@@ -18,14 +18,18 @@ from bim_ai.elements import (
     RoofElem,
     RoomElem,
     SectionCutElem,
+    SlabOpeningElem,
     StairElem,
     WallElem,
     WindowElem,
 )
+from bim_ai.opening_cut_primitives import floor_panels_axis_aligned_rect_with_single_hole_mm
 
 _EPS = 1e-6
 
 _DEFAULT_DOOR_HEIGHT_MM = 2100.0
+
+_FLOOR_SLAB_PANEL_GAP_MM = 40.0
 
 
 def _hypot(dx: float, dy: float) -> float:
@@ -181,12 +185,69 @@ def _polygon_u_span_in_strip(
         return None
     return min(us), max(us)
 
+def _append_floor_u_span_primitive(
+    floors: list[dict[str, Any]],
+    *,
+    floor_el: FloorElem,
+    doc: Document,
+    poly: list[tuple[float, float]],
+    p0x: float,
+    p0y: float,
+    tx: float,
+    ty: float,
+    nx: float,
+    ny: float,
+    half: float,
+    pane_index: int | None,
+) -> None:
+    span = _polygon_u_span_in_strip(poly, p0x=p0x, p0y=p0y, tx=tx, ty=ty, nx=nx, ny=ny, half=half)
+    if span is None:
+        return
+    u_lo, u_hi = span
+    z0 = _level_elevation_mm(doc, floor_el.level_id)
+    z_t = z0 + float(floor_el.thickness_mm)
+    pane_suffix = "0" if pane_index is None else f"pane-{pane_index + 1}"
+    floors.append(
+        {
+            "id": f"floor:{floor_el.id}:{pane_suffix}",
+            "elementId": floor_el.id,
+            "levelId": floor_el.level_id,
+            "uStartMm": round(u_lo, 3),
+            "uEndMm": round(u_hi, 3),
+            "zBottomMm": round(z0, 3),
+            "zTopMm": round(z_t, 3),
+        }
+    )
+
+
 
 def _roof_proxy_top_z_mm(doc: Document, r: RoofElem) -> float:
     base = _level_elevation_mm(doc, r.reference_level_id)
     slope = float(r.slope_deg or 25.0)
     rise = 800.0 * math.tan(math.radians(slope))
     return base + rise
+
+
+def _collect_level_markers(doc: Document) -> list[dict[str, Any]]:
+    """Sorted level datums for section annotation (WP-E04); optional on ``sectionProjectionPrimitives_v1``."""
+    rows: list[tuple[float, dict[str, Any]]] = []
+    for eid in sorted(doc.elements.keys()):
+        e = doc.elements[eid]
+        if not isinstance(e, LevelElem):
+            continue
+        z = float(e.elevation_mm)
+        rows.append(
+            (
+                z,
+                {
+                    "id": e.id,
+                    "name": str(e.name or e.id),
+                    "elevationMm": round(z, 3),
+                },
+            )
+        )
+    rows.sort(key=lambda t: (t[0], t[1]["id"]))
+    return [r[1] for r in rows]
 
 
 def build_section_projection_primitives(
@@ -222,6 +283,7 @@ def build_section_projection_primitives(
                 "windows": [],
                 "stairs": [],
                 "roofs": [],
+                "levelMarkers": _collect_level_markers(doc),
             },
             warnings,
         )
@@ -400,29 +462,68 @@ def build_section_projection_primitives(
             )
             oid += 1
 
+    openings_by_floor: dict[str, list[SlabOpeningElem]] = {}
+    for ev in doc.elements.values():
+        if isinstance(ev, SlabOpeningElem):
+            openings_by_floor.setdefault(ev.host_floor_id, []).append(ev)
+
     floors: list[dict[str, Any]] = []
     for eid in sorted(doc.elements.keys()):
         e = doc.elements[eid]
         if not isinstance(e, FloorElem):
             continue
-        poly = [(float(p.x_mm), float(p.y_mm)) for p in e.boundary_mm]
-        span = _polygon_u_span_in_strip(poly, p0x=p0x, p0y=p0y, tx=tx, ty=ty, nx=nx, ny=ny, half=half)
-        if span is None:
-            continue
-        u_lo, u_hi = span
-        z0 = _level_elevation_mm(doc, e.level_id)
-        z_t = z0 + float(e.thickness_mm)
-        floors.append(
-            {
-                "id": f"floor:{e.id}:0",
-                "elementId": e.id,
-                "levelId": e.level_id,
-                "uStartMm": round(u_lo, 3),
-                "uEndMm": round(u_hi, 3),
-                "zBottomMm": round(z0, 3),
-                "zTopMm": round(z_t, 3),
-            }
-        )
+        floor_el = e
+        floor_pts = [(float(p.x_mm), float(p.y_mm)) for p in floor_el.boundary_mm]
+
+        openings_on_floor = openings_by_floor.get(e.id, [])
+        panel_rects_mm: list[tuple[float, float, float, float]] | None = None
+        if len(openings_on_floor) == 1:
+            op_only = openings_on_floor[0]
+            op_pts = [(float(p.x_mm), float(p.y_mm)) for p in op_only.boundary_mm]
+            if len(floor_pts) >= 3 and len(op_pts) >= 3:
+                panel_rects_mm = floor_panels_axis_aligned_rect_with_single_hole_mm(
+                    floor_pts,
+                    op_pts,
+                    min_gap_mm=_FLOOR_SLAB_PANEL_GAP_MM,
+                )
+
+        if panel_rects_mm:
+            for pi, (px0, px1, py0, py1) in enumerate(panel_rects_mm):
+                panel_poly = [
+                    (px0, py0),
+                    (px1, py0),
+                    (px1, py1),
+                    (px0, py1),
+                ]
+                _append_floor_u_span_primitive(
+                    floors,
+                    floor_el=floor_el,
+                    doc=doc,
+                    poly=panel_poly,
+                    p0x=p0x,
+                    p0y=p0y,
+                    tx=tx,
+                    ty=ty,
+                    nx=nx,
+                    ny=ny,
+                    half=half,
+                    pane_index=pi,
+                )
+        else:
+            _append_floor_u_span_primitive(
+                floors,
+                floor_el=floor_el,
+                doc=doc,
+                poly=floor_pts,
+                p0x=p0x,
+                p0y=p0y,
+                tx=tx,
+                ty=ty,
+                nx=nx,
+                ny=ny,
+                half=half,
+                pane_index=None,
+            )
 
     rooms: list[dict[str, Any]] = []
     for eid in sorted(doc.elements.keys()):
@@ -510,6 +611,7 @@ def build_section_projection_primitives(
         "format": "sectionProjectionPrimitives_v1",
         "coordinateFrame": prim_frame,
         "cutSegmentLengthMm": round(seg_len, 3),
+        "levelMarkers": _collect_level_markers(doc),
         "walls": walls,
         "floors": floors,
         "rooms": rooms,

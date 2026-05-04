@@ -140,6 +140,7 @@ def _build_plan_primitive_lists(
     level: str | None,
     hidden_semantic: set[str],
     pinned_pv_el: PlanViewElem | None,
+    plan_detail_level: str | None,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     """2D primitives for deterministic server-side plan previews."""
 
@@ -169,7 +170,11 @@ def _build_plan_primitive_lists(
             )
 
     line_weight_hint = 1.0
-    if pinned_pv_el is not None:
+    if plan_detail_level == "fine":
+        line_weight_hint = 1.15
+    elif plan_detail_level == "coarse":
+        line_weight_hint = 0.85
+    elif pinned_pv_el is not None:
         pres = pinned_pv_el.plan_presentation
         if pres == "opening_focus":
             line_weight_hint = 1.18
@@ -443,6 +448,7 @@ def resolve_plan_projection_wire(
     presentation = global_plan_presentation
     pinned_pv: str | None = None
     pinned_pv_elem: PlanViewElem | None = None
+    plan_detail_level_resolved: str | None = None
 
     if plan_view_id:
         pv_el = doc.elements.get(plan_view_id)
@@ -463,6 +469,8 @@ def resolve_plan_projection_wire(
                         k = _canon_hidden_category(str(lab))
                         if k:
                             hidden_semantic.add(k)
+                    dlev = tmpl.plan_detail_level
+                    plan_detail_level_resolved = str(dlev) if dlev else None
 
             pres_raw = getattr(pv_el, "plan_presentation", None) or "default"
             if pres_raw in {"opening_focus", "room_scheme"}:
@@ -524,11 +532,12 @@ def resolve_plan_projection_wire(
         level=active_level,
         hidden_semantic=hidden_semantic,
         pinned_pv_el=pinned_pv_elem,
+        plan_detail_level=plan_detail_level_resolved,
     )
     all_warnings = list(prim_warn)
     legend = _room_color_legend_payload(doc, level=active_level, hidden_semantic=hidden_semantic)
 
-    return {
+    out_payload: dict[str, Any] = {
         "format": "planProjectionWire_v1",
         "planViewElementId": pinned_pv,
         "activeLevelId": active_level,
@@ -540,6 +549,9 @@ def resolve_plan_projection_wire(
         "primitives": prim,
         "roomColorLegend": legend,
     }
+    if plan_detail_level_resolved:
+        out_payload["planGraphicHints"] = {"detailLevel": plan_detail_level_resolved}
+    return out_payload
 
 
 def plan_projection_wire_from_request(

@@ -13,7 +13,9 @@ from bim_ai.elements import (
     RoomElem,
     SectionCutElem,
     SheetElem,
+    SlabOpeningElem,
     StairElem,
+    ViewTemplateElem,
     WallElem,
 )
 from bim_ai.evidence_manifest import (
@@ -95,6 +97,10 @@ def test_section_projection_wire_emits_wall_u_span_for_perpendicular_cut() -> No
     assert span > 150.0 and span < 260.0
     assert ws[0]["elementId"] == "w1"
     assert out["countsByVisibleKind"]["wall"] == 1
+    markers = prim.get("levelMarkers") or []
+    assert len(markers) == 1
+    assert markers[0]["id"] == "lvl"
+    assert markers[0]["elevationMm"] == 300.0
 
 
 def test_section_projection_wire_emits_door_when_cut_hits_host_wall() -> None:
@@ -124,6 +130,60 @@ def test_section_projection_wire_emits_door_when_cut_hits_host_wall() -> None:
     assert len(ds) == 1
     assert ds[0]["elementId"] == "d1"
     assert out["countsByVisibleKind"]["door"] == 1
+    markers = (out.get("primitives") or {}).get("levelMarkers") or []
+    assert markers == [{"id": "lvl", "name": "L", "elevationMm": 0.0}]
+
+
+def test_section_floor_emits_multiple_panels_when_slab_opening_subtracts_outer_rect() -> None:
+    """Rectangular floor minus one slab void: section uses same pane bands as cut kernel / glTF."""
+    lvl = LevelElem(kind="level", id="lvl", name="L", elevationMm=0.0)
+    floor = FloorElem(
+        kind="floor",
+        id="fl",
+        name="F",
+        levelId="lvl",
+        boundaryMm=[
+            {"xMm": 0, "yMm": 0},
+            {"xMm": 5000, "yMm": 0},
+            {"xMm": 5000, "yMm": 4000},
+            {"xMm": 0, "yMm": 4000},
+        ],
+        thicknessMm=220.0,
+    )
+    slab_open = SlabOpeningElem(
+        kind="slab_opening",
+        id="so",
+        name="O",
+        hostFloorId="fl",
+        boundaryMm=[
+            {"xMm": 900, "yMm": 900},
+            {"xMm": 1900, "yMm": 900},
+            {"xMm": 1900, "yMm": 1700},
+            {"xMm": 900, "yMm": 1700},
+        ],
+    )
+    sec = SectionCutElem(
+        kind="section_cut",
+        id="sec-a",
+        name="A-A",
+        lineStartMm={"xMm": 2500.0, "yMm": -1000.0},
+        lineEndMm={"xMm": 2500.0, "yMm": 5000.0},
+        cropDepthMm=8000.0,
+    )
+    doc = Document(
+        revision=1,
+        elements={"lvl": lvl, "fl": floor, "so": slab_open, "sec-a": sec},
+    )
+    out = section_cut_projection_wire(doc, "sec-a")
+    assert not out.get("errors")
+    prim = out.get("primitives") or {}
+    fls = prim.get("floors") or []
+    assert len(fls) >= 3
+    ids = {str(f["id"]) for f in fls}
+    assert "floor:fl:pane-1" in ids
+    assert "floor:fl:pane-4" in ids
+    assert all(str(f.get("elementId")) == "fl" for f in fls)
+    assert out["countsByVisibleKind"]["floor"] == len(fls)
 
 
 def test_merged_registry_has_builtin_format() -> None:
@@ -435,3 +495,52 @@ def test_plan_projection_includes_stair_primitive() -> None:
     sts = (out.get("primitives") or {}).get("stairs") or []
     assert len(sts) == 1
     assert sts[0]["id"] == "st1"
+
+def test_plan_projection_wire_plan_graphic_hints_order_coarse_vs_fine() -> None:
+    lvl = LevelElem(kind="level", id="lvl", name="L", elevationMm=0)
+    vt_fine = ViewTemplateElem(kind="view_template", id="vt-f", name="Fine", plan_detail_level="fine")
+    vt_coarse = ViewTemplateElem(
+        kind="view_template",
+        id="vt-c",
+        name="Coarse",
+        plan_detail_level="coarse",
+    )
+    wall = WallElem(
+        kind="wall",
+        id="w",
+        name="W",
+        levelId=lvl.id,
+        start={"xMm": 0, "yMm": 0},
+        end={"xMm": 3000, "yMm": 0},
+        thicknessMm=200,
+        heightMm=2800,
+    )
+    pv_fine = PlanViewElem(
+        kind="plan_view",
+        id="pv-f",
+        name="VF",
+        levelId=lvl.id,
+        viewTemplateId="vt-f",
+    )
+    pv_coarse = PlanViewElem(
+        kind="plan_view",
+        id="pv-c",
+        name="VC",
+        levelId=lvl.id,
+        viewTemplateId="vt-c",
+    )
+    doc_fine = Document(revision=1, elements={"lvl": lvl, "vt-f": vt_fine, "w": wall, "pv-f": pv_fine})
+    doc_coarse = Document(revision=1, elements={"lvl": lvl, "vt-c": vt_coarse, "w": wall, "pv-c": pv_coarse})
+
+    out_fine = plan_projection_wire_from_request(doc_fine, plan_view_id="pv-f", fallback_level_id=None)
+    out_coarse = plan_projection_wire_from_request(doc_coarse, plan_view_id="pv-c", fallback_level_id=None)
+
+    hints_fine = out_fine["planGraphicHints"]
+    hints_coarse = out_coarse["planGraphicHints"]
+    assert hints_fine["detailLevel"] == "fine"
+    assert hints_coarse["detailLevel"] == "coarse"
+
+    lw_fine = float((out_fine["primitives"]["walls"] or [])[0]["lineWeightHint"])
+    lw_coarse = float((out_coarse["primitives"]["walls"] or [])[0]["lineWeightHint"])
+    assert lw_fine > lw_coarse
+

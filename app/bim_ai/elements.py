@@ -338,6 +338,10 @@ class ViewTemplateElem(BaseModel):
     scale: Literal["scale_50", "scale_100", "scale_200"] = Field(default="scale_100", alias="scale")
     disciplines_visible: list[str] = Field(default_factory=list, alias="disciplinesVisible")
     hidden_categories: list[str] = Field(default_factory=list, alias="hiddenCategories")
+    plan_detail_level: Literal["coarse", "medium", "fine"] | None = Field(
+        default=None,
+        alias="planDetailLevel",
+    )
 
 
 class SheetElem(BaseModel):
