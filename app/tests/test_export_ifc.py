@@ -931,3 +931,67 @@ def test_ifc_authoritative_replay_v0_hosted_openings_roundtrip() -> None:
     assert "d-1" in new_doc.elements and "win-1" in new_doc.elements
     assert not viols or not any(v.blocking or v.severity == "error" for v in viols)
 
+
+def test_ifc_authoritative_replay_v0_slab_opening_roundtrip() -> None:
+    doc = Document(
+        revision=508,
+        elements={
+            "lvl-g": LevelElem(kind="level", id="lvl-g", name="G", elevationMm=0),
+            "fl-host": FloorElem(
+                kind="floor",
+                id="fl-host",
+                name="Slab",
+                levelId="lvl-g",
+                boundaryMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 6000, "yMm": 0},
+                    {"xMm": 6000, "yMm": 5000},
+                    {"xMm": 0, "yMm": 5000},
+                ],
+                thicknessMm=220,
+            ),
+            "void-1": SlabOpeningElem(
+                kind="slab_opening",
+                id="void-1",
+                name="Shaft",
+                hostFloorId="fl-host",
+                boundaryMm=[
+                    {"xMm": 1000, "yMm": 900},
+                    {"xMm": 2100, "yMm": 900},
+                    {"xMm": 2100, "yMm": 1800},
+                    {"xMm": 1000, "yMm": 1800},
+                ],
+                isShaft=True,
+            ),
+        },
+    )
+    step = export_ifc_model_step(doc)
+    sketch = build_kernel_ifc_authoritative_replay_sketch_v0(step)
+    assert sketch["available"] is True
+    assert sketch["authoritativeSubset"]["floors"] is True
+    assert sketch["authoritativeSubset"]["slabOpenings"] is True
+    assert sketch.get("kernelSlabSkippedNoReference") == 0
+    assert sketch.get("kernelSlabOpeningSkippedNoReference") == 0
+
+    floor_cmds = [c for c in sketch["commands"] if c["type"] == "createFloor"]
+    opening_cmds = [c for c in sketch["commands"] if c["type"] == "createSlabOpening"]
+    assert len(floor_cmds) == 1
+    assert floor_cmds[0]["id"] == "fl-host"
+    assert abs(floor_cmds[0]["thicknessMm"] - 220) < 0.2
+    assert len(opening_cmds) == 1
+    assert opening_cmds[0]["id"] == "void-1"
+    assert opening_cmds[0]["hostFloorId"] == "fl-host"
+
+    exp_outline = [(1000, 900), (2100, 900), (2100, 1800), (1000, 1800)]
+    got = [(float(p["xMm"]), float(p["yMm"])) for p in opening_cmds[0]["boundaryMm"]]
+    assert len(got) == 4
+    for ex, ey in exp_outline:
+        assert any(abs(px - ex) < 0.2 and abs(py - ey) < 0.2 for px, py in got)
+
+    empty = Document(revision=0, elements={})
+    ok, new_doc, _cmds, viols, code = try_apply_kernel_ifc_authoritative_replay_v0(empty, sketch)
+    assert ok is True and code == "ok" and new_doc is not None
+    assert "fl-host" in new_doc.elements and "void-1" in new_doc.elements
+    assert new_doc.elements["void-1"].kind == "slab_opening"
+    assert not viols or not any(v.blocking or v.severity == "error" for v in viols)
+

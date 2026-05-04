@@ -7,7 +7,13 @@ from typing import Any
 
 import numpy as np
 
-from bim_ai.commands import CreateLevelCmd, CreateRoomOutlineCmd, CreateWallCmd
+from bim_ai.commands import (
+    CreateFloorCmd,
+    CreateLevelCmd,
+    CreateRoomOutlineCmd,
+    CreateSlabOpeningCmd,
+    CreateWallCmd,
+)
 from bim_ai.document import Document
 from bim_ai.elements import (
     DoorElem,
@@ -720,6 +726,25 @@ def _kernel_space_footprint_outline_mm(space: Any) -> list[tuple[float, float]] 
     return out_mm if len(out_mm) >= 3 else None
 
 
+def _kernel_slab_footprint_outline_mm(slab: Any) -> list[tuple[float, float]] | None:
+    """Recover floor/opening plan outline (mm) from kernel-style slab extrusion + placement."""
+
+    return _kernel_space_footprint_outline_mm(slab)
+
+
+def _kernel_extrusion_depth_mm(product: Any) -> float | None:
+    ex = _first_body_extruded_area_solid(product)
+    if ex is None:
+        return None
+    try:
+        depth = abs(float(ex.Depth))
+    except Exception:
+        return None
+    if depth <= 1e-9:
+        return None
+    return depth
+
+
 def _space_pset_programme_cmd_kwargs(bucket: dict[str, Any]) -> dict[str, Any]:
     """IFC ``Pset_SpaceCommon`` programme strings → optional ``CreateRoomOutlineCmd`` kwargs."""
 
@@ -807,9 +832,56 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
             ).model_dump(mode="json", by_alias=True)
         )
 
+    extraction_gaps: list[dict[str, Any]] = []
+    floor_cmds: list[dict[str, Any]] = []
+    slab_global_id_to_kernel_ref: dict[str, str] = {}
+    slabs_skipped_no_reference = 0
+    slab_opening_cmds: list[dict[str, Any]] = []
+    slab_openings_skipped_no_reference = 0
+
+    for slab in sorted(model.by_type("IfcSlab") or [], key=lambda s: str(getattr(s, "GlobalId", None) or "")):
+        ps_sl = ifc_elem_util.get_psets(slab)
+        bucket_sl = ps_sl.get("Pset_SlabCommon") or {}
+        ref_sl = bucket_sl.get("Reference")
+        ref_s = ref_sl.strip() if isinstance(ref_sl, str) else ""
+        sgid = str(getattr(slab, "GlobalId", None) or "")
+        if not ref_s:
+            slabs_skipped_no_reference += 1
+            continue
+
+        st_gid_sl = _product_host_storey_global_id(slab)
+        if not st_gid_sl or st_gid_sl not in storey_gid_to_level_id:
+            extraction_gaps.append(
+                {"slabGlobalId": sgid, "kernelReference": ref_s, "reason": "missing_or_unknown_host_storey"}
+            )
+            continue
+
+        outline_sl = _kernel_slab_footprint_outline_mm(slab)
+        if outline_sl is None:
+            extraction_gaps.append(
+                {"slabGlobalId": sgid, "kernelReference": ref_s, "reason": "slab_body_extrusion_unreadable"}
+            )
+            continue
+
+        thickness_mm = _kernel_extrusion_depth_mm(slab) or 220.0
+        floor_cmds.append(
+            CreateFloorCmd(
+                id=ref_s,
+                name=str(getattr(slab, "Name", None) or "") or ref_s,
+                level_id=storey_gid_to_level_id[st_gid_sl],
+                boundary_mm=[Vec2Mm(x_mm=px, y_mm=py) for px, py in outline_sl],
+                thickness_mm=thickness_mm,
+            ).model_dump(mode="json", by_alias=True)
+        )
+        if sgid:
+            slab_global_id_to_kernel_ref[sgid] = ref_s
+
+    floor_cmds.sort(key=lambda c: str(c.get("id") or ""))
+    if model.by_type("IfcSlab"):
+        subset["floors"] = bool(floor_cmds)
+
     wall_cmds: list[dict[str, Any]] = []
     wall_global_id_to_kernel_ref: dict[str, str] = {}
-    extraction_gaps: list[dict[str, Any]] = []
     walls_skipped_no_reference = 0
 
     for wal in sorted(model.by_type("IfcWall") or [], key=lambda w: str(getattr(w, "GlobalId", None) or "")):
@@ -859,6 +931,71 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
         storey_gid_to_elev_mm=storey_gid_to_elev_mm,
         extraction_gaps=extraction_gaps,
     )
+
+    for opening in sorted(model.by_type("IfcOpeningElement") or [], key=lambda o: str(getattr(o, "GlobalId", None) or "")):
+        host_slab = None
+        rels_raw = getattr(opening, "VoidsElements", None)
+        rels = rels_raw if isinstance(rels_raw, (list, tuple)) else ([rels_raw] if rels_raw is not None else [])
+        for rel in rels:
+            try:
+                if not rel.is_a("IfcRelVoidsElement"):
+                    continue
+                host = getattr(rel, "RelatingBuildingElement", None)
+                if host is not None and host.is_a("IfcSlab"):
+                    host_slab = host
+                    break
+            except Exception:
+                continue
+        if host_slab is None:
+            continue
+
+        ogid = str(getattr(opening, "GlobalId", None) or "")
+        ps_op = ifc_elem_util.get_psets(opening)
+        bucket_op = ps_op.get("Pset_OpeningElementCommon") or {}
+        ref_op = bucket_op.get("Reference")
+        ref_s = ref_op.strip() if isinstance(ref_op, str) else ""
+        if not ref_s:
+            slab_openings_skipped_no_reference += 1
+            extraction_gaps.append({"openingGlobalId": ogid, "kind": "slab_opening", "reason": "missing_pset_reference"})
+            continue
+
+        hgid = str(getattr(host_slab, "GlobalId", None) or "")
+        host_ref = slab_global_id_to_kernel_ref.get(hgid)
+        if not host_ref:
+            extraction_gaps.append(
+                {
+                    "openingGlobalId": ogid,
+                    "kernelReference": ref_s,
+                    "kind": "slab_opening",
+                    "reason": "slab_reference_not_in_kernel_subset",
+                }
+            )
+            continue
+
+        outline_op = _kernel_slab_footprint_outline_mm(opening)
+        if outline_op is None:
+            extraction_gaps.append(
+                {
+                    "openingGlobalId": ogid,
+                    "kernelReference": ref_s,
+                    "kind": "slab_opening",
+                    "reason": "slab_opening_body_extrusion_unreadable",
+                }
+            )
+            continue
+
+        slab_opening_cmds.append(
+            CreateSlabOpeningCmd(
+                id=ref_s,
+                name=str(getattr(opening, "Name", None) or "") or ref_s,
+                host_floor_id=host_ref,
+                boundary_mm=[Vec2Mm(x_mm=px, y_mm=py) for px, py in outline_op],
+            ).model_dump(mode="json", by_alias=True)
+        )
+
+    slab_opening_cmds.sort(key=lambda c: str(c.get("id") or ""))
+    if slab_opening_cmds or slab_openings_skipped_no_reference:
+        subset["slabOpenings"] = bool(slab_opening_cmds)
 
     room_cmds: list[dict[str, Any]] = []
     ids_space_rows: list[dict[str, Any]] = []
@@ -929,9 +1066,11 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
             "counts IfcProduct classes outside the kernel exchange slice (not replay targets)."
         ),
         "kernelWallSkippedNoReference": walls_skipped_no_reference,
+        "kernelSlabSkippedNoReference": slabs_skipped_no_reference,
         "kernelSpaceSkippedNoReference": spaces_skipped_no_reference,
         "kernelDoorSkippedNoReference": kernel_door_skip,
         "kernelWindowSkippedNoReference": kernel_window_skip,
+        "kernelSlabOpeningSkippedNoReference": slab_openings_skipped_no_reference,
         "idsAuthoritativeReplayMap_v0": {
             "schemaVersion": 0,
             "note": (
@@ -941,7 +1080,7 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
             ),
             "spaces": ids_space_rows,
         },
-        "commands": level_cmds + wall_cmds + door_cmds + win_cmds + room_cmds,
+        "commands": level_cmds + floor_cmds + wall_cmds + door_cmds + win_cmds + slab_opening_cmds + room_cmds,
         "extractionGaps": extraction_gaps,
     }
 
@@ -1685,6 +1824,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
 
         edit_object_placement(f, product=op_el, matrix=omat)
         ifc_feature.add_feature(f, feature=op_el, element=host_slab_ent)
+        attach_kernel_identity_pset(op_el, "Pset_OpeningElementCommon", oid)
         geo_products += 1
 
     for rid in sorted(eid for eid, e in doc.elements.items() if isinstance(e, RoofElem)):

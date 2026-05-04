@@ -227,6 +227,9 @@ def test_ifc_manifest_scope_lists_authoritative_replay_bullet() -> None:
     assert any("idsAuthoritativeReplayMap_v0" in str(x) for x in supported)
     assert any("try_apply_kernel_ifc_authoritative_replay_v0" in str(x) for x in supported)
     assert any("insertDoorOnWall" in str(x) for x in supported)
+    assert any("createFloor" in str(x) for x in supported)
+    assert any("createSlabOpening" in str(x) for x in supported)
+    assert any("kernelSlabOpening" in str(x) for x in supported)
     unsupported = scope.get("importMergeUnsupported") or []
     assert any("try_apply_kernel_ifc_authoritative_replay_v0" in str(x) for x in unsupported)
 
