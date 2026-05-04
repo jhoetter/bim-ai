@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import math
 from typing import Any
 
 from bim_ai.document import Document
@@ -23,6 +24,7 @@ from bim_ai.elements import (
 )
 from bim_ai.opening_cut_primitives import hosted_opening_t_span_normalized
 from bim_ai.section_projection_primitives import build_section_projection_primitives
+from bim_ai.stair_plan_proxy import stair_riser_count_plan_proxy
 
 
 def _canon_hidden_category(label: str) -> str | None:
@@ -365,10 +367,19 @@ def _build_plan_primitive_lists(
                 crop_box,
             ):
                 continue
+            run_len_mm = math.hypot(
+                float(e.run_end.x_mm) - float(e.run_start.x_mm),
+                float(e.run_end.y_mm) - float(e.run_start.y_mm),
+            )
+            rc_proxy = stair_riser_count_plan_proxy(doc, e, run_length_mm=run_len_mm)
             stairs.append(
                 {
                     "id": e.id,
                     "baseLevelId": e.base_level_id,
+                    "topLevelId": e.top_level_id,
+                    "riserMm": round(float(e.riser_mm), 3),
+                    "treadMm": round(float(e.tread_mm), 3),
+                    "riserCountPlanProxy": rc_proxy,
                     "runStartMm": {
                         "x": round(e.run_start.x_mm, 3),
                         "y": round(e.run_start.y_mm, 3),

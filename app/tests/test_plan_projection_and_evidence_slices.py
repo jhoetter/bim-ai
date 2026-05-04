@@ -519,6 +519,47 @@ def test_plan_projection_includes_stair_primitive() -> None:
     sts = (out.get("primitives") or {}).get("stairs") or []
     assert len(sts) == 1
     assert sts[0]["id"] == "st1"
+    assert sts[0]["topLevelId"] == "l1"
+    assert sts[0]["riserMm"] == 175
+    assert sts[0]["treadMm"] == 275
+    assert sts[0]["riserCountPlanProxy"] == 16
+
+
+def test_section_projection_stair_includes_riser_count_plan_proxy() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "l0": LevelElem(kind="level", id="l0", name="G", elevationMm=0),
+            "l1": LevelElem(kind="level", id="l1", name="OG", elevationMm=2800),
+            "st": StairElem(
+                kind="stair",
+                id="st1",
+                name="S",
+                baseLevelId="l0",
+                topLevelId="l1",
+                runStartMm={"xMm": 1000.0, "yMm": 500.0},
+                runEndMm={"xMm": 1000.0, "yMm": 3500.0},
+                widthMm=1100,
+            ),
+            "sec-a": SectionCutElem(
+                kind="section_cut",
+                id="sec-a",
+                name="A-A",
+                lineStartMm={"xMm": 1000.0, "yMm": -8000.0},
+                lineEndMm={"xMm": 1000.0, "yMm": 8000.0},
+                cropDepthMm=12000.0,
+            ),
+        },
+    )
+    out = section_cut_projection_wire(doc, "sec-a")
+    assert not out.get("errors")
+    sts = (out.get("primitives") or {}).get("stairs") or []
+    assert len(sts) == 1
+    assert sts[0]["elementId"] == "st1"
+    assert sts[0]["riserCountPlanProxy"] == 16
+    assert sts[0]["riserMm"] == 175
+    assert sts[0]["treadMm"] == 275
+
 
 def test_plan_projection_wire_plan_graphic_hints_order_coarse_vs_fine() -> None:
     lvl = LevelElem(kind="level", id="lvl", name="L", elevationMm=0)

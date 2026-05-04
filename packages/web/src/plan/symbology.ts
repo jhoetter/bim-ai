@@ -346,10 +346,10 @@ function rebuildPlanMeshesFromWire(
             runStartMm: coerceVec2Mm(row.runStartMm),
             runEndMm: coerceVec2Mm(row.runEndMm),
             widthMm: Number(row.widthMm ?? 1000),
-            riserMm: 175,
-            treadMm: 275,
+            riserMm: Number(row.riserMm ?? 175),
+            treadMm: Number(row.treadMm ?? 275),
           } as Extract<Element, { kind: 'stair' }>);
-    const g = stairPlanThree(stairEl);
+    const g = stairPlanThree(stairEl, elementsById);
     if (g) holder.add(g);
   }
 
@@ -488,7 +488,7 @@ export function rebuildPlanMeshes(
     if (st.kind !== 'stair') continue;
     if (kindHidden('stair')) continue;
     if (level && st.baseLevelId !== level) continue;
-    const g = stairPlanThree(st);
+    const g = stairPlanThree(st, elementsById);
 
     if (g) holder.add(g);
   }
@@ -705,9 +705,42 @@ function planWindowMesh(
   return grp;
 }
 
+/** Match kernel `stair_riser_count_plan_proxy` (rise / riser when levels resolve). */
+function computeStairPlanRiserCount(
+  stair: Extract<Element, { kind: 'stair' }>,
+  elementsById?: Record<string, Element>,
+): number {
+  const sx = stair.runStartMm.xMm / 1000;
+  const sz = stair.runStartMm.yMm / 1000;
+  const ex = stair.runEndMm.xMm / 1000;
+  const ez = stair.runEndMm.yMm / 1000;
+  const lenM = Math.max(1e-6, Math.hypot(ex - sx, ez - sz));
+  const lenMm = lenM * 1000;
+
+  if (elementsById) {
+    const bl = elementsById[stair.baseLevelId];
+    const tl = elementsById[stair.topLevelId];
+    if (bl?.kind === 'level' && tl?.kind === 'level') {
+      const riseMm = Math.abs(tl.elevationMm - bl.elevationMm);
+      if (riseMm > 1e-3) {
+        const r = Math.max(stair.riserMm, 1e-6);
+        const n = Math.round(riseMm / r);
+        return Math.max(2, Math.min(36, n));
+      }
+    }
+  }
+
+  const t = Math.max(stair.treadMm, 1e-6);
+  const n2 = Math.round(lenMm / t);
+  return Math.max(2, Math.min(36, n2));
+}
+
 /** Footprint tread preview on the stair base level (OG plan hides it). */
 
-function stairPlanThree(stair: Extract<Element, { kind: 'stair' }>): THREE.Group | null {
+function stairPlanThree(
+  stair: Extract<Element, { kind: 'stair' }>,
+  elementsById?: Record<string, Element>,
+): THREE.Group | null {
   const sx = stair.runStartMm.xMm / 1000;
   const sz = stair.runStartMm.yMm / 1000;
   const ex = stair.runEndMm.xMm / 1000;
@@ -742,7 +775,7 @@ function stairPlanThree(stair: Extract<Element, { kind: 'stair' }>): THREE.Group
     ),
   );
 
-  const nSteps = Math.max(2, Math.min(36, Math.round(len / Math.max(stair.treadMm / 1000, 0.05))));
+  const nSteps = computeStairPlanRiserCount(stair, elementsById);
   const stepLen = len / nSteps;
 
   const runOffX = uxDir * stepLen;

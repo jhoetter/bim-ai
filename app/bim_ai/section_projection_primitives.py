@@ -24,6 +24,7 @@ from bim_ai.elements import (
     WindowElem,
 )
 from bim_ai.opening_cut_primitives import floor_panels_axis_aligned_rect_with_single_hole_mm
+from bim_ai.stair_plan_proxy import stair_riser_count_plan_proxy
 
 _EPS = 1e-6
 
@@ -571,6 +572,8 @@ def build_section_projection_primitives(
         zt = _level_elevation_mm(doc, e.top_level_id)
         if zt < zb:
             zb, zt = zt, zb
+        run_len_mm = _hypot(rx1 - rx0, ry1 - ry0)
+        rc_proxy = stair_riser_count_plan_proxy(doc, e, run_length_mm=run_len_mm)
         stairs.append(
             {
                 "id": f"stair:{e.id}:0",
@@ -580,6 +583,9 @@ def build_section_projection_primitives(
                 "zBottomMm": round(zb, 3),
                 "zTopMm": round(zt, 3),
                 "widthMm": round(float(e.width_mm), 3),
+                "riserMm": round(float(e.riser_mm), 3),
+                "treadMm": round(float(e.tread_mm), 3),
+                "riserCountPlanProxy": rc_proxy,
                 "proxyKind": "runRampExtents",
             }
         )
