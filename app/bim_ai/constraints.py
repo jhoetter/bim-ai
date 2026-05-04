@@ -103,6 +103,7 @@ _RULE_DISCIPLINE: dict[str, str] = {
     "exchange_ifc_roundtrip_count_mismatch": "exchange",
     "exchange_ifc_roundtrip_programme_mismatch": "exchange",
     "exchange_ifc_ids_identity_pset_gap": "exchange",
+    "exchange_ifc_ids_qto_gap": "exchange",
 }
 
 
@@ -499,6 +500,22 @@ def _exchange_advisory_violations(elements: dict[str, Element]) -> list[Violatio
                         message=(
                             "Cleanroom IDS validation is active but IFC read-back shows incomplete "
                             "Pset_*Common Reference coverage on some emitted products."
+                        ),
+                        element_ids=[],
+                        discipline="exchange",
+                    )
+                )
+            if _validation_rules_any_cleanroom_ids(val_rules) and not rtc.get(
+                "allQtoLinksMatch", True
+            ):
+                out.append(
+                    Violation(
+                        rule_id="exchange_ifc_ids_qto_gap",
+                        severity="info",
+                        message=(
+                            "Cleanroom IDS validation is active but IFC read-back shows incomplete "
+                            "Qto_* base-quantity linkage on some emitted products "
+                            "(summarize_kernel_ifc_semantic_roundtrip.roundtripChecks.qtoCoverage)."
                         ),
                         element_ids=[],
                         discipline="exchange",

@@ -157,6 +157,29 @@ def test_inspect_kernel_ifc_semantics_stub_when_ifcopenshell_missing() -> None:
     assert rep["matrixVersion"] == 1
 
 
+def test_ifc_manifest_scope_lists_qto_linked_products_read_back() -> None:
+    doc = Document(
+        revision=71,
+        elements={
+            "lvl-g": LevelElem(kind="level", id="lvl-g", name="G", elevationMm=0),
+            "w-a": WallElem(
+                kind="wall",
+                id="w-a",
+                name="W",
+                levelId="lvl-g",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 3000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+        },
+    )
+    mf = build_ifc_exchange_manifest_payload(doc)
+    scope = mf.get("ifcSemanticImportScope_v0") or {}
+    supported = scope.get("semanticReadBackSupported") or []
+    assert any("qtoLinkedProducts" in str(x) for x in supported)
+
+
 def test_inspect_kernel_ifc_semantics_kernel_not_eligible_when_ifc_present() -> None:
     if not ifcopenshell_available():
         pytest.skip("requires ifcopenshell")

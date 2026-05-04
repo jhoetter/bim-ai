@@ -516,6 +516,11 @@ def test_ifc_inspection_matrix_covers_storeys_spaces_qtos_and_programme_fields()
     assert rep["products"]["IfcSpace"] >= 1
     assert rep["identityPsets"]["wallWithPsetWallCommonReference"] >= 1
     assert rep["identityPsets"]["spaceWithPsetSpaceCommonReference"] >= 1
+    assert rep["identityPsets"]["slabWithPsetSlabCommonReference"] >= 1
+    ql = rep.get("qtoLinkedProducts") or {}
+    assert ql.get("IfcWall", 0) >= 1
+    assert ql.get("IfcSlab", 0) >= 1
+    assert ql.get("IfcSpace", 0) >= 1
     sf = rep["spaceProgrammeFields"]
     assert sf["ProgrammeCode"] >= 1
     assert sf["Department"] >= 1
@@ -542,6 +547,7 @@ def test_ifc_inspection_matrix_covers_storeys_spaces_qtos_and_programme_fields()
 
     rt = summarize_kernel_ifc_semantic_roundtrip(doc)
     assert rt["roundtripChecks"] is not None
+    assert rt["roundtripChecks"]["allQtoLinksMatch"] is True
     assert rt["roundtripChecks"]["allChecksPass"] is True
     assert rt["commandSketch"] is not None
     assert rt["commandSketch"]["referenceIdsFromIfc"]["IfcWall"]

@@ -49,9 +49,10 @@ Single read-back entry point: **`inspect_kernel_ifc_semantics()`** in [`export_i
 | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `buildingStorey`                 | `IfcBuildingStorey` count; how many storeys carry a numeric `Elevation`.                                                                                               |
 | `products`                       | Counts of `IfcWall`, `IfcSlab`, `IfcRoof`, `IfcStair`, `IfcOpeningElement`, `IfcDoor`, `IfcWindow`, `IfcSpace`.                                                        |
-| `identityPsets`                  | Instances with `Reference` on `Pset_WallCommon`, `Pset_SpaceCommon`, `Pset_DoorCommon`, `Pset_WindowCommon`.                                                           |
+| `identityPsets`                  | Instances with `Reference` on `Pset_WallCommon`, `Pset_SlabCommon`, `Pset_SpaceCommon`, `Pset_DoorCommon`, `Pset_WindowCommon`, `Pset_RoofCommon`, `Pset_StairCommon`. |
 | `spaceProgrammeFields`           | Counts of spaces carrying `ProgrammeCode` / `Department` / `FunctionLabel` / `FinishSet` on `Pset_SpaceCommon`.                                                        |
 | `qtoTemplates`                   | `Name` of each `IfcElementQuantity` (`Qto_*` templates when QTO helpers succeed).                                                                                      |
+| `qtoLinkedProducts`              | Per IFC product class, count of instances with a defining `Qto_*` template (`Qto_WallBaseQuantities`, `Qto_SlabBaseQuantities`, `Qto_SpaceBaseQuantities`, door/window base quantities). |
 | `ifcKernelGeometrySkippedCounts` | Document-level map from `ifc_kernel_geometry_skip_counts()` (missing hosts, degenerate outlines); aligned with manifest + `exchange_ifc_kernel_geometry_skip_summary`. |
 
 **Offline / no IfcOpenShell:** same function returns `available: false` (`reason`: `ifcopenshell_not_installed` or `kernel_not_eligible`) and may still include `ifcKernelGeometrySkippedCounts` when a `Document` is supplied.
@@ -65,7 +66,7 @@ Secondary entry point: **`summarize_kernel_ifc_semantic_roundtrip(doc)`** in [`e
 | Field                    | Meaning                                                                                                                                                                    |
 | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `kernelExpectedIfcKinds` | Same shape as manifest `kernelExpectedIfcKinds` — document-only expected emit counts (offline-safe when IFC absent).                                                       |
-| `roundtripChecks`        | `productCounts`, `programmeFields`, `identityCoverage`, and booleans `allProductCountsMatch` / `allProgrammeFieldsMatch` / `allIdentityReferencesMatch` / `allChecksPass`. |
+| `roundtripChecks`        | `productCounts`, `programmeFields`, `identityCoverage`, `qtoCoverage`, and booleans `allProductCountsMatch` / `allProgrammeFieldsMatch` / `allIdentityReferencesMatch` / `allQtoLinksMatch` / `allChecksPass`. |
 | `commandSketch`          | Traceability-only `Reference` strings read back from `Pset_*Common` on walls/spaces (not replay commands).                                                                 |
 
 **Offline:** returns `roundtripChecks: null`, `commandSketch: null`, with `inspection` from the usual unavailable stubs.

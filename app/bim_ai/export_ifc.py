@@ -248,6 +248,33 @@ def _kernel_ifc_space_export_props(rm: RoomElem) -> dict[str, str]:
     return out
 
 
+def _count_ifc_products_with_qto_template(products: list[Any], qto_template_name: str) -> int:
+    """Count IFC products that define an ``IfcElementQuantity`` with ``Name == qto_template_name``."""
+
+    c = 0
+    for p in products:
+        rels = getattr(p, "IsDefinedBy", None) or []
+        ok = False
+        for rel in rels:
+            try:
+                if not rel.is_a("IfcRelDefinesByProperties"):
+                    continue
+            except Exception:
+                continue
+            dfn = getattr(rel, "RelatingPropertyDefinition", None)
+            if dfn is None:
+                continue
+            try:
+                if dfn.is_a("IfcElementQuantity") and getattr(dfn, "Name", None) == qto_template_name:
+                    ok = True
+                    break
+            except Exception:
+                continue
+        if ok:
+            c += 1
+    return c
+
+
 def inspect_kernel_ifc_semantics(
     *,
     doc: Document | None = None,
@@ -356,9 +383,19 @@ def inspect_kernel_ifc_semantics(
         },
         "identityPsets": {
             "wallWithPsetWallCommonReference": _count_pset_ref(list(walls), "Pset_WallCommon"),
+            "slabWithPsetSlabCommonReference": _count_pset_ref(list(slabs), "Pset_SlabCommon"),
             "spaceWithPsetSpaceCommonReference": _count_pset_ref(list(spaces), "Pset_SpaceCommon"),
             "doorWithPsetDoorCommonReference": _count_pset_ref(list(doors), "Pset_DoorCommon"),
             "windowWithPsetWindowCommonReference": _count_pset_ref(list(windows), "Pset_WindowCommon"),
+            "roofWithPsetRoofCommonReference": _count_pset_ref(list(roofs), "Pset_RoofCommon"),
+            "stairWithPsetStairCommonReference": _count_pset_ref(list(stairs), "Pset_StairCommon"),
+        },
+        "qtoLinkedProducts": {
+            "IfcWall": _count_ifc_products_with_qto_template(list(walls), "Qto_WallBaseQuantities"),
+            "IfcSlab": _count_ifc_products_with_qto_template(list(slabs), "Qto_SlabBaseQuantities"),
+            "IfcSpace": _count_ifc_products_with_qto_template(list(spaces), "Qto_SpaceBaseQuantities"),
+            "IfcDoor": _count_ifc_products_with_qto_template(list(doors), "Qto_DoorBaseQuantities"),
+            "IfcWindow": _count_ifc_products_with_qto_template(list(windows), "Qto_WindowBaseQuantities"),
         },
         "spaceProgrammeFields": {
             "ProgrammeCode": _count_space_programme("Pset_SpaceCommon", "ProgrammeCode"),
@@ -491,6 +528,10 @@ def summarize_kernel_ifc_semantic_roundtrip(doc: Document) -> dict[str, Any]:
             kinds_expected.get("wall", 0),
             int(id_ps.get("wallWithPsetWallCommonReference", 0)),
         ),
+        "slab": _tri(
+            kinds_expected.get("floor", 0),
+            int(id_ps.get("slabWithPsetSlabCommonReference", 0)),
+        ),
         "space": _tri(
             kinds_expected.get("room", 0),
             int(id_ps.get("spaceWithPsetSpaceCommonReference", 0)),
@@ -503,7 +544,25 @@ def summarize_kernel_ifc_semantic_roundtrip(doc: Document) -> dict[str, Any]:
             kinds_expected.get("window", 0),
             int(id_ps.get("windowWithPsetWindowCommonReference", 0)),
         ),
+        "roof": _tri(
+            kinds_expected.get("roof", 0),
+            int(id_ps.get("roofWithPsetRoofCommonReference", 0)),
+        ),
+        "stair": _tri(
+            kinds_expected.get("stair", 0),
+            int(id_ps.get("stairWithPsetStairCommonReference", 0)),
+        ),
     }
+
+    qto_ln = inspection.get("qtoLinkedProducts") or {}
+    qto_coverage = {
+        "wall": _tri(kinds_expected.get("wall", 0), int(qto_ln.get("IfcWall", 0))),
+        "floor": _tri(kinds_expected.get("floor", 0), int(qto_ln.get("IfcSlab", 0))),
+        "room": _tri(kinds_expected.get("room", 0), int(qto_ln.get("IfcSpace", 0))),
+        "door": _tri(kinds_expected.get("door", 0), int(qto_ln.get("IfcDoor", 0))),
+        "window": _tri(kinds_expected.get("window", 0), int(qto_ln.get("IfcWindow", 0))),
+    }
+    all_qto_match = all(v["match"] for v in qto_coverage.values())
 
     all_pc_match = all(v["match"] for v in product_counts.values())
     all_prog_match = all(v["match"] for v in programme_fields.values()) if programme_fields else True
@@ -528,10 +587,12 @@ def summarize_kernel_ifc_semantic_roundtrip(doc: Document) -> dict[str, Any]:
             "productCounts": product_counts,
             "programmeFields": programme_fields,
             "identityCoverage": identity_coverage,
+            "qtoCoverage": qto_coverage,
             "allProductCountsMatch": all_pc_match,
             "allProgrammeFieldsMatch": all_prog_match,
             "allIdentityReferencesMatch": all_id_match,
-            "allChecksPass": all_pc_match and all_prog_match and all_id_match,
+            "allQtoLinksMatch": all_qto_match,
+            "allChecksPass": all_pc_match and all_prog_match and all_id_match and all_qto_match,
         },
         "commandSketch": command_sketch,
     }
