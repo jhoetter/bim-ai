@@ -20,7 +20,7 @@ export default defineConfig({
   },
   webServer: {
     command:
-      'pnpm exec vite build && pnpm exec vite preview --host 127.0.0.1 --strictPort --port 5739',
+      'PREVIEW_NO_PROXY=1 pnpm exec vite build && PREVIEW_NO_PROXY=1 pnpm exec vite preview --host 127.0.0.1 --strictPort --port 5739',
     url: 'http://127.0.0.1:5739',
     reuseExistingServer: process.env.CI !== 'true',
     timeout: 180_000,

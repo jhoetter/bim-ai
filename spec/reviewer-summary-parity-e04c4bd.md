@@ -4,7 +4,7 @@
 
 - **Commit:** `e04c4bd` on `main`.
 - **Python CI:** green (ruff + pytest + IFC extras).
-- **JS CI:** initially failed on `pnpm/action-setup@v4` (duplicate major `version` vs root `packageManager`); fixed in a follow-up commit by letting `pnpm/action-setup` infer pnpm from `package.json`'s `"packageManager": "pnpm@9.15.4"` (see [.github/workflows/ci.yml](.github/workflows/ci.yml)).
+- **JS / Playwright CI:** `e04c4bd` hit `pnpm/action-setup` version drift (fixed by inferring pnpm from [`package.json`](../package.json) — see [.github/workflows/ci.yml](../.github/workflows/ci.yml)) and **`vite preview` proxying `/api` to `:8500`**, which defeated Playwright mocks. Playwright now runs with **`PREVIEW_NO_PROXY=1`** on build + preview ([`packages/web/playwright.config.ts`](../packages/web/playwright.config.ts), [`packages/web/vite.config.ts`](../packages/web/vite.config.ts)); evidence baseline PNGs were updated for layout drift.
 
 ## What shipped (high level)
 
@@ -18,7 +18,7 @@
 
 ## Collaboration flow (recommended)
 
-- **Truth branch:** feature work landed on **`main`**; no separate PR is required unless your process mandates review-before-merge—then use **`main` as baseline** and open topic PRs forward.
+- **Truth branch:** **`main`** is the integration line; optional PRs for review cadence only.
 - **Next features:** Branch from **`main` after CI is fully green**:
 
   ```bash
