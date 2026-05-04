@@ -11,10 +11,14 @@ import {
   SECTION_VIEWPORT_SCALE_BASELINE_PX,
   SECTION_VIEWPORT_STROKE_SCALE_MAX,
   SECTION_VIEWPORT_STROKE_SCALE_MIN,
+  SECTION_VIEWPORT_WALL_HATCH_ALONG_CUT_TILE,
+  SECTION_VIEWPORT_WALL_HATCH_ALONG_STROKE_FACTOR,
+  SECTION_VIEWPORT_WALL_HATCH_EDGE_ON_TILE,
 } from '../plan/symbology';
 import {
   formatSectionElevationSpanMmLabel,
   formatSectionSheetCalloutsLabel,
+  parseSectionWallCutHatchKind,
   type SectionSheetCalloutRow,
 } from './sectionViewportDoc';
 
@@ -99,7 +103,8 @@ export function SectionViewportSvg(props: {
   const [err, setErr] = useState<string | null>(null);
 
   type LayerSnap = {
-    wallPaths: string[];
+    wallPathsEdgeOn: string[];
+    wallPathsAlongCut: string[];
     floorPaths: string[];
     roomPaths: string[];
     stairPaths: string[];
@@ -129,7 +134,9 @@ export function SectionViewportSvg(props: {
   const lvlPx = labelFontPx(props.widthPx, props.heightPx);
   const openingTagMinPx = SECTION_VIEWPORT_OPENING_TAG_MIN_PX;
   const borderStroke = 3 * strokeScale;
-  const patternWallLine = 3.5 * strokeScale;
+  const patternWallLineEdgeOn = 3.5 * strokeScale;
+  const patternWallLineAlongCut =
+    patternWallLineEdgeOn * SECTION_VIEWPORT_WALL_HATCH_ALONG_STROKE_FACTOR;
   const patternSlabStroke = 1.25 * strokeScale;
   const floorStroke = 2.25 * strokeScale;
   const stairStroke = 2 * strokeScale;
@@ -192,10 +199,14 @@ export function SectionViewportSvg(props: {
           zTopMm: Number(w.zTopMm ?? 0),
         });
 
-        const rects: UzPrim[] = [];
+        const wallRectsEdgeOn: UzPrim[] = [];
+        const wallRectsAlongCut: UzPrim[] = [];
         for (const w of wallsRaw as Record<string, unknown>[]) {
           const p = asUz(w);
-          if (p) rects.push(p);
+          if (!p) continue;
+          const kind = parseSectionWallCutHatchKind(w.cutHatchKind);
+          if (kind === 'edgeOn') wallRectsEdgeOn.push(p);
+          else wallRectsAlongCut.push(p);
         }
 
         const floorRects: UzPrim[] = [];
@@ -258,7 +269,7 @@ export function SectionViewportSvg(props: {
           }
         };
 
-        widen(...rects);
+        widen(...wallRectsEdgeOn, ...wallRectsAlongCut);
         widen(...floorRects);
         widen(...roomRects);
         widen(...stairRects);
@@ -339,7 +350,8 @@ export function SectionViewportSvg(props: {
           return `M ${x} ${yTop} h ${bw} v ${h} h ${-bw} Z`;
         };
 
-        const wallPaths = rects.map(rectPath);
+        const wallPathsEdgeOn = wallRectsEdgeOn.map(rectPath);
+        const wallPathsAlongCut = wallRectsAlongCut.map(rectPath);
         const floorPaths = floorRects.map(rectPath);
         const roomPaths = roomRects.map(rectPath);
         const stairPaths = stairRects.map(rectPath);
@@ -347,7 +359,8 @@ export function SectionViewportSvg(props: {
         if (!cancel) {
           setErr(null);
           setLayers({
-            wallPaths,
+            wallPathsEdgeOn,
+            wallPathsAlongCut,
             floorPaths,
             roomPaths,
             stairPaths,
@@ -410,13 +423,37 @@ export function SectionViewportSvg(props: {
     >
       <defs>
         <pattern
-          id={`${defsId}-wall`}
-          width={10}
-          height={10}
+          id={`${defsId}-wall-edgeOn`}
+          width={SECTION_VIEWPORT_WALL_HATCH_EDGE_ON_TILE}
+          height={SECTION_VIEWPORT_WALL_HATCH_EDGE_ON_TILE}
           patternUnits="userSpaceOnUse"
           patternTransform="rotate(45)"
         >
-          <line x1={0} y1={0} x2={0} y2={10} stroke="#334155" strokeWidth={patternWallLine} />
+          <line
+            x1={0}
+            y1={0}
+            x2={0}
+            y2={SECTION_VIEWPORT_WALL_HATCH_EDGE_ON_TILE}
+            stroke="#334155"
+            strokeWidth={patternWallLineEdgeOn}
+          />
+        </pattern>
+
+        <pattern
+          id={`${defsId}-wall-alongCut`}
+          width={SECTION_VIEWPORT_WALL_HATCH_ALONG_CUT_TILE}
+          height={SECTION_VIEWPORT_WALL_HATCH_ALONG_CUT_TILE}
+          patternUnits="userSpaceOnUse"
+          patternTransform="rotate(-45)"
+        >
+          <line
+            x1={0}
+            y1={0}
+            x2={0}
+            y2={SECTION_VIEWPORT_WALL_HATCH_ALONG_CUT_TILE}
+            stroke="#475569"
+            strokeWidth={patternWallLineAlongCut}
+          />
         </pattern>
 
         <pattern id={`${defsId}-slab`} width={14} height={14} patternUnits="userSpaceOnUse">
@@ -498,12 +535,22 @@ export function SectionViewportSvg(props: {
             );
           })}
 
-          {layers.wallPaths.map((d, i) => (
+          {layers.wallPathsEdgeOn.map((d, i) => (
             <path
-              key={`wall-${i}`}
+              key={`wall-e-${i}`}
               d={d}
-              fill={`url(#${defsId}-wall)`}
+              fill={`url(#${defsId}-wall-edgeOn)`}
               fillOpacity={0.92}
+              stroke="#020617"
+              strokeWidth={wallStroke}
+            />
+          ))}
+          {layers.wallPathsAlongCut.map((d, i) => (
+            <path
+              key={`wall-a-${i}`}
+              d={d}
+              fill={`url(#${defsId}-wall-alongCut)`}
+              fillOpacity={0.9}
               stroke="#020617"
               strokeWidth={wallStroke}
             />
