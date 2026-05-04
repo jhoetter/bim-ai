@@ -17,6 +17,7 @@ from bim_ai.elements import (
     LevelElem,
     PlanViewElem,
     RoomElem,
+    RoomSeparationElem,
     ScheduleElem,
     SectionCutElem,
     SheetElem,
@@ -67,6 +68,7 @@ _RULE_DISCIPLINE: dict[str, str] = {
     "room_programme_metadata_hint": "architecture",
 
     "room_programme_inconsistent_within_level": "architecture",
+    "room_outline_spans_axis_room_separation": "architecture",
     "room_overlap_plan": "architecture",
     "door_off_wall": "architecture",
     "door_not_on_wall": "architecture",
@@ -86,6 +88,7 @@ _RULE_DISCIPLINE: dict[str, str] = {
     "ids_cleanroom_interlock_grade_missing": "agent",
     "ids_cleanroom_opening_finish_material_missing": "agent",
     "sheet_viewport_unknown_ref": "coordination",
+    "schedule_orphan_sheet_ref": "coordination",
 
     "exchange_manifest_ifc_gltf_slice_mismatch": "exchange",
 
@@ -417,6 +420,7 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
     rooms: list[RoomElem] = []
     grids: list[GridLineElem] = []
     dims: list[DimensionElem] = []
+    room_separations: list[RoomSeparationElem] = []
     levels: list[LevelElem] = []
 
     viols: list[Violation] = []
@@ -434,6 +438,8 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
             grids.append(el)
         elif isinstance(el, DimensionElem):
             dims.append(el)
+        elif isinstance(el, RoomSeparationElem):
+            room_separations.append(el)
         elif isinstance(el, LevelElem):
             levels.append(el)
 
@@ -613,6 +619,42 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
                         severity="info",
                         message="Room lacks programmeCode and department; documentation schedules/color correlation are weaker.",
                         element_ids=[room.id],
+                    )
+                )
+
+    seps_by_level: dict[str, list[RoomSeparationElem]] = defaultdict(list)
+    for sep in room_separations:
+        if sep.level_id not in lvl_by_id:
+            continue
+        seps_by_level[sep.level_id].append(sep)
+
+    for room in rooms:
+        if len(room.outline_mm) < 3:
+            continue
+        xmin, xmax, ymin, ymax = _room_bbox(room)
+        if xmax <= xmin or ymax <= ymin:
+            continue
+        for sep in seps_by_level.get(room.level_id, ()):
+            if axis_aligned_room_separation_splits_rectangle(
+                sep.start.x_mm,
+                sep.start.y_mm,
+                sep.end.x_mm,
+                sep.end.y_mm,
+                xmin,
+                xmax,
+                ymin,
+                ymax,
+            ):
+                viols.append(
+                    Violation(
+                        rule_id="room_outline_spans_axis_room_separation",
+                        severity="info",
+                        message=(
+                            "Room axis-aligned bbox is crossed by an axis-aligned room separation "
+                            "inside the footprint; consider splitting into two RoomElem outlines "
+                            "or relocating the separator."
+                        ),
+                        element_ids=sorted({room.id, sep.id}),
                     )
                 )
 
@@ -1020,6 +1062,32 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
                     )
                 )
 
+    for sc_el in elements.values():
+        if not isinstance(sc_el, ScheduleElem):
+            continue
+        sheet_link = (sc_el.sheet_id or "").strip()
+        if not sheet_link:
+            continue
+        sheet_tgt = elements.get(sheet_link)
+        if not isinstance(sheet_tgt, SheetElem):
+            viols.append(
+                Violation(
+                    rule_id="schedule_orphan_sheet_ref",
+                    severity="warning",
+                    message=(
+                        "Schedule sheetId points to a missing id or an element that is not a sheet; "
+                        f"documentation linkage is broken ({sheet_link!r})."
+                    ),
+                    element_ids=[sc_el.id],
+                    quick_fix_command={
+                        "type": "updateElementProperty",
+                        "elementId": sc_el.id,
+                        "key": "sheetId",
+                        "value": "",
+                    },
+                )
+            )
+
     for sh_el in elements.values():
         if not isinstance(sh_el, SheetElem):
             continue
@@ -1044,12 +1112,19 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
                 ok_kind = isinstance(targ_el, SectionCutElem)
 
             if not ok_kind:
+                rows = sh_el.viewports_mm or []
+                new_vps = [v for v in rows if v is not vp]
                 viols.append(
                     Violation(
                         rule_id="sheet_viewport_unknown_ref",
                         severity="warning",
                         message=f"Sheet viewport refers to unresolved semantic reference ({vr}).",
                         element_ids=[sh_el.id],
+                        quick_fix_command={
+                            "type": "upsertSheetViewports",
+                            "sheetId": sh_el.id,
+                            "viewportsMm": new_vps,
+                        },
                     )
                 )
 

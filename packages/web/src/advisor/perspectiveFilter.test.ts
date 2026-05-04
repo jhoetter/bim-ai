@@ -36,4 +36,16 @@ describe('filterViolationsForPerspective', () => {
   it('coordination retains errors regardless of discipline tag', () => {
     expect(filterViolationsForPerspective(mix, 'coordination').map((x) => x.ruleId)).toContain('c');
   });
+
+  it('shows schedule_orphan_sheet_ref when discipline is coordination', () => {
+    const rows: Violation[] = [
+      row({
+        severity: 'warning',
+        ruleId: 'schedule_orphan_sheet_ref',
+        discipline: 'coordination',
+      }),
+    ];
+    expect(filterViolationsForPerspective(rows, 'coordination')).toHaveLength(1);
+    expect(filterViolationsForPerspective(rows, 'architecture')).toHaveLength(0);
+  });
 });

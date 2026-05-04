@@ -692,6 +692,18 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                     els[cmd.element_id] = el.model_copy(update={"material_key": raw_v or None})
                 else:
                     raise ValueError("door/window updates: key=familyTypeId | materialKey | name")
+            elif isinstance(el, ScheduleElem):
+                raw_s = cmd.value.strip()
+                if cmd.key == "sheetId":
+                    if not raw_s:
+                        els[cmd.element_id] = el.model_copy(update={"sheet_id": None})
+                    else:
+                        sh_tgt = els.get(raw_s)
+                        if not isinstance(sh_tgt, SheetElem):
+                            raise ValueError("sheetId must reference an existing sheet element")
+                        els[cmd.element_id] = el.model_copy(update={"sheet_id": raw_s})
+                else:
+                    raise ValueError("schedule updates: key=sheetId | name")
             else:
                 raise ValueError(
                     "Only updateElementProperty key=name | label(grid) | title(issue) | "
@@ -705,7 +717,8 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                     "planRoomFillOpacityScale(plan_view float 0..1 or empty) | "
                     "viewerClipCapElevMm(viewpoint) | viewerClipFloorElevMm(viewpoint) | "
                     "hiddenSemanticKinds3d(viewpoint JSON array) | "
-                    "familyTypeId(door/window) | materialKey(door/window) supported in v2"
+                    "familyTypeId(door/window) | materialKey(door/window) | "
+                    "sheetId(schedule) supported in v2"
                 )
 
         case SaveViewpointCmd():
