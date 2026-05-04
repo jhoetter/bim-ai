@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Element } from '@bim-ai/core';
 
 import { VirtualScrollRows } from './VirtualScrollRows';
+import { parseWidthMmGtThreshold, schedulesFiltersWithWidthMmGt } from './scheduleFilterWidthRules';
 
 type TabKey = 'rooms' | 'doors' | 'windows' | 'floors' | 'roofs' | 'stairs' | 'plans' | 'sheets';
 
@@ -445,6 +446,23 @@ export function SchedulePanel(props: {
         return undefined;
     }
   }, [tab, sidRooms, sidDoors, sidWins, sidFloors, sidRoofs, sidStairs, sidPlans, sidSheets]);
+
+  const [openingWidthGtDraft, setOpeningWidthGtDraft] = useState('');
+
+  const openingToolbarScheduleEl =
+    sidForTab && (tab === 'doors' || tab === 'windows') ? props.elementsById[sidForTab] : undefined;
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      if (openingToolbarScheduleEl?.kind !== 'schedule') {
+        setOpeningWidthGtDraft('');
+        return;
+      }
+      const f0 = { ...(openingToolbarScheduleEl.filters ?? {}) } as Record<string, unknown>;
+      const t = parseWidthMmGtThreshold(f0);
+      setOpeningWidthGtDraft(t !== null ? String(t) : '');
+    });
+  }, [openingToolbarScheduleEl]);
 
   useEffect(() => {
     if (!props.modelId || !sidForTab) {
@@ -1101,6 +1119,53 @@ export function SchedulePanel(props: {
             </label>
           ))}
         </div>
+
+        {tab === 'doors' || tab === 'windows' ? (
+          <>
+            <div className="mt-2 flex flex-wrap items-center gap-3">
+              <label className="flex flex-wrap items-center gap-2">
+                <span>Min width (mm) &gt;</span>
+                <input
+                  type="number"
+                  className="w-24 rounded border border-border bg-background px-2 py-0.5 font-mono text-foreground"
+                  data-testid="schedule-filter-width-mm-gt"
+                  value={openingWidthGtDraft}
+                  onChange={(e) => {
+                    setOpeningWidthGtDraft(e.target.value);
+                  }}
+                  onBlur={() => {
+                    const trimmed = openingWidthGtDraft.trim();
+                    let thresh: number | null = null;
+                    if (trimmed !== '') {
+                      const n = Number(trimmed);
+                      thresh = Number.isFinite(n) ? n : null;
+                    }
+                    const base: Record<string, unknown> = {
+                      ...f,
+                      sortBy: sortVal,
+                      groupingHint: orderedHints(),
+                      filterEquals: feObj,
+                      sortDescending: sortDesc,
+                    };
+                    const nextF = schedulesFiltersWithWidthMmGt(base, thresh);
+                    commit(nextF, groupingPayload(orderedHints()));
+                  }}
+                />
+              </label>
+            </div>
+            {(() => {
+              const wgt = parseWidthMmGtThreshold(f as Record<string, unknown>);
+              return wgt != null ? (
+                <div
+                  data-testid="schedule-filter-rules-readout"
+                  className="mt-1 text-[10px] text-foreground/90"
+                >
+                  Rule: widthMm &gt; {wgt} mm
+                </div>
+              ) : null;
+            })()}
+          </>
+        ) : null}
       </div>
     );
   }

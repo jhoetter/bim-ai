@@ -248,6 +248,59 @@ def _rows_after_filter_equals(
     ]
 
 
+def _normalize_filter_rules(filt: dict[str, Any]) -> list[dict[str, Any]]:
+    """Structured schedule row filters: only ``gt`` on numeric-coercible rule values."""
+
+    raw = filt.get("filterRules") or filt.get("filter_rules")
+    if not isinstance(raw, list) or not raw:
+        return []
+    out: list[dict[str, Any]] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        field = str(item.get("field") or "").strip()
+        op = str(item.get("op") or "").strip().lower()
+        if not field or op != "gt":
+            continue
+        val_raw = item.get("value")
+        thr = _coerce_float_for_sort(val_raw)
+        if thr is None:
+            continue
+        out.append({"field": field, "op": "gt", "value": float(thr)})
+    return out
+
+
+def _row_value_gt_threshold(
+    row: dict[str, Any],
+    field: str,
+    threshold: float,
+    key_aliases: dict[str, str],
+) -> bool:
+    lk = key_aliases.get(field, field)
+    raw = row.get(lk)
+    got = _coerce_float_for_sort(raw)
+    if got is None:
+        return False
+    return got > threshold
+
+
+def _rows_after_filter_rules(
+    rows: list[dict[str, Any]],
+    rules: list[dict[str, Any]],
+    key_aliases: dict[str, str],
+) -> list[dict[str, Any]]:
+    if not rules:
+        return rows
+    return [
+        r
+        for r in rows
+        if all(
+            _row_value_gt_threshold(r, str(rule["field"]), float(rule["value"]), key_aliases)
+            for rule in rules
+        )
+    ]
+
+
 def _resolve_group_keys(filt: dict[str, Any], sch_grouping: dict[str, Any]) -> list[str]:
     """Prefer ``filters.groupingHint``; else ``grouping.groupKeys`` (persisted canonical)."""
 
@@ -285,6 +338,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
 
     group_keys = _resolve_group_keys(filt, sch_group)
     filter_equals = _filter_equals_from_filters(filt)
+    filter_rules_norm = _normalize_filter_rules(filt)
     sort_descending = _resolve_sort_descending(filt, sch_group)
     key_aliases = {"familyTypeMark": "familyTypeId"}
 
@@ -620,6 +674,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
         rows = []
 
     rows = _rows_after_filter_equals(rows, filter_equals)
+    rows = _rows_after_filter_rules(rows, filter_rules_norm, key_aliases)
 
     # Grouping / sorting on server hint
     grouped: dict[str, list[dict[str, Any]]] | None = None
@@ -775,6 +830,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
             "supportsCsv": True,
             **({"sortDescending": True} if sort_descending else {}),
             **({"filterEquals": filter_equals} if filter_equals else {}),
+            **({"filterRules": filter_rules_norm} if filter_rules_norm else {}),
         },
         "totalRows": total_rows,
         "groupKeys": group_keys,
