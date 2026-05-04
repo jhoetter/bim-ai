@@ -459,6 +459,13 @@ async function sharedRoutes(page: Page, layoutPreset: string) {
                 maxChannelDelta: null,
                 mismatchPixelRatioMax: null,
               },
+              thresholdPolicy_v1: {
+                format: 'pixelDiffThresholdPolicy_v1',
+                enforcement: 'advisory_only',
+                mismatchPixelRatioFailAbove: 0.001,
+                maxChannelDeltaFailAbove: 1,
+                notes: 'Mock threshold policy for e2e.',
+              },
               notes: 'Pixel diff execution stays client-side (Playwright snapshots / pixelmatch).',
               ingestChecklist_v1: {
                 format: 'pixelDiffIngestChecklist_v1',
@@ -477,6 +484,65 @@ async function sharedRoutes(page: Page, layoutPreset: string) {
             correlationFullyConsistent: true,
             screenshotHintGapRowCount: 0,
             pixelDiffIngestTargetCount: MOCK_CLOSURE_DETERMINISTIC_PNG_BASENAMES.length,
+          },
+          evidenceAgentFollowThrough_v1: {
+            format: 'evidenceAgentFollowThrough_v1',
+            semanticDigestExclusionNote: 'mock',
+            packageSemanticDigestSha256: MOCK_SEMANTIC_DIGEST_SHA256,
+            stagedArtifactUrlPlaceholders_v1: {
+              format: 'stagedArtifactUrlPlaceholders_v1',
+              interpolationKeysNote: 'mock',
+              interpolationKeys: [
+                'suggestedEvidenceArtifactBasename',
+                'modelId',
+                'githubRepository',
+                'githubRunId',
+                'githubSha',
+              ],
+              urlTemplates: {
+                githubActionsRunArtifactsUrl:
+                  'https://github.com/{githubRepository}/actions/runs/{githubRunId}#artifacts',
+              },
+              relativeApiPaths: {
+                evidencePackage: `/api/models/${MODEL_ID}/evidence-package`,
+                bcfTopicsJsonExport: `/api/models/${MODEL_ID}/exports/bcf-topics-json`,
+                bcfTopicsJsonImport: `/api/models/${MODEL_ID}/imports/bcf-topics-json`,
+                snapshot: `/api/models/${MODEL_ID}/snapshot`,
+              },
+              bundleFilenameHints: {
+                evidencePackageJson: `${MOCK_EVIDENCE_BASENAME}-evidence-package.json`,
+              },
+            },
+            bcfIssueCoordinationCheck_v1: {
+              format: 'bcfIssueCoordinationCheck_v1',
+              documentBcfTopicCount: 0,
+              documentIssueTopicCount: 0,
+              indexedBcfTopicCount: 0,
+              indexedIssueTopicCount: 0,
+              bcfTopicsJsonExportTopicCount: 0,
+              bcfIndexedTopicCountMatchesDocument: true,
+              issueIndexedTopicCountMatchesDocument: true,
+              bcfExportIncludesOnlyBcfElems: true,
+              issueTopicsNotInBcfTopicsJsonExport: true,
+              bcfTopicsJsonImportSupportsTopicKinds: ['bcf'],
+            },
+            evidenceRefResolution_v1: {
+              format: 'evidenceRefResolution_v1',
+              unresolvedEvidenceRefs: [],
+              unresolvedCount: 0,
+              hasUnresolvedEvidenceRefs: false,
+            },
+            collaborationReplayConflictHints_v1: {
+              format: 'collaborationReplayConflictHints_v1',
+              constraintRejectedHttpStatus: 409,
+              typicalErrorBodyFields: ['reason', 'violations', 'replayDiagnostics'],
+              replayDiagnosticsFields: [
+                'commandCount',
+                'commandTypesInOrder',
+                'firstBlockingCommandIndex',
+              ],
+              firstBlockingCommandIndexNote: 'mock',
+            },
           },
           agentEvidenceClosureHints: {
             format: 'agentEvidenceClosureHints_v1',
@@ -604,6 +670,9 @@ test.describe('evidence PNG baselines', () => {
     const pix = closure?.pixelDiffExpectation as Record<string, unknown> | undefined;
     expect(pix?.format).toBe('pixelDiffExpectation_v1');
     expect(pix?.status).toBe('not_run');
+    const pol = pix?.thresholdPolicy_v1 as Record<string, unknown> | undefined;
+    expect(pol?.format).toBe('pixelDiffThresholdPolicy_v1');
+    expect(pol?.enforcement).toBe('advisory_only');
     const life = pkg.evidenceLifecycleSignal_v1 as Record<string, unknown> | undefined;
     expect(life?.format).toBe('evidenceLifecycleSignal_v1');
     expect(life?.packageSemanticDigestSha256).toBe(pkg.semanticDigestSha256);
@@ -616,5 +685,10 @@ test.describe('evidence PNG baselines', () => {
     const gapRows = shotGaps?.gaps as unknown[] | undefined;
     expect(life?.screenshotHintGapRowCount).toBe(gapRows?.length);
     expect(life?.correlationFullyConsistent).toBe(true);
+    const follow = pkg.evidenceAgentFollowThrough_v1 as Record<string, unknown> | undefined;
+    expect(follow?.format).toBe('evidenceAgentFollowThrough_v1');
+    expect(
+      (follow?.bcfIssueCoordinationCheck_v1 as Record<string, unknown> | undefined)?.format,
+    ).toBe('bcfIssueCoordinationCheck_v1');
   });
 });

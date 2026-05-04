@@ -42,6 +42,7 @@ from bim_ai.evidence_manifest import (
     deterministic_plan_view_evidence_manifest,
     deterministic_section_cut_evidence_manifest,
     deterministic_sheet_evidence_manifest,
+    evidence_agent_follow_through_v1,
     evidence_closure_review_v1,
     evidence_lifecycle_signal_v1,
     evidence_package_semantic_digest_sha256,
@@ -400,6 +401,17 @@ async def evidence_package(
         deterministic_plan_view_evidence=payload["deterministicPlanViewEvidence"],
         deterministic_section_cut_evidence=payload["deterministicSectionCutEvidence"],
         violations=viols,
+    )
+    payload["evidenceAgentFollowThrough_v1"] = evidence_agent_follow_through_v1(
+        model_id=model_id,
+        doc=doc,
+        package_semantic_digest_sha256=digest,
+        suggested_evidence_artifact_basename=str(payload["suggestedEvidenceArtifactBasename"]),
+        bcf_topics_index=payload["bcfTopicsIndex_v1"],
+        deterministic_sheet_evidence=payload["deterministicSheetEvidence"],
+        deterministic_3d_view_evidence=payload["deterministic3dViewEvidence"],
+        deterministic_plan_view_evidence=payload["deterministicPlanViewEvidence"],
+        deterministic_section_cut_evidence=payload["deterministicSectionCutEvidence"],
     )
     return payload
 

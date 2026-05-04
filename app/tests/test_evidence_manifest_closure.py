@@ -46,6 +46,10 @@ def test_evidence_closure_review_inventory_lists_sorted_png_basenames() -> None:
     assert out["primaryScreenshotArtifactCount"] == 4
     assert out["correlationDigestConsistency"]["isFullyConsistent"] is True
     assert out["pixelDiffExpectation"]["format"] == "pixelDiffExpectation_v1"
+    pol = out["pixelDiffExpectation"].get("thresholdPolicy_v1")
+    assert isinstance(pol, dict)
+    assert pol.get("format") == "pixelDiffThresholdPolicy_v1"
+    assert pol.get("enforcement") == "advisory_only"
     ingest = out["pixelDiffExpectation"]["ingestChecklist_v1"]
     assert ingest["format"] == "pixelDiffIngestChecklist_v1"
     assert len(ingest["targets"]) == 4

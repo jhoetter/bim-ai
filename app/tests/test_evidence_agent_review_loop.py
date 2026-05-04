@@ -50,6 +50,25 @@ def test_evidence_digest_ignores_bcf_topics_and_agent_actions_summaries() -> Non
     assert evidence_package_semantic_digest_sha256(a) == evidence_package_semantic_digest_sha256(b)
 
 
+def test_evidence_digest_ignores_evidence_agent_follow_through_v1() -> None:
+    base = {"format": "evidencePackage_v1", "revision": 1, "modelId": "x"}
+    a = {
+        **base,
+        "evidenceAgentFollowThrough_v1": {
+            "format": "evidenceAgentFollowThrough_v1",
+            "bcfIssueCoordinationCheck_v1": {"indexedBcfTopicCount": 0},
+        },
+    }
+    b = {
+        **base,
+        "evidenceAgentFollowThrough_v1": {
+            "format": "evidenceAgentFollowThrough_v1",
+            "bcfIssueCoordinationCheck_v1": {"indexedBcfTopicCount": 99},
+        },
+    }
+    assert evidence_package_semantic_digest_sha256(a) == evidence_package_semantic_digest_sha256(b)
+
+
 def test_agent_review_actions_v1_links_bcf_to_deterministic_rows() -> None:
     cam = CameraMm(
         position=Vec3Mm(xMm=0, yMm=0, zMm=5000),

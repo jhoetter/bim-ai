@@ -81,8 +81,11 @@ export function AgentReviewPane() {
       missingDigestRowCount: number;
       pixelDiffStatus: string | null;
       pixelDiffSuffix: string | null;
+      pixelDiffThresholdEnforcement: string | null;
+      pixelMismatchRatioFailAbove: number | null;
     } | null;
     lifecycleSignal: Record<string, unknown> | null;
+    agentFollowThrough: Record<string, unknown> | null;
     screenshotSlotGaps: {
       gapRowCount: number;
       items: {
@@ -147,6 +150,7 @@ export function AgentReviewPane() {
       closureHints: null,
       closureReview: null,
       lifecycleSignal: null,
+      agentFollowThrough: null,
       screenshotSlotGaps: null,
       suggestedBasenameHint: null,
       mismatchNotes: [],
@@ -188,6 +192,12 @@ export function AgentReviewPane() {
       const lifeRaw = payload.evidenceLifecycleSignal_v1;
       if (lifeRaw && typeof lifeRaw === 'object') {
         lifecycleSignal = lifeRaw as Record<string, unknown>;
+      }
+
+      let agentFollowThrough: EvidenceArtifactSummary['agentFollowThrough'] = null;
+      const ftRaw = payload.evidenceAgentFollowThrough_v1;
+      if (ftRaw && typeof ftRaw === 'object') {
+        agentFollowThrough = ftRaw as Record<string, unknown>;
       }
 
       let screenshotSlotGaps: EvidenceArtifactSummary['screenshotSlotGaps'] = null;
@@ -242,11 +252,23 @@ export function AgentReviewPane() {
         const pixRaw = e.pixelDiffExpectation;
         let pixelDiffStatus: string | null = null;
         let pixelDiffSuffix: string | null = null;
+        let pixelDiffThresholdEnforcement: string | null = null;
+        let pixelMismatchRatioFailAbove: number | null = null;
         if (pixRaw && typeof pixRaw === 'object') {
           const p = pixRaw as Record<string, unknown>;
           pixelDiffStatus = typeof p.status === 'string' ? p.status : null;
           pixelDiffSuffix =
             typeof p.diffArtifactBasenameSuffix === 'string' ? p.diffArtifactBasenameSuffix : null;
+          const pol = p.thresholdPolicy_v1;
+          if (pol && typeof pol === 'object') {
+            const t = pol as Record<string, unknown>;
+            pixelDiffThresholdEnforcement =
+              typeof t.enforcement === 'string' ? t.enforcement : null;
+            const r = t.mismatchPixelRatioFailAbove;
+            if (typeof r === 'number' && Number.isFinite(r)) {
+              pixelMismatchRatioFailAbove = r;
+            }
+          }
         }
         const primaryCount =
           typeof e.primaryScreenshotArtifactCount === 'number' &&
@@ -261,6 +283,8 @@ export function AgentReviewPane() {
           missingDigestRowCount,
           pixelDiffStatus,
           pixelDiffSuffix,
+          pixelDiffThresholdEnforcement,
+          pixelMismatchRatioFailAbove,
         };
 
         const sgRaw = e.screenshotHintGaps_v1;
@@ -553,6 +577,7 @@ export function AgentReviewPane() {
         closureHints,
         closureReview,
         lifecycleSignal,
+        agentFollowThrough,
         screenshotSlotGaps,
         suggestedBasenameHint: basename,
         mismatchNotes,
@@ -571,6 +596,7 @@ export function AgentReviewPane() {
         closureHints: null,
         closureReview: null,
         lifecycleSignal: null,
+        agentFollowThrough: null,
         screenshotSlotGaps: null,
         suggestedBasenameHint: null,
         mismatchNotes: ['Could not parse evidence JSON for artifact summary.'],
@@ -1129,6 +1155,23 @@ export function AgentReviewPane() {
                   </>
                 ) : null}
               </p>
+              {evidenceArtifactSummary.closureReview.pixelDiffThresholdEnforcement ||
+              evidenceArtifactSummary.closureReview.pixelMismatchRatioFailAbove !== null ? (
+                <p className="mt-1 text-[10px] text-muted">
+                  Threshold policy (
+                  <code className="text-[10px]">pixelDiffExpectation.thresholdPolicy_v1</code>
+                  ): {evidenceArtifactSummary.closureReview.pixelDiffThresholdEnforcement ?? '—'}
+                  {evidenceArtifactSummary.closureReview.pixelMismatchRatioFailAbove !== null ? (
+                    <>
+                      {' '}
+                      · mismatchPixelRatioFailAbove{' '}
+                      <code className="font-mono text-[10px]">
+                        {String(evidenceArtifactSummary.closureReview.pixelMismatchRatioFailAbove)}
+                      </code>
+                    </>
+                  ) : null}
+                </p>
+              ) : null}
             </div>
           ) : null}
           {evidenceArtifactSummary.lifecycleSignal ? (
@@ -1186,6 +1229,91 @@ export function AgentReviewPane() {
                   </code>
                 </li>
               </ul>
+            </div>
+          ) : null}
+          {evidenceArtifactSummary.agentFollowThrough ? (
+            <div className="mt-2 rounded border border-border/60 bg-background/30 p-2">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div className="text-[10px] font-semibold text-muted">
+                  Agent follow-through (evidenceAgentFollowThrough_v1)
+                </div>
+                <Btn
+                  type="button"
+                  variant="quiet"
+                  className="shrink-0 text-[10px]"
+                  onClick={() => {
+                    const body = JSON.stringify(
+                      evidenceArtifactSummary.agentFollowThrough,
+                      null,
+                      2,
+                    );
+                    void navigator.clipboard.writeText(body).then(
+                      () => pushStep('Copied evidenceAgentFollowThrough_v1 JSON'),
+                      () => pushStep('Clipboard write failed'),
+                    );
+                  }}
+                >
+                  Copy JSON
+                </Btn>
+              </div>
+              {(() => {
+                const ft = evidenceArtifactSummary.agentFollowThrough ?? {};
+                const chk = ft.bcfIssueCoordinationCheck_v1 as Record<string, unknown> | undefined;
+                const res = ft.evidenceRefResolution_v1 as Record<string, unknown> | undefined;
+                const collab = ft.collaborationReplayConflictHints_v1 as
+                  | Record<string, unknown>
+                  | undefined;
+                const unres =
+                  typeof res?.unresolvedCount === 'number' && Number.isFinite(res.unresolvedCount)
+                    ? res.unresolvedCount
+                    : null;
+                const bcfOk =
+                  typeof chk?.bcfIndexedTopicCountMatchesDocument === 'boolean'
+                    ? chk.bcfIndexedTopicCountMatchesDocument
+                    : null;
+                const docBcf =
+                  typeof chk?.documentBcfTopicCount === 'number' ? chk.documentBcfTopicCount : null;
+                const idxBcf =
+                  typeof chk?.indexedBcfTopicCount === 'number' ? chk.indexedBcfTopicCount : null;
+                return (
+                  <ul className="mt-1 list-disc space-y-0.5 ps-4 text-[10px] text-muted">
+                    {bcfOk !== null ? (
+                      <li>
+                        BCF index vs document: <code className="font-mono">{String(bcfOk)}</code>
+                        {docBcf !== null && idxBcf !== null ? (
+                          <>
+                            {' '}
+                            (doc {docBcf} · indexed {idxBcf})
+                          </>
+                        ) : null}
+                      </li>
+                    ) : null}
+                    {unres !== null ? (
+                      <li>
+                        Unresolved BCF/issue evidenceRefs:{' '}
+                        <code className="font-mono">{unres}</code>
+                      </li>
+                    ) : null}
+                    {collab && typeof collab.constraintRejectedHttpStatus === 'number' ? (
+                      <li>
+                        Collaboration bundle conflicts: HTTP{' '}
+                        <code className="font-mono">{collab.constraintRejectedHttpStatus}</code>
+                        {Array.isArray(collab.typicalErrorBodyFields) ? (
+                          <>
+                            {' '}
+                            · fields{' '}
+                            <code className="text-[9px]">
+                              {(collab.typicalErrorBodyFields as unknown[])
+                                .filter((x): x is string => typeof x === 'string')
+                                .join(', ')}
+                            </code>
+                          </>
+                        ) : null}
+                      </li>
+                    ) : null}
+                  </ul>
+                );
+              })()}
             </div>
           ) : null}
           {evidenceArtifactSummary.screenshotSlotGaps &&

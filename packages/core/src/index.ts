@@ -427,6 +427,14 @@ export type EvidencePixelDiffExpectationV1 = {
 
   metricsPlaceholder?: Record<string, number | null>;
 
+  thresholdPolicy_v1?: {
+    format: 'pixelDiffThresholdPolicy_v1';
+    enforcement?: string;
+    mismatchPixelRatioFailAbove?: number;
+    maxChannelDeltaFailAbove?: number;
+    notes?: string;
+  };
+
   notes?: string;
 };
 

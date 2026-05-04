@@ -9,7 +9,14 @@ from urllib.parse import quote
 from uuid import UUID
 
 from bim_ai.document import Document
-from bim_ai.elements import PlanViewElem, SectionCutElem, SheetElem, ViewpointElem
+from bim_ai.elements import (
+    BcfElem,
+    IssueElem,
+    PlanViewElem,
+    SectionCutElem,
+    SheetElem,
+    ViewpointElem,
+)
 from bim_ai.sheet_preview_svg import viewport_evidence_hints_v0
 
 
@@ -319,6 +326,17 @@ def pixel_diff_expectation_placeholder_v1() -> dict[str, Any]:
             "maxChannelDelta": None,
             "mismatchPixelRatioMax": None,
         },
+        "thresholdPolicy_v1": {
+            "format": "pixelDiffThresholdPolicy_v1",
+            "enforcement": "advisory_only",
+            "mismatchPixelRatioFailAbove": 0.001,
+            "maxChannelDeltaFailAbove": 1,
+            "notes": (
+                "Thresholds are for client-side diff tooling (Playwright/pixelmatch); "
+                "the server does not enforce screenshot equality. Align metricsPlaceholder with "
+                "values your CI ingests when pixelDiffExpectation.status becomes populated."
+            ),
+        },
         "notes": (
             "Pixel diff execution stays client-side (Playwright snapshots / pixelmatch). "
             "When produced, attach diff PNGs using diffArtifactBasenameSuffix beside deterministic basenames "
@@ -515,12 +533,17 @@ def agent_evidence_closure_hints() -> dict[str, Any]:
         "screenshotHintGapsField": "screenshotHintGaps_v1",
         "pixelDiffIngestChecklistField": "ingestChecklist_v1",
         "evidenceLifecycleSignalField": "evidenceLifecycleSignal_v1",
+        "evidenceAgentFollowThroughField": "evidenceAgentFollowThrough_v1",
+        "semanticDigestOmitsDerivativeSummariesNote": (
+            "semanticDigestSha256 excludes bcfTopicsIndex_v1, agentReviewActions_v1, "
+            "and evidenceAgentFollowThrough_v1 so deterministic row digests stay stable."
+        ),
         "playwrightEvidenceSpecRelPath": "packages/web/e2e/evidence-baselines.spec.ts",
         "suggestedRegenerationCommands": [
             (
                 "cd app && ruff check bim_ai tests && "
                 "pytest tests/test_evidence_package_digest.py tests/test_evidence_manifest_closure.py "
-                "tests/test_plan_projection_and_evidence_slices.py"
+                "tests/test_evidence_agent_follow_through.py tests/test_plan_projection_and_evidence_slices.py"
             ),
             "cd packages/web && CI=true pnpm exec playwright test e2e/evidence-baselines.spec.ts",
         ],
@@ -536,6 +559,235 @@ def agent_evidence_closure_hints() -> dict[str, Any]:
     }
 
 
+def evidence_ref_resolution_v1(
+    *,
+    bcf_topics_index: dict[str, Any],
+    deterministic_sheet_evidence: list[dict[str, Any]],
+    deterministic_3d_view_evidence: list[dict[str, Any]],
+    deterministic_plan_view_evidence: list[dict[str, Any]],
+    deterministic_section_cut_evidence: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """List BCF/issue evidenceRefs that do not resolve to a deterministic evidence row."""
+
+    sheet_by_id: dict[str, dict[str, Any]] = {}
+    for row in deterministic_sheet_evidence:
+        if isinstance(row, dict):
+            sid = str(row.get("sheetId") or "")
+            if sid:
+                sheet_by_id[sid] = row
+
+    vp_by_id: dict[str, dict[str, Any]] = {}
+    for row in deterministic_3d_view_evidence:
+        if isinstance(row, dict):
+            vid = str(row.get("viewpointId") or "")
+            if vid:
+                vp_by_id[vid] = row
+
+    plan_by_id: dict[str, dict[str, Any]] = {}
+    for row in deterministic_plan_view_evidence:
+        if isinstance(row, dict):
+            pid = str(row.get("planViewId") or "")
+            if pid:
+                plan_by_id[pid] = row
+
+    sec_by_id: dict[str, dict[str, Any]] = {}
+    for row in deterministic_section_cut_evidence:
+        if isinstance(row, dict):
+            cid = str(row.get("sectionCutId") or "")
+            if cid:
+                sec_by_id[cid] = row
+
+    unresolved: list[dict[str, Any]] = []
+    topics = bcf_topics_index.get("topics") if isinstance(bcf_topics_index, dict) else None
+    topic_list = topics if isinstance(topics, list) else []
+
+    for t in topic_list:
+        if not isinstance(t, dict):
+            continue
+        tid = str(t.get("topicId") or "")
+        tk = str(t.get("topicKind") or "")
+        refs_raw = t.get("evidenceRefs")
+        refs = refs_raw if isinstance(refs_raw, list) else []
+        for ref in refs:
+            if not isinstance(ref, dict):
+                continue
+            kind = ref.get("kind")
+            ok = False
+            if kind == "sheet":
+                sid = ref.get("sheetId")
+                ok = isinstance(sid, str) and sid in sheet_by_id
+            elif kind == "viewpoint":
+                vid = ref.get("viewpointId")
+                ok = isinstance(vid, str) and vid in vp_by_id
+            elif kind == "plan_view":
+                pid = ref.get("planViewId")
+                ok = isinstance(pid, str) and pid in plan_by_id
+            elif kind == "section_cut":
+                cid = ref.get("sectionCutId")
+                ok = isinstance(cid, str) and cid in sec_by_id
+            elif kind == "deterministic_png":
+                png = ref.get("pngBasename")
+                ok = isinstance(png, str) and bool(png.strip())
+            if ok:
+                continue
+            unresolved.append(
+                {
+                    "topicKind": tk,
+                    "topicId": tid,
+                    "evidenceRef": {
+                        "kind": kind,
+                        "sheetId": ref.get("sheetId"),
+                        "viewpointId": ref.get("viewpointId"),
+                        "planViewId": ref.get("planViewId"),
+                        "sectionCutId": ref.get("sectionCutId"),
+                        "pngBasename": ref.get("pngBasename"),
+                    },
+                }
+            )
+
+    unresolved.sort(
+        key=lambda x: (
+            str(x.get("topicKind") or ""),
+            str(x.get("topicId") or ""),
+            str(x.get("evidenceRef", {}).get("kind") or ""),
+            str(x.get("evidenceRef", {}).get("sheetId") or ""),
+            str(x.get("evidenceRef", {}).get("viewpointId") or ""),
+            str(x.get("evidenceRef", {}).get("planViewId") or ""),
+            str(x.get("evidenceRef", {}).get("sectionCutId") or ""),
+            str(x.get("evidenceRef", {}).get("pngBasename") or ""),
+        )
+    )
+    return {
+        "format": "evidenceRefResolution_v1",
+        "unresolvedEvidenceRefs": unresolved,
+        "unresolvedCount": len(unresolved),
+        "hasUnresolvedEvidenceRefs": len(unresolved) > 0,
+    }
+
+
+def staged_artifact_url_placeholders_v1(
+    *,
+    model_id: UUID,
+    suggested_evidence_artifact_basename: str,
+) -> dict[str, Any]:
+    """URL/path templates for CI artifacts — placeholders only; no external storage."""
+
+    links = export_link_map(model_id)
+    bundle_json = f"{suggested_evidence_artifact_basename}-evidence-package.json"
+    return {
+        "format": "stagedArtifactUrlPlaceholders_v1",
+        "interpolationKeysNote": "Replace placeholders when publishing artifacts; never secrets.",
+        "interpolationKeys": [
+            "suggestedEvidenceArtifactBasename",
+            "modelId",
+            "githubRepository",
+            "githubRunId",
+            "githubSha",
+        ],
+        "urlTemplates": {
+            "githubActionsRunArtifactsUrl": (
+                "https://github.com/{githubRepository}/actions/runs/{githubRunId}#artifacts"
+            )
+        },
+        "relativeApiPaths": {
+            "evidencePackage": links["evidencePackage"],
+            "bcfTopicsJsonExport": links["bcfTopicsJsonExport"],
+            "bcfTopicsJsonImport": links["bcfTopicsJsonImport"],
+            "snapshot": links["snapshot"],
+        },
+        "bundleFilenameHints": {
+            "evidencePackageJson": bundle_json,
+        },
+    }
+
+
+def bcf_issue_coordination_check_v1(
+    *,
+    doc: Document,
+    bcf_topics_index: dict[str, Any],
+) -> dict[str, Any]:
+    """BCF JSON export vs topics index vs document counts (issues are index-only for this export)."""
+
+    doc_bcf = sum(1 for e in doc.elements.values() if isinstance(e, BcfElem))
+    doc_issue = sum(1 for e in doc.elements.values() if isinstance(e, IssueElem))
+    topics = bcf_topics_index.get("topics") if isinstance(bcf_topics_index, dict) else None
+    topic_list = topics if isinstance(topics, list) else []
+    idx_bcf = sum(1 for t in topic_list if isinstance(t, dict) and t.get("topicKind") == "bcf")
+    idx_issue = sum(1 for t in topic_list if isinstance(t, dict) and t.get("topicKind") == "issue")
+
+    return {
+        "format": "bcfIssueCoordinationCheck_v1",
+        "documentBcfTopicCount": doc_bcf,
+        "documentIssueTopicCount": doc_issue,
+        "indexedBcfTopicCount": idx_bcf,
+        "indexedIssueTopicCount": idx_issue,
+        "bcfTopicsJsonExportTopicCount": doc_bcf,
+        "bcfIndexedTopicCountMatchesDocument": idx_bcf == doc_bcf,
+        "issueIndexedTopicCountMatchesDocument": idx_issue == doc_issue,
+        "bcfExportIncludesOnlyBcfElems": True,
+        "issueTopicsNotInBcfTopicsJsonExport": True,
+        "bcfTopicsJsonImportSupportsTopicKinds": ["bcf"],
+    }
+
+
+def collaboration_replay_conflict_hints_v1() -> dict[str, Any]:
+    """Static pointers for collaboration constraint failures (bundle 409 + replay diagnostics)."""
+
+    return {
+        "format": "collaborationReplayConflictHints_v1",
+        "constraintRejectedHttpStatus": 409,
+        "typicalErrorBodyFields": ["reason", "violations", "replayDiagnostics"],
+        "replayDiagnosticsFields": [
+            "commandCount",
+            "commandTypesInOrder",
+            "firstBlockingCommandIndex",
+        ],
+        "firstBlockingCommandIndexNote": (
+            "Emitted when replay outcome indicates constraint_error; omitted for successful dry outcomes."
+        ),
+    }
+
+
+def evidence_agent_follow_through_v1(
+    *,
+    model_id: UUID,
+    doc: Document,
+    package_semantic_digest_sha256: str,
+    suggested_evidence_artifact_basename: str,
+    bcf_topics_index: dict[str, Any],
+    deterministic_sheet_evidence: list[dict[str, Any]],
+    deterministic_3d_view_evidence: list[dict[str, Any]],
+    deterministic_plan_view_evidence: list[dict[str, Any]],
+    deterministic_section_cut_evidence: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Programmatic rollup: artifact placeholders, BCF coordination, ref resolution, replay hints."""
+
+    return {
+        "format": "evidenceAgentFollowThrough_v1",
+        "semanticDigestExclusionNote": (
+            "evidenceAgentFollowThrough_v1 is derivative and excluded from semanticDigestSha256 "
+            "alongside bcfTopicsIndex_v1 and agentReviewActions_v1."
+        ),
+        "packageSemanticDigestSha256": package_semantic_digest_sha256,
+        "stagedArtifactUrlPlaceholders_v1": staged_artifact_url_placeholders_v1(
+            model_id=model_id,
+            suggested_evidence_artifact_basename=suggested_evidence_artifact_basename,
+        ),
+        "bcfIssueCoordinationCheck_v1": bcf_issue_coordination_check_v1(
+            doc=doc,
+            bcf_topics_index=bcf_topics_index,
+        ),
+        "evidenceRefResolution_v1": evidence_ref_resolution_v1(
+            bcf_topics_index=bcf_topics_index,
+            deterministic_sheet_evidence=deterministic_sheet_evidence,
+            deterministic_3d_view_evidence=deterministic_3d_view_evidence,
+            deterministic_plan_view_evidence=deterministic_plan_view_evidence,
+            deterministic_section_cut_evidence=deterministic_section_cut_evidence,
+        ),
+        "collaborationReplayConflictHints_v1": collaboration_replay_conflict_hints_v1(),
+    }
+
+
 # Derivative summaries from ``agent_evidence_review_loop`` — omit so deterministic-row digests stay stable.
 _DIGEST_EXCLUDED_KEYS = frozenset(
     {
@@ -543,6 +795,7 @@ _DIGEST_EXCLUDED_KEYS = frozenset(
         "semanticDigestSha256",
         "bcfTopicsIndex_v1",
         "agentReviewActions_v1",
+        "evidenceAgentFollowThrough_v1",
     }
 )
 
