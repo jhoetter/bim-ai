@@ -19,8 +19,10 @@ export default defineConfig({
     baseURL: 'http://127.0.0.1:5739',
   },
   webServer: {
+    /** CI `pnpm verify` may leave `dist/` without E2E flags; always rebuild for Playwright. */
+
     command:
-      'pnpm exec vite build && pnpm exec vite preview --host 127.0.0.1 --strictPort --port 5739',
+      'rm -rf dist && env PREVIEW_NO_PROXY=1 VITE_E2E_DISABLE_WS=true pnpm exec vite build && env PREVIEW_NO_PROXY=1 pnpm exec vite preview --host 127.0.0.1 --strictPort --port 5739',
     env: {
       PREVIEW_NO_PROXY: '1',
       VITE_E2E_DISABLE_WS: 'true',

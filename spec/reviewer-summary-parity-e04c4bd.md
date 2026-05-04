@@ -5,7 +5,7 @@
 - **Commit:** `e04c4bd` on `main`.
 - **Python CI:** green (ruff + pytest + IFC extras).
 - **JS / Playwright CI:** `e04c4bd` hit `pnpm/action-setup` version drift (fixed by inferring pnpm from [`package.json`](../package.json) — see [.github/workflows/ci.yml](../.github/workflows/ci.yml)) and **`vite preview` proxying `/api` and `/ws` to `:8500`**, which broke mocked E2E. Mitigations:
-  - [`packages/web/playwright.config.ts`](../packages/web/playwright.config.ts) sets **`webServer.env`** with `PREVIEW_NO_PROXY=1` and `VITE_E2E_DISABLE_WS=true` so preview does not forward API traffic and [`Workspace.tsx`](../packages/web/src/Workspace.tsx) skips the model WebSocket in that build (no dead `:8500` proxy noise).
+  - [`packages/web/playwright.config.ts`](../packages/web/playwright.config.ts) sets **`webServer.env`** (`PREVIEW_NO_PROXY=1`, `VITE_E2E_DISABLE_WS=true`) and **`rm -rf dist && vite build`** before `vite preview` so tests never reuse **`pnpm verify`'s prod `dist/`** (which would otherwise open a real WebSocket and hit the dead `:8500` proxy). [`Workspace.tsx`](../packages/web/src/Workspace.tsx) skips the model socket when `VITE_E2E_DISABLE_WS` is baked into that E2E bundle.
   - [`packages/web/vite.config.ts`](../packages/web/vite.config.ts) omits `preview.proxy` when `PREVIEW_NO_PROXY` / `E2E_NO_API_PROXY` is set.
   - Evidence **`toHaveScreenshot`** baselines are namespaced **per Playwright `{platform}`** (`darwin/` vs `linux/`) — GitHub `ubuntu-latest` is **amd64**. Regenerate `linux/` after UI changes affecting screenshots:
 
