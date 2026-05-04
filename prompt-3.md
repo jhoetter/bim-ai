@@ -1,16 +1,16 @@
-# Agent Prompt 3: Room Programme Authoring, Area Targets, And Finish Schedules
+# Agent Prompt 3: Hosted Openings, Joins, And Cut Solid Fidelity
 
 ## Mission
 
-You are Agent 3 of the next parallel BIM AI parity batch. Turn room data into a production authoring slice: programme/department/finish fields, area targets, schedule rows, and advisor feedback. Do not open a pull request. Commit and push only the branch you work on.
+You are Agent 3 of the next parallel BIM AI parity batch. Deepen kernel fidelity for hosted openings and joins with one bounded evidenced slice: non-orthogonal openings, rough opening/reveal evidence, better cut solids, or slab/wall join behavior with glTF/section evidence. Do not open a pull request. Commit and push only your branch.
 
 Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
 
-- `WP-B06` Rooms, areas, and zones
-- `WP-C04` Tags and annotations
-- `WP-D01` Schedules and quantities
-- `WP-D05` Material takeoff and finish data
-- `WP-V01` Validation advisor
+- `WP-B02` Walls, doors, windows, hosted openings
+- `WP-B03` Floors/slabs and slab openings
+- `WP-E03` 3D geometry fidelity
+- `WP-X02` glTF export
+- light `WP-D05` Materials/layer catalogs
 
 ## Start Procedure
 
@@ -20,56 +20,56 @@ Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
    git fetch origin
    git switch main
    git pull --ff-only origin main
-   git switch -c agent/room-programme-finish-schedules
+   git switch -c agent/hosted-openings-cut-solid-fidelity
    ```
 
 2. Read first:
    - `spec/revit-production-parity-workpackage-tracker.md`
    - `spec/prd/revit-production-parity-ai-agent-prd.md`
+   - `app/bim_ai/opening_cut_primitives.py`
+   - `app/bim_ai/cut_solid_kernel.py`
+   - `app/bim_ai/export_gltf.py`
+   - `app/bim_ai/section_projection_primitives.py`
    - `app/bim_ai/elements.py`
-   - `app/bim_ai/commands.py`
-   - `app/bim_ai/engine.py`
-   - `app/bim_ai/room_derivation.py`
-   - `app/bim_ai/schedule_derivation.py`
-   - `app/bim_ai/constraints.py`
-   - `packages/core/src/index.ts`
-   - `packages/web/src/Workspace.tsx`
-   - schedule and room tests
+   - existing opening, cut-solid, section, and glTF tests
+
+## File Ownership Rules
+
+This is the only schema-adjacent geometry lane in this wave. If persisted fields are required, keep them narrow and isolated. Do not change sheet crop projection, validation advisor rules, IFC import semantics, or evidence artifact lifecycle fields.
 
 ## Allowed Scope
 
 Prefer changes in:
 
-- `RoomElem` / area programme fields and command-backed updates
-- schedule derivation for room finish and area target rows
-- validation/advisor checks for missing programme/department/finish or target-area deviations
-- frontend table/property surfaces that already show room/schedule/advisor data
-- focused backend and web tests
+- `app/bim_ai/opening_cut_primitives.py`
+- `app/bim_ai/cut_solid_kernel.py`
+- `app/bim_ai/export_gltf.py`
+- `app/bim_ai/section_projection_primitives.py`
+- geometry helper modules and focused tests
 - `spec/revit-production-parity-workpackage-tracker.md`
 
 ## Non-Goals
 
-- Do not rewrite room boundary derivation.
-- Do not implement full Revit area plans.
-- Do not change sheet viewport or export flows.
-- Do not change IFC import/export except if a small manifest hint is already directly wired from room fields.
+- Do not redesign the full geometry kernel.
+- Do not add broad new command families.
+- Do not change schedule UI.
+- Do not change IFC import/replay behavior.
 - Do not open a PR.
 
 ## Implementation Checklist
 
-- Add first-class authoring or editing for room programme, department, target area, and at least one finish field.
-- Reflect those fields in derived room schedules or finish schedules.
-- Add validation/advisor feedback for one meaningful room data gap or target miss.
-- Preserve existing room separation and plan-label behavior.
-- Add tests proving command replay, schedule derivation, and advisor output.
+- Add one bounded fidelity improvement for hosted openings, joins, rough openings/reveals, or slab/wall cuts.
+- Prove the output is more than a proxy marker using glTF, section primitives, or cut-solid tests.
+- Keep fixture geometry deterministic and small.
+- Preserve existing axis-aligned slab opening behavior.
+- Document remaining true boolean and join blockers in the tracker.
 
 ## Validation
 
 Run focused checks:
 
 ```bash
-cd app && ruff check bim_ai tests && pytest tests/test_room* tests/test_schedule* tests/test_constraints*
-cd packages/web && pnpm exec tsc -p tsconfig.json --noEmit && pnpm test
+cd app && ruff check bim_ai tests && pytest tests/test_opening_cut_primitives.py tests/test_cut_solid_kernel.py tests/test_export_gltf.py tests/test_section* tests/test_plan_projection_and_evidence_slices.py
 ```
 
 Then run, if practical:
@@ -80,7 +80,7 @@ pnpm verify
 
 ## Tracker Update
 
-Update only rows you materially changed, likely `WP-B06`, `WP-C04`, `WP-D01`, `WP-D05`, and `WP-V01`. Mention exact room fields, schedule columns, advisor checks, and tests.
+Update only rows you materially changed, likely `WP-B02`, `WP-B03`, `WP-E03`, `WP-X02`, and maybe `WP-D05`. Include exact geometry scenario, evidence path, and tests.
 
 ## Commit And Push
 
@@ -91,7 +91,7 @@ git status
 git diff
 git add <changed files>
 git commit -m "$(cat <<'EOF'
-feat(rooms): add programme fields and finish schedule evidence
+feat(geometry): deepen hosted opening cut fidelity
 
 EOF
 )"
@@ -100,4 +100,4 @@ git push -u origin HEAD
 
 ## Final Report
 
-Return branch, commit SHA, room fields added, schedule/advisor behavior, tracker rows updated, validation results, and any shared-file merge risks.
+Return branch, commit SHA, geometry behavior added, evidence paths, tracker rows updated, validation results, and shared-file merge risks.

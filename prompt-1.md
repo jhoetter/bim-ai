@@ -1,15 +1,15 @@
-# Agent Prompt 1: View Template Editor, Properties Palette, And Scope Boxes
+# Agent Prompt 1: Sheet Crop-To-Projection And Print Fidelity
 
 ## Mission
 
-You are Agent 1 of the next parallel BIM AI parity batch. Move plan views from hidden schema fields toward editable production view definitions: view-template editor affordances, active/selected view properties, crop/scope metadata, and inheritance evidence. Do not open a pull request. Commit and push only the branch you work on.
+You are Agent 1 of the next parallel BIM AI parity batch. Finish the sheet viewport crop slice: viewport crop metadata already persists, but projection/export still needs to consume sheet viewport crop semantics instead of only echoing crop text. Own the sheet/projection/export spine for this wave. Do not open a pull request. Commit and push only your branch.
 
 Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
 
-- `WP-C01` First-class plan views
-- `WP-C02` Plan projection engine
-- `WP-C03` Plan symbology and graphics
-- `WP-C05` Project browser hierarchy
+- `WP-E05` Sheet canvas and titleblock
+- `WP-E06` SVG/PNG/PDF export
+- `WP-X01` JSON snapshot and command replay
+- light `WP-A03` Playwright evidence baselines
 
 ## Start Procedure
 
@@ -19,57 +19,57 @@ Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
    git fetch origin
    git switch main
    git pull --ff-only origin main
-   git switch -c agent/view-template-properties
+   git switch -c agent/sheet-crop-projection-print
    ```
 
 2. Read first:
    - `spec/revit-production-parity-workpackage-tracker.md`
    - `spec/prd/revit-production-parity-ai-agent-prd.md`
-   - `app/bim_ai/elements.py`
-   - `app/bim_ai/commands.py`
-   - `app/bim_ai/engine.py`
    - `app/bim_ai/plan_projection_wire.py`
-   - `packages/core/src/index.ts`
-   - `packages/web/src/state/store.ts`
-   - `packages/web/src/Workspace.tsx`
-   - `packages/web/src/workspace/ProjectBrowser.tsx`
-   - `packages/web/src/plan/PlanCanvas.tsx`
+   - `app/bim_ai/sheet_preview_svg.py`
+   - `app/bim_ai/sheet_preview_pdf.py`
+   - `app/bim_ai/evidence_manifest.py`
+   - sheet viewport authoring/rendering files
+   - existing sheet, projection, PDF/SVG, and evidence baseline tests
+
+## File Ownership Rules
+
+This prompt owns sheet viewport crop-to-projection/export behavior for this wave. Keep `Workspace.tsx` edits out unless unavoidable. Do not change plan-view template semantics, room derivation, IFC/OpenBIM import, or broad evidence manifest lifecycle fields owned by other prompts.
 
 ## Allowed Scope
 
 Prefer changes in:
 
-- `PlanViewElem` / `ViewTemplateElem` fields in `app/bim_ai/elements.py`
-- `UpdateElementPropertyCmd` and `upsertPlanView` handling in `app/bim_ai/engine.py`
-- `app/bim_ai/plan_projection_wire.py`, only for crop/scope/template metadata already relevant to plan views
-- shared types in `packages/core/src/index.ts`
-- view selection/property controls in `packages/web/src/Workspace.tsx`, `packages/web/src/state/store.ts`, or `packages/web/src/workspace/ProjectBrowser.tsx`
-- focused tests in `app/tests/test_update_element_property_plan_view.py`, `app/tests/test_plan_projection_and_evidence_slices.py`, and web plan/workspace tests
+- `app/bim_ai/plan_projection_wire.py`, only for applying sheet viewport crop context to projected content
+- `app/bim_ai/sheet_preview_svg.py`
+- `app/bim_ai/sheet_preview_pdf.py`
+- sheet viewport rendering/authoring helpers, only if crop semantics require it
+- focused tests around replayed `viewportsMm`, crop projection, SVG/PDF, and evidence baselines
 - `spec/revit-production-parity-workpackage-tracker.md`
 
 ## Non-Goals
 
-- Do not change sheet viewport authoring or export.
-- Do not change schedule derivation.
-- Do not change room derivation algorithms.
-- Do not change IFC/glTF exporters.
+- Do not implement a full print service.
+- Do not redesign plan projection generally.
+- Do not add new element kinds.
+- Do not change OpenBIM import/export semantics.
 - Do not open a PR.
 
 ## Implementation Checklist
 
-- Add one narrow UI-backed view definition slice, such as editable view-template toggles, active plan view properties, scope/crop metadata controls, or visible inheritance explanation.
-- Keep behavior command-backed and replayable.
-- Ensure server wire and web fallback behavior agree when a pinned plan view is active.
-- Add at least one backend test and one web unit or e2e assertion.
-- Keep full template editor / Revit-complete range semantics out of scope unless directly needed.
+- Make sheet viewport crop metadata affect at least one deterministic projected/exported representation, not just a text suffix.
+- Preserve replay determinism for `upsertSheetViewports`.
+- Add regression coverage proving sheet viewport crop changes the projected/exported content or its deterministic crop window.
+- Keep any screenshot baseline update tightly scoped and justified.
+- Document remaining full print/raster blockers in the tracker.
 
 ## Validation
 
 Run focused checks:
 
 ```bash
-cd app && ruff check bim_ai tests && pytest tests/test_update_element_property_plan_view.py tests/test_plan_projection_and_evidence_slices.py
-cd packages/web && pnpm exec tsc -p tsconfig.json --noEmit && pnpm test
+cd app && ruff check bim_ai tests && pytest tests/test_upsert_sheet_viewports.py tests/test_sheet* tests/test_plan_projection_and_evidence_slices.py
+cd packages/web && pnpm exec tsc -p tsconfig.json --noEmit && pnpm test -- Sheet
 ```
 
 Then run, if practical:
@@ -80,7 +80,7 @@ pnpm verify
 
 ## Tracker Update
 
-Update only rows you materially changed, likely `WP-C01`, `WP-C02`, `WP-C03`, and maybe `WP-C05`. Keep `State` as `partial` unless the Done Rule is fully satisfied. Include exact fields, UI entry points, and tests.
+Update only rows you materially changed, likely `WP-E05`, `WP-E06`, `WP-X01`, and maybe `WP-A03`. Include exact crop semantics, command names, artifact/export evidence, and tests.
 
 ## Commit And Push
 
@@ -91,7 +91,7 @@ git status
 git diff
 git add <changed files>
 git commit -m "$(cat <<'EOF'
-feat(views): add editable view template properties slice
+feat(sheets): apply viewport crop to projection export
 
 EOF
 )"
@@ -100,4 +100,4 @@ git push -u origin HEAD
 
 ## Final Report
 
-Return branch, commit SHA, view/template behavior added, tracker rows updated, validation results, and any shared-file merge risks.
+Return branch, commit SHA, sheet crop behavior added, export/evidence artifact changes, tracker rows updated, validation results, and shared-file merge risks.

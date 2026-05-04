@@ -1,16 +1,16 @@
-# Agent Prompt 5: BCF Issues, Agent Assumptions, And Evidence Loop Actions
+# Agent Prompt 5: Agent Evidence Artifacts And Collaboration Follow-Through
 
 ## Mission
 
-You are Agent 5 of the next parallel BIM AI parity batch. Build the collaboration/evidence loop around production review: BCF-like issue topics, links to viewpoints/elements/evidence rows, agent assumption/deviation records, and actionable Agent Review guidance. Do not open a pull request. Commit and push only the branch you work on.
+You are Agent 5 of the next parallel BIM AI parity batch. Close more of the agent review loop after `evidenceLifecycleSignal_v1`: staged artifact URL placeholders, BCF/issue roundtrip checks, diff threshold policy metadata, and collaboration conflict summaries that Agent Review can act on. Do not open a pull request. Commit and push only your branch.
 
 Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
 
-- `WP-X04` BCF/issues and review loops
-- `WP-F01` Agent review and evidence packs
-- `WP-F02` Assumption/deviation tracking
-- `WP-F03` Planner/executor feedback loop
-- light `WP-A02` Semantic command model
+- `WP-A02` Evidence package API
+- `WP-F02` Agent review UI
+- `WP-F03` Automated evidence comparison
+- `WP-X04` BCF export/import
+- `WP-P02` Collaboration model
 
 ## Start Procedure
 
@@ -20,54 +20,57 @@ Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
    git fetch origin
    git switch main
    git pull --ff-only origin main
-   git switch -c agent/bcf-assumptions-evidence-loop
+   git switch -c agent/evidence-artifacts-collab-followthrough
    ```
 
 2. Read first:
    - `spec/revit-production-parity-workpackage-tracker.md`
    - `spec/prd/revit-production-parity-ai-agent-prd.md`
-   - `app/bim_ai/elements.py`
-   - `app/bim_ai/commands.py`
-   - `app/bim_ai/engine.py`
    - `app/bim_ai/evidence_manifest.py`
-   - `app/bim_ai/agent_review.py`
-   - `packages/core/src/index.ts`
-   - `packages/web/src/Workspace.tsx`
-   - `packages/web/src/evidence/*`
-   - existing agent review / evidence / collaboration tests
+   - agent review and evidence loop helpers
+   - `app/bim_ai/engine.py`
+   - `packages/web/src/workspace/AgentReviewPane.tsx`
+   - evidence, BCF, collaboration, and Agent Review tests
+
+## File Ownership Rules
+
+Do not reshape sheet viewport evidence owned by Prompt 1. Avoid broad `Workspace.tsx` edits; prefer `AgentReviewPane.tsx` or isolated child components. If touching `evidence_manifest.py`, keep changes to artifact lifecycle, diff policy, BCF links, or collaboration summaries.
 
 ## Allowed Scope
 
 Prefer changes in:
 
-- semantic issue/topic/assumption/deviation elements or command payloads
-- evidence manifest generation and Agent Review summaries
-- web panels that already render review, evidence, or diagnostics
-- tests for issue creation, evidence links, and action guidance
+- `app/bim_ai/evidence_manifest.py`
+- agent evidence review loop helpers
+- BCF/issue evidence link summaries
+- collaboration conflict/replay diagnostic summaries that already exist
+- `packages/web/src/workspace/AgentReviewPane.tsx` or isolated components
+- focused backend and web tests
 - `spec/revit-production-parity-workpackage-tracker.md`
 
 ## Non-Goals
 
-- Do not integrate an external BCF server.
-- Do not implement auth, comments, or notification infrastructure.
-- Do not change geometry, sheets, schedules, or IFC behavior except to link existing evidence rows.
+- Do not implement external artifact storage.
+- Do not change sheet viewport projection/export behavior.
+- Do not change IFC import/replay semantics.
+- Do not implement multiplayer persistence.
 - Do not open a PR.
 
 ## Implementation Checklist
 
-- Add a small BCF-like issue/topic model with stable IDs and links to elements, viewpoints, or evidence artifacts.
-- Add assumption/deviation records that can be created or summarized from command/evidence context.
-- Surface at least one Agent Review action that points to a specific issue, assumption, deviation, or evidence row.
-- Keep outputs deterministic and suitable for snapshots or manifest assertions.
-- Add backend tests and, where practical, a web test for rendered review guidance.
+- Add one deterministic artifact/collaboration follow-through signal that agents can consume programmatically.
+- Tie Agent Review guidance to exact evidence rows, BCF/issue links, diff policy metadata, or conflict diagnostics.
+- Keep digest semantics clear when derivative summaries are excluded.
+- Add backend tests and, where practical, a focused web assertion.
+- Document staged artifact and automated fix-loop blockers in the tracker.
 
 ## Validation
 
 Run focused checks:
 
 ```bash
-cd app && ruff check bim_ai tests && pytest tests/test_evidence* tests/test_agent* tests/test_engine*
-cd packages/web && pnpm exec tsc -p tsconfig.json --noEmit && pnpm test
+cd app && ruff check bim_ai tests && pytest tests/test_evidence* tests/test_agent* tests/test_undo_replay_constraint.py
+cd packages/web && pnpm exec tsc -p tsconfig.json --noEmit && pnpm test -- AgentReview
 ```
 
 Then run, if practical:
@@ -78,7 +81,7 @@ pnpm verify
 
 ## Tracker Update
 
-Update only rows you materially changed, likely `WP-X04`, `WP-F01`, `WP-F02`, `WP-F03`, and maybe `WP-A02`. Mention issue schema, links, Agent Review actions, and tests.
+Update only rows you materially changed, likely `WP-A02`, `WP-F02`, `WP-F03`, `WP-X04`, and `WP-P02`. Include exact manifest keys, UI paths, evidence rows, BCF/collaboration links, and tests.
 
 ## Commit And Push
 
@@ -89,7 +92,7 @@ git status
 git diff
 git add <changed files>
 git commit -m "$(cat <<'EOF'
-feat(review): add bcf issue and assumption evidence loop
+feat(evidence): add artifact collaboration followthrough
 
 EOF
 )"
@@ -98,4 +101,4 @@ git push -u origin HEAD
 
 ## Final Report
 
-Return branch, commit SHA, issue/evidence loop behavior added, tracker rows updated, validation results, and any shared-file merge risks.
+Return branch, commit SHA, evidence/collaboration behavior added, tracker rows updated, validation results, and shared-file merge risks.
