@@ -770,9 +770,14 @@ def collaboration_replay_conflict_hints_v1() -> dict[str, Any]:
             "commandCount",
             "commandTypesInOrder",
             "firstBlockingCommandIndex",
+            "blockingViolationRuleIds",
         ],
         "firstBlockingCommandIndexNote": (
             "Emitted when replay outcome indicates constraint_error; omitted for successful dry outcomes."
+        ),
+        "blockingViolationRuleIdsNote": (
+            "Sorted unique ruleId values from blocking/error violations at the first blocking prefix; "
+            "omitted when firstBlockingCommandIndex cannot be resolved."
         ),
     }
 

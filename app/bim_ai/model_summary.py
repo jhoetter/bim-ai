@@ -88,6 +88,12 @@ def compute_model_summary(doc: Document) -> dict[str, Any]:
             "documentRevision": doc.revision,
             "roomDerivationHeuristicVersion": rd_preview.get("heuristicVersion"),
             "roomDerivationCandidateCount": rd_preview.get("candidateCount"),
+            "roomDerivationAuthoritativeCount": rd_preview.get("authoritativeCandidateCount", 0),
+            "roomDerivationDiagnosticCount": rd_preview.get("diagnosticCount", 0),
             "roomDerivationWarningCount": len(rd_preview.get("warnings") or []),
+            "levelsWithRoomsSorted": sorted(room_by_level.keys()),
+            "levelsWithWallsSorted": sorted(wall_by_level.keys()),
+            "maxRoomsOnSingleLevel": max(room_by_level.values()) if room_by_level else 0,
+            "maxWallsOnSingleLevel": max(wall_by_level.values()) if wall_by_level else 0,
         },
     }

@@ -64,6 +64,7 @@ jobs:
             echo "  evidenceLifecycleSignal_v1 — programmatic rollup (counts + digest + basename) for scripts/agents."
             echo "  evidenceAgentFollowThrough_v1 — staged artifact URL placeholders, BCF/issue coordination checks,"
             echo "    evidenceRef resolution gaps, collaboration replayConflict hints (excluded from semanticDigestSha256)."
+            echo "  Python pytest scale gate: test_bundle_replay_diagnostics_large_list_under_budget (replayDiagnostics metadata scan)."
             echo "  evidenceClosureReview_v1.pixelDiffExpectation.thresholdPolicy_v1 — advisory diff thresholds for client ingest."
             echo ""
             echo "This CI run:"

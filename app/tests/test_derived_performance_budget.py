@@ -186,6 +186,35 @@ def test_try_commit_bundle_many_create_walls_under_three_seconds() -> None:
     assert elapsed < 3.0
 
 
+def test_try_commit_bundle_many_create_walls_290_under_four_seconds() -> None:
+    """Scale tier above the 220-wall bundle budget (WP-P01), conservative CI-safe ceiling."""
+    lvl = LevelElem(kind="level", id="lvl", name="G", elevationMm=0)
+    doc = Document(revision=1, elements={"lvl": lvl})
+    cmds: list[dict[str, object]] = []
+    for i in range(290):
+        y_mm = float(i * 4100)
+        cmds.append(
+            {
+                "type": "createWall",
+                "levelId": "lvl",
+                "start": {"xMm": 0, "yMm": y_mm},
+                "end": {"xMm": 2600, "yMm": y_mm},
+                "thicknessMm": 200,
+                "heightMm": 2800,
+            }
+        )
+
+    start = time.perf_counter()
+    ok, new_doc, _cmds, _violations, code = try_commit_bundle(doc, cmds)
+    elapsed = time.perf_counter() - start
+
+    assert ok is True
+    assert new_doc is not None
+    assert code == "ok"
+    assert len([e for e in new_doc.elements.values() if getattr(e, "kind", None) == "wall"]) == 290
+    assert elapsed < 4.0
+
+
 def test_hybrid_model_summary_exposes_scale_fields() -> None:
     # `room_derivation_preview` scales poorly on huge hybrids; keep this correctness check modest.
     doc = _doc_hybrid_walls_rooms(55, 40)
@@ -201,4 +230,10 @@ def test_hybrid_model_summary_exposes_scale_fields() -> None:
     assert regen["documentRevision"] == doc.revision
     assert regen["roomDerivationHeuristicVersion"] == preview["heuristicVersion"]
     assert regen["roomDerivationCandidateCount"] == preview["candidateCount"]
+    assert regen["roomDerivationAuthoritativeCount"] == preview.get("authoritativeCandidateCount", 0)
+    assert regen["roomDerivationDiagnosticCount"] == preview.get("diagnosticCount", 0)
     assert regen["roomDerivationWarningCount"] == len(preview["warnings"])
+    assert regen["levelsWithRoomsSorted"] == ["lvl"]
+    assert regen["levelsWithWallsSorted"] == ["lvl"]
+    assert regen["maxRoomsOnSingleLevel"] == 40
+    assert regen["maxWallsOnSingleLevel"] == 55

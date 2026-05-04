@@ -1456,6 +1456,17 @@ def first_blocking_command_index_after_prefixes(doc: Document, cmds: list[Comman
     return None
 
 
+def blocking_violation_rule_ids_at_prefix(doc: Document, cmds: list[Command], idx: int) -> list[str]:
+    """Sorted unique rule ids from blocking/error violations after cmds[0..idx] inclusive."""
+
+    cand = clone_document(doc)
+    for i in range(idx + 1):
+        apply_inplace(cand, cmds[i])
+    violations = evaluate(cand.elements)
+    blocking = [v for v in violations if v.blocking or v.severity == "error"]
+    return sorted({v.rule_id for v in blocking})
+
+
 def replay_bundle_diagnostics_for_outcome(
     doc: Document,
     cmds_raw: list[dict[str, Any]],
@@ -1473,7 +1484,12 @@ def replay_bundle_diagnostics_for_outcome(
         return base
     idx = first_blocking_command_index_after_prefixes(doc, cmds)
     if idx is not None:
-        return {**base, "firstBlockingCommandIndex": idx}
+        rule_ids = blocking_violation_rule_ids_at_prefix(doc, cmds, idx)
+        return {
+            **base,
+            "firstBlockingCommandIndex": idx,
+            "blockingViolationRuleIds": rule_ids,
+        }
     return base
 
 
