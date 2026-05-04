@@ -124,6 +124,35 @@ test.describe('golden bundle affordances', () => {
                 { xMm: 0, yMm: 3000 },
               ],
             },
+            'hf-pv-eg': {
+              kind: 'plan_view',
+              id: 'hf-pv-eg',
+              name: 'EG working',
+              levelId: 'hf-lvl-1',
+              discipline: 'architecture',
+            },
+            'vp-3d-mock': {
+              kind: 'viewpoint',
+              id: 'vp-3d-mock',
+              name: 'Corner 3D',
+              mode: 'orbit_3d',
+              camera: {
+                position: { xMm: 0, yMm: 0, zMm: 1500 },
+                target: { xMm: 5000, yMm: 0, zMm: 1500 },
+                up: { xMm: 0, yMm: 0, zMm: 1000 },
+              },
+            },
+            'vp-plan-mock': {
+              kind: 'viewpoint',
+              id: 'vp-plan-mock',
+              name: 'Plan advisory',
+              mode: 'plan_2d',
+              camera: {
+                position: { xMm: 0, yMm: 0, zMm: 1400 },
+                target: { xMm: 1, yMm: 0, zMm: 1400 },
+                up: { xMm: 0, yMm: 0, zMm: 1000 },
+              },
+            },
           },
           violations: [],
         }),
@@ -174,6 +203,21 @@ test.describe('golden bundle affordances', () => {
     await expect(page.getByText('Schedules', { exact: true }).first()).toBeVisible();
     await page.getByRole('button', { name: /^Sheets$/ }).click();
     await expect(page.getByText('GA-01 — Golden evidence').first()).toBeVisible();
+  });
+
+  test('project browser lists floor plans, section cuts, and split viewpoint groups', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await expect(page.getByText('Ready', { exact: false })).toBeVisible({ timeout: 30_000 });
+
+    await expect(page.getByText('Floor plans', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('EG working').first()).toBeVisible();
+    await expect(page.getByText('Section cuts', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('3D saved views', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('Corner 3D').first()).toBeVisible();
+    await expect(page.getByText('Plan / canvas viewpoints', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('Plan advisory').first()).toBeVisible();
   });
 
   test('sheet canvas renders section viewport from replayed viewportsMm', async ({ page }) => {
