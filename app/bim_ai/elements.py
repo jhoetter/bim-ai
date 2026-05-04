@@ -59,6 +59,14 @@ class WallTypeElem(BaseModel):
     basis_line: WallBasisLine = Field(default="center", alias="basisLine")
 
 
+class FloorTypeElem(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["floor_type"] = "floor_type"
+    id: str
+    name: str = "Floor type"
+    layers: list[WallTypeLayer] = Field(default_factory=list)
+
+
 class LevelElem(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True)
     kind: Literal["level"] = "level"
@@ -137,6 +145,7 @@ class RoomElem(BaseModel):
     department: str | None = Field(default=None, alias="department")
     function_label: str | None = Field(default=None, alias="functionLabel")
     finish_set: str | None = Field(default=None, alias="finishSet")
+    target_area_m2: float | None = Field(default=None, alias="targetAreaM2")
 
 
 class GridLineElem(BaseModel):
@@ -197,6 +206,7 @@ class FloorElem(BaseModel):
     thickness_mm: float = Field(alias="thicknessMm", default=220)
     structure_thickness_mm: float = Field(alias="structureThicknessMm", default=140)
     finish_thickness_mm: float = Field(alias="finishThicknessMm", default=0)
+    floor_type_id: str | None = Field(default=None, alias="floorTypeId")
     insulation_extension_mm: float = Field(default=0, alias="insulationExtensionMm")
     room_bounded: bool = Field(default=False, alias="roomBounded")
 
@@ -405,6 +415,7 @@ class ValidationRuleElem(BaseModel):
 ElementKind = Literal[
     "project_settings",
     "wall_type",
+    "floor_type",
     "level",
     "wall",
     "door",
@@ -438,6 +449,7 @@ ElementKind = Literal[
 Element = Annotated[
     ProjectSettingsElem
     | WallTypeElem
+    | FloorTypeElem
     | LevelElem
     | WallElem
     | DoorElem

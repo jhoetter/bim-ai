@@ -32,6 +32,8 @@ from bim_ai.commands import (
     CreateWallChainCmd,
     CreateWallCmd,
     CreateWallTypeCmd,
+    UpsertFloorTypeCmd,
+    UpsertWallTypeCmd,
     DeleteElementCmd,
     DeleteElementsCmd,
     ExtendFloorInsulationCmd,
@@ -67,6 +69,7 @@ from bim_ai.elements import (
     Element,
     FamilyTypeElem,
     FloorElem,
+    FloorTypeElem,
     GridLineElem,
     IssueElem,
     JoinGeometryElem,
@@ -167,13 +170,19 @@ def _room_programme_field_updates(
     department: str | None,
     function_label: str | None,
     finish_set: str | None,
-) -> dict[str, str | None]:
-    return {
+    target_area_m2: float | None = None,
+) -> dict[str, Any]:
+    out: dict[str, Any] = {
         "programme_code": _stripped_optional_str(programme_code),
         "department": _stripped_optional_str(department),
         "function_label": _stripped_optional_str(function_label),
         "finish_set": _stripped_optional_str(finish_set),
     }
+    if target_area_m2 is not None:
+        if target_area_m2 <= 0:
+            raise ValueError("targetAreaM2 must be positive when set")
+        out["target_area_m2"] = float(target_area_m2)
+    return out
 
 
 def coerce_command(data: dict[str, Any]) -> Command:
@@ -244,6 +253,49 @@ def _wall_thickness_from_type(els: dict[str, Element], wall_type_id: str | None,
     if not isinstance(wt, WallTypeElem) or not wt.layers:
         return fallback
     return float(sum(lyr.thickness_mm for lyr in wt.layers)) or fallback
+
+
+def _floor_dims_from_type(
+    els: dict[str, Element], floor_type_id: str | None
+) -> tuple[float, float, float] | None:
+    if not floor_type_id:
+        return None
+    ft = els.get(floor_type_id)
+    if not isinstance(ft, FloorTypeElem) or not ft.layers:
+        return None
+    layers = ft.layers
+    total = float(sum(lyr.thickness_mm for lyr in layers))
+    structure = float(
+        sum(lyr.thickness_mm for lyr in layers if lyr.layer_function in ("structure", "insulation"))
+    )
+    finish = float(sum(lyr.thickness_mm for lyr in layers if lyr.layer_function == "finish"))
+    return (total, structure, finish)
+
+
+def _propagate_wall_thickness_for_type(els: dict[str, Element], wall_type_id: str) -> None:
+    wt = els.get(wall_type_id)
+    if not isinstance(wt, WallTypeElem) or not wt.layers:
+        return
+    thick = float(sum(lyr.thickness_mm for lyr in wt.layers))
+    for eid, el in list(els.items()):
+        if isinstance(el, WallElem) and el.wall_type_id == wall_type_id:
+            els[eid] = el.model_copy(update={"thickness_mm": thick})
+
+
+def _propagate_floor_dims_for_type(els: dict[str, Element], floor_type_id: str) -> None:
+    dims = _floor_dims_from_type(els, floor_type_id)
+    if dims is None:
+        return
+    t_mm, s_mm, f_mm = dims
+    for eid, el in list(els.items()):
+        if isinstance(el, FloorElem) and el.floor_type_id == floor_type_id:
+            els[eid] = el.model_copy(
+                update={
+                    "thickness_mm": t_mm,
+                    "structure_thickness_mm": s_mm,
+                    "finish_thickness_mm": f_mm,
+                }
+            )
 
 
 def apply_inplace(doc: Document, cmd: Command) -> None:
@@ -446,6 +498,7 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                     cmd.department,
                     cmd.function_label,
                     cmd.finish_set,
+                    cmd.target_area_m2,
                 ),
             )
 
@@ -492,6 +545,7 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                     cmd.department,
                     cmd.function_label,
                     cmd.finish_set,
+                    cmd.target_area_m2,
                 ),
             )
 
@@ -538,6 +592,7 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                     cmd.department,
                     cmd.function_label,
                     cmd.finish_set,
+                    cmd.target_area_m2,
                 ),
             )
 
@@ -577,6 +632,18 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 els[cmd.element_id] = el.model_copy(update={"function_label": cmd.value})
             elif cmd.key == "finishSet" and isinstance(el, RoomElem):
                 els[cmd.element_id] = el.model_copy(update={"finish_set": cmd.value})
+            elif cmd.key == "targetAreaM2" and isinstance(el, RoomElem):
+                raw_t = cmd.value.strip()
+                if not raw_t:
+                    els[cmd.element_id] = el.model_copy(update={"target_area_m2": None})
+                else:
+                    try:
+                        tv = float(raw_t)
+                    except ValueError as exc:
+                        raise ValueError("targetAreaM2 must be a number or empty to clear") from exc
+                    if tv <= 0:
+                        raise ValueError("targetAreaM2 must be positive when set")
+                    els[cmd.element_id] = el.model_copy(update={"target_area_m2": tv})
             elif cmd.key == "label" and isinstance(el, GridLineElem):
                 els[cmd.element_id] = el.model_copy(update={"label": cmd.value})
             elif isinstance(el, PlanViewElem):
@@ -770,6 +837,7 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 raise ValueError(
                     "Only updateElementProperty key=name | label(grid) | title(issue) | "
                     "programmeCode(room) | department(room) | functionLabel(room) | finishSet(room) | "
+                    "targetAreaM2(room) | "
                     "planPresentation(plan_view) | categoriesHidden(plan_view JSON array) | "
                     "underlayLevelId(plan_view) | viewTemplateId(plan_view) | "
                     "cropMinMm(plan_view JSON object) | cropMaxMm(plan_view JSON object) | "
@@ -821,8 +889,33 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 id=tid,
                 name=cmd.name,
                 layers=list(cmd.layers),
-                basisLine=_basis_line(cmd.basis_line),
+                basis_line=_basis_line(cmd.basis_line),
             )
+
+        case UpsertWallTypeCmd():
+            prev = els.get(cmd.id)
+            if prev is not None and not isinstance(prev, WallTypeElem):
+                raise ValueError("upsertWallType.id must reference wall_type when element exists")
+            els[cmd.id] = WallTypeElem(
+                kind="wall_type",
+                id=cmd.id,
+                name=cmd.name,
+                layers=list(cmd.layers),
+                basis_line=_basis_line(cmd.basis_line),
+            )
+            _propagate_wall_thickness_for_type(els, cmd.id)
+
+        case UpsertFloorTypeCmd():
+            prev = els.get(cmd.id)
+            if prev is not None and not isinstance(prev, FloorTypeElem):
+                raise ValueError("upsertFloorType.id must reference floor_type when element exists")
+            els[cmd.id] = FloorTypeElem(
+                kind="floor_type",
+                id=cmd.id,
+                name=cmd.name,
+                layers=list(cmd.layers),
+            )
+            _propagate_floor_dims_for_type(els, cmd.id)
 
         case AssignWallDatumConstraintsCmd():
             w = els.get(cmd.wall_id)
@@ -856,15 +949,21 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 raise ValueError("createFloor.levelId must reference an existing Level")
             if len(cmd.boundary_mm) < 3:
                 raise ValueError("createFloor.boundaryMm requires ≥3 vertices")
+            dims = _floor_dims_from_type(els, cmd.floor_type_id)
+            if dims is not None:
+                t_mm, s_mm, f_mm = dims
+            else:
+                t_mm, s_mm, f_mm = cmd.thickness_mm, cmd.structure_thickness_mm, cmd.finish_thickness_mm
             els[fid] = FloorElem(
                 kind="floor",
                 id=fid,
                 name=cmd.name,
                 level_id=cmd.level_id,
                 boundary_mm=cmd.boundary_mm,
-                thickness_mm=cmd.thickness_mm,
-                structure_thickness_mm=cmd.structure_thickness_mm,
-                finish_thickness_mm=cmd.finish_thickness_mm,
+                thickness_mm=t_mm,
+                structure_thickness_mm=s_mm,
+                finish_thickness_mm=f_mm,
+                floor_type_id=cmd.floor_type_id,
                 room_bounded=cmd.room_bounded,
             )
 

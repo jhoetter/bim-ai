@@ -42,7 +42,11 @@ function readOptionalFinite(rec: Record<string, unknown>, keys: string[]): numbe
   return undefined;
 }
 
-function readCropCorner(raw: Record<string, unknown>, camel: string, snake: string): Vec2MmDraft | null {
+function readCropCorner(
+  raw: Record<string, unknown>,
+  camel: string,
+  snake: string,
+): Vec2MmDraft | null {
   const obj = raw[camel] ?? raw[snake];
   if (!obj || typeof obj !== 'object') return null;
   const rec = obj as Record<string, unknown>;
@@ -409,7 +413,12 @@ export function SheetViewportEditor(props: {
                   if (!Number.isFinite(nx)) return;
                   const minY = row.cropMinMm?.yMm ?? 0;
                   const max = row.cropMaxMm ?? { xMm: 0, yMm: 0 };
-                  patchRow(idx, { cropMinMm: { xMm: nx, yMm: minY }, cropMaxMm: max }, drafts, setDrafts);
+                  patchRow(
+                    idx,
+                    { cropMinMm: { xMm: nx, yMm: minY }, cropMaxMm: max },
+                    drafts,
+                    setDrafts,
+                  );
                 }}
               />
               <input
@@ -427,7 +436,12 @@ export function SheetViewportEditor(props: {
                   if (!Number.isFinite(ny)) return;
                   const minX = row.cropMinMm?.xMm ?? 0;
                   const max = row.cropMaxMm ?? { xMm: 0, yMm: 0 };
-                  patchRow(idx, { cropMinMm: { xMm: minX, yMm: ny }, cropMaxMm: max }, drafts, setDrafts);
+                  patchRow(
+                    idx,
+                    { cropMinMm: { xMm: minX, yMm: ny }, cropMaxMm: max },
+                    drafts,
+                    setDrafts,
+                  );
                 }}
               />
               <span className="font-mono">max</span>
@@ -446,7 +460,12 @@ export function SheetViewportEditor(props: {
                   if (!Number.isFinite(nx)) return;
                   const min = row.cropMinMm ?? { xMm: 0, yMm: 0 };
                   const maxY = row.cropMaxMm?.yMm ?? 0;
-                  patchRow(idx, { cropMinMm: min, cropMaxMm: { xMm: nx, yMm: maxY } }, drafts, setDrafts);
+                  patchRow(
+                    idx,
+                    { cropMinMm: min, cropMaxMm: { xMm: nx, yMm: maxY } },
+                    drafts,
+                    setDrafts,
+                  );
                 }}
               />
               <input
@@ -464,7 +483,12 @@ export function SheetViewportEditor(props: {
                   if (!Number.isFinite(ny)) return;
                   const min = row.cropMinMm ?? { xMm: 0, yMm: 0 };
                   const maxX = row.cropMaxMm?.xMm ?? 0;
-                  patchRow(idx, { cropMinMm: min, cropMaxMm: { xMm: maxX, yMm: ny } }, drafts, setDrafts);
+                  patchRow(
+                    idx,
+                    { cropMinMm: min, cropMaxMm: { xMm: maxX, yMm: ny } },
+                    drafts,
+                    setDrafts,
+                  );
                 }}
               />
               <button

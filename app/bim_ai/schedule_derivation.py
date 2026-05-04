@@ -6,6 +6,7 @@ from collections import defaultdict
 from typing import Any
 
 from bim_ai.document import Document
+from bim_ai.material_assembly_resolve import resolved_layers_for_floor, resolved_layers_for_wall
 from bim_ai.elements import (
     DoorElem,
     FloorElem,
@@ -27,10 +28,15 @@ _NUMERIC_SCHEDULE_FIELDS: frozenset[str] = frozenset(
     {
         "areaM2",
         "perimeterM",
+        "targetAreaM2",
+        "areaDeltaM2",
         "widthMm",
         "heightMm",
         "sillMm",
         "thicknessMm",
+        "layerIndex",
+        "grossAreaM2",
+        "grossVolumeM3",
         "viewportCount",
         "overhangMm",
         "slopeDeg",
@@ -252,21 +258,24 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                 pts = [{"xMm": float(p.x_mm), "yMm": float(p.y_mm)} for p in e.outline_mm]
                 area, perimeter = _room_polygon_area_perimeter_sqm(pts)
                 lev = lvl_lab.get(e.level_id, e.level_id)
-                rows.append(
-                    {
-                        "elementId": e.id,
-                        "name": e.name,
-                        "levelId": e.level_id,
-                        "level": lev,
-                        "areaM2": round(area, 3),
-                        "perimeterM": round(perimeter, 3),
-                        "familyTypeId": "",
-                        "programmeCode": (e.programme_code or "").strip(),
-                        "department": (e.department or "").strip(),
-                        "functionLabel": (e.function_label or "").strip(),
-                        "finishSet": (e.finish_set or "").strip(),
-                    }
-                )
+                row: dict[str, Any] = {
+                    "elementId": e.id,
+                    "name": e.name,
+                    "levelId": e.level_id,
+                    "level": lev,
+                    "areaM2": round(area, 3),
+                    "perimeterM": round(perimeter, 3),
+                    "familyTypeId": "",
+                    "programmeCode": (e.programme_code or "").strip(),
+                    "department": (e.department or "").strip(),
+                    "functionLabel": (e.function_label or "").strip(),
+                    "finishSet": (e.finish_set or "").strip(),
+                }
+                if e.target_area_m2 is not None:
+                    tgm = float(e.target_area_m2)
+                    row["targetAreaM2"] = round(tgm, 3)
+                    row["areaDeltaM2"] = round(area - tgm, 3)
+                rows.append(row)
 
     elif cat == "door":
         for e in doc.elements.values():
@@ -428,6 +437,75 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                     }
                 )
 
+    elif cat == "material_assembly":
+        for e in doc.elements.values():
+            if isinstance(e, WallElem):
+                layers = resolved_layers_for_wall(doc, e)
+                lid = e.level_id
+                lev = lvl_lab.get(lid, lid)
+                dx = e.end.x_mm - e.start.x_mm
+                dy = e.end.y_mm - e.start.y_mm
+                length_m = (dx * dx + dy * dy) ** 0.5 / 1000.0
+                height_m = e.height_mm / 1000.0
+                gross_face_m2 = length_m * height_m
+                asm_id = (e.wall_type_id or "").strip()
+                for idx, lyr in enumerate(layers):
+                    tk = str(lyr.get("materialKey") or "").strip()
+                    th_mm = float(lyr["thicknessMm"])
+                    th_m = th_mm / 1000.0
+                    fn = str(lyr.get("function") or "").strip()
+                    vol = gross_face_m2 * th_m
+                    rows.append(
+                        {
+                            "elementId": f"{e.id}:layer-{idx}",
+                            "name": e.name,
+                            "hostElementId": e.id,
+                            "hostKind": "wall",
+                            "assemblyTypeId": asm_id,
+                            "layerIndex": idx,
+                            "layerFunction": fn,
+                            "materialKey": tk,
+                            "materialDisplay": material_display_label(doc, tk or None),
+                            "thicknessMm": round(th_mm, 6),
+                            "grossAreaM2": round(gross_face_m2, 8),
+                            "grossVolumeM3": round(vol, 12),
+                            "levelId": lid,
+                            "level": lev,
+                            "familyTypeId": "",
+                        }
+                    )
+            elif isinstance(e, FloorElem):
+                layers = resolved_layers_for_floor(doc, e)
+                lev = lvl_lab.get(e.level_id, e.level_id)
+                pts = [{"xMm": float(p.x_mm), "yMm": float(p.y_mm)} for p in e.boundary_mm]
+                slab_m2, _perim = _room_polygon_area_perimeter_sqm(pts)
+                asm_id = (e.floor_type_id or "").strip()
+                for idx, lyr in enumerate(layers):
+                    tk = str(lyr.get("materialKey") or "").strip()
+                    th_mm = float(lyr["thicknessMm"])
+                    th_m = th_mm / 1000.0
+                    fn = str(lyr.get("function") or "").strip()
+                    vol = slab_m2 * th_m
+                    rows.append(
+                        {
+                            "elementId": f"{e.id}:layer-{idx}",
+                            "name": e.name,
+                            "hostElementId": e.id,
+                            "hostKind": "floor",
+                            "assemblyTypeId": asm_id,
+                            "layerIndex": idx,
+                            "layerFunction": fn,
+                            "materialKey": tk,
+                            "materialDisplay": material_display_label(doc, tk or None),
+                            "thicknessMm": round(th_mm, 6),
+                            "grossAreaM2": round(slab_m2, 8),
+                            "grossVolumeM3": round(vol, 12),
+                            "levelId": e.level_id,
+                            "level": lev,
+                            "familyTypeId": "",
+                        }
+                    )
+
     else:
         rows = []
 
@@ -498,11 +576,21 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
 
     totals: dict[str, Any] = {}
     if cat == "room" and leaf_rows:
+        tgt_vals = [
+            float(r["targetAreaM2"])
+            for r in leaf_rows
+            if r.get("targetAreaM2") is not None
+        ]
         totals = {
             "kind": "room",
             "rowCount": len(leaf_rows),
             "areaM2": round(sum(float(r.get("areaM2") or 0.0) for r in leaf_rows), 4),
             "perimeterM": round(sum(float(r.get("perimeterM") or 0.0) for r in leaf_rows), 4),
+            **(
+                {"targetAreaM2": round(sum(tgt_vals), 4)}
+                if tgt_vals
+                else {}
+            ),
         }
     elif cat == "window" and leaf_rows:
         totals = {
@@ -540,6 +628,14 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
             "kind": "sheet",
             "rowCount": len(leaf_rows),
             "totalViewports": int(sum(int(r.get("viewportCount") or 0) for r in leaf_rows)),
+        }
+    elif cat == "material_assembly" and leaf_rows:
+        totals = {
+            "kind": "material_assembly",
+            "rowCount": len(leaf_rows),
+            "grossVolumeM3": round(
+                sum(float(r.get("grossVolumeM3") or 0.0) for r in leaf_rows), 8
+            ),
         }
 
     out: dict[str, Any] = {

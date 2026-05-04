@@ -69,6 +69,8 @@ _RULE_DISCIPLINE: dict[str, str] = {
     "room_outline_degenerate": "architecture",
 
     "room_programme_metadata_hint": "architecture",
+    "room_finish_metadata_hint": "architecture",
+    "room_target_area_mismatch": "architecture",
 
     "room_programme_inconsistent_within_level": "architecture",
     "room_outline_spans_axis_room_separation": "architecture",
@@ -693,7 +695,8 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
             )
             continue
 
-        if polygon_area_abs_mm2(pts) < 1_000:
+        area_mm2 = polygon_area_abs_mm2(pts)
+        if area_mm2 < 1_000:
             viols.append(
                 Violation(
                     rule_id="room_outline_degenerate",
@@ -711,6 +714,36 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
                         rule_id="room_programme_metadata_hint",
                         severity="info",
                         message="Room lacks programmeCode and department; documentation schedules/color correlation are weaker.",
+                        element_ids=[room.id],
+                    )
+                )
+            fs = (room.finish_set or "").strip()
+            if (pc or dept) and not fs:
+                viols.append(
+                    Violation(
+                        rule_id="room_finish_metadata_hint",
+                        severity="info",
+                        message=(
+                            "Room has programme or department metadata but finishSet is blank; "
+                            "finish schedules may be incomplete."
+                        ),
+                        element_ids=[room.id],
+                    )
+                )
+
+        tgt = room.target_area_m2
+        if tgt is not None:
+            actual_m2 = area_mm2 / 1_000_000.0
+            tv = float(tgt)
+            if abs(actual_m2 - tv) > max(0.25, 0.05 * tv):
+                viols.append(
+                    Violation(
+                        rule_id="room_target_area_mismatch",
+                        severity="info",
+                        message=(
+                            f"Room outline area ({actual_m2:.3f} m²) differs from targetAreaM2 ({tv:.3f} m²) "
+                            "beyond the advisory tolerance."
+                        ),
                         element_ids=[room.id],
                     )
                 )

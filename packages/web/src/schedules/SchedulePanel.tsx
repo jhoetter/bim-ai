@@ -98,7 +98,16 @@ function scheduleSortKeyChoices(tab: TabKey): readonly string[] {
     }
 
     case 'rooms': {
-      return ['name', 'elementId', 'level', 'areaM2', 'perimeterM', 'programmeCode'];
+      return [
+        'name',
+        'elementId',
+        'level',
+        'areaM2',
+        'targetAreaM2',
+        'areaDeltaM2',
+        'perimeterM',
+        'programmeCode',
+      ];
     }
 
     case 'floors': {
@@ -187,7 +196,16 @@ type RoomVm = {
   level: string;
   areaM2: number;
   perM: number;
+  targetAreaM2: number | null;
+  areaDeltaM2: number | null;
 };
+
+const ROOM_SCHED_COLSPAN = 6;
+
+function fmtRoomScheduleOptM2(v: number | null | undefined): string {
+  if (v == null || Number.isNaN(Number(v))) return '—';
+  return Number(v).toFixed(3);
+}
 
 type DoorVm = {
   id: string;
@@ -208,13 +226,23 @@ type WinVm = {
 };
 
 function roomRowsFromServer(rows: Record<string, unknown>[]): RoomVm[] {
-  return rows.map((r, i) => ({
-    id: String(r.elementId ?? r.element_id ?? `srv-room-${i}`),
-    name: String(r.name ?? ''),
-    level: String(r.level ?? r.levelId ?? r.level_id ?? ''),
-    areaM2: Number(r.areaM2 ?? r.area_m2 ?? 0),
-    perM: Number(r.perimeterM ?? r.perimeter_m ?? 0),
-  }));
+  return rows.map((r, i) => {
+    const rawT = r.targetAreaM2 ?? r.target_area_m2;
+    const rawD = r.areaDeltaM2 ?? r.area_delta_m2;
+    const targetAreaM2 =
+      rawT != null && rawT !== '' && Number.isFinite(Number(rawT)) ? Number(rawT) : null;
+    const areaDeltaM2 =
+      rawD != null && rawD !== '' && Number.isFinite(Number(rawD)) ? Number(rawD) : null;
+    return {
+      id: String(r.elementId ?? r.element_id ?? `srv-room-${i}`),
+      name: String(r.name ?? ''),
+      level: String(r.level ?? r.levelId ?? r.level_id ?? ''),
+      areaM2: Number(r.areaM2 ?? r.area_m2 ?? 0),
+      perM: Number(r.perimeterM ?? r.perimeter_m ?? 0),
+      targetAreaM2,
+      areaDeltaM2,
+    };
+  });
 }
 
 function doorRowsFromServer(rows: Record<string, unknown>[]): DoorVm[] {
@@ -430,6 +458,13 @@ export function SchedulePanel(props: {
 
         const lv = levelLabels.get(r.levelId) ?? r.levelId;
 
+        const tgtRaw = r.targetAreaM2;
+        const targetAreaM2 =
+          tgtRaw != null && Number.isFinite(Number(tgtRaw)) ? Number(tgtRaw) : null;
+
+        const areaDeltaM2 =
+          targetAreaM2 != null ? Math.round((a - targetAreaM2) * 1000) / 1000 : null;
+
         return {
           id: r.id,
 
@@ -440,6 +475,10 @@ export function SchedulePanel(props: {
           areaM2: a,
 
           perM: per,
+
+          targetAreaM2,
+
+          areaDeltaM2,
         };
       });
   }, [props.activeLevelId, props.elementsById, levelLabels]);
@@ -673,8 +712,16 @@ export function SchedulePanel(props: {
   function csvForTab(): string {
     if (tab === 'rooms')
       return [
-        ['Name', 'Level', 'Id', 'Area(m²)', 'Perimeter(m)'],
-        ...roomRows.map((r) => [r.name, r.level, r.id, r.areaM2.toFixed(2), r.perM.toFixed(2)]),
+        ['Name', 'Level', 'Id', 'Area(m²)', 'Tgt(m²)', 'Δ(m²)', 'Perimeter(m)'],
+        ...roomRows.map((r) => [
+          r.name,
+          r.level,
+          r.id,
+          r.areaM2.toFixed(2),
+          fmtRoomScheduleOptM2(r.targetAreaM2),
+          fmtRoomScheduleOptM2(r.areaDeltaM2),
+          r.perM.toFixed(2),
+        ]),
       ]
         .map((line) => line.map((cell) => `"${cell}"`).join(','))
         .join('\n');
@@ -796,6 +843,10 @@ export function SchedulePanel(props: {
     if (kind === 'room') {
       parts.push(`sum area ${Number(totals.areaM2 ?? 0).toFixed(3)} m2`);
       parts.push(`sum perimeter ${Number(totals.perimeterM ?? 0).toFixed(3)} m`);
+      const tsum = totals.targetAreaM2 ?? totals.target_area_m2;
+      if (tsum != null && tsum !== '' && Number.isFinite(Number(tsum))) {
+        parts.push(`sum target ${Number(tsum).toFixed(3)} m²`);
+      }
     }
 
     if (kind === 'window')
@@ -984,13 +1035,15 @@ export function SchedulePanel(props: {
               <VirtualScrollRows
                 maxHeightPx={Math.min(SCHED_TABLE_VIEWPORT_PX, SCHED_TABLE_ROW_PX * rowsVm.length)}
                 rowHeightPx={SCHED_TABLE_ROW_PX}
-                colSpan={4}
+                colSpan={ROOM_SCHED_COLSPAN}
                 rows={rowsVm}
                 header={
                   <tr>
                     <th>Name</th>
                     <th>Level</th>
                     <th className="text-right">A m²</th>
+                    <th className="text-right">Tgt m²</th>
+                    <th className="text-right">Δ m²</th>
                     <th className="text-right">Edge m</th>
                   </tr>
                 }
@@ -999,6 +1052,8 @@ export function SchedulePanel(props: {
                     <td>{r.name}</td>
                     <td className="text-muted">{r.level}</td>
                     <td className="text-right">{r.areaM2.toFixed(2)}</td>
+                    <td className="text-right">{fmtRoomScheduleOptM2(r.targetAreaM2)}</td>
+                    <td className="text-right">{fmtRoomScheduleOptM2(r.areaDeltaM2)}</td>
                     <td className="text-right">{r.perM.toFixed(2)}</td>
                   </tr>
                 )}
@@ -1235,13 +1290,15 @@ export function SchedulePanel(props: {
             <VirtualScrollRows
               maxHeightPx={SCHED_TABLE_VIEWPORT_PX}
               rowHeightPx={SCHED_TABLE_ROW_PX}
-              colSpan={4}
+              colSpan={ROOM_SCHED_COLSPAN}
               rows={roomRows}
               header={
                 <tr>
                   <th>Name</th>
                   <th>Level</th>
                   <th className="text-right">A m²</th>
+                  <th className="text-right">Tgt m²</th>
+                  <th className="text-right">Δ m²</th>
                   <th className="text-right">Edge m</th>
                 </tr>
               }
@@ -1250,6 +1307,8 @@ export function SchedulePanel(props: {
                   <td>{r.name}</td>
                   <td className="text-muted">{r.level}</td>
                   <td className="text-right">{r.areaM2.toFixed(2)}</td>
+                  <td className="text-right">{fmtRoomScheduleOptM2(r.targetAreaM2)}</td>
+                  <td className="text-right">{fmtRoomScheduleOptM2(r.areaDeltaM2)}</td>
                   <td className="text-right">{r.perM.toFixed(2)}</td>
                 </tr>
               )}

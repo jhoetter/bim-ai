@@ -1,6 +1,7 @@
 export type ElemKind =
   | 'project_settings'
   | 'wall_type'
+  | 'floor_type'
   | 'level'
   | 'wall'
   | 'door'
@@ -27,6 +28,8 @@ export type ElemKind =
   | 'schedule'
   | 'callout'
   | 'bcf'
+  | 'agent_assumption'
+  | 'agent_deviation'
   | 'validation_rule';
 
 export type XY = { xMm: number; yMm: number };
@@ -44,6 +47,22 @@ export type WallTypeLayer = {
   materialKey?: string | null;
 };
 
+export type EvidenceRefKind =
+  | 'sheet'
+  | 'viewpoint'
+  | 'plan_view'
+  | 'section_cut'
+  | 'deterministic_png';
+
+export type EvidenceRef = {
+  kind: EvidenceRefKind;
+  sheetId?: string | null;
+  viewpointId?: string | null;
+  planViewId?: string | null;
+  sectionCutId?: string | null;
+  pngBasename?: string | null;
+};
+
 export type Element =
   | {
       kind: 'project_settings';
@@ -59,6 +78,12 @@ export type Element =
       name: string;
       layers: WallTypeLayer[];
       basisLine?: 'center' | 'face_interior' | 'face_exterior';
+    }
+  | {
+      kind: 'floor_type';
+      id: string;
+      name: string;
+      layers: WallTypeLayer[];
     }
   | {
       kind: 'level';
@@ -129,6 +154,7 @@ export type Element =
       department?: string | null;
       functionLabel?: string | null;
       finishSet?: string | null;
+      targetAreaM2?: number | null;
     }
   | {
       kind: 'grid_line';
@@ -168,6 +194,7 @@ export type Element =
       status: 'open' | 'in_progress' | 'done';
       elementIds?: string[];
       viewpointId?: string | null;
+      evidenceRefs?: EvidenceRef[];
     }
   | {
       kind: 'floor';
@@ -178,6 +205,7 @@ export type Element =
       thicknessMm: number;
       structureThicknessMm?: number;
       finishThicknessMm?: number;
+      floorTypeId?: string | null;
       insulationExtensionMm?: number;
       roomBounded?: boolean;
     }
@@ -303,7 +331,33 @@ export type Element =
       grouping?: Record<string, unknown>;
     }
   | { kind: 'callout'; id: string; name: string; parentSheetId: string; outlineMm: XY[] }
-  | { kind: 'bcf'; id: string; title: string; viewpointRef?: string | null; status?: string }
+  | {
+      kind: 'bcf';
+      id: string;
+      title: string;
+      viewpointRef?: string | null;
+      status?: string;
+      elementIds?: string[];
+      planViewId?: string | null;
+      sectionCutId?: string | null;
+      evidenceRefs?: EvidenceRef[];
+    }
+  | {
+      kind: 'agent_assumption';
+      id: string;
+      statement: string;
+      source?: 'manual' | 'bundle_dry_run' | 'evidence_summary';
+      relatedElementIds?: string[];
+      relatedTopicId?: string | null;
+    }
+  | {
+      kind: 'agent_deviation';
+      id: string;
+      statement: string;
+      severity?: 'info' | 'warning' | 'error';
+      relatedAssumptionId?: string | null;
+      relatedElementIds?: string[];
+    }
   | { kind: 'validation_rule'; id: string; name: string; ruleJson: Record<string, unknown> };
 
 export type Violation = {

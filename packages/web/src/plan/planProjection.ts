@@ -239,15 +239,16 @@ export function planViewInheritanceSummaryLines(
   const a = resolvePlanAnnotationHints(elementsById, planViewId);
   const tmplId = el.viewTemplateId;
   const tmpl =
-    tmplId && elementsById[tmplId]?.kind === 'view_template'
-      ? elementsById[tmplId]
-      : undefined;
+    tmplId && elementsById[tmplId]?.kind === 'view_template' ? elementsById[tmplId] : undefined;
 
   const effDetail = g?.detailLevel ?? 'medium';
   const effFill = g?.roomFillOpacityScale ?? 1;
   const pvDetail =
-    el.planDetailLevel === undefined || el.planDetailLevel === null ? 'inherit' : el.planDetailLevel;
-  const pvFill = el.planRoomFillOpacityScale == null ? 'inherit' : String(el.planRoomFillOpacityScale);
+    el.planDetailLevel === undefined || el.planDetailLevel === null
+      ? 'inherit'
+      : el.planDetailLevel;
+  const pvFill =
+    el.planRoomFillOpacityScale == null ? 'inherit' : String(el.planRoomFillOpacityScale);
 
   const vtDetail =
     tmpl == null ? '—' : tmpl.planDetailLevel == null ? 'inherit→medium' : tmpl.planDetailLevel;

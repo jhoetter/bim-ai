@@ -150,6 +150,7 @@ class CreateRoomOutlineCmd(BaseModel):
     department: str | None = Field(default=None, alias="department")
     function_label: str | None = Field(default=None, alias="functionLabel")
     finish_set: str | None = Field(default=None, alias="finishSet")
+    target_area_m2: float | None = Field(default=None, alias="targetAreaM2")
 
 
 class CreateRoomRectangleCmd(BaseModel):
@@ -170,6 +171,7 @@ class CreateRoomRectangleCmd(BaseModel):
     department: str | None = Field(default=None, alias="department")
     function_label: str | None = Field(default=None, alias="functionLabel")
     finish_set: str | None = Field(default=None, alias="finishSet")
+    target_area_m2: float | None = Field(default=None, alias="targetAreaM2")
 
 
 class CreateRoomPolyCmd(BaseModel):
@@ -188,6 +190,7 @@ class CreateRoomPolyCmd(BaseModel):
     department: str | None = Field(default=None, alias="department")
     function_label: str | None = Field(default=None, alias="functionLabel")
     finish_set: str | None = Field(default=None, alias="finishSet")
+    target_area_m2: float | None = Field(default=None, alias="targetAreaM2")
 
 
 class DeleteElementsCmd(BaseModel):
@@ -250,6 +253,23 @@ class CreateWallTypeCmd(BaseModel):
     basis_line: str = Field(alias="basisLine", default="center")
 
 
+class UpsertWallTypeCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["upsertWallType"] = "upsertWallType"
+    id: str
+    name: str = "Wall type"
+    layers: list[WallTypeLayer] = Field(default_factory=list)
+    basis_line: str = Field(alias="basisLine", default="center")
+
+
+class UpsertFloorTypeCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["upsertFloorType"] = "upsertFloorType"
+    id: str
+    name: str = "Floor type"
+    layers: list[WallTypeLayer] = Field(default_factory=list)
+
+
 class AssignWallDatumConstraintsCmd(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     type: Literal["assignWallDatumConstraints"] = "assignWallDatumConstraints"
@@ -271,6 +291,7 @@ class CreateFloorCmd(BaseModel):
     thickness_mm: float = Field(alias="thicknessMm", default=220)
     structure_thickness_mm: float = Field(alias="structureThicknessMm", default=140)
     finish_thickness_mm: float = Field(alias="finishThicknessMm", default=0)
+    floor_type_id: str | None = Field(default=None, alias="floorTypeId")
     room_bounded: bool = Field(default=False, alias="roomBounded")
 
 
@@ -535,6 +556,8 @@ Command = Annotated[
     | SaveViewpointCmd
     | UpsertProjectSettingsCmd
     | CreateWallTypeCmd
+    | UpsertWallTypeCmd
+    | UpsertFloorTypeCmd
     | AssignWallDatumConstraintsCmd
     | CreateFloorCmd
     | CreateRoofCmd

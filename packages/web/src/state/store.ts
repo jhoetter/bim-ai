@@ -2,6 +2,8 @@ import { create } from 'zustand';
 
 import type {
   Element,
+  EvidenceRef,
+  EvidenceRefKind,
   ModelDelta,
   PerspectiveId,
   Snapshot,
@@ -191,6 +193,60 @@ function coerceXYZ(raw: Record<string, unknown>): { xMm: number; yMm: number; zM
   };
 }
 
+const _EVIDENCE_REF_KINDS = new Set<EvidenceRefKind>([
+  'sheet',
+  'viewpoint',
+  'plan_view',
+  'section_cut',
+  'deterministic_png',
+]);
+
+function coerceEvidenceRefs(rawUnknown: unknown): EvidenceRef[] {
+  if (!Array.isArray(rawUnknown)) return [];
+  const refs: EvidenceRef[] = [];
+  for (const item of rawUnknown) {
+    if (typeof item !== 'object' || item === null) continue;
+    const o = item as Record<string, unknown>;
+    const kindRaw = o.kind;
+    if (typeof kindRaw !== 'string' || !_EVIDENCE_REF_KINDS.has(kindRaw as EvidenceRefKind)) {
+      continue;
+    }
+    const kind = kindRaw as EvidenceRefKind;
+    const sheetId =
+      typeof (o.sheetId ?? o.sheet_id) === 'string' ? String(o.sheetId ?? o.sheet_id) : undefined;
+    const viewpointId =
+      typeof (o.viewpointId ?? o.viewpoint_id) === 'string'
+        ? String(o.viewpointId ?? o.viewpoint_id)
+        : undefined;
+    const planViewId =
+      typeof (o.planViewId ?? o.plan_view_id) === 'string'
+        ? String(o.planViewId ?? o.plan_view_id)
+        : undefined;
+    const sectionCutId =
+      typeof (o.sectionCutId ?? o.section_cut_id) === 'string'
+        ? String(o.sectionCutId ?? o.section_cut_id)
+        : undefined;
+    const pngBasename =
+      typeof (o.pngBasename ?? o.png_basename) === 'string'
+        ? String(o.pngBasename ?? o.png_basename)
+        : undefined;
+    refs.push({
+      kind,
+      ...(sheetId !== undefined ? { sheetId } : {}),
+      ...(viewpointId !== undefined ? { viewpointId } : {}),
+      ...(planViewId !== undefined ? { planViewId } : {}),
+      ...(sectionCutId !== undefined ? { sectionCutId } : {}),
+      ...(pngBasename !== undefined ? { pngBasename } : {}),
+    });
+  }
+  refs.sort((a, b) => {
+    const ak = `${a.kind}|${a.sheetId ?? ''}|${a.viewpointId ?? ''}|${a.planViewId ?? ''}|${a.sectionCutId ?? ''}|${a.pngBasename ?? ''}`;
+    const bk = `${b.kind}|${b.sheetId ?? ''}|${b.viewpointId ?? ''}|${b.planViewId ?? ''}|${b.sectionCutId ?? ''}|${b.pngBasename ?? ''}`;
+    return ak.localeCompare(bk);
+  });
+  return refs;
+}
+
 function readPlanViewBoolOverride(raw: unknown): boolean | undefined {
   if (raw === null || raw === undefined) return undefined;
   if (typeof raw === 'boolean') return raw;
@@ -339,6 +395,14 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
       ...(typeof raw.finishSet === 'string' || typeof raw.finish_set === 'string'
         ? { finishSet: String(raw.finishSet ?? raw.finish_set) }
         : {}),
+      ...(raw.targetAreaM2 !== undefined || raw.target_area_m2 !== undefined
+        ? {
+            targetAreaM2:
+              raw.targetAreaM2 === null || raw.target_area_m2 === null
+                ? null
+                : Number(raw.targetAreaM2 ?? raw.target_area_m2),
+          }
+        : {}),
     };
   }
   if (kind === 'grid_line') {
@@ -434,9 +498,10 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
     const elementIdsRaw = raw.elementIds ?? raw.element_ids ?? [];
     const elementIds =
       Array.isArray(elementIdsRaw) && elementIdsRaw.every((x) => typeof x === 'string')
-        ? elementIdsRaw
+        ? [...elementIdsRaw].sort()
         : [];
     const title = typeof raw.title === 'string' ? raw.title : name;
+    const evidenceRefs = coerceEvidenceRefs(raw.evidenceRefs ?? raw.evidence_refs);
     return {
       kind: 'issue',
       id,
@@ -444,6 +509,7 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
       status,
       elementIds,
       viewpointId: (raw.viewpointId ?? raw.viewpoint_id ?? null) as string | null,
+      ...(evidenceRefs.length ? { evidenceRefs } : {}),
     };
   }
 
@@ -483,6 +549,24 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
     };
   }
 
+  if (kind === 'floor_type') {
+    const layersRaw = Array.isArray(raw.layers) ? raw.layers : [];
+    const layers = layersRaw.map((l) => {
+      const rr = (l ?? {}) as Record<string, unknown>;
+      return {
+        thicknessMm: Number(rr.thicknessMm ?? rr.thickness_mm ?? 0),
+        function: (rr.function as 'structure' | 'insulation' | 'finish') ?? 'structure',
+        materialKey: (rr.materialKey ?? rr.material_key) as string | null | undefined,
+      };
+    });
+    return {
+      kind: 'floor_type',
+      id,
+      name,
+      layers,
+    };
+  }
+
   if (kind === 'floor') {
     return {
       kind: 'floor',
@@ -493,6 +577,9 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
       thicknessMm: Number(raw.thicknessMm ?? raw.thickness_mm ?? 220),
       structureThicknessMm: Number(raw.structureThicknessMm ?? raw.structure_thickness_mm ?? 140),
       finishThicknessMm: Number(raw.finishThicknessMm ?? raw.finish_thickness_mm ?? 0),
+      ...(raw.floorTypeId || raw.floor_type_id
+        ? { floorTypeId: String(raw.floorTypeId ?? raw.floor_type_id) }
+        : {}),
       insulationExtensionMm: Number(raw.insulationExtensionMm ?? raw.insulation_extension_mm ?? 0),
       roomBounded: Boolean(raw.roomBounded ?? raw.room_bounded),
     };
@@ -795,12 +882,62 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
   }
 
   if (kind === 'bcf') {
+    const elementIdsRaw = raw.elementIds ?? raw.element_ids ?? [];
+    const elementIds =
+      Array.isArray(elementIdsRaw) && elementIdsRaw.every((x) => typeof x === 'string')
+        ? [...elementIdsRaw].sort()
+        : [];
+    const evidenceRefs = coerceEvidenceRefs(raw.evidenceRefs ?? raw.evidence_refs);
     return {
       kind: 'bcf',
       id,
       title: typeof raw.title === 'string' ? raw.title : id,
       viewpointRef: (raw.viewpointRef ?? raw.viewpoint_ref ?? null) as string | null,
       status: typeof raw.status === 'string' ? raw.status : 'open',
+      ...(elementIds.length ? { elementIds } : {}),
+      planViewId: (raw.planViewId ?? raw.plan_view_id ?? null) as string | null,
+      sectionCutId: (raw.sectionCutId ?? raw.section_cut_id ?? null) as string | null,
+      ...(evidenceRefs.length ? { evidenceRefs } : {}),
+    };
+  }
+
+  if (kind === 'agent_assumption') {
+    const relatedRaw = raw.relatedElementIds ?? raw.related_element_ids ?? [];
+    const relatedElementIds =
+      Array.isArray(relatedRaw) && relatedRaw.every((x) => typeof x === 'string')
+        ? [...relatedRaw].sort()
+        : [];
+    const src = raw.source;
+    const source =
+      src === 'bundle_dry_run' || src === 'evidence_summary' ? src : ('manual' as const);
+    return {
+      kind: 'agent_assumption',
+      id,
+      statement: typeof raw.statement === 'string' ? raw.statement : '',
+      source,
+      ...(relatedElementIds.length ? { relatedElementIds } : {}),
+      relatedTopicId: (raw.relatedTopicId ?? raw.related_topic_id ?? null) as string | null,
+    };
+  }
+
+  if (kind === 'agent_deviation') {
+    const sev = raw.severity;
+    const severity =
+      sev === 'info' || sev === 'warning' || sev === 'error' ? sev : ('warning' as const);
+    const relatedRaw = raw.relatedElementIds ?? raw.related_element_ids ?? [];
+    const relatedElementIds =
+      Array.isArray(relatedRaw) && relatedRaw.every((x) => typeof x === 'string')
+        ? [...relatedRaw].sort()
+        : [];
+    return {
+      kind: 'agent_deviation',
+      id,
+      statement: typeof raw.statement === 'string' ? raw.statement : '',
+      severity,
+      relatedAssumptionId: (raw.relatedAssumptionId ?? raw.related_assumption_id ?? null) as
+        | string
+        | null,
+      ...(relatedElementIds.length ? { relatedElementIds } : {}),
     };
   }
 

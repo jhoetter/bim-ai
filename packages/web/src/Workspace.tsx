@@ -233,11 +233,14 @@ export function Workspace() {
     if (!pv || pv.kind !== 'plan_view') return;
     const min = pv.cropMinMm;
     const max = pv.cropMaxMm;
-    setPlanCropDraft({
+    const next = {
       minX: min ? String(min.xMm) : '',
       minY: min ? String(min.yMm) : '',
       maxX: max ? String(max.xMm) : '',
       maxY: max ? String(max.yMm) : '',
+    };
+    queueMicrotask(() => {
+      setPlanCropDraft(next);
     });
   }, [selectedId, elementsById]);
 
@@ -1414,9 +1417,7 @@ export function Workspace() {
                       <input
                         className="mt-1 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px]"
                         value={planCropDraft.minX}
-                        onChange={(e) =>
-                          setPlanCropDraft((d) => ({ ...d, minX: e.target.value }))
-                        }
+                        onChange={(e) => setPlanCropDraft((d) => ({ ...d, minX: e.target.value }))}
                       />
                     </label>
                     <label className="block text-[10px] text-muted">
@@ -1424,9 +1425,7 @@ export function Workspace() {
                       <input
                         className="mt-1 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px]"
                         value={planCropDraft.minY}
-                        onChange={(e) =>
-                          setPlanCropDraft((d) => ({ ...d, minY: e.target.value }))
-                        }
+                        onChange={(e) => setPlanCropDraft((d) => ({ ...d, minY: e.target.value }))}
                       />
                     </label>
                     <label className="block text-[10px] text-muted">
@@ -1434,9 +1433,7 @@ export function Workspace() {
                       <input
                         className="mt-1 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px]"
                         value={planCropDraft.maxX}
-                        onChange={(e) =>
-                          setPlanCropDraft((d) => ({ ...d, maxX: e.target.value }))
-                        }
+                        onChange={(e) => setPlanCropDraft((d) => ({ ...d, maxX: e.target.value }))}
                       />
                     </label>
                     <label className="block text-[10px] text-muted">
@@ -1444,9 +1441,7 @@ export function Workspace() {
                       <input
                         className="mt-1 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px]"
                         value={planCropDraft.maxY}
-                        onChange={(e) =>
-                          setPlanCropDraft((d) => ({ ...d, maxY: e.target.value }))
-                        }
+                        onChange={(e) => setPlanCropDraft((d) => ({ ...d, maxY: e.target.value }))}
                       />
                     </label>
                   </div>
@@ -1711,6 +1706,114 @@ export function Workspace() {
                         elementId: selected.id,
                         key: 'name',
                         value: v,
+                      });
+                    }}
+                  />
+                </label>
+              </div>
+            ) : null}
+            {selected?.kind === 'room' ? (
+              <div className="mb-3 space-y-2 text-[11px]">
+                <div className="font-semibold text-muted">Room programme & finishes</div>
+                <label className="block text-[10px] text-muted">
+                  Name
+                  <input
+                    className="mt-1 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px]"
+                    defaultValue={selected.name}
+                    key={`rm-name-${selected.id}-${selected.name}-${revision}`}
+                    onBlur={(e) => {
+                      const v = e.target.value.trim();
+                      if (!v || v === selected.name) return;
+                      void onSemantic({
+                        type: 'updateElementProperty',
+                        elementId: selected.id,
+                        key: 'name',
+                        value: v,
+                      });
+                    }}
+                  />
+                </label>
+                <label className="block text-[10px] text-muted">
+                  Programme code
+                  <input
+                    className="mt-1 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px]"
+                    defaultValue={selected.programmeCode ?? ''}
+                    key={`rm-pc-${selected.id}-${selected.programmeCode ?? ''}-${revision}`}
+                    onBlur={(e) => {
+                      void onSemantic({
+                        type: 'updateElementProperty',
+                        elementId: selected.id,
+                        key: 'programmeCode',
+                        value: e.target.value.trim(),
+                      });
+                    }}
+                  />
+                </label>
+                <label className="block text-[10px] text-muted">
+                  Department
+                  <input
+                    className="mt-1 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px]"
+                    defaultValue={selected.department ?? ''}
+                    key={`rm-dep-${selected.id}-${selected.department ?? ''}-${revision}`}
+                    onBlur={(e) => {
+                      void onSemantic({
+                        type: 'updateElementProperty',
+                        elementId: selected.id,
+                        key: 'department',
+                        value: e.target.value.trim(),
+                      });
+                    }}
+                  />
+                </label>
+                <label className="block text-[10px] text-muted">
+                  Function label
+                  <input
+                    className="mt-1 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px]"
+                    defaultValue={selected.functionLabel ?? ''}
+                    key={`rm-fn-${selected.id}-${selected.functionLabel ?? ''}-${revision}`}
+                    onBlur={(e) => {
+                      void onSemantic({
+                        type: 'updateElementProperty',
+                        elementId: selected.id,
+                        key: 'functionLabel',
+                        value: e.target.value.trim(),
+                      });
+                    }}
+                  />
+                </label>
+                <label className="block text-[10px] text-muted">
+                  Finish set
+                  <input
+                    className="mt-1 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px]"
+                    defaultValue={selected.finishSet ?? ''}
+                    key={`rm-fs-${selected.id}-${selected.finishSet ?? ''}-${revision}`}
+                    onBlur={(e) => {
+                      void onSemantic({
+                        type: 'updateElementProperty',
+                        elementId: selected.id,
+                        key: 'finishSet',
+                        value: e.target.value.trim(),
+                      });
+                    }}
+                  />
+                </label>
+                <label className="block text-[10px] text-muted">
+                  Target area (m²); empty on blur clears
+                  <input
+                    className="mt-1 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px]"
+                    placeholder="optional"
+                    type="text"
+                    inputMode="decimal"
+                    defaultValue={
+                      selected.targetAreaM2 == null ? '' : String(selected.targetAreaM2)
+                    }
+                    key={`rm-tgt-${selected.id}-${selected.targetAreaM2 ?? 'x'}-${revision}`}
+                    onBlur={(e) => {
+                      void onSemantic({
+                        type: 'updateElementProperty',
+                        elementId: selected.id,
+                        key: 'targetAreaM2',
+                        value: e.target.value.trim(),
                       });
                     }}
                   />
