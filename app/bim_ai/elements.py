@@ -27,6 +27,21 @@ class CameraMm(BaseModel):
     up: Vec3Mm
 
 
+EvidenceRefKind = Literal["sheet", "viewpoint", "plan_view", "section_cut", "deterministic_png"]
+
+
+class EvidenceRef(BaseModel):
+    """BCF/issue pointer into deterministic evidence rows or PNG basenames."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: EvidenceRefKind
+    sheet_id: str | None = Field(default=None, alias="sheetId")
+    viewpoint_id: str | None = Field(default=None, alias="viewpointId")
+    plan_view_id: str | None = Field(default=None, alias="planViewId")
+    section_cut_id: str | None = Field(default=None, alias="sectionCutId")
+    png_basename: str | None = Field(default=None, alias="pngBasename")
+
+
 WallLayerFunction = Literal["structure", "insulation", "finish"]
 WallBasisLine = Literal["center", "face_interior", "face_exterior"]
 PlanDetailLevelPlan = Literal["coarse", "medium", "fine"]
@@ -194,6 +209,7 @@ class IssueElem(BaseModel):
     element_ids: list[str] = Field(default_factory=list, alias="elementIds")
     viewpoint_id: str | None = Field(default=None, alias="viewpointId")
     assignee_placeholder: str | None = Field(default=None, alias="assigneePlaceholder")
+    evidence_refs: list[EvidenceRef] = Field(default_factory=list, alias="evidenceRefs")
 
 
 class FloorElem(BaseModel):
@@ -402,6 +418,36 @@ class BcfElem(BaseModel):
     title: str
     viewpoint_ref: str | None = Field(default=None, alias="viewpointRef")
     status: str = Field(default="open")
+    element_ids: list[str] = Field(default_factory=list, alias="elementIds")
+    plan_view_id: str | None = Field(default=None, alias="planViewId")
+    section_cut_id: str | None = Field(default=None, alias="sectionCutId")
+    evidence_refs: list[EvidenceRef] = Field(default_factory=list, alias="evidenceRefs")
+
+
+AgentAssumptionSource = Literal["manual", "bundle_dry_run", "evidence_summary"]
+
+
+class AgentAssumptionElem(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["agent_assumption"] = "agent_assumption"
+    id: str
+    statement: str
+    source: AgentAssumptionSource = "manual"
+    related_element_ids: list[str] = Field(default_factory=list, alias="relatedElementIds")
+    related_topic_id: str | None = Field(default=None, alias="relatedTopicId")
+
+
+AgentDeviationSeverity = Literal["info", "warning", "error"]
+
+
+class AgentDeviationElem(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["agent_deviation"] = "agent_deviation"
+    id: str
+    statement: str
+    severity: AgentDeviationSeverity = "warning"
+    related_assumption_id: str | None = Field(default=None, alias="relatedAssumptionId")
+    related_element_ids: list[str] = Field(default_factory=list, alias="relatedElementIds")
 
 
 class ValidationRuleElem(BaseModel):
@@ -442,6 +488,8 @@ ElementKind = Literal[
     "schedule",
     "callout",
     "bcf",
+    "agent_assumption",
+    "agent_deviation",
     "validation_rule",
 ]
 
@@ -476,6 +524,8 @@ Element = Annotated[
     | ScheduleElem
     | CalloutElem
     | BcfElem
+    | AgentAssumptionElem
+    | AgentDeviationElem
     | ValidationRuleElem,
     Field(discriminator="kind"),
 ]

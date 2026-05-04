@@ -11,6 +11,8 @@ from bim_ai.commands import (
     AssignWallDatumConstraintsCmd,
     AttachWallTopToRoofCmd,
     Command,
+    CreateAgentAssumptionCmd,
+    CreateAgentDeviationCmd,
     CreateBcfTopicCmd,
     CreateCalloutCmd,
     CreateDimensionCmd,
@@ -62,6 +64,8 @@ from bim_ai.commands import (
 from bim_ai.constraints import Violation, evaluate
 from bim_ai.document import Document
 from bim_ai.elements import (
+    AgentAssumptionElem,
+    AgentDeviationElem,
     BcfElem,
     CalloutElem,
     DimensionElem,
@@ -1303,11 +1307,62 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
             bid = cmd.id or new_id()
             if bid in els:
                 raise ValueError(f"duplicate element id '{bid}'")
+            pv = cmd.plan_view_id
+            if pv is not None:
+                pvel = els.get(pv)
+                if not isinstance(pvel, PlanViewElem):
+                    raise ValueError("createBcfTopic.planViewId must reference plan_view")
+            sc = cmd.section_cut_id
+            if sc is not None:
+                scel = els.get(sc)
+                if not isinstance(scel, SectionCutElem):
+                    raise ValueError("createBcfTopic.sectionCutId must reference section_cut")
+            refs_sorted = sorted(
+                cmd.evidence_refs,
+                key=lambda r: (
+                    r.kind,
+                    r.sheet_id or "",
+                    r.viewpoint_id or "",
+                    r.plan_view_id or "",
+                    r.section_cut_id or "",
+                    r.png_basename or "",
+                ),
+            )
             els[bid] = BcfElem(
                 kind="bcf",
                 id=bid,
                 title=cmd.title,
                 viewpoint_ref=cmd.viewpoint_ref,
+                element_ids=sorted(cmd.element_ids),
+                plan_view_id=pv,
+                section_cut_id=sc,
+                evidence_refs=refs_sorted,
+            )
+
+        case CreateAgentAssumptionCmd():
+            aid = cmd.id or new_id()
+            if aid in els:
+                raise ValueError(f"duplicate element id '{aid}'")
+            els[aid] = AgentAssumptionElem(
+                kind="agent_assumption",
+                id=aid,
+                statement=cmd.statement,
+                source=cmd.source,
+                related_element_ids=sorted(cmd.related_element_ids),
+                related_topic_id=cmd.related_topic_id,
+            )
+
+        case CreateAgentDeviationCmd():
+            did = cmd.id or new_id()
+            if did in els:
+                raise ValueError(f"duplicate element id '{did}'")
+            els[did] = AgentDeviationElem(
+                kind="agent_deviation",
+                id=did,
+                statement=cmd.statement,
+                severity=cmd.severity,
+                related_assumption_id=cmd.related_assumption_id,
+                related_element_ids=sorted(cmd.related_element_ids),
             )
 
         case UpsertValidationRuleCmd():

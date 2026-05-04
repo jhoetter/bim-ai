@@ -4,7 +4,7 @@ from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from bim_ai.elements import CameraMm, Vec2Mm, WallTypeLayer
+from bim_ai.elements import CameraMm, EvidenceRef, Vec2Mm, WallTypeLayer
 
 
 class CreateLevelCmd(BaseModel):
@@ -523,6 +523,30 @@ class CreateBcfTopicCmd(BaseModel):
     id: str | None = None
     title: str
     viewpoint_ref: str | None = Field(default=None, alias="viewpointRef")
+    element_ids: list[str] = Field(default_factory=list, alias="elementIds")
+    plan_view_id: str | None = Field(default=None, alias="planViewId")
+    section_cut_id: str | None = Field(default=None, alias="sectionCutId")
+    evidence_refs: list[EvidenceRef] = Field(default_factory=list, alias="evidenceRefs")
+
+
+class CreateAgentAssumptionCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createAgentAssumption"] = "createAgentAssumption"
+    id: str | None = None
+    statement: str
+    source: Literal["manual", "bundle_dry_run", "evidence_summary"] = "manual"
+    related_element_ids: list[str] = Field(default_factory=list, alias="relatedElementIds")
+    related_topic_id: str | None = Field(default=None, alias="relatedTopicId")
+
+
+class CreateAgentDeviationCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createAgentDeviation"] = "createAgentDeviation"
+    id: str | None = None
+    statement: str
+    severity: Literal["info", "warning", "error"] = "warning"
+    related_assumption_id: str | None = Field(default=None, alias="relatedAssumptionId")
+    related_element_ids: list[str] = Field(default_factory=list, alias="relatedElementIds")
 
 
 class UpsertValidationRuleCmd(BaseModel):
@@ -583,6 +607,8 @@ Command = Annotated[
     | UpsertPlanViewCmd
     | CreateCalloutCmd
     | CreateBcfTopicCmd
+    | CreateAgentAssumptionCmd
+    | CreateAgentDeviationCmd
     | UpsertValidationRuleCmd,
     Field(discriminator="type"),
 ]

@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { Btn } from '@bim-ai/ui';
 
 import { useBimStore } from '../state/store';
+import { parseAgentReviewActionsV1, type AgentReviewActionRow } from './agentReviewActions';
 
 type JsonText = string;
 
@@ -83,6 +84,7 @@ export function AgentReviewPane() {
     } | null;
     suggestedBasenameHint: string | null;
     mismatchNotes: string[];
+    reviewActions: AgentReviewActionRow[];
   };
 
   const assumptionsJson = useMemo(() => {
@@ -137,6 +139,7 @@ export function AgentReviewPane() {
       closureReview: null,
       suggestedBasenameHint: null,
       mismatchNotes: [],
+      reviewActions: [],
     });
 
     if (!evidenceTxt) return empty();
@@ -361,6 +364,10 @@ export function AgentReviewPane() {
         };
       });
 
+      const reviewActions = parseAgentReviewActionsV1(
+        payload.agentReviewActions_v1 ?? payload.agent_review_actions_v1,
+      );
+
       const mismatchNotes: string[] = [];
 
       const noteCorrelationDigest = (corr: Record<string, unknown>, label: string, id: string) => {
@@ -495,6 +502,7 @@ export function AgentReviewPane() {
         closureReview,
         suggestedBasenameHint: basename,
         mismatchNotes,
+        reviewActions,
       };
     } catch {
       return {
@@ -510,6 +518,7 @@ export function AgentReviewPane() {
         closureReview: null,
         suggestedBasenameHint: null,
         mismatchNotes: ['Could not parse evidence JSON for artifact summary.'],
+        reviewActions: [],
       };
     }
   }, [evidenceTxt, revision]);
@@ -967,7 +976,8 @@ export function AgentReviewPane() {
       evidenceArtifactSummary.sectionCutRows.length ||
       evidenceArtifactSummary.semanticDigestPrefix16 ||
       evidenceArtifactSummary.closureHints ||
-      evidenceArtifactSummary.closureReview ? (
+      evidenceArtifactSummary.closureReview ||
+      evidenceArtifactSummary.reviewActions.length ? (
         <div className="rounded border border-border bg-background/40 p-2">
           <div className="text-[10px] font-semibold text-muted">Evidence artifact correlation</div>
           <ul className="mt-1 list-disc space-y-1 ps-4 text-[10px] text-muted">
@@ -1062,6 +1072,52 @@ export function AgentReviewPane() {
                   </>
                 ) : null}
               </p>
+            </div>
+          ) : null}
+          {evidenceArtifactSummary.reviewActions.length ? (
+            <div className="mt-3 rounded border border-border/60 bg-background/30 p-2">
+              <div className="text-[10px] font-semibold text-muted">
+                Suggested agent actions (agentReviewActions_v1)
+              </div>
+              <ul className="mt-2 space-y-2">
+                {evidenceArtifactSummary.reviewActions.map((a) => (
+                  <li
+                    key={a.actionId}
+                    className="rounded border border-border/50 bg-background/40 p-2 text-[10px]"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div>
+                        <span className="font-mono text-muted">{a.kind}</span>
+                        <div className="mt-0.5 font-mono text-[9px] text-muted/80">{a.actionId}</div>
+                      </div>
+                      <Btn
+                        type="button"
+                        variant="quiet"
+                        className="shrink-0 text-[10px]"
+                        onClick={() => {
+                          const body = JSON.stringify(
+                            {
+                              actionId: a.actionId,
+                              kind: a.kind,
+                              guidance: a.guidance,
+                              target: a.target,
+                            },
+                            null,
+                            2,
+                          );
+                          void navigator.clipboard.writeText(body).then(
+                            () => pushStep(`Copied agent action ${a.actionId}`),
+                            () => pushStep('Clipboard write failed'),
+                          );
+                        }}
+                      >
+                        Copy JSON
+                      </Btn>
+                    </div>
+                    <p className="mt-1 text-muted">{a.guidance}</p>
+                  </li>
+                ))}
+              </ul>
             </div>
           ) : null}
           {evidenceArtifactSummary.sheetRows.length ? (

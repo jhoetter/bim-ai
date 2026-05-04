@@ -20,6 +20,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import RedirectResponse
 
+from bim_ai.agent_evidence_review_loop import agent_review_actions_v1, bcf_topics_index_v1
 from bim_ai.codes import BUILDING_PRESETS
 from bim_ai.commands import Command
 from bim_ai.constraints import evaluate
@@ -385,6 +386,15 @@ async def evidence_package(
         deterministic_section_cut_evidence=payload["deterministicSectionCutEvidence"],
     )
     payload["agentEvidenceClosureHints"] = agent_evidence_closure_hints()
+    payload["bcfTopicsIndex_v1"] = bcf_topics_index_v1(doc)
+    payload["agentReviewActions_v1"] = agent_review_actions_v1(
+        doc=doc,
+        deterministic_sheet_evidence=payload["deterministicSheetEvidence"],
+        deterministic_3d_view_evidence=payload["deterministic3dViewEvidence"],
+        deterministic_plan_view_evidence=payload["deterministicPlanViewEvidence"],
+        deterministic_section_cut_evidence=payload["deterministicSectionCutEvidence"],
+        violations=viols,
+    )
     return payload
 
 
