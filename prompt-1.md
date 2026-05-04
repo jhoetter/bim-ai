@@ -1,16 +1,16 @@
-# Agent Prompt 1: Room Boundary Authoritative Derivation And Programme Closure
+# Agent Prompt 1: Saved View Definitions And Tag-Style Authoring
 
 ## Mission
 
-You are Agent 1 of the next parallel BIM AI parity batch. Move rooms beyond preview/proxy behavior by making one authoritative room derivation slice from bounded walls and room separation lines. Include unbounded-room diagnostics, programme/area schedule parity, and minimal evidence that the derived boundary can be inspected. Do not open a pull request. Commit and push only your branch.
+You are Agent 1 of the next parallel BIM AI parity batch. Move beyond readout/matrix into a small editable saved-view/template definition workflow: tag style choices, per-view graphics presets, and replay evidence without changing sheet crop or schedule behavior. Do not open a pull request. Commit and push only your branch.
 
 Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
 
-- `WP-B06` Rooms and room separation
-- `WP-C04` Room color schemes and legends
-- `WP-D01` Server-derived schedules
-- `WP-D03` Schedule UI
-- light `WP-V01` Validation/advisor expansion
+- `WP-C01` First-class plan views
+- `WP-C02` Plan projection engine
+- `WP-C03` Plan symbology and graphics
+- `WP-C05` Project browser hierarchy
+- light `WP-E02` 3D clipping / cutaways
 
 ## Start Procedure
 
@@ -20,56 +20,57 @@ Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
    git fetch origin
    git switch main
    git pull --ff-only origin main
-   git switch -c agent/room-boundary-authoritative-derivation
+   git switch -c agent/saved-view-tag-style-authoring
    ```
 
 2. Read first:
    - `spec/revit-production-parity-workpackage-tracker.md`
    - `spec/prd/revit-production-parity-ai-agent-prd.md`
-   - room derivation helpers under `app/bim_ai/`
-   - `app/bim_ai/plan_projection_wire.py`
-   - `app/bim_ai/schedule_derivation.py`
-   - `app/bim_ai/constraints.py`
-   - existing room derivation, schedule, plan projection, and validation tests
+   - `packages/web/src/workspace/ProjectBrowser.tsx`
+   - `packages/web/src/Workspace.tsx`
+   - `packages/web/src/plan/planProjection.ts`
+   - `packages/web/src/workspace/PlanViewGraphicsMatrix.tsx`
+   - backend `updateElementProperty` tests for plan/view_template fields
+   - existing plan and workspace Vitest tests
 
 ## File Ownership Rules
 
-Own room derivation and room-specific evidence only. Avoid broad `Workspace.tsx` edits and avoid changing non-room validation classes. Coordinate mentally with the validation prompt by keeping any `constraints.py` edits scoped to room boundary diagnostics.
+Own saved-view/template authoring UI and deterministic readout only. Avoid broad `Workspace.tsx` rewrites; keep any edit localized to mounting an isolated component. Do not touch sheet crop, schedule behavior, IFC, evidence loops, or geometry kernels.
 
 ## Allowed Scope
 
 Prefer changes in:
 
-- `app/bim_ai/room_derivation.py` or existing room derivation helpers
-- `app/bim_ai/plan_projection_wire.py`, only for room boundary evidence
-- `app/bim_ai/schedule_derivation.py`, only for room programme/area deltas
-- `app/bim_ai/constraints.py`, only for room-boundary diagnostics
-- focused room derivation, schedule, and validation tests
+- `packages/web/src/workspace/ProjectBrowser.tsx`
+- isolated child components under `packages/web/src/workspace/`
+- `packages/web/src/plan/planProjection.ts`, only for deterministic UI readout helpers
+- focused plan/workspace tests
+- backend `updateElementProperty` tests only for existing fields
 - `spec/revit-production-parity-workpackage-tracker.md`
 
 ## Non-Goals
 
-- Do not redesign all room schedule columns.
-- Do not introduce broad UI panels.
-- Do not add non-room validation bundles.
-- Do not touch IFC replay, section graphics, or performance diagnostics.
+- Do not redesign the Workspace shell.
+- Do not add broad backend schemas unless existing fields are insufficient and replay-tested.
+- Do not change sheet crop/projection semantics.
+- Do not touch schedules, IFC, or Agent Review.
 - Do not open a PR.
 
 ## Implementation Checklist
 
-- Add one deterministic authoritative room derivation path from bounded walls and/or room separation lines.
-- Expose enough evidence to distinguish authoritative derived rooms from preview-only warnings.
-- Add unbounded or ambiguous room diagnostics with deterministic IDs/messages.
-- Preserve existing target area, finish, programme, and room schedule behavior.
-- Add tests for one successful derivation case and one unbounded/ambiguous case.
-- Update tracker rows with exact scope, tests, and remaining room parity blockers.
+- Add one narrow editable saved-view/template definition workflow for tag styles or graphics presets.
+- Ensure edits persist through existing element property or command paths.
+- Keep Project Browser evidence and Inspector readouts deterministic.
+- Add tests for UI/readout behavior and any backend replay path used.
+- Update tracker rows with exact fields, UI path, tests, and remaining template/tag-style blockers.
 
 ## Validation
 
 Run focused checks:
 
 ```bash
-cd app && ruff check bim_ai tests && pytest tests/test_room* tests/test_plan_projection* tests/test_constraints_room_programme_consistency.py
+cd packages/web && pnpm exec vitest run src/plan src/workspace
+cd app && ruff check bim_ai tests && pytest tests/test_update_element_property_plan_view.py
 ```
 
 Then run, if practical:
@@ -80,7 +81,7 @@ pnpm verify
 
 ## Tracker Update
 
-Update `WP-B06`, `WP-C04`, `WP-D01`, `WP-D03`, and any narrow `WP-V01` evidence. Add a Recent Sprint Ledger entry describing the authoritative derivation slice and remaining room derivation gaps.
+Update `WP-C01`, `WP-C02`, `WP-C03`, `WP-C05`, and any narrow `WP-E02` evidence. Add a Recent Sprint Ledger entry describing the saved-view/template authoring slice.
 
 ## Commit And Push
 
@@ -91,7 +92,7 @@ git status
 git diff
 git add <changed files>
 git commit -m "$(cat <<'EOF'
-feat(rooms): add authoritative boundary derivation slice
+feat(web): add saved view tag style authoring
 
 EOF
 )"
@@ -100,4 +101,4 @@ git push -u origin HEAD
 
 ## Final Report
 
-Return branch, commit SHA, derivation behavior added, tracker rows updated, validation results, and shared-file merge risks.
+Return branch, commit SHA, authoring workflow added, tracker rows updated, validation results, and shared-file merge risks.

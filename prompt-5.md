@@ -1,15 +1,17 @@
-# Agent Prompt 5: Performance And Collaboration Scale Proof
+# Agent Prompt 5: Evidence Diff Ingestion And Agent Review Fix Loop
 
 ## Mission
 
-You are Agent 5 of the next parallel BIM AI parity batch. Raise confidence on large models and scoped collaboration by adding larger deterministic fixtures, incremental or worker-friendly derivation diagnostics, and conflict/replay evidence without broad UI rewrites. Do not open a pull request. Commit and push only your branch.
+You are Agent 5 of the next parallel BIM AI parity batch. Move from placeholder artifact/diff metadata toward a closed evidence review loop: stale/missing screenshot detection, ingested diff rows, issue/action targeting, and Agent Review guidance. Do not open a pull request. Commit and push only your branch.
 
 Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
 
-- `WP-P01` Browser performance budget
-- `WP-P02` Collaboration model
-- `WP-X01` JSON snapshot and command replay
-- light `WP-A04` CI verification gates
+- `WP-F02` Agent review UI
+- `WP-F03` Automated evidence comparison
+- `WP-A02` Evidence package API
+- `WP-A03` Playwright evidence baselines
+- `WP-A04` CI verification gates
+- light `WP-X04` BCF export/import
 
 ## Start Procedure
 
@@ -19,56 +21,57 @@ Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
    git fetch origin
    git switch main
    git pull --ff-only origin main
-   git switch -c agent/performance-collaboration-scale-proof
+   git switch -c agent/evidence-diff-fix-loop
    ```
 
 2. Read first:
    - `spec/revit-production-parity-workpackage-tracker.md`
    - `spec/prd/revit-production-parity-ai-agent-prd.md`
-   - `app/bim_ai/engine.py`
-   - `app/bim_ai/summary.py`
-   - performance tests and cockpit smoke tests
-   - undo/redo/replay diagnostics tests
-   - CI workflow timing hints if thresholds change
+   - `app/bim_ai/evidence_manifest.py`
+   - agent review/evidence loop helpers
+   - `packages/web/src/workspace/AgentReviewPane.tsx`
+   - Playwright evidence specs
+   - `.github/workflows/ci.yml`
 
 ## File Ownership Rules
 
-Own scale diagnostics, performance tests, and collaboration replay evidence. Avoid schedule derivation, IFC replay, room derivation, geometry kernels, and visual rendering baselines except for timing evidence.
+Own evidence diff ingestion and Agent Review guidance only. Avoid implementing external storage or real rasterization; build on the current placeholder artifact contract. Do not touch IFC replay, schedule UI, material catalogs, or geometry kernels.
 
 ## Allowed Scope
 
 Prefer changes in:
 
-- `app/bim_ai/summary.py` or model summary/regeneration diagnostics helpers
-- `app/bim_ai/engine.py`, only for diagnostics or replay evidence
-- performance and collaboration tests
-- cockpit smoke timing thresholds if justified by deterministic evidence
-- CI evidence hints only if timing evidence changes
+- `app/bim_ai/evidence_manifest.py`
+- agent review/evidence loop helpers
+- `packages/web/src/workspace/AgentReviewPane.tsx` or isolated child components
+- Playwright evidence specs
+- CI correlation hints
+- focused evidence/Agent Review tests
 - `spec/revit-production-parity-workpackage-tracker.md`
 
 ## Non-Goals
 
-- Do not implement multiplayer persistence.
-- Do not rewrite command execution.
-- Do not change model semantics or schedule/IFC behavior.
-- Do not add flaky timing requirements without local and CI margins.
+- Do not implement external artifact storage.
+- Do not implement real server-side SVG-to-PNG rasterization.
+- Do not change OpenBIM or schedule semantics.
+- Do not rewrite Agent Review UI broadly.
 - Do not open a PR.
 
 ## Implementation Checklist
 
-- Add one larger deterministic fixture or replay workload that exercises scale without relying on external services.
-- Add or refine diagnostics that would support incremental/worker-friendly derivation later.
-- Add one collaboration/conflict replay evidence improvement with stable output.
-- Keep timing thresholds conservative and documented.
-- Add tests that are deterministic and suitable for CI.
-- Update tracker rows with exact workload size, timing/diagnostic evidence, and remaining collaboration blockers.
+- Add one deterministic stale/missing screenshot or ingested-diff signal.
+- Connect that signal to Agent Review guidance or action targeting.
+- Keep digest semantics clear for derivative summaries.
+- Add backend tests and, where practical, a focused web or Playwright assertion.
+- Update tracker rows with exact manifest keys, UI path, tests, and remaining fix-loop blockers.
 
 ## Validation
 
 Run focused checks:
 
 ```bash
-cd app && ruff check bim_ai tests && pytest tests/test_*performance* tests/test_*diagnostic* tests/test_undo_replay_constraint.py
+cd app && ruff check bim_ai tests && pytest tests/test_evidence* tests/test_agent*
+cd packages/web && pnpm exec vitest run src/workspace
 ```
 
 Then run, if practical:
@@ -79,7 +82,7 @@ pnpm verify
 
 ## Tracker Update
 
-Update `WP-P01`, `WP-P02`, `WP-X01`, and any affected `WP-A04` evidence. Add a Recent Sprint Ledger entry with the fixture size, timing evidence, and collaboration/replay diagnostics.
+Update `WP-F02`, `WP-F03`, `WP-A02`, `WP-A03`, `WP-A04`, and any narrow `WP-X04` evidence. Add a Recent Sprint Ledger entry describing the evidence diff/fix-loop behavior.
 
 ## Commit And Push
 
@@ -90,7 +93,7 @@ git status
 git diff
 git add <changed files>
 git commit -m "$(cat <<'EOF'
-feat(perf): add collaboration scale proof
+feat(evidence): add diff ingestion fix loop
 
 EOF
 )"
@@ -99,4 +102,4 @@ git push -u origin HEAD
 
 ## Final Report
 
-Return branch, commit SHA, scale/collaboration behavior added, tracker rows updated, validation results, and shared-file merge risks.
+Return branch, commit SHA, evidence/fix-loop behavior added, tracker rows updated, validation results, and shared-file merge risks.
