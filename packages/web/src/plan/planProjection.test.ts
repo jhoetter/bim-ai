@@ -3,7 +3,9 @@ import { describe, expect, it } from 'vitest';
 
 import {
   canonHiddenCategory,
+  planViewGraphicsMatrixRows,
   planViewInheritanceSummaryLines,
+  planViewProjectBrowserEvidenceLine,
   resolvePlanGraphicHints,
   resolvePlanViewDisplay,
 } from './planProjection';
@@ -168,6 +170,67 @@ describe('planProjection', () => {
     expect(lines.some((l) => l.includes('Stored plan_view: detail=coarse'))).toBe(true);
     expect(lines.some((l) => l.includes('roomFill=0.15'))).toBe(true);
     expect(lines.some((l) => l.includes('Opening tags: effective=off'))).toBe(true);
+  });
+
+  it('planViewGraphicsMatrixRows inherits template defaults and counts merged hidden kinds', () => {
+    const elementsById = {
+      vt: {
+        kind: 'view_template',
+        id: 'vt',
+        name: 'T',
+        scale: 'scale_100',
+        planDetailLevel: 'fine',
+        planRoomFillOpacityScale: 0.4,
+        planShowOpeningTags: true,
+        planShowRoomLabels: false,
+        hiddenCategories: ['door'],
+      },
+      pv: {
+        kind: 'plan_view',
+        id: 'pv',
+        name: 'P',
+        levelId: 'lv',
+        viewTemplateId: 'vt',
+        categoriesHidden: ['room'],
+      },
+      lv: { kind: 'level', id: 'lv', name: 'L', elevationMm: 0 },
+    } as Record<string, Element>;
+    const rows = planViewGraphicsMatrixRows(elementsById, 'pv');
+    const detail = rows.find((r) => r.label === 'Detail level');
+    expect(detail?.template).toBe('fine');
+    expect(detail?.stored).toBe('inherit');
+    expect(detail?.effective).toBe('fine');
+    const hidden = rows.find((r) => r.label === 'Hidden categories');
+    expect(hidden?.template).toBe('1');
+    expect(hidden?.stored).toBe('1');
+    expect(hidden?.effective).toBe('2 kinds');
+    expect(planViewProjectBrowserEvidenceLine(elementsById, 'pv')).toMatch(/fill 0\.4/);
+    expect(planViewProjectBrowserEvidenceLine(elementsById, 'pv')).toMatch(/tags on\/off/);
+  });
+
+  it('planViewGraphicsMatrixRows prefers plan_view overrides and handles missing template', () => {
+    const elementsById = {
+      pv: {
+        kind: 'plan_view',
+        id: 'pv',
+        name: 'P',
+        levelId: 'lv',
+        planDetailLevel: 'coarse',
+        planRoomFillOpacityScale: 0.15,
+        planShowOpeningTags: false,
+        planShowRoomLabels: true,
+        planPresentation: 'opening_focus',
+      },
+      lv: { kind: 'level', id: 'lv', name: 'L', elevationMm: 0 },
+    } as Record<string, Element>;
+    const rows = planViewGraphicsMatrixRows(elementsById, 'pv');
+    expect(rows.find((r) => r.label === 'Presentation')?.stored).toBe('opening_focus');
+    expect(rows.find((r) => r.label === 'Detail level')?.template).toBe('—');
+    expect(rows.find((r) => r.label === 'Detail level')?.effective).toBe('coarse');
+    expect(rows.find((r) => r.label === 'Room fill')?.stored).toBe('0.15');
+    expect(rows.find((r) => r.label === 'Opening tags')?.effective).toBe('off');
+    expect(rows.find((r) => r.label === 'Room labels')?.effective).toBe('on');
+    expect(planViewGraphicsMatrixRows(elementsById, 'missing')).toEqual([]);
   });
 
   it('planViewInheritanceSummaryLines handles missing template', () => {

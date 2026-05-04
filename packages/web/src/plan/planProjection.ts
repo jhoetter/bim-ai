@@ -226,6 +226,137 @@ export function resolvePlanAnnotationHints(
   return { openingTagsVisible, roomLabelsVisible };
 }
 
+export type PlanGraphicsMatrixRow = {
+  label: string;
+  template: string;
+  stored: string;
+  effective: string;
+};
+
+function formatPlanPresentationStored(pres: PlanPresentationPreset): string {
+  if (pres === 'opening_focus') return 'opening_focus';
+  if (pres === 'room_scheme') return 'room_scheme';
+  return 'default';
+}
+
+function annotationTriStored(v: boolean | undefined): string {
+  if (v === undefined) return 'inherit';
+  return v ? 'on' : 'off';
+}
+
+function annotationTriEffective(v: boolean): string {
+  return v ? 'on' : 'off';
+}
+
+/**
+ * Compact Effective · detail/fill/tags line for Project Browser (plan_view rows).
+ */
+
+export function planViewProjectBrowserEvidenceLine(
+  elementsById: Record<string, Element>,
+  planViewId: string,
+): string {
+  const g = resolvePlanGraphicHints(elementsById, planViewId);
+  const a = resolvePlanAnnotationHints(elementsById, planViewId);
+  const pres = resolvePlanViewDisplay(elementsById, planViewId, undefined, 'default').presentation;
+
+  const d = g?.detailLevel ?? 'medium';
+  const fill = g?.roomFillOpacityScale ?? 1;
+  return `pres ${formatPlanPresentationStored(pres)} · ${d} · fill ${fill} · tags ${annotationTriEffective(a.openingTagsVisible)}/${annotationTriEffective(a.roomLabelsVisible)}`;
+}
+
+/** Template | stored plan_view | effective matrix for Inspector production review. */
+
+export function planViewGraphicsMatrixRows(
+  elementsById: Record<string, Element>,
+  planViewId: string,
+): PlanGraphicsMatrixRow[] {
+  const el = elementsById[planViewId];
+  if (!el || el.kind !== 'plan_view') return [];
+
+  const tmplId = el.viewTemplateId;
+  const tmpl =
+    tmplId && elementsById[tmplId]?.kind === 'view_template'
+      ? (elementsById[tmplId] as Extract<Element, { kind: 'view_template' }>)
+      : undefined;
+
+  const display = resolvePlanViewDisplay(elementsById, planViewId, undefined, 'default');
+  const g = resolvePlanGraphicHints(elementsById, planViewId);
+  const a = resolvePlanAnnotationHints(elementsById, planViewId);
+
+  const presEff = formatPlanPresentationStored(display.presentation);
+
+  const vtDetail =
+    tmpl == null ? '—' : tmpl.planDetailLevel == null ? 'inherit→medium' : tmpl.planDetailLevel;
+  const pvDetail =
+    el.planDetailLevel === undefined || el.planDetailLevel === null ? 'inherit' : el.planDetailLevel;
+  const effDetail = g?.detailLevel ?? 'medium';
+
+  const vtFill =
+    tmpl == null ? '—' : String(tmpl.planRoomFillOpacityScale ?? 1);
+  const pvFill = el.planRoomFillOpacityScale == null ? 'inherit' : String(el.planRoomFillOpacityScale);
+  const effFill = String(g?.roomFillOpacityScale ?? 1);
+
+  const vtOpening =
+    tmpl == null ? '—' : annotationTriEffective(tmpl.planShowOpeningTags ?? false);
+  const pvOpening = annotationTriStored(el.planShowOpeningTags);
+  const effOpening = annotationTriEffective(a.openingTagsVisible);
+
+  const vtLabels =
+    tmpl == null ? '—' : annotationTriEffective(tmpl.planShowRoomLabels ?? false);
+  const pvLabels = annotationTriStored(el.planShowRoomLabels);
+  const effLabels = annotationTriEffective(a.roomLabelsVisible);
+
+  const tmplHiddenRaw = tmpl?.hiddenCategories?.length ?? 0;
+  const pvHiddenRaw = el.categoriesHidden?.length ?? 0;
+  const effHiddenKinds = String(display.hiddenSemanticKinds.size);
+
+  return [
+    {
+      label: 'Presentation',
+      template: '—',
+      stored: presEff,
+      effective: presEff,
+    },
+    {
+      label: 'Detail level',
+      template: vtDetail,
+      stored: pvDetail,
+      effective: effDetail,
+    },
+    {
+      label: 'Room fill',
+      template: vtFill,
+      stored: pvFill,
+      effective: effFill,
+    },
+    {
+      label: 'Line weight ×',
+      template: '—',
+      stored: '—',
+      effective: String(g?.lineWeightScale ?? 1),
+    },
+    {
+      label: 'Opening tags',
+      template: vtOpening,
+      stored: pvOpening,
+      effective: effOpening,
+    },
+    {
+      label: 'Room labels',
+      template: vtLabels,
+      stored: pvLabels,
+      effective: effLabels,
+    },
+    {
+      label: 'Hidden categories',
+      template: tmpl == null ? '—' : String(tmplHiddenRaw),
+      stored: String(pvHiddenRaw),
+      effective: `${effHiddenKinds} kinds`,
+    },
+  ];
+}
+
 /** Deterministic inheritance readout for Workspace Inspector (mirrors resolver math). */
 
 export function planViewInheritanceSummaryLines(

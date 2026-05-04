@@ -43,10 +43,11 @@ import { AgentReviewPane } from './workspace/AgentReviewPane';
 
 import type { PlanPresentationPreset } from './plan/symbology';
 
-import { planViewInheritanceSummaryLines } from './plan/planProjection';
+import { planViewGraphicsMatrixRows } from './plan/planProjection';
 
 import { planToolsForPerspective } from './workspace/planToolsByPerspective';
 
+import { PlanViewGraphicsMatrix } from './workspace/PlanViewGraphicsMatrix';
 import { ProjectBrowser } from './workspace/ProjectBrowser';
 import { SectionPlaceholderPane } from './workspace/SectionPlaceholderPane';
 import { SheetCanvas } from './workspace/SheetCanvas';
@@ -244,9 +245,9 @@ export function Workspace() {
     });
   }, [selectedId, elementsById]);
 
-  const inspectorPlanInheritanceLines = useMemo(() => {
+  const planGraphicsMatrixRows = useMemo(() => {
     if (!selected || selected.kind !== 'plan_view') return [];
-    return planViewInheritanceSummaryLines(elementsById, selected.id);
+    return planViewGraphicsMatrixRows(elementsById, selected.id);
   }, [elementsById, selected]);
 
   const levels = useMemo(
@@ -1565,14 +1566,7 @@ export function Workspace() {
                   </label>
                 </div>
 
-                <div className="border-border bg-muted/30 mt-3 rounded border border-dashed p-2 pt-2">
-                  <div className="font-semibold text-muted">Inheritance readout</div>
-                  <ul className="mt-1 list-inside list-disc space-y-0.5 text-[10px] leading-snug text-muted">
-                    {inspectorPlanInheritanceLines.map((ln) => (
-                      <li key={ln}>{ln}</li>
-                    ))}
-                  </ul>
-                </div>
+                <PlanViewGraphicsMatrix rows={planGraphicsMatrixRows} />
               </div>
             ) : null}
             {selected?.kind === 'view_template' ? (

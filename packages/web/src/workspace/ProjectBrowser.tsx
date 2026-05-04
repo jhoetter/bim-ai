@@ -3,6 +3,7 @@ import type { Element } from '@bim-ai/core';
 
 import { Btn } from '@bim-ai/ui';
 
+import { planViewProjectBrowserEvidenceLine } from '../plan/planProjection';
 import { useBimStore } from '../state/store';
 
 function newDupPlanViewId(prefix: string) {
@@ -13,10 +14,27 @@ function newDupPlanViewId(prefix: string) {
   }
 }
 
-function planViewTooltip(pv: Extract<Element, { kind: 'plan_view' }>): string {
+function viewTemplateEvidenceLine(vt: Extract<Element, { kind: 'view_template' }>): string {
+  const d =
+    vt.planDetailLevel === undefined || vt.planDetailLevel === null ? 'inherit→medium' : vt.planDetailLevel;
+  const fill = vt.planRoomFillOpacityScale ?? 1;
+  const ot = (vt.planShowOpeningTags ?? false) ? 'on' : 'off';
+  const rl = (vt.planShowRoomLabels ?? false) ? 'on' : 'off';
+  return `${vt.scale} · ${d} · fill ${fill} · tags ${ot}/${rl}`;
+}
+
+function planViewTooltip(
+  pv: Extract<Element, { kind: 'plan_view' }>,
+  elementsById: Record<string, Element>,
+): string {
   const parts = [`plan_view (${pv.name})`];
   parts.push(`discipline: ${pv.discipline ?? 'architecture'}`);
-  if (pv.viewTemplateId) parts.push(`template: ${pv.viewTemplateId}`);
+  const tid = pv.viewTemplateId;
+  if (tid) {
+    const t = elementsById[tid];
+    parts.push(t?.kind === 'view_template' ? `template: ${t.name}` : `templateRef: ${tid}`);
+  }
+  parts.push(planViewProjectBrowserEvidenceLine(elementsById, pv.id));
   return parts.join(' · ');
 }
 
@@ -82,13 +100,18 @@ export function ProjectBrowser(props: {
     .filter((e): e is Extract<Element, { kind: 'sheet' }> => e.kind === 'sheet')
     .sort((a, b) => a.name.localeCompare(b.name));
 
+  const viewTemplates = Object.values(props.elementsById)
+    .filter((e): e is Extract<Element, { kind: 'view_template' }> => e.kind === 'view_template')
+    .sort((a, b) => a.name.localeCompare(b.name));
+
   const hasAnyDoc =
     planViewsSorted.length > 0 ||
     viewpoints3d.length > 0 ||
     viewpointsPlan.length > 0 ||
     sectionCuts.length > 0 ||
     schedules.length > 0 ||
-    sheets.length > 0;
+    sheets.length > 0 ||
+    viewTemplates.length > 0;
 
   if (!hasAnyDoc) {
     return <div className="text-[10px] text-muted">No documented views yet.</div>;
@@ -200,11 +223,14 @@ export function ProjectBrowser(props: {
                         type="button"
                         variant="quiet"
                         className="w-full px-2 py-0.5 text-left text-[10px]"
-                        title={planViewTooltip(pv)}
+                        title={planViewTooltip(pv, props.elementsById)}
                         onClick={() => activatePlanView(pv.id)}
                       >
                         plan_view · {pv.name}
                       </Btn>
+                      <div className="pl-2 font-mono text-[9px] leading-tight text-muted">
+                        {planViewProjectBrowserEvidenceLine(props.elementsById, pv.id)}
+                      </div>
                       {props.onUpsertSemantic ? (
                         <button
                           type="button"
@@ -221,6 +247,29 @@ export function ProjectBrowser(props: {
               </div>
             ))}
           </div>
+        </div>
+      ) : null}
+
+      {viewTemplates.length ? (
+        <div className="space-y-1">
+          <div className="text-[10px] uppercase tracking-wide text-muted">View templates</div>
+          <ul className="space-y-0.5">
+            {viewTemplates.map((vt) => (
+              <li key={vt.id}>
+                <button
+                  type="button"
+                  className="w-full px-2 py-0.5 text-left text-[10px]"
+                  title={`view_template · ${vt.name} · ${viewTemplateEvidenceLine(vt)}`}
+                  onClick={() => useBimStore.getState().select(vt.id)}
+                >
+                  <span className="text-muted">view_template ·</span> {vt.name}
+                </button>
+                <div className="pl-2 font-mono text-[9px] leading-tight text-muted">
+                  {viewTemplateEvidenceLine(vt)}
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
       ) : null}
 
