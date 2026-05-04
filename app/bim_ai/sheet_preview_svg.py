@@ -15,6 +15,7 @@ from bim_ai.elements import (
     SheetElem,
     ViewpointElem,
 )
+from bim_ai.plan_projection_wire import resolve_plan_projection_wire
 from bim_ai.section_projection_primitives import build_section_projection_primitives
 
 
@@ -98,6 +99,41 @@ def format_viewport_crop_export_segment(vp: dict[str, Any]) -> str:
     xmin, ymin = cmn
     xmax, ymax = cmx
     return f"crop[mn={xmin:g},{ymin:g} mx={xmax:g},{ymax:g}]"
+
+
+def format_plan_projection_export_segment(wire: dict[str, Any]) -> str:
+    """Compact deterministic summary of plan projection primitives (sheet export / regression)."""
+
+    prim = wire.get("primitives") or {}
+    nw = len(prim.get("walls") or [])
+    nf = len(prim.get("floors") or [])
+    nr = len(prim.get("rooms") or [])
+    nd = len(prim.get("doors") or [])
+    nwi = len(prim.get("windows") or [])
+    ns = len(prim.get("stairs") or [])
+    return f"planPrim[w={nw},f={nf},r={nr},d={nd},wi={nwi},s={ns}]"
+
+
+def format_sheet_plan_viewport_projection_segment(doc: Document, vp: dict[str, Any]) -> str:
+    """Plan projection slice for a sheet viewport row when viewRef targets a plan_view."""
+
+    vr = vp.get("viewRef") or vp.get("view_ref")
+    if not isinstance(vr, str) or ":" not in vr:
+        return ""
+    kind_raw, ref_raw = vr.split(":", 1)
+    if kind_raw.strip().lower() != "plan":
+        return ""
+    pv_id = ref_raw.strip()
+    if not pv_id:
+        return ""
+    wire = resolve_plan_projection_wire(
+        doc,
+        plan_view_id=pv_id,
+        fallback_level_id=None,
+        global_plan_presentation="default",
+        sheet_viewport_row_for_crop=vp,
+    )
+    return format_plan_projection_export_segment(wire)
 
 
 def format_section_viewport_documentation_segment(doc: Document, view_ref: str) -> str:
@@ -255,6 +291,15 @@ def sheet_elem_to_svg(doc: Document, sh: SheetElem) -> str:
                 f'fill="#5b21b6" font-size="280px">{esc_sec}</text>'
             )
 
+        proj_seg = format_sheet_plan_viewport_projection_segment(doc, vp)
+        proj_block = ""
+        if proj_seg:
+            esc_proj = html.escape(proj_seg)
+            proj_block = (
+                f'<text x="{x_mm + 200}" y="{y_mm + 2600}" '
+                f'fill="#b45309" font-size="280px">{esc_proj}</text>'
+            )
+
         viewport_blocks.append(
             "<g>"
             f'<rect x="{x_mm}" y="{y_mm}" width="{width_mm}" height="{height_mm}" '
@@ -265,6 +310,7 @@ def sheet_elem_to_svg(doc: Document, sh: SheetElem) -> str:
             f"{sub_block}"
             f"{crop_block}"
             f"{doc_block}"
+            f"{proj_block}"
             "</g>"
         )
 

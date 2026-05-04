@@ -29,6 +29,7 @@ from bim_ai.evidence_manifest import (
 )
 from bim_ai.plan_projection_wire import (
     plan_projection_wire_from_request,
+    resolve_plan_projection_wire,
     section_cut_projection_wire,
 )
 from bim_ai.type_material_registry import merged_registry_payload
@@ -399,10 +400,13 @@ def test_agent_evidence_closure_hints_shape() -> None:
     assert h.get("screenshotHintGapsField") == "screenshotHintGaps_v1"
     assert h.get("pixelDiffIngestChecklistField") == "ingestChecklist_v1"
     assert h.get("evidenceLifecycleSignalField") == "evidenceLifecycleSignal_v1"
+    assert h.get("evidenceAgentFollowThroughField") == "evidenceAgentFollowThrough_v1"
+    assert h.get("semanticDigestOmitsDerivativeSummariesNote")
     cmds = h["suggestedRegenerationCommands"]
     assert isinstance(cmds, list)
     assert any("pytest" in str(c) for c in cmds)
     assert any("test_evidence_manifest_closure.py" in str(c) for c in cmds)
+    assert any("test_evidence_agent_follow_through.py" in str(c) for c in cmds)
     assert any("playwright" in str(c) for c in cmds)
     assert "packages/web/playwright-report/index.html" in h["ciArtifactRelativePaths"]
 
@@ -728,6 +732,112 @@ def test_plan_projection_crop_authored_filters_and_emits_range_warning() -> None
     assert "viewRangeNotApplied" in codes
     walls = (out.get("primitives") or {}).get("walls") or []
     assert [w.get("id") for w in walls] == ["w-a"]
+
+
+def test_plan_projection_sheet_viewport_crop_intersects_plan_crop() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L", elevationMm=0),
+            "pv1": PlanViewElem(
+                kind="plan_view",
+                id="pv1",
+                name="EG",
+                levelId="lvl",
+                cropMinMm={"xMm": -500, "yMm": -500},
+                cropMaxMm={"xMm": 9500, "yMm": 6500},
+            ),
+            "w-a": WallElem(
+                kind="wall",
+                id="w-a",
+                name="A",
+                levelId="lvl",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 2000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+            "w-b": WallElem(
+                kind="wall",
+                id="w-b",
+                name="B",
+                levelId="lvl",
+                start={"xMm": 5000, "yMm": 0},
+                end={"xMm": 7000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+        },
+    )
+    vp_crop = {
+        "cropMinMm": {"xMm": 0, "yMm": -200},
+        "cropMaxMm": {"xMm": 3000, "yMm": 200},
+    }
+    out_plain = resolve_plan_projection_wire(
+        doc,
+        plan_view_id="pv1",
+        fallback_level_id=None,
+        global_plan_presentation="default",
+        sheet_viewport_row_for_crop=None,
+    )
+    out_sheet = resolve_plan_projection_wire(
+        doc,
+        plan_view_id="pv1",
+        fallback_level_id=None,
+        global_plan_presentation="default",
+        sheet_viewport_row_for_crop=vp_crop,
+    )
+    plain_wall_ids = [w.get("id") for w in (out_plain.get("primitives") or {}).get("walls") or []]
+    sheet_wall_ids = [w.get("id") for w in (out_sheet.get("primitives") or {}).get("walls") or []]
+    assert plain_wall_ids == ["w-a", "w-b"]
+    assert sheet_wall_ids == ["w-a"]
+    sheet_codes = {w.get("code") for w in out_sheet.get("warnings") or [] if isinstance(w, dict)}
+    assert "sheetViewportCropNotApplied" not in sheet_codes
+
+
+def test_plan_projection_sheet_viewport_crop_partial_emits_warning() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L", elevationMm=0),
+            "pv1": PlanViewElem(
+                kind="plan_view",
+                id="pv1",
+                name="EG",
+                levelId="lvl",
+                cropMinMm={"xMm": -500, "yMm": -500},
+                cropMaxMm={"xMm": 9500, "yMm": 6500},
+            ),
+            "w-a": WallElem(
+                kind="wall",
+                id="w-a",
+                name="A",
+                levelId="lvl",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 2000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+        },
+    )
+    vp_partial = {"cropMinMm": {"xMm": 0, "yMm": 0}}
+    out = resolve_plan_projection_wire(
+        doc,
+        plan_view_id="pv1",
+        fallback_level_id=None,
+        global_plan_presentation="default",
+        sheet_viewport_row_for_crop=vp_partial,
+    )
+    codes = {w.get("code") for w in out.get("warnings") or [] if isinstance(w, dict)}
+    assert "sheetViewportCropNotApplied" in codes
+    plain = resolve_plan_projection_wire(
+        doc,
+        plan_view_id="pv1",
+        fallback_level_id=None,
+        global_plan_presentation="default",
+        sheet_viewport_row_for_crop=None,
+    )
+    assert (out.get("primitives") or {}).get("walls") == (plain.get("primitives") or {}).get("walls")
 
 
 def test_plan_projection_includes_stair_primitive() -> None:

@@ -487,6 +487,79 @@ def test_sheet_svg_resolves_plan_view_ref_for_viewport_label():
     assert "plan:pv-a" in svg
 
 
+def test_sheet_svg_plan_viewport_plan_prim_reflects_sheet_crop() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl-1", name="EG", elevationMm=0),
+            "pv-a": PlanViewElem(
+                kind="plan_view",
+                id="pv-a",
+                name="Floor plan",
+                levelId="lvl-1",
+                cropMinMm={"xMm": -500, "yMm": -500},
+                cropMaxMm={"xMm": 9500, "yMm": 6500},
+            ),
+            "w-a": WallElem(
+                kind="wall",
+                id="w-a",
+                name="A",
+                levelId="lvl-1",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 2000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+            "w-b": WallElem(
+                kind="wall",
+                id="w-b",
+                name="B",
+                levelId="lvl-1",
+                start={"xMm": 5000, "yMm": 0},
+                end={"xMm": 7000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+        },
+    )
+    vp_wide = {
+        "viewportId": "vp",
+        "xMm": 100,
+        "yMm": 120,
+        "widthMm": 2000,
+        "heightMm": 1500,
+        "label": "P",
+        "viewRef": "plan:pv-a",
+        "cropMinMm": {"xMm": 0, "yMm": -400},
+        "cropMaxMm": {"xMm": 8000, "yMm": 400},
+    }
+    vp_tight = {
+        **vp_wide,
+        "cropMinMm": {"xMm": 0, "yMm": -200},
+        "cropMaxMm": {"xMm": 3000, "yMm": 200},
+    }
+    svg_wide = sheet_elem_to_svg(
+        doc,
+        SheetElem(kind="sheet", id="s1", name="S", titleBlock="TB", viewportsMm=[vp_wide]),
+    )
+    svg_tight = sheet_elem_to_svg(
+        doc,
+        SheetElem(kind="sheet", id="s1", name="S", titleBlock="TB", viewportsMm=[vp_tight]),
+    )
+    assert "planPrim[w=2," in svg_wide
+    assert "planPrim[w=1," in svg_tight
+    pdf_wide = sheet_viewport_export_listing_lines(
+        doc,
+        SheetElem(kind="sheet", id="s1", name="S", titleBlock="TB", viewportsMm=[vp_wide]),
+    )
+    pdf_tight = sheet_viewport_export_listing_lines(
+        doc,
+        SheetElem(kind="sheet", id="s1", name="S", titleBlock="TB", viewportsMm=[vp_tight]),
+    )
+    assert any("planPrim[w=2," in ln for ln in pdf_wide)
+    assert any("planPrim[w=1," in ln for ln in pdf_tight)
+
+
 def test_sheet_svg_viewport_includes_crop_export_segment():
     vp = {
         "viewportId": "vp-c",

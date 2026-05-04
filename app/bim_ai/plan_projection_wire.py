@@ -186,6 +186,71 @@ def _normalized_crop_box_xy_mm(pv: PlanViewElem | None) -> tuple[float, float, f
     return (x0, y0, x1, y1)
 
 
+def _vp_dict_axis_xy(
+    obj: Any, keys_x: tuple[str, ...], keys_y: tuple[str, ...]
+) -> tuple[float | None, float | None]:
+    """Read x,y from viewport crop corner dict ({xMm,yMm} aliases). Mirrors sheet_preview_svg."""
+
+    if obj is None or not isinstance(obj, dict):
+        return None, None
+    d = obj
+
+    def pick(keys: tuple[str, ...]) -> float | None:
+        for key in keys:
+            val = d.get(key)
+            if val is None:
+                continue
+            num = float(val)
+            if math.isfinite(num):
+                return num
+        return None
+
+    return pick(keys_x), pick(keys_y)
+
+
+def _sheet_viewport_crop_box_xy_mm(vp_row: dict[str, Any]) -> tuple[tuple[float, float, float, float] | None, bool]:
+    """Return (normalized sheet crop box, partial_corner_authored).
+
+    partial_corner_authored is True when only one of cropMinMm/cropMaxMm is present (crop ignored).
+    """
+
+    mn_raw = vp_row.get("cropMinMm") or vp_row.get("crop_min_mm")
+    mx_raw = vp_row.get("cropMaxMm") or vp_row.get("crop_max_mm")
+    has_mn = mn_raw is not None
+    has_mx = mx_raw is not None
+    if has_mn ^ has_mx:
+        return None, True
+    if not has_mn:
+        return None, False
+    xmin, ymin = _vp_dict_axis_xy(mn_raw, ("xMm", "x_mm"), ("yMm", "y_mm"))
+    xmax, ymax = _vp_dict_axis_xy(mx_raw, ("xMm", "x_mm"), ("yMm", "y_mm"))
+    if None in (xmin, ymin, xmax, ymax):
+        return None, True
+    assert xmin is not None and ymin is not None and xmax is not None and ymax is not None
+    x0, x1 = sorted((xmin, xmax))
+    y0, y1 = sorted((ymin, ymax))
+    return (x0, y0, x1, y1), False
+
+
+def _intersect_axis_aligned_crop_boxes(
+    a: tuple[float, float, float, float] | None,
+    b: tuple[float, float, float, float] | None,
+) -> tuple[float, float, float, float] | None:
+    """Intersect axis-aligned boxes (x0,y0,x1,y1). None behaves as universal set."""
+
+    if a is None:
+        return b
+    if b is None:
+        return a
+    ax0, ay0, ax1, ay1 = a
+    bx0, by0, bx1, by1 = b
+    ix0 = max(ax0, bx0)
+    iy0 = max(ay0, by0)
+    ix1 = min(ax1, bx1)
+    iy1 = min(ay1, by1)
+    return (ix0, iy0, ix1, iy1)
+
+
 def _point_in_crop_xy(x: float, y: float, box: tuple[float, float, float, float]) -> bool:
     x0, y0, x1, y1 = box
     return x0 <= x <= x1 and y0 <= y <= y1
@@ -246,6 +311,7 @@ def _build_plan_primitive_lists(
     level: str | None,
     hidden_semantic: set[str],
     pinned_pv_el: PlanViewElem | None,
+    crop_box_mm: tuple[float, float, float, float] | None,
     line_weight_hint: float = 1.0,
     opening_tags_visible: bool = False,
     room_labels_visible: bool = False,
@@ -254,7 +320,7 @@ def _build_plan_primitive_lists(
 
     warnings: list[dict[str, Any]] = []
 
-    crop_box = _normalized_crop_box_xy_mm(pinned_pv_el)
+    crop_box = crop_box_mm
     if pinned_pv_el is not None:
         cmn, cmx = pinned_pv_el.crop_min_mm, pinned_pv_el.crop_max_mm
         has_partial_crop = (cmn is not None) ^ (cmx is not None)
@@ -566,6 +632,7 @@ def resolve_plan_projection_wire(
     plan_view_id: str | None,
     fallback_level_id: str | None,
     global_plan_presentation: str = "default",
+    sheet_viewport_row_for_crop: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Mirror `packages/web/src/plan/planProjection.ts` semantics for deterministic tests."""
 
@@ -665,16 +732,34 @@ def resolve_plan_projection_wire(
         opening_vis = bool(plan_ann["openingTagsVisible"])
         room_lab_vis = bool(plan_ann["roomLabelsVisible"])
 
+    extra_prim_warn: list[dict[str, Any]] = []
+    sheet_crop_box: tuple[float, float, float, float] | None = None
+    if sheet_viewport_row_for_crop is not None:
+        sbox, sheet_partial = _sheet_viewport_crop_box_xy_mm(sheet_viewport_row_for_crop)
+        if sheet_partial:
+            extra_prim_warn.append(
+                {
+                    "code": "sheetViewportCropNotApplied",
+                    "message": "Sheet viewport crop requires both cropMinMm and cropMaxMm; sheet crop is ignored for primitives.",
+                }
+            )
+        else:
+            sheet_crop_box = sbox
+
+    plan_crop_box = _normalized_crop_box_xy_mm(pinned_pv_elem)
+    effective_crop = _intersect_axis_aligned_crop_boxes(plan_crop_box, sheet_crop_box)
+
     prim, prim_warn = _build_plan_primitive_lists(
         doc,
         level=active_level,
         hidden_semantic=hidden_semantic,
         pinned_pv_el=pinned_pv_elem,
+        crop_box_mm=effective_crop,
         line_weight_hint=line_weight_scale,
         opening_tags_visible=opening_vis,
         room_labels_visible=room_lab_vis,
     )
-    all_warnings = list(prim_warn)
+    all_warnings = list(extra_prim_warn) + list(prim_warn)
     legend = _room_color_legend_payload(doc, level=active_level, hidden_semantic=hidden_semantic)
 
     out_payload: dict[str, Any] = {
@@ -710,6 +795,7 @@ def plan_projection_wire_from_request(
         plan_view_id=plan_view_id,
         fallback_level_id=fallback_level_id,
         global_plan_presentation=global_plan_presentation,
+        sheet_viewport_row_for_crop=None,
     )
 
 

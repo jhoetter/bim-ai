@@ -11,6 +11,7 @@ from bim_ai.document import Document
 from bim_ai.elements import SheetElem
 from bim_ai.sheet_preview_svg import (
     format_section_viewport_documentation_segment,
+    format_sheet_plan_viewport_projection_segment,
     format_viewport_crop_export_segment,
     read_viewport_mm_box,
     resolve_view_ref_title,
@@ -58,7 +59,14 @@ def sheet_viewport_export_listing_lines(doc: Document, sh: SheetElem) -> list[st
             else ""
         )
 
-        geo_tail = geo + (f" · {crop_seg}" if crop_seg else "") + (f" · {doc_seg}" if doc_seg else "")
+        proj_seg = format_sheet_plan_viewport_projection_segment(doc, vp) if isinstance(vp, dict) else ""
+
+        geo_tail = (
+            geo
+            + (f" · {crop_seg}" if crop_seg else "")
+            + (f" · {doc_seg}" if doc_seg else "")
+            + (f" · {proj_seg}" if proj_seg else "")
+        )
 
         lines.append(str(f"{label}{suffix}{geo_tail}")[:220])
 
