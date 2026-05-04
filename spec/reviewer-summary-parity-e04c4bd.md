@@ -6,8 +6,8 @@
 - **Python CI:** green (ruff + pytest + IFC extras).
 - **JS / Playwright CI:** `e04c4bd` hit `pnpm/action-setup` version drift (fixed by inferring pnpm from [`package.json`](../package.json) — see [.github/workflows/ci.yml](../.github/workflows/ci.yml)) and **`vite preview` proxying `/api` and `/ws` to `:8500`**, which broke mocked E2E. Mitigations:
   - [`packages/web/playwright.config.ts`](../packages/web/playwright.config.ts) sets **`webServer.env`** (`PREVIEW_NO_PROXY=1`, `VITE_E2E_DISABLE_WS=true`) and **`rm -rf dist && vite build`** before `vite preview` so tests never reuse **`pnpm verify`'s prod `dist/`** (which would otherwise open a real WebSocket and hit the dead `:8500` proxy). [`Workspace.tsx`](../packages/web/src/Workspace.tsx) skips the model socket when `VITE_E2E_DISABLE_WS` is baked into that E2E bundle.
-  - **`toHaveScreenshot` baselines** are namespaced per Playwright **`{platform}`** (`darwin/` vs `linux/`, **amd64**). Prefer regenerating **`linux/`** inside **`mcr.microsoft.com/playwright:v1.53.2-jammy`** (see command below).
-  - **GitHub Actions `js` job** uses **`runs-on: ubuntu-22.04`** so Chromium/font/layout matches that Docker toolchain; **`ubuntu-latest`** can diverge from committed `linux/` baselines (e.g. schedule-panel screenshot height).
+  - **`toHaveScreenshot` baselines** are namespaced per Playwright **`{platform}`** (`darwin/` vs `linux/`, **amd64**). The committed `linux/` schedule-panel baselines are from the GitHub runner artifact; use that artifact as source of truth if runner layout drifts.
+  - **GitHub Actions `js` job** uses **`runs-on: ubuntu-22.04`** to avoid `ubuntu-latest` image churn in screenshot tests. The Docker command below is still useful for focused Linux checks, but runner artifacts may be needed for exact baseline refreshes.
 
 ```bash
 docker run --platform linux/amd64 --rm -v \"$PWD:/workspace\" -w /workspace \\
