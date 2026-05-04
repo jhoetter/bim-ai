@@ -21,6 +21,7 @@ from bim_ai.elements import (
     WallElem,
     WindowElem,
 )
+from bim_ai.kernel_ifc_opening_replay_v0 import build_wall_hosted_opening_replay_commands_v0
 
 try:
     import ifcopenshell  # noqa: F401
@@ -758,9 +759,12 @@ def _space_pset_programme_json_fields(bucket: dict[str, Any]) -> dict[str, str]:
 
 
 def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> dict[str, Any]:
-    """Deterministic createLevel + createWall + createRoomOutline payloads from kernel IFC."""
+    """Deterministic createLevel + createWall + opening inserts + createRoomOutline payloads from kernel IFC."""
 
-    subset = {"levels": True, "walls": True, "spaces": True}
+    has_opening_products = bool(
+        (model.by_type("IfcDoor") or []) or (model.by_type("IfcWindow") or [])
+    )
+    subset = {"levels": True, "walls": True, "spaces": True, "openings": has_opening_products}
     unsupported = _import_scope_unsupported_ifc_products_v0(model)
 
     if ifc_elem_util is None:
@@ -769,7 +773,7 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
             "available": False,
             "reason": "ifcopenshell_util_unavailable",
             "replayKind": AUTHORITATIVE_REPLAY_KIND_V0,
-            "authoritativeSubset": {"levels": False, "walls": False, "spaces": False},
+            "authoritativeSubset": {"levels": False, "walls": False, "spaces": False, "openings": False},
             "unsupportedIfcProducts": unsupported,
         }
 
@@ -784,14 +788,16 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
     storey_rows.sort(key=lambda t: t[0])
 
     storey_gid_to_level_id: dict[str, str] = {}
+    storey_gid_to_elev_mm: dict[str, float] = {}
     level_cmds: list[dict[str, Any]] = []
     for _k, st in storey_rows:
         gid = str(getattr(st, "GlobalId", None) or "")
         lvl_id = _ifc_global_id_slug(gid)
-        if gid:
-            storey_gid_to_level_id[gid] = lvl_id
         raw_elev = getattr(st, "Elevation", None)
         el = float(raw_elev) if isinstance(raw_elev, (int, float)) else 0.0
+        if gid:
+            storey_gid_to_level_id[gid] = lvl_id
+            storey_gid_to_elev_mm[gid] = el
         nm = str(getattr(st, "Name", None) or "") or lvl_id
         level_cmds.append(
             CreateLevelCmd(
@@ -802,6 +808,7 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
         )
 
     wall_cmds: list[dict[str, Any]] = []
+    wall_global_id_to_kernel_ref: dict[str, str] = {}
     extraction_gaps: list[dict[str, Any]] = []
     walls_skipped_no_reference = 0
 
@@ -840,8 +847,18 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
                 height_mm=geo["height_mm"],
             ).model_dump(mode="json", by_alias=True)
         )
+        wgid = str(getattr(wal, "GlobalId", None) or "")
+        if wgid:
+            wall_global_id_to_kernel_ref[wgid] = ref_s
 
     wall_cmds.sort(key=lambda c: str(c.get("id") or ""))
+
+    door_cmds, win_cmds, kernel_door_skip, kernel_window_skip = build_wall_hosted_opening_replay_commands_v0(
+        model,
+        wall_global_id_to_kernel_ref=wall_global_id_to_kernel_ref,
+        storey_gid_to_elev_mm=storey_gid_to_elev_mm,
+        extraction_gaps=extraction_gaps,
+    )
 
     room_cmds: list[dict[str, Any]] = []
     ids_space_rows: list[dict[str, Any]] = []
@@ -913,6 +930,8 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
         ),
         "kernelWallSkippedNoReference": walls_skipped_no_reference,
         "kernelSpaceSkippedNoReference": spaces_skipped_no_reference,
+        "kernelDoorSkippedNoReference": kernel_door_skip,
+        "kernelWindowSkippedNoReference": kernel_window_skip,
         "idsAuthoritativeReplayMap_v0": {
             "schemaVersion": 0,
             "note": (
@@ -922,7 +941,7 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
             ),
             "spaces": ids_space_rows,
         },
-        "commands": level_cmds + wall_cmds + room_cmds,
+        "commands": level_cmds + wall_cmds + door_cmds + win_cmds + room_cmds,
         "extractionGaps": extraction_gaps,
     }
 
@@ -936,7 +955,7 @@ def build_kernel_ifc_authoritative_replay_sketch_v0(step_text: str) -> dict[str,
             "available": False,
             "reason": "ifcopenshell_not_installed",
             "replayKind": AUTHORITATIVE_REPLAY_KIND_V0,
-            "authoritativeSubset": {"levels": False, "walls": False, "spaces": False},
+            "authoritativeSubset": {"levels": False, "walls": False, "spaces": False, "openings": False},
             "unsupportedIfcProducts": {"schemaVersion": 0, "countsByClass": {}},
         }
     import ifcopenshell

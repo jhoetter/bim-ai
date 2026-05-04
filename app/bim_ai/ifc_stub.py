@@ -34,14 +34,14 @@ IFC_SEMANTIC_IMPORT_SCOPE_V0: dict[str, Any] = {
         "Kernel geometry skip map from Document",
         "summarize_kernel_ifc_semantic_roundtrip export→re-parse deltas (identityCoverage, qtoCoverage)",
         "summarize_kernel_ifc_semantic_roundtrip.commandSketch — level echo, storeys read-back, QTO names, programme samples",
-        "summarize_kernel_ifc_semantic_roundtrip.commandSketch.authoritativeReplay_v0 — kernel IFC re-parse → deterministic createLevel/createWall/createRoomOutline (IfcSpace) payloads, idsAuthoritativeReplayMap_v0 IDS linkage, unsupportedIfcProducts_v0 vs replay distinction",
-        "engine.try_apply_kernel_ifc_authoritative_replay_v0 — empty-document apply of authoritativeReplay_v0 commands via try_commit_bundle",
+        "summarize_kernel_ifc_semantic_roundtrip.commandSketch.authoritativeReplay_v0 — kernel IFC re-parse → deterministic createLevel/createWall/createRoomOutline (IfcSpace) + wall-hosted insertDoorOnWall/insertWindowOnWall payloads, idsAuthoritativeReplayMap_v0 IDS linkage, unsupportedIfcProducts_v0 vs replay distinction",
+        "engine.try_apply_kernel_ifc_authoritative_replay_v0 — additive apply of authoritativeReplay_v0 commands via try_commit_bundle (preflight merge_id_collision / merge_reference_unresolved)",
     ],
     "importMergeUnsupported": [
         "IFC ingest → Document merge / replay for arbitrary IFC entity graphs",
         "Full IDS fixture exchange matrix beyond authoring-side rules + semantic inspector",
         "Boolean regeneration from IFC openings vs kernel proxies",
-        "engine.try_apply_kernel_ifc_authoritative_replay_v0 is empty-document only; broader populated-document IFC merge and arbitrary replay remain deferred",
+        "engine.try_apply_kernel_ifc_authoritative_replay_v0 — full populated-document arbitrary IFC merge (v0 is kernel authoritative bundle + preflight only)",
     ],
 }
 

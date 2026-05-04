@@ -199,7 +199,7 @@ def test_authoritative_replay_sketch_unavailable_when_ifcopenshell_missing() -> 
     assert out["available"] is False
     assert out["reason"] == "ifcopenshell_not_installed"
     assert out["replayKind"] == "authoritative_kernel_slice_v0"
-    assert out["authoritativeSubset"] == {"levels": False, "walls": False, "spaces": False}
+    assert out["authoritativeSubset"] == {"levels": False, "walls": False, "spaces": False, "openings": False}
 
 
 def test_ifc_manifest_scope_lists_authoritative_replay_bullet() -> None:
@@ -226,6 +226,7 @@ def test_ifc_manifest_scope_lists_authoritative_replay_bullet() -> None:
     assert any("createRoomOutline" in str(x) for x in supported)
     assert any("idsAuthoritativeReplayMap_v0" in str(x) for x in supported)
     assert any("try_apply_kernel_ifc_authoritative_replay_v0" in str(x) for x in supported)
+    assert any("insertDoorOnWall" in str(x) for x in supported)
     unsupported = scope.get("importMergeUnsupported") or []
     assert any("try_apply_kernel_ifc_authoritative_replay_v0" in str(x) for x in unsupported)
 
@@ -254,30 +255,78 @@ def test_inspect_kernel_ifc_semantics_kernel_not_eligible_when_ifc_present() -> 
     assert (rep.get("ifcKernelGeometrySkippedCounts") or {}).get("door_missing_host_wall") == 1
 
 
-def _minimal_authoritative_replay_sketch_v0() -> dict[str, object]:
+def _sketch_with_commands(*, cmds: list[dict[str, object]]) -> dict[str, object]:
     return {
         "available": True,
         "replayKind": AUTHORITATIVE_REPLAY_KIND_V0,
         "schemaVersion": KERNEL_IFC_AUTHORITATIVE_REPLAY_SCHEMA_VERSION,
-        "commands": [{"type": "createLevel", "id": "l-offline", "name": "G", "elevationMm": 0}],
+        "commands": cmds,
     }
 
 
-def test_try_apply_authoritative_replay_v0_rejects_non_empty_document() -> None:
+def _minimal_create_wall_cmd(*, wall_id: str, level_id: str) -> dict[str, object]:
+    return {
+        "type": "createWall",
+        "id": wall_id,
+        "name": wall_id,
+        "levelId": level_id,
+        "start": {"xMm": 0, "yMm": 0},
+        "end": {"xMm": 3000, "yMm": 0},
+        "thicknessMm": 200,
+        "heightMm": 2800,
+    }
+
+
+def test_try_apply_authoritative_replay_v0_additive_merge_ok() -> None:
     doc = Document(
         revision=1,
         elements={
             "lvl-g": LevelElem(kind="level", id="lvl-g", name="G", elevationMm=0),
         },
     )
-    sketch = _minimal_authoritative_replay_sketch_v0()
+    sketch = _sketch_with_commands(cmds=[_minimal_create_wall_cmd(wall_id="w-new", level_id="lvl-g")])
     before = clone_document(doc)
     ok, new_doc, cmds, _v, code = try_apply_kernel_ifc_authoritative_replay_v0(doc, sketch)
-    assert ok is False
-    assert new_doc is None
-    assert code == "document_not_empty"
-    assert cmds == []
+    assert ok is True and code == "ok"
+    assert new_doc is not None and "w-new" in new_doc.elements
     assert doc.elements == before.elements
+    assert len(cmds) == 1
+
+
+def test_try_apply_authoritative_replay_v0_merge_id_collision() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl-g": LevelElem(kind="level", id="lvl-g", name="G", elevationMm=0),
+            "w-a": WallElem(
+                kind="wall",
+                id="w-a",
+                name="W",
+                levelId="lvl-g",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 1000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+        },
+    )
+    sketch = _sketch_with_commands(cmds=[_minimal_create_wall_cmd(wall_id="w-a", level_id="lvl-g")])
+    ok, new_doc, cmds, _v, code = try_apply_kernel_ifc_authoritative_replay_v0(doc, sketch)
+    assert ok is False and new_doc is None and code == "merge_id_collision"
+    assert len(cmds) == 1
+
+
+def test_try_apply_authoritative_replay_v0_merge_reference_unresolved() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl-g": LevelElem(kind="level", id="lvl-g", name="G", elevationMm=0),
+        },
+    )
+    sketch = _sketch_with_commands(cmds=[_minimal_create_wall_cmd(wall_id="w-new", level_id="no-such-level")])
+    ok, new_doc, cmds, _v, code = try_apply_kernel_ifc_authoritative_replay_v0(doc, sketch)
+    assert ok is False and new_doc is None and code == "merge_reference_unresolved"
+    assert len(cmds) == 1
 
 
 def test_try_apply_authoritative_replay_v0_sketch_unavailable() -> None:
@@ -293,7 +342,9 @@ def test_try_apply_authoritative_replay_v0_sketch_unavailable() -> None:
 def test_try_apply_authoritative_replay_v0_invalid_command() -> None:
     empty = Document(revision=0, elements={})
     sketch = {
-        **_minimal_authoritative_replay_sketch_v0(),
+        "available": True,
+        "replayKind": AUTHORITATIVE_REPLAY_KIND_V0,
+        "schemaVersion": KERNEL_IFC_AUTHORITATIVE_REPLAY_SCHEMA_VERSION,
         "commands": [{"type": "moveWallDelta", "wallId": "w", "dxMm": 1, "dyMm": 0}],
     }
     ok, new_doc, cmds, _v, code = try_apply_kernel_ifc_authoritative_replay_v0(empty, sketch)
@@ -305,9 +356,15 @@ def test_try_apply_authoritative_replay_v0_invalid_command() -> None:
 
 def test_try_apply_authoritative_replay_v0_invalid_sketch() -> None:
     empty = Document(revision=0, elements={})
-    bad_kind = {**_minimal_authoritative_replay_sketch_v0(), "replayKind": "nope"}
+    base = {
+        "available": True,
+        "replayKind": AUTHORITATIVE_REPLAY_KIND_V0,
+        "schemaVersion": KERNEL_IFC_AUTHORITATIVE_REPLAY_SCHEMA_VERSION,
+        "commands": [{"type": "createLevel", "id": "l-offline", "name": "G", "elevationMm": 0}],
+    }
+    bad_kind = {**base, "replayKind": "nope"}
     ok, _nd, _c, _v, code = try_apply_kernel_ifc_authoritative_replay_v0(empty, bad_kind)
     assert ok is False and code == "invalid_sketch"
-    bad_ver = {**_minimal_authoritative_replay_sketch_v0(), "schemaVersion": 99}
+    bad_ver = {**base, "schemaVersion": 99}
     ok2, _nd2, _c2, _v2, code2 = try_apply_kernel_ifc_authoritative_replay_v0(empty, bad_ver)
     assert ok2 is False and code2 == "invalid_sketch"

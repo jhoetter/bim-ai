@@ -741,7 +741,12 @@ def test_ifc_summarize_command_sketch_includes_authoritative_replay_v0() -> None
     assert rt["commandSketch"] is not None
     auth = rt["commandSketch"]["authoritativeReplay_v0"]
     assert auth["available"] is True
-    assert auth["authoritativeSubset"] == {"levels": True, "walls": True, "spaces": True}
+    assert auth["authoritativeSubset"] == {
+        "levels": True,
+        "walls": True,
+        "spaces": True,
+        "openings": False,
+    }
     assert any(c.get("type") == "createLevel" for c in auth["commands"])
     assert any(c.get("type") == "createWall" for c in auth["commands"])
 
@@ -783,6 +788,7 @@ def test_ifc_authoritative_replay_v0_space_outline_and_ids_map() -> None:
     sketch = build_kernel_ifc_authoritative_replay_sketch_v0(step)
     assert sketch["available"] is True
     assert sketch["authoritativeSubset"]["spaces"] is True
+    assert sketch["authoritativeSubset"].get("openings") is False
     assert sketch.get("kernelSpaceSkippedNoReference") == 0
 
     room_cmds = [c for c in sketch["commands"] if c["type"] == "createRoomOutline"]
@@ -848,6 +854,7 @@ def test_ifc_authoritative_replay_v0_apply_to_empty_document() -> None:
     step = export_ifc_model_step(doc)
     sketch = build_kernel_ifc_authoritative_replay_sketch_v0(step)
     assert sketch["available"] is True
+    assert sketch["authoritativeSubset"].get("openings") is False
     want_levels = sum(1 for c in sketch["commands"] if c["type"] == "createLevel")
     want_walls = sum(1 for c in sketch["commands"] if c["type"] == "createWall")
     want_rooms = sum(1 for c in sketch["commands"] if c["type"] == "createRoomOutline")
@@ -867,5 +874,60 @@ def test_ifc_authoritative_replay_v0_apply_to_empty_document() -> None:
     assert by_kind.get("level", 0) == want_levels
     assert by_kind.get("wall", 0) == want_walls
     assert by_kind.get("room", 0) == want_rooms
+    assert not viols or not any(v.blocking or v.severity == "error" for v in viols)
+
+
+def test_ifc_authoritative_replay_v0_hosted_openings_roundtrip() -> None:
+    doc = Document(
+        revision=507,
+        elements={
+            "lvl-g": LevelElem(kind="level", id="lvl-g", name="G", elevationMm=0),
+            "w-main": WallElem(
+                kind="wall",
+                id="w-main",
+                name="W",
+                levelId="lvl-g",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 5000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+            "d-1": DoorElem(
+                kind="door",
+                id="d-1",
+                name="D1",
+                wallId="w-main",
+                alongT=0.35,
+                widthMm=900,
+            ),
+            "win-1": WindowElem(
+                kind="window",
+                id="win-1",
+                name="W1",
+                wallId="w-main",
+                alongT=0.72,
+                widthMm=1200,
+                sillHeightMm=900,
+                heightMm=1500,
+            ),
+        },
+    )
+    step = export_ifc_model_step(doc)
+    sketch = build_kernel_ifc_authoritative_replay_sketch_v0(step)
+    assert sketch["available"] is True
+    assert sketch["authoritativeSubset"]["openings"] is True
+    assert sketch.get("kernelDoorSkippedNoReference") == 0
+    assert sketch.get("kernelWindowSkippedNoReference") == 0
+    door_cmds = [c for c in sketch["commands"] if c["type"] == "insertDoorOnWall"]
+    win_cmds = [c for c in sketch["commands"] if c["type"] == "insertWindowOnWall"]
+    assert len(door_cmds) == 1
+    assert door_cmds[0].get("wallId") == "w-main" and door_cmds[0].get("id") == "d-1"
+    assert len(win_cmds) == 1
+    assert win_cmds[0].get("wallId") == "w-main" and win_cmds[0].get("id") == "win-1"
+
+    empty = Document(revision=0, elements={})
+    ok, new_doc, _cmds, viols, code = try_apply_kernel_ifc_authoritative_replay_v0(empty, sketch)
+    assert ok is True and code == "ok" and new_doc is not None
+    assert "d-1" in new_doc.elements and "win-1" in new_doc.elements
     assert not viols or not any(v.blocking or v.severity == "error" for v in viols)
 

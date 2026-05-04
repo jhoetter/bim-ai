@@ -1531,6 +1531,81 @@ def blocking_violation_rule_ids_at_prefix(doc: Document, cmds: list[Command], id
     return sorted({v.rule_id for v in blocking})
 
 
+def _authoritative_replay_v0_declared_id(cmd: dict[str, Any]) -> str | None:
+    cid = cmd.get("id")
+    if isinstance(cid, str) and cid.strip():
+        return cid.strip()
+    return None
+
+
+def _authoritative_replay_v0_preflight(doc: Document, cmds_raw: list[dict[str, Any]]) -> str | None:
+    """Return a failure outcome code before ``try_commit_bundle``, or ``None`` if safe to attempt."""
+
+    declared: set[str] = set()
+    known_levels: set[str] = {eid for eid, el in doc.elements.items() if isinstance(el, LevelElem)}
+    known_walls: set[str] = {eid for eid, el in doc.elements.items() if isinstance(el, WallElem)}
+
+    for cmd in cmds_raw:
+        t = cmd.get("type")
+        if t == "createLevel":
+            pid = cmd.get("parentLevelId")
+            if isinstance(pid, str) and pid.strip():
+                ps = pid.strip()
+                if ps not in known_levels:
+                    return "merge_reference_unresolved"
+            eid = _authoritative_replay_v0_declared_id(cmd)
+            if eid is not None:
+                if eid in doc.elements or eid in declared:
+                    return "merge_id_collision"
+                declared.add(eid)
+                known_levels.add(eid)
+
+        elif t == "createWall":
+            lid = cmd.get("levelId")
+            if not isinstance(lid, str) or not lid.strip():
+                return "merge_reference_unresolved"
+            ls = lid.strip()
+            if ls not in known_levels:
+                return "merge_reference_unresolved"
+            eid = _authoritative_replay_v0_declared_id(cmd)
+            if eid is not None:
+                if eid in doc.elements or eid in declared:
+                    return "merge_id_collision"
+                declared.add(eid)
+                known_walls.add(eid)
+
+        elif t == "createRoomOutline":
+            lid = cmd.get("levelId")
+            if not isinstance(lid, str) or not lid.strip():
+                return "merge_reference_unresolved"
+            ls = lid.strip()
+            if ls not in known_levels:
+                return "merge_reference_unresolved"
+            eid = _authoritative_replay_v0_declared_id(cmd)
+            if eid is not None:
+                if eid in doc.elements or eid in declared:
+                    return "merge_id_collision"
+                declared.add(eid)
+
+        elif t in {"insertDoorOnWall", "insertWindowOnWall"}:
+            wid = cmd.get("wallId")
+            if not isinstance(wid, str) or not wid.strip():
+                return "merge_reference_unresolved"
+            ws = wid.strip()
+            if ws not in known_walls:
+                return "merge_reference_unresolved"
+            eid = _authoritative_replay_v0_declared_id(cmd)
+            if eid is not None:
+                if eid in doc.elements or eid in declared:
+                    return "merge_id_collision"
+                declared.add(eid)
+
+        else:
+            return "invalid_command"
+
+    return None
+
+
 def replay_bundle_diagnostics_for_outcome(
     doc: Document,
     cmds_raw: list[dict[str, Any]],
@@ -1561,15 +1636,13 @@ def try_apply_kernel_ifc_authoritative_replay_v0(
     doc: Document,
     sketch: dict[str, Any],
 ) -> tuple[bool, Document | None, list[dict[str, Any]], list[Violation], str]:
-    """Apply ``authoritativeReplay_v0`` commands to an **empty** document via ``try_commit_bundle``.
+    """Apply ``authoritativeReplay_v0`` commands via ``try_commit_bundle`` (additive merge).
 
-    Narrow OpenBIM merge slice: only ``createLevel`` / ``createWall`` / ``createRoomOutline`` payloads
-    from ``build_kernel_ifc_authoritative_replay_sketch_v0``. Rejects non-empty documents to avoid
-    accidental overwrites. Returns raw command dicts that were validated (third tuple element).
+    OpenBIM slice: ``createLevel`` / ``createWall`` / ``createRoomOutline`` / ``insertDoorOnWall`` /
+    ``insertWindowOnWall`` payloads from ``build_kernel_ifc_authoritative_replay_sketch_v0``. Runs
+    preflight for id collisions and unresolved references vs the current document plus preceding
+    commands in the bundle. Returns raw command dicts that were validated (third tuple element).
     """
-
-    if doc.elements:
-        return False, None, [], [], "document_not_empty"
 
     if sketch.get("available") is not True:
         return False, None, [], [], "sketch_unavailable"
@@ -1596,6 +1669,10 @@ def try_apply_kernel_ifc_authoritative_replay_v0(
         if not isinstance(t, str) or t not in _AUTHORITATIVE_REPLAY_V0_TYPES:
             return False, None, [], [], "invalid_command"
         cmds_raw.append(item)
+
+    pre = _authoritative_replay_v0_preflight(doc, cmds_raw)
+    if pre is not None:
+        return False, None, cmds_raw, [], pre
 
     ok, new_doc, _cmds, violations, code = try_commit_bundle(doc, cmds_raw)
     if not ok:
