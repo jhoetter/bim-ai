@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from typing import Any
 
 import numpy as np
@@ -108,8 +109,8 @@ def ifc_manifest_artifact_hints(doc: Document, *, emitting_kernel_body: bool) ->
             "Kernel IFC encodes storey graph, walls+floors, roofs (IfcRoof prism), stairs (IfcStair run prism), "
             "hosted door/window openings, slab voids via IfcOpeningElement on host IfcSlab, and rooms as IfcSpace "
             "footprints; IfcOpenShell emits minimal IFC4 **property sets** (e.g. Pset_*Common `Reference` "
-            "from kernel ids on physical products); quantities stay narrow in this slice. IFC import and full "
-            "boolean regeneration remain deferred."
+            "from kernel ids on physical products); **narrow `Qto_*` quantities** attach to walls/fillings/slab/space "
+            "when IfcOpenShell qto helpers succeed. IFC import and full boolean regeneration remain deferred."
         ),
     }
 
@@ -209,6 +210,43 @@ def export_ifc_model_step(doc: Document) -> str:
 
 def _clamp(v: float, lo: float, hi: float) -> float:
     return max(lo, min(hi, v))
+
+
+def _polygon_area_m2_xy_mm(poly_mm: list[tuple[float, float]]) -> float:
+    n = len(poly_mm)
+    if n < 3:
+        return 0.0
+    a = 0.0
+    for i in range(n):
+        x1, y1 = poly_mm[i]
+        x2, y2 = poly_mm[(i + 1) % n]
+        a += x1 * y2 - x2 * y1
+    return abs(a / 2.0) / 1e6
+
+
+def _polygon_perimeter_m_xy_mm(poly_mm: list[tuple[float, float]]) -> float:
+    n = len(poly_mm)
+    if n < 2:
+        return 0.0
+    p = 0.0
+    for i in range(n):
+        x1, y1 = poly_mm[i]
+        x2, y2 = poly_mm[(i + 1) % n]
+        p += math.hypot(x2 - x1, y2 - y1)
+    return p / 1000.0
+
+
+def _try_attach_qto(f: Any, product: Any, qto_name: str, properties: dict[str, float]) -> None:
+    """Narrow QTO slice (WP-X03) — ignored when IfcOpenShell build lacks qto use-cases."""
+
+    try:
+        from ifcopenshell.api.pset.add_qto import add_qto  # type: ignore import-not-found
+        from ifcopenshell.api.pset.edit_qto import edit_qto  # type: ignore import-not-found
+
+        qto = add_qto(f, product=product, name=qto_name)
+        edit_qto(f, qto=qto, properties=dict(properties))
+    except Exception:
+        return
 
 
 def _elev_m(doc: Document, level_id: str) -> float:
@@ -382,6 +420,13 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         wall_products[wid] = wal
         geo_products += 1
         attach_kernel_identity_pset(wal, "Pset_WallCommon", wid)
+        _wmat_unused, length_m = wall_local_to_world_m(w, ez)
+        _try_attach_qto(
+            f,
+            wal,
+            "Qto_WallBaseQuantities",
+            {"Length": float(length_m), "Height": float(height_m), "Width": float(thick_m)},
+        )
 
     for fid in sorted(eid for eid, e in doc.elements.items() if isinstance(e, FloorElem)):
         fl = doc.elements[fid]
@@ -422,6 +467,22 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         slab_products[fid] = slab
         geo_products += 1
         attach_kernel_identity_pset(slab, "Pset_SlabCommon", fid)
+
+        slab_area_m2 = _polygon_area_m2_xy_mm(pts)
+        slab_perm_m = _polygon_perimeter_m_xy_mm(
+            [*pts, pts[0]] if pts else pts,
+        )
+        _try_attach_qto(
+            f,
+            slab,
+            "Qto_SlabBaseQuantities",
+            {
+                "GrossArea": float(slab_area_m2),
+                "NetArea": float(slab_area_m2),
+                "Perimeter": float(slab_perm_m),
+                "Width": float(thick_m),
+            },
+        )
 
     panel_thickness = 0.06
 
@@ -533,6 +594,21 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
 
         attach_kernel_identity_pset(filler, pset_name, kernel_elem_id)
 
+        if filling_class == "IfcDoor":
+            _try_attach_qto(
+                f,
+                filler,
+                "Qto_DoorBaseQuantities",
+                {"Width": float(width_open), "Height": float(ih)},
+            )
+        else:
+            _try_attach_qto(
+                f,
+                filler,
+                "Qto_WindowBaseQuantities",
+                {"Width": float(width_open), "Height": float(ih)},
+            )
+
         geo_products += 2
 
     for elem_id in sorted(eid for eid, e in doc.elements.items() if isinstance(e, DoorElem)):
@@ -637,9 +713,16 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
 
         storey_sp = storey_for(rm.level_id)
 
-        ifcopenshell.api.spatial.assign_container(f, products=[sp], relating_structure=storey_sp)
+        ifcopenshell.api.aggregate.assign_object(f, products=[sp], relating_object=storey_sp)
         geo_products += 1
         attach_kernel_identity_pset(sp, "Pset_SpaceCommon", rid)
+        gross_area = _polygon_area_m2_xy_mm(pts_outline)
+        _try_attach_qto(
+            f,
+            sp,
+            "Qto_SpaceBaseQuantities",
+            {"GrossFloorArea": float(gross_area), "NetFloorArea": float(gross_area)},
+        )
 
     for oid in sorted(eid for eid, e in doc.elements.items() if isinstance(e, SlabOpeningElem)):
         sop = doc.elements[oid]

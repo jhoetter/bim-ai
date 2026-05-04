@@ -20,6 +20,7 @@ from bim_ai.elements import (
     WindowElem,
 )
 from bim_ai.schedule_field_registry import column_metadata_bundle, stable_column_keys
+from bim_ai.type_material_registry import family_type_display_label
 
 
 def _level_labels(doc: Document) -> dict[str, str]:
@@ -111,6 +112,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                         "level": lvl_lab.get(lid, lid or "—"),
                         "widthMm": e.width_mm,
                         "familyTypeId": getattr(e, "family_type_id", "") or "",
+                        "familyTypeDisplay": family_type_display_label(doc, getattr(e, "family_type_id", None)),
                     }
                 )
 
@@ -129,6 +131,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                         "heightMm": e.height_mm,
                         "sillMm": e.sill_height_mm,
                         "familyTypeId": getattr(e, "family_type_id", "") or "",
+                        "familyTypeDisplay": family_type_display_label(doc, getattr(e, "family_type_id", None)),
                     }
                 )
 
@@ -254,10 +257,10 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
             grouped[" / ".join(str(x) for x in k)] = sub
 
     sch_group = sch.grouping or {}
-    stable_sort_field = sch_group.get("sortBy")
+    stable_sort_field = filt.get("sortBy") or filt.get("SortBy") or sch_group.get("sortBy")
 
     def sort_rs(rs: list[dict[str, Any]]) -> list[dict[str, Any]]:
-        if stable_sort_field and stable_sort_field in (rows[0] if rows else {}):
+        if stable_sort_field and rs and stable_sort_field in rs[0]:
             return sorted(rs, key=lambda x: x.get(stable_sort_field, ""))
         return sorted(rs, key=lambda x: str(x.get("name", "") or x.get("elementId")))
 
@@ -312,6 +315,18 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                 sum(float(r.get("footprintAreaM2") or 0.0) for r in leaf_rows), 4
             ),
         }
+    elif cat == "stair" and leaf_rows:
+        totals = {
+            "kind": "stair",
+            "rowCount": len(leaf_rows),
+            "totalRunMm": round(sum(float(r.get("runMm") or 0.0) for r in leaf_rows), 4),
+        }
+    elif cat == "sheet" and leaf_rows:
+        totals = {
+            "kind": "sheet",
+            "rowCount": len(leaf_rows),
+            "totalViewports": int(sum(int(r.get("viewportCount") or 0) for r in leaf_rows)),
+        }
 
     out: dict[str, Any] = {
         "scheduleId": schedule_id,
@@ -319,6 +334,13 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
         "category": cat,
         "columns": columns,
         "columnMetadata": column_metadata_bundle(cat),
+        "scheduleEngine": {
+            "format": "scheduleDerivationEngine_v1",
+            "category": cat,
+            "groupKeys": group_keys,
+            "sortBy": stable_sort_field,
+            "supportsCsv": True,
+        },
         "totalRows": total_rows,
         "groupKeys": group_keys,
         **({"groupedSections": grouped} if grouped else {"rows": rows}),

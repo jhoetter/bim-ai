@@ -12,6 +12,8 @@ export function AgentReviewPane() {
   const [evidenceTxt, setEvidenceTxt] = useState<JsonText | null>(null);
   const [bundleText, setBundleText] = useState<string>('{"commands":[]}');
   const [dryRunTxt, setDryRunTxt] = useState<JsonText | null>(null);
+  const [roomCandTxt, setRoomCandTxt] = useState<JsonText | null>(null);
+  const [roomCandError, setRoomCandError] = useState<string | null>(null);
   const [assumeLogTxt, setAssumeLogTxt] = useState<JsonText>(
     JSON.stringify(
       [
@@ -38,9 +40,100 @@ export function AgentReviewPane() {
       const arr = Array.isArray(parsed) ? parsed.filter((x) => typeof x === 'string') : [];
       return { assumptionLogFormat: 'assumptionLog_v0', assumptions: arr };
     } catch {
-      return { assumptionLogFormat: 'assumptionLog_v0', assumptions: [], error: 'Invalid JSON array' };
+      return {
+        assumptionLogFormat: 'assumptionLog_v0',
+        assumptions: [],
+        error: 'Invalid JSON array',
+      };
     }
   }, [assumeLogTxt]);
+
+  type RoomCand = {
+    candidateId?: string;
+    approxAreaM2?: number;
+    levelName?: string;
+    perimeterApproxM?: number;
+    warnings?: { code?: string; message?: string; severity?: string }[];
+    comparisonToAuthoredRooms?: {
+      roomId?: string;
+      roomName?: string;
+      iouApprox?: number;
+    }[];
+    classificationHints?: { schemeColorHint?: string };
+    suggestedBundleCommands?: unknown[];
+  };
+
+  const elementsById = useBimStore((s) => s.elementsById);
+
+  const authoredRoomStats = useMemo(() => {
+    const rooms = Object.values(elementsById).filter((e) => e.kind === 'room');
+
+    return { count: rooms.length };
+  }, [elementsById]);
+
+  const roomCandPreview = useMemo(() => {
+    if (!roomCandTxt) return null;
+
+    try {
+      const parsed = JSON.parse(roomCandTxt) as { candidates?: RoomCand[] };
+
+      const cands = Array.isArray(parsed.candidates) ? parsed.candidates : [];
+
+      return cands.map((c) => {
+        const topMatch = Array.isArray(c.comparisonToAuthoredRooms)
+          ? c.comparisonToAuthoredRooms[0]
+          : undefined;
+
+        return {
+          id: String(c.candidateId ?? '—'),
+
+          area: typeof c.approxAreaM2 === 'number' ? c.approxAreaM2 : null,
+
+          level: typeof c.levelName === 'string' ? c.levelName : '',
+
+          perimeter: typeof c.perimeterApproxM === 'number' ? c.perimeterApproxM : null,
+
+          warnCount: Array.isArray(c.warnings) ? c.warnings.length : 0,
+
+          hint:
+            typeof c.classificationHints?.schemeColorHint === 'string'
+              ? c.classificationHints.schemeColorHint
+              : '',
+          bestRoomId: typeof topMatch?.roomId === 'string' ? topMatch.roomId : '',
+          bestIou:
+            typeof topMatch?.iouApprox === 'number'
+              ? topMatch.iouApprox
+              : topMatch?.iouApprox != null
+                ? Number(topMatch.iouApprox)
+                : null,
+        };
+      });
+    } catch {
+      return null;
+    }
+  }, [roomCandTxt]);
+
+  function appendRoomCandidateCommands(cands: RoomCand[]) {
+    const flat: unknown[] = [];
+    for (const c of cands) {
+      const sb = c.suggestedBundleCommands;
+      if (Array.isArray(sb)) {
+        for (const cmd of sb) {
+          flat.push(cmd);
+        }
+      }
+    }
+    if (!flat.length) return;
+    try {
+      const env = JSON.parse(bundleText || '{}') as { commands?: unknown[] };
+      const existing = Array.isArray(env.commands) ? env.commands : [];
+      env.commands = [...existing, ...flat];
+      setBundleText(JSON.stringify(env, null, 2));
+      pushStep(`appended ${flat.length} commands from room derivation candidates`);
+    } catch {
+      pushStep('failed to merge room candidate commands into bundle JSON');
+    }
+  }
 
   return (
     <div className="space-y-3 text-[11px]">
@@ -51,7 +144,9 @@ export function AgentReviewPane() {
             Inspect schema + attach an <strong>assumption log</strong> (JSON array of strings).
           </li>
           <li>Paste a command bundle and run bundle dry-run (no commit).</li>
-          <li>Fetch validation + evidence-package JSON and compare with Playwright screenshots in CI.</li>
+          <li>
+            Fetch validation + evidence-package JSON and compare with Playwright screenshots in CI.
+          </li>
           <li>Use advisor quick-fixes before applying bundles to production models.</li>
         </ol>
       </div>
@@ -162,8 +257,121 @@ export function AgentReviewPane() {
           >
             Validate + fetch evidence-package
           </Btn>
+
+          <Btn
+            type="button"
+            variant="quiet"
+            className="text-[11px]"
+            disabled={!modelId}
+            title={!modelId ? 'Bootstrap a model first' : undefined}
+            onClick={() =>
+              void (async () => {
+                if (!modelId) return;
+                try {
+                  const res = await fetch(
+                    `/api/models/${encodeURIComponent(modelId)}/room-derivation-candidates`,
+                  );
+                  const body = JSON.parse(await res.text()) as unknown;
+                  if (!res.ok) throw new Error(JSON.stringify(body));
+                  setRoomCandTxt(JSON.stringify(body, null, 2));
+                  setRoomCandError(null);
+                  pushStep('room-derivation-candidates fetch ok');
+                } catch (e) {
+                  const msg = e instanceof Error ? e.message : String(e);
+                  setRoomCandError(msg);
+                  setRoomCandTxt(null);
+                  pushStep('room-derivation-candidates error');
+                }
+              })()
+            }
+          >
+            Fetch room-derivation-candidates
+          </Btn>
         </div>
       </div>
+
+      {roomCandError ? (
+        <div className="rounded border border-border border-amber-500/40 bg-background/40 p-2 text-[10px] text-amber-600">
+          {roomCandError}
+        </div>
+      ) : null}
+
+      {roomCandTxt ? (
+        <div className="rounded border border-border bg-background/40 p-2">
+          <div className="font-semibold text-muted">Room derivation (review)</div>
+          <p className="mt-1 text-[10px] text-muted" data-testid="room-derivation-browser-context">
+            Browser snapshot: {authoredRoomStats.count} authored room(s). Use comparison below
+            against server candidates.
+          </p>
+          {roomCandPreview && roomCandPreview.length > 0 ? (
+            <div data-testid="room-derivation-comparison" className="mt-2 overflow-x-auto">
+              <table className="w-full border-collapse text-[10px]">
+                <thead>
+                  <tr className="border-b border-border/60 text-left text-muted">
+                    <th className="py-1 pe-2">Candidate</th>
+                    <th className="py-1 pe-2">Level</th>
+                    <th className="py-1 pe-2">A (m²)</th>
+                    <th className="py-1 pe-2">Perim (m)</th>
+                    <th className="py-1 pe-2">Best room</th>
+                    <th className="py-1 pe-2">IoU≈</th>
+                    <th className="py-1 pe-2">Warnings</th>
+                    <th className="py-1">Hint</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {roomCandPreview.map((row) => (
+                    <tr key={row.id} className="border-t border-border/40">
+                      <td className="py-1 pe-2 font-mono">{row.id.slice(0, 12)}…</td>
+                      <td className="py-1 pe-2">{row.level || '—'}</td>
+                      <td className="py-1 pe-2">{row.area != null ? row.area.toFixed(2) : '—'}</td>
+                      <td className="py-1 pe-2">
+                        {row.perimeter != null ? row.perimeter.toFixed(2) : '—'}
+                      </td>
+                      <td className="py-1 pe-2 font-mono">{row.bestRoomId || '—'}</td>
+                      <td className="py-1 pe-2">
+                        {row.bestIou != null ? row.bestIou.toFixed(2) : '—'}
+                      </td>
+                      <td className="py-1 pe-2">{row.warnCount}</td>
+                      <td className="py-1">
+                        {row.hint ? (
+                          <span
+                            className="inline-block size-3 rounded-full border border-border"
+                            style={{ backgroundColor: row.hint }}
+                            title={row.hint}
+                          />
+                        ) : (
+                          '—'
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
+          <div className="mt-2 flex flex-wrap gap-2">
+            <Btn
+              type="button"
+              variant="quiet"
+              className="text-[11px]"
+              onClick={() => {
+                try {
+                  const parsed = JSON.parse(roomCandTxt || '{}') as { candidates?: RoomCand[] };
+                  const cands = Array.isArray(parsed.candidates) ? parsed.candidates : [];
+                  appendRoomCandidateCommands(cands);
+                } catch {
+                  pushStep('room candidate merge parse error');
+                }
+              }}
+            >
+              Append all suggested bundle commands
+            </Btn>
+          </div>
+          <pre className="mt-2 max-h-40 overflow-auto rounded border bg-background p-2 text-[10px]">
+            {roomCandTxt}
+          </pre>
+        </div>
+      ) : null}
 
       <div>
         <div className="font-semibold text-muted">Evidence checklist (CLI)</div>
@@ -182,8 +390,8 @@ export function AgentReviewPane() {
             <code className="text-[10px]">bim-ai evidence</code> — snapshot counts + validate rollup
           </li>
           <li>
-            <code className="text-[10px]">bim-ai apply-bundle --dry-run &lt;bundle.json</code> — commit
-            preview
+            <code className="text-[10px]">bim-ai apply-bundle --dry-run &lt;bundle.json</code> —
+            commit preview
           </li>
         </ol>
       </div>
@@ -270,7 +478,9 @@ export function AgentReviewPane() {
                 );
                 const body = JSON.parse(await res.text()) as unknown;
                 if (!res.ok) throw new Error(String(body));
-                setEvidenceTxt(JSON.stringify({ assumptions: assumptionsJson, payload: body }, null, 2));
+                setEvidenceTxt(
+                  JSON.stringify({ assumptions: assumptionsJson, payload: body }, null, 2),
+                );
               } catch (e) {
                 setEvidenceTxt(e instanceof Error ? e.message : String(e));
               }

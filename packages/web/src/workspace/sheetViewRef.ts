@@ -2,7 +2,10 @@ import type { Element } from '@bim-ai/core';
 
 /** Parses `plan:`, `schedule:`, `section:` references from sheet viewports into display titles. */
 
-export function resolveViewportTitleFromRef(elementsById: Record<string, Element>, viewRefRaw: unknown) {
+export function resolveViewportTitleFromRef(
+  elementsById: Record<string, Element>,
+  viewRefRaw: unknown,
+) {
   if (typeof viewRefRaw !== 'string' || !viewRefRaw.includes(':')) {
     return undefined;
   }

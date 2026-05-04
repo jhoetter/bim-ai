@@ -14,7 +14,7 @@ ColumnMeta = dict[str, Any]
 # Preferred column order per derived category (stable field keys).
 SCHEDULE_COLUMN_ORDER: dict[str, tuple[str, ...]] = {
     "room": ("elementId", "name", "levelId", "level", "areaM2", "perimeterM", "familyTypeId"),
-    "door": ("elementId", "name", "wallId", "levelId", "level", "widthMm", "familyTypeId"),
+    "door": ("elementId", "name", "wallId", "levelId", "level", "widthMm", "familyTypeId", "familyTypeDisplay"),
     "window": (
         "elementId",
         "name",
@@ -25,6 +25,7 @@ SCHEDULE_COLUMN_ORDER: dict[str, tuple[str, ...]] = {
         "heightMm",
         "sillMm",
         "familyTypeId",
+        "familyTypeDisplay",
     ),
     "floor": (
         "elementId",
@@ -91,11 +92,65 @@ SCHEDULE_COLUMN_METADATA: dict[str, dict[str, ColumnMeta]] = {
     "door": {
         "widthMm": {"label": "Width (mm)", "role": "integer"},
         "familyTypeId": {"label": "Family / type", "role": "identity"},
+        "familyTypeDisplay": {"label": "Type name", "role": "text"},
     },
     "window": {
         "widthMm": {"label": "Width (mm)", "role": "integer"},
         "heightMm": {"label": "Height (mm)", "role": "integer"},
         "sillMm": {"label": "Sill (mm)", "role": "integer"},
+        "familyTypeId": {"label": "Family / type", "role": "identity"},
+        "familyTypeDisplay": {"label": "Type name", "role": "text"},
+    },
+    "floor": {
+        "elementId": {"label": "Element Id", "role": "id"},
+        "name": {"label": "Name", "role": "text"},
+        "level": {"label": "Level", "role": "text"},
+        "thicknessMm": {"label": "Thickness (mm)", "role": "number"},
+        "areaM2": {"label": "Area (m²)", "role": "number"},
+        "perimeterM": {"label": "Perimeter (m)", "role": "number"},
+        "familyTypeId": {"label": "Family / type", "role": "identity"},
+    },
+    "roof": {
+        "elementId": {"label": "Element Id", "role": "id"},
+        "name": {"label": "Name", "role": "text"},
+        "referenceLevel": {"label": "Ref. level", "role": "text"},
+        "overhangMm": {"label": "Overhang (mm)", "role": "number"},
+        "slopeDeg": {"label": "Slope (°)", "role": "number"},
+        "footprintAreaM2": {"label": "Footprint (m²)", "role": "number"},
+        "footprintPerimeterM": {"label": "Footprint perimeter (m)", "role": "number"},
+        "familyTypeId": {"label": "Family / type", "role": "identity"},
+    },
+    "stair": {
+        "elementId": {"label": "Element Id", "role": "id"},
+        "name": {"label": "Name", "role": "text"},
+        "baseLevel": {"label": "Base level", "role": "text"},
+        "topLevel": {"label": "Top level", "role": "text"},
+        "riseMm": {"label": "Rise (mm)", "role": "number"},
+        "runMm": {"label": "Run (mm)", "role": "number"},
+        "widthMm": {"label": "Width (mm)", "role": "number"},
+        "familyTypeId": {"label": "Family / type", "role": "identity"},
+    },
+    "sheet": {
+        "elementId": {"label": "Element Id", "role": "id"},
+        "name": {"label": "Name", "role": "text"},
+        "titleBlock": {"label": "Title block", "role": "text"},
+        "viewportCount": {"label": "Viewports", "role": "integer"},
+        "familyTypeId": {"label": "Family / type", "role": "identity"},
+    },
+    "plan_view": {
+        "elementId": {"label": "Element Id", "role": "id"},
+        "name": {"label": "Name", "role": "text"},
+        "level": {"label": "Level", "role": "text"},
+        "planPresentation": {"label": "Presentation", "role": "text"},
+        "discipline": {"label": "Discipline", "role": "text"},
+        "familyTypeId": {"label": "Family / type", "role": "identity"},
+    },
+    "planview": {
+        "elementId": {"label": "Element Id", "role": "id"},
+        "name": {"label": "Name", "role": "text"},
+        "level": {"label": "Level", "role": "text"},
+        "planPresentation": {"label": "Presentation", "role": "text"},
+        "discipline": {"label": "Discipline", "role": "text"},
         "familyTypeId": {"label": "Family / type", "role": "identity"},
     },
 }

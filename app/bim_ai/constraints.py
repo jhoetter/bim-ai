@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from collections import defaultdict
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -11,6 +11,7 @@ from bim_ai.elements import (
     DimensionElem,
     DoorElem,
     Element,
+    FamilyTypeElem,
     FloorElem,
     GridLineElem,
     LevelElem,
@@ -73,6 +74,11 @@ _RULE_DISCIPLINE: dict[str, str] = {
     "stair_comfort_eu_proxy": "architecture",
     "ids_cleanroom_door_without_family_type": "agent",
     "ids_cleanroom_window_without_family_type": "agent",
+    "ids_cleanroom_door_pressure_metadata_missing": "agent",
+    "ids_cleanroom_family_type_unknown": "agent",
+    "ids_cleanroom_cleanroom_class_missing": "agent",
+    "ids_cleanroom_interlock_grade_missing": "agent",
+    "ids_cleanroom_opening_finish_material_missing": "agent",
     "sheet_viewport_unknown_ref": "coordination",
 
     "exchange_manifest_ifc_gltf_slice_mismatch": "exchange",
@@ -796,6 +802,166 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
                             "Window instance missing required family/type reference for IDS/cleanroom rules."
                         ),
                         element_ids=[el.id],
+                    )
+                )
+
+    enforce_family_link = any(
+        bool(v.rule_json.get("enforceCleanroomFamilyTypeLinkage"))
+        if isinstance(getattr(v, "rule_json", None), dict)
+        else False
+        for v in val_rules
+    )
+
+    def _opening_family_ft_entries() -> list[tuple[str, str, Literal["door", "window"]]]:
+        out: list[tuple[str, str, Literal["door", "window"]]] = []
+        for d in doors:
+            fid = (getattr(d, "family_type_id", None) or "").strip()
+            if fid:
+                out.append((d.id, fid, "door"))
+        for el in elements.values():
+            if isinstance(el, WindowElem):
+                wid = (getattr(el, "family_type_id", None) or "").strip()
+                if wid:
+                    out.append((el.id, wid, "window"))
+        return out
+
+    if enforce_family_link:
+        for el_id, ftid, _kind in _opening_family_ft_entries():
+            tgt = elements.get(ftid)
+            if not isinstance(tgt, FamilyTypeElem):
+                viols.append(
+                    Violation(
+                        rule_id="ids_cleanroom_family_type_unknown",
+                        severity="warning",
+                        message="Opening references unknown family/type id — IDS metadata cannot be audited.",
+                        element_ids=[el_id],
+                    )
+                )
+
+    def _ftype_param_nonempty(ft_el: FamilyTypeElem, keys: tuple[str, ...]) -> bool:
+        p = ft_el.parameters or {}
+        if any(isinstance(p.get(k), (int, float)) and p.get(k) != 0 for k in keys):
+            return True
+        return any(isinstance(p.get(k), str) and str(p.get(k)).strip() for k in keys)
+
+    enforce_clean_class = any(
+        bool(v.rule_json.get("enforceCleanroomCleanroomClass"))
+        if isinstance(getattr(v, "rule_json", None), dict)
+        else False
+        for v in val_rules
+    )
+    if enforce_clean_class:
+        cr_keys = ("CleanroomClass", "cleanroomClass", "CR_CLASS", "cleanroom_grade")
+        for el_id, ftid, kind in _opening_family_ft_entries():
+            tgt = elements.get(ftid)
+            if not isinstance(tgt, FamilyTypeElem):
+                continue
+            if not _ftype_param_nonempty(tgt, cr_keys):
+                viols.append(
+                    Violation(
+                        rule_id="ids_cleanroom_cleanroom_class_missing",
+                        severity="warning",
+                        message=(
+                            "IDS expects cleanroom classification metadata on the referenced "
+                            f"opening family/type ({kind})."
+                        ),
+                        element_ids=[el_id],
+                    )
+                )
+
+    enforce_interlock = any(
+        bool(v.rule_json.get("enforceCleanroomInterlockGrade"))
+        if isinstance(getattr(v, "rule_json", None), dict)
+        else False
+        for v in val_rules
+    )
+    if enforce_interlock:
+        lk_keys = ("InterlockGrade", "interlockGrade", "CleanroomInterlock")
+        for d in doors:
+            fid = (getattr(d, "family_type_id", None) or "").strip()
+            if not fid:
+                continue
+            tgt = elements.get(fid)
+            if not isinstance(tgt, FamilyTypeElem):
+                continue
+            if not _ftype_param_nonempty(tgt, lk_keys):
+                viols.append(
+                    Violation(
+                        rule_id="ids_cleanroom_interlock_grade_missing",
+                        severity="warning",
+                        message="IDS expects interlock-grade metadata on the referenced door family/type.",
+                        element_ids=[d.id],
+                    )
+                )
+
+    enforce_finish_mat = any(
+        bool(v.rule_json.get("enforceCleanroomOpeningFinishMaterial"))
+        if isinstance(getattr(v, "rule_json", None), dict)
+        else False
+        for v in val_rules
+    )
+    if enforce_finish_mat:
+        fm_keys = ("Finish", "finish", "Material", "material", "SurfaceFinish", "surface_finish")
+        for el_id, ftid, kind in _opening_family_ft_entries():
+            tgt = elements.get(ftid)
+            if not isinstance(tgt, FamilyTypeElem):
+                continue
+            if not _ftype_param_nonempty(tgt, fm_keys):
+                viols.append(
+                    Violation(
+                        rule_id="ids_cleanroom_opening_finish_material_missing",
+                        severity="warning",
+                        message=(
+                            "IDS expects finish/material metadata on the referenced "
+                            f"opening family/type ({kind})."
+                        ),
+                        element_ids=[el_id],
+                    )
+                )
+
+    enforce_door_pressure = any(
+        bool(v.rule_json.get("enforceCleanroomDoorPressureRating"))
+        if isinstance(getattr(v, "rule_json", None), dict)
+        else False
+        for v in val_rules
+    )
+
+    if enforce_door_pressure:
+
+        def _ftype_has_pressure_rating(ft_el: FamilyTypeElem) -> bool:
+            p = ft_el.parameters or {}
+            for key in ("pressureRating", "pressure_rating", "PressureClass", "cleanroomPressureClass"):
+                val = p.get(key)
+                if isinstance(val, str) and val.strip():
+                    return True
+                if isinstance(val, (int, float)) and val != 0:
+                    return True
+            return False
+
+        for d in doors:
+            ftid = (getattr(d, "family_type_id", None) or "").strip()
+            if not ftid:
+                continue
+            ft_tgt = elements.get(ftid)
+
+            if not isinstance(ft_tgt, FamilyTypeElem):
+                viols.append(
+                    Violation(
+                        rule_id="ids_cleanroom_door_pressure_metadata_missing",
+                        severity="warning",
+                        message="Door references unknown family/type — cannot evaluate cleanroom pressure metadata.",
+                        element_ids=[d.id],
+                    )
+                )
+                continue
+
+            if not _ftype_has_pressure_rating(ft_tgt):
+                viols.append(
+                    Violation(
+                        rule_id="ids_cleanroom_door_pressure_metadata_missing",
+                        severity="warning",
+                        message="Cleanroom IDS requires pressure-class metadata on the door family/type parameters.",
+                        element_ids=[d.id],
                     )
                 )
 

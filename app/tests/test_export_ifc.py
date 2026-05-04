@@ -9,6 +9,7 @@ from bim_ai.elements import (
     DoorElem,
     FloorElem,
     LevelElem,
+    RoomElem,
     RoofElem,
     SlabOpeningElem,
     StairElem,
@@ -257,4 +258,94 @@ def test_export_ifc_kernel_wall_step_includes_pset_relationships() -> None:
     step = export_ifc_model_step(doc).upper()
     assert "IFCRELDEFINESBYPROPERTIES" in step
     assert "IFCPROPERTYSET" in step
+
+
+def test_export_ifc_kernel_qto_matrix_for_wall_slab_space_door_window() -> None:
+    """When IfcOpenShell QTO helpers succeed, expect narrow ``Qto_*BaseQuantities`` templates."""
+    doc = Document(
+        revision=101,
+        elements={
+            "lvl-g": LevelElem(kind="level", id="lvl-g", name="G", elevationMm=0),
+            "w-host": WallElem(
+                kind="wall",
+                id="w-host",
+                name="W",
+                levelId="lvl-g",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 8000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+            "fl": FloorElem(
+                kind="floor",
+                id="fl",
+                name="S",
+                levelId="lvl-g",
+                boundaryMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 9000, "yMm": 0},
+                    {"xMm": 9000, "yMm": 6000},
+                    {"xMm": 0, "yMm": 6000},
+                ],
+                thicknessMm=220,
+            ),
+            "rm": RoomElem(
+                kind="room",
+                id="rm",
+                name="Lab",
+                levelId="lvl-g",
+                outlineMm=[
+                    {"xMm": 1000, "yMm": 1000},
+                    {"xMm": 7000, "yMm": 1000},
+                    {"xMm": 7000, "yMm": 5500},
+                    {"xMm": 1000, "yMm": 5500},
+                ],
+            ),
+            "d1": DoorElem(
+                kind="door",
+                id="d1",
+                name="D",
+                wallId="w-host",
+                alongT=0.52,
+                widthMm=900,
+            ),
+            "z1": WindowElem(
+                kind="window",
+                id="z1",
+                name="Z",
+                wallId="w-host",
+                alongT=0.22,
+                widthMm=900,
+                sillHeightMm=900,
+                heightMm=1200,
+            ),
+        },
+    )
+    step = export_ifc_model_step(doc)
+    import ifcopenshell
+
+    model = ifcopenshell.file.from_string(step)
+
+    qtys = model.by_type("IfcElementQuantity")
+    names = {q.Name for q in qtys if getattr(q, "Name", None)}
+
+    expected = {
+        "Qto_WallBaseQuantities",
+        "Qto_SlabBaseQuantities",
+        "Qto_SpaceBaseQuantities",
+        "Qto_DoorBaseQuantities",
+        "Qto_WindowBaseQuantities",
+    }
+    missing = sorted(expected - names)
+    assert not missing, f"Missing QTO templates: {missing}; have {sorted(names)!r}"
+
+    rels = model.by_type("IfcRelDefinesByProperties")
+    qty_ids = {q.id() for q in qtys}
+    linked_any = any(
+        getattr(rel, "RelatingPropertyDefinition", None) is not None
+        and rel.RelatingPropertyDefinition.id() in qty_ids
+        for rel in rels
+    )
+
+    assert len(qtys) == 0 or linked_any
 

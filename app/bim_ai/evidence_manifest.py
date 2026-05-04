@@ -5,10 +5,11 @@ from __future__ import annotations
 import hashlib
 import json
 from typing import Any
+from urllib.parse import quote
 from uuid import UUID
 
 from bim_ai.document import Document
-from bim_ai.elements import PlanViewElem
+from bim_ai.elements import PlanViewElem, SheetElem
 
 
 def export_link_map(model_id: UUID) -> dict[str, str]:
@@ -30,6 +31,10 @@ def export_link_map(model_id: UUID) -> dict[str, str]:
         "bcfTopicsJsonImport": f"{base}/imports/bcf-topics-json",
         "sheetPreviewSvg": f"{base}/exports/sheet-preview.svg",
         "sheetPreviewPdf": f"{base}/exports/sheet-preview.pdf",
+        "roomDerivationCandidates": f"{base}/room-derivation-candidates",
+        "typeMaterialRegistry": f"{base}/registry/type-material",
+        "planProjectionWire": f"{base}/projection/plan",
+        "sectionProjectionWire": f"{base}/projection/section/{{sectionCutId}}",
     }
 
 
@@ -66,6 +71,15 @@ def expected_screenshot_captures(plan_view_ids: list[str]) -> list[dict[str, Any
             "id": "split_plan_section",
             "workspaceLayoutPreset": "split_plan_section",
             "recommendedTestIds": ["plan-canvas"],
+        },
+        {
+            "id": "sheet_full_deterministic",
+            "workspaceLayoutPreset": "coordination",
+            "recommendedTestIds": ["sheet-canvas"],
+            "note": (
+                "Correlate Playwright PNG with `evidencePackage.deterministicSheetEvidence` rows; prefix filenames "
+                "with `suggestedEvidenceArtifactBasename` for artifact sorting in CI."
+            ),
         },
     ]
     for pv in plan_view_ids:
@@ -109,6 +123,59 @@ def plan_view_wire_index(doc: Document) -> list[dict[str, Any]]:
     return sorted(out, key=lambda x: x["id"])
 
 
+def deterministic_sheet_evidence_manifest(
+    *,
+    model_id: UUID,
+    doc: Document,
+    evidence_artifact_basename: str,
+    semantic_digest_sha256: str,
+    semantic_digest_prefix16: str,
+) -> list[dict[str, Any]]:
+    """Stable rows for CI / Playwright naming (WP-E05/E06 / WP-A03/A04)."""
+
+    mid = str(model_id)
+    api_base = f"/api/models/{mid}/exports"
+
+    sheets = [e for e in doc.elements.values() if isinstance(e, SheetElem)]
+
+    rows: list[dict[str, Any]] = []
+
+    bundle_json = f"{evidence_artifact_basename}-evidence-package.json"
+
+    for sh in sorted(sheets, key=lambda s: s.id):
+
+        safe = "".join(ch for ch in sh.id if ch.isalnum() or ch in ("-", "_")) or "sheet"
+
+        qid = quote(sh.id, safe="")
+
+        stem = f"{evidence_artifact_basename}-sheet-{safe}"
+
+        rows.append(
+            {
+                "sheetId": sh.id,
+                "sheetName": sh.name,
+                "svgHref": f"{api_base}/sheet-preview.svg?sheetId={qid}",
+                "pdfHref": f"{api_base}/sheet-preview.pdf?sheetId={qid}",
+                "playwrightSuggestedFilenames": {
+                    "svgProbe": f"{stem}.svg.probe.txt",
+                    "pdfProbe": f"{stem}.pdf.probe.bin",
+                    "pngViewport": f"{stem}-viewport.png",
+                },
+                "correlation": {
+                    "format": "evidenceSheetCorrelation_v1",
+                    "semanticDigestSha256": semantic_digest_sha256,
+                    "semanticDigestPrefix16": semantic_digest_prefix16,
+                    "modelRevision": doc.revision,
+                    "modelId": mid,
+                    "suggestedEvidenceBundleEvidencePackageJson": bundle_json,
+                },
+            }
+
+        )
+
+    return rows
+
+
 _DIGEST_EXCLUDED_KEYS = frozenset({"generatedAt", "semanticDigestSha256"})
 
 
@@ -144,6 +211,89 @@ def evidence_package_semantic_digest_sha256(payload: dict[str, Any]) -> str:
                 ),
             )
             shallow["validate"] = val2
+
+    rdc = shallow.get("roomDerivationCandidates")
+    if isinstance(rdc, dict):
+        cands = rdc.get("candidates")
+        if isinstance(cands, list):
+            shallow = dict(shallow)
+            rdc2 = dict(rdc)
+
+            normed: list[dict[str, Any]] = []
+
+            for c_raw in sorted(cands, key=lambda x: str(x.get("candidateId", ""))):
+                if not isinstance(c_raw, dict):
+                    continue
+
+                cx = dict(c_raw)
+
+                comp = cx.get("comparisonToAuthoredRooms")
+
+                if isinstance(comp, list):
+
+                    cx["comparisonToAuthoredRooms"] = sorted(comp, key=lambda x: str(x.get("roomId", "")))
+
+                wrn = cx.get("warnings")
+
+                if isinstance(wrn, list):
+
+                    cx["warnings"] = sorted(
+                        wrn,
+                        key=lambda x: (
+                            str(x.get("code", "")),
+
+                            str(x.get("message", "")),
+                            str(x.get("severity", "")),
+                        ),
+                    )
+
+                sh = cx.get("separationHintGridLineIds")
+
+                if isinstance(sh, list):
+
+                    cx["separationHintGridLineIds"] = sorted(str(x) for x in sh)
+
+                normed.append(cx)
+
+            rdc2["candidates"] = normed
+            shallow["roomDerivationCandidates"] = rdc2
+
+    tmr = shallow.get("typeMaterialRegistry")
+    if isinstance(tmr, dict):
+        docp = tmr.get("document")
+        if isinstance(docp, dict):
+            shallow = dict(shallow)
+            tmr2 = dict(tmr)
+            doc2 = dict(docp)
+            fts = doc2.get("familyTypes")
+            if isinstance(fts, list):
+                doc2["familyTypes"] = sorted(fts, key=lambda x: str(x.get("id", "")))
+            wts = doc2.get("wallTypes")
+            if isinstance(wts, list):
+                doc2["wallTypes"] = sorted(wts, key=lambda x: str(x.get("id", "")))
+            tmr2["document"] = doc2
+            shallow["typeMaterialRegistry"] = tmr2
+
+    pps = shallow.get("planProjectionWireSample")
+    if isinstance(pps, dict):
+        shallow = dict(shallow)
+        pps2 = dict(pps)
+        prim = pps2.get("primitives")
+        if isinstance(prim, dict):
+            prim2 = dict(prim)
+            for list_key, arr in list(prim2.items()):
+                if list_key == "format":
+                    continue
+                if isinstance(arr, list):
+                    prim2[list_key] = sorted(arr, key=lambda x: str(x.get("id", "")))
+            pps2["primitives"] = prim2
+        warn_pv = pps2.get("warnings")
+        if isinstance(warn_pv, list):
+            pps2["warnings"] = sorted(
+                warn_pv,
+                key=lambda x: (str(x.get("code", "")), str(x.get("message", ""))),
+            )
+        shallow["planProjectionWireSample"] = pps2
 
     body = json.dumps(shallow, sort_keys=True, separators=(",", ":"), default=str)
     return hashlib.sha256(body.encode("utf-8")).hexdigest()

@@ -5,6 +5,7 @@ from bim_ai.elements import (
     FloorElem,
     LevelElem,
     PlanViewElem,
+    RoofElem,
     RoomElem,
     ScheduleElem,
     SheetElem,
@@ -115,6 +116,93 @@ def test_build_ifc_exchange_manifest_aligned_with_schedule_only_doc():
     assert im["elementCount"] == gext["elementCount"]
     assert im["exportedGeometryKinds"] == gext["exportedGeometryKinds"]
     assert im["unsupportedDocumentKindsDetailed"] == gext["unsupportedDocumentKindsDetailed"]
+
+
+def test_floor_schedule_engine_meta_and_sort():
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="G", elevationMm=0),
+            "f-b": FloorElem(
+                kind="floor",
+                id="f-b",
+                name="Beta slab",
+                levelId="lvl",
+                boundaryMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 2000, "yMm": 0},
+                    {"xMm": 2000, "yMm": 2000},
+                    {"xMm": 0, "yMm": 2000},
+                ],
+                thicknessMm=200,
+            ),
+            "f-a": FloorElem(
+                kind="floor",
+                id="f-a",
+                name="Alpha slab",
+                levelId="lvl",
+                boundaryMm=[
+                    {"xMm": 3000, "yMm": 0},
+                    {"xMm": 5000, "yMm": 0},
+                    {"xMm": 5000, "yMm": 2000},
+                    {"xMm": 3000, "yMm": 2000},
+                ],
+                thicknessMm=200,
+            ),
+            "sch-f": ScheduleElem(
+                kind="schedule",
+                id="sch-f",
+                name="Floors",
+                filters={"category": "floor", "sortBy": "name"},
+            ),
+        },
+    )
+    tbl = derive_schedule_table(doc, "sch-f")
+    assert tbl["scheduleEngine"]["format"] == "scheduleDerivationEngine_v1"
+    assert tbl["scheduleEngine"]["sortBy"] == "name"
+    names = [r["name"] for r in tbl["rows"]]
+    assert names == sorted(names)
+    assert tbl["columnMetadata"]["fields"]["areaM2"]["label"]
+
+
+def test_roof_and_stair_totals_rollups():
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl0": LevelElem(kind="level", id="lvl0", name="G", elevationMm=0),
+            "lvl1": LevelElem(kind="level", id="lvl1", name="O", elevationMm=2800),
+            "r1": RoofElem(
+                kind="roof",
+                id="r1",
+                name="R",
+                referenceLevelId="lvl1",
+                footprintMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 4000, "yMm": 0},
+                    {"xMm": 4000, "yMm": 3000},
+                    {"xMm": 0, "yMm": 3000},
+                ],
+            ),
+            "st1": StairElem(
+                kind="stair",
+                id="st1",
+                name="S",
+                baseLevelId="lvl0",
+                topLevelId="lvl1",
+                runStartMm={"xMm": 0, "yMm": 0},
+                runEndMm={"xMm": 3000, "yMm": 0},
+                widthMm=1000,
+            ),
+            "sch-r": ScheduleElem(kind="schedule", id="sch-r", name="Roofs", filters={"category": "roof"}),
+            "sch-s": ScheduleElem(kind="schedule", id="sch-s", name="Stairs", filters={"category": "stair"}),
+        },
+    )
+    tr = derive_schedule_table(doc, "sch-r")
+    assert tr["totals"]["kind"] == "roof"
+    assert tr["totals"]["rowCount"] == 1
+    ts = derive_schedule_table(doc, "sch-s")
+    assert ts["totals"]["kind"] == "stair"
+    assert ts["totals"]["totalRunMm"] > 0
 
 
 def test_window_schedule_group_alias():

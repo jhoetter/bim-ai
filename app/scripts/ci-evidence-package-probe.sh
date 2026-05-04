@@ -51,3 +51,30 @@ echo "evidence-package probe OK for ${base}/api/models/…/evidence-package"
 echo "semanticDigestSha256=${semantic_digest}"
 echo "semanticDigestPrefix16=${semantic_prefix}"
 echo "suggestedEvidenceArtifactBasename=${artifact_basename}"
+
+python3 -c "
+import json, sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+data = json.loads(path.read_text(encoding='utf-8'))
+bund = data.get('suggestedEvidenceBundleFilenames') or {}
+print('suggestedEvidenceBundle.evidencePackageJson=' + str(bund.get('evidencePackageJson') or ''))
+rows = data.get('deterministicSheetEvidence') or []
+if not rows:
+    raise SystemExit(0)
+r0 = rows[0]
+corr = r0.get('correlation') or {}
+pfn = (r0.get('playwrightSuggestedFilenames') or {}).get('pngViewport') or ''
+svg = str(r0.get('svgHref') or '')
+pdf = str(r0.get('pdfHref') or '')
+print('deterministicSheetEvidence[0].correlation.modelRevision=' + str(corr.get('modelRevision') or ''))
+print('deterministicSheetEvidence[0].playwrightSuggested.pngViewport=' + pfn)
+print('deterministicSheetEvidence[0].svgHref=' + svg)
+print('deterministicSheetEvidence[0].pdfHref=' + pdf)
+" "$tmp"
+
+if [[ "${BIM_AI_EVIDENCE_PROBE_FETCH_ARTIFACTS:-}" == "1" ]]; then
+  probe_png="$(python3 -c "import json,sys; d=json.load(open(sys.argv[1],encoding='utf-8')); r=(d.get('deterministicSheetEvidence')or [{}])[0]; print((r.get('playwrightSuggestedFilenames')or{}).get('pngViewport',''))" "$tmp")"
+  echo "(fetch skipped) playwright PNG basename for CI reviewers: ${probe_png}"
+fi

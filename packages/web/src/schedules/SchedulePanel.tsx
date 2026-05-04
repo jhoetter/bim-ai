@@ -4,7 +4,7 @@ import type { Element } from '@bim-ai/core';
 
 import { VirtualScrollRows } from './VirtualScrollRows';
 
-type TabKey = 'rooms' | 'doors' | 'windows' | 'sheets';
+type TabKey = 'rooms' | 'doors' | 'windows' | 'floors' | 'roofs' | 'stairs' | 'plans' | 'sheets';
 
 const SCHED_TABLE_ROW_PX = 28;
 const SCHED_TABLE_VIEWPORT_PX = 220;
@@ -19,15 +19,42 @@ function findScheduleIdForCategory(
     if (e.kind !== 'schedule') continue;
     const f = e.filters ?? {};
     const c = String(
-      (f as { category?: string }).category ??
-        (f as { Category?: string }).Category ??
-        '',
+      (f as { category?: string }).category ?? (f as { Category?: string }).Category ?? '',
     ).toLowerCase();
     if (c !== category) continue;
     if (!best || e.id.localeCompare(best) < 0) best = e.id;
   }
 
   return best;
+}
+
+function formatScheduleCell(v: unknown): string {
+  if (v == null || v === '') return '—';
+
+  if (typeof v === 'number') return Number.isInteger(v) ? String(v) : v.toFixed(3);
+
+  return String(v);
+}
+
+/** Flat rows from derived schedule payload (ungrouped or grouped). */
+function flattenSchedulePayloadRows(data: Record<string, unknown>): Record<string, unknown>[] {
+  const rows = data.rows;
+
+  if (Array.isArray(rows)) return rows as Record<string, unknown>[];
+
+  const gs = data.groupedSections as Record<string, unknown[]> | undefined;
+
+  if (gs && typeof gs === 'object') {
+    const out: Record<string, unknown>[] = [];
+
+    for (const v of Object.values(gs)) {
+      if (Array.isArray(v)) out.push(...(v as Record<string, unknown>[]));
+    }
+
+    return out;
+  }
+
+  return [];
 }
 
 type RoomVm = {
@@ -135,26 +162,60 @@ export function SchedulePanel(props: {
     () => findScheduleIdForCategory(props.elementsById, 'window'),
     [props.elementsById],
   );
+  const sidFloors = useMemo(
+    () => findScheduleIdForCategory(props.elementsById, 'floor'),
+    [props.elementsById],
+  );
+  const sidRoofs = useMemo(
+    () => findScheduleIdForCategory(props.elementsById, 'roof'),
+    [props.elementsById],
+  );
+  const sidStairs = useMemo(
+    () => findScheduleIdForCategory(props.elementsById, 'stair'),
+    [props.elementsById],
+  );
+  const sidPlans = useMemo(
+    () => findScheduleIdForCategory(props.elementsById, 'plan_view'),
+    [props.elementsById],
+  );
+  const sidSheets = useMemo(
+    () => findScheduleIdForCategory(props.elementsById, 'sheet'),
+    [props.elementsById],
+  );
+
+  const sidForTab = useMemo(() => {
+    switch (tab) {
+      case 'rooms':
+        return sidRooms;
+      case 'doors':
+        return sidDoors;
+      case 'windows':
+        return sidWins;
+      case 'floors':
+        return sidFloors;
+      case 'roofs':
+        return sidRoofs;
+      case 'stairs':
+        return sidStairs;
+      case 'plans':
+        return sidPlans;
+      case 'sheets':
+        return sidSheets;
+      default:
+        return undefined;
+    }
+  }, [tab, sidRooms, sidDoors, sidWins, sidFloors, sidRoofs, sidStairs, sidPlans, sidSheets]);
 
   useEffect(() => {
-    if (!props.modelId || tab === 'sheets') {
-      setServer(null);
-      setServerErr(null);
+    if (!props.modelId || !sidForTab) {
+      queueMicrotask(() => {
+        setServer(null);
+        setServerErr(null);
+      });
       return;
     }
-    const sid =
-      tab === 'rooms'
-        ? sidRooms
-        : tab === 'doors'
-          ? sidDoors
-          : tab === 'windows'
-            ? sidWins
-            : undefined;
-    if (!sid) {
-      setServer(null);
-      setServerErr(null);
-      return;
-    }
+
+    const sid = sidForTab;
 
     let cancel = false;
     void (async () => {
@@ -182,7 +243,7 @@ export function SchedulePanel(props: {
     return () => {
       cancel = true;
     };
-  }, [props.modelId, tab, sidDoors, sidRooms, sidWins]);
+  }, [props.modelId, tab, sidForTab]);
 
   const roomRowsLocal = useMemo(() => {
     const lvl = props.activeLevelId;
@@ -326,8 +387,7 @@ export function SchedulePanel(props: {
     [props.elementsById],
   );
 
-  const srvActive =
-    !!props.modelId && server && server.tab === tab && tab !== 'sheets' ? server : null;
+  const srvActive = !!props.modelId && server && server.tab === tab ? server : null;
 
   const groupedRooms =
     tab === 'rooms' && srvActive?.data.groupedSections
@@ -365,7 +425,42 @@ export function SchedulePanel(props: {
 
   const windowRows = flatWinSrv ?? windowRowsLocal;
 
-  const totals = srvActive ? (srvActive.data.totals as Record<string, unknown> | undefined) : undefined;
+  const totals = srvActive
+    ? (srvActive.data.totals as Record<string, unknown> | undefined)
+    : undefined;
+
+  type GenericDerived = {
+    columns: string[];
+    fieldLabels: Record<string, string>;
+    rows: Record<string, unknown>[];
+  };
+
+  const registrySchedule: GenericDerived | null = useMemo(() => {
+    if (
+      tab !== 'floors' &&
+      tab !== 'roofs' &&
+      tab !== 'stairs' &&
+      tab !== 'plans' &&
+      tab !== 'sheets'
+    )
+      return null;
+
+    if (!srvActive || srvActive.tab !== tab) return null;
+
+    const d = srvActive.data;
+    const columns = Array.isArray(d.columns) ? (d.columns as string[]) : [];
+
+    const rawMeta = d.columnMetadata as { fields?: Record<string, { label?: string }> } | undefined;
+    const fields = rawMeta?.fields ?? {};
+
+    const fieldLabels = Object.fromEntries(
+      Object.entries(fields).map(([k, v]) => [k, v?.label ?? k]),
+    ) as Record<string, string>;
+
+    const rows = flattenSchedulePayloadRows(d);
+
+    return columns.length ? { columns, fieldLabels, rows } : null;
+  }, [srvActive, tab]);
 
   function csvForTab(): string {
     if (tab === 'rooms')
@@ -410,12 +505,7 @@ export function SchedulePanel(props: {
   }
 
   async function downloadCsv() {
-    if (
-      srvActive?.scheduleId &&
-      props.modelId &&
-      tab !== 'sheets' &&
-      srvActive.tab === tab
-    ) {
+    if (srvActive?.scheduleId && props.modelId && srvActive.tab === tab) {
       const mid = encodeURIComponent(props.modelId);
       const sc = encodeURIComponent(srvActive.scheduleId);
       const res = await fetch(`/api/models/${mid}/schedules/${sc}/table?format=csv`);
@@ -425,7 +515,22 @@ export function SchedulePanel(props: {
         return;
       }
 
-      const ext = tab === 'windows' ? 'window' : tab === 'doors' ? 'door' : 'room';
+      const ext =
+        tab === 'windows'
+          ? 'window'
+          : tab === 'doors'
+            ? 'door'
+            : tab === 'floors'
+              ? 'floor'
+              : tab === 'roofs'
+                ? 'roof'
+                : tab === 'stairs'
+                  ? 'stair'
+                  : tab === 'plans'
+                    ? 'plan_view'
+                    : tab === 'sheets'
+                      ? 'sheet'
+                      : 'room';
 
       const blob = new Blob([body], { type: 'text/csv;charset=utf-8' });
 
@@ -471,11 +576,21 @@ export function SchedulePanel(props: {
     parts.push(`${totals.rowCount ?? totals.row_count ?? '?'} rows`);
 
     if (kind === 'room') {
-      parts.push(`Σ area ${Number(totals.areaM2 ?? 0).toFixed(3)} m²`);
-      parts.push(`Σ perimeter ${Number(totals.perimeterM ?? 0).toFixed(3)} m`);
+      parts.push(`sum area ${Number(totals.areaM2 ?? 0).toFixed(3)} m2`);
+      parts.push(`sum perimeter ${Number(totals.perimeterM ?? 0).toFixed(3)} m`);
     }
 
-    if (kind === 'window') parts.push(`avg width ${Number(totals.averageWidthMm ?? 0).toFixed(1)} mm`);
+    if (kind === 'window')
+      parts.push(`avg width ${Number(totals.averageWidthMm ?? 0).toFixed(1)} mm`);
+
+    if (kind === 'floor') parts.push(`sum area ${Number(totals.areaM2 ?? 0).toFixed(3)} m²`);
+
+    if (kind === 'roof')
+      parts.push(`footprint ${Number(totals.footprintAreaM2 ?? 0).toFixed(3)} m²`);
+
+    if (kind === 'stair') parts.push(`total run ${Number(totals.totalRunMm ?? 0).toFixed(1)} mm`);
+
+    if (kind === 'sheet') parts.push(`viewports ${Number(totals.totalViewports ?? 0)}`);
 
     return (
       <div
@@ -548,7 +663,10 @@ export function SchedulePanel(props: {
                   {k}
                 </div>
                 <VirtualScrollRows
-                  maxHeightPx={Math.min(SCHED_TABLE_VIEWPORT_PX, SCHED_TABLE_ROW_PX * rowsVm.length)}
+                  maxHeightPx={Math.min(
+                    SCHED_TABLE_VIEWPORT_PX,
+                    SCHED_TABLE_ROW_PX * rowsVm.length,
+                  )}
                   rowHeightPx={SCHED_TABLE_ROW_PX}
                   colSpan={4}
                   rows={rowsVm}
@@ -620,6 +738,47 @@ export function SchedulePanel(props: {
     );
   }
 
+  function renderRegistryScheduleTable(g: GenericDerived) {
+    const headers = g.columns.map((c) => g.fieldLabels[c] ?? c);
+
+    const rowsKeyed: Array<Record<string, unknown> & { id: string }> = g.rows.map((r, i) => ({
+      ...r,
+      id: String(r.elementId ?? (r as { element_id?: string }).element_id ?? `row-${i}`),
+    }));
+
+    return (
+      <div data-testid="schedule-registry-table">
+        <VirtualScrollRows<Record<string, unknown> & { id: string }>
+          maxHeightPx={Math.min(
+            SCHED_TABLE_VIEWPORT_PX,
+            SCHED_TABLE_ROW_PX * Math.max(rowsKeyed.length, 1),
+          )}
+          rowHeightPx={SCHED_TABLE_ROW_PX}
+          colSpan={g.columns.length}
+          rows={rowsKeyed}
+          header={
+            <tr>
+              {headers.map((h) => (
+                <th key={h} className="text-left text-[10px] font-normal">
+                  {h}
+                </th>
+              ))}
+            </tr>
+          }
+          renderRow={(r) => (
+            <tr className="border-t border-border/60">
+              {g.columns.map((c) => (
+                <td key={c} className="max-w-[140px] truncate text-[10px]">
+                  {formatScheduleCell(r[c])}
+                </td>
+              ))}
+            </tr>
+          )}
+        />
+      </div>
+    );
+  }
+
   return (
     <div
       data-testid="schedule-panel"
@@ -638,12 +797,33 @@ export function SchedulePanel(props: {
           </span>
         ) : null}
 
+        {srvActive?.data.scheduleEngine ? (
+          <span
+            data-testid="schedule-engine-meta"
+            className="rounded border border-border/50 px-1.5 py-0.5 text-[9px] text-muted"
+            title="scheduleDerivationEngine_v1 metadata"
+          >
+            {String(
+              (srvActive.data.scheduleEngine as { format?: string }).format ?? 'scheduleEngine',
+            )}
+            {(() => {
+              const sb = (srvActive.data.scheduleEngine as { sortBy?: unknown }).sortBy;
+
+              return sb ? ` · sort:${String(sb)}` : '';
+            })()}
+          </span>
+        ) : null}
+
         <div className="ms-auto flex flex-wrap gap-1">
           {(
             [
               ['rooms', 'Rooms'],
               ['doors', 'Doors'],
               ['windows', 'Windows'],
+              ['floors', 'Floors'],
+              ['roofs', 'Roofs'],
+              ['stairs', 'Stairs'],
+              ['plans', 'Plans'],
               ['sheets', 'Sheets'],
             ] as const
           ).map(([k, label]) => (
@@ -662,7 +842,11 @@ export function SchedulePanel(props: {
           ))}
         </div>
 
-        <button type="button" className="text-[11px] text-accent" onClick={() => void downloadCsv()}>
+        <button
+          type="button"
+          className="text-[11px] text-accent"
+          onClick={() => void downloadCsv()}
+        >
           CSV
         </button>
       </div>
@@ -784,8 +968,49 @@ export function SchedulePanel(props: {
         )
       ) : null}
 
+      {tab === 'floors' || tab === 'roofs' || tab === 'stairs' || tab === 'plans' ? (
+        !props.modelId ? (
+          <div className="mt-3 text-[11px] text-muted">
+            Open a saved model to load server schedules.
+          </div>
+        ) : !sidForTab ? (
+          <div className="mt-3 text-[11px] text-muted">
+            No{' '}
+            {tab === 'plans'
+              ? 'plan view'
+              : tab === 'floors'
+                ? 'floor'
+                : tab === 'roofs'
+                  ? 'roof'
+                  : 'stair'}{' '}
+            schedule element in this model.
+          </div>
+        ) : serverErr ? null : srvActive?.tab !== tab ? (
+          <div className="mt-3 text-[11px] text-muted">Loading schedule…</div>
+        ) : registrySchedule && registrySchedule.rows.length > 0 ? (
+          <div className="mt-2">
+            {renderRegistryScheduleTable(registrySchedule)}
+            {renderTotals()}
+          </div>
+        ) : (
+          <div className="mt-3 text-[11px] text-muted">No rows in this schedule.</div>
+        )
+      ) : null}
+
       {tab === 'sheets' ? (
-        !sheets.length ? (
+        props.modelId &&
+        sidSheets &&
+        !serverErr &&
+        srvActive?.tab === 'sheets' &&
+        registrySchedule &&
+        registrySchedule.rows.length > 0 ? (
+          <div className="mt-2">
+            {renderRegistryScheduleTable(registrySchedule)}
+            {renderTotals()}
+          </div>
+        ) : props.modelId && sidSheets && !serverErr && srvActive?.tab !== 'sheets' ? (
+          <div className="mt-3 text-[11px] text-muted">Loading schedule…</div>
+        ) : !sheets.length ? (
           <div className="mt-3 text-[11px] text-muted">No sheet elements yet.</div>
         ) : (
           <ul className="mt-2 space-y-1 text-[11px]">

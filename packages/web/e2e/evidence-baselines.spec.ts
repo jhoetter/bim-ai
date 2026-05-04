@@ -4,6 +4,19 @@ import { expect, test, type Page } from '@playwright/test';
 
 const MODEL_ID = '00000000-0000-4000-a000-00000000e2e';
 
+/** Mock evidence-package semantic tokens (stable; aligns with deterministicSheetEvidence[].playwright PNG stem). */
+
+const MOCK_SEMANTIC_DIGEST_SHA256 =
+  'e2efe2e0e2efe2e000000000000000000000000000000000000000000000000';
+
+const MOCK_SEMANTIC_PREFIX16 = MOCK_SEMANTIC_DIGEST_SHA256.slice(0, 16);
+
+const MOCK_EVIDENCE_BASENAME = `bim-ai-evidence-${MOCK_SEMANTIC_PREFIX16}-r3`;
+
+/** Expected Playwright PNG filename for GA-01 sheet canvas (deterministicSheetEvidence stub). */
+
+const MOCK_SHEET_VIEWPORT_PNG_FROM_MANIFEST = `${MOCK_EVIDENCE_BASENAME}-sheet-hf-sheet-ga01-viewport.png`;
+
 async function sharedRoutes(page: Page, layoutPreset: string) {
   await page.addInitScript((preset: string) => {
     localStorage.setItem('bim.welcome.dismissed', '1');
@@ -269,41 +282,73 @@ async function sharedRoutes(page: Page, layoutPreset: string) {
     await route.fulfill({ status: 404, body: JSON.stringify({ detail: 'unknown schedule' }) });
   });
 
-  await page.route(`**/api/models/${encodeURIComponent(MODEL_ID)}/evidence-package`, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        format: 'evidencePackage_v1',
-        generatedAt: new Date().toISOString(),
-        modelId: MODEL_ID,
-        revision: 3,
-        elementCount: 42,
-        countsByKind: { level: 2, wall: 1, sheet: 1, plan_view: 2 },
-        validate: {
-          violations: [],
-          checks: { errorViolationCount: 0, blockingViolationCount: 0 },
-        },
-        exportLinks: {
-          snapshot: `/api/models/${MODEL_ID}/snapshot`,
-          validate: `/api/models/${MODEL_ID}/validate`,
-          evidencePackage: `/api/models/${MODEL_ID}/evidence-package`,
-          sheetPreviewSvg: `/api/models/${MODEL_ID}/exports/sheet-preview.svg`,
-          sheetPreviewPdf: `/api/models/${MODEL_ID}/exports/sheet-preview.pdf`,
-        },
-        planViews: [{ id: 'pv-eg' }, { id: 'pv-og' }],
-        scheduleIds: [{ id: 'hf-sch-room' }, { id: 'hf-sch-window' }],
-        expectedScreenshotCaptures: [
-          { id: 'coord_sheet', screenshotBaseline: 'coordination-sheet.png' },
-          {
-            id: 'schedules_focus',
-            screenshotBaseline: 'schedules-focus.png',
-            workspaceLayoutPreset: 'schedules_focus',
+  await page.route(
+    `**/api/models/${encodeURIComponent(MODEL_ID)}/evidence-package`,
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          format: 'evidencePackage_v1',
+          generatedAt: new Date().toISOString(),
+          modelId: MODEL_ID,
+          revision: 3,
+          elementCount: 42,
+          countsByKind: { level: 2, wall: 1, sheet: 1, plan_view: 2 },
+          semanticDigestSha256: MOCK_SEMANTIC_DIGEST_SHA256,
+          semanticDigestPrefix16: MOCK_SEMANTIC_PREFIX16,
+          suggestedEvidenceArtifactBasename: MOCK_EVIDENCE_BASENAME,
+          suggestedEvidenceBundleFilenames: {
+            format: 'evidenceBundleFilenames_v1',
+            evidencePackageJson: `${MOCK_EVIDENCE_BASENAME}-evidence-package.json`,
           },
-        ],
-      }),
-    });
-  });
+          recommendedPngEvidenceBackend: 'playwright_ci',
+          validate: {
+            violations: [],
+            checks: { errorViolationCount: 0, blockingViolationCount: 0 },
+          },
+          exportLinks: {
+            snapshot: `/api/models/${MODEL_ID}/snapshot`,
+            validate: `/api/models/${MODEL_ID}/validate`,
+            evidencePackage: `/api/models/${MODEL_ID}/evidence-package`,
+            sheetPreviewSvg: `/api/models/${MODEL_ID}/exports/sheet-preview.svg`,
+            sheetPreviewPdf: `/api/models/${MODEL_ID}/exports/sheet-preview.pdf`,
+          },
+          deterministicSheetEvidence: [
+            {
+              sheetId: 'hf-sheet-ga01',
+              sheetName: 'GA-01 — Evidence',
+              svgHref: `/api/models/${MODEL_ID}/exports/sheet-preview.svg?sheetId=hf-sheet-ga01`,
+              pdfHref: `/api/models/${MODEL_ID}/exports/sheet-preview.pdf?sheetId=hf-sheet-ga01`,
+              playwrightSuggestedFilenames: {
+                svgProbe: `${MOCK_EVIDENCE_BASENAME}-sheet-hf-sheet-ga01.svg.probe.txt`,
+                pdfProbe: `${MOCK_EVIDENCE_BASENAME}-sheet-hf-sheet-ga01.pdf.probe.bin`,
+                pngViewport: MOCK_SHEET_VIEWPORT_PNG_FROM_MANIFEST,
+              },
+              correlation: {
+                format: 'evidenceSheetCorrelation_v1',
+                semanticDigestSha256: MOCK_SEMANTIC_DIGEST_SHA256,
+                semanticDigestPrefix16: MOCK_SEMANTIC_PREFIX16,
+                modelRevision: 3,
+                modelId: MODEL_ID,
+                suggestedEvidenceBundleEvidencePackageJson: `${MOCK_EVIDENCE_BASENAME}-evidence-package.json`,
+              },
+            },
+          ],
+          planViews: [{ id: 'pv-eg' }, { id: 'pv-og' }],
+          scheduleIds: [{ id: 'hf-sch-room' }, { id: 'hf-sch-window' }],
+          expectedScreenshotCaptures: [
+            { id: 'coord_sheet', screenshotBaseline: 'coordination-sheet.png' },
+            {
+              id: 'schedules_focus',
+              screenshotBaseline: 'schedules-focus.png',
+              workspaceLayoutPreset: 'schedules_focus',
+            },
+          ],
+        }),
+      });
+    },
+  );
 
   await page.route(`**/api/models/*/comments**`, async (route) => {
     await route.fulfill({ status: 200, body: '{}' });
@@ -348,6 +393,16 @@ test.describe('evidence PNG baselines', () => {
     await expect(page.getByText('Ready', { exact: false })).toBeVisible({ timeout: 30_000 });
     await expect(page.getByTestId('plan-canvas')).toBeVisible();
     await expect(page.getByTestId('orbit-3d-viewport')).toBeVisible();
+  });
+
+  test('coordination layout: deterministic manifest sheet PNG basename', async ({ page }) => {
+    await sharedRoutes(page, 'coordination');
+    await page.goto('/');
+    await expect(page.getByText('Ready', { exact: false })).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId('sheet-canvas')).toBeVisible();
+    await expect(page.getByTestId('sheet-canvas')).toHaveScreenshot(
+      MOCK_SHEET_VIEWPORT_PNG_FROM_MANIFEST,
+    );
   });
 
   test('named plan_views change EG openings vs OG room presentation', async ({ page }) => {

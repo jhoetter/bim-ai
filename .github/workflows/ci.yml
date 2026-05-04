@@ -35,11 +35,22 @@ jobs:
         env:
           CI: true
 
+      - name: Evidence CI correlation hint (bundles reviewer mapping)
+        if: always()
+        run: |
+          mkdir -p packages/web/test-results
+          printf '%s\n%s\n%s\n%s\n' \
+            'Map Playwright PNGs to semantic evidence fields:' \
+            '  GET /api/models/{id}/evidence-package → suggestedEvidenceArtifactBasename,' \
+            '  semanticDigestPrefix16, suggestedEvidenceBundleFilenames.evidencePackageJson,' \
+            '  deterministicSheetEvidence[].correlation + playwrightSuggestedFilenames (png/svg/pdf).' \
+            > packages/web/test-results/ci-evidence-correlation-hint.txt
+
       - name: Upload Playwright report + screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: web-playwright-${{ github.run_id }}
+          name: evidence-web-${{ github.run_id }}-playwright
           retention-days: 14
           path: |
             packages/web/playwright-report

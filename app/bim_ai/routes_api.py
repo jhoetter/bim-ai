@@ -25,7 +25,7 @@ from bim_ai.commands import Command
 from bim_ai.constraints import evaluate
 from bim_ai.db import SessionMaker, get_session
 from bim_ai.document import Document
-from bim_ai.elements import BcfElem, Element
+from bim_ai.elements import BcfElem, Element, LevelElem, PlanViewElem
 from bim_ai.engine import (
     clone_document,
     compute_delta_wire,
@@ -34,6 +34,7 @@ from bim_ai.engine import (
     try_commit_bundle,
 )
 from bim_ai.evidence_manifest import (
+    deterministic_sheet_evidence_manifest,
     evidence_package_semantic_digest_sha256,
     expected_screenshot_captures,
     export_link_map,
@@ -44,7 +45,15 @@ from bim_ai.export_ifc import export_ifc_model_step
 from bim_ai.hub import Hub
 from bim_ai.ifc_stub import build_ifc_exchange_manifest_payload, minimal_empty_ifc_skeleton
 from bim_ai.model_summary import compute_model_summary
-from bim_ai.room_derivation_preview import room_derivation_preview
+from bim_ai.plan_projection_wire import (
+    plan_projection_wire_from_request,
+    resolve_plan_projection_wire,
+    section_cut_projection_wire,
+)
+from bim_ai.room_derivation_preview import (
+    room_derivation_candidates_review,
+    room_derivation_preview,
+)
 from bim_ai.schedule_csv import schedule_payload_to_csv
 from bim_ai.schedule_derivation import derive_schedule_table, list_schedule_ids
 from bim_ai.sheet_preview_pdf import sheet_elem_to_pdf_bytes
@@ -56,6 +65,7 @@ from bim_ai.tables import (
     RedoStackRecord,
     UndoStackRecord,
 )
+from bim_ai.type_material_registry import merged_registry_payload
 
 
 def get_hub(request: Request) -> Hub:
@@ -301,19 +311,102 @@ async def evidence_package(
         ],
         "scheduleIds": schedules,
         "roomDerivationPreview": room_derivation_preview(doc),
+        "roomDerivationCandidates": room_derivation_candidates_review(doc),
+        "typeMaterialRegistry": merged_registry_payload(doc),
         "hint": "Use Playwright to capture PNG alongside this JSON per spec §8.3 / §14 Phase A. CI attaches artifacts alongside this bundle.",
         "sheetRasterNote": (
             "Sheet SVG/PDF exports are deterministic server-side; bundle Playwright screenshots as canonical PNG evidence "
             "(optional backend SVG→PNG raster stays out-of-band to minimize deploy deps)."
         ),
     }
+    plan_ids = sorted(eid for eid, e in doc.elements.items() if isinstance(e, PlanViewElem))
+    first_plan = plan_ids[0] if plan_ids else None
+    levels_sorted = sorted(
+        (e for e in doc.elements.values() if isinstance(e, LevelElem)),
+        key=lambda le: (le.elevation_mm, le.id),
+    )
+    fl0 = levels_sorted[0].id if levels_sorted else None
+    payload["planProjectionWireSample"] = resolve_plan_projection_wire(
+        doc,
+        plan_view_id=first_plan,
+        fallback_level_id=fl0,
+        global_plan_presentation="default",
+    )
     payload["semanticDigestSha256"] = evidence_package_semantic_digest_sha256(payload)
     digest = str(payload["semanticDigestSha256"])
     payload["semanticDigestPrefix16"] = digest[:16]
     payload["suggestedEvidenceArtifactBasename"] = f"bim-ai-evidence-{digest[:16]}-r{doc.revision}"
+    payload["suggestedEvidenceBundleFilenames"] = {
+        "format": "evidenceBundleFilenames_v1",
+        "evidencePackageJson": f'{payload["suggestedEvidenceArtifactBasename"]}-evidence-package.json',
+    }
     payload["recommendedPngEvidenceBackend"] = "playwright_ci"
     payload["svgRasterBackendAvailable"] = False
+    payload["deterministicSheetEvidence"] = deterministic_sheet_evidence_manifest(
+        model_id=model_id,
+        doc=doc,
+        evidence_artifact_basename=str(payload["suggestedEvidenceArtifactBasename"]),
+        semantic_digest_sha256=digest,
+        semantic_digest_prefix16=str(payload["semanticDigestPrefix16"]),
+    )
     return payload
+
+
+@api_router.get("/models/{model_id}/room-derivation-candidates")
+async def room_derivation_candidates(
+    model_id: UUID,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    doc = Document.model_validate(row.document)
+    return room_derivation_candidates_review(doc)
+
+
+@api_router.get("/models/{model_id}/registry/type-material")
+async def type_material_registry(
+    model_id: UUID,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    doc = Document.model_validate(row.document)
+    return merged_registry_payload(doc)
+
+
+@api_router.get("/models/{model_id}/projection/plan")
+async def projection_plan_wire_route(
+    model_id: UUID,
+    session: AsyncSession = Depends(get_session),
+    plan_view_id: Annotated[str | None, Query(alias="planViewId")] = None,
+    fallback_level_id: Annotated[str | None, Query(alias="fallbackLevelId")] = None,
+    global_plan_presentation: Annotated[str, Query(alias="globalPresentation")] = "default",
+) -> dict[str, Any]:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    doc = Document.model_validate(row.document)
+    return plan_projection_wire_from_request(
+        doc,
+        plan_view_id=plan_view_id,
+        fallback_level_id=fallback_level_id,
+        global_plan_presentation=global_plan_presentation,
+    )
+
+
+@api_router.get("/models/{model_id}/projection/section/{section_cut_id}")
+async def projection_section_wire_route(
+    model_id: UUID,
+    section_cut_id: str,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    doc = Document.model_validate(row.document)
+    return section_cut_projection_wire(doc, section_cut_id)
 
 
 @api_router.get(
