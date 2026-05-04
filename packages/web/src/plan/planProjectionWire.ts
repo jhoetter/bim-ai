@@ -54,6 +54,8 @@ export type RoomProgrammeLegendEvidenceV0 = {
   rowCount: number;
   colorSeedPolicy?: string;
   orthogonalTo?: string[];
+  schemeOverridesSource?: string;
+  schemeOverrideRowCount?: number;
   notes?: string;
 };
 
@@ -143,6 +145,20 @@ export function extractRoomProgrammeLegendEvidenceV0(
   if (Array.isArray(orthoRaw)) {
     orthogonalTo = orthoRaw.filter((x): x is string => typeof x === 'string');
   }
+  const source =
+    typeof o.schemeOverridesSource === 'string'
+      ? o.schemeOverridesSource
+      : typeof o.scheme_overrides_source === 'string'
+        ? o.scheme_overrides_source
+        : undefined;
+  const orc = o.schemeOverrideRowCount ?? o.scheme_override_row_count;
+  let schemeOverrideRowCount: number | undefined;
+  if (typeof orc === 'number' && Number.isFinite(orc)) {
+    schemeOverrideRowCount = orc;
+  } else if (typeof orc === 'string' && orc.trim()) {
+    const parsed = Number(orc);
+    schemeOverrideRowCount = Number.isFinite(parsed) ? parsed : undefined;
+  }
   const notes = typeof o.notes === 'string' ? o.notes : undefined;
   return {
     format: 'roomProgrammeLegendEvidence_v0',
@@ -150,6 +166,8 @@ export function extractRoomProgrammeLegendEvidenceV0(
     rowCount,
     ...(policy !== undefined ? { colorSeedPolicy: policy } : {}),
     ...(orthogonalTo !== undefined && orthogonalTo.length ? { orthogonalTo } : {}),
+    ...(source !== undefined ? { schemeOverridesSource: source } : {}),
+    ...(schemeOverrideRowCount !== undefined ? { schemeOverrideRowCount } : {}),
     ...(notes !== undefined ? { notes } : {}),
   };
 }

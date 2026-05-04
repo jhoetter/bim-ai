@@ -49,6 +49,7 @@ import { planToolsForPerspective } from './workspace/planToolsByPerspective';
 
 import { PlanViewGraphicsMatrix } from './workspace/PlanViewGraphicsMatrix';
 import { ProjectBrowser } from './workspace/ProjectBrowser';
+import { RoomColorSchemeWorkbench } from './workspace/RoomColorSchemeWorkbench';
 import {
   SavedViewTagGraphicsAuthoring,
   SavedViewTemplateGraphicsAuthoring,
@@ -1035,6 +1036,20 @@ export function Workspace() {
               </label>
             </Panel>
           ) : null}
+
+          <Panel title="Room colour scheme">
+            <RoomColorSchemeWorkbench
+              modelId={modelId}
+              revision={revision}
+              elementsById={elementsById}
+              activePlanViewId={activePlanViewId}
+              activeLevelId={lvResolved || undefined}
+              planPresentationPreset={planPresentationPreset}
+              selectedId={selectedId}
+              onSelectElement={selectEl}
+              onUpsertSemantic={(cmd) => void onSemantic(cmd)}
+            />
+          </Panel>
 
           <LevelStack
             levels={levels}

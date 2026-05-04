@@ -29,6 +29,8 @@ describe('extractRoomColorLegend', () => {
         legendDigestSha256: 'a'.repeat(64),
         rowCount: 3,
         orthogonalTo: ['derivedRoomBoundaryEvidence_v0'],
+        schemeOverridesSource: 'bim-room-color-scheme',
+        schemeOverrideRowCount: '2',
         notes: 'Test note',
       },
     });
@@ -36,6 +38,8 @@ describe('extractRoomColorLegend', () => {
     expect(ev!.legendDigestSha256).toBe('a'.repeat(64));
     expect(ev!.rowCount).toBe(3);
     expect(ev!.orthogonalTo).toEqual(['derivedRoomBoundaryEvidence_v0']);
+    expect(ev!.schemeOverridesSource).toBe('bim-room-color-scheme');
+    expect(ev!.schemeOverrideRowCount).toBe(2);
     expect(ev!.notes).toBe('Test note');
   });
 });

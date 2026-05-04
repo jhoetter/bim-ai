@@ -10,7 +10,9 @@ import {
   extractPlanGraphicHints,
   extractPlanPrimitives,
   extractRoomColorLegend,
+  extractRoomProgrammeLegendEvidenceV0,
   fetchPlanProjectionWire,
+  type RoomProgrammeLegendEvidenceV0,
 } from './planProjectionWire';
 import {
   resolvePlanAnnotationHints,
@@ -123,6 +125,8 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
       functionLabel?: string;
     }>
   >([]);
+  const [roomLegendEvidence, setRoomLegendEvidence] =
+    useState<RoomProgrammeLegendEvidenceV0 | null>(null);
   const [wireGraphicHints, setWireGraphicHints] = useState<ReturnType<
     typeof extractPlanGraphicHints
   > | null>(null);
@@ -182,6 +186,7 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
         if (cancel) return;
         setPlanProjectionPrimitives(null);
         setRoomColorLegend([]);
+        setRoomLegendEvidence(null);
         setWireGraphicHints(null);
         setWireAnnotationHints(null);
       });
@@ -200,11 +205,13 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
         if (cancel) return;
         setPlanProjectionPrimitives(extractPlanPrimitives(payload));
         setRoomColorLegend(extractRoomColorLegend(payload));
+        setRoomLegendEvidence(extractRoomProgrammeLegendEvidenceV0(payload));
         setWireGraphicHints(extractPlanGraphicHints(payload));
         setWireAnnotationHints(extractPlanAnnotationHints(payload));
       } catch {
         if (!cancel) setPlanProjectionPrimitives(null);
         if (!cancel) setRoomColorLegend([]);
+        if (!cancel) setRoomLegendEvidence(null);
         if (!cancel) setWireGraphicHints(null);
         if (!cancel) setWireAnnotationHints(null);
       }
@@ -700,6 +707,15 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
                 );
               })}
             </ul>
+            {roomLegendEvidence ? (
+              <div className="mt-2 border-t border-border pt-1 font-mono text-[9px]">
+                digest {roomLegendEvidence.legendDigestSha256.slice(0, 12)} · rows{' '}
+                {roomLegendEvidence.rowCount}
+                {roomLegendEvidence.schemeOverridesSource
+                  ? ` · override ${roomLegendEvidence.schemeOverrideRowCount ?? 0}`
+                  : ''}
+              </div>
+            ) : null}
           </div>
         ) : null}
       </div>
