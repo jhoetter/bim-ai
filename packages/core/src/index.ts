@@ -1,5 +1,6 @@
 export type ElemKind =
   | 'project_settings'
+  | 'room_color_scheme'
   | 'wall_type'
   | 'floor_type'
   | 'roof_type'
@@ -40,6 +41,12 @@ export type PlanDetailLevelPlan = 'coarse' | 'medium' | 'fine';
 
 export type XYZ = { xMm: number; yMm: number; zMm: number };
 
+export type RoomColorSchemeRow = {
+  programmeCode?: string | null;
+  department?: string | null;
+  schemeColorHex: string;
+};
+
 export type WallLayerFunction = 'structure' | 'insulation' | 'finish';
 
 export type WallTypeLayer = {
@@ -71,6 +78,12 @@ export type Element =
       lengthUnit?: string;
       angularUnitDeg?: string;
       displayLocale?: string;
+      name?: string;
+    }
+  | {
+      kind: 'room_color_scheme';
+      id: string;
+      schemeRows: RoomColorSchemeRow[];
       name?: string;
     }
   | {

@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import re
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from bim_ai.roof_geometry import RoofGeometryMode
 
@@ -48,6 +49,8 @@ WallLayerFunction = Literal["structure", "insulation", "finish"]
 WallBasisLine = Literal["center", "face_interior", "face_exterior"]
 PlanDetailLevelPlan = Literal["coarse", "medium", "fine"]
 
+_SCHEME_HEX_PATTERN = re.compile(r"^#[0-9A-Fa-f]{6}$")
+
 
 class ProjectSettingsElem(BaseModel):
     """Singleton-style project datum (canonical units / locale metadata)."""
@@ -57,7 +60,48 @@ class ProjectSettingsElem(BaseModel):
     id: str
     length_unit: str = Field(default="millimeter", alias="lengthUnit")
     angular_unit_deg: str = Field(default="degree", alias="angularUnitDeg")
+
     display_locale: str = Field(default="en-US", alias="displayLocale")
+
+
+class RoomColorSchemeRow(BaseModel):
+    """One programme and/or department → fill colour for room-scheme presentation."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    programme_code: str | None = Field(default=None, alias="programmeCode")
+    department: str | None = Field(default=None, alias="department")
+    scheme_color_hex: str = Field(alias="schemeColorHex")
+
+    @field_validator("programme_code", "department", mode="before")
+    @classmethod
+    def _strip_optional_str(cls, v: Any) -> str | None:
+        if v is None:
+            return None
+        s = str(v).strip()
+        return s or None
+
+    @field_validator("scheme_color_hex", mode="before")
+    @classmethod
+    def _normalize_scheme_hex(cls, v: Any) -> str:
+        s = str(v).strip()
+        if not _SCHEME_HEX_PATTERN.fullmatch(s):
+            raise ValueError("schemeColorHex must be a '#RRGGBB' literal")
+        return f"#{s[1:].upper()}"
+
+    @model_validator(mode="after")
+    def _needs_programme_or_department(self) -> RoomColorSchemeRow:
+        if not self.programme_code and not self.department:
+            raise ValueError("each scheme row needs a non-empty programmeCode and/or department")
+        return self
+
+
+class RoomColorSchemeElem(BaseModel):
+    """Singleton document colour overrides for programme/department fills (replayable deltas)."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["room_color_scheme"] = "room_color_scheme"
+    id: str
+    scheme_rows: list[RoomColorSchemeRow] = Field(default_factory=list, alias="schemeRows")
 
 
 class WallTypeLayer(BaseModel):
@@ -472,6 +516,7 @@ class ValidationRuleElem(BaseModel):
 
 ElementKind = Literal[
     "project_settings",
+    "room_color_scheme",
     "wall_type",
     "floor_type",
     "roof_type",
@@ -509,6 +554,7 @@ ElementKind = Literal[
 
 Element = Annotated[
     ProjectSettingsElem
+    | RoomColorSchemeElem
     | WallTypeElem
     | FloorTypeElem
     | RoofTypeElem

@@ -530,6 +530,30 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
     };
   }
 
+  if (kind === 'room_color_scheme') {
+    const srRaw = raw.schemeRows ?? raw.scheme_rows ?? [];
+    const schemeRows =
+      Array.isArray(srRaw) && srRaw.length
+        ? srRaw.map((row) => {
+            const rr = (row ?? {}) as Record<string, unknown>;
+            const pc = rr.programmeCode ?? rr.programme_code;
+            const dp = rr.department;
+            const hx = rr.schemeColorHex ?? rr.scheme_color_hex;
+            return {
+              ...(typeof pc === 'string' ? { programmeCode: pc } : {}),
+              ...(typeof dp === 'string' ? { department: dp } : {}),
+              schemeColorHex: typeof hx === 'string' ? hx : '',
+            };
+          })
+        : [];
+    return {
+      kind: 'room_color_scheme',
+      id,
+      ...(name ? { name } : {}),
+      schemeRows,
+    };
+  }
+
   if (kind === 'wall_type') {
     const layersRaw = Array.isArray(raw.layers) ? raw.layers : [];
     const layers = layersRaw.map((l) => {

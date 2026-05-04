@@ -52,6 +52,7 @@ from bim_ai.commands import (
     UpsertPlanViewCmd,
     UpsertProjectSettingsCmd,
     UpsertRoofTypeCmd,
+    UpsertRoomColorSchemeCmd,
     UpsertRoomVolumeCmd,
     UpsertScheduleCmd,
     UpsertScheduleFiltersCmd,
@@ -90,6 +91,8 @@ from bim_ai.elements import (
     RailingElem,
     RoofElem,
     RoofTypeElem,
+    RoomColorSchemeElem,
+    RoomColorSchemeRow,
     RoomElem,
     RoomSeparationElem,
     ScheduleElem,
@@ -114,7 +117,7 @@ from bim_ai.export_ifc import (
 from bim_ai.roof_geometry import assert_valid_gable_pitched_rectangle_footprint_mm
 
 _AUTHORITATIVE_REPLAY_V0_TYPES: frozenset[str] = frozenset(
-    {"createLevel", "createWall", "createRoomOutline"}
+    {"createLevel", "createWall", "createRoomOutline", "insertDoorOnWall", "insertWindowOnWall"}
 )
 
 command_adapter = TypeAdapter(Command)
@@ -315,6 +318,17 @@ def _propagate_floor_dims_for_type(els: dict[str, Element], floor_type_id: str) 
                     "finish_thickness_mm": f_mm,
                 }
             )
+
+
+def _canonical_room_scheme_rows(rows: list[RoomColorSchemeRow]) -> list[RoomColorSchemeRow]:
+    keyed: dict[tuple[str, str], RoomColorSchemeRow] = {}
+    for row in rows:
+        prog = (row.programme_code or "").strip()
+        dept = (row.department or "").strip()
+        keyed[(prog.lower(), dept.lower())] = row
+    out_keys = sorted(keyed.keys(), key=lambda x: (x[0], x[1]))
+    return [keyed[k] for k in out_keys]
+
 
 
 def apply_inplace(doc: Document, cmd: Command) -> None:
@@ -912,6 +926,15 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 angular_unit_deg=cmd.angular_unit_deg,
                 display_locale=cmd.display_locale,
             )
+
+        case UpsertRoomColorSchemeCmd():
+            sid = cmd.id
+            prev_el = els.get(sid)
+            if prev_el is not None and not isinstance(prev_el, RoomColorSchemeElem):
+                raise ValueError("upsertRoomColorScheme.id must reference room_color_scheme when element exists")
+            canon_rows = _canonical_room_scheme_rows(list(cmd.scheme_rows))
+            els[sid] = RoomColorSchemeElem(kind="room_color_scheme", id=sid, scheme_rows=canon_rows)
+
 
         case CreateWallTypeCmd():
             tid = cmd.id or new_id()

@@ -10,6 +10,7 @@ from bim_ai.commands import (
     CreateLevelCmd,
     CreateRoomRectangleCmd,
     UpsertPlanViewCmd,
+    UpsertRoomColorSchemeCmd,
     UpsertScheduleCmd,
     UpsertScheduleFiltersCmd,
     UpsertSheetCmd,
@@ -21,6 +22,7 @@ from bim_ai.elements import (
     FloorElem,
     LevelElem,
     PlanViewElem,
+    RoomColorSchemeRow,
     RoomElem,
     RoomSeparationElem,
     SectionCutElem,
@@ -337,7 +339,7 @@ def test_deterministic_sheet_evidence_rows_stable() -> None:
     assert rows[0]["printRasterPngHref"].endswith("/exports/sheet-print-raster.png?sheetId=sheet-a")
     ingest = rows[0].get("sheetPrintRasterIngest_v1") or {}
     assert ingest.get("format") == "sheetPrintRasterIngest_v1"
-    assert ingest.get("contract") == "sheetPrintRasterLayoutStamp_v1"
+    assert ingest.get("contract") == "sheetPrintRasterPrintSurrogate_v2"
     assert ingest.get("svgContentSha256") and ingest.get("placeholderPngSha256")
     diffc = ingest.get("diffCorrelation") or {}
     assert diffc.get("format") == "sheetPrintRasterDiffCorrelation_v1"
@@ -460,6 +462,13 @@ def test_agent_evidence_closure_hints_shape() -> None:
     assert h.get("deterministicPngBasenamesField") == "expectedDeterministicPngBasenames"
     assert h.get("screenshotHintGapsField") == "screenshotHintGaps_v1"
     assert h.get("pixelDiffIngestChecklistField") == "ingestChecklist_v1"
+    assert h.get("artifactIngestCorrelationNestedField") == "artifactIngestCorrelation_v1"
+    assert h.get("artifactIngestCorrelationFullPath") == (
+        "evidenceClosureReview_v1.pixelDiffExpectation.artifactIngestCorrelation_v1"
+    )
+    assert h.get("artifactIngestManifestDigestSha256LifecycleField") == (
+        "artifactIngestManifestDigestSha256"
+    )
     assert h.get("evidenceLifecycleSignalField") == "evidenceLifecycleSignal_v1"
     assert h.get("evidenceDiffIngestFixLoopField") == "evidenceDiffIngestFixLoop_v1"
     assert h.get("evidenceAgentFollowThroughField") == "evidenceAgentFollowThrough_v1"
@@ -1262,3 +1271,126 @@ def test_room_programme_legend_replay_matches_schedule_and_sheet_manifest() -> N
     assert man_rows[0].get("planRoomProgrammeLegendHints_v0") == hints
 
 
+def test_room_color_scheme_overrides_primitive_legend_digest() -> None:
+    doc = Document(revision=1, elements={})
+    apply_inplace(doc, CreateLevelCmd(id="lvl", name="L", elevationMm=0))
+    apply_inplace(
+        doc,
+        CreateRoomRectangleCmd(
+            roomId="rm-lab",
+            name="Lab",
+            levelId="lvl",
+            origin={"xMm": 0, "yMm": 0},
+            widthMm=2500,
+            depthMm=2500,
+            programmeCode="LAB",
+        ),
+    )
+    apply_inplace(
+        doc,
+        UpsertPlanViewCmd(id="pv", name="PV", levelId="lvl", planPresentation="room_scheme"),
+    )
+    apply_inplace(doc, UpsertScheduleCmd(id="sch-rooms", name="Rooms"))
+    apply_inplace(
+        doc,
+        UpsertScheduleFiltersCmd(
+            scheduleId="sch-rooms",
+            filters={"category": "room"},
+            grouping={},
+        ),
+    )
+
+    baseline = resolve_plan_projection_wire(doc, plan_view_id="pv", fallback_level_id=None)
+    prim0 = ((baseline["primitives"] or {}).get("rooms") or [])[0]
+    dig0 = (baseline.get("roomProgrammeLegendEvidence_v0") or {}).get("legendDigestSha256")
+    assert isinstance(dig0, str)
+
+    apply_inplace(
+        doc,
+        UpsertRoomColorSchemeCmd(
+            scheme_rows=[RoomColorSchemeRow(programme_code="LAB", scheme_color_hex="#ABCDEf")],
+        ),
+    )
+
+    out = resolve_plan_projection_wire(doc, plan_view_id="pv", fallback_level_id=None)
+    prim = ((out["primitives"] or {}).get("rooms") or [])[0]
+    assert prim["schemeColorHex"] == "#ABCDEF"
+
+    legend = out.get("roomColorLegend") or []
+    legend_row = next(r for r in legend if isinstance(r, dict) and r.get("label") == "LAB")
+    assert legend_row["schemeColorHex"] == "#ABCDEF"
+
+    ev = out.get("roomProgrammeLegendEvidence_v0") or {}
+    canon = json.dumps(legend, sort_keys=True, separators=(",", ":"))
+    assert hashlib.sha256(canon.encode("utf-8")).hexdigest() == ev.get("legendDigestSha256")
+    assert ev.get("legendDigestSha256") != dig0
+    assert prim0["schemeColorHex"] != "#ABCDEF"
+
+    assert ev.get("schemeOverridesSource") == "bim-room-color-scheme"
+    assert ev.get("schemeOverrideRowCount") == 1
+
+    sch_codes = {
+        row.get("programmeCode") for row in (derive_schedule_table(doc, "sch-rooms").get("rows") or [])
+        if isinstance(row, dict)
+    }
+    legend_codes = {row.get("programmeCode") for row in legend if isinstance(row, dict)}
+    assert sch_codes == {"LAB"}
+    assert sch_codes <= {c for c in legend_codes if c}
+
+
+def test_room_color_scheme_matches_department_only_row() -> None:
+    doc = Document(revision=1, elements={})
+    apply_inplace(doc, CreateLevelCmd(id="lvl", name="L", elevationMm=0))
+    apply_inplace(
+        doc,
+        CreateRoomRectangleCmd(
+            roomId="rm-op",
+            name="Op",
+            levelId="lvl",
+            origin={"xMm": 0, "yMm": 0},
+            widthMm=2500,
+            depthMm=2500,
+            department="Surgery",
+        ),
+    )
+    apply_inplace(
+        doc,
+        UpsertRoomColorSchemeCmd(
+            scheme_rows=[
+                RoomColorSchemeRow(department="Surgery", scheme_color_hex="#00FFAa"),
+            ],
+        ),
+    )
+    wire = plan_projection_wire_from_request(doc, plan_view_id=None, fallback_level_id="lvl")
+    prim = ((wire["primitives"] or {}).get("rooms") or [])[0]
+    assert prim["schemeColorHex"] == "#00FFAA"
+
+
+def test_room_color_scheme_prefers_programme_match_over_department() -> None:
+    doc = Document(revision=1, elements={})
+    apply_inplace(doc, CreateLevelCmd(id="lvl", name="L", elevationMm=0))
+    apply_inplace(
+        doc,
+        CreateRoomRectangleCmd(
+            roomId="rm-core",
+            name="Office",
+            levelId="lvl",
+            origin={"xMm": 0, "yMm": 0},
+            widthMm=3000,
+            depthMm=3000,
+            programmeCode="OFF",
+            department="Core",
+        ),
+    )
+    apply_inplace(
+        doc,
+        UpsertRoomColorSchemeCmd(
+            scheme_rows=[
+                RoomColorSchemeRow(department="Core", scheme_color_hex="#111111"),
+                RoomColorSchemeRow(programme_code="OFF", scheme_color_hex="#222222"),
+            ],
+        ),
+    )
+    out = plan_projection_wire_from_request(doc, plan_view_id=None, fallback_level_id="lvl")
+    prim = ((out["primitives"] or {}).get("rooms") or [])[0]
+    assert prim["schemeColorHex"] == "#222222"

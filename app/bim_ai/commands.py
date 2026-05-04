@@ -4,7 +4,7 @@ from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from bim_ai.elements import CameraMm, EvidenceRef, Vec2Mm, WallTypeLayer
+from bim_ai.elements import CameraMm, EvidenceRef, RoomColorSchemeRow, Vec2Mm, WallTypeLayer
 from bim_ai.roof_geometry import RoofGeometryMode
 
 
@@ -243,6 +243,15 @@ class UpsertProjectSettingsCmd(BaseModel):
     length_unit: str = Field(alias="lengthUnit", default="millimeter")
     angular_unit_deg: str = Field(alias="angularUnitDeg", default="degree")
     display_locale: str = Field(alias="displayLocale", default="en-US")
+
+
+class UpsertRoomColorSchemeCmd(BaseModel):
+    """Replace authoritative programme / department scheme colours (singleton replay)."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["upsertRoomColorScheme"] = "upsertRoomColorScheme"
+    id: str = "bim-room-color-scheme"
+    scheme_rows: list[RoomColorSchemeRow] = Field(default_factory=list, alias="schemeRows")
 
 
 class CreateWallTypeCmd(BaseModel):
@@ -590,6 +599,7 @@ Command = Annotated[
     | UpdateElementPropertyCmd
     | SaveViewpointCmd
     | UpsertProjectSettingsCmd
+    | UpsertRoomColorSchemeCmd
     | CreateWallTypeCmd
     | UpsertWallTypeCmd
     | UpsertFloorTypeCmd

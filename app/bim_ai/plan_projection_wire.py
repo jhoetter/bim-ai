@@ -16,6 +16,8 @@ from bim_ai.elements import (
     LevelElem,
     PlanViewElem,
     RoofElem,
+    RoomColorSchemeElem,
+    RoomColorSchemeRow,
     RoomElem,
     RoomSeparationElem,
     SectionCutElem,
@@ -228,6 +230,30 @@ def _deterministic_scheme_color_hex(seed: str) -> str:
     return f"#{digest[:6]}"
 
 
+def _document_room_scheme_rows(doc: Document) -> list[RoomColorSchemeRow]:
+    el = doc.elements.get("bim-room-color-scheme")
+    if isinstance(el, RoomColorSchemeElem):
+        return list(el.scheme_rows)
+    return []
+
+
+def _scheme_color_hex_for_room(room: RoomElem, scheme_rows: list[RoomColorSchemeRow]) -> str:
+    """Programme overrides first, then department, then deterministic hashing."""
+
+    room_prog = (room.programme_code or "").strip()
+    room_dept = (room.department or "").strip()
+    for row in scheme_rows:
+        rp = (row.programme_code or "").strip()
+        if rp and room_prog and rp == room_prog:
+            return str(row.scheme_color_hex)
+    for row in scheme_rows:
+        rd = (row.department or "").strip()
+        if rd and room_dept and rd == room_dept:
+            return str(row.scheme_color_hex)
+    seed_src = room_prog or room.id
+    return _deterministic_scheme_color_hex(seed_src)
+
+
 def _normalized_crop_box_xy_mm(pv: PlanViewElem | None) -> tuple[float, float, float, float] | None:
     """Axis-aligned crop from plan_view corners; None if either corner is missing."""
     if pv is None:
@@ -408,6 +434,7 @@ def _build_plan_primitive_lists(
     hidden_semantic: set[str],
     pinned_pv_el: PlanViewElem | None,
     crop_box_mm: tuple[float, float, float, float] | None,
+    scheme_rows: list[RoomColorSchemeRow],
     line_weight_hint: float = 1.0,
     opening_tags_visible: bool = False,
     room_labels_visible: bool = False,
@@ -491,12 +518,11 @@ def _build_plan_primitive_lists(
             if crop_box is not None and not _poly_bbox_overlaps_crop(room_pts, crop_box):
                 continue
             outlines = [[round(p.x_mm, 3), round(p.y_mm, 3)] for p in e.outline_mm]
-            seed_src = (e.programme_code or "").strip() or e.id
             row: dict[str, Any] = {
                 "id": e.id,
                 "levelId": e.level_id,
                 "outlineMm": outlines,
-                "schemeColorHex": _deterministic_scheme_color_hex(seed_src),
+                "schemeColorHex": _scheme_color_hex_for_room(e, scheme_rows),
             }
             if (e.programme_code or "").strip():
                 row["programmeCode"] = (e.programme_code or "").strip()
@@ -706,6 +732,7 @@ def _room_color_legend_payload(
     *,
     level: str | None,
     hidden_semantic: set[str],
+    scheme_rows: list[RoomColorSchemeRow],
 ) -> list[dict[str, Any]]:
     if "room" in hidden_semantic:
         return []
@@ -723,8 +750,7 @@ def _room_color_legend_payload(
             or (e.name or "").strip()
             or e.id
         )
-        seed = (e.programme_code or "").strip() or e.id
-        hx = _deterministic_scheme_color_hex(seed)
+        hx = _scheme_color_hex_for_room(e, scheme_rows)
         key = (label, hx)
         if key in seen:
             continue
@@ -740,12 +766,26 @@ def _room_color_legend_payload(
     return sorted(out, key=lambda r: str(r.get("label", "")))
 
 
-def _room_programme_legend_evidence_v0(legend: list[dict[str, Any]]) -> dict[str, Any]:
+def _room_programme_legend_evidence_v0(
+    legend: list[dict[str, Any]],
+    *,
+    scheme_override_row_count: int = 0,
+) -> dict[str, Any]:
     """Stable digest correlating schedules, sheets, and clients; orthogonal to boundary preview."""
 
     canon = json.dumps(legend, sort_keys=True, separators=(",", ":"))
     digest = hashlib.sha256(canon.encode("utf-8")).hexdigest()
-    return {
+    notes = (
+        "Digest covers roomColorLegend rows from authored RoomElem programme metadata on the "
+        "active plan level. Derived vacant footprints (derivedRoomBoundaryEvidence_v0) and "
+        "heuristic boundary previews do not seed this digest."
+    )
+    if scheme_override_row_count > 0:
+        notes += (
+            " Replayable programme/department entries on bim-room-color-scheme may override "
+            "schemeColorHex versus the trimmed programme/id hash fallback."
+        )
+    payload: dict[str, Any] = {
         "format": "roomProgrammeLegendEvidence_v0",
         "legendDigestSha256": digest,
         "rowCount": len(legend),
@@ -754,12 +794,12 @@ def _room_programme_legend_evidence_v0(legend: list[dict[str, Any]]) -> dict[str
             "derivedRoomBoundaryEvidence_v0",
             "planProjectionPrimitives.roomOutlinesMm",
         ],
-        "notes": (
-            "Digest covers roomColorLegend rows from authored RoomElem programme metadata on the "
-            "active plan level. Derived vacant footprints (derivedRoomBoundaryEvidence_v0) and "
-            "heuristic boundary previews do not seed this digest."
-        ),
+        "notes": notes,
     }
+    if scheme_override_row_count > 0:
+        payload["schemeOverridesSource"] = "bim-room-color-scheme"
+        payload["schemeOverrideRowCount"] = int(scheme_override_row_count)
+    return payload
 
 
 def resolve_plan_projection_wire(
@@ -885,18 +925,26 @@ def resolve_plan_projection_wire(
     plan_crop_box = _normalized_crop_box_xy_mm(pinned_pv_elem)
     effective_crop = _intersect_axis_aligned_crop_boxes(plan_crop_box, sheet_crop_box)
 
+    scheme_rows = _document_room_scheme_rows(doc)
+
     prim, prim_warn = _build_plan_primitive_lists(
         doc,
         level=active_level,
         hidden_semantic=hidden_semantic,
         pinned_pv_el=pinned_pv_elem,
         crop_box_mm=effective_crop,
+        scheme_rows=scheme_rows,
         line_weight_hint=line_weight_scale,
         opening_tags_visible=opening_vis,
         room_labels_visible=room_lab_vis,
     )
     all_warnings = list(extra_prim_warn) + list(prim_warn)
-    legend = _room_color_legend_payload(doc, level=active_level, hidden_semantic=hidden_semantic)
+    legend = _room_color_legend_payload(
+        doc,
+        level=active_level,
+        hidden_semantic=hidden_semantic,
+        scheme_rows=scheme_rows,
+    )
 
     out_payload: dict[str, Any] = {
         "format": "planProjectionWire_v1",
@@ -909,7 +957,10 @@ def resolve_plan_projection_wire(
         "warnings": all_warnings,
         "primitives": prim,
         "roomColorLegend": legend,
-        "roomProgrammeLegendEvidence_v0": _room_programme_legend_evidence_v0(legend),
+        "roomProgrammeLegendEvidence_v0": _room_programme_legend_evidence_v0(
+            legend,
+            scheme_override_row_count=len(scheme_rows),
+        ),
         "derivedRoomBoundaryEvidence_v0": _derived_room_boundary_evidence_for_wire(
             doc,
             active_level_id=active_level,
