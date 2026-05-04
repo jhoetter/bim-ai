@@ -8,7 +8,13 @@ describe('scheduleSortKeyChoices', () => {
       expect.arrayContaining(['hostHeightMm', 'roughOpeningAreaM2']),
     );
     expect(scheduleSortKeyChoices('windows')).toEqual(
-      expect.arrayContaining(['sillMm', 'openingAreaM2', 'aspectRatio', 'headHeightMm']),
+      expect.arrayContaining([
+        'sillMm',
+        'roughOpeningAreaM2',
+        'openingAreaM2',
+        'aspectRatio',
+        'headHeightMm',
+      ]),
     );
   });
 });

@@ -21,6 +21,7 @@ from bim_ai.elements import (
     WindowElem,
 )
 from bim_ai.material_assembly_resolve import resolved_layers_for_floor, resolved_layers_for_wall
+from bim_ai.opening_cut_primitives import hosted_opening_half_span_mm
 from bim_ai.schedule_field_registry import column_metadata_bundle, stable_column_keys
 from bim_ai.type_material_registry import family_type_display_label, material_display_label
 
@@ -298,7 +299,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
             if isinstance(e, DoorElem):
                 lid = w_lv.get(e.wall_id, "")
                 host_h = float(w_h_mm.get(e.wall_id, 0.0))
-                wmm = float(e.width_mm)
+                rough_w_mm = 2.0 * hosted_opening_half_span_mm(e)
                 rows.append(
                     {
                         "elementId": e.id,
@@ -308,7 +309,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                         "level": lvl_lab.get(lid, lid or "—"),
                         "widthMm": e.width_mm,
                         "hostHeightMm": round(host_h, 3),
-                        "roughOpeningAreaM2": round(wmm * host_h / 1_000_000.0, 6),
+                        "roughOpeningAreaM2": round(rough_w_mm * host_h / 1_000_000.0, 6),
                         "familyTypeId": getattr(e, "family_type_id", "") or "",
                         "materialKey": (getattr(e, "material_key", None) or "").strip(),
                         "materialDisplay": material_display_label(
@@ -328,6 +329,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                 wmm = float(e.width_mm)
                 hmm = float(e.height_mm)
                 sill = float(e.sill_height_mm)
+                rough_w_mm = 2.0 * hosted_opening_half_span_mm(e)
                 opening_m2 = wmm * hmm / 1_000_000.0
                 ar = round(wmm / hmm, 6) if hmm > 0 else 0.0
                 rows.append(
@@ -340,6 +342,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                         "widthMm": e.width_mm,
                         "heightMm": e.height_mm,
                         "sillMm": e.sill_height_mm,
+                        "roughOpeningAreaM2": round(rough_w_mm * hmm / 1_000_000.0, 6),
                         "openingAreaM2": round(opening_m2, 6),
                         "aspectRatio": ar,
                         "headHeightMm": round(sill + hmm, 3),
@@ -637,6 +640,9 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
             "averageWidthMm": round(
                 sum(float(r.get("widthMm") or 0.0) for r in leaf_rows) / max(len(leaf_rows), 1),
                 3,
+            ),
+            "roughOpeningAreaM2": round(
+                sum(float(r.get("roughOpeningAreaM2") or 0.0) for r in leaf_rows), 6
             ),
             "totalOpeningAreaM2": round(
                 sum(float(r.get("openingAreaM2") or 0.0) for r in leaf_rows), 6

@@ -41,6 +41,40 @@ def test_door_schedule_rough_opening_from_host_wall_height() -> None:
     assert tbl["totals"]["roughOpeningAreaM2"] == 2.52
 
 
+def test_door_schedule_rough_opening_includes_interior_reveal() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lv": LevelElem(kind="level", id="lv", name="L1", elevationMm=0),
+            "wa": WallElem(
+                kind="wall",
+                id="wa",
+                name="W",
+                levelId="lv",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 5000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+            "d1": DoorElem(
+                kind="door",
+                id="d1",
+                name="D",
+                wallId="wa",
+                alongT=0.5,
+                widthMm=900,
+                revealInteriorMm=50,
+            ),
+            "sch": ScheduleElem(kind="schedule", id="sch", name="Dr", filters={"category": "door"}),
+        },
+    )
+    tbl = derive_schedule_table(doc, "sch")
+    row = tbl["rows"][0]
+    want = (900.0 + 100.0) * 2800.0 / 1_000_000.0
+    assert row["roughOpeningAreaM2"] == round(want, 6)
+    assert tbl["totals"]["roughOpeningAreaM2"] == round(want, 6)
+
+
 def test_window_schedule_opening_area_aspect_head_height() -> None:
     doc = Document(
         revision=1,
@@ -72,8 +106,48 @@ def test_window_schedule_opening_area_aspect_head_height() -> None:
     tbl = derive_schedule_table(doc, "sch")
     row = tbl["rows"][0]
     assert row["openingAreaM2"] == 1.8
+    assert row["roughOpeningAreaM2"] == 1.8
     assert row["aspectRatio"] == 0.8
     assert row["headHeightMm"] == 2400.0
+    assert tbl["totals"]["totalOpeningAreaM2"] == 1.8
+    assert tbl["totals"]["roughOpeningAreaM2"] == 1.8
+
+
+def test_window_schedule_rough_opening_includes_interior_reveal() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lv": LevelElem(kind="level", id="lv", name="L1", elevationMm=0),
+            "wa": WallElem(
+                kind="wall",
+                id="wa",
+                name="W",
+                levelId="lv",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 5000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+            "w1": WindowElem(
+                kind="window",
+                id="w1",
+                name="W1",
+                wallId="wa",
+                alongT=0.3,
+                widthMm=1200,
+                heightMm=1500,
+                sillHeightMm=900,
+                revealInteriorMm=40,
+            ),
+            "sch": ScheduleElem(kind="schedule", id="sch", name="Win", filters={"category": "window"}),
+        },
+    )
+    tbl = derive_schedule_table(doc, "sch")
+    row = tbl["rows"][0]
+    want_rough = (1200.0 + 80.0) * 1500.0 / 1_000_000.0
+    assert row["openingAreaM2"] == 1.8
+    assert row["roughOpeningAreaM2"] == round(want_rough, 6)
+    assert tbl["totals"]["roughOpeningAreaM2"] == round(want_rough, 6)
     assert tbl["totals"]["totalOpeningAreaM2"] == 1.8
 
 

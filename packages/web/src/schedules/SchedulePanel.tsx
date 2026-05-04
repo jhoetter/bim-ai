@@ -94,6 +94,7 @@ export function scheduleSortKeyChoices(tab: TabKey): readonly string[] {
         'widthMm',
         'heightMm',
         'sillMm',
+        'roughOpeningAreaM2',
         'openingAreaM2',
         'aspectRatio',
         'headHeightMm',
