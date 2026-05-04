@@ -29,7 +29,7 @@ def aa_rect_intersection_area_m2(
     ix0 = max(min(ax0, ax1), min(bx0, bx1))
     iy0 = max(min(ay0, ay1), min(by0, by1))
     ix1 = min(max(ax0, ax1), max(bx0, bx1))
-    iy1 = min(max(ay0, ay1), max(by1, by1))
+    iy1 = min(max(ay0, ay1), max(by0, by1))
     if ix1 <= ix0 or iy1 <= iy0:
         return 0.0
     return (ix1 - ix0) / 1000.0 * (iy1 - iy0) / 1000.0

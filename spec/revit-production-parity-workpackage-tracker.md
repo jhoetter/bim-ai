@@ -106,6 +106,7 @@ This dashboard is a rough directional read, not a release claim. The target is s
 | Prompt-4 print raster evidence (`main`)         | **`sheetPrintRasterPlaceholder_v1`**: `GET /exports/sheet-print-raster.png` returns deterministic 1x1 PNG derived from sheet SVG UTF-8 hash; response headers **`X-Bim-Ai-Sheet-Print-Raster-Contract`**, **`X-Bim-Ai-Sheet-Svg-Sha256`**; evidence **`printRasterPngHref`**, **`sheetPrintRasterIngest_v1`** ( **`diffCorrelation`** vs **`pngFullSheet`** ), **`rasterPlaceholderProbe`** stem; **`exportLinks.sheetPrintRasterPng`**; **`svgRasterBackendAvailable`**: true with clarified note; **`AgentReviewPane`** sheet table column; pytest **`test_sheet_print_raster_placeholder`**; Playwright mock route + ingest assertions; CI correlation hint lines. | Touches **`WP-E06`**, **`WP-E05`**, **`WP-A02`**, **`WP-A03`**, **`WP-A04`**, **`WP-F02`**, **`WP-F03`**; rows stay **`partial`** (real SVG-to-pixel print service still out).            |
 | Post-wave validation 2026-05-04 (`main`)        | Confirmed four prompt commits on **`main`**; moved the IFC placement dependency to the module import block (workspace no-inline-import rule); focused backend validation: `ruff check bim_ai tests`, 55 passed / 3 skipped across schedule, IFC, raster placeholder, and plan/evidence tests; focused web validation: 13 Vitest files / 45 tests; `tsc --noEmit` green.                                                                                                                                                                                                                                                                                               | Keeps tracker aligned after prompts 1-4; no workpackage moves to `done` because remaining parity blockers stay explicit.                                                                  |
 | Prompt-1 room boundary authoritative (`main`)   | **`app/bim_ai/room_derivation.py`**: deterministic axis-aligned rectangles from merged orthogonal **walls + room separators**, **`derivationAuthority`** (`authoritative` vs `preview_heuristic`), diagnostics + advisor rules; **`room_deriv_preview_v3`** / **`authorityVersion` `axis_aa_authoritative_v1`**; per-level scan guard **`ROOM_AX_RECT_SEGMENT_ENUM_CAP`** (72); plan wire **`derivedRoomBoundaryEvidence_v0`**; derived room schedule **`roomProgrammeClosure_v0`** + optional **`programmeScheduleResidualM2`**; model summary regeneration counts; pytest + `pnpm verify`.                                                                          | Touches **`WP-B06`**, **`WP-C02`**, **`WP-D01`**, **`WP-D03`**, **`WP-V01`**, **`WP-P01`**; rows stay **`partial`**.                                                                      |
+| Post-wave validation 2026-05-04 (5 prompts)     | Confirmed prompt commits for geometry, validation, sections, performance/collaboration, plus the uncommitted room-boundary slice; fixed `aa_rect_intersection_area_m2` Y-overlap upper bound; focused backend validation: 86 passed across room derivation, plan evidence, validation, section callouts, wall joins, glTF, performance, undo/replay, and evidence follow-through; focused web validation: 6 Vitest files / 27 tests.                                                                                                                                                                                                                                  | Keeps tracker aligned after prompts 1-5; no workpackage moves to `done` because remaining parity blockers stay explicit.                                                                  |
 
 ## Current Workpackages
 
@@ -183,21 +184,6 @@ These are the next todo candidates that should be split into focused implementat
 8. Make Agent Review close the evidence loop: artifact manifest ingestion, stale/missing screenshot detection, pixel diff metadata, and regeneration guidance.
 9. Build broader PRD §11 validation: blocking classes, quick-fix bundles, schedule/sheet linkage checks, and user-facing advisor severity.
 10. Raise performance/collaboration confidence: larger fixtures, worker/incremental derivation, Playwright UI timings, conflict/scoped-undo semantics.
-
-## Update Protocol
-
-When work lands:
-
-1. Update the relevant row state and evidence path.
-2. Add or adjust remaining work.
-3. If a new PRD requirement appears, add a new `WP-*` row before creating todos.
-4. Do not mark a row `done` unless it passes the Done Rule above.
-   rt scale behavior.
-5. Deepen geometry fidelity: non-orthogonal hosted openings, joins, layered wall/floor/roof assemblies, and true cut solids where bounded fixtures exist.
-6. Turn the OpenBIM import replay sketch into authoritative document merge/replay for levels, walls, spaces, Psets/QTOs, and IDS mismatch advisories.
-7. Make Agent Review close the evidence loop: artifact manifest ingestion, stale/missing screenshot detection, pixel diff metadata, and regeneration guidance.
-8. Build broader PRD §11 validation: blocking classes, quick-fix bundles, schedule/sheet linkage checks, and user-facing advisor severity.
-9. Raise performance/collaboration confidence: larger fixtures, worker/incremental derivation, Playwright UI timings, conflict/scoped-undo semantics.
 
 ## Update Protocol
 
