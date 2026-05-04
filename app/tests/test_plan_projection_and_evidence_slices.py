@@ -138,6 +138,11 @@ def test_section_projection_wire_emits_wall_u_span_for_perpendicular_cut() -> No
     assert len(markers) == 1
     assert markers[0]["id"] == "lvl"
     assert markers[0]["elevationMm"] == 300.0
+    ext = prim.get("sectionGeometryExtentMm")
+    assert isinstance(ext, dict)
+    assert abs(float(ext["uMaxMm"]) - float(ext["uMinMm"]) - span) < 1.0
+    assert float(ext["zMinMm"]) == float(ws[0]["zBottomMm"])
+    assert float(ext["zMaxMm"]) == float(ws[0]["zTopMm"])
 
 
 def test_section_projection_wire_wall_parallel_to_cut_is_along_cut_hatch() -> None:

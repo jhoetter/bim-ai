@@ -15,6 +15,12 @@ export function formatSectionElevationSpanMmLabel(zMinMm: number, zMaxMm: number
   return `Δz ${(span / 1000).toFixed(2)} m`;
 }
 
+/** Along-cut horizontal extent in section coordinates (matches `sectionGeometryExtentMm` u axis). */
+export function formatSectionAlongCutSpanMmLabel(uMinMm: number, uMaxMm: number): string {
+  const span = Math.abs(uMaxMm - uMinMm);
+  return `Δu ${(span / 1000).toFixed(2)} m`;
+}
+
 /** Single-line caption for `sheetCallouts` on section primitives (sorted by id). */
 export function formatSectionSheetCalloutsLabel(rows: SectionSheetCalloutRow[]): string {
   if (rows.length === 0) return '';

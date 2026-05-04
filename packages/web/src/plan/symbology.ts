@@ -65,6 +65,14 @@ export const SECTION_VIEWPORT_LEVEL_SPAN_BRACKET_MARGIN_PX = 22;
 
 export const SECTION_VIEWPORT_LEVEL_SPAN_LABEL_MIN_PX = 8;
 
+/** Bottom inset for along-cut (Δu) documentation bracket in section viewport SVG (WP-E04/C03). */
+
+export const SECTION_VIEWPORT_U_SPAN_BRACKET_MARGIN_PX = 40;
+
+/** Minimum label size for Δu along-cut span annotation in section viewport. */
+
+export const SECTION_VIEWPORT_U_SPAN_LABEL_MIN_PX = 8;
+
 function ux(xMm: number) {
   return xMm / 1000;
 }

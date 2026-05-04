@@ -702,14 +702,14 @@ def _doc_sheet_with_section_viewport_and_wall_hatch_mix() -> Document:
 def test_sheet_svg_section_viewport_includes_wall_hatch_documentation_token() -> None:
     doc = _doc_sheet_with_section_viewport_and_wall_hatch_mix()
     svg = sheet_elem_to_svg(doc, pick_sheet(doc, "s1"))
-    assert "secDoc[lvl=2 zSpanMm=3200 wh=E1A1]" in svg
+    assert "secDoc[lvl=2 zSpanMm=3200 uGeomSpanMm=7000 wh=E1A1]" in svg
 
 
 def test_sheet_pdf_viewport_export_listing_includes_wall_hatch_documentation_token() -> None:
     doc = _doc_sheet_with_section_viewport_and_wall_hatch_mix()
     lines = sheet_viewport_export_listing_lines(doc, pick_sheet(doc, "s1"))
     joined = "\n".join(lines)
-    assert "secDoc[lvl=2 zSpanMm=3200 wh=E1A1]" in joined
+    assert "secDoc[lvl=2 zSpanMm=3200 uGeomSpanMm=7000 wh=E1A1]" in joined
 
 
 _TRI_CALLOUT = (

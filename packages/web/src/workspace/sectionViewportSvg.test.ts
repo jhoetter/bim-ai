@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  formatSectionAlongCutSpanMmLabel,
   formatSectionElevationSpanMmLabel,
   formatSectionSheetCalloutsLabel,
   summarizeWallCutHatchKinds,
@@ -31,6 +32,15 @@ describe('Section viewport documentation helpers', () => {
 
   it('uses absolute separation when min and max reversed', () => {
     expect(formatSectionElevationSpanMmLabel(9700, 300)).toBe('Δz 9.40 m');
+  });
+
+  it('formats along-cut span metres with two decimals', () => {
+    expect(formatSectionAlongCutSpanMmLabel(0, 7000)).toBe('Δu 7.00 m');
+    expect(formatSectionAlongCutSpanMmLabel(1000, 8000)).toBe('Δu 7.00 m');
+  });
+
+  it('uses absolute u separation when min and max reversed', () => {
+    expect(formatSectionAlongCutSpanMmLabel(9700, 300)).toBe('Δu 9.40 m');
   });
 
   it('formats callout rows sorted by id with name when distinct from id', () => {

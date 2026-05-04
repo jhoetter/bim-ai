@@ -282,7 +282,8 @@ def format_sheet_plan_viewport_projection_segment(doc: Document, vp: dict[str, A
 def format_section_viewport_documentation_segment(doc: Document, view_ref: str) -> str:
     """Stable documentation substring for sheet exports when viewport references a section cut.
 
-    Includes level counts / elevation span, optional callout ids, and optional wall hatch mix
+    Includes level counts / elevation span, optional along-cut geometry span ``uGeomSpanMm`` (integer
+    millimetres from ``sectionGeometryExtentMm``), optional callout ids, and optional wall hatch mix
     ``wh=E{n}A{m}`` (edge-on vs along-cut ``walls[]`` rows) when any walls are present.
     """
 
@@ -321,6 +322,16 @@ def format_section_viewport_documentation_segment(doc: Document, view_ref: str) 
         z_vals = [_elev_id(m)[0] for m in ordered]
         z_span = round(max(z_vals) - min(z_vals))
         inner_parts.append(f"zSpanMm={z_span}")
+
+    geom_raw = prim.get("sectionGeometryExtentMm")
+    if isinstance(geom_raw, dict):
+        try:
+            gu0 = float(geom_raw.get("uMinMm", 0.0))
+            gu1 = float(geom_raw.get("uMaxMm", 0.0))
+        except (TypeError, ValueError):
+            gu0, gu1 = 0.0, 0.0
+        if math.isfinite(gu0) and math.isfinite(gu1) and abs(gu1 - gu0) > 0.5:
+            inner_parts.append(f"uGeomSpanMm={round(abs(gu1 - gu0))}")
 
     sc_raw = prim.get("sheetCallouts") or []
     if isinstance(sc_raw, list) and sc_raw:

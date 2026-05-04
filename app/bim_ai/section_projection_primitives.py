@@ -299,6 +299,94 @@ def _collect_sheet_callouts_for_section(doc: Document, section_cut_id: str) -> l
     return out
 
 
+def _section_geometry_extent_mm(
+    walls: list[dict[str, Any]],
+    floors: list[dict[str, Any]],
+    rooms: list[dict[str, Any]],
+    stairs: list[dict[str, Any]],
+    roofs: list[dict[str, Any]],
+    doors: list[dict[str, Any]],
+    windows: list[dict[str, Any]],
+) -> dict[str, float] | None:
+    """Tight axis-aligned (u, z) bounds over section solid contributors (WP-E04 / prompt-5 Δu witness)."""
+
+    u_min = math.inf
+    u_max = -math.inf
+    z_min = math.inf
+    z_max = -math.inf
+    touched = False
+
+    def acc(ulo: float, uhi: float, zlo: float, zhi: float) -> None:
+        nonlocal u_min, u_max, z_min, z_max, touched
+        if uhi < ulo:
+            ulo, uhi = uhi, ulo
+        if zhi < zlo:
+            zlo, zhi = zhi, zlo
+        if (uhi - ulo) < _EPS and (zhi - zlo) < _EPS:
+            return
+        u_min = min(u_min, ulo)
+        u_max = max(u_max, uhi)
+        z_min = min(z_min, zlo)
+        z_max = max(z_max, zhi)
+        touched = True
+
+    for w in walls:
+        acc(
+            float(w["uStartMm"]),
+            float(w["uEndMm"]),
+            float(w["zBottomMm"]),
+            float(w["zTopMm"]),
+        )
+    for w in floors:
+        acc(
+            float(w["uStartMm"]),
+            float(w["uEndMm"]),
+            float(w["zBottomMm"]),
+            float(w["zTopMm"]),
+        )
+    for w in rooms:
+        acc(
+            float(w["uStartMm"]),
+            float(w["uEndMm"]),
+            float(w["zBottomMm"]),
+            float(w["zTopMm"]),
+        )
+    for w in stairs:
+        half_u = max(0.0, float(w.get("widthMm") or 0.0) * 0.5)
+        s = float(w["uStartMm"])
+        e = float(w["uEndMm"])
+        ulo, uhi = (s, e) if s <= e else (e, s)
+        acc(ulo - half_u, uhi + half_u, float(w["zBottomMm"]), float(w["zTopMm"]))
+    for w in roofs:
+        ulo = float(w["uStartMm"])
+        uhi = float(w["uEndMm"])
+        mode = str(w.get("roofGeometryMode") or "")
+        if mode == "gable_pitched_rectangle":
+            z_lo = float(w.get("eavePlateZMm") or w.get("zMidMm") or 0.0)
+            z_hi = float(w.get("ridgeZMm") or w.get("zMidMm") or z_lo)
+            acc(ulo, uhi, z_lo, z_hi)
+        else:
+            z_mid = float(w.get("zMidMm") or 0.0)
+            acc(ulo, uhi, z_mid, z_mid)
+    for w in doors:
+        uc = float(w["uCenterMm"])
+        half = abs(float(w.get("openingHalfWidthAlongUMm") or 0.0))
+        acc(uc - half, uc + half, float(w["zBottomMm"]), float(w["zTopMm"]))
+    for w in windows:
+        uc = float(w["uCenterMm"])
+        half = abs(float(w.get("openingHalfWidthAlongUMm") or 0.0))
+        acc(uc - half, uc + half, float(w["zBottomMm"]), float(w["zTopMm"]))
+
+    if not touched or not math.isfinite(u_min) or (u_max - u_min) < _EPS:
+        return None
+    return {
+        "uMinMm": round(u_min, 3),
+        "uMaxMm": round(u_max, 3),
+        "zMinMm": round(z_min, 3),
+        "zMaxMm": round(z_max, 3),
+    }
+
+
 def build_section_projection_primitives(
     doc: Document,
     sec: SectionCutElem,
@@ -729,5 +817,9 @@ def build_section_projection_primitives(
         "stairs": stairs,
         "roofs": roofs,
     }
+
+    extent = _section_geometry_extent_mm(walls, floors, rooms, stairs, roofs, doors, windows)
+    if extent is not None:
+        primitives["sectionGeometryExtentMm"] = extent
 
     return primitives, warnings

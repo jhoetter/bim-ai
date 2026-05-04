@@ -11,11 +11,14 @@ import {
   SECTION_VIEWPORT_SCALE_BASELINE_PX,
   SECTION_VIEWPORT_STROKE_SCALE_MAX,
   SECTION_VIEWPORT_STROKE_SCALE_MIN,
+  SECTION_VIEWPORT_U_SPAN_BRACKET_MARGIN_PX,
+  SECTION_VIEWPORT_U_SPAN_LABEL_MIN_PX,
   SECTION_VIEWPORT_WALL_HATCH_ALONG_CUT_TILE,
   SECTION_VIEWPORT_WALL_HATCH_ALONG_STROKE_FACTOR,
   SECTION_VIEWPORT_WALL_HATCH_EDGE_ON_TILE,
 } from '../plan/symbology';
 import {
+  formatSectionAlongCutSpanMmLabel,
   formatSectionElevationSpanMmLabel,
   formatSectionSheetCalloutsLabel,
   parseSectionWallCutHatchKind,
@@ -121,6 +124,7 @@ export function SectionViewportSvg(props: {
     levelMarkers: LevelMarkerPrim[];
     advisory: string | null;
     calloutsCaption: string | null;
+    sectionGeomExtent: { uMinMm: number; uMaxMm: number } | null;
   };
 
   const [layers, setLayers] = useState<LayerSnap | null>(null);
@@ -191,6 +195,17 @@ export function SectionViewportSvg(props: {
         }
         const calloutsCaption =
           sheetCalloutRows.length > 0 ? formatSectionSheetCalloutsLabel(sheetCalloutRows) : null;
+
+        const geomRaw = prim?.sectionGeometryExtentMm;
+        let sectionGeomExtent: { uMinMm: number; uMaxMm: number } | null = null;
+        if (typeof geomRaw === 'object' && geomRaw !== null) {
+          const o = geomRaw as Record<string, unknown>;
+          const gu0 = Number(o.uMinMm);
+          const gu1 = Number(o.uMaxMm);
+          if (Number.isFinite(gu0) && Number.isFinite(gu1) && Math.abs(gu1 - gu0) > MM_EPS) {
+            sectionGeomExtent = { uMinMm: gu0, uMaxMm: gu1 };
+          }
+        }
 
         const asUz = (w: Record<string, unknown>): UzPrim | null => ({
           uStartMm: Number(w.uStartMm ?? 0),
@@ -377,6 +392,7 @@ export function SectionViewportSvg(props: {
             levelMarkers: levelMarkersInView,
             advisory,
             calloutsCaption,
+            sectionGeomExtent,
           });
         }
       } catch (e) {
@@ -698,6 +714,61 @@ export function SectionViewportSvg(props: {
                   textAnchor="end"
                   dominantBaseline="middle"
                   style={{ fontSize: lvlSpanFont }}
+                  pointerEvents="none"
+                >
+                  {lbl}
+                </text>
+              </g>
+            );
+          })()}
+          {(() => {
+            const g = layers.sectionGeomExtent;
+            if (!g) return null;
+            const span = Math.abs(g.uMaxMm - g.uMinMm);
+            if (span < MM_EPS) return null;
+            const bracketY = props.heightPx - SECTION_VIEWPORT_U_SPAN_BRACKET_MARGIN_PX;
+            const tick = 14 * strokeScale;
+            const xA = (Math.min(g.uMinMm, g.uMaxMm) - layers.u0) * layers.sx;
+            const xB = (Math.max(g.uMinMm, g.uMaxMm) - layers.u0) * layers.sx;
+            const xLeft = Math.min(xA, xB);
+            const xRight = Math.max(xA, xB);
+            if (xRight < -8 || xLeft > props.widthPx + 8) return null;
+            const lbl = formatSectionAlongCutSpanMmLabel(g.uMinMm, g.uMaxMm);
+            const midX = 0.5 * (xLeft + xRight);
+            const uSpanFont = Math.max(SECTION_VIEWPORT_U_SPAN_LABEL_MIN_PX, 10 * strokeScale);
+            return (
+              <g key="u-span-bracket">
+                <line
+                  x1={xLeft}
+                  x2={xRight}
+                  y1={bracketY}
+                  y2={bracketY}
+                  stroke="#475569"
+                  strokeWidth={datumStroke}
+                />
+                <line
+                  x1={xLeft}
+                  x2={xLeft}
+                  y1={bracketY}
+                  y2={bracketY - tick}
+                  stroke="#475569"
+                  strokeWidth={datumStroke}
+                />
+                <line
+                  x1={xRight}
+                  x2={xRight}
+                  y1={bracketY}
+                  y2={bracketY - tick}
+                  stroke="#475569"
+                  strokeWidth={datumStroke}
+                />
+                <text
+                  x={midX}
+                  y={bracketY - tick - 6}
+                  fill="#334155"
+                  textAnchor="middle"
+                  dominantBaseline="auto"
+                  style={{ fontSize: uSpanFont }}
                   pointerEvents="none"
                 >
                   {lbl}
