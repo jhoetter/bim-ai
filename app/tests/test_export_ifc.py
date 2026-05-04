@@ -16,6 +16,7 @@ from bim_ai.elements import (
     WallElem,
     WindowElem,
 )
+from bim_ai.engine import try_apply_kernel_ifc_authoritative_replay_v0
 from bim_ai.export_ifc import (
     AUTHORITATIVE_REPLAY_KIND_V0,
     IFC_AVAILABLE,
@@ -809,4 +810,62 @@ def test_ifc_authoritative_replay_v0_space_outline_and_ids_map() -> None:
     assert row["programmeFields"]["programmeCode"] == "PC1"
     assert row["programmeFields"]["department"] == "DeptA"
     assert row["qtoSpaceBaseQuantitiesLinked"] is True
+
+
+def test_ifc_authoritative_replay_v0_apply_to_empty_document() -> None:
+    doc = Document(
+        revision=506,
+        elements={
+            "lvl-g": LevelElem(kind="level", id="lvl-g", name="G", elevationMm=0),
+            "fl": FloorElem(
+                kind="floor",
+                id="fl",
+                name="F",
+                levelId="lvl-g",
+                boundaryMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 5000, "yMm": 0},
+                    {"xMm": 5000, "yMm": 5000},
+                    {"xMm": 0, "yMm": 5000},
+                ],
+            ),
+            "rm-1": RoomElem(
+                kind="room",
+                id="rm-1",
+                name="Office",
+                levelId="lvl-g",
+                outlineMm=[
+                    {"xMm": 1000, "yMm": 1000},
+                    {"xMm": 4000, "yMm": 1000},
+                    {"xMm": 4000, "yMm": 4000},
+                    {"xMm": 1000, "yMm": 4000},
+                ],
+                programmeCode="PC1",
+                department="DeptA",
+            ),
+        },
+    )
+    step = export_ifc_model_step(doc)
+    sketch = build_kernel_ifc_authoritative_replay_sketch_v0(step)
+    assert sketch["available"] is True
+    want_levels = sum(1 for c in sketch["commands"] if c["type"] == "createLevel")
+    want_walls = sum(1 for c in sketch["commands"] if c["type"] == "createWall")
+    want_rooms = sum(1 for c in sketch["commands"] if c["type"] == "createRoomOutline")
+    assert want_levels >= 1 and want_rooms >= 1
+
+    empty = Document(revision=0, elements={})
+    ok, new_doc, _cmds, viols, code = try_apply_kernel_ifc_authoritative_replay_v0(empty, sketch)
+    assert ok is True
+    assert code == "ok"
+    assert new_doc is not None
+    assert new_doc.elements
+    by_kind: dict[str, int] = {}
+    for el in new_doc.elements.values():
+        k = getattr(el, "kind", None)
+        if isinstance(k, str):
+            by_kind[k] = by_kind.get(k, 0) + 1
+    assert by_kind.get("level", 0) == want_levels
+    assert by_kind.get("wall", 0) == want_walls
+    assert by_kind.get("room", 0) == want_rooms
+    assert not viols or not any(v.blocking or v.severity == "error" for v in viols)
 

@@ -35,12 +35,13 @@ IFC_SEMANTIC_IMPORT_SCOPE_V0: dict[str, Any] = {
         "summarize_kernel_ifc_semantic_roundtrip export→re-parse deltas (identityCoverage, qtoCoverage)",
         "summarize_kernel_ifc_semantic_roundtrip.commandSketch — level echo, storeys read-back, QTO names, programme samples",
         "summarize_kernel_ifc_semantic_roundtrip.commandSketch.authoritativeReplay_v0 — kernel IFC re-parse → deterministic createLevel/createWall/createRoomOutline (IfcSpace) payloads, idsAuthoritativeReplayMap_v0 IDS linkage, unsupportedIfcProducts_v0 vs replay distinction",
+        "engine.try_apply_kernel_ifc_authoritative_replay_v0 — empty-document apply of authoritativeReplay_v0 commands via try_commit_bundle",
     ],
     "importMergeUnsupported": [
         "IFC ingest → Document merge / replay for arbitrary IFC entity graphs",
         "Full IDS fixture exchange matrix beyond authoring-side rules + semantic inspector",
         "Boolean regeneration from IFC openings vs kernel proxies",
-        "Authoritative replay v0 applies to kernel-shaped IFC (bim_ai_ifc_kernel_v1-style walls/storeys/spaces); arbitrary importers / opening replay remain out of scope",
+        "engine.try_apply_kernel_ifc_authoritative_replay_v0 is empty-document only; broader populated-document IFC merge and arbitrary replay remain deferred",
     ],
 }
 

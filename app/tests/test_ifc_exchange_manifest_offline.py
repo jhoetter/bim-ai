@@ -10,8 +10,11 @@ import pytest
 
 from bim_ai.document import Document
 from bim_ai.elements import DoorElem, FloorElem, LevelElem, WallElem
+from bim_ai.engine import clone_document, try_apply_kernel_ifc_authoritative_replay_v0
 from bim_ai.export_ifc import (
+    AUTHORITATIVE_REPLAY_KIND_V0,
     IFC_AVAILABLE,
+    KERNEL_IFC_AUTHORITATIVE_REPLAY_SCHEMA_VERSION,
     build_kernel_ifc_authoritative_replay_sketch_v0,
     ifcopenshell_available,
     inspect_kernel_ifc_semantics,
@@ -222,8 +225,9 @@ def test_ifc_manifest_scope_lists_authoritative_replay_bullet() -> None:
     assert any("authoritativeReplay_v0" in str(x) for x in supported)
     assert any("createRoomOutline" in str(x) for x in supported)
     assert any("idsAuthoritativeReplayMap_v0" in str(x) for x in supported)
+    assert any("try_apply_kernel_ifc_authoritative_replay_v0" in str(x) for x in supported)
     unsupported = scope.get("importMergeUnsupported") or []
-    assert any("authoritative replay" in str(x).lower() for x in unsupported)
+    assert any("try_apply_kernel_ifc_authoritative_replay_v0" in str(x) for x in unsupported)
 
 
 def test_inspect_kernel_ifc_semantics_kernel_not_eligible_when_ifc_present() -> None:
@@ -248,3 +252,62 @@ def test_inspect_kernel_ifc_semantics_kernel_not_eligible_when_ifc_present() -> 
     assert rep["available"] is False
     assert rep["reason"] == "kernel_not_eligible"
     assert (rep.get("ifcKernelGeometrySkippedCounts") or {}).get("door_missing_host_wall") == 1
+
+
+def _minimal_authoritative_replay_sketch_v0() -> dict[str, object]:
+    return {
+        "available": True,
+        "replayKind": AUTHORITATIVE_REPLAY_KIND_V0,
+        "schemaVersion": KERNEL_IFC_AUTHORITATIVE_REPLAY_SCHEMA_VERSION,
+        "commands": [{"type": "createLevel", "id": "l-offline", "name": "G", "elevationMm": 0}],
+    }
+
+
+def test_try_apply_authoritative_replay_v0_rejects_non_empty_document() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl-g": LevelElem(kind="level", id="lvl-g", name="G", elevationMm=0),
+        },
+    )
+    sketch = _minimal_authoritative_replay_sketch_v0()
+    before = clone_document(doc)
+    ok, new_doc, cmds, _v, code = try_apply_kernel_ifc_authoritative_replay_v0(doc, sketch)
+    assert ok is False
+    assert new_doc is None
+    assert code == "document_not_empty"
+    assert cmds == []
+    assert doc.elements == before.elements
+
+
+def test_try_apply_authoritative_replay_v0_sketch_unavailable() -> None:
+    empty = Document(revision=0, elements={})
+    sketch = {"available": False, "reason": "ifcopenshell_not_installed"}
+    ok, new_doc, cmds, _v, code = try_apply_kernel_ifc_authoritative_replay_v0(empty, sketch)
+    assert ok is False
+    assert new_doc is None
+    assert code == "sketch_unavailable"
+    assert cmds == []
+
+
+def test_try_apply_authoritative_replay_v0_invalid_command() -> None:
+    empty = Document(revision=0, elements={})
+    sketch = {
+        **_minimal_authoritative_replay_sketch_v0(),
+        "commands": [{"type": "moveWallDelta", "wallId": "w", "dxMm": 1, "dyMm": 0}],
+    }
+    ok, new_doc, cmds, _v, code = try_apply_kernel_ifc_authoritative_replay_v0(empty, sketch)
+    assert ok is False
+    assert new_doc is None
+    assert code == "invalid_command"
+    assert cmds == []
+
+
+def test_try_apply_authoritative_replay_v0_invalid_sketch() -> None:
+    empty = Document(revision=0, elements={})
+    bad_kind = {**_minimal_authoritative_replay_sketch_v0(), "replayKind": "nope"}
+    ok, _nd, _c, _v, code = try_apply_kernel_ifc_authoritative_replay_v0(empty, bad_kind)
+    assert ok is False and code == "invalid_sketch"
+    bad_ver = {**_minimal_authoritative_replay_sketch_v0(), "schemaVersion": 99}
+    ok2, _nd2, _c2, _v2, code2 = try_apply_kernel_ifc_authoritative_replay_v0(empty, bad_ver)
+    assert ok2 is False and code2 == "invalid_sketch"

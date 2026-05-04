@@ -87,6 +87,12 @@ Narrow import-adjacent path (WP‑X03 / WP‑D06 evidence): after kernel STEP ex
 
 **Not in v0:** opening replay, arbitrary IFC importers, document merge. **`summarize_kernel_ifc_semantic_roundtrip`** nests this under **`commandSketch.authoritativeReplay_v0`**.
 
+### Engine apply (empty document)
+
+[`try_apply_kernel_ifc_authoritative_replay_v0`](../app/bim_ai/engine.py) accepts the **`authoritativeReplay_v0`** object (or sketch-shaped dict) and applies its **`commands`** to a **`Document`** whose **`elements`** map is **empty**, delegating to **`try_commit_bundle`** so coercion, constraint evaluation, and revision bump match the rest of the command pipeline.
+
+**Outcomes:** `ok` on success; `document_not_empty` if the target document already has elements; `sketch_unavailable` when `available` is not true; `invalid_sketch` for wrong `replayKind` or `schemaVersion`; `invalid_command` for a non-list `commands` or any entry whose `type` is not `createLevel` / `createWall` / `createRoomOutline`. **`exchange_ifc_ids_identity_pset_gap`** / **`exchange_ifc_ids_qto_gap`** may append a deterministic pointer to **`commandSketch.authoritativeReplay_v0.idsAuthoritativeReplayMap_v0`** (row count) when the roundtrip gate runs — not a `quickFixCommand` bundle.
+
 ## Still deferred
 
 - Broader QTO roll-ups (full composite takeoffs), materials, classifications, and layered composites.
