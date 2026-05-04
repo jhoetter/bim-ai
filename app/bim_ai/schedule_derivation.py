@@ -249,7 +249,7 @@ def _rows_after_filter_equals(
 
 
 def _normalize_filter_rules(filt: dict[str, Any]) -> list[dict[str, Any]]:
-    """Structured schedule row filters: only ``gt`` on numeric-coercible rule values."""
+    """Structured schedule row filters: ``gt`` / ``lt`` on numeric-coercible rule values."""
 
     raw = filt.get("filterRules") or filt.get("filter_rules")
     if not isinstance(raw, list) or not raw:
@@ -260,28 +260,37 @@ def _normalize_filter_rules(filt: dict[str, Any]) -> list[dict[str, Any]]:
             continue
         field = str(item.get("field") or "").strip()
         op = str(item.get("op") or "").strip().lower()
-        if not field or op != "gt":
+        if not field or op not in {"gt", "lt"}:
             continue
         val_raw = item.get("value")
         thr = _coerce_float_for_sort(val_raw)
         if thr is None:
             continue
-        out.append({"field": field, "op": "gt", "value": float(thr)})
+        out.append({"field": field, "op": op, "value": float(thr)})
+    out.sort(key=lambda r: (r["field"], r["op"], r["value"]))
     return out
 
 
-def _row_value_gt_threshold(
+def _row_matches_numeric_compare_rule(
     row: dict[str, Any],
-    field: str,
-    threshold: float,
+    rule: dict[str, Any],
     key_aliases: dict[str, str],
 ) -> bool:
+    field = str(rule["field"])
+    op = str(rule["op"])
+    threshold = float(rule["value"])
     lk = key_aliases.get(field, field)
     raw = row.get(lk)
     got = _coerce_float_for_sort(raw)
     if got is None:
         return False
-    return got > threshold
+    match op:
+        case "gt":
+            return got > threshold
+        case "lt":
+            return got < threshold
+        case _:
+            return False
 
 
 def _rows_after_filter_rules(
@@ -294,10 +303,7 @@ def _rows_after_filter_rules(
     return [
         r
         for r in rows
-        if all(
-            _row_value_gt_threshold(r, str(rule["field"]), float(rule["value"]), key_aliases)
-            for rule in rules
-        )
+        if all(_row_matches_numeric_compare_rule(r, rule, key_aliases) for rule in rules)
     ]
 
 

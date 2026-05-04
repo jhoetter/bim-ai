@@ -107,6 +107,166 @@ def test_schedule_filter_rules_gt_width_mm_on_doors() -> None:
     assert "d1" in csv
 
 
+def test_schedule_filter_rules_lt_width_mm_on_doors() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lv": LevelElem(kind="level", id="lv", name="L1", elevationMm=0),
+            "wa": WallElem(
+                kind="wall",
+                id="wa",
+                name="W",
+                levelId="lv",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 5000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+            "d0": DoorElem(
+                kind="door",
+                id="d0",
+                name="Narrow",
+                wallId="wa",
+                alongT=0.1,
+                widthMm=800,
+            ),
+            "d1": DoorElem(
+                kind="door",
+                id="d1",
+                name="Wide",
+                wallId="wa",
+                alongT=0.5,
+                widthMm=1100,
+            ),
+            "sch": ScheduleElem(
+                kind="schedule",
+                id="sch",
+                name="Doors",
+                filters={
+                    "category": "door",
+                    "filterRules": [{"field": "widthMm", "op": "lt", "value": 1000}],
+                },
+            ),
+        },
+    )
+    tbl = derive_schedule_table(doc, "sch")
+    rows = tbl.get("rows") or []
+    assert len(rows) == 1
+    assert rows[0].get("elementId") == "d0"
+    eng = tbl.get("scheduleEngine") or {}
+    assert eng.get("filterRules") == [{"field": "widthMm", "op": "lt", "value": 1000.0}]
+
+
+def test_schedule_filter_rules_gt_lt_band_width_mm_on_doors() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lv": LevelElem(kind="level", id="lv", name="L1", elevationMm=0),
+            "wa": WallElem(
+                kind="wall",
+                id="wa",
+                name="W",
+                levelId="lv",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 5000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+            "d0": DoorElem(
+                kind="door",
+                id="d0",
+                name="Low",
+                wallId="wa",
+                alongT=0.05,
+                widthMm=800,
+            ),
+            "d1": DoorElem(
+                kind="door",
+                id="d1",
+                name="Mid",
+                wallId="wa",
+                alongT=0.35,
+                widthMm=900,
+            ),
+            "d2": DoorElem(
+                kind="door",
+                id="d2",
+                name="High",
+                wallId="wa",
+                alongT=0.65,
+                widthMm=1100,
+            ),
+            "sch": ScheduleElem(
+                kind="schedule",
+                id="sch",
+                name="Doors",
+                filters={
+                    "category": "door",
+                    "filterRules": [
+                        {"field": "widthMm", "op": "lt", "value": 1000},
+                        {"field": "widthMm", "op": "gt", "value": 850},
+                    ],
+                },
+            ),
+        },
+    )
+    tbl = derive_schedule_table(doc, "sch")
+    rows = tbl.get("rows") or []
+    assert len(rows) == 1
+    assert rows[0].get("elementId") == "d1"
+    eng = tbl.get("scheduleEngine") or {}
+    assert eng.get("filterRules") == [
+        {"field": "widthMm", "op": "gt", "value": 850.0},
+        {"field": "widthMm", "op": "lt", "value": 1000.0},
+    ]
+
+
+def test_schedule_filter_rules_lt_ignores_non_numeric_row_values() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lv": LevelElem(kind="level", id="lv", name="L1", elevationMm=0),
+            "wa": WallElem(
+                kind="wall",
+                id="wa",
+                name="W",
+                levelId="lv",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 5000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+            "d0": DoorElem(
+                kind="door",
+                id="d0",
+                name="A",
+                wallId="wa",
+                alongT=0.1,
+                widthMm=1200,
+            ),
+            "d1": DoorElem(
+                kind="door",
+                id="d1",
+                name="B",
+                wallId="wa",
+                alongT=0.5,
+                widthMm=1300,
+            ),
+            "sch": ScheduleElem(
+                kind="schedule",
+                id="sch",
+                name="Doors",
+                filters={
+                    "category": "door",
+                    "filter_rules": [{"field": "name", "op": "lt", "value": 0}],
+                },
+            ),
+        },
+    )
+    tbl = derive_schedule_table(doc, "sch")
+    assert tbl.get("rows") == []
+
+
 def test_schedule_filter_rules_gt_ignores_non_numeric_row_values() -> None:
     doc = Document(
         revision=1,

@@ -3,7 +3,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Element } from '@bim-ai/core';
 
 import { VirtualScrollRows } from './VirtualScrollRows';
-import { parseWidthMmGtThreshold, schedulesFiltersWithWidthMmGt } from './scheduleFilterWidthRules';
+import {
+  parseWidthMmGtThreshold,
+  parseWidthMmLtThreshold,
+  schedulesFiltersWithWidthMmGt,
+  schedulesFiltersWithWidthMmLt,
+} from './scheduleFilterWidthRules';
 
 type TabKey = 'rooms' | 'doors' | 'windows' | 'floors' | 'roofs' | 'stairs' | 'plans' | 'sheets';
 
@@ -448,6 +453,7 @@ export function SchedulePanel(props: {
   }, [tab, sidRooms, sidDoors, sidWins, sidFloors, sidRoofs, sidStairs, sidPlans, sidSheets]);
 
   const [openingWidthGtDraft, setOpeningWidthGtDraft] = useState('');
+  const [openingWidthLtDraft, setOpeningWidthLtDraft] = useState('');
 
   const openingToolbarScheduleEl =
     sidForTab && (tab === 'doors' || tab === 'windows') ? props.elementsById[sidForTab] : undefined;
@@ -456,11 +462,14 @@ export function SchedulePanel(props: {
     queueMicrotask(() => {
       if (openingToolbarScheduleEl?.kind !== 'schedule') {
         setOpeningWidthGtDraft('');
+        setOpeningWidthLtDraft('');
         return;
       }
       const f0 = { ...(openingToolbarScheduleEl.filters ?? {}) } as Record<string, unknown>;
       const t = parseWidthMmGtThreshold(f0);
       setOpeningWidthGtDraft(t !== null ? String(t) : '');
+      const u = parseWidthMmLtThreshold(f0);
+      setOpeningWidthLtDraft(u !== null ? String(u) : '');
     });
   }, [openingToolbarScheduleEl]);
 
@@ -1152,17 +1161,52 @@ export function SchedulePanel(props: {
                   }}
                 />
               </label>
+              <label className="flex flex-wrap items-center gap-2">
+                <span>Max width (mm) &lt;</span>
+                <input
+                  type="number"
+                  className="w-24 rounded border border-border bg-background px-2 py-0.5 font-mono text-foreground"
+                  data-testid="schedule-filter-width-mm-lt"
+                  value={openingWidthLtDraft}
+                  onChange={(e) => {
+                    setOpeningWidthLtDraft(e.target.value);
+                  }}
+                  onBlur={() => {
+                    const trimmed = openingWidthLtDraft.trim();
+                    let thresh: number | null = null;
+                    if (trimmed !== '') {
+                      const n = Number(trimmed);
+                      thresh = Number.isFinite(n) ? n : null;
+                    }
+                    const base: Record<string, unknown> = {
+                      ...f,
+                      sortBy: sortVal,
+                      groupingHint: orderedHints(),
+                      filterEquals: feObj,
+                      sortDescending: sortDesc,
+                    };
+                    const nextF = schedulesFiltersWithWidthMmLt(base, thresh);
+                    commit(nextF, groupingPayload(orderedHints()));
+                  }}
+                />
+              </label>
             </div>
             {(() => {
-              const wgt = parseWidthMmGtThreshold(f as Record<string, unknown>);
-              return wgt != null ? (
+              const fw = f as Record<string, unknown>;
+              const wgt = parseWidthMmGtThreshold(fw);
+              const wlt = parseWidthMmLtThreshold(fw);
+              if (wgt == null && wlt == null) return null;
+              const parts: string[] = [];
+              if (wgt != null) parts.push(`widthMm > ${wgt} mm`);
+              if (wlt != null) parts.push(`widthMm < ${wlt} mm`);
+              return (
                 <div
                   data-testid="schedule-filter-rules-readout"
                   className="mt-1 text-[10px] text-foreground/90"
                 >
-                  Rule: widthMm &gt; {wgt} mm
+                  Rules: {parts.join(' · ')}
                 </div>
-              ) : null;
+              );
             })()}
           </>
         ) : null}

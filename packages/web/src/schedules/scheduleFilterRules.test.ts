@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseWidthMmGtThreshold, schedulesFiltersWithWidthMmGt } from './scheduleFilterWidthRules';
+import {
+  parseWidthMmGtThreshold,
+  parseWidthMmLtThreshold,
+  schedulesFiltersWithWidthMmGt,
+  schedulesFiltersWithWidthMmLt,
+} from './scheduleFilterWidthRules';
 
 describe('schedule filterRules widthMm gt helpers', () => {
   it('parseWidthMmGtThreshold reads first widthMm gt', () => {
@@ -46,5 +51,44 @@ describe('schedule filterRules widthMm gt helpers', () => {
     };
     const next = schedulesFiltersWithWidthMmGt(base, null);
     expect(next.filterRules).toBeUndefined();
+  });
+});
+
+describe('schedule filterRules widthMm lt helpers', () => {
+  it('parseWidthMmLtThreshold reads first widthMm lt', () => {
+    expect(
+      parseWidthMmLtThreshold({
+        filterRules: [
+          { field: 'heightMm', op: 'lt', value: 99 },
+          { field: 'widthMm', op: 'lt', value: 1200 },
+        ],
+      }),
+    ).toBe(1200);
+  });
+
+  it('schedulesFiltersWithWidthMmLt replaces width lt and preserves gt rules', () => {
+    const base = {
+      category: 'door',
+      filterRules: [
+        { field: 'widthMm', op: 'lt', value: 100 },
+        { field: 'widthMm', op: 'gt', value: 700 },
+      ],
+    };
+    const next = schedulesFiltersWithWidthMmLt(base, 1500);
+    expect(next.filterRules).toEqual([
+      { field: 'widthMm', op: 'gt', value: 700 },
+      { field: 'widthMm', op: 'lt', value: 1500 },
+    ]);
+  });
+
+  it('schedulesFiltersWithWidthMmLt clears width lt when threshold null but keeps gt', () => {
+    const base = {
+      filterRules: [
+        { field: 'widthMm', op: 'gt', value: 500 },
+        { field: 'widthMm', op: 'lt', value: 2000 },
+      ],
+    };
+    const next = schedulesFiltersWithWidthMmLt(base, null);
+    expect(next.filterRules).toEqual([{ field: 'widthMm', op: 'gt', value: 500 }]);
   });
 });
