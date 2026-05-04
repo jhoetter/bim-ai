@@ -200,12 +200,23 @@ def format_section_viewport_documentation_segment(doc: Document, view_ref: str) 
     ordered = sorted(markers_raw, key=_elev_id)
     count = len(ordered)
 
-    if count == 1:
-        return f"secDoc[lvl={count}]"
+    inner_parts: list[str] = [f"lvl={count}"]
+    if count > 1:
+        z_vals = [_elev_id(m)[0] for m in ordered]
+        z_span = round(max(z_vals) - min(z_vals))
+        inner_parts.append(f"zSpanMm={z_span}")
 
-    z_vals = [_elev_id(m)[0] for m in ordered]
-    z_span = round(max(z_vals) - min(z_vals))
-    return f"secDoc[lvl={count} zSpanMm={z_span}]"
+    sc_raw = prim.get("sheetCallouts") or []
+    if isinstance(sc_raw, list) and sc_raw:
+        co_ids = sorted(
+            str(item.get("id") or "").strip()
+            for item in sc_raw
+            if isinstance(item, dict) and str(item.get("id") or "").strip()
+        )
+        if co_ids:
+            inner_parts.append(f"co={','.join(co_ids)}")
+
+    return "secDoc[" + " ".join(inner_parts) + "]"
 
 
 def viewport_evidence_hints_v0(vps_raw: list[Any]) -> list[dict[str, Any]]:

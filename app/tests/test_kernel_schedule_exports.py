@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from bim_ai.document import Document
 from bim_ai.elements import (
+    CalloutElem,
     CameraMm,
     DoorElem,
     FloorElem,
@@ -614,6 +615,44 @@ def test_sheet_svg_section_viewport_includes_documentation_segment() -> None:
     doc = _doc_sheet_with_section_viewport()
     svg = sheet_elem_to_svg(doc, pick_sheet(doc, "s1"))
     assert "secDoc[lvl=2 zSpanMm=3200]" in svg
+    assert "co=" not in svg
+
+
+_TRI_CALLOUT = (
+    {"xMm": 0.0, "yMm": 0.0},
+    {"xMm": 400.0, "yMm": 0.0},
+    {"xMm": 200.0, "yMm": 300.0},
+)
+
+
+def _doc_sheet_with_section_viewport_and_callouts() -> Document:
+    base = _doc_sheet_with_section_viewport()
+    els = dict(base.elements)
+    els["co-z"] = CalloutElem(
+        kind="callout",
+        id="co-z",
+        name="Wall junction",
+        parentSheetId="s1",
+        outlineMm=list(_TRI_CALLOUT),
+    )
+    els["co-a"] = CalloutElem(
+        kind="callout",
+        id="co-a",
+        name="Footing detail",
+        parentSheetId="s1",
+        outlineMm=[
+            {"xMm": 500.0, "yMm": 500.0},
+            {"xMm": 900.0, "yMm": 500.0},
+            {"xMm": 700.0, "yMm": 800.0},
+        ],
+    )
+    return Document(revision=base.revision, elements=els)
+
+
+def test_sheet_svg_section_viewport_includes_callout_documentation_token() -> None:
+    doc = _doc_sheet_with_section_viewport_and_callouts()
+    svg = sheet_elem_to_svg(doc, pick_sheet(doc, "s1"))
+    assert "secDoc[lvl=2 zSpanMm=3200 co=co-a,co-z]" in svg
 
 
 def test_sheet_pdf_viewport_export_listing_includes_section_documentation_segment() -> None:
@@ -621,6 +660,14 @@ def test_sheet_pdf_viewport_export_listing_includes_section_documentation_segmen
     lines = sheet_viewport_export_listing_lines(doc, pick_sheet(doc, "s1"))
     joined = "\n".join(lines)
     assert "secDoc[lvl=2 zSpanMm=3200]" in joined
+    assert "co=" not in joined
+
+
+def test_sheet_pdf_viewport_export_listing_includes_callout_documentation_token() -> None:
+    doc = _doc_sheet_with_section_viewport_and_callouts()
+    lines = sheet_viewport_export_listing_lines(doc, pick_sheet(doc, "s1"))
+    joined = "\n".join(lines)
+    assert "secDoc[lvl=2 zSpanMm=3200 co=co-a,co-z]" in joined
 
 
 def test_format_viewport_crop_export_segment_empty_without_pair():

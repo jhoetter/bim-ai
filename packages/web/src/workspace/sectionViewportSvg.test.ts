@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatSectionElevationSpanMmLabel } from './sectionViewportDoc';
+import {
+  formatSectionElevationSpanMmLabel,
+  formatSectionSheetCalloutsLabel,
+} from './sectionViewportDoc';
 
 describe('Section viewport documentation helpers', () => {
   it('formats elevation span metres with two decimals', () => {
@@ -10,5 +13,18 @@ describe('Section viewport documentation helpers', () => {
 
   it('uses absolute separation when min and max reversed', () => {
     expect(formatSectionElevationSpanMmLabel(9700, 300)).toBe('Δz 9.40 m');
+  });
+
+  it('formats callout rows sorted by id with name when distinct from id', () => {
+    expect(
+      formatSectionSheetCalloutsLabel([
+        { id: 'z-co', name: 'Zeta' },
+        { id: 'a-co', name: 'Alpha' },
+      ]),
+    ).toBe('Callouts · Alpha (a-co), Zeta (z-co)');
+  });
+
+  it('uses id-only token when name matches id', () => {
+    expect(formatSectionSheetCalloutsLabel([{ id: 'co-1', name: 'co-1' }])).toBe('Callouts · co-1');
   });
 });

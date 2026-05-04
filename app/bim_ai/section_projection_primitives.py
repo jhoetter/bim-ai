@@ -12,12 +12,14 @@ from typing import Any
 
 from bim_ai.document import Document
 from bim_ai.elements import (
+    CalloutElem,
     DoorElem,
     FloorElem,
     LevelElem,
     RoofElem,
     RoomElem,
     SectionCutElem,
+    SheetElem,
     SlabOpeningElem,
     StairElem,
     WallElem,
@@ -255,6 +257,37 @@ def _collect_level_markers(doc: Document) -> list[dict[str, Any]]:
     return [r[1] for r in rows]
 
 
+def _collect_sheet_callouts_for_section(doc: Document, section_cut_id: str) -> list[dict[str, str]]:
+    """Callouts on sheets that reference this section in any viewport (sorted by element id)."""
+
+    sheet_ids: set[str] = set()
+    for e in doc.elements.values():
+        if not isinstance(e, SheetElem):
+            continue
+        for vp in e.viewports_mm or []:
+            if not isinstance(vp, dict):
+                continue
+            vr = vp.get("viewRef") or vp.get("view_ref")
+            if not isinstance(vr, str) or ":" not in vr:
+                continue
+            kind_raw, ref_raw = vr.split(":", 1)
+            if kind_raw.strip().lower() not in {"section", "sec"}:
+                continue
+            if ref_raw.strip() == section_cut_id:
+                sheet_ids.add(e.id)
+                break
+
+    out: list[dict[str, str]] = []
+    for eid in sorted(doc.elements.keys()):
+        ce = doc.elements[eid]
+        if not isinstance(ce, CalloutElem):
+            continue
+        if ce.parent_sheet_id not in sheet_ids:
+            continue
+        out.append({"id": ce.id, "name": str(ce.name or ce.id)})
+    return out
+
+
 def build_section_projection_primitives(
     doc: Document,
     sec: SectionCutElem,
@@ -289,6 +322,7 @@ def build_section_projection_primitives(
                 "stairs": [],
                 "roofs": [],
                 "levelMarkers": _collect_level_markers(doc),
+                "sheetCallouts": _collect_sheet_callouts_for_section(doc, sec.id),
             },
             warnings,
         )
@@ -655,6 +689,7 @@ def build_section_projection_primitives(
         "coordinateFrame": prim_frame,
         "cutSegmentLengthMm": round(seg_len, 3),
         "levelMarkers": _collect_level_markers(doc),
+        "sheetCallouts": _collect_sheet_callouts_for_section(doc, sec.id),
         "walls": walls,
         "floors": floors,
         "rooms": rooms,

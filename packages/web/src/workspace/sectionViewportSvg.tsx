@@ -12,7 +12,11 @@ import {
   SECTION_VIEWPORT_STROKE_SCALE_MAX,
   SECTION_VIEWPORT_STROKE_SCALE_MIN,
 } from '../plan/symbology';
-import { formatSectionElevationSpanMmLabel } from './sectionViewportDoc';
+import {
+  formatSectionElevationSpanMmLabel,
+  formatSectionSheetCalloutsLabel,
+  type SectionSheetCalloutRow,
+} from './sectionViewportDoc';
 
 type UzPrim = {
   uStartMm: number;
@@ -111,6 +115,7 @@ export function SectionViewportSvg(props: {
     sy: number;
     levelMarkers: LevelMarkerPrim[];
     advisory: string | null;
+    calloutsCaption: string | null;
   };
 
   const [layers, setLayers] = useState<LayerSnap | null>(null);
@@ -165,6 +170,20 @@ export function SectionViewportSvg(props: {
             });
           }
         }
+
+        const sheetCalloutsRaw = prim?.sheetCallouts;
+        const sheetCalloutRows: SectionSheetCalloutRow[] = [];
+        if (Array.isArray(sheetCalloutsRaw)) {
+          for (const row of sheetCalloutsRaw) {
+            if (typeof row !== 'object' || row === null) continue;
+            const o = row as Record<string, unknown>;
+            const sid = String(o.id ?? '').trim();
+            if (!sid) continue;
+            sheetCalloutRows.push({ id: sid, name: String(o.name ?? sid) });
+          }
+        }
+        const calloutsCaption =
+          sheetCalloutRows.length > 0 ? formatSectionSheetCalloutsLabel(sheetCalloutRows) : null;
 
         const asUz = (w: Record<string, unknown>): UzPrim | null => ({
           uStartMm: Number(w.uStartMm ?? 0),
@@ -344,6 +363,7 @@ export function SectionViewportSvg(props: {
             sy,
             levelMarkers: levelMarkersInView,
             advisory,
+            calloutsCaption,
           });
         }
       } catch (e) {
@@ -639,6 +659,19 @@ export function SectionViewportSvg(props: {
             );
           })()}
         </>
+      ) : null}
+      {layers?.calloutsCaption ? (
+        <text
+          x={8}
+          y={props.heightPx - 8}
+          fill="#64748b"
+          textAnchor="start"
+          dominantBaseline="auto"
+          style={{ fontSize: Math.max(8, 9 * strokeScale) }}
+          pointerEvents="none"
+        >
+          {layers.calloutsCaption}
+        </text>
       ) : null}
       {layers?.advisory ? (
         <text
