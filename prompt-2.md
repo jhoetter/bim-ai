@@ -1,15 +1,15 @@
-# Agent Prompt 2: Room Derivation, Separation Lines, And Programme UI
+# Agent Prompt 2: Sheet Drag/Drop, Viewport Crop, And Export Fidelity
 
 ## Mission
 
-You are Agent 2 of the next parallel BIM AI parity batch. Promote rooms from authored polygons plus schedules into a stronger production workflow: derived room regions, separation lines, programme metadata, legends, and advisor feedback. Do not open a pull request. Commit and push only the branch you work on.
+You are Agent 2 of the next parallel BIM AI parity batch. Move sheets beyond titleblock replay into authoring fidelity: drag/drop or direct-manipulation viewport placement, viewport crop/scale metadata, and deterministic SVG/PNG/PDF evidence. Do not open a pull request. Commit and push only the branch you work on.
 
 Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
 
-- `WP-B06` Rooms and room separation
-- `WP-C04` Room color schemes and legends
-- `WP-V01` Validation/advisor expansion
-- Light `WP-D06` Cleanroom metadata and IDS, only for programme/cleanroom fields
+- `WP-E05` Sheet canvas and titleblock
+- `WP-E06` SVG/PNG/PDF export
+- `WP-X01` JSON snapshot and command replay
+- Light `WP-A03` Playwright evidence baselines, only if stable sheet evidence changes
 
 ## Start Procedure
 
@@ -19,7 +19,7 @@ Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
    git fetch origin
    git switch main
    git pull --ff-only origin main
-   git switch -c agent/room-derivation-programme
+   git switch -c agent/sheet-dragdrop-export
    ```
 
 2. Read first:
@@ -28,46 +28,49 @@ Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
    - `app/bim_ai/elements.py`
    - `app/bim_ai/commands.py`
    - `app/bim_ai/engine.py`
-   - `app/bim_ai/schedule_derivation.py`
-   - `app/bim_ai/constraints.py`
-   - `app/bim_ai/plan_projection_wire.py`
-   - `packages/web/src/plan/PlanCanvas.tsx`
-   - `packages/web/src/plan/roomSchemeColor.ts`
+   - `app/bim_ai/sheet_preview_svg.py`
+   - `app/bim_ai/sheet_preview_pdf.py`
+   - `packages/core/src/index.ts`
+   - `packages/web/src/workspace/SheetCanvas.tsx`
+   - `packages/web/src/workspace/sheetViewportAuthoring.tsx`
+   - `packages/web/src/workspace/sheetTitleblockAuthoring.tsx`
 
 ## Allowed Scope
 
 Prefer changes in:
 
-- room and room-separation element/command schemas in `app/bim_ai/elements.py` and `app/bim_ai/commands.py`
-- bounded derivation and preview logic in `app/bim_ai/schedule_derivation.py`, `app/bim_ai/plan_projection_wire.py`, or nearby room helpers
-- validation and quick-fix rules in `app/bim_ai/constraints.py`
-- web plan/legend rendering in `packages/web/src/plan/*`
-- focused tests under `app/tests/test_room_*`, `app/tests/test_constraints_*`, `app/tests/test_plan_projection_and_evidence_slices.py`, and `packages/web/src/plan/*.test.ts`
+- replayable sheet viewport commands and `viewportsMm` metadata
+- sheet preview/export helpers in `app/bim_ai/sheet_preview_svg.py` and `app/bim_ai/sheet_preview_pdf.py`
+- `packages/web/src/workspace/SheetCanvas.tsx`
+- `packages/web/src/workspace/sheetViewportAuthoring.tsx`
+- focused tests under `app/tests/test_upsert_sheet_viewports.py`, `app/tests/test_golden_exchange_fixture.py`, and `packages/web/src/workspace/*.test.ts`
+- Playwright sheet assertions and baselines only when visual changes are intentional and stable
 - `spec/revit-production-parity-workpackage-tracker.md`
 
 ## Non-Goals
 
-- Do not change sheet viewport authoring.
-- Do not change schedule grouping/filtering beyond room metadata needed for this slice.
-- Do not change IFC/glTF exporters unless a tiny programme field read-back update is unavoidable.
-- Do not attempt a general polygon solver without a bounded fixture.
+- Do not redesign plan, section, or schedule derivation.
+- Do not change Agent Review evidence package contracts except sheet artifact names if necessary.
+- Do not implement a full print service beyond deterministic preview/export fidelity.
+- Do not change room or OpenBIM semantics.
 - Do not open a PR.
 
 ## Implementation Checklist
 
-- Add one narrow room production feature, such as room separation lines, derived unbounded-room warnings, authoritative wall-loop area recomputation for a fixture, or programme metadata editing.
-- Ensure the room plan legend and schedule/advisor paths stay consistent with the new metadata.
-- Add at least one backend test and one web unit or e2e assertion.
-- Keep generated room colors deterministic.
-- Document remaining blockers for full room derivation.
+- Add one narrow sheet authoring/export slice, such as viewport drag/drop, viewport crop box editing, viewport scale/title metadata, or sheet SVG/PDF parity for titleblock fields.
+- Preserve command replay and snapshot determinism.
+- Add backend replay/export tests and web unit or Playwright evidence.
+- Avoid broad screenshot layout churn.
+- Document remaining print/export blockers in the tracker.
 
 ## Validation
 
 Run focused checks:
 
 ```bash
-cd app && ruff check bim_ai tests && pytest tests/test_room_derivation_preview.py tests/test_constraints_room_programme_consistency.py tests/test_plan_projection_and_evidence_slices.py
+cd app && ruff check bim_ai tests && pytest tests/test_upsert_sheet_viewports.py tests/test_golden_exchange_fixture.py
 cd packages/web && pnpm exec tsc -p tsconfig.json --noEmit && pnpm test
+cd packages/web && CI=true pnpm exec playwright test e2e/golden-bundle-plan.spec.ts e2e/evidence-baselines.spec.ts
 ```
 
 Then run, if practical:
@@ -78,7 +81,7 @@ pnpm verify
 
 ## Tracker Update
 
-Update only rows you materially changed, likely `WP-B06`, `WP-C04`, `WP-V01`, and maybe `WP-D06`. Keep `State` as `partial` unless the Done Rule is fully satisfied. Mention exact derivation limits and test fixtures.
+Update only rows you materially changed, likely `WP-E05`, `WP-E06`, `WP-X01`, and maybe `WP-A03`. Keep `State` as `partial` unless the Done Rule is fully satisfied. Include exact tests, evidence files, and export limits.
 
 ## Commit And Push
 
@@ -89,7 +92,7 @@ git status
 git diff
 git add <changed files>
 git commit -m "$(cat <<'EOF'
-feat(rooms): deepen derivation and programme slice
+feat(sheets): improve viewport authoring export fidelity
 
 EOF
 )"
@@ -98,4 +101,4 @@ git push -u origin HEAD
 
 ## Final Report
 
-Return branch, commit SHA, room workflow added, tracker rows updated, validation results, and any schedule/legend handoff notes.
+Return branch, commit SHA, sheet behavior added, tracker rows updated, validation results, and any screenshot/export baseline risks.
