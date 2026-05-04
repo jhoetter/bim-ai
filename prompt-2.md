@@ -1,15 +1,15 @@
-# Agent Prompt 2: Production Section Graphics And Annotation
+# Agent Prompt 2: Room Derivation, Separation Lines, And Programme UI
 
 ## Mission
 
-You are Agent 2 of the next parallel BIM AI parity batch. Move section/elevation output closer to production documentation: richer cut graphics, material hints, datum/level markers, lightweight tags/dimensions, and scale-aware section SVG behavior. Do not open a pull request. Commit and push only the branch you work on.
+You are Agent 2 of the next parallel BIM AI parity batch. Promote rooms from authored polygons plus schedules into a stronger production workflow: derived room regions, separation lines, programme metadata, legends, and advisor feedback. Do not open a pull request. Commit and push only the branch you work on.
 
 Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
 
-- `WP-E04` Section/elevation views
-- `WP-C03` Plan symbology and graphics, only shared graphics constants
-- `WP-E05` Sheet canvas and titleblock, only section viewport rendering
-- `WP-E06` SVG/PNG/PDF export, only if section SVG evidence changes
+- `WP-B06` Rooms and room separation
+- `WP-C04` Room color schemes and legends
+- `WP-V01` Validation/advisor expansion
+- Light `WP-D06` Cleanroom metadata and IDS, only for programme/cleanroom fields
 
 ## Start Procedure
 
@@ -19,59 +19,55 @@ Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
    git fetch origin
    git switch main
    git pull --ff-only origin main
-   git switch -c agent/section-documentation
+   git switch -c agent/room-derivation-programme
    ```
 
 2. Read first:
    - `spec/revit-production-parity-workpackage-tracker.md`
    - `spec/prd/revit-production-parity-ai-agent-prd.md`
-   - `app/bim_ai/section_projection_primitives.py`
+   - `app/bim_ai/elements.py`
+   - `app/bim_ai/commands.py`
+   - `app/bim_ai/engine.py`
+   - `app/bim_ai/schedule_derivation.py`
+   - `app/bim_ai/constraints.py`
    - `app/bim_ai/plan_projection_wire.py`
-   - `packages/web/src/plan/sectionProjectionWire.ts`
-   - `packages/web/src/workspace/sectionViewportSvg.tsx`
-   - `packages/web/src/workspace/SheetCanvas.tsx`
-   - `packages/web/e2e/golden-bundle-plan.spec.ts`
-   - `packages/web/e2e/evidence-baselines.spec.ts`
+   - `packages/web/src/plan/PlanCanvas.tsx`
+   - `packages/web/src/plan/roomSchemeColor.ts`
 
 ## Allowed Scope
 
 Prefer changes in:
 
-- `app/bim_ai/section_projection_primitives.py`
-- `app/bim_ai/plan_projection_wire.py`, section projection path only
-- `packages/web/src/workspace/sectionViewportSvg.tsx`
-- `packages/web/src/workspace/SheetCanvas.tsx`, only to pass section viewport props
-- `packages/web/src/plan/sectionProjectionWire.ts`
-- focused tests in `app/tests/test_plan_projection_and_evidence_slices.py`
-- focused web tests under `packages/web/src/workspace/*section*` if needed
-- Playwright section/sheet assertions and baselines only when visual changes are intentional
+- room and room-separation element/command schemas in `app/bim_ai/elements.py` and `app/bim_ai/commands.py`
+- bounded derivation and preview logic in `app/bim_ai/schedule_derivation.py`, `app/bim_ai/plan_projection_wire.py`, or nearby room helpers
+- validation and quick-fix rules in `app/bim_ai/constraints.py`
+- web plan/legend rendering in `packages/web/src/plan/*`
+- focused tests under `app/tests/test_room_*`, `app/tests/test_constraints_*`, `app/tests/test_plan_projection_and_evidence_slices.py`, and `packages/web/src/plan/*.test.ts`
 - `spec/revit-production-parity-workpackage-tracker.md`
 
 ## Non-Goals
 
-- Do not change sheet viewport command replay.
-- Do not change schedule engine, CSV, or schedule UI.
-- Do not change room programme validation.
-- Do not change IFC/glTF exporters or cut-solid kernel.
-- Do not change Agent Review/evidence package semantics.
+- Do not change sheet viewport authoring.
+- Do not change schedule grouping/filtering beyond room metadata needed for this slice.
+- Do not change IFC/glTF exporters unless a tiny programme field read-back update is unavoidable.
+- Do not attempt a general polygon solver without a bounded fixture.
 - Do not open a PR.
 
 ## Implementation Checklist
 
-- Improve section primitives or SVG rendering for at least one production feature: cut hatches, level/datum labels, material bands, opening tags, simple dimensions, crop/depth warning, or scale-aware stroke/text.
-- Keep `sectionProjectionPrimitives_v1` backwards compatible unless tests and consumers are updated together.
-- Ensure sheet viewport rendering still works for section refs.
-- Add focused backend and/or Playwright evidence for the section output.
-- Avoid broad layout churn in screenshots.
+- Add one narrow room production feature, such as room separation lines, derived unbounded-room warnings, authoritative wall-loop area recomputation for a fixture, or programme metadata editing.
+- Ensure the room plan legend and schedule/advisor paths stay consistent with the new metadata.
+- Add at least one backend test and one web unit or e2e assertion.
+- Keep generated room colors deterministic.
+- Document remaining blockers for full room derivation.
 
 ## Validation
 
 Run focused checks:
 
 ```bash
-cd app && ruff check bim_ai tests && pytest tests/test_plan_projection_and_evidence_slices.py
+cd app && ruff check bim_ai tests && pytest tests/test_room_derivation_preview.py tests/test_constraints_room_programme_consistency.py tests/test_plan_projection_and_evidence_slices.py
 cd packages/web && pnpm exec tsc -p tsconfig.json --noEmit && pnpm test
-cd packages/web && CI=true pnpm exec playwright test e2e/golden-bundle-plan.spec.ts e2e/evidence-baselines.spec.ts
 ```
 
 Then run, if practical:
@@ -82,7 +78,7 @@ pnpm verify
 
 ## Tracker Update
 
-Update only rows you materially changed, likely `WP-E04`, `WP-C03`, `WP-E05`, and maybe `WP-E06`. Keep `State` as `partial` unless the Done Rule is fully satisfied. If screenshots change, mention exact baseline/evidence paths.
+Update only rows you materially changed, likely `WP-B06`, `WP-C04`, `WP-V01`, and maybe `WP-D06`. Keep `State` as `partial` unless the Done Rule is fully satisfied. Mention exact derivation limits and test fixtures.
 
 ## Commit And Push
 
@@ -93,7 +89,7 @@ git status
 git diff
 git add <changed files>
 git commit -m "$(cat <<'EOF'
-feat(sections): improve production section graphics
+feat(rooms): deepen derivation and programme slice
 
 EOF
 )"
@@ -102,4 +98,4 @@ git push -u origin HEAD
 
 ## Final Report
 
-Return branch, commit SHA, visual behavior added, tracker rows updated, validation results, and screenshot baseline notes.
+Return branch, commit SHA, room workflow added, tracker rows updated, validation results, and any schedule/legend handoff notes.

@@ -1,17 +1,17 @@
-# Agent Prompt 3: Geometry Fidelity Spine
+# Agent Prompt 3: Schedule Definition Depth And Type Propagation
 
 ## Mission
 
-You are Agent 3 of the next parallel BIM AI parity batch. Improve one high-leverage geometry fidelity path that benefits at least two surfaces, such as plan + section, section + glTF, or glTF + validation. Keep scope narrow and fixture-driven. Do not open a pull request. Commit and push only the branch you work on.
+You are Agent 3 of the next parallel BIM AI parity batch. Deepen schedules from useful tables into more Revit-like definitions: persisted fields, sort/group/filter behavior, type/material propagation, and stable JSON/CSV/API/CLI evidence. Do not open a pull request. Commit and push only the branch you work on.
 
 Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
 
-- `WP-B02` Walls, doors, windows, hosted openings
-- `WP-B03` Floors/slabs and slab openings
-- `WP-B04` Roofs
-- `WP-B05` Stairs
-- `WP-E03` 3D geometry fidelity
-- `WP-X02` glTF export, only when proving visual geometry parity
+- `WP-D01` Server-derived schedules
+- `WP-D02` Schedule CSV/API/CLI export
+- `WP-D03` Schedule UI
+- `WP-D04` Family/type registry and propagation
+- `WP-D05` Materials/layer catalogs
+- Light `WP-X01` JSON snapshot and command replay, only for schedule definition replay
 
 ## Start Procedure
 
@@ -21,60 +21,54 @@ Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
    git fetch origin
    git switch main
    git pull --ff-only origin main
-   git switch -c agent/geometry-fidelity
+   git switch -c agent/schedule-definition-depth
    ```
 
 2. Read first:
    - `spec/revit-production-parity-workpackage-tracker.md`
    - `spec/prd/revit-production-parity-ai-agent-prd.md`
-   - `app/bim_ai/cut_solid_kernel.py`
-   - `app/bim_ai/opening_cut_primitives.py`
-   - `app/bim_ai/export_gltf.py`
-   - `app/bim_ai/section_projection_primitives.py`
-   - `app/bim_ai/plan_projection_wire.py`
-   - `packages/web/src/plan/symbology.ts`
+   - `app/bim_ai/elements.py`
+   - `app/bim_ai/commands.py`
+   - `app/bim_ai/engine.py`
+   - `app/bim_ai/schedule_derivation.py`
+   - `app/bim_ai/schedule_csv.py`
+   - `app/bim_ai/type_material_registry.py`
+   - `app/bim_ai/routes_api.py`
+   - `packages/web/src/schedule/SchedulePanel.tsx`
 
 ## Allowed Scope
 
 Prefer changes in:
 
-- `app/bim_ai/cut_solid_kernel.py`
-- `app/bim_ai/opening_cut_primitives.py`
-- `app/bim_ai/export_gltf.py`, mesh/tree behavior only
-- `app/bim_ai/section_projection_primitives.py`, only to consume improved geometry
-- `app/bim_ai/plan_projection_wire.py`, only to consume improved geometry
-- `packages/web/src/plan/symbology.ts`, only if plan evidence needs the geometry
-- focused tests: `app/tests/test_cut_solid_kernel.py`, `app/tests/test_export_gltf.py`, `app/tests/test_plan_projection_and_evidence_slices.py`, `app/tests/test_golden_exchange_fixture.py`
+- schedule definition schema and commands in `app/bim_ai/elements.py`, `app/bim_ai/commands.py`, and `app/bim_ai/engine.py`
+- derivation/export/API paths in `app/bim_ai/schedule_derivation.py`, `app/bim_ai/schedule_csv.py`, and `app/bim_ai/routes_api.py`
+- type/material helpers in `app/bim_ai/type_material_registry.py`
+- web schedule controls in `packages/web/src/schedule/SchedulePanel.tsx`
+- focused tests under `app/tests/test_schedule_*`, `app/tests/test_kernel_schedule_exports.py`, and schedule web tests
 - `spec/revit-production-parity-workpackage-tracker.md`
 
 ## Non-Goals
 
-- Do not edit IFC export unless a tiny manifest-count compatibility adjustment is required. OpenBIM inspection is owned by another agent.
-- Do not change schedule definitions or room programme UI.
+- Do not change room derivation or room programme validation beyond consuming existing fields.
 - Do not change sheet viewport authoring.
-- Do not change evidence package digest/UI.
-- Do not attempt broad boolean geometry without a bounded fixture and tests.
+- Do not alter IFC/glTF exporters.
+- Do not update Playwright screenshot baselines unless schedule UI changes are intentionally visible.
 - Do not open a PR.
 
 ## Implementation Checklist
 
-- Pick exactly one narrow geometry improvement, for example:
-  - non-orthogonal hosted opening projection;
-  - stair plan/section symbol with basic treads and direction marker;
-  - layered wall/floor cut bands;
-  - roof overhang/ridge proxy in glTF + section;
-  - slab opening clipping that improves both glTF and section.
-- Prove the improvement across at least two surfaces.
-- Preserve existing geometry manifests unless intentionally updated and tested.
-- Add focused tests for the chosen fixture.
-- Document remaining geometry blockers in the tracker.
+- Add one narrow schedule-definition improvement, such as stable sort keys, multiple equality filters, grouped subtotals, persisted field sets, type-parameter propagation, or material display propagation.
+- Ensure JSON, CSV, CLI, and web surfaces stay coherent for the chosen slice.
+- Add backend tests for schedule derivation/export and a web unit/e2e assertion if UI changes.
+- Preserve existing schedule fixtures unless intentionally updated and documented.
+- Keep schedule rows deterministic.
 
 ## Validation
 
 Run focused checks:
 
 ```bash
-cd app && ruff check bim_ai tests && pytest tests/test_cut_solid_kernel.py tests/test_export_gltf.py tests/test_plan_projection_and_evidence_slices.py
+cd app && ruff check bim_ai tests && pytest tests/test_schedule_row_filters.py tests/test_kernel_schedule_exports.py
 cd packages/web && pnpm exec tsc -p tsconfig.json --noEmit && pnpm test
 ```
 
@@ -86,7 +80,7 @@ pnpm verify
 
 ## Tracker Update
 
-Update only rows you materially changed, likely a subset of `WP-B02/B03/B04/B05`, `WP-E03`, and `WP-X02`. Keep `State` as `partial` unless the Done Rule is fully satisfied. Be precise about which surfaces prove the improvement.
+Update only rows you materially changed, likely `WP-D01` through `WP-D05` and maybe `WP-X01`. Keep `State` as `partial` unless the Done Rule is fully satisfied. List exact schedule categories and export surfaces proven.
 
 ## Commit And Push
 
@@ -97,7 +91,7 @@ git status
 git diff
 git add <changed files>
 git commit -m "$(cat <<'EOF'
-feat(geometry): improve bounded projection fidelity
+feat(schedules): deepen definition replay slice
 
 EOF
 )"
@@ -106,4 +100,4 @@ git push -u origin HEAD
 
 ## Final Report
 
-Return branch, commit SHA, chosen geometry slice, surfaces proven, tracker rows updated, validation results, and any OpenBIM handoff notes.
+Return branch, commit SHA, schedule behavior added, tracker rows updated, validation results, and any UI/baseline risks.
