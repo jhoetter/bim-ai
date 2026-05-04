@@ -9,7 +9,7 @@ import {
 } from './symbology';
 
 describe('plan symbology (WP-C01/C02/C03 projection constants)', () => {
-  it('exports stable overlap threshold aligned with constraints', () => {
+  it('exports overlap threshold aligned with ROOM_PLAN_OVERLAP_THRESHOLD_MM2 (constraints.py)', () => {
     expect(ROOM_PLAN_OVERLAP_ADVISOR_MM2).toBe(50_000);
   });
 

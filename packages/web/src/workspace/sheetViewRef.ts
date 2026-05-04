@@ -1,6 +1,6 @@
 import type { Element } from '@bim-ai/core';
 
-/** Parses `plan:`, `schedule:`, `section:` references from sheet viewports into display titles. */
+/** Parses `plan:`, `schedule:`, `section:`, `viewpoint:` references from sheet viewports into display titles. */
 
 export function resolveViewportTitleFromRef(
   elementsById: Record<string, Element>,
@@ -27,6 +27,10 @@ export function resolveViewportTitleFromRef(
   }
   if (kind === 'section' || kind === 'sec') {
     if (el?.kind === 'section_cut') return el.name ?? refId;
+    return undefined;
+  }
+  if (kind === 'viewpoint' || kind === 'vp') {
+    if (el?.kind === 'viewpoint') return el.name ?? refId;
     return undefined;
   }
   return undefined;

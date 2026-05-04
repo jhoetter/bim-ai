@@ -62,6 +62,8 @@ def test_finds_rectangle_from_four_axis_walls():
     cand = prev["axisAlignedRectangleCandidates"][0]
     assert cand["approxAreaM2"] == pytest.approx(16.0, rel=1e-2)
     assert sorted(cand["wallIds"]) == sorted(w.id for w in walls)
+    warns = prev.get("warnings") or []
+    assert any(w.get("code") == "derivedRectangleWithoutAuthoredRoom" for w in warns)
 
 
 def test_room_derivation_flags_overlap_with_authored_room_bbox() -> None:
@@ -123,6 +125,10 @@ def test_room_derivation_flags_overlap_with_authored_room_bbox() -> None:
     )
 
     doc = Document(revision=5, elements={"lvl-1": lvl, "rm-live": rm, **{w.id: w for w in walls}})
+    prev = room_derivation_preview(doc)
+    assert not any(
+        w.get("code") == "derivedRectangleWithoutAuthoredRoom" for w in (prev.get("warnings") or [])
+    )
     rev = room_derivation_candidates_review(doc)
     c0 = rev["candidates"][0]
     assert c0["perimeterApproxM"] == pytest.approx(16.0, rel=1e-2)

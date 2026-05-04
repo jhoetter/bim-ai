@@ -23,6 +23,7 @@ export type PlanRoomColorLegendRow = {
   schemeColorHex: string;
   programmeCode?: string;
   department?: string;
+  functionLabel?: string;
 };
 
 export function extractRoomColorLegend(
@@ -43,6 +44,7 @@ export function extractRoomColorLegend(
     const row: PlanRoomColorLegendRow = { label, schemeColorHex: hex };
     if (typeof o.programmeCode === 'string') row.programmeCode = o.programmeCode;
     if (typeof o.department === 'string') row.department = o.department;
+    if (typeof o.functionLabel === 'string') row.functionLabel = o.functionLabel;
     out.push(row);
   }
   return out;

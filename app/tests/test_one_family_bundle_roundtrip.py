@@ -82,6 +82,36 @@ def test_one_family_bundle_covers_documentation_spine() -> None:
     assert sh.titleblock_parameters.get("projectName") == "One‑family golden"
     assert sh.paper_width_mm == 42_000
 
+    vps = sh.viewports_mm
+    assert len(vps) == 3
+    assert vps[0] == {
+        "viewportId": "vp-plan-eg",
+        "label": "EG plan (named view)",
+        "viewRef": "plan:hf-plan-eg-openings",
+        "xMm": 1200,
+        "yMm": 1800,
+        "widthMm": 9000,
+        "heightMm": 9000,
+    }
+    assert vps[1] == {
+        "viewportId": "vp-sec-demo",
+        "label": "Section scaffold",
+        "viewRef": "section:hf-sec-longitudinal",
+        "xMm": 10800,
+        "yMm": 1800,
+        "widthMm": 4200,
+        "heightMm": 9000,
+    }
+    assert vps[2] == {
+        "viewportId": "vp-sch-windows",
+        "label": "Window schedule",
+        "viewRef": "schedule:hf-sch-window",
+        "xMm": 1200,
+        "yMm": 11200,
+        "widthMm": 13800,
+        "heightMm": 3200,
+    }
+
     sec = section_cut_projection_wire(doc, "hf-sec-longitudinal")
     assert not sec.get("errors")
     prim = sec.get("primitives") or {}

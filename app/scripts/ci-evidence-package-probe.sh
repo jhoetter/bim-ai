@@ -72,6 +72,18 @@ print('deterministicSheetEvidence[0].correlation.modelRevision=' + str(corr.get(
 print('deterministicSheetEvidence[0].playwrightSuggested.pngViewport=' + pfn)
 print('deterministicSheetEvidence[0].svgHref=' + svg)
 print('deterministicSheetEvidence[0].pdfHref=' + pdf)
+plan_rows = data.get('deterministicPlanViewEvidence') or []
+if plan_rows:
+    p0 = plan_rows[0]
+    pn = (p0.get('playwrightSuggestedFilenames') or {}).get('pngPlanCanvas') or ''
+    print('deterministicPlanViewEvidence[0].planViewId=' + str(p0.get('planViewId') or ''))
+    print('deterministicPlanViewEvidence[0].playwrightSuggested.pngPlanCanvas=' + str(pn))
+sec_rows = data.get('deterministicSectionCutEvidence') or []
+if sec_rows:
+    s0 = sec_rows[0]
+    sn = (s0.get('playwrightSuggestedFilenames') or {}).get('pngSectionViewport') or ''
+    print('deterministicSectionCutEvidence[0].sectionCutId=' + str(s0.get('sectionCutId') or ''))
+    print('deterministicSectionCutEvidence[0].playwrightSuggested.pngSectionViewport=' + str(sn))
 " "$tmp"
 
 if [[ "${BIM_AI_EVIDENCE_PROBE_FETCH_ARTIFACTS:-}" == "1" ]]; then

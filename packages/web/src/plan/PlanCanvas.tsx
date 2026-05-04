@@ -109,7 +109,13 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
   const [halfUi, setHalfUi] = useState(22);
   const [geomEpoch, bumpGeom] = useState(0);
   const [roomColorLegend, setRoomColorLegend] = useState<
-    Array<{ label: string; schemeColorHex: string; programmeCode?: string; department?: string }>
+    Array<{
+      label: string;
+      schemeColorHex: string;
+      programmeCode?: string;
+      department?: string;
+      functionLabel?: string;
+    }>
   >([]);
 
   const elementsById = useBimStore((s) => s.elementsById);
@@ -639,16 +645,28 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
           <div data-testid="plan-room-color-legend">
             <div className="mb-1 font-semibold text-foreground">Room colour legend</div>
             <ul className="space-y-1">
-              {roomColorLegend.map((row) => (
-                <li key={`${row.label}-${row.schemeColorHex}`} className="flex items-start gap-2">
-                  <span
-                    className="mt-0.5 inline-block size-3 shrink-0 rounded-sm border border-border"
-                    style={{ backgroundColor: row.schemeColorHex }}
-                    title={row.programmeCode ?? row.label}
-                  />
-                  <span className="leading-tight text-foreground">{row.label}</span>
-                </li>
-              ))}
+              {roomColorLegend.map((row) => {
+                const subtitle = [row.programmeCode, row.department, row.functionLabel]
+                  .filter((x): x is string => Boolean(x && x.trim()))
+                  .filter((x, i, a) => a.indexOf(x) === i)
+                  .filter((x) => x !== row.label)
+                  .join(' · ');
+                return (
+                  <li key={`${row.label}-${row.schemeColorHex}`} className="flex items-start gap-2">
+                    <span
+                      className="mt-0.5 inline-block size-3 shrink-0 rounded-sm border border-border"
+                      style={{ backgroundColor: row.schemeColorHex }}
+                      title={row.programmeCode ?? row.label}
+                    />
+                    <span className="leading-tight">
+                      <span className="text-foreground">{row.label}</span>
+                      {subtitle ? (
+                        <span className="mt-0.5 block text-[9px] text-muted">{subtitle}</span>
+                      ) : null}
+                    </span>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         ) : null}

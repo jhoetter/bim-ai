@@ -169,6 +169,32 @@ def _quad_closes_rectangle(
     }
 
 
+def _authored_room_overlaps_candidate_bbox(rooms: list[RoomElem], cand_bbox: dict[str, Any]) -> bool:
+    mn = cand_bbox.get("min") or {}
+    mx = cand_bbox.get("max") or {}
+    cx0 = float(mn.get("x") or 0)
+    cy0 = float(mn.get("y") or 0)
+    cx1 = float(mx.get("x") or 0)
+    cy1 = float(mx.get("y") or 0)
+    if cx1 <= cx0 or cy1 <= cy0:
+        return False
+    for rm in rooms:
+        bb = _outline_aa_bbox_mm(rm)
+        if bb is None:
+            continue
+        mn_r = bb["min"]
+        mx_r = bb["max"]
+        rx0 = float(mn_r["x"])
+        ry0 = float(mn_r["y"])
+        rx1 = float(mx_r["x"])
+        ry1 = float(mx_r["y"])
+        if rx1 <= rx0 or ry1 <= ry0:
+            continue
+        if _aa_rect_intersection_area_m2(cx0, cy0, cx1, cy1, rx0, ry0, rx1, ry1) > 1e-12:
+            return True
+    return False
+
+
 def room_derivation_preview(doc: Document) -> dict[str, Any]:
     """Return deterministic facts for agent/UI comparison surfaces."""
 
@@ -205,10 +231,36 @@ def room_derivation_preview(doc: Document) -> dict[str, Any]:
     for c in sorted(candidates, key=_sig):
         dedup[_sig(c)] = c
 
+    authored_by_level: defaultdict[str, list[RoomElem]] = defaultdict(list)
+    for ent in doc.elements.values():
+        if isinstance(ent, RoomElem):
+            authored_by_level[ent.level_id].append(ent)
+
+    warnings: list[dict[str, Any]] = []
+    for cand in dedup.values():
+        lid = str(cand.get("levelId") or "")
+        bbox = cand.get("bboxMm") if isinstance(cand.get("bboxMm"), dict) else {}
+        authored = authored_by_level.get(lid, [])
+        if _authored_room_overlaps_candidate_bbox(authored, bbox):
+            continue
+        warnings.append(
+            {
+                "code": "derivedRectangleWithoutAuthoredRoom",
+                "severity": "info",
+                "levelId": lid,
+                "wallIds": sorted(cand.get("wallIds") or []),
+                "message": (
+                    "Heuristic axis-aligned rectangle from walls does not overlap any authored RoomElem "
+                    "bounding box on this level; consider createRoomOutline or verify closure."
+                ),
+            }
+        )
+
     return {
         "heuristicVersion": "room_deriv_preview_v1",
         "axisAlignedRectangleCandidates": sorted(dedup.values(), key=_sig),
         "candidateCount": len(dedup),
+        "warnings": warnings,
     }
 
 

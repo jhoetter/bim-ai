@@ -26,7 +26,18 @@ SCHEDULE_COLUMN_ORDER: dict[str, tuple[str, ...]] = {
         "finishSet",
         "familyTypeId",
     ),
-    "door": ("elementId", "name", "wallId", "levelId", "level", "widthMm", "familyTypeId", "familyTypeDisplay", "materialKey"),
+    "door": (
+        "elementId",
+        "name",
+        "wallId",
+        "levelId",
+        "level",
+        "widthMm",
+        "familyTypeId",
+        "familyTypeDisplay",
+        "materialKey",
+        "materialDisplay",
+    ),
     "window": (
         "elementId",
         "name",
@@ -39,6 +50,7 @@ SCHEDULE_COLUMN_ORDER: dict[str, tuple[str, ...]] = {
         "familyTypeId",
         "familyTypeDisplay",
         "materialKey",
+        "materialDisplay",
     ),
     "floor": (
         "elementId",
@@ -113,6 +125,7 @@ SCHEDULE_COLUMN_METADATA: dict[str, dict[str, ColumnMeta]] = {
         "familyTypeId": {"label": "Family / type", "role": "identity"},
         "familyTypeDisplay": {"label": "Type name", "role": "text"},
         "materialKey": {"label": "Finish / material", "role": "text"},
+        "materialDisplay": {"label": "Material (catalog)", "role": "text"},
     },
     "window": {
         "widthMm": {"label": "Width (mm)", "role": "integer"},
@@ -121,6 +134,7 @@ SCHEDULE_COLUMN_METADATA: dict[str, dict[str, ColumnMeta]] = {
         "familyTypeId": {"label": "Family / type", "role": "identity"},
         "familyTypeDisplay": {"label": "Type name", "role": "text"},
         "materialKey": {"label": "Finish / material", "role": "text"},
+        "materialDisplay": {"label": "Material (catalog)", "role": "text"},
     },
     "floor": {
         "elementId": {"label": "Element Id", "role": "id"},

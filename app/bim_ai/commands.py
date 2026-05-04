@@ -146,6 +146,10 @@ class CreateRoomOutlineCmd(BaseModel):
     name: str = "Room"
     level_id: str = Field(alias="levelId")
     outline_mm: list[Vec2Mm] = Field(alias="outlineMm")
+    programme_code: str | None = Field(default=None, alias="programmeCode")
+    department: str | None = Field(default=None, alias="department")
+    function_label: str | None = Field(default=None, alias="functionLabel")
+    finish_set: str | None = Field(default=None, alias="finishSet")
 
 
 class CreateRoomRectangleCmd(BaseModel):
@@ -162,6 +166,10 @@ class CreateRoomRectangleCmd(BaseModel):
     thickness_mm: float = Field(alias="thicknessMm", default=200)
     height_mm: float = Field(alias="heightMm", default=2800)
     wall_name_prefix: str = Field(alias="wallNamePrefix", default="Wall")
+    programme_code: str | None = Field(default=None, alias="programmeCode")
+    department: str | None = Field(default=None, alias="department")
+    function_label: str | None = Field(default=None, alias="functionLabel")
+    finish_set: str | None = Field(default=None, alias="finishSet")
 
 
 class CreateRoomPolyCmd(BaseModel):
@@ -176,6 +184,10 @@ class CreateRoomPolyCmd(BaseModel):
     thickness_mm: float = Field(alias="thicknessMm", default=200)
     height_mm: float = Field(alias="heightMm", default=2800)
     wall_name_prefix: str = Field(alias="wallNamePrefix", default="Wall")
+    programme_code: str | None = Field(default=None, alias="programmeCode")
+    department: str | None = Field(default=None, alias="department")
+    function_label: str | None = Field(default=None, alias="functionLabel")
+    finish_set: str | None = Field(default=None, alias="finishSet")
 
 
 class DeleteElementsCmd(BaseModel):

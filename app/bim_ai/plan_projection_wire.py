@@ -68,6 +68,72 @@ def _deterministic_scheme_color_hex(seed: str) -> str:
     return f"#{digest[:6]}"
 
 
+def _normalized_crop_box_xy_mm(pv: PlanViewElem | None) -> tuple[float, float, float, float] | None:
+    """Axis-aligned crop from plan_view corners; None if either corner is missing."""
+    if pv is None:
+        return None
+    mn, mx = pv.crop_min_mm, pv.crop_max_mm
+    if mn is None or mx is None:
+        return None
+    x0, x1 = sorted((mn.x_mm, mx.x_mm))
+    y0, y1 = sorted((mn.y_mm, mx.y_mm))
+    return (x0, y0, x1, y1)
+
+
+def _point_in_crop_xy(x: float, y: float, box: tuple[float, float, float, float]) -> bool:
+    x0, y0, x1, y1 = box
+    return x0 <= x <= x1 and y0 <= y <= y1
+
+
+def _segment_intersects_crop_xy(
+    ax: float,
+    ay: float,
+    bx: float,
+    by: float,
+    box: tuple[float, float, float, float],
+) -> bool:
+    """Whether segment AB intersects the closed axis-aligned crop rectangle (inclusive edges)."""
+    if _point_in_crop_xy(ax, ay, box) or _point_in_crop_xy(bx, by, box):
+        return True
+    x0, y0, x1, y1 = box
+    dx = bx - ax
+    dy = by - ay
+    p = (-dx, dx, -dy, dy)
+    q = (ax - x0, x1 - ax, ay - y0, y1 - ay)
+    u1, u2 = 0.0, 1.0
+    eps = 1e-12
+    for i in range(4):
+        pi, qi = p[i], q[i]
+        if abs(pi) < eps:
+            if qi < 0:
+                return False
+            continue
+        r = qi / pi
+        if pi < 0:
+            if r > u2:
+                return False
+            u1 = max(u1, r)
+        else:
+            if r < u1:
+                return False
+            u2 = min(u2, r)
+    return u1 <= u2 + eps
+
+
+def _poly_bbox_overlaps_crop(
+    pts: list[tuple[float, float]], box: tuple[float, float, float, float]
+) -> bool:
+    """Conservative 2D filter: polygon AABB overlaps crop AABB."""
+    if not pts:
+        return False
+    xs = [p[0] for p in pts]
+    ys = [p[1] for p in pts]
+    px0, px1 = min(xs), max(xs)
+    py0, py1 = min(ys), max(ys)
+    x0, y0, x1, y1 = box
+    return not (px1 < x0 or px0 > x1 or py1 < y0 or py0 > y1)
+
+
 def _build_plan_primitive_lists(
     doc: Document,
     *,
@@ -75,23 +141,30 @@ def _build_plan_primitive_lists(
     hidden_semantic: set[str],
     pinned_pv_el: PlanViewElem | None,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-    """2D primitives for deterministic server-side plan previews (bounding extent; clipping deferred)."""
+    """2D primitives for deterministic server-side plan previews."""
 
     warnings: list[dict[str, Any]] = []
 
+    crop_box = _normalized_crop_box_xy_mm(pinned_pv_el)
     if pinned_pv_el is not None:
-        if pinned_pv_el.crop_min_mm is not None or pinned_pv_el.crop_max_mm is not None:
+        cmn, cmx = pinned_pv_el.crop_min_mm, pinned_pv_el.crop_max_mm
+        has_partial_crop = (cmn is not None) ^ (cmx is not None)
+        if has_partial_crop:
             warnings.append(
                 {
                     "code": "cropBoxNotApplied",
-                    "message": "Plan viewport cropMm is authored but primitives are emitted in full extents in this slice.",
+                    "message": "Plan viewport crop requires both cropMinMm and cropMaxMm; primitives are not cropped.",
                 }
             )
-        if pinned_pv_el.view_range_bottom_mm is not None or pinned_pv_el.view_range_top_mm is not None:
+        if (
+            pinned_pv_el.view_range_bottom_mm is not None
+            or pinned_pv_el.view_range_top_mm is not None
+            or pinned_pv_el.cut_plane_offset_mm is not None
+        ):
             warnings.append(
                 {
                     "code": "viewRangeNotApplied",
-                    "message": "View range overrides are authored but vertical cut extents are not applied to primitives.",
+                    "message": "View range / cut-plane overrides are authored but vertical cut extents are not applied to 2D primitives.",
                 }
             )
 
@@ -124,6 +197,10 @@ def _build_plan_primitive_lists(
         if isinstance(e, WallElem):
             if "wall" in hidden_semantic or not lvl_ok(e.level_id):
                 continue
+            if crop_box is not None and not _segment_intersects_crop_xy(
+                e.start.x_mm, e.start.y_mm, e.end.x_mm, e.end.y_mm, crop_box
+            ):
+                continue
             walls.append(
                 {
                     "id": e.id,
@@ -138,10 +215,16 @@ def _build_plan_primitive_lists(
         elif isinstance(e, FloorElem):
             if "floor" in hidden_semantic or not lvl_ok(e.level_id):
                 continue
+            floor_pts = [(p.x_mm, p.y_mm) for p in e.boundary_mm]
+            if crop_box is not None and not _poly_bbox_overlaps_crop(floor_pts, crop_box):
+                continue
             outlines = [[round(p.x_mm, 3), round(p.y_mm, 3)] for p in e.boundary_mm]
             floors.append({"id": e.id, "levelId": e.level_id, "outlineMm": outlines})
         elif isinstance(e, RoomElem):
             if "room" in hidden_semantic or not lvl_ok(e.level_id):
+                continue
+            room_pts = [(p.x_mm, p.y_mm) for p in e.outline_mm]
+            if crop_box is not None and not _poly_bbox_overlaps_crop(room_pts, crop_box):
                 continue
             outlines = [[round(p.x_mm, 3), round(p.y_mm, 3)] for p in e.outline_mm]
             seed_src = (e.programme_code or "").strip() or e.id
@@ -170,6 +253,12 @@ def _build_plan_primitive_lists(
                 continue
             tspan = hosted_opening_t_span_normalized(e, w)
             cx_mm, cy_mm = _hosted_xy_mm_on_wall(e, w)
+            if crop_box is not None:
+                opening_ok = _point_in_crop_xy(cx_mm, cy_mm, crop_box) or _segment_intersects_crop_xy(
+                    w.start.x_mm, w.start.y_mm, w.end.x_mm, w.end.y_mm, crop_box
+                )
+                if not opening_ok:
+                    continue
             doors.append(
                 {
                     "id": e.id,
@@ -195,6 +284,12 @@ def _build_plan_primitive_lists(
                 continue
             tspan = hosted_opening_t_span_normalized(e, w)
             cx_mm, cy_mm = _hosted_xy_mm_on_wall(e, w)
+            if crop_box is not None:
+                opening_ok = _point_in_crop_xy(cx_mm, cy_mm, crop_box) or _segment_intersects_crop_xy(
+                    w.start.x_mm, w.start.y_mm, w.end.x_mm, w.end.y_mm, crop_box
+                )
+                if not opening_ok:
+                    continue
             windows.append(
                 {
                     "id": e.id,
@@ -212,6 +307,14 @@ def _build_plan_primitive_lists(
             )
         elif isinstance(e, StairElem):
             if "stair" in hidden_semantic or not lvl_ok(e.base_level_id):
+                continue
+            if crop_box is not None and not _segment_intersects_crop_xy(
+                e.run_start.x_mm,
+                e.run_start.y_mm,
+                e.run_end.x_mm,
+                e.run_end.y_mm,
+                crop_box,
+            ):
                 continue
             stairs.append(
                 {
@@ -232,12 +335,19 @@ def _build_plan_primitive_lists(
             ref = getattr(e, "reference_level_id", "") or ""
             if "roof" in hidden_semantic or not lvl_ok(ref):
                 continue
+            fp_pts = [(p.x_mm, p.y_mm) for p in e.footprint_mm]
+            if crop_box is not None and not _poly_bbox_overlaps_crop(fp_pts, crop_box):
+                continue
             fp = [[round(p.x_mm, 3), round(p.y_mm, 3)] for p in e.footprint_mm]
             roofs.append({"id": e.id, "referenceLevelId": ref, "footprintMm": fp})
         elif isinstance(e, GridLineElem):
             elv = getattr(e, "level_id", None)
             if "grid_line" in hidden_semantic or (
                 level and elv is not None and elv != level
+            ):
+                continue
+            if crop_box is not None and not _segment_intersects_crop_xy(
+                e.start.x_mm, e.start.y_mm, e.end.x_mm, e.end.y_mm, crop_box
             ):
                 continue
             grid_lines.append(
@@ -250,6 +360,10 @@ def _build_plan_primitive_lists(
             )
         elif isinstance(e, DimensionElem):
             if "dimension" in hidden_semantic or not lvl_ok(e.level_id):
+                continue
+            if crop_box is not None and not _segment_intersects_crop_xy(
+                e.a_mm.x_mm, e.a_mm.y_mm, e.b_mm.x_mm, e.b_mm.y_mm, crop_box
+            ):
                 continue
             dimensions.append(
                 {
@@ -309,6 +423,8 @@ def _room_color_legend_payload(
             row["programmeCode"] = (e.programme_code or "").strip()
         if (e.department or "").strip():
             row["department"] = (e.department or "").strip()
+        if (e.function_label or "").strip():
+            row["functionLabel"] = (e.function_label or "").strip()
         out.append(row)
     return sorted(out, key=lambda r: str(r.get("label", "")))
 

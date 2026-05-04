@@ -36,6 +36,7 @@ export function AgentReviewPane() {
   type EvidenceArtifactSummary = {
     semanticDigestPrefix16: string | null;
     semanticDigestSha256Tail: string | null;
+    semanticDigestSha256Full: string | null;
     modelRevision: number | null;
     sheetRows: {
       sheetId: string;
@@ -50,6 +51,27 @@ export function AgentReviewPane() {
       pngViewport?: string;
       bundleJson?: string;
     }[];
+    planViewRows: {
+      planViewId: string;
+      name?: string;
+      levelId?: string;
+      planPresentation?: string;
+      pngPlanCanvas?: string;
+      bundleJson?: string;
+    }[];
+    sectionCutRows: {
+      sectionCutId: string;
+      name?: string;
+      projectionWireHref?: string;
+      pngSectionViewport?: string;
+      bundleJson?: string;
+    }[];
+    closureHints: {
+      playwrightSpec?: string;
+      commands: string[];
+      ciPaths: string[];
+      envHints: string[];
+    } | null;
     suggestedBasenameHint: string | null;
     mismatchNotes: string[];
   };
@@ -93,22 +115,30 @@ export function AgentReviewPane() {
   }, [elementsById]);
 
   const evidenceArtifactSummary = useMemo((): EvidenceArtifactSummary => {
-    if (!evidenceTxt)
-      return {
-        semanticDigestPrefix16: null,
-        semanticDigestSha256Tail: null,
-        modelRevision: null,
-        sheetRows: [],
-        view3dRows: [],
-        suggestedBasenameHint: null,
-        mismatchNotes: [],
-      };
+    const empty = (): EvidenceArtifactSummary => ({
+      semanticDigestPrefix16: null,
+      semanticDigestSha256Tail: null,
+      semanticDigestSha256Full: null,
+      modelRevision: null,
+      sheetRows: [],
+      view3dRows: [],
+      planViewRows: [],
+      sectionCutRows: [],
+      closureHints: null,
+      suggestedBasenameHint: null,
+      mismatchNotes: [],
+    });
+
+    if (!evidenceTxt) return empty();
+
     try {
       const root = JSON.parse(evidenceTxt) as Record<string, unknown>;
       const payload =
         root && typeof root.payload === 'object' && root.payload !== null
           ? (root.payload as Record<string, unknown>)
-          : root;
+          : root && typeof root.evidencePackage === 'object' && root.evidencePackage !== null
+            ? (root.evidencePackage as Record<string, unknown>)
+            : root;
 
       const prefix =
         typeof payload.semanticDigestPrefix16 === 'string' ? payload.semanticDigestPrefix16 : null;
@@ -129,6 +159,30 @@ export function AgentReviewPane() {
         typeof payload.suggestedEvidenceArtifactBasename === 'string'
           ? payload.suggestedEvidenceArtifactBasename
           : null;
+
+      const hintsRaw = payload.agentEvidenceClosureHints;
+      let closureHints: EvidenceArtifactSummary['closureHints'] = null;
+      if (hintsRaw && typeof hintsRaw === 'object') {
+        const h = hintsRaw as Record<string, unknown>;
+        const cmdsRaw = h.suggestedRegenerationCommands;
+        const pathsRaw = h.ciArtifactRelativePaths;
+        const envRaw = h.ciEnvPlaceholderHints;
+        closureHints = {
+          playwrightSpec:
+            typeof h.playwrightEvidenceSpecRelPath === 'string'
+              ? h.playwrightEvidenceSpecRelPath
+              : undefined,
+          commands: Array.isArray(cmdsRaw)
+            ? cmdsRaw.filter((x): x is string => typeof x === 'string')
+            : [],
+          ciPaths: Array.isArray(pathsRaw)
+            ? pathsRaw.filter((x): x is string => typeof x === 'string')
+            : [],
+          envHints: Array.isArray(envRaw)
+            ? envRaw.filter((x): x is string => typeof x === 'string')
+            : [],
+        };
+      }
 
       const dse = payload.deterministicSheetEvidence;
       const rowsRaw = Array.isArray(dse) ? dse : [];
@@ -185,7 +239,82 @@ export function AgentReviewPane() {
         };
       });
 
+      const dpv = payload.deterministicPlanViewEvidence ?? payload.deterministic_plan_view_evidence;
+      const prowsRaw = Array.isArray(dpv) ? dpv : [];
+      const planViewRows = prowsRaw.map((row) => {
+        const r = row as Record<string, unknown>;
+        const pwRaw = r.playwrightSuggestedFilenames;
+        const pw = pwRaw && typeof pwRaw === 'object' ? (pwRaw as Record<string, unknown>) : {};
+        const corrRaw = r.correlation;
+        const corr =
+          corrRaw && typeof corrRaw === 'object' ? (corrRaw as Record<string, unknown>) : {};
+        return {
+          planViewId: String(r.planViewId ?? r.plan_view_id ?? ''),
+          name: typeof r.name === 'string' ? r.name : undefined,
+          levelId:
+            typeof r.levelId === 'string'
+              ? r.levelId
+              : typeof r.level_id === 'string'
+                ? r.level_id
+                : undefined,
+          planPresentation:
+            typeof r.planPresentation === 'string'
+              ? r.planPresentation
+              : typeof r.plan_presentation === 'string'
+                ? r.plan_presentation
+                : undefined,
+          pngPlanCanvas: typeof pw.pngPlanCanvas === 'string' ? pw.pngPlanCanvas : undefined,
+          bundleJson:
+            typeof corr.suggestedEvidenceBundleEvidencePackageJson === 'string'
+              ? corr.suggestedEvidenceBundleEvidencePackageJson
+              : typeof corr.suggested_evidence_bundle_evidence_package_json === 'string'
+                ? corr.suggested_evidence_bundle_evidence_package_json
+                : undefined,
+        };
+      });
+
+      const dsc =
+        payload.deterministicSectionCutEvidence ?? payload.deterministic_section_cut_evidence;
+      const secrowsRaw = Array.isArray(dsc) ? dsc : [];
+      const sectionCutRows = secrowsRaw.map((row) => {
+        const r = row as Record<string, unknown>;
+        const pwRaw = r.playwrightSuggestedFilenames;
+        const pw = pwRaw && typeof pwRaw === 'object' ? (pwRaw as Record<string, unknown>) : {};
+        const corrRaw = r.correlation;
+        const corr =
+          corrRaw && typeof corrRaw === 'object' ? (corrRaw as Record<string, unknown>) : {};
+        return {
+          sectionCutId: String(r.sectionCutId ?? r.section_cut_id ?? ''),
+          name: typeof r.name === 'string' ? r.name : undefined,
+          projectionWireHref:
+            typeof r.projectionWireHref === 'string'
+              ? r.projectionWireHref
+              : typeof r.projection_wire_href === 'string'
+                ? r.projection_wire_href
+                : undefined,
+          pngSectionViewport:
+            typeof pw.pngSectionViewport === 'string' ? pw.pngSectionViewport : undefined,
+          bundleJson:
+            typeof corr.suggestedEvidenceBundleEvidencePackageJson === 'string'
+              ? corr.suggestedEvidenceBundleEvidencePackageJson
+              : typeof corr.suggested_evidence_bundle_evidence_package_json === 'string'
+                ? corr.suggested_evidence_bundle_evidence_package_json
+                : undefined,
+        };
+      });
+
       const mismatchNotes: string[] = [];
+
+      const noteCorrelationDigest = (corr: Record<string, unknown>, label: string, id: string) => {
+        const rowSha =
+          typeof corr.semanticDigestSha256 === 'string' ? corr.semanticDigestSha256 : null;
+        if (dig && rowSha && rowSha !== dig) {
+          mismatchNotes.push(
+            `${label} ${id}: correlation semanticDigestSha256 ≠ package digest — stale row or pasted fragment; re-fetch full evidence-package.`,
+          );
+        }
+      };
+
       for (let i = 0; i < rowsRaw.length; i++) {
         const sr = sheetRows[i];
         if (!sr?.sheetId) continue;
@@ -200,6 +329,7 @@ export function AgentReviewPane() {
             `Sheet ${sr.sheetId}: correlation semanticDigestPrefix16 (${rowPrefix}) ≠ package (${prefix}).`,
           );
         }
+        noteCorrelationDigest(corr, 'Sheet', sr.sheetId);
       }
 
       const liveRev = typeof revision === 'number' ? revision : null;
@@ -223,6 +353,41 @@ export function AgentReviewPane() {
             `3D ${vr.viewpointId}: correlation semanticDigestPrefix16 (${rowPrefix}) ≠ package (${prefix}).`,
           );
         }
+        noteCorrelationDigest(corr, '3D', vr.viewpointId);
+      }
+
+      for (let i = 0; i < prowsRaw.length; i++) {
+        const pr = planViewRows[i];
+        if (!pr?.planViewId) continue;
+        const cRaw = prowsRaw[i] as Record<string, unknown>;
+        const corrRaw = cRaw?.correlation;
+        const corr =
+          corrRaw && typeof corrRaw === 'object' ? (corrRaw as Record<string, unknown>) : {};
+        const rowPrefix =
+          typeof corr.semanticDigestPrefix16 === 'string' ? corr.semanticDigestPrefix16 : null;
+        if (prefix && rowPrefix && rowPrefix !== prefix) {
+          mismatchNotes.push(
+            `Plan ${pr.planViewId}: correlation semanticDigestPrefix16 (${rowPrefix}) ≠ package (${prefix}).`,
+          );
+        }
+        noteCorrelationDigest(corr, 'Plan', pr.planViewId);
+      }
+
+      for (let i = 0; i < secrowsRaw.length; i++) {
+        const sec = sectionCutRows[i];
+        if (!sec?.sectionCutId) continue;
+        const cRaw = secrowsRaw[i] as Record<string, unknown>;
+        const corrRaw = cRaw?.correlation;
+        const corr =
+          corrRaw && typeof corrRaw === 'object' ? (corrRaw as Record<string, unknown>) : {};
+        const rowPrefix =
+          typeof corr.semanticDigestPrefix16 === 'string' ? corr.semanticDigestPrefix16 : null;
+        if (prefix && rowPrefix && rowPrefix !== prefix) {
+          mismatchNotes.push(
+            `Section ${sec.sectionCutId}: correlation semanticDigestPrefix16 (${rowPrefix}) ≠ package (${prefix}).`,
+          );
+        }
+        noteCorrelationDigest(corr, 'Section', sec.sectionCutId);
       }
 
       for (const sr of sheetRows) {
@@ -241,14 +406,34 @@ export function AgentReviewPane() {
           );
         }
       }
+      for (const pr of planViewRows) {
+        if (!pr.planViewId) continue;
+        if (!pr.pngPlanCanvas) {
+          mismatchNotes.push(
+            `Plan view ${pr.planViewId}: missing pngPlanCanvas hint — refresh evidence-package or extend server manifest.`,
+          );
+        }
+      }
+      for (const sec of sectionCutRows) {
+        if (!sec.sectionCutId) continue;
+        if (!sec.pngSectionViewport) {
+          mismatchNotes.push(
+            `Section cut ${sec.sectionCutId}: missing pngSectionViewport hint — refresh evidence-package or extend server manifest.`,
+          );
+        }
+      }
 
       return {
         semanticDigestPrefix16: prefix,
         semanticDigestSha256Tail: shaTail,
+        semanticDigestSha256Full: dig,
         modelRevision:
           modelRevision !== null && Number.isFinite(modelRevision) ? modelRevision : null,
         sheetRows,
         view3dRows,
+        planViewRows,
+        sectionCutRows,
+        closureHints,
         suggestedBasenameHint: basename,
         mismatchNotes,
       };
@@ -256,9 +441,13 @@ export function AgentReviewPane() {
       return {
         semanticDigestPrefix16: null,
         semanticDigestSha256Tail: null,
+        semanticDigestSha256Full: null,
         modelRevision: null,
         sheetRows: [],
         view3dRows: [],
+        planViewRows: [],
+        sectionCutRows: [],
+        closureHints: null,
         suggestedBasenameHint: null,
         mismatchNotes: ['Could not parse evidence JSON for artifact summary.'],
       };
@@ -714,7 +903,10 @@ export function AgentReviewPane() {
 
       {evidenceArtifactSummary.sheetRows.length ||
       evidenceArtifactSummary.view3dRows.length ||
-      evidenceArtifactSummary.semanticDigestPrefix16 ? (
+      evidenceArtifactSummary.planViewRows.length ||
+      evidenceArtifactSummary.sectionCutRows.length ||
+      evidenceArtifactSummary.semanticDigestPrefix16 ||
+      evidenceArtifactSummary.closureHints ? (
         <div className="rounded border border-border bg-background/40 p-2">
           <div className="text-[10px] font-semibold text-muted">Evidence artifact correlation</div>
           <ul className="mt-1 list-disc space-y-1 ps-4 text-[10px] text-muted">
@@ -731,6 +923,16 @@ export function AgentReviewPane() {
                 semanticDigest tail:{' '}
                 <code className="text-[10px]">
                   {evidenceArtifactSummary.semanticDigestSha256Tail}
+                </code>
+              </li>
+            ) : null}
+            {evidenceArtifactSummary.semanticDigestSha256Full &&
+            evidenceArtifactSummary.semanticDigestSha256Full.length >= 24 ? (
+              <li>
+                semanticDigestSha256 (verify row correlation matches):{' '}
+                <code className="text-[10px]">
+                  {evidenceArtifactSummary.semanticDigestSha256Full.slice(0, 12)}…
+                  {evidenceArtifactSummary.semanticDigestSha256Full.slice(-12)}
                 </code>
               </li>
             ) : null}
@@ -809,6 +1011,140 @@ export function AgentReviewPane() {
               </table>
             </div>
           ) : null}
+          {evidenceArtifactSummary.planViewRows.length ? (
+            <div className="mt-3 overflow-auto">
+              <div className="mb-1 text-[10px] font-semibold text-muted">
+                Plan views (deterministic PNG)
+              </div>
+              <table className="w-full border-collapse border border-border text-[10px]">
+                <thead>
+                  <tr className="bg-surface/50">
+                    <th className="border border-border px-1 py-1 text-left">Plan view</th>
+                    <th className="border border-border px-1 py-1 text-left">Presentation</th>
+                    <th className="border border-border px-1 py-1 text-left">PNG plan canvas</th>
+                    <th className="border border-border px-1 py-1 text-left">Bundle JSON</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {evidenceArtifactSummary.planViewRows.map((pr) => (
+                    <tr key={pr.planViewId}>
+                      <td className="border border-border px-1 py-1 align-top">
+                        <div className="font-mono">{pr.planViewId}</div>
+                        {pr.name ? <div className="text-muted">{pr.name}</div> : null}
+                      </td>
+                      <td className="border border-border px-1 py-1 align-top">
+                        {pr.planPresentation ?? '—'}
+                      </td>
+                      <td className="border border-border px-1 py-1 font-mono align-top">
+                        {pr.pngPlanCanvas ?? '—'}
+                      </td>
+                      <td className="border border-border px-1 py-1 font-mono align-top">
+                        {pr.bundleJson ?? '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
+          {evidenceArtifactSummary.sectionCutRows.length ? (
+            <div className="mt-3 overflow-auto">
+              <div className="mb-1 text-[10px] font-semibold text-muted">
+                Section cuts (projection + PNG)
+              </div>
+              <table className="w-full border-collapse border border-border text-[10px]">
+                <thead>
+                  <tr className="bg-surface/50">
+                    <th className="border border-border px-1 py-1 text-left">Section</th>
+                    <th className="border border-border px-1 py-1 text-left">Wire href</th>
+                    <th className="border border-border px-1 py-1 text-left">PNG viewport</th>
+                    <th className="border border-border px-1 py-1 text-left">Bundle JSON</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {evidenceArtifactSummary.sectionCutRows.map((sec) => (
+                    <tr key={sec.sectionCutId}>
+                      <td className="border border-border px-1 py-1 align-top">
+                        <div className="font-mono">{sec.sectionCutId}</div>
+                        {sec.name ? <div className="text-muted">{sec.name}</div> : null}
+                      </td>
+                      <td className="border border-border px-1 py-1 font-mono align-top break-all">
+                        {sec.projectionWireHref ?? '—'}
+                      </td>
+                      <td className="border border-border px-1 py-1 font-mono align-top">
+                        {sec.pngSectionViewport ?? '—'}
+                      </td>
+                      <td className="border border-border px-1 py-1 font-mono align-top">
+                        {sec.bundleJson ?? '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
+          <div className="mt-3 text-[10px] text-muted">
+            <div className="font-semibold">Regeneration / CI artifacts</div>
+            {evidenceArtifactSummary.closureHints &&
+            (evidenceArtifactSummary.closureHints.commands.length > 0 ||
+              evidenceArtifactSummary.closureHints.ciPaths.length > 0 ||
+              evidenceArtifactSummary.closureHints.envHints.length > 0 ||
+              evidenceArtifactSummary.closureHints.playwrightSpec) ? (
+              <div className="mt-1 space-y-1">
+                {evidenceArtifactSummary.closureHints.playwrightSpec ? (
+                  <div>
+                    Playwright spec:{' '}
+                    <code className="text-[10px]">
+                      {evidenceArtifactSummary.closureHints.playwrightSpec}
+                    </code>
+                  </div>
+                ) : null}
+                {evidenceArtifactSummary.closureHints.commands.length > 0 ? (
+                  <ul className="list-disc space-y-0.5 ps-4">
+                    {evidenceArtifactSummary.closureHints.commands.map((c, i) => (
+                      <li key={i}>
+                        <code className="text-[10px] break-all">{c}</code>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+                {evidenceArtifactSummary.closureHints.ciPaths.length > 0 ? (
+                  <>
+                    <div className="font-semibold text-muted">
+                      Artifact paths (after CI download)
+                    </div>
+                    <ul className="list-disc space-y-0.5 ps-4">
+                      {evidenceArtifactSummary.closureHints.ciPaths.map((p, i) => (
+                        <li key={i}>
+                          <code className="text-[10px] break-all">{p}</code>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                ) : null}
+                {evidenceArtifactSummary.closureHints.envHints.length ? (
+                  <>
+                    <div className="font-semibold text-muted">CI env placeholders</div>
+                    <ul className="list-disc space-y-0.5 ps-4">
+                      {evidenceArtifactSummary.closureHints.envHints.map((p, i) => (
+                        <li key={i}>{p}</li>
+                      ))}
+                    </ul>
+                  </>
+                ) : null}
+              </div>
+            ) : (
+              <p className="mt-1">
+                Re-fetch <code className="text-[10px]">evidence-package</code> for{' '}
+                <code className="text-[10px]">agentEvidenceClosureHints</code>, or run{' '}
+                <code className="text-[10px] break-all">
+                  cd packages/web && CI=true pnpm exec playwright test
+                  e2e/evidence-baselines.spec.ts
+                </code>
+                .
+              </p>
+            )}
+          </div>
           {evidenceArtifactSummary.mismatchNotes.length ? (
             <ul className="mt-2 list-disc space-y-1 ps-4 text-[10px] text-amber-500">
               {evidenceArtifactSummary.mismatchNotes.map((n, i) => (

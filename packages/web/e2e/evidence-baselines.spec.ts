@@ -384,6 +384,57 @@ async function sharedRoutes(page: Page, layoutPreset: string) {
               },
             },
           ],
+          deterministicPlanViewEvidence: [
+            {
+              planViewId: 'pv-eg',
+              name: 'EG — openings',
+              levelId: 'hf-lvl-1',
+              planPresentation: 'opening_focus',
+              playwrightSuggestedFilenames: {
+                pngPlanCanvas: `${MOCK_EVIDENCE_BASENAME}-plan-pv-eg.png`,
+              },
+              correlation: {
+                format: 'evidencePlanViewCorrelation_v1',
+                semanticDigestSha256: MOCK_SEMANTIC_DIGEST_SHA256,
+                semanticDigestPrefix16: MOCK_SEMANTIC_PREFIX16,
+                modelRevision: 3,
+                modelId: MODEL_ID,
+                suggestedEvidenceBundleEvidencePackageJson: `${MOCK_EVIDENCE_BASENAME}-evidence-package.json`,
+              },
+            },
+          ],
+          deterministicSectionCutEvidence: [
+            {
+              sectionCutId: 'hf-sec-demo',
+              name: 'Demo section',
+              projectionWireHref: `/api/models/${MODEL_ID}/projection/section/hf-sec-demo`,
+              playwrightSuggestedFilenames: {
+                pngSectionViewport: `${MOCK_EVIDENCE_BASENAME}-section-hf-sec-demo.png`,
+              },
+              correlation: {
+                format: 'evidenceSectionCutCorrelation_v1',
+                semanticDigestSha256: MOCK_SEMANTIC_DIGEST_SHA256,
+                semanticDigestPrefix16: MOCK_SEMANTIC_PREFIX16,
+                modelRevision: 3,
+                modelId: MODEL_ID,
+                suggestedEvidenceBundleEvidencePackageJson: `${MOCK_EVIDENCE_BASENAME}-evidence-package.json`,
+              },
+            },
+          ],
+          agentEvidenceClosureHints: {
+            format: 'agentEvidenceClosureHints_v1',
+            playwrightEvidenceSpecRelPath: 'packages/web/e2e/evidence-baselines.spec.ts',
+            suggestedRegenerationCommands: [
+              'cd packages/web && CI=true pnpm exec playwright test e2e/evidence-baselines.spec.ts',
+            ],
+            ciArtifactRelativePaths: [
+              'packages/web/playwright-report/index.html',
+              'packages/web/test-results/ci-evidence-correlation-hint.txt',
+            ],
+            ciEnvPlaceholderHints: [
+              'GITHUB_RUN_ID — artifact evidence-web-${GITHUB_RUN_ID}-playwright',
+            ],
+          },
           planViews: [{ id: 'pv-eg' }, { id: 'pv-og' }],
           scheduleIds: [{ id: 'hf-sch-room' }, { id: 'hf-sch-window' }],
           expectedScreenshotCaptures: [

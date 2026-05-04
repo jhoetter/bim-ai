@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from bim_ai.document import Document
-from bim_ai.elements import DoorElem, LevelElem, Vec2Mm, WallElem
+from bim_ai.elements import DoorElem, LevelElem, RoomElem, Vec2Mm, WallElem
 from bim_ai.engine import try_commit
 
 
@@ -144,3 +144,36 @@ def test_room_far_from_door_is_warning_but_commits():
     warnings = [v for v in viols if v.severity == "warning"]
     assert any(v.rule_id == "room_no_door" for v in warnings)
     assert code == "ok"
+
+
+def test_create_room_outline_persists_optional_programme_fields():
+    lvl = LevelElem(kind="level", id="lvl-1", name="Ground", elevationMm=0)
+    doc = Document(revision=1, elements={"lvl-1": lvl})
+    ok, new_doc, _cmd, _viols, code = try_commit(
+        doc,
+        {
+            "type": "createRoomOutline",
+            "id": "r_meta",
+            "name": "Tagged",
+            "levelId": "lvl-1",
+            "programmeCode": " A1 ",
+            "department": " Lab ",
+            "functionLabel": " Prep ",
+            "finishSet": " F01 ",
+            "outlineMm": [
+                {"xMm": 0, "yMm": 0},
+                {"xMm": 2000, "yMm": 0},
+                {"xMm": 2000, "yMm": 2000},
+                {"xMm": 0, "yMm": 2000},
+            ],
+        },
+    )
+    assert ok is True
+    assert new_doc is not None
+    assert code == "ok"
+    rm = new_doc.elements["r_meta"]
+    assert isinstance(rm, RoomElem)
+    assert rm.programme_code == "A1"
+    assert rm.department == "Lab"
+    assert rm.function_label == "Prep"
+    assert rm.finish_set == "F01"

@@ -207,8 +207,11 @@ async function cmdEvidencePackage(modelId) {
   console.log(JSON.stringify(json, null, 2));
 }
 
-async function cmdScheduleTable(modelId, scheduleId, wantCsv) {
-  const qs = wantCsv ? '?format=csv' : '';
+async function cmdScheduleTable(modelId, scheduleId, wantCsv, columnsList) {
+  const parts = [];
+  if (wantCsv) parts.push('format=csv');
+  if (columnsList && String(columnsList).trim()) parts.push(`columns=${encodeURIComponent(columnsList)}`);
+  const qs = parts.length ? `?${parts.join('&')}` : '';
   const url = `${base}/api/models/${encodeURIComponent(modelId)}/schedules/${encodeURIComponent(scheduleId)}/table${qs}`;
   const res = await fetch(url);
   const text = await res.text();
@@ -384,7 +387,7 @@ Commands:
   snapshot                            GET snapshot (needs BIM_AI_MODEL_ID)
   evidence                            Combined artifact: counts-by-kind + full validate rollup
   evidence-package                    Phase A checklist JSON (captures recommended layouts + manifests)
-  schedule-table [--csv] <scheduleId>   Server-derived rows (optional CSV download shape)
+  schedule-table [--csv] [--columns keys] <scheduleId>   Server-derived rows (optional CSV; columns=comma-separated keys)
   export-manifests                     glTF + IFC exchange-manifest JSON stubs
   export gltf [--out <path>]           download model.gltf JSON (default: stdout; needs BIM_AI_MODEL_ID)
   export glb [--out <path>]            download model.glb binary (default: stdout; needs BIM_AI_MODEL_ID)
@@ -481,13 +484,16 @@ async function main() {
       if (!modelId) usage();
       const args = argv.slice(1);
       let wantCsv = false;
+      let columnsArg;
       let sid;
-      for (const a of args) {
+      for (let i = 0; i < args.length; i++) {
+        const a = args[i];
         if (a === '--csv') wantCsv = true;
-        else sid = sid ?? a;
+        else if (a === '--columns' && args[i + 1]) columnsArg = args[++i];
+        else if (!a.startsWith('-')) sid = sid ?? a;
       }
       if (!sid) usage();
-      await cmdScheduleTable(modelId, sid, wantCsv);
+      await cmdScheduleTable(modelId, sid, wantCsv, columnsArg);
       return;
     }
     if (cmd === 'command-log') {

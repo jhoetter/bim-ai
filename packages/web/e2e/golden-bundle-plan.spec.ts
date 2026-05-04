@@ -11,6 +11,43 @@ test.describe('golden bundle affordances', () => {
       localStorage.setItem('bim.workspaceLayout', 'split_plan_section');
     });
 
+    await page.route('**/api/models/*/projection/plan**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          format: 'planProjectionWire_v1',
+          primitives: {
+            format: 'planProjectionPrimitives_v1',
+            walls: [],
+            floors: [],
+            rooms: [],
+            doors: [],
+            windows: [],
+            stairs: [],
+            roofs: [],
+            gridLines: [],
+            dimensions: [],
+          },
+        }),
+      });
+    });
+
+    await page.route('**/api/models/*/projection/section/**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          format: 'sectionProjectionWire_v1',
+          primitives: {
+            format: 'sectionProjectionPrimitives_v1',
+            walls: [{ uStartMm: 600, uEndMm: 7200, zBottomMm: 0, zTopMm: 5600 }],
+            floors: [{ uStartMm: 500, uEndMm: 7300, zBottomMm: -200, zTopMm: 0 }],
+          },
+        }),
+      });
+    });
+
     await page.route('**/api/bootstrap', async (route) => {
       await route.fulfill({
         status: 200,
@@ -63,7 +100,17 @@ test.describe('golden bundle affordances', () => {
               id: 'hf-sheet-ga01',
               name: 'GA-01 — Golden evidence',
               titleBlock: 'A1-Golden',
-              viewportsMm: [],
+              viewportsMm: [
+                {
+                  viewportId: 'vp-golden-sec',
+                  label: 'Long section',
+                  viewRef: 'section:hf-sec-longitudinal',
+                  xMm: 2000,
+                  yMm: 2000,
+                  widthMm: 12000,
+                  heightMm: 8000,
+                },
+              ],
             },
             rm: {
               kind: 'room',
@@ -76,6 +123,35 @@ test.describe('golden bundle affordances', () => {
                 { xMm: 4000, yMm: 3000 },
                 { xMm: 0, yMm: 3000 },
               ],
+            },
+            'hf-pv-eg': {
+              kind: 'plan_view',
+              id: 'hf-pv-eg',
+              name: 'EG working',
+              levelId: 'hf-lvl-1',
+              discipline: 'architecture',
+            },
+            'vp-3d-mock': {
+              kind: 'viewpoint',
+              id: 'vp-3d-mock',
+              name: 'Corner 3D',
+              mode: 'orbit_3d',
+              camera: {
+                position: { xMm: 0, yMm: 0, zMm: 1500 },
+                target: { xMm: 5000, yMm: 0, zMm: 1500 },
+                up: { xMm: 0, yMm: 0, zMm: 1000 },
+              },
+            },
+            'vp-plan-mock': {
+              kind: 'viewpoint',
+              id: 'vp-plan-mock',
+              name: 'Plan advisory',
+              mode: 'plan_2d',
+              camera: {
+                position: { xMm: 0, yMm: 0, zMm: 1400 },
+                target: { xMm: 1, yMm: 0, zMm: 1400 },
+                up: { xMm: 0, yMm: 0, zMm: 1000 },
+              },
             },
           },
           violations: [],
@@ -127,6 +203,38 @@ test.describe('golden bundle affordances', () => {
     await expect(page.getByText('Schedules', { exact: true }).first()).toBeVisible();
     await page.getByRole('button', { name: /^Sheets$/ }).click();
     await expect(page.getByText('GA-01 — Golden evidence').first()).toBeVisible();
+  });
+
+  test('project browser lists floor plans, section cuts, and split viewpoint groups', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await expect(page.getByText('Ready', { exact: false })).toBeVisible({ timeout: 30_000 });
+
+    await expect(page.getByText('Floor plans', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('EG working').first()).toBeVisible();
+    await expect(page.getByText('Section cuts', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('3D saved views', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('Corner 3D').first()).toBeVisible();
+    await expect(page.getByText('Plan / canvas viewpoints', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('Plan advisory').first()).toBeVisible();
+  });
+
+  test('sheet canvas renders section viewport from replayed viewportsMm', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('bim.workspaceLayout', 'coordination');
+    });
+    await page.goto('/');
+    await expect(page.getByText('Ready', { exact: false })).toBeVisible({ timeout: 30_000 });
+
+    const canvas = page.getByTestId('sheet-canvas');
+    await expect(canvas).toBeVisible();
+    await expect(canvas.getByText('Hall + stair longitudinal').first()).toBeVisible();
+
+    // Nested `SectionViewportSvg`: wall mass uses hatch fill (async projection fetch).
+    await expect(canvas.locator('svg svg path[fill^="url(#"]').first()).toBeVisible({
+      timeout: 15_000,
+    });
   });
 
   test('applies evidence3d clip query params on 3D section box controls', async ({ page }) => {

@@ -24,7 +24,7 @@ def test_upsert_schedule_filters_merges_grouping() -> None:
         UpsertScheduleFiltersCmd(
             scheduleId="sch-1",
             filters={"sortBy": "widthMm", "groupingHint": ["familyTypeId"]},
-            grouping={"sortBy": "widthMm"},
+            grouping={"sortBy": "widthMm", "groupKeys": ["familyTypeId"]},
         ),
     )
     sch = doc.elements["sch-1"]
@@ -33,3 +33,4 @@ def test_upsert_schedule_filters_merges_grouping() -> None:
     assert sch.filters["sortBy"] == "widthMm"
     assert sch.filters["groupingHint"] == ["familyTypeId"]
     assert sch.grouping.get("sortBy") == "widthMm"
+    assert sch.grouping.get("groupKeys") == ["familyTypeId"]

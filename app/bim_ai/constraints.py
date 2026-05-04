@@ -39,6 +39,8 @@ from bim_ai.export_ifc import (
 from bim_ai.geometry import Poly, approx_overlap_area_mm2, sat_overlap, wall_corners
 from bim_ai.ifc_stub import build_ifc_exchange_manifest_payload
 
+ROOM_PLAN_OVERLAP_THRESHOLD_MM2 = 50_000.0
+
 
 class Violation(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
@@ -590,7 +592,9 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
                     element_ids=[room.id],
                 )
             )
-        elif polygon_area_abs_mm2(pts) < 1_000:
+            continue
+
+        if polygon_area_abs_mm2(pts) < 1_000:
             viols.append(
                 Violation(
                     rule_id="room_outline_degenerate",
@@ -617,14 +621,26 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
         rooms_by_level[room.level_id].append(room)
 
     for _lvl, mates in rooms_by_level.items():
-        peer_authored_programme = any(
-            bool((rr.programme_code or "").strip() or (rr.department or "").strip()) for rr in mates
-        )
-        if not peer_authored_programme:
+        peers_meta = [
+            rr
+            for rr in mates
+            if (rr.programme_code or "").strip() or (rr.department or "").strip()
+        ]
+        if not peers_meta:
             continue
+        ref_peer = sorted(peers_meta, key=lambda rr: rr.id)[0]
+        ref_pc = (ref_peer.programme_code or "").strip()
         for r in mates:
             if (r.programme_code or "").strip() or (r.department or "").strip():
                 continue
+            qfix: dict[str, Any] | None = None
+            if ref_pc:
+                qfix = {
+                    "type": "updateElementProperty",
+                    "elementId": r.id,
+                    "key": "programmeCode",
+                    "value": ref_pc,
+                }
             viols.append(
                 Violation(
                     rule_id="room_programme_inconsistent_within_level",
@@ -634,11 +650,10 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
                         "colour fills, legends, and room schedules may disagree until programme is aligned."
                     ),
                     element_ids=[r.id],
-                    discipline="architecture",
+                    quick_fix_command=qfix,
                 )
             )
 
-    overlap_threshold_mm2 = 50_000.0
     for _lid, rlist in rooms_by_level.items():
         for i in range(len(rlist)):
             for j in range(i + 1, len(rlist)):
@@ -652,7 +667,7 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
                 if not sat_overlap(pa, pb):
                     continue
                 approx_a = approx_overlap_area_mm2(pa, pb, spacing_mm=200.0)
-                if approx_a >= overlap_threshold_mm2:
+                if approx_a >= ROOM_PLAN_OVERLAP_THRESHOLD_MM2:
                     approx_m2 = approx_a / 1_000_000.0
                     severity = "error" if approx_a >= 2_000_000.0 else "warning"
                     viols.append(

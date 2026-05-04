@@ -9,7 +9,7 @@ from urllib.parse import quote
 from uuid import UUID
 
 from bim_ai.document import Document
-from bim_ai.elements import PlanViewElem, SheetElem, ViewpointElem
+from bim_ai.elements import PlanViewElem, SectionCutElem, SheetElem, ViewpointElem
 
 
 def export_link_map(model_id: UUID) -> dict[str, str]:
@@ -221,6 +221,113 @@ def deterministic_3d_view_evidence_manifest(
         )
 
     return rows
+
+
+def deterministic_plan_view_evidence_manifest(
+    *,
+    model_id: UUID,
+    doc: Document,
+    evidence_artifact_basename: str,
+    semantic_digest_sha256: str,
+    semantic_digest_prefix16: str,
+) -> list[dict[str, Any]]:
+    """Stable plan-view canvas capture hints (WP-C01 / agent evidence loop)."""
+
+    mid = str(model_id)
+    bundle_json = f"{evidence_artifact_basename}-evidence-package.json"
+
+    rows: list[dict[str, Any]] = []
+    pvs = [e for e in doc.elements.values() if isinstance(e, PlanViewElem)]
+    for pv in sorted(pvs, key=lambda x: x.id):
+        safe = "".join(ch for ch in pv.id if ch.isalnum() or ch in ("-", "_")) or "plan"
+        stem = f"{evidence_artifact_basename}-plan-{safe}"
+        rows.append(
+            {
+                "planViewId": pv.id,
+                "name": pv.name,
+                "levelId": pv.level_id,
+                "planPresentation": pv.plan_presentation,
+                "playwrightSuggestedFilenames": {
+                    "pngPlanCanvas": f"{stem}.png",
+                },
+                "correlation": {
+                    "format": "evidencePlanViewCorrelation_v1",
+                    "semanticDigestSha256": semantic_digest_sha256,
+                    "semanticDigestPrefix16": semantic_digest_prefix16,
+                    "modelRevision": doc.revision,
+                    "modelId": mid,
+                    "suggestedEvidenceBundleEvidencePackageJson": bundle_json,
+                },
+            }
+        )
+
+    return rows
+
+
+def deterministic_section_cut_evidence_manifest(
+    *,
+    model_id: UUID,
+    doc: Document,
+    evidence_artifact_basename: str,
+    semantic_digest_sha256: str,
+    semantic_digest_prefix16: str,
+) -> list[dict[str, Any]]:
+    """Stable section projection / viewport capture hints."""
+
+    mid = str(model_id)
+    bundle_json = f"{evidence_artifact_basename}-evidence-package.json"
+
+    rows: list[dict[str, Any]] = []
+    secs = [e for e in doc.elements.values() if isinstance(e, SectionCutElem)]
+    for sc in sorted(secs, key=lambda x: x.id):
+        safe = "".join(ch for ch in sc.id if ch.isalnum() or ch in ("-", "_")) or "sec"
+        stem = f"{evidence_artifact_basename}-section-{safe}"
+        qid = quote(sc.id, safe="")
+        rows.append(
+            {
+                "sectionCutId": sc.id,
+                "name": sc.name,
+                "projectionWireHref": f"/api/models/{mid}/projection/section/{qid}",
+                "playwrightSuggestedFilenames": {
+                    "pngSectionViewport": f"{stem}.png",
+                },
+                "correlation": {
+                    "format": "evidenceSectionCutCorrelation_v1",
+                    "semanticDigestSha256": semantic_digest_sha256,
+                    "semanticDigestPrefix16": semantic_digest_prefix16,
+                    "modelRevision": doc.revision,
+                    "modelId": mid,
+                    "suggestedEvidenceBundleEvidencePackageJson": bundle_json,
+                },
+            }
+        )
+
+    return rows
+
+
+def agent_evidence_closure_hints() -> dict[str, Any]:
+    """Static guidance for agents; safe to attach on every evidence-package response."""
+
+    return {
+        "format": "agentEvidenceClosureHints_v1",
+        "playwrightEvidenceSpecRelPath": "packages/web/e2e/evidence-baselines.spec.ts",
+        "suggestedRegenerationCommands": [
+            (
+                "cd app && ruff check bim_ai tests && "
+                "pytest tests/test_evidence_package_digest.py tests/test_plan_projection_and_evidence_slices.py"
+            ),
+            "cd packages/web && CI=true pnpm exec playwright test e2e/evidence-baselines.spec.ts",
+        ],
+        "ciArtifactRelativePaths": [
+            "packages/web/playwright-report/index.html",
+            "packages/web/test-results/ci-evidence-correlation-hint.txt",
+            "packages/web/e2e/__screenshots__/evidence-baselines/evidence-baselines.spec.ts/<platform>/",
+        ],
+        "ciEnvPlaceholderHints": [
+            "GITHUB_RUN_ID correlates with artifact name evidence-web-${GITHUB_RUN_ID}-playwright",
+            "GITHUB_SHA identifies the commit that produced the bundle",
+        ],
+    }
 
 
 _DIGEST_EXCLUDED_KEYS = frozenset({"generatedAt", "semanticDigestSha256"})

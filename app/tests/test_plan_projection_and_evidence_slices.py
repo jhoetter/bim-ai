@@ -17,6 +17,9 @@ from bim_ai.elements import (
     WallElem,
 )
 from bim_ai.evidence_manifest import (
+    agent_evidence_closure_hints,
+    deterministic_plan_view_evidence_manifest,
+    deterministic_section_cut_evidence_manifest,
     deterministic_sheet_evidence_manifest,
     evidence_package_semantic_digest_sha256,
 )
@@ -157,6 +160,73 @@ def test_deterministic_sheet_evidence_rows_stable() -> None:
     assert corr.get("suggestedEvidenceBundleEvidencePackageJson") == "pfx-evidence-package.json"
 
 
+def test_deterministic_plan_view_evidence_rows_sorted_and_stems() -> None:
+    sid = uuid4()
+    doc = Document(
+        revision=3,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L", elevationMm=0),
+            "z-pv": PlanViewElem(
+                kind="plan_view",
+                id="z-pv",
+                name="Z",
+                levelId="lvl",
+                planPresentation="room_scheme",
+            ),
+            "a-pv": PlanViewElem(kind="plan_view", id="a-pv", name="A", levelId="lvl"),
+        },
+    )
+    rows = deterministic_plan_view_evidence_manifest(
+        model_id=sid,
+        doc=doc,
+        evidence_artifact_basename="pfx",
+        semantic_digest_sha256="c" * 64,
+        semantic_digest_prefix16="c" * 16,
+    )
+    assert [r["planViewId"] for r in rows] == ["a-pv", "z-pv"]
+    assert rows[0]["playwrightSuggestedFilenames"]["pngPlanCanvas"] == "pfx-plan-a-pv.png"
+    assert rows[0]["correlation"]["format"] == "evidencePlanViewCorrelation_v1"
+    assert rows[0]["correlation"]["modelRevision"] == 3
+
+
+def test_deterministic_section_cut_evidence_quotes_id_in_href() -> None:
+    sid = uuid4()
+    mid_str = str(sid)
+    doc = Document(
+        revision=1,
+        elements={
+            "sec/a": SectionCutElem(
+                kind="section_cut",
+                id="sec/a",
+                name="Cut",
+                lineStartMm={"xMm": 0, "yMm": 0},
+                lineEndMm={"xMm": 0, "yMm": 1000},
+            ),
+        },
+    )
+    rows = deterministic_section_cut_evidence_manifest(
+        model_id=sid,
+        doc=doc,
+        evidence_artifact_basename="pfx",
+        semantic_digest_sha256="d" * 64,
+        semantic_digest_prefix16="d" * 16,
+    )
+    assert len(rows) == 1
+    assert rows[0]["projectionWireHref"] == f"/api/models/{mid_str}/projection/section/sec%2Fa"
+    assert rows[0]["playwrightSuggestedFilenames"]["pngSectionViewport"] == "pfx-section-seca.png"
+    assert rows[0]["correlation"]["format"] == "evidenceSectionCutCorrelation_v1"
+
+
+def test_agent_evidence_closure_hints_shape() -> None:
+    h = agent_evidence_closure_hints()
+    assert h["format"] == "agentEvidenceClosureHints_v1"
+    cmds = h["suggestedRegenerationCommands"]
+    assert isinstance(cmds, list)
+    assert any("pytest" in str(c) for c in cmds)
+    assert any("playwright" in str(c) for c in cmds)
+    assert "packages/web/playwright-report/index.html" in h["ciArtifactRelativePaths"]
+
+
 def test_evidence_digest_sorts_nested_registry_and_candidates() -> None:
     cand_a = {
         "candidateId": "zzz",
@@ -253,7 +323,52 @@ def test_plan_projection_room_primitives_include_programme_and_color() -> None:
     assert str(rooms[0].get("schemeColorHex", "")).startswith("#")
 
 
-def test_plan_projection_crop_authored_emits_warning_codes() -> None:
+def test_plan_projection_room_legend_matches_primitives_when_programme_shared() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="G", elevationMm=0),
+            "rm1": RoomElem(
+                kind="room",
+                id="rm1",
+                name="Office A",
+                levelId="lvl",
+                programmeCode="OFF",
+                outlineMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 2000, "yMm": 0},
+                    {"xMm": 2000, "yMm": 2000},
+                    {"xMm": 0, "yMm": 2000},
+                ],
+            ),
+            "rm2": RoomElem(
+                kind="room",
+                id="rm2",
+                name="Office B",
+                levelId="lvl",
+                programmeCode="OFF",
+                outlineMm=[
+                    {"xMm": 2100, "yMm": 0},
+                    {"xMm": 4100, "yMm": 0},
+                    {"xMm": 4100, "yMm": 2000},
+                    {"xMm": 2100, "yMm": 2000},
+                ],
+            ),
+        },
+    )
+    out = plan_projection_wire_from_request(doc, plan_view_id=None, fallback_level_id="lvl")
+    rooms = (out.get("primitives") or {}).get("rooms") or []
+    assert len(rooms) == 2
+    hx0 = rooms[0].get("schemeColorHex")
+    hx1 = rooms[1].get("schemeColorHex")
+    assert isinstance(hx0, str) and hx0 == hx1
+    legend = out.get("roomColorLegend") or []
+    assert len(legend) == 1
+    assert legend[0].get("label") == "OFF"
+    assert legend[0].get("schemeColorHex") == hx0
+
+
+def test_plan_projection_crop_authored_filters_and_emits_range_warning() -> None:
     doc = Document(
         revision=1,
         elements={
@@ -278,12 +393,24 @@ def test_plan_projection_crop_authored_emits_warning_codes() -> None:
                 thicknessMm=200,
                 heightMm=2800,
             ),
+            "w-out": WallElem(
+                kind="wall",
+                id="w-out",
+                name="Far",
+                levelId="lvl",
+                start={"xMm": 12000, "yMm": 0},
+                end={"xMm": 14000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
         },
     )
     out = plan_projection_wire_from_request(doc, plan_view_id="pv1", fallback_level_id="lvl")
     codes = {w.get("code") for w in out.get("warnings", []) if isinstance(w, dict)}
-    assert "cropBoxNotApplied" in codes
+    assert "cropBoxNotApplied" not in codes
     assert "viewRangeNotApplied" in codes
+    walls = (out.get("primitives") or {}).get("walls") or []
+    assert [w.get("id") for w in walls] == ["w-a"]
 
 
 def test_plan_projection_includes_stair_primitive() -> None:

@@ -34,7 +34,10 @@ from bim_ai.engine import (
     try_commit_bundle,
 )
 from bim_ai.evidence_manifest import (
+    agent_evidence_closure_hints,
     deterministic_3d_view_evidence_manifest,
+    deterministic_plan_view_evidence_manifest,
+    deterministic_section_cut_evidence_manifest,
     deterministic_sheet_evidence_manifest,
     evidence_package_semantic_digest_sha256,
     expected_screenshot_captures,
@@ -357,6 +360,21 @@ async def evidence_package(
         semantic_digest_sha256=digest,
         semantic_digest_prefix16=str(payload["semanticDigestPrefix16"]),
     )
+    payload["deterministicPlanViewEvidence"] = deterministic_plan_view_evidence_manifest(
+        model_id=model_id,
+        doc=doc,
+        evidence_artifact_basename=str(payload["suggestedEvidenceArtifactBasename"]),
+        semantic_digest_sha256=digest,
+        semantic_digest_prefix16=str(payload["semanticDigestPrefix16"]),
+    )
+    payload["deterministicSectionCutEvidence"] = deterministic_section_cut_evidence_manifest(
+        model_id=model_id,
+        doc=doc,
+        evidence_artifact_basename=str(payload["suggestedEvidenceArtifactBasename"]),
+        semantic_digest_sha256=digest,
+        semantic_digest_prefix16=str(payload["semanticDigestPrefix16"]),
+    )
+    payload["agentEvidenceClosureHints"] = agent_evidence_closure_hints()
     return payload
 
 
@@ -449,7 +467,12 @@ async def schedule_derived_table(
             media_type="text/csv; charset=utf-8",
             headers={"Content-Disposition": f'attachment; filename="{safe}.csv"'},
         )
-    return payload
+    out = payload
+    if columns and columns.strip():
+        wanted = [c.strip() for c in columns.split(",") if c.strip()]
+        if wanted:
+            out = schedule_payload_with_column_subset(payload, wanted)
+    return out
 
 
 @api_router.get("/models/{model_id}/exports/gltf-manifest")

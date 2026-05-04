@@ -12,6 +12,13 @@ function newDupPlanViewId(prefix: string) {
   }
 }
 
+function planViewTooltip(pv: Extract<Element, { kind: 'plan_view' }>): string {
+  const parts = [`plan_view (${pv.name})`];
+  parts.push(`discipline: ${pv.discipline ?? 'architecture'}`);
+  if (pv.viewTemplateId) parts.push(`template: ${pv.viewTemplateId}`);
+  return parts.join(' · ');
+}
+
 /** Lightweight project-browser band: plan views grouped separately from mixed explorer. */
 
 export function ProjectBrowser(props: {
@@ -29,8 +36,22 @@ export function ProjectBrowser(props: {
     .filter((e): e is Extract<Element, { kind: 'plan_view' }> => e.kind === 'plan_view')
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  const viewpoints = Object.values(props.elementsById)
-    .filter((e): e is Extract<Element, { kind: 'viewpoint' }> => e.kind === 'viewpoint')
+  const viewpoints3d = Object.values(props.elementsById)
+    .filter(
+      (e): e is Extract<Element, { kind: 'viewpoint' }> =>
+        e.kind === 'viewpoint' && e.mode === 'orbit_3d',
+    )
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const viewpointsPlan = Object.values(props.elementsById)
+    .filter(
+      (e): e is Extract<Element, { kind: 'viewpoint' }> =>
+        e.kind === 'viewpoint' && (e.mode === 'plan_2d' || e.mode === 'plan_canvas'),
+    )
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const sectionCuts = Object.values(props.elementsById)
+    .filter((e): e is Extract<Element, { kind: 'section_cut' }> => e.kind === 'section_cut')
     .sort((a, b) => a.name.localeCompare(b.name));
 
   const schedules = Object.values(props.elementsById)
@@ -41,7 +62,15 @@ export function ProjectBrowser(props: {
     .filter((e): e is Extract<Element, { kind: 'sheet' }> => e.kind === 'sheet')
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  if (!planViews.length && !viewpoints.length && !schedules.length && !sheets.length) {
+  const hasAnyDoc =
+    planViews.length > 0 ||
+    viewpoints3d.length > 0 ||
+    viewpointsPlan.length > 0 ||
+    sectionCuts.length > 0 ||
+    schedules.length > 0 ||
+    sheets.length > 0;
+
+  if (!hasAnyDoc) {
     return <div className="text-[10px] text-muted">No documented views yet.</div>;
   }
 
@@ -120,9 +149,8 @@ export function ProjectBrowser(props: {
     }
     setActiveViewpointId(undefined);
     activatePlanView(undefined);
-    /** plan_2d / plan_canvas viewpoints are advisory — focus the explorer row. */
     useBimStore.getState().select(vp.id);
-    if (vp.mode === 'plan_canvas') setViewerMode('plan_canvas');
+    if (vp.mode === 'plan_canvas' || vp.mode === 'plan_2d') setViewerMode('plan_canvas');
   };
 
   return (
@@ -130,7 +158,7 @@ export function ProjectBrowser(props: {
       <div className="font-semibold text-muted">Project browser</div>
       {planViews.length ? (
         <div className="space-y-1">
-          <div className="text-[10px] uppercase tracking-wide text-muted">Plan views</div>
+          <div className="text-[10px] uppercase tracking-wide text-muted">Floor plans</div>
           <ul className="space-y-0.5">
             {planViews.map((pv) => (
               <li key={pv.id} className="flex flex-col gap-0.5">
@@ -138,6 +166,7 @@ export function ProjectBrowser(props: {
                   type="button"
                   variant="quiet"
                   className="w-full px-2 py-0.5 text-left text-[10px]"
+                  title={planViewTooltip(pv)}
                   onClick={() => activatePlanView(pv.id)}
                 >
                   plan_view · {pv.name}
@@ -158,13 +187,55 @@ export function ProjectBrowser(props: {
         </div>
       ) : null}
 
-      {viewpoints.length ? (
+      {sectionCuts.length ? (
+        <div className="space-y-1">
+          <div className="text-[10px] uppercase tracking-wide text-muted">Section cuts</div>
+          <ul className="space-y-0.5">
+            {sectionCuts.map((sc) => (
+              <li key={sc.id}>
+                <button
+                  type="button"
+                  className="w-full px-2 py-0.5 text-left font-mono text-[10px] text-muted underline"
+                  title="Inspect in explorer"
+                  onClick={() => useBimStore.getState().select(sc.id)}
+                >
+                  section_cut · {sc.name}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {viewpoints3d.length ? (
+        <div className="space-y-1">
+          <div className="text-[10px] uppercase tracking-wide text-muted">3D saved views</div>
+          <ul className="space-y-0.5">
+            {viewpoints3d.map((vp) => (
+              <li key={vp.id} className="flex flex-col gap-0.5">
+                <Btn
+                  type="button"
+                  variant="quiet"
+                  className="w-full px-2 py-0.5 text-left text-[10px]"
+                  onClick={() => applyViewpointQuick(vp)}
+                  title={`viewpoint (${vp.mode})`}
+                >
+                  viewpoint · {vp.name}
+                  <span className="font-mono text-[9px] text-muted"> · {vp.mode}</span>
+                </Btn>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {viewpointsPlan.length ? (
         <div className="space-y-1">
           <div className="text-[10px] uppercase tracking-wide text-muted">
-            Saved views &amp; 3D presets
+            Plan / canvas viewpoints
           </div>
           <ul className="space-y-0.5">
-            {viewpoints.map((vp) => (
+            {viewpointsPlan.map((vp) => (
               <li key={vp.id} className="flex flex-col gap-0.5">
                 <Btn
                   type="button"

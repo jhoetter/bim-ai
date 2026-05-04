@@ -21,7 +21,7 @@ from bim_ai.elements import (
     WindowElem,
 )
 from bim_ai.schedule_field_registry import column_metadata_bundle, stable_column_keys
-from bim_ai.type_material_registry import family_type_display_label
+from bim_ai.type_material_registry import family_type_display_label, material_display_label
 
 
 def _level_labels(doc: Document) -> dict[str, str]:
@@ -40,7 +40,9 @@ def _wall_level(doc: Document) -> dict[str, str]:
     return m
 
 
-def _room_polygon_area_perimeter_sqm(outline: list[dict[str, float] | tuple]) -> tuple[float, float]:
+def _room_polygon_area_perimeter_sqm(
+    outline: list[dict[str, float] | tuple],
+) -> tuple[float, float]:
     n = len(outline)
     if n < 3:
         return 0.0, 0.0
@@ -64,20 +66,72 @@ def _room_polygon_area_perimeter_sqm(outline: list[dict[str, float] | tuple]) ->
     return abs(a2 / 2) / 1_000_000.0, per_m
 
 
+def _filter_equals_from_filters(filt: dict[str, Any]) -> dict[str, Any]:
+    """Optional AND equality filters on derived row keys (``filterEquals`` / ``filter_equals``)."""
+
+    raw = filt.get("filterEquals") or filt.get("filter_equals")
+    if not isinstance(raw, dict) or not raw:
+        return {}
+    out: dict[str, Any] = {}
+    for k, v in raw.items():
+        sk = str(k).strip()
+        if sk and v is not None:
+            out[sk] = v
+    return out
+
+
+def _filter_value_matches(want: Any, got: Any) -> bool:
+    if got is None and want not in (False, 0, 0.0, ""):
+        return False
+    if isinstance(want, bool):
+        return bool(got) == want
+    if isinstance(want, int | float) and not isinstance(want, bool):
+        try:
+            return float(got) == float(want)
+        except (TypeError, ValueError):
+            return False
+    if isinstance(want, str):
+        return str(got).strip() == want.strip()
+    return got == want
+
+
+def _rows_after_filter_equals(
+    rows: list[dict[str, Any]], feq: dict[str, Any]
+) -> list[dict[str, Any]]:
+    if not feq:
+        return rows
+    return [
+        r
+        for r in rows
+        if all(_filter_value_matches(want, r.get(field)) for field, want in feq.items())
+    ]
+
+
+def _resolve_group_keys(filt: dict[str, Any], sch_grouping: dict[str, Any]) -> list[str]:
+    """Prefer ``filters.groupingHint``; else ``grouping.groupKeys`` (persisted canonical)."""
+
+    hint = filt.get("groupingHint") or filt.get("group_by")
+    if isinstance(hint, list) and hint:
+        return [str(x) for x in hint]
+    gk = sch_grouping.get("groupKeys") or sch_grouping.get("group_keys")
+    if isinstance(gk, list) and gk:
+        return [str(x) for x in gk]
+    return []
+
+
 def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
     sch = doc.elements.get(schedule_id)
     if not isinstance(sch, ScheduleElem):
         raise ValueError(f"schedule id '{schedule_id}' not found or not a schedule")
     filt = dict(sch.filters or {})
     cat = str(filt.get("category") or filt.get("Category") or "room").lower()
+    sch_group = dict(sch.grouping or {})
 
     lvl_lab = _level_labels(doc)
     w_lv = _wall_level(doc)
 
-    grouping_hint = filt.get("groupingHint") or filt.get("group_by")
-    group_keys: list[str] = []
-    if isinstance(grouping_hint, list):
-        group_keys = [str(x) for x in grouping_hint]
+    group_keys = _resolve_group_keys(filt, sch_group)
+    filter_equals = _filter_equals_from_filters(filt)
     key_aliases = {"familyTypeMark": "familyTypeId"}
 
     rows: list[dict[str, Any]] = []
@@ -118,7 +172,13 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                         "widthMm": e.width_mm,
                         "familyTypeId": getattr(e, "family_type_id", "") or "",
                         "materialKey": (getattr(e, "material_key", None) or "").strip(),
-                        "familyTypeDisplay": family_type_display_label(doc, getattr(e, "family_type_id", None)),
+                        "materialDisplay": material_display_label(
+                            doc,
+                            getattr(e, "material_key", None),
+                        ),
+                        "familyTypeDisplay": family_type_display_label(
+                            doc, getattr(e, "family_type_id", None)
+                        ),
                     }
                 )
 
@@ -138,7 +198,13 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                         "sillMm": e.sill_height_mm,
                         "familyTypeId": getattr(e, "family_type_id", "") or "",
                         "materialKey": (getattr(e, "material_key", None) or "").strip(),
-                        "familyTypeDisplay": family_type_display_label(doc, getattr(e, "family_type_id", None)),
+                        "materialDisplay": material_display_label(
+                            doc,
+                            getattr(e, "material_key", None),
+                        ),
+                        "familyTypeDisplay": family_type_display_label(
+                            doc, getattr(e, "family_type_id", None)
+                        ),
                     }
                 )
 
@@ -255,6 +321,8 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
     else:
         rows = []
 
+    rows = _rows_after_filter_equals(rows, filter_equals)
+
     # Grouping / sorting on server hint
     grouped: dict[str, list[dict[str, Any]]] | None = None
     if group_keys:
@@ -275,11 +343,10 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
             sub = sorted(buckets[k], key=lambda r: str(r.get("name", "")))
             grouped[" / ".join(str(x) for x in k)] = sub
 
-    sch_group = sch.grouping or {}
     stable_sort_field = filt.get("sortBy") or filt.get("SortBy") or sch_group.get("sortBy")
 
     def sort_rs(rs: list[dict[str, Any]]) -> list[dict[str, Any]]:
-        if stable_sort_field and rs and stable_sort_field in rs[0]:
+        if stable_sort_field and rs and any(stable_sort_field in r for r in rs):
             return sorted(rs, key=lambda x: x.get(stable_sort_field, ""))
         return sorted(rs, key=lambda x: str(x.get("name", "") or x.get("elementId")))
 
@@ -367,6 +434,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
             "groupKeys": group_keys,
             "sortBy": stable_sort_field,
             "supportsCsv": True,
+            **({"filterEquals": filter_equals} if filter_equals else {}),
         },
         "totalRows": total_rows,
         "groupKeys": group_keys,

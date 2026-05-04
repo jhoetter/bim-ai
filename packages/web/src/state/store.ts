@@ -1110,6 +1110,7 @@ export const useBimStore = create<StoreState>((set, get) => {
         activeViewpointId: undefined,
         activeLevelId: el.levelId,
         planPresentationPreset: normalized,
+        viewerMode: 'plan_canvas',
       });
     },
 
