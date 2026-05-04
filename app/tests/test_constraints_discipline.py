@@ -92,3 +92,26 @@ def test_room_overlap_plan_discipline() -> None:
     oval = next(v for v in viols if v.rule_id == "room_overlap_plan")
     assert oval.discipline == "architecture"
     assert oval.severity == "error"
+
+
+def test_level_datum_mismatch_discipline_structure() -> None:
+    viols = evaluate(
+        dict(
+            Document(
+                revision=1,
+                elements={
+                    "p": LevelElem(kind="level", id="p", name="P", elevationMm=0),
+                    "c": LevelElem(
+                        kind="level",
+                        id="c",
+                        name="C",
+                        elevationMm=90,
+                        parentLevelId="p",
+                        offsetFromParentMm=10,
+                    ),
+                },
+            ).elements
+        )
+    )
+    v = next(x for x in viols if x.rule_id == "level_datum_parent_offset_mismatch")
+    assert v.discipline == "structure"

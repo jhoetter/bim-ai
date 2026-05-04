@@ -15,3 +15,21 @@ export function formatSectionSheetCalloutsLabel(rows: SectionSheetCalloutRow[]):
   const parts = ordered.map((r) => (r.name && r.name !== r.id ? `${r.name} (${r.id})` : r.id));
   return `Callouts · ${parts.join(', ')}`;
 }
+
+/** Count wall `cutHatchKind` values for section viewport doc lines (legacy rows default to alongCut). */
+export function summarizeWallCutHatchKinds(rows: ReadonlyArray<{ cutHatchKind?: string }>): {
+  edgeOn: number;
+  alongCut: number;
+} {
+  let edgeOn = 0;
+  let alongCut = 0;
+  for (const r of rows) {
+    const k = r.cutHatchKind ?? 'alongCut';
+    if (k === 'edgeOn') {
+      edgeOn += 1;
+    } else {
+      alongCut += 1;
+    }
+  }
+  return { edgeOn, alongCut };
+}

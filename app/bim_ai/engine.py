@@ -63,6 +63,10 @@ from bim_ai.commands import (
     UpsertWallTypeCmd,
 )
 from bim_ai.constraints import Violation, evaluate
+from bim_ai.datum_levels import (
+    expected_level_elevation_from_parent,
+    propagate_dependent_level_elevations,
+)
 from bim_ai.document import Document
 from bim_ai.elements import (
     AgentAssumptionElem,
@@ -103,7 +107,15 @@ from bim_ai.elements import (
     WallTypeElem,
     WindowElem,
 )
+from bim_ai.export_ifc import (
+    AUTHORITATIVE_REPLAY_KIND_V0,
+    KERNEL_IFC_AUTHORITATIVE_REPLAY_SCHEMA_VERSION,
+)
 from bim_ai.roof_geometry import assert_valid_gable_pitched_rectangle_footprint_mm
+
+_AUTHORITATIVE_REPLAY_V0_TYPES: frozenset[str] = frozenset(
+    {"createLevel", "createWall", "createRoomOutline"}
+)
 
 command_adapter = TypeAdapter(Command)
 element_adapter = TypeAdapter(Element)
@@ -317,15 +329,22 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 raise ValueError("createLevel.parentLevelId must reference an existing Level")
             if parent is not None and not isinstance(els[parent], LevelElem):
                 raise ValueError("createLevel.parentLevelId must reference a Level")
+            parent_el = els[parent] if parent is not None else None
+            elev_mm = (
+                expected_level_elevation_from_parent(parent_el, cmd.offset_from_parent_mm)
+                if isinstance(parent_el, LevelElem)
+                else float(cmd.elevation_mm)
+            )
             els[eid] = LevelElem(
                 kind="level",
                 id=eid,
                 name=cmd.name,
-                elevation_mm=cmd.elevation_mm,
+                elevation_mm=elev_mm,
                 datum_kind=cmd.datum_kind,
                 parent_level_id=parent,
                 offset_from_parent_mm=cmd.offset_from_parent_mm,
             )
+            propagate_dependent_level_elevations(els)
 
         case CreateWallCmd():
             eid = cmd.id or new_id()
@@ -608,6 +627,7 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
             if not isinstance(lvl, LevelElem):
                 raise ValueError("moveLevelElevation.levelId must reference an existing Level")
             els[cmd.level_id] = lvl.model_copy(update={"elevation_mm": cmd.elevation_mm})
+            propagate_dependent_level_elevations(els)
             _recompute_constrained_wall_heights(els)
 
         case CreateIssueFromViolationCmd():
@@ -1512,6 +1532,52 @@ def replay_bundle_diagnostics_for_outcome(
             "blockingViolationRuleIds": rule_ids,
         }
     return base
+
+
+def try_apply_kernel_ifc_authoritative_replay_v0(
+    doc: Document,
+    sketch: dict[str, Any],
+) -> tuple[bool, Document | None, list[dict[str, Any]], list[Violation], str]:
+    """Apply ``authoritativeReplay_v0`` commands to an **empty** document via ``try_commit_bundle``.
+
+    Narrow OpenBIM merge slice: only ``createLevel`` / ``createWall`` / ``createRoomOutline`` payloads
+    from ``build_kernel_ifc_authoritative_replay_sketch_v0``. Rejects non-empty documents to avoid
+    accidental overwrites. Returns raw command dicts that were validated (third tuple element).
+    """
+
+    if doc.elements:
+        return False, None, [], [], "document_not_empty"
+
+    if sketch.get("available") is not True:
+        return False, None, [], [], "sketch_unavailable"
+
+    if sketch.get("replayKind") != AUTHORITATIVE_REPLAY_KIND_V0:
+        return False, None, [], [], "invalid_sketch"
+
+    try:
+        ver = int(sketch["schemaVersion"])
+    except (KeyError, TypeError, ValueError):
+        return False, None, [], [], "invalid_sketch"
+    if ver != KERNEL_IFC_AUTHORITATIVE_REPLAY_SCHEMA_VERSION:
+        return False, None, [], [], "invalid_sketch"
+
+    raw_cmds = sketch.get("commands")
+    if not isinstance(raw_cmds, list):
+        return False, None, [], [], "invalid_command"
+
+    cmds_raw: list[dict[str, Any]] = []
+    for item in raw_cmds:
+        if not isinstance(item, dict):
+            return False, None, [], [], "invalid_command"
+        t = item.get("type")
+        if not isinstance(t, str) or t not in _AUTHORITATIVE_REPLAY_V0_TYPES:
+            return False, None, [], [], "invalid_command"
+        cmds_raw.append(item)
+
+    ok, new_doc, _cmds, violations, code = try_commit_bundle(doc, cmds_raw)
+    if not ok:
+        return False, None, cmds_raw, violations, code
+    return True, new_doc, cmds_raw, violations, code
 
 
 def try_commit_bundle(

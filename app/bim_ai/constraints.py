@@ -6,6 +6,11 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from bim_ai.datum_levels import (
+    expected_level_elevation_from_parent,
+    level_datum_cycle_participant_level_ids,
+    level_datum_topo_order_if_acyclic,
+)
 from bim_ai.document import Document
 from bim_ai.elements import (
     DimensionElem,
@@ -72,8 +77,11 @@ _RULE_DISCIPLINE: dict[str, str] = {
     "wall_overlap": "coordination",
     "window_overlaps_door": "coordination",
     "level_duplicate_elevation": "structure",
+    "level_datum_parent_cycle": "structure",
+    "level_datum_parent_offset_mismatch": "structure",
     "wall_missing_level": "structure",
     "wall_zero_length": "structure",
+    "wall_constraint_levels_inverted": "structure",
     "grid_zero_length": "architecture",
     "dimension_zero_length": "architecture",
     "dimension_bad_level": "structure",
@@ -446,6 +454,25 @@ def _elements_have_room_programme_metadata(elements: dict[str, Element]) -> bool
     return False
 
 
+def _ids_authoritative_replay_map_pointer_suffix(summary: dict[str, Any]) -> str:
+    cs = summary.get("commandSketch")
+    if not isinstance(cs, dict):
+        return ""
+    auth = cs.get("authoritativeReplay_v0")
+    if not isinstance(auth, dict) or auth.get("available") is not True:
+        return ""
+    ids_map = auth.get("idsAuthoritativeReplayMap_v0")
+    if not isinstance(ids_map, dict):
+        return ""
+    spaces = ids_map.get("spaces")
+    n = len(spaces) if isinstance(spaces, list) else 0
+    return (
+        " Per-space IDS linkage evidence: "
+        f"{n} row(s) under summarize_kernel_ifc_semantic_roundtrip.commandSketch."
+        "authoritativeReplay_v0.idsAuthoritativeReplayMap_v0."
+    )
+
+
 def _exchange_advisory_violations(elements: dict[str, Element]) -> list[Violation]:
     out: list[Violation] = []
     try:
@@ -542,6 +569,7 @@ def _exchange_advisory_violations(elements: dict[str, Element]) -> list[Violatio
     )
     if gate_roundtrip:
         summary = summarize_kernel_ifc_semantic_roundtrip(doc)
+        ids_ptr = _ids_authoritative_replay_map_pointer_suffix(summary)
         rtc = summary.get("roundtripChecks")
         if isinstance(rtc, dict):
             if not rtc.get("allProductCountsMatch", True):
@@ -580,6 +608,7 @@ def _exchange_advisory_violations(elements: dict[str, Element]) -> list[Violatio
                         message=(
                             "Cleanroom IDS validation is active but IFC read-back shows incomplete "
                             "Pset_*Common Reference coverage on some emitted products."
+                            + ids_ptr
                         ),
                         element_ids=[],
                         discipline="exchange",
@@ -596,6 +625,7 @@ def _exchange_advisory_violations(elements: dict[str, Element]) -> list[Violatio
                             "Cleanroom IDS validation is active but IFC read-back shows incomplete "
                             "Qto_* base-quantity linkage on some emitted products "
                             "(summarize_kernel_ifc_semantic_roundtrip.roundtripChecks.qtoCoverage)."
+                            + ids_ptr
                         ),
                         element_ids=[],
                         discipline="exchange",
@@ -636,6 +666,43 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
             levels.append(el)
 
     lvl_by_id = {lv.id for lv in levels}
+    lev_elem_by_id = {lv.id: lv for lv in levels}
+
+    datum_cycle_levels = level_datum_cycle_participant_level_ids(elements)
+    if datum_cycle_levels:
+        viols.append(
+            Violation(
+                rule_id="level_datum_parent_cycle",
+                severity="error",
+                message=(
+                    "Level datum parent pointers form a cycle among levels; "
+                    "dependent offsets cannot propagate deterministically."
+                ),
+                element_ids=list(datum_cycle_levels),
+            )
+        )
+
+    if level_datum_topo_order_if_acyclic(elements) is not None:
+        for lv in sorted(levels, key=lambda x: x.id):
+            pid = lv.parent_level_id
+            if pid is None:
+                continue
+            parent_lv = lev_elem_by_id.get(pid)
+            if parent_lv is None:
+                continue
+            exp_mm = expected_level_elevation_from_parent(parent_lv, lv.offset_from_parent_mm)
+            if abs(lv.elevation_mm - exp_mm) >= 1.0:
+                viols.append(
+                    Violation(
+                        rule_id="level_datum_parent_offset_mismatch",
+                        severity="warning",
+                        message=(
+                            "Level elevationMm differs from parent level datum plus offsetFromParentMm."
+                        ),
+                        element_ids=sorted({lv.id, pid}),
+                    )
+                )
+
     lev_pairs = [
         (levels[i], levels[j]) for i in range(len(levels)) for j in range(i + 1, len(levels))
     ]
@@ -673,6 +740,27 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
                     element_ids=[wall.id],
                 )
             )
+
+        bid = wall.base_constraint_level_id
+        tid = wall.top_constraint_level_id
+        if bid and tid:
+            bl = lev_elem_by_id.get(bid)
+            tl = lev_elem_by_id.get(tid)
+            if isinstance(bl, LevelElem) and isinstance(tl, LevelElem):
+                b_z = float(bl.elevation_mm) + wall.base_constraint_offset_mm
+                t_z = float(tl.elevation_mm) + wall.top_constraint_offset_mm
+                if b_z >= t_z - 1e-6:
+                    viols.append(
+                        Violation(
+                            rule_id="wall_constraint_levels_inverted",
+                            severity="warning",
+                            message=(
+                                "Wall base constraint Z is not below top constraint Z; "
+                                "vertical extent from level datums is inconsistent."
+                            ),
+                            element_ids=sorted({wall.id, bid, tid}),
+                        )
+                    )
 
     overlap_tol_mm2 = 120.0
     for lw in walls_by_level.values():
