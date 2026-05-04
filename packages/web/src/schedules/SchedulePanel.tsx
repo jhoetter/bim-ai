@@ -70,7 +70,7 @@ function scheduleGroupingKeyChoices(tab: TabKey): readonly string[] {
   }
 }
 
-function scheduleSortKeyChoices(tab: TabKey): readonly string[] {
+export function scheduleSortKeyChoices(tab: TabKey): readonly string[] {
   switch (tab) {
     case 'doors': {
       return [
@@ -78,6 +78,8 @@ function scheduleSortKeyChoices(tab: TabKey): readonly string[] {
         'elementId',
         'level',
         'widthMm',
+        'hostHeightMm',
+        'roughOpeningAreaM2',
         'familyTypeId',
         'materialKey',
         'materialDisplay',
@@ -91,6 +93,10 @@ function scheduleSortKeyChoices(tab: TabKey): readonly string[] {
         'level',
         'widthMm',
         'heightMm',
+        'sillMm',
+        'openingAreaM2',
+        'aspectRatio',
+        'headHeightMm',
         'familyTypeId',
         'materialKey',
         'materialDisplay',

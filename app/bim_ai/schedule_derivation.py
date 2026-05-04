@@ -45,6 +45,13 @@ _NUMERIC_SCHEDULE_FIELDS: frozenset[str] = frozenset(
         "riseMm",
         "runMm",
         "cropDepthMm",
+        "hostHeightMm",
+        "roughOpeningAreaM2",
+        "openingAreaM2",
+        "aspectRatio",
+        "headHeightMm",
+        "assemblyTotalThicknessMm",
+        "layerOffsetFromExteriorMm",
     }
 )
 
@@ -155,6 +162,14 @@ def _wall_level(doc: Document) -> dict[str, str]:
     return m
 
 
+def _wall_height_mm(doc: Document) -> dict[str, float]:
+    m: dict[str, float] = {}
+    for e in doc.elements.values():
+        if isinstance(e, WallElem):
+            m[e.id] = float(e.height_mm)
+    return m
+
+
 def _room_polygon_area_perimeter_sqm(
     outline: list[dict[str, float] | tuple],
 ) -> tuple[float, float]:
@@ -244,6 +259,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
 
     lvl_lab = _level_labels(doc)
     w_lv = _wall_level(doc)
+    w_h_mm = _wall_height_mm(doc)
 
     group_keys = _resolve_group_keys(filt, sch_group)
     filter_equals = _filter_equals_from_filters(filt)
@@ -281,6 +297,8 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
         for e in doc.elements.values():
             if isinstance(e, DoorElem):
                 lid = w_lv.get(e.wall_id, "")
+                host_h = float(w_h_mm.get(e.wall_id, 0.0))
+                wmm = float(e.width_mm)
                 rows.append(
                     {
                         "elementId": e.id,
@@ -289,6 +307,8 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                         "levelId": lid,
                         "level": lvl_lab.get(lid, lid or "—"),
                         "widthMm": e.width_mm,
+                        "hostHeightMm": round(host_h, 3),
+                        "roughOpeningAreaM2": round(wmm * host_h / 1_000_000.0, 6),
                         "familyTypeId": getattr(e, "family_type_id", "") or "",
                         "materialKey": (getattr(e, "material_key", None) or "").strip(),
                         "materialDisplay": material_display_label(
@@ -305,6 +325,11 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
         for e in doc.elements.values():
             if isinstance(e, WindowElem):
                 lid = w_lv.get(e.wall_id, "")
+                wmm = float(e.width_mm)
+                hmm = float(e.height_mm)
+                sill = float(e.sill_height_mm)
+                opening_m2 = wmm * hmm / 1_000_000.0
+                ar = round(wmm / hmm, 6) if hmm > 0 else 0.0
                 rows.append(
                     {
                         "elementId": e.id,
@@ -315,6 +340,9 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                         "widthMm": e.width_mm,
                         "heightMm": e.height_mm,
                         "sillMm": e.sill_height_mm,
+                        "openingAreaM2": round(opening_m2, 6),
+                        "aspectRatio": ar,
+                        "headHeightMm": round(sill + hmm, 3),
                         "familyTypeId": getattr(e, "family_type_id", "") or "",
                         "materialKey": (getattr(e, "material_key", None) or "").strip(),
                         "materialDisplay": material_display_label(
@@ -449,6 +477,8 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                 height_m = e.height_mm / 1000.0
                 gross_face_m2 = length_m * height_m
                 asm_id = (e.wall_type_id or "").strip()
+                total_thk = sum(float(lyr["thicknessMm"]) for lyr in layers)
+                offset_mm = 0.0
                 for idx, lyr in enumerate(layers):
                     tk = str(lyr.get("materialKey") or "").strip()
                     th_mm = float(lyr["thicknessMm"])
@@ -462,6 +492,8 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                             "hostElementId": e.id,
                             "hostKind": "wall",
                             "assemblyTypeId": asm_id,
+                            "assemblyTotalThicknessMm": round(total_thk, 6),
+                            "layerOffsetFromExteriorMm": round(offset_mm, 6),
                             "layerIndex": idx,
                             "layerFunction": fn,
                             "materialKey": tk,
@@ -474,12 +506,15 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                             "familyTypeId": "",
                         }
                     )
+                    offset_mm += th_mm
             elif isinstance(e, FloorElem):
                 layers = resolved_layers_for_floor(doc, e)
                 lev = lvl_lab.get(e.level_id, e.level_id)
                 pts = [{"xMm": float(p.x_mm), "yMm": float(p.y_mm)} for p in e.boundary_mm]
                 slab_m2, _perim = _room_polygon_area_perimeter_sqm(pts)
                 asm_id = (e.floor_type_id or "").strip()
+                total_thk = sum(float(lyr["thicknessMm"]) for lyr in layers)
+                offset_mm = 0.0
                 for idx, lyr in enumerate(layers):
                     tk = str(lyr.get("materialKey") or "").strip()
                     th_mm = float(lyr["thicknessMm"])
@@ -493,6 +528,8 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                             "hostElementId": e.id,
                             "hostKind": "floor",
                             "assemblyTypeId": asm_id,
+                            "assemblyTotalThicknessMm": round(total_thk, 6),
+                            "layerOffsetFromExteriorMm": round(offset_mm, 6),
                             "layerIndex": idx,
                             "layerFunction": fn,
                             "materialKey": tk,
@@ -505,6 +542,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                             "familyTypeId": "",
                         }
                     )
+                    offset_mm += th_mm
 
     else:
         rows = []
@@ -600,9 +638,18 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                 sum(float(r.get("widthMm") or 0.0) for r in leaf_rows) / max(len(leaf_rows), 1),
                 3,
             ),
+            "totalOpeningAreaM2": round(
+                sum(float(r.get("openingAreaM2") or 0.0) for r in leaf_rows), 6
+            ),
         }
     elif cat == "door" and leaf_rows:
-        totals = {"kind": "door", "rowCount": len(leaf_rows)}
+        totals = {
+            "kind": "door",
+            "rowCount": len(leaf_rows),
+            "roughOpeningAreaM2": round(
+                sum(float(r.get("roughOpeningAreaM2") or 0.0) for r in leaf_rows), 6
+            ),
+        }
     elif cat == "floor" and leaf_rows:
         totals = {
             "kind": "floor",

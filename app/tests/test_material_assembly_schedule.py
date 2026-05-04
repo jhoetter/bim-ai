@@ -219,3 +219,17 @@ def test_material_assembly_schedule_quantities():
     fl0 = next(r for r in floor_rows if r["layerIndex"] == 0)
     assert abs(float(fl0["grossAreaM2"]) - slab_m2) < 1e-5
     assert abs(float(fl0["grossVolumeM3"]) - slab_m2 * 0.1) < 1e-8
+
+    w0 = next(r for r in wall_rows if r["layerIndex"] == 0)
+    w1 = next(r for r in wall_rows if r["layerIndex"] == 1)
+    assert float(w0["assemblyTotalThicknessMm"]) == 150.0
+    assert float(w0["layerOffsetFromExteriorMm"]) == 0.0
+    assert float(w1["assemblyTotalThicknessMm"]) == 150.0
+    assert float(w1["layerOffsetFromExteriorMm"]) == 100.0
+
+    f0 = next(r for r in floor_rows if r["layerIndex"] == 0)
+    f1 = next(r for r in floor_rows if r["layerIndex"] == 1)
+    assert float(f0["assemblyTotalThicknessMm"]) == 140.0
+    assert float(f0["layerOffsetFromExteriorMm"]) == 0.0
+    assert float(f1["assemblyTotalThicknessMm"]) == 140.0
+    assert float(f1["layerOffsetFromExteriorMm"]) == 100.0
