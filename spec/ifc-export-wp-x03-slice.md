@@ -45,13 +45,13 @@ Kinds **outside** [`EXPORT_GEOMETRY_KINDS`](../app/bim_ai/export_gltf.py) stay i
 
 Single read-back entry point: **`inspect_kernel_ifc_semantics()`** in [`export_ifc.py`](../app/bim_ai/export_ifc.py). Returns JSON-serializable rows (and does **not** add keys to the IFC↔glTF parity slice in [`constraints.py`](../app/bim_ai/constraints.py)).
 
-| Row | What it covers |
-| --- | ---------------- |
-| `buildingStorey` | `IfcBuildingStorey` count; how many storeys carry a numeric `Elevation`. |
-| `products` | Counts of `IfcWall`, `IfcOpeningElement`, `IfcDoor`, `IfcWindow`, `IfcSpace`. |
-| `identityPsets` | Instances with `Reference` on `Pset_WallCommon`, `Pset_SpaceCommon`, `Pset_DoorCommon`, `Pset_WindowCommon`. |
-| `spaceProgrammeFields` | Counts of spaces carrying `ProgrammeCode` / `Department` / `FunctionLabel` / `FinishSet` on `Pset_SpaceCommon`. |
-| `qtoTemplates` | `Name` of each `IfcElementQuantity` (`Qto_*` templates when QTO helpers succeed). |
+| Row                              | What it covers                                                                                                                                                         |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `buildingStorey`                 | `IfcBuildingStorey` count; how many storeys carry a numeric `Elevation`.                                                                                               |
+| `products`                       | Counts of `IfcWall`, `IfcOpeningElement`, `IfcDoor`, `IfcWindow`, `IfcSpace`.                                                                                          |
+| `identityPsets`                  | Instances with `Reference` on `Pset_WallCommon`, `Pset_SpaceCommon`, `Pset_DoorCommon`, `Pset_WindowCommon`.                                                           |
+| `spaceProgrammeFields`           | Counts of spaces carrying `ProgrammeCode` / `Department` / `FunctionLabel` / `FinishSet` on `Pset_SpaceCommon`.                                                        |
+| `qtoTemplates`                   | `Name` of each `IfcElementQuantity` (`Qto_*` templates when QTO helpers succeed).                                                                                      |
 | `ifcKernelGeometrySkippedCounts` | Document-level map from `ifc_kernel_geometry_skip_counts()` (missing hosts, degenerate outlines); aligned with manifest + `exchange_ifc_kernel_geometry_skip_summary`. |
 
 **Offline / no IfcOpenShell:** same function returns `available: false` (`reason`: `ifcopenshell_not_installed` or `kernel_not_eligible`) and may still include `ifcKernelGeometrySkippedCounts` when a `Document` is supplied.
