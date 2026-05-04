@@ -4,7 +4,21 @@
 
 - **Commit:** `e04c4bd` on `main`.
 - **Python CI:** green (ruff + pytest + IFC extras).
-- **JS / Playwright CI:** `e04c4bd` hit `pnpm/action-setup` version drift (fixed by inferring pnpm from [`package.json`](../package.json) — see [.github/workflows/ci.yml](../.github/workflows/ci.yml)) and **`vite preview` proxying `/api` to `:8500`**, which defeated Playwright mocks. Playwright now runs with **`PREVIEW_NO_PROXY=1`** on build + preview ([`packages/web/playwright.config.ts`](../packages/web/playwright.config.ts), [`packages/web/vite.config.ts`](../packages/web/vite.config.ts)); evidence baseline PNGs were updated for layout drift.
+- **JS / Playwright CI:** `e04c4bd` hit `pnpm/action-setup` version drift (fixed by inferring pnpm from [`package.json`](../package.json) — see [.github/workflows/ci.yml](../.github/workflows/ci.yml)) and **`vite preview` proxying `/api` and `/ws` to `:8500`**, which broke mocked E2E. Mitigations:
+  - [`packages/web/playwright.config.ts`](../packages/web/playwright.config.ts) sets **`webServer.env`** with `PREVIEW_NO_PROXY=1` and `VITE_E2E_DISABLE_WS=true` so preview does not forward API traffic and [`Workspace.tsx`](../packages/web/src/Workspace.tsx) skips the model WebSocket in that build (no dead `:8500` proxy noise).
+  - [`packages/web/vite.config.ts`](../packages/web/vite.config.ts) omits `preview.proxy` when `PREVIEW_NO_PROXY` / `E2E_NO_API_PROXY` is set.
+  - Evidence **`toHaveScreenshot`** baselines are namespaced **per Playwright `{platform}`** (`darwin/` vs `linux/`) — GitHub `ubuntu-latest` is **amd64**. Regenerate `linux/` after UI changes affecting screenshots:
+
+```bash
+docker run --platform linux/amd64 --rm -v \"$PWD:/workspace\" -w /workspace \\
+  mcr.microsoft.com/playwright:v1.53.2-jammy \\
+  bash -lc 'cd /workspace && find . -name node_modules -type d -prune -exec rm -rf {} + && \\
+    corepack enable && corepack prepare pnpm@9.15.4 --activate && pnpm install && \\
+    cd packages/web && pnpm exec playwright install chromium --with-deps && \\
+    CI=true pnpm exec playwright test e2e/evidence-baselines.spec.ts --update-snapshots'
+```
+
+**Do not bind-mount `.pnpm-store` into the workspace** — keep the default global store location or `.pnpm-store/` is gitignored since `pnpm install` inside Docker recreated it under the repo.
 
 ## What shipped (high level)
 

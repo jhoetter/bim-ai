@@ -447,6 +447,15 @@ export function Workspace() {
 
         setStatus('Ready');
 
+        /** E2E builds set VITE_E2E_DISABLE_WS — no backend; avoid Vite preview forwarding /ws to :8500. */
+        const disableWs =
+          typeof import.meta.env.VITE_E2E_DISABLE_WS === 'string' &&
+          ['1', 'true', 'yes'].includes(import.meta.env.VITE_E2E_DISABLE_WS.trim().toLowerCase());
+
+        if (disableWs) {
+          return;
+        }
+
         const p = window.location.protocol === 'https:' ? 'wss' : 'ws';
 
         const ws = new WebSocket(`${p}://${window.location.host}/ws/${encodeURIComponent(mid)}`);
