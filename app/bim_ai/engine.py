@@ -838,6 +838,12 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                         els[cmd.element_id] = el.model_copy(update={"sheet_id": raw_s})
                 else:
                     raise ValueError("schedule updates: key=sheetId | name")
+            elif isinstance(el, SheetElem):
+                raw_sh = cmd.value.strip()
+                if cmd.key == "titleBlock":
+                    els[cmd.element_id] = el.model_copy(update={"title_block": raw_sh or None})
+                else:
+                    raise ValueError("sheet updates: key=titleBlock | name")
             else:
                 raise ValueError(
                     "Only updateElementProperty key=name | label(grid) | title(issue) | "
@@ -857,7 +863,7 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                     "viewerClipCapElevMm(viewpoint) | viewerClipFloorElevMm(viewpoint) | "
                     "hiddenSemanticKinds3d(viewpoint JSON array) | "
                     "familyTypeId(door/window) | materialKey(door/window) | "
-                    "sheetId(schedule) supported in v2"
+                    "sheetId(schedule) | titleBlock(sheet) supported in v2"
                 )
 
         case SaveViewpointCmd():

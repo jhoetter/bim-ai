@@ -51,6 +51,10 @@ _SCHEDULE_VIEWPORT_AUTOPLACE_Y_MM = 800.0
 _SCHEDULE_VIEWPORT_AUTOPLACE_WIDTH_MM = 14_000.0
 _SCHEDULE_VIEWPORT_AUTOPLACE_HEIGHT_MM = 9000.0
 
+# Degenerate viewport quick-fix clamps (deterministic replay).
+_SHEET_VIEWPORT_MIN_SIDE_MM = 10.0
+_SHEET_DEFAULT_TITLEBLOCK_SYMBOL = "A1"
+
 
 class Violation(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
@@ -101,6 +105,8 @@ _RULE_DISCIPLINE: dict[str, str] = {
     "sheet_viewport_unknown_ref": "coordination",
     "schedule_orphan_sheet_ref": "coordination",
     "schedule_sheet_viewport_missing": "coordination",
+    "sheet_missing_titleblock": "coordination",
+    "sheet_viewport_zero_extent": "coordination",
 
     "exchange_manifest_ifc_gltf_slice_mismatch": "exchange",
 
@@ -112,6 +118,70 @@ _RULE_DISCIPLINE: dict[str, str] = {
     "exchange_ifc_ids_identity_pset_gap": "exchange",
     "exchange_ifc_ids_qto_gap": "exchange",
 }
+
+
+def _viewport_dimension_mm(vp: dict[str, Any], camel_key: str, snake_key: str) -> float | None:
+    raw = vp.get(camel_key)
+    if raw is None:
+        raw = vp.get(snake_key)
+    if raw is None:
+        return None
+    if isinstance(raw, bool):
+        return None
+    if isinstance(raw, (int, float)):
+        return float(raw)
+    if isinstance(raw, str):
+        stripped = raw.strip()
+        if not stripped:
+            return None
+        try:
+            return float(stripped)
+        except ValueError:
+            return None
+    return None
+
+
+def _repair_sheet_viewport_extents_inplace_rows(
+    rows: list[Any],
+) -> tuple[list[Any], bool]:
+    """Clone viewport rows; clamp invalid or non-positive width/heightMm dict entries."""
+
+    repaired: list[Any] = []
+    changed = False
+    for vp in rows:
+        if not isinstance(vp, dict):
+            repaired.append(vp)
+            continue
+        out = dict(vp)
+        w = _viewport_dimension_mm(out, "widthMm", "width_mm")
+        h = _viewport_dimension_mm(out, "heightMm", "height_mm")
+        if w is None or w <= 0:
+            out["widthMm"] = _SHEET_VIEWPORT_MIN_SIDE_MM
+            changed = True
+        if h is None or h <= 0:
+            out["heightMm"] = _SHEET_VIEWPORT_MIN_SIDE_MM
+            changed = True
+        repaired.append(out)
+    return repaired, changed
+
+
+def _sheet_viewport_zero_extent_labels(rows: list[Any]) -> list[str]:
+    labels: list[str] = []
+    for idx, vp in enumerate(rows):
+        if not isinstance(vp, dict):
+            continue
+        w = _viewport_dimension_mm(vp, "widthMm", "width_mm")
+        h = _viewport_dimension_mm(vp, "heightMm", "height_mm")
+        bad = ((w is None) or (w <= 0)) or ((h is None) or (h <= 0))
+        if not bad:
+            continue
+        vid = vp.get("viewportId") or vp.get("viewport_id")
+        if isinstance(vid, str) and vid.strip():
+            labels.append(vid.strip())
+        else:
+            labels.append(f"idx={idx}")
+    labels.sort()
+    return labels
 
 
 def polygon_area_abs_mm2(poly: list[tuple[float, float]]) -> float:
@@ -1301,9 +1371,52 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
                 )
             )
 
-    for sh_el in elements.values():
-        if not isinstance(sh_el, SheetElem):
-            continue
+    sheets_ordered = sorted(
+        (el for el in elements.values() if isinstance(el, SheetElem)),
+        key=lambda s: s.id,
+    )
+    for sh_el in sheets_ordered:
+        rows_raw = list(sh_el.viewports_mm or [])
+
+        if rows_raw and not (sh_el.title_block or "").strip():
+            viols.append(
+                Violation(
+                    rule_id="sheet_missing_titleblock",
+                    severity="warning",
+                    message=(
+                        "Sheet carries viewports but has no title block symbol; drawing border metadata is ambiguous."
+                    ),
+                    element_ids=[sh_el.id],
+                    quick_fix_command={
+                        "type": "updateElementProperty",
+                        "elementId": sh_el.id,
+                        "key": "titleBlock",
+                        "value": _SHEET_DEFAULT_TITLEBLOCK_SYMBOL,
+                    },
+                )
+            )
+
+        extent_labels = _sheet_viewport_zero_extent_labels(rows_raw)
+        if extent_labels:
+            repaired_vps, _ = _repair_sheet_viewport_extents_inplace_rows(rows_raw)
+            viols.append(
+                Violation(
+                    rule_id="sheet_viewport_zero_extent",
+                    severity="warning",
+                    message=(
+                        "Sheet viewport(s) missing or non-positive extent (widthMm/heightMm): "
+                        + ", ".join(extent_labels)
+                        + "."
+                    ),
+                    element_ids=[sh_el.id],
+                    quick_fix_command={
+                        "type": "upsertSheetViewports",
+                        "sheetId": sh_el.id,
+                        "viewportsMm": repaired_vps,
+                    },
+                )
+            )
+
         for vp in sh_el.viewports_mm or []:
             if not isinstance(vp, dict):
                 continue

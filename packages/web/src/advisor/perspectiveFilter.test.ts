@@ -48,4 +48,16 @@ describe('filterViolationsForPerspective', () => {
     expect(filterViolationsForPerspective(rows, 'coordination')).toHaveLength(1);
     expect(filterViolationsForPerspective(rows, 'architecture')).toHaveLength(0);
   });
+
+  it('shows sheet_missing_titleblock when discipline is coordination', () => {
+    const rows: Violation[] = [
+      row({
+        severity: 'warning',
+        ruleId: 'sheet_missing_titleblock',
+        discipline: 'coordination',
+      }),
+    ];
+    expect(filterViolationsForPerspective(rows, 'coordination')).toHaveLength(1);
+    expect(filterViolationsForPerspective(rows, 'architecture')).toHaveLength(0);
+  });
 });
