@@ -11,6 +11,34 @@ from bim_ai.elements import AgentDeviationElem, BcfElem, EvidenceRef, IssueElem
 from bim_ai.evidence_manifest import evidence_diff_ingest_fix_loop_v1
 
 
+def _remediate_evidence_diff_ingest_target(
+    evidence_closure_review: dict[str, Any],
+    *,
+    needs_fix_loop: bool,
+    blockers: list[str],
+) -> dict[str, Any]:
+    target: dict[str, Any] = {
+        "needsFixLoop": needs_fix_loop,
+        "blockerCodes": blockers,
+        "evidenceClosureReviewField": "evidenceClosureReview_v1",
+        "evidenceDiffIngestFixLoopField": "evidenceDiffIngestFixLoop_v1",
+    }
+    pix = evidence_closure_review.get("pixelDiffExpectation")
+    if isinstance(pix, dict):
+        ac = pix.get("artifactIngestCorrelation_v1")
+        if isinstance(ac, dict):
+            dig = ac.get("ingestManifestDigestSha256")
+            if isinstance(dig, str) and len(dig) == 64:
+                target["artifactIngestManifestDigestSha256"] = dig
+            target["artifactIngestCorrelationField"] = (
+                "evidenceClosureReview_v1.pixelDiffExpectation.artifactIngestCorrelation_v1"
+            )
+            hint = ac.get("playwrightEvidenceScreenshotsRootHint")
+            if isinstance(hint, str) and hint:
+                target["playwrightEvidenceScreenshotsRootHint"] = hint
+    return target
+
+
 def _sorted_evidence_ref_models(refs: list[EvidenceRef]) -> list[EvidenceRef]:
     return sorted(
         refs,
@@ -383,12 +411,11 @@ def agent_review_actions_v1(
                         {"blockerCodes": blockers},
                     ),
                     "kind": "remediateEvidenceDiffIngest",
-                    "target": {
-                        "needsFixLoop": True,
-                        "blockerCodes": blockers,
-                        "evidenceClosureReviewField": "evidenceClosureReview_v1",
-                        "evidenceDiffIngestFixLoopField": "evidenceDiffIngestFixLoop_v1",
-                    },
+                    "target": _remediate_evidence_diff_ingest_target(
+                        evidence_closure_review,
+                        needs_fix_loop=True,
+                        blockers=blockers,
+                    ),
                     "guidance": (
                         "Evidence closure needs follow-up: re-fetch evidence-package after model changes; "
                         "repair correlation digests or missing Playwright PNG filename slots in "

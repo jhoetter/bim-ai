@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+
 import { expect, test, type Page } from '@playwright/test';
 
 /** Visual baselines for Revit-parity Phase A evidence (sheet + schedules + split plan / 3D regions). */
@@ -36,6 +38,24 @@ const MOCK_CLOSURE_DETERMINISTIC_PNG_BASENAMES = [
   MOCK_SHEET_FULL_PNG_FROM_MANIFEST,
   MOCK_SHEET_VIEWPORT_PNG_FROM_MANIFEST,
 ].sort();
+
+/** Canonical ingest pairs (sorted like `artifact_ingest_correlation_v1` in `evidence_manifest.py`). */
+const MOCK_INGEST_PAIRS_SORTED = MOCK_CLOSURE_DETERMINISTIC_PNG_BASENAMES.filter((bn) =>
+  bn.endsWith('.png'),
+)
+  .map((bn) => ({
+    baselinePngBasename: bn,
+    expectedDiffBasename: `${bn.replace(/\.png$/, '')}-diff.png`,
+  }))
+  .sort(
+    (a, b) =>
+      a.baselinePngBasename.localeCompare(b.baselinePngBasename) ||
+      a.expectedDiffBasename.localeCompare(b.expectedDiffBasename),
+  );
+
+const MOCK_ARTIFACT_INGEST_DIGEST = createHash('sha256')
+  .update(JSON.stringify(MOCK_INGEST_PAIRS_SORTED))
+  .digest('hex');
 
 async function sharedRoutes(page: Page, layoutPreset: string) {
   await page.addInitScript((preset: string) => {
@@ -511,10 +531,16 @@ async function sharedRoutes(page: Page, layoutPreset: string) {
               notes: 'Pixel diff execution stays client-side (Playwright snapshots / pixelmatch).',
               ingestChecklist_v1: {
                 format: 'pixelDiffIngestChecklist_v1',
-                targets: MOCK_CLOSURE_DETERMINISTIC_PNG_BASENAMES.map((bn) => ({
-                  baselinePngBasename: bn,
-                  expectedDiffBasename: `${bn.replace(/\.png$/, '')}-diff.png`,
-                })),
+                targets: MOCK_INGEST_PAIRS_SORTED,
+              },
+              artifactIngestCorrelation_v1: {
+                format: 'artifactIngestCorrelation_v1',
+                canonicalPairCount: MOCK_INGEST_PAIRS_SORTED.length,
+                ingestManifestDigestSha256: MOCK_ARTIFACT_INGEST_DIGEST,
+                playwrightEvidenceScreenshotsRootHint:
+                  'packages/web/e2e/__screenshots__/evidence-baselines/evidence-baselines.spec.ts/',
+                notes:
+                  'mock artifactIngestCorrelation_v1 — deterministic digest over ingest checklist pairs',
               },
             },
           },
@@ -526,6 +552,7 @@ async function sharedRoutes(page: Page, layoutPreset: string) {
             correlationFullyConsistent: true,
             screenshotHintGapRowCount: 0,
             pixelDiffIngestTargetCount: MOCK_CLOSURE_DETERMINISTIC_PNG_BASENAMES.length,
+            artifactIngestManifestDigestSha256: MOCK_ARTIFACT_INGEST_DIGEST,
           },
           evidenceDiffIngestFixLoop_v1: {
             format: 'evidence_diff_ingest_fix_loop_v1',
@@ -734,6 +761,14 @@ test.describe('evidence PNG baselines', () => {
     const gapRows = shotGaps?.gaps as unknown[] | undefined;
     expect(life?.screenshotHintGapRowCount).toBe(gapRows?.length);
     expect(life?.correlationFullyConsistent).toBe(true);
+    expect(life?.artifactIngestManifestDigestSha256).toBe(MOCK_ARTIFACT_INGEST_DIGEST);
+    const ac = pix?.artifactIngestCorrelation_v1 as Record<string, unknown> | undefined;
+    expect(ac?.format).toBe('artifactIngestCorrelation_v1');
+    expect(ac?.canonicalPairCount).toBe(MOCK_INGEST_PAIRS_SORTED.length);
+    expect(ac?.ingestManifestDigestSha256).toBe(MOCK_ARTIFACT_INGEST_DIGEST);
+    expect(ac?.playwrightEvidenceScreenshotsRootHint).toBe(
+      'packages/web/e2e/__screenshots__/evidence-baselines/evidence-baselines.spec.ts/',
+    );
     const fixLoop = pkg.evidenceDiffIngestFixLoop_v1 as Record<string, unknown> | undefined;
     expect(fixLoop?.format).toBe('evidence_diff_ingest_fix_loop_v1');
     expect(fixLoop?.needsFixLoop).toBe(false);

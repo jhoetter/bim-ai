@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from bim_ai.evidence_manifest import (
+    artifact_ingest_correlation_v1,
     evidence_closure_review_v1,
     evidence_diff_ingest_fix_loop_v1,
     evidence_lifecycle_signal_v1,
@@ -58,6 +59,13 @@ def test_evidence_closure_review_inventory_lists_sorted_png_basenames() -> None:
     assert ingest["format"] == "pixelDiffIngestChecklist_v1"
     assert len(ingest["targets"]) == 4
     assert ingest["targets"][0]["expectedDiffBasename"].endswith("-diff.png")
+    ac = out["pixelDiffExpectation"]["artifactIngestCorrelation_v1"]
+    assert isinstance(ac, dict)
+    assert ac["format"] == "artifactIngestCorrelation_v1"
+    assert ac["canonicalPairCount"] == len(ingest["targets"])
+    dig = ac["ingestManifestDigestSha256"]
+    assert isinstance(dig, str) and len(dig) == 64
+    assert dig == artifact_ingest_correlation_v1(list(ingest["targets"]))["ingestManifestDigestSha256"]
     gaps = out["screenshotHintGaps_v1"]
     assert gaps["format"] == "screenshotHintGaps_v1"
     assert gaps["hasGaps"] is False
@@ -153,6 +161,11 @@ def test_evidence_lifecycle_signal_v1_matches_closure_review() -> None:
     ingest = pix["ingestChecklist_v1"]
     targets = ingest["targets"]
     assert sig["pixelDiffIngestTargetCount"] == len(targets)
+    corr_ac = pix["artifactIngestCorrelation_v1"]
+    assert isinstance(corr_ac, dict)
+    corr_dig = corr_ac["ingestManifestDigestSha256"]
+    assert isinstance(corr_dig, str) and len(corr_dig) == 64
+    assert sig["artifactIngestManifestDigestSha256"] == corr_dig
 
     stale_pkg = "f" * 64
     stale_closure = evidence_closure_review_v1(

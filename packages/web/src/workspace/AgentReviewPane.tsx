@@ -86,6 +86,10 @@ export function AgentReviewPane() {
       pixelDiffSuffix: string | null;
       pixelDiffThresholdEnforcement: string | null;
       pixelMismatchRatioFailAbove: number | null;
+      artifactIngestDigestSha256Tail: string | null;
+      artifactIngestDigestSha256Full: string | null;
+      artifactIngestScreenshotsRootHint: string | null;
+      artifactIngestCanonicalPairCount: number | null;
     } | null;
     lifecycleSignal: Record<string, unknown> | null;
     agentFollowThrough: Record<string, unknown> | null;
@@ -278,6 +282,10 @@ export function AgentReviewPane() {
         let pixelDiffSuffix: string | null = null;
         let pixelDiffThresholdEnforcement: string | null = null;
         let pixelMismatchRatioFailAbove: number | null = null;
+        let artifactIngestDigestSha256Tail: string | null = null;
+        let artifactIngestDigestSha256Full: string | null = null;
+        let artifactIngestScreenshotsRootHint: string | null = null;
+        let artifactIngestCanonicalPairCount: number | null = null;
         if (pixRaw && typeof pixRaw === 'object') {
           const p = pixRaw as Record<string, unknown>;
           pixelDiffStatus = typeof p.status === 'string' ? p.status : null;
@@ -291,6 +299,23 @@ export function AgentReviewPane() {
             const r = t.mismatchPixelRatioFailAbove;
             if (typeof r === 'number' && Number.isFinite(r)) {
               pixelMismatchRatioFailAbove = r;
+            }
+          }
+          const acRaw = p.artifactIngestCorrelation_v1;
+          if (acRaw && typeof acRaw === 'object') {
+            const ac = acRaw as Record<string, unknown>;
+            const dig = ac.ingestManifestDigestSha256;
+            if (typeof dig === 'string' && /^[a-f0-9]{64}$/.test(dig)) {
+              artifactIngestDigestSha256Full = dig;
+              artifactIngestDigestSha256Tail = dig.length >= 12 ? dig.slice(-12) : dig;
+            }
+            const root = ac.playwrightEvidenceScreenshotsRootHint;
+            if (typeof root === 'string' && root) {
+              artifactIngestScreenshotsRootHint = root;
+            }
+            const pc = ac.canonicalPairCount;
+            if (typeof pc === 'number' && Number.isFinite(pc)) {
+              artifactIngestCanonicalPairCount = pc;
             }
           }
         }
@@ -309,6 +334,10 @@ export function AgentReviewPane() {
           pixelDiffSuffix,
           pixelDiffThresholdEnforcement,
           pixelMismatchRatioFailAbove,
+          artifactIngestDigestSha256Tail,
+          artifactIngestDigestSha256Full,
+          artifactIngestScreenshotsRootHint,
+          artifactIngestCanonicalPairCount,
         };
 
         const sgRaw = e.screenshotHintGaps_v1;
@@ -1217,6 +1246,46 @@ export function AgentReviewPane() {
                   ) : null}
                 </p>
               ) : null}
+              {evidenceArtifactSummary.closureReview.artifactIngestDigestSha256Full ? (
+                <div
+                  data-testid="artifact-ingest-correlation-callout"
+                  className="mt-2 rounded border border-border/40 bg-muted/10 p-2"
+                >
+                  <div className="text-[10px] font-semibold text-muted">
+                    Artifact ingest correlation (
+                    <code className="text-[10px]">artifactIngestCorrelation_v1</code>)
+                  </div>
+                  <p className="mt-1 text-[10px] text-muted">
+                    ingestManifestDigestSha256:{' '}
+                    <code className="font-mono text-[10px]">
+                      {evidenceArtifactSummary.closureReview.artifactIngestDigestSha256Full.slice(
+                        0,
+                        12,
+                      )}
+                      …{evidenceArtifactSummary.closureReview.artifactIngestDigestSha256Tail}
+                    </code>
+                  </p>
+                  {evidenceArtifactSummary.closureReview.artifactIngestCanonicalPairCount !==
+                  null ? (
+                    <p className="mt-0.5 text-[10px] text-muted">
+                      canonicalPairCount:{' '}
+                      <code className="font-mono text-[10px]">
+                        {String(
+                          evidenceArtifactSummary.closureReview.artifactIngestCanonicalPairCount,
+                        )}
+                      </code>
+                    </p>
+                  ) : null}
+                  {evidenceArtifactSummary.closureReview.artifactIngestScreenshotsRootHint ? (
+                    <p className="mt-0.5 text-[10px] text-muted">
+                      Playwright screenshots root hint:{' '}
+                      <code className="text-[9px]">
+                        {evidenceArtifactSummary.closureReview.artifactIngestScreenshotsRootHint}
+                      </code>
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
           ) : null}
           {evidenceArtifactSummary.lifecycleSignal ? (
@@ -1273,6 +1342,22 @@ export function AgentReviewPane() {
                     )}
                   </code>
                 </li>
+                {typeof evidenceArtifactSummary.lifecycleSignal
+                  .artifactIngestManifestDigestSha256 === 'string' ? (
+                  <li data-testid="lifecycle-artifact-ingest-digest-row">
+                    artifactIngestManifestDigestSha256:{' '}
+                    <code className="font-mono">
+                      {String(
+                        evidenceArtifactSummary.lifecycleSignal.artifactIngestManifestDigestSha256,
+                      ).length >= 24
+                        ? `${String(evidenceArtifactSummary.lifecycleSignal.artifactIngestManifestDigestSha256).slice(0, 12)}…${String(evidenceArtifactSummary.lifecycleSignal.artifactIngestManifestDigestSha256).slice(-12)}`
+                        : String(
+                            evidenceArtifactSummary.lifecycleSignal
+                              .artifactIngestManifestDigestSha256,
+                          )}
+                    </code>
+                  </li>
+                ) : null}
               </ul>
             </div>
           ) : null}

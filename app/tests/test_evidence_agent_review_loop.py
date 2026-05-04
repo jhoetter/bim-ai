@@ -238,4 +238,13 @@ def test_agent_review_actions_v1_adds_remediate_when_closure_needs_fix_loop() ->
     )
     remediate = [a for a in out["actions"] if a["kind"] == "remediateEvidenceDiffIngest"]
     assert len(remediate) == 1
-    assert remediate[0]["target"]["blockerCodes"] == ["correlation_digest_stale_or_missing"]
+    tgt = remediate[0]["target"]
+    assert tgt["blockerCodes"] == ["correlation_digest_stale_or_missing"]
+    pix = closure["pixelDiffExpectation"]
+    ac = pix["artifactIngestCorrelation_v1"]
+    assert isinstance(ac, dict)
+    assert tgt["artifactIngestManifestDigestSha256"] == ac["ingestManifestDigestSha256"]
+    assert tgt["artifactIngestCorrelationField"] == (
+        "evidenceClosureReview_v1.pixelDiffExpectation.artifactIngestCorrelation_v1"
+    )
+    assert tgt["playwrightEvidenceScreenshotsRootHint"] == ac["playwrightEvidenceScreenshotsRootHint"]
