@@ -627,6 +627,23 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
     const vrb = raw.viewRangeBottomMm ?? raw.view_range_bottom_mm;
     const vrt = raw.viewRangeTopMm ?? raw.view_range_top_mm;
     const cpo = raw.cutPlaneOffsetMm ?? raw.cut_plane_offset_mm;
+    const pdlRaw = raw.planDetailLevel ?? raw.plan_detail_level;
+    const planDetailLevel =
+      pdlRaw === 'coarse' || pdlRaw === 'fine' || pdlRaw === 'medium' ? pdlRaw : undefined;
+    const pfoRaw = raw.planRoomFillOpacityScale ?? raw.plan_room_fill_opacity_scale;
+    let planRoomFillOpacityScale: number | undefined;
+    if (
+      pfoRaw !== null &&
+      pfoRaw !== undefined &&
+      pfoRaw !== '' &&
+      typeof pfoRaw === 'number' &&
+      Number.isFinite(pfoRaw)
+    ) {
+      planRoomFillOpacityScale = Math.max(0, Math.min(1, pfoRaw));
+    } else if (typeof pfoRaw === 'string' && pfoRaw.trim() !== '') {
+      const n = Number(pfoRaw);
+      if (Number.isFinite(n)) planRoomFillOpacityScale = Math.max(0, Math.min(1, n));
+    }
     return {
       kind: 'plan_view',
       id,
@@ -647,6 +664,8 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
       cutPlaneOffsetMm:
         typeof cpo === 'number' ? cpo : typeof cpo === 'string' ? Number(cpo) || null : null,
       categoriesHidden,
+      ...(planDetailLevel !== undefined ? { planDetailLevel } : {}),
+      ...(planRoomFillOpacityScale !== undefined ? { planRoomFillOpacityScale } : {}),
     };
   }
 
@@ -661,6 +680,17 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
     const hiddenCategories = Array.isArray(hcRaw)
       ? hcRaw.filter((x): x is string => typeof x === 'string')
       : [];
+    const pdlT = raw.planDetailLevel ?? raw.plan_detail_level;
+    const planDetailLevel =
+      pdlT === 'coarse' || pdlT === 'fine' || pdlT === 'medium' ? pdlT : undefined;
+    const pfoT = raw.planRoomFillOpacityScale ?? raw.plan_room_fill_opacity_scale;
+    let planRoomFillOpacityScale: number | undefined;
+    if (typeof pfoT === 'number' && Number.isFinite(pfoT)) {
+      planRoomFillOpacityScale = Math.max(0, Math.min(1, pfoT));
+    } else if (typeof pfoT === 'string' && pfoT.trim() !== '') {
+      const n = Number(pfoT);
+      if (Number.isFinite(n)) planRoomFillOpacityScale = Math.max(0, Math.min(1, n));
+    }
     return {
       kind: 'view_template',
       id,
@@ -668,6 +698,8 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
       scale,
       disciplinesVisible: disciplinesVisible.length ? disciplinesVisible : undefined,
       hiddenCategories: hiddenCategories.length ? hiddenCategories : undefined,
+      ...(planDetailLevel !== undefined ? { planDetailLevel } : {}),
+      ...(planRoomFillOpacityScale !== undefined ? { planRoomFillOpacityScale } : {}),
     };
   }
 

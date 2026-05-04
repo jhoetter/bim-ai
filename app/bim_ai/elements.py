@@ -29,6 +29,7 @@ class CameraMm(BaseModel):
 
 WallLayerFunction = Literal["structure", "insulation", "finish"]
 WallBasisLine = Literal["center", "face_interior", "face_exterior"]
+PlanDetailLevelPlan = Literal["coarse", "medium", "fine"]
 
 
 class ProjectSettingsElem(BaseModel):
@@ -328,6 +329,8 @@ class PlanViewElem(BaseModel):
     view_range_top_mm: float | None = Field(default=None, alias="viewRangeTopMm")
     cut_plane_offset_mm: float | None = Field(default=None, alias="cutPlaneOffsetMm")
     categories_hidden: list[str] = Field(default_factory=list, alias="categoriesHidden")
+    plan_detail_level: PlanDetailLevelPlan | None = Field(default=None, alias="planDetailLevel")
+    plan_room_fill_opacity_scale: float | None = Field(default=None, alias="planRoomFillOpacityScale")
 
 
 class ViewTemplateElem(BaseModel):
@@ -338,9 +341,12 @@ class ViewTemplateElem(BaseModel):
     scale: Literal["scale_50", "scale_100", "scale_200"] = Field(default="scale_100", alias="scale")
     disciplines_visible: list[str] = Field(default_factory=list, alias="disciplinesVisible")
     hidden_categories: list[str] = Field(default_factory=list, alias="hiddenCategories")
-    plan_detail_level: Literal["coarse", "medium", "fine"] | None = Field(
-        default=None,
-        alias="planDetailLevel",
+    plan_detail_level: PlanDetailLevelPlan | None = Field(default=None, alias="planDetailLevel")
+    plan_room_fill_opacity_scale: float = Field(
+        default=1.0,
+        ge=0.0,
+        le=1.0,
+        alias="planRoomFillOpacityScale",
     )
 
 

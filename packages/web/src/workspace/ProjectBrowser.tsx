@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import type { Element } from '@bim-ai/core';
 
 import { Btn } from '@bim-ai/ui';
@@ -32,9 +33,28 @@ export function ProjectBrowser(props: {
   const applyOrbitViewpointPreset = useBimStore((s) => s.applyOrbitViewpointPreset);
   const setOrbitCameraFromViewpointMm = useBimStore((s) => s.setOrbitCameraFromViewpointMm);
 
-  const planViews = Object.values(props.elementsById)
-    .filter((e): e is Extract<Element, { kind: 'plan_view' }> => e.kind === 'plan_view')
-    .sort((a, b) => a.name.localeCompare(b.name));
+  const { planViewsSorted, planViewBuckets, bucketKeys } = useMemo(() => {
+    const sorted = Object.values(props.elementsById)
+      .filter((e): e is Extract<Element, { kind: 'plan_view' }> => e.kind === 'plan_view')
+      .sort((a, b) => a.name.localeCompare(b.name));
+    const buckets = new Map<string, Extract<Element, { kind: 'plan_view' }>[]>();
+    for (const pv of sorted) {
+      const k = pv.viewTemplateId ?? 'none';
+      const arr = buckets.get(k) ?? [];
+      arr.push(pv);
+      buckets.set(k, arr);
+    }
+    const keys = [...buckets.keys()].sort();
+    return { planViewsSorted: sorted, planViewBuckets: buckets, bucketKeys: keys };
+  }, [props.elementsById]);
+
+  const showPlanTemplateBuckets = bucketKeys.length >= 2;
+
+  const templateBucketLabel = (tid: string) => {
+    if (tid === 'none') return 'No template';
+    const t = props.elementsById[tid];
+    return t?.kind === 'view_template' ? t.name : tid;
+  };
 
   const viewpoints3d = Object.values(props.elementsById)
     .filter(
@@ -63,7 +83,7 @@ export function ProjectBrowser(props: {
     .sort((a, b) => a.name.localeCompare(b.name));
 
   const hasAnyDoc =
-    planViews.length > 0 ||
+    planViewsSorted.length > 0 ||
     viewpoints3d.length > 0 ||
     viewpointsPlan.length > 0 ||
     sectionCuts.length > 0 ||
@@ -84,6 +104,10 @@ export function ProjectBrowser(props: {
       discipline: pv.discipline ?? 'architecture',
     };
     if (pv.viewTemplateId) cmd.viewTemplateId = pv.viewTemplateId;
+    if (pv.planDetailLevel) cmd.planDetailLevel = pv.planDetailLevel;
+    if (pv.planRoomFillOpacityScale != null && Number.isFinite(pv.planRoomFillOpacityScale)) {
+      cmd.planRoomFillOpacityScale = pv.planRoomFillOpacityScale;
+    }
     if (pv.underlayLevelId) cmd.underlayLevelId = pv.underlayLevelId;
     if (pv.phaseId) cmd.phaseId = pv.phaseId;
     if (pv.categoriesHidden?.length) cmd.categoriesHidden = [...pv.categoriesHidden];
@@ -156,34 +180,45 @@ export function ProjectBrowser(props: {
   return (
     <div className="space-y-2 text-[11px]">
       <div className="font-semibold text-muted">Project browser</div>
-      {planViews.length ? (
+      {planViewsSorted.length ? (
         <div className="space-y-1">
           <div className="text-[10px] uppercase tracking-wide text-muted">Floor plans</div>
-          <ul className="space-y-0.5">
-            {planViews.map((pv) => (
-              <li key={pv.id} className="flex flex-col gap-0.5">
-                <Btn
-                  type="button"
-                  variant="quiet"
-                  className="w-full px-2 py-0.5 text-left text-[10px]"
-                  title={planViewTooltip(pv)}
-                  onClick={() => activatePlanView(pv.id)}
-                >
-                  plan_view · {pv.name}
-                </Btn>
-                {props.onUpsertSemantic ? (
-                  <button
-                    type="button"
-                    className="pl-2 text-left text-[9px] text-muted underline"
-                    title="Creates a duplicated plan_view with the same pinned settings"
-                    onClick={() => dupPlanView(pv)}
-                  >
-                    Duplicate…
-                  </button>
+          <div className="space-y-0.5">
+            {bucketKeys.map((tid) => (
+              <div key={tid} className="space-y-0.5">
+                {showPlanTemplateBuckets ? (
+                  <div className="pl-2 pt-1 text-[9px] font-semibold uppercase tracking-wide text-muted">
+                    {templateBucketLabel(tid)}
+                  </div>
                 ) : null}
-              </li>
+                <ul className="space-y-0.5">
+                  {(planViewBuckets.get(tid) ?? []).map((pv) => (
+                    <li key={pv.id} className="flex flex-col gap-0.5">
+                      <Btn
+                        type="button"
+                        variant="quiet"
+                        className="w-full px-2 py-0.5 text-left text-[10px]"
+                        title={planViewTooltip(pv)}
+                        onClick={() => activatePlanView(pv.id)}
+                      >
+                        plan_view · {pv.name}
+                      </Btn>
+                      {props.onUpsertSemantic ? (
+                        <button
+                          type="button"
+                          className="pl-2 text-left text-[9px] text-muted underline"
+                          title="Creates a duplicated plan_view with the same pinned settings"
+                          onClick={() => dupPlanView(pv)}
+                        >
+                          Duplicate…
+                        </button>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ))}
-          </ul>
+          </div>
         </div>
       ) : null}
 

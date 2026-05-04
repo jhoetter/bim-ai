@@ -54,6 +54,51 @@ def _canon_hidden_category(label: str) -> str | None:
     return table.get(raw)
 
 
+_PLAN_DETAIL_LINE_WEIGHT_FACTOR: dict[str, float] = {
+    "coarse": 0.88,
+    "medium": 1.0,
+    "fine": 1.14,
+}
+
+
+def _presentation_line_weight_base(presentation: str) -> float:
+    if presentation == "opening_focus":
+        return 1.18
+    if presentation == "room_scheme":
+        return 0.92
+    return 1.0
+
+
+def _plan_graphic_hints_for_pinned_view(doc: Document, pv: PlanViewElem) -> dict[str, Any]:
+    tmpl: ViewTemplateElem | None = None
+    if pv.view_template_id:
+        te = doc.elements.get(pv.view_template_id)
+        if isinstance(te, ViewTemplateElem):
+            tmpl = te
+    if pv.plan_detail_level is not None:
+        detail = str(pv.plan_detail_level)
+    else:
+        td = tmpl.plan_detail_level if tmpl is not None else None
+        detail = str(td) if td else "medium"
+    if detail not in _PLAN_DETAIL_LINE_WEIGHT_FACTOR:
+        detail = "medium"
+    if pv.plan_room_fill_opacity_scale is not None:
+        fill = float(pv.plan_room_fill_opacity_scale)
+    elif tmpl is not None:
+        fill = float(tmpl.plan_room_fill_opacity_scale)
+    else:
+        fill = 1.0
+    fill = max(0.0, min(1.0, fill))
+    pres_raw = getattr(pv, "plan_presentation", None) or "default"
+    pres = pres_raw if pres_raw in {"opening_focus", "room_scheme"} else "default"
+    lw = _presentation_line_weight_base(pres) * _PLAN_DETAIL_LINE_WEIGHT_FACTOR[detail]
+    return {
+        "detailLevel": detail,
+        "lineWeightScale": round(float(lw), 4),
+        "roomFillOpacityScale": round(float(fill), 4),
+    }
+
+
 def _hosted_xy_mm_on_wall(opening: DoorElem | WindowElem, wall: WallElem) -> tuple[float, float]:
     sx, sy = wall.start.x_mm, wall.start.y_mm
     dx = wall.end.x_mm - sx
@@ -140,7 +185,7 @@ def _build_plan_primitive_lists(
     level: str | None,
     hidden_semantic: set[str],
     pinned_pv_el: PlanViewElem | None,
-    plan_detail_level: str | None,
+    line_weight_hint: float = 1.0,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     """2D primitives for deterministic server-side plan previews."""
 
@@ -168,18 +213,6 @@ def _build_plan_primitive_lists(
                     "message": "View range / cut-plane overrides are authored but vertical cut extents are not applied to 2D primitives.",
                 }
             )
-
-    line_weight_hint = 1.0
-    if plan_detail_level == "fine":
-        line_weight_hint = 1.15
-    elif plan_detail_level == "coarse":
-        line_weight_hint = 0.85
-    elif pinned_pv_el is not None:
-        pres = pinned_pv_el.plan_presentation
-        if pres == "opening_focus":
-            line_weight_hint = 1.18
-        elif pres == "room_scheme":
-            line_weight_hint = 0.92
 
     walls: list[dict[str, Any]] = []
     floors: list[dict[str, Any]] = []
@@ -448,7 +481,6 @@ def resolve_plan_projection_wire(
     presentation = global_plan_presentation
     pinned_pv: str | None = None
     pinned_pv_elem: PlanViewElem | None = None
-    plan_detail_level_resolved: str | None = None
 
     if plan_view_id:
         pv_el = doc.elements.get(plan_view_id)
@@ -469,8 +501,6 @@ def resolve_plan_projection_wire(
                         k = _canon_hidden_category(str(lab))
                         if k:
                             hidden_semantic.add(k)
-                    dlev = tmpl.plan_detail_level
-                    plan_detail_level_resolved = str(dlev) if dlev else None
 
             pres_raw = getattr(pv_el, "plan_presentation", None) or "default"
             if pres_raw in {"opening_focus", "room_scheme"}:
@@ -527,12 +557,18 @@ def resolve_plan_projection_wire(
             if not level or e.level_id == level:
                 bump("dimension")
 
+    plan_graphic_hints: dict[str, Any] | None = None
+    line_weight_scale = 1.0
+    if pinned_pv_elem is not None:
+        plan_graphic_hints = _plan_graphic_hints_for_pinned_view(doc, pinned_pv_elem)
+        line_weight_scale = float(plan_graphic_hints["lineWeightScale"])
+
     prim, prim_warn = _build_plan_primitive_lists(
         doc,
         level=active_level,
         hidden_semantic=hidden_semantic,
         pinned_pv_el=pinned_pv_elem,
-        plan_detail_level=plan_detail_level_resolved,
+        line_weight_hint=line_weight_scale,
     )
     all_warnings = list(prim_warn)
     legend = _room_color_legend_payload(doc, level=active_level, hidden_semantic=hidden_semantic)
@@ -549,8 +585,8 @@ def resolve_plan_projection_wire(
         "primitives": prim,
         "roomColorLegend": legend,
     }
-    if plan_detail_level_resolved:
-        out_payload["planGraphicHints"] = {"detailLevel": plan_detail_level_resolved}
+    if plan_graphic_hints is not None:
+        out_payload["planGraphicHints"] = plan_graphic_hints
     return out_payload
 
 

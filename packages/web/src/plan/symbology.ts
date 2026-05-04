@@ -5,6 +5,7 @@ import type { Element } from '@bim-ai/core';
 import {
   coerceVec2Mm,
   isPlanProjectionPrimitivesV1,
+  type PlanGraphicHintsResolved,
   type PlanProjectionPrimitivesV1Wire,
 } from './planProjectionWire';
 import { deterministicSchemeColorHex } from './roomSchemeColor';
@@ -182,6 +183,7 @@ function rebuildPlanMeshesFromWire(
     selectedId?: string;
     presentation?: PlanPresentationPreset;
     wirePrimitives: PlanProjectionPrimitivesV1Wire;
+    roomFillOpacityScale?: number;
   },
 ): void {
   while (holder.children.length) holder.remove(holder.children[0]!);
@@ -189,6 +191,7 @@ function rebuildPlanMeshesFromWire(
   const prim = opts.wirePrimitives;
   const presentation = opts.presentation ?? 'default';
   const selectedId = opts.selectedId;
+  const roomFillOpacityScale = opts.roomFillOpacityScale ?? 1;
 
   const wallsRaw = Array.isArray(prim.walls) ? (prim.walls as Record<string, unknown>[]) : [];
   const wallsByWireId = new Map<string, Extract<Element, { kind: 'wall' }>>();
@@ -234,7 +237,12 @@ function rebuildPlanMeshesFromWire(
       typeof hexRaw === 'string' && /^#[0-9a-fA-F]{6}$/.test(hexRaw.trim())
         ? hexRaw.trim()
         : undefined;
-    holder.add(roomMesh(roomEl, presentation, { schemeColorHex: schemeHex }));
+    holder.add(
+      roomMesh(roomEl, presentation, {
+        schemeColorHex: schemeHex,
+        roomFillOpacityScale,
+      }),
+    );
   }
 
   const floors = Array.isArray(prim.floors) ? (prim.floors as Record<string, unknown>[]) : [];
@@ -327,15 +335,21 @@ export function rebuildPlanMeshes(
     presentation?: PlanPresentationPreset;
     hiddenSemanticKinds?: ReadonlySet<string>;
     wirePrimitives?: PlanProjectionPrimitivesV1Wire | null;
+    planGraphicHints?: PlanGraphicHintsResolved | null;
   },
 ): void {
   while (holder.children.length) holder.remove(holder.children[0]!);
+
+  const gh = opts.planGraphicHints;
+  const roomFillOpacityScale = gh?.roomFillOpacityScale ?? 1;
+  const lineWeightScale = gh?.lineWeightScale ?? 1;
 
   if (opts.wirePrimitives && isPlanProjectionPrimitivesV1(opts.wirePrimitives)) {
     rebuildPlanMeshesFromWire(holder, elementsById, {
       selectedId: opts.selectedId,
       presentation: opts.presentation,
       wirePrimitives: opts.wirePrimitives,
+      roomFillOpacityScale,
     });
     return;
   }
@@ -369,7 +383,7 @@ export function rebuildPlanMeshes(
 
     if (level && r.levelId !== level) continue;
 
-    holder.add(roomMesh(r, presentation));
+    holder.add(roomMesh(r, presentation, { roomFillOpacityScale }));
   }
 
   for (const f of Object.values(elementsById)) {
@@ -390,7 +404,7 @@ export function rebuildPlanMeshes(
     holder.add(horizontalOutlineMesh(rf.footprintMm, PLAN_Y + 0.004, '#f97316', 0.2, rf.id));
   }
 
-  for (const wall of walls) holder.add(planWallMesh(wall, opts.selectedId));
+  for (const wall of walls) holder.add(planWallMesh(wall, opts.selectedId, lineWeightScale));
 
   for (const d of Object.values(elementsById)) {
     if (d.kind !== 'door') continue;
@@ -433,7 +447,11 @@ export function rebuildPlanMeshes(
   }
 }
 
-function planWallMesh(wall: Extract<Element, { kind: 'wall' }>, selectedId?: string): THREE.Mesh {
+function planWallMesh(
+  wall: Extract<Element, { kind: 'wall' }>,
+  selectedId?: string,
+  lineWeightScale = 1,
+): THREE.Mesh {
   const { lenM: len, nx, nz } = segmentDir(wall);
 
   const sx = ux(wall.start.xMm);
@@ -442,7 +460,7 @@ function planWallMesh(wall: Extract<Element, { kind: 'wall' }>, selectedId?: str
 
   const angle = Math.atan2(nz, nx);
 
-  const thick = THREE.MathUtils.clamp(wall.thicknessMm / 1000, 0.02, 1.8);
+  const thick = THREE.MathUtils.clamp((wall.thicknessMm * lineWeightScale) / 1000, 0.02, 1.8);
 
   const geom = new THREE.BoxGeometry(len, PLAN_WALL_CENTER_SLICE_HEIGHT_M, thick);
 
@@ -721,7 +739,7 @@ function stairPlanThree(stair: Extract<Element, { kind: 'stair' }>): THREE.Group
 function roomMesh(
   room: Extract<Element, { kind: 'room' }>,
   presentation?: PlanPresentationPreset,
-  opts?: { schemeColorHex?: string },
+  opts?: { schemeColorHex?: string; roomFillOpacityScale?: number },
 ): THREE.Mesh {
   const scheme = presentation ?? 'default';
 
@@ -768,6 +786,8 @@ function roomMesh(
             color: '#3b82f6',
           };
 
+  const scale = opts?.roomFillOpacityScale ?? 1;
+
   const mesh = new THREE.Mesh(
     geo,
 
@@ -776,7 +796,7 @@ function roomMesh(
 
       transparent: true,
 
-      opacity: fill.opacity,
+      opacity: THREE.MathUtils.clamp(fill.opacity * scale, 0, 1),
 
       depthWrite: false,
     }),

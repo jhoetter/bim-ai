@@ -6,11 +6,12 @@ import { useBimStore } from '../state/store';
 import { collectWallAnchors, snapPlanPoint } from './snapEngine';
 import {
   buildPlanProjectionQuery,
+  extractPlanGraphicHints,
   extractPlanPrimitives,
   extractRoomColorLegend,
   fetchPlanProjectionWire,
 } from './planProjectionWire';
-import { resolvePlanViewDisplay } from './planProjection';
+import { resolvePlanGraphicHints, resolvePlanViewDisplay } from './planProjection';
 import { rebuildPlanMeshes } from './symbology';
 
 const SLICE_Y = 0.02;
@@ -117,6 +118,9 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
       functionLabel?: string;
     }>
   >([]);
+  const [wireGraphicHints, setWireGraphicHints] = useState<ReturnType<
+    typeof extractPlanGraphicHints
+  > | null>(null);
 
   const elementsById = useBimStore((s) => s.elementsById);
   const selectedId = useBimStore((s) => s.selectedId);
@@ -141,6 +145,11 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
     [elementsById, activePlanViewId, activeLevelResolvedId, planPresentation],
   );
 
+  const mergedGraphicHints = useMemo(() => {
+    if (wireGraphicHints) return wireGraphicHints;
+    return resolvePlanGraphicHints(elementsById, activePlanViewId);
+  }, [wireGraphicHints, elementsById, activePlanViewId]);
+
   const hiddenKey = useMemo(
     () => [...display.hiddenSemanticKinds].sort().join('|'),
     [display.hiddenSemanticKinds],
@@ -160,6 +169,7 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
         if (cancel) return;
         setPlanProjectionPrimitives(null);
         setRoomColorLegend([]);
+        setWireGraphicHints(null);
       });
       return () => {
         cancel = true;
@@ -176,9 +186,11 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
         if (cancel) return;
         setPlanProjectionPrimitives(extractPlanPrimitives(payload));
         setRoomColorLegend(extractRoomColorLegend(payload));
+        setWireGraphicHints(extractPlanGraphicHints(payload));
       } catch {
         if (!cancel) setPlanProjectionPrimitives(null);
         if (!cancel) setRoomColorLegend([]);
+        if (!cancel) setWireGraphicHints(null);
       }
     })();
     return () => {
@@ -261,6 +273,7 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
       presentation: display.presentation,
       hiddenSemanticKinds: display.hiddenSemanticKinds,
       wirePrimitives,
+      planGraphicHints: mergedGraphicHints,
     });
     for (let i = grp.children.length - 1; i >= 0; i--) {
       const ch = grp.children[i]!;
@@ -282,6 +295,7 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
     grid.userData.draftingGrid = true;
     grp.add(grid);
   }, [
+    mergedGraphicHints,
     display.presentation,
     display.hiddenSemanticKinds,
     displayLevelId,

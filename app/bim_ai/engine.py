@@ -71,6 +71,7 @@ from bim_ai.elements import (
     IssueElem,
     JoinGeometryElem,
     LevelElem,
+    PlanDetailLevelPlan,
     PlanRegionElem,
     PlanViewElem,
     ProjectSettingsElem,
@@ -100,6 +101,36 @@ element_adapter = TypeAdapter(Element)
 
 def new_id() -> str:
     return str(uuid.uuid4())
+
+
+def _clamp_unit_interval(x: float | None, default: float = 1.0) -> float:
+    if x is None:
+        return default
+    return max(0.0, min(1.0, float(x)))
+
+
+def _plan_detail_default_medium(raw: str | None) -> PlanDetailLevelPlan:
+    if raw == "coarse":
+        return "coarse"
+    if raw == "fine":
+        return "fine"
+    if raw == "medium":
+        return "medium"
+    return "medium"
+
+
+def _optional_plan_detail_override(raw: str | None) -> PlanDetailLevelPlan | None:
+    if raw is None:
+        return None
+    if raw not in {"coarse", "medium", "fine"}:
+        raise ValueError("planDetailLevel must be coarse|medium|fine")
+    return cast(PlanDetailLevelPlan, raw)
+
+
+def _optional_room_fill_scale(raw: float | None) -> float | None:
+    if raw is None:
+        return None
+    return max(0.0, min(1.0, float(raw)))
 
 
 def _stripped_optional_str(val: str | None) -> str | None:
@@ -600,11 +631,25 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                     )
                 elif cmd.key == "phaseId":
                     els[cmd.element_id] = el.model_copy(update={"phase_id": raw or None})
+                elif cmd.key == "planDetailLevel":
+                    if raw == "":
+                        els[cmd.element_id] = el.model_copy(update={"plan_detail_level": None})
+                    elif raw not in {"coarse", "medium", "fine"}:
+                        raise ValueError("planDetailLevel must be coarse|medium|fine or empty")
+                    else:
+                        els[cmd.element_id] = el.model_copy(update={"plan_detail_level": raw})
+                elif cmd.key == "planRoomFillOpacityScale":
+                    if raw == "":
+                        els[cmd.element_id] = el.model_copy(update={"plan_room_fill_opacity_scale": None})
+                    else:
+                        v = max(0.0, min(1.0, float(raw)))
+                        els[cmd.element_id] = el.model_copy(update={"plan_room_fill_opacity_scale": v})
                 else:
                     raise ValueError(
                         "plan_view updates: key=planPresentation | categoriesHidden | underlayLevelId | "
                         "viewTemplateId | cropMinMm | cropMaxMm | viewRangeBottomMm | viewRangeTopMm | "
-                        "cutPlaneOffsetMm | discipline | phaseId | name"
+                        "cutPlaneOffsetMm | discipline | phaseId | planDetailLevel | planRoomFillOpacityScale | "
+                        "name"
                     )
             elif isinstance(el, ViewpointElem):
                 raw = cmd.value.strip()
@@ -656,6 +701,8 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                     "cropMinMm(plan_view JSON object) | cropMaxMm(plan_view JSON object) | "
                     "viewRangeBottomMm(plan_view) | viewRangeTopMm(plan_view) | cutPlaneOffsetMm(plan_view) | "
                     "discipline(plan_view) | phaseId(plan_view) | "
+                    "planDetailLevel(plan_view coarse|medium|fine or empty) | "
+                    "planRoomFillOpacityScale(plan_view float 0..1 or empty) | "
                     "viewerClipCapElevMm(viewpoint) | viewerClipFloorElevMm(viewpoint) | "
                     "hiddenSemanticKinds3d(viewpoint JSON array) | "
                     "familyTypeId(door/window) | materialKey(door/window) supported in v2"
@@ -941,6 +988,8 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
         case UpsertViewTemplateCmd():
             vt = cmd.id or new_id()
             scale = cmd.scale if cmd.scale in {"scale_50", "scale_100", "scale_200"} else "scale_100"
+            pdl = _plan_detail_default_medium(cmd.plan_detail_level)
+            pfo = _clamp_unit_interval(cmd.plan_room_fill_opacity_scale, 1.0)
             els[vt] = ViewTemplateElem(
                 kind="view_template",
                 id=vt,
@@ -948,6 +997,8 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 scale=scale,
                 disciplines_visible=list(cmd.disciplines_visible or []),
                 hidden_categories=list(cmd.hidden_categories or []),
+                plan_detail_level=pdl,
+                plan_room_fill_opacity_scale=pfo,
             )
 
         case UpsertSheetCmd():
@@ -1028,6 +1079,8 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 "opening_focus",
                 "room_scheme",
             } else "default"
+            pdl_override = _optional_plan_detail_override(cmd.plan_detail_level)
+            pfo_override = _optional_room_fill_scale(cmd.plan_room_fill_opacity_scale)
             els[pvid] = PlanViewElem(
                 kind="plan_view",
                 id=pvid,
@@ -1044,6 +1097,8 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 view_range_top_mm=cmd.view_range_top_mm,
                 cut_plane_offset_mm=cmd.cut_plane_offset_mm,
                 categories_hidden=list(cmd.categories_hidden or []),
+                plan_detail_level=pdl_override,
+                plan_room_fill_opacity_scale=pfo_override,
             )
 
         case CreateCalloutCmd():

@@ -6,7 +6,14 @@ import pytest
 
 from bim_ai.commands import UpdateElementPropertyCmd
 from bim_ai.document import Document
-from bim_ai.elements import CameraMm, LevelElem, PlanViewElem, Vec3Mm, ViewpointElem
+from bim_ai.elements import (
+    CameraMm,
+    LevelElem,
+    PlanViewElem,
+    Vec3Mm,
+    ViewpointElem,
+    ViewTemplateElem,
+)
 from bim_ai.engine import apply_inplace
 
 _CAM = CameraMm(
@@ -91,6 +98,51 @@ def test_plan_view_crop_range_discipline_phase() -> None:
     assert isinstance(pv2, PlanViewElem)
     assert pv2.crop_min_mm is None
     assert pv2.phase_id is None
+
+
+
+def test_plan_view_plan_detail_level_and_room_fill_scale() -> None:
+    vt = ViewTemplateElem(
+        kind="view_template",
+        id="vt",
+        name="T",
+        plan_detail_level="fine",
+        plan_room_fill_opacity_scale=0.5,
+    )
+    els = {
+        "lv": LevelElem(kind="level", id="lv", name="EG", elevationMm=0),
+        "vt": vt,
+        "pv": PlanViewElem(
+            kind="plan_view",
+            id="pv",
+            name="Test",
+            levelId="lv",
+            viewTemplateId="vt",
+        ),
+    }
+    doc = Document(revision=1, elements=els)
+    apply_inplace(doc, UpdateElementPropertyCmd(elementId="pv", key="planDetailLevel", value="coarse"))
+    pv = doc.elements["pv"]
+    assert isinstance(pv, PlanViewElem)
+    assert pv.plan_detail_level == "coarse"
+
+    apply_inplace(doc, UpdateElementPropertyCmd(elementId="pv", key="planDetailLevel", value=""))
+    pv2 = doc.elements["pv"]
+    assert isinstance(pv2, PlanViewElem)
+    assert pv2.plan_detail_level is None
+
+    apply_inplace(
+        doc,
+        UpdateElementPropertyCmd(elementId="pv", key="planRoomFillOpacityScale", value="0.25"),
+    )
+    pv3 = doc.elements["pv"]
+    assert isinstance(pv3, PlanViewElem)
+    assert pv3.plan_room_fill_opacity_scale == 0.25
+
+    apply_inplace(doc, UpdateElementPropertyCmd(elementId="pv", key="planRoomFillOpacityScale", value=""))
+    pv4 = doc.elements["pv"]
+    assert isinstance(pv4, PlanViewElem)
+    assert pv4.plan_room_fill_opacity_scale is None
 
 
 def test_plan_view_crop_json_invalid_raises() -> None:

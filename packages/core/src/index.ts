@@ -31,6 +31,9 @@ export type ElemKind =
 
 export type XY = { xMm: number; yMm: number };
 
+/** Floor-plan graphic detail preset (view template + optional plan_view override). */
+export type PlanDetailLevelPlan = 'coarse' | 'medium' | 'fine';
+
 export type XYZ = { xMm: number; yMm: number; zMm: number };
 
 export type WallLayerFunction = 'structure' | 'insulation' | 'finish';
@@ -264,6 +267,8 @@ export type Element =
       viewRangeTopMm?: number | null;
       cutPlaneOffsetMm?: number | null;
       categoriesHidden?: string[];
+      planDetailLevel?: PlanDetailLevelPlan | null;
+      planRoomFillOpacityScale?: number | null;
     }
   | {
       kind: 'view_template';
@@ -272,6 +277,8 @@ export type Element =
       scale: 'scale_50' | 'scale_100' | 'scale_200';
       disciplinesVisible?: string[];
       hiddenCategories?: string[];
+      planDetailLevel?: PlanDetailLevelPlan | null;
+      planRoomFillOpacityScale?: number;
     }
   | {
       kind: 'sheet';

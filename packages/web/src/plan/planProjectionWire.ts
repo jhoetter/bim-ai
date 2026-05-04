@@ -18,6 +18,13 @@ export type PlanProjectionWirePayload = Record<string, unknown> & {
   primitives?: PlanProjectionPrimitivesV1Wire;
 };
 
+/** Resolved template + presentation graphic multipliers (`plan_projection_wire.planGraphicHints`). */
+export type PlanGraphicHintsResolved = {
+  detailLevel: string;
+  lineWeightScale: number;
+  roomFillOpacityScale: number;
+};
+
 export type PlanRoomColorLegendRow = {
   label: string;
   schemeColorHex: string;
@@ -25,6 +32,20 @@ export type PlanRoomColorLegendRow = {
   department?: string;
   functionLabel?: string;
 };
+
+export function extractPlanGraphicHints(
+  payload: Record<string, unknown> | null | undefined,
+): PlanGraphicHintsResolved | null {
+  if (!payload || typeof payload !== 'object') return null;
+  const h = payload.planGraphicHints ?? payload.plan_graphic_hints;
+  if (!h || typeof h !== 'object') return null;
+  const o = h as Record<string, unknown>;
+  const detailLevel = typeof o.detailLevel === 'string' ? o.detailLevel : 'medium';
+  const lineWeightScale = Number(o.lineWeightScale ?? o.line_weight_scale ?? 1);
+  const roomFillOpacityScale = Number(o.roomFillOpacityScale ?? o.room_fill_opacity_scale ?? 1);
+  if (!Number.isFinite(lineWeightScale) || !Number.isFinite(roomFillOpacityScale)) return null;
+  return { detailLevel, lineWeightScale, roomFillOpacityScale };
+}
 
 export function extractRoomColorLegend(
   payload: PlanProjectionWirePayload | null | undefined,

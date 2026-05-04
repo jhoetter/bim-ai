@@ -413,6 +413,8 @@ class UpsertViewTemplateCmd(BaseModel):
     scale: str = Field(alias="scale", default="scale_100")
     disciplines_visible: list[str] = Field(default_factory=list, alias="disciplinesVisible")
     hidden_categories: list[str] = Field(default_factory=list, alias="hiddenCategories")
+    plan_detail_level: str | None = Field(default=None, alias="planDetailLevel")
+    plan_room_fill_opacity_scale: float | None = Field(default=None, alias="planRoomFillOpacityScale")
 
 
 class UpsertSheetCmd(BaseModel):
@@ -477,6 +479,8 @@ class UpsertPlanViewCmd(BaseModel):
     view_range_top_mm: float | None = Field(default=None, alias="viewRangeTopMm")
     cut_plane_offset_mm: float | None = Field(default=None, alias="cutPlaneOffsetMm")
     categories_hidden: list[str] = Field(default_factory=list, alias="categoriesHidden")
+    plan_detail_level: str | None = Field(default=None, alias="planDetailLevel")
+    plan_room_fill_opacity_scale: float | None = Field(default=None, alias="planRoomFillOpacityScale")
 
 
 class CreateCalloutCmd(BaseModel):
