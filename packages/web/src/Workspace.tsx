@@ -77,6 +77,16 @@ function parseWs(payload: Record<string, unknown>): Snapshot | null {
   };
 }
 
+const VIEWER_HIDDEN_KIND_KEYS = [
+  'wall',
+  'floor',
+  'roof',
+  'stair',
+  'door',
+  'window',
+  'room',
+] as const;
+
 function mapComments(rows: Record<string, unknown>[]) {
   return rows.map((row) => ({
     id: String(row.id ?? ''),
@@ -195,6 +205,8 @@ export function Workspace() {
   const selectEl = useBimStore((s) => s.select);
   const planPresentationPreset = useBimStore((s) => s.planPresentationPreset);
   const activatePlanView = useBimStore((s) => s.activatePlanView);
+  const activePlanViewId = useBimStore((s) => s.activePlanViewId);
+  const activeViewpointId = useBimStore((s) => s.activeViewpointId);
 
   const setPlanPresentationPreset = useBimStore((s) => s.setPlanPresentationPreset);
   const viewerCategoryHidden = useBimStore((s) => s.viewerCategoryHidden);
@@ -205,8 +217,6 @@ export function Workspace() {
   const setViewerClipFloorElevMm = useBimStore((s) => s.setViewerClipFloorElevMm);
 
   const selected = selectedId ? elementsById[selectedId] : undefined;
-
-  const layerKeys = ['wall', 'floor', 'roof', 'stair', 'door', 'window', 'room'] as const;
 
   const levels = useMemo(
     () =>
@@ -255,6 +265,83 @@ export function Workspace() {
 
     [pushServer],
   );
+
+  const persistViewpointHiddenKinds = useCallback(async () => {
+    const st = useBimStore.getState();
+    const mid = st.modelId;
+    const uid = st.userId;
+    const vid = st.activeViewpointId;
+    if (!mid || !vid || st.viewerMode !== 'orbit_3d') return;
+
+    const vpEl = st.elementsById[vid];
+    if (!vpEl || vpEl.kind !== 'viewpoint') return;
+
+    const hidden = VIEWER_HIDDEN_KIND_KEYS.filter((k) => st.viewerCategoryHidden[k]);
+
+    try {
+      const r = await applyCommand(
+        mid,
+        {
+          type: 'updateElementProperty',
+
+          elementId: vid,
+
+          key: 'hiddenSemanticKinds3d',
+
+          value: JSON.stringify(hidden),
+        },
+        { userId: uid },
+      );
+
+      if (r.revision !== undefined) pushServer(r.revision, r.elements, r.violations);
+      setStatus('Applied');
+    } catch (e) {
+      setStatus(e instanceof Error ? e.message : String(e));
+    }
+  }, [pushServer]);
+
+  const persistViewpointClipPlanes = useCallback(async () => {
+    const st = useBimStore.getState();
+    const mid = st.modelId;
+    const uid = st.userId;
+    const vid = st.activeViewpointId;
+    if (!mid || !vid || st.viewerMode !== 'orbit_3d') return;
+
+    const vpEl = st.elementsById[vid];
+    if (!vpEl || vpEl.kind !== 'viewpoint') return;
+
+    try {
+      for (const tup of [
+        [
+          'viewerClipCapElevMm',
+          st.viewerClipElevMm == null ? '' : String(st.viewerClipElevMm),
+        ] as const,
+        [
+          'viewerClipFloorElevMm',
+          st.viewerClipFloorElevMm == null ? '' : String(st.viewerClipFloorElevMm),
+        ] as const,
+      ]) {
+        const r = await applyCommand(
+          mid,
+          {
+            type: 'updateElementProperty',
+
+            elementId: vid,
+
+            key: tup[0],
+
+            value: tup[1],
+          },
+          { userId: uid },
+        );
+        if (r.revision !== undefined) pushServer(r.revision, r.elements, r.violations);
+      }
+
+      setStatus('Applied');
+    } catch (e) {
+      setStatus(e instanceof Error ? e.message : String(e));
+    }
+  }, [pushServer]);
 
   const undoRedo = useCallback(
     async (u: boolean) => {
@@ -600,6 +687,14 @@ export function Workspace() {
 
   const explorer = useMemo(() => Object.values(elementsById), [elementsById]);
 
+  const planViewTemplates = useMemo(
+    () =>
+      Object.values(elementsById).filter((e): e is Extract<Element, { kind: 'view_template' }> => {
+        return e.kind === 'view_template';
+      }),
+    [elementsById],
+  );
+
   const visiblePlanTools = useMemo(
     () => [...planToolsForPerspective(perspectiveId)],
     [perspectiveId],
@@ -645,6 +740,14 @@ export function Workspace() {
                   modelId={modelId}
                   elementsById={elementsById}
                   activeLevelId={lvResolved || undefined}
+                  onScheduleFiltersCommit={(scheduleId, filters, grouping) =>
+                    void onSemantic({
+                      type: 'upsertScheduleFilters',
+                      scheduleId,
+                      filters,
+                      ...(grouping && Object.keys(grouping).length > 0 ? { grouping } : {}),
+                    })
+                  }
                 />
               </Panel>
             </div>
@@ -674,9 +777,11 @@ export function Workspace() {
 
             <Panel title="Sheet canvas (preview)">
               <SheetCanvas
+                modelId={modelId ?? undefined}
                 elementsById={elementsById}
                 preferredSheetId="hf-sheet-ga01"
                 evidenceFullBleed={evidenceSheetFull}
+                onUpsertSemantic={(cmd) => void onSemantic(cmd)}
               />
             </Panel>
           </div>
@@ -812,9 +917,37 @@ export function Workspace() {
                 <select
                   className="mt-1 w-full rounded border border-border bg-background px-2 py-1 text-[11px]"
                   value={planPresentationPreset}
+                  title={
+                    activePlanViewId
+                      ? 'Writes to the active plan_view (replayable)'
+                      : 'Session-only preset until you open a saved plan_view'
+                  }
                   onChange={(e) => {
+                    const next = e.target.value as PlanPresentationPreset;
+                    setPlanPresentationPreset(next);
+
+                    try {
+                      localStorage.setItem('bim.planPresentation', next);
+                    } catch {
+                      /* noop */
+                    }
+
+                    const apv = useBimStore.getState().activePlanViewId;
+                    if (apv) {
+                      void onSemantic({
+                        type: 'updateElementProperty',
+
+                        elementId: apv,
+
+                        key: 'planPresentation',
+
+                        value: next,
+                      });
+
+                      return;
+                    }
+
                     activatePlanView(undefined);
-                    setPlanPresentationPreset(e.target.value as PlanPresentationPreset);
                   }}
                 >
                   <option value="default">Neutral (walls + rooms)</option>
@@ -837,17 +970,29 @@ export function Workspace() {
           />
 
           <Panel title="Project browser">
-            <ProjectBrowser elementsById={elementsById} />
+            <ProjectBrowser
+              elementsById={elementsById}
+              onUpsertSemantic={(cmd) => void onSemantic(cmd)}
+            />
           </Panel>
 
           <Panel title="3D layers">
+            {activeViewpointId && viewerMode === 'orbit_3d' ? (
+              <p className="mb-2 text-[10px] text-muted">
+                Section box / layer toggles update saved viewpoint{' '}
+                <span className="font-mono">{activeViewpointId}</span>.
+              </p>
+            ) : null}
             <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[10px]">
-              {layerKeys.map((lk) => (
+              {VIEWER_HIDDEN_KIND_KEYS.map((lk) => (
                 <label key={lk} className="flex cursor-pointer items-center gap-2">
                   <input
                     type="checkbox"
                     checked={!viewerCategoryHidden[lk]}
-                    onChange={() => toggleViewerCategoryHidden(lk)}
+                    onChange={() => {
+                      toggleViewerCategoryHidden(lk);
+                      void persistViewpointHiddenKinds();
+                    }}
                   />
 
                   <span>{lk}</span>
@@ -873,6 +1018,7 @@ export function Workspace() {
                   const n = Number(raw);
                   setViewerClipElevMm(Number.isFinite(n) ? n : null);
                 }}
+                onBlur={() => void persistViewpointClipPlanes()}
               />
             </label>
 
@@ -894,6 +1040,7 @@ export function Workspace() {
                   const n = Number(raw);
                   setViewerClipFloorElevMm(Number.isFinite(n) ? n : null);
                 }}
+                onBlur={() => void persistViewpointClipPlanes()}
               />
             </label>
           </Panel>
@@ -972,6 +1119,139 @@ export function Workspace() {
 
         <div className="flex flex-col gap-3">
           <Panel title="Inspector">
+            {selected?.kind === 'plan_view' ? (
+              <div className="mb-3 space-y-2 text-[11px]">
+                <div className="font-semibold text-muted">Saved plan_view (replayable edits)</div>
+                <label className="block text-[10px] text-muted">
+                  Name
+                  <input
+                    className="mt-1 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px]"
+                    defaultValue={selected.name}
+                    key={`pv-name-${selected.id}-${selected.name}`}
+                    onBlur={(e) => {
+                      const v = e.target.value.trim();
+                      if (!v || v === selected.name) return;
+                      void onSemantic({
+                        type: 'updateElementProperty',
+                        elementId: selected.id,
+                        key: 'name',
+                        value: v,
+                      });
+                    }}
+                  />
+                </label>
+                <label className="block text-[10px] text-muted">
+                  Plan presentation (stored)
+                  <select
+                    className="mt-1 w-full rounded border border-border bg-background px-2 py-1 text-[11px]"
+                    value={selected.planPresentation ?? 'default'}
+                    onChange={(e) => {
+                      const next = e.target.value as PlanPresentationPreset | string;
+                      void onSemantic({
+                        type: 'updateElementProperty',
+                        elementId: selected.id,
+                        key: 'planPresentation',
+
+                        value: next,
+                      });
+                      const norm: PlanPresentationPreset =
+                        next === 'opening_focus' || next === 'room_scheme' ? next : 'default';
+                      setPlanPresentationPreset(norm);
+                      try {
+                        localStorage.setItem('bim.planPresentation', norm);
+                      } catch {
+                        /* noop */
+                      }
+                    }}
+                  >
+                    <option value="default">Neutral</option>
+                    <option value="opening_focus">Opening focus</option>
+                    <option value="room_scheme">Room scheme</option>
+                  </select>
+                </label>
+                <label className="block text-[10px] text-muted">
+                  Underlay level (optional)
+                  <select
+                    className="mt-1 w-full rounded border border-border bg-background px-2 py-1 text-[11px]"
+                    value={
+                      selected.underlayLevelId &&
+                      levels.some((lv) => lv.id === selected.underlayLevelId)
+                        ? selected.underlayLevelId
+                        : ''
+                    }
+                    onChange={(e) => {
+                      void onSemantic({
+                        type: 'updateElementProperty',
+                        elementId: selected.id,
+                        key: 'underlayLevelId',
+                        value: e.target.value,
+                      });
+                    }}
+                  >
+                    <option value="">none</option>
+                    {levels.map((lv) => (
+                      <option key={lv.id} value={lv.id}>
+                        {lv.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                {planViewTemplates.length ? (
+                  <label className="block text-[10px] text-muted">
+                    View template
+                    <select
+                      className="mt-1 w-full rounded border border-border bg-background px-2 py-1 text-[11px]"
+                      value={
+                        selected.viewTemplateId &&
+                        planViewTemplates.some((vt) => vt.id === selected.viewTemplateId)
+                          ? selected.viewTemplateId
+                          : ''
+                      }
+                      onChange={(e) => {
+                        void onSemantic({
+                          type: 'updateElementProperty',
+                          elementId: selected.id,
+                          key: 'viewTemplateId',
+                          value: e.target.value,
+                        });
+                      }}
+                    >
+                      <option value="">none</option>
+                      {planViewTemplates.map((vt) => (
+                        <option key={vt.id} value={vt.id}>
+                          {vt.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ) : null}
+              </div>
+            ) : null}
+            {selected?.kind === 'viewpoint' ? (
+              <div className="mb-3 space-y-2 text-[11px]">
+                <div className="font-semibold text-muted">
+                  Saved viewpoint (clip + layer toggles persist while active)
+                </div>
+                <label className="block text-[10px] text-muted">
+                  Name
+                  <input
+                    className="mt-1 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px]"
+                    defaultValue={selected.name}
+                    key={`vp-name-${selected.id}-${selected.name}`}
+                    onBlur={(e) => {
+                      const v = e.target.value.trim();
+                      if (!v || v === selected.name) return;
+                      void onSemantic({
+                        type: 'updateElementProperty',
+                        elementId: selected.id,
+                        key: 'name',
+                        value: v,
+                      });
+                    }}
+                  />
+                </label>
+              </div>
+            ) : null}
             <pre className="max-h-[40vh] overflow-auto whitespace-pre-wrap text-[11px]">
               {JSON.stringify(selected ?? { hint: 'pick' }, null, 2)}
             </pre>
@@ -995,6 +1275,14 @@ export function Workspace() {
                 modelId={modelId}
                 elementsById={elementsById}
                 activeLevelId={lvResolved || undefined}
+                onScheduleFiltersCommit={(scheduleId, filters, grouping) =>
+                  void onSemantic({
+                    type: 'upsertScheduleFilters',
+                    scheduleId,
+                    filters,
+                    ...(grouping && Object.keys(grouping).length > 0 ? { grouping } : {}),
+                  })
+                }
               />
             </Panel>
           ) : (

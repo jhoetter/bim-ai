@@ -69,6 +69,8 @@ type StoreState = {
   activeLevelId?: string;
   planPresentationPreset: PlanPresentationPreset;
   activePlanViewId?: string;
+  /** Saved 3D viewpoint whose clip/layer tweaks should persist via `updateElementProperty`. */
+  activeViewpointId?: string;
   /** When set, plan canvas prefers server `planProjectionWire_v1.primitives` (WP-C02/C03). */
   planProjectionPrimitives: PlanProjectionPrimitivesV1Wire | null;
   viewerClipElevMm: number | null;
@@ -88,6 +90,15 @@ type StoreState = {
   workspaceLayoutPreset: WorkspaceLayoutPreset;
   perspectiveId: PerspectiveId;
 
+  /** Bump to push a saved orbit viewpoint camera into Viewport three.js rig (WP-E02/E03). */
+  orbitCameraNonce: number;
+  /** Optional camera pose in model mm conventions (plan x/zMm as world-up). */
+  orbitCameraPoseMm: {
+    position: { xMm: number; yMm: number; zMm: number };
+    target: { xMm: number; yMm: number; zMm: number };
+    up: { xMm: number; yMm: number; zMm: number };
+  } | null;
+
   hydrateFromSnapshot: (snap: Snapshot) => void;
   applyDelta: (d: ModelDelta) => void;
   select: (id?: string) => void;
@@ -105,10 +116,23 @@ type StoreState = {
   setPlanPresentationPreset: (p: PlanPresentationPreset) => void;
 
   activatePlanView: (planViewElementId: string | undefined) => void;
+  setActiveViewpointId: (viewpointElementId?: string) => void;
   setViewerClipElevMm: (mm: number | null) => void;
   setViewerClipFloorElevMm: (mm: number | null) => void;
   setPlanProjectionPrimitives: (p: PlanProjectionPrimitivesV1Wire | null) => void;
   toggleViewerCategoryHidden: (semanticKind: string) => void;
+  /** Apply saved 3D viewpoint clip planes + semantic category hides (WP-E02/E03). */
+  applyOrbitViewpointPreset: (opts: {
+    capElevMm?: number | null;
+    floorElevMm?: number | null;
+    hideSemanticKinds?: string[];
+  }) => void;
+  /** Feed Viewport orbital camera rig from element camera mm payload. */
+  setOrbitCameraFromViewpointMm: (opts: {
+    position: { xMm: number; yMm: number; zMm: number };
+    target: { xMm: number; yMm: number; zMm: number };
+    up: { xMm: number; yMm: number; zMm: number };
+  }) => void;
 
   setActivity: (e: ActivityEvent[]) => void;
   setIdentity: (userId: string, display: string, peerId: string) => void;
@@ -233,6 +257,9 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
       ...(raw.familyTypeId || raw.family_type_id
         ? { familyTypeId: String(raw.familyTypeId ?? raw.family_type_id) }
         : {}),
+      ...(typeof raw.materialKey === 'string' || typeof raw.material_key === 'string'
+        ? { materialKey: String(raw.materialKey ?? raw.material_key) }
+        : {}),
       hostCutDepthMm: raw.hostCutDepthMm !== undefined ? Number(raw.hostCutDepthMm) : undefined,
       revealInteriorMm:
         raw.revealInteriorMm !== undefined ? Number(raw.revealInteriorMm) : undefined,
@@ -253,6 +280,9 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
       heightMm: Number(raw.heightMm ?? raw.height_mm ?? 1500),
       ...(raw.familyTypeId || raw.family_type_id
         ? { familyTypeId: String(raw.familyTypeId ?? raw.family_type_id) }
+        : {}),
+      ...(typeof raw.materialKey === 'string' || typeof raw.material_key === 'string'
+        ? { materialKey: String(raw.materialKey ?? raw.material_key) }
         : {}),
       hostCutDepthMm: raw.hostCutDepthMm !== undefined ? Number(raw.hostCutDepthMm) : undefined,
       revealInteriorMm:
@@ -284,6 +314,13 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
         ? {
             programmeCode: String(raw.programmeCode ?? raw.programme_code),
           }
+        : {}),
+      ...(typeof raw.department === 'string' ? { department: raw.department } : {}),
+      ...(typeof raw.functionLabel === 'string' || typeof raw.function_label === 'string'
+        ? { functionLabel: String(raw.functionLabel ?? raw.function_label) }
+        : {}),
+      ...(typeof raw.finishSet === 'string' || typeof raw.finish_set === 'string'
+        ? { finishSet: String(raw.finishSet ?? raw.finish_set) }
         : {}),
     };
   }
@@ -347,6 +384,29 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
         up: xyzKey('up'),
       },
       mode,
+      ...(raw.viewerClipCapElevMm !== undefined || raw.viewer_clip_cap_elev_mm !== undefined
+        ? {
+            viewerClipCapElevMm: Number(
+              raw.viewerClipCapElevMm ?? raw.viewer_clip_cap_elev_mm ?? null,
+            ),
+          }
+        : {}),
+      ...(raw.viewerClipFloorElevMm !== undefined || raw.viewer_clip_floor_elev_mm !== undefined
+        ? {
+            viewerClipFloorElevMm: Number(
+              raw.viewerClipFloorElevMm ?? raw.viewer_clip_floor_elev_mm ?? null,
+            ),
+          }
+        : {}),
+      ...(Array.isArray(raw.hiddenSemanticKinds3d) || Array.isArray(raw.hidden_semantic_kinds_3d)
+        ? {
+            hiddenSemanticKinds3d: (
+              (raw.hiddenSemanticKinds3d ?? raw.hidden_semantic_kinds_3d) as unknown[]
+            )
+              .filter((x): x is string => typeof x === 'string')
+              .map((s) => s),
+          }
+        : {}),
     };
   }
 
@@ -889,7 +949,13 @@ export const useBimStore = create<StoreState>((set, get) => {
 
     viewerCategoryHidden: {},
 
+    orbitCameraNonce: 0,
+
+    orbitCameraPoseMm: null,
+
     activePlanViewId: undefined,
+
+    activeViewpointId: undefined,
 
     planProjectionPrimitives: null,
 
@@ -902,6 +968,8 @@ export const useBimStore = create<StoreState>((set, get) => {
       }
 
       const curLevel = get().activeLevelId;
+      const prevPv = get().activePlanViewId;
+      const prevVp = get().activeViewpointId;
 
       set({
         modelId: snap.modelId,
@@ -915,6 +983,9 @@ export const useBimStore = create<StoreState>((set, get) => {
         activeLevelId:
           curLevel && elements[curLevel]?.kind === 'level' ? curLevel : defaultLevelId(elements),
         planProjectionPrimitives: null,
+
+        activePlanViewId: prevPv && elements[prevPv]?.kind === 'plan_view' ? prevPv : undefined,
+        activeViewpointId: prevVp && elements[prevVp]?.kind === 'viewpoint' ? prevVp : undefined,
       });
     },
 
@@ -937,6 +1008,10 @@ export const useBimStore = create<StoreState>((set, get) => {
         if (typed) merged[eid] = typed;
       }
 
+      const st = get();
+      const pv = st.activePlanViewId;
+      const vp = st.activeViewpointId;
+
       set({
         revision: d.revision,
 
@@ -945,6 +1020,8 @@ export const useBimStore = create<StoreState>((set, get) => {
         violations: (d.violations ?? []).map(coerceViolation),
 
         planProjectionPrimitives: null,
+        activePlanViewId: pv && merged[pv]?.kind === 'plan_view' ? pv : undefined,
+        activeViewpointId: vp && merged[vp]?.kind === 'viewpoint' ? vp : undefined,
       });
     },
 
@@ -1030,10 +1107,13 @@ export const useBimStore = create<StoreState>((set, get) => {
       }
       set({
         activePlanViewId: planViewElementId,
+        activeViewpointId: undefined,
         activeLevelId: el.levelId,
         planPresentationPreset: normalized,
       });
     },
+
+    setActiveViewpointId: (viewpointElementId) => set({ activeViewpointId: viewpointElementId }),
 
     setViewerClipElevMm: (viewerClipElevMm) => set({ viewerClipElevMm }),
 
@@ -1047,6 +1127,42 @@ export const useBimStore = create<StoreState>((set, get) => {
         const next = { ...get().viewerCategoryHidden, [semanticKind]: !prior };
         return { viewerCategoryHidden: next };
       }),
+
+    applyOrbitViewpointPreset: (opts) =>
+      set((state) => {
+        const LayerKeys = ['wall', 'floor', 'roof', 'stair', 'door', 'window', 'room'] as const;
+        let viewerClipElevMm = state.viewerClipElevMm;
+        if ('capElevMm' in opts) {
+          const v = opts.capElevMm;
+          viewerClipElevMm =
+            v !== undefined && v !== null && typeof v === 'number' && Number.isFinite(v) ? v : null;
+        }
+        let viewerClipFloorElevMm = state.viewerClipFloorElevMm;
+        if ('floorElevMm' in opts) {
+          const v = opts.floorElevMm;
+          viewerClipFloorElevMm =
+            v !== undefined && v !== null && typeof v === 'number' && Number.isFinite(v) ? v : null;
+        }
+        let viewerCategoryHidden = state.viewerCategoryHidden;
+        if (opts.hideSemanticKinds !== undefined) {
+          const hid = new Set(opts.hideSemanticKinds);
+          viewerCategoryHidden = { ...state.viewerCategoryHidden };
+          for (const lk of LayerKeys) {
+            viewerCategoryHidden[lk] = hid.has(lk);
+          }
+        }
+        return {
+          viewerClipElevMm,
+          viewerClipFloorElevMm,
+          viewerCategoryHidden,
+        };
+      }),
+
+    setOrbitCameraFromViewpointMm: ({ position, target, up }) =>
+      set((state) => ({
+        orbitCameraPoseMm: { position, target, up },
+        orbitCameraNonce: state.orbitCameraNonce + 1,
+      })),
 
     setActivity: (e) => set({ activityEvents: e }),
 

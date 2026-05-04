@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import uuid
 from typing import Any, cast
 
@@ -476,11 +477,97 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 els[cmd.element_id] = el.model_copy(update={"title": cmd.value})
             elif cmd.key == "name" and hasattr(el, "name"):
                 els[cmd.element_id] = el.model_copy(update={"name": cmd.value})
+            elif cmd.key == "programmeCode" and isinstance(el, RoomElem):
+                els[cmd.element_id] = el.model_copy(update={"programme_code": cmd.value})
+            elif cmd.key == "department" and isinstance(el, RoomElem):
+                els[cmd.element_id] = el.model_copy(update={"department": cmd.value})
+            elif cmd.key == "functionLabel" and isinstance(el, RoomElem):
+                els[cmd.element_id] = el.model_copy(update={"function_label": cmd.value})
+            elif cmd.key == "finishSet" and isinstance(el, RoomElem):
+                els[cmd.element_id] = el.model_copy(update={"finish_set": cmd.value})
             elif cmd.key == "label" and isinstance(el, GridLineElem):
                 els[cmd.element_id] = el.model_copy(update={"label": cmd.value})
+            elif isinstance(el, PlanViewElem):
+                raw = cmd.value.strip()
+                if cmd.key == "planPresentation":
+                    pres = raw if raw in {"default", "opening_focus", "room_scheme"} else "default"
+                    els[cmd.element_id] = el.model_copy(update={"plan_presentation": pres})
+                elif cmd.key == "categoriesHidden":
+                    hx: list[str] = []
+                    if raw:
+                        try:
+                            parsed = json.loads(raw)
+                            if isinstance(parsed, list):
+                                hx = [str(x) for x in parsed if isinstance(x, str)]
+                        except json.JSONDecodeError as exc:
+                            raise ValueError("categoriesHidden must be a JSON array of strings") from exc
+                    els[cmd.element_id] = el.model_copy(update={"categories_hidden": hx})
+                elif cmd.key == "underlayLevelId":
+                    lv = raw or None
+                    if lv is not None and lv not in els:
+                        raise ValueError("underlayLevelId references unknown Level")
+                    els[cmd.element_id] = el.model_copy(update={"underlay_level_id": lv})
+                elif cmd.key == "viewTemplateId":
+                    vt = raw or None
+                    if vt is not None:
+                        vt_el = els.get(vt)
+                        if not isinstance(vt_el, ViewTemplateElem):
+                            raise ValueError("viewTemplateId must reference view_template")
+                    els[cmd.element_id] = el.model_copy(update={"view_template_id": vt})
+                else:
+                    raise ValueError(
+                        "plan_view updates: key=planPresentation | categoriesHidden | underlayLevelId | viewTemplateId | name"
+                    )
+            elif isinstance(el, ViewpointElem):
+                raw = cmd.value.strip()
+                if cmd.key == "viewerClipCapElevMm":
+                    cap: float | None = None
+                    if raw != "":
+                        cap = float(raw)
+                        if not (cap >= 0):
+                            raise ValueError("viewerClipCapElevMm must be non-negative")
+                    els[cmd.element_id] = el.model_copy(update={"viewer_clip_cap_elev_mm": cap})
+                elif cmd.key == "viewerClipFloorElevMm":
+                    floor_v: float | None = None
+                    if raw != "":
+                        floor_v = float(raw)
+                        if not (floor_v >= 0):
+                            raise ValueError("viewerClipFloorElevMm must be non-negative")
+                    els[cmd.element_id] = el.model_copy(update={"viewer_clip_floor_elev_mm": floor_v})
+                elif cmd.key == "hiddenSemanticKinds3d":
+                    hid: list[str] = []
+                    if raw:
+                        try:
+                            parsed = json.loads(raw)
+                            if isinstance(parsed, list):
+                                hid = [str(x) for x in parsed if isinstance(x, str)]
+                        except json.JSONDecodeError as exc:
+                            raise ValueError("hiddenSemanticKinds3d must be a JSON array of strings") from exc
+                    els[cmd.element_id] = el.model_copy(update={"hidden_semantic_kinds_3d": hid})
+                elif cmd.key == "name" and hasattr(el, "name"):
+                    els[cmd.element_id] = el.model_copy(update={"name": cmd.value})
+                else:
+                    raise ValueError(
+                        "viewpoint updates: key=viewerClipCapElevMm | viewerClipFloorElevMm | "
+                        "hiddenSemanticKinds3d | name"
+                    )
+            elif isinstance(el, (DoorElem, WindowElem)):
+                raw_v = cmd.value.strip()
+                if cmd.key == "familyTypeId":
+                    els[cmd.element_id] = el.model_copy(update={"family_type_id": raw_v or None})
+                elif cmd.key == "materialKey":
+                    els[cmd.element_id] = el.model_copy(update={"material_key": raw_v or None})
+                else:
+                    raise ValueError("door/window updates: key=familyTypeId | materialKey | name")
             else:
                 raise ValueError(
-                    "Only updateElementProperty key=name | label(grid) | title(issue) supported in v2"
+                    "Only updateElementProperty key=name | label(grid) | title(issue) | "
+                    "programmeCode(room) | department(room) | functionLabel(room) | finishSet(room) | "
+                    "planPresentation(plan_view) | categoriesHidden(plan_view JSON array) | "
+                    "underlayLevelId(plan_view) | viewTemplateId(plan_view) | "
+                    "viewerClipCapElevMm(viewpoint) | viewerClipFloorElevMm(viewpoint) | "
+                    "hiddenSemanticKinds3d(viewpoint JSON array) | "
+                    "familyTypeId(door/window) | materialKey(door/window) supported in v2"
                 )
 
         case SaveViewpointCmd():
@@ -493,6 +580,9 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 name=cmd.name,
                 camera=cmd.camera,
                 mode=cmd.mode,
+                viewer_clip_cap_elev_mm=cmd.viewer_clip_cap_elev_mm,
+                viewer_clip_floor_elev_mm=cmd.viewer_clip_floor_elev_mm,
+                hidden_semantic_kinds_3d=list(cmd.hidden_semantic_kinds_3d or []),
             )
 
         case UpsertProjectSettingsCmd():
@@ -771,11 +861,25 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
 
         case UpsertSheetCmd():
             sh = cmd.id or new_id()
+            prior = els.get(sh)
+            viewports: list[dict[str, Any]] = []
+            if isinstance(prior, SheetElem):
+                viewports = list(prior.viewports_mm)
             els[sh] = SheetElem(
                 kind="sheet",
                 id=sh,
                 name=cmd.name,
                 title_block=cmd.title_block,
+                viewports_mm=viewports,
+                paper_width_mm=float(cmd.paper_width_mm)
+                if cmd.paper_width_mm is not None
+                else (prior.paper_width_mm if isinstance(prior, SheetElem) else 42_000),
+                paper_height_mm=float(cmd.paper_height_mm)
+                if cmd.paper_height_mm is not None
+                else (prior.paper_height_mm if isinstance(prior, SheetElem) else 29_700),
+                titleblock_parameters=dict(cmd.titleblock_parameters or {})
+                if cmd.titleblock_parameters is not None
+                else (dict(prior.titleblock_parameters) if isinstance(prior, SheetElem) else {}),
             )
 
         case UpsertSheetViewportsCmd():
@@ -799,7 +903,10 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 raise ValueError("upsertScheduleFilters.scheduleId must reference schedule")
             merged = dict(sc_el.filters)
             merged.update(cmd.filters)
-            els[cmd.schedule_id] = sc_el.model_copy(update={"filters": merged})
+            gnext = dict(sc_el.grouping or {})
+            if cmd.grouping:
+                gnext.update(cmd.grouping)
+            els[cmd.schedule_id] = sc_el.model_copy(update={"filters": merged, "grouping": gnext})
 
         case UpsertRoomVolumeCmd():
             r = els.get(cmd.room_id)

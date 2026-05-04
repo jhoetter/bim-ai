@@ -34,6 +34,7 @@ from bim_ai.engine import (
     try_commit_bundle,
 )
 from bim_ai.evidence_manifest import (
+    deterministic_3d_view_evidence_manifest,
     deterministic_sheet_evidence_manifest,
     evidence_package_semantic_digest_sha256,
     expected_screenshot_captures,
@@ -343,6 +344,13 @@ async def evidence_package(
     payload["recommendedPngEvidenceBackend"] = "playwright_ci"
     payload["svgRasterBackendAvailable"] = False
     payload["deterministicSheetEvidence"] = deterministic_sheet_evidence_manifest(
+        model_id=model_id,
+        doc=doc,
+        evidence_artifact_basename=str(payload["suggestedEvidenceArtifactBasename"]),
+        semantic_digest_sha256=digest,
+        semantic_digest_prefix16=str(payload["semanticDigestPrefix16"]),
+    )
+    payload["deterministic3dViewEvidence"] = deterministic_3d_view_evidence_manifest(
         model_id=model_id,
         doc=doc,
         evidence_artifact_basename=str(payload["suggestedEvidenceArtifactBasename"]),

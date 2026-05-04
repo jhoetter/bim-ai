@@ -1,31 +1,24 @@
 import type { Element } from '@bim-ai/core';
 
+import { useMemo, useState } from 'react';
+
+import type { SheetViewportMmDraft } from './sheetViewportAuthoring';
+import { SheetViewportEditor, normalizeViewportRaw } from './sheetViewportAuthoring';
 import { resolveViewportTitleFromRef } from './sheetViewRef';
+import { SectionViewportSvg } from './sectionViewportSvg';
 
-/** Paper-space preview: titleblock stripe + viewport frames from semantic `sheet` elements. */
+type SheetEl = Extract<Element, { kind: 'sheet' }>;
 
-export function SheetCanvas(props: {
-  elementsById: Record<string, Element>;
-  preferredSheetId?: string;
-  /**
-   * When true, drop scroll/max-height clamps so PNG evidence can rasterize the entire sheet SVG
-   * (drive via `/?evidenceSheetFull=1` in Playwright).
-   */
+function SheetCanvasWithSheet(props: {
+  sheet: SheetEl;
   evidenceFullBleed?: boolean;
+  modelId?: string;
+  elementsById: Record<string, Element>;
+  onUpsertSemantic?: (cmd: Record<string, unknown>) => void;
 }) {
-  const sheets = Object.values(props.elementsById).filter(
-    (e): e is Extract<Element, { kind: 'sheet' }> => e.kind === 'sheet',
-  );
+  const { sheet: sh, evidenceFullBleed, modelId, elementsById } = props;
 
-  const sh =
-    sheets.find((s) => s.id === props.preferredSheetId) ??
-    [...sheets].sort((a, b) => a.name.localeCompare(b.name))[0];
-
-  if (!sh) {
-    return <div className="text-[11px] text-muted">No sheet elements in this model.</div>;
-  }
-
-  const bleed = props.evidenceFullBleed ?? false;
+  const bleed = evidenceFullBleed ?? false;
   const wMm =
     typeof sh.paperWidthMm === 'number' && Number.isFinite(sh.paperWidthMm)
       ? sh.paperWidthMm
@@ -34,7 +27,11 @@ export function SheetCanvas(props: {
     typeof sh.paperHeightMm === 'number' && Number.isFinite(sh.paperHeightMm)
       ? sh.paperHeightMm
       : 29_700;
+
   const vps = (sh.viewportsMm ?? []) as Array<Record<string, unknown>>;
+  const nextDraftBase = (): SheetViewportMmDraft[] => vps.map((vp) => normalizeViewportRaw(vp));
+  const [vpDrafts, setVpDrafts] = useState<SheetViewportMmDraft[]>(() => nextDraftBase());
+
   const tp = sh.titleblockParameters ?? {};
   const sheetNo = tp.sheetNumber ?? tp.sheetNo ?? '';
   const revision = tp.revision ?? '';
@@ -110,10 +107,16 @@ export function SheetCanvas(props: {
             const heightMm = Number(vp.heightMm ?? vp.height_mm ?? 1000);
 
             const viewRefRaw = vp.viewRef ?? vp.view_ref;
-            const resolved = resolveViewportTitleFromRef(props.elementsById, viewRefRaw);
+            const resolved = resolveViewportTitleFromRef(elementsById, viewRefRaw);
             const fallback = typeof vp.label === 'string' ? vp.label : 'Viewport';
             const primary = resolved ?? fallback;
             const sub = typeof viewRefRaw === 'string' && viewRefRaw ? viewRefRaw : '';
+            const secId =
+              modelId &&
+              typeof viewRefRaw === 'string' &&
+              (viewRefRaw.startsWith('section:') || viewRefRaw.startsWith('sec:'))
+                ? viewRefRaw.split(':', 2)[1]?.trim()
+                : '';
 
             return (
               <g key={String(vp.viewportId ?? vp.viewport_id ?? `${xMm}_${yMm}`)}>
@@ -126,6 +129,22 @@ export function SheetCanvas(props: {
                   stroke="#475569"
                   strokeWidth={80}
                 />
+                {secId ? (
+                  <svg
+                    x={xMm + 160}
+                    y={yMm + 1500}
+                    width={Math.max(200, widthMm - 320)}
+                    height={Math.max(200, heightMm - 2700)}
+                    viewBox="0 0 800 600"
+                  >
+                    <SectionViewportSvg
+                      modelId={modelId!}
+                      sectionCutId={secId}
+                      widthPx={800}
+                      heightPx={600}
+                    />
+                  </svg>
+                ) : null}
                 <text x={xMm + 200} y={yMm + 900} fill="#475569" style={{ fontSize: '600px' }}>
                   {primary}
                 </text>
@@ -140,7 +159,58 @@ export function SheetCanvas(props: {
         </svg>
       </div>
 
+      {props.onUpsertSemantic ? (
+        <SheetViewportEditor
+          sheetId={sh.id}
+          sheetName={sh.name}
+          drafts={vpDrafts}
+          setDrafts={setVpDrafts}
+          elementsById={elementsById}
+          onUpsertSemantic={props.onUpsertSemantic}
+        />
+      ) : null}
+
       <div className="mt-1 font-mono text-[10px] text-muted">{sh.id}</div>
     </div>
+  );
+}
+
+/** Paper-space preview: titleblock stripe + viewport frames from semantic `sheet` elements. */
+
+export function SheetCanvas(props: {
+  elementsById: Record<string, Element>;
+  preferredSheetId?: string;
+  modelId?: string;
+  /**
+   * When true, drop scroll/max-height clamps so PNG evidence can rasterize the entire sheet SVG
+   * (drive via `/?evidenceSheetFull=1` in Playwright).
+   */
+  evidenceFullBleed?: boolean;
+  /** When set, show a replayable `upsertSheetViewports` authoring band (WP-E05/E06/E04). */
+  onUpsertSemantic?: (cmd: Record<string, unknown>) => void;
+}) {
+  const sheets = Object.values(props.elementsById).filter(
+    (e): e is Extract<Element, { kind: 'sheet' }> => e.kind === 'sheet',
+  );
+
+  const sh =
+    sheets.find((s) => s.id === props.preferredSheetId) ??
+    [...sheets].sort((a, b) => a.name.localeCompare(b.name))[0];
+
+  const viewportSyncKey = useMemo(() => (sh ? JSON.stringify(sh.viewportsMm ?? []) : ''), [sh]);
+
+  if (!sh) {
+    return <div className="text-[11px] text-muted">No sheet elements in this model.</div>;
+  }
+
+  return (
+    <SheetCanvasWithSheet
+      key={`${sh.id}:${viewportSyncKey}`}
+      sheet={sh}
+      evidenceFullBleed={props.evidenceFullBleed}
+      modelId={props.modelId}
+      elementsById={props.elementsById}
+      onUpsertSemantic={props.onUpsertSemantic}
+    />
   );
 }

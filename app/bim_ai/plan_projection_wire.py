@@ -95,6 +95,14 @@ def _build_plan_primitive_lists(
                 }
             )
 
+    line_weight_hint = 1.0
+    if pinned_pv_el is not None:
+        pres = pinned_pv_el.plan_presentation
+        if pres == "opening_focus":
+            line_weight_hint = 1.18
+        elif pres == "room_scheme":
+            line_weight_hint = 0.92
+
     walls: list[dict[str, Any]] = []
     floors: list[dict[str, Any]] = []
     rooms: list[dict[str, Any]] = []
@@ -124,6 +132,7 @@ def _build_plan_primitive_lists(
                     "endMm": {"x": round(e.end.x_mm, 3), "y": round(e.end.y_mm, 3)},
                     "thicknessMm": round(e.thickness_mm, 3),
                     "heightMm": round(e.height_mm, 3),
+                    "lineWeightHint": round(float(line_weight_hint), 4),
                 }
             )
         elif isinstance(e, FloorElem):
@@ -144,6 +153,10 @@ def _build_plan_primitive_lists(
             }
             if (e.programme_code or "").strip():
                 row["programmeCode"] = (e.programme_code or "").strip()
+            if (e.department or "").strip():
+                row["department"] = (e.department or "").strip()
+            if (e.function_label or "").strip():
+                row["functionLabel"] = (e.function_label or "").strip()
             rooms.append(row)
         elif isinstance(e, DoorElem):
             w = doc.elements.get(e.wall_id)
@@ -263,6 +276,43 @@ def _build_plan_primitive_lists(
     return primitives, warnings
 
 
+def _room_color_legend_payload(
+    doc: Document,
+    *,
+    level: str | None,
+    hidden_semantic: set[str],
+) -> list[dict[str, Any]]:
+    if "room" in hidden_semantic:
+        return []
+    out: list[dict[str, Any]] = []
+    seen: set[tuple[str, str]] = set()
+    for e in doc.elements.values():
+        if not isinstance(e, RoomElem):
+            continue
+        if level and e.level_id != level:
+            continue
+        label = (
+            (e.programme_code or "").strip()
+            or (e.department or "").strip()
+            or (e.function_label or "").strip()
+            or (e.name or "").strip()
+            or e.id
+        )
+        seed = (e.programme_code or "").strip() or e.id
+        hx = _deterministic_scheme_color_hex(seed)
+        key = (label, hx)
+        if key in seen:
+            continue
+        seen.add(key)
+        row: dict[str, Any] = {"label": label, "schemeColorHex": hx}
+        if (e.programme_code or "").strip():
+            row["programmeCode"] = (e.programme_code or "").strip()
+        if (e.department or "").strip():
+            row["department"] = (e.department or "").strip()
+        out.append(row)
+    return sorted(out, key=lambda r: str(r.get("label", "")))
+
+
 def resolve_plan_projection_wire(
     doc: Document,
     *,
@@ -360,6 +410,7 @@ def resolve_plan_projection_wire(
         pinned_pv_el=pinned_pv_elem,
     )
     all_warnings = list(prim_warn)
+    legend = _room_color_legend_payload(doc, level=active_level, hidden_semantic=hidden_semantic)
 
     return {
         "format": "planProjectionWire_v1",
@@ -371,6 +422,7 @@ def resolve_plan_projection_wire(
         "countsByVisibleKind": dict(sorted(counts.items())),
         "warnings": all_warnings,
         "primitives": prim,
+        "roomColorLegend": legend,
     }
 
 

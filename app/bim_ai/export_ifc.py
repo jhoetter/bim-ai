@@ -521,6 +521,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         along_t: float,
         open_height_m: float,
         sill_offset_m: float,
+        material_finish_key: str | None = None,
     ) -> None:
         nonlocal geo_products
 
@@ -592,7 +593,12 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
 
         pset_name = "Pset_DoorCommon" if filling_class == "IfcDoor" else "Pset_WindowCommon"
 
-        attach_kernel_identity_pset(filler, pset_name, kernel_elem_id)
+        attach_kernel_identity_pset(
+            filler,
+            pset_name,
+            kernel_elem_id,
+            **({"MaterialFinish": material_finish_key} if material_finish_key else {}),
+        )
 
         if filling_class == "IfcDoor":
             _try_attach_qto(
@@ -637,6 +643,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
             open_height_m=dh,
 
             sill_offset_m=0.0,
+            material_finish_key=d.material_key,
 
         )
 
@@ -670,6 +677,8 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
             along_t=zwin.along_t,
             open_height_m=wh_m,
             sill_offset_m=sill_z,
+            material_finish_key=zwin.material_key,
+
         )
 
     for rid in sorted(eid for eid, e in doc.elements.items() if isinstance(e, RoomElem)):

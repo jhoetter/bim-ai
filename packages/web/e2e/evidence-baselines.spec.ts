@@ -47,6 +47,20 @@ async function sharedRoutes(page: Page, layoutPreset: string) {
     });
   });
 
+  await page.route(`**/api/models/*/projection/section/**`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        format: 'sectionProjectionWire_v1',
+        primitives: {
+          format: 'sectionProjectionPrimitives_v1',
+          walls: [{ uStartMm: 600, uEndMm: 7200, zBottomMm: 0, zTopMm: 5600 }],
+        },
+      }),
+    });
+  });
+
   await page.route('**/api/bootstrap', async (route) => {
     await route.fulfill({
       status: 200,

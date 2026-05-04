@@ -61,6 +61,10 @@ _RULE_DISCIPLINE: dict[str, str] = {
     "dimension_zero_length": "architecture",
     "dimension_bad_level": "structure",
     "room_outline_degenerate": "architecture",
+
+    "room_programme_metadata_hint": "architecture",
+
+    "room_programme_inconsistent_within_level": "architecture",
     "room_overlap_plan": "architecture",
     "door_off_wall": "architecture",
     "door_not_on_wall": "architecture",
@@ -595,10 +599,45 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
                     element_ids=[room.id],
                 )
             )
+        else:
+            pc = (room.programme_code or "").strip()
+            dept = (room.department or "").strip()
+            if not pc and not dept:
+                viols.append(
+                    Violation(
+                        rule_id="room_programme_metadata_hint",
+                        severity="info",
+                        message="Room lacks programmeCode and department; documentation schedules/color correlation are weaker.",
+                        element_ids=[room.id],
+                    )
+                )
 
     rooms_by_level: dict[str, list[RoomElem]] = defaultdict(list)
     for room in rooms:
         rooms_by_level[room.level_id].append(room)
+
+    for _lvl, mates in rooms_by_level.items():
+        peer_authored_programme = any(
+            bool((rr.programme_code or "").strip() or (rr.department or "").strip()) for rr in mates
+        )
+        if not peer_authored_programme:
+            continue
+        for r in mates:
+            if (r.programme_code or "").strip() or (r.department or "").strip():
+                continue
+            viols.append(
+                Violation(
+                    rule_id="room_programme_inconsistent_within_level",
+                    severity="warning",
+                    message=(
+                        "Another room on this level has programme metadata but this room is blank; "
+                        "colour fills, legends, and room schedules may disagree until programme is aligned."
+                    ),
+                    element_ids=[r.id],
+                    discipline="architecture",
+                )
+            )
+
     overlap_threshold_mm2 = 50_000.0
     for _lid, rlist in rooms_by_level.items():
         for i in range(len(rlist)):

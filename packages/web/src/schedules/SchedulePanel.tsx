@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import type { Element } from '@bim-ai/core';
 
@@ -26,6 +26,50 @@ function findScheduleIdForCategory(
   }
 
   return best;
+}
+
+function scheduleGroupingKeyChoices(tab: 'rooms' | 'doors' | 'windows'): readonly string[] {
+  switch (tab) {
+    case 'doors': {
+      return ['levelId', 'familyTypeId', 'wallId'];
+    }
+
+    case 'windows': {
+      return ['levelId', 'familyTypeId', 'wallId'];
+    }
+
+    case 'rooms': {
+      return ['levelId', 'programmeCode', 'department'];
+    }
+
+    default: {
+      const exhaustive: never = tab;
+
+      return exhaustive;
+    }
+  }
+}
+
+function scheduleSortKeyChoices(tab: 'rooms' | 'doors' | 'windows'): readonly string[] {
+  switch (tab) {
+    case 'doors': {
+      return ['name', 'elementId', 'level', 'widthMm', 'familyTypeId', 'materialKey'];
+    }
+
+    case 'windows': {
+      return ['name', 'elementId', 'level', 'widthMm', 'heightMm', 'familyTypeId', 'materialKey'];
+    }
+
+    case 'rooms': {
+      return ['name', 'elementId', 'level', 'areaM2', 'perimeterM'];
+    }
+
+    default: {
+      const exhaustive: never = tab;
+
+      return exhaustive;
+    }
+  }
 }
 
 function formatScheduleCell(v: unknown): string {
@@ -121,6 +165,11 @@ export function SchedulePanel(props: {
   modelId?: string;
   elementsById: Record<string, Element>;
   activeLevelId?: string;
+  onScheduleFiltersCommit?: (
+    scheduleId: string,
+    filters: Record<string, unknown>,
+    grouping?: Record<string, unknown>,
+  ) => void;
 }) {
   const [tab, setTab] = useState<TabKey>('rooms');
   const [server, setServer] = useState<{
@@ -131,6 +180,21 @@ export function SchedulePanel(props: {
   const [serverErr, setServerErr] = useState<string | null>(null);
 
   const [registryVisibleCols, setRegistryVisibleCols] = useState<Record<string, string[]>>({});
+
+  const schedulePersistedColumns = useCallback(
+    (scheduleElementId: string | null): string[] | null => {
+      if (!scheduleElementId) return null;
+      const el = props.elementsById[scheduleElementId];
+      if (!el || el.kind !== 'schedule') return null;
+      const f = el.filters ?? {};
+      const keys =
+        (f as { displayColumnKeys?: unknown }).displayColumnKeys ??
+        (f as { display_column_keys?: unknown }).display_column_keys;
+      if (!Array.isArray(keys) || !keys.every((k) => typeof k === 'string')) return null;
+      return keys as string[];
+    },
+    [props.elementsById],
+  );
 
   const levelLabels = useMemo(() => {
     const m = new Map<string, string>();
@@ -475,22 +539,33 @@ export function SchedulePanel(props: {
     if (!registrySchedule) return [] as string[];
     const all = registrySchedule.columns;
     if (!registryPickKey) return all;
-    const sel = registryVisibleCols[registryPickKey];
+    const persisted = schedulePersistedColumns(registryPickKey);
+    const sel = registryVisibleCols[registryPickKey] ?? persisted;
     if (!sel?.length) return all;
     const want = new Set(sel);
     return all.filter((c) => want.has(c));
-  }, [registrySchedule, registryPickKey, registryVisibleCols]);
+  }, [registrySchedule, registryPickKey, registryVisibleCols, schedulePersistedColumns]);
 
   function toggleRegistryColumn(columnKey: string) {
     if (!registryPickKey || !registrySchedule) return;
     const all = registrySchedule.columns;
+    const persisted = schedulePersistedColumns(registryPickKey);
     setRegistryVisibleCols((prev) => {
-      const curSel = [...(prev[registryPickKey] ?? all)];
+      const curSel = [...(prev[registryPickKey] ?? persisted ?? all)];
       const has = curSel.includes(columnKey);
-      const nextSel = has ? curSel.filter((c) => c !== columnKey) : [...curSel, columnKey];
-      if (!nextSel.length) return { ...prev, [registryPickKey]: [...all] };
+      let nextSel = has ? curSel.filter((c) => c !== columnKey) : [...curSel, columnKey];
+      if (!nextSel.length) nextSel = [...all];
       nextSel.sort((a, b) => all.indexOf(a) - all.indexOf(b));
-      return { ...prev, [registryPickKey]: nextSel.filter((c) => all.includes(c)) };
+      const filtered = nextSel.filter((c) => all.includes(c));
+      const el = props.elementsById[registryPickKey];
+      if (el?.kind === 'schedule' && props.onScheduleFiltersCommit) {
+        const prevF = (el.filters ?? {}) as Record<string, unknown>;
+        props.onScheduleFiltersCommit(registryPickKey, {
+          ...prevF,
+          displayColumnKeys: filtered,
+        });
+      }
+      return { ...prev, [registryPickKey]: filtered };
     });
   }
 
@@ -661,6 +736,111 @@ export function SchedulePanel(props: {
         className="mt-2 rounded border border-border/60 px-2 py-1 font-mono text-[10px] text-muted"
       >
         {parts.join(' · ')}
+      </div>
+    );
+  }
+
+  function renderScheduleDefinitionToolbar() {
+    if (!props.onScheduleFiltersCommit) return null;
+
+    if (tab !== 'rooms' && tab !== 'doors' && tab !== 'windows') return null;
+
+    const scheduleId = sidForTab;
+
+    if (!scheduleId || !srvActive || srvActive.scheduleId !== scheduleId || !props.modelId)
+      return null;
+
+    const el = props.elementsById[scheduleId];
+
+    if (!el || el.kind !== 'schedule') return null;
+
+    const f = { ...(el.filters ?? {}) } as Record<string, unknown>;
+
+    const ghRaw = f.groupingHint ?? f.grouping_hint;
+
+    const hintSet = new Set(
+      Array.isArray(ghRaw) ? ghRaw.filter((x): x is string => typeof x === 'string') : [],
+    );
+
+    const sortKeys = scheduleSortKeyChoices(tab);
+
+    const groupOpts = scheduleGroupingKeyChoices(tab);
+
+    const sortVal = String(
+      f.sortBy ?? (el.grouping as { sortBy?: string } | undefined)?.sortBy ?? sortKeys[0] ?? 'name',
+    );
+
+    const orderedHints = (): string[] => groupOpts.filter((gk) => hintSet.has(gk));
+
+    const commit = (nextF: Record<string, unknown>, nextG: Record<string, unknown>) => {
+      props.onScheduleFiltersCommit!(scheduleId, nextF, nextG);
+    };
+
+    return (
+      <div
+        data-testid="schedule-definition-toolbar"
+        className="mt-2 rounded border border-border/60 bg-background/40 p-2 text-[10px] text-muted"
+      >
+        <div className="font-semibold text-foreground">
+          Schedule definition · upsertScheduleFilters
+        </div>
+
+        <div className="mt-2 flex flex-wrap items-center gap-3">
+          <label className="flex flex-wrap items-center gap-2">
+            <span>Sort field</span>
+
+            <select
+              className="rounded border border-border bg-background px-2 py-0.5 font-mono"
+              value={sortVal}
+              onChange={(e) => {
+                const sb = e.target.value;
+
+                commit(
+                  { ...f, sortBy: sb, groupingHint: orderedHints() },
+
+                  { ...(el.grouping as Record<string, unknown>), sortBy: sb },
+                );
+              }}
+            >
+              {sortKeys.map((k) => (
+                <option key={k} value={k}>
+                  {k}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
+          <span className="font-semibold text-foreground">Group by</span>
+
+          {groupOpts.map((gk) => (
+            <label key={gk} className="flex cursor-pointer items-center gap-1">
+              <input
+                type="checkbox"
+                checked={hintSet.has(gk)}
+                onChange={(e) => {
+                  const on = e.target.checked;
+
+                  const nx = new Set(hintSet);
+
+                  if (on) nx.add(gk);
+                  else nx.delete(gk);
+
+                  const nextHints = groupOpts.filter((x) => nx.has(x));
+
+                  commit(
+                    { ...f, groupingHint: nextHints, sortBy: sortVal },
+
+                    { ...(el.grouping as Record<string, unknown>), sortBy: sortVal },
+                  );
+                }}
+              />
+
+              <span className="font-mono">{gk}</span>
+            </label>
+          ))}
+        </div>
       </div>
     );
   }
@@ -916,6 +1096,8 @@ export function SchedulePanel(props: {
       </div>
 
       {serverErr ? <div className="mt-2 text-[10px] text-amber-500">{serverErr}</div> : null}
+
+      {renderScheduleDefinitionToolbar()}
 
       {tab === 'rooms' ? (
         groupedRooms && Object.keys(groupedRooms).length > 0 ? (

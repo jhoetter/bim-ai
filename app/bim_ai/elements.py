@@ -97,6 +97,7 @@ class DoorElem(BaseModel):
     along_t: float = Field(alias="alongT", ge=0, le=1)
     width_mm: float = Field(alias="widthMm", default=900)
     family_type_id: str | None = Field(default=None, alias="familyTypeId")
+    material_key: str | None = Field(default=None, alias="materialKey")
     host_cut_depth_mm: float | None = Field(default=None, alias="hostCutDepthMm")
     reveal_interior_mm: float | None = Field(default=None, alias="revealInteriorMm")
     interlock_grade: str | None = Field(default=None, alias="interlockGrade")
@@ -114,6 +115,7 @@ class WindowElem(BaseModel):
     sill_height_mm: float = Field(alias="sillHeightMm", default=900)
     height_mm: float = Field(alias="heightMm", default=1500)
     family_type_id: str | None = Field(default=None, alias="familyTypeId")
+    material_key: str | None = Field(default=None, alias="materialKey")
     host_cut_depth_mm: float | None = Field(default=None, alias="hostCutDepthMm")
     reveal_interior_mm: float | None = Field(default=None, alias="revealInteriorMm")
     interlock_grade: str | None = Field(default=None, alias="interlockGrade")
@@ -131,6 +133,9 @@ class RoomElem(BaseModel):
     upper_limit_level_id: str | None = Field(default=None, alias="upperLimitLevelId")
     volume_ceiling_offset_mm: float | None = Field(default=None, alias="volumeCeilingOffsetMm")
     programme_code: str | None = Field(default=None, alias="programmeCode")
+    department: str | None = Field(default=None, alias="department")
+    function_label: str | None = Field(default=None, alias="functionLabel")
+    finish_set: str | None = Field(default=None, alias="finishSet")
 
 
 class GridLineElem(BaseModel):
@@ -165,6 +170,9 @@ class ViewpointElem(BaseModel):
     name: str = "View"
     camera: CameraMm
     mode: Literal["plan_2d", "orbit_3d", "plan_canvas"] = "orbit_3d"
+    viewer_clip_cap_elev_mm: float | None = Field(default=None, alias="viewerClipCapElevMm")
+    viewer_clip_floor_elev_mm: float | None = Field(default=None, alias="viewerClipFloorElevMm")
+    hidden_semantic_kinds_3d: list[str] = Field(default_factory=list, alias="hiddenSemanticKinds3d")
 
 
 class IssueElem(BaseModel):

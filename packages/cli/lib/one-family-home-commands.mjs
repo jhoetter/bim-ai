@@ -369,6 +369,25 @@ export function buildOneFamilyHomeCommands() {
     },
 
     {
+      type: 'updateElementProperty',
+      elementId: 'hf-room-kitchen',
+      key: 'programmeCode',
+      value: 'KIT-BUNDLE',
+    },
+    {
+      type: 'updateElementProperty',
+      elementId: 'hf-room-bath',
+      key: 'programmeCode',
+      value: 'WET-BUNDLE',
+    },
+    {
+      type: 'updateElementProperty',
+      elementId: 'hf-room-master',
+      key: 'programmeCode',
+      value: 'BED-BUNDLE',
+    },
+
+    {
       type: 'upsertRoomVolume',
       roomId: 'hf-room-bath',
       upperLimitLevelId: 'hf-lvl-2',
@@ -440,6 +459,14 @@ export function buildOneFamilyHomeCommands() {
       id: 'hf-sheet-ga01',
       name: 'GA-01 — Golden evidence',
       titleBlock: 'A1‑Golden',
+      paperWidthMm: 42000,
+      paperHeightMm: 29700,
+      titleblockParameters: {
+        projectName: 'One‑family golden',
+        sheetNumber: 'GA‑01',
+        revision: '3',
+        drawnBy: 'bundle',
+      },
     },
     {
       type: 'upsertSchedule',
@@ -477,6 +504,73 @@ export function buildOneFamilyHomeCommands() {
       type: 'upsertScheduleFilters',
       scheduleId: 'hf-sch-door',
       filters: { category: 'door', discipline: 'architecture' },
+    },
+
+    {
+      type: 'upsertSchedule',
+      id: 'hf-sch-floor',
+      name: 'Floor schedule — golden',
+      sheetId: null,
+    },
+    {
+      type: 'upsertScheduleFilters',
+      scheduleId: 'hf-sch-floor',
+      filters: { category: 'floor' },
+    },
+    {
+      type: 'upsertSchedule',
+      id: 'hf-sch-roof',
+      name: 'Roof schedule — golden',
+      sheetId: null,
+    },
+    {
+      type: 'upsertScheduleFilters',
+      scheduleId: 'hf-sch-roof',
+      filters: { category: 'roof' },
+    },
+    {
+      type: 'upsertSchedule',
+      id: 'hf-sch-stair',
+      name: 'Stair schedule — golden',
+      sheetId: null,
+    },
+    {
+      type: 'upsertScheduleFilters',
+      scheduleId: 'hf-sch-stair',
+      filters: { category: 'stair' },
+    },
+    {
+      type: 'upsertSchedule',
+      id: 'hf-sch-sheet',
+      name: 'Sheet index — golden',
+      sheetId: null,
+    },
+    {
+      type: 'upsertScheduleFilters',
+      scheduleId: 'hf-sch-sheet',
+      filters: { category: 'sheet' },
+    },
+    {
+      type: 'upsertSchedule',
+      id: 'hf-sch-plan-view',
+      name: 'Plan views — golden',
+      sheetId: null,
+    },
+    {
+      type: 'upsertScheduleFilters',
+      scheduleId: 'hf-sch-plan-view',
+      filters: { category: 'plan_view' },
+    },
+    {
+      type: 'upsertSchedule',
+      id: 'hf-sch-section',
+      name: 'Section cuts — golden',
+      sheetId: null,
+    },
+    {
+      type: 'upsertScheduleFilters',
+      scheduleId: 'hf-sch-section',
+      filters: { category: 'section_cut' },
     },
 
     {
@@ -663,6 +757,9 @@ export function buildOneFamilyHomeCommands() {
       id: 'hf-vp-cutaway-core',
       name: '3D cut corridor',
       mode: 'orbit_3d',
+      viewerClipCapElevMm: 5600,
+      viewerClipFloorElevMm: 0,
+      hiddenSemanticKinds3d: ['roof'],
       camera: {
         position: { xMm: 9800, yMm: 14800, zMm: 4200 },
         target: { xMm: 12000, yMm: 8800, zMm: 1400 },

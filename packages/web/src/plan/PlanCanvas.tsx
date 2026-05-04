@@ -7,6 +7,7 @@ import { collectWallAnchors, snapPlanPoint } from './snapEngine';
 import {
   buildPlanProjectionQuery,
   extractPlanPrimitives,
+  extractRoomColorLegend,
   fetchPlanProjectionWire,
 } from './planProjectionWire';
 import { resolvePlanViewDisplay } from './planProjection';
@@ -107,6 +108,9 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
   const [hudMm, setHudMm] = useState<{ xMm: number; yMm: number }>();
   const [halfUi, setHalfUi] = useState(22);
   const [geomEpoch, bumpGeom] = useState(0);
+  const [roomColorLegend, setRoomColorLegend] = useState<
+    Array<{ label: string; schemeColorHex: string; programmeCode?: string; department?: string }>
+  >([]);
 
   const elementsById = useBimStore((s) => s.elementsById);
   const selectedId = useBimStore((s) => s.selectedId);
@@ -146,8 +150,14 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
   useEffect(() => {
     let cancel = false;
     if (!modelId) {
-      setPlanProjectionPrimitives(null);
-      return;
+      queueMicrotask(() => {
+        if (cancel) return;
+        setPlanProjectionPrimitives(null);
+        setRoomColorLegend([]);
+      });
+      return () => {
+        cancel = true;
+      };
     }
     void (async () => {
       try {
@@ -159,8 +169,10 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
         const payload = await fetchPlanProjectionWire(modelId, qs);
         if (cancel) return;
         setPlanProjectionPrimitives(extractPlanPrimitives(payload));
+        setRoomColorLegend(extractRoomColorLegend(payload));
       } catch {
         if (!cancel) setPlanProjectionPrimitives(null);
+        if (!cancel) setRoomColorLegend([]);
       }
     })();
     return () => {
@@ -265,6 +277,7 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
     grp.add(grid);
   }, [
     display.presentation,
+    display.hiddenSemanticKinds,
     displayLevelId,
     elementsById,
     geomEpoch,
@@ -620,6 +633,25 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
         {hudMm
           ? `X ${(hudMm.xMm / 1000).toFixed(2)} m · Y ${(hudMm.yMm / 1000).toFixed(2)} m`
           : '—'}
+      </div>
+      <div className="pointer-events-none absolute right-3 top-14 z-10 max-w-[min(260px,calc(100%-24px))] rounded border border-border bg-surface/90 px-2 py-2 text-[10px] text-muted backdrop-blur">
+        {planPresentation === 'room_scheme' && roomColorLegend.length ? (
+          <div data-testid="plan-room-color-legend">
+            <div className="mb-1 font-semibold text-foreground">Room colour legend</div>
+            <ul className="space-y-1">
+              {roomColorLegend.map((row) => (
+                <li key={`${row.label}-${row.schemeColorHex}`} className="flex items-start gap-2">
+                  <span
+                    className="mt-0.5 inline-block size-3 shrink-0 rounded-sm border border-border"
+                    style={{ backgroundColor: row.schemeColorHex }}
+                    title={row.programmeCode ?? row.label}
+                  />
+                  <span className="leading-tight text-foreground">{row.label}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
       </div>
       <div className="pointer-events-none absolute left-3 bottom-3 z-10 rounded border border-border bg-surface/80 px-2 py-1 text-[10px] text-muted backdrop-blur">
         ━━━ {`${(sb * 100).toFixed(0)} cm`}

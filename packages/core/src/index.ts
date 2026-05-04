@@ -91,6 +91,7 @@ export type Element =
       alongT: number;
       widthMm: number;
       familyTypeId?: string | null;
+      materialKey?: string | null;
       hostCutDepthMm?: number | null;
       revealInteriorMm?: number | null;
       interlockGrade?: string | null;
@@ -106,6 +107,7 @@ export type Element =
       sillHeightMm: number;
       heightMm: number;
       familyTypeId?: string | null;
+      materialKey?: string | null;
       hostCutDepthMm?: number | null;
       revealInteriorMm?: number | null;
       interlockGrade?: string | null;
@@ -121,6 +123,9 @@ export type Element =
       upperLimitLevelId?: string | null;
       volumeCeilingOffsetMm?: number | null;
       programmeCode?: string | null;
+      department?: string | null;
+      functionLabel?: string | null;
+      finishSet?: string | null;
     }
   | {
       kind: 'grid_line';
@@ -149,6 +154,9 @@ export type Element =
       name: string;
       camera: { position: XYZ; target: XYZ; up: XYZ };
       mode: 'plan_2d' | 'orbit_3d' | 'plan_canvas';
+      viewerClipCapElevMm?: number | null;
+      viewerClipFloorElevMm?: number | null;
+      hiddenSemanticKinds3d?: string[];
     }
   | {
       kind: 'issue';

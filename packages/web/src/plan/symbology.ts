@@ -149,6 +149,9 @@ function outlineMmFromWire(raw: unknown): Array<{ xMm: number; yMm: number }> {
 function wallElemFromWirePrimitive(
   row: Record<string, unknown>,
 ): Extract<Element, { kind: 'wall' }> {
+  const lwh = Number(row.lineWeightHint ?? 1);
+  const baseT = Number(row.thicknessMm ?? 200);
+  const scale = Number.isFinite(lwh) && lwh > 0 && lwh <= 3 ? lwh : 1;
   return {
     kind: 'wall',
     id: String(row.id ?? ''),
@@ -156,7 +159,7 @@ function wallElemFromWirePrimitive(
     levelId: String(row.levelId ?? ''),
     start: coerceVec2Mm(row.startMm),
     end: coerceVec2Mm(row.endMm),
-    thicknessMm: Number(row.thicknessMm ?? 200),
+    thicknessMm: baseT * scale,
     heightMm: Number(row.heightMm ?? 2800),
   };
 }

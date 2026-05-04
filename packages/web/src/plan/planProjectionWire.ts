@@ -18,6 +18,36 @@ export type PlanProjectionWirePayload = Record<string, unknown> & {
   primitives?: PlanProjectionPrimitivesV1Wire;
 };
 
+export type PlanRoomColorLegendRow = {
+  label: string;
+  schemeColorHex: string;
+  programmeCode?: string;
+  department?: string;
+};
+
+export function extractRoomColorLegend(
+  payload: PlanProjectionWirePayload | null | undefined,
+): PlanRoomColorLegendRow[] {
+  if (!payload) return [];
+  const raw =
+    (payload.roomColorLegend as unknown) ??
+    ((payload as { room_color_legend?: unknown }).room_color_legend as unknown);
+  if (!Array.isArray(raw)) return [];
+  const out: PlanRoomColorLegendRow[] = [];
+  for (const r of raw) {
+    if (!r || typeof r !== 'object') continue;
+    const o = r as Record<string, unknown>;
+    const label = typeof o.label === 'string' ? o.label : '';
+    const hex = String(o.schemeColorHex ?? o.scheme_color_hex ?? '#888888');
+    if (!label) continue;
+    const row: PlanRoomColorLegendRow = { label, schemeColorHex: hex };
+    if (typeof o.programmeCode === 'string') row.programmeCode = o.programmeCode;
+    if (typeof o.department === 'string') row.department = o.department;
+    out.push(row);
+  }
+  return out;
+}
+
 export function isPlanProjectionPrimitivesV1(p: unknown): p is PlanProjectionPrimitivesV1Wire {
   const o = p as Record<string, unknown> | null;
   return Boolean(o && o.format === 'planProjectionPrimitives_v1');

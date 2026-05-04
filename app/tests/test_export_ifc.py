@@ -123,6 +123,52 @@ def test_ifc_read_back_surface_has_walls_storeys_and_spaces():
     assert len(spaces) >= 1, "read-back expected at least one IfcSpace from room"
 
 
+def test_ifc_read_back_wall_and_space_psets_expose_reference_ids() -> None:
+    """IFS/IDS-style read path: IFC property sets carry kernel ``Reference`` ↔ element id."""
+    doc = Document(
+        revision=2,
+        elements={
+            "lvl-g": LevelElem(kind="level", id="lvl-g", name="G", elevationMm=0),
+            "w-a": WallElem(
+                kind="wall",
+                id="w-a",
+                name="W",
+                levelId="lvl-g",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 3000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+            "rm-space": RoomElem(
+                kind="room",
+                id="rm-space",
+                name="Rm",
+                levelId="lvl-g",
+                outlineMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 3500, "yMm": 0},
+                    {"xMm": 3500, "yMm": 2500},
+                    {"xMm": 0, "yMm": 2500},
+                ],
+                programmeCode="READBACK",
+            ),
+        },
+    )
+    step = export_ifc_model_step(doc)
+    import ifcopenshell
+    import ifcopenshell.util.element as elem_util
+
+    model = ifcopenshell.file.from_string(step)
+    walls = model.by_type("IfcWall") or []
+    spaces = model.by_type("IfcSpace") or []
+    assert walls
+    assert spaces
+    w_ps = elem_util.get_psets(walls[0])
+    assert (w_ps.get("Pset_WallCommon") or {}).get("Reference") == "w-a"
+    s_ps = elem_util.get_psets(spaces[0])
+    assert (s_ps.get("Pset_SpaceCommon") or {}).get("Reference") == "rm-space"
+
+
 def test_export_ifc_wall_encoding_kernel_string():
     assert IFC_ENCODING_KERNEL_V1 == "bim_ai_ifc_kernel_v1"
 

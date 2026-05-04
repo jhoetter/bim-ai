@@ -13,8 +13,20 @@ ColumnMeta = dict[str, Any]
 
 # Preferred column order per derived category (stable field keys).
 SCHEDULE_COLUMN_ORDER: dict[str, tuple[str, ...]] = {
-    "room": ("elementId", "name", "levelId", "level", "areaM2", "perimeterM", "familyTypeId"),
-    "door": ("elementId", "name", "wallId", "levelId", "level", "widthMm", "familyTypeId", "familyTypeDisplay"),
+    "room": (
+        "elementId",
+        "name",
+        "levelId",
+        "level",
+        "areaM2",
+        "perimeterM",
+        "programmeCode",
+        "department",
+        "functionLabel",
+        "finishSet",
+        "familyTypeId",
+    ),
+    "door": ("elementId", "name", "wallId", "levelId", "level", "widthMm", "familyTypeId", "familyTypeDisplay", "materialKey"),
     "window": (
         "elementId",
         "name",
@@ -26,6 +38,7 @@ SCHEDULE_COLUMN_ORDER: dict[str, tuple[str, ...]] = {
         "sillMm",
         "familyTypeId",
         "familyTypeDisplay",
+        "materialKey",
     ),
     "floor": (
         "elementId",
@@ -79,6 +92,8 @@ SCHEDULE_COLUMN_ORDER: dict[str, tuple[str, ...]] = {
         "discipline",
         "familyTypeId",
     ),
+    "section_cut": ("elementId", "name", "cropDepthMm", "familyTypeId"),
+    "sectioncut": ("elementId", "name", "cropDepthMm", "familyTypeId"),
 }
 
 SCHEDULE_COLUMN_METADATA: dict[str, dict[str, ColumnMeta]] = {
@@ -88,11 +103,16 @@ SCHEDULE_COLUMN_METADATA: dict[str, dict[str, ColumnMeta]] = {
         "level": {"label": "Level", "role": "text"},
         "areaM2": {"label": "Area (m²)", "role": "number"},
         "perimeterM": {"label": "Perimeter (m)", "role": "number"},
+        "programmeCode": {"label": "Programme", "role": "text"},
+        "department": {"label": "Department", "role": "text"},
+        "functionLabel": {"label": "Function", "role": "text"},
+        "finishSet": {"label": "Finish set", "role": "text"},
     },
     "door": {
         "widthMm": {"label": "Width (mm)", "role": "integer"},
         "familyTypeId": {"label": "Family / type", "role": "identity"},
         "familyTypeDisplay": {"label": "Type name", "role": "text"},
+        "materialKey": {"label": "Finish / material", "role": "text"},
     },
     "window": {
         "widthMm": {"label": "Width (mm)", "role": "integer"},
@@ -100,6 +120,7 @@ SCHEDULE_COLUMN_METADATA: dict[str, dict[str, ColumnMeta]] = {
         "sillMm": {"label": "Sill (mm)", "role": "integer"},
         "familyTypeId": {"label": "Family / type", "role": "identity"},
         "familyTypeDisplay": {"label": "Type name", "role": "text"},
+        "materialKey": {"label": "Finish / material", "role": "text"},
     },
     "floor": {
         "elementId": {"label": "Element Id", "role": "id"},
@@ -151,6 +172,18 @@ SCHEDULE_COLUMN_METADATA: dict[str, dict[str, ColumnMeta]] = {
         "level": {"label": "Level", "role": "text"},
         "planPresentation": {"label": "Presentation", "role": "text"},
         "discipline": {"label": "Discipline", "role": "text"},
+        "familyTypeId": {"label": "Family / type", "role": "identity"},
+    },
+    "section_cut": {
+        "elementId": {"label": "Element Id", "role": "id"},
+        "name": {"label": "Name", "role": "text"},
+        "cropDepthMm": {"label": "Crop depth (mm)", "role": "number"},
+        "familyTypeId": {"label": "Family / type", "role": "identity"},
+    },
+    "sectioncut": {
+        "elementId": {"label": "Element Id", "role": "id"},
+        "name": {"label": "Name", "role": "text"},
+        "cropDepthMm": {"label": "Crop depth (mm)", "role": "number"},
         "familyTypeId": {"label": "Family / type", "role": "identity"},
     },
 }

@@ -321,6 +321,14 @@ export function Viewport({ wsConnected }: Props) {
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const rootGroupRef = useRef<THREE.Group | null>(null);
   const rafRef = useRef<number | null>(null);
+  /** Set by the mount effect so we can snap the orbit rig to saved `viewpoint` cameras. */
+  const orbitRigApiRef = useRef<{
+    applyViewpointMm: (pose: {
+      position: { xMm: number; yMm: number; zMm: number };
+      target: { xMm: number; yMm: number; zMm: number };
+      up: { xMm: number; yMm: number; zMm: number };
+    }) => void;
+  } | null>(null);
 
   const elementsById = useBimStore((s) => s.elementsById);
 
@@ -330,6 +338,8 @@ export function Viewport({ wsConnected }: Props) {
 
   const viewerClipElevMm = useBimStore((s) => s.viewerClipElevMm);
   const viewerClipFloorElevMm = useBimStore((s) => s.viewerClipFloorElevMm);
+  const orbitCameraNonce = useBimStore((s) => s.orbitCameraNonce);
+  const orbitCameraPoseMm = useBimStore((s) => s.orbitCameraPoseMm);
 
   useEffect(() => {
     const el = mountRef.current;
@@ -362,10 +372,18 @@ export function Viewport({ wsConnected }: Props) {
 
     cameraRef.current = camera;
 
-    let az = Math.PI / 4;
-    let elv = 0.45;
-    let radius = 16;
-    const target = new THREE.Vector3(0, 1.35, 0);
+    /** World mapping matches mesh build: Three.X ← plan xMm, Three.Y ← elev zMm, Three.Z ← plan yMm */
+    const rig = {
+      az: Math.PI / 4,
+
+      elv: 0.45,
+
+      radius: 16,
+
+      target: new THREE.Vector3(0, 1.35, 0),
+
+      up: new THREE.Vector3(0, 1, 0),
+    };
     let dragging = false;
 
     let dragMoved = false;
@@ -376,15 +394,41 @@ export function Viewport({ wsConnected }: Props) {
 
     function placeCamera() {
       camera.position.set(
-        target.x + radius * Math.cos(elv) * Math.sin(az),
-        target.y + radius * Math.sin(elv),
-        target.z + radius * Math.cos(elv) * Math.cos(az),
+        rig.target.x + rig.radius * Math.cos(rig.elv) * Math.sin(rig.az),
+
+        rig.target.y + rig.radius * Math.sin(rig.elv),
+
+        rig.target.z + rig.radius * Math.cos(rig.elv) * Math.cos(rig.az),
       );
-      camera.lookAt(target);
-      camera.up.set(0, 1, 0);
+
+      camera.up.copy(rig.up).normalize();
+
+      camera.lookAt(rig.target);
     }
 
     placeCamera();
+
+    orbitRigApiRef.current = {
+      applyViewpointMm: (pose) => {
+        rig.target.set(pose.target.xMm / 1000, pose.target.zMm / 1000, pose.target.yMm / 1000);
+        rig.up.set(pose.up.xMm / 1000, pose.up.zMm / 1000, pose.up.yMm / 1000).normalize();
+        if (rig.up.lengthSq() < 1e-8) rig.up.set(0, 1, 0);
+        const px = pose.position.xMm / 1000;
+
+        const py = pose.position.zMm / 1000;
+
+        const pz = pose.position.yMm / 1000;
+        const dx = px - rig.target.x;
+
+        const dy = py - rig.target.y;
+
+        const dz = pz - rig.target.z;
+        rig.radius = Math.max(1e-3, Math.hypot(dx, dy, dz));
+        rig.elv = Math.asin(THREE.MathUtils.clamp(dy / rig.radius, -0.995, 0.995));
+        rig.az = Math.atan2(dx, dz);
+        placeCamera();
+      },
+    };
 
     function pick(cx: number, cy: number) {
       const rect = renderer.domElement.getBoundingClientRect();
@@ -440,14 +484,14 @@ export function Viewport({ wsConnected }: Props) {
       if (Math.hypot(dx, dy) > 2) dragMoved = true;
       lastX = ev.clientX;
       lastY = ev.clientY;
-      az += dx * 0.006;
+      rig.az += dx * 0.006;
 
-      elv = THREE.MathUtils.clamp(elv - dy * 0.006, 0.12, Math.PI / 2 - 0.08);
+      rig.elv = THREE.MathUtils.clamp(rig.elv - dy * 0.006, 0.12, Math.PI / 2 - 0.08);
       placeCamera();
     }
 
     function onWheel(ev: WheelEvent) {
-      radius = THREE.MathUtils.clamp(radius + ev.deltaY * 0.012, 4, 80);
+      rig.radius = THREE.MathUtils.clamp(rig.radius + ev.deltaY * 0.012, 4, 80);
 
       placeCamera();
     }
@@ -469,6 +513,8 @@ export function Viewport({ wsConnected }: Props) {
     tick();
 
     return () => {
+      orbitRigApiRef.current = null;
+
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
 
       ro.disconnect();
@@ -488,11 +534,14 @@ export function Viewport({ wsConnected }: Props) {
   }, []);
 
   useEffect(() => {
+    if (!orbitCameraPoseMm) return;
+    orbitRigApiRef.current?.applyViewpointMm(orbitCameraPoseMm);
+  }, [orbitCameraNonce, orbitCameraPoseMm]);
+
+  useEffect(() => {
     const root = rootGroupRef.current;
 
-    const camera = cameraRef.current;
-
-    if (!root || !camera) return;
+    if (!root) return;
 
     while (root.children.length) root.remove(root.children[0]!);
 
@@ -603,8 +652,6 @@ export function Viewport({ wsConnected }: Props) {
     }
 
     applyClippingPlanesToMeshes(root, clippingPlanes);
-
-    camera.lookAt(new THREE.Vector3(0, 1.35, 0));
   }, [elementsById, selectedId, viewerCategoryHidden, viewerClipElevMm, viewerClipFloorElevMm]);
 
   return (

@@ -14,6 +14,7 @@ from bim_ai.elements import (
     RoofElem,
     RoomElem,
     ScheduleElem,
+    SectionCutElem,
     SheetElem,
     StairElem,
     WallElem,
@@ -96,6 +97,10 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                         "areaM2": round(area, 3),
                         "perimeterM": round(perimeter, 3),
                         "familyTypeId": "",
+                        "programmeCode": (e.programme_code or "").strip(),
+                        "department": (e.department or "").strip(),
+                        "functionLabel": (e.function_label or "").strip(),
+                        "finishSet": (e.finish_set or "").strip(),
                     }
                 )
 
@@ -112,6 +117,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                         "level": lvl_lab.get(lid, lid or "—"),
                         "widthMm": e.width_mm,
                         "familyTypeId": getattr(e, "family_type_id", "") or "",
+                        "materialKey": (getattr(e, "material_key", None) or "").strip(),
                         "familyTypeDisplay": family_type_display_label(doc, getattr(e, "family_type_id", None)),
                     }
                 )
@@ -131,6 +137,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                         "heightMm": e.height_mm,
                         "sillMm": e.sill_height_mm,
                         "familyTypeId": getattr(e, "family_type_id", "") or "",
+                        "materialKey": (getattr(e, "material_key", None) or "").strip(),
                         "familyTypeDisplay": family_type_display_label(doc, getattr(e, "family_type_id", None)),
                     }
                 )
@@ -233,6 +240,18 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                     }
                 )
 
+    elif cat in {"section_cut", "sectioncut"}:
+        for e in doc.elements.values():
+            if isinstance(e, SectionCutElem):
+                rows.append(
+                    {
+                        "elementId": e.id,
+                        "name": e.name,
+                        "cropDepthMm": round(float(e.crop_depth_mm), 3),
+                        "familyTypeId": "",
+                    }
+                )
+
     else:
         rows = []
 
@@ -281,6 +300,14 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
 
     observed_keys = {k for r in leaf_rows for k in r.keys()} if leaf_rows else set()
     columns = stable_column_keys(cat, observed_keys)
+    dck_raw = filt.get("displayColumnKeys") or filt.get("display_column_keys")
+    if isinstance(dck_raw, list) and dck_raw:
+        want_list = [str(x) for x in dck_raw if str(x).strip()]
+        if want_list:
+            want_set = set(want_list)
+            narrowed = [c for c in columns if c in want_set]
+            if narrowed:
+                columns = narrowed
 
     totals: dict[str, Any] = {}
     if cat == "room" and leaf_rows:

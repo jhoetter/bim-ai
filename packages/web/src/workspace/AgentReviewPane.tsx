@@ -44,6 +44,12 @@ export function AgentReviewPane() {
       pngFullSheet?: string;
       bundleJson?: string;
     }[];
+    view3dRows: {
+      viewpointId: string;
+      viewpointName?: string;
+      pngViewport?: string;
+      bundleJson?: string;
+    }[];
     suggestedBasenameHint: string | null;
     mismatchNotes: string[];
   };
@@ -93,6 +99,7 @@ export function AgentReviewPane() {
         semanticDigestSha256Tail: null,
         modelRevision: null,
         sheetRows: [],
+        view3dRows: [],
         suggestedBasenameHint: null,
         mismatchNotes: [],
       };
@@ -151,6 +158,33 @@ export function AgentReviewPane() {
         };
       });
 
+      const dv3 = payload.deterministic3dViewEvidence ?? payload.deterministic_3d_view_evidence;
+      const vrowsRaw = Array.isArray(dv3) ? dv3 : [];
+      const view3dRows = vrowsRaw.map((row) => {
+        const r = row as Record<string, unknown>;
+        const pwRaw = r.playwrightSuggestedFilenames;
+        const pw = pwRaw && typeof pwRaw === 'object' ? (pwRaw as Record<string, unknown>) : {};
+        const corrRaw = r.correlation;
+        const corr =
+          corrRaw && typeof corrRaw === 'object' ? (corrRaw as Record<string, unknown>) : {};
+        return {
+          viewpointId: String(r.viewpointId ?? r.viewpoint_id ?? ''),
+          viewpointName:
+            typeof r.viewpointName === 'string'
+              ? r.viewpointName
+              : typeof r.viewpoint_name === 'string'
+                ? r.viewpoint_name
+                : undefined,
+          pngViewport: typeof pw.pngViewport === 'string' ? pw.pngViewport : undefined,
+          bundleJson:
+            typeof corr.suggestedEvidenceBundleEvidencePackageJson === 'string'
+              ? corr.suggestedEvidenceBundleEvidencePackageJson
+              : typeof corr.suggested_evidence_bundle_evidence_package_json === 'string'
+                ? corr.suggested_evidence_bundle_evidence_package_json
+                : undefined,
+        };
+      });
+
       const mismatchNotes: string[] = [];
       for (let i = 0; i < rowsRaw.length; i++) {
         const sr = sheetRows[i];
@@ -175,12 +209,46 @@ export function AgentReviewPane() {
         );
       }
 
+      for (let i = 0; i < vrowsRaw.length; i++) {
+        const vr = view3dRows[i];
+        if (!vr?.viewpointId) continue;
+        const cRaw = vrowsRaw[i] as Record<string, unknown>;
+        const corrRaw = cRaw?.correlation;
+        const corr =
+          corrRaw && typeof corrRaw === 'object' ? (corrRaw as Record<string, unknown>) : {};
+        const rowPrefix =
+          typeof corr.semanticDigestPrefix16 === 'string' ? corr.semanticDigestPrefix16 : null;
+        if (prefix && rowPrefix && rowPrefix !== prefix) {
+          mismatchNotes.push(
+            `3D ${vr.viewpointId}: correlation semanticDigestPrefix16 (${rowPrefix}) ≠ package (${prefix}).`,
+          );
+        }
+      }
+
+      for (const sr of sheetRows) {
+        if (!sr.sheetId) continue;
+        if (!sr.pngViewport && !sr.pngFullSheet) {
+          mismatchNotes.push(
+            `Sheet ${sr.sheetId}: missing Playwright PNG hints in deterministic sheet evidence row — rerun evidence-baselines or refresh manifest.`,
+          );
+        }
+      }
+      for (const vr of view3dRows) {
+        if (!vr.viewpointId) continue;
+        if (!vr.pngViewport) {
+          mismatchNotes.push(
+            `Viewpoint ${vr.viewpointId}: missing pngViewport hint — regenerate deterministic 3D evidence.`,
+          );
+        }
+      }
+
       return {
         semanticDigestPrefix16: prefix,
         semanticDigestSha256Tail: shaTail,
         modelRevision:
           modelRevision !== null && Number.isFinite(modelRevision) ? modelRevision : null,
         sheetRows,
+        view3dRows,
         suggestedBasenameHint: basename,
         mismatchNotes,
       };
@@ -190,6 +258,7 @@ export function AgentReviewPane() {
         semanticDigestSha256Tail: null,
         modelRevision: null,
         sheetRows: [],
+        view3dRows: [],
         suggestedBasenameHint: null,
         mismatchNotes: ['Could not parse evidence JSON for artifact summary.'],
       };
@@ -644,6 +713,7 @@ export function AgentReviewPane() {
       ) : null}
 
       {evidenceArtifactSummary.sheetRows.length ||
+      evidenceArtifactSummary.view3dRows.length ||
       evidenceArtifactSummary.semanticDigestPrefix16 ? (
         <div className="rounded border border-border bg-background/40 p-2">
           <div className="text-[10px] font-semibold text-muted">Evidence artifact correlation</div>
@@ -696,6 +766,42 @@ export function AgentReviewPane() {
                       </td>
                       <td className="border border-border px-1 py-1 font-mono align-top">
                         {sr.pngFullSheet ?? '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
+          {evidenceArtifactSummary.view3dRows.length ? (
+            <div className="mt-3 overflow-auto">
+              <div className="mb-1 text-[10px] font-semibold text-muted">
+                Deterministic 3D viewpoints
+              </div>
+              <table className="w-full border-collapse border border-border text-[10px]">
+                <thead>
+                  <tr className="bg-surface/50">
+                    <th className="border border-border px-1 py-1 text-left">Viewpoint</th>
+                    <th className="border border-border px-1 py-1 text-left">PNG stem</th>
+                    <th className="border border-border px-1 py-1 text-left">
+                      Evidence bundle hint
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {evidenceArtifactSummary.view3dRows.map((vr) => (
+                    <tr key={vr.viewpointId}>
+                      <td className="border border-border px-1 py-1 align-top">
+                        <div className="font-mono">{vr.viewpointId}</div>
+                        {vr.viewpointName ? (
+                          <div className="text-muted">{vr.viewpointName}</div>
+                        ) : null}
+                      </td>
+                      <td className="border border-border px-1 py-1 font-mono align-top">
+                        {vr.pngViewport ?? '—'}
+                      </td>
+                      <td className="border border-border px-1 py-1 font-mono align-top">
+                        {vr.bundleJson ?? '—'}
                       </td>
                     </tr>
                   ))}

@@ -215,6 +215,9 @@ class SaveViewpointCmd(BaseModel):
     name: str = "Viewpoint"
     camera: CameraMm
     mode: Literal["plan_2d", "orbit_3d", "plan_canvas"] = "orbit_3d"
+    viewer_clip_cap_elev_mm: float | None = Field(default=None, alias="viewerClipCapElevMm")
+    viewer_clip_floor_elev_mm: float | None = Field(default=None, alias="viewerClipFloorElevMm")
+    hidden_semantic_kinds_3d: list[str] = Field(default_factory=list, alias="hiddenSemanticKinds3d")
 
 
 class UpsertProjectSettingsCmd(BaseModel):
@@ -406,6 +409,9 @@ class UpsertSheetCmd(BaseModel):
     id: str | None = None
     name: str = "Sheet"
     title_block: str | None = Field(default=None, alias="titleBlock")
+    paper_width_mm: float | None = Field(default=None, alias="paperWidthMm")
+    paper_height_mm: float | None = Field(default=None, alias="paperHeightMm")
+    titleblock_parameters: dict[str, str] | None = Field(default=None, alias="titleblockParameters")
 
 
 class UpsertSheetViewportsCmd(BaseModel):
@@ -428,6 +434,7 @@ class UpsertScheduleFiltersCmd(BaseModel):
     type: Literal["upsertScheduleFilters"] = "upsertScheduleFilters"
     schedule_id: str = Field(alias="scheduleId")
     filters: dict[str, Any]
+    grouping: dict[str, Any] | None = None
 
 
 class UpsertRoomVolumeCmd(BaseModel):

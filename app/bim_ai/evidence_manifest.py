@@ -9,7 +9,7 @@ from urllib.parse import quote
 from uuid import UUID
 
 from bim_ai.document import Document
-from bim_ai.elements import PlanViewElem, SheetElem
+from bim_ai.elements import PlanViewElem, SheetElem, ViewpointElem
 
 
 def export_link_map(model_id: UUID) -> dict[str, str]:
@@ -164,6 +164,52 @@ def deterministic_sheet_evidence_manifest(
                 },
                 "correlation": {
                     "format": "evidenceSheetCorrelation_v1",
+                    "semanticDigestSha256": semantic_digest_sha256,
+                    "semanticDigestPrefix16": semantic_digest_prefix16,
+                    "modelRevision": doc.revision,
+                    "modelId": mid,
+                    "suggestedEvidenceBundleEvidencePackageJson": bundle_json,
+                },
+            }
+
+        )
+
+    return rows
+
+
+def deterministic_3d_view_evidence_manifest(
+    *,
+    model_id: UUID,
+    doc: Document,
+    evidence_artifact_basename: str,
+    semantic_digest_sha256: str,
+    semantic_digest_prefix16: str,
+) -> list[dict[str, Any]]:
+    """Stable 3D viewpoint capture hints (WP-E02 agent evidence loop)."""
+
+    mid = str(model_id)
+    bundle_json = f"{evidence_artifact_basename}-evidence-package.json"
+
+    rows: list[dict[str, Any]] = []
+    vps = [
+        e for e in doc.elements.values() if isinstance(e, ViewpointElem) and e.mode == "orbit_3d"
+    ]
+    for vp in sorted(vps, key=lambda x: x.id):
+        safe = "".join(ch for ch in vp.id if ch.isalnum() or ch in ("-", "_")) or "vp"
+        stem = f"{evidence_artifact_basename}-3d-{safe}"
+
+        rows.append(
+            {
+                "viewpointId": vp.id,
+                "viewpointName": vp.name,
+                "viewerClipCapElevMm": vp.viewer_clip_cap_elev_mm,
+                "viewerClipFloorElevMm": vp.viewer_clip_floor_elev_mm,
+                "hiddenSemanticKinds3d": list(vp.hidden_semantic_kinds_3d or []),
+                "playwrightSuggestedFilenames": {
+                    "pngViewport": f"{stem}.png",
+                },
+                "correlation": {
+                    "format": "evidence3dViewCorrelation_v1",
                     "semanticDigestSha256": semantic_digest_sha256,
                     "semanticDigestPrefix16": semantic_digest_prefix16,
                     "modelRevision": doc.revision,
