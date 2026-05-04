@@ -208,6 +208,140 @@ def export_ifc_model_step(doc: Document) -> str:
     return step
 
 
+def _kernel_ifc_space_export_props(rm: RoomElem) -> dict[str, str]:
+    """Optional Pset_SpaceCommon fields for IDS / room programme read-back (kernel slice)."""
+
+    out: dict[str, str] = {}
+    if rm.programme_code:
+        out["ProgrammeCode"] = rm.programme_code
+    if rm.department:
+        out["Department"] = rm.department
+    if rm.function_label:
+        out["FunctionLabel"] = rm.function_label
+    if rm.finish_set:
+        out["FinishSet"] = rm.finish_set
+    return out
+
+
+def inspect_kernel_ifc_semantics(
+    *,
+    doc: Document | None = None,
+    step_text: str | None = None,
+) -> dict[str, Any]:
+    """Structured read-back matrix for kernel IFC (WP-X03/X05) — JSON-serializable.
+
+    Does not add fields to the IFC↔glTF parity manifest slice in ``constraints``.
+
+    - Without IfcOpenShell, returns ``available=False`` and optional skip counts when ``doc`` is set.
+    - With ``doc`` only, parses nothing when the document is not ``kernel_export_eligible``.
+    - With ``step_text``, parses that STEP when IfcOpenShell is available (for tests over fixed strings).
+    """
+
+    matrix_version = 1
+    skip_counts: dict[str, int] = {}
+    if doc is not None:
+        skip_counts = {k: v for k, v in sorted(ifc_kernel_geometry_skip_counts(doc).items()) if v}
+
+    if not IFC_AVAILABLE:
+        return {
+            "matrixVersion": matrix_version,
+            "available": False,
+            "reason": "ifcopenshell_not_installed",
+            **({"ifcKernelGeometrySkippedCounts": skip_counts} if skip_counts else {}),
+        }
+
+    text: str | None = step_text
+    if text is None and doc is not None:
+        if not kernel_export_eligible(doc):
+            return {
+                "matrixVersion": matrix_version,
+                "available": False,
+                "reason": "kernel_not_eligible",
+                **({"ifcKernelGeometrySkippedCounts": skip_counts} if skip_counts else {}),
+            }
+        text = export_ifc_model_step(doc)
+
+    if text is None:
+        return {
+            "matrixVersion": matrix_version,
+            "available": False,
+            "reason": "no_document_or_step",
+            **({"ifcKernelGeometrySkippedCounts": skip_counts} if skip_counts else {}),
+        }
+
+    import ifcopenshell
+    import ifcopenshell.util.element as elem_util
+
+    model = ifcopenshell.file.from_string(text)
+
+    storeys = model.by_type("IfcBuildingStorey") or []
+    n_storey = len(storeys)
+    elevations_present = 0
+    for st in storeys:
+        el = getattr(st, "Elevation", None)
+        if el is not None and isinstance(el, (int, float)):
+            elevations_present += 1
+
+    walls = model.by_type("IfcWall") or []
+    openings = model.by_type("IfcOpeningElement") or []
+    doors = model.by_type("IfcDoor") or []
+    windows = model.by_type("IfcWindow") or []
+    spaces = model.by_type("IfcSpace") or []
+    qtys = model.by_type("IfcElementQuantity") or []
+
+    def _count_pset_ref(ifc_products: list[Any], pset_name: str) -> int:
+        c = 0
+        for p in ifc_products:
+            ps = elem_util.get_psets(p)
+            bucket = ps.get(pset_name) or {}
+            if bucket.get("Reference"):
+                c += 1
+        return c
+
+    def _count_space_programme(pset_name: str, key: str) -> int:
+        c = 0
+        for sp in spaces:
+            ps = elem_util.get_psets(sp)
+            bucket = ps.get(pset_name) or {}
+            if bucket.get(key):
+                c += 1
+        return c
+
+    qto_names = sorted({str(q.Name) for q in qtys if getattr(q, "Name", None)})
+
+    out: dict[str, Any] = {
+        "matrixVersion": matrix_version,
+        "available": True,
+        "buildingStorey": {
+            "count": n_storey,
+            "elevationsPresent": elevations_present,
+        },
+        "products": {
+            "IfcWall": len(walls),
+            "IfcOpeningElement": len(openings),
+            "IfcDoor": len(doors),
+            "IfcWindow": len(windows),
+            "IfcSpace": len(spaces),
+        },
+        "identityPsets": {
+            "wallWithPsetWallCommonReference": _count_pset_ref(list(walls), "Pset_WallCommon"),
+            "spaceWithPsetSpaceCommonReference": _count_pset_ref(list(spaces), "Pset_SpaceCommon"),
+            "doorWithPsetDoorCommonReference": _count_pset_ref(list(doors), "Pset_DoorCommon"),
+            "windowWithPsetWindowCommonReference": _count_pset_ref(list(windows), "Pset_WindowCommon"),
+        },
+        "spaceProgrammeFields": {
+            "ProgrammeCode": _count_space_programme("Pset_SpaceCommon", "ProgrammeCode"),
+            "Department": _count_space_programme("Pset_SpaceCommon", "Department"),
+            "FunctionLabel": _count_space_programme("Pset_SpaceCommon", "FunctionLabel"),
+            "FinishSet": _count_space_programme("Pset_SpaceCommon", "FinishSet"),
+        },
+        "qtoTemplates": qto_names,
+    }
+    if skip_counts:
+        out["ifcKernelGeometrySkippedCounts"] = skip_counts
+    return out
+
+
 def _clamp(v: float, lo: float, hi: float) -> float:
     return max(lo, min(hi, v))
 
@@ -724,7 +858,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
 
         ifcopenshell.api.aggregate.assign_object(f, products=[sp], relating_object=storey_sp)
         geo_products += 1
-        attach_kernel_identity_pset(sp, "Pset_SpaceCommon", rid)
+        attach_kernel_identity_pset(sp, "Pset_SpaceCommon", rid, **_kernel_ifc_space_export_props(rm))
         gross_area = _polygon_area_m2_xy_mm(pts_outline)
         _try_attach_qto(
             f,

@@ -16,7 +16,12 @@ from bim_ai.elements import (
     WallElem,
     WindowElem,
 )
-from bim_ai.export_ifc import IFC_AVAILABLE, IFC_ENCODING_KERNEL_V1, export_ifc_model_step
+from bim_ai.export_ifc import (
+    IFC_AVAILABLE,
+    IFC_ENCODING_KERNEL_V1,
+    export_ifc_model_step,
+    inspect_kernel_ifc_semantics,
+)
 from bim_ai.ifc_stub import build_ifc_exchange_manifest_payload
 
 pytestmark = pytest.mark.skipif(not IFC_AVAILABLE, reason="ifcopenshell not installed (pip install '.[ifc]')")
@@ -167,6 +172,7 @@ def test_ifc_read_back_wall_and_space_psets_expose_reference_ids() -> None:
     assert (w_ps.get("Pset_WallCommon") or {}).get("Reference") == "w-a"
     s_ps = elem_util.get_psets(spaces[0])
     assert (s_ps.get("Pset_SpaceCommon") or {}).get("Reference") == "rm-space"
+    assert (s_ps.get("Pset_SpaceCommon") or {}).get("ProgrammeCode") == "READBACK"
 
 
 def test_export_ifc_wall_encoding_kernel_string():
@@ -450,4 +456,127 @@ def test_export_ifc_kernel_qto_matrix_for_wall_slab_space_door_window() -> None:
     )
 
     assert len(qtys) == 0 or linked_any
+
+def test_ifc_inspection_matrix_covers_storeys_spaces_qtos_and_programme_fields() -> None:
+    """``inspect_kernel_ifc_semantics`` collapses read-back smoke into a single matrix dict."""
+
+    doc = Document(
+        revision=202,
+        elements={
+            "lvl-g": LevelElem(kind="level", id="lvl-g", name="G", elevationMm=0),
+            "w-a": WallElem(
+                kind="wall",
+                id="w-a",
+                name="W",
+                levelId="lvl-g",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 6000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+            "fl": FloorElem(
+                kind="floor",
+                id="fl",
+                name="S",
+                levelId="lvl-g",
+                boundaryMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 8000, "yMm": 0},
+                    {"xMm": 8000, "yMm": 5000},
+                    {"xMm": 0, "yMm": 5000},
+                ],
+                thicknessMm=220,
+            ),
+            "rm": RoomElem(
+                kind="room",
+                id="rm-id",
+                name="Clean Lab",
+                levelId="lvl-g",
+                outlineMm=[
+                    {"xMm": 1000, "yMm": 1000},
+                    {"xMm": 5000, "yMm": 1000},
+                    {"xMm": 5000, "yMm": 4000},
+                    {"xMm": 1000, "yMm": 4000},
+                ],
+                programmeCode="ISO7",
+                department="Process",
+                functionLabel="Airlock ante",
+                finishSet="Epoxy_C3",
+            ),
+        },
+    )
+    rep = inspect_kernel_ifc_semantics(doc=doc)
+    assert rep["available"] is True
+    assert rep["matrixVersion"] == 1
+    assert rep["buildingStorey"]["count"] >= 1
+    assert rep["buildingStorey"]["elevationsPresent"] >= 1
+    assert rep["products"]["IfcWall"] >= 1
+    assert rep["products"]["IfcSpace"] >= 1
+    assert rep["identityPsets"]["wallWithPsetWallCommonReference"] >= 1
+    assert rep["identityPsets"]["spaceWithPsetSpaceCommonReference"] >= 1
+    sf = rep["spaceProgrammeFields"]
+    assert sf["ProgrammeCode"] >= 1
+    assert sf["Department"] >= 1
+    assert sf["FunctionLabel"] >= 1
+    assert sf["FinishSet"] >= 1
+
+    step = export_ifc_model_step(doc)
+    import ifcopenshell
+    import ifcopenshell.util.element as elem_util
+
+    model = ifcopenshell.file.from_string(step)
+    spaces = model.by_type("IfcSpace") or []
+    assert spaces
+    s_ps = elem_util.get_psets(spaces[0])
+    pc = s_ps.get("Pset_SpaceCommon") or {}
+    assert pc.get("ProgrammeCode") == "ISO7"
+    assert pc.get("Department") == "Process"
+    assert pc.get("FunctionLabel") == "Airlock ante"
+    assert pc.get("FinishSet") == "Epoxy_C3"
+
+    rep2 = inspect_kernel_ifc_semantics(step_text=step)
+    assert rep2["available"] is True
+    assert rep2["products"]["IfcSpace"] == rep["products"]["IfcSpace"]
+
+
+def test_ifc_inspection_matrix_includes_geometry_skip_counts_on_eligible_doc() -> None:
+    doc = Document(
+        revision=203,
+        elements={
+            "lvl-g": LevelElem(kind="level", id="lvl-g", name="G", elevationMm=0),
+            "w-a": WallElem(
+                kind="wall",
+                id="w-a",
+                name="W",
+                levelId="lvl-g",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 3000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+            "fl": FloorElem(
+                kind="floor",
+                id="fl",
+                name="F",
+                levelId="lvl-g",
+                boundaryMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 3000, "yMm": 0},
+                    {"xMm": 3000, "yMm": 3000},
+                    {"xMm": 0, "yMm": 3000},
+                ],
+            ),
+            "d-bad": DoorElem(
+                kind="door",
+                id="d-bad",
+                name="Bad",
+                wallId="no-wall",
+                alongT=0.5,
+                widthMm=900,
+            ),
+        },
+    )
+    rep = inspect_kernel_ifc_semantics(doc=doc)
+    assert rep["available"] is True
+    assert (rep.get("ifcKernelGeometrySkippedCounts") or {}).get("door_missing_host_wall") == 1
 

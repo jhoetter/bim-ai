@@ -9,7 +9,7 @@ Companion to [revit-production-parity-workpackage-tracker.md](./revit-production
 | **ifcopenshell** (recommended for X03‑2 onward) | Valid IFC graphs, IFC4 schema enums, incremental entity coverage | Native wheel / CI image size; server deploy story                        |
 | Hand-authored STEP snippet                      | Zero new deps today                                              | Extremely error-prone references; brittle for anything beyond EMPTY DATA |
 
-**Decision:** Ship **manifest + canonical download URL** aligned with [`export_gltf.py`](../app/bim_ai/export_gltf.py) statistics (`exportedIfcKindsInArtifact`, parity counts, unsupported kinds). **`model.ifc`** serves an **IfcOpenShell-backed IFC4 subset** (`bim_ai/export_ifc.py`) when **`ifcopenshell`** (`pyproject.toml` `[ifc]`) is installed and the document is **kernel-eligible** (≥1 wall and ≥1 floor-with-boundary together); otherwise the validated empty DATA hull `bim_ai_ifc_empty_shell_v0`.
+**Decision:** Ship **manifest + canonical download URL** aligned with [`export_gltf.py`](../app/bim_ai/export_gltf.py) statistics (`exportedIfcKindsInArtifact`, parity counts, unsupported kinds). **`model.ifc`** serves an **IfcOpenShell-backed IFC4 subset** (`bim_ai/export_ifc.py`) when **`ifcopenshell`** (`pyproject.toml` `[ifc]`) is installed and the document is **kernel-eligible** (≥1 wall **or** ≥1 `floor` with boundary ≥3 points — see `kernel_export_eligible()` in [`export_ifc.py`](../app/bim_ai/export_ifc.py)); otherwise the validated empty DATA hull `bim_ai_ifc_empty_shell_v0`.
 
 ## Kernel ↔ IFC4 targets (geometry parity slice)
 
@@ -39,6 +39,24 @@ Kinds **outside** [`EXPORT_GEOMETRY_KINDS`](../app/bim_ai/export_gltf.py) stay i
 
 - **Property sets (kernel):** emitted products receive buildingSMART-aligned `Pset_*Common` instances with a deterministic `Reference` string (kernel element id) via `ifcopenshell.api.pset.{add_pset,edit_pset}` — see `try_build_kernel_ifc()` in [`export_ifc.py`](../app/bim_ai/export_ifc.py).
 - **Quantities (narrow QTO slice):** `ifcopenshell.api.pset.{add_qto,edit_qto}` attaches template-backed `IfcElementQuantity` roll-ups (`Qto_WallBaseQuantities`, `Qto_SlabBaseQuantities`, `Qto_BaseQuantities` / door+window fillings, plus `Qto_SpaceBaseQuantities` on `IfcSpace`) when imports succeed — ignored silently on unsupported builds.
+- **Spaces — programme metadata (kernel):** optional strings from `RoomElem` map onto `Pset_SpaceCommon` as `ProgrammeCode`, `Department`, `FunctionLabel`, and `FinishSet` when set (`_kernel_ifc_space_export_props()` in [`export_ifc.py`](../app/bim_ai/export_ifc.py)).
+
+## IFC semantic inspection matrix (v1)
+
+Single read-back entry point: **`inspect_kernel_ifc_semantics()`** in [`export_ifc.py`](../app/bim_ai/export_ifc.py). Returns JSON-serializable rows (and does **not** add keys to the IFC↔glTF parity slice in [`constraints.py`](../app/bim_ai/constraints.py)).
+
+| Row | What it covers |
+| --- | ---------------- |
+| `buildingStorey` | `IfcBuildingStorey` count; how many storeys carry a numeric `Elevation`. |
+| `products` | Counts of `IfcWall`, `IfcOpeningElement`, `IfcDoor`, `IfcWindow`, `IfcSpace`. |
+| `identityPsets` | Instances with `Reference` on `Pset_WallCommon`, `Pset_SpaceCommon`, `Pset_DoorCommon`, `Pset_WindowCommon`. |
+| `spaceProgrammeFields` | Counts of spaces carrying `ProgrammeCode` / `Department` / `FunctionLabel` / `FinishSet` on `Pset_SpaceCommon`. |
+| `qtoTemplates` | `Name` of each `IfcElementQuantity` (`Qto_*` templates when QTO helpers succeed). |
+| `ifcKernelGeometrySkippedCounts` | Document-level map from `ifc_kernel_geometry_skip_counts()` (missing hosts, degenerate outlines); aligned with manifest + `exchange_ifc_kernel_geometry_skip_summary`. |
+
+**Offline / no IfcOpenShell:** same function returns `available: false` (`reason`: `ifcopenshell_not_installed` or `kernel_not_eligible`) and may still include `ifcKernelGeometrySkippedCounts` when a `Document` is supplied.
+
+**Tests:** [`app/tests/test_export_ifc.py`](../app/tests/test_export_ifc.py) (ifc-backed), [`app/tests/test_ifc_exchange_manifest_offline.py`](../app/tests/test_ifc_exchange_manifest_offline.py) (manifest + stub paths).
 
 ## Still deferred
 
