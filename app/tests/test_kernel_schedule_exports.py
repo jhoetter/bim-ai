@@ -97,6 +97,25 @@ def test_schedule_csv_column_subset_keeps_payload_order():
     assert csv_txt.splitlines()[0] == "a,c"
 
 
+def test_schedule_table_column_subset_same_as_csv_header():
+    payload = {
+        "columns": ["elementId", "name", "levelId", "level", "areaM2", "perimeterM"],
+        "rows": [
+            {
+                "elementId": "r1",
+                "name": "Room",
+                "levelId": "lv",
+                "level": "L1",
+                "areaM2": 12.0,
+                "perimeterM": 14.0,
+            },
+        ],
+    }
+    sub = schedule_payload_with_column_subset(payload, ["level", "elementId"])
+    assert sub["columns"] == ["elementId", "level"]
+    assert schedule_payload_to_csv(sub).splitlines()[0] == "elementId,level"
+
+
 def test_gltf_manifest_warns_on_diagonal_wall_with_opening():
     doc = Document(
         revision=1,

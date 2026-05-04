@@ -13,16 +13,34 @@ def builtin_type_material_registry() -> dict[str, Any]:
 
     return {
         "format": "bimAiBuiltinRegistry_v1",
-        "notes": ("Use `upsertFamilyType`, `assignOpeningFamily`, and wall type elements to reference these keys."),
+        "notes": (
+            "Use `upsertFamilyType`, `assignOpeningFamily`, and wall type elements to reference these keys."
+        ),
         "familyTypeSeeds": [
-            {"key": "ft-door-interior-swing-v1", "discipline": "door", "displayName": "Interior swing"},
-            {"key": "ft-door-cleanroom-interlock-v1", "discipline": "door", "displayName": "Cleanroom interlock"},
+            {
+                "key": "ft-door-interior-swing-v1",
+                "discipline": "door",
+                "displayName": "Interior swing",
+            },
+            {
+                "key": "ft-door-cleanroom-interlock-v1",
+                "discipline": "door",
+                "displayName": "Cleanroom interlock",
+            },
             {"key": "ft-window-fixed-v1", "discipline": "window", "displayName": "Fixed lite"},
-            {"key": "ft-generic-placeholder-v1", "discipline": "generic", "displayName": "Generic host type"},
+            {
+                "key": "ft-generic-placeholder-v1",
+                "discipline": "generic",
+                "displayName": "Generic host type",
+            },
         ],
         "wallTypeSeeds": [
             {"key": "wt-exterior-masonry-200-v1", "name": "Exterior masonry 200", "layerCount": 1},
-            {"key": "wt-interior-partition-100-v1", "name": "Interior partition 100", "layerCount": 1},
+            {
+                "key": "wt-interior-partition-100-v1",
+                "name": "Interior partition 100",
+                "layerCount": 1,
+            },
         ],
         "materialSeeds": [
             {"materialKey": "mat-concrete-structure-v1", "displayName": "Concrete structure"},
@@ -62,13 +80,35 @@ def merged_registry_payload(doc: Document) -> dict[str, Any]:
     }
 
 
+def material_display_label(_doc: Document, material_key: str | None) -> str:
+    """Human label for schedules / UI from builtin material seeds (WP-D05 slice)."""
+
+    key = (material_key or "").strip()
+
+    if not key:
+        return ""
+
+    for seed in builtin_type_material_registry().get("materialSeeds") or []:
+        if not isinstance(seed, dict):
+            continue
+
+        sk = str(seed.get("materialKey") or seed.get("material_key") or "").strip()
+
+        if sk == key:
+            dn = seed.get("displayName") or seed.get("display_name")
+
+            if isinstance(dn, str) and dn.strip():
+                return dn.strip()
+
+    return ""
+
+
 def family_type_display_label(doc: Document, family_type_id: str | None) -> str:
     """Human label for schedules / UI."""
 
     fid = (family_type_id or "").strip()
 
     if not fid:
-
         return ""
 
     ft = doc.elements.get(fid)
@@ -78,7 +118,6 @@ def family_type_display_label(doc: Document, family_type_id: str | None) -> str:
         dn = params.get("displayName") or params.get("display_name") or params.get("name")
 
         if isinstance(dn, str) and dn.strip():
-
             return dn.strip()
 
     return fid

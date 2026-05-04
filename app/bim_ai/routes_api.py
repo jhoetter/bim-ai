@@ -467,7 +467,12 @@ async def schedule_derived_table(
             media_type="text/csv; charset=utf-8",
             headers={"Content-Disposition": f'attachment; filename="{safe}.csv"'},
         )
-    return payload
+    out = payload
+    if columns and columns.strip():
+        wanted = [c.strip() for c in columns.split(",") if c.strip()]
+        if wanted:
+            out = schedule_payload_with_column_subset(payload, wanted)
+    return out
 
 
 @api_router.get("/models/{model_id}/exports/gltf-manifest")

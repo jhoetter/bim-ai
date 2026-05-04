@@ -28,7 +28,7 @@ function findScheduleIdForCategory(
   return best;
 }
 
-function scheduleGroupingKeyChoices(tab: 'rooms' | 'doors' | 'windows'): readonly string[] {
+function scheduleGroupingKeyChoices(tab: TabKey): readonly string[] {
   switch (tab) {
     case 'doors': {
       return ['levelId', 'familyTypeId', 'wallId'];
@@ -42,6 +42,26 @@ function scheduleGroupingKeyChoices(tab: 'rooms' | 'doors' | 'windows'): readonl
       return ['levelId', 'programmeCode', 'department'];
     }
 
+    case 'floors': {
+      return ['levelId', 'name'];
+    }
+
+    case 'roofs': {
+      return ['referenceLevelId', 'name'];
+    }
+
+    case 'stairs': {
+      return ['baseLevelId', 'topLevelId', 'name'];
+    }
+
+    case 'plans': {
+      return ['levelId', 'planPresentation', 'discipline'];
+    }
+
+    case 'sheets': {
+      return ['titleBlock', 'name'];
+    }
+
     default: {
       const exhaustive: never = tab;
 
@@ -50,23 +70,83 @@ function scheduleGroupingKeyChoices(tab: 'rooms' | 'doors' | 'windows'): readonl
   }
 }
 
-function scheduleSortKeyChoices(tab: 'rooms' | 'doors' | 'windows'): readonly string[] {
+function scheduleSortKeyChoices(tab: TabKey): readonly string[] {
   switch (tab) {
     case 'doors': {
-      return ['name', 'elementId', 'level', 'widthMm', 'familyTypeId', 'materialKey'];
+      return [
+        'name',
+        'elementId',
+        'level',
+        'widthMm',
+        'familyTypeId',
+        'materialKey',
+        'materialDisplay',
+      ];
     }
 
     case 'windows': {
-      return ['name', 'elementId', 'level', 'widthMm', 'heightMm', 'familyTypeId', 'materialKey'];
+      return [
+        'name',
+        'elementId',
+        'level',
+        'widthMm',
+        'heightMm',
+        'familyTypeId',
+        'materialKey',
+        'materialDisplay',
+      ];
     }
 
     case 'rooms': {
-      return ['name', 'elementId', 'level', 'areaM2', 'perimeterM'];
+      return ['name', 'elementId', 'level', 'areaM2', 'perimeterM', 'programmeCode'];
+    }
+
+    case 'floors': {
+      return ['name', 'elementId', 'level', 'thicknessMm', 'areaM2', 'perimeterM'];
+    }
+
+    case 'roofs': {
+      return ['name', 'elementId', 'referenceLevel', 'overhangMm', 'slopeDeg', 'footprintAreaM2'];
+    }
+
+    case 'stairs': {
+      return ['name', 'elementId', 'baseLevel', 'topLevel', 'riseMm', 'runMm', 'widthMm'];
+    }
+
+    case 'plans': {
+      return ['name', 'elementId', 'level', 'planPresentation', 'discipline'];
+    }
+
+    case 'sheets': {
+      return ['name', 'elementId', 'viewportCount', 'titleBlock'];
     }
 
     default: {
       const exhaustive: never = tab;
 
+      return exhaustive;
+    }
+  }
+}
+
+function levelFilterFieldForTab(
+  tab: TabKey,
+): 'levelId' | 'referenceLevelId' | 'baseLevelId' | null {
+  switch (tab) {
+    case 'rooms':
+    case 'doors':
+    case 'windows':
+    case 'floors':
+    case 'plans':
+      return 'levelId';
+    case 'roofs':
+      return 'referenceLevelId';
+    case 'stairs':
+      return 'baseLevelId';
+    case 'sheets':
+      return null;
+    default: {
+      const exhaustive: never = tab;
       return exhaustive;
     }
   }
@@ -743,8 +823,6 @@ export function SchedulePanel(props: {
   function renderScheduleDefinitionToolbar() {
     if (!props.onScheduleFiltersCommit) return null;
 
-    if (tab !== 'rooms' && tab !== 'doors' && tab !== 'windows') return null;
-
     const scheduleId = sidForTab;
 
     if (!scheduleId || !srvActive || srvActive.scheduleId !== scheduleId || !props.modelId)
@@ -757,10 +835,16 @@ export function SchedulePanel(props: {
     const f = { ...(el.filters ?? {}) } as Record<string, unknown>;
 
     const ghRaw = f.groupingHint ?? f.grouping_hint;
-
-    const hintSet = new Set(
-      Array.isArray(ghRaw) ? ghRaw.filter((x): x is string => typeof x === 'string') : [],
-    );
+    const gkEl = el.grouping as { groupKeys?: unknown } | undefined;
+    const gkRaw = gkEl?.groupKeys;
+    const hintsFromFilters = Array.isArray(ghRaw)
+      ? ghRaw.filter((x): x is string => typeof x === 'string')
+      : [];
+    const hintsFromGrouping = Array.isArray(gkRaw)
+      ? gkRaw.filter((x): x is string => typeof x === 'string')
+      : [];
+    const hintList = hintsFromFilters.length > 0 ? hintsFromFilters : hintsFromGrouping;
+    const hintSet = new Set(hintList);
 
     const sortKeys = scheduleSortKeyChoices(tab);
 
@@ -772,9 +856,25 @@ export function SchedulePanel(props: {
 
     const orderedHints = (): string[] => groupOpts.filter((gk) => hintSet.has(gk));
 
+    const groupingPayload = (hints: string[]) => ({
+      ...(el.grouping as Record<string, unknown>),
+      sortBy: sortVal,
+      groupKeys: hints,
+    });
+
     const commit = (nextF: Record<string, unknown>, nextG: Record<string, unknown>) => {
       props.onScheduleFiltersCommit!(scheduleId, nextF, nextG);
     };
+
+    const lf = levelFilterFieldForTab(tab);
+    const feRaw = f.filterEquals ?? f.filter_equals;
+    const feObj =
+      typeof feRaw === 'object' && feRaw !== null && !Array.isArray(feRaw)
+        ? { ...(feRaw as Record<string, unknown>) }
+        : {};
+    const levelRestricted = Boolean(
+      lf && props.activeLevelId && String(feObj[lf] ?? '') === props.activeLevelId,
+    );
 
     return (
       <div
@@ -794,12 +894,8 @@ export function SchedulePanel(props: {
               value={sortVal}
               onChange={(e) => {
                 const sb = e.target.value;
-
-                commit(
-                  { ...f, sortBy: sb, groupingHint: orderedHints() },
-
-                  { ...(el.grouping as Record<string, unknown>), sortBy: sb },
-                );
+                const hints = orderedHints();
+                commit({ ...f, sortBy: sb, groupingHint: hints }, groupingPayload(hints));
               }}
             >
               {sortKeys.map((k) => (
@@ -809,6 +905,34 @@ export function SchedulePanel(props: {
               ))}
             </select>
           </label>
+
+          {lf && props.activeLevelId ? (
+            <label className="flex cursor-pointer items-center gap-2">
+              <input
+                type="checkbox"
+                checked={levelRestricted}
+                onChange={(e) => {
+                  const on = e.target.checked;
+                  const hints = orderedHints();
+                  const nextFe = { ...feObj };
+                  if (on) nextFe[lf] = props.activeLevelId!;
+                  else delete nextFe[lf];
+                  commit(
+                    {
+                      ...f,
+                      sortBy: sortVal,
+                      groupingHint: hints,
+                      filterEquals: nextFe,
+                    },
+                    groupingPayload(hints),
+                  );
+                }}
+              />
+              <span>
+                Restrict to active level (<span className="font-mono">{lf}</span>)
+              </span>
+            </label>
+          ) : null}
         </div>
 
         <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
@@ -830,9 +954,8 @@ export function SchedulePanel(props: {
                   const nextHints = groupOpts.filter((x) => nx.has(x));
 
                   commit(
-                    { ...f, groupingHint: nextHints, sortBy: sortVal },
-
-                    { ...(el.grouping as Record<string, unknown>), sortBy: sortVal },
+                    { ...f, groupingHint: nextHints, sortBy: sortVal, filterEquals: feObj },
+                    groupingPayload(nextHints),
                   );
                 }}
               />
