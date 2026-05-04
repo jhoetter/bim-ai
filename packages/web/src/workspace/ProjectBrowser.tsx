@@ -108,6 +108,8 @@ export function ProjectBrowser(props: {
     if (pv.planRoomFillOpacityScale != null && Number.isFinite(pv.planRoomFillOpacityScale)) {
       cmd.planRoomFillOpacityScale = pv.planRoomFillOpacityScale;
     }
+    if (pv.planShowOpeningTags !== undefined) cmd.planShowOpeningTags = pv.planShowOpeningTags;
+    if (pv.planShowRoomLabels !== undefined) cmd.planShowRoomLabels = pv.planShowRoomLabels;
     if (pv.underlayLevelId) cmd.underlayLevelId = pv.underlayLevelId;
     if (pv.phaseId) cmd.phaseId = pv.phaseId;
     if (pv.categoriesHidden?.length) cmd.categoriesHidden = [...pv.categoriesHidden];

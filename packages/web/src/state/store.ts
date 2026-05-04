@@ -191,6 +191,23 @@ function coerceXYZ(raw: Record<string, unknown>): { xMm: number; yMm: number; zM
   };
 }
 
+function readPlanViewBoolOverride(raw: unknown): boolean | undefined {
+  if (raw === null || raw === undefined) return undefined;
+  if (typeof raw === 'boolean') return raw;
+  if (typeof raw === 'string') {
+    const s = raw.trim().toLowerCase();
+    if (s === '') return undefined;
+    if (s === 'true' || s === '1') return true;
+    if (s === 'false' || s === '0') return false;
+  }
+  return undefined;
+}
+
+function readViewTemplateBool(raw: unknown, defaultVal: boolean): boolean {
+  const o = readPlanViewBoolOverride(raw);
+  return o === undefined ? defaultVal : o;
+}
+
 function coerceElement(id: string, raw: Record<string, unknown>): Element | null {
   const kind = raw.kind;
   const name =
@@ -644,6 +661,8 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
       const n = Number(pfoRaw);
       if (Number.isFinite(n)) planRoomFillOpacityScale = Math.max(0, Math.min(1, n));
     }
+    const pso = readPlanViewBoolOverride(raw.planShowOpeningTags ?? raw.plan_show_opening_tags);
+    const psr = readPlanViewBoolOverride(raw.planShowRoomLabels ?? raw.plan_show_room_labels);
     return {
       kind: 'plan_view',
       id,
@@ -666,6 +685,8 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
       categoriesHidden,
       ...(planDetailLevel !== undefined ? { planDetailLevel } : {}),
       ...(planRoomFillOpacityScale !== undefined ? { planRoomFillOpacityScale } : {}),
+      ...(pso !== undefined ? { planShowOpeningTags: pso } : {}),
+      ...(psr !== undefined ? { planShowRoomLabels: psr } : {}),
     };
   }
 
@@ -691,6 +712,14 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
       const n = Number(pfoT);
       if (Number.isFinite(n)) planRoomFillOpacityScale = Math.max(0, Math.min(1, n));
     }
+    const planShowOpeningTags = readViewTemplateBool(
+      raw.planShowOpeningTags ?? raw.plan_show_opening_tags,
+      false,
+    );
+    const planShowRoomLabels = readViewTemplateBool(
+      raw.planShowRoomLabels ?? raw.plan_show_room_labels,
+      false,
+    );
     return {
       kind: 'view_template',
       id,
@@ -700,6 +729,8 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
       hiddenCategories: hiddenCategories.length ? hiddenCategories : undefined,
       ...(planDetailLevel !== undefined ? { planDetailLevel } : {}),
       ...(planRoomFillOpacityScale !== undefined ? { planRoomFillOpacityScale } : {}),
+      planShowOpeningTags,
+      planShowRoomLabels,
     };
   }
 

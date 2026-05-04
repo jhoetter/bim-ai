@@ -415,6 +415,8 @@ class UpsertViewTemplateCmd(BaseModel):
     hidden_categories: list[str] = Field(default_factory=list, alias="hiddenCategories")
     plan_detail_level: str | None = Field(default=None, alias="planDetailLevel")
     plan_room_fill_opacity_scale: float | None = Field(default=None, alias="planRoomFillOpacityScale")
+    plan_show_opening_tags: bool | None = Field(default=None, alias="planShowOpeningTags")
+    plan_show_room_labels: bool | None = Field(default=None, alias="planShowRoomLabels")
 
 
 class UpsertSheetCmd(BaseModel):
@@ -481,6 +483,8 @@ class UpsertPlanViewCmd(BaseModel):
     categories_hidden: list[str] = Field(default_factory=list, alias="categoriesHidden")
     plan_detail_level: str | None = Field(default=None, alias="planDetailLevel")
     plan_room_fill_opacity_scale: float | None = Field(default=None, alias="planRoomFillOpacityScale")
+    plan_show_opening_tags: bool | None = Field(default=None, alias="planShowOpeningTags")
+    plan_show_room_labels: bool | None = Field(default=None, alias="planShowRoomLabels")
 
 
 class CreateCalloutCmd(BaseModel):

@@ -5,6 +5,7 @@ import type { Element } from '@bim-ai/core';
 import {
   coerceVec2Mm,
   isPlanProjectionPrimitivesV1,
+  type PlanAnnotationHintsResolved,
   type PlanGraphicHintsResolved,
   type PlanProjectionPrimitivesV1Wire,
 } from './planProjectionWire';
@@ -222,6 +223,7 @@ function rebuildPlanMeshesFromWire(
     presentation?: PlanPresentationPreset;
     wirePrimitives: PlanProjectionPrimitivesV1Wire;
     roomFillOpacityScale?: number;
+    planAnnotationHints?: PlanAnnotationHintsResolved | null;
   },
 ): void {
   while (holder.children.length) holder.remove(holder.children[0]!);
@@ -230,6 +232,7 @@ function rebuildPlanMeshesFromWire(
   const presentation = opts.presentation ?? 'default';
   const selectedId = opts.selectedId;
   const roomFillOpacityScale = opts.roomFillOpacityScale ?? 1;
+  const ann = opts.planAnnotationHints ?? null;
 
   const wallsRaw = Array.isArray(prim.walls) ? (prim.walls as Record<string, unknown>[]) : [];
   const wallsByWireId = new Map<string, Extract<Element, { kind: 'wall' }>>();
@@ -275,12 +278,26 @@ function rebuildPlanMeshesFromWire(
       typeof hexRaw === 'string' && /^#[0-9a-fA-F]{6}$/.test(hexRaw.trim())
         ? hexRaw.trim()
         : undefined;
-    holder.add(
-      roomMesh(roomEl, presentation, {
-        schemeColorHex: schemeHex,
-        roomFillOpacityScale,
-      }),
-    );
+    const mesh = roomMesh(roomEl, presentation, {
+      schemeColorHex: schemeHex,
+      roomFillOpacityScale,
+    });
+    holder.add(mesh);
+    if (ann?.roomLabelsVisible === true && typeof mesh.userData.roomLabel === 'object') {
+      const labelRaw = typeof r.planTagLabel === 'string' ? r.planTagLabel.trim() : '';
+      if (labelRaw) {
+        const rl = mesh.userData.roomLabel as { cx?: number; cz?: number };
+        if (
+          rl &&
+          typeof rl.cx === 'number' &&
+          Number.isFinite(rl.cx) &&
+          typeof rl.cz === 'number' &&
+          Number.isFinite(rl.cz)
+        ) {
+          holder.add(planAnnotationLabelSprite(rl.cx, rl.cz, labelRaw, mesh.userData.bimPickId));
+        }
+      }
+    }
   }
 
   const floors = Array.isArray(prim.floors) ? (prim.floors as Record<string, unknown>[]) : [];
@@ -317,7 +334,17 @@ function rebuildPlanMeshesFromWire(
     const host = resolveWallForWire(wallId, elementsById, wallsByWireId);
     const doorEl = elementsById[id];
     if (!host || doorEl?.kind !== 'door') continue;
-    holder.add(doorGroupThree(doorEl, host, selectedId, presentation === 'opening_focus'));
+    const doorGrp = doorGroupThree(doorEl, host, selectedId, presentation === 'opening_focus');
+    holder.add(doorGrp);
+    if (ann?.openingTagsVisible === true) {
+      const labelRaw = typeof d.planTagLabel === 'string' ? d.planTagLabel.trim() : '';
+      if (labelRaw) {
+        doorGrp.updateMatrixWorld(true);
+        const pos = new THREE.Vector3();
+        doorGrp.getWorldPosition(pos);
+        holder.add(planAnnotationLabelSprite(pos.x, pos.z, labelRaw, doorEl.id));
+      }
+    }
   }
 
   const wins = Array.isArray(prim.windows) ? (prim.windows as Record<string, unknown>[]) : [];
@@ -327,7 +354,17 @@ function rebuildPlanMeshesFromWire(
     const host = resolveWallForWire(wallId, elementsById, wallsByWireId);
     const winEl = elementsById[id];
     if (!host || winEl?.kind !== 'window') continue;
-    holder.add(planWindowMesh(winEl, host, selectedId, presentation === 'opening_focus'));
+    const winGrp = planWindowMesh(winEl, host, selectedId, presentation === 'opening_focus');
+    holder.add(winGrp);
+    if (ann?.openingTagsVisible === true) {
+      const labelRaw = typeof w.planTagLabel === 'string' ? w.planTagLabel.trim() : '';
+      if (labelRaw) {
+        winGrp.updateMatrixWorld(true);
+        const pos = new THREE.Vector3();
+        winGrp.getWorldPosition(pos);
+        holder.add(planAnnotationLabelSprite(pos.x, pos.z, labelRaw, winEl.id));
+      }
+    }
   }
 
   const stairsRaw = Array.isArray(prim.stairs) ? (prim.stairs as Record<string, unknown>[]) : [];
@@ -385,6 +422,7 @@ export function rebuildPlanMeshes(
     hiddenSemanticKinds?: ReadonlySet<string>;
     wirePrimitives?: PlanProjectionPrimitivesV1Wire | null;
     planGraphicHints?: PlanGraphicHintsResolved | null;
+    planAnnotationHints?: PlanAnnotationHintsResolved | null;
   },
 ): void {
   while (holder.children.length) holder.remove(holder.children[0]!);
@@ -399,6 +437,7 @@ export function rebuildPlanMeshes(
       presentation: opts.presentation,
       wirePrimitives: opts.wirePrimitives,
       roomFillOpacityScale,
+      planAnnotationHints: opts.planAnnotationHints ?? null,
     });
     return;
   }
@@ -907,6 +946,104 @@ function roomMesh(
   };
 
   return mesh;
+}
+
+function planAnnotationLabelSprite(
+  cxM: number,
+  czM: number,
+  text: string,
+  pickId?: string,
+): THREE.Sprite {
+  const trimmed = text.trim().slice(0, 96);
+  const safe = trimmed.length ? trimmed : '—';
+
+  const doc = typeof globalThis.document !== 'undefined' ? globalThis.document : null;
+  const emptySprite = (): THREE.Sprite => {
+    const mat = new THREE.SpriteMaterial({ color: '#1e293b', transparent: true, opacity: 0.92 });
+    const sprite = new THREE.Sprite(mat);
+    sprite.position.set(cxM, PLAN_Y + 0.003, czM);
+    sprite.scale.set(0.08, 0.03, 1);
+    sprite.renderOrder = 10;
+    sprite.userData.planAnnotationOverlay = true;
+    if (pickId) sprite.userData.bimPickId = pickId;
+    return sprite;
+  };
+  if (!doc?.createElement) return emptySprite();
+
+  const viteMode =
+    typeof import.meta !== 'undefined' &&
+    typeof (import.meta as { env?: { MODE?: string } }).env?.MODE === 'string'
+      ? (import.meta as { env: { MODE: string } }).env.MODE
+      : '';
+  if (viteMode === 'test') return emptySprite();
+
+  const dpr =
+    typeof (globalThis as { devicePixelRatio?: number }).devicePixelRatio === 'number'
+      ? (globalThis as { devicePixelRatio: number }).devicePixelRatio
+      : 1;
+  const fontPx = Math.round(64 * Math.min(Math.max(dpr, 1), 2));
+  const size = Math.max(Math.floor(fontPx * 1.125), 32);
+  const ch = Math.max(Math.floor(fontPx * 1.5625), 36);
+
+  const canvas = doc.createElement('canvas');
+  canvas.width = size;
+  canvas.height = ch;
+  let ctx: CanvasRenderingContext2D | null = null;
+  try {
+    ctx = canvas.getContext('2d');
+  } catch {
+    ctx = null;
+  }
+  if (!ctx) return emptySprite();
+
+  ctx.globalAlpha = 0.92;
+  ctx.strokeStyle = 'rgba(255,255,255,0.78)';
+  ctx.fillStyle = '#0f172a';
+  ctx.lineWidth = 4;
+  const pad = Math.max(12, Math.floor(fontPx / 16));
+  const r = pad * 1.05;
+  const wBox = canvas.width - pad * 2;
+  ctx.beginPath();
+  ctx.moveTo(wBox + pad, canvas.height / 2);
+  ctx.arcTo(canvas.width - pad + 1e-3, canvas.height / 2, canvas.width - pad, pad, r);
+  ctx.arcTo(canvas.width - pad, pad + 1e-3, canvas.width / 2, pad, r);
+  ctx.arcTo(pad + 1e-3, pad, pad, canvas.height / 2, r);
+  ctx.arcTo(pad, canvas.height / 2, pad, canvas.height - pad, r);
+  ctx.arcTo(pad + 1e-3, canvas.height - pad, canvas.width / 2, canvas.height - pad, r);
+  ctx.arcTo(canvas.width - pad, canvas.height - pad, canvas.width - pad, canvas.height / 2, r);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.globalAlpha = 1;
+  ctx.font = `600 ${fontPx}px system-ui,sans-serif`;
+  ctx.fillStyle = '#fafafa';
+  ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  try {
+    ctx.lineWidth = 3;
+    ctx.strokeText(safe, canvas.width / 2, canvas.height / 2);
+  } catch {
+    /* strokeText unsupported in some canvas implementations */
+  }
+  ctx.fillText(safe, canvas.width / 2, canvas.height / 2);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.needsUpdate = true;
+  const mat = new THREE.SpriteMaterial({
+    map: texture,
+    transparent: true,
+    depthTest: true,
+    depthWrite: false,
+  });
+  const sprite = new THREE.Sprite(mat);
+  sprite.position.set(cxM, PLAN_Y + 0.003, czM);
+  sprite.scale.set(0.22, 0.22 * (canvas.height / canvas.width), 1);
+  sprite.renderOrder = 10;
+  sprite.userData.planAnnotationOverlay = true;
+  if (pickId) sprite.userData.bimPickId = pickId;
+  return sprite;
 }
 
 function gridLineThree(g: Extract<Element, { kind: 'grid_line' }>): THREE.Group {

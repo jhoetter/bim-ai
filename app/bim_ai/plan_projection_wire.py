@@ -111,6 +111,55 @@ def _plan_graphic_hints_for_pinned_view(doc: Document, pv: PlanViewElem) -> dict
     }
 
 
+def _plan_tag_label_trunc(label: str, max_len: int = 48) -> str:
+    s = " ".join(label.replace("\n", " ").split())
+    if not s:
+        return ""
+    if len(s) <= max_len:
+        return s
+    return s[: max(1, max_len - 3)] + "..."
+
+
+def _opening_plan_tag_label(opening: DoorElem | WindowElem) -> str:
+    name = _plan_tag_label_trunc((opening.name or "").strip())
+    if name:
+        return name
+    kind = "D" if isinstance(opening, DoorElem) else "W"
+    suf = opening.id[-4:] if len(opening.id) >= 4 else opening.id
+    return f"{kind}-{suf}"
+
+
+def _room_plan_tag_label(room: RoomElem) -> str:
+    name_part = _plan_tag_label_trunc((room.name or "").strip())
+    code = _plan_tag_label_trunc((room.programme_code or "").strip(), max_len=20)
+    if name_part and code:
+        combined = f"{name_part} ({code})"
+        return _plan_tag_label_trunc(combined)
+    if name_part:
+        return name_part
+    if code:
+        return code
+    suf = room.id[-4:] if len(room.id) >= 4 else room.id
+    return f"R-{suf}"
+
+
+def _plan_annotation_hints_for_pinned_view(doc: Document, pv: PlanViewElem) -> dict[str, bool]:
+    tmpl: ViewTemplateElem | None = None
+    if pv.view_template_id:
+        te = doc.elements.get(pv.view_template_id)
+        if isinstance(te, ViewTemplateElem):
+            tmpl = te
+    if pv.plan_show_opening_tags is not None:
+        opening_tags_visible = pv.plan_show_opening_tags
+    else:
+        opening_tags_visible = tmpl.plan_show_opening_tags if tmpl is not None else False
+    if pv.plan_show_room_labels is not None:
+        room_labels_visible = pv.plan_show_room_labels
+    else:
+        room_labels_visible = tmpl.plan_show_room_labels if tmpl is not None else False
+    return {"openingTagsVisible": opening_tags_visible, "roomLabelsVisible": room_labels_visible}
+
+
 def _hosted_xy_mm_on_wall(opening: DoorElem | WindowElem, wall: WallElem) -> tuple[float, float]:
     sx, sy = wall.start.x_mm, wall.start.y_mm
     dx = wall.end.x_mm - sx
@@ -198,6 +247,8 @@ def _build_plan_primitive_lists(
     hidden_semantic: set[str],
     pinned_pv_el: PlanViewElem | None,
     line_weight_hint: float = 1.0,
+    opening_tags_visible: bool = False,
+    room_labels_visible: bool = False,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     """2D primitives for deterministic server-side plan previews."""
 
@@ -291,6 +342,8 @@ def _build_plan_primitive_lists(
                 row["department"] = (e.department or "").strip()
             if (e.function_label or "").strip():
                 row["functionLabel"] = (e.function_label or "").strip()
+            if room_labels_visible:
+                row["planTagLabel"] = _room_plan_tag_label(e)
             rooms.append(row)
         elif isinstance(e, DoorElem):
             w = doc.elements.get(e.wall_id)
@@ -310,19 +363,20 @@ def _build_plan_primitive_lists(
                 )
                 if not opening_ok:
                     continue
-            doors.append(
-                {
-                    "id": e.id,
-                    "wallId": e.wall_id,
-                    "levelId": w.level_id,
-                    "alongT": round(float(e.along_t), 6),
-                    "widthMm": round(e.width_mm, 3),
-                    "anchorMm": {"x": round(cx_mm, 3), "y": round(cy_mm, 3)},
-                    "openingTSpanNormalized": [round(float(tspan[0]), 6), round(float(tspan[1]), 6)]
-                    if tspan
-                    else None,
-                }
-            )
+            dout: dict[str, Any] = {
+                "id": e.id,
+                "wallId": e.wall_id,
+                "levelId": w.level_id,
+                "alongT": round(float(e.along_t), 6),
+                "widthMm": round(e.width_mm, 3),
+                "anchorMm": {"x": round(cx_mm, 3), "y": round(cy_mm, 3)},
+                "openingTSpanNormalized": [round(float(tspan[0]), 6), round(float(tspan[1]), 6)]
+                if tspan
+                else None,
+            }
+            if opening_tags_visible:
+                dout["planTagLabel"] = _opening_plan_tag_label(e)
+            doors.append(dout)
         elif isinstance(e, WindowElem):
             w = doc.elements.get(e.wall_id)
             if not isinstance(w, WallElem):
@@ -341,21 +395,22 @@ def _build_plan_primitive_lists(
                 )
                 if not opening_ok:
                     continue
-            windows.append(
-                {
-                    "id": e.id,
-                    "wallId": e.wall_id,
-                    "levelId": w.level_id,
-                    "alongT": round(float(e.along_t), 6),
-                    "widthMm": round(e.width_mm, 3),
-                    "sillHeightMm": round(e.sill_height_mm, 3),
-                    "heightMm": round(e.height_mm, 3),
-                    "anchorMm": {"x": round(cx_mm, 3), "y": round(cy_mm, 3)},
-                    "openingTSpanNormalized": [round(float(tspan[0]), 6), round(float(tspan[1]), 6)]
-                    if tspan
-                    else None,
-                }
-            )
+            wrow: dict[str, Any] = {
+                "id": e.id,
+                "wallId": e.wall_id,
+                "levelId": w.level_id,
+                "alongT": round(float(e.along_t), 6),
+                "widthMm": round(e.width_mm, 3),
+                "sillHeightMm": round(e.sill_height_mm, 3),
+                "heightMm": round(e.height_mm, 3),
+                "anchorMm": {"x": round(cx_mm, 3), "y": round(cy_mm, 3)},
+                "openingTSpanNormalized": [round(float(tspan[0]), 6), round(float(tspan[1]), 6)]
+                if tspan
+                else None,
+            }
+            if opening_tags_visible:
+                wrow["planTagLabel"] = _opening_plan_tag_label(e)
+            windows.append(wrow)
         elif isinstance(e, StairElem):
             if "stair" in hidden_semantic or not lvl_ok(e.base_level_id):
                 continue
@@ -600,9 +655,15 @@ def resolve_plan_projection_wire(
 
     plan_graphic_hints: dict[str, Any] | None = None
     line_weight_scale = 1.0
+    plan_ann: dict[str, bool] | None = None
+    opening_vis = False
+    room_lab_vis = False
     if pinned_pv_elem is not None:
         plan_graphic_hints = _plan_graphic_hints_for_pinned_view(doc, pinned_pv_elem)
         line_weight_scale = float(plan_graphic_hints["lineWeightScale"])
+        plan_ann = _plan_annotation_hints_for_pinned_view(doc, pinned_pv_elem)
+        opening_vis = bool(plan_ann["openingTagsVisible"])
+        room_lab_vis = bool(plan_ann["roomLabelsVisible"])
 
     prim, prim_warn = _build_plan_primitive_lists(
         doc,
@@ -610,6 +671,8 @@ def resolve_plan_projection_wire(
         hidden_semantic=hidden_semantic,
         pinned_pv_el=pinned_pv_elem,
         line_weight_hint=line_weight_scale,
+        opening_tags_visible=opening_vis,
+        room_labels_visible=room_lab_vis,
     )
     all_warnings = list(prim_warn)
     legend = _room_color_legend_payload(doc, level=active_level, hidden_semantic=hidden_semantic)
@@ -628,6 +691,8 @@ def resolve_plan_projection_wire(
     }
     if plan_graphic_hints is not None:
         out_payload["planGraphicHints"] = plan_graphic_hints
+    if plan_ann is not None:
+        out_payload["planAnnotationHints"] = plan_ann
     return out_payload
 
 

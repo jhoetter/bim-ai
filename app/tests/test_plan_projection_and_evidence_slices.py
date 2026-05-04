@@ -18,6 +18,7 @@ from bim_ai.elements import (
     StairElem,
     ViewTemplateElem,
     WallElem,
+    WindowElem,
 )
 from bim_ai.evidence_manifest import (
     agent_evidence_closure_hints,
@@ -405,6 +406,143 @@ def test_plan_projection_room_primitives_include_programme_and_color() -> None:
     assert len(rooms) == 1
     assert rooms[0].get("programmeCode") == "OFF"
     assert str(rooms[0].get("schemeColorHex", "")).startswith("#")
+
+
+def test_plan_projection_annotation_hints_emit_plan_tag_labels_when_enabled() -> None:
+    tmpl = ViewTemplateElem(
+        kind="view_template",
+        id="vt-an",
+        name="Annot T",
+        planShowOpeningTags=True,
+        planShowRoomLabels=False,
+    )
+    pv = PlanViewElem(
+        kind="plan_view",
+        id="pv-an",
+        name="Annotated",
+        levelId="lvl",
+        viewTemplateId="vt-an",
+        planShowRoomLabels=True,
+    )
+    lvl = LevelElem(kind="level", id="lvl", name="L", elevationMm=0)
+    wall = WallElem(
+        kind="wall",
+        id="w-h",
+        name="Host",
+        levelId="lvl",
+        start={"xMm": 0, "yMm": 0},
+        end={"xMm": 6000, "yMm": 0},
+        thicknessMm=200,
+        heightMm=2800,
+    )
+    door = DoorElem(kind="door", id="d-a", name="Entry", wallId="w-h", alongT=0.5, widthMm=900)
+    window = WindowElem(
+        kind="window",
+        id="win-a",
+        name="Kitchen win",
+        wallId="w-h",
+        alongT=0.25,
+        widthMm=1200,
+        sillHeightMm=900,
+        heightMm=1500,
+    )
+    room = RoomElem(
+        kind="room",
+        id="r-a",
+        name="Kitchen",
+        levelId="lvl",
+        programmeCode="KIT",
+        outlineMm=[
+            {"xMm": 500, "yMm": -2000},
+            {"xMm": 5500, "yMm": -2000},
+            {"xMm": 5500, "yMm": 2500},
+            {"xMm": 500, "yMm": 2500},
+        ],
+    )
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": lvl,
+            "vt-an": tmpl,
+            "pv-an": pv,
+            "w-h": wall,
+            "d-a": door,
+            "win-a": window,
+            "r-a": room,
+        },
+    )
+    out = plan_projection_wire_from_request(doc, plan_view_id="pv-an", fallback_level_id=None)
+    ann = out.get("planAnnotationHints") or {}
+    assert ann["openingTagsVisible"] is True
+    assert ann["roomLabelsVisible"] is True
+    prim = out.get("primitives") or {}
+    doors_row = prim.get("doors") or []
+    wins_row = prim.get("windows") or []
+    rooms_row = prim.get("rooms") or []
+    assert any(r.get("id") == "d-a" and "planTagLabel" in r for r in doors_row)
+    assert any(r.get("id") == "win-a" and "planTagLabel" in r for r in wins_row)
+    assert any(r.get("id") == "r-a" and "planTagLabel" in r for r in rooms_row)
+
+
+def test_plan_projection_annotation_off_omits_plan_tag_label_keys() -> None:
+    tpl = ViewTemplateElem(
+        kind="view_template",
+        id="vt-off",
+        name="Quiet",
+        planShowOpeningTags=False,
+        planShowRoomLabels=False,
+    )
+    pv = PlanViewElem(
+        kind="plan_view",
+        id="pv-off",
+        name="Off",
+        levelId="lvl",
+        viewTemplateId="vt-off",
+    )
+    lvl = LevelElem(kind="level", id="lvl", name="L", elevationMm=0)
+    wall = WallElem(
+        kind="wall",
+        id="w2",
+        name="W",
+        levelId="lvl",
+        start={"xMm": 0, "yMm": 0},
+        end={"xMm": 4000, "yMm": 0},
+        thicknessMm=200,
+        heightMm=2800,
+    )
+    door = DoorElem(kind="door", id="d2", name="D", wallId="w2", alongT=0.5, widthMm=900)
+    room = RoomElem(
+        kind="room",
+        id="rm-off",
+        name="R",
+        levelId="lvl",
+        outlineMm=[
+            {"xMm": 0, "yMm": 0},
+            {"xMm": 4000, "yMm": 0},
+            {"xMm": 4000, "yMm": 2500},
+            {"xMm": 0, "yMm": 2500},
+        ],
+    )
+    doc = Document(
+        revision=1,
+        elements={"lvl": lvl, "vt-off": tpl, "pv-off": pv, "w2": wall, "d2": door, "rm-off": room},
+    )
+    out = plan_projection_wire_from_request(doc, plan_view_id="pv-off", fallback_level_id=None)
+    ann = out.get("planAnnotationHints") or {}
+    assert ann.get("openingTagsVisible") is False
+    assert ann.get("roomLabelsVisible") is False
+    prim = out.get("primitives") or {}
+    for row in prim.get("doors") or []:
+        assert "planTagLabel" not in row
+    for row in prim.get("rooms") or []:
+        assert "planTagLabel" not in row
+
+
+def test_plan_projection_unpinned_wire_omits_plan_annotation_hints_payload() -> None:
+    lvl = LevelElem(kind="level", id="lvl", name="L", elevationMm=0)
+    doc = Document(revision=1, elements={"lvl": lvl})
+    out = plan_projection_wire_from_request(doc, plan_view_id=None, fallback_level_id="lvl")
+    assert "planAnnotationHints" not in out
 
 
 def test_plan_projection_room_legend_matches_primitives_when_programme_shared() -> None:

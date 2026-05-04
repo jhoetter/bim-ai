@@ -3,6 +3,9 @@
 export type Vec2Mm = { xMm: number; yMm: number };
 
 export function coerceVec2Mm(raw: unknown): Vec2Mm {
+  if (Array.isArray(raw) && raw.length >= 2) {
+    return { xMm: Number(raw[0] ?? 0), yMm: Number(raw[1] ?? 0) };
+  }
   const o = raw as Record<string, unknown>;
   const x = Number(o.xMm ?? o.x ?? o.X ?? 0);
   const y = Number(o.yMm ?? o.y ?? o.Y ?? 0);
@@ -25,6 +28,18 @@ export type PlanGraphicHintsResolved = {
   roomFillOpacityScale: number;
 };
 
+/** Effective plan overlay toggles (`plan_projection_wire.planAnnotationHints`). */
+
+export type PlanAnnotationHintsResolved = {
+  openingTagsVisible: boolean;
+  roomLabelsVisible: boolean;
+};
+
+function readWireAnnotationBool(raw: unknown): boolean {
+  if (raw === true || raw === 1 || raw === '1') return true;
+  if (typeof raw === 'string' && raw.trim().toLowerCase() === 'true') return true;
+  return false;
+}
 export type PlanRoomColorLegendRow = {
   label: string;
   schemeColorHex: string;
@@ -45,6 +60,22 @@ export function extractPlanGraphicHints(
   const roomFillOpacityScale = Number(o.roomFillOpacityScale ?? o.room_fill_opacity_scale ?? 1);
   if (!Number.isFinite(lineWeightScale) || !Number.isFinite(roomFillOpacityScale)) return null;
   return { detailLevel, lineWeightScale, roomFillOpacityScale };
+}
+
+/** Defaults to both false when the server omits the block (backward compatible). */
+
+export function extractPlanAnnotationHints(
+  payload: Record<string, unknown> | null | undefined,
+): PlanAnnotationHintsResolved {
+  const def = { openingTagsVisible: false, roomLabelsVisible: false };
+  if (!payload || typeof payload !== 'object') return def;
+  const h = payload.planAnnotationHints ?? payload.plan_annotation_hints;
+  if (!h || typeof h !== 'object') return def;
+  const o = h as Record<string, unknown>;
+  return {
+    openingTagsVisible: readWireAnnotationBool(o.openingTagsVisible ?? o.opening_tags_visible),
+    roomLabelsVisible: readWireAnnotationBool(o.roomLabelsVisible ?? o.room_labels_visible),
+  };
 }
 
 export function extractRoomColorLegend(

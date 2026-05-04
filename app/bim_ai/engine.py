@@ -133,6 +133,28 @@ def _optional_room_fill_scale(raw: float | None) -> float | None:
     return max(0.0, min(1.0, float(raw)))
 
 
+def _parse_plan_view_bool_override(raw: str) -> bool | None:
+    s = raw.strip().lower()
+    if s == "":
+        return None
+    if s in {"true", "1"}:
+        return True
+    if s in {"false", "0"}:
+        return False
+    raise ValueError(
+        "planShowOpeningTags/planShowRoomLabels(plan_view): use true|false or empty string to inherit"
+    )
+
+
+def _parse_view_template_bool(raw: str) -> bool:
+    s = raw.strip().lower()
+    if s in {"true", "1"}:
+        return True
+    if s in {"false", "0"}:
+        return False
+    raise ValueError("planShowOpeningTags/planShowRoomLabels(view_template): must be true|false")
+
+
 def _stripped_optional_str(val: str | None) -> str | None:
     if val is None:
         return None
@@ -644,12 +666,31 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                     else:
                         v = max(0.0, min(1.0, float(raw)))
                         els[cmd.element_id] = el.model_copy(update={"plan_room_fill_opacity_scale": v})
+                elif cmd.key == "planShowOpeningTags":
+                    v = _parse_plan_view_bool_override(cmd.value)
+                    els[cmd.element_id] = el.model_copy(update={"plan_show_opening_tags": v})
+                elif cmd.key == "planShowRoomLabels":
+                    v = _parse_plan_view_bool_override(cmd.value)
+                    els[cmd.element_id] = el.model_copy(update={"plan_show_room_labels": v})
                 else:
                     raise ValueError(
                         "plan_view updates: key=planPresentation | categoriesHidden | underlayLevelId | "
                         "viewTemplateId | cropMinMm | cropMaxMm | viewRangeBottomMm | viewRangeTopMm | "
                         "cutPlaneOffsetMm | discipline | phaseId | planDetailLevel | planRoomFillOpacityScale | "
-                        "name"
+                        "planShowOpeningTags | planShowRoomLabels | name"
+                    )
+            elif isinstance(el, ViewTemplateElem):
+                if cmd.key == "planShowOpeningTags":
+                    els[cmd.element_id] = el.model_copy(
+                        update={"plan_show_opening_tags": _parse_view_template_bool(cmd.value)}
+                    )
+                elif cmd.key == "planShowRoomLabels":
+                    els[cmd.element_id] = el.model_copy(
+                        update={"plan_show_room_labels": _parse_view_template_bool(cmd.value)}
+                    )
+                else:
+                    raise ValueError(
+                        "view_template updates: key=planShowOpeningTags | planShowRoomLabels | name"
                     )
             elif isinstance(el, ViewpointElem):
                 raw = cmd.value.strip()
@@ -715,6 +756,8 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                     "discipline(plan_view) | phaseId(plan_view) | "
                     "planDetailLevel(plan_view coarse|medium|fine or empty) | "
                     "planRoomFillOpacityScale(plan_view float 0..1 or empty) | "
+                    "planShowOpeningTags(plan_view true|false or empty inherit; view_template true|false only) | "
+                    "planShowRoomLabels(plan_view true|false or empty inherit; view_template true|false only) | "
                     "viewerClipCapElevMm(viewpoint) | viewerClipFloorElevMm(viewpoint) | "
                     "hiddenSemanticKinds3d(viewpoint JSON array) | "
                     "familyTypeId(door/window) | materialKey(door/window) | "
@@ -1012,6 +1055,8 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 hidden_categories=list(cmd.hidden_categories or []),
                 plan_detail_level=pdl,
                 plan_room_fill_opacity_scale=pfo,
+                plan_show_opening_tags=cmd.plan_show_opening_tags is True,
+                plan_show_room_labels=cmd.plan_show_room_labels is True,
             )
 
         case UpsertSheetCmd():
@@ -1112,6 +1157,8 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 categories_hidden=list(cmd.categories_hidden or []),
                 plan_detail_level=pdl_override,
                 plan_room_fill_opacity_scale=pfo_override,
+                plan_show_opening_tags=cmd.plan_show_opening_tags,
+                plan_show_room_labels=cmd.plan_show_room_labels,
             )
 
         case CreateCalloutCmd():

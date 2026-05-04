@@ -13,6 +13,14 @@ function countLineNodes(root: THREE.Object3D): number {
   return n;
 }
 
+function countAnnotationOverlaySprites(root: THREE.Object3D): number {
+  let n = 0;
+  const u = root.userData as { planAnnotationOverlay?: unknown };
+  if (root instanceof THREE.Sprite && u.planAnnotationOverlay) n += 1;
+  for (const c of root.children) n += countAnnotationOverlaySprites(c);
+  return n;
+}
+
 describe('PlanCanvas server wire primitives path (WP-C03)', () => {
   it('builds at least one mesh from planProjectionPrimitives_v1 walls', () => {
     const wall: Extract<Element, { kind: 'wall' }> = {
@@ -211,5 +219,99 @@ describe('PlanCanvas server wire primitives path (WP-C03)', () => {
     // nSteps=16 → outline 1 + 17 cross + 16 diag = 34 (kernel-aligned vs tread-only ~24)
     expect(lineCount).toBeGreaterThan(28);
     expect(lineCount).toBe(34);
+  });
+
+  it('adds sprite overlays only when planAnnotationHints and planTagLabel are set', () => {
+    const wall: Extract<Element, { kind: 'wall' }> = {
+      kind: 'wall',
+      id: 'w1',
+      name: 'W',
+      levelId: 'lvl',
+      start: { xMm: 0, yMm: 0 },
+      end: { xMm: 3000, yMm: 0 },
+      thicknessMm: 200,
+      heightMm: 2800,
+    };
+    const door: Extract<Element, { kind: 'door' }> = {
+      kind: 'door',
+      id: 'd1',
+      name: 'D1',
+      wallId: 'w1',
+      alongT: 0.5,
+      widthMm: 900,
+    };
+    const room: Extract<Element, { kind: 'room' }> = {
+      kind: 'room',
+      id: 'r1',
+      name: 'Living',
+      levelId: 'lvl',
+      outlineMm: [
+        { xMm: 0, yMm: 0 },
+        { xMm: 3000, yMm: 0 },
+        { xMm: 3000, yMm: 2000 },
+        { xMm: 0, yMm: 2000 },
+      ],
+    };
+    const primitives = {
+      format: 'planProjectionPrimitives_v1',
+      walls: [
+        {
+          id: 'w1',
+          levelId: 'lvl',
+          startMm: { x: 0, y: 0 },
+          endMm: { x: 3000, y: 0 },
+          thicknessMm: 200,
+          heightMm: 2800,
+        },
+      ],
+      floors: [],
+      rooms: [
+        {
+          id: 'r1',
+          levelId: 'lvl',
+          outlineMm: [
+            [0, 0],
+            [3000, 0],
+            [3000, 2000],
+            [0, 2000],
+          ],
+          planTagLabel: 'R-Liv',
+        },
+      ],
+      doors: [
+        {
+          id: 'd1',
+          wallId: 'w1',
+          alongT: 0.5,
+          widthMm: 900,
+          planTagLabel: 'D-101',
+        },
+      ],
+      windows: [],
+      stairs: [],
+      roofs: [],
+      gridLines: [],
+      roomSeparations: [],
+      dimensions: [],
+    } as const;
+
+    const byId: Record<string, Element> = { w1: wall, d1: door, r1: room };
+    const wire = primitives as unknown as PlanProjectionPrimitivesV1Wire;
+
+    const grpOff = new THREE.Group();
+    rebuildPlanMeshes(grpOff, byId, {
+      activeLevelId: 'lvl',
+      wirePrimitives: wire,
+      planAnnotationHints: { openingTagsVisible: false, roomLabelsVisible: false },
+    });
+    expect(countAnnotationOverlaySprites(grpOff)).toBe(0);
+
+    const grpOn = new THREE.Group();
+    rebuildPlanMeshes(grpOn, byId, {
+      activeLevelId: 'lvl',
+      wirePrimitives: wire,
+      planAnnotationHints: { openingTagsVisible: true, roomLabelsVisible: true },
+    });
+    expect(countAnnotationOverlaySprites(grpOn)).toBe(2);
   });
 });

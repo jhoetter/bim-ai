@@ -1,6 +1,6 @@
 import type { Element } from '@bim-ai/core';
 
-import type { PlanGraphicHintsResolved } from './planProjectionWire';
+import type { PlanAnnotationHintsResolved, PlanGraphicHintsResolved } from './planProjectionWire';
 import type { PlanPresentationPreset } from './symbology';
 
 export type PlanSemanticKind =
@@ -187,4 +187,41 @@ export function resolvePlanGraphicHints(
     lineWeightScale: Math.round(lw * 10000) / 10000,
     roomFillOpacityScale: Math.round(fill * 10000) / 10000,
   };
+}
+
+/** Mirrors server `_plan_annotation_hints_for_pinned_view` until wire payloads arrive. */
+
+export function resolvePlanAnnotationHints(
+  elementsById: Record<string, Element>,
+  activePlanViewId: string | undefined,
+): PlanAnnotationHintsResolved {
+  const off = (): PlanAnnotationHintsResolved => ({
+    openingTagsVisible: false,
+    roomLabelsVisible: false,
+  });
+  if (!activePlanViewId) return off();
+  const el = elementsById[activePlanViewId];
+  if (!el || el.kind !== 'plan_view') return off();
+
+  let tmpl: Extract<Element, { kind: 'view_template' }> | undefined;
+  if (el.viewTemplateId) {
+    const t = elementsById[el.viewTemplateId];
+    if (t?.kind === 'view_template') tmpl = t;
+  }
+
+  let openingTagsVisible: boolean;
+  if (el.planShowOpeningTags !== undefined) {
+    openingTagsVisible = el.planShowOpeningTags;
+  } else {
+    openingTagsVisible = tmpl?.planShowOpeningTags ?? false;
+  }
+
+  let roomLabelsVisible: boolean;
+  if (el.planShowRoomLabels !== undefined) {
+    roomLabelsVisible = el.planShowRoomLabels;
+  } else {
+    roomLabelsVisible = tmpl?.planShowRoomLabels ?? false;
+  }
+
+  return { openingTagsVisible, roomLabelsVisible };
 }

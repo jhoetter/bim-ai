@@ -269,6 +269,8 @@ export type Element =
       categoriesHidden?: string[];
       planDetailLevel?: PlanDetailLevelPlan | null;
       planRoomFillOpacityScale?: number | null;
+      planShowOpeningTags?: boolean;
+      planShowRoomLabels?: boolean;
     }
   | {
       kind: 'view_template';
@@ -279,6 +281,8 @@ export type Element =
       hiddenCategories?: string[];
       planDetailLevel?: PlanDetailLevelPlan | null;
       planRoomFillOpacityScale?: number;
+      planShowOpeningTags?: boolean;
+      planShowRoomLabels?: boolean;
     }
   | {
       kind: 'sheet';

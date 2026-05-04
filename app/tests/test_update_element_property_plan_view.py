@@ -191,3 +191,45 @@ def test_viewpoint_clip_and_hidden_categories() -> None:
     assert vp.viewer_clip_cap_elev_mm is None
     assert vp.viewer_clip_floor_elev_mm == 0
     assert vp.hidden_semantic_kinds_3d == ["roof"]
+
+
+def test_plan_view_plan_annotation_flags_and_template_inheritance() -> None:
+    vt = ViewTemplateElem(
+        kind="view_template",
+        id="vt",
+        name="T",
+        planShowOpeningTags=True,
+        planShowRoomLabels=True,
+    )
+    els = {
+        "lv": LevelElem(kind="level", id="lv", name="EG", elevationMm=0),
+        "vt": vt,
+        "pv": PlanViewElem(
+            kind="plan_view",
+            id="pv",
+            name="Test",
+            levelId="lv",
+            viewTemplateId="vt",
+        ),
+    }
+    doc = Document(revision=1, elements=els)
+    pv0 = doc.elements["pv"]
+    assert isinstance(pv0, PlanViewElem)
+    assert pv0.plan_show_opening_tags is None
+
+    apply_inplace(doc, UpdateElementPropertyCmd(elementId="pv", key="planShowOpeningTags", value="false"))
+    pv1 = doc.elements["pv"]
+    assert isinstance(pv1, PlanViewElem)
+    assert pv1.plan_show_opening_tags is False
+
+    apply_inplace(doc, UpdateElementPropertyCmd(elementId="pv", key="planShowOpeningTags", value=""))
+    pv2 = doc.elements["pv"]
+    assert isinstance(pv2, PlanViewElem)
+    assert pv2.plan_show_opening_tags is None
+
+    apply_inplace(doc, UpdateElementPropertyCmd(elementId="vt", key="planShowOpeningTags", value="false"))
+    apply_inplace(doc, UpdateElementPropertyCmd(elementId="vt", key="planShowRoomLabels", value="false"))
+    vt2 = doc.elements["vt"]
+    assert isinstance(vt2, ViewTemplateElem)
+    assert vt2.plan_show_opening_tags is False
+    assert vt2.plan_show_room_labels is False

@@ -331,6 +331,8 @@ class PlanViewElem(BaseModel):
     categories_hidden: list[str] = Field(default_factory=list, alias="categoriesHidden")
     plan_detail_level: PlanDetailLevelPlan | None = Field(default=None, alias="planDetailLevel")
     plan_room_fill_opacity_scale: float | None = Field(default=None, alias="planRoomFillOpacityScale")
+    plan_show_opening_tags: bool | None = Field(default=None, alias="planShowOpeningTags")
+    plan_show_room_labels: bool | None = Field(default=None, alias="planShowRoomLabels")
 
 
 class ViewTemplateElem(BaseModel):
@@ -348,6 +350,8 @@ class ViewTemplateElem(BaseModel):
         le=1.0,
         alias="planRoomFillOpacityScale",
     )
+    plan_show_opening_tags: bool = Field(default=False, alias="planShowOpeningTags")
+    plan_show_room_labels: bool = Field(default=False, alias="planShowRoomLabels")
 
 
 class SheetElem(BaseModel):
