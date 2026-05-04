@@ -4,8 +4,10 @@ import type { Element } from '@bim-ai/core';
 
 import { VirtualScrollRows } from './VirtualScrollRows';
 import {
+  parseNumericFilterRuleThreshold,
   parseWidthMmGtThreshold,
   parseWidthMmLtThreshold,
+  schedulesFiltersWithNumericRule,
   schedulesFiltersWithWidthMmGt,
   schedulesFiltersWithWidthMmLt,
 } from './scheduleFilterWidthRules';
@@ -454,9 +456,14 @@ export function SchedulePanel(props: {
 
   const [openingWidthGtDraft, setOpeningWidthGtDraft] = useState('');
   const [openingWidthLtDraft, setOpeningWidthLtDraft] = useState('');
+  const [roomAreaGtDraft, setRoomAreaGtDraft] = useState('');
+  const [roomAreaLtDraft, setRoomAreaLtDraft] = useState('');
 
   const openingToolbarScheduleEl =
     sidForTab && (tab === 'doors' || tab === 'windows') ? props.elementsById[sidForTab] : undefined;
+
+  const roomToolbarScheduleEl =
+    sidForTab && tab === 'rooms' ? props.elementsById[sidForTab] : undefined;
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -472,6 +479,21 @@ export function SchedulePanel(props: {
       setOpeningWidthLtDraft(u !== null ? String(u) : '');
     });
   }, [openingToolbarScheduleEl]);
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      if (roomToolbarScheduleEl?.kind !== 'schedule') {
+        setRoomAreaGtDraft('');
+        setRoomAreaLtDraft('');
+        return;
+      }
+      const f0 = { ...(roomToolbarScheduleEl.filters ?? {}) } as Record<string, unknown>;
+      const minArea = parseNumericFilterRuleThreshold(f0, 'areaM2', 'gt');
+      setRoomAreaGtDraft(minArea !== null ? String(minArea) : '');
+      const maxArea = parseNumericFilterRuleThreshold(f0, 'areaM2', 'lt');
+      setRoomAreaLtDraft(maxArea !== null ? String(maxArea) : '');
+    });
+  }, [roomToolbarScheduleEl]);
 
   useEffect(() => {
     if (!props.modelId || !sidForTab) {
@@ -988,6 +1010,13 @@ export function SchedulePanel(props: {
       props.onScheduleFiltersCommit!(scheduleId, nextF, nextG);
     };
 
+    const numericDraftThreshold = (draft: string): number | null => {
+      const trimmed = draft.trim();
+      if (trimmed === '') return null;
+      const n = Number(trimmed);
+      return Number.isFinite(n) ? n : null;
+    };
+
     const lf = levelFilterFieldForTab(tab);
     const feRaw = f.filterEquals ?? f.filter_equals;
     const feObj =
@@ -997,6 +1026,14 @@ export function SchedulePanel(props: {
     const levelRestricted = Boolean(
       lf && props.activeLevelId && String(feObj[lf] ?? '') === props.activeLevelId,
     );
+
+    const numericRuleBase = (): Record<string, unknown> => ({
+      ...f,
+      sortBy: sortVal,
+      groupingHint: orderedHints(),
+      filterEquals: feObj,
+      sortDescending: sortDesc,
+    });
 
     return (
       <div
@@ -1129,6 +1166,71 @@ export function SchedulePanel(props: {
           ))}
         </div>
 
+        {tab === 'rooms' ? (
+          <>
+            <div className="mt-2 flex flex-wrap items-center gap-3">
+              <label className="flex flex-wrap items-center gap-2">
+                <span>Min area (m²) &gt;</span>
+                <input
+                  type="number"
+                  className="w-24 rounded border border-border bg-background px-2 py-0.5 font-mono text-foreground"
+                  data-testid="schedule-filter-area-m2-gt"
+                  value={roomAreaGtDraft}
+                  onChange={(e) => {
+                    setRoomAreaGtDraft(e.target.value);
+                  }}
+                  onBlur={() => {
+                    const nextF = schedulesFiltersWithNumericRule(
+                      numericRuleBase(),
+                      'areaM2',
+                      'gt',
+                      numericDraftThreshold(roomAreaGtDraft),
+                    );
+                    commit(nextF, groupingPayload(orderedHints()));
+                  }}
+                />
+              </label>
+              <label className="flex flex-wrap items-center gap-2">
+                <span>Max area (m²) &lt;</span>
+                <input
+                  type="number"
+                  className="w-24 rounded border border-border bg-background px-2 py-0.5 font-mono text-foreground"
+                  data-testid="schedule-filter-area-m2-lt"
+                  value={roomAreaLtDraft}
+                  onChange={(e) => {
+                    setRoomAreaLtDraft(e.target.value);
+                  }}
+                  onBlur={() => {
+                    const nextF = schedulesFiltersWithNumericRule(
+                      numericRuleBase(),
+                      'areaM2',
+                      'lt',
+                      numericDraftThreshold(roomAreaLtDraft),
+                    );
+                    commit(nextF, groupingPayload(orderedHints()));
+                  }}
+                />
+              </label>
+            </div>
+            {(() => {
+              const minArea = parseNumericFilterRuleThreshold(f, 'areaM2', 'gt');
+              const maxArea = parseNumericFilterRuleThreshold(f, 'areaM2', 'lt');
+              if (minArea == null && maxArea == null) return null;
+              const parts: string[] = [];
+              if (minArea != null) parts.push(`areaM2 > ${minArea} m²`);
+              if (maxArea != null) parts.push(`areaM2 < ${maxArea} m²`);
+              return (
+                <div
+                  data-testid="schedule-filter-rules-readout"
+                  className="mt-1 text-[10px] text-foreground/90"
+                >
+                  Rules: {parts.join(' · ')}
+                </div>
+              );
+            })()}
+          </>
+        ) : null}
+
         {tab === 'doors' || tab === 'windows' ? (
           <>
             <div className="mt-2 flex flex-wrap items-center gap-3">
@@ -1149,14 +1251,7 @@ export function SchedulePanel(props: {
                       const n = Number(trimmed);
                       thresh = Number.isFinite(n) ? n : null;
                     }
-                    const base: Record<string, unknown> = {
-                      ...f,
-                      sortBy: sortVal,
-                      groupingHint: orderedHints(),
-                      filterEquals: feObj,
-                      sortDescending: sortDesc,
-                    };
-                    const nextF = schedulesFiltersWithWidthMmGt(base, thresh);
+                    const nextF = schedulesFiltersWithWidthMmGt(numericRuleBase(), thresh);
                     commit(nextF, groupingPayload(orderedHints()));
                   }}
                 />
@@ -1178,14 +1273,7 @@ export function SchedulePanel(props: {
                       const n = Number(trimmed);
                       thresh = Number.isFinite(n) ? n : null;
                     }
-                    const base: Record<string, unknown> = {
-                      ...f,
-                      sortBy: sortVal,
-                      groupingHint: orderedHints(),
-                      filterEquals: feObj,
-                      sortDescending: sortDesc,
-                    };
-                    const nextF = schedulesFiltersWithWidthMmLt(base, thresh);
+                    const nextF = schedulesFiltersWithWidthMmLt(numericRuleBase(), thresh);
                     commit(nextF, groupingPayload(orderedHints()));
                   }}
                 />

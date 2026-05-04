@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from bim_ai.document import Document
 from bim_ai.elements import DoorElem, LevelElem, RoomElem, ScheduleElem, WallElem
+from bim_ai.schedule_csv import schedule_payload_to_csv
 from bim_ai.schedule_derivation import derive_schedule_table
 
 
@@ -52,8 +53,6 @@ def test_schedule_filter_equals_level_reduces_rows() -> None:
 
 
 def test_schedule_filter_rules_gt_width_mm_on_doors() -> None:
-    from bim_ai.schedule_csv import schedule_payload_to_csv
-
     doc = Document(
         revision=1,
         elements={
@@ -105,6 +104,90 @@ def test_schedule_filter_rules_gt_width_mm_on_doors() -> None:
     csv = schedule_payload_to_csv(tbl, include_totals_csv=True)
     assert csv.count("\n") >= 2
     assert "d1" in csv
+
+
+def test_schedule_filter_rules_area_m2_on_rooms_grouped_totals_and_csv() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lv": LevelElem(kind="level", id="lv", name="L1", elevationMm=0),
+            "r-small": RoomElem(
+                kind="room",
+                id="r-small",
+                name="Small",
+                levelId="lv",
+                department="Dept A",
+                outlineMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 2000, "yMm": 0},
+                    {"xMm": 2000, "yMm": 2000},
+                    {"xMm": 0, "yMm": 2000},
+                ],
+            ),
+            "r-mid": RoomElem(
+                kind="room",
+                id="r-mid",
+                name="Mid",
+                levelId="lv",
+                department="Dept A",
+                targetAreaM2=14.0,
+                outlineMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 3000, "yMm": 0},
+                    {"xMm": 3000, "yMm": 4000},
+                    {"xMm": 0, "yMm": 4000},
+                ],
+            ),
+            "r-large": RoomElem(
+                kind="room",
+                id="r-large",
+                name="Large",
+                levelId="lv",
+                department="Dept B",
+                targetAreaM2=24.0,
+                outlineMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 5000, "yMm": 0},
+                    {"xMm": 5000, "yMm": 5000},
+                    {"xMm": 0, "yMm": 5000},
+                ],
+            ),
+            "sch": ScheduleElem(
+                kind="schedule",
+                id="sch",
+                name="Rooms",
+                filters={
+                    "category": "room",
+                    "groupingHint": ["department"],
+                    "sortBy": "areaM2",
+                    "filterRules": [
+                        {"field": "areaM2", "op": "gt", "value": 10},
+                        {"field": "areaM2", "op": "lt", "value": 30},
+                    ],
+                },
+            ),
+        },
+    )
+    tbl = derive_schedule_table(doc, "sch")
+    grouped = tbl.get("groupedSections")
+    assert isinstance(grouped, dict)
+    assert list(grouped.keys()) == ["Dept A", "Dept B"]
+    assert [r["elementId"] for rows in grouped.values() for r in rows] == ["r-mid", "r-large"]
+    assert tbl["totalRows"] == 2
+    assert tbl["totals"]["areaM2"] == 37.0
+    assert tbl["totals"]["targetAreaM2"] == 38.0
+    assert tbl["scheduleEngine"]["filterRules"] == [
+        {"field": "areaM2", "op": "gt", "value": 10.0},
+        {"field": "areaM2", "op": "lt", "value": 30.0},
+    ]
+
+    csv = schedule_payload_to_csv(tbl, include_totals_csv=True)
+    assert csv.splitlines()[0].startswith("Group,")
+    assert "r-mid" in csv
+    assert "r-large" in csv
+    assert "r-small" not in csv
+    assert "__schedule_totals_v1__" in csv
+    assert ",areaM2,37" in csv
 
 
 def test_schedule_filter_rules_lt_width_mm_on_doors() -> None:

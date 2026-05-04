@@ -249,7 +249,7 @@ def _rows_after_filter_equals(
 
 
 def _normalize_filter_rules(filt: dict[str, Any]) -> list[dict[str, Any]]:
-    """Structured schedule row filters: ``gt`` / ``lt`` on numeric-coercible rule values."""
+    """Structured schedule row filters: ``gt`` / ``lt`` on numeric-coercible row fields."""
 
     raw = filt.get("filterRules") or filt.get("filter_rules")
     if not isinstance(raw, list) or not raw:

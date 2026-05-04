@@ -1,11 +1,64 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  parseNumericFilterRuleThreshold,
   parseWidthMmGtThreshold,
   parseWidthMmLtThreshold,
+  schedulesFiltersWithNumericRule,
   schedulesFiltersWithWidthMmGt,
   schedulesFiltersWithWidthMmLt,
 } from './scheduleFilterWidthRules';
+
+describe('generic numeric schedule filterRules helpers', () => {
+  it('parseNumericFilterRuleThreshold reads areaM2 gt from camelCase rules', () => {
+    expect(
+      parseNumericFilterRuleThreshold(
+        {
+          filterRules: [
+            { field: 'widthMm', op: 'gt', value: 900 },
+            { field: 'areaM2', op: 'gt', value: '12.5' },
+          ],
+        },
+        'areaM2',
+        'gt',
+      ),
+    ).toBe(12.5);
+  });
+
+  it('schedulesFiltersWithNumericRule replaces only the requested field/op', () => {
+    const next = schedulesFiltersWithNumericRule(
+      {
+        category: 'room',
+        filterRules: [
+          { field: 'areaM2', op: 'gt', value: 8 },
+          { field: 'areaM2', op: 'lt', value: 30 },
+          { field: 'targetAreaM2', op: 'gt', value: 10 },
+        ],
+      },
+      'areaM2',
+      'gt',
+      12,
+    );
+    expect(next.filterRules).toEqual([
+      { field: 'areaM2', op: 'lt', value: 30 },
+      { field: 'targetAreaM2', op: 'gt', value: 10 },
+      { field: 'areaM2', op: 'gt', value: 12 },
+    ]);
+  });
+
+  it('schedulesFiltersWithNumericRule clears the final rule and removes snake_case', () => {
+    const next = schedulesFiltersWithNumericRule(
+      {
+        filter_rules: [{ field: 'areaM2', op: 'lt', value: 50 }],
+      },
+      'areaM2',
+      'lt',
+      null,
+    );
+    expect(next).not.toHaveProperty('filterRules');
+    expect(next).not.toHaveProperty('filter_rules');
+  });
+});
 
 describe('schedule filterRules widthMm gt helpers', () => {
   it('parseWidthMmGtThreshold reads first widthMm gt', () => {

@@ -452,6 +452,55 @@ def test_schedule_csv_contains_room_headers():
     assert "elementId" in header
 
 
+def test_room_schedule_area_filter_csv_export_totals_footer():
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl-1": LevelElem(kind="level", id="lvl-1", name="EG", elevationMm=0),
+            "rm-a": RoomElem(
+                kind="room",
+                id="rm-a",
+                name="Small",
+                levelId="lvl-1",
+                outlineMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 1000, "yMm": 0},
+                    {"xMm": 1000, "yMm": 1000},
+                    {"xMm": 0, "yMm": 1000},
+                ],
+            ),
+            "rm-b": RoomElem(
+                kind="room",
+                id="rm-b",
+                name="Large",
+                levelId="lvl-1",
+                outlineMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 5000, "yMm": 0},
+                    {"xMm": 5000, "yMm": 4000},
+                    {"xMm": 0, "yMm": 4000},
+                ],
+            ),
+            "sch-1": ScheduleElem(
+                kind="schedule",
+                id="sch-1",
+                name="Rooms",
+                filters={
+                    "category": "room",
+                    "filterRules": [{"field": "areaM2", "op": "gt", "value": 10}],
+                },
+            ),
+        },
+    )
+    tbl = derive_schedule_table(doc, "sch-1")
+    assert tbl["totalRows"] == 1
+    csv_txt = schedule_payload_to_csv(tbl, include_totals_csv=True)
+    assert "rm-b" in csv_txt
+    assert "rm-a" not in csv_txt
+    assert "__schedule_totals_v1__" in csv_txt
+    assert ",areaM2,20" in csv_txt
+
+
 def test_sheet_svg_legacy_w_mm_h_mm_viewport_extents():
     doc = Document(
         revision=1,
