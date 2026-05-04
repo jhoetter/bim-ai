@@ -17,6 +17,7 @@ from bim_ai.elements import (
 _CUT_THICKNESS_MATCH_EPS_MM = 0.05
 
 HostKindCut = Literal["wall", "floor", "roof"]
+LayeredGeometryHostKind = Literal["wall", "floor", "roof"]
 
 
 def resolved_layers_for_wall(doc: Document, wall: WallElem) -> list[dict[str, Any]]:
@@ -135,6 +136,65 @@ def layer_stack_cut_metrics_for_roof(doc: Document, roof: RoofElem) -> dict[str,
     )
 
 
+def _layer_stack_witness_layers(layers: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    total = sum(float(lyr["thicknessMm"]) for lyr in layers)
+    offset = 0.0
+    rows: list[dict[str, Any]] = []
+    for idx, lyr in enumerate(layers):
+        thickness = float(lyr["thicknessMm"])
+        rows.append(
+            {
+                "layerIndex": idx,
+                "function": lyr["function"],
+                "materialKey": (lyr.get("materialKey") or "").strip(),
+                "thicknessMm": round(thickness, 3),
+                "offsetFromExteriorMm": round(offset, 3),
+                "offsetToInteriorMm": round(total - offset - thickness, 3),
+            }
+        )
+        offset += thickness
+    return rows
+
+
+def _stack_axis_hint(host_kind: LayeredGeometryHostKind) -> str:
+    if host_kind == "wall":
+        return "wallThicknessExteriorToInteriorProxy"
+    if host_kind == "floor":
+        return "slabBottomToTopProxy"
+    return "roofAssemblyNormalProxy"
+
+
+def _geometry_encoding_hint(host_kind: LayeredGeometryHostKind) -> str:
+    if host_kind == "wall":
+        return "monoWallPrismWithLayerStackWitness"
+    if host_kind == "floor":
+        return "monoFloorSlabWithLayerStackWitness"
+    return "monoRoofProxyWithLayerStackWitness"
+
+
+def layer_stack_geometry_witness(
+    *,
+    host_kind: LayeredGeometryHostKind,
+    assembly_type_id: str,
+    layers: list[dict[str, Any]],
+    metrics: dict[str, Any],
+) -> dict[str, Any]:
+    """Per-layer metadata for mono geometry exports/sections without claiming per-layer solids."""
+
+    return {
+        "format": "layerStackGeometryWitness_v0",
+        "hostKind": host_kind,
+        "assemblyTypeId": assembly_type_id,
+        "geometryEncodingHint": _geometry_encoding_hint(host_kind),
+        "stackAxisHint": _stack_axis_hint(host_kind),
+        "layerCount": metrics["layerCount"],
+        "layerTotalThicknessMm": metrics["layerTotalThicknessMm"],
+        "cutThicknessMm": metrics["cutThicknessMm"],
+        "layerStackMatchesCutThickness": metrics["layerStackMatchesCutThickness"],
+        "layers": _layer_stack_witness_layers(layers),
+    }
+
+
 def _typed_wall_layers(doc: Document, wall: WallElem) -> list[dict[str, Any]] | None:
     tid = (wall.wall_type_id or "").strip()
     if not tid:
@@ -170,6 +230,100 @@ def _typed_roof_layers(doc: Document, roof: RoofElem) -> list[dict[str, Any]] | 
         }
         for lyr in rt.layers
     ]
+
+
+def _layer_stack_geometry_witness_for_wall(doc: Document, wall: WallElem) -> dict[str, Any] | None:
+    layers = _typed_wall_layers(doc, wall)
+    if layers is None:
+        return None
+    return layer_stack_geometry_witness(
+        host_kind="wall",
+        assembly_type_id=(wall.wall_type_id or "").strip(),
+        layers=layers,
+        metrics=layer_stack_cut_metrics_for_wall(doc, wall),
+    )
+
+
+def _layer_stack_geometry_witness_for_floor(doc: Document, floor: FloorElem) -> dict[str, Any] | None:
+    layers = _typed_floor_layers(doc, floor)
+    if layers is None:
+        return None
+    return layer_stack_geometry_witness(
+        host_kind="floor",
+        assembly_type_id=(floor.floor_type_id or "").strip(),
+        layers=layers,
+        metrics=layer_stack_cut_metrics_for_floor(doc, floor),
+    )
+
+
+def _layer_stack_geometry_witness_for_roof(doc: Document, roof: RoofElem) -> dict[str, Any] | None:
+    layers = _typed_roof_layers(doc, roof)
+    if layers is None:
+        return None
+    return layer_stack_geometry_witness(
+        host_kind="roof",
+        assembly_type_id=(roof.roof_type_id or "").strip(),
+        layers=layers,
+        metrics=layer_stack_cut_metrics_for_roof(doc, roof),
+    )
+
+
+def layer_stack_geometry_witness_for_element(
+    doc: Document,
+    *,
+    host_kind: LayeredGeometryHostKind,
+    host_element_id: str,
+) -> dict[str, Any] | None:
+    ev = doc.elements.get(host_element_id)
+    if host_kind == "wall" and isinstance(ev, WallElem):
+        return _layer_stack_geometry_witness_for_wall(doc, ev)
+    if host_kind == "floor" and isinstance(ev, FloorElem):
+        return _layer_stack_geometry_witness_for_floor(doc, ev)
+    if host_kind == "roof" and isinstance(ev, RoofElem):
+        return _layer_stack_geometry_witness_for_roof(doc, ev)
+    return None
+
+
+def collect_layered_assembly_geometry_witness_v0(doc: Document) -> dict[str, Any] | None:
+    """Typed wall/floor/roof layer stacks attached to current mono geometry encodings."""
+
+    hosts: list[dict[str, Any]] = []
+
+    for eid in sorted(eid for eid, e in doc.elements.items() if isinstance(e, WallElem)):
+        w = doc.elements[eid]
+        assert isinstance(w, WallElem)
+        witness = _layer_stack_geometry_witness_for_wall(doc, w)
+        if witness is None:
+            continue
+        hosts.append({"hostElementId": w.id, **witness})
+
+    for eid in sorted(eid for eid, e in doc.elements.items() if isinstance(e, FloorElem)):
+        fl = doc.elements[eid]
+        assert isinstance(fl, FloorElem)
+        witness = _layer_stack_geometry_witness_for_floor(doc, fl)
+        if witness is None:
+            continue
+        hosts.append({"hostElementId": fl.id, **witness})
+
+    for eid in sorted(eid for eid, e in doc.elements.items() if isinstance(e, RoofElem)):
+        rf = doc.elements[eid]
+        assert isinstance(rf, RoofElem)
+        witness = _layer_stack_geometry_witness_for_roof(doc, rf)
+        if witness is None:
+            continue
+        hosts.append(
+            {
+                "hostElementId": rf.id,
+                "roofGeometryMode": rf.roof_geometry_mode,
+                **witness,
+            }
+        )
+
+    if not hosts:
+        return None
+
+    hosts.sort(key=lambda row: (str(row["hostKind"]), str(row["hostElementId"])))
+    return {"format": "layeredAssemblyGeometryWitness_v0", "hosts": hosts}
 
 
 def collect_layered_assembly_cut_alignment_evidence_v0(doc: Document) -> dict[str, Any] | None:
@@ -227,7 +381,8 @@ def collect_layered_assembly_cut_alignment_evidence_v0(doc: Document) -> dict[st
 
 
 def section_assembly_alignment_fields_wall(doc: Document, wall: WallElem) -> dict[str, Any] | None:
-    if _typed_wall_layers(doc, wall) is None:
+    witness = _layer_stack_geometry_witness_for_wall(doc, wall)
+    if witness is None:
         return None
     m = layer_stack_cut_metrics_for_wall(doc, wall)
     return {
@@ -235,11 +390,13 @@ def section_assembly_alignment_fields_wall(doc: Document, wall: WallElem) -> dic
         "assemblyLayerTotalThicknessMm": m["layerTotalThicknessMm"],
         "assemblyCutThicknessMm": m["cutThicknessMm"],
         "assemblyLayerStackMatchesCutThickness": m["layerStackMatchesCutThickness"],
+        "assemblyLayerStackWitness": witness,
     }
 
 
 def section_assembly_alignment_fields_floor(doc: Document, floor: FloorElem) -> dict[str, Any] | None:
-    if _typed_floor_layers(doc, floor) is None:
+    witness = _layer_stack_geometry_witness_for_floor(doc, floor)
+    if witness is None:
         return None
     m = layer_stack_cut_metrics_for_floor(doc, floor)
     return {
@@ -247,6 +404,21 @@ def section_assembly_alignment_fields_floor(doc: Document, floor: FloorElem) -> 
         "assemblyLayerTotalThicknessMm": m["layerTotalThicknessMm"],
         "assemblyCutThicknessMm": m["cutThicknessMm"],
         "assemblyLayerStackMatchesCutThickness": m["layerStackMatchesCutThickness"],
+        "assemblyLayerStackWitness": witness,
+    }
+
+
+def section_assembly_alignment_fields_roof(doc: Document, roof: RoofElem) -> dict[str, Any] | None:
+    witness = _layer_stack_geometry_witness_for_roof(doc, roof)
+    if witness is None:
+        return None
+    m = layer_stack_cut_metrics_for_roof(doc, roof)
+    return {
+        "assemblyLayerCount": m["layerCount"],
+        "assemblyLayerTotalThicknessMm": m["layerTotalThicknessMm"],
+        "assemblyCutThicknessMm": m["cutThicknessMm"],
+        "assemblyLayerStackMatchesCutThickness": m["layerStackMatchesCutThickness"],
+        "assemblyLayerStackWitness": witness,
     }
 
 

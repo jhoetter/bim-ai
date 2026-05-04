@@ -27,6 +27,7 @@ from bim_ai.elements import (
 )
 from bim_ai.material_assembly_resolve import (
     section_assembly_alignment_fields_floor,
+    section_assembly_alignment_fields_roof,
     section_assembly_alignment_fields_wall,
 )
 from bim_ai.opening_cut_primitives import (
@@ -766,42 +767,46 @@ def build_section_projection_primitives(
             rise_mm, ridge_axis = gable_ridge_rise_mm(span_x, span_z, slope)
             zb = _level_elevation_mm(doc, e.reference_level_id)
             ridge_z = zb + rise_mm
-            roofs.append(
-                {
-                    "id": f"roof:{e.id}:0",
-                    "elementId": e.id,
-                    "referenceLevelId": e.reference_level_id,
-                    "roofGeometryMode": mode,
-                    "uStartMm": round(u_lo, 3),
-                    "uEndMm": round(u_hi, 3),
-                    "ridgeZMm": round(ridge_z, 3),
-                    "eavePlateZMm": round(zb, 3),
-                    "zMidMm": round(ridge_z, 3),
-                    "proxyKind": "gablePitchedRectangleChord",
-                    "ridgeAxisPlan": ridge_axis,
-                    "slopeDeg": round(slope, 3),
-                    "overhangMm": round(float(e.overhang_mm), 3),
-                    "planSpanXmMm": round(span_x, 3),
-                    "planSpanZmMm": round(span_z, 3),
-                    "ridgeRiseMm": round(rise_mm, 3),
-                }
-            )
+            roof_row: dict[str, Any] = {
+                "id": f"roof:{e.id}:0",
+                "elementId": e.id,
+                "referenceLevelId": e.reference_level_id,
+                "roofGeometryMode": mode,
+                "uStartMm": round(u_lo, 3),
+                "uEndMm": round(u_hi, 3),
+                "ridgeZMm": round(ridge_z, 3),
+                "eavePlateZMm": round(zb, 3),
+                "zMidMm": round(ridge_z, 3),
+                "proxyKind": "gablePitchedRectangleChord",
+                "ridgeAxisPlan": ridge_axis,
+                "slopeDeg": round(slope, 3),
+                "overhangMm": round(float(e.overhang_mm), 3),
+                "planSpanXmMm": round(span_x, 3),
+                "planSpanZmMm": round(span_z, 3),
+                "ridgeRiseMm": round(rise_mm, 3),
+            }
+            asm_roof = section_assembly_alignment_fields_roof(doc, e)
+            if asm_roof:
+                roof_row.update(asm_roof)
+            roofs.append(roof_row)
         else:
             z_mid = _roof_proxy_top_z_mm(doc, e)
-            roofs.append(
-                {
-                    "id": f"roof:{e.id}:0",
-                    "elementId": e.id,
-                    "referenceLevelId": e.reference_level_id,
-                    "roofGeometryMode": "mass_box",
-                    "uStartMm": round(u_lo, 3),
-                    "uEndMm": round(u_hi, 3),
-                    "zMidMm": round(z_mid, 3),
-                    "slopeDeg": round(float(e.slope_deg or 25.0), 3),
-                    "overhangMm": round(float(e.overhang_mm), 3),
-                    "proxyKind": "footprintChord",
-                }
-            )
+            roof_row = {
+                "id": f"roof:{e.id}:0",
+                "elementId": e.id,
+                "referenceLevelId": e.reference_level_id,
+                "roofGeometryMode": "mass_box",
+                "uStartMm": round(u_lo, 3),
+                "uEndMm": round(u_hi, 3),
+                "zMidMm": round(z_mid, 3),
+                "slopeDeg": round(float(e.slope_deg or 25.0), 3),
+                "overhangMm": round(float(e.overhang_mm), 3),
+                "proxyKind": "footprintChord",
+            }
+            asm_roof = section_assembly_alignment_fields_roof(doc, e)
+            if asm_roof:
+                roof_row.update(asm_roof)
+            roofs.append(roof_row)
 
     primitives: dict[str, Any] = {
         "format": "sectionProjectionPrimitives_v1",

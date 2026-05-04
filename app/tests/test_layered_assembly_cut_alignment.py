@@ -7,6 +7,8 @@ from bim_ai.elements import (
     FloorElem,
     FloorTypeElem,
     LevelElem,
+    RoofElem,
+    RoofTypeElem,
     SectionCutElem,
     Vec2Mm,
     WallElem,
@@ -15,6 +17,7 @@ from bim_ai.elements import (
 )
 from bim_ai.material_assembly_resolve import (
     collect_layered_assembly_cut_alignment_evidence_v0,
+    collect_layered_assembly_geometry_witness_v0,
     layer_stack_cut_metrics_for_wall,
 )
 from bim_ai.section_projection_primitives import build_section_projection_primitives
@@ -226,3 +229,119 @@ def test_section_floor_row_includes_assembly_fields_for_typed_floor() -> None:
     assert row["assemblyLayerTotalThicknessMm"] == 200.0
     assert row["assemblyCutThicknessMm"] == 200.0
     assert row["assemblyLayerStackMatchesCutThickness"] is True
+
+
+def test_collect_geometry_witness_includes_typed_roof_stack_offsets() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="Roof", elevationMm=3000),
+            "rt": RoofTypeElem(
+                kind="roof_type",
+                id="rt",
+                name="Warm deck",
+                layers=[
+                    WallTypeLayer(
+                        thicknessMm=22,
+                        layer_function="structure",
+                        materialKey="mat-osb-roof-deck-v1",
+                    ),
+                    WallTypeLayer(
+                        thicknessMm=140,
+                        layer_function="insulation",
+                        materialKey="mat-insulation-roof-board-v1",
+                    ),
+                ],
+            ),
+            "r1": RoofElem(
+                kind="roof",
+                id="r1",
+                name="R",
+                referenceLevelId="lvl",
+                footprintMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 4000, "yMm": 0},
+                    {"xMm": 4000, "yMm": 3000},
+                    {"xMm": 0, "yMm": 3000},
+                ],
+                roofGeometryMode="mass_box",
+                roofTypeId="rt",
+            ),
+        },
+    )
+
+    ev = collect_layered_assembly_geometry_witness_v0(doc)
+    assert ev is not None
+    assert ev["format"] == "layeredAssemblyGeometryWitness_v0"
+    hosts = ev["hosts"]
+    assert len(hosts) == 1
+    roof = hosts[0]
+    assert roof["hostElementId"] == "r1"
+    assert roof["hostKind"] == "roof"
+    assert roof["assemblyTypeId"] == "rt"
+    assert roof["geometryEncodingHint"] == "monoRoofProxyWithLayerStackWitness"
+    assert roof["stackAxisHint"] == "roofAssemblyNormalProxy"
+    assert roof["layerTotalThicknessMm"] == 162.0
+    assert roof["cutThicknessMm"] is None
+    assert roof["layerStackMatchesCutThickness"] is None
+    assert roof["layers"][0]["offsetFromExteriorMm"] == 0.0
+    assert roof["layers"][0]["offsetToInteriorMm"] == 140.0
+    assert roof["layers"][1]["offsetFromExteriorMm"] == 22.0
+    assert roof["layers"][1]["materialKey"] == "mat-insulation-roof-board-v1"
+
+
+def test_section_roof_row_includes_layer_stack_witness_for_typed_roof() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="Roof", elevationMm=3000),
+            "rt": RoofTypeElem(
+                kind="roof_type",
+                id="rt",
+                name="Warm deck",
+                layers=[
+                    WallTypeLayer(thicknessMm=18, layer_function="structure"),
+                    WallTypeLayer(thicknessMm=120, layer_function="insulation"),
+                ],
+            ),
+            "r1": RoofElem(
+                kind="roof",
+                id="r1",
+                name="R",
+                referenceLevelId="lvl",
+                footprintMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 5000, "yMm": 0},
+                    {"xMm": 5000, "yMm": 3000},
+                    {"xMm": 0, "yMm": 3000},
+                ],
+                roofGeometryMode="gable_pitched_rectangle",
+                slopeDeg=30,
+                roofTypeId="rt",
+            ),
+            "sec": SectionCutElem(
+                kind="section_cut",
+                id="sec-r",
+                name="S",
+                line_start_mm={"xMm": 2500, "yMm": -1000},
+                line_end_mm={"xMm": 2500, "yMm": 4000},
+                crop_depth_mm=8000,
+            ),
+        },
+    )
+
+    sec = doc.elements["sec"]
+    assert isinstance(sec, SectionCutElem)
+    prim, _w = build_section_projection_primitives(doc, sec)
+    roofs = prim.get("roofs") or []
+    assert len(roofs) == 1
+    row = roofs[0]
+    assert row["elementId"] == "r1"
+    assert row["assemblyLayerCount"] == 2
+    assert row["assemblyLayerTotalThicknessMm"] == 138.0
+    assert row["assemblyCutThicknessMm"] is None
+    assert row["assemblyLayerStackMatchesCutThickness"] is None
+    witness = row["assemblyLayerStackWitness"]
+    assert witness["assemblyTypeId"] == "rt"
+    assert witness["geometryEncodingHint"] == "monoRoofProxyWithLayerStackWitness"
+    assert witness["layers"][1]["offsetFromExteriorMm"] == 18.0

@@ -26,6 +26,8 @@ from bim_ai.elements import (
 )
 from bim_ai.material_assembly_resolve import (
     collect_layered_assembly_cut_alignment_evidence_v0,
+    collect_layered_assembly_geometry_witness_v0,
+    layer_stack_geometry_witness_for_element,
     material_assembly_manifest_evidence,
 )
 from bim_ai.opening_cut_primitives import xz_bounds_mm_from_poly
@@ -158,6 +160,7 @@ def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
     stair_geom = stair_geometry_manifest_evidence_v0(doc)
     corner_joins = collect_wall_corner_join_evidence_v0(doc)
     layer_cut_align = collect_layered_assembly_cut_alignment_evidence_v0(doc)
+    layer_geom_witness = collect_layered_assembly_geometry_witness_v0(doc)
     mesh_enc = "bim_ai_box_primitive_v0"
     if rgeom_roofs:
         mesh_enc += "+bim_ai_gable_roof_v0"
@@ -167,6 +170,8 @@ def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
         mesh_enc += "+bim_ai_skew_wall_hosted_openings_v0"
     if layer_cut_align:
         mesh_enc += "+bim_ai_layered_assembly_cut_alignment_v0"
+    if layer_geom_witness:
+        mesh_enc += "+bim_ai_layered_assembly_geometry_witness_v0"
     base: dict[str, Any] = {
         **parity,
         "meshEncoding": mesh_enc,
@@ -187,6 +192,8 @@ def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
         base["wallCornerJoinEvidence_v0"] = corner_joins
     if layer_cut_align:
         base["layeredAssemblyCutAlignmentEvidence_v0"] = layer_cut_align
+    if layer_geom_witness:
+        base["layeredAssemblyGeometryWitness_v0"] = layer_geom_witness
     return base
 
 
@@ -441,6 +448,12 @@ def _collect_visual_geom_entries(doc: Document) -> list[tuple[Literal["box", "ga
     return entries
 
 
+def _layer_witness_host_element_id(geom_kind: str, elem_id: str) -> str:
+    if geom_kind in {"wall", "floor"}:
+        return elem_id.split(":", 1)[0]
+    return elem_id
+
+
 def _collect_geom_boxes(doc: Document) -> list[_GeomBox]:
     boxes: list[_GeomBox] = []
 
@@ -674,6 +687,15 @@ def _document_to_gltf_tree_and_bins(doc: Document) -> tuple[dict[str, Any], byte
                 "elementId": gv.elem_id,
                 "bimAiRoofGeometryMode": "gable_pitched_rectangle",
             }
+
+        if geom_kind in {"wall", "floor", "roof"}:
+            witness = layer_stack_geometry_witness_for_element(
+                doc,
+                host_kind=cast(Literal["wall", "floor", "roof"], geom_kind),
+                host_element_id=_layer_witness_host_element_id(geom_kind, elem_id_f),
+            )
+            if witness:
+                extras["bimAiLayerStackWitness"] = witness
 
         vtx_off = len(bins)
         bins.extend(vbytes)

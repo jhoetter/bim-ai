@@ -232,6 +232,24 @@ def test_build_visual_export_manifest_includes_roof_assembly_evidence():
     assert float(layers[0]["thicknessMm"]) == 18.0
     assert float(layers[1]["thicknessMm"]) == 120.0
 
+    witness = ext.get("layeredAssemblyGeometryWitness_v0")
+    assert witness is not None
+    assert "bim_ai_layered_assembly_geometry_witness_v0" in ext["meshEncoding"]
+    roof_witnesses = [h for h in witness["hosts"] if h.get("hostKind") == "roof"]
+    assert len(roof_witnesses) == 1
+    roof_witness = roof_witnesses[0]
+    assert roof_witness["hostElementId"] == "r1"
+    assert roof_witness["geometryEncodingHint"] == "monoRoofProxyWithLayerStackWitness"
+    assert roof_witness["layerTotalThicknessMm"] == 138.0
+    assert roof_witness["cutThicknessMm"] is None
+    assert roof_witness["layers"][1]["offsetFromExteriorMm"] == 18.0
+
+    g = document_to_gltf(doc)
+    roof_node = next(n for n in g["nodes"] if n["name"] == "roof:r1")
+    node_witness = roof_node["extras"]["bimAiLayerStackWitness"]
+    assert node_witness["assemblyTypeId"] == "rt-1"
+    assert node_witness["layers"][0]["thicknessMm"] == 18.0
+
 
 def test_document_to_gltf_subset_counts_and_manifest_extension():
     doc = Document(
