@@ -10,6 +10,7 @@ from bim_ai.elements import (
     RoofElem,
     RoomElem,
     ScheduleElem,
+    SectionCutElem,
     SheetElem,
     StairElem,
     Vec3Mm,
@@ -499,6 +500,54 @@ def test_sheet_svg_viewport_includes_crop_export_segment():
     doc = Document(revision=1, elements={"s1": SheetElem(kind="sheet", id="s1", name="Crop", viewportsMm=[vp])})
     svg = sheet_elem_to_svg(doc, pick_sheet(doc, "s1"))
     assert "crop[mn=-5,-6 mx=1002,2003]" in svg
+
+
+def _doc_sheet_with_section_viewport() -> Document:
+    return Document(
+        revision=1,
+        elements={
+            "lvl-eg": LevelElem(kind="level", id="lvl-eg", name="EG", elevationMm=0),
+            "lvl-l1": LevelElem(kind="level", id="lvl-l1", name="L1", elevationMm=3200),
+            "sec-cut": SectionCutElem(
+                kind="section_cut",
+                id="sec-cut",
+                name="A-A",
+                lineStartMm={"xMm": 0.0, "yMm": -2000.0},
+                lineEndMm={"xMm": 0.0, "yMm": 2000.0},
+                cropDepthMm=8000.0,
+            ),
+            "s1": SheetElem(
+                kind="sheet",
+                id="s1",
+                name="Sections",
+                titleBlock="TB-1",
+                viewportsMm=[
+                    {
+                        "viewportId": "vp-sec",
+                        "xMm": 100,
+                        "yMm": 120,
+                        "widthMm": 1500,
+                        "heightMm": 900,
+                        "label": "S",
+                        "viewRef": "section:sec-cut",
+                    }
+                ],
+            ),
+        },
+    )
+
+
+def test_sheet_svg_section_viewport_includes_documentation_segment() -> None:
+    doc = _doc_sheet_with_section_viewport()
+    svg = sheet_elem_to_svg(doc, pick_sheet(doc, "s1"))
+    assert "secDoc[lvl=2 zSpanMm=3200]" in svg
+
+
+def test_sheet_pdf_viewport_export_listing_includes_section_documentation_segment() -> None:
+    doc = _doc_sheet_with_section_viewport()
+    lines = sheet_viewport_export_listing_lines(doc, pick_sheet(doc, "s1"))
+    joined = "\n".join(lines)
+    assert "secDoc[lvl=2 zSpanMm=3200]" in joined
 
 
 def test_format_viewport_crop_export_segment_empty_without_pair():

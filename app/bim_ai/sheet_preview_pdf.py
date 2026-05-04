@@ -10,6 +10,7 @@ from reportlab.pdfgen import canvas as pdf_canvas
 from bim_ai.document import Document
 from bim_ai.elements import SheetElem
 from bim_ai.sheet_preview_svg import (
+    format_section_viewport_documentation_segment,
     format_viewport_crop_export_segment,
     read_viewport_mm_box,
     resolve_view_ref_title,
@@ -50,7 +51,14 @@ def sheet_viewport_export_listing_lines(doc: Document, sh: SheetElem) -> list[st
         geo = f" [{x_mm:g},{y_mm:g}] {w_mm:g}×{h_mm:g} mm"
 
         crop_seg = format_viewport_crop_export_segment(vp)
-        geo_tail = geo + (f" · {crop_seg}" if crop_seg else "")
+
+        doc_seg = (
+            format_section_viewport_documentation_segment(doc, str(vr_raw))
+            if isinstance(vr_raw, str)
+            else ""
+        )
+
+        geo_tail = geo + (f" · {crop_seg}" if crop_seg else "") + (f" · {doc_seg}" if doc_seg else "")
 
         lines.append(str(f"{label}{suffix}{geo_tail}")[:220])
 

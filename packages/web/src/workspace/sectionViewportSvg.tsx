@@ -5,11 +5,14 @@ import {
   SECTION_VIEWPORT_ADVISORY_MAX_CHARS,
   SECTION_VIEWPORT_LABEL_FONT_MAX_PX,
   SECTION_VIEWPORT_LABEL_FONT_MIN_PX,
+  SECTION_VIEWPORT_LEVEL_SPAN_BRACKET_MARGIN_PX,
+  SECTION_VIEWPORT_LEVEL_SPAN_LABEL_MIN_PX,
   SECTION_VIEWPORT_OPENING_TAG_MIN_PX,
   SECTION_VIEWPORT_SCALE_BASELINE_PX,
   SECTION_VIEWPORT_STROKE_SCALE_MAX,
   SECTION_VIEWPORT_STROKE_SCALE_MIN,
 } from '../plan/symbology';
+import { formatSectionElevationSpanMmLabel } from './sectionViewportDoc';
 
 type UzPrim = {
   uStartMm: number;
@@ -575,6 +578,66 @@ export function SectionViewportSvg(props: {
               </text>
             );
           })}
+          {(() => {
+            const mk = layers.levelMarkers;
+            if (mk.length < 2) return null;
+            const elevs = mk.map((m) => m.elevationMm);
+            const zLo = Math.min(...elevs);
+            const zHi = Math.max(...elevs);
+            if (Math.abs(zHi - zLo) < MM_EPS) return null;
+            const bracketX = props.widthPx - SECTION_VIEWPORT_LEVEL_SPAN_BRACKET_MARGIN_PX;
+            const tick = 14 * strokeScale;
+            const yTop = (layers.z1 - zHi) * layers.sy;
+            const yBot = (layers.z1 - zLo) * layers.sy;
+            const yA = Math.min(yTop, yBot);
+            const yB = Math.max(yTop, yBot);
+            if (yB < -8 || yA > props.heightPx + 8) return null;
+            const lbl = formatSectionElevationSpanMmLabel(zLo, zHi);
+            const midY = 0.5 * (yA + yB);
+            const lvlSpanFont = Math.max(
+              SECTION_VIEWPORT_LEVEL_SPAN_LABEL_MIN_PX,
+              10 * strokeScale,
+            );
+            return (
+              <g key="lvl-span-bracket">
+                <line
+                  x1={bracketX}
+                  x2={bracketX}
+                  y1={yA}
+                  y2={yB}
+                  stroke="#475569"
+                  strokeWidth={datumStroke}
+                />
+                <line
+                  x1={bracketX - tick}
+                  x2={bracketX}
+                  y1={yA}
+                  y2={yA}
+                  stroke="#475569"
+                  strokeWidth={datumStroke}
+                />
+                <line
+                  x1={bracketX - tick}
+                  x2={bracketX}
+                  y1={yB}
+                  y2={yB}
+                  stroke="#475569"
+                  strokeWidth={datumStroke}
+                />
+                <text
+                  x={bracketX - tick - 6}
+                  y={midY}
+                  fill="#334155"
+                  textAnchor="end"
+                  dominantBaseline="middle"
+                  style={{ fontSize: lvlSpanFont }}
+                  pointerEvents="none"
+                >
+                  {lbl}
+                </text>
+              </g>
+            );
+          })()}
         </>
       ) : null}
       {layers?.advisory ? (

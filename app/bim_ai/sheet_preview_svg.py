@@ -15,6 +15,7 @@ from bim_ai.elements import (
     SheetElem,
     ViewpointElem,
 )
+from bim_ai.section_projection_primitives import build_section_projection_primitives
 
 
 def pick_sheet(doc: Document, sheet_id: str | None) -> SheetElem:
@@ -97,6 +98,47 @@ def format_viewport_crop_export_segment(vp: dict[str, Any]) -> str:
     xmin, ymin = cmn
     xmax, ymax = cmx
     return f"crop[mn={xmin:g},{ymin:g} mx={xmax:g},{ymax:g}]"
+
+
+def format_section_viewport_documentation_segment(doc: Document, view_ref: str) -> str:
+    """Stable level documentation substring for sheet exports when viewport references a section cut."""
+
+    if not view_ref.strip() or ":" not in view_ref:
+        return ""
+    kind_raw, ref_raw = view_ref.split(":", 1)
+    kind = kind_raw.strip().lower()
+    ref = ref_raw.strip()
+    if kind not in {"section", "sec"} or not ref:
+        return ""
+    el = doc.elements.get(ref)
+    if not isinstance(el, SectionCutElem):
+        return ""
+
+    prim, _ = build_section_projection_primitives(doc, el)
+    markers_raw = prim.get("levelMarkers") or []
+    if not isinstance(markers_raw, list) or len(markers_raw) == 0:
+        return ""
+
+    def _elev_id(m: Any) -> tuple[float, str]:
+        if not isinstance(m, dict):
+            return 0.0, ""
+        z = m.get("elevationMm") if "elevationMm" in m else m.get("elevation_mm")
+        try:
+            zz = float(z) if z is not None else 0.0
+        except (TypeError, ValueError):
+            zz = 0.0
+        sid = str(m.get("id") or "")
+        return zz, sid
+
+    ordered = sorted(markers_raw, key=_elev_id)
+    count = len(ordered)
+
+    if count == 1:
+        return f"secDoc[lvl={count}]"
+
+    z_vals = [_elev_id(m)[0] for m in ordered]
+    z_span = round(max(z_vals) - min(z_vals))
+    return f"secDoc[lvl={count} zSpanMm={z_span}]"
 
 
 def viewport_evidence_hints_v0(vps_raw: list[Any]) -> list[dict[str, Any]]:
@@ -202,6 +244,17 @@ def sheet_elem_to_svg(doc: Document, sh: SheetElem) -> str:
                 f'fill="#0f766e" font-size="300px">{esc_crop}</text>'
             )
 
+        sec_seg = ""
+        if isinstance(vr, str):
+            sec_seg = format_section_viewport_documentation_segment(doc, str(vr))
+        doc_block = ""
+        if sec_seg:
+            esc_sec = html.escape(sec_seg)
+            doc_block = (
+                f'<text x="{x_mm + 200}" y="{y_mm + 2200}" '
+                f'fill="#5b21b6" font-size="280px">{esc_sec}</text>'
+            )
+
         viewport_blocks.append(
             "<g>"
             f'<rect x="{x_mm}" y="{y_mm}" width="{width_mm}" height="{height_mm}" '
@@ -211,6 +264,7 @@ def sheet_elem_to_svg(doc: Document, sh: SheetElem) -> str:
             f"</text>"
             f"{sub_block}"
             f"{crop_block}"
+            f"{doc_block}"
             "</g>"
         )
 

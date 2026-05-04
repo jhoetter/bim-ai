@@ -45,6 +45,14 @@ export const SECTION_VIEWPORT_OPENING_TAG_MIN_PX = 14;
 
 export const SECTION_VIEWPORT_ADVISORY_MAX_CHARS = 96;
 
+/** Right inset for elevation-span documentation bracket (section viewport SVG, WP-E04/C03). */
+
+export const SECTION_VIEWPORT_LEVEL_SPAN_BRACKET_MARGIN_PX = 22;
+
+/** Minimum label size for Δz elevation-span annotation in section viewport. */
+
+export const SECTION_VIEWPORT_LEVEL_SPAN_LABEL_MIN_PX = 8;
+
 function ux(xMm: number) {
   return xMm / 1000;
 }
