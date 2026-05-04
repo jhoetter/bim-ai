@@ -6,7 +6,20 @@ from collections import defaultdict
 from typing import Any
 
 from bim_ai.document import Document
-from bim_ai.elements import DoorElem, LevelElem, RoomElem, ScheduleElem, WallElem, WindowElem
+from bim_ai.elements import (
+    DoorElem,
+    FloorElem,
+    LevelElem,
+    PlanViewElem,
+    RoofElem,
+    RoomElem,
+    ScheduleElem,
+    SheetElem,
+    StairElem,
+    WallElem,
+    WindowElem,
+)
+from bim_ai.schedule_field_registry import column_metadata_bundle, stable_column_keys
 
 
 def _level_labels(doc: Document) -> dict[str, str]:
@@ -119,6 +132,104 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                     }
                 )
 
+    elif cat == "floor":
+        for e in doc.elements.values():
+            if isinstance(e, FloorElem):
+                lev = lvl_lab.get(e.level_id, e.level_id)
+                pts = [{"xMm": float(p.x_mm), "yMm": float(p.y_mm)} for p in e.boundary_mm]
+                area, perimeter = _room_polygon_area_perimeter_sqm(pts)
+                rows.append(
+                    {
+                        "elementId": e.id,
+                        "name": e.name,
+                        "levelId": e.level_id,
+                        "level": lev,
+                        "thicknessMm": round(float(e.thickness_mm), 3),
+                        "areaM2": round(area, 3),
+                        "perimeterM": round(perimeter, 3),
+                        "familyTypeId": "",
+                    }
+                )
+
+    elif cat == "roof":
+        for e in doc.elements.values():
+            if isinstance(e, RoofElem):
+                rl = lvl_lab.get(e.reference_level_id, e.reference_level_id or "—")
+                pts = [{"xMm": float(p.x_mm), "yMm": float(p.y_mm)} for p in e.footprint_mm]
+                area, perimeter = _room_polygon_area_perimeter_sqm(pts)
+                rows.append(
+                    {
+                        "elementId": e.id,
+                        "name": e.name,
+                        "referenceLevelId": e.reference_level_id,
+                        "referenceLevel": rl,
+                        "overhangMm": round(float(e.overhang_mm or 0.0), 3),
+                        "slopeDeg": round(float(e.slope_deg or 0.0), 3),
+                        "footprintAreaM2": round(area, 3),
+                        "footprintPerimeterM": round(perimeter, 3),
+                        "familyTypeId": "",
+                    }
+                )
+
+    elif cat == "stair":
+        bl = {eid: el for eid, el in doc.elements.items() if isinstance(el, LevelElem)}
+        for e in doc.elements.values():
+            if isinstance(e, StairElem):
+                bs = bl.get(e.base_level_id)
+                ts = bl.get(e.top_level_id)
+                rise_mm = (
+                    abs(ts.elevation_mm - bs.elevation_mm)
+                    if isinstance(bs, LevelElem) and isinstance(ts, LevelElem)
+                    else float(getattr(e, "riser_mm", 0.0)) * 16.0
+                )
+                p0 = e.run_start.x_mm, e.run_start.y_mm
+                p1 = e.run_end.x_mm, e.run_end.y_mm
+                run_mm = ((p1[0] - p0[0]) ** 2 + (p1[1] - p0[1]) ** 2) ** 0.5
+                rows.append(
+                    {
+                        "elementId": e.id,
+                        "name": e.name,
+                        "baseLevelId": e.base_level_id,
+                        "topLevelId": e.top_level_id,
+                        "baseLevel": lvl_lab.get(e.base_level_id, e.base_level_id),
+                        "topLevel": lvl_lab.get(e.top_level_id, e.top_level_id),
+                        "riseMm": round(float(rise_mm), 3),
+                        "runMm": round(float(run_mm), 3),
+                        "widthMm": round(float(e.width_mm), 3),
+                        "familyTypeId": "",
+                    }
+                )
+
+    elif cat == "sheet":
+        for e in doc.elements.values():
+            if isinstance(e, SheetElem):
+                vps = getattr(e, "viewports_mm", ()) or ()
+                rows.append(
+                    {
+                        "elementId": e.id,
+                        "name": e.name,
+                        "titleBlock": getattr(e, "title_block", "") or "",
+                        "viewportCount": len(vps),
+                        "familyTypeId": "",
+                    }
+                )
+
+    elif cat in {"plan_view", "planview"}:
+        for e in doc.elements.values():
+            if isinstance(e, PlanViewElem):
+                lev = lvl_lab.get(e.level_id, e.level_id)
+                rows.append(
+                    {
+                        "elementId": e.id,
+                        "name": e.name,
+                        "levelId": e.level_id,
+                        "level": lev,
+                        "planPresentation": e.plan_presentation,
+                        "discipline": getattr(e, "discipline", "") or "",
+                        "familyTypeId": "",
+                    }
+                )
+
     else:
         rows = []
 
@@ -141,8 +252,6 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
         for k in sorted(buckets.keys(), key=lambda x: "".join(map(str, x))):
             sub = sorted(buckets[k], key=lambda r: str(r.get("name", "")))
             grouped[" / ".join(str(x) for x in k)] = sub
-
-    columns = sorted({k for r in rows for k in r.keys()}) if rows else []
 
     sch_group = sch.grouping or {}
     stable_sort_field = sch_group.get("sortBy")
@@ -167,6 +276,9 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
     else:
         leaf_rows = list(rows)
 
+    observed_keys = {k for r in leaf_rows for k in r.keys()} if leaf_rows else set()
+    columns = stable_column_keys(cat, observed_keys)
+
     totals: dict[str, Any] = {}
     if cat == "room" and leaf_rows:
         totals = {
@@ -186,12 +298,27 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
         }
     elif cat == "door" and leaf_rows:
         totals = {"kind": "door", "rowCount": len(leaf_rows)}
+    elif cat == "floor" and leaf_rows:
+        totals = {
+            "kind": "floor",
+            "rowCount": len(leaf_rows),
+            "areaM2": round(sum(float(r.get("areaM2") or 0.0) for r in leaf_rows), 4),
+        }
+    elif cat == "roof" and leaf_rows:
+        totals = {
+            "kind": "roof",
+            "rowCount": len(leaf_rows),
+            "footprintAreaM2": round(
+                sum(float(r.get("footprintAreaM2") or 0.0) for r in leaf_rows), 4
+            ),
+        }
 
     out: dict[str, Any] = {
         "scheduleId": schedule_id,
         "name": sch.name,
         "category": cat,
         "columns": columns,
+        "columnMetadata": column_metadata_bundle(cat),
         "totalRows": total_rows,
         "groupKeys": group_keys,
         **({"groupedSections": grouped} if grouped else {"rows": rows}),

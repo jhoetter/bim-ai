@@ -6,6 +6,20 @@ import type { Element } from '@bim-ai/core';
 
 const PLAN_Y = 0.02;
 
+/** Documentation-style plan projection knobs (WP-C01/C02/C03). */
+
+export const PLAN_SLICE_ELEVATION_M = PLAN_Y;
+
+/** Thin wall prism at the active cut — reads lighter than volumetric extrusions elsewhere. */
+
+export const PLAN_WALL_CENTER_SLICE_HEIGHT_M = 0.048;
+
+export const PLAN_DOOR_SWING_ARC_SEMI_MINOR_FACTOR_DEFAULT = 2.2;
+
+export const PLAN_DOOR_SWING_ARC_SEMI_MINOR_FACTOR_FOCUS = 1.95;
+
+export const PLAN_WINDOW_SILL_LINE_WIDTH = 1.2;
+
 function ux(xMm: number) {
   return xMm / 1000;
 }
@@ -114,6 +128,9 @@ function horizontalOutlineMesh(
 
   return mesh;
 }
+
+/** Server `room_overlap_plan` heuristic threshold (mm²); keep aligned with Python constraints. */
+export const ROOM_PLAN_OVERLAP_ADVISOR_MM2 = 50_000;
 
 /** Plan authoring display bias (orthogonal to BIM levels). */
 export type PlanPresentationPreset = 'default' | 'opening_focus' | 'room_scheme';
@@ -236,7 +253,7 @@ function planWallMesh(wall: Extract<Element, { kind: 'wall' }>, selectedId?: str
 
   const thick = THREE.MathUtils.clamp(wall.thicknessMm / 1000, 0.02, 1.8);
 
-  const geom = new THREE.BoxGeometry(len, 0.05, thick);
+  const geom = new THREE.BoxGeometry(len, PLAN_WALL_CENTER_SLICE_HEIGHT_M, thick);
 
   const mat = new THREE.MeshStandardMaterial({
     roughness: 0.82,
@@ -300,12 +317,19 @@ function doorGroupThree(
 
   g.add(opening);
 
+  const swingMinor = openingFocus
+    ? PLAN_DOOR_SWING_ARC_SEMI_MINOR_FACTOR_FOCUS
+    : PLAN_DOOR_SWING_ARC_SEMI_MINOR_FACTOR_DEFAULT;
+
   const curve = new THREE.EllipseCurve(
     0,
     0,
-    width / (openingFocus ? 1.95 : 2.2),
-    width / (openingFocus ? 1.95 : 2.2),
+    width / swingMinor,
+
+    width / swingMinor,
+
     Math.PI / 4,
+
     Math.PI / 4 + Math.PI / (openingFocus ? 1.9 : 2.2),
   );
 
@@ -338,7 +362,9 @@ function planWindowMesh(
   selectedId?: string,
 
   openingFocus?: boolean,
-): THREE.Mesh {
+): THREE.Group {
+  const grp = new THREE.Group();
+
   const sx = ux(wall.start.xMm);
 
   const sz = uz(wall.start.yMm);
@@ -348,6 +374,12 @@ function planWindowMesh(
   const px = sx + seg.nx * seg.lenM * win.alongT;
 
   const pz = sz + seg.nz * seg.lenM * win.alongT;
+
+  const yaw = Math.atan2(seg.nz, seg.nx);
+
+  grp.position.set(px, 0, pz);
+
+  grp.rotation.y = yaw;
 
   const width = THREE.MathUtils.clamp(win.widthMm / 1000, 0.2, seg.lenM * 0.95);
 
@@ -375,13 +407,37 @@ function planWindowMesh(
     }),
   );
 
-  mesh.position.set(px, sill + h / 2, pz);
-
-  mesh.rotation.y = Math.atan2(seg.nz, seg.nx);
+  mesh.position.set(0, sill + h / 2, 0);
 
   mesh.userData.bimPickId = win.id;
 
-  return mesh;
+  grp.add(mesh);
+
+  const sillPts = [
+    new THREE.Vector3(-width / 2, sill + 0.004, depth * 0.51),
+
+    new THREE.Vector3(width / 2, sill + 0.004, depth * 0.51),
+  ];
+
+  const sillGeom = new THREE.BufferGeometry().setFromPoints(sillPts);
+
+  const sillLn = new THREE.Line(
+    sillGeom,
+
+    new THREE.LineBasicMaterial({
+      color: openingFocus ? '#f5d0fe' : '#7c3aed',
+
+      linewidth: PLAN_WINDOW_SILL_LINE_WIDTH,
+    }),
+  );
+
+  sillLn.renderOrder = 2;
+
+  grp.add(sillLn);
+
+  grp.userData.bimPickId = win.id;
+
+  return grp;
 }
 
 function hueFromName(seed: string): number {

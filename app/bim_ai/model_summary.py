@@ -15,6 +15,7 @@ from bim_ai.elements import (
     WallElem,
     WindowElem,
 )
+from bim_ai.room_derivation_preview import room_derivation_preview
 
 
 def compute_model_summary(doc: Document) -> dict[str, Any]:
@@ -74,4 +75,5 @@ def compute_model_summary(doc: Document) -> dict[str, Any]:
         "viewpointCount": int(kinds.get("viewpoint", 0)),
         "dimensionCount": int(kinds.get("dimension", 0)),
         "scheduleCount": int(kinds.get("schedule", 0)),
+        "roomDerivationPreview": room_derivation_preview(doc),
     }

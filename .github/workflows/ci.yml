@@ -60,8 +60,17 @@ jobs:
           python-version: '3.12'
 
       - run: python -m pip install --upgrade pip
-      - run: python -m pip install -e ".[dev]"
+      - run: python -m pip install -e ".[dev,ifc]"
+
+      - name: Import FastAPI app (route wiring regression guard)
+        run: PYTHONPATH=. python -c "from bim_ai.main import app"
 
       - run: ruff check bim_ai tests
 
       - run: pytest
+
+      - name: Optional evidence-package staging probe
+        env:
+          BIM_AI_EVIDENCE_PROBE_BASE_URL: ${{ vars.BIM_AI_EVIDENCE_PROBE_BASE_URL }}
+          BIM_AI_EVIDENCE_PROBE_MODEL_ID: ${{ vars.BIM_AI_EVIDENCE_PROBE_MODEL_ID }}
+        run: bash scripts/ci-evidence-package-probe.sh

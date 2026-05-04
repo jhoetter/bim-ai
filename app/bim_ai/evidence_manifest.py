@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 from typing import Any
 from uuid import UUID
 
@@ -19,8 +21,11 @@ def export_link_map(model_id: UUID) -> dict[str, str]:
         "evidencePackage": f"{base}/evidence-package",
         "commandLog": f"{base}/command-log",
         "gltfManifest": f"{base}/exports/gltf-manifest",
+        "gltfModel": f"{base}/exports/model.gltf",
+        "glbModel": f"{base}/exports/model.glb",
         "ifcManifest": f"{base}/exports/ifc-manifest",
         "ifcEmptySkeleton": f"{base}/exports/ifc-empty-skeleton.ifc",
+        "ifcModel": f"{base}/exports/model.ifc",
         "bcfTopicsJsonExport": f"{base}/exports/bcf-topics-json",
         "bcfTopicsJsonImport": f"{base}/imports/bcf-topics-json",
         "sheetPreviewSvg": f"{base}/exports/sheet-preview.svg",
@@ -102,3 +107,43 @@ def plan_view_wire_index(doc: Document) -> list[dict[str, Any]]:
             )
 
     return sorted(out, key=lambda x: x["id"])
+
+
+_DIGEST_EXCLUDED_KEYS = frozenset({"generatedAt", "semanticDigestSha256"})
+
+
+def evidence_package_semantic_digest_sha256(payload: dict[str, Any]) -> str:
+    """SHA-256 of a canonical JSON view of `payload`, excluding unstable keys."""
+
+    shallow = {k: v for k, v in payload.items() if k not in _DIGEST_EXCLUDED_KEYS}
+
+    pv = shallow.get("planViews")
+    if isinstance(pv, list):
+
+        shallow = dict(shallow)
+        shallow["planViews"] = sorted(pv, key=lambda x: str(x.get("id", "")))
+
+    sch = shallow.get("scheduleIds")
+    if isinstance(sch, list):
+        shallow = dict(shallow)
+        shallow["scheduleIds"] = sorted(sch, key=lambda x: str(x.get("id", "")))
+
+    val = shallow.get("validate")
+    if isinstance(val, dict):
+        viols = val.get("violations")
+        if isinstance(viols, list):
+            shallow = dict(shallow)
+            val2 = dict(val)
+            val2["violations"] = sorted(
+                viols,
+                key=lambda x: (
+                    str(x.get("ruleId", "")),
+                    json.dumps(x.get("elementIds", []), sort_keys=True),
+                    str(x.get("severity", "")),
+                    str(x.get("message", "")),
+                ),
+            )
+            shallow["validate"] = val2
+
+    body = json.dumps(shallow, sort_keys=True, separators=(",", ":"), default=str)
+    return hashlib.sha256(body.encode("utf-8")).hexdigest()

@@ -13,11 +13,12 @@ from fastapi import (
     WebSocket,
     WebSocketDisconnect,
 )
-from fastapi.responses import PlainTextResponse, Response
+from fastapi.responses import JSONResponse, PlainTextResponse, Response
 from pydantic import BaseModel, Field, TypeAdapter
 from sqlalchemy import delete, desc, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.responses import RedirectResponse
 
 from bim_ai.codes import BUILDING_PRESETS
 from bim_ai.commands import Command
@@ -33,14 +34,17 @@ from bim_ai.engine import (
     try_commit_bundle,
 )
 from bim_ai.evidence_manifest import (
+    evidence_package_semantic_digest_sha256,
     expected_screenshot_captures,
     export_link_map,
     plan_view_wire_index,
 )
-from bim_ai.export_gltf import build_visual_export_manifest
+from bim_ai.export_gltf import build_visual_export_manifest, document_to_glb_bytes, document_to_gltf
+from bim_ai.export_ifc import export_ifc_model_step
 from bim_ai.hub import Hub
-from bim_ai.ifc_stub import ifc_exchange_manifest_payload, minimal_empty_ifc_skeleton
+from bim_ai.ifc_stub import build_ifc_exchange_manifest_payload, minimal_empty_ifc_skeleton
 from bim_ai.model_summary import compute_model_summary
+from bim_ai.room_derivation_preview import room_derivation_preview
 from bim_ai.schedule_csv import schedule_payload_to_csv
 from bim_ai.schedule_derivation import derive_schedule_table, list_schedule_ids
 from bim_ai.sheet_preview_pdf import sheet_elem_to_pdf_bytes
@@ -258,7 +262,7 @@ async def evidence_package(
 
     pv_index = plan_view_wire_index(doc)
 
-    return {
+    payload: dict[str, Any] = {
         "format": "evidencePackage_v1",
         "generatedAt": datetime.now(UTC).isoformat(),
         "modelId": str(model_id),
@@ -296,11 +300,26 @@ async def evidence_package(
             },
         ],
         "scheduleIds": schedules,
+        "roomDerivationPreview": room_derivation_preview(doc),
         "hint": "Use Playwright to capture PNG alongside this JSON per spec §8.3 / §14 Phase A. CI attaches artifacts alongside this bundle.",
+        "sheetRasterNote": (
+            "Sheet SVG/PDF exports are deterministic server-side; bundle Playwright screenshots as canonical PNG evidence "
+            "(optional backend SVG→PNG raster stays out-of-band to minimize deploy deps)."
+        ),
     }
+    payload["semanticDigestSha256"] = evidence_package_semantic_digest_sha256(payload)
+    digest = str(payload["semanticDigestSha256"])
+    payload["semanticDigestPrefix16"] = digest[:16]
+    payload["suggestedEvidenceArtifactBasename"] = f"bim-ai-evidence-{digest[:16]}-r{doc.revision}"
+    payload["recommendedPngEvidenceBackend"] = "playwright_ci"
+    payload["svgRasterBackendAvailable"] = False
+    return payload
 
 
-@api_router.get("/models/{model_id}/schedules/{schedule_id}/table")
+@api_router.get(
+    "/models/{model_id}/schedules/{schedule_id}/table",
+    response_model=None,
+)
 async def schedule_derived_table(
     model_id: UUID,
     schedule_id: str,
@@ -338,6 +357,43 @@ async def export_gltf_manifest(
     return build_visual_export_manifest(doc)
 
 
+@api_router.get("/models/{model_id}/exports/model.gltf")
+async def export_model_gltf_json(
+    model_id: UUID,
+    session: AsyncSession = Depends(get_session),
+) -> JSONResponse:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    doc = Document.model_validate(row.document)
+    body = document_to_gltf(doc)
+    return JSONResponse(
+        content=body,
+        media_type="model/gltf+json",
+        headers={"Content-Disposition": 'attachment; filename="model.gltf"'},
+    )
+
+
+@api_router.get("/models/{model_id}/exports/model.glb")
+async def export_model_glb_bundle(
+    model_id: UUID,
+    session: AsyncSession = Depends(get_session),
+) -> Response:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    doc = Document.model_validate(row.document)
+    blob = document_to_glb_bytes(doc)
+    return Response(
+        content=blob,
+        media_type="model/gltf-binary",
+        headers={
+            "Content-Disposition": 'attachment; filename="model.glb"',
+            "Cache-Control": "public, max-age=60",
+        },
+    )
+
+
 @api_router.get("/models/{model_id}/exports/sheet-preview.svg")
 async def sheet_preview_svg_export(
     model_id: UUID,
@@ -373,7 +429,7 @@ async def sheet_preview_pdf_export(
         sh = pick_sheet(doc, sheet_id or None)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
-    pdf_blob = sheet_elem_to_pdf_bytes(sh)
+    pdf_blob = sheet_elem_to_pdf_bytes(doc, sh)
 
     fname = "".join(ch for ch in getattr(sh, "id", "") if ch.isalnum() or ch in ("-", "_")) or "sheet"
 
@@ -396,11 +452,7 @@ async def export_ifc_manifest_route(
     if row is None:
         raise HTTPException(status_code=404, detail="Model not found")
     doc = Document.model_validate(row.document)
-    kinds: dict[str, int] = {}
-    for el in doc.elements.values():
-        k = getattr(el, "kind", "?")
-        kinds[k] = kinds.get(k, 0) + 1
-    return ifc_exchange_manifest_payload(revision=doc.revision, counts_by_kind=kinds)
+    return build_ifc_exchange_manifest_payload(doc)
 
 
 @api_router.get("/models/{model_id}/exports/ifc-empty-skeleton.ifc")
@@ -417,6 +469,25 @@ async def export_ifc_skeleton(
         headers={
             "Content-Disposition": f'attachment; filename="bim-ai-model-{model_id}-empty.ifc"'
         },
+    )
+
+
+@api_router.get("/models/{model_id}/exports/model.ifc")
+async def export_model_ifc_bundle(
+    model_id: UUID,
+    session: AsyncSession = Depends(get_session),
+) -> PlainTextResponse:
+    """Canonical IFC artifact; kernel geometries emit IfcWall/IfcSlab when ifcopenshell is installed."""
+
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    doc = Document.model_validate(row.document)
+    step = export_ifc_model_step(doc)
+    return PlainTextResponse(
+        step,
+        media_type="application/octet-stream",
+        headers={"Content-Disposition": 'attachment; filename="model.ifc"'},
     )
 
 
@@ -1170,37 +1241,25 @@ async def export_model_json(
 
 
 @api_router.get("/models/{model_id}/export/ifc")
-async def export_model_ifc_placeholder(
-    model_id: UUID,
-    session: AsyncSession = Depends(get_session),
-) -> dict[str, Any]:
-    row = await load_model_row(session, model_id)
-    if row is None:
-        raise HTTPException(status_code=404, detail="Model not found")
-    return {
-        "format": "ifc",
-        "status": "not_implemented",
-        "modelId": str(model_id),
-        "revision": row.revision,
-        "note": "Roadmap: map levels, walls, slabs, roofs, openings — see spec/openbim-compatibility.md",
-    }
+async def export_model_ifc_redirect(model_id: UUID) -> RedirectResponse:
+    """Legacy path → canonical IFC under /exports/model.ifc."""
+
+    return RedirectResponse(url=f"/api/models/{model_id}/exports/model.ifc", status_code=307)
 
 
 @api_router.get("/models/{model_id}/export/gltf")
-async def export_model_gltf_placeholder(
-    model_id: UUID,
-    session: AsyncSession = Depends(get_session),
-) -> dict[str, Any]:
-    row = await load_model_row(session, model_id)
-    if row is None:
-        raise HTTPException(status_code=404, detail="Model not found")
-    return {
-        "format": "gltf",
-        "status": "not_implemented",
-        "modelId": str(model_id),
-        "revision": row.revision,
-        "note": "Roadmap: mesh bundle for reference house subset",
-    }
+async def export_model_gltf_redirect(model_id: UUID) -> RedirectResponse:
+    """Legacy path → canonical glTF under /exports/model.gltf."""
+    return RedirectResponse(
+        url=f"/api/models/{model_id}/exports/model.gltf",
+        status_code=307,
+    )
+
+
+@api_router.get("/models/{model_id}/export/glb")
+async def export_model_glb_redirect(model_id: UUID) -> RedirectResponse:
+    """Legacy path → canonical binary glTF under /exports/model.glb."""
+    return RedirectResponse(url=f"/api/models/{model_id}/exports/model.glb", status_code=307)
 
 
 @api_router.get("/models/{model_id}/export/bcf")

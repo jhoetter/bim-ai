@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import json
+from collections import defaultdict
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from bim_ai.document import Document
 from bim_ai.elements import (
     DimensionElem,
     DoorElem,
@@ -22,7 +25,18 @@ from bim_ai.elements import (
     WallElem,
     WindowElem,
 )
-from bim_ai.geometry import approx_overlap_area_mm2, sat_overlap, wall_corners
+from bim_ai.export_gltf import (
+    EXPORT_GEOMETRY_KINDS,
+    build_visual_export_manifest,
+    exchange_parity_manifest_fields_from_document,
+)
+from bim_ai.export_ifc import (
+    IFC_EXCHANGE_EMITTABLE_GEOMETRY_KINDS,
+    ifc_kernel_geometry_skip_counts,
+    kernel_export_eligible,
+)
+from bim_ai.geometry import Poly, approx_overlap_area_mm2, sat_overlap, wall_corners
+from bim_ai.ifc_stub import build_ifc_exchange_manifest_payload
 
 
 class Violation(BaseModel):
@@ -46,6 +60,7 @@ _RULE_DISCIPLINE: dict[str, str] = {
     "dimension_zero_length": "architecture",
     "dimension_bad_level": "structure",
     "room_outline_degenerate": "architecture",
+    "room_overlap_plan": "architecture",
     "door_off_wall": "architecture",
     "door_not_on_wall": "architecture",
     "window_off_wall": "architecture",
@@ -57,7 +72,13 @@ _RULE_DISCIPLINE: dict[str, str] = {
     "stair_geometry_unreasonable": "architecture",
     "stair_comfort_eu_proxy": "architecture",
     "ids_cleanroom_door_without_family_type": "agent",
+    "ids_cleanroom_window_without_family_type": "agent",
     "sheet_viewport_unknown_ref": "coordination",
+
+    "exchange_manifest_ifc_gltf_slice_mismatch": "exchange",
+
+    "exchange_ifc_unhandled_geometry_present": "exchange",
+    "exchange_ifc_kernel_geometry_skip_summary": "exchange",
 }
 
 
@@ -290,6 +311,93 @@ def _validate_hosted_opening(
         )
 
 
+def _exchange_advisory_violations(elements: dict[str, Element]) -> list[Violation]:
+    out: list[Violation] = []
+    try:
+
+        doc = Document(revision=1, elements=dict(elements))  # type: ignore[arg-type]
+    except Exception:
+        return []
+
+    parity_keys = (
+        "elementCount",
+        "countsByKind",
+
+        "exportedGeometryKinds",
+
+        "unsupportedDocumentKindsDetailed",
+    )
+
+    ifc_row = build_ifc_exchange_manifest_payload(doc)
+
+    gltf_ext = build_visual_export_manifest(doc)["extensions"]["BIM_AI_exportManifest_v0"]
+
+    ifc_slice = {k: ifc_row[k] for k in parity_keys if k in ifc_row}
+
+    gltf_slice = {k: gltf_ext[k] for k in parity_keys if k in gltf_ext}
+
+    if json.dumps(ifc_slice, sort_keys=True) != json.dumps(gltf_slice, sort_keys=True):
+        out.append(
+            Violation(
+                rule_id="exchange_manifest_ifc_gltf_slice_mismatch",
+
+                severity="warning",
+
+                message="IFC exchange manifest parity slice differs from glTF export manifest (investigate exporter drift).",
+
+                element_ids=[],
+
+            )
+        )
+
+    parity = exchange_parity_manifest_fields_from_document(doc)
+
+    cbk = parity.get("countsByKind") or {}
+
+    missing: list[str] = []
+
+    for k in sorted(EXPORT_GEOMETRY_KINDS):
+
+        if cbk.get(k, 0) > 0 and k not in IFC_EXCHANGE_EMITTABLE_GEOMETRY_KINDS:
+            missing.append(f"{k}:{cbk[k]}")
+
+    if missing:
+        out.append(
+            Violation(
+                rule_id="exchange_ifc_unhandled_geometry_present",
+                severity="info",
+                message=(
+                    "IFC kernel exporter does not emit physical products for some present geometry kinds: "
+                    + ", ".join(missing)
+                    + "."
+                ),
+
+                element_ids=[],
+
+            )
+        )
+
+    skip_map = ifc_kernel_geometry_skip_counts(doc)
+    if kernel_export_eligible(doc) and any(skip_map.values()):
+        parts = [f"{k}:{v}" for k, v in sorted(skip_map.items()) if v]
+        out.append(
+            Violation(
+                rule_id="exchange_ifc_kernel_geometry_skip_summary",
+                severity="info",
+                message=(
+                    "IFC kernel export skips some instances (see ifcKernelGeometrySkippedCounts on "
+                    "ifc-manifest / evidence slice): "
+                    + ", ".join(parts)
+                    + "."
+                ),
+                element_ids=[],
+                discipline="exchange",
+            )
+        )
+
+    return out
+
+
 def evaluate(elements: dict[str, Element]) -> list[Violation]:
     walls: list[WallElem] = []
     doors: list[DoorElem] = []
@@ -482,6 +590,37 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
                 )
             )
 
+    rooms_by_level: dict[str, list[RoomElem]] = defaultdict(list)
+    for room in rooms:
+        rooms_by_level[room.level_id].append(room)
+    overlap_threshold_mm2 = 50_000.0
+    for _lid, rlist in rooms_by_level.items():
+        for i in range(len(rlist)):
+            for j in range(i + 1, len(rlist)):
+                ri, rj = rlist[i], rlist[j]
+                pi = [(p.x_mm, p.y_mm) for p in ri.outline_mm]
+                pj = [(p.x_mm, p.y_mm) for p in rj.outline_mm]
+                if len(pi) < 3 or len(pj) < 3:
+                    continue
+                pa = Poly(tuple(pi))
+                pb = Poly(tuple(pj))
+                if not sat_overlap(pa, pb):
+                    continue
+                approx_a = approx_overlap_area_mm2(pa, pb, spacing_mm=200.0)
+                if approx_a >= overlap_threshold_mm2:
+                    approx_m2 = approx_a / 1_000_000.0
+                    viols.append(
+                        Violation(
+                            rule_id="room_overlap_plan",
+                            severity="warning",
+                            message=(
+                                "Room outlines on the same level overlap materially in plan "
+                                f"(approx {approx_m2:.2f} m² overlap by sampling)."
+                            ),
+                            element_ids=sorted({ri.id, rj.id}),
+                        )
+                    )
+
     if len(doors) == 0 and len(windows) == 0 and len(rooms) > 0:
         for room in rooms:
             viols.append(
@@ -618,21 +757,45 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
                 )
 
     val_rules = [vr for vr in elements.values() if isinstance(vr, ValidationRuleElem)]
-    enforce_clean = any(
+    enforce_clean_door = any(
         bool(v.rule_json.get("enforceCleanroomDoorFamilyTypes"))
         if isinstance(getattr(v, "rule_json", None), dict)
         else False
         for v in val_rules
     )
-    if enforce_clean:
+    enforce_clean_win = any(
+        bool(v.rule_json.get("enforceCleanroomWindowFamilyTypes"))
+        if isinstance(getattr(v, "rule_json", None), dict)
+        else False
+        for v in val_rules
+    )
+    if enforce_clean_door:
         for d in doors:
-            if d.family_type_id is None:
+            ft = (getattr(d, "family_type_id", None) or "").strip()
+            if not ft:
                 viols.append(
                     Violation(
                         rule_id="ids_cleanroom_door_without_family_type",
                         severity="warning",
                         message="Door instance missing required family/type reference for IDS/cleanroom rules.",
                         element_ids=[d.id],
+                    )
+                )
+
+    if enforce_clean_win:
+        for el in elements.values():
+            if not isinstance(el, WindowElem):
+                continue
+            ft = (getattr(el, "family_type_id", None) or "").strip()
+            if not ft:
+                viols.append(
+                    Violation(
+                        rule_id="ids_cleanroom_window_without_family_type",
+                        severity="warning",
+                        message=(
+                            "Window instance missing required family/type reference for IDS/cleanroom rules."
+                        ),
+                        element_ids=[el.id],
                     )
                 )
 
@@ -669,4 +832,5 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
                     )
                 )
 
+    viols.extend(_exchange_advisory_violations(elements))
     return annotate_violation_disciplines(viols)

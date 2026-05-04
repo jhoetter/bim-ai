@@ -14,7 +14,11 @@ from bim_ai.elements import (
 )
 from bim_ai.engine import try_commit, try_commit_bundle
 from bim_ai.export_gltf import build_visual_export_manifest
-from bim_ai.ifc_stub import ifc_exchange_manifest_payload
+from bim_ai.ifc_stub import (
+    IFC_ENCODING_EMPTY_SHELL,
+    build_ifc_exchange_manifest_payload,
+    ifc_exchange_manifest_payload,
+)
 from bim_ai.schedule_csv import schedule_payload_to_csv
 from bim_ai.schedule_derivation import derive_schedule_table
 from bim_ai.sheet_preview_svg import pick_sheet, sheet_elem_to_svg
@@ -94,7 +98,23 @@ def test_gltf_manifest_embeds_extensions():
 def test_ifc_manifest_reports_counts():
     fm = ifc_exchange_manifest_payload(revision=11, counts_by_kind={"wall": 3})
     assert fm["format"] == "ifc_manifest_v0"
-    assert fm["plannedIfcEntitiesHints"]
+    assert fm["plannedIfcEntitiesHints"] == ["wall"]
+    assert fm["elementCount"] == 3
+    assert fm["exportedGeometryKinds"] == {"wall": 3}
+    assert fm["ifcEncoding"] == IFC_ENCODING_EMPTY_SHELL
+    assert fm["artifactHasGeometryEntities"] is False
+    assert fm["exportedIfcKindsInArtifact"] == {}
+    assert fm["ifcEmittedKernelKinds"] == []
+
+
+def test_build_ifc_exchange_manifest_aligned_with_schedule_only_doc():
+    doc = Document(revision=2, elements={"sch": ScheduleElem(kind="schedule", id="sch-1", name="S")})
+    im = build_ifc_exchange_manifest_payload(doc)
+    gm = build_visual_export_manifest(doc)
+    gext = gm["extensions"]["BIM_AI_exportManifest_v0"]
+    assert im["elementCount"] == gext["elementCount"]
+    assert im["exportedGeometryKinds"] == gext["exportedGeometryKinds"]
+    assert im["unsupportedDocumentKindsDetailed"] == gext["unsupportedDocumentKindsDetailed"]
 
 
 def test_window_schedule_group_alias():
@@ -212,6 +232,8 @@ def test_schedule_csv_contains_room_headers():
         },
     )
     tbl = derive_schedule_table(doc, "sch-1")
+    assert tbl["columns"][0] == "elementId"
+    assert tbl["columnMetadata"]["category"] == "room"
     csv_txt = schedule_payload_to_csv(tbl)
     header = csv_txt.splitlines()[0]
     assert "elementId" in header

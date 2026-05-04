@@ -1,0 +1,189 @@
+{
+  "revision": 2,
+  "elements": {
+    "lvl-eg": {
+      "kind": "level",
+      "id": "lvl-eg",
+      "name": "EG",
+      "elevationMm": 0
+    },
+    "lvl-og": {
+      "kind": "level",
+      "id": "lvl-og",
+      "name": "OG",
+      "elevationMm": 2900
+    },
+    "w-main": {
+      "kind": "wall",
+      "id": "w-main",
+      "name": "Main",
+      "levelId": "lvl-eg",
+      "start": { "xMm": 0, "yMm": 0 },
+      "end": { "xMm": 6000, "yMm": 0 },
+      "thicknessMm": 200,
+      "heightMm": 2800
+    },
+    "door-ex": {
+      "kind": "door",
+      "id": "door-ex",
+      "name": "Exterior",
+      "wallId": "w-main",
+      "alongT": 0.5,
+      "widthMm": 900
+    },
+    "win-lv": {
+      "kind": "window",
+      "id": "win-lv",
+      "name": "Living",
+      "wallId": "w-main",
+      "alongT": 0.2,
+      "widthMm": 1200,
+      "sillHeightMm": 900,
+      "heightMm": 1500
+    },
+    "fl-slab": {
+      "kind": "floor",
+      "id": "fl-slab",
+      "name": "Slab",
+      "levelId": "lvl-eg",
+      "boundaryMm": [
+        { "xMm": 0, "yMm": 0 },
+        { "xMm": 6000, "yMm": 0 },
+        { "xMm": 6000, "yMm": 4500 },
+        { "xMm": 0, "yMm": 4500 }
+      ],
+      "thicknessMm": 220,
+      "structureThicknessMm": 140,
+      "finishThicknessMm": 0,
+      "insulationExtensionMm": 0,
+      "roomBounded": false
+    },
+    "so-slab": {
+      "kind": "slab_opening",
+      "id": "so-slab",
+      "name": "Lobby cut",
+      "hostFloorId": "fl-slab",
+      "boundaryMm": [
+        { "xMm": 2000, "yMm": 2000 },
+        { "xMm": 3200, "yMm": 2000 },
+        { "xMm": 3200, "yMm": 3200 },
+        { "xMm": 2000, "yMm": 3200 }
+      ],
+      "isShaft": false
+    },
+    "rm-kit": {
+      "kind": "room",
+      "id": "rm-kit",
+      "name": "Kitchen",
+      "levelId": "lvl-eg",
+      "outlineMm": [
+        { "xMm": 1000, "yMm": 1000 },
+        { "xMm": 5200, "yMm": 1000 },
+        { "xMm": 5200, "yMm": 4000 },
+        { "xMm": 1000, "yMm": 4000 }
+      ]
+    },
+    "rf-pitch": {
+      "kind": "roof",
+      "id": "rf-pitch",
+      "name": "Roof",
+      "referenceLevelId": "lvl-og",
+      "footprintMm": [
+        { "xMm": 0, "yMm": 0 },
+        { "xMm": 7000, "yMm": 0 },
+        { "xMm": 7000, "yMm": 9200 },
+        { "xMm": 0, "yMm": 9200 }
+      ],
+      "overhangMm": 350,
+      "slopeDeg": 28
+    },
+    "st-main": {
+      "kind": "stair",
+      "id": "st-main",
+      "name": "Main stair",
+      "baseLevelId": "lvl-eg",
+      "topLevelId": "lvl-og",
+      "runStartMm": { "xMm": 4700, "yMm": 800 },
+      "runEndMm": { "xMm": 4700, "yMm": 3400 },
+      "widthMm": 1100,
+      "riserMm": 175,
+      "treadMm": 280
+    },
+    "pv-eg": {
+      "kind": "plan_view",
+      "id": "pv-eg",
+      "name": "EG floor plan",
+      "levelId": "lvl-eg",
+      "planPresentation": "opening_focus",
+      "discipline": "architecture",
+      "categoriesHidden": []
+    },
+    "sh-a1": {
+      "kind": "sheet",
+      "id": "sh-a1",
+      "name": "A101 — Plan + room schedule",
+      "titleBlock": "A1",
+      "viewportsMm": [
+        { "viewRef": "plan:pv-eg", "xMm": 25, "yMm": 40, "wMm": 220, "hMm": 170 },
+        { "viewRef": "schedule:sch-room", "xMm": 260, "yMm": 40, "wMm": 120, "hMm": 140 }
+      ]
+    },
+    "sch-room": {
+      "kind": "schedule",
+      "id": "sch-room",
+      "name": "Rooms",
+      "sheetId": "sh-a1",
+      "filters": { "category": "room" },
+      "grouping": {}
+    },
+    "sch-door": {
+      "kind": "schedule",
+      "id": "sch-door",
+      "name": "Doors",
+      "filters": { "category": "door" },
+      "grouping": {}
+    },
+    "sch-window": {
+      "kind": "schedule",
+      "id": "sch-window",
+      "name": "Windows",
+      "filters": { "category": "window" },
+      "grouping": {}
+    },
+    "sch-floor": {
+      "kind": "schedule",
+      "id": "sch-floor",
+      "name": "Floors",
+      "filters": { "category": "floor" },
+      "grouping": {}
+    },
+    "sch-roof": {
+      "kind": "schedule",
+      "id": "sch-roof",
+      "name": "Roofs",
+      "filters": { "category": "roof" },
+      "grouping": {}
+    },
+    "sch-stair": {
+      "kind": "schedule",
+      "id": "sch-stair",
+      "name": "Stairs",
+      "filters": { "category": "stair" },
+      "grouping": {}
+    },
+    "sch-sheet": {
+      "kind": "schedule",
+      "id": "sch-sheet",
+      "name": "Sheet index",
+      "filters": { "category": "sheet" },
+      "grouping": {}
+    },
+    "sch-plan-view": {
+      "kind": "schedule",
+      "id": "sch-plan-view",
+      "name": "Plan views",
+      "filters": { "category": "plan_view" },
+      "grouping": {}
+    }
+  }
+}

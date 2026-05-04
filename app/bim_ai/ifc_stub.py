@@ -1,10 +1,26 @@
-"""IFC STEP skeleton with empty DATA until ifcopenshell-backed encoding lands."""
+"""IFC STEP skeleton + manifest fields (kernel export lives in `export_ifc.py`)."""
+
 
 from __future__ import annotations
 
+from typing import Any
+
+from bim_ai.document import Document
+from bim_ai.export_gltf import (
+    exchange_parity_manifest_fields,
+    exchange_parity_manifest_fields_from_document,
+)
+from bim_ai.export_ifc import (
+    IFC_ENCODING_KERNEL_V1,
+    ifc_manifest_artifact_hints,
+    kernel_export_eligible,
+)
+
+IFC_ENCODING_EMPTY_SHELL = "bim_ai_ifc_empty_shell_v0"
+
 
 def minimal_empty_ifc_skeleton() -> str:
-    """Valid minimal SPFF hull (no misplaced entity references).."""
+    """Valid minimal SPFF hull (no misplaced entity references)."""
 
     return (
         "ISO-10303-21;\n"
@@ -19,17 +35,51 @@ def minimal_empty_ifc_skeleton() -> str:
     )
 
 
-def ifc_exchange_manifest_payload(*, revision: int, counts_by_kind: dict[str, int]) -> dict:
-    """JSON side-car so agents know what IFC should eventually carry."""
+def build_ifc_exchange_manifest_payload(doc: Document) -> dict[str, Any]:
+    parity = exchange_parity_manifest_fields_from_document(doc)
+    planned = sorted(parity["countsByKind"].keys())
+    emitting = kernel_export_eligible(doc)
+    enc = IFC_ENCODING_KERNEL_V1 if emitting else IFC_ENCODING_EMPTY_SHELL
+    hints = ifc_manifest_artifact_hints(doc, emitting_kernel_body=emitting)
+    return {
+        "format": "ifc_manifest_v0",
+        "revision": doc.revision,
+        **parity,
+        **hints,
+        "ifcEncoding": enc,
+        "artifactHasGeometryEntities": bool(emitting),
+        "plannedIfcEntitiesHints": planned,
+        "plannedEntitiesReference": "spec/ifc-export-wp-x03-slice.md",
+        "hint": "IFC artifact: GET /api/models/{id}/exports/model.ifc",
+        "note": (
+            "Kernel slice emits IfcWall + IfcSlab + storey graph, roof/stair/slab-hosted openings, and IfcSpace "
+            "when geometry is eligible; otherwise empty DATA hull."
+        ),
+    }
 
-    planned = sorted(counts_by_kind.keys())
+
+def ifc_exchange_manifest_payload(
+    *,
+    revision: int,
+    counts_by_kind: dict[str, int],
+    element_count: int | None = None,
+) -> dict[str, Any]:
+    """Fixture entry when callers only aggregate kind counts outside a Document snapshot."""
+
+    ec = sum(counts_by_kind.values()) if element_count is None else element_count
+    parity = exchange_parity_manifest_fields(element_count=ec, counts_by_kind=counts_by_kind)
+    planned = sorted(parity["countsByKind"].keys())
+    zero_doc = Document(revision=max(1, revision), elements={})  # type: ignore[arg-type]
+    hints = ifc_manifest_artifact_hints(zero_doc, emitting_kernel_body=False)
     return {
         "format": "ifc_manifest_v0",
         "revision": revision,
-        "countsByKind": counts_by_kind,
+        **parity,
+        **hints,
+        "ifcEncoding": IFC_ENCODING_EMPTY_SHELL,
+        "artifactHasGeometryEntities": False,
         "plannedIfcEntitiesHints": planned,
-        "note": (
-            "Empty IFC skeleton file is downloadable at /exports/ifc-empty.skeleton.ifc "
-            "(no geometry entities yet). Prefer JSON snapshot until Phase exchange hardens."
-        ),
+        "plannedEntitiesReference": "spec/ifc-export-wp-x03-slice.md",
+        "hint": "IFC artifact: GET /api/models/{id}/exports/model.ifc",
+        "note": ("Empty IFC hull only — parity fields aligned with `/exports/ifc-manifest` + glTF kernels."),
     }

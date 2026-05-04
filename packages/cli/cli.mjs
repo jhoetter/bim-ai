@@ -71,6 +71,35 @@ async function fetchJson(method, url, bodyObj) {
   return json;
 }
 
+async function fetchOkText(method, url) {
+  const res = await fetch(url, {
+    method,
+    headers: { accept: 'model/gltf+json,application/json,text/plain;q=0.9,*/*;q=0.1' },
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    console.error(JSON.stringify({ status: res.status, sample: text.slice(0, 2000) }, null, 2));
+    process.exit(1);
+  }
+  return text;
+}
+
+async function fetchOkBytes(method, url) {
+  const res = await fetch(url, {
+    method,
+    headers: {
+      accept:
+        'application/octet-stream,model/gltf-binary,*/*;q=0.8',
+    },
+  });
+  const buf = Buffer.from(await res.arrayBuffer());
+  if (!res.ok) {
+    console.error(JSON.stringify({ status: res.status, bytes: buf.length }, null, 2));
+    process.exit(1);
+  }
+  return buf;
+}
+
 async function snapshot(modelId) {
   const json = await fetchJson('GET', `${base}/api/models/${encodeURIComponent(modelId)}/snapshot`);
   console.log(JSON.stringify(json, null, 2));
@@ -295,7 +324,44 @@ async function cmdPlanHouse(briefPath, outPath, modelHint) {
   console.log(JSON.stringify({ ok: true, out: outPath, commandCount: bundle.commands.length }, null, 2));
 }
 
-async function cmdExport(kind) {
+async function cmdExport(kind, modelId, outPath) {
+  if (kind === 'gltf') {
+    if (!modelId) usage();
+    const url = `${base}/api/models/${encodeURIComponent(modelId)}/exports/model.gltf`;
+    const text = await fetchOkText('GET', url);
+    if (outPath && outPath !== '-') {
+      await fs.writeFile(outPath, text, 'utf8');
+      console.log(JSON.stringify({ ok: true, out: outPath, chars: text.length }, null, 2));
+    } else {
+      process.stdout.write(text);
+      if (!text.endsWith('\n')) process.stdout.write('\n');
+    }
+    return;
+  }
+  if (kind === 'glb') {
+    if (!modelId) usage();
+    const url = `${base}/api/models/${encodeURIComponent(modelId)}/exports/model.glb`;
+    const buf = await fetchOkBytes('GET', url);
+    if (outPath && outPath !== '-') {
+      await fs.writeFile(outPath, buf);
+      console.log(JSON.stringify({ ok: true, out: outPath, bytes: buf.length }, null, 2));
+    } else {
+      process.stdout.write(buf);
+    }
+    return;
+  }
+  if (kind === 'ifc') {
+    if (!modelId) usage();
+    const url = `${base}/api/models/${encodeURIComponent(modelId)}/exports/model.ifc`;
+    const buf = await fetchOkBytes('GET', url);
+    if (outPath && outPath !== '-') {
+      await fs.writeFile(outPath, buf);
+      console.log(JSON.stringify({ ok: true, out: outPath, bytes: buf.length }, null, 2));
+    } else {
+      process.stdout.write(buf.toString('utf8'));
+    }
+    return;
+  }
   console.error(`export ${kind}: not implemented (see spec/openbim-compatibility.md roadmap).`);
   process.exit(2);
 }
@@ -320,6 +386,9 @@ Commands:
   evidence-package                    Phase A checklist JSON (captures recommended layouts + manifests)
   schedule-table [--csv] <scheduleId>   Server-derived rows (optional CSV download shape)
   export-manifests                     glTF + IFC exchange-manifest JSON stubs
+  export gltf [--out <path>]           download model.gltf JSON (default: stdout; needs BIM_AI_MODEL_ID)
+  export glb [--out <path>]            download model.glb binary (default: stdout; needs BIM_AI_MODEL_ID)
+  export ifc [--out <path>]            download model.ifc (default: stdout; needs BIM_AI_MODEL_ID)
   summary                             GET model summary rollup
   validate                            GET violations + summary + counts
   command-log [limit]                  GET undo/command history with full commands JSON
@@ -329,7 +398,7 @@ Commands:
   dry-run [file|-]                     POST single command dry-run
   plan-house --brief <path> --out <path> [--model-hint id]
                                        validate brief JSON → write starter command bundle (one-family preset)
-  export <ifc|gltf|json>               reserved (stub)
+  export json                          reserved (stub)
   diff --from … --to …                 reserved (stub)
   watch                               WebSocket watcher
 
@@ -447,9 +516,14 @@ async function main() {
     const pathArgDry = argv[1];
 
     if (cmd === 'export') {
-      const k = argv[1];
+      const rest = argv.slice(1);
+      const k = rest[0];
       if (!k) usage();
-      await cmdExport(k);
+      let outArg;
+      for (let i = 1; i < rest.length; i++) {
+        if (rest[i] === '--out' && rest[i + 1]) outArg = rest[++i];
+      }
+      await cmdExport(k, modelId, outArg);
       return;
     }
     if (cmd === 'diff') {
