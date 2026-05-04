@@ -1,24 +1,168 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { Btn } from '@bim-ai/ui';
 
 import { useBimStore } from '../state/store';
 
-/** Ergonomics for agent-style review: CLI evidence steps + API smoke + stated assumptions. */
+type JsonText = string;
+
+/** Agent-style review workflow: assumptions, dry-run bundle, validate + evidence-package. */
 export function AgentReviewPane() {
-  const [schemaTxt, setSchemaTxt] = useState<string | null>(null);
-  const [evidenceTxt, setEvidenceTxt] = useState<string | null>(null);
+  const [schemaTxt, setSchemaTxt] = useState<JsonText | null>(null);
+  const [evidenceTxt, setEvidenceTxt] = useState<JsonText | null>(null);
+  const [bundleText, setBundleText] = useState<string>('{"commands":[]}');
+  const [dryRunTxt, setDryRunTxt] = useState<JsonText | null>(null);
+  const [assumeLogTxt, setAssumeLogTxt] = useState<JsonText>(
+    JSON.stringify(
+      [
+        'Golden bundles target an isolated model revision — avoid stacking repeats blindly.',
+        'Coordinates are mm; disciplines default residential unless commanded otherwise.',
+      ],
+      null,
+      2,
+    ),
+  );
+  const [stepLog, setStepLog] = useState<string[]>([]);
 
   const modelId = useBimStore((s) => s.modelId);
   const revision = useBimStore((s) => s.revision);
 
+  function pushStep(line: string) {
+    setStepLog((p) => [...p.slice(-80), `[${new Date().toISOString()}] ${line}`]);
+  }
+
+  const assumptionsJson = useMemo(() => {
+    try {
+      const raw = assumeLogTxt.trim();
+      const parsed = JSON.parse(raw === '' ? '[]' : raw) as unknown;
+      const arr = Array.isArray(parsed) ? parsed.filter((x) => typeof x === 'string') : [];
+      return { assumptionLogFormat: 'assumptionLog_v0', assumptions: arr };
+    } catch {
+      return { assumptionLogFormat: 'assumptionLog_v0', assumptions: [], error: 'Invalid JSON array' };
+    }
+  }, [assumeLogTxt]);
+
   return (
     <div className="space-y-3 text-[11px]">
+      <div>
+        <div className="font-semibold text-muted">Guided workflow</div>
+        <ol className="mt-2 list-decimal space-y-1 ps-5 text-muted">
+          <li>
+            Inspect schema + attach an <strong>assumption log</strong> (JSON array of strings).
+          </li>
+          <li>Paste a command bundle and run bundle dry-run (no commit).</li>
+          <li>Fetch validation + evidence-package JSON and compare with Playwright screenshots in CI.</li>
+          <li>Use advisor quick-fixes before applying bundles to production models.</li>
+        </ol>
+      </div>
+
       <div>
         <div className="font-semibold text-muted">Model context</div>
         <p className="mt-1 text-muted">
           Active model <code className="text-[10px]">{modelId ?? '—'}</code> · revision r{revision}
         </p>
+      </div>
+
+      <div className="rounded border border-border bg-background/40 p-2">
+        <label className="block text-[10px] font-semibold text-muted">
+          Assumption log (JSON string array — attached to bundled evidence previews)
+          <textarea
+            className="mt-1 w-full rounded border border-border bg-background p-2 font-mono text-[10px]"
+            rows={6}
+            value={assumeLogTxt}
+            onChange={(e) => setAssumeLogTxt(e.target.value)}
+          />
+        </label>
+        {'error' in assumptionsJson && assumptionsJson.error ? (
+          <div className="mt-1 text-[10px] text-amber-500">{assumptionsJson.error}</div>
+        ) : (
+          <div className="mt-2 text-[10px] text-muted">
+            Attached shape:{' '}
+            <code className="text-[10px]">{JSON.stringify(assumptionsJson, null, 0)}</code>
+          </div>
+        )}
+      </div>
+
+      <div className="rounded border border-border bg-background/40 p-2">
+        <div className="font-semibold text-muted">Command bundle (JSON)</div>
+        <textarea
+          className="mt-2 w-full rounded border border-border bg-background p-2 font-mono text-[10px]"
+          rows={6}
+          spellCheck={false}
+          value={bundleText}
+          onChange={(e) => setBundleText(e.target.value)}
+        />
+
+        <div className="mt-2 flex flex-wrap gap-2">
+          <Btn
+            type="button"
+            variant="quiet"
+            className="text-[11px]"
+            disabled={!modelId}
+            title={!modelId ? 'Bootstrap a model first' : undefined}
+            onClick={() =>
+              void (async () => {
+                if (!modelId) return;
+                try {
+                  const env = JSON.parse(bundleText || '{}') as { commands?: unknown };
+                  const commands = Array.isArray(env.commands) ? env.commands : [];
+                  const res = await fetch(
+                    `/api/models/${encodeURIComponent(modelId)}/commands/bundle/dry-run`,
+                    {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ commands }),
+                    },
+                  );
+                  const body = JSON.parse(await res.text()) as unknown;
+                  const merged = { assumptionPreview: assumptionsJson, dryRun: body };
+                  setDryRunTxt(JSON.stringify(merged, null, 2));
+                  pushStep(`bundle dry-run ${res.ok ? 'ok' : 'failed'}`);
+                  if (!res.ok) throw new Error(JSON.stringify(body));
+                } catch (e) {
+                  setDryRunTxt(e instanceof Error ? e.message : String(e));
+                  pushStep(`bundle dry-run error`);
+                }
+              })()
+            }
+          >
+            POST bundle dry-run
+          </Btn>
+
+          <Btn
+            type="button"
+            variant="quiet"
+            className="text-[11px]"
+            disabled={!modelId}
+            title={!modelId ? 'Bootstrap a model first' : undefined}
+            onClick={() =>
+              void (async () => {
+                if (!modelId) return;
+                try {
+                  const valRes = await fetch(`/api/models/${encodeURIComponent(modelId)}/validate`);
+                  const val = JSON.parse(await valRes.text()) as unknown;
+
+                  const evRes = await fetch(
+                    `/api/models/${encodeURIComponent(modelId)}/evidence-package`,
+                  );
+                  const ev = JSON.parse(await evRes.text()) as unknown;
+                  const merged = {
+                    assumptions: assumptionsJson,
+                    validate: val,
+                    evidencePackage: ev,
+                  };
+                  setEvidenceTxt(JSON.stringify(merged, null, 2));
+                  pushStep(`validate+evidence ${valRes.ok && evRes.ok ? 'ok' : 'partial failure'}`);
+                } catch (e) {
+                  setEvidenceTxt(e instanceof Error ? e.message : String(e));
+                  pushStep('validate+evidence error');
+                }
+              })()
+            }
+          >
+            Validate + fetch evidence-package
+          </Btn>
+        </div>
       </div>
 
       <div>
@@ -36,35 +180,12 @@ export function AgentReviewPane() {
           </li>
           <li>
             <code className="text-[10px]">bim-ai evidence</code> — snapshot counts + validate rollup
-            (agent artifact)
           </li>
           <li>
-            <code className="text-[10px]">bim-ai summary</code> /{' '}
-            <code className="text-[10px]">bim-ai validate</code> — drills
-          </li>
-          <li>
-            <code className="text-[10px]">bim-ai apply-bundle --dry-run &lt;bundle.json</code> —
-            non-destructive commit preview
+            <code className="text-[10px]">bim-ai apply-bundle --dry-run &lt;bundle.json</code> — commit
+            preview
           </li>
         </ol>
-      </div>
-
-      <div className="rounded border border-border bg-background/40 p-2">
-        <div className="font-semibold text-muted">Assumptions (golden starter)</div>
-        <ul className="mt-1 list-disc space-y-1 ps-4 text-muted">
-          <li>
-            The shipped <code className="text-[10px]">plan-house</code> bundle targets an{' '}
-            <strong>empty</strong> model — do not stack repeats without a reset.
-          </li>
-          <li>
-            Coordinates are millimetres; discipline defaults follow the residential bootstrap
-            preset.
-          </li>
-          <li>
-            Sheets / view templates / schedules are authoring scaffolds — export to IFC is not
-            implied.
-          </li>
-        </ul>
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -116,6 +237,7 @@ export function AgentReviewPane() {
                   }
                 }
                 const bundled = {
+                  assumptions: assumptionsJson,
                   generatedAt: new Date().toISOString(),
                   modelId,
                   revision: snap.revision,
@@ -130,7 +252,7 @@ export function AgentReviewPane() {
             })()
           }
         >
-          Fetch browser evidence bundle
+          Fetch browser evidence bundle (snapshot + validate)
         </Btn>
 
         <Btn
@@ -148,7 +270,7 @@ export function AgentReviewPane() {
                 );
                 const body = JSON.parse(await res.text()) as unknown;
                 if (!res.ok) throw new Error(String(body));
-                setEvidenceTxt(JSON.stringify(body, null, 2));
+                setEvidenceTxt(JSON.stringify({ assumptions: assumptionsJson, payload: body }, null, 2));
               } catch (e) {
                 setEvidenceTxt(e instanceof Error ? e.message : String(e));
               }
@@ -158,6 +280,24 @@ export function AgentReviewPane() {
           Fetch evidence-package JSON
         </Btn>
       </div>
+
+      {stepLog.length ? (
+        <div>
+          <div className="mb-1 text-[10px] font-semibold text-muted">Run trace</div>
+          <pre className="max-h-32 overflow-auto rounded border bg-background p-2 text-[10px]">
+            {stepLog.join('\n')}
+          </pre>
+        </div>
+      ) : null}
+
+      {dryRunTxt ? (
+        <div>
+          <div className="mb-1 text-[10px] font-semibold text-muted">Bundle dry-run</div>
+          <pre className="max-h-48 overflow-auto rounded border bg-background p-2 text-[10px]">
+            {dryRunTxt}
+          </pre>
+        </div>
+      ) : null}
 
       {schemaTxt ? (
         <div>
@@ -170,9 +310,7 @@ export function AgentReviewPane() {
 
       {evidenceTxt ? (
         <div>
-          <div className="mb-1 text-[10px] font-semibold text-muted">
-            Evidence (snapshot + validate or evidence-package)
-          </div>
+          <div className="mb-1 text-[10px] font-semibold text-muted">Evidence payloads</div>
           <pre className="max-h-48 overflow-auto rounded border bg-background p-2 text-[10px]">
             {evidenceTxt}
           </pre>

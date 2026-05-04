@@ -538,6 +538,23 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
     const pres = raw.planPresentation ?? raw.plan_presentation;
     const planPresentation =
       pres === 'opening_focus' || pres === 'room_scheme' ? pres : ('default' as const);
+    const hidRaw = raw.categoriesHidden ?? raw.categories_hidden;
+    const categoriesHidden = Array.isArray(hidRaw)
+      ? hidRaw.filter((x): x is string => typeof x === 'string')
+      : [];
+    const cropMinRaw = raw.cropMinMm ?? raw.crop_min_mm;
+    const cropMaxRaw = raw.cropMaxMm ?? raw.crop_max_mm;
+    const cropMinMm =
+      cropMinRaw && typeof cropMinRaw === 'object'
+        ? coerceXY(cropMinRaw as Record<string, unknown>)
+        : null;
+    const cropMaxMm =
+      cropMaxRaw && typeof cropMaxRaw === 'object'
+        ? coerceXY(cropMaxRaw as Record<string, unknown>)
+        : null;
+    const vrb = raw.viewRangeBottomMm ?? raw.view_range_bottom_mm;
+    const vrt = raw.viewRangeTopMm ?? raw.view_range_top_mm;
+    const cpo = raw.cutPlaneOffsetMm ?? raw.cut_plane_offset_mm;
     return {
       kind: 'plan_view',
       id,
@@ -548,17 +565,37 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
       underlayLevelId: (raw.underlayLevelId ?? raw.underlay_level_id ?? null) as string | null,
       discipline:
         typeof raw.discipline === 'string' && raw.discipline ? raw.discipline : 'architecture',
+      phaseId: (raw.phaseId ?? raw.phase_id ?? null) as string | null,
+      cropMinMm,
+      cropMaxMm,
+      viewRangeBottomMm:
+        typeof vrb === 'number' ? vrb : typeof vrb === 'string' ? Number(vrb) || null : null,
+      viewRangeTopMm:
+        typeof vrt === 'number' ? vrt : typeof vrt === 'string' ? Number(vrt) || null : null,
+      cutPlaneOffsetMm:
+        typeof cpo === 'number' ? cpo : typeof cpo === 'string' ? Number(cpo) || null : null,
+      categoriesHidden,
     };
   }
 
   if (kind === 'view_template') {
     const s = raw.scale;
     const scale = s === 'scale_50' || s === 'scale_200' ? s : ('scale_100' as const);
+    const dvRaw = raw.disciplinesVisible ?? raw.disciplines_visible;
+    const disciplinesVisible = Array.isArray(dvRaw)
+      ? dvRaw.filter((x): x is string => typeof x === 'string')
+      : [];
+    const hcRaw = raw.hiddenCategories ?? raw.hidden_categories;
+    const hiddenCategories = Array.isArray(hcRaw)
+      ? hcRaw.filter((x): x is string => typeof x === 'string')
+      : [];
     return {
       kind: 'view_template',
       id,
       name,
       scale,
+      disciplinesVisible: disciplinesVisible.length ? disciplinesVisible : undefined,
+      hiddenCategories: hiddenCategories.length ? hiddenCategories : undefined,
     };
   }
 

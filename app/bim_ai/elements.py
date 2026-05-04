@@ -312,6 +312,13 @@ class PlanViewElem(BaseModel):
     )
     underlay_level_id: str | None = Field(default=None, alias="underlayLevelId")
     discipline: str = Field(default="architecture", alias="discipline")
+    phase_id: str | None = Field(default=None, alias="phaseId")
+    crop_min_mm: Vec2Mm | None = Field(default=None, alias="cropMinMm")
+    crop_max_mm: Vec2Mm | None = Field(default=None, alias="cropMaxMm")
+    view_range_bottom_mm: float | None = Field(default=None, alias="viewRangeBottomMm")
+    view_range_top_mm: float | None = Field(default=None, alias="viewRangeTopMm")
+    cut_plane_offset_mm: float | None = Field(default=None, alias="cutPlaneOffsetMm")
+    categories_hidden: list[str] = Field(default_factory=list, alias="categoriesHidden")
 
 
 class ViewTemplateElem(BaseModel):

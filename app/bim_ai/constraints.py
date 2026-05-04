@@ -11,7 +11,11 @@ from bim_ai.elements import (
     FloorElem,
     GridLineElem,
     LevelElem,
+    PlanViewElem,
     RoomElem,
+    ScheduleElem,
+    SectionCutElem,
+    SheetElem,
     SlabOpeningElem,
     StairElem,
     ValidationRuleElem,
@@ -41,7 +45,7 @@ _RULE_DISCIPLINE: dict[str, str] = {
     "grid_zero_length": "architecture",
     "dimension_zero_length": "architecture",
     "dimension_bad_level": "structure",
-    "room_no_door": "architecture",
+    "room_outline_degenerate": "architecture",
     "door_off_wall": "architecture",
     "door_not_on_wall": "architecture",
     "window_off_wall": "architecture",
@@ -53,6 +57,7 @@ _RULE_DISCIPLINE: dict[str, str] = {
     "stair_geometry_unreasonable": "architecture",
     "stair_comfort_eu_proxy": "architecture",
     "ids_cleanroom_door_without_family_type": "agent",
+    "sheet_viewport_unknown_ref": "coordination",
 }
 
 
@@ -456,6 +461,27 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
                 )
             )
 
+    for room in rooms:
+        pts = [(p.x_mm, p.y_mm) for p in room.outline_mm]
+        if len(pts) < 3:
+            viols.append(
+                Violation(
+                    rule_id="room_outline_degenerate",
+                    severity="warning",
+                    message="Room outline has fewer than three corners (cannot compute usable area).",
+                    element_ids=[room.id],
+                )
+            )
+        elif polygon_area_abs_mm2(pts) < 1_000:
+            viols.append(
+                Violation(
+                    rule_id="room_outline_degenerate",
+                    severity="warning",
+                    message="Room outline has negligible plan area (< ~1 m²).",
+                    element_ids=[room.id],
+                )
+            )
+
     if len(doors) == 0 and len(windows) == 0 and len(rooms) > 0:
         for room in rooms:
             viols.append(
@@ -607,6 +633,39 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
                         severity="warning",
                         message="Door instance missing required family/type reference for IDS/cleanroom rules.",
                         element_ids=[d.id],
+                    )
+                )
+
+    for sh_el in elements.values():
+        if not isinstance(sh_el, SheetElem):
+            continue
+        for vp in sh_el.viewports_mm or []:
+            if not isinstance(vp, dict):
+                continue
+            vr = vp.get("viewRef") or vp.get("view_ref")
+            if not isinstance(vr, str) or ":" not in vr:
+                continue
+            kind_raw, ref_raw = vr.split(":", 1)
+            kind = kind_raw.strip().lower()
+            tgt = ref_raw.strip()
+            if not tgt:
+                continue
+            targ_el = elements.get(tgt)
+            ok_kind = False
+            if kind == "plan":
+                ok_kind = isinstance(targ_el, (PlanViewElem, LevelElem))
+            elif kind == "schedule":
+                ok_kind = isinstance(targ_el, ScheduleElem)
+            elif kind in {"section", "sec"}:
+                ok_kind = isinstance(targ_el, SectionCutElem)
+
+            if not ok_kind:
+                viols.append(
+                    Violation(
+                        rule_id="sheet_viewport_unknown_ref",
+                        severity="warning",
+                        message=f"Sheet viewport refers to unresolved semantic reference ({vr}).",
+                        element_ids=[sh_el.id],
                     )
                 )
 

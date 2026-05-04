@@ -1,5 +1,7 @@
 import type { Element } from '@bim-ai/core';
 
+import { resolveViewportTitleFromRef } from './sheetViewRef';
+
 /** Paper-space preview: titleblock stripe + viewport frames from semantic `sheet` elements. */
 
 export function SheetCanvas(props: {
@@ -43,13 +45,18 @@ export function SheetCanvas(props: {
           TB {sh.titleBlock ?? '—'}
         </text>
 
-        {vps.map((vp) => {
+        {vps.map((vpRaw) => {
+          const vp = vpRaw as Record<string, unknown>;
           const xMm = Number(vp.xMm ?? vp.x_mm ?? 0);
           const yMm = Number(vp.yMm ?? vp.y_mm ?? 0);
           const widthMm = Number(vp.widthMm ?? vp.width_mm ?? 1000);
           const heightMm = Number(vp.heightMm ?? vp.height_mm ?? 1000);
 
-          const label = typeof vp.label === 'string' ? vp.label : 'Viewport';
+          const viewRefRaw = vp.viewRef ?? vp.view_ref;
+          const resolved = resolveViewportTitleFromRef(props.elementsById, viewRefRaw);
+          const fallback = typeof vp.label === 'string' ? vp.label : 'Viewport';
+          const primary = resolved ?? fallback;
+          const sub = typeof viewRefRaw === 'string' && viewRefRaw ? viewRefRaw : '';
 
           return (
             <g key={String(vp.viewportId ?? vp.viewport_id ?? `${xMm}_${yMm}`)}>
@@ -63,8 +70,13 @@ export function SheetCanvas(props: {
                 strokeWidth={80}
               />
               <text x={xMm + 200} y={yMm + 900} fill="#475569" style={{ fontSize: '600px' }}>
-                {label}
+                {primary}
               </text>
+              {sub ? (
+                <text x={xMm + 200} y={yMm + 1400} fill="#64748b" style={{ fontSize: '350px' }}>
+                  {sub}
+                </text>
+              ) : null}
             </g>
           );
         })}

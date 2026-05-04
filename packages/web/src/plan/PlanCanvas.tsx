@@ -4,6 +4,7 @@ import type { Element } from '@bim-ai/core';
 
 import { useBimStore } from '../state/store';
 import { collectWallAnchors, snapPlanPoint } from './snapEngine';
+import { resolvePlanViewDisplay } from './planProjection';
 import { rebuildPlanMeshes } from './symbology';
 
 const SLICE_Y = 0.02;
@@ -104,16 +105,34 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
 
   const elementsById = useBimStore((s) => s.elementsById);
   const selectedId = useBimStore((s) => s.selectedId);
-  const activeLevelId = useBimStore((s) => s.activeLevelId);
+  const activePlanViewId = useBimStore((s) => s.activePlanViewId);
   const planPresentation = useBimStore((s) => s.planPresentationPreset);
   const planTool = useBimStore((s) => s.planTool);
   const orthoSnapHold = useBimStore((s) => s.orthoSnapHold);
   const selectEl = useBimStore((s) => s.select);
-  const anchors = useMemo(
-    () => collectWallAnchors(elementsById, activeLevelId),
-    [elementsById, activeLevelId],
+
+  const display = useMemo(
+    () =>
+      resolvePlanViewDisplay(
+        elementsById,
+        activePlanViewId,
+        activeLevelResolvedId || undefined,
+        planPresentation,
+      ),
+    [elementsById, activePlanViewId, activeLevelResolvedId, planPresentation],
   );
-  const lvlId = activeLevelResolvedId;
+
+  const hiddenKey = useMemo(
+    () => [...display.hiddenSemanticKinds].sort().join('|'),
+    [display.hiddenSemanticKinds],
+  );
+
+  const displayLevelId = display.activeLevelId;
+  const anchors = useMemo(
+    () => collectWallAnchors(elementsById, displayLevelId || undefined),
+    [elementsById, displayLevelId],
+  );
+  const lvlId = displayLevelId || activeLevelResolvedId;
 
   const resizeCam = useCallback(() => {
     const host = mountRef.current;
@@ -177,9 +196,10 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
     const grp = rootRef.current;
     if (!grp) return;
     rebuildPlanMeshes(grp, elementsById, {
-      activeLevelId,
+      activeLevelId: displayLevelId || undefined,
       selectedId,
-      presentation: planPresentation,
+      presentation: display.presentation,
+      hiddenSemanticKinds: display.hiddenSemanticKinds,
     });
     for (let i = grp.children.length - 1; i >= 0; i--) {
       const ch = grp.children[i]!;
@@ -200,7 +220,15 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
     );
     grid.userData.draftingGrid = true;
     grp.add(grid);
-  }, [activeLevelId, elementsById, geomEpoch, planPresentation, planTool, selectedId]);
+  }, [
+    display.presentation,
+    displayLevelId,
+    elementsById,
+    geomEpoch,
+    hiddenKey,
+    planTool,
+    selectedId,
+  ]);
 
   useEffect(() => {
     const canvas = rendererRef.current?.domElement;
@@ -359,7 +387,7 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
         return;
       }
       if (planTool === 'door') {
-        const n = nearestWallAt(elementsById, activeLevelId, sp.xMm, sp.yMm);
+        const n = nearestWallAt(elementsById, displayLevelId || undefined, sp.xMm, sp.yMm);
         if (!n || n.distMm > 900) return;
         onSemanticCommand({
           type: 'insertDoorOnWall',
@@ -370,7 +398,7 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
         return;
       }
       if (planTool === 'window') {
-        const n = nearestWallAt(elementsById, activeLevelId, sp.xMm, sp.yMm);
+        const n = nearestWallAt(elementsById, displayLevelId || undefined, sp.xMm, sp.yMm);
         if (!n || n.distMm > 900) return;
         onSemanticCommand({
           type: 'insertWindowOnWall',
@@ -436,7 +464,7 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
         onSemanticCommand({
           type: 'createGridLine',
           label: guessGridLabel(d.sx, d.sy, sp.xMm, sp.yMm),
-          levelId: activeLevelId,
+          levelId: lvlId,
           start: { xMm: d.sx, yMm: d.sy },
           end: { xMm: sp.xMm, yMm: sp.yMm },
         });
@@ -522,9 +550,9 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
       window.removeEventListener('keydown', onKey);
     };
   }, [
-    activeLevelId,
     anchors,
     bumpGeom,
+    displayLevelId,
     elementsById,
     lvlId,
     onSemanticCommand,

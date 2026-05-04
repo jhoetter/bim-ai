@@ -397,6 +397,7 @@ export function buildOneFamilyHomeCommands() {
       id: 'hf-vt-plan-eg-opening',
       name: 'Plan — openings focus',
       scale: 'scale_100',
+      hiddenCategories: ['dimension'],
     },
     {
       type: 'upsertViewTemplate',
@@ -412,6 +413,7 @@ export function buildOneFamilyHomeCommands() {
       levelId: 'hf-lvl-1',
       viewTemplateId: 'hf-vt-plan-eg-opening',
       planPresentation: 'opening_focus',
+      categoriesHidden: ['room'],
     },
     {
       type: 'upsertPlanView',
@@ -440,30 +442,6 @@ export function buildOneFamilyHomeCommands() {
       titleBlock: 'A1‑Golden',
     },
     {
-      type: 'upsertSheetViewports',
-      sheetId: 'hf-sheet-ga01',
-      viewportsMm: [
-        {
-          viewportId: 'vp-plan-eg',
-          label: 'EG plan baseline',
-          viewRef: 'plan:hf-lvl-1',
-          xMm: 1200,
-          yMm: 1800,
-          widthMm: 9000,
-          heightMm: 9000,
-        },
-        {
-          viewportId: 'vp-sec-demo',
-          label: 'Section scaffold',
-          viewRef: 'section:hf-sec-longitudinal',
-          xMm: 10800,
-          yMm: 1800,
-          widthMm: 4200,
-          heightMm: 9000,
-        },
-      ],
-    },
-    {
       type: 'upsertSchedule',
       id: 'hf-sch-room',
       name: 'Room schedule — golden',
@@ -487,6 +465,52 @@ export function buildOneFamilyHomeCommands() {
         category: 'window',
         groupingHint: ['levelId', 'familyTypeMark'],
       },
+    },
+
+    {
+      type: 'upsertSchedule',
+      id: 'hf-sch-door',
+      name: 'Door schedule — golden',
+      sheetId: null,
+    },
+    {
+      type: 'upsertScheduleFilters',
+      scheduleId: 'hf-sch-door',
+      filters: { category: 'door', discipline: 'architecture' },
+    },
+
+    {
+      type: 'upsertSheetViewports',
+      sheetId: 'hf-sheet-ga01',
+      viewportsMm: [
+        {
+          viewportId: 'vp-plan-eg',
+          label: 'EG plan (named view)',
+          viewRef: 'plan:hf-plan-eg-openings',
+          xMm: 1200,
+          yMm: 1800,
+          widthMm: 9000,
+          heightMm: 9000,
+        },
+        {
+          viewportId: 'vp-sec-demo',
+          label: 'Section scaffold',
+          viewRef: 'section:hf-sec-longitudinal',
+          xMm: 10800,
+          yMm: 1800,
+          widthMm: 4200,
+          heightMm: 9000,
+        },
+        {
+          viewportId: 'vp-sch-windows',
+          label: 'Window schedule',
+          viewRef: 'schedule:hf-sch-window',
+          xMm: 1200,
+          yMm: 11200,
+          widthMm: 13800,
+          heightMm: 3200,
+        },
+      ],
     },
 
     {

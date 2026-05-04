@@ -35,6 +35,17 @@ jobs:
         env:
           CI: true
 
+      - name: Upload Playwright report + screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-playwright-${{ github.run_id }}
+          retention-days: 14
+          path: |
+            packages/web/playwright-report
+            packages/web/test-results
+            packages/web/e2e/__screenshots__/evidence-baselines/evidence-baselines.spec.ts
+
   python:
     runs-on: ubuntu-latest
     timeout-minutes: 15

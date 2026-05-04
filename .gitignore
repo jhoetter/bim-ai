@@ -11,3 +11,5 @@ coverage/
 app/.venv/
 .idea/
 *.local
+packages/web/playwright-report/
+packages/web/test-results/

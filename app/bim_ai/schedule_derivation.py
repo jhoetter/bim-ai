@@ -159,7 +159,35 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
         rows = sort_rs(rows)
         total_rows = len(rows)
 
-    return {
+    leaf_rows: list[dict[str, Any]]
+    if grouped:
+        leaf_rows = []
+        for grp in grouped.values():
+            leaf_rows.extend(grp)
+    else:
+        leaf_rows = list(rows)
+
+    totals: dict[str, Any] = {}
+    if cat == "room" and leaf_rows:
+        totals = {
+            "kind": "room",
+            "rowCount": len(leaf_rows),
+            "areaM2": round(sum(float(r.get("areaM2") or 0.0) for r in leaf_rows), 4),
+            "perimeterM": round(sum(float(r.get("perimeterM") or 0.0) for r in leaf_rows), 4),
+        }
+    elif cat == "window" and leaf_rows:
+        totals = {
+            "kind": "window",
+            "rowCount": len(leaf_rows),
+            "averageWidthMm": round(
+                sum(float(r.get("widthMm") or 0.0) for r in leaf_rows) / max(len(leaf_rows), 1),
+                3,
+            ),
+        }
+    elif cat == "door" and leaf_rows:
+        totals = {"kind": "door", "rowCount": len(leaf_rows)}
+
+    out: dict[str, Any] = {
         "scheduleId": schedule_id,
         "name": sch.name,
         "category": cat,
@@ -168,6 +196,9 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
         "groupKeys": group_keys,
         **({"groupedSections": grouped} if grouped else {"rows": rows}),
     }
+    if totals:
+        out["totals"] = totals
+    return out
 
 
 def list_schedule_ids(doc: Document) -> list[str]:

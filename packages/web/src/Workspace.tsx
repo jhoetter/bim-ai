@@ -191,6 +191,8 @@ export function Workspace() {
   const setIdentity = useBimStore((s) => s.setIdentity);
   const selectEl = useBimStore((s) => s.select);
   const planPresentationPreset = useBimStore((s) => s.planPresentationPreset);
+  const activatePlanView = useBimStore((s) => s.activatePlanView);
+
   const setPlanPresentationPreset = useBimStore((s) => s.setPlanPresentationPreset);
   const viewerCategoryHidden = useBimStore((s) => s.viewerCategoryHidden);
   const toggleViewerCategoryHidden = useBimStore((s) => s.toggleViewerCategoryHidden);
@@ -622,6 +624,7 @@ export function Workspace() {
             <div className="min-w-[260px] xl:w-[40%]">
               <Panel title="Schedules (focused)">
                 <SchedulePanel
+                  modelId={modelId}
                   elementsById={elementsById}
                   activeLevelId={lvResolved || undefined}
                 />
@@ -787,9 +790,10 @@ export function Workspace() {
                 <select
                   className="mt-1 w-full rounded border border-border bg-background px-2 py-1 text-[11px]"
                   value={planPresentationPreset}
-                  onChange={(e) =>
-                    setPlanPresentationPreset(e.target.value as PlanPresentationPreset)
-                  }
+                  onChange={(e) => {
+                    activatePlanView(undefined);
+                    setPlanPresentationPreset(e.target.value as PlanPresentationPreset);
+                  }}
                 >
                   <option value="default">Neutral (walls + rooms)</option>
 
@@ -944,7 +948,11 @@ export function Workspace() {
 
           {!hideSchedulePanelRight ? (
             <Panel title="Schedules">
-              <SchedulePanel elementsById={elementsById} activeLevelId={lvResolved || undefined} />
+              <SchedulePanel
+                modelId={modelId}
+                elementsById={elementsById}
+                activeLevelId={lvResolved || undefined}
+              />
             </Panel>
           ) : (
             <div className="rounded border border-dashed border-border p-3 text-[11px] text-muted">

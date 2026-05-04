@@ -13,7 +13,7 @@ from fastapi import (
     WebSocket,
     WebSocketDisconnect,
 )
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import PlainTextResponse, Response
 from pydantic import BaseModel, Field, TypeAdapter
 from sqlalchemy import delete, desc, select
 from sqlalchemy.exc import IntegrityError
@@ -32,12 +32,18 @@ from bim_ai.engine import (
     try_commit,
     try_commit_bundle,
 )
+from bim_ai.evidence_manifest import (
+    expected_screenshot_captures,
+    export_link_map,
+    plan_view_wire_index,
+)
 from bim_ai.export_gltf import build_visual_export_manifest
 from bim_ai.hub import Hub
 from bim_ai.ifc_stub import ifc_exchange_manifest_payload, minimal_empty_ifc_skeleton
 from bim_ai.model_summary import compute_model_summary
 from bim_ai.schedule_csv import schedule_payload_to_csv
 from bim_ai.schedule_derivation import derive_schedule_table, list_schedule_ids
+from bim_ai.sheet_preview_pdf import sheet_elem_to_pdf_bytes
 from bim_ai.sheet_preview_svg import pick_sheet, sheet_elem_to_svg
 from bim_ai.tables import (
     CommentRecord,
@@ -250,7 +256,10 @@ async def evidence_package(
 
     schedules = [{"id": sid, "name": doc.elements[sid].name} for sid in list_schedule_ids(doc)]
 
+    pv_index = plan_view_wire_index(doc)
+
     return {
+        "format": "evidencePackage_v1",
         "generatedAt": datetime.now(UTC).isoformat(),
         "modelId": str(model_id),
         "revision": doc.revision,
@@ -261,6 +270,9 @@ async def evidence_package(
             "violations": viols,
             "checks": {"errorViolationCount": err_ct, "blockingViolationCount": block_ct},
         },
+        "exportLinks": export_link_map(model_id),
+        "planViews": pv_index,
+        "expectedScreenshotCaptures": expected_screenshot_captures([str(p["id"]) for p in pv_index]),
         "recommendedCapture": [
             {
                 "id": "cockpit_plan_3d",
@@ -284,7 +296,7 @@ async def evidence_package(
             },
         ],
         "scheduleIds": schedules,
-        "hint": "Use Playwright to capture PNG alongside this JSON per spec §8.3 / §14 Phase A.",
+        "hint": "Use Playwright to capture PNG alongside this JSON per spec §8.3 / §14 Phase A. CI attaches artifacts alongside this bundle.",
     }
 
 
@@ -341,9 +353,37 @@ async def sheet_preview_svg_export(
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     return PlainTextResponse(
-        sheet_elem_to_svg(sh),
+        sheet_elem_to_svg(doc, sh),
         media_type="image/svg+xml; charset=utf-8",
         headers={"Cache-Control": "public, max-age=60"},
+    )
+
+
+@api_router.get("/models/{model_id}/exports/sheet-preview.pdf")
+async def sheet_preview_pdf_export(
+    model_id: UUID,
+    sheet_id: Annotated[str | None, Query(alias="sheetId")] = None,
+    session: AsyncSession = Depends(get_session),
+) -> Response:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    doc = Document.model_validate(row.document)
+    try:
+        sh = pick_sheet(doc, sheet_id or None)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    pdf_blob = sheet_elem_to_pdf_bytes(sh)
+
+    fname = "".join(ch for ch in getattr(sh, "id", "") if ch.isalnum() or ch in ("-", "_")) or "sheet"
+
+    return Response(
+        content=pdf_blob,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="bim-ai-model-{model_id}-{fname}.pdf"',
+            "Cache-Control": "public, max-age=60",
+        },
     )
 
 

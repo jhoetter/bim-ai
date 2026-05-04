@@ -123,23 +123,32 @@ export function rebuildPlanMeshes(
 
   elementsById: Record<string, Element>,
 
-  opts: { activeLevelId?: string; selectedId?: string; presentation?: PlanPresentationPreset },
+  opts: {
+    activeLevelId?: string;
+    selectedId?: string;
+    presentation?: PlanPresentationPreset;
+    hiddenSemanticKinds?: ReadonlySet<string>;
+  },
 ): void {
   while (holder.children.length) holder.remove(holder.children[0]!);
 
   const level = opts.activeLevelId;
   const presentation = opts.presentation ?? 'default';
+  const hidden = opts.hiddenSemanticKinds;
+  const kindHidden = (k: string) => Boolean(hidden?.has(k));
 
   type WallElem = Extract<Element, { kind: 'wall' }>;
 
   const walls = Object.values(elementsById).filter(
-    (e): e is WallElem => e.kind === 'wall' && (!level || e.levelId === level),
+    (e): e is WallElem =>
+      e.kind === 'wall' && !kindHidden('wall') && (!level || e.levelId === level),
   );
 
   const wallsById: Record<string, WallElem> = Object.fromEntries(walls.map((w) => [w.id, w]));
 
   for (const g of Object.values(elementsById)) {
     if (g.kind !== 'grid_line') continue;
+    if (kindHidden('grid_line')) continue;
 
     if (g.levelId && level && g.levelId !== level) continue;
 
@@ -148,6 +157,7 @@ export function rebuildPlanMeshes(
 
   for (const r of Object.values(elementsById)) {
     if (r.kind !== 'room') continue;
+    if (kindHidden('room')) continue;
 
     if (level && r.levelId !== level) continue;
 
@@ -156,6 +166,7 @@ export function rebuildPlanMeshes(
 
   for (const f of Object.values(elementsById)) {
     if (f.kind !== 'floor') continue;
+    if (kindHidden('floor')) continue;
 
     if (level && f.levelId !== level) continue;
 
@@ -164,6 +175,7 @@ export function rebuildPlanMeshes(
 
   for (const rf of Object.values(elementsById)) {
     if (rf.kind !== 'roof') continue;
+    if (kindHidden('roof')) continue;
 
     if (level && rf.referenceLevelId !== level) continue;
 
@@ -174,6 +186,7 @@ export function rebuildPlanMeshes(
 
   for (const d of Object.values(elementsById)) {
     if (d.kind !== 'door') continue;
+    if (kindHidden('door')) continue;
 
     const host = wallsById[d.wallId];
 
@@ -184,6 +197,7 @@ export function rebuildPlanMeshes(
 
   for (const win of Object.values(elementsById)) {
     if (win.kind !== 'window') continue;
+    if (kindHidden('window')) continue;
 
     const host = wallsById[win.wallId];
 
@@ -194,6 +208,7 @@ export function rebuildPlanMeshes(
 
   for (const st of Object.values(elementsById)) {
     if (st.kind !== 'stair') continue;
+    if (kindHidden('stair')) continue;
     if (level && st.baseLevelId !== level) continue;
     const g = stairPlanThree(st);
 
@@ -202,6 +217,7 @@ export function rebuildPlanMeshes(
 
   for (const dm of Object.values(elementsById)) {
     if (dm.kind !== 'dimension') continue;
+    if (kindHidden('dimension')) continue;
 
     if (level && dm.levelId !== level) continue;
 

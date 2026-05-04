@@ -6,6 +6,8 @@ export default defineConfig({
   timeout: 60_000,
   forbidOnly: Boolean(process.env.CI),
   snapshotPathTemplate: '{testDir}/__screenshots__/{testFilePath}/{arg}{ext}',
+  reporter: [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]],
+  outputDir: 'test-results',
   expect: {
     toHaveScreenshot: {
       animations: 'disabled',

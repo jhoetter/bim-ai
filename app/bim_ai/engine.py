@@ -760,7 +760,14 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
         case UpsertViewTemplateCmd():
             vt = cmd.id or new_id()
             scale = cmd.scale if cmd.scale in {"scale_50", "scale_100", "scale_200"} else "scale_100"
-            els[vt] = ViewTemplateElem(kind="view_template", id=vt, name=cmd.name, scale=scale)
+            els[vt] = ViewTemplateElem(
+                kind="view_template",
+                id=vt,
+                name=cmd.name,
+                scale=scale,
+                disciplines_visible=list(cmd.disciplines_visible or []),
+                hidden_categories=list(cmd.hidden_categories or []),
+            )
 
         case UpsertSheetCmd():
             sh = cmd.id or new_id()
@@ -832,6 +839,13 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 plan_presentation=pres,
                 underlay_level_id=cmd.underlay_level_id,
                 discipline=cmd.discipline or "architecture",
+                phase_id=cmd.phase_id,
+                crop_min_mm=cmd.crop_min_mm,
+                crop_max_mm=cmd.crop_max_mm,
+                view_range_bottom_mm=cmd.view_range_bottom_mm,
+                view_range_top_mm=cmd.view_range_top_mm,
+                cut_plane_offset_mm=cmd.cut_plane_offset_mm,
+                categories_hidden=list(cmd.categories_hidden or []),
             )
 
         case CreateCalloutCmd():

@@ -396,6 +396,8 @@ class UpsertViewTemplateCmd(BaseModel):
     id: str | None = None
     name: str = "Template"
     scale: str = Field(alias="scale", default="scale_100")
+    disciplines_visible: list[str] = Field(default_factory=list, alias="disciplinesVisible")
+    hidden_categories: list[str] = Field(default_factory=list, alias="hiddenCategories")
 
 
 class UpsertSheetCmd(BaseModel):
@@ -449,6 +451,13 @@ class UpsertPlanViewCmd(BaseModel):
     )
     underlay_level_id: str | None = Field(default=None, alias="underlayLevelId")
     discipline: str = "architecture"
+    phase_id: str | None = Field(default=None, alias="phaseId")
+    crop_min_mm: Vec2Mm | None = Field(default=None, alias="cropMinMm")
+    crop_max_mm: Vec2Mm | None = Field(default=None, alias="cropMaxMm")
+    view_range_bottom_mm: float | None = Field(default=None, alias="viewRangeBottomMm")
+    view_range_top_mm: float | None = Field(default=None, alias="viewRangeTopMm")
+    cut_plane_offset_mm: float | None = Field(default=None, alias="cutPlaneOffsetMm")
+    categories_hidden: list[str] = Field(default_factory=list, alias="categoriesHidden")
 
 
 class CreateCalloutCmd(BaseModel):

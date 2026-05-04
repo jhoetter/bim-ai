@@ -6,7 +6,7 @@ import html
 from typing import Any
 
 from bim_ai.document import Document
-from bim_ai.elements import SheetElem
+from bim_ai.elements import LevelElem, PlanViewElem, ScheduleElem, SectionCutElem, SheetElem
 
 
 def pick_sheet(doc: Document, sheet_id: str | None) -> SheetElem:
@@ -21,7 +21,35 @@ def pick_sheet(doc: Document, sheet_id: str | None) -> SheetElem:
     raise ValueError("no sheet elements in model")
 
 
-def sheet_elem_to_svg(sh: SheetElem) -> str:
+def resolve_view_ref_title(doc: Document, view_ref: str) -> str | None:
+    if not view_ref or ":" not in view_ref:
+        return None
+    kind_raw, ref_raw = view_ref.split(":", 1)
+    kind = kind_raw.strip().lower()
+    ref = ref_raw.strip()
+    if not ref:
+        return None
+    el = doc.elements.get(ref)
+
+    if kind == "plan":
+        if isinstance(el, PlanViewElem):
+            return el.name or el.id
+        if isinstance(el, LevelElem):
+            return f"Level {el.name}"
+        return None
+    if kind == "schedule":
+        if isinstance(el, ScheduleElem):
+            return el.name or el.id
+        return None
+    if kind in {"section", "sec"}:
+        if isinstance(el, SectionCutElem):
+            return el.name or el.id
+        return None
+
+    return None
+
+
+def sheet_elem_to_svg(doc: Document, sh: SheetElem) -> str:
     w_mm = 42_000
     h_mm = 29_700
     vps_raw: list[Any] = list(sh.viewports_mm or [])
@@ -37,13 +65,28 @@ def sheet_elem_to_svg(sh: SheetElem) -> str:
         y_mm = float(vp.get("yMm") or vp.get("y_mm") or 0)
         width_mm = float(vp.get("widthMm") or vp.get("width_mm") or 1000)
         height_mm = float(vp.get("heightMm") or vp.get("height_mm") or 1000)
-        label = html.escape(str(vp.get("label") or "Viewport"))
+        label = str(vp.get("label") or "Viewport")
+        vr = vp.get("viewRef") or vp.get("view_ref")
+        ref_title = resolve_view_ref_title(doc, str(vr)) if isinstance(vr, str) else None
+        display = ref_title or label
+        escaped_label = html.escape(display)
+
+        sub = html.escape(str(vr)) if isinstance(vr, str) and str(vr) else ""
+        sub_block = ""
+        if sub:
+            sub_block = (
+                f'<text x="{x_mm + 200}" y="{y_mm + 1400}" fill="#64748b" font-size="350px">{sub}</text>'
+            )
+
         viewport_blocks.append(
-            '<g>'
+            "<g>"
             f'<rect x="{x_mm}" y="{y_mm}" width="{width_mm}" height="{height_mm}" '
             f'fill="#ffffff" stroke="#475569" stroke-width="80"/>'
-            f'<text x="{x_mm + 200}" y="{y_mm + 900}" fill="#475569" font-size="600px">{label}</text>'
-            '</g>'
+            f'<text x="{x_mm + 200}" y="{y_mm + 900}" fill="#475569" font-size="600px">'
+            f"{escaped_label}"
+            f"</text>"
+            f"{sub_block}"
+            "</g>"
         )
 
     vps_xml = "".join(viewport_blocks)

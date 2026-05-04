@@ -248,6 +248,13 @@ export type Element =
       planPresentation?: 'default' | 'opening_focus' | 'room_scheme';
       underlayLevelId?: string | null;
       discipline?: string;
+      phaseId?: string | null;
+      cropMinMm?: XY | null;
+      cropMaxMm?: XY | null;
+      viewRangeBottomMm?: number | null;
+      viewRangeTopMm?: number | null;
+      cutPlaneOffsetMm?: number | null;
+      categoriesHidden?: string[];
     }
   | {
       kind: 'view_template';

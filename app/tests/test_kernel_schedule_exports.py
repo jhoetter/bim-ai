@@ -4,6 +4,7 @@ from bim_ai.document import Document
 from bim_ai.elements import (
     FloorElem,
     LevelElem,
+    PlanViewElem,
     RoomElem,
     ScheduleElem,
     SheetElem,
@@ -229,10 +230,45 @@ def test_sheet_preview_svg_is_deterministic():
             ),
         },
     )
-    svg = sheet_elem_to_svg(pick_sheet(doc, "s1"))
+    svg = sheet_elem_to_svg(doc, pick_sheet(doc, "s1"))
     assert "<?xml" in svg
     assert "A1 metaphor" in svg
     assert pick_sheet(doc, None).id == "s1"
+
+
+def test_sheet_svg_resolves_plan_view_ref_for_viewport_label():
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl-1": LevelElem(kind="level", id="lvl-1", name="EG", elevationMm=0),
+            "pv-a": PlanViewElem(
+                kind="plan_view",
+                id="pv-a",
+                name="EG openings",
+                level_id="lvl-1",
+                plan_presentation="opening_focus",
+            ),
+            "s1": SheetElem(
+                kind="sheet",
+                id="s1",
+                name="Test sheet",
+                titleBlock="TB-1",
+                viewportsMm=[
+                    {
+                        "xMm": 100,
+                        "yMm": 120,
+                        "widthMm": 2000,
+                        "heightMm": 1500,
+                        "label": "Fallback",
+                        "viewRef": "plan:pv-a",
+                    }
+                ],
+            ),
+        },
+    )
+    svg = sheet_elem_to_svg(doc, pick_sheet(doc, "s1"))
+    assert "EG openings" in svg
+    assert "plan:pv-a" in svg
 
 
 def test_bcf_topics_apply_via_bundle():
