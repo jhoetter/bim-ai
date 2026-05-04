@@ -1,0 +1,60 @@
+{
+  "$schema": "https://hofos.dev/schemas/hof-module-v1.json",
+  "name": "bimai",
+  "displayName": "BIM AI",
+  "version": "0.1.0",
+  "contract_version": "1.0.0",
+  "description": "Standalone BIM AI subapp for hofOS — browser-first coordination v1.",
+  "sidecars": [
+    {
+      "name": "bimai",
+      "image": "ghcr.io/jhoetter/bim-ai:0.1.0",
+      "ports": [
+        {
+          "container": 8500,
+          "public": 4015
+        }
+      ],
+      "auth": {
+        "mode": "inherit"
+      },
+      "healthcheck": {
+        "path": "/api/health"
+      }
+    }
+  ],
+  "data": {
+    "schema_name": "bimai",
+    "s3_prefix": "tenants/${tenant}/bim/",
+    "redis_prefix": "bimai:"
+  },
+  "navigation": {
+    "groups": [
+      {
+        "label": "BIM AI",
+        "icon": "box",
+        "entries": [
+          {
+            "label": "Projects",
+            "href": "/"
+          },
+          {
+            "label": "Workspace",
+            "href": "/p/demo"
+          }
+        ]
+      }
+    ]
+  },
+  "design": {
+    "consume": true
+  },
+  "agent": {
+    "subagent": {
+      "enabled": false,
+      "system_prompt_path": "agent/system-prompt.md",
+      "tool_allowlist": ["bim status"],
+      "canvas_route": "/agent/bim/<session_id>"
+    }
+  }
+}

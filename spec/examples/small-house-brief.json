@@ -1,0 +1,16 @@
+{
+  "version": "1",
+  "stylePreset": "residential",
+  "siteWidthM": 14,
+  "siteDepthM": 10,
+  "floors": 1,
+  "rooms": [
+    { "name": "Living", "areaTargetM2": 24 },
+    { "name": "Bedroom", "areaTargetM2": 12 },
+    { "name": "Bath", "areaTargetM2": 5 }
+  ],
+  "notes": [
+    "Small deterministic brief for demos; replace bundle.commands with ids from bim-ai snapshot.",
+    "Run: bim-ai plan-house --brief this-file --out /tmp/demo-bundle.json"
+  ]
+}

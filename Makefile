@@ -1,0 +1,128 @@
+# bim-ai monorepo Makefile — mirrors collaboration-ai ergonomics.
+
+_HOF_OS_IMPORT_DB := $(DATABASE_URL)
+_HOF_OS_IMPORT_JWT := $(HOF_SUBAPP_JWT_SECRET)
+ifneq ($(and $(strip $(_HOF_OS_IMPORT_JWT)),$(strip $(_HOF_OS_IMPORT_DB))),)
+DATABASE_URL := $(_HOF_OS_IMPORT_DB)
+HOF_SUBAPP_JWT_SECRET := $(_HOF_OS_IMPORT_JWT)
+HOFOS_SUBAPP_NATIVE := 1
+endif
+
+PYTHON ?= python3.13
+APP_DIR := app
+PNPM := pnpm
+
+# Local suite port allocation:
+#   2000 → bim-ai web (:8500 API)  <-- this repo (avoids 3xxx used by sister apps)
+WEB_PORT ?= 2000
+API_PORT ?= 8500
+
+.PHONY: help install dev dev-api dev-web kill-ports seed \
+	db-up db-down db-reset db-logs \
+	test test-py test-js format format-check python-format-check lint architecture \
+	typecheck verify build clean
+
+help:
+	@echo "bim-ai Makefile"
+	@echo "  install   — pnpm + Python venv"
+	@echo "  dev       — db-up + API + Web (:$(API_PORT) / :$(WEB_PORT))"
+	@echo "  verify    — format-check, lint, architecture, tc, pytest, vite build"
+
+install:
+	$(PNPM) install
+	cd $(APP_DIR) && $(PYTHON) -m venv .venv && .venv/bin/pip install --upgrade pip && .venv/bin/pip install -e ".[dev]"
+
+db-up:
+	docker compose -f infra/docker-compose.yml up -d
+	@echo "Postgres localhost:5545  Redis localhost:6392  MinIO http://localhost:9120"
+
+db-down:
+	docker compose -f infra/docker-compose.yml down
+
+db-reset:
+	docker compose -f infra/docker-compose.yml down -v
+	$(MAKE) db-up
+
+db-logs:
+	docker compose -f infra/docker-compose.yml logs -f --tail=100
+
+kill-ports:
+	@PORTS="$(API_PORT) $(WEB_PORT)"; \
+	WS_TAG="$(CURDIR)"; \
+	for _ in 1 2 3 4 5 6; do \
+	  for p in $$PORTS; do \
+	    pids=$$(lsof -ti :$$p 2>/dev/null); \
+	    [ -n "$$pids" ] && kill -9 $$pids 2>/dev/null || true; \
+	  done; \
+	  pkill -9 -f "vite.*$$WS_TAG"     2>/dev/null || true; \
+	  pkill -9 -f "uvicorn.*$$WS_TAG"   2>/dev/null || true; \
+	  pkill -9 -f "concurrently.*$$WS_TAG" 2>/dev/null || true; \
+	  pkill -9 -f "turbo run dev"       2>/dev/null || true; \
+	  busy=""; \
+	  for p in $$PORTS; do \
+	    lsof -ti :$$p >/dev/null 2>&1 && busy="$$busy $$p"; \
+	  done; \
+	  [ -z "$$busy" ] && exit 0; \
+	  sleep 0.5; \
+	done; \
+	echo "kill-ports: still in use after retries:$$busy" >&2; \
+	exit 1
+
+ifeq ($(HOFOS_SUBAPP_NATIVE),1)
+dev: kill-ports seed
+else
+dev: db-up kill-ports seed
+endif
+	@echo "→ API   http://127.0.0.1:$(API_PORT)/api/health"
+	@echo "→ Web   http://127.0.0.1:$(WEB_PORT)"
+	$(PNPM) -w exec concurrently -k -n api,web -c blue,magenta \
+	  "$(MAKE) dev-api" \
+	  "$(MAKE) dev-web"
+
+dev-api:
+	cd $(APP_DIR) && PYTHONPATH=. .venv/bin/python -m uvicorn bim_ai.main:app --host 127.0.0.1 --port $(API_PORT) --reload
+
+dev-web:
+	API_PORT=$(API_PORT) $(PNPM) --filter @bim-ai/web dev --port $(WEB_PORT) --host 127.0.0.1 --strictPort
+
+seed:
+	cd $(APP_DIR) && PYTHONPATH=. .venv/bin/python scripts/seed.py
+
+test: test-py test-js
+
+test-py:
+	cd $(APP_DIR) && PYTHONPATH=. .venv/bin/python -m pytest tests/ -q
+
+test-js:
+	$(PNPM) -w turbo test
+
+format:
+	$(PNPM) -w prettier --write "**/*.{ts,tsx,js,jsx,json,md,yml,yaml}"
+	cd $(APP_DIR) && .venv/bin/ruff format bim_ai tests scripts
+
+format-check:
+	$(PNPM) -w prettier --check "**/*.{ts,tsx,js,jsx,json,md,yml,yaml}"
+
+python-format-check:
+	cd $(APP_DIR) && .venv/bin/ruff format --check bim_ai tests scripts
+
+lint:
+	$(PNPM) -w eslint "packages/**/*.{ts,tsx}"
+	cd $(APP_DIR) && .venv/bin/ruff check bim_ai tests scripts
+
+architecture:
+	node scripts/check-architecture.mjs
+
+typecheck:
+	$(PNPM) -w turbo typecheck
+
+build:
+	$(PNPM) -w turbo build
+
+verify: format-check python-format-check lint architecture typecheck test build
+	@echo "verify: PASS"
+
+clean:
+	$(PNPM) -w turbo clean || true
+	rm -rf node_modules **/node_modules **/dist **/.turbo
+	rm -rf $(APP_DIR)/.venv $(APP_DIR)/.pytest_cache

@@ -1,0 +1,669 @@
+import { create } from 'zustand';
+
+import type { Element, ModelDelta, Snapshot, Violation } from '@bim-ai/core';
+
+export type ViewerMode = 'plan_canvas' | 'orbit_3d';
+
+export type PlanTool = 'select' | 'wall' | 'door' | 'window' | 'room' | 'grid' | 'dimension';
+
+export type PresencePeers = Record<
+  string,
+  {
+    peerId?: string;
+    userId?: string;
+    name?: string;
+    color?: string;
+    cursorMm?: { xMm: number; yMm: number };
+    selectionId?: string;
+    viewer?: string;
+  }
+>;
+
+export type UxComment = {
+  id: string;
+  userDisplay: string;
+  body: string;
+  elementId?: string | null;
+  levelId?: string | null;
+  anchorXMm?: number | null;
+  anchorYMm?: number | null;
+  resolved: boolean;
+  createdAt?: string;
+};
+
+export type ActivityEvent = {
+  id: number;
+  userId: string;
+  revisionAfter: number;
+  createdAt: string;
+  commandTypes: string[];
+};
+
+type StoreState = {
+  modelId?: string;
+  revision: number;
+  elementsById: Record<string, Element>;
+  violations: Violation[];
+  selectedId?: string;
+  viewerMode: ViewerMode;
+  planTool: PlanTool;
+  activeLevelId?: string;
+  orthoSnapHold: boolean;
+  userId: string;
+  userDisplayName: string;
+  peerId: string;
+  aiPreview: Record<string, unknown>[];
+  aiExplanation?: string;
+
+  presencePeers: PresencePeers;
+
+  comments: UxComment[];
+
+  activityEvents: ActivityEvent[];
+
+  hydrateFromSnapshot: (snap: Snapshot) => void;
+  applyDelta: (d: ModelDelta) => void;
+  select: (id?: string) => void;
+  setViewerMode: (m: ViewerMode) => void;
+  setPlanTool: (t: PlanTool) => void;
+  setActiveLevelId: (id: string | undefined) => void;
+
+  setOrthoSnapHold: (v: boolean) => void;
+  setPresencePeers: (peers: PresencePeers) => void;
+  mergePresencePeer: (peerId: string, patch: PresencePeers[string]) => void;
+  setAiPreview: (cmds: Record<string, unknown>[], explanation?: string) => void;
+  setComments: (c: UxComment[]) => void;
+  mergeComment: (c: UxComment) => void;
+  setActivity: (e: ActivityEvent[]) => void;
+
+  setIdentity: (userId: string, display: string, peerId: string) => void;
+};
+
+function coerceViolation(v: unknown): Violation {
+  const vv = v as Record<string, unknown>;
+  const ruleId =
+    typeof vv.ruleId === 'string' ? vv.ruleId : typeof vv.rule_id === 'string' ? vv.rule_id : '';
+  const sev = vv.severity as string | undefined;
+  const severity = sev === 'error' || sev === 'warning' ? sev : 'warning';
+
+  const elementIdsRaw = vv.elementIds ?? vv.element_ids;
+  const elementIds =
+    Array.isArray(elementIdsRaw) && elementIdsRaw.every((x) => typeof x === 'string')
+      ? elementIdsRaw
+      : [];
+
+  const message = typeof vv.message === 'string' ? vv.message : '';
+  return { ruleId, severity: severity as Violation['severity'], message, elementIds };
+}
+
+function coerceXY(raw: Record<string, unknown>): { xMm: number; yMm: number } {
+  return {
+    xMm: Number(raw.xMm ?? raw.x_mm ?? 0),
+    yMm: Number(raw.yMm ?? raw.y_mm ?? 0),
+  };
+}
+
+function coerceXYZ(raw: Record<string, unknown>): { xMm: number; yMm: number; zMm: number } {
+  return {
+    xMm: Number(raw.xMm ?? raw.x_mm ?? 0),
+    yMm: Number(raw.yMm ?? raw.y_mm ?? 0),
+    zMm: Number(raw.zMm ?? raw.z_mm ?? 0),
+  };
+}
+
+function coerceElement(id: string, raw: Record<string, unknown>): Element | null {
+  const kind = raw.kind;
+  const name =
+    typeof raw.name === 'string' ? raw.name : kind === 'issue' ? ((raw.title as string) ?? id) : id;
+
+  if (kind === 'level') {
+    return {
+      kind: 'level',
+      id,
+      name,
+      elevationMm: Number(raw.elevationMm ?? raw.elevation_mm ?? 0),
+    };
+  }
+
+  if (kind === 'wall') {
+    return {
+      kind: 'wall',
+      id,
+      name,
+      levelId: String(raw.levelId ?? ''),
+      start: coerceXY(raw.start as Record<string, unknown>),
+      end: coerceXY(raw.end as Record<string, unknown>),
+      thicknessMm: Number(raw.thicknessMm ?? raw.thickness_mm ?? 200),
+      heightMm: Number(raw.heightMm ?? raw.height_mm ?? 2800),
+    };
+  }
+
+  if (kind === 'door') {
+    return {
+      kind: 'door',
+      id,
+      name,
+      wallId: String(raw.wallId ?? ''),
+      alongT: Number(raw.alongT ?? 0),
+      widthMm: Number(raw.widthMm ?? 900),
+    };
+  }
+
+  if (kind === 'window') {
+    return {
+      kind: 'window',
+      id,
+      name,
+      wallId: String(raw.wallId ?? ''),
+      alongT: Number(raw.alongT ?? 0),
+      widthMm: Number(raw.widthMm ?? 1200),
+      sillHeightMm: Number(raw.sillHeightMm ?? raw.sill_height_mm ?? 900),
+      heightMm: Number(raw.heightMm ?? raw.height_mm ?? 1500),
+    };
+  }
+
+  if (kind === 'room') {
+    const outline = Array.isArray(raw.outlineMm) ? raw.outlineMm : [];
+    return {
+      kind: 'room',
+      id,
+      name,
+      levelId: String(raw.levelId ?? ''),
+      outlineMm: outline.map((p) => coerceXY((p ?? {}) as Record<string, unknown>)),
+    };
+  }
+
+  if (kind === 'grid_line') {
+    const lid = raw.levelId ?? raw.level_id;
+    return {
+      kind: 'grid_line',
+      id,
+      name,
+      label: typeof raw.label === 'string' ? raw.label : '',
+      start: coerceXY(raw.start as Record<string, unknown>),
+      end: coerceXY(raw.end as Record<string, unknown>),
+      levelId: typeof lid === 'string' ? lid : null,
+    };
+  }
+
+  if (kind === 'dimension') {
+    return {
+      kind: 'dimension',
+      id,
+      name,
+      levelId: String(raw.levelId ?? ''),
+      aMm: coerceXY((raw.aMm ?? raw.a_mm ?? {}) as Record<string, unknown>),
+      bMm: coerceXY((raw.bMm ?? raw.b_mm ?? {}) as Record<string, unknown>),
+      offsetMm: coerceXY((raw.offsetMm ?? raw.offset_mm ?? {}) as Record<string, unknown>),
+      refElementIdA:
+        typeof raw.refElementIdA === 'string'
+          ? raw.refElementIdA
+          : typeof raw.ref_element_id_a === 'string'
+            ? raw.ref_element_id_a
+            : null,
+      refElementIdB:
+        typeof raw.refElementIdB === 'string'
+          ? raw.refElementIdB
+          : typeof raw.ref_element_id_b === 'string'
+            ? raw.ref_element_id_b
+            : null,
+    };
+  }
+
+  if (kind === 'viewpoint') {
+    const cam = (raw.camera ?? {}) as Record<string, unknown>;
+    const xyzKey = (k: string) => coerceXYZ(((cam[k] as Record<string, unknown>) ?? {}) as Record<string, unknown>);
+    const modeRaw = raw.mode;
+    const mode =
+      modeRaw === 'plan_2d'
+        ? 'plan_2d'
+        : modeRaw === 'plan_canvas'
+          ? 'plan_canvas'
+          : 'orbit_3d';
+    return {
+      kind: 'viewpoint',
+      id,
+      name,
+      camera: {
+        position: xyzKey('position'),
+        target: xyzKey('target'),
+        up: xyzKey('up'),
+      },
+      mode,
+    };
+  }
+
+  if (kind === 'issue') {
+    const statusRaw = raw.status;
+    const status =
+      statusRaw === 'done' ? 'done' : statusRaw === 'in_progress' ? 'in_progress' : 'open';
+    const elementIdsRaw = raw.elementIds ?? raw.element_ids ?? [];
+    const elementIds =
+      Array.isArray(elementIdsRaw) && elementIdsRaw.every((x) => typeof x === 'string')
+        ? elementIdsRaw
+        : [];
+    const title = typeof raw.title === 'string' ? raw.title : name;
+    return {
+      kind: 'issue',
+      id,
+      title,
+      status,
+      elementIds,
+      viewpointId: (raw.viewpointId ?? raw.viewpoint_id ?? null) as string | null,
+    };
+  }
+
+  return null;
+}
+
+function defaultLevelId(elements: Record<string, Element>): string | undefined {
+  const levels = Object.values(elements)
+    .filter((e): e is Extract<Element, { kind: 'level' }> => e.kind === 'level')
+    .sort((a, b) => a.elevationMm - b.elevationMm);
+  return levels[0]?.id;
+}
+
+function loadThemePref() {
+
+  try {
+    return localStorage.getItem('bim.theme') === 'dark';
+  } catch {
+    return false;
+  }
+
+
+}
+
+
+
+
+
+function applyStoredTheme(isDark?: boolean) {
+  try {
+    if (typeof isDark !== 'undefined') {
+
+
+      document.documentElement.classList.toggle('dark', isDark);
+      localStorage.setItem('bim.theme', isDark ? 'dark' : 'light');
+
+
+    }
+
+
+
+  }
+
+
+
+  catch {
+    // noop
+  }
+
+
+
+}
+
+
+
+
+export function initThemeFromStorage() {
+
+
+  applyStoredTheme(loadThemePref());
+
+
+
+}
+
+
+
+export const useBimStore = create<StoreState>((set, get) => ({
+  revision: 0,
+  elementsById: {},
+  violations: [],
+  viewerMode: 'orbit_3d',
+  planTool: 'select',
+  orthoSnapHold: false,
+
+  aiPreview: [],
+  aiExplanation: undefined,
+  presencePeers: {},
+  comments: [],
+  activityEvents: [],
+  userId: 'local-dev',
+  userDisplayName: 'Architect',
+  peerId: crypto.randomUUID(),
+
+
+
+  hydrateFromSnapshot: (snap) => {
+
+
+    const elements: Record<string, Element> = {};
+
+
+    for (const [id, raw] of Object.entries(snap.elements ?? {})) {
+      const typed = coerceElement(id, raw as Record<string, unknown>);
+      if (typed) elements[id] = typed;
+    }
+
+
+
+    const al = get().activeLevelId;
+
+
+
+    const nextSelected = snap.modelId;
+
+
+
+    void nextSelected;
+
+
+
+    set({
+
+
+      modelId: snap.modelId,
+
+
+
+
+
+      revision: snap.revision,
+
+
+
+
+      elementsById: elements,
+
+
+
+
+      violations: (snap.violations ?? []).map(coerceViolation),
+
+
+
+
+      activeLevelId:
+
+
+        !al || !(al in elements) || elements[al]?.kind !== 'level'
+
+
+          ? defaultLevelId(elements)
+
+
+
+          : al,
+
+
+
+
+
+
+    });
+
+
+
+  },
+
+
+
+
+
+
+  applyDelta: (d) => {
+
+
+    const merged = { ...get().elementsById };
+
+
+
+    for (const rid of d.removedIds ?? []) {
+
+
+      delete merged[rid];
+
+
+
+
+
+    }
+
+
+
+
+
+
+    for (const [eid, raw] of Object.entries(d.elements ?? {})) {
+
+
+
+      const coerced = coerceElement(eid, raw as Record<string, unknown>);
+
+
+
+      if (coerced) merged[eid] = coerced;
+
+
+
+
+
+
+
+    }
+
+
+
+
+
+
+
+
+    set({
+
+
+      revision: d.revision,
+
+
+
+
+      elementsById: merged,
+
+
+
+
+      violations: (d.violations ?? []).map(coerceViolation),
+
+
+
+
+
+
+    });
+
+
+
+
+
+  },
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  select: (id) => set({ selectedId: id }),
+
+
+
+
+  setViewerMode: (m) => set({ viewerMode: m }),
+
+
+
+
+  setPlanTool: (t) => set({ planTool: t }),
+
+
+
+
+  setActiveLevelId: (id) => set({ activeLevelId: id }),
+
+
+
+
+  setOrthoSnapHold: (v) => set({ orthoSnapHold: v }),
+
+
+
+
+  setPresencePeers: (peers) => set({ presencePeers: peers }),
+
+
+
+
+  mergePresencePeer: (peerId, patch) =>
+    set(() => {
+
+
+      const peers = { ...get().presencePeers };
+
+
+      peers[peerId] = { ...peers[peerId], ...patch, peerId };
+
+
+
+
+
+
+
+      return { presencePeers: peers };
+
+
+
+
+
+    }),
+
+
+
+
+  setAiPreview: (cmds, explanation) => set({ aiPreview: cmds, aiExplanation: explanation }),
+
+
+
+
+  setComments: (c) => set({ comments: c }),
+
+
+
+
+  mergeComment: (c) =>
+
+
+
+
+    set((st) => {
+
+
+
+      const next = [...st.comments.filter((x) => x.id !== c.id), c].sort((a, b) =>
+
+
+        String(b.createdAt).localeCompare(String(a.createdAt)),
+      );
+
+
+
+
+
+      return { comments: next };
+
+
+
+
+
+    }),
+
+
+
+
+  setActivity: (e) => set({ activityEvents: e }),
+
+
+
+
+  setIdentity: (userId, userDisplayName, peerId) =>
+
+
+
+
+    set({ userId, userDisplayName, peerId }),
+
+
+
+}));
+
+export type { ViewerMode as _ViewerMode };
+
+
+export function toggleStoredTheme(): boolean {
+
+
+
+
+
+
+  try {
+
+
+
+
+
+
+    const goDark = !document.documentElement.classList.contains('dark');
+
+
+
+
+
+
+
+
+
+
+    applyStoredTheme(goDark);
+
+
+
+    return goDark;
+
+
+
+
+
+  } catch {
+
+
+    return false;
+
+  }
+
+
+
+}
+
+

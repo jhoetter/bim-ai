@@ -1,0 +1,440 @@
+#!/usr/bin/env node
+/**
+ * BIM AI CLI — agent-facing workflows + snapshot transport.
+ * Node 20+ (fetch + WebSocket).
+ */
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { stdin } from 'node:process';
+
+import { buildOneFamilyHomeCommands } from './lib/one-family-home-commands.mjs';
+
+const base = (
+  process.env.BIM_AI_BASE_URL ?? process.env.BIM_AI_API_ROOT ?? 'http://127.0.0.1:8500'
+).replace(/\/$/, '');
+
+function slurpStdin() {
+  return new Promise((resolve, reject) => {
+    let d = '';
+    stdin.setEncoding('utf8');
+    stdin.on('data', (c) => {
+      d += c;
+    });
+    stdin.on('end', () => resolve(d));
+    stdin.on('error', reject);
+  });
+}
+
+async function readPayloadOrStdin(pathArg) {
+  if (pathArg && pathArg !== '-') {
+    return fs.readFile(pathArg, 'utf8');
+  }
+  if (stdin.isTTY) {
+    console.error('Pass a JSON file path, or pipe JSON on stdin (use - for explicit stdin).');
+    process.exit(1);
+  }
+  return slurpStdin();
+}
+
+function commandsFromBundleJson(blob) {
+  if (Array.isArray(blob)) return blob;
+  if (blob && typeof blob === 'object' && Array.isArray(blob.commands)) return blob.commands;
+  console.error('Bundle must be a JSON array or { "commands": [...] }.');
+  process.exit(1);
+}
+
+function wsUrl(modelId) {
+  const u = new URL(base);
+  u.protocol = u.protocol === 'https:' ? 'wss:' : 'ws:';
+  u.pathname = `/ws/${encodeURIComponent(modelId)}`;
+  u.search = '';
+  return u.href;
+}
+
+async function fetchJson(method, url, bodyObj) {
+  const res = await fetch(url, {
+    method,
+    headers: bodyObj ? { 'content-type': 'application/json' } : undefined,
+    body: bodyObj ? JSON.stringify(bodyObj) : undefined,
+  });
+  const text = await res.text();
+  let json;
+  try {
+    json = JSON.parse(text);
+  } catch {
+    json = { raw: text };
+  }
+  if (!res.ok) {
+    console.error(JSON.stringify({ status: res.status, body: json }, null, 2));
+    process.exit(1);
+  }
+  return json;
+}
+
+async function snapshot(modelId) {
+  const json = await fetchJson('GET', `${base}/api/models/${encodeURIComponent(modelId)}/snapshot`);
+  console.log(JSON.stringify(json, null, 2));
+}
+
+async function postCommand(modelId, userId, command) {
+  const json = await fetchJson(
+    'POST',
+    `${base}/api/models/${encodeURIComponent(modelId)}/commands`,
+    { command, userId },
+  );
+  console.log(JSON.stringify(json, null, 2));
+}
+
+async function postBundle(modelId, userId, commands) {
+  const json = await fetchJson(
+    'POST',
+    `${base}/api/models/${encodeURIComponent(modelId)}/commands/bundle`,
+    { commands, userId },
+  );
+  console.log(JSON.stringify(json, null, 2));
+}
+
+async function dryRunCommand(modelId, userId, command) {
+  const json = await fetchJson(
+    'POST',
+    `${base}/api/models/${encodeURIComponent(modelId)}/commands/dry-run`,
+    { command, userId },
+  );
+  console.log(JSON.stringify(json, null, 2));
+}
+
+async function dryRunBundle(modelId, userId, commands) {
+  const json = await fetchJson(
+    'POST',
+    `${base}/api/models/${encodeURIComponent(modelId)}/commands/bundle/dry-run`,
+    { commands, userId },
+  );
+  console.log(JSON.stringify(json, null, 2));
+}
+
+async function cmdSchema() {
+  const json = await fetchJson('GET', `${base}/api/schema`);
+  console.log(JSON.stringify(json, null, 2));
+}
+
+async function cmdPresets() {
+  const schema = await fetchJson('GET', `${base}/api/schema`);
+  const bp = await fetchJson('GET', `${base}/api/building-presets`);
+  console.log(
+    JSON.stringify(
+      {
+        schemaVersion: schema.version,
+        buildingPresetIds: schema.buildingPresetIds,
+        perspectiveIds: schema.perspectiveIds ?? [],
+        workspaceLayoutPresetIds: schema.workspaceLayoutPresetIds ?? [],
+        presetsDetailKeys: bp.presets ? Object.keys(bp.presets) : [],
+      },
+      null,
+      2,
+    ),
+  );
+}
+
+async function cmdSummary(modelId) {
+  const json = await fetchJson('GET', `${base}/api/models/${encodeURIComponent(modelId)}/summary`);
+  console.log(JSON.stringify(json, null, 2));
+}
+
+async function cmdValidate(modelId) {
+  const json = await fetchJson('GET', `${base}/api/models/${encodeURIComponent(modelId)}/validate`);
+  console.log(JSON.stringify(json, null, 2));
+}
+
+async function cmdBootstrapCli() {
+  const json = await fetchJson('GET', `${base}/api/bootstrap`);
+  console.log(JSON.stringify(json, null, 2));
+}
+
+async function cmdInitModel(projectId, slug) {
+  const json = await fetchJson('POST', `${base}/api/projects/${encodeURIComponent(projectId)}/models`, {
+    slug,
+  });
+  console.log(JSON.stringify(json, null, 2));
+}
+
+async function cmdCommandLog(modelId, limit) {
+  const q = typeof limit === 'number' ? `?limit=${encodeURIComponent(String(limit))}` : '';
+  const json = await fetchJson(
+    'GET',
+    `${base}/api/models/${encodeURIComponent(modelId)}/command-log${q}`,
+  );
+  console.log(JSON.stringify(json, null, 2));
+}
+
+function validateHouseBrief(blob) {
+  const errors = [];
+  if (!blob || typeof blob !== 'object') {
+    errors.push('brief must be a JSON object');
+    return errors;
+  }
+  if (typeof blob.version !== 'string') errors.push('version (string)');
+  if (blob.stylePreset != null && typeof blob.stylePreset !== 'string')
+    errors.push('stylePreset (optional string)');
+  if (!Number.isFinite(blob.siteWidthM)) errors.push('siteWidthM (number)');
+  if (!Number.isFinite(blob.siteDepthM)) errors.push('siteDepthM (number)');
+  const floors = blob.floors;
+  if (!Number.isInteger(floors) || floors < 1) errors.push('floors (int >= 1)');
+  const rooms = blob.rooms;
+  if (!Array.isArray(rooms) || rooms.length === 0) errors.push('rooms (non-empty array)');
+  else {
+    rooms.forEach((r, i) => {
+      if (!r || typeof r !== 'object') errors.push(`rooms[${i}] object`);
+      else {
+        if (typeof r.name !== 'string') errors.push(`rooms[${i}].name`);
+        if (!Number.isFinite(r.areaTargetM2)) errors.push(`rooms[${i}].areaTargetM2`);
+      }
+    });
+  }
+  return errors;
+}
+
+function briefToHouseStarterBundle(brief, modelIdPlaceholder) {
+  const commands = buildOneFamilyHomeCommands();
+  return {
+    meta: {
+      generatedBy: '@bim-ai/cli plan-house',
+      modelIdPlaceholder,
+      note:
+        'Fixed one-family footprint (shared with scripts/apply-one-family-home.mjs). Use on empty model — do not prepend deleteElements when applying to a seeded demo.',
+      brief,
+    },
+    commands,
+  };
+}
+
+async function cmdPlanHouse(briefPath, outPath, modelHint) {
+  const raw = (await fs.readFile(briefPath, 'utf8')).trim();
+  let brief;
+  try {
+    brief = JSON.parse(raw);
+  } catch {
+    console.error(`Invalid JSON: ${briefPath}`);
+    process.exit(1);
+  }
+  const err = validateHouseBrief(brief);
+  if (err.length) {
+    console.error(JSON.stringify({ ok: false, errors: err }, null, 2));
+    process.exit(1);
+  }
+  const bundle = briefToHouseStarterBundle(brief, modelHint ?? '${BIM_AI_MODEL_ID}');
+  await fs.mkdir(path.dirname(outPath), { recursive: true });
+  await fs.writeFile(outPath, `${JSON.stringify(bundle, null, 2)}\n`, 'utf8');
+  console.log(JSON.stringify({ ok: true, out: outPath, commandCount: bundle.commands.length }, null, 2));
+}
+
+async function cmdExport(kind) {
+  console.error(`export ${kind}: not implemented (see spec/openbim-compatibility.md roadmap).`);
+  process.exit(2);
+}
+
+async function cmdDiff() {
+  console.error('diff: not implemented (planned for agent self-review vs revisions).');
+  process.exit(2);
+}
+
+function usage() {
+  console.error(
+    `bim-ai <command> [args]
+
+Commands:
+  bootstrap                           GET /api/bootstrap (projects + models)
+  init-model --project-id <uuid> [--slug slug]
+                                       POST empty model row (agents use BIM_AI_MODEL_ID from output)
+  schema                              GET /api/schema (commands + presets ids)
+  presets                             summarize schema + building presets
+  snapshot                            GET snapshot (needs BIM_AI_MODEL_ID)
+  summary                             GET model summary rollup
+  validate                            GET violations + summary + counts
+  command-log [limit]                  GET undo/command history with full commands JSON
+  apply [file|-]                       POST single command
+  apply-bundle [file|-]                POST bundle
+  apply-bundle --dry-run [file|-]      POST bundle dry-run (no commit)
+  dry-run [file|-]                     POST single command dry-run
+  plan-house --brief <path> --out <path> [--model-hint id]
+                                       validate brief JSON → write starter command bundle (one-family preset)
+  export <ifc|gltf|json>               reserved (stub)
+  diff --from … --to …                 reserved (stub)
+  watch                               WebSocket watcher
+
+Env:
+  BIM_AI_MODEL_ID   (required for model-scoped ops)
+  BIM_AI_USER_ID    default: local-dev
+  BIM_AI_BASE_URL   default: http://127.0.0.1:8500`,
+  );
+  process.exit(1);
+}
+
+async function main() {
+  let argv = process.argv.slice(2);
+  let modelId = process.env.BIM_AI_MODEL_ID;
+  const userId = process.env.BIM_AI_USER_ID ?? 'local-dev';
+
+  if (!argv.length) usage();
+  let cmd = argv[0];
+
+  if (argv[0] === 'apply-bundle' && argv[1] === '--dry-run') {
+    cmd = '__apply-bundle-dry';
+    argv = argv.slice(2);
+  }
+
+  try {
+    if (cmd === 'bootstrap') {
+      await cmdBootstrapCli();
+      return;
+    }
+    if (cmd === 'init-model') {
+      const rest = argv.slice(1);
+      let pid;
+      let slug = `empty-${Date.now().toString(36)}`;
+      for (let i = 0; i < rest.length; i++) {
+        const a = rest[i];
+        if (a === '--project-id' && rest[i + 1]) pid = rest[++i];
+        else if (a === '--slug' && rest[i + 1]) slug = rest[++i];
+      }
+      if (!pid) {
+        console.error('init-model requires --project-id <uuid> (run bim-ai bootstrap first).');
+        usage();
+      }
+      await cmdInitModel(pid, slug);
+      return;
+    }
+    if (cmd === 'schema') {
+      await cmdSchema();
+      return;
+    }
+    if (cmd === 'presets') {
+      await cmdPresets();
+      return;
+    }
+    if (cmd === 'summary') {
+      if (!modelId) usage();
+      await cmdSummary(modelId);
+      return;
+    }
+    if (cmd === 'validate') {
+      if (!modelId) usage();
+      await cmdValidate(modelId);
+      return;
+    }
+    if (cmd === 'command-log') {
+      if (!modelId) usage();
+      const lim = argv[1] ? Number(argv[1]) : undefined;
+      await cmdCommandLog(modelId, Number.isFinite(lim) ? lim : undefined);
+      return;
+    }
+    if (cmd === 'plan-house') {
+      let briefArg;
+      let outArg;
+      let modelHint;
+      const rest = argv.slice(1);
+      for (let i = 0; i < rest.length; i++) {
+        const a = rest[i];
+        if (a === '--brief' && rest[i + 1]) briefArg = rest[++i];
+        else if (a === '--out' && rest[i + 1]) outArg = rest[++i];
+        else if (a === '--model-hint' && rest[i + 1]) modelHint = rest[++i];
+      }
+      if (!briefArg || !outArg) usage();
+      await cmdPlanHouse(briefArg, outArg, modelHint);
+      return;
+    }
+
+    const pathArgFirst = argv[1];
+    const pathArgDry = argv[1];
+
+    if (cmd === 'export') {
+      const k = argv[1];
+      if (!k) usage();
+      await cmdExport(k);
+      return;
+    }
+    if (cmd === 'diff') {
+      await cmdDiff();
+      return;
+    }
+
+    if (!modelId && cmd !== 'schema' && cmd !== 'presets' && cmd !== 'plan-house' && cmd !== 'bootstrap' && cmd !== 'init-model')
+      usage();
+
+    if (cmd === 'snapshot') {
+      await snapshot(modelId);
+      return;
+    }
+
+    if (cmd === 'apply') {
+      const raw = (await readPayloadOrStdin(pathArgFirst)).trim();
+      if (!raw) {
+        console.error('Empty JSON for apply');
+        process.exit(1);
+      }
+      await postCommand(modelId, userId, JSON.parse(raw));
+      return;
+    }
+
+    if (cmd === 'dry-run') {
+      const raw = (await readPayloadOrStdin(pathArgDry)).trim();
+      if (!raw) {
+        console.error('Empty JSON for dry-run');
+        process.exit(1);
+      }
+      await dryRunCommand(modelId, userId, JSON.parse(raw));
+      return;
+    }
+
+    if (cmd === 'apply-bundle') {
+      const raw = (await readPayloadOrStdin(pathArgFirst)).trim();
+      if (!raw) {
+        console.error('Empty JSON for apply-bundle');
+        process.exit(1);
+      }
+      const cmds = commandsFromBundleJson(JSON.parse(raw));
+      await postBundle(modelId, userId, cmds);
+      return;
+    }
+
+    if (cmd === '__apply-bundle-dry') {
+      const pathArg = argv[0];
+      const raw = (await readPayloadOrStdin(pathArg)).trim();
+      if (!raw) {
+        console.error('Empty JSON for apply-bundle --dry-run');
+        process.exit(1);
+      }
+      const cmds = commandsFromBundleJson(JSON.parse(raw));
+      await dryRunBundle(modelId, userId, cmds);
+      return;
+    }
+
+    if (cmd === 'watch') {
+      const url = wsUrl(modelId);
+      console.error(`Watching ${url}`);
+      const ws = new WebSocket(url);
+      ws.addEventListener('open', () => {
+        const ping = { type: 'presence_update', peerId: 'cli', userId, name: 'bim-ai-cli' };
+        ws.send(JSON.stringify(ping));
+        setInterval(() => {
+          if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(ping));
+        }, 25_000);
+      });
+      ws.addEventListener('message', (ev) => {
+        console.log(String(ev.data));
+      });
+      ws.addEventListener('close', () => process.exit(0));
+      ws.addEventListener('error', () => {
+        console.error('WebSocket error');
+        process.exit(1);
+      });
+      return;
+    }
+
+    usage();
+  } catch (e) {
+    console.error(e instanceof Error ? e.message : String(e));
+    process.exit(1);
+  }
+}
+
+main();

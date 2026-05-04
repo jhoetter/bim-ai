@@ -1,0 +1,21 @@
+{
+  "description": "Small studio footprint — substitute level id at apply time.",
+
+  "commands": [
+    {
+      "type": "createRoomRectangle",
+      "levelId": "lvl-1",
+      "origin": { "xMm": 7000, "yMm": 500 },
+
+      "widthMm": 3600,
+
+      "depthMm": 2400,
+
+      "name": "North studio",
+
+      "thicknessMm": 200,
+
+      "heightMm": 2800
+    }
+  ]
+}

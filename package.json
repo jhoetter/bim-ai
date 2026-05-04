@@ -1,0 +1,38 @@
+{
+  "name": "bim-ai",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "bim-ai — browser-first BIM coordination (Vite + Python).",
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "lint:root": "eslint \"packages/**/*.{ts,tsx}\"",
+    "typecheck": "turbo typecheck",
+    "test": "turbo test",
+    "clean": "turbo clean && rm -rf node_modules",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml}\"",
+    "architecture": "node scripts/check-architecture.mjs",
+    "verify": "pnpm format:check && pnpm lint:root && pnpm architecture && pnpm typecheck && pnpm test && pnpm build",
+    "build:dist": "pnpm --filter @bim-ai/hofos-ui build"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "@typescript-eslint/eslint-plugin": "^8.59.1",
+    "@typescript-eslint/parser": "^8.59.1",
+    "eslint": "^9.39.4",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "concurrently": "^9.2.1",
+    "prettier": "^3.8.3",
+    "turbo": "^2.9.7",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.59.1"
+  },
+  "packageManager": "pnpm@9.15.4",
+  "engines": {
+    "node": ">=20"
+  }
+}

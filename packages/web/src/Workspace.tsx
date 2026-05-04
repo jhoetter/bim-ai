@@ -1,0 +1,959 @@
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+
+import type {
+  Element,
+  ModelDelta,
+  PerspectiveId,
+  Snapshot,
+  Violation,
+  WorkspaceLayoutPreset,
+} from '@bim-ai/core';
+
+import { Btn, Panel } from '@bim-ai/ui';
+
+import {
+  applyCommand,
+  bootstrap,
+  coerceDelta,
+  fetchActivity,
+  fetchBuildingPresets,
+  fetchComments,
+  patchCommentResolved,
+  postComment,
+  redoModel,
+  undoModel,
+} from './lib/api';
+import { AdvisorPanel } from './advisor/AdvisorPanel';
+import { Cheatsheet } from './cmd/Cheatsheet';
+import { CommandBar } from './cmd/CommandBar';
+import { CommandPalette } from './CommandPalette';
+import { LevelStack } from './levels/LevelStack';
+import { parseCommandLine } from './cmd/parser';
+import { SchedulePanel } from './schedules/SchedulePanel';
+import { Welcome, shouldShowWelcome } from './onboarding/Welcome';
+import { PlanCanvas } from './plan/PlanCanvas';
+
+import { toggleStoredTheme, useBimStore, type PlanTool } from './state/store';
+
+import { Viewport } from './Viewport';
+
+import { AgentReviewPane } from './workspace/AgentReviewPane';
+
+import { planToolsForPerspective } from './workspace/planToolsByPerspective';
+
+import { SectionPlaceholderPane } from './workspace/SectionPlaceholderPane';
+
+async function fetchSnap(modelId: string): Promise<Snapshot> {
+  const res = await fetch(`/api/models/${encodeURIComponent(modelId)}/snapshot`);
+  const txt = await res.text();
+  if (!res.ok) throw new Error(`${res.status}: ${txt}`);
+  const json = JSON.parse(txt) as Record<string, unknown>;
+  return {
+    modelId: String(json.modelId ?? ''),
+    revision: Number(json.revision ?? 0),
+    elements: (json.elements ?? {}) as Snapshot['elements'],
+    violations: (json.violations ?? []) as Violation[],
+  };
+}
+
+function parseWs(payload: Record<string, unknown>): Snapshot | null {
+  const modelId =
+    typeof payload.modelId === 'string'
+      ? payload.modelId
+      : typeof payload.model_id === 'string'
+        ? payload.model_id
+        : '';
+  if (!modelId) return null;
+  return {
+    modelId,
+    revision: Number(payload.revision ?? 0),
+    elements: (payload.elements ?? {}) as Snapshot['elements'],
+    violations: (payload.violations ?? []) as Violation[],
+  };
+}
+
+function mapComments(rows: Record<string, unknown>[]) {
+  return rows.map((row) => ({
+    id: String(row.id ?? ''),
+    userDisplay: String(row.userDisplay ?? row.user_display ?? ''),
+    body: String(row.body ?? ''),
+    elementId: (row.elementId ?? row.element_id ?? null) as string | null,
+    levelId: (row.levelId ?? row.level_id ?? null) as string | null,
+    anchorXMm:
+      row.anchorXMm !== undefined
+        ? Number(row.anchorXMm)
+        : row.anchor_x_mm !== undefined
+          ? Number(row.anchor_x_mm)
+          : null,
+    anchorYMm:
+      row.anchorYMm !== undefined
+        ? Number(row.anchorYMm)
+        : row.anchor_y_mm !== undefined
+          ? Number(row.anchor_y_mm)
+          : null,
+    resolved: Boolean(row.resolved),
+    createdAt: String(row.createdAt ?? row.created_at ?? ''),
+  }));
+}
+
+const LAYOUT_PRESET_OPTIONS: { id: WorkspaceLayoutPreset; label: string }[] = [
+  { id: 'classic', label: 'Classic' },
+  { id: 'split_plan_3d', label: 'Plan + 3D' },
+  { id: 'split_plan_section', label: 'Plan + Section' },
+  { id: 'coordination', label: 'Coordination' },
+  { id: 'schedules_focus', label: 'Schedules' },
+  { id: 'agent_review', label: 'Agent review' },
+];
+
+const PERSPECTIVE_OPTIONS: { id: PerspectiveId; label: string }[] = [
+  { id: 'architecture', label: 'Architecture' },
+  { id: 'structure', label: 'Structure' },
+  { id: 'mep', label: 'MEP' },
+  { id: 'coordination', label: 'Coordination' },
+  { id: 'construction', label: 'Construction' },
+  { id: 'agent', label: 'Agent' },
+];
+
+const TOOL_BTN_LABEL: Record<PlanTool, string> = {
+  select: 'Sel',
+  wall: 'Wall',
+  door: 'Door',
+  window: 'Win',
+  room: 'Rm',
+  room_rectangle: 'Rect',
+  grid: 'Grid',
+  dimension: 'Dim',
+};
+
+export function Workspace() {
+  const wsRef = useRef<WebSocket | null>(null);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [cmdBarFocus, setCmdBarFocus] = useState(false);
+  const [cheatsheetOpen, setCheatsheetOpen] = useState(false);
+
+  const [welcomeOpen, setWelcomeOpen] = useState(() => shouldShowWelcome());
+  const [codePresetIds, setCodePresetIds] = useState<string[]>([
+    'residential',
+    'commercial',
+    'office',
+  ]);
+
+  const [bootErr, setBootErr] = useState<string | null>(null);
+  const [status, setStatus] = useState('Loading…');
+
+  const [wsOn, setWsOn] = useState(false);
+
+  const [commentTxt, setCommentTxt] = useState('');
+  const [displayName, setDisplayName] = useState(useBimStore.getState().userDisplayName);
+
+  const modelId = useBimStore((s) => s.modelId);
+
+  const revision = useBimStore((s) => s.revision);
+
+  const violations = useBimStore((s) => s.violations);
+  const selectedId = useBimStore((s) => s.selectedId);
+  const elementsById = useBimStore((s) => s.elementsById);
+  const viewerMode = useBimStore((s) => s.viewerMode);
+  const planTool = useBimStore((s) => s.planTool);
+  const activeLv = useBimStore((s) => s.activeLevelId);
+  const userId = useBimStore((s) => s.userId);
+  const peerId = useBimStore((s) => s.peerId);
+  const peers = useBimStore((s) => s.presencePeers);
+  const cmts = useBimStore((s) => s.comments);
+
+  const activities = useBimStore((s) => s.activityEvents);
+
+  const planHudMm = useBimStore((s) => s.planHudMm);
+  const buildingPreset = useBimStore((s) => s.buildingPreset);
+  const setBuildingPreset = useBimStore((s) => s.setBuildingPreset);
+
+  const workspaceLayoutPreset = useBimStore((s) => s.workspaceLayoutPreset);
+  const setWorkspaceLayoutPreset = useBimStore((s) => s.setWorkspaceLayoutPreset);
+  const perspectiveId = useBimStore((s) => s.perspectiveId);
+  const setPerspectiveId = useBimStore((s) => s.setPerspectiveId);
+
+  const hydrateSnap = useBimStore((s) => s.hydrateFromSnapshot);
+  const applyDelta = useBimStore((s) => s.applyDelta);
+  const setVm = useBimStore((s) => s.setViewerMode);
+  const setTool = useBimStore((s) => s.setPlanTool);
+  const setLv = useBimStore((s) => s.setActiveLevelId);
+  const setOrtho = useBimStore((s) => s.setOrthoSnapHold);
+
+  const setPeers = useBimStore((s) => s.setPresencePeers);
+
+  const mergeCm = useBimStore((s) => s.mergeComment);
+  const setCm = useBimStore((s) => s.setComments);
+  const setAct = useBimStore((s) => s.setActivity);
+  const setIdentity = useBimStore((s) => s.setIdentity);
+  const selectEl = useBimStore((s) => s.select);
+
+  const selected = selectedId ? elementsById[selectedId] : undefined;
+
+  const levels = useMemo(
+    () =>
+      Object.values(elementsById)
+
+        .filter((e): e is Extract<Element, { kind: 'level' }> => e.kind === 'level')
+
+        .sort((a, b) => a.elevationMm - b.elevationMm),
+    [elementsById],
+  );
+
+  const lvResolved = activeLv ?? levels[0]?.id ?? '';
+
+  const pushServer = useCallback(
+    (revision: number, elements?: Record<string, unknown>, viols?: unknown[]) => {
+      const mid = useBimStore.getState().modelId;
+      if (!mid) return;
+      hydrateSnap({
+        modelId: mid,
+
+        revision,
+        elements: elements ?? {},
+
+        violations: (viols ?? []) as Violation[],
+      });
+    },
+    [hydrateSnap],
+  );
+
+  const onSemantic = useCallback(
+    async (cmd: Record<string, unknown>) => {
+      const mid = useBimStore.getState().modelId;
+      const uid = useBimStore.getState().userId;
+      if (!mid) return;
+
+      try {
+        const r = await applyCommand(mid, cmd, { userId: uid });
+
+        if (r.revision !== undefined) pushServer(r.revision, r.elements, r.violations);
+
+        setStatus('Applied');
+      } catch (e) {
+        setStatus(e instanceof Error ? e.message : String(e));
+      }
+    },
+
+    [pushServer],
+  );
+
+  const undoRedo = useCallback(
+    async (u: boolean) => {
+      const mid = useBimStore.getState().modelId;
+
+      const uid = useBimStore.getState().userId;
+
+      if (!mid) return;
+
+      try {
+        const r = u ? await undoModel(mid, uid) : await redoModel(mid, uid);
+
+        if (r.revision !== undefined) pushServer(r.revision, r.elements, r.violations);
+
+        fetchActivity(mid).then((a) => {
+          const evs = ((a.events ?? []) as Record<string, unknown>[]).map((ev) => ({
+            id: Number(ev.id),
+
+            userId: String(ev.userId ?? ev.user_id ?? ''),
+            revisionAfter: Number(ev.revisionAfter ?? ev.revision_after ?? 0),
+
+            createdAt: String(ev.createdAt ?? ev.created_at ?? ''),
+            commandTypes: Array.isArray(ev.commandTypes) ? ev.commandTypes.map(String) : [],
+          }));
+
+          setAct(evs);
+        });
+
+        setStatus(u ? 'Undone' : 'Redone');
+      } catch (e) {
+        setStatus(e instanceof Error ? e.message : String(e));
+      }
+    },
+
+    [pushServer, setAct],
+  );
+
+  useEffect(() => {
+    void fetchBuildingPresets()
+      .then((ids) => {
+        if (ids.length) setCodePresetIds(ids);
+      })
+      .catch(() => {});
+  }, []);
+
+  /* Boot */
+
+  useEffect(() => {
+    let cancel = false;
+
+    void (async () => {
+      try {
+        await bootstrap();
+
+        const bxRes = await fetch('/api/bootstrap');
+        const bx = (await bxRes.json()) as Record<string, unknown>;
+        const pj = bx.projects as Record<string, unknown>[] | undefined;
+        const m0 = pj?.[0]?.models as Array<{ id?: unknown }> | undefined;
+
+        const mid = m0?.[0]?.id;
+
+        if (typeof mid !== 'string') throw new Error('No models — run make seed');
+        const fs = await fetchSnap(mid);
+
+        hydrateSnap(fs);
+
+        fetchComments(mid).then((c) =>
+          setCm(mapComments((c.comments ?? []) as Record<string, unknown>[])),
+        );
+
+        fetchActivity(mid).then((a) => {
+          const evs = ((a.events ?? []) as Record<string, unknown>[]).map((ev) => ({
+            id: Number(ev.id),
+
+            userId: String(ev.userId ?? ev.user_id ?? ''),
+
+            revisionAfter: Number(ev.revisionAfter ?? ev.revision_after ?? 0),
+
+            createdAt: String(ev.createdAt ?? ev.created_at ?? ''),
+
+            commandTypes: Array.isArray(ev.commandTypes) ? ev.commandTypes.map(String) : [],
+          }));
+
+          setAct(evs);
+        });
+
+        if (cancel) return;
+
+        setBootErr(null);
+
+        setStatus('Ready');
+
+        const p = window.location.protocol === 'https:' ? 'wss' : 'ws';
+
+        const ws = new WebSocket(`${p}://${window.location.host}/ws/${encodeURIComponent(mid)}`);
+
+        wsRef.current = ws;
+
+        ws.onopen = () => setWsOn(true);
+
+        ws.onclose = () => setWsOn(false);
+
+        ws.onmessage = (evt) => {
+          const payload = JSON.parse(String(evt.data)) as Record<string, unknown>;
+
+          const t = payload.type;
+
+          if (t === 'snapshot') {
+            const s = parseWs(payload);
+
+            if (s) hydrateSnap(s);
+          } else if (t === 'delta') {
+            const dd = coerceDelta(payload);
+
+            if (dd) applyDelta(dd as ModelDelta);
+          } else if (t === 'presence_state') {
+            const pl = payload.payload as Record<string, unknown> | undefined;
+
+            const px = ((pl?.peers as Record<string, unknown>) ?? {}) as typeof peers;
+
+            setPeers(px);
+          } else if (t === 'comment_event') {
+            const w = payload.payload as Record<string, unknown> | undefined;
+
+            if (!w) return;
+
+            mergeCm(mapComments([w])[0]!);
+          }
+        };
+      } catch (e: unknown) {
+        setBootErr(e instanceof Error ? e.message : String(e));
+
+        setStatus('Boot failed');
+      }
+    })();
+
+    return () => {
+      cancel = true;
+
+      wsRef.current?.close();
+
+      wsRef.current = null;
+    };
+  }, [applyDelta, hydrateSnap, mergeCm, setAct, setCm, setPeers]);
+
+  useEffect(() => {
+    const id = window.setInterval(
+      () => {
+        const ws = wsRef.current;
+
+        if (!ws || ws.readyState !== WebSocket.OPEN) return;
+
+        const st = useBimStore.getState();
+
+        ws.send(
+          JSON.stringify({
+            type: 'presence_update',
+
+            peerId: st.peerId,
+
+            userId: st.userId,
+
+            name: st.userDisplayName,
+
+            selectionId: st.selectedId,
+
+            viewer: st.viewerMode,
+          }),
+        );
+      },
+
+      2300,
+    );
+
+    return () => window.clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    const kd = (ev: KeyboardEvent) => {
+      const tgt = ev.target as HTMLElement | null;
+      const tag = tgt?.tagName ?? '';
+      const typing =
+        tag === 'INPUT' ||
+        tag === 'TEXTAREA' ||
+        tag === 'SELECT' ||
+        tgt?.closest('[contenteditable=true]');
+
+      if (cheatsheetOpen && ev.key === 'Escape') {
+        ev.preventDefault();
+        setCheatsheetOpen(false);
+        return;
+      }
+
+      if (!typing && ev.key === '?' && !ev.metaKey && !ev.ctrlKey) {
+        ev.preventDefault();
+        setCheatsheetOpen((o) => !o);
+        return;
+      }
+
+      if (!typing && ev.key === ':' && !ev.metaKey && !ev.ctrlKey) {
+        ev.preventDefault();
+        setCmdBarFocus(true);
+      }
+
+      if ((ev.metaKey || ev.ctrlKey) && ev.key.toLowerCase() === 'z') {
+        ev.preventDefault();
+        void (ev.shiftKey ? undoRedo(false) : undoRedo(true));
+      }
+
+      if ((ev.metaKey || ev.ctrlKey) && ev.code === 'Space') {
+        const cockpitLayouts: WorkspaceLayoutPreset[] = [
+          'split_plan_3d',
+          'split_plan_section',
+          'coordination',
+          'schedules_focus',
+          'agent_review',
+        ];
+        if (!cockpitLayouts.includes(workspaceLayoutPreset)) {
+          ev.preventDefault();
+          void setVm(viewerMode === 'plan_canvas' ? 'orbit_3d' : 'plan_canvas');
+        }
+      }
+
+      if ((ev.metaKey || ev.ctrlKey) && ev.key.toLowerCase() === 'p') {
+        ev.preventDefault();
+        window.print();
+      }
+
+      if (
+        !typing &&
+        viewerMode === 'plan_canvas' &&
+        !ev.metaKey &&
+        !ev.ctrlKey &&
+        (ev.key === 'r' || ev.key === 'R')
+      ) {
+        ev.preventDefault();
+        setTool(ev.shiftKey ? 'room' : 'room_rectangle');
+      }
+
+      if (ev.shiftKey) setOrtho(true);
+    };
+
+    const ku = (ev: KeyboardEvent) => {
+      if (!ev.shiftKey) setOrtho(false);
+    };
+
+    window.addEventListener('keydown', kd);
+
+    window.addEventListener('keyup', ku);
+
+    return () => {
+      window.removeEventListener('keydown', kd);
+
+      window.removeEventListener('keyup', ku);
+    };
+  }, [cheatsheetOpen, setOrtho, setTool, setVm, undoRedo, viewerMode, workspaceLayoutPreset]);
+
+
+
+  const onCmdSubmit = useCallback(
+    (raw: string) => {
+      const res = parseCommandLine(raw.trim(), {
+        levelId: lvResolved || undefined,
+
+        hudMm: planHudMm,
+      });
+
+      if (!res.ok) {
+        setStatus(res.error);
+
+        return;
+      }
+
+      void onSemantic(res.command);
+    },
+    [lvResolved, onSemantic, planHudMm],
+  );
+
+  const palette = useMemo(
+    () => [
+      {
+        id: 'v',
+
+        label: viewerMode === 'plan_canvas' ? '3D view' : 'Plan view',
+
+        kbd: '⌘⇧Space',
+
+        onSelect: () => setVm(viewerMode === 'plan_canvas' ? 'orbit_3d' : 'plan_canvas'),
+      },
+
+      { id: 'u', label: 'Undo', kbd: '⌘Z', onSelect: () => void undoRedo(true) },
+
+      { id: 'r', label: 'Redo', kbd: '⌘⇧Z', onSelect: () => void undoRedo(false) },
+
+      { id: 's', label: 'Tool select', onSelect: () => setTool('select') },
+
+      { id: 'w', label: 'Tool wall', onSelect: () => setTool('wall') },
+
+      { id: 'd', label: 'Tool door', onSelect: () => setTool('door') },
+
+      { id: 'n', label: 'Tool window', onSelect: () => setTool('window') },
+
+      {
+        id: 'room',
+
+        label: 'Tool room',
+
+        onSelect: () => setTool('room'),
+      },
+
+      {
+        id: 'roomRect',
+
+        label: 'Room rectangle',
+
+        onSelect: () => setTool('room_rectangle'),
+      },
+
+      { id: 'g', label: 'Tool grid', onSelect: () => setTool('grid') },
+
+      {
+        id: 'x',
+
+        label: 'Tool dimension',
+
+        onSelect: () => setTool('dimension'),
+      },
+    ],
+
+    [setTool, setVm, undoRedo, viewerMode],
+  );
+
+  const explorer = useMemo(() => Object.values(elementsById), [elementsById]);
+
+  const visiblePlanTools = useMemo(() => [...planToolsForPerspective(perspectiveId)], [perspectiveId]);
+
+  useEffect(() => {
+    if (!visiblePlanTools.includes(planTool)) setTool('select');
+  }, [planTool, setTool, visiblePlanTools]);
+
+  const cockpitLayouts: WorkspaceLayoutPreset[] = [
+    'split_plan_3d',
+    'split_plan_section',
+    'coordination',
+    'schedules_focus',
+    'agent_review',
+  ];
+
+  const planSurfaceVisible =
+    cockpitLayouts.includes(workspaceLayoutPreset) || viewerMode === 'plan_canvas';
+
+  const hideSchedulePanelRight = workspaceLayoutPreset === 'schedules_focus';
+
+  const activeLevelLabel =
+    levels.find((l) => l.id === lvResolved)?.name ?? (lvResolved ? lvResolved : '—');
+
+  const renderPrimaryCanvas = (): ReactNode => {
+    const plan = (
+      <PlanCanvas
+        wsConnected={wsOn}
+        activeLevelResolvedId={lvResolved}
+        onSemanticCommand={(c) => void onSemantic(c)}
+      />
+    );
+
+    switch (workspaceLayoutPreset) {
+      case 'schedules_focus':
+        return (
+          <div className="flex min-h-[360px] flex-col gap-2 xl:flex-row">
+            <div className="min-w-0 flex-1">{plan}</div>
+            <div className="min-w-[260px] xl:w-[40%]">
+              <Panel title="Rooms (schedule focus)">
+                <SchedulePanel elementsById={elementsById} activeLevelId={lvResolved || undefined} />
+              </Panel>
+            </div>
+          </div>
+        );
+      case 'split_plan_3d':
+        return (
+          <div className="grid min-h-[360px] grid-cols-1 gap-2 xl:grid-cols-2">
+            {plan}
+            <Viewport wsConnected={wsOn} />
+          </div>
+        );
+      case 'split_plan_section':
+      case 'coordination':
+        return (
+          <div className="flex flex-col gap-2">
+            {plan}
+            <SectionPlaceholderPane activeLevelLabel={activeLevelLabel} />
+          </div>
+        );
+      case 'agent_review':
+        return (
+          <div className="flex flex-col gap-2">
+            {plan}
+            <Panel title="Agent cockpit">
+              <AgentReviewPane />
+            </Panel>
+          </div>
+        );
+      default:
+        return viewerMode === 'plan_canvas' ? plan : <Viewport wsConnected={wsOn} />;
+    }
+  };
+
+  return (
+    <div className="min-h-[100vh]">
+      <div className="border-b border-border bg-surface/70 px-4 py-3">
+        <div className="mx-auto flex max-w-[1400px] flex-wrap justify-between gap-3">
+          <div>
+            <div className="text-[11px] uppercase text-muted">BIM AI v2</div>
+
+            <div className="text-lg font-semibold">Floor plan + 3D</div>
+
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
+              <span>
+                r{revision} {status}
+              </span>
+
+              <select
+                className="rounded border border-border bg-background px-2 py-1 text-[11px]"
+                value={workspaceLayoutPreset}
+                onChange={(e) =>
+                  setWorkspaceLayoutPreset(e.target.value as WorkspaceLayoutPreset)
+                }
+              >
+                {LAYOUT_PRESET_OPTIONS.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    Layout: {o.label}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                className="rounded border border-border bg-background px-2 py-1 text-[11px]"
+                value={perspectiveId}
+                onChange={(e) => setPerspectiveId(e.target.value as PerspectiveId)}
+              >
+                {PERSPECTIVE_OPTIONS.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                className="rounded border border-border bg-background px-2 py-1 text-[11px]"
+                disabled={cockpitLayouts.includes(workspaceLayoutPreset)}
+                title={
+                  cockpitLayouts.includes(workspaceLayoutPreset)
+                    ? 'Classic view toggle is superseded by the layout preset.'
+                    : undefined
+                }
+                value={viewerMode}
+                onChange={(e) => setVm(e.target.value as typeof viewerMode)}
+              >
+                <option value="orbit_3d">3D</option>
+
+                <option value="plan_canvas">Plan</option>
+              </select>
+
+              <input
+                className="w-32 rounded border border-border bg-background px-2 py-1 text-[11px]"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                onBlur={() => setIdentity(userId, displayName, peerId)}
+                placeholder="Name"
+              />
+
+              {Object.values(peers)
+
+                .slice(0, 6)
+
+                .map((p, i) => (
+                  <span key={i} className="rounded border px-1 text-[10px]">
+                    {(p.name ?? '?').slice(0, 2)}
+                  </span>
+                ))}
+            </div>
+
+            {bootErr ? <div className="text-xs text-red-600">{bootErr}</div> : null}
+          </div>
+
+          <div className="flex gap-2">
+            <Btn type="button" onClick={() => setPaletteOpen(true)}>
+              ⌘K
+            </Btn>
+
+            <Btn type="button" variant="quiet" onClick={() => void toggleStoredTheme()}>
+              Theme
+            </Btn>
+          </div>
+        </div>
+      </div>
+
+      <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} actions={palette} />
+
+      <div className="mx-auto grid max-w-[1400px] grid-cols-1 gap-3 p-3 lg:grid-cols-[260px_1fr_300px]">
+        <div className="flex flex-col gap-3">
+          {planSurfaceVisible ? (
+            <Panel title="Tools">
+              <div className="flex flex-wrap gap-1">
+                {visiblePlanTools.map((k) => (
+                  <Btn
+                    key={k}
+                    type="button"
+                    variant={planTool === k ? undefined : 'quiet'}
+                    className="px-2 py-1 text-[11px]"
+                    onClick={() => setTool(k)}
+                  >
+                    {TOOL_BTN_LABEL[k]}
+                  </Btn>
+                ))}
+              </div>
+
+              <p className="mt-2 text-[11px] text-muted">
+                Shift+drag pan · Shift ortho · Esc cancel
+              </p>
+            </Panel>
+          ) : null}
+
+          <LevelStack
+            levels={levels}
+            activeId={lvResolved}
+            setActive={(id) => setLv(id)}
+            onElevationCommitted={(levelId, elevationMm) =>
+              void onSemantic({ type: 'moveLevelElevation', levelId, elevationMm })
+            }
+          />
+
+          <Panel title="Explorer">
+            <ul className="max-h-[50vh] space-y-1 overflow-auto text-xs">
+              {explorer
+
+                .sort((a, b) => a.kind.localeCompare(b.kind))
+
+                .map((e) => (
+                  <li key={e.id}>
+                    <button
+                      type="button"
+                      className={[
+                        'w-full rounded px-2 py-1 text-left',
+
+                        selectedId === e.id ? 'bg-accent/25' : 'hover:bg-accent/10',
+                      ].join(' ')}
+                      onClick={() => selectEl(e.id)}
+                    >
+                      {e.kind} ·
+                      {'name' in e && typeof (e as { name?: string }).name === 'string'
+                        ? (e as { name: string }).name
+                        : e.kind === 'issue'
+                          ? (e as { title: string }).title
+                          : e.id}
+                    </button>
+                  </li>
+                ))}
+            </ul>
+          </Panel>
+
+          <Panel title="WS">
+            <div className="text-xs">{wsOn ? 'connected' : 'offline'}</div>
+          </Panel>
+        </div>
+
+        <div className="flex flex-col gap-3">
+          {renderPrimaryCanvas()}
+
+          <Panel title="Issues & constraints">
+            <ul className="max-h-40 space-y-1 overflow-auto text-xs">
+              {explorer
+
+                .filter((e): e is Extract<Element, { kind: 'issue' }> => e.kind === 'issue')
+
+                .map((is) => (
+                  <li key={is.id}>
+                    <button
+                      type="button"
+                      className="w-full text-left"
+                      onClick={() => selectEl(is.id)}
+                    >
+                      {is.title}
+                    </button>
+                  </li>
+                ))}
+            </ul>
+            <div className="mt-3 text-[10px] text-muted">
+              Model checks live in Advisor →{' '}
+              {!violations.length ? 'all clear.' : `${violations.length} advisory row(s)`}
+            </div>
+          </Panel>
+
+          <Panel title="Activity">
+            <ul className="max-h-32 space-y-1 overflow-auto text-[11px] text-muted">
+              {activities.map((a) => (
+                <li key={a.id}>
+                  r{a.revisionAfter} · {a.commandTypes[0] ?? '?'}
+                </li>
+              ))}
+            </ul>
+          </Panel>
+        </div>
+
+        <div className="flex flex-col gap-3">
+          <Panel title="Inspector">
+            <pre className="max-h-[40vh] overflow-auto whitespace-pre-wrap text-[11px]">
+              {JSON.stringify(selected ?? { hint: 'pick' }, null, 2)}
+            </pre>
+          </Panel>
+
+          <Panel title="Advisor">
+            <AdvisorPanel
+              violations={violations}
+              selectionId={selectedId}
+              preset={buildingPreset}
+              onPreset={setBuildingPreset}
+              codePresets={codePresetIds}
+              onApplyQuickFix={(cmd) => void onSemantic(cmd)}
+              perspective={perspectiveId}
+            />
+          </Panel>
+
+          {!hideSchedulePanelRight ? (
+            <Panel title="Rooms">
+              <SchedulePanel elementsById={elementsById} activeLevelId={lvResolved || undefined} />
+            </Panel>
+          ) : (
+            <div className="rounded border border-dashed border-border p-3 text-[11px] text-muted">
+              Room schedule docked beside plan (Schedules layout).
+            </div>
+          )}
+
+          <Panel title="Comments">
+            <textarea
+              className="mt-1 w-full rounded border bg-background p-2 text-sm"
+              rows={3}
+              value={commentTxt}
+              onChange={(e) => setCommentTxt(e.target.value)}
+            />
+
+            <Btn
+              type="button"
+              className="mt-2 w-full"
+              onClick={() =>
+                void (async () => {
+                  if (!modelId || !commentTxt.trim()) return;
+
+                  await postComment(modelId, {
+                    userDisplay: displayName || 'Guest',
+
+                    body: commentTxt.trim(),
+
+                    levelId: lvResolved,
+
+                    elementId: selected?.id,
+                  });
+
+                  setCommentTxt('');
+
+                  const c = await fetchComments(modelId);
+
+                  setCm(mapComments((c.comments ?? []) as Record<string, unknown>[]));
+                })()
+              }
+            >
+              Post
+            </Btn>
+
+            <ul className="mt-2 max-h-[35vh] space-y-2 overflow-auto text-xs">
+              {cmts.map((c) => (
+                <li key={c.id} className="rounded border p-2">
+                  <div className="font-semibold">{c.userDisplay}</div>
+
+                  <div className="text-muted">{c.body}</div>
+
+                  <Btn
+                    type="button"
+                    variant="quiet"
+                    className="mt-1 text-[11px]"
+                    onClick={() =>
+                      void (async () => {
+                        if (!modelId) return;
+
+                        await patchCommentResolved(modelId, c.id, !c.resolved);
+
+                        const cl = await fetchComments(modelId);
+
+                        setCm(mapComments((cl.comments ?? []) as Record<string, unknown>[]));
+                      })()
+                    }
+                  >
+                    {c.resolved ? 'reopen' : 'resolve'}
+                  </Btn>
+                </li>
+              ))}
+            </ul>
+          </Panel>
+        </div>
+      </div>
+
+      <Welcome
+        visible={welcomeOpen}
+        onDismiss={() => setWelcomeOpen(false)}
+        onRoomRectTool={() => {
+          setTool('room_rectangle');
+          setVm('plan_canvas');
+
+          setWelcomeOpen(false);
+        }}
+      />
+
+      <Cheatsheet
+        open={cheatsheetOpen}
+        onClose={() => setCheatsheetOpen(false)}
+        viewerMode={viewerMode}
+      />
+
+      <CommandBar expanded={cmdBarFocus} onExpandedChange={setCmdBarFocus} onSubmit={onCmdSubmit} />
+    </div>
+  );
+}
