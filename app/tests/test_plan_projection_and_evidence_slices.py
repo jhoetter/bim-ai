@@ -11,6 +11,7 @@ from bim_ai.elements import (
     LevelElem,
     PlanViewElem,
     RoomElem,
+    RoomSeparationElem,
     SectionCutElem,
     SheetElem,
     SlabOpeningElem,
@@ -56,6 +57,25 @@ def test_plan_projection_wire_counts_visible_walls() -> None:
     prim = out.get("primitives") or {}
     assert prim.get("format") == "planProjectionPrimitives_v1"
     assert len(prim.get("walls") or []) == 1
+
+
+def test_plan_projection_wire_emits_room_separations_and_counts() -> None:
+    lvl = LevelElem(kind="level", id="lvl", name="L", elevationMm=0)
+    sep = RoomSeparationElem(
+        kind="room_separation",
+        id="rs-1",
+        name="Sep",
+        levelId="lvl",
+        start={"xMm": 1500.0, "yMm": 0.0},
+        end={"xMm": 1500.0, "yMm": 3000.0},
+    )
+    doc = Document(revision=2, elements={"lvl": lvl, "rs-1": sep})
+    out = plan_projection_wire_from_request(doc, plan_view_id=None, fallback_level_id="lvl")
+    assert out["countsByVisibleKind"].get("room_separation") == 1
+    prim = out.get("primitives") or {}
+    rss = prim.get("roomSeparations") or []
+    assert len(rss) == 1
+    assert rss[0]["id"] == "rs-1"
 
 
 def test_section_projection_wire_reports_missing_section() -> None:

@@ -38,6 +38,7 @@ describe('PlanCanvas server wire primitives path (WP-C03)', () => {
       stairs: [],
       roofs: [],
       gridLines: [],
+      roomSeparations: [],
       dimensions: [],
     } as const;
 
@@ -53,5 +54,68 @@ describe('PlanCanvas server wire primitives path (WP-C03)', () => {
     );
 
     expect(grp.children.some((c) => 'isMesh' in c && (c as THREE.Mesh).isMesh)).toBe(true);
+  });
+
+  it('adds dashed Line instances for wire roomSeparations', () => {
+    const wall: Extract<Element, { kind: 'wall' }> = {
+      kind: 'wall',
+      id: 'w1',
+      name: 'W',
+      levelId: 'lvl',
+      start: { xMm: 0, yMm: 0 },
+      end: { xMm: 3000, yMm: 0 },
+      thicknessMm: 200,
+      heightMm: 2800,
+    };
+
+    const primitives = {
+      format: 'planProjectionPrimitives_v1',
+      walls: [
+        {
+          id: 'w1',
+          levelId: 'lvl',
+          startMm: { x: 0, y: 0 },
+          endMm: { x: 3000, y: 0 },
+          thicknessMm: 200,
+          heightMm: 2800,
+        },
+      ],
+      floors: [],
+      rooms: [],
+      doors: [],
+      windows: [],
+      stairs: [],
+      roofs: [],
+      gridLines: [],
+      roomSeparations: [
+        {
+          id: 'rs-mid',
+          levelId: 'lvl',
+          startMm: { x: 1500, y: 0 },
+          endMm: { x: 1500, y: 2500 },
+        },
+      ],
+      dimensions: [],
+    } as const;
+
+    const grp = new THREE.Group();
+    rebuildPlanMeshes(
+      grp,
+      { w1: wall },
+      {
+        activeLevelId: 'lvl',
+        wirePrimitives: primitives as unknown as PlanProjectionPrimitivesV1Wire,
+      },
+    );
+
+    const lines = grp.children.filter((c): c is THREE.Line => c instanceof THREE.Line);
+    expect(lines.some((ln) => ln.userData.bimPickId === 'rs-mid')).toBe(true);
+    expect(
+      lines.some((ln) => {
+        const m = ln.material;
+        const mm = Array.isArray(m) ? m[0] : m;
+        return mm instanceof THREE.LineDashedMaterial;
+      }),
+    ).toBe(true);
   });
 });

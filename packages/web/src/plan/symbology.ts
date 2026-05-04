@@ -192,6 +192,28 @@ function resolveWallForWire(
   return wallsByWireId.get(wallId);
 }
 
+function roomSeparationLineFromMm(
+  start: { xMm: number; yMm: number },
+  end: { xMm: number; yMm: number },
+  id: string,
+): THREE.Line {
+  const pts = [
+    new THREE.Vector3(ux(start.xMm), PLAN_Y + 0.003, uz(start.yMm)),
+    new THREE.Vector3(ux(end.xMm), PLAN_Y + 0.003, uz(end.yMm)),
+  ];
+  const geo = new THREE.BufferGeometry().setFromPoints(pts);
+  const mat = new THREE.LineDashedMaterial({
+    color: '#a855f7',
+    dashSize: 0.06,
+    gapSize: 0.04,
+    depthTest: true,
+  });
+  const line = new THREE.Line(geo, mat);
+  line.computeLineDistances();
+  line.userData.bimPickId = id;
+  return line;
+}
+
 function rebuildPlanMeshesFromWire(
   holder: THREE.Object3D,
   elementsById: Record<string, Element>,
@@ -276,6 +298,17 @@ function rebuildPlanMeshesFromWire(
   }
 
   for (const w of wallsByWireId.values()) holder.add(planWallMesh(w, selectedId));
+
+  const sepsRaw = Array.isArray(prim.roomSeparations)
+    ? (prim.roomSeparations as Record<string, unknown>[])
+    : [];
+  for (const row of sepsRaw) {
+    const sid = String(row.id ?? '');
+    if (!sid) continue;
+    const sMm = coerceVec2Mm(row.startMm);
+    const eMm = coerceVec2Mm(row.endMm);
+    holder.add(roomSeparationLineFromMm(sMm, eMm, sid));
+  }
 
   const doors = Array.isArray(prim.doors) ? (prim.doors as Record<string, unknown>[]) : [];
   for (const d of doors) {
@@ -421,6 +454,13 @@ export function rebuildPlanMeshes(
   }
 
   for (const wall of walls) holder.add(planWallMesh(wall, opts.selectedId, lineWeightScale));
+
+  for (const rs of Object.values(elementsById)) {
+    if (rs.kind !== 'room_separation') continue;
+    if (kindHidden('room_separation')) continue;
+    if (level && rs.levelId !== level) continue;
+    holder.add(roomSeparationLineFromMm(rs.start, rs.end, rs.id));
+  }
 
   for (const d of Object.values(elementsById)) {
     if (d.kind !== 'door') continue;

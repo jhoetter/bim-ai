@@ -39,6 +39,7 @@ from bim_ai.export_ifc import (
 )
 from bim_ai.geometry import Poly, approx_overlap_area_mm2, sat_overlap, wall_corners
 from bim_ai.ifc_stub import build_ifc_exchange_manifest_payload
+from bim_ai.plan_aa_room_separation import axis_aligned_room_separation_splits_rectangle
 
 ROOM_PLAN_OVERLAP_THRESHOLD_MM2 = 50_000.0
 

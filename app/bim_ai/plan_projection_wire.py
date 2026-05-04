@@ -14,6 +14,7 @@ from bim_ai.elements import (
     PlanViewElem,
     RoofElem,
     RoomElem,
+    RoomSeparationElem,
     SectionCutElem,
     StairElem,
     ViewTemplateElem,
@@ -50,6 +51,15 @@ def _canon_hidden_category(label: str) -> str | None:
         "grid-lines": "grid_line",
         "dimensions": "dimension",
         "dimension": "dimension",
+        "room separation": "room_separation",
+        "room separation line": "room_separation",
+        "room separating": "room_separation",
+        "room separators": "room_separation",
+        "room separators line": "room_separation",
+        "room_separation": "room_separation",
+        "room_separator": "room_separation",
+        "room-separation": "room_separation",
+        "room-separations": "room_separation",
     }
     return table.get(raw)
 
@@ -222,6 +232,7 @@ def _build_plan_primitive_lists(
     stairs: list[dict[str, Any]] = []
     roofs: list[dict[str, Any]] = []
     grid_lines: list[dict[str, Any]] = []
+    room_separations: list[dict[str, Any]] = []
     dimensions: list[dict[str, Any]] = []
 
     def lvl_ok(lv: str | None) -> bool:
@@ -396,6 +407,21 @@ def _build_plan_primitive_lists(
                     "endMm": {"x": round(e.end.x_mm, 3), "y": round(e.end.y_mm, 3)},
                 }
             )
+        elif isinstance(e, RoomSeparationElem):
+            if "room_separation" in hidden_semantic or not lvl_ok(e.level_id):
+                continue
+            if crop_box is not None and not _segment_intersects_crop_xy(
+                e.start.x_mm, e.start.y_mm, e.end.x_mm, e.end.y_mm, crop_box
+            ):
+                continue
+            room_separations.append(
+                {
+                    "id": e.id,
+                    "levelId": e.level_id,
+                    "startMm": {"x": round(e.start.x_mm, 3), "y": round(e.start.y_mm, 3)},
+                    "endMm": {"x": round(e.end.x_mm, 3), "y": round(e.end.y_mm, 3)},
+                }
+            )
         elif isinstance(e, DimensionElem):
             if "dimension" in hidden_semantic or not lvl_ok(e.level_id):
                 continue
@@ -423,6 +449,7 @@ def _build_plan_primitive_lists(
         "stairs": stairs,
         "roofs": roofs,
         "gridLines": grid_lines,
+        "roomSeparations": room_separations,
         "dimensions": dimensions,
     }
     return primitives, warnings
@@ -553,6 +580,9 @@ def resolve_plan_projection_wire(
             elv = getattr(e, "level_id", None)
             if elv is None or not level or elv == level:
                 bump("grid_line")
+        elif ek == "room_separation" and isinstance(e, RoomSeparationElem):
+            if not level or e.level_id == level:
+                bump("room_separation")
         elif ek == "dimension" and isinstance(e, DimensionElem):
             if not level or e.level_id == level:
                 bump("dimension")

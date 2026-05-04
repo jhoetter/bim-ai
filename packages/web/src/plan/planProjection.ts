@@ -12,6 +12,7 @@ export type PlanSemanticKind =
   | 'window'
   | 'stair'
   | 'grid_line'
+  | 'room_separation'
   | 'dimension';
 
 /** Map schedule / authoring labels to semantic drawing kinds consumed by symbology. */
@@ -41,6 +42,15 @@ export function canonHiddenCategory(cat: string): PlanSemanticKind | undefined {
     gridlines: 'grid_line',
     grid_line: 'grid_line',
     'grid-lines': 'grid_line',
+    'room separation': 'room_separation',
+    'room separation line': 'room_separation',
+    'room separators': 'room_separation',
+    'room separators line': 'room_separation',
+    room_separation: 'room_separation',
+    room_separator: 'room_separation',
+    'room separating': 'room_separation',
+    'room-separation': 'room_separation',
+    'room-separations': 'room_separation',
     dimensions: 'dimension',
     dimension: 'dimension',
   };

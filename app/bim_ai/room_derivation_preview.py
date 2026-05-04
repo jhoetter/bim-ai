@@ -15,7 +15,8 @@ from collections import defaultdict
 from typing import Any
 
 from bim_ai.document import Document
-from bim_ai.elements import GridLineElem, LevelElem, RoomElem, WallElem
+from bim_ai.elements import GridLineElem, LevelElem, RoomElem, RoomSeparationElem, WallElem
+from bim_ai.plan_aa_room_separation import axis_aligned_room_separation_splits_rectangle
 
 _SNAP_MM = 50.0
 
@@ -195,6 +196,40 @@ def _authored_room_overlaps_candidate_bbox(rooms: list[RoomElem], cand_bbox: dic
     return False
 
 
+def _separation_ids_splitting_candidate_bbox(
+    doc: Document,
+    *,
+    level_id: str,
+    bbox: dict[str, Any],
+) -> list[str]:
+    mn = bbox.get("min") or {}
+    mx = bbox.get("max") or {}
+    bx_lo = float(mn.get("x") or 0)
+    by_lo = float(mn.get("y") or 0)
+    bx_hi = float(mx.get("x") or 0)
+    by_hi = float(mx.get("y") or 0)
+    if bx_hi <= bx_lo or by_hi <= by_lo:
+        return []
+    found: list[str] = []
+    for ent in doc.elements.values():
+        if not isinstance(ent, RoomSeparationElem):
+            continue
+        if ent.level_id != level_id:
+            continue
+        if axis_aligned_room_separation_splits_rectangle(
+            ent.start.x_mm,
+            ent.start.y_mm,
+            ent.end.x_mm,
+            ent.end.y_mm,
+            bx_lo,
+            bx_hi,
+            by_lo,
+            by_hi,
+        ):
+            found.append(ent.id)
+    return sorted(found)
+
+
 def room_derivation_preview(doc: Document) -> dict[str, Any]:
     """Return deterministic facts for agent/UI comparison surfaces."""
 
@@ -237,9 +272,25 @@ def room_derivation_preview(doc: Document) -> dict[str, Any]:
             authored_by_level[ent.level_id].append(ent)
 
     warnings: list[dict[str, Any]] = []
-    for cand in dedup.values():
+    for cand in sorted(dedup.values(), key=_sig):
         lid = str(cand.get("levelId") or "")
         bbox = cand.get("bboxMm") if isinstance(cand.get("bboxMm"), dict) else {}
+        sep_ids = _separation_ids_splitting_candidate_bbox(doc, level_id=lid, bbox=bbox)
+        if sep_ids:
+            warnings.append(
+                {
+                    "code": "derivedRectangleInteriorRoomSeparation",
+                    "severity": "warning",
+                    "levelId": lid,
+                    "wallIds": sorted(cand.get("wallIds") or []),
+                    "separationIds": sep_ids,
+                    "message": (
+                        "An axis-aligned room separation pierces this derived rectangle bbox interior; "
+                        "expect multiple rooms or adjust separators before trusting a single createRoomOutline."
+                    ),
+                }
+            )
+
         authored = authored_by_level.get(lid, [])
         if _authored_room_overlaps_candidate_bbox(authored, bbox):
             continue
@@ -257,7 +308,7 @@ def room_derivation_preview(doc: Document) -> dict[str, Any]:
         )
 
     return {
-        "heuristicVersion": "room_deriv_preview_v1",
+        "heuristicVersion": "room_deriv_preview_v2",
         "axisAlignedRectangleCandidates": sorted(dedup.values(), key=_sig),
         "candidateCount": len(dedup),
         "warnings": warnings,
@@ -305,6 +356,7 @@ def room_derivation_candidates_review(doc: Document) -> dict[str, Any]:
         "Heuristic detects axis-aligned rectangles from four orthogonal wall segments only.",
         "Suggested command uses createRoomOutline (room only; respects existing perimeter walls).",
         "Comparison loop flags overlaps with authored rooms and neighbouring candidates (bbox proxy).",
+        "Axis-aligned separators that pierce derived bbox interiors emit derivedRectangleInteriorRoomSeparation.",
     )
 
     def _candidate_bbox_nums(b: dict[str, Any]) -> tuple[float, float, float, float, float]:
@@ -342,6 +394,22 @@ def room_derivation_candidates_review(doc: Document) -> dict[str, Any]:
         warnings_local: list[dict[str, Any]] = []
         comparison_rows: list[dict[str, Any]] = []
         overlap_best = 0.0
+
+        sep_rs = _separation_ids_splitting_candidate_bbox(doc, level_id=lvl_id, bbox=bbox)
+        if sep_rs:
+            warnings_local.append(
+                {
+                    "code": "derivedRectangleInteriorRoomSeparation",
+                    "severity": "warning",
+                    "levelId": lvl_id,
+                    "wallIds": sorted(raw.get("wallIds") or []),
+                    "separationIds": sep_rs,
+                    "message": (
+                        "An axis-aligned room separation pierces this derived rectangle bbox interior; "
+                        "expect multiple rooms or adjust separators before trusting a single createRoomOutline."
+                    ),
+                }
+            )
 
         for rm in authored_by_level.get(lvl_id, ()):
 
