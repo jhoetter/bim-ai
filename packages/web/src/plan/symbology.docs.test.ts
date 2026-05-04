@@ -7,6 +7,8 @@ import {
   PLAN_WALL_CENTER_SLICE_HEIGHT_M,
   ROOM_PLAN_OVERLAP_ADVISOR_MM2,
   SECTION_VIEWPORT_SCALE_BASELINE_PX,
+  SECTION_VIEWPORT_WALL_HATCH_ALONG_CUT_TILE,
+  SECTION_VIEWPORT_WALL_HATCH_EDGE_ON_TILE,
 } from './symbology';
 
 describe('plan symbology (WP-C01/C02/C03 projection constants)', () => {
@@ -24,5 +26,10 @@ describe('plan symbology (WP-C01/C02/C03 projection constants)', () => {
 
   it('exports section viewport scale baseline for sheet nesting (WP-E04/C03)', () => {
     expect(SECTION_VIEWPORT_SCALE_BASELINE_PX).toBe(600);
+  });
+
+  it('exports section wall hatch tile sizes (WP-E04/C03)', () => {
+    expect(SECTION_VIEWPORT_WALL_HATCH_EDGE_ON_TILE).toBe(10);
+    expect(SECTION_VIEWPORT_WALL_HATCH_ALONG_CUT_TILE).toBe(12);
   });
 });

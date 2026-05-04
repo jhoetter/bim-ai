@@ -3,9 +3,27 @@ import { describe, expect, it } from 'vitest';
 import {
   formatSectionElevationSpanMmLabel,
   formatSectionSheetCalloutsLabel,
+  summarizeWallCutHatchKinds,
 } from './sectionViewportDoc';
 
 describe('Section viewport documentation helpers', () => {
+  it('summarizes wall cutHatchKind rows like secDoc wh=E…A…', () => {
+    expect(
+      summarizeWallCutHatchKinds([
+        { cutHatchKind: 'edgeOn' },
+        { cutHatchKind: 'alongCut' },
+        { cutHatchKind: 'edgeOn' },
+      ]),
+    ).toEqual({ edgeOn: 2, alongCut: 1 });
+  });
+
+  it('treats missing cutHatchKind as alongCut for legacy payloads', () => {
+    expect(summarizeWallCutHatchKinds([{}, { cutHatchKind: 'edgeOn' }])).toEqual({
+      edgeOn: 1,
+      alongCut: 1,
+    });
+  });
+
   it('formats elevation span metres with two decimals', () => {
     expect(formatSectionElevationSpanMmLabel(0, 3200)).toBe('Δz 3.20 m');
     expect(formatSectionElevationSpanMmLabel(300, 9700)).toBe('Δz 9.40 m');

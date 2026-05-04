@@ -672,6 +672,46 @@ def test_sheet_svg_section_viewport_includes_documentation_segment() -> None:
     assert "co=" not in svg
 
 
+def _doc_sheet_with_section_viewport_and_wall_hatch_mix() -> Document:
+    """Two walls: perpendicular to cut (edge-on) + parallel to cut (along-cut) for secDoc wh= token."""
+    base_doc = _doc_sheet_with_section_viewport()
+    els = dict(base_doc.elements)
+    els["w-edge"] = WallElem(
+        kind="wall",
+        id="w-edge",
+        name="Beam wall",
+        levelId="lvl-eg",
+        start={"xMm": 0.0, "yMm": 0.0},
+        end={"xMm": 6000.0, "yMm": 0.0},
+        thicknessMm=200.0,
+        heightMm=2800.0,
+    )
+    els["w-along"] = WallElem(
+        kind="wall",
+        id="w-along",
+        name="Curtain",
+        levelId="lvl-eg",
+        start={"xMm": 3100.0, "yMm": -1000.0},
+        end={"xMm": 3100.0, "yMm": 6000.0},
+        thicknessMm=200.0,
+        heightMm=2800.0,
+    )
+    return Document(revision=1, elements=els)
+
+
+def test_sheet_svg_section_viewport_includes_wall_hatch_documentation_token() -> None:
+    doc = _doc_sheet_with_section_viewport_and_wall_hatch_mix()
+    svg = sheet_elem_to_svg(doc, pick_sheet(doc, "s1"))
+    assert "secDoc[lvl=2 zSpanMm=3200 wh=E1A1]" in svg
+
+
+def test_sheet_pdf_viewport_export_listing_includes_wall_hatch_documentation_token() -> None:
+    doc = _doc_sheet_with_section_viewport_and_wall_hatch_mix()
+    lines = sheet_viewport_export_listing_lines(doc, pick_sheet(doc, "s1"))
+    joined = "\n".join(lines)
+    assert "secDoc[lvl=2 zSpanMm=3200 wh=E1A1]" in joined
+
+
 _TRI_CALLOUT = (
     {"xMm": 0.0, "yMm": 0.0},
     {"xMm": 400.0, "yMm": 0.0},

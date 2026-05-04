@@ -1,6 +1,13 @@
 /** Pure helpers for section viewport documentation labels (deterministic UX copy). */
 
+export type SectionWallCutHatchKind = 'edgeOn' | 'alongCut';
+
 export type SectionSheetCalloutRow = { id: string; name: string };
+
+/** Parse server `cutHatchKind`; legacy payloads default to along-cut. */
+export function parseSectionWallCutHatchKind(raw: unknown): SectionWallCutHatchKind {
+  return raw === 'edgeOn' ? 'edgeOn' : 'alongCut';
+}
 
 export function formatSectionElevationSpanMmLabel(zMinMm: number, zMaxMm: number): string {
   const span = Math.abs(zMaxMm - zMinMm);

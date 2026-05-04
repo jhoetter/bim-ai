@@ -168,7 +168,11 @@ def format_sheet_plan_viewport_projection_segment(doc: Document, vp: dict[str, A
 
 
 def format_section_viewport_documentation_segment(doc: Document, view_ref: str) -> str:
-    """Stable level documentation substring for sheet exports when viewport references a section cut."""
+    """Stable documentation substring for sheet exports when viewport references a section cut.
+
+    Includes level counts / elevation span, optional callout ids, and optional wall hatch mix
+    ``wh=E{n}A{m}`` (edge-on vs along-cut ``walls[]`` rows) when any walls are present.
+    """
 
     if not view_ref.strip() or ":" not in view_ref:
         return ""
@@ -215,6 +219,20 @@ def format_section_viewport_documentation_segment(doc: Document, view_ref: str) 
         )
         if co_ids:
             inner_parts.append(f"co={','.join(co_ids)}")
+
+    walls_raw = prim.get("walls") or []
+    edge_on = 0
+    along_cut = 0
+    if isinstance(walls_raw, list):
+        for w in walls_raw:
+            if not isinstance(w, dict):
+                continue
+            if str(w.get("cutHatchKind") or "") == "edgeOn":
+                edge_on += 1
+            else:
+                along_cut += 1
+    if edge_on > 0 or along_cut > 0:
+        inner_parts.append(f"wh=E{edge_on}A{along_cut}")
 
     return "secDoc[" + " ".join(inner_parts) + "]"
 
