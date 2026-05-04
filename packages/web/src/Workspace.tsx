@@ -43,12 +43,16 @@ import { AgentReviewPane } from './workspace/AgentReviewPane';
 
 import type { PlanPresentationPreset } from './plan/symbology';
 
-import { planViewGraphicsMatrixRows } from './plan/planProjection';
+import { planViewGraphicsMatrixRows, viewTemplateGraphicsMatrixRows } from './plan/planProjection';
 
 import { planToolsForPerspective } from './workspace/planToolsByPerspective';
 
 import { PlanViewGraphicsMatrix } from './workspace/PlanViewGraphicsMatrix';
 import { ProjectBrowser } from './workspace/ProjectBrowser';
+import {
+  SavedViewTagGraphicsAuthoring,
+  SavedViewTemplateGraphicsAuthoring,
+} from './workspace/savedViewTagGraphicsAuthoring';
 import { SectionPlaceholderPane } from './workspace/SectionPlaceholderPane';
 import { SheetCanvas } from './workspace/SheetCanvas';
 
@@ -245,9 +249,12 @@ export function Workspace() {
     });
   }, [selectedId, elementsById]);
 
-  const planGraphicsMatrixRows = useMemo(() => {
-    if (!selected || selected.kind !== 'plan_view') return [];
-    return planViewGraphicsMatrixRows(elementsById, selected.id);
+  const inspectorGraphicsMatrixRows = useMemo(() => {
+    if (!selected) return [];
+    if (selected.kind === 'plan_view') return planViewGraphicsMatrixRows(elementsById, selected.id);
+    if (selected.kind === 'view_template')
+      return viewTemplateGraphicsMatrixRows(elementsById, selected.id);
+    return [];
   }, [elementsById, selected]);
 
   const levels = useMemo(
@@ -1294,121 +1301,19 @@ export function Workspace() {
                     </select>
                   </label>
                 ) : null}
-                <div className="border-border mt-3 space-y-2 border-t pt-2">
-                  <div className="font-semibold text-muted">Graphic overrides</div>
-                  <label className="block text-[10px] text-muted">
-                    Plan detail level (stored)
-                    <select
-                      className="mt-1 w-full rounded border border-border bg-background px-2 py-1 text-[11px]"
-                      value={selected.planDetailLevel ?? ''}
-                      onChange={(e) => {
-                        void onSemantic({
-                          type: 'updateElementProperty',
-                          elementId: selected.id,
-                          key: 'planDetailLevel',
-                          value: e.target.value,
-                        });
-                      }}
-                    >
-                      <option value="">inherit from template</option>
-                      <option value="coarse">coarse</option>
-                      <option value="medium">medium</option>
-                      <option value="fine">fine</option>
-                    </select>
-                  </label>
-                  <label className="block text-[10px] text-muted">
-                    Room fill opacity scale (0–1; empty on blur clears override)
-                    <input
-                      className="mt-1 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px]"
-                      key={`pv-fill-${selected.id}-${selected.planRoomFillOpacityScale ?? 'null'}-${revision}`}
-                      defaultValue={
-                        selected.planRoomFillOpacityScale == null
-                          ? ''
-                          : String(selected.planRoomFillOpacityScale)
-                      }
-                      placeholder="inherit"
-                      type="text"
-                      inputMode="decimal"
-                      onBlur={(e) => {
-                        void onSemantic({
-                          type: 'updateElementProperty',
-                          elementId: selected.id,
-                          key: 'planRoomFillOpacityScale',
-                          value: e.target.value.trim(),
-                        });
-                      }}
-                    />
-                  </label>
-                  <Btn
-                    type="button"
-                    variant="quiet"
-                    className="w-full text-[10px]"
-                    onClick={() =>
-                      void onSemantic({
-                        type: 'updateElementProperty',
-                        elementId: selected.id,
-                        key: 'planRoomFillOpacityScale',
-                        value: '',
-                      })
-                    }
-                  >
-                    Clear fill override
-                  </Btn>
-                </div>
-
-                <div className="border-border mt-3 space-y-2 border-t pt-2">
-                  <div className="font-semibold text-muted">Annotations</div>
-                  <label className="block text-[10px] text-muted">
-                    Opening tags
-                    <select
-                      className="mt-1 w-full rounded border border-border bg-background px-2 py-1 text-[11px]"
-                      value={
-                        selected.planShowOpeningTags === undefined
-                          ? ''
-                          : selected.planShowOpeningTags
-                            ? 'true'
-                            : 'false'
-                      }
-                      onChange={(e) => {
-                        void onSemantic({
-                          type: 'updateElementProperty',
-                          elementId: selected.id,
-                          key: 'planShowOpeningTags',
-                          value: e.target.value,
-                        });
-                      }}
-                    >
-                      <option value="">inherit</option>
-                      <option value="true">on</option>
-                      <option value="false">off</option>
-                    </select>
-                  </label>
-                  <label className="block text-[10px] text-muted">
-                    Room labels
-                    <select
-                      className="mt-1 w-full rounded border border-border bg-background px-2 py-1 text-[11px]"
-                      value={
-                        selected.planShowRoomLabels === undefined
-                          ? ''
-                          : selected.planShowRoomLabels
-                            ? 'true'
-                            : 'false'
-                      }
-                      onChange={(e) => {
-                        void onSemantic({
-                          type: 'updateElementProperty',
-                          elementId: selected.id,
-                          key: 'planShowRoomLabels',
-                          value: e.target.value,
-                        });
-                      }}
-                    >
-                      <option value="">inherit</option>
-                      <option value="true">on</option>
-                      <option value="false">off</option>
-                    </select>
-                  </label>
-                </div>
+                <SavedViewTagGraphicsAuthoring
+                  variant="plan_view"
+                  selected={selected}
+                  revision={revision}
+                  onPersistProperty={(key, value) => {
+                    void onSemantic({
+                      type: 'updateElementProperty',
+                      elementId: selected.id,
+                      key,
+                      value,
+                    });
+                  }}
+                />
 
                 <div className="border-border mt-3 space-y-2 border-t pt-2">
                   <div className="font-semibold text-muted">Crop (2D, mm)</div>
@@ -1566,7 +1471,7 @@ export function Workspace() {
                   </label>
                 </div>
 
-                <PlanViewGraphicsMatrix rows={planGraphicsMatrixRows} />
+                <PlanViewGraphicsMatrix rows={inspectorGraphicsMatrixRows} />
               </div>
             ) : null}
             {selected?.kind === 'view_template' ? (
@@ -1590,95 +1495,22 @@ export function Workspace() {
                     }}
                   />
                 </label>
-                <label className="block text-[10px] text-muted">
-                  Plan detail level (template default)
-                  <select
-                    className="mt-1 w-full rounded border border-border bg-background px-2 py-1 text-[11px]"
-                    value={selected.planDetailLevel ?? ''}
-                    onChange={(e) => {
-                      void onSemantic({
-                        type: 'updateElementProperty',
-                        elementId: selected.id,
-                        key: 'planDetailLevel',
-                        value: e.target.value,
-                      });
-                    }}
-                  >
-                    <option value="">inherit → medium when resolving</option>
-                    <option value="coarse">coarse</option>
-                    <option value="medium">medium</option>
-                    <option value="fine">fine</option>
-                  </select>
-                </label>
-                <label className="block text-[10px] text-muted">
-                  Room fill opacity scale (0–1)
-                  <input
-                    className="mt-1 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px]"
-                    key={`vt-fill-${selected.id}-${selected.planRoomFillOpacityScale}-${revision}`}
-                    defaultValue={String(selected.planRoomFillOpacityScale)}
-                    type="text"
-                    inputMode="decimal"
-                    onBlur={(e) => {
-                      void onSemantic({
-                        type: 'updateElementProperty',
-                        elementId: selected.id,
-                        key: 'planRoomFillOpacityScale',
-                        value: e.target.value.trim(),
-                      });
-                    }}
-                  />
-                </label>
-                <Btn
-                  type="button"
-                  variant="quiet"
-                  className="w-full text-[10px]"
-                  onClick={() =>
+                <SavedViewTemplateGraphicsAuthoring
+                  selected={selected}
+                  revision={revision}
+                  onPersistProperty={(key, value) => {
                     void onSemantic({
                       type: 'updateElementProperty',
                       elementId: selected.id,
-                      key: 'planRoomFillOpacityScale',
-                      value: '',
-                    })
-                  }
-                >
-                  Reset fill to default (1.0)
-                </Btn>
-                <label className="block text-[10px] text-muted">
-                  Opening tags default
-                  <select
-                    className="mt-1 w-full rounded border border-border bg-background px-2 py-1 text-[11px]"
-                    value={selected.planShowOpeningTags ? 'true' : 'false'}
-                    onChange={(e) => {
-                      void onSemantic({
-                        type: 'updateElementProperty',
-                        elementId: selected.id,
-                        key: 'planShowOpeningTags',
-                        value: e.target.value,
-                      });
-                    }}
-                  >
-                    <option value="false">off</option>
-                    <option value="true">on</option>
-                  </select>
-                </label>
-                <label className="block text-[10px] text-muted">
-                  Room labels default
-                  <select
-                    className="mt-1 w-full rounded border border-border bg-background px-2 py-1 text-[11px]"
-                    value={selected.planShowRoomLabels ? 'true' : 'false'}
-                    onChange={(e) => {
-                      void onSemantic({
-                        type: 'updateElementProperty',
-                        elementId: selected.id,
-                        key: 'planShowRoomLabels',
-                        value: e.target.value,
-                      });
-                    }}
-                  >
-                    <option value="false">off</option>
-                    <option value="true">on</option>
-                  </select>
-                </label>
+                      key,
+                      value,
+                    });
+                  }}
+                />
+                <PlanViewGraphicsMatrix
+                  rows={inspectorGraphicsMatrixRows}
+                  footnote="view_template readout: Template column is —; Stored is persisted JSON; Effective uses the same resolution rules as plan symbology (default presentation, resolved detail for line weight)."
+                />
               </div>
             ) : null}
             {selected?.kind === 'viewpoint' ? (

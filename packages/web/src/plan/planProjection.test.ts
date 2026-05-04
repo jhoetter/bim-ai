@@ -8,6 +8,8 @@ import {
   planViewProjectBrowserEvidenceLine,
   resolvePlanGraphicHints,
   resolvePlanViewDisplay,
+  viewTemplateGraphicsMatrixRows,
+  viewpointOrbit3dEvidenceLine,
 } from './planProjection';
 import { extractPlanGraphicHints } from './planProjectionWire';
 
@@ -247,5 +249,71 @@ describe('planProjection', () => {
     expect(lines.some((l) => l.includes('Template: detail=—'))).toBe(true);
     expect(lines.some((l) => l.includes('detail=medium'))).toBe(true);
     expect(planViewInheritanceSummaryLines(elementsById, 'missing')).toEqual([]);
+  });
+
+  it('viewTemplateGraphicsMatrixRows matches template defaults and hidden category count', () => {
+    const elementsById = {
+      vt: {
+        kind: 'view_template',
+        id: 'vt',
+        name: 'T',
+        scale: 'scale_100',
+        planDetailLevel: 'fine',
+        planRoomFillOpacityScale: 0.5,
+        planShowOpeningTags: true,
+        planShowRoomLabels: false,
+        hiddenCategories: ['wall', 'door'],
+      },
+    } as Record<string, Element>;
+    const rows = viewTemplateGraphicsMatrixRows(elementsById, 'vt');
+    expect(rows.find((r) => r.label === 'Detail level')?.stored).toBe('fine');
+    expect(rows.find((r) => r.label === 'Detail level')?.effective).toBe('fine');
+    expect(rows.find((r) => r.label === 'Room fill')?.effective).toBe('0.5');
+    expect(rows.find((r) => r.label === 'Opening tags')?.effective).toBe('on');
+    expect(rows.find((r) => r.label === 'Room labels')?.effective).toBe('off');
+    expect(rows.find((r) => r.label === 'Hidden categories')?.effective).toBe('2 kinds');
+    expect(rows.every((r) => r.template === '—')).toBe(true);
+  });
+
+  it('viewTemplateGraphicsMatrixRows inherits medium detail when null', () => {
+    const elementsById = {
+      vt: {
+        kind: 'view_template',
+        id: 'vt',
+        name: 'T',
+        scale: 'scale_100',
+        planShowOpeningTags: false,
+        planShowRoomLabels: false,
+      },
+    } as Record<string, Element>;
+    const rows = viewTemplateGraphicsMatrixRows(elementsById, 'vt');
+    expect(rows.find((r) => r.label === 'Detail level')?.stored).toBe('inherit→medium');
+    expect(rows.find((r) => r.label === 'Detail level')?.effective).toBe('medium');
+    expect(viewTemplateGraphicsMatrixRows(elementsById, 'missing')).toEqual([]);
+  });
+
+  it('viewpointOrbit3dEvidenceLine encodes clip and hidden kind count', () => {
+    const vp = {
+      kind: 'viewpoint' as const,
+      id: 'v1',
+      name: 'Orbit',
+      camera: {
+        position: { xMm: 0, yMm: 0, zMm: 0 },
+        target: { xMm: 1, yMm: 0, zMm: 0 },
+        up: { xMm: 0, yMm: 0, zMm: 1 },
+      },
+      mode: 'orbit_3d' as const,
+      viewerClipCapElevMm: 3000,
+      viewerClipFloorElevMm: undefined,
+      hiddenSemanticKinds3d: ['roof'],
+    };
+    expect(viewpointOrbit3dEvidenceLine(vp)).toBe('clip cap 3000 · floor ∅ · 1 hid');
+
+    expect(
+      viewpointOrbit3dEvidenceLine({
+        ...vp,
+        mode: 'plan_2d',
+      }),
+    ).toBe('');
   });
 });

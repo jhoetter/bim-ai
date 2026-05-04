@@ -3,7 +3,10 @@ import type { Element } from '@bim-ai/core';
 
 import { Btn } from '@bim-ai/ui';
 
-import { planViewProjectBrowserEvidenceLine } from '../plan/planProjection';
+import {
+  planViewProjectBrowserEvidenceLine,
+  viewpointOrbit3dEvidenceLine,
+} from '../plan/planProjection';
 import { useBimStore } from '../state/store';
 
 function newDupPlanViewId(prefix: string) {
@@ -311,6 +314,11 @@ export function ProjectBrowser(props: {
                   viewpoint · {vp.name}
                   <span className="font-mono text-[9px] text-muted"> · {vp.mode}</span>
                 </Btn>
+                {vp.mode === 'orbit_3d' ? (
+                  <div className="pl-2 font-mono text-[9px] leading-tight text-muted">
+                    {viewpointOrbit3dEvidenceLine(vp)}
+                  </div>
+                ) : null}
               </li>
             ))}
           </ul>

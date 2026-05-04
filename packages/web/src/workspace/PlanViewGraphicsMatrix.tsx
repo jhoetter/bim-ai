@@ -1,6 +1,10 @@
 import type { PlanGraphicsMatrixRow } from '../plan/planProjection';
 
-export function PlanViewGraphicsMatrix(props: { rows: PlanGraphicsMatrixRow[] }) {
+export function PlanViewGraphicsMatrix(props: {
+  rows: PlanGraphicsMatrixRow[];
+  /** Replaces default footnote (e.g. view_template authoring readout). */
+  footnote?: string;
+}) {
   if (!props.rows.length) return null;
   return (
     <div className="border-border mt-2 rounded border border-dashed border-border p-2 pt-2">
@@ -28,8 +32,8 @@ export function PlanViewGraphicsMatrix(props: { rows: PlanGraphicsMatrixRow[] })
         </table>
       </div>
       <p className="mt-1.5 leading-snug text-[9px] text-muted">
-        Effective column matches symbology inputs: resolvePlanGraphicHints,
-        resolvePlanAnnotationHints, resolvePlanViewDisplay.
+        {props.footnote ??
+          'Effective column matches symbology inputs: resolvePlanGraphicHints, resolvePlanAnnotationHints, resolvePlanViewDisplay.'}
       </p>
     </div>
   );

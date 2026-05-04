@@ -186,7 +186,7 @@ These are the next todo candidates that should be split into focused implementat
 4. Deepen schedule definitions: persisted sort/group/filter UI, stable JSON+CSV coverage for every current schedule category, type/material propagation tests.
 5. Advance section graphics from projection boxes to production documentation: cut hatches, tags/dimensions, material hints, and viewport scale behavior.
 6. Deepen geometry fidelity: non-orthogonal hosted openings, joins, layered wall/floor/roof assemblies, and true cut solids where bounded fixtures exist.
-7. Turn the OpenBIM import replay sketch into authoritative document merge/replay for levels, walls, spaces (beyond current sketch), Psets/QTOs, and IDS mismatch advisories.
+7. Turn the OpenBIM import replay sketch into authoritative document merge/replay for openings, arbitrary IFC graphs, fuller Psets/QTOs, and IDS mismatch advisories beyond sketch payloads.
 8. Make Agent Review close the evidence loop: artifact manifest ingestion, stale/missing screenshot detection, pixel diff metadata, and regeneration guidance.
 9. Build broader PRD §11 validation: blocking classes, quick-fix bundles, schedule/sheet linkage checks, and user-facing advisor severity.
 10. Raise performance/collaboration confidence: larger fixtures, worker/incremental derivation, Playwright UI timings, conflict/scoped-undo semantics.

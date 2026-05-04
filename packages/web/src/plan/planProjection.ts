@@ -357,6 +357,106 @@ export function planViewGraphicsMatrixRows(
   ];
 }
 
+function viewTemplateDetailEffective(tmpl: Extract<Element, { kind: 'view_template' }>): string {
+  if (tmpl.planDetailLevel === undefined || tmpl.planDetailLevel === null) return 'medium';
+  const d = tmpl.planDetailLevel;
+  return PLAN_DETAIL_LINE_WEIGHT_FACTOR[d] === undefined ? 'medium' : d;
+}
+
+/**
+ * Matrix rows when inspecting a view_template alone (template column "—"; stored defaults;
+ * detail `effective` is the resolved level used for line-weight math).
+ */
+
+export function viewTemplateGraphicsMatrixRows(
+  elementsById: Record<string, Element>,
+  viewTemplateId: string,
+): PlanGraphicsMatrixRow[] {
+  const el = elementsById[viewTemplateId];
+  if (!el || el.kind !== 'view_template') return [];
+
+  const effDetail = viewTemplateDetailEffective(el);
+
+  const fill = Math.max(
+    0,
+    Math.min(1, el.planRoomFillOpacityScale != null ? el.planRoomFillOpacityScale : 1),
+  );
+  const pres: PlanPresentationPreset = 'default';
+  const lw = presentationLineWeightBase(pres) * PLAN_DETAIL_LINE_WEIGHT_FACTOR[effDetail]!;
+
+  const openingEff = annotationTriEffective(el.planShowOpeningTags ?? false);
+  const labelsEff = annotationTriEffective(el.planShowRoomLabels ?? false);
+
+  const fillStr = String(Math.round(fill * 10000) / 10000);
+  const detailStored =
+    el.planDetailLevel === undefined || el.planDetailLevel === null
+      ? 'inherit→medium'
+      : el.planDetailLevel;
+
+  const hiddenCount = el.hiddenCategories?.length ?? 0;
+
+  const dash = '—';
+
+  return [
+    {
+      label: 'Presentation',
+      template: dash,
+      stored: dash,
+      effective: dash,
+    },
+    {
+      label: 'Detail level',
+      template: dash,
+      stored: detailStored,
+      effective: effDetail,
+    },
+    {
+      label: 'Room fill',
+      template: dash,
+      stored: fillStr,
+      effective: fillStr,
+    },
+    {
+      label: 'Line weight ×',
+      template: dash,
+      stored: dash,
+      effective: String(Math.round(lw * 10000) / 10000),
+    },
+    {
+      label: 'Opening tags',
+      template: dash,
+      stored: openingEff,
+      effective: openingEff,
+    },
+    {
+      label: 'Room labels',
+      template: dash,
+      stored: labelsEff,
+      effective: labelsEff,
+    },
+    {
+      label: 'Hidden categories',
+      template: dash,
+      stored: String(hiddenCount),
+      effective: `${hiddenCount} kinds`,
+    },
+  ];
+}
+
+/**
+ * Compact clip + hidden-kind summary for Project Browser (orbit_3d viewpoints).
+ */
+
+export function viewpointOrbit3dEvidenceLine(vp: Extract<Element, { kind: 'viewpoint' }>): string {
+  if (vp.mode !== 'orbit_3d') return '';
+  const cap = vp.viewerClipCapElevMm;
+  const floor = vp.viewerClipFloorElevMm;
+  const hid = vp.hiddenSemanticKinds3d?.length ?? 0;
+  const capS = cap == null ? '∅' : String(cap);
+  const floorS = floor == null ? '∅' : String(floor);
+  return `clip cap ${capS} · floor ${floorS} · ${hid} hid`;
+}
+
 /** Deterministic inheritance readout for Workspace Inspector (mirrors resolver math). */
 
 export function planViewInheritanceSummaryLines(
