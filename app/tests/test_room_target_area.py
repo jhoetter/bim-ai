@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import pytest
+
 from bim_ai.commands import UpdateElementPropertyCmd
 from bim_ai.document import Document
-from bim_ai.elements import LevelElem, RoomElem, ScheduleElem, Vec2Mm
+from bim_ai.elements import LevelElem, RoomElem, ScheduleElem, Vec2Mm, WallElem
 from bim_ai.engine import apply_inplace
 from bim_ai.schedule_derivation import derive_schedule_table
 
@@ -122,3 +124,78 @@ def test_room_target_area_mismatch_advisory() -> None:
     vs = evaluate(doc)
     hits = [v for v in vs if getattr(v, "rule_id", None) == "room_target_area_mismatch"]
     assert len(hits) == 1
+
+
+def test_derive_room_schedule_includes_room_programme_closure_v0_when_no_room_rows() -> None:
+    lvl = LevelElem(kind="level", id="lvl-1", name="Ground", elevation_mm=0)
+    walls = (
+        WallElem(
+            kind="wall",
+            id="w-s",
+            name="S",
+            levelId="lvl-1",
+            start={"xMm": 0, "yMm": 0},
+            end={"xMm": 4000, "yMm": 0},
+            thicknessMm=200,
+            heightMm=2800,
+        ),
+        WallElem(
+            kind="wall",
+            id="w-n",
+            name="N",
+            levelId="lvl-1",
+            start={"xMm": 0, "yMm": 4000},
+            end={"xMm": 4000, "yMm": 4000},
+            thicknessMm=200,
+            heightMm=2800,
+        ),
+        WallElem(
+            kind="wall",
+            id="w-w",
+            name="W",
+            levelId="lvl-1",
+            start={"xMm": 0, "yMm": 0},
+            end={"xMm": 0, "yMm": 4000},
+            thicknessMm=200,
+            heightMm=2800,
+        ),
+        WallElem(
+            kind="wall",
+            id="w-e",
+            name="E",
+            levelId="lvl-1",
+            start={"xMm": 4000, "yMm": 0},
+            end={"xMm": 4000, "yMm": 4000},
+            thicknessMm=200,
+            heightMm=2800,
+        ),
+    )
+    sch = ScheduleElem(kind="schedule", id="sch-room", name="Rooms", filters={"category": "room"})
+    doc = Document(revision=2, elements={"lvl-1": lvl, **{w.id: w for w in walls}, "sch-room": sch})
+    table = derive_schedule_table(doc, "sch-room")
+    assert table.get("rows") == []
+    closure = table.get("roomProgrammeClosure_v0")
+    assert isinstance(closure, dict)
+    assert closure.get("authoritativeVacantDerivedAreaM2") == pytest.approx(16.0, rel=1e-2)
+    assert closure.get("authoritativeVacantFootprintCount") == 1
+
+
+def test_derive_room_schedule_programme_residual_without_vacant_footprint() -> None:
+    lvl = LevelElem(kind="level", id="lvl-1", name="Ground", elevation_mm=0)
+    rm = RoomElem(
+        kind="room",
+        id="rm-1",
+        name="Lab",
+        level_id="lvl-1",
+        outline_mm=_sq(((0.0, 0.0), (4000.0, 0.0), (4000.0, 4000.0), (0.0, 4000.0))),
+        target_area_m2=22.5,
+    )
+    sch = ScheduleElem(kind="schedule", id="sch-room", name="Rooms", filters={"category": "room"})
+    doc = Document(revision=2, elements={"lvl-1": lvl, "rm-1": rm, "sch-room": sch})
+    table = derive_schedule_table(doc, "sch-room")
+    closure = table.get("roomProgrammeClosure_v0")
+    totals = table.get("totals")
+    assert totals and totals.get("targetAreaM2") == pytest.approx(22.5, rel=1e-3)
+    assert totals.get("areaM2") == pytest.approx(16.0, rel=1e-2)
+    assert closure.get("authoritativeVacantDerivedAreaM2") == pytest.approx(0.0, abs=1e-4)
+    assert closure.get("programmeScheduleResidualM2") == pytest.approx(6.5, rel=1e-2)

@@ -23,6 +23,11 @@ from bim_ai.elements import (
     WindowElem,
 )
 from bim_ai.opening_cut_primitives import hosted_opening_t_span_normalized
+from bim_ai.room_derivation import (
+    compute_room_boundary_derivation,
+    footprint_outline_mm_rectangle,
+    stable_footprint_id,
+)
 from bim_ai.section_projection_primitives import build_section_projection_primitives
 from bim_ai.stair_plan_proxy import stair_riser_count_plan_proxy
 
@@ -303,6 +308,48 @@ def _poly_bbox_overlaps_crop(
     py0, py1 = min(ys), max(ys)
     x0, y0, x1, y1 = box
     return not (px1 < x0 or px0 > x1 or py1 < y0 or py0 > y1)
+
+
+def _derived_room_boundary_evidence_for_wire(
+    doc: Document,
+    *,
+    active_level_id: str | None,
+    effective_crop_mm: tuple[float, float, float, float] | None,
+) -> list[dict[str, Any]]:
+    """Authoritative vacant axis rectangles for plan inspection (deterministic; crop-filtered)."""
+    if not active_level_id:
+        return []
+    bundle = compute_room_boundary_derivation(doc)
+    out: list[dict[str, Any]] = []
+    for c in bundle.get("axisAlignedRectangleCandidates") or []:
+        if not isinstance(c, dict):
+            continue
+        if c.get("derivationAuthority") != "authoritative":
+            continue
+        if str(c.get("levelId") or "") != active_level_id:
+            continue
+        bbox = c.get("bboxMm")
+        if not isinstance(bbox, dict):
+            continue
+        outline_pts = footprint_outline_mm_rectangle(bbox)
+        pts = [(float(d["xMm"]), float(d["yMm"])) for d in outline_pts]
+        if effective_crop_mm is not None and not _poly_bbox_overlaps_crop(pts, effective_crop_mm):
+            continue
+        fp_id = stable_footprint_id(c)
+        outline_mm_xy = [[round(float(d["xMm"]), 3), round(float(d["yMm"]), 3)] for d in outline_pts]
+        out.append(
+            {
+                "format": "derivedRoomFootprintEvidenceRow_v0",
+                "footprintId": fp_id,
+                "levelId": active_level_id,
+                "outlineMm": outline_mm_xy,
+                "boundaryWallIds": sorted(c.get("wallIds") or []),
+                "boundarySeparationIds": sorted(c.get("boundarySeparationIds") or []),
+                "derivationAuthority": "authoritative",
+                "approxAreaM2": c.get("approxAreaM2"),
+            }
+        )
+    return sorted(out, key=lambda x: str(x.get("footprintId") or ""))
 
 
 def _build_plan_primitive_lists(
@@ -773,6 +820,11 @@ def resolve_plan_projection_wire(
         "warnings": all_warnings,
         "primitives": prim,
         "roomColorLegend": legend,
+        "derivedRoomBoundaryEvidence_v0": _derived_room_boundary_evidence_for_wire(
+            doc,
+            active_level_id=active_level,
+            effective_crop_mm=effective_crop,
+        ),
     }
     if plan_graphic_hints is not None:
         out_payload["planGraphicHints"] = plan_graphic_hints

@@ -1,7 +1,7 @@
 """Room programme workflow: mixed blank vs authored programmes on a level."""
 
 from bim_ai.constraints import evaluate
-from bim_ai.elements import LevelElem, RoomElem, RoomSeparationElem, Vec2Mm
+from bim_ai.elements import LevelElem, RoomElem, RoomSeparationElem, Vec2Mm, WallElem
 
 
 def _square(outline_mm: tuple[tuple[float, float], ...]) -> list[Vec2Mm]:
@@ -166,4 +166,98 @@ def test_room_finish_metadata_hint_no_quick_fix_without_peer_finish() -> None:
     ours = [v for v in vs if getattr(v, "rule_id", None) == "room_finish_metadata_hint"]
     assert len(ours) == 1
     assert ours[0].quick_fix_command is None
+
+
+def test_room_boundary_axis_closure_insufficient_segments_rule() -> None:
+    lvl = LevelElem(kind="level", id="lvl-1", name="EG", elevation_mm=0)
+    els = {
+        "lvl-1": lvl,
+        "w-h": WallElem(
+            kind="wall",
+            id="w-h",
+            name="H",
+            levelId="lvl-1",
+            start={"xMm": 0, "yMm": 0},
+            end={"xMm": 4000, "yMm": 0},
+            thicknessMm=200,
+            heightMm=2800,
+        ),
+        "w-v": WallElem(
+            kind="wall",
+            id="w-v",
+            name="V",
+            levelId="lvl-1",
+            start={"xMm": 0, "yMm": 0},
+            end={"xMm": 0, "yMm": 4000},
+            thicknessMm=200,
+            heightMm=2800,
+        ),
+    }
+    vs = evaluate(els)
+    ours = [
+        v for v in vs if getattr(v, "rule_id", None) == "room_boundary_axis_closure_insufficient_segments"
+    ]
+    assert len(ours) == 1
+    assert sorted(ours[0].element_ids) == sorted(["w-h", "w-v"])
+
+
+def test_room_derived_interior_separation_ambiguous_rule() -> None:
+    lvl = LevelElem(kind="level", id="lvl-1", name="EG", elevation_mm=0)
+    walls = (
+        WallElem(
+            kind="wall",
+            id="w-s",
+            name="S",
+            levelId="lvl-1",
+            start={"xMm": 0, "yMm": 0},
+            end={"xMm": 4000, "yMm": 0},
+            thicknessMm=200,
+            heightMm=2800,
+        ),
+        WallElem(
+            kind="wall",
+            id="w-n",
+            name="N",
+            levelId="lvl-1",
+            start={"xMm": 0, "yMm": 4000},
+            end={"xMm": 4000, "yMm": 4000},
+            thicknessMm=200,
+            heightMm=2800,
+        ),
+        WallElem(
+            kind="wall",
+            id="w-w",
+            name="W",
+            levelId="lvl-1",
+            start={"xMm": 0, "yMm": 0},
+            end={"xMm": 0, "yMm": 4000},
+            thicknessMm=200,
+            heightMm=2800,
+        ),
+        WallElem(
+            kind="wall",
+            id="w-e",
+            name="E",
+            levelId="lvl-1",
+            start={"xMm": 4000, "yMm": 0},
+            end={"xMm": 4000, "yMm": 4000},
+            thicknessMm=200,
+            heightMm=2800,
+        ),
+    )
+    sep = RoomSeparationElem(
+        kind="room_separation",
+        id="rs-mid",
+        name="Mid",
+        levelId="lvl-1",
+        start={"xMm": 2000, "yMm": 500},
+        end={"xMm": 2000, "yMm": 3500},
+    )
+    els = {"lvl-1": lvl, "rs-mid": sep, **{w.id: w for w in walls}}
+    vs = evaluate(els)
+    ours = [
+        v for v in vs if getattr(v, "rule_id", None) == "room_derived_interior_separation_ambiguous"
+    ]
+    assert len(ours) >= 1
+    assert {"rs-mid", "w-s", "w-n", "w-w", "w-e"}.issubset(set(ours[0].element_ids))
 

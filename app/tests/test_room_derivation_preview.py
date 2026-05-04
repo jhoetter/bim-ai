@@ -59,7 +59,9 @@ def test_finds_rectangle_from_four_axis_walls():
     doc = Document(revision=1, elements={"lvl-1": lvl, **{w.id: w for w in walls}})
     prev = room_derivation_preview(doc)
     assert prev["candidateCount"] >= 1
+    assert prev.get("authoritativeCandidateCount", 0) >= 1
     cand = prev["axisAlignedRectangleCandidates"][0]
+    assert cand.get("derivationAuthority") == "authoritative"
     assert cand["approxAreaM2"] == pytest.approx(16.0, rel=1e-2)
     assert sorted(cand["wallIds"]) == sorted(w.id for w in walls)
     warns = prev.get("warnings") or []
@@ -247,8 +249,11 @@ def test_room_derivation_warns_interior_axis_room_separation():
     )
     doc = Document(revision=1, elements={"lvl-1": lvl, "rs-mid": sep, **{w.id: w for w in walls}})
     prev = room_derivation_preview(doc)
-    assert prev["heuristicVersion"] == "room_deriv_preview_v2"
+    assert prev["heuristicVersion"] == "room_deriv_preview_v3"
     warns = prev.get("warnings") or []
+    cand0 = prev["axisAlignedRectangleCandidates"][0]
+    assert cand0.get("derivationAuthority") == "preview_heuristic"
+    assert "ambiguous_interior_separation" in (cand0.get("authorityReasonCodes") or [])
     assert any(w.get("code") == "derivedRectangleInteriorRoomSeparation" for w in warns)
 
     rev = room_derivation_candidates_review(doc)
@@ -256,3 +261,39 @@ def test_room_derivation_warns_interior_axis_room_separation():
     assert any(
         w.get("code") == "derivedRectangleInteriorRoomSeparation" for w in (c0.get("warnings") or [])
     )
+
+
+def test_insufficient_segments_emits_axis_closure_diagnostic() -> None:
+    lvl = LevelElem(kind="level", id="lvl-1", name="EG", elevationMm=0)
+    docs = Document(
+        revision=3,
+        elements={
+            "lvl-1": lvl,
+            "w-h": WallElem(
+                kind="wall",
+                id="w-h",
+                name="H",
+                levelId="lvl-1",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 4000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+            "w-v": WallElem(
+                kind="wall",
+                id="w-v",
+                name="V",
+                levelId="lvl-1",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 0, "yMm": 4000},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+        },
+    )
+    prev = room_derivation_preview(docs)
+    diag = prev.get("diagnostics") or []
+    assert prev["candidateCount"] == 0
+    ours = [d for d in diag if d.get("code") == "axis_segments_insufficient_for_closure"]
+    assert len(ours) == 1
+    assert sorted(ours[0].get("elementIds") or []) == sorted(["w-h", "w-v"])

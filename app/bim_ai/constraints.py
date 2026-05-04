@@ -42,6 +42,7 @@ from bim_ai.export_ifc import (
 from bim_ai.geometry import Poly, approx_overlap_area_mm2, sat_overlap, wall_corners
 from bim_ai.ifc_stub import build_ifc_exchange_manifest_payload
 from bim_ai.plan_aa_room_separation import axis_aligned_room_separation_splits_rectangle
+from bim_ai.room_derivation import compute_room_boundary_derivation
 
 ROOM_PLAN_OVERLAP_THRESHOLD_MM2 = 50_000.0
 
@@ -85,6 +86,8 @@ _RULE_DISCIPLINE: dict[str, str] = {
     "room_programme_inconsistent_within_level": "architecture",
     "room_outline_spans_axis_room_separation": "architecture",
     "room_overlap_plan": "architecture",
+    "room_boundary_axis_closure_insufficient_segments": "architecture",
+    "room_derived_interior_separation_ambiguous": "architecture",
     "door_off_wall": "architecture",
     "door_not_on_wall": "architecture",
     "window_off_wall": "architecture",
@@ -898,6 +901,44 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
                         element_ids=sorted({room.id, sep.id}),
                     )
                 )
+
+    doc_snap = Document(elements=dict(elements))
+    rb = compute_room_boundary_derivation(doc_snap)
+    for d in rb.get("diagnostics") or []:
+        if not isinstance(d, dict):
+            continue
+        code = str(d.get("code") or "")
+        if code == "axis_segments_insufficient_for_closure":
+            viols.append(
+                Violation(
+                    rule_id="room_boundary_axis_closure_insufficient_segments",
+                    severity="info",
+                    message=str(
+                        d.get("message")
+                        or "Insufficient orthogonal wall/separator segments to close an axis-aligned rectangle."
+                    ),
+                    element_ids=sorted(d.get("elementIds") or []),
+                )
+            )
+            continue
+        if code == "ambiguous_interior_separation":
+            eids: set[str] = set()
+            for k in ("separationIds", "wallIds"):
+                for x in d.get(k) or []:
+                    eids.add(str(x))
+            for x in d.get("boundarySeparationIds") or []:
+                eids.add(str(x))
+            viols.append(
+                Violation(
+                    rule_id="room_derived_interior_separation_ambiguous",
+                    severity="warning",
+                    message=(
+                        "Derived rectangle interior is split by a room separation; "
+                        "authoritative vacant footprint is ambiguous."
+                    ),
+                    element_ids=sorted(eids),
+                )
+            )
 
     rooms_by_level: dict[str, list[RoomElem]] = defaultdict(list)
     for room in rooms:

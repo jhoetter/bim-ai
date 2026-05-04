@@ -850,6 +850,147 @@ def test_plan_projection_sheet_viewport_crop_partial_emits_warning() -> None:
     assert (out.get("primitives") or {}).get("walls") == (plain.get("primitives") or {}).get("walls")
 
 
+def test_plan_projection_derived_room_boundary_evidence_v0_authoritative() -> None:
+    lvl = LevelElem(kind="level", id="lvl-1", name="EG", elevationMm=0)
+    walls = (
+        WallElem(
+            kind="wall",
+            id="w-s",
+            name="S",
+            levelId="lvl-1",
+            start={"xMm": 0, "yMm": 0},
+            end={"xMm": 4000, "yMm": 0},
+            thicknessMm=200,
+            heightMm=2800,
+        ),
+        WallElem(
+            kind="wall",
+            id="w-n",
+            name="N",
+            levelId="lvl-1",
+            start={"xMm": 0, "yMm": 4000},
+            end={"xMm": 4000, "yMm": 4000},
+            thicknessMm=200,
+            heightMm=2800,
+        ),
+        WallElem(
+            kind="wall",
+            id="w-w",
+            name="W",
+            levelId="lvl-1",
+            start={"xMm": 0, "yMm": 0},
+            end={"xMm": 0, "yMm": 4000},
+            thicknessMm=200,
+            heightMm=2800,
+        ),
+        WallElem(
+            kind="wall",
+            id="w-e",
+            name="E",
+            levelId="lvl-1",
+            start={"xMm": 4000, "yMm": 0},
+            end={"xMm": 4000, "yMm": 4000},
+            thicknessMm=200,
+            heightMm=2800,
+        ),
+    )
+    doc = Document(
+        revision=10,
+        elements={
+            "lvl-1": lvl,
+            "pv1": PlanViewElem(
+                kind="plan_view",
+                id="pv1",
+                name="EG",
+                levelId="lvl-1",
+                cropMinMm={"xMm": -500, "yMm": -500},
+                cropMaxMm={"xMm": 9500, "yMm": 9500},
+            ),
+            **{w.id: w for w in walls},
+        },
+    )
+    out = resolve_plan_projection_wire(
+        doc,
+        plan_view_id="pv1",
+        fallback_level_id=None,
+        global_plan_presentation="default",
+        sheet_viewport_row_for_crop=None,
+    )
+    ev = out.get("derivedRoomBoundaryEvidence_v0") or []
+    assert len(ev) >= 1
+    assert ev[0].get("derivationAuthority") == "authoritative"
+    assert sorted(ev[0].get("boundaryWallIds") or []) == sorted(w.id for w in walls)
+
+
+def test_plan_projection_derived_room_boundary_evidence_v0_filtered_by_crop() -> None:
+    lvl = LevelElem(kind="level", id="lvl-1", name="EG", elevationMm=0)
+    walls = (
+        WallElem(
+            kind="wall",
+            id="w-s",
+            name="S",
+            levelId="lvl-1",
+            start={"xMm": 0, "yMm": 0},
+            end={"xMm": 4000, "yMm": 0},
+            thicknessMm=200,
+            heightMm=2800,
+        ),
+        WallElem(
+            kind="wall",
+            id="w-n",
+            name="N",
+            levelId="lvl-1",
+            start={"xMm": 0, "yMm": 4000},
+            end={"xMm": 4000, "yMm": 4000},
+            thicknessMm=200,
+            heightMm=2800,
+        ),
+        WallElem(
+            kind="wall",
+            id="w-w",
+            name="W",
+            levelId="lvl-1",
+            start={"xMm": 0, "yMm": 0},
+            end={"xMm": 0, "yMm": 4000},
+            thicknessMm=200,
+            heightMm=2800,
+        ),
+        WallElem(
+            kind="wall",
+            id="w-e",
+            name="E",
+            levelId="lvl-1",
+            start={"xMm": 4000, "yMm": 0},
+            end={"xMm": 4000, "yMm": 4000},
+            thicknessMm=200,
+            heightMm=2800,
+        ),
+    )
+    doc = Document(
+        revision=11,
+        elements={
+            "lvl-1": lvl,
+            "pv1": PlanViewElem(
+                kind="plan_view",
+                id="pv1",
+                name="EG",
+                levelId="lvl-1",
+                cropMinMm={"xMm": 9000, "yMm": 9000},
+                cropMaxMm={"xMm": 9100, "yMm": 9100},
+            ),
+            **{w.id: w for w in walls},
+        },
+    )
+    out = resolve_plan_projection_wire(
+        doc,
+        plan_view_id="pv1",
+        fallback_level_id=None,
+        global_plan_presentation="default",
+        sheet_viewport_row_for_crop=None,
+    )
+    assert (out.get("derivedRoomBoundaryEvidence_v0") or []) == []
+
+
 def test_plan_projection_includes_stair_primitive() -> None:
     doc = Document(
         revision=1,

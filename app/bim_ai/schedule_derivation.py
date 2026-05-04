@@ -22,6 +22,12 @@ from bim_ai.elements import (
 )
 from bim_ai.material_assembly_resolve import resolved_layers_for_floor, resolved_layers_for_wall
 from bim_ai.opening_cut_primitives import hosted_opening_half_span_mm
+from bim_ai.room_derivation import (
+    HEURISTIC_VERSION as ROOM_BOUNDARY_HEURISTIC_VERSION,
+)
+from bim_ai.room_derivation import (
+    authoritative_vacant_area_m2_filtered,
+)
 from bim_ai.schedule_field_registry import column_metadata_bundle, stable_column_keys
 from bim_ai.type_material_registry import family_type_display_label, material_display_label
 
@@ -248,6 +254,17 @@ def _resolve_group_keys(filt: dict[str, Any], sch_grouping: dict[str, Any]) -> l
     if isinstance(gk, list) and gk:
         return [str(x) for x in gk]
     return []
+
+
+def _allowed_levels_from_schedule_filter_equals(feq: dict[str, Any]) -> frozenset[str] | None:
+    """When a schedule filter pins a single level id, scope derived-footprint closure."""
+    if not feq:
+        return None
+    for k, v in feq.items():
+        sk = str(k).strip().lower()
+        if sk in ("levelid", "level_id", "level") and v is not None:
+            return frozenset({str(v).strip()})
+    return None
 
 
 def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
@@ -713,6 +730,23 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
     }
     if totals:
         out["totals"] = totals
+    if cat == "room":
+        lvl_allow = _allowed_levels_from_schedule_filter_equals(filter_equals)
+        vacant_m2, vacant_n = authoritative_vacant_area_m2_filtered(doc, allowed_level_ids=lvl_allow)
+        closure = {
+            "format": "roomProgrammeClosure_v0",
+            "boundaryHeuristicVersion": ROOM_BOUNDARY_HEURISTIC_VERSION,
+            "authoritativeVacantDerivedAreaM2": vacant_m2,
+            "authoritativeVacantFootprintCount": vacant_n,
+        }
+        if totals and "targetAreaM2" in totals:
+            try:
+                area_sum = float(totals.get("areaM2") or 0.0)
+                tgt_sum = float(totals["targetAreaM2"])
+                closure["programmeScheduleResidualM2"] = round(tgt_sum - area_sum - vacant_m2, 4)
+            except (TypeError, ValueError):
+                pass
+        out["roomProgrammeClosure_v0"] = closure
     return out
 
 
