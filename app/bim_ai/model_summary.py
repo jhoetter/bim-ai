@@ -51,6 +51,12 @@ def compute_model_summary(doc: Document) -> dict[str, Any]:
 
     return {
         "revision": doc.revision,
+        "elementTotal": len(elems),
+        "scaleWorkload": {
+            "wallCount": len(walls),
+            "roomCount": len(rooms),
+            "scheduleElementCount": int(kinds.get("schedule", 0)),
+        },
         "countsByKind": dict(kinds),
         "levelCount": len(levels),
         "levels": [{"id": lv.id, "name": lv.name, "elevationMm": lv.elevation_mm} for lv in levels],

@@ -13,6 +13,7 @@ import type {
 import { Btn, Panel } from '@bim-ai/ui';
 
 import {
+  ApiHttpError,
   applyCommand,
   bootstrap,
   coerceDelta,
@@ -372,6 +373,19 @@ export function Workspace() {
 
         setStatus(u ? 'Undone' : 'Redone');
       } catch (e) {
+        if (e instanceof ApiHttpError && e.status === 409) {
+          const d = e.detail;
+          const reason =
+            d && typeof d === 'object' && !Array.isArray(d) && 'reason' in d
+              ? String((d as { reason?: unknown }).reason ?? '').trim()
+              : '';
+          setStatus(
+            reason
+              ? `${u ? 'Undo' : 'Redo'} blocked: ${reason}`
+              : `${u ? 'Undo' : 'Redo'} blocked (model conflict).`,
+          );
+          return;
+        }
         setStatus(e instanceof Error ? e.message : String(e));
       }
     },

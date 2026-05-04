@@ -1,5 +1,44 @@
 import type { ModelDelta, Snapshot } from '@bim-ai/core';
 
+export class ApiHttpError extends Error {
+  readonly status: number;
+
+  readonly detail: unknown;
+
+  constructor(status: number, message: string, detail: unknown) {
+    super(message);
+    this.name = 'ApiHttpError';
+    this.status = status;
+    this.detail = detail;
+  }
+}
+
+async function postJsonOrApiError<T>(url: string, init: RequestInit): Promise<T> {
+  const res = await fetch(url, init);
+  const text = await res.text();
+  let detail: unknown = text;
+  if (text) {
+    try {
+      const parsed = JSON.parse(text) as { detail?: unknown };
+      if (parsed && typeof parsed === 'object' && parsed !== null && 'detail' in parsed) {
+        detail = parsed.detail;
+      }
+    } catch {
+      // keep raw text in detail
+    }
+  }
+  if (!res.ok) {
+    let message = `${res.status} ${res.statusText}`;
+    if (detail && typeof detail === 'object' && !Array.isArray(detail) && 'reason' in detail) {
+      const r = (detail as { reason?: unknown }).reason;
+      if (typeof r === 'string' && r.trim()) message = r;
+    }
+    throw new ApiHttpError(res.status, message, detail);
+  }
+  if (!text) return {} as T;
+  return JSON.parse(text) as T;
+}
+
 async function fetchJson<T>(input: RequestInfo | URL, init?: RequestInit): Promise<T> {
   const res = await fetch(input, init);
   const text = await res.text();
@@ -34,7 +73,7 @@ export async function undoModel(
   modelId: string,
   userId?: string,
 ): Promise<{ ok: boolean } & ApplyCommandResp> {
-  return fetchJson(`/api/models/${encodeURIComponent(modelId)}/undo`, {
+  return postJsonOrApiError(`/api/models/${encodeURIComponent(modelId)}/undo`, {
     method: 'POST',
 
     headers: { 'content-type': 'application/json' },
@@ -47,7 +86,7 @@ export async function redoModel(
   modelId: string,
   userId?: string,
 ): Promise<{ ok: boolean } & ApplyCommandResp> {
-  return fetchJson(`/api/models/${encodeURIComponent(modelId)}/redo`, {
+  return postJsonOrApiError(`/api/models/${encodeURIComponent(modelId)}/redo`, {
     method: 'POST',
 
     headers: { 'content-type': 'application/json' },
