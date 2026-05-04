@@ -6,6 +6,7 @@ coverage/
 *.log
 *.pid
 .env
+app/uv.lock
 **/.venv/
 **/.pytest_cache/
 **/.ruff_cache/
