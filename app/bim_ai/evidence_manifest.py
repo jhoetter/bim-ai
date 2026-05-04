@@ -305,16 +305,106 @@ def deterministic_section_cut_evidence_manifest(
     return rows
 
 
+def pixel_diff_expectation_placeholder_v1() -> dict[str, Any]:
+    """Stable placeholder for future programmatic screenshot diff ingestion (agents read-only)."""
+
+    return {
+        "format": "pixelDiffExpectation_v1",
+        "status": "not_run",
+        "baselineRole": "committed_png_under_e2e_screenshots",
+        "diffArtifactBasenameSuffix": "-diff.png",
+        "metricsPlaceholder": {
+            "maxChannelDelta": None,
+            "mismatchPixelRatioMax": None,
+        },
+        "notes": (
+            "Pixel diff execution stays client-side (Playwright snapshots / pixelmatch). "
+            "When produced, attach diff PNGs using diffArtifactBasenameSuffix beside deterministic basenames "
+            "listed in evidenceClosureReview_v1.expectedDeterministicPngBasenames."
+        ),
+    }
+
+
+def evidence_closure_review_v1(
+    *,
+    package_semantic_digest_sha256: str,
+    deterministic_sheet_evidence: list[dict[str, Any]],
+    deterministic_3d_view_evidence: list[dict[str, Any]],
+    deterministic_plan_view_evidence: list[dict[str, Any]],
+    deterministic_section_cut_evidence: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Flatten deterministic PNG inventory + correlation digest hygiene for Agent Review / CI."""
+
+    stale_rows: list[dict[str, Any]] = []
+    missing_digest_rows: list[dict[str, Any]] = []
+    png_basenames: list[str] = []
+
+    def note_pngs(playwright_suggested: dict[str, Any]) -> None:
+        for key in ("pngViewport", "pngFullSheet", "pngPlanCanvas", "pngSectionViewport"):
+            val = playwright_suggested.get(key)
+            if isinstance(val, str) and val.endswith(".png"):
+                png_basenames.append(val)
+
+    def scan_rows(kind: str, id_key: str, rows: list[dict[str, Any]]) -> None:
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            row_id = str(row.get(id_key, "") or "")
+            corr_raw = row.get("correlation")
+            corr = corr_raw if isinstance(corr_raw, dict) else {}
+            row_sha = corr.get("semanticDigestSha256")
+            if row_sha is None:
+                if row_id:
+                    missing_digest_rows.append({"kind": kind, "id": row_id})
+            elif isinstance(row_sha, str) and row_sha != package_semantic_digest_sha256:
+                stale_rows.append(
+                    {
+                        "kind": kind,
+                        "id": row_id,
+                        "correlationSemanticDigestSha256": row_sha,
+                        "packageSemanticDigestSha256": package_semantic_digest_sha256,
+                    }
+                )
+            pw_raw = row.get("playwrightSuggestedFilenames")
+            if isinstance(pw_raw, dict):
+                note_pngs(pw_raw)
+
+    scan_rows("sheet", "sheetId", deterministic_sheet_evidence)
+    scan_rows("viewpoint", "viewpointId", deterministic_3d_view_evidence)
+    scan_rows("plan_view", "planViewId", deterministic_plan_view_evidence)
+    scan_rows("section_cut", "sectionCutId", deterministic_section_cut_evidence)
+
+    basenames_sorted = sorted(set(png_basenames))
+
+    return {
+        "format": "evidenceClosureReview_v1",
+        "packageSemanticDigestSha256": package_semantic_digest_sha256,
+        "expectedDeterministicPngBasenames": basenames_sorted,
+        "primaryScreenshotArtifactCount": len(basenames_sorted),
+        "correlationDigestConsistency": {
+            "format": "correlationDigestConsistency_v1",
+            "staleRowsRelativeToPackageDigest": stale_rows,
+            "rowsMissingCorrelationDigest": missing_digest_rows,
+            "isFullyConsistent": len(stale_rows) == 0 and len(missing_digest_rows) == 0,
+        },
+        "pixelDiffExpectation": pixel_diff_expectation_placeholder_v1(),
+    }
+
+
 def agent_evidence_closure_hints() -> dict[str, Any]:
     """Static guidance for agents; safe to attach on every evidence-package response."""
 
     return {
         "format": "agentEvidenceClosureHints_v1",
+        "evidenceClosureReviewField": "evidenceClosureReview_v1",
+        "pixelDiffExpectationNestedField": "pixelDiffExpectation",
+        "deterministicPngBasenamesField": "expectedDeterministicPngBasenames",
         "playwrightEvidenceSpecRelPath": "packages/web/e2e/evidence-baselines.spec.ts",
         "suggestedRegenerationCommands": [
             (
                 "cd app && ruff check bim_ai tests && "
-                "pytest tests/test_evidence_package_digest.py tests/test_plan_projection_and_evidence_slices.py"
+                "pytest tests/test_evidence_package_digest.py tests/test_evidence_manifest_closure.py "
+                "tests/test_plan_projection_and_evidence_slices.py"
             ),
             "cd packages/web && CI=true pnpm exec playwright test e2e/evidence-baselines.spec.ts",
         ],

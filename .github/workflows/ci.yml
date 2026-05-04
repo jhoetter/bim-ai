@@ -54,6 +54,8 @@ jobs:
             echo "  deterministicPlanViewEvidence[].playwrightSuggestedFilenames.pngPlanCanvas,"
             echo "  deterministicSectionCutEvidence[].playwrightSuggestedFilenames.pngSectionViewport,"
             echo "  deterministic3dViewEvidence[].playwrightSuggestedFilenames.pngViewport."
+            echo "  evidenceClosureReview_v1.expectedDeterministicPngBasenames — flat CI grep target vs PNG artifact names;"
+            echo "  evidenceClosureReview_v1.pixelDiffExpectation — reserved metadata when attaching programmatic diff outputs."
             echo ""
             echo "This CI run:"
             echo "  github.run_id=${CORR_RUN_ID}"

@@ -346,4 +346,43 @@ export type Command = Record<string, unknown> & {
   type: string;
 };
 
+/** Evidence-package subtree: deterministic PNG inventory + digest hygiene (WP-F02/F03). */
+export type CorrelationDigestConsistencyV1 = {
+  format: 'correlationDigestConsistency_v1';
+
+  staleRowsRelativeToPackageDigest: Record<string, unknown>[];
+
+  rowsMissingCorrelationDigest: { kind: string; id: string }[];
+
+  isFullyConsistent: boolean;
+};
+
+export type EvidencePixelDiffExpectationV1 = {
+  format: 'pixelDiffExpectation_v1';
+
+  status: string;
+
+  baselineRole?: string;
+
+  diffArtifactBasenameSuffix?: string;
+
+  metricsPlaceholder?: Record<string, number | null>;
+
+  notes?: string;
+};
+
+export type EvidenceClosureReviewV1 = {
+  format: 'evidenceClosureReview_v1';
+
+  packageSemanticDigestSha256: string;
+
+  expectedDeterministicPngBasenames: string[];
+
+  primaryScreenshotArtifactCount: number;
+
+  correlationDigestConsistency: CorrelationDigestConsistencyV1;
+
+  pixelDiffExpectation: EvidencePixelDiffExpectationV1;
+};
+
 export type { PerspectiveId, WorkspaceLayoutPreset } from './workbench';

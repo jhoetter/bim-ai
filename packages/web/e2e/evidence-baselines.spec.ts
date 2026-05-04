@@ -425,8 +425,39 @@ async function sharedRoutes(page: Page, layoutPreset: string) {
               },
             },
           ],
+          evidenceClosureReview_v1: {
+            format: 'evidenceClosureReview_v1',
+            packageSemanticDigestSha256: MOCK_SEMANTIC_DIGEST_SHA256,
+            expectedDeterministicPngBasenames: [
+              `${MOCK_EVIDENCE_BASENAME}-plan-pv-eg.png`,
+              `${MOCK_EVIDENCE_BASENAME}-section-hf-sec-demo.png`,
+              MOCK_SHEET_FULL_PNG_FROM_MANIFEST,
+              MOCK_SHEET_VIEWPORT_PNG_FROM_MANIFEST,
+            ].sort(),
+            primaryScreenshotArtifactCount: 4,
+            correlationDigestConsistency: {
+              format: 'correlationDigestConsistency_v1',
+              staleRowsRelativeToPackageDigest: [],
+              rowsMissingCorrelationDigest: [],
+              isFullyConsistent: true,
+            },
+            pixelDiffExpectation: {
+              format: 'pixelDiffExpectation_v1',
+              status: 'not_run',
+              baselineRole: 'committed_png_under_e2e_screenshots',
+              diffArtifactBasenameSuffix: '-diff.png',
+              metricsPlaceholder: {
+                maxChannelDelta: null,
+                mismatchPixelRatioMax: null,
+              },
+              notes: 'Pixel diff execution stays client-side (Playwright snapshots / pixelmatch).',
+            },
+          },
           agentEvidenceClosureHints: {
             format: 'agentEvidenceClosureHints_v1',
+            evidenceClosureReviewField: 'evidenceClosureReview_v1',
+            pixelDiffExpectationNestedField: 'pixelDiffExpectation',
+            deterministicPngBasenamesField: 'expectedDeterministicPngBasenames',
             playwrightEvidenceSpecRelPath: 'packages/web/e2e/evidence-baselines.spec.ts',
             suggestedRegenerationCommands: [
               'cd packages/web && CI=true pnpm exec playwright test e2e/evidence-baselines.spec.ts',
@@ -526,5 +557,27 @@ test.describe('evidence PNG baselines', () => {
 
     await page.getByRole('button', { name: /plan_view · OG — rooms/i }).click();
     await expect(page.getByTestId('plan-canvas')).toHaveScreenshot('plan-og-rooms.png');
+  });
+
+  test('evidence-package exposes closure review inventory', async ({ page }) => {
+    await sharedRoutes(page, 'coordination');
+    await page.goto('/');
+    await expect(page.getByText('Ready', { exact: false })).toBeVisible({ timeout: 30_000 });
+    const pkg = await page.evaluate(async (mid: string) => {
+      const res = await fetch(`/api/models/${mid}/evidence-package`);
+      return res.json() as Record<string, unknown>;
+    }, MODEL_ID);
+    const closure = pkg.evidenceClosureReview_v1 as Record<string, unknown> | undefined;
+    expect(closure?.format).toBe('evidenceClosureReview_v1');
+    const basenames = closure?.expectedDeterministicPngBasenames as string[] | undefined;
+    expect(basenames).toContain(MOCK_SHEET_VIEWPORT_PNG_FROM_MANIFEST);
+    expect(basenames).toContain(MOCK_SHEET_FULL_PNG_FROM_MANIFEST);
+    expect(basenames).toContain(`${MOCK_EVIDENCE_BASENAME}-plan-pv-eg.png`);
+    expect(basenames).toContain(`${MOCK_EVIDENCE_BASENAME}-section-hf-sec-demo.png`);
+    const cons = closure?.correlationDigestConsistency as Record<string, unknown> | undefined;
+    expect(cons?.isFullyConsistent).toBe(true);
+    const pix = closure?.pixelDiffExpectation as Record<string, unknown> | undefined;
+    expect(pix?.format).toBe('pixelDiffExpectation_v1');
+    expect(pix?.status).toBe('not_run');
   });
 });

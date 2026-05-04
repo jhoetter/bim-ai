@@ -72,6 +72,15 @@ export function AgentReviewPane() {
       ciPaths: string[];
       envHints: string[];
     } | null;
+    closureReview: {
+      primaryCount: number;
+      basenames: string[];
+      correlationFullyConsistent: boolean | null;
+      staleRowCount: number;
+      missingDigestRowCount: number;
+      pixelDiffStatus: string | null;
+      pixelDiffSuffix: string | null;
+    } | null;
     suggestedBasenameHint: string | null;
     mismatchNotes: string[];
   };
@@ -125,6 +134,7 @@ export function AgentReviewPane() {
       planViewRows: [],
       sectionCutRows: [],
       closureHints: null,
+      closureReview: null,
       suggestedBasenameHint: null,
       mismatchNotes: [],
     });
@@ -181,6 +191,54 @@ export function AgentReviewPane() {
           envHints: Array.isArray(envRaw)
             ? envRaw.filter((x): x is string => typeof x === 'string')
             : [],
+        };
+      }
+
+      const ecrRaw = payload.evidenceClosureReview_v1;
+      let closureReview: EvidenceArtifactSummary['closureReview'] = null;
+      if (ecrRaw && typeof ecrRaw === 'object') {
+        const e = ecrRaw as Record<string, unknown>;
+        const basenames = Array.isArray(e.expectedDeterministicPngBasenames)
+          ? e.expectedDeterministicPngBasenames.filter((x): x is string => typeof x === 'string')
+          : [];
+        const consRaw = e.correlationDigestConsistency;
+        let correlationFullyConsistent: boolean | null = null;
+        let staleRowCount = 0;
+        let missingDigestRowCount = 0;
+        if (consRaw && typeof consRaw === 'object') {
+          const c = consRaw as Record<string, unknown>;
+          if (typeof c.isFullyConsistent === 'boolean') {
+            correlationFullyConsistent = c.isFullyConsistent;
+          }
+          staleRowCount = Array.isArray(c.staleRowsRelativeToPackageDigest)
+            ? c.staleRowsRelativeToPackageDigest.length
+            : 0;
+          missingDigestRowCount = Array.isArray(c.rowsMissingCorrelationDigest)
+            ? c.rowsMissingCorrelationDigest.length
+            : 0;
+        }
+        const pixRaw = e.pixelDiffExpectation;
+        let pixelDiffStatus: string | null = null;
+        let pixelDiffSuffix: string | null = null;
+        if (pixRaw && typeof pixRaw === 'object') {
+          const p = pixRaw as Record<string, unknown>;
+          pixelDiffStatus = typeof p.status === 'string' ? p.status : null;
+          pixelDiffSuffix =
+            typeof p.diffArtifactBasenameSuffix === 'string' ? p.diffArtifactBasenameSuffix : null;
+        }
+        const primaryCount =
+          typeof e.primaryScreenshotArtifactCount === 'number' &&
+          Number.isFinite(e.primaryScreenshotArtifactCount)
+            ? e.primaryScreenshotArtifactCount
+            : basenames.length;
+        closureReview = {
+          primaryCount,
+          basenames,
+          correlationFullyConsistent,
+          staleRowCount,
+          missingDigestRowCount,
+          pixelDiffStatus,
+          pixelDiffSuffix,
         };
       }
 
@@ -434,6 +492,7 @@ export function AgentReviewPane() {
         planViewRows,
         sectionCutRows,
         closureHints,
+        closureReview,
         suggestedBasenameHint: basename,
         mismatchNotes,
       };
@@ -448,6 +507,7 @@ export function AgentReviewPane() {
         planViewRows: [],
         sectionCutRows: [],
         closureHints: null,
+        closureReview: null,
         suggestedBasenameHint: null,
         mismatchNotes: ['Could not parse evidence JSON for artifact summary.'],
       };
@@ -906,7 +966,8 @@ export function AgentReviewPane() {
       evidenceArtifactSummary.planViewRows.length ||
       evidenceArtifactSummary.sectionCutRows.length ||
       evidenceArtifactSummary.semanticDigestPrefix16 ||
-      evidenceArtifactSummary.closureHints ? (
+      evidenceArtifactSummary.closureHints ||
+      evidenceArtifactSummary.closureReview ? (
         <div className="rounded border border-border bg-background/40 p-2">
           <div className="text-[10px] font-semibold text-muted">Evidence artifact correlation</div>
           <ul className="mt-1 list-disc space-y-1 ps-4 text-[10px] text-muted">
@@ -946,6 +1007,63 @@ export function AgentReviewPane() {
               <li>package modelRevision: {evidenceArtifactSummary.modelRevision}</li>
             ) : null}
           </ul>
+          {evidenceArtifactSummary.closureReview ? (
+            <div className="mt-2 rounded border border-border/60 bg-background/30 p-2">
+              <div className="text-[10px] font-semibold text-muted">Evidence closure inventory</div>
+              <p className="mt-1 text-[10px] text-muted">
+                Primary deterministic PNG artifacts expected:{' '}
+                <strong>{evidenceArtifactSummary.closureReview.primaryCount}</strong>
+              </p>
+              {evidenceArtifactSummary.closureReview.basenames.length ? (
+                <ul className="mt-1 list-disc space-y-0.5 ps-4 font-mono text-[10px] text-muted">
+                  {evidenceArtifactSummary.closureReview.basenames.slice(0, 8).map((bn) => (
+                    <li key={bn}>{bn}</li>
+                  ))}
+                  {evidenceArtifactSummary.closureReview.basenames.length > 8 ? (
+                    <li className="text-muted">
+                      … +{evidenceArtifactSummary.closureReview.basenames.length - 8} more (see{' '}
+                      <code className="text-[10px]">expectedDeterministicPngBasenames</code>)
+                    </li>
+                  ) : null}
+                </ul>
+              ) : (
+                <p className="mt-1 text-[10px] text-muted">
+                  No deterministic PNG basenames listed.
+                </p>
+              )}
+              <p className="mt-2 text-[10px]">
+                {evidenceArtifactSummary.closureReview.correlationFullyConsistent === true ? (
+                  <span className="text-emerald-600 dark:text-emerald-400">
+                    Row correlation digests match package semanticDigestSha256.
+                  </span>
+                ) : evidenceArtifactSummary.closureReview.correlationFullyConsistent === false ? (
+                  <span className="text-amber-600 dark:text-amber-400">
+                    Stale or incomplete deterministic rows:{' '}
+                    {evidenceArtifactSummary.closureReview.staleRowCount} stale digest(s),{' '}
+                    {evidenceArtifactSummary.closureReview.missingDigestRowCount} missing
+                    correlation digest(s).
+                  </span>
+                ) : (
+                  <span className="text-muted">Correlation consistency unknown.</span>
+                )}
+              </p>
+              <p className="mt-1 text-[10px] text-muted">
+                Pixel diff pipeline:{' '}
+                <code className="text-[10px]">
+                  {evidenceArtifactSummary.closureReview.pixelDiffStatus ?? '—'}
+                </code>
+                {evidenceArtifactSummary.closureReview.pixelDiffSuffix ? (
+                  <>
+                    {' '}
+                    · optional diff suffix{' '}
+                    <code className="text-[10px]">
+                      {evidenceArtifactSummary.closureReview.pixelDiffSuffix}
+                    </code>
+                  </>
+                ) : null}
+              </p>
+            </div>
+          ) : null}
           {evidenceArtifactSummary.sheetRows.length ? (
             <div className="mt-2 overflow-auto">
               <table className="w-full border-collapse border border-border text-[10px]">

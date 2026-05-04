@@ -280,9 +280,13 @@ def test_deterministic_section_cut_evidence_quotes_id_in_href() -> None:
 def test_agent_evidence_closure_hints_shape() -> None:
     h = agent_evidence_closure_hints()
     assert h["format"] == "agentEvidenceClosureHints_v1"
+    assert h.get("evidenceClosureReviewField") == "evidenceClosureReview_v1"
+    assert h.get("pixelDiffExpectationNestedField") == "pixelDiffExpectation"
+    assert h.get("deterministicPngBasenamesField") == "expectedDeterministicPngBasenames"
     cmds = h["suggestedRegenerationCommands"]
     assert isinstance(cmds, list)
     assert any("pytest" in str(c) for c in cmds)
+    assert any("test_evidence_manifest_closure.py" in str(c) for c in cmds)
     assert any("playwright" in str(c) for c in cmds)
     assert "packages/web/playwright-report/index.html" in h["ciArtifactRelativePaths"]
 
