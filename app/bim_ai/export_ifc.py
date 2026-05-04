@@ -24,10 +24,12 @@ from bim_ai.elements import (
 try:
     import ifcopenshell  # noqa: F401
     import ifcopenshell.util.element as ifc_elem_util
+    import ifcopenshell.util.placement as ifc_placement
 
     IFC_AVAILABLE = True
 except ImportError:
     ifc_elem_util = None  # type: ignore[misc, assignment]
+    ifc_placement = None  # type: ignore[misc, assignment]
     IFC_AVAILABLE = False
 
 KERNEL_IFC_DOMINANT_KINDS: frozenset[str] = frozenset(
@@ -622,8 +624,8 @@ def _first_body_extruded_area_solid(product: Any) -> Any | None:
 def _kernel_wall_plan_geometry_mm(wall: Any) -> dict[str, float] | None:
     """Recover createWall-style spine + thickness + height from kernel extruded wall body."""
 
-    import ifcopenshell.util.placement as ifc_placement
-
+    if ifc_placement is None:
+        return None
     ex = _first_body_extruded_area_solid(wall)
     if ex is None:
         return None

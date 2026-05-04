@@ -16,7 +16,9 @@ function newDupPlanViewId(prefix: string) {
 
 function viewTemplateEvidenceLine(vt: Extract<Element, { kind: 'view_template' }>): string {
   const d =
-    vt.planDetailLevel === undefined || vt.planDetailLevel === null ? 'inherit→medium' : vt.planDetailLevel;
+    vt.planDetailLevel === undefined || vt.planDetailLevel === null
+      ? 'inherit→medium'
+      : vt.planDetailLevel;
   const fill = vt.planRoomFillOpacityScale ?? 1;
   const ot = (vt.planShowOpeningTags ?? false) ? 'on' : 'off';
   const rl = (vt.planShowRoomLabels ?? false) ? 'on' : 'off';

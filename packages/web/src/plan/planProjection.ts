@@ -289,21 +289,21 @@ export function planViewGraphicsMatrixRows(
   const vtDetail =
     tmpl == null ? '—' : tmpl.planDetailLevel == null ? 'inherit→medium' : tmpl.planDetailLevel;
   const pvDetail =
-    el.planDetailLevel === undefined || el.planDetailLevel === null ? 'inherit' : el.planDetailLevel;
+    el.planDetailLevel === undefined || el.planDetailLevel === null
+      ? 'inherit'
+      : el.planDetailLevel;
   const effDetail = g?.detailLevel ?? 'medium';
 
-  const vtFill =
-    tmpl == null ? '—' : String(tmpl.planRoomFillOpacityScale ?? 1);
-  const pvFill = el.planRoomFillOpacityScale == null ? 'inherit' : String(el.planRoomFillOpacityScale);
+  const vtFill = tmpl == null ? '—' : String(tmpl.planRoomFillOpacityScale ?? 1);
+  const pvFill =
+    el.planRoomFillOpacityScale == null ? 'inherit' : String(el.planRoomFillOpacityScale);
   const effFill = String(g?.roomFillOpacityScale ?? 1);
 
-  const vtOpening =
-    tmpl == null ? '—' : annotationTriEffective(tmpl.planShowOpeningTags ?? false);
+  const vtOpening = tmpl == null ? '—' : annotationTriEffective(tmpl.planShowOpeningTags ?? false);
   const pvOpening = annotationTriStored(el.planShowOpeningTags);
   const effOpening = annotationTriEffective(a.openingTagsVisible);
 
-  const vtLabels =
-    tmpl == null ? '—' : annotationTriEffective(tmpl.planShowRoomLabels ?? false);
+  const vtLabels = tmpl == null ? '—' : annotationTriEffective(tmpl.planShowRoomLabels ?? false);
   const pvLabels = annotationTriStored(el.planShowRoomLabels);
   const effLabels = annotationTriEffective(a.roomLabelsVisible);
 

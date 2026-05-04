@@ -28,8 +28,8 @@ export function PlanViewGraphicsMatrix(props: { rows: PlanGraphicsMatrixRow[] })
         </table>
       </div>
       <p className="mt-1.5 leading-snug text-[9px] text-muted">
-        Effective column matches symbology inputs: resolvePlanGraphicHints, resolvePlanAnnotationHints,
-        resolvePlanViewDisplay.
+        Effective column matches symbology inputs: resolvePlanGraphicHints,
+        resolvePlanAnnotationHints, resolvePlanViewDisplay.
       </p>
     </div>
   );
