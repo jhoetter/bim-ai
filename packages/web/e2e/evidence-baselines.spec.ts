@@ -19,6 +19,15 @@ const MOCK_SHEET_VIEWPORT_PNG_FROM_MANIFEST = `${MOCK_EVIDENCE_BASENAME}-sheet-h
 
 const MOCK_SHEET_FULL_PNG_FROM_MANIFEST = `${MOCK_EVIDENCE_BASENAME}-sheet-hf-sheet-ga01-full.png`;
 
+const MOCK_SHEET_RASTER_PLACEHOLDER_PROBE = `${MOCK_EVIDENCE_BASENAME}-sheet-hf-sheet-ga01.raster-placeholder.png`;
+
+/** Minimal deterministic placeholder PNG (`<svg/>`) for mocked `sheet-print-raster` route — matches server v1 encoder. */
+const MOCK_SHEET_PRINT_RASTER_PNG_BYTES = Uint8Array.from([
+  137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82, 0, 0, 0, 1, 0, 0, 0, 1, 8, 2, 0, 0,
+  0, 144, 119, 83, 222, 0, 0, 0, 12, 73, 68, 65, 84, 120, 218, 99, 184, 114, 39, 12, 0, 4, 142, 2,
+  7, 23, 80, 123, 180, 0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130,
+]);
+
 /** Sorted like server `evidenceClosureReview_v1.expectedDeterministicPngBasenames` for mock + assertions. */
 const MOCK_CLOSURE_DETERMINISTIC_PNG_BASENAMES = [
   `${MOCK_EVIDENCE_BASENAME}-plan-pv-eg.png`,
@@ -32,6 +41,19 @@ async function sharedRoutes(page: Page, layoutPreset: string) {
     localStorage.setItem('bim.welcome.dismissed', '1');
     localStorage.setItem('bim.workspaceLayout', preset);
   }, layoutPreset);
+
+  await page.route(`**/api/models/*/exports/sheet-print-raster.png**`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'image/png',
+      body: Buffer.from(MOCK_SHEET_PRINT_RASTER_PNG_BYTES),
+      headers: {
+        'X-Bim-Ai-Sheet-Print-Raster-Contract': 'sheetPrintRasterPlaceholder_v1',
+        'X-Bim-Ai-Sheet-Svg-Sha256':
+          'd4dc56669143034f31aa309635d4113d9ad76a02b1739da22c965ed2049be9e6',
+      },
+    });
+  });
 
   await page.route(`**/api/models/*/projection/plan**`, async (route) => {
     await route.fulfill({
@@ -373,6 +395,7 @@ async function sharedRoutes(page: Page, layoutPreset: string) {
             evidencePackage: `/api/models/${MODEL_ID}/evidence-package`,
             sheetPreviewSvg: `/api/models/${MODEL_ID}/exports/sheet-preview.svg`,
             sheetPreviewPdf: `/api/models/${MODEL_ID}/exports/sheet-preview.pdf`,
+            sheetPrintRasterPng: `/api/models/${MODEL_ID}/exports/sheet-print-raster.png`,
           },
           deterministicSheetEvidence: [
             {
@@ -380,11 +403,27 @@ async function sharedRoutes(page: Page, layoutPreset: string) {
               sheetName: 'GA-01 — Evidence',
               svgHref: `/api/models/${MODEL_ID}/exports/sheet-preview.svg?sheetId=hf-sheet-ga01`,
               pdfHref: `/api/models/${MODEL_ID}/exports/sheet-preview.pdf?sheetId=hf-sheet-ga01`,
+              printRasterPngHref: `/api/models/${MODEL_ID}/exports/sheet-print-raster.png?sheetId=hf-sheet-ga01`,
+              sheetPrintRasterIngest_v1: {
+                format: 'sheetPrintRasterIngest_v1',
+                contract: 'sheetPrintRasterPlaceholder_v1',
+                svgContentSha256:
+                  'd4dc56669143034f31aa309635d4113d9ad76a02b1739da22c965ed2049be9e6',
+                placeholderPngSha256:
+                  'd96db10ee28f5c236c22ca3b9ff548cfdeecdbdd5a03a5b2ac51fe674e273e88',
+                diffCorrelation: {
+                  format: 'sheetPrintRasterDiffCorrelation_v1',
+                  playwrightBaselineSlot: 'pngFullSheet',
+                  notes:
+                    'mock ingest — correlate placeholder hash vs Playwright baselines in CI only.',
+                },
+              },
               playwrightSuggestedFilenames: {
                 svgProbe: `${MOCK_EVIDENCE_BASENAME}-sheet-hf-sheet-ga01.svg.probe.txt`,
                 pdfProbe: `${MOCK_EVIDENCE_BASENAME}-sheet-hf-sheet-ga01.pdf.probe.bin`,
                 pngViewport: MOCK_SHEET_VIEWPORT_PNG_FROM_MANIFEST,
                 pngFullSheet: MOCK_SHEET_FULL_PNG_FROM_MANIFEST,
+                rasterPlaceholderProbe: MOCK_SHEET_RASTER_PLACEHOLDER_PROBE,
               },
               correlation: {
                 format: 'evidenceSheetCorrelation_v1',
@@ -690,5 +729,39 @@ test.describe('evidence PNG baselines', () => {
     expect(
       (follow?.bcfIssueCoordinationCheck_v1 as Record<string, unknown> | undefined)?.format,
     ).toBe('bcfIssueCoordinationCheck_v1');
+    const sheetRows = pkg.deterministicSheetEvidence as Record<string, unknown>[] | undefined;
+    expect(sheetRows?.[0]?.printRasterPngHref as string).toContain('sheet-print-raster.png');
+    const rasterIngest = sheetRows?.[0]?.sheetPrintRasterIngest_v1 as
+      | Record<string, unknown>
+      | undefined;
+    expect(rasterIngest?.format).toBe('sheetPrintRasterIngest_v1');
+    expect(rasterIngest?.contract).toBe('sheetPrintRasterPlaceholder_v1');
+    expect(rasterIngest?.placeholderPngSha256).toBe(
+      'd96db10ee28f5c236c22ca3b9ff548cfdeecdbdd5a03a5b2ac51fe674e273e88',
+    );
+  });
+
+  test('sheet-print-raster.png: placeholder contract response headers', async ({ page }) => {
+    await sharedRoutes(page, 'coordination');
+    await page.goto('/');
+    await expect(page.getByText('Ready', { exact: false })).toBeVisible({ timeout: 30_000 });
+    const result = await page.evaluate(async (mid: string) => {
+      const r = await fetch(
+        `/api/models/${mid}/exports/sheet-print-raster.png?sheetId=hf-sheet-ga01`,
+      );
+      const buf = new Uint8Array(await r.arrayBuffer());
+      return {
+        ok: r.ok,
+        contentType: r.headers.get('content-type'),
+        contract: r.headers.get('X-Bim-Ai-Sheet-Print-Raster-Contract'),
+        svgSha: r.headers.get('X-Bim-Ai-Sheet-Svg-Sha256'),
+        byteLength: buf.byteLength,
+      };
+    }, MODEL_ID);
+    expect(result.ok).toBe(true);
+    expect(result.contentType).toContain('image/png');
+    expect(result.contract).toBe('sheetPrintRasterPlaceholder_v1');
+    expect(result.svgSha).toBe('d4dc56669143034f31aa309635d4113d9ad76a02b1739da22c965ed2049be9e6');
+    expect(result.byteLength).toBe(MOCK_SHEET_PRINT_RASTER_PNG_BYTES.length);
   });
 });

@@ -17,7 +17,13 @@ from bim_ai.elements import (
     SheetElem,
     ViewpointElem,
 )
-from bim_ai.sheet_preview_svg import viewport_evidence_hints_v0
+from bim_ai.sheet_preview_svg import (
+    SHEET_PRINT_RASTER_PLACEHOLDER_CONTRACT_V1,
+    sheet_elem_to_svg,
+    sheet_print_raster_placeholder_png_bytes_v1,
+    sheet_svg_utf8_sha256,
+    viewport_evidence_hints_v0,
+)
 
 
 def export_link_map(model_id: UUID) -> dict[str, str]:
@@ -39,6 +45,7 @@ def export_link_map(model_id: UUID) -> dict[str, str]:
         "bcfTopicsJsonImport": f"{base}/imports/bcf-topics-json",
         "sheetPreviewSvg": f"{base}/exports/sheet-preview.svg",
         "sheetPreviewPdf": f"{base}/exports/sheet-preview.pdf",
+        "sheetPrintRasterPng": f"{base}/exports/sheet-print-raster.png",
         "roomDerivationCandidates": f"{base}/room-derivation-candidates",
         "typeMaterialRegistry": f"{base}/registry/type-material",
         "planProjectionWire": f"{base}/projection/plan",
@@ -157,6 +164,10 @@ def deterministic_sheet_evidence_manifest(
         qid = quote(sh.id, safe="")
 
         stem = f"{evidence_artifact_basename}-sheet-{safe}"
+        svg_body = sheet_elem_to_svg(doc, sh)
+        svg_sha = sheet_svg_utf8_sha256(svg_body)
+        placeholder_png = sheet_print_raster_placeholder_png_bytes_v1(svg_body)
+        placeholder_png_sha = hashlib.sha256(placeholder_png).hexdigest()
 
         rows.append(
             {
@@ -164,11 +175,28 @@ def deterministic_sheet_evidence_manifest(
                 "sheetName": sh.name,
                 "svgHref": f"{api_base}/sheet-preview.svg?sheetId={qid}",
                 "pdfHref": f"{api_base}/sheet-preview.pdf?sheetId={qid}",
+                "printRasterPngHref": f"{api_base}/sheet-print-raster.png?sheetId={qid}",
+                "sheetPrintRasterIngest_v1": {
+                    "format": "sheetPrintRasterIngest_v1",
+                    "contract": SHEET_PRINT_RASTER_PLACEHOLDER_CONTRACT_V1,
+                    "svgContentSha256": svg_sha,
+                    "placeholderPngSha256": placeholder_png_sha,
+                    "diffCorrelation": {
+                        "format": "sheetPrintRasterDiffCorrelation_v1",
+                        "playwrightBaselineSlot": "pngFullSheet",
+                        "notes": (
+                            "Server placeholder PNG correlates with the sheet SVG digest only; it does not "
+                            "pixel-match Playwright captures. Use for CI artifact/hash correlation; baseline "
+                            "visual diff remains client-side on pngFullSheet / pngViewport."
+                        ),
+                    },
+                },
                 "playwrightSuggestedFilenames": {
                     "svgProbe": f"{stem}.svg.probe.txt",
                     "pdfProbe": f"{stem}.pdf.probe.bin",
                     "pngViewport": f"{stem}-viewport.png",
                     "pngFullSheet": f"{stem}-full.png",
+                    "rasterPlaceholderProbe": f"{stem}.raster-placeholder.png",
                 },
                 "viewportEvidenceHints_v0": viewport_evidence_hints_v0(list(sh.viewports_mm or [])),
                 "correlation": {
@@ -543,7 +571,8 @@ def agent_evidence_closure_hints() -> dict[str, Any]:
             (
                 "cd app && ruff check bim_ai tests && "
                 "pytest tests/test_evidence_package_digest.py tests/test_evidence_manifest_closure.py "
-                "tests/test_evidence_agent_follow_through.py tests/test_plan_projection_and_evidence_slices.py"
+                "tests/test_evidence_agent_follow_through.py tests/test_plan_projection_and_evidence_slices.py "
+                "tests/test_sheet_print_raster_placeholder.py"
             ),
             "cd packages/web && CI=true pnpm exec playwright test e2e/evidence-baselines.spec.ts",
         ],

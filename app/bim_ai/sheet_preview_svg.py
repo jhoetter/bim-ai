@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import hashlib
 import html
 import math
+import struct
+import zlib
 from typing import Any
 
 from bim_ai.document import Document
@@ -17,6 +20,34 @@ from bim_ai.elements import (
 )
 from bim_ai.plan_projection_wire import resolve_plan_projection_wire
 from bim_ai.section_projection_primitives import build_section_projection_primitives
+
+SHEET_PRINT_RASTER_PLACEHOLDER_CONTRACT_V1 = "sheetPrintRasterPlaceholder_v1"
+
+
+def sheet_svg_utf8_sha256(svg_text: str) -> str:
+    return hashlib.sha256(svg_text.encode("utf-8")).hexdigest()
+
+
+def _png_pack_chunk(chunk_type: bytes, data: bytes) -> bytes:
+    crc = zlib.crc32(chunk_type + data) & 0xFFFFFFFF
+    return struct.pack("!I", len(data)) + chunk_type + data + struct.pack("!I", crc)
+
+
+def sheet_print_raster_placeholder_png_bytes_v1(svg_text: str) -> bytes:
+    """1x1 RGB PNG; bytes derived deterministically from the SVG UTF-8 string (hash-correlated placeholder)."""
+
+    digest = hashlib.sha256(svg_text.encode("utf-8")).digest()
+    r, g, b = int(digest[0]), int(digest[1]), int(digest[2])
+    signature = b"\x89PNG\r\n\x1a\n"
+    ihdr = struct.pack("!IIBBBBB", 1, 1, 8, 2, 0, 0, 0)
+    raw_scanline = bytes([0, r, g, b])
+    idat = zlib.compress(raw_scanline, level=9)
+    return (
+        signature
+        + _png_pack_chunk(b"IHDR", ihdr)
+        + _png_pack_chunk(b"IDAT", idat)
+        + _png_pack_chunk(b"IEND", b"")
+    )
 
 
 def pick_sheet(doc: Document, sheet_id: str | None) -> SheetElem:

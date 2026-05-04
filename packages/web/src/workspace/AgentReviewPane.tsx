@@ -44,6 +44,9 @@ export function AgentReviewPane() {
       sheetName?: string;
       pngViewport?: string;
       pngFullSheet?: string;
+      printRasterPngHref?: string;
+      printRasterContract?: string;
+      placeholderPngSha256Tail?: string;
       bundleJson?: string;
     }[];
     view3dRows: {
@@ -330,6 +333,12 @@ export function AgentReviewPane() {
         const corrRaw = r.correlation;
         const corr =
           corrRaw && typeof corrRaw === 'object' ? (corrRaw as Record<string, unknown>) : {};
+        const rasterRaw = r.sheetPrintRasterIngest_v1;
+        const raster =
+          rasterRaw && typeof rasterRaw === 'object' ? (rasterRaw as Record<string, unknown>) : {};
+        const ph = raster.placeholderPngSha256;
+        const phStr = typeof ph === 'string' && ph.length >= 12 ? ph.slice(-12) : undefined;
+        const ctr = raster.contract;
         return {
           sheetId: String(r.sheetId ?? r.sheet_id ?? ''),
           sheetName:
@@ -340,6 +349,14 @@ export function AgentReviewPane() {
                 : undefined,
           pngViewport: typeof pw.pngViewport === 'string' ? pw.pngViewport : undefined,
           pngFullSheet: typeof pw.pngFullSheet === 'string' ? pw.pngFullSheet : undefined,
+          printRasterPngHref:
+            typeof r.printRasterPngHref === 'string'
+              ? r.printRasterPngHref
+              : typeof r.print_raster_png_href === 'string'
+                ? r.print_raster_png_href
+                : undefined,
+          printRasterContract: typeof ctr === 'string' ? ctr : undefined,
+          placeholderPngSha256Tail: phStr,
           bundleJson:
             typeof corr.suggestedEvidenceBundleEvidencePackageJson === 'string'
               ? corr.suggestedEvidenceBundleEvidencePackageJson
@@ -1404,6 +1421,7 @@ export function AgentReviewPane() {
                     <th className="border border-border px-1 py-1 text-left">Sheet</th>
                     <th className="border border-border px-1 py-1 text-left">PNG viewport</th>
                     <th className="border border-border px-1 py-1 text-left">PNG full bleed</th>
+                    <th className="border border-border px-1 py-1 text-left">Print raster</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1418,6 +1436,28 @@ export function AgentReviewPane() {
                       </td>
                       <td className="border border-border px-1 py-1 font-mono align-top">
                         {sr.pngFullSheet ?? '—'}
+                      </td>
+                      <td className="border border-border px-1 py-1 align-top font-mono text-[9px]">
+                        {sr.printRasterPngHref ? (
+                          <div className="space-y-0.5">
+                            <a
+                              className="text-primary underline break-all"
+                              href={sr.printRasterPngHref}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              sheet-print-raster.png
+                            </a>
+                            {sr.printRasterContract ? (
+                              <div className="text-muted">{sr.printRasterContract}</div>
+                            ) : null}
+                            {sr.placeholderPngSha256Tail ? (
+                              <div className="text-muted">png…{sr.placeholderPngSha256Tail}</div>
+                            ) : null}
+                          </div>
+                        ) : (
+                          '—'
+                        )}
                       </td>
                     </tr>
                   ))}

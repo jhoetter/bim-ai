@@ -286,6 +286,16 @@ def test_deterministic_sheet_evidence_rows_stable() -> None:
     assert len(rows) == 1
     assert rows[0]["sheetId"] == "sheet-a"
     assert "svgHref" in rows[0]
+    assert rows[0]["printRasterPngHref"].endswith("/exports/sheet-print-raster.png?sheetId=sheet-a")
+    ingest = rows[0].get("sheetPrintRasterIngest_v1") or {}
+    assert ingest.get("format") == "sheetPrintRasterIngest_v1"
+    assert ingest.get("contract") == "sheetPrintRasterPlaceholder_v1"
+    assert ingest.get("svgContentSha256") and ingest.get("placeholderPngSha256")
+    diffc = ingest.get("diffCorrelation") or {}
+    assert diffc.get("format") == "sheetPrintRasterDiffCorrelation_v1"
+    assert diffc.get("playwrightBaselineSlot") == "pngFullSheet"
+    pw = rows[0]["playwrightSuggestedFilenames"]
+    assert pw["rasterPlaceholderProbe"] == "pfx-sheet-sheet-a.raster-placeholder.png"
     assert rows[0]["playwrightSuggestedFilenames"]["pngViewport"].startswith("pfx-sheet-sheet-a")
     assert rows[0]["playwrightSuggestedFilenames"]["pngFullSheet"] == "pfx-sheet-sheet-a-full.png"
     assert rows[0].get("viewportEvidenceHints_v0") == []

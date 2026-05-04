@@ -67,7 +67,13 @@ from bim_ai.room_derivation_preview import (
 from bim_ai.schedule_csv import schedule_payload_to_csv, schedule_payload_with_column_subset
 from bim_ai.schedule_derivation import derive_schedule_table, list_schedule_ids
 from bim_ai.sheet_preview_pdf import sheet_elem_to_pdf_bytes
-from bim_ai.sheet_preview_svg import pick_sheet, sheet_elem_to_svg
+from bim_ai.sheet_preview_svg import (
+    SHEET_PRINT_RASTER_PLACEHOLDER_CONTRACT_V1,
+    pick_sheet,
+    sheet_elem_to_svg,
+    sheet_print_raster_placeholder_png_bytes_v1,
+    sheet_svg_utf8_sha256,
+)
 from bim_ai.tables import (
     CommentRecord,
     ModelRecord,
@@ -325,8 +331,10 @@ async def evidence_package(
         "typeMaterialRegistry": merged_registry_payload(doc),
         "hint": "Use Playwright to capture PNG alongside this JSON per spec §8.3 / §14 Phase A. CI attaches artifacts alongside this bundle.",
         "sheetRasterNote": (
-            "Sheet SVG/PDF exports are deterministic server-side; bundle Playwright screenshots as canonical PNG evidence "
-            "(optional backend SVG→PNG raster stays out-of-band to minimize deploy deps)."
+            "Sheet SVG/PDF exports are deterministic server-side. "
+            "`GET …/exports/sheet-print-raster.png` returns a hash-correlated 1x1 PNG placeholder "
+            f"(`{SHEET_PRINT_RASTER_PLACEHOLDER_CONTRACT_V1}`) for CI artifact correlation — "
+            "not a visual raster of the sheet; use Playwright captures for baseline PNG diffing."
         ),
     }
     plan_ids = sorted(eid for eid, e in doc.elements.items() if isinstance(e, PlanViewElem))
@@ -351,7 +359,7 @@ async def evidence_package(
         "evidencePackageJson": f'{payload["suggestedEvidenceArtifactBasename"]}-evidence-package.json',
     }
     payload["recommendedPngEvidenceBackend"] = "playwright_ci"
-    payload["svgRasterBackendAvailable"] = False
+    payload["svgRasterBackendAvailable"] = True
     payload["deterministicSheetEvidence"] = deterministic_sheet_evidence_manifest(
         model_id=model_id,
         doc=doc,
@@ -607,6 +615,35 @@ async def sheet_preview_pdf_export(
         headers={
             "Content-Disposition": f'attachment; filename="bim-ai-model-{model_id}-{fname}.pdf"',
             "Cache-Control": "public, max-age=60",
+        },
+    )
+
+
+@api_router.get("/models/{model_id}/exports/sheet-print-raster.png")
+async def sheet_print_raster_png_export(
+    model_id: UUID,
+    sheet_id: Annotated[str | None, Query(alias="sheetId")] = None,
+    session: AsyncSession = Depends(get_session),
+) -> Response:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    doc = Document.model_validate(row.document)
+    try:
+        sh = pick_sheet(doc, sheet_id or None)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    svg = sheet_elem_to_svg(doc, sh)
+    blob = sheet_print_raster_placeholder_png_bytes_v1(svg)
+    svg_sha = sheet_svg_utf8_sha256(svg)
+    return Response(
+        content=blob,
+        media_type="image/png",
+        headers={
+            "Cache-Control": "public, max-age=60",
+            "X-Bim-Ai-Sheet-Print-Raster-Contract": SHEET_PRINT_RASTER_PLACEHOLDER_CONTRACT_V1,
+            "X-Bim-Ai-Sheet-Svg-Sha256": svg_sha,
         },
     )
 
