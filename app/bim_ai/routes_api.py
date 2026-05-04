@@ -69,12 +69,12 @@ from bim_ai.schedule_csv import schedule_payload_to_csv, schedule_payload_with_c
 from bim_ai.schedule_derivation import derive_schedule_table, list_schedule_ids
 from bim_ai.sheet_preview_pdf import sheet_elem_to_pdf_bytes
 from bim_ai.sheet_preview_svg import (
-    SHEET_PRINT_RASTER_LAYOUT_STAMP_CONTRACT_V1,
-    SHEET_PRINT_RASTER_STAMP_HEIGHT_PX,
+    SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2,
     SHEET_PRINT_RASTER_STAMP_WIDTH_PX,
+    SHEET_PRINT_RASTER_SURROGATE_V2_HEIGHT_PX,
     pick_sheet,
     sheet_elem_to_svg,
-    sheet_print_raster_layout_stamp_png_bytes_v1,
+    sheet_print_raster_print_surrogate_png_bytes_v2,
     sheet_svg_utf8_sha256,
 )
 from bim_ai.tables import (
@@ -335,9 +335,10 @@ async def evidence_package(
         "hint": "Use Playwright to capture PNG alongside this JSON per spec §8.3 / §14 Phase A. CI attaches artifacts alongside this bundle.",
         "sheetRasterNote": (
             "Sheet SVG/PDF exports are deterministic server-side. "
-            "`GET …/exports/sheet-print-raster.png` returns a deterministic 128×96 RGB8 viewport **layout-stamp** PNG "
-            f"(`{SHEET_PRINT_RASTER_LAYOUT_STAMP_CONTRACT_V1}`) for CI correlation — "
-            "not a true raster of the sheet SVG; use Playwright captures for baseline PNG diffing."
+            "`GET …/exports/sheet-print-raster.png` returns a deterministic 128×112 RGB8 **print-surrogate** PNG "
+            f"(`{SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2}`: 96px viewport layout stamp + 16px titleblock "
+            "metadata strip + SVG UTF-8 salt) for CI correlation — not a true raster of the sheet SVG; use Playwright "
+            "captures for baseline PNG diffing."
         ),
     }
     plan_ids = sorted(eid for eid, e in doc.elements.items() if isinstance(e, PlanViewElem))
@@ -646,17 +647,17 @@ async def sheet_print_raster_png_export(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
     svg = sheet_elem_to_svg(doc, sh)
-    blob = sheet_print_raster_layout_stamp_png_bytes_v1(doc, sh, svg)
+    blob = sheet_print_raster_print_surrogate_png_bytes_v2(doc, sh, svg)
     svg_sha = sheet_svg_utf8_sha256(svg)
     return Response(
         content=blob,
         media_type="image/png",
         headers={
             "Cache-Control": "public, max-age=60",
-            "X-Bim-Ai-Sheet-Print-Raster-Contract": SHEET_PRINT_RASTER_LAYOUT_STAMP_CONTRACT_V1,
+            "X-Bim-Ai-Sheet-Print-Raster-Contract": SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2,
             "X-Bim-Ai-Sheet-Svg-Sha256": svg_sha,
             "X-Bim-Ai-Sheet-Print-Raster-Width": str(SHEET_PRINT_RASTER_STAMP_WIDTH_PX),
-            "X-Bim-Ai-Sheet-Print-Raster-Height": str(SHEET_PRINT_RASTER_STAMP_HEIGHT_PX),
+            "X-Bim-Ai-Sheet-Print-Raster-Height": str(SHEET_PRINT_RASTER_SURROGATE_V2_HEIGHT_PX),
         },
     )
 

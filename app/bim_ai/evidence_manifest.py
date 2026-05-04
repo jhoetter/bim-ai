@@ -18,12 +18,16 @@ from bim_ai.elements import (
     ViewpointElem,
 )
 from bim_ai.sheet_preview_svg import (
-    SHEET_PRINT_RASTER_LAYOUT_STAMP_CONTRACT_V1,
+    SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2,
     plan_room_programme_legend_hints_v0,
     sheet_elem_to_svg,
-    sheet_print_raster_layout_stamp_png_bytes_v1,
+    sheet_print_raster_print_surrogate_png_bytes_v2,
     sheet_svg_utf8_sha256,
     viewport_evidence_hints_v1,
+)
+
+PLAYWRIGHT_EVIDENCE_SCREENSHOTS_ROOT_HINT = (
+    "packages/web/e2e/__screenshots__/evidence-baselines/evidence-baselines.spec.ts/"
 )
 
 
@@ -167,7 +171,7 @@ def deterministic_sheet_evidence_manifest(
         stem = f"{evidence_artifact_basename}-sheet-{safe}"
         svg_body = sheet_elem_to_svg(doc, sh)
         svg_sha = sheet_svg_utf8_sha256(svg_body)
-        placeholder_png = sheet_print_raster_layout_stamp_png_bytes_v1(doc, sh, svg_body)
+        placeholder_png = sheet_print_raster_print_surrogate_png_bytes_v2(doc, sh, svg_body)
         placeholder_png_sha = hashlib.sha256(placeholder_png).hexdigest()
 
         rows.append(
@@ -179,17 +183,18 @@ def deterministic_sheet_evidence_manifest(
                 "printRasterPngHref": f"{api_base}/sheet-print-raster.png?sheetId={qid}",
                 "sheetPrintRasterIngest_v1": {
                     "format": "sheetPrintRasterIngest_v1",
-                    "contract": SHEET_PRINT_RASTER_LAYOUT_STAMP_CONTRACT_V1,
+                    "contract": SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2,
                     "svgContentSha256": svg_sha,
                     "placeholderPngSha256": placeholder_png_sha,
                     "diffCorrelation": {
                         "format": "sheetPrintRasterDiffCorrelation_v1",
                         "playwrightBaselineSlot": "pngFullSheet",
                         "notes": (
-                            "Server layout-stamp PNG encodes sheet viewport rectangles on a fixed RGB canvas plus "
-                            "SVG UTF-8 salt; it does not pixel-match Playwright captures or fully render the SVG. "
-                            "Use for CI artifact/hash correlation and viewport-layout evidence; baseline visual "
-                            "diff remains client-side on pngFullSheet / pngViewport."
+                            "Server print-surrogate PNG (128×112) stacks a 128×96 viewport layout stamp with SVG "
+                            "UTF-8 salt and a 16px deterministic titleblock metadata band; it does not pixel-match "
+                            "Playwright captures or fully render the SVG. Use for CI artifact/hash correlation and "
+                            "layout/titleblock evidence; baseline visual diff remains client-side on pngFullSheet / "
+                            "pngViewport."
                         ),
                     },
                 },
@@ -378,6 +383,37 @@ def pixel_diff_expectation_placeholder_v1() -> dict[str, Any]:
     }
 
 
+def artifact_ingest_correlation_v1(targets: list[dict[str, Any]]) -> dict[str, Any]:
+    """SHA-256 manifest over canonical baseline/diff basename pairs from ingest checklist targets."""
+
+    pairs: list[dict[str, str]] = []
+    for raw in targets:
+        if not isinstance(raw, dict):
+            continue
+        b = raw.get("baselinePngBasename")
+        d = raw.get("expectedDiffBasename")
+        if (
+            isinstance(b, str)
+            and isinstance(d, str)
+            and b.endswith(".png")
+            and d.endswith(".png")
+        ):
+            pairs.append({"baselinePngBasename": b, "expectedDiffBasename": d})
+    pairs.sort(key=lambda p: (p["baselinePngBasename"], p["expectedDiffBasename"]))
+    payload = json.dumps(pairs, sort_keys=True, separators=(",", ":"), default=str)
+    digest = hashlib.sha256(payload.encode()).hexdigest()
+    return {
+        "format": "artifactIngestCorrelation_v1",
+        "canonicalPairCount": len(pairs),
+        "ingestManifestDigestSha256": digest,
+        "playwrightEvidenceScreenshotsRootHint": PLAYWRIGHT_EVIDENCE_SCREENSHOTS_ROOT_HINT,
+        "notes": (
+            "Derived from pixelDiffExpectation.ingestChecklist_v1.targets only; "
+            "client-side ingest correlation for deterministic PNG basenames vs expected diff filenames."
+        ),
+    }
+
+
 def pixel_diff_expectation_v1_with_ingest(expected_png_basenames: list[str]) -> dict[str, Any]:
     """Placeholder plus deterministic per-baseline diff basename pairs for scripted ingest."""
 
@@ -393,6 +429,7 @@ def pixel_diff_expectation_v1_with_ingest(expected_png_basenames: list[str]) -> 
         "format": "pixelDiffIngestChecklist_v1",
         "targets": targets,
     }
+    base["artifactIngestCorrelation_v1"] = artifact_ingest_correlation_v1(targets)
     return base
 
 
@@ -470,7 +507,15 @@ def evidence_lifecycle_signal_v1(
     basenames = evidence_closure_review.get("expectedDeterministicPngBasenames")
     bn_n = len(basenames) if isinstance(basenames, list) else 0
 
-    return {
+    ingest_digest: str | None = None
+    if isinstance(pix, dict):
+        ac = pix.get("artifactIngestCorrelation_v1")
+        if isinstance(ac, dict):
+            d = ac.get("ingestManifestDigestSha256")
+            if isinstance(d, str) and len(d) == 64:
+                ingest_digest = d
+
+    out: dict[str, Any] = {
         "format": "evidenceLifecycleSignal_v1",
         "packageSemanticDigestSha256": package_semantic_digest_sha256,
         "suggestedEvidenceArtifactBasename": suggested_evidence_artifact_basename,
@@ -479,6 +524,9 @@ def evidence_lifecycle_signal_v1(
         "screenshotHintGapRowCount": gap_n,
         "pixelDiffIngestTargetCount": t_count,
     }
+    if ingest_digest is not None:
+        out["artifactIngestManifestDigestSha256"] = ingest_digest
+    return out
 
 
 def evidence_diff_ingest_fix_loop_v1(evidence_closure_review: dict[str, Any]) -> dict[str, Any]:
@@ -609,6 +657,11 @@ def agent_evidence_closure_hints() -> dict[str, Any]:
         "deterministicPngBasenamesField": "expectedDeterministicPngBasenames",
         "screenshotHintGapsField": "screenshotHintGaps_v1",
         "pixelDiffIngestChecklistField": "ingestChecklist_v1",
+        "artifactIngestCorrelationNestedField": "artifactIngestCorrelation_v1",
+        "artifactIngestCorrelationFullPath": (
+            "evidenceClosureReview_v1.pixelDiffExpectation.artifactIngestCorrelation_v1"
+        ),
+        "artifactIngestManifestDigestSha256LifecycleField": "artifactIngestManifestDigestSha256",
         "evidenceLifecycleSignalField": "evidenceLifecycleSignal_v1",
         "evidenceDiffIngestFixLoopField": "evidenceDiffIngestFixLoop_v1",
         "evidenceAgentFollowThroughField": "evidenceAgentFollowThrough_v1",

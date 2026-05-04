@@ -25,8 +25,14 @@ SHEET_PRINT_RASTER_PLACEHOLDER_CONTRACT_V1 = "sheetPrintRasterPlaceholder_v1"
 
 SHEET_PRINT_RASTER_LAYOUT_STAMP_CONTRACT_V1 = "sheetPrintRasterLayoutStamp_v1"
 
+SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2 = "sheetPrintRasterPrintSurrogate_v2"
+
 SHEET_PRINT_RASTER_STAMP_WIDTH_PX = 128
 SHEET_PRINT_RASTER_STAMP_HEIGHT_PX = 96
+SHEET_PRINT_RASTER_TITLEBLOCK_BAND_PX = 16
+SHEET_PRINT_RASTER_SURROGATE_V2_HEIGHT_PX = (
+    SHEET_PRINT_RASTER_STAMP_HEIGHT_PX + SHEET_PRINT_RASTER_TITLEBLOCK_BAND_PX
+)
 
 
 def sheet_svg_utf8_sha256(svg_text: str) -> str:
@@ -89,10 +95,10 @@ def _stamp_viewport_fill_rgb(digest: bytes) -> tuple[int, int, int]:
     return r, g, b
 
 
-def sheet_print_raster_layout_stamp_png_bytes_v1(
+def _sheet_print_raster_layout_stamp_rows(
     _doc: Document, sh: SheetElem, svg_text: str
-) -> bytes:
-    """128x96 RGB8 PNG from viewport mm rectangles + SVG UTF-8 salt (layout stamp, not SVG raster)."""
+) -> list[bytes]:
+    """RGB scanlines for the viewport layout stamp region (96 rows × 128 cols)."""
 
     w_px, h_px = SHEET_PRINT_RASTER_STAMP_WIDTH_PX, SHEET_PRINT_RASTER_STAMP_HEIGHT_PX
     svg_digest = hashlib.sha256(svg_text.encode("utf-8")).digest()
@@ -109,12 +115,12 @@ def sheet_print_raster_layout_stamp_png_bytes_v1(
         x_mm, y_mm, w_mm, h_mm = read_viewport_mm_box(vp)
         rects.append((vid, x_mm, y_mm, w_mm, h_mm))
 
-    rows: list[bytearray] = [bytearray([bg[0], bg[1], bg[2]] * w_px) for _ in range(h_px)]
+    rows_buf: list[bytearray] = [bytearray([bg[0], bg[1], bg[2]] * w_px) for _ in range(h_px)]
 
     def set_px(rx: int, ry: int, rgb: tuple[int, int, int]) -> None:
         if 0 <= rx < w_px and 0 <= ry < h_px:
             off = rx * 3
-            row = rows[ry]
+            row = rows_buf[ry]
             row[off] = rgb[0]
             row[off + 1] = rgb[1]
             row[off + 2] = rgb[2]
@@ -159,7 +165,74 @@ def sheet_print_raster_layout_stamp_png_bytes_v1(
                     edge = x == px0 or x == px1 or y == py0 or y == py1
                     set_px(x, y, outline if edge else (fr, fg, fb))
 
-    return _encode_png_rgb8_rgb(w_px, h_px, [bytes(r) for r in rows])
+    return [bytes(r) for r in rows_buf]
+
+
+def sheet_print_raster_layout_stamp_png_bytes_v1(
+    doc: Document, sh: SheetElem, svg_text: str
+) -> bytes:
+    """128x96 RGB8 PNG from viewport mm rectangles + SVG UTF-8 salt (layout stamp, not SVG raster)."""
+
+    rows = _sheet_print_raster_layout_stamp_rows(doc, sh, svg_text)
+    return _encode_png_rgb8_rgb(
+        SHEET_PRINT_RASTER_STAMP_WIDTH_PX, SHEET_PRINT_RASTER_STAMP_HEIGHT_PX, rows
+    )
+
+
+def _titleblock_surrogate_payload_bytes(sh: SheetElem) -> bytes:
+    """Canonical titleblock + paper fields for the surrogate strip (mirrors SVG export inputs)."""
+
+    tb = sh.titleblock_parameters or {}
+    sheet_no_raw = tb.get("sheetNumber") or tb.get("sheetNo") or ""
+    revision_raw = tb.get("revision") or ""
+    project_raw = tb.get("projectName") or tb.get("project") or ""
+    drawn_raw = tb.get("drawnBy") or ""
+    chk_raw = tb.get("checkedBy") or ""
+    issued_raw = tb.get("issueDate") or tb.get("date") or ""
+    parts = (
+        sh.name or "",
+        sh.title_block or "",
+        f"{float(sh.paper_width_mm):g}",
+        f"{float(sh.paper_height_mm):g}",
+        str(sheet_no_raw),
+        str(revision_raw),
+        str(project_raw),
+        str(drawn_raw),
+        str(chk_raw),
+        str(issued_raw),
+    )
+    return "\n".join(parts).encode("utf-8")
+
+
+def _titleblock_surrogate_band_rows(sh: SheetElem, svg_text: str) -> list[bytes]:
+    w_px = SHEET_PRINT_RASTER_STAMP_WIDTH_PX
+    band = SHEET_PRINT_RASTER_TITLEBLOCK_BAND_PX
+    svg_digest = hashlib.sha256(svg_text.encode("utf-8")).digest()
+    payload = _titleblock_surrogate_payload_bytes(sh)
+    out: list[bytes] = []
+    for r in range(band):
+        seed = hashlib.sha256(
+            b"sheetPrintRasterTitleblockBand_v2\x00" + svg_digest + bytes([r]) + payload
+        ).digest()
+        buf = bytearray()
+        cur = seed
+        while len(buf) < w_px * 3:
+            cur = hashlib.sha256(cur + bytes([len(buf) & 0xFF])).digest()
+            buf.extend(cur)
+        out.append(bytes(buf[: w_px * 3]))
+    return out
+
+
+def sheet_print_raster_print_surrogate_png_bytes_v2(
+    doc: Document, sh: SheetElem, svg_text: str
+) -> bytes:
+    """128×112 RGB8: 96px layout stamp + 16px deterministic titleblock band (not SVG raster)."""
+
+    rows = _sheet_print_raster_layout_stamp_rows(doc, sh, svg_text)
+    rows.extend(_titleblock_surrogate_band_rows(sh, svg_text))
+    return _encode_png_rgb8_rgb(
+        SHEET_PRINT_RASTER_STAMP_WIDTH_PX, SHEET_PRINT_RASTER_SURROGATE_V2_HEIGHT_PX, rows
+    )
 
 
 def pick_sheet(doc: Document, sheet_id: str | None) -> SheetElem:
