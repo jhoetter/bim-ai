@@ -25,6 +25,19 @@ def _remediate_evidence_diff_ingest_target(
     }
     pix = evidence_closure_review.get("pixelDiffExpectation")
     if isinstance(pix, dict):
+        gate = pix.get("pixelDiffClosureGate_v1")
+        if isinstance(gate, dict):
+            state = gate.get("gateState")
+            if isinstance(state, str) and state:
+                target["pixelDiffClosureGateState"] = state
+            gate_blockers = gate.get("blockerCodes")
+            if isinstance(gate_blockers, list):
+                target["pixelDiffClosureGateBlockerCodes"] = sorted(
+                    {str(x) for x in gate_blockers if isinstance(x, str)}
+                )
+            target["pixelDiffClosureGateField"] = (
+                "evidenceClosureReview_v1.pixelDiffExpectation.pixelDiffClosureGate_v1"
+            )
         ac = pix.get("artifactIngestCorrelation_v1")
         if isinstance(ac, dict):
             dig = ac.get("ingestManifestDigestSha256")

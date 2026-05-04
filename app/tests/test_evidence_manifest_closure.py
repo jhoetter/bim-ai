@@ -5,6 +5,7 @@ from bim_ai.evidence_manifest import (
     evidence_closure_review_v1,
     evidence_diff_ingest_fix_loop_v1,
     evidence_lifecycle_signal_v1,
+    pixel_diff_closure_gate_v1,
 )
 
 
@@ -66,6 +67,13 @@ def test_evidence_closure_review_inventory_lists_sorted_png_basenames() -> None:
     dig = ac["ingestManifestDigestSha256"]
     assert isinstance(dig, str) and len(dig) == 64
     assert dig == artifact_ingest_correlation_v1(list(ingest["targets"]))["ingestManifestDigestSha256"]
+    gate = out["pixelDiffExpectation"]["pixelDiffClosureGate_v1"]
+    assert gate["format"] == "pixelDiffClosureGate_v1"
+    assert gate["enforcement"] == "required_for_evidence_closure"
+    assert gate["gateState"] == "pending"
+    assert gate["blockerCodes"] == ["pixel_diff_ingest_pending"]
+    assert gate["expectedPngCount"] == 4
+    assert gate["validIngestTargetCount"] == 4
     gaps = out["screenshotHintGaps_v1"]
     assert gaps["format"] == "screenshotHintGaps_v1"
     assert gaps["hasGaps"] is False
@@ -166,6 +174,8 @@ def test_evidence_lifecycle_signal_v1_matches_closure_review() -> None:
     corr_dig = corr_ac["ingestManifestDigestSha256"]
     assert isinstance(corr_dig, str) and len(corr_dig) == 64
     assert sig["artifactIngestManifestDigestSha256"] == corr_dig
+    assert sig["pixelDiffClosureGateState"] == "pending"
+    assert sig["pixelDiffClosureGateBlockerCodes"] == ["pixel_diff_ingest_pending"]
 
     stale_pkg = "f" * 64
     stale_closure = evidence_closure_review_v1(
@@ -189,7 +199,7 @@ def test_evidence_lifecycle_signal_v1_matches_closure_review() -> None:
     assert stale_sig["correlationFullyConsistent"] is False
 
 
-def test_evidence_diff_ingest_fix_loop_clear_when_pixel_marked_ingested() -> None:
+def test_evidence_diff_ingest_fix_loop_clear_when_pixel_metrics_pass_gate() -> None:
     pkg = "f" * 64
     closure = evidence_closure_review_v1(
         package_semantic_digest_sha256=pkg,
@@ -208,11 +218,61 @@ def test_evidence_diff_ingest_fix_loop_clear_when_pixel_marked_ingested() -> Non
     assert isinstance(pix, dict)
     pix = dict(pix)
     pix["status"] = "ingested"
+    pix["metrics_v1"] = {
+        "format": "pixelDiffMetrics_v1",
+        "mismatchPixelRatioMax": 0.0,
+        "maxChannelDelta": 0,
+    }
+    pix["pixelDiffClosureGate_v1"] = pixel_diff_closure_gate_v1(
+        pixel_diff_expectation=pix,
+        expected_png_basenames=closure["expectedDeterministicPngBasenames"],
+    )
     closure2 = {**closure, "pixelDiffExpectation": pix}
     fl = evidence_diff_ingest_fix_loop_v1(closure2)
     assert fl["format"] == "evidence_diff_ingest_fix_loop_v1"
     assert fl["needsFixLoop"] is False
     assert fl["blockerCodes"] == []
+
+
+def test_evidence_diff_ingest_fix_loop_fails_when_pixel_metrics_exceed_gate() -> None:
+    pkg = "f" * 64
+    closure = evidence_closure_review_v1(
+        package_semantic_digest_sha256=pkg,
+        deterministic_sheet_evidence=[
+            {
+                "sheetId": "s1",
+                "playwrightSuggestedFilenames": {"pngViewport": "a.png", "pngFullSheet": "b.png"},
+                "correlation": {"semanticDigestSha256": pkg},
+            }
+        ],
+        deterministic_3d_view_evidence=[],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+    )
+    pix = closure["pixelDiffExpectation"]
+    assert isinstance(pix, dict)
+    pix = dict(pix)
+    pix["status"] = "ingested"
+    pix["metrics_v1"] = {
+        "format": "pixelDiffMetrics_v1",
+        "mismatchPixelRatioMax": 0.01,
+        "maxChannelDelta": 3,
+    }
+    pix["pixelDiffClosureGate_v1"] = pixel_diff_closure_gate_v1(
+        pixel_diff_expectation=pix,
+        expected_png_basenames=closure["expectedDeterministicPngBasenames"],
+    )
+    gate = pix["pixelDiffClosureGate_v1"]
+    assert gate["gateState"] == "failed"
+    assert gate["blockerCodes"] == ["pixel_diff_threshold_exceeded"]
+    assert [v["metric"] for v in gate["thresholdViolations"]] == [
+        "mismatchPixelRatioMax",
+        "maxChannelDelta",
+    ]
+    closure2 = {**closure, "pixelDiffExpectation": pix}
+    fl = evidence_diff_ingest_fix_loop_v1(closure2)
+    assert fl["needsFixLoop"] is True
+    assert fl["blockerCodes"] == ["pixel_diff_threshold_exceeded"]
 
 
 def test_evidence_diff_ingest_fix_loop_correlation_blocker() -> None:

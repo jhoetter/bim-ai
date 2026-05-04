@@ -414,6 +414,148 @@ def artifact_ingest_correlation_v1(targets: list[dict[str, Any]]) -> dict[str, A
     }
 
 
+def _metric_number(value: Any) -> float | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int | float):
+        return float(value)
+    return None
+
+
+def pixel_diff_closure_gate_v1(
+    *,
+    pixel_diff_expectation: dict[str, Any],
+    expected_png_basenames: list[str],
+) -> dict[str, Any]:
+    """Deterministic server-side closure gate over staged pixel-diff ingest metadata."""
+
+    expected = sorted({bn for bn in expected_png_basenames if isinstance(bn, str) and bn.endswith(".png")})
+    ingest_raw = pixel_diff_expectation.get("ingestChecklist_v1")
+    targets_raw = ingest_raw.get("targets") if isinstance(ingest_raw, dict) else None
+    target_items = targets_raw if isinstance(targets_raw, list) else []
+
+    invalid_target_count = 0
+    baselines: list[str] = []
+    diff_basenames: list[str] = []
+    for raw in target_items:
+        if not isinstance(raw, dict):
+            invalid_target_count += 1
+            continue
+        b = raw.get("baselinePngBasename")
+        d = raw.get("expectedDiffBasename")
+        if not (
+            isinstance(b, str)
+            and b.endswith(".png")
+            and isinstance(d, str)
+            and d.endswith(".png")
+        ):
+            invalid_target_count += 1
+            continue
+        baselines.append(b)
+        diff_basenames.append(d)
+
+    baseline_set = set(baselines)
+    duplicate_baselines = sorted({b for b in baselines if baselines.count(b) > 1})
+    missing_baselines = sorted(set(expected) - baseline_set)
+    extra_baselines = sorted(baseline_set - set(expected))
+
+    policy_raw = pixel_diff_expectation.get("thresholdPolicy_v1")
+    policy = policy_raw if isinstance(policy_raw, dict) else {}
+    mismatch_fail_above = _metric_number(policy.get("mismatchPixelRatioFailAbove"))
+    max_channel_fail_above = _metric_number(policy.get("maxChannelDeltaFailAbove"))
+
+    metrics_raw = pixel_diff_expectation.get("metrics_v1")
+    if not isinstance(metrics_raw, dict):
+        metrics_raw = pixel_diff_expectation.get("metricsPlaceholder")
+    metrics = metrics_raw if isinstance(metrics_raw, dict) else {}
+    mismatch_ratio = _metric_number(
+        metrics.get("mismatchPixelRatioMax", metrics.get("maxMismatchPixelRatio"))
+    )
+    max_channel_delta = _metric_number(
+        metrics.get("maxChannelDelta", metrics.get("maxChannelDeltaMax"))
+    )
+
+    threshold_violations: list[dict[str, Any]] = []
+    if (
+        mismatch_ratio is not None
+        and mismatch_fail_above is not None
+        and mismatch_ratio > mismatch_fail_above
+    ):
+        threshold_violations.append(
+            {
+                "metric": "mismatchPixelRatioMax",
+                "actual": mismatch_ratio,
+                "failAbove": mismatch_fail_above,
+            }
+        )
+    if (
+        max_channel_delta is not None
+        and max_channel_fail_above is not None
+        and max_channel_delta > max_channel_fail_above
+    ):
+        threshold_violations.append(
+            {
+                "metric": "maxChannelDelta",
+                "actual": max_channel_delta,
+                "failAbove": max_channel_fail_above,
+            }
+        )
+
+    blockers: list[str] = []
+    if invalid_target_count:
+        blockers.append("pixel_diff_ingest_targets_invalid")
+    if len(baselines) != len(expected):
+        blockers.append("pixel_diff_ingest_target_count_mismatch")
+    if duplicate_baselines:
+        blockers.append("pixel_diff_ingest_duplicate_baselines")
+    if missing_baselines:
+        blockers.append("pixel_diff_ingest_missing_baselines")
+    if extra_baselines:
+        blockers.append("pixel_diff_ingest_extra_baselines")
+
+    status_raw = pixel_diff_expectation.get("status")
+    ingest_status = status_raw if isinstance(status_raw, str) else "unknown"
+    metrics_present = mismatch_ratio is not None and max_channel_delta is not None
+    if threshold_violations:
+        blockers.append("pixel_diff_threshold_exceeded")
+    elif expected and ingest_status not in ("ingested", "passed"):
+        blockers.append("pixel_diff_ingest_pending")
+    elif expected and not metrics_present:
+        blockers.append("pixel_diff_metrics_missing")
+
+    blocker_codes = sorted(set(blockers))
+    if "pixel_diff_threshold_exceeded" in blocker_codes:
+        gate_state = "failed"
+    elif blocker_codes == ["pixel_diff_ingest_pending"]:
+        gate_state = "pending"
+    elif blocker_codes:
+        gate_state = "blocked"
+    else:
+        gate_state = "passed"
+
+    return {
+        "format": "pixelDiffClosureGate_v1",
+        "enforcement": "required_for_evidence_closure",
+        "gateState": gate_state,
+        "needsFixLoop": gate_state != "passed",
+        "blockerCodes": blocker_codes,
+        "ingestStatus": ingest_status,
+        "expectedPngCount": len(expected),
+        "validIngestTargetCount": len(baselines),
+        "invalidIngestTargetCount": invalid_target_count,
+        "expectedDiffBasenameCount": len(set(diff_basenames)),
+        "metricsPresent": metrics_present,
+        "missingBaselinePngBasenames": missing_baselines,
+        "extraBaselinePngBasenames": extra_baselines,
+        "duplicateBaselinePngBasenames": duplicate_baselines,
+        "thresholdViolations": threshold_violations,
+        "notes": (
+            "Derivative closure gate over pixelDiffExpectation.ingestChecklist_v1 and threshold metrics; "
+            "excluded from semanticDigestSha256 so evidence row digests remain stable."
+        ),
+    }
+
+
 def pixel_diff_expectation_v1_with_ingest(expected_png_basenames: list[str]) -> dict[str, Any]:
     """Placeholder plus deterministic per-baseline diff basename pairs for scripted ingest."""
 
@@ -430,6 +572,10 @@ def pixel_diff_expectation_v1_with_ingest(expected_png_basenames: list[str]) -> 
         "targets": targets,
     }
     base["artifactIngestCorrelation_v1"] = artifact_ingest_correlation_v1(targets)
+    base["pixelDiffClosureGate_v1"] = pixel_diff_closure_gate_v1(
+        pixel_diff_expectation=base,
+        expected_png_basenames=expected_png_basenames,
+    )
     return base
 
 
@@ -508,12 +654,22 @@ def evidence_lifecycle_signal_v1(
     bn_n = len(basenames) if isinstance(basenames, list) else 0
 
     ingest_digest: str | None = None
+    gate_state: str | None = None
+    gate_blockers: list[str] = []
     if isinstance(pix, dict):
         ac = pix.get("artifactIngestCorrelation_v1")
         if isinstance(ac, dict):
             d = ac.get("ingestManifestDigestSha256")
             if isinstance(d, str) and len(d) == 64:
                 ingest_digest = d
+        gate = pix.get("pixelDiffClosureGate_v1")
+        if isinstance(gate, dict):
+            state = gate.get("gateState")
+            if isinstance(state, str):
+                gate_state = state
+            blockers_raw = gate.get("blockerCodes")
+            if isinstance(blockers_raw, list):
+                gate_blockers = sorted({str(x) for x in blockers_raw if isinstance(x, str)})
 
     out: dict[str, Any] = {
         "format": "evidenceLifecycleSignal_v1",
@@ -526,6 +682,9 @@ def evidence_lifecycle_signal_v1(
     }
     if ingest_digest is not None:
         out["artifactIngestManifestDigestSha256"] = ingest_digest
+    if gate_state is not None:
+        out["pixelDiffClosureGateState"] = gate_state
+        out["pixelDiffClosureGateBlockerCodes"] = gate_blockers
     return out
 
 
@@ -552,14 +711,19 @@ def evidence_diff_ingest_fix_loop_v1(evidence_closure_review: dict[str, Any]) ->
     correlation_ok = isinstance(cons, dict) and cons.get("isFullyConsistent") is True
     if correlation_ok and not gap_has:
         pix = evidence_closure_review.get("pixelDiffExpectation")
-        ingest_targets: list[Any] = []
         if isinstance(pix, dict):
-            ing = pix.get("ingestChecklist_v1")
-            if isinstance(ing, dict) and isinstance(ing.get("targets"), list):
-                ingest_targets = ing["targets"]
-            status_ok = pix.get("status") == "not_run"
-            if status_ok and len(ingest_targets) > 0:
-                blockers.append("pixel_diff_ingest_pending")
+            gate = pix.get("pixelDiffClosureGate_v1")
+            gate_blockers = gate.get("blockerCodes") if isinstance(gate, dict) else None
+            if isinstance(gate_blockers, list):
+                blockers.extend(str(x) for x in gate_blockers if isinstance(x, str))
+            else:
+                ing = pix.get("ingestChecklist_v1")
+                ingest_targets: list[Any] = []
+                if isinstance(ing, dict) and isinstance(ing.get("targets"), list):
+                    ingest_targets = ing["targets"]
+                status_ok = pix.get("status") == "not_run"
+                if status_ok and len(ingest_targets) > 0:
+                    blockers.append("pixel_diff_ingest_pending")
 
     codes = sorted(set(blockers))
     return {
@@ -658,8 +822,12 @@ def agent_evidence_closure_hints() -> dict[str, Any]:
         "screenshotHintGapsField": "screenshotHintGaps_v1",
         "pixelDiffIngestChecklistField": "ingestChecklist_v1",
         "artifactIngestCorrelationNestedField": "artifactIngestCorrelation_v1",
+        "pixelDiffClosureGateNestedField": "pixelDiffClosureGate_v1",
         "artifactIngestCorrelationFullPath": (
             "evidenceClosureReview_v1.pixelDiffExpectation.artifactIngestCorrelation_v1"
+        ),
+        "pixelDiffClosureGateFullPath": (
+            "evidenceClosureReview_v1.pixelDiffExpectation.pixelDiffClosureGate_v1"
         ),
         "artifactIngestManifestDigestSha256LifecycleField": "artifactIngestManifestDigestSha256",
         "evidenceLifecycleSignalField": "evidenceLifecycleSignal_v1",

@@ -248,3 +248,8 @@ def test_agent_review_actions_v1_adds_remediate_when_closure_needs_fix_loop() ->
         "evidenceClosureReview_v1.pixelDiffExpectation.artifactIngestCorrelation_v1"
     )
     assert tgt["playwrightEvidenceScreenshotsRootHint"] == ac["playwrightEvidenceScreenshotsRootHint"]
+    assert tgt["pixelDiffClosureGateState"] == "pending"
+    assert tgt["pixelDiffClosureGateBlockerCodes"] == ["pixel_diff_ingest_pending"]
+    assert tgt["pixelDiffClosureGateField"] == (
+        "evidenceClosureReview_v1.pixelDiffExpectation.pixelDiffClosureGate_v1"
+    )
