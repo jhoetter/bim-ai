@@ -220,6 +220,8 @@ def test_ifc_manifest_scope_lists_authoritative_replay_bullet() -> None:
     scope = mf.get("ifcSemanticImportScope_v0") or {}
     supported = scope.get("semanticReadBackSupported") or []
     assert any("authoritativeReplay_v0" in str(x) for x in supported)
+    assert any("createRoomOutline" in str(x) for x in supported)
+    assert any("idsAuthoritativeReplayMap_v0" in str(x) for x in supported)
     unsupported = scope.get("importMergeUnsupported") or []
     assert any("authoritative replay" in str(x).lower() for x in unsupported)
 

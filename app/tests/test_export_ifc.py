@@ -740,7 +740,73 @@ def test_ifc_summarize_command_sketch_includes_authoritative_replay_v0() -> None
     assert rt["commandSketch"] is not None
     auth = rt["commandSketch"]["authoritativeReplay_v0"]
     assert auth["available"] is True
-    assert auth["authoritativeSubset"] == {"levels": True, "walls": True, "spaces": False}
+    assert auth["authoritativeSubset"] == {"levels": True, "walls": True, "spaces": True}
     assert any(c.get("type") == "createLevel" for c in auth["commands"])
     assert any(c.get("type") == "createWall" for c in auth["commands"])
+
+
+def test_ifc_authoritative_replay_v0_space_outline_and_ids_map() -> None:
+    doc = Document(
+        revision=505,
+        elements={
+            "lvl-g": LevelElem(kind="level", id="lvl-g", name="G", elevationMm=0),
+            "fl": FloorElem(
+                kind="floor",
+                id="fl",
+                name="F",
+                levelId="lvl-g",
+                boundaryMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 5000, "yMm": 0},
+                    {"xMm": 5000, "yMm": 5000},
+                    {"xMm": 0, "yMm": 5000},
+                ],
+            ),
+            "rm-1": RoomElem(
+                kind="room",
+                id="rm-1",
+                name="Office",
+                levelId="lvl-g",
+                outlineMm=[
+                    {"xMm": 1000, "yMm": 1000},
+                    {"xMm": 4000, "yMm": 1000},
+                    {"xMm": 4000, "yMm": 4000},
+                    {"xMm": 1000, "yMm": 4000},
+                ],
+                programmeCode="PC1",
+                department="DeptA",
+            ),
+        },
+    )
+    step = export_ifc_model_step(doc)
+    sketch = build_kernel_ifc_authoritative_replay_sketch_v0(step)
+    assert sketch["available"] is True
+    assert sketch["authoritativeSubset"]["spaces"] is True
+    assert sketch.get("kernelSpaceSkippedNoReference") == 0
+
+    room_cmds = [c for c in sketch["commands"] if c["type"] == "createRoomOutline"]
+    assert len(room_cmds) == 1
+    rc = room_cmds[0]
+    assert rc["id"] == "rm-1"
+    assert rc["name"] == "Office"
+    assert rc["programmeCode"] == "PC1"
+    assert rc["department"] == "DeptA"
+
+    level_ids = {c["id"] for c in sketch["commands"] if c["type"] == "createLevel"}
+    assert rc["levelId"] in level_ids
+
+    exp_outline = [(1000, 1000), (4000, 1000), (4000, 4000), (1000, 4000)]
+    got = [(float(p["xMm"]), float(p["yMm"])) for p in rc["outlineMm"]]
+    assert len(got) == 4
+    for ex, ey in exp_outline:
+        assert any(abs(px - ex) < 0.15 and abs(py - ey) < 0.15 for px, py in got)
+
+    ids_map = sketch["idsAuthoritativeReplayMap_v0"]
+    assert ids_map["schemaVersion"] == 0
+    assert len(ids_map["spaces"]) == 1
+    row = ids_map["spaces"][0]
+    assert row["identityReference"] == "rm-1"
+    assert row["programmeFields"]["programmeCode"] == "PC1"
+    assert row["programmeFields"]["department"] == "DeptA"
+    assert row["qtoSpaceBaseQuantitiesLinked"] is True
 

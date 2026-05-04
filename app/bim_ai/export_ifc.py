@@ -7,7 +7,7 @@ from typing import Any
 
 import numpy as np
 
-from bim_ai.commands import CreateLevelCmd, CreateWallCmd
+from bim_ai.commands import CreateLevelCmd, CreateRoomOutlineCmd, CreateWallCmd
 from bim_ai.document import Document
 from bim_ai.elements import (
     DoorElem,
@@ -17,6 +17,7 @@ from bim_ai.elements import (
     RoomElem,
     SlabOpeningElem,
     StairElem,
+    Vec2Mm,
     WallElem,
     WindowElem,
 )
@@ -356,31 +357,29 @@ def _kernel_ifc_space_export_props(rm: RoomElem) -> dict[str, str]:
     return out
 
 
+def _ifc_product_defines_qto_template(product: Any, qto_template_name: str) -> bool:
+    rels = getattr(product, "IsDefinedBy", None) or []
+    for rel in rels:
+        try:
+            if not rel.is_a("IfcRelDefinesByProperties"):
+                continue
+        except Exception:
+            continue
+        dfn = getattr(rel, "RelatingPropertyDefinition", None)
+        if dfn is None:
+            continue
+        try:
+            if dfn.is_a("IfcElementQuantity") and getattr(dfn, "Name", None) == qto_template_name:
+                return True
+        except Exception:
+            continue
+    return False
+
+
 def _count_ifc_products_with_qto_template(products: list[Any], qto_template_name: str) -> int:
     """Count IFC products that define an ``IfcElementQuantity`` with ``Name == qto_template_name``."""
 
-    c = 0
-    for p in products:
-        rels = getattr(p, "IsDefinedBy", None) or []
-        ok = False
-        for rel in rels:
-            try:
-                if not rel.is_a("IfcRelDefinesByProperties"):
-                    continue
-            except Exception:
-                continue
-            dfn = getattr(rel, "RelatingPropertyDefinition", None)
-            if dfn is None:
-                continue
-            try:
-                if dfn.is_a("IfcElementQuantity") and getattr(dfn, "Name", None) == qto_template_name:
-                    ok = True
-                    break
-            except Exception:
-                continue
-        if ok:
-            c += 1
-    return c
+    return sum(1 for p in products if _ifc_product_defines_qto_template(p, qto_template_name))
 
 
 def inspect_kernel_ifc_semantics(
@@ -563,9 +562,26 @@ def _ifc_global_id_slug(raw: Any) -> str:
     return "".join(ch if ch.isalnum() else "_" for ch in s)
 
 
-def _wall_host_storey_global_id(wall: Any) -> str | None:
-    for rel in getattr(wall, "ContainedInStructure", None) or []:
+def _product_host_storey_global_id(product: Any) -> str | None:
+    """Host ``IfcBuildingStorey`` from spatial containment or aggregate (kernel export)."""
+
+    for rel in getattr(product, "ContainedInStructure", None) or []:
         st = getattr(rel, "RelatingStructure", None)
+        if st is None:
+            continue
+        try:
+            if st.is_a("IfcBuildingStorey"):
+                gid = getattr(st, "GlobalId", None)
+                return str(gid) if gid else None
+        except Exception:
+            continue
+    for rel in getattr(product, "Decomposes", None) or []:
+        try:
+            if not rel.is_a("IfcRelAggregates"):
+                continue
+        except Exception:
+            continue
+        st = getattr(rel, "RelatingObject", None)
         if st is None:
             continue
         try:
@@ -671,10 +687,80 @@ def _kernel_wall_plan_geometry_mm(wall: Any) -> dict[str, float] | None:
     }
 
 
-def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> dict[str, Any]:
-    """Deterministic createLevel + createWall payloads from a parsed kernel-shaped IFC model."""
+def _kernel_space_footprint_outline_mm(space: Any) -> list[tuple[float, float]] | None:
+    """Recover plan outline (mm) from kernel-style IfcSpace slab extrusion + placement."""
 
-    subset = {"levels": True, "walls": True, "spaces": False}
+    if ifc_placement is None:
+        return None
+    ex = _first_body_extruded_area_solid(space)
+    if ex is None:
+        return None
+    swept = getattr(ex, "SweptArea", None)
+    if swept is None or not swept.is_a("IfcArbitraryClosedProfileDef"):
+        return None
+    outer = getattr(swept, "OuterCurve", None)
+    if outer is None:
+        return None
+    poly = _profile_xy_polyline_mm(outer)
+    if not poly or len(poly) < 3:
+        return None
+
+    M = ifc_placement.get_local_placement(space.ObjectPlacement)
+    out_mm: list[tuple[float, float]] = []
+    for lx, ly in poly:
+        v = M @ np.array([float(lx), float(ly), 0.0, 1.0])
+        out_mm.append((float(v[0]), float(v[1])))
+
+    def _same_pt(a: tuple[float, float], b: tuple[float, float], tol: float = 1e-2) -> bool:
+        return abs(a[0] - b[0]) < tol and abs(a[1] - b[1]) < tol
+
+    if len(out_mm) >= 2 and _same_pt(out_mm[0], out_mm[-1]):
+        out_mm = out_mm[:-1]
+    return out_mm if len(out_mm) >= 3 else None
+
+
+def _space_pset_programme_cmd_kwargs(bucket: dict[str, Any]) -> dict[str, Any]:
+    """IFC ``Pset_SpaceCommon`` programme strings → optional ``CreateRoomOutlineCmd`` kwargs."""
+
+    out: dict[str, Any] = {}
+    pc = bucket.get("ProgrammeCode")
+    if isinstance(pc, str) and pc.strip():
+        out["programme_code"] = pc.strip()
+    dep = bucket.get("Department")
+    if isinstance(dep, str) and dep.strip():
+        out["department"] = dep.strip()
+    fl = bucket.get("FunctionLabel")
+    if isinstance(fl, str) and fl.strip():
+        out["function_label"] = fl.strip()
+    fs = bucket.get("FinishSet")
+    if isinstance(fs, str) and fs.strip():
+        out["finish_set"] = fs.strip()
+    return out
+
+
+def _space_pset_programme_json_fields(bucket: dict[str, Any]) -> dict[str, str]:
+    """CamelCase programme field dict for ``idsAuthoritativeReplayMap_v0`` (non-empty only)."""
+
+    fields: dict[str, str] = {}
+    pc = bucket.get("ProgrammeCode")
+    if isinstance(pc, str) and pc.strip():
+        fields["programmeCode"] = pc.strip()
+    dep = bucket.get("Department")
+    if isinstance(dep, str) and dep.strip():
+        fields["department"] = dep.strip()
+    fl = bucket.get("FunctionLabel")
+    if isinstance(fl, str) and fl.strip():
+        fields["functionLabel"] = fl.strip()
+    fs = bucket.get("FinishSet")
+    if isinstance(fs, str) and fs.strip():
+        fields["finishSet"] = fs.strip()
+    return fields
+
+
+def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> dict[str, Any]:
+    """Deterministic createLevel + createWall + createRoomOutline payloads from kernel IFC."""
+
+    subset = {"levels": True, "walls": True, "spaces": True}
     unsupported = _import_scope_unsupported_ifc_products_v0(model)
 
     if ifc_elem_util is None:
@@ -728,7 +814,7 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
             walls_skipped_no_reference += 1
             continue
 
-        st_gid = _wall_host_storey_global_id(wal)
+        st_gid = _product_host_storey_global_id(wal)
         if not st_gid or st_gid not in storey_gid_to_level_id:
             extraction_gaps.append(
                 {"wallGlobalId": str(getattr(wal, "GlobalId", None) or ""), "reason": "missing_or_unknown_host_storey"}
@@ -757,6 +843,63 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
 
     wall_cmds.sort(key=lambda c: str(c.get("id") or ""))
 
+    room_cmds: list[dict[str, Any]] = []
+    ids_space_rows: list[dict[str, Any]] = []
+    spaces_skipped_no_reference = 0
+
+    for spa in sorted(model.by_type("IfcSpace") or [], key=lambda s: str(getattr(s, "GlobalId", None) or "")):
+        sp_gid = str(getattr(spa, "GlobalId", None) or "")
+        ps_sp = ifc_elem_util.get_psets(spa)
+        bucket_sp = ps_sp.get("Pset_SpaceCommon") or {}
+        ref_sp = bucket_sp.get("Reference")
+        ref_s = ref_sp.strip() if isinstance(ref_sp, str) else ""
+        if not ref_s:
+            spaces_skipped_no_reference += 1
+            continue
+
+        st_gid_sp = _product_host_storey_global_id(spa)
+        if not st_gid_sp or st_gid_sp not in storey_gid_to_level_id:
+            extraction_gaps.append(
+                {"spaceGlobalId": sp_gid, "reason": "missing_or_unknown_host_storey"}
+            )
+            continue
+
+        outline_sp = _kernel_space_footprint_outline_mm(spa)
+        if outline_sp is None:
+            extraction_gaps.append(
+                {
+                    "spaceGlobalId": sp_gid,
+                    "kernelReference": ref_s,
+                    "reason": "space_body_extrusion_unreadable",
+                }
+            )
+            continue
+
+        rname = str(getattr(spa, "Name", None) or "") or ref_s
+        prog_kw = _space_pset_programme_cmd_kwargs(bucket_sp)
+        room_cmds.append(
+            CreateRoomOutlineCmd(
+                id=ref_s,
+                name=rname,
+                level_id=storey_gid_to_level_id[st_gid_sp],
+                outline_mm=[Vec2Mm(x_mm=px, y_mm=py) for px, py in outline_sp],
+                **prog_kw,
+            ).model_dump(mode="json", by_alias=True)
+        )
+        ids_space_rows.append(
+            {
+                "ifcGlobalId": sp_gid,
+                "identityReference": ref_s,
+                "programmeFields": _space_pset_programme_json_fields(bucket_sp),
+                "qtoSpaceBaseQuantitiesLinked": _ifc_product_defines_qto_template(
+                    spa, "Qto_SpaceBaseQuantities"
+                ),
+            }
+        )
+
+    room_cmds.sort(key=lambda c: str(c.get("id") or ""))
+    ids_space_rows.sort(key=lambda r: (r["identityReference"], r["ifcGlobalId"]))
+
     return {
         "schemaVersion": KERNEL_IFC_AUTHORITATIVE_REPLAY_SCHEMA_VERSION,
         "available": True,
@@ -769,7 +912,17 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
             "counts IfcProduct classes outside the kernel exchange slice (not replay targets)."
         ),
         "kernelWallSkippedNoReference": walls_skipped_no_reference,
-        "commands": level_cmds + wall_cmds,
+        "kernelSpaceSkippedNoReference": spaces_skipped_no_reference,
+        "idsAuthoritativeReplayMap_v0": {
+            "schemaVersion": 0,
+            "note": (
+                "Per-IfcSpace linkage for cleanroom IDS read-back vs authoritative replay rows: "
+                "identity Reference aligns with exchange_ifc_ids_identity_pset_gap (document-level coverage); "
+                "qtoSpaceBaseQuantitiesLinked aligns with exchange_ifc_ids_qto_gap."
+            ),
+            "spaces": ids_space_rows,
+        },
+        "commands": level_cmds + wall_cmds + room_cmds,
         "extractionGaps": extraction_gaps,
     }
 
