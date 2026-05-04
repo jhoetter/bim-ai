@@ -332,7 +332,7 @@ def test_deterministic_sheet_evidence_rows_stable() -> None:
     assert rows[0]["printRasterPngHref"].endswith("/exports/sheet-print-raster.png?sheetId=sheet-a")
     ingest = rows[0].get("sheetPrintRasterIngest_v1") or {}
     assert ingest.get("format") == "sheetPrintRasterIngest_v1"
-    assert ingest.get("contract") == "sheetPrintRasterPlaceholder_v1"
+    assert ingest.get("contract") == "sheetPrintRasterLayoutStamp_v1"
     assert ingest.get("svgContentSha256") and ingest.get("placeholderPngSha256")
     diffc = ingest.get("diffCorrelation") or {}
     assert diffc.get("format") == "sheetPrintRasterDiffCorrelation_v1"
@@ -386,6 +386,8 @@ def test_deterministic_sheet_evidence_viewport_hints_v0_sorted_and_crop() -> Non
     assert zrow["crop"] == "omit"
     arow = next(h for h in hints if h["viewportId"] == "a")
     assert arow["crop"] == "mn=7,8 mx=9,11"
+    assert arow.get("planProjectionSegment") == ""
+    assert arow.get("sectionDocumentationSegment") == ""
 
 
 def test_deterministic_plan_view_evidence_rows_sorted_and_stems() -> None:

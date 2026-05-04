@@ -23,6 +23,11 @@ from bim_ai.section_projection_primitives import build_section_projection_primit
 
 SHEET_PRINT_RASTER_PLACEHOLDER_CONTRACT_V1 = "sheetPrintRasterPlaceholder_v1"
 
+SHEET_PRINT_RASTER_LAYOUT_STAMP_CONTRACT_V1 = "sheetPrintRasterLayoutStamp_v1"
+
+SHEET_PRINT_RASTER_STAMP_WIDTH_PX = 128
+SHEET_PRINT_RASTER_STAMP_HEIGHT_PX = 96
+
 
 def sheet_svg_utf8_sha256(svg_text: str) -> str:
     return hashlib.sha256(svg_text.encode("utf-8")).hexdigest()
@@ -48,6 +53,113 @@ def sheet_print_raster_placeholder_png_bytes_v1(svg_text: str) -> bytes:
         + _png_pack_chunk(b"IDAT", idat)
         + _png_pack_chunk(b"IEND", b"")
     )
+
+
+def _encode_png_rgb8_rgb(width: int, height: int, rows_rgb: list[bytes]) -> bytes:
+    """RGB8 truecolor PNG, filter type 0 per row."""
+
+    raw = bytearray()
+    for row in rows_rgb:
+        raw.append(0)
+        raw.extend(row)
+    signature = b"\x89PNG\r\n\x1a\n"
+    ihdr = struct.pack("!IIBBBBB", width, height, 8, 2, 0, 0, 0)
+    idat = zlib.compress(bytes(raw), level=9)
+    return (
+        signature
+        + _png_pack_chunk(b"IHDR", ihdr)
+        + _png_pack_chunk(b"IDAT", idat)
+        + _png_pack_chunk(b"IEND", b"")
+    )
+
+
+def _stamp_bg_rgb(svg_digest: bytes) -> tuple[int, int, int]:
+    d = svg_digest
+    r = 165 + (d[0] % 45)
+    g = 170 + (d[1] % 45)
+    b = 175 + (d[2] % 45)
+    return r, g, b
+
+
+def _stamp_viewport_fill_rgb(digest: bytes) -> tuple[int, int, int]:
+    d = digest
+    r = 40 + (d[0] % 160)
+    g = 50 + (d[1] % 150)
+    b = 60 + (d[2] % 140)
+    return r, g, b
+
+
+def sheet_print_raster_layout_stamp_png_bytes_v1(
+    _doc: Document, sh: SheetElem, svg_text: str
+) -> bytes:
+    """128x96 RGB8 PNG from viewport mm rectangles + SVG UTF-8 salt (layout stamp, not SVG raster)."""
+
+    w_px, h_px = SHEET_PRINT_RASTER_STAMP_WIDTH_PX, SHEET_PRINT_RASTER_STAMP_HEIGHT_PX
+    svg_digest = hashlib.sha256(svg_text.encode("utf-8")).digest()
+    bg = _stamp_bg_rgb(svg_digest)
+
+    rects: list[tuple[str, float, float, float, float]] = []
+    for i, vp_any in enumerate(sh.viewports_mm or []):
+        if not isinstance(vp_any, dict):
+            continue
+        vp = vp_any
+        vid = str(vp.get("viewportId") or vp.get("viewport_id") or "").strip()
+        if not vid:
+            vid = f"__implicit_{i}"
+        x_mm, y_mm, w_mm, h_mm = read_viewport_mm_box(vp)
+        rects.append((vid, x_mm, y_mm, w_mm, h_mm))
+
+    rows: list[bytearray] = [bytearray([bg[0], bg[1], bg[2]] * w_px) for _ in range(h_px)]
+
+    def set_px(rx: int, ry: int, rgb: tuple[int, int, int]) -> None:
+        if 0 <= rx < w_px and 0 <= ry < h_px:
+            off = rx * 3
+            row = rows[ry]
+            row[off] = rgb[0]
+            row[off + 1] = rgb[1]
+            row[off + 2] = rgb[2]
+
+    if rects:
+        ux0 = min(t[1] for t in rects)
+        uy0 = min(t[2] for t in rects)
+        ux1 = max(t[1] + t[3] for t in rects)
+        uy1 = max(t[2] + t[4] for t in rects)
+        margin = 4
+        span_x = max(ux1 - ux0, 1.0)
+        span_y = max(uy1 - uy0, 1.0)
+        inner_w = w_px - 2 * margin
+        inner_h = h_px - 2 * margin
+        scale = min(inner_w / span_x, inner_h / span_y)
+
+        ordered = sorted(rects, key=lambda t: (t[0], t[1], t[2]))
+        for idx, (vid, vx, vy, vw, vh) in enumerate(ordered):
+            filler_digest = hashlib.sha256(
+                svg_text.encode("utf-8")
+                + b"|"
+                + vid.encode("utf-8")
+                + b"|"
+                + str(idx).encode("ascii")
+            ).digest()
+            fr, fg, fb = _stamp_viewport_fill_rgb(filler_digest)
+            outline = (max(0, fr - 45), max(0, fg - 45), max(0, fb - 45))
+            px0 = margin + int(math.floor((vx - ux0) * scale))
+            py0 = margin + int(math.floor((vy - uy0) * scale))
+            px1 = margin + int(math.ceil((vx + vw - ux0) * scale)) - 1
+            py1 = margin + int(math.ceil((vy + vh - uy0) * scale)) - 1
+            px0 = max(0, min(px0, w_px - 1))
+            px1 = max(0, min(px1, w_px - 1))
+            py0 = max(0, min(py0, h_px - 1))
+            py1 = max(0, min(py1, h_px - 1))
+            if px1 < px0:
+                px0, px1 = px1, px0
+            if py1 < py0:
+                py0, py1 = py1, py0
+            for y in range(py0, py1 + 1):
+                for x in range(px0, px1 + 1):
+                    edge = x == px0 or x == px1 or y == py0 or y == py1
+                    set_px(x, y, outline if edge else (fr, fg, fb))
+
+    return _encode_png_rgb8_rgb(w_px, h_px, [bytes(r) for r in rows])
 
 
 def pick_sheet(doc: Document, sheet_id: str | None) -> SheetElem:
@@ -309,6 +421,47 @@ def plan_room_programme_legend_hints_v0(doc: Document, vps_raw: list[Any]) -> li
         )
 
     return sorted(out, key=lambda r: str(r.get("viewportId") or ""))
+
+
+def viewport_evidence_hints_v1(doc: Document, vps_raw: list[Any]) -> list[dict[str, Any]]:
+    """Like ``viewport_evidence_hints_v0`` plus plan / section export segments from ``doc``."""
+
+    hints: list[dict[str, Any]] = []
+
+    for i, vp_any in enumerate(vps_raw):
+        if not isinstance(vp_any, dict):
+            continue
+
+        vp = vp_any
+
+        vid = str(vp.get("viewportId") or vp.get("viewport_id") or "").strip()
+        if not vid:
+            vid = f"__implicit_{i}"
+
+        x_mm, y_mm, w_mm, h_mm = read_viewport_mm_box(vp)
+
+        geom = f"[{x_mm:g},{y_mm:g}] {w_mm:g}×{h_mm:g} mm"
+
+        crop_seg = format_viewport_crop_export_segment(vp)
+        crop = crop_seg.replace("crop[", "").replace("]", "").strip() if crop_seg else "omit"
+
+        vr = vp.get("viewRef") or vp.get("view_ref")
+        plan_seg = format_sheet_plan_viewport_projection_segment(doc, vp)
+        sec_seg = (
+            format_section_viewport_documentation_segment(doc, str(vr)) if isinstance(vr, str) else ""
+        )
+
+        hints.append(
+            {
+                "viewportId": vid,
+                "geom": geom,
+                "crop": crop,
+                "planProjectionSegment": plan_seg,
+                "sectionDocumentationSegment": sec_seg,
+            }
+        )
+
+    return sorted(hints, key=lambda r: str(r.get("viewportId") or ""))
 
 
 def resolve_view_ref_title(doc: Document, view_ref: str) -> str | None:

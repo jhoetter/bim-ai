@@ -18,12 +18,12 @@ from bim_ai.elements import (
     ViewpointElem,
 )
 from bim_ai.sheet_preview_svg import (
-    SHEET_PRINT_RASTER_PLACEHOLDER_CONTRACT_V1,
+    SHEET_PRINT_RASTER_LAYOUT_STAMP_CONTRACT_V1,
     plan_room_programme_legend_hints_v0,
     sheet_elem_to_svg,
-    sheet_print_raster_placeholder_png_bytes_v1,
+    sheet_print_raster_layout_stamp_png_bytes_v1,
     sheet_svg_utf8_sha256,
-    viewport_evidence_hints_v0,
+    viewport_evidence_hints_v1,
 )
 
 
@@ -167,7 +167,7 @@ def deterministic_sheet_evidence_manifest(
         stem = f"{evidence_artifact_basename}-sheet-{safe}"
         svg_body = sheet_elem_to_svg(doc, sh)
         svg_sha = sheet_svg_utf8_sha256(svg_body)
-        placeholder_png = sheet_print_raster_placeholder_png_bytes_v1(svg_body)
+        placeholder_png = sheet_print_raster_layout_stamp_png_bytes_v1(doc, sh, svg_body)
         placeholder_png_sha = hashlib.sha256(placeholder_png).hexdigest()
 
         rows.append(
@@ -179,16 +179,17 @@ def deterministic_sheet_evidence_manifest(
                 "printRasterPngHref": f"{api_base}/sheet-print-raster.png?sheetId={qid}",
                 "sheetPrintRasterIngest_v1": {
                     "format": "sheetPrintRasterIngest_v1",
-                    "contract": SHEET_PRINT_RASTER_PLACEHOLDER_CONTRACT_V1,
+                    "contract": SHEET_PRINT_RASTER_LAYOUT_STAMP_CONTRACT_V1,
                     "svgContentSha256": svg_sha,
                     "placeholderPngSha256": placeholder_png_sha,
                     "diffCorrelation": {
                         "format": "sheetPrintRasterDiffCorrelation_v1",
                         "playwrightBaselineSlot": "pngFullSheet",
                         "notes": (
-                            "Server placeholder PNG correlates with the sheet SVG digest only; it does not "
-                            "pixel-match Playwright captures. Use for CI artifact/hash correlation; baseline "
-                            "visual diff remains client-side on pngFullSheet / pngViewport."
+                            "Server layout-stamp PNG encodes sheet viewport rectangles on a fixed RGB canvas plus "
+                            "SVG UTF-8 salt; it does not pixel-match Playwright captures or fully render the SVG. "
+                            "Use for CI artifact/hash correlation and viewport-layout evidence; baseline visual "
+                            "diff remains client-side on pngFullSheet / pngViewport."
                         ),
                     },
                 },
@@ -199,7 +200,7 @@ def deterministic_sheet_evidence_manifest(
                     "pngFullSheet": f"{stem}-full.png",
                     "rasterPlaceholderProbe": f"{stem}.raster-placeholder.png",
                 },
-                "viewportEvidenceHints_v0": viewport_evidence_hints_v0(list(sh.viewports_mm or [])),
+                "viewportEvidenceHints_v0": viewport_evidence_hints_v1(doc, list(sh.viewports_mm or [])),
                 "planRoomProgrammeLegendHints_v0": plan_room_programme_legend_hints_v0(
                     doc, list(sh.viewports_mm or [])
                 ),
