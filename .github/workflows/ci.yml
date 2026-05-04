@@ -39,14 +39,32 @@ jobs:
 
       - name: Evidence CI correlation hint (bundles reviewer mapping)
         if: always()
+        env:
+          CORR_RUN_ID: ${{ github.run_id }}
+          CORR_SHA: ${{ github.sha }}
+          CORR_WORKFLOW: ${{ github.workflow }}
+          CORR_JOB: ${{ github.job }}
         run: |
           mkdir -p packages/web/test-results
-          printf '%s\n%s\n%s\n%s\n' \
-            'Map Playwright PNGs to semantic evidence fields:' \
-            '  GET /api/models/{id}/evidence-package → suggestedEvidenceArtifactBasename,' \
-            '  semanticDigestPrefix16, suggestedEvidenceBundleFilenames.evidencePackageJson,' \
-            '  deterministicSheetEvidence[].correlation + playwrightSuggestedFilenames (png/svg/pdf).' \
-            > packages/web/test-results/ci-evidence-correlation-hint.txt
+          {
+            echo "Map Playwright PNGs to semantic evidence fields:"
+            echo "  GET /api/models/{id}/evidence-package -> suggestedEvidenceArtifactBasename,"
+            echo "  semanticDigestPrefix16, suggestedEvidenceBundleFilenames.evidencePackageJson,"
+            echo "  deterministicSheetEvidence[].correlation + playwrightSuggestedFilenames (png/svg/pdf),"
+            echo "  deterministicPlanViewEvidence[].playwrightSuggestedFilenames.pngPlanCanvas,"
+            echo "  deterministicSectionCutEvidence[].playwrightSuggestedFilenames.pngSectionViewport,"
+            echo "  deterministic3dViewEvidence[].playwrightSuggestedFilenames.pngViewport."
+            echo ""
+            echo "This CI run:"
+            echo "  github.run_id=${CORR_RUN_ID}"
+            echo "  github.sha=${CORR_SHA}"
+            echo "  workflow=${CORR_WORKFLOW} job=${CORR_JOB}"
+            echo "  playwright artifact name=evidence-web-${CORR_RUN_ID}-playwright"
+            echo ""
+            echo "Recipe: download that artifact -> open packages/web/playwright-report/index.html"
+            echo "  -> match failing or baseline PNG names to evidence-package deterministic* rows"
+            echo "  and agentEvidenceClosureHints.ciArtifactRelativePaths."
+          } > packages/web/test-results/ci-evidence-correlation-hint.txt
 
       - name: Upload Playwright report + screenshots
         if: always()
