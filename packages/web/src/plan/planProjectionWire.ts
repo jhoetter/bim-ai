@@ -48,6 +48,15 @@ export type PlanRoomColorLegendRow = {
   functionLabel?: string;
 };
 
+export type RoomProgrammeLegendEvidenceV0 = {
+  format: 'roomProgrammeLegendEvidence_v0';
+  legendDigestSha256: string;
+  rowCount: number;
+  colorSeedPolicy?: string;
+  orthogonalTo?: string[];
+  notes?: string;
+};
+
 export function extractPlanGraphicHints(
   payload: Record<string, unknown> | null | undefined,
 ): PlanGraphicHintsResolved | null {
@@ -100,6 +109,49 @@ export function extractRoomColorLegend(
     out.push(row);
   }
   return out;
+}
+
+export function extractRoomProgrammeLegendEvidenceV0(
+  payload: PlanProjectionWirePayload | null | undefined,
+): RoomProgrammeLegendEvidenceV0 | null {
+  if (!payload || typeof payload !== 'object') return null;
+  const raw =
+    (payload as { roomProgrammeLegendEvidence_v0?: unknown }).roomProgrammeLegendEvidence_v0 ??
+    (payload as { roomProgrammeLegendEvidenceV0?: unknown }).roomProgrammeLegendEvidenceV0;
+  if (!raw || typeof raw !== 'object') return null;
+  const o = raw as Record<string, unknown>;
+  const fmt = o.format ?? o.Format;
+  if (fmt !== 'roomProgrammeLegendEvidence_v0') return null;
+  const digest = String(o.legendDigestSha256 ?? o.legend_digest_sha256 ?? '').trim();
+  const rc = o.rowCount ?? o.row_count;
+  let rowCount: number | undefined;
+  if (typeof rc === 'number' && Number.isFinite(rc)) {
+    rowCount = rc;
+  } else if (typeof rc === 'string' && rc.trim()) {
+    const parsed = Number(rc);
+    rowCount = Number.isFinite(parsed) ? parsed : undefined;
+  }
+  if (!digest || rowCount === undefined) return null;
+  const policy =
+    typeof o.colorSeedPolicy === 'string'
+      ? o.colorSeedPolicy
+      : typeof o.color_seed_policy === 'string'
+        ? o.color_seed_policy
+        : undefined;
+  const orthoRaw = o.orthogonalTo ?? o.orthogonal_to;
+  let orthogonalTo: string[] | undefined;
+  if (Array.isArray(orthoRaw)) {
+    orthogonalTo = orthoRaw.filter((x): x is string => typeof x === 'string');
+  }
+  const notes = typeof o.notes === 'string' ? o.notes : undefined;
+  return {
+    format: 'roomProgrammeLegendEvidence_v0',
+    legendDigestSha256: digest,
+    rowCount,
+    ...(policy !== undefined ? { colorSeedPolicy: policy } : {}),
+    ...(orthogonalTo !== undefined && orthogonalTo.length ? { orthogonalTo } : {}),
+    ...(notes !== undefined ? { notes } : {}),
+  };
 }
 
 export function isPlanProjectionPrimitivesV1(p: unknown): p is PlanProjectionPrimitivesV1Wire {

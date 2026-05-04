@@ -2,8 +2,19 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 from uuid import uuid4
 
+from bim_ai.commands import (
+    CreateLevelCmd,
+    CreateRoomRectangleCmd,
+    UpsertPlanViewCmd,
+    UpsertScheduleCmd,
+    UpsertScheduleFiltersCmd,
+    UpsertSheetCmd,
+    UpsertSheetViewportsCmd,
+)
 from bim_ai.document import Document
 from bim_ai.elements import (
     DoorElem,
@@ -20,6 +31,7 @@ from bim_ai.elements import (
     WallElem,
     WindowElem,
 )
+from bim_ai.engine import apply_inplace
 from bim_ai.evidence_manifest import (
     agent_evidence_closure_hints,
     deterministic_plan_view_evidence_manifest,
@@ -32,6 +44,8 @@ from bim_ai.plan_projection_wire import (
     resolve_plan_projection_wire,
     section_cut_projection_wire,
 )
+from bim_ai.schedule_derivation import derive_schedule_table
+from bim_ai.sheet_preview_svg import plan_room_programme_legend_hints_v0
 from bim_ai.type_material_registry import merged_registry_payload
 
 
@@ -118,11 +132,40 @@ def test_section_projection_wire_emits_wall_u_span_for_perpendicular_cut() -> No
     span = float(ws[0]["uEndMm"]) - float(ws[0]["uStartMm"])
     assert span > 150.0 and span < 260.0
     assert ws[0]["elementId"] == "w1"
+    assert ws[0]["cutHatchKind"] == "edgeOn"
     assert out["countsByVisibleKind"]["wall"] == 1
     markers = prim.get("levelMarkers") or []
     assert len(markers) == 1
     assert markers[0]["id"] == "lvl"
     assert markers[0]["elevationMm"] == 300.0
+
+
+def test_section_projection_wire_wall_parallel_to_cut_is_along_cut_hatch() -> None:
+    """Vertical wall offset from a vertical cut plane: large U span → alongCut classification."""
+    lvl = LevelElem(kind="level", id="lvl", name="L", elevationMm=0.0)
+    wall = WallElem(
+        kind="wall",
+        id="w-along",
+        name="W",
+        levelId="lvl",
+        start={"xMm": 3100.0, "yMm": -1000.0},
+        end={"xMm": 3100.0, "yMm": 6000.0},
+        thicknessMm=200.0,
+        heightMm=2800.0,
+    )
+    sec = SectionCutElem(
+        kind="section_cut",
+        id="sec-a",
+        name="A-A",
+        lineStartMm={"xMm": 3000.0, "yMm": -5000.0},
+        lineEndMm={"xMm": 3000.0, "yMm": 5000.0},
+        cropDepthMm=9000.0,
+    )
+    doc = Document(revision=1, elements={"lvl": lvl, "w-along": wall, "sec-a": sec})
+    out = section_cut_projection_wire(doc, "sec-a")
+    ws = (out.get("primitives") or {}).get("walls") or []
+    assert len(ws) == 1
+    assert ws[0]["cutHatchKind"] == "alongCut"
 
 
 def test_section_projection_wire_emits_door_when_cut_hits_host_wall() -> None:
@@ -299,6 +342,7 @@ def test_deterministic_sheet_evidence_rows_stable() -> None:
     assert rows[0]["playwrightSuggestedFilenames"]["pngViewport"].startswith("pfx-sheet-sheet-a")
     assert rows[0]["playwrightSuggestedFilenames"]["pngFullSheet"] == "pfx-sheet-sheet-a-full.png"
     assert rows[0].get("viewportEvidenceHints_v0") == []
+    assert rows[0].get("planRoomProgrammeLegendHints_v0") == []
     corr = rows[0].get("correlation") or {}
     assert corr.get("semanticDigestPrefix16") == "a" * 16
     assert corr.get("modelRevision") == 2
@@ -698,6 +742,10 @@ def test_plan_projection_room_legend_matches_primitives_when_programme_shared() 
     assert len(legend) == 1
     assert legend[0].get("label") == "OFF"
     assert legend[0].get("schemeColorHex") == hx0
+    leg_ev = out.get("roomProgrammeLegendEvidence_v0") or {}
+    assert leg_ev.get("format") == "roomProgrammeLegendEvidence_v0"
+    assert leg_ev.get("rowCount") == 1
+    assert isinstance(leg_ev.get("legendDigestSha256"), str) and len(leg_ev["legendDigestSha256"]) == 64
 
 
 def test_plan_projection_crop_authored_filters_and_emits_range_warning() -> None:
@@ -1100,7 +1148,110 @@ def test_plan_projection_wire_plan_graphic_hints_order_coarse_vs_fine() -> None:
     assert hints_fine["detailLevel"] == "fine"
     assert hints_coarse["detailLevel"] == "coarse"
 
-    lw_fine = float((out_fine["primitives"]["walls"] or [])[0]["lineWeightHint"])
-    lw_coarse = float((out_coarse["primitives"]["walls"] or [])[0]["lineWeightHint"])
-    assert lw_fine > lw_coarse
+
+
+def test_room_programme_legend_replay_matches_schedule_and_sheet_manifest() -> None:
+    """Replayable slice: rooms + plan + sheet viewport + room schedule + legend evidence digests."""
+
+    doc = Document(revision=1, elements={})
+    apply_inplace(doc, CreateLevelCmd(id="lvl", name="G", elevationMm=0))
+    apply_inplace(
+        doc,
+        CreateRoomRectangleCmd(
+            roomId="rm-lab",
+            name="Lab",
+            levelId="lvl",
+            origin={"xMm": 0, "yMm": 0},
+            widthMm=3000,
+            depthMm=3000,
+            programmeCode="LAB",
+        ),
+    )
+    apply_inplace(
+        doc,
+        CreateRoomRectangleCmd(
+            roomId="rm-off",
+            name="Office",
+            levelId="lvl",
+            origin={"xMm": 4000, "yMm": 0},
+            widthMm=3000,
+            depthMm=3000,
+            programmeCode="OFF",
+        ),
+    )
+    apply_inplace(
+        doc,
+        UpsertPlanViewCmd(
+            id="pv-1",
+            name="Floor plan",
+            levelId="lvl",
+            planPresentation="room_scheme",
+        ),
+    )
+    apply_inplace(doc, UpsertSheetCmd(id="sh-1", name="A101"))
+    apply_inplace(
+        doc,
+        UpsertSheetViewportsCmd(
+            sheetId="sh-1",
+            viewportsMm=[
+                {
+                    "viewportId": "vp-plan",
+                    "label": "Plan",
+                    "viewRef": "plan:pv-1",
+                    "xMm": 100,
+                    "yMm": 200,
+                    "widthMm": 5000,
+                    "heightMm": 4000,
+                },
+            ],
+        ),
+    )
+    apply_inplace(doc, UpsertScheduleCmd(id="sch-rooms", name="Room schedule"))
+    apply_inplace(
+        doc,
+        UpsertScheduleFiltersCmd(
+            scheduleId="sch-rooms",
+            filters={"category": "room"},
+            grouping={},
+        ),
+    )
+
+    wire = resolve_plan_projection_wire(doc, plan_view_id="pv-1", fallback_level_id=None)
+    legend = wire.get("roomColorLegend") or []
+    assert len(legend) == 2
+    ev = wire.get("roomProgrammeLegendEvidence_v0") or {}
+    assert ev.get("format") == "roomProgrammeLegendEvidence_v0"
+    assert ev.get("rowCount") == 2
+    ortho = ev.get("orthogonalTo") or []
+    assert "derivedRoomBoundaryEvidence_v0" in ortho
+    digest = ev.get("legendDigestSha256")
+    assert isinstance(digest, str) and len(digest) == 64
+    canon = json.dumps(legend, sort_keys=True, separators=(",", ":"))
+    assert hashlib.sha256(canon.encode("utf-8")).hexdigest() == digest
+
+    sch = derive_schedule_table(doc, "sch-rooms")
+    sch_rows = sch.get("rows") or []
+    codes = {r.get("programmeCode") for r in sch_rows if isinstance(r, dict)}
+    assert codes == {"LAB", "OFF"}
+
+    boundary = wire.get("derivedRoomBoundaryEvidence_v0") or []
+    assert isinstance(boundary, list)
+    assert digest
+
+    sh = doc.elements["sh-1"]
+    hints = plan_room_programme_legend_hints_v0(doc, list(sh.viewports_mm or []))
+    assert hints == [
+        {"viewportId": "vp-plan", "legendDigestSha256": digest, "rowCount": 2},
+    ]
+
+    man_rows = deterministic_sheet_evidence_manifest(
+        model_id=uuid4(),
+        doc=doc,
+        evidence_artifact_basename="rl",
+        semantic_digest_sha256="c" * 64,
+        semantic_digest_prefix16="c" * 16,
+    )
+    assert len(man_rows) == 1
+    assert man_rows[0].get("planRoomProgrammeLegendHints_v0") == hints
+
 

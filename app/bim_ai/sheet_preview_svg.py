@@ -246,6 +246,53 @@ def viewport_evidence_hints_v0(vps_raw: list[Any]) -> list[dict[str, Any]]:
     return sorted(hints, key=lambda r: str(r.get("viewportId") or ""))
 
 
+def plan_room_programme_legend_hints_v0(doc: Document, vps_raw: list[Any]) -> list[dict[str, Any]]:
+    """Per ``plan:`` viewport: legend digest tying sheet manifest rows to ``plan_projection_wire``."""
+
+    out: list[dict[str, Any]] = []
+
+    for i, vp_any in enumerate(vps_raw):
+        if not isinstance(vp_any, dict):
+            continue
+        vp = vp_any
+        vr = vp.get("viewRef") or vp.get("view_ref")
+        if not isinstance(vr, str) or ":" not in vr:
+            continue
+        kind_raw, ref_raw = vr.split(":", 1)
+        if kind_raw.strip().lower() != "plan":
+            continue
+        pv_id = ref_raw.strip()
+        if not pv_id:
+            continue
+        vid = str(vp.get("viewportId") or vp.get("viewport_id") or "").strip()
+        if not vid:
+            vid = f"__implicit_{i}"
+        wire = resolve_plan_projection_wire(
+            doc,
+            plan_view_id=pv_id,
+            fallback_level_id=None,
+            global_plan_presentation="default",
+            sheet_viewport_row_for_crop=vp,
+        )
+        ev = wire.get("roomProgrammeLegendEvidence_v0")
+        if not isinstance(ev, dict):
+            continue
+        digest_raw = ev.get("legendDigestSha256") or ev.get("legend_digest_sha256")
+        digest = str(digest_raw).strip()
+        if not digest:
+            continue
+        rows_raw = ev.get("rowCount", ev.get("row_count"))
+        try:
+            row_count = int(rows_raw)
+        except (TypeError, ValueError):
+            continue
+        out.append(
+            {"viewportId": vid, "legendDigestSha256": digest, "rowCount": row_count}
+        )
+
+    return sorted(out, key=lambda r: str(r.get("viewportId") or ""))
+
+
 def resolve_view_ref_title(doc: Document, view_ref: str) -> str | None:
     if not view_ref or ":" not in view_ref:
         return None

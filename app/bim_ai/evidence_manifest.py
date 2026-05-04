@@ -19,6 +19,7 @@ from bim_ai.elements import (
 )
 from bim_ai.sheet_preview_svg import (
     SHEET_PRINT_RASTER_PLACEHOLDER_CONTRACT_V1,
+    plan_room_programme_legend_hints_v0,
     sheet_elem_to_svg,
     sheet_print_raster_placeholder_png_bytes_v1,
     sheet_svg_utf8_sha256,
@@ -199,6 +200,9 @@ def deterministic_sheet_evidence_manifest(
                     "rasterPlaceholderProbe": f"{stem}.raster-placeholder.png",
                 },
                 "viewportEvidenceHints_v0": viewport_evidence_hints_v0(list(sh.viewports_mm or [])),
+                "planRoomProgrammeLegendHints_v0": plan_room_programme_legend_hints_v0(
+                    doc, list(sh.viewports_mm or [])
+                ),
                 "correlation": {
                     "format": "evidenceSheetCorrelation_v1",
                     "semanticDigestSha256": semantic_digest_sha256,
