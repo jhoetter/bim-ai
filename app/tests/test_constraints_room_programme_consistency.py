@@ -37,4 +37,38 @@ def test_room_programme_inconsistent_within_level_warns_blank_peer() -> None:
 
     ids = getattr(ours[0], "element_ids", []) or []
     assert "rm-b" in ids
+    qf = getattr(ours[0], "quick_fix_command", None)
+    assert isinstance(qf, dict)
+    assert qf.get("type") == "updateElementProperty"
+    assert qf.get("elementId") == "rm-b"
+    assert qf.get("key") == "programmeCode"
+    assert qf.get("value") == "A1"
+
+
+def test_room_programme_inconsistent_skips_quick_fix_when_peer_has_department_only() -> None:
+    els = {
+        "lv": LevelElem(kind="level", id="lv", name="L1", elevation_mm=0),
+        "rm-a": RoomElem(
+            kind="room",
+            id="rm-a",
+            name="A",
+            level_id="lv",
+            outline_mm=_square(((0.0, 0.0), (3000.0, 0.0), (3000.0, 2000.0), (0.0, 2000.0))),
+            programme_code=None,
+            department="North wing",
+            function_label=None,
+            finish_set=None,
+        ),
+        "rm-b": RoomElem(
+            kind="room",
+            id="rm-b",
+            name="B",
+            level_id="lv",
+            outline_mm=_square(((3100.0, 0.0), (5000.0, 0.0), (5000.0, 2000.0), (3100.0, 2000.0))),
+        ),
+    }
+    vs = evaluate(els)
+    ours = [v for v in vs if getattr(v, "rule_id", None) == "room_programme_inconsistent_within_level"]
+    assert len(ours) == 1
+    assert ours[0].quick_fix_command is None
 

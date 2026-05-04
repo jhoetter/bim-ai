@@ -7,6 +7,7 @@ import {
   isPlanProjectionPrimitivesV1,
   type PlanProjectionPrimitivesV1Wire,
 } from './planProjectionWire';
+import { deterministicSchemeColorHex } from './roomSchemeColor';
 
 /** Plan slice elevation in world units (walls still render with real height elsewhere). */
 
@@ -135,7 +136,7 @@ function horizontalOutlineMesh(
   return mesh;
 }
 
-/** Server `room_overlap_plan` heuristic threshold (mm²); keep aligned with Python constraints. */
+/** Server `ROOM_PLAN_OVERLAP_THRESHOLD_MM2` in `app/bim_ai/constraints.py` (`room_overlap_plan`). */
 export const ROOM_PLAN_OVERLAP_ADVISOR_MM2 = 50_000;
 
 /** Plan authoring display bias (orthogonal to BIM levels). */
@@ -228,7 +229,12 @@ function rebuildPlanMeshesFromWire(
             levelId: String(r.levelId ?? ''),
             outlineMm: outline,
           };
-    holder.add(roomMesh(roomEl, presentation));
+    const hexRaw = r.schemeColorHex ?? r.scheme_color_hex;
+    const schemeHex =
+      typeof hexRaw === 'string' && /^#[0-9a-fA-F]{6}$/.test(hexRaw.trim())
+        ? hexRaw.trim()
+        : undefined;
+    holder.add(roomMesh(roomEl, presentation, { schemeColorHex: schemeHex }));
   }
 
   const floors = Array.isArray(prim.floors) ? (prim.floors as Record<string, unknown>[]) : [];
@@ -625,12 +631,6 @@ function planWindowMesh(
   return grp;
 }
 
-function hueFromName(seed: string): number {
-  let h = 0;
-  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) % 360;
-  return h;
-}
-
 /** Footprint tread preview on the stair base level (OG plan hides it). */
 
 function stairPlanThree(stair: Extract<Element, { kind: 'stair' }>): THREE.Group | null {
@@ -721,6 +721,7 @@ function stairPlanThree(stair: Extract<Element, { kind: 'stair' }>): THREE.Group
 function roomMesh(
   room: Extract<Element, { kind: 'room' }>,
   presentation?: PlanPresentationPreset,
+  opts?: { schemeColorHex?: string },
 ): THREE.Mesh {
   const scheme = presentation ?? 'default';
 
@@ -744,12 +745,20 @@ function roomMesh(
 
   const geo = new THREE.ShapeGeometry(shape);
 
+  const seed =
+    typeof room.programmeCode === 'string' && room.programmeCode.trim()
+      ? room.programmeCode.trim()
+      : room.id;
+
   const fill =
     scheme === 'room_scheme'
       ? {
           opacity: 0.34,
 
-          color: `hsl(${hueFromName(room.name)} 62% 46%)`,
+          color:
+            opts?.schemeColorHex && /^#[0-9a-fA-F]{6}$/.test(opts.schemeColorHex)
+              ? opts.schemeColorHex
+              : deterministicSchemeColorHex(seed),
         }
       : scheme === 'opening_focus'
         ? { opacity: 0.045, color: '#1d4ed8' }

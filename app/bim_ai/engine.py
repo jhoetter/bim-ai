@@ -102,6 +102,27 @@ def new_id() -> str:
     return str(uuid.uuid4())
 
 
+def _stripped_optional_str(val: str | None) -> str | None:
+    if val is None:
+        return None
+    t = val.strip()
+    return t or None
+
+
+def _room_programme_field_updates(
+    programme_code: str | None,
+    department: str | None,
+    function_label: str | None,
+    finish_set: str | None,
+) -> dict[str, str | None]:
+    return {
+        "programme_code": _stripped_optional_str(programme_code),
+        "department": _stripped_optional_str(department),
+        "function_label": _stripped_optional_str(function_label),
+        "finish_set": _stripped_optional_str(finish_set),
+    }
+
+
 def coerce_command(data: dict[str, Any]) -> Command:
     return command_adapter.validate_python(data)
 
@@ -367,6 +388,12 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 name=cmd.name,
                 level_id=cmd.level_id,
                 outline_mm=cmd.outline_mm,
+                **_room_programme_field_updates(
+                    cmd.programme_code,
+                    cmd.department,
+                    cmd.function_label,
+                    cmd.finish_set,
+                ),
             )
 
         case CreateRoomRectangleCmd():
@@ -407,6 +434,12 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 name=cmd.name,
                 level_id=cmd.level_id,
                 outline_mm=list(corners),
+                **_room_programme_field_updates(
+                    cmd.programme_code,
+                    cmd.department,
+                    cmd.function_label,
+                    cmd.finish_set,
+                ),
             )
 
         case CreateRoomPolyCmd():
@@ -447,6 +480,12 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 name=cmd.name,
                 level_id=cmd.level_id,
                 outline_mm=verts,
+                **_room_programme_field_updates(
+                    cmd.programme_code,
+                    cmd.department,
+                    cmd.function_label,
+                    cmd.finish_set,
+                ),
             )
 
         case MoveLevelElevationCmd():
@@ -514,9 +553,58 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                         if not isinstance(vt_el, ViewTemplateElem):
                             raise ValueError("viewTemplateId must reference view_template")
                     els[cmd.element_id] = el.model_copy(update={"view_template_id": vt})
+                elif cmd.key == "cropMinMm":
+                    if not raw:
+                        els[cmd.element_id] = el.model_copy(update={"crop_min_mm": None})
+                    else:
+                        try:
+                            parsed = json.loads(raw)
+                        except json.JSONDecodeError as exc:
+                            raise ValueError("cropMinMm must be JSON object {xMm,yMm} or empty") from exc
+                        if not isinstance(parsed, dict):
+                            raise ValueError("cropMinMm must be a JSON object")
+                        els[cmd.element_id] = el.model_copy(
+                            update={"crop_min_mm": Vec2Mm.model_validate(parsed)}
+                        )
+                elif cmd.key == "cropMaxMm":
+                    if not raw:
+                        els[cmd.element_id] = el.model_copy(update={"crop_max_mm": None})
+                    else:
+                        try:
+                            parsed = json.loads(raw)
+                        except json.JSONDecodeError as exc:
+                            raise ValueError("cropMaxMm must be JSON object {xMm,yMm} or empty") from exc
+                        if not isinstance(parsed, dict):
+                            raise ValueError("cropMaxMm must be a JSON object")
+                        els[cmd.element_id] = el.model_copy(
+                            update={"crop_max_mm": Vec2Mm.model_validate(parsed)}
+                        )
+                elif cmd.key == "viewRangeBottomMm":
+                    vrb: float | None = None
+                    if raw != "":
+                        vrb = float(raw)
+                    els[cmd.element_id] = el.model_copy(update={"view_range_bottom_mm": vrb})
+                elif cmd.key == "viewRangeTopMm":
+                    vrt: float | None = None
+                    if raw != "":
+                        vrt = float(raw)
+                    els[cmd.element_id] = el.model_copy(update={"view_range_top_mm": vrt})
+                elif cmd.key == "cutPlaneOffsetMm":
+                    cpo: float | None = None
+                    if raw != "":
+                        cpo = float(raw)
+                    els[cmd.element_id] = el.model_copy(update={"cut_plane_offset_mm": cpo})
+                elif cmd.key == "discipline":
+                    els[cmd.element_id] = el.model_copy(
+                        update={"discipline": raw if raw else "architecture"}
+                    )
+                elif cmd.key == "phaseId":
+                    els[cmd.element_id] = el.model_copy(update={"phase_id": raw or None})
                 else:
                     raise ValueError(
-                        "plan_view updates: key=planPresentation | categoriesHidden | underlayLevelId | viewTemplateId | name"
+                        "plan_view updates: key=planPresentation | categoriesHidden | underlayLevelId | "
+                        "viewTemplateId | cropMinMm | cropMaxMm | viewRangeBottomMm | viewRangeTopMm | "
+                        "cutPlaneOffsetMm | discipline | phaseId | name"
                     )
             elif isinstance(el, ViewpointElem):
                 raw = cmd.value.strip()
@@ -565,6 +653,9 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                     "programmeCode(room) | department(room) | functionLabel(room) | finishSet(room) | "
                     "planPresentation(plan_view) | categoriesHidden(plan_view JSON array) | "
                     "underlayLevelId(plan_view) | viewTemplateId(plan_view) | "
+                    "cropMinMm(plan_view JSON object) | cropMaxMm(plan_view JSON object) | "
+                    "viewRangeBottomMm(plan_view) | viewRangeTopMm(plan_view) | cutPlaneOffsetMm(plan_view) | "
+                    "discipline(plan_view) | phaseId(plan_view) | "
                     "viewerClipCapElevMm(viewpoint) | viewerClipFloorElevMm(viewpoint) | "
                     "hiddenSemanticKinds3d(viewpoint JSON array) | "
                     "familyTypeId(door/window) | materialKey(door/window) supported in v2"
