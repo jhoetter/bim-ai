@@ -24,7 +24,44 @@ from bim_ai.export_gltf import (
     build_visual_export_manifest,
     document_to_glb_bytes,
     document_to_gltf,
+    export_manifest_extension_payload,
 )
+
+
+def test_export_manifest_includes_wall_corner_join_evidence_for_l_walls() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=0),
+            "wh": WallElem(
+                kind="wall",
+                id="wh",
+                name="H",
+                levelId="lvl",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 4000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+            "wv": WallElem(
+                kind="wall",
+                id="wv",
+                name="V",
+                levelId="lvl",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 0, "yMm": 3000},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+        },
+    )
+    ext = export_manifest_extension_payload(doc)
+    assert "bim_ai_wall_corner_joins_v0" in ext["meshEncoding"]
+    jev = ext.get("wallCornerJoinEvidence_v0")
+    assert jev is not None
+    assert jev["format"] == "wallCornerJoinEvidence_v0"
+    assert len(jev["joins"]) == 1
+    assert jev["joins"][0]["joinKind"] == "corner"
 
 
 def test_gltf_manifest_lists_unsupported_kinds_when_no_geometry_categories():

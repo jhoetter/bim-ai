@@ -26,6 +26,7 @@ from bim_ai.elements import (
 from bim_ai.material_assembly_resolve import material_assembly_manifest_evidence
 from bim_ai.opening_cut_primitives import xz_bounds_mm_from_poly
 from bim_ai.roof_geometry import gable_ridge_rise_mm, outer_rect_extent
+from bim_ai.wall_join_evidence import collect_wall_corner_join_evidence_v0
 
 EXPORT_GEOMETRY_KINDS: frozenset[str] = frozenset(
     {"wall", "floor", "roof", "door", "window", "room", "stair", "slab_opening"}
@@ -114,9 +115,12 @@ def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
     parity = exchange_parity_manifest_fields_from_document(doc)
     cut_warns = collect_hosted_cut_manifest_warnings(doc)
     rgeom_roofs = roof_geometry_manifest_evidence_v0(doc)
+    corner_joins = collect_wall_corner_join_evidence_v0(doc)
     mesh_enc = "bim_ai_box_primitive_v0"
     if rgeom_roofs:
         mesh_enc += "+bim_ai_gable_roof_v0"
+    if corner_joins:
+        mesh_enc += "+bim_ai_wall_corner_joins_v0"
     base: dict[str, Any] = {
         **parity,
         "meshEncoding": mesh_enc,
@@ -129,6 +133,8 @@ def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
         base["materialAssemblyEvidence_v0"] = asm_ev
     if rgeom_roofs:
         base["roofGeometryEvidence_v0"] = rgeom_roofs
+    if corner_joins:
+        base["wallCornerJoinEvidence_v0"] = corner_joins
     return base
 
 
