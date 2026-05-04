@@ -491,7 +491,7 @@ async function sharedRoutes(page: Page, layoutPreset: string) {
             },
             pixelDiffExpectation: {
               format: 'pixelDiffExpectation_v1',
-              status: 'not_run',
+              status: 'ingested',
               baselineRole: 'committed_png_under_e2e_screenshots',
               diffArtifactBasenameSuffix: '-diff.png',
               metricsPlaceholder: {
@@ -523,6 +523,12 @@ async function sharedRoutes(page: Page, layoutPreset: string) {
             correlationFullyConsistent: true,
             screenshotHintGapRowCount: 0,
             pixelDiffIngestTargetCount: MOCK_CLOSURE_DETERMINISTIC_PNG_BASENAMES.length,
+          },
+          evidenceDiffIngestFixLoop_v1: {
+            format: 'evidence_diff_ingest_fix_loop_v1',
+            needsFixLoop: false,
+            blockerCodes: [],
+            notes: 'mock clean closure — pixel diff marked ingested for e2e fix-loop panel',
           },
           evidenceAgentFollowThrough_v1: {
             format: 'evidenceAgentFollowThrough_v1',
@@ -587,6 +593,7 @@ async function sharedRoutes(page: Page, layoutPreset: string) {
             format: 'agentEvidenceClosureHints_v1',
             evidenceClosureReviewField: 'evidenceClosureReview_v1',
             pixelDiffExpectationNestedField: 'pixelDiffExpectation',
+            evidenceDiffIngestFixLoopField: 'evidenceDiffIngestFixLoop_v1',
             deterministicPngBasenamesField: 'expectedDeterministicPngBasenames',
             playwrightEvidenceSpecRelPath: 'packages/web/e2e/evidence-baselines.spec.ts',
             suggestedRegenerationCommands: [
@@ -708,7 +715,7 @@ test.describe('evidence PNG baselines', () => {
     expect(cons?.isFullyConsistent).toBe(true);
     const pix = closure?.pixelDiffExpectation as Record<string, unknown> | undefined;
     expect(pix?.format).toBe('pixelDiffExpectation_v1');
-    expect(pix?.status).toBe('not_run');
+    expect(pix?.status).toBe('ingested');
     const pol = pix?.thresholdPolicy_v1 as Record<string, unknown> | undefined;
     expect(pol?.format).toBe('pixelDiffThresholdPolicy_v1');
     expect(pol?.enforcement).toBe('advisory_only');
@@ -724,6 +731,11 @@ test.describe('evidence PNG baselines', () => {
     const gapRows = shotGaps?.gaps as unknown[] | undefined;
     expect(life?.screenshotHintGapRowCount).toBe(gapRows?.length);
     expect(life?.correlationFullyConsistent).toBe(true);
+    const fixLoop = pkg.evidenceDiffIngestFixLoop_v1 as Record<string, unknown> | undefined;
+    expect(fixLoop?.format).toBe('evidence_diff_ingest_fix_loop_v1');
+    expect(fixLoop?.needsFixLoop).toBe(false);
+    const fixBlockers = fixLoop?.blockerCodes as unknown[] | undefined;
+    expect(Array.isArray(fixBlockers) ? fixBlockers.length : -1).toBe(0);
     const follow = pkg.evidenceAgentFollowThrough_v1 as Record<string, unknown> | undefined;
     expect(follow?.format).toBe('evidenceAgentFollowThrough_v1');
     expect(
@@ -763,5 +775,16 @@ test.describe('evidence PNG baselines', () => {
     expect(result.contract).toBe('sheetPrintRasterPlaceholder_v1');
     expect(result.svgSha).toBe('d4dc56669143034f31aa309635d4113d9ad76a02b1739da22c965ed2049be9e6');
     expect(result.byteLength).toBe(MOCK_SHEET_PRINT_RASTER_PNG_BYTES.length);
+  });
+
+  test('agent_review layout: fix-loop callout hidden when evidence package clean', async ({
+    page,
+  }) => {
+    await sharedRoutes(page, 'agent_review');
+    await page.goto('/');
+    await expect(page.getByText('Ready', { exact: false })).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText('Agent cockpit')).toBeVisible();
+    await page.getByRole('button', { name: 'Fetch evidence-package JSON' }).click();
+    await expect(page.getByTestId('evidence-diff-fix-loop-callout')).toHaveCount(0);
   });
 });

@@ -62,6 +62,7 @@ jobs:
             echo "  evidenceClosureReview_v1.pixelDiffExpectation — reserved metadata when attaching programmatic diff outputs;"
             echo "  evidenceClosureReview_v1.screenshotHintGaps_v1 — deterministic rows missing required Playwright PNG filename slots;"
             echo "  evidenceLifecycleSignal_v1 — programmatic rollup (counts + digest + basename) for scripts/agents."
+            echo "  evidenceDiffIngestFixLoop_v1 — derivative blocker rollup (correlation, screenshot slots, pixel diff ingest) + agent remediate action hook."
             echo "  evidenceAgentFollowThrough_v1 — staged artifact URL placeholders, BCF/issue coordination checks,"
             echo "    evidenceRef resolution gaps, collaboration replayConflict hints (excluded from semanticDigestSha256)."
             echo "  Python pytest scale gate: test_bundle_replay_diagnostics_large_list_under_budget (replayDiagnostics metadata scan)."

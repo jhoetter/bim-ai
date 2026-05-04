@@ -1,6 +1,10 @@
 from __future__ import annotations
 
-from bim_ai.evidence_manifest import evidence_closure_review_v1, evidence_lifecycle_signal_v1
+from bim_ai.evidence_manifest import (
+    evidence_closure_review_v1,
+    evidence_diff_ingest_fix_loop_v1,
+    evidence_lifecycle_signal_v1,
+)
 
 
 def test_evidence_closure_review_inventory_lists_sorted_png_basenames() -> None:
@@ -170,3 +174,91 @@ def test_evidence_lifecycle_signal_v1_matches_closure_review() -> None:
         evidence_closure_review=stale_closure,
     )
     assert stale_sig["correlationFullyConsistent"] is False
+
+
+def test_evidence_diff_ingest_fix_loop_clear_when_pixel_marked_ingested() -> None:
+    pkg = "f" * 64
+    closure = evidence_closure_review_v1(
+        package_semantic_digest_sha256=pkg,
+        deterministic_sheet_evidence=[
+            {
+                "sheetId": "s1",
+                "playwrightSuggestedFilenames": {"pngViewport": "a.png", "pngFullSheet": "b.png"},
+                "correlation": {"semanticDigestSha256": pkg},
+            }
+        ],
+        deterministic_3d_view_evidence=[],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+    )
+    pix = closure["pixelDiffExpectation"]
+    assert isinstance(pix, dict)
+    pix = dict(pix)
+    pix["status"] = "ingested"
+    closure2 = {**closure, "pixelDiffExpectation": pix}
+    fl = evidence_diff_ingest_fix_loop_v1(closure2)
+    assert fl["format"] == "evidence_diff_ingest_fix_loop_v1"
+    assert fl["needsFixLoop"] is False
+    assert fl["blockerCodes"] == []
+
+
+def test_evidence_diff_ingest_fix_loop_correlation_blocker() -> None:
+    pkg = "a" * 64
+    closure = evidence_closure_review_v1(
+        package_semantic_digest_sha256=pkg,
+        deterministic_sheet_evidence=[
+            {
+                "sheetId": "s1",
+                "playwrightSuggestedFilenames": {"pngViewport": "x.png", "pngFullSheet": "y.png"},
+                "correlation": {"semanticDigestSha256": "b" * 64},
+            }
+        ],
+        deterministic_3d_view_evidence=[],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+    )
+    fl = evidence_diff_ingest_fix_loop_v1(closure)
+    assert fl["needsFixLoop"] is True
+    assert fl["blockerCodes"] == ["correlation_digest_stale_or_missing"]
+
+
+def test_evidence_diff_ingest_fix_loop_screenshot_gaps_suppresses_pixel_pending() -> None:
+    pkg = "e" * 64
+    closure = evidence_closure_review_v1(
+        package_semantic_digest_sha256=pkg,
+        deterministic_sheet_evidence=[
+            {
+                "sheetId": "s1",
+                "playwrightSuggestedFilenames": {"pngViewport": "only-viewport.png"},
+                "correlation": {"semanticDigestSha256": pkg},
+            }
+        ],
+        deterministic_3d_view_evidence=[],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+    )
+    fl = evidence_diff_ingest_fix_loop_v1(closure)
+    assert fl["blockerCodes"] == ["screenshot_filename_slots_incomplete"]
+
+
+def test_evidence_diff_ingest_fix_loop_pixel_pending_when_inventory_complete() -> None:
+    pkg = "f" * 64
+    closure = evidence_closure_review_v1(
+        package_semantic_digest_sha256=pkg,
+        deterministic_sheet_evidence=[
+            {
+                "sheetId": "s1",
+                "playwrightSuggestedFilenames": {
+                    "pngViewport": "a-viewport.png",
+                    "pngFullSheet": "z-full.png",
+                },
+                "correlation": {"semanticDigestSha256": pkg},
+            }
+        ],
+        deterministic_3d_view_evidence=[],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+    )
+    fl = evidence_diff_ingest_fix_loop_v1(closure)
+    assert fl["needsFixLoop"] is True
+    assert fl["blockerCodes"] == ["pixel_diff_ingest_pending"]

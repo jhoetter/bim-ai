@@ -17,7 +17,10 @@ from bim_ai.elements import (
     ViewpointElem,
 )
 from bim_ai.engine import apply_inplace, coerce_command
-from bim_ai.evidence_manifest import evidence_package_semantic_digest_sha256
+from bim_ai.evidence_manifest import (
+    evidence_closure_review_v1,
+    evidence_package_semantic_digest_sha256,
+)
 
 
 def test_bcf_topics_index_v1_sorts_by_kind_then_id() -> None:
@@ -200,3 +203,39 @@ def test_engine_applies_enriched_bcf_and_agent_records() -> None:
     dev = doc.elements["dev-1"]
     assert isinstance(dev, AgentDeviationElem)
     assert dev.related_assumption_id == "asm-1"
+
+
+def test_evidence_digest_ignores_evidence_diff_ingest_fix_loop_v1() -> None:
+    base = {"format": "evidencePackage_v1", "revision": 1, "modelId": "x"}
+    a = {**base, "evidenceDiffIngestFixLoop_v1": {"needsFixLoop": True, "blockerCodes": ["a"]}}
+    b = {**base, "evidenceDiffIngestFixLoop_v1": {"needsFixLoop": False, "blockerCodes": []}}
+    assert evidence_package_semantic_digest_sha256(a) == evidence_package_semantic_digest_sha256(b)
+
+
+def test_agent_review_actions_v1_adds_remediate_when_closure_needs_fix_loop() -> None:
+    pkg = "a" * 64
+    closure = evidence_closure_review_v1(
+        package_semantic_digest_sha256=pkg,
+        deterministic_sheet_evidence=[
+            {
+                "sheetId": "s1",
+                "playwrightSuggestedFilenames": {"pngViewport": "x.png", "pngFullSheet": "y.png"},
+                "correlation": {"semanticDigestSha256": "b" * 64},
+            }
+        ],
+        deterministic_3d_view_evidence=[],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+    )
+    out = agent_review_actions_v1(
+        doc=Document(revision=1, elements={}),
+        deterministic_sheet_evidence=[],
+        deterministic_3d_view_evidence=[],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+        violations=[],
+        evidence_closure_review=closure,
+    )
+    remediate = [a for a in out["actions"] if a["kind"] == "remediateEvidenceDiffIngest"]
+    assert len(remediate) == 1
+    assert remediate[0]["target"]["blockerCodes"] == ["correlation_digest_stale_or_missing"]

@@ -8,6 +8,7 @@ from typing import Any
 
 from bim_ai.document import Document
 from bim_ai.elements import AgentDeviationElem, BcfElem, EvidenceRef, IssueElem
+from bim_ai.evidence_manifest import evidence_diff_ingest_fix_loop_v1
 
 
 def _sorted_evidence_ref_models(refs: list[EvidenceRef]) -> list[EvidenceRef]:
@@ -75,6 +76,7 @@ def agent_review_actions_v1(
     deterministic_plan_view_evidence: list[dict[str, Any]],
     deterministic_section_cut_evidence: list[dict[str, Any]],
     violations: list[dict[str, Any]],
+    evidence_closure_review: dict[str, Any] | None = None,
     max_violation_actions: int = 12,
 ) -> dict[str, Any]:
     """Deterministic guidance tying topics, deviations, and deterministic evidence rows."""
@@ -364,6 +366,38 @@ def agent_review_actions_v1(
             }
         )
         v_ct += 1
+
+    if evidence_closure_review is not None:
+        fix_loop = evidence_diff_ingest_fix_loop_v1(evidence_closure_review)
+        if fix_loop.get("needsFixLoop") is True:
+            blockers_raw = fix_loop.get("blockerCodes")
+            blockers: list[str] = (
+                sorted({str(x) for x in blockers_raw if isinstance(x, str)})
+                if isinstance(blockers_raw, list)
+                else []
+            )
+            actions.append(
+                {
+                    "actionId": _action_id_v1(
+                        "remediate_evidence_diff_ingest",
+                        {"blockerCodes": blockers},
+                    ),
+                    "kind": "remediateEvidenceDiffIngest",
+                    "target": {
+                        "needsFixLoop": True,
+                        "blockerCodes": blockers,
+                        "evidenceClosureReviewField": "evidenceClosureReview_v1",
+                        "evidenceDiffIngestFixLoopField": "evidenceDiffIngestFixLoop_v1",
+                    },
+                    "guidance": (
+                        "Evidence closure needs follow-up: re-fetch evidence-package after model changes; "
+                        "repair correlation digests or missing Playwright PNG filename slots in "
+                        "deterministic rows; run `e2e/evidence-baselines.spec.ts` (or your CI recipe); "
+                        "attach pixel diffs beside baselines per "
+                        "evidenceClosureReview_v1.pixelDiffExpectation.ingestChecklist_v1."
+                    ),
+                }
+            )
 
     actions.sort(key=lambda a: str(a.get("actionId", "")))
     return {"format": "agentReviewActions_v1", "actions": actions}

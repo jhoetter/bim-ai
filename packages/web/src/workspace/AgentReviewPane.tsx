@@ -99,6 +99,10 @@ export function AgentReviewPane() {
     } | null;
     suggestedBasenameHint: string | null;
     mismatchNotes: string[];
+    diffFixLoop: {
+      needsFixLoop: boolean;
+      blockerCodes: string[];
+    } | null;
     reviewActions: AgentReviewActionRow[];
   };
 
@@ -157,6 +161,7 @@ export function AgentReviewPane() {
       screenshotSlotGaps: null,
       suggestedBasenameHint: null,
       mismatchNotes: [],
+      diffFixLoop: null,
       reviewActions: [],
     });
 
@@ -201,6 +206,22 @@ export function AgentReviewPane() {
       const ftRaw = payload.evidenceAgentFollowThrough_v1;
       if (ftRaw && typeof ftRaw === 'object') {
         agentFollowThrough = ftRaw as Record<string, unknown>;
+      }
+
+      let diffFixLoop: EvidenceArtifactSummary['diffFixLoop'] = null;
+      const dflRaw = payload.evidenceDiffIngestFixLoop_v1;
+      if (dflRaw && typeof dflRaw === 'object') {
+        const d = dflRaw as Record<string, unknown>;
+        if (d.format === 'evidence_diff_ingest_fix_loop_v1') {
+          const codesRaw = d.blockerCodes;
+          const blockerCodes = Array.isArray(codesRaw)
+            ? codesRaw.filter((x): x is string => typeof x === 'string')
+            : [];
+          diffFixLoop = {
+            needsFixLoop: d.needsFixLoop === true,
+            blockerCodes,
+          };
+        }
       }
 
       let screenshotSlotGaps: EvidenceArtifactSummary['screenshotSlotGaps'] = null;
@@ -457,9 +478,13 @@ export function AgentReviewPane() {
         };
       });
 
-      const reviewActions = parseAgentReviewActionsV1(
+      const reviewActionsParsed = parseAgentReviewActionsV1(
         payload.agentReviewActions_v1 ?? payload.agent_review_actions_v1,
       );
+      const reviewActions = [
+        ...reviewActionsParsed.filter((a) => a.kind === 'remediateEvidenceDiffIngest'),
+        ...reviewActionsParsed.filter((a) => a.kind !== 'remediateEvidenceDiffIngest'),
+      ];
 
       const mismatchNotes: string[] = [];
 
@@ -598,6 +623,7 @@ export function AgentReviewPane() {
         screenshotSlotGaps,
         suggestedBasenameHint: basename,
         mismatchNotes,
+        diffFixLoop,
         reviewActions,
       };
     } catch {
@@ -617,6 +643,7 @@ export function AgentReviewPane() {
         screenshotSlotGaps: null,
         suggestedBasenameHint: null,
         mismatchNotes: ['Could not parse evidence JSON for artifact summary.'],
+        diffFixLoop: null,
         reviewActions: [],
       };
     }
@@ -1077,6 +1104,7 @@ export function AgentReviewPane() {
       evidenceArtifactSummary.closureHints ||
       evidenceArtifactSummary.closureReview ||
       evidenceArtifactSummary.lifecycleSignal ||
+      evidenceArtifactSummary.diffFixLoop?.needsFixLoop ||
       evidenceArtifactSummary.reviewActions.length ? (
         <div className="rounded border border-border bg-background/40 p-2">
           <div className="text-[10px] font-semibold text-muted">Evidence artifact correlation</div>
@@ -1246,6 +1274,51 @@ export function AgentReviewPane() {
                   </code>
                 </li>
               </ul>
+            </div>
+          ) : null}
+          {evidenceArtifactSummary.diffFixLoop?.needsFixLoop ? (
+            <div
+              data-testid="evidence-diff-fix-loop-callout"
+              className="mt-2 rounded border border-amber-500/35 bg-amber-500/5 p-2"
+            >
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div className="text-[10px] font-semibold text-amber-800 dark:text-amber-400">
+                  Evidence diff / screenshot fix loop (evidenceDiffIngestFixLoop_v1)
+                </div>
+                <Btn
+                  type="button"
+                  variant="quiet"
+                  className="shrink-0 text-[10px]"
+                  onClick={() => {
+                    const body = JSON.stringify(
+                      {
+                        format: 'evidence_diff_ingest_fix_loop_v1',
+                        needsFixLoop: true,
+                        blockerCodes: evidenceArtifactSummary.diffFixLoop?.blockerCodes ?? [],
+                      },
+                      null,
+                      2,
+                    );
+                    void navigator.clipboard.writeText(body).then(
+                      () => pushStep('Copied evidenceDiffIngestFixLoop_v1 summary JSON'),
+                      () => pushStep('Clipboard write failed'),
+                    );
+                  }}
+                >
+                  Copy JSON
+                </Btn>
+              </div>
+              <p className="mt-1 text-[10px] text-muted">
+                Blockers:{' '}
+                <code className="text-[9px]">
+                  {(evidenceArtifactSummary.diffFixLoop?.blockerCodes ?? []).join(', ') || '—'}
+                </code>
+              </p>
+              <p className="mt-1 text-[10px] text-muted">
+                Use <code className="text-[9px]">remediateEvidenceDiffIngest</code> in{' '}
+                <code className="text-[9px]">agentReviewActions_v1</code> (pinned first when
+                present).
+              </p>
             </div>
           ) : null}
           {evidenceArtifactSummary.agentFollowThrough ? (
