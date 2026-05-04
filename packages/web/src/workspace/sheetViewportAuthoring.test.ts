@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { fingerprintViewportFallback, normalizeViewportRaw } from './sheetViewportAuthoring';
+import {
+  fingerprintViewportFallback,
+  normalizeViewportRaw,
+  readViewportMmBox,
+} from './sheetViewportAuthoring';
 
 describe('normalizeViewportRaw', () => {
   it('is deterministic across repeated runs when viewportId is omitted', () => {
@@ -32,6 +36,18 @@ describe('normalizeViewportRaw', () => {
     const d0 = normalizeViewportRaw(row, 0);
     const d1 = normalizeViewportRaw(row, 1);
     expect(d0.viewportId).not.toBe(d1.viewportId);
+  });
+
+  it('accepts legacy wMm and hMm aliases for width and height', () => {
+    const box = readViewportMmBox({
+      xMm: 1,
+      yMm: 2,
+      wMm: 220,
+      hMm: 170,
+      viewRef: 'plan:a',
+    });
+    expect(box.widthMm).toBe(220);
+    expect(box.heightMm).toBe(170);
   });
 });
 

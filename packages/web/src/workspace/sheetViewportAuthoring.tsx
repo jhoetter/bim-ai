@@ -40,6 +40,24 @@ export function sheetViewportsMmFromDrafts(
   }));
 }
 
+/** Read mm box from persisted viewport dict (camelCase plus legacy `wMm`/`hMm`). */
+export function readViewportMmBox(raw: Record<string, unknown>): {
+  xMm: number;
+  yMm: number;
+  widthMm: number;
+  heightMm: number;
+} {
+  const xMm = Number(raw.xMm ?? raw.x_mm ?? 0);
+  const yMm = Number(raw.yMm ?? raw.y_mm ?? 0);
+  const widthMm = Number(raw.widthMm ?? raw.width_mm ?? raw.wMm ?? raw.w_mm ?? 1000);
+  const heightMm = Number(raw.heightMm ?? raw.height_mm ?? raw.hMm ?? raw.h_mm ?? 1000);
+  const nx = Number.isFinite(xMm) ? xMm : 0;
+  const ny = Number.isFinite(yMm) ? yMm : 0;
+  const nw = Number.isFinite(widthMm) ? Math.max(10, widthMm) : 1000;
+  const nh = Number.isFinite(heightMm) ? Math.max(10, heightMm) : 1000;
+  return { xMm: nx, yMm: ny, widthMm: nw, heightMm: nh };
+}
+
 /** Stable fallback id when `viewportId` is missing (replay / hydration). */
 export function fingerprintViewportFallback(
   index: number,
@@ -61,27 +79,13 @@ export function normalizeViewportRaw(
   raw: Record<string, unknown>,
   index = 0,
 ): SheetViewportMmDraft {
-  const xMm = Number(raw.xMm ?? raw.x_mm ?? 0);
-
-  const yMm = Number(raw.yMm ?? raw.y_mm ?? 0);
-
-  const widthMm = Number(raw.widthMm ?? raw.width_mm ?? 1000);
-
-  const heightMm = Number(raw.heightMm ?? raw.height_mm ?? 1000);
+  const { xMm: nx, yMm: ny, widthMm: nw, heightMm: nh } = readViewportMmBox(raw);
 
   const viewRefRaw = raw.viewRef ?? raw.view_ref;
 
   const viewportIdRaw = raw.viewportId ?? raw.viewport_id;
 
   const labelRaw = raw.label;
-
-  const nx = Number.isFinite(xMm) ? xMm : 0;
-
-  const ny = Number.isFinite(yMm) ? yMm : 0;
-
-  const nw = Number.isFinite(widthMm) ? Math.max(10, widthMm) : 1000;
-
-  const nh = Number.isFinite(heightMm) ? Math.max(10, heightMm) : 1000;
 
   const viewRef = typeof viewRefRaw === 'string' ? viewRefRaw : '';
 

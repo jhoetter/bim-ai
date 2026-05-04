@@ -7,6 +7,7 @@ from pathlib import Path
 
 from bim_ai.constraints import evaluate
 from bim_ai.document import Document
+from bim_ai.elements import SheetElem
 from bim_ai.schedule_derivation import derive_schedule_table
 
 
@@ -95,3 +96,36 @@ def test_golden_snapshot_room_has_programme_code_when_present_on_element() -> No
 
     pv_tbl = derive_schedule_table(doc, "sch-plan-view")
     assert pv_tbl["category"] == "plan_view" and pv_tbl["totalRows"] >= 1
+
+
+def test_golden_snapshot_sheet_sh_a1_viewport_and_titleblock_evidence() -> None:
+    doc = _golden_doc()
+    raw = doc.elements["sh-a1"]
+    assert isinstance(raw, SheetElem)
+    assert raw.title_block == "A1"
+
+    tb = raw.titleblock_parameters
+    assert tb.get("sheetNumber") == "A101"
+    assert tb.get("revision") == "C"
+    assert tb.get("projectName") == "Golden exchange fixture"
+    assert tb.get("drawnBy") == "CI"
+    assert tb.get("checkedBy") == "CI"
+    assert tb.get("issueDate") == "2026-05-04"
+
+    vps = raw.viewports_mm
+    assert len(vps) == 2
+
+    plan_vp = vps[0]
+    assert plan_vp.get("viewportId") == "vp-sh-a1-plan"
+    assert plan_vp.get("viewRef") == "plan:pv-eg"
+    assert plan_vp.get("label") == "EG floor plan"
+    assert float(plan_vp.get("xMm", -1)) == 25.0
+    assert float(plan_vp.get("yMm", -1)) == 40.0
+    assert float(plan_vp.get("widthMm", -1)) == 220.0
+    assert float(plan_vp.get("heightMm", -1)) == 170.0
+
+    sch_vp = vps[1]
+    assert sch_vp.get("viewportId") == "vp-sh-a1-room-schedule"
+    assert sch_vp.get("viewRef") == "schedule:sch-room"
+    assert float(sch_vp.get("widthMm", -1)) == 120.0
+    assert float(sch_vp.get("heightMm", -1)) == 140.0

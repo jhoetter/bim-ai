@@ -3,7 +3,15 @@ import type { Element } from '@bim-ai/core';
 import { useMemo, useState } from 'react';
 
 import type { SheetViewportMmDraft } from './sheetViewportAuthoring';
-import { SheetViewportEditor, normalizeViewportRaw } from './sheetViewportAuthoring';
+import {
+  readViewportMmBox,
+  SheetViewportEditor,
+  normalizeViewportRaw,
+} from './sheetViewportAuthoring';
+import {
+  SheetTitleblockEditor,
+  normalizeTitleblockDraftFromSheet,
+} from './sheetTitleblockAuthoring';
 import { resolveViewportTitleFromRef } from './sheetViewRef';
 import { SectionViewportSvg } from './sectionViewportSvg';
 
@@ -32,6 +40,8 @@ function SheetCanvasWithSheet(props: {
   const nextDraftBase = (): SheetViewportMmDraft[] =>
     vps.map((vp, i) => normalizeViewportRaw(vp, i));
   const [vpDrafts, setVpDrafts] = useState<SheetViewportMmDraft[]>(() => nextDraftBase());
+
+  const [tbDraft, setTbDraft] = useState(() => normalizeTitleblockDraftFromSheet(sh));
 
   const tp = sh.titleblockParameters ?? {};
   const sheetNo = tp.sheetNumber ?? tp.sheetNo ?? '';
@@ -102,10 +112,11 @@ function SheetCanvasWithSheet(props: {
 
           {vps.map((vpRaw) => {
             const vp = vpRaw as Record<string, unknown>;
-            const xMm = Number(vp.xMm ?? vp.x_mm ?? 0);
-            const yMm = Number(vp.yMm ?? vp.y_mm ?? 0);
-            const widthMm = Number(vp.widthMm ?? vp.width_mm ?? 1000);
-            const heightMm = Number(vp.heightMm ?? vp.height_mm ?? 1000);
+            const box = readViewportMmBox(vp);
+            const xMm = box.xMm;
+            const yMm = box.yMm;
+            const widthMm = box.widthMm;
+            const heightMm = box.heightMm;
 
             const viewRefRaw = vp.viewRef ?? vp.view_ref;
             const resolved = resolveViewportTitleFromRef(elementsById, viewRefRaw);
@@ -163,14 +174,25 @@ function SheetCanvasWithSheet(props: {
       </div>
 
       {props.onUpsertSemantic ? (
-        <SheetViewportEditor
-          sheetId={sh.id}
-          sheetName={sh.name}
-          drafts={vpDrafts}
-          setDrafts={setVpDrafts}
-          elementsById={elementsById}
-          onUpsertSemantic={props.onUpsertSemantic}
-        />
+        <>
+          <SheetTitleblockEditor
+            sheetId={sh.id}
+            sheetName={sh.name}
+            draft={tbDraft}
+            priorTitleblockParameters={tp as Record<string, string>}
+            setDraft={setTbDraft}
+            onUpsertSemantic={props.onUpsertSemantic}
+          />
+
+          <SheetViewportEditor
+            sheetId={sh.id}
+            sheetName={sh.name}
+            drafts={vpDrafts}
+            setDrafts={setVpDrafts}
+            elementsById={elementsById}
+            onUpsertSemantic={props.onUpsertSemantic}
+          />
+        </>
       ) : null}
 
       <div className="mt-1 font-mono text-[10px] text-muted">{sh.id}</div>
@@ -200,7 +222,17 @@ export function SheetCanvas(props: {
     sheets.find((s) => s.id === props.preferredSheetId) ??
     [...sheets].sort((a, b) => a.name.localeCompare(b.name))[0];
 
-  const viewportSyncKey = useMemo(() => (sh ? JSON.stringify(sh.viewportsMm ?? []) : ''), [sh]);
+  const sheetAuthoringSyncKey = useMemo(
+    () =>
+      sh
+        ? JSON.stringify({
+            tb: sh.titleblockParameters ?? {},
+            tbsym: sh.titleBlock ?? '',
+            vps: sh.viewportsMm ?? [],
+          })
+        : '',
+    [sh],
+  );
 
   if (!sh) {
     return <div className="text-[11px] text-muted">No sheet elements in this model.</div>;
@@ -208,7 +240,7 @@ export function SheetCanvas(props: {
 
   return (
     <SheetCanvasWithSheet
-      key={`${sh.id}:${viewportSyncKey}`}
+      key={`${sh.id}:${sheetAuthoringSyncKey}`}
       sheet={sh}
       evidenceFullBleed={props.evidenceFullBleed}
       modelId={props.modelId}
