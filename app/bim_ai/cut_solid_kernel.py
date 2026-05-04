@@ -16,24 +16,13 @@ from bim_ai.opening_cut_primitives import (
     complement_unit_segments,
     complement_vertical_spans_m,
     floor_panels_axis_aligned_rect_with_single_hole_mm,
+    hosted_opening_half_span_mm,
     hosted_opening_t_span_normalized,
     merge_unit_spans,
+    wall_plan_axis_aligned_xy,
+    wall_plan_yaw_deg,
     xz_bounds_mm_from_poly,
 )
-
-
-def _wall_plan_axis_aligned_xy(w: WallElem, *, angle_tol_deg: float = 2.5) -> bool:
-    """True when the wall runs ~N/E/S/W in plan."""
-
-    dx = float(w.end.x_mm - w.start.x_mm)
-    dy = float(w.end.y_mm - w.start.y_mm)
-    span = max(math.hypot(dx, dy), 1e-6)
-    if span < 1e-3:
-        return True
-    ang = math.degrees(math.atan2(abs(dy), abs(dx)))
-    axial_slack = ang % 90.0
-    axial_slack = min(axial_slack, 90.0 - axial_slack)
-    return axial_slack <= angle_tol_deg + 1e-9
 
 
 def collect_hosted_cut_manifest_warnings(doc: Document) -> list[dict[str, Any]]:
@@ -54,7 +43,7 @@ def collect_hosted_cut_manifest_warnings(doc: Document) -> list[dict[str, Any]]:
         kids = hosted_by_wall.get(wid, [])
         if not kids:
             continue
-        if _wall_plan_axis_aligned_xy(e):
+        if wall_plan_axis_aligned_xy(e):
             continue
         out.append(
             {
@@ -70,6 +59,41 @@ def collect_hosted_cut_manifest_warnings(doc: Document) -> list[dict[str, Any]]:
         )
 
     return sorted(out, key=lambda row: str(row["wallId"]))
+
+
+def collect_skew_wall_hosted_opening_evidence_v0(doc: Document) -> dict[str, Any] | None:
+    """Deterministic manifest rows for hosted openings on non-axis-aligned walls (WP-B02 / E03 / X02)."""
+
+    rows: list[dict[str, Any]] = []
+
+    for e in doc.elements.values():
+        if not isinstance(e, (DoorElem, WindowElem)):
+            continue
+        w = doc.elements.get(e.wall_id)
+        if not isinstance(w, WallElem):
+            continue
+        if wall_plan_axis_aligned_xy(w):
+            continue
+        tspan = hosted_opening_t_span_normalized(e, w)
+        if tspan is None:
+            continue
+        t0, t1 = tspan
+        rows.append(
+            {
+                "openingId": e.id,
+                "kind": e.kind,
+                "wallId": w.id,
+                "openingTSpanNormalized": [round(float(t0), 6), round(float(t1), 6)],
+                "wallYawDeg": wall_plan_yaw_deg(w),
+                "halfSpanAlongWallMm": round(hosted_opening_half_span_mm(e), 3),
+            },
+        )
+
+    if not rows:
+        return None
+
+    rows.sort(key=lambda r: (str(r["wallId"]), str(r["openingId"])))
+    return {"format": "skewWallHostedOpeningEvidence_v0", "openings": rows}
 
 
 def _clamp(v: float, lo: float, hi: float) -> float:

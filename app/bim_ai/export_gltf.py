@@ -11,6 +11,7 @@ from typing import Any, Literal, cast
 
 from bim_ai.cut_solid_kernel import (
     collect_hosted_cut_manifest_warnings,
+    collect_skew_wall_hosted_opening_evidence_v0,
     collect_wall_floor_slab_cut_boxes,
 )
 from bim_ai.document import Document
@@ -149,6 +150,7 @@ def stair_geometry_manifest_evidence_v0(doc: Document) -> dict[str, Any] | None:
 def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
     parity = exchange_parity_manifest_fields_from_document(doc)
     cut_warns = collect_hosted_cut_manifest_warnings(doc)
+    skew_hosted = collect_skew_wall_hosted_opening_evidence_v0(doc)
     rgeom_roofs = roof_geometry_manifest_evidence_v0(doc)
     stair_geom = stair_geometry_manifest_evidence_v0(doc)
     corner_joins = collect_wall_corner_join_evidence_v0(doc)
@@ -157,6 +159,8 @@ def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
         mesh_enc += "+bim_ai_gable_roof_v0"
     if corner_joins:
         mesh_enc += "+bim_ai_wall_corner_joins_v0"
+    if skew_hosted:
+        mesh_enc += "+bim_ai_skew_wall_hosted_openings_v0"
     base: dict[str, Any] = {
         **parity,
         "meshEncoding": mesh_enc,
@@ -164,6 +168,8 @@ def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
     }
     if cut_warns:
         base["hostedCutApproximationWarnings"] = cut_warns
+    if skew_hosted:
+        base["skewWallHostedOpeningEvidence_v0"] = skew_hosted
     asm_ev = material_assembly_manifest_evidence(doc)
     if asm_ev:
         base["materialAssemblyEvidence_v0"] = asm_ev

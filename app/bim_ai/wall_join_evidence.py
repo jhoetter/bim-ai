@@ -10,18 +10,7 @@ from typing import Any
 
 from bim_ai.document import Document
 from bim_ai.elements import WallElem
-
-
-def _wall_plan_axis_aligned_xy(w: WallElem, *, angle_tol_deg: float = 2.5) -> bool:
-    dx = float(w.end.x_mm - w.start.x_mm)
-    dy = float(w.end.y_mm - w.start.y_mm)
-    span = max(math.hypot(dx, dy), 1e-6)
-    if span < 1e-3:
-        return False
-    ang = math.degrees(math.atan2(abs(dy), abs(dx)))
-    axial_slack = ang % 90.0
-    axial_slack = min(axial_slack, 90.0 - axial_slack)
-    return axial_slack <= angle_tol_deg + 1e-9
+from bim_ai.opening_cut_primitives import wall_plan_axis_aligned_xy
 
 
 def _endpoints_rounded_mm(w: WallElem, eps_mm: float = 1.0) -> set[tuple[float, float]]:
@@ -51,7 +40,7 @@ def collect_wall_corner_join_evidence_v0(doc: Document) -> dict[str, Any] | None
 
     for i, ia in enumerate(wall_ids):
         wa = by_id[ia]
-        if not _wall_plan_axis_aligned_xy(wa):
+        if not wall_plan_axis_aligned_xy(wa):
             continue
         ua = _wall_unit_xy(wa)
         if ua is None:
@@ -60,7 +49,7 @@ def collect_wall_corner_join_evidence_v0(doc: Document) -> dict[str, Any] | None
             wb = by_id[ib]
             if wb.level_id != wa.level_id:
                 continue
-            if not _wall_plan_axis_aligned_xy(wb):
+            if not wall_plan_axis_aligned_xy(wb):
                 continue
             ub = _wall_unit_xy(wb)
             if ub is None:

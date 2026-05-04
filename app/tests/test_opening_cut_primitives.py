@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
+import pytest
+
 from bim_ai.elements import DoorElem, WallElem
 from bim_ai.opening_cut_primitives import (
     complement_vertical_spans_m,
     floor_panels_axis_aligned_rect_with_single_hole_mm,
     hosted_opening_half_span_mm,
     hosted_opening_t_span_normalized,
+    hosted_opening_u_projection_scale,
+    wall_plan_axis_aligned_xy,
+    wall_plan_yaw_deg,
 )
 
 
@@ -89,4 +94,50 @@ def test_floor_panels_rectangle_with_rectangular_void_splits_to_l_shape() -> Non
     panels = floor_panels_axis_aligned_rect_with_single_hole_mm(floor, hole, min_gap_mm=40)
     assert panels is not None
     assert len(panels) >= 2
+
+
+def test_wall_plan_axis_aligned_and_yaw() -> None:
+    east = WallElem(
+        kind="wall",
+        id="w",
+        name="",
+        level_id="lvl",
+        start={"xMm": 0, "yMm": 0},
+        end={"xMm": 8000, "yMm": 0},
+        thicknessMm=200,
+        heightMm=2800,
+    )
+    diag = WallElem(
+        kind="wall",
+        id="w2",
+        name="",
+        level_id="lvl",
+        start={"xMm": 0, "yMm": 0},
+        end={"xMm": 5000, "yMm": 5000},
+        thicknessMm=200,
+        heightMm=2800,
+    )
+    assert wall_plan_axis_aligned_xy(east) is True
+    assert wall_plan_axis_aligned_xy(diag) is False
+    assert wall_plan_yaw_deg(east) == 0.0
+    assert wall_plan_yaw_deg(diag) == 45.0
+
+
+def test_hosted_opening_u_projection_scale_diagonal_wall_vs_cardinal_cut() -> None:
+    wall = WallElem(
+        kind="wall",
+        id="w",
+        name="",
+        level_id="lvl",
+        start={"xMm": 0, "yMm": 0},
+        end={"xMm": 5000, "yMm": 5000},
+        thicknessMm=200,
+        heightMm=2800,
+    )
+    # Cut tangent along +X: scale |ŵ·(1,0)| = cos(45°)
+    s_x = hosted_opening_u_projection_scale(wall, 1.0, 0.0)
+    assert s_x == pytest.approx(2**0.5 / 2, rel=1e-9)
+    # Cut tangent along +Y: same by symmetry
+    s_y = hosted_opening_u_projection_scale(wall, 0.0, 1.0)
+    assert s_y == pytest.approx(2**0.5 / 2, rel=1e-9)
 

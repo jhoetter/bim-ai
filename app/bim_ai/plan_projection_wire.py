@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import math
 from typing import Any
 
@@ -23,7 +24,11 @@ from bim_ai.elements import (
     WallElem,
     WindowElem,
 )
-from bim_ai.opening_cut_primitives import hosted_opening_t_span_normalized
+from bim_ai.opening_cut_primitives import (
+    hosted_opening_t_span_normalized,
+    wall_plan_axis_aligned_xy,
+    wall_plan_yaw_deg,
+)
 from bim_ai.roof_geometry import (
     gable_ridge_rise_mm,
     mass_box_roof_proxy_peak_z_mm,
@@ -531,6 +536,8 @@ def _build_plan_primitive_lists(
                 if tspan
                 else None,
             }
+            if not wall_plan_axis_aligned_xy(w):
+                dout["wallYawDeg"] = wall_plan_yaw_deg(w)
             if opening_tags_visible:
                 dout["planTagLabel"] = _opening_plan_tag_label(e)
             doors.append(dout)
@@ -565,6 +572,8 @@ def _build_plan_primitive_lists(
                 if tspan
                 else None,
             }
+            if not wall_plan_axis_aligned_xy(w):
+                wrow["wallYawDeg"] = wall_plan_yaw_deg(w)
             if opening_tags_visible:
                 wrow["planTagLabel"] = _opening_plan_tag_label(e)
             windows.append(wrow)
@@ -731,6 +740,28 @@ def _room_color_legend_payload(
     return sorted(out, key=lambda r: str(r.get("label", "")))
 
 
+def _room_programme_legend_evidence_v0(legend: list[dict[str, Any]]) -> dict[str, Any]:
+    """Stable digest correlating schedules, sheets, and clients; orthogonal to boundary preview."""
+
+    canon = json.dumps(legend, sort_keys=True, separators=(",", ":"))
+    digest = hashlib.sha256(canon.encode("utf-8")).hexdigest()
+    return {
+        "format": "roomProgrammeLegendEvidence_v0",
+        "legendDigestSha256": digest,
+        "rowCount": len(legend),
+        "colorSeedPolicy": "trimmed_programme_code_or_else_element_id",
+        "orthogonalTo": [
+            "derivedRoomBoundaryEvidence_v0",
+            "planProjectionPrimitives.roomOutlinesMm",
+        ],
+        "notes": (
+            "Digest covers roomColorLegend rows from authored RoomElem programme metadata on the "
+            "active plan level. Derived vacant footprints (derivedRoomBoundaryEvidence_v0) and "
+            "heuristic boundary previews do not seed this digest."
+        ),
+    }
+
+
 def resolve_plan_projection_wire(
     doc: Document,
     *,
@@ -878,6 +909,7 @@ def resolve_plan_projection_wire(
         "warnings": all_warnings,
         "primitives": prim,
         "roomColorLegend": legend,
+        "roomProgrammeLegendEvidence_v0": _room_programme_legend_evidence_v0(legend),
         "derivedRoomBoundaryEvidence_v0": _derived_room_boundary_evidence_for_wire(
             doc,
             active_level_id=active_level,

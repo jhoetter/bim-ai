@@ -15,6 +15,38 @@ def clamp(v: float, lo: float, hi: float) -> float:
     return max(lo, min(hi, v))
 
 
+def wall_plan_axis_aligned_xy(w: WallElem, *, angle_tol_deg: float = 2.5) -> bool:
+    """True when the wall runs ~N/E/S/W in plan (cut-solid warnings, join filters, section/plan evidence)."""
+
+    dx = float(w.end.x_mm - w.start.x_mm)
+    dy = float(w.end.y_mm - w.start.y_mm)
+    span = max(math.hypot(dx, dy), 1e-6)
+    if span < 1e-3:
+        return True
+    ang = math.degrees(math.atan2(abs(dy), abs(dx)))
+    axial_slack = ang % 90.0
+    axial_slack = min(axial_slack, 90.0 - axial_slack)
+    return axial_slack <= angle_tol_deg + 1e-9
+
+
+def wall_plan_yaw_deg(w: WallElem) -> float:
+    """Plan yaw in degrees (atan2 dy,dx), rounded for manifest and plan wire."""
+
+    dx = float(w.end.x_mm - w.start.x_mm)
+    dy = float(w.end.y_mm - w.start.y_mm)
+    return round(float(math.degrees(math.atan2(dy, dx))), 3)
+
+
+def hosted_opening_u_projection_scale(w: WallElem, cut_tx: float, cut_ty: float) -> float:
+    """|wall_unit · cut_tangent| — scales rough-opening half-width on section axis ``u`` (WP-E04)."""
+
+    ux = float(w.end.x_mm - w.start.x_mm)
+    uy = float(w.end.y_mm - w.start.y_mm)
+    w_len = max(1e-6, math.hypot(ux, uy))
+    wux, wuy = ux / w_len, uy / w_len
+    return abs(wux * cut_tx + wuy * cut_ty)
+
+
 def xz_bounds_mm_from_poly(poly_mm: list[tuple[float, float]]) -> tuple[float, float, float, float]:
     xs = [p[0] for p in poly_mm]
     zs = [p[1] for p in poly_mm]

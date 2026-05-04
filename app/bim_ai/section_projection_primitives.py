@@ -28,6 +28,9 @@ from bim_ai.elements import (
 from bim_ai.opening_cut_primitives import (
     floor_panels_axis_aligned_rect_with_single_hole_mm,
     hosted_opening_half_span_mm,
+    hosted_opening_t_span_normalized,
+    hosted_opening_u_projection_scale,
+    wall_plan_axis_aligned_xy,
 )
 from bim_ai.roof_geometry import (
     gable_ridge_rise_mm,
@@ -391,7 +394,12 @@ def build_section_projection_primitives(
         u_half_thickness = 0.5 * float(e.thickness_mm) * abs(wnx * tx + wny * ty)
         du = u_hi - u_lo
         # Wall perpendicular to cut tangent projects to ~constant u — expand by in-plan thickness in u.
-        if du < max(_EPS, u_half_thickness * 0.05 + 0.001):
+        cut_hatch_kind = (
+            "edgeOn"
+            if du < max(_EPS, u_half_thickness * 0.05 + 0.001)
+            else "alongCut"
+        )
+        if cut_hatch_kind == "edgeOn":
             u_c = 0.5 * (u_lo + u_hi)
             half_du = max(u_half_thickness, 1.0)
             u_lo = u_c - half_du
@@ -414,6 +422,7 @@ def build_section_projection_primitives(
                 "zBottomMm": round(z0, 3),
                 "zTopMm": round(z1, 3),
                 "thicknessMm": round(float(e.thickness_mm), 3),
+                "cutHatchKind": cut_hatch_kind,
             }
         )
         wall_clip_by_id[e.id] = (u_lo, u_hi)
@@ -434,12 +443,8 @@ def build_section_projection_primitives(
             if abs(_perp_mm(px_mm, py_mm, p0x=p0x, p0y=p0y, nx=nx, ny=ny)) > half + _EPS:
                 continue
 
-            ux = float(w.end.x_mm - w.start.x_mm)
-            uy = float(w.end.y_mm - w.start.y_mm)
-            w_len = max(_EPS, _hypot(ux, uy))
-            wux, wuy = ux / w_len, uy / w_len
-            along_scale = abs(wux * tx + wuy * ty)
-            half_du = hosted_opening_half_span_mm(e) * max(_EPS, along_scale)
+            u_scale = max(_EPS, hosted_opening_u_projection_scale(w, tx, ty))
+            half_du = hosted_opening_half_span_mm(e) * u_scale
 
             u_c = _u_mm(px_mm, py_mm, p0x=p0x, p0y=p0y, tx=tx, ty=ty)
             u_lo_w, u_hi_w = span_u
@@ -460,6 +465,11 @@ def build_section_projection_primitives(
             }
             if e.reveal_interior_mm is not None and float(e.reveal_interior_mm) > 0.0:
                 door_row["revealInteriorMm"] = round(float(e.reveal_interior_mm), 3)
+            if not wall_plan_axis_aligned_xy(w):
+                ts = hosted_opening_t_span_normalized(e, w)
+                if ts:
+                    door_row["openingTSpanNormalized"] = [round(float(ts[0]), 6), round(float(ts[1]), 6)]
+                door_row["uProjectionScale"] = round(float(u_scale), 6)
             doors.append(door_row)
             oid += 1
 
@@ -474,12 +484,8 @@ def build_section_projection_primitives(
             if abs(_perp_mm(px_mm, py_mm, p0x=p0x, p0y=p0y, nx=nx, ny=ny)) > half + _EPS:
                 continue
 
-            ux = float(w.end.x_mm - w.start.x_mm)
-            uy = float(w.end.y_mm - w.start.y_mm)
-            w_len = max(_EPS, _hypot(ux, uy))
-            wux, wuy = ux / w_len, uy / w_len
-            along_scale = abs(wux * tx + wuy * ty)
-            half_du = hosted_opening_half_span_mm(e) * max(_EPS, along_scale)
+            u_scale = max(_EPS, hosted_opening_u_projection_scale(w, tx, ty))
+            half_du = hosted_opening_half_span_mm(e) * u_scale
 
             u_c = _u_mm(px_mm, py_mm, p0x=p0x, p0y=p0y, tx=tx, ty=ty)
             u_lo_w, u_hi_w = span_u
@@ -502,6 +508,11 @@ def build_section_projection_primitives(
             }
             if e.reveal_interior_mm is not None and float(e.reveal_interior_mm) > 0.0:
                 win_row["revealInteriorMm"] = round(float(e.reveal_interior_mm), 3)
+            if not wall_plan_axis_aligned_xy(w):
+                ts = hosted_opening_t_span_normalized(e, w)
+                if ts:
+                    win_row["openingTSpanNormalized"] = [round(float(ts[0]), 6), round(float(ts[1]), 6)]
+                win_row["uProjectionScale"] = round(float(u_scale), 6)
             windows.append(win_row)
             oid += 1
 
