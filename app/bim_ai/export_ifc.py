@@ -7,6 +7,7 @@ from typing import Any
 
 import numpy as np
 
+from bim_ai.commands import CreateLevelCmd, CreateWallCmd
 from bim_ai.document import Document
 from bim_ai.elements import (
     DoorElem,
@@ -33,6 +34,8 @@ KERNEL_IFC_DOMINANT_KINDS: frozenset[str] = frozenset(
     {"level", "wall", "floor", "door", "window", "room", "roof", "stair", "slab_opening"}
 )
 IFC_ENCODING_KERNEL_V1 = "bim_ai_ifc_kernel_v1"
+KERNEL_IFC_AUTHORITATIVE_REPLAY_SCHEMA_VERSION = 0
+AUTHORITATIVE_REPLAY_KIND_V0 = "authoritative_kernel_slice_v0"
 
 # Semantic geometry kinds emitted as physical IFC bodies in kernel export (for advisor parity).
 IFC_EXCHANGE_EMITTABLE_GEOMETRY_KINDS: frozenset[str] = frozenset(
@@ -551,6 +554,242 @@ def _references_from_products(products: list[Any], pset_name: str, *, limit: int
     return sorted(refs)
 
 
+def _ifc_global_id_slug(raw: Any) -> str:
+    s = str(raw or "").strip()
+    if not s:
+        return "ifc_empty_gid"
+    return "".join(ch if ch.isalnum() else "_" for ch in s)
+
+
+def _wall_host_storey_global_id(wall: Any) -> str | None:
+    for rel in getattr(wall, "ContainedInStructure", None) or []:
+        st = getattr(rel, "RelatingStructure", None)
+        if st is None:
+            continue
+        try:
+            if st.is_a("IfcBuildingStorey"):
+                gid = getattr(st, "GlobalId", None)
+                return str(gid) if gid else None
+        except Exception:
+            continue
+    return None
+
+
+def _profile_xy_polyline_mm(outer_curve: Any) -> list[tuple[float, float]] | None:
+    """2D profile vertices (mm) for kernel-style wall section in the extrusion local frame."""
+
+    try:
+        if outer_curve.is_a("IfcIndexedPolyCurve"):
+            pts = outer_curve.Points
+            if pts is None:
+                return None
+            out: list[tuple[float, float]] = []
+            for row in pts.CoordList or []:
+                if len(row) >= 2:
+                    out.append((float(row[0]), float(row[1])))
+            return out or None
+        if outer_curve.is_a("IfcPolyline"):
+            out2: list[tuple[float, float]] = []
+            for p in outer_curve.Points or []:
+                c = p.Coordinates
+                if len(c) >= 2:
+                    out2.append((float(c[0]), float(c[1])))
+            return out2 or None
+    except Exception:
+        return None
+    return None
+
+
+def _first_body_extruded_area_solid(product: Any) -> Any | None:
+    pdef = getattr(product, "Representation", None)
+    if pdef is None:
+        return None
+    for rep in pdef.Representations or []:
+        try:
+            if getattr(rep, "RepresentationIdentifier", None) != "Body":
+                continue
+        except Exception:
+            continue
+        for it in rep.Items or []:
+            try:
+                if it.is_a("IfcExtrudedAreaSolid"):
+                    return it
+            except Exception:
+                continue
+    return None
+
+
+def _kernel_wall_plan_geometry_mm(wall: Any) -> dict[str, float] | None:
+    """Recover createWall-style spine + thickness + height from kernel extruded wall body."""
+
+    import ifcopenshell.util.placement as ifc_placement
+
+    ex = _first_body_extruded_area_solid(wall)
+    if ex is None:
+        return None
+    try:
+        depth = float(ex.Depth)
+    except Exception:
+        return None
+    if depth <= 1e-6:
+        return None
+
+    swept = getattr(ex, "SweptArea", None)
+    if swept is None or not swept.is_a("IfcArbitraryClosedProfileDef"):
+        return None
+    outer = getattr(swept, "OuterCurve", None)
+    if outer is None:
+        return None
+    poly = _profile_xy_polyline_mm(outer)
+    if not poly or len(poly) < 3:
+        return None
+
+    xs = [p[0] for p in poly]
+    ys = [p[1] for p in poly]
+    min_x, max_x = min(xs), max(xs)
+    min_y, max_y = min(ys), max(ys)
+    length_mm = max_x - min_x
+    thick_mm = max_y - min_y
+    if length_mm < 1e-3 or thick_mm < 1e-3:
+        return None
+
+    M = ifc_placement.get_local_placement(wall.ObjectPlacement)
+    lx0, ly0 = float(min_x), float(min_y)
+    lx1, ly1 = float(max_x), float(min_y)
+    v0 = M @ np.array([lx0, ly0, 0.0, 1.0])
+    v1 = M @ np.array([lx1, ly1, 0.0, 1.0])
+
+    return {
+        "start_x_mm": float(v0[0]),
+        "start_y_mm": float(v0[1]),
+        "end_x_mm": float(v1[0]),
+        "end_y_mm": float(v1[1]),
+        "thickness_mm": thick_mm,
+        "height_mm": depth,
+    }
+
+
+def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> dict[str, Any]:
+    """Deterministic createLevel + createWall payloads from a parsed kernel-shaped IFC model."""
+
+    subset = {"levels": True, "walls": True, "spaces": False}
+    unsupported = _import_scope_unsupported_ifc_products_v0(model)
+
+    if ifc_elem_util is None:
+        return {
+            "schemaVersion": KERNEL_IFC_AUTHORITATIVE_REPLAY_SCHEMA_VERSION,
+            "available": False,
+            "reason": "ifcopenshell_util_unavailable",
+            "replayKind": AUTHORITATIVE_REPLAY_KIND_V0,
+            "authoritativeSubset": {"levels": False, "walls": False, "spaces": False},
+            "unsupportedIfcProducts": unsupported,
+        }
+
+    storeys = list(model.by_type("IfcBuildingStorey") or [])
+    storey_rows: list[tuple[tuple[float, str, str], Any]] = []
+    for st in storeys:
+        raw_elev = getattr(st, "Elevation", None)
+        elev_sort = float(raw_elev) if isinstance(raw_elev, (int, float)) else 0.0
+        gid_s = str(getattr(st, "GlobalId", None) or "")
+        name_s = str(getattr(st, "Name", None) or "")
+        storey_rows.append(((elev_sort, name_s, gid_s), st))
+    storey_rows.sort(key=lambda t: t[0])
+
+    storey_gid_to_level_id: dict[str, str] = {}
+    level_cmds: list[dict[str, Any]] = []
+    for _k, st in storey_rows:
+        gid = str(getattr(st, "GlobalId", None) or "")
+        lvl_id = _ifc_global_id_slug(gid)
+        if gid:
+            storey_gid_to_level_id[gid] = lvl_id
+        raw_elev = getattr(st, "Elevation", None)
+        el = float(raw_elev) if isinstance(raw_elev, (int, float)) else 0.0
+        nm = str(getattr(st, "Name", None) or "") or lvl_id
+        level_cmds.append(
+            CreateLevelCmd(
+                id=lvl_id,
+                name=nm,
+                elevation_mm=el,
+            ).model_dump(mode="json", by_alias=True)
+        )
+
+    wall_cmds: list[dict[str, Any]] = []
+    extraction_gaps: list[dict[str, Any]] = []
+    walls_skipped_no_reference = 0
+
+    for wal in sorted(model.by_type("IfcWall") or [], key=lambda w: str(getattr(w, "GlobalId", None) or "")):
+        ps = ifc_elem_util.get_psets(wal)
+        bucket = ps.get("Pset_WallCommon") or {}
+        ref = bucket.get("Reference")
+        ref_s = ref.strip() if isinstance(ref, str) else ""
+        if not ref_s:
+            walls_skipped_no_reference += 1
+            continue
+
+        st_gid = _wall_host_storey_global_id(wal)
+        if not st_gid or st_gid not in storey_gid_to_level_id:
+            extraction_gaps.append(
+                {"wallGlobalId": str(getattr(wal, "GlobalId", None) or ""), "reason": "missing_or_unknown_host_storey"}
+            )
+            continue
+
+        geo = _kernel_wall_plan_geometry_mm(wal)
+        if geo is None:
+            extraction_gaps.append(
+                {"wallGlobalId": str(getattr(wal, "GlobalId", None) or ""), "kernelReference": ref_s, "reason": "wall_body_extrusion_unreadable"}
+            )
+            continue
+
+        wname = str(getattr(wal, "Name", None) or "") or ref_s
+        wall_cmds.append(
+            CreateWallCmd(
+                id=ref_s,
+                name=wname,
+                level_id=storey_gid_to_level_id[st_gid],
+                start={"xMm": geo["start_x_mm"], "yMm": geo["start_y_mm"]},
+                end={"xMm": geo["end_x_mm"], "yMm": geo["end_y_mm"]},
+                thickness_mm=geo["thickness_mm"],
+                height_mm=geo["height_mm"],
+            ).model_dump(mode="json", by_alias=True)
+        )
+
+    wall_cmds.sort(key=lambda c: str(c.get("id") or ""))
+
+    return {
+        "schemaVersion": KERNEL_IFC_AUTHORITATIVE_REPLAY_SCHEMA_VERSION,
+        "available": True,
+        "replayKind": AUTHORITATIVE_REPLAY_KIND_V0,
+        "replayProvenance": "kernel_ifc_step_reparse_v0",
+        "authoritativeSubset": subset,
+        "unsupportedIfcProducts": unsupported,
+        "comparisonNote": (
+            "authoritativeReplay_v0 lists kernel-sourced replay commands; unsupportedIfcProducts_v0 "
+            "counts IfcProduct classes outside the kernel exchange slice (not replay targets)."
+        ),
+        "kernelWallSkippedNoReference": walls_skipped_no_reference,
+        "commands": level_cmds + wall_cmds,
+        "extractionGaps": extraction_gaps,
+    }
+
+
+def build_kernel_ifc_authoritative_replay_sketch_v0(step_text: str) -> dict[str, Any]:
+    """Parse STEP and build authoritative replay sketch (tests / direct IFC strings)."""
+
+    if not IFC_AVAILABLE:
+        return {
+            "schemaVersion": KERNEL_IFC_AUTHORITATIVE_REPLAY_SCHEMA_VERSION,
+            "available": False,
+            "reason": "ifcopenshell_not_installed",
+            "replayKind": AUTHORITATIVE_REPLAY_KIND_V0,
+            "authoritativeSubset": {"levels": False, "walls": False, "spaces": False},
+            "unsupportedIfcProducts": {"schemaVersion": 0, "countsByClass": {}},
+        }
+    import ifcopenshell
+
+    model = ifcopenshell.file.from_string(step_text)
+    return build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model)
+
+
 def summarize_kernel_ifc_semantic_roundtrip(doc: Document) -> dict[str, Any]:
     """Export → re-parse summary: expected kernel counts vs IFC inspection (+ programme / identity checks)."""
 
@@ -687,6 +926,7 @@ def summarize_kernel_ifc_semantic_roundtrip(doc: Document) -> dict[str, Any]:
             "IfcWall": _references_from_products(list(walls_m), "Pset_WallCommon", limit=sketch_limit),
             "IfcSpace": _references_from_products(list(spaces_m), "Pset_SpaceCommon", limit=sketch_limit),
         },
+        "authoritativeReplay_v0": build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model),
     }
 
     return {

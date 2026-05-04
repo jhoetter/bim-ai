@@ -32,7 +32,7 @@ Kinds **outside** [`EXPORT_GEOMETRY_KINDS`](../app/bim_ai/export_gltf.py) stay i
 
 ## Deferred / omitted (explicit)
 
-- IFC **import**: document merge / command replay — only **semantic export→re-parse** summaries (`summarize_kernel_ifc_semantic_roundtrip`) and manifest **import-scope** hints (`ifcSemanticImportScope_v0` on `ifc_manifest_v0`).
+- IFC **import**: document merge / command replay — **narrow authoritative replay v0** (`commandSketch.authoritativeReplay_v0`: kernel storey + wall commands from STEP re-parse); full **semantic export→re-parse** summaries (`summarize_kernel_ifc_semantic_roundtrip`) and manifest **import-scope** hints (`ifcSemanticImportScope_v0` on `ifc_manifest_v0`) unchanged for broader scope.
 - **`IfcOpeningElement`** with full boolean tessellation regeneration for walls vs extruded proxy gaps only.
 
 ## Implemented in this slice (WP‑X03)
@@ -64,15 +64,26 @@ Single read-back entry point: **`inspect_kernel_ifc_semantics()`** in [`export_i
 
 Secondary entry point: **`summarize_kernel_ifc_semantic_roundtrip(doc)`** in [`export_ifc.py`](../app/bim_ai/export_ifc.py). Runs **one** kernel STEP serialization when IfcOpenShell is installed and the document is kernel-eligible, nests **`inspect_kernel_ifc_semantics`** under `inspection`, and adds:
 
-| Field                    | Meaning                                                                                                                                                                                                        |
-| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `kernelExpectedIfcKinds` | Same shape as manifest `kernelExpectedIfcKinds` — document-only expected emit counts (offline-safe when IFC absent).                                                                                           |
-| `roundtripChecks`        | `productCounts`, `programmeFields`, `identityCoverage`, `qtoCoverage`, and booleans `allProductCountsMatch` / `allProgrammeFieldsMatch` / `allIdentityReferencesMatch` / `allQtoLinksMatch` / `allChecksPass`. |
-| `commandSketch`          | Traceability-only `Reference` strings read back from `Pset_*Common` on walls/spaces (not replay commands).                                                                                                     |
+| Field                    | Meaning                                                                                                                                                                                                                                                                                                                                                                                                |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `kernelExpectedIfcKinds` | Same shape as manifest `kernelExpectedIfcKinds` — document-only expected emit counts (offline-safe when IFC absent).                                                                                                                                                                                                                                                                                   |
+| `roundtripChecks`        | `productCounts`, `programmeFields`, `identityCoverage`, `qtoCoverage`, and booleans `allProductCountsMatch` / `allProgrammeFieldsMatch` / `allIdentityReferencesMatch` / `allQtoLinksMatch` / `allChecksPass`.                                                                                                                                                                                         |
+| `commandSketch`          | Traceability read-back: `levelsFromDocument`, `storeysFromIfc`, `qtoTemplatesFromIfc`, `spaceProgrammeSampleFromIfc`, `referenceIdsFromIfc`. **Plus** `authoritativeReplay_v0`: deterministic `createLevel` / `createWall` payloads from kernel IFC re-parse (`build_kernel_ifc_authoritative_replay_sketch_v0`), with `unsupportedIfcProducts` vs replay `comparisonNote`; spaces/openings not in v0. |
 
-**Offline:** returns `roundtripChecks: null`, `commandSketch: null`, with `inspection` from the usual unavailable stubs.
+**Offline:** returns `roundtripChecks: null`, `commandSketch: null`, with `inspection` from the usual unavailable stubs. **`build_kernel_ifc_authoritative_replay_sketch_v0`** alone returns `available: false` when IfcOpenShell is missing.
 
 **Manifest:** [`ifc_stub.build_ifc_exchange_manifest_payload`](../app/bim_ai/ifc_stub.py) adds **`ifcSemanticImportScope_v0`** (read-back vs import-merge deferrals) and **`kernelExpectedIfcKinds`** without parsing STEP.
+
+## Authoritative replay slice (v0)
+
+Narrow import-adjacent path (WP‑X03 / WP‑D06 evidence): after kernel STEP export, **re-parse** with IfcOpenShell and emit JSON command sketches aligned with **`CreateLevelCmd`** / **`CreateWallCmd`** ([`commands.py`](../app/bim_ai/commands.py)):
+
+- **IfcBuildingStorey** → `createLevel` with stable `id` derived from storey `GlobalId`, `elevationMm` from `Elevation`, `name` from `Name`.
+- **IfcWall** with **`Pset_WallCommon.Reference`** → `createWall` with wall geometry recovered from **`IfcExtrudedAreaSolid`** + **`IfcArbitraryClosedProfileDef`** / **`IfcIndexedPolyCurve`** profile (kernel exporter shape) and host storey → `levelId`.
+- **`unsupportedIfcProducts`:** same rollup as `inspect_kernel_ifc_semantics.importScopeUnsupportedIfcProducts_v0` (foreign `IfcProduct` classes), distinct from replay targets.
+- **`extractionGaps`:** walls that carry `Reference` but lack readable body / host storey; **`kernelWallSkippedNoReference`** counts IFC walls outside kernel identity.
+
+**Not in v0:** `createRoomOutline`, openings, arbitrary IFC importers, document merge. **`summarize_kernel_ifc_semantic_roundtrip`** nests this under **`commandSketch.authoritativeReplay_v0`**.
 
 ## Still deferred
 

@@ -11,6 +11,8 @@ import pytest
 from bim_ai.document import Document
 from bim_ai.elements import DoorElem, FloorElem, LevelElem, WallElem
 from bim_ai.export_ifc import (
+    IFC_AVAILABLE,
+    build_kernel_ifc_authoritative_replay_sketch_v0,
     ifcopenshell_available,
     inspect_kernel_ifc_semantics,
     summarize_kernel_ifc_semantic_roundtrip,
@@ -182,6 +184,44 @@ def test_ifc_manifest_scope_lists_qto_linked_products_read_back() -> None:
     scope = mf.get("ifcSemanticImportScope_v0") or {}
     supported = scope.get("semanticReadBackSupported") or []
     assert any("qtoLinkedProducts" in str(x) for x in supported)
+
+
+def test_authoritative_replay_sketch_unavailable_when_ifcopenshell_missing() -> None:
+    """``build_kernel_ifc_authoritative_replay_sketch_v0`` stubs cleanly on bare installs."""
+
+    if IFC_AVAILABLE:
+        pytest.skip("ifcopenshell installed — full replay covered in test_export_ifc")
+
+    out = build_kernel_ifc_authoritative_replay_sketch_v0("")
+    assert out["available"] is False
+    assert out["reason"] == "ifcopenshell_not_installed"
+    assert out["replayKind"] == "authoritative_kernel_slice_v0"
+    assert out["authoritativeSubset"] == {"levels": False, "walls": False, "spaces": False}
+
+
+def test_ifc_manifest_scope_lists_authoritative_replay_bullet() -> None:
+    doc = Document(
+        revision=72,
+        elements={
+            "lvl-g": LevelElem(kind="level", id="lvl-g", name="G", elevationMm=0),
+            "w-a": WallElem(
+                kind="wall",
+                id="w-a",
+                name="W",
+                levelId="lvl-g",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 3000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+        },
+    )
+    mf = build_ifc_exchange_manifest_payload(doc)
+    scope = mf.get("ifcSemanticImportScope_v0") or {}
+    supported = scope.get("semanticReadBackSupported") or []
+    assert any("authoritativeReplay_v0" in str(x) for x in supported)
+    unsupported = scope.get("importMergeUnsupported") or []
+    assert any("authoritative replay" in str(x).lower() for x in unsupported)
 
 
 def test_inspect_kernel_ifc_semantics_kernel_not_eligible_when_ifc_present() -> None:

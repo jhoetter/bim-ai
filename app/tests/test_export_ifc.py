@@ -17,8 +17,10 @@ from bim_ai.elements import (
     WindowElem,
 )
 from bim_ai.export_ifc import (
+    AUTHORITATIVE_REPLAY_KIND_V0,
     IFC_AVAILABLE,
     IFC_ENCODING_KERNEL_V1,
+    build_kernel_ifc_authoritative_replay_sketch_v0,
     export_ifc_model_step,
     inspect_kernel_ifc_semantics,
     summarize_kernel_ifc_semantic_roundtrip,
@@ -610,4 +612,135 @@ def test_ifc_inspection_matrix_includes_geometry_skip_counts_on_eligible_doc() -
     rep = inspect_kernel_ifc_semantics(doc=doc)
     assert rep["available"] is True
     assert (rep.get("ifcKernelGeometrySkippedCounts") or {}).get("door_missing_host_wall") == 1
+
+
+def test_ifc_authoritative_replay_v0_same_step_is_deterministic() -> None:
+    doc = Document(
+        revision=501,
+        elements={
+            "lvl-g": LevelElem(kind="level", id="lvl-g", name="G", elevationMm=0),
+            "w-a": WallElem(
+                kind="wall",
+                id="w-a",
+                name="W",
+                levelId="lvl-g",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 3000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+        },
+    )
+    step = export_ifc_model_step(doc)
+    a1 = build_kernel_ifc_authoritative_replay_sketch_v0(step)
+    a2 = build_kernel_ifc_authoritative_replay_sketch_v0(step)
+    assert a1 == a2
+    assert a1["available"] is True
+    assert a1["replayKind"] == AUTHORITATIVE_REPLAY_KIND_V0
+
+
+def test_ifc_authoritative_replay_v0_wall_geometry_roundtrip() -> None:
+    doc = Document(
+        revision=502,
+        elements={
+            "lvl-g": LevelElem(kind="level", id="lvl-g", name="G", elevationMm=0),
+            "w-a": WallElem(
+                kind="wall",
+                id="w-a",
+                name="W",
+                levelId="lvl-g",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 3000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+            "w-diag": WallElem(
+                kind="wall",
+                id="w-diag",
+                name="D",
+                levelId="lvl-g",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 3000, "yMm": 3000},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+        },
+    )
+    step = export_ifc_model_step(doc)
+    sketch = build_kernel_ifc_authoritative_replay_sketch_v0(step)
+    assert sketch["available"] is True
+    assert sketch["unsupportedIfcProducts"]["countsByClass"] == {}
+    cmds = sketch["commands"]
+    wall_cmds = [c for c in cmds if c["type"] == "createWall"]
+    assert len(wall_cmds) == 2
+    by_id = {str(c["id"]): c for c in wall_cmds}
+    w0 = by_id["w-a"]
+    assert abs(w0["thicknessMm"] - 200) < 0.1
+    assert abs(w0["heightMm"] - 2800) < 0.2
+    assert abs(w0["start"]["xMm"] - 0) < 0.01
+    assert abs(w0["start"]["yMm"] - 0) < 0.01
+    assert abs(w0["end"]["xMm"] - 3000) < 0.01
+    assert abs(w0["end"]["yMm"] - 0) < 0.01
+
+    wd = by_id["w-diag"]
+    assert abs(wd["end"]["xMm"] - 3000) < 0.05
+    assert abs(wd["end"]["yMm"] - 3000) < 0.05
+    assert not sketch.get("extractionGaps")
+
+
+def test_ifc_authoritative_replay_v0_wall_on_second_level_references_level_id() -> None:
+    doc = Document(
+        revision=503,
+        elements={
+            "l0": LevelElem(kind="level", id="l0", name="G", elevationMm=0),
+            "l1": LevelElem(kind="level", id="l1", name="OG", elevationMm=3000),
+            "w-up": WallElem(
+                kind="wall",
+                id="w-up",
+                name="W",
+                levelId="l1",
+                start={"xMm": 100, "yMm": 200},
+                end={"xMm": 4100, "yMm": 200},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+        },
+    )
+    step = export_ifc_model_step(doc)
+    sketch = build_kernel_ifc_authoritative_replay_sketch_v0(step)
+    level_cmds = [c for c in sketch["commands"] if c["type"] == "createLevel"]
+    wall_cmds = [c for c in sketch["commands"] if c["type"] == "createWall"]
+    assert len(level_cmds) == 2
+    assert len(wall_cmds) == 1
+    og_level_id = next(c["id"] for c in level_cmds if c.get("name") == "OG")
+    assert wall_cmds[0]["levelId"] == og_level_id
+    assert wall_cmds[0]["id"] == "w-up"
+    assert abs(wall_cmds[0]["start"]["xMm"] - 100) < 0.05
+    assert abs(wall_cmds[0]["end"]["xMm"] - 4100) < 0.05
+
+
+def test_ifc_summarize_command_sketch_includes_authoritative_replay_v0() -> None:
+    doc = Document(
+        revision=504,
+        elements={
+            "lvl-g": LevelElem(kind="level", id="lvl-g", name="G", elevationMm=0),
+            "w-a": WallElem(
+                kind="wall",
+                id="w-a",
+                name="W",
+                levelId="lvl-g",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 3000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+        },
+    )
+    rt = summarize_kernel_ifc_semantic_roundtrip(doc)
+    assert rt["commandSketch"] is not None
+    auth = rt["commandSketch"]["authoritativeReplay_v0"]
+    assert auth["available"] is True
+    assert auth["authoritativeSubset"] == {"levels": True, "walls": True, "spaces": False}
+    assert any(c.get("type") == "createLevel" for c in auth["commands"])
+    assert any(c.get("type") == "createWall" for c in auth["commands"])
 
