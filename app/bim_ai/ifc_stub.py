@@ -13,10 +13,30 @@ from bim_ai.export_gltf import (
 from bim_ai.export_ifc import (
     IFC_ENCODING_KERNEL_V1,
     ifc_manifest_artifact_hints,
+    kernel_expected_ifc_emit_counts,
     kernel_export_eligible,
 )
 
 IFC_ENCODING_EMPTY_SHELL = "bim_ai_ifc_empty_shell_v0"
+
+IFC_SEMANTIC_IMPORT_SCOPE_V0: dict[str, Any] = {
+    "schemaVersion": 0,
+    "semanticReadBackSupported": [
+        "IfcBuildingStorey counts and elevationsPresent",
+        "IfcWall, IfcSlab, IfcRoof, IfcStair, IfcSpace product counts",
+        "IfcOpeningElement, IfcDoor, IfcWindow counts",
+        "Pset_*Common Reference identity coverage",
+        "Pset_SpaceCommon programme string fields",
+        "IfcElementQuantity Qto_* template names",
+        "Kernel geometry skip map from Document",
+        "summarize_kernel_ifc_semantic_roundtrip export→re-parse deltas",
+    ],
+    "importMergeUnsupported": [
+        "IFC ingest → Document merge / replay for arbitrary IFC entity graphs",
+        "Full IDS fixture exchange matrix beyond authoring-side rules + semantic inspector",
+        "Boolean regeneration from IFC openings vs kernel proxies",
+    ],
+}
 
 
 def minimal_empty_ifc_skeleton() -> str:
@@ -50,6 +70,8 @@ def build_ifc_exchange_manifest_payload(doc: Document) -> dict[str, Any]:
         "artifactHasGeometryEntities": bool(emitting),
         "plannedIfcEntitiesHints": planned,
         "plannedEntitiesReference": "spec/ifc-export-wp-x03-slice.md",
+        "ifcSemanticImportScope_v0": dict(IFC_SEMANTIC_IMPORT_SCOPE_V0),
+        "kernelExpectedIfcKinds": dict(sorted(kernel_expected_ifc_emit_counts(doc).items())),
         "hint": "IFC artifact: GET /api/models/{id}/exports/model.ifc",
         "note": (
             "Kernel slice emits IfcWall + IfcSlab + storey graph, roof/stair/slab-hosted openings, and IfcSpace "
@@ -80,6 +102,8 @@ def ifc_exchange_manifest_payload(
         "artifactHasGeometryEntities": False,
         "plannedIfcEntitiesHints": planned,
         "plannedEntitiesReference": "spec/ifc-export-wp-x03-slice.md",
+        "ifcSemanticImportScope_v0": dict(IFC_SEMANTIC_IMPORT_SCOPE_V0),
+        "kernelExpectedIfcKinds": {},
         "hint": "IFC artifact: GET /api/models/{id}/exports/model.ifc",
         "note": ("Empty IFC hull only — parity fields aligned with `/exports/ifc-manifest` + glTF kernels."),
     }

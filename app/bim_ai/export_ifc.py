@@ -42,14 +42,23 @@ def ifcopenshell_available() -> bool:
     return IFC_AVAILABLE
 
 
-def kernel_export_eligible(doc: Document) -> bool:
-    if not IFC_AVAILABLE:
-        return False
+def document_kernel_export_eligible(doc: Document) -> bool:
+    """True when the document has kernel IFC geometry inputs (walls or slab-capable floors).
+
+    Does not require IfcOpenShell — used for manifest expected-kind hints offline.
+    """
+
     wal = sum(1 for e in doc.elements.values() if isinstance(e, WallElem))
     fl = sum(
-        1 for e in doc.elements.values() if isinstance(e, FloorElem) and len(e.boundary_mm) >= 3
+        1
+        for e in doc.elements.values()
+        if isinstance(e, FloorElem) and len(getattr(e, "boundary_mm", ()) or ()) >= 3
     )
     return wal + fl > 0
+
+
+def kernel_export_eligible(doc: Document) -> bool:
+    return IFC_AVAILABLE and document_kernel_export_eligible(doc)
 
 
 def ifc_kernel_geometry_skip_counts(doc: Document) -> dict[str, int]:
@@ -93,35 +102,24 @@ def ifc_kernel_geometry_skip_counts(doc: Document) -> dict[str, int]:
     return skips
 
 
-def ifc_manifest_artifact_hints(doc: Document, *, emitting_kernel_body: bool) -> dict[str, Any]:
+def kernel_expected_ifc_emit_counts(doc: Document) -> dict[str, int]:
+    """Hypothetical kernel IFC instance counts from the document only (no STEP parse).
+
+    Matches ``exportedIfcKindsInArtifact`` when geometry would be emitted (walls or slab floors present).
+    """
+
+    if not document_kernel_export_eligible(doc):
+        return {}
+
     storey_n = sum(1 for e in doc.elements.values() if isinstance(e, LevelElem))
     wal_n = sum(1 for e in doc.elements.values() if isinstance(e, WallElem))
     slab_n = sum(
-        1 for e in doc.elements.values() if isinstance(e, FloorElem) and len(e.boundary_mm) >= 3
+        1
+        for e in doc.elements.values()
+        if isinstance(e, FloorElem) and len(getattr(e, "boundary_mm", ()) or ()) >= 3
     )
     if storey_n == 0 and wal_n + slab_n > 0:
         storey_n = 1
-
-    hinted: dict[str, Any] = {
-        "exportedIfcKindsInArtifact": {},
-        "ifcEmittedKernelKinds": sorted(KERNEL_IFC_DOMINANT_KINDS),
-        "kernelNote": (
-            "Kernel IFC encodes storey graph, walls+floors, roofs (IfcRoof prism), stairs (IfcStair run prism), "
-            "hosted door/window openings, slab voids via IfcOpeningElement on host IfcSlab, and rooms as IfcSpace "
-            "footprints; IfcOpenShell emits minimal IFC4 **property sets** (e.g. Pset_*Common `Reference` "
-            "from kernel ids on physical products); **narrow `Qto_*` quantities** attach to walls/fillings/slab/space "
-            "when IfcOpenShell qto helpers succeed. IFC import and full boolean regeneration remain deferred."
-        ),
-    }
-
-    skip_summary = ifc_kernel_geometry_skip_counts(doc)
-    nonzero_skip = {k: v for k, v in sorted(skip_summary.items()) if v}
-    if nonzero_skip:
-        hinted["ifcKernelGeometrySkippedCounts"] = nonzero_skip
-
-    if not IFC_AVAILABLE or not emitting_kernel_body:
-        hinted["ifcEmittedKernelKinds"] = []
-        return hinted
 
     wall_ids = {eid for eid, e in doc.elements.items() if isinstance(e, WallElem)}
     door_emit = sum(
@@ -137,10 +135,12 @@ def ifc_manifest_artifact_hints(doc: Document, *, emitting_kernel_body: bool) ->
     room_emit = sum(
         1
         for e in doc.elements.values()
-        if isinstance(e, RoomElem) and len(e.outline_mm) >= 3
+        if isinstance(e, RoomElem) and len(getattr(e, "outline_mm", ()) or ()) >= 3
     )
     roof_emit = sum(
-        1 for e in doc.elements.values() if isinstance(e, RoofElem) and len(e.footprint_mm) >= 3
+        1
+        for e in doc.elements.values()
+        if isinstance(e, RoofElem) and len(getattr(e, "footprint_mm", ()) or ()) >= 3
     )
     level_ids_eff = {eid for eid, e in doc.elements.items() if isinstance(e, LevelElem)}
     stair_emit = sum(
@@ -153,14 +153,14 @@ def ifc_manifest_artifact_hints(doc: Document, *, emitting_kernel_body: bool) ->
     floors_with_slab = {
         eid
         for eid, e in doc.elements.items()
-        if isinstance(e, FloorElem) and len(e.boundary_mm) >= 3
+        if isinstance(e, FloorElem) and len(getattr(e, "boundary_mm", ()) or ()) >= 3
     }
     slab_open_emit = sum(
         1
         for e in doc.elements.values()
         if isinstance(e, SlabOpeningElem)
         and e.host_floor_id in floors_with_slab
-        and len(e.boundary_mm) >= 3
+        and len(getattr(e, "boundary_mm", ()) or ()) >= 3
     )
 
     kinds: dict[str, int] = {}
@@ -182,7 +182,32 @@ def ifc_manifest_artifact_hints(doc: Document, *, emitting_kernel_body: bool) ->
         kinds["stair"] = stair_emit
     if slab_open_emit:
         kinds["slab_opening"] = slab_open_emit
-    hinted["exportedIfcKindsInArtifact"] = dict(sorted(kinds.items()))
+    return dict(sorted(kinds.items()))
+
+
+def ifc_manifest_artifact_hints(doc: Document, *, emitting_kernel_body: bool) -> dict[str, Any]:
+    hinted: dict[str, Any] = {
+        "exportedIfcKindsInArtifact": {},
+        "ifcEmittedKernelKinds": sorted(KERNEL_IFC_DOMINANT_KINDS),
+        "kernelNote": (
+            "Kernel IFC encodes storey graph, walls+floors, roofs (IfcRoof prism), stairs (IfcStair run prism), "
+            "hosted door/window openings, slab voids via IfcOpeningElement on host IfcSlab, and rooms as IfcSpace "
+            "footprints; IfcOpenShell emits minimal IFC4 **property sets** (e.g. Pset_*Common `Reference` "
+            "from kernel ids on physical products); **narrow `Qto_*` quantities** attach to walls/fillings/slab/space "
+            "when IfcOpenShell qto helpers succeed. IFC import and full boolean regeneration remain deferred."
+        ),
+    }
+
+    skip_summary = ifc_kernel_geometry_skip_counts(doc)
+    nonzero_skip = {k: v for k, v in sorted(skip_summary.items()) if v}
+    if nonzero_skip:
+        hinted["ifcKernelGeometrySkippedCounts"] = nonzero_skip
+
+    if not IFC_AVAILABLE or not emitting_kernel_body:
+        hinted["ifcEmittedKernelKinds"] = []
+        return hinted
+
+    hinted["exportedIfcKindsInArtifact"] = kernel_expected_ifc_emit_counts(doc)
     return hinted
 
 
@@ -283,6 +308,9 @@ def inspect_kernel_ifc_semantics(
             elevations_present += 1
 
     walls = model.by_type("IfcWall") or []
+    slabs = model.by_type("IfcSlab") or []
+    roofs = model.by_type("IfcRoof") or []
+    stairs = model.by_type("IfcStair") or []
     openings = model.by_type("IfcOpeningElement") or []
     doors = model.by_type("IfcDoor") or []
     windows = model.by_type("IfcWindow") or []
@@ -318,6 +346,9 @@ def inspect_kernel_ifc_semantics(
         },
         "products": {
             "IfcWall": len(walls),
+            "IfcSlab": len(slabs),
+            "IfcRoof": len(roofs),
+            "IfcStair": len(stairs),
             "IfcOpeningElement": len(openings),
             "IfcDoor": len(doors),
             "IfcWindow": len(windows),
@@ -340,6 +371,170 @@ def inspect_kernel_ifc_semantics(
     if skip_counts:
         out["ifcKernelGeometrySkippedCounts"] = skip_counts
     return out
+
+
+def kernel_expected_space_programme_counts(doc: Document) -> dict[str, int]:
+    """Per-field counts for emit-able rooms (outline ≥3) with non-empty programme strings."""
+
+    fields = (
+        ("ProgrammeCode", "programme_code"),
+        ("Department", "department"),
+        ("FunctionLabel", "function_label"),
+        ("FinishSet", "finish_set"),
+    )
+    out = {k: 0 for k, _ in fields}
+    for e in doc.elements.values():
+        if not isinstance(e, RoomElem):
+            continue
+        if len(getattr(e, "outline_mm", ()) or ()) < 3:
+            continue
+        for key, attr in fields:
+            raw = getattr(e, attr, None)
+            if isinstance(raw, str) and raw.strip():
+                out[key] += 1
+    return out
+
+
+def _references_from_products(products: list[Any], pset_name: str, *, limit: int) -> list[str]:
+    import ifcopenshell.util.element as elem_util
+
+    refs: set[str] = set()
+    for p in products:
+        ps = elem_util.get_psets(p)
+        bucket = ps.get(pset_name) or {}
+        ref = bucket.get("Reference")
+        if isinstance(ref, str) and ref.strip():
+            refs.add(ref.strip())
+        if len(refs) >= limit:
+            break
+    return sorted(refs)
+
+
+def summarize_kernel_ifc_semantic_roundtrip(doc: Document) -> dict[str, Any]:
+    """Export → re-parse summary: expected kernel counts vs IFC inspection (+ programme / identity checks)."""
+
+    matrix_version = 1
+    kinds_expected = kernel_expected_ifc_emit_counts(doc)
+
+    if not IFC_AVAILABLE:
+        inspection = inspect_kernel_ifc_semantics(doc=doc)
+        return {
+            "matrixVersion": matrix_version,
+            "inspection": inspection,
+            "kernelExpectedIfcKinds": dict(sorted(kinds_expected.items())),
+            "roundtripChecks": None,
+            "commandSketch": None,
+        }
+
+    if not kernel_export_eligible(doc):
+        inspection = inspect_kernel_ifc_semantics(doc=doc)
+        return {
+            "matrixVersion": matrix_version,
+            "inspection": inspection,
+            "kernelExpectedIfcKinds": {},
+            "roundtripChecks": None,
+            "commandSketch": None,
+        }
+
+    step = export_ifc_model_step(doc)
+    inspection = inspect_kernel_ifc_semantics(doc=doc, step_text=step)
+
+    if not inspection.get("available"):
+        return {
+            "matrixVersion": matrix_version,
+            "inspection": inspection,
+            "kernelExpectedIfcKinds": dict(sorted(kinds_expected.items())),
+            "roundtripChecks": None,
+            "commandSketch": None,
+        }
+
+    import ifcopenshell
+
+    model = ifcopenshell.file.from_string(step)
+    walls_m = model.by_type("IfcWall") or []
+    spaces_m = model.by_type("IfcSpace") or []
+
+    prog_exp = kernel_expected_space_programme_counts(doc)
+    prog_insp = inspection.get("spaceProgrammeFields") or {}
+    programme_fields: dict[str, dict[str, Any]] = {}
+    for k, exp_n in prog_exp.items():
+        insp_n = int(prog_insp.get(k, 0))
+        programme_fields[k] = {"expected": exp_n, "inspected": insp_n, "match": exp_n == insp_n}
+
+    products = inspection.get("products") or {}
+    bs = inspection.get("buildingStorey") or {}
+
+    def _tri(expected: int, inspected: int) -> dict[str, Any]:
+        return {"expected": expected, "inspected": inspected, "match": expected == inspected}
+
+    exp_open = (
+        kinds_expected.get("door", 0)
+        + kinds_expected.get("window", 0)
+        + kinds_expected.get("slab_opening", 0)
+    )
+
+    product_counts = {
+        "level": _tri(kinds_expected.get("level", 0), int(bs.get("count", 0))),
+        "wall": _tri(kinds_expected.get("wall", 0), int(products.get("IfcWall", 0))),
+        "floor": _tri(kinds_expected.get("floor", 0), int(products.get("IfcSlab", 0))),
+        "roof": _tri(kinds_expected.get("roof", 0), int(products.get("IfcRoof", 0))),
+        "stair": _tri(kinds_expected.get("stair", 0), int(products.get("IfcStair", 0))),
+        "door": _tri(kinds_expected.get("door", 0), int(products.get("IfcDoor", 0))),
+        "window": _tri(kinds_expected.get("window", 0), int(products.get("IfcWindow", 0))),
+        "room": _tri(kinds_expected.get("room", 0), int(products.get("IfcSpace", 0))),
+        "openingElements": _tri(exp_open, int(products.get("IfcOpeningElement", 0))),
+    }
+
+    id_ps = inspection.get("identityPsets") or {}
+    identity_coverage = {
+        "wall": _tri(
+            kinds_expected.get("wall", 0),
+            int(id_ps.get("wallWithPsetWallCommonReference", 0)),
+        ),
+        "space": _tri(
+            kinds_expected.get("room", 0),
+            int(id_ps.get("spaceWithPsetSpaceCommonReference", 0)),
+        ),
+        "door": _tri(
+            kinds_expected.get("door", 0),
+            int(id_ps.get("doorWithPsetDoorCommonReference", 0)),
+        ),
+        "window": _tri(
+            kinds_expected.get("window", 0),
+            int(id_ps.get("windowWithPsetWindowCommonReference", 0)),
+        ),
+    }
+
+    all_pc_match = all(v["match"] for v in product_counts.values())
+    all_prog_match = all(v["match"] for v in programme_fields.values()) if programme_fields else True
+    all_id_match = all(v["match"] for v in identity_coverage.values())
+
+    sketch_limit = 48
+    command_sketch = {
+        "note": (
+            "Traceability-only `Reference` ids read from IFC Psets on walls/spaces — not replay commands."
+        ),
+        "referenceIdsFromIfc": {
+            "IfcWall": _references_from_products(list(walls_m), "Pset_WallCommon", limit=sketch_limit),
+            "IfcSpace": _references_from_products(list(spaces_m), "Pset_SpaceCommon", limit=sketch_limit),
+        },
+    }
+
+    return {
+        "matrixVersion": matrix_version,
+        "inspection": inspection,
+        "kernelExpectedIfcKinds": dict(sorted(kinds_expected.items())),
+        "roundtripChecks": {
+            "productCounts": product_counts,
+            "programmeFields": programme_fields,
+            "identityCoverage": identity_coverage,
+            "allProductCountsMatch": all_pc_match,
+            "allProgrammeFieldsMatch": all_prog_match,
+            "allIdentityReferencesMatch": all_id_match,
+            "allChecksPass": all_pc_match and all_prog_match and all_id_match,
+        },
+        "commandSketch": command_sketch,
+    }
 
 
 def _clamp(v: float, lo: float, hi: float) -> float:

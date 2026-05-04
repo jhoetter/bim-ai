@@ -21,6 +21,7 @@ from bim_ai.export_ifc import (
     IFC_ENCODING_KERNEL_V1,
     export_ifc_model_step,
     inspect_kernel_ifc_semantics,
+    summarize_kernel_ifc_semantic_roundtrip,
 )
 from bim_ai.ifc_stub import build_ifc_exchange_manifest_payload
 
@@ -511,6 +512,7 @@ def test_ifc_inspection_matrix_covers_storeys_spaces_qtos_and_programme_fields()
     assert rep["buildingStorey"]["count"] >= 1
     assert rep["buildingStorey"]["elevationsPresent"] >= 1
     assert rep["products"]["IfcWall"] >= 1
+    assert rep["products"]["IfcSlab"] >= 1
     assert rep["products"]["IfcSpace"] >= 1
     assert rep["identityPsets"]["wallWithPsetWallCommonReference"] >= 1
     assert rep["identityPsets"]["spaceWithPsetSpaceCommonReference"] >= 1
@@ -537,6 +539,13 @@ def test_ifc_inspection_matrix_covers_storeys_spaces_qtos_and_programme_fields()
     rep2 = inspect_kernel_ifc_semantics(step_text=step)
     assert rep2["available"] is True
     assert rep2["products"]["IfcSpace"] == rep["products"]["IfcSpace"]
+
+    rt = summarize_kernel_ifc_semantic_roundtrip(doc)
+    assert rt["roundtripChecks"] is not None
+    assert rt["roundtripChecks"]["allChecksPass"] is True
+    assert rt["commandSketch"] is not None
+    assert rt["commandSketch"]["referenceIdsFromIfc"]["IfcWall"]
+    assert rt["commandSketch"]["referenceIdsFromIfc"]["IfcSpace"]
 
 
 def test_ifc_inspection_matrix_includes_geometry_skip_counts_on_eligible_doc() -> None:

@@ -35,7 +35,9 @@ from bim_ai.export_gltf import (
 from bim_ai.export_ifc import (
     IFC_EXCHANGE_EMITTABLE_GEOMETRY_KINDS,
     ifc_kernel_geometry_skip_counts,
+    ifcopenshell_available,
     kernel_export_eligible,
+    summarize_kernel_ifc_semantic_roundtrip,
 )
 from bim_ai.geometry import Poly, approx_overlap_area_mm2, sat_overlap, wall_corners
 from bim_ai.ifc_stub import build_ifc_exchange_manifest_payload
@@ -95,6 +97,10 @@ _RULE_DISCIPLINE: dict[str, str] = {
 
     "exchange_ifc_unhandled_geometry_present": "exchange",
     "exchange_ifc_kernel_geometry_skip_summary": "exchange",
+
+    "exchange_ifc_roundtrip_count_mismatch": "exchange",
+    "exchange_ifc_roundtrip_programme_mismatch": "exchange",
+    "exchange_ifc_ids_identity_pset_gap": "exchange",
 }
 
 
@@ -327,6 +333,36 @@ def _validate_hosted_opening(
         )
 
 
+def _validation_rules_any_cleanroom_ids(val_rules: list[ValidationRuleElem]) -> bool:
+    keys = (
+        "enforceCleanroomDoorFamilyTypes",
+        "enforceCleanroomWindowFamilyTypes",
+        "enforceCleanroomFamilyTypeLinkage",
+        "enforceCleanroomCleanroomClass",
+        "enforceCleanroomInterlockGrade",
+        "enforceCleanroomOpeningFinishMaterial",
+        "enforceCleanroomDoorPressureRating",
+    )
+    for v in val_rules:
+        rj = getattr(v, "rule_json", None)
+        if not isinstance(rj, dict):
+            continue
+        if any(bool(rj.get(k)) for k in keys):
+            return True
+    return False
+
+
+def _elements_have_room_programme_metadata(elements: dict[str, Element]) -> bool:
+    for el in elements.values():
+        if not isinstance(el, RoomElem):
+            continue
+        for attr in ("programme_code", "department", "function_label", "finish_set"):
+            raw = getattr(el, attr, None)
+            if isinstance(raw, str) and raw.strip():
+                return True
+    return False
+
+
 def _exchange_advisory_violations(elements: dict[str, Element]) -> list[Violation]:
     out: list[Violation] = []
     try:
@@ -410,6 +446,62 @@ def _exchange_advisory_violations(elements: dict[str, Element]) -> list[Violatio
                 discipline="exchange",
             )
         )
+
+    val_rules = [vr for vr in elements.values() if isinstance(vr, ValidationRuleElem)]
+    gate_roundtrip = (
+        ifcopenshell_available()
+        and kernel_export_eligible(doc)
+        and (
+            any(skip_map.values())
+            or _elements_have_room_programme_metadata(elements)
+            or _validation_rules_any_cleanroom_ids(val_rules)
+        )
+    )
+    if gate_roundtrip:
+        summary = summarize_kernel_ifc_semantic_roundtrip(doc)
+        rtc = summary.get("roundtripChecks")
+        if isinstance(rtc, dict):
+            if not rtc.get("allProductCountsMatch", True):
+                out.append(
+                    Violation(
+                        rule_id="exchange_ifc_roundtrip_count_mismatch",
+                        severity="warning",
+                        message=(
+                            "Exported IFC product counts differ from kernel-expected emits "
+                            "(summarize_kernel_ifc_semantic_roundtrip.roundtripChecks.productCounts)."
+                        ),
+                        element_ids=[],
+                        discipline="exchange",
+                    )
+                )
+            if not rtc.get("allProgrammeFieldsMatch", True):
+                out.append(
+                    Violation(
+                        rule_id="exchange_ifc_roundtrip_programme_mismatch",
+                        severity="info",
+                        message=(
+                            "IFC read-back programme field counts differ from emit-able room programme metadata "
+                            "(summarize_kernel_ifc_semantic_roundtrip.roundtripChecks.programmeFields)."
+                        ),
+                        element_ids=[],
+                        discipline="exchange",
+                    )
+                )
+            if _validation_rules_any_cleanroom_ids(val_rules) and not rtc.get(
+                "allIdentityReferencesMatch", True
+            ):
+                out.append(
+                    Violation(
+                        rule_id="exchange_ifc_ids_identity_pset_gap",
+                        severity="info",
+                        message=(
+                            "Cleanroom IDS validation is active but IFC read-back shows incomplete "
+                            "Pset_*Common Reference coverage on some emitted products."
+                        ),
+                        element_ids=[],
+                        discipline="exchange",
+                    )
+                )
 
     return out
 

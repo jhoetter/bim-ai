@@ -32,7 +32,7 @@ Kinds **outside** [`EXPORT_GEOMETRY_KINDS`](../app/bim_ai/export_gltf.py) stay i
 
 ## Deferred / omitted (explicit)
 
-- IFC **import** and minimal merge read.
+- IFC **import**: document merge / command replay — only **semantic export→re-parse** summaries (`summarize_kernel_ifc_semantic_roundtrip`) and manifest **import-scope** hints (`ifcSemanticImportScope_v0` on `ifc_manifest_v0`).
 - **`IfcOpeningElement`** with full boolean tessellation regeneration for walls vs extruded proxy gaps only.
 
 ## Implemented in this slice (WP‑X03)
@@ -48,7 +48,7 @@ Single read-back entry point: **`inspect_kernel_ifc_semantics()`** in [`export_i
 | Row                              | What it covers                                                                                                                                                         |
 | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `buildingStorey`                 | `IfcBuildingStorey` count; how many storeys carry a numeric `Elevation`.                                                                                               |
-| `products`                       | Counts of `IfcWall`, `IfcOpeningElement`, `IfcDoor`, `IfcWindow`, `IfcSpace`.                                                                                          |
+| `products`                       | Counts of `IfcWall`, `IfcSlab`, `IfcRoof`, `IfcStair`, `IfcOpeningElement`, `IfcDoor`, `IfcWindow`, `IfcSpace`.                                                        |
 | `identityPsets`                  | Instances with `Reference` on `Pset_WallCommon`, `Pset_SpaceCommon`, `Pset_DoorCommon`, `Pset_WindowCommon`.                                                           |
 | `spaceProgrammeFields`           | Counts of spaces carrying `ProgrammeCode` / `Department` / `FunctionLabel` / `FinishSet` on `Pset_SpaceCommon`.                                                        |
 | `qtoTemplates`                   | `Name` of each `IfcElementQuantity` (`Qto_*` templates when QTO helpers succeed).                                                                                      |
@@ -57,6 +57,20 @@ Single read-back entry point: **`inspect_kernel_ifc_semantics()`** in [`export_i
 **Offline / no IfcOpenShell:** same function returns `available: false` (`reason`: `ifcopenshell_not_installed` or `kernel_not_eligible`) and may still include `ifcKernelGeometrySkippedCounts` when a `Document` is supplied.
 
 **Tests:** [`app/tests/test_export_ifc.py`](../app/tests/test_export_ifc.py) (ifc-backed), [`app/tests/test_ifc_exchange_manifest_offline.py`](../app/tests/test_ifc_exchange_manifest_offline.py) (manifest + stub paths).
+
+## IFC semantic roundtrip summary (v1)
+
+Secondary entry point: **`summarize_kernel_ifc_semantic_roundtrip(doc)`** in [`export_ifc.py`](../app/bim_ai/export_ifc.py). Runs **one** kernel STEP serialization when IfcOpenShell is installed and the document is kernel-eligible, nests **`inspect_kernel_ifc_semantics`** under `inspection`, and adds:
+
+| Field                    | Meaning                                                                                                                                                                    |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `kernelExpectedIfcKinds` | Same shape as manifest `kernelExpectedIfcKinds` — document-only expected emit counts (offline-safe when IFC absent).                                                       |
+| `roundtripChecks`        | `productCounts`, `programmeFields`, `identityCoverage`, and booleans `allProductCountsMatch` / `allProgrammeFieldsMatch` / `allIdentityReferencesMatch` / `allChecksPass`. |
+| `commandSketch`          | Traceability-only `Reference` strings read back from `Pset_*Common` on walls/spaces (not replay commands).                                                                 |
+
+**Offline:** returns `roundtripChecks: null`, `commandSketch: null`, with `inspection` from the usual unavailable stubs.
+
+**Manifest:** [`ifc_stub.build_ifc_exchange_manifest_payload`](../app/bim_ai/ifc_stub.py) adds **`ifcSemanticImportScope_v0`** (read-back vs import-merge deferrals) and **`kernelExpectedIfcKinds`** without parsing STEP.
 
 ## Still deferred
 
@@ -71,7 +85,7 @@ When these land, bump `ifcEncoding` commentary / `kernelNote` in [`export_ifc.py
 
 ## Artifact contract
 
-| Resource                     | Purpose                                                                                                                                                                   |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GET …/exports/ifc-manifest` | **`ifc_manifest_v0`** JSON: parity fields + `ifcEncoding` + `artifactHasGeometryEntities` + `exportedIfcKindsInArtifact` hints                                            |
-| `GET …/exports/model.ifc`    | Downloadable IFC STEP — **`bim_ai_ifc_kernel_v1`** kernel solids when **`ifcopenshell`** + eligible geometry exists; **`bim_ai_ifc_empty_shell_v0`** empty DATA otherwise |
+| Resource                     | Purpose                                                                                                                                                                                 |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET …/exports/ifc-manifest` | **`ifc_manifest_v0`** JSON: parity fields + `ifcEncoding` + `artifactHasGeometryEntities` + `exportedIfcKindsInArtifact` + `ifcSemanticImportScope_v0` + `kernelExpectedIfcKinds` hints |
+| `GET …/exports/model.ifc`    | Downloadable IFC STEP — **`bim_ai_ifc_kernel_v1`** kernel solids when **`ifcopenshell`** + eligible geometry exists; **`bim_ai_ifc_empty_shell_v0`** empty DATA otherwise               |
