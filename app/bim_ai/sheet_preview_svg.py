@@ -3,10 +3,18 @@
 from __future__ import annotations
 
 import html
+import math
 from typing import Any
 
 from bim_ai.document import Document
-from bim_ai.elements import LevelElem, PlanViewElem, ScheduleElem, SectionCutElem, SheetElem
+from bim_ai.elements import (
+    LevelElem,
+    PlanViewElem,
+    ScheduleElem,
+    SectionCutElem,
+    SheetElem,
+    ViewpointElem,
+)
 
 
 def pick_sheet(doc: Document, sheet_id: str | None) -> SheetElem:
@@ -19,6 +27,23 @@ def pick_sheet(doc: Document, sheet_id: str | None) -> SheetElem:
         if isinstance(e, SheetElem):
             return e
     raise ValueError("no sheet elements in model")
+
+
+def read_viewport_mm_box(vp: dict[str, Any]) -> tuple[float, float, float, float]:
+    """Mirror TS `readViewportMmBox`: camelCase plus legacy ``wMm``/``hMm`` with min dimension 10mm."""
+    x_mm = float(vp.get("xMm") or vp.get("x_mm") or 0)
+    y_mm = float(vp.get("yMm") or vp.get("y_mm") or 0)
+    width_mm = float(
+        vp.get("widthMm") or vp.get("width_mm") or vp.get("wMm") or vp.get("w_mm") or 1000
+    )
+    height_mm = float(
+        vp.get("heightMm") or vp.get("height_mm") or vp.get("hMm") or vp.get("h_mm") or 1000
+    )
+    nw = width_mm if math.isfinite(width_mm) else 1000.0
+    nh = height_mm if math.isfinite(height_mm) else 1000.0
+    nx = x_mm if math.isfinite(x_mm) else 0.0
+    ny = y_mm if math.isfinite(y_mm) else 0.0
+    return (nx, ny, max(10.0, nw), max(10.0, nh))
 
 
 def resolve_view_ref_title(doc: Document, view_ref: str) -> str | None:
@@ -45,6 +70,10 @@ def resolve_view_ref_title(doc: Document, view_ref: str) -> str | None:
         if isinstance(el, SectionCutElem):
             return el.name or el.id
         return None
+    if kind in {"viewpoint", "vp"}:
+        if isinstance(el, ViewpointElem):
+            return el.name or el.id
+        return None
 
     return None
 
@@ -69,10 +98,7 @@ def sheet_elem_to_svg(doc: Document, sh: SheetElem) -> str:
     for vp in vps_raw:
         if not isinstance(vp, dict):
             continue
-        x_mm = float(vp.get("xMm") or vp.get("x_mm") or 0)
-        y_mm = float(vp.get("yMm") or vp.get("y_mm") or 0)
-        width_mm = float(vp.get("widthMm") or vp.get("width_mm") or 1000)
-        height_mm = float(vp.get("heightMm") or vp.get("height_mm") or 1000)
+        x_mm, y_mm, width_mm, height_mm = read_viewport_mm_box(vp)
         label = str(vp.get("label") or "Viewport")
         vr = vp.get("viewRef") or vp.get("view_ref")
         ref_title = resolve_view_ref_title(doc, str(vr)) if isinstance(vr, str) else None

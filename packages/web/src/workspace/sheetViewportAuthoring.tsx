@@ -58,6 +58,20 @@ export function readViewportMmBox(raw: Record<string, unknown>): {
   return { xMm: nx, yMm: ny, widthMm: nw, heightMm: nh };
 }
 
+/** Clamp viewport top-left so the rect stays inside paper bounds (sheet mm space). */
+export function clampViewportMmPosition(
+  paperWidthMm: number,
+  paperHeightMm: number,
+  box: { xMm: number; yMm: number; widthMm: number; heightMm: number },
+): { xMm: number; yMm: number } {
+  const maxX = Math.max(0, paperWidthMm - box.widthMm);
+  const maxY = Math.max(0, paperHeightMm - box.heightMm);
+  return {
+    xMm: Math.min(Math.max(0, box.xMm), maxX),
+    yMm: Math.min(Math.max(0, box.yMm), maxY),
+  };
+}
+
 /** Stable fallback id when `viewportId` is missing (replay / hydration). */
 export function fingerprintViewportFallback(
   index: number,

@@ -1,10 +1,35 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  clampViewportMmPosition,
   fingerprintViewportFallback,
   normalizeViewportRaw,
   readViewportMmBox,
 } from './sheetViewportAuthoring';
+
+describe('clampViewportMmPosition', () => {
+  it('clamps negative origin to zero', () => {
+    expect(
+      clampViewportMmPosition(42000, 29700, {
+        xMm: -100,
+        yMm: -50,
+        widthMm: 2000,
+        heightMm: 1500,
+      }),
+    ).toEqual({ xMm: 0, yMm: 0 });
+  });
+
+  it('clamps bottom-right overflow inside paper', () => {
+    expect(
+      clampViewportMmPosition(42000, 29700, {
+        xMm: 41000,
+        yMm: 29200,
+        widthMm: 3000,
+        heightMm: 2000,
+      }),
+    ).toEqual({ xMm: 39000, yMm: 27700 });
+  });
+});
 
 describe('normalizeViewportRaw', () => {
   it('is deterministic across repeated runs when viewportId is omitted', () => {

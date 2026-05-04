@@ -1,12 +1,13 @@
 import type { Element } from '@bim-ai/core';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 
 import type { SheetViewportMmDraft } from './sheetViewportAuthoring';
 import {
   readViewportMmBox,
   SheetViewportEditor,
   normalizeViewportRaw,
+  clampViewportMmPosition,
 } from './sheetViewportAuthoring';
 import {
   SheetTitleblockEditor,
@@ -16,6 +17,22 @@ import { resolveViewportTitleFromRef } from './sheetViewRef';
 import { SectionViewportSvg } from './sectionViewportSvg';
 
 type SheetEl = Extract<Element, { kind: 'sheet' }>;
+
+function clientToSvgMm(
+  svg: SVGSVGElement,
+  clientX: number,
+  clientY: number,
+): { x: number; y: number } {
+  const pt = svg.createSVGPoint();
+  pt.x = clientX;
+  pt.y = clientY;
+  const ctm = svg.getScreenCTM();
+  if (!ctm) {
+    return { x: 0, y: 0 };
+  }
+  const sp = pt.matrixTransform(ctm.inverse());
+  return { x: sp.x, y: sp.y };
+}
 
 function SheetCanvasWithSheet(props: {
   sheet: SheetEl;
@@ -42,6 +59,11 @@ function SheetCanvasWithSheet(props: {
   const [vpDrafts, setVpDrafts] = useState<SheetViewportMmDraft[]>(() => nextDraftBase());
 
   const [tbDraft, setTbDraft] = useState(() => normalizeTitleblockDraftFromSheet(sh));
+
+  const svgRef = useRef<SVGSVGElement | null>(null);
+  const dragRef = useRef<{ index: number; grabDX: number; grabDY: number } | null>(null);
+
+  const authoring = Boolean(props.onUpsertSemantic);
 
   const tp = sh.titleblockParameters ?? {};
   const sheetNo = tp.sheetNumber ?? tp.sheetNo ?? '';
@@ -71,6 +93,89 @@ function SheetCanvasWithSheet(props: {
 
   const scrollCls = bleed ? '' : ' max-h-[360px]';
 
+  const paintRows: Array<{
+    key: string;
+    xMm: number;
+    yMm: number;
+    widthMm: number;
+    heightMm: number;
+    viewRef: string;
+    label: string;
+    index: number;
+  }> = authoring
+    ? vpDrafts.map((d, index) => ({
+        key: d.viewportId,
+        xMm: d.xMm,
+        yMm: d.yMm,
+        widthMm: d.widthMm,
+        heightMm: d.heightMm,
+        viewRef: d.viewRef,
+        label: d.label,
+        index,
+      }))
+    : vps.map((vpRaw, index) => {
+        const vp = vpRaw as Record<string, unknown>;
+        const box = readViewportMmBox(vp);
+        const viewRefRaw = vp.viewRef ?? vp.view_ref;
+        const label = typeof vp.label === 'string' ? vp.label : 'Viewport';
+        return {
+          key: String(vp.viewportId ?? vp.viewport_id ?? `${box.xMm}_${box.yMm}_${index}`),
+          xMm: box.xMm,
+          yMm: box.yMm,
+          widthMm: box.widthMm,
+          heightMm: box.heightMm,
+          viewRef: typeof viewRefRaw === 'string' ? viewRefRaw : '',
+          label,
+          index,
+        };
+      });
+
+  const beginDrag = (e: ReactPointerEvent<SVGRectElement>, index: number) => {
+    if (!authoring) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const svg = svgRef.current;
+    if (!svg) return;
+    const d = vpDrafts[index];
+    if (!d) return;
+    const m = clientToSvgMm(svg, e.clientX, e.clientY);
+    dragRef.current = { index, grabDX: m.x - d.xMm, grabDY: m.y - d.yMm };
+
+    const onMove = (ev: PointerEvent) => {
+      const dd = dragRef.current;
+      const el = svgRef.current;
+      if (!dd || !el) return;
+      const pt = clientToSvgMm(el, ev.clientX, ev.clientY);
+      setVpDrafts((prev) => {
+        const row = prev[dd.index];
+        if (!row) return prev;
+        const nx = pt.x - dd.grabDX;
+        const ny = pt.y - dd.grabDY;
+        const { xMm, yMm } = clampViewportMmPosition(wMm, hMm, {
+          xMm: nx,
+          yMm: ny,
+          widthMm: row.widthMm,
+          heightMm: row.heightMm,
+        });
+        if (row.xMm === xMm && row.yMm === yMm) return prev;
+        const next = [...prev];
+        next[dd.index] = { ...row, xMm, yMm };
+        return next;
+      });
+    };
+
+    const onUp = () => {
+      dragRef.current = null;
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+    };
+
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+  };
+
   return (
     <div
       data-testid="sheet-canvas"
@@ -78,6 +183,7 @@ function SheetCanvasWithSheet(props: {
     >
       <div data-testid="sheet-canvas-full-bleed">
         <svg
+          ref={svgRef}
           data-testid="sheet-svg"
           viewBox={`0 0 ${wMm} ${hMm}`}
           className={bleed ? 'h-auto w-full' : 'h-auto max-h-[360px] w-full'}
@@ -110,31 +216,22 @@ function SheetCanvasWithSheet(props: {
               </text>
             ))}
 
-          {vps.map((vpRaw) => {
-            const vp = vpRaw as Record<string, unknown>;
-            const box = readViewportMmBox(vp);
-            const xMm = box.xMm;
-            const yMm = box.yMm;
-            const widthMm = box.widthMm;
-            const heightMm = box.heightMm;
-
-            const viewRefRaw = vp.viewRef ?? vp.view_ref;
-            const resolved = resolveViewportTitleFromRef(elementsById, viewRefRaw);
-            const fallback = typeof vp.label === 'string' ? vp.label : 'Viewport';
-            const primary = resolved ?? fallback;
-            const sub = typeof viewRefRaw === 'string' && viewRefRaw ? viewRefRaw : '';
+          {paintRows.map((row) => {
+            const { xMm, yMm, widthMm, heightMm, viewRef, label, index } = row;
+            const resolved = resolveViewportTitleFromRef(elementsById, viewRef);
+            const primary = resolved ?? label;
+            const sub = viewRef.trim() ? viewRef : '';
             const secId =
-              modelId &&
-              typeof viewRefRaw === 'string' &&
-              (viewRefRaw.startsWith('section:') || viewRefRaw.startsWith('sec:'))
-                ? viewRefRaw.split(':', 2)[1]?.trim()
+              modelId && (viewRef.startsWith('section:') || viewRef.startsWith('sec:'))
+                ? viewRef.split(':', 2)[1]?.trim()
                 : '';
             const secInnerW = Math.max(200, widthMm - 320);
             const secInnerH = Math.max(200, heightMm - 2700);
 
             return (
-              <g key={String(vp.viewportId ?? vp.viewport_id ?? `${xMm}_${yMm}`)}>
+              <g key={row.key}>
                 <rect
+                  data-testid={`sheet-viewport-${index}`}
                   x={xMm}
                   y={yMm}
                   width={widthMm}
@@ -142,6 +239,8 @@ function SheetCanvasWithSheet(props: {
                   fill="#ffffff"
                   stroke="#475569"
                   strokeWidth={80}
+                  className={authoring ? 'cursor-move touch-none' : undefined}
+                  onPointerDown={authoring ? (e) => beginDrag(e, index) : undefined}
                 />
                 {secId ? (
                   <svg

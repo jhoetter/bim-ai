@@ -9,7 +9,7 @@ from reportlab.pdfgen import canvas as pdf_canvas
 
 from bim_ai.document import Document
 from bim_ai.elements import SheetElem
-from bim_ai.sheet_preview_svg import resolve_view_ref_title
+from bim_ai.sheet_preview_svg import read_viewport_mm_box, resolve_view_ref_title
 
 
 def sheet_elem_to_pdf_bytes(doc: Document, sh: SheetElem) -> bytes:
@@ -65,7 +65,11 @@ def sheet_elem_to_pdf_bytes(doc: Document, sh: SheetElem) -> bytes:
 
             suffix = f" · {vr_raw}"
 
-        lines.append(f"{label}{suffix}")
+        x_mm, y_mm, w_mm, h_mm = read_viewport_mm_box(vp)
+
+        geo = f" [{x_mm:g},{y_mm:g}] {w_mm:g}×{h_mm:g} mm"
+
+        lines.append(str(f"{label}{suffix}{geo}")[:120])
 
     if not lines:
 

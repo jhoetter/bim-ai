@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from bim_ai.document import Document
 from bim_ai.elements import (
+    CameraMm,
     DoorElem,
     FloorElem,
     LevelElem,
@@ -11,6 +12,8 @@ from bim_ai.elements import (
     ScheduleElem,
     SheetElem,
     StairElem,
+    Vec3Mm,
+    ViewpointElem,
     WallElem,
     WindowElem,
 )
@@ -23,7 +26,7 @@ from bim_ai.ifc_stub import (
 )
 from bim_ai.schedule_csv import schedule_payload_to_csv, schedule_payload_with_column_subset
 from bim_ai.schedule_derivation import derive_schedule_table
-from bim_ai.sheet_preview_svg import pick_sheet, sheet_elem_to_svg
+from bim_ai.sheet_preview_svg import pick_sheet, resolve_view_ref_title, sheet_elem_to_svg
 
 
 def test_floor_opening_and_stair_apply_chain():
@@ -385,6 +388,42 @@ def test_schedule_csv_contains_room_headers():
     csv_txt = schedule_payload_to_csv(tbl)
     header = csv_txt.splitlines()[0]
     assert "elementId" in header
+
+
+def test_sheet_svg_legacy_w_mm_h_mm_viewport_extents():
+    doc = Document(
+        revision=1,
+        elements={
+            "s1": SheetElem(
+                kind="sheet",
+                id="s1",
+                name="Legacy VP",
+                titleBlock="TB-1",
+                viewportsMm=[
+                    {"xMm": 500, "yMm": 600, "wMm": 2200, "hMm": 1700, "label": "A"},
+                ],
+            ),
+        },
+    )
+    svg = sheet_elem_to_svg(doc, pick_sheet(doc, "s1"))
+    assert '2200' in svg and '1700' in svg
+    assert '<rect x="500.0" y="600.0"' in svg or '<rect x="500" y="600"' in svg
+
+
+def test_resolve_view_ref_title_viewpoint_alias():
+    vp = ViewpointElem(
+        kind="viewpoint",
+        id="vp-roof",
+        name="Roof overview",
+        camera=CameraMm(
+            position=Vec3Mm(xMm=0, yMm=5000, zMm=8000),
+            target=Vec3Mm(xMm=0, yMm=0, zMm=0),
+            up=Vec3Mm(xMm=0, yMm=1, zMm=0),
+        ),
+    )
+    doc = Document(revision=1, elements={"vp-roof": vp})
+    assert resolve_view_ref_title(doc, "viewpoint:vp-roof") == "Roof overview"
+    assert resolve_view_ref_title(doc, "vp:vp-roof") == "Roof overview"
 
 
 def test_sheet_preview_svg_is_deterministic():
