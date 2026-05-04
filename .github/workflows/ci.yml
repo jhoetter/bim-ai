@@ -11,7 +11,10 @@ concurrency:
 
 jobs:
   js:
-    runs-on: ubuntu-latest
+    # Keep Playwright/Chromium/fonts aligned with linux snapshot regeneration
+    # (see spec/reviewer-summary-parity-e04c4bd.md): `ubuntu-latest` (24.04+)
+    # can shift flex layout/heights vs ubuntu-22.04 + Playwright Docker jammy.
+    runs-on: ubuntu-22.04
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
