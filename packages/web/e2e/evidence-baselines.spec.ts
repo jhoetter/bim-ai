@@ -56,6 +56,10 @@ async function sharedRoutes(page: Page, layoutPreset: string) {
         primitives: {
           format: 'sectionProjectionPrimitives_v1',
           walls: [{ uStartMm: 600, uEndMm: 7200, zBottomMm: 0, zTopMm: 5600 }],
+          levelMarkers: [
+            { id: 'hf-lvl-1', name: 'EG', elevationMm: 0 },
+            { id: 'hf-lvl-2', name: 'OG', elevationMm: 2800 },
+          ],
         },
       }),
     });

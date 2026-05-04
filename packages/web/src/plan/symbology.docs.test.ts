@@ -6,6 +6,7 @@ import {
   PLAN_SLICE_ELEVATION_M,
   PLAN_WALL_CENTER_SLICE_HEIGHT_M,
   ROOM_PLAN_OVERLAP_ADVISOR_MM2,
+  SECTION_VIEWPORT_SCALE_BASELINE_PX,
 } from './symbology';
 
 describe('plan symbology (WP-C01/C02/C03 projection constants)', () => {
@@ -19,5 +20,9 @@ describe('plan symbology (WP-C01/C02/C03 projection constants)', () => {
     expect(PLAN_DOOR_SWING_ARC_SEMI_MINOR_FACTOR_FOCUS).toBeLessThan(
       PLAN_DOOR_SWING_ARC_SEMI_MINOR_FACTOR_DEFAULT,
     );
+  });
+
+  it('exports section viewport scale baseline for sheet nesting (WP-E04/C03)', () => {
+    expect(SECTION_VIEWPORT_SCALE_BASELINE_PX).toBe(600);
   });
 });

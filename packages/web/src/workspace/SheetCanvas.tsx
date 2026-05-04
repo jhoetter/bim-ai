@@ -118,6 +118,8 @@ function SheetCanvasWithSheet(props: {
               (viewRefRaw.startsWith('section:') || viewRefRaw.startsWith('sec:'))
                 ? viewRefRaw.split(':', 2)[1]?.trim()
                 : '';
+            const secInnerW = Math.max(200, widthMm - 320);
+            const secInnerH = Math.max(200, heightMm - 2700);
 
             return (
               <g key={String(vp.viewportId ?? vp.viewport_id ?? `${xMm}_${yMm}`)}>
@@ -134,15 +136,15 @@ function SheetCanvasWithSheet(props: {
                   <svg
                     x={xMm + 160}
                     y={yMm + 1500}
-                    width={Math.max(200, widthMm - 320)}
-                    height={Math.max(200, heightMm - 2700)}
-                    viewBox="0 0 800 600"
+                    width={secInnerW}
+                    height={secInnerH}
+                    viewBox={`0 0 ${secInnerW} ${secInnerH}`}
                   >
                     <SectionViewportSvg
                       modelId={modelId!}
                       sectionCutId={secId}
-                      widthPx={800}
-                      heightPx={600}
+                      widthPx={secInnerW}
+                      heightPx={secInnerH}
                     />
                   </svg>
                 ) : null}

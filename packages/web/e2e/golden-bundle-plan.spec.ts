@@ -39,10 +39,21 @@ test.describe('golden bundle affordances', () => {
         contentType: 'application/json',
         body: JSON.stringify({
           format: 'sectionProjectionWire_v1',
+          warnings: [
+            {
+              code: 'symmetricCropBand',
+              message:
+                'cropDepthMm is interpreted as a full-width symmetric perpendicular band centered on the cut segment (half-width = cropDepthMm/2).',
+            },
+          ],
           primitives: {
             format: 'sectionProjectionPrimitives_v1',
             walls: [{ uStartMm: 600, uEndMm: 7200, zBottomMm: 0, zTopMm: 5600 }],
             floors: [{ uStartMm: 500, uEndMm: 7300, zBottomMm: -200, zTopMm: 0 }],
+            levelMarkers: [
+              { id: 'hf-lvl-1', name: 'EG', elevationMm: 0 },
+              { id: 'hf-lvl-2', name: 'OG', elevationMm: 2800 },
+            ],
           },
         }),
       });
@@ -235,6 +246,7 @@ test.describe('golden bundle affordances', () => {
     await expect(canvas.locator('svg svg path[fill^="url(#"]').first()).toBeVisible({
       timeout: 15_000,
     });
+    await expect(canvas.getByText(/EG · 0\.00 m/).first()).toBeVisible({ timeout: 15_000 });
   });
 
   test('applies evidence3d clip query params on 3D section box controls', async ({ page }) => {

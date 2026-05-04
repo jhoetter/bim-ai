@@ -28,6 +28,22 @@ export const PLAN_DOOR_SWING_ARC_SEMI_MINOR_FACTOR_FOCUS = 1.95;
 
 export const PLAN_WINDOW_SILL_LINE_WIDTH = 1.2;
 
+/** Section viewport SVG documentation knobs (WP-E04/C03). Baseline matches historical 600px minor axis. */
+
+export const SECTION_VIEWPORT_SCALE_BASELINE_PX = 600;
+
+export const SECTION_VIEWPORT_LABEL_FONT_MIN_PX = 9;
+
+export const SECTION_VIEWPORT_LABEL_FONT_MAX_PX = 15;
+
+export const SECTION_VIEWPORT_STROKE_SCALE_MIN = 0.65;
+
+export const SECTION_VIEWPORT_STROKE_SCALE_MAX = 1.35;
+
+export const SECTION_VIEWPORT_OPENING_TAG_MIN_PX = 14;
+
+export const SECTION_VIEWPORT_ADVISORY_MAX_CHARS = 96;
+
 function ux(xMm: number) {
   return xMm / 1000;
 }
