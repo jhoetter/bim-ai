@@ -1,15 +1,16 @@
-# Agent Prompt 5: Performance, Collaboration, And Regeneration Diagnostics
+# Agent Prompt 5: BCF Issues, Agent Assumptions, And Evidence Loop Actions
 
 ## Mission
 
-You are Agent 5 of the next parallel BIM AI parity batch. Raise confidence that larger models and command-driven collaboration stay predictable: regeneration/stale diagnostics, larger deterministic fixtures, command ordering, scoped undo/conflict evidence, and non-flaky browser timing smoke. Do not open a pull request. Commit and push only the branch you work on.
+You are Agent 5 of the next parallel BIM AI parity batch. Build the collaboration/evidence loop around production review: BCF-like issue topics, links to viewpoints/elements/evidence rows, agent assumption/deviation records, and actionable Agent Review guidance. Do not open a pull request. Commit and push only the branch you work on.
 
 Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
 
-- `WP-P01` Browser performance budget
-- `WP-P02` Collaboration model
-- `WP-X01` JSON snapshot and command replay
-- Light `WP-A04` CI verification gates, only if adding bounded non-flaky checks
+- `WP-X04` BCF/issues and review loops
+- `WP-F01` Agent review and evidence packs
+- `WP-F02` Assumption/deviation tracking
+- `WP-F03` Planner/executor feedback loop
+- light `WP-A02` Semantic command model
 
 ## Start Procedure
 
@@ -19,58 +20,54 @@ Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
    git fetch origin
    git switch main
    git pull --ff-only origin main
-   git switch -c agent/perf-collab-regeneration
+   git switch -c agent/bcf-assumptions-evidence-loop
    ```
 
 2. Read first:
    - `spec/revit-production-parity-workpackage-tracker.md`
    - `spec/prd/revit-production-parity-ai-agent-prd.md`
+   - `app/bim_ai/elements.py`
+   - `app/bim_ai/commands.py`
    - `app/bim_ai/engine.py`
-   - `app/bim_ai/model_summary.py`
-   - `app/bim_ai/routes_api.py`
-   - `app/tests/test_derived_performance_budget.py`
-   - `app/tests/test_undo_replay_constraint.py`
+   - `app/bim_ai/evidence_manifest.py`
+   - `app/bim_ai/agent_review.py`
+   - `packages/core/src/index.ts`
    - `packages/web/src/Workspace.tsx`
-   - `packages/web/src/state/store.ts`
-   - `packages/web/e2e/cockpit-smoke.spec.ts`
+   - `packages/web/src/evidence/*`
+   - existing agent review / evidence / collaboration tests
 
 ## Allowed Scope
 
 Prefer changes in:
 
-- command replay and diagnostic metadata in `app/bim_ai/engine.py`
-- model rollups in `app/bim_ai/model_summary.py`
-- API status/error shaping in `app/bim_ai/routes_api.py`
-- focused performance fixtures/tests in `app/tests/test_derived_performance_budget.py`
-- undo/conflict tests in `app/tests/test_undo_replay_constraint.py`
-- browser status/timing assertions in `packages/web/e2e/cockpit-smoke.spec.ts`
-- `packages/web/src/Workspace.tsx` and `packages/web/src/state/store.ts`, only for existing status/undo/collaboration paths
+- semantic issue/topic/assumption/deviation elements or command payloads
+- evidence manifest generation and Agent Review summaries
+- web panels that already render review, evidence, or diagnostics
+- tests for issue creation, evidence links, and action guidance
 - `spec/revit-production-parity-workpackage-tracker.md`
 
 ## Non-Goals
 
-- Do not implement full multiplayer persistence.
-- Do not redesign plan, sheet, schedule, room, geometry, or OpenBIM feature semantics.
-- Do not update visual baselines for performance checks.
-- Do not add flaky timing thresholds without local and CI-safe margins.
+- Do not integrate an external BCF server.
+- Do not implement auth, comments, or notification infrastructure.
+- Do not change geometry, sheets, schedules, or IFC behavior except to link existing evidence rows.
 - Do not open a PR.
 
 ## Implementation Checklist
 
-- Add one narrow confidence feature, such as stale regeneration diagnostics, larger replay fixture budgets, command ordering metadata, scoped undo conflict evidence, or a deterministic browser timing/status smoke.
-- Prefer measurable budget tests with explicit fixture sizes and conservative thresholds.
-- Keep web checks non-visual where possible.
-- Add focused backend tests and web/e2e tests only when stable.
-- Document remaining collaboration and regeneration blockers in the tracker.
+- Add a small BCF-like issue/topic model with stable IDs and links to elements, viewpoints, or evidence artifacts.
+- Add assumption/deviation records that can be created or summarized from command/evidence context.
+- Surface at least one Agent Review action that points to a specific issue, assumption, deviation, or evidence row.
+- Keep outputs deterministic and suitable for snapshots or manifest assertions.
+- Add backend tests and, where practical, a web test for rendered review guidance.
 
 ## Validation
 
 Run focused checks:
 
 ```bash
-cd app && ruff check bim_ai tests && pytest tests/test_derived_performance_budget.py tests/test_undo_replay_constraint.py
+cd app && ruff check bim_ai tests && pytest tests/test_evidence* tests/test_agent* tests/test_engine*
 cd packages/web && pnpm exec tsc -p tsconfig.json --noEmit && pnpm test
-cd packages/web && CI=true pnpm exec playwright test e2e/cockpit-smoke.spec.ts
 ```
 
 Then run, if practical:
@@ -81,7 +78,7 @@ pnpm verify
 
 ## Tracker Update
 
-Update only rows you materially changed, likely `WP-P01`, `WP-P02`, `WP-X01`, and maybe `WP-A04`. Keep `State` as `partial` unless the Done Rule is fully satisfied. Include fixture sizes, thresholds, diagnostics, and flake risks.
+Update only rows you materially changed, likely `WP-X04`, `WP-F01`, `WP-F02`, `WP-F03`, and maybe `WP-A02`. Mention issue schema, links, Agent Review actions, and tests.
 
 ## Commit And Push
 
@@ -92,7 +89,7 @@ git status
 git diff
 git add <changed files>
 git commit -m "$(cat <<'EOF'
-test(perf): add regeneration collaboration diagnostics
+feat(review): add bcf issue and assumption evidence loop
 
 EOF
 )"
@@ -101,4 +98,4 @@ git push -u origin HEAD
 
 ## Final Report
 
-Return branch, commit SHA, diagnostics or budget coverage added, tracker rows updated, validation results, and any flake/collaboration risks.
+Return branch, commit SHA, issue/evidence loop behavior added, tracker rows updated, validation results, and any shared-file merge risks.

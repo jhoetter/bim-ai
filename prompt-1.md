@@ -1,8 +1,8 @@
-# Agent Prompt 1: Plan Tags, View Templates, And Annotation Rules
+# Agent Prompt 1: View Template Editor, Properties Palette, And Scope Boxes
 
 ## Mission
 
-You are Agent 1 of the next parallel BIM AI parity batch. Deepen production plan documentation: door/window/room tag primitives, view-template inheritance, annotation visibility, and deterministic plan replay. Do not open a pull request. Commit and push only the branch you work on.
+You are Agent 1 of the next parallel BIM AI parity batch. Move plan views from hidden schema fields toward editable production view definitions: view-template editor affordances, active/selected view properties, crop/scope metadata, and inheritance evidence. Do not open a pull request. Commit and push only the branch you work on.
 
 Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
 
@@ -19,7 +19,7 @@ Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
    git fetch origin
    git switch main
    git pull --ff-only origin main
-   git switch -c agent/plan-tags-templates
+   git switch -c agent/view-template-properties
    ```
 
 2. Read first:
@@ -30,39 +30,38 @@ Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
    - `app/bim_ai/engine.py`
    - `app/bim_ai/plan_projection_wire.py`
    - `packages/core/src/index.ts`
-   - `packages/web/src/plan/PlanCanvas.tsx`
-   - `packages/web/src/plan/planProjection.ts`
-   - `packages/web/src/plan/symbology.ts`
+   - `packages/web/src/state/store.ts`
+   - `packages/web/src/Workspace.tsx`
    - `packages/web/src/workspace/ProjectBrowser.tsx`
+   - `packages/web/src/plan/PlanCanvas.tsx`
 
 ## Allowed Scope
 
 Prefer changes in:
 
-- `PlanViewElem`, `ViewTemplateElem`, or narrow tag/annotation element schemas
-- `UpdateElementPropertyCmd` handling for plan/template/tag visibility settings
-- `app/bim_ai/plan_projection_wire.py` for annotation/tag primitive metadata
-- `packages/core/src/index.ts` for hydration types
-- `packages/web/src/plan/*` for tag rendering and visibility
-- `packages/web/src/workspace/ProjectBrowser.tsx`, only for template/view grouping
-- focused tests under `app/tests/test_*plan*`, `app/tests/test_update_element_property_plan_view.py`, and `packages/web/src/plan/*.test.ts`
+- `PlanViewElem` / `ViewTemplateElem` fields in `app/bim_ai/elements.py`
+- `UpdateElementPropertyCmd` and `upsertPlanView` handling in `app/bim_ai/engine.py`
+- `app/bim_ai/plan_projection_wire.py`, only for crop/scope/template metadata already relevant to plan views
+- shared types in `packages/core/src/index.ts`
+- view selection/property controls in `packages/web/src/Workspace.tsx`, `packages/web/src/state/store.ts`, or `packages/web/src/workspace/ProjectBrowser.tsx`
+- focused tests in `app/tests/test_update_element_property_plan_view.py`, `app/tests/test_plan_projection_and_evidence_slices.py`, and web plan/workspace tests
 - `spec/revit-production-parity-workpackage-tracker.md`
 
 ## Non-Goals
 
-- Do not change sheet viewport placement or export.
-- Do not change schedule derivation semantics.
+- Do not change sheet viewport authoring or export.
+- Do not change schedule derivation.
 - Do not change room derivation algorithms.
 - Do not change IFC/glTF exporters.
 - Do not open a PR.
 
 ## Implementation Checklist
 
-- Add one narrow production plan annotation slice, such as D/W tag primitives, room label fields, annotation category visibility, template inheritance for tags, or view-specific annotation style.
-- Keep new behavior persisted through commands or semantic elements.
-- Ensure server wire output and web rendering agree.
+- Add one narrow UI-backed view definition slice, such as editable view-template toggles, active plan view properties, scope/crop metadata controls, or visible inheritance explanation.
+- Keep behavior command-backed and replayable.
+- Ensure server wire and web fallback behavior agree when a pinned plan view is active.
 - Add at least one backend test and one web unit or e2e assertion.
-- Keep screenshot baseline churn minimal.
+- Keep full template editor / Revit-complete range semantics out of scope unless directly needed.
 
 ## Validation
 
@@ -81,7 +80,7 @@ pnpm verify
 
 ## Tracker Update
 
-Update only rows you materially changed, likely `WP-C01`, `WP-C02`, `WP-C03`, and maybe `WP-C05`. Keep `State` as `partial` unless the Done Rule is fully satisfied. Include exact evidence paths and remaining annotation blockers.
+Update only rows you materially changed, likely `WP-C01`, `WP-C02`, `WP-C03`, and maybe `WP-C05`. Keep `State` as `partial` unless the Done Rule is fully satisfied. Include exact fields, UI entry points, and tests.
 
 ## Commit And Push
 
@@ -92,7 +91,7 @@ git status
 git diff
 git add <changed files>
 git commit -m "$(cat <<'EOF'
-feat(plan): add annotation tag visibility slice
+feat(views): add editable view template properties slice
 
 EOF
 )"
@@ -101,4 +100,4 @@ git push -u origin HEAD
 
 ## Final Report
 
-Return branch, commit SHA, annotation behavior added, tracker rows updated, validation results, and any plan wire merge risks.
+Return branch, commit SHA, view/template behavior added, tracker rows updated, validation results, and any shared-file merge risks.
