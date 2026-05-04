@@ -9,35 +9,15 @@ from reportlab.pdfgen import canvas as pdf_canvas
 
 from bim_ai.document import Document
 from bim_ai.elements import SheetElem
-from bim_ai.sheet_preview_svg import read_viewport_mm_box, resolve_view_ref_title
+from bim_ai.sheet_preview_svg import (
+    format_viewport_crop_export_segment,
+    read_viewport_mm_box,
+    resolve_view_ref_title,
+)
 
 
-def sheet_elem_to_pdf_bytes(doc: Document, sh: SheetElem) -> bytes:
-    buf = BytesIO()
-    c = pdf_canvas.Canvas(buf, pagesize=A4)
-    pw, ph = A4
-
-    margin = 40
-    c.setFont("Helvetica-Bold", 16)
-    c.drawString(margin, ph - margin, str(sh.name or sh.id))
-    c.setFont("Helvetica", 11)
-    c.drawString(margin, ph - margin - 24, f"Titleblock {sh.title_block or '—'}")
-    c.setDrawColor(0.15, 0.15, 0.15)
-
-    c.setFont("Helvetica", 9)
-    tb_p = sh.titleblock_parameters or {}
-    line_y = margin + 50
-    for key in ("sheetNumber", "revision", "projectName", "drawnBy", "checkedBy", "issueDate"):
-        val = str(tb_p.get(key) or "").strip()
-        if not val:
-            continue
-        c.drawRightString(pw - margin, line_y, f"{key}: {val}"[:120])
-        line_y += 13
-
-    # Deterministic placemarker grid echoed from SVG extents (normalized for evidence).
-    c.line(margin, margin + 220, pw - margin, margin + 220)
-
-    y = ph - margin - 52
+def sheet_viewport_export_listing_lines(doc: Document, sh: SheetElem) -> list[str]:
+    """Stable viewport lines for PDF and pytest (compression-safe)."""
 
     lines: list[str] = []
 
@@ -69,11 +49,45 @@ def sheet_elem_to_pdf_bytes(doc: Document, sh: SheetElem) -> bytes:
 
         geo = f" [{x_mm:g},{y_mm:g}] {w_mm:g}×{h_mm:g} mm"
 
-        lines.append(str(f"{label}{suffix}{geo}")[:120])
+        crop_seg = format_viewport_crop_export_segment(vp)
+        geo_tail = geo + (f" · {crop_seg}" if crop_seg else "")
+
+        lines.append(str(f"{label}{suffix}{geo_tail}")[:220])
 
     if not lines:
-
         lines.append("No viewports on sheet.")
+
+    return lines
+
+
+def sheet_elem_to_pdf_bytes(doc: Document, sh: SheetElem) -> bytes:
+    buf = BytesIO()
+    c = pdf_canvas.Canvas(buf, pagesize=A4)
+    pw, ph = A4
+
+    margin = 40
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(margin, ph - margin, str(sh.name or sh.id))
+    c.setFont("Helvetica", 11)
+    c.drawString(margin, ph - margin - 24, f"Titleblock {sh.title_block or '—'}")
+    c.setDrawColor(0.15, 0.15, 0.15)
+
+    c.setFont("Helvetica", 9)
+    tb_p = sh.titleblock_parameters or {}
+    line_y = margin + 50
+    for key in ("sheetNumber", "revision", "projectName", "drawnBy", "checkedBy", "issueDate"):
+        val = str(tb_p.get(key) or "").strip()
+        if not val:
+            continue
+        c.drawRightString(pw - margin, line_y, f"{key}: {val}"[:120])
+        line_y += 13
+
+    # Deterministic placemarker grid echoed from SVG extents (normalized for evidence).
+    c.line(margin, margin + 220, pw - margin, margin + 220)
+
+    y = ph - margin - 52
+
+    lines = sheet_viewport_export_listing_lines(doc, sh)
 
     for ln in lines:
 

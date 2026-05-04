@@ -46,6 +46,86 @@ def read_viewport_mm_box(vp: dict[str, Any]) -> tuple[float, float, float, float
     return (nx, ny, max(10.0, nw), max(10.0, nh))
 
 
+def _vp_axis_xy(
+    obj: Any, keys_x: tuple[str, ...], keys_y: tuple[str, ...]
+) -> tuple[float | None, float | None]:
+    """Read x,y from viewport corner dict ({xMm,yMm} aliases)."""
+
+    if obj is None or not isinstance(obj, dict):
+        return None, None
+
+    d = obj
+
+    def pick(keys: tuple[str, ...]) -> float | None:
+        for key in keys:
+            val = d.get(key)
+            if val is None:
+                continue
+            num = float(val)
+            if math.isfinite(num):
+                return num
+        return None
+
+    xa = pick(keys_x)
+    ya = pick(keys_y)
+    return xa, ya
+
+
+def read_viewport_crop_min_max(
+    vp: dict[str, Any],
+) -> tuple[tuple[float, float] | None, tuple[float, float] | None]:
+    """Optional model-space crop corners on replayable viewport row (camelCase + snake_case aliases)."""
+
+    mn = vp.get("cropMinMm") or vp.get("crop_min_mm")
+    mx = vp.get("cropMaxMm") or vp.get("crop_max_mm")
+
+    xmin, ymin = _vp_axis_xy(mn, ("xMm", "x_mm"), ("yMm", "y_mm"))
+    xmax, ymax = _vp_axis_xy(mx, ("xMm", "x_mm"), ("yMm", "y_mm"))
+    if None in (xmin, ymin, xmax, ymax):
+        return None, None
+    assert xmin is not None and ymin is not None and xmax is not None and ymax is not None
+    return (xmin, ymin), (xmax, ymax)
+
+
+def format_viewport_crop_export_segment(vp: dict[str, Any]) -> str:
+    """Deterministic substring for SVG/PDF/Manifest regressions when both crop corners exist."""
+
+    cmn, cmx = read_viewport_crop_min_max(vp)
+    if cmn is None or cmx is None:
+        return ""
+
+    xmin, ymin = cmn
+    xmax, ymax = cmx
+    return f"crop[mn={xmin:g},{ymin:g} mx={xmax:g},{ymax:g}]"
+
+
+def viewport_evidence_hints_v0(vps_raw: list[Any]) -> list[dict[str, Any]]:
+    """Sorted hints for deterministic manifest consumption (WP-X01)."""
+
+    hints: list[dict[str, Any]] = []
+
+    for i, vp_any in enumerate(vps_raw):
+        if not isinstance(vp_any, dict):
+            continue
+
+        vp = vp_any
+
+        vid = str(vp.get("viewportId") or vp.get("viewport_id") or "").strip()
+        if not vid:
+            vid = f"__implicit_{i}"
+
+        x_mm, y_mm, w_mm, h_mm = read_viewport_mm_box(vp)
+
+        geom = f"[{x_mm:g},{y_mm:g}] {w_mm:g}×{h_mm:g} mm"
+
+        crop_seg = format_viewport_crop_export_segment(vp)
+        crop = crop_seg.replace("crop[", "").replace("]", "").strip() if crop_seg else "omit"
+
+        hints.append({"viewportId": vid, "geom": geom, "crop": crop})
+
+    return sorted(hints, key=lambda r: str(r.get("viewportId") or ""))
+
+
 def resolve_view_ref_title(doc: Document, view_ref: str) -> str | None:
     if not view_ref or ":" not in view_ref:
         return None
@@ -112,6 +192,16 @@ def sheet_elem_to_svg(doc: Document, sh: SheetElem) -> str:
                 f'<text x="{x_mm + 200}" y="{y_mm + 1400}" fill="#64748b" font-size="350px">{sub}</text>'
             )
 
+        crop_seg = format_viewport_crop_export_segment(vp)
+
+        crop_block = ""
+        if crop_seg:
+            esc_crop = html.escape(crop_seg)
+            crop_block = (
+                f'<text x="{x_mm + 200}" y="{y_mm + 1800}" '
+                f'fill="#0f766e" font-size="300px">{esc_crop}</text>'
+            )
+
         viewport_blocks.append(
             "<g>"
             f'<rect x="{x_mm}" y="{y_mm}" width="{width_mm}" height="{height_mm}" '
@@ -120,6 +210,7 @@ def sheet_elem_to_svg(doc: Document, sh: SheetElem) -> str:
             f"{escaped_label}"
             f"</text>"
             f"{sub_block}"
+            f"{crop_block}"
             "</g>"
         )
 

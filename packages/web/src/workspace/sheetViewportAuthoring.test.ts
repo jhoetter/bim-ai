@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  clampViewportMmBox,
   clampViewportMmPosition,
   fingerprintViewportFallback,
   normalizeViewportRaw,
+  parsePlanViewRefId,
   readViewportMmBox,
+  sheetViewportsMmFromDrafts,
 } from './sheetViewportAuthoring';
 
 describe('clampViewportMmPosition', () => {
@@ -31,6 +34,27 @@ describe('clampViewportMmPosition', () => {
   });
 });
 
+describe('clampViewportMmBox', () => {
+  it('enforces minimum 10 mm edges and keeps rect inside paper', () => {
+    expect(
+      clampViewportMmBox(42000, 29700, { xMm: 41990, yMm: 29690, widthMm: 5, heightMm: 5 }),
+    ).toEqual({
+      xMm: 41990,
+      yMm: 29690,
+      widthMm: 10,
+      heightMm: 10,
+    });
+  });
+
+  it('shrinks overflowing dimensions and clamps origin so rect fits paper', () => {
+    const b = clampViewportMmBox(1000, 800, { xMm: 900, yMm: 700, widthMm: 5000, heightMm: 5000 });
+    expect(b.xMm + b.widthMm).toBeLessThanOrEqual(1000);
+    expect(b.yMm + b.heightMm).toBeLessThanOrEqual(800);
+    expect(b.widthMm).toBeGreaterThanOrEqual(10);
+    expect(b.heightMm).toBeGreaterThanOrEqual(10);
+  });
+});
+
 describe('normalizeViewportRaw', () => {
   it('is deterministic across repeated runs when viewportId is omitted', () => {
     const raw = {
@@ -46,6 +70,41 @@ describe('normalizeViewportRaw', () => {
     const b = normalizeViewportRaw(raw, 0);
     expect(a).toEqual(b);
     expect(a.viewportId).toMatch(/^vp-0-/);
+    expect(a.cropMinMm).toBe(null);
+    expect(a.cropMaxMm).toBe(null);
+  });
+
+  it('parses snake_case crop aliases when both corners are present', () => {
+    const d = normalizeViewportRaw(
+      {
+        xMm: 0,
+        yMm: 0,
+        widthMm: 50,
+        heightMm: 50,
+        viewRef: '',
+        crop_min_mm: { x_mm: 1.5, y_mm: -2 },
+        cropMaxMm: { xMm: 9, yMm: 8 },
+      },
+      0,
+    );
+    expect(d.cropMinMm).toEqual({ xMm: 1.5, yMm: -2 });
+    expect(d.cropMaxMm).toEqual({ xMm: 9, yMm: 8 });
+  });
+
+  it('drops incomplete crop corners', () => {
+    const d = normalizeViewportRaw(
+      {
+        xMm: 0,
+        yMm: 0,
+        widthMm: 50,
+        heightMm: 50,
+        viewRef: '',
+        cropMinMm: { xMm: 1, yMm: 2 },
+      },
+      0,
+    );
+    expect(d.cropMinMm).toBe(null);
+    expect(d.cropMaxMm).toBe(null);
   });
 
   it('preserves explicit viewportId', () => {
@@ -73,6 +132,48 @@ describe('normalizeViewportRaw', () => {
     });
     expect(box.widthMm).toBe(220);
     expect(box.heightMm).toBe(170);
+  });
+});
+
+describe('sheetViewportsMmFromDrafts', () => {
+  it('serializes crop only when both corners are set', () => {
+    const rows = sheetViewportsMmFromDrafts([
+      {
+        viewportId: 'a',
+        label: '',
+        viewRef: '',
+        xMm: 0,
+        yMm: 0,
+        widthMm: 10,
+        heightMm: 10,
+        cropMinMm: { xMm: 1, yMm: 2 },
+        cropMaxMm: { xMm: 3, yMm: 4 },
+      },
+      {
+        viewportId: 'b',
+        label: '',
+        viewRef: '',
+        xMm: 0,
+        yMm: 0,
+        widthMm: 10,
+        heightMm: 10,
+        cropMinMm: { xMm: 1, yMm: 2 },
+        cropMaxMm: null,
+      },
+    ]);
+    expect(rows[0]).toMatchObject({
+      cropMinMm: { xMm: 1, yMm: 2 },
+      cropMaxMm: { xMm: 3, yMm: 4 },
+    });
+    expect('cropMinMm' in rows[1]).toBe(false);
+    expect('cropMaxMm' in rows[1]).toBe(false);
+  });
+});
+
+describe('parsePlanViewRefId', () => {
+  it('extracts trailing id segment', () => {
+    expect(parsePlanViewRefId('plan: pv-99 ')).toBe('pv-99');
+    expect(parsePlanViewRefId('schedule:s1')).toBe(null);
   });
 });
 

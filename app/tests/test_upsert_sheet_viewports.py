@@ -1,5 +1,7 @@
 """Regression: replayable sheet viewport authoring command."""
 
+import pytest
+
 from bim_ai.commands import UpsertSheetViewportsCmd
 from bim_ai.document import Document
 from bim_ai.elements import SheetElem
@@ -40,6 +42,33 @@ def test_upsert_sheet_viewports_replaces_array() -> None:
     assert len(sh.viewports_mm) == 1
     assert sh.viewports_mm[0]["viewportId"] == "vp-plan"
     assert sh.viewports_mm[0]["viewRef"] == "plan:pv-1"
+
+
+def test_upsert_sheet_viewports_persists_model_crop_metadata() -> None:
+    doc = Document(revision=1, elements={"s1": SheetElem(kind="sheet", id="s1", name="GA", viewports_mm=[])})
+    apply_inplace(
+        doc,
+        UpsertSheetViewportsCmd(
+            sheetId="s1",
+            viewportsMm=[
+                {
+                    "viewportId": "vp-plan",
+                    "viewRef": "plan:p1",
+                    "xMm": 100,
+                    "yMm": 200,
+                    "widthMm": 300,
+                    "heightMm": 280,
+                    "cropMinMm": {"xMm": -1200.01, "yMm": 10},
+                    "cropMaxMm": {"xMm": 8008.25, "yMm": 902},
+                },
+            ],
+        ),
+    )
+    sh = doc.elements["s1"]
+    assert isinstance(sh, SheetElem)
+    vp = sh.viewports_mm[0]
+    assert vp["cropMinMm"]["xMm"] == pytest.approx(-1200.01)
+    assert vp["cropMaxMm"]["yMm"] == pytest.approx(902)
 
 
 def test_upsert_sheet_viewports_sequential_replace() -> None:

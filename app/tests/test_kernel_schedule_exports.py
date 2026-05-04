@@ -26,7 +26,13 @@ from bim_ai.ifc_stub import (
 )
 from bim_ai.schedule_csv import schedule_payload_to_csv, schedule_payload_with_column_subset
 from bim_ai.schedule_derivation import derive_schedule_table
-from bim_ai.sheet_preview_svg import pick_sheet, resolve_view_ref_title, sheet_elem_to_svg
+from bim_ai.sheet_preview_pdf import sheet_viewport_export_listing_lines
+from bim_ai.sheet_preview_svg import (
+    format_viewport_crop_export_segment,
+    pick_sheet,
+    resolve_view_ref_title,
+    sheet_elem_to_svg,
+)
 
 
 def test_floor_opening_and_stair_apply_chain():
@@ -478,6 +484,44 @@ def test_sheet_svg_resolves_plan_view_ref_for_viewport_label():
     svg = sheet_elem_to_svg(doc, pick_sheet(doc, "s1"))
     assert "EG openings" in svg
     assert "plan:pv-a" in svg
+
+
+def test_sheet_svg_viewport_includes_crop_export_segment():
+    vp = {
+        "viewportId": "vp-c",
+        "xMm": 100,
+        "yMm": 120,
+        "widthMm": 900,
+        "heightMm": 700,
+        "cropMinMm": {"xMm": -5, "yMm": -6},
+        "cropMaxMm": {"xMm": 1002, "yMm": 2003},
+    }
+    doc = Document(revision=1, elements={"s1": SheetElem(kind="sheet", id="s1", name="Crop", viewportsMm=[vp])})
+    svg = sheet_elem_to_svg(doc, pick_sheet(doc, "s1"))
+    assert "crop[mn=-5,-6 mx=1002,2003]" in svg
+
+
+def test_format_viewport_crop_export_segment_empty_without_pair():
+    partial = {"viewportId": "p", "xMm": 0, "yMm": 0, "widthMm": 10, "heightMm": 10, "cropMinMm": {"xMm": 1, "yMm": 2}}
+    assert format_viewport_crop_export_segment(partial) == ""
+
+
+def test_sheet_pdf_viewport_export_listing_includes_crop_segment():
+    vp_full = {
+        "viewportId": "z-last",
+        "label": "L",
+        "xMm": 10,
+        "yMm": 20,
+        "widthMm": 100,
+        "heightMm": 80,
+        "cropMinMm": {"xMm": 0, "yMm": 1},
+        "crop_max_mm": {"x_mm": 9, "y_mm": 8},
+    }
+    vp_plain = {"viewportId": "a-first", "label": "N", "xMm": 0, "yMm": 0, "widthMm": 50, "heightMm": 40}
+    doc = Document(revision=1, elements={"s1": SheetElem(kind="sheet", id="s1", name="Pdf", viewportsMm=[vp_full, vp_plain])})
+    lines = sheet_viewport_export_listing_lines(doc, pick_sheet(doc, "s1"))
+    joined = "\n".join(lines)
+    assert "crop[mn=" in joined
 
 
 def test_bcf_topics_apply_via_bundle():

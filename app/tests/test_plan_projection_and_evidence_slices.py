@@ -235,10 +235,50 @@ def test_deterministic_sheet_evidence_rows_stable() -> None:
     assert "svgHref" in rows[0]
     assert rows[0]["playwrightSuggestedFilenames"]["pngViewport"].startswith("pfx-sheet-sheet-a")
     assert rows[0]["playwrightSuggestedFilenames"]["pngFullSheet"] == "pfx-sheet-sheet-a-full.png"
+    assert rows[0].get("viewportEvidenceHints_v0") == []
     corr = rows[0].get("correlation") or {}
     assert corr.get("semanticDigestPrefix16") == "a" * 16
     assert corr.get("modelRevision") == 2
     assert corr.get("suggestedEvidenceBundleEvidencePackageJson") == "pfx-evidence-package.json"
+
+
+def test_deterministic_sheet_evidence_viewport_hints_v0_sorted_and_crop() -> None:
+    sid = uuid4()
+    doc = Document(
+        revision=5,
+        elements={
+            "sheet-b": SheetElem(
+                kind="sheet",
+                id="sheet-b",
+                name="S",
+                viewportsMm=[
+                    {"viewportId": "z", "xMm": 1, "yMm": 2, "widthMm": 100, "heightMm": 100},
+                    {
+                        "viewportId": "a",
+                        "xMm": 5,
+                        "yMm": 6,
+                        "widthMm": 120,
+                        "heightMm": 90,
+                        "cropMinMm": {"xMm": 7, "yMm": 8},
+                        "cropMaxMm": {"xMm": 9, "yMm": 11},
+                    },
+                ],
+            ),
+        },
+    )
+    rows = deterministic_sheet_evidence_manifest(
+        model_id=sid,
+        doc=doc,
+        evidence_artifact_basename="pfx",
+        semantic_digest_sha256="b" * 64,
+        semantic_digest_prefix16="b" * 16,
+    )
+    hints = rows[0]["viewportEvidenceHints_v0"]
+    assert [h["viewportId"] for h in hints] == ["a", "z"]
+    zrow = next(h for h in hints if h["viewportId"] == "z")
+    assert zrow["crop"] == "omit"
+    arow = next(h for h in hints if h["viewportId"] == "a")
+    assert arow["crop"] == "mn=7,8 mx=9,11"
 
 
 def test_deterministic_plan_view_evidence_rows_sorted_and_stems() -> None:

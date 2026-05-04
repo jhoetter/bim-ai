@@ -8,6 +8,7 @@ import {
   SheetViewportEditor,
   normalizeViewportRaw,
   clampViewportMmPosition,
+  clampViewportMmBox,
 } from './sheetViewportAuthoring';
 import {
   SheetTitleblockEditor,
@@ -62,6 +63,7 @@ function SheetCanvasWithSheet(props: {
 
   const svgRef = useRef<SVGSVGElement | null>(null);
   const dragRef = useRef<{ index: number; grabDX: number; grabDY: number } | null>(null);
+  const resizeRef = useRef<{ index: number } | null>(null);
 
   const authoring = Boolean(props.onUpsertSemantic);
 
@@ -176,6 +178,57 @@ function SheetCanvasWithSheet(props: {
     window.addEventListener('pointercancel', onUp);
   };
 
+  const beginResize = (e: ReactPointerEvent<SVGRectElement>, index: number) => {
+    if (!authoring) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const svg = svgRef.current;
+    if (!svg) return;
+    if (!vpDrafts[index]) return;
+    resizeRef.current = { index };
+
+    const onMove = (ev: PointerEvent) => {
+      const rr = resizeRef.current;
+      const el = svgRef.current;
+      if (!rr || !el) return;
+      const pt = clientToSvgMm(el, ev.clientX, ev.clientY);
+      setVpDrafts((prev) => {
+        const row = prev[rr.index];
+        if (!row) return prev;
+        const nwRaw = pt.x - row.xMm;
+        const nhRaw = pt.y - row.yMm;
+        const nextBox = clampViewportMmBox(wMm, hMm, {
+          xMm: row.xMm,
+          yMm: row.yMm,
+          widthMm: nwRaw,
+          heightMm: nhRaw,
+        });
+        if (
+          row.widthMm === nextBox.widthMm &&
+          row.heightMm === nextBox.heightMm &&
+          row.xMm === nextBox.xMm &&
+          row.yMm === nextBox.yMm
+        ) {
+          return prev;
+        }
+        const cp = [...prev];
+        cp[rr.index] = { ...row, ...nextBox };
+        return cp;
+      });
+    };
+
+    const onUp = () => {
+      resizeRef.current = null;
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+    };
+
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+  };
+
   return (
     <div
       data-testid="sheet-canvas"
@@ -228,6 +281,10 @@ function SheetCanvasWithSheet(props: {
             const secInnerW = Math.max(200, widthMm - 320);
             const secInnerH = Math.max(200, heightMm - 2700);
 
+            const handle = 560;
+            const hx = xMm + widthMm - handle;
+            const hy = yMm + heightMm - handle;
+
             return (
               <g key={row.key}>
                 <rect
@@ -242,6 +299,20 @@ function SheetCanvasWithSheet(props: {
                   className={authoring ? 'cursor-move touch-none' : undefined}
                   onPointerDown={authoring ? (e) => beginDrag(e, index) : undefined}
                 />
+                {authoring ? (
+                  <rect
+                    data-testid={`sheet-viewport-resize-${index}`}
+                    x={hx}
+                    y={hy}
+                    width={handle}
+                    height={handle}
+                    fill="#475569"
+                    stroke="#1e293b"
+                    strokeWidth={40}
+                    className="cursor-nwse-resize touch-none"
+                    onPointerDown={(e) => beginResize(e, index)}
+                  />
+                ) : null}
                 {secId ? (
                   <svg
                     x={xMm + 160}

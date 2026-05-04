@@ -10,6 +10,7 @@ from uuid import UUID
 
 from bim_ai.document import Document
 from bim_ai.elements import PlanViewElem, SectionCutElem, SheetElem, ViewpointElem
+from bim_ai.sheet_preview_svg import viewport_evidence_hints_v0
 
 
 def export_link_map(model_id: UUID) -> dict[str, str]:
@@ -162,6 +163,7 @@ def deterministic_sheet_evidence_manifest(
                     "pngViewport": f"{stem}-viewport.png",
                     "pngFullSheet": f"{stem}-full.png",
                 },
+                "viewportEvidenceHints_v0": viewport_evidence_hints_v0(list(sh.viewports_mm or [])),
                 "correlation": {
                     "format": "evidenceSheetCorrelation_v1",
                     "semanticDigestSha256": semantic_digest_sha256,
@@ -420,7 +422,15 @@ def agent_evidence_closure_hints() -> dict[str, Any]:
     }
 
 
-_DIGEST_EXCLUDED_KEYS = frozenset({"generatedAt", "semanticDigestSha256"})
+# Derivative summaries from ``agent_evidence_review_loop`` — omit so deterministic-row digests stay stable.
+_DIGEST_EXCLUDED_KEYS = frozenset(
+    {
+        "generatedAt",
+        "semanticDigestSha256",
+        "bcfTopicsIndex_v1",
+        "agentReviewActions_v1",
+    }
+)
 
 
 def evidence_package_semantic_digest_sha256(payload: dict[str, Any]) -> str:
@@ -515,6 +525,9 @@ def evidence_package_semantic_digest_sha256(payload: dict[str, Any]) -> str:
             wts = doc2.get("wallTypes")
             if isinstance(wts, list):
                 doc2["wallTypes"] = sorted(wts, key=lambda x: str(x.get("id", "")))
+            fts = doc2.get("floorTypes")
+            if isinstance(fts, list):
+                doc2["floorTypes"] = sorted(fts, key=lambda x: str(x.get("id", "")))
             tmr2["document"] = doc2
             shallow["typeMaterialRegistry"] = tmr2
 

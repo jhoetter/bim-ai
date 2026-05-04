@@ -4,6 +4,8 @@ import { Fragment } from 'react';
 
 /** Normalized authoring row for replayable `upsertSheetViewports`. */
 
+export type Vec2MmDraft = { xMm: number; yMm: number };
+
 export type SheetViewportMmDraft = {
   viewportId: string;
 
@@ -18,26 +20,63 @@ export type SheetViewportMmDraft = {
   widthMm: number;
 
   heightMm: number;
+
+  cropMinMm: Vec2MmDraft | null;
+
+  cropMaxMm: Vec2MmDraft | null;
 };
+
+export function parsePlanViewRefId(viewRef: string): string | null {
+  const t = viewRef.trim();
+  const m = /^plan:\s*(.+)$/i.exec(t);
+  return m?.[1]?.trim() ? m[1].trim() : null;
+}
+
+function readOptionalFinite(rec: Record<string, unknown>, keys: string[]): number | undefined {
+  for (const k of keys) {
+    const v = rec[k];
+    if (v === undefined) continue;
+    const n = Number(v);
+    if (Number.isFinite(n)) return n;
+  }
+  return undefined;
+}
+
+function readCropCorner(raw: Record<string, unknown>, camel: string, snake: string): Vec2MmDraft | null {
+  const obj = raw[camel] ?? raw[snake];
+  if (!obj || typeof obj !== 'object') return null;
+  const rec = obj as Record<string, unknown>;
+  const x = readOptionalFinite(rec, ['xMm', 'x_mm']);
+  const y = readOptionalFinite(rec, ['yMm', 'y_mm']);
+  if (x === undefined || y === undefined) return null;
+  return { xMm: x, yMm: y };
+}
 
 export function sheetViewportsMmFromDrafts(
   rows: SheetViewportMmDraft[],
 ): Record<string, unknown>[] {
-  return rows.map((r) => ({
-    viewportId: r.viewportId.trim() || undefined,
+  return rows.map((r) => {
+    const row: Record<string, unknown> = {
+      viewportId: r.viewportId.trim() || undefined,
 
-    label: r.label.trim() || 'Viewport',
+      label: r.label.trim() || 'Viewport',
 
-    viewRef: r.viewRef.trim() || undefined,
+      viewRef: r.viewRef.trim() || undefined,
 
-    xMm: r.xMm,
+      xMm: r.xMm,
 
-    yMm: r.yMm,
+      yMm: r.yMm,
 
-    widthMm: r.widthMm,
+      widthMm: r.widthMm,
 
-    heightMm: r.heightMm,
-  }));
+      heightMm: r.heightMm,
+    };
+    if (r.cropMinMm !== null && r.cropMaxMm !== null) {
+      row.cropMinMm = { xMm: r.cropMinMm.xMm, yMm: r.cropMinMm.yMm };
+      row.cropMaxMm = { xMm: r.cropMaxMm.xMm, yMm: r.cropMaxMm.yMm };
+    }
+    return row;
+  });
 }
 
 /** Read mm box from persisted viewport dict (camelCase plus legacy `wMm`/`hMm`). */
@@ -69,6 +108,26 @@ export function clampViewportMmPosition(
   return {
     xMm: Math.min(Math.max(0, box.xMm), maxX),
     yMm: Math.min(Math.max(0, box.yMm), maxY),
+  };
+}
+
+/** Clamp viewport box dimensions (min 10 mm edges) and origin so the rect fits the paper. */
+export function clampViewportMmBox(
+  paperWidthMm: number,
+  paperHeightMm: number,
+  box: { xMm: number; yMm: number; widthMm: number; heightMm: number },
+): { xMm: number; yMm: number; widthMm: number; heightMm: number } {
+  let w = Math.max(10, box.widthMm);
+  let h = Math.max(10, box.heightMm);
+  w = Math.min(w, paperWidthMm);
+  h = Math.min(h, paperHeightMm);
+  const maxX = Math.max(0, paperWidthMm - w);
+  const maxY = Math.max(0, paperHeightMm - h);
+  return {
+    xMm: Math.min(Math.max(0, box.xMm), maxX),
+    yMm: Math.min(Math.max(0, box.yMm), maxY),
+    widthMm: w,
+    heightMm: h,
   };
 }
 
@@ -105,6 +164,10 @@ export function normalizeViewportRaw(
 
   const fp = fingerprintViewportFallback(index, nx, ny, nw, nh, viewRef);
 
+  const cmin = readCropCorner(raw, 'cropMinMm', 'crop_min_mm');
+  const cmax = readCropCorner(raw, 'cropMaxMm', 'crop_max_mm');
+  const hasCrop = cmin !== null && cmax !== null;
+
   return {
     viewportId:
       typeof viewportIdRaw === 'string' && viewportIdRaw.trim()
@@ -117,6 +180,8 @@ export function normalizeViewportRaw(
     widthMm: nw,
 
     heightMm: nh,
+    cropMinMm: hasCrop ? cmin : null,
+    cropMaxMm: hasCrop ? cmax : null,
   };
 }
 
@@ -175,6 +240,26 @@ export function SheetViewportEditor(props: {
     });
   };
 
+  const pullCropFromPlan = (idx: number) => {
+    const row = drafts[idx];
+    if (!row) return;
+    const pid = parsePlanViewRefId(row.viewRef);
+    if (!pid) return;
+    const el = elementsById[pid];
+    if (!el || el.kind !== 'plan_view') return;
+    const { cropMinMm, cropMaxMm } = el;
+    if (!cropMinMm || !cropMaxMm) return;
+    patchRow(
+      idx,
+      {
+        cropMinMm: { xMm: cropMinMm.xMm, yMm: cropMinMm.yMm },
+        cropMaxMm: { xMm: cropMaxMm.xMm, yMm: cropMaxMm.yMm },
+      },
+      drafts,
+      setDrafts,
+    );
+  };
+
   const addRow = () => {
     setDrafts((prev) => {
       const x = 1200;
@@ -206,6 +291,8 @@ export function SheetViewportEditor(props: {
           widthMm: w,
 
           heightMm: h,
+          cropMinMm: null,
+          cropMaxMm: null,
         },
       ];
     });
@@ -304,6 +391,91 @@ export function SheetViewportEditor(props: {
                   patchRow(idx, { heightMm: Math.max(10, n) }, drafts, setDrafts);
               }}
             />
+
+            <div className="col-span-full flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-border/60 pt-1 text-muted">
+              <span className="font-mono">crop min mm</span>
+              <input
+                className="w-14 rounded border border-border bg-background px-1 py-0.5 font-mono text-[10px]"
+                inputMode="decimal"
+                aria-label="Crop min X mm"
+                value={row.cropMinMm == null ? '' : String(row.cropMinMm.xMm)}
+                onChange={(e) => {
+                  const t = e.target.value.trim();
+                  if (t === '') {
+                    patchRow(idx, { cropMinMm: null, cropMaxMm: null }, drafts, setDrafts);
+                    return;
+                  }
+                  const nx = Number(t);
+                  if (!Number.isFinite(nx)) return;
+                  const minY = row.cropMinMm?.yMm ?? 0;
+                  const max = row.cropMaxMm ?? { xMm: 0, yMm: 0 };
+                  patchRow(idx, { cropMinMm: { xMm: nx, yMm: minY }, cropMaxMm: max }, drafts, setDrafts);
+                }}
+              />
+              <input
+                className="w-14 rounded border border-border bg-background px-1 py-0.5 font-mono text-[10px]"
+                inputMode="decimal"
+                aria-label="Crop min Y mm"
+                value={row.cropMinMm == null ? '' : String(row.cropMinMm.yMm)}
+                onChange={(e) => {
+                  const t = e.target.value.trim();
+                  if (t === '') {
+                    patchRow(idx, { cropMinMm: null, cropMaxMm: null }, drafts, setDrafts);
+                    return;
+                  }
+                  const ny = Number(t);
+                  if (!Number.isFinite(ny)) return;
+                  const minX = row.cropMinMm?.xMm ?? 0;
+                  const max = row.cropMaxMm ?? { xMm: 0, yMm: 0 };
+                  patchRow(idx, { cropMinMm: { xMm: minX, yMm: ny }, cropMaxMm: max }, drafts, setDrafts);
+                }}
+              />
+              <span className="font-mono">max</span>
+              <input
+                className="w-14 rounded border border-border bg-background px-1 py-0.5 font-mono text-[10px]"
+                inputMode="decimal"
+                aria-label="Crop max X mm"
+                value={row.cropMaxMm == null ? '' : String(row.cropMaxMm.xMm)}
+                onChange={(e) => {
+                  const t = e.target.value.trim();
+                  if (t === '') {
+                    patchRow(idx, { cropMinMm: null, cropMaxMm: null }, drafts, setDrafts);
+                    return;
+                  }
+                  const nx = Number(t);
+                  if (!Number.isFinite(nx)) return;
+                  const min = row.cropMinMm ?? { xMm: 0, yMm: 0 };
+                  const maxY = row.cropMaxMm?.yMm ?? 0;
+                  patchRow(idx, { cropMinMm: min, cropMaxMm: { xMm: nx, yMm: maxY } }, drafts, setDrafts);
+                }}
+              />
+              <input
+                className="w-14 rounded border border-border bg-background px-1 py-0.5 font-mono text-[10px]"
+                inputMode="decimal"
+                aria-label="Crop max Y mm"
+                value={row.cropMaxMm == null ? '' : String(row.cropMaxMm.yMm)}
+                onChange={(e) => {
+                  const t = e.target.value.trim();
+                  if (t === '') {
+                    patchRow(idx, { cropMinMm: null, cropMaxMm: null }, drafts, setDrafts);
+                    return;
+                  }
+                  const ny = Number(t);
+                  if (!Number.isFinite(ny)) return;
+                  const min = row.cropMinMm ?? { xMm: 0, yMm: 0 };
+                  const maxX = row.cropMaxMm?.xMm ?? 0;
+                  patchRow(idx, { cropMinMm: min, cropMaxMm: { xMm: maxX, yMm: ny } }, drafts, setDrafts);
+                }}
+              />
+              <button
+                type="button"
+                className="rounded border border-border bg-background px-2 py-0.5 font-mono text-[9px] text-muted"
+                disabled={!parsePlanViewRefId(row.viewRef)}
+                onClick={() => pullCropFromPlan(idx)}
+              >
+                Pull crop from plan view
+              </button>
+            </div>
 
             <div className="col-span-full flex justify-end">
               <button
