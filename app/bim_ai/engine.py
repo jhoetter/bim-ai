@@ -680,6 +680,7 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                         "planShowOpeningTags | planShowRoomLabels | name"
                     )
             elif isinstance(el, ViewTemplateElem):
+                raw_vt = cmd.value.strip()
                 if cmd.key == "planShowOpeningTags":
                     els[cmd.element_id] = el.model_copy(
                         update={"plan_show_opening_tags": _parse_view_template_bool(cmd.value)}
@@ -688,9 +689,29 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                     els[cmd.element_id] = el.model_copy(
                         update={"plan_show_room_labels": _parse_view_template_bool(cmd.value)}
                     )
+                elif cmd.key == "planDetailLevel":
+                    if raw_vt == "":
+                        els[cmd.element_id] = el.model_copy(update={"plan_detail_level": None})
+                    elif raw_vt not in {"coarse", "medium", "fine"}:
+                        raise ValueError("planDetailLevel must be coarse|medium|fine or empty")
+                    else:
+                        els[cmd.element_id] = el.model_copy(
+                            update={"plan_detail_level": cast(PlanDetailLevelPlan, raw_vt)}
+                        )
+                elif cmd.key == "planRoomFillOpacityScale":
+                    if raw_vt == "":
+                        els[cmd.element_id] = el.model_copy(
+                            update={"plan_room_fill_opacity_scale": 1.0}
+                        )
+                    else:
+                        vscale = max(0.0, min(1.0, float(raw_vt)))
+                        els[cmd.element_id] = el.model_copy(
+                            update={"plan_room_fill_opacity_scale": vscale}
+                        )
                 else:
                     raise ValueError(
-                        "view_template updates: key=planShowOpeningTags | planShowRoomLabels | name"
+                        "view_template updates: key=planDetailLevel | planRoomFillOpacityScale | "
+                        "planShowOpeningTags | planShowRoomLabels | name"
                     )
             elif isinstance(el, ViewpointElem):
                 raw = cmd.value.strip()
@@ -756,6 +777,8 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                     "discipline(plan_view) | phaseId(plan_view) | "
                     "planDetailLevel(plan_view coarse|medium|fine or empty) | "
                     "planRoomFillOpacityScale(plan_view float 0..1 or empty) | "
+                    "planDetailLevel(view_template coarse|medium|fine or empty) | "
+                    "planRoomFillOpacityScale(view_template float 0..1 or empty resets default 1.0) | "
                     "planShowOpeningTags(plan_view true|false or empty inherit; view_template true|false only) | "
                     "planShowRoomLabels(plan_view true|false or empty inherit; view_template true|false only) | "
                     "viewerClipCapElevMm(viewpoint) | viewerClipFloorElevMm(viewpoint) | "

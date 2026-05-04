@@ -225,3 +225,44 @@ export function resolvePlanAnnotationHints(
 
   return { openingTagsVisible, roomLabelsVisible };
 }
+
+/** Deterministic inheritance readout for Workspace Inspector (mirrors resolver math). */
+
+export function planViewInheritanceSummaryLines(
+  elementsById: Record<string, Element>,
+  planViewId: string,
+): string[] {
+  const el = elementsById[planViewId];
+  if (!el || el.kind !== 'plan_view') return [];
+
+  const g = resolvePlanGraphicHints(elementsById, planViewId);
+  const a = resolvePlanAnnotationHints(elementsById, planViewId);
+  const tmplId = el.viewTemplateId;
+  const tmpl =
+    tmplId && elementsById[tmplId]?.kind === 'view_template'
+      ? elementsById[tmplId]
+      : undefined;
+
+  const effDetail = g?.detailLevel ?? 'medium';
+  const effFill = g?.roomFillOpacityScale ?? 1;
+  const pvDetail =
+    el.planDetailLevel === undefined || el.planDetailLevel === null ? 'inherit' : el.planDetailLevel;
+  const pvFill = el.planRoomFillOpacityScale == null ? 'inherit' : String(el.planRoomFillOpacityScale);
+
+  const vtDetail =
+    tmpl == null ? '—' : tmpl.planDetailLevel == null ? 'inherit→medium' : tmpl.planDetailLevel;
+  const vtFill = tmpl == null ? '—' : String(tmpl.planRoomFillOpacityScale);
+
+  const pvOpening =
+    el.planShowOpeningTags === undefined ? 'inherit' : el.planShowOpeningTags ? 'on' : 'off';
+  const pvLabels =
+    el.planShowRoomLabels === undefined ? 'inherit' : el.planShowRoomLabels ? 'on' : 'off';
+
+  return [
+    `Graphics: detail=${effDetail}, lineWeight×=${g?.lineWeightScale ?? 1}, roomFill=${effFill}`,
+    `Stored plan_view: detail=${pvDetail}, roomFill=${pvFill}`,
+    `Template: detail=${vtDetail}, roomFill=${vtFill}`,
+    `Opening tags: effective=${a.openingTagsVisible ? 'on' : 'off'}; plan_view=${pvOpening}; template=${tmpl ? (tmpl.planShowOpeningTags ? 'on' : 'off') : '—'}`,
+    `Room labels: effective=${a.roomLabelsVisible ? 'on' : 'off'}; plan_view=${pvLabels}; template=${tmpl ? (tmpl.planShowRoomLabels ? 'on' : 'off') : '—'}`,
+  ];
+}

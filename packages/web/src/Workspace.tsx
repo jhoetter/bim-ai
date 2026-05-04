@@ -43,6 +43,8 @@ import { AgentReviewPane } from './workspace/AgentReviewPane';
 
 import type { PlanPresentationPreset } from './plan/symbology';
 
+import { planViewInheritanceSummaryLines } from './plan/planProjection';
+
 import { planToolsForPerspective } from './workspace/planToolsByPerspective';
 
 import { ProjectBrowser } from './workspace/ProjectBrowser';
@@ -218,6 +220,31 @@ export function Workspace() {
   const setViewerClipFloorElevMm = useBimStore((s) => s.setViewerClipFloorElevMm);
 
   const selected = selectedId ? elementsById[selectedId] : undefined;
+
+  const [planCropDraft, setPlanCropDraft] = useState({
+    minX: '',
+    minY: '',
+    maxX: '',
+    maxY: '',
+  });
+
+  useEffect(() => {
+    const pv = selectedId ? elementsById[selectedId] : undefined;
+    if (!pv || pv.kind !== 'plan_view') return;
+    const min = pv.cropMinMm;
+    const max = pv.cropMaxMm;
+    setPlanCropDraft({
+      minX: min ? String(min.xMm) : '',
+      minY: min ? String(min.yMm) : '',
+      maxX: max ? String(max.xMm) : '',
+      maxY: max ? String(max.yMm) : '',
+    });
+  }, [selectedId, elementsById]);
+
+  const inspectorPlanInheritanceLines = useMemo(() => {
+    if (!selected || selected.kind !== 'plan_view') return [];
+    return planViewInheritanceSummaryLines(elementsById, selected.id);
+  }, [elementsById, selected]);
 
   const levels = useMemo(
     () =>
@@ -1263,6 +1290,406 @@ export function Workspace() {
                     </select>
                   </label>
                 ) : null}
+                <div className="border-border mt-3 space-y-2 border-t pt-2">
+                  <div className="font-semibold text-muted">Graphic overrides</div>
+                  <label className="block text-[10px] text-muted">
+                    Plan detail level (stored)
+                    <select
+                      className="mt-1 w-full rounded border border-border bg-background px-2 py-1 text-[11px]"
+                      value={selected.planDetailLevel ?? ''}
+                      onChange={(e) => {
+                        void onSemantic({
+                          type: 'updateElementProperty',
+                          elementId: selected.id,
+                          key: 'planDetailLevel',
+                          value: e.target.value,
+                        });
+                      }}
+                    >
+                      <option value="">inherit from template</option>
+                      <option value="coarse">coarse</option>
+                      <option value="medium">medium</option>
+                      <option value="fine">fine</option>
+                    </select>
+                  </label>
+                  <label className="block text-[10px] text-muted">
+                    Room fill opacity scale (0–1; empty on blur clears override)
+                    <input
+                      className="mt-1 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px]"
+                      key={`pv-fill-${selected.id}-${selected.planRoomFillOpacityScale ?? 'null'}-${revision}`}
+                      defaultValue={
+                        selected.planRoomFillOpacityScale == null
+                          ? ''
+                          : String(selected.planRoomFillOpacityScale)
+                      }
+                      placeholder="inherit"
+                      type="text"
+                      inputMode="decimal"
+                      onBlur={(e) => {
+                        void onSemantic({
+                          type: 'updateElementProperty',
+                          elementId: selected.id,
+                          key: 'planRoomFillOpacityScale',
+                          value: e.target.value.trim(),
+                        });
+                      }}
+                    />
+                  </label>
+                  <Btn
+                    type="button"
+                    variant="quiet"
+                    className="w-full text-[10px]"
+                    onClick={() =>
+                      void onSemantic({
+                        type: 'updateElementProperty',
+                        elementId: selected.id,
+                        key: 'planRoomFillOpacityScale',
+                        value: '',
+                      })
+                    }
+                  >
+                    Clear fill override
+                  </Btn>
+                </div>
+
+                <div className="border-border mt-3 space-y-2 border-t pt-2">
+                  <div className="font-semibold text-muted">Annotations</div>
+                  <label className="block text-[10px] text-muted">
+                    Opening tags
+                    <select
+                      className="mt-1 w-full rounded border border-border bg-background px-2 py-1 text-[11px]"
+                      value={
+                        selected.planShowOpeningTags === undefined
+                          ? ''
+                          : selected.planShowOpeningTags
+                            ? 'true'
+                            : 'false'
+                      }
+                      onChange={(e) => {
+                        void onSemantic({
+                          type: 'updateElementProperty',
+                          elementId: selected.id,
+                          key: 'planShowOpeningTags',
+                          value: e.target.value,
+                        });
+                      }}
+                    >
+                      <option value="">inherit</option>
+                      <option value="true">on</option>
+                      <option value="false">off</option>
+                    </select>
+                  </label>
+                  <label className="block text-[10px] text-muted">
+                    Room labels
+                    <select
+                      className="mt-1 w-full rounded border border-border bg-background px-2 py-1 text-[11px]"
+                      value={
+                        selected.planShowRoomLabels === undefined
+                          ? ''
+                          : selected.planShowRoomLabels
+                            ? 'true'
+                            : 'false'
+                      }
+                      onChange={(e) => {
+                        void onSemantic({
+                          type: 'updateElementProperty',
+                          elementId: selected.id,
+                          key: 'planShowRoomLabels',
+                          value: e.target.value,
+                        });
+                      }}
+                    >
+                      <option value="">inherit</option>
+                      <option value="true">on</option>
+                      <option value="false">off</option>
+                    </select>
+                  </label>
+                </div>
+
+                <div className="border-border mt-3 space-y-2 border-t pt-2">
+                  <div className="font-semibold text-muted">Crop (2D, mm)</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <label className="block text-[10px] text-muted">
+                      cropMin X
+                      <input
+                        className="mt-1 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px]"
+                        value={planCropDraft.minX}
+                        onChange={(e) =>
+                          setPlanCropDraft((d) => ({ ...d, minX: e.target.value }))
+                        }
+                      />
+                    </label>
+                    <label className="block text-[10px] text-muted">
+                      cropMin Y
+                      <input
+                        className="mt-1 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px]"
+                        value={planCropDraft.minY}
+                        onChange={(e) =>
+                          setPlanCropDraft((d) => ({ ...d, minY: e.target.value }))
+                        }
+                      />
+                    </label>
+                    <label className="block text-[10px] text-muted">
+                      cropMax X
+                      <input
+                        className="mt-1 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px]"
+                        value={planCropDraft.maxX}
+                        onChange={(e) =>
+                          setPlanCropDraft((d) => ({ ...d, maxX: e.target.value }))
+                        }
+                      />
+                    </label>
+                    <label className="block text-[10px] text-muted">
+                      cropMax Y
+                      <input
+                        className="mt-1 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px]"
+                        value={planCropDraft.maxY}
+                        onChange={(e) =>
+                          setPlanCropDraft((d) => ({ ...d, maxY: e.target.value }))
+                        }
+                      />
+                    </label>
+                  </div>
+                  <div className="flex gap-2">
+                    <Btn
+                      type="button"
+                      className="flex-1 text-[10px]"
+                      onClick={() => {
+                        const nx = Number(planCropDraft.minX);
+                        const ny = Number(planCropDraft.minY);
+                        const xx = Number(planCropDraft.maxX);
+                        const xy = Number(planCropDraft.maxY);
+                        if (![nx, ny, xx, xy].every((n) => Number.isFinite(n))) {
+                          setStatus('Crop apply: enter four finite mm numbers');
+                          return;
+                        }
+                        void onSemantic({
+                          type: 'updateElementProperty',
+                          elementId: selected.id,
+                          key: 'cropMinMm',
+                          value: JSON.stringify({ xMm: nx, yMm: ny }),
+                        });
+                        void onSemantic({
+                          type: 'updateElementProperty',
+                          elementId: selected.id,
+                          key: 'cropMaxMm',
+                          value: JSON.stringify({ xMm: xx, yMm: xy }),
+                        });
+                      }}
+                    >
+                      Apply crop
+                    </Btn>
+                    <Btn
+                      type="button"
+                      variant="quiet"
+                      className="flex-1 text-[10px]"
+                      onClick={() => {
+                        void onSemantic({
+                          type: 'updateElementProperty',
+                          elementId: selected.id,
+                          key: 'cropMinMm',
+                          value: '',
+                        });
+                        void onSemantic({
+                          type: 'updateElementProperty',
+                          elementId: selected.id,
+                          key: 'cropMaxMm',
+                          value: '',
+                        });
+                      }}
+                    >
+                      Clear crop
+                    </Btn>
+                  </div>
+                </div>
+
+                <div className="border-border mt-3 space-y-2 border-t pt-2">
+                  <div className="font-semibold text-muted">View range / cut</div>
+                  <label className="block text-[10px] text-muted">
+                    View range bottom (mm)
+                    <input
+                      className="mt-1 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px]"
+                      key={`pv-vrb-${selected.id}-${selected.viewRangeBottomMm ?? 'null'}-${revision}`}
+                      defaultValue={
+                        selected.viewRangeBottomMm == null ? '' : String(selected.viewRangeBottomMm)
+                      }
+                      placeholder="empty clears"
+                      type="text"
+                      inputMode="decimal"
+                      onBlur={(e) => {
+                        void onSemantic({
+                          type: 'updateElementProperty',
+                          elementId: selected.id,
+                          key: 'viewRangeBottomMm',
+                          value: e.target.value.trim(),
+                        });
+                      }}
+                    />
+                  </label>
+                  <label className="block text-[10px] text-muted">
+                    View range top (mm)
+                    <input
+                      className="mt-1 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px]"
+                      key={`pv-vrt-${selected.id}-${selected.viewRangeTopMm ?? 'null'}-${revision}`}
+                      defaultValue={
+                        selected.viewRangeTopMm == null ? '' : String(selected.viewRangeTopMm)
+                      }
+                      placeholder="empty clears"
+                      type="text"
+                      inputMode="decimal"
+                      onBlur={(e) => {
+                        void onSemantic({
+                          type: 'updateElementProperty',
+                          elementId: selected.id,
+                          key: 'viewRangeTopMm',
+                          value: e.target.value.trim(),
+                        });
+                      }}
+                    />
+                  </label>
+                  <label className="block text-[10px] text-muted">
+                    Cut plane offset (mm)
+                    <input
+                      className="mt-1 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px]"
+                      key={`pv-cpo-${selected.id}-${selected.cutPlaneOffsetMm ?? 'null'}-${revision}`}
+                      defaultValue={
+                        selected.cutPlaneOffsetMm == null ? '' : String(selected.cutPlaneOffsetMm)
+                      }
+                      placeholder="empty clears"
+                      type="text"
+                      inputMode="decimal"
+                      onBlur={(e) => {
+                        void onSemantic({
+                          type: 'updateElementProperty',
+                          elementId: selected.id,
+                          key: 'cutPlaneOffsetMm',
+                          value: e.target.value.trim(),
+                        });
+                      }}
+                    />
+                  </label>
+                </div>
+
+                <div className="border-border bg-muted/30 mt-3 rounded border border-dashed p-2 pt-2">
+                  <div className="font-semibold text-muted">Inheritance readout</div>
+                  <ul className="mt-1 list-inside list-disc space-y-0.5 text-[10px] leading-snug text-muted">
+                    {inspectorPlanInheritanceLines.map((ln) => (
+                      <li key={ln}>{ln}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            ) : null}
+            {selected?.kind === 'view_template' ? (
+              <div className="mb-3 space-y-2 text-[11px]">
+                <div className="font-semibold text-muted">View template (replayable defaults)</div>
+                <label className="block text-[10px] text-muted">
+                  Name
+                  <input
+                    className="mt-1 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px]"
+                    defaultValue={selected.name}
+                    key={`vt-name-${selected.id}-${selected.name}-${revision}`}
+                    onBlur={(e) => {
+                      const v = e.target.value.trim();
+                      if (!v || v === selected.name) return;
+                      void onSemantic({
+                        type: 'updateElementProperty',
+                        elementId: selected.id,
+                        key: 'name',
+                        value: v,
+                      });
+                    }}
+                  />
+                </label>
+                <label className="block text-[10px] text-muted">
+                  Plan detail level (template default)
+                  <select
+                    className="mt-1 w-full rounded border border-border bg-background px-2 py-1 text-[11px]"
+                    value={selected.planDetailLevel ?? ''}
+                    onChange={(e) => {
+                      void onSemantic({
+                        type: 'updateElementProperty',
+                        elementId: selected.id,
+                        key: 'planDetailLevel',
+                        value: e.target.value,
+                      });
+                    }}
+                  >
+                    <option value="">inherit → medium when resolving</option>
+                    <option value="coarse">coarse</option>
+                    <option value="medium">medium</option>
+                    <option value="fine">fine</option>
+                  </select>
+                </label>
+                <label className="block text-[10px] text-muted">
+                  Room fill opacity scale (0–1)
+                  <input
+                    className="mt-1 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px]"
+                    key={`vt-fill-${selected.id}-${selected.planRoomFillOpacityScale}-${revision}`}
+                    defaultValue={String(selected.planRoomFillOpacityScale)}
+                    type="text"
+                    inputMode="decimal"
+                    onBlur={(e) => {
+                      void onSemantic({
+                        type: 'updateElementProperty',
+                        elementId: selected.id,
+                        key: 'planRoomFillOpacityScale',
+                        value: e.target.value.trim(),
+                      });
+                    }}
+                  />
+                </label>
+                <Btn
+                  type="button"
+                  variant="quiet"
+                  className="w-full text-[10px]"
+                  onClick={() =>
+                    void onSemantic({
+                      type: 'updateElementProperty',
+                      elementId: selected.id,
+                      key: 'planRoomFillOpacityScale',
+                      value: '',
+                    })
+                  }
+                >
+                  Reset fill to default (1.0)
+                </Btn>
+                <label className="block text-[10px] text-muted">
+                  Opening tags default
+                  <select
+                    className="mt-1 w-full rounded border border-border bg-background px-2 py-1 text-[11px]"
+                    value={selected.planShowOpeningTags ? 'true' : 'false'}
+                    onChange={(e) => {
+                      void onSemantic({
+                        type: 'updateElementProperty',
+                        elementId: selected.id,
+                        key: 'planShowOpeningTags',
+                        value: e.target.value,
+                      });
+                    }}
+                  >
+                    <option value="false">off</option>
+                    <option value="true">on</option>
+                  </select>
+                </label>
+                <label className="block text-[10px] text-muted">
+                  Room labels default
+                  <select
+                    className="mt-1 w-full rounded border border-border bg-background px-2 py-1 text-[11px]"
+                    value={selected.planShowRoomLabels ? 'true' : 'false'}
+                    onChange={(e) => {
+                      void onSemantic({
+                        type: 'updateElementProperty',
+                        elementId: selected.id,
+                        key: 'planShowRoomLabels',
+                        value: e.target.value,
+                      });
+                    }}
+                  >
+                    <option value="false">off</option>
+                    <option value="true">on</option>
+                  </select>
+                </label>
               </div>
             ) : null}
             {selected?.kind === 'viewpoint' ? (

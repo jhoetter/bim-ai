@@ -233,3 +233,33 @@ def test_plan_view_plan_annotation_flags_and_template_inheritance() -> None:
     assert isinstance(vt2, ViewTemplateElem)
     assert vt2.plan_show_opening_tags is False
     assert vt2.plan_show_room_labels is False
+
+
+def test_view_template_plan_detail_level_and_room_fill_via_update_element_property() -> None:
+    vt = ViewTemplateElem(
+        kind="view_template",
+        id="vt",
+        name="T",
+        plan_detail_level="medium",
+        plan_room_fill_opacity_scale=1.0,
+    )
+    doc = Document(revision=1, elements={"vt": vt})
+    apply_inplace(doc, UpdateElementPropertyCmd(elementId="vt", key="planDetailLevel", value="fine"))
+    vt1 = doc.elements["vt"]
+    assert isinstance(vt1, ViewTemplateElem)
+    assert vt1.plan_detail_level == "fine"
+
+    apply_inplace(
+        doc,
+        UpdateElementPropertyCmd(elementId="vt", key="planRoomFillOpacityScale", value="0.35"),
+    )
+    vt2 = doc.elements["vt"]
+    assert isinstance(vt2, ViewTemplateElem)
+    assert vt2.plan_room_fill_opacity_scale == 0.35
+
+    apply_inplace(doc, UpdateElementPropertyCmd(elementId="vt", key="planDetailLevel", value=""))
+    apply_inplace(doc, UpdateElementPropertyCmd(elementId="vt", key="planRoomFillOpacityScale", value=""))
+    vt3 = doc.elements["vt"]
+    assert isinstance(vt3, ViewTemplateElem)
+    assert vt3.plan_detail_level is None
+    assert vt3.plan_room_fill_opacity_scale == 1.0

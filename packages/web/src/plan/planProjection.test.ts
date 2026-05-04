@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   canonHiddenCategory,
+  planViewInheritanceSummaryLines,
   resolvePlanGraphicHints,
   resolvePlanViewDisplay,
 } from './planProjection';
@@ -107,5 +108,81 @@ describe('planProjection', () => {
     const r = resolvePlanGraphicHints(elementsById, 'pv');
     expect(r?.detailLevel).toBe('coarse');
     expect(r?.roomFillOpacityScale).toBe(0.2);
+  });
+
+  it('planViewInheritanceSummaryLines reflects template defaults only', () => {
+    const elementsById = {
+      vt: {
+        kind: 'view_template',
+        id: 'vt',
+        name: 'T',
+        scale: 'scale_100',
+        planDetailLevel: 'fine',
+        planRoomFillOpacityScale: 0.4,
+        planShowOpeningTags: true,
+        planShowRoomLabels: false,
+      },
+      pv: {
+        kind: 'plan_view',
+        id: 'pv',
+        name: 'P',
+        levelId: 'lv',
+        viewTemplateId: 'vt',
+      },
+      lv: { kind: 'level', id: 'lv', name: 'L', elevationMm: 0 },
+    } as Record<string, Element>;
+    const lines = planViewInheritanceSummaryLines(elementsById, 'pv');
+    expect(lines.some((l) => l.includes('detail=fine'))).toBe(true);
+    expect(lines.some((l) => l.includes('roomFill=0.4'))).toBe(true);
+    expect(lines.some((l) => l.includes('Stored plan_view: detail=inherit'))).toBe(true);
+    expect(lines.some((l) => l.includes('Opening tags: effective=on'))).toBe(true);
+  });
+
+  it('planViewInheritanceSummaryLines prefers plan_view overrides', () => {
+    const elementsById = {
+      vt: {
+        kind: 'view_template',
+        id: 'vt',
+        name: 'T',
+        scale: 'scale_100',
+        planDetailLevel: 'fine',
+        planRoomFillOpacityScale: 0.9,
+        planShowOpeningTags: true,
+        planShowRoomLabels: true,
+      },
+      pv: {
+        kind: 'plan_view',
+        id: 'pv',
+        name: 'P',
+        levelId: 'lv',
+        viewTemplateId: 'vt',
+        planDetailLevel: 'coarse',
+        planRoomFillOpacityScale: 0.15,
+        planShowOpeningTags: false,
+        planShowRoomLabels: false,
+      },
+      lv: { kind: 'level', id: 'lv', name: 'L', elevationMm: 0 },
+    } as Record<string, Element>;
+    const lines = planViewInheritanceSummaryLines(elementsById, 'pv');
+    expect(lines.some((l) => l.includes('detail=coarse'))).toBe(true);
+    expect(lines.some((l) => l.includes('Stored plan_view: detail=coarse'))).toBe(true);
+    expect(lines.some((l) => l.includes('roomFill=0.15'))).toBe(true);
+    expect(lines.some((l) => l.includes('Opening tags: effective=off'))).toBe(true);
+  });
+
+  it('planViewInheritanceSummaryLines handles missing template', () => {
+    const elementsById = {
+      pv: {
+        kind: 'plan_view',
+        id: 'pv',
+        name: 'P',
+        levelId: 'lv',
+      },
+      lv: { kind: 'level', id: 'lv', name: 'L', elevationMm: 0 },
+    } as Record<string, Element>;
+    const lines = planViewInheritanceSummaryLines(elementsById, 'pv');
+    expect(lines.some((l) => l.includes('Template: detail=—'))).toBe(true);
+    expect(lines.some((l) => l.includes('detail=medium'))).toBe(true);
+    expect(planViewInheritanceSummaryLines(elementsById, 'missing')).toEqual([]);
   });
 });
