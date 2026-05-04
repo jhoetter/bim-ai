@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import csv
+from io import StringIO
+
 from bim_ai.document import Document
 from bim_ai.elements import (
     CalloutElem,
@@ -313,6 +316,57 @@ def test_window_schedule_group_alias():
     tbl = derive_schedule_table(doc, "sch-1")
     assert tbl["category"] == "window"
     assert tbl["totalRows"] == 1
+
+
+def test_window_schedule_grouped_csv_includes_sorted_totals_footer() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl-1": LevelElem(kind="level", id="lvl-1", name="Ground", elevationMm=0),
+            "w1": WallElem(
+                kind="wall",
+                id="w1",
+                name="W",
+                levelId="lvl-1",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 5000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+            "win-a": WindowElem(
+                kind="window",
+                id="win-a",
+                name="A",
+                wallId="w1",
+                alongT=0.33,
+                widthMm=900,
+                sillHeightMm=900,
+                heightMm=1200,
+                familyTypeId="ft-ab",
+            ),
+            "sch-1": ScheduleElem(
+                kind="schedule",
+                id="sch-1",
+                name="WinSch",
+                filters={"category": "window", "groupingHint": ["levelId", "familyTypeMark"]},
+            ),
+        },
+    )
+    tbl = derive_schedule_table(doc, "sch-1")
+    assert isinstance(tbl.get("groupedSections"), dict)
+    csv_txt = schedule_payload_to_csv(tbl, include_totals_csv=True)
+    lines = csv_txt.splitlines()
+    assert lines[0].startswith("Group,")
+    assert "__schedule_totals_v1__" in csv_txt
+    start = next(i for i, ln in enumerate(lines) if "__schedule_totals_v1__" in ln)
+    keys: list[str] = []
+    for ln in lines[start + 2 :]:
+        if not ln.strip():
+            break
+        row = next(csv.reader(StringIO(ln)))
+        if len(row) >= 3 and row[1].strip():
+            keys.append(row[1].strip())
+    assert keys == sorted(keys)
 
 
 def test_upsert_plan_view_command():

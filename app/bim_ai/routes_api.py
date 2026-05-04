@@ -491,6 +491,7 @@ async def schedule_derived_table(
     session: AsyncSession = Depends(get_session),
     fmt: Annotated[str, Query(alias="format")] = "json",
     columns: Annotated[str | None, Query(alias="columns")] = None,
+    include_schedule_totals_csv: Annotated[bool, Query(alias="includeScheduleTotalsCsv")] = False,
 ) -> dict[str, Any] | PlainTextResponse:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -506,7 +507,10 @@ async def schedule_derived_table(
             wanted = [c.strip() for c in columns.split(",") if c.strip()]
             if wanted:
                 export_payload = schedule_payload_with_column_subset(payload, wanted)
-        csv_body = schedule_payload_to_csv(export_payload)
+        csv_body = schedule_payload_to_csv(
+            export_payload,
+            include_totals_csv=include_schedule_totals_csv,
+        )
         safe = "".join(ch for ch in schedule_id if ch.isalnum() or ch in ("-", "_")) or "schedule"
         return PlainTextResponse(
             csv_body,

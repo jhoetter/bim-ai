@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import csv
+from io import StringIO
+
 from bim_ai.document import Document
 from bim_ai.elements import DoorElem, LevelElem, ScheduleElem, WallElem, WindowElem
 from bim_ai.schedule_csv import schedule_payload_to_csv, schedule_payload_with_column_subset
@@ -203,3 +206,78 @@ def test_window_schedule_csv_subset_includes_computed_columns() -> None:
     assert lines[0] == "elementId,openingAreaM2,headHeightMm"
     assert "0.54" in lines[1] or "0.540000" in lines[1]
     assert "1.08" in lines[2] or "1.080000" in lines[2]
+
+
+def test_door_schedule_csv_totals_footer_includes_rough_opening() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lv": LevelElem(kind="level", id="lv", name="L1", elevationMm=0),
+            "wa": WallElem(
+                kind="wall",
+                id="wa",
+                name="W",
+                levelId="lv",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 5000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+            "d1": DoorElem(
+                kind="door",
+                id="d1",
+                name="D",
+                wallId="wa",
+                alongT=0.5,
+                widthMm=900,
+            ),
+            "sch": ScheduleElem(kind="schedule", id="sch", name="Dr", filters={"category": "door"}),
+        },
+    )
+    tbl = derive_schedule_table(doc, "sch")
+    csv_txt = schedule_payload_to_csv(tbl, include_totals_csv=True)
+    assert "__schedule_totals_v1__" in csv_txt
+    assert "roughOpeningAreaM2" in csv_txt
+    assert "kind" in csv_txt
+
+
+def test_window_schedule_csv_totals_footer_sorted_metric_keys() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lv": LevelElem(kind="level", id="lv", name="L1", elevationMm=0),
+            "wa": WallElem(
+                kind="wall",
+                id="wa",
+                name="W",
+                levelId="lv",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 5000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+            "w1": WindowElem(
+                kind="window",
+                id="w1",
+                name="W1",
+                wallId="wa",
+                alongT=0.3,
+                widthMm=1200,
+                heightMm=1500,
+                sillHeightMm=900,
+            ),
+            "sch": ScheduleElem(kind="schedule", id="sch", name="Win", filters={"category": "window"}),
+        },
+    )
+    tbl = derive_schedule_table(doc, "sch")
+    csv_txt = schedule_payload_to_csv(tbl, include_totals_csv=True)
+    lines = csv_txt.splitlines()
+    start = next(i for i, ln in enumerate(lines) if "__schedule_totals_v1__" in ln)
+    keys: list[str] = []
+    for ln in lines[start + 2 :]:
+        if not ln.strip():
+            break
+        row = next(csv.reader(StringIO(ln)))
+        if len(row) >= 3 and row[1].strip():
+            keys.append(row[1].strip())
+    assert keys == sorted(keys)

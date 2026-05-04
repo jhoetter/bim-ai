@@ -197,6 +197,65 @@ function flattenSchedulePayloadRows(data: Record<string, unknown>): Record<strin
   return [];
 }
 
+/** Precedence matches server `_resolve_sort_descending` (filters, then grouping). */
+export function resolveScheduleSortDescending(
+  filters: Record<string, unknown>,
+  grouping: Record<string, unknown> | undefined,
+): boolean {
+  for (const src of [filters, grouping ?? {}]) {
+    const v = src.sortDescending ?? src.sort_descending;
+    if (typeof v === 'boolean') return v;
+    if (typeof v === 'string' && ['true', '1', 'yes'].includes(v.trim().toLowerCase())) return true;
+  }
+  return false;
+}
+
+export function scheduleTotalsReadoutParts(totals: Record<string, unknown> | undefined): string[] {
+  if (!totals) return [];
+
+  const kind = String(totals.kind ?? '');
+
+  const parts: string[] = [];
+
+  parts.push(`${totals.rowCount ?? totals.row_count ?? '?'} rows`);
+
+  if (kind === 'room') {
+    parts.push(`sum area ${Number(totals.areaM2 ?? 0).toFixed(3)} m2`);
+    parts.push(`sum perimeter ${Number(totals.perimeterM ?? 0).toFixed(3)} m`);
+    const tsum = totals.targetAreaM2 ?? totals.target_area_m2;
+    if (tsum != null && tsum !== '' && Number.isFinite(Number(tsum))) {
+      parts.push(`sum target ${Number(tsum).toFixed(3)} m²`);
+    }
+  }
+
+  if (kind === 'door') {
+    parts.push(`sum rough opening ${Number(totals.roughOpeningAreaM2 ?? 0).toFixed(6)} m²`);
+  }
+
+  if (kind === 'window') {
+    parts.push(`avg width ${Number(totals.averageWidthMm ?? 0).toFixed(1)} mm`);
+    parts.push(`sum rough opening ${Number(totals.roughOpeningAreaM2 ?? 0).toFixed(6)} m²`);
+    const glaze = totals.totalOpeningAreaM2 ?? totals.total_opening_area_m2;
+    if (glaze != null && glaze !== '' && Number.isFinite(Number(glaze))) {
+      parts.push(`sum glazing ${Number(glaze).toFixed(6)} m²`);
+    }
+  }
+
+  if (kind === 'floor') parts.push(`sum area ${Number(totals.areaM2 ?? 0).toFixed(3)} m²`);
+
+  if (kind === 'roof') parts.push(`footprint ${Number(totals.footprintAreaM2 ?? 0).toFixed(3)} m²`);
+
+  if (kind === 'stair') parts.push(`total run ${Number(totals.totalRunMm ?? 0).toFixed(1)} mm`);
+
+  if (kind === 'sheet') parts.push(`viewports ${Number(totals.totalViewports ?? 0)}`);
+
+  if (kind === 'material_assembly') {
+    parts.push(`gross volume ${Number(totals.grossVolumeM3 ?? 0).toFixed(8)} m³`);
+  }
+
+  return parts;
+}
+
 type RoomVm = {
   id: string;
   name: string;
@@ -770,7 +829,7 @@ export function SchedulePanel(props: {
     if (srvActive?.scheduleId && props.modelId && srvActive.tab === tab) {
       const mid = encodeURIComponent(props.modelId);
       const sc = encodeURIComponent(srvActive.scheduleId);
-      let csvEndpoint = `/api/models/${mid}/schedules/${sc}/table?format=csv`;
+      let csvEndpoint = `/api/models/${mid}/schedules/${sc}/table?format=csv&includeScheduleTotalsCsv=true`;
       if (
         registrySchedule &&
         srvActive.scheduleId === registryPickKey &&
@@ -841,32 +900,7 @@ export function SchedulePanel(props: {
   function renderTotals() {
     if (!totals) return null;
 
-    const kind = String(totals.kind ?? '');
-
-    const parts: string[] = [];
-
-    parts.push(`${totals.rowCount ?? totals.row_count ?? '?'} rows`);
-
-    if (kind === 'room') {
-      parts.push(`sum area ${Number(totals.areaM2 ?? 0).toFixed(3)} m2`);
-      parts.push(`sum perimeter ${Number(totals.perimeterM ?? 0).toFixed(3)} m`);
-      const tsum = totals.targetAreaM2 ?? totals.target_area_m2;
-      if (tsum != null && tsum !== '' && Number.isFinite(Number(tsum))) {
-        parts.push(`sum target ${Number(tsum).toFixed(3)} m²`);
-      }
-    }
-
-    if (kind === 'window')
-      parts.push(`avg width ${Number(totals.averageWidthMm ?? 0).toFixed(1)} mm`);
-
-    if (kind === 'floor') parts.push(`sum area ${Number(totals.areaM2 ?? 0).toFixed(3)} m²`);
-
-    if (kind === 'roof')
-      parts.push(`footprint ${Number(totals.footprintAreaM2 ?? 0).toFixed(3)} m²`);
-
-    if (kind === 'stair') parts.push(`total run ${Number(totals.totalRunMm ?? 0).toFixed(1)} mm`);
-
-    if (kind === 'sheet') parts.push(`viewports ${Number(totals.totalViewports ?? 0)}`);
+    const parts = scheduleTotalsReadoutParts(totals);
 
     return (
       <div
@@ -912,12 +946,15 @@ export function SchedulePanel(props: {
       f.sortBy ?? (el.grouping as { sortBy?: string } | undefined)?.sortBy ?? sortKeys[0] ?? 'name',
     );
 
+    const sortDesc = resolveScheduleSortDescending(f, el.grouping as Record<string, unknown>);
+
     const orderedHints = (): string[] => groupOpts.filter((gk) => hintSet.has(gk));
 
     const groupingPayload = (hints: string[]) => ({
       ...(el.grouping as Record<string, unknown>),
       sortBy: sortVal,
       groupKeys: hints,
+      sortDescending: sortDesc,
     });
 
     const commit = (nextF: Record<string, unknown>, nextG: Record<string, unknown>) => {
@@ -953,7 +990,15 @@ export function SchedulePanel(props: {
               onChange={(e) => {
                 const sb = e.target.value;
                 const hints = orderedHints();
-                commit({ ...f, sortBy: sb, groupingHint: hints }, groupingPayload(hints));
+                commit(
+                  { ...f, sortBy: sb, groupingHint: hints, sortDescending: sortDesc },
+                  {
+                    ...(el.grouping as Record<string, unknown>),
+                    sortBy: sb,
+                    groupKeys: hints,
+                    sortDescending: sortDesc,
+                  },
+                );
               }}
             >
               {sortKeys.map((k) => (
@@ -962,6 +1007,33 @@ export function SchedulePanel(props: {
                 </option>
               ))}
             </select>
+          </label>
+
+          <label className="flex cursor-pointer items-center gap-2">
+            <input
+              type="checkbox"
+              data-testid="schedule-sort-descending"
+              checked={sortDesc}
+              onChange={(e) => {
+                const desc = e.target.checked;
+                const hints = orderedHints();
+                commit(
+                  {
+                    ...f,
+                    sortBy: sortVal,
+                    groupingHint: hints,
+                    sortDescending: desc,
+                  },
+                  {
+                    ...(el.grouping as Record<string, unknown>),
+                    sortBy: sortVal,
+                    groupKeys: hints,
+                    sortDescending: desc,
+                  },
+                );
+              }}
+            />
+            <span>Descending</span>
           </label>
 
           {lf && props.activeLevelId ? (
@@ -981,6 +1053,7 @@ export function SchedulePanel(props: {
                       sortBy: sortVal,
                       groupingHint: hints,
                       filterEquals: nextFe,
+                      sortDescending: sortDesc,
                     },
                     groupingPayload(hints),
                   );
@@ -1012,7 +1085,13 @@ export function SchedulePanel(props: {
                   const nextHints = groupOpts.filter((x) => nx.has(x));
 
                   commit(
-                    { ...f, groupingHint: nextHints, sortBy: sortVal, filterEquals: feObj },
+                    {
+                      ...f,
+                      groupingHint: nextHints,
+                      sortBy: sortVal,
+                      filterEquals: feObj,
+                      sortDescending: sortDesc,
+                    },
                     groupingPayload(nextHints),
                   );
                 }}
