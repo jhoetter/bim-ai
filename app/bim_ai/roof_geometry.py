@@ -16,8 +16,8 @@ def outer_rect_extent(pts: list[tuple[float, float]]) -> tuple[float, float, flo
 
 
 def gable_half_run_mm_and_ridge_axis(span_x: float, span_z: float) -> tuple[float, str]:
-    """Ridge parallels the longer span; half-run is half of the shorter span (mm)."""
-    if span_x >= span_z:
+    """Ridge parallels the shorter footprint span; slope half-run is half the longer span (mm)."""
+    if span_x <= span_z:
         return span_z / 2.0, "alongX"
     return span_x / 2.0, "alongZ"
 

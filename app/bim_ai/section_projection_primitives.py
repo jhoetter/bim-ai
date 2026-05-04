@@ -24,6 +24,7 @@ from bim_ai.elements import (
     WindowElem,
 )
 from bim_ai.opening_cut_primitives import floor_panels_axis_aligned_rect_with_single_hole_mm
+from bim_ai.roof_geometry import gable_ridge_rise_mm, outer_rect_extent
 from bim_ai.stair_plan_proxy import stair_riser_count_plan_proxy
 
 _EPS = 1e-6
@@ -600,18 +601,49 @@ def build_section_projection_primitives(
         if span is None:
             continue
         u_lo, u_hi = span
-        z_mid = _roof_proxy_top_z_mm(doc, e)
-        roofs.append(
-            {
-                "id": f"roof:{e.id}:0",
-                "elementId": e.id,
-                "referenceLevelId": e.reference_level_id,
-                "uStartMm": round(u_lo, 3),
-                "uEndMm": round(u_hi, 3),
-                "zMidMm": round(z_mid, 3),
-                "proxyKind": "footprintChord",
-            }
-        )
+        mode = e.roof_geometry_mode
+        if mode == "gable_pitched_rectangle":
+            x0, x1, z0, z1 = outer_rect_extent(poly)
+            span_x = float(x1 - x0)
+            span_z = float(z1 - z0)
+            slope = float(e.slope_deg or 25.0)
+            rise_mm, ridge_axis = gable_ridge_rise_mm(span_x, span_z, slope)
+            zb = _level_elevation_mm(doc, e.reference_level_id)
+            ridge_z = zb + rise_mm
+            roofs.append(
+                {
+                    "id": f"roof:{e.id}:0",
+                    "elementId": e.id,
+                    "referenceLevelId": e.reference_level_id,
+                    "roofGeometryMode": mode,
+                    "uStartMm": round(u_lo, 3),
+                    "uEndMm": round(u_hi, 3),
+                    "ridgeZMm": round(ridge_z, 3),
+                    "eavePlateZMm": round(zb, 3),
+                    "zMidMm": round(ridge_z, 3),
+                    "proxyKind": "gablePitchedRectangleChord",
+                    "ridgeAxisPlan": ridge_axis,
+                    "slopeDeg": round(slope, 3),
+                    "overhangMm": round(float(e.overhang_mm), 3),
+                    "planSpanXmMm": round(span_x, 3),
+                    "planSpanZmMm": round(span_z, 3),
+                    "ridgeRiseMm": round(rise_mm, 3),
+                }
+            )
+        else:
+            z_mid = _roof_proxy_top_z_mm(doc, e)
+            roofs.append(
+                {
+                    "id": f"roof:{e.id}:0",
+                    "elementId": e.id,
+                    "referenceLevelId": e.reference_level_id,
+                    "roofGeometryMode": "mass_box",
+                    "uStartMm": round(u_lo, 3),
+                    "uEndMm": round(u_hi, 3),
+                    "zMidMm": round(z_mid, 3),
+                    "proxyKind": "footprintChord",
+                }
+            )
 
     primitives: dict[str, Any] = {
         "format": "sectionProjectionPrimitives_v1",

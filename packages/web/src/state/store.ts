@@ -586,6 +586,11 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
   }
 
   if (kind === 'roof') {
+    const rg =
+      raw.roofGeometryMode === 'gable_pitched_rectangle' ||
+      raw.roof_geometry_mode === 'gable_pitched_rectangle'
+        ? ('gable_pitched_rectangle' as const)
+        : ('mass_box' as const);
     return {
       kind: 'roof',
       id,
@@ -598,6 +603,7 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
         typeof raw.edgeSlopeFlags === 'object' && raw.edgeSlopeFlags
           ? (raw.edgeSlopeFlags as Record<string, boolean>)
           : undefined,
+      roofGeometryMode: rg,
     };
   }
 

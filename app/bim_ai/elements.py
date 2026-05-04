@@ -4,6 +4,8 @@ from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from bim_ai.roof_geometry import RoofGeometryMode
+
 # --- Geometry primitives ------------------------------------------------------------
 
 
@@ -237,6 +239,7 @@ class RoofElem(BaseModel):
     overhang_mm: float = Field(default=400, alias="overhangMm")
     slope_deg: float | None = Field(default=25.0, alias="slopeDeg")
     edge_slope_flags: dict[str, bool] = Field(default_factory=dict, alias="edgeSlopeFlags")
+    roof_geometry_mode: RoofGeometryMode = Field(default="mass_box", alias="roofGeometryMode")
 
 
 class StairElem(BaseModel):

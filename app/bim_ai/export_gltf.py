@@ -7,7 +7,7 @@ import json
 import math
 import struct
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Literal, cast
 
 from bim_ai.cut_solid_kernel import (
     collect_hosted_cut_manifest_warnings,
@@ -25,6 +25,7 @@ from bim_ai.elements import (
 )
 from bim_ai.material_assembly_resolve import material_assembly_manifest_evidence
 from bim_ai.opening_cut_primitives import xz_bounds_mm_from_poly
+from bim_ai.roof_geometry import gable_ridge_rise_mm, outer_rect_extent
 
 EXPORT_GEOMETRY_KINDS: frozenset[str] = frozenset(
     {"wall", "floor", "roof", "door", "window", "room", "stair", "slab_opening"}
@@ -80,12 +81,45 @@ def exchange_parity_manifest_fields(
     }
 
 
+def roof_geometry_manifest_evidence_v0(doc: Document) -> dict[str, Any] | None:
+    rows: list[dict[str, Any]] = []
+    for eid in sorted(doc.elements.keys()):
+        e = doc.elements[eid]
+        if not isinstance(e, RoofElem) or e.roof_geometry_mode != "gable_pitched_rectangle":
+            continue
+        pts = [(p.x_mm, p.y_mm) for p in e.footprint_mm]
+        x0_mm, x1_mm, z0_mm, z1_mm = outer_rect_extent(pts)
+        span_x = float(x1_mm - x0_mm)
+        span_z = float(z1_mm - z0_mm)
+        slope = float(e.slope_deg or 25.0)
+        rise_mm, axis = gable_ridge_rise_mm(span_x, span_z, slope)
+        rows.append(
+            {
+                "elementId": eid,
+                "roofGeometryMode": "gable_pitched_rectangle",
+                "ridgeAxisPlan": axis,
+                "spanXmMm": round(span_x, 3),
+                "spanZmMm": round(span_z, 3),
+                "ridgeRiseMm": round(rise_mm, 3),
+                "slopeDeg": round(slope, 3),
+                "overhangMm": round(float(e.overhang_mm), 3),
+            }
+        )
+    if not rows:
+        return None
+    return {"format": "roofGeometryEvidence_v0", "roofs": rows}
+
+
 def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
     parity = exchange_parity_manifest_fields_from_document(doc)
     cut_warns = collect_hosted_cut_manifest_warnings(doc)
+    rgeom_roofs = roof_geometry_manifest_evidence_v0(doc)
+    mesh_enc = "bim_ai_box_primitive_v0"
+    if rgeom_roofs:
+        mesh_enc += "+bim_ai_gable_roof_v0"
     base: dict[str, Any] = {
         **parity,
-        "meshEncoding": "bim_ai_box_primitive_v0",
+        "meshEncoding": mesh_enc,
         "hint": "Meshes: GET /api/models/{id}/exports/model.gltf",
     }
     if cut_warns:
@@ -93,6 +127,8 @@ def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
     asm_ev = material_assembly_manifest_evidence(doc)
     if asm_ev:
         base["materialAssemblyEvidence_v0"] = asm_ev
+    if rgeom_roofs:
+        base["roofGeometryEvidence_v0"] = rgeom_roofs
     return base
 
 
@@ -195,6 +231,158 @@ class _GeomBox:
     hz: float
 
 
+@dataclass(frozen=True, slots=True)
+class _GableRoofVisual:
+    elem_id: str
+    xmin_m: float
+    xmax_m: float
+    zmin_m: float
+    zmax_m: float
+    y_eave_m: float
+    y_ridge_m: float
+    ridge_axis: str
+
+
+def _triangle_unit_normal(
+    v0: tuple[float, float, float],
+    v1: tuple[float, float, float],
+    v2: tuple[float, float, float],
+) -> tuple[float, float, float]:
+    ax = v1[0] - v0[0]
+    ay = v1[1] - v0[1]
+    az = v1[2] - v0[2]
+    bx = v2[0] - v0[0]
+    by = v2[1] - v0[1]
+    bz = v2[2] - v0[2]
+    nx = ay * bz - az * by
+    ny = az * bx - ax * bz
+    nz = ax * by - ay * bx
+    L = math.hypot(nx, ny, nz)
+    if L < 1e-12:
+        return (0.0, 1.0, 0.0)
+    return nx / L, ny / L, nz / L
+
+
+def _gable_roof_interleaved_world_m(gr: _GableRoofVisual) -> tuple[bytes, int]:
+    buf = bytearray()
+    xmin, xmax = gr.xmin_m, gr.xmax_m
+    zmin, zmax = gr.zmin_m, gr.zmax_m
+    ye, yr = gr.y_eave_m, gr.y_ridge_m
+    xc = 0.5 * (xmin + xmax)
+    zc = 0.5 * (zmin + zmax)
+    if max(xmax - xmin, zmax - zmin) < 1e-9:
+        return bytes(buf), 0
+    if gr.ridge_axis == "alongX":
+        a0 = (xmin, ye, zmax)
+        a1 = (xmax, ye, zmax)
+        a2 = (xmax, yr, zc)
+        a3 = (xmin, yr, zc)
+        _emit_tri(buf, a0, a1, a2, _triangle_unit_normal(a0, a1, a2))
+        _emit_tri(buf, a0, a2, a3, _triangle_unit_normal(a0, a2, a3))
+        b0 = (xmax, ye, zmin)
+        b1 = (xmin, ye, zmin)
+        b2 = (xmin, yr, zc)
+        b3 = (xmax, yr, zc)
+        _emit_tri(buf, b0, b1, b2, _triangle_unit_normal(b0, b1, b2))
+        _emit_tri(buf, b0, b2, b3, _triangle_unit_normal(b0, b2, b3))
+        c0 = (xmin, ye, zmax)
+        c1 = (xmax, ye, zmax)
+        c2 = (xc, yr, zc)
+        _emit_tri(buf, c0, c1, c2, _triangle_unit_normal(c0, c1, c2))
+        d0 = (xmax, ye, zmin)
+        d1 = (xmin, ye, zmin)
+        d2 = (xc, yr, zc)
+        _emit_tri(buf, d0, d1, d2, _triangle_unit_normal(d0, d1, d2))
+    else:
+        p0 = (xmax, ye, zmax)
+        p1 = (xmax, ye, zmin)
+        p2 = (xc, yr, zmin)
+        p3 = (xc, yr, zmax)
+        _emit_tri(buf, p0, p1, p2, _triangle_unit_normal(p0, p1, p2))
+        _emit_tri(buf, p0, p2, p3, _triangle_unit_normal(p0, p2, p3))
+        q0 = (xmin, ye, zmin)
+        q1 = (xmin, ye, zmax)
+        q2 = (xc, yr, zmax)
+        q3 = (xc, yr, zmin)
+        _emit_tri(buf, q0, q1, q2, _triangle_unit_normal(q0, q1, q2))
+        _emit_tri(buf, q0, q2, q3, _triangle_unit_normal(q0, q2, q3))
+        r0 = (xmax, ye, zmax)
+        r1 = (xmax, ye, zmin)
+        r2 = (xc, yr, zc)
+        _emit_tri(buf, r0, r1, r2, _triangle_unit_normal(r0, r1, r2))
+        s0 = (xmin, ye, zmin)
+        s1 = (xmin, ye, zmax)
+        s2 = (xc, yr, zc)
+        _emit_tri(buf, s0, s1, s2, _triangle_unit_normal(s0, s1, s2))
+    vcount = len(buf) // VERT_BYTES
+    return bytes(buf), vcount
+
+
+def _collect_gable_roof_visual_slices(doc: Document) -> list[_GableRoofVisual]:
+    out: list[_GableRoofVisual] = []
+    for rid in sorted(eid for eid, e in doc.elements.items() if isinstance(e, RoofElem)):
+        rf = doc.elements[rid]
+        assert isinstance(rf, RoofElem)
+        if rf.roof_geometry_mode != "gable_pitched_rectangle":
+            continue
+        pts = [(p.x_mm, p.y_mm) for p in rf.footprint_mm]
+        x0_mm, x1_mm, z0_mm, z1_mm = outer_rect_extent(pts)
+        rise_mm, axis = gable_ridge_rise_mm(
+            float(x1_mm - x0_mm), float(z1_mm - z0_mm), float(rf.slope_deg or 25.0)
+        )
+        ye = _elev_m(doc, rf.reference_level_id)
+        yr = ye + rise_mm / 1000.0
+        out.append(
+            _GableRoofVisual(
+                elem_id=rid,
+                xmin_m=x0_mm / 1000.0,
+                xmax_m=x1_mm / 1000.0,
+                zmin_m=z0_mm / 1000.0,
+                zmax_m=z1_mm / 1000.0,
+                y_eave_m=ye,
+                y_ridge_m=yr,
+                ridge_axis=axis,
+            )
+        )
+    return out
+
+
+def _interleaved_position_min_max(interleaved: bytes, vcount: int) -> tuple[list[float], list[float]]:
+    mn = [math.inf, math.inf, math.inf]
+    mx = [-math.inf, -math.inf, -math.inf]
+    for i in range(vcount):
+        off = VERT_BYTES * i
+        px, py, pz = struct.unpack_from("<fff", interleaved, off)
+        mn[0] = min(mn[0], px)
+        mn[1] = min(mn[1], py)
+        mn[2] = min(mn[2], pz)
+        mx[0] = max(mx[0], px)
+        mx[1] = max(mx[1], py)
+        mx[2] = max(mx[2], pz)
+    return mn, mx
+
+
+def _visual_geom_entry_sort_key(
+    pair: tuple[Literal["box", "gable"], _GeomBox | _GableRoofVisual],
+) -> tuple[str, str]:
+    tag, payload = pair
+    if tag == "box":
+        gb = cast(_GeomBox, payload)
+        return (gb.kind, gb.elem_id)
+    gv = cast(_GableRoofVisual, payload)
+    return ("roof", gv.elem_id)
+
+
+def _collect_visual_geom_entries(doc: Document) -> list[tuple[Literal["box", "gable"], _GeomBox | _GableRoofVisual]]:
+    entries: list[tuple[Literal["box", "gable"], _GeomBox | _GableRoofVisual]] = [
+        ("box", b) for b in _collect_geom_boxes(doc)
+    ]
+    for gv in _collect_gable_roof_visual_slices(doc):
+        entries.append(("gable", gv))
+    entries.sort(key=_visual_geom_entry_sort_key)
+    return entries
+
+
 def _collect_geom_boxes(doc: Document) -> list[_GeomBox]:
     boxes: list[_GeomBox] = []
 
@@ -206,6 +394,8 @@ def _collect_geom_boxes(doc: Document) -> list[_GeomBox]:
     for rid in sorted(eid for eid, e in doc.elements.items() if isinstance(e, RoofElem)):
         rf = doc.elements[rid]
         assert isinstance(rf, RoofElem)
+        if rf.roof_geometry_mode == "gable_pitched_rectangle":
+            continue
         pts = [(p.x_mm, p.y_mm) for p in rf.footprint_mm]
         if len(pts) < 3:
             continue
@@ -372,7 +562,7 @@ def _document_to_gltf_tree_and_bins(doc: Document) -> tuple[dict[str, Any], byte
         pad = (-off) % 4
         return off + pad
 
-    geo_boxes = sorted(_collect_geom_boxes(doc), key=lambda b: (b.kind, b.elem_id))
+    geo_entries = _collect_visual_geom_entries(doc)
 
     for lid in sorted(eid for eid, e in doc.elements.items() if isinstance(e, LevelElem)):
         lvl = doc.elements[lid]
@@ -393,8 +583,40 @@ def _document_to_gltf_tree_and_bins(doc: Document) -> tuple[dict[str, Any], byte
             }
         )
 
-    for gb in geo_boxes:
-        vbytes, vcount = _box_interleaved_bytes(gb.hx, gb.hy, gb.hz)
+    for tag, payload in geo_entries:
+        geom_kind: str
+        elem_id_f: str
+        yaw: float
+        trans_t: tuple[float, float, float]
+        mat_kind: str
+        extras: dict[str, Any]
+        if tag == "box":
+            gb = cast(_GeomBox, payload)
+            vbytes, vcount = _box_interleaved_bytes(gb.hx, gb.hy, gb.hz)
+            pos_min, pos_max = bounds_position_world_aabb_geom_box(gb)
+            geom_kind = gb.kind
+            elem_id_f = gb.elem_id
+            yaw = gb.yaw
+            trans_t = (float(gb.translation[0]), float(gb.translation[1]), float(gb.translation[2]))
+            mat_kind = gb.kind
+            extras = {"bimAiEncoding": mf_payload["meshEncoding"], "elementId": gb.elem_id}
+        else:
+            gv = cast(_GableRoofVisual, payload)
+            vbytes, vcount = _gable_roof_interleaved_world_m(gv)
+            if vcount <= 0:
+                continue
+            pos_min, pos_max = _interleaved_position_min_max(vbytes, vcount)
+            geom_kind = "roof"
+            elem_id_f = gv.elem_id
+            yaw = 0.0
+            trans_t = (0.0, 0.0, 0.0)
+            mat_kind = "roof"
+            extras = {
+                "bimAiEncoding": mf_payload["meshEncoding"],
+                "elementId": gv.elem_id,
+                "bimAiRoofGeometryMode": "gable_pitched_rectangle",
+            }
+
         vtx_off = len(bins)
         bins.extend(vbytes)
 
@@ -425,7 +647,6 @@ def _document_to_gltf_tree_and_bins(doc: Document) -> tuple[dict[str, Any], byte
 
         tri_indices = list(range(vcount))
 
-        pos_min, pos_max = bounds_position_world_aabb_geom_box(gb)
         accessors[acc_pos].update({"min": pos_min, "max": pos_max})
 
         idx_off_raw = vtx_off + len(vbytes)
@@ -462,12 +683,12 @@ def _document_to_gltf_tree_and_bins(doc: Document) -> tuple[dict[str, Any], byte
         mesh_idx = len(meshes)
         meshes.append(
             {
-                "name": f"{gb.kind}:{gb.elem_id}",
+                "name": f"{geom_kind}:{elem_id_f}",
                 "primitives": [
                     {
                         "attributes": {"POSITION": acc_pos, "NORMAL": acc_norm},
                         "indices": ix_acc_idx,
-                        "material": _KIND_MAT_IDX[gb.kind],
+                        "material": _KIND_MAT_IDX[mat_kind],
                     }
                 ],
             }
@@ -475,12 +696,12 @@ def _document_to_gltf_tree_and_bins(doc: Document) -> tuple[dict[str, Any], byte
 
         nodes.append(
             {
-                "name": f"{gb.kind}:{gb.elem_id}",
+                "name": f"{geom_kind}:{elem_id_f}",
                 "mesh": mesh_idx,
-                "translation": [float(gb.translation[0]), float(gb.translation[1]), float(gb.translation[2])],
-                "rotation": _quat_yaw_y_rad(gb.yaw),
+                "translation": [trans_t[0], trans_t[1], trans_t[2]],
+                "rotation": _quat_yaw_y_rad(yaw),
                 "scale": [1.0, 1.0, 1.0],
-                "extras": {"bimAiEncoding": mf_payload["meshEncoding"], "elementId": gb.elem_id},
+                "extras": extras,
             }
         )
 

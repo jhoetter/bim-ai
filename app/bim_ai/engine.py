@@ -101,6 +101,7 @@ from bim_ai.elements import (
     WallTypeElem,
     WindowElem,
 )
+from bim_ai.roof_geometry import assert_valid_gable_pitched_rectangle_footprint_mm
 
 command_adapter = TypeAdapter(Command)
 element_adapter = TypeAdapter(Element)
@@ -981,6 +982,10 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 raise ValueError("createRoof.referenceLevelId must reference an existing Level")
             if len(cmd.footprint_mm) < 3:
                 raise ValueError("createRoof.footprintMm requires ≥3 vertices")
+            if cmd.roof_geometry_mode == "gable_pitched_rectangle":
+                assert_valid_gable_pitched_rectangle_footprint_mm(
+                    [(p.x_mm, p.y_mm) for p in cmd.footprint_mm]
+                )
             els[rid] = RoofElem(
                 kind="roof",
                 id=rid,
@@ -989,6 +994,7 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 footprint_mm=cmd.footprint_mm,
                 overhang_mm=cmd.overhang_mm,
                 slope_deg=cmd.slope_deg,
+                roof_geometry_mode=cmd.roof_geometry_mode,
             )
 
         case ExtendFloorInsulationCmd():

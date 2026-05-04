@@ -5,6 +5,7 @@ from typing import Annotated, Any, Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from bim_ai.elements import CameraMm, EvidenceRef, Vec2Mm, WallTypeLayer
+from bim_ai.roof_geometry import RoofGeometryMode
 
 
 class CreateLevelCmd(BaseModel):
@@ -304,6 +305,7 @@ class CreateRoofCmd(BaseModel):
     footprint_mm: list[Vec2Mm] = Field(alias="footprintMm")
     overhang_mm: float = Field(alias="overhangMm", default=400)
     slope_deg: float | None = Field(default=25, alias="slopeDeg")
+    roof_geometry_mode: RoofGeometryMode = Field(default="mass_box", alias="roofGeometryMode")
 
 
 class ExtendFloorInsulationCmd(BaseModel):

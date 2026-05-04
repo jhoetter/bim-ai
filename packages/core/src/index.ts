@@ -218,6 +218,7 @@ export type Element =
       overhangMm?: number;
       slopeDeg?: number | null;
       edgeSlopeFlags?: Record<string, boolean>;
+      roofGeometryMode?: 'mass_box' | 'gable_pitched_rectangle';
     }
   | {
       kind: 'stair';
