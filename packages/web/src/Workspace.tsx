@@ -148,6 +148,30 @@ const TOOL_BTN_LABEL: Record<PlanTool, string> = {
   dimension: 'Dim',
 };
 
+function replayConflictStatus(actionLabel: string, e: unknown): string | null {
+  if (!(e instanceof ApiHttpError) || e.status !== 409) return null;
+
+  const d = e.detail;
+  const reason =
+    d && typeof d === 'object' && !Array.isArray(d) && 'reason' in d
+      ? String((d as { reason?: unknown }).reason ?? '').trim()
+      : '';
+  const replay =
+    d && typeof d === 'object' && !Array.isArray(d) && 'replayDiagnostics' in d
+      ? (d as { replayDiagnostics?: Record<string, unknown> }).replayDiagnostics
+      : undefined;
+  const stepRaw =
+    replay && typeof replay === 'object' && replay !== null && 'firstBlockingCommandIndex' in replay
+      ? Number((replay as { firstBlockingCommandIndex?: unknown }).firstBlockingCommandIndex)
+      : NaN;
+  const stepHint =
+    Number.isFinite(stepRaw) && stepRaw >= 0 ? ` (step ${Math.floor(stepRaw) + 1})` : '';
+
+  return reason
+    ? `${actionLabel} blocked: ${reason}${stepHint}`
+    : `${actionLabel} blocked (model conflict).${stepHint}`;
+}
+
 export function Workspace() {
   const [searchParams] = useSearchParams();
   const evidenceSheetFull = searchParams.has('evidenceSheetFull');
@@ -298,7 +322,7 @@ export function Workspace() {
 
         setStatus('Applied');
       } catch (e) {
-        setStatus(e instanceof Error ? e.message : String(e));
+        setStatus(replayConflictStatus('Apply', e) ?? (e instanceof Error ? e.message : String(e)));
       }
     },
 
@@ -335,7 +359,7 @@ export function Workspace() {
       if (r.revision !== undefined) pushServer(r.revision, r.elements, r.violations);
       setStatus('Applied');
     } catch (e) {
-      setStatus(e instanceof Error ? e.message : String(e));
+      setStatus(replayConflictStatus('Apply', e) ?? (e instanceof Error ? e.message : String(e)));
     }
   }, [pushServer]);
 
@@ -378,7 +402,7 @@ export function Workspace() {
 
       setStatus('Applied');
     } catch (e) {
-      setStatus(e instanceof Error ? e.message : String(e));
+      setStatus(replayConflictStatus('Apply', e) ?? (e instanceof Error ? e.message : String(e)));
     }
   }, [pushServer]);
 
@@ -411,32 +435,9 @@ export function Workspace() {
 
         setStatus(u ? 'Undone' : 'Redone');
       } catch (e) {
-        if (e instanceof ApiHttpError && e.status === 409) {
-          const d = e.detail;
-          const reason =
-            d && typeof d === 'object' && !Array.isArray(d) && 'reason' in d
-              ? String((d as { reason?: unknown }).reason ?? '').trim()
-              : '';
-          const replay =
-            d && typeof d === 'object' && !Array.isArray(d) && 'replayDiagnostics' in d
-              ? (d as { replayDiagnostics?: Record<string, unknown> }).replayDiagnostics
-              : undefined;
-          const stepRaw =
-            replay &&
-            typeof replay === 'object' &&
-            replay !== null &&
-            'firstBlockingCommandIndex' in replay
-              ? Number(
-                  (replay as { firstBlockingCommandIndex?: unknown }).firstBlockingCommandIndex,
-                )
-              : NaN;
-          const stepHint =
-            Number.isFinite(stepRaw) && stepRaw >= 0 ? ` (step ${Math.floor(stepRaw) + 1})` : '';
-          setStatus(
-            reason
-              ? `${u ? 'Undo' : 'Redo'} blocked: ${reason}${stepHint}`
-              : `${u ? 'Undo' : 'Redo'} blocked (model conflict).${stepHint}`,
-          );
+        const conflictStatus = replayConflictStatus(u ? 'Undo' : 'Redo', e);
+        if (conflictStatus) {
+          setStatus(conflictStatus);
           return;
         }
         setStatus(e instanceof Error ? e.message : String(e));
