@@ -29,7 +29,11 @@ from bim_ai.opening_cut_primitives import (
     floor_panels_axis_aligned_rect_with_single_hole_mm,
     hosted_opening_half_span_mm,
 )
-from bim_ai.roof_geometry import gable_ridge_rise_mm, outer_rect_extent
+from bim_ai.roof_geometry import (
+    gable_ridge_rise_mm,
+    mass_box_roof_proxy_peak_z_mm,
+    outer_rect_extent,
+)
 from bim_ai.stair_plan_proxy import stair_riser_count_plan_proxy
 
 _EPS = 1e-6
@@ -230,9 +234,7 @@ def _append_floor_u_span_primitive(
 
 def _roof_proxy_top_z_mm(doc: Document, r: RoofElem) -> float:
     base = _level_elevation_mm(doc, r.reference_level_id)
-    slope = float(r.slope_deg or 25.0)
-    rise = 800.0 * math.tan(math.radians(slope))
-    return base + rise
+    return mass_box_roof_proxy_peak_z_mm(base, r.slope_deg)
 
 
 def _collect_level_markers(doc: Document) -> list[dict[str, Any]]:
@@ -614,21 +616,29 @@ def build_section_projection_primitives(
             zb, zt = zt, zb
         run_len_mm = _hypot(rx1 - rx0, ry1 - ry0)
         rc_proxy = stair_riser_count_plan_proxy(doc, e, run_length_mm=run_len_mm)
-        stairs.append(
-            {
-                "id": f"stair:{e.id}:0",
-                "elementId": e.id,
-                "uStartMm": round(u_lo, 3),
-                "uEndMm": round(u_hi, 3),
-                "zBottomMm": round(zb, 3),
-                "zTopMm": round(zt, 3),
-                "widthMm": round(float(e.width_mm), 3),
-                "riserMm": round(float(e.riser_mm), 3),
-                "treadMm": round(float(e.tread_mm), 3),
-                "riserCountPlanProxy": rc_proxy,
-                "proxyKind": "runRampExtents",
-            }
-        )
+        stair_row: dict[str, Any] = {
+            "id": f"stair:{e.id}:0",
+            "elementId": e.id,
+            "uStartMm": round(u_lo, 3),
+            "uEndMm": round(u_hi, 3),
+            "zBottomMm": round(zb, 3),
+            "zTopMm": round(zt, 3),
+            "widthMm": round(float(e.width_mm), 3),
+            "riserMm": round(float(e.riser_mm), 3),
+            "treadMm": round(float(e.tread_mm), 3),
+            "riserCountPlanProxy": rc_proxy,
+            "proxyKind": "runRampExtents",
+        }
+        bl = doc.elements.get(e.base_level_id)
+        tl_ev = doc.elements.get(e.top_level_id)
+        if isinstance(bl, LevelElem) and isinstance(tl_ev, LevelElem):
+            z_lo = float(min(bl.elevation_mm, tl_ev.elevation_mm))
+            z_hi = float(max(bl.elevation_mm, tl_ev.elevation_mm))
+            rise_story = z_hi - z_lo
+            if rise_story > 1e-3:
+                stair_row["storyRiseMm"] = round(rise_story, 3)
+                stair_row["midRunElevationMm"] = round(z_lo + rise_story * 0.5, 3)
+        stairs.append(stair_row)
 
     roofs: list[dict[str, Any]] = []
     for eid in sorted(doc.elements.keys()):
@@ -680,6 +690,8 @@ def build_section_projection_primitives(
                     "uStartMm": round(u_lo, 3),
                     "uEndMm": round(u_hi, 3),
                     "zMidMm": round(z_mid, 3),
+                    "slopeDeg": round(float(e.slope_deg or 25.0), 3),
+                    "overhangMm": round(float(e.overhang_mm), 3),
                     "proxyKind": "footprintChord",
                 }
             )

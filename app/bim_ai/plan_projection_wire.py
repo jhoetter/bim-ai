@@ -12,6 +12,7 @@ from bim_ai.elements import (
     DoorElem,
     FloorElem,
     GridLineElem,
+    LevelElem,
     PlanViewElem,
     RoofElem,
     RoomElem,
@@ -23,6 +24,11 @@ from bim_ai.elements import (
     WindowElem,
 )
 from bim_ai.opening_cut_primitives import hosted_opening_t_span_normalized
+from bim_ai.roof_geometry import (
+    gable_ridge_rise_mm,
+    mass_box_roof_proxy_peak_z_mm,
+    outer_rect_extent,
+)
 from bim_ai.room_derivation import (
     compute_room_boundary_derivation,
     footprint_outline_mm_rectangle,
@@ -30,6 +36,44 @@ from bim_ai.room_derivation import (
 )
 from bim_ai.section_projection_primitives import build_section_projection_primitives
 from bim_ai.stair_plan_proxy import stair_riser_count_plan_proxy
+
+
+def _level_elevation_mm(doc: Document, level_id: str) -> float:
+    el = doc.elements.get(level_id)
+    return float(el.elevation_mm) if isinstance(el, LevelElem) else 0.0
+
+
+def _roof_plan_wire_geometry_fields(doc: Document, e: RoofElem) -> dict[str, Any]:
+    slope = float(e.slope_deg or 25.0)
+    zb = _level_elevation_mm(doc, e.reference_level_id)
+    mode = e.roof_geometry_mode
+    base: dict[str, Any] = {
+        "roofGeometryMode": mode,
+        "slopeDeg": round(slope, 3),
+        "overhangMm": round(float(e.overhang_mm), 3),
+    }
+    if mode == "gable_pitched_rectangle":
+        poly = [(float(p.x_mm), float(p.y_mm)) for p in e.footprint_mm]
+        x0, x1, z0, z1 = outer_rect_extent(poly)
+        span_x = float(x1 - x0)
+        span_z = float(z1 - z0)
+        rise_mm, ridge_axis = gable_ridge_rise_mm(span_x, span_z, slope)
+        ridge_z = zb + rise_mm
+        base.update(
+            {
+                "ridgeAxisPlan": ridge_axis,
+                "planSpanXmMm": round(span_x, 3),
+                "planSpanZmMm": round(span_z, 3),
+                "ridgeRiseMm": round(rise_mm, 3),
+                "ridgeZMm": round(ridge_z, 3),
+                "eavePlateZMm": round(zb, 3),
+                "proxyKind": "gablePitchedRectangleChord",
+            }
+        )
+    else:
+        z_mid = mass_box_roof_proxy_peak_z_mm(zb, e.slope_deg)
+        base.update({"zMidMm": round(z_mid, 3), "proxyKind": "footprintChord"})
+    return base
 
 
 def _canon_hidden_category(label: str) -> str | None:
@@ -540,25 +584,33 @@ def _build_plan_primitive_lists(
                 float(e.run_end.y_mm) - float(e.run_start.y_mm),
             )
             rc_proxy = stair_riser_count_plan_proxy(doc, e, run_length_mm=run_len_mm)
-            stairs.append(
-                {
-                    "id": e.id,
-                    "baseLevelId": e.base_level_id,
-                    "topLevelId": e.top_level_id,
-                    "riserMm": round(float(e.riser_mm), 3),
-                    "treadMm": round(float(e.tread_mm), 3),
-                    "riserCountPlanProxy": rc_proxy,
-                    "runStartMm": {
-                        "x": round(e.run_start.x_mm, 3),
-                        "y": round(e.run_start.y_mm, 3),
-                    },
-                    "runEndMm": {
-                        "x": round(e.run_end.x_mm, 3),
-                        "y": round(e.run_end.y_mm, 3),
-                    },
-                    "widthMm": round(e.width_mm, 3),
-                }
-            )
+            stair_row: dict[str, Any] = {
+                "id": e.id,
+                "baseLevelId": e.base_level_id,
+                "topLevelId": e.top_level_id,
+                "riserMm": round(float(e.riser_mm), 3),
+                "treadMm": round(float(e.tread_mm), 3),
+                "riserCountPlanProxy": rc_proxy,
+                "runStartMm": {
+                    "x": round(e.run_start.x_mm, 3),
+                    "y": round(e.run_start.y_mm, 3),
+                },
+                "runEndMm": {
+                    "x": round(e.run_end.x_mm, 3),
+                    "y": round(e.run_end.y_mm, 3),
+                },
+                "widthMm": round(e.width_mm, 3),
+            }
+            blv = doc.elements.get(e.base_level_id)
+            tlv = doc.elements.get(e.top_level_id)
+            if isinstance(blv, LevelElem) and isinstance(tlv, LevelElem):
+                z_lo = float(min(blv.elevation_mm, tlv.elevation_mm))
+                z_hi = float(max(blv.elevation_mm, tlv.elevation_mm))
+                rise_story = z_hi - z_lo
+                if rise_story > 1e-3:
+                    stair_row["storyRiseMm"] = round(rise_story, 3)
+                    stair_row["midRunElevationMm"] = round(z_lo + rise_story * 0.5, 3)
+            stairs.append(stair_row)
         elif isinstance(e, RoofElem):
             ref = getattr(e, "reference_level_id", "") or ""
             if "roof" in hidden_semantic or not lvl_ok(ref):
@@ -567,7 +619,13 @@ def _build_plan_primitive_lists(
             if crop_box is not None and not _poly_bbox_overlaps_crop(fp_pts, crop_box):
                 continue
             fp = [[round(p.x_mm, 3), round(p.y_mm, 3)] for p in e.footprint_mm]
-            roofs.append({"id": e.id, "referenceLevelId": ref, "footprintMm": fp})
+            roof_row: dict[str, Any] = {
+                "id": e.id,
+                "referenceLevelId": ref,
+                "footprintMm": fp,
+                **_roof_plan_wire_geometry_fields(doc, e),
+            }
+            roofs.append(roof_row)
         elif isinstance(e, GridLineElem):
             elv = getattr(e, "level_id", None)
             if "grid_line" in hidden_semantic or (

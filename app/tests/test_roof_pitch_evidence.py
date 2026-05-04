@@ -6,9 +6,10 @@ import pytest
 
 from bim_ai.commands import CreateLevelCmd, CreateRoofCmd
 from bim_ai.document import Document
-from bim_ai.elements import LevelElem, RoofElem, SectionCutElem
+from bim_ai.elements import LevelElem, PlanViewElem, RoofElem, SectionCutElem
 from bim_ai.engine import apply_inplace
 from bim_ai.export_gltf import document_to_gltf
+from bim_ai.plan_projection_wire import resolve_plan_projection_wire
 from bim_ai.section_projection_primitives import build_section_projection_primitives
 
 _RECT_FP = (
@@ -85,6 +86,101 @@ def test_section_roof_primitive_gable_carries_pitch_fields() -> None:
     assert row["roofGeometryMode"] == "gable_pitched_rectangle"
     assert row["ridgeAxisPlan"] in {"alongX", "alongZ"}
     assert pytest.approx(row["slopeDeg"], rel=1e-6) == 35
+
+
+SHARED_GABLE_EVIDENCE_KEYS = (
+    "roofGeometryMode",
+    "ridgeAxisPlan",
+    "slopeDeg",
+    "overhangMm",
+    "planSpanXmMm",
+    "planSpanZmMm",
+    "ridgeRiseMm",
+    "ridgeZMm",
+    "eavePlateZMm",
+    "proxyKind",
+)
+
+
+def test_plan_wire_gable_roof_geometry_matches_section_primitives_overlap() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=2600),
+            "pv": PlanViewElem(kind="plan_view", id="pv-roof-t", name="P", levelId="lvl"),
+            "r1": RoofElem(
+                kind="roof",
+                id="r1",
+                name="R",
+                reference_level_id="lvl",
+                footprint_mm=list(_RECT_FP),
+                overhang_mm=400,
+                slope_deg=35,
+                roof_geometry_mode="gable_pitched_rectangle",
+            ),
+            "sec": SectionCutElem(
+                kind="section_cut",
+                id="sec-1",
+                name="Sec",
+                line_start_mm={"xMm": 500, "yMm": 2000},
+                line_end_mm={"xMm": 5500, "yMm": 2000},
+                crop_depth_mm=6000,
+            ),
+        },
+    )
+    pw = resolve_plan_projection_wire(doc, plan_view_id="pv-roof-t", fallback_level_id="lvl")
+    prim_pw = pw.get("primitives") or {}
+    plan_roofs = prim_pw.get("roofs") or []
+    assert len(plan_roofs) == 1
+    plan_row = plan_roofs[0]
+    sec_prim, _w = build_section_projection_primitives(doc, doc.elements["sec"])
+    sec_row = (sec_prim.get("roofs") or [])[0]
+    for k in SHARED_GABLE_EVIDENCE_KEYS:
+        p_v, s_v = plan_row[k], sec_row[k]
+        if isinstance(p_v, str):
+            assert p_v == s_v
+        else:
+            assert pytest.approx(float(p_v), rel=1e-9, abs=1e-6) == float(s_v), k
+
+
+def test_plan_wire_mass_box_roof_z_mid_matches_section_primitive() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="OG", elevationMm=2800),
+            "pv": PlanViewElem(kind="plan_view", id="pv-r2", name="P", levelId="lvl"),
+            "roof-m": RoofElem(
+                kind="roof",
+                id="roof-m",
+                name="R",
+                reference_level_id="lvl",
+                footprint_mm=list(_RECT_FP),
+                slope_deg=31,
+                overhang_mm=350,
+            ),
+            "sec": SectionCutElem(
+                kind="section_cut",
+                id="sec-m",
+                name="Sec",
+                line_start_mm={"xMm": 500, "yMm": 2000},
+                line_end_mm={"xMm": 5500, "yMm": 2000},
+                crop_depth_mm=6000,
+            ),
+        },
+    )
+    pw = resolve_plan_projection_wire(doc, plan_view_id="pv-r2", fallback_level_id="lvl")
+    plan_row = (pw.get("primitives") or {}).get("roofs") or []
+    assert len(plan_row) == 1
+    pr = plan_row[0]
+    sec_prim, _w = build_section_projection_primitives(doc, doc.elements["sec"])
+    sr = (sec_prim.get("roofs") or [])[0]
+    mass_keys = ("roofGeometryMode", "slopeDeg", "overhangMm", "zMidMm", "proxyKind")
+    for k in mass_keys:
+        p_v, s_v = pr[k], sr[k]
+        if isinstance(p_v, str):
+            assert p_v == s_v
+        else:
+            assert pytest.approx(float(p_v), rel=1e-9, abs=1e-6) == float(s_v), k
 
 
 def test_gltf_manifest_and_mesh_differs_from_mass_box_for_gable_roof() -> None:

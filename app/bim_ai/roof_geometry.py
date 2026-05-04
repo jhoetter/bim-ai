@@ -28,6 +28,14 @@ def gable_ridge_rise_mm(span_x: float, span_z: float, slope_deg: float) -> tuple
     return rise_mm, axis
 
 
+def mass_box_roof_proxy_peak_z_mm(reference_level_elevation_mm: float, slope_deg: float | None) -> float:
+    """Section/plan proxy peak for roofGeometryMode=mass_box (800 mm nominal half-run heuristic)."""
+
+    slope = float(slope_deg if slope_deg is not None else 25.0)
+    rise = 800.0 * math.tan(math.radians(slope))
+    return float(reference_level_elevation_mm) + rise
+
+
 def assert_valid_gable_pitched_rectangle_footprint_mm(
     footprint_mm: list[tuple[float, float]],
 ) -> None:

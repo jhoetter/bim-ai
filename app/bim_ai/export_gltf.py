@@ -26,6 +26,7 @@ from bim_ai.elements import (
 from bim_ai.material_assembly_resolve import material_assembly_manifest_evidence
 from bim_ai.opening_cut_primitives import xz_bounds_mm_from_poly
 from bim_ai.roof_geometry import gable_ridge_rise_mm, outer_rect_extent
+from bim_ai.stair_plan_proxy import stair_riser_count_plan_proxy
 from bim_ai.wall_join_evidence import collect_wall_corner_join_evidence_v0
 
 EXPORT_GEOMETRY_KINDS: frozenset[str] = frozenset(
@@ -111,10 +112,45 @@ def roof_geometry_manifest_evidence_v0(doc: Document) -> dict[str, Any] | None:
     return {"format": "roofGeometryEvidence_v0", "roofs": rows}
 
 
+def stair_geometry_manifest_evidence_v0(doc: Document) -> dict[str, Any] | None:
+    rows: list[dict[str, Any]] = []
+    for eid in sorted(doc.elements.keys()):
+        e = doc.elements[eid]
+        if not isinstance(e, StairElem):
+            continue
+        bl = doc.elements.get(e.base_level_id)
+        tl = doc.elements.get(e.top_level_id)
+        if not isinstance(bl, LevelElem) or not isinstance(tl, LevelElem):
+            continue
+        z_lo = float(min(bl.elevation_mm, tl.elevation_mm))
+        z_hi = float(max(bl.elevation_mm, tl.elevation_mm))
+        rise_story = z_hi - z_lo
+        if rise_story <= 1e-3:
+            continue
+        rx0, ry0 = float(e.run_start.x_mm), float(e.run_start.y_mm)
+        rx1, ry1 = float(e.run_end.x_mm), float(e.run_end.y_mm)
+        run_len = math.hypot(rx1 - rx0, ry1 - ry0)
+        rc_proxy = stair_riser_count_plan_proxy(doc, e, run_length_mm=run_len)
+        rows.append(
+            {
+                "elementId": eid,
+                "baseLevelId": e.base_level_id,
+                "topLevelId": e.top_level_id,
+                "storyRiseMm": round(rise_story, 3),
+                "midRunElevationMm": round(z_lo + rise_story * 0.5, 3),
+                "riserCountPlanProxy": rc_proxy,
+            }
+        )
+    if not rows:
+        return None
+    return {"format": "stairGeometryEvidence_v0", "stairs": rows}
+
+
 def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
     parity = exchange_parity_manifest_fields_from_document(doc)
     cut_warns = collect_hosted_cut_manifest_warnings(doc)
     rgeom_roofs = roof_geometry_manifest_evidence_v0(doc)
+    stair_geom = stair_geometry_manifest_evidence_v0(doc)
     corner_joins = collect_wall_corner_join_evidence_v0(doc)
     mesh_enc = "bim_ai_box_primitive_v0"
     if rgeom_roofs:
@@ -133,6 +169,8 @@ def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
         base["materialAssemblyEvidence_v0"] = asm_ev
     if rgeom_roofs:
         base["roofGeometryEvidence_v0"] = rgeom_roofs
+    if stair_geom:
+        base["stairGeometryEvidence_v0"] = stair_geom
     if corner_joins:
         base["wallCornerJoinEvidence_v0"] = corner_joins
     return base
