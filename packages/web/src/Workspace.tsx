@@ -379,10 +379,25 @@ export function Workspace() {
             d && typeof d === 'object' && !Array.isArray(d) && 'reason' in d
               ? String((d as { reason?: unknown }).reason ?? '').trim()
               : '';
+          const replay =
+            d && typeof d === 'object' && !Array.isArray(d) && 'replayDiagnostics' in d
+              ? (d as { replayDiagnostics?: Record<string, unknown> }).replayDiagnostics
+              : undefined;
+          const stepRaw =
+            replay &&
+            typeof replay === 'object' &&
+            replay !== null &&
+            'firstBlockingCommandIndex' in replay
+              ? Number(
+                  (replay as { firstBlockingCommandIndex?: unknown }).firstBlockingCommandIndex,
+                )
+              : NaN;
+          const stepHint =
+            Number.isFinite(stepRaw) && stepRaw >= 0 ? ` (step ${Math.floor(stepRaw) + 1})` : '';
           setStatus(
             reason
-              ? `${u ? 'Undo' : 'Redo'} blocked: ${reason}`
-              : `${u ? 'Undo' : 'Redo'} blocked (model conflict).`,
+              ? `${u ? 'Undo' : 'Redo'} blocked: ${reason}${stepHint}`
+              : `${u ? 'Undo' : 'Redo'} blocked (model conflict).${stepHint}`,
           );
           return;
         }

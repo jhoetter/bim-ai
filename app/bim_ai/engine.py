@@ -1191,6 +1191,56 @@ def compute_delta_wire(prev_doc: Document, next_doc: Document) -> dict[str, Any]
     }
 
 
+def bundle_replay_diagnostics(cmds_raw: list[dict[str, Any]]) -> dict[str, Any]:
+    """Stable ordering metadata for collaboration + replay surfaces (WP-X01 / WP-P02)."""
+
+    types_in_order: list[str] = []
+    for c in cmds_raw:
+        if not isinstance(c, dict):
+            types_in_order.append("?")
+            continue
+        t = c.get("type")
+        types_in_order.append(str(t) if t is not None else "?")
+    return {
+        "commandCount": len(cmds_raw),
+        "commandTypesInOrder": types_in_order,
+    }
+
+
+def first_blocking_command_index_after_prefixes(doc: Document, cmds: list[Command]) -> int | None:
+    """First apply index (0-based) where accumulated model hits a blocking/error violation."""
+
+    cand = clone_document(doc)
+    for i, cmd in enumerate(cmds):
+        apply_inplace(cand, cmd)
+        violations = evaluate(cand.elements)
+        blocking = [v for v in violations if v.blocking or v.severity == "error"]
+        if blocking:
+            return i
+    return None
+
+
+def replay_bundle_diagnostics_for_outcome(
+    doc: Document,
+    cmds_raw: list[dict[str, Any]],
+    *,
+    outcome_code: str,
+) -> dict[str, Any]:
+    """Augment ordering metadata after a bundle try; adds conflict index on constraint failures."""
+
+    base = bundle_replay_diagnostics(cmds_raw)
+    if outcome_code != "constraint_error":
+        return base
+    try:
+        cmds = [coerce_command(c) for c in cmds_raw]
+    except Exception:
+        return base
+    idx = first_blocking_command_index_after_prefixes(doc, cmds)
+    if idx is not None:
+        return {**base, "firstBlockingCommandIndex": idx}
+    return base
+
+
 def try_commit_bundle(
     doc: Document,
     cmds_raw: list[dict[str, Any]],

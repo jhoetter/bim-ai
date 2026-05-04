@@ -196,3 +196,9 @@ def test_hybrid_model_summary_exposes_scale_fields() -> None:
     assert sw["wallCount"] == 55
     assert sw["roomCount"] == 40
     assert sw["scheduleElementCount"] == 1
+    preview = summary["roomDerivationPreview"]
+    regen = summary["regenerationDiagnostics"]
+    assert regen["documentRevision"] == doc.revision
+    assert regen["roomDerivationHeuristicVersion"] == preview["heuristicVersion"]
+    assert regen["roomDerivationCandidateCount"] == preview["candidateCount"]
+    assert regen["roomDerivationWarningCount"] == len(preview["warnings"])

@@ -81,5 +81,13 @@ def compute_model_summary(doc: Document) -> dict[str, Any]:
         "viewpointCount": int(kinds.get("viewpoint", 0)),
         "dimensionCount": int(kinds.get("dimension", 0)),
         "scheduleCount": int(kinds.get("schedule", 0)),
-        "roomDerivationPreview": room_derivation_preview(doc),
+        "roomDerivationPreview": (
+            rd_preview := room_derivation_preview(doc)
+        ),
+        "regenerationDiagnostics": {
+            "documentRevision": doc.revision,
+            "roomDerivationHeuristicVersion": rd_preview.get("heuristicVersion"),
+            "roomDerivationCandidateCount": rd_preview.get("candidateCount"),
+            "roomDerivationWarningCount": len(rd_preview.get("warnings") or []),
+        },
     }

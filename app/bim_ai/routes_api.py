@@ -27,9 +27,11 @@ from bim_ai.db import SessionMaker, get_session
 from bim_ai.document import Document
 from bim_ai.elements import BcfElem, Element, LevelElem, PlanViewElem
 from bim_ai.engine import (
+    bundle_replay_diagnostics,
     clone_document,
     compute_delta_wire,
     diff_undo_cmds,
+    replay_bundle_diagnostics_for_outcome,
     try_commit,
     try_commit_bundle,
 )
@@ -709,7 +711,18 @@ async def import_bcf_topics_json(
     if not ok or new_doc is None:
         viols_wire = [v.model_dump(by_alias=True) for v in violations]
 
-        raise HTTPException(status_code=409, detail={"reason": code, "violations": viols_wire})
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "reason": code,
+                "violations": viols_wire,
+                "replayDiagnostics": replay_bundle_diagnostics_for_outcome(
+                    baseline_doc,
+                    commands,
+                    outcome_code=code,
+                ),
+            },
+        )
 
     undo_cmds = diff_undo_cmds(doc_before, new_doc)
 
@@ -757,6 +770,7 @@ async def import_bcf_topics_json(
         "appliedCommands": commands,
         "clientOpId": body.client_op_id,
         "delta": delta,
+        "replayDiagnostics": bundle_replay_diagnostics(commands),
     }
 
 
@@ -945,7 +959,18 @@ async def apply_command_bundle(
     if not ok or new_doc is None:
         viols_wire = [v.model_dump(by_alias=True) for v in violations]
 
-        raise HTTPException(status_code=409, detail={"reason": code, "violations": viols_wire})
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "reason": code,
+                "violations": viols_wire,
+                "replayDiagnostics": replay_bundle_diagnostics_for_outcome(
+                    baseline_doc,
+                    body.commands,
+                    outcome_code=code,
+                ),
+            },
+        )
 
     undo_cmds = diff_undo_cmds(doc_before, new_doc)
 
@@ -992,6 +1017,7 @@ async def apply_command_bundle(
         "appliedCommands": body.commands,
         "clientOpId": body.client_op_id,
         "delta": delta,
+        "replayDiagnostics": bundle_replay_diagnostics(body.commands),
     }
 
 
@@ -1025,6 +1051,11 @@ async def dry_run_command_bundle(
             "summaryAfter": None,
             "wouldRevision": None,
             "appliedCommandsPreview": body.commands,
+            "replayDiagnostics": replay_bundle_diagnostics_for_outcome(
+                baseline_doc,
+                body.commands,
+                outcome_code=code,
+            ),
         }
 
     return {
@@ -1036,6 +1067,7 @@ async def dry_run_command_bundle(
         "summaryAfter": compute_model_summary(new_doc),
         "wouldRevision": new_doc.revision,
         "appliedCommandsPreview": body.commands,
+        "replayDiagnostics": bundle_replay_diagnostics(body.commands),
     }
 
 
@@ -1108,7 +1140,19 @@ async def undo_model(
 
     if not ok or new_doc is None:
         viols_wire = [v.model_dump(by_alias=True) for v in violations]
-        raise HTTPException(status_code=409, detail={"reason": code, "violations": viols_wire})
+        undo_cmds_raw = list(undo_row.undo_commands)
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "reason": code,
+                "violations": viols_wire,
+                "replayDiagnostics": replay_bundle_diagnostics_for_outcome(
+                    current,
+                    undo_cmds_raw,
+                    outcome_code=code,
+                ),
+            },
+        )
 
     await session.delete(undo_row)
     session.add(
@@ -1167,7 +1211,19 @@ async def redo_model(
 
     if not ok or new_doc is None:
         viols_wire = [v.model_dump(by_alias=True) for v in violations]
-        raise HTTPException(status_code=409, detail={"reason": code, "violations": viols_wire})
+        forward_cmds = list(redo_row.forward_commands)
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "reason": code,
+                "violations": viols_wire,
+                "replayDiagnostics": replay_bundle_diagnostics_for_outcome(
+                    current,
+                    forward_cmds,
+                    outcome_code=code,
+                ),
+            },
+        )
 
     undo_cmds = diff_undo_cmds(baseline, new_doc)
 
