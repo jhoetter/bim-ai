@@ -1,15 +1,16 @@
-# Agent Prompt 1: Datum Chain And Level Constraint Parity Slice
+# Agent Prompt 1: View Template Tag Style Catalog And Graphic Overrides
 
 ## Mission
 
-You are Agent 1 of the next parallel BIM AI parity batch. Move datum/level behavior beyond editable elevations by adding one deterministic datum-chain or level-dependency slice: dependent offsets, level-hosted element impact evidence, and validation/advisor feedback when a datum edit would create inconsistent host relationships. Do not open a pull request. Commit and push only your branch.
+You are Agent 1 of the next parallel BIM AI parity batch. Deepen saved view/template parity by adding one compact tag-style or graphic-override catalog slice that is editable, replayable, and visible in deterministic plan/browser readouts. Do not open a pull request. Commit and push only your branch.
 
 Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
 
-- `WP-B01` Level/datum model
-- `WP-V01` Validation/advisor expansion
-- `WP-X01` JSON snapshot and command replay
-- light `WP-P01` Browser performance budget
+- `WP-C01` First-class plan views
+- `WP-C02` Plan projection engine
+- `WP-C03` Plan symbology and graphics
+- `WP-C05` Project browser hierarchy
+- light `WP-X01` JSON snapshot and command replay
 
 ## Start Procedure
 
@@ -19,57 +20,59 @@ Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
    git fetch origin
    git switch main
    git pull --ff-only origin main
-   git switch -c agent/datum-chain-level-constraints
+   git switch -c agent/view-template-tag-style-catalog
    ```
 
 2. Read first:
    - `spec/revit-production-parity-workpackage-tracker.md`
    - `spec/prd/revit-production-parity-ai-agent-prd.md`
    - `app/bim_ai/elements.py`
-   - `app/bim_ai/commands.py`
    - `app/bim_ai/engine.py`
-   - `app/bim_ai/constraints.py`
-   - existing level, update-property, validation, and replay tests
+   - `app/tests/test_update_element_property_plan_view.py`
+   - `packages/web/src/plan/planProjection.ts`
+   - `packages/web/src/workspace/savedViewTagGraphicsAuthoring.tsx`
+   - `packages/web/src/workspace/ProjectBrowser.tsx`
+   - existing plan/workspace Vitest tests
 
 ## File Ownership Rules
 
-Own level/datum data, command replay, and validation only. Avoid schedule, sheet export, OpenBIM, room derivation, and geometry-kernel edits. If a UI readout is needed, keep it tiny and isolated to existing level/property inspection paths.
+Own saved view/template tag-style or graphic-override catalog behavior only. Avoid sheet export, schedule engine, room derivation, OpenBIM, geometry kernels, and broad `Workspace.tsx` rewrites.
 
 ## Allowed Scope
 
 Prefer changes in:
 
-- `app/bim_ai/elements.py`
-- `app/bim_ai/commands.py`
-- `app/bim_ai/engine.py`
-- `app/bim_ai/constraints.py`
-- focused tests under `app/tests/`
-- optional small web state/type hydration only if backend schema changes require it
+- `app/bim_ai/elements.py`, `commands.py`, `engine.py` only for replayable view/template fields
+- `app/tests/test_update_element_property_plan_view.py`
+- `packages/web/src/plan/planProjection.ts`
+- `packages/web/src/workspace/savedViewTagGraphicsAuthoring.tsx`
+- `packages/web/src/workspace/PlanViewGraphicsMatrix.tsx`
+- `packages/web/src/workspace/ProjectBrowser.tsx`
+- focused plan/workspace tests
 - `spec/revit-production-parity-workpackage-tracker.md`
 
 ## Non-Goals
 
-- Do not redesign all level editing UI.
-- Do not implement full Revit datum propagation.
-- Do not touch schedule filters, sheet raster/export, IFC replay, room legends, or stair/roof geometry.
-- Do not introduce broad defensive compatibility shims for unshipped branch behavior.
+- Do not build the full Revit visibility/graphics dialog.
+- Do not change crop/range semantics.
+- Do not touch schedule, sheet raster, IFC, room, or geometry code.
 - Do not open a PR.
 
 ## Implementation Checklist
 
-- Add one narrow dependent datum/level property or command behavior, such as a dependent offset, story constraint, or hosted-element impact summary.
-- Ensure the behavior survives JSON command replay and snapshot hydration.
-- Add deterministic validation/advisor rules for one inconsistent datum/host case.
-- Keep diagnostic IDs/messages stable and sorted.
-- Add focused tests for successful replay and one validation failure/advisory case.
-- Update tracker rows with exact fields, commands, tests, and remaining level/datum blockers.
+- Add one replayable catalog/config surface for tag style or plan graphic overrides.
+- Make plan views inherit/override the catalog deterministically from view templates.
+- Add browser/inspector/readout evidence that shows stored vs effective values.
+- Add tests for replay and web readout behavior.
+- Update tracker rows with exact fields, tests, and remaining template/tag blockers.
 
 ## Validation
 
 Run focused checks:
 
 ```bash
-cd app && .venv/bin/ruff check bim_ai tests && .venv/bin/pytest tests/test_*level* tests/test_update_element_property* tests/test_constraints*
+cd app && .venv/bin/ruff check bim_ai tests && .venv/bin/pytest tests/test_update_element_property_plan_view.py
+cd packages/web && pnpm exec vitest run src/plan src/workspace
 ```
 
 Then run, if practical:
@@ -80,7 +83,7 @@ pnpm verify
 
 ## Tracker Update
 
-Update `WP-B01`, `WP-V01`, `WP-X01`, and any narrow `WP-P01` evidence. Add a Recent Sprint Ledger entry describing the datum-chain/level-constraint slice.
+Update `WP-C01`, `WP-C02`, `WP-C03`, `WP-C05`, and any narrow `WP-X01` evidence. Add a Recent Sprint Ledger entry describing the template/tag-style catalog slice.
 
 ## Commit And Push
 
@@ -91,7 +94,7 @@ git status
 git diff
 git add <changed files>
 git commit -m "$(cat <<'EOF'
-feat(levels): add datum chain constraint slice
+feat(web): add view template tag style catalog
 
 EOF
 )"
@@ -100,4 +103,4 @@ git push -u origin HEAD
 
 ## Final Report
 
-Return branch, commit SHA, datum behavior added, tracker rows updated, validation results, and shared-file merge risks.
+Return branch, commit SHA, catalog behavior added, tracker rows updated, validation results, and shared-file merge risks.

@@ -1,8 +1,8 @@
-# Agent Prompt 4: Advanced Schedule Filters And Calculated Field Slice
+# Agent Prompt 4: Schedule Multi-Operator Filters And Safe Calculated Fields
 
 ## Mission
 
-You are Agent 4 of the next parallel BIM AI parity batch. Deepen schedule definitions by adding one narrow advanced filter/calculated-field slice that works server-side, exports through JSON/CSV, and has a minimal UI authoring/readout path. Do not open a pull request. Commit and push only your branch.
+You are Agent 4 of the next parallel BIM AI parity batch. Extend schedule parity beyond the current `gt` filter rule by adding one safe multi-operator filter or constrained calculated-field slice that is replayable, exported, and minimally authorable in the web schedule UI. Do not open a pull request. Commit and push only your branch.
 
 Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
 
@@ -20,7 +20,7 @@ Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
    git fetch origin
    git switch main
    git pull --ff-only origin main
-   git switch -c agent/schedule-advanced-filters-calculated-fields
+   git switch -c agent/schedule-multi-operator-calculated-fields
    ```
 
 2. Read first:
@@ -29,13 +29,14 @@ Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
    - `app/bim_ai/schedule_derivation.py`
    - `app/bim_ai/schedule_field_registry.py`
    - `app/bim_ai/schedule_csv.py`
-   - `app/bim_ai/commands.py`
+   - `app/tests/test_schedule_row_filters.py`
    - `packages/web/src/schedules/SchedulePanel.tsx`
-   - existing schedule filter, export, and UI tests
+   - `packages/web/src/schedules/scheduleFilterWidthRules.ts`
+   - existing schedule tests
 
 ## File Ownership Rules
 
-Own schedule definition/filter/calculated-field behavior only. Avoid room derivation, sheet export, OpenBIM replay, level constraints, and geometry-kernel files. Coordinate mentally with room prompt by keeping room-specific schedule changes minimal and generic.
+Own schedule definition/filter/calculated-field behavior only. Avoid room legend placement, sheet raster, OpenBIM replay, geometry kernels, and validation bundles.
 
 ## Allowed Scope
 
@@ -44,27 +45,26 @@ Prefer changes in:
 - `app/bim_ai/schedule_derivation.py`
 - `app/bim_ai/schedule_field_registry.py`
 - `app/bim_ai/schedule_csv.py`
-- `app/bim_ai/commands.py` / `engine.py` only for replayable schedule definition fields
-- `app/bim_ai/routes_api.py` only if export/query surface changes
+- `app/bim_ai/commands.py` / `engine.py` only if replay schema changes are required
 - `packages/web/src/schedules/SchedulePanel.tsx`
-- focused schedule tests
+- schedule helper/test files
+- focused backend schedule tests
 - `spec/revit-production-parity-workpackage-tracker.md`
 
 ## Non-Goals
 
-- Do not build a full formula language.
-- Do not redesign SchedulePanel layout.
-- Do not touch sheet viewport placement, room legend UI, IFC, or geometry.
-- Do not add arbitrary eval or unsafe expression parsing.
+- Do not implement arbitrary formulas or unsafe string evaluation.
+- Do not redesign SchedulePanel.
+- Do not touch room/IFC/sheet-raster/geometry files.
 - Do not open a PR.
 
 ## Implementation Checklist
 
-- Add one constrained advanced filter operator (`gt`, `lt`, `contains`, `isBlank`, etc.) or one safe calculated field helper using structured config, not arbitrary code strings.
-- Persist it through existing schedule command/replay paths.
-- Ensure server-derived JSON and CSV exports produce deterministic rows/totals.
-- Add a minimal UI control/readout for the new filter/calculated-field behavior.
-- Add tests for replay, derivation, CSV/JSON export, and UI state if touched.
+- Add one safe filter operator (`lt`, `contains`, `isBlank`) or one constrained calculated field using structured config.
+- Persist and echo the definition through replay/schedule payloads.
+- Ensure JSON and CSV exports remain deterministic.
+- Add minimal web UI/readout for the new behavior.
+- Add backend and web tests.
 - Update tracker rows with exact operators/fields, tests, and remaining schedule blockers.
 
 ## Validation
@@ -84,7 +84,7 @@ pnpm verify
 
 ## Tracker Update
 
-Update `WP-D01`, `WP-D02`, `WP-D03`, `WP-D04`, and `WP-X01`. Add a Recent Sprint Ledger entry describing the schedule filter/calculated-field slice.
+Update `WP-D01`, `WP-D02`, `WP-D03`, `WP-D04`, and `WP-X01`. Add a Recent Sprint Ledger entry describing the schedule operator/calculated-field slice.
 
 ## Commit And Push
 
@@ -95,7 +95,7 @@ git status
 git diff
 git add <changed files>
 git commit -m "$(cat <<'EOF'
-feat(schedules): add advanced filter calculated field slice
+feat(schedules): add multi operator calculated field slice
 
 EOF
 )"

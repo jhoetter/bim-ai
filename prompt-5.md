@@ -1,8 +1,8 @@
-# Agent Prompt 5: Section Documentation Dimensions Hatches And Material Hints
+# Agent Prompt 5: Section Dimensions Tags And Material Cut Patterns
 
 ## Mission
 
-You are Agent 5 of the next parallel BIM AI parity batch. Advance section/elevation views from projection boxes toward production documentation by adding one deterministic cut hatch, material hint, or dimension/tag evidence slice that flows into sheet viewport rendering/export. Do not open a pull request. Commit and push only your branch.
+You are Agent 5 of the next parallel BIM AI parity batch. Advance section/elevation documentation by adding one deterministic dimension/tag/material cut-pattern slice that appears in server primitives, sheet export tokens, and `SectionViewportSvg`. Do not open a pull request. Commit and push only your branch.
 
 Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
 
@@ -20,7 +20,7 @@ Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
    git fetch origin
    git switch main
    git pull --ff-only origin main
-   git switch -c agent/section-doc-dimensions-hatches
+   git switch -c agent/section-dimensions-tags-material-cuts
    ```
 
 2. Read first:
@@ -31,18 +31,18 @@ Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
    - `packages/web/src/workspace/SectionViewportSvg.tsx`
    - `packages/web/src/workspace/sectionViewportDoc.ts`
    - `packages/web/src/plan/symbology.ts`
-   - existing section primitive, sheet export, and SectionViewportSvg tests
+   - existing section/sheet export/Vitest tests
 
 ## File Ownership Rules
 
-Own section documentation primitives and rendering/export labels only. Avoid plan projection, room derivation, schedule filters, OpenBIM replay, sheet raster service, and roof/stair geometry kernels unless a read-only material hint is necessary.
+Own section documentation primitives/rendering/export tokens only. Avoid plan projection, room legends, schedule filters, OpenBIM, sheet raster internals, and hosted-opening geometry.
 
 ## Allowed Scope
 
 Prefer changes in:
 
 - `app/bim_ai/section_projection_primitives.py`
-- `app/bim_ai/sheet_preview_svg.py`, only for section export/documentation tokens
+- `app/bim_ai/sheet_preview_svg.py`, only for section documentation export tokens
 - `packages/web/src/workspace/SectionViewportSvg.tsx`
 - `packages/web/src/workspace/sectionViewportDoc.ts`
 - `packages/web/src/plan/symbology.ts`
@@ -51,20 +51,18 @@ Prefer changes in:
 
 ## Non-Goals
 
-- Do not build full Revit dimension-chain editing.
-- Do not change plan view behavior.
-- Do not touch schedule or OpenBIM code.
+- Do not implement editable dimension chains.
+- Do not touch schedule, IFC, or room logic.
 - Do not redesign SheetCanvas.
 - Do not open a PR.
 
 ## Implementation Checklist
 
-- Add one deterministic section documentation feature: cut hatch classification, material/layer hint labels, dimension bracket/token, or door/window/level tag evidence.
-- Ensure server primitives and web SVG rendering use the same stable source data.
-- Add deterministic export token(s) to SVG/PDF listing if the feature is export-visible.
-- Add pytest and Vitest coverage for primitive generation and rendering/export.
-- Keep visual output stable and low-noise.
-- Update tracker rows with exact primitive fields, rendering path, tests, and remaining section blockers.
+- Add one deterministic production documentation feature: dimension witness token, material cut pattern hint, elevation tag, or scale-aware annotation.
+- Ensure server primitive, web rendering, and export token paths agree.
+- Keep rendering deterministic and low-noise.
+- Add pytest and Vitest coverage.
+- Update tracker rows with exact primitive/export fields and remaining blockers.
 
 ## Validation
 
@@ -94,7 +92,7 @@ git status
 git diff
 git add <changed files>
 git commit -m "$(cat <<'EOF'
-feat(sections): add documentation hatch dimension slice
+feat(sections): add dimension tag material cut slice
 
 EOF
 )"

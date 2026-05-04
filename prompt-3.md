@@ -1,8 +1,8 @@
-# Agent Prompt 3: Room Legend Elements And Programme Workflow Slice
+# Agent Prompt 3: First-Class Room Legend Placement And Department Schemes
 
 ## Mission
 
-You are Agent 3 of the next parallel BIM AI parity batch. Promote room programme data from schedule/readout into a small first-class workflow: room legend elements on sheets or a deterministic programme/department color-scheme authoring slice, with evidence that links rooms, schedules, and legends. Do not open a pull request. Commit and push only your branch.
+You are Agent 3 of the next parallel BIM AI parity batch. Promote room legend evidence into a first-class authoring workflow: replayable room legend placement, department/programme scheme configuration, or sheet-linked legend rows that remain aligned with schedules and plan color legends. Do not open a pull request. Commit and push only your branch.
 
 Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
 
@@ -10,7 +10,8 @@ Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
 - `WP-C04` Room color schemes and legends
 - `WP-D01` Server-derived schedules
 - `WP-D03` Schedule UI
-- light `WP-E05` Sheet canvas and titleblock
+- `WP-E05` Sheet canvas and titleblock
+- light `WP-X01` JSON snapshot and command replay
 
 ## Start Procedure
 
@@ -20,59 +21,58 @@ Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
    git fetch origin
    git switch main
    git pull --ff-only origin main
-   git switch -c agent/room-legend-programme-workflow
+   git switch -c agent/room-legend-placement-department-schemes
    ```
 
 2. Read first:
    - `spec/revit-production-parity-workpackage-tracker.md`
    - `spec/prd/revit-production-parity-ai-agent-prd.md`
-   - `app/bim_ai/room_derivation.py`
-   - `app/bim_ai/schedule_derivation.py`
+   - `app/bim_ai/elements.py`
+   - `app/bim_ai/commands.py`
+   - `app/bim_ai/engine.py`
    - `app/bim_ai/plan_projection_wire.py`
+   - `app/bim_ai/sheet_preview_svg.py`
+   - `packages/web/src/plan/planProjectionWire.ts`
    - `packages/web/src/plan/roomSchemeColor.ts`
-   - `packages/web/src/schedules/SchedulePanel.tsx`
-   - existing room, schedule, plan, and sheet tests
+   - existing room legend/schedule/sheet tests
 
 ## File Ownership Rules
 
-Own room programme/legend behavior only. Avoid broad room derivation algorithm rewrites, non-room validation bundles, OpenBIM replay, sheet raster service, and schedule engine refactors. Keep any sheet work limited to room legend placement/evidence.
+Own room legend/scheme authoring only. Avoid room boundary algorithm rewrites, sheet raster service, schedule filter engine, OpenBIM replay, and geometry kernels.
 
 ## Allowed Scope
 
 Prefer changes in:
 
-- `app/bim_ai/elements.py` and `commands.py` only if a room legend element/command is needed
-- `app/bim_ai/engine.py`
-- `app/bim_ai/schedule_derivation.py`
+- `app/bim_ai/elements.py`, `commands.py`, `engine.py` for a narrow legend/scheme command if needed
 - `app/bim_ai/plan_projection_wire.py`
-- `packages/web/src/plan/roomSchemeColor.ts`
-- small isolated web component/test for room legend/programme readout
-- focused tests under `app/tests/` and `packages/web/src/`
+- `app/bim_ai/sheet_preview_svg.py`, only for room legend sheet/export evidence
+- `app/bim_ai/schedule_derivation.py`, only for room programme alignment
+- focused room/schedule/sheet tests
+- small web extract/readout helpers
 - `spec/revit-production-parity-workpackage-tracker.md`
 
 ## Non-Goals
 
-- Do not implement arbitrary curved room boundaries.
+- Do not solve curved/non-axis room derivation.
 - Do not redesign SchedulePanel globally.
-- Do not touch IFC, print raster export, level constraints, or stair/roof geometry.
-- Do not turn room derivation into a full computational geometry project.
+- Do not touch print raster internals, IFC, or hosted-opening geometry.
 - Do not open a PR.
 
 ## Implementation Checklist
 
-- Add one replayable room legend/programme workflow: e.g. `room_legend` element, sheet placement, deterministic legend rows, or editable programme/department scheme mapping.
-- Link legend output to existing room schedule/programme fields and deterministic color hashing.
-- Add evidence that distinguishes real legend/programme output from preview-only room warnings.
-- Preserve existing room target/area schedule behavior.
-- Add tests for replay, deterministic legend rows/colors, and one sheet or UI readout if touched.
-- Update tracker rows with exact fields/evidence and remaining room legend blockers.
+- Add one replayable room legend placement or department/programme scheme authoring path.
+- Keep legend rows, schedule rows, and plan projection evidence deterministic.
+- Preserve `roomProgrammeLegendEvidence_v0` digest semantics or version it deliberately.
+- Add tests for replay, sheet/plan evidence, and schedule alignment.
+- Update tracker rows with exact element/command/evidence keys and remaining blockers.
 
 ## Validation
 
 Run focused checks:
 
 ```bash
-cd app && .venv/bin/ruff check bim_ai tests && .venv/bin/pytest tests/test_room* tests/test_schedule* tests/test_plan_projection*
+cd app && .venv/bin/ruff check bim_ai tests && .venv/bin/pytest tests/test_room* tests/test_plan_projection* tests/test_sheet* tests/test_schedule*
 cd packages/web && pnpm exec vitest run src/plan src/schedules src/workspace
 ```
 
@@ -84,7 +84,7 @@ pnpm verify
 
 ## Tracker Update
 
-Update `WP-B06`, `WP-C04`, `WP-D01`, `WP-D03`, and any narrow `WP-E05` evidence. Add a Recent Sprint Ledger entry describing the room legend/programme workflow.
+Update `WP-B06`, `WP-C04`, `WP-D01`, `WP-D03`, `WP-E05`, and any narrow `WP-X01` evidence. Add a Recent Sprint Ledger entry describing the room legend placement/scheme slice.
 
 ## Commit And Push
 
@@ -95,7 +95,7 @@ git status
 git diff
 git add <changed files>
 git commit -m "$(cat <<'EOF'
-feat(rooms): add room legend programme workflow
+feat(rooms): add room legend placement scheme slice
 
 EOF
 )"
@@ -104,4 +104,4 @@ git push -u origin HEAD
 
 ## Final Report
 
-Return branch, commit SHA, room legend/programme behavior added, tracker rows updated, validation results, and shared-file merge risks.
+Return branch, commit SHA, room legend behavior added, tracker rows updated, validation results, and shared-file merge risks.
