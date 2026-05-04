@@ -1,15 +1,16 @@
-# Agent Prompt 1: Reveal-Aware Schedule Quantities And Material Takeoff Closure
+# Agent Prompt 1: Room Boundary Authoritative Derivation And Programme Closure
 
 ## Mission
 
-You are Agent 1 of the next parallel BIM AI parity batch. Close the tracker gap where geometry now respects `revealInteriorMm`, but schedule quantities still use nominal `widthMm`. Align rough opening quantities, totals, CSV/JSON export, and material takeoff notes with the reveal-expanded rough opening model. Do not open a pull request. Commit and push only your branch.
+You are Agent 1 of the next parallel BIM AI parity batch. Move rooms beyond preview/proxy behavior by making one authoritative room derivation slice from bounded walls and room separation lines. Include unbounded-room diagnostics, programme/area schedule parity, and minimal evidence that the derived boundary can be inspected. Do not open a pull request. Commit and push only your branch.
 
 Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
 
+- `WP-B06` Rooms and room separation
+- `WP-C04` Room color schemes and legends
 - `WP-D01` Server-derived schedules
-- `WP-D02` Schedule CSV/API/CLI export
-- `WP-D05` Materials/layer catalogs
-- light `WP-B02` Walls, doors, windows, hosted openings
+- `WP-D03` Schedule UI
+- light `WP-V01` Validation/advisor expansion
 
 ## Start Procedure
 
@@ -19,56 +20,56 @@ Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
    git fetch origin
    git switch main
    git pull --ff-only origin main
-   git switch -c agent/reveal-aware-schedule-quantities
+   git switch -c agent/room-boundary-authoritative-derivation
    ```
 
 2. Read first:
    - `spec/revit-production-parity-workpackage-tracker.md`
    - `spec/prd/revit-production-parity-ai-agent-prd.md`
+   - room derivation helpers under `app/bim_ai/`
+   - `app/bim_ai/plan_projection_wire.py`
    - `app/bim_ai/schedule_derivation.py`
-   - `app/bim_ai/schedule_field_registry.py`
-   - `app/bim_ai/schedule_csv.py`
-   - `app/bim_ai/opening_cut_primitives.py`
-   - `app/tests/test_schedule_opening_computed_fields.py`
-   - `app/tests/test_kernel_schedule_exports.py`
-   - `app/tests/test_material_assembly_schedule.py`
+   - `app/bim_ai/constraints.py`
+   - existing room derivation, schedule, plan projection, and validation tests
 
 ## File Ownership Rules
 
-Avoid new element fields or command schemas. Use existing `revealInteriorMm` data and the same effective rough span semantics used by geometry helpers. Do not touch IFC import/replay, plan/view template UI, or evidence artifact pipeline files.
+Own room derivation and room-specific evidence only. Avoid broad `Workspace.tsx` edits and avoid changing non-room validation classes. Coordinate mentally with the validation prompt by keeping any `constraints.py` edits scoped to room boundary diagnostics.
 
 ## Allowed Scope
 
 Prefer changes in:
 
-- `app/bim_ai/schedule_derivation.py`
-- `app/bim_ai/schedule_field_registry.py`, only for labels/help text
-- `app/bim_ai/schedule_csv.py`, only if export behavior changes
-- focused schedule and material assembly tests
+- `app/bim_ai/room_derivation.py` or existing room derivation helpers
+- `app/bim_ai/plan_projection_wire.py`, only for room boundary evidence
+- `app/bim_ai/schedule_derivation.py`, only for room programme/area deltas
+- `app/bim_ai/constraints.py`, only for room-boundary diagnostics
+- focused room derivation, schedule, and validation tests
 - `spec/revit-production-parity-workpackage-tracker.md`
 
 ## Non-Goals
 
-- Do not add new persisted element fields.
-- Do not redesign schedule filtering/grouping.
-- Do not change geometry kernels except by reusing existing helper semantics.
-- Do not change UI unless a small label/export assertion requires it.
+- Do not redesign all room schedule columns.
+- Do not introduce broad UI panels.
+- Do not add non-room validation bundles.
+- Do not touch IFC replay, section graphics, or performance diagnostics.
 - Do not open a PR.
 
 ## Implementation Checklist
 
-- Align `roughOpeningAreaM2` and related totals with reveal-expanded rough opening width when `revealInteriorMm` is present.
-- Keep nominal behavior unchanged for openings without reveal metadata.
-- Ensure CSV/JSON export stays deterministic and includes the corrected values.
-- Add tests that compare nominal vs reveal-aware schedule quantities.
-- Update tracker rows with exact formulas, tests, and any remaining material takeoff gaps.
+- Add one deterministic authoritative room derivation path from bounded walls and/or room separation lines.
+- Expose enough evidence to distinguish authoritative derived rooms from preview-only warnings.
+- Add unbounded or ambiguous room diagnostics with deterministic IDs/messages.
+- Preserve existing target area, finish, programme, and room schedule behavior.
+- Add tests for one successful derivation case and one unbounded/ambiguous case.
+- Update tracker rows with exact scope, tests, and remaining room parity blockers.
 
 ## Validation
 
 Run focused checks:
 
 ```bash
-cd app && ruff check bim_ai tests && pytest tests/test_schedule_opening_computed_fields.py tests/test_kernel_schedule_exports.py tests/test_material_assembly_schedule.py
+cd app && ruff check bim_ai tests && pytest tests/test_room* tests/test_plan_projection* tests/test_constraints_room_programme_consistency.py
 ```
 
 Then run, if practical:
@@ -79,7 +80,7 @@ pnpm verify
 
 ## Tracker Update
 
-Update only rows you materially changed, likely `WP-D01`, `WP-D02`, `WP-D05`, and maybe `WP-B02`. Include formula changes, export behavior, and tests.
+Update `WP-B06`, `WP-C04`, `WP-D01`, `WP-D03`, and any narrow `WP-V01` evidence. Add a Recent Sprint Ledger entry describing the authoritative derivation slice and remaining room derivation gaps.
 
 ## Commit And Push
 
@@ -90,7 +91,7 @@ git status
 git diff
 git add <changed files>
 git commit -m "$(cat <<'EOF'
-feat(schedules): align rough opening quantities with reveals
+feat(rooms): add authoritative boundary derivation slice
 
 EOF
 )"
@@ -99,4 +100,4 @@ git push -u origin HEAD
 
 ## Final Report
 
-Return branch, commit SHA, schedule quantity behavior added, tracker rows updated, validation results, and shared-file merge risks.
+Return branch, commit SHA, derivation behavior added, tracker rows updated, validation results, and shared-file merge risks.
