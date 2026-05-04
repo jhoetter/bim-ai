@@ -35,9 +35,17 @@ export default defineConfig(({ mode }) => {
 
   const apiPort = env.API_PORT ?? process.env.API_PORT ?? '8500';
   const apiTarget = `http://127.0.0.1:${apiPort}`;
-  /** Playwright drives `vite preview` with mocked APIs; omit proxy so /api isn't forwarded to a dead backend. */
+  /** Playwright: use empty proxy map so `/api`/`/ws` are not forwarded (Vite may merge `server.proxy` into preview). */
   const skipPreviewApiProxy =
     process.env.PREVIEW_NO_PROXY === '1' || process.env.E2E_NO_API_PROXY === '1';
+
+  const previewProxy: Record<string, string | { target: string; ws?: boolean }> =
+    skipPreviewApiProxy
+      ? {}
+      : {
+          '/api': apiTarget,
+          '/ws': { target: `ws://127.0.0.1:${apiPort}`, ws: true },
+        };
 
   return {
     plugins: [react()],
@@ -58,14 +66,7 @@ export default defineConfig(({ mode }) => {
     preview: {
       port: 2000,
       strictPort: true,
-      ...(skipPreviewApiProxy
-        ? {}
-        : {
-            proxy: {
-              '/api': apiTarget,
-              '/ws': { target: `ws://127.0.0.1:${apiPort}`, ws: true },
-            },
-          }),
+      proxy: previewProxy,
     },
     test: {
       environment: 'jsdom',
