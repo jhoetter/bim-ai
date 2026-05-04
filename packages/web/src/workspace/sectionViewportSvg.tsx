@@ -394,13 +394,13 @@ export function SectionViewportSvg(props: {
           patternUnits="userSpaceOnUse"
           patternTransform="rotate(45)"
         >
-          <line x1={0} y1={0} x2={0} y2={10} stroke="#475569" strokeWidth={3} />
+          <line x1={0} y1={0} x2={0} y2={10} stroke="#334155" strokeWidth={3.5} />
         </pattern>
 
         <pattern id={`${defsId}-slab`} width={14} height={14} patternUnits="userSpaceOnUse">
-          <rect width={14} height={14} fill="#fef3c7" />
+          <rect width={14} height={14} fill="#fff7ed" />
 
-          <path d="M0 14 L14 0" stroke="#ca8a04" strokeOpacity={0.35} strokeWidth={1} />
+          <path d="M0 14 L14 0" stroke="#b45309" strokeOpacity={0.45} strokeWidth={1.25} />
         </pattern>
       </defs>
 
@@ -423,9 +423,9 @@ export function SectionViewportSvg(props: {
               key={`floor-${i}`}
               d={d}
               fill={`url(#${defsId}-slab)`}
-              stroke="#b45309"
-              strokeOpacity={0.55}
-              strokeWidth={2}
+              stroke="#92400e"
+              strokeOpacity={0.65}
+              strokeWidth={2.25}
             />
           ))}
           {layers.stairPaths.map((d, i) => (
@@ -439,14 +439,28 @@ export function SectionViewportSvg(props: {
             />
           ))}
 
+          {layers.z0 <= 0 && 0 <= layers.z1 ? (
+            <line
+              key="datum-z0"
+              x1={0}
+              x2={props.widthPx}
+              y1={(layers.z1 - 0) * layers.sy}
+              y2={(layers.z1 - 0) * layers.sy}
+              stroke="#475569"
+              strokeWidth={1.5}
+              strokeDasharray="6 5"
+              opacity={0.9}
+            />
+          ) : null}
+
           {layers.wallPaths.map((d, i) => (
             <path
               key={`wall-${i}`}
               d={d}
               fill={`url(#${defsId}-wall)`}
-              fillOpacity={0.9}
-              stroke="#0f172a"
-              strokeWidth={2.5}
+              fillOpacity={0.92}
+              stroke="#020617"
+              strokeWidth={3}
             />
           ))}
 

@@ -40,7 +40,27 @@ export function sheetViewportsMmFromDrafts(
   }));
 }
 
-export function normalizeViewportRaw(raw: Record<string, unknown>): SheetViewportMmDraft {
+/** Stable fallback id when `viewportId` is missing (replay / hydration). */
+export function fingerprintViewportFallback(
+  index: number,
+  xMm: number,
+  yMm: number,
+  widthMm: number,
+  heightMm: number,
+  viewRef: string,
+): string {
+  const s = `${index}|${xMm}|${yMm}|${widthMm}|${heightMm}|${viewRef}`;
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) {
+    h = Math.imul(33, h) ^ s.charCodeAt(i);
+  }
+  return (h >>> 0).toString(36);
+}
+
+export function normalizeViewportRaw(
+  raw: Record<string, unknown>,
+  index = 0,
+): SheetViewportMmDraft {
   const xMm = Number(raw.xMm ?? raw.x_mm ?? 0);
 
   const yMm = Number(raw.yMm ?? raw.y_mm ?? 0);
@@ -55,18 +75,30 @@ export function normalizeViewportRaw(raw: Record<string, unknown>): SheetViewpor
 
   const labelRaw = raw.label;
 
+  const nx = Number.isFinite(xMm) ? xMm : 0;
+
+  const ny = Number.isFinite(yMm) ? yMm : 0;
+
+  const nw = Number.isFinite(widthMm) ? Math.max(10, widthMm) : 1000;
+
+  const nh = Number.isFinite(heightMm) ? Math.max(10, heightMm) : 1000;
+
+  const viewRef = typeof viewRefRaw === 'string' ? viewRefRaw : '';
+
+  const fp = fingerprintViewportFallback(index, nx, ny, nw, nh, viewRef);
+
   return {
     viewportId:
       typeof viewportIdRaw === 'string' && viewportIdRaw.trim()
         ? viewportIdRaw.trim()
-        : `vp-${Math.random().toString(36).slice(2, 9)}`,
+        : `vp-${index}-${fp}`,
     label: typeof labelRaw === 'string' ? labelRaw : 'Viewport',
-    viewRef: typeof viewRefRaw === 'string' ? viewRefRaw : '',
-    xMm: Number.isFinite(xMm) ? xMm : 0,
-    yMm: Number.isFinite(yMm) ? yMm : 0,
-    widthMm: Number.isFinite(widthMm) ? Math.max(10, widthMm) : 1000,
+    viewRef,
+    xMm: nx,
+    yMm: ny,
+    widthMm: nw,
 
-    heightMm: Number.isFinite(heightMm) ? Math.max(10, heightMm) : 1000,
+    heightMm: nh,
   };
 }
 
@@ -76,8 +108,12 @@ function refSuggestions(elementsById: Record<string, Element>) {
       el,
     ): el is Extract<
       Element,
-      { kind: 'plan_view' } | { kind: 'schedule' } | { kind: 'section_cut' }
-    > => el.kind === 'plan_view' || el.kind === 'schedule' || el.kind === 'section_cut',
+      { kind: 'plan_view' } | { kind: 'schedule' } | { kind: 'section_cut' } | { kind: 'viewpoint' }
+    > =>
+      el.kind === 'plan_view' ||
+      el.kind === 'schedule' ||
+      el.kind === 'section_cut' ||
+      el.kind === 'viewpoint',
   );
 }
 
@@ -123,13 +159,17 @@ export function SheetViewportEditor(props: {
 
   const addRow = () => {
     setDrafts((prev) => {
-      let nid = '';
+      const x = 1200;
 
-      try {
-        nid = `vp-${crypto.randomUUID().slice(0, 8)}`;
-      } catch {
-        nid = `vp-${Date.now().toString(36)}`;
-      }
+      const y = 1200 + prev.length * 800;
+
+      const w = 5000;
+
+      const h = 4000;
+
+      const ref = 'plan:';
+
+      const nid = `vp-add-${prev.length}-${fingerprintViewportFallback(prev.length, x, y, w, h, ref)}`;
 
       return [
         ...prev,
@@ -139,22 +179,22 @@ export function SheetViewportEditor(props: {
 
           label: 'Viewport',
 
-          viewRef: 'plan:',
+          viewRef: ref,
 
-          xMm: 1200,
+          xMm: x,
 
-          yMm: 1200 + prev.length * 800,
+          yMm: y,
 
-          widthMm: 5000,
+          widthMm: w,
 
-          heightMm: 4000,
+          heightMm: h,
         },
       ];
     });
   };
 
   const refExamples =
-    '`plan:<plan_view id>` · `schedule:<schedule id>` · `section:<section_cut id>`';
+    '`plan:<plan_view id>` · `schedule:<schedule id>` · `section:<section_cut id>` · `viewpoint:<viewpoint id>`';
 
   return (
     <div className="mt-3 space-y-2 text-[10px]">
@@ -289,6 +329,16 @@ export function SheetViewportEditor(props: {
                   key={`section:${el.id}`}
                   value={`section:${el.id}`}
                   label={`section_cut · ${el.name}`}
+                />
+              );
+            }
+
+            case 'viewpoint': {
+              return (
+                <option
+                  key={`viewpoint:${el.id}`}
+                  value={`viewpoint:${el.id}`}
+                  label={`viewpoint · ${el.name}`}
                 />
               );
             }

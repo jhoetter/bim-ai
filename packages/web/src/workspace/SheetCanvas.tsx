@@ -29,7 +29,8 @@ function SheetCanvasWithSheet(props: {
       : 29_700;
 
   const vps = (sh.viewportsMm ?? []) as Array<Record<string, unknown>>;
-  const nextDraftBase = (): SheetViewportMmDraft[] => vps.map((vp) => normalizeViewportRaw(vp));
+  const nextDraftBase = (): SheetViewportMmDraft[] =>
+    vps.map((vp, i) => normalizeViewportRaw(vp, i));
   const [vpDrafts, setVpDrafts] = useState<SheetViewportMmDraft[]>(() => nextDraftBase());
 
   const tp = sh.titleblockParameters ?? {};
