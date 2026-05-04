@@ -1,17 +1,16 @@
-# Agent Prompt 5: Evidence Diff Ingestion And Agent Review Fix Loop
+# Agent Prompt 5: Section Documentation Dimensions Hatches And Material Hints
 
 ## Mission
 
-You are Agent 5 of the next parallel BIM AI parity batch. Move from placeholder artifact/diff metadata toward a closed evidence review loop: stale/missing screenshot detection, ingested diff rows, issue/action targeting, and Agent Review guidance. Do not open a pull request. Commit and push only your branch.
+You are Agent 5 of the next parallel BIM AI parity batch. Advance section/elevation views from projection boxes toward production documentation by adding one deterministic cut hatch, material hint, or dimension/tag evidence slice that flows into sheet viewport rendering/export. Do not open a pull request. Commit and push only your branch.
 
 Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
 
-- `WP-F02` Agent review UI
-- `WP-F03` Automated evidence comparison
-- `WP-A02` Evidence package API
-- `WP-A03` Playwright evidence baselines
-- `WP-A04` CI verification gates
-- light `WP-X04` BCF export/import
+- `WP-E04` Section/elevation views
+- `WP-C03` Plan symbology and graphics
+- `WP-E05` Sheet canvas and titleblock
+- `WP-E06` SVG/PNG/PDF export
+- light `WP-D05` Materials/layer catalogs
 
 ## Start Procedure
 
@@ -21,57 +20,59 @@ Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
    git fetch origin
    git switch main
    git pull --ff-only origin main
-   git switch -c agent/evidence-diff-fix-loop
+   git switch -c agent/section-doc-dimensions-hatches
    ```
 
 2. Read first:
    - `spec/revit-production-parity-workpackage-tracker.md`
    - `spec/prd/revit-production-parity-ai-agent-prd.md`
-   - `app/bim_ai/evidence_manifest.py`
-   - agent review/evidence loop helpers
-   - `packages/web/src/workspace/AgentReviewPane.tsx`
-   - Playwright evidence specs
-   - `.github/workflows/ci.yml`
+   - `app/bim_ai/section_projection_primitives.py`
+   - `app/bim_ai/sheet_preview_svg.py`
+   - `packages/web/src/workspace/SectionViewportSvg.tsx`
+   - `packages/web/src/workspace/sectionViewportDoc.ts`
+   - `packages/web/src/plan/symbology.ts`
+   - existing section primitive, sheet export, and SectionViewportSvg tests
 
 ## File Ownership Rules
 
-Own evidence diff ingestion and Agent Review guidance only. Avoid implementing external storage or real rasterization; build on the current placeholder artifact contract. Do not touch IFC replay, schedule UI, material catalogs, or geometry kernels.
+Own section documentation primitives and rendering/export labels only. Avoid plan projection, room derivation, schedule filters, OpenBIM replay, sheet raster service, and roof/stair geometry kernels unless a read-only material hint is necessary.
 
 ## Allowed Scope
 
 Prefer changes in:
 
-- `app/bim_ai/evidence_manifest.py`
-- agent review/evidence loop helpers
-- `packages/web/src/workspace/AgentReviewPane.tsx` or isolated child components
-- Playwright evidence specs
-- CI correlation hints
-- focused evidence/Agent Review tests
+- `app/bim_ai/section_projection_primitives.py`
+- `app/bim_ai/sheet_preview_svg.py`, only for section export/documentation tokens
+- `packages/web/src/workspace/SectionViewportSvg.tsx`
+- `packages/web/src/workspace/sectionViewportDoc.ts`
+- `packages/web/src/plan/symbology.ts`
+- focused section/sheet tests
 - `spec/revit-production-parity-workpackage-tracker.md`
 
 ## Non-Goals
 
-- Do not implement external artifact storage.
-- Do not implement real server-side SVG-to-PNG rasterization.
-- Do not change OpenBIM or schedule semantics.
-- Do not rewrite Agent Review UI broadly.
+- Do not build full Revit dimension-chain editing.
+- Do not change plan view behavior.
+- Do not touch schedule or OpenBIM code.
+- Do not redesign SheetCanvas.
 - Do not open a PR.
 
 ## Implementation Checklist
 
-- Add one deterministic stale/missing screenshot or ingested-diff signal.
-- Connect that signal to Agent Review guidance or action targeting.
-- Keep digest semantics clear for derivative summaries.
-- Add backend tests and, where practical, a focused web or Playwright assertion.
-- Update tracker rows with exact manifest keys, UI path, tests, and remaining fix-loop blockers.
+- Add one deterministic section documentation feature: cut hatch classification, material/layer hint labels, dimension bracket/token, or door/window/level tag evidence.
+- Ensure server primitives and web SVG rendering use the same stable source data.
+- Add deterministic export token(s) to SVG/PDF listing if the feature is export-visible.
+- Add pytest and Vitest coverage for primitive generation and rendering/export.
+- Keep visual output stable and low-noise.
+- Update tracker rows with exact primitive fields, rendering path, tests, and remaining section blockers.
 
 ## Validation
 
 Run focused checks:
 
 ```bash
-cd app && ruff check bim_ai tests && pytest tests/test_evidence* tests/test_agent*
-cd packages/web && pnpm exec vitest run src/workspace
+cd app && .venv/bin/ruff check bim_ai tests && .venv/bin/pytest tests/test_section* tests/test_sheet_svg* tests/test_sheet_pdf*
+cd packages/web && pnpm exec vitest run src/workspace src/plan
 ```
 
 Then run, if practical:
@@ -82,7 +83,7 @@ pnpm verify
 
 ## Tracker Update
 
-Update `WP-F02`, `WP-F03`, `WP-A02`, `WP-A03`, `WP-A04`, and any narrow `WP-X04` evidence. Add a Recent Sprint Ledger entry describing the evidence diff/fix-loop behavior.
+Update `WP-E04`, `WP-C03`, `WP-E05`, `WP-E06`, and any narrow `WP-D05` evidence. Add a Recent Sprint Ledger entry describing the section documentation slice.
 
 ## Commit And Push
 
@@ -93,7 +94,7 @@ git status
 git diff
 git add <changed files>
 git commit -m "$(cat <<'EOF'
-feat(evidence): add diff ingestion fix loop
+feat(sections): add documentation hatch dimension slice
 
 EOF
 )"
@@ -102,4 +103,4 @@ git push -u origin HEAD
 
 ## Final Report
 
-Return branch, commit SHA, evidence/fix-loop behavior added, tracker rows updated, validation results, and shared-file merge risks.
+Return branch, commit SHA, section documentation behavior added, tracker rows updated, validation results, and shared-file merge risks.

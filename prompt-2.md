@@ -1,16 +1,16 @@
-# Agent Prompt 2: Schedule UI Filter/Group Export Parity
+# Agent Prompt 2: Sheet Print Raster Service And Viewport Geometry Evidence
 
 ## Mission
 
-You are Agent 2 of the next parallel BIM AI parity batch. Deepen schedule definitions where the server already has sorting/grouping and QTO fields, but UI/export parity remains shallow: persisted filter/group controls, visible totals/readouts, and CSV/JSON coverage for more schedule categories. Do not open a pull request. Commit and push only your branch.
+You are Agent 2 of the next parallel BIM AI parity batch. Move sheet export beyond the current 1x1 hash placeholder by adding one deterministic local print-raster service slice or richer production viewport geometry evidence. The goal is to make sheet export closer to production documentation without changing schedule definitions or model kernels. Do not open a pull request. Commit and push only your branch.
 
 Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
 
-- `WP-D01` Server-derived schedules
-- `WP-D02` Schedule CSV/API/CLI export
-- `WP-D03` Schedule UI
-- `WP-X01` JSON snapshot and command replay
-- light `WP-D05` Materials/layer catalogs
+- `WP-E05` Sheet canvas and titleblock
+- `WP-E06` SVG/PNG/PDF export
+- `WP-A02` Evidence package API
+- `WP-A03` Playwright evidence baselines
+- light `WP-F02` Agent review UI
 
 ## Start Procedure
 
@@ -20,58 +20,57 @@ Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
    git fetch origin
    git switch main
    git pull --ff-only origin main
-   git switch -c agent/schedule-filter-group-export-parity
+   git switch -c agent/sheet-print-raster-viewport-evidence
    ```
 
 2. Read first:
    - `spec/revit-production-parity-workpackage-tracker.md`
    - `spec/prd/revit-production-parity-ai-agent-prd.md`
-   - `packages/web/src/schedules/SchedulePanel.tsx`
-   - schedule UI tests under `packages/web/src/schedules/`
-   - `app/bim_ai/schedule_derivation.py`
-   - `app/bim_ai/schedule_csv.py`
-   - `app/bim_ai/schedule_field_registry.py`
-   - existing schedule export and schedule derivation tests
+   - `app/bim_ai/sheet_preview_svg.py`
+   - `app/bim_ai/routes_api.py`
+   - `app/bim_ai/evidence_manifest.py`
+   - `packages/web/src/workspace/AgentReviewPane.tsx`
+   - existing sheet SVG/PDF/raster/evidence tests and Playwright evidence baselines
 
 ## File Ownership Rules
 
-Own schedule UI/export depth only. Avoid room derivation internals, IFC, geometry kernels, and Agent Review. If `schedule_derivation.py` is touched, keep it to stable fields/totals required by the UI/export slice.
+Own sheet export and evidence-package surface only. Avoid changing plan projection semantics, schedule payloads, OpenBIM replay, room derivation, section primitive generation, and general Workspace UI.
 
 ## Allowed Scope
 
 Prefer changes in:
 
-- `packages/web/src/schedules/SchedulePanel.tsx`
-- schedule UI tests
-- `app/bim_ai/schedule_derivation.py`, only for missing stable fields/totals
-- `app/bim_ai/schedule_csv.py`
-- `app/bim_ai/schedule_field_registry.py`
-- focused API/CLI/export tests
+- `app/bim_ai/sheet_preview_svg.py`
+- `app/bim_ai/routes_api.py`
+- `app/bim_ai/evidence_manifest.py`
+- focused sheet export/raster/evidence tests
+- `packages/web/e2e/evidence-baselines.spec.ts`
+- small `AgentReviewPane` readout only if new evidence metadata needs display
 - `spec/revit-production-parity-workpackage-tracker.md`
 
 ## Non-Goals
 
-- Do not alter room boundary derivation.
-- Do not change IFC or glTF behavior.
-- Do not add a general query language.
-- Do not redesign the full schedule panel.
+- Do not require an external browser service or network dependency.
+- Do not rewrite sheet canvas authoring.
+- Do not change schedule or plan crop behavior.
+- Do not add broad image-processing dependencies unless already present and justified.
 - Do not open a PR.
 
 ## Implementation Checklist
 
-- Add one production-grade filter/group/export improvement that persists or replays deterministically.
-- Surface totals/readouts for the chosen schedule categories in the UI or export payload.
-- Expand CSV/JSON tests for the selected schedule categories.
-- Preserve existing numeric sort and grouping behavior.
-- Update tracker rows with exact UI/export behavior and remaining schedule blockers.
+- Replace or extend the placeholder raster path with a deterministic locally generated PNG contract, or add richer viewport interior geometry evidence that closes a print/export blocker.
+- Preserve stable hashes, filenames, and evidence manifest keys.
+- Add route/export tests that assert content type, stable headers/metadata, and correlation with sheet SVG.
+- If the UI displays new metadata, add a focused Vitest or Playwright assertion.
+- Update tracker rows with exact artifact keys, route/test names, and remaining print-raster blockers.
 
 ## Validation
 
 Run focused checks:
 
 ```bash
-cd packages/web && pnpm exec vitest run src/schedules
-cd app && ruff check bim_ai tests && pytest tests/test_schedule* tests/test_kernel_schedule_exports.py
+cd app && .venv/bin/ruff check bim_ai tests && .venv/bin/pytest tests/test_sheet* tests/test_evidence_manifest_closure.py tests/test_sheet_print_raster_placeholder.py
+cd packages/web && pnpm exec vitest run src/workspace && pnpm exec playwright test e2e/evidence-baselines.spec.ts
 ```
 
 Then run, if practical:
@@ -82,7 +81,7 @@ pnpm verify
 
 ## Tracker Update
 
-Update `WP-D01`, `WP-D02`, `WP-D03`, `WP-X01`, and any narrow `WP-D05` evidence. Add a Recent Sprint Ledger entry describing the filter/group/export parity slice.
+Update `WP-E05`, `WP-E06`, `WP-A02`, `WP-A03`, and any narrow `WP-F02` evidence. Add a Recent Sprint Ledger entry describing the sheet print/export slice.
 
 ## Commit And Push
 
@@ -93,7 +92,7 @@ git status
 git diff
 git add <changed files>
 git commit -m "$(cat <<'EOF'
-feat(schedules): add filter group export parity
+feat(export): add deterministic sheet print raster slice
 
 EOF
 )"
@@ -102,4 +101,4 @@ git push -u origin HEAD
 
 ## Final Report
 
-Return branch, commit SHA, schedule UI/export behavior added, tracker rows updated, validation results, and shared-file merge risks.
+Return branch, commit SHA, export/raster behavior added, tracker rows updated, validation results, and shared-file merge risks.

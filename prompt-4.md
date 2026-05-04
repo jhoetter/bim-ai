@@ -1,16 +1,16 @@
-# Agent Prompt 4: OpenBIM Space/Room Replay And IDS Mapping Slice
+# Agent Prompt 4: Advanced Schedule Filters And Calculated Field Slice
 
 ## Mission
 
-You are Agent 4 of the next parallel BIM AI parity batch. Extend `authoritativeReplay_v0` beyond levels/walls with one narrow room/space or opening replay path, plus IDS mismatch mapping that remains deterministic and offline-safe. Do not open a pull request. Commit and push only your branch.
+You are Agent 4 of the next parallel BIM AI parity batch. Deepen schedule definitions by adding one narrow advanced filter/calculated-field slice that works server-side, exports through JSON/CSV, and has a minimal UI authoring/readout path. Do not open a pull request. Commit and push only your branch.
 
 Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
 
-- `WP-X03` IFC export/import
-- `WP-D06` Cleanroom metadata and IDS
-- `WP-X05` IDS validation
+- `WP-D01` Server-derived schedules
+- `WP-D02` Schedule CSV/API/CLI export
+- `WP-D03` Schedule UI
+- `WP-D04` Family/type registry and propagation
 - `WP-X01` JSON snapshot and command replay
-- light `WP-B06` Rooms and room separation
 
 ## Start Procedure
 
@@ -20,56 +20,60 @@ Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
    git fetch origin
    git switch main
    git pull --ff-only origin main
-   git switch -c agent/openbim-space-room-replay
+   git switch -c agent/schedule-advanced-filters-calculated-fields
    ```
 
 2. Read first:
    - `spec/revit-production-parity-workpackage-tracker.md`
    - `spec/prd/revit-production-parity-ai-agent-prd.md`
-   - `spec/ifc-export-wp-x03-slice.md`
-   - `app/bim_ai/export_ifc.py`
-   - `app/bim_ai/ifc_stub.py`
+   - `app/bim_ai/schedule_derivation.py`
+   - `app/bim_ai/schedule_field_registry.py`
+   - `app/bim_ai/schedule_csv.py`
    - `app/bim_ai/commands.py`
-   - existing IFC/offline/IDS tests
+   - `packages/web/src/schedules/SchedulePanel.tsx`
+   - existing schedule filter, export, and UI tests
 
 ## File Ownership Rules
 
-Own OpenBIM replay and IDS mapping only. Avoid engine-side document merge unless the slice is purely compare/apply-sketch metadata. Do not touch schedule UI, evidence diff UI, material catalog work, or roof/stair geometry.
+Own schedule definition/filter/calculated-field behavior only. Avoid room derivation, sheet export, OpenBIM replay, level constraints, and geometry-kernel files. Coordinate mentally with room prompt by keeping room-specific schedule changes minimal and generic.
 
 ## Allowed Scope
 
 Prefer changes in:
 
-- `app/bim_ai/export_ifc.py`
-- `app/bim_ai/ifc_stub.py`
-- `spec/ifc-export-wp-x03-slice.md`
-- IFC/offline tests
-- IDS mapping/advisory tests only when directly tied to the replay slice
+- `app/bim_ai/schedule_derivation.py`
+- `app/bim_ai/schedule_field_registry.py`
+- `app/bim_ai/schedule_csv.py`
+- `app/bim_ai/commands.py` / `engine.py` only for replayable schedule definition fields
+- `app/bim_ai/routes_api.py` only if export/query surface changes
+- `packages/web/src/schedules/SchedulePanel.tsx`
+- focused schedule tests
 - `spec/revit-production-parity-workpackage-tracker.md`
 
 ## Non-Goals
 
-- Do not implement full IFC document merge.
-- Do not require IfcOpenShell for offline tests.
-- Do not change schedule derivation or UI.
-- Do not add broad command execution from IFC unless it remains sketch/metadata only.
+- Do not build a full formula language.
+- Do not redesign SchedulePanel layout.
+- Do not touch sheet viewport placement, room legend UI, IFC, or geometry.
+- Do not add arbitrary eval or unsafe expression parsing.
 - Do not open a PR.
 
 ## Implementation Checklist
 
-- Add one narrow replay extension, such as `IfcSpace` to room/space command sketch metadata or an opening replay sketch.
-- Keep outputs deterministic and explicitly versioned.
-- Preserve offline fallback behavior through `ifc_stub.py`.
-- Add IDS mismatch mapping only for the chosen subset.
-- Add tests for available and offline behavior.
-- Update tracker rows with exact replay subset and remaining OpenBIM blockers.
+- Add one constrained advanced filter operator (`gt`, `lt`, `contains`, `isBlank`, etc.) or one safe calculated field helper using structured config, not arbitrary code strings.
+- Persist it through existing schedule command/replay paths.
+- Ensure server-derived JSON and CSV exports produce deterministic rows/totals.
+- Add a minimal UI control/readout for the new filter/calculated-field behavior.
+- Add tests for replay, derivation, CSV/JSON export, and UI state if touched.
+- Update tracker rows with exact operators/fields, tests, and remaining schedule blockers.
 
 ## Validation
 
 Run focused checks:
 
 ```bash
-cd app && ruff check bim_ai tests && pytest tests/test_export_ifc.py tests/test_ifc_exchange_manifest_offline.py tests/test_exchange_ifc_geometry_skips_advisory.py
+cd app && .venv/bin/ruff check bim_ai tests && .venv/bin/pytest tests/test_schedule* tests/test_kernel_schedule_exports.py tests/test_upsert_schedule_filters_grouping.py
+cd packages/web && pnpm exec vitest run src/schedules
 ```
 
 Then run, if practical:
@@ -80,7 +84,7 @@ pnpm verify
 
 ## Tracker Update
 
-Update `WP-X03`, `WP-D06`, `WP-X05`, `WP-X01`, and any narrow `WP-B06` evidence. Add a Recent Sprint Ledger entry describing the OpenBIM replay/IDS mapping slice.
+Update `WP-D01`, `WP-D02`, `WP-D03`, `WP-D04`, and `WP-X01`. Add a Recent Sprint Ledger entry describing the schedule filter/calculated-field slice.
 
 ## Commit And Push
 
@@ -91,7 +95,7 @@ git status
 git diff
 git add <changed files>
 git commit -m "$(cat <<'EOF'
-feat(openbim): add space replay ids mapping slice
+feat(schedules): add advanced filter calculated field slice
 
 EOF
 )"
@@ -100,4 +104,4 @@ git push -u origin HEAD
 
 ## Final Report
 
-Return branch, commit SHA, replay subset, IDS mapping behavior, tracker rows updated, validation results, and shared-file merge risks.
+Return branch, commit SHA, schedule behavior added, tracker rows updated, validation results, and shared-file merge risks.
