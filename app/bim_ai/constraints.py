@@ -615,10 +615,11 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
                 approx_a = approx_overlap_area_mm2(pa, pb, spacing_mm=200.0)
                 if approx_a >= overlap_threshold_mm2:
                     approx_m2 = approx_a / 1_000_000.0
+                    severity = "error" if approx_a >= 2_000_000.0 else "warning"
                     viols.append(
                         Violation(
                             rule_id="room_overlap_plan",
-                            severity="warning",
+                            severity=severity,
                             message=(
                                 "Room outlines on the same level overlap materially in plan "
                                 f"(approx {approx_m2:.2f} m² overlap by sampling)."

@@ -329,6 +329,7 @@ export function Viewport({ wsConnected }: Props) {
   const viewerCategoryHidden = useBimStore((s) => s.viewerCategoryHidden);
 
   const viewerClipElevMm = useBimStore((s) => s.viewerClipElevMm);
+  const viewerClipFloorElevMm = useBimStore((s) => s.viewerClipFloorElevMm);
 
   useEffect(() => {
     const el = mountRef.current;
@@ -497,14 +498,21 @@ export function Viewport({ wsConnected }: Props) {
 
     const clipElevMRaw = viewerClipElevMm;
     const clipElevM =
-      clipElevMRaw != null && Number.isFinite(clipElevMRaw) && clipElevMRaw > 0
+      clipElevMRaw != null && Number.isFinite(clipElevMRaw) && clipElevMRaw >= 0
         ? clipElevMRaw / 1000
         : null;
 
+    const clipFloorMRaw = viewerClipFloorElevMm;
+    const clipFloorM =
+      clipFloorMRaw != null && Number.isFinite(clipFloorMRaw) && clipFloorMRaw >= 0
+        ? clipFloorMRaw / 1000
+        : null;
+
     const rnd = rendererRef.current;
-    if (rnd) rnd.localClippingEnabled = clipElevM != null;
+    if (rnd) rnd.localClippingEnabled = clipElevM != null || clipFloorM != null;
 
     const clippingPlanes: THREE.Plane[] = [];
+    /** Upper cap: same semantics as the original single plane — hide everything **above** Y=clipElevM. */
     if (clipElevM != null) {
       const plane = new THREE.Plane();
       plane.setFromNormalAndCoplanarPoint(
@@ -512,6 +520,15 @@ export function Viewport({ wsConnected }: Props) {
         new THREE.Vector3(0, clipElevM, 0),
       );
       clippingPlanes.push(plane);
+    }
+    /** Lower floor: hide everything **below** Y=clipFloorM when set. */
+    if (clipFloorM != null) {
+      const planeLo = new THREE.Plane();
+      planeLo.setFromNormalAndCoplanarPoint(
+        new THREE.Vector3(0, 1, 0),
+        new THREE.Vector3(0, clipFloorM, 0),
+      );
+      clippingPlanes.push(planeLo);
     }
     const catHidden = viewerCategoryHidden;
 
@@ -588,7 +605,7 @@ export function Viewport({ wsConnected }: Props) {
     applyClippingPlanesToMeshes(root, clippingPlanes);
 
     camera.lookAt(new THREE.Vector3(0, 1.35, 0));
-  }, [elementsById, selectedId, viewerCategoryHidden, viewerClipElevMm]);
+  }, [elementsById, selectedId, viewerCategoryHidden, viewerClipElevMm, viewerClipFloorElevMm]);
 
   return (
     <div

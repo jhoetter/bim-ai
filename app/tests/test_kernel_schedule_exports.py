@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from bim_ai.document import Document
 from bim_ai.elements import (
+    DoorElem,
     FloorElem,
     LevelElem,
     PlanViewElem,
@@ -20,7 +21,7 @@ from bim_ai.ifc_stub import (
     build_ifc_exchange_manifest_payload,
     ifc_exchange_manifest_payload,
 )
-from bim_ai.schedule_csv import schedule_payload_to_csv
+from bim_ai.schedule_csv import schedule_payload_to_csv, schedule_payload_with_column_subset
 from bim_ai.schedule_derivation import derive_schedule_table
 from bim_ai.sheet_preview_svg import pick_sheet, sheet_elem_to_svg
 
@@ -87,6 +88,46 @@ def test_floor_opening_and_stair_apply_chain():
         },
     )
     assert ok3 and isinstance(doc_c.elements.get("st-1"), StairElem)
+
+
+def test_schedule_csv_column_subset_keeps_payload_order():
+    payload = {"columns": ["a", "b", "c"], "rows": [{"a": 1, "b": 2, "c": 3}]}
+    sub = schedule_payload_with_column_subset(payload, ["c", "a"])
+    csv_txt = schedule_payload_to_csv(sub)
+    assert csv_txt.splitlines()[0] == "a,c"
+
+
+def test_gltf_manifest_warns_on_diagonal_wall_with_opening():
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="EG", elevationMm=0),
+            "wskew": WallElem(
+                kind="wall",
+                id="wskew",
+                name="Skew host",
+                levelId="lvl",
+                start={"xMm": 0.0, "yMm": 0.0},
+                end={"xMm": 3000.0, "yMm": 1800.0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+            "door-a": DoorElem(
+                kind="door",
+                id="door-a",
+                name="D",
+                wallId="wskew",
+                alongT=0.55,
+                widthMm=900,
+            ),
+        },
+    )
+    gm = build_visual_export_manifest(doc)
+    ext = gm["extensions"]["BIM_AI_exportManifest_v0"]
+    warns = ext.get("hostedCutApproximationWarnings") or []
+    assert any(w.get("code") == "nonAxisAlignedWallHostedCutsApproximated" for w in warns)
+    hit = next(w for w in warns if w.get("wallId") == "wskew")
+    assert "door-a" in (hit.get("hostedOpeningIds") or [])
 
 
 def test_gltf_manifest_embeds_extensions():

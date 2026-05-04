@@ -36,6 +36,7 @@ def test_golden_snapshot_contains_exchange_documentation_kinds() -> None:
         "roof",
         "stair",
         "plan_view",
+        "section_cut",
         "sheet",
         "schedule",
     ):
@@ -53,7 +54,22 @@ def test_golden_snapshot_has_no_exchange_ifc_unhandled_geometry_warnings() -> No
     assert warns == [], [w.message for w in warns]
 
 
-def test_golden_fixture_schedule_categories_derive_rows() -> None:
+def test_golden_snapshot_section_cut_emits_primitives() -> None:
+    from bim_ai.plan_projection_wire import section_cut_projection_wire
+
+    doc = _golden_doc()
+    out = section_cut_projection_wire(doc, "sec-a")
+    assert not out.get("errors")
+    prim = out.get("primitives") or {}
+    assert prim.get("format") == "sectionProjectionPrimitives_v1"
+    counts = out.get("countsByVisibleKind") or {}
+    assert int(counts.get("wall", 0)) >= 1
+
+
+def test_golden_snapshot_room_has_programme_code_when_present_on_element() -> None:
+    doc = _golden_doc()
+    rm = doc.elements["rm-kit"]
+    assert rm.programme_code == "KIT-DEMO"
     doc = _golden_doc()
 
     room_tbl = derive_schedule_table(doc, "sch-room")

@@ -76,6 +76,7 @@
       "id": "rm-kit",
       "name": "Kitchen",
       "levelId": "lvl-eg",
+      "programmeCode": "KIT-DEMO",
       "outlineMm": [
         { "xMm": 1000, "yMm": 1000 },
         { "xMm": 5200, "yMm": 1000 },
@@ -108,6 +109,14 @@
       "widthMm": 1100,
       "riserMm": 175,
       "treadMm": 280
+    },
+    "sec-a": {
+      "kind": "section_cut",
+      "id": "sec-a",
+      "name": "Section A",
+      "lineStartMm": { "xMm": 1200, "yMm": 0 },
+      "lineEndMm": { "xMm": 1200, "yMm": 6000 },
+      "cropDepthMm": 9000
     },
     "pv-eg": {
       "kind": "plan_view",

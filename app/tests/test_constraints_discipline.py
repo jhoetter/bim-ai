@@ -91,3 +91,4 @@ def test_room_overlap_plan_discipline() -> None:
     viols = evaluate(dict(Document(revision=1, elements={"lvl": lvl, "r1": r1, "r2": r2}).elements))
     oval = next(v for v in viols if v.rule_id == "room_overlap_plan")
     assert oval.discipline == "architecture"
+    assert oval.severity == "error"

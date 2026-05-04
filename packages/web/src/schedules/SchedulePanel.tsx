@@ -130,6 +130,8 @@ export function SchedulePanel(props: {
   } | null>(null);
   const [serverErr, setServerErr] = useState<string | null>(null);
 
+  const [registryVisibleCols, setRegistryVisibleCols] = useState<Record<string, string[]>>({});
+
   const levelLabels = useMemo(() => {
     const m = new Map<string, string>();
 
@@ -462,6 +464,57 @@ export function SchedulePanel(props: {
     return columns.length ? { columns, fieldLabels, rows } : null;
   }, [srvActive, tab]);
 
+  const registryPickKey =
+    srvActive &&
+    registrySchedule &&
+    (tab === 'floors' || tab === 'roofs' || tab === 'stairs' || tab === 'plans' || tab === 'sheets')
+      ? srvActive.scheduleId
+      : null;
+
+  const visibleRegistryColumns = useMemo(() => {
+    if (!registrySchedule) return [] as string[];
+    const all = registrySchedule.columns;
+    if (!registryPickKey) return all;
+    const sel = registryVisibleCols[registryPickKey];
+    if (!sel?.length) return all;
+    const want = new Set(sel);
+    return all.filter((c) => want.has(c));
+  }, [registrySchedule, registryPickKey, registryVisibleCols]);
+
+  function toggleRegistryColumn(columnKey: string) {
+    if (!registryPickKey || !registrySchedule) return;
+    const all = registrySchedule.columns;
+    setRegistryVisibleCols((prev) => {
+      const curSel = [...(prev[registryPickKey] ?? all)];
+      const has = curSel.includes(columnKey);
+      const nextSel = has ? curSel.filter((c) => c !== columnKey) : [...curSel, columnKey];
+      if (!nextSel.length) return { ...prev, [registryPickKey]: [...all] };
+      nextSel.sort((a, b) => all.indexOf(a) - all.indexOf(b));
+      return { ...prev, [registryPickKey]: nextSel.filter((c) => all.includes(c)) };
+    });
+  }
+
+  function renderRegistryColumnPicker() {
+    if (!registryPickKey || !registrySchedule || registrySchedule.columns.length < 2) return null;
+    return (
+      <div
+        data-testid="schedule-column-picker"
+        className="mb-2 flex flex-wrap gap-2 border-b border-border/40 pb-2 text-[10px] text-muted"
+      >
+        <span className="font-semibold text-foreground">Columns</span>
+        {registrySchedule.columns.map((c) => {
+          const on = visibleRegistryColumns.includes(c);
+          return (
+            <label key={c} className="flex cursor-pointer items-center gap-1">
+              <input type="checkbox" checked={on} onChange={() => toggleRegistryColumn(c)} />
+              <span>{registrySchedule.fieldLabels[c] ?? c}</span>
+            </label>
+          );
+        })}
+      </div>
+    );
+  }
+
   function csvForTab(): string {
     if (tab === 'rooms')
       return [
@@ -508,7 +561,17 @@ export function SchedulePanel(props: {
     if (srvActive?.scheduleId && props.modelId && srvActive.tab === tab) {
       const mid = encodeURIComponent(props.modelId);
       const sc = encodeURIComponent(srvActive.scheduleId);
-      const res = await fetch(`/api/models/${mid}/schedules/${sc}/table?format=csv`);
+      let csvEndpoint = `/api/models/${mid}/schedules/${sc}/table?format=csv`;
+      if (
+        registrySchedule &&
+        srvActive.scheduleId === registryPickKey &&
+        visibleRegistryColumns.length > 0 &&
+        visibleRegistryColumns.length < registrySchedule.columns.length
+      ) {
+        const cq = visibleRegistryColumns.map(encodeURIComponent).join(',');
+        csvEndpoint += `&columns=${cq}`;
+      }
+      const res = await fetch(csvEndpoint);
       const body = await res.text();
       if (!res.ok) {
         alert(body);
@@ -534,17 +597,17 @@ export function SchedulePanel(props: {
 
       const blob = new Blob([body], { type: 'text/csv;charset=utf-8' });
 
-      const url = URL.createObjectURL(blob);
+      const objectUrl = URL.createObjectURL(blob);
 
       const a = document.createElement('a');
 
-      a.href = url;
+      a.href = objectUrl;
 
       a.download = `bim-ai-schedule-${ext}-server.csv`;
 
       a.click();
 
-      URL.revokeObjectURL(url);
+      URL.revokeObjectURL(objectUrl);
       return;
     }
 
@@ -553,17 +616,17 @@ export function SchedulePanel(props: {
 
     const blob = new Blob([csvForTab()], { type: 'text/csv;charset=utf-8' });
 
-    const url = URL.createObjectURL(blob);
+    const objectUrl = URL.createObjectURL(blob);
 
     const a = document.createElement('a');
 
-    a.href = url;
+    a.href = objectUrl;
 
     a.download = `bim-ai-${ext}-schedule.csv`;
 
     a.click();
 
-    URL.revokeObjectURL(url);
+    URL.revokeObjectURL(objectUrl);
   }
 
   function renderTotals() {
@@ -738,8 +801,9 @@ export function SchedulePanel(props: {
     );
   }
 
-  function renderRegistryScheduleTable(g: GenericDerived) {
-    const headers = g.columns.map((c) => g.fieldLabels[c] ?? c);
+  function renderRegistryScheduleTable(g: GenericDerived, columnKeys: string[]) {
+    const cols = columnKeys.length ? columnKeys : g.columns;
+    const headers = cols.map((c) => g.fieldLabels[c] ?? c);
 
     const rowsKeyed: Array<Record<string, unknown> & { id: string }> = g.rows.map((r, i) => ({
       ...r,
@@ -754,7 +818,7 @@ export function SchedulePanel(props: {
             SCHED_TABLE_ROW_PX * Math.max(rowsKeyed.length, 1),
           )}
           rowHeightPx={SCHED_TABLE_ROW_PX}
-          colSpan={g.columns.length}
+          colSpan={cols.length}
           rows={rowsKeyed}
           header={
             <tr>
@@ -767,7 +831,7 @@ export function SchedulePanel(props: {
           }
           renderRow={(r) => (
             <tr className="border-t border-border/60">
-              {g.columns.map((c) => (
+              {cols.map((c) => (
                 <td key={c} className="max-w-[140px] truncate text-[10px]">
                   {formatScheduleCell(r[c])}
                 </td>
@@ -989,7 +1053,8 @@ export function SchedulePanel(props: {
           <div className="mt-3 text-[11px] text-muted">Loading schedule…</div>
         ) : registrySchedule && registrySchedule.rows.length > 0 ? (
           <div className="mt-2">
-            {renderRegistryScheduleTable(registrySchedule)}
+            {renderRegistryColumnPicker()}
+            {renderRegistryScheduleTable(registrySchedule, visibleRegistryColumns)}
             {renderTotals()}
           </div>
         ) : (
@@ -1005,7 +1070,8 @@ export function SchedulePanel(props: {
         registrySchedule &&
         registrySchedule.rows.length > 0 ? (
           <div className="mt-2">
-            {renderRegistryScheduleTable(registrySchedule)}
+            {renderRegistryColumnPicker()}
+            {renderRegistryScheduleTable(registrySchedule, visibleRegistryColumns)}
             {renderTotals()}
           </div>
         ) : props.modelId && sidSheets && !serverErr && srvActive?.tab !== 'sheets' ? (

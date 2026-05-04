@@ -2,6 +2,12 @@ import * as THREE from 'three';
 
 import type { Element } from '@bim-ai/core';
 
+import {
+  coerceVec2Mm,
+  isPlanProjectionPrimitivesV1,
+  type PlanProjectionPrimitivesV1Wire,
+} from './planProjectionWire';
+
 /** Plan slice elevation in world units (walls still render with real height elsewhere). */
 
 const PLAN_Y = 0.02;
@@ -135,6 +141,172 @@ export const ROOM_PLAN_OVERLAP_ADVISOR_MM2 = 50_000;
 /** Plan authoring display bias (orthogonal to BIM levels). */
 export type PlanPresentationPreset = 'default' | 'opening_focus' | 'room_scheme';
 
+function outlineMmFromWire(raw: unknown): Array<{ xMm: number; yMm: number }> {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((p) => coerceVec2Mm(p));
+}
+
+function wallElemFromWirePrimitive(
+  row: Record<string, unknown>,
+): Extract<Element, { kind: 'wall' }> {
+  return {
+    kind: 'wall',
+    id: String(row.id ?? ''),
+    name: 'Wall',
+    levelId: String(row.levelId ?? ''),
+    start: coerceVec2Mm(row.startMm),
+    end: coerceVec2Mm(row.endMm),
+    thicknessMm: Number(row.thicknessMm ?? 200),
+    heightMm: Number(row.heightMm ?? 2800),
+  };
+}
+
+function resolveWallForWire(
+  wallId: string,
+  elementsById: Record<string, Element>,
+  wallsByWireId: Map<string, Extract<Element, { kind: 'wall' }>>,
+): Extract<Element, { kind: 'wall' }> | undefined {
+  const live = elementsById[wallId];
+  if (live?.kind === 'wall') return live;
+  return wallsByWireId.get(wallId);
+}
+
+function rebuildPlanMeshesFromWire(
+  holder: THREE.Object3D,
+  elementsById: Record<string, Element>,
+  opts: {
+    selectedId?: string;
+    presentation?: PlanPresentationPreset;
+    wirePrimitives: PlanProjectionPrimitivesV1Wire;
+  },
+): void {
+  while (holder.children.length) holder.remove(holder.children[0]!);
+
+  const prim = opts.wirePrimitives;
+  const presentation = opts.presentation ?? 'default';
+  const selectedId = opts.selectedId;
+
+  const wallsRaw = Array.isArray(prim.walls) ? (prim.walls as Record<string, unknown>[]) : [];
+  const wallsByWireId = new Map<string, Extract<Element, { kind: 'wall' }>>();
+  for (const row of wallsRaw) {
+    const id = String(row.id ?? '');
+    if (!id) continue;
+    wallsByWireId.set(id, wallElemFromWirePrimitive(row));
+  }
+
+  const grids = Array.isArray(prim.gridLines) ? (prim.gridLines as Record<string, unknown>[]) : [];
+  for (const g of grids) {
+    const id = String(g.id ?? '');
+    const gl: Extract<Element, { kind: 'grid_line' }> = {
+      kind: 'grid_line',
+      id,
+      name: 'Grid',
+      label: typeof g.label === 'string' ? g.label : '',
+      start: coerceVec2Mm(g.startMm),
+      end: coerceVec2Mm(g.endMm),
+      ...(g.levelId !== undefined && g.levelId !== null ? { levelId: String(g.levelId) } : {}),
+    };
+    holder.add(gridLineThree(gl));
+  }
+
+  const rooms = Array.isArray(prim.rooms) ? (prim.rooms as Record<string, unknown>[]) : [];
+  for (const r of rooms) {
+    const id = String(r.id ?? '');
+    const outline = outlineMmFromWire(r.outlineMm);
+    if (outline.length < 2) continue;
+    const live = elementsById[id];
+    const roomEl: Extract<Element, { kind: 'room' }> =
+      live?.kind === 'room'
+        ? live
+        : {
+            kind: 'room',
+            id,
+            name: id,
+            levelId: String(r.levelId ?? ''),
+            outlineMm: outline,
+          };
+    holder.add(roomMesh(roomEl, presentation));
+  }
+
+  const floors = Array.isArray(prim.floors) ? (prim.floors as Record<string, unknown>[]) : [];
+  for (const f of floors) {
+    const outline = outlineMmFromWire(f.outlineMm);
+    if (outline.length < 2) continue;
+    holder.add(horizontalOutlineMesh(outline, PLAN_Y + 0.001, '#22c55e', 0.16, String(f.id ?? '')));
+  }
+
+  const roofs = Array.isArray(prim.roofs) ? (prim.roofs as Record<string, unknown>[]) : [];
+  for (const rf of roofs) {
+    const outline = outlineMmFromWire(rf.footprintMm);
+    if (outline.length < 2) continue;
+    holder.add(horizontalOutlineMesh(outline, PLAN_Y + 0.004, '#f97316', 0.2, String(rf.id ?? '')));
+  }
+
+  for (const w of wallsByWireId.values()) holder.add(planWallMesh(w, selectedId));
+
+  const doors = Array.isArray(prim.doors) ? (prim.doors as Record<string, unknown>[]) : [];
+  for (const d of doors) {
+    const id = String(d.id ?? '');
+    const wallId = String(d.wallId ?? '');
+    const host = resolveWallForWire(wallId, elementsById, wallsByWireId);
+    const doorEl = elementsById[id];
+    if (!host || doorEl?.kind !== 'door') continue;
+    holder.add(doorGroupThree(doorEl, host, selectedId, presentation === 'opening_focus'));
+  }
+
+  const wins = Array.isArray(prim.windows) ? (prim.windows as Record<string, unknown>[]) : [];
+  for (const w of wins) {
+    const id = String(w.id ?? '');
+    const wallId = String(w.wallId ?? '');
+    const host = resolveWallForWire(wallId, elementsById, wallsByWireId);
+    const winEl = elementsById[id];
+    if (!host || winEl?.kind !== 'window') continue;
+    holder.add(planWindowMesh(winEl, host, selectedId, presentation === 'opening_focus'));
+  }
+
+  const stairsRaw = Array.isArray(prim.stairs) ? (prim.stairs as Record<string, unknown>[]) : [];
+  for (const row of stairsRaw) {
+    const id = String(row.id ?? '');
+    const live = elementsById[id];
+    const stairEl: Extract<Element, { kind: 'stair' }> =
+      live?.kind === 'stair'
+        ? live
+        : ({
+            kind: 'stair',
+            id,
+            name: 'Stair',
+            baseLevelId: String(row.baseLevelId ?? ''),
+            topLevelId: String(row.topLevelId ?? row.baseLevelId ?? ''),
+            runStartMm: coerceVec2Mm(row.runStartMm),
+            runEndMm: coerceVec2Mm(row.runEndMm),
+            widthMm: Number(row.widthMm ?? 1000),
+            riserMm: 175,
+            treadMm: 275,
+          } as Extract<Element, { kind: 'stair' }>);
+    const g = stairPlanThree(stairEl);
+    if (g) holder.add(g);
+  }
+
+  const dims = Array.isArray(prim.dimensions) ? (prim.dimensions as Record<string, unknown>[]) : [];
+  for (const dm of dims) {
+    const id = String(dm.id ?? '');
+    const live = elementsById[id];
+    const dEl: Extract<Element, { kind: 'dimension' }> =
+      live?.kind === 'dimension'
+        ? live
+        : {
+            kind: 'dimension',
+            id,
+            name: 'Dimension',
+            levelId: String(dm.levelId ?? ''),
+            aMm: coerceVec2Mm(dm.aMm),
+            bMm: coerceVec2Mm(dm.bMm),
+            offsetMm: coerceVec2Mm(dm.offsetMm ?? { x: 0, y: 0 }),
+          };
+    holder.add(dimensionsThree(dEl));
+  }
+}
+
 export function rebuildPlanMeshes(
   holder: THREE.Object3D,
 
@@ -145,9 +317,19 @@ export function rebuildPlanMeshes(
     selectedId?: string;
     presentation?: PlanPresentationPreset;
     hiddenSemanticKinds?: ReadonlySet<string>;
+    wirePrimitives?: PlanProjectionPrimitivesV1Wire | null;
   },
 ): void {
   while (holder.children.length) holder.remove(holder.children[0]!);
+
+  if (opts.wirePrimitives && isPlanProjectionPrimitivesV1(opts.wirePrimitives)) {
+    rebuildPlanMeshesFromWire(holder, elementsById, {
+      selectedId: opts.selectedId,
+      presentation: opts.presentation,
+      wirePrimitives: opts.wirePrimitives,
+    });
+    return;
+  }
 
   const level = opts.activeLevelId;
   const presentation = opts.presentation ?? 'default';

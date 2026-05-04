@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
+from typing import Any
 
 from bim_ai.document import Document
 from bim_ai.elements import DoorElem, FloorElem, LevelElem, SlabOpeningElem, WallElem, WindowElem
@@ -19,6 +20,56 @@ from bim_ai.opening_cut_primitives import (
     merge_unit_spans,
     xz_bounds_mm_from_poly,
 )
+
+
+def _wall_plan_axis_aligned_xy(w: WallElem, *, angle_tol_deg: float = 2.5) -> bool:
+    """True when the wall runs ~N/E/S/W in plan."""
+
+    dx = float(w.end.x_mm - w.start.x_mm)
+    dy = float(w.end.y_mm - w.start.y_mm)
+    span = max(math.hypot(dx, dy), 1e-6)
+    if span < 1e-3:
+        return True
+    ang = math.degrees(math.atan2(abs(dy), abs(dx)))
+    axial_slack = ang % 90.0
+    axial_slack = min(axial_slack, 90.0 - axial_slack)
+    return axial_slack <= angle_tol_deg + 1e-9
+
+
+def collect_hosted_cut_manifest_warnings(doc: Document) -> list[dict[str, Any]]:
+    """Explicit manifest rows when rectangular gap segmentation may be approximate on skew walls."""
+
+    hosted_by_wall: dict[str, list[DoorElem | WindowElem]] = {}
+    for e in doc.elements.values():
+        if isinstance(e, DoorElem):
+            hosted_by_wall.setdefault(e.wall_id, []).append(e)
+        elif isinstance(e, WindowElem):
+            hosted_by_wall.setdefault(e.wall_id, []).append(e)
+
+    out: list[dict[str, Any]] = []
+
+    for wid, e in doc.elements.items():
+        if not isinstance(e, WallElem):
+            continue
+        kids = hosted_by_wall.get(wid, [])
+        if not kids:
+            continue
+        if _wall_plan_axis_aligned_xy(e):
+            continue
+        out.append(
+            {
+                "code": "nonAxisAlignedWallHostedCutsApproximated",
+                "message": (
+                    "Wall is skewed vs world XY; hosted door/window rectangular cuts reuse the same "
+                    "segmented prism kernel as cardinal walls — validate in views where precision matters."
+                ),
+                "wallId": wid,
+                "hostedOpeningIds": sorted(k.id for k in kids),
+                "hostedOpeningKinds": sorted({k.kind for k in kids}),
+            }
+        )
+
+    return sorted(out, key=lambda row: str(row["wallId"]))
 
 
 def _clamp(v: float, lo: float, hi: float) -> float:

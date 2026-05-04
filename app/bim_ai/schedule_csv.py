@@ -7,6 +7,26 @@ import io
 from typing import Any
 
 
+def schedule_payload_with_column_subset(payload: dict[str, Any], columns: list[str]) -> dict[str, Any]:
+    """Return a shallow copy with ``columns`` restricted (CSV/query MVP)."""
+
+    if not columns:
+        return payload
+    keep = list(dict.fromkeys(columns))
+    keep_set = set(keep)
+    p = dict(payload)
+    existing = list(p.get("columns") or [])
+    if existing:
+        filtered = [c for c in existing if c in keep_set]
+        if filtered:
+            p["columns"] = filtered
+        else:
+            p["columns"] = [c for c in keep if c in existing]
+    else:
+        p["columns"] = keep
+    return p
+
+
 def schedule_payload_to_csv(payload: dict[str, Any]) -> str:
     grouped = payload.get("groupedSections")
     cols = list(payload.get("columns") or [])

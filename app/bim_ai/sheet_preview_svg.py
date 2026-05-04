@@ -50,12 +50,20 @@ def resolve_view_ref_title(doc: Document, view_ref: str) -> str | None:
 
 
 def sheet_elem_to_svg(doc: Document, sh: SheetElem) -> str:
-    w_mm = 42_000
-    h_mm = 29_700
+    w_mm = float(sh.paper_width_mm or 42_000)
+    h_mm = float(sh.paper_height_mm or 29_700)
     vps_raw: list[Any] = list(sh.viewports_mm or [])
 
     title = html.escape(sh.name or sh.id or "Sheet")
     tb = html.escape(sh.title_block or "—")
+
+    tb_params = sh.titleblock_parameters or {}
+    sheet_no_raw = tb_params.get("sheetNumber") or tb_params.get("sheetNo") or ""
+    revision_raw = tb_params.get("revision") or ""
+    project_raw = tb_params.get("projectName") or tb_params.get("project") or ""
+    drawn_raw = tb_params.get("drawnBy") or ""
+    chk_raw = tb_params.get("checkedBy") or ""
+    issued_raw = tb_params.get("issueDate") or tb_params.get("date") or ""
 
     viewport_blocks = []
     for vp in vps_raw:
@@ -91,14 +99,48 @@ def sheet_elem_to_svg(doc: Document, sh: SheetElem) -> str:
 
     vps_xml = "".join(viewport_blocks)
 
+    tb_ix = max(2800.0, h_mm - 5200)
+    x_right = w_mm - 2600
+    y_line = tb_ix
+    step = 760
+
+    hdr_parts = []
+    if sheet_no_raw.strip():
+        hdr_parts.append(sheet_no_raw.strip())
+    if revision_raw.strip():
+        hdr_parts.append(f"Rev {revision_raw.strip()}")
+    hdr = " · ".join(hdr_parts)
+
+    footer_lines = [hdr, project_raw]
+    if drawn_raw.strip() or chk_raw.strip():
+        footer_lines.append(
+            f"Drn {drawn_raw.strip()} · Chk {chk_raw.strip()}".strip(" ·").strip()
+        )
+    footer_lines.append(issued_raw)
+
+    footer_xml_parts: list[str] = []
+    for raw in footer_lines:
+        txt = str(raw).strip()
+        if not txt:
+            continue
+        escaped = html.escape(txt)
+        footer_xml_parts.append(
+            f'<text x="{x_right}" y="{y_line}" fill="#334155" '
+            f'font-size="620px" text-anchor="end">{escaped}</text>'
+        )
+        y_line += step
+
+    footer_xml = "".join(footer_xml_parts)
+
     return (
         f'<?xml version="1.0" encoding="UTF-8"?>\n'
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w_mm} {h_mm}" '
-        f'width="420mm" height="297mm">'
+        f'width="{w_mm / 100:.3f}mm" height="{h_mm / 100:.3f}mm">'
         f'<rect width="{w_mm}" height="{h_mm}" fill="#f8fafc" stroke="#1e293b" stroke-width="120"/>'
         f'<rect x="800" y="800" width="{w_mm - 1600}" height="3600" fill="#edf2ff" opacity="0.9"/>'
         f'<text x="2400" y="2400" fill="#1e293b" font-size="1200px">A1 metaphor — {title}</text>'
         f'<text x="2400" y="3600" fill="#64748b" font-size="800px">TB {tb}</text>'
+        f"{footer_xml}"
         f"{vps_xml}"
         f"</svg>"
     )

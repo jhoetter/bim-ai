@@ -54,7 +54,7 @@ from bim_ai.room_derivation_preview import (
     room_derivation_candidates_review,
     room_derivation_preview,
 )
-from bim_ai.schedule_csv import schedule_payload_to_csv
+from bim_ai.schedule_csv import schedule_payload_to_csv, schedule_payload_with_column_subset
 from bim_ai.schedule_derivation import derive_schedule_table, list_schedule_ids
 from bim_ai.sheet_preview_pdf import sheet_elem_to_pdf_bytes
 from bim_ai.sheet_preview_svg import pick_sheet, sheet_elem_to_svg
@@ -418,6 +418,7 @@ async def schedule_derived_table(
     schedule_id: str,
     session: AsyncSession = Depends(get_session),
     fmt: Annotated[str, Query(alias="format")] = "json",
+    columns: Annotated[str | None, Query(alias="columns")] = None,
 ) -> dict[str, Any] | PlainTextResponse:
     row = await load_model_row(session, model_id)
     if row is None:
@@ -428,7 +429,12 @@ async def schedule_derived_table(
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     if fmt.strip().lower() == "csv":
-        csv_body = schedule_payload_to_csv(payload)
+        export_payload = payload
+        if columns and columns.strip():
+            wanted = [c.strip() for c in columns.split(",") if c.strip()]
+            if wanted:
+                export_payload = schedule_payload_with_column_subset(payload, wanted)
+        csv_body = schedule_payload_to_csv(export_payload)
         safe = "".join(ch for ch in schedule_id if ch.isalnum() or ch in ("-", "_")) or "schedule"
         return PlainTextResponse(
             csv_body,

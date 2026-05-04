@@ -11,6 +11,7 @@ import type {
 } from '@bim-ai/core';
 
 import type { PlanPresentationPreset } from '../plan/symbology';
+import type { PlanProjectionPrimitivesV1Wire } from '../plan/planProjectionWire';
 
 export type ViewerMode = 'plan_canvas' | 'orbit_3d';
 
@@ -68,7 +69,11 @@ type StoreState = {
   activeLevelId?: string;
   planPresentationPreset: PlanPresentationPreset;
   activePlanViewId?: string;
+  /** When set, plan canvas prefers server `planProjectionWire_v1.primitives` (WP-C02/C03). */
+  planProjectionPrimitives: PlanProjectionPrimitivesV1Wire | null;
   viewerClipElevMm: number | null;
+  /** Optional lower bound — clips geometry *below* this world Y (mm) for a reproducible slab cut. */
+  viewerClipFloorElevMm: number | null;
   /** When true for a semantic kind (`wall`, `roof`, …), that category is hidden in 3D. */
   viewerCategoryHidden: Record<string, boolean>;
   orthoSnapHold: boolean;
@@ -101,6 +106,8 @@ type StoreState = {
 
   activatePlanView: (planViewElementId: string | undefined) => void;
   setViewerClipElevMm: (mm: number | null) => void;
+  setViewerClipFloorElevMm: (mm: number | null) => void;
+  setPlanProjectionPrimitives: (p: PlanProjectionPrimitivesV1Wire | null) => void;
   toggleViewerCategoryHidden: (semanticKind: string) => void;
 
   setActivity: (e: ActivityEvent[]) => void;
@@ -273,6 +280,11 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
         raw.volumeCeilingOffsetMm !== undefined || raw.volume_ceiling_offset_mm !== undefined
           ? Number(raw.volumeCeilingOffsetMm ?? raw.volume_ceiling_offset_mm)
           : undefined,
+      ...(typeof raw.programmeCode === 'string' || typeof raw.programme_code === 'string'
+        ? {
+            programmeCode: String(raw.programmeCode ?? raw.programme_code),
+          }
+        : {}),
     };
   }
   if (kind === 'grid_line') {
@@ -600,12 +612,35 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
   }
 
   if (kind === 'sheet') {
+    const tpRaw = raw.titleblockParameters ?? raw.titleblock_parameters;
+    const titleblockParameters =
+      typeof tpRaw === 'object' &&
+      tpRaw !== null &&
+      !Array.isArray(tpRaw) &&
+      Object.entries(tpRaw as Record<string, unknown>).every(
+        ([k, v]) => typeof k === 'string' && typeof v === 'string',
+      )
+        ? (tpRaw as Record<string, string>)
+        : undefined;
     return {
       kind: 'sheet',
       id,
       name,
       titleBlock: (raw.titleBlock ?? raw.title_block ?? null) as string | null,
       viewportsMm: Array.isArray(raw.viewportsMm) ? raw.viewportsMm : [],
+      paperWidthMm:
+        raw.paperWidthMm !== undefined
+          ? Number(raw.paperWidthMm)
+          : raw.paper_width_mm !== undefined
+            ? Number(raw.paper_width_mm)
+            : undefined,
+      paperHeightMm:
+        raw.paperHeightMm !== undefined
+          ? Number(raw.paperHeightMm)
+          : raw.paper_height_mm !== undefined
+            ? Number(raw.paper_height_mm)
+            : undefined,
+      ...(titleblockParameters !== undefined ? { titleblockParameters } : {}),
     };
   }
 
@@ -850,9 +885,13 @@ export const useBimStore = create<StoreState>((set, get) => {
 
     viewerClipElevMm: null,
 
+    viewerClipFloorElevMm: null,
+
     viewerCategoryHidden: {},
 
     activePlanViewId: undefined,
+
+    planProjectionPrimitives: null,
 
     hydrateFromSnapshot: (snap) => {
       const elements: Record<string, Element> = {};
@@ -875,6 +914,7 @@ export const useBimStore = create<StoreState>((set, get) => {
 
         activeLevelId:
           curLevel && elements[curLevel]?.kind === 'level' ? curLevel : defaultLevelId(elements),
+        planProjectionPrimitives: null,
       });
     },
 
@@ -903,6 +943,8 @@ export const useBimStore = create<StoreState>((set, get) => {
         elementsById: merged,
 
         violations: (d.violations ?? []).map(coerceViolation),
+
+        planProjectionPrimitives: null,
       });
     },
 
@@ -994,6 +1036,10 @@ export const useBimStore = create<StoreState>((set, get) => {
     },
 
     setViewerClipElevMm: (viewerClipElevMm) => set({ viewerClipElevMm }),
+
+    setViewerClipFloorElevMm: (viewerClipFloorElevMm) => set({ viewerClipFloorElevMm }),
+
+    setPlanProjectionPrimitives: (planProjectionPrimitives) => set({ planProjectionPrimitives }),
 
     toggleViewerCategoryHidden: (semanticKind) =>
       set(() => {

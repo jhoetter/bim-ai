@@ -25,6 +25,14 @@ def sheet_elem_to_pdf_bytes(doc: Document, sh: SheetElem) -> bytes:
     c.setDrawColor(0.15, 0.15, 0.15)
 
     c.setFont("Helvetica", 9)
+    tb_p = sh.titleblock_parameters or {}
+    line_y = margin + 50
+    for key in ("sheetNumber", "revision", "projectName", "drawnBy", "checkedBy", "issueDate"):
+        val = str(tb_p.get(key) or "").strip()
+        if not val:
+            continue
+        c.drawRightString(pw - margin, line_y, f"{key}: {val}"[:120])
+        line_y += 13
 
     # Deterministic placemarker grid echoed from SVG extents (normalized for evidence).
     c.line(margin, margin + 220, pw - margin, margin + 220)

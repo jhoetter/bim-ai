@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useSearchParams } from 'react-router';
 
 import type {
   Element,
@@ -130,6 +131,8 @@ const TOOL_BTN_LABEL: Record<PlanTool, string> = {
 };
 
 export function Workspace() {
+  const [searchParams] = useSearchParams();
+  const evidenceSheetFull = searchParams.has('evidenceSheetFull');
   const wsRef = useRef<WebSocket | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [cmdBarFocus, setCmdBarFocus] = useState(false);
@@ -198,6 +201,8 @@ export function Workspace() {
   const toggleViewerCategoryHidden = useBimStore((s) => s.toggleViewerCategoryHidden);
   const viewerClipElevMm = useBimStore((s) => s.viewerClipElevMm);
   const setViewerClipElevMm = useBimStore((s) => s.setViewerClipElevMm);
+  const viewerClipFloorElevMm = useBimStore((s) => s.viewerClipFloorElevMm);
+  const setViewerClipFloorElevMm = useBimStore((s) => s.setViewerClipFloorElevMm);
 
   const selected = selectedId ? elementsById[selectedId] : undefined;
 
@@ -294,6 +299,19 @@ export function Workspace() {
       })
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    const cap = searchParams.get('evidence3dClipCapMm');
+    const floor = searchParams.get('evidence3dClipFloorMm');
+    if (cap === null && floor === null) return;
+    const parseMm = (raw: string | null) => {
+      if (raw === null || raw.trim() === '') return null;
+      const n = Number(raw);
+      return Number.isFinite(n) ? n : null;
+    };
+    if (cap !== null) setViewerClipElevMm(parseMm(cap));
+    if (floor !== null) setViewerClipFloorElevMm(parseMm(floor));
+  }, [searchParams, setViewerClipElevMm, setViewerClipFloorElevMm]);
 
   /* Boot */
 
@@ -655,7 +673,11 @@ export function Workspace() {
             <SectionPlaceholderPane activeLevelLabel={activeLevelLabel} />
 
             <Panel title="Sheet canvas (preview)">
-              <SheetCanvas elementsById={elementsById} preferredSheetId="hf-sheet-ga01" />
+              <SheetCanvas
+                elementsById={elementsById}
+                preferredSheetId="hf-sheet-ga01"
+                evidenceFullBleed={evidenceSheetFull}
+              />
             </Panel>
           </div>
         );
@@ -834,7 +856,7 @@ export function Workspace() {
             </div>
 
             <label className="mt-2 block text-[10px] text-muted">
-              Cut plane Y (mm, empty = off)
+              Section box — cap Y (mm, clips above; empty = off)
               <input
                 className="mt-1 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px]"
                 placeholder="e.g. 5600"
@@ -850,6 +872,27 @@ export function Workspace() {
 
                   const n = Number(raw);
                   setViewerClipElevMm(Number.isFinite(n) ? n : null);
+                }}
+              />
+            </label>
+
+            <label className="mt-2 block text-[10px] text-muted">
+              Section box — floor Y (mm, clips below; empty = off)
+              <input
+                className="mt-1 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px]"
+                placeholder="e.g. 2500"
+                inputMode="numeric"
+                value={viewerClipFloorElevMm ?? ''}
+                onChange={(e) => {
+                  const raw = e.target.value.trim();
+
+                  if (raw === '') {
+                    setViewerClipFloorElevMm(null);
+                    return;
+                  }
+
+                  const n = Number(raw);
+                  setViewerClipFloorElevMm(Number.isFinite(n) ? n : null);
                 }}
               />
             </label>

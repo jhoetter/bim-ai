@@ -33,6 +33,21 @@ export function AgentReviewPane() {
     setStepLog((p) => [...p.slice(-80), `[${new Date().toISOString()}] ${line}`]);
   }
 
+  type EvidenceArtifactSummary = {
+    semanticDigestPrefix16: string | null;
+    semanticDigestSha256Tail: string | null;
+    modelRevision: number | null;
+    sheetRows: {
+      sheetId: string;
+      sheetName?: string;
+      pngViewport?: string;
+      pngFullSheet?: string;
+      bundleJson?: string;
+    }[];
+    suggestedBasenameHint: string | null;
+    mismatchNotes: string[];
+  };
+
   const assumptionsJson = useMemo(() => {
     try {
       const raw = assumeLogTxt.trim();
@@ -70,6 +85,116 @@ export function AgentReviewPane() {
 
     return { count: rooms.length };
   }, [elementsById]);
+
+  const evidenceArtifactSummary = useMemo((): EvidenceArtifactSummary => {
+    if (!evidenceTxt)
+      return {
+        semanticDigestPrefix16: null,
+        semanticDigestSha256Tail: null,
+        modelRevision: null,
+        sheetRows: [],
+        suggestedBasenameHint: null,
+        mismatchNotes: [],
+      };
+    try {
+      const root = JSON.parse(evidenceTxt) as Record<string, unknown>;
+      const payload =
+        root && typeof root.payload === 'object' && root.payload !== null
+          ? (root.payload as Record<string, unknown>)
+          : root;
+
+      const prefix =
+        typeof payload.semanticDigestPrefix16 === 'string' ? payload.semanticDigestPrefix16 : null;
+
+      const dig =
+        typeof payload.semanticDigestSha256 === 'string' ? payload.semanticDigestSha256 : null;
+      const shaTail = dig && dig.length >= 12 ? dig.slice(-12) : dig;
+
+      const revRaw = payload.modelRevision ?? payload.revision;
+      const modelRevision =
+        typeof revRaw === 'number' && Number.isFinite(revRaw)
+          ? revRaw
+          : typeof revRaw === 'string'
+            ? Number(revRaw)
+            : null;
+
+      const basename =
+        typeof payload.suggestedEvidenceArtifactBasename === 'string'
+          ? payload.suggestedEvidenceArtifactBasename
+          : null;
+
+      const dse = payload.deterministicSheetEvidence;
+      const rowsRaw = Array.isArray(dse) ? dse : [];
+      const sheetRows = rowsRaw.map((row) => {
+        const r = row as Record<string, unknown>;
+        const pwRaw = r.playwrightSuggestedFilenames;
+        const pw = pwRaw && typeof pwRaw === 'object' ? (pwRaw as Record<string, unknown>) : {};
+        const corrRaw = r.correlation;
+        const corr =
+          corrRaw && typeof corrRaw === 'object' ? (corrRaw as Record<string, unknown>) : {};
+        return {
+          sheetId: String(r.sheetId ?? r.sheet_id ?? ''),
+          sheetName:
+            typeof r.sheetName === 'string'
+              ? r.sheetName
+              : typeof r.sheet_name === 'string'
+                ? r.sheet_name
+                : undefined,
+          pngViewport: typeof pw.pngViewport === 'string' ? pw.pngViewport : undefined,
+          pngFullSheet: typeof pw.pngFullSheet === 'string' ? pw.pngFullSheet : undefined,
+          bundleJson:
+            typeof corr.suggestedEvidenceBundleEvidencePackageJson === 'string'
+              ? corr.suggestedEvidenceBundleEvidencePackageJson
+              : typeof corr.suggested_evidence_bundle_evidence_package_json === 'string'
+                ? corr.suggested_evidence_bundle_evidence_package_json
+                : undefined,
+        };
+      });
+
+      const mismatchNotes: string[] = [];
+      for (let i = 0; i < rowsRaw.length; i++) {
+        const sr = sheetRows[i];
+        if (!sr?.sheetId) continue;
+        const cRaw = rowsRaw[i] as Record<string, unknown>;
+        const corrRaw = cRaw?.correlation;
+        const corr =
+          corrRaw && typeof corrRaw === 'object' ? (corrRaw as Record<string, unknown>) : {};
+        const rowPrefix =
+          typeof corr.semanticDigestPrefix16 === 'string' ? corr.semanticDigestPrefix16 : null;
+        if (prefix && rowPrefix && rowPrefix !== prefix) {
+          mismatchNotes.push(
+            `Sheet ${sr.sheetId}: correlation semanticDigestPrefix16 (${rowPrefix}) ≠ package (${prefix}).`,
+          );
+        }
+      }
+
+      const liveRev = typeof revision === 'number' ? revision : null;
+      if (modelRevision !== null && liveRev !== null && modelRevision !== liveRev) {
+        mismatchNotes.push(
+          `Evidence package modelRevision (${modelRevision}) ≠ loaded store revision (${liveRev}) — regenerate or re-fetch.`,
+        );
+      }
+
+      return {
+        semanticDigestPrefix16: prefix,
+        semanticDigestSha256Tail: shaTail,
+        modelRevision:
+          modelRevision !== null && Number.isFinite(modelRevision) ? modelRevision : null,
+        sheetRows,
+        suggestedBasenameHint: basename,
+        mismatchNotes,
+      };
+    } catch {
+      return {
+        semanticDigestPrefix16: null,
+        semanticDigestSha256Tail: null,
+        modelRevision: null,
+        sheetRows: [],
+        suggestedBasenameHint: null,
+        mismatchNotes: ['Could not parse evidence JSON for artifact summary.'],
+      };
+    }
+  }, [evidenceTxt, revision]);
 
   const roomCandPreview = useMemo(() => {
     if (!roomCandTxt) return null;
@@ -515,6 +640,76 @@ export function AgentReviewPane() {
           <pre className="max-h-48 overflow-auto rounded border bg-background p-2 text-[10px]">
             {schemaTxt}
           </pre>
+        </div>
+      ) : null}
+
+      {evidenceArtifactSummary.sheetRows.length ||
+      evidenceArtifactSummary.semanticDigestPrefix16 ? (
+        <div className="rounded border border-border bg-background/40 p-2">
+          <div className="text-[10px] font-semibold text-muted">Evidence artifact correlation</div>
+          <ul className="mt-1 list-disc space-y-1 ps-4 text-[10px] text-muted">
+            {evidenceArtifactSummary.semanticDigestPrefix16 ? (
+              <li>
+                semanticDigestPrefix16:{' '}
+                <code className="text-[10px]">
+                  {evidenceArtifactSummary.semanticDigestPrefix16}
+                </code>
+              </li>
+            ) : null}
+            {evidenceArtifactSummary.semanticDigestSha256Tail ? (
+              <li>
+                semanticDigest tail:{' '}
+                <code className="text-[10px]">
+                  {evidenceArtifactSummary.semanticDigestSha256Tail}
+                </code>
+              </li>
+            ) : null}
+            {evidenceArtifactSummary.suggestedBasenameHint ? (
+              <li>
+                suggested basename:{' '}
+                <code className="text-[10px]">{evidenceArtifactSummary.suggestedBasenameHint}</code>
+              </li>
+            ) : null}
+            {evidenceArtifactSummary.modelRevision !== null ? (
+              <li>package modelRevision: {evidenceArtifactSummary.modelRevision}</li>
+            ) : null}
+          </ul>
+          {evidenceArtifactSummary.sheetRows.length ? (
+            <div className="mt-2 overflow-auto">
+              <table className="w-full border-collapse border border-border text-[10px]">
+                <thead>
+                  <tr className="bg-surface/50">
+                    <th className="border border-border px-1 py-1 text-left">Sheet</th>
+                    <th className="border border-border px-1 py-1 text-left">PNG viewport</th>
+                    <th className="border border-border px-1 py-1 text-left">PNG full bleed</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {evidenceArtifactSummary.sheetRows.map((sr) => (
+                    <tr key={sr.sheetId}>
+                      <td className="border border-border px-1 py-1 align-top">
+                        <div className="font-mono">{sr.sheetId}</div>
+                        {sr.sheetName ? <div className="text-muted">{sr.sheetName}</div> : null}
+                      </td>
+                      <td className="border border-border px-1 py-1 font-mono align-top">
+                        {sr.pngViewport ?? '—'}
+                      </td>
+                      <td className="border border-border px-1 py-1 font-mono align-top">
+                        {sr.pngFullSheet ?? '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
+          {evidenceArtifactSummary.mismatchNotes.length ? (
+            <ul className="mt-2 list-disc space-y-1 ps-4 text-[10px] text-amber-500">
+              {evidenceArtifactSummary.mismatchNotes.map((n, i) => (
+                <li key={i}>{n}</li>
+              ))}
+            </ul>
+          ) : null}
         </div>
       ) : null}
 

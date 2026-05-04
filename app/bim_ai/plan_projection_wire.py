@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from typing import Any
 
 from bim_ai.document import Document
@@ -20,6 +21,7 @@ from bim_ai.elements import (
     WindowElem,
 )
 from bim_ai.opening_cut_primitives import hosted_opening_t_span_normalized
+from bim_ai.section_projection_primitives import build_section_projection_primitives
 
 
 def _canon_hidden_category(label: str) -> str | None:
@@ -59,6 +61,11 @@ def _hosted_xy_mm_on_wall(opening: DoorElem | WindowElem, wall: WallElem) -> tup
     length_mm = max(1e-6, (dx * dx + dy * dy) ** 0.5)
     ux, uy = dx / length_mm, dy / length_mm
     return sx + ux * opening.along_t * length_mm, sy + uy * opening.along_t * length_mm
+
+
+def _deterministic_scheme_color_hex(seed: str) -> str:
+    digest = hashlib.sha256(seed.encode("utf-8")).hexdigest()
+    return f"#{digest[:6]}"
 
 
 def _build_plan_primitive_lists(
@@ -128,7 +135,16 @@ def _build_plan_primitive_lists(
             if "room" in hidden_semantic or not lvl_ok(e.level_id):
                 continue
             outlines = [[round(p.x_mm, 3), round(p.y_mm, 3)] for p in e.outline_mm]
-            rooms.append({"id": e.id, "levelId": e.level_id, "outlineMm": outlines})
+            seed_src = (e.programme_code or "").strip() or e.id
+            row: dict[str, Any] = {
+                "id": e.id,
+                "levelId": e.level_id,
+                "outlineMm": outlines,
+                "schemeColorHex": _deterministic_scheme_color_hex(seed_src),
+            }
+            if (e.programme_code or "").strip():
+                row["programmeCode"] = (e.programme_code or "").strip()
+            rooms.append(row)
         elif isinstance(e, DoorElem):
             w = doc.elements.get(e.wall_id)
             if not isinstance(w, WallElem):
@@ -228,6 +244,7 @@ def _build_plan_primitive_lists(
                     "levelId": e.level_id,
                     "aMm": {"x": round(e.a_mm.x_mm, 3), "y": round(e.a_mm.y_mm, 3)},
                     "bMm": {"x": round(e.b_mm.x_mm, 3), "y": round(e.b_mm.y_mm, 3)},
+                    "offsetMm": {"x": round(e.offset_mm.x_mm, 3), "y": round(e.offset_mm.y_mm, 3)},
                 }
             )
 
@@ -375,7 +392,7 @@ def plan_projection_wire_from_request(
 
 
 def section_cut_projection_wire(doc: Document, section_cut_id: str) -> dict[str, Any]:
-    """Thin server slice for `section_cut` — geometry projection deferred (WP-E04)."""
+    """Portable section display resolution / orthographic (u,z) primitives (WP-E04/C02)."""
 
     sec = doc.elements.get(section_cut_id)
 
@@ -386,20 +403,35 @@ def section_cut_projection_wire(doc: Document, section_cut_id: str) -> dict[str,
             "errors": [{"code": "not_found", "message": "section_cut id missing or wrong kind"}],
         }
 
+    primitives, prim_warnings = build_section_projection_primitives(doc, sec)
+    prim = primitives
+    walls = prim.get("walls") or []
+    floors = prim.get("floors") or []
+    rooms = prim.get("rooms") or []
+    doors = prim.get("doors") or []
+    windows = prim.get("windows") or []
+    stairs = prim.get("stairs") or []
+    roofs = prim.get("roofs") or []
+    counts: dict[str, int] = {
+        "wall": len(walls),
+        "floor": len(floors),
+        "room": len(rooms),
+        "door": len(doors),
+        "window": len(windows),
+        "stair": len(stairs),
+        "roof": len(roofs),
+    }
+
     return {
         "format": "sectionProjectionWire_v1",
         "sectionCutId": sec.id,
         "name": sec.name,
-
         "lineStartMm": sec.line_start_mm.model_dump(by_alias=True),
-
         "lineEndMm": sec.line_end_mm.model_dump(by_alias=True),
-
         "cropDepthMm": float(sec.crop_depth_mm),
-        "note": (
-            "2D orthographic projection and cut-plane intersection are not emitted in this slice; "
-            "this wire is stable metadata for hydration and CI."
-        ),
+        "warnings": prim_warnings,
+        "primitives": prim,
+        "countsByVisibleKind": dict(sorted(counts.items())),
         "elementCountRough": sum(1 for e in doc.elements.values() if isinstance(e, WallElem)),
     }
 

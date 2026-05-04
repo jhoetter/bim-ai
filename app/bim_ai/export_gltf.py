@@ -9,7 +9,10 @@ import struct
 from dataclasses import dataclass
 from typing import Any
 
-from bim_ai.cut_solid_kernel import collect_wall_floor_slab_cut_boxes
+from bim_ai.cut_solid_kernel import (
+    collect_hosted_cut_manifest_warnings,
+    collect_wall_floor_slab_cut_boxes,
+)
 from bim_ai.document import Document
 from bim_ai.elements import (
     DoorElem,
@@ -78,11 +81,15 @@ def exchange_parity_manifest_fields(
 
 def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
     parity = exchange_parity_manifest_fields_from_document(doc)
-    return {
+    cut_warns = collect_hosted_cut_manifest_warnings(doc)
+    base: dict[str, Any] = {
         **parity,
         "meshEncoding": "bim_ai_box_primitive_v0",
         "hint": "Meshes: GET /api/models/{id}/exports/model.gltf",
     }
+    if cut_warns:
+        base["hostedCutApproximationWarnings"] = cut_warns
+    return base
 
 
 def build_visual_export_manifest(doc: Document) -> dict[str, Any]:

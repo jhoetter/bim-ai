@@ -4,6 +4,11 @@ import type { Element } from '@bim-ai/core';
 
 import { useBimStore } from '../state/store';
 import { collectWallAnchors, snapPlanPoint } from './snapEngine';
+import {
+  buildPlanProjectionQuery,
+  extractPlanPrimitives,
+  fetchPlanProjectionWire,
+} from './planProjectionWire';
 import { resolvePlanViewDisplay } from './planProjection';
 import { rebuildPlanMeshes } from './symbology';
 
@@ -105,6 +110,10 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
 
   const elementsById = useBimStore((s) => s.elementsById);
   const selectedId = useBimStore((s) => s.selectedId);
+  const modelId = useBimStore((s) => s.modelId);
+  const revision = useBimStore((s) => s.revision);
+  const planProjectionPrimitives = useBimStore((s) => s.planProjectionPrimitives);
+  const setPlanProjectionPrimitives = useBimStore((s) => s.setPlanProjectionPrimitives);
   const activePlanViewId = useBimStore((s) => s.activePlanViewId);
   const planPresentation = useBimStore((s) => s.planPresentationPreset);
   const planTool = useBimStore((s) => s.planTool);
@@ -133,6 +142,38 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
     [elementsById, displayLevelId],
   );
   const lvlId = displayLevelId || activeLevelResolvedId;
+
+  useEffect(() => {
+    let cancel = false;
+    if (!modelId) {
+      setPlanProjectionPrimitives(null);
+      return;
+    }
+    void (async () => {
+      try {
+        const qs = buildPlanProjectionQuery({
+          planViewId: display.planViewElementId,
+          fallbackLevelId: display.planViewElementId ? undefined : lvlId || undefined,
+          globalPresentation: planPresentation,
+        });
+        const payload = await fetchPlanProjectionWire(modelId, qs);
+        if (cancel) return;
+        setPlanProjectionPrimitives(extractPlanPrimitives(payload));
+      } catch {
+        if (!cancel) setPlanProjectionPrimitives(null);
+      }
+    })();
+    return () => {
+      cancel = true;
+    };
+  }, [
+    modelId,
+    revision,
+    display.planViewElementId,
+    lvlId,
+    planPresentation,
+    setPlanProjectionPrimitives,
+  ]);
 
   const resizeCam = useCallback(() => {
     const host = mountRef.current;
@@ -195,11 +236,13 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
   useEffect(() => {
     const grp = rootRef.current;
     if (!grp) return;
+    const wirePrimitives = modelId ? planProjectionPrimitives : null;
     rebuildPlanMeshes(grp, elementsById, {
       activeLevelId: displayLevelId || undefined,
       selectedId,
       presentation: display.presentation,
       hiddenSemanticKinds: display.hiddenSemanticKinds,
+      wirePrimitives,
     });
     for (let i = grp.children.length - 1; i >= 0; i--) {
       const ch = grp.children[i]!;
@@ -226,6 +269,8 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
     elementsById,
     geomEpoch,
     hiddenKey,
+    planProjectionPrimitives,
+    modelId,
     planTool,
     selectedId,
   ]);

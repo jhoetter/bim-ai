@@ -130,6 +130,7 @@ class RoomElem(BaseModel):
     outline_mm: list[Vec2Mm] = Field(alias="outlineMm")
     upper_limit_level_id: str | None = Field(default=None, alias="upperLimitLevelId")
     volume_ceiling_offset_mm: float | None = Field(default=None, alias="volumeCeilingOffsetMm")
+    programme_code: str | None = Field(default=None, alias="programmeCode")
 
 
 class GridLineElem(BaseModel):
@@ -338,6 +339,9 @@ class SheetElem(BaseModel):
     name: str = "Sheet"
     title_block: str | None = Field(default=None, alias="titleBlock")
     viewports_mm: list[dict[str, Any]] = Field(default_factory=list, alias="viewportsMm")
+    paper_width_mm: float = Field(default=42_000, alias="paperWidthMm")
+    paper_height_mm: float = Field(default=29_700, alias="paperHeightMm")
+    titleblock_parameters: dict[str, str] = Field(default_factory=dict, alias="titleblockParameters")
 
 
 class ScheduleElem(BaseModel):

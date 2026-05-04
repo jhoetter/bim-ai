@@ -128,4 +128,15 @@ test.describe('golden bundle affordances', () => {
     await page.getByRole('button', { name: /^Sheets$/ }).click();
     await expect(page.getByText('GA-01 — Golden evidence').first()).toBeVisible();
   });
+
+  test('applies evidence3d clip query params on 3D section box controls', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('bim.workspaceLayout', 'split_plan_3d');
+    });
+    await page.goto('/?evidence3dClipCapMm=5600&evidence3dClipFloorMm=2000');
+    await expect(page.getByText('Ready', { exact: false })).toBeVisible({ timeout: 30_000 });
+
+    await expect(page.getByLabel(/Section box — cap Y/i)).toHaveValue('5600');
+    await expect(page.getByLabel(/Section box — floor Y/i)).toHaveValue('2000');
+  });
 });

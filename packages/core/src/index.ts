@@ -120,6 +120,7 @@ export type Element =
       outlineMm: XY[];
       upperLimitLevelId?: string | null;
       volumeCeilingOffsetMm?: number | null;
+      programmeCode?: string | null;
     }
   | {
       kind: 'grid_line';
@@ -270,6 +271,9 @@ export type Element =
       name: string;
       titleBlock?: string | null;
       viewportsMm?: unknown[];
+      paperWidthMm?: number;
+      paperHeightMm?: number;
+      titleblockParameters?: Record<string, string>;
     }
   | {
       kind: 'schedule';

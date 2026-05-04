@@ -160,6 +160,7 @@ def deterministic_sheet_evidence_manifest(
                     "svgProbe": f"{stem}.svg.probe.txt",
                     "pdfProbe": f"{stem}.pdf.probe.bin",
                     "pngViewport": f"{stem}-viewport.png",
+                    "pngFullSheet": f"{stem}-full.png",
                 },
                 "correlation": {
                     "format": "evidenceSheetCorrelation_v1",

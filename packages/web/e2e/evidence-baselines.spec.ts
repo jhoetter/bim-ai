@@ -17,11 +17,35 @@ const MOCK_EVIDENCE_BASENAME = `bim-ai-evidence-${MOCK_SEMANTIC_PREFIX16}-r3`;
 
 const MOCK_SHEET_VIEWPORT_PNG_FROM_MANIFEST = `${MOCK_EVIDENCE_BASENAME}-sheet-hf-sheet-ga01-viewport.png`;
 
+const MOCK_SHEET_FULL_PNG_FROM_MANIFEST = `${MOCK_EVIDENCE_BASENAME}-sheet-hf-sheet-ga01-full.png`;
+
 async function sharedRoutes(page: Page, layoutPreset: string) {
   await page.addInitScript((preset: string) => {
     localStorage.setItem('bim.welcome.dismissed', '1');
     localStorage.setItem('bim.workspaceLayout', preset);
   }, layoutPreset);
+
+  await page.route(`**/api/models/*/projection/plan**`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        format: 'planProjectionWire_v1',
+        primitives: {
+          format: 'planProjectionPrimitives_v1',
+          walls: [],
+          floors: [],
+          rooms: [],
+          doors: [],
+          windows: [],
+          stairs: [],
+          roofs: [],
+          gridLines: [],
+          dimensions: [],
+        },
+      }),
+    });
+  });
 
   await page.route('**/api/bootstrap', async (route) => {
     await route.fulfill({
@@ -161,6 +185,16 @@ async function sharedRoutes(page: Page, layoutPreset: string) {
             id: 'hf-sheet-ga01',
             name: 'GA-01 — Evidence',
             titleBlock: 'A1-Golden',
+            paperWidthMm: 42000,
+            paperHeightMm: 29700,
+            titleblockParameters: {
+              sheetNumber: 'GA-01',
+              revision: 'P01',
+              projectName: 'Evidence tower',
+              drawnBy: 'AU',
+              checkedBy: 'RV',
+              issueDate: '2026-05-04',
+            },
             viewportsMm: [
               {
                 viewportId: 'vp-plan',
@@ -324,6 +358,7 @@ async function sharedRoutes(page: Page, layoutPreset: string) {
                 svgProbe: `${MOCK_EVIDENCE_BASENAME}-sheet-hf-sheet-ga01.svg.probe.txt`,
                 pdfProbe: `${MOCK_EVIDENCE_BASENAME}-sheet-hf-sheet-ga01.pdf.probe.bin`,
                 pngViewport: MOCK_SHEET_VIEWPORT_PNG_FROM_MANIFEST,
+                pngFullSheet: MOCK_SHEET_FULL_PNG_FROM_MANIFEST,
               },
               correlation: {
                 format: 'evidenceSheetCorrelation_v1',
@@ -403,6 +438,14 @@ test.describe('evidence PNG baselines', () => {
     await expect(page.getByTestId('sheet-canvas')).toHaveScreenshot(
       MOCK_SHEET_VIEWPORT_PNG_FROM_MANIFEST,
     );
+  });
+
+  test('deterministic manifest: full-sheet SVG screenshot', async ({ page }) => {
+    await sharedRoutes(page, 'coordination');
+    await page.goto('/?evidenceSheetFull=1');
+    await expect(page.getByText('Ready', { exact: false })).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId('sheet-svg')).toBeVisible();
+    await expect(page.getByTestId('sheet-svg')).toHaveScreenshot(MOCK_SHEET_FULL_PNG_FROM_MANIFEST);
   });
 
   test('named plan_views change EG openings vs OG room presentation', async ({ page }) => {
