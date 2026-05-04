@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from bim_ai.evidence_manifest import evidence_closure_review_v1
+from bim_ai.evidence_manifest import evidence_closure_review_v1, evidence_lifecycle_signal_v1
 
 
 def test_evidence_closure_review_inventory_lists_sorted_png_basenames() -> None:
@@ -46,6 +46,14 @@ def test_evidence_closure_review_inventory_lists_sorted_png_basenames() -> None:
     assert out["primaryScreenshotArtifactCount"] == 4
     assert out["correlationDigestConsistency"]["isFullyConsistent"] is True
     assert out["pixelDiffExpectation"]["format"] == "pixelDiffExpectation_v1"
+    ingest = out["pixelDiffExpectation"]["ingestChecklist_v1"]
+    assert ingest["format"] == "pixelDiffIngestChecklist_v1"
+    assert len(ingest["targets"]) == 4
+    assert ingest["targets"][0]["expectedDiffBasename"].endswith("-diff.png")
+    gaps = out["screenshotHintGaps_v1"]
+    assert gaps["format"] == "screenshotHintGaps_v1"
+    assert gaps["hasGaps"] is False
+    assert gaps["gaps"] == []
 
 
 def test_evidence_closure_review_flags_stale_correlation_digest() -> None:
@@ -95,3 +103,66 @@ def test_evidence_closure_review_flags_missing_row_digest() -> None:
     assert cons["isFullyConsistent"] is False
     assert cons["staleRowsRelativeToPackageDigest"] == []
     assert cons["rowsMissingCorrelationDigest"] == [{"kind": "viewpoint", "id": "v1"}]
+
+
+def test_evidence_lifecycle_signal_v1_matches_closure_review() -> None:
+    pkg = "e" * 64
+    suggested_basename = "bim-ai-evidence-eeeeeeeeeeee-r9"
+    sheet = [
+        {
+            "sheetId": "s1",
+            "playwrightSuggestedFilenames": {"pngViewport": "only-viewport.png"},
+            "correlation": {"semanticDigestSha256": pkg},
+        }
+    ]
+    closure = evidence_closure_review_v1(
+        package_semantic_digest_sha256=pkg,
+        deterministic_sheet_evidence=sheet,
+        deterministic_3d_view_evidence=[],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+    )
+    sig = evidence_lifecycle_signal_v1(
+        package_semantic_digest_sha256=pkg,
+        suggested_evidence_artifact_basename=suggested_basename,
+        evidence_closure_review=closure,
+    )
+    assert sig["format"] == "evidenceLifecycleSignal_v1"
+    assert sig["packageSemanticDigestSha256"] == pkg
+    assert sig["suggestedEvidenceArtifactBasename"] == suggested_basename
+    bn = closure["expectedDeterministicPngBasenames"]
+    assert isinstance(bn, list)
+    assert sig["expectedDeterministicPngCount"] == len(bn)
+    shot_gaps = closure["screenshotHintGaps_v1"]
+    gap_rows = shot_gaps.get("gaps")
+    assert isinstance(gap_rows, list)
+    assert shot_gaps.get("hasGaps") is True
+    assert len(gap_rows) == 1
+    assert gap_rows[0]["missingPlaywrightFilenameSlots"] == ["pngFullSheet"]
+    assert sig["screenshotHintGapRowCount"] == len(gap_rows)
+    assert sig["correlationFullyConsistent"] is True
+    pix = closure["pixelDiffExpectation"]
+    ingest = pix["ingestChecklist_v1"]
+    targets = ingest["targets"]
+    assert sig["pixelDiffIngestTargetCount"] == len(targets)
+
+    stale_pkg = "f" * 64
+    stale_closure = evidence_closure_review_v1(
+        package_semantic_digest_sha256=stale_pkg,
+        deterministic_sheet_evidence=[
+            {
+                "sheetId": "s9",
+                "playwrightSuggestedFilenames": {"pngViewport": "x.png", "pngFullSheet": "y.png"},
+                "correlation": {"semanticDigestSha256": pkg},
+            }
+        ],
+        deterministic_3d_view_evidence=[],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+    )
+    stale_sig = evidence_lifecycle_signal_v1(
+        package_semantic_digest_sha256=stale_pkg,
+        suggested_evidence_artifact_basename=suggested_basename,
+        evidence_closure_review=stale_closure,
+    )
+    assert stale_sig["correlationFullyConsistent"] is False

@@ -19,6 +19,14 @@ const MOCK_SHEET_VIEWPORT_PNG_FROM_MANIFEST = `${MOCK_EVIDENCE_BASENAME}-sheet-h
 
 const MOCK_SHEET_FULL_PNG_FROM_MANIFEST = `${MOCK_EVIDENCE_BASENAME}-sheet-hf-sheet-ga01-full.png`;
 
+/** Sorted like server `evidenceClosureReview_v1.expectedDeterministicPngBasenames` for mock + assertions. */
+const MOCK_CLOSURE_DETERMINISTIC_PNG_BASENAMES = [
+  `${MOCK_EVIDENCE_BASENAME}-plan-pv-eg.png`,
+  `${MOCK_EVIDENCE_BASENAME}-section-hf-sec-demo.png`,
+  MOCK_SHEET_FULL_PNG_FROM_MANIFEST,
+  MOCK_SHEET_VIEWPORT_PNG_FROM_MANIFEST,
+].sort();
+
 async function sharedRoutes(page: Page, layoutPreset: string) {
   await page.addInitScript((preset: string) => {
     localStorage.setItem('bim.welcome.dismissed', '1');
@@ -428,13 +436,14 @@ async function sharedRoutes(page: Page, layoutPreset: string) {
           evidenceClosureReview_v1: {
             format: 'evidenceClosureReview_v1',
             packageSemanticDigestSha256: MOCK_SEMANTIC_DIGEST_SHA256,
-            expectedDeterministicPngBasenames: [
-              `${MOCK_EVIDENCE_BASENAME}-plan-pv-eg.png`,
-              `${MOCK_EVIDENCE_BASENAME}-section-hf-sec-demo.png`,
-              MOCK_SHEET_FULL_PNG_FROM_MANIFEST,
-              MOCK_SHEET_VIEWPORT_PNG_FROM_MANIFEST,
-            ].sort(),
+            expectedDeterministicPngBasenames: MOCK_CLOSURE_DETERMINISTIC_PNG_BASENAMES,
             primaryScreenshotArtifactCount: 4,
+            screenshotHintGaps_v1: {
+              format: 'screenshotHintGaps_v1',
+              gaps: [],
+              hasGaps: false,
+              gapRowCount: 0,
+            },
             correlationDigestConsistency: {
               format: 'correlationDigestConsistency_v1',
               staleRowsRelativeToPackageDigest: [],
@@ -451,7 +460,23 @@ async function sharedRoutes(page: Page, layoutPreset: string) {
                 mismatchPixelRatioMax: null,
               },
               notes: 'Pixel diff execution stays client-side (Playwright snapshots / pixelmatch).',
+              ingestChecklist_v1: {
+                format: 'pixelDiffIngestChecklist_v1',
+                targets: MOCK_CLOSURE_DETERMINISTIC_PNG_BASENAMES.map((bn) => ({
+                  baselinePngBasename: bn,
+                  expectedDiffBasename: `${bn.replace(/\.png$/, '')}-diff.png`,
+                })),
+              },
             },
+          },
+          evidenceLifecycleSignal_v1: {
+            format: 'evidenceLifecycleSignal_v1',
+            packageSemanticDigestSha256: MOCK_SEMANTIC_DIGEST_SHA256,
+            suggestedEvidenceArtifactBasename: MOCK_EVIDENCE_BASENAME,
+            expectedDeterministicPngCount: MOCK_CLOSURE_DETERMINISTIC_PNG_BASENAMES.length,
+            correlationFullyConsistent: true,
+            screenshotHintGapRowCount: 0,
+            pixelDiffIngestTargetCount: MOCK_CLOSURE_DETERMINISTIC_PNG_BASENAMES.length,
           },
           agentEvidenceClosureHints: {
             format: 'agentEvidenceClosureHints_v1',
@@ -579,5 +604,17 @@ test.describe('evidence PNG baselines', () => {
     const pix = closure?.pixelDiffExpectation as Record<string, unknown> | undefined;
     expect(pix?.format).toBe('pixelDiffExpectation_v1');
     expect(pix?.status).toBe('not_run');
+    const life = pkg.evidenceLifecycleSignal_v1 as Record<string, unknown> | undefined;
+    expect(life?.format).toBe('evidenceLifecycleSignal_v1');
+    expect(life?.packageSemanticDigestSha256).toBe(pkg.semanticDigestSha256);
+    expect(life?.suggestedEvidenceArtifactBasename).toBe(pkg.suggestedEvidenceArtifactBasename);
+    expect(life?.expectedDeterministicPngCount).toBe(basenames?.length);
+    const ingest = pix?.ingestChecklist_v1 as Record<string, unknown> | undefined;
+    const targets = ingest?.targets as unknown[] | undefined;
+    expect(life?.pixelDiffIngestTargetCount).toBe(targets?.length);
+    const shotGaps = closure?.screenshotHintGaps_v1 as Record<string, unknown> | undefined;
+    const gapRows = shotGaps?.gaps as unknown[] | undefined;
+    expect(life?.screenshotHintGapRowCount).toBe(gapRows?.length);
+    expect(life?.correlationFullyConsistent).toBe(true);
   });
 });

@@ -82,6 +82,15 @@ export function AgentReviewPane() {
       pixelDiffStatus: string | null;
       pixelDiffSuffix: string | null;
     } | null;
+    lifecycleSignal: Record<string, unknown> | null;
+    screenshotSlotGaps: {
+      gapRowCount: number;
+      items: {
+        deterministicRowKind: string;
+        rowId: string;
+        missingPlaywrightFilenameSlots: string[];
+      }[];
+    } | null;
     suggestedBasenameHint: string | null;
     mismatchNotes: string[];
     reviewActions: AgentReviewActionRow[];
@@ -137,6 +146,8 @@ export function AgentReviewPane() {
       sectionCutRows: [],
       closureHints: null,
       closureReview: null,
+      lifecycleSignal: null,
+      screenshotSlotGaps: null,
       suggestedBasenameHint: null,
       mismatchNotes: [],
       reviewActions: [],
@@ -172,6 +183,14 @@ export function AgentReviewPane() {
         typeof payload.suggestedEvidenceArtifactBasename === 'string'
           ? payload.suggestedEvidenceArtifactBasename
           : null;
+
+      let lifecycleSignal: EvidenceArtifactSummary['lifecycleSignal'] = null;
+      const lifeRaw = payload.evidenceLifecycleSignal_v1;
+      if (lifeRaw && typeof lifeRaw === 'object') {
+        lifecycleSignal = lifeRaw as Record<string, unknown>;
+      }
+
+      let screenshotSlotGaps: EvidenceArtifactSummary['screenshotSlotGaps'] = null;
 
       const hintsRaw = payload.agentEvidenceClosureHints;
       let closureHints: EvidenceArtifactSummary['closureHints'] = null;
@@ -243,6 +262,39 @@ export function AgentReviewPane() {
           pixelDiffStatus,
           pixelDiffSuffix,
         };
+
+        const sgRaw = e.screenshotHintGaps_v1;
+        if (sgRaw && typeof sgRaw === 'object') {
+          const sg = sgRaw as Record<string, unknown>;
+          const rawGaps = Array.isArray(sg.gaps) ? sg.gaps : [];
+          const items: {
+            deterministicRowKind: string;
+            rowId: string;
+            missingPlaywrightFilenameSlots: string[];
+          }[] = [];
+          for (const gItem of rawGaps) {
+            if (!gItem || typeof gItem !== 'object') continue;
+            const o = gItem as Record<string, unknown>;
+            const kind = typeof o.deterministicRowKind === 'string' ? o.deterministicRowKind : '';
+            const rowId = typeof o.rowId === 'string' ? o.rowId : '';
+            const slotsRaw = o.missingPlaywrightFilenameSlots;
+            const slots = Array.isArray(slotsRaw)
+              ? slotsRaw.filter((x): x is string => typeof x === 'string')
+              : [];
+            if (kind && rowId) {
+              items.push({
+                deterministicRowKind: kind,
+                rowId,
+                missingPlaywrightFilenameSlots: slots,
+              });
+            }
+          }
+          const gapRowCount =
+            typeof sg.gapRowCount === 'number' && Number.isFinite(sg.gapRowCount)
+              ? sg.gapRowCount
+              : items.length;
+          screenshotSlotGaps = { gapRowCount, items };
+        }
       }
 
       const dse = payload.deterministicSheetEvidence;
@@ -500,6 +552,8 @@ export function AgentReviewPane() {
         sectionCutRows,
         closureHints,
         closureReview,
+        lifecycleSignal,
+        screenshotSlotGaps,
         suggestedBasenameHint: basename,
         mismatchNotes,
         reviewActions,
@@ -516,6 +570,8 @@ export function AgentReviewPane() {
         sectionCutRows: [],
         closureHints: null,
         closureReview: null,
+        lifecycleSignal: null,
+        screenshotSlotGaps: null,
         suggestedBasenameHint: null,
         mismatchNotes: ['Could not parse evidence JSON for artifact summary.'],
         reviewActions: [],
@@ -977,6 +1033,7 @@ export function AgentReviewPane() {
       evidenceArtifactSummary.semanticDigestPrefix16 ||
       evidenceArtifactSummary.closureHints ||
       evidenceArtifactSummary.closureReview ||
+      evidenceArtifactSummary.lifecycleSignal ||
       evidenceArtifactSummary.reviewActions.length ? (
         <div className="rounded border border-border bg-background/40 p-2">
           <div className="text-[10px] font-semibold text-muted">Evidence artifact correlation</div>
@@ -1074,6 +1131,95 @@ export function AgentReviewPane() {
               </p>
             </div>
           ) : null}
+          {evidenceArtifactSummary.lifecycleSignal ? (
+            <div className="mt-2 rounded border border-border/60 bg-background/30 p-2">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div className="text-[10px] font-semibold text-muted">
+                  Programmatic signal (evidenceLifecycleSignal_v1)
+                </div>
+                <Btn
+                  type="button"
+                  variant="quiet"
+                  className="shrink-0 text-[10px]"
+                  onClick={() => {
+                    const body = JSON.stringify(evidenceArtifactSummary.lifecycleSignal, null, 2);
+                    void navigator.clipboard.writeText(body).then(
+                      () => pushStep('Copied evidenceLifecycleSignal_v1 JSON'),
+                      () => pushStep('Clipboard write failed'),
+                    );
+                  }}
+                >
+                  Copy JSON
+                </Btn>
+              </div>
+              <ul className="mt-1 list-disc space-y-0.5 ps-4 text-[10px] text-muted">
+                <li>
+                  expectedDeterministicPngCount:{' '}
+                  <code className="font-mono">
+                    {String(
+                      evidenceArtifactSummary.lifecycleSignal.expectedDeterministicPngCount ?? '—',
+                    )}
+                  </code>
+                </li>
+                <li>
+                  screenshotHintGapRowCount:{' '}
+                  <code className="font-mono">
+                    {String(
+                      evidenceArtifactSummary.lifecycleSignal.screenshotHintGapRowCount ?? '—',
+                    )}
+                  </code>
+                </li>
+                <li>
+                  pixelDiffIngestTargetCount:{' '}
+                  <code className="font-mono">
+                    {String(
+                      evidenceArtifactSummary.lifecycleSignal.pixelDiffIngestTargetCount ?? '—',
+                    )}
+                  </code>
+                </li>
+                <li>
+                  correlationFullyConsistent:{' '}
+                  <code className="font-mono">
+                    {String(
+                      evidenceArtifactSummary.lifecycleSignal.correlationFullyConsistent ?? '—',
+                    )}
+                  </code>
+                </li>
+              </ul>
+            </div>
+          ) : null}
+          {evidenceArtifactSummary.screenshotSlotGaps &&
+          evidenceArtifactSummary.screenshotSlotGaps.items.length ? (
+            <div className="mt-2 rounded border border-amber-500/30 bg-background/30 p-2">
+              <div className="text-[10px] font-semibold text-amber-700 dark:text-amber-400">
+                Screenshot filename gaps ({evidenceArtifactSummary.screenshotSlotGaps.gapRowCount}{' '}
+                row(s))
+              </div>
+              <ul className="mt-1 space-y-1 ps-3 text-[10px] text-muted">
+                {evidenceArtifactSummary.screenshotSlotGaps.items.slice(0, 6).map((g) => (
+                  <li key={`${g.deterministicRowKind}:${g.rowId}`}>
+                    <span className="font-mono">{g.deterministicRowKind}</span> ·{' '}
+                    <span className="font-mono">{g.rowId}</span>
+                    {g.missingPlaywrightFilenameSlots.length ? (
+                      <>
+                        {' '}
+                        — missing{' '}
+                        <code className="text-[9px]">
+                          {g.missingPlaywrightFilenameSlots.join(', ')}
+                        </code>
+                      </>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+              {evidenceArtifactSummary.screenshotSlotGaps.items.length > 6 ? (
+                <p className="mt-1 text-[9px] text-muted">
+                  … +{evidenceArtifactSummary.screenshotSlotGaps.items.length - 6} more in{' '}
+                  <code className="text-[9px]">evidenceClosureReview_v1.screenshotHintGaps_v1</code>
+                </p>
+              ) : null}
+            </div>
+          ) : null}
           {evidenceArtifactSummary.reviewActions.length ? (
             <div className="mt-3 rounded border border-border/60 bg-background/30 p-2">
               <div className="text-[10px] font-semibold text-muted">
@@ -1088,7 +1234,9 @@ export function AgentReviewPane() {
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div>
                         <span className="font-mono text-muted">{a.kind}</span>
-                        <div className="mt-0.5 font-mono text-[9px] text-muted/80">{a.actionId}</div>
+                        <div className="mt-0.5 font-mono text-[9px] text-muted/80">
+                          {a.actionId}
+                        </div>
                       </div>
                       <Btn
                         type="button"

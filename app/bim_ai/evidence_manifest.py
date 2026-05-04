@@ -327,6 +327,110 @@ def pixel_diff_expectation_placeholder_v1() -> dict[str, Any]:
     }
 
 
+def pixel_diff_expectation_v1_with_ingest(expected_png_basenames: list[str]) -> dict[str, Any]:
+    """Placeholder plus deterministic per-baseline diff basename pairs for scripted ingest."""
+
+    base = dict(pixel_diff_expectation_placeholder_v1())
+    suffix = str(base.get("diffArtifactBasenameSuffix") or "-diff.png")
+    targets: list[dict[str, str]] = []
+    for bn in expected_png_basenames:
+        if not (isinstance(bn, str) and bn.endswith(".png")):
+            continue
+        stem = bn[:-4]
+        targets.append({"baselinePngBasename": bn, "expectedDiffBasename": f"{stem}{suffix}"})
+    base["ingestChecklist_v1"] = {
+        "format": "pixelDiffIngestChecklist_v1",
+        "targets": targets,
+    }
+    return base
+
+
+def screenshot_hint_gaps_v1(
+    *,
+    deterministic_sheet_evidence: list[dict[str, Any]],
+    deterministic_3d_view_evidence: list[dict[str, Any]],
+    deterministic_plan_view_evidence: list[dict[str, Any]],
+    deterministic_section_cut_evidence: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Deterministic missing Playwright filename slots per deterministic evidence row (agents / CI)."""
+
+    gaps: list[dict[str, Any]] = []
+
+    def slot_ok(pw: dict[str, Any], key: str) -> bool:
+        v = pw.get(key)
+        return isinstance(v, str) and v.endswith(".png")
+
+    def walk(kind: str, id_key: str, rows: list[dict[str, Any]], required: list[str]) -> None:
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            rid = str(row.get(id_key, "") or "")
+            if not rid:
+                continue
+            pw_raw = row.get("playwrightSuggestedFilenames")
+            pw: dict[str, Any] = pw_raw if isinstance(pw_raw, dict) else {}
+            missing = [k for k in required if not slot_ok(pw, k)]
+            if missing:
+                gaps.append(
+                    {
+                        "deterministicRowKind": kind,
+                        "rowId": rid,
+                        "missingPlaywrightFilenameSlots": missing,
+                    }
+                )
+
+    walk("sheet", "sheetId", deterministic_sheet_evidence, ["pngViewport", "pngFullSheet"])
+    walk("viewpoint", "viewpointId", deterministic_3d_view_evidence, ["pngViewport"])
+    walk("plan_view", "planViewId", deterministic_plan_view_evidence, ["pngPlanCanvas"])
+    walk("section_cut", "sectionCutId", deterministic_section_cut_evidence, ["pngSectionViewport"])
+
+    gaps.sort(key=lambda x: (str(x["deterministicRowKind"]), str(x["rowId"])))
+    return {
+        "format": "screenshotHintGaps_v1",
+        "gaps": gaps,
+        "hasGaps": len(gaps) > 0,
+        "gapRowCount": len(gaps),
+    }
+
+
+def evidence_lifecycle_signal_v1(
+    *,
+    package_semantic_digest_sha256: str,
+    suggested_evidence_artifact_basename: str,
+    evidence_closure_review: dict[str, Any],
+) -> dict[str, Any]:
+    """Single programmatic bundle: digest, staging basename, consistency, gaps, diff-ingest cardinality."""
+
+    pix = evidence_closure_review.get("pixelDiffExpectation")
+    ingest = pix.get("ingestChecklist_v1") if isinstance(pix, dict) else None
+    t_count = (
+        len(ingest["targets"])
+        if isinstance(ingest, dict) and isinstance(ingest.get("targets"), list)
+        else 0
+    )
+    gaps_obj = evidence_closure_review.get("screenshotHintGaps_v1")
+    gap_list = gaps_obj.get("gaps") if isinstance(gaps_obj, dict) else None
+    gap_n = len(gap_list) if isinstance(gap_list, list) else 0
+    cons = evidence_closure_review.get("correlationDigestConsistency")
+    if isinstance(cons, dict) and isinstance(cons.get("isFullyConsistent"), bool):
+        consistent: bool | None = bool(cons["isFullyConsistent"])
+    else:
+        consistent = None
+    basenames = evidence_closure_review.get("expectedDeterministicPngBasenames")
+    bn_n = len(basenames) if isinstance(basenames, list) else 0
+
+    return {
+        "format": "evidenceLifecycleSignal_v1",
+        "packageSemanticDigestSha256": package_semantic_digest_sha256,
+        "suggestedEvidenceArtifactBasename": suggested_evidence_artifact_basename,
+        "expectedDeterministicPngCount": bn_n,
+        "correlationFullyConsistent": consistent,
+        "screenshotHintGapRowCount": gap_n,
+        "pixelDiffIngestTargetCount": t_count,
+    }
+
+
+
 def evidence_closure_review_v1(
     *,
     package_semantic_digest_sha256: str,
@@ -377,19 +481,26 @@ def evidence_closure_review_v1(
     scan_rows("section_cut", "sectionCutId", deterministic_section_cut_evidence)
 
     basenames_sorted = sorted(set(png_basenames))
+    shot_gaps = screenshot_hint_gaps_v1(
+        deterministic_sheet_evidence=deterministic_sheet_evidence,
+        deterministic_3d_view_evidence=deterministic_3d_view_evidence,
+        deterministic_plan_view_evidence=deterministic_plan_view_evidence,
+        deterministic_section_cut_evidence=deterministic_section_cut_evidence,
+    )
 
     return {
         "format": "evidenceClosureReview_v1",
         "packageSemanticDigestSha256": package_semantic_digest_sha256,
         "expectedDeterministicPngBasenames": basenames_sorted,
         "primaryScreenshotArtifactCount": len(basenames_sorted),
+        "screenshotHintGaps_v1": shot_gaps,
         "correlationDigestConsistency": {
             "format": "correlationDigestConsistency_v1",
             "staleRowsRelativeToPackageDigest": stale_rows,
             "rowsMissingCorrelationDigest": missing_digest_rows,
             "isFullyConsistent": len(stale_rows) == 0 and len(missing_digest_rows) == 0,
         },
-        "pixelDiffExpectation": pixel_diff_expectation_placeholder_v1(),
+        "pixelDiffExpectation": pixel_diff_expectation_v1_with_ingest(basenames_sorted),
     }
 
 
@@ -401,6 +512,9 @@ def agent_evidence_closure_hints() -> dict[str, Any]:
         "evidenceClosureReviewField": "evidenceClosureReview_v1",
         "pixelDiffExpectationNestedField": "pixelDiffExpectation",
         "deterministicPngBasenamesField": "expectedDeterministicPngBasenames",
+        "screenshotHintGapsField": "screenshotHintGaps_v1",
+        "pixelDiffIngestChecklistField": "ingestChecklist_v1",
+        "evidenceLifecycleSignalField": "evidenceLifecycleSignal_v1",
         "playwrightEvidenceSpecRelPath": "packages/web/e2e/evidence-baselines.spec.ts",
         "suggestedRegenerationCommands": [
             (

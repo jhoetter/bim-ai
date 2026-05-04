@@ -344,6 +344,9 @@ def test_agent_evidence_closure_hints_shape() -> None:
     assert h.get("evidenceClosureReviewField") == "evidenceClosureReview_v1"
     assert h.get("pixelDiffExpectationNestedField") == "pixelDiffExpectation"
     assert h.get("deterministicPngBasenamesField") == "expectedDeterministicPngBasenames"
+    assert h.get("screenshotHintGapsField") == "screenshotHintGaps_v1"
+    assert h.get("pixelDiffIngestChecklistField") == "ingestChecklist_v1"
+    assert h.get("evidenceLifecycleSignalField") == "evidenceLifecycleSignal_v1"
     cmds = h["suggestedRegenerationCommands"]
     assert isinstance(cmds, list)
     assert any("pytest" in str(c) for c in cmds)
