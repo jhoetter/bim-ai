@@ -65,5 +65,13 @@ def compute_model_summary(doc: Document) -> dict[str, Any]:
         "roofCount": int(kinds.get("roof", 0)),
         "stairCount": int(kinds.get("stair", 0)),
         "sheetCount": int(kinds.get("sheet", 0)),
+        "railingCount": int(kinds.get("railing", 0)),
+        "slabOpeningCount": int(kinds.get("slab_opening", 0)),
+        "familyTypeCount": int(kinds.get("family_type", 0)),
+        "sectionCutCount": int(kinds.get("section_cut", 0)),
+        "planViewCount": int(kinds.get("plan_view", 0)),
+        "viewTemplateCount": int(kinds.get("view_template", 0)),
+        "viewpointCount": int(kinds.get("viewpoint", 0)),
+        "dimensionCount": int(kinds.get("dimension", 0)),
         "scheduleCount": int(kinds.get("schedule", 0)),
     }

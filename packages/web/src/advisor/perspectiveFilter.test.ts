@@ -29,17 +29,11 @@ describe('filterViolationsForPerspective', () => {
   });
 
   it('filters by discipline buckets', () => {
-    expect(filterViolationsForPerspective(mix, 'architecture').map((x) => x.ruleId)).toEqual([
-      'a',
-    ]);
-    expect(filterViolationsForPerspective(mix, 'structure').map((x) => x.ruleId)).toEqual([
-      's',
-    ]);
+    expect(filterViolationsForPerspective(mix, 'architecture').map((x) => x.ruleId)).toEqual(['a']);
+    expect(filterViolationsForPerspective(mix, 'structure').map((x) => x.ruleId)).toEqual(['s']);
   });
 
   it('coordination retains errors regardless of discipline tag', () => {
-    expect(filterViolationsForPerspective(mix, 'coordination').map((x) => x.ruleId)).toContain(
-      'c',
-    );
+    expect(filterViolationsForPerspective(mix, 'coordination').map((x) => x.ruleId)).toContain('c');
   });
 });

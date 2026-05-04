@@ -51,6 +51,7 @@ _RULE_DISCIPLINE: dict[str, str] = {
     "slab_opening_polygon_degenerate": "structure",
     "stair_missing_levels": "architecture",
     "stair_geometry_unreasonable": "architecture",
+    "stair_comfort_eu_proxy": "architecture",
     "ids_cleanroom_door_without_family_type": "agent",
 }
 
@@ -570,6 +571,25 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
                             element_ids=[st.id],
                         )
                     )
+
+            tread = st.tread_mm
+            rise_step = st.riser_mm
+            if (
+                rise_step > 190.1
+                or (tread > 0 and tread + 1e-6 < 259.99)
+                or (rise_step < 155 and rise > 2000)
+            ):
+                viols.append(
+                    Violation(
+                        rule_id="stair_comfort_eu_proxy",
+                        severity="info",
+                        message=(
+                            "Stair tread/riser differs from documented EU residential comfort proxy "
+                            "(≥ 260 mm tread depth, ≤ 190 mm riser)."
+                        ),
+                        element_ids=[st.id],
+                    )
+                )
 
     val_rules = [vr for vr in elements.values() if isinstance(vr, ValidationRuleElem)]
     enforce_clean = any(

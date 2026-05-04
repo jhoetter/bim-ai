@@ -105,6 +105,7 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
   const elementsById = useBimStore((s) => s.elementsById);
   const selectedId = useBimStore((s) => s.selectedId);
   const activeLevelId = useBimStore((s) => s.activeLevelId);
+  const planPresentation = useBimStore((s) => s.planPresentationPreset);
   const planTool = useBimStore((s) => s.planTool);
   const orthoSnapHold = useBimStore((s) => s.orthoSnapHold);
   const selectEl = useBimStore((s) => s.select);
@@ -175,7 +176,11 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
   useEffect(() => {
     const grp = rootRef.current;
     if (!grp) return;
-    rebuildPlanMeshes(grp, elementsById, { activeLevelId, selectedId });
+    rebuildPlanMeshes(grp, elementsById, {
+      activeLevelId,
+      selectedId,
+      presentation: planPresentation,
+    });
     for (let i = grp.children.length - 1; i >= 0; i--) {
       const ch = grp.children[i]!;
       if ((ch.userData as { draftingGrid?: unknown }).draftingGrid) grp.remove(ch);
@@ -195,7 +200,7 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
     );
     grid.userData.draftingGrid = true;
     grp.add(grid);
-  }, [activeLevelId, elementsById, geomEpoch, planTool, selectedId]);
+  }, [activeLevelId, elementsById, geomEpoch, planPresentation, planTool, selectedId]);
 
   useEffect(() => {
     const canvas = rendererRef.current?.domElement;
@@ -531,7 +536,10 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
 
   const sb = THREE.MathUtils.clamp(halfUi * 0.25, 0.2, 6);
   return (
-    <div className="relative h-[min(740px,calc(100vh-260px))] w-full overflow-hidden rounded-lg border border-border bg-background">
+    <div
+      data-testid="plan-canvas"
+      className="relative h-[min(740px,calc(100vh-260px))] w-full overflow-hidden rounded-lg border border-border bg-background"
+    >
       <div className="pointer-events-none absolute left-3 top-3 z-10 rounded-md border border-border bg-surface/80 px-3 py-1 text-[11px] text-muted backdrop-blur">
         Plan · pan Shift+LMB / MMB · zoom wheel · Esc cancels · tool {planTool}
       </div>

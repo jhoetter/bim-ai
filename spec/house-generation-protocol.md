@@ -10,14 +10,14 @@ Brief files can be linted locally via:
 pnpm exec bim-ai plan-house --brief spec/examples/small-house-brief.json --out /tmp/house-bundle.json
 ```
 
-| Field          | Required | Notes                                      |
-|----------------|----------|--------------------------------------------|
-| `version`      | ✓       | `"1"` acceptable                          |
-| `stylePreset`  |         | e.g. `residential`; maps to code presets later |
-| `siteWidthM`   | ✓       | Lot width                                   |
-| `siteDepthM`   | ✓       | Lot depth                                   |
-| `floors`       | ✓       | Integer ≥ 1                                 |
-| `rooms`        | ✓       | `{ name, areaTargetM2 }[]`               |
+| Field         | Required | Notes                                          |
+| ------------- | -------- | ---------------------------------------------- |
+| `version`     | ✓        | `"1"` acceptable                               |
+| `stylePreset` |          | e.g. `residential`; maps to code presets later |
+| `siteWidthM`  | ✓        | Lot width                                      |
+| `siteDepthM`  | ✓        | Lot depth                                      |
+| `floors`      | ✓        | Integer ≥ 1                                    |
+| `rooms`       | ✓        | `{ name, areaTargetM2 }[]`                     |
 
 Extend later with sheets, elevations, IDS targets, tolerances.
 
@@ -40,3 +40,18 @@ Extend later with sheets, elevations, IDS targets, tolerances.
 ## Command coverage roadmap
 
 Primitives evolve; agents must introspect `/api/schema` (`commandsUnionSchema`). Target richer coverage: slabs, roofs, stairs, phased tasks, federation metadata, sheet/view templates.
+
+## Evidence capture (PRD §8.3)
+
+After `apply-bundle`, assemble evidence:
+
+| Artifact         | Endpoint / tool                                               |
+| ---------------- | ------------------------------------------------------------- |
+| Evidence JSON    | `GET /api/models/{id}/evidence-package` · `bim-ai evidence`   |
+| Schedule rows    | `GET /api/models/{id}/schedules/{scheduleId}/table`           |
+| glTF manifest    | `GET /api/models/{id}/exports/gltf-manifest`                  |
+| IFC placeholders | `GET /api/models/{id}/exports/ifc-manifest` + skeleton `.ifc` |
+| BCF JSON         | `GET /api/models/{id}/exports/bcf-topics-json`                |
+| PNG baselines    | Playwright snapshots (`packages/web/e2e`)                     |
+
+Log **assumptions** before destructive commits (policy in `spec/revit-parity-decisions.md`).

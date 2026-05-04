@@ -6,7 +6,7 @@ This PRD distills a structured **11‑video Revit tutorial series** (German walk
 
 **Scope:** Parity is **workflow and data semantics**, not pixel‑level Revit UI. Native `.rvt` I/O remains out of scope for v1; see [openbim-compatibility.md](../openbim-compatibility.md).
 
-**Related:** [cli-agent-home-design-gaps.md](./cli-agent-home-design-gaps.md) (agent/CLI/house demo gaps).
+**Related:** [cli-agent-home-design-gaps.md](./cli-agent-home-design-gaps.md) (agent/CLI/house demo gaps) and [revit-production-parity-ai-agent-prd.md](./revit-production-parity-ai-agent-prd.md) (deeper screenshot/video production parity requirements).
 
 ## Product principles (inherited from repo)
 
@@ -15,16 +15,16 @@ This PRD distills a structured **11‑video Revit tutorial series** (German walk
 
 ## Current BIM AI surface (baseline)
 
-| Area | Today (high level) |
-|------|-------------------|
-| Levels | Named level + elevation; no first‑class RFB/FFB/UKRD stack |
-| Walls | Segments with thickness/height; layer types / structural vs finish **limited** |
-| Slabs / roofs / stairs | Not first‑class in command union for full tutorial parity |
-| Hosted openings | Doors/windows on walls; no parametric family editor / void solids |
-| Rooms | Outlines + names; no full Revit “Room” upper limit / volume semantics |
-| Sections / sheets / schedules | Partial schedule UI; sheets/plan production **not** equivalent to Revit |
-| Constraints | Geometric + advisory rules; not full parametric **align/lock** graph |
-| Materials / quantities | Summary counts; **not** layered takeoffs per finish |
+| Area                          | Today (high level)                                                             |
+| ----------------------------- | ------------------------------------------------------------------------------ |
+| Levels                        | Named level + elevation; no first‑class RFB/FFB/UKRD stack                     |
+| Walls                         | Segments with thickness/height; layer types / structural vs finish **limited** |
+| Slabs / roofs / stairs        | Not first‑class in command union for full tutorial parity                      |
+| Hosted openings               | Doors/windows on walls; no parametric family editor / void solids              |
+| Rooms                         | Outlines + names; no full Revit “Room” upper limit / volume semantics          |
+| Sections / sheets / schedules | Partial schedule UI; sheets/plan production **not** equivalent to Revit        |
+| Constraints                   | Geometric + advisory rules; not full parametric **align/lock** graph           |
+| Materials / quantities        | Summary counts; **not** layered takeoffs per finish                            |
 
 ## Personas
 
@@ -282,43 +282,43 @@ This PRD distills a structured **11‑video Revit tutorial series** (German walk
 
 ## Cross-cutting requirements (Cleanroom takeaway)
 
-| Theme | Requirement | Risk if missing |
-|--------|-------------|-----------------|
+| Theme                         | Requirement                            | Risk if missing             |
+| ----------------------------- | -------------------------------------- | --------------------------- |
 | Parametric reveals/voids (E3) | Wall cut depth tied to supplier panels | Wrong GMP as-built aperture |
-| Layer split & slab edge (C2) | Insulation vs structure quantities | Thermal bridge + wrong BOQ |
-| Room-bounded finishes (F2) | Epoxy area by cleanroom class | Compliance & cost |
-| View templates (H4) | Discipline separation on same model | HVAC vs arch confusion |
-| Schedules (I2) | Filtered BOM & door matrices | Procurement errors |
+| Layer split & slab edge (C2)  | Insulation vs structure quantities     | Thermal bridge + wrong BOQ  |
+| Room-bounded finishes (F2)    | Epoxy area by cleanroom class          | Compliance & cost           |
+| View templates (H4)           | Discipline separation on same model    | HVAC vs arch confusion      |
+| Schedules (I2)                | Filtered BOM & door matrices           | Procurement errors          |
 
 ---
 
 ## Phased roadmap (suggested)
 
-| Phase | Goal | BIM AI direction |
-|-------|------|------------------|
-| P0 | **Datums + constraints** shell | Extend level/constraints schema; cockpit underlay prototype |
-| P1 | **Slabs/roof/stair openings** | New commands + join hooks in engine |
-| P2 | **Families/voids (subset)** | Parametric opening families or template-based void library |
-| P3 | **Documentation** | Sheets, richer schedules, plan regions |
-| P4 | **Exchange** | IFC export reflects layers + openings; IDS rules for cleanrooms |
+| Phase | Goal                           | BIM AI direction                                                |
+| ----- | ------------------------------ | --------------------------------------------------------------- |
+| P0    | **Datums + constraints** shell | Extend level/constraints schema; cockpit underlay prototype     |
+| P1    | **Slabs/roof/stair openings**  | New commands + join hooks in engine                             |
+| P2    | **Families/voids (subset)**    | Parametric opening families or template-based void library      |
+| P3    | **Documentation**              | Sheets, richer schedules, plan regions                          |
+| P4    | **Exchange**                   | IFC export reflects layers + openings; IDS rules for cleanrooms |
 
 ---
 
 ## Traceability placeholder (tutorial → epic)
 
-| Video | Primary epics |
-|-------|----------------|
-| 01 | A1–A2, B1–B2 |
-| 02 | A3–A4, B wall edits |
-| 03 | C1–C3 |
-| 04 | D1–D2 |
-| 05 | E1–E2, I2 seeds |
-| 06 | E windows, F1 |
-| 07 | **E3** (cleanroom) |
-| 08 | F2–F3, D rails |
-| 09 | G1–G3 |
-| 10 | H1–H4 |
-| 11 | I1–I2 |
+| Video | Primary epics       |
+| ----- | ------------------- |
+| 01    | A1–A2, B1–B2        |
+| 02    | A3–A4, B wall edits |
+| 03    | C1–C3               |
+| 04    | D1–D2               |
+| 05    | E1–E2, I2 seeds     |
+| 06    | E windows, F1       |
+| 07    | **E3** (cleanroom)  |
+| 08    | F2–F3, D rails      |
+| 09    | G1–G3               |
+| 10    | H1–H4               |
+| 11    | I1–I2               |
 
 ---
 

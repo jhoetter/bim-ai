@@ -297,6 +297,23 @@ class SectionCutElem(BaseModel):
     segmented_path_mm: list[Vec2Mm] = Field(default_factory=list, alias="segmentedPathMm")
 
 
+class PlanViewElem(BaseModel):
+    """First-class floor-plan view artifact (Revit-like plan definitions)."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["plan_view"] = "plan_view"
+    id: str
+    name: str = "Plan view"
+    level_id: str = Field(alias="levelId")
+    view_template_id: str | None = Field(default=None, alias="viewTemplateId")
+    plan_presentation: Literal["default", "opening_focus", "room_scheme"] = Field(
+        default="default",
+        alias="planPresentation",
+    )
+    underlay_level_id: str | None = Field(default=None, alias="underlayLevelId")
+    discipline: str = Field(default="architecture", alias="discipline")
+
+
 class ViewTemplateElem(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True)
     kind: Literal["view_template"] = "view_template"
@@ -375,6 +392,7 @@ ElementKind = Literal[
     "tag_definition",
     "join_geometry",
     "section_cut",
+    "plan_view",
     "view_template",
     "sheet",
     "schedule",
@@ -407,6 +425,7 @@ Element = Annotated[
     | TagDefinitionElem
     | JoinGeometryElem
     | SectionCutElem
+    | PlanViewElem
     | ViewTemplateElem
     | SheetElem
     | ScheduleElem

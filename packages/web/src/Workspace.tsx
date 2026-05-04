@@ -39,9 +39,13 @@ import { Viewport } from './Viewport';
 
 import { AgentReviewPane } from './workspace/AgentReviewPane';
 
+import type { PlanPresentationPreset } from './plan/symbology';
+
 import { planToolsForPerspective } from './workspace/planToolsByPerspective';
 
+import { ProjectBrowser } from './workspace/ProjectBrowser';
 import { SectionPlaceholderPane } from './workspace/SectionPlaceholderPane';
+import { SheetCanvas } from './workspace/SheetCanvas';
 
 async function fetchSnap(modelId: string): Promise<Snapshot> {
   const res = await fetch(`/api/models/${encodeURIComponent(modelId)}/snapshot`);
@@ -186,8 +190,16 @@ export function Workspace() {
   const setAct = useBimStore((s) => s.setActivity);
   const setIdentity = useBimStore((s) => s.setIdentity);
   const selectEl = useBimStore((s) => s.select);
+  const planPresentationPreset = useBimStore((s) => s.planPresentationPreset);
+  const setPlanPresentationPreset = useBimStore((s) => s.setPlanPresentationPreset);
+  const viewerCategoryHidden = useBimStore((s) => s.viewerCategoryHidden);
+  const toggleViewerCategoryHidden = useBimStore((s) => s.toggleViewerCategoryHidden);
+  const viewerClipElevMm = useBimStore((s) => s.viewerClipElevMm);
+  const setViewerClipElevMm = useBimStore((s) => s.setViewerClipElevMm);
 
   const selected = selectedId ? elementsById[selectedId] : undefined;
+
+  const layerKeys = ['wall', 'floor', 'roof', 'stair', 'door', 'window', 'room'] as const;
 
   const levels = useMemo(
     () =>
@@ -493,8 +505,6 @@ export function Workspace() {
     };
   }, [cheatsheetOpen, setOrtho, setTool, setVm, undoRedo, viewerMode, workspaceLayoutPreset]);
 
-
-
   const onCmdSubmit = useCallback(
     (raw: string) => {
       const res = parseCommandLine(raw.trim(), {
@@ -570,7 +580,10 @@ export function Workspace() {
 
   const explorer = useMemo(() => Object.values(elementsById), [elementsById]);
 
-  const visiblePlanTools = useMemo(() => [...planToolsForPerspective(perspectiveId)], [perspectiveId]);
+  const visiblePlanTools = useMemo(
+    () => [...planToolsForPerspective(perspectiveId)],
+    [perspectiveId],
+  );
 
   useEffect(() => {
     if (!visiblePlanTools.includes(planTool)) setTool('select');
@@ -607,8 +620,11 @@ export function Workspace() {
           <div className="flex min-h-[360px] flex-col gap-2 xl:flex-row">
             <div className="min-w-0 flex-1">{plan}</div>
             <div className="min-w-[260px] xl:w-[40%]">
-              <Panel title="Rooms (schedule focus)">
-                <SchedulePanel elementsById={elementsById} activeLevelId={lvResolved || undefined} />
+              <Panel title="Schedules (focused)">
+                <SchedulePanel
+                  elementsById={elementsById}
+                  activeLevelId={lvResolved || undefined}
+                />
               </Panel>
             </div>
           </div>
@@ -621,11 +637,23 @@ export function Workspace() {
           </div>
         );
       case 'split_plan_section':
-      case 'coordination':
         return (
           <div className="flex flex-col gap-2">
             {plan}
             <SectionPlaceholderPane activeLevelLabel={activeLevelLabel} />
+          </div>
+        );
+
+      case 'coordination':
+        return (
+          <div className="flex flex-col gap-2">
+            {plan}
+
+            <SectionPlaceholderPane activeLevelLabel={activeLevelLabel} />
+
+            <Panel title="Sheet canvas (preview)">
+              <SheetCanvas elementsById={elementsById} preferredSheetId="hf-sheet-ga01" />
+            </Panel>
           </div>
         );
       case 'agent_review':
@@ -659,9 +687,7 @@ export function Workspace() {
               <select
                 className="rounded border border-border bg-background px-2 py-1 text-[11px]"
                 value={workspaceLayoutPreset}
-                onChange={(e) =>
-                  setWorkspaceLayoutPreset(e.target.value as WorkspaceLayoutPreset)
-                }
+                onChange={(e) => setWorkspaceLayoutPreset(e.target.value as WorkspaceLayoutPreset)}
               >
                 {LAYOUT_PRESET_OPTIONS.map((o) => (
                   <option key={o.id} value={o.id}>
@@ -755,6 +781,23 @@ export function Workspace() {
               <p className="mt-2 text-[11px] text-muted">
                 Shift+drag pan · Shift ortho · Esc cancel
               </p>
+
+              <label className="mt-3 block text-[10px] text-muted">
+                Plan style
+                <select
+                  className="mt-1 w-full rounded border border-border bg-background px-2 py-1 text-[11px]"
+                  value={planPresentationPreset}
+                  onChange={(e) =>
+                    setPlanPresentationPreset(e.target.value as PlanPresentationPreset)
+                  }
+                >
+                  <option value="default">Neutral (walls + rooms)</option>
+
+                  <option value="opening_focus">Openings-first (plan demos)</option>
+
+                  <option value="room_scheme">Room color fills</option>
+                </select>
+              </label>
             </Panel>
           ) : null}
 
@@ -766,6 +809,47 @@ export function Workspace() {
               void onSemantic({ type: 'moveLevelElevation', levelId, elevationMm })
             }
           />
+
+          <Panel title="Project browser">
+            <ProjectBrowser elementsById={elementsById} />
+          </Panel>
+
+          <Panel title="3D layers">
+            <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[10px]">
+              {layerKeys.map((lk) => (
+                <label key={lk} className="flex cursor-pointer items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={!viewerCategoryHidden[lk]}
+                    onChange={() => toggleViewerCategoryHidden(lk)}
+                  />
+
+                  <span>{lk}</span>
+                </label>
+              ))}
+            </div>
+
+            <label className="mt-2 block text-[10px] text-muted">
+              Cut plane Y (mm, empty = off)
+              <input
+                className="mt-1 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px]"
+                placeholder="e.g. 5600"
+                inputMode="numeric"
+                value={viewerClipElevMm ?? ''}
+                onChange={(e) => {
+                  const raw = e.target.value.trim();
+
+                  if (raw === '') {
+                    setViewerClipElevMm(null);
+                    return;
+                  }
+
+                  const n = Number(raw);
+                  setViewerClipElevMm(Number.isFinite(n) ? n : null);
+                }}
+              />
+            </label>
+          </Panel>
 
           <Panel title="Explorer">
             <ul className="max-h-[50vh] space-y-1 overflow-auto text-xs">
@@ -859,12 +943,12 @@ export function Workspace() {
           </Panel>
 
           {!hideSchedulePanelRight ? (
-            <Panel title="Rooms">
+            <Panel title="Schedules">
               <SchedulePanel elementsById={elementsById} activeLevelId={lvResolved || undefined} />
             </Panel>
           ) : (
             <div className="rounded border border-dashed border-border p-3 text-[11px] text-muted">
-              Room schedule docked beside plan (Schedules layout).
+              Schedules docked beside plan (Schedules-focus layout).
             </div>
           )}
 

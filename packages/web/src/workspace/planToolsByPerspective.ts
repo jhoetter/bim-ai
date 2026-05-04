@@ -25,9 +25,7 @@ export function planToolsForPerspective(p: PerspectiveId): readonly PlanTool[] {
       return ALL_TOOLS.filter((x) => x !== 'door' && x !== 'window');
 
     case 'mep':
-      return ALL_TOOLS.filter((x) =>
-        ['select', 'grid', 'dimension', 'wall'].includes(x),
-      );
+      return ALL_TOOLS.filter((x) => ['select', 'grid', 'dimension', 'wall'].includes(x));
 
     case 'construction':
       return ALL_TOOLS.filter((x) =>

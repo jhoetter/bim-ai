@@ -115,16 +115,20 @@ function horizontalOutlineMesh(
   return mesh;
 }
 
+/** Plan authoring display bias (orthogonal to BIM levels). */
+export type PlanPresentationPreset = 'default' | 'opening_focus' | 'room_scheme';
+
 export function rebuildPlanMeshes(
   holder: THREE.Object3D,
 
   elementsById: Record<string, Element>,
 
-  opts: { activeLevelId?: string; selectedId?: string },
+  opts: { activeLevelId?: string; selectedId?: string; presentation?: PlanPresentationPreset },
 ): void {
   while (holder.children.length) holder.remove(holder.children[0]!);
 
   const level = opts.activeLevelId;
+  const presentation = opts.presentation ?? 'default';
 
   type WallElem = Extract<Element, { kind: 'wall' }>;
 
@@ -147,7 +151,7 @@ export function rebuildPlanMeshes(
 
     if (level && r.levelId !== level) continue;
 
-    holder.add(roomMesh(r));
+    holder.add(roomMesh(r, presentation));
   }
 
   for (const f of Object.values(elementsById)) {
@@ -175,7 +179,7 @@ export function rebuildPlanMeshes(
 
     if (!host) continue;
 
-    holder.add(doorGroupThree(d, host, opts.selectedId));
+    holder.add(doorGroupThree(d, host, opts.selectedId, presentation === 'opening_focus'));
   }
 
   for (const win of Object.values(elementsById)) {
@@ -185,7 +189,15 @@ export function rebuildPlanMeshes(
 
     if (!host) continue;
 
-    holder.add(planWindowMesh(win, host, opts.selectedId));
+    holder.add(planWindowMesh(win, host, opts.selectedId, presentation === 'opening_focus'));
+  }
+
+  for (const st of Object.values(elementsById)) {
+    if (st.kind !== 'stair') continue;
+    if (level && st.baseLevelId !== level) continue;
+    const g = stairPlanThree(st);
+
+    if (g) holder.add(g);
   }
 
   for (const dm of Object.values(elementsById)) {
@@ -235,6 +247,8 @@ function doorGroupThree(
   wall: Extract<Element, { kind: 'wall' }>,
 
   selectedId?: string,
+
+  openingFocus?: boolean,
 ): THREE.Group {
   const g = new THREE.Group();
 
@@ -256,6 +270,8 @@ function doorGroupThree(
     new THREE.BoxGeometry(width, 0.04, depth),
 
     new THREE.MeshStandardMaterial({
+      emissive: openingFocus ? 0x084c6e : 0x000000,
+      emissiveIntensity: openingFocus ? 0.35 : 0,
       color: door.id === selectedId ? '#fde047' : '#67e8f9',
     }),
   );
@@ -271,20 +287,20 @@ function doorGroupThree(
   const curve = new THREE.EllipseCurve(
     0,
     0,
-    width / 2.2,
-    width / 2.2,
+    width / (openingFocus ? 1.95 : 2.2),
+    width / (openingFocus ? 1.95 : 2.2),
     Math.PI / 4,
-    Math.PI / 4 + Math.PI / 2.2,
+    Math.PI / 4 + Math.PI / (openingFocus ? 1.9 : 2.2),
   );
 
-  const arcPts = curve.getPoints(16).map((p) => new THREE.Vector3(p.x, PLAN_Y + 0.03, -p.y));
+  const arcPts = curve.getPoints(28).map((p) => new THREE.Vector3(p.x, PLAN_Y + 0.03, -p.y));
 
   const arcGeom = new THREE.BufferGeometry().setFromPoints(arcPts);
 
   const arc = new THREE.Line(
     arcGeom,
 
-    new THREE.LineBasicMaterial({ color: '#0ea5e9' }),
+    new THREE.LineBasicMaterial({ color: openingFocus ? '#bae6fd' : '#0ea5e9', linewidth: 1 }),
   );
 
   arc.position.set(px, 0, pz);
@@ -304,6 +320,8 @@ function planWindowMesh(
   wall: Extract<Element, { kind: 'wall' }>,
 
   selectedId?: string,
+
+  openingFocus?: boolean,
 ): THREE.Mesh {
   const sx = ux(wall.start.xMm);
 
@@ -329,9 +347,15 @@ function planWindowMesh(
     new THREE.MeshStandardMaterial({
       transparent: true,
 
-      opacity: 0.55,
+      opacity: openingFocus ? 0.92 : 0.55,
 
-      color: win.id === selectedId ? '#c4b5fd' : '#a78bfa',
+      color: openingFocus
+        ? win.id === selectedId
+          ? '#ddd6fe'
+          : '#9333ea'
+        : win.id === selectedId
+          ? '#c4b5fd'
+          : '#a78bfa',
     }),
   );
 
@@ -344,7 +368,105 @@ function planWindowMesh(
   return mesh;
 }
 
-function roomMesh(room: Extract<Element, { kind: 'room' }>): THREE.Mesh {
+function hueFromName(seed: string): number {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) % 360;
+  return h;
+}
+
+/** Footprint tread preview on the stair base level (OG plan hides it). */
+
+function stairPlanThree(stair: Extract<Element, { kind: 'stair' }>): THREE.Group | null {
+  const sx = stair.runStartMm.xMm / 1000;
+  const sz = stair.runStartMm.yMm / 1000;
+  const ex = stair.runEndMm.xMm / 1000;
+  const ez = stair.runEndMm.yMm / 1000;
+  const dx = ex - sx;
+  const dz = ez - sz;
+  const len = Math.max(1e-6, Math.hypot(dx, dz));
+  const uxDir = dx / len;
+  const uzDir = dz / len;
+  const px = -uzDir * (stair.widthMm / 2000);
+
+  const pz = uxDir * (stair.widthMm / 2000);
+
+  const g = new THREE.Group();
+
+  const outline = [
+    new THREE.Vector3(sx + px, PLAN_Y + 0.012, sz + pz),
+
+    new THREE.Vector3(ex + px, PLAN_Y + 0.012, ez + pz),
+
+    new THREE.Vector3(ex - px, PLAN_Y + 0.012, ez - pz),
+
+    new THREE.Vector3(sx - px, PLAN_Y + 0.012, sz - pz),
+
+    new THREE.Vector3(sx + px, PLAN_Y + 0.012, sz + pz),
+  ];
+
+  g.add(
+    new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(outline),
+      new THREE.LineBasicMaterial({ color: '#facc15', transparent: true, opacity: 0.92 }),
+    ),
+  );
+
+  const nSteps = Math.max(2, Math.min(36, Math.round(len / Math.max(stair.treadMm / 1000, 0.05))));
+  const stepLen = len / nSteps;
+
+  const runOffX = uxDir * stepLen;
+
+  const runOffZ = uzDir * stepLen;
+
+  for (let i = 0; i <= nSteps; i++) {
+    const t = sx + uxDir * stepLen * i;
+
+    const w = sz + uzDir * stepLen * i;
+
+    const p1 = new THREE.Vector3(t + px, PLAN_Y + 0.018, w + pz);
+
+    const p2 = new THREE.Vector3(t - px, PLAN_Y + 0.018, w - pz);
+
+    g.add(
+      new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints([p1, p2]),
+        new THREE.LineBasicMaterial({ color: '#e2e8f0', transparent: true, opacity: 0.55 }),
+      ),
+    );
+
+    if (i < nSteps) {
+      const c1 = new THREE.Vector3(
+        t + runOffX + px * 0.15,
+        PLAN_Y + 0.018,
+        w + runOffZ + pz * 0.15,
+      );
+
+      const c2 = new THREE.Vector3(
+        t + runOffX - px * 0.15,
+        PLAN_Y + 0.018,
+        w + runOffZ - pz * 0.15,
+      );
+
+      g.add(
+        new THREE.Line(
+          new THREE.BufferGeometry().setFromPoints([c1, c2]),
+          new THREE.LineBasicMaterial({ color: '#94a3b8', transparent: true, opacity: 0.45 }),
+        ),
+      );
+    }
+  }
+
+  g.userData.bimPickId = stair.id;
+
+  return g;
+}
+
+function roomMesh(
+  room: Extract<Element, { kind: 'room' }>,
+  presentation?: PlanPresentationPreset,
+): THREE.Mesh {
+  const scheme = presentation ?? 'default';
+
   const shape = new THREE.Shape();
 
   const o = room.outlineMm[0];
@@ -365,15 +487,30 @@ function roomMesh(room: Extract<Element, { kind: 'room' }>): THREE.Mesh {
 
   const geo = new THREE.ShapeGeometry(shape);
 
+  const fill =
+    scheme === 'room_scheme'
+      ? {
+          opacity: 0.34,
+
+          color: `hsl(${hueFromName(room.name)} 62% 46%)`,
+        }
+      : scheme === 'opening_focus'
+        ? { opacity: 0.045, color: '#1d4ed8' }
+        : {
+            opacity: 0.14,
+
+            color: '#3b82f6',
+          };
+
   const mesh = new THREE.Mesh(
     geo,
 
     new THREE.MeshBasicMaterial({
-      color: '#3b82f6',
+      color: fill.color,
 
       transparent: true,
 
-      opacity: 0.14,
+      opacity: fill.opacity,
 
       depthWrite: false,
     }),

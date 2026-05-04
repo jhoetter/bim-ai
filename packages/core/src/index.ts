@@ -21,6 +21,7 @@ export type ElemKind =
   | 'tag_definition'
   | 'join_geometry'
   | 'section_cut'
+  | 'plan_view'
   | 'view_template'
   | 'sheet'
   | 'schedule'
@@ -34,7 +35,11 @@ export type XYZ = { xMm: number; yMm: number; zMm: number };
 
 export type WallLayerFunction = 'structure' | 'insulation' | 'finish';
 
-export type WallTypeLayer = { thicknessMm: number; function: WallLayerFunction; materialKey?: string | null };
+export type WallTypeLayer = {
+  thicknessMm: number;
+  function: WallLayerFunction;
+  materialKey?: string | null;
+};
 
 export type Element =
   | {
@@ -202,9 +207,21 @@ export type Element =
       pathMm: XY[];
       guardHeightMm?: number;
     }
-  | { kind: 'family_type'; id: string; discipline: 'door' | 'window' | 'generic'; parameters: Record<string, unknown> }
+  | {
+      kind: 'family_type';
+      id: string;
+      discipline: 'door' | 'window' | 'generic';
+      parameters: Record<string, unknown>;
+    }
   | { kind: 'room_separation'; id: string; name: string; levelId: string; start: XY; end: XY }
-  | { kind: 'plan_region'; id: string; name: string; levelId: string; outlineMm: XY[]; cutPlaneOffsetMm?: number }
+  | {
+      kind: 'plan_region';
+      id: string;
+      name: string;
+      levelId: string;
+      outlineMm: XY[];
+      cutPlaneOffsetMm?: number;
+    }
   | {
       kind: 'tag_definition';
       id: string;
@@ -223,6 +240,16 @@ export type Element =
       segmentedPathMm?: XY[];
     }
   | {
+      kind: 'plan_view';
+      id: string;
+      name: string;
+      levelId: string;
+      viewTemplateId?: string | null;
+      planPresentation?: 'default' | 'opening_focus' | 'room_scheme';
+      underlayLevelId?: string | null;
+      discipline?: string;
+    }
+  | {
       kind: 'view_template';
       id: string;
       name: string;
@@ -237,7 +264,14 @@ export type Element =
       titleBlock?: string | null;
       viewportsMm?: unknown[];
     }
-  | { kind: 'schedule'; id: string; name: string; sheetId?: string | null; filters?: Record<string, unknown>; grouping?: Record<string, unknown> }
+  | {
+      kind: 'schedule';
+      id: string;
+      name: string;
+      sheetId?: string | null;
+      filters?: Record<string, unknown>;
+      grouping?: Record<string, unknown>;
+    }
   | { kind: 'callout'; id: string; name: string; parentSheetId: string; outlineMm: XY[] }
   | { kind: 'bcf'; id: string; title: string; viewpointRef?: string | null; status?: string }
   | { kind: 'validation_rule'; id: string; name: string; ruleJson: Record<string, unknown> };

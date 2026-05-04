@@ -145,6 +145,74 @@ async function cmdValidate(modelId) {
   console.log(JSON.stringify(json, null, 2));
 }
 
+async function cmdEvidence(modelId) {
+  const snap = await fetchJson('GET', `${base}/api/models/${encodeURIComponent(modelId)}/snapshot`);
+  const val = await fetchJson('GET', `${base}/api/models/${encodeURIComponent(modelId)}/validate`);
+  const els = snap.elements && typeof snap.elements === 'object' ? snap.elements : {};
+  /** @type {Record<string, number>} */
+  const counts = {};
+  for (const id of Object.keys(els)) {
+    const row = els[id];
+    const k =
+      row && typeof row === 'object' && typeof row.kind === 'string'
+        ? row.kind
+        : '?';
+    counts[k] = (counts[k] ?? 0) + 1;
+  }
+  const out = {
+    generatedAt: new Date().toISOString(),
+    modelId,
+    revision: snap.revision,
+    elementCount: Object.keys(els).length,
+    countsByKind: counts,
+    validate: val,
+  };
+  console.log(JSON.stringify(out, null, 2));
+}
+
+async function cmdEvidencePackage(modelId) {
+  const json = await fetchJson(
+    'GET',
+    `${base}/api/models/${encodeURIComponent(modelId)}/evidence-package`,
+  );
+  console.log(JSON.stringify(json, null, 2));
+}
+
+async function cmdScheduleTable(modelId, scheduleId, wantCsv) {
+  const qs = wantCsv ? '?format=csv' : '';
+  const url = `${base}/api/models/${encodeURIComponent(modelId)}/schedules/${encodeURIComponent(scheduleId)}/table${qs}`;
+  const res = await fetch(url);
+  const text = await res.text();
+
+  let json;
+
+  try {
+    json = JSON.parse(text);
+  } catch {
+    json = undefined;
+  }
+
+  if (!res.ok) {
+    console.error(JSON.stringify({ status: res.status, body: json ?? text }, null, 2));
+
+    process.exit(1);
+  }
+
+  if (wantCsv) console.log(text);
+  else console.log(JSON.stringify(json ?? { raw: text }, null, 2));
+}
+
+async function cmdExportManifests(modelId) {
+  const gltf = await fetchJson(
+    'GET',
+
+    `${base}/api/models/${encodeURIComponent(modelId)}/exports/gltf-manifest`,
+  );
+
+  const ifc = await fetchJson('GET', `${base}/api/models/${encodeURIComponent(modelId)}/exports/ifc-manifest`);
+  console.log(JSON.stringify({ gltf, ifc }, null, 2));
+}
+
 async function cmdBootstrapCli() {
   const json = await fetchJson('GET', `${base}/api/bootstrap`);
   console.log(JSON.stringify(json, null, 2));
@@ -248,6 +316,10 @@ Commands:
   schema                              GET /api/schema (commands + presets ids)
   presets                             summarize schema + building presets
   snapshot                            GET snapshot (needs BIM_AI_MODEL_ID)
+  evidence                            Combined artifact: counts-by-kind + full validate rollup
+  evidence-package                    Phase A checklist JSON (captures recommended layouts + manifests)
+  schedule-table [--csv] <scheduleId>   Server-derived rows (optional CSV download shape)
+  export-manifests                     glTF + IFC exchange-manifest JSON stubs
   summary                             GET model summary rollup
   validate                            GET violations + summary + counts
   command-log [limit]                  GET undo/command history with full commands JSON
@@ -319,6 +391,34 @@ async function main() {
     if (cmd === 'validate') {
       if (!modelId) usage();
       await cmdValidate(modelId);
+      return;
+    }
+    if (cmd === 'evidence') {
+      if (!modelId) usage();
+      await cmdEvidence(modelId);
+      return;
+    }
+    if (cmd === 'evidence-package') {
+      if (!modelId) usage();
+      await cmdEvidencePackage(modelId);
+      return;
+    }
+    if (cmd === 'export-manifests') {
+      if (!modelId) usage();
+      await cmdExportManifests(modelId);
+      return;
+    }
+    if (cmd === 'schedule-table') {
+      if (!modelId) usage();
+      const args = argv.slice(1);
+      let wantCsv = false;
+      let sid;
+      for (const a of args) {
+        if (a === '--csv') wantCsv = true;
+        else sid = sid ?? a;
+      }
+      if (!sid) usage();
+      await cmdScheduleTable(modelId, sid, wantCsv);
       return;
     }
     if (cmd === 'command-log') {

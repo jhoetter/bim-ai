@@ -5,10 +5,7 @@ function disc(v: Violation): string {
 }
 
 /** Perspective-based advisory filter — backend tags discipline when available */
-export function filterViolationsForPerspective(
-  rows: Violation[],
-  pid: PerspectiveId,
-): Violation[] {
+export function filterViolationsForPerspective(rows: Violation[], pid: PerspectiveId): Violation[] {
   if (pid === 'agent') return rows;
 
   return rows.filter((v) => {

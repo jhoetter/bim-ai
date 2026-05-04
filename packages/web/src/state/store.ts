@@ -10,6 +10,8 @@ import type {
   XY,
 } from '@bim-ai/core';
 
+import type { PlanPresentationPreset } from '../plan/symbology';
+
 export type ViewerMode = 'plan_canvas' | 'orbit_3d';
 
 export type PlanTool =
@@ -64,6 +66,11 @@ type StoreState = {
   viewerMode: ViewerMode;
   planTool: PlanTool;
   activeLevelId?: string;
+  planPresentationPreset: PlanPresentationPreset;
+  activePlanViewId?: string;
+  viewerClipElevMm: number | null;
+  /** When true for a semantic kind (`wall`, `roof`, …), that category is hidden in 3D. */
+  viewerCategoryHidden: Record<string, boolean>;
   orthoSnapHold: boolean;
   userId: string;
   userDisplayName: string;
@@ -90,6 +97,11 @@ type StoreState = {
   setPlanHud: (mm?: { xMm: number; yMm: number }) => void;
   setWorkspaceLayoutPreset: (p: WorkspaceLayoutPreset) => void;
   setPerspectiveId: (p: PerspectiveId) => void;
+  setPlanPresentationPreset: (p: PlanPresentationPreset) => void;
+
+  activatePlanView: (planViewElementId: string | undefined) => void;
+  setViewerClipElevMm: (mm: number | null) => void;
+  toggleViewerCategoryHidden: (semanticKind: string) => void;
 
   setActivity: (e: ActivityEvent[]) => void;
   setIdentity: (userId: string, display: string, peerId: string) => void;
@@ -184,13 +196,17 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
         : {}),
       ...(raw.baseConstraintLevelId || raw.base_constraint_level_id
         ? {
-            baseConstraintLevelId: String(raw.baseConstraintLevelId ?? raw.base_constraint_level_id),
+            baseConstraintLevelId: String(
+              raw.baseConstraintLevelId ?? raw.base_constraint_level_id,
+            ),
           }
         : {}),
       ...(raw.topConstraintLevelId || raw.top_constraint_level_id
         ? { topConstraintLevelId: String(raw.topConstraintLevelId ?? raw.top_constraint_level_id) }
         : {}),
-      baseConstraintOffsetMm: Number(raw.baseConstraintOffsetMm ?? raw.base_constraint_offset_mm ?? 0),
+      baseConstraintOffsetMm: Number(
+        raw.baseConstraintOffsetMm ?? raw.base_constraint_offset_mm ?? 0,
+      ),
       topConstraintOffsetMm: Number(raw.topConstraintOffsetMm ?? raw.top_constraint_offset_mm ?? 0),
       ...(raw.roofAttachmentId || raw.roof_attachment_id
         ? { roofAttachmentId: String(raw.roofAttachmentId ?? raw.roof_attachment_id) }
@@ -210,16 +226,11 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
       ...(raw.familyTypeId || raw.family_type_id
         ? { familyTypeId: String(raw.familyTypeId ?? raw.family_type_id) }
         : {}),
-      hostCutDepthMm:
-        raw.hostCutDepthMm !== undefined ? Number(raw.hostCutDepthMm) : undefined,
+      hostCutDepthMm: raw.hostCutDepthMm !== undefined ? Number(raw.hostCutDepthMm) : undefined,
       revealInteriorMm:
         raw.revealInteriorMm !== undefined ? Number(raw.revealInteriorMm) : undefined,
-      interlockGrade:
-        typeof raw.interlockGrade === 'string' ? raw.interlockGrade : undefined,
-      lodPlan:
-        raw.lodPlan === 'simple' || raw.lodPlan === 'detailed'
-          ? raw.lodPlan
-          : undefined,
+      interlockGrade: typeof raw.interlockGrade === 'string' ? raw.interlockGrade : undefined,
+      lodPlan: raw.lodPlan === 'simple' || raw.lodPlan === 'detailed' ? raw.lodPlan : undefined,
     };
   }
 
@@ -236,18 +247,12 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
       ...(raw.familyTypeId || raw.family_type_id
         ? { familyTypeId: String(raw.familyTypeId ?? raw.family_type_id) }
         : {}),
-      hostCutDepthMm:
-        raw.hostCutDepthMm !== undefined ? Number(raw.hostCutDepthMm) : undefined,
+      hostCutDepthMm: raw.hostCutDepthMm !== undefined ? Number(raw.hostCutDepthMm) : undefined,
       revealInteriorMm:
         raw.revealInteriorMm !== undefined ? Number(raw.revealInteriorMm) : undefined,
-      interlockGrade:
-        typeof raw.interlockGrade === 'string' ? raw.interlockGrade : undefined,
-      sealRebateMm:
-        raw.sealRebateMm !== undefined ? Number(raw.sealRebateMm) : undefined,
-      lodPlan:
-        raw.lodPlan === 'simple' || raw.lodPlan === 'detailed'
-          ? raw.lodPlan
-          : undefined,
+      interlockGrade: typeof raw.interlockGrade === 'string' ? raw.interlockGrade : undefined,
+      sealRebateMm: raw.sealRebateMm !== undefined ? Number(raw.sealRebateMm) : undefined,
+      lodPlan: raw.lodPlan === 'simple' || raw.lodPlan === 'detailed' ? raw.lodPlan : undefined,
     };
   }
 
@@ -265,8 +270,7 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
           }
         : {}),
       volumeCeilingOffsetMm:
-        raw.volumeCeilingOffsetMm !== undefined ||
-        raw.volume_ceiling_offset_mm !== undefined
+        raw.volumeCeilingOffsetMm !== undefined || raw.volume_ceiling_offset_mm !== undefined
           ? Number(raw.volumeCeilingOffsetMm ?? raw.volume_ceiling_offset_mm)
           : undefined,
     };
@@ -400,9 +404,7 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
       thicknessMm: Number(raw.thicknessMm ?? raw.thickness_mm ?? 220),
       structureThicknessMm: Number(raw.structureThicknessMm ?? raw.structure_thickness_mm ?? 140),
       finishThicknessMm: Number(raw.finishThicknessMm ?? raw.finish_thickness_mm ?? 0),
-      insulationExtensionMm: Number(
-        raw.insulationExtensionMm ?? raw.insulation_extension_mm ?? 0,
-      ),
+      insulationExtensionMm: Number(raw.insulationExtensionMm ?? raw.insulation_extension_mm ?? 0),
       roomBounded: Boolean(raw.roomBounded ?? raw.room_bounded),
     };
   }
@@ -462,8 +464,7 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
 
   if (kind === 'family_type') {
     const d = raw.discipline;
-    const discipline =
-      d === 'door' || d === 'window' || d === 'generic' ? d : 'generic';
+    const discipline = d === 'door' || d === 'window' || d === 'generic' ? d : 'generic';
     return {
       kind: 'family_type',
       id,
@@ -500,9 +501,7 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
   if (kind === 'tag_definition') {
     const tkRaw = raw.tagKind ?? raw.tag_kind;
     const tagKind =
-      tkRaw === 'room' || tkRaw === 'sill' || tkRaw === 'slab_finish'
-        ? tkRaw
-        : ('custom' as const);
+      tkRaw === 'room' || tkRaw === 'sill' || tkRaw === 'slab_finish' ? tkRaw : ('custom' as const);
     return {
       kind: 'tag_definition',
       id,
@@ -527,16 +526,34 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
       kind: 'section_cut',
       id,
       name,
-      lineStartMm: coerceXY((raw.lineStartMm ?? raw.line_start_mm ?? {}) as Record<string, unknown>),
+      lineStartMm: coerceXY(
+        (raw.lineStartMm ?? raw.line_start_mm ?? {}) as Record<string, unknown>,
+      ),
       lineEndMm: coerceXY((raw.lineEndMm ?? raw.line_end_mm ?? {}) as Record<string, unknown>),
       cropDepthMm: Number(raw.cropDepthMm ?? raw.crop_depth_mm ?? 8500),
     };
   }
 
+  if (kind === 'plan_view') {
+    const pres = raw.planPresentation ?? raw.plan_presentation;
+    const planPresentation =
+      pres === 'opening_focus' || pres === 'room_scheme' ? pres : ('default' as const);
+    return {
+      kind: 'plan_view',
+      id,
+      name,
+      levelId: String(raw.levelId ?? raw.level_id ?? ''),
+      viewTemplateId: (raw.viewTemplateId ?? raw.view_template_id ?? null) as string | null,
+      planPresentation,
+      underlayLevelId: (raw.underlayLevelId ?? raw.underlay_level_id ?? null) as string | null,
+      discipline:
+        typeof raw.discipline === 'string' && raw.discipline ? raw.discipline : 'architecture',
+    };
+  }
+
   if (kind === 'view_template') {
     const s = raw.scale;
-    const scale =
-      s === 'scale_50' || s === 'scale_200' ? s : ('scale_100' as const);
+    const scale = s === 'scale_50' || s === 'scale_200' ? s : ('scale_100' as const);
     return {
       kind: 'view_template',
       id,
@@ -753,7 +770,8 @@ export const useBimStore = create<StoreState>((set, get) => {
       ];
       try {
         const raw = localStorage.getItem('bim.workspaceLayout');
-        if (raw && allowed.includes(raw as WorkspaceLayoutPreset)) return raw as WorkspaceLayoutPreset;
+        if (raw && allowed.includes(raw as WorkspaceLayoutPreset))
+          return raw as WorkspaceLayoutPreset;
       } catch {
         /* noop */
       }
@@ -777,6 +795,27 @@ export const useBimStore = create<StoreState>((set, get) => {
       }
       return 'architecture';
     })(),
+
+    planPresentationPreset: ((): PlanPresentationPreset => {
+      const allowed: PlanPresentationPreset[] = ['default', 'opening_focus', 'room_scheme'];
+
+      try {
+        const raw = localStorage.getItem('bim.planPresentation');
+
+        if (raw && allowed.includes(raw as PlanPresentationPreset))
+          return raw as PlanPresentationPreset;
+      } catch {
+        /* noop */
+      }
+
+      return 'default';
+    })(),
+
+    viewerClipElevMm: null,
+
+    viewerCategoryHidden: {},
+
+    activePlanViewId: undefined,
 
     hydrateFromSnapshot: (snap) => {
       const elements: Record<string, Element> = {};
@@ -883,6 +922,47 @@ export const useBimStore = create<StoreState>((set, get) => {
           /* noop */
         }
         return { perspectiveId };
+      }),
+
+    setPlanPresentationPreset: (planPresentationPreset) =>
+      set(() => {
+        try {
+          localStorage.setItem('bim.planPresentation', planPresentationPreset);
+        } catch {
+          /* noop */
+        }
+        return { planPresentationPreset };
+      }),
+
+    activatePlanView: (planViewElementId) => {
+      if (!planViewElementId) {
+        set({ activePlanViewId: undefined });
+        return;
+      }
+      const el = get().elementsById[planViewElementId];
+      if (!el || el.kind !== 'plan_view') return;
+      const preset = el.planPresentation ?? 'default';
+      const normalized: PlanPresentationPreset =
+        preset === 'opening_focus' || preset === 'room_scheme' ? preset : 'default';
+      try {
+        localStorage.setItem('bim.planPresentation', normalized);
+      } catch {
+        /* noop */
+      }
+      set({
+        activePlanViewId: planViewElementId,
+        activeLevelId: el.levelId,
+        planPresentationPreset: normalized,
+      });
+    },
+
+    setViewerClipElevMm: (viewerClipElevMm) => set({ viewerClipElevMm }),
+
+    toggleViewerCategoryHidden: (semanticKind) =>
+      set(() => {
+        const prior = get().viewerCategoryHidden[semanticKind];
+        const next = { ...get().viewerCategoryHidden, [semanticKind]: !prior };
+        return { viewerCategoryHidden: next };
       }),
 
     setActivity: (e) => set({ activityEvents: e }),

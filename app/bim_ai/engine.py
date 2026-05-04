@@ -45,6 +45,7 @@ from bim_ai.commands import (
     UpdateElementPropertyCmd,
     UpdateOpeningCleanroomCmd,
     UpsertFamilyTypeCmd,
+    UpsertPlanViewCmd,
     UpsertProjectSettingsCmd,
     UpsertRoomVolumeCmd,
     UpsertScheduleCmd,
@@ -70,6 +71,7 @@ from bim_ai.elements import (
     JoinGeometryElem,
     LevelElem,
     PlanRegionElem,
+    PlanViewElem,
     ProjectSettingsElem,
     RailingElem,
     RoofElem,
@@ -801,6 +803,35 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                     "upper_limit_level_id": cmd.upper_limit_level_id,
                     "volume_ceiling_offset_mm": cmd.volume_ceiling_offset_mm,
                 }
+            )
+
+        case UpsertPlanViewCmd():
+            pvid = cmd.id or new_id()
+            lvl = els.get(cmd.level_id)
+            if not isinstance(lvl, LevelElem):
+                raise ValueError("upsertPlanView.levelId must reference Level")
+            vt_id = cmd.view_template_id
+            if vt_id is not None:
+                vt_el = els.get(vt_id)
+                if not isinstance(vt_el, ViewTemplateElem):
+                    raise ValueError("upsertPlanView.viewTemplateId must reference view_template")
+            uli = cmd.underlay_level_id
+            if uli is not None and uli not in els:
+                raise ValueError(f"upsertPlanView underlay unknown level '{uli}'")
+            pres = cmd.plan_presentation if cmd.plan_presentation in {
+                "default",
+                "opening_focus",
+                "room_scheme",
+            } else "default"
+            els[pvid] = PlanViewElem(
+                kind="plan_view",
+                id=pvid,
+                name=cmd.name,
+                level_id=cmd.level_id,
+                view_template_id=cmd.view_template_id,
+                plan_presentation=pres,
+                underlay_level_id=cmd.underlay_level_id,
+                discipline=cmd.discipline or "architecture",
             )
 
         case CreateCalloutCmd():

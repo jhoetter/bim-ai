@@ -75,6 +75,6 @@ test.describe('cockpit hydration', () => {
     });
     await expect(page.getByText('Explorer')).toBeVisible();
     await expect(page.getByText('Master bedroom').first()).toBeVisible();
-    await expect(page.getByText('Rooms').first()).toBeVisible();
+    await expect(page.getByRole('button', { name: 'CSV' })).toBeVisible();
   });
 });

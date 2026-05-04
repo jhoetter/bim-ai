@@ -3,3 +3,5 @@ node_modules/
 dist/
 .turbo/
 coverage/
+**/test-results/
+pnpm-lock.yaml

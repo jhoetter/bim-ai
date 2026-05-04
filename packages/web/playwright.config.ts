@@ -5,13 +5,22 @@ export default defineConfig({
   testDir: './e2e',
   timeout: 60_000,
   forbidOnly: Boolean(process.env.CI),
+  snapshotPathTemplate: '{testDir}/__screenshots__/{testFilePath}/{arg}{ext}',
+  expect: {
+    toHaveScreenshot: {
+      animations: 'disabled',
+      maxDiffPixelRatio: 0.068,
+      threshold: 0.28,
+    },
+  },
   use: {
     baseURL: 'http://127.0.0.1:5739',
   },
   webServer: {
-    command: 'pnpm exec vite preview --host 127.0.0.1 --strictPort --port 5739',
+    command:
+      'pnpm exec vite build && pnpm exec vite preview --host 127.0.0.1 --strictPort --port 5739',
     url: 'http://127.0.0.1:5739',
     reuseExistingServer: process.env.CI !== 'true',
-    timeout: 120_000,
+    timeout: 180_000,
   },
 });

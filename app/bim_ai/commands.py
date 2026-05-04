@@ -436,6 +436,21 @@ class UpsertRoomVolumeCmd(BaseModel):
     volume_ceiling_offset_mm: float | None = Field(default=None, alias="volumeCeilingOffsetMm")
 
 
+class UpsertPlanViewCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["upsertPlanView"] = "upsertPlanView"
+    id: str | None = None
+    name: str = "Plan view"
+    level_id: str = Field(alias="levelId")
+    view_template_id: str | None = Field(default=None, alias="viewTemplateId")
+    plan_presentation: Literal["default", "opening_focus", "room_scheme"] = Field(
+        default="default",
+        alias="planPresentation",
+    )
+    underlay_level_id: str | None = Field(default=None, alias="underlayLevelId")
+    discipline: str = "architecture"
+
+
 class CreateCalloutCmd(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     type: Literal["createCallout"] = "createCallout"
@@ -506,6 +521,7 @@ Command = Annotated[
     | UpsertScheduleCmd
     | UpsertScheduleFiltersCmd
     | UpsertRoomVolumeCmd
+    | UpsertPlanViewCmd
     | CreateCalloutCmd
     | CreateBcfTopicCmd
     | UpsertValidationRuleCmd,

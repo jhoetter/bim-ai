@@ -10,6 +10,55 @@ type Props = { wsConnected: boolean };
 
 type WallElem = Extract<Element, { kind: 'wall' }>;
 
+/** Footprints use world XZ with z ← plan yMm */
+
+function xzBoundsMm(poly: Array<{ xMm: number; yMm: number }>): {
+  minX: number;
+  maxX: number;
+  minZ: number;
+  maxZ: number;
+  cx: number;
+  cz: number;
+  spanX: number;
+  spanZ: number;
+} {
+  let minX = Number.POSITIVE_INFINITY;
+  let maxX = Number.NEGATIVE_INFINITY;
+  let minZ = Number.POSITIVE_INFINITY;
+  let maxZ = Number.NEGATIVE_INFINITY;
+  for (const p of poly) {
+    minX = Math.min(minX, p.xMm);
+
+    maxX = Math.max(maxX, p.xMm);
+
+    minZ = Math.min(minZ, p.yMm);
+
+    maxZ = Math.max(maxZ, p.yMm);
+  }
+
+  const spanX = Math.max(maxX - minX, 1);
+
+  const spanZ = Math.max(maxZ - minZ, 1);
+
+  return {
+    minX,
+
+    maxX,
+
+    minZ,
+
+    maxZ,
+
+    cx: (minX + maxX) / 2,
+
+    cz: (minZ + maxZ) / 2,
+
+    spanX,
+
+    spanZ,
+  };
+}
+
 function elevationMForLevel(levelId: string, elementsById: Record<string, Element>): number {
   const lvl = elementsById[levelId];
   if (!lvl || lvl.kind !== 'level') return 0;
@@ -39,6 +88,118 @@ function wallYaw(wall: WallElem) {
   const ex = wall.end.xMm / 1000;
   const ez = wall.end.yMm / 1000;
   return Math.atan2(ez - sz, ex - sx);
+}
+
+function makeFloorSlabMesh(
+  floor: Extract<Element, { kind: 'floor' }>,
+  elementsById: Record<string, Element>,
+): THREE.Mesh {
+  const b = xzBoundsMm(floor.boundaryMm ?? []);
+
+  const elev = elevationMForLevel(floor.levelId, elementsById);
+
+  const th = THREE.MathUtils.clamp(floor.thicknessMm / 1000, 0.05, 1.8);
+
+  const mesh = new THREE.Mesh(
+    new THREE.BoxGeometry(b.spanX / 1000, th, b.spanZ / 1000),
+
+    new THREE.MeshStandardMaterial({
+      color: '#22c55e',
+      roughness: 0.9,
+      transparent: true,
+      opacity: 0.92,
+    }),
+  );
+
+  mesh.position.set(b.cx / 1000, elev + th / 2, b.cz / 1000);
+
+  mesh.userData.bimPickId = floor.id;
+
+  return mesh;
+}
+
+function makeRoofMassMesh(
+  roof: Extract<Element, { kind: 'roof' }>,
+  elementsById: Record<string, Element>,
+): THREE.Mesh {
+  const b = xzBoundsMm(roof.footprintMm ?? []);
+
+  const ov = THREE.MathUtils.clamp((roof.overhangMm ?? 0) / 1000, 0, 5);
+
+  const elev = elevationMForLevel(roof.referenceLevelId, elementsById);
+
+  const rise = THREE.MathUtils.clamp(Number(roof.slopeDeg ?? 25) / 70, 0.25, 2.8);
+
+  const spanX = THREE.MathUtils.clamp(b.spanX / 1000 + ov * 0.08, 3, 200);
+
+  const spanZ = THREE.MathUtils.clamp(b.spanZ / 1000 + ov * 0.08, 3, 200);
+
+  const mesh = new THREE.Mesh(
+    new THREE.BoxGeometry(spanX, rise, spanZ),
+
+    new THREE.MeshStandardMaterial({
+      color: '#fb923c',
+      transparent: true,
+      opacity: 0.94,
+      roughness: 0.74,
+      metalness: 0.04,
+    }),
+  );
+
+  mesh.position.set(b.cx / 1000, elev + ov * 0.12 + rise / 2, b.cz / 1000);
+
+  mesh.userData.bimPickId = roof.id;
+
+  return mesh;
+}
+
+function makeStairVolumeMesh(
+  stair: Extract<Element, { kind: 'stair' }>,
+  elementsById: Record<string, Element>,
+  selectedId?: string,
+): THREE.Mesh {
+  const sx = stair.runStartMm.xMm / 1000;
+
+  const sz = stair.runStartMm.yMm / 1000;
+
+  const ex = stair.runEndMm.xMm / 1000;
+
+  const ez = stair.runEndMm.yMm / 1000;
+
+  const dx = ex - sx;
+
+  const dz = ez - sz;
+
+  const len = Math.max(1e-3, Math.hypot(dx, dz));
+
+  const width = THREE.MathUtils.clamp(stair.widthMm / 1000, 0.3, 4);
+
+  const bl = elementsById[stair.baseLevelId];
+
+  const tl = elementsById[stair.topLevelId];
+
+  const riseMm =
+    bl?.kind === 'level' && tl?.kind === 'level'
+      ? Math.abs(tl.elevationMm - bl.elevationMm)
+      : stair.riserMm * 16;
+
+  const rise = THREE.MathUtils.clamp(riseMm / 1000, 0.5, 12);
+
+  const elevBase = elevationMForLevel(stair.baseLevelId, elementsById);
+
+  const mesh = new THREE.Mesh(
+    new THREE.BoxGeometry(len, rise, width),
+
+    new THREE.MeshStandardMaterial({ color: stair.id === selectedId ? '#fcd34d' : '#ca8a04' }),
+  );
+
+  mesh.position.set(sx + dx / 2, elevBase + rise / 2, sz + dz / 2);
+
+  mesh.rotation.y = Math.atan2(dx, dz);
+
+  mesh.userData.bimPickId = stair.id;
+
+  return mesh;
 }
 
 function makeWallMesh(wall: WallElem, elevM: number, selectedId?: string): THREE.Mesh {
@@ -116,6 +277,41 @@ function makeRoomRibbon(room: Extract<Element, { kind: 'room' }>, elevM: number)
   return loop;
 }
 
+type ViewerCatKey = 'wall' | 'floor' | 'roof' | 'stair' | 'door' | 'window' | 'room';
+
+function elemViewerCategory(e: Element): ViewerCatKey | null {
+  switch (e.kind) {
+    case 'wall':
+      return 'wall';
+    case 'floor':
+      return 'floor';
+    case 'roof':
+      return 'roof';
+    case 'stair':
+      return 'stair';
+    case 'door':
+      return 'door';
+    case 'window':
+      return 'window';
+    case 'room':
+      return 'room';
+    default:
+      return null;
+  }
+}
+
+function applyClippingPlanesToMeshes(root: THREE.Object3D, planes: THREE.Plane[]) {
+  if (!planes.length) return;
+  root.traverse((node) => {
+    const mesh = node as THREE.Mesh;
+    if (mesh.isMesh && mesh.material instanceof THREE.MeshStandardMaterial) {
+      const m = mesh.material.clone();
+      m.clippingPlanes = planes.slice();
+      mesh.material = m;
+    }
+  });
+}
+
 export function Viewport({ wsConnected }: Props) {
   void wsConnected;
 
@@ -130,12 +326,17 @@ export function Viewport({ wsConnected }: Props) {
 
   const selectedId = useBimStore((s) => s.selectedId);
 
+  const viewerCategoryHidden = useBimStore((s) => s.viewerCategoryHidden);
+
+  const viewerClipElevMm = useBimStore((s) => s.viewerClipElevMm);
+
   useEffect(() => {
     const el = mountRef.current;
     if (!el) return;
     const host = el;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.localClippingEnabled = true;
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setClearColor('#0b1220', 1);
     rendererRef.current = renderer;
@@ -294,11 +495,44 @@ export function Viewport({ wsConnected }: Props) {
 
     while (root.children.length) root.remove(root.children[0]!);
 
+    const clipElevMRaw = viewerClipElevMm;
+    const clipElevM =
+      clipElevMRaw != null && Number.isFinite(clipElevMRaw) && clipElevMRaw > 0
+        ? clipElevMRaw / 1000
+        : null;
+
+    const rnd = rendererRef.current;
+    if (rnd) rnd.localClippingEnabled = clipElevM != null;
+
+    const clippingPlanes: THREE.Plane[] = [];
+    if (clipElevM != null) {
+      const plane = new THREE.Plane();
+      plane.setFromNormalAndCoplanarPoint(
+        new THREE.Vector3(0, -1, 0),
+        new THREE.Vector3(0, clipElevM, 0),
+      );
+      clippingPlanes.push(plane);
+    }
+    const catHidden = viewerCategoryHidden;
+
+    const skipCat = (e: Element): boolean => {
+      const ck = elemViewerCategory(e);
+      return ck != null && Boolean(catHidden[ck]);
+    };
+
     const walls = Object.values(elementsById).filter((e): e is WallElem => e.kind === 'wall');
 
     const wallById = Object.fromEntries(walls.map((w) => [w.id, w]));
 
+    for (const f of Object.values(elementsById)) {
+      if (f.kind !== 'floor') continue;
+      if (skipCat(f)) continue;
+
+      root.add(makeFloorSlabMesh(f, elementsById));
+    }
+
     for (const w of walls) {
+      if (skipCat(w)) continue;
       const elev = elevationMForLevel(w.levelId, elementsById);
 
       root.add(makeWallMesh(w, elev, selectedId));
@@ -306,10 +540,11 @@ export function Viewport({ wsConnected }: Props) {
 
     for (const e of Object.values(elementsById)) {
       if (e.kind !== 'door') continue;
+      if (skipCat(e)) continue;
 
       const hw = wallById[e.wallId];
 
-      if (!hw) continue;
+      if (!hw || skipCat(hw)) continue;
 
       const elev = elevationMForLevel(hw.levelId, elementsById);
 
@@ -318,10 +553,11 @@ export function Viewport({ wsConnected }: Props) {
 
     for (const e of Object.values(elementsById)) {
       if (e.kind !== 'window') continue;
+      if (skipCat(e)) continue;
 
       const hw = wallById[e.wallId];
 
-      if (!hw) continue;
+      if (!hw || skipCat(hw)) continue;
 
       const elev = elevationMForLevel(hw.levelId, elementsById);
 
@@ -329,16 +565,36 @@ export function Viewport({ wsConnected }: Props) {
     }
 
     for (const e of Object.values(elementsById)) {
+      if (e.kind !== 'stair') continue;
+      if (skipCat(e)) continue;
+
+      root.add(makeStairVolumeMesh(e, elementsById, selectedId));
+    }
+
+    for (const e of Object.values(elementsById)) {
       if (e.kind !== 'room') continue;
+      if (skipCat(e)) continue;
 
       root.add(makeRoomRibbon(e, elevationMForLevel(e.levelId, elementsById)));
     }
 
+    for (const rf of Object.values(elementsById)) {
+      if (rf.kind !== 'roof') continue;
+      if (skipCat(rf)) continue;
+
+      root.add(makeRoofMassMesh(rf, elementsById));
+    }
+
+    applyClippingPlanesToMeshes(root, clippingPlanes);
+
     camera.lookAt(new THREE.Vector3(0, 1.35, 0));
-  }, [elementsById, selectedId]);
+  }, [elementsById, selectedId, viewerCategoryHidden, viewerClipElevMm]);
 
   return (
-    <div className="relative h-[min(740px,calc(100vh-260px))] w-full overflow-hidden rounded-lg border border-border bg-background">
+    <div
+      data-testid="orbit-3d-viewport"
+      className="relative h-[min(740px,calc(100vh-260px))] w-full overflow-hidden rounded-lg border border-border bg-background"
+    >
       <div className="pointer-events-none absolute left-3 top-3 z-10 rounded-full border border-border bg-surface/80 px-3 py-1 text-[11px] text-muted backdrop-blur">
         3D orbit · LMB pick · drag · zoom
       </div>

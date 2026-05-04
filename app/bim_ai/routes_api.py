@@ -1,10 +1,19 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Any
+from typing import Annotated, Any
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, Request, WebSocket, WebSocketDisconnect
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Query,
+    Request,
+    WebSocket,
+    WebSocketDisconnect,
+)
+from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, Field, TypeAdapter
 from sqlalchemy import delete, desc, select
 from sqlalchemy.exc import IntegrityError
@@ -15,7 +24,7 @@ from bim_ai.commands import Command
 from bim_ai.constraints import evaluate
 from bim_ai.db import SessionMaker, get_session
 from bim_ai.document import Document
-from bim_ai.elements import Element
+from bim_ai.elements import BcfElem, Element
 from bim_ai.engine import (
     clone_document,
     compute_delta_wire,
@@ -23,8 +32,13 @@ from bim_ai.engine import (
     try_commit,
     try_commit_bundle,
 )
+from bim_ai.export_gltf import build_visual_export_manifest
 from bim_ai.hub import Hub
+from bim_ai.ifc_stub import ifc_exchange_manifest_payload, minimal_empty_ifc_skeleton
 from bim_ai.model_summary import compute_model_summary
+from bim_ai.schedule_csv import schedule_payload_to_csv
+from bim_ai.schedule_derivation import derive_schedule_table, list_schedule_ids
+from bim_ai.sheet_preview_svg import pick_sheet, sheet_elem_to_svg
 from bim_ai.tables import (
     CommentRecord,
     ModelRecord,
@@ -214,6 +228,286 @@ async def validate_model_snapshot(
         "violations": viols,
         "summary": compute_model_summary(doc),
         "checks": {"errorViolationCount": err_ct, "blockingViolationCount": block_ct},
+    }
+
+
+@api_router.get("/models/{model_id}/evidence-package")
+async def evidence_package(
+    model_id: UUID,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    doc = Document.model_validate(row.document)
+    viols = violations_wire(doc.elements)
+    err_ct = sum(1 for x in viols if x.get("severity") == "error")
+    block_ct = sum(1 for x in viols if x.get("blocking") is True)
+    kinds: dict[str, int] = {}
+    for e in doc.elements.values():
+        k = getattr(e, "kind", "?")
+        kinds[k] = kinds.get(k, 0) + 1
+
+    schedules = [{"id": sid, "name": doc.elements[sid].name} for sid in list_schedule_ids(doc)]
+
+    return {
+        "generatedAt": datetime.now(UTC).isoformat(),
+        "modelId": str(model_id),
+        "revision": doc.revision,
+        "elementCount": len(doc.elements),
+        "countsByKind": kinds,
+        "summary": compute_model_summary(doc),
+        "validate": {
+            "violations": viols,
+            "checks": {"errorViolationCount": err_ct, "blockingViolationCount": block_ct},
+        },
+        "recommendedCapture": [
+            {
+                "id": "cockpit_plan_3d",
+                "workspaceLayoutPreset": "split_plan_3d",
+                "planPresentation": ["default", "opening_focus", "room_scheme"],
+                "regions": [],
+            },
+            {
+                "id": "schedule_focus",
+                "workspaceLayoutPreset": "schedules_focus",
+                "planPresentation": ["opening_focus"],
+            },
+            {
+                "id": "sections_and_plan",
+                "workspaceLayoutPreset": "split_plan_section",
+            },
+            {
+                "id": "sheet_placeholder",
+                "note": "Use sheet canvas coordination layout when wired",
+                "workspaceLayoutPreset": "coordination",
+            },
+        ],
+        "scheduleIds": schedules,
+        "hint": "Use Playwright to capture PNG alongside this JSON per spec §8.3 / §14 Phase A.",
+    }
+
+
+@api_router.get("/models/{model_id}/schedules/{schedule_id}/table")
+async def schedule_derived_table(
+    model_id: UUID,
+    schedule_id: str,
+    session: AsyncSession = Depends(get_session),
+    fmt: Annotated[str, Query(alias="format")] = "json",
+) -> dict[str, Any] | PlainTextResponse:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    doc = Document.model_validate(row.document)
+    try:
+        payload = derive_schedule_table(doc, schedule_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    if fmt.strip().lower() == "csv":
+        csv_body = schedule_payload_to_csv(payload)
+        safe = "".join(ch for ch in schedule_id if ch.isalnum() or ch in ("-", "_")) or "schedule"
+        return PlainTextResponse(
+            csv_body,
+            media_type="text/csv; charset=utf-8",
+            headers={"Content-Disposition": f'attachment; filename="{safe}.csv"'},
+        )
+    return payload
+
+
+@api_router.get("/models/{model_id}/exports/gltf-manifest")
+async def export_gltf_manifest(
+    model_id: UUID,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    doc = Document.model_validate(row.document)
+    return build_visual_export_manifest(doc)
+
+
+@api_router.get("/models/{model_id}/exports/sheet-preview.svg")
+async def sheet_preview_svg_export(
+    model_id: UUID,
+    sheet_id: Annotated[str | None, Query(alias="sheetId")] = None,
+    session: AsyncSession = Depends(get_session),
+) -> PlainTextResponse:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    doc = Document.model_validate(row.document)
+    try:
+        sh = pick_sheet(doc, sheet_id or None)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return PlainTextResponse(
+        sheet_elem_to_svg(sh),
+        media_type="image/svg+xml; charset=utf-8",
+        headers={"Cache-Control": "public, max-age=60"},
+    )
+
+
+@api_router.get("/models/{model_id}/exports/ifc-manifest")
+async def export_ifc_manifest_route(
+    model_id: UUID,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    doc = Document.model_validate(row.document)
+    kinds: dict[str, int] = {}
+    for el in doc.elements.values():
+        k = getattr(el, "kind", "?")
+        kinds[k] = kinds.get(k, 0) + 1
+    return ifc_exchange_manifest_payload(revision=doc.revision, counts_by_kind=kinds)
+
+
+@api_router.get("/models/{model_id}/exports/ifc-empty-skeleton.ifc")
+async def export_ifc_skeleton(
+    model_id: UUID,
+    session: AsyncSession = Depends(get_session),
+) -> PlainTextResponse:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    return PlainTextResponse(
+        minimal_empty_ifc_skeleton(),
+        media_type="application/octet-stream",
+        headers={
+            "Content-Disposition": f'attachment; filename="bim-ai-model-{model_id}-empty.ifc"'
+        },
+    )
+
+
+@api_router.get("/models/{model_id}/exports/bcf-topics-json")
+async def export_bcf_topics(
+    model_id: UUID,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    doc = Document.model_validate(row.document)
+    topics = [
+        e.model_dump(by_alias=True) for e in doc.elements.values() if isinstance(e, BcfElem)
+    ]
+    return {
+        "modelId": str(model_id),
+        "revision": doc.revision,
+        "topics": topics,
+    }
+
+
+class BcfTopicsImportEnvelope(BaseModel):
+    model_config = {"populate_by_name": True}
+
+    topics: list[dict[str, Any]]
+    user_id: str | None = Field(default=None, alias="userId")
+    client_op_id: str | None = Field(default=None, alias="clientOpId")
+
+
+@api_router.post("/models/{model_id}/imports/bcf-topics-json")
+async def import_bcf_topics_json(
+    model_id: UUID,
+    body: BcfTopicsImportEnvelope,
+    session: AsyncSession = Depends(get_session),
+    hub: Hub = Depends(get_hub),
+) -> dict[str, Any]:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+
+    uid = body.user_id or "local-dev"
+    baseline_doc = Document.model_validate(row.document)
+    doc_before = clone_document(baseline_doc)
+
+    commands: list[dict[str, Any]] = []
+    batch_seen: set[str] = set()
+    for t in body.topics:
+        if not isinstance(t, dict):
+            continue
+        tid_raw = t.get("id")
+        tid = str(tid_raw).strip() if tid_raw not in (None, "") else ""
+        title = str(t.get("title") or "BCF topic")
+        vpref = t.get("viewpointRef") or t.get("viewpoint_ref")
+        if tid and tid in baseline_doc.elements:
+            continue
+        if tid and tid in batch_seen:
+            continue
+        cmd: dict[str, Any] = {"type": "createBcfTopic", "title": title}
+        if tid:
+            cmd["id"] = tid
+            batch_seen.add(tid)
+        if vpref:
+            cmd["viewpointRef"] = str(vpref)
+        commands.append(cmd)
+
+    if not commands:
+        return {
+            "ok": True,
+            "modelId": str(model_id),
+            "appliedTopics": 0,
+            "revision": baseline_doc.revision,
+            "skippedDuplicates": True,
+        }
+
+    try:
+        ok, new_doc, _cmds, violations, code = try_commit_bundle(baseline_doc, commands)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Invalid BCF import: {exc}") from exc
+
+    if not ok or new_doc is None:
+        viols_wire = [v.model_dump(by_alias=True) for v in violations]
+
+        raise HTTPException(status_code=409, detail={"reason": code, "violations": viols_wire})
+
+    undo_cmds = diff_undo_cmds(doc_before, new_doc)
+
+    await delete_redos(session, model_id, uid)
+
+    undo_row = UndoStackRecord(
+        model_id=model_id,
+        user_id=uid,
+        revision_after=new_doc.revision,
+        forward_commands=commands,
+        undo_commands=undo_cmds,
+        created_at=datetime.now(UTC),
+    )
+
+    session.add(undo_row)
+
+    wire_doc = document_to_wire(new_doc)
+
+    row.document = wire_doc  # type: ignore[assignment]
+    row.revision = new_doc.revision
+
+    await session.commit()
+
+    delta = compute_delta_wire(doc_before, new_doc)
+
+    if body.client_op_id:
+        delta["clientOpId"] = body.client_op_id
+
+    await hub.broadcast_json(
+        model_id,
+        {"type": "delta", "modelId": str(model_id), **delta},
+    )
+
+    elems_out = wire_doc["elements"]
+
+    viols_wire = violations_wire(new_doc.elements)
+
+    return {
+        "ok": True,
+        "modelId": str(model_id),
+        "revision": new_doc.revision,
+        "appliedTopics": len(commands),
+        "elements": elems_out,
+        "violations": viols_wire,
+        "appliedCommands": commands,
+        "clientOpId": body.client_op_id,
+        "delta": delta,
     }
 
 
