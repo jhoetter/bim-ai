@@ -478,6 +478,7 @@ export function buildOneFamilyHomeCommands() {
       type: 'upsertScheduleFilters',
       scheduleId: 'hf-sch-room',
       filters: { category: 'room', discipline: 'architecture' },
+      grouping: { sortBy: 'areaM2', sortDescending: true },
     },
     {
       type: 'upsertSchedule',

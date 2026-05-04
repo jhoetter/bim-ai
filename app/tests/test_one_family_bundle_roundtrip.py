@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 from bim_ai.document import Document
-from bim_ai.elements import RoomElem, SheetElem
+from bim_ai.elements import RoomElem, ScheduleElem, SheetElem
 from bim_ai.engine import apply_inplace, command_adapter
 from bim_ai.plan_projection_wire import section_cut_projection_wire
 from bim_ai.schedule_derivation import derive_schedule_table
@@ -118,6 +118,11 @@ def test_one_family_bundle_covers_documentation_spine() -> None:
     assert prim.get("format") == "sectionProjectionPrimitives_v1"
     wall_count = int((sec.get("countsByVisibleKind") or {}).get("wall", 0))
     assert wall_count >= 1
+
+    sch_room = doc.elements.get("hf-sch-room")
+    assert isinstance(sch_room, ScheduleElem)
+    assert sch_room.grouping.get("sortBy") == "areaM2"
+    assert sch_room.grouping.get("sortDescending") is True
 
     for sid in (
         "hf-sch-room",

@@ -23,6 +23,115 @@ from bim_ai.elements import (
 from bim_ai.schedule_field_registry import column_metadata_bundle, stable_column_keys
 from bim_ai.type_material_registry import family_type_display_label, material_display_label
 
+_NUMERIC_SCHEDULE_FIELDS: frozenset[str] = frozenset(
+    {
+        "areaM2",
+        "perimeterM",
+        "widthMm",
+        "heightMm",
+        "sillMm",
+        "thicknessMm",
+        "viewportCount",
+        "overhangMm",
+        "slopeDeg",
+        "footprintAreaM2",
+        "footprintPerimeterM",
+        "riseMm",
+        "runMm",
+        "cropDepthMm",
+    }
+)
+
+
+def _resolve_sort_descending(filt: dict[str, Any], sch_group: dict[str, Any]) -> bool:
+    for d in (filt, sch_group):
+        v = d.get("sortDescending")
+        if v is None:
+            v = d.get("sort_descending")
+        if isinstance(v, bool):
+            return v
+        if isinstance(v, str) and v.strip().lower() in {"true", "1", "yes"}:
+            return True
+    return False
+
+
+def _scalar_for_group_bucket(v: Any) -> tuple[int, Any]:
+    """Deterministic ordering for group-key tuples (bucket labels)."""
+
+    if v is None:
+        return (0, "")
+    if isinstance(v, bool):
+        return (1, int(v))
+    if isinstance(v, int | float) and not isinstance(v, bool):
+        return (2, float(v))
+    return (3, str(v).strip().lower())
+
+
+def _group_bucket_sort_key(bucket_tuple: tuple[Any, ...]) -> tuple[tuple[int, Any], ...]:
+    return tuple(_scalar_for_group_bucket(x) for x in bucket_tuple)
+
+
+def _coerce_float_for_sort(raw: Any) -> float | None:
+    if raw is None:
+        return None
+    if isinstance(raw, bool):
+        return float(int(raw))
+    if isinstance(raw, int | float):
+        return float(raw)
+    if isinstance(raw, str) and raw.strip():
+        try:
+            return float(raw)
+        except ValueError:
+            return None
+    return None
+
+
+def _primary_sort_key_part(row: dict[str, Any], field: str) -> tuple[int, float | str]:
+    """Lower tuple orders first when sort ascending (ties use stable elementId pass)."""
+
+    raw = row.get(field)
+    if field in _NUMERIC_SCHEDULE_FIELDS:
+        fv = _coerce_float_for_sort(raw)
+        if fv is not None:
+            return (0, fv)
+        return (1, str(raw if raw is not None else "").strip().lower())
+    if raw is None:
+        return (2, "")
+    if isinstance(raw, bool):
+        return (2, str(int(raw)))
+    if isinstance(raw, int | float) and not isinstance(raw, bool):
+        return (0, float(raw))
+    return (2, str(raw).strip().lower())
+
+
+def _sort_rows_stable(
+    rs: list[dict[str, Any]],
+    *,
+    sort_field: str | None,
+    key_aliases: dict[str, str],
+    sort_descending: bool,
+    default_name_fallback: bool,
+) -> list[dict[str, Any]]:
+    """Stable sort: primary key with optional desc; Python stable sort + elementId prefetch fixes ties."""
+
+    if not rs:
+        return rs
+    eid_ordered = sorted(rs, key=lambda r: str(r.get("elementId", "")))
+    lk = key_aliases.get(sort_field, sort_field) if sort_field else None
+    if sort_field and lk is not None and any(lk in r for r in rs):
+        return sorted(
+            eid_ordered,
+            key=lambda r, lk=lk: _primary_sort_key_part(r, lk),
+            reverse=sort_descending,
+        )
+    if default_name_fallback:
+        return sorted(
+            eid_ordered,
+            key=lambda r: str(r.get("name", "") or r.get("elementId", "")).strip().lower(),
+            reverse=sort_descending,
+        )
+    return eid_ordered
+
 
 def _level_labels(doc: Document) -> dict[str, str]:
     out: dict[str, str] = {}
@@ -132,6 +241,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
 
     group_keys = _resolve_group_keys(filt, sch_group)
     filter_equals = _filter_equals_from_filters(filt)
+    sort_descending = _resolve_sort_descending(filt, sch_group)
     key_aliases = {"familyTypeMark": "familyTypeId"}
 
     rows: list[dict[str, Any]] = []
@@ -339,22 +449,32 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
         for r in rows:
             buckets[gkey(r)].append(r)
         grouped = {}
-        for k in sorted(buckets.keys(), key=lambda x: "".join(map(str, x))):
-            sub = sorted(buckets[k], key=lambda r: str(r.get("name", "")))
-            grouped[" / ".join(str(x) for x in k)] = sub
+        for k in sorted(buckets.keys(), key=_group_bucket_sort_key):
+            grouped[" / ".join(str(x) for x in k)] = list(buckets[k])
 
     stable_sort_field = filt.get("sortBy") or filt.get("SortBy") or sch_group.get("sortBy")
-
-    def sort_rs(rs: list[dict[str, Any]]) -> list[dict[str, Any]]:
-        if stable_sort_field and rs and any(stable_sort_field in r for r in rs):
-            return sorted(rs, key=lambda x: x.get(stable_sort_field, ""))
-        return sorted(rs, key=lambda x: str(x.get("name", "") or x.get("elementId")))
+    ssf = str(stable_sort_field).strip() if stable_sort_field else None
 
     if grouped:
-        grouped = {lbl: sort_rs(gs) for lbl, gs in grouped.items()}
+        grouped = {
+            lbl: _sort_rows_stable(
+                gs,
+                sort_field=ssf,
+                key_aliases=key_aliases,
+                sort_descending=sort_descending,
+                default_name_fallback=True,
+            )
+            for lbl, gs in grouped.items()
+        }
         total_rows = sum(len(gs) for gs in grouped.values())
     else:
-        rows = sort_rs(rows)
+        rows = _sort_rows_stable(
+            rows,
+            sort_field=ssf,
+            key_aliases=key_aliases,
+            sort_descending=sort_descending,
+            default_name_fallback=True,
+        )
         total_rows = len(rows)
 
     leaf_rows: list[dict[str, Any]]
@@ -432,8 +552,10 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
             "format": "scheduleDerivationEngine_v1",
             "category": cat,
             "groupKeys": group_keys,
-            "sortBy": stable_sort_field,
+            "sortBy": ssf,
+            "sortTieBreak": "elementId",
             "supportsCsv": True,
+            **({"sortDescending": True} if sort_descending else {}),
             **({"filterEquals": filter_equals} if filter_equals else {}),
         },
         "totalRows": total_rows,
