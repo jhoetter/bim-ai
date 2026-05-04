@@ -150,6 +150,43 @@ def test_build_visual_export_manifest_includes_material_assembly_evidence_with_l
     assert any(h.get("hostElementId") == "w1" for h in hosts)
 
 
+def test_build_visual_export_manifest_includes_layered_assembly_cut_alignment_evidence() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=0),
+            "wt": WallTypeElem(
+                kind="wall_type",
+                id="wt",
+                name="WT",
+                layers=[
+                    WallTypeLayer(thicknessMm=100, layer_function="structure"),
+                    WallTypeLayer(thicknessMm=50, layer_function="finish"),
+                ],
+            ),
+            "w1": WallElem(
+                kind="wall",
+                id="w1",
+                name="W",
+                levelId="lvl",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 3000, "yMm": 0},
+                thicknessMm=150,
+                heightMm=2800,
+                wallTypeId="wt",
+            ),
+        },
+    )
+    ext = export_manifest_extension_payload(doc)
+    assert "bim_ai_layered_assembly_cut_alignment_v0" in ext["meshEncoding"]
+    cut_ev = ext.get("layeredAssemblyCutAlignmentEvidence_v0")
+    assert cut_ev is not None
+    assert cut_ev["format"] == "layeredAssemblyCutAlignmentEvidence_v0"
+    h0 = cut_ev["hosts"][0]
+    assert h0["hostElementId"] == "w1"
+    assert h0["layerStackMatchesCutThickness"] is True
+
+
 def test_build_visual_export_manifest_includes_roof_assembly_evidence():
     doc = Document(revision=1, elements={"lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=0)})
     apply_inplace(

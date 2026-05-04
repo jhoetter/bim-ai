@@ -25,6 +25,10 @@ from bim_ai.elements import (
     WallElem,
     WindowElem,
 )
+from bim_ai.material_assembly_resolve import (
+    section_assembly_alignment_fields_floor,
+    section_assembly_alignment_fields_wall,
+)
 from bim_ai.opening_cut_primitives import (
     floor_panels_axis_aligned_rect_with_single_hole_mm,
     hosted_opening_half_span_mm,
@@ -221,17 +225,19 @@ def _append_floor_u_span_primitive(
     z0 = _level_elevation_mm(doc, floor_el.level_id)
     z_t = z0 + float(floor_el.thickness_mm)
     pane_suffix = "0" if pane_index is None else f"pane-{pane_index + 1}"
-    floors.append(
-        {
-            "id": f"floor:{floor_el.id}:{pane_suffix}",
-            "elementId": floor_el.id,
-            "levelId": floor_el.level_id,
-            "uStartMm": round(u_lo, 3),
-            "uEndMm": round(u_hi, 3),
-            "zBottomMm": round(z0, 3),
-            "zTopMm": round(z_t, 3),
-        }
-    )
+    row: dict[str, Any] = {
+        "id": f"floor:{floor_el.id}:{pane_suffix}",
+        "elementId": floor_el.id,
+        "levelId": floor_el.level_id,
+        "uStartMm": round(u_lo, 3),
+        "uEndMm": round(u_hi, 3),
+        "zBottomMm": round(z0, 3),
+        "zTopMm": round(z_t, 3),
+    }
+    asm_floor = section_assembly_alignment_fields_floor(doc, floor_el)
+    if asm_floor:
+        row.update(asm_floor)
+    floors.append(row)
 
 
 
@@ -412,19 +418,21 @@ def build_section_projection_primitives(
         stable_id = f"wall:{e.id}:{segment_idx}"
         segment_idx += 1
 
-        walls.append(
-            {
-                "id": stable_id,
-                "elementId": e.id,
-                "levelId": e.level_id,
-                "uStartMm": round(u_lo, 3),
-                "uEndMm": round(u_hi, 3),
-                "zBottomMm": round(z0, 3),
-                "zTopMm": round(z1, 3),
-                "thicknessMm": round(float(e.thickness_mm), 3),
-                "cutHatchKind": cut_hatch_kind,
-            }
-        )
+        wall_row: dict[str, Any] = {
+            "id": stable_id,
+            "elementId": e.id,
+            "levelId": e.level_id,
+            "uStartMm": round(u_lo, 3),
+            "uEndMm": round(u_hi, 3),
+            "zBottomMm": round(z0, 3),
+            "zTopMm": round(z1, 3),
+            "thicknessMm": round(float(e.thickness_mm), 3),
+            "cutHatchKind": cut_hatch_kind,
+        }
+        asm_wall = section_assembly_alignment_fields_wall(doc, e)
+        if asm_wall:
+            wall_row.update(asm_wall)
+        walls.append(wall_row)
         wall_clip_by_id[e.id] = (u_lo, u_hi)
 
     doors: list[dict[str, Any]] = []

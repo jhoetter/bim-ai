@@ -24,7 +24,10 @@ from bim_ai.elements import (
     WallElem,
     WindowElem,
 )
-from bim_ai.material_assembly_resolve import material_assembly_manifest_evidence
+from bim_ai.material_assembly_resolve import (
+    collect_layered_assembly_cut_alignment_evidence_v0,
+    material_assembly_manifest_evidence,
+)
 from bim_ai.opening_cut_primitives import xz_bounds_mm_from_poly
 from bim_ai.roof_geometry import gable_ridge_rise_mm, outer_rect_extent
 from bim_ai.stair_plan_proxy import stair_riser_count_plan_proxy
@@ -154,6 +157,7 @@ def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
     rgeom_roofs = roof_geometry_manifest_evidence_v0(doc)
     stair_geom = stair_geometry_manifest_evidence_v0(doc)
     corner_joins = collect_wall_corner_join_evidence_v0(doc)
+    layer_cut_align = collect_layered_assembly_cut_alignment_evidence_v0(doc)
     mesh_enc = "bim_ai_box_primitive_v0"
     if rgeom_roofs:
         mesh_enc += "+bim_ai_gable_roof_v0"
@@ -161,6 +165,8 @@ def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
         mesh_enc += "+bim_ai_wall_corner_joins_v0"
     if skew_hosted:
         mesh_enc += "+bim_ai_skew_wall_hosted_openings_v0"
+    if layer_cut_align:
+        mesh_enc += "+bim_ai_layered_assembly_cut_alignment_v0"
     base: dict[str, Any] = {
         **parity,
         "meshEncoding": mesh_enc,
@@ -179,6 +185,8 @@ def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
         base["stairGeometryEvidence_v0"] = stair_geom
     if corner_joins:
         base["wallCornerJoinEvidence_v0"] = corner_joins
+    if layer_cut_align:
+        base["layeredAssemblyCutAlignmentEvidence_v0"] = layer_cut_align
     return base
 
 

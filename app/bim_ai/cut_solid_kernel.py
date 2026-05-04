@@ -2,6 +2,9 @@
 
 glTF meshing and future plan/section consumers should derive rectangular rough cuts from this module
 instead of duplicating segmentation logic in exporters.
+
+Layer stack vs instance thickness alignment for manifests and section rows lives in
+``bim_ai.material_assembly_resolve`` (``collect_layered_assembly_cut_alignment_evidence_v0``).
 """
 
 from __future__ import annotations
