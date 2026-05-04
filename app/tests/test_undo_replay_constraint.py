@@ -7,6 +7,30 @@ from bim_ai.elements import LevelElem
 from bim_ai.engine import replay_bundle_diagnostics_for_outcome, try_commit_bundle
 
 
+def test_replay_diagnostics_for_ok_outcome_has_no_blocking_index() -> None:
+    lvl = LevelElem(kind="level", id="lvl", name="G", elevationMm=0)
+    doc = Document(revision=1, elements={"lvl": lvl})
+    cmds: list[dict[str, object]] = [
+        {
+            "type": "createWall",
+            "levelId": "lvl",
+            "start": {"xMm": 0, "yMm": 0},
+            "end": {"xMm": 2600, "yMm": 0},
+            "thicknessMm": 200,
+            "heightMm": 2800,
+        }
+    ]
+    ok, new_doc, _cmds, _violations, code = try_commit_bundle(doc, cmds)
+    assert ok is True
+    assert new_doc is not None
+    assert code == "ok"
+
+    diag = replay_bundle_diagnostics_for_outcome(doc, cmds, outcome_code="ok")
+    assert "firstBlockingCommandIndex" not in diag
+    assert diag["commandCount"] == 1
+    assert diag["commandTypesInOrder"] == ["createWall"]
+
+
 def test_undo_restore_wall_with_missing_level_blocked() -> None:
     lvl = LevelElem(kind="level", id="lvl", name="G", elevationMm=0)
     doc = Document(revision=1, elements={"lvl": lvl})
