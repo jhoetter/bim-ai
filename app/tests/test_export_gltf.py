@@ -19,7 +19,12 @@ from bim_ai.elements import (
     WallTypeLayer,
     WindowElem,
 )
-from bim_ai.export_gltf import build_visual_export_manifest, document_to_glb_bytes, document_to_gltf
+from bim_ai.export_gltf import (
+    _collect_geom_boxes,
+    build_visual_export_manifest,
+    document_to_glb_bytes,
+    document_to_gltf,
+)
 
 
 def test_gltf_manifest_lists_unsupported_kinds_when_no_geometry_categories():
@@ -187,6 +192,49 @@ def test_document_to_gltf_subset_counts_and_manifest_extension():
     geo_kinds_exported = g["extensions"]["BIM_AI_exportManifest_v0"]["exportedGeometryKinds"]
     for k in ("wall", "door", "window", "roof", "stair", "room"):
         assert geo_kinds_exported[k] == 1
+
+
+def test_gltf_wall_prisms_shorten_when_hosted_door_has_reveal():
+    """export uses same cut kernel; wider rough opening shrinks adjacent wall box half-lengths."""
+    lvl = LevelElem(kind="level", id="l0", name="EG", elevationMm=0)
+    wall = WallElem(
+        kind="wall",
+        id="w1",
+        name="W",
+        levelId="l0",
+        start={"xMm": 0, "yMm": 0},
+        end={"xMm": 8000, "yMm": 0},
+        thicknessMm=200,
+        heightMm=2800,
+    )
+    doc_plain = Document(
+        revision=1,
+        elements={
+            "l0": lvl,
+            "w1": wall,
+            "d1": DoorElem(kind="door", id="d1", name="D", wallId="w1", alongT=0.5, widthMm=1000),
+        },
+    )
+    doc_rev = Document(
+        revision=1,
+        elements={
+            "l0": lvl,
+            "w1": wall,
+            "d1": DoorElem(
+                kind="door",
+                id="d1",
+                name="D",
+                wallId="w1",
+                alongT=0.5,
+                widthMm=1000,
+                revealInteriorMm=75,
+            ),
+        },
+    )
+    boxes0 = [b for b in _collect_geom_boxes(doc_plain) if b.kind == "wall"]
+    boxes1 = [b for b in _collect_geom_boxes(doc_rev) if b.kind == "wall"]
+    assert len(boxes0) == len(boxes1) == 2
+    assert max(b.hx for b in boxes1) < max(b.hx for b in boxes0) - 1e-9
 
 
 def test_document_to_glb_contains_header_json_and_matching_bin_chunk():

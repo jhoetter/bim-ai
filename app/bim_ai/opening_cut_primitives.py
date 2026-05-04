@@ -7,10 +7,8 @@ Non-rectangular outlines stay on the proxy/bounding-box path in callers.
 from __future__ import annotations
 
 import math
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from bim_ai.elements import DoorElem, WallElem, WindowElem
+from bim_ai.elements import DoorElem, WallElem, WindowElem
 
 
 def clamp(v: float, lo: float, hi: float) -> float:
@@ -158,6 +156,17 @@ def complement_unit_segments(blocked: list[tuple[float, float]]) -> list[tuple[f
     return free
 
 
+def hosted_opening_half_span_mm(opening: DoorElem | WindowElem) -> float:
+    """Half-width along wall baseline for cut/projection: nominal width/2 plus interior reveal.
+
+    Does not change persisted ``widthMm`` on the element; used only for rough-opening segmentation.
+    """
+    reveal = float(opening.reveal_interior_mm or 0.0)
+    if reveal < 0.0:
+        reveal = 0.0
+    return float(opening.width_mm) * 0.5 + reveal
+
+
 def hosted_opening_t_span_normalized(opening: DoorElem | WindowElem, wall: WallElem) -> tuple[float, float] | None:
     """Rough opening ``t`` extent along the wall baseline in normalized [0,1] coordinates."""
     wl_mm = math.hypot(wall.end.x_mm - wall.start.x_mm, wall.end.y_mm - wall.start.y_mm)
@@ -165,7 +174,7 @@ def hosted_opening_t_span_normalized(opening: DoorElem | WindowElem, wall: WallE
     if wl_mm < 10.0:
         return None
 
-    usable_half = opening.width_mm / 2.0 / wl_mm
+    usable_half = hosted_opening_half_span_mm(opening) / wl_mm
 
     usable_t0 = usable_half
 

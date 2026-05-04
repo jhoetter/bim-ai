@@ -37,6 +37,7 @@ def test_cut_kernel_matches_geom_box_wall_floor_slab_slice() -> None:
                 wallId="w1",
                 alongT=0.5,
                 widthMm=900,
+                revealInteriorMm=100,
             ),
             "z1": WindowElem(
                 kind="window",
@@ -119,3 +120,53 @@ def test_wall_without_hostings_emits_single_prism() -> None:
     assert len(boxes) == 1
     assert boxes[0].kind == "wall"
     assert boxes[0].elem_id == "w1"
+
+
+def test_door_reveal_shortens_wall_prism_half_length_along_wall() -> None:
+    """Wider rough opening from revealInteriorMm removes more wall length in cut boxes."""
+    common_wall = WallElem(
+        kind="wall",
+        id="w1",
+        name="W",
+        levelId="lvl",
+        start={"xMm": 0, "yMm": 0},
+        end={"xMm": 6000, "yMm": 0},
+        thicknessMm=200,
+        heightMm=2800,
+    )
+    lvl = LevelElem(kind="level", id="lvl", name="G", elevationMm=0)
+    doc_plain = Document(
+        revision=1,
+        elements={
+            "lvl": lvl,
+            "w1": common_wall,
+            "d1": DoorElem(
+                kind="door",
+                id="d1",
+                name="D",
+                wallId="w1",
+                alongT=0.5,
+                widthMm=900,
+            ),
+        },
+    )
+    doc_rev = Document(
+        revision=1,
+        elements={
+            "lvl": lvl,
+            "w1": common_wall,
+            "d1": DoorElem(
+                kind="door",
+                id="d1",
+                name="D",
+                wallId="w1",
+                alongT=0.5,
+                widthMm=900,
+                revealInteriorMm=120,
+            ),
+        },
+    )
+    walls0 = [b for b in collect_wall_floor_slab_cut_boxes(doc_plain) if b.kind == "wall"]
+    walls1 = [b for b in collect_wall_floor_slab_cut_boxes(doc_rev) if b.kind == "wall"]
+    assert len(walls0) == len(walls1) == 2
+    assert max(b.hx for b in walls1) < max(b.hx for b in walls0) - 1e-9

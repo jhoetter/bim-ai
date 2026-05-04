@@ -23,7 +23,10 @@ from bim_ai.elements import (
     WallElem,
     WindowElem,
 )
-from bim_ai.opening_cut_primitives import floor_panels_axis_aligned_rect_with_single_hole_mm
+from bim_ai.opening_cut_primitives import (
+    floor_panels_axis_aligned_rect_with_single_hole_mm,
+    hosted_opening_half_span_mm,
+)
 from bim_ai.roof_geometry import gable_ridge_rise_mm, outer_rect_extent
 from bim_ai.stair_plan_proxy import stair_riser_count_plan_proxy
 
@@ -400,7 +403,7 @@ def build_section_projection_primitives(
             w_len = max(_EPS, _hypot(ux, uy))
             wux, wuy = ux / w_len, uy / w_len
             along_scale = abs(wux * tx + wuy * ty)
-            half_du = 0.5 * float(e.width_mm) * max(_EPS, along_scale)
+            half_du = hosted_opening_half_span_mm(e) * max(_EPS, along_scale)
 
             u_c = _u_mm(px_mm, py_mm, p0x=p0x, p0y=p0y, tx=tx, ty=ty)
             u_lo_w, u_hi_w = span_u
@@ -409,18 +412,19 @@ def build_section_projection_primitives(
 
             z0 = _level_elevation_mm(doc, w.level_id) + float(w.base_constraint_offset_mm)
             z1 = z0 + _DEFAULT_DOOR_HEIGHT_MM
-            doors.append(
-                {
-                    "id": f"door:{e.id}:{oid}",
-                    "elementId": e.id,
-                    "wallId": w.id,
-                    "levelId": w.level_id,
-                    "uCenterMm": round(u_c, 3),
-                    "openingHalfWidthAlongUMm": round(half_du, 3),
-                    "zBottomMm": round(z0, 3),
-                    "zTopMm": round(z1, 3),
-                }
-            )
+            door_row: dict[str, Any] = {
+                "id": f"door:{e.id}:{oid}",
+                "elementId": e.id,
+                "wallId": w.id,
+                "levelId": w.level_id,
+                "uCenterMm": round(u_c, 3),
+                "openingHalfWidthAlongUMm": round(half_du, 3),
+                "zBottomMm": round(z0, 3),
+                "zTopMm": round(z1, 3),
+            }
+            if e.reveal_interior_mm is not None and float(e.reveal_interior_mm) > 0.0:
+                door_row["revealInteriorMm"] = round(float(e.reveal_interior_mm), 3)
+            doors.append(door_row)
             oid += 1
 
         elif isinstance(e, WindowElem):
@@ -439,7 +443,7 @@ def build_section_projection_primitives(
             w_len = max(_EPS, _hypot(ux, uy))
             wux, wuy = ux / w_len, uy / w_len
             along_scale = abs(wux * tx + wuy * ty)
-            half_du = 0.5 * float(e.width_mm) * max(_EPS, along_scale)
+            half_du = hosted_opening_half_span_mm(e) * max(_EPS, along_scale)
 
             u_c = _u_mm(px_mm, py_mm, p0x=p0x, p0y=p0y, tx=tx, ty=ty)
             u_lo_w, u_hi_w = span_u
@@ -450,18 +454,19 @@ def build_section_projection_primitives(
                 e.sill_height_mm
             )
             z1 = z0 + float(e.height_mm)
-            windows.append(
-                {
-                    "id": f"window:{e.id}:{oid}",
-                    "elementId": e.id,
-                    "wallId": w.id,
-                    "levelId": w.level_id,
-                    "uCenterMm": round(u_c, 3),
-                    "openingHalfWidthAlongUMm": round(half_du, 3),
-                    "zBottomMm": round(z0, 3),
-                    "zTopMm": round(z1, 3),
-                }
-            )
+            win_row: dict[str, Any] = {
+                "id": f"window:{e.id}:{oid}",
+                "elementId": e.id,
+                "wallId": w.id,
+                "levelId": w.level_id,
+                "uCenterMm": round(u_c, 3),
+                "openingHalfWidthAlongUMm": round(half_du, 3),
+                "zBottomMm": round(z0, 3),
+                "zTopMm": round(z1, 3),
+            }
+            if e.reveal_interior_mm is not None and float(e.reveal_interior_mm) > 0.0:
+                win_row["revealInteriorMm"] = round(float(e.reveal_interior_mm), 3)
+            windows.append(win_row)
             oid += 1
 
     openings_by_floor: dict[str, list[SlabOpeningElem]] = {}

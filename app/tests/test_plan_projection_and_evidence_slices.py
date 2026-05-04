@@ -155,6 +155,58 @@ def test_section_projection_wire_emits_door_when_cut_hits_host_wall() -> None:
     assert markers == [{"id": "lvl", "name": "L", "elevationMm": 0.0}]
 
 
+def test_section_projection_wire_door_reveal_widens_opening_half_width_and_emits_hint() -> None:
+    """Interior reveal expands rough opening along U; section row carries revealInteriorMm when set."""
+    lvl = LevelElem(kind="level", id="lvl", name="L", elevationMm=0.0)
+    wall = WallElem(
+        kind="wall",
+        id="w-host",
+        name="W",
+        levelId="lvl",
+        start={"xMm": 0.0, "yMm": 0.0},
+        end={"xMm": 6000.0, "yMm": 0.0},
+        thicknessMm=200.0,
+        heightMm=2800.0,
+    )
+    door_plain = DoorElem(
+        kind="door",
+        id="d-plain",
+        name="D",
+        wallId="w-host",
+        alongT=0.5,
+        widthMm=900.0,
+    )
+    door_rev = DoorElem(
+        kind="door",
+        id="d-rev",
+        name="D",
+        wallId="w-host",
+        alongT=0.5,
+        widthMm=900.0,
+        revealInteriorMm=80.0,
+    )
+    sec = SectionCutElem(
+        kind="section_cut",
+        id="sec-a",
+        name="A-A",
+        lineStartMm={"xMm": 3000.0, "yMm": -8000.0},
+        lineEndMm={"xMm": 3000.0, "yMm": 8000.0},
+        cropDepthMm=12000.0,
+    )
+    doc_plain = Document(revision=1, elements={"lvl": lvl, "w-host": wall, "d-plain": door_plain, "sec-a": sec})
+    doc_rev = Document(revision=1, elements={"lvl": lvl, "w-host": wall, "d-rev": door_rev, "sec-a": sec})
+    out_plain = section_cut_projection_wire(doc_plain, "sec-a")
+    out_rev = section_cut_projection_wire(doc_rev, "sec-a")
+    ds_plain = (out_plain.get("primitives") or {}).get("doors") or []
+    ds_rev = (out_rev.get("primitives") or {}).get("doors") or []
+    assert len(ds_plain) == 1 and len(ds_rev) == 1
+    hw0 = float(ds_plain[0]["openingHalfWidthAlongUMm"])
+    hw1 = float(ds_rev[0]["openingHalfWidthAlongUMm"])
+    assert hw1 > hw0
+    assert ds_plain[0].get("revealInteriorMm") is None
+    assert ds_rev[0]["revealInteriorMm"] == 80.0
+
+
 def test_section_floor_emits_multiple_panels_when_slab_opening_subtracts_outer_rect() -> None:
     """Rectangular floor minus one slab void: section uses same pane bands as cut kernel / glTF."""
     lvl = LevelElem(kind="level", id="lvl", name="L", elevationMm=0.0)
