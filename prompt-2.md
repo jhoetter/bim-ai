@@ -1,16 +1,15 @@
-# Agent Prompt 2: Validation Advisor Breadth And Quick-Fix Bundles
+# Agent Prompt 2: Authoritative IFC Import Replay Slice
 
 ## Mission
 
-You are Agent 2 of the next parallel BIM AI parity batch. Broaden PRD section 11 validation with additive blocking classes and quick-fix bundle guidance, staying mostly in advisor logic and tests so this can run safely beside the sheet projection/export work. Do not open a pull request. Commit and push only your branch.
+You are Agent 2 of the next parallel BIM AI parity batch. Turn the current OpenBIM import replay sketch into one narrow authoritative replay path. Start with a deterministic subset, such as IFC storeys/levels and spaces or walls, and produce command sketches that can be applied or compared against an existing document. Do not open a pull request. Commit and push only your branch.
 
 Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
 
-- `WP-V01` Validation/advisor expansion
-- `WP-D03` Schedule UI
-- `WP-E05` Sheet canvas and titleblock
-- `WP-B06` Rooms and room separation
-- light `WP-X01` JSON snapshot and command replay
+- `WP-X03` OpenBIM import/edit/export round-trip
+- `WP-D06` External references/imported CAD/RVT/IFC
+- `WP-X05` OpenBIM validation/governance
+- light `WP-X01` IFC 4.3 export identity and quantities
 
 ## Start Procedure
 
@@ -20,55 +19,57 @@ Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
    git fetch origin
    git switch main
    git pull --ff-only origin main
-   git switch -c agent/validation-advisor-quickfix-bundles
+   git switch -c agent/ifc-authoritative-replay-slice
    ```
 
 2. Read first:
    - `spec/revit-production-parity-workpackage-tracker.md`
    - `spec/prd/revit-production-parity-ai-agent-prd.md`
-   - `app/bim_ai/constraints.py`
+   - `spec/ifc-export-wp-x03-slice.md`
+   - `app/bim_ai/export_ifc.py`
+   - `app/bim_ai/ifc_stub.py`
    - `app/bim_ai/commands.py`
-   - `app/bim_ai/engine.py`
-   - existing room, schedule, sheet, and advisor tests
-   - web advisor/filter tests if rendering or grouping changes
+   - `app/bim_ai/elements.py`
+   - `app/tests/test_export_ifc.py`
 
 ## File Ownership Rules
 
-Keep this prompt additive and validation-focused. Avoid new element kinds, command schemas, and broad `engine.py` behavior. Use existing command quick-fix paths where possible. Do not touch sheet crop projection implementation owned by Prompt 1.
+Avoid broad document merge and avoid UI changes. The done slice should prove one authoritative import/replay pathway, not solve all IFC reconciliation. Do not touch schedule quantity derivation, plan/view editor UI, or evidence raster artifact work.
 
 ## Allowed Scope
 
 Prefer changes in:
 
-- `app/bim_ai/constraints.py`
-- focused helper functions under validation/advisor code
-- tests for room, schedule, sheet, viewport, or IFC-adjacent advisor classes
-- web tests only for existing advisor grouping/filter rendering
+- `app/bim_ai/export_ifc.py`
+- `app/bim_ai/ifc_stub.py`
+- small IFC helper modules, if already present
+- `app/tests/test_export_ifc.py` or adjacent IFC/offline tests
+- `spec/ifc-export-wp-x03-slice.md`, if behavior changes
 - `spec/revit-production-parity-workpackage-tracker.md`
 
 ## Non-Goals
 
-- Do not add new persisted element fields.
-- Do not rewrite `constraints.evaluate`.
-- Do not implement full PRD section 11 coverage in one pass.
-- Do not change sheet projection/export behavior.
+- Do not implement full IFC merge/reconciliation.
+- Do not add a broad command executor pathway unless it is already present and needs a narrow test hook.
+- Do not introduce heavyweight mandatory dependencies for offline CI.
+- Do not alter unrelated IFC export identity behavior.
 - Do not open a PR.
 
 ## Implementation Checklist
 
-- Add at least one new PRD section 11 blocking/advisor class or strengthen one shallow existing class.
-- Where feasible, return a deterministic quick-fix bundle using existing commands.
-- Cover negative and positive cases in pytest.
-- Keep advisor severity and reason codes stable and explicit.
-- Update the tracker with remaining validation classes and quick-fix gaps.
+- Pick one authoritative replay subset and document the subset explicitly.
+- Generate deterministic command sketches from IFC-derived levels/storeys plus one model element family, such as spaces or walls.
+- Include comparison/replay metadata that distinguishes authoritative replay from unsupported product reporting.
+- Preserve offline behavior through `ifc_stub.py` when IfcOpenShell is unavailable.
+- Add tests for deterministic command sketches, unsupported products, and offline fallback behavior.
+- Update tracker rows with the exact subset implemented and the remaining import/merge blockers.
 
 ## Validation
 
 Run focused checks:
 
 ```bash
-cd app && ruff check bim_ai tests && pytest tests/test_constraints* tests/test_schema_advisor.py tests/test_upsert_sheet_viewports.py tests/test_room*
-cd packages/web && pnpm exec tsc -p tsconfig.json --noEmit && pnpm test -- advisor
+cd app && ruff check bim_ai tests && pytest tests/test_export_ifc.py
 ```
 
 Then run, if practical:
@@ -79,7 +80,7 @@ pnpm verify
 
 ## Tracker Update
 
-Update only rows you materially changed, likely `WP-V01`, `WP-D03`, `WP-E05`, `WP-B06`, and maybe `WP-X01`. Include exact violation/advisor IDs, quick-fix commands, and tests.
+Update `WP-X03`, `WP-D06`, `WP-X05`, and any affected `WP-X01` evidence. Add a Recent Sprint Ledger entry describing the authoritative replay subset, tests, and remaining unsupported IFC scope.
 
 ## Commit And Push
 
@@ -90,7 +91,7 @@ git status
 git diff
 git add <changed files>
 git commit -m "$(cat <<'EOF'
-feat(validation): add advisor quick-fix bundle coverage
+feat(openbim): add authoritative ifc replay slice
 
 EOF
 )"
@@ -99,4 +100,4 @@ git push -u origin HEAD
 
 ## Final Report
 
-Return branch, commit SHA, advisor classes added, quick-fix behavior, tracker rows updated, validation results, and shared-file merge risks.
+Return branch, commit SHA, replay subset, command sketch examples, tracker rows updated, validation results, and shared-file merge risks.

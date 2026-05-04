@@ -1,15 +1,16 @@
-# Agent Prompt 4: IFC Import Replay And Merge Sketch
+# Agent Prompt 4: Print Raster Service And Evidence Artifact Pipeline
 
 ## Mission
 
-You are Agent 4 of the next parallel BIM AI parity batch. Move OpenBIM past read-back inspection toward a narrow import/replay sketch: levels, walls, spaces, Psets/QTOs, unsupported entity reporting, and command-sketch evidence. Do not open a pull request. Commit and push only your branch.
+You are Agent 4 of the next parallel BIM AI parity batch. Push beyond SVG/PDF listing hints toward deterministic raster/print artifact handling: server SVG-to-PNG pathway or a controlled raster placeholder contract, artifact URLs/placeholders, diff ingestion metadata, and CI/evidence correlation. Do not open a pull request. Commit and push only your branch.
 
 Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
 
-- `WP-X03` IFC export/import
-- `WP-X05` IDS validation
-- `WP-D06` Cleanroom metadata and IDS
-- light `WP-V01` Validation/advisor expansion
+- `WP-E06` Sheets/print/export
+- `WP-A02` Agent review/evidence package
+- `WP-A03` Evaluation harness
+- `WP-A04` Collaboration follow-through
+- `WP-F03` Cloud artifact persistence and traceability
 
 ## Start Procedure
 
@@ -19,56 +20,58 @@ Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
    git fetch origin
    git switch main
    git pull --ff-only origin main
-   git switch -c agent/ifc-import-replay-sketch
+   git switch -c agent/print-raster-evidence-artifacts
    ```
 
 2. Read first:
    - `spec/revit-production-parity-workpackage-tracker.md`
    - `spec/prd/revit-production-parity-ai-agent-prd.md`
-   - `spec/ifc-export-wp-x03-slice.md`
-   - `app/bim_ai/export_ifc.py`
-   - `app/bim_ai/ifc_stub.py`
-   - `app/bim_ai/constraints.py`
-   - IFC, IDS, and offline manifest tests
+   - `app/bim_ai/sheet_preview_svg.py`
+   - `app/bim_ai/evidence_manifest.py`
+   - `app/bim_ai/agent_review.py`
+   - `packages/web/src/workspace/AgentReviewPane.tsx`
+   - relevant Playwright evidence specs
+   - `.github/workflows/ci.yml`
 
 ## File Ownership Rules
 
-Keep this prompt OpenBIM-only. Avoid broad document merge behavior and do not require IfcOpenShell for offline tests. If touching validation, keep it gated to IFC/IDS/import evidence so it does not conflict with Prompt 2's broader advisor work.
+Avoid changing plan projection logic owned by prior sheet crop work. Coordinate mentally with the plan/view prompt if visual baselines are touched. Do not change schedule quantity logic or IFC import/replay behavior.
 
 ## Allowed Scope
 
 Prefer changes in:
 
-- IFC semantic import/read-back helpers
-- command-sketch output for levels, walls, spaces, Psets, or QTOs
-- unsupported entity/import-scope reports
-- IDS mismatch evidence derived from imported/inspected data
-- optional dependency skip behavior
-- `spec/ifc-export-wp-x03-slice.md` if behavior changes
+- `app/bim_ai/sheet_preview_svg.py`
+- print artifact helper modules, if already present
+- `app/bim_ai/evidence_manifest.py`, for artifact metadata only
+- focused evidence manifest and sheet preview tests
+- Playwright evidence specs and CI correlation hints
+- `packages/web/src/workspace/AgentReviewPane.tsx`, only for artifact/diff display
 - `spec/revit-production-parity-workpackage-tracker.md`
 
 ## Non-Goals
 
-- Do not implement full document merge/import replay.
-- Do not change glTF or roof geometry.
-- Do not change Agent Review UI.
-- Do not rewrite validation advisor internals.
+- Do not implement a full print server or general rendering farm.
+- Do not change plan projection crop semantics.
+- Do not introduce non-deterministic image generation in tests.
+- Do not expand collaboration workflow beyond artifact metadata/follow-through evidence.
 - Do not open a PR.
 
 ## Implementation Checklist
 
-- Add one narrow import/replay sketch improvement, such as command sketches for inspected IFC levels/walls/spaces or Pset/QTO-driven limitations.
-- Make unsupported behavior explicit and deterministic.
-- Preserve existing export/read-back checks.
-- Add focused tests that pass with and without IfcOpenShell where appropriate.
-- Update OpenBIM docs only for actual behavior.
+- Add either a deterministic SVG-to-PNG pathway or a clearly versioned raster placeholder contract suitable for offline CI.
+- Attach artifact URLs/placeholders and diff ingestion metadata to evidence manifests.
+- Surface artifact/diff evidence in the agent review UI only as needed.
+- Add tests that prove deterministic artifact metadata, manifest correlation, and CI evidence hints.
+- Update tracker rows with implemented artifact behavior and remaining print/raster blockers.
 
 ## Validation
 
 Run focused checks:
 
 ```bash
-cd app && ruff check bim_ai tests && pytest tests/test_export_ifc.py tests/test_ifc_exchange_manifest_offline.py tests/test_ids_enforcement.py tests/test_exchange_ifc_geometry_skips_advisory.py
+cd app && ruff check bim_ai tests && pytest tests
+pnpm exec vitest run src/workspace
 ```
 
 Then run, if practical:
@@ -79,7 +82,7 @@ pnpm verify
 
 ## Tracker Update
 
-Update only rows you materially changed, likely `WP-X03`, `WP-X05`, `WP-D06`, and maybe `WP-V01`. Include exact import/replay sketch scope, unsupported entities, IDS checks, and tests.
+Update `WP-E06`, `WP-A02`, `WP-A03`, `WP-A04`, and `WP-F03`. Add a Recent Sprint Ledger entry describing the raster/artifact contract, tests, and any remaining production print service blockers.
 
 ## Commit And Push
 
@@ -90,7 +93,7 @@ git status
 git diff
 git add <changed files>
 git commit -m "$(cat <<'EOF'
-feat(openbim): add ifc import replay sketch
+feat(evidence): add print raster artifact pipeline
 
 EOF
 )"
@@ -99,4 +102,4 @@ git push -u origin HEAD
 
 ## Final Report
 
-Return branch, commit SHA, IFC import/replay sketch behavior, tracker rows updated, validation results, optional dependency notes, and shared-file merge risks.
+Return branch, commit SHA, raster/artifact behavior added, tracker rows updated, validation results, and shared-file merge risks.

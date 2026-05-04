@@ -1,15 +1,15 @@
-# Agent Prompt 1: Sheet Crop-To-Projection And Print Fidelity
+# Agent Prompt 1: Reveal-Aware Schedule Quantities And Material Takeoff Closure
 
 ## Mission
 
-You are Agent 1 of the next parallel BIM AI parity batch. Finish the sheet viewport crop slice: viewport crop metadata already persists, but projection/export still needs to consume sheet viewport crop semantics instead of only echoing crop text. Own the sheet/projection/export spine for this wave. Do not open a pull request. Commit and push only your branch.
+You are Agent 1 of the next parallel BIM AI parity batch. Close the tracker gap where geometry now respects `revealInteriorMm`, but schedule quantities still use nominal `widthMm`. Align rough opening quantities, totals, CSV/JSON export, and material takeoff notes with the reveal-expanded rough opening model. Do not open a pull request. Commit and push only your branch.
 
 Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
 
-- `WP-E05` Sheet canvas and titleblock
-- `WP-E06` SVG/PNG/PDF export
-- `WP-X01` JSON snapshot and command replay
-- light `WP-A03` Playwright evidence baselines
+- `WP-D01` Server-derived schedules
+- `WP-D02` Schedule CSV/API/CLI export
+- `WP-D05` Materials/layer catalogs
+- light `WP-B02` Walls, doors, windows, hosted openings
 
 ## Start Procedure
 
@@ -19,57 +19,56 @@ Target workpackages in `spec/revit-production-parity-workpackage-tracker.md`:
    git fetch origin
    git switch main
    git pull --ff-only origin main
-   git switch -c agent/sheet-crop-projection-print
+   git switch -c agent/reveal-aware-schedule-quantities
    ```
 
 2. Read first:
    - `spec/revit-production-parity-workpackage-tracker.md`
    - `spec/prd/revit-production-parity-ai-agent-prd.md`
-   - `app/bim_ai/plan_projection_wire.py`
-   - `app/bim_ai/sheet_preview_svg.py`
-   - `app/bim_ai/sheet_preview_pdf.py`
-   - `app/bim_ai/evidence_manifest.py`
-   - sheet viewport authoring/rendering files
-   - existing sheet, projection, PDF/SVG, and evidence baseline tests
+   - `app/bim_ai/schedule_derivation.py`
+   - `app/bim_ai/schedule_field_registry.py`
+   - `app/bim_ai/schedule_csv.py`
+   - `app/bim_ai/opening_cut_primitives.py`
+   - `app/tests/test_schedule_opening_computed_fields.py`
+   - `app/tests/test_kernel_schedule_exports.py`
+   - `app/tests/test_material_assembly_schedule.py`
 
 ## File Ownership Rules
 
-This prompt owns sheet viewport crop-to-projection/export behavior for this wave. Keep `Workspace.tsx` edits out unless unavoidable. Do not change plan-view template semantics, room derivation, IFC/OpenBIM import, or broad evidence manifest lifecycle fields owned by other prompts.
+Avoid new element fields or command schemas. Use existing `revealInteriorMm` data and the same effective rough span semantics used by geometry helpers. Do not touch IFC import/replay, plan/view template UI, or evidence artifact pipeline files.
 
 ## Allowed Scope
 
 Prefer changes in:
 
-- `app/bim_ai/plan_projection_wire.py`, only for applying sheet viewport crop context to projected content
-- `app/bim_ai/sheet_preview_svg.py`
-- `app/bim_ai/sheet_preview_pdf.py`
-- sheet viewport rendering/authoring helpers, only if crop semantics require it
-- focused tests around replayed `viewportsMm`, crop projection, SVG/PDF, and evidence baselines
+- `app/bim_ai/schedule_derivation.py`
+- `app/bim_ai/schedule_field_registry.py`, only for labels/help text
+- `app/bim_ai/schedule_csv.py`, only if export behavior changes
+- focused schedule and material assembly tests
 - `spec/revit-production-parity-workpackage-tracker.md`
 
 ## Non-Goals
 
-- Do not implement a full print service.
-- Do not redesign plan projection generally.
-- Do not add new element kinds.
-- Do not change OpenBIM import/export semantics.
+- Do not add new persisted element fields.
+- Do not redesign schedule filtering/grouping.
+- Do not change geometry kernels except by reusing existing helper semantics.
+- Do not change UI unless a small label/export assertion requires it.
 - Do not open a PR.
 
 ## Implementation Checklist
 
-- Make sheet viewport crop metadata affect at least one deterministic projected/exported representation, not just a text suffix.
-- Preserve replay determinism for `upsertSheetViewports`.
-- Add regression coverage proving sheet viewport crop changes the projected/exported content or its deterministic crop window.
-- Keep any screenshot baseline update tightly scoped and justified.
-- Document remaining full print/raster blockers in the tracker.
+- Align `roughOpeningAreaM2` and related totals with reveal-expanded rough opening width when `revealInteriorMm` is present.
+- Keep nominal behavior unchanged for openings without reveal metadata.
+- Ensure CSV/JSON export stays deterministic and includes the corrected values.
+- Add tests that compare nominal vs reveal-aware schedule quantities.
+- Update tracker rows with exact formulas, tests, and any remaining material takeoff gaps.
 
 ## Validation
 
 Run focused checks:
 
 ```bash
-cd app && ruff check bim_ai tests && pytest tests/test_upsert_sheet_viewports.py tests/test_sheet* tests/test_plan_projection_and_evidence_slices.py
-cd packages/web && pnpm exec tsc -p tsconfig.json --noEmit && pnpm test -- Sheet
+cd app && ruff check bim_ai tests && pytest tests/test_schedule_opening_computed_fields.py tests/test_kernel_schedule_exports.py tests/test_material_assembly_schedule.py
 ```
 
 Then run, if practical:
@@ -80,7 +79,7 @@ pnpm verify
 
 ## Tracker Update
 
-Update only rows you materially changed, likely `WP-E05`, `WP-E06`, `WP-X01`, and maybe `WP-A03`. Include exact crop semantics, command names, artifact/export evidence, and tests.
+Update only rows you materially changed, likely `WP-D01`, `WP-D02`, `WP-D05`, and maybe `WP-B02`. Include formula changes, export behavior, and tests.
 
 ## Commit And Push
 
@@ -91,7 +90,7 @@ git status
 git diff
 git add <changed files>
 git commit -m "$(cat <<'EOF'
-feat(sheets): apply viewport crop to projection export
+feat(schedules): align rough opening quantities with reveals
 
 EOF
 )"
@@ -100,4 +99,4 @@ git push -u origin HEAD
 
 ## Final Report
 
-Return branch, commit SHA, sheet crop behavior added, export/evidence artifact changes, tracker rows updated, validation results, and shared-file merge risks.
+Return branch, commit SHA, schedule quantity behavior added, tracker rows updated, validation results, and shared-file merge risks.
