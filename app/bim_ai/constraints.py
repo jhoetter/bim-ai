@@ -45,6 +45,12 @@ from bim_ai.plan_aa_room_separation import axis_aligned_room_separation_splits_r
 
 ROOM_PLAN_OVERLAP_THRESHOLD_MM2 = 50_000.0
 
+# Sheet mm rectangle for schedule_sheet_viewport_missing upsertSheetViewports quick-fix (default ISO A0 canvas).
+_SCHEDULE_VIEWPORT_AUTOPLACE_X_MM = 800.0
+_SCHEDULE_VIEWPORT_AUTOPLACE_Y_MM = 800.0
+_SCHEDULE_VIEWPORT_AUTOPLACE_WIDTH_MM = 14_000.0
+_SCHEDULE_VIEWPORT_AUTOPLACE_HEIGHT_MM = 9000.0
+
 
 class Violation(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
@@ -94,6 +100,7 @@ _RULE_DISCIPLINE: dict[str, str] = {
     "ids_cleanroom_opening_finish_material_missing": "agent",
     "sheet_viewport_unknown_ref": "coordination",
     "schedule_orphan_sheet_ref": "coordination",
+    "schedule_sheet_viewport_missing": "coordination",
 
     "exchange_manifest_ifc_gltf_slice_mismatch": "exchange",
 
@@ -699,6 +706,17 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
                 )
             )
 
+    finish_set_donor_by_level: dict[str, str] = {}
+    _rooms_grouped: dict[str, list[RoomElem]] = defaultdict(list)
+    for r in rooms:
+        _rooms_grouped[r.level_id].append(r)
+    for _lid, mates in _rooms_grouped.items():
+        for r in sorted(mates, key=lambda rr: rr.id):
+            donor_fs = (r.finish_set or "").strip()
+            if donor_fs:
+                finish_set_donor_by_level[_lid] = donor_fs
+                break
+
     for room in rooms:
         pts = [(p.x_mm, p.y_mm) for p in room.outline_mm]
         if len(pts) < 3:
@@ -736,6 +754,15 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
                 )
             fs = (room.finish_set or "").strip()
             if (pc or dept) and not fs:
+                peer_finish = finish_set_donor_by_level.get(room.level_id)
+                finish_qfix: dict[str, Any] | None = None
+                if peer_finish and peer_finish.strip():
+                    finish_qfix = {
+                        "type": "updateElementProperty",
+                        "elementId": room.id,
+                        "key": "finishSet",
+                        "value": peer_finish,
+                    }
                 viols.append(
                     Violation(
                         rule_id="room_finish_metadata_hint",
@@ -745,6 +772,7 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
                             "finish schedules may be incomplete."
                         ),
                         element_ids=[room.id],
+                        quick_fix_command=finish_qfix,
                     )
                 )
 
@@ -1227,6 +1255,48 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
                         "elementId": sc_el.id,
                         "key": "sheetId",
                         "value": "",
+                    },
+                )
+            )
+            continue
+
+        expected_ref = f"schedule:{sc_el.id}"
+        placed = False
+        for vp in sheet_tgt.viewports_mm or []:
+            if not isinstance(vp, dict):
+                continue
+            vr = vp.get("viewRef") or vp.get("view_ref")
+            if not isinstance(vr, str) or ":" not in vr:
+                continue
+            kind_raw, ref_raw = vr.split(":", 1)
+            if kind_raw.strip().lower() == "schedule" and ref_raw.strip() == sc_el.id:
+                placed = True
+                break
+
+        if not placed:
+            rows = list(sheet_tgt.viewports_mm or [])
+            new_vp: dict[str, Any] = {
+                "viewportId": f"vp-autoplace-schedule-{sc_el.id}",
+                "label": sc_el.name or "Schedule",
+                "viewRef": expected_ref,
+                "xMm": _SCHEDULE_VIEWPORT_AUTOPLACE_X_MM,
+                "yMm": _SCHEDULE_VIEWPORT_AUTOPLACE_Y_MM,
+                "widthMm": _SCHEDULE_VIEWPORT_AUTOPLACE_WIDTH_MM,
+                "heightMm": _SCHEDULE_VIEWPORT_AUTOPLACE_HEIGHT_MM,
+            }
+            viols.append(
+                Violation(
+                    rule_id="schedule_sheet_viewport_missing",
+                    severity="warning",
+                    message=(
+                        f"Schedule is linked to sheet {sheet_link!r} but that sheet has no viewport "
+                        f"with viewRef {expected_ref!r}."
+                    ),
+                    element_ids=[sc_el.id],
+                    quick_fix_command={
+                        "type": "upsertSheetViewports",
+                        "sheetId": sheet_tgt.id,
+                        "viewportsMm": rows + [new_vp],
                     },
                 )
             )

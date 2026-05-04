@@ -101,3 +101,69 @@ def test_room_programme_inconsistent_skips_quick_fix_when_peer_has_department_on
     assert len(ours) == 1
     assert ours[0].quick_fix_command is None
 
+
+def test_room_finish_metadata_hint_peer_finish_quick_fix() -> None:
+    els = {
+        "lv": LevelElem(kind="level", id="lv", name="L1", elevation_mm=0),
+        "rm-a": RoomElem(
+            kind="room",
+            id="rm-a",
+            name="A",
+            level_id="lv",
+            outline_mm=_square(((0.0, 0.0), (3000.0, 0.0), (3000.0, 2000.0), (0.0, 2000.0))),
+            programme_code="A1",
+            department=None,
+            function_label=None,
+            finish_set=None,
+        ),
+        "rm-b": RoomElem(
+            kind="room",
+            id="rm-b",
+            name="B",
+            level_id="lv",
+            outline_mm=_square(((3100.0, 0.0), (5000.0, 0.0), (5000.0, 2000.0), (3100.0, 2000.0))),
+            finish_set="StdPaint",
+        ),
+    }
+    vs = evaluate(els)
+    ours = [v for v in vs if getattr(v, "rule_id", None) == "room_finish_metadata_hint"]
+    assert len(ours) == 1
+    assert ours[0].element_ids == ["rm-a"]
+    qf = ours[0].quick_fix_command
+    assert isinstance(qf, dict)
+    assert qf == {
+        "type": "updateElementProperty",
+        "elementId": "rm-a",
+        "key": "finishSet",
+        "value": "StdPaint",
+    }
+
+
+def test_room_finish_metadata_hint_no_quick_fix_without_peer_finish() -> None:
+    els = {
+        "lv": LevelElem(kind="level", id="lv", name="L1", elevation_mm=0),
+        "rm-a": RoomElem(
+            kind="room",
+            id="rm-a",
+            name="A",
+            level_id="lv",
+            outline_mm=_square(((0.0, 0.0), (3000.0, 0.0), (3000.0, 2000.0), (0.0, 2000.0))),
+            programme_code="A1",
+            department=None,
+            function_label=None,
+            finish_set=None,
+        ),
+        "rm-b": RoomElem(
+            kind="room",
+            id="rm-b",
+            name="B",
+            level_id="lv",
+            outline_mm=_square(((3100.0, 0.0), (5000.0, 0.0), (5000.0, 2000.0), (3100.0, 2000.0))),
+            finish_set=None,
+        ),
+    }
+    vs = evaluate(els)
+    ours = [v for v in vs if getattr(v, "rule_id", None) == "room_finish_metadata_hint"]
+    assert len(ours) == 1
+    assert ours[0].quick_fix_command is None
+
