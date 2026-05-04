@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from bim_ai.document import Document
-from bim_ai.elements import FamilyTypeElem, WallTypeElem
+from bim_ai.elements import FamilyTypeElem, FloorTypeElem, WallTypeElem
 
 
 def builtin_type_material_registry() -> dict[str, Any]:
@@ -41,6 +41,14 @@ def builtin_type_material_registry() -> dict[str, Any]:
                 "name": "Interior partition 100",
                 "layerCount": 1,
             },
+            {
+                "key": "wt-cleanroom-partition-150-v1",
+                "name": "Cleanroom partition (structure + finish)",
+                "layerCount": 2,
+            },
+        ],
+        "floorTypeSeeds": [
+            {"key": "ft-slab-two-layer-220-v1", "name": "Slab structure + finish", "layerCount": 2},
         ],
         "materialSeeds": [
             {"materialKey": "mat-concrete-structure-v1", "displayName": "Concrete structure"},
@@ -65,11 +73,19 @@ def document_registry_overlay(doc: Document) -> dict[str, Any]:
         if isinstance(e, WallTypeElem)
     ]
 
+    floor_types = [
+        e.model_dump(mode="json", by_alias=True)
+        for e in doc.elements.values()
+        if isinstance(e, FloorTypeElem)
+    ]
+
     family_types.sort(key=lambda x: str(x.get("id", "")))
 
     wall_types.sort(key=lambda x: str(x.get("id", "")))
 
-    return {"familyTypes": family_types, "wallTypes": wall_types}
+    floor_types.sort(key=lambda x: str(x.get("id", "")))
+
+    return {"familyTypes": family_types, "wallTypes": wall_types, "floorTypes": floor_types}
 
 
 def merged_registry_payload(doc: Document) -> dict[str, Any]:

@@ -16,6 +16,7 @@ from bim_ai.export_ifc import (
     kernel_expected_ifc_emit_counts,
     kernel_export_eligible,
 )
+from bim_ai.material_assembly_resolve import material_assembly_manifest_evidence
 
 IFC_ENCODING_EMPTY_SHELL = "bim_ai_ifc_empty_shell_v0"
 
@@ -61,7 +62,7 @@ def build_ifc_exchange_manifest_payload(doc: Document) -> dict[str, Any]:
     emitting = kernel_export_eligible(doc)
     enc = IFC_ENCODING_KERNEL_V1 if emitting else IFC_ENCODING_EMPTY_SHELL
     hints = ifc_manifest_artifact_hints(doc, emitting_kernel_body=emitting)
-    return {
+    out: dict[str, Any] = {
         "format": "ifc_manifest_v0",
         "revision": doc.revision,
         **parity,
@@ -78,6 +79,10 @@ def build_ifc_exchange_manifest_payload(doc: Document) -> dict[str, Any]:
             "when geometry is eligible; otherwise empty DATA hull."
         ),
     }
+    asm_ev = material_assembly_manifest_evidence(doc)
+    if asm_ev:
+        out["materialAssemblyEvidence_v0"] = asm_ev
+    return out
 
 
 def ifc_exchange_manifest_payload(

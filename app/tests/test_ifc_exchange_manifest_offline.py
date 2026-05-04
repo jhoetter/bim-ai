@@ -60,6 +60,10 @@ def test_ifc_manifest_reports_kernel_geometry_skip_counts_without_ifcopenshell()
     mf = build_ifc_exchange_manifest_payload(doc)
     skips = mf.get("ifcKernelGeometrySkippedCounts") or {}
     assert skips.get("door_missing_host_wall") == 1
+    asm = mf.get("materialAssemblyEvidence_v0")
+    assert asm is not None
+    assert asm.get("format") == "materialAssemblyEvidence_v0"
+    assert len(asm.get("hosts") or []) >= 2
 
 
 def test_ifc_manifest_includes_semantic_import_scope_and_expected_kinds_hint() -> None:

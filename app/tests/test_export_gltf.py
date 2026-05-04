@@ -15,6 +15,8 @@ from bim_ai.elements import (
     SlabOpeningElem,
     StairElem,
     WallElem,
+    WallTypeElem,
+    WallTypeLayer,
     WindowElem,
 )
 from bim_ai.export_gltf import build_visual_export_manifest, document_to_glb_bytes, document_to_gltf
@@ -64,6 +66,43 @@ def test_document_to_gltf_wall_level_metadata_semantic_nodes():
     pos_acc = g["accessors"][pos_ix]
     assert pos_acc["min"] is not None and pos_acc["max"] is not None
     assert len(pos_acc["min"]) == len(pos_acc["max"]) == 3
+
+
+def test_build_visual_export_manifest_includes_material_assembly_evidence_with_layered_wall_type():
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=0),
+            "wt": WallTypeElem(
+                kind="wall_type",
+                id="wt",
+                name="WT",
+                layers=[
+                    WallTypeLayer(thicknessMm=100, layer_function="structure"),
+                    WallTypeLayer(thicknessMm=50, layer_function="finish"),
+                ],
+            ),
+            "w1": WallElem(
+                kind="wall",
+                id="w1",
+                name="W",
+                levelId="lvl",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 3000, "yMm": 0},
+                thicknessMm=150,
+                heightMm=2800,
+                wallTypeId="wt",
+            ),
+        },
+    )
+    gm = build_visual_export_manifest(doc)
+    ext = gm["extensions"]["BIM_AI_exportManifest_v0"]
+    asm = ext.get("materialAssemblyEvidence_v0")
+    assert asm is not None
+    assert asm.get("format") == "materialAssemblyEvidence_v0"
+    hosts = asm.get("hosts") or []
+    assert len(hosts) >= 1
+    assert any(h.get("hostElementId") == "w1" for h in hosts)
 
 
 def test_document_to_gltf_subset_counts_and_manifest_extension():

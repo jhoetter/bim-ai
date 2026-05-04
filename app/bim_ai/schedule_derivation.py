@@ -6,7 +6,6 @@ from collections import defaultdict
 from typing import Any
 
 from bim_ai.document import Document
-from bim_ai.material_assembly_resolve import resolved_layers_for_floor, resolved_layers_for_wall
 from bim_ai.elements import (
     DoorElem,
     FloorElem,
@@ -21,6 +20,7 @@ from bim_ai.elements import (
     WallElem,
     WindowElem,
 )
+from bim_ai.material_assembly_resolve import resolved_layers_for_floor, resolved_layers_for_wall
 from bim_ai.schedule_field_registry import column_metadata_bundle, stable_column_keys
 from bim_ai.type_material_registry import family_type_display_label, material_display_label
 

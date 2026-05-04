@@ -32,8 +32,6 @@ from bim_ai.commands import (
     CreateWallChainCmd,
     CreateWallCmd,
     CreateWallTypeCmd,
-    UpsertFloorTypeCmd,
-    UpsertWallTypeCmd,
     DeleteElementCmd,
     DeleteElementsCmd,
     ExtendFloorInsulationCmd,
@@ -48,6 +46,7 @@ from bim_ai.commands import (
     UpdateElementPropertyCmd,
     UpdateOpeningCleanroomCmd,
     UpsertFamilyTypeCmd,
+    UpsertFloorTypeCmd,
     UpsertPlanViewCmd,
     UpsertProjectSettingsCmd,
     UpsertRoomVolumeCmd,
@@ -58,6 +57,7 @@ from bim_ai.commands import (
     UpsertTagDefinitionCmd,
     UpsertValidationRuleCmd,
     UpsertViewTemplateCmd,
+    UpsertWallTypeCmd,
 )
 from bim_ai.constraints import Violation, evaluate
 from bim_ai.document import Document

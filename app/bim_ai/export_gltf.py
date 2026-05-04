@@ -23,6 +23,7 @@ from bim_ai.elements import (
     WallElem,
     WindowElem,
 )
+from bim_ai.material_assembly_resolve import material_assembly_manifest_evidence
 from bim_ai.opening_cut_primitives import xz_bounds_mm_from_poly
 
 EXPORT_GEOMETRY_KINDS: frozenset[str] = frozenset(
@@ -89,6 +90,9 @@ def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
     }
     if cut_warns:
         base["hostedCutApproximationWarnings"] = cut_warns
+    asm_ev = material_assembly_manifest_evidence(doc)
+    if asm_ev:
+        base["materialAssemblyEvidence_v0"] = asm_ev
     return base
 
 
