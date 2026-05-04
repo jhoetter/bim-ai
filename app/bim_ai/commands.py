@@ -271,6 +271,14 @@ class UpsertFloorTypeCmd(BaseModel):
     layers: list[WallTypeLayer] = Field(default_factory=list)
 
 
+class UpsertRoofTypeCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["upsertRoofType"] = "upsertRoofType"
+    id: str
+    name: str = "Roof type"
+    layers: list[WallTypeLayer] = Field(default_factory=list)
+
+
 class AssignWallDatumConstraintsCmd(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     type: Literal["assignWallDatumConstraints"] = "assignWallDatumConstraints"
@@ -306,6 +314,7 @@ class CreateRoofCmd(BaseModel):
     overhang_mm: float = Field(alias="overhangMm", default=400)
     slope_deg: float | None = Field(default=25, alias="slopeDeg")
     roof_geometry_mode: RoofGeometryMode = Field(default="mass_box", alias="roofGeometryMode")
+    roof_type_id: str | None = Field(default=None, alias="roofTypeId")
 
 
 class ExtendFloorInsulationCmd(BaseModel):
@@ -584,6 +593,7 @@ Command = Annotated[
     | CreateWallTypeCmd
     | UpsertWallTypeCmd
     | UpsertFloorTypeCmd
+    | UpsertRoofTypeCmd
     | AssignWallDatumConstraintsCmd
     | CreateFloorCmd
     | CreateRoofCmd

@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from bim_ai.document import Document
-from bim_ai.elements import FamilyTypeElem, FloorTypeElem, WallTypeElem
+from bim_ai.elements import FamilyTypeElem, FloorTypeElem, RoofTypeElem, WallTypeElem
 
 
 def builtin_type_material_registry() -> dict[str, Any]:
@@ -50,10 +50,20 @@ def builtin_type_material_registry() -> dict[str, Any]:
         "floorTypeSeeds": [
             {"key": "ft-slab-two-layer-220-v1", "name": "Slab structure + finish", "layerCount": 2},
         ],
+        "roofTypeSeeds": [
+            {
+                "key": "rt-warm-roof-buildup-v1",
+                "name": "Warm deck (deck + rigid insulation)",
+                "layerCount": 2,
+            },
+        ],
         "materialSeeds": [
             {"materialKey": "mat-concrete-structure-v1", "displayName": "Concrete structure"},
             {"materialKey": "mat-gwb-finish-v1", "displayName": "Gypsum board finish"},
             {"materialKey": "mat-epoxy-cleanroom-v1", "displayName": "Epoxy cleanroom flooring"},
+            {"materialKey": "mat-osb-roof-deck-v1", "displayName": "OSB structural deck"},
+            {"materialKey": "mat-insulation-roof-board-v1", "displayName": "Rigid insulation board"},
+            {"materialKey": "mat-membrane-roof-single-ply-v1", "displayName": "Roof membrane (single-ply)"},
         ],
     }
 
@@ -79,13 +89,26 @@ def document_registry_overlay(doc: Document) -> dict[str, Any]:
         if isinstance(e, FloorTypeElem)
     ]
 
+    roof_types = [
+        e.model_dump(mode="json", by_alias=True)
+        for e in doc.elements.values()
+        if isinstance(e, RoofTypeElem)
+    ]
+
     family_types.sort(key=lambda x: str(x.get("id", "")))
 
     wall_types.sort(key=lambda x: str(x.get("id", "")))
 
     floor_types.sort(key=lambda x: str(x.get("id", "")))
 
-    return {"familyTypes": family_types, "wallTypes": wall_types, "floorTypes": floor_types}
+    roof_types.sort(key=lambda x: str(x.get("id", "")))
+
+    return {
+        "familyTypes": family_types,
+        "wallTypes": wall_types,
+        "floorTypes": floor_types,
+        "roofTypes": roof_types,
+    }
 
 
 def merged_registry_payload(doc: Document) -> dict[str, Any]:

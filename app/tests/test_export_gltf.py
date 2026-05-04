@@ -4,6 +4,7 @@ import base64
 import json
 import struct
 
+from bim_ai.commands import CreateRoofCmd, UpsertRoofTypeCmd
 from bim_ai.document import Document
 from bim_ai.elements import (
     DoorElem,
@@ -14,11 +15,13 @@ from bim_ai.elements import (
     ScheduleElem,
     SlabOpeningElem,
     StairElem,
+    Vec2Mm,
     WallElem,
     WallTypeElem,
     WallTypeLayer,
     WindowElem,
 )
+from bim_ai.engine import apply_inplace
 from bim_ai.export_gltf import (
     _collect_geom_boxes,
     build_visual_export_manifest,
@@ -145,6 +148,52 @@ def test_build_visual_export_manifest_includes_material_assembly_evidence_with_l
     hosts = asm.get("hosts") or []
     assert len(hosts) >= 1
     assert any(h.get("hostElementId") == "w1" for h in hosts)
+
+
+def test_build_visual_export_manifest_includes_roof_assembly_evidence():
+    doc = Document(revision=1, elements={"lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=0)})
+    apply_inplace(
+        doc,
+        UpsertRoofTypeCmd(
+            type="upsertRoofType",
+            id="rt-1",
+            name="Warm deck",
+            layers=[
+                WallTypeLayer(thicknessMm=18, layer_function="structure"),
+                WallTypeLayer(thicknessMm=120, layer_function="insulation"),
+            ],
+        ),
+    )
+    apply_inplace(
+        doc,
+        CreateRoofCmd(
+            type="createRoof",
+            id="r1",
+            name="R",
+            reference_level_id="lvl",
+            footprint_mm=[
+                Vec2Mm(x_mm=0, y_mm=0),
+                Vec2Mm(x_mm=2000, y_mm=0),
+                Vec2Mm(x_mm=2000, y_mm=2000),
+                Vec2Mm(x_mm=0, y_mm=2000),
+            ],
+            roof_geometry_mode="mass_box",
+            roof_type_id="rt-1",
+        ),
+    )
+    gm = build_visual_export_manifest(doc)
+    ext = gm["extensions"]["BIM_AI_exportManifest_v0"]
+    asm = ext.get("materialAssemblyEvidence_v0")
+    assert asm is not None
+    hosts = asm.get("hosts") or []
+    roof_hosts = [h for h in hosts if h.get("hostKind") == "roof"]
+    assert len(roof_hosts) == 1
+    assert roof_hosts[0].get("hostElementId") == "r1"
+    assert roof_hosts[0].get("assemblyTypeId") == "rt-1"
+    layers = roof_hosts[0].get("layers") or []
+    assert len(layers) == 2
+    assert float(layers[0]["thicknessMm"]) == 18.0
+    assert float(layers[1]["thicknessMm"]) == 120.0
 
 
 def test_document_to_gltf_subset_counts_and_manifest_extension():

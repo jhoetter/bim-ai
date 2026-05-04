@@ -567,6 +567,24 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
     };
   }
 
+  if (kind === 'roof_type') {
+    const layersRaw = Array.isArray(raw.layers) ? raw.layers : [];
+    const layers = layersRaw.map((l) => {
+      const rr = (l ?? {}) as Record<string, unknown>;
+      return {
+        thicknessMm: Number(rr.thicknessMm ?? rr.thickness_mm ?? 0),
+        function: (rr.function as 'structure' | 'insulation' | 'finish') ?? 'structure',
+        materialKey: (rr.materialKey ?? rr.material_key) as string | null | undefined,
+      };
+    });
+    return {
+      kind: 'roof_type',
+      id,
+      name,
+      layers,
+    };
+  }
+
   if (kind === 'floor') {
     return {
       kind: 'floor',
@@ -598,12 +616,20 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
       referenceLevelId: String(raw.referenceLevelId ?? raw.reference_level_id ?? ''),
       footprintMm: coerceLoop('footprintMm', 'footprint_mm'),
       overhangMm: Number(raw.overhangMm ?? raw.overhang_mm ?? 400),
-      slopeDeg: raw.slopeDeg !== undefined ? Number(raw.slopeDeg) : null,
+      slopeDeg:
+        raw.slopeDeg !== undefined
+          ? Number(raw.slopeDeg)
+          : raw.slope_deg !== undefined
+            ? Number(raw.slope_deg)
+            : null,
       edgeSlopeFlags:
         typeof raw.edgeSlopeFlags === 'object' && raw.edgeSlopeFlags
           ? (raw.edgeSlopeFlags as Record<string, boolean>)
           : undefined,
       roofGeometryMode: rg,
+      ...(raw.roofTypeId || raw.roof_type_id
+        ? { roofTypeId: String(raw.roofTypeId ?? raw.roof_type_id) }
+        : {}),
     };
   }
 

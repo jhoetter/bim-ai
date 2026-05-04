@@ -20,7 +20,11 @@ from bim_ai.elements import (
     WallElem,
     WindowElem,
 )
-from bim_ai.material_assembly_resolve import resolved_layers_for_floor, resolved_layers_for_wall
+from bim_ai.material_assembly_resolve import (
+    resolved_layers_for_floor,
+    resolved_layers_for_roof,
+    resolved_layers_for_wall,
+)
 from bim_ai.opening_cut_primitives import hosted_opening_half_span_mm
 from bim_ai.room_derivation import (
     HEURISTIC_VERSION as ROOM_BOUNDARY_HEURISTIC_VERSION,
@@ -400,19 +404,28 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                 rl = lvl_lab.get(e.reference_level_id, e.reference_level_id or "—")
                 pts = [{"xMm": float(p.x_mm), "yMm": float(p.y_mm)} for p in e.footprint_mm]
                 area, perimeter = _room_polygon_area_perimeter_sqm(pts)
-                rows.append(
-                    {
-                        "elementId": e.id,
-                        "name": e.name,
-                        "referenceLevelId": e.reference_level_id,
-                        "referenceLevel": rl,
-                        "overhangMm": round(float(e.overhang_mm or 0.0), 3),
-                        "slopeDeg": round(float(e.slope_deg or 0.0), 3),
-                        "footprintAreaM2": round(area, 3),
-                        "footprintPerimeterM": round(perimeter, 3),
-                        "familyTypeId": "",
-                    }
-                )
+                rlayers = resolved_layers_for_roof(doc, e)
+                total_asm_thk = round(
+                    sum(float(ly["thicknessMm"]) for ly in rlayers),
+                    6,
+                ) if rlayers else None
+                row_root: dict[str, Any] = {
+                    "elementId": e.id,
+                    "name": e.name,
+                    "referenceLevelId": e.reference_level_id,
+                    "referenceLevel": rl,
+                    "overhangMm": round(float(e.overhang_mm or 0.0), 3),
+                    "slopeDeg": round(float(e.slope_deg or 0.0), 3),
+                    "footprintAreaM2": round(area, 3),
+                    "footprintPerimeterM": round(perimeter, 3),
+                    "familyTypeId": "",
+                }
+                rtid = (e.roof_type_id or "").strip()
+                if rtid:
+                    row_root["roofTypeId"] = rtid
+                if total_asm_thk is not None:
+                    row_root["assemblyTotalThicknessMm"] = total_asm_thk
+                rows.append(row_root)
 
     elif cat == "stair":
         bl = {eid: el for eid, el in doc.elements.items() if isinstance(el, LevelElem)}
@@ -558,6 +571,45 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                             "grossAreaM2": round(slab_m2, 8),
                             "grossVolumeM3": round(vol, 12),
                             "levelId": e.level_id,
+                            "level": lev,
+                            "familyTypeId": "",
+                        }
+                    )
+                    offset_mm += th_mm
+            elif isinstance(e, RoofElem):
+                layers = resolved_layers_for_roof(doc, e)
+                if not layers:
+                    continue
+                lid = e.reference_level_id
+                lev = lvl_lab.get(lid, lid)
+                pts = [{"xMm": float(p.x_mm), "yMm": float(p.y_mm)} for p in e.footprint_mm]
+                footprint_m2, _perim = _room_polygon_area_perimeter_sqm(pts)
+                asm_id = (e.roof_type_id or "").strip()
+                total_thk = sum(float(lyr["thicknessMm"]) for lyr in layers)
+                offset_mm = 0.0
+                for idx, lyr in enumerate(layers):
+                    tk = str(lyr.get("materialKey") or "").strip()
+                    th_mm = float(lyr["thicknessMm"])
+                    th_m = th_mm / 1000.0
+                    fn = str(lyr.get("function") or "").strip()
+                    vol = footprint_m2 * th_m
+                    rows.append(
+                        {
+                            "elementId": f"{e.id}:layer-{idx}",
+                            "name": e.name,
+                            "hostElementId": e.id,
+                            "hostKind": "roof",
+                            "assemblyTypeId": asm_id,
+                            "assemblyTotalThicknessMm": round(total_thk, 6),
+                            "layerOffsetFromExteriorMm": round(offset_mm, 6),
+                            "layerIndex": idx,
+                            "layerFunction": fn,
+                            "materialKey": tk,
+                            "materialDisplay": material_display_label(doc, tk or None),
+                            "thicknessMm": round(th_mm, 6),
+                            "grossAreaM2": round(footprint_m2, 8),
+                            "grossVolumeM3": round(vol, 12),
+                            "levelId": lid,
                             "level": lev,
                             "familyTypeId": "",
                         }

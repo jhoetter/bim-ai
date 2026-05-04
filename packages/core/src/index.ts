@@ -2,6 +2,7 @@ export type ElemKind =
   | 'project_settings'
   | 'wall_type'
   | 'floor_type'
+  | 'roof_type'
   | 'level'
   | 'wall'
   | 'door'
@@ -81,6 +82,12 @@ export type Element =
     }
   | {
       kind: 'floor_type';
+      id: string;
+      name: string;
+      layers: WallTypeLayer[];
+    }
+  | {
+      kind: 'roof_type';
       id: string;
       name: string;
       layers: WallTypeLayer[];
@@ -219,6 +226,7 @@ export type Element =
       slopeDeg?: number | null;
       edgeSlopeFlags?: Record<string, boolean>;
       roofGeometryMode?: 'mass_box' | 'gable_pitched_rectangle';
+      roofTypeId?: string | null;
     }
   | {
       kind: 'stair';

@@ -84,6 +84,14 @@ class FloorTypeElem(BaseModel):
     layers: list[WallTypeLayer] = Field(default_factory=list)
 
 
+class RoofTypeElem(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["roof_type"] = "roof_type"
+    id: str
+    name: str = "Roof type"
+    layers: list[WallTypeLayer] = Field(default_factory=list)
+
+
 class LevelElem(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True)
     kind: Literal["level"] = "level"
@@ -240,6 +248,7 @@ class RoofElem(BaseModel):
     slope_deg: float | None = Field(default=25.0, alias="slopeDeg")
     edge_slope_flags: dict[str, bool] = Field(default_factory=dict, alias="edgeSlopeFlags")
     roof_geometry_mode: RoofGeometryMode = Field(default="mass_box", alias="roofGeometryMode")
+    roof_type_id: str | None = Field(default=None, alias="roofTypeId")
 
 
 class StairElem(BaseModel):
@@ -465,6 +474,7 @@ ElementKind = Literal[
     "project_settings",
     "wall_type",
     "floor_type",
+    "roof_type",
     "level",
     "wall",
     "door",
@@ -501,6 +511,7 @@ Element = Annotated[
     ProjectSettingsElem
     | WallTypeElem
     | FloorTypeElem
+    | RoofTypeElem
     | LevelElem
     | WallElem
     | DoorElem

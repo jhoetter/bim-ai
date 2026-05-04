@@ -51,6 +51,7 @@ from bim_ai.commands import (
     UpsertFloorTypeCmd,
     UpsertPlanViewCmd,
     UpsertProjectSettingsCmd,
+    UpsertRoofTypeCmd,
     UpsertRoomVolumeCmd,
     UpsertScheduleCmd,
     UpsertScheduleFiltersCmd,
@@ -84,6 +85,7 @@ from bim_ai.elements import (
     ProjectSettingsElem,
     RailingElem,
     RoofElem,
+    RoofTypeElem,
     RoomElem,
     RoomSeparationElem,
     ScheduleElem,
@@ -928,6 +930,17 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
             )
             _propagate_floor_dims_for_type(els, cmd.id)
 
+        case UpsertRoofTypeCmd():
+            prev = els.get(cmd.id)
+            if prev is not None and not isinstance(prev, RoofTypeElem):
+                raise ValueError("upsertRoofType.id must reference roof_type when element exists")
+            els[cmd.id] = RoofTypeElem(
+                kind="roof_type",
+                id=cmd.id,
+                name=cmd.name,
+                layers=list(cmd.layers),
+            )
+
         case AssignWallDatumConstraintsCmd():
             w = els.get(cmd.wall_id)
             if not isinstance(w, WallElem):
@@ -988,6 +1001,13 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 raise ValueError("createRoof.referenceLevelId must reference an existing Level")
             if len(cmd.footprint_mm) < 3:
                 raise ValueError("createRoof.footprintMm requires ≥3 vertices")
+            rtid = cmd.roof_type_id
+            if rtid is not None:
+                rtid = str(rtid).strip() or None
+                if rtid is not None:
+                    rt_el = els.get(rtid)
+                    if not isinstance(rt_el, RoofTypeElem):
+                        raise ValueError("createRoof.roofTypeId must reference an existing roof_type")
             if cmd.roof_geometry_mode == "gable_pitched_rectangle":
                 assert_valid_gable_pitched_rectangle_footprint_mm(
                     [(p.x_mm, p.y_mm) for p in cmd.footprint_mm]
@@ -1001,6 +1021,7 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 overhang_mm=cmd.overhang_mm,
                 slope_deg=cmd.slope_deg,
                 roof_geometry_mode=cmd.roof_geometry_mode,
+                roof_type_id=rtid,
             )
 
         case ExtendFloorInsulationCmd():

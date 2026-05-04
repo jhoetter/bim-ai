@@ -1,11 +1,18 @@
-"""Resolve layered assemblies on walls/floors for schedules and exchange manifests."""
+"""Resolve layered assemblies on walls, floors, and roofs for schedules and exchange manifests."""
 
 from __future__ import annotations
 
 from typing import Any
 
 from bim_ai.document import Document
-from bim_ai.elements import FloorElem, FloorTypeElem, WallElem, WallTypeElem
+from bim_ai.elements import (
+    FloorElem,
+    FloorTypeElem,
+    RoofElem,
+    RoofTypeElem,
+    WallElem,
+    WallTypeElem,
+)
 
 
 def resolved_layers_for_wall(doc: Document, wall: WallElem) -> list[dict[str, Any]]:
@@ -52,6 +59,22 @@ def resolved_layers_for_floor(doc: Document, floor: FloorElem) -> list[dict[str,
     ]
 
 
+def resolved_layers_for_roof(doc: Document, roof: RoofElem) -> list[dict[str, Any]]:
+    tid = roof.roof_type_id
+    if tid:
+        rt = doc.elements.get(tid)
+        if isinstance(rt, RoofTypeElem) and rt.layers:
+            return [
+                {
+                    "function": lyr.layer_function,
+                    "materialKey": (lyr.material_key or "").strip(),
+                    "thicknessMm": float(lyr.thickness_mm),
+                }
+                for lyr in rt.layers
+            ]
+    return []
+
+
 def material_assembly_manifest_evidence(doc: Document) -> dict[str, Any] | None:
     hosts: list[dict[str, Any]] = []
     for eid in sorted(eid for eid, e in doc.elements.items() if isinstance(e, WallElem)):
@@ -75,6 +98,20 @@ def material_assembly_manifest_evidence(doc: Document) -> dict[str, Any] | None:
                 "hostElementId": fl.id,
                 "hostKind": "floor",
                 "assemblyTypeId": (fl.floor_type_id or "").strip(),
+                "layers": layers,
+            }
+        )
+    for eid in sorted(eid for eid, e in doc.elements.items() if isinstance(e, RoofElem)):
+        rf = doc.elements[eid]
+        assert isinstance(rf, RoofElem)
+        layers = resolved_layers_for_roof(doc, rf)
+        if not layers:
+            continue
+        hosts.append(
+            {
+                "hostElementId": rf.id,
+                "hostKind": "roof",
+                "assemblyTypeId": (rf.roof_type_id or "").strip(),
                 "layers": layers,
             }
         )

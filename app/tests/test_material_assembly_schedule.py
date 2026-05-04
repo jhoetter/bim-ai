@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from bim_ai.commands import (
     CreateFloorCmd,
+    CreateRoofCmd,
     UpsertFloorTypeCmd,
+    UpsertRoofTypeCmd,
     UpsertScheduleFiltersCmd,
     UpsertWallTypeCmd,
 )
@@ -233,3 +235,126 @@ def test_material_assembly_schedule_quantities():
     assert float(f0["layerOffsetFromExteriorMm"]) == 0.0
     assert float(f1["assemblyTotalThicknessMm"]) == 140.0
     assert float(f1["layerOffsetFromExteriorMm"]) == 100.0
+
+
+def test_material_assembly_schedule_includes_roof_layers():
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=0),
+            "sch-mat": ScheduleElem(kind="schedule", id="sch-mat", name="Materials"),
+        },
+    )
+    apply_inplace(
+        doc,
+        UpsertRoofTypeCmd(
+            type="upsertRoofType",
+            id="rt-1",
+            name="Warm deck",
+            layers=[
+                WallTypeLayer(
+                    thicknessMm=22,
+                    layer_function="structure",
+                    material_key="mat-osb-roof-deck-v1",
+                ),
+                WallTypeLayer(
+                    thicknessMm=140,
+                    layer_function="insulation",
+                    material_key="mat-insulation-roof-board-v1",
+                ),
+            ],
+        ),
+    )
+    apply_inplace(
+        doc,
+        CreateRoofCmd(
+            type="createRoof",
+            id="r1",
+            name="Roof",
+            reference_level_id="lvl",
+            footprint_mm=[
+                Vec2Mm(x_mm=0, y_mm=0),
+                Vec2Mm(x_mm=4000, y_mm=0),
+                Vec2Mm(x_mm=4000, y_mm=3000),
+                Vec2Mm(x_mm=0, y_mm=3000),
+            ],
+            roof_geometry_mode="mass_box",
+            roof_type_id="rt-1",
+        ),
+    )
+    apply_inplace(
+        doc,
+        UpsertScheduleFiltersCmd(
+            type="upsertScheduleFilters",
+            schedule_id="sch-mat",
+            filters={"category": "material_assembly"},
+            grouping=None,
+        ),
+    )
+    table = derive_schedule_table(doc, "sch-mat")
+    rows = table["rows"]
+    roof_rows = [r for r in rows if r.get("hostKind") == "roof"]
+    assert len(roof_rows) == 2
+    fp_m2 = 4.0 * 3.0
+    r0 = next(r for r in roof_rows if r["layerIndex"] == 0)
+    assert r0["materialDisplay"] == "OSB structural deck"
+    assert abs(float(r0["grossVolumeM3"]) - fp_m2 * 0.022) < 1e-8
+    assert float(r0["assemblyTotalThicknessMm"]) == 162.0
+    assert float(r0["layerOffsetFromExteriorMm"]) == 0.0
+    r1 = next(r for r in roof_rows if r["layerIndex"] == 1)
+    assert r1["materialDisplay"] == "Rigid insulation board"
+    assert abs(float(r1["grossVolumeM3"]) - fp_m2 * 0.14) < 1e-8
+    assert float(r1["layerOffsetFromExteriorMm"]) == 22.0
+
+
+def test_roof_schedule_includes_roof_type_columns():
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=0),
+            "sch-r": ScheduleElem(kind="schedule", id="sch-r", name="Roofs"),
+        },
+    )
+    apply_inplace(
+        doc,
+        UpsertRoofTypeCmd(
+            type="upsertRoofType",
+            id="rt-1",
+            name="Warm deck",
+            layers=[
+                WallTypeLayer(thicknessMm=22, layer_function="structure"),
+                WallTypeLayer(thicknessMm=140, layer_function="insulation"),
+            ],
+        ),
+    )
+    apply_inplace(
+        doc,
+        CreateRoofCmd(
+            type="createRoof",
+            id="r1",
+            name="Roof",
+            reference_level_id="lvl",
+            footprint_mm=[
+                Vec2Mm(x_mm=0, y_mm=0),
+                Vec2Mm(x_mm=1000, y_mm=0),
+                Vec2Mm(x_mm=1000, y_mm=1000),
+                Vec2Mm(x_mm=0, y_mm=1000),
+            ],
+            roof_geometry_mode="mass_box",
+            roof_type_id="rt-1",
+        ),
+    )
+    apply_inplace(
+        doc,
+        UpsertScheduleFiltersCmd(
+            type="upsertScheduleFilters",
+            schedule_id="sch-r",
+            filters={"category": "roof"},
+            grouping=None,
+        ),
+    )
+    table = derive_schedule_table(doc, "sch-r")
+    assert table["category"] == "roof"
+    row = table["rows"][0]
+    assert row["roofTypeId"] == "rt-1"
+    assert float(row["assemblyTotalThicknessMm"]) == 162.0

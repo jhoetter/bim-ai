@@ -476,6 +476,50 @@ def evidence_lifecycle_signal_v1(
     }
 
 
+def evidence_diff_ingest_fix_loop_v1(evidence_closure_review: dict[str, Any]) -> dict[str, Any]:
+    """Derivative rollup: when agents/CI should run the evidence diff / screenshot fix loop."""
+
+    blockers: list[str] = []
+
+    cons = evidence_closure_review.get("correlationDigestConsistency")
+    if not isinstance(cons, dict) or cons.get("isFullyConsistent") is not True:
+        blockers.append("correlation_digest_stale_or_missing")
+
+    gaps_raw = evidence_closure_review.get("screenshotHintGaps_v1")
+    gap_has = False
+    if isinstance(gaps_raw, dict):
+        if gaps_raw.get("hasGaps") is True:
+            gap_has = True
+        n = gaps_raw.get("gapRowCount")
+        if isinstance(n, int) and n > 0:
+            gap_has = True
+    if gap_has:
+        blockers.append("screenshot_filename_slots_incomplete")
+
+    correlation_ok = isinstance(cons, dict) and cons.get("isFullyConsistent") is True
+    if correlation_ok and not gap_has:
+        pix = evidence_closure_review.get("pixelDiffExpectation")
+        ingest_targets: list[Any] = []
+        if isinstance(pix, dict):
+            ing = pix.get("ingestChecklist_v1")
+            if isinstance(ing, dict) and isinstance(ing.get("targets"), list):
+                ingest_targets = ing["targets"]
+            status_ok = pix.get("status") == "not_run"
+            if status_ok and len(ingest_targets) > 0:
+                blockers.append("pixel_diff_ingest_pending")
+
+    codes = sorted(set(blockers))
+    return {
+        "format": "evidence_diff_ingest_fix_loop_v1",
+        "needsFixLoop": len(codes) > 0,
+        "blockerCodes": codes,
+        "notes": (
+            "Derivative of evidenceClosureReview_v1; excluded from semanticDigestSha256. "
+            "pixel_diff_ingest_pending applies only when correlation is consistent and required "
+            "Playwright PNG slots are present (screenshot gaps cleared first)."
+        ),
+    }
+
 
 def evidence_closure_review_v1(
     *,
@@ -561,10 +605,12 @@ def agent_evidence_closure_hints() -> dict[str, Any]:
         "screenshotHintGapsField": "screenshotHintGaps_v1",
         "pixelDiffIngestChecklistField": "ingestChecklist_v1",
         "evidenceLifecycleSignalField": "evidenceLifecycleSignal_v1",
+        "evidenceDiffIngestFixLoopField": "evidenceDiffIngestFixLoop_v1",
         "evidenceAgentFollowThroughField": "evidenceAgentFollowThrough_v1",
         "semanticDigestOmitsDerivativeSummariesNote": (
             "semanticDigestSha256 excludes bcfTopicsIndex_v1, agentReviewActions_v1, "
-            "and evidenceAgentFollowThrough_v1 so deterministic row digests stay stable."
+            "evidenceDiffIngestFixLoop_v1, and evidenceAgentFollowThrough_v1 so deterministic "
+            "row digests stay stable."
         ),
         "playwrightEvidenceSpecRelPath": "packages/web/e2e/evidence-baselines.spec.ts",
         "suggestedRegenerationCommands": [
@@ -829,6 +875,7 @@ _DIGEST_EXCLUDED_KEYS = frozenset(
         "semanticDigestSha256",
         "bcfTopicsIndex_v1",
         "agentReviewActions_v1",
+        "evidenceDiffIngestFixLoop_v1",
         "evidenceAgentFollowThrough_v1",
     }
 )
@@ -929,6 +976,9 @@ def evidence_package_semantic_digest_sha256(payload: dict[str, Any]) -> str:
             fts = doc2.get("floorTypes")
             if isinstance(fts, list):
                 doc2["floorTypes"] = sorted(fts, key=lambda x: str(x.get("id", "")))
+            rtts = doc2.get("roofTypes")
+            if isinstance(rtts, list):
+                doc2["roofTypes"] = sorted(rtts, key=lambda x: str(x.get("id", "")))
             tmr2["document"] = doc2
             shallow["typeMaterialRegistry"] = tmr2
 
