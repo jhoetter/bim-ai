@@ -30,8 +30,10 @@ IFC_SEMANTIC_IMPORT_SCOPE_V0: dict[str, Any] = {
         "Pset_SpaceCommon programme string fields",
         "IfcElementQuantity Qto_* template names",
         "inspect_kernel_ifc_semantics.qtoLinkedProducts — per-product Qto_* linkage counts",
+        "inspect_kernel_ifc_semantics.importScopeUnsupportedIfcProducts_v0 — IfcProduct classes outside kernel slice roots",
         "Kernel geometry skip map from Document",
         "summarize_kernel_ifc_semantic_roundtrip export→re-parse deltas (identityCoverage, qtoCoverage)",
+        "summarize_kernel_ifc_semantic_roundtrip.commandSketch — level echo, storeys read-back, QTO names, programme samples",
     ],
     "importMergeUnsupported": [
         "IFC ingest → Document merge / replay for arbitrary IFC entity graphs",

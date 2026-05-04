@@ -101,6 +101,10 @@ def test_ifc_manifest_includes_semantic_import_scope_and_expected_kinds_hint() -
     assert any(
         "summarize_kernel_ifc_semantic_roundtrip" in str(x) for x in (scope.get("semanticReadBackSupported") or [])
     )
+    assert any(
+        "importScopeUnsupportedIfcProducts_v0" in str(x)
+        for x in (scope.get("semanticReadBackSupported") or [])
+    )
     kinds = mf.get("kernelExpectedIfcKinds") or {}
     assert kinds.get("wall") == 1 and kinds.get("floor") == 1 and kinds.get("level") == 1
 

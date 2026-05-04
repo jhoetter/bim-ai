@@ -509,6 +509,9 @@ def test_ifc_inspection_matrix_covers_storeys_spaces_qtos_and_programme_fields()
     rep = inspect_kernel_ifc_semantics(doc=doc)
     assert rep["available"] is True
     assert rep["matrixVersion"] == 1
+    us0 = rep.get("importScopeUnsupportedIfcProducts_v0") or {}
+    assert us0.get("schemaVersion") == 0
+    assert us0.get("countsByClass") == {}
     assert rep["buildingStorey"]["count"] >= 1
     assert rep["buildingStorey"]["elevationsPresent"] >= 1
     assert rep["products"]["IfcWall"] >= 1
@@ -552,6 +555,19 @@ def test_ifc_inspection_matrix_covers_storeys_spaces_qtos_and_programme_fields()
     assert rt["commandSketch"] is not None
     assert rt["commandSketch"]["referenceIdsFromIfc"]["IfcWall"]
     assert rt["commandSketch"]["referenceIdsFromIfc"]["IfcSpace"]
+    sk = rt["commandSketch"]
+    assert sk["levelsFromDocument"] == [{"id": "lvl-g", "name": "G", "elevationMm": 0.0}]
+    assert any(s.get("name") == "G" for s in sk["storeysFromIfc"])
+    assert set(sk["qtoTemplatesFromIfc"]) >= {
+        "Qto_WallBaseQuantities",
+        "Qto_SlabBaseQuantities",
+        "Qto_SpaceBaseQuantities",
+    }
+    assert sk["spaceProgrammeSampleFromIfc"]
+    sample0 = sk["spaceProgrammeSampleFromIfc"][0]
+    assert sample0.get("programmeFields", {}).get("ProgrammeCode") == "ISO7"
+    rt_us = (rt["inspection"] or {}).get("importScopeUnsupportedIfcProducts_v0") or {}
+    assert rt_us.get("countsByClass") == {}
 
 
 def test_ifc_inspection_matrix_includes_geometry_skip_counts_on_eligible_doc() -> None:
