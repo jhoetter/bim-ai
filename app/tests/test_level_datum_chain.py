@@ -8,7 +8,8 @@ import time
 from bim_ai.constraints import evaluate
 from bim_ai.document import Document
 from bim_ai.elements import LevelElem, Vec2Mm, WallElem
-from bim_ai.engine import bundle_replay_diagnostics, try_commit_bundle
+from bim_ai.engine import bundle_replay_diagnostics, clone_document, try_commit_bundle
+from bim_ai.level_datum_propagation_evidence import build_level_elevation_propagation_evidence_v0
 
 
 def test_create_level_derives_child_elevation_from_parent_offset_and_propagates_on_move():
@@ -192,3 +193,33 @@ def test_bundle_replay_diagnostics_datum_commands_large_mix_under_budget() -> No
         assert elapsed < 1.0
     else:
         assert elapsed < 0.35
+
+
+def test_level_elevation_propagation_evidence_labels_direct_and_datum_roles():
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl-a": LevelElem(kind="level", id="lvl-a", name="A", elevationMm=100),
+            "lvl-gr": LevelElem(kind="level", id="lvl-gr", name="Root", elevationMm=-50),
+            "lvl-b": LevelElem(
+                kind="level",
+                id="lvl-b",
+                name="B",
+                elevationMm=-50 + 2750,
+                parentLevelId="lvl-gr",
+                offsetFromParentMm=2750,
+            ),
+        },
+    )
+    before = clone_document(doc)
+    cmds: list[dict[str, object]] = [{"type": "moveLevelElevation", "levelId": "lvl-gr", "elevationMm": 0}]
+    ok, new_doc, _c, _v, code = try_commit_bundle(doc, cmds)
+    assert ok is True
+    assert new_doc is not None
+    ev = build_level_elevation_propagation_evidence_v0(before, new_doc, applied_commands=cmds)
+    assert ev["format"] == "levelElevationPropagationEvidence_v0"
+    assert ev["datumPropagationBlocked"] is False
+    by_id = {r["levelId"]: r for r in ev["rows"]}
+    assert by_id["lvl-gr"]["role"] == "direct_move"
+    assert by_id["lvl-b"]["role"] == "datum_propagated"
+    assert by_id["lvl-a"]["role"] == "unchanged"

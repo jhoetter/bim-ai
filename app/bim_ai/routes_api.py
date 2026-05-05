@@ -69,6 +69,7 @@ from bim_ai.export_gltf import build_visual_export_manifest, document_to_glb_byt
 from bim_ai.export_ifc import export_ifc_model_step
 from bim_ai.hub import Hub
 from bim_ai.ifc_stub import build_ifc_exchange_manifest_payload, minimal_empty_ifc_skeleton
+from bim_ai.level_datum_propagation_evidence import build_level_elevation_propagation_evidence_v0
 from bim_ai.model_summary import compute_model_summary
 from bim_ai.plan_projection_wire import (
     plan_projection_wire_from_request,
@@ -111,6 +112,10 @@ def document_to_wire(doc: Document) -> dict[str, Any]:
         "revision": doc.revision,
         "elements": {kid: elem.model_dump(by_alias=True) for kid, elem in doc.elements.items()},
     }
+
+
+def _commands_include_move_level_elevation(cmds: list[dict[str, Any]]) -> bool:
+    return any(str(c.get("type") or "") == "moveLevelElevation" for c in cmds)
 
 
 async def load_model_row(session: AsyncSession, model_id: UUID) -> ModelRecord | None:
@@ -1026,7 +1031,7 @@ async def apply_command(
     elems_out = wire_doc["elements"]
     viols_wire = violations_wire(new_doc.elements)
 
-    return {
+    payload: dict[str, Any] = {
         "ok": True,
         "modelId": str(model_id),
         "revision": new_doc.revision,
@@ -1036,6 +1041,13 @@ async def apply_command(
         "clientOpId": body.client_op_id,
         "delta": delta,
     }
+    if _commands_include_move_level_elevation([body.command]):
+        payload["levelElevationPropagationEvidence_v0"] = build_level_elevation_propagation_evidence_v0(
+            doc_before,
+            new_doc,
+            applied_commands=[body.command],
+        )
+    return payload
 
 
 @api_router.post("/models/{model_id}/commands/dry-run")
@@ -1164,7 +1176,7 @@ async def apply_command_bundle(
 
     viols_wire = violations_wire(new_doc.elements)
 
-    return {
+    payload: dict[str, Any] = {
         "ok": True,
         "modelId": str(model_id),
         "revision": new_doc.revision,
@@ -1175,6 +1187,13 @@ async def apply_command_bundle(
         "delta": delta,
         "replayDiagnostics": bundle_replay_diagnostics(body.commands),
     }
+    if _commands_include_move_level_elevation(body.commands):
+        payload["levelElevationPropagationEvidence_v0"] = build_level_elevation_propagation_evidence_v0(
+            doc_before,
+            new_doc,
+            applied_commands=body.commands,
+        )
+    return payload
 
 
 @api_router.post("/models/{model_id}/commands/bundle/dry-run")

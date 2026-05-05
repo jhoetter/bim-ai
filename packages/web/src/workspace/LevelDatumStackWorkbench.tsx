@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import type { Element, Violation } from '@bim-ai/core';
 
 import { recommendedContextForRuleId } from '../advisor/advisorViolationContext';
+import { useBimStore } from '../state/store';
 
 import {
   buildLevelDatumStackEvidenceToken,
@@ -11,6 +12,7 @@ import {
   formatElevationMmReadout,
   levelIdsFromDatumRows,
 } from './datumLevelStackReadout';
+import { formatLevelDatumPropagationEvidenceLine } from './levelDatumPropagationReadout';
 
 type Props = {
   selected: Element | undefined;
@@ -21,6 +23,7 @@ type Props = {
 export function LevelDatumStackWorkbench({ selected, elementsById, violations }: Props) {
   const rows = useMemo(() => buildLevelDatumStackRows(elementsById), [elementsById]);
   const levelIds = useMemo(() => levelIdsFromDatumRows(rows), [rows]);
+  const lastPropagation = useBimStore((s) => s.lastLevelElevationPropagationEvidence);
 
   const datumViolations = useMemo(
     () => filterDatumWorkbenchViolations(violations, levelIds),
@@ -127,6 +130,15 @@ export function LevelDatumStackWorkbench({ selected, elementsById, violations }:
               </li>
             ))}
           </ul>
+        </div>
+      ) : null}
+
+      {lastPropagation ? (
+        <div
+          className="break-all rounded border border-border/60 bg-muted/20 p-1.5 font-mono text-[10px] text-muted"
+          data-testid="level-datum-propagation-evidence"
+        >
+          {formatLevelDatumPropagationEvidenceLine(lastPropagation)}
         </div>
       ) : null}
 

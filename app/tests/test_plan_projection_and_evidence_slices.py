@@ -28,6 +28,7 @@ from bim_ai.document import Document
 from bim_ai.elements import (
     DoorElem,
     FloorElem,
+    GridLineElem,
     LevelElem,
     PlanCategoryGraphicRow,
     PlanTagStyleElem,
@@ -2419,3 +2420,76 @@ def test_plan_projection_invalid_plan_tag_style_ref_builtin_and_warning() -> Non
     assert (hints.get("opening") or {}).get("resolvedStyleId") == BUILTIN_PLAN_TAG_OPENING_ID
     codes = [str(w.get("code", "")) for w in (out.get("warnings") or [])]
     assert "planTagStyleRefInvalid" in codes
+
+
+def test_plan_projection_wire_includes_plan_grid_datum_evidence_bad_level_reference() -> None:
+    doc = Document(revision=1, elements={})
+    apply_inplace(doc, CreateLevelCmd(id="lvl", name="L", elevationMm=0))
+    apply_inplace(
+        doc,
+        CreateGridLineCmd(
+            id="g1",
+            name="G",
+            level_id="bad-lvl",
+            start={"xMm": 0, "yMm": 0},
+            end={"xMm": 5000, "yMm": 0},
+        ),
+    )
+    out = plan_projection_wire_from_request(doc, plan_view_id=None, fallback_level_id=None)
+    ev = out.get("planGridDatumEvidence_v0") or {}
+    assert ev.get("format") == "planGridDatumEvidence_v0"
+    row = next(r for r in ev["rows"] if r["gridId"] == "g1")
+    assert row["referenceOk"] is False
+    assert row["reasonCode"] == "datum_grid_reference_missing"
+
+
+def test_section_projection_wire_includes_datum_elevation_evidence_grid_crossing_count() -> None:
+    lvl = LevelElem(kind="level", id="lvl", name="L", elevationMm=300.0)
+    wall = WallElem(
+        kind="wall",
+        id="w1",
+        name="W",
+        levelId="lvl",
+        start={"xMm": 0.0, "yMm": 0.0},
+        end={"xMm": 6000.0, "yMm": 0.0},
+        thicknessMm=200.0,
+        heightMm=2800.0,
+    )
+    sec = SectionCutElem(
+        kind="section_cut",
+        id="sec-a",
+        name="A-A",
+        lineStartMm={"xMm": 3000.0, "yMm": -5000.0},
+        lineEndMm={"xMm": 3000.0, "yMm": 5000.0},
+        cropDepthMm=9000.0,
+    )
+    grid = GridLineElem(
+        kind="grid_line",
+        id="gh",
+        name="H",
+        start={"xMm": -1000.0, "yMm": 0.0},
+        end={"xMm": 9000.0, "yMm": 0.0},
+        levelId="lvl",
+    )
+    doc = Document(revision=1, elements={"lvl": lvl, "w1": wall, "sec-a": sec, "gh": grid})
+    out = section_cut_projection_wire(doc, "sec-a")
+    ev = out.get("sectionDatumElevationEvidence_v0") or {}
+    assert ev.get("format") == "sectionDatumElevationEvidence_v0"
+    assert ev.get("gridCrossingCount") == 1
+
+
+def test_section_projection_wire_degenerate_cut_section_datum_reason() -> None:
+    sec = SectionCutElem(
+        kind="section_cut",
+        id="sec-deg",
+        name="X",
+        lineStartMm={"xMm": 0.0, "yMm": 0.0},
+        lineEndMm={"xMm": 0.0, "yMm": 0.0},
+        cropDepthMm=1000.0,
+    )
+    lvl = LevelElem(kind="level", id="lvl", name="L", elevationMm=0.0)
+    doc = Document(revision=1, elements={"lvl": lvl, "sec-deg": sec})
+    out = section_cut_projection_wire(doc, "sec-deg")
+    ev = out.get("sectionDatumElevationEvidence_v0") or {}
+    assert ev.get("reasonCode") == "degenerateCutLine"
+    assert ev.get("gridCrossingCount") is None

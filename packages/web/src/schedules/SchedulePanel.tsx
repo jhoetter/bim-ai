@@ -48,6 +48,7 @@ import {
 import { roomFinishScheduleEvidenceReadoutParts } from './roomFinishScheduleEvidenceReadout';
 import { stairScheduleEvidenceReadoutLines } from './stairScheduleEvidenceReadout';
 import { compactScheduleOpeningAdvisoryLines } from './scheduleOpeningAdvisoriesReadout';
+import { formatScheduleLevelDatumEvidenceLine } from './scheduleLevelDatumEvidenceReadout';
 
 export { resolveScheduleSortDescending, scheduleTotalsReadoutParts } from './schedulePayloadTotals';
 
@@ -1324,6 +1325,15 @@ export function SchedulePanel(props: {
             </label>
           ) : null}
         </div>
+
+        {levelRestricted && props.activeLevelId ? (
+          <div
+            data-testid="schedule-level-datum-evidence"
+            className="mt-2 break-all font-mono text-[10px] text-muted"
+          >
+            {formatScheduleLevelDatumEvidenceLine(props.elementsById, props.activeLevelId)}
+          </div>
+        ) : null}
 
         <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
           <span className="font-semibold text-foreground">Group by</span>

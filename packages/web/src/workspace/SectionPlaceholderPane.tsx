@@ -1,13 +1,15 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import type { Element } from '@bim-ai/core';
 
 import { Btn, Panel } from '@bim-ai/ui';
 
+import { fetchSectionProjectionWire } from '../plan/sectionProjectionWire';
 import { useBimStore } from '../state/store';
 
 import { SectionViewportSvg } from './sectionViewportSvg';
 import { formatSectionCutIdentityLine, formatSectionCutPlaneContext } from './sectionViewportDoc';
+import { formatSectionDatumElevationEvidenceLine } from './sectionDatumElevationReadout';
 import { sheetsReferencingSectionCut } from './sheetViewRef';
 
 const PREVIEW_WIDTH_PX = 320;
@@ -20,6 +22,36 @@ function segmentLengthMm(a: { xMm: number; yMm: number }, b: { xMm: number; yMm:
   const dx = b.xMm - a.xMm;
   const dy = b.yMm - a.yMm;
   return Math.round(Math.hypot(dx, dy));
+}
+
+function SectionDatumElevationEvidenceLine(props: { modelId: string; sectionCutId: string }) {
+  const [line, setLine] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const payload = await fetchSectionProjectionWire(props.modelId, props.sectionCutId);
+        if (cancelled) return;
+        setLine(formatSectionDatumElevationEvidenceLine(payload));
+      } catch {
+        if (!cancelled) setLine('');
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [props.modelId, props.sectionCutId]);
+
+  if (!line) return null;
+  return (
+    <div
+      className="mt-1 font-mono text-[10px] text-muted"
+      data-testid="section-datum-elevation-evidence"
+    >
+      {line}
+    </div>
+  );
 }
 
 function SectionWorkbenchLivePreview(props: {
@@ -126,15 +158,21 @@ export function SectionPlaceholderPane(props: { activeLevelLabel: string; modelI
       ) : (
         <>
           {props.modelId && previewSectionId && previewCut ? (
-            <SectionWorkbenchLivePreview
-              key={previewSectionId}
-              modelId={props.modelId}
-              sectionCutId={previewSectionId}
-              sectionIdentityCaption={sectionPreviewCaptions.identity}
-              sectionCutPlaneCaption={sectionPreviewCaptions.plane}
-              widthPx={PREVIEW_WIDTH_PX}
-              heightPx={PREVIEW_HEIGHT_PX}
-            />
+            <>
+              <SectionWorkbenchLivePreview
+                key={previewSectionId}
+                modelId={props.modelId}
+                sectionCutId={previewSectionId}
+                sectionIdentityCaption={sectionPreviewCaptions.identity}
+                sectionCutPlaneCaption={sectionPreviewCaptions.plane}
+                widthPx={PREVIEW_WIDTH_PX}
+                heightPx={PREVIEW_HEIGHT_PX}
+              />
+              <SectionDatumElevationEvidenceLine
+                modelId={props.modelId}
+                sectionCutId={previewSectionId}
+              />
+            </>
           ) : (
             <p className="mt-2 text-[11px] leading-snug text-muted">
               No <span className="font-mono">modelId</span> in this cockpit state—live projection

@@ -19,6 +19,7 @@ import type {
   PlanRoomColorLegendRow,
   RoomProgrammeLegendEvidenceV0,
 } from '../plan/planProjectionWire';
+import type { LevelElevationPropagationEvidenceV0 } from '../workspace/levelDatumPropagationReadout';
 
 export type PlanRoomSchemeWireReadout = {
   roomColorLegendRows: PlanRoomColorLegendRow[];
@@ -90,6 +91,8 @@ type StoreState = {
   planRoomSchemeWireReadout: PlanRoomSchemeWireReadout | null;
   /** Active Schedules tab row count for browser rendering budget readout (Prompt-8). */
   scheduleBudgetHydration: { tab: string; rowCount: number } | null;
+  /** Latest server `levelElevationPropagationEvidence_v0` after apply (Prompt-1). */
+  lastLevelElevationPropagationEvidence: LevelElevationPropagationEvidenceV0 | null;
   viewerClipElevMm: number | null;
   /** Optional lower bound — clips geometry *below* this world Y (mm) for a reproducible slab cut. */
   viewerClipFloorElevMm: number | null;
@@ -1299,6 +1302,8 @@ export const useBimStore = create<StoreState>((set, get) => {
 
     scheduleBudgetHydration: null,
 
+    lastLevelElevationPropagationEvidence: null,
+
     hydrateFromSnapshot: (snap) => {
       const elements: Record<string, Element> = {};
 
@@ -1327,6 +1332,8 @@ export const useBimStore = create<StoreState>((set, get) => {
         planRoomSchemeWireReadout: null,
 
         scheduleBudgetHydration: null,
+
+        lastLevelElevationPropagationEvidence: null,
 
         activePlanViewId: prevPv && elements[prevPv]?.kind === 'plan_view' ? prevPv : undefined,
         activeViewpointId: prevVp && elements[prevVp]?.kind === 'viewpoint' ? prevVp : undefined,
@@ -1368,6 +1375,8 @@ export const useBimStore = create<StoreState>((set, get) => {
         planRoomSchemeWireReadout: null,
 
         scheduleBudgetHydration: null,
+
+        lastLevelElevationPropagationEvidence: null,
 
         activePlanViewId: pv && merged[pv]?.kind === 'plan_view' ? pv : undefined,
         activeViewpointId: vp && merged[vp]?.kind === 'viewpoint' ? vp : undefined,

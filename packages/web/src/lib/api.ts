@@ -67,6 +67,8 @@ export type ApplyCommandResp = {
   violations?: unknown[];
 
   delta?: Record<string, unknown>;
+
+  levelElevationPropagationEvidence_v0?: unknown;
 };
 
 export async function undoModel(

@@ -30,6 +30,10 @@ export function recommendedContextForRuleId(ruleId: string): string {
     case 'level_datum_parent_cycle':
     case 'level_datum_parent_offset_mismatch':
     case 'wall_constraint_levels_inverted':
+    case 'level_parent_unresolved':
+    case 'datum_grid_reference_missing':
+    case 'elevation_marker_view_unresolved':
+    case 'section_level_reference_missing':
       return 'Recommended: Levels datum chain / wall level constraints.';
     case 'exchange_ifc_roundtrip_count_mismatch':
     case 'exchange_ifc_roundtrip_programme_mismatch':

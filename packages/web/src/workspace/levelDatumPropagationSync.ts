@@ -1,5 +1,12 @@
-/** Persist level elevation propagation hints from apply responses (store integration optional). */
+import type { ApplyCommandResp } from '../lib/api';
+import { useBimStore } from '../state/store';
 
-export function syncLastLevelElevationPropagationFromApplyResponse(_response: unknown): void {
-  // No-op until level datum propagation readout is wired to store.
+import { parseLevelElevationPropagationEvidence } from './levelDatumPropagationReadout';
+
+export function syncLastLevelElevationPropagationFromApplyResponse(
+  r: ApplyCommandResp & Record<string, unknown>,
+): void {
+  const raw = r.levelElevationPropagationEvidence_v0;
+  const parsed = parseLevelElevationPropagationEvidence(raw);
+  useBimStore.setState({ lastLevelElevationPropagationEvidence: parsed });
 }

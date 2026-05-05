@@ -22,6 +22,10 @@ const DATUM_RULE_IDS = new Set<string>([
   'level_datum_parent_cycle',
   'level_datum_parent_offset_mismatch',
   'wall_constraint_levels_inverted',
+  'level_parent_unresolved',
+  'datum_grid_reference_missing',
+  'elevation_marker_view_unresolved',
+  'section_level_reference_missing',
 ]);
 
 export function formatElevationMmReadout(mm: number): string {
