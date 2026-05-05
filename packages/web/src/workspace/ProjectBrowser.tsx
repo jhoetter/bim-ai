@@ -59,6 +59,18 @@ function planViewTooltip(
   return parts.join(' · ');
 }
 
+function siteProjectBrowserEvidenceLine(
+  elementsById: Record<string, Element>,
+  site: Extract<Element, { kind: 'site' }>,
+): string {
+  const n = site.boundaryMm?.length ?? 0;
+  const ctxCount = site.contextObjects?.length ?? 0;
+  const lid = site.referenceLevelId;
+  const l = elementsById[lid];
+  const lvl = l?.kind === 'level' ? l.name : lid;
+  return `boundaryVerts=${n} · context=${ctxCount} · refLevel=${lvl}`;
+}
+
 /** Lightweight project-browser band: plan views grouped separately from mixed explorer. */
 
 export function ProjectBrowser(props: {
@@ -125,6 +137,10 @@ export function ProjectBrowser(props: {
     .filter((e): e is Extract<Element, { kind: 'view_template' }> => e.kind === 'view_template')
     .sort((a, b) => a.name.localeCompare(b.name));
 
+  const sites = Object.values(props.elementsById)
+    .filter((e): e is Extract<Element, { kind: 'site' }> => e.kind === 'site')
+    .sort((a, b) => a.name.localeCompare(b.name));
+
   const hasAnyDoc =
     planViewsSorted.length > 0 ||
     viewpoints3d.length > 0 ||
@@ -132,7 +148,8 @@ export function ProjectBrowser(props: {
     sectionCuts.length > 0 ||
     schedules.length > 0 ||
     sheets.length > 0 ||
-    viewTemplates.length > 0;
+    viewTemplates.length > 0 ||
+    sites.length > 0;
 
   if (!hasAnyDoc) {
     return <div className="text-[10px] text-muted">No documented views yet.</div>;
@@ -228,6 +245,28 @@ export function ProjectBrowser(props: {
   return (
     <div className="space-y-2 text-[11px]">
       <div className="font-semibold text-muted">Project browser</div>
+      {sites.length ? (
+        <div className="space-y-1">
+          <div className="text-[10px] uppercase tracking-wide text-muted">Sites</div>
+          <ul className="space-y-0.5">
+            {sites.map((st) => (
+              <li key={st.id} className="flex flex-col gap-0.5">
+                <button
+                  type="button"
+                  className="w-full px-2 py-0.5 text-left text-[10px]"
+                  title="Select site in explorer / inspector"
+                  onClick={() => useBimStore.getState().select(st.id)}
+                >
+                  <span className="text-muted">site ·</span> {st.name}
+                </button>
+                <div className="pl-2 font-mono text-[9px] leading-tight text-muted">
+                  {siteProjectBrowserEvidenceLine(props.elementsById, st)}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
       {planViewsSorted.length ? (
         <div className="space-y-1">
           <div className="text-[10px] uppercase tracking-wide text-muted">Floor plans</div>

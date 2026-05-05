@@ -55,6 +55,7 @@ import {
   SavedViewTemplateGraphicsAuthoring,
 } from './workspace/savedViewTagGraphicsAuthoring';
 import { RoomColorSchemePanel } from './workspace/RoomColorSchemePanel';
+import { SiteAuthoringPanel } from './workspace/SiteAuthoringPanel';
 import { SectionPlaceholderPane } from './workspace/SectionPlaceholderPane';
 import { SheetCanvas } from './workspace/SheetCanvas';
 
@@ -1639,6 +1640,13 @@ export function Workspace() {
               {JSON.stringify(selected ?? { hint: 'pick' }, null, 2)}
             </pre>
           </Panel>
+
+          <SiteAuthoringPanel
+            revision={revision}
+            elementsById={elementsById}
+            levels={levels}
+            onUpsertSemantic={(cmd) => void onSemantic(cmd)}
+          />
 
           <RoomColorSchemePanel onUpsertSemantic={(cmd) => void onSemantic(cmd)} />
 
