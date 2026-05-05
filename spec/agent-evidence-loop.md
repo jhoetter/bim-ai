@@ -22,4 +22,6 @@ Row `correlation` blocks repeat `semanticDigestSha256` / `modelRevision` for fre
 
 **agentEvidenceClosureHints** (format `agentEvidenceClosureHints_v1`) lists regeneration commands, CI-relative paths (Playwright report, `test-results/ci-evidence-correlation-hint.txt`, screenshot trees), and placeholder env keys (`GITHUB_RUN_ID`, `GITHUB_SHA`) for mapping downloaded artifacts to semantic rows.
 
+**`evidenceAgentFollowThrough_v1.stagedArtifactLinks_v1`** (derivative, digest-excluded) supplies deterministic API-relative **`exportRelativePaths`**, **`stagedLinkRows`**, **`bundleFilenameHints`**, **`resolutionMode`** (`local_relative` offline; `github_actions` only when **`BIM_AI_STAGED_ARTIFACT_LINKS=1`** together with **`GITHUB_REPOSITORY`** + **`GITHUB_RUN_ID`**), and optional **`githubActionsResolution`** URLs — no tokens or GitHub API calls during package generation.
+
 In GitHub Actions, the `js` job writes `packages/web/test-results/ci-evidence-correlation-hint.txt` with the current `run_id` and artifact name pattern `evidence-web-{run_id}-playwright`, then uploads it with the HTML report and screenshots.

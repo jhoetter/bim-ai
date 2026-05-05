@@ -1,6 +1,11 @@
 from __future__ import annotations
 
+import json
+from collections.abc import Mapping
+from typing import Any
 from uuid import UUID
+
+import pytest
 
 from bim_ai.agent_evidence_review_loop import bcf_topics_index_v1
 from bim_ai.document import Document
@@ -18,7 +23,18 @@ from bim_ai.evidence_manifest import (
     collaboration_replay_conflict_hints_v1,
     evidence_agent_follow_through_v1,
     evidence_ref_resolution_v1,
+    staged_artifact_links_v1,
 )
+
+
+def _mapping_key_strings(obj: Any, acc: set[str]) -> None:
+    if isinstance(obj, Mapping):
+        for k, v in obj.items():
+            acc.add(str(k))
+            _mapping_key_strings(v, acc)
+    elif isinstance(obj, list):
+        for x in obj:
+            _mapping_key_strings(x, acc)
 
 
 def test_evidence_agent_follow_through_v1_shape() -> None:
@@ -37,7 +53,29 @@ def test_evidence_agent_follow_through_v1_shape() -> None:
         deterministic_section_cut_evidence=[],
     )
     assert ft["format"] == "evidenceAgentFollowThrough_v1"
-    assert ft["stagedArtifactUrlPlaceholders_v1"]["format"] == "stagedArtifactUrlPlaceholders_v1"
+    assert "stagedArtifactUrlPlaceholders_v1" not in ft
+    sal = ft["stagedArtifactLinks_v1"]
+    assert sal["format"] == "stagedArtifactLinks_v1"
+    assert sal["resolutionMode"] == "local_relative"
+    assert sal["sideEffectsEnabled"] is False
+    assert sal["modelId"] == str(mid)
+    assert sal["suggestedEvidenceArtifactBasename"] == "bim-ai-evidence-aaaaaaaaaaaa-r0"
+    assert sal["packageSemanticDigestSha256"] == "a" * 64
+    assert sal["bundleFilenameHints"]["evidencePackageJson"] == (
+        "bim-ai-evidence-aaaaaaaaaaaa-r0-evidence-package.json"
+    )
+    erp = sal["exportRelativePaths"]
+    assert erp["evidencePackage"] == f"/api/models/{mid}/evidence-package"
+    assert erp["snapshot"] == f"/api/models/{mid}/snapshot"
+    assert erp["validate"] == f"/api/models/{mid}/validate"
+    assert erp["bcfTopicsJsonExport"] == f"/api/models/{mid}/exports/bcf-topics-json"
+    assert erp["bcfTopicsJsonImport"] == f"/api/models/{mid}/imports/bcf-topics-json"
+    assert sal["githubActionsResolution"] is None
+    row_ids = [r["id"] for r in sal["stagedLinkRows"]]
+    assert row_ids == sorted(row_ids)
+    pw = next(r for r in sal["stagedLinkRows"] if r["id"] == "playwright_evidence_ci_bundle")
+    assert "resolvedArtifactName" not in pw
+    assert "githubActionsRunArtifactsWebUrl" not in pw
     chk = ft["bcfIssueCoordinationCheck_v1"]
     assert chk["format"] == "bcfIssueCoordinationCheck_v1"
     assert chk["bcfIndexedTopicCountMatchesDocument"] is True
@@ -48,6 +86,44 @@ def test_evidence_agent_follow_through_v1_shape() -> None:
     assert res["unresolvedCount"] == 0
     assert res["hasUnresolvedEvidenceRefs"] is False
     assert ft["collaborationReplayConflictHints_v1"]["format"] == "collaborationReplayConflictHints_v1"
+
+
+def test_staged_artifact_links_v1_github_actions_mode_without_secrets(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("BIM_AI_STAGED_ARTIFACT_LINKS", "1")
+    monkeypatch.setenv("GITHUB_REPOSITORY", "owner/sample-repo")
+    monkeypatch.setenv("GITHUB_RUN_ID", "4242")
+    monkeypatch.setenv("GITHUB_SHA", "deadbeef" * 5)
+    monkeypatch.setenv("GITHUB_TOKEN", "must-not-appear-in-manifest")
+
+    mid = UUID("00000000-0000-0000-0000-000000000099")
+    out = staged_artifact_links_v1(
+        model_id=mid,
+        suggested_evidence_artifact_basename="pfx",
+        package_semantic_digest_sha256="d" * 64,
+    )
+    assert out["format"] == "stagedArtifactLinks_v1"
+    assert out["resolutionMode"] == "github_actions"
+    assert out["sideEffectsEnabled"] is True
+    gar = out["githubActionsResolution"]
+    assert isinstance(gar, dict)
+    assert gar["repository"] == "owner/sample-repo"
+    assert gar["runId"] == "4242"
+    assert gar["runArtifactsWebUrl"] == "https://github.com/owner/sample-repo/actions/runs/4242#artifacts"
+    assert gar["commitSha"] == "deadbeef" * 5
+    pw = next(r for r in out["stagedLinkRows"] if r["id"] == "playwright_evidence_ci_bundle")
+    assert pw["resolvedArtifactName"] == "evidence-web-4242-playwright"
+    assert pw["githubActionsRunArtifactsWebUrl"] == gar["runArtifactsWebUrl"]
+
+    blob = json.dumps(out, sort_keys=True)
+    assert "must-not-appear-in-manifest" not in blob
+    assert "GITHUB_TOKEN" not in blob
+    keys: set[str] = set()
+    _mapping_key_strings(out, keys)
+    lowered = {k.lower() for k in keys}
+    assert "github_token" not in lowered
+    assert "authorization" not in lowered
 
 
 def test_bcf_issue_coordination_mismatch_when_index_corrupt() -> None:

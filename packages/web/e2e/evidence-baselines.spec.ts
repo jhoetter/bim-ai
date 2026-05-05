@@ -596,29 +596,60 @@ async function sharedRoutes(page: Page, layoutPreset: string) {
             format: 'evidenceAgentFollowThrough_v1',
             semanticDigestExclusionNote: 'mock',
             packageSemanticDigestSha256: MOCK_SEMANTIC_DIGEST_SHA256,
-            stagedArtifactUrlPlaceholders_v1: {
-              format: 'stagedArtifactUrlPlaceholders_v1',
-              interpolationKeysNote: 'mock',
-              interpolationKeys: [
-                'suggestedEvidenceArtifactBasename',
-                'modelId',
-                'githubRepository',
-                'githubRunId',
-                'githubSha',
-              ],
-              urlTemplates: {
-                githubActionsRunArtifactsUrl:
-                  'https://github.com/{githubRepository}/actions/runs/{githubRunId}#artifacts',
-              },
-              relativeApiPaths: {
-                evidencePackage: `/api/models/${MODEL_ID}/evidence-package`,
-                bcfTopicsJsonExport: `/api/models/${MODEL_ID}/exports/bcf-topics-json`,
-                bcfTopicsJsonImport: `/api/models/${MODEL_ID}/imports/bcf-topics-json`,
-                snapshot: `/api/models/${MODEL_ID}/snapshot`,
-              },
+            stagedArtifactLinks_v1: {
+              format: 'stagedArtifactLinks_v1',
+              followThroughNote: 'mock stagedArtifactLinks_v1 — local/offline shaped bundle',
+              resolutionMode: 'local_relative',
+              sideEffectsEnabled: false,
+              modelId: MODEL_ID,
+              suggestedEvidenceArtifactBasename: MOCK_EVIDENCE_BASENAME,
+              packageSemanticDigestSha256: MOCK_SEMANTIC_DIGEST_SHA256,
               bundleFilenameHints: {
                 evidencePackageJson: `${MOCK_EVIDENCE_BASENAME}-evidence-package.json`,
               },
+              exportRelativePaths: {
+                evidencePackage: `/api/models/${MODEL_ID}/evidence-package`,
+                snapshot: `/api/models/${MODEL_ID}/snapshot`,
+                validate: `/api/models/${MODEL_ID}/validate`,
+                bcfTopicsJsonExport: `/api/models/${MODEL_ID}/exports/bcf-topics-json`,
+                bcfTopicsJsonImport: `/api/models/${MODEL_ID}/imports/bcf-topics-json`,
+              },
+              githubActionsResolution: null,
+              stagedLinkRows: [
+                {
+                  id: 'bcf_topics_json_export_anchor',
+                  kind: 'api_relative_anchor',
+                  bcfTopicsJsonExportHref: `/api/models/${MODEL_ID}/exports/bcf-topics-json`,
+                },
+                {
+                  id: 'bcf_topics_json_import_anchor',
+                  kind: 'api_relative_anchor',
+                  bcfTopicsJsonImportHref: `/api/models/${MODEL_ID}/imports/bcf-topics-json`,
+                },
+                {
+                  id: 'evidence_package_json_anchor',
+                  kind: 'api_relative_anchor',
+                  evidencePackageJsonBasename: `${MOCK_EVIDENCE_BASENAME}-evidence-package.json`,
+                  evidencePackageHref: `/api/models/${MODEL_ID}/evidence-package`,
+                  notes: 'mock evidence package anchor',
+                },
+                {
+                  id: 'model_snapshot_anchor',
+                  kind: 'api_relative_anchor',
+                  snapshotHref: `/api/models/${MODEL_ID}/snapshot`,
+                },
+                {
+                  id: 'model_validate_anchor',
+                  kind: 'api_relative_anchor',
+                  validateHref: `/api/models/${MODEL_ID}/validate`,
+                },
+                {
+                  id: 'playwright_evidence_ci_bundle',
+                  kind: 'ci_playwright_evidence_bundle',
+                  artifactNamePattern: 'evidence-web-{githubRunId}-playwright',
+                  notes: 'mock unresolved CI artifact row for local_relative',
+                },
+              ],
             },
             bcfIssueCoordinationCheck_v1: {
               format: 'bcfIssueCoordinationCheck_v1',
@@ -808,6 +839,10 @@ test.describe('evidence PNG baselines', () => {
     expect(Array.isArray(fixBlockers) ? fixBlockers.length : -1).toBe(0);
     const follow = pkg.evidenceAgentFollowThrough_v1 as Record<string, unknown> | undefined;
     expect(follow?.format).toBe('evidenceAgentFollowThrough_v1');
+    const sal = follow?.stagedArtifactLinks_v1 as Record<string, unknown> | undefined;
+    expect(sal?.format).toBe('stagedArtifactLinks_v1');
+    expect(sal?.resolutionMode).toBe('local_relative');
+    expect(sal?.sideEffectsEnabled).toBe(false);
     expect(
       (follow?.bcfIssueCoordinationCheck_v1 as Record<string, unknown> | undefined)?.format,
     ).toBe('bcfIssueCoordinationCheck_v1');

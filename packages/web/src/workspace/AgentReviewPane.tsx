@@ -4,6 +4,7 @@ import { Btn } from '@bim-ai/ui';
 
 import { useBimStore } from '../state/store';
 import { parseAgentReviewActionsV1, type AgentReviewActionRow } from './agentReviewActions';
+import { formatStagedArtifactResolutionMode } from './formatStagedArtifactResolutionMode';
 
 type JsonText = string;
 
@@ -1556,6 +1557,8 @@ export function AgentReviewPane() {
               </div>
               {(() => {
                 const ft = evidenceArtifactSummary.agentFollowThrough ?? {};
+                const sal = ft.stagedArtifactLinks_v1 as Record<string, unknown> | undefined;
+                const stagedFormat = typeof sal?.format === 'string' ? sal.format : null;
                 const chk = ft.bcfIssueCoordinationCheck_v1 as Record<string, unknown> | undefined;
                 const res = ft.evidenceRefResolution_v1 as Record<string, unknown> | undefined;
                 const collab = ft.collaborationReplayConflictHints_v1 as
@@ -1575,6 +1578,21 @@ export function AgentReviewPane() {
                   typeof chk?.indexedBcfTopicCount === 'number' ? chk.indexedBcfTopicCount : null;
                 return (
                   <ul className="mt-1 list-disc space-y-0.5 ps-4 text-[10px] text-muted">
+                    {stagedFormat ? (
+                      <li>
+                        Staged artifact links: <code className="font-mono">{stagedFormat}</code>
+                        {' · '}resolution{' '}
+                        <code className="font-mono">
+                          {formatStagedArtifactResolutionMode(sal?.resolutionMode)}
+                        </code>
+                        {' · '}side effects{' '}
+                        <code className="font-mono">
+                          {typeof sal?.sideEffectsEnabled === 'boolean'
+                            ? String(sal.sideEffectsEnabled)
+                            : '—'}
+                        </code>
+                      </li>
+                    ) : null}
                     {bcfOk !== null ? (
                       <li>
                         BCF index vs document: <code className="font-mono">{String(bcfOk)}</code>

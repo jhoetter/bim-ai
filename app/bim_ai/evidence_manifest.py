@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import struct
 from typing import Any
 from urllib.parse import quote
@@ -1024,39 +1025,116 @@ def evidence_ref_resolution_v1(
     }
 
 
-def staged_artifact_url_placeholders_v1(
+def staged_artifact_links_v1(
     *,
     model_id: UUID,
     suggested_evidence_artifact_basename: str,
+    package_semantic_digest_sha256: str,
 ) -> dict[str, Any]:
-    """URL/path templates for CI artifacts — placeholders only; no external storage."""
+    """Deterministic staged-link references for agents; no network or secret materialization."""
 
     links = export_link_map(model_id)
+    mid = str(model_id)
     bundle_json = f"{suggested_evidence_artifact_basename}-evidence-package.json"
+    export_keys = (
+        "evidencePackage",
+        "snapshot",
+        "validate",
+        "bcfTopicsJsonExport",
+        "bcfTopicsJsonImport",
+    )
+    export_relative_paths = {k: links[k] for k in export_keys}
+
+    opt_in = os.environ.get("BIM_AI_STAGED_ARTIFACT_LINKS") == "1"
+    gh_repo = (os.environ.get("GITHUB_REPOSITORY") or "").strip()
+    gh_run = (os.environ.get("GITHUB_RUN_ID") or "").strip()
+    gh_sha = (os.environ.get("GITHUB_SHA") or "").strip()
+
+    github_actions = opt_in and bool(gh_repo) and bool(gh_run)
+    resolution_mode = "github_actions" if github_actions else "local_relative"
+    side_effects_enabled = opt_in
+
+    github_actions_resolution: dict[str, Any] | None
+    run_artifacts_web_url: str | None
+    if github_actions:
+        run_artifacts_web_url = f"https://github.com/{gh_repo}/actions/runs/{gh_run}#artifacts"
+        github_actions_resolution = {
+            "repository": gh_repo,
+            "runId": gh_run,
+            "runArtifactsWebUrl": run_artifacts_web_url,
+        }
+        if gh_sha:
+            github_actions_resolution["commitSha"] = gh_sha
+    else:
+        github_actions_resolution = None
+        run_artifacts_web_url = None
+
+    staged_link_rows: list[dict[str, Any]] = [
+        {
+            "id": "bcf_topics_json_export_anchor",
+            "kind": "api_relative_anchor",
+            "bcfTopicsJsonExportHref": links["bcfTopicsJsonExport"],
+        },
+        {
+            "id": "bcf_topics_json_import_anchor",
+            "kind": "api_relative_anchor",
+            "bcfTopicsJsonImportHref": links["bcfTopicsJsonImport"],
+        },
+        {
+            "id": "evidence_package_json_anchor",
+            "kind": "api_relative_anchor",
+            "evidencePackageJsonBasename": bundle_json,
+            "evidencePackageHref": links["evidencePackage"],
+            "notes": (
+                "Reference only: save JSON as evidencePackageJsonBasename; fetch via evidencePackageHref "
+                "without mutating repositories."
+            ),
+        },
+        {
+            "id": "model_snapshot_anchor",
+            "kind": "api_relative_anchor",
+            "snapshotHref": links["snapshot"],
+        },
+        {
+            "id": "model_validate_anchor",
+            "kind": "api_relative_anchor",
+            "validateHref": links["validate"],
+        },
+    ]
+
+    playwright_row: dict[str, Any] = {
+        "id": "playwright_evidence_ci_bundle",
+        "kind": "ci_playwright_evidence_bundle",
+        "artifactNamePattern": "evidence-web-{githubRunId}-playwright",
+        "notes": (
+            "Expected GitHub Actions artifact name template when RUN_ID is known; pattern is unresolved "
+            "when githubRunId is empty."
+        ),
+    }
+    if github_actions and run_artifacts_web_url:
+        playwright_row["resolvedArtifactName"] = f"evidence-web-{gh_run}-playwright"
+        playwright_row["githubActionsRunArtifactsWebUrl"] = run_artifacts_web_url
+        if gh_sha:
+            playwright_row["commitSha"] = gh_sha
+    staged_link_rows.append(playwright_row)
+
+    staged_link_rows.sort(key=lambda r: str(r.get("id", "")))
+
     return {
-        "format": "stagedArtifactUrlPlaceholders_v1",
-        "interpolationKeysNote": "Replace placeholders when publishing artifacts; never secrets.",
-        "interpolationKeys": [
-            "suggestedEvidenceArtifactBasename",
-            "modelId",
-            "githubRepository",
-            "githubRunId",
-            "githubSha",
-        ],
-        "urlTemplates": {
-            "githubActionsRunArtifactsUrl": (
-                "https://github.com/{githubRepository}/actions/runs/{githubRunId}#artifacts"
-            )
-        },
-        "relativeApiPaths": {
-            "evidencePackage": links["evidencePackage"],
-            "bcfTopicsJsonExport": links["bcfTopicsJsonExport"],
-            "bcfTopicsJsonImport": links["bcfTopicsJsonImport"],
-            "snapshot": links["snapshot"],
-        },
-        "bundleFilenameHints": {
-            "evidencePackageJson": bundle_json,
-        },
+        "format": "stagedArtifactLinks_v1",
+        "followThroughNote": (
+            "Links and patterns are references for agent follow-through; API paths may be unresolved offline "
+            "and GitHub Actions URLs appear only when non-secret CI environment fields are present."
+        ),
+        "resolutionMode": resolution_mode,
+        "sideEffectsEnabled": side_effects_enabled,
+        "modelId": mid,
+        "suggestedEvidenceArtifactBasename": suggested_evidence_artifact_basename,
+        "packageSemanticDigestSha256": package_semantic_digest_sha256,
+        "bundleFilenameHints": {"evidencePackageJson": bundle_json},
+        "exportRelativePaths": export_relative_paths,
+        "githubActionsResolution": github_actions_resolution,
+        "stagedLinkRows": staged_link_rows,
     }
 
 
@@ -1124,7 +1202,7 @@ def evidence_agent_follow_through_v1(
     deterministic_plan_view_evidence: list[dict[str, Any]],
     deterministic_section_cut_evidence: list[dict[str, Any]],
 ) -> dict[str, Any]:
-    """Programmatic rollup: artifact placeholders, BCF coordination, ref resolution, replay hints."""
+    """Programmatic rollup: staged artifact link contract, BCF coordination, ref resolution, replay hints."""
 
     return {
         "format": "evidenceAgentFollowThrough_v1",
@@ -1133,9 +1211,10 @@ def evidence_agent_follow_through_v1(
             "alongside bcfTopicsIndex_v1 and agentReviewActions_v1."
         ),
         "packageSemanticDigestSha256": package_semantic_digest_sha256,
-        "stagedArtifactUrlPlaceholders_v1": staged_artifact_url_placeholders_v1(
+        "stagedArtifactLinks_v1": staged_artifact_links_v1(
             model_id=model_id,
             suggested_evidence_artifact_basename=suggested_evidence_artifact_basename,
+            package_semantic_digest_sha256=package_semantic_digest_sha256,
         ),
         "bcfIssueCoordinationCheck_v1": bcf_issue_coordination_check_v1(
             doc=doc,
