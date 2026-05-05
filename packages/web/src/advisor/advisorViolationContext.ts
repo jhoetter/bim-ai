@@ -7,6 +7,14 @@ export function recommendedContextForRuleId(ruleId: string): string {
       return 'Recommended: open the linked sheet, add or fix a schedule viewport (viewRef schedule:…).';
     case 'schedule_orphan_sheet_ref':
       return 'Recommended: Schedules — set or clear sheetId so the schedule references a real sheet.';
+    case 'schedule_opening_identifier_missing':
+      return 'Recommended: Schedules / properties — set door or window mark/name used on opening schedules.';
+    case 'schedule_opening_orphan_host':
+      return 'Recommended: Restore or re-host the opening onto a valid wall (wallId) so schedule rows resolve.';
+    case 'schedule_opening_family_type_incomplete':
+      return 'Recommended: Assign familyTypeId on the opening (type columns and type-driven schedules).';
+    case 'schedule_opening_host_wall_type_incomplete':
+      return 'Recommended: Assign wallTypeId on the host wall (hostWallTypeId / hostWallTypeDisplay columns).';
     case 'sheet_missing_titleblock':
       return 'Recommended: Sheet authoring — set title block symbol on this sheet.';
     case 'sheet_viewport_zero_extent':

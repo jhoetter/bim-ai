@@ -8,6 +8,10 @@ import {
   formatAgentBriefCommandProtocolReadout,
   parseAgentBriefCommandProtocolV1,
 } from './agentBriefCommandProtocol';
+import {
+  formatAgentGeneratedBundleQaChecklistReadout,
+  parseAgentGeneratedBundleQaChecklistV1,
+} from './agentGeneratedBundleQaChecklist';
 import { formatAgentReviewActionDetails } from './agentReviewActionDetails';
 import { parseAgentReviewActionsV1, type AgentReviewActionRow } from './agentReviewActions';
 import { summarizeArtifactUploadManifestV1 } from './artifactUploadManifestReadout';
@@ -183,6 +187,38 @@ export function AgentReviewPane() {
     }
     return null;
   }, [evidenceTxt]);
+
+  const evidenceQaChecklist = useMemo(() => {
+    if (!evidenceTxt) return null;
+    try {
+      const root = JSON.parse(evidenceTxt) as Record<string, unknown>;
+      const pay = root.payload ?? root.evidencePackage;
+      if (pay !== null && typeof pay === 'object' && !Array.isArray(pay)) {
+        return parseAgentGeneratedBundleQaChecklistV1(
+          (pay as Record<string, unknown>).agentGeneratedBundleQaChecklist_v1,
+        );
+      }
+    } catch {
+      return null;
+    }
+    return null;
+  }, [evidenceTxt]);
+
+  const dryRunQaChecklist = useMemo(() => {
+    if (!dryRunTxt) return null;
+    try {
+      const root = JSON.parse(dryRunTxt) as Record<string, unknown>;
+      const dr = root.dryRun;
+      if (dr !== null && typeof dr === 'object' && !Array.isArray(dr)) {
+        return parseAgentGeneratedBundleQaChecklistV1(
+          (dr as Record<string, unknown>).agentGeneratedBundleQaChecklist_v1,
+        );
+      }
+    } catch {
+      return null;
+    }
+    return null;
+  }, [dryRunTxt]);
 
   type RoomCand = {
     candidateId?: string;
@@ -888,7 +924,11 @@ export function AgentReviewPane() {
           <li>
             Fetch validation + evidence-package JSON and compare with Playwright screenshots in CI.
           </li>
-          <li>Use advisor quick-fixes before applying bundles to production models.</li>
+          <li>
+            Use advisor quick-fixes before applying bundles to production models. Watch{' '}
+            <code className="text-[10px]">schedule_opening_*</code> rows for hosted openings and use the Schedules
+            panel definition presets to confirm required export columns are present on the server table.
+          </li>
         </ol>
       </div>
 
@@ -1266,6 +1306,44 @@ export function AgentReviewPane() {
               <div className="text-[10px] font-medium text-muted">Last bundle dry-run preview</div>
               <pre className="mt-1 max-h-40 overflow-auto rounded border border-border/60 bg-background p-2 font-mono text-[10px]">
                 {formatAgentBriefCommandProtocolReadout(dryRunBriefProtocol).join('\n')}
+              </pre>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      {evidenceQaChecklist !== null || dryRunQaChecklist !== null ? (
+        <div
+          data-testid="agent-generated-bundle-qa-checklist"
+          className="rounded border border-border bg-background/40 p-2"
+        >
+          <div className="text-[10px] font-semibold text-muted">Generated bundle QA checklist</div>
+          <p className="mt-2 text-[11px] font-medium text-foreground">
+            Deterministic QA summary only. It does not auto-execute commands on the model, does not
+            apply remediation, and does not replace human review.
+          </p>
+          <p className="mt-1 text-[10px] text-muted">
+            Row order is stable and matches the evidence-package / dry-run payloads. Use Fetch
+            evidence-package JSON for full coverage rows; bundle dry-run narrows command + validation
+            preview.
+          </p>
+          {evidenceQaChecklist !== null ? (
+            <div className="mt-2">
+              <div className="text-[10px] font-medium text-muted">
+                Evidence-package checklist (agentGeneratedBundleQaChecklist_v1)
+              </div>
+              <pre className="mt-1 max-h-48 overflow-auto rounded border border-border/60 bg-background p-2 font-mono text-[10px] leading-snug">
+                {formatAgentGeneratedBundleQaChecklistReadout(evidenceQaChecklist).join('\n')}
+              </pre>
+            </div>
+          ) : null}
+          {dryRunQaChecklist !== null ? (
+            <div className="mt-2">
+              <div className="text-[10px] font-medium text-muted">
+                Last dry-run checklist (agentGeneratedBundleQaChecklist_v1)
+              </div>
+              <pre className="mt-1 max-h-48 overflow-auto rounded border border-border/60 bg-background p-2 font-mono text-[10px] leading-snug">
+                {formatAgentGeneratedBundleQaChecklistReadout(dryRunQaChecklist).join('\n')}
               </pre>
             </div>
           ) : null}

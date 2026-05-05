@@ -116,6 +116,10 @@ _RULE_DISCIPLINE: dict[str, str] = {
     "ids_cleanroom_opening_finish_material_missing": "agent",
     "sheet_viewport_unknown_ref": "coordination",
     "schedule_orphan_sheet_ref": "coordination",
+    "schedule_opening_identifier_missing": "coordination",
+    "schedule_opening_orphan_host": "coordination",
+    "schedule_opening_family_type_incomplete": "coordination",
+    "schedule_opening_host_wall_type_incomplete": "coordination",
     "schedule_sheet_viewport_missing": "coordination",
     "sheet_missing_titleblock": "coordination",
     "sheet_viewport_zero_extent": "coordination",
@@ -361,6 +365,16 @@ def _validate_hosted_opening(
                 element_ids=[opening.id],
             )
         )
+        viols.append(
+            Violation(
+                rule_id="schedule_opening_orphan_host",
+                severity="info",
+                message=(
+                    "Hosted opening references a missing wall host (schedule rows cannot resolve wallId)."
+                ),
+                element_ids=[opening.id],
+            )
+        )
         return
 
     wl = _wall_length_mm(host)
@@ -420,6 +434,62 @@ def _validate_hosted_opening(
                 element_ids=[opening.id, host.id],
             )
         )
+
+
+def _append_schedule_opening_qa_violations(
+    wall_map: dict[str, WallElem],
+    doors: list[DoorElem],
+    windows: list[WindowElem],
+    viols: list[Violation],
+) -> None:
+    """Deterministic schedule/documentation advisories for door and window rows (WP-V01 / WP-D01)."""
+
+    def _opening_kind_label(op: DoorElem | WindowElem) -> Literal["door", "window"]:
+        return "door" if isinstance(op, DoorElem) else "window"
+
+    def _one(opening: DoorElem | WindowElem) -> None:
+        kind = _opening_kind_label(opening)
+        label = "Door" if kind == "door" else "Window"
+
+        if not (opening.name or "").strip():
+            viols.append(
+                Violation(
+                    rule_id="schedule_opening_identifier_missing",
+                    severity="warning",
+                    message=f"{label} has no mark/name for schedule identification.",
+                    element_ids=[opening.id],
+                )
+            )
+
+        fid = getattr(opening, "family_type_id", None)
+        if fid is None or (isinstance(fid, str) and not fid.strip()):
+            viols.append(
+                Violation(
+                    rule_id="schedule_opening_family_type_incomplete",
+                    severity="warning",
+                    message=f"{label} is missing familyTypeId (type schedule columns are incomplete).",
+                    element_ids=[opening.id],
+                )
+            )
+
+        host = wall_map.get(opening.wall_id)
+        if host is None:
+            return
+        wt = host.wall_type_id
+        if wt is None or (isinstance(wt, str) and not wt.strip()):
+            viols.append(
+                Violation(
+                    rule_id="schedule_opening_host_wall_type_incomplete",
+                    severity="warning",
+                    message="Host wall has no wallTypeId (hostWallType schedule columns cannot resolve).",
+                    element_ids=sorted({opening.id, host.id}),
+                )
+            )
+
+    for d in sorted(doors, key=lambda x: x.id):
+        _one(d)
+    for w in sorted(windows, key=lambda x: x.id):
+        _one(w)
 
 
 def _validation_rules_any_cleanroom_ids(val_rules: list[ValidationRuleElem]) -> bool:
@@ -792,6 +862,8 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
         _validate_hosted_opening(door, wall_map, is_door=True, viols=viols)
     for win in windows:
         _validate_hosted_opening(win, wall_map, is_door=False, viols=viols)
+
+    _append_schedule_opening_qa_violations(wall_map, doors, windows, viols)
 
     # overlap along walls for any hosted openings sharing a wall segment
     for wid, wall in wall_map.items():

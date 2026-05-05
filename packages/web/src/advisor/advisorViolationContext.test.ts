@@ -35,6 +35,17 @@ describe('advisorViolationContext', () => {
     expect(lines).toContain('elementId: sh1');
   });
 
+  it('recommends schedule opening QA context for new rules', () => {
+    expect(recommendedContextForRuleId('schedule_opening_identifier_missing')).toMatch(/mark|name/i);
+    expect(recommendedContextForRuleId('schedule_opening_orphan_host')).toMatch(/wall/i);
+    expect(recommendedContextForRuleId('schedule_opening_family_type_incomplete')).toMatch(
+      /familyTypeId/i,
+    );
+    expect(recommendedContextForRuleId('schedule_opening_host_wall_type_incomplete')).toMatch(
+      /wallTypeId/i,
+    );
+  });
+
   it('sorts violations deterministically', () => {
     const sorted = sortViolationsDeterministic([
       {

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import type { Element } from '@bim-ai/core';
 
+import { useBimStore } from '../state/store';
 import { VirtualScrollRows } from './VirtualScrollRows';
 import {
   parseNumericFilterRuleThreshold,
@@ -43,6 +44,7 @@ import {
   type ScheduleTableBodyRowV1,
   type ScheduleTableModelV1,
 } from './scheduleTableRendererV1';
+import { compactScheduleOpeningAdvisoryLines } from './scheduleOpeningAdvisoriesReadout';
 
 export { resolveScheduleSortDescending, scheduleTotalsReadoutParts } from './schedulePayloadTotals';
 
@@ -413,6 +415,13 @@ export function SchedulePanel(props: {
   const [serverErr, setServerErr] = useState<string | null>(null);
 
   const [registryVisibleCols, setRegistryVisibleCols] = useState<Record<string, string[]>>({});
+
+  const violations = useBimStore((s) => s.violations);
+
+  const scheduleOpeningAdvisoryLines = useMemo(() => {
+    if (tab !== 'doors' && tab !== 'windows') return [];
+    return compactScheduleOpeningAdvisoryLines(violations, props.elementsById, tab);
+  }, [tab, violations, props.elementsById]);
 
   const schedulePersistedColumns = useCallback(
     (scheduleElementId: string | null): string[] | null => {
@@ -862,6 +871,66 @@ export function SchedulePanel(props: {
       visibleColumnKeys: visibleRegistryColumns.length ? visibleRegistryColumns : undefined,
     });
   }, [srvActive, tab, visibleRegistryColumns]);
+
+  const scheduleBudgetHydrationForStore = useMemo((): { tab: string; rowCount: number } | null => {
+    if (registryScheduleTab(tab)) {
+      if (!props.modelId || !sidForTab) return null;
+      if (serverErr) return null;
+      if (!srvActive || srvActive.tab !== tab) return null;
+      const n = registryTableModelV1?.bodyRows.length ?? 0;
+      return { tab, rowCount: n };
+    }
+    if (tab === 'rooms') {
+      if (groupedRooms && Object.keys(groupedRooms).length > 0) {
+        const n = Object.values(groupedRooms).reduce(
+          (acc, rows) => acc + (Array.isArray(rows) ? rows.length : 0),
+          0,
+        );
+        return { tab, rowCount: n };
+      }
+      return { tab, rowCount: roomRows.length };
+    }
+    if (tab === 'doors') {
+      if (groupedDoors && Object.keys(groupedDoors).length > 0) {
+        const n = Object.values(groupedDoors).reduce(
+          (acc, rows) => acc + (Array.isArray(rows) ? rows.length : 0),
+          0,
+        );
+        return { tab, rowCount: n };
+      }
+      return { tab, rowCount: doorRows.length };
+    }
+    if (tab === 'windows') {
+      if (groupedWins && Object.keys(groupedWins).length > 0) {
+        const n = Object.values(groupedWins).reduce(
+          (acc, rows) => acc + (Array.isArray(rows) ? rows.length : 0),
+          0,
+        );
+        return { tab, rowCount: n };
+      }
+      return { tab, rowCount: windowRows.length };
+    }
+    return null;
+  }, [
+    tab,
+    props.modelId,
+    sidForTab,
+    serverErr,
+    srvActive,
+    registryTableModelV1,
+    groupedRooms,
+    groupedDoors,
+    groupedWins,
+    roomRows,
+    doorRows,
+    windowRows,
+  ]);
+
+  const setScheduleBudgetHydration = useBimStore((s) => s.setScheduleBudgetHydration);
+
+  useEffect(() => {
+    setScheduleBudgetHydration(scheduleBudgetHydrationForStore);
+  }, [scheduleBudgetHydrationForStore, setScheduleBudgetHydration]);
 
   function toggleRegistryColumn(columnKey: string) {
     if (!registryPickKey || !registrySchedule) return;
@@ -1846,6 +1915,20 @@ export function SchedulePanel(props: {
       {serverErr ? <div className="mt-2 text-[10px] text-amber-500">{serverErr}</div> : null}
 
       {renderScheduleDefinitionPresetsStrip()}
+
+      {scheduleOpeningAdvisoryLines.length ? (
+        <div
+          data-testid="schedule-opening-advisories-readout"
+          className="mt-2 rounded border border-amber-500/30 bg-amber-500/5 px-2 py-1.5 text-[10px] text-amber-700 dark:text-amber-400/90"
+        >
+          <div className="font-semibold text-foreground/90">Opening schedule advisories</div>
+          <ul className="mt-1 list-disc space-y-0.5 ps-4 font-mono leading-snug">
+            {scheduleOpeningAdvisoryLines.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       {renderScheduleDefinitionToolbar()}
 
