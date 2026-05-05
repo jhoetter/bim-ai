@@ -1,0 +1,76 @@
+/* BIM AI design tokens — drafting palette.
+ *
+ * Source of truth: spec/ui-ux-redesign-v1-spec.md §9.2 / §9.3 / §9.10 / §26.
+ *
+ * Usage rule: these tokens are CANVAS-ONLY. They MUST NOT be applied to
+ * chrome elements (rails, top bar, status bar, dialogs). Chrome reads from
+ * tokens-default.css / tokens-dark.css. Drafting tokens drive 2D plan canvas
+ * symbology (`packages/web/src/plan/symbology/*`) and 3D viewport materials.
+ */
+
+:root,
+:root[data-theme='light'] {
+  /* §9.2 Color — drafting (canvas only), light */
+  --draft-paper: hsl(40 30% 99%);
+  --draft-grid-major: hsl(220 12% 88%);
+  --draft-grid-minor: hsl(220 12% 95%);
+  --draft-construction-blue: hsl(213 80% 56%);
+  --draft-witness: hsl(213 30% 50%);
+  --draft-cut: hsl(220 18% 14%);
+  --draft-projection: hsl(220 12% 38%);
+  --draft-hidden: hsl(220 10% 60%);
+  --draft-selection: var(--color-accent);
+  --draft-hover: color-mix(in srgb, hsl(214 88% 50%) 60%, hsl(0 0% 100%));
+  --draft-snap: hsl(38 92% 50%);
+
+  /* §9.3 Color — element categories (3D + plan fill), light */
+  --cat-wall: hsl(220 6% 60%);
+  --cat-floor: hsl(36 18% 70%);
+  --cat-roof: hsl(0 18% 40%);
+  --cat-door: hsl(28 30% 45%);
+  --cat-window: hsl(213 60% 70%);
+  --cat-stair: hsl(220 6% 35%);
+  --cat-railing: hsl(220 6% 28%);
+  --cat-room: hsl(150 24% 86%);
+  --cat-site: hsl(80 20% 80%);
+  --cat-section: hsl(0 70% 50%);
+  --cat-sheet: hsl(220 6% 80%);
+
+  /* §9.10 Drafting line weights at 1:50 plot scale (in px) */
+  --draft-lw-cut-major: 2px;
+  --draft-lw-cut-minor: 1.4px;
+  --draft-lw-projection-major: 1px;
+  --draft-lw-projection-minor: 0.7px;
+  --draft-lw-hidden: 0.7px;
+  --draft-lw-witness: 0.5px;
+  --draft-lw-construction: 0.5px;
+}
+
+:root[data-theme='dark'],
+:root.dark {
+  /* §9.2 Color — drafting (canvas only), dark */
+  --draft-paper: hsl(220 14% 12%);
+  --draft-grid-major: hsl(220 10% 24%);
+  --draft-grid-minor: hsl(220 10% 18%);
+  --draft-construction-blue: hsl(213 95% 64%);
+  --draft-witness: hsl(213 30% 70%);
+  --draft-cut: hsl(220 14% 92%);
+  --draft-projection: hsl(220 12% 66%);
+  --draft-hidden: hsl(220 10% 50%);
+  --draft-selection: var(--color-accent);
+  --draft-hover: color-mix(in srgb, hsl(213 95% 62%) 60%, hsl(220 14% 10%));
+  --draft-snap: hsl(40 95% 62%);
+
+  /* §9.3 Color — element categories, dark */
+  --cat-wall: hsl(220 6% 50%);
+  --cat-floor: hsl(36 14% 38%);
+  --cat-roof: hsl(0 18% 50%);
+  --cat-door: hsl(28 30% 60%);
+  --cat-window: hsl(213 60% 50%);
+  --cat-stair: hsl(220 6% 70%);
+  --cat-railing: hsl(220 6% 75%);
+  --cat-room: hsl(150 18% 22%);
+  --cat-site: hsl(80 14% 22%);
+  --cat-section: hsl(0 80% 62%);
+  --cat-sheet: hsl(220 6% 30%);
+}

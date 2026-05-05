@@ -6,7 +6,10 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./tailwind-preset": "./src/tailwind-preset.ts"
+    "./tailwind-preset": "./src/tailwind-preset.ts",
+    "./tokens-default.css": "./src/tokens-default.css",
+    "./tokens-dark.css": "./src/tokens-dark.css",
+    "./tokens-drafting.css": "./src/tokens-drafting.css"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json --noEmit",

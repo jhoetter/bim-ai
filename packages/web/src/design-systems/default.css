@@ -1,7 +1,39 @@
-@import "./tokens-default.css";
+/* Web entrypoint for the BIM AI design system.
+ *
+ * Order matters: light defaults first, then dark overrides, then drafting
+ * canvas-only tokens. Sources of truth live in @bim-ai/design-tokens.
+ */
+
+@import '@bim-ai/design-tokens/tokens-default.css';
+@import '@bim-ai/design-tokens/tokens-dark.css';
+@import '@bim-ai/design-tokens/tokens-drafting.css';
 
 html,
 body,
 #root {
   height: 100%;
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--text-base-line);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0ms !important;
+    scroll-behavior: auto !important;
+  }
 }
