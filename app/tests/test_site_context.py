@@ -6,9 +6,10 @@ import pytest
 
 from bim_ai.commands import UpsertSiteCmd
 from bim_ai.document import Document
-from bim_ai.elements import LevelElem, SiteElem, Vec2Mm
+from bim_ai.elements import LevelElem, SiteElem, Vec2Mm, WallElem
 from bim_ai.engine import apply_inplace, try_commit_bundle
 from bim_ai.export_gltf import document_to_gltf, export_manifest_extension_payload
+from bim_ai.ifc_stub import build_ifc_exchange_manifest_payload
 
 
 def _minimal_doc() -> Document:
@@ -199,3 +200,36 @@ def test_document_to_gltf_includes_site_pad_node() -> None:
     names = [str(n["name"]) for n in g["nodes"]]
     assert "site:site-a" in names
     assert any(n.startswith("site:site-a:ctx:") for n in names)
+
+
+def test_ifc_manifest_lists_site_expected_kind_when_wall_and_site_present() -> None:
+    doc = Document(
+        revision=8,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=100),
+            "w": WallElem(
+                kind="wall",
+                id="w",
+                name="W",
+                levelId="lvl",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 5000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+            "site-a": SiteElem(
+                kind="site",
+                id="site-a",
+                referenceLevelId="lvl",
+                boundaryMm=[
+                    Vec2Mm(xMm=0, yMm=0),
+                    Vec2Mm(xMm=8000, yMm=0),
+                    Vec2Mm(xMm=8000, yMm=6000),
+                    Vec2Mm(xMm=0, yMm=6000),
+                ],
+                padThicknessMm=120,
+            ),
+        },
+    )
+    mf = build_ifc_exchange_manifest_payload(doc)
+    assert mf["kernelExpectedIfcKinds"].get("site") == 1

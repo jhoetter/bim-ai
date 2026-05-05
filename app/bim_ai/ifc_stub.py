@@ -12,6 +12,7 @@ from bim_ai.export_gltf import (
 )
 from bim_ai.export_ifc import (
     IFC_ENCODING_KERNEL_V1,
+    build_site_exchange_evidence_v0_for_manifest,
     ifc_manifest_artifact_hints,
     kernel_expected_ifc_emit_counts,
     kernel_export_eligible,
@@ -26,11 +27,13 @@ IFC_SEMANTIC_IMPORT_SCOPE_V0: dict[str, Any] = {
         "IfcBuildingStorey counts and elevationsPresent",
         "IfcWall, IfcSlab, IfcRoof, IfcStair, IfcSpace product counts",
         "IfcOpeningElement, IfcDoor, IfcWindow counts",
-        "Pset_*Common Reference identity coverage (wall, slab, space, door, window, roof, stair)",
+        "Pset_*Common Reference identity coverage (wall, slab, space, door, window, roof, stair, site)",
         "Pset_SpaceCommon programme string fields",
         "IfcElementQuantity Qto_* template names",
         "inspect_kernel_ifc_semantics.qtoLinkedProducts — per-product Qto_* linkage counts",
         "inspect_kernel_ifc_semantics.importScopeUnsupportedIfcProducts_v0 — IfcProduct classes outside kernel slice roots",
+        "inspect_kernel_ifc_semantics.siteExchangeEvidence_v0 — kernel SiteElem ↔ IfcSite counts + Pset_SiteCommon.Reference joined ids",
+        "ifc_manifest_v0.siteExchangeEvidence_v0 — document-only kernel site participation when IFC export not eligible",
         "Kernel geometry skip map from Document",
         "summarize_kernel_ifc_semantic_roundtrip export→re-parse deltas (identityCoverage, qtoCoverage)",
         "summarize_kernel_ifc_semantic_roundtrip.commandSketch — level echo, storeys read-back, QTO names, programme samples",
@@ -88,6 +91,7 @@ def build_ifc_exchange_manifest_payload(doc: Document) -> dict[str, Any]:
     asm_ev = material_assembly_manifest_evidence(doc)
     if asm_ev:
         out["materialAssemblyEvidence_v0"] = asm_ev
+    out["siteExchangeEvidence_v0"] = build_site_exchange_evidence_v0_for_manifest(doc)
     return out
 
 

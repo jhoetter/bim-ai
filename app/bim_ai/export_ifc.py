@@ -23,6 +23,7 @@ from bim_ai.elements import (
     LevelElem,
     RoofElem,
     RoomElem,
+    SiteElem,
     SlabOpeningElem,
     StairElem,
     Vec2Mm,
@@ -43,7 +44,7 @@ except ImportError:
     IFC_AVAILABLE = False
 
 KERNEL_IFC_DOMINANT_KINDS: frozenset[str] = frozenset(
-    {"level", "wall", "floor", "door", "window", "room", "roof", "stair", "slab_opening"}
+    {"level", "wall", "floor", "door", "window", "room", "roof", "stair", "slab_opening", "site"}
 )
 IFC_ENCODING_KERNEL_V1 = "bim_ai_ifc_kernel_v1"
 KERNEL_IFC_AUTHORITATIVE_REPLAY_SCHEMA_VERSION = 0
@@ -300,6 +301,9 @@ def kernel_expected_ifc_emit_counts(doc: Document) -> dict[str, int]:
         kinds["stair"] = stair_emit
     if slab_open_emit:
         kinds["slab_opening"] = slab_open_emit
+    site_emit = sum(1 for e in doc.elements.values() if isinstance(e, SiteElem))
+    if site_emit:
+        kinds["site"] = site_emit
     return dict(sorted(kinds.items()))
 
 
@@ -308,11 +312,13 @@ def ifc_manifest_artifact_hints(doc: Document, *, emitting_kernel_body: bool) ->
         "exportedIfcKindsInArtifact": {},
         "ifcEmittedKernelKinds": sorted(KERNEL_IFC_DOMINANT_KINDS),
         "kernelNote": (
-            "Kernel IFC encodes storey graph, walls+floors, roofs (IfcRoof prism), stairs (IfcStair run prism), "
-            "hosted door/window openings, slab voids via IfcOpeningElement on host IfcSlab, and rooms as IfcSpace "
-            "footprints; IfcOpenShell emits minimal IFC4 **property sets** (e.g. Pset_*Common `Reference` "
-            "from kernel ids on physical products); **narrow `Qto_*` quantities** attach to walls/fillings/slab/space "
-            "when IfcOpenShell qto helpers succeed. IFC import and full boolean regeneration remain deferred."
+            "Kernel IFC encodes Proj→IfcSite→IfcBuilding→storeys; kernel **SiteElem** maps to identity "
+            "**`Pset_SiteCommon.Reference`** on **`IfcSite`** (comma-joined sorted ids when multiple); walls+floors, "
+            "roofs (IfcRoof prism), stairs (IfcStair run prism), hosted door/window openings, slab voids via "
+            "IfcOpeningElement on host IfcSlab, and rooms as IfcSpace footprints; IfcOpenShell emits minimal IFC4 "
+            "**property sets** (e.g. Pset_*Common `Reference` from kernel ids on physical products); **narrow `Qto_*` "
+            "quantities** attach to walls/fillings/slab/space when IfcOpenShell qto helpers succeed. IFC import and "
+            "full boolean regeneration remain deferred."
         ),
     }
 
@@ -391,6 +397,92 @@ def _count_ifc_products_with_qto_template(products: list[Any], qto_template_name
     return sum(1 for p in products if _ifc_product_defines_qto_template(p, qto_template_name))
 
 
+def _kernel_site_element_ids_sorted(doc: Document | None) -> list[str]:
+    if doc is None:
+        return []
+    return sorted(eid for eid, e in doc.elements.items() if isinstance(e, SiteElem))
+
+
+def build_site_exchange_evidence_v0_for_manifest(doc: Document) -> dict[str, Any]:
+    """Offline-safe document-only site participation (manifest); independent of STEP."""
+
+    kernel_ids = _kernel_site_element_ids_sorted(doc)
+    kn = len(kernel_ids)
+    eligible = document_kernel_export_eligible(doc)
+    out: dict[str, Any] = {
+        "schemaVersion": 0,
+        "kernelSiteCount": kn,
+        "kernelIfcExportEligible": eligible,
+        "joinedKernelSiteIdsExpected": ",".join(kernel_ids) if kn else "",
+    }
+    if not eligible:
+        out["note"] = (
+            "kernelExpectedIfcKinds stays empty until wall/slab-floor eligibility is satisfied; "
+            "kernel SiteElem counts remain declared here."
+        )
+    return out
+
+
+def build_site_exchange_evidence_v0(
+    *,
+    doc: Document | None,
+    model: Any | None = None,
+    unavailable_reason: str | None = None,
+) -> dict[str, Any]:
+    """Kernel site ↔ IFC ``IfcSite`` identity slice for inspectors (WP-X03)."""
+
+    kernel_ids = _kernel_site_element_ids_sorted(doc)
+    kn = len(kernel_ids)
+    joined_expect = ",".join(kernel_ids)
+    base: dict[str, Any] = {
+        "schemaVersion": 0,
+        "kernelSiteCount": kn,
+        "joinedKernelSiteIdsExpected": joined_expect if kn else "",
+    }
+
+    if unavailable_reason is not None:
+        base["reason"] = unavailable_reason
+        base["ifcSiteCount"] = None
+        base["identityReferenceJoined"] = None
+        base["sitesWithPsetSiteCommonReference"] = None
+        base["kernelIdsMatchJoinedReference"] = False
+        return base
+
+    if model is None:
+        base["ifcSiteCount"] = None
+        base["identityReferenceJoined"] = None
+        base["sitesWithPsetSiteCommonReference"] = None
+        base["kernelIdsMatchJoinedReference"] = None
+        return base
+
+    sites_raw = model.by_type("IfcSite") or []
+    sites_sorted = sorted(sites_raw, key=lambda s: str(getattr(s, "GlobalId", None) or ""))
+    base["ifcSiteCount"] = len(sites_sorted)
+
+    refs_nonempty = 0
+    joined_from_ifc = ""
+    if ifc_elem_util is not None:
+        for si in sites_sorted:
+            ps = ifc_elem_util.get_psets(si)
+            bucket = ps.get("Pset_SiteCommon") or {}
+            ref = bucket.get("Reference")
+            if isinstance(ref, str) and ref.strip():
+                refs_nonempty += 1
+                if not joined_from_ifc:
+                    joined_from_ifc = ref.strip()
+
+    base["sitesWithPsetSiteCommonReference"] = refs_nonempty
+    base["identityReferenceJoined"] = joined_from_ifc or None
+
+    if kn == 0:
+        base["kernelIdsMatchJoinedReference"] = refs_nonempty == 0
+    else:
+        parsed = sorted(part.strip() for part in joined_from_ifc.split(",") if part.strip())
+        base["kernelIdsMatchJoinedReference"] = bool(parsed == kernel_ids and refs_nonempty >= 1)
+
+    return base
+
+
 def inspect_kernel_ifc_semantics(
     *,
     doc: Document | None = None,
@@ -411,31 +503,48 @@ def inspect_kernel_ifc_semantics(
         skip_counts = {k: v for k, v in sorted(ifc_kernel_geometry_skip_counts(doc).items()) if v}
 
     if not IFC_AVAILABLE:
-        return {
+        row = {
             "matrixVersion": matrix_version,
             "available": False,
             "reason": "ifcopenshell_not_installed",
             **({"ifcKernelGeometrySkippedCounts": skip_counts} if skip_counts else {}),
         }
+        if doc is not None:
+            row["siteExchangeEvidence_v0"] = build_site_exchange_evidence_v0(
+                doc=doc,
+                unavailable_reason="ifcopenshell_not_installed",
+            )
+        return row
 
     text: str | None = step_text
     if text is None and doc is not None:
         if not kernel_export_eligible(doc):
-            return {
+            row = {
                 "matrixVersion": matrix_version,
                 "available": False,
                 "reason": "kernel_not_eligible",
                 **({"ifcKernelGeometrySkippedCounts": skip_counts} if skip_counts else {}),
             }
+            row["siteExchangeEvidence_v0"] = build_site_exchange_evidence_v0(
+                doc=doc,
+                unavailable_reason="kernel_not_eligible",
+            )
+            return row
         text = export_ifc_model_step(doc)
 
     if text is None:
-        return {
+        row = {
             "matrixVersion": matrix_version,
             "available": False,
             "reason": "no_document_or_step",
             **({"ifcKernelGeometrySkippedCounts": skip_counts} if skip_counts else {}),
         }
+        if doc is not None:
+            row["siteExchangeEvidence_v0"] = build_site_exchange_evidence_v0(
+                doc=doc,
+                unavailable_reason="no_document_or_step",
+            )
+        return row
 
     import ifcopenshell
 
@@ -457,6 +566,7 @@ def inspect_kernel_ifc_semantics(
     doors = model.by_type("IfcDoor") or []
     windows = model.by_type("IfcWindow") or []
     spaces = model.by_type("IfcSpace") or []
+    site_products = model.by_type("IfcSite") or []
     qtys = model.by_type("IfcElementQuantity") or []
 
     def _count_pset_ref(ifc_products: list[Any], pset_name: str) -> int:
@@ -504,6 +614,7 @@ def inspect_kernel_ifc_semantics(
             "windowWithPsetWindowCommonReference": _count_pset_ref(list(windows), "Pset_WindowCommon"),
             "roofWithPsetRoofCommonReference": _count_pset_ref(list(roofs), "Pset_RoofCommon"),
             "stairWithPsetStairCommonReference": _count_pset_ref(list(stairs), "Pset_StairCommon"),
+            "siteWithPsetSiteCommonReference": _count_pset_ref(list(site_products), "Pset_SiteCommon"),
         },
         "qtoLinkedProducts": {
             "IfcWall": _count_ifc_products_with_qto_template(list(walls), "Qto_WallBaseQuantities"),
@@ -520,6 +631,7 @@ def inspect_kernel_ifc_semantics(
         },
         "qtoTemplates": qto_names,
         "importScopeUnsupportedIfcProducts_v0": _import_scope_unsupported_ifc_products_v0(model),
+        "siteExchangeEvidence_v0": build_site_exchange_evidence_v0(doc=doc, model=model),
     }
     if skip_counts:
         out["ifcKernelGeometrySkippedCounts"] = skip_counts
@@ -1479,6 +1591,7 @@ def summarize_kernel_ifc_semantic_roundtrip(doc: Document) -> dict[str, Any]:
     model = ifcopenshell.file.from_string(step)
     walls_m = model.by_type("IfcWall") or []
     spaces_m = model.by_type("IfcSpace") or []
+    sites_m = model.by_type("IfcSite") or []
 
     prog_exp = kernel_expected_space_programme_counts(doc)
     prog_insp = inspection.get("spaceProgrammeFields") or {}
@@ -1541,6 +1654,12 @@ def summarize_kernel_ifc_semantic_roundtrip(doc: Document) -> dict[str, Any]:
             kinds_expected.get("stair", 0),
             int(id_ps.get("stairWithPsetStairCommonReference", 0)),
         ),
+        "site": _tri(
+            kinds_expected.get("site", 0),
+            kinds_expected.get("site", 0)
+            if (inspection.get("siteExchangeEvidence_v0") or {}).get("kernelIdsMatchJoinedReference") is True
+            else 0,
+        ),
     }
 
     qto_ln = inspection.get("qtoLinkedProducts") or {}
@@ -1571,6 +1690,7 @@ def summarize_kernel_ifc_semantic_roundtrip(doc: Document) -> dict[str, Any]:
         "referenceIdsFromIfc": {
             "IfcWall": _references_from_products(list(walls_m), "Pset_WallCommon", limit=sketch_limit),
             "IfcSpace": _references_from_products(list(spaces_m), "Pset_SpaceCommon", limit=sketch_limit),
+            "IfcSite": _references_from_products(list(sites_m), "Pset_SiteCommon", limit=sketch_limit),
         },
         "authoritativeReplay_v0": build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model),
     }
@@ -1779,6 +1899,13 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         pset = add_pset(f, product=product, name=pset_name)
 
         edit_pset(f, pset=pset, properties=merged)
+
+    kernel_site_ids_sorted = sorted(eid for eid, e in doc.elements.items() if isinstance(e, SiteElem))
+    if kernel_site_ids_sorted:
+        first_site_el = doc.elements[kernel_site_ids_sorted[0]]
+        assert isinstance(first_site_el, SiteElem)
+        site.Name = first_site_el.name or kernel_site_ids_sorted[0]
+        attach_kernel_identity_pset(site, "Pset_SiteCommon", ",".join(kernel_site_ids_sorted))
 
     for wid in sorted(eid for eid, e in doc.elements.items() if isinstance(e, WallElem)):
         w = doc.elements[wid]

@@ -13,8 +13,10 @@ from bim_ai.elements import (
     LevelElem,
     RoofElem,
     RoomElem,
+    SiteElem,
     SlabOpeningElem,
     StairElem,
+    Vec2Mm,
     WallElem,
     WindowElem,
 )
@@ -536,6 +538,10 @@ def test_ifc_inspection_matrix_covers_storeys_spaces_qtos_and_programme_fields()
     assert sf["FunctionLabel"] >= 1
     assert sf["FinishSet"] >= 1
 
+    sx0 = rep.get("siteExchangeEvidence_v0") or {}
+    assert sx0.get("kernelSiteCount") == 0
+    assert sx0.get("kernelIdsMatchJoinedReference") is True
+
     step = export_ifc_model_step(doc)
     import ifcopenshell
     import ifcopenshell.util.element as elem_util
@@ -561,6 +567,7 @@ def test_ifc_inspection_matrix_covers_storeys_spaces_qtos_and_programme_fields()
     assert rt["commandSketch"] is not None
     assert rt["commandSketch"]["referenceIdsFromIfc"]["IfcWall"]
     assert rt["commandSketch"]["referenceIdsFromIfc"]["IfcSpace"]
+    assert rt["commandSketch"]["referenceIdsFromIfc"]["IfcSite"] == []
     sk = rt["commandSketch"]
     assert sk["levelsFromDocument"] == [{"id": "lvl-g", "name": "G", "elevationMm": 0.0}]
     assert any(s.get("name") == "G" for s in sk["storeysFromIfc"])
@@ -574,6 +581,83 @@ def test_ifc_inspection_matrix_covers_storeys_spaces_qtos_and_programme_fields()
     assert sample0.get("programmeFields", {}).get("ProgrammeCode") == "ISO7"
     rt_us = (rt["inspection"] or {}).get("importScopeUnsupportedIfcProducts_v0") or {}
     assert rt_us.get("countsByClass") == {}
+
+
+def test_ifc_site_identity_reference_pset_and_exchange_evidence_v0() -> None:
+    doc = Document(
+        revision=905,
+        elements={
+            "lvl-g": LevelElem(kind="level", id="lvl-g", name="G", elevationMm=0),
+            "w-a": WallElem(
+                kind="wall",
+                id="w-a",
+                name="W",
+                levelId="lvl-g",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 3000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+            "site-a": SiteElem(
+                kind="site",
+                id="site-a",
+                name="AlphaLot",
+                referenceLevelId="lvl-g",
+                boundaryMm=[
+                    Vec2Mm(xMm=0, yMm=0),
+                    Vec2Mm(xMm=6000, yMm=0),
+                    Vec2Mm(xMm=6000, yMm=4000),
+                    Vec2Mm(xMm=0, yMm=4000),
+                ],
+                padThicknessMm=100,
+            ),
+            "site-b": SiteElem(
+                kind="site",
+                id="site-b",
+                referenceLevelId="lvl-g",
+                boundaryMm=[
+                    Vec2Mm(xMm=0, yMm=0),
+                    Vec2Mm(xMm=4000, yMm=0),
+                    Vec2Mm(xMm=4000, yMm=4000),
+                    Vec2Mm(xMm=0, yMm=4000),
+                ],
+                padThicknessMm=100,
+            ),
+        },
+    )
+    mf = build_ifc_exchange_manifest_payload(doc)
+    kinds = mf.get("kernelExpectedIfcKinds") or {}
+    assert kinds.get("site") == 2
+
+    step = export_ifc_model_step(doc)
+    import ifcopenshell
+    import ifcopenshell.util.element as elem_util
+
+    model = ifcopenshell.file.from_string(step)
+    sites = model.by_type("IfcSite") or []
+    assert len(sites) >= 1
+    site_el = sites[0]
+    assert str(getattr(site_el, "Name", None) or "") == "AlphaLot"
+    ps = elem_util.get_psets(site_el)
+    bucket = ps.get("Pset_SiteCommon") or {}
+    assert bucket.get("Reference") == "site-a,site-b"
+
+    rep = inspect_kernel_ifc_semantics(doc=doc)
+    sx = rep.get("siteExchangeEvidence_v0") or {}
+    assert sx["kernelSiteCount"] == 2
+    assert sx["joinedKernelSiteIdsExpected"] == "site-a,site-b"
+    assert sx["kernelIdsMatchJoinedReference"] is True
+    assert rep["identityPsets"]["siteWithPsetSiteCommonReference"] >= 1
+
+    rt = summarize_kernel_ifc_semantic_roundtrip(doc)
+    assert rt["roundtripChecks"]["identityCoverage"]["site"]["match"] is True
+    site_refs = rt["commandSketch"]["referenceIdsFromIfc"]["IfcSite"]
+    assert "site-a,site-b" in site_refs
+
+    ar = rt["commandSketch"]["authoritativeReplay_v0"]
+    assert ar["available"] is True
+    cmds = ar["commands"]
+    assert all(c.get("type") != "upsertSite" for c in cmds)
 
 
 def test_ifc_inspection_matrix_includes_geometry_skip_counts_on_eligible_doc() -> None:

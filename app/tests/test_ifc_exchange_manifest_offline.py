@@ -9,7 +9,7 @@ from __future__ import annotations
 import pytest
 
 from bim_ai.document import Document
-from bim_ai.elements import DoorElem, FloorElem, LevelElem, WallElem
+from bim_ai.elements import DoorElem, FloorElem, LevelElem, SiteElem, WallElem
 from bim_ai.engine import clone_document, try_apply_kernel_ifc_authoritative_replay_v0
 from bim_ai.export_ifc import (
     AUTHORITATIVE_REPLAY_KIND_V0,
@@ -158,12 +158,27 @@ def test_inspect_kernel_ifc_semantics_stub_when_ifcopenshell_missing() -> None:
                 thicknessMm=200,
                 heightMm=2800,
             ),
+            "sx": SiteElem(
+                kind="site",
+                id="sx",
+                referenceLevelId="lvl-g",
+                boundaryMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 3000, "yMm": 0},
+                    {"xMm": 3000, "yMm": 3000},
+                    {"xMm": 0, "yMm": 3000},
+                ],
+                padThicknessMm=80,
+            ),
         },
     )
     rep = inspect_kernel_ifc_semantics(doc=doc)
     assert rep["available"] is False
     assert rep["reason"] == "ifcopenshell_not_installed"
     assert rep["matrixVersion"] == 1
+    sx = rep.get("siteExchangeEvidence_v0") or {}
+    assert sx.get("kernelSiteCount") == 1
+    assert sx["reason"] == "ifcopenshell_not_installed"
 
 
 def test_ifc_manifest_scope_lists_qto_linked_products_read_back() -> None:
@@ -262,6 +277,75 @@ def test_inspect_kernel_ifc_semantics_kernel_not_eligible_when_ifc_present() -> 
     assert rep["available"] is False
     assert rep["reason"] == "kernel_not_eligible"
     assert (rep.get("ifcKernelGeometrySkippedCounts") or {}).get("door_missing_host_wall") == 1
+    sx = rep.get("siteExchangeEvidence_v0") or {}
+    assert sx.get("kernelSiteCount") == 0
+
+
+def test_ifc_manifest_site_exchange_when_kernel_not_eligible_site_only_doc() -> None:
+    doc = Document(
+        revision=92,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L", elevationMm=0),
+            "site-only": SiteElem(
+                kind="site",
+                id="site-only",
+                referenceLevelId="lvl",
+                boundaryMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 4000, "yMm": 0},
+                    {"xMm": 4000, "yMm": 4000},
+                    {"xMm": 0, "yMm": 4000},
+                ],
+                padThicknessMm=80,
+            ),
+        },
+    )
+    mf = build_ifc_exchange_manifest_payload(doc)
+    assert mf["artifactHasGeometryEntities"] is False
+    assert mf.get("kernelExpectedIfcKinds") == {}
+    sx = mf.get("siteExchangeEvidence_v0") or {}
+    assert sx.get("kernelSiteCount") == 1
+    assert sx.get("kernelIfcExportEligible") is False
+    assert sx.get("joinedKernelSiteIdsExpected") == "site-only"
+    assert sx.get("note")
+
+
+def test_ifc_manifest_kernel_expected_includes_site_when_geometry_eligible() -> None:
+    doc = Document(
+        revision=93,
+        elements={
+            "lvl-g": LevelElem(kind="level", id="lvl-g", name="G", elevationMm=0),
+            "w-a": WallElem(
+                kind="wall",
+                id="w-a",
+                name="W",
+                levelId="lvl-g",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 3000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+            "sx": SiteElem(
+                kind="site",
+                id="sx",
+                referenceLevelId="lvl-g",
+                boundaryMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 3000, "yMm": 0},
+                    {"xMm": 3000, "yMm": 3000},
+                    {"xMm": 0, "yMm": 3000},
+                ],
+                padThicknessMm=80,
+            ),
+        },
+    )
+    mf = build_ifc_exchange_manifest_payload(doc)
+    kinds = mf.get("kernelExpectedIfcKinds") or {}
+    assert kinds.get("wall") == 1
+    assert kinds.get("site") == 1
+    msx = mf.get("siteExchangeEvidence_v0") or {}
+    assert msx.get("kernelIfcExportEligible") is True
+    assert msx.get("kernelSiteCount") == 1
 
 
 def _sketch_with_commands(*, cmds: list[dict[str, object]]) -> dict[str, object]:

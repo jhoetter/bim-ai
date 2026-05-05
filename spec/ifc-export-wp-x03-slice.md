@@ -49,14 +49,15 @@ Single read-back entry point: **`inspect_kernel_ifc_semantics()`** in [`export_i
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `buildingStorey`                       | `IfcBuildingStorey` count; how many storeys carry a numeric `Elevation`.                                                                                                                                                                                     |
 | `products`                             | Counts of `IfcWall`, `IfcSlab`, `IfcRoof`, `IfcStair`, `IfcOpeningElement`, `IfcDoor`, `IfcWindow`, `IfcSpace`.                                                                                                                                              |
-| `identityPsets`                        | Instances with `Reference` on `Pset_WallCommon`, `Pset_SlabCommon`, `Pset_SpaceCommon`, `Pset_DoorCommon`, `Pset_WindowCommon`, `Pset_RoofCommon`, `Pset_StairCommon`.                                                                                       |
+| `identityPsets`                        | Instances with `Reference` on `Pset_WallCommon`, `Pset_SlabCommon`, `Pset_SpaceCommon`, `Pset_DoorCommon`, `Pset_WindowCommon`, `Pset_RoofCommon`, `Pset_StairCommon`, **`Pset_SiteCommon`** (`siteWithPsetSiteCommonReference`).                                                                                       |
 | `spaceProgrammeFields`                 | Counts of spaces carrying `ProgrammeCode` / `Department` / `FunctionLabel` / `FinishSet` on `Pset_SpaceCommon`.                                                                                                                                              |
 | `qtoTemplates`                         | `Name` of each `IfcElementQuantity` (`Qto_*` templates when QTO helpers succeed).                                                                                                                                                                            |
 | `qtoLinkedProducts`                    | Per IFC product class, count of instances with a defining `Qto_*` template (`Qto_WallBaseQuantities`, `Qto_SlabBaseQuantities`, `Qto_SpaceBaseQuantities`, door/window base quantities).                                                                     |
 | `ifcKernelGeometrySkippedCounts`       | Document-level map from `ifc_kernel_geometry_skip_counts()` (missing hosts, degenerate outlines); aligned with manifest + `exchange_ifc_kernel_geometry_skip_summary`.                                                                                       |
 | `importScopeUnsupportedIfcProducts_v0` | `schemaVersion` + `countsByClass`: `IfcProduct` instances not under kernel slice element roots and not spatial graph products (`IfcSite`, `IfcBuilding`, `IfcBuildingStorey`); signals foreign element types (e.g. `IfcBeam`); empty on pure kernel exports. |
+| **`siteExchangeEvidence_v0`**          | Kernel **`SiteElem`** count vs `IfcSite` instances; **`Pset_SiteCommon.Reference`** as comma-joined sorted kernel ids (multi-site); **`kernelIdsMatchJoinedReference`** when STEP read-back aligns (offline stubs carry document-only counts + `reason`).   |
 
-**Offline / no IfcOpenShell:** same function returns `available: false` (`reason`: `ifcopenshell_not_installed` or `kernel_not_eligible`) and may still include `ifcKernelGeometrySkippedCounts` when a `Document` is supplied.
+**Offline / no IfcOpenShell:** same function returns `available: false` (`reason`: `ifcopenshell_not_installed` or `kernel_not_eligible`) and may still include `ifcKernelGeometrySkippedCounts` and **`siteExchangeEvidence_v0`** (document-only kernel site counts) when a `Document` is supplied.
 
 **Tests:** [`app/tests/test_export_ifc.py`](../app/tests/test_export_ifc.py) (ifc-backed), [`app/tests/test_ifc_exchange_manifest_offline.py`](../app/tests/test_ifc_exchange_manifest_offline.py) (manifest + stub paths).
 
@@ -72,7 +73,7 @@ Secondary entry point: **`summarize_kernel_ifc_semantic_roundtrip(doc)`** in [`e
 
 **Offline:** returns `roundtripChecks: null`, `commandSketch: null`, with `inspection` from the usual unavailable stubs. **`build_kernel_ifc_authoritative_replay_sketch_v0`** alone returns `available: false` when IfcOpenShell is missing.
 
-**Manifest:** [`ifc_stub.build_ifc_exchange_manifest_payload`](../app/bim_ai/ifc_stub.py) adds **`ifcSemanticImportScope_v0`** (read-back vs import-merge deferrals) and **`kernelExpectedIfcKinds`** without parsing STEP.
+**Manifest:** [`ifc_stub.build_ifc_exchange_manifest_payload`](../app/bim_ai/ifc_stub.py) adds **`ifcSemanticImportScope_v0`** (read-back vs import-merge deferrals), **`kernelExpectedIfcKinds`** without parsing STEP, and **`siteExchangeEvidence_v0`** (document-only kernel site participation when geometry export is not yet eligible).
 
 ## Authoritative replay slice (v0)
 
