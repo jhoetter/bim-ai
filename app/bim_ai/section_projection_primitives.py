@@ -15,6 +15,7 @@ from bim_ai.elements import (
     CalloutElem,
     DoorElem,
     FloorElem,
+    GridLineElem,
     LevelElem,
     RoofElem,
     RoomElem,
@@ -29,6 +30,8 @@ from bim_ai.material_assembly_resolve import (
     layered_assembly_witness_row_for_floor,
     layered_assembly_witness_row_for_roof,
     layered_assembly_witness_row_for_wall,
+    resolved_layers_for_floor,
+    resolved_layers_for_roof,
     resolved_layers_for_wall,
     roof_surface_material_readout_v0,
     section_assembly_alignment_fields_floor,
@@ -463,6 +466,143 @@ def _section_geometry_extent_mm(
     }
 
 
+def _build_section_cut_material_hints_v1(
+    doc: Document,
+    walls: list[dict[str, Any]],
+    floors: list[dict[str, Any]],
+    roofs: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    hints: list[dict[str, Any]] = []
+    seen_wall_ids: set[str] = set()
+    for row in walls:
+        eid = str(row.get("elementId") or "")
+        if eid in seen_wall_ids:
+            continue
+        seen_wall_ids.add(eid)
+        wall_el = doc.elements.get(eid)
+        if not isinstance(wall_el, WallElem):
+            continue
+        layers = resolved_layers_for_wall(doc, wall_el)
+        material_key = ""
+        for lyr in layers:
+            if str(lyr.get("function") or "") == "structure":
+                material_key = str(lyr.get("materialKey") or "").strip()
+                break
+        if not material_key and layers:
+            material_key = str(layers[0].get("materialKey") or "").strip()
+        hatch_kind = str(row.get("cutHatchKind") or "")
+        hatch_token = "hatch_edgeOn_v1" if hatch_kind == "edgeOn" else "hatch_alongCut_v1"
+        u_span = abs(float(row.get("uEndMm") or 0) - float(row.get("uStartMm") or 0))
+        z_span = abs(float(row.get("zTopMm") or 0) - float(row.get("zBottomMm") or 0))
+        hints.append({
+            "elementId": eid,
+            "elementKind": "wall",
+            "materialId": material_key,
+            "hatchPatternToken": hatch_token,
+            "cutFaceMm2": round(u_span * z_span, 3),
+        })
+    seen_floor_ids: set[str] = set()
+    for row in floors:
+        eid = str(row.get("elementId") or "")
+        if eid in seen_floor_ids:
+            continue
+        seen_floor_ids.add(eid)
+        floor_el = doc.elements.get(eid)
+        if not isinstance(floor_el, FloorElem):
+            continue
+        layers = resolved_layers_for_floor(doc, floor_el)
+        material_key = ""
+        for lyr in layers:
+            if str(lyr.get("function") or "") == "structure":
+                material_key = str(lyr.get("materialKey") or "").strip()
+                break
+        if not material_key and layers:
+            material_key = str(layers[0].get("materialKey") or "").strip()
+        u_span = abs(float(row.get("uEndMm") or 0) - float(row.get("uStartMm") or 0))
+        z_span = abs(float(row.get("zTopMm") or 0) - float(row.get("zBottomMm") or 0))
+        hints.append({
+            "elementId": eid,
+            "elementKind": "floor",
+            "materialId": material_key,
+            "hatchPatternToken": "hatch_structure_v1",
+            "cutFaceMm2": round(u_span * z_span, 3),
+        })
+    seen_roof_ids: set[str] = set()
+    for row in roofs:
+        eid = str(row.get("elementId") or "")
+        if eid in seen_roof_ids:
+            continue
+        seen_roof_ids.add(eid)
+        roof_el = doc.elements.get(eid)
+        if not isinstance(roof_el, RoofElem):
+            continue
+        layers = resolved_layers_for_roof(doc, roof_el)
+        material_key = ""
+        for lyr in layers:
+            if str(lyr.get("function") or "") == "structure":
+                material_key = str(lyr.get("materialKey") or "").strip()
+                break
+        if not material_key and layers:
+            material_key = str(layers[0].get("materialKey") or "").strip()
+        u_span = abs(float(row.get("uEndMm") or 0) - float(row.get("uStartMm") or 0))
+        proxy_kind = str(row.get("proxyKind") or "")
+        if proxy_kind == "gablePitchedRectangleChord" and row.get("ridgeZMm") is not None:
+            z_span = abs(float(row.get("ridgeZMm") or 0) - float(row.get("eavePlateZMm") or 0))
+        else:
+            z_span = 0.0
+        hints.append({
+            "elementId": eid,
+            "elementKind": "roof",
+            "materialId": material_key,
+            "hatchPatternToken": "hatch_structure_v1",
+            "cutFaceMm2": round(u_span * z_span, 3),
+        })
+    hints.sort(key=lambda h: (str(h["elementKind"]), str(h["elementId"])))
+    return hints
+
+
+def _build_section_annotation_stubs_v1(
+    doc: Document,
+    sec: SectionCutElem,
+    level_markers: list[dict[str, Any]],
+    frame: tuple[float, float, float, float, float, float, float, float, float],
+) -> list[dict[str, Any]]:
+    p0x, p0y, _p1x, _p1y, tx, ty, nx, ny, _seg_len = frame
+    half = float(sec.crop_depth_mm) * 0.5
+    stubs: list[dict[str, Any]] = []
+    for m in level_markers:
+        ref_id = str(m.get("id") or "")
+        label = str(m.get("name") or ref_id) or ref_id
+        stubs.append({
+            "stubKind": "level_line",
+            "referenceId": ref_id,
+            "annotationLabel": label,
+            "annotationToken": "level_line_v1",
+        })
+    for eid in sorted(doc.elements.keys()):
+        e = doc.elements[eid]
+        if not isinstance(e, GridLineElem):
+            continue
+        ax, ay = float(e.start.x_mm), float(e.start.y_mm)
+        bx, by = float(e.end.x_mm), float(e.end.y_mm)
+        clip = _clip_wall_segment_xy(ax, ay, bx, by, p0x=p0x, p0y=p0y, nx=nx, ny=ny, half=half)
+        if clip is None:
+            continue
+        c0x, c0y, c1x, c1y = clip
+        u0 = _u_mm(c0x, c0y, p0x=p0x, p0y=p0y, tx=tx, ty=ty)
+        u1 = _u_mm(c1x, c1y, p0x=p0x, p0y=p0y, tx=tx, ty=ty)
+        label = str(e.label or e.name or eid)
+        stubs.append({
+            "stubKind": "grid_intersection",
+            "referenceId": e.id,
+            "annotationLabel": label,
+            "annotationToken": "grid_intersection_v1",
+            "uAnchorMm": round(0.5 * (u0 + u1), 3),
+        })
+    stubs.sort(key=lambda s: (str(s["stubKind"]), str(s["referenceId"])))
+    return stubs
+
+
 def build_section_projection_primitives(
     doc: Document,
     sec: SectionCutElem,
@@ -499,6 +639,8 @@ def build_section_projection_primitives(
                 "levelMarkers": _collect_level_markers(doc),
                 "sheetCallouts": _collect_sheet_callouts_for_section(doc, sec.id),
                 "sectionDocMaterialHints": [],
+                "sectionCutMaterialHints_v1": [],
+                "sectionAnnotationStubs_v1": [],
                 "slabOpeningDocumentationEvidence_v0": {
                     "format": "slabOpeningDocumentationEvidence_v0",
                     "rows": [],
@@ -1027,6 +1169,10 @@ def build_section_projection_primitives(
         primitives["sectionGeometryExtentMm"] = extent
 
     primitives["sectionDocMaterialHints"] = _build_section_doc_material_hints(doc, walls)
+    primitives["sectionCutMaterialHints_v1"] = _build_section_cut_material_hints_v1(doc, walls, floors, roofs)
+    primitives["sectionAnnotationStubs_v1"] = _build_section_annotation_stubs_v1(
+        doc, sec, primitives["levelMarkers"], frame
+    )
 
     slab_doc_rows: list[dict[str, Any]] = []
     for oid in sorted(eid for eid, e in doc.elements.items() if isinstance(e, SlabOpeningElem)):

@@ -12,6 +12,7 @@ from bim_ai.elements import (
     PlanCategoryGraphicRow,
     PlanLinePatternTokenPlan,
     PlanViewElem,
+    SectionCutElem,
     ViewTemplateElem,
 )
 
@@ -137,6 +138,44 @@ def resolve_plan_category_graphics_for_pinned_view(
             line_pattern_is_defaulted=p_def,
         )
     return out
+
+
+def build_plan_section_mark_ref_evidence_v1(
+    doc: Document,
+    pinned_pv: PlanViewElem | None,
+) -> dict[str, Any]:
+    pv_id = pinned_pv.id if pinned_pv is not None else None
+    crop_min = pinned_pv.crop_min_mm if pinned_pv is not None else None
+    crop_max = pinned_pv.crop_max_mm if pinned_pv is not None else None
+    rows: list[dict[str, Any]] = []
+    for eid in sorted(doc.elements.keys()):
+        e = doc.elements[eid]
+        if not isinstance(e, SectionCutElem):
+            continue
+        if crop_min is not None and crop_max is not None:
+            sx = float(e.line_start_mm.x_mm)
+            sy = float(e.line_start_mm.y_mm)
+            ex = float(e.line_end_mm.x_mm)
+            ey = float(e.line_end_mm.y_mm)
+            cx0 = float(crop_min.x_mm)
+            cy0 = float(crop_min.y_mm)
+            cx1 = float(crop_max.x_mm)
+            cy1 = float(crop_max.y_mm)
+            start_in = (cx0 <= sx <= cx1) and (cy0 <= sy <= cy1)
+            end_in = (cx0 <= ex <= cx1) and (cy0 <= ey <= cy1)
+            if not (start_in or end_in):
+                continue
+        rows.append({
+            "planViewId": pv_id,
+            "sectionId": e.id,
+            "sectionName": str(e.name or e.id),
+            "sectionMarkRefToken": "section_mark_plan_ref_v1",
+        })
+    return {
+        "format": "planSectionMarkRefEvidence_v1",
+        "planViewId": pv_id,
+        "rows": rows,
+    }
 
 
 def plan_category_graphic_hints_v0_payload(

@@ -925,9 +925,16 @@ def format_section_viewport_documentation_segment(doc: Document, view_ref: str) 
     if edge_on > 0 or along_cut > 0:
         inner_parts.append(f"wh=E{edge_on}A{along_cut}")
 
+    mh_v1 = prim.get("sectionCutMaterialHints_v1")
     mh_raw = prim.get("sectionDocMaterialHints") or []
-    if isinstance(mh_raw, list) and len(mh_raw) > 0:
-        inner_parts.append(f"mh={len(mh_raw)}")
+    if isinstance(mh_v1, list):
+        mh_count = len(mh_v1)
+    elif isinstance(mh_raw, list):
+        mh_count = len(mh_raw)
+    else:
+        mh_count = 0
+    if mh_count > 0:
+        inner_parts.append(f"mh={mh_count}")
 
     so_ev = prim.get("slabOpeningDocumentationEvidence_v0")
     so_rows = so_ev.get("rows") if isinstance(so_ev, dict) else None
@@ -944,6 +951,63 @@ def format_section_viewport_documentation_segment(doc: Document, view_ref: str) 
         inner_parts.append(f"woCutFed[n={len(wo_rows)} h={d12_wo}]")
 
     return "secDoc[" + " ".join(inner_parts) + "]"
+
+
+def _derive_section_viewport_scale_factor(
+    vp: dict[str, Any],
+    primitives: dict[str, Any],
+) -> float | None:
+    _x, _y, w_mm, h_mm = read_viewport_mm_box(vp)
+    if w_mm < 1.0 or h_mm < 1.0:
+        return None
+    geom = primitives.get("sectionGeometryExtentMm")
+    if not isinstance(geom, dict):
+        return None
+    try:
+        u_span = float(geom["uMaxMm"]) - float(geom["uMinMm"])
+        z_span = float(geom["zMaxMm"]) - float(geom["zMinMm"])
+    except (KeyError, TypeError, ValueError):
+        return None
+    if u_span < 1.0 or z_span < 1.0:
+        return None
+    return round(min(w_mm / u_span, h_mm / z_span), 6)
+
+
+def build_section_viewport_scale_evidence_v1(doc: Document, sh: SheetElem) -> dict[str, Any]:
+    rows: list[dict[str, Any]] = []
+    for vp_any in sh.viewports_mm or []:
+        if not isinstance(vp_any, dict):
+            continue
+        vr = str(vp_any.get("viewRef") or vp_any.get("view_ref") or "").strip()
+        if not vr or ":" not in vr:
+            continue
+        kind_raw, ref_raw = vr.split(":", 1)
+        if kind_raw.strip().lower() not in {"section", "sec"}:
+            continue
+        sec_id = ref_raw.strip()
+        if not sec_id:
+            continue
+        sec_el = doc.elements.get(sec_id)
+        if not isinstance(sec_el, SectionCutElem):
+            continue
+        vp_id = str(vp_any.get("viewportId") or vp_any.get("viewport_id") or "").strip()
+        primitives, _ = build_section_projection_primitives(doc, sec_el)
+        scale_factor = _derive_section_viewport_scale_factor(vp_any, primitives)
+        row: dict[str, Any] = {
+            "viewportId": vp_id,
+            "sectionId": sec_id,
+            "sheetId": sh.id,
+            "scaleResolved": scale_factor is not None,
+        }
+        if scale_factor is not None:
+            row["scaleFactor"] = scale_factor
+        rows.append(row)
+    rows.sort(key=lambda r: str(r["viewportId"]))
+    return {
+        "format": "sectionViewportScaleEvidence_v1",
+        "sheetId": sh.id,
+        "rows": rows,
+    }
 
 
 def format_schedule_viewport_documentation_segment_from_payload(
