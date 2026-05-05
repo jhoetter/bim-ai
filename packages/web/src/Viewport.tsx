@@ -1,9 +1,10 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
 import * as THREE from 'three';
 
 import type { Element } from '@bim-ai/core';
 
+import { OrbitViewpointPersistedHud } from './OrbitViewpointPersistedHud';
 import { useBimStore } from './state/store';
 
 type Props = { wsConnected: boolean };
@@ -340,6 +341,15 @@ export function Viewport({ wsConnected }: Props) {
   const viewerClipFloorElevMm = useBimStore((s) => s.viewerClipFloorElevMm);
   const orbitCameraNonce = useBimStore((s) => s.orbitCameraNonce);
   const orbitCameraPoseMm = useBimStore((s) => s.orbitCameraPoseMm);
+  const activeViewpointId = useBimStore((s) => s.activeViewpointId);
+
+  const persistedOrbitViewpoint = useMemo(() => {
+    const id = activeViewpointId;
+    if (!id) return null;
+    const el = elementsById[id];
+    if (!el || el.kind !== 'viewpoint' || el.mode !== 'orbit_3d') return null;
+    return el;
+  }, [activeViewpointId, elementsById]);
 
   useEffect(() => {
     const el = mountRef.current;
@@ -662,6 +672,11 @@ export function Viewport({ wsConnected }: Props) {
       <div className="pointer-events-none absolute left-3 top-3 z-10 rounded-full border border-border bg-surface/80 px-3 py-1 text-[11px] text-muted backdrop-blur">
         3D orbit · LMB pick · drag · zoom
       </div>
+
+      <OrbitViewpointPersistedHud
+        activeViewpointId={activeViewpointId}
+        viewpoint={persistedOrbitViewpoint}
+      />
 
       <div ref={mountRef} className="size-full cursor-grab active:cursor-grabbing" />
     </div>

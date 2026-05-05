@@ -595,6 +595,53 @@ export function viewTemplateGraphicsMatrixRows(
  * Compact clip + hidden-kind summary for Project Browser (orbit_3d viewpoints).
  */
 
+const ORBIT_HIDDEN_KINDS_MAX_CHARS = 72;
+
+/** Stable token derived from which elevation clip planes are authored (no separate persisted style enum). */
+export function viewpointOrbit3dCutawayStyleToken(
+  vp: Extract<Element, { kind: 'viewpoint' }>,
+): 'none' | 'cap' | 'floor' | 'box' {
+  if (vp.mode !== 'orbit_3d') return 'none';
+  const hasCap = vp.viewerClipCapElevMm != null && Number.isFinite(vp.viewerClipCapElevMm);
+  const hasFloor =
+    vp.viewerClipFloorElevMm != null && Number.isFinite(vp.viewerClipFloorElevMm);
+  if (hasCap && hasFloor) return 'box';
+  if (hasCap) return 'cap';
+  if (hasFloor) return 'floor';
+  return 'none';
+}
+
+/** Human-readable cutaway / section-box style for HUD (from clip fields only). */
+export function viewpointOrbit3dCutawayStyleLabel(vp: Extract<Element, { kind: 'viewpoint' }>): string {
+  const t = viewpointOrbit3dCutawayStyleToken(vp);
+  switch (t) {
+    case 'none':
+      return 'No elevation clip';
+    case 'cap':
+      return 'Cap clip only';
+    case 'floor':
+      return 'Floor clip only';
+    case 'box':
+      return 'Box clip (cap + floor)';
+    default: {
+      const _exhaustive: never = t;
+      return _exhaustive;
+    }
+  }
+}
+
+/** Hidden 3D semantic kinds (shown as “categories” in UX copy). */
+export function viewpointOrbit3dHiddenKindsReadout(
+  vp: Extract<Element, { kind: 'viewpoint' }>,
+): string {
+  if (vp.mode !== 'orbit_3d') return '—';
+  const kinds = vp.hiddenSemanticKinds3d;
+  if (kinds == null || kinds.length === 0) return '—';
+  const joined = kinds.join(', ');
+  if (joined.length <= ORBIT_HIDDEN_KINDS_MAX_CHARS) return `${kinds.length}: ${joined}`;
+  return `${kinds.length}: ${joined.slice(0, ORBIT_HIDDEN_KINDS_MAX_CHARS - 1)}…`;
+}
+
 export function viewpointOrbit3dEvidenceLine(vp: Extract<Element, { kind: 'viewpoint' }>): string {
   if (vp.mode !== 'orbit_3d') return '';
   const cap = vp.viewerClipCapElevMm;
@@ -602,7 +649,8 @@ export function viewpointOrbit3dEvidenceLine(vp: Extract<Element, { kind: 'viewp
   const hid = vp.hiddenSemanticKinds3d?.length ?? 0;
   const capS = cap == null ? '∅' : String(cap);
   const floorS = floor == null ? '∅' : String(floor);
-  return `clip cap ${capS} · floor ${floorS} · ${hid} hid`;
+  const cut = viewpointOrbit3dCutawayStyleToken(vp);
+  return `clip cap ${capS} · floor ${floorS} · ${hid} hid · cut:${cut}`;
 }
 
 /** Deterministic inheritance readout for Workspace Inspector (mirrors resolver math). */

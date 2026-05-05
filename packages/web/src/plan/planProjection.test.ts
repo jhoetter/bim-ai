@@ -12,7 +12,10 @@ import {
   resolvePlanTagStyleLane,
   resolvePlanViewDisplay,
   viewTemplateGraphicsMatrixRows,
+  viewpointOrbit3dCutawayStyleLabel,
+  viewpointOrbit3dCutawayStyleToken,
   viewpointOrbit3dEvidenceLine,
+  viewpointOrbit3dHiddenKindsReadout,
 } from './planProjection';
 import { extractPlanGraphicHints, extractPlanTagStyleHints } from './planProjectionWire';
 
@@ -444,7 +447,7 @@ describe('planProjection', () => {
       viewerClipFloorElevMm: undefined,
       hiddenSemanticKinds3d: ['roof'],
     };
-    expect(viewpointOrbit3dEvidenceLine(vp)).toBe('clip cap 3000 · floor ∅ · 1 hid');
+    expect(viewpointOrbit3dEvidenceLine(vp)).toBe('clip cap 3000 · floor ∅ · 1 hid · cut:cap');
 
     expect(
       viewpointOrbit3dEvidenceLine({
@@ -452,5 +455,84 @@ describe('planProjection', () => {
         mode: 'plan_2d',
       }),
     ).toBe('');
+  });
+
+  it('viewpointOrbit3dCutawayStyleToken and label cover clip combinations', () => {
+    const base = {
+      kind: 'viewpoint' as const,
+      id: 'v1',
+      name: 'V',
+      camera: {
+        position: { xMm: 0, yMm: 0, zMm: 0 },
+        target: { xMm: 1, yMm: 0, zMm: 0 },
+        up: { xMm: 0, yMm: 0, zMm: 1 },
+      },
+      mode: 'orbit_3d' as const,
+    };
+    expect(viewpointOrbit3dCutawayStyleToken({ ...base })).toBe('none');
+    expect(viewpointOrbit3dCutawayStyleLabel({ ...base })).toBe('No elevation clip');
+
+    expect(
+      viewpointOrbit3dCutawayStyleToken({
+        ...base,
+        viewerClipCapElevMm: 4000,
+      }),
+    ).toBe('cap');
+    expect(viewpointOrbit3dCutawayStyleLabel({ ...base, viewerClipCapElevMm: 4000 })).toBe(
+      'Cap clip only',
+    );
+
+    expect(
+      viewpointOrbit3dCutawayStyleToken({
+        ...base,
+        viewerClipFloorElevMm: 1000,
+      }),
+    ).toBe('floor');
+    expect(
+      viewpointOrbit3dCutawayStyleLabel({ ...base, viewerClipFloorElevMm: 1000 }),
+    ).toBe('Floor clip only');
+
+    expect(
+      viewpointOrbit3dCutawayStyleToken({
+        ...base,
+        viewerClipCapElevMm: 4000,
+        viewerClipFloorElevMm: 1000,
+      }),
+    ).toBe('box');
+    expect(
+      viewpointOrbit3dCutawayStyleLabel({
+        ...base,
+        viewerClipCapElevMm: 4000,
+        viewerClipFloorElevMm: 1000,
+      }),
+    ).toBe('Box clip (cap + floor)');
+
+    expect(viewpointOrbit3dCutawayStyleToken({ ...base, mode: 'plan_2d' })).toBe('none');
+  });
+
+  it('viewpointOrbit3dHiddenKindsReadout lists kinds and ellipsizes long lists', () => {
+    const vp = {
+      kind: 'viewpoint' as const,
+      id: 'v1',
+      name: 'V',
+      camera: {
+        position: { xMm: 0, yMm: 0, zMm: 0 },
+        target: { xMm: 1, yMm: 0, zMm: 0 },
+        up: { xMm: 0, yMm: 0, zMm: 1 },
+      },
+      mode: 'orbit_3d' as const,
+    };
+    expect(viewpointOrbit3dHiddenKindsReadout(vp)).toBe('—');
+    expect(
+      viewpointOrbit3dHiddenKindsReadout({
+        ...vp,
+        hiddenSemanticKinds3d: ['wall', 'door'],
+      }),
+    ).toBe('2: wall, door');
+
+    const long = Array.from({ length: 20 }, (_, i) => `kind_${i}`);
+    const out = viewpointOrbit3dHiddenKindsReadout({ ...vp, hiddenSemanticKinds3d: long });
+    expect(out.endsWith('…')).toBe(true);
+    expect(out.startsWith('20: ')).toBe(true);
   });
 });

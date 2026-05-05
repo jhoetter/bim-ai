@@ -319,6 +319,10 @@ export function ProjectBrowser(props: {
       {viewpoints3d.length ? (
         <div className="space-y-1">
           <div className="text-[10px] uppercase tracking-wide text-muted">3D saved views</div>
+          <p className="pl-0.5 text-[9px] leading-snug text-muted">
+            Each row summarizes persisted clip/cutaway on the saved <span className="font-mono">viewpoint</span>{' '}
+            element—activate to mirror in 3D and read the viewport HUD.
+          </p>
           <ul className="space-y-0.5">
             {viewpoints3d.map((vp) => (
               <li key={vp.id} className="flex flex-col gap-0.5">
@@ -327,7 +331,7 @@ export function ProjectBrowser(props: {
                   variant="quiet"
                   className="w-full px-2 py-0.5 text-left text-[10px]"
                   onClick={() => applyViewpointQuick(vp)}
-                  title={`viewpoint (${vp.mode})`}
+                  title={`Persisted clip/cutaway (document): ${viewpointOrbit3dEvidenceLine(vp)}`}
                 >
                   viewpoint · {vp.name}
                   <span className="font-mono text-[9px] text-muted"> · {vp.mode}</span>
