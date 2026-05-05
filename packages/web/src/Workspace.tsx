@@ -297,6 +297,11 @@ export function Workspace() {
     [elementsById, planProjectionPrimitives, scheduleBudgetHydration],
   );
 
+  const planGridDatumInspectorLine = useMemo(() => {
+    if (!selected || selected.kind !== 'plan_view') return '';
+    return buildPlanGridDatumInspectorLine(elementsById, planProjectionPrimitives, selected.id);
+  }, [selected, elementsById, planProjectionPrimitives]);
+
   const lvResolved = activeLv ?? levels[0]?.id ?? '';
 
   const pushServer = useCallback(
@@ -325,6 +330,7 @@ export function Workspace() {
         const r = await applyCommand(mid, cmd, { userId: uid });
 
         if (r.revision !== undefined) pushServer(r.revision, r.elements, r.violations);
+        syncLastLevelElevationPropagationFromApplyResponse(r);
 
         setCollaborationConflictQueue(null);
         setStatus('Applied');
@@ -368,6 +374,7 @@ export function Workspace() {
           { userId: uid },
         );
         if (r.revision !== undefined) pushServer(r.revision, r.elements, r.violations);
+        syncLastLevelElevationPropagationFromApplyResponse(r);
         setCollaborationConflictQueue(null);
         setStatus('Applied');
       } catch (e) {
@@ -424,6 +431,7 @@ export function Workspace() {
         const r = u ? await undoModel(mid, uid) : await redoModel(mid, uid);
 
         if (r.revision !== undefined) pushServer(r.revision, r.elements, r.violations);
+        syncLastLevelElevationPropagationFromApplyResponse(r);
 
         fetchActivity(mid).then((a) => {
           const evs = ((a.events ?? []) as Record<string, unknown>[]).map((ev) => ({
@@ -997,6 +1005,12 @@ export function Workspace() {
             {collaborationConflictQueue.inspectionReadoutSecondary ? (
               <p className="mt-0.5">{collaborationConflictQueue.inspectionReadoutSecondary}</p>
             ) : null}
+            {collaborationConflictQueue.mergePreflightReadout ? (
+              <p className="mt-0.5">{collaborationConflictQueue.mergePreflightReadout}</p>
+            ) : null}
+            {collaborationConflictQueue.mergePreflightReadoutSecondary ? (
+              <p className="mt-0.5">{collaborationConflictQueue.mergePreflightReadoutSecondary}</p>
+            ) : null}
             <ul className="mt-1 list-disc space-y-0.5 ps-4">
               <li>
                 Retry advice:{' '}
@@ -1274,6 +1288,14 @@ export function Workspace() {
             {selected?.kind === 'plan_view' ? (
               <div className="mb-3 space-y-2 text-[11px]">
                 <div className="font-semibold text-muted">Saved plan_view (replayable edits)</div>
+                {planGridDatumInspectorLine ? (
+                  <div
+                    className="break-all font-mono text-[10px] leading-snug text-muted"
+                    data-testid="plan-view-grid-datum-readout"
+                  >
+                    {planGridDatumInspectorLine}
+                  </div>
+                ) : null}
                 <label className="block text-[10px] text-muted">
                   Name
                   <input

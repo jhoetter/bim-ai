@@ -21,6 +21,10 @@ import {
   type EvidenceBaselineLifecycleReadoutWire,
 } from './evidenceBaselineLifecycleReadout';
 import {
+  summarizeBcfIssuePackageExport,
+  type BcfIssuePackageExportWire,
+} from './bcfIssuePackageExportFormat';
+import {
   summarizeBcfRoundtripEvidenceSummary,
   type BcfRoundtripEvidenceSummaryWire,
 } from './bcfRoundtripEvidenceSummaryFormat';
@@ -1890,6 +1894,12 @@ export function AgentReviewPane() {
                 const roundtripFmt = summarizeBcfRoundtripEvidenceSummary(
                   roundtripRaw as BcfRoundtripEvidenceSummaryWire,
                 );
+                const issuePkgRaw = ft.bcfIssuePackageExport_v1 as
+                  | Record<string, unknown>
+                  | undefined;
+                const issuePkgFmt = summarizeBcfIssuePackageExport(
+                  issuePkgRaw as BcfIssuePackageExportWire,
+                );
                 const bcfOk =
                   typeof chk?.bcfIndexedTopicCountMatchesDocument === 'boolean'
                     ? chk.bcfIndexedTopicCountMatchesDocument
@@ -1965,6 +1975,34 @@ export function AgentReviewPane() {
                           </li>
                         ) : null}
                       </>
+                    ) : null}
+                    {issuePkgRaw?.format === 'bcfIssuePackageExport_v1' &&
+                    issuePkgFmt.lines.length ? (
+                      <li
+                        className="space-y-0.5"
+                        data-testid="bcf-issue-package-export-readout"
+                      >
+                        <span>BCF issue package export:</span>
+                        <ul className="list-disc space-y-0.5 ps-4">
+                          {issuePkgFmt.lines.map((ln) => (
+                            <li key={ln}>
+                              <code className="text-[9px] font-mono">{ln}</code>
+                            </li>
+                          ))}
+                          {issuePkgFmt.violationTopicLines.length ? (
+                            <li className="space-y-0.5">
+                              <span>Violations by topic:</span>
+                              <ul className="list-disc space-y-0.5 ps-4">
+                                {issuePkgFmt.violationTopicLines.map((ln) => (
+                                  <li key={ln}>
+                                    <code className="text-[9px] font-mono">{ln}</code>
+                                  </li>
+                                ))}
+                              </ul>
+                            </li>
+                          ) : null}
+                        </ul>
+                      </li>
                     ) : null}
                     {collab && typeof collab.constraintRejectedHttpStatus === 'number' ? (
                       <li className="space-y-0.5">

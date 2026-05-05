@@ -11,6 +11,7 @@ from typing import Any
 from urllib.parse import quote
 from uuid import UUID
 
+from bim_ai.bcf_issue_package_export import bcf_issue_package_export_v1
 from bim_ai.document import Document
 from bim_ai.elements import (
     BcfElem,
@@ -1242,15 +1243,18 @@ def agent_evidence_closure_hints() -> dict[str, Any]:
         "evidenceReviewPerformanceGateField": "evidenceReviewPerformanceGate_v1",
         "evidenceAgentFollowThroughField": "evidenceAgentFollowThrough_v1",
         "bcfRoundtripEvidenceSummaryField": "bcfRoundtripEvidenceSummary_v1",
+        "bcfIssuePackageExportField": "bcfIssuePackageExport_v1",
         "artifactUploadManifestField": "artifactUploadManifest_v1",
         "agentGeneratedBundleQaChecklistField": "agentGeneratedBundleQaChecklist_v1",
+        "agentBriefAcceptanceReadoutField": "agentBriefAcceptanceReadout_v1",
         "evidenceBaselineLifecycleReadoutField": "evidenceBaselineLifecycleReadout_v1",
         "v1CloseoutReadinessManifestField": "v1CloseoutReadinessManifest_v1",
         "semanticDigestOmitsDerivativeSummariesNote": (
             "semanticDigestSha256 excludes bcfTopicsIndex_v1, agentReviewActions_v1, "
             "evidenceDiffIngestFixLoop_v1, evidenceReviewPerformanceGate_v1, "
-            "evidenceAgentFollowThrough_v1, artifactUploadManifest_v1, "
-            "agentGeneratedBundleQaChecklist_v1, evidenceBaselineLifecycleReadout_v1, "
+            "evidenceAgentFollowThrough_v1 (including nested bcfIssuePackageExport_v1), "
+            "artifactUploadManifest_v1, "
+            "agentGeneratedBundleQaChecklist_v1, agentBriefAcceptanceReadout_v1, evidenceBaselineLifecycleReadout_v1, "
             "and v1CloseoutReadinessManifest_v1 "
             "so deterministic row digests stay stable."
         ),
@@ -1859,7 +1863,7 @@ def collaboration_replay_conflict_hints_v1() -> dict[str, Any]:
     return {
         "format": "collaborationReplayConflictHints_v1",
         "constraintRejectedHttpStatus": 409,
-        "typicalErrorBodyFields": ["reason", "violations", "replayDiagnostics"],
+        "typicalErrorBodyFields": ["reason", "violations", "replayDiagnostics", "mergePreflight_v1"],
         "replayDiagnosticsFields": [
             "commandCount",
             "commandTypesInOrder",
@@ -1867,6 +1871,24 @@ def collaboration_replay_conflict_hints_v1() -> dict[str, Any]:
             "firstBlockingCommandIndex",
             "blockingViolationRuleIds",
         ],
+        "mergePreflight_v1Fields": [
+            "format",
+            "reasonCode",
+            "firstConflictingStepIndex",
+            "conflictingDeclaredIds",
+            "conflictingExistingElementIds",
+            "missingReferenceHints",
+            "safeRetryClassification",
+            "suggestedManualAction",
+            "suggestedAgentAction",
+            "evidenceDigestSha256",
+        ],
+        "mergePreflight_v1Note": (
+            "Deterministic commandBundleMergePreflight_v1 on bundle 409 and bundle dry-run: ordered "
+            "first conflicting step, sorted ids, sorted missingReferenceHints (stepIndex, referenceKey, "
+            "referenceId), safeRetryClassification, stable manual/agent guidance strings, "
+            "evidenceDigestSha256 over canonical JSON excluding the digest field."
+        ),
         "replayPerformanceBudgetNote": (
             "Nested object replayPerformanceBudget_v1: deterministic commandCount, sorted commandTypeHistogram, "
             "largeBundleWarn / warningCodes / agentBundleAdvisory for large bundles, declaredDiagnosticsBudgetMs* "
@@ -1894,6 +1916,8 @@ def evidence_agent_follow_through_v1(
     deterministic_plan_view_evidence: list[dict[str, Any]],
     deterministic_section_cut_evidence: list[dict[str, Any]],
     violations: list[dict[str, Any]] | None = None,
+    evidence_closure_review: dict[str, Any] | None = None,
+    evidence_diff_ingest_fix_loop: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Programmatic rollup: staged artifact link contract, BCF coordination, ref resolution, replay hints."""
 
@@ -1905,6 +1929,12 @@ def evidence_agent_follow_through_v1(
         deterministic_section_cut_evidence=deterministic_section_cut_evidence,
     )
 
+    sal = staged_artifact_links_v1(
+        model_id=model_id,
+        suggested_evidence_artifact_basename=suggested_evidence_artifact_basename,
+        package_semantic_digest_sha256=package_semantic_digest_sha256,
+    )
+
     return {
         "format": "evidenceAgentFollowThrough_v1",
         "semanticDigestExclusionNote": (
@@ -1912,11 +1942,7 @@ def evidence_agent_follow_through_v1(
             "alongside bcfTopicsIndex_v1 and agentReviewActions_v1."
         ),
         "packageSemanticDigestSha256": package_semantic_digest_sha256,
-        "stagedArtifactLinks_v1": staged_artifact_links_v1(
-            model_id=model_id,
-            suggested_evidence_artifact_basename=suggested_evidence_artifact_basename,
-            package_semantic_digest_sha256=package_semantic_digest_sha256,
-        ),
+        "stagedArtifactLinks_v1": sal,
         "bcfIssueCoordinationCheck_v1": bcf_issue_coordination_check_v1(
             doc=doc,
             bcf_topics_index=bcf_topics_index,
@@ -1927,6 +1953,18 @@ def evidence_agent_follow_through_v1(
             bcf_topics_index=bcf_topics_index,
             violations=violations,
             evidence_ref_resolution=ref_resolution,
+        ),
+        "bcfIssuePackageExport_v1": bcf_issue_package_export_v1(
+            bcf_topics_index=bcf_topics_index,
+            violations=violations,
+            evidence_ref_resolution=ref_resolution,
+            staged_artifact_links_v1_payload=sal,
+            evidence_closure_review=evidence_closure_review,
+            evidence_diff_ingest_fix_loop=evidence_diff_ingest_fix_loop,
+            deterministic_sheet_evidence=deterministic_sheet_evidence,
+            deterministic_3d_view_evidence=deterministic_3d_view_evidence,
+            deterministic_plan_view_evidence=deterministic_plan_view_evidence,
+            deterministic_section_cut_evidence=deterministic_section_cut_evidence,
         ),
         "collaborationReplayConflictHints_v1": collaboration_replay_conflict_hints_v1(),
     }
@@ -1946,6 +1984,7 @@ _DIGEST_EXCLUDED_KEYS = frozenset(
         "agentGeneratedBundleQaChecklist_v1",
         "evidenceBaselineLifecycleReadout_v1",
         "v1CloseoutReadinessManifest_v1",
+        "agentBriefAcceptanceReadout_v1",
     }
 )
 

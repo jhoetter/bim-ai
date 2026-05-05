@@ -464,6 +464,8 @@ async def evidence_package(
         deterministic_plan_view_evidence=payload["deterministicPlanViewEvidence"],
         deterministic_section_cut_evidence=payload["deterministicSectionCutEvidence"],
         violations=viols,
+        evidence_closure_review=payload["evidenceClosureReview_v1"],
+        evidence_diff_ingest_fix_loop=payload["evidenceDiffIngestFixLoop_v1"],
     )
     payload["artifactUploadManifest_v1"] = artifact_upload_manifest_v1(
         model_id=model_id,

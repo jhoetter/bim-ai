@@ -24,6 +24,7 @@ from bim_ai.evidence_manifest import (
     collaboration_replay_conflict_hints_v1,
     evidence_agent_follow_through_v1,
     evidence_closure_review_v1,
+    evidence_diff_ingest_fix_loop_v1,
     evidence_ref_resolution_v1,
     staged_artifact_links_v1,
 )
@@ -95,6 +96,17 @@ def test_evidence_agent_follow_through_v1_shape() -> None:
     assert rts["modelElementReferenceCount"] == 0
     assert rts["unresolvedReferenceCount"] == 0
     assert rts["topicsWithLinkedViolationRuleIds"] == []
+
+    issue_pkg = ft["bcfIssuePackageExport_v1"]
+    assert issue_pkg["format"] == "bcfIssuePackageExport_v1"
+    assert issue_pkg["topics"] == []
+    assert issue_pkg["counts"]["topicRowCount"] == 0
+    assert issue_pkg["unresolvedAnchorRows"] == []
+    assert issue_pkg["staleAnchorRows"] == []
+    assert issue_pkg["missingCorrelationAnchorRows"] == []
+    assert issue_pkg["remediationHintRefs"] == []
+    dig = issue_pkg["packageManifestDigestSha256"]
+    assert isinstance(dig, str) and len(dig) == 64
 
 
 def test_staged_artifact_links_v1_github_actions_mode_without_secrets(
@@ -205,23 +217,32 @@ def test_collaboration_replay_hints_lists_409_fields() -> None:
     h = collaboration_replay_conflict_hints_v1()
     assert h["constraintRejectedHttpStatus"] == 409
     assert "replayDiagnostics" in h["typicalErrorBodyFields"]
+    assert "mergePreflight_v1" in h["typicalErrorBodyFields"]
     fields = h["replayDiagnosticsFields"]
     assert "firstBlockingCommandIndex" in fields
     assert "blockingViolationRuleIds" in fields
     assert "replayPerformanceBudget_v1" in fields
     assert "replayPerformanceBudgetNote" in h
+    mp_fields = h["mergePreflight_v1Fields"]
+    assert "evidenceDigestSha256" in mp_fields
+    assert "safeRetryClassification" in mp_fields
+    assert "mergePreflight_v1Note" in h
 
 
 def test_agent_evidence_closure_hints_names_follow_through_field() -> None:
     h = agent_evidence_closure_hints()
     assert h.get("evidenceAgentFollowThroughField") == "evidenceAgentFollowThrough_v1"
     assert h.get("bcfRoundtripEvidenceSummaryField") == "bcfRoundtripEvidenceSummary_v1"
+    assert h.get("bcfIssuePackageExportField") == "bcfIssuePackageExport_v1"
     assert h.get("artifactUploadManifestField") == "artifactUploadManifest_v1"
     assert h.get("agentGeneratedBundleQaChecklistField") == "agentGeneratedBundleQaChecklist_v1"
+    assert h.get("agentBriefAcceptanceReadoutField") == "agentBriefAcceptanceReadout_v1"
     note = str(h.get("semanticDigestOmitsDerivativeSummariesNote"))
     assert "evidenceAgentFollowThrough_v1" in note
+    assert "bcfIssuePackageExport_v1" in note
     assert "artifactUploadManifest_v1" in note
     assert "agentGeneratedBundleQaChecklist_v1" in note
+    assert "agentBriefAcceptanceReadout_v1" in note
 
 
 def test_artifact_upload_manifest_v1_github_actions_hint_without_secrets(
@@ -372,6 +393,235 @@ def test_bcf_roundtrip_summary_links_violations_to_topic_elements() -> None:
     assert rts["topicsWithLinkedViolationRuleIds"] == [
         {"topicKind": "bcf", "topicId": "bcf-1", "violationRuleIds": ["a_rule", "z_rule"]},
     ]
+    ip = ft["bcfIssuePackageExport_v1"]
+    topics = [row for row in ip["topics"] if row["stableTopicId"] == "bcf:bcf-1"]
+    assert len(topics) == 1
+    assert topics[0]["violationRuleIds"] == ["a_rule", "z_rule"]
+
+
+def test_bcf_issue_package_export_manifest_digest_stable_under_topic_permutation() -> None:
+    pkg = "p" * 64
+    stale = "s" * 64
+    closure = evidence_closure_review_v1(
+        package_semantic_digest_sha256=pkg,
+        deterministic_sheet_evidence=[],
+        deterministic_3d_view_evidence=[
+            {
+                "viewpointId": "vp-a",
+                "playwrightSuggestedFilenames": {"pngViewport": "a.png"},
+                "correlation": {"semanticDigestSha256": stale},
+            },
+            {
+                "viewpointId": "vp-b",
+                "playwrightSuggestedFilenames": {"pngViewport": "b.png"},
+                "correlation": {"semanticDigestSha256": stale},
+            },
+        ],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+    )
+    fix_loop = evidence_diff_ingest_fix_loop_v1(closure)
+    mid = UUID("00000000-0000-0000-0000-000000000088")
+    topics_a = [
+        {
+            "topicKind": "bcf",
+            "topicId": "topic-a",
+            "elementIds": [],
+            "viewpointRef": "vp-a",
+            "evidenceRefs": [],
+        },
+        {
+            "topicKind": "bcf",
+            "topicId": "topic-b",
+            "elementIds": [],
+            "viewpointRef": "vp-b",
+            "evidenceRefs": [],
+        },
+    ]
+    topics_b = list(reversed(topics_a))
+    doc = Document(revision=0, elements={})
+
+    def build(idx_topics: list[dict[str, Any]]) -> str:
+        idx = {"format": "bcfTopicsIndex_v1", "topics": idx_topics}
+        ft = evidence_agent_follow_through_v1(
+            model_id=mid,
+            doc=doc,
+            package_semantic_digest_sha256=pkg,
+            suggested_evidence_artifact_basename="pfx",
+            bcf_topics_index=idx,
+            deterministic_sheet_evidence=[],
+            deterministic_3d_view_evidence=[
+                {
+                    "viewpointId": "vp-a",
+                    "playwrightSuggestedFilenames": {"pngViewport": "a.png"},
+                    "correlation": {"semanticDigestSha256": stale},
+                },
+                {
+                    "viewpointId": "vp-b",
+                    "playwrightSuggestedFilenames": {"pngViewport": "b.png"},
+                    "correlation": {"semanticDigestSha256": stale},
+                },
+            ],
+            deterministic_plan_view_evidence=[],
+            deterministic_section_cut_evidence=[],
+            evidence_closure_review=closure,
+            evidence_diff_ingest_fix_loop=fix_loop,
+        )
+        return str(ft["bcfIssuePackageExport_v1"]["packageManifestDigestSha256"])
+
+    assert build(topics_a) == build(topics_b)
+
+
+def test_bcf_issue_package_export_unresolved_bcf_viewpoint_ref_row() -> None:
+    idx = {
+        "format": "bcfTopicsIndex_v1",
+        "topics": [
+            {
+                "topicKind": "bcf",
+                "topicId": "t-u",
+                "elementIds": [],
+                "viewpointRef": "vp-missing",
+                "evidenceRefs": [],
+            }
+        ],
+    }
+    mid = UUID("00000000-0000-0000-0000-000000000056")
+    ft = evidence_agent_follow_through_v1(
+        model_id=mid,
+        doc=Document(revision=0, elements={}),
+        package_semantic_digest_sha256="q" * 64,
+        suggested_evidence_artifact_basename="pfx",
+        bcf_topics_index=idx,
+        deterministic_sheet_evidence=[],
+        deterministic_3d_view_evidence=[],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+    )
+    ip = ft["bcfIssuePackageExport_v1"]
+    unresolved = ip["unresolvedAnchorRows"]
+    assert len(unresolved) == 1
+    row = unresolved[0]
+    assert row["resolutionState"] == "unresolved_absent_evidence"
+    assert row["anchorKind"] == "bcf_viewpoint_ref"
+    assert row["stableTopicId"] == "bcf:t-u"
+    assert ip["topics"][0]["anchors"][0]["resolutionState"] == "unresolved_absent_evidence"
+
+
+def test_bcf_issue_package_export_stale_and_missing_correlation_rows() -> None:
+    pkg = "m" * 64
+    stale_d = "z" * 64
+    idx = {
+        "format": "bcfTopicsIndex_v1",
+        "topics": [
+            {
+                "topicKind": "bcf",
+                "topicId": "bcf-stale",
+                "elementIds": [],
+                "viewpointRef": "vp-1",
+                "evidenceRefs": [],
+            },
+            {
+                "topicKind": "bcf",
+                "topicId": "bcf-miss",
+                "elementIds": [],
+                "viewpointRef": "vp-2",
+                "evidenceRefs": [],
+            },
+        ],
+    }
+    vp_rows = [
+        {
+            "viewpointId": "vp-1",
+            "playwrightSuggestedFilenames": {"pngViewport": "v.png"},
+            "correlation": {"semanticDigestSha256": stale_d},
+        },
+        {
+            "viewpointId": "vp-2",
+            "playwrightSuggestedFilenames": {"pngViewport": "w.png"},
+            "correlation": {},
+        },
+    ]
+    closure = evidence_closure_review_v1(
+        package_semantic_digest_sha256=pkg,
+        deterministic_sheet_evidence=[],
+        deterministic_3d_view_evidence=vp_rows,
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+    )
+    mid = UUID("00000000-0000-0000-0000-000000000055")
+    ft = evidence_agent_follow_through_v1(
+        model_id=mid,
+        doc=Document(revision=0, elements={}),
+        package_semantic_digest_sha256=pkg,
+        suggested_evidence_artifact_basename="pfx",
+        bcf_topics_index=idx,
+        deterministic_sheet_evidence=[],
+        deterministic_3d_view_evidence=vp_rows,
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+        evidence_closure_review=closure,
+    )
+    ip = ft["bcfIssuePackageExport_v1"]
+    stale_rows = ip["staleAnchorRows"]
+    assert len(stale_rows) == 1
+    assert stale_rows[0]["correlationRowKind"] == "viewpoint"
+    assert stale_rows[0]["correlationRowId"] == "vp-1"
+    assert stale_rows[0]["resolutionState"] == "stale_correlation_digest"
+    miss_rows = ip["missingCorrelationAnchorRows"]
+    assert len(miss_rows) == 1
+    assert miss_rows[0]["correlationRowId"] == "vp-2"
+    assert miss_rows[0]["resolutionState"] == "missing_correlation_digest"
+
+
+def test_bcf_issue_package_export_remediation_when_fix_loop_and_actionable_anchors() -> None:
+    pkg = "n" * 64
+    stale_d = "o" * 64
+    vp_rows = [
+        {
+            "viewpointId": "vp-1",
+            "playwrightSuggestedFilenames": {"pngViewport": "v.png"},
+            "correlation": {"semanticDigestSha256": stale_d},
+        },
+    ]
+    closure = evidence_closure_review_v1(
+        package_semantic_digest_sha256=pkg,
+        deterministic_sheet_evidence=[],
+        deterministic_3d_view_evidence=vp_rows,
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+    )
+    fix_loop = evidence_diff_ingest_fix_loop_v1(closure)
+    assert fix_loop["needsFixLoop"] is True
+    idx = {
+        "format": "bcfTopicsIndex_v1",
+        "topics": [
+            {
+                "topicKind": "bcf",
+                "topicId": "t1",
+                "elementIds": [],
+                "viewpointRef": "vp-1",
+                "evidenceRefs": [],
+            },
+        ],
+    }
+    mid = UUID("00000000-0000-0000-0000-000000000054")
+    ft = evidence_agent_follow_through_v1(
+        model_id=mid,
+        doc=Document(revision=0, elements={}),
+        package_semantic_digest_sha256=pkg,
+        suggested_evidence_artifact_basename="pfx",
+        bcf_topics_index=idx,
+        deterministic_sheet_evidence=[],
+        deterministic_3d_view_evidence=vp_rows,
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+        evidence_closure_review=closure,
+        evidence_diff_ingest_fix_loop=fix_loop,
+    )
+    rh = ft["bcfIssuePackageExport_v1"]["remediationHintRefs"]
+    assert isinstance(rh, list) and len(rh) >= 3
+    paths = sorted({str(x.get("path")) for x in rh if isinstance(x, dict)})
+    assert "agentEvidenceClosureHints_v1.artifactIngestCorrelationFullPath" in paths
 
 
 def test_bcf_roundtrip_summary_unresolved_matches_anchor_resolution() -> None:

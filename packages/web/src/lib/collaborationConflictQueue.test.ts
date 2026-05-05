@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildCollaborationConflictQueueV1,
   collaborationConflictQueueInspectionLinesFromHints,
+  formatMergePreflightV1Readout,
 } from './collaborationConflictQueue';
 
 describe('buildCollaborationConflictQueueV1', () => {
@@ -110,6 +111,27 @@ describe('buildCollaborationConflictQueueV1', () => {
       reason: 'merge_reference_unresolved',
     });
     expect(q?.retryAdvice).toBe('requires_manual_edit');
+    expect(q?.mergePreflightReadout).toBeNull();
+  });
+
+  it('surfaces mergePreflight_v1 lines alongside replay hints', () => {
+    const q = buildCollaborationConflictQueueV1({
+      reason: 'merge_reference_unresolved',
+      mergePreflight_v1: {
+        format: 'commandBundleMergePreflight_v1',
+        reasonCode: 'merge_reference_unresolved',
+        firstConflictingStepIndex: 0,
+        conflictingDeclaredIds: [],
+        conflictingExistingElementIds: [],
+        missingReferenceHints: [{ stepIndex: 0, referenceKey: 'levelId', referenceId: 'lvl-miss' }],
+        safeRetryClassification: 'safe_after_dependency_refresh',
+        suggestedManualAction: 'Refresh refs.',
+        suggestedAgentAction: 'Regenerate bundle.',
+        evidenceDigestSha256: 'abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd',
+      },
+    });
+    expect(q?.mergePreflightReadout).toContain('merge_reference_unresolved');
+    expect(q?.mergePreflightReadoutSecondary).toContain('Refresh refs.');
   });
 
   it('returns queue when only replayDiagnostics object is present', () => {
@@ -124,7 +146,30 @@ describe('buildCollaborationConflictQueueV1', () => {
 describe('collaborationConflictQueueInspectionLinesFromHints', () => {
   it('returns stable non-empty lines', () => {
     const lines = collaborationConflictQueueInspectionLinesFromHints();
-    expect(lines.length).toBeGreaterThanOrEqual(3);
+    expect(lines.length).toBeGreaterThanOrEqual(4);
     expect(lines[0]).toContain('firstBlockingCommandIndex');
+    expect(lines.some((ln) => ln.includes('mergePreflight_v1'))).toBe(true);
+  });
+});
+
+describe('formatMergePreflightV1Readout', () => {
+  it('formats primary and secondary from merge preflight payload', () => {
+    const mp = {
+      format: 'commandBundleMergePreflight_v1',
+      reasonCode: 'merge_reference_unresolved',
+      firstConflictingStepIndex: 1,
+      conflictingDeclaredIds: [],
+      conflictingExistingElementIds: [],
+      missingReferenceHints: [{ stepIndex: 1, referenceKey: 'levelId', referenceId: 'lvl-x' }],
+      safeRetryClassification: 'safe_after_dependency_refresh',
+      suggestedManualAction: 'Manual guidance.',
+      suggestedAgentAction: 'Agent guidance.',
+      evidenceDigestSha256: 'deadbeef'.repeat(8),
+    };
+    const out = formatMergePreflightV1Readout(mp);
+    expect(out.primary).toContain('merge_reference_unresolved');
+    expect(out.primary).toContain('step 2');
+    expect(out.secondary).toContain('Manual guidance.');
+    expect(out.secondary).toContain('Agent');
   });
 });

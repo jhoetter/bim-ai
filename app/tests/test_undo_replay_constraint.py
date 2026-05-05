@@ -9,7 +9,10 @@ from bim_ai.document import Document
 from bim_ai.elements import LevelElem
 from bim_ai.engine import (
     AGENT_LARGE_BUNDLE_ADVISORY_TEXT_V1,
+    authoritative_replay_v0_preflight_detail,
+    bundle_commands_are_authoritative_replay_v0_only,
     bundle_replay_diagnostics,
+    command_bundle_merge_preflight_v1,
     replay_bundle_diagnostics_for_outcome,
     try_commit_bundle,
 )
@@ -170,3 +173,105 @@ def test_bundle_replay_diagnostics_second_command_blocks_first_valid() -> None:
     assert diag.get("blockingViolationRuleIds") == ["wall_missing_level"]
     bb = diag["replayPerformanceBudget_v1"]
     assert bb.get("firstBlockingCommandIndex") == 1
+
+
+def _minimal_wall_cmd(*, wid: str, level_id: str = "lvl") -> dict[str, object]:
+    return {
+        "type": "createWall",
+        "id": wid,
+        "levelId": level_id,
+        "start": {"xMm": 0, "yMm": 0},
+        "end": {"xMm": 2600, "yMm": 0},
+        "thicknessMm": 200,
+        "heightMm": 2800,
+    }
+
+
+def test_bundle_commands_are_authoritative_replay_v0_only() -> None:
+    wall_cmd = _minimal_wall_cmd(wid="w-a")
+    assert bundle_commands_are_authoritative_replay_v0_only([wall_cmd]) is True
+    assert bundle_commands_are_authoritative_replay_v0_only([wall_cmd, {"type": "noop"}]) is False
+
+
+def test_authoritative_preflight_detail_duplicate_declared_id() -> None:
+    lvl = LevelElem(kind="level", id="lvl", name="G", elevationMm=0)
+    doc = Document(revision=1, elements={"lvl": lvl})
+    cmds: list[dict[str, object]] = [_minimal_wall_cmd(wid="dup"), _minimal_wall_cmd(wid="dup")]
+    detail = authoritative_replay_v0_preflight_detail(doc, cmds)
+    assert detail is not None
+    assert detail.reason_code == "merge_id_collision"
+    assert detail.first_conflicting_step_index == 1
+    assert detail.conflicting_declared_ids == ("dup",)
+
+
+def test_authoritative_preflight_detail_missing_level_hint() -> None:
+    lvl = LevelElem(kind="level", id="lvl", name="G", elevationMm=0)
+    doc = Document(revision=1, elements={"lvl": lvl})
+    cmds: list[dict[str, object]] = [_minimal_wall_cmd(wid="w-a", level_id="lvl-missing")]
+    detail = authoritative_replay_v0_preflight_detail(doc, cmds)
+    assert detail is not None
+    assert detail.reason_code == "merge_reference_unresolved"
+    assert detail.first_conflicting_step_index == 0
+    assert len(detail.missing_reference_hints) == 1
+    h0 = detail.missing_reference_hints[0]
+    assert h0["referenceKey"] == "levelId"
+    assert h0["referenceId"] == "lvl-missing"
+
+
+def test_command_bundle_merge_preflight_digest_stable() -> None:
+    lvl = LevelElem(kind="level", id="lvl", name="G", elevationMm=0)
+    doc = Document(revision=1, elements={"lvl": lvl})
+    cmds: list[dict[str, object]] = [_minimal_wall_cmd(wid="w-new")]
+    detail = authoritative_replay_v0_preflight_detail(doc, cmds)
+    assert detail is None
+    diag = replay_bundle_diagnostics_for_outcome(doc, cmds, outcome_code="ok")
+    a = command_bundle_merge_preflight_v1(
+        doc=doc,
+        cmds_raw=cmds,
+        authoritative_failure=None,
+        outcome_code="ok",
+        violations=[],
+        replay_diag=diag,
+    )
+    b = command_bundle_merge_preflight_v1(
+        doc=doc,
+        cmds_raw=cmds,
+        authoritative_failure=None,
+        outcome_code="ok",
+        violations=[],
+        replay_diag=diag,
+    )
+    assert a["evidenceDigestSha256"] == b["evidenceDigestSha256"]
+    assert a["format"] == "commandBundleMergePreflight_v1"
+    assert a["reasonCode"] == "ok"
+    assert a["safeRetryClassification"] == "safe_retry_unchanged"
+
+
+def test_merge_preflight_constraint_error_matches_blocking_step() -> None:
+    lvl = LevelElem(kind="level", id="lvl", name="G", elevationMm=0)
+    doc = Document(revision=1, elements={"lvl": lvl})
+    ghost_wall = {
+        "kind": "wall",
+        "id": "w-bad",
+        "name": "W",
+        "levelId": "level-missing",
+        "start": {"xMm": 0, "yMm": 0},
+        "end": {"xMm": 2600, "yMm": 0},
+        "thicknessMm": 200,
+        "heightMm": 2800,
+    }
+    cmds: list[dict[str, object]] = [{"type": "restoreElement", "element": ghost_wall}]
+    ok, _new_doc, _cmds, violations, code = try_commit_bundle(doc, cmds)
+    assert ok is False
+    diag = replay_bundle_diagnostics_for_outcome(doc, cmds, outcome_code=code)
+    mf = command_bundle_merge_preflight_v1(
+        doc=doc,
+        cmds_raw=cmds,
+        authoritative_failure=None,
+        outcome_code=code,
+        violations=violations,
+        replay_diag=diag,
+    )
+    assert mf["reasonCode"] == "constraint_error"
+    assert mf["firstConflictingStepIndex"] == 0
+    assert mf["safeRetryClassification"] == "requires_manual_resolution"

@@ -22,6 +22,8 @@ export type CollaborationConflictQueueV1 = {
   inspectionReadout: string;
   inspectionReadoutSecondary: string | null;
   retryAdvice: CollaborationRetryAdvice;
+  mergePreflightReadout: string | null;
+  mergePreflightReadoutSecondary: string | null;
 };
 
 const MANUAL_EDIT_REASONS = new Set([
@@ -151,12 +153,86 @@ function buildInspectionReadout(params: {
   return { primary, secondary };
 }
 
+/** Stable workspace/agent-review lines from POST bundle mergePreflight_v1 / 409 detail. */
+export function formatMergePreflightV1Readout(mp: Record<string, unknown>): {
+  primary: string;
+  secondary: string | null;
+} {
+  if (mp.format !== 'commandBundleMergePreflight_v1') {
+    return { primary: '', secondary: null };
+  }
+  const reason = typeof mp.reasonCode === 'string' ? mp.reasonCode.trim() : '';
+  const stepRaw = mp.firstConflictingStepIndex;
+  const step1Based =
+    typeof stepRaw === 'number' && Number.isFinite(stepRaw) && stepRaw >= 0
+      ? Math.floor(stepRaw) + 1
+      : null;
+  const cls = typeof mp.safeRetryClassification === 'string' ? mp.safeRetryClassification.trim() : '';
+  const manual = typeof mp.suggestedManualAction === 'string' ? mp.suggestedManualAction.trim() : '';
+  const agentAct = typeof mp.suggestedAgentAction === 'string' ? mp.suggestedAgentAction.trim() : '';
+
+  const declared = Array.isArray(mp.conflictingDeclaredIds)
+    ? mp.conflictingDeclaredIds.filter((x): x is string => typeof x === 'string')
+    : [];
+  const existing = Array.isArray(mp.conflictingExistingElementIds)
+    ? mp.conflictingExistingElementIds.filter((x): x is string => typeof x === 'string')
+    : [];
+  const hints = Array.isArray(mp.missingReferenceHints) ? mp.missingReferenceHints : [];
+
+  const maxIds = 5;
+  const declHint =
+    declared.length > 0
+      ? `declared: ${declared.slice(0, maxIds).join(', ')}` +
+        (declared.length > maxIds ? ` (+${declared.length - maxIds})` : '')
+      : null;
+  const existHint =
+    existing.length > 0
+      ? `existing: ${existing.slice(0, maxIds).join(', ')}` +
+        (existing.length > maxIds ? ` (+${existing.length - maxIds})` : '')
+      : null;
+
+  let missingHint: string | null = null;
+  const h0 = hints[0];
+  if (h0 !== undefined && h0 !== null && typeof h0 === 'object' && !Array.isArray(h0)) {
+    const hr = h0 as Record<string, unknown>;
+    const rk = typeof hr.referenceKey === 'string' ? hr.referenceKey : '';
+    const rid = typeof hr.referenceId === 'string' ? hr.referenceId : '';
+    const siRaw = hr.stepIndex;
+    const si1 =
+      typeof siRaw === 'number' && Number.isFinite(siRaw) && siRaw >= 0 ? Math.floor(siRaw) + 1 : null;
+    missingHint =
+      `missing ${rk}${rid !== '' ? `=${rid}` : ''}` + (si1 !== null ? ` @ step ${si1}` : '');
+  }
+
+  const digestRaw = mp.evidenceDigestSha256;
+  const digestHint =
+    typeof digestRaw === 'string' && digestRaw.length >= 16 ? `digest ${digestRaw.slice(0, 16)}…` : null;
+
+  const primary = [
+    reason ? `Merge preflight: ${reason}` : 'Merge preflight',
+    step1Based !== null ? `first conflicting step ${step1Based}` : null,
+    cls ? `classification ${cls}` : null,
+    [declHint, existHint, missingHint].filter(Boolean).join(' · ') || null,
+    digestHint,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+
+  const secondary =
+    manual !== '' || agentAct !== ''
+      ? `${manual}${manual !== '' && agentAct !== '' ? ' — ' : ''}${agentAct !== '' ? `Agent: ${agentAct}` : ''}`
+      : null;
+
+  return { primary, secondary };
+}
+
 /** Static inspection steps for Agent Review (no live 409 required). */
 export function collaborationConflictQueueInspectionLinesFromHints(): string[] {
   return [
     'Map replayDiagnostics.firstBlockingCommandIndex (0-based) to commandTypesInOrder for the blocking command type.',
     'Join blockingViolationRuleIds with violations[].ruleId; use Advisor with those rule ids and elementIds.',
     'When replayPerformanceBudget_v1.largeBundleWarn is true, consider splitting or shrinking command bundles before replay.',
+    'Read mergePreflight_v1 for deterministic safeRetryClassification, first conflicting step, ids/refs, and evidenceDigestSha256.',
   ];
 }
 
@@ -171,10 +247,14 @@ export function buildCollaborationConflictQueueV1(detail: unknown): Collaboratio
   const { firstBlockingCommandIndex, blockingViolationRuleIds, commandTypesInOrder, replay } =
     readReplayDiagnostics(d);
 
+  const mergeProbe = d.mergePreflight_v1;
+  const hasMergePreflight =
+    mergeProbe !== null && typeof mergeProbe === 'object' && !Array.isArray(mergeProbe);
+
   const hasReplay = replay !== null;
   const hasViolations = violationsList.length > 0;
 
-  if (!reason && !hasViolations && !hasReplay) return null;
+  if (!reason && !hasViolations && !hasReplay && !hasMergePreflight) return null;
 
   const ruleFilter =
     blockingViolationRuleIds.length > 0 ? new Set(blockingViolationRuleIds) : null;
@@ -225,6 +305,14 @@ export function buildCollaborationConflictQueueV1(detail: unknown): Collaboratio
     retryAdvice,
   });
 
+  let mergePreflightReadout: string | null = null;
+  let mergePreflightReadoutSecondary: string | null = null;
+  if (hasMergePreflight) {
+    const mf = formatMergePreflightV1Readout(mergeProbe as Record<string, unknown>);
+    mergePreflightReadout = mf.primary.trim() !== '' ? mf.primary : null;
+    mergePreflightReadoutSecondary = mf.secondary;
+  }
+
   return {
     format: 'collaborationConflictQueue_v1',
     reason,
@@ -237,5 +325,7 @@ export function buildCollaborationConflictQueueV1(detail: unknown): Collaboratio
     inspectionReadout: primary,
     inspectionReadoutSecondary: secondary,
     retryAdvice,
+    mergePreflightReadout,
+    mergePreflightReadoutSecondary,
   };
 }
