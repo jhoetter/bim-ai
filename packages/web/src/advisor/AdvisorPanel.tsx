@@ -2,6 +2,12 @@ import type { PerspectiveId, Violation } from '@bim-ai/core';
 
 import { Btn } from '@bim-ai/ui';
 
+import {
+  groupViolationsBySeverity,
+  recommendedContextForRuleId,
+  sortViolationsDeterministic,
+  summarizeQuickFixCommand,
+} from './advisorViolationContext';
 import { filterViolationsForPerspective } from './perspectiveFilter';
 
 export function AdvisorPanel(props: {
@@ -18,7 +24,74 @@ export function AdvisorPanel(props: {
     : props.violations;
 
   const filtered = filterViolationsForPerspective(scoped, props.perspective);
+  const sorted = sortViolationsDeterministic(filtered);
+  const grouped = groupViolationsBySeverity(sorted);
   const presetKeys = props.codePresets ?? ['residential', 'commercial', 'office'];
+
+  function renderViolationCard(v: Violation, i: number) {
+    const qf =
+      v.quickFixCommand && typeof v.quickFixCommand === 'object'
+        ? summarizeQuickFixCommand(v.quickFixCommand as Record<string, unknown>)
+        : null;
+    const ctx = recommendedContextForRuleId(v.ruleId);
+
+    return (
+      <li key={`${v.ruleId}-${i}-${v.message.slice(0, 24)}`} className="rounded border p-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <span
+            className={`rounded px-2 py-0.5 text-[10px] ${v.blocking ? 'bg-red-500/25' : 'bg-amber-500/15'}`}
+          >
+            {v.severity}
+          </span>
+          <span className="font-mono text-[10px] text-muted">{v.ruleId}</span>
+
+          {v.discipline ? (
+            <span className="rounded bg-muted/30 px-1 py-0.5 text-[9px] text-muted">
+              {v.discipline}
+            </span>
+          ) : null}
+        </div>
+
+        <div className="mt-1">{v.message}</div>
+
+        <p className="mt-1 text-[10px] text-muted">{ctx}</p>
+
+        {(v.elementIds?.length ?? 0) > 0 ? (
+          <div className="mt-1 text-[10px]">
+            <span className="text-muted">elementIds: </span>
+            <code className="break-all text-[10px]">{(v.elementIds ?? []).join(', ')}</code>
+          </div>
+        ) : null}
+
+        {qf ? (
+          <div className="mt-2 rounded border border-border/50 bg-muted/5 p-2">
+            <div className="text-[9px] font-semibold text-muted">Quick-fix command (summary)</div>
+            <ul className="mt-1 list-inside list-disc font-mono text-[9px] text-muted">
+              {qf.map((line) => (
+                <li key={line} className="break-all">
+                  {line}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-1 text-[9px] text-muted">
+              Applying still requires an explicit click below — nothing runs automatically.
+            </p>
+          </div>
+        ) : null}
+
+        {v.quickFixCommand && typeof v.quickFixCommand === 'object' ? (
+          <Btn
+            type="button"
+            className="mt-2 px-3 py-1 text-[11px]"
+            variant="quiet"
+            onClick={() => props.onApplyQuickFix(v.quickFixCommand as Record<string, unknown>)}
+          >
+            Apply suggested fix
+          </Btn>
+        ) : null}
+      </li>
+    );
+  }
 
   return (
     <div className="space-y-2">
@@ -42,42 +115,17 @@ export function AdvisorPanel(props: {
         </span>
       </div>
 
-      {filtered.length ? (
-        <ul className="max-h-[40vh] space-y-2 overflow-auto text-xs">
-          {filtered.map((v, i) => (
-            <li key={`${v.ruleId}-${i}`} className="rounded border p-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <span
-                  className={`rounded px-2 py-0.5 text-[10px] ${v.blocking ? 'bg-red-500/25' : 'bg-amber-500/15'}`}
-                >
-                  {v.severity}
-                </span>
-                <span className="font-mono text-[10px] text-muted">{v.ruleId}</span>
-
-                {v.discipline ? (
-                  <span className="rounded bg-muted/30 px-1 py-0.5 text-[9px] text-muted">
-                    {v.discipline}
-                  </span>
-                ) : null}
+      {grouped.length ? (
+        <div className="max-h-[40vh] space-y-3 overflow-auto text-xs">
+          {grouped.map((g) => (
+            <div key={g.severity}>
+              <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted">
+                {g.severity}
               </div>
-
-              <div className="mt-1">{v.message}</div>
-
-              {v.quickFixCommand && typeof v.quickFixCommand === 'object' ? (
-                <Btn
-                  type="button"
-                  className="mt-2 px-3 py-1 text-[11px]"
-                  variant="quiet"
-                  onClick={() =>
-                    props.onApplyQuickFix(v.quickFixCommand as Record<string, unknown>)
-                  }
-                >
-                  Apply suggested fix
-                </Btn>
-              ) : null}
-            </li>
+              <ul className="space-y-2">{g.items.map((v, i) => renderViolationCard(v, i))}</ul>
+            </div>
           ))}
-        </ul>
+        </div>
       ) : (
         <div className="rounded border bg-surface p-4 text-[11px] text-muted">
           {props.selectionId

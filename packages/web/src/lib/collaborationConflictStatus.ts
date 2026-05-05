@@ -26,7 +26,42 @@ export function formatCollaboration409Status(
   const stepHint =
     Number.isFinite(stepRaw) && stepRaw >= 0 ? ` (step ${Math.floor(stepRaw) + 1})` : '';
 
+  const rulesRaw =
+    replay && typeof replay === 'object' && replay !== null && 'blockingViolationRuleIds' in replay
+      ? (replay as { blockingViolationRuleIds?: unknown }).blockingViolationRuleIds
+      : undefined;
+  const rules =
+    Array.isArray(rulesRaw) && rulesRaw.length
+      ? rulesRaw.filter((x): x is string => typeof x === 'string' && x.trim().length > 0)
+      : [];
+  const maxRules = 6;
+  const rulesHint =
+    rules.length > 0
+      ? `; blocking rules: ${rules.slice(0, maxRules).join(', ')}${rules.length > maxRules ? ', …' : ''}`
+      : '';
+
+  let cmdPeek = '';
+  const typesRaw =
+    replay &&
+    typeof replay === 'object' &&
+    replay !== null &&
+    'commandTypesInOrder' in replay &&
+    typeof (replay as { commandTypesInOrder?: unknown }).commandTypesInOrder !== 'undefined'
+      ? (replay as { commandTypesInOrder?: unknown }).commandTypesInOrder
+      : undefined;
+  if (
+    Array.isArray(typesRaw) &&
+    typesRaw.length > 0 &&
+    typesRaw.every((x): x is string => typeof x === 'string')
+  ) {
+    const head = typesRaw.slice(0, 8).join(' → ');
+    cmdPeek =
+      typesRaw.length > 8
+        ? ` · cmds: ${head} → … (${typesRaw.length} total)`
+        : ` · cmds: ${head}`;
+  }
+
   return reason
-    ? `${actionLabel} blocked: ${reason}${stepHint}`
-    : `${actionLabel} blocked (model conflict).${stepHint}`;
+    ? `${actionLabel} blocked: ${reason}${stepHint}${rulesHint}${cmdPeek}`
+    : `${actionLabel} blocked (model conflict).${stepHint}${rulesHint}${cmdPeek}`;
 }

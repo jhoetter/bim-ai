@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { Btn } from '@bim-ai/ui';
 
 import { useBimStore } from '../state/store';
+import { formatAgentReviewActionDetails } from './agentReviewActionDetails';
 import { parseAgentReviewActionsV1, type AgentReviewActionRow } from './agentReviewActions';
 import { formatStagedArtifactResolutionMode } from './formatStagedArtifactResolutionMode';
 
@@ -1669,46 +1670,66 @@ export function AgentReviewPane() {
               <div className="text-[10px] font-semibold text-muted">
                 Suggested agent actions (agentReviewActions_v1)
               </div>
+              <p className="mt-1 text-[9px] text-muted">
+                Review aids only — inspect here or copy JSON. Does not create remote issues or run commands
+                automatically.
+              </p>
               <ul className="mt-2 space-y-2">
-                {evidenceArtifactSummary.reviewActions.map((a) => (
-                  <li
-                    key={a.actionId}
-                    className="rounded border border-border/50 bg-background/40 p-2 text-[10px]"
-                  >
-                    <div className="flex flex-wrap items-start justify-between gap-2">
-                      <div>
-                        <span className="font-mono text-muted">{a.kind}</span>
-                        <div className="mt-0.5 font-mono text-[9px] text-muted/80">
-                          {a.actionId}
+                {evidenceArtifactSummary.reviewActions.map((a) => {
+                  const detailLines = formatAgentReviewActionDetails(a.kind, a.target);
+                  return (
+                    <li
+                      key={a.actionId}
+                      className="rounded border border-border/50 bg-background/40 p-2 text-[10px]"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div>
+                          <span className="font-mono text-muted">{a.kind}</span>
+                          <div className="mt-0.5 font-mono text-[9px] text-muted/80">
+                            {a.actionId}
+                          </div>
                         </div>
+                        <Btn
+                          type="button"
+                          variant="quiet"
+                          className="shrink-0 text-[10px]"
+                          onClick={() => {
+                            const body = JSON.stringify(
+                              {
+                                actionId: a.actionId,
+                                kind: a.kind,
+                                guidance: a.guidance,
+                                target: a.target,
+                              },
+                              null,
+                              2,
+                            );
+                            void navigator.clipboard.writeText(body).then(
+                              () => pushStep(`Copied agent action ${a.actionId}`),
+                              () => pushStep('Clipboard write failed'),
+                            );
+                          }}
+                        >
+                          Copy JSON
+                        </Btn>
                       </div>
-                      <Btn
-                        type="button"
-                        variant="quiet"
-                        className="shrink-0 text-[10px]"
-                        onClick={() => {
-                          const body = JSON.stringify(
-                            {
-                              actionId: a.actionId,
-                              kind: a.kind,
-                              guidance: a.guidance,
-                              target: a.target,
-                            },
-                            null,
-                            2,
-                          );
-                          void navigator.clipboard.writeText(body).then(
-                            () => pushStep(`Copied agent action ${a.actionId}`),
-                            () => pushStep('Clipboard write failed'),
-                          );
-                        }}
-                      >
-                        Copy JSON
-                      </Btn>
-                    </div>
-                    <p className="mt-1 text-muted">{a.guidance}</p>
-                  </li>
-                ))}
+                      <p className="mt-1 text-muted">{a.guidance}</p>
+                      {detailLines.length ? (
+                        <dl className="mt-2 space-y-1 text-[9px] text-muted">
+                          {detailLines.map((d) => (
+                            <div
+                              key={`${a.actionId}:${d.label}:${d.value.slice(0, 48)}`}
+                              className="grid gap-x-2 sm:grid-cols-[auto_1fr]"
+                            >
+                              <dt className="font-semibold whitespace-nowrap">{d.label}</dt>
+                              <dd className="break-all font-mono">{d.value}</dd>
+                            </div>
+                          ))}
+                        </dl>
+                      ) : null}
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           ) : null}

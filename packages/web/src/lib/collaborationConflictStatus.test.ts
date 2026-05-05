@@ -19,6 +19,32 @@ describe('formatCollaboration409Status', () => {
     );
   });
 
+  it('appends blockingViolationRuleIds and command type peek when present', () => {
+    const e = new ApiHttpError(409, 'x', {
+      reason: 'constraint_error',
+      replayDiagnostics: {
+        firstBlockingCommandIndex: 1,
+        blockingViolationRuleIds: ['door_off_wall', 'wall_overlap'],
+        commandTypesInOrder: ['noop', 'createWall', 'createWall'],
+      },
+    });
+    expect(formatCollaboration409Status('Redo', e)).toBe(
+      'Redo blocked: constraint_error (step 2); blocking rules: door_off_wall, wall_overlap · cmds: noop → createWall → createWall',
+    );
+  });
+
+  it('truncates rule list after six entries', () => {
+    const e = new ApiHttpError(409, 'x', {
+      reason: 'x',
+      replayDiagnostics: {
+        blockingViolationRuleIds: ['r1', 'r2', 'r3', 'r4', 'r5', 'r6', 'r7'],
+      },
+    });
+    expect(formatCollaboration409Status('Apply', e)).toBe(
+      'Apply blocked: x; blocking rules: r1, r2, r3, r4, r5, r6, …',
+    );
+  });
+
   it('uses conflict fallback when reason is missing', () => {
     const e = new ApiHttpError(409, '409 Conflict', {
       replayDiagnostics: { firstBlockingCommandIndex: 1 },
