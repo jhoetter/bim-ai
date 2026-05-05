@@ -14,6 +14,7 @@ import {
   SheetTitleblockEditor,
   normalizeTitleblockDraftFromSheet,
 } from './sheetTitleblockAuthoring';
+import { SheetDocumentationManifest } from './SheetDocumentationManifest';
 import { resolveViewportTitleFromRef } from './sheetViewRef';
 import { SectionViewportSvg } from './sectionViewportSvg';
 
@@ -342,6 +343,15 @@ function SheetCanvasWithSheet(props: {
           })}
         </svg>
       </div>
+
+      <SheetDocumentationManifest
+        sheet={sh}
+        modelId={modelId}
+        elementsById={elementsById}
+        authoring={authoring}
+        tbDraft={tbDraft}
+        vpDrafts={vpDrafts}
+      />
 
       {props.onUpsertSemantic ? (
         <>
