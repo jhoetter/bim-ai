@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import ifcopenshell
+import pytest
+from bim_ai.ifc_material_layer_exchange_v0 import kernel_ifc_material_layer_set_readback_v0
+
 from bim_ai.commands import (
     CreateFloorCmd,
     CreateRoofCmd,
@@ -22,6 +26,8 @@ from bim_ai.elements import (
     WallTypeLayer,
 )
 from bim_ai.engine import apply_inplace
+from bim_ai.export_ifc import IFC_AVAILABLE, export_ifc_model_step
+from bim_ai.material_assembly_resolve import resolved_layers_for_wall
 from bim_ai.schedule_derivation import derive_schedule_table
 
 
@@ -358,3 +364,57 @@ def test_roof_schedule_includes_roof_type_columns():
     row = table["rows"][0]
     assert row["roofTypeId"] == "rt-1"
     assert float(row["assemblyTotalThicknessMm"]) == 162.0
+
+
+@pytest.mark.skipif(not IFC_AVAILABLE, reason="ifcopenshell not installed (pip install '.[ifc]')")
+def test_ifc_material_readback_matches_resolved_wall_layers() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=0),
+            "wt": WallTypeElem(
+                kind="wall_type",
+                id="wt",
+                name="WT",
+                layers=[
+                    WallTypeLayer(
+                        thicknessMm=100,
+                        layer_function="structure",
+                        material_key="mat-concrete-structure-v1",
+                    ),
+                    WallTypeLayer(
+                        thicknessMm=50,
+                        layer_function="finish",
+                        material_key="mat-gwb-finish-v1",
+                    ),
+                ],
+            ),
+            "w1": WallElem(
+                kind="wall",
+                id="w1",
+                name="W",
+                level_id="lvl",
+                start=Vec2Mm(x_mm=0, y_mm=0),
+                end=Vec2Mm(x_mm=3000, y_mm=0),
+                thickness_mm=150,
+                height_mm=2800,
+                wall_type_id="wt",
+            ),
+        },
+    )
+    w = doc.elements["w1"]
+    assert isinstance(w, WallElem)
+    doc_layers = resolved_layers_for_wall(doc, w)
+    assert len(doc_layers) == 2
+
+    step = export_ifc_model_step(doc)
+    model = ifcopenshell.file.from_string(step)
+    rb = kernel_ifc_material_layer_set_readback_v0(model, doc)
+    assert rb.get("available") is True
+    row = next(
+        h
+        for h in (rb.get("hosts") or [])
+        if h.get("hostElementId") == "w1" and h.get("hostKind") == "wall"
+    )
+    assert row.get("readbackState") == "matched"
+    assert row.get("docLayerCount") == 2

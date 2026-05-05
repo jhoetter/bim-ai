@@ -9,7 +9,16 @@ from __future__ import annotations
 import pytest
 
 from bim_ai.document import Document
-from bim_ai.elements import DoorElem, FloorElem, LevelElem, SiteElem, WallElem
+from bim_ai.elements import (
+    DoorElem,
+    FloorElem,
+    FloorTypeElem,
+    LevelElem,
+    SiteElem,
+    WallElem,
+    WallTypeElem,
+    WallTypeLayer,
+)
 from bim_ai.engine import clone_document, try_apply_kernel_ifc_authoritative_replay_v0
 from bim_ai.export_ifc import (
     AUTHORITATIVE_REPLAY_KIND_V0,
@@ -112,6 +121,74 @@ def test_ifc_manifest_includes_semantic_import_scope_and_expected_kinds_hint() -
     )
     kinds = mf.get("kernelExpectedIfcKinds") or {}
     assert kinds.get("wall") == 1 and kinds.get("floor") == 1 and kinds.get("level") == 1
+
+
+def test_ifc_semantic_scope_mentions_material_layer_readback_evidence() -> None:
+    supported = IFC_SEMANTIC_IMPORT_SCOPE_V0.get("semanticReadBackSupported") or []
+    blob = "\n".join(str(x) for x in supported)
+    assert "materialLayerSetReadback_v0" in blob
+    assert "ifcMaterialLayerSetReadbackEvidence_v0" in blob
+
+
+def test_ifc_manifest_includes_material_layer_readback_when_ifc_installed() -> None:
+    if not IFC_AVAILABLE:
+        pytest.skip("ifcopenshell not installed (pip install '.[ifc]')")
+
+    doc = Document(
+        revision=203,
+        elements={
+            "lvl-g": LevelElem(kind="level", id="lvl-g", name="G", elevationMm=0),
+            "wt": WallTypeElem(
+                kind="wall_type",
+                id="wt",
+                name="WT",
+                layers=[
+                    WallTypeLayer(thicknessMm=95, layer_function="structure", material_key="manifest-mat-a"),
+                    WallTypeLayer(thicknessMm=55, layer_function="finish", material_key="manifest-mat-b"),
+                ],
+            ),
+            "w-a": WallElem(
+                kind="wall",
+                id="w-a",
+                name="W",
+                levelId="lvl-g",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 3000, "yMm": 0},
+                thicknessMm=150,
+                heightMm=2800,
+                wallTypeId="wt",
+            ),
+            "ft": FloorTypeElem(
+                kind="floor_type",
+                id="ft",
+                name="FT",
+                layers=[
+                    WallTypeLayer(thicknessMm=90, layer_function="structure"),
+                    WallTypeLayer(thicknessMm=30, layer_function="finish"),
+                ],
+            ),
+            "fl": FloorElem(
+                kind="floor",
+                id="fl",
+                name="S",
+                levelId="lvl-g",
+                boundaryMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 3500, "yMm": 0},
+                    {"xMm": 3500, "yMm": 2500},
+                    {"xMm": 0, "yMm": 2500},
+                ],
+                thicknessMm=130,
+                floorTypeId="ft",
+            ),
+        },
+    )
+    mf = build_ifc_exchange_manifest_payload(doc)
+    ev = mf.get("ifcMaterialLayerSetReadbackEvidence_v0")
+    assert isinstance(ev, dict)
+    assert ev.get("format") == "ifcMaterialLayerSetReadbackEvidence_v0"
+    assert ev.get("available") is True
+    assert (ev.get("summary") or {}).get("hostsCompared", 0) >= 1
 
 
 def test_summarize_kernel_ifc_semantic_roundtrip_stub_when_ifcopenshell_missing() -> None:

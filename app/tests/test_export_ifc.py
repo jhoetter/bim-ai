@@ -13,12 +13,14 @@ from bim_ai.elements import (
     FloorTypeElem,
     LevelElem,
     RoofElem,
+    RoofTypeElem,
     RoomElem,
     SiteElem,
     SlabOpeningElem,
     StairElem,
     Vec2Mm,
     WallElem,
+    WallTypeElem,
     WallTypeLayer,
     WindowElem,
 )
@@ -59,6 +61,100 @@ def test_ifc_exchange_manifest_signals_kernel_wall_slice():
     assert mf["ifcEncoding"] == IFC_ENCODING_KERNEL_V1
     assert mf["artifactHasGeometryEntities"] is True
     assert mf["exportedIfcKindsInArtifact"] == {"level": 1, "wall": 1}
+
+
+def test_ifc_material_layer_set_export_and_readback_matches_document() -> None:
+    doc = Document(
+        revision=31,
+        elements={
+            "lvl-g": LevelElem(kind="level", id="lvl-g", name="G", elevationMm=0),
+            "wt": WallTypeElem(
+                kind="wall_type",
+                id="wt",
+                name="WT",
+                layers=[
+                    WallTypeLayer(thicknessMm=100, layer_function="structure", material_key="mat-w-structure"),
+                    WallTypeLayer(thicknessMm=50, layer_function="finish", material_key="mat-w-finish"),
+                ],
+            ),
+            "w-a": WallElem(
+                kind="wall",
+                id="w-a",
+                name="W",
+                levelId="lvl-g",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 3000, "yMm": 0},
+                thicknessMm=150,
+                heightMm=2800,
+                wallTypeId="wt",
+            ),
+            "ft": FloorTypeElem(
+                kind="floor_type",
+                id="ft",
+                name="FT",
+                layers=[
+                    WallTypeLayer(thicknessMm=120, layer_function="structure", material_key="mat-f-structure"),
+                    WallTypeLayer(thicknessMm=40, layer_function="finish", material_key="mat-f-finish"),
+                ],
+            ),
+            "fl": FloorElem(
+                kind="floor",
+                id="fl",
+                name="S",
+                levelId="lvl-g",
+                boundaryMm=[
+                    {"xMm": -500, "yMm": -500},
+                    {"xMm": 5000, "yMm": -500},
+                    {"xMm": 5000, "yMm": 5000},
+                    {"xMm": -500, "yMm": 5000},
+                ],
+                thicknessMm=160,
+                floorTypeId="ft",
+            ),
+            "rt": RoofTypeElem(
+                kind="roof_type",
+                id="rt",
+                name="RT",
+                layers=[
+                    WallTypeLayer(thicknessMm=30, layer_function="structure", material_key="mat-r-structure"),
+                    WallTypeLayer(thicknessMm=80, layer_function="insulation", material_key="mat-r-ins"),
+                ],
+            ),
+            "rf": RoofElem(
+                kind="roof",
+                id="rf",
+                name="R",
+                referenceLevelId="lvl-g",
+                footprintMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 2000, "yMm": 0},
+                    {"xMm": 2000, "yMm": 1500},
+                    {"xMm": 0, "yMm": 1500},
+                ],
+                roofTypeId="rt",
+            ),
+        },
+    )
+    step = export_ifc_model_step(doc)
+    upper = step.upper()
+    assert "IFCMATERIALLAYERSET" in upper
+
+    ins = inspect_kernel_ifc_semantics(doc=doc)
+    ml = ins.get("materialLayerSetReadback_v0") or {}
+    assert ml.get("available") is True
+    by_id = {str(h.get("hostElementId")): h for h in (ml.get("hosts") or []) if h.get("hostElementId")}
+    assert by_id["w-a"].get("readbackState") == "matched"
+    assert by_id["fl"].get("readbackState") == "matched"
+    assert by_id["rf"].get("readbackState") == "matched"
+
+    summary = summarize_kernel_ifc_semantic_roundtrip(doc)
+    rtc = summary.get("roundtripChecks") or {}
+    ml_rb = rtc.get("materialLayerReadback") or {}
+    assert ml_rb.get("allMatched") is True
+    mf = build_ifc_exchange_manifest_payload(doc)
+    ev = mf.get("ifcMaterialLayerSetReadbackEvidence_v0") or {}
+    assert ev.get("format") == "ifcMaterialLayerSetReadbackEvidence_v0"
+    assert (ev.get("summary") or {}).get("hostsMatched", 0) >= 3
 
 
 def test_export_ifc_wall_step_contains_ifc_wall_product():

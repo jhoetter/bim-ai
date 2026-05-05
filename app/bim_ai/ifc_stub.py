@@ -33,9 +33,11 @@ IFC_SEMANTIC_IMPORT_SCOPE_V0: dict[str, Any] = {
         "inspect_kernel_ifc_semantics.qtoLinkedProducts — per-product Qto_* linkage counts",
         "inspect_kernel_ifc_semantics.importScopeUnsupportedIfcProducts_v0 — IfcProduct classes outside kernel slice roots",
         "inspect_kernel_ifc_semantics.siteExchangeEvidence_v0 — kernel SiteElem ↔ IfcSite counts + Pset_SiteCommon.Reference joined ids",
+        "inspect_kernel_ifc_semantics.materialLayerSetReadback_v0 — IfcMaterialLayerSet read-back vs document layer stacks for IfcWall / IfcSlab / IfcRoof (when kernel export eligible)",
         "ifc_manifest_v0.siteExchangeEvidence_v0 — document-only kernel site participation when IFC export not eligible",
+        "ifc_manifest_v0.ifcMaterialLayerSetReadbackEvidence_v0 — re-export STEP + same read-back slice for exchange manifest (when IfcOpenShell + kernel export eligible)",
         "Kernel geometry skip map from Document",
-        "summarize_kernel_ifc_semantic_roundtrip export→re-parse deltas (identityCoverage, qtoCoverage)",
+        "summarize_kernel_ifc_semantic_roundtrip export→re-parse deltas (identityCoverage, qtoCoverage, materialLayerReadback summary)",
         "summarize_kernel_ifc_semantic_roundtrip.commandSketch — level echo, storeys read-back, QTO names, programme samples",
         "summarize_kernel_ifc_semantic_roundtrip.commandSketch.authoritativeReplay_v0 — kernel IFC re-parse → deterministic createLevel/createFloor/createWall/createRoof (IfcRoof prism, identity Pset_RoofCommon.Reference, inferred slopeDeg/overhangMm/mass_box from exporter-aligned placement) /createStair (IfcStair, identity Pset_StairCommon.Reference, top storey from elevation + body height when unique) / createRoomOutline (IfcSpace) + wall-hosted insertDoorOnWall/insertWindowOnWall + slab-hosted createSlabOpening (IfcOpeningElement voids on IfcSlab, op:<id> names); authoritativeSubset.roofs + kernelRoofSkippedNoReference; IfcSlabType + Pset_SlabCommon type Reference when floorTypeId set; typedFloorAuthoritativeReplayEvidence_v0; slabRoofHostedVoidReplaySkipped_v0 skip ledger; idsAuthoritativeReplayMap_v0 spaces + roofs + floors IDS linkage, unsupportedIfcProducts_v0 vs replay distinction",
         "engine.try_apply_kernel_ifc_authoritative_replay_v0 — additive apply of authoritativeReplay_v0 commands via try_commit_bundle (preflight merge_id_collision / merge_reference_unresolved)",
@@ -65,6 +67,34 @@ def minimal_empty_ifc_skeleton() -> str:
     )
 
 
+def build_ifc_material_layer_set_readback_evidence_v0(doc: Document) -> dict[str, Any] | None:
+    """Re-parse exported STEP for material layer read-back (lazy import avoids export cycle at load)."""
+
+    from bim_ai.export_ifc import IFC_AVAILABLE, export_ifc_model_step  # noqa: PLC0415
+    from bim_ai.ifc_material_layer_exchange_v0 import (  # noqa: PLC0415
+        kernel_ifc_material_layer_set_readback_v0,
+    )
+
+    if not IFC_AVAILABLE or not kernel_export_eligible(doc):
+        return None
+
+    try:
+        import ifcopenshell  # noqa: PLC0415
+    except ImportError:
+        return None
+
+    step = export_ifc_model_step(doc)
+    model = ifcopenshell.file.from_string(step)
+    rb = kernel_ifc_material_layer_set_readback_v0(model, doc)
+    return {
+        "format": "ifcMaterialLayerSetReadbackEvidence_v0",
+        **rb,
+        "inspectPointer": (
+            "inspect_kernel_ifc_semantics.materialLayerSetReadback_v0 — same schema as this manifest slice."
+        ),
+    }
+
+
 def build_ifc_exchange_manifest_payload(doc: Document) -> dict[str, Any]:
     parity = exchange_parity_manifest_fields_from_document(doc)
     planned = sorted(parity["countsByKind"].keys())
@@ -91,6 +121,9 @@ def build_ifc_exchange_manifest_payload(doc: Document) -> dict[str, Any]:
     asm_ev = material_assembly_manifest_evidence(doc)
     if asm_ev:
         out["materialAssemblyEvidence_v0"] = asm_ev
+    ml_ev = build_ifc_material_layer_set_readback_evidence_v0(doc)
+    if ml_ev:
+        out["ifcMaterialLayerSetReadbackEvidence_v0"] = ml_ev
     out["siteExchangeEvidence_v0"] = build_site_exchange_evidence_v0_for_manifest(doc)
     return out
 

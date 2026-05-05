@@ -31,7 +31,16 @@ from bim_ai.elements import (
     WallElem,
     WindowElem,
 )
+from bim_ai.ifc_material_layer_exchange_v0 import (
+    kernel_ifc_material_layer_set_readback_v0,
+    try_attach_kernel_ifc_material_layer_set,
+)
 from bim_ai.kernel_ifc_opening_replay_v0 import build_wall_hosted_opening_replay_commands_v0
+from bim_ai.material_assembly_resolve import (
+    resolved_layers_for_floor,
+    resolved_layers_for_roof,
+    resolved_layers_for_wall,
+)
 
 try:
     import ifcopenshell  # noqa: F401
@@ -633,6 +642,7 @@ def inspect_kernel_ifc_semantics(
         "qtoTemplates": qto_names,
         "importScopeUnsupportedIfcProducts_v0": _import_scope_unsupported_ifc_products_v0(model),
         "siteExchangeEvidence_v0": build_site_exchange_evidence_v0(doc=doc, model=model),
+        "materialLayerSetReadback_v0": kernel_ifc_material_layer_set_readback_v0(model, doc),
     }
     if skip_counts:
         out["ifcKernelGeometrySkippedCounts"] = skip_counts
@@ -1916,6 +1926,20 @@ def summarize_kernel_ifc_semantic_roundtrip(doc: Document) -> dict[str, Any]:
     all_prog_match = all(v["match"] for v in programme_fields.values()) if programme_fields else True
     all_id_match = all(v["match"] for v in identity_coverage.values())
 
+    ml_ins = inspection.get("materialLayerSetReadback_v0")
+    material_layer_readback: dict[str, Any]
+    if isinstance(ml_ins, dict) and ml_ins.get("available"):
+        ml_sum = ml_ins.get("summary") if isinstance(ml_ins.get("summary"), dict) else {}
+        material_layer_readback = {
+            "hostsCompared": int(ml_sum.get("hostsCompared") or 0),
+            "hostsMatched": int(ml_sum.get("hostsMatched") or 0),
+            "hostsMissingIfcLayers": int(ml_sum.get("hostsMissingIfcLayers") or 0),
+            "hostsPartialMismatch": int(ml_sum.get("hostsPartialMismatch") or 0),
+            "allMatched": bool(ml_sum.get("allMatchedComparedHosts")),
+        }
+    else:
+        material_layer_readback = {"allMatched": True}
+
     sketch_limit = 48
     qto_names_sk = list(inspection.get("qtoTemplates") or [])
     command_sketch = {
@@ -1944,6 +1968,7 @@ def summarize_kernel_ifc_semantic_roundtrip(doc: Document) -> dict[str, Any]:
             "programmeFields": programme_fields,
             "identityCoverage": identity_coverage,
             "qtoCoverage": qto_coverage,
+            "materialLayerReadback": material_layer_readback,
             "allProductCountsMatch": all_pc_match,
             "allProgrammeFieldsMatch": all_prog_match,
             "allIdentityReferencesMatch": all_id_match,
@@ -2128,6 +2153,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
     wall_products: dict[str, Any] = {}
     slab_products: dict[str, Any] = {}
     slab_type_entities: dict[str, Any] = {}
+    material_by_key_cache: dict[str, Any] = {}
 
     def attach_kernel_identity_pset(product: Any, pset_name: str, reference: str, **props: Any) -> None:
         try:
@@ -2182,6 +2208,16 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
             "Qto_WallBaseQuantities",
             {"Length": float(length_m), "Height": float(height_m), "Width": float(thick_m)},
         )
+        w_layers = resolved_layers_for_wall(doc, w)
+        if w_layers:
+            try_attach_kernel_ifc_material_layer_set(
+                f,
+                doc,
+                wal,
+                layers=w_layers,
+                layer_set_display_name=f"kernel_wall:{wid}",
+                material_by_key_cache=material_by_key_cache,
+            )
 
     for fid in sorted(eid for eid, e in doc.elements.items() if isinstance(e, FloorElem)):
         fl = doc.elements[fid]
@@ -2258,6 +2294,16 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
                 "Width": float(thick_m),
             },
         )
+        fl_layers = resolved_layers_for_floor(doc, fl)
+        if fl_layers:
+            try_attach_kernel_ifc_material_layer_set(
+                f,
+                doc,
+                slab,
+                layers=fl_layers,
+                layer_set_display_name=f"kernel_slab:{fid}",
+                material_by_key_cache=material_by_key_cache,
+            )
 
     panel_thickness = 0.06
 
@@ -2582,6 +2628,16 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         ifcopenshell.api.spatial.assign_container(f, products=[roof_ent], relating_structure=st_roof)
         geo_products += 1
         attach_kernel_identity_pset(roof_ent, "Pset_RoofCommon", rid)
+        rf_layers = resolved_layers_for_roof(doc, rf)
+        if rf_layers:
+            try_attach_kernel_ifc_material_layer_set(
+                f,
+                doc,
+                roof_ent,
+                layers=rf_layers,
+                layer_set_display_name=f"kernel_roof:{rid}",
+                material_by_key_cache=material_by_key_cache,
+            )
 
     for sid in sorted(eid for eid, e in doc.elements.items() if isinstance(e, StairElem)):
         st = doc.elements[sid]

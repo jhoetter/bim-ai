@@ -46,6 +46,7 @@ from bim_ai.export_ifc import (
 )
 from bim_ai.geometry import Poly, approx_overlap_area_mm2, sat_overlap, wall_corners
 from bim_ai.ifc_stub import build_ifc_exchange_manifest_payload
+from bim_ai.material_assembly_resolve import material_assembly_manifest_evidence
 from bim_ai.plan_aa_room_separation import axis_aligned_room_separation_splits_rectangle
 from bim_ai.room_derivation import compute_room_boundary_derivation
 
@@ -130,6 +131,7 @@ _RULE_DISCIPLINE: dict[str, str] = {
     "exchange_ifc_roundtrip_programme_mismatch": "exchange",
     "exchange_ifc_ids_identity_pset_gap": "exchange",
     "exchange_ifc_ids_qto_gap": "exchange",
+    "exchange_ifc_material_layer_readback_mismatch": "exchange",
 }
 
 
@@ -685,6 +687,26 @@ def _exchange_advisory_violations(elements: dict[str, Element]) -> list[Violatio
                             "Cleanroom IDS validation is active but IFC read-back shows incomplete "
                             "Qto_* base-quantity linkage on some emitted products "
                             "(summarize_kernel_ifc_semantic_roundtrip.roundtripChecks.qtoCoverage)."
+                            + ids_ptr
+                        ),
+                        element_ids=[],
+                        discipline="exchange",
+                    )
+                )
+            mlr = rtc.get("materialLayerReadback")
+            if (
+                isinstance(mlr, dict)
+                and not mlr.get("allMatched", True)
+                and material_assembly_manifest_evidence(doc) is not None
+            ):
+                out.append(
+                    Violation(
+                        rule_id="exchange_ifc_material_layer_readback_mismatch",
+                        severity="info",
+                        message=(
+                            "IFC layer stack read-back does not align with documented material assemblies "
+                            "for some kernel emits (inspect_kernel_ifc_semantics.materialLayerSetReadback_v0; "
+                            "ifc_manifest_v0.ifcMaterialLayerSetReadbackEvidence_v0)."
                             + ids_ptr
                         ),
                         element_ids=[],
