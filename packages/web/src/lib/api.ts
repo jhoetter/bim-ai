@@ -164,7 +164,7 @@ export async function applyCommand(
 
   if (extras?.userId) body.userId = extras.userId;
 
-  return fetchJson(`/api/models/${encodeURIComponent(modelId)}/commands`, {
+  return postJsonOrApiError(`/api/models/${encodeURIComponent(modelId)}/commands`, {
     method: 'POST',
 
     headers: { 'content-type': 'application/json' },
@@ -183,7 +183,7 @@ export async function applyCommandBundle(
 
   if (extras?.userId) body.userId = extras.userId;
 
-  return fetchJson(`/api/models/${encodeURIComponent(modelId)}/commands/bundle`, {
+  return postJsonOrApiError(`/api/models/${encodeURIComponent(modelId)}/commands/bundle`, {
     method: 'POST',
 
     headers: { 'content-type': 'application/json' },
