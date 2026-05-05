@@ -598,6 +598,9 @@ class CreateAgentAssumptionCmd(BaseModel):
     id: str | None = None
     statement: str
     source: Literal["manual", "bundle_dry_run", "evidence_summary"] = "manual"
+    closure_status: Literal["open", "resolved", "accepted", "deferred"] = Field(
+        default="resolved", alias="closureStatus"
+    )
     related_element_ids: list[str] = Field(default_factory=list, alias="relatedElementIds")
     related_topic_id: str | None = Field(default=None, alias="relatedTopicId")
 
@@ -608,6 +611,7 @@ class CreateAgentDeviationCmd(BaseModel):
     id: str | None = None
     statement: str
     severity: Literal["info", "warning", "error"] = "warning"
+    acknowledged: bool = True
     related_assumption_id: str | None = Field(default=None, alias="relatedAssumptionId")
     related_element_ids: list[str] = Field(default_factory=list, alias="relatedElementIds")
 

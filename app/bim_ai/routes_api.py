@@ -21,6 +21,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import RedirectResponse
 
+from bim_ai.agent_brief_acceptance_readout import agent_brief_acceptance_readout_v1
 from bim_ai.agent_brief_command_protocol import agent_brief_command_protocol_v1
 from bim_ai.agent_evidence_review_loop import agent_review_actions_v1, bcf_topics_index_v1
 from bim_ai.agent_generated_bundle_qa_checklist import (
@@ -489,6 +490,13 @@ async def evidence_package(
         evidence_diff_ingest_fix_loop=payload["evidenceDiffIngestFixLoop_v1"],
         evidence_review_performance_gate=payload["evidenceReviewPerformanceGate_v1"],
         evidence_ref_resolution=ref_res,
+    )
+    payload["agentBriefAcceptanceReadout_v1"] = agent_brief_acceptance_readout_v1(
+        doc=doc,
+        brief_protocol=payload["agentBriefCommandProtocol_v1"],
+        qa_checklist=payload["agentGeneratedBundleQaChecklist_v1"],
+        artifact_upload_manifest=payload.get("artifactUploadManifest_v1"),
+        validation_violations=viols,
     )
     payload["evidenceBaselineLifecycleReadout_v1"] = evidence_baseline_lifecycle_readout_v1(
         evidence_closure_review=payload["evidenceClosureReview_v1"],
@@ -1209,6 +1217,13 @@ async def dry_run_command_bundle(
         evidence_review_performance_gate=None,
         evidence_ref_resolution=None,
     )
+    accept_readout = agent_brief_acceptance_readout_v1(
+        doc=baseline_doc,
+        brief_protocol=brief_proto,
+        qa_checklist=qa_checklist,
+        artifact_upload_manifest=None,
+        validation_violations=viols_wire,
+    )
     if not ok or new_doc is None:
         return {
             "ok": False,
@@ -1226,6 +1241,7 @@ async def dry_run_command_bundle(
             ),
             "agentBriefCommandProtocol_v1": brief_proto,
             "agentGeneratedBundleQaChecklist_v1": qa_checklist,
+            "agentBriefAcceptanceReadout_v1": accept_readout,
         }
 
     return {
@@ -1240,6 +1256,7 @@ async def dry_run_command_bundle(
         "replayDiagnostics": bundle_replay_diagnostics(body.commands),
         "agentBriefCommandProtocol_v1": brief_proto,
         "agentGeneratedBundleQaChecklist_v1": qa_checklist,
+        "agentBriefAcceptanceReadout_v1": accept_readout,
     }
 
 

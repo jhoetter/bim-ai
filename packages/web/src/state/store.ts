@@ -1010,11 +1010,17 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
     const src = raw.source;
     const source =
       src === 'bundle_dry_run' || src === 'evidence_summary' ? src : ('manual' as const);
+    const cs = raw.closureStatus ?? raw.closure_status;
+    const closureStatus =
+      cs === 'open' || cs === 'resolved' || cs === 'accepted' || cs === 'deferred'
+        ? cs
+        : ('resolved' as const);
     return {
       kind: 'agent_assumption',
       id,
       statement: typeof raw.statement === 'string' ? raw.statement : '',
       source,
+      ...(closureStatus !== 'resolved' ? { closureStatus } : {}),
       ...(relatedElementIds.length ? { relatedElementIds } : {}),
       relatedTopicId: (raw.relatedTopicId ?? raw.related_topic_id ?? null) as string | null,
     };
@@ -1024,6 +1030,8 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
     const sev = raw.severity;
     const severity =
       sev === 'info' || sev === 'warning' || sev === 'error' ? sev : ('warning' as const);
+    const ack = raw.acknowledged;
+    const acknowledged = typeof ack === 'boolean' ? ack : true;
     const relatedRaw = raw.relatedElementIds ?? raw.related_element_ids ?? [];
     const relatedElementIds =
       Array.isArray(relatedRaw) && relatedRaw.every((x) => typeof x === 'string')
@@ -1034,6 +1042,7 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
       id,
       statement: typeof raw.statement === 'string' ? raw.statement : '',
       severity,
+      ...(acknowledged ? {} : { acknowledged: false }),
       relatedAssumptionId: (raw.relatedAssumptionId ?? raw.related_assumption_id ?? null) as
         | string
         | null,

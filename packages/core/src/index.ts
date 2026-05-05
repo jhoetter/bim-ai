@@ -437,6 +437,7 @@ export type Element =
       id: string;
       statement: string;
       source?: 'manual' | 'bundle_dry_run' | 'evidence_summary';
+      closureStatus?: 'open' | 'resolved' | 'accepted' | 'deferred';
       relatedElementIds?: string[];
       relatedTopicId?: string | null;
     }
@@ -445,6 +446,7 @@ export type Element =
       id: string;
       statement: string;
       severity?: 'info' | 'warning' | 'error';
+      acknowledged?: boolean;
       relatedAssumptionId?: string | null;
       relatedElementIds?: string[];
     }

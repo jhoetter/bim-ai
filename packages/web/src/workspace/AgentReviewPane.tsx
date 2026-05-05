@@ -5,6 +5,11 @@ import { Btn } from '@bim-ai/ui';
 import { collaborationConflictQueueInspectionLinesFromHints } from '../lib/collaborationConflictQueue';
 import { useBimStore } from '../state/store';
 import {
+  AgentBriefAcceptanceReadoutV1Table,
+  formatAgentBriefAcceptanceReadoutLines,
+  parseAgentBriefAcceptanceReadoutV1,
+} from './agentBriefAcceptanceReadout';
+import {
   formatAgentBriefCommandProtocolReadout,
   parseAgentBriefCommandProtocolV1,
 } from './agentBriefCommandProtocol';
@@ -226,6 +231,38 @@ export function AgentReviewPane() {
       if (dr !== null && typeof dr === 'object' && !Array.isArray(dr)) {
         return parseAgentGeneratedBundleQaChecklistV1(
           (dr as Record<string, unknown>).agentGeneratedBundleQaChecklist_v1,
+        );
+      }
+    } catch {
+      return null;
+    }
+    return null;
+  }, [dryRunTxt]);
+
+  const evidenceAcceptanceReadout = useMemo(() => {
+    if (!evidenceTxt) return null;
+    try {
+      const root = JSON.parse(evidenceTxt) as Record<string, unknown>;
+      const pay = root.payload ?? root.evidencePackage;
+      if (pay !== null && typeof pay === 'object' && !Array.isArray(pay)) {
+        return parseAgentBriefAcceptanceReadoutV1(
+          (pay as Record<string, unknown>).agentBriefAcceptanceReadout_v1,
+        );
+      }
+    } catch {
+      return null;
+    }
+    return null;
+  }, [evidenceTxt]);
+
+  const dryRunAcceptanceReadout = useMemo(() => {
+    if (!dryRunTxt) return null;
+    try {
+      const root = JSON.parse(dryRunTxt) as Record<string, unknown>;
+      const dr = root.dryRun;
+      if (dr !== null && typeof dr === 'object' && !Array.isArray(dr)) {
+        return parseAgentBriefAcceptanceReadoutV1(
+          (dr as Record<string, unknown>).agentBriefAcceptanceReadout_v1,
         );
       }
     } catch {
@@ -1403,6 +1440,32 @@ export function AgentReviewPane() {
               </pre>
             </div>
           ) : null}
+        </div>
+      ) : null}
+
+      {evidenceAcceptanceReadout !== null || dryRunAcceptanceReadout !== null ? (
+        <div
+          data-testid="agent-brief-acceptance-readout"
+          className="rounded border border-border bg-background/40 p-2"
+        >
+          <div className="text-[10px] font-semibold text-muted">Brief acceptance gates</div>
+          <p className="mt-1 text-[10px] text-muted">
+            Deterministic closure readout (<code className="text-[9px]">agentBriefAcceptanceReadout_v1</code>) from
+            evidence-package and bundle dry-run payloads. Line preview:
+          </p>
+          <div className="mt-2 grid gap-2 md:grid-cols-2">
+            <pre className="max-h-32 overflow-auto rounded border border-border/60 bg-background p-2 font-mono text-[9px]">
+              {formatAgentBriefAcceptanceReadoutLines(evidenceAcceptanceReadout).join('\n')}
+            </pre>
+            <pre className="max-h-32 overflow-auto rounded border border-border/60 bg-background p-2 font-mono text-[9px]">
+              {formatAgentBriefAcceptanceReadoutLines(dryRunAcceptanceReadout).join('\n')}
+            </pre>
+          </div>
+          <AgentBriefAcceptanceReadoutV1Table
+            title="Evidence-package readout (preferred for artifact expectations)"
+            readout={evidenceAcceptanceReadout}
+          />
+          <AgentBriefAcceptanceReadoutV1Table title="Last bundle dry-run readout" readout={dryRunAcceptanceReadout} />
         </div>
       ) : null}
 

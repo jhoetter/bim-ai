@@ -546,6 +546,7 @@ class BcfElem(BaseModel):
 
 
 AgentAssumptionSource = Literal["manual", "bundle_dry_run", "evidence_summary"]
+AgentAssumptionClosureStatus = Literal["open", "resolved", "accepted", "deferred"]
 
 
 class AgentAssumptionElem(BaseModel):
@@ -554,6 +555,11 @@ class AgentAssumptionElem(BaseModel):
     id: str
     statement: str
     source: AgentAssumptionSource = "manual"
+    closure_status: AgentAssumptionClosureStatus = Field(
+        default="resolved",
+        alias="closureStatus",
+        description="Open assumptions require explicit resolution before acceptance.",
+    )
     related_element_ids: list[str] = Field(default_factory=list, alias="relatedElementIds")
     related_topic_id: str | None = Field(default=None, alias="relatedTopicId")
 
@@ -567,6 +573,7 @@ class AgentDeviationElem(BaseModel):
     id: str
     statement: str
     severity: AgentDeviationSeverity = "warning"
+    acknowledged: bool = True
     related_assumption_id: str | None = Field(default=None, alias="relatedAssumptionId")
     related_element_ids: list[str] = Field(default_factory=list, alias="relatedElementIds")
 

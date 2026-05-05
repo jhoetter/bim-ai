@@ -174,6 +174,29 @@ def test_digest_stable_when_bundle_qa_checklist_differs_derivative_only() -> Non
     assert evidence_package_semantic_digest_sha256(a) == evidence_package_semantic_digest_sha256(b)
 
 
+def test_digest_stable_when_agent_brief_acceptance_readout_differs_derivative_only() -> None:
+    """agentBriefAcceptanceReadout_v1 omits semantic digest."""
+
+    root = {"format": "evidencePackage_v1", "revision": 1, "modelId": "m1"}
+    a = {
+        **root,
+        "agentBriefAcceptanceReadout_v1": {
+            "format": "agentBriefAcceptanceReadout_v1",
+            "schemaVersion": 1,
+            "marker": "alpha",
+        },
+    }
+    b = {
+        **root,
+        "agentBriefAcceptanceReadout_v1": {
+            "format": "agentBriefAcceptanceReadout_v1",
+            "schemaVersion": 1,
+            "marker": "beta",
+        },
+    }
+    assert evidence_package_semantic_digest_sha256(a) == evidence_package_semantic_digest_sha256(b)
+
+
 def test_evidence_closure_review_inventory_lists_sorted_png_basenames() -> None:
     pkg = "f" * 64
     sheet = [
