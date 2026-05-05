@@ -19,6 +19,14 @@ import {
   noScheduleElementMessage,
   registryNoModelMode,
 } from './schedulePanelPlansSheetsUi';
+import {
+  buildScheduleTableCsvUrl,
+  columnFieldRoleHint,
+  columnMetadataCategoryLine,
+  formatSchedulePlacementReadout,
+  scheduleRegistryEngineReadoutParts,
+  type ScheduleFieldMeta,
+} from './schedulePanelRegistryChrome';
 
 type TabKey = 'rooms' | 'doors' | 'windows' | 'floors' | 'roofs' | 'stairs' | 'plans' | 'sheets';
 
@@ -748,6 +756,7 @@ export function SchedulePanel(props: {
   type GenericDerived = {
     columns: string[];
     fieldLabels: Record<string, string>;
+    fieldMeta: Record<string, ScheduleFieldMeta>;
     rows: Record<string, unknown>[];
   };
 
@@ -766,7 +775,9 @@ export function SchedulePanel(props: {
     const d = srvActive.data;
     const columns = Array.isArray(d.columns) ? (d.columns as string[]) : [];
 
-    const rawMeta = d.columnMetadata as { fields?: Record<string, { label?: string }> } | undefined;
+    const rawMeta = d.columnMetadata as
+      | { fields?: Record<string, ScheduleFieldMeta> }
+      | undefined;
     const fields = rawMeta?.fields ?? {};
 
     const fieldLabels = Object.fromEntries(
@@ -775,7 +786,9 @@ export function SchedulePanel(props: {
 
     const rows = flattenSchedulePayloadRows(d);
 
-    return columns.length ? { columns, fieldLabels, rows } : null;
+    const fieldMeta = fields as Record<string, ScheduleFieldMeta>;
+
+    return columns.length ? { columns, fieldLabels, fieldMeta, rows } : null;
   }, [srvActive, tab]);
 
   const registryPickKey =
@@ -832,7 +845,12 @@ export function SchedulePanel(props: {
           return (
             <label key={c} className="flex cursor-pointer items-center gap-1">
               <input type="checkbox" checked={on} onChange={() => toggleRegistryColumn(c)} />
-              <span>{registrySchedule.fieldLabels[c] ?? c}</span>
+              <span>
+                {registrySchedule.fieldLabels[c] ?? c}
+                <span className="text-muted opacity-80">
+                  {columnFieldRoleHint(registrySchedule.fieldMeta[c])}
+                </span>
+              </span>
             </label>
           );
         })}
@@ -892,18 +910,17 @@ export function SchedulePanel(props: {
 
   async function downloadCsv() {
     if (srvActive?.scheduleId && props.modelId && srvActive.tab === tab) {
-      const mid = encodeURIComponent(props.modelId);
-      const sc = encodeURIComponent(srvActive.scheduleId);
-      let csvEndpoint = `/api/models/${mid}/schedules/${sc}/table?format=csv&includeScheduleTotalsCsv=true`;
-      if (
+      const subset =
         registrySchedule &&
         srvActive.scheduleId === registryPickKey &&
         visibleRegistryColumns.length > 0 &&
         visibleRegistryColumns.length < registrySchedule.columns.length
-      ) {
-        const cq = visibleRegistryColumns.map(encodeURIComponent).join(',');
-        csvEndpoint += `&columns=${cq}`;
-      }
+          ? visibleRegistryColumns
+          : undefined;
+      const csvEndpoint = buildScheduleTableCsvUrl(props.modelId, srvActive.scheduleId, {
+        columns: subset,
+        includeScheduleTotalsCsv: true,
+      });
       const res = await fetch(csvEndpoint);
       const body = await res.text();
       if (!res.ok) {
@@ -1500,6 +1517,32 @@ export function SchedulePanel(props: {
     );
   }
 
+  const csvUsesServerEndpoint = Boolean(
+    srvActive?.scheduleId && props.modelId && srvActive.tab === tab,
+  );
+
+  function renderRegistryChrome() {
+    if (!srvActive) return null;
+    const data = srvActive.data as Record<string, unknown>;
+    const placementLine = formatSchedulePlacementReadout(data.schedulePlacement);
+    const regLine = columnMetadataCategoryLine(data);
+    const engParts = scheduleRegistryEngineReadoutParts(data);
+    if (!placementLine && !regLine && engParts.length === 0) return null;
+
+    return (
+      <div
+        data-testid="schedule-registry-chrome"
+        className="mt-2 space-y-1 rounded border border-border/50 bg-background/40 px-2 py-1.5 text-[10px] text-muted"
+      >
+        {regLine ? <div className="text-foreground/90">{regLine}</div> : null}
+        {placementLine ? <div className="text-foreground/90">{placementLine}</div> : null}
+        {engParts.length ? (
+          <div className="font-mono text-[10px] leading-snug">{engParts.join(' · ')}</div>
+        ) : null}
+      </div>
+    );
+  }
+
   return (
     <div
       data-testid="schedule-panel"
@@ -1515,23 +1558,6 @@ export function SchedulePanel(props: {
             className="rounded border border-accent/40 bg-accent/15 px-1.5 py-0.5 text-[10px] text-muted"
           >
             server rows
-          </span>
-        ) : null}
-
-        {srvActive?.data.scheduleEngine ? (
-          <span
-            data-testid="schedule-engine-meta"
-            className="rounded border border-border/50 px-1.5 py-0.5 text-[9px] text-muted"
-            title="scheduleDerivationEngine_v1 metadata"
-          >
-            {String(
-              (srvActive.data.scheduleEngine as { format?: string }).format ?? 'scheduleEngine',
-            )}
-            {(() => {
-              const sb = (srvActive.data.scheduleEngine as { sortBy?: unknown }).sortBy;
-
-              return sb ? ` · sort:${String(sb)}` : '';
-            })()}
           </span>
         ) : null}
 
@@ -1566,12 +1592,23 @@ export function SchedulePanel(props: {
         <button
           type="button"
           className="text-[11px] text-accent"
+          title={
+            csvUsesServerEndpoint
+              ? 'Download CSV from the server schedule table (includes totals row when available)'
+              : 'Build CSV from the visible client snapshot (limited columns)'
+          }
+          aria-label={
+            csvUsesServerEndpoint
+              ? 'Download server schedule CSV with totals'
+              : 'Download local schedule CSV snapshot'
+          }
           onClick={() => void downloadCsv()}
         >
           CSV
         </button>
       </div>
 
+      {renderRegistryChrome()}
       {serverErr ? <div className="mt-2 text-[10px] text-amber-500">{serverErr}</div> : null}
 
       {renderScheduleDefinitionToolbar()}
