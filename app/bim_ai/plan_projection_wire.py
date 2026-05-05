@@ -49,6 +49,7 @@ from bim_ai.roof_geometry import (
     mass_box_roof_proxy_peak_z_mm,
     outer_rect_extent,
     roof_geometry_support_token_v0,
+    roof_plan_geometry_readout_v0,
 )
 from bim_ai.room_derivation import (
     HEURISTIC_VERSION as ROOM_BOUNDARY_HEURISTIC_VERSION,
@@ -183,19 +184,25 @@ def _roof_plan_wire_geometry_fields(doc: Document, e: RoofElem) -> dict[str, Any
     slope = float(e.slope_deg or 25.0)
     zb = _level_elevation_mm(doc, e.reference_level_id)
     mode = e.roof_geometry_mode
-    base: dict[str, Any] = {
-        "roofGeometryMode": mode,
-        "slopeDeg": round(slope, 3),
-        "overhangMm": round(float(e.overhang_mm), 3),
-    }
-    if support_tok is not None:
-        base["roofGeometrySupportToken"] = support_tok
-    if gable_pitched_rectangle_elevation_supported_v0(
+    gable_ok = gable_pitched_rectangle_elevation_supported_v0(
         footprint_mm=poly,
         roof_geometry_mode=e.roof_geometry_mode,
         reference_level_resolves=lvl_ok,
         slope_deg=e.slope_deg,
-    ):
+    )
+    base: dict[str, Any] = {
+        "roofGeometryMode": mode,
+        "slopeDeg": round(slope, 3),
+        "overhangMm": round(float(e.overhang_mm), 3),
+        "roofPlanGeometryReadout_v0": roof_plan_geometry_readout_v0(
+            roof_geometry_mode=mode,
+            roof_geometry_support_token=support_tok,
+            gable_elevation_supported=gable_ok,
+        ),
+    }
+    if support_tok is not None:
+        base["roofGeometrySupportToken"] = support_tok
+    if gable_ok:
         x0, x1, z0, z1 = outer_rect_extent(poly)
         span_x = float(x1 - x0)
         span_z = float(z1 - z0)

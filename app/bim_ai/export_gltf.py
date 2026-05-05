@@ -43,6 +43,7 @@ from bim_ai.roof_geometry import (
     plan_polygon_signed_area_mm2,
     plan_polygon_winding_token,
     roof_geometry_support_token_v0,
+    roof_plan_geometry_readout_v0,
 )
 from bim_ai.stair_plan_proxy import (
     stair_documentation_diagnostics,
@@ -134,7 +135,12 @@ def _roof_geometry_evidence_v1_row(doc: Document, e: RoofElem) -> dict[str, Any]
     span_z = float(z1_mm - z0_mm)
     slope = float(e.slope_deg or 25.0)
     oh = round(float(e.overhang_mm), 3)
-
+    gable_ok = gable_pitched_rectangle_elevation_supported_v0(
+        footprint_mm=pts,
+        roof_geometry_mode=e.roof_geometry_mode,
+        reference_level_resolves=lvl_ok,
+        slope_deg=e.slope_deg,
+    )
     row: dict[str, Any] = {
         "elementId": e.id,
         "roofGeometryMode": e.roof_geometry_mode,
@@ -145,6 +151,11 @@ def _roof_geometry_evidence_v1_row(doc: Document, e: RoofElem) -> dict[str, Any]
         "slopeDeg": round(slope, 3),
         "overhangMm": oh,
         "roofElementName": e.name,
+        "roofPlanGeometryReadout_v0": roof_plan_geometry_readout_v0(
+            roof_geometry_mode=e.roof_geometry_mode,
+            roof_geometry_support_token=support_tok,
+            gable_elevation_supported=gable_ok,
+        ),
     }
     if support_tok is not None:
         row["roofGeometrySupportToken"] = support_tok
@@ -183,6 +194,38 @@ def _roof_geometry_evidence_v1_row(doc: Document, e: RoofElem) -> dict[str, Any]
             cast(RidgeAxisPlan, row["ridgeAxisPlan"]),
         )
     return row
+
+
+def roof_geometry_unsupported_shape_summary_v0(doc: Document) -> dict[str, Any] | None:
+    """Rollup of roof instances whose support token is neither gable-supported nor mass-box rectangle."""
+
+    counts: dict[str, int] = {}
+    deferred_n = 0
+    for eid in sorted(doc.elements.keys()):
+        el = doc.elements[eid]
+        if not isinstance(el, RoofElem):
+            continue
+        pts = [(float(p.x_mm), float(p.y_mm)) for p in el.footprint_mm]
+        if len(pts) < 3:
+            continue
+        lvl_ok = isinstance(doc.elements.get(el.reference_level_id), LevelElem)
+        tok = roof_geometry_support_token_v0(
+            footprint_mm=pts,
+            roof_geometry_mode=el.roof_geometry_mode,
+            reference_level_resolves=lvl_ok,
+            slope_deg=el.slope_deg,
+        )
+        if tok in (None, "gable_pitched_rectangle_supported"):
+            continue
+        counts[tok] = counts.get(tok, 0) + 1
+        deferred_n += 1
+    if deferred_n == 0:
+        return None
+    return {
+        "format": "roofGeometryUnsupportedShapeSummary_v0",
+        "countsBySupportToken": dict(sorted(counts.items())),
+        "deferredInstanceCount": deferred_n,
+    }
 
 
 def roof_geometry_manifest_evidence_v1(doc: Document) -> dict[str, Any] | None:
@@ -294,6 +337,7 @@ def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
     wall_opening_cut_fidelity = collect_wall_opening_cut_fidelity_evidence_v1(doc)
     layer_cut_align = collect_layered_assembly_cut_alignment_evidence_v0(doc)
     layer_asm_witness = collect_layered_assembly_witness_v0(doc)
+    roof_unsup_summary = roof_geometry_unsupported_shape_summary_v0(doc)
     mesh_enc = "bim_ai_box_primitive_v0"
     if _document_has_gable_roof_mesh(doc):
         mesh_enc += "+bim_ai_gable_roof_v0"
@@ -313,6 +357,8 @@ def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
         mesh_enc += "+bim_ai_layered_assembly_witness_v0"
     if site_ctx:
         mesh_enc += "+bim_ai_site_context_v0"
+    if roof_unsup_summary:
+        mesh_enc += "+bim_ai_roof_unsupported_shape_summary_v0"
     base: dict[str, Any] = {
         **parity,
         "meshEncoding": mesh_enc,
@@ -341,6 +387,8 @@ def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
         base["layeredAssemblyWitness_v0"] = layer_asm_witness
     if site_ctx:
         base["siteContextEvidence_v0"] = site_ctx
+    if roof_unsup_summary:
+        base["roofGeometryUnsupportedShapeSummary_v0"] = roof_unsup_summary
     return base
 
 

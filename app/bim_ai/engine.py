@@ -125,7 +125,10 @@ from bim_ai.plan_category_graphics import (
     normalize_plan_category_graphics_rows,
     parse_plan_category_graphics_property_json,
 )
-from bim_ai.roof_geometry import assert_valid_gable_pitched_rectangle_footprint_mm
+from bim_ai.roof_geometry import (
+    RoofGeometryMode,
+    assert_valid_gable_pitched_rectangle_footprint_mm,
+)
 
 _AUTHORITATIVE_REPLAY_V0_TYPES: frozenset[str] = frozenset(
     {
@@ -1084,6 +1087,27 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                     els[cmd.element_id] = el.model_copy(update={"titleblock_parameters": merged})
                 else:
                     raise ValueError("sheet updates: key=titleBlock | titleblockParametersPatch | name")
+            elif isinstance(el, RoofElem):
+                raw_r = cmd.value.strip()
+                if cmd.key == "roofTypeId":
+                    rtid = raw_r or None
+                    if rtid is not None:
+                        rt_el = els.get(rtid)
+                        if not isinstance(rt_el, RoofTypeElem):
+                            raise ValueError("roofTypeId must reference an existing roof_type")
+                    els[cmd.element_id] = el.model_copy(update={"roof_type_id": rtid})
+                elif cmd.key == "roofGeometryMode":
+                    mode_s = raw_r
+                    if mode_s not in ("mass_box", "gable_pitched_rectangle"):
+                        raise ValueError("roofGeometryMode must be mass_box|gable_pitched_rectangle")
+                    mode = cast(RoofGeometryMode, mode_s)
+                    if mode == "gable_pitched_rectangle":
+                        assert_valid_gable_pitched_rectangle_footprint_mm(
+                            [(p.x_mm, p.y_mm) for p in el.footprint_mm]
+                        )
+                    els[cmd.element_id] = el.model_copy(update={"roof_geometry_mode": mode})
+                else:
+                    raise ValueError("roof updates: key=roofTypeId | roofGeometryMode | name")
             else:
                 raise ValueError(
                     "Only updateElementProperty key=name | label(grid) | title(issue) | "
@@ -1108,6 +1132,7 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                     "viewerClipCapElevMm(viewpoint) | viewerClipFloorElevMm(viewpoint) | "
                     "hiddenSemanticKinds3d(viewpoint JSON array) | cutawayStyle(viewpoint) | "
                     "familyTypeId(door/window) | materialKey(door/window) | "
+                    "roofTypeId(roof) | roofGeometryMode(roof) | "
                     "sheetId(schedule) | titleBlock(sheet) | titleblockParametersPatch(sheet JSON object) supported in v2"
                 )
 

@@ -15,6 +15,12 @@ RoofGeometrySupportTokenV0 = Literal[
     "missing_slope_or_level",
 ]
 
+RoofPlanGeometryReadoutV0 = Literal[
+    "gable_projection_supported",
+    "mass_box_peak_proxy",
+    "footprint_proxy_deferred",
+]
+
 FootprintPlanWinding = Literal["ccw", "cw", "degenerate"]
 RidgeAxisPlan = Literal["alongX", "alongZ"]
 
@@ -119,6 +125,21 @@ def gable_pitched_rectangle_elevation_supported_v0(
         )
         == "gable_pitched_rectangle_supported"
     )
+
+
+def roof_plan_geometry_readout_v0(
+    *,
+    roof_geometry_mode: RoofGeometryMode,
+    roof_geometry_support_token: RoofGeometrySupportTokenV0 | None,
+    gable_elevation_supported: bool,
+) -> RoofPlanGeometryReadoutV0:
+    """Compact agent-facing token: full gable chord vs mass-box peak proxy vs deferred footprint."""
+
+    if gable_elevation_supported:
+        return "gable_projection_supported"
+    if roof_geometry_mode == "mass_box" and roof_geometry_support_token is None:
+        return "mass_box_peak_proxy"
+    return "footprint_proxy_deferred"
 
 
 def roof_geometry_support_token_v0(

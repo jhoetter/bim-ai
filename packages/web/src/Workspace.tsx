@@ -65,6 +65,7 @@ import { SheetCanvas } from './workspace/SheetCanvas';
 import { RoomSeparationAuthoringWorkbench } from './workspace/RoomSeparationAuthoringWorkbench';
 import { LevelDatumStackWorkbench } from './workspace/LevelDatumStackWorkbench';
 import { MaterialLayerStackWorkbench } from './workspace/MaterialLayerStackWorkbench';
+import { RoofAuthoringWorkbench } from './workspace/RoofAuthoringWorkbench';
 import {
   buildBrowserRenderingBudgetReadoutV1,
   formatBrowserRenderingBudgetLines,
@@ -1736,6 +1737,22 @@ export function Workspace() {
               selected={selected}
               elementsById={elementsById}
               violations={violations}
+            />
+            <RoofAuthoringWorkbench
+              selected={selected}
+              elementsById={elementsById}
+              wirePrimitives={planProjectionPrimitives}
+              revision={revision}
+              onPersistProperty={(key, value) => {
+                const sid = selected?.id;
+                if (!sid) return;
+                void onSemantic({
+                  type: 'updateElementProperty',
+                  elementId: sid,
+                  key,
+                  value,
+                });
+              }}
             />
             <MaterialLayerStackWorkbench selected={selected} elementsById={elementsById} />
             <pre className="max-h-[40vh] overflow-auto whitespace-pre-wrap text-[11px]">
