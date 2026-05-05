@@ -163,6 +163,7 @@ _RULE_DISCIPLINE: dict[str, str] = {
     "exchange_ifc_import_preview_extraction_gaps": "exchange",
     "exchange_ifc_import_preview_unsupported_products": "exchange",
     "exchange_ifc_import_preview_ids_pointer_gap": "exchange",
+    "exchange_ifc_import_preview_id_collision": "exchange",
     "material_catalog_missing_layer_stack": "exchange",
     "material_catalog_stale_assembly_reference": "exchange",
     "material_catalog_missing_material": "exchange",
@@ -894,6 +895,26 @@ def _exchange_advisory_violations(elements: dict[str, Element]) -> list[Violatio
                             discipline="exchange",
                         )
                     )
+
+            id_collision_classes = dict(preview.get("idCollisionClasses") or {})
+            if id_collision_classes:
+                collision_summary = ", ".join(
+                    f"{kind}:{count}" for kind, count in sorted(id_collision_classes.items())
+                )
+                out.append(
+                    Violation(
+                        rule_id="exchange_ifc_import_preview_id_collision",
+                        severity="warning",
+                        message=(
+                            "IFC import preview detected duplicate replay IDs within the STEP file "
+                            f"({collision_summary}). Resolve duplicate Pset_*Common.Reference values "
+                            "before applying the authoritative replay "
+                            "(ifc_manifest_v0.ifcImportPreview_v0.idCollisionClasses)."
+                        ),
+                        element_ids=[],
+                        discipline="exchange",
+                    )
+                )
 
     return out
 

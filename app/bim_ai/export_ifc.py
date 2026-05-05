@@ -2021,6 +2021,7 @@ def build_ifc_import_preview_v0(step_text: str) -> dict[str, Any]:
         "commandCountTotal": 0,
         "unresolvedReferences": [],
         "unresolvedReferenceCount": 0,
+        "idCollisionClasses": {},
         "skipCountsByReason": {},
         "authoritativeProducts": {},
         "unsupportedProducts": {"schemaVersion": 0, "countsByClass": {}},
@@ -2081,6 +2082,22 @@ def build_ifc_import_preview_v0(step_text: str) -> dict[str, Any]:
 
     unsupported: dict[str, Any] = sketch.get("unsupportedIfcProducts") or {"schemaVersion": 0, "countsByClass": {}}
 
+    # ID collision classes: command kinds whose replay IDs collide within the sketch itself
+    # (duplicate Pset_*Common.Reference values extracted from the same STEP file).
+    _id_seen: dict[str, dict[str, int]] = {}
+    for cmd in commands:
+        t = str(cmd.get("type") or "")
+        cmd_id = str(cmd.get("id") or "")
+        if t and cmd_id:
+            if t not in _id_seen:
+                _id_seen[t] = {}
+            _id_seen[t][cmd_id] = _id_seen[t].get(cmd_id, 0) + 1
+    id_collision_classes: dict[str, int] = {
+        kind: sum(1 for c in id_counts.values() if c > 1)
+        for kind, id_counts in sorted(_id_seen.items())
+        if any(c > 1 for c in id_counts.values())
+    }
+
     ids_map: dict[str, Any] = sketch.get("idsAuthoritativeReplayMap_v0") or {}
     spaces_rows: list[dict[str, Any]] = list(ids_map.get("spaces") or [])
     roofs_rows: list[dict[str, Any]] = list(ids_map.get("roofs") or [])
@@ -2111,10 +2128,19 @@ def build_ifc_import_preview_v0(step_text: str) -> dict[str, Any]:
         not_apply_reasons.append("extraction_gaps_present")
     if skip_counts:
         not_apply_reasons.append("products_skipped_missing_reference")
+    if id_collision_classes:
+        not_apply_reasons.append("replay_id_collisions_detected")
 
-    authoritative_safe = bool(cmd_counts)
+    authoritative_safe = bool(cmd_counts) and not bool(id_collision_classes)
 
-    if authoritative_safe:
+    if id_collision_classes:
+        collision_kinds = ", ".join(f"{k}:{v}" for k, v in sorted(id_collision_classes.items()))
+        apply_note = (
+            f"authoritativeSliceSafeApply=False: duplicate command IDs detected within the replay sketch "
+            f"({collision_kinds}). Resolve duplicate Pset_*Common.Reference values in the source STEP "
+            f"file before applying."
+        )
+    elif authoritative_safe:
         apply_note = (
             "authoritativeSliceSafeApply=True: command list may be applied to an additive-compatible "
             "document via try_apply_kernel_ifc_authoritative_replay_v0 (preflight validates ID "
@@ -2131,6 +2157,7 @@ def build_ifc_import_preview_v0(step_text: str) -> dict[str, Any]:
         "commandCountTotal": sum(cmd_counts.values()),
         "unresolvedReferences": extraction_gaps,
         "unresolvedReferenceCount": len(extraction_gaps),
+        "idCollisionClasses": id_collision_classes,
         "skipCountsByReason": skip_counts,
         "authoritativeProducts": authoritative_products,
         "unsupportedProducts": unsupported,

@@ -798,3 +798,39 @@ def test_ifc_import_preview_safe_apply_classification_structure() -> None:
     assert "notApplyReasons" in sa
     assert isinstance(sa["notApplyReasons"], list)
     assert "note" in sa
+
+
+def test_ifc_import_preview_includes_id_collision_classes_key() -> None:
+    """``idCollisionClasses`` is always present in the import preview regardless of IfcOpenShell."""
+
+    doc = _doc_with_wall_and_level()
+    preview = build_ifc_import_preview_v0_for_manifest(doc)
+    assert "idCollisionClasses" in preview
+    assert isinstance(preview["idCollisionClasses"], dict)
+
+
+def test_ifc_import_preview_stub_includes_id_collision_classes_when_ifcopenshell_missing() -> None:
+    """Offline stubs include an empty ``idCollisionClasses`` dict."""
+
+    if IFC_AVAILABLE:
+        pytest.skip("ifcopenshell installed — offline stub not exercised")
+
+    preview = build_ifc_import_preview_v0("")
+    assert "idCollisionClasses" in preview
+    assert preview["idCollisionClasses"] == {}
+
+
+def test_ifc_manifest_import_preview_id_collision_classes_empty_when_no_collisions() -> None:
+    """``idCollisionClasses`` is empty for a well-formed document with unique kernel IDs."""
+
+    doc = _doc_with_wall_and_level()
+    preview = build_ifc_import_preview_v0_for_manifest(doc)
+    assert preview["idCollisionClasses"] == {}
+
+
+def test_ifc_semantic_scope_mentions_id_collision_classes() -> None:
+    """``IFC_SEMANTIC_IMPORT_SCOPE_V0.semanticReadBackSupported`` documents idCollisionClasses."""
+
+    supported = IFC_SEMANTIC_IMPORT_SCOPE_V0.get("semanticReadBackSupported") or []
+    blob = "\n".join(str(x) for x in supported)
+    assert "idCollisionClasses" in blob
