@@ -103,6 +103,13 @@ def test_section_roof_primitive_gable_carries_pitch_fields() -> None:
     )
     assert row["roofGeometrySupportToken"] == "gable_pitched_rectangle_supported"
     assert row["roofPlanGeometryReadout_v0"] == "gable_projection_supported"
+    assert row["roofLayeredPrismWitnessSkipReason_v0"] == "roof_missing_roof_type_id"
+    scw = row["roofSectionCutWitness_v0"]
+    assert scw["format"] == "roofSectionCutWitness_v0"
+    assert scw["sectionCutIntersectsRoofFootprintStrip"] is True
+    assert scw["sectionProfileToken_v0"] == "gableLayeredPrismChord_partial_v1"
+    assert scw["roofSectionCutSupportToken_v0"] == "skipped_prism_roof_missing_roof_type_id"
+    assert scw["layerReadouts"] == []
 
 
 SHARED_GABLE_EVIDENCE_KEYS = (
@@ -167,6 +174,11 @@ def test_plan_wire_gable_roof_geometry_matches_section_primitives_overlap() -> N
             assert p_v == s_v
         else:
             assert pytest.approx(float(p_v), rel=1e-9, abs=1e-6) == float(s_v), k
+    assert (
+        plan_row["roofLayeredPrismWitnessSkipReason_v0"]
+        == sec_row["roofLayeredPrismWitnessSkipReason_v0"]
+        == "roof_missing_roof_type_id"
+    )
 
 
 def test_plan_wire_mass_box_roof_z_mid_matches_section_primitive() -> None:
@@ -217,6 +229,11 @@ def test_plan_wire_mass_box_roof_z_mid_matches_section_primitive() -> None:
             assert pytest.approx(float(p_v), rel=1e-9, abs=1e-6) == float(s_v), k
     assert "roofGeometrySupportToken" not in pr
     assert "roofGeometrySupportToken" not in sr
+    assert pr["roofLayeredPrismWitnessSkipReason_v0"] == sr["roofLayeredPrismWitnessSkipReason_v0"]
+    sr_scw = sr["roofSectionCutWitness_v0"]
+    assert sr_scw["sectionProfileToken_v0"] == "footprintChord_skipLayeredPrism_v1"
+    assert sr_scw["roofSectionCutSupportToken_v0"] == "skipped_prism_skipped_not_gable_elevation_supported_v1"
+    assert sr_scw["layerReadouts"] == []
 
 
 def test_gltf_manifest_and_mesh_differs_from_mass_box_for_gable_roof() -> None:
@@ -243,6 +260,7 @@ def test_gltf_manifest_and_mesh_differs_from_mass_box_for_gable_roof() -> None:
         "bim_ai_box_primitive_v0+bim_ai_gable_roof_v0+bim_ai_roof_geometry_evidence_v1"
         "+bim_ai_layered_assembly_witness_v0"
     )
+    assert "+bim_ai_roof_layered_prism_witness_v1" not in ext["meshEncoding"]
     ev = ext.get("roofGeometryEvidence_v1")
     assert ev is not None and ev.get("format") == "roofGeometryEvidence_v1"
     assert len(ev["roofs"]) == 1
@@ -261,6 +279,8 @@ def test_gltf_manifest_and_mesh_differs_from_mass_box_for_gable_roof() -> None:
     assert row["roofFasciaEdgePlanToken"] == "eaveParallelPlanZ_gableRakeParallelPlanX"
     assert row["roofGeometrySupportToken"] == "gable_pitched_rectangle_supported"
     assert row["roofPlanGeometryReadout_v0"] == "gable_projection_supported"
+    assert row["roofLayeredPrismWitnessSkipReason_v0"] == "roof_type_without_layers"
+    assert "roofLayeredPrismWitness_v1" not in row
     assert "layerStackCount" not in row
     roof_mesh = next(m for m in g["meshes"] if m["name"] == "roof:r1")
     pos_ix = roof_mesh["primitives"][0]["attributes"]["POSITION"]
@@ -585,3 +605,14 @@ def test_gable_roof_typed_layers_surface_evidence_manifest_plan_section_agree() 
         "roofPlanGeometryReadout_v0",
     ):
         assert pr[k] == sec_row[k] == row[k]
+    assert "+bim_ai_roof_layered_prism_witness_v1" in g["extensions"]["BIM_AI_exportManifest_v0"]["meshEncoding"]
+    prism = row["roofLayeredPrismWitness_v1"]
+    assert prism["format"] == "roofLayeredPrismWitness_v1"
+    assert prism["roofLayeredPrismStackModel_v0"] == "vertical_stack_from_eave"
+    assert prism["assemblyTotalThicknessMm"] == 138.0
+    assert len(prism["layerReadouts"]) == 2
+    assert pr["roofLayeredPrismWitness_v1"] == sec_row["roofLayeredPrismWitness_v1"] == prism
+    scw_m = sec_row["roofSectionCutWitness_v0"]
+    assert scw_m["sectionProfileToken_v0"] == "gableLayeredPrismChord_v1"
+    assert scw_m["roofSectionCutSupportToken_v0"] == "gable_rectangle_layered_prism_v1"
+    assert scw_m["layerReadouts"] == prism["layerReadouts"]

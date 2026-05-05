@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import ifcopenshell
 import pytest
-from bim_ai.ifc_material_layer_exchange_v0 import kernel_ifc_material_layer_set_readback_v0
 
 from bim_ai.commands import (
     CreateFloorCmd,
@@ -19,6 +18,7 @@ from bim_ai.elements import (
     FloorElem,
     FloorTypeElem,
     LevelElem,
+    RoofElem,
     ScheduleElem,
     Vec2Mm,
     WallElem,
@@ -27,7 +27,9 @@ from bim_ai.elements import (
 )
 from bim_ai.engine import apply_inplace
 from bim_ai.export_ifc import IFC_AVAILABLE, export_ifc_model_step
-from bim_ai.material_assembly_resolve import resolved_layers_for_wall
+from bim_ai.ifc_material_layer_exchange_v0 import kernel_ifc_material_layer_set_readback_v0
+from bim_ai.material_assembly_resolve import resolved_layers_for_roof, resolved_layers_for_wall
+from bim_ai.roof_layered_prism_evidence_v1 import build_roof_layered_prism_witness_v1
 from bim_ai.schedule_derivation import derive_schedule_table
 
 
@@ -311,6 +313,68 @@ def test_material_assembly_schedule_includes_roof_layers():
     assert r1["materialDisplay"] == "Rigid insulation board"
     assert abs(float(r1["grossVolumeM3"]) - fp_m2 * 0.14) < 1e-8
     assert float(r1["layerOffsetFromExteriorMm"]) == 22.0
+
+
+def test_gable_roof_layered_prism_readouts_align_with_resolved_type_layers():
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=1000),
+            "sch-mat": ScheduleElem(kind="schedule", id="sch-mat", name="Materials"),
+        },
+    )
+    apply_inplace(
+        doc,
+        UpsertRoofTypeCmd(
+            type="upsertRoofType",
+            id="rt-prism-t",
+            name="Warm deck",
+            layers=[
+                WallTypeLayer(thicknessMm=22, layer_function="structure", material_key="mat-a"),
+                WallTypeLayer(thicknessMm=140, layer_function="insulation", material_key="mat-b"),
+            ],
+        ),
+    )
+    footprint = [
+        Vec2Mm(x_mm=0, y_mm=0),
+        Vec2Mm(x_mm=5000, y_mm=0),
+        Vec2Mm(x_mm=5000, y_mm=3000),
+        Vec2Mm(x_mm=0, y_mm=3000),
+    ]
+    apply_inplace(
+        doc,
+        CreateRoofCmd(
+            type="createRoof",
+            id="r-gbl",
+            name="Roof",
+            reference_level_id="lvl",
+            footprint_mm=footprint,
+            roof_geometry_mode="gable_pitched_rectangle",
+            slope_deg=30.0,
+            roof_type_id="rt-prism-t",
+        ),
+    )
+    roof = doc.elements["r-gbl"]
+    assert isinstance(roof, RoofElem)
+    layers = resolved_layers_for_roof(doc, roof)
+    assert len(layers) == 2
+    w, skip = build_roof_layered_prism_witness_v1(doc, roof)
+    assert skip is None and w is not None
+    assert w["assemblyTotalThicknessMm"] == 162.0
+    readouts = w["layerReadouts"]
+    assert len(readouts) == 2
+    assert readouts[0]["thicknessMm"] == 22.0
+    assert readouts[0]["cumulativeThicknessFromAssemblyBottomMm"] == 22.0
+    assert readouts[1]["thicknessMm"] == 140.0
+    assert readouts[1]["cumulativeThicknessFromAssemblyBottomMm"] == 162.0
+    assert readouts[0]["materialKey"] == "mat-a"
+    assert readouts[1]["materialKey"] == "mat-b"
+    assert readouts[0]["offsetBottomMmAboveEave"] == 0.0
+    assert readouts[0]["offsetTopMmAboveEave"] == 22.0
+    assert readouts[1]["offsetBottomMmAboveEave"] == 22.0
+    assert readouts[1]["offsetTopMmAboveEave"] == 162.0
+    assert readouts[0]["worldZBottomMm"] == 1000.0
+    assert readouts[0]["worldZTopMm"] == 1022.0
 
 
 def test_roof_schedule_includes_roof_type_columns():

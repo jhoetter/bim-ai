@@ -45,6 +45,10 @@ from bim_ai.roof_geometry import (
     roof_geometry_support_token_v0,
     roof_plan_geometry_readout_v0,
 )
+from bim_ai.roof_layered_prism_evidence_v1 import (
+    document_has_roof_layered_prism_witness_v1,
+    roof_layered_prism_payload_for_merge_v1,
+)
 from bim_ai.stair_plan_proxy import (
     stair_documentation_diagnostics,
     stair_documentation_placeholders_v0,
@@ -193,6 +197,7 @@ def _roof_geometry_evidence_v1_row(doc: Document, e: RoofElem) -> dict[str, Any]
         row["roofFasciaEdgePlanToken"] = gable_rectangle_fascia_edge_plan_token_v0(
             cast(RidgeAxisPlan, row["ridgeAxisPlan"]),
         )
+    row.update(roof_layered_prism_payload_for_merge_v1(doc, e))
     return row
 
 
@@ -359,6 +364,8 @@ def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
         mesh_enc += "+bim_ai_site_context_v0"
     if roof_unsup_summary:
         mesh_enc += "+bim_ai_roof_unsupported_shape_summary_v0"
+    if document_has_roof_layered_prism_witness_v1(doc):
+        mesh_enc += "+bim_ai_roof_layered_prism_witness_v1"
     base: dict[str, Any] = {
         **parity,
         "meshEncoding": mesh_enc,

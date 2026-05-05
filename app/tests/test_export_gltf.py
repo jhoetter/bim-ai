@@ -253,6 +253,47 @@ def test_build_visual_export_manifest_includes_roof_assembly_evidence():
     assert "roofGeometrySupportToken" not in rrow
 
 
+def test_export_manifest_mesh_encoding_includes_roof_layered_prism_for_gable_with_typed_layers() -> None:
+    doc = Document(revision=1, elements={"lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=0)})
+    apply_inplace(
+        doc,
+        UpsertRoofTypeCmd(
+            type="upsertRoofType",
+            id="rt-gable-prism",
+            name="Deck",
+            layers=[
+                WallTypeLayer(thicknessMm=18, layer_function="structure"),
+                WallTypeLayer(thicknessMm=120, layer_function="insulation"),
+            ],
+        ),
+    )
+    apply_inplace(
+        doc,
+        CreateRoofCmd(
+            type="createRoof",
+            id="r-gable",
+            name="R",
+            reference_level_id="lvl",
+            footprint_mm=[
+                Vec2Mm(x_mm=0, y_mm=0),
+                Vec2Mm(x_mm=4000, y_mm=0),
+                Vec2Mm(x_mm=4000, y_mm=3000),
+                Vec2Mm(x_mm=0, y_mm=3000),
+            ],
+            roof_geometry_mode="gable_pitched_rectangle",
+            slope_deg=30.0,
+            roof_type_id="rt-gable-prism",
+        ),
+    )
+    ext = export_manifest_extension_payload(doc)
+    assert "+bim_ai_roof_layered_prism_witness_v1" in ext["meshEncoding"]
+    rgeo = ext.get("roofGeometryEvidence_v1")
+    assert rgeo is not None
+    r = rgeo["roofs"][0]
+    assert r.get("roofLayeredPrismWitness_v1", {}).get("format") == "roofLayeredPrismWitness_v1"
+    assert "roofLayeredPrismWitnessSkipReason_v0" not in r
+
+
 def test_document_to_gltf_subset_counts_and_manifest_extension():
     doc = Document(
         revision=3,

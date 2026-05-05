@@ -53,6 +53,11 @@ from bim_ai.roof_geometry import (
     roof_geometry_support_token_v0,
     roof_plan_geometry_readout_v0,
 )
+from bim_ai.roof_layered_prism_evidence_v1 import (
+    build_roof_layered_prism_witness_v1,
+    build_roof_section_cut_witness_v0,
+    roof_layered_prism_payload_for_merge_v1,
+)
 from bim_ai.stair_plan_proxy import (
     stair_documentation_diagnostics,
     stair_documentation_placeholders_v0,
@@ -931,53 +936,70 @@ def build_section_projection_primitives(
             rise_mm, ridge_axis = gable_ridge_rise_mm(span_x, span_z, slope)
             zb = _level_elevation_mm(doc, e.reference_level_id)
             ridge_z = zb + rise_mm
-            roofs.append(
-                {
-                    "id": f"roof:{e.id}:0",
-                    "elementId": e.id,
-                    "referenceLevelId": e.reference_level_id,
-                    "roofGeometryMode": mode,
-                    "uStartMm": round(u_lo, 3),
-                    "uEndMm": round(u_hi, 3),
-                    "ridgeZMm": round(ridge_z, 3),
-                    "eavePlateZMm": round(zb, 3),
-                    "zMidMm": round(ridge_z, 3),
-                    "proxyKind": "gablePitchedRectangleChord",
-                    "ridgeAxisPlan": ridge_axis,
-                    "slopeDeg": round(slope, 3),
-                    "overhangMm": round(float(e.overhang_mm), 3),
-                    "planSpanXmMm": round(span_x, 3),
-                    "planSpanZmMm": round(span_z, 3),
-                    "ridgeRiseMm": round(rise_mm, 3),
-                    "roofPlanGeometryReadout_v0": plan_geo_readout,
-                    "layerAssemblyWitness_v0": layered_assembly_witness_row_for_roof(doc, e),
-                    "roofFasciaEdgePlanToken": gable_rectangle_fascia_edge_plan_token_v0(
-                        cast(RidgeAxisPlan, ridge_axis),
-                    ),
-                    **roof_mat,
-                    **extra_tok,
-                }
+            prism_w, prism_skip = build_roof_layered_prism_witness_v1(doc, e)
+            gable_row: dict[str, Any] = {
+                "id": f"roof:{e.id}:0",
+                "elementId": e.id,
+                "referenceLevelId": e.reference_level_id,
+                "roofGeometryMode": mode,
+                "uStartMm": round(u_lo, 3),
+                "uEndMm": round(u_hi, 3),
+                "ridgeZMm": round(ridge_z, 3),
+                "eavePlateZMm": round(zb, 3),
+                "zMidMm": round(ridge_z, 3),
+                "proxyKind": "gablePitchedRectangleChord",
+                "ridgeAxisPlan": ridge_axis,
+                "slopeDeg": round(slope, 3),
+                "overhangMm": round(float(e.overhang_mm), 3),
+                "planSpanXmMm": round(span_x, 3),
+                "planSpanZmMm": round(span_z, 3),
+                "ridgeRiseMm": round(rise_mm, 3),
+                "roofPlanGeometryReadout_v0": plan_geo_readout,
+                "layerAssemblyWitness_v0": layered_assembly_witness_row_for_roof(doc, e),
+                "roofFasciaEdgePlanToken": gable_rectangle_fascia_edge_plan_token_v0(
+                    cast(RidgeAxisPlan, ridge_axis),
+                ),
+                **roof_mat,
+                **extra_tok,
+            }
+            gable_row.update(roof_layered_prism_payload_for_merge_v1(doc, e))
+            gable_row["roofSectionCutWitness_v0"] = build_roof_section_cut_witness_v0(
+                proxy_kind="gablePitchedRectangleChord",
+                prism_witness=prism_w,
+                prism_skip_reason=prism_skip,
+                eave_plate_z_mm=zb,
+                ridge_z_mm=ridge_z,
             )
+            roofs.append(gable_row)
         else:
             z_mid = _roof_proxy_top_z_mm(doc, e)
-            roofs.append(
-                {
-                    "id": f"roof:{e.id}:0",
-                    "elementId": e.id,
-                    "referenceLevelId": e.reference_level_id,
-                    "roofGeometryMode": mode,
-                    "uStartMm": round(u_lo, 3),
-                    "uEndMm": round(u_hi, 3),
-                    "zMidMm": round(z_mid, 3),
-                    "slopeDeg": round(float(e.slope_deg or 25.0), 3),
-                    "overhangMm": round(float(e.overhang_mm), 3),
-                    "proxyKind": "footprintChord",
-                    "roofPlanGeometryReadout_v0": plan_geo_readout,
-                    "layerAssemblyWitness_v0": layered_assembly_witness_row_for_roof(doc, e),
-                    **roof_mat,
-                    **extra_tok,
-                }
+            zb_lvl = _level_elevation_mm(doc, e.reference_level_id)
+            prism_w, prism_skip = build_roof_layered_prism_witness_v1(doc, e)
+            fp_row: dict[str, Any] = {
+                "id": f"roof:{e.id}:0",
+                "elementId": e.id,
+                "referenceLevelId": e.reference_level_id,
+                "roofGeometryMode": mode,
+                "uStartMm": round(u_lo, 3),
+                "uEndMm": round(u_hi, 3),
+                "zMidMm": round(z_mid, 3),
+                "slopeDeg": round(float(e.slope_deg or 25.0), 3),
+                "overhangMm": round(float(e.overhang_mm), 3),
+                "proxyKind": "footprintChord",
+                "roofPlanGeometryReadout_v0": plan_geo_readout,
+                "layerAssemblyWitness_v0": layered_assembly_witness_row_for_roof(doc, e),
+                **roof_mat,
+                **extra_tok,
+            }
+            fp_row.update(roof_layered_prism_payload_for_merge_v1(doc, e))
+            fp_row["roofSectionCutWitness_v0"] = build_roof_section_cut_witness_v0(
+                proxy_kind="footprintChord",
+                prism_witness=prism_w,
+                prism_skip_reason=prism_skip,
+                eave_plate_z_mm=zb_lvl,
+                ridge_z_mm=None,
             )
+            roofs.append(fp_row)
 
     primitives: dict[str, Any] = {
         "format": "sectionProjectionPrimitives_v1",

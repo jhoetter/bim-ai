@@ -51,6 +51,7 @@ from bim_ai.roof_geometry import (
     roof_geometry_support_token_v0,
     roof_plan_geometry_readout_v0,
 )
+from bim_ai.roof_layered_prism_evidence_v1 import roof_layered_prism_payload_for_merge_v1
 from bim_ai.room_derivation import (
     HEURISTIC_VERSION as ROOM_BOUNDARY_HEURISTIC_VERSION,
 )
@@ -1167,6 +1168,7 @@ def _build_plan_primitive_lists(
                 roof_row["roofFasciaEdgePlanToken"] = gable_rectangle_fascia_edge_plan_token_v0(
                     cast(RidgeAxisPlan, roof_row["ridgeAxisPlan"]),
                 )
+            roof_row.update(roof_layered_prism_payload_for_merge_v1(doc, e))
             roofs.append(roof_row)
         elif isinstance(e, GridLineElem):
             elv = getattr(e, "level_id", None)
