@@ -15,6 +15,10 @@ export function recommendedContextForRuleId(ruleId: string): string {
       return 'Recommended: Assign familyTypeId on the opening (type columns and type-driven schedules).';
     case 'schedule_opening_host_wall_type_incomplete':
       return 'Recommended: Assign wallTypeId on the host wall (hostWallTypeId / hostWallTypeDisplay columns).';
+    case 'schedule_sheet_export_parity_csv_diverges':
+    case 'schedule_sheet_export_parity_json_diverges':
+    case 'schedule_sheet_export_parity_listing_diverges':
+      return 'Recommended: Schedules — re-derive the schedule table; CSV / JSON / sheet listing row counts disagree.';
     case 'sheet_missing_titleblock':
       return 'Recommended: Sheet authoring — set title block symbol on this sheet.';
     case 'sheet_viewport_zero_extent':

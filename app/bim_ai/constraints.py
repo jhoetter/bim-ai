@@ -66,6 +66,27 @@ from bim_ai.plan_aa_room_separation import axis_aligned_room_separation_splits_r
 from bim_ai.room_color_scheme_override_evidence import scheme_override_advisory_violations_for_doc
 from bim_ai.room_derivation import compute_room_boundary_derivation
 from bim_ai.room_finish_schedule import peer_finish_set_by_level
+from bim_ai.schedule_sheet_export_parity import (
+    ADV_CSV_DIVERGES as _PARITY_ADV_CSV_DIVERGES,
+)
+from bim_ai.schedule_sheet_export_parity import (
+    ADV_JSON_DIVERGES as _PARITY_ADV_JSON_DIVERGES,
+)
+from bim_ai.schedule_sheet_export_parity import (
+    ADV_LISTING_DIVERGES as _PARITY_ADV_LISTING_DIVERGES,
+)
+from bim_ai.schedule_sheet_export_parity import (
+    PARITY_CSV_DIVERGES as _PARITY_CSV_DIVERGES,
+)
+from bim_ai.schedule_sheet_export_parity import (
+    PARITY_JSON_DIVERGES as _PARITY_JSON_DIVERGES,
+)
+from bim_ai.schedule_sheet_export_parity import (
+    PARITY_LISTING_DIVERGES as _PARITY_LISTING_DIVERGES,
+)
+from bim_ai.schedule_sheet_export_parity import (
+    collect_schedule_sheet_export_parity_rows_for_doc,
+)
 from bim_ai.section_on_sheet_integration_evidence_v1 import (
     section_cut_line_present,
     section_profile_token_from_primitives,
@@ -159,6 +180,9 @@ _RULE_DISCIPLINE: dict[str, str] = {
     "schedule_opening_family_type_incomplete": "coordination",
     "schedule_opening_host_wall_type_incomplete": "coordination",
     "schedule_sheet_viewport_missing": "coordination",
+    "schedule_sheet_export_parity_csv_diverges": "coordination",
+    "schedule_sheet_export_parity_json_diverges": "coordination",
+    "schedule_sheet_export_parity_listing_diverges": "coordination",
     "sheet_missing_titleblock": "coordination",
     "sheet_revision_issue_metadata_missing": "coordination",
     "sheet_viewport_zero_extent": "coordination",
@@ -2232,6 +2256,41 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
                     },
                 )
             )
+
+    parity_doc = Document(revision=1, elements=dict(elements))  # type: ignore[arg-type]
+    parity_rows = collect_schedule_sheet_export_parity_rows_for_doc(parity_doc)
+    parity_token_to_rule = {
+        _PARITY_CSV_DIVERGES: _PARITY_ADV_CSV_DIVERGES,
+        _PARITY_JSON_DIVERGES: _PARITY_ADV_JSON_DIVERGES,
+        _PARITY_LISTING_DIVERGES: _PARITY_ADV_LISTING_DIVERGES,
+    }
+    parity_token_messages = {
+        _PARITY_CSV_DIVERGES: "CSV row count diverges from JSON …/table totalRows",
+        _PARITY_JSON_DIVERGES: "JSON …/table totalRows diverges from derived leaf row count",
+        _PARITY_LISTING_DIVERGES: "Sheet listing rows= diverges from JSON …/table totalRows",
+    }
+    for parity_row in parity_rows:
+        token = str(parity_row.get("crossFormatParityToken") or "")
+        rule = parity_token_to_rule.get(token)
+        if not rule:
+            continue
+        sched_id = str(parity_row.get("scheduleId") or "")
+        sheet_id_val = str(parity_row.get("sheetId") or "")
+        viewport_id_val = str(parity_row.get("viewportId") or "")
+        eids = [eid for eid in (sched_id, sheet_id_val) if eid]
+        viols.append(
+            Violation(
+                rule_id=rule,
+                severity="warning",
+                message=(
+                    f"{parity_token_messages[token]} — "
+                    f"scheduleId={sched_id!r} sheetId={sheet_id_val!r} viewportId={viewport_id_val!r} "
+                    f"csv={parity_row.get('csvRowCount')} json={parity_row.get('jsonRowCount')} "
+                    f"listing={parity_row.get('svgListingRowCount')}."
+                ),
+                element_ids=eids,
+            )
+        )
 
     sheets_ordered = sorted(
         (el for el in elements.values() if isinstance(el, SheetElem)),

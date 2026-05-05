@@ -49,6 +49,11 @@ import { roomFinishScheduleEvidenceReadoutParts } from './roomFinishScheduleEvid
 import { stairScheduleEvidenceReadoutLines } from './stairScheduleEvidenceReadout';
 import { compactScheduleOpeningAdvisoryLines } from './scheduleOpeningAdvisoriesReadout';
 import { formatScheduleLevelDatumEvidenceLine } from './scheduleLevelDatumEvidenceReadout';
+import {
+  compactScheduleSheetExportParityAdvisoryLines,
+  formatScheduleSheetExportParityRowLine,
+  parseScheduleSheetExportParityRows,
+} from './scheduleSheetExportParityReadout';
 
 export { resolveScheduleSortDescending, scheduleTotalsReadoutParts } from './schedulePayloadTotals';
 
@@ -426,6 +431,11 @@ export function SchedulePanel(props: {
     if (tab !== 'doors' && tab !== 'windows') return [];
     return compactScheduleOpeningAdvisoryLines(violations, props.elementsById, tab);
   }, [tab, violations, props.elementsById]);
+
+  const scheduleSheetExportParityAdvisoryLines = useMemo(
+    () => compactScheduleSheetExportParityAdvisoryLines(violations),
+    [violations],
+  );
 
   const schedulePersistedColumns = useCallback(
     (scheduleElementId: string | null): string[] | null => {
@@ -1859,7 +1869,18 @@ export function SchedulePanel(props: {
     );
     const regLine = columnMetadataCategoryLine(data);
     const engParts = scheduleRegistryEngineReadoutParts(data);
-    if (!placementLine && !regLine && engParts.length === 0 && !pagLine) return null;
+    const parityRows = parseScheduleSheetExportParityRows(
+      data.scheduleSheetExportParityEvidence_v1,
+    );
+    if (
+      !placementLine
+      && !regLine
+      && engParts.length === 0
+      && !pagLine
+      && parityRows.length === 0
+    ) {
+      return null;
+    }
 
     return (
       <div
@@ -1874,6 +1895,22 @@ export function SchedulePanel(props: {
             data-testid="schedule-pagination-placement-readout"
           >
             {pagLine}
+          </div>
+        ) : null}
+        {parityRows.length ? (
+          <div
+            data-testid="schedule-sheet-export-parity-readout"
+            className="font-mono text-[10px] leading-snug text-foreground/90"
+          >
+            {parityRows.map((row) => (
+              <div
+                key={`${row.scheduleId}/${row.viewportId ?? ''}`}
+                data-parity-token={row.crossFormatParityToken}
+                data-schedule-id={row.scheduleId}
+              >
+                {formatScheduleSheetExportParityRowLine(row)}
+              </div>
+            ))}
           </div>
         ) : null}
         {engParts.length ? (
@@ -1962,6 +1999,22 @@ export function SchedulePanel(props: {
           <div className="font-semibold text-foreground/90">Opening schedule advisories</div>
           <ul className="mt-1 list-disc space-y-0.5 ps-4 font-mono leading-snug">
             {scheduleOpeningAdvisoryLines.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {scheduleSheetExportParityAdvisoryLines.length ? (
+        <div
+          data-testid="schedule-sheet-export-parity-advisories-readout"
+          className="mt-2 rounded border border-amber-500/30 bg-amber-500/5 px-2 py-1.5 text-[10px] text-amber-700 dark:text-amber-400/90"
+        >
+          <div className="font-semibold text-foreground/90">
+            Schedule sheet export parity advisories
+          </div>
+          <ul className="mt-1 list-disc space-y-0.5 ps-4 font-mono leading-snug">
+            {scheduleSheetExportParityAdvisoryLines.map((line) => (
               <li key={line}>{line}</li>
             ))}
           </ul>

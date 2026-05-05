@@ -45,6 +45,9 @@ from bim_ai.schedule_field_registry import column_metadata_bundle, stable_column
 from bim_ai.schedule_pagination_placement_evidence import (
     build_schedule_pagination_placement_evidence_v0,
 )
+from bim_ai.schedule_sheet_export_parity import (
+    build_schedule_sheet_export_parity_evidence_v1_for_schedule,
+)
 from bim_ai.stair_plan_proxy import stair_schedule_row_extensions_v1
 from bim_ai.type_material_registry import (
     family_type_display_label,
@@ -1026,12 +1029,18 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                 pass
         out["roomProgrammeClosure_v0"] = closure
         out["roomFinishScheduleEvidence_v1"] = build_room_finish_schedule_evidence_v1(leaf_rows)
-    out["schedulePaginationPlacementEvidence_v0"] = build_schedule_pagination_placement_evidence_v0(
+    pag_ev = build_schedule_pagination_placement_evidence_v0(
         doc,
         schedule_id,
         schedule_el=sch,
         leaf_rows=leaf_rows,
         total_rows=total_rows,
+    )
+    out["schedulePaginationPlacementEvidence_v0"] = pag_ev
+    out["scheduleSheetExportParityEvidence_v1"] = (
+        build_schedule_sheet_export_parity_evidence_v1_for_schedule(
+            doc, sch, payload=out, pagination_evidence=pag_ev
+        )
     )
     return out
 

@@ -946,6 +946,21 @@ def format_section_viewport_documentation_segment(doc: Document, view_ref: str) 
     return "secDoc[" + " ".join(inner_parts) + "]"
 
 
+def format_schedule_viewport_documentation_segment_from_payload(
+    payload: dict[str, Any], *, fallback_schedule_id: str = ""
+) -> str:
+    """Schedule listing segment from an already-derived schedule table payload."""
+    cols = payload.get("columns") or []
+    ncols = len(cols) if isinstance(cols, list) else 0
+    try:
+        total_rows = int(payload.get("totalRows") or 0)
+    except (TypeError, ValueError):
+        total_rows = 0
+    cat = str(payload.get("category") or "")
+    sid = str(payload.get("scheduleId") or fallback_schedule_id)
+    return f"schDoc[id={sid} rows={total_rows} cols={ncols} cat={cat}]"
+
+
 def format_schedule_viewport_documentation_segment(doc: Document, view_ref: str) -> str:
     """Compact deterministic summary when a sheet viewport references ``schedule:``."""
 
@@ -963,15 +978,9 @@ def format_schedule_viewport_documentation_segment(doc: Document, view_ref: str)
         tbl = derive_schedule_table(doc, ref)
     except (ValueError, TypeError, KeyError):
         return "schDoc[derive_error]"
-    cols = tbl.get("columns") or []
-    ncols = len(cols) if isinstance(cols, list) else 0
-    try:
-        total_rows = int(tbl.get("totalRows", 0))
-    except (TypeError, ValueError):
-        total_rows = 0
-    cat = str(tbl.get("category") or "")
-    sid = str(tbl.get("scheduleId") or ref)
-    return f"schDoc[id={sid} rows={total_rows} cols={ncols} cat={cat}]"
+    return format_schedule_viewport_documentation_segment_from_payload(
+        tbl, fallback_schedule_id=ref
+    )
 
 
 def viewport_evidence_hints_v0(vps_raw: list[Any]) -> list[dict[str, Any]]:
