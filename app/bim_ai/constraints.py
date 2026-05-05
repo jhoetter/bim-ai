@@ -142,6 +142,9 @@ _RULE_DISCIPLINE: dict[str, str] = {
     "ids_cleanroom_cleanroom_class_missing": "agent",
     "ids_cleanroom_interlock_grade_missing": "agent",
     "ids_cleanroom_opening_finish_material_missing": "agent",
+    "plan_view_sheet_viewport_crop_missing": "coordination",
+    "plan_view_sheet_viewport_crop_inverted": "coordination",
+    "plan_view_sheet_viewport_zero_extent": "coordination",
     "sheet_viewport_unknown_ref": "coordination",
     "schedule_orphan_sheet_ref": "coordination",
     "schedule_opening_identifier_missing": "coordination",
@@ -2209,12 +2212,74 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
                     )
                 )
 
+            if ok_kind and kind == "plan" and isinstance(targ_el, PlanViewElem):
+                _plan_on_sheet_advisory_violations(
+                    viols, sh_el, vp, targ_el
+                )
+
     viols.extend(_agent_brief_advisory_violations(elements))
     viols.extend(_exchange_advisory_violations(elements))
     viols.extend(_plan_view_tag_style_advisor_violations(elements))
     viols.extend(_room_color_scheme_advisory_violations(elements))
     viols.sort(key=lambda v: (v.rule_id, tuple(sorted(v.element_ids)), v.severity))
     return annotate_violation_disciplines(viols)
+
+
+def _plan_on_sheet_advisory_violations(
+    viols: list[Violation],
+    sh_el: SheetElem,
+    vp: dict[str, Any],
+    pv_el: PlanViewElem,
+) -> None:
+    """Append plan-on-sheet advisory violations for crop agreement between plan view and sheet viewport."""
+    vp_id = str(vp.get("viewportId") or vp.get("viewport_id") or "")
+    eids = [x for x in [sh_el.id, vp_id, pv_el.id] if x]
+
+    w = _viewport_dimension_mm(vp, "widthMm", "width_mm")
+    h = _viewport_dimension_mm(vp, "heightMm", "height_mm")
+    zero_extent = (w is None or w <= 0) or (h is None or h <= 0)
+    if zero_extent:
+        viols.append(
+            Violation(
+                rule_id="plan_view_sheet_viewport_zero_extent",
+                severity="warning",
+                message=(
+                    f"Plan view {pv_el.id!r} sheet viewport {vp_id!r} on sheet {sh_el.id!r} "
+                    "has zero or missing extent (widthMm/heightMm); plan crop cannot be resolved."
+                ),
+                element_ids=eids,
+            )
+        )
+        return
+
+    cmn, cmx = pv_el.crop_min_mm, pv_el.crop_max_mm
+    if cmn is None or cmx is None:
+        viols.append(
+            Violation(
+                rule_id="plan_view_sheet_viewport_crop_missing",
+                severity="info",
+                message=(
+                    f"Plan view {pv_el.id!r} placed on sheet {sh_el.id!r} viewport {vp_id!r} "
+                    "has no crop box (cropMinMm/cropMaxMm absent); the plan-on-sheet boundary is unconstrained."
+                ),
+                element_ids=eids,
+            )
+        )
+        return
+
+    if cmn.x_mm > cmx.x_mm or cmn.y_mm > cmx.y_mm:
+        viols.append(
+            Violation(
+                rule_id="plan_view_sheet_viewport_crop_inverted",
+                severity="warning",
+                message=(
+                    f"Plan view {pv_el.id!r} on sheet {sh_el.id!r} viewport {vp_id!r} "
+                    "has inverted crop corners (cropMinMm coordinates exceed cropMaxMm coordinates); "
+                    "the crop box is degenerate."
+                ),
+                element_ids=eids,
+            )
+        )
 
 
 def _room_color_scheme_advisory_violations(elements: dict[str, Element]) -> list[Violation]:

@@ -2,7 +2,9 @@ import type { Element } from '@bim-ai/core';
 import { describe, expect, it } from 'vitest';
 
 import {
+  extractPlanSheetViewportPlacementEvidence,
   indexViewportEvidenceHints,
+  planOnSheetTokenLabel,
   sheetExportHrefTriple,
   viewportCropExtentsMm,
 } from './sheetDocumentationManifestHelpers';
@@ -115,6 +117,84 @@ describe('titleblockRevisionIssueSegmentsV1', () => {
     expect(formatSheetRevIssExportListingSegmentV1(norm)).toMatch(/^sheetRevIssList\[/);
     expect(formatSheetRevIssExportListingSegmentV1(norm)).toContain('id=R-1');
     expect(formatSheetRevIssExportListingSegmentV1(norm)).toContain('code=B');
+  });
+});
+
+describe('extractPlanSheetViewportPlacementEvidence', () => {
+  const makeRow = (overrides: Record<string, unknown> = {}) => ({
+    format: 'planSheetViewportPlacementEvidence_v1',
+    viewportId: 'vp-1',
+    planViewId: 'pv-1',
+    sheetViewportMmBox: { xMm: 10, yMm: 10, widthMm: 200, heightMm: 150 },
+    resolvedPlanCropMmBox: { xMinMm: 0, yMinMm: 0, xMaxMm: 5000, yMaxMm: 4000 },
+    intersectClampToken: 'inside',
+    primitiveCounts: { inBox: { wall: 5, room: 2 }, clipped: { wall: 3 } },
+    planOnSheetSegmentDigestSha256: 'a'.repeat(64),
+    ...overrides,
+  });
+
+  it('parses valid rows and sorts by viewportId', () => {
+    const rows = extractPlanSheetViewportPlacementEvidence([
+      makeRow({ viewportId: 'vp-z' }),
+      makeRow({ viewportId: 'vp-a' }),
+    ]);
+    expect(rows).toHaveLength(2);
+    expect(rows[0].viewportId).toBe('vp-a');
+    expect(rows[1].viewportId).toBe('vp-z');
+  });
+
+  it('returns empty for non-array input', () => {
+    expect(extractPlanSheetViewportPlacementEvidence(null)).toEqual([]);
+    expect(extractPlanSheetViewportPlacementEvidence({})).toEqual([]);
+  });
+
+  it('skips rows with wrong format', () => {
+    const rows = extractPlanSheetViewportPlacementEvidence([
+      makeRow({ format: 'other_format' }),
+    ]);
+    expect(rows).toEqual([]);
+  });
+
+  it('extracts inBox and clipped primitive counts', () => {
+    const rows = extractPlanSheetViewportPlacementEvidence([makeRow()]);
+    expect(rows[0].primitiveCounts.inBox).toEqual({ wall: 5, room: 2 });
+    expect(rows[0].primitiveCounts.clipped).toEqual({ wall: 3 });
+  });
+
+  it('handles null resolvedPlanCropMmBox', () => {
+    const rows = extractPlanSheetViewportPlacementEvidence([
+      makeRow({ resolvedPlanCropMmBox: null }),
+    ]);
+    expect(rows[0].resolvedPlanCropMmBox).toBeNull();
+  });
+
+  it('extracts sheetViewportMmBox', () => {
+    const rows = extractPlanSheetViewportPlacementEvidence([makeRow()]);
+    expect(rows[0].sheetViewportMmBox).toEqual({ xMm: 10, yMm: 10, widthMm: 200, heightMm: 150 });
+  });
+
+  it('includes segment digest', () => {
+    const rows = extractPlanSheetViewportPlacementEvidence([makeRow()]);
+    expect(rows[0].planOnSheetSegmentDigestSha256).toBe('a'.repeat(64));
+  });
+
+  it('returns intersectClampToken', () => {
+    const rows = extractPlanSheetViewportPlacementEvidence([makeRow({ intersectClampToken: 'clamped' })]);
+    expect(rows[0].intersectClampToken).toBe('clamped');
+  });
+});
+
+describe('planOnSheetTokenLabel', () => {
+  it('returns human-readable labels for all tokens', () => {
+    expect(planOnSheetTokenLabel('inside')).toBe('inside');
+    expect(planOnSheetTokenLabel('clamped')).toBe('clamped');
+    expect(planOnSheetTokenLabel('crop_missing')).toBe('crop missing');
+    expect(planOnSheetTokenLabel('viewport_zero_extent')).toBe('viewport zero extent');
+    expect(planOnSheetTokenLabel('crop_inverted')).toBe('crop inverted');
+  });
+
+  it('passes through unknown tokens', () => {
+    expect(planOnSheetTokenLabel('unknown_token')).toBe('unknown_token');
   });
 });
 

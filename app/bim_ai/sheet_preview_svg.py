@@ -604,6 +604,167 @@ def _plan_sheet_viewport_projection_wire(doc: Document, vp: dict[str, Any]) -> d
     )
 
 
+def _plan_on_sheet_intersect_clamp_token(
+    pv_el: PlanViewElem,
+    vp: dict[str, Any],
+    vp_w_mm: float,
+    vp_h_mm: float,
+) -> str:
+    """Classify plan crop vs sheet viewport relationship for placement evidence.
+
+    Returns one of: viewport_zero_extent | crop_missing | crop_inverted | inside | clamped
+    """
+    # Use raw (unclamped) values to detect zero/missing extent
+    raw_w = vp.get("widthMm") or vp.get("width_mm") or vp.get("wMm") or vp.get("w_mm")
+    raw_h = vp.get("heightMm") or vp.get("height_mm") or vp.get("hMm") or vp.get("h_mm")
+    raw_w_f: float | None = None
+    raw_h_f: float | None = None
+    try:
+        if raw_w is not None and not isinstance(raw_w, bool):
+            raw_w_f = float(raw_w)
+    except (TypeError, ValueError):
+        pass
+    try:
+        if raw_h is not None and not isinstance(raw_h, bool):
+            raw_h_f = float(raw_h)
+    except (TypeError, ValueError):
+        pass
+    if raw_w_f is None or raw_w_f <= 0 or raw_h_f is None or raw_h_f <= 0:
+        return "viewport_zero_extent"
+
+    cmn, cmx = pv_el.crop_min_mm, pv_el.crop_max_mm
+    if cmn is None or cmx is None:
+        return "crop_missing"
+
+    # Detect raw inversion before normalization
+    if cmn.x_mm > cmx.x_mm or cmn.y_mm > cmx.y_mm:
+        return "crop_inverted"
+
+    px0, py0 = min(cmn.x_mm, cmx.x_mm), min(cmn.y_mm, cmx.y_mm)
+    px1, py1 = max(cmn.x_mm, cmx.x_mm), max(cmn.y_mm, cmx.y_mm)
+    if (px1 - px0) <= 0 or (py1 - py0) <= 0:
+        return "crop_inverted"
+
+    # Compare plan crop against sheet viewport model-space crop (cropMinMm/cropMaxMm on vp row)
+    sheet_crop_mn, sheet_crop_mx = read_viewport_crop_min_max(vp)
+    if sheet_crop_mn is None or sheet_crop_mx is None:
+        # No sheet viewport model-space crop → plan crop is sole constraint
+        return "inside"
+
+    sx0, sy0 = sheet_crop_mn
+    sx1, sy1 = sheet_crop_mx
+    sx0, sx1 = min(sx0, sx1), max(sx0, sx1)
+    sy0, sy1 = min(sy0, sy1), max(sy0, sy1)
+
+    if px0 >= sx0 and py0 >= sy0 and px1 <= sx1 and py1 <= sy1:
+        return "inside"
+    return "clamped"
+
+
+def _plan_on_sheet_primitive_counts(wire: dict[str, Any]) -> tuple[dict[str, int], dict[str, int]]:
+    """Return (in_box_by_cat, clipped_by_cat) from plan projection wire."""
+    _PRIM_KEY_MAP = (
+        ("walls", "wall"),
+        ("floors", "floor"),
+        ("rooms", "room"),
+        ("doors", "door"),
+        ("windows", "window"),
+        ("stairs", "stair"),
+        ("roofs", "roof"),
+        ("gridLines", "grid_line"),
+        ("roomSeparations", "room_separation"),
+        ("dimensions", "dimension"),
+    )
+    prim = wire.get("primitives") or {}
+    in_box: dict[str, int] = {}
+    for pk, ck in _PRIM_KEY_MAP:
+        n = len(prim.get(pk) or [])
+        if n:
+            in_box[ck] = n
+
+    level_counts: dict[str, int] = dict(wire.get("countsByVisibleKind") or {})
+    clipped: dict[str, int] = {}
+    all_cats = set(level_counts) | set(in_box)
+    for cat in all_cats:
+        total = level_counts.get(cat, 0)
+        nb = in_box.get(cat, 0)
+        c = max(0, total - nb)
+        if c:
+            clipped[cat] = c
+
+    return dict(sorted(in_box.items())), dict(sorted(clipped.items()))
+
+
+def plan_sheet_viewport_placement_evidence_v1(
+    doc: Document,
+    viewports: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Per plan-on-sheet placement row: crop/viewport agreement + primitive counts (WP-C01/C02/E05/V01)."""
+    rows: list[dict[str, Any]] = []
+    for vp in viewports:
+        if not isinstance(vp, dict):
+            continue
+        vr = vp.get("viewRef") or vp.get("view_ref")
+        if not isinstance(vr, str):
+            continue
+        parts = vr.split(":", 1)
+        if len(parts) != 2 or parts[0].strip().lower() != "plan":
+            continue
+        pv_id = parts[1].strip()
+        if not pv_id:
+            continue
+
+        pv_el = doc.elements.get(pv_id)
+        if not isinstance(pv_el, PlanViewElem):
+            continue
+
+        vp_id = str(vp.get("viewportId") or vp.get("viewport_id") or "")
+        x_mm, y_mm, w_mm, h_mm = read_viewport_mm_box(vp)
+
+        token = _plan_on_sheet_intersect_clamp_token(pv_el, vp, w_mm, h_mm)
+
+        cmn, cmx = pv_el.crop_min_mm, pv_el.crop_max_mm
+        plan_crop_mm_box: dict[str, float] | None = None
+        if cmn is not None and cmx is not None:
+            plan_crop_mm_box = {
+                "xMinMm": min(cmn.x_mm, cmx.x_mm),
+                "yMinMm": min(cmn.y_mm, cmx.y_mm),
+                "xMaxMm": max(cmn.x_mm, cmx.x_mm),
+                "yMaxMm": max(cmn.y_mm, cmx.y_mm),
+            }
+
+        wire = _plan_sheet_viewport_projection_wire(doc, vp)
+        in_box_by_cat: dict[str, int] = {}
+        clipped_by_cat: dict[str, int] = {}
+        if wire is not None:
+            in_box_by_cat, clipped_by_cat = _plan_on_sheet_primitive_counts(wire)
+
+        proj_seg = format_plan_projection_export_segment(wire) if wire is not None else ""
+        listing_digest = hashlib.sha256(proj_seg.encode("utf-8")).hexdigest()
+
+        rows.append(
+            {
+                "format": "planSheetViewportPlacementEvidence_v1",
+                "viewportId": vp_id,
+                "planViewId": pv_id,
+                "sheetViewportMmBox": {
+                    "xMm": x_mm,
+                    "yMm": y_mm,
+                    "widthMm": w_mm,
+                    "heightMm": h_mm,
+                },
+                "resolvedPlanCropMmBox": plan_crop_mm_box,
+                "intersectClampToken": token,
+                "primitiveCounts": {
+                    "inBox": in_box_by_cat,
+                    "clipped": clipped_by_cat,
+                },
+                "planOnSheetSegmentDigestSha256": listing_digest,
+            }
+        )
+    return rows
+
+
 def _normalized_sorted_room_color_legend_rows(
     wire: dict[str, Any],
 ) -> tuple[list[dict[str, str]], str, int] | None:

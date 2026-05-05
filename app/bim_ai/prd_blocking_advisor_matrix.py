@@ -217,13 +217,18 @@ _PRD_ADVISOR_ROWS: list[dict[str, Any]] = [
         "prdNeedle": "Sheets: missing titleblock, empty viewport, scale mismatch, crop clipping annotations.",
         "requiredRuleIds": sorted(
             [
+                "plan_view_sheet_viewport_crop_inverted",
+                "plan_view_sheet_viewport_crop_missing",
+                "plan_view_sheet_viewport_zero_extent",
                 "sheet_missing_titleblock",
                 "sheet_revision_issue_metadata_missing",
                 "sheet_viewport_unknown_ref",
                 "sheet_viewport_zero_extent",
             ]
         ),
-        "status": "pass",
+        "status": "partial",
+        "waiverReasonCode": "partial_coverage_v1",
+        "waiverEvidenceLink": "spec/revit-production-parity-workpackage-tracker.md",
         "goldenBundleCoverage": [
             {"kind": "pytest_module", "path": "app/tests/test_constraints.py"},
             {

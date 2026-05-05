@@ -34,6 +34,7 @@ from bim_ai.sheet_preview_svg import (
     build_sheet_print_raster_print_contract_v3,
     detail_callout_readout_rows_v0,
     plan_room_programme_legend_hints_v0,
+    plan_sheet_viewport_placement_evidence_v1,
     room_color_scheme_legend_placement_evidence_v1,
     sheet_elem_to_svg,
     sheet_print_raster_print_surrogate_png_bytes_v2,
@@ -270,6 +271,9 @@ def deterministic_sheet_evidence_manifest(
                     "rasterPlaceholderProbe": f"{stem}.raster-placeholder.png",
                 },
                 "viewportEvidenceHints_v0": viewport_evidence_hints_v1(doc, list(sh.viewports_mm or [])),
+                "planSheetViewportPlacementEvidence_v1": plan_sheet_viewport_placement_evidence_v1(
+                    doc, list(sh.viewports_mm or [])
+                ),
                 "detailCalloutReadout_v0": detail_callout_readout_rows_v0(doc, sh),
                 "planRoomProgrammeLegendHints_v0": plan_room_programme_legend_hints_v0(
                     doc, list(sh.viewports_mm or [])

@@ -217,6 +217,140 @@ def test_sheet_viewport_zero_extent_quick_fix_bundle_ok() -> None:
     assert code == "ok"
 
 
+def test_plan_view_sheet_viewport_crop_missing_fires_when_no_plan_crop() -> None:
+    lvl = LevelElem(kind="level", id="lvl", name="G", elevationMm=0)
+    pv = PlanViewElem(kind="plan_view", id="pv-1", name="EG", levelId="lvl")
+    sh = SheetElem(
+        kind="sheet",
+        id="sh-1",
+        name="S1",
+        viewportsMm=[
+            {
+                "viewportId": "vp-1",
+                "viewRef": "plan:pv-1",
+                "xMm": 0,
+                "yMm": 0,
+                "widthMm": 200,
+                "heightMm": 150,
+            },
+        ],
+    )
+    viols = evaluate({"lvl": lvl, "pv-1": pv, "sh-1": sh})  # type: ignore[arg-type]
+    v = next((x for x in viols if x.rule_id == "plan_view_sheet_viewport_crop_missing"), None)
+    assert v is not None
+    assert "pv-1" in v.element_ids
+    assert "sh-1" in v.element_ids
+    assert "vp-1" in v.element_ids
+    assert v.discipline == "coordination"
+
+
+def test_plan_view_sheet_viewport_crop_missing_absent_when_crop_set() -> None:
+    lvl = LevelElem(kind="level", id="lvl", name="G", elevationMm=0)
+    pv = PlanViewElem(
+        kind="plan_view",
+        id="pv-1",
+        name="EG",
+        levelId="lvl",
+        cropMinMm={"xMm": 0.0, "yMm": 0.0},
+        cropMaxMm={"xMm": 5000.0, "yMm": 4000.0},
+    )
+    sh = SheetElem(
+        kind="sheet",
+        id="sh-1",
+        name="S1",
+        viewportsMm=[
+            {
+                "viewportId": "vp-1",
+                "viewRef": "plan:pv-1",
+                "xMm": 0,
+                "yMm": 0,
+                "widthMm": 200,
+                "heightMm": 150,
+            },
+        ],
+    )
+    viols = evaluate({"lvl": lvl, "pv-1": pv, "sh-1": sh})  # type: ignore[arg-type]
+    assert not any(x.rule_id == "plan_view_sheet_viewport_crop_missing" for x in viols)
+
+
+def test_plan_view_sheet_viewport_crop_inverted_fires_when_min_exceeds_max() -> None:
+    lvl = LevelElem(kind="level", id="lvl", name="G", elevationMm=0)
+    pv = PlanViewElem(
+        kind="plan_view",
+        id="pv-1",
+        name="EG",
+        levelId="lvl",
+        cropMinMm={"xMm": 5000.0, "yMm": 0.0},
+        cropMaxMm={"xMm": 0.0, "yMm": 4000.0},
+    )
+    sh = SheetElem(
+        kind="sheet",
+        id="sh-1",
+        name="S1",
+        viewportsMm=[
+            {
+                "viewportId": "vp-1",
+                "viewRef": "plan:pv-1",
+                "xMm": 0,
+                "yMm": 0,
+                "widthMm": 200,
+                "heightMm": 150,
+            },
+        ],
+    )
+    viols = evaluate({"lvl": lvl, "pv-1": pv, "sh-1": sh})  # type: ignore[arg-type]
+    v = next((x for x in viols if x.rule_id == "plan_view_sheet_viewport_crop_inverted"), None)
+    assert v is not None
+    assert "pv-1" in v.element_ids
+    assert "sh-1" in v.element_ids
+    assert "vp-1" in v.element_ids
+
+
+def test_plan_view_sheet_viewport_zero_extent_fires_when_vp_width_zero() -> None:
+    lvl = LevelElem(kind="level", id="lvl", name="G", elevationMm=0)
+    pv = PlanViewElem(kind="plan_view", id="pv-1", name="EG", levelId="lvl")
+    sh = SheetElem(
+        kind="sheet",
+        id="sh-1",
+        name="S1",
+        viewportsMm=[
+            {
+                "viewportId": "vp-1",
+                "viewRef": "plan:pv-1",
+                "xMm": 0,
+                "yMm": 0,
+                "widthMm": 0,
+                "heightMm": 150,
+            },
+        ],
+    )
+    viols = evaluate({"lvl": lvl, "pv-1": pv, "sh-1": sh})  # type: ignore[arg-type]
+    v = next((x for x in viols if x.rule_id == "plan_view_sheet_viewport_zero_extent"), None)
+    assert v is not None
+    assert "pv-1" in v.element_ids
+    assert "sh-1" in v.element_ids
+
+
+def test_plan_view_sheet_viewport_crop_not_fired_for_section_viewport() -> None:
+    sh = SheetElem(
+        kind="sheet",
+        id="sh-1",
+        name="S1",
+        viewportsMm=[
+            {
+                "viewportId": "vp-sec",
+                "viewRef": "section:sec-1",
+                "xMm": 0,
+                "yMm": 0,
+                "widthMm": 100,
+                "heightMm": 80,
+            },
+        ],
+    )
+    viols = evaluate({"sh-1": sh})  # type: ignore[arg-type]
+    assert not any(x.rule_id.startswith("plan_view_sheet_viewport_") for x in viols)
+
+
 def test_sheet_missing_titleblock_quick_fix_try_commit_ok() -> None:
     lvl = LevelElem(kind="level", id="lvl", name="G", elevationMm=0)
     pv = PlanViewElem(kind="plan_view", id="pv-1", name="EG", levelId="lvl")

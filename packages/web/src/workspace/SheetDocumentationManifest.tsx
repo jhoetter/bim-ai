@@ -4,7 +4,9 @@ import { useEffect, useMemo, useState } from 'react';
 import type { SheetTitleblockDraft } from './sheetTitleblockAuthoring';
 import { mergedTitleblockParametersForUpsert } from './sheetTitleblockAuthoring';
 import {
+  extractPlanSheetViewportPlacementEvidence,
   indexViewportEvidenceHints,
+  planOnSheetTokenLabel,
   sheetExportHrefTriple,
   viewportCropExtentsMm,
 } from './sheetDocumentationManifestHelpers';
@@ -250,6 +252,13 @@ export function SheetDocumentationManifest(props: {
     return raw.filter((r) => r && typeof r === 'object') as Record<string, unknown>[];
   }, [deterministicRow, evidence.status]);
 
+  const planOnSheetPlacementRows = useMemo(() => {
+    if (evidence.status !== 'ready' || !deterministicRow) return [];
+    return extractPlanSheetViewportPlacementEvidence(
+      deterministicRow.planSheetViewportPlacementEvidence_v1,
+    );
+  }, [deterministicRow, evidence.status]);
+
   const advisorNotes = useMemo(() => {
     const notes: string[] = [];
     if (viewportRows.length > 0 && !effectiveTitleblockSymbol) {
@@ -297,6 +306,24 @@ export function SheetDocumentationManifest(props: {
           notes.push(
             `Viewport ${row.viewportId}: detail callout target is unresolved (${dcReason}).`,
           );
+        }
+      }
+      if (parsed && parsed.kind === 'plan') {
+        if (row.widthMm <= 0 || row.heightMm <= 0) {
+          notes.push(
+            `Viewport ${row.viewportId}: plan view viewport has zero or missing extent (aligns with plan_view_sheet_viewport_zero_extent).`,
+          );
+        } else if (!row.cropMinMm || !row.cropMaxMm) {
+          notes.push(
+            `Viewport ${row.viewportId}: plan view has no crop box authored (aligns with plan_view_sheet_viewport_crop_missing).`,
+          );
+        } else {
+          const cropEx = viewportCropExtentsMm(row.cropMinMm, row.cropMaxMm);
+          if (cropEx && (cropEx.widthMm <= 0 || cropEx.heightMm <= 0)) {
+            notes.push(
+              `Viewport ${row.viewportId}: plan view crop box is inverted or degenerate (aligns with plan_view_sheet_viewport_crop_inverted).`,
+            );
+          }
         }
       }
     }
@@ -678,6 +705,74 @@ export function SheetDocumentationManifest(props: {
           </div>
         ) : null;
       })() : null}
+
+      {evidence.status === 'ready' && planOnSheetPlacementRows.length > 0 ? (
+        <div
+          className="mt-3 space-y-1 border-t border-border pt-2"
+          data-testid="sheet-manifest-plan-on-sheet-placement-readout"
+        >
+          <div className="text-[10px] font-semibold uppercase text-muted">
+            Plan-on-sheet viewport placement (v1)
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-[900px] border-collapse border border-border font-mono text-[10px]">
+              <thead>
+                <tr className="bg-muted/30">
+                  <th className="border border-border px-1 py-0.5 text-left">viewportId</th>
+                  <th className="border border-border px-1 py-0.5 text-left">planViewId</th>
+                  <th className="border border-border px-1 py-0.5 text-left">intersect/clamp</th>
+                  <th className="border border-border px-1 py-0.5 text-left">sheet box (mm)</th>
+                  <th className="border border-border px-1 py-0.5 text-left">plan crop (mm)</th>
+                  <th className="border border-border px-1 py-0.5 text-left">inBox counts</th>
+                  <th className="border border-border px-1 py-0.5 text-left">clipped counts</th>
+                  <th className="border border-border px-1 py-0.5 text-left">segment digest (prefix)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {planOnSheetPlacementRows.map((r) => {
+                  const tokenLabel = planOnSheetTokenLabel(r.intersectClampToken);
+                  const tokenCls =
+                    r.intersectClampToken === 'inside'
+                      ? 'text-green-700 dark:text-green-400'
+                      : r.intersectClampToken === 'clamped'
+                        ? 'text-amber-700 dark:text-amber-400'
+                        : r.intersectClampToken === 'crop_missing'
+                          ? 'text-muted'
+                          : 'text-red-700 dark:text-red-400';
+                  const shBox = r.sheetViewportMmBox;
+                  const shBoxLabel = `[${shBox.xMm},${shBox.yMm}] ${shBox.widthMm}×${shBox.heightMm}`;
+                  const cropBox = r.resolvedPlanCropMmBox;
+                  const cropLabel = cropBox
+                    ? `[${cropBox.xMinMm},${cropBox.yMinMm}]→[${cropBox.xMaxMm},${cropBox.yMaxMm}]`
+                    : '—';
+                  const inBoxLabel = Object.entries(r.primitiveCounts.inBox)
+                    .map(([k, v]) => `${k}=${v}`)
+                    .join(' ') || '—';
+                  const clippedLabel = Object.entries(r.primitiveCounts.clipped)
+                    .map(([k, v]) => `${k}=${v}`)
+                    .join(' ') || '—';
+                  return (
+                    <tr key={r.viewportId}>
+                      <td className="border border-border px-1 py-0.5">{r.viewportId}</td>
+                      <td className="border border-border px-1 py-0.5">{r.planViewId}</td>
+                      <td className={`border border-border px-1 py-0.5 font-semibold ${tokenCls}`}>
+                        {tokenLabel}
+                      </td>
+                      <td className="border border-border px-1 py-0.5 whitespace-nowrap">{shBoxLabel}</td>
+                      <td className="border border-border px-1 py-0.5 whitespace-nowrap">{cropLabel}</td>
+                      <td className="border border-border px-1 py-0.5">{inBoxLabel}</td>
+                      <td className="border border-border px-1 py-0.5">{clippedLabel}</td>
+                      <td className="border border-border px-1 py-0.5 text-muted">
+                        {r.planOnSheetSegmentDigestSha256.slice(0, 12)}…
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : null}
 
       <div className="mt-3 space-y-1 border-t border-border pt-2">
         <div className="text-[10px] font-semibold uppercase text-muted">
