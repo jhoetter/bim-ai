@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import html
+import json
 import math
 import struct
 import zlib
@@ -27,11 +28,20 @@ SHEET_PRINT_RASTER_LAYOUT_STAMP_CONTRACT_V1 = "sheetPrintRasterLayoutStamp_v1"
 
 SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2 = "sheetPrintRasterPrintSurrogate_v2"
 
+SHEET_PRINT_RASTER_PRINT_CONTRACT_V3 = "sheetPrintRasterPrintContract_v3"
+
 SHEET_PRINT_RASTER_STAMP_WIDTH_PX = 128
 SHEET_PRINT_RASTER_STAMP_HEIGHT_PX = 96
 SHEET_PRINT_RASTER_TITLEBLOCK_BAND_PX = 16
 SHEET_PRINT_RASTER_SURROGATE_V2_HEIGHT_PX = (
     SHEET_PRINT_RASTER_STAMP_HEIGHT_PX + SHEET_PRINT_RASTER_TITLEBLOCK_BAND_PX
+)
+SHEET_PRINT_RASTER_CONTRACT_V3_WIDTH_PX = SHEET_PRINT_RASTER_STAMP_WIDTH_PX * 2
+SHEET_PRINT_RASTER_CONTRACT_V3_LAYOUT_HEIGHT_PX = SHEET_PRINT_RASTER_STAMP_HEIGHT_PX * 2
+SHEET_PRINT_RASTER_CONTRACT_V3_METADATA_BAND_PX = SHEET_PRINT_RASTER_TITLEBLOCK_BAND_PX * 2
+SHEET_PRINT_RASTER_CONTRACT_V3_HEIGHT_PX = (
+    SHEET_PRINT_RASTER_CONTRACT_V3_LAYOUT_HEIGHT_PX
+    + SHEET_PRINT_RASTER_CONTRACT_V3_METADATA_BAND_PX
 )
 
 
@@ -42,6 +52,12 @@ def sheet_svg_utf8_sha256(svg_text: str) -> str:
 def _png_pack_chunk(chunk_type: bytes, data: bytes) -> bytes:
     crc = zlib.crc32(chunk_type + data) & 0xFFFFFFFF
     return struct.pack("!I", len(data)) + chunk_type + data + struct.pack("!I", crc)
+
+
+def _png_pack_text_chunk(keyword: str, text: str) -> bytes:
+    key_bytes = keyword.encode("latin-1")
+    text_bytes = text.encode("latin-1")
+    return _png_pack_chunk(b"tEXt", key_bytes + b"\x00" + text_bytes)
 
 
 def sheet_print_raster_placeholder_png_bytes_v1(svg_text: str) -> bytes:
@@ -61,7 +77,13 @@ def sheet_print_raster_placeholder_png_bytes_v1(svg_text: str) -> bytes:
     )
 
 
-def _encode_png_rgb8_rgb(width: int, height: int, rows_rgb: list[bytes]) -> bytes:
+def _encode_png_rgb8_rgb(
+    width: int,
+    height: int,
+    rows_rgb: list[bytes],
+    *,
+    text_chunks: dict[str, str] | None = None,
+) -> bytes:
     """RGB8 truecolor PNG, filter type 0 per row."""
 
     raw = bytearray()
@@ -71,12 +93,14 @@ def _encode_png_rgb8_rgb(width: int, height: int, rows_rgb: list[bytes]) -> byte
     signature = b"\x89PNG\r\n\x1a\n"
     ihdr = struct.pack("!IIBBBBB", width, height, 8, 2, 0, 0, 0)
     idat = zlib.compress(bytes(raw), level=9)
-    return (
-        signature
-        + _png_pack_chunk(b"IHDR", ihdr)
-        + _png_pack_chunk(b"IDAT", idat)
-        + _png_pack_chunk(b"IEND", b"")
-    )
+    chunks = bytearray(signature)
+    chunks.extend(_png_pack_chunk(b"IHDR", ihdr))
+    if text_chunks:
+        for keyword in sorted(text_chunks):
+            chunks.extend(_png_pack_text_chunk(keyword, text_chunks[keyword]))
+    chunks.extend(_png_pack_chunk(b"IDAT", idat))
+    chunks.extend(_png_pack_chunk(b"IEND", b""))
+    return bytes(chunks)
 
 
 def _stamp_bg_rgb(svg_digest: bytes) -> tuple[int, int, int]:
@@ -233,6 +257,171 @@ def sheet_print_raster_print_surrogate_png_bytes_v2(
     return _encode_png_rgb8_rgb(
         SHEET_PRINT_RASTER_STAMP_WIDTH_PX, SHEET_PRINT_RASTER_SURROGATE_V2_HEIGHT_PX, rows
     )
+
+
+def _canonical_json_text(payload: dict[str, Any]) -> str:
+    return json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+
+
+def sheet_print_raster_print_contract_metadata_v3(
+    doc: Document,
+    sh: SheetElem,
+    svg_text: str,
+    *,
+    pdf_content_sha256: str | None = None,
+) -> dict[str, Any]:
+    """Canonical print-contract metadata embedded in v3 PNG and mirrored in evidence rows."""
+
+    svg_sha = sheet_svg_utf8_sha256(svg_text)
+    tb = sh.titleblock_parameters or {}
+    paper = {
+        "widthMm": float(sh.paper_width_mm),
+        "heightMm": float(sh.paper_height_mm),
+    }
+    titleblock = {
+        "titleBlock": sh.title_block or "",
+        "sheetNumber": str(tb.get("sheetNumber") or tb.get("sheetNo") or ""),
+        "revision": str(tb.get("revision") or ""),
+        "projectName": str(tb.get("projectName") or tb.get("project") or ""),
+        "drawnBy": str(tb.get("drawnBy") or ""),
+        "checkedBy": str(tb.get("checkedBy") or ""),
+        "issueDate": str(tb.get("issueDate") or tb.get("date") or ""),
+    }
+    metadata: dict[str, Any] = {
+        "format": "sheetPrintRasterPrintContractMetadata_v3",
+        "contract": SHEET_PRINT_RASTER_PRINT_CONTRACT_V3,
+        "sheetId": sh.id,
+        "sheetName": sh.name,
+        "svgContentSha256": svg_sha,
+        "pdfContentSha256": pdf_content_sha256,
+        "paper": paper,
+        "titleblock": titleblock,
+        "raster": {
+            "widthPx": SHEET_PRINT_RASTER_CONTRACT_V3_WIDTH_PX,
+            "heightPx": SHEET_PRINT_RASTER_CONTRACT_V3_HEIGHT_PX,
+            "layoutStampWidthPx": SHEET_PRINT_RASTER_CONTRACT_V3_WIDTH_PX,
+            "layoutStampHeightPx": SHEET_PRINT_RASTER_CONTRACT_V3_LAYOUT_HEIGHT_PX,
+            "metadataBandHeightPx": SHEET_PRINT_RASTER_CONTRACT_V3_METADATA_BAND_PX,
+            "layoutSourceContract": SHEET_PRINT_RASTER_LAYOUT_STAMP_CONTRACT_V1,
+            "previousPrintSurrogateContract": SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2,
+        },
+        "viewportEvidenceHints_v1": viewport_evidence_hints_v1(doc, list(sh.viewports_mm or [])),
+    }
+    metadata["metadataSha256"] = hashlib.sha256(_canonical_json_text(metadata).encode("ascii")).hexdigest()
+    return metadata
+
+
+def sheet_print_raster_print_contract_metadata_sha256_v3(metadata: dict[str, Any]) -> str:
+    canonical = dict(metadata)
+    canonical.pop("metadataSha256", None)
+    return hashlib.sha256(_canonical_json_text(canonical).encode("ascii")).hexdigest()
+
+
+def _scale_rows_2x(rows: list[bytes]) -> list[bytes]:
+    scaled: list[bytes] = []
+    for row in rows:
+        out = bytearray()
+        for i in range(0, len(row), 3):
+            pix = row[i : i + 3]
+            out.extend(pix)
+            out.extend(pix)
+        doubled = bytes(out)
+        scaled.append(doubled)
+        scaled.append(doubled)
+    return scaled
+
+
+def _metadata_surrogate_band_rows_v3(metadata: dict[str, Any]) -> list[bytes]:
+    w_px = SHEET_PRINT_RASTER_CONTRACT_V3_WIDTH_PX
+    band = SHEET_PRINT_RASTER_CONTRACT_V3_METADATA_BAND_PX
+    payload = _canonical_json_text(metadata).encode("ascii")
+    out: list[bytes] = []
+    for r in range(band):
+        seed = hashlib.sha256(b"sheetPrintRasterMetadataBand_v3\x00" + bytes([r]) + payload).digest()
+        buf = bytearray()
+        cur = seed
+        while len(buf) < w_px * 3:
+            cur = hashlib.sha256(cur + bytes([len(buf) & 0xFF])).digest()
+            buf.extend(cur)
+        out.append(bytes(buf[: w_px * 3]))
+    return out
+
+
+def sheet_print_raster_print_contract_png_bytes_v3(
+    doc: Document,
+    sh: SheetElem,
+    svg_text: str,
+    *,
+    pdf_content_sha256: str | None = None,
+) -> bytes:
+    """256×224 RGB8 print-contract PNG: 2× layout stamp + 32px deterministic metadata band."""
+
+    metadata = sheet_print_raster_print_contract_metadata_v3(
+        doc, sh, svg_text, pdf_content_sha256=pdf_content_sha256
+    )
+    metadata_json = _canonical_json_text(metadata)
+    metadata_sha = sheet_print_raster_print_contract_metadata_sha256_v3(metadata)
+    rows = _scale_rows_2x(_sheet_print_raster_layout_stamp_rows(doc, sh, svg_text))
+    rows.extend(_metadata_surrogate_band_rows_v3(metadata))
+    return _encode_png_rgb8_rgb(
+        SHEET_PRINT_RASTER_CONTRACT_V3_WIDTH_PX,
+        SHEET_PRINT_RASTER_CONTRACT_V3_HEIGHT_PX,
+        rows,
+        text_chunks={
+            "Bim-Ai-Raster-Contract": SHEET_PRINT_RASTER_PRINT_CONTRACT_V3,
+            "Bim-Ai-Raster-Metadata-Json": metadata_json,
+            "Bim-Ai-Raster-Metadata-Sha256": metadata_sha,
+        },
+    )
+
+
+def _png_ihdr_and_text_chunks(png: bytes) -> tuple[tuple[int, int], dict[str, str]]:
+    if not png.startswith(b"\x89PNG\r\n\x1a\n"):
+        raise ValueError("not a PNG")
+    pos = 8
+    width = height = 0
+    text_chunks: dict[str, str] = {}
+    while pos + 8 <= len(png):
+        ln = int.from_bytes(png[pos : pos + 4], "big")
+        typ = png[pos + 4 : pos + 8]
+        data = png[pos + 8 : pos + 8 + ln]
+        pos += 12 + ln
+        if typ == b"IHDR":
+            width = int.from_bytes(data[0:4], "big")
+            height = int.from_bytes(data[4:8], "big")
+        elif typ == b"tEXt":
+            key, _, value = data.partition(b"\x00")
+            if key:
+                text_chunks[key.decode("latin-1")] = value.decode("latin-1")
+        elif typ == b"IEND":
+            break
+    return (width, height), text_chunks
+
+
+def validate_sheet_print_raster_contract_v3(png: bytes, metadata: dict[str, Any]) -> dict[str, Any]:
+    """Server-side self-check for v3 raster dimensions and embedded metadata channels."""
+
+    (width, height), text_chunks = _png_ihdr_and_text_chunks(png)
+    metadata_sha = sheet_print_raster_print_contract_metadata_sha256_v3(metadata)
+    checks = {
+        "dimensionsMatch": width == SHEET_PRINT_RASTER_CONTRACT_V3_WIDTH_PX
+        and height == SHEET_PRINT_RASTER_CONTRACT_V3_HEIGHT_PX,
+        "contractTextChunkMatches": text_chunks.get("Bim-Ai-Raster-Contract")
+        == SHEET_PRINT_RASTER_PRINT_CONTRACT_V3,
+        "metadataDigestTextChunkMatches": text_chunks.get("Bim-Ai-Raster-Metadata-Sha256")
+        == metadata_sha,
+        "metadataJsonTextChunkMatches": text_chunks.get("Bim-Ai-Raster-Metadata-Json")
+        == _canonical_json_text(metadata),
+        "metadataSelfDigestMatches": metadata.get("metadataSha256") == metadata_sha,
+    }
+    return {
+        "format": "sheetPrintRasterContractValidation_v3",
+        "ok": all(checks.values()),
+        "checks": checks,
+        "widthPx": width,
+        "heightPx": height,
+        "metadataSha256": metadata_sha,
+    }
 
 
 def pick_sheet(doc: Document, sheet_id: str | None) -> SheetElem:

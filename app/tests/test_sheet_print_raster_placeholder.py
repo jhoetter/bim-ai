@@ -7,8 +7,12 @@ import zlib
 from bim_ai.document import Document
 from bim_ai.elements import LevelElem, PlanViewElem, SectionCutElem, SheetElem
 from bim_ai.sheet_preview_svg import (
+    SHEET_PRINT_RASTER_CONTRACT_V3_HEIGHT_PX,
+    SHEET_PRINT_RASTER_CONTRACT_V3_METADATA_BAND_PX,
+    SHEET_PRINT_RASTER_CONTRACT_V3_WIDTH_PX,
     SHEET_PRINT_RASTER_LAYOUT_STAMP_CONTRACT_V1,
     SHEET_PRINT_RASTER_PLACEHOLDER_CONTRACT_V1,
+    SHEET_PRINT_RASTER_PRINT_CONTRACT_V3,
     SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2,
     SHEET_PRINT_RASTER_STAMP_HEIGHT_PX,
     SHEET_PRINT_RASTER_STAMP_WIDTH_PX,
@@ -16,8 +20,12 @@ from bim_ai.sheet_preview_svg import (
     sheet_elem_to_svg,
     sheet_print_raster_layout_stamp_png_bytes_v1,
     sheet_print_raster_placeholder_png_bytes_v1,
+    sheet_print_raster_print_contract_metadata_sha256_v3,
+    sheet_print_raster_print_contract_metadata_v3,
+    sheet_print_raster_print_contract_png_bytes_v3,
     sheet_print_raster_print_surrogate_png_bytes_v2,
     sheet_svg_utf8_sha256,
+    validate_sheet_print_raster_contract_v3,
     viewport_evidence_hints_v1,
 )
 
@@ -214,5 +222,84 @@ def test_print_surrogate_v2_titleblock_metadata_changes_png() -> None:
     svg2 = sheet_elem_to_svg(doc, sh2)
     p1 = sheet_print_raster_print_surrogate_png_bytes_v2(doc, sh1, svg1)
     p2 = sheet_print_raster_print_surrogate_png_bytes_v2(doc, sh2, svg2)
+    assert p1 != p2
+
+
+def _png_text_chunks(png: bytes) -> dict[str, str]:
+    assert png.startswith(b"\x89PNG\r\n\x1a\n")
+    pos = 8
+    chunks: dict[str, str] = {}
+    while pos + 8 <= len(png):
+        ln = int.from_bytes(png[pos : pos + 4], "big")
+        typ = png[pos + 4 : pos + 8]
+        data = png[pos + 8 : pos + 8 + ln]
+        pos += 12 + ln
+        if typ == b"tEXt":
+            key, _, value = data.partition(b"\x00")
+            chunks[key.decode("latin-1")] = value.decode("latin-1")
+        elif typ == b"IEND":
+            break
+    return chunks
+
+
+def test_print_contract_v3_shape_metadata_and_validation() -> None:
+    sh = SheetElem(
+        kind="sheet",
+        id="s1",
+        name="S",
+        titleBlock="TB",
+        paperWidthMm=42000,
+        paperHeightMm=29700,
+        titleblockParameters={"sheetNumber": "A101", "revision": "B"},
+        viewportsMm=[
+            {"viewportId": "a", "xMm": 0, "yMm": 0, "widthMm": 1000, "heightMm": 1000},
+        ],
+    )
+    doc = Document(revision=1, elements={"s1": sh})
+    svg = sheet_elem_to_svg(doc, sh)
+    pdf_sha = "c" * 64
+    metadata = sheet_print_raster_print_contract_metadata_v3(
+        doc, sh, svg, pdf_content_sha256=pdf_sha
+    )
+    png = sheet_print_raster_print_contract_png_bytes_v3(
+        doc, sh, svg, pdf_content_sha256=pdf_sha
+    )
+
+    assert SHEET_PRINT_RASTER_PRINT_CONTRACT_V3 == "sheetPrintRasterPrintContract_v3"
+    assert metadata["contract"] == SHEET_PRINT_RASTER_PRINT_CONTRACT_V3
+    assert metadata["pdfContentSha256"] == pdf_sha
+    assert metadata["paper"] == {"widthMm": 42000.0, "heightMm": 29700.0}
+    assert metadata["raster"]["metadataBandHeightPx"] == SHEET_PRINT_RASTER_CONTRACT_V3_METADATA_BAND_PX
+    w, h = _png_ihdr_wh(png)
+    assert w == SHEET_PRINT_RASTER_CONTRACT_V3_WIDTH_PX
+    assert h == SHEET_PRINT_RASTER_CONTRACT_V3_HEIGHT_PX
+
+    chunks = _png_text_chunks(png)
+    metadata_sha = sheet_print_raster_print_contract_metadata_sha256_v3(metadata)
+    assert chunks["Bim-Ai-Raster-Contract"] == SHEET_PRINT_RASTER_PRINT_CONTRACT_V3
+    assert chunks["Bim-Ai-Raster-Metadata-Sha256"] == metadata_sha
+    assert "sheetPrintRasterPrintContractMetadata_v3" in chunks["Bim-Ai-Raster-Metadata-Json"]
+    validation = validate_sheet_print_raster_contract_v3(png, metadata)
+    assert validation["ok"] is True
+    assert validation["metadataSha256"] == metadata_sha
+
+
+def test_print_contract_v3_changes_when_pdf_sha_changes() -> None:
+    sh = SheetElem(
+        kind="sheet",
+        id="s1",
+        name="S",
+        viewportsMm=[
+            {"viewportId": "a", "xMm": 0, "yMm": 0, "widthMm": 1000, "heightMm": 1000},
+        ],
+    )
+    doc = Document(revision=1, elements={"s1": sh})
+    svg = sheet_elem_to_svg(doc, sh)
+    p1 = sheet_print_raster_print_contract_png_bytes_v3(
+        doc, sh, svg, pdf_content_sha256="a" * 64
+    )
+    p2 = sheet_print_raster_print_contract_png_bytes_v3(
+        doc, sh, svg, pdf_content_sha256="b" * 64
+    )
     assert p1 != p2
 

@@ -17,12 +17,16 @@ from bim_ai.elements import (
     SheetElem,
     ViewpointElem,
 )
+from bim_ai.sheet_preview_pdf import sheet_elem_to_pdf_bytes
 from bim_ai.sheet_preview_svg import (
-    SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2,
+    SHEET_PRINT_RASTER_PRINT_CONTRACT_V3,
     plan_room_programme_legend_hints_v0,
     sheet_elem_to_svg,
-    sheet_print_raster_print_surrogate_png_bytes_v2,
+    sheet_print_raster_print_contract_metadata_sha256_v3,
+    sheet_print_raster_print_contract_metadata_v3,
+    sheet_print_raster_print_contract_png_bytes_v3,
     sheet_svg_utf8_sha256,
+    validate_sheet_print_raster_contract_v3,
     viewport_evidence_hints_v1,
 )
 
@@ -171,8 +175,18 @@ def deterministic_sheet_evidence_manifest(
         stem = f"{evidence_artifact_basename}-sheet-{safe}"
         svg_body = sheet_elem_to_svg(doc, sh)
         svg_sha = sheet_svg_utf8_sha256(svg_body)
-        placeholder_png = sheet_print_raster_print_surrogate_png_bytes_v2(doc, sh, svg_body)
-        placeholder_png_sha = hashlib.sha256(placeholder_png).hexdigest()
+        pdf_sha = hashlib.sha256(sheet_elem_to_pdf_bytes(doc, sh)).hexdigest()
+        raster_metadata = sheet_print_raster_print_contract_metadata_v3(
+            doc, sh, svg_body, pdf_content_sha256=pdf_sha
+        )
+        raster_metadata_sha = sheet_print_raster_print_contract_metadata_sha256_v3(raster_metadata)
+        print_raster_png = sheet_print_raster_print_contract_png_bytes_v3(
+            doc, sh, svg_body, pdf_content_sha256=pdf_sha
+        )
+        print_raster_png_sha = hashlib.sha256(print_raster_png).hexdigest()
+        print_raster_validation = validate_sheet_print_raster_contract_v3(
+            print_raster_png, raster_metadata
+        )
 
         rows.append(
             {
@@ -183,18 +197,23 @@ def deterministic_sheet_evidence_manifest(
                 "printRasterPngHref": f"{api_base}/sheet-print-raster.png?sheetId={qid}",
                 "sheetPrintRasterIngest_v1": {
                     "format": "sheetPrintRasterIngest_v1",
-                    "contract": SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2,
+                    "contract": SHEET_PRINT_RASTER_PRINT_CONTRACT_V3,
                     "svgContentSha256": svg_sha,
-                    "placeholderPngSha256": placeholder_png_sha,
+                    "pdfContentSha256": pdf_sha,
+                    "printRasterPngSha256": print_raster_png_sha,
+                    "placeholderPngSha256": print_raster_png_sha,
+                    "metadataSha256": raster_metadata_sha,
+                    "metadata": raster_metadata,
+                    "serverValidation": print_raster_validation,
                     "diffCorrelation": {
                         "format": "sheetPrintRasterDiffCorrelation_v1",
                         "playwrightBaselineSlot": "pngFullSheet",
                         "notes": (
-                            "Server print-surrogate PNG (128×112) stacks a 128×96 viewport layout stamp with SVG "
-                            "UTF-8 salt and a 16px deterministic titleblock metadata band; it does not pixel-match "
-                            "Playwright captures or fully render the SVG. Use for CI artifact/hash correlation and "
-                            "layout/titleblock evidence; baseline visual diff remains client-side on pngFullSheet / "
-                            "pngViewport."
+                            "Server print-contract PNG (256×224) stacks a 2× viewport layout stamp with SVG/PDF "
+                            "content SHA channels, embedded PNG tEXt metadata digest, and a 32px deterministic "
+                            "metadata band; it does not pixel-match Playwright captures or fully render the SVG. "
+                            "Use for CI artifact/hash correlation and layout/titleblock/paper evidence; baseline "
+                            "visual diff remains client-side on pngFullSheet / pngViewport."
                         ),
                     },
                 },

@@ -47,6 +47,7 @@ export function AgentReviewPane() {
       printRasterPngHref?: string;
       printRasterContract?: string;
       placeholderPngSha256Tail?: string;
+      metadataSha256Tail?: string;
       bundleJson?: string;
     }[];
     view3dRows: {
@@ -388,6 +389,11 @@ export function AgentReviewPane() {
           rasterRaw && typeof rasterRaw === 'object' ? (rasterRaw as Record<string, unknown>) : {};
         const ph = raster.placeholderPngSha256;
         const phStr = typeof ph === 'string' && ph.length >= 12 ? ph.slice(-12) : undefined;
+        const metadataSha = raster.metadataSha256;
+        const metadataShaTail =
+          typeof metadataSha === 'string' && metadataSha.length >= 12
+            ? metadataSha.slice(-12)
+            : undefined;
         const ctr = raster.contract;
         return {
           sheetId: String(r.sheetId ?? r.sheet_id ?? ''),
@@ -407,6 +413,7 @@ export function AgentReviewPane() {
                 : undefined,
           printRasterContract: typeof ctr === 'string' ? ctr : undefined,
           placeholderPngSha256Tail: phStr,
+          metadataSha256Tail: metadataShaTail,
           bundleJson:
             typeof corr.suggestedEvidenceBundleEvidencePackageJson === 'string'
               ? corr.suggestedEvidenceBundleEvidencePackageJson
@@ -1611,6 +1618,9 @@ export function AgentReviewPane() {
                             ) : null}
                             {sr.placeholderPngSha256Tail ? (
                               <div className="text-muted">png…{sr.placeholderPngSha256Tail}</div>
+                            ) : null}
+                            {sr.metadataSha256Tail ? (
+                              <div className="text-muted">meta…{sr.metadataSha256Tail}</div>
                             ) : null}
                           </div>
                         ) : (

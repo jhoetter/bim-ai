@@ -339,8 +339,17 @@ def test_deterministic_sheet_evidence_rows_stable() -> None:
     assert rows[0]["printRasterPngHref"].endswith("/exports/sheet-print-raster.png?sheetId=sheet-a")
     ingest = rows[0].get("sheetPrintRasterIngest_v1") or {}
     assert ingest.get("format") == "sheetPrintRasterIngest_v1"
-    assert ingest.get("contract") == "sheetPrintRasterPrintSurrogate_v2"
-    assert ingest.get("svgContentSha256") and ingest.get("placeholderPngSha256")
+    assert ingest.get("contract") == "sheetPrintRasterPrintContract_v3"
+    assert ingest.get("svgContentSha256") and ingest.get("printRasterPngSha256")
+    assert ingest.get("pdfContentSha256") and ingest.get("metadataSha256")
+    assert ingest.get("placeholderPngSha256") == ingest.get("printRasterPngSha256")
+    metadata = ingest.get("metadata") or {}
+    assert metadata.get("format") == "sheetPrintRasterPrintContractMetadata_v3"
+    assert metadata.get("metadataSha256") == ingest.get("metadataSha256")
+    assert metadata.get("contract") == "sheetPrintRasterPrintContract_v3"
+    validation = ingest.get("serverValidation") or {}
+    assert validation.get("format") == "sheetPrintRasterContractValidation_v3"
+    assert validation.get("ok") is True
     diffc = ingest.get("diffCorrelation") or {}
     assert diffc.get("format") == "sheetPrintRasterDiffCorrelation_v1"
     assert diffc.get("playwrightBaselineSlot") == "pngFullSheet"

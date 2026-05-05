@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from datetime import UTC, datetime
 from typing import Annotated, Any
 from uuid import UUID, uuid4
@@ -69,13 +70,17 @@ from bim_ai.schedule_csv import schedule_payload_to_csv, schedule_payload_with_c
 from bim_ai.schedule_derivation import derive_schedule_table, list_schedule_ids
 from bim_ai.sheet_preview_pdf import sheet_elem_to_pdf_bytes
 from bim_ai.sheet_preview_svg import (
+    SHEET_PRINT_RASTER_CONTRACT_V3_HEIGHT_PX,
+    SHEET_PRINT_RASTER_CONTRACT_V3_WIDTH_PX,
+    SHEET_PRINT_RASTER_PRINT_CONTRACT_V3,
     SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2,
-    SHEET_PRINT_RASTER_STAMP_WIDTH_PX,
-    SHEET_PRINT_RASTER_SURROGATE_V2_HEIGHT_PX,
     pick_sheet,
     sheet_elem_to_svg,
-    sheet_print_raster_print_surrogate_png_bytes_v2,
+    sheet_print_raster_print_contract_metadata_sha256_v3,
+    sheet_print_raster_print_contract_metadata_v3,
+    sheet_print_raster_print_contract_png_bytes_v3,
     sheet_svg_utf8_sha256,
+    validate_sheet_print_raster_contract_v3,
 )
 from bim_ai.tables import (
     CommentRecord,
@@ -335,9 +340,10 @@ async def evidence_package(
         "hint": "Use Playwright to capture PNG alongside this JSON per spec §8.3 / §14 Phase A. CI attaches artifacts alongside this bundle.",
         "sheetRasterNote": (
             "Sheet SVG/PDF exports are deterministic server-side. "
-            "`GET …/exports/sheet-print-raster.png` returns a deterministic 128×112 RGB8 **print-surrogate** PNG "
-            f"(`{SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2}`: 96px viewport layout stamp + 16px titleblock "
-            "metadata strip + SVG UTF-8 salt) for CI correlation — not a true raster of the sheet SVG; use Playwright "
+            "`GET …/exports/sheet-print-raster.png` returns a deterministic 256×224 RGB8 **print-contract** PNG "
+            f"(`{SHEET_PRINT_RASTER_PRINT_CONTRACT_V3}`: 2× viewport layout stamp + 32px metadata band + embedded "
+            "PNG tEXt metadata digest, SVG SHA, and PDF SHA) for CI correlation — not a true raster of the sheet SVG; "
+            f"`{SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2}` remains the prior v2 contract. Use Playwright "
             "captures for baseline PNG diffing."
         ),
     }
@@ -647,17 +653,30 @@ async def sheet_print_raster_png_export(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
     svg = sheet_elem_to_svg(doc, sh)
-    blob = sheet_print_raster_print_surrogate_png_bytes_v2(doc, sh, svg)
+    pdf_sha = hashlib.sha256(sheet_elem_to_pdf_bytes(doc, sh)).hexdigest()
+    metadata = sheet_print_raster_print_contract_metadata_v3(doc, sh, svg, pdf_content_sha256=pdf_sha)
+    blob = sheet_print_raster_print_contract_png_bytes_v3(
+        doc, sh, svg, pdf_content_sha256=pdf_sha
+    )
+    validation = validate_sheet_print_raster_contract_v3(blob, metadata)
+    if validation.get("ok") is not True:
+        raise HTTPException(
+            status_code=500,
+            detail={"reason": "sheet_print_raster_contract_validation_failed", "validation": validation},
+        )
     svg_sha = sheet_svg_utf8_sha256(svg)
+    metadata_sha = sheet_print_raster_print_contract_metadata_sha256_v3(metadata)
     return Response(
         content=blob,
         media_type="image/png",
         headers={
             "Cache-Control": "public, max-age=60",
-            "X-Bim-Ai-Sheet-Print-Raster-Contract": SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2,
+            "X-Bim-Ai-Sheet-Print-Raster-Contract": SHEET_PRINT_RASTER_PRINT_CONTRACT_V3,
             "X-Bim-Ai-Sheet-Svg-Sha256": svg_sha,
-            "X-Bim-Ai-Sheet-Print-Raster-Width": str(SHEET_PRINT_RASTER_STAMP_WIDTH_PX),
-            "X-Bim-Ai-Sheet-Print-Raster-Height": str(SHEET_PRINT_RASTER_SURROGATE_V2_HEIGHT_PX),
+            "X-Bim-Ai-Sheet-Pdf-Sha256": pdf_sha,
+            "X-Bim-Ai-Sheet-Print-Raster-Metadata-Sha256": metadata_sha,
+            "X-Bim-Ai-Sheet-Print-Raster-Width": str(SHEET_PRINT_RASTER_CONTRACT_V3_WIDTH_PX),
+            "X-Bim-Ai-Sheet-Print-Raster-Height": str(SHEET_PRINT_RASTER_CONTRACT_V3_HEIGHT_PX),
         },
     )
 
