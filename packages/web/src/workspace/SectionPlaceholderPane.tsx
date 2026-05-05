@@ -7,6 +7,7 @@ import { Btn, Panel } from '@bim-ai/ui';
 import { useBimStore } from '../state/store';
 
 import { SectionViewportSvg } from './sectionViewportSvg';
+import { formatSectionCutIdentityLine, formatSectionCutPlaneContext } from './sectionViewportDoc';
 import { sheetsReferencingSectionCut } from './sheetViewRef';
 
 const PREVIEW_WIDTH_PX = 320;
@@ -24,6 +25,8 @@ function segmentLengthMm(a: { xMm: number; yMm: number }, b: { xMm: number; yMm:
 function SectionWorkbenchLivePreview(props: {
   modelId: string;
   sectionCutId: string;
+  sectionIdentityCaption: string;
+  sectionCutPlaneCaption: string;
   widthPx: number;
   heightPx: number;
 }) {
@@ -41,6 +44,8 @@ function SectionWorkbenchLivePreview(props: {
           sectionCutId={props.sectionCutId}
           widthPx={props.widthPx}
           heightPx={props.heightPx}
+          sectionIdentityCaption={props.sectionIdentityCaption}
+          sectionCutPlaneCaption={props.sectionCutPlaneCaption}
           onWallPrimitivesKnown={(hasWalls) => setShowNoWallCaption(!hasWalls)}
         />
       </div>
@@ -83,6 +88,25 @@ export function SectionPlaceholderPane(props: { activeLevelLabel: string; modelI
     return sheetsReferencingSectionCut(elementsById, previewSectionId);
   }, [elementsById, previewSectionId]);
 
+  const previewCut = useMemo(() => {
+    if (!previewSectionId) return undefined;
+    const e = elementsById[previewSectionId];
+    return e?.kind === 'section_cut' ? e : undefined;
+  }, [elementsById, previewSectionId]);
+
+  const sectionPreviewCaptions = useMemo(() => {
+    if (!previewCut) {
+      return { identity: '', plane: '' };
+    }
+    return {
+      identity: formatSectionCutIdentityLine({ name: previewCut.name, id: previewCut.id }),
+      plane: formatSectionCutPlaneContext({
+        lineStartMm: previewCut.lineStartMm,
+        lineEndMm: previewCut.lineEndMm,
+      }),
+    };
+  }, [previewCut]);
+
   return (
     <Panel title={`Sections (${props.activeLevelLabel})`}>
       <p className="text-[11px] leading-snug text-muted">
@@ -101,11 +125,13 @@ export function SectionPlaceholderPane(props: { activeLevelLabel: string; modelI
         </p>
       ) : (
         <>
-          {props.modelId && previewSectionId ? (
+          {props.modelId && previewSectionId && previewCut ? (
             <SectionWorkbenchLivePreview
               key={previewSectionId}
               modelId={props.modelId}
               sectionCutId={previewSectionId}
+              sectionIdentityCaption={sectionPreviewCaptions.identity}
+              sectionCutPlaneCaption={sectionPreviewCaptions.plane}
               widthPx={PREVIEW_WIDTH_PX}
               heightPx={PREVIEW_HEIGHT_PX}
             />

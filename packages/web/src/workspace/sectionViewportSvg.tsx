@@ -22,10 +22,14 @@ import {
   formatSectionAlongCutSpanMmLabel,
   formatSectionDocMaterialHintCaption,
   formatSectionElevationSpanMmLabel,
+  formatSectionLevelDatumCaption,
   formatSectionSheetCalloutsLabel,
+  formatSectionWallHatchReadout,
   parseSectionWallCutHatchKind,
+  summarizeWallCutHatchKinds,
   type SectionDocMaterialHint,
   type SectionSheetCalloutRow,
+  type SectionWallHatchSummary,
 } from './sectionViewportDoc';
 
 type UzPrim = {
@@ -105,6 +109,10 @@ export function SectionViewportSvg(props: {
   sectionCutId: string;
   widthPx: number;
   heightPx: number;
+  /** Optional single-line identity (e.g. from `formatSectionCutIdentityLine`). */
+  sectionIdentityCaption?: string;
+  /** Optional cut-line / view-heading line (e.g. from `formatSectionCutPlaneContext`). */
+  sectionCutPlaneCaption?: string;
   /** Fires after projection resolves; `false` when there are no wall primitives (empty framing). */
   onWallPrimitivesKnown?: (hasWalls: boolean) => void;
 }) {
@@ -131,6 +139,8 @@ export function SectionViewportSvg(props: {
     calloutsCaption: string | null;
     sectionGeomExtent: { uMinMm: number; uMaxMm: number } | null;
     materialHints: SectionDocMaterialHint[];
+    wallHatchSummary: SectionWallHatchSummary;
+    levelMarkersTotalFromServer: number;
   };
 
   const [layers, setLayers] = useState<LayerSnap | null>(null);
@@ -181,6 +191,10 @@ export function SectionViewportSvg(props: {
           return;
         }
 
+        const wallHatchSummary = summarizeWallCutHatchKinds(
+          wallsRaw as ReadonlyArray<{ cutHatchKind?: string }>,
+        );
+
         const levelMarkersRaw = prim?.levelMarkers;
         const allLevelMarkers: LevelMarkerPrim[] = [];
         if (Array.isArray(levelMarkersRaw)) {
@@ -192,6 +206,11 @@ export function SectionViewportSvg(props: {
             });
           }
         }
+        allLevelMarkers.sort((a, b) => {
+          if (a.elevationMm !== b.elevationMm) return a.elevationMm - b.elevationMm;
+          return a.id.localeCompare(b.id);
+        });
+        const levelMarkersTotalFromServer = allLevelMarkers.length;
 
         const sheetCalloutsRaw = prim?.sheetCallouts;
         const sheetCalloutRows: SectionSheetCalloutRow[] = [];
@@ -426,6 +445,8 @@ export function SectionViewportSvg(props: {
             calloutsCaption,
             sectionGeomExtent,
             materialHints,
+            wallHatchSummary,
+            levelMarkersTotalFromServer,
           });
         }
       } catch (e) {
@@ -443,6 +464,41 @@ export function SectionViewportSvg(props: {
   }, [props.modelId, props.sectionCutId, props.widthPx, props.heightPx]);
 
   const vb = `0 0 ${props.widthPx} ${props.heightPx}`;
+
+  const topDocFontPx = Math.max(8, 9 * strokeScale);
+  const topDocLineStepPx = Math.max(11, 12 * strokeScale);
+  const topDocRows = useMemo(() => {
+    const rows: { key: string; text: string; testId?: string }[] = [];
+    if (props.sectionIdentityCaption) {
+      rows.push({
+        key: 'sec-ident',
+        text: props.sectionIdentityCaption,
+        testId: 'section-cut-identity-caption',
+      });
+    }
+    if (props.sectionCutPlaneCaption) {
+      rows.push({
+        key: 'sec-plane',
+        text: props.sectionCutPlaneCaption,
+        testId: 'section-cut-plane-caption',
+      });
+    }
+    if (layers) {
+      rows.push({
+        key: 'wall-hatch',
+        text: formatSectionWallHatchReadout(layers.wallHatchSummary),
+        testId: 'section-wall-hatch-readout',
+      });
+      const lvl = formatSectionLevelDatumCaption({
+        inViewCount: layers.levelMarkers.length,
+        totalFromServer: layers.levelMarkersTotalFromServer,
+      });
+      if (lvl) {
+        rows.push({ key: 'lvl-datum', text: lvl, testId: 'section-level-datum-caption' });
+      }
+    }
+    return rows;
+  }, [layers, props.sectionCutPlaneCaption, props.sectionIdentityCaption]);
 
   const roofChordPath = layers
     ? layers.roofLines.map((r) => {
@@ -862,8 +918,28 @@ export function SectionViewportSvg(props: {
           {layers.advisory}
         </text>
       ) : null}
+      {topDocRows.map((row, i) => (
+        <text
+          key={row.key}
+          x={8}
+          y={10 + i * topDocLineStepPx}
+          fill="#334155"
+          dominantBaseline="hanging"
+          style={{ fontSize: topDocFontPx }}
+          pointerEvents="none"
+          data-testid={row.testId}
+        >
+          {row.text}
+        </text>
+      ))}
       {err ? (
-        <text x={8} y={16} fill="#b45309" style={{ fontSize: 10 }}>
+        <text
+          x={8}
+          y={10 + topDocRows.length * topDocLineStepPx + 6}
+          fill="#b45309"
+          dominantBaseline="hanging"
+          style={{ fontSize: 10 }}
+        >
           {err}
         </text>
       ) : null}

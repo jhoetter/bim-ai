@@ -2,9 +2,13 @@ import { describe, expect, it } from 'vitest';
 
 import {
   formatSectionAlongCutSpanMmLabel,
+  formatSectionCutIdentityLine,
+  formatSectionCutPlaneContext,
   formatSectionDocMaterialHintCaption,
   formatSectionElevationSpanMmLabel,
+  formatSectionLevelDatumCaption,
   formatSectionSheetCalloutsLabel,
+  formatSectionWallHatchReadout,
   summarizeWallCutHatchKinds,
 } from './sectionViewportDoc';
 
@@ -70,5 +74,47 @@ describe('Section viewport documentation helpers', () => {
         cutPatternHint: 'alongCut',
       }),
     ).toBe('structure · along-cut');
+  });
+
+  it('formats wall hatch readout', () => {
+    expect(formatSectionWallHatchReadout({ edgeOn: 0, alongCut: 0 })).toBe('Wall hatch · none');
+    expect(formatSectionWallHatchReadout({ edgeOn: 2, alongCut: 1 })).toBe(
+      'Wall hatch · edge-on 2 · along-cut 1',
+    );
+  });
+
+  it('formats section cut identity line', () => {
+    expect(formatSectionCutIdentityLine({ name: 'A', id: 'sc-1' })).toBe('Section · A · sc-1');
+  });
+
+  it('formats level datum captions for empty vs out-of-span markers', () => {
+    expect(formatSectionLevelDatumCaption({ inViewCount: 0, totalFromServer: 0 })).toBe(
+      'Level datums: none in snapshot',
+    );
+    expect(formatSectionLevelDatumCaption({ inViewCount: 0, totalFromServer: 3 })).toBe(
+      'Level datums: markers outside current z-span',
+    );
+    expect(formatSectionLevelDatumCaption({ inViewCount: 2, totalFromServer: 3 })).toBe('');
+  });
+
+  it('formats cut plane context with run and 8-way view heading', () => {
+    expect(
+      formatSectionCutPlaneContext({
+        lineStartMm: { xMm: 0, yMm: 0 },
+        lineEndMm: { xMm: 0, yMm: 0 },
+      }),
+    ).toBe('Cut line 0 mm · view toward —');
+    expect(
+      formatSectionCutPlaneContext({
+        lineStartMm: { xMm: 0, yMm: 0 },
+        lineEndMm: { xMm: 3000, yMm: 0 },
+      }),
+    ).toBe('Cut line 3000 mm · view toward N');
+    expect(
+      formatSectionCutPlaneContext({
+        lineStartMm: { xMm: 0, yMm: 0 },
+        lineEndMm: { xMm: 0, yMm: 3000 },
+      }),
+    ).toBe('Cut line 3000 mm · view toward W');
   });
 });

@@ -79,3 +79,64 @@ export function summarizeWallCutHatchKinds(rows: ReadonlyArray<{ cutHatchKind?: 
   }
   return { edgeOn, alongCut };
 }
+
+export type SectionWallHatchSummary = {
+  edgeOn: number;
+  alongCut: number;
+};
+
+/** Single readout line for wall hatch categories (matches sheet `secDoc` wh=E…A… semantics). */
+export function formatSectionWallHatchReadout(summary: SectionWallHatchSummary): string {
+  const total = summary.edgeOn + summary.alongCut;
+  if (total === 0) return 'Wall hatch · none';
+  return `Wall hatch · edge-on ${summary.edgeOn} · along-cut ${summary.alongCut}`;
+}
+
+export function formatSectionCutIdentityLine(part: { name: string; id: string }): string {
+  return `Section · ${part.name} · ${part.id}`;
+}
+
+/** Plan-space segment; same fields as `section_cut.lineStartMm` / `lineEndMm`. */
+export type SectionCutPlanSegmentMm = {
+  lineStartMm: { xMm: number; yMm: number };
+  lineEndMm: { xMm: number; yMm: number };
+};
+
+const EIGHT_WAY_COMPASS = ['E', 'NE', 'N', 'NW', 'W', 'SW', 'S', 'SE'] as const;
+
+function compassLabel8(angDeg: number): string {
+  const x = ((angDeg % 360) + 360) % 360;
+  const idx = Math.floor((x + 22.5) / 45) % 8;
+  return EIGHT_WAY_COMPASS[idx] ?? '—';
+}
+
+/**
+ * Cut line run in plan (mm) and a deterministic 8-way view heading from the perpendicular
+ * to the cut segment (+Y is “north” in plan mm).
+ */
+export function formatSectionCutPlaneContext(seg: SectionCutPlanSegmentMm): string {
+  const dx = seg.lineEndMm.xMm - seg.lineStartMm.xMm;
+  const dy = seg.lineEndMm.yMm - seg.lineStartMm.yMm;
+  const run = Math.round(Math.hypot(dx, dy));
+  if (run === 0) {
+    return 'Cut line 0 mm · view toward —';
+  }
+  const nx = -dy / run;
+  const ny = dx / run;
+  const angDeg = (Math.atan2(ny, nx) * 180) / Math.PI;
+  const toward = compassLabel8(angDeg);
+  return `Cut line ${run} mm · view toward ${toward}`;
+}
+
+export function formatSectionLevelDatumCaption(part: {
+  inViewCount: number;
+  totalFromServer: number;
+}): string {
+  if (part.totalFromServer === 0) {
+    return 'Level datums: none in snapshot';
+  }
+  if (part.inViewCount === 0) {
+    return 'Level datums: markers outside current z-span';
+  }
+  return '';
+}
