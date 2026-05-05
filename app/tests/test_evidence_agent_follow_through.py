@@ -217,9 +217,11 @@ def test_agent_evidence_closure_hints_names_follow_through_field() -> None:
     assert h.get("evidenceAgentFollowThroughField") == "evidenceAgentFollowThrough_v1"
     assert h.get("bcfRoundtripEvidenceSummaryField") == "bcfRoundtripEvidenceSummary_v1"
     assert h.get("artifactUploadManifestField") == "artifactUploadManifest_v1"
+    assert h.get("agentGeneratedBundleQaChecklistField") == "agentGeneratedBundleQaChecklist_v1"
     note = str(h.get("semanticDigestOmitsDerivativeSummariesNote"))
     assert "evidenceAgentFollowThrough_v1" in note
     assert "artifactUploadManifest_v1" in note
+    assert "agentGeneratedBundleQaChecklist_v1" in note
 
 
 def test_artifact_upload_manifest_v1_github_actions_hint_without_secrets(

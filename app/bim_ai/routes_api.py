@@ -23,6 +23,10 @@ from starlette.responses import RedirectResponse
 
 from bim_ai.agent_brief_command_protocol import agent_brief_command_protocol_v1
 from bim_ai.agent_evidence_review_loop import agent_review_actions_v1, bcf_topics_index_v1
+from bim_ai.agent_generated_bundle_qa_checklist import (
+    agent_generated_bundle_qa_checklist_v1,
+    validate_checks_wire,
+)
 from bim_ai.codes import BUILDING_PRESETS
 from bim_ai.commands import Command
 from bim_ai.constraints import evaluate
@@ -464,6 +468,23 @@ async def evidence_package(
         suggested_evidence_artifact_basename=str(payload["suggestedEvidenceArtifactBasename"]),
         package_semantic_digest_sha256=digest,
         evidence_closure_review=payload["evidenceClosureReview_v1"],
+    )
+    follow_raw = payload.get("evidenceAgentFollowThrough_v1")
+    ref_res = (
+        follow_raw.get("evidenceRefResolution_v1")
+        if isinstance(follow_raw, dict) and isinstance(follow_raw.get("evidenceRefResolution_v1"), dict)
+        else None
+    )
+    payload["agentGeneratedBundleQaChecklist_v1"] = agent_generated_bundle_qa_checklist_v1(
+        brief_protocol=payload["agentBriefCommandProtocol_v1"],
+        validate=payload["validate"],
+        schedule_ids=payload["scheduleIds"],
+        export_links=payload["exportLinks"],
+        deterministic_sheet_evidence=payload["deterministicSheetEvidence"],
+        deterministic_plan_view_evidence=payload["deterministicPlanViewEvidence"],
+        evidence_diff_ingest_fix_loop=payload["evidenceDiffIngestFixLoop_v1"],
+        evidence_review_performance_gate=payload["evidenceReviewPerformanceGate_v1"],
+        evidence_ref_resolution=ref_res,
     )
     return payload
 
@@ -1163,6 +1184,21 @@ async def dry_run_command_bundle(
         proposed_commands=list(body.commands),
         validation_violations=viols_wire,
     )
+    schedule_rows = [
+        {"id": sid, "name": baseline_doc.elements[sid].name}
+        for sid in list_schedule_ids(baseline_doc)
+    ]
+    qa_checklist = agent_generated_bundle_qa_checklist_v1(
+        brief_protocol=brief_proto,
+        validate=validate_checks_wire(viols_wire),
+        schedule_ids=schedule_rows,
+        export_links=export_link_map(model_id),
+        deterministic_sheet_evidence=None,
+        deterministic_plan_view_evidence=None,
+        evidence_diff_ingest_fix_loop=None,
+        evidence_review_performance_gate=None,
+        evidence_ref_resolution=None,
+    )
     if not ok or new_doc is None:
         return {
             "ok": False,
@@ -1179,6 +1215,7 @@ async def dry_run_command_bundle(
                 outcome_code=code,
             ),
             "agentBriefCommandProtocol_v1": brief_proto,
+            "agentGeneratedBundleQaChecklist_v1": qa_checklist,
         }
 
     return {
@@ -1192,6 +1229,7 @@ async def dry_run_command_bundle(
         "appliedCommandsPreview": body.commands,
         "replayDiagnostics": bundle_replay_diagnostics(body.commands),
         "agentBriefCommandProtocol_v1": brief_proto,
+        "agentGeneratedBundleQaChecklist_v1": qa_checklist,
     }
 
 

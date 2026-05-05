@@ -23,6 +23,7 @@ from bim_ai.elements import (
 from bim_ai.sheet_preview_svg import (
     SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2,
     build_sheet_print_raster_print_contract_v3,
+    detail_callout_readout_rows_v0,
     plan_room_programme_legend_hints_v0,
     sheet_elem_to_svg,
     sheet_print_raster_print_surrogate_png_bytes_v2,
@@ -213,6 +214,7 @@ def deterministic_sheet_evidence_manifest(
                     "rasterPlaceholderProbe": f"{stem}.raster-placeholder.png",
                 },
                 "viewportEvidenceHints_v0": viewport_evidence_hints_v1(doc, list(sh.viewports_mm or [])),
+                "detailCalloutReadout_v0": detail_callout_readout_rows_v0(doc, sh),
                 "planRoomProgrammeLegendHints_v0": plan_room_programme_legend_hints_v0(
                     doc, list(sh.viewports_mm or [])
                 ),
@@ -1087,10 +1089,12 @@ def agent_evidence_closure_hints() -> dict[str, Any]:
         "evidenceAgentFollowThroughField": "evidenceAgentFollowThrough_v1",
         "bcfRoundtripEvidenceSummaryField": "bcfRoundtripEvidenceSummary_v1",
         "artifactUploadManifestField": "artifactUploadManifest_v1",
+        "agentGeneratedBundleQaChecklistField": "agentGeneratedBundleQaChecklist_v1",
         "semanticDigestOmitsDerivativeSummariesNote": (
             "semanticDigestSha256 excludes bcfTopicsIndex_v1, agentReviewActions_v1, "
             "evidenceDiffIngestFixLoop_v1, evidenceReviewPerformanceGate_v1, "
-            "evidenceAgentFollowThrough_v1, and artifactUploadManifest_v1 so deterministic row digests stay stable."
+            "evidenceAgentFollowThrough_v1, artifactUploadManifest_v1, "
+            "and agentGeneratedBundleQaChecklist_v1 so deterministic row digests stay stable."
         ),
         "playwrightEvidenceSpecRelPath": "packages/web/e2e/evidence-baselines.spec.ts",
         "suggestedRegenerationCommands": [
@@ -1781,6 +1785,7 @@ _DIGEST_EXCLUDED_KEYS = frozenset(
         "evidenceReviewPerformanceGate_v1",
         "evidenceAgentFollowThrough_v1",
         "artifactUploadManifest_v1",
+        "agentGeneratedBundleQaChecklist_v1",
     }
 )
 

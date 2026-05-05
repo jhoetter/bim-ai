@@ -21,6 +21,8 @@ export type SheetViewportMmDraft = {
 
   viewportLocked: boolean;
 
+  viewportRole: 'standard' | 'detail_callout';
+
   xMm: number;
 
   yMm: number;
@@ -71,6 +73,15 @@ function readViewportLockedFlag(raw: Record<string, unknown>): boolean {
   return false;
 }
 
+function readViewportRoleFromRaw(raw: Record<string, unknown>): 'standard' | 'detail_callout' {
+  const v = raw.viewportRole ?? raw.viewport_role;
+  if (typeof v === 'string') {
+    const s = v.trim().toLowerCase().replace(/-/g, '_').replace(/\s+/g, '_');
+    if (s === 'detail_callout' || s === 'detailcallout') return 'detail_callout';
+  }
+  return 'standard';
+}
+
 /** Detail number, scale token, and lock flag from a persisted viewport row (read-only surfaces / hydration). */
 export function readViewportPresentationMeta(raw: Record<string, unknown>): {
   detailNumber: string;
@@ -112,6 +123,7 @@ export function sheetViewportsMmFromDrafts(
     const sc = r.scale.trim();
     if (sc) row.scale = sc;
     if (r.viewportLocked) row.viewportLocked = true;
+    if (r.viewportRole === 'detail_callout') row.viewportRole = 'detail_callout';
     if (r.cropMinMm !== null && r.cropMaxMm !== null) {
       row.cropMinMm = { xMm: r.cropMinMm.xMm, yMm: r.cropMinMm.yMm };
       row.cropMaxMm = { xMm: r.cropMaxMm.xMm, yMm: r.cropMaxMm.yMm };
@@ -209,6 +221,7 @@ export function normalizeViewportRaw(
   const cmax = readCropCorner(raw, 'cropMaxMm', 'crop_max_mm');
   const hasCrop = cmin !== null && cmax !== null;
   const { detailNumber, scale, viewportLocked } = readViewportPresentationMeta(raw);
+  const viewportRole = readViewportRoleFromRaw(raw);
 
   return {
     viewportId:
@@ -220,6 +233,7 @@ export function normalizeViewportRaw(
     detailNumber,
     scale,
     viewportLocked,
+    viewportRole,
     xMm: nx,
     yMm: ny,
     widthMm: nw,
@@ -335,6 +349,8 @@ export function SheetViewportEditor(props: {
 
           viewportLocked: false,
 
+          viewportRole: 'standard',
+
           xMm: x,
 
           yMm: y,
@@ -360,7 +376,7 @@ export function SheetViewportEditor(props: {
 
       <div className="text-muted">{props.sheetName}</div>
 
-      <div className="mt-2 grid grid-cols-[minmax(0,2.2fr)_minmax(0,1.8fr)_minmax(0,2.6fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.7fr)_repeat(4,minmax(0,0.95fr))] gap-x-1 gap-y-2 font-mono text-[9px] text-muted">
+      <div className="mt-2 grid grid-cols-[minmax(0,2.2fr)_minmax(0,1.8fr)_minmax(0,2.6fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.7fr)_minmax(0,1fr)_repeat(4,minmax(0,0.95fr))] gap-x-1 gap-y-2 font-mono text-[9px] text-muted">
         <span>viewportId</span>
 
         <span>label</span>
@@ -374,6 +390,8 @@ export function SheetViewportEditor(props: {
         <span>scale</span>
 
         <span>lock</span>
+
+        <span>role</span>
 
         <span>xMm</span>
 
@@ -437,6 +455,26 @@ export function SheetViewportEditor(props: {
                 }
               />
             </label>
+
+            <select
+              className="w-full rounded border border-border bg-background px-1 py-0.5 font-mono text-[10px]"
+              aria-label="Viewport role"
+              value={row.viewportRole}
+              onChange={(e) =>
+                patchRow(
+                  idx,
+                  {
+                    viewportRole:
+                      e.target.value === 'detail_callout' ? 'detail_callout' : 'standard',
+                  },
+                  drafts,
+                  setDrafts,
+                )
+              }
+            >
+              <option value="standard">standard</option>
+              <option value="detail_callout">detail_callout</option>
+            </select>
 
             <input
               className="w-full rounded border border-border bg-background px-1 py-0.5 font-mono text-[10px]"
