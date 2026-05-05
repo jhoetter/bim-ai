@@ -20,6 +20,8 @@ from bim_ai.elements import (
     Vec3Mm,
     ViewpointElem,
     WallElem,
+    WallTypeElem,
+    WallTypeLayer,
     WindowElem,
 )
 from bim_ai.engine import try_commit, try_commit_bundle
@@ -710,6 +712,53 @@ def test_sheet_pdf_viewport_export_listing_includes_wall_hatch_documentation_tok
     lines = sheet_viewport_export_listing_lines(doc, pick_sheet(doc, "s1"))
     joined = "\n".join(lines)
     assert "secDoc[lvl=2 zSpanMm=3200 uGeomSpanMm=7000 wh=E1A1]" in joined
+
+
+def _doc_sheet_with_section_viewport_and_material_cut_hint() -> Document:
+    base_doc = _doc_sheet_with_section_viewport()
+    els = dict(base_doc.elements)
+    els["wt-doc"] = WallTypeElem(
+        kind="wall_type",
+        id="wt-doc",
+        name="Documented wall",
+        layers=[
+            WallTypeLayer(
+                thicknessMm=140,
+                layer_function="structure",
+                materialKey="mat-concrete-structure-v1",
+            ),
+            WallTypeLayer(
+                thicknessMm=60,
+                layer_function="finish",
+                materialKey="mat-gwb-finish-v1",
+            ),
+        ],
+    )
+    els["w-mat"] = WallElem(
+        kind="wall",
+        id="w-mat",
+        name="Material wall",
+        levelId="lvl-eg",
+        start={"xMm": 0.0, "yMm": 0.0},
+        end={"xMm": 6000.0, "yMm": 0.0},
+        thicknessMm=200.0,
+        heightMm=2800.0,
+        wallTypeId="wt-doc",
+    )
+    return Document(revision=base_doc.revision, elements=els)
+
+
+def test_sheet_svg_section_viewport_includes_material_cut_pattern_token() -> None:
+    doc = _doc_sheet_with_section_viewport_and_material_cut_hint()
+    svg = sheet_elem_to_svg(doc, pick_sheet(doc, "s1"))
+    assert "mat=w:w-mat:mat-concrete-structure-v1+mat-gwb-finish-v1" in svg
+
+
+def test_sheet_pdf_viewport_export_listing_includes_material_cut_pattern_token() -> None:
+    doc = _doc_sheet_with_section_viewport_and_material_cut_hint()
+    lines = sheet_viewport_export_listing_lines(doc, pick_sheet(doc, "s1"))
+    joined = "\n".join(lines)
+    assert "mat=w:w-mat:mat-concrete-structure-v1+mat-gwb-finish-v1" in joined
 
 
 _TRI_CALLOUT = (

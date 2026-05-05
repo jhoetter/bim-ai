@@ -13,6 +13,7 @@ from bim_ai.elements import (
     WallElem,
     WallTypeElem,
 )
+from bim_ai.type_material_registry import material_display_label
 
 _CUT_THICKNESS_MATCH_EPS_MM = 0.05
 
@@ -172,6 +173,33 @@ def _typed_roof_layers(doc: Document, roof: RoofElem) -> list[dict[str, Any]] | 
     ]
 
 
+def _section_material_cut_pattern_hint(
+    doc: Document,
+    *,
+    host_kind: HostKindCut,
+    host_element_id: str,
+    layers: list[dict[str, Any]],
+) -> dict[str, Any]:
+    layer_tokens: list[str] = []
+    layer_labels: list[str] = []
+
+    for lyr in layers:
+        fn = str(lyr.get("function") or "layer").strip() or "layer"
+        material_key = str(lyr.get("materialKey") or "").strip()
+        label = material_display_label(doc, material_key) if material_key else ""
+        layer_tokens.append(material_key or fn)
+        layer_labels.append(label or fn)
+
+    return {
+        "format": "sectionMaterialCutPatternHint_v0",
+        "hostKind": host_kind,
+        "hostElementId": host_element_id,
+        "layerCount": len(layers),
+        "patternToken": "+".join(layer_tokens),
+        "label": " / ".join(layer_labels),
+    }
+
+
 def collect_layered_assembly_cut_alignment_evidence_v0(doc: Document) -> dict[str, Any] | None:
     """Hosts with a resolved type layer stack (not instance-only fallback), for cut/section parity manifests."""
 
@@ -227,7 +255,8 @@ def collect_layered_assembly_cut_alignment_evidence_v0(doc: Document) -> dict[st
 
 
 def section_assembly_alignment_fields_wall(doc: Document, wall: WallElem) -> dict[str, Any] | None:
-    if _typed_wall_layers(doc, wall) is None:
+    layers = _typed_wall_layers(doc, wall)
+    if layers is None:
         return None
     m = layer_stack_cut_metrics_for_wall(doc, wall)
     return {
@@ -235,11 +264,15 @@ def section_assembly_alignment_fields_wall(doc: Document, wall: WallElem) -> dic
         "assemblyLayerTotalThicknessMm": m["layerTotalThicknessMm"],
         "assemblyCutThicknessMm": m["cutThicknessMm"],
         "assemblyLayerStackMatchesCutThickness": m["layerStackMatchesCutThickness"],
+        "materialCutPatternHint": _section_material_cut_pattern_hint(
+            doc, host_kind="wall", host_element_id=wall.id, layers=layers
+        ),
     }
 
 
 def section_assembly_alignment_fields_floor(doc: Document, floor: FloorElem) -> dict[str, Any] | None:
-    if _typed_floor_layers(doc, floor) is None:
+    layers = _typed_floor_layers(doc, floor)
+    if layers is None:
         return None
     m = layer_stack_cut_metrics_for_floor(doc, floor)
     return {
@@ -247,6 +280,9 @@ def section_assembly_alignment_fields_floor(doc: Document, floor: FloorElem) -> 
         "assemblyLayerTotalThicknessMm": m["layerTotalThicknessMm"],
         "assemblyCutThicknessMm": m["cutThicknessMm"],
         "assemblyLayerStackMatchesCutThickness": m["layerStackMatchesCutThickness"],
+        "materialCutPatternHint": _section_material_cut_pattern_hint(
+            doc, host_kind="floor", host_element_id=floor.id, layers=layers
+        ),
     }
 
 

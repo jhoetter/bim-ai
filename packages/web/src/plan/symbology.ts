@@ -45,6 +45,8 @@ export const SECTION_VIEWPORT_OPENING_TAG_MIN_PX = 14;
 
 export const SECTION_VIEWPORT_ADVISORY_MAX_CHARS = 96;
 
+export const SECTION_VIEWPORT_MATERIAL_HINT_MAX_CHARS = 128;
+
 /** Tile size (px) for edge-on (cut-through) wall hatch in section viewport SVG (WP-E04/C03). */
 
 export const SECTION_VIEWPORT_WALL_HATCH_EDGE_ON_TILE = 10;

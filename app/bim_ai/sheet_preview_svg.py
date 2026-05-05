@@ -430,6 +430,23 @@ def format_section_viewport_documentation_segment(doc: Document, view_ref: str) 
     if edge_on > 0 or along_cut > 0:
         inner_parts.append(f"wh=E{edge_on}A{along_cut}")
 
+    mat_tokens: set[str] = set()
+    for prefix, rows_raw in (("w", walls_raw), ("f", prim.get("floors") or [])):
+        if not isinstance(rows_raw, list):
+            continue
+        for row in rows_raw:
+            if not isinstance(row, dict):
+                continue
+            hint = row.get("materialCutPatternHint")
+            if not isinstance(hint, dict):
+                continue
+            host_id = str(hint.get("hostElementId") or row.get("elementId") or "").strip()
+            pattern = str(hint.get("patternToken") or "").strip()
+            if host_id and pattern:
+                mat_tokens.add(f"{prefix}:{host_id}:{pattern}")
+    if mat_tokens:
+        inner_parts.append(f"mat={','.join(sorted(mat_tokens))}")
+
     return "secDoc[" + " ".join(inner_parts) + "]"
 
 

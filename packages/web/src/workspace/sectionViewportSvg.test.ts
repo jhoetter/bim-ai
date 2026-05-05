@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   formatSectionAlongCutSpanMmLabel,
   formatSectionElevationSpanMmLabel,
+  formatSectionMaterialCutHintsLabel,
   formatSectionSheetCalloutsLabel,
   summarizeWallCutHatchKinds,
 } from './sectionViewportDoc';
@@ -54,5 +55,14 @@ describe('Section viewport documentation helpers', () => {
 
   it('uses id-only token when name matches id', () => {
     expect(formatSectionSheetCalloutsLabel([{ id: 'co-1', name: 'co-1' }])).toBe('Callouts · co-1');
+  });
+
+  it('formats material cut hints sorted by host id', () => {
+    expect(
+      formatSectionMaterialCutHintsLabel([
+        { hostKind: 'wall', hostElementId: 'w-z', label: 'Gypsum / Concrete' },
+        { hostKind: 'floor', hostElementId: 'fl-a', label: 'Concrete / Epoxy' },
+      ]),
+    ).toBe('Materials · fl-a: Concrete / Epoxy; w-z: Gypsum / Concrete');
   });
 });

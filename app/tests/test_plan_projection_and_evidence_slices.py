@@ -31,6 +31,8 @@ from bim_ai.elements import (
     StairElem,
     ViewTemplateElem,
     WallElem,
+    WallTypeElem,
+    WallTypeLayer,
     WindowElem,
 )
 from bim_ai.engine import apply_inplace
@@ -106,6 +108,15 @@ def test_section_projection_wire_reports_missing_section() -> None:
 def test_section_projection_wire_emits_wall_u_span_for_perpendicular_cut() -> None:
     """Horizontal wall + vertical cut plane: wall is seen 'edge-on' → thickness-sized u span."""
     lvl = LevelElem(kind="level", id="lvl", name="L", elevationMm=300.0)
+    wall_type = WallTypeElem(
+        kind="wall_type",
+        id="wt-doc",
+        name="Documented wall",
+        layers=[
+            WallTypeLayer(thicknessMm=120.0, layer_function="structure"),
+            WallTypeLayer(thicknessMm=80.0, layer_function="finish"),
+        ],
+    )
     wall = WallElem(
         kind="wall",
         id="w1",
@@ -115,6 +126,7 @@ def test_section_projection_wire_emits_wall_u_span_for_perpendicular_cut() -> No
         end={"xMm": 6000.0, "yMm": 0.0},
         thicknessMm=200.0,
         heightMm=2800.0,
+        wallTypeId="wt-doc",
     )
     sec = SectionCutElem(
         kind="section_cut",
@@ -124,7 +136,7 @@ def test_section_projection_wire_emits_wall_u_span_for_perpendicular_cut() -> No
         lineEndMm={"xMm": 3000.0, "yMm": 5000.0},
         cropDepthMm=9000.0,
     )
-    doc = Document(revision=1, elements={"lvl": lvl, "w1": wall, "sec-a": sec})
+    doc = Document(revision=1, elements={"lvl": lvl, "wt-doc": wall_type, "w1": wall, "sec-a": sec})
     out = section_cut_projection_wire(doc, "sec-a")
     assert not out.get("errors")
     prim = out.get("primitives") or {}
@@ -145,6 +157,10 @@ def test_section_projection_wire_emits_wall_u_span_for_perpendicular_cut() -> No
     assert abs(float(ext["uMaxMm"]) - float(ext["uMinMm"]) - span) < 1.0
     assert float(ext["zMinMm"]) == float(ws[0]["zBottomMm"])
     assert float(ext["zMaxMm"]) == float(ws[0]["zTopMm"])
+    hint = ws[0]["materialCutPatternHint"]
+    assert hint["hostKind"] == "wall"
+    assert hint["hostElementId"] == "w1"
+    assert hint["patternToken"] == "structure+finish"
 
 
 def test_section_projection_wire_wall_parallel_to_cut_is_along_cut_hatch() -> None:

@@ -167,6 +167,12 @@ def test_section_wall_row_includes_assembly_fields_for_typed_wall() -> None:
     assert row["assemblyLayerTotalThicknessMm"] == 150.0
     assert row["assemblyCutThicknessMm"] == 150.0
     assert row["assemblyLayerStackMatchesCutThickness"] is True
+    hint = row["materialCutPatternHint"]
+    assert hint["format"] == "sectionMaterialCutPatternHint_v0"
+    assert hint["hostKind"] == "wall"
+    assert hint["hostElementId"] == "w1"
+    assert hint["patternToken"] == "structure+finish"
+    assert hint["label"] == "structure / finish"
 
 
 def test_section_floor_row_includes_assembly_fields_for_typed_floor() -> None:
@@ -226,3 +232,8 @@ def test_section_floor_row_includes_assembly_fields_for_typed_floor() -> None:
     assert row["assemblyLayerTotalThicknessMm"] == 200.0
     assert row["assemblyCutThicknessMm"] == 200.0
     assert row["assemblyLayerStackMatchesCutThickness"] is True
+    hint = row["materialCutPatternHint"]
+    assert hint["hostKind"] == "floor"
+    assert hint["hostElementId"] == "fl"
+    assert hint["patternToken"] == "mat-concrete-structure-v1+mat-epoxy-cleanroom-v1"
+    assert hint["label"] == "Concrete structure / Epoxy cleanroom flooring"

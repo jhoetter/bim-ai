@@ -4,6 +4,12 @@ export type SectionWallCutHatchKind = 'edgeOn' | 'alongCut';
 
 export type SectionSheetCalloutRow = { id: string; name: string };
 
+export type SectionMaterialCutHintRow = {
+  hostKind: string;
+  hostElementId: string;
+  label: string;
+};
+
 /** Parse server `cutHatchKind`; legacy payloads default to along-cut. */
 export function parseSectionWallCutHatchKind(raw: unknown): SectionWallCutHatchKind {
   return raw === 'edgeOn' ? 'edgeOn' : 'alongCut';
@@ -27,6 +33,18 @@ export function formatSectionSheetCalloutsLabel(rows: SectionSheetCalloutRow[]):
   const ordered = [...rows].sort((a, b) => a.id.localeCompare(b.id));
   const parts = ordered.map((r) => (r.name && r.name !== r.id ? `${r.name} (${r.id})` : r.id));
   return `Callouts · ${parts.join(', ')}`;
+}
+
+/** Single-line caption for typed assembly material cut-pattern hints in section primitives. */
+export function formatSectionMaterialCutHintsLabel(rows: SectionMaterialCutHintRow[]): string {
+  if (rows.length === 0) return '';
+  const ordered = [...rows].sort((a, b) => {
+    const ak = `${a.hostKind}:${a.hostElementId}`;
+    const bk = `${b.hostKind}:${b.hostElementId}`;
+    return ak.localeCompare(bk);
+  });
+  const parts = ordered.map((r) => `${r.hostElementId}: ${r.label || r.hostKind}`);
+  return `Materials · ${parts.join('; ')}`;
 }
 
 /** Count wall `cutHatchKind` values for section viewport doc lines (legacy rows default to alongCut). */

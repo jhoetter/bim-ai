@@ -7,6 +7,7 @@ import {
   SECTION_VIEWPORT_LABEL_FONT_MIN_PX,
   SECTION_VIEWPORT_LEVEL_SPAN_BRACKET_MARGIN_PX,
   SECTION_VIEWPORT_LEVEL_SPAN_LABEL_MIN_PX,
+  SECTION_VIEWPORT_MATERIAL_HINT_MAX_CHARS,
   SECTION_VIEWPORT_OPENING_TAG_MIN_PX,
   SECTION_VIEWPORT_SCALE_BASELINE_PX,
   SECTION_VIEWPORT_STROKE_SCALE_MAX,
@@ -20,8 +21,10 @@ import {
 import {
   formatSectionAlongCutSpanMmLabel,
   formatSectionElevationSpanMmLabel,
+  formatSectionMaterialCutHintsLabel,
   formatSectionSheetCalloutsLabel,
   parseSectionWallCutHatchKind,
+  type SectionMaterialCutHintRow,
   type SectionSheetCalloutRow,
 } from './sectionViewportDoc';
 
@@ -124,6 +127,7 @@ export function SectionViewportSvg(props: {
     levelMarkers: LevelMarkerPrim[];
     advisory: string | null;
     calloutsCaption: string | null;
+    materialCaption: string | null;
     sectionGeomExtent: { uMinMm: number; uMaxMm: number } | null;
   };
 
@@ -216,12 +220,28 @@ export function SectionViewportSvg(props: {
 
         const wallRectsEdgeOn: UzPrim[] = [];
         const wallRectsAlongCut: UzPrim[] = [];
+        const materialHintsByKey = new Map<string, SectionMaterialCutHintRow>();
+        const addMaterialHint = (row: Record<string, unknown>) => {
+          const raw = row.materialCutPatternHint;
+          if (typeof raw !== 'object' || raw === null) return;
+          const hint = raw as Record<string, unknown>;
+          const hostKind = String(hint.hostKind ?? '').trim();
+          const hostElementId = String(hint.hostElementId ?? row.elementId ?? '').trim();
+          const label = String(hint.label ?? '').trim();
+          if (!hostKind || !hostElementId || !label) return;
+          materialHintsByKey.set(`${hostKind}:${hostElementId}`, {
+            hostKind,
+            hostElementId,
+            label,
+          });
+        };
         for (const w of wallsRaw as Record<string, unknown>[]) {
           const p = asUz(w);
           if (!p) continue;
           const kind = parseSectionWallCutHatchKind(w.cutHatchKind);
           if (kind === 'edgeOn') wallRectsEdgeOn.push(p);
           else wallRectsAlongCut.push(p);
+          addMaterialHint(w);
         }
 
         const floorRects: UzPrim[] = [];
@@ -230,8 +250,14 @@ export function SectionViewportSvg(props: {
           for (const w of floorsRaw as Record<string, unknown>[]) {
             const p = asUz(w);
             if (p) floorRects.push(p);
+            addMaterialHint(w);
           }
         }
+        const materialLabel = formatSectionMaterialCutHintsLabel([...materialHintsByKey.values()]);
+        const materialCaption =
+          materialLabel.length > SECTION_VIEWPORT_MATERIAL_HINT_MAX_CHARS
+            ? `${materialLabel.slice(0, SECTION_VIEWPORT_MATERIAL_HINT_MAX_CHARS - 1)}…`
+            : materialLabel || null;
 
         const roomRects: UzPrim[] = [];
         const roomsRaw = prim?.rooms;
@@ -392,6 +418,7 @@ export function SectionViewportSvg(props: {
             levelMarkers: levelMarkersInView,
             advisory,
             calloutsCaption,
+            materialCaption,
             sectionGeomExtent,
           });
         }
@@ -801,6 +828,19 @@ export function SectionViewportSvg(props: {
           style={{ fontSize: Math.max(8, 9 * strokeScale) }}
         >
           {layers.advisory}
+        </text>
+      ) : null}
+      {layers?.materialCaption ? (
+        <text
+          x={props.widthPx - 8}
+          y={16}
+          fill="#7c2d12"
+          textAnchor="end"
+          dominantBaseline="hanging"
+          style={{ fontSize: Math.max(8, 9 * strokeScale), fontWeight: 600 }}
+          pointerEvents="none"
+        >
+          {layers.materialCaption}
         </text>
       ) : null}
       {err ? (
