@@ -1333,12 +1333,14 @@ def agent_evidence_closure_hints() -> dict[str, Any]:
         "evidenceBaselineLifecycleReadoutField": "evidenceBaselineLifecycleReadout_v1",
         "v1CloseoutReadinessManifestField": "v1CloseoutReadinessManifest_v1",
         "prdAdvisorMatrixField": "prdAdvisorMatrix_v1",
+        "agentReviewReadoutConsistencyClosureField": "agentReviewReadoutConsistencyClosure_v1",
         "semanticDigestOmitsDerivativeSummariesNote": (
             "semanticDigestSha256 excludes bcfTopicsIndex_v1, agentReviewActions_v1, "
             "evidenceDiffIngestFixLoop_v1, evidenceReviewPerformanceGate_v1, "
             "evidenceAgentFollowThrough_v1 (including nested bcfIssuePackageExport_v1), "
             "artifactUploadManifest_v1, "
             "agentGeneratedBundleQaChecklist_v1, agentBriefAcceptanceReadout_v1, evidenceBaselineLifecycleReadout_v1, "
+            "agentReviewReadoutConsistencyClosure_v1, "
             "v1CloseoutReadinessManifest_v1, and prdAdvisorMatrix_v1 "
             "so deterministic row digests stay stable."
         ),

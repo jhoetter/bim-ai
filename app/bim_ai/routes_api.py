@@ -28,6 +28,9 @@ from bim_ai.agent_generated_bundle_qa_checklist import (
     agent_generated_bundle_qa_checklist_v1,
     validate_checks_wire,
 )
+from bim_ai.agent_review_readout_consistency_closure import (
+    agent_review_readout_consistency_closure_v1,
+)
 from bim_ai.codes import BUILDING_PRESETS
 from bim_ai.commands import Command
 from bim_ai.constraints import evaluate
@@ -510,6 +513,14 @@ async def evidence_package(
         evidence_closure_review=payload["evidenceClosureReview_v1"],
         evidence_diff_ingest_fix_loop=payload["evidenceDiffIngestFixLoop_v1"],
         evidence_review_performance_gate=payload["evidenceReviewPerformanceGate_v1"],
+    )
+    payload["agentReviewReadoutConsistencyClosure_v1"] = agent_review_readout_consistency_closure_v1(
+        readout_brief_acceptance=payload.get("agentBriefAcceptanceReadout_v1"),
+        readout_bundle_qa_checklist=payload.get("agentGeneratedBundleQaChecklist_v1"),
+        readout_merge_preflight=None,
+        readout_baseline_lifecycle=payload.get("evidenceBaselineLifecycleReadout_v1"),
+        readout_browser_rendering_budget=None,
+        closure_hints=payload["agentEvidenceClosureHints"],
     )
     payload["v1CloseoutReadinessManifest_v1"] = build_v1_closeout_readiness_manifest_v1()
     payload["prdAdvisorMatrix_v1"] = build_prd_blocking_advisor_matrix()
@@ -1253,6 +1264,15 @@ async def dry_run_command_bundle(
         artifact_upload_manifest=None,
         validation_violations=viols_wire,
     )
+    dry_run_closure_hints = agent_evidence_closure_hints()
+    consistency_closure = agent_review_readout_consistency_closure_v1(
+        readout_brief_acceptance=accept_readout,
+        readout_bundle_qa_checklist=qa_checklist,
+        readout_merge_preflight=None,
+        readout_baseline_lifecycle=None,
+        readout_browser_rendering_budget=None,
+        closure_hints=dry_run_closure_hints,
+    )
     if not ok or new_doc is None:
         return {
             "ok": False,
@@ -1271,6 +1291,7 @@ async def dry_run_command_bundle(
             "agentBriefCommandProtocol_v1": brief_proto,
             "agentGeneratedBundleQaChecklist_v1": qa_checklist,
             "agentBriefAcceptanceReadout_v1": accept_readout,
+            "agentReviewReadoutConsistencyClosure_v1": consistency_closure,
         }
 
     return {
@@ -1286,6 +1307,7 @@ async def dry_run_command_bundle(
         "agentBriefCommandProtocol_v1": brief_proto,
         "agentGeneratedBundleQaChecklist_v1": qa_checklist,
         "agentBriefAcceptanceReadout_v1": accept_readout,
+        "agentReviewReadoutConsistencyClosure_v1": consistency_closure,
     }
 
 

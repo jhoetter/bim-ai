@@ -373,6 +373,7 @@ export function AgentReviewPane() {
       reviewActions: [],
       artifactUploadManifestReadout: null,
       baselineLifecycleReadout: null,
+      consistencyClosure: null,
     });
 
     if (!evidenceTxt) return empty();
