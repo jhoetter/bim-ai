@@ -90,6 +90,7 @@ from bim_ai.schedule_csv import schedule_payload_to_csv, schedule_payload_with_c
 from bim_ai.schedule_derivation import derive_schedule_table, list_schedule_ids
 from bim_ai.sheet_preview_pdf import sheet_elem_to_pdf_bytes
 from bim_ai.sheet_preview_svg import (
+    FULL_RASTER_RENDERER_STATUS_UNAVAILABLE,
     SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2,
     SHEET_PRINT_RASTER_STAMP_WIDTH_PX,
     SHEET_PRINT_RASTER_SURROGATE_V2_HEIGHT_PX,
@@ -759,6 +760,7 @@ async def sheet_print_raster_png_export(
         headers={
             "Cache-Control": "public, max-age=60",
             "X-Bim-Ai-Sheet-Print-Raster-Contract": SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2,
+            "X-Bim-Ai-Sheet-Print-Raster-Full-Raster-Status": FULL_RASTER_RENDERER_STATUS_UNAVAILABLE,
             "X-Bim-Ai-Sheet-Svg-Sha256": svg_sha,
             "X-Bim-Ai-Sheet-Print-Raster-Png-Sha256": png_digest,
             "X-Bim-Ai-Sheet-Print-Raster-Width": str(SHEET_PRINT_RASTER_STAMP_WIDTH_PX),

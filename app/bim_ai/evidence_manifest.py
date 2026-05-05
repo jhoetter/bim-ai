@@ -230,9 +230,14 @@ def deterministic_sheet_evidence_manifest(
             "ciBaselineCorrelation": {
                 "format": "sheetExportCiBaselineCorrelation_v1",
                 "sheetId": sh.id,
+                "sheetName": sh.name,
+                "svgArtifactName": "sheet-preview.svg",
+                "pngArtifactName": "sheet-print-raster.png",
                 "svgDigestSha256": svg_sha,
                 "pngDigestSha256": placeholder_png_sha,
                 "exportListingDigestSha256": export_listing_digest,
+                "surrogateContract": SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2,
+                "fullRasterExportStatus": FULL_RASTER_RENDERER_STATUS_UNAVAILABLE,
             },
         }
 
