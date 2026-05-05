@@ -45,10 +45,12 @@ from bim_ai.opening_cut_primitives import (
 )
 from bim_ai.roof_geometry import (
     RidgeAxisPlan,
+    gable_pitched_rectangle_elevation_supported_v0,
     gable_rectangle_fascia_edge_plan_token_v0,
     gable_ridge_rise_mm,
     mass_box_roof_proxy_peak_z_mm,
     outer_rect_extent,
+    roof_geometry_support_token_v0,
 )
 from bim_ai.stair_plan_proxy import (
     stair_documentation_diagnostics,
@@ -58,6 +60,11 @@ from bim_ai.stair_plan_proxy import (
     stair_tread_count_straight_plan_proxy,
 )
 from bim_ai.type_material_registry import material_display_label
+from bim_ai.wall_opening_cut_fidelity import (
+    build_wall_opening_cut_fidelity_row,
+    corner_join_rows_for_document,
+    opening_visible_in_section_cut_strip,
+)
 
 _EPS = 1e-6
 
@@ -422,8 +429,7 @@ def _section_geometry_extent_mm(
     for w in roofs:
         ulo = float(w["uStartMm"])
         uhi = float(w["uEndMm"])
-        mode = str(w.get("roofGeometryMode") or "")
-        if mode == "gable_pitched_rectangle":
+        if str(w.get("proxyKind") or "") == "gablePitchedRectangleChord" and w.get("ridgeZMm") is not None:
             z_lo = float(w.get("eavePlateZMm") or w.get("zMidMm") or 0.0)
             z_hi = float(w.get("ridgeZMm") or w.get("zMidMm") or z_lo)
             acc(ulo, uhi, z_lo, z_hi)
@@ -487,6 +493,10 @@ def build_section_projection_primitives(
                 "sectionDocMaterialHints": [],
                 "slabOpeningDocumentationEvidence_v0": {
                     "format": "slabOpeningDocumentationEvidence_v0",
+                    "rows": [],
+                },
+                "wallOpeningCutFidelityEvidence_v1": {
+                    "format": "wallOpeningCutFidelityEvidence_v1",
                     "rows": [],
                 },
             },
@@ -680,6 +690,33 @@ def build_section_projection_primitives(
             windows.append(win_row)
             oid += 1
 
+    joins_sec = corner_join_rows_for_document(doc)
+    fed_section_rows: list[dict[str, Any]] = []
+    for eid in sorted(doc.elements.keys()):
+        el_o = doc.elements[eid]
+        if not isinstance(el_o, (DoorElem, WindowElem)):
+            continue
+        w_host = doc.elements.get(el_o.wall_id)
+        if not isinstance(w_host, WallElem):
+            continue
+        if not opening_visible_in_section_cut_strip(
+            el_o,
+            w_host,
+            wall_clip_by_id=wall_clip_by_id,
+            p0x=p0x,
+            p0y=p0y,
+            tx=tx,
+            ty=ty,
+            nx=nx,
+            ny=ny,
+            half=half,
+        ):
+            continue
+        fed_section_rows.append(
+            build_wall_opening_cut_fidelity_row(doc, el_o, corner_joins=joins_sec),
+        )
+    fed_section_rows.sort(key=lambda r: (str(r["hostWallId"]), str(r["openingId"])))
+
     openings_by_floor: dict[str, list[SlabOpeningElem]] = {}
     for ev in doc.elements.values():
         if isinstance(ev, SlabOpeningElem):
@@ -842,7 +879,22 @@ def build_section_projection_primitives(
         u_lo, u_hi = span
         mode = e.roof_geometry_mode
         roof_mat = roof_surface_material_readout_v0(doc, e)
-        if mode == "gable_pitched_rectangle":
+        lvl_ok = isinstance(doc.elements.get(e.reference_level_id), LevelElem)
+        support_tok = roof_geometry_support_token_v0(
+            footprint_mm=poly,
+            roof_geometry_mode=mode,
+            reference_level_resolves=lvl_ok,
+            slope_deg=e.slope_deg,
+        )
+        extra_tok: dict[str, Any] = (
+            {"roofGeometrySupportToken": support_tok} if support_tok is not None else {}
+        )
+        if gable_pitched_rectangle_elevation_supported_v0(
+            footprint_mm=poly,
+            roof_geometry_mode=mode,
+            reference_level_resolves=lvl_ok,
+            slope_deg=e.slope_deg,
+        ):
             x0, x1, z0, z1 = outer_rect_extent(poly)
             span_x = float(x1 - x0)
             span_z = float(z1 - z0)
@@ -873,6 +925,7 @@ def build_section_projection_primitives(
                         cast(RidgeAxisPlan, ridge_axis),
                     ),
                     **roof_mat,
+                    **extra_tok,
                 }
             )
         else:
@@ -882,7 +935,7 @@ def build_section_projection_primitives(
                     "id": f"roof:{e.id}:0",
                     "elementId": e.id,
                     "referenceLevelId": e.reference_level_id,
-                    "roofGeometryMode": "mass_box",
+                    "roofGeometryMode": mode,
                     "uStartMm": round(u_lo, 3),
                     "uEndMm": round(u_hi, 3),
                     "zMidMm": round(z_mid, 3),
@@ -891,6 +944,7 @@ def build_section_projection_primitives(
                     "proxyKind": "footprintChord",
                     "layerAssemblyWitness_v0": layered_assembly_witness_row_for_roof(doc, e),
                     **roof_mat,
+                    **extra_tok,
                 }
             )
 
@@ -939,6 +993,11 @@ def build_section_projection_primitives(
     primitives["slabOpeningDocumentationEvidence_v0"] = {
         "format": "slabOpeningDocumentationEvidence_v0",
         "rows": slab_doc_rows,
+    }
+
+    primitives["wallOpeningCutFidelityEvidence_v1"] = {
+        "format": "wallOpeningCutFidelityEvidence_v1",
+        "rows": fed_section_rows,
     }
 
     return primitives, warnings

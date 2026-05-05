@@ -43,10 +43,12 @@ from bim_ai.plan_category_graphics import (
 )
 from bim_ai.roof_geometry import (
     RidgeAxisPlan,
+    gable_pitched_rectangle_elevation_supported_v0,
     gable_rectangle_fascia_edge_plan_token_v0,
     gable_ridge_rise_mm,
     mass_box_roof_proxy_peak_z_mm,
     outer_rect_extent,
+    roof_geometry_support_token_v0,
 )
 from bim_ai.room_derivation import (
     HEURISTIC_VERSION as ROOM_BOUNDARY_HEURISTIC_VERSION,
@@ -54,6 +56,7 @@ from bim_ai.room_derivation import (
 from bim_ai.room_derivation import (
     compute_room_boundary_derivation,
     footprint_outline_mm_rectangle,
+    room_separation_plan_wire_row_fields_by_id,
     stable_footprint_id,
 )
 from bim_ai.section_projection_primitives import (
@@ -67,6 +70,10 @@ from bim_ai.stair_plan_proxy import (
     stair_riser_count_plan_proxy,
     stair_run_bearing_deg_ccw_from_plan_x,
     stair_tread_count_straight_plan_proxy,
+)
+from bim_ai.wall_opening_cut_fidelity import (
+    build_wall_opening_cut_fidelity_row,
+    corner_join_rows_for_document,
 )
 
 
@@ -131,10 +138,15 @@ def _floor_vertical_span_mm(doc: Document, fl: FloorElem) -> tuple[float, float]
 
 def _roof_vertical_span_mm(doc: Document, e: RoofElem) -> tuple[float, float]:
     zb = _level_elevation_mm(doc, e.reference_level_id)
-    mode = e.roof_geometry_mode
+    poly = [(float(p.x_mm), float(p.y_mm)) for p in e.footprint_mm]
+    lvl_ok = isinstance(doc.elements.get(e.reference_level_id), LevelElem)
     slope = float(e.slope_deg or 25.0)
-    if mode == "gable_pitched_rectangle":
-        poly = [(float(p.x_mm), float(p.y_mm)) for p in e.footprint_mm]
+    if gable_pitched_rectangle_elevation_supported_v0(
+        footprint_mm=poly,
+        roof_geometry_mode=e.roof_geometry_mode,
+        reference_level_resolves=lvl_ok,
+        slope_deg=e.slope_deg,
+    ):
         x0, x1, z0, z1 = outer_rect_extent(poly)
         span_x = float(x1 - x0)
         span_z = float(z1 - z0)
@@ -158,6 +170,14 @@ def _stair_vertical_span_mm(doc: Document, st: StairElem) -> tuple[float, float]
 
 
 def _roof_plan_wire_geometry_fields(doc: Document, e: RoofElem) -> dict[str, Any]:
+    poly = [(float(p.x_mm), float(p.y_mm)) for p in e.footprint_mm]
+    lvl_ok = isinstance(doc.elements.get(e.reference_level_id), LevelElem)
+    support_tok = roof_geometry_support_token_v0(
+        footprint_mm=poly,
+        roof_geometry_mode=e.roof_geometry_mode,
+        reference_level_resolves=lvl_ok,
+        slope_deg=e.slope_deg,
+    )
     slope = float(e.slope_deg or 25.0)
     zb = _level_elevation_mm(doc, e.reference_level_id)
     mode = e.roof_geometry_mode
@@ -166,8 +186,14 @@ def _roof_plan_wire_geometry_fields(doc: Document, e: RoofElem) -> dict[str, Any
         "slopeDeg": round(slope, 3),
         "overhangMm": round(float(e.overhang_mm), 3),
     }
-    if mode == "gable_pitched_rectangle":
-        poly = [(float(p.x_mm), float(p.y_mm)) for p in e.footprint_mm]
+    if support_tok is not None:
+        base["roofGeometrySupportToken"] = support_tok
+    if gable_pitched_rectangle_elevation_supported_v0(
+        footprint_mm=poly,
+        roof_geometry_mode=e.roof_geometry_mode,
+        reference_level_resolves=lvl_ok,
+        slope_deg=e.slope_deg,
+    ):
         x0, x1, z0, z1 = outer_rect_extent(poly)
         span_x = float(x1 - x0)
         span_z = float(z1 - z0)
@@ -811,6 +837,7 @@ def _build_plan_primitive_lists(
     room_tag_catalog: PlanTagStyleElem | None = None,
     category_resolved: dict[str, ResolvedPlanCategoryGraphic] | None = None,
     view_range_clip_mm: tuple[float, float, float] | None = None,
+    room_sep_wire_fields: dict[str, dict[str, Any]] | None = None,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     """2D primitives for deterministic server-side plan previews."""
 
@@ -1150,16 +1177,29 @@ def _build_plan_primitive_lists(
                 if not _closed_z_intervals_overlap_mm(sepz, sepz, lo, hi):
                     continue
             s_wt, s_pat = cat_eff("room_separation")
-            room_separations.append(
-                {
-                    "id": e.id,
-                    "levelId": e.level_id,
-                    "startMm": {"x": round(e.start.x_mm, 3), "y": round(e.start.y_mm, 3)},
-                    "endMm": {"x": round(e.end.x_mm, 3), "y": round(e.end.y_mm, 3)},
-                    "linePatternToken": s_pat,
-                    "lineWeightHint": round(float(line_weight_hint) * float(s_wt), 4),
-                }
-            )
+            row_rs: dict[str, Any] = {
+                "id": e.id,
+                "name": e.name,
+                "levelId": e.level_id,
+                "startMm": {"x": round(e.start.x_mm, 3), "y": round(e.start.y_mm, 3)},
+                "endMm": {"x": round(e.end.x_mm, 3), "y": round(e.end.y_mm, 3)},
+                "lengthMm": round(
+                    math.hypot(e.end.x_mm - e.start.x_mm, e.end.y_mm - e.start.y_mm), 3
+                ),
+                "linePatternToken": s_pat,
+                "lineWeightHint": round(float(line_weight_hint) * float(s_wt), 4),
+            }
+            xf = room_sep_wire_fields.get(e.id) if room_sep_wire_fields else None
+            if xf:
+                row_rs["axisAlignedBoundarySegmentEligible"] = xf["axisAlignedBoundarySegmentEligible"]
+                rsn = xf.get("axisBoundarySegmentExcludedReason")
+                if rsn:
+                    row_rs["axisBoundarySegmentExcludedReason"] = rsn
+                row_rs["onAuthoritativeDerivedFootprintBoundary"] = xf[
+                    "onAuthoritativeDerivedFootprintBoundary"
+                ]
+                row_rs["piercesDerivedRectangleInterior"] = xf["piercesDerivedRectangleInterior"]
+            room_separations.append(row_rs)
         elif isinstance(e, DimensionElem):
             if "dimension" in hidden_semantic or not lvl_ok(e.level_id):
                 continue
@@ -1346,6 +1386,81 @@ def _slab_opening_documentation_rows_for_plan_view(
     return out
 
 
+def _wall_opening_cut_fidelity_rows_for_plan_view(
+    doc: Document,
+    *,
+    level: str | None,
+    hidden_semantic: set[str],
+    crop_box_mm: tuple[float, float, float, float] | None,
+    view_range_clip_mm: tuple[float, float, float] | None,
+) -> list[dict[str, Any]]:
+    """Wall-hosted opening cut fidelity rows matching visible doors/windows on the active plan."""
+
+    def span_in_vertical_range(z0: float, z1: float) -> bool:
+        if view_range_clip_mm is None:
+            return True
+        lo, hi, _cut = view_range_clip_mm
+        return _closed_z_intervals_overlap_mm(z0, z1, lo, hi)
+
+    def lvl_ok(lv: str | None) -> bool:
+        if not level:
+            return True
+        return lv == level if lv else False
+
+    joins = corner_join_rows_for_document(doc)
+    out: list[dict[str, Any]] = []
+
+    for eid in sorted(doc.elements.keys()):
+        e = doc.elements[eid]
+        if isinstance(e, DoorElem):
+            w = doc.elements.get(e.wall_id)
+            if not isinstance(w, WallElem):
+                continue
+            if (
+                "door" in hidden_semantic
+                or "wall" in hidden_semantic
+                or not lvl_ok(w.level_id)
+            ):
+                continue
+            cx_mm, cy_mm = _hosted_xy_mm_on_wall(e, w)
+            crop_box = crop_box_mm
+            if crop_box is not None:
+                opening_ok = _point_in_crop_xy(cx_mm, cy_mm, crop_box) or _segment_intersects_crop_xy(
+                    w.start.x_mm, w.start.y_mm, w.end.x_mm, w.end.y_mm, crop_box
+                )
+                if not opening_ok:
+                    continue
+            dwz0, dwz1 = _wall_vertical_span_mm(doc, w)
+            if not span_in_vertical_range(dwz0, dwz1):
+                continue
+            out.append(build_wall_opening_cut_fidelity_row(doc, e, corner_joins=joins))
+        elif isinstance(e, WindowElem):
+            w = doc.elements.get(e.wall_id)
+            if not isinstance(w, WallElem):
+                continue
+            if (
+                "window" in hidden_semantic
+                or "wall" in hidden_semantic
+                or not lvl_ok(w.level_id)
+            ):
+                continue
+            cx_mm, cy_mm = _hosted_xy_mm_on_wall(e, w)
+            crop_box = crop_box_mm
+            if crop_box is not None:
+                opening_ok = _point_in_crop_xy(cx_mm, cy_mm, crop_box) or _segment_intersects_crop_xy(
+                    w.start.x_mm, w.start.y_mm, w.end.x_mm, w.end.y_mm, crop_box
+                )
+                if not opening_ok:
+                    continue
+            wwz0, wwz1 = _wall_vertical_span_mm(doc, w)
+            if not span_in_vertical_range(wwz0, wwz1):
+                continue
+            out.append(build_wall_opening_cut_fidelity_row(doc, e, corner_joins=joins))
+
+    out.sort(key=lambda r: (str(r["hostWallId"]), str(r["openingId"])))
+    return out
+
+
 def resolve_plan_projection_wire(
     doc: Document,
     *,
@@ -1489,6 +1604,9 @@ def resolve_plan_projection_wire(
         opening_cat = res_open.catalog
         room_cat = res_room.catalog
 
+    room_boundary_bundle = compute_room_boundary_derivation(doc)
+    sep_wire_fields = room_separation_plan_wire_row_fields_by_id(doc, room_boundary_bundle)
+
     prim, prim_warn = _build_plan_primitive_lists(
         doc,
         level=active_level,
@@ -1503,6 +1621,7 @@ def resolve_plan_projection_wire(
         room_tag_catalog=room_cat,
         category_resolved=cat_res,
         view_range_clip_mm=view_range_clip_mm,
+        room_sep_wire_fields=sep_wire_fields,
     )
     if view_range_clip_mm is not None:
         eligible, counts = _counts_from_plan_primitives(prim)
@@ -1517,8 +1636,6 @@ def resolve_plan_projection_wire(
         scheme_rows=scheme_rows,
         view_range_clip_mm=view_range_clip_mm,
     )
-
-    room_boundary_bundle = compute_room_boundary_derivation(doc)
 
     out_payload: dict[str, Any] = {
         "format": "planProjectionWire_v1",
@@ -1583,6 +1700,17 @@ def resolve_plan_projection_wire(
     out_payload["slabOpeningDocumentationEvidence_v0"] = {
         "format": "slabOpeningDocumentationEvidence_v0",
         "rows": slab_doc_rows,
+    }
+    fed_plan_rows = _wall_opening_cut_fidelity_rows_for_plan_view(
+        doc,
+        level=active_level,
+        hidden_semantic=hidden_semantic,
+        crop_box_mm=effective_crop,
+        view_range_clip_mm=view_range_clip_mm,
+    )
+    out_payload["wallOpeningCutFidelityEvidence_v1"] = {
+        "format": "wallOpeningCutFidelityEvidence_v1",
+        "rows": fed_plan_rows,
     }
     return out_payload
 

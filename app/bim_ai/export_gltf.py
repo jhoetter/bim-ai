@@ -35,13 +35,14 @@ from bim_ai.material_assembly_resolve import (
 from bim_ai.opening_cut_primitives import xz_bounds_mm_from_poly
 from bim_ai.roof_geometry import (
     RidgeAxisPlan,
-    footprint_is_valid_axis_aligned_rectangle_mm,
+    gable_pitched_rectangle_elevation_supported_v0,
     gable_rectangle_fascia_edge_plan_token_v0,
     gable_ridge_rise_mm,
     gable_ridge_segment_plan_mm,
     outer_rect_extent,
     plan_polygon_signed_area_mm2,
     plan_polygon_winding_token,
+    roof_geometry_support_token_v0,
 )
 from bim_ai.stair_plan_proxy import (
     stair_documentation_diagnostics,
@@ -51,6 +52,7 @@ from bim_ai.stair_plan_proxy import (
     stair_tread_count_straight_plan_proxy,
 )
 from bim_ai.wall_join_evidence import collect_wall_corner_join_evidence_v0
+from bim_ai.wall_opening_cut_fidelity import collect_wall_opening_cut_fidelity_evidence_v1
 
 EXPORT_GEOMETRY_KINDS: frozenset[str] = frozenset(
     {"wall", "floor", "roof", "door", "window", "room", "stair", "slab_opening"}
@@ -107,16 +109,20 @@ def exchange_parity_manifest_fields(
 
 
 def _document_has_gable_roof_mesh(doc: Document) -> bool:
-    return any(
-        isinstance(e, RoofElem) and e.roof_geometry_mode == "gable_pitched_rectangle"
-        for e in doc.elements.values()
-    )
+    return len(_collect_gable_roof_visual_slices(doc)) > 0
 
 
 def _roof_geometry_evidence_v1_row(doc: Document, e: RoofElem) -> dict[str, Any] | None:
     pts = [(float(p.x_mm), float(p.y_mm)) for p in e.footprint_mm]
     if len(pts) < 3:
         return None
+    lvl_ok = isinstance(doc.elements.get(e.reference_level_id), LevelElem)
+    support_tok = roof_geometry_support_token_v0(
+        footprint_mm=pts,
+        roof_geometry_mode=e.roof_geometry_mode,
+        reference_level_resolves=lvl_ok,
+        slope_deg=e.slope_deg,
+    )
     area_mm2 = plan_polygon_signed_area_mm2(pts)
     winding = plan_polygon_winding_token(area_mm2)
     x0_mm, x1_mm, z0_mm, z1_mm = outer_rect_extent(pts)
@@ -136,6 +142,8 @@ def _roof_geometry_evidence_v1_row(doc: Document, e: RoofElem) -> dict[str, Any]
         "overhangMm": oh,
         "roofElementName": e.name,
     }
+    if support_tok is not None:
+        row["roofGeometrySupportToken"] = support_tok
     tid = (e.roof_type_id or "").strip()
     if tid:
         row["roofTypeId"] = tid
@@ -146,7 +154,7 @@ def _roof_geometry_evidence_v1_row(doc: Document, e: RoofElem) -> dict[str, Any]
     if e.roof_geometry_mode == "mass_box":
         row["roofTopologyToken"] = "mass_box_proxy"
         row["ridgeInferable"] = False
-    elif footprint_is_valid_axis_aligned_rectangle_mm(pts):
+    elif support_tok == "gable_pitched_rectangle_supported":
         rise_mm, axis_str = gable_ridge_rise_mm(span_x, span_z, slope)
         axis_plan = cast(RidgeAxisPlan, axis_str)
         lvl = doc.elements.get(e.reference_level_id)
@@ -264,6 +272,7 @@ def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
     stair_geom = stair_geometry_manifest_evidence_v0(doc)
     site_ctx = site_context_manifest_evidence_v0(doc)
     corner_joins = collect_wall_corner_join_evidence_v0(doc)
+    wall_opening_cut_fidelity = collect_wall_opening_cut_fidelity_evidence_v1(doc)
     layer_cut_align = collect_layered_assembly_cut_alignment_evidence_v0(doc)
     layer_asm_witness = collect_layered_assembly_witness_v0(doc)
     mesh_enc = "bim_ai_box_primitive_v0"
@@ -275,6 +284,8 @@ def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
         mesh_enc += "+bim_ai_wall_corner_joins_v0"
     if skew_hosted:
         mesh_enc += "+bim_ai_skew_wall_hosted_openings_v0"
+    if wall_opening_cut_fidelity:
+        mesh_enc += "+bim_ai_wall_opening_cut_fidelity_v1"
     if layer_cut_align:
         mesh_enc += "+bim_ai_layered_assembly_cut_alignment_v0"
     if layer_asm_witness:
@@ -290,6 +301,8 @@ def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
         base["hostedCutApproximationWarnings"] = cut_warns
     if skew_hosted:
         base["skewWallHostedOpeningEvidence_v0"] = skew_hosted
+    if wall_opening_cut_fidelity:
+        base["wallOpeningCutFidelityEvidence_v1"] = wall_opening_cut_fidelity
     asm_ev = material_assembly_manifest_evidence(doc)
     if asm_ev:
         base["materialAssemblyEvidence_v0"] = asm_ev
@@ -556,9 +569,14 @@ def _collect_gable_roof_visual_slices(doc: Document) -> list[_GableRoofVisual]:
     for rid in sorted(eid for eid, e in doc.elements.items() if isinstance(e, RoofElem)):
         rf = doc.elements[rid]
         assert isinstance(rf, RoofElem)
-        if rf.roof_geometry_mode != "gable_pitched_rectangle":
+        pts = [(float(p.x_mm), float(p.y_mm)) for p in rf.footprint_mm]
+        if not gable_pitched_rectangle_elevation_supported_v0(
+            footprint_mm=pts,
+            roof_geometry_mode=rf.roof_geometry_mode,
+            reference_level_resolves=isinstance(doc.elements.get(rf.reference_level_id), LevelElem),
+            slope_deg=rf.slope_deg,
+        ):
             continue
-        pts = [(p.x_mm, p.y_mm) for p in rf.footprint_mm]
         x0_mm, x1_mm, z0_mm, z1_mm = outer_rect_extent(pts)
         rise_mm, axis = gable_ridge_rise_mm(
             float(x1_mm - x0_mm), float(z1_mm - z0_mm), float(rf.slope_deg or 25.0)
@@ -698,9 +716,14 @@ def _collect_geom_boxes(doc: Document) -> list[_GeomBox]:
     for rid in sorted(eid for eid, e in doc.elements.items() if isinstance(e, RoofElem)):
         rf = doc.elements[rid]
         assert isinstance(rf, RoofElem)
-        if rf.roof_geometry_mode == "gable_pitched_rectangle":
+        pts = [(float(p.x_mm), float(p.y_mm)) for p in rf.footprint_mm]
+        if gable_pitched_rectangle_elevation_supported_v0(
+            footprint_mm=pts,
+            roof_geometry_mode=rf.roof_geometry_mode,
+            reference_level_resolves=isinstance(doc.elements.get(rf.reference_level_id), LevelElem),
+            slope_deg=rf.slope_deg,
+        ):
             continue
-        pts = [(p.x_mm, p.y_mm) for p in rf.footprint_mm]
         if len(pts) < 3:
             continue
         cx_mm, cz_mm, span_x, span_z = xz_bounds_mm_from_poly(pts)

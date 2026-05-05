@@ -276,6 +276,158 @@ def pick_sheet(doc: Document, sheet_id: str | None) -> SheetElem:
     raise ValueError("no sheet elements in model")
 
 
+def read_viewport_role(vp: dict[str, Any]) -> str:
+    """Return ``standard`` or ``detail_callout`` (``viewportRole`` / ``viewport_role``, case-insensitive)."""
+
+    v = vp.get("viewportRole") or vp.get("viewport_role")
+    if isinstance(v, str):
+        s = v.strip().lower().replace("-", "_")
+        if s in {"detail_callout", "detailcallout"}:
+            return "detail_callout"
+    return "standard"
+
+
+def read_viewport_detail_number(vp: dict[str, Any]) -> str:
+    d = vp.get("detailNumber") or vp.get("detail_number")
+    if isinstance(d, str):
+        return d.strip()
+    if isinstance(d, (int, float)) and math.isfinite(float(d)):
+        return str(int(d)) if float(d) == int(float(d)) else str(float(d))
+    return ""
+
+
+def parse_sheet_view_ref(vr: str | None) -> dict[str, str]:
+    """Mirror TS ``parseSheetViewRef`` vocabulary (``sec:``/``vp:`` normalized)."""
+
+    if vr is None:
+        return {"kind": "unknown", "ref_id": "", "normalized_ref": "", "raw_ref": ""}
+    raw_ref = vr.strip()
+    if not raw_ref:
+        return {"kind": "unknown", "ref_id": "", "normalized_ref": "", "raw_ref": ""}
+    if ":" not in raw_ref:
+        return {"kind": "unknown", "ref_id": "", "normalized_ref": raw_ref, "raw_ref": raw_ref}
+    kind_raw, ref_raw = raw_ref.split(":", 1)
+    k = kind_raw.strip().lower()
+    ref_id = ref_raw.strip()
+    kind = "unknown"
+    prefix = k
+    if k == "plan":
+        kind = "plan"
+    elif k in {"section", "sec"}:
+        kind = "section"
+        prefix = "section"
+    elif k == "schedule":
+        kind = "schedule"
+    elif k in {"viewpoint", "vp"}:
+        kind = "viewpoint"
+        prefix = "viewpoint"
+    norm = f"{prefix}:{ref_id}" if kind != "unknown" and ref_id else raw_ref
+    return {"kind": kind, "ref_id": ref_id, "normalized_ref": norm, "raw_ref": raw_ref}
+
+
+def _detail_callout_unresolved_reason(doc: Document, parsed: dict[str, str], raw_ref: str) -> str:
+    if not raw_ref.strip():
+        return "empty_view_ref"
+    kind = parsed["kind"]
+    ref_id = parsed["ref_id"]
+    if kind == "unknown":
+        return "unknown_ref_prefix"
+    if not ref_id:
+        return "unknown_ref_prefix"
+    ttl = resolve_view_ref_title(doc, raw_ref)
+    if ttl is not None:
+        return ""
+    if kind == "plan":
+        return "unresolved_plan_view"
+    if kind == "section":
+        return "unresolved_section_cut"
+    if kind == "schedule":
+        return "unresolved_schedule"
+    if kind == "viewpoint":
+        return "unresolved_viewpoint"
+    return "unknown_ref_prefix"
+
+
+def build_placeholder_detail_title(
+    detail_number: str, resolved_title: str | None, unresolved_reason: str
+) -> str:
+    """Deterministic placeholder title aligned with WP-E05 readout (matches web helper)."""
+
+    base = f"Detail {detail_number.strip()}" if detail_number.strip() else "Detail"
+    if unresolved_reason:
+        return f"{base} — unresolved"
+    if resolved_title and resolved_title.strip():
+        return f"{base} — {resolved_title.strip()}"
+    return base
+
+
+def format_detail_callout_documentation_segment(doc: Document, vp: dict[str, Any], index: int) -> str:
+    """Compact token for SVG/PDF listing / viewport hints when ``viewportRole`` is ``detail_callout``."""
+
+    if read_viewport_role(vp) != "detail_callout":
+        return ""
+    vid = str(vp.get("viewportId") or vp.get("viewport_id") or "").strip()
+    if not vid:
+        vid = f"__implicit_{index}"
+    vr_raw = vp.get("viewRef") or vp.get("view_ref")
+    raw = str(vr_raw).strip() if isinstance(vr_raw, str) else ""
+    parsed = parse_sheet_view_ref(raw if raw else None)
+    reason = _detail_callout_unresolved_reason(doc, parsed, raw)
+    ok = not reason
+    dn = read_viewport_detail_number(vp)
+    resolved_ttl = resolve_view_ref_title(doc, raw) if raw and ok else None
+    ph = build_placeholder_detail_title(dn, resolved_ttl, reason)
+    ref_tok = (parsed["normalized_ref"] or raw).replace(" ", "_")
+    if len(ref_tok) > 56:
+        ref_tok = ref_tok[:53] + "..."
+    st = "ok" if ok else "broken"
+    ttl_tok = ph.replace(" ", "_")
+    if len(ttl_tok) > 40:
+        ttl_tok = ttl_tok[:37] + "..."
+    return f"detailCo[vp={vid} ref={ref_tok} status={st} ttl={ttl_tok}]"
+
+
+def detail_callout_readout_rows_v0(doc: Document, sh: SheetElem) -> list[dict[str, Any]]:
+    """Sorted detail-callout readout rows for deterministic sheet evidence (WP-X01)."""
+
+    out: list[dict[str, Any]] = []
+    for i, vp_any in enumerate(sh.viewports_mm or []):
+        if not isinstance(vp_any, dict):
+            continue
+        vp = vp_any
+        if read_viewport_role(vp) != "detail_callout":
+            continue
+        vid = str(vp.get("viewportId") or vp.get("viewport_id") or "").strip()
+        if not vid:
+            vid = f"__implicit_{i}"
+        vr_raw = vp.get("viewRef") or vp.get("view_ref")
+        raw = str(vr_raw).strip() if isinstance(vr_raw, str) else ""
+        parsed = parse_sheet_view_ref(raw if raw else None)
+        reason = _detail_callout_unresolved_reason(doc, parsed, raw)
+        resolved_ttl = resolve_view_ref_title(doc, raw) if raw and not reason else None
+        dn = read_viewport_detail_number(vp)
+        ph_title = build_placeholder_detail_title(dn, resolved_ttl, reason)
+        norm_ref = parsed["normalized_ref"] if parsed["kind"] != "unknown" else raw
+        out.append(
+            {
+                "viewportId": vid,
+                "viewportRole": "detail_callout",
+                "parentSheetId": sh.id,
+                "parentSheetName": sh.name or sh.id,
+                "referencedViewRefRaw": raw,
+                "referencedViewRefNormalized": norm_ref,
+                "referencedTargetKind": parsed["kind"] if parsed["kind"] != "unknown" else "",
+                "referencedTargetId": parsed["ref_id"],
+                "resolvedTargetTitle": (resolved_ttl or "").strip(),
+                "placeholderDetailNumber": dn,
+                "placeholderDetailTitle": ph_title,
+                "unresolvedReason": reason,
+            }
+        )
+    out.sort(key=lambda r: str(r.get("viewportId") or ""))
+    return out
+
+
 def read_viewport_mm_box(vp: dict[str, Any]) -> tuple[float, float, float, float]:
     """Mirror TS `readViewportMmBox`: camelCase plus legacy ``wMm``/``hMm`` with min dimension 10mm."""
     x_mm = float(vp.get("xMm") or vp.get("x_mm") or 0)
@@ -378,7 +530,13 @@ def format_plan_projection_export_segment(wire: dict[str, Any]) -> str:
     if isinstance(rows, list) and len(rows) > 0:
         canon = json.dumps(rows, sort_keys=True, separators=(",", ":"), default=str)
         d12 = hashlib.sha256(canon.encode("utf-8")).hexdigest()[:12]
-        return f"{base} soDoc[n={len(rows)} h={d12}]"
+        base = f"{base} soDoc[n={len(rows)} h={d12}]"
+    fed = wire.get("wallOpeningCutFidelityEvidence_v1")
+    fed_rows = fed.get("rows") if isinstance(fed, dict) else None
+    if isinstance(fed_rows, list) and len(fed_rows) > 0:
+        canon_f = json.dumps(fed_rows, sort_keys=True, separators=(",", ":"), default=str)
+        h12 = hashlib.sha256(canon_f.encode("utf-8")).hexdigest()[:12]
+        base = f"{base} woCutFed[n={len(fed_rows)} h={h12}]"
     return base
 
 
@@ -581,6 +739,13 @@ def format_section_viewport_documentation_segment(doc: Document, view_ref: str) 
         d12_so = hashlib.sha256(canon_so.encode("utf-8")).hexdigest()[:12]
         inner_parts.append(f"soDoc[n={len(so_rows)} h={d12_so}]")
 
+    wo_ev = prim.get("wallOpeningCutFidelityEvidence_v1")
+    wo_rows = wo_ev.get("rows") if isinstance(wo_ev, dict) else None
+    if isinstance(wo_rows, list) and len(wo_rows) > 0:
+        canon_wo = json.dumps(wo_rows, sort_keys=True, separators=(",", ":"), default=str)
+        d12_wo = hashlib.sha256(canon_wo.encode("utf-8")).hexdigest()[:12]
+        inner_parts.append(f"woCutFed[n={len(wo_rows)} h={d12_wo}]")
+
     return "secDoc[" + " ".join(inner_parts) + "]"
 
 
@@ -724,6 +889,7 @@ def viewport_evidence_hints_v1(doc: Document, vps_raw: list[Any]) -> list[dict[s
         )
         sch_seg = format_schedule_viewport_documentation_segment(doc, str(vr)) if isinstance(vr, str) else ""
         room_leg_seg = format_room_programme_legend_documentation_segment(doc, vp)
+        dc_seg = format_detail_callout_documentation_segment(doc, vp, i)
 
         hints.append(
             {
@@ -734,6 +900,7 @@ def viewport_evidence_hints_v1(doc: Document, vps_raw: list[Any]) -> list[dict[s
                 "sectionDocumentationSegment": sec_seg,
                 "scheduleDocumentationSegment": sch_seg,
                 "roomProgrammeLegendDocumentationSegment": room_leg_seg,
+                "detailCalloutDocumentationSegment": dc_seg,
             }
         )
 
@@ -825,6 +992,8 @@ def sheet_viewport_export_listing_lines(doc: Document, sh: SheetElem) -> list[st
             format_room_programme_legend_listing_segment(doc, vp) if isinstance(vp, dict) else ""
         )
 
+        dc_list_seg = format_detail_callout_documentation_segment(doc, vp, i) if isinstance(vp, dict) else ""
+
         geo_tail = (
             geo
             + (f" · {crop_seg}" if crop_seg else "")
@@ -832,6 +1001,7 @@ def sheet_viewport_export_listing_lines(doc: Document, sh: SheetElem) -> list[st
             + (f" · {proj_seg}" if proj_seg else "")
             + (f" · {sch_seg}" if sch_seg else "")
             + (f" · {leg_list_seg}" if leg_list_seg else "")
+            + (f" · {dc_list_seg}" if dc_list_seg else "")
         )
 
         lines.append(str(f"{label}{suffix}{geo_tail}")[:220])
@@ -848,7 +1018,8 @@ def _viewport_export_correlation_segment_bytes(hint_row: dict[str, Any]) -> byte
     sec_s = str(hint_row.get("sectionDocumentationSegment") or "")
     sch_s = str(hint_row.get("scheduleDocumentationSegment") or "")
     leg_s = str(hint_row.get("roomProgrammeLegendDocumentationSegment") or "")
-    return f"{crop}\n{plan_s}\n{sec_s}\n{sch_s}\n{leg_s}".encode()
+    dc_s = str(hint_row.get("detailCalloutDocumentationSegment") or "")
+    return f"{crop}\n{plan_s}\n{sec_s}\n{sch_s}\n{leg_s}\n{dc_s}".encode()
 
 
 def build_sheet_print_raster_print_contract_v3(
@@ -981,14 +1152,23 @@ def sheet_elem_to_svg(doc: Document, sh: SheetElem) -> str:
     issued_raw = tb_params.get("issueDate") or tb_params.get("date") or ""
 
     viewport_blocks = []
-    for vp in vps_raw:
+    for vi, vp in enumerate(vps_raw):
         if not isinstance(vp, dict):
             continue
         x_mm, y_mm, width_mm, height_mm = read_viewport_mm_box(vp)
         label = str(vp.get("label") or "Viewport")
         vr = vp.get("viewRef") or vp.get("view_ref")
-        ref_title = resolve_view_ref_title(doc, str(vr)) if isinstance(vr, str) else None
-        display = ref_title or label
+        is_dc = read_viewport_role(vp) == "detail_callout"
+        raw_v = str(vr).strip() if isinstance(vr, str) else ""
+        ref_title = resolve_view_ref_title(doc, raw_v) if raw_v else None
+        if is_dc:
+            parsed = parse_sheet_view_ref(raw_v if raw_v else None)
+            reason = _detail_callout_unresolved_reason(doc, parsed, raw_v)
+            dn = read_viewport_detail_number(vp)
+            res_ttl = resolve_view_ref_title(doc, raw_v) if raw_v and not reason else None
+            display = build_placeholder_detail_title(dn, res_ttl, reason)
+        else:
+            display = ref_title or label
         escaped_label = html.escape(display)
 
         sub = html.escape(str(vr)) if isinstance(vr, str) and str(vr) else ""
@@ -1053,11 +1233,24 @@ def sheet_elem_to_svg(doc: Document, sh: SheetElem) -> str:
                 f'fill="#0e7490" font-size="260px">{esc_leg}</text>'
             )
 
+        dc_seg = format_detail_callout_documentation_segment(doc, vp, vi)
+        dc_block = ""
+        if dc_seg:
+            esc_dc = html.escape(dc_seg)
+            dc_block = (
+                f'<text x="{x_mm + 200}" y="{y_mm + 3800}" '
+                f'data-detail-callout-doc-token="detailCalloutDocumentationSegment" '
+                f'fill="#6d28d9" font-size="260px">{esc_dc}</text>'
+            )
+
+        stroke_color = "#6d28d9" if is_dc else "#475569"
+        dash = ' stroke-dasharray="480 240"' if is_dc else ""
+
         viewport_blocks.append(
             "<g>"
             f'<rect x="{x_mm}" y="{y_mm}" width="{width_mm}" height="{height_mm}" '
-            f'fill="#ffffff" stroke="#475569" stroke-width="80"/>'
-            f'<text x="{x_mm + 200}" y="{y_mm + 900}" fill="#475569" font-size="600px">'
+            f'fill="#ffffff" stroke="{stroke_color}" stroke-width="80"{dash}/>'
+            f'<text x="{x_mm + 200}" y="{y_mm + 900}" fill="{stroke_color}" font-size="600px">'
             f"{escaped_label}"
             f"</text>"
             f"{sub_block}"
@@ -1066,6 +1259,7 @@ def sheet_elem_to_svg(doc: Document, sh: SheetElem) -> str:
             f"{proj_block}"
             f"{sch_block}"
             f"{leg_block}"
+            f"{dc_block}"
             "</g>"
         )
 
