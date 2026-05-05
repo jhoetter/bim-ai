@@ -62,6 +62,16 @@ _TRACEABILITY_ROWS: list[dict[str, object]] = [
             ".github/workflows/ci.yml",
         ],
     },
+    {
+        "id": "prd_blocking_advisor_matrix",
+        "needles": [
+            "Validation classes:",
+        ],
+        "paths": [
+            "app/bim_ai/prd_blocking_advisor_matrix.py",
+            "app/tests/test_prd_blocking_advisor_matrix.py",
+        ],
+    },
 ]
 
 

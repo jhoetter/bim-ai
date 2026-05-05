@@ -76,6 +76,7 @@ from bim_ai.plan_projection_wire import (
     resolve_plan_projection_wire,
     section_cut_projection_wire,
 )
+from bim_ai.prd_blocking_advisor_matrix import build_prd_blocking_advisor_matrix
 from bim_ai.room_derivation_preview import (
     room_derivation_candidates_review,
     room_derivation_preview,
@@ -509,6 +510,7 @@ async def evidence_package(
         evidence_review_performance_gate=payload["evidenceReviewPerformanceGate_v1"],
     )
     payload["v1CloseoutReadinessManifest_v1"] = build_v1_closeout_readiness_manifest_v1()
+    payload["prdAdvisorMatrix_v1"] = build_prd_blocking_advisor_matrix()
     return payload
 
 

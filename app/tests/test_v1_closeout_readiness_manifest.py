@@ -119,3 +119,39 @@ def test_agent_evidence_closure_hints_names_manifest_field() -> None:
     assert hints.get("v1CloseoutReadinessManifestField") == "v1CloseoutReadinessManifest_v1"
     note = str(hints.get("semanticDigestOmitsDerivativeSummariesNote") or "")
     assert "v1CloseoutReadinessManifest_v1" in note
+
+
+def test_agent_evidence_closure_hints_names_prd_advisor_matrix_field() -> None:
+    hints = agent_evidence_closure_hints()
+    assert hints.get("prdAdvisorMatrixField") == "prdAdvisorMatrix_v1"
+    note = str(hints.get("semanticDigestOmitsDerivativeSummariesNote") or "")
+    assert "prdAdvisorMatrix_v1" in note
+
+
+def test_manifest_includes_prd_advisor_matrix_summary() -> None:
+    m = build_v1_closeout_readiness_manifest_v1()
+    summary = m.get("prdAdvisorMatrixSummary")
+    assert isinstance(summary, dict), "manifest must include prdAdvisorMatrixSummary"
+    assert summary.get("format") == "prdAdvisorMatrixSummary_v1"
+    assert isinstance(summary.get("totalSections"), int) and summary["totalSections"] > 0
+    assert "statusCounts" in summary
+    assert "deferredCount" in summary
+    assert "passCount" in summary
+
+
+def test_manifest_prd_advisor_matrix_summary_deferred_count_positive() -> None:
+    m = build_v1_closeout_readiness_manifest_v1()
+    summary = m["prdAdvisorMatrixSummary"]
+    assert summary["deferredCount"] > 0, (
+        "At least one PRD section must be deferred in the closeout manifest summary"
+    )
+
+
+def test_manifest_gates_include_prd_blocking_advisor_matrix() -> None:
+    m = build_v1_closeout_readiness_manifest_v1()
+    gates = {g["id"]: g for g in m.get("gates", []) if isinstance(g, dict)}
+    assert "pytest_prd_blocking_advisor_matrix" in gates
+    gate = gates["pytest_prd_blocking_advisor_matrix"]
+    assert gate["path"] == "app/tests/test_prd_blocking_advisor_matrix.py"
+    assert gate["gateKind"] == "required_pytest_module"
+    assert gate["structuralOk"] is True

@@ -1,6 +1,7 @@
-"""Deterministic v1 closeout / CI readiness manifest (prompt-8 / WP-A01,A02,A04,V01,F01).
+"""Deterministic v1 closeout / CI readiness manifest (prompt-8/prompt-7 / WP-A01,A02,A04,V01,F01).
 
 Built from repo-local structural checks only (paths, tracker substrings). No network or timing.
+Includes PRD blocking advisor matrix summary from prd_blocking_advisor_matrix.
 """
 
 from __future__ import annotations
@@ -24,8 +25,9 @@ def _deferred_blockers_v1() -> list[dict[str, Any]]:
         {
             "id": "prd_wide_blocking_validation",
             "reason": (
-                "PRD-wide blocking validation for Revit parity v1 remains incomplete; advisor rules "
-                "do not exhaustively enforce all PRD § acceptance gates."
+                "PRD-wide blocking validation for Revit parity v1 remains incomplete. "
+                "The PRD blocking advisor matrix (prdAdvisorMatrix_v1) covers §11–§15 sections "
+                "but roof validation and full IFC/IDS enforcement are deferred or partially covered."
             ),
             "blocksClassification": True,
             "countsAsCompletedWork": False,
@@ -81,6 +83,12 @@ def _gate_rows(*, tracker_text: str | None, ci_yml_text: str | None) -> list[dic
         gate_kind="golden_bundle_roundtrip",
         rel_path="app/tests/test_one_family_bundle_roundtrip.py",
         note="Python engine replay of one-family CLI bundle (roundtrip gate).",
+    )
+    add_path_gate(
+        gate_id="pytest_prd_blocking_advisor_matrix",
+        gate_kind="required_pytest_module",
+        rel_path="app/tests/test_prd_blocking_advisor_matrix.py",
+        note="PRD blocking advisor matrix tests (WP-V01/A01/A02/A04/F01 v1 closeout wave 2).",
     )
     add_path_gate(
         gate_id="pytest_prd_traceability_matrix",
@@ -175,6 +183,12 @@ def _release_classification_v1(
     }
 
 
+def _prd_advisor_summary_safe() -> dict[str, Any]:
+    from bim_ai.prd_blocking_advisor_matrix import prd_advisor_matrix_summary  # lazy import
+
+    return prd_advisor_matrix_summary()
+
+
 def build_v1_closeout_readiness_manifest_v1() -> dict[str, Any]:
     tracker_text: str | None
     try:
@@ -199,6 +213,7 @@ def build_v1_closeout_readiness_manifest_v1() -> dict[str, Any]:
         "deferredBlockers": deferred,
         "releaseClassification": classification,
         "releaseClassificationDetails": cls_details,
+        "prdAdvisorMatrixSummary": _prd_advisor_summary_safe(),
         "agentNextActions": sorted(
             [
                 "Do not claim v1 or workpackage done unless tracker Done Rule and evidence match.",
