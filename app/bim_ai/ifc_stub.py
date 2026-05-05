@@ -12,6 +12,8 @@ from bim_ai.export_gltf import (
 )
 from bim_ai.export_ifc import (
     IFC_ENCODING_KERNEL_V1,
+    build_ifc_import_preview_v0,
+    build_ifc_unsupported_merge_map_v0,
     build_site_exchange_evidence_v0_for_manifest,
     ifc_manifest_artifact_hints,
     kernel_expected_ifc_emit_counts,
@@ -46,6 +48,10 @@ IFC_SEMANTIC_IMPORT_SCOPE_V0: dict[str, Any] = {
         "summarize_kernel_ifc_semantic_roundtrip.commandSketch — level echo, storeys read-back, QTO names, programme samples",
         "summarize_kernel_ifc_semantic_roundtrip.commandSketch.authoritativeReplay_v0 — kernel IFC re-parse → deterministic createLevel/createFloor/createWall/createRoof (IfcRoof prism, identity Pset_RoofCommon.Reference, inferred slopeDeg/overhangMm/mass_box from exporter-aligned placement) /createStair (IfcStair, identity Pset_StairCommon.Reference, top storey from elevation + body height when unique) / createRoomOutline (IfcSpace) + wall-hosted insertDoorOnWall/insertWindowOnWall + slab-hosted createSlabOpening (IfcOpeningElement voids on IfcSlab, op:<id> names); authoritativeSubset.roofs + kernelRoofSkippedNoReference; IfcSlabType + Pset_SlabCommon type Reference when floorTypeId set; typedFloorAuthoritativeReplayEvidence_v0; slabRoofHostedVoidReplaySkipped_v0 skip ledger; idsAuthoritativeReplayMap_v0 spaces + roofs + floors IDS linkage, unsupportedIfcProducts_v0 vs replay distinction",
         "engine.try_apply_kernel_ifc_authoritative_replay_v0 — additive apply of authoritativeReplay_v0 commands via try_commit_bundle (preflight merge_id_collision / merge_reference_unresolved)",
+        "build_ifc_import_preview_v0 — deterministic IFC import preview: commandCountsByKind, unresolvedReferences (extractionGaps), skipCountsByReason, authoritativeProducts subset map, unsupportedProducts countsByClass, idsPointerCoverage (spaces/roofs/floors QTO+identity rows), safeApplyClassification (authoritativeSliceSafeApply + notApplyReasons); stable across repeated runs",
+        "build_ifc_unsupported_merge_map_v0 — unsupported IFC merge map: unsupportedIfcProductsByClass (products outside kernel slice), extractionGapsByReason (reasons kernel failed to extract command from supported product), mergeConstraints (permanent architectural limits); offline-safe mergeConstraints always present",
+        "ifc_manifest_v0.ifcImportPreview_v0 — same schema as build_ifc_import_preview_v0 (requires IfcOpenShell + kernel export eligible); offline stub sets available=False + reason",
+        "ifc_manifest_v0.ifcUnsupportedMergeMap_v0 — same schema as build_ifc_unsupported_merge_map_v0 (mergeConstraints always present; full map requires IfcOpenShell + kernel export eligible)",
     ],
     "importMergeUnsupported": [
         "IFC ingest → Document merge / replay for arbitrary IFC entity graphs",
@@ -128,6 +134,88 @@ def build_ifc_property_set_coverage_evidence_v0(doc: Document) -> dict[str, Any]
     }
 
 
+def build_ifc_import_preview_v0_for_manifest(doc: Document) -> dict[str, Any]:
+    """IFC import preview slice for manifest (offline stub when IfcOpenShell absent or not eligible)."""
+
+    from bim_ai.export_ifc import IFC_AVAILABLE, export_ifc_model_step  # noqa: PLC0415
+
+    if not IFC_AVAILABLE:
+        return {
+            "schemaVersion": 0,
+            "available": False,
+            "reason": "ifcopenshell_not_installed",
+            "commandCountsByKind": {},
+            "commandCountTotal": 0,
+            "unresolvedReferences": [],
+            "unresolvedReferenceCount": 0,
+            "skipCountsByReason": {},
+            "authoritativeProducts": {},
+            "unsupportedProducts": {"schemaVersion": 0, "countsByClass": {}},
+            "idsPointerCoverage": {"schemaVersion": 0, "available": False},
+            "safeApplyClassification": {
+                "authoritativeSliceSafeApply": False,
+                "notApplyReasons": ["ifcopenshell_not_installed"],
+                "note": "IfcOpenShell is not installed; install '.[ifc]' to enable preview.",
+            },
+        }
+
+    if not kernel_export_eligible(doc):
+        return {
+            "schemaVersion": 0,
+            "available": False,
+            "reason": "kernel_not_eligible",
+            "commandCountsByKind": {},
+            "commandCountTotal": 0,
+            "unresolvedReferences": [],
+            "unresolvedReferenceCount": 0,
+            "skipCountsByReason": {},
+            "authoritativeProducts": {},
+            "unsupportedProducts": {"schemaVersion": 0, "countsByClass": {}},
+            "idsPointerCoverage": {"schemaVersion": 0, "available": False},
+            "safeApplyClassification": {
+                "authoritativeSliceSafeApply": False,
+                "notApplyReasons": ["kernel_not_eligible"],
+                "note": "Document has no kernel IFC geometry (no walls or slab floors).",
+            },
+        }
+
+    step = export_ifc_model_step(doc)
+    return build_ifc_import_preview_v0(step)
+
+
+def build_ifc_unsupported_merge_map_v0_for_manifest(doc: Document) -> dict[str, Any]:
+    """IFC unsupported merge map slice for manifest (mergeConstraints always present offline)."""
+
+    from bim_ai.export_ifc import IFC_AVAILABLE, export_ifc_model_step  # noqa: PLC0415
+
+    merge_constraints: list[str] = list(IFC_SEMANTIC_IMPORT_SCOPE_V0.get("importMergeUnsupported") or [])
+
+    if not IFC_AVAILABLE:
+        return {
+            "schemaVersion": 0,
+            "available": False,
+            "reason": "ifcopenshell_not_installed",
+            "unsupportedIfcProductsByClass": {},
+            "extractionGapsByReason": {},
+            "extractionGapTotal": 0,
+            "mergeConstraints": merge_constraints,
+        }
+
+    if not kernel_export_eligible(doc):
+        return {
+            "schemaVersion": 0,
+            "available": False,
+            "reason": "kernel_not_eligible",
+            "unsupportedIfcProductsByClass": {},
+            "extractionGapsByReason": {},
+            "extractionGapTotal": 0,
+            "mergeConstraints": merge_constraints,
+        }
+
+    step = export_ifc_model_step(doc)
+    return build_ifc_unsupported_merge_map_v0(step)
+
+
 def build_ifc_exchange_manifest_payload(doc: Document) -> dict[str, Any]:
     parity = exchange_parity_manifest_fields_from_document(doc)
     planned = sorted(parity["countsByKind"].keys())
@@ -164,6 +252,8 @@ def build_ifc_exchange_manifest_payload(doc: Document) -> dict[str, Any]:
     if ps_ev:
         out["ifcPropertySetCoverageEvidence_v0"] = ps_ev
     out["siteExchangeEvidence_v0"] = build_site_exchange_evidence_v0_for_manifest(doc)
+    out["ifcImportPreview_v0"] = build_ifc_import_preview_v0_for_manifest(doc)
+    out["ifcUnsupportedMergeMap_v0"] = build_ifc_unsupported_merge_map_v0_for_manifest(doc)
     return out
 
 

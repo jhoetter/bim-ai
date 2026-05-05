@@ -24,12 +24,19 @@ from bim_ai.export_ifc import (
     AUTHORITATIVE_REPLAY_KIND_V0,
     IFC_AVAILABLE,
     KERNEL_IFC_AUTHORITATIVE_REPLAY_SCHEMA_VERSION,
+    build_ifc_import_preview_v0,
+    build_ifc_unsupported_merge_map_v0,
     build_kernel_ifc_authoritative_replay_sketch_v0,
     ifcopenshell_available,
     inspect_kernel_ifc_semantics,
     summarize_kernel_ifc_semantic_roundtrip,
 )
-from bim_ai.ifc_stub import IFC_SEMANTIC_IMPORT_SCOPE_V0, build_ifc_exchange_manifest_payload
+from bim_ai.ifc_stub import (
+    IFC_SEMANTIC_IMPORT_SCOPE_V0,
+    build_ifc_exchange_manifest_payload,
+    build_ifc_import_preview_v0_for_manifest,
+    build_ifc_unsupported_merge_map_v0_for_manifest,
+)
 
 
 def test_ifc_manifest_reports_kernel_geometry_skip_counts_without_ifcopenshell() -> None:
@@ -651,3 +658,143 @@ def test_try_apply_authoritative_replay_v0_invalid_sketch() -> None:
     bad_ver = {**base, "schemaVersion": 99}
     ok2, _nd2, _c2, _v2, code2 = try_apply_kernel_ifc_authoritative_replay_v0(empty, bad_ver)
     assert ok2 is False and code2 == "invalid_sketch"
+
+
+# ---------------------------------------------------------------------------
+# IFC import preview and unsupported merge map — offline / stub tests
+# ---------------------------------------------------------------------------
+
+
+def test_ifc_import_preview_stub_when_ifcopenshell_missing() -> None:
+    """``build_ifc_import_preview_v0`` returns a stable stub on bare installs."""
+
+    if IFC_AVAILABLE:
+        pytest.skip("ifcopenshell installed — full preview covered by test_export_ifc")
+
+    preview = build_ifc_import_preview_v0("")
+    assert preview["available"] is False
+    assert preview["reason"] == "ifcopenshell_not_installed"
+    assert preview["commandCountsByKind"] == {}
+    assert preview["commandCountTotal"] == 0
+    assert preview["unresolvedReferences"] == []
+    assert preview["unresolvedReferenceCount"] == 0
+    assert preview["skipCountsByReason"] == {}
+    assert preview["authoritativeProducts"] == {}
+    assert preview["unsupportedProducts"] == {"schemaVersion": 0, "countsByClass": {}}
+    ids_cov = preview["idsPointerCoverage"]
+    assert ids_cov["available"] is False
+    sa = preview["safeApplyClassification"]
+    assert sa["authoritativeSliceSafeApply"] is False
+    assert "ifcopenshell_not_installed" in sa["notApplyReasons"]
+
+
+def test_ifc_unsupported_merge_map_stub_when_ifcopenshell_missing() -> None:
+    """``build_ifc_unsupported_merge_map_v0`` always returns mergeConstraints offline."""
+
+    if IFC_AVAILABLE:
+        pytest.skip("ifcopenshell installed")
+
+    merge_map = build_ifc_unsupported_merge_map_v0("")
+    assert merge_map["available"] is False
+    assert merge_map["reason"] == "ifcopenshell_not_installed"
+    assert merge_map["unsupportedIfcProductsByClass"] == {}
+    assert merge_map["extractionGapsByReason"] == {}
+    assert merge_map["extractionGapTotal"] == 0
+    constraints = merge_map.get("mergeConstraints") or []
+    assert len(constraints) >= 1
+    assert any("arbitrary" in str(c).lower() or "merge" in str(c).lower() for c in constraints)
+
+
+def _doc_with_wall_and_level() -> Document:
+    return Document(
+        revision=100,
+        elements={
+            "lvl-g": LevelElem(kind="level", id="lvl-g", name="G", elevationMm=0),
+            "w-a": WallElem(
+                kind="wall",
+                id="w-a",
+                name="W",
+                levelId="lvl-g",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 3000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+        },
+    )
+
+
+def test_ifc_manifest_includes_import_preview_stub_offline() -> None:
+    """Manifest always includes ``ifcImportPreview_v0`` key regardless of IfcOpenShell."""
+
+    doc = _doc_with_wall_and_level()
+    mf = build_ifc_exchange_manifest_payload(doc)
+    preview = mf.get("ifcImportPreview_v0")
+    assert isinstance(preview, dict)
+    assert "available" in preview
+    assert "safeApplyClassification" in preview
+    assert "commandCountsByKind" in preview
+    assert "idsPointerCoverage" in preview
+
+
+def test_ifc_manifest_includes_unsupported_merge_map_stub_offline() -> None:
+    """Manifest always includes ``ifcUnsupportedMergeMap_v0`` with mergeConstraints."""
+
+    doc = _doc_with_wall_and_level()
+    mf = build_ifc_exchange_manifest_payload(doc)
+    mm = mf.get("ifcUnsupportedMergeMap_v0")
+    assert isinstance(mm, dict)
+    assert "available" in mm
+    assert "mergeConstraints" in mm
+    constraints = mm.get("mergeConstraints") or []
+    assert len(constraints) >= 1
+
+
+def test_ifc_manifest_import_preview_for_manifest_stub_when_kernel_not_eligible() -> None:
+    """Preview stub returns kernel_not_eligible reason when doc has no kernel geometry."""
+
+    doc = Document(revision=1, elements={})
+    preview = build_ifc_import_preview_v0_for_manifest(doc)
+    assert preview["available"] is False
+    if IFC_AVAILABLE:
+        assert preview["reason"] == "kernel_not_eligible"
+    else:
+        assert preview["reason"] == "ifcopenshell_not_installed"
+
+
+def test_ifc_manifest_unsupported_merge_map_for_manifest_always_has_merge_constraints() -> None:
+    """Unsupported merge map always carries mergeConstraints from the semantic import scope."""
+
+    doc = Document(revision=1, elements={})
+    mm = build_ifc_unsupported_merge_map_v0_for_manifest(doc)
+    assert isinstance(mm.get("mergeConstraints"), list)
+    assert len(mm["mergeConstraints"]) >= 1
+    blob = " ".join(mm["mergeConstraints"])
+    assert "merge" in blob.lower()
+
+
+def test_ifc_semantic_scope_mentions_import_preview_and_unsupported_map() -> None:
+    """``IFC_SEMANTIC_IMPORT_SCOPE_V0.semanticReadBackSupported`` documents the new functions."""
+
+    supported = IFC_SEMANTIC_IMPORT_SCOPE_V0.get("semanticReadBackSupported") or []
+    blob = "\n".join(str(x) for x in supported)
+    assert "build_ifc_import_preview_v0" in blob
+    assert "commandCountsByKind" in blob
+    assert "unresolvedReferences" in blob
+    assert "safeApplyClassification" in blob
+    assert "build_ifc_unsupported_merge_map_v0" in blob
+    assert "unsupportedIfcProductsByClass" in blob
+    assert "ifcImportPreview_v0" in blob
+    assert "ifcUnsupportedMergeMap_v0" in blob
+
+
+def test_ifc_import_preview_safe_apply_classification_structure() -> None:
+    """Preview safe-apply dict has the required keys regardless of IFC availability."""
+
+    doc = _doc_with_wall_and_level()
+    preview = build_ifc_import_preview_v0_for_manifest(doc)
+    sa = preview.get("safeApplyClassification") or {}
+    assert "authoritativeSliceSafeApply" in sa
+    assert "notApplyReasons" in sa
+    assert isinstance(sa["notApplyReasons"], list)
+    assert "note" in sa

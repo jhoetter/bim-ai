@@ -48,7 +48,11 @@ from bim_ai.export_ifc import (
     summarize_kernel_ifc_semantic_roundtrip,
 )
 from bim_ai.geometry import Poly, approx_overlap_area_mm2, sat_overlap, wall_corners
-from bim_ai.ifc_stub import build_ifc_exchange_manifest_payload
+from bim_ai.ifc_stub import (
+    build_ifc_exchange_manifest_payload,
+    build_ifc_import_preview_v0_for_manifest,
+    build_ifc_unsupported_merge_map_v0_for_manifest,
+)
 from bim_ai.material_assembly_resolve import (
     material_assembly_manifest_evidence,
     material_catalog_audit_rows,
@@ -152,6 +156,9 @@ _RULE_DISCIPLINE: dict[str, str] = {
     "exchange_ifc_ids_identity_pset_gap": "exchange",
     "exchange_ifc_ids_qto_gap": "exchange",
     "exchange_ifc_material_layer_readback_mismatch": "exchange",
+    "exchange_ifc_import_preview_extraction_gaps": "exchange",
+    "exchange_ifc_import_preview_unsupported_products": "exchange",
+    "exchange_ifc_import_preview_ids_pointer_gap": "exchange",
     "material_catalog_missing_layer_stack": "exchange",
     "material_catalog_stale_assembly_reference": "exchange",
     "material_catalog_missing_material": "exchange",
@@ -804,6 +811,76 @@ def _exchange_advisory_violations(elements: dict[str, Element]) -> list[Violatio
                         discipline="exchange",
                     )
                 )
+
+    if ifcopenshell_available() and kernel_export_eligible(doc):
+        try:
+            preview = build_ifc_import_preview_v0_for_manifest(doc)
+            merge_map = build_ifc_unsupported_merge_map_v0_for_manifest(doc)
+        except Exception:
+            preview = {}
+            merge_map = {}
+
+        if preview.get("available"):
+            unresolved_count = int(preview.get("unresolvedReferenceCount") or 0)
+            if unresolved_count > 0:
+                out.append(
+                    Violation(
+                        rule_id="exchange_ifc_import_preview_extraction_gaps",
+                        severity="info",
+                        message=(
+                            f"IFC import preview detected {unresolved_count} extraction gap(s) "
+                            "(unresolved product references or unreadable geometry; see "
+                            "ifc_manifest_v0.ifcImportPreview_v0.unresolvedReferences)."
+                        ),
+                        element_ids=[],
+                        discipline="exchange",
+                    )
+                )
+
+            unsupported_classes = dict(merge_map.get("unsupportedIfcProductsByClass") or {})
+            unsupported_total = sum(unsupported_classes.values())
+            if unsupported_total > 0:
+                class_summary = ", ".join(f"{cls}:{n}" for cls, n in sorted(unsupported_classes.items()))
+                out.append(
+                    Violation(
+                        rule_id="exchange_ifc_import_preview_unsupported_products",
+                        severity="info",
+                        message=(
+                            f"IFC import preview found {unsupported_total} product(s) outside the kernel "
+                            "replay slice (not replay targets): "
+                            + class_summary
+                            + " (ifc_manifest_v0.ifcUnsupportedMergeMap_v0.unsupportedIfcProductsByClass)."
+                        ),
+                        element_ids=[],
+                        discipline="exchange",
+                    )
+                )
+
+            ids_cov = preview.get("idsPointerCoverage") or {}
+            if ids_cov.get("available"):
+                spaces_cov = ids_cov.get("spaces") or {}
+                floors_cov = ids_cov.get("floors") or {}
+                space_rows = int(spaces_cov.get("rows") or 0)
+                space_qto = int(spaces_cov.get("withQtoSpaceBaseQuantitiesLinked") or 0)
+                floor_rows = int(floors_cov.get("rows") or 0)
+                floor_qto = int(floors_cov.get("withQtoSlabBaseQuantitiesLinked") or 0)
+                ids_gap = (space_rows > 0 and space_qto < space_rows) or (
+                    floor_rows > 0 and floor_qto < floor_rows
+                )
+                if ids_gap and _validation_rules_any_cleanroom_ids(val_rules):
+                    out.append(
+                        Violation(
+                            rule_id="exchange_ifc_import_preview_ids_pointer_gap",
+                            severity="info",
+                            message=(
+                                "Cleanroom IDS validation is active but IFC import preview shows incomplete "
+                                "Qto_* linkage for some authoritative replay rows "
+                                "(ifc_manifest_v0.ifcImportPreview_v0.idsPointerCoverage)."
+                            ),
+                            element_ids=[],
+                            discipline="exchange",
+                        )
+                    )
 
     return out
 

@@ -2007,6 +2007,189 @@ def summarize_kernel_ifc_semantic_roundtrip(doc: Document) -> dict[str, Any]:
     }
 
 
+def build_ifc_import_preview_v0(step_text: str) -> dict[str, Any]:
+    """Deterministic IFC import preview: command counts, unresolved refs, authoritative vs
+    unsupported products, IDS pointer coverage, and safe-apply classification.
+
+    Runs entirely from STEP text; no document context is required.  Stable across repeated
+    runs against the same input (deterministic sketch + sorted outputs).
+    """
+
+    _unavailable_base: dict[str, Any] = {
+        "schemaVersion": 0,
+        "commandCountsByKind": {},
+        "commandCountTotal": 0,
+        "unresolvedReferences": [],
+        "unresolvedReferenceCount": 0,
+        "skipCountsByReason": {},
+        "authoritativeProducts": {},
+        "unsupportedProducts": {"schemaVersion": 0, "countsByClass": {}},
+        "idsPointerCoverage": {"schemaVersion": 0, "available": False},
+    }
+
+    if not IFC_AVAILABLE:
+        return {
+            **_unavailable_base,
+            "available": False,
+            "reason": "ifcopenshell_not_installed",
+            "safeApplyClassification": {
+                "authoritativeSliceSafeApply": False,
+                "notApplyReasons": ["ifcopenshell_not_installed"],
+                "note": "IfcOpenShell is not installed; install '.[ifc]' to enable preview.",
+            },
+        }
+
+    sketch = build_kernel_ifc_authoritative_replay_sketch_v0(step_text)
+
+    if not sketch.get("available"):
+        return {
+            **_unavailable_base,
+            "available": False,
+            "reason": str(sketch.get("reason") or "sketch_unavailable"),
+            "unsupportedProducts": sketch.get("unsupportedIfcProducts") or {"schemaVersion": 0, "countsByClass": {}},
+            "safeApplyClassification": {
+                "authoritativeSliceSafeApply": False,
+                "notApplyReasons": [str(sketch.get("reason") or "sketch_unavailable")],
+                "note": "Authoritative replay sketch is unavailable.",
+            },
+        }
+
+    commands: list[dict[str, Any]] = list(sketch.get("commands") or [])
+    cmd_counts: dict[str, int] = {}
+    for cmd in commands:
+        t = str(cmd.get("type") or "")
+        if t:
+            cmd_counts[t] = cmd_counts.get(t, 0) + 1
+
+    extraction_gaps: list[dict[str, Any]] = [
+        g for g in (sketch.get("extractionGaps") or []) if isinstance(g, dict)
+    ]
+
+    raw_skips = {
+        "kernelWallSkippedNoReference": sketch.get("kernelWallSkippedNoReference", 0),
+        "kernelSlabSkippedNoReference": sketch.get("kernelSlabSkippedNoReference", 0),
+        "kernelSpaceSkippedNoReference": sketch.get("kernelSpaceSkippedNoReference", 0),
+        "kernelDoorSkippedNoReference": sketch.get("kernelDoorSkippedNoReference", 0),
+        "kernelWindowSkippedNoReference": sketch.get("kernelWindowSkippedNoReference", 0),
+        "kernelStairSkippedNoReference": sketch.get("kernelStairSkippedNoReference", 0),
+        "kernelRoofSkippedNoReference": sketch.get("kernelRoofSkippedNoReference", 0),
+    }
+    skip_counts = {k: int(v) for k, v in sorted(raw_skips.items()) if int(v) > 0}
+
+    auth_subset: dict[str, Any] = sketch.get("authoritativeSubset") or {}
+    authoritative_products = {k: bool(v) for k, v in sorted(auth_subset.items())}
+
+    unsupported: dict[str, Any] = sketch.get("unsupportedIfcProducts") or {"schemaVersion": 0, "countsByClass": {}}
+
+    ids_map: dict[str, Any] = sketch.get("idsAuthoritativeReplayMap_v0") or {}
+    spaces_rows: list[dict[str, Any]] = list(ids_map.get("spaces") or [])
+    roofs_rows: list[dict[str, Any]] = list(ids_map.get("roofs") or [])
+    floors_rows: list[dict[str, Any]] = list(ids_map.get("floors") or [])
+
+    ids_pointer_coverage: dict[str, Any] = {
+        "schemaVersion": 0,
+        "available": True,
+        "spaces": {
+            "rows": len(spaces_rows),
+            "withQtoSpaceBaseQuantitiesLinked": sum(1 for r in spaces_rows if r.get("qtoSpaceBaseQuantitiesLinked")),
+        },
+        "roofs": {
+            "rows": len(roofs_rows),
+            "withIdentityReference": sum(1 for r in roofs_rows if r.get("identityReference")),
+        },
+        "floors": {
+            "rows": len(floors_rows),
+            "withQtoSlabBaseQuantitiesLinked": sum(1 for r in floors_rows if r.get("qtoSlabBaseQuantitiesLinked")),
+        },
+    }
+
+    not_apply_reasons: list[str] = []
+    unsupported_counts: dict[str, int] = unsupported.get("countsByClass") or {}
+    if any(v > 0 for v in unsupported_counts.values()):
+        not_apply_reasons.append("unsupported_ifc_products_present")
+    if extraction_gaps:
+        not_apply_reasons.append("extraction_gaps_present")
+    if skip_counts:
+        not_apply_reasons.append("products_skipped_missing_reference")
+
+    authoritative_safe = bool(cmd_counts)
+
+    if authoritative_safe:
+        apply_note = (
+            "authoritativeSliceSafeApply=True: command list may be applied to an additive-compatible "
+            "document via try_apply_kernel_ifc_authoritative_replay_v0 (preflight validates ID "
+            "collisions and unresolved references at apply time). notApplyReasons describe boundary "
+            "conditions for the full IFC graph, not the authoritative command subset."
+        )
+    else:
+        apply_note = "No authoritative replay commands were extractable from this STEP input."
+
+    return {
+        "schemaVersion": 0,
+        "available": True,
+        "commandCountsByKind": dict(sorted(cmd_counts.items())),
+        "commandCountTotal": sum(cmd_counts.values()),
+        "unresolvedReferences": extraction_gaps,
+        "unresolvedReferenceCount": len(extraction_gaps),
+        "skipCountsByReason": skip_counts,
+        "authoritativeProducts": authoritative_products,
+        "unsupportedProducts": unsupported,
+        "idsPointerCoverage": ids_pointer_coverage,
+        "safeApplyClassification": {
+            "authoritativeSliceSafeApply": authoritative_safe,
+            "notApplyReasons": not_apply_reasons,
+            "note": apply_note,
+        },
+    }
+
+
+def build_ifc_unsupported_merge_map_v0(step_text: str) -> dict[str, Any]:
+    """Deterministic unsupported IFC merge map: products outside the kernel slice, extraction
+    gap reasons, and architectural merge constraints.  Stable across repeated runs.
+    """
+
+    from bim_ai.ifc_stub import IFC_SEMANTIC_IMPORT_SCOPE_V0  # noqa: PLC0415
+
+    merge_constraints: list[str] = list(IFC_SEMANTIC_IMPORT_SCOPE_V0.get("importMergeUnsupported") or [])
+
+    if not IFC_AVAILABLE:
+        return {
+            "schemaVersion": 0,
+            "available": False,
+            "reason": "ifcopenshell_not_installed",
+            "unsupportedIfcProductsByClass": {},
+            "extractionGapsByReason": {},
+            "extractionGapTotal": 0,
+            "mergeConstraints": merge_constraints,
+        }
+
+    sketch = build_kernel_ifc_authoritative_replay_sketch_v0(step_text)
+
+    unsupported_products: dict[str, Any] = sketch.get("unsupportedIfcProducts") or {"schemaVersion": 0, "countsByClass": {}}
+    extraction_gaps: list[dict[str, Any]] = [
+        g for g in (sketch.get("extractionGaps") or []) if isinstance(g, dict)
+    ]
+
+    gap_by_reason: dict[str, int] = {}
+    for g in extraction_gaps:
+        reason = str(g.get("reason") or "unknown")
+        gap_by_reason[reason] = gap_by_reason.get(reason, 0) + 1
+
+    return {
+        "schemaVersion": 0,
+        "available": bool(sketch.get("available")),
+        "unsupportedIfcProductsByClass": dict(sorted((unsupported_products.get("countsByClass") or {}).items())),
+        "extractionGapsByReason": dict(sorted(gap_by_reason.items())),
+        "extractionGapTotal": len(extraction_gaps),
+        "mergeConstraints": merge_constraints,
+        "note": (
+            "unsupportedIfcProductsByClass: IFC product classes outside the kernel replay slice; "
+            "extractionGapsByReason: reasons the kernel failed to extract a command from a supported product; "
+            "mergeConstraints: permanent architectural decisions preventing arbitrary IFC merge."
+        ),
+    }
+
+
 def _clamp(v: float, lo: float, hi: float) -> float:
     return max(lo, min(hi, v))
 
