@@ -118,9 +118,9 @@ def test_deferred_rows_have_valid_waiver_codes() -> None:
 def test_non_deferred_rows_have_no_waiver_code() -> None:
     m = build_prd_blocking_advisor_matrix()
     for row in m["rows"]:
-        if row["status"] != "deferred":
+        if row["status"] not in ("deferred", "partial"):
             assert "waiverReasonCode" not in row, (
-                f"Row {row['id']!r}: non-deferred row must not have waiverReasonCode "
+                f"Row {row['id']!r}: non-deferred/non-partial row must not have waiverReasonCode "
                 f"(status={row['status']!r})"
             )
 

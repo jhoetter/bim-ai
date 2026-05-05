@@ -189,6 +189,17 @@ def _prd_advisor_summary_safe() -> dict[str, Any]:
     return prd_advisor_matrix_summary()
 
 
+def _prd_closeout_cross_correlation_safe() -> dict[str, Any] | None:
+    try:
+        from bim_ai.prd_closeout_cross_correlation import (  # lazy import
+            build_prd_closeout_cross_correlation_manifest_v1,
+        )
+
+        return build_prd_closeout_cross_correlation_manifest_v1()
+    except Exception:
+        return None
+
+
 def build_v1_closeout_readiness_manifest_v1() -> dict[str, Any]:
     tracker_text: str | None
     try:
@@ -206,6 +217,8 @@ def build_v1_closeout_readiness_manifest_v1() -> dict[str, Any]:
     gates = _gate_rows(tracker_text=tracker_text, ci_yml_text=ci_yml_text)
     classification, cls_details = _release_classification_v1(gates=gates, deferred=deferred)
 
+    cross_correlation = _prd_closeout_cross_correlation_safe()
+
     manifest_body: dict[str, Any] = {
         "format": "v1CloseoutReadinessManifest_v1",
         "schemaVersion": 1,
@@ -214,6 +227,7 @@ def build_v1_closeout_readiness_manifest_v1() -> dict[str, Any]:
         "releaseClassification": classification,
         "releaseClassificationDetails": cls_details,
         "prdAdvisorMatrixSummary": _prd_advisor_summary_safe(),
+        "prdCloseoutCrossCorrelationManifest_v1": cross_correlation,
         "agentNextActions": sorted(
             [
                 "Do not claim v1 or workpackage done unless tracker Done Rule and evidence match.",

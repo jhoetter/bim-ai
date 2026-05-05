@@ -47,6 +47,11 @@ import {
   formatIfcExchangeManifestClosureLines,
   type IfcExchangeManifestClosureWire,
 } from './ifcExchangeManifestClosureReadout';
+import {
+  formatPrdCloseoutCrossCorrelationReadoutLines,
+  parsePrdCloseoutCrossCorrelationManifestV1,
+  type PrdCloseoutCrossCorrelationManifestWire,
+} from './prdCloseoutCrossCorrelationReadout';
 
 type JsonText = string;
 
@@ -168,6 +173,7 @@ export function AgentReviewPane() {
     artifactUploadManifestReadout: string[] | null;
     baselineLifecycleReadout: EvidenceBaselineLifecycleReadoutWire | null;
     consistencyClosure: AgentReviewReadoutConsistencyClosureV1 | null;
+    prdCloseoutCrossCorrelation: PrdCloseoutCrossCorrelationManifestWire | null;
   };
 
   const assumptionsJson = useMemo(() => {
@@ -378,6 +384,7 @@ export function AgentReviewPane() {
       artifactUploadManifestReadout: null,
       baselineLifecycleReadout: null,
       consistencyClosure: null,
+      prdCloseoutCrossCorrelation: null,
     });
 
     if (!evidenceTxt) return empty();
@@ -438,6 +445,15 @@ export function AgentReviewPane() {
       const consistencyClosure = parseAgentReviewReadoutConsistencyClosureV1(
         payload.agentReviewReadoutConsistencyClosure_v1,
       );
+
+      let prdCloseoutCrossCorrelation: EvidenceArtifactSummary['prdCloseoutCrossCorrelation'] = null;
+      const closeoutManifestRaw = payload.v1CloseoutReadinessManifest_v1;
+      if (closeoutManifestRaw && typeof closeoutManifestRaw === 'object') {
+        const cm = closeoutManifestRaw as Record<string, unknown>;
+        prdCloseoutCrossCorrelation = parsePrdCloseoutCrossCorrelationManifestV1(
+          cm.prdCloseoutCrossCorrelationManifest_v1,
+        );
+      }
 
       let diffFixLoop: EvidenceArtifactSummary['diffFixLoop'] = null;
       const dflRaw = payload.evidenceDiffIngestFixLoop_v1;
@@ -946,6 +962,7 @@ export function AgentReviewPane() {
         artifactUploadManifestReadout,
         baselineLifecycleReadout,
         consistencyClosure,
+        prdCloseoutCrossCorrelation,
       };
     } catch {
       return {
@@ -970,6 +987,7 @@ export function AgentReviewPane() {
         artifactUploadManifestReadout: null,
         baselineLifecycleReadout: null,
         consistencyClosure: null,
+        prdCloseoutCrossCorrelation: null,
       };
     }
   }, [evidenceTxt, revision]);
@@ -1599,6 +1617,7 @@ export function AgentReviewPane() {
       evidenceArtifactSummary.diffFixLoop?.needsFixLoop ||
       evidenceArtifactSummary.performanceGate ||
       evidenceArtifactSummary.baselineLifecycleReadout ||
+      evidenceArtifactSummary.prdCloseoutCrossCorrelation ||
       evidenceArtifactSummary.reviewActions.length ? (
         <div className="rounded border border-border bg-background/40 p-2">
           <div className="text-[10px] font-semibold text-muted">Evidence artifact correlation</div>
@@ -1950,6 +1969,25 @@ export function AgentReviewPane() {
             <EvidenceBaselineLifecycleReadoutV1Table
               readout={evidenceArtifactSummary.baselineLifecycleReadout}
             />
+          ) : null}
+          {evidenceArtifactSummary.prdCloseoutCrossCorrelation ? (
+            <div
+              className="mt-2 rounded border border-border/60 bg-background/30 p-2"
+              data-testid="prd-closeout-cross-correlation-readout"
+            >
+              <div className="text-[10px] font-semibold text-muted">
+                PRD closeout cross-correlation (prdCloseoutCrossCorrelationManifest_v1)
+              </div>
+              <ul className="mt-1 list-disc space-y-0.5 ps-4 text-[10px] text-muted">
+                {formatPrdCloseoutCrossCorrelationReadoutLines(
+                  evidenceArtifactSummary.prdCloseoutCrossCorrelation,
+                ).map((ln, idx) => (
+                  <li key={`prd-cc-${idx}`}>
+                    <code className="whitespace-pre-wrap break-all font-mono text-[9px]">{ln}</code>
+                  </li>
+                ))}
+              </ul>
+            </div>
           ) : null}
           {evidenceArtifactSummary.diffFixLoop?.needsFixLoop ? (
             <div

@@ -21,7 +21,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # ── Allowed status and waiver vocabulary ──────────────────────────────────────
 
-ALLOWED_STATUSES: frozenset[str] = frozenset({"pass", "warn", "block", "deferred"})
+ALLOWED_STATUSES: frozenset[str] = frozenset({"pass", "warn", "block", "deferred", "partial"})
 
 ALLOWED_WAIVER_REASON_CODES: frozenset[str] = frozenset(
     {
@@ -376,11 +376,11 @@ def validate_prd_advisor_matrix_rows(rows: list[dict[str, Any]]) -> list[str]:
             errors.append(f"Duplicate row id: {row_id!r}")
         seen_ids.add(row_id)
 
-        if status == "deferred":
+        if status in ("deferred", "partial"):
             waiver_code = str(row.get("waiverReasonCode") or "")
             if not waiver_code:
                 errors.append(
-                    f"{row_id}: deferred row must have 'waiverReasonCode'; "
+                    f"{row_id}: {status} row must have 'waiverReasonCode'; "
                     f"allowed: {sorted(ALLOWED_WAIVER_REASON_CODES)}"
                 )
             elif waiver_code not in ALLOWED_WAIVER_REASON_CODES:
@@ -389,7 +389,7 @@ def validate_prd_advisor_matrix_rows(rows: list[dict[str, Any]]) -> list[str]:
                     f"allowed: {sorted(ALLOWED_WAIVER_REASON_CODES)}"
                 )
             if not row.get("waiverEvidenceLink"):
-                errors.append(f"{row_id}: deferred row must have 'waiverEvidenceLink'")
+                errors.append(f"{row_id}: {status} row must have 'waiverEvidenceLink'")
         else:
             if row.get("waiverReasonCode"):
                 errors.append(

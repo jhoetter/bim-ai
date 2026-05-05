@@ -199,6 +199,9 @@ _RULE_DISCIPLINE: dict[str, str] = {
     "section_on_sheet_revision_issue_unresolved": "coordination",
     "gltf_export_manifest_expected_extension_missing": "exchange",
     "gltf_export_manifest_extension_order_drift": "exchange",
+    "prd_closeout_advisor_readiness_status_drift": "agent",
+    "prd_closeout_section_missing_in_readiness": "agent",
+    "prd_closeout_reason_code_drift": "agent",
 }
 
 _MATERIAL_CATALOG_AUDIT_RULE_IDS: dict[str, str] = {
