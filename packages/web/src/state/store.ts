@@ -510,8 +510,7 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
         : {}),
       ...(() => {
         const csRaw = raw.cutawayStyle ?? raw.cutaway_style;
-        if (csRaw !== 'none' && csRaw !== 'cap' && csRaw !== 'floor' && csRaw !== 'box')
-          return {};
+        if (csRaw !== 'none' && csRaw !== 'cap' && csRaw !== 'floor' && csRaw !== 'box') return {};
         return { cutawayStyle: csRaw };
       })(),
     };
@@ -1103,38 +1102,24 @@ function defaultLevelId(elements: Record<string, Element>): string | undefined {
   return levels[0]?.id;
 }
 
-function readThemeDark(): boolean {
-  try {
-    return localStorage.getItem('bim.theme') === 'dark';
-  } catch {
-    return false;
-  }
-}
+/** Theme controls live in `./theme.ts`. These exports preserve the
+ * existing call-site API while delegating to the canonical module. */
 
-function writeThemeDark(dark: boolean) {
-  try {
-    document.documentElement.classList.toggle('dark', dark);
-    localStorage.setItem('bim.theme', dark ? 'dark' : 'light');
-  } catch {
-    /* noop */
-  }
-}
+export {
+  initTheme as initThemeFromStorage,
+  toggleTheme,
+  applyTheme,
+  getCurrentTheme,
+  readPreferredTheme,
+  prefersReducedMotion,
+  type Theme,
+} from './theme';
 
-/** Call once from `main.tsx` before render. */
+import { toggleTheme as _toggleTheme } from './theme';
 
-export function initThemeFromStorage() {
-  writeThemeDark(readThemeDark());
-}
-
+/** Back-compat: returns `true` when the new theme is dark. */
 export function toggleStoredTheme(): boolean {
-  try {
-    const next = !document.documentElement.classList.contains('dark');
-    writeThemeDark(next);
-
-    return next;
-  } catch {
-    return false;
-  }
+  return _toggleTheme() === 'dark';
 }
 
 export function newPeerIdentity() {
