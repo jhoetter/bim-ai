@@ -174,6 +174,18 @@ export function AgentReviewPane() {
     baselineLifecycleReadout: EvidenceBaselineLifecycleReadoutWire | null;
     consistencyClosure: AgentReviewReadoutConsistencyClosureV1 | null;
     prdCloseoutCrossCorrelation: PrdCloseoutCrossCorrelationManifestWire | null;
+    evidenceFreshness: {
+      freshCount: number;
+      staleCount: number;
+      missingCount: number;
+      totalCount: number;
+    } | null;
+    regenerationGuidance: {
+      priority: string;
+      artifactKey: string;
+      reason: string;
+      suggestedCommand: string;
+    }[] | null;
   };
 
   const assumptionsJson = useMemo(() => {
@@ -385,6 +397,8 @@ export function AgentReviewPane() {
       baselineLifecycleReadout: null,
       consistencyClosure: null,
       prdCloseoutCrossCorrelation: null,
+      evidenceFreshness: null,
+      regenerationGuidance: null,
     });
 
     if (!evidenceTxt) return empty();
@@ -939,6 +953,38 @@ export function AgentReviewPane() {
         }
       }
 
+      let evidenceFreshness: EvidenceArtifactSummary['evidenceFreshness'] = null;
+      if (closureReview) {
+        const staleCount = closureReview.staleRowCount;
+        const missingCount = closureReview.missingDigestRowCount;
+        const totalCount = closureReview.primaryCount;
+        const freshCount = Math.max(0, totalCount - staleCount - missingCount);
+        evidenceFreshness = { freshCount, staleCount, missingCount, totalCount };
+      }
+
+      let regenerationGuidance: EvidenceArtifactSummary['regenerationGuidance'] = null;
+      const regenRaw = (typeof evidenceTxt === 'string' ? (() => {
+        try { return JSON.parse(evidenceTxt) as Record<string, unknown>; } catch { return null; }
+      })() : null);
+      if (regenRaw && typeof regenRaw === 'object') {
+        const rgRaw = (regenRaw as Record<string, unknown>).agentRegenerationGuidance_v1;
+        if (rgRaw && typeof rgRaw === 'object') {
+          const rg = rgRaw as Record<string, unknown>;
+          const actionsRaw = rg.actions;
+          if (Array.isArray(actionsRaw)) {
+            regenerationGuidance = actionsRaw
+              .filter((a): a is Record<string, unknown> => typeof a === 'object' && a !== null)
+              .map((a) => ({
+                priority: typeof a.priority === 'string' ? a.priority : 'low',
+                artifactKey: typeof a.artifactKey === 'string' ? a.artifactKey : '',
+                reason: typeof a.reason === 'string' ? a.reason : '',
+                suggestedCommand: typeof a.suggestedCommand === 'string' ? a.suggestedCommand : '',
+              }))
+              .filter((a) => a.artifactKey.length > 0);
+          }
+        }
+      }
+
       return {
         semanticDigestPrefix16: prefix,
         semanticDigestSha256Tail: shaTail,
@@ -963,6 +1009,8 @@ export function AgentReviewPane() {
         baselineLifecycleReadout,
         consistencyClosure,
         prdCloseoutCrossCorrelation,
+        evidenceFreshness,
+        regenerationGuidance,
       };
     } catch {
       return {
@@ -988,6 +1036,8 @@ export function AgentReviewPane() {
         baselineLifecycleReadout: null,
         consistencyClosure: null,
         prdCloseoutCrossCorrelation: null,
+        evidenceFreshness: null,
+        regenerationGuidance: null,
       };
     }
   }, [evidenceTxt, revision]);
@@ -1618,6 +1668,7 @@ export function AgentReviewPane() {
       evidenceArtifactSummary.performanceGate ||
       evidenceArtifactSummary.baselineLifecycleReadout ||
       evidenceArtifactSummary.prdCloseoutCrossCorrelation ||
+      evidenceArtifactSummary.evidenceFreshness ||
       evidenceArtifactSummary.reviewActions.length ? (
         <div className="rounded border border-border bg-background/40 p-2">
           <div className="text-[10px] font-semibold text-muted">Evidence artifact correlation</div>
@@ -1987,6 +2038,69 @@ export function AgentReviewPane() {
                   </li>
                 ))}
               </ul>
+            </div>
+          ) : null}
+          {evidenceArtifactSummary.evidenceFreshness ? (
+            <div
+              className="mt-2 rounded border border-border/60 bg-background/30 p-2"
+              data-testid="agent-review-evidence-freshness"
+            >
+              <div className="text-[10px] font-semibold text-muted">
+                Evidence freshness (ingestEvidenceArtifactManifest_v1)
+              </div>
+              <ul className="mt-1 list-disc space-y-0.5 ps-4 text-[10px] text-muted">
+                <li>
+                  fresh:{' '}
+                  <strong data-testid="freshness-fresh-count">
+                    {evidenceArtifactSummary.evidenceFreshness.freshCount}
+                  </strong>
+                  {' / '}stale:{' '}
+                  <strong data-testid="freshness-stale-count">
+                    {evidenceArtifactSummary.evidenceFreshness.staleCount}
+                  </strong>
+                  {' / '}missing:{' '}
+                  <strong data-testid="freshness-missing-count">
+                    {evidenceArtifactSummary.evidenceFreshness.missingCount}
+                  </strong>
+                  {' '}(total:{' '}
+                  <strong>{evidenceArtifactSummary.evidenceFreshness.totalCount}</strong>)
+                </li>
+              </ul>
+              {evidenceArtifactSummary.regenerationGuidance &&
+              evidenceArtifactSummary.regenerationGuidance.length > 0 ? (
+                <div className="mt-2">
+                  <div className="text-[10px] font-semibold text-muted">
+                    Regeneration guidance (agentRegenerationGuidance_v1)
+                  </div>
+                  <ul
+                    className="mt-1 list-disc space-y-1 ps-4 text-[10px] text-muted"
+                    data-testid="regeneration-guidance-checklist"
+                  >
+                    {evidenceArtifactSummary.regenerationGuidance.map((action, idx) => (
+                      <li key={`regen-${idx}`}>
+                        <span
+                          className={
+                            action.priority === 'high'
+                              ? 'font-semibold text-red-600 dark:text-red-400'
+                              : action.priority === 'medium'
+                                ? 'font-semibold text-amber-600 dark:text-amber-400'
+                                : 'text-muted'
+                          }
+                        >
+                          [{action.priority}]
+                        </span>{' '}
+                        <code className="font-mono text-[9px]">{action.artifactKey}</code>
+                        {' — '}{action.reason}
+                        <div className="mt-0.5">
+                          <code className="whitespace-pre-wrap break-all font-mono text-[9px] text-muted">
+                            $ {action.suggestedCommand}
+                          </code>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
             </div>
           ) : null}
           {evidenceArtifactSummary.diffFixLoop?.needsFixLoop ? (

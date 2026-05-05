@@ -7,6 +7,8 @@ from typing import Any
 from bim_ai.document import Document
 from bim_ai.elements import AgentAssumptionElem, AgentDeviationElem
 
+_REGEN_PRIORITY_ORDER: dict[str, int] = {"high": 0, "medium": 1, "low": 2}
+
 FORMAT = "agentBriefAcceptanceReadout_v1"
 SCHEMA_VERSION = 1
 
@@ -384,4 +386,70 @@ def agent_brief_acceptance_readout_v1(
             "agentBriefAcceptanceReadout_v1 is derivative; excluded from semanticDigestSha256."
         ),
         "rows": rows,
+    }
+
+
+def agent_regeneration_guidance_v1(
+    doc: Document,
+    stale_artifacts: list[dict[str, Any]],
+    diff_summary: dict[str, Any],
+) -> dict[str, Any]:
+    """Generate ordered regeneration guidance from stale artifacts and diff summary.
+
+    Each action has priority (high/medium/low), artifactKey, reason, suggestedCommand.
+    Priority ordering: high (missing digest) → medium (changed) → low (stale digest).
+    """
+    changed_keys: set[str] = set()
+    if isinstance(diff_summary, dict):
+        for entry in (diff_summary.get("changed") or []):
+            if isinstance(entry, dict):
+                k = entry.get("artifactKey")
+                if isinstance(k, str) and k:
+                    changed_keys.add(k)
+
+    actions: list[dict[str, Any]] = []
+    for artifact in stale_artifacts:
+        if not isinstance(artifact, dict):
+            continue
+        key = artifact.get("artifactKey")
+        if not isinstance(key, str) or not key:
+            continue
+        reason_code = artifact.get("stalenessReason") or "package_digest_changed"
+
+        if reason_code == "entry_digest_missing":
+            priority = "high"
+            reason = "Evidence artifact has no recorded digest; regeneration required to establish baseline."
+        elif key in changed_keys:
+            priority = "medium"
+            reason = "Artifact changed since last manifest; retake to synchronize with current model state."
+        else:
+            priority = "low"
+            reason = "Package digest changed; artifact may be stale relative to current model revision."
+
+        if key.startswith("sheet-"):
+            cmd = "cd app && .venv/bin/pytest tests/test_deterministic_sheet_evidence.py -x -v"
+        elif key.startswith("viewpoint-"):
+            cmd = "pnpm exec playwright test e2e/evidence-baselines.spec.ts"
+        elif key.startswith("plan_view-"):
+            cmd = "cd app && .venv/bin/pytest tests/ -k evidence -x -v"
+        elif key.startswith("section_cut-"):
+            cmd = "cd app && .venv/bin/pytest tests/ -k section -x -v"
+        else:
+            cmd = "cd app && .venv/bin/pytest tests/ -x -v"
+
+        actions.append(
+            {"priority": priority, "artifactKey": key, "reason": reason, "suggestedCommand": cmd}
+        )
+
+    actions.sort(
+        key=lambda a: (
+            _REGEN_PRIORITY_ORDER.get(str(a.get("priority", "")), 99),
+            str(a.get("artifactKey", "")),
+        )
+    )
+
+    return {
+        "format": "agentRegenerationGuidance_v1",
+        "actions": actions,
+        "actionCount": len(actions),
     }

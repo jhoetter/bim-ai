@@ -7,7 +7,16 @@ import json
 from typing import Any
 
 from bim_ai.document import Document
-from bim_ai.elements import AgentDeviationElem, BcfElem, EvidenceRef, IssueElem
+from bim_ai.elements import (
+    AgentDeviationElem,
+    BcfElem,
+    EvidenceRef,
+    IssueElem,
+    PlanViewElem,
+    SectionCutElem,
+    SheetElem,
+    ViewpointElem,
+)
 from bim_ai.evidence_manifest import (
     artifact_ingest_correlation_v1,
     evidence_diff_ingest_fix_loop_v1,
@@ -445,3 +454,154 @@ def agent_review_actions_v1(
 
     actions.sort(key=lambda a: str(a.get("actionId", "")))
     return {"format": "agentReviewActions_v1", "actions": actions}
+
+
+def ingest_evidence_artifact_manifest_v1(
+    doc: Document,
+    manifest: dict[str, Any],
+    *,
+    current_package_digest: str | None = None,
+) -> dict[str, Any]:
+    """Validate manifest entries against current document state.
+
+    Returns {fresh, stale, missing} artifact lists with staleness reasons.
+    Staleness: compare each entry's recorded digest to current_package_digest.
+    Missing: artifact keys expected from doc elements but absent from manifest.
+    """
+    entries_raw = manifest.get("entries")
+    entries: list[dict[str, Any]] = [e for e in (entries_raw or []) if isinstance(e, dict)]
+
+    manifest_digest = manifest.get("packageDigestSha256")
+    reference_digest = current_package_digest if current_package_digest is not None else manifest_digest
+
+    fresh: list[dict[str, Any]] = []
+    stale: list[dict[str, Any]] = []
+    manifest_keys: set[str] = set()
+
+    for entry in entries:
+        key = entry.get("artifactKey")
+        if not isinstance(key, str) or not key:
+            continue
+        manifest_keys.add(key)
+        entry_digest = entry.get("digest")
+
+        if reference_digest and isinstance(entry_digest, str) and entry_digest == reference_digest:
+            fresh.append({"artifactKey": key, "digest": entry_digest})
+        else:
+            if not isinstance(entry_digest, str) or not entry_digest:
+                reason = "entry_digest_missing"
+            elif not reference_digest:
+                reason = "reference_digest_unavailable"
+            else:
+                reason = "package_digest_changed"
+            stale.append(
+                {
+                    "artifactKey": key,
+                    "digest": entry_digest,
+                    "stalenessReason": reason,
+                    "manifestPackageDigest": manifest_digest,
+                    "currentPackageDigest": current_package_digest,
+                }
+            )
+
+    missing: list[dict[str, Any]] = []
+    for eid, elem in doc.elements.items():
+        expected_key: str | None = None
+        elem_kind: str | None = None
+        if isinstance(elem, SheetElem):
+            expected_key = f"sheet-{eid}"
+            elem_kind = "sheet"
+        elif isinstance(elem, ViewpointElem):
+            expected_key = f"viewpoint-{eid}"
+            elem_kind = "viewpoint"
+        elif isinstance(elem, PlanViewElem):
+            expected_key = f"plan_view-{eid}"
+            elem_kind = "plan_view"
+        elif isinstance(elem, SectionCutElem):
+            expected_key = f"section_cut-{eid}"
+            elem_kind = "section_cut"
+        if expected_key and expected_key not in manifest_keys:
+            missing.append({"artifactKey": expected_key, "elementId": eid, "elementKind": elem_kind})
+
+    missing.sort(key=lambda x: str(x.get("artifactKey", "")))
+
+    return {
+        "format": "ingestEvidenceArtifactManifest_v1",
+        "fresh": sorted(fresh, key=lambda x: str(x.get("artifactKey", ""))),
+        "stale": sorted(stale, key=lambda x: str(x.get("artifactKey", ""))),
+        "missing": missing,
+        "freshCount": len(fresh),
+        "staleCount": len(stale),
+        "missingCount": len(missing),
+    }
+
+
+def compute_evidence_diff_metadata_v1(
+    doc: Document,
+    previous_manifest: dict[str, Any],
+    current_manifest: dict[str, Any],
+) -> dict[str, Any]:
+    """Compute structured diff between two evidence artifact manifests.
+
+    Returns added/removed/changed entries with per-key delta summaries
+    and an evidenceDiffSummary_v1 with counts and top-5 largest deltas.
+    """
+
+    def _entry_map(m: dict[str, Any]) -> dict[str, str]:
+        out: dict[str, str] = {}
+        for e in (m.get("entries") or []):
+            if not isinstance(e, dict):
+                continue
+            k = e.get("artifactKey")
+            d = e.get("digest")
+            if isinstance(k, str) and k and isinstance(d, str):
+                out[k] = d
+        return out
+
+    prev_map = _entry_map(previous_manifest)
+    curr_map = _entry_map(current_manifest)
+
+    prev_keys = set(prev_map)
+    curr_keys = set(curr_map)
+
+    added = [
+        {"artifactKey": k, "newDigest": curr_map[k]} for k in sorted(curr_keys - prev_keys)
+    ]
+    removed = [
+        {"artifactKey": k, "oldDigest": prev_map[k]} for k in sorted(prev_keys - curr_keys)
+    ]
+    changed: list[dict[str, Any]] = []
+    for k in sorted(prev_keys & curr_keys):
+        old_d, new_d = prev_map[k], curr_map[k]
+        if old_d != new_d:
+            old_pfx = old_d[:8] if len(old_d) >= 8 else old_d
+            new_pfx = new_d[:8] if len(new_d) >= 8 else new_d
+            changed.append(
+                {
+                    "artifactKey": k,
+                    "oldDigest": old_d,
+                    "newDigest": new_d,
+                    "deltaSummary": f"{old_pfx}→{new_pfx}",
+                }
+            )
+
+    top5 = [
+        {"artifactKey": e["artifactKey"], "deltaSummary": e["deltaSummary"]}
+        for e in changed[:5]
+    ]
+
+    summary: dict[str, Any] = {
+        "format": "evidenceDiffSummary_v1",
+        "addedCount": len(added),
+        "removedCount": len(removed),
+        "changedCount": len(changed),
+        "top5LargestDeltas": top5,
+    }
+
+    return {
+        "format": "evidenceDiffMetadata_v1",
+        "added": added,
+        "removed": removed,
+        "changed": changed,
+        "evidenceDiffSummary_v1": summary,
+    }
