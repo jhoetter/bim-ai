@@ -1245,11 +1245,13 @@ def agent_evidence_closure_hints() -> dict[str, Any]:
         "artifactUploadManifestField": "artifactUploadManifest_v1",
         "agentGeneratedBundleQaChecklistField": "agentGeneratedBundleQaChecklist_v1",
         "evidenceBaselineLifecycleReadoutField": "evidenceBaselineLifecycleReadout_v1",
+        "v1CloseoutReadinessManifestField": "v1CloseoutReadinessManifest_v1",
         "semanticDigestOmitsDerivativeSummariesNote": (
             "semanticDigestSha256 excludes bcfTopicsIndex_v1, agentReviewActions_v1, "
             "evidenceDiffIngestFixLoop_v1, evidenceReviewPerformanceGate_v1, "
             "evidenceAgentFollowThrough_v1, artifactUploadManifest_v1, "
-            "agentGeneratedBundleQaChecklist_v1, and evidenceBaselineLifecycleReadout_v1 "
+            "agentGeneratedBundleQaChecklist_v1, evidenceBaselineLifecycleReadout_v1, "
+            "and v1CloseoutReadinessManifest_v1 "
             "so deterministic row digests stay stable."
         ),
         "playwrightEvidenceSpecRelPath": "packages/web/e2e/evidence-baselines.spec.ts",
@@ -1943,6 +1945,7 @@ _DIGEST_EXCLUDED_KEYS = frozenset(
         "artifactUploadManifest_v1",
         "agentGeneratedBundleQaChecklist_v1",
         "evidenceBaselineLifecycleReadout_v1",
+        "v1CloseoutReadinessManifest_v1",
     }
 )
 

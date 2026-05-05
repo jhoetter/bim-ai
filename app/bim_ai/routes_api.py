@@ -98,6 +98,7 @@ from bim_ai.tables import (
     UndoStackRecord,
 )
 from bim_ai.type_material_registry import merged_registry_payload
+from bim_ai.v1_closeout_readiness_manifest import build_v1_closeout_readiness_manifest_v1
 
 
 def get_hub(request: Request) -> Hub:
@@ -492,6 +493,7 @@ async def evidence_package(
         evidence_diff_ingest_fix_loop=payload["evidenceDiffIngestFixLoop_v1"],
         evidence_review_performance_gate=payload["evidenceReviewPerformanceGate_v1"],
     )
+    payload["v1CloseoutReadinessManifest_v1"] = build_v1_closeout_readiness_manifest_v1()
     return payload
 
 

@@ -1,0 +1,217 @@
+"""Deterministic v1 closeout / CI readiness manifest (prompt-8 / WP-A01,A02,A04,V01,F01).
+
+Built from repo-local structural checks only (paths, tracker substrings). No network or timing.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+from pathlib import Path
+from typing import Any, Literal
+
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+
+_TRACKER_PATH = _REPO_ROOT / "spec" / "revit-production-parity-workpackage-tracker.md"
+_PRD_PATH = _REPO_ROOT / "spec" / "prd" / "revit-production-parity-ai-agent-prd.md"
+_CI_YML_PATH = _REPO_ROOT / ".github" / "workflows" / "ci.yml"
+
+_REQUIRED_WP_IDS: tuple[str, ...] = ("WP-A01", "WP-A02", "WP-A04", "WP-V01", "WP-F01")
+
+
+def _deferred_blockers_v1() -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = [
+        {
+            "id": "prd_wide_blocking_validation",
+            "reason": (
+                "PRD-wide blocking validation for Revit parity v1 remains incomplete; advisor rules "
+                "do not exhaustively enforce all PRD § acceptance gates."
+            ),
+            "blocksClassification": True,
+            "countsAsCompletedWork": False,
+        },
+        {
+            "id": "revit_production_parity_v1_scope",
+            "reason": (
+                "Revit production parity v1 is a scoped program; tracker and PRD still list partial "
+                "and deferred subsystem work."
+            ),
+            "blocksClassification": True,
+            "countsAsCompletedWork": False,
+        },
+    ]
+    rows.sort(key=lambda r: str(r["id"]))
+    return rows
+
+
+def _gate_rows(*, tracker_text: str | None, ci_yml_text: str | None) -> list[dict[str, Any]]:
+    gates: list[dict[str, Any]] = []
+
+    def add_path_gate(
+        *,
+        gate_id: str,
+        gate_kind: str,
+        rel_path: str,
+        note: str | None = None,
+    ) -> None:
+        p = _REPO_ROOT / rel_path
+        row: dict[str, Any] = {
+            "id": gate_id,
+            "gateKind": gate_kind,
+            "path": rel_path.replace("\\", "/"),
+            "structuralOk": p.is_file(),
+        }
+        if note:
+            row["note"] = note
+        gates.append(row)
+
+    add_path_gate(
+        gate_id="golden_cli_one_family_commands",
+        gate_kind="golden_cli_bundle_anchor",
+        rel_path="packages/cli/lib/one-family-home-commands.mjs",
+        note="CLI golden command list for the one-family house bundle.",
+    )
+    add_path_gate(
+        gate_id="pytest_evidence_manifest_closure",
+        gate_kind="required_pytest_module",
+        rel_path="app/tests/test_evidence_manifest_closure.py",
+    )
+    add_path_gate(
+        gate_id="pytest_one_family_bundle_roundtrip",
+        gate_kind="golden_bundle_roundtrip",
+        rel_path="app/tests/test_one_family_bundle_roundtrip.py",
+        note="Python engine replay of one-family CLI bundle (roundtrip gate).",
+    )
+    add_path_gate(
+        gate_id="pytest_prd_traceability_matrix",
+        gate_kind="required_pytest_module",
+        rel_path="app/tests/test_prd_traceability_matrix.py",
+    )
+
+    prd_ok = _PRD_PATH.is_file()
+    gates.append(
+        {
+            "id": "prd_file_present",
+            "gateKind": "prd_traceability_expectation",
+            "path": str(_PRD_PATH.relative_to(_REPO_ROOT)).replace("\\", "/"),
+            "structuralOk": prd_ok,
+            "note": "PRD source for traceability matrix needles and §15 expectations.",
+        }
+    )
+
+    tracker_ok = _TRACKER_PATH.is_file()
+    wp_substrings = [f"| {_wp} |" for _wp in _REQUIRED_WP_IDS]
+    wp_ok = bool(tracker_text) and all(s in tracker_text for s in wp_substrings)
+
+    gates.append(
+        {
+            "id": "tracker_workpackages_present",
+            "gateKind": "tracker_closeout_rows",
+            "path": str(_TRACKER_PATH.relative_to(_REPO_ROOT)).replace("\\", "/"),
+            "structuralOk": tracker_ok and wp_ok,
+            "note": (
+                f"Tracker must include table rows: {', '.join(_REQUIRED_WP_IDS)} "
+                f"(substring match `{wp_substrings[0]}` …)."
+            ),
+        }
+    )
+
+    ci_ok = False
+    if ci_yml_text:
+        ci_ok = "pytest" in ci_yml_text and "python:" in ci_yml_text and "jobs:" in ci_yml_text
+    gates.append(
+        {
+            "id": "github_workflows_ci_pytest",
+            "gateKind": "ci_path_mapping",
+            "path": str(_CI_YML_PATH.relative_to(_REPO_ROOT)).replace("\\", "/"),
+            "structuralOk": _CI_YML_PATH.is_file() and ci_ok,
+            "note": "ci.yml must exist and include python job and pytest.",
+        }
+    )
+
+    gates.sort(key=lambda r: str(r["id"]))
+    return gates
+
+
+def _release_classification_v1(
+    *,
+    gates: list[dict[str, Any]],
+    deferred: list[dict[str, Any]],
+) -> tuple[
+    Literal["release_ready", "not_release_ready", "blocked_deferred"],
+    dict[str, Any],
+]:
+    has_blocking_deferral = any(
+        bool(d.get("blocksClassification")) is True for d in deferred if isinstance(d, dict)
+    )
+    required_fail = any(
+        bool(g.get("structuralOk")) is False for g in gates if isinstance(g, dict)
+    )
+
+    details: dict[str, Any] = {
+        "allRequiredGatesStructuralOk": not required_fail,
+        "blockingDeferredCount": sum(
+            1
+            for d in deferred
+            if isinstance(d, dict) and bool(d.get("blocksClassification")) is True
+        ),
+    }
+
+    if has_blocking_deferral:
+        return "blocked_deferred", {**details, "conservativeNote": None}
+
+    if required_fail:
+        return "not_release_ready", {
+            **details,
+            "conservativeNote": "One or more structural gates failed (missing path or tracker row).",
+        }
+
+    return "not_release_ready", {
+        **details,
+        "conservativeNote": (
+            "Structural gates pass locally, but v1 closeout release is not claimed: parity scope and "
+            "PRD-wide blocking validation remain open per manifest deferrals if re-enabled."
+        ),
+    }
+
+
+def build_v1_closeout_readiness_manifest_v1() -> dict[str, Any]:
+    tracker_text: str | None
+    try:
+        tracker_text = _TRACKER_PATH.read_text(encoding="utf-8") if _TRACKER_PATH.is_file() else None
+    except OSError:
+        tracker_text = None
+
+    ci_yml_text: str | None
+    try:
+        ci_yml_text = _CI_YML_PATH.read_text(encoding="utf-8") if _CI_YML_PATH.is_file() else None
+    except OSError:
+        ci_yml_text = None
+
+    deferred = _deferred_blockers_v1()
+    gates = _gate_rows(tracker_text=tracker_text, ci_yml_text=ci_yml_text)
+    classification, cls_details = _release_classification_v1(gates=gates, deferred=deferred)
+
+    manifest_body: dict[str, Any] = {
+        "format": "v1CloseoutReadinessManifest_v1",
+        "schemaVersion": 1,
+        "gates": gates,
+        "deferredBlockers": deferred,
+        "releaseClassification": classification,
+        "releaseClassificationDetails": cls_details,
+        "agentNextActions": sorted(
+            [
+                "Do not claim v1 or workpackage done unless tracker Done Rule and evidence match.",
+                "Run focused closeout pytest: app/tests/test_prd_traceability_matrix.py, "
+                "test_one_family_bundle_roundtrip.py, test_evidence_manifest_closure.py",
+                "Read spec/prd/revit-production-parity-ai-agent-prd.md and "
+                "spec/revit-production-parity-workpackage-tracker.md before closing a wave.",
+                "Use GET …/evidence-package field v1CloseoutReadinessManifest_v1 for gate rows; "
+                "deferredBlockers are not completed work.",
+            ]
+        ),
+    }
+
+    canonical = json.dumps(manifest_body, sort_keys=True, separators=(",", ":"))
+    digest = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+    return {**manifest_body, "manifestContentDigestSha256": digest}
