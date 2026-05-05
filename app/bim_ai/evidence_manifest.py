@@ -1086,10 +1086,11 @@ def agent_evidence_closure_hints() -> dict[str, Any]:
         "evidenceReviewPerformanceGateField": "evidenceReviewPerformanceGate_v1",
         "evidenceAgentFollowThroughField": "evidenceAgentFollowThrough_v1",
         "bcfRoundtripEvidenceSummaryField": "bcfRoundtripEvidenceSummary_v1",
+        "artifactUploadManifestField": "artifactUploadManifest_v1",
         "semanticDigestOmitsDerivativeSummariesNote": (
             "semanticDigestSha256 excludes bcfTopicsIndex_v1, agentReviewActions_v1, "
-            "evidenceDiffIngestFixLoop_v1, evidenceReviewPerformanceGate_v1, and "
-            "evidenceAgentFollowThrough_v1 so deterministic row digests stay stable."
+            "evidenceDiffIngestFixLoop_v1, evidenceReviewPerformanceGate_v1, "
+            "evidenceAgentFollowThrough_v1, and artifactUploadManifest_v1 so deterministic row digests stay stable."
         ),
         "playwrightEvidenceSpecRelPath": "packages/web/e2e/evidence-baselines.spec.ts",
         "suggestedRegenerationCommands": [
@@ -1399,6 +1400,182 @@ def staged_artifact_links_v1(
     }
 
 
+def artifact_upload_manifest_v1(
+    *,
+    model_id: UUID,
+    suggested_evidence_artifact_basename: str,
+    package_semantic_digest_sha256: str,
+    evidence_closure_review: dict[str, Any],
+) -> dict[str, Any]:
+    """Deterministic upload-manifest contract for evidence bundles; no uploads or secrets."""
+
+    sal = staged_artifact_links_v1(
+        model_id=model_id,
+        suggested_evidence_artifact_basename=suggested_evidence_artifact_basename,
+        package_semantic_digest_sha256=package_semantic_digest_sha256,
+    )
+    erp = sal["exportRelativePaths"]
+    if not isinstance(erp, dict):
+        erp = {}
+
+    ingest_manifest_digest: str | None = None
+    pix = evidence_closure_review.get("pixelDiffExpectation")
+    if isinstance(pix, dict):
+        ac = pix.get("artifactIngestCorrelation_v1")
+        if isinstance(ac, dict):
+            raw_d = ac.get("ingestManifestDigestSha256")
+            if isinstance(raw_d, str) and len(raw_d.strip()) == 64:
+                ingest_manifest_digest = raw_d.strip()
+
+    side_effects_enabled = bool(sal.get("sideEffectsEnabled"))
+    resolution_mode = str(sal.get("resolutionMode") or "")
+    gh_res = sal.get("githubActionsResolution")
+    gh_ok = isinstance(gh_res, dict) and bool(gh_res)
+
+    if side_effects_enabled:
+        side_effects_reason = (
+            "BIM_AI_STAGED_ARTIFACT_LINKS=1 enables non-secret GitHub Actions correlation hints only; "
+            "the API still performs no artifact uploads."
+        )
+    else:
+        side_effects_reason = (
+            "Staged CI correlation hints are disabled by default "
+            "(set BIM_AI_STAGED_ARTIFACT_LINKS=1 together with GITHUB_REPOSITORY and GITHUB_RUN_ID)."
+        )
+
+    ci_hint: dict[str, Any]
+    if gh_ok:
+        repo = str(gh_res.get("repository") or "")
+        run_id = str(gh_res.get("runId") or "")
+        ci_hint = {
+            "format": "ciProviderHint_v1",
+            "provider": "github_actions",
+            "repository": repo,
+            "runId": run_id,
+            "runArtifactsWebUrl": str(gh_res.get("runArtifactsWebUrl") or ""),
+        }
+        cs = gh_res.get("commitSha")
+        if isinstance(cs, str) and cs.strip():
+            ci_hint["commitSha"] = cs.strip()
+    else:
+        if resolution_mode == "github_actions":
+            omitted = (
+                "GitHub Actions resolution inactive despite github_actions mode label; "
+                "check GITHUB_REPOSITORY and GITHUB_RUN_ID."
+            )
+        elif not side_effects_enabled:
+            omitted = (
+                "Non-secret GitHub Actions correlation omitted: BIM_AI_STAGED_ARTIFACT_LINKS is not 1 "
+                "or GITHUB_REPOSITORY/GITHUB_RUN_ID are unset."
+            )
+        else:
+            omitted = "GITHUB_REPOSITORY or GITHUB_RUN_ID missing."
+        ci_hint = {
+            "format": "ciProviderHint_v1",
+            "provider": "github_actions",
+            "omittedReason": omitted,
+        }
+
+    bundle_hints = sal.get("bundleFilenameHints")
+    bundle_json = (
+        str(bundle_hints["evidencePackageJson"])
+        if isinstance(bundle_hints, dict) and isinstance(bundle_hints.get("evidencePackageJson"), str)
+        else f"{suggested_evidence_artifact_basename}-evidence-package.json"
+    )
+
+    playwright_row: dict[str, Any] | None = None
+    rows_raw = sal.get("stagedLinkRows")
+    if isinstance(rows_raw, list):
+        for r in rows_raw:
+            if isinstance(r, dict) and r.get("id") == "playwright_evidence_ci_bundle":
+                playwright_row = r
+                break
+
+    pw_expected = None
+    pw_pattern = None
+    if isinstance(playwright_row, dict):
+        ra = playwright_row.get("resolvedArtifactName")
+        pat = playwright_row.get("artifactNamePattern")
+        if isinstance(ra, str) and ra.strip():
+            pw_expected = ra.strip()
+        if isinstance(pat, str) and pat.strip():
+            pw_pattern = pat.strip()
+
+    expected_artifacts: list[dict[str, Any]] = [
+        {
+            "id": "bcf_topics_json_export",
+            "kind": "local_api_relative_json_export",
+            "expectedArtifactName": None,
+            "localExportRelativePath": str(erp.get("bcfTopicsJsonExport") or ""),
+            "uploadEligible": False,
+        },
+        {
+            "id": "bcf_topics_json_import",
+            "kind": "local_api_relative_json_import",
+            "expectedArtifactName": None,
+            "localExportRelativePath": str(erp.get("bcfTopicsJsonImport") or ""),
+            "uploadEligible": False,
+        },
+        {
+            "id": "evidence_package_json",
+            "kind": "bundle_evidence_package_json",
+            "expectedArtifactName": bundle_json,
+            "localExportRelativePath": str(erp.get("evidencePackage") or ""),
+            "uploadEligible": False,
+        },
+        {
+            "id": "playwright_ci_evidence_bundle",
+            "kind": "ci_playwright_named_bundle",
+            "expectedArtifactName": pw_expected,
+            "artifactNamePattern": pw_pattern,
+            "localExportRelativePath": None,
+            "uploadEligible": False,
+        },
+        {
+            "id": "snapshot_json",
+            "kind": "local_api_relative_snapshot",
+            "expectedArtifactName": None,
+            "localExportRelativePath": str(erp.get("snapshot") or ""),
+            "uploadEligible": False,
+        },
+        {
+            "id": "validate_json",
+            "kind": "local_api_relative_validate",
+            "expectedArtifactName": None,
+            "localExportRelativePath": str(erp.get("validate") or ""),
+            "uploadEligible": False,
+        },
+    ]
+    expected_artifacts.sort(key=lambda x: str(x.get("id") or ""))
+
+    content_digests: dict[str, Any] = {
+        "format": "artifactUploadContentDigests_v1",
+        "packageSemanticDigestSha256": package_semantic_digest_sha256,
+    }
+    if ingest_manifest_digest:
+        content_digests["artifactIngestManifestDigestSha256"] = ingest_manifest_digest
+
+    return {
+        "format": "artifactUploadManifest_v1",
+        "semanticDigestExclusionNote": (
+            "artifactUploadManifest_v1 is derivative metadata and excluded from semanticDigestSha256."
+        ),
+        "contractNote": (
+            "Manifest-only contract: this API never uploads artifacts; entries describe expected bundle "
+            "companions and correlation digests."
+        ),
+        "uploadEligible": False,
+        "sideEffectsEnabled": side_effects_enabled,
+        "sideEffectsReason": side_effects_reason,
+        "resolutionMode": resolution_mode,
+        "ciProviderHint_v1": ci_hint,
+        "contentDigests": content_digests,
+        "exportRelativePaths": dict(erp),
+        "expectedArtifacts": expected_artifacts,
+        "stagedArtifactLinksFormat": "stagedArtifactLinks_v1",
+    }
+
+
 def bcf_issue_coordination_check_v1(
     *,
     doc: Document,
@@ -1603,6 +1780,7 @@ _DIGEST_EXCLUDED_KEYS = frozenset(
         "evidenceDiffIngestFixLoop_v1",
         "evidenceReviewPerformanceGate_v1",
         "evidenceAgentFollowThrough_v1",
+        "artifactUploadManifest_v1",
     }
 )
 

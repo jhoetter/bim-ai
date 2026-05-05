@@ -19,9 +19,11 @@ from bim_ai.elements import (
 )
 from bim_ai.evidence_manifest import (
     agent_evidence_closure_hints,
+    artifact_upload_manifest_v1,
     bcf_issue_coordination_check_v1,
     collaboration_replay_conflict_hints_v1,
     evidence_agent_follow_through_v1,
+    evidence_closure_review_v1,
     evidence_ref_resolution_v1,
     staged_artifact_links_v1,
 )
@@ -214,7 +216,56 @@ def test_agent_evidence_closure_hints_names_follow_through_field() -> None:
     h = agent_evidence_closure_hints()
     assert h.get("evidenceAgentFollowThroughField") == "evidenceAgentFollowThrough_v1"
     assert h.get("bcfRoundtripEvidenceSummaryField") == "bcfRoundtripEvidenceSummary_v1"
-    assert "evidenceAgentFollowThrough_v1" in str(h.get("semanticDigestOmitsDerivativeSummariesNote"))
+    assert h.get("artifactUploadManifestField") == "artifactUploadManifest_v1"
+    note = str(h.get("semanticDigestOmitsDerivativeSummariesNote"))
+    assert "evidenceAgentFollowThrough_v1" in note
+    assert "artifactUploadManifest_v1" in note
+
+
+def test_artifact_upload_manifest_v1_github_actions_hint_without_secrets(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("BIM_AI_STAGED_ARTIFACT_LINKS", "1")
+    monkeypatch.setenv("GITHUB_REPOSITORY", "owner/sample-repo")
+    monkeypatch.setenv("GITHUB_RUN_ID", "4242")
+    monkeypatch.setenv("GITHUB_SHA", "deadbeef" * 5)
+    monkeypatch.setenv("GITHUB_TOKEN", "must-not-appear-in-manifest")
+
+    mid = UUID("00000000-0000-0000-0000-000000000099")
+    pkg = "a" * 64
+    closure = evidence_closure_review_v1(
+        package_semantic_digest_sha256=pkg,
+        deterministic_sheet_evidence=[],
+        deterministic_3d_view_evidence=[],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+    )
+    out = artifact_upload_manifest_v1(
+        model_id=mid,
+        suggested_evidence_artifact_basename="pfx",
+        package_semantic_digest_sha256=pkg,
+        evidence_closure_review=closure,
+    )
+    assert out["format"] == "artifactUploadManifest_v1"
+    assert out["sideEffectsEnabled"] is True
+    hint = out["ciProviderHint_v1"]
+    assert hint["format"] == "ciProviderHint_v1"
+    assert hint.get("repository") == "owner/sample-repo"
+    assert hint.get("runId") == "4242"
+    assert hint.get("runArtifactsWebUrl") == (
+        "https://github.com/owner/sample-repo/actions/runs/4242#artifacts"
+    )
+    assert hint.get("commitSha") == "deadbeef" * 5
+    assert "omittedReason" not in hint
+
+    blob = json.dumps(out, sort_keys=True)
+    assert "must-not-appear-in-manifest" not in blob
+    assert "GITHUB_TOKEN" not in blob
+    keys: set[str] = set()
+    _mapping_key_strings(out, keys)
+    lowered = {k.lower() for k in keys}
+    assert "github_token" not in lowered
+    assert "authorization" not in lowered
 
 
 def test_follow_through_with_realistic_bcf_and_rows() -> None:

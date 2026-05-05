@@ -824,6 +824,7 @@ def test_agent_evidence_closure_hints_shape() -> None:
     assert h.get("evidenceLifecycleSignalField") == "evidenceLifecycleSignal_v1"
     assert h.get("evidenceDiffIngestFixLoopField") == "evidenceDiffIngestFixLoop_v1"
     assert h.get("evidenceAgentFollowThroughField") == "evidenceAgentFollowThrough_v1"
+    assert h.get("artifactUploadManifestField") == "artifactUploadManifest_v1"
     assert h.get("semanticDigestOmitsDerivativeSummariesNote")
     cmds = h["suggestedRegenerationCommands"]
     assert isinstance(cmds, list)

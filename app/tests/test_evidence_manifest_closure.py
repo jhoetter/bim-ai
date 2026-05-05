@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import hashlib
 from pathlib import Path
+from uuid import UUID
 
 from bim_ai.evidence_manifest import (
     MINIMAL_PROBE_PNG_BYTES_V1,
     MINIMAL_PROBE_PNG_CANONICAL_SHA256_V1,
     artifact_ingest_correlation_v1,
+    artifact_upload_manifest_v1,
     committed_evidence_png_fixture_dir_v1,
     evidence_closure_review_v1,
     evidence_diff_ingest_fix_loop_v1,
@@ -20,6 +22,105 @@ from bim_ai.evidence_manifest import (
     read_committed_evidence_png_fixture_bytes_v1,
     server_png_byte_ingest_report_v1,
 )
+
+
+def test_digest_stable_when_artifact_upload_manifest_differs_derivative_only() -> None:
+    """artifactUploadManifest_v1 omits semantic digest."""
+
+    root = {"format": "evidencePackage_v1", "revision": 1, "modelId": "m1"}
+    a = {
+        **root,
+        "artifactUploadManifest_v1": {
+            "format": "artifactUploadManifest_v1",
+            "marker": "alpha",
+        },
+    }
+    b = {
+        **root,
+        "artifactUploadManifest_v1": {
+            "format": "artifactUploadManifest_v1",
+            "marker": "beta",
+        },
+    }
+    assert evidence_package_semantic_digest_sha256(a) == evidence_package_semantic_digest_sha256(b)
+
+
+def test_artifact_upload_manifest_v1_expected_artifacts_sorted_by_id() -> None:
+    pkg = "f" * 64
+    closure = evidence_closure_review_v1(
+        package_semantic_digest_sha256=pkg,
+        deterministic_sheet_evidence=[],
+        deterministic_3d_view_evidence=[],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+    )
+    mid = UUID("00000000-0000-4000-8000-0000000000aa")
+    out = artifact_upload_manifest_v1(
+        model_id=mid,
+        suggested_evidence_artifact_basename="bim-ai-evidence-ffffffffffff-r0",
+        package_semantic_digest_sha256=pkg,
+        evidence_closure_review=closure,
+    )
+    assert out["format"] == "artifactUploadManifest_v1"
+    ids = [str(x.get("id") or "") for x in out["expectedArtifacts"]]
+    assert ids == sorted(ids)
+
+
+def test_artifact_upload_manifest_v1_side_effects_disabled_by_default_and_ci_hint_omitted() -> (
+    None
+):
+    pkg = "c" * 64
+    closure = evidence_closure_review_v1(
+        package_semantic_digest_sha256=pkg,
+        deterministic_sheet_evidence=[],
+        deterministic_3d_view_evidence=[],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+    )
+    mid = UUID("00000000-0000-4000-8000-0000000000bb")
+    out = artifact_upload_manifest_v1(
+        model_id=mid,
+        suggested_evidence_artifact_basename="pfx",
+        package_semantic_digest_sha256=pkg,
+        evidence_closure_review=closure,
+    )
+    assert out["sideEffectsEnabled"] is False
+    assert out["uploadEligible"] is False
+    hint = out["ciProviderHint_v1"]
+    assert hint["format"] == "ciProviderHint_v1"
+    assert isinstance(hint.get("omittedReason"), str) and hint["omittedReason"]
+    assert "repository" not in hint
+
+
+def test_artifact_upload_manifest_v1_content_digests_match_closure_ingest() -> None:
+    pkg = "d" * 64
+    closure = evidence_closure_review_v1(
+        package_semantic_digest_sha256=pkg,
+        deterministic_sheet_evidence=[
+            {
+                "sheetId": "s1",
+                "playwrightSuggestedFilenames": {"pngViewport": "only-viewport.png"},
+                "correlation": {"semanticDigestSha256": pkg},
+            }
+        ],
+        deterministic_3d_view_evidence=[],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+    )
+    mid = UUID("00000000-0000-4000-8000-0000000000cc")
+    out = artifact_upload_manifest_v1(
+        model_id=mid,
+        suggested_evidence_artifact_basename="bim-ai-evidence-dddddddddddd-r1",
+        package_semantic_digest_sha256=pkg,
+        evidence_closure_review=closure,
+    )
+    ac = closure["pixelDiffExpectation"]["artifactIngestCorrelation_v1"]
+    assert isinstance(ac, dict)
+    expected_dig = ac["ingestManifestDigestSha256"]
+    cds = out["contentDigests"]
+    assert cds["format"] == "artifactUploadContentDigests_v1"
+    assert cds["packageSemanticDigestSha256"] == pkg
+    assert cds["artifactIngestManifestDigestSha256"] == expected_dig
 
 
 def test_digest_stable_when_follow_through_replay_hints_differ_derivative_only() -> None:

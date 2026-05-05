@@ -42,6 +42,7 @@ from bim_ai.evidence_manifest import (
     MINIMAL_PROBE_PNG_BYTES_V1,
     MINIMAL_PROBE_PNG_CANONICAL_SHA256_V1,
     agent_evidence_closure_hints,
+    artifact_upload_manifest_v1,
     deterministic_3d_view_evidence_manifest,
     deterministic_plan_view_evidence_manifest,
     deterministic_section_cut_evidence_manifest,
@@ -457,6 +458,12 @@ async def evidence_package(
         deterministic_plan_view_evidence=payload["deterministicPlanViewEvidence"],
         deterministic_section_cut_evidence=payload["deterministicSectionCutEvidence"],
         violations=viols,
+    )
+    payload["artifactUploadManifest_v1"] = artifact_upload_manifest_v1(
+        model_id=model_id,
+        suggested_evidence_artifact_basename=str(payload["suggestedEvidenceArtifactBasename"]),
+        package_semantic_digest_sha256=digest,
+        evidence_closure_review=payload["evidenceClosureReview_v1"],
     )
     return payload
 
