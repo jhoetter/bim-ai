@@ -1372,34 +1372,69 @@ export function Workspace() {
                     ))}
                   </select>
                 </label>
+                <div className="text-[10px] text-muted">
+                  Current template:{' '}
+                  <span className="font-mono">
+                    {selected.viewTemplateId &&
+                    planViewTemplates.some((vt) => vt.id === selected.viewTemplateId)
+                      ? (planViewTemplates.find((vt) => vt.id === selected.viewTemplateId)?.name ??
+                        selected.viewTemplateId)
+                      : 'No template'}
+                  </span>
+                </div>
                 {planViewTemplates.length ? (
-                  <label className="block text-[10px] text-muted">
-                    View template
-                    <select
-                      className="mt-1 w-full rounded border border-border bg-background px-2 py-1 text-[11px]"
-                      value={
-                        selected.viewTemplateId &&
-                        planViewTemplates.some((vt) => vt.id === selected.viewTemplateId)
-                          ? selected.viewTemplateId
-                          : ''
-                      }
-                      onChange={(e) => {
-                        void onSemantic({
-                          type: 'updateElementProperty',
-                          elementId: selected.id,
-                          key: 'viewTemplateId',
-                          value: e.target.value,
-                        });
-                      }}
-                    >
-                      <option value="">none</option>
-                      {planViewTemplates.map((vt) => (
-                        <option key={vt.id} value={vt.id}>
-                          {vt.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                  <div className="space-y-1">
+                    <label className="block text-[10px] text-muted">
+                      View template (link)
+                      <select
+                        className="mt-1 w-full rounded border border-border bg-background px-2 py-1 text-[11px]"
+                        value={
+                          selected.viewTemplateId &&
+                          planViewTemplates.some((vt) => vt.id === selected.viewTemplateId)
+                            ? selected.viewTemplateId
+                            : ''
+                        }
+                        onChange={(e) => {
+                          void onSemantic({
+                            type: 'updateElementProperty',
+                            elementId: selected.id,
+                            key: 'viewTemplateId',
+                            value: e.target.value,
+                          });
+                        }}
+                      >
+                        <option value="">none</option>
+                        {planViewTemplates.map((vt) => (
+                          <option key={vt.id} value={vt.id}>
+                            {vt.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="block text-[10px] text-muted">
+                      Apply template (stamps values)
+                      <select
+                        className="mt-1 w-full rounded border border-border bg-background px-2 py-1 text-[11px]"
+                        value=""
+                        onChange={(e) => {
+                          const tid = e.target.value;
+                          if (!tid) return;
+                          void onSemantic({
+                            type: 'applyPlanViewTemplate',
+                            planViewId: selected.id,
+                            templateId: tid,
+                          });
+                        }}
+                      >
+                        <option value="">— select to apply —</option>
+                        {planViewTemplates.map((vt) => (
+                          <option key={vt.id} value={vt.id}>
+                            {vt.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
                 ) : null}
                 <SavedViewTagGraphicsAuthoring
                   variant="plan_view"

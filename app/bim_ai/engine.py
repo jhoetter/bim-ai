@@ -9,6 +9,7 @@ from typing import Any, Literal, NamedTuple, cast
 from pydantic import TypeAdapter
 
 from bim_ai.commands import (
+    ApplyPlanViewTemplateCmd,
     AssignOpeningFamilyCmd,
     AssignWallDatumConstraintsCmd,
     AttachWallTopToRoofCmd,
@@ -49,10 +50,13 @@ from bim_ai.commands import (
     SaveViewpointCmd,
     UpdateElementPropertyCmd,
     UpdateOpeningCleanroomCmd,
+    UpdatePlanViewCropCmd,
+    UpdatePlanViewRangeCmd,
     UpsertFamilyTypeCmd,
     UpsertFloorTypeCmd,
     UpsertPlanTagStyleCmd,
     UpsertPlanViewCmd,
+    UpsertPlanViewTemplateCmd,
     UpsertProjectSettingsCmd,
     UpsertRoofTypeCmd,
     UpsertRoomColorSchemeCmd,
@@ -806,6 +810,8 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 els[cmd.element_id] = el.model_copy(update={"programme_code": cmd.value})
             elif cmd.key == "department" and isinstance(el, RoomElem):
                 els[cmd.element_id] = el.model_copy(update={"department": cmd.value})
+            elif cmd.key == "programmeGroup" and isinstance(el, RoomElem):
+                els[cmd.element_id] = el.model_copy(update={"programme_group": cmd.value})
             elif cmd.key == "functionLabel" and isinstance(el, RoomElem):
                 els[cmd.element_id] = el.model_copy(update={"function_label": cmd.value})
             elif cmd.key == "finishSet" and isinstance(el, RoomElem):
@@ -1112,7 +1118,7 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
             else:
                 raise ValueError(
                     "Only updateElementProperty key=name | label(grid) | title(issue) | "
-                    "programmeCode(room) | department(room) | functionLabel(room) | finishSet(room) | "
+                    "programmeCode(room) | department(room) | programmeGroup(room) | functionLabel(room) | finishSet(room) | "
                     "targetAreaM2(room) | "
                     "planPresentation(plan_view) | categoriesHidden(plan_view JSON array) | "
                     "underlayLevelId(plan_view) | viewTemplateId(plan_view) | "
@@ -1514,6 +1520,95 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 default_plan_opening_tag_style_id=d_open,
                 default_plan_room_tag_style_id=d_room,
                 plan_category_graphics=pcg_t,
+            )
+
+        case UpsertPlanViewTemplateCmd():
+            vt = cmd.id or new_id()
+            prior_tmpl = els.get(vt) if isinstance(els.get(vt), ViewTemplateElem) else None
+            d_open = cmd.default_plan_opening_tag_style_id
+            if prior_tmpl is not None and "default_plan_opening_tag_style_id" not in cmd.model_fields_set:
+                d_open = prior_tmpl.default_plan_opening_tag_style_id
+            if d_open is not None:
+                _validate_plan_tag_style_ref(els, d_open, "opening")
+            d_room = cmd.default_plan_room_tag_style_id
+            if prior_tmpl is not None and "default_plan_room_tag_style_id" not in cmd.model_fields_set:
+                d_room = prior_tmpl.default_plan_room_tag_style_id
+            if d_room is not None:
+                _validate_plan_tag_style_ref(els, d_room, "room")
+            scale = cmd.scale if cmd.scale in {"scale_50", "scale_100", "scale_200"} else "scale_100"
+            pdl = _plan_detail_default_medium(cmd.plan_detail_level)
+            pfo = _clamp_unit_interval(cmd.plan_room_fill_opacity_scale, 1.0)
+            pcg_t: list[PlanCategoryGraphicRow] = []
+            if "plan_category_graphics" in cmd.model_fields_set:
+                pcg_t = normalize_plan_category_graphics_rows(cmd.plan_category_graphics or [])
+            elif prior_tmpl is not None:
+                pcg_t = list(prior_tmpl.plan_category_graphics)
+            vrb: float | None = cmd.view_range_bottom_mm
+            if prior_tmpl is not None and "view_range_bottom_mm" not in cmd.model_fields_set:
+                vrb = prior_tmpl.view_range_bottom_mm
+            vrt: float | None = cmd.view_range_top_mm
+            if prior_tmpl is not None and "view_range_top_mm" not in cmd.model_fields_set:
+                vrt = prior_tmpl.view_range_top_mm
+            els[vt] = ViewTemplateElem(
+                kind="view_template",
+                id=vt,
+                name=cmd.name,
+                scale=scale,
+                disciplines_visible=list(cmd.disciplines_visible or []),
+                hidden_categories=list(cmd.hidden_categories or []),
+                plan_detail_level=pdl,
+                plan_room_fill_opacity_scale=pfo,
+                plan_show_opening_tags=cmd.plan_show_opening_tags is True,
+                plan_show_room_labels=cmd.plan_show_room_labels is True,
+                default_plan_opening_tag_style_id=d_open,
+                default_plan_room_tag_style_id=d_room,
+                plan_category_graphics=pcg_t,
+                view_range_bottom_mm=vrb,
+                view_range_top_mm=vrt,
+            )
+
+        case ApplyPlanViewTemplateCmd():
+            pv_el = els.get(cmd.plan_view_id)
+            if not isinstance(pv_el, PlanViewElem):
+                raise ValueError("applyPlanViewTemplate.planViewId must reference plan_view")
+            tmpl_el = els.get(cmd.template_id)
+            if not isinstance(tmpl_el, ViewTemplateElem):
+                raise ValueError("applyPlanViewTemplate.templateId must reference view_template")
+            update: dict[str, Any] = {
+                "view_template_id": cmd.template_id,
+                "crop_min_mm": None,
+                "crop_max_mm": None,
+                "view_range_bottom_mm": tmpl_el.view_range_bottom_mm,
+                "view_range_top_mm": tmpl_el.view_range_top_mm,
+                "categories_hidden": list(tmpl_el.hidden_categories),
+                "plan_category_graphics": list(tmpl_el.plan_category_graphics),
+            }
+            if tmpl_el.default_plan_opening_tag_style_id is not None:
+                update["plan_opening_tag_style_id"] = tmpl_el.default_plan_opening_tag_style_id
+            if tmpl_el.default_plan_room_tag_style_id is not None:
+                update["plan_room_tag_style_id"] = tmpl_el.default_plan_room_tag_style_id
+            els[cmd.plan_view_id] = pv_el.model_copy(update=update)
+
+        case UpdatePlanViewCropCmd():
+            pv_el = els.get(cmd.plan_view_id)
+            if not isinstance(pv_el, PlanViewElem):
+                raise ValueError("updatePlanViewCrop.planViewId must reference plan_view")
+            els[cmd.plan_view_id] = pv_el.model_copy(
+                update={
+                    "crop_min_mm": cmd.crop_min_mm,
+                    "crop_max_mm": cmd.crop_max_mm,
+                }
+            )
+
+        case UpdatePlanViewRangeCmd():
+            pv_el = els.get(cmd.plan_view_id)
+            if not isinstance(pv_el, PlanViewElem):
+                raise ValueError("updatePlanViewRange.planViewId must reference plan_view")
+            els[cmd.plan_view_id] = pv_el.model_copy(
+                update={
+                    "view_range_bottom_mm": cmd.view_range_bottom_mm,
+                    "view_range_top_mm": cmd.view_range_top_mm,
+                }
             )
 
         case UpsertSheetCmd():

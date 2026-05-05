@@ -483,6 +483,55 @@ class UpsertViewTemplateCmd(BaseModel):
     )
 
 
+class UpsertPlanViewTemplateCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["upsertPlanViewTemplate"] = "upsertPlanViewTemplate"
+    id: str | None = None
+    name: str = "Plan view template"
+    scale: str = Field(alias="scale", default="scale_100")
+    disciplines_visible: list[str] = Field(default_factory=list, alias="disciplinesVisible")
+    hidden_categories: list[str] = Field(default_factory=list, alias="hiddenCategories")
+    plan_detail_level: str | None = Field(default=None, alias="planDetailLevel")
+    plan_room_fill_opacity_scale: float | None = Field(default=None, alias="planRoomFillOpacityScale")
+    plan_show_opening_tags: bool | None = Field(default=None, alias="planShowOpeningTags")
+    plan_show_room_labels: bool | None = Field(default=None, alias="planShowRoomLabels")
+    default_plan_opening_tag_style_id: str | None = Field(
+        default=None, alias="defaultPlanOpeningTagStyleId"
+    )
+    default_plan_room_tag_style_id: str | None = Field(
+        default=None, alias="defaultPlanRoomTagStyleId"
+    )
+    plan_category_graphics: list[PlanCategoryGraphicRow] | None = Field(
+        default=None,
+        alias="planCategoryGraphics",
+    )
+    view_range_bottom_mm: float | None = Field(default=None, alias="viewRangeBottomMm")
+    view_range_top_mm: float | None = Field(default=None, alias="viewRangeTopMm")
+
+
+class ApplyPlanViewTemplateCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["applyPlanViewTemplate"] = "applyPlanViewTemplate"
+    plan_view_id: str = Field(alias="planViewId")
+    template_id: str = Field(alias="templateId")
+
+
+class UpdatePlanViewCropCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["updatePlanViewCrop"] = "updatePlanViewCrop"
+    plan_view_id: str = Field(alias="planViewId")
+    crop_min_mm: Vec2Mm | None = Field(default=None, alias="cropMinMm")
+    crop_max_mm: Vec2Mm | None = Field(default=None, alias="cropMaxMm")
+
+
+class UpdatePlanViewRangeCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["updatePlanViewRange"] = "updatePlanViewRange"
+    plan_view_id: str = Field(alias="planViewId")
+    view_range_bottom_mm: float | None = Field(default=None, alias="viewRangeBottomMm")
+    view_range_top_mm: float | None = Field(default=None, alias="viewRangeTopMm")
+
+
 class UpsertPlanTagStyleCmd(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     type: Literal["upsertPlanTagStyle"] = "upsertPlanTagStyle"
@@ -682,6 +731,10 @@ Command = Annotated[
     | CreateJoinGeometryCmd
     | CreateSectionCutCmd
     | UpsertViewTemplateCmd
+    | UpsertPlanViewTemplateCmd
+    | ApplyPlanViewTemplateCmd
+    | UpdatePlanViewCropCmd
+    | UpdatePlanViewRangeCmd
     | UpsertSheetCmd
     | UpsertSheetViewportsCmd
     | UpsertScheduleCmd

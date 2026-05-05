@@ -212,6 +212,7 @@ class RoomElem(BaseModel):
     volume_ceiling_offset_mm: float | None = Field(default=None, alias="volumeCeilingOffsetMm")
     programme_code: str | None = Field(default=None, alias="programmeCode")
     department: str | None = Field(default=None, alias="department")
+    programme_group: str | None = Field(default=None, alias="programmeGroup")
     function_label: str | None = Field(default=None, alias="functionLabel")
     finish_set: str | None = Field(default=None, alias="finishSet")
     target_area_m2: float | None = Field(default=None, alias="targetAreaM2")
@@ -502,6 +503,8 @@ class ViewTemplateElem(BaseModel):
         default_factory=list,
         alias="planCategoryGraphics",
     )
+    view_range_bottom_mm: float | None = Field(default=None, alias="viewRangeBottomMm")
+    view_range_top_mm: float | None = Field(default=None, alias="viewRangeTopMm")
 
 
 class SheetElem(BaseModel):

@@ -626,6 +626,13 @@ def _plan_view_browser_hierarchy_v0(
             "roomLabelsSource": room_src,
         }
 
+    tmpl_view_range: dict[str, Any] | None = None
+    if tmpl is not None and (tmpl.view_range_bottom_mm is not None or tmpl.view_range_top_mm is not None):
+        tmpl_view_range = {
+            "viewRangeBottomMm": tmpl.view_range_bottom_mm,
+            "viewRangeTopMm": tmpl.view_range_top_mm,
+        }
+
     return {
         "format": "planViewBrowserHierarchy_v0",
         "planViewId": pv.id,
@@ -633,11 +640,46 @@ def _plan_view_browser_hierarchy_v0(
         "levelId": pv.level_id,
         "viewTemplateId": tmpl.id if tmpl else None,
         "viewTemplateName": tmpl.name if tmpl else None,
+        "templateViewRange": tmpl_view_range,
+        "storedCropMinMm": {"xMm": pv.crop_min_mm.x_mm, "yMm": pv.crop_min_mm.y_mm} if pv.crop_min_mm else None,
+        "storedCropMaxMm": {"xMm": pv.crop_max_mm.x_mm, "yMm": pv.crop_max_mm.y_mm} if pv.crop_max_mm else None,
+        "storedViewRangeBottomMm": pv.view_range_bottom_mm,
+        "storedViewRangeTopMm": pv.view_range_top_mm,
         "discipline": pv.discipline,
         "tagStyles": [_tag_summary(res_open, "opening"), _tag_summary(res_room, "room")],
         "categoryGraphicsSourceCounts": cat_source_counts,
         "categoryGraphicsRows": cat_rows,
         "annotationHints": annotation,
+    }
+
+
+def planViewTemplateApplicationEvidence_v1(
+    plan_view_id: str,
+    before: dict[str, Any],
+    after: dict[str, Any],
+) -> dict[str, Any]:
+    """Before/after property diff for applyPlanViewTemplate evidence (WP-C01)."""
+    tracked_keys = (
+        "viewTemplateId",
+        "viewRangeBottomMm",
+        "viewRangeTopMm",
+        "categoriesHidden",
+        "planCategoryGraphics",
+        "planOpeningTagStyleId",
+        "planRoomTagStyleId",
+    )
+    changed: dict[str, dict[str, Any]] = {}
+    all_keys = set(tracked_keys)
+    for k in all_keys:
+        bv = before.get(k)
+        av = after.get(k)
+        if bv != av:
+            changed[k] = {"before": bv, "after": av}
+    return {
+        "format": "planViewTemplateApplicationEvidence_v1",
+        "planViewId": plan_view_id,
+        "changedProperties": changed,
+        "changedPropertyCount": len(changed),
     }
 
 
