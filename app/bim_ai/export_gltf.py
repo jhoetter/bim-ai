@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+import hashlib
 import json
 import math
 import struct
@@ -70,6 +71,115 @@ EXPORT_GEOMETRY_KINDS: frozenset[str] = frozenset(
     {"wall", "floor", "roof", "door", "window", "room", "stair", "slab_opening"}
 )
 VERT_BYTES = 6 * 4  # POSITION(vec3)+NORMAL(vec3) as f32
+
+# Canonical ordered list of all known glTF extension tokens emitted by the exporter.
+GLTF_KNOWN_EXTENSION_TOKENS: tuple[str, ...] = (
+    "bim_ai_box_primitive_v0",
+    "bim_ai_gable_roof_v0",
+    "bim_ai_roof_geometry_evidence_v1",
+    "bim_ai_wall_corner_joins_v0",
+    "bim_ai_wall_corner_join_summary_v1",
+    "bim_ai_skew_wall_hosted_openings_v0",
+    "bim_ai_wall_opening_cut_fidelity_v1",
+    "bim_ai_layered_assembly_cut_alignment_v0",
+    "bim_ai_layered_assembly_witness_v0",
+    "bim_ai_site_context_v0",
+    "bim_ai_roof_unsupported_shape_summary_v0",
+    "bim_ai_roof_layered_prism_witness_v1",
+    "bim_ai_saved_3d_view_clip_v1",
+)
+
+# Map: extension token → manifest payload key holding its evidence data.
+# None means the token's digest is derived from the parity/geometry fields.
+_EXTENSION_TOKEN_PAYLOAD_KEY: dict[str, str | None] = {
+    "bim_ai_box_primitive_v0": None,
+    "bim_ai_gable_roof_v0": "roofGeometryEvidence_v1",
+    "bim_ai_roof_geometry_evidence_v1": "roofGeometryEvidence_v1",
+    "bim_ai_wall_corner_joins_v0": "wallCornerJoinEvidence_v0",
+    "bim_ai_wall_corner_join_summary_v1": "wallCornerJoinSummary_v1",
+    "bim_ai_skew_wall_hosted_openings_v0": "skewWallHostedOpeningEvidence_v0",
+    "bim_ai_wall_opening_cut_fidelity_v1": "wallOpeningCutFidelityEvidence_v1",
+    "bim_ai_layered_assembly_cut_alignment_v0": "layeredAssemblyCutAlignmentEvidence_v0",
+    "bim_ai_layered_assembly_witness_v0": "layeredAssemblyWitness_v0",
+    "bim_ai_site_context_v0": "siteContextEvidence_v0",
+    "bim_ai_roof_unsupported_shape_summary_v0": "roofGeometryUnsupportedShapeSummary_v0",
+    "bim_ai_roof_layered_prism_witness_v1": "roofGeometryEvidence_v1",
+    "bim_ai_saved_3d_view_clip_v1": "saved3dViewClipEvidence_v1",
+}
+
+# Map: extension token → element kind whose presence makes the extension "expected".
+# Used by advisory rules to detect missing extensions on eligible models.
+GLTF_EXTENSION_TOKEN_ELIGIBLE_KIND: dict[str, str] = {
+    "bim_ai_gable_roof_v0": "roof",
+    "bim_ai_roof_geometry_evidence_v1": "roof",
+    "bim_ai_wall_corner_joins_v0": "wall",
+    "bim_ai_wall_corner_join_summary_v1": "wall",
+    "bim_ai_skew_wall_hosted_openings_v0": "wall",
+    "bim_ai_wall_opening_cut_fidelity_v1": "wall",
+    "bim_ai_layered_assembly_cut_alignment_v0": "wall",
+    "bim_ai_layered_assembly_witness_v0": "wall",
+    "bim_ai_site_context_v0": "site",
+    "bim_ai_roof_unsupported_shape_summary_v0": "roof",
+    "bim_ai_roof_layered_prism_witness_v1": "roof",
+    "bim_ai_saved_3d_view_clip_v1": "viewpoint",
+}
+
+
+def _sha256_hex(obj: Any) -> str:
+    blob = json.dumps(obj, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return hashlib.sha256(blob.encode()).hexdigest()
+
+
+def build_gltf_export_manifest_closure_v1(
+    mesh_enc: str,
+    payload: dict[str, Any],
+) -> dict[str, Any]:
+    """Build gltfExportManifestClosure_v1 from the completed manifest payload.
+
+    Returns ordered extension token list, per-extension digests, total closure
+    digest, and a presence matrix recording emitted vs skipped_ineligible status.
+    The closure digest is stable under deterministic input element re-orderings
+    because all digests are computed over sort_keys=True JSON serialisations.
+    """
+    emitted_set = set(mesh_enc.split("+"))
+    parity_blob = {
+        k: payload.get(k)
+        for k in ("elementCount", "countsByKind", "exportedGeometryKinds")
+    }
+
+    extension_tokens: list[str] = []
+    extension_digests: dict[str, str] = {}
+    presence_matrix: list[dict[str, Any]] = []
+
+    for token in GLTF_KNOWN_EXTENSION_TOKENS:
+        if token in emitted_set:
+            key = _EXTENSION_TOKEN_PAYLOAD_KEY.get(token)
+            digest = _sha256_hex(parity_blob if key is None else payload.get(key))
+            extension_tokens.append(token)
+            extension_digests[token] = digest
+            presence_matrix.append(
+                {"token": token, "status": "emitted", "digestSha256": digest, "skipReasonCode": None}
+            )
+        else:
+            presence_matrix.append(
+                {
+                    "token": token,
+                    "status": "skipped_ineligible",
+                    "digestSha256": None,
+                    "skipReasonCode": "no_eligible_elements",
+                }
+            )
+
+    closure_digest = _sha256_hex(
+        {"extensionTokens": extension_tokens, "extensionDigests": extension_digests}
+    )
+    return {
+        "format": "gltfExportManifestClosure_v1",
+        "extensionTokens": extension_tokens,
+        "extensionDigests": extension_digests,
+        "gltfExportManifestClosureDigestSha256": closure_digest,
+        "extensionPresenceMatrix": presence_matrix,
+    }
 
 
 def _kind_counts(doc: Document) -> dict[str, int]:
@@ -452,6 +562,7 @@ def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
         base["roofGeometryUnsupportedShapeSummary_v0"] = roof_unsup_summary
     if saved_3d_clip:
         base["saved3dViewClipEvidence_v1"] = saved_3d_clip
+    base["gltfExportManifestClosure_v1"] = build_gltf_export_manifest_closure_v1(mesh_enc, base)
     return base
 
 

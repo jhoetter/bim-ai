@@ -40,6 +40,8 @@ from bim_ai.elements import (
 )
 from bim_ai.export_gltf import (
     EXPORT_GEOMETRY_KINDS,
+    GLTF_EXTENSION_TOKEN_ELIGIBLE_KIND,
+    GLTF_KNOWN_EXTENSION_TOKENS,
     build_visual_export_manifest,
     exchange_parity_manifest_fields_from_document,
 )
@@ -64,6 +66,11 @@ from bim_ai.plan_aa_room_separation import axis_aligned_room_separation_splits_r
 from bim_ai.room_color_scheme_override_evidence import scheme_override_advisory_violations_for_doc
 from bim_ai.room_derivation import compute_room_boundary_derivation
 from bim_ai.room_finish_schedule import peer_finish_set_by_level
+from bim_ai.section_on_sheet_integration_evidence_v1 import (
+    section_cut_line_present,
+    section_profile_token_from_primitives,
+)
+from bim_ai.section_projection_primitives import build_section_projection_primitives
 from bim_ai.sheet_titleblock_revision_issue_v1 import (
     normalize_titleblock_revision_issue_v1,
     sheet_revision_issue_metadata_present,
@@ -167,6 +174,9 @@ _RULE_DISCIPLINE: dict[str, str] = {
     "exchange_ifc_import_preview_unsupported_products": "exchange",
     "exchange_ifc_import_preview_ids_pointer_gap": "exchange",
     "exchange_ifc_import_preview_id_collision": "exchange",
+    "exchange_ifc_manifest_authoritative_alignment_drift": "exchange",
+    "exchange_ifc_manifest_unsupported_alignment_drift": "exchange",
+    "exchange_ifc_manifest_ids_pointer_alignment_drift": "exchange",
     "material_catalog_missing_layer_stack": "exchange",
     "material_catalog_stale_assembly_reference": "exchange",
     "material_catalog_missing_material": "exchange",
@@ -184,6 +194,11 @@ _RULE_DISCIPLINE: dict[str, str] = {
     "room_color_scheme_row_missing_label": "architecture",
     "room_color_scheme_row_invalid_fill_color": "architecture",
     "room_color_scheme_row_duplicate_override_key": "architecture",
+    "section_on_sheet_cut_line_missing": "coordination",
+    "section_on_sheet_profile_token_missing": "coordination",
+    "section_on_sheet_revision_issue_unresolved": "coordination",
+    "gltf_export_manifest_expected_extension_missing": "exchange",
+    "gltf_export_manifest_extension_order_drift": "exchange",
 }
 
 _MATERIAL_CATALOG_AUDIT_RULE_IDS: dict[str, str] = {
@@ -918,6 +933,117 @@ def _exchange_advisory_violations(elements: dict[str, Element]) -> list[Violatio
                         discipline="exchange",
                     )
                 )
+
+    # Cross-manifest closure alignment advisory rules — surface manifest drift.
+    closure = ifc_row.get("ifcExchangeManifestClosure_v0") or {}
+
+    auth_token = str(closure.get("authoritativeProductsAlignmentToken") or "")
+    if auth_token and auth_token not in ("aligned", "unavailable_offline", ""):
+        out.append(
+            Violation(
+                rule_id="exchange_ifc_manifest_authoritative_alignment_drift",
+                severity="warning",
+                message=(
+                    f"IFC exchange manifest closure: authoritative product alignment drifted "
+                    f"({auth_token}). The IDS replay map coverage does not match the import "
+                    "preview's authoritativeProducts slice "
+                    "(ifcExchangeManifestClosure_v0.authoritativeProductsAlignmentToken)."
+                ),
+                element_ids=[],
+                discipline="exchange",
+            )
+        )
+
+    unsupported_token = str(closure.get("unsupportedClassAlignmentToken") or "")
+    if unsupported_token and unsupported_token not in ("aligned", "unavailable_offline", ""):
+        out.append(
+            Violation(
+                rule_id="exchange_ifc_manifest_unsupported_alignment_drift",
+                severity="warning",
+                message=(
+                    f"IFC exchange manifest closure: unsupported class alignment drifted "
+                    f"({unsupported_token}). The unsupported product class sets in the import "
+                    "preview and merge map disagree "
+                    "(ifcExchangeManifestClosure_v0.unsupportedClassAlignmentToken)."
+                ),
+                element_ids=[],
+                discipline="exchange",
+            )
+        )
+
+    ids_token = str(closure.get("idsPointerCoverageAlignmentToken") or "")
+    if ids_token and ids_token not in ("aligned", "unavailable_offline", ""):
+        out.append(
+            Violation(
+                rule_id="exchange_ifc_manifest_ids_pointer_alignment_drift",
+                severity="info",
+                message=(
+                    f"IFC exchange manifest closure: IDS pointer coverage drifted "
+                    f"({ids_token}). Some authoritative product rows lack complete QTO/identity "
+                    "IDS linkage across the manifest surfaces "
+                    "(ifcExchangeManifestClosure_v0.idsPointerCoverageAlignmentToken)."
+                ),
+                element_ids=[],
+                discipline="exchange",
+            )
+        )
+
+    return out
+
+
+def _gltf_manifest_closure_advisory_violations(elements: dict[str, Element]) -> list[Violation]:
+    """Advisory violations derived from gltfExportManifestClosure_v1 presence matrix."""
+    out: list[Violation] = []
+    try:
+        doc = Document(revision=1, elements=dict(elements))  # type: ignore[arg-type]
+    except Exception:
+        return []
+    try:
+        gltf_ext = build_visual_export_manifest(doc)["extensions"]["BIM_AI_exportManifest_v0"]
+    except Exception:
+        return []
+
+    closure = gltf_ext.get("gltfExportManifestClosure_v1")
+    if not isinstance(closure, dict):
+        return out
+
+    counts_by_kind: dict[str, int] = gltf_ext.get("countsByKind") or {}
+
+    for entry in closure.get("extensionPresenceMatrix") or []:
+        token = entry.get("token", "")
+        if entry.get("status") == "skipped_ineligible":
+            eligible_kind = GLTF_EXTENSION_TOKEN_ELIGIBLE_KIND.get(token)
+            if eligible_kind and counts_by_kind.get(eligible_kind, 0) > 0:
+                skip_code = entry.get("skipReasonCode") or "unknown"
+                out.append(
+                    Violation(
+                        rule_id="gltf_export_manifest_expected_extension_missing",
+                        severity="info",
+                        message=(
+                            f"glTF export manifest: extension {token!r} not emitted "
+                            f"but eligible element kind {eligible_kind!r} is present "
+                            f"(skipReasonCode={skip_code!r})."
+                        ),
+                        element_ids=[],
+                    )
+                )
+
+    emitted_tokens: list[str] = closure.get("extensionTokens") or []
+    emitted_set = set(emitted_tokens)
+    canonical_order = [t for t in GLTF_KNOWN_EXTENSION_TOKENS if t in emitted_set]
+    if emitted_tokens != canonical_order:
+        out.append(
+            Violation(
+                rule_id="gltf_export_manifest_extension_order_drift",
+                severity="warning",
+                message=(
+                    "glTF export manifest: extension token order in closure differs from canonical. "
+                    f"Emitted order: {emitted_tokens!r}. "
+                    f"Canonical order: {canonical_order!r}."
+                ),
+                element_ids=[],
+            )
+        )
 
     return out
 
@@ -2219,8 +2345,10 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
 
     viols.extend(_agent_brief_advisory_violations(elements))
     viols.extend(_exchange_advisory_violations(elements))
+    viols.extend(_gltf_manifest_closure_advisory_violations(elements))
     viols.extend(_plan_view_tag_style_advisor_violations(elements))
     viols.extend(_room_color_scheme_advisory_violations(elements))
+    viols.extend(_section_on_sheet_advisory_violations(elements))
     viols.sort(key=lambda v: (v.rule_id, tuple(sorted(v.element_ids)), v.severity))
     return annotate_violation_disciplines(viols)
 
@@ -2308,4 +2436,80 @@ def _room_color_scheme_advisory_violations(elements: dict[str, Element]) -> list
                 element_ids=eids,
             )
         )
+    return out
+
+
+def _section_on_sheet_advisory_violations(elements: dict[str, Element]) -> list[Violation]:
+    """Advisory rules for section/elevation viewports placed on sheets (WP-E03/E05/V01)."""
+    out: list[Violation] = []
+    sheets = sorted(
+        (el for el in elements.values() if isinstance(el, SheetElem)),
+        key=lambda s: s.id,
+    )
+    for sh in sheets:
+        tb_norm = normalize_titleblock_revision_issue_v1(sh.titleblock_parameters)
+        rev_iss_present = sheet_revision_issue_metadata_present(tb_norm)
+
+        for vp in list(sh.viewports_mm or []):
+            if not isinstance(vp, dict):
+                continue
+            vr = vp.get("viewRef") or vp.get("view_ref")
+            if not isinstance(vr, str) or ":" not in vr:
+                continue
+            kind_raw, ref_raw = vr.split(":", 1)
+            kind = kind_raw.strip().lower()
+            if kind not in {"section", "sec"}:
+                continue
+            sec_id = ref_raw.strip()
+            if not sec_id:
+                continue
+            el = elements.get(sec_id)
+            if not isinstance(el, SectionCutElem):
+                continue
+            vid = str(vp.get("viewportId") or vp.get("viewport_id") or "").strip() or sec_id
+
+            if not section_cut_line_present(el):
+                out.append(
+                    Violation(
+                        rule_id="section_on_sheet_cut_line_missing",
+                        severity="warning",
+                        message=(
+                            f"Section viewport '{vid}' on sheet '{sh.id}' references section cut "
+                            f"'{sec_id}' whose cut line endpoints coincide; no cut-line digest can "
+                            "be produced for the section-on-sheet integration evidence."
+                        ),
+                        element_ids=[sh.id, sec_id],
+                    )
+                )
+
+            _doc = Document(revision=1, elements=dict(elements))  # type: ignore[arg-type]
+            prim, _ = build_section_projection_primitives(_doc, el)
+            token = section_profile_token_from_primitives(prim)
+            if token == "noGeometry_v1":
+                out.append(
+                    Violation(
+                        rule_id="section_on_sheet_profile_token_missing",
+                        severity="info",
+                        message=(
+                            f"Section viewport '{vid}' on sheet '{sh.id}' references section cut "
+                            f"'{sec_id}' with no resolvable profile token (no roof witness, geometry "
+                            "extent, or level markers found)."
+                        ),
+                        element_ids=[sh.id, sec_id],
+                    )
+                )
+
+            if not rev_iss_present:
+                out.append(
+                    Violation(
+                        rule_id="section_on_sheet_revision_issue_unresolved",
+                        severity="info",
+                        message=(
+                            f"Section viewport '{vid}' on sheet '{sh.id}' references section cut "
+                            f"'{sec_id}' but the sheet titleblock revision/issue cross-reference is "
+                            "empty (revisionId and revisionCode are both absent)."
+                        ),
+                        element_ids=[sh.id, sec_id],
+                    )
+                )
     return out

@@ -33,6 +33,7 @@ from bim_ai.export_ifc import (
 )
 from bim_ai.ifc_stub import (
     IFC_SEMANTIC_IMPORT_SCOPE_V0,
+    build_ifc_exchange_manifest_closure_v0,
     build_ifc_exchange_manifest_payload,
     build_ifc_import_preview_v0_for_manifest,
     build_ifc_unsupported_merge_map_v0_for_manifest,
@@ -834,3 +835,111 @@ def test_ifc_semantic_scope_mentions_id_collision_classes() -> None:
     supported = IFC_SEMANTIC_IMPORT_SCOPE_V0.get("semanticReadBackSupported") or []
     blob = "\n".join(str(x) for x in supported)
     assert "idCollisionClasses" in blob
+
+
+# ---------------------------------------------------------------------------
+# IFC exchange manifest closure — offline / stub tests
+# ---------------------------------------------------------------------------
+
+
+def test_ifc_manifest_includes_closure_always() -> None:
+    """``ifcExchangeManifestClosure_v0`` is always present on the manifest."""
+
+    doc = _doc_with_wall_and_level()
+    mf = build_ifc_exchange_manifest_payload(doc)
+    closure = mf.get("ifcExchangeManifestClosure_v0")
+    assert isinstance(closure, dict)
+    assert "authoritativeProductsAlignmentToken" in closure
+    assert "unsupportedClassAlignmentToken" in closure
+    assert "idsPointerCoverageAlignmentToken" in closure
+    assert "ifcExchangeManifestClosureDigestSha256" in closure
+
+
+def test_ifc_closure_digest_is_64_hex_chars() -> None:
+    """Closure SHA-256 digest is a valid 64-character hex string."""
+
+    doc = _doc_with_wall_and_level()
+    mf = build_ifc_exchange_manifest_payload(doc)
+    digest = mf["ifcExchangeManifestClosure_v0"]["ifcExchangeManifestClosureDigestSha256"]
+    assert isinstance(digest, str)
+    assert len(digest) == 64
+    assert all(c in "0123456789abcdef" for c in digest.lower())
+
+
+def test_ifc_closure_offline_tokens_when_ifcopenshell_missing() -> None:
+    """When IfcOpenShell is absent, all three tokens are ``unavailable_offline``."""
+
+    if IFC_AVAILABLE:
+        pytest.skip("ifcopenshell installed — offline stub not exercised")
+
+    doc = _doc_with_wall_and_level()
+    mf = build_ifc_exchange_manifest_payload(doc)
+    closure = mf["ifcExchangeManifestClosure_v0"]
+    assert closure["authoritativeProductsAlignmentToken"] == "unavailable_offline"
+    assert closure["unsupportedClassAlignmentToken"] == "unavailable_offline"
+    assert closure["idsPointerCoverageAlignmentToken"] == "unavailable_offline"
+
+
+def test_ifc_closure_build_from_unavailable_stubs() -> None:
+    """``build_ifc_exchange_manifest_closure_v0`` handles unavailable preview/merge-map stubs."""
+
+    unavailable_preview = {
+        "available": False,
+        "reason": "ifcopenshell_not_installed",
+        "authoritativeProducts": {},
+        "unsupportedProducts": {"schemaVersion": 0, "countsByClass": {}},
+        "idsPointerCoverage": {"schemaVersion": 0, "available": False},
+    }
+    unavailable_merge_map = {
+        "available": False,
+        "reason": "ifcopenshell_not_installed",
+        "unsupportedIfcProductsByClass": {},
+        "mergeConstraints": [],
+    }
+    closure = build_ifc_exchange_manifest_closure_v0(unavailable_preview, unavailable_merge_map)
+    assert closure["schemaVersion"] == 0
+    assert closure["authoritativeProductsAlignmentToken"] == "unavailable_offline"
+    assert closure["unsupportedClassAlignmentToken"] == "unavailable_offline"
+    assert closure["idsPointerCoverageAlignmentToken"] == "unavailable_offline"
+    digest = closure["ifcExchangeManifestClosureDigestSha256"]
+    assert len(digest) == 64
+
+
+def test_ifc_closure_digest_is_deterministic() -> None:
+    """Closure digest is the same across repeated calls for the same document."""
+
+    doc = _doc_with_wall_and_level()
+    mf1 = build_ifc_exchange_manifest_payload(doc)
+    mf2 = build_ifc_exchange_manifest_payload(doc)
+    assert (
+        mf1["ifcExchangeManifestClosure_v0"]["ifcExchangeManifestClosureDigestSha256"]
+        == mf2["ifcExchangeManifestClosure_v0"]["ifcExchangeManifestClosureDigestSha256"]
+    )
+
+
+def test_ifc_closure_aligned_when_well_formed_document() -> None:
+    """Well-formed kernel-eligible doc produces aligned or unavailable_offline tokens (never drift)."""
+
+    doc = _doc_with_wall_and_level()
+    mf = build_ifc_exchange_manifest_payload(doc)
+    closure = mf["ifcExchangeManifestClosure_v0"]
+    for key in (
+        "authoritativeProductsAlignmentToken",
+        "unsupportedClassAlignmentToken",
+        "idsPointerCoverageAlignmentToken",
+    ):
+        token = closure[key]
+        assert token in ("aligned", "unavailable_offline"), (
+            f"{key} = {token!r} — expected 'aligned' or 'unavailable_offline'"
+        )
+
+
+def test_ifc_semantic_scope_mentions_closure() -> None:
+    """``IFC_SEMANTIC_IMPORT_SCOPE_V0.semanticReadBackSupported`` documents the closure."""
+
+    supported = IFC_SEMANTIC_IMPORT_SCOPE_V0.get("semanticReadBackSupported") or []
+    blob = "\n".join(str(x) for x in supported)
+    assert "ifcExchangeManifestClosure_v0" in blob
+    assert "authoritativeProductsAlignmentToken" in blob
+    assert "unsupportedClassAlignmentToken" in blob
+    assert "idsPointerCoverageAlignmentToken" in blob

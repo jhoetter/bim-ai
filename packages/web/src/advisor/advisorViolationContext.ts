@@ -42,6 +42,9 @@ export function recommendedContextForRuleId(ruleId: string): string {
     case 'exchange_ifc_unhandled_geometry_present':
     case 'exchange_ifc_kernel_geometry_skip_summary':
     case 'exchange_manifest_ifc_gltf_slice_mismatch':
+    case 'exchange_ifc_manifest_authoritative_alignment_drift':
+    case 'exchange_ifc_manifest_unsupported_alignment_drift':
+    case 'exchange_ifc_manifest_ids_pointer_alignment_drift':
       return 'Recommended: OpenBIF / IDS export evidence — inspect IFC manifest and advisories.';
     default:
       return 'Inspect related elements and Advisor message; use perspective filter to narrow discipline.';

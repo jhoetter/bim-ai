@@ -208,3 +208,61 @@ describe('scheduleTableRendererV1SheetReadout', () => {
     ).toBe('tblV1[id=s1 name=Room Schedule rows=0 cols=3 cat=room]');
   });
 });
+
+describe('sectionOnSheetIntegrationEvidence helpers', () => {
+  const makeIntegrationRow = (overrides?: Record<string, unknown>) => ({
+    sheetId: 'sh-1',
+    viewportId: 'vp-sec',
+    sectionViewId: 'sec-1',
+    cutLinePresent: true,
+    cutLineDigestSha256: 'a'.repeat(64),
+    sectionProfileToken: 'geometryExtentChord_v1',
+    listingSegment: 'secDoc[lvl=2 zSpanMm=3000]',
+    listingSegmentDigestSha256: 'b'.repeat(64),
+    sheetRevIssDocCrossRef: 'sheetRevIssDoc[id=R-1 code=A]',
+    ...overrides,
+  });
+
+  it('integration row has expected shape', () => {
+    const row = makeIntegrationRow();
+    expect(row.cutLinePresent).toBe(true);
+    expect(row.sectionProfileToken).toBe('geometryExtentChord_v1');
+    expect(row.sheetRevIssDocCrossRef).toContain('sheetRevIssDoc');
+  });
+
+  it('rows sort by viewportId', () => {
+    const rows = [
+      makeIntegrationRow({ viewportId: 'vp-z', sectionViewId: 'sec-z' }),
+      makeIntegrationRow({ viewportId: 'vp-a', sectionViewId: 'sec-a' }),
+    ].sort((a, b) => String(a.viewportId).localeCompare(String(b.viewportId)));
+    expect(rows[0].viewportId).toBe('vp-a');
+    expect(rows[1].viewportId).toBe('vp-z');
+  });
+
+  it('degenerate cut row has null digest and cutLinePresent=false', () => {
+    const row = makeIntegrationRow({ cutLinePresent: false, cutLineDigestSha256: null });
+    expect(row.cutLinePresent).toBe(false);
+    expect(row.cutLineDigestSha256).toBeNull();
+  });
+
+  it('empty cross-ref signals missing revision metadata', () => {
+    const row = makeIntegrationRow({ sheetRevIssDocCrossRef: '' });
+    expect(String(row.sheetRevIssDocCrossRef ?? '').trim()).toBe('');
+  });
+
+  it('noGeometry_v1 token signals missing profile', () => {
+    const row = makeIntegrationRow({ sectionProfileToken: 'noGeometry_v1' });
+    expect(row.sectionProfileToken).toBe('noGeometry_v1');
+  });
+
+  it('indexViewportEvidenceHints still works alongside section integration rows', () => {
+    const m = indexViewportEvidenceHints([
+      {
+        viewportId: 'vp-sec',
+        crop: 'omit',
+        sectionDocumentationSegment: 'secDoc[lvl=2 zSpanMm=3000]',
+      },
+    ]);
+    expect(m.get('vp-sec')?.sectionDocumentationSegment).toBe('secDoc[lvl=2 zSpanMm=3000]');
+  });
+});

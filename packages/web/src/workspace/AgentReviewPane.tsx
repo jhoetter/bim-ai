@@ -43,6 +43,10 @@ import {
   parseAgentReviewReadoutConsistencyClosureV1,
   type AgentReviewReadoutConsistencyClosureV1,
 } from './agentReviewReadoutConsistencyClosure';
+import {
+  formatIfcExchangeManifestClosureLines,
+  type IfcExchangeManifestClosureWire,
+} from './ifcExchangeManifestClosureReadout';
 
 type JsonText = string;
 
@@ -2060,6 +2064,10 @@ export function AgentReviewPane() {
                 const issuePkgFmt = summarizeBcfIssuePackageExport(
                   issuePkgRaw as BcfIssuePackageExportWire,
                 );
+                const ifcClosureRaw = ft.ifcExchangeManifestClosure_v0 as
+                  | IfcExchangeManifestClosureWire
+                  | undefined;
+                const ifcClosureLines = formatIfcExchangeManifestClosureLines(ifcClosureRaw);
                 const bcfOk =
                   typeof chk?.bcfIndexedTopicCountMatchesDocument === 'boolean'
                     ? chk.bcfIndexedTopicCountMatchesDocument
@@ -2161,6 +2169,18 @@ export function AgentReviewPane() {
                               </ul>
                             </li>
                           ) : null}
+                        </ul>
+                      </li>
+                    ) : null}
+                    {ifcClosureLines.length ? (
+                      <li className="space-y-0.5" data-testid="ifc-exchange-manifest-closure-readout">
+                        <span>IFC exchange manifest closure:</span>
+                        <ul className="list-disc space-y-0.5 ps-4">
+                          {ifcClosureLines.map((ln) => (
+                            <li key={ln}>
+                              <code className="text-[9px] font-mono">{ln}</code>
+                            </li>
+                          ))}
                         </ul>
                       </li>
                     ) : null}

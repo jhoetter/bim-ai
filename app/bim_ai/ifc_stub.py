@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 from typing import Any
 
 from bim_ai.document import Document
@@ -52,6 +54,7 @@ IFC_SEMANTIC_IMPORT_SCOPE_V0: dict[str, Any] = {
         "build_ifc_unsupported_merge_map_v0 — unsupported IFC merge map: unsupportedIfcProductsByClass (products outside kernel slice), extractionGapsByReason (reasons kernel failed to extract command from supported product), mergeConstraints (permanent architectural limits); offline-safe mergeConstraints always present",
         "ifc_manifest_v0.ifcImportPreview_v0 — same schema as build_ifc_import_preview_v0 (requires IfcOpenShell + kernel export eligible); offline stub sets available=False + reason",
         "ifc_manifest_v0.ifcUnsupportedMergeMap_v0 — same schema as build_ifc_unsupported_merge_map_v0 (mergeConstraints always present; full map requires IfcOpenShell + kernel export eligible)",
+        "ifc_manifest_v0.ifcExchangeManifestClosure_v0 — deterministic cross-manifest closure: authoritativeProductsAlignmentToken (aligned/replay_missing_products/preview_missing_products), unsupportedClassAlignmentToken (aligned/class_set_drift), idsPointerCoverageAlignmentToken (aligned/coverage_drift), ifcExchangeManifestClosureDigestSha256; offline tokens set to unavailable_offline",
     ],
     "importMergeUnsupported": [
         "IFC ingest → Document merge / replay for arbitrary IFC entity graphs",
@@ -131,6 +134,141 @@ def build_ifc_property_set_coverage_evidence_v0(doc: Document) -> dict[str, Any]
         "inspectPointer": (
             "inspect_kernel_ifc_semantics.propertySetCoverageEvidence_v0 — same schema as this manifest slice."
         ),
+    }
+
+
+def _ifc_closure_authoritative_token(preview: dict[str, Any]) -> str:
+    """Authoritative products alignment token.
+
+    Checks that idsPointerCoverage row counts align with the command counts for the
+    IDS-tracked product kinds (spaces, roofs, floors) in the import preview.
+    Uses commandCountsByKind (actual extracted instance counts) rather than the
+    capability flags in authoritativeProducts.
+    """
+    if not preview.get("available"):
+        return "unavailable_offline"
+
+    ids_cov = preview.get("idsPointerCoverage") or {}
+    if not ids_cov.get("available"):
+        return "unavailable_offline"
+
+    cmd_counts: dict[str, int] = preview.get("commandCountsByKind") or {}
+
+    # Map: replay command kind → idsPointerCoverage section key
+    _KIND_TO_COV = {
+        "createRoomOutline": "spaces",
+        "createFloor": "floors",
+        "createRoof": "roofs",
+    }
+
+    replay_missing: list[str] = []
+    preview_missing: list[str] = []
+
+    for cmd_kind, cov_key in _KIND_TO_COV.items():
+        has_commands = int(cmd_counts.get(cmd_kind) or 0) > 0
+        cov = ids_cov.get(cov_key) or {}
+        has_rows = int(cov.get("rows") or 0) > 0
+        if has_commands and not has_rows:
+            replay_missing.append(cov_key)
+        elif not has_commands and has_rows:
+            preview_missing.append(cov_key)
+
+    if replay_missing:
+        return "replay_missing_products"
+    if preview_missing:
+        return "preview_missing_products"
+    return "aligned"
+
+
+def _ifc_closure_unsupported_class_token(
+    preview: dict[str, Any],
+    merge_map: dict[str, Any],
+) -> str:
+    """Unsupported class alignment token.
+
+    Checks that unsupported product classes agree between the import preview and
+    the unsupported merge map (both derived from the same authoritative replay sketch).
+    """
+    if not preview.get("available") or not merge_map.get("available"):
+        return "unavailable_offline"
+
+    preview_classes = {
+        cls
+        for cls, cnt in ((preview.get("unsupportedProducts") or {}).get("countsByClass") or {}).items()
+        if int(cnt) > 0
+    }
+    merge_classes = {
+        cls
+        for cls, cnt in (merge_map.get("unsupportedIfcProductsByClass") or {}).items()
+        if int(cnt) > 0
+    }
+
+    if preview_classes == merge_classes:
+        return "aligned"
+    return "class_set_drift"
+
+
+def _ifc_closure_ids_pointer_token(preview: dict[str, Any]) -> str:
+    """IDS pointer coverage alignment token.
+
+    Checks that authoritative product rows have complete QTO/identity IDS linkage
+    across spaces, roofs, and floors in the import preview's idsPointerCoverage.
+    """
+    if not preview.get("available"):
+        return "unavailable_offline"
+
+    ids_cov = preview.get("idsPointerCoverage") or {}
+    if not ids_cov.get("available"):
+        return "unavailable_offline"
+
+    spaces = ids_cov.get("spaces") or {}
+    roofs = ids_cov.get("roofs") or {}
+    floors = ids_cov.get("floors") or {}
+
+    drift = False
+
+    s_rows = int(spaces.get("rows") or 0)
+    s_qto = int(spaces.get("withQtoSpaceBaseQuantitiesLinked") or 0)
+    if s_rows > 0 and s_qto < s_rows:
+        drift = True
+
+    r_rows = int(roofs.get("rows") or 0)
+    r_id = int(roofs.get("withIdentityReference") or 0)
+    if r_rows > 0 and r_id < r_rows:
+        drift = True
+
+    fl_rows = int(floors.get("rows") or 0)
+    fl_qto = int(floors.get("withQtoSlabBaseQuantitiesLinked") or 0)
+    if fl_rows > 0 and fl_qto < fl_rows:
+        drift = True
+
+    return "coverage_drift" if drift else "aligned"
+
+
+def build_ifc_exchange_manifest_closure_v0(
+    preview: dict[str, Any],
+    merge_map: dict[str, Any],
+) -> dict[str, Any]:
+    """Deterministic cross-manifest closure for IFC exchange manifest.
+
+    Computes three alignment tokens from the import preview and unsupported merge map,
+    then produces a deterministic SHA-256 closure digest over those tokens.
+    """
+    auth_token = _ifc_closure_authoritative_token(preview)
+    unsupported_token = _ifc_closure_unsupported_class_token(preview, merge_map)
+    ids_token = _ifc_closure_ids_pointer_token(preview)
+
+    closure_core: dict[str, str] = {
+        "authoritativeProductsAlignmentToken": auth_token,
+        "unsupportedClassAlignmentToken": unsupported_token,
+        "idsPointerCoverageAlignmentToken": ids_token,
+    }
+    digest = hashlib.sha256(json.dumps(closure_core, sort_keys=True).encode()).hexdigest()
+
+    return {
+        "schemaVersion": 0,
+        **closure_core,
+        "ifcExchangeManifestClosureDigestSha256": digest,
     }
 
 
@@ -256,6 +394,10 @@ def build_ifc_exchange_manifest_payload(doc: Document) -> dict[str, Any]:
     out["siteExchangeEvidence_v0"] = build_site_exchange_evidence_v0_for_manifest(doc)
     out["ifcImportPreview_v0"] = build_ifc_import_preview_v0_for_manifest(doc)
     out["ifcUnsupportedMergeMap_v0"] = build_ifc_unsupported_merge_map_v0_for_manifest(doc)
+    out["ifcExchangeManifestClosure_v0"] = build_ifc_exchange_manifest_closure_v0(
+        out["ifcImportPreview_v0"],
+        out["ifcUnsupportedMergeMap_v0"],
+    )
     return out
 
 
