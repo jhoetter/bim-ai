@@ -307,28 +307,40 @@ def deterministic_3d_view_evidence_manifest(
         safe = "".join(ch for ch in vp.id if ch.isalnum() or ch in ("-", "_")) or "vp"
         stem = f"{evidence_artifact_basename}-3d-{safe}"
 
-        rows.append(
-            {
-                "viewpointId": vp.id,
-                "viewpointName": vp.name,
-                "viewerClipCapElevMm": vp.viewer_clip_cap_elev_mm,
-                "viewerClipFloorElevMm": vp.viewer_clip_floor_elev_mm,
-                "hiddenSemanticKinds3d": list(vp.hidden_semantic_kinds_3d or []),
-                "cutawayStyle": vp.cutaway_style,
-                "playwrightSuggestedFilenames": {
-                    "pngViewport": f"{stem}.png",
-                },
-                "correlation": {
-                    "format": "evidence3dViewCorrelation_v1",
-                    "semanticDigestSha256": semantic_digest_sha256,
-                    "semanticDigestPrefix16": semantic_digest_prefix16,
-                    "modelRevision": doc.revision,
-                    "modelId": mid,
-                    "suggestedEvidenceBundleEvidencePackageJson": bundle_json,
-                },
+        row: dict[str, Any] = {
+            "viewpointId": vp.id,
+            "viewpointName": vp.name,
+            "viewerClipCapElevMm": vp.viewer_clip_cap_elev_mm,
+            "viewerClipFloorElevMm": vp.viewer_clip_floor_elev_mm,
+            "hiddenSemanticKinds3d": list(vp.hidden_semantic_kinds_3d or []),
+            "hiddenCategoryCount": len(vp.hidden_semantic_kinds_3d or []),
+            "cutawayStyle": vp.cutaway_style,
+            "sectionBoxEnabled": vp.section_box_enabled,
+            "playwrightSuggestedFilenames": {
+                "pngViewport": f"{stem}.png",
+            },
+            "correlation": {
+                "format": "evidence3dViewCorrelation_v1",
+                "semanticDigestSha256": semantic_digest_sha256,
+                "semanticDigestPrefix16": semantic_digest_prefix16,
+                "modelRevision": doc.revision,
+                "modelId": mid,
+                "suggestedEvidenceBundleEvidencePackageJson": bundle_json,
+            },
+        }
+        if vp.section_box_min_mm is not None:
+            row["sectionBoxMinMm"] = {
+                "xMm": vp.section_box_min_mm.x_mm,
+                "yMm": vp.section_box_min_mm.y_mm,
+                "zMm": vp.section_box_min_mm.z_mm,
             }
-
-        )
+        if vp.section_box_max_mm is not None:
+            row["sectionBoxMaxMm"] = {
+                "xMm": vp.section_box_max_mm.x_mm,
+                "yMm": vp.section_box_max_mm.y_mm,
+                "zMm": vp.section_box_max_mm.z_mm,
+            }
+        rows.append(row)
 
     return rows
 

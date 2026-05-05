@@ -12,10 +12,33 @@ from bim_ai.elements import (
     IssueElem,
     LevelElem,
     RoomElem,
+    ViewpointElem,
     WallElem,
     WindowElem,
 )
 from bim_ai.room_derivation_preview import room_derivation_preview
+
+
+def _saved_3d_view_clip_summary(doc: Document) -> dict[str, Any]:
+    """Deterministic clip / section-box readout for all saved orbit_3d viewpoints (WP-E02)."""
+    views = [
+        e
+        for e in doc.elements.values()
+        if isinstance(e, ViewpointElem) and e.mode == "orbit_3d"
+    ]
+    clip_enabled_count = sum(
+        1
+        for vp in views
+        if vp.viewer_clip_cap_elev_mm is not None or vp.viewer_clip_floor_elev_mm is not None
+    )
+    section_box_count = sum(1 for vp in views if vp.section_box_enabled)
+    total_hidden_categories = sum(len(vp.hidden_semantic_kinds_3d or []) for vp in views)
+    return {
+        "saved3dViewCount": len(views),
+        "clipEnabledCount": clip_enabled_count,
+        "sectionBoxEnabledCount": section_box_count,
+        "totalHiddenCategoryCount": total_hidden_categories,
+    }
 
 
 def compute_model_summary(doc: Document) -> dict[str, Any]:
@@ -82,6 +105,7 @@ def compute_model_summary(doc: Document) -> dict[str, Any]:
         "viewpointCount": int(kinds.get("viewpoint", 0)),
         "dimensionCount": int(kinds.get("dimension", 0)),
         "scheduleCount": int(kinds.get("schedule", 0)),
+        "saved3dViewClipSummary": _saved_3d_view_clip_summary(doc),
         "roomDerivationPreview": (
             rd_preview := room_derivation_preview(doc)
         ),

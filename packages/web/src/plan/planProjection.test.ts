@@ -528,6 +528,45 @@ describe('planProjection', () => {
     expect(viewpointOrbit3dCutawayStyleToken({ ...base, mode: 'plan_2d' })).toBe('none');
   });
 
+  it('viewpointOrbit3dEvidenceLine appends section box token when sectionBoxEnabled is set', () => {
+    const base = {
+      kind: 'viewpoint' as const,
+      id: 'vsbox',
+      name: 'SBox',
+      camera: {
+        position: { xMm: 0, yMm: 0, zMm: 0 },
+        target: { xMm: 1, yMm: 0, zMm: 0 },
+        up: { xMm: 0, yMm: 0, zMm: 1 },
+      },
+      mode: 'orbit_3d' as const,
+      hiddenSemanticKinds3d: [] as string[],
+    };
+    // sectionBoxEnabled=false → sbox:off suffix
+    expect(
+      viewpointOrbit3dEvidenceLine({ ...base, sectionBoxEnabled: false }),
+    ).toBe('clip cap ∅ · floor ∅ · 0 hid · cut:none · sbox:off');
+
+    // sectionBoxEnabled=true without bounds → sbox:on suffix
+    expect(
+      viewpointOrbit3dEvidenceLine({ ...base, sectionBoxEnabled: true }),
+    ).toBe('clip cap ∅ · floor ∅ · 0 hid · cut:none · sbox:on');
+
+    // sectionBoxEnabled=true with bounds → full coordinate token
+    expect(
+      viewpointOrbit3dEvidenceLine({
+        ...base,
+        sectionBoxEnabled: true,
+        sectionBoxMinMm: { xMm: -500, yMm: 0, zMm: 0 },
+        sectionBoxMaxMm: { xMm: 4000, yMm: 3000, zMm: 2800 },
+      }),
+    ).toBe('clip cap ∅ · floor ∅ · 0 hid · cut:none · sbox[-500,0,0→4000,3000,2800]');
+
+    // sectionBoxEnabled null (not set) → no sbox suffix
+    expect(viewpointOrbit3dEvidenceLine({ ...base })).toBe(
+      'clip cap ∅ · floor ∅ · 0 hid · cut:none',
+    );
+  });
+
   it('viewpointOrbit3dHiddenKindsReadout lists kinds and ellipsizes long lists', () => {
     const vp = {
       kind: 'viewpoint' as const,

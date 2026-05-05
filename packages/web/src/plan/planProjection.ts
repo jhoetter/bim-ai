@@ -806,7 +806,18 @@ export function viewpointOrbit3dEvidenceLine(vp: Extract<Element, { kind: 'viewp
   const capS = cap == null ? '∅' : String(cap);
   const floorS = floor == null ? '∅' : String(floor);
   const cut = viewpointOrbit3dCutawayStyleToken(vp);
-  return `clip cap ${capS} · floor ${floorS} · ${hid} hid · cut:${cut}`;
+  const sbEnabled = vp.sectionBoxEnabled;
+  const sbMin = vp.sectionBoxMinMm;
+  const sbMax = vp.sectionBoxMaxMm;
+  let sbTok = '';
+  if (sbEnabled != null) {
+    if (sbEnabled && sbMin != null && sbMax != null) {
+      sbTok = ` · sbox[${sbMin.xMm},${sbMin.yMm},${sbMin.zMm}→${sbMax.xMm},${sbMax.yMm},${sbMax.zMm}]`;
+    } else {
+      sbTok = ` · sbox:${sbEnabled ? 'on' : 'off'}`;
+    }
+  }
+  return `clip cap ${capS} · floor ${floorS} · ${hid} hid · cut:${cut}${sbTok}`;
 }
 
 /** Deterministic inheritance readout for Workspace Inspector (mirrors resolver math). */

@@ -256,6 +256,9 @@ class ViewpointElem(BaseModel):
     viewer_clip_floor_elev_mm: float | None = Field(default=None, alias="viewerClipFloorElevMm")
     hidden_semantic_kinds_3d: list[str] = Field(default_factory=list, alias="hiddenSemanticKinds3d")
     cutaway_style: ViewpointCutawayStyle | None = Field(default=None, alias="cutawayStyle")
+    section_box_enabled: bool | None = Field(default=None, alias="sectionBoxEnabled")
+    section_box_min_mm: Vec3Mm | None = Field(default=None, alias="sectionBoxMinMm")
+    section_box_max_mm: Vec3Mm | None = Field(default=None, alias="sectionBoxMaxMm")
 
 
 class IssueElem(BaseModel):

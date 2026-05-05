@@ -23,6 +23,7 @@ from bim_ai.elements import (
     RoomElem,
     SiteElem,
     StairElem,
+    ViewpointElem,
     WallElem,
     WindowElem,
 )
@@ -333,6 +334,50 @@ def site_context_manifest_evidence_v0(doc: Document) -> dict[str, Any] | None:
     return {"format": "siteContextEvidence_v0", "sites": rows}
 
 
+def collect_saved_3d_view_clip_evidence_v1(doc: Document) -> dict[str, Any] | None:
+    """Deterministic section box / clip evidence for all saved orbit_3d viewpoints (WP-E02/WP-X02)."""
+    views = [
+        e
+        for e in doc.elements.values()
+        if isinstance(e, ViewpointElem) and e.mode == "orbit_3d"
+    ]
+    if not views:
+        return None
+    rows: list[dict[str, Any]] = []
+    for vp in sorted(views, key=lambda x: x.id):
+        row: dict[str, Any] = {
+            "viewId": vp.id,
+            "viewName": vp.name,
+            "clipEnabled": (
+                vp.viewer_clip_cap_elev_mm is not None
+                or vp.viewer_clip_floor_elev_mm is not None
+            ),
+            "viewerClipCapElevMm": vp.viewer_clip_cap_elev_mm,
+            "viewerClipFloorElevMm": vp.viewer_clip_floor_elev_mm,
+            "cutawayStyle": vp.cutaway_style,
+            "hiddenCategoryCount": len(vp.hidden_semantic_kinds_3d or []),
+            "sectionBoxEnabled": vp.section_box_enabled,
+        }
+        if vp.section_box_min_mm is not None:
+            row["sectionBoxMinMm"] = {
+                "xMm": vp.section_box_min_mm.x_mm,
+                "yMm": vp.section_box_min_mm.y_mm,
+                "zMm": vp.section_box_min_mm.z_mm,
+            }
+        if vp.section_box_max_mm is not None:
+            row["sectionBoxMaxMm"] = {
+                "xMm": vp.section_box_max_mm.x_mm,
+                "yMm": vp.section_box_max_mm.y_mm,
+                "zMm": vp.section_box_max_mm.z_mm,
+            }
+        rows.append(row)
+    return {
+        "format": "saved3dViewClipEvidence_v1",
+        "viewCount": len(rows),
+        "views": rows,
+    }
+
+
 def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
     parity = exchange_parity_manifest_fields_from_document(doc)
     cut_warns = collect_hosted_cut_manifest_warnings(doc)
@@ -346,6 +391,7 @@ def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
     layer_cut_align = collect_layered_assembly_cut_alignment_evidence_v0(doc)
     layer_asm_witness = collect_layered_assembly_witness_v0(doc)
     roof_unsup_summary = roof_geometry_unsupported_shape_summary_v0(doc)
+    saved_3d_clip = collect_saved_3d_view_clip_evidence_v1(doc)
     mesh_enc = "bim_ai_box_primitive_v0"
     if _document_has_gable_roof_mesh(doc):
         mesh_enc += "+bim_ai_gable_roof_v0"
@@ -369,6 +415,8 @@ def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
         mesh_enc += "+bim_ai_roof_unsupported_shape_summary_v0"
     if document_has_roof_layered_prism_witness_v1(doc):
         mesh_enc += "+bim_ai_roof_layered_prism_witness_v1"
+    if saved_3d_clip:
+        mesh_enc += "+bim_ai_saved_3d_view_clip_v1"
     base: dict[str, Any] = {
         **parity,
         "meshEncoding": mesh_enc,
@@ -402,6 +450,8 @@ def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
         base["siteContextEvidence_v0"] = site_ctx
     if roof_unsup_summary:
         base["roofGeometryUnsupportedShapeSummary_v0"] = roof_unsup_summary
+    if saved_3d_clip:
+        base["saved3dViewClipEvidence_v1"] = saved_3d_clip
     return base
 
 

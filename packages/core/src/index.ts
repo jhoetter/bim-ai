@@ -244,6 +244,9 @@ export type Element =
       viewerClipFloorElevMm?: number | null;
       hiddenSemanticKinds3d?: string[];
       cutawayStyle?: 'none' | 'cap' | 'floor' | 'box' | null;
+      sectionBoxEnabled?: boolean | null;
+      sectionBoxMinMm?: { xMm: number; yMm: number; zMm: number } | null;
+      sectionBoxMaxMm?: { xMm: number; yMm: number; zMm: number } | null;
     }
   | {
       kind: 'issue';
