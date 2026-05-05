@@ -21,6 +21,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import RedirectResponse
 
+from bim_ai.agent_brief_command_protocol import agent_brief_command_protocol_v1
 from bim_ai.agent_evidence_review_loop import agent_review_actions_v1, bcf_topics_index_v1
 from bim_ai.codes import BUILDING_PRESETS
 from bim_ai.commands import Command
@@ -440,6 +441,11 @@ async def evidence_package(
         violations=viols,
         evidence_closure_review=payload["evidenceClosureReview_v1"],
     )
+    payload["agentBriefCommandProtocol_v1"] = agent_brief_command_protocol_v1(
+        doc=doc,
+        proposed_commands=[],
+        validation_violations=viols,
+    )
     payload["evidenceAgentFollowThrough_v1"] = evidence_agent_follow_through_v1(
         model_id=model_id,
         doc=doc,
@@ -450,6 +456,7 @@ async def evidence_package(
         deterministic_3d_view_evidence=payload["deterministic3dViewEvidence"],
         deterministic_plan_view_evidence=payload["deterministicPlanViewEvidence"],
         deterministic_section_cut_evidence=payload["deterministicSectionCutEvidence"],
+        violations=viols,
     )
     return payload
 
@@ -1144,6 +1151,11 @@ async def dry_run_command_bundle(
 
     viols_wire = [v.model_dump(by_alias=True) for v in violations]
 
+    brief_proto = agent_brief_command_protocol_v1(
+        doc=baseline_doc,
+        proposed_commands=list(body.commands),
+        validation_violations=viols_wire,
+    )
     if not ok or new_doc is None:
         return {
             "ok": False,
@@ -1159,6 +1171,7 @@ async def dry_run_command_bundle(
                 body.commands,
                 outcome_code=code,
             ),
+            "agentBriefCommandProtocol_v1": brief_proto,
         }
 
     return {
@@ -1171,6 +1184,7 @@ async def dry_run_command_bundle(
         "wouldRevision": new_doc.revision,
         "appliedCommandsPreview": body.commands,
         "replayDiagnostics": bundle_replay_diagnostics(body.commands),
+        "agentBriefCommandProtocol_v1": brief_proto,
     }
 
 

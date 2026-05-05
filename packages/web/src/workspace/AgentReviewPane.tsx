@@ -3,9 +3,17 @@ import { useMemo, useState } from 'react';
 import { Btn } from '@bim-ai/ui';
 
 import { useBimStore } from '../state/store';
+import {
+  formatAgentBriefCommandProtocolReadout,
+  parseAgentBriefCommandProtocolV1,
+} from './agentBriefCommandProtocol';
 import { formatAgentReviewActionDetails } from './agentReviewActionDetails';
 import { parseAgentReviewActionsV1, type AgentReviewActionRow } from './agentReviewActions';
 import { formatStagedArtifactResolutionMode } from './formatStagedArtifactResolutionMode';
+import {
+  summarizeBcfRoundtripEvidenceSummary,
+  type BcfRoundtripEvidenceSummaryWire,
+} from './bcfRoundtripEvidenceSummaryFormat';
 
 type JsonText = string;
 
@@ -140,6 +148,38 @@ export function AgentReviewPane() {
       };
     }
   }, [assumeLogTxt]);
+
+  const dryRunBriefProtocol = useMemo(() => {
+    if (!dryRunTxt) return null;
+    try {
+      const root = JSON.parse(dryRunTxt) as Record<string, unknown>;
+      const dr = root.dryRun;
+      if (dr !== null && typeof dr === 'object' && !Array.isArray(dr)) {
+        return parseAgentBriefCommandProtocolV1(
+          (dr as Record<string, unknown>).agentBriefCommandProtocol_v1,
+        );
+      }
+    } catch {
+      return null;
+    }
+    return null;
+  }, [dryRunTxt]);
+
+  const evidenceBriefProtocol = useMemo(() => {
+    if (!evidenceTxt) return null;
+    try {
+      const root = JSON.parse(evidenceTxt) as Record<string, unknown>;
+      const pay = root.payload ?? root.evidencePackage;
+      if (pay !== null && typeof pay === 'object' && !Array.isArray(pay)) {
+        return parseAgentBriefCommandProtocolV1(
+          (pay as Record<string, unknown>).agentBriefCommandProtocol_v1,
+        );
+      }
+    } catch {
+      return null;
+    }
+    return null;
+  }, [evidenceTxt]);
 
   type RoomCand = {
     candidateId?: string;
@@ -1187,6 +1227,37 @@ export function AgentReviewPane() {
         </div>
       ) : null}
 
+      {dryRunBriefProtocol !== null || evidenceBriefProtocol !== null ? (
+        <div
+          data-testid="agent-brief-command-protocol"
+          className="rounded border border-border bg-background/40 p-2"
+        >
+          <div className="text-[10px] font-semibold text-muted">Brief → command protocol</div>
+          <p className="mt-1 text-[10px] text-muted">
+            Deterministic readout from model state + validation violations + optional command preview
+            (evidence-package uses an empty proposed-command list; dry-run uses your bundle).
+          </p>
+          {evidenceBriefProtocol !== null ? (
+            <div className="mt-2">
+              <div className="text-[10px] font-medium text-muted">
+                Evidence-package snapshot (proposedCommandCount from server digest)
+              </div>
+              <pre className="mt-1 max-h-40 overflow-auto rounded border border-border/60 bg-background p-2 font-mono text-[10px]">
+                {formatAgentBriefCommandProtocolReadout(evidenceBriefProtocol).join('\n')}
+              </pre>
+            </div>
+          ) : null}
+          {dryRunBriefProtocol !== null ? (
+            <div className="mt-2">
+              <div className="text-[10px] font-medium text-muted">Last bundle dry-run preview</div>
+              <pre className="mt-1 max-h-40 overflow-auto rounded border border-border/60 bg-background p-2 font-mono text-[10px]">
+                {formatAgentBriefCommandProtocolReadout(dryRunBriefProtocol).join('\n')}
+              </pre>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
       {dryRunTxt ? (
         <div>
           <div className="mb-1 text-[10px] font-semibold text-muted">Bundle dry-run</div>
@@ -1645,6 +1716,13 @@ export function AgentReviewPane() {
                   typeof res?.unresolvedCount === 'number' && Number.isFinite(res.unresolvedCount)
                     ? res.unresolvedCount
                     : null;
+                const roundtripRaw = ft.bcfRoundtripEvidenceSummary_v1 as Record<
+                  string,
+                  unknown
+                > | undefined;
+                const roundtripFmt = summarizeBcfRoundtripEvidenceSummary(
+                  roundtripRaw as BcfRoundtripEvidenceSummaryWire,
+                );
                 const bcfOk =
                   typeof chk?.bcfIndexedTopicCountMatchesDocument === 'boolean'
                     ? chk.bcfIndexedTopicCountMatchesDocument
@@ -1686,6 +1764,40 @@ export function AgentReviewPane() {
                         Unresolved BCF/issue evidenceRefs:{' '}
                         <code className="font-mono">{unres}</code>
                       </li>
+                    ) : null}
+                    {roundtripRaw?.format === 'bcfRoundtripEvidenceSummary_v1' ? (
+                      <>
+                        <li>
+                          BCF round-trip summary: BCF topics{' '}
+                          <code className="font-mono">
+                            {roundtripFmt.bcfTopicCount ?? '—'}
+                          </code>
+                          {' · '}viewpoint/PNG refs{' '}
+                          <code className="font-mono">
+                            {roundtripFmt.viewpointAndScreenshotRefCount ?? '—'}
+                          </code>
+                          {' · '}model element refs{' '}
+                          <code className="font-mono">
+                            {roundtripFmt.modelElementReferenceCount ?? '—'}
+                          </code>
+                          {' · '}unresolved (refs + anchors){' '}
+                          <code className="font-mono">
+                            {roundtripFmt.unresolvedReferenceCount ?? '—'}
+                          </code>
+                        </li>
+                        {roundtripFmt.violationRuleLinkLines.length ? (
+                          <li className="space-y-0.5">
+                            <span>Violations linked to topic elements:</span>
+                            <ul className="list-disc space-y-0.5 ps-4">
+                              {roundtripFmt.violationRuleLinkLines.map((ln) => (
+                                <li key={ln}>
+                                  <code className="text-[9px] font-mono">{ln}</code>
+                                </li>
+                              ))}
+                            </ul>
+                          </li>
+                        ) : null}
+                      </>
                     ) : null}
                     {collab && typeof collab.constraintRejectedHttpStatus === 'number' ? (
                       <li>
