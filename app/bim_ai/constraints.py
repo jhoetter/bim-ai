@@ -465,11 +465,13 @@ def _ids_authoritative_replay_map_pointer_suffix(summary: dict[str, Any]) -> str
     if not isinstance(ids_map, dict):
         return ""
     spaces = ids_map.get("spaces")
-    n = len(spaces) if isinstance(spaces, list) else 0
+    roofs = ids_map.get("roofs")
+    n_space = len(spaces) if isinstance(spaces, list) else 0
+    n_roof = len(roofs) if isinstance(roofs, list) else 0
     return (
-        " Per-space IDS linkage evidence: "
-        f"{n} row(s) under summarize_kernel_ifc_semantic_roundtrip.commandSketch."
-        "authoritativeReplay_v0.idsAuthoritativeReplayMap_v0."
+        " IDS linkage evidence: "
+        f"{n_space} IfcSpace row(s), {n_roof} IfcRoof row(s) under summarize_kernel_ifc_semantic_roundtrip."
+        "commandSketch.authoritativeReplay_v0.idsAuthoritativeReplayMap_v0."
     )
 
 

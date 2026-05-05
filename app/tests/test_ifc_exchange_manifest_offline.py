@@ -221,6 +221,7 @@ def test_authoritative_replay_sketch_unavailable_when_ifcopenshell_missing() -> 
         "openings": False,
         "floors": False,
         "slabVoids": False,
+        "roofs": False,
         "stairs": False,
     }
 
@@ -417,6 +418,36 @@ def test_try_apply_authoritative_replay_v0_merge_reference_unresolved() -> None:
         },
     )
     sketch = _sketch_with_commands(cmds=[_minimal_create_wall_cmd(wall_id="w-new", level_id="no-such-level")])
+    ok, new_doc, cmds, _v, code = try_apply_kernel_ifc_authoritative_replay_v0(doc, sketch)
+    assert ok is False and new_doc is None and code == "merge_reference_unresolved"
+    assert len(cmds) == 1
+
+
+def test_try_apply_authoritative_replay_v0_roof_reference_level_unresolved() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl-g": LevelElem(kind="level", id="lvl-g", name="G", elevationMm=0),
+        },
+    )
+    sketch = _sketch_with_commands(
+        cmds=[
+            {
+                "type": "createRoof",
+                "id": "r-new",
+                "name": "R",
+                "referenceLevelId": "no-level",
+                "footprintMm": [
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 1000, "yMm": 0},
+                    {"xMm": 500, "yMm": 800},
+                ],
+                "overhangMm": 0,
+                "slopeDeg": 25,
+                "roofGeometryMode": "mass_box",
+            },
+        ]
+    )
     ok, new_doc, cmds, _v, code = try_apply_kernel_ifc_authoritative_replay_v0(doc, sketch)
     assert ok is False and new_doc is None and code == "merge_reference_unresolved"
     assert len(cmds) == 1

@@ -835,6 +835,7 @@ def test_ifc_summarize_command_sketch_includes_authoritative_replay_v0() -> None
         "openings": False,
         "floors": False,
         "slabVoids": False,
+        "roofs": False,
         "stairs": False,
     }
     assert any(c.get("type") == "createLevel" for c in auth["commands"])
@@ -903,6 +904,7 @@ def test_ifc_authoritative_replay_v0_space_outline_and_ids_map() -> None:
 
     ids_map = sketch["idsAuthoritativeReplayMap_v0"]
     assert ids_map["schemaVersion"] == 0
+    assert ids_map.get("roofs") == []
     assert len(ids_map["spaces"]) == 1
     row = ids_map["spaces"][0]
     assert row["identityReference"] == "rm-1"
@@ -1291,6 +1293,20 @@ def test_ifc_authoritative_replay_v0_stairs_before_hosted_openings_in_command_or
                 alongT=0.4,
                 widthMm=900,
             ),
+            "rf-1": RoofElem(
+                kind="roof",
+                id="rf-1",
+                name="R",
+                referenceLevelId="l1",
+                footprintMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 2500, "yMm": 0},
+                    {"xMm": 2500, "yMm": 2000},
+                    {"xMm": 0, "yMm": 2000},
+                ],
+                overhangMm=300,
+                slopeDeg=30,
+            ),
             "st-1": StairElem(
                 kind="stair",
                 id="st-1",
@@ -1306,4 +1322,129 @@ def test_ifc_authoritative_replay_v0_stairs_before_hosted_openings_in_command_or
     step = export_ifc_model_step(doc)
     sketch = build_kernel_ifc_authoritative_replay_sketch_v0(step)
     typ_order = [c["type"] for c in sketch["commands"]]
+    assert typ_order.index("createWall") < typ_order.index("createRoof")
+    assert typ_order.index("createRoof") < typ_order.index("createStair")
     assert typ_order.index("createStair") < typ_order.index("insertDoorOnWall")
+
+
+def test_ifc_authoritative_replay_v0_roof_roundtrip_and_apply() -> None:
+    doc = Document(
+        revision=520,
+        elements={
+            "l0": LevelElem(kind="level", id="l0", name="G", elevationMm=0),
+            "l1": LevelElem(kind="level", id="l1", name="OG", elevationMm=2800),
+            "w-a": WallElem(
+                kind="wall",
+                id="w-a",
+                name="W",
+                levelId="l0",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 5500, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+            "rf-1": RoofElem(
+                kind="roof",
+                id="rf-1",
+                name="R",
+                referenceLevelId="l1",
+                footprintMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 6500, "yMm": 0},
+                    {"xMm": 6500, "yMm": 5500},
+                    {"xMm": 0, "yMm": 5500},
+                ],
+                overhangMm=300,
+                slopeDeg=30,
+            ),
+        },
+    )
+    step = export_ifc_model_step(doc)
+    sketch = build_kernel_ifc_authoritative_replay_sketch_v0(step)
+    assert sketch["available"] is True
+    assert sketch["authoritativeSubset"]["roofs"] is True
+    assert sketch.get("kernelRoofSkippedNoReference") == 0
+    roof_cmds = [c for c in sketch["commands"] if c["type"] == "createRoof"]
+    assert len(roof_cmds) == 1
+    rc = roof_cmds[0]
+    assert rc["id"] == "rf-1"
+    assert rc["roofGeometryMode"] == "mass_box"
+    level_cmds = [c for c in sketch["commands"] if c["type"] == "createLevel"]
+    by_elev = {float(c["elevationMm"]): c["id"] for c in level_cmds}
+    assert rc["referenceLevelId"] == by_elev[2800.0]
+    assert abs(float(rc["slopeDeg"]) - 30.0) < 0.2
+    assert abs(float(rc["overhangMm"]) - 300.0) < 2.0
+    want_fp = [(0.0, 0.0), (6500.0, 0.0), (6500.0, 5500.0), (0.0, 5500.0)]
+    got = [(float(p["xMm"]), float(p["yMm"])) for p in rc["footprintMm"]]
+    assert len(got) == 4
+    for ex, ey in want_fp:
+        assert any(abs(px - ex) < 0.2 and abs(py - ey) < 0.2 for px, py in got)
+
+    ids_map = sketch["idsAuthoritativeReplayMap_v0"]
+    assert len(ids_map["roofs"]) == 1
+    assert ids_map["roofs"][0]["identityReference"] == "rf-1"
+
+    typ_order = [c["type"] for c in sketch["commands"]]
+    assert typ_order.index("createWall") < typ_order.index("createRoof")
+
+    empty = Document(revision=0, elements={})
+    ok, new_doc, _cmds, viols, code = try_apply_kernel_ifc_authoritative_replay_v0(empty, sketch)
+    assert ok is True and code == "ok" and new_doc is not None
+    r_el = new_doc.elements.get("rf-1")
+    assert isinstance(r_el, RoofElem)
+    assert r_el.reference_level_id == rc["referenceLevelId"]
+    assert abs(float(r_el.slope_deg or 0) - float(rc["slopeDeg"])) < 0.25
+    assert abs(float(r_el.overhang_mm) - float(rc["overhangMm"])) < 2.5
+    assert not viols or not any(v.blocking or v.severity == "error" for v in viols)
+
+
+def test_ifc_authoritative_replay_v0_roof_missing_reference_skipped() -> None:
+    import ifcopenshell
+    import ifcopenshell.util.element as ue
+    from ifcopenshell.api.pset.edit_pset import edit_pset
+
+    doc = Document(
+        revision=521,
+        elements={
+            "l0": LevelElem(kind="level", id="l0", name="G", elevationMm=0),
+            "l1": LevelElem(kind="level", id="l1", name="OG", elevationMm=2800),
+            "w-a": WallElem(
+                kind="wall",
+                id="w-a",
+                name="W",
+                levelId="l0",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 3500, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+            "rf-1": RoofElem(
+                kind="roof",
+                id="rf-1",
+                name="R",
+                referenceLevelId="l1",
+                footprintMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 4000, "yMm": 0},
+                    {"xMm": 4000, "yMm": 3000},
+                    {"xMm": 0, "yMm": 3000},
+                ],
+                overhangMm=250,
+                slopeDeg=28,
+            ),
+        },
+    )
+    step = export_ifc_model_step(doc)
+    model = ifcopenshell.file.from_string(step)
+    roofs_m = model.by_type("IfcRoof") or []
+    assert len(roofs_m) == 1
+    rf = roofs_m[0]
+    pinfo = ue.get_psets(rf, psets_only=False)["Pset_RoofCommon"]
+    ps = model.by_id(pinfo["id"])
+    edit_pset(model, pset=ps, properties={"Reference": ""})
+
+    sketch = build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model)
+    assert sketch["available"] is True
+    assert [c for c in sketch["commands"] if c["type"] == "createRoof"] == []
+    assert sketch.get("kernelRoofSkippedNoReference") == 1
+    assert any(g.get("reason") == "roof_missing_pset_reference" for g in sketch.get("extractionGaps") or [])

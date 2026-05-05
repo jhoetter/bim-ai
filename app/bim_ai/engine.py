@@ -131,6 +131,7 @@ _AUTHORITATIVE_REPLAY_V0_TYPES: frozenset[str] = frozenset(
         "createLevel",
         "createFloor",
         "createWall",
+        "createRoof",
         "createRoomOutline",
         "createStair",
         "insertDoorOnWall",
@@ -1865,6 +1866,25 @@ def _authoritative_replay_v0_preflight(doc: Document, cmds_raw: list[dict[str, A
                 declared.add(eid)
                 known_walls.add(eid)
 
+        elif t == "createRoof":
+            rlid = cmd.get("referenceLevelId")
+            if not isinstance(rlid, str) or not rlid.strip():
+                return "merge_reference_unresolved"
+            rs = rlid.strip()
+            if rs not in known_levels:
+                return "merge_reference_unresolved"
+            rtid_raw = cmd.get("roofTypeId")
+            if isinstance(rtid_raw, str) and rtid_raw.strip():
+                rts = rtid_raw.strip()
+                rt_el = doc.elements.get(rts)
+                if not isinstance(rt_el, RoofTypeElem):
+                    return "merge_reference_unresolved"
+            eid = _authoritative_replay_v0_declared_id(cmd)
+            if eid is not None:
+                if eid in doc.elements or eid in declared:
+                    return "merge_id_collision"
+                declared.add(eid)
+
         elif t == "createRoomOutline":
             lid = cmd.get("levelId")
             if not isinstance(lid, str) or not lid.strip():
@@ -1956,7 +1976,7 @@ def try_apply_kernel_ifc_authoritative_replay_v0(
 ) -> tuple[bool, Document | None, list[dict[str, Any]], list[Violation], str]:
     """Apply ``authoritativeReplay_v0`` commands via ``try_commit_bundle`` (additive merge).
 
-    OpenBIM slice: ``createLevel`` / ``createFloor`` / ``createWall`` / ``createStair`` /
+    OpenBIM slice: ``createLevel`` / ``createFloor`` / ``createWall`` / ``createRoof`` / ``createStair`` /
     ``createRoomOutline`` / ``insertDoorOnWall`` / ``insertWindowOnWall`` /
     ``createSlabOpening`` payloads from
     ``build_kernel_ifc_authoritative_replay_sketch_v0``. Runs preflight for id collisions and

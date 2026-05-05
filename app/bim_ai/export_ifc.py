@@ -11,6 +11,7 @@ import numpy as np
 from bim_ai.commands import (
     CreateFloorCmd,
     CreateLevelCmd,
+    CreateRoofCmd,
     CreateRoomOutlineCmd,
     CreateSlabOpeningCmd,
     CreateStairCmd,
@@ -878,9 +879,14 @@ def _kernel_horizontal_extrusion_footprint_mm_and_thickness(
     if ex is None:
         return None
     try:
-        depth_mm = abs(float(ex.Depth)) * 1000.0
+        depth_raw = abs(float(ex.Depth))
     except Exception:
         return None
+    if depth_raw <= 1e-9:
+        return None
+    # IfcOpenShell geometry helpers usually persist ``Depth`` in millimetres (slab thickness, wall height).
+    # Roof prism ``depth`` is emitted as a metre fraction (~0.25–2.8); treat small magnitudes as metres.
+    depth_mm = depth_raw * 1000.0 if depth_raw <= 20.0 else depth_raw
     if depth_mm <= 1e-3:
         return None
     swept = getattr(ex, "SweptArea", None)
@@ -1025,6 +1031,50 @@ def _space_pset_programme_json_fields(bucket: dict[str, Any]) -> dict[str, str]:
 AUTHORITATIVE_REPLAY_STAIR_TOP_LEVEL_TOL_MM = 1.0
 
 
+def _replay_roof_world_z_center_m(product: Any, *, storey_elev_mm: float) -> float | None:
+    """World-space roof product Z centre (m), disambiguating mm vs m in read-back mats."""
+
+    if ifc_placement is None:
+        return None
+    try:
+        op = getattr(product, "ObjectPlacement", None)
+        if op is None:
+            return None
+        mat = ifc_placement.get_local_placement(op)
+        z_raw = float(mat[2, 3])
+    except Exception:
+        return None
+    se = float(storey_elev_mm)
+    err_if_z_is_mm = abs(z_raw - se)
+    err_if_z_is_m = abs(z_raw * 1000.0 - se)
+    if err_if_z_is_mm <= err_if_z_is_m:
+        return z_raw / 1000.0
+    return z_raw
+
+
+def _replay_infer_roof_slope_deg_from_prism_rise_m(*, rise_m: float) -> float:
+    """Inverse of kernel roof prism depth: ``rise_m = clamp(slope_deg/70, 0.25, 2.8)`` (meters)."""
+
+    r = float(rise_m)
+    if r <= 0.25 + 1e-9:
+        return 17.5
+    if r >= 2.8 - 1e-9:
+        return 196.0
+    return r * 70.0
+
+
+def _replay_infer_roof_overhang_mm_from_placement(
+    *,
+    roof_z_center_m: float,
+    storey_elev_m: float,
+    rise_m: float,
+) -> float:
+    """Inverse of ``roof_z_center = elev + overhang_m * 0.12 + rise_m/2`` with exporter clamps."""
+
+    ov_m = (float(roof_z_center_m) - float(storey_elev_m) - float(rise_m) / 2.0) / 0.12
+    return float(_clamp(ov_m * 1000.0, 0.0, 5000.0))
+
+
 def _replay_level_ids_matching_elevation_mm(
     *,
     target_elevation_mm: float,
@@ -1060,7 +1110,7 @@ def _sort_authoritative_replay_extraction_gaps_v0(gaps: list[dict[str, Any]]) ->
 
 
 def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> dict[str, Any]:
-    """Deterministic kernel IFC replay: levels, slabs, walls, inserts, slab voids, rooms."""
+    """Deterministic kernel IFC replay: levels, slabs, walls, roofs, stairs, inserts, slab voids, rooms."""
 
     has_opening_products = bool(
         (model.by_type("IfcDoor") or []) or (model.by_type("IfcWindow") or [])
@@ -1068,6 +1118,7 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
     has_floor_products = bool(model.by_type("IfcSlab") or [])
     has_slab_void_topology = _ifc_model_has_slab_void_opening_topology_v0(model)
     has_stair_products = bool(model.by_type("IfcStair") or [])
+    has_roof_products = bool(model.by_type("IfcRoof") or [])
 
     authoritative_subset_unreachable = {
         "levels": False,
@@ -1076,6 +1127,7 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
         "openings": False,
         "floors": False,
         "slabVoids": False,
+        "roofs": False,
         "stairs": False,
     }
 
@@ -1086,6 +1138,7 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
         "openings": has_opening_products,
         "floors": has_floor_products,
         "slabVoids": has_slab_void_topology,
+        "roofs": has_roof_products,
         "stairs": has_stair_products,
     }
     unsupported = _import_scope_unsupported_ifc_products_v0(model)
@@ -1227,6 +1280,81 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
             wall_global_id_to_kernel_ref[wgid] = ref_s
 
     wall_cmds.sort(key=lambda c: str(c.get("id") or ""))
+
+    roof_cmds: list[dict[str, Any]] = []
+    ids_roof_rows: list[dict[str, Any]] = []
+    roofs_skipped_no_reference = 0
+
+    for rfl in sorted(model.by_type("IfcRoof") or [], key=lambda r: str(getattr(r, "GlobalId", None) or "")):
+        rf_gid = str(getattr(rfl, "GlobalId", None) or "")
+        ps_rf = ifc_elem_util.get_psets(rfl)
+        bucket_rf = ps_rf.get("Pset_RoofCommon") or {}
+        ref_rf = bucket_rf.get("Reference")
+        ref_s = ref_rf.strip() if isinstance(ref_rf, str) else ""
+        if not ref_s:
+            roofs_skipped_no_reference += 1
+            extraction_gaps.append({"roofGlobalId": rf_gid, "reason": "roof_missing_pset_reference"})
+            continue
+
+        st_gid_rf = _product_host_storey_global_id(rfl)
+        if not st_gid_rf or st_gid_rf not in storey_gid_to_level_id:
+            extraction_gaps.append(
+                {
+                    "roofGlobalId": rf_gid,
+                    "kernelReference": ref_s,
+                    "reason": "roof_missing_or_unknown_host_storey",
+                }
+            )
+            continue
+
+        geo_rf = _kernel_horizontal_extrusion_footprint_mm_and_thickness(rfl)
+        if geo_rf is None:
+            extraction_gaps.append(
+                {
+                    "roofGlobalId": rf_gid,
+                    "kernelReference": ref_s,
+                    "reason": "roof_body_extrusion_unreadable",
+                }
+            )
+            continue
+        outline_rf, depth_mm = geo_rf
+        rise_m = float(depth_mm) / 1000.0
+        elev_mm = float(storey_gid_to_elev_mm.get(st_gid_rf, 0.0))
+        roof_z_m = _replay_roof_world_z_center_m(rfl, storey_elev_mm=elev_mm)
+        if roof_z_m is None:
+            extraction_gaps.append(
+                {
+                    "roofGlobalId": rf_gid,
+                    "kernelReference": ref_s,
+                    "reason": "roof_placement_unreadable",
+                }
+            )
+            continue
+
+        elev_m = elev_mm / 1000.0
+        overhang_mm = _replay_infer_roof_overhang_mm_from_placement(
+            roof_z_center_m=roof_z_m,
+            storey_elev_m=elev_m,
+            rise_m=rise_m,
+        )
+        slope_deg = _replay_infer_roof_slope_deg_from_prism_rise_m(rise_m=rise_m)
+
+        rname = str(getattr(rfl, "Name", None) or "") or ref_s
+        roof_cmds.append(
+            CreateRoofCmd(
+                id=ref_s,
+                name=rname,
+                reference_level_id=storey_gid_to_level_id[st_gid_rf],
+                footprint_mm=[Vec2Mm(x_mm=px, y_mm=py) for px, py in outline_rf],
+                overhang_mm=overhang_mm,
+                slope_deg=slope_deg,
+                roof_geometry_mode="mass_box",
+            ).model_dump(mode="json", by_alias=True)
+        )
+        ids_roof_rows.append({"ifcGlobalId": rf_gid, "identityReference": ref_s})
+
+    roof_cmds.sort(key=lambda c: str(c.get("id") or ""))
+    ids_roof_rows.sort(key=lambda r: (r["identityReference"], r["ifcGlobalId"]))
 
     stair_cmds: list[dict[str, Any]] = []
     stairs_skipped_no_reference = 0
@@ -1481,6 +1609,7 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
         level_cmds
         + floor_cmds
         + wall_cmds
+        + roof_cmds
         + stair_cmds
         + door_cmds
         + win_cmds
@@ -1505,15 +1634,18 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
         "kernelDoorSkippedNoReference": kernel_door_skip,
         "kernelWindowSkippedNoReference": kernel_window_skip,
         "kernelStairSkippedNoReference": stairs_skipped_no_reference,
+        "kernelRoofSkippedNoReference": roofs_skipped_no_reference,
         "slabRoofHostedVoidReplaySkipped_v0": slab_roof_hosted_void_skip_v0,
         "idsAuthoritativeReplayMap_v0": {
             "schemaVersion": 0,
             "note": (
-                "Per-IfcSpace linkage for cleanroom IDS read-back vs authoritative replay rows: "
-                "identity Reference aligns with exchange_ifc_ids_identity_pset_gap (document-level coverage); "
+                "Per-product linkage for cleanroom IDS read-back vs authoritative replay rows: IfcSpace rows carry "
+                "programme + Qto_SpaceBaseQuantities; IfcRoof rows carry identity Reference only (no roof QTO slice). "
+                "Space identity Reference aligns with exchange_ifc_ids_identity_pset_gap; "
                 "qtoSpaceBaseQuantitiesLinked aligns with exchange_ifc_ids_qto_gap."
             ),
             "spaces": ids_space_rows,
+            "roofs": ids_roof_rows,
         },
         "commands": merged_cmds,
         "extractionGaps": extraction_gaps,
@@ -1538,6 +1670,7 @@ def build_kernel_ifc_authoritative_replay_sketch_v0(step_text: str) -> dict[str,
                 "openings": False,
                 "floors": False,
                 "slabVoids": False,
+                "roofs": False,
                 "stairs": False,
             },
             "unsupportedIfcProducts": {"schemaVersion": 0, "countsByClass": {}},
