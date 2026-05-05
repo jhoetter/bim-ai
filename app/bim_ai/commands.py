@@ -4,7 +4,14 @@ from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from bim_ai.elements import CameraMm, EvidenceRef, RoomColorSchemeRow, Vec2Mm, WallTypeLayer
+from bim_ai.elements import (
+    CameraMm,
+    EvidenceRef,
+    PlanTagStyle,
+    RoomColorSchemeRow,
+    Vec2Mm,
+    WallTypeLayer,
+)
 from bim_ai.roof_geometry import RoofGeometryMode
 
 
@@ -426,6 +433,7 @@ class UpsertTagDefinitionCmd(BaseModel):
     name: str = "Tag"
     tag_kind: str = Field(alias="tagKind", default="custom")
     discipline: str = Field(default="architecture")
+    plan_tag_style: PlanTagStyle = Field(default_factory=PlanTagStyle, alias="planTagStyle")
 
 
 class CreateJoinGeometryCmd(BaseModel):
@@ -458,6 +466,11 @@ class UpsertViewTemplateCmd(BaseModel):
     plan_room_fill_opacity_scale: float | None = Field(default=None, alias="planRoomFillOpacityScale")
     plan_show_opening_tags: bool | None = Field(default=None, alias="planShowOpeningTags")
     plan_show_room_labels: bool | None = Field(default=None, alias="planShowRoomLabels")
+    plan_opening_tag_definition_id: str | None = Field(
+        default=None,
+        alias="planOpeningTagDefinitionId",
+    )
+    plan_room_tag_definition_id: str | None = Field(default=None, alias="planRoomTagDefinitionId")
 
 
 class UpsertSheetCmd(BaseModel):
@@ -526,6 +539,11 @@ class UpsertPlanViewCmd(BaseModel):
     plan_room_fill_opacity_scale: float | None = Field(default=None, alias="planRoomFillOpacityScale")
     plan_show_opening_tags: bool | None = Field(default=None, alias="planShowOpeningTags")
     plan_show_room_labels: bool | None = Field(default=None, alias="planShowRoomLabels")
+    plan_opening_tag_definition_id: str | None = Field(
+        default=None,
+        alias="planOpeningTagDefinitionId",
+    )
+    plan_room_tag_definition_id: str | None = Field(default=None, alias="planRoomTagDefinitionId")
 
 
 class CreateCalloutCmd(BaseModel):

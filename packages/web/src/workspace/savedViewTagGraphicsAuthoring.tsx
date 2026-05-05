@@ -106,6 +106,32 @@ export function SavedViewTagGraphicsAuthoring(props: {
             <option value="false">off</option>
           </select>
         </label>
+        <label className="block text-[10px] text-muted">
+          Opening tag definition id (empty inherits)
+          <input
+            className="mt-1 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px]"
+            key={`pv-opening-tag-${selected.id}-${selected.planOpeningTagDefinitionId ?? 'null'}-${revision}`}
+            defaultValue={selected.planOpeningTagDefinitionId ?? ''}
+            placeholder="inherit"
+            type="text"
+            onBlur={(e) => {
+              onPersistProperty('planOpeningTagDefinitionId', e.target.value.trim());
+            }}
+          />
+        </label>
+        <label className="block text-[10px] text-muted">
+          Room tag definition id (empty inherits)
+          <input
+            className="mt-1 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px]"
+            key={`pv-room-tag-${selected.id}-${selected.planRoomTagDefinitionId ?? 'null'}-${revision}`}
+            defaultValue={selected.planRoomTagDefinitionId ?? ''}
+            placeholder="inherit"
+            type="text"
+            onBlur={(e) => {
+              onPersistProperty('planRoomTagDefinitionId', e.target.value.trim());
+            }}
+          />
+        </label>
       </div>
     </>
   );
@@ -183,6 +209,32 @@ export function SavedViewTemplateGraphicsAuthoring(props: {
           <option value="false">off</option>
           <option value="true">on</option>
         </select>
+      </label>
+      <label className="block text-[10px] text-muted">
+        Opening tag definition id
+        <input
+          className="mt-1 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px]"
+          key={`vt-opening-tag-${selected.id}-${selected.planOpeningTagDefinitionId ?? 'null'}-${revision}`}
+          defaultValue={selected.planOpeningTagDefinitionId ?? ''}
+          placeholder="none"
+          type="text"
+          onBlur={(e) => {
+            onPersistProperty('planOpeningTagDefinitionId', e.target.value.trim());
+          }}
+        />
+      </label>
+      <label className="block text-[10px] text-muted">
+        Room tag definition id
+        <input
+          className="mt-1 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px]"
+          key={`vt-room-tag-${selected.id}-${selected.planRoomTagDefinitionId ?? 'null'}-${revision}`}
+          defaultValue={selected.planRoomTagDefinitionId ?? ''}
+          placeholder="none"
+          type="text"
+          onBlur={(e) => {
+            onPersistProperty('planRoomTagDefinitionId', e.target.value.trim());
+          }}
+        />
       </label>
     </>
   );

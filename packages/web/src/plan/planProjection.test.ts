@@ -125,6 +125,22 @@ describe('planProjection', () => {
         planRoomFillOpacityScale: 0.4,
         planShowOpeningTags: true,
         planShowRoomLabels: false,
+        planOpeningTagDefinitionId: 'tag-door',
+        planRoomTagDefinitionId: 'tag-room',
+      },
+      'tag-door': {
+        kind: 'tag_definition',
+        id: 'tag-door',
+        name: 'Door mark',
+        tagKind: 'sill',
+        planTagStyle: { labelPrefix: 'D-', textCase: 'upper' },
+      },
+      'tag-room': {
+        kind: 'tag_definition',
+        id: 'tag-room',
+        name: 'Room bubble',
+        tagKind: 'room',
+        planTagStyle: { labelSuffix: ' R', textCase: 'preserve' },
       },
       pv: {
         kind: 'plan_view',
@@ -140,6 +156,7 @@ describe('planProjection', () => {
     expect(lines.some((l) => l.includes('roomFill=0.4'))).toBe(true);
     expect(lines.some((l) => l.includes('Stored plan_view: detail=inherit'))).toBe(true);
     expect(lines.some((l) => l.includes('Opening tags: effective=on'))).toBe(true);
+    expect(lines.some((l) => l.includes('Tag catalog: opening=Door mark'))).toBe(true);
   });
 
   it('planViewInheritanceSummaryLines prefers plan_view overrides', () => {
@@ -186,6 +203,22 @@ describe('planProjection', () => {
         planShowOpeningTags: true,
         planShowRoomLabels: false,
         hiddenCategories: ['door'],
+        planOpeningTagDefinitionId: 'tag-opening',
+        planRoomTagDefinitionId: 'tag-room',
+      },
+      'tag-opening': {
+        kind: 'tag_definition',
+        id: 'tag-opening',
+        name: 'Opening mark',
+        tagKind: 'sill',
+        planTagStyle: { labelPrefix: 'OP-', textCase: 'upper' },
+      },
+      'tag-room': {
+        kind: 'tag_definition',
+        id: 'tag-room',
+        name: 'Room mark',
+        tagKind: 'room',
+        planTagStyle: { labelPrefix: 'RM-', textCase: 'preserve' },
       },
       pv: {
         kind: 'plan_view',
@@ -206,8 +239,15 @@ describe('planProjection', () => {
     expect(hidden?.template).toBe('1');
     expect(hidden?.stored).toBe('1');
     expect(hidden?.effective).toBe('2 kinds');
+    expect(rows.find((r) => r.label === 'Opening tag catalog')?.effective).toContain(
+      'Opening mark',
+    );
+    expect(rows.find((r) => r.label === 'Room tag catalog')?.effective).toContain('Room mark');
     expect(planViewProjectBrowserEvidenceLine(elementsById, 'pv')).toMatch(/fill 0\.4/);
     expect(planViewProjectBrowserEvidenceLine(elementsById, 'pv')).toMatch(/tags on\/off/);
+    expect(planViewProjectBrowserEvidenceLine(elementsById, 'pv')).toMatch(
+      /catalog Opening mark\/Room mark/,
+    );
   });
 
   it('planViewGraphicsMatrixRows prefers plan_view overrides and handles missing template', () => {
@@ -263,6 +303,14 @@ describe('planProjection', () => {
         planShowOpeningTags: true,
         planShowRoomLabels: false,
         hiddenCategories: ['wall', 'door'],
+        planOpeningTagDefinitionId: 'tag-door',
+      },
+      'tag-door': {
+        kind: 'tag_definition',
+        id: 'tag-door',
+        name: 'Door mark',
+        tagKind: 'sill',
+        planTagStyle: { labelPrefix: 'D-', textCase: 'upper' },
       },
     } as Record<string, Element>;
     const rows = viewTemplateGraphicsMatrixRows(elementsById, 'vt');
@@ -271,6 +319,7 @@ describe('planProjection', () => {
     expect(rows.find((r) => r.label === 'Room fill')?.effective).toBe('0.5');
     expect(rows.find((r) => r.label === 'Opening tags')?.effective).toBe('on');
     expect(rows.find((r) => r.label === 'Room labels')?.effective).toBe('off');
+    expect(rows.find((r) => r.label === 'Opening tag catalog')?.effective).toContain('Door mark');
     expect(rows.find((r) => r.label === 'Hidden categories')?.effective).toBe('2 kinds');
     expect(rows.every((r) => r.template === '—')).toBe(true);
   });

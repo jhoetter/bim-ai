@@ -248,6 +248,35 @@ function annotationTriEffective(v: boolean): string {
   return v ? 'on' : 'off';
 }
 
+function resolvedTagDefinition(
+  elementsById: Record<string, Element>,
+  activePlanViewId: string,
+  slot: 'opening' | 'room',
+): Extract<Element, { kind: 'tag_definition' }> | undefined {
+  const el = elementsById[activePlanViewId];
+  if (!el || el.kind !== 'plan_view') return undefined;
+  let tmpl: Extract<Element, { kind: 'view_template' }> | undefined;
+  if (el.viewTemplateId) {
+    const t = elementsById[el.viewTemplateId];
+    if (t?.kind === 'view_template') tmpl = t;
+  }
+  const ref =
+    slot === 'opening'
+      ? (el.planOpeningTagDefinitionId ?? tmpl?.planOpeningTagDefinitionId)
+      : (el.planRoomTagDefinitionId ?? tmpl?.planRoomTagDefinitionId);
+  const td = ref ? elementsById[ref] : undefined;
+  return td?.kind === 'tag_definition' ? td : undefined;
+}
+
+function tagCatalogLabel(td: Extract<Element, { kind: 'tag_definition' }> | undefined): string {
+  if (!td) return 'inherit';
+  const style = td.planTagStyle;
+  const prefix = style?.labelPrefix ? `pre=${style.labelPrefix}` : 'pre=∅';
+  const suffix = style?.labelSuffix ? `suf=${style.labelSuffix}` : 'suf=∅';
+  const textCase = style?.textCase ?? 'preserve';
+  return `${td.name} (${textCase}, ${prefix}, ${suffix})`;
+}
+
 /**
  * Compact Effective · detail/fill/tags line for Project Browser (plan_view rows).
  */
@@ -262,7 +291,9 @@ export function planViewProjectBrowserEvidenceLine(
 
   const d = g?.detailLevel ?? 'medium';
   const fill = g?.roomFillOpacityScale ?? 1;
-  return `pres ${formatPlanPresentationStored(pres)} · ${d} · fill ${fill} · tags ${annotationTriEffective(a.openingTagsVisible)}/${annotationTriEffective(a.roomLabelsVisible)}`;
+  const openingTag = resolvedTagDefinition(elementsById, planViewId, 'opening');
+  const roomTag = resolvedTagDefinition(elementsById, planViewId, 'room');
+  return `pres ${formatPlanPresentationStored(pres)} · ${d} · fill ${fill} · tags ${annotationTriEffective(a.openingTagsVisible)}/${annotationTriEffective(a.roomLabelsVisible)} · catalog ${openingTag?.name ?? 'inherit'}/${roomTag?.name ?? 'inherit'}`;
 }
 
 /** Template | stored plan_view | effective matrix for Inspector production review. */
@@ -306,6 +337,8 @@ export function planViewGraphicsMatrixRows(
   const vtLabels = tmpl == null ? '—' : annotationTriEffective(tmpl.planShowRoomLabels ?? false);
   const pvLabels = annotationTriStored(el.planShowRoomLabels);
   const effLabels = annotationTriEffective(a.roomLabelsVisible);
+  const openingTag = resolvedTagDefinition(elementsById, planViewId, 'opening');
+  const roomTag = resolvedTagDefinition(elementsById, planViewId, 'room');
 
   const tmplHiddenRaw = tmpl?.hiddenCategories?.length ?? 0;
   const pvHiddenRaw = el.categoriesHidden?.length ?? 0;
@@ -349,6 +382,46 @@ export function planViewGraphicsMatrixRows(
       effective: effLabels,
     },
     {
+      label: 'Opening tag catalog',
+      template: tagCatalogLabel(
+        tmpl?.planOpeningTagDefinitionId
+          ? (elementsById[tmpl.planOpeningTagDefinitionId] as Extract<
+              Element,
+              { kind: 'tag_definition' }
+            >)
+          : undefined,
+      ),
+      stored: tagCatalogLabel(
+        el.planOpeningTagDefinitionId
+          ? (elementsById[el.planOpeningTagDefinitionId] as Extract<
+              Element,
+              { kind: 'tag_definition' }
+            >)
+          : undefined,
+      ),
+      effective: tagCatalogLabel(openingTag),
+    },
+    {
+      label: 'Room tag catalog',
+      template: tagCatalogLabel(
+        tmpl?.planRoomTagDefinitionId
+          ? (elementsById[tmpl.planRoomTagDefinitionId] as Extract<
+              Element,
+              { kind: 'tag_definition' }
+            >)
+          : undefined,
+      ),
+      stored: tagCatalogLabel(
+        el.planRoomTagDefinitionId
+          ? (elementsById[el.planRoomTagDefinitionId] as Extract<
+              Element,
+              { kind: 'tag_definition' }
+            >)
+          : undefined,
+      ),
+      effective: tagCatalogLabel(roomTag),
+    },
+    {
       label: 'Hidden categories',
       template: tmpl == null ? '—' : String(tmplHiddenRaw),
       stored: String(pvHiddenRaw),
@@ -386,6 +459,14 @@ export function viewTemplateGraphicsMatrixRows(
 
   const openingEff = annotationTriEffective(el.planShowOpeningTags ?? false);
   const labelsEff = annotationTriEffective(el.planShowRoomLabels ?? false);
+  const openingTag =
+    el.planOpeningTagDefinitionId && elementsById[el.planOpeningTagDefinitionId]?.kind === 'tag_definition'
+      ? (elementsById[el.planOpeningTagDefinitionId] as Extract<Element, { kind: 'tag_definition' }>)
+      : undefined;
+  const roomTag =
+    el.planRoomTagDefinitionId && elementsById[el.planRoomTagDefinitionId]?.kind === 'tag_definition'
+      ? (elementsById[el.planRoomTagDefinitionId] as Extract<Element, { kind: 'tag_definition' }>)
+      : undefined;
 
   const fillStr = String(Math.round(fill * 10000) / 10000);
   const detailStored =
@@ -433,6 +514,18 @@ export function viewTemplateGraphicsMatrixRows(
       template: dash,
       stored: labelsEff,
       effective: labelsEff,
+    },
+    {
+      label: 'Opening tag catalog',
+      template: dash,
+      stored: tagCatalogLabel(openingTag),
+      effective: tagCatalogLabel(openingTag),
+    },
+    {
+      label: 'Room tag catalog',
+      template: dash,
+      stored: tagCatalogLabel(roomTag),
+      effective: tagCatalogLabel(roomTag),
     },
     {
       label: 'Hidden categories',
@@ -496,5 +589,6 @@ export function planViewInheritanceSummaryLines(
     `Template: detail=${vtDetail}, roomFill=${vtFill}`,
     `Opening tags: effective=${a.openingTagsVisible ? 'on' : 'off'}; plan_view=${pvOpening}; template=${tmpl ? (tmpl.planShowOpeningTags ? 'on' : 'off') : '—'}`,
     `Room labels: effective=${a.roomLabelsVisible ? 'on' : 'off'}; plan_view=${pvLabels}; template=${tmpl ? (tmpl.planShowRoomLabels ? 'on' : 'off') : '—'}`,
+    `Tag catalog: opening=${tagCatalogLabel(resolvedTagDefinition(elementsById, planViewId, 'opening'))}; room=${tagCatalogLabel(resolvedTagDefinition(elementsById, planViewId, 'room'))}`,
   ];
 }

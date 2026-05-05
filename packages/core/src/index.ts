@@ -39,6 +39,16 @@ export type XY = { xMm: number; yMm: number };
 /** Floor-plan graphic detail preset (view template + optional plan_view override). */
 export type PlanDetailLevelPlan = 'coarse' | 'medium' | 'fine';
 
+export type PlanTagStyle = {
+  labelPrefix?: string;
+  labelSuffix?: string;
+  textCase?: 'preserve' | 'upper' | 'lower';
+  maxLabelChars?: number;
+  showBox?: boolean;
+  leaderLine?: boolean;
+  colorHex?: string | null;
+};
+
 export type XYZ = { xMm: number; yMm: number; zMm: number };
 
 export type RoomColorSchemeRow = {
@@ -290,6 +300,7 @@ export type Element =
       name: string;
       tagKind: 'room' | 'sill' | 'slab_finish' | 'custom';
       discipline?: string;
+      planTagStyle?: PlanTagStyle;
     }
   | { kind: 'join_geometry'; id: string; joinedElementIds: string[]; notes?: string }
   | {
@@ -321,6 +332,8 @@ export type Element =
       planRoomFillOpacityScale?: number | null;
       planShowOpeningTags?: boolean;
       planShowRoomLabels?: boolean;
+      planOpeningTagDefinitionId?: string | null;
+      planRoomTagDefinitionId?: string | null;
     }
   | {
       kind: 'view_template';
@@ -333,6 +346,8 @@ export type Element =
       planRoomFillOpacityScale?: number;
       planShowOpeningTags?: boolean;
       planShowRoomLabels?: boolean;
+      planOpeningTagDefinitionId?: string | null;
+      planRoomTagDefinitionId?: string | null;
     }
   | {
       kind: 'sheet';

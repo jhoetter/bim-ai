@@ -1513,6 +1513,45 @@ export function Workspace() {
                 />
               </div>
             ) : null}
+            {selected?.kind === 'tag_definition' ? (
+              <div className="mb-3 space-y-2 text-[11px]">
+                <div className="font-semibold text-muted">Tag definition catalog row</div>
+                <label className="block text-[10px] text-muted">
+                  Name
+                  <input
+                    className="mt-1 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px]"
+                    defaultValue={selected.name}
+                    key={`tag-name-${selected.id}-${selected.name}-${revision}`}
+                    onBlur={(e) => {
+                      const v = e.target.value.trim();
+                      if (!v || v === selected.name) return;
+                      void onSemantic({
+                        type: 'updateElementProperty',
+                        elementId: selected.id,
+                        key: 'name',
+                        value: v,
+                      });
+                    }}
+                  />
+                </label>
+                <label className="block text-[10px] text-muted">
+                  Plan tag style JSON
+                  <textarea
+                    className="mt-1 min-h-20 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[10px]"
+                    key={`tag-style-${selected.id}-${revision}`}
+                    defaultValue={JSON.stringify(selected.planTagStyle ?? {}, null, 2)}
+                    onBlur={(e) => {
+                      void onSemantic({
+                        type: 'updateElementProperty',
+                        elementId: selected.id,
+                        key: 'planTagStyle',
+                        value: e.target.value.trim(),
+                      });
+                    }}
+                  />
+                </label>
+              </div>
+            ) : null}
             {selected?.kind === 'viewpoint' ? (
               <div className="mb-3 space-y-2 text-[11px]">
                 <div className="font-semibold text-muted">

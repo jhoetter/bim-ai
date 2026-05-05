@@ -22,6 +22,7 @@ from bim_ai.elements import (
     RoomSeparationElem,
     SectionCutElem,
     StairElem,
+    TagDefinitionElem,
     ViewTemplateElem,
     WallElem,
     WindowElem,
@@ -176,6 +177,37 @@ def _plan_tag_label_trunc(label: str, max_len: int = 48) -> str:
     return s[: max(1, max_len - 3)] + "..."
 
 
+def _plan_tag_definition(doc: Document, ref: str | None) -> TagDefinitionElem | None:
+    if not ref:
+        return None
+    el = doc.elements.get(ref)
+    return el if isinstance(el, TagDefinitionElem) else None
+
+
+def _apply_plan_tag_style(label: str, tag_def: TagDefinitionElem | None) -> str:
+    if tag_def is None:
+        return _plan_tag_label_trunc(label)
+    style = tag_def.plan_tag_style
+    body = _plan_tag_label_trunc(label, max_len=style.max_label_chars)
+    if style.text_case == "upper":
+        body = body.upper()
+    elif style.text_case == "lower":
+        body = body.lower()
+    styled = f"{style.label_prefix}{body}{style.label_suffix}"
+    return _plan_tag_label_trunc(styled, max_len=style.max_label_chars)
+
+
+def _plan_tag_style_payload(tag_def: TagDefinitionElem | None) -> dict[str, Any] | None:
+    if tag_def is None:
+        return None
+    return {
+        "tagDefinitionId": tag_def.id,
+        "tagDefinitionName": tag_def.name,
+        "tagKind": tag_def.tag_kind,
+        "planTagStyle": tag_def.plan_tag_style.model_dump(by_alias=True),
+    }
+
+
 def _opening_plan_tag_label(opening: DoorElem | WindowElem) -> str:
     name = _plan_tag_label_trunc((opening.name or "").strip())
     if name:
@@ -199,7 +231,7 @@ def _room_plan_tag_label(room: RoomElem) -> str:
     return f"R-{suf}"
 
 
-def _plan_annotation_hints_for_pinned_view(doc: Document, pv: PlanViewElem) -> dict[str, bool]:
+def _plan_annotation_hints_for_pinned_view(doc: Document, pv: PlanViewElem) -> dict[str, Any]:
     tmpl: ViewTemplateElem | None = None
     if pv.view_template_id:
         te = doc.elements.get(pv.view_template_id)
@@ -213,7 +245,26 @@ def _plan_annotation_hints_for_pinned_view(doc: Document, pv: PlanViewElem) -> d
         room_labels_visible = pv.plan_show_room_labels
     else:
         room_labels_visible = tmpl.plan_show_room_labels if tmpl is not None else False
-    return {"openingTagsVisible": opening_tags_visible, "roomLabelsVisible": room_labels_visible}
+
+    opening_tag_ref = (
+        pv.plan_opening_tag_definition_id
+        or (tmpl.plan_opening_tag_definition_id if tmpl is not None else None)
+    )
+    room_tag_ref = (
+        pv.plan_room_tag_definition_id
+        or (tmpl.plan_room_tag_definition_id if tmpl is not None else None)
+    )
+    out: dict[str, Any] = {
+        "openingTagsVisible": opening_tags_visible,
+        "roomLabelsVisible": room_labels_visible,
+    }
+    opening_tag = _plan_tag_style_payload(_plan_tag_definition(doc, opening_tag_ref))
+    room_tag = _plan_tag_style_payload(_plan_tag_definition(doc, room_tag_ref))
+    if opening_tag is not None:
+        out["openingTagCatalog"] = opening_tag
+    if room_tag is not None:
+        out["roomTagCatalog"] = room_tag
+    return out
 
 
 def _hosted_xy_mm_on_wall(opening: DoorElem | WindowElem, wall: WallElem) -> tuple[float, float]:
@@ -438,6 +489,8 @@ def _build_plan_primitive_lists(
     line_weight_hint: float = 1.0,
     opening_tags_visible: bool = False,
     room_labels_visible: bool = False,
+    opening_tag_definition: TagDefinitionElem | None = None,
+    room_tag_definition: TagDefinitionElem | None = None,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     """2D primitives for deterministic server-side plan previews."""
 
@@ -531,7 +584,12 @@ def _build_plan_primitive_lists(
             if (e.function_label or "").strip():
                 row["functionLabel"] = (e.function_label or "").strip()
             if room_labels_visible:
-                row["planTagLabel"] = _room_plan_tag_label(e)
+                row["planTagLabel"] = _apply_plan_tag_style(
+                    _room_plan_tag_label(e),
+                    room_tag_definition,
+                )
+                if room_tag_definition is not None:
+                    row["planTagDefinitionId"] = room_tag_definition.id
             rooms.append(row)
         elif isinstance(e, DoorElem):
             w = doc.elements.get(e.wall_id)
@@ -565,7 +623,12 @@ def _build_plan_primitive_lists(
             if not wall_plan_axis_aligned_xy(w):
                 dout["wallYawDeg"] = wall_plan_yaw_deg(w)
             if opening_tags_visible:
-                dout["planTagLabel"] = _opening_plan_tag_label(e)
+                dout["planTagLabel"] = _apply_plan_tag_style(
+                    _opening_plan_tag_label(e),
+                    opening_tag_definition,
+                )
+                if opening_tag_definition is not None:
+                    dout["planTagDefinitionId"] = opening_tag_definition.id
             doors.append(dout)
         elif isinstance(e, WindowElem):
             w = doc.elements.get(e.wall_id)
@@ -601,7 +664,12 @@ def _build_plan_primitive_lists(
             if not wall_plan_axis_aligned_xy(w):
                 wrow["wallYawDeg"] = wall_plan_yaw_deg(w)
             if opening_tags_visible:
-                wrow["planTagLabel"] = _opening_plan_tag_label(e)
+                wrow["planTagLabel"] = _apply_plan_tag_style(
+                    _opening_plan_tag_label(e),
+                    opening_tag_definition,
+                )
+                if opening_tag_definition is not None:
+                    wrow["planTagDefinitionId"] = opening_tag_definition.id
             windows.append(wrow)
         elif isinstance(e, StairElem):
             if "stair" in hidden_semantic or not lvl_ok(e.base_level_id):
@@ -898,15 +966,29 @@ def resolve_plan_projection_wire(
 
     plan_graphic_hints: dict[str, Any] | None = None
     line_weight_scale = 1.0
-    plan_ann: dict[str, bool] | None = None
+    plan_ann: dict[str, Any] | None = None
     opening_vis = False
     room_lab_vis = False
+    opening_tag_definition: TagDefinitionElem | None = None
+    room_tag_definition: TagDefinitionElem | None = None
     if pinned_pv_elem is not None:
         plan_graphic_hints = _plan_graphic_hints_for_pinned_view(doc, pinned_pv_elem)
         line_weight_scale = float(plan_graphic_hints["lineWeightScale"])
         plan_ann = _plan_annotation_hints_for_pinned_view(doc, pinned_pv_elem)
         opening_vis = bool(plan_ann["openingTagsVisible"])
         room_lab_vis = bool(plan_ann["roomLabelsVisible"])
+        opening_catalog = plan_ann.get("openingTagCatalog")
+        room_catalog = plan_ann.get("roomTagCatalog")
+        if isinstance(opening_catalog, dict):
+            opening_tag_definition = _plan_tag_definition(
+                doc,
+                str(opening_catalog.get("tagDefinitionId") or ""),
+            )
+        if isinstance(room_catalog, dict):
+            room_tag_definition = _plan_tag_definition(
+                doc,
+                str(room_catalog.get("tagDefinitionId") or ""),
+            )
 
     extra_prim_warn: list[dict[str, Any]] = []
     sheet_crop_box: tuple[float, float, float, float] | None = None
@@ -937,6 +1019,8 @@ def resolve_plan_projection_wire(
         line_weight_hint=line_weight_scale,
         opening_tags_visible=opening_vis,
         room_labels_visible=room_lab_vis,
+        opening_tag_definition=opening_tag_definition,
+        room_tag_definition=room_tag_definition,
     )
     all_warnings = list(extra_prim_warn) + list(prim_warn)
     legend = _room_color_legend_payload(

@@ -86,6 +86,7 @@ from bim_ai.elements import (
     LevelElem,
     PlanDetailLevelPlan,
     PlanRegionElem,
+    PlanTagStyle,
     PlanViewElem,
     ProjectSettingsElem,
     RailingElem,
@@ -185,6 +186,32 @@ def _stripped_optional_str(val: str | None) -> str | None:
         return None
     t = val.strip()
     return t or None
+
+
+def _parse_plan_tag_style_json(raw: str) -> PlanTagStyle:
+    if not raw.strip():
+        return PlanTagStyle()
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise ValueError("planTagStyle must be a JSON object or empty for defaults") from exc
+    if not isinstance(parsed, dict):
+        raise ValueError("planTagStyle must be a JSON object")
+    return PlanTagStyle.model_validate(parsed)
+
+
+def _validated_tag_definition_ref(
+    els: dict[str, Element],
+    raw: str | None,
+    *,
+    field: str,
+) -> str | None:
+    ref = _stripped_optional_str(raw)
+    if ref is None:
+        return None
+    if not isinstance(els.get(ref), TagDefinitionElem):
+        raise ValueError(f"{field} must reference tag_definition")
+    return ref
 
 
 def _room_programme_field_updates(
@@ -780,12 +807,31 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 elif cmd.key == "planShowRoomLabels":
                     v = _parse_plan_view_bool_override(cmd.value)
                     els[cmd.element_id] = el.model_copy(update={"plan_show_room_labels": v})
+                elif cmd.key == "planOpeningTagDefinitionId":
+                    ref = _validated_tag_definition_ref(
+                        els,
+                        raw,
+                        field="planOpeningTagDefinitionId",
+                    )
+                    els[cmd.element_id] = el.model_copy(
+                        update={"plan_opening_tag_definition_id": ref}
+                    )
+                elif cmd.key == "planRoomTagDefinitionId":
+                    ref = _validated_tag_definition_ref(
+                        els,
+                        raw,
+                        field="planRoomTagDefinitionId",
+                    )
+                    els[cmd.element_id] = el.model_copy(
+                        update={"plan_room_tag_definition_id": ref}
+                    )
                 else:
                     raise ValueError(
                         "plan_view updates: key=planPresentation | categoriesHidden | underlayLevelId | "
                         "viewTemplateId | cropMinMm | cropMaxMm | viewRangeBottomMm | viewRangeTopMm | "
                         "cutPlaneOffsetMm | discipline | phaseId | planDetailLevel | planRoomFillOpacityScale | "
-                        "planShowOpeningTags | planShowRoomLabels | name"
+                        "planShowOpeningTags | planShowRoomLabels | planOpeningTagDefinitionId | "
+                        "planRoomTagDefinitionId | name"
                     )
             elif isinstance(el, ViewTemplateElem):
                 raw_vt = cmd.value.strip()
@@ -816,10 +862,50 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                         els[cmd.element_id] = el.model_copy(
                             update={"plan_room_fill_opacity_scale": vscale}
                         )
+                elif cmd.key == "planOpeningTagDefinitionId":
+                    ref = _validated_tag_definition_ref(
+                        els,
+                        raw_vt,
+                        field="planOpeningTagDefinitionId",
+                    )
+                    els[cmd.element_id] = el.model_copy(
+                        update={"plan_opening_tag_definition_id": ref}
+                    )
+                elif cmd.key == "planRoomTagDefinitionId":
+                    ref = _validated_tag_definition_ref(
+                        els,
+                        raw_vt,
+                        field="planRoomTagDefinitionId",
+                    )
+                    els[cmd.element_id] = el.model_copy(
+                        update={"plan_room_tag_definition_id": ref}
+                    )
                 else:
                     raise ValueError(
                         "view_template updates: key=planDetailLevel | planRoomFillOpacityScale | "
-                        "planShowOpeningTags | planShowRoomLabels | name"
+                        "planShowOpeningTags | planShowRoomLabels | planOpeningTagDefinitionId | "
+                        "planRoomTagDefinitionId | name"
+                    )
+            elif isinstance(el, TagDefinitionElem):
+                raw_tag = cmd.value.strip()
+                if cmd.key == "tagKind":
+                    tag_kind_literal = (
+                        raw_tag
+                        if raw_tag in {"room", "sill", "slab_finish", "custom"}
+                        else "custom"
+                    )
+                    els[cmd.element_id] = el.model_copy(update={"tag_kind": tag_kind_literal})
+                elif cmd.key == "discipline":
+                    els[cmd.element_id] = el.model_copy(
+                        update={"discipline": raw_tag or "architecture"}
+                    )
+                elif cmd.key == "planTagStyle":
+                    els[cmd.element_id] = el.model_copy(
+                        update={"plan_tag_style": _parse_plan_tag_style_json(cmd.value)}
+                    )
+                else:
+                    raise ValueError(
+                        "tag_definition updates: key=name | tagKind | discipline | planTagStyle"
                     )
             elif isinstance(el, ViewpointElem):
                 raw = cmd.value.strip()
@@ -896,6 +982,9 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                     "planRoomFillOpacityScale(view_template float 0..1 or empty resets default 1.0) | "
                     "planShowOpeningTags(plan_view true|false or empty inherit; view_template true|false only) | "
                     "planShowRoomLabels(plan_view true|false or empty inherit; view_template true|false only) | "
+                    "planOpeningTagDefinitionId(plan_view/view_template tag_definition id or empty) | "
+                    "planRoomTagDefinitionId(plan_view/view_template tag_definition id or empty) | "
+                    "planTagStyle(tag_definition JSON object or empty defaults) | "
                     "viewerClipCapElevMm(viewpoint) | viewerClipFloorElevMm(viewpoint) | "
                     "hiddenSemanticKinds3d(viewpoint JSON array) | "
                     "familyTypeId(door/window) | materialKey(door/window) | "
@@ -1214,6 +1303,7 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 name=cmd.name,
                 tag_kind=tag_kind_literal,  # type: ignore[arg-type]
                 discipline=cmd.discipline,
+                plan_tag_style=cmd.plan_tag_style,
             )
 
         case CreateJoinGeometryCmd():
@@ -1248,6 +1338,16 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
             scale = cmd.scale if cmd.scale in {"scale_50", "scale_100", "scale_200"} else "scale_100"
             pdl = _plan_detail_default_medium(cmd.plan_detail_level)
             pfo = _clamp_unit_interval(cmd.plan_room_fill_opacity_scale, 1.0)
+            opening_tag_ref = _validated_tag_definition_ref(
+                els,
+                cmd.plan_opening_tag_definition_id,
+                field="upsertViewTemplate.planOpeningTagDefinitionId",
+            )
+            room_tag_ref = _validated_tag_definition_ref(
+                els,
+                cmd.plan_room_tag_definition_id,
+                field="upsertViewTemplate.planRoomTagDefinitionId",
+            )
             els[vt] = ViewTemplateElem(
                 kind="view_template",
                 id=vt,
@@ -1259,6 +1359,8 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 plan_room_fill_opacity_scale=pfo,
                 plan_show_opening_tags=cmd.plan_show_opening_tags is True,
                 plan_show_room_labels=cmd.plan_show_room_labels is True,
+                plan_opening_tag_definition_id=opening_tag_ref,
+                plan_room_tag_definition_id=room_tag_ref,
             )
 
         case UpsertSheetCmd():
@@ -1331,6 +1433,16 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 vt_el = els.get(vt_id)
                 if not isinstance(vt_el, ViewTemplateElem):
                     raise ValueError("upsertPlanView.viewTemplateId must reference view_template")
+            opening_tag_ref = _validated_tag_definition_ref(
+                els,
+                cmd.plan_opening_tag_definition_id,
+                field="upsertPlanView.planOpeningTagDefinitionId",
+            )
+            room_tag_ref = _validated_tag_definition_ref(
+                els,
+                cmd.plan_room_tag_definition_id,
+                field="upsertPlanView.planRoomTagDefinitionId",
+            )
             uli = cmd.underlay_level_id
             if uli is not None and uli not in els:
                 raise ValueError(f"upsertPlanView underlay unknown level '{uli}'")
@@ -1361,6 +1473,8 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 plan_room_fill_opacity_scale=pfo_override,
                 plan_show_opening_tags=cmd.plan_show_opening_tags,
                 plan_show_room_labels=cmd.plan_show_room_labels,
+                plan_opening_tag_definition_id=opening_tag_ref,
+                plan_room_tag_definition_id=room_tag_ref,
             )
 
         case CreateCalloutCmd():

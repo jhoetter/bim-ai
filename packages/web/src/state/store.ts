@@ -264,6 +264,36 @@ function readViewTemplateBool(raw: unknown, defaultVal: boolean): boolean {
   return o === undefined ? defaultVal : o;
 }
 
+function coercePlanTagStyle(raw: unknown): NonNullable<
+  Extract<Element, { kind: 'tag_definition' }>['planTagStyle']
+> {
+  const obj =
+    raw && typeof raw === 'object' && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
+  const tc = obj.textCase ?? obj.text_case;
+  const textCase = tc === 'upper' || tc === 'lower' ? tc : 'preserve';
+  const maxRaw = obj.maxLabelChars ?? obj.max_label_chars;
+  const maxLabelChars = Number(maxRaw ?? 48);
+  const colorRaw = obj.colorHex ?? obj.color_hex;
+  return {
+    labelPrefix: typeof (obj.labelPrefix ?? obj.label_prefix) === 'string'
+      ? String(obj.labelPrefix ?? obj.label_prefix)
+      : '',
+    labelSuffix: typeof (obj.labelSuffix ?? obj.label_suffix) === 'string'
+      ? String(obj.labelSuffix ?? obj.label_suffix)
+      : '',
+    textCase,
+    maxLabelChars: Number.isFinite(maxLabelChars)
+      ? Math.max(4, Math.min(96, Math.round(maxLabelChars)))
+      : 48,
+    showBox: Boolean(obj.showBox ?? obj.show_box),
+    leaderLine: Boolean(obj.leaderLine ?? obj.leader_line),
+    colorHex:
+      typeof colorRaw === 'string' && /^#[0-9a-fA-F]{6}$/.test(colorRaw.trim())
+        ? colorRaw.trim().toUpperCase()
+        : null,
+  };
+}
+
 function coerceElement(id: string, raw: Record<string, unknown>): Element | null {
   const kind = raw.kind;
   const name =
@@ -740,6 +770,7 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
       name,
       tagKind,
       discipline: typeof raw.discipline === 'string' ? raw.discipline : 'architecture',
+      planTagStyle: coercePlanTagStyle(raw.planTagStyle ?? raw.plan_tag_style),
     };
   }
 
@@ -830,6 +861,12 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
       ...(planRoomFillOpacityScale !== undefined ? { planRoomFillOpacityScale } : {}),
       ...(pso !== undefined ? { planShowOpeningTags: pso } : {}),
       ...(psr !== undefined ? { planShowRoomLabels: psr } : {}),
+      planOpeningTagDefinitionId:
+        (raw.planOpeningTagDefinitionId ?? raw.plan_opening_tag_definition_id ?? null) as
+          | string
+          | null,
+      planRoomTagDefinitionId:
+        (raw.planRoomTagDefinitionId ?? raw.plan_room_tag_definition_id ?? null) as string | null,
     };
   }
 
@@ -874,6 +911,12 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
       ...(planRoomFillOpacityScale !== undefined ? { planRoomFillOpacityScale } : {}),
       planShowOpeningTags,
       planShowRoomLabels,
+      planOpeningTagDefinitionId:
+        (raw.planOpeningTagDefinitionId ?? raw.plan_opening_tag_definition_id ?? null) as
+          | string
+          | null,
+      planRoomTagDefinitionId:
+        (raw.planRoomTagDefinitionId ?? raw.plan_room_tag_definition_id ?? null) as string | null,
     };
   }
 

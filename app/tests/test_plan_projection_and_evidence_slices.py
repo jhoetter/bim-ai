@@ -29,6 +29,7 @@ from bim_ai.elements import (
     SheetElem,
     SlabOpeningElem,
     StairElem,
+    TagDefinitionElem,
     ViewTemplateElem,
     WallElem,
     WindowElem,
@@ -579,12 +580,28 @@ def test_plan_projection_room_primitives_include_programme_and_color() -> None:
 
 
 def test_plan_projection_annotation_hints_emit_plan_tag_labels_when_enabled() -> None:
+    opening_tag = TagDefinitionElem(
+        kind="tag_definition",
+        id="tag-opening",
+        name="Opening mark",
+        tagKind="sill",
+        planTagStyle={"labelPrefix": "OP-", "textCase": "upper", "maxLabelChars": 24},
+    )
+    room_tag = TagDefinitionElem(
+        kind="tag_definition",
+        id="tag-room",
+        name="Room bubble",
+        tagKind="room",
+        planTagStyle={"labelPrefix": "RM-", "labelSuffix": "!", "maxLabelChars": 24},
+    )
     tmpl = ViewTemplateElem(
         kind="view_template",
         id="vt-an",
         name="Annot T",
         planShowOpeningTags=True,
         planShowRoomLabels=False,
+        planOpeningTagDefinitionId="tag-opening",
+        planRoomTagDefinitionId="tag-room",
     )
     pv = PlanViewElem(
         kind="plan_view",
@@ -633,6 +650,8 @@ def test_plan_projection_annotation_hints_emit_plan_tag_labels_when_enabled() ->
         revision=1,
         elements={
             "lvl": lvl,
+            "tag-opening": opening_tag,
+            "tag-room": room_tag,
             "vt-an": tmpl,
             "pv-an": pv,
             "w-h": wall,
@@ -645,13 +664,25 @@ def test_plan_projection_annotation_hints_emit_plan_tag_labels_when_enabled() ->
     ann = out.get("planAnnotationHints") or {}
     assert ann["openingTagsVisible"] is True
     assert ann["roomLabelsVisible"] is True
+    assert ann["openingTagCatalog"]["tagDefinitionName"] == "Opening mark"
+    assert ann["roomTagCatalog"]["planTagStyle"]["labelPrefix"] == "RM-"
     prim = out.get("primitives") or {}
     doors_row = prim.get("doors") or []
     wins_row = prim.get("windows") or []
     rooms_row = prim.get("rooms") or []
-    assert any(r.get("id") == "d-a" and "planTagLabel" in r for r in doors_row)
-    assert any(r.get("id") == "win-a" and "planTagLabel" in r for r in wins_row)
-    assert any(r.get("id") == "r-a" and "planTagLabel" in r for r in rooms_row)
+    assert any(
+        r.get("id") == "d-a"
+        and r.get("planTagLabel") == "OP-ENTRY"
+        and r.get("planTagDefinitionId") == "tag-opening"
+        for r in doors_row
+    )
+    assert any(r.get("id") == "win-a" and r.get("planTagLabel") == "OP-KITCHEN WIN" for r in wins_row)
+    assert any(
+        r.get("id") == "r-a"
+        and r.get("planTagLabel") == "RM-Kitchen (KIT)!"
+        and r.get("planTagDefinitionId") == "tag-room"
+        for r in rooms_row
+    )
 
 
 def test_plan_projection_annotation_off_omits_plan_tag_label_keys() -> None:

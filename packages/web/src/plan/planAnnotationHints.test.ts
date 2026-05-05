@@ -26,4 +26,17 @@ describe('extractPlanAnnotationHints', () => {
       }),
     ).toEqual({ openingTagsVisible: true, roomLabelsVisible: false });
   });
+
+  it('preserves optional tag catalog payloads', () => {
+    const hints = extractPlanAnnotationHints({
+      planAnnotationHints: {
+        openingTagsVisible: true,
+        roomLabelsVisible: true,
+        openingTagCatalog: { tagDefinitionId: 'tag-opening', tagDefinitionName: 'Opening mark' },
+        roomTagCatalog: { tagDefinitionId: 'tag-room', tagDefinitionName: 'Room mark' },
+      },
+    });
+    expect(hints.openingTagCatalog?.tagDefinitionName).toBe('Opening mark');
+    expect(hints.roomTagCatalog?.tagDefinitionId).toBe('tag-room');
+  });
 });

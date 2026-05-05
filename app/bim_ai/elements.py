@@ -48,6 +48,7 @@ class EvidenceRef(BaseModel):
 WallLayerFunction = Literal["structure", "insulation", "finish"]
 WallBasisLine = Literal["center", "face_interior", "face_exterior"]
 PlanDetailLevelPlan = Literal["coarse", "medium", "fine"]
+PlanTagTextCase = Literal["preserve", "upper", "lower"]
 
 _SCHEME_HEX_PATTERN = re.compile(r"^#[0-9A-Fa-f]{6}$")
 
@@ -102,6 +103,31 @@ class RoomColorSchemeElem(BaseModel):
     kind: Literal["room_color_scheme"] = "room_color_scheme"
     id: str
     scheme_rows: list[RoomColorSchemeRow] = Field(default_factory=list, alias="schemeRows")
+
+
+class PlanTagStyle(BaseModel):
+    """Compact plan-label style carried by tag_definition catalog rows."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    label_prefix: str = Field(default="", alias="labelPrefix")
+    label_suffix: str = Field(default="", alias="labelSuffix")
+    text_case: PlanTagTextCase = Field(default="preserve", alias="textCase")
+    max_label_chars: int = Field(default=48, ge=4, le=96, alias="maxLabelChars")
+    show_box: bool = Field(default=False, alias="showBox")
+    leader_line: bool = Field(default=False, alias="leaderLine")
+    color_hex: str | None = Field(default=None, alias="colorHex")
+
+    @field_validator("color_hex", mode="before")
+    @classmethod
+    def _normalize_optional_color_hex(cls, v: Any) -> str | None:
+        if v is None:
+            return None
+        s = str(v).strip()
+        if not s:
+            return None
+        if not _SCHEME_HEX_PATTERN.fullmatch(s):
+            raise ValueError("colorHex must be a '#RRGGBB' literal")
+        return f"#{s[1:].upper()}"
 
 
 class WallTypeLayer(BaseModel):
@@ -366,6 +392,7 @@ class TagDefinitionElem(BaseModel):
         default="custom", alias="tagKind"
     )
     discipline: str = Field(default="architecture")
+    plan_tag_style: PlanTagStyle = Field(default_factory=PlanTagStyle, alias="planTagStyle")
 
 
 class JoinGeometryElem(BaseModel):
@@ -415,6 +442,11 @@ class PlanViewElem(BaseModel):
     plan_room_fill_opacity_scale: float | None = Field(default=None, alias="planRoomFillOpacityScale")
     plan_show_opening_tags: bool | None = Field(default=None, alias="planShowOpeningTags")
     plan_show_room_labels: bool | None = Field(default=None, alias="planShowRoomLabels")
+    plan_opening_tag_definition_id: str | None = Field(
+        default=None,
+        alias="planOpeningTagDefinitionId",
+    )
+    plan_room_tag_definition_id: str | None = Field(default=None, alias="planRoomTagDefinitionId")
 
 
 class ViewTemplateElem(BaseModel):
@@ -434,6 +466,11 @@ class ViewTemplateElem(BaseModel):
     )
     plan_show_opening_tags: bool = Field(default=False, alias="planShowOpeningTags")
     plan_show_room_labels: bool = Field(default=False, alias="planShowRoomLabels")
+    plan_opening_tag_definition_id: str | None = Field(
+        default=None,
+        alias="planOpeningTagDefinitionId",
+    )
+    plan_room_tag_definition_id: str | None = Field(default=None, alias="planRoomTagDefinitionId")
 
 
 class SheetElem(BaseModel):

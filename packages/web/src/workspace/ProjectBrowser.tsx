@@ -17,7 +17,25 @@ function newDupPlanViewId(prefix: string) {
   }
 }
 
-function viewTemplateEvidenceLine(vt: Extract<Element, { kind: 'view_template' }>): string {
+function tagDefName(elementsById: Record<string, Element>, id?: string | null): string {
+  if (!id) return 'inherit';
+  const el = elementsById[id];
+  return el?.kind === 'tag_definition' ? el.name : id;
+}
+
+function tagDefinitionEvidenceLine(td: Extract<Element, { kind: 'tag_definition' }>): string {
+  const s = td.planTagStyle;
+  const textCase = s?.textCase ?? 'preserve';
+  const prefix = s?.labelPrefix ? `pre ${s.labelPrefix}` : 'pre ∅';
+  const suffix = s?.labelSuffix ? `suf ${s.labelSuffix}` : 'suf ∅';
+  const max = s?.maxLabelChars ?? 48;
+  return `${td.tagKind} · ${textCase} · ${prefix} · ${suffix} · max ${max}`;
+}
+
+function viewTemplateEvidenceLine(
+  vt: Extract<Element, { kind: 'view_template' }>,
+  elementsById: Record<string, Element>,
+): string {
   const d =
     vt.planDetailLevel === undefined || vt.planDetailLevel === null
       ? 'inherit→medium'
@@ -25,7 +43,9 @@ function viewTemplateEvidenceLine(vt: Extract<Element, { kind: 'view_template' }
   const fill = vt.planRoomFillOpacityScale ?? 1;
   const ot = (vt.planShowOpeningTags ?? false) ? 'on' : 'off';
   const rl = (vt.planShowRoomLabels ?? false) ? 'on' : 'off';
-  return `${vt.scale} · ${d} · fill ${fill} · tags ${ot}/${rl}`;
+  const opening = tagDefName(elementsById, vt.planOpeningTagDefinitionId);
+  const room = tagDefName(elementsById, vt.planRoomTagDefinitionId);
+  return `${vt.scale} · ${d} · fill ${fill} · tags ${ot}/${rl} · catalog ${opening}/${room}`;
 }
 
 function planViewTooltip(
@@ -109,6 +129,10 @@ export function ProjectBrowser(props: {
     .filter((e): e is Extract<Element, { kind: 'view_template' }> => e.kind === 'view_template')
     .sort((a, b) => a.name.localeCompare(b.name));
 
+  const tagDefinitions = Object.values(props.elementsById)
+    .filter((e): e is Extract<Element, { kind: 'tag_definition' }> => e.kind === 'tag_definition')
+    .sort((a, b) => a.name.localeCompare(b.name));
+
   const hasAnyDoc =
     planViewsSorted.length > 0 ||
     viewpoints3d.length > 0 ||
@@ -116,7 +140,8 @@ export function ProjectBrowser(props: {
     sectionCuts.length > 0 ||
     schedules.length > 0 ||
     sheets.length > 0 ||
-    viewTemplates.length > 0;
+    viewTemplates.length > 0 ||
+    tagDefinitions.length > 0;
 
   if (!hasAnyDoc) {
     return <div className="text-[10px] text-muted">No documented views yet.</div>;
@@ -138,6 +163,9 @@ export function ProjectBrowser(props: {
     }
     if (pv.planShowOpeningTags !== undefined) cmd.planShowOpeningTags = pv.planShowOpeningTags;
     if (pv.planShowRoomLabels !== undefined) cmd.planShowRoomLabels = pv.planShowRoomLabels;
+    if (pv.planOpeningTagDefinitionId)
+      cmd.planOpeningTagDefinitionId = pv.planOpeningTagDefinitionId;
+    if (pv.planRoomTagDefinitionId) cmd.planRoomTagDefinitionId = pv.planRoomTagDefinitionId;
     if (pv.underlayLevelId) cmd.underlayLevelId = pv.underlayLevelId;
     if (pv.phaseId) cmd.phaseId = pv.phaseId;
     if (pv.categoriesHidden?.length) cmd.categoriesHidden = [...pv.categoriesHidden];
@@ -264,13 +292,36 @@ export function ProjectBrowser(props: {
                 <button
                   type="button"
                   className="w-full px-2 py-0.5 text-left text-[10px]"
-                  title={`view_template · ${vt.name} · ${viewTemplateEvidenceLine(vt)}`}
+                  title={`view_template · ${vt.name} · ${viewTemplateEvidenceLine(vt, props.elementsById)}`}
                   onClick={() => useBimStore.getState().select(vt.id)}
                 >
                   <span className="text-muted">view_template ·</span> {vt.name}
                 </button>
                 <div className="pl-2 font-mono text-[9px] leading-tight text-muted">
-                  {viewTemplateEvidenceLine(vt)}
+                  {viewTemplateEvidenceLine(vt, props.elementsById)}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {tagDefinitions.length ? (
+        <div className="space-y-1">
+          <div className="text-[10px] uppercase tracking-wide text-muted">Tag definitions</div>
+          <ul className="space-y-0.5">
+            {tagDefinitions.map((td) => (
+              <li key={td.id}>
+                <button
+                  type="button"
+                  className="w-full px-2 py-0.5 text-left text-[10px]"
+                  title={`tag_definition · ${td.name} · ${tagDefinitionEvidenceLine(td)}`}
+                  onClick={() => useBimStore.getState().select(td.id)}
+                >
+                  <span className="text-muted">tag_definition ·</span> {td.name}
+                </button>
+                <div className="pl-2 font-mono text-[9px] leading-tight text-muted">
+                  {tagDefinitionEvidenceLine(td)}
                 </div>
               </li>
             ))}

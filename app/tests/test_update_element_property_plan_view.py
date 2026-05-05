@@ -10,6 +10,7 @@ from bim_ai.elements import (
     CameraMm,
     LevelElem,
     PlanViewElem,
+    TagDefinitionElem,
     Vec3Mm,
     ViewpointElem,
     ViewTemplateElem,
@@ -233,6 +234,66 @@ def test_plan_view_plan_annotation_flags_and_template_inheritance() -> None:
     assert isinstance(vt2, ViewTemplateElem)
     assert vt2.plan_show_opening_tags is False
     assert vt2.plan_show_room_labels is False
+
+
+def test_plan_view_template_tag_definition_refs_and_style_update() -> None:
+    room_tag = TagDefinitionElem(
+        kind="tag_definition",
+        id="tag-room",
+        name="Room bubble",
+        tagKind="room",
+    )
+    opening_tag = TagDefinitionElem(
+        kind="tag_definition",
+        id="tag-opening",
+        name="Door mark",
+        tagKind="sill",
+    )
+    vt = ViewTemplateElem(kind="view_template", id="vt", name="T")
+    pv = PlanViewElem(kind="plan_view", id="pv", name="Test", levelId="lv", viewTemplateId="vt")
+    doc = Document(
+        revision=1,
+        elements={
+            "lv": LevelElem(kind="level", id="lv", name="EG", elevationMm=0),
+            "tag-room": room_tag,
+            "tag-opening": opening_tag,
+            "vt": vt,
+            "pv": pv,
+        },
+    )
+
+    apply_inplace(
+        doc,
+        UpdateElementPropertyCmd(
+            elementId="tag-room",
+            key="planTagStyle",
+            value='{"labelPrefix":"R-","textCase":"upper","maxLabelChars":24,"showBox":true}',
+        ),
+    )
+    apply_inplace(
+        doc,
+        UpdateElementPropertyCmd(elementId="vt", key="planRoomTagDefinitionId", value="tag-room"),
+    )
+    apply_inplace(
+        doc,
+        UpdateElementPropertyCmd(
+            elementId="pv",
+            key="planOpeningTagDefinitionId",
+            value="tag-opening",
+        ),
+    )
+
+    tag_out = doc.elements["tag-room"]
+    vt_out = doc.elements["vt"]
+    pv_out = doc.elements["pv"]
+    assert isinstance(tag_out, TagDefinitionElem)
+    assert isinstance(vt_out, ViewTemplateElem)
+    assert isinstance(pv_out, PlanViewElem)
+    assert tag_out.plan_tag_style.label_prefix == "R-"
+    assert tag_out.plan_tag_style.text_case == "upper"
+    assert tag_out.plan_tag_style.show_box is True
+    assert vt_out.plan_room_tag_definition_id == "tag-room"
+    assert pv_out.plan_opening_tag_definition_id == "tag-opening"
 
 
 def test_view_template_plan_detail_level_and_room_fill_via_update_element_property() -> None:

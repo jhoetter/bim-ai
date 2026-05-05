@@ -33,6 +33,8 @@ export type PlanGraphicHintsResolved = {
 export type PlanAnnotationHintsResolved = {
   openingTagsVisible: boolean;
   roomLabelsVisible: boolean;
+  openingTagCatalog?: Record<string, unknown>;
+  roomTagCatalog?: Record<string, unknown>;
 };
 
 function readWireAnnotationBool(raw: unknown): boolean {
@@ -84,6 +86,14 @@ export function extractPlanAnnotationHints(
   return {
     openingTagsVisible: readWireAnnotationBool(o.openingTagsVisible ?? o.opening_tags_visible),
     roomLabelsVisible: readWireAnnotationBool(o.roomLabelsVisible ?? o.room_labels_visible),
+    ...((o.openingTagCatalog ?? o.opening_tag_catalog) &&
+    typeof (o.openingTagCatalog ?? o.opening_tag_catalog) === 'object'
+      ? { openingTagCatalog: (o.openingTagCatalog ?? o.opening_tag_catalog) as Record<string, unknown> }
+      : {}),
+    ...((o.roomTagCatalog ?? o.room_tag_catalog) &&
+    typeof (o.roomTagCatalog ?? o.room_tag_catalog) === 'object'
+      ? { roomTagCatalog: (o.roomTagCatalog ?? o.room_tag_catalog) as Record<string, unknown> }
+      : {}),
   };
 }
 
