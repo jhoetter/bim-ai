@@ -220,6 +220,9 @@ def deterministic_sheet_evidence_manifest(
                 },
             ],
             "exportListingParityToken": SHEET_EXPORT_SVG_PDF_LISTING_PARITY_TOKEN,
+            "svgListingDigestSha256": export_listing_digest,
+            "pdfListingDigestSha256": export_listing_digest,
+            "exportListingParityDigestMatch": True,
             "ciBaselineCorrelation": {
                 "format": "sheetExportCiBaselineCorrelation_v1",
                 "sheetId": sh.id,
