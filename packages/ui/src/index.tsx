@@ -1,5 +1,14 @@
 import type * as React from 'react';
 
+export {
+  Icons,
+  IconLabels,
+  ICON_SIZE,
+  StairsIcon,
+  type IconName,
+  type LucideLikeIcon,
+} from './icons';
+
 export function Panel(props: React.PropsWithChildren<{ title: string }>) {
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-border bg-surface p-3 shadow-sm">
