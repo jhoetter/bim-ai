@@ -11,6 +11,14 @@ import {
   schedulesFiltersWithWidthMmGt,
   schedulesFiltersWithWidthMmLt,
 } from './scheduleFilterWidthRules';
+import {
+  MSG_LOADING,
+  MSG_NO_ROWS,
+  MSG_NO_SHEET_ELEMENTS,
+  MSG_OPEN_SAVED_MODEL,
+  noScheduleElementMessage,
+  registryNoModelMode,
+} from './schedulePanelPlansSheetsUi';
 
 type TabKey = 'rooms' | 'doors' | 'windows' | 'floors' | 'roofs' | 'stairs' | 'plans' | 'sheets';
 
@@ -63,11 +71,11 @@ function scheduleGroupingKeyChoices(tab: TabKey): readonly string[] {
     }
 
     case 'plans': {
-      return ['levelId', 'planPresentation', 'discipline'];
+      return ['levelId', 'planPresentation', 'discipline', 'sheetId'];
     }
 
     case 'sheets': {
-      return ['titleBlock', 'name'];
+      return ['titleBlock', 'name', 'planViewNames'];
     }
 
     default: {
@@ -138,11 +146,11 @@ export function scheduleSortKeyChoices(tab: TabKey): readonly string[] {
     }
 
     case 'plans': {
-      return ['name', 'elementId', 'level', 'planPresentation', 'discipline'];
+      return ['name', 'elementId', 'level', 'planPresentation', 'discipline', 'sheetId', 'sheetName'];
     }
 
     case 'sheets': {
-      return ['name', 'elementId', 'viewportCount', 'titleBlock'];
+      return ['name', 'elementId', 'viewportCount', 'titleBlock', 'planViewNames'];
     }
 
     default: {
@@ -1679,25 +1687,37 @@ export function SchedulePanel(props: {
         )
       ) : null}
 
-      {tab === 'floors' || tab === 'roofs' || tab === 'stairs' || tab === 'plans' ? (
+      {tab === 'floors' ||
+      tab === 'roofs' ||
+      tab === 'stairs' ||
+      tab === 'plans' ||
+      tab === 'sheets' ? (
         !props.modelId ? (
-          <div className="mt-3 text-[11px] text-muted">
-            Open a saved model to load server schedules.
-          </div>
+          tab === 'sheets' ? (
+            registryNoModelMode(sheets.length) === 'sheetsLocal' ? (
+              <ul className="mt-2 space-y-1 text-[11px]">
+                {sheets.map((s) => (
+                  <li key={s.id} className="rounded border border-border/50 px-2 py-1">
+                    <div className="font-medium">{s.name}</div>
+
+                    <div className="text-muted">
+                      TB {s.tb || '—'} · VP {s.vps} <span className="opacity-75">[{s.id}]</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="mt-3 text-[11px] text-muted">{MSG_NO_SHEET_ELEMENTS}</div>
+            )
+          ) : (
+            <div className="mt-3 text-[11px] text-muted">{MSG_OPEN_SAVED_MODEL}</div>
+          )
         ) : !sidForTab ? (
           <div className="mt-3 text-[11px] text-muted">
-            No{' '}
-            {tab === 'plans'
-              ? 'plan view'
-              : tab === 'floors'
-                ? 'floor'
-                : tab === 'roofs'
-                  ? 'roof'
-                  : 'stair'}{' '}
-            schedule element in this model.
+            {noScheduleElementMessage(tab)}
           </div>
         ) : serverErr ? null : srvActive?.tab !== tab ? (
-          <div className="mt-3 text-[11px] text-muted">Loading schedule…</div>
+          <div className="mt-3 text-[11px] text-muted">{MSG_LOADING}</div>
         ) : registrySchedule && registrySchedule.rows.length > 0 ? (
           <div className="mt-2">
             {renderRegistryColumnPicker()}
@@ -1705,38 +1725,7 @@ export function SchedulePanel(props: {
             {renderTotals()}
           </div>
         ) : (
-          <div className="mt-3 text-[11px] text-muted">No rows in this schedule.</div>
-        )
-      ) : null}
-
-      {tab === 'sheets' ? (
-        props.modelId &&
-        sidSheets &&
-        !serverErr &&
-        srvActive?.tab === 'sheets' &&
-        registrySchedule &&
-        registrySchedule.rows.length > 0 ? (
-          <div className="mt-2">
-            {renderRegistryColumnPicker()}
-            {renderRegistryScheduleTable(registrySchedule, visibleRegistryColumns)}
-            {renderTotals()}
-          </div>
-        ) : props.modelId && sidSheets && !serverErr && srvActive?.tab !== 'sheets' ? (
-          <div className="mt-3 text-[11px] text-muted">Loading schedule…</div>
-        ) : !sheets.length ? (
-          <div className="mt-3 text-[11px] text-muted">No sheet elements yet.</div>
-        ) : (
-          <ul className="mt-2 space-y-1 text-[11px]">
-            {sheets.map((s) => (
-              <li key={s.id} className="rounded border border-border/50 px-2 py-1">
-                <div className="font-medium">{s.name}</div>
-
-                <div className="text-muted">
-                  TB {s.tb || '—'} · VP {s.vps} <span className="opacity-75">[{s.id}]</span>
-                </div>
-              </li>
-            ))}
-          </ul>
+          <div className="mt-3 text-[11px] text-muted">{MSG_NO_ROWS}</div>
         )
       ) : null}
     </div>

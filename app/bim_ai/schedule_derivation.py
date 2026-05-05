@@ -35,6 +35,49 @@ from bim_ai.room_derivation import (
 from bim_ai.schedule_field_registry import column_metadata_bundle, stable_column_keys
 from bim_ai.type_material_registry import family_type_display_label, material_display_label
 
+
+def _plan_view_id_to_owning_sheet(doc: Document) -> dict[str, tuple[str, str]]:
+    """Map plan_view id -> (sheet_id, sheet_name); first sheet wins by sorted sheet id."""
+
+    out: dict[str, tuple[str, str]] = {}
+    sheet_ids = sorted(eid for eid, el in doc.elements.items() if isinstance(el, SheetElem))
+    for sid in sheet_ids:
+        sh = doc.elements[sid]
+        if not isinstance(sh, SheetElem):
+            continue
+        for vp in sh.viewports_mm or ():
+            ref = str(vp.get("viewRef") or "")
+            if not ref.startswith("plan:"):
+                continue
+            pv_id = ref.split(":", 1)[1].strip()
+            if not pv_id or pv_id in out:
+                continue
+            out[pv_id] = (sh.id, sh.name or "")
+    return out
+
+
+def _plan_view_names_on_sheet_csv(doc: Document, sheet: SheetElem) -> str:
+    """Sorted unique plan: viewports -> display labels (name, else id), joined with '; '."""
+
+    seen: set[str] = set()
+    pv_ids: list[str] = []
+    for vp in sheet.viewports_mm or ():
+        ref = str(vp.get("viewRef") or "")
+        if not ref.startswith("plan:"):
+            continue
+        pv_id = ref.split(":", 1)[1].strip()
+        if pv_id and pv_id not in seen:
+            seen.add(pv_id)
+            pv_ids.append(pv_id)
+    pv_ids.sort()
+    parts: list[str] = []
+    for pvid in pv_ids:
+        el = doc.elements.get(pvid)
+        label = el.name if isinstance(el, PlanViewElem) else ""
+        parts.append(label.strip() if label else pvid)
+    return "; ".join(parts)
+
+
 _NUMERIC_SCHEDULE_FIELDS: frozenset[str] = frozenset(
     {
         "areaM2",
@@ -520,31 +563,36 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
         for e in doc.elements.values():
             if isinstance(e, SheetElem):
                 vps = getattr(e, "viewports_mm", ()) or ()
-                rows.append(
-                    {
-                        "elementId": e.id,
-                        "name": e.name,
-                        "titleBlock": getattr(e, "title_block", "") or "",
-                        "viewportCount": len(vps),
-                        "familyTypeId": "",
-                    }
-                )
+                row_root: dict[str, Any] = {
+                    "elementId": e.id,
+                    "name": e.name,
+                    "titleBlock": getattr(e, "title_block", "") or "",
+                    "viewportCount": len(vps),
+                    "familyTypeId": "",
+                }
+                pv_labels = _plan_view_names_on_sheet_csv(doc, e)
+                if pv_labels:
+                    row_root["planViewNames"] = pv_labels
+                rows.append(row_root)
 
     elif cat in {"plan_view", "planview"}:
+        owning = _plan_view_id_to_owning_sheet(doc)
         for e in doc.elements.values():
             if isinstance(e, PlanViewElem):
                 lev = lvl_lab.get(e.level_id, e.level_id)
-                rows.append(
-                    {
-                        "elementId": e.id,
-                        "name": e.name,
-                        "levelId": e.level_id,
-                        "level": lev,
-                        "planPresentation": e.plan_presentation,
-                        "discipline": getattr(e, "discipline", "") or "",
-                        "familyTypeId": "",
-                    }
-                )
+                row_pv: dict[str, Any] = {
+                    "elementId": e.id,
+                    "name": e.name,
+                    "levelId": e.level_id,
+                    "level": lev,
+                    "planPresentation": e.plan_presentation,
+                    "discipline": getattr(e, "discipline", "") or "",
+                    "familyTypeId": "",
+                }
+                own = owning.get(e.id)
+                if own:
+                    row_pv["sheetId"], row_pv["sheetName"] = own
+                rows.append(row_pv)
 
     elif cat in {"section_cut", "sectioncut"}:
         for e in doc.elements.values():

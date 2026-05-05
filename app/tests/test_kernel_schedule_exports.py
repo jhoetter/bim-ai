@@ -239,6 +239,61 @@ def test_floor_schedule_engine_meta_and_sort():
     assert tbl["columnMetadata"]["fields"]["areaM2"]["label"]
 
 
+def test_plan_view_schedule_includes_owning_sheet_and_sheet_lists_plan_views() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="G", elevationMm=0),
+            "pv-a": PlanViewElem(kind="plan_view", id="pv-a", name="Level 1", levelId="lvl"),
+            "sh-1": SheetElem(
+                kind="sheet",
+                id="sh-1",
+                name="A102",
+                titleBlock="TB",
+                viewportsMm=[
+                    {
+                        "viewportId": "vp1",
+                        "viewRef": "plan:pv-a",
+                        "xMm": 0,
+                        "yMm": 0,
+                        "widthMm": 1000,
+                        "heightMm": 1000,
+                    },
+                ],
+            ),
+            "sch-p": ScheduleElem(
+                kind="schedule",
+                id="sch-p",
+                name="Plans",
+                filters={"category": "plan_view", "sortBy": "name"},
+            ),
+            "sch-sh": ScheduleElem(
+                kind="schedule",
+                id="sch-sh",
+                name="Sheets",
+                filters={"category": "sheet", "sortBy": "name"},
+            ),
+        },
+    )
+    tp = derive_schedule_table(doc, "sch-p")
+    assert tp["category"] == "plan_view"
+    assert len(tp["rows"]) == 1
+    row = tp["rows"][0]
+    assert row["elementId"] == "pv-a"
+    assert row["sheetId"] == "sh-1"
+    assert row["sheetName"] == "A102"
+    assert "sheetId" in tp["columns"]
+    assert "sheetName" in tp["columns"]
+
+    ts = derive_schedule_table(doc, "sch-sh")
+    assert ts["category"] == "sheet"
+    assert len(ts["rows"]) == 1
+    srow = ts["rows"][0]
+    assert srow["elementId"] == "sh-1"
+    assert srow["planViewNames"] == "Level 1"
+    assert "planViewNames" in ts["columns"]
+
+
 def test_roof_and_stair_totals_rollups():
     doc = Document(
         revision=1,

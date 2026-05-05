@@ -95,7 +95,14 @@ SCHEDULE_COLUMN_ORDER: dict[str, tuple[str, ...]] = {
         "widthMm",
         "familyTypeId",
     ),
-    "sheet": ("elementId", "name", "titleBlock", "viewportCount", "familyTypeId"),
+    "sheet": (
+        "elementId",
+        "name",
+        "titleBlock",
+        "viewportCount",
+        "planViewNames",
+        "familyTypeId",
+    ),
     "plan_view": (
         "elementId",
         "name",
@@ -103,6 +110,8 @@ SCHEDULE_COLUMN_ORDER: dict[str, tuple[str, ...]] = {
         "level",
         "planPresentation",
         "discipline",
+        "sheetId",
+        "sheetName",
         "familyTypeId",
     ),
     "planview": (
@@ -112,6 +121,8 @@ SCHEDULE_COLUMN_ORDER: dict[str, tuple[str, ...]] = {
         "level",
         "planPresentation",
         "discipline",
+        "sheetId",
+        "sheetName",
         "familyTypeId",
     ),
     "section_cut": ("elementId", "name", "cropDepthMm", "familyTypeId"),
@@ -213,6 +224,7 @@ SCHEDULE_COLUMN_METADATA: dict[str, dict[str, ColumnMeta]] = {
         "name": {"label": "Name", "role": "text"},
         "titleBlock": {"label": "Title block", "role": "text"},
         "viewportCount": {"label": "Viewports", "role": "integer"},
+        "planViewNames": {"label": "Plan views", "role": "text"},
         "familyTypeId": {"label": "Family / type", "role": "identity"},
     },
     "plan_view": {
@@ -221,6 +233,8 @@ SCHEDULE_COLUMN_METADATA: dict[str, dict[str, ColumnMeta]] = {
         "level": {"label": "Level", "role": "text"},
         "planPresentation": {"label": "Presentation", "role": "text"},
         "discipline": {"label": "Discipline", "role": "text"},
+        "sheetId": {"label": "Sheet id", "role": "identity"},
+        "sheetName": {"label": "Sheet name", "role": "text"},
         "familyTypeId": {"label": "Family / type", "role": "identity"},
     },
     "planview": {
@@ -229,6 +243,8 @@ SCHEDULE_COLUMN_METADATA: dict[str, dict[str, ColumnMeta]] = {
         "level": {"label": "Level", "role": "text"},
         "planPresentation": {"label": "Presentation", "role": "text"},
         "discipline": {"label": "Discipline", "role": "text"},
+        "sheetId": {"label": "Sheet id", "role": "identity"},
+        "sheetName": {"label": "Sheet name", "role": "text"},
         "familyTypeId": {"label": "Family / type", "role": "identity"},
     },
     "section_cut": {
