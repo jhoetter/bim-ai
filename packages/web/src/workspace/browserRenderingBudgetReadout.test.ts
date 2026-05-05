@@ -4,6 +4,10 @@ import { describe, expect, it } from 'vitest';
 import type { PlanProjectionPrimitivesV1Wire } from '../plan/planProjectionWire';
 
 import {
+  BROWSER_BUDGET_OVER_BUDGET_ELEMENT_COUNT,
+  BROWSER_BUDGET_OVER_BUDGET_PLAN_WIRE_ENTRIES,
+  BROWSER_BUDGET_OVER_BUDGET_SCHEDULE_TABLE_ROWS,
+  BROWSER_BUDGET_OVER_BUDGET_SHEET_VIEWPORT_COUNT,
   BROWSER_BUDGET_WARN_ELEMENT_COUNT,
   BROWSER_BUDGET_WARN_PLAN_WIRE_ENTRIES,
   BROWSER_BUDGET_WARN_SCHEDULE_TABLE_ROWS,
@@ -234,5 +238,374 @@ describe('browserRenderingBudgetReadout', () => {
     const lines = formatBrowserRenderingBudgetLines(r);
     expect(lines[0]).toContain('browserRenderingBudgetReadout_v1');
     expect(lines.some((l) => l.startsWith('route:'))).toBe(true);
+  });
+
+  // --- Progressive rendering state tests ---
+
+  describe('progressive states: plan wire primitives', () => {
+    it('in_budget below warn threshold', () => {
+      const r = buildBrowserRenderingBudgetReadoutV1({
+        elementsById: {},
+        planProjectionPrimitives: emptyWire(BROWSER_BUDGET_WARN_PLAN_WIRE_ENTRIES - 1),
+        scheduleHydratedRowCount: null,
+        scheduleHydratedTab: null,
+      });
+      const row = r.rows.find((x) => x.id === 'plan_wire_primitives')!;
+      expect(row.progressiveState).toBe('in_budget');
+      expect(row.reasonCode).toBe('plan_wire_in_budget');
+    });
+
+    it('deferred at warn threshold', () => {
+      const r = buildBrowserRenderingBudgetReadoutV1({
+        elementsById: {},
+        planProjectionPrimitives: emptyWire(BROWSER_BUDGET_WARN_PLAN_WIRE_ENTRIES),
+        scheduleHydratedRowCount: null,
+        scheduleHydratedTab: null,
+      });
+      const row = r.rows.find((x) => x.id === 'plan_wire_primitives')!;
+      expect(row.progressiveState).toBe('deferred');
+      expect(row.reasonCode).toBe('plan_wire_deferred_large_primitive_count');
+    });
+
+    it('deferred just below over-budget threshold', () => {
+      const r = buildBrowserRenderingBudgetReadoutV1({
+        elementsById: {},
+        planProjectionPrimitives: emptyWire(BROWSER_BUDGET_OVER_BUDGET_PLAN_WIRE_ENTRIES - 1),
+        scheduleHydratedRowCount: null,
+        scheduleHydratedTab: null,
+      });
+      const row = r.rows.find((x) => x.id === 'plan_wire_primitives')!;
+      expect(row.progressiveState).toBe('deferred');
+      expect(row.reasonCode).toBe('plan_wire_deferred_large_primitive_count');
+    });
+
+    it('over_budget at over-budget threshold', () => {
+      const r = buildBrowserRenderingBudgetReadoutV1({
+        elementsById: {},
+        planProjectionPrimitives: emptyWire(BROWSER_BUDGET_OVER_BUDGET_PLAN_WIRE_ENTRIES),
+        scheduleHydratedRowCount: null,
+        scheduleHydratedTab: null,
+      });
+      const row = r.rows.find((x) => x.id === 'plan_wire_primitives')!;
+      expect(row.progressiveState).toBe('over_budget');
+      expect(row.reasonCode).toBe('plan_wire_over_budget_very_large_primitive_count');
+      expect(row.status).toBe('warn');
+    });
+
+    it('stale when no projection primitives', () => {
+      const r = buildBrowserRenderingBudgetReadoutV1({
+        elementsById: {},
+        planProjectionPrimitives: null,
+        scheduleHydratedRowCount: null,
+        scheduleHydratedTab: null,
+      });
+      const row = r.rows.find((x) => x.id === 'plan_wire_primitives')!;
+      expect(row.progressiveState).toBe('stale');
+      expect(row.reasonCode).toBe('plan_wire_stale_no_projection');
+      expect(row.status).toBe('ok');
+      expect(row.value).toBeNull();
+    });
+  });
+
+  describe('progressive states: model elements', () => {
+    it('in_budget below warn threshold', () => {
+      const r = buildBrowserRenderingBudgetReadoutV1({
+        elementsById: minimalElements(BROWSER_BUDGET_WARN_ELEMENT_COUNT - 1),
+        planProjectionPrimitives: null,
+        scheduleHydratedRowCount: null,
+        scheduleHydratedTab: null,
+      });
+      const row = r.rows.find((x) => x.id === 'model_elements')!;
+      expect(row.progressiveState).toBe('in_budget');
+      expect(row.reasonCode).toBe('model_elements_in_budget');
+    });
+
+    it('deferred at warn threshold', () => {
+      const r = buildBrowserRenderingBudgetReadoutV1({
+        elementsById: minimalElements(BROWSER_BUDGET_WARN_ELEMENT_COUNT),
+        planProjectionPrimitives: null,
+        scheduleHydratedRowCount: null,
+        scheduleHydratedTab: null,
+      });
+      const row = r.rows.find((x) => x.id === 'model_elements')!;
+      expect(row.progressiveState).toBe('deferred');
+      expect(row.reasonCode).toBe('model_elements_deferred_large_count');
+    });
+
+    it('over_budget at over-budget threshold', () => {
+      const r = buildBrowserRenderingBudgetReadoutV1({
+        elementsById: minimalElements(BROWSER_BUDGET_OVER_BUDGET_ELEMENT_COUNT),
+        planProjectionPrimitives: null,
+        scheduleHydratedRowCount: null,
+        scheduleHydratedTab: null,
+      });
+      const row = r.rows.find((x) => x.id === 'model_elements')!;
+      expect(row.progressiveState).toBe('over_budget');
+      expect(row.reasonCode).toBe('model_elements_over_budget_very_large_count');
+      expect(row.status).toBe('warn');
+    });
+  });
+
+  describe('progressive states: sheet viewports', () => {
+    function sheetWithViewports(n: number): Record<string, Element> {
+      return {
+        s1: {
+          kind: 'sheet',
+          id: 's1',
+          name: 'S',
+          viewportsMm: Array.from({ length: n }, () => ({})),
+          paperWidthMm: 100,
+          paperHeightMm: 100,
+        },
+      };
+    }
+
+    it('in_budget below warn threshold', () => {
+      const r = buildBrowserRenderingBudgetReadoutV1({
+        elementsById: sheetWithViewports(BROWSER_BUDGET_WARN_SHEET_VIEWPORT_COUNT - 1),
+        planProjectionPrimitives: null,
+        scheduleHydratedRowCount: null,
+        scheduleHydratedTab: null,
+      });
+      const row = r.rows.find((x) => x.id === 'sheet_viewports')!;
+      expect(row.progressiveState).toBe('in_budget');
+      expect(row.reasonCode).toBe('sheet_viewports_in_budget');
+    });
+
+    it('deferred at warn threshold', () => {
+      const r = buildBrowserRenderingBudgetReadoutV1({
+        elementsById: sheetWithViewports(BROWSER_BUDGET_WARN_SHEET_VIEWPORT_COUNT),
+        planProjectionPrimitives: null,
+        scheduleHydratedRowCount: null,
+        scheduleHydratedTab: null,
+      });
+      const row = r.rows.find((x) => x.id === 'sheet_viewports')!;
+      expect(row.progressiveState).toBe('deferred');
+      expect(row.reasonCode).toBe('sheet_viewports_deferred_large_count');
+    });
+
+    it('over_budget at over-budget threshold', () => {
+      const r = buildBrowserRenderingBudgetReadoutV1({
+        elementsById: sheetWithViewports(BROWSER_BUDGET_OVER_BUDGET_SHEET_VIEWPORT_COUNT),
+        planProjectionPrimitives: null,
+        scheduleHydratedRowCount: null,
+        scheduleHydratedTab: null,
+      });
+      const row = r.rows.find((x) => x.id === 'sheet_viewports')!;
+      expect(row.progressiveState).toBe('over_budget');
+      expect(row.reasonCode).toBe('sheet_viewports_over_budget_very_large_count');
+      expect(row.status).toBe('warn');
+    });
+  });
+
+  describe('progressive states: schedule table rows', () => {
+    it('stale when not hydrated', () => {
+      const r = buildBrowserRenderingBudgetReadoutV1({
+        elementsById: {},
+        planProjectionPrimitives: null,
+        scheduleHydratedRowCount: null,
+        scheduleHydratedTab: null,
+      });
+      const row = r.rows.find((x) => x.id === 'schedule_table_rows')!;
+      expect(row.progressiveState).toBe('stale');
+      expect(row.reasonCode).toBe('schedule_stale_not_hydrated');
+      expect(row.status).toBe('ok');
+      expect(row.value).toBeNull();
+    });
+
+    it('in_budget below warn threshold', () => {
+      const r = buildBrowserRenderingBudgetReadoutV1({
+        elementsById: {},
+        planProjectionPrimitives: null,
+        scheduleHydratedRowCount: BROWSER_BUDGET_WARN_SCHEDULE_TABLE_ROWS - 1,
+        scheduleHydratedTab: 'rooms',
+      });
+      const row = r.rows.find((x) => x.id === 'schedule_table_rows')!;
+      expect(row.progressiveState).toBe('in_budget');
+      expect(row.reasonCode).toBe('schedule_in_budget');
+    });
+
+    it('deferred at warn threshold', () => {
+      const r = buildBrowserRenderingBudgetReadoutV1({
+        elementsById: {},
+        planProjectionPrimitives: null,
+        scheduleHydratedRowCount: BROWSER_BUDGET_WARN_SCHEDULE_TABLE_ROWS,
+        scheduleHydratedTab: 'doors',
+      });
+      const row = r.rows.find((x) => x.id === 'schedule_table_rows')!;
+      expect(row.progressiveState).toBe('deferred');
+      expect(row.reasonCode).toBe('schedule_deferred_large_row_count');
+      expect(row.status).toBe('warn');
+    });
+
+    it('over_budget at over-budget threshold', () => {
+      const r = buildBrowserRenderingBudgetReadoutV1({
+        elementsById: {},
+        planProjectionPrimitives: null,
+        scheduleHydratedRowCount: BROWSER_BUDGET_OVER_BUDGET_SCHEDULE_TABLE_ROWS,
+        scheduleHydratedTab: 'windows',
+      });
+      const row = r.rows.find((x) => x.id === 'schedule_table_rows')!;
+      expect(row.progressiveState).toBe('over_budget');
+      expect(row.reasonCode).toBe('schedule_over_budget_very_large_row_count');
+      expect(row.status).toBe('warn');
+    });
+  });
+
+  describe('over-budget thresholds are 2× warn thresholds', () => {
+    it('plan wire over-budget is 2× warn', () => {
+      expect(BROWSER_BUDGET_OVER_BUDGET_PLAN_WIRE_ENTRIES).toBe(BROWSER_BUDGET_WARN_PLAN_WIRE_ENTRIES * 2);
+    });
+
+    it('element count over-budget is 2× warn', () => {
+      expect(BROWSER_BUDGET_OVER_BUDGET_ELEMENT_COUNT).toBe(BROWSER_BUDGET_WARN_ELEMENT_COUNT * 2);
+    });
+
+    it('sheet viewports over-budget is 2× warn', () => {
+      expect(BROWSER_BUDGET_OVER_BUDGET_SHEET_VIEWPORT_COUNT).toBe(BROWSER_BUDGET_WARN_SHEET_VIEWPORT_COUNT * 2);
+    });
+
+    it('schedule rows over-budget is 2× warn', () => {
+      expect(BROWSER_BUDGET_OVER_BUDGET_SCHEDULE_TABLE_ROWS).toBe(BROWSER_BUDGET_WARN_SCHEDULE_TABLE_ROWS * 2);
+    });
+  });
+
+  describe('large-model proof summary', () => {
+    it('in_budget summary when all metrics are nominal', () => {
+      const r = buildBrowserRenderingBudgetReadoutV1({
+        elementsById: {},
+        planProjectionPrimitives: emptyWire(0),
+        scheduleHydratedRowCount: 0,
+        scheduleHydratedTab: 'rooms',
+      });
+      expect(r.largeModelProofSummary).toMatch(/in_budget/);
+    });
+
+    it('deferred summary when at least one metric is deferred', () => {
+      const r = buildBrowserRenderingBudgetReadoutV1({
+        elementsById: {},
+        planProjectionPrimitives: emptyWire(BROWSER_BUDGET_WARN_PLAN_WIRE_ENTRIES),
+        scheduleHydratedRowCount: null,
+        scheduleHydratedTab: null,
+      });
+      expect(r.largeModelProofSummary).toMatch(/deferred/);
+      expect(r.largeModelProofSummary).toContain('plan_wire_primitives');
+    });
+
+    it('over_budget summary when at least one metric is over-budget', () => {
+      const r = buildBrowserRenderingBudgetReadoutV1({
+        elementsById: {},
+        planProjectionPrimitives: emptyWire(BROWSER_BUDGET_OVER_BUDGET_PLAN_WIRE_ENTRIES),
+        scheduleHydratedRowCount: null,
+        scheduleHydratedTab: null,
+      });
+      expect(r.largeModelProofSummary).toMatch(/over_budget/);
+      expect(r.largeModelProofSummary).toContain('plan_wire_primitives');
+    });
+
+    it('over_budget takes priority over deferred in summary', () => {
+      const r = buildBrowserRenderingBudgetReadoutV1({
+        elementsById: minimalElements(BROWSER_BUDGET_WARN_ELEMENT_COUNT),
+        planProjectionPrimitives: emptyWire(BROWSER_BUDGET_OVER_BUDGET_PLAN_WIRE_ENTRIES),
+        scheduleHydratedRowCount: null,
+        scheduleHydratedTab: null,
+      });
+      expect(r.largeModelProofSummary).toMatch(/over_budget/);
+    });
+  });
+
+  describe('sort order: over_budget before deferred within warn tier', () => {
+    it('over_budget rows sort before deferred rows', () => {
+      const r = buildBrowserRenderingBudgetReadoutV1({
+        elementsById: minimalElements(BROWSER_BUDGET_WARN_ELEMENT_COUNT),
+        planProjectionPrimitives: emptyWire(BROWSER_BUDGET_OVER_BUDGET_PLAN_WIRE_ENTRIES),
+        scheduleHydratedRowCount: null,
+        scheduleHydratedTab: null,
+      });
+      const warnRows = r.rows.filter((x) => x.status === 'warn');
+      const idxOverBudget = warnRows.findIndex((x) => x.progressiveState === 'over_budget');
+      const idxDeferred = warnRows.findIndex((x) => x.progressiveState === 'deferred');
+      expect(idxOverBudget).toBeLessThan(idxDeferred);
+    });
+  });
+
+  describe('format lines include progressive state and reason code', () => {
+    it('line contains state token and reason code in brackets', () => {
+      const r = buildBrowserRenderingBudgetReadoutV1({
+        elementsById: {},
+        planProjectionPrimitives: emptyWire(BROWSER_BUDGET_WARN_PLAN_WIRE_ENTRIES),
+        scheduleHydratedRowCount: null,
+        scheduleHydratedTab: null,
+      });
+      const lines = formatBrowserRenderingBudgetLines(r);
+      const planLine = lines.find((l) => l.includes('plan_wire_primitives'))!;
+      expect(planLine).toContain('deferred');
+      expect(planLine).toContain('[plan_wire_deferred_large_primitive_count]');
+    });
+
+    it('stale line contains stale state and reason code', () => {
+      const r = buildBrowserRenderingBudgetReadoutV1({
+        elementsById: {},
+        planProjectionPrimitives: null,
+        scheduleHydratedRowCount: null,
+        scheduleHydratedTab: null,
+      });
+      const lines = formatBrowserRenderingBudgetLines(r);
+      const planLine = lines.find((l) => l.includes('plan_wire_primitives'))!;
+      expect(planLine).toContain('stale');
+      expect(planLine).toContain('[plan_wire_stale_no_projection]');
+    });
+
+    it('over_budget line contains over_budget state and reason code', () => {
+      const r = buildBrowserRenderingBudgetReadoutV1({
+        elementsById: {},
+        planProjectionPrimitives: emptyWire(BROWSER_BUDGET_OVER_BUDGET_PLAN_WIRE_ENTRIES),
+        scheduleHydratedRowCount: null,
+        scheduleHydratedTab: null,
+      });
+      const lines = formatBrowserRenderingBudgetLines(r);
+      const planLine = lines.find((l) => l.includes('plan_wire_primitives'))!;
+      expect(planLine).toContain('over_budget');
+      expect(planLine).toContain('[plan_wire_over_budget_very_large_primitive_count]');
+    });
+
+    it('format includes large_model_proof summary line', () => {
+      const r = buildBrowserRenderingBudgetReadoutV1({
+        elementsById: {},
+        planProjectionPrimitives: null,
+        scheduleHydratedRowCount: null,
+        scheduleHydratedTab: null,
+      });
+      const lines = formatBrowserRenderingBudgetLines(r);
+      expect(lines.some((l) => l.startsWith('large_model_proof:'))).toBe(true);
+    });
+
+    it('format includes warn limit and over-budget limit in row line', () => {
+      const r = buildBrowserRenderingBudgetReadoutV1({
+        elementsById: {},
+        planProjectionPrimitives: emptyWire(0),
+        scheduleHydratedRowCount: null,
+        scheduleHydratedTab: null,
+      });
+      const lines = formatBrowserRenderingBudgetLines(r);
+      const planLine = lines.find((l) => l.includes('plan_wire_primitives'))!;
+      expect(planLine).toContain(`/${BROWSER_BUDGET_WARN_PLAN_WIRE_ENTRIES}/${BROWSER_BUDGET_OVER_BUDGET_PLAN_WIRE_ENTRIES}`);
+    });
+  });
+
+  describe('metric row fields: overBudgetLimit is set correctly', () => {
+    it('each row carries overBudgetLimit matching exported constants', () => {
+      const r = buildBrowserRenderingBudgetReadoutV1({
+        elementsById: {},
+        planProjectionPrimitives: null,
+        scheduleHydratedRowCount: null,
+        scheduleHydratedTab: null,
+      });
+      const byId = new Map(r.rows.map((row) => [row.id, row]));
+      expect(byId.get('plan_wire_primitives')!.overBudgetLimit).toBe(BROWSER_BUDGET_OVER_BUDGET_PLAN_WIRE_ENTRIES);
+      expect(byId.get('model_elements')!.overBudgetLimit).toBe(BROWSER_BUDGET_OVER_BUDGET_ELEMENT_COUNT);
+      expect(byId.get('sheet_viewports')!.overBudgetLimit).toBe(BROWSER_BUDGET_OVER_BUDGET_SHEET_VIEWPORT_COUNT);
+      expect(byId.get('schedule_table_rows')!.overBudgetLimit).toBe(BROWSER_BUDGET_OVER_BUDGET_SCHEDULE_TABLE_ROWS);
+    });
   });
 });
