@@ -5,11 +5,13 @@ from pathlib import Path
 from uuid import UUID
 
 from bim_ai.evidence_manifest import (
+    DIGEST_EXCLUDED_KEYS,
     MINIMAL_PROBE_PNG_BYTES_V1,
     MINIMAL_PROBE_PNG_CANONICAL_SHA256_V1,
     artifact_ingest_correlation_v1,
     artifact_upload_manifest_v1,
     committed_evidence_png_fixture_dir_v1,
+    digest_exclusion_rules_v1,
     evidence_closure_review_v1,
     evidence_diff_ingest_fix_loop_v1,
     evidence_lifecycle_signal_v1,
@@ -914,3 +916,194 @@ def test_merge_committed_png_baseline_bytes_invalid_png_records_parse_failure() 
     assert e0["baselinePngBasename"] == "x.png"
     comp = e0["serverPngByteIngest_v1"]["comparison"]
     assert "png_parse_failed" in str(comp.get("skippedReason", ""))
+
+
+# ---------------------------------------------------------------------------
+# Signed/staged artifact flow — digest exclusion rules, signature rows, missing reasons
+# ---------------------------------------------------------------------------
+
+
+def test_digest_exclusion_rules_v1_lists_derivative_keys() -> None:
+    rules = digest_exclusion_rules_v1()
+    assert rules["format"] == "digestExclusionRules_v1"
+    keys = rules["excludedTopLevelKeys"]
+    assert isinstance(keys, list)
+    assert keys == sorted(keys)
+    for expected in (
+        "artifactUploadManifest_v1",
+        "evidenceAgentFollowThrough_v1",
+        "evidenceBaselineLifecycleReadout_v1",
+        "evidenceDiffIngestFixLoop_v1",
+        "evidenceReviewPerformanceGate_v1",
+        "agentGeneratedBundleQaChecklist_v1",
+        "agentBriefAcceptanceReadout_v1",
+    ):
+        assert expected in keys
+    assert isinstance(rules.get("rationale"), str) and rules["rationale"]
+    assert isinstance(rules.get("enforcementNote"), str) and rules["enforcementNote"]
+
+
+def test_digest_excluded_keys_public_constant_matches_exclusion_rules() -> None:
+    rules = digest_exclusion_rules_v1()
+    assert set(rules["excludedTopLevelKeys"]) == set(DIGEST_EXCLUDED_KEYS)
+
+
+def test_artifact_upload_manifest_v1_each_artifact_has_local_signature_row() -> None:
+    pkg = "e" * 64
+    closure = evidence_closure_review_v1(
+        package_semantic_digest_sha256=pkg,
+        deterministic_sheet_evidence=[],
+        deterministic_3d_view_evidence=[],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+    )
+    mid = UUID("00000000-0000-4000-8000-0000000000dd")
+    out = artifact_upload_manifest_v1(
+        model_id=mid,
+        suggested_evidence_artifact_basename="pfx",
+        package_semantic_digest_sha256=pkg,
+        evidence_closure_review=closure,
+    )
+    artifacts = out["expectedArtifacts"]
+    assert isinstance(artifacts, list) and len(artifacts) > 0
+    for art in artifacts:
+        sig = art.get("localSignatureRow_v1")
+        assert isinstance(sig, dict), f"missing localSignatureRow_v1 on artifact {art.get('id')}"
+        assert sig["format"] == "localArtifactSignatureRow_v1"
+        assert sig["signatureKind"] == "sha256_content_descriptor"
+        assert sig["artifactId"] == art["id"]
+        digest = sig["contentDescriptorDigestSha256"]
+        assert isinstance(digest, str) and len(digest) == 64
+        assert sig["contentDescriptorDigestPrefix16"] == digest[:16]
+
+
+def test_artifact_upload_manifest_v1_signature_rows_are_deterministic() -> None:
+    pkg = "f" * 64
+    closure = evidence_closure_review_v1(
+        package_semantic_digest_sha256=pkg,
+        deterministic_sheet_evidence=[],
+        deterministic_3d_view_evidence=[],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+    )
+    mid = UUID("00000000-0000-4000-8000-0000000000ee")
+
+    def build() -> dict:
+        return artifact_upload_manifest_v1(
+            model_id=mid,
+            suggested_evidence_artifact_basename="stable-basename",
+            package_semantic_digest_sha256=pkg,
+            evidence_closure_review=closure,
+        )
+
+    out_a = build()
+    out_b = build()
+    sigs_a = {
+        a["id"]: a["localSignatureRow_v1"]["contentDescriptorDigestSha256"]
+        for a in out_a["expectedArtifacts"]
+    }
+    sigs_b = {
+        a["id"]: a["localSignatureRow_v1"]["contentDescriptorDigestSha256"]
+        for a in out_b["expectedArtifacts"]
+    }
+    assert sigs_a == sigs_b
+    # The signature rows manifest digest must also be stable.
+    assert (
+        out_a["contentDigests"]["signatureRowsManifestDigestSha256"]
+        == out_b["contentDigests"]["signatureRowsManifestDigestSha256"]
+    )
+
+
+def test_artifact_upload_manifest_v1_non_upload_eligible_artifacts_have_missing_reason() -> None:
+    pkg = "b" * 64
+    closure = evidence_closure_review_v1(
+        package_semantic_digest_sha256=pkg,
+        deterministic_sheet_evidence=[],
+        deterministic_3d_view_evidence=[],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+    )
+    mid = UUID("00000000-0000-4000-8000-0000000000ff")
+    out = artifact_upload_manifest_v1(
+        model_id=mid,
+        suggested_evidence_artifact_basename="pfx",
+        package_semantic_digest_sha256=pkg,
+        evidence_closure_review=closure,
+    )
+    for art in out["expectedArtifacts"]:
+        assert art["uploadEligible"] is False
+        reason = art.get("missingArtifactReason_v1")
+        assert isinstance(reason, dict), f"missing missingArtifactReason_v1 on {art.get('id')}"
+        assert reason["format"] == "missingArtifactReason_v1"
+        assert isinstance(reason.get("reasonCode"), str) and reason["reasonCode"]
+        assert isinstance(reason.get("detail"), str) and reason["detail"]
+
+
+def test_artifact_upload_manifest_v1_missing_reason_code_reflects_name_resolution() -> None:
+    pkg = "c" * 64
+    closure = evidence_closure_review_v1(
+        package_semantic_digest_sha256=pkg,
+        deterministic_sheet_evidence=[],
+        deterministic_3d_view_evidence=[],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+    )
+    mid = UUID("00000000-0000-4000-8000-000000000011")
+    out = artifact_upload_manifest_v1(
+        model_id=mid,
+        suggested_evidence_artifact_basename="pfx",
+        package_semantic_digest_sha256=pkg,
+        evidence_closure_review=closure,
+    )
+    by_id = {a["id"]: a for a in out["expectedArtifacts"]}
+    # evidence_package_json has a resolved name → not_upload_eligible
+    epj = by_id["evidence_package_json"]
+    assert epj["expectedArtifactName"] is not None
+    assert epj["missingArtifactReason_v1"]["reasonCode"] == "not_upload_eligible"
+    # snapshot_json has no name → artifact_name_not_resolved
+    snap = by_id["snapshot_json"]
+    assert snap["expectedArtifactName"] is None
+    assert snap["missingArtifactReason_v1"]["reasonCode"] == "artifact_name_not_resolved"
+
+
+def test_artifact_upload_manifest_v1_digest_exclusion_rules_present() -> None:
+    pkg = "d" * 64
+    closure = evidence_closure_review_v1(
+        package_semantic_digest_sha256=pkg,
+        deterministic_sheet_evidence=[],
+        deterministic_3d_view_evidence=[],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+    )
+    mid = UUID("00000000-0000-4000-8000-000000000022")
+    out = artifact_upload_manifest_v1(
+        model_id=mid,
+        suggested_evidence_artifact_basename="pfx",
+        package_semantic_digest_sha256=pkg,
+        evidence_closure_review=closure,
+    )
+    excl = out.get("digestExclusionRules_v1")
+    assert isinstance(excl, dict)
+    assert excl["format"] == "digestExclusionRules_v1"
+    assert "artifactUploadManifest_v1" in excl["excludedTopLevelKeys"]
+
+
+def test_artifact_upload_manifest_v1_signature_rows_manifest_digest_in_content_digests() -> None:
+    pkg = "a" * 64
+    closure = evidence_closure_review_v1(
+        package_semantic_digest_sha256=pkg,
+        deterministic_sheet_evidence=[],
+        deterministic_3d_view_evidence=[],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+    )
+    mid = UUID("00000000-0000-4000-8000-000000000033")
+    out = artifact_upload_manifest_v1(
+        model_id=mid,
+        suggested_evidence_artifact_basename="pfx",
+        package_semantic_digest_sha256=pkg,
+        evidence_closure_review=closure,
+    )
+    cds = out["contentDigests"]
+    sig_dig = cds.get("signatureRowsManifestDigestSha256")
+    assert isinstance(sig_dig, str) and len(sig_dig) == 64

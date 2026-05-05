@@ -1111,6 +1111,12 @@ def evidence_baseline_lifecycle_readout_v1(
             return "run_pixel_diff_ingest"
         return "accept_baseline"
 
+    _staged_upload_note = (
+        "Staged upload is not performed by this API. "
+        "This readout is a review-only lifecycle summary; "
+        "no baselines are committed or mutated automatically."
+    )
+
     row_objs: list[dict[str, Any]] = []
     digest_cell = digestrollup if ingest_count else "not_applicable"
     for r in norm_rows:
@@ -1124,6 +1130,7 @@ def evidence_baseline_lifecycle_readout_v1(
                 "digestCorrelationStatus": digest_cell,
                 "suggestedNextAction": row_next_action(bn),
                 "ciGateHint": rollup_ci,
+                "stagedUploadEligibilityNote": _staged_upload_note,
             }
         )
 
@@ -1140,6 +1147,7 @@ def evidence_baseline_lifecycle_readout_v1(
         "fixLoopBlockerCodes": fix_codes,
         "gateClosed": gate_closed,
         "rows": row_objs,
+        "stagedUploadEligibilityNote": _staged_upload_note,
         "notes": (
             "Deterministic join of evidenceClosureReview_v1 pixel ingest checklist, "
             "committedPngBaselineIngests_v1, evidenceDiffIngestFixLoop_v1 blockerCodes, "
@@ -1667,56 +1675,99 @@ def artifact_upload_manifest_v1(
         if isinstance(pat, str) and pat.strip():
             pw_pattern = pat.strip()
 
+    def _build_artifact(
+        artifact_id: str,
+        kind: str,
+        expected_artifact_name: str | None,
+        local_export_relative_path: str | None,
+        extra: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        sig_row = _artifact_local_signature_row_v1(artifact_id, kind, expected_artifact_name)
+        entry: dict[str, Any] = {
+            "id": artifact_id,
+            "kind": kind,
+            "expectedArtifactName": expected_artifact_name,
+            "localExportRelativePath": local_export_relative_path,
+            "uploadEligible": False,
+            "localSignatureRow_v1": sig_row,
+        }
+        if expected_artifact_name is None:
+            entry["missingArtifactReason_v1"] = _missing_artifact_reason_v1(
+                "artifact_name_not_resolved",
+                "expectedArtifactName is None: artifact name cannot be resolved in this context "
+                "(no real upload is performed by this API).",
+            )
+        else:
+            entry["missingArtifactReason_v1"] = _missing_artifact_reason_v1(
+                "not_upload_eligible",
+                "uploadEligible is False: this API is a manifest-only contract and performs no "
+                "real artifact uploads or side effects.",
+            )
+        if extra:
+            entry.update(extra)
+        return entry
+
     expected_artifacts: list[dict[str, Any]] = [
-        {
-            "id": "bcf_topics_json_export",
-            "kind": "local_api_relative_json_export",
-            "expectedArtifactName": None,
-            "localExportRelativePath": str(erp.get("bcfTopicsJsonExport") or ""),
-            "uploadEligible": False,
-        },
-        {
-            "id": "bcf_topics_json_import",
-            "kind": "local_api_relative_json_import",
-            "expectedArtifactName": None,
-            "localExportRelativePath": str(erp.get("bcfTopicsJsonImport") or ""),
-            "uploadEligible": False,
-        },
-        {
-            "id": "evidence_package_json",
-            "kind": "bundle_evidence_package_json",
-            "expectedArtifactName": bundle_json,
-            "localExportRelativePath": str(erp.get("evidencePackage") or ""),
-            "uploadEligible": False,
-        },
-        {
-            "id": "playwright_ci_evidence_bundle",
-            "kind": "ci_playwright_named_bundle",
-            "expectedArtifactName": pw_expected,
-            "artifactNamePattern": pw_pattern,
-            "localExportRelativePath": None,
-            "uploadEligible": False,
-        },
-        {
-            "id": "snapshot_json",
-            "kind": "local_api_relative_snapshot",
-            "expectedArtifactName": None,
-            "localExportRelativePath": str(erp.get("snapshot") or ""),
-            "uploadEligible": False,
-        },
-        {
-            "id": "validate_json",
-            "kind": "local_api_relative_validate",
-            "expectedArtifactName": None,
-            "localExportRelativePath": str(erp.get("validate") or ""),
-            "uploadEligible": False,
-        },
+        _build_artifact(
+            "bcf_topics_json_export",
+            "local_api_relative_json_export",
+            None,
+            str(erp.get("bcfTopicsJsonExport") or ""),
+        ),
+        _build_artifact(
+            "bcf_topics_json_import",
+            "local_api_relative_json_import",
+            None,
+            str(erp.get("bcfTopicsJsonImport") or ""),
+        ),
+        _build_artifact(
+            "evidence_package_json",
+            "bundle_evidence_package_json",
+            bundle_json,
+            str(erp.get("evidencePackage") or ""),
+        ),
+        _build_artifact(
+            "playwright_ci_evidence_bundle",
+            "ci_playwright_named_bundle",
+            pw_expected,
+            None,
+            extra={"artifactNamePattern": pw_pattern} if pw_pattern else None,
+        ),
+        _build_artifact(
+            "snapshot_json",
+            "local_api_relative_snapshot",
+            None,
+            str(erp.get("snapshot") or ""),
+        ),
+        _build_artifact(
+            "validate_json",
+            "local_api_relative_validate",
+            None,
+            str(erp.get("validate") or ""),
+        ),
     ]
     expected_artifacts.sort(key=lambda x: str(x.get("id") or ""))
+
+    # Deterministic signature rows manifest digest — covers all per-artifact signature rows.
+    sig_rows_payload = json.dumps(
+        sorted(
+            [
+                a["localSignatureRow_v1"]
+                for a in expected_artifacts
+                if isinstance(a.get("localSignatureRow_v1"), dict)
+            ],
+            key=lambda r: str(r.get("artifactId", "")),
+        ),
+        sort_keys=True,
+        separators=(",", ":"),
+        default=str,
+    )
+    signature_rows_manifest_digest = hashlib.sha256(sig_rows_payload.encode("utf-8")).hexdigest()
 
     content_digests: dict[str, Any] = {
         "format": "artifactUploadContentDigests_v1",
         "packageSemanticDigestSha256": package_semantic_digest_sha256,
+        "signatureRowsManifestDigestSha256": signature_rows_manifest_digest,
     }
     if ingest_manifest_digest:
         content_digests["artifactIngestManifestDigestSha256"] = ingest_manifest_digest
@@ -1739,6 +1790,7 @@ def artifact_upload_manifest_v1(
         "exportRelativePaths": dict(erp),
         "expectedArtifacts": expected_artifacts,
         "stagedArtifactLinksFormat": "stagedArtifactLinks_v1",
+        "digestExclusionRules_v1": digest_exclusion_rules_v1(),
     }
 
 
@@ -1971,7 +2023,8 @@ def evidence_agent_follow_through_v1(
 
 
 # Derivative summaries from ``agent_evidence_review_loop`` — omit so deterministic-row digests stay stable.
-_DIGEST_EXCLUDED_KEYS = frozenset(
+# Public alias so CI gates and tests can enumerate and document the exclusion set.
+DIGEST_EXCLUDED_KEYS: frozenset[str] = frozenset(
     {
         "generatedAt",
         "semanticDigestSha256",
@@ -1987,6 +2040,65 @@ _DIGEST_EXCLUDED_KEYS = frozenset(
         "agentBriefAcceptanceReadout_v1",
     }
 )
+# Internal alias kept for backward-compatible internal references.
+_DIGEST_EXCLUDED_KEYS = DIGEST_EXCLUDED_KEYS
+
+
+def digest_exclusion_rules_v1() -> dict[str, Any]:
+    """Structured digest exclusion rules for CI gate documentation and enforcement."""
+    return {
+        "format": "digestExclusionRules_v1",
+        "excludedTopLevelKeys": sorted(DIGEST_EXCLUDED_KEYS),
+        "rationale": (
+            "These top-level keys are derivative summaries or derivative metadata produced "
+            "after the semantic package digest is computed. Excluding them keeps the "
+            "semanticDigestSha256 stable across repeated runs when only derivative output changes. "
+            "CI verification gates must not include these keys in digest comparisons."
+        ),
+        "enforcementNote": (
+            "evidence_package_semantic_digest_sha256() enforces these exclusions automatically. "
+            "Do not introduce nondeterministic timestamps, random IDs, machine-local absolute paths, "
+            "or environment-specific values into keys that are NOT excluded."
+        ),
+    }
+
+
+def _artifact_local_signature_row_v1(
+    artifact_id: str,
+    kind: str,
+    expected_artifact_name: str | None,
+) -> dict[str, Any]:
+    """Deterministic local signature row for an expected artifact (no secrets or network calls)."""
+    descriptor = json.dumps(
+        {
+            "artifactId": artifact_id,
+            "kind": kind,
+            "expectedArtifactName": expected_artifact_name or "",
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    digest = hashlib.sha256(descriptor.encode("utf-8")).hexdigest()
+    return {
+        "format": "localArtifactSignatureRow_v1",
+        "signatureKind": "sha256_content_descriptor",
+        "artifactId": artifact_id,
+        "contentDescriptorDigestSha256": digest,
+        "contentDescriptorDigestPrefix16": digest[:16],
+        "note": (
+            "Deterministic SHA-256 of artifact ID/kind/expectedArtifactName descriptor; "
+            "no secret key material. Stable given unchanged artifact metadata."
+        ),
+    }
+
+
+def _missing_artifact_reason_v1(reason_code: str, detail: str) -> dict[str, Any]:
+    """Structured reason for a missing or non-upload-eligible artifact."""
+    return {
+        "format": "missingArtifactReason_v1",
+        "reasonCode": reason_code,
+        "detail": detail,
+    }
 
 
 def evidence_package_semantic_digest_sha256(payload: dict[str, Any]) -> str:

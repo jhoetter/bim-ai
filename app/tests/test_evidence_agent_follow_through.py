@@ -676,3 +676,69 @@ def test_bcf_topic_count_matches_document_after_engine_create_bcf_topic() -> Non
     )
     assert ft["bcfRoundtripEvidenceSummary_v1"]["bcfTopicCount"] == 1
     assert len([e for e in doc.elements.values() if isinstance(e, BcfElem)]) == 1
+
+
+# ---------------------------------------------------------------------------
+# Signed/staged artifact flow — signature rows, missing reasons, CI hint in follow-through
+# ---------------------------------------------------------------------------
+
+
+def test_artifact_upload_manifest_v1_signature_rows_present_in_follow_through() -> None:
+    """Artifact upload manifest embedded in follow-through has localSignatureRow_v1 per artifact."""
+    mid = UUID("00000000-0000-0000-0000-000000000091")
+    # evidenceAgentFollowThrough_v1 does not embed artifactUploadManifest directly,
+    # but the top-level evidence package does. Verify the manifest can be independently
+    # constructed and contains the expected fields.
+    pkg = "b" * 64
+    closure = evidence_closure_review_v1(
+        package_semantic_digest_sha256=pkg,
+        deterministic_sheet_evidence=[],
+        deterministic_3d_view_evidence=[],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+    )
+    manifest = artifact_upload_manifest_v1(
+        model_id=mid,
+        suggested_evidence_artifact_basename="pfx",
+        package_semantic_digest_sha256=pkg,
+        evidence_closure_review=closure,
+    )
+    for art in manifest["expectedArtifacts"]:
+        assert "localSignatureRow_v1" in art, f"missing signature row for {art.get('id')}"
+        assert "missingArtifactReason_v1" in art, f"missing reason for {art.get('id')}"
+    assert "digestExclusionRules_v1" in manifest
+    cds = manifest["contentDigests"]
+    assert "signatureRowsManifestDigestSha256" in cds
+
+
+def test_artifact_upload_manifest_staged_upload_eligibility_off_without_env(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Without BIM_AI_STAGED_ARTIFACT_LINKS=1, sideEffectsEnabled is False and upload is ineligible."""
+    monkeypatch.delenv("BIM_AI_STAGED_ARTIFACT_LINKS", raising=False)
+    monkeypatch.delenv("GITHUB_REPOSITORY", raising=False)
+    monkeypatch.delenv("GITHUB_RUN_ID", raising=False)
+
+    mid = UUID("00000000-0000-0000-0000-000000000092")
+    pkg = "c" * 64
+    closure = evidence_closure_review_v1(
+        package_semantic_digest_sha256=pkg,
+        deterministic_sheet_evidence=[],
+        deterministic_3d_view_evidence=[],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+    )
+    manifest = artifact_upload_manifest_v1(
+        model_id=mid,
+        suggested_evidence_artifact_basename="pfx",
+        package_semantic_digest_sha256=pkg,
+        evidence_closure_review=closure,
+    )
+    assert manifest["uploadEligible"] is False
+    assert manifest["sideEffectsEnabled"] is False
+    for art in manifest["expectedArtifacts"]:
+        assert art["uploadEligible"] is False
+        assert art["missingArtifactReason_v1"]["reasonCode"] in (
+            "not_upload_eligible",
+            "artifact_name_not_resolved",
+        )

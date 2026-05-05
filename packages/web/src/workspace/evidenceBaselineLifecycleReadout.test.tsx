@@ -74,4 +74,32 @@ describe('EvidenceBaselineLifecycleReadoutV1Table', () => {
     render(<EvidenceBaselineLifecycleReadoutV1Table readout={empty} />);
     expect(screen.getByText(/No ingest checklist targets/)).toBeTruthy();
   });
+
+  it('renders stagedUploadEligibilityNote when present', () => {
+    const withNote: EvidenceBaselineLifecycleReadoutWire = {
+      ...fixture(),
+      stagedUploadEligibilityNote:
+        'Staged upload is not performed by this API. No baselines are committed automatically.',
+    };
+    render(<EvidenceBaselineLifecycleReadoutV1Table readout={withNote} />);
+    expect(screen.getByText(/Staged upload is not performed/)).toBeTruthy();
+  });
+});
+
+describe('parseEvidenceBaselineLifecycleReadoutV1 — staged upload note', () => {
+  it('passes through stagedUploadEligibilityNote when present', () => {
+    const raw = {
+      ...fixture(),
+      stagedUploadEligibilityNote: 'Staged upload is not performed by this API.',
+    };
+    const p = parseEvidenceBaselineLifecycleReadoutV1(raw);
+    expect(p).not.toBeNull();
+    expect(p!.stagedUploadEligibilityNote).toBe('Staged upload is not performed by this API.');
+  });
+
+  it('stagedUploadEligibilityNote is undefined when absent', () => {
+    const p = parseEvidenceBaselineLifecycleReadoutV1(fixture());
+    expect(p).not.toBeNull();
+    expect(p!.stagedUploadEligibilityNote).toBeUndefined();
+  });
 });

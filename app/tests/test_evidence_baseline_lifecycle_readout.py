@@ -163,3 +163,55 @@ def test_evidence_baseline_lifecycle_readout_v1_no_baseline_targets() -> None:
     assert out["rollupDigestCorrelationStatus"] == "not_applicable"
     assert out["rollupSuggestedNextAction"] == "noop_no_baseline_targets"
     assert out["gateClosed"] is True
+
+
+def test_evidence_baseline_lifecycle_readout_v1_staged_upload_note_present() -> None:
+    """Readout explains that staged upload is not performed; no baselines are auto-committed."""
+    pkg = "e" * 64
+    parity = (EVIDENCE_PNG_FIXTURE_DIR / FIX_PARITY_BN).read_bytes()
+    closure = evidence_closure_review_v1(
+        package_semantic_digest_sha256=pkg,
+        deterministic_sheet_evidence=[
+            {
+                "sheetId": "s1",
+                "playwrightSuggestedFilenames": {
+                    "pngViewport": FIX_PARITY_BN,
+                    "pngFullSheet": FIX_PARITY_BN,
+                },
+                "correlation": {"semanticDigestSha256": pkg},
+            }
+        ],
+        deterministic_3d_view_evidence=[],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+    )
+    merged = merge_committed_png_baseline_bytes_into_evidence_closure_review_v1(
+        closure,
+        baseline_png_bytes_by_basename={FIX_PARITY_BN: parity},
+    )
+    out = _readout(merged)
+    # Top-level staged upload note must be present and non-empty.
+    note = out.get("stagedUploadEligibilityNote")
+    assert isinstance(note, str) and note, "expected stagedUploadEligibilityNote at top level"
+    assert "upload" in note.lower()
+    # Row-level note must also be present for each row.
+    for row in out["rows"]:
+        row_note = row.get("stagedUploadEligibilityNote")
+        assert isinstance(row_note, str) and row_note, (
+            f"expected stagedUploadEligibilityNote on row {row.get('baselinePngBasename')}"
+        )
+
+
+def test_evidence_baseline_lifecycle_readout_v1_staged_upload_note_stable_across_runs() -> None:
+    """Staged upload note is deterministic and does not change between repeated calls."""
+    pkg = "f" * 64
+    closure = evidence_closure_review_v1(
+        package_semantic_digest_sha256=pkg,
+        deterministic_sheet_evidence=[],
+        deterministic_3d_view_evidence=[],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+    )
+    out_a = _readout(closure)
+    out_b = _readout(closure)
+    assert out_a.get("stagedUploadEligibilityNote") == out_b.get("stagedUploadEligibilityNote")

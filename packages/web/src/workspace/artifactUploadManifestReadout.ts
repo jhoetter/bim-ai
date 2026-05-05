@@ -59,6 +59,40 @@ export function summarizeArtifactUploadManifestV1(raw: unknown): string[] {
   const exp = m.expectedArtifacts;
   if (Array.isArray(exp)) {
     lines.push(`Expected artifact rows: ${exp.length}`);
+
+    // Count artifacts carrying a local signature row.
+    const signedCount = exp.filter(
+      (a) =>
+        a &&
+        typeof a === 'object' &&
+        (a as Record<string, unknown>).localSignatureRow_v1 !== undefined,
+    ).length;
+    if (signedCount > 0) {
+      lines.push(`Signed artifact rows (local): ${signedCount} / ${exp.length}`);
+    }
+
+    // Collect distinct missing-reason codes.
+    const reasonCodes = new Set<string>();
+    for (const a of exp) {
+      if (!a || typeof a !== 'object') continue;
+      const reason = (a as Record<string, unknown>).missingArtifactReason_v1;
+      if (reason && typeof reason === 'object') {
+        const code = (reason as Record<string, unknown>).reasonCode;
+        if (typeof code === 'string' && code) reasonCodes.add(code);
+      }
+    }
+    if (reasonCodes.size > 0) {
+      lines.push(
+        `Missing artifact reasons: ${[...reasonCodes].sort().map((c) => truncate(c, 40)).join(', ')}`,
+      );
+    }
+  }
+
+  const excl = m.digestExclusionRules_v1;
+  if (excl && typeof excl === 'object') {
+    const e = excl as Record<string, unknown>;
+    const keys = Array.isArray(e.excludedTopLevelKeys) ? e.excludedTopLevelKeys : [];
+    lines.push(`Digest-excluded keys: ${keys.length}`);
   }
 
   return lines;

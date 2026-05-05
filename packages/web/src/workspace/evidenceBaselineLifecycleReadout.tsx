@@ -7,6 +7,7 @@ export type EvidenceBaselineLifecycleRowWire = {
   digestCorrelationStatus: string;
   suggestedNextAction: string;
   ciGateHint: string;
+  stagedUploadEligibilityNote?: string;
 };
 
 export type EvidenceBaselineLifecycleReadoutWire = {
@@ -19,6 +20,7 @@ export type EvidenceBaselineLifecycleReadoutWire = {
   fixLoopBlockerCodes: string[];
   gateClosed: boolean;
   rows: EvidenceBaselineLifecycleRowWire[];
+  stagedUploadEligibilityNote?: string;
 };
 
 function isRow(raw: unknown): raw is EvidenceBaselineLifecycleRowWire {
@@ -70,6 +72,9 @@ export function parseEvidenceBaselineLifecycleReadoutV1(
     return null;
   }
 
+  const stagedNote =
+    typeof m.stagedUploadEligibilityNote === 'string' ? m.stagedUploadEligibilityNote : undefined;
+
   return {
     format: 'evidenceBaselineLifecycleReadout_v1',
     expectedBaselineIds: [...expectedRaw],
@@ -80,6 +85,7 @@ export function parseEvidenceBaselineLifecycleReadoutV1(
     fixLoopBlockerCodes: [...codesRaw],
     gateClosed: m.gateClosed === true,
     rows: rowsRaw.map((r) => ({ ...r })),
+    ...(stagedNote !== undefined ? { stagedUploadEligibilityNote: stagedNote } : {}),
   };
 }
 
@@ -111,6 +117,11 @@ export function EvidenceBaselineLifecycleReadoutV1Table(props: {
         blockers:{' '}
         <code className="font-mono">{readout.fixLoopBlockerCodes.join(', ') || '—'}</code>
       </p>
+      {readout.stagedUploadEligibilityNote && (
+        <p className="mt-0.5 text-[9px] italic text-muted">
+          {readout.stagedUploadEligibilityNote}
+        </p>
+      )}
       <div className="mt-2 overflow-x-auto">
         <table className="w-full border-collapse text-[9px]">
           <thead>
