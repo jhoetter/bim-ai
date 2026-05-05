@@ -160,3 +160,22 @@ def family_type_display_label(doc: Document, family_type_id: str | None) -> str:
             return dn.strip()
 
     return fid
+
+
+def wall_type_display_label(doc: Document, wall_type_id: str | None) -> str:
+    """Human label for schedules / UI from document wall types."""
+
+    wid = (wall_type_id or "").strip()
+
+    if not wid:
+        return ""
+
+    wt = doc.elements.get(wid)
+
+    if isinstance(wt, WallTypeElem):
+        nm = (wt.name or "").strip()
+
+        if nm:
+            return nm
+
+    return wid

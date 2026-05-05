@@ -6,7 +6,7 @@ import csv
 from io import StringIO
 
 from bim_ai.document import Document
-from bim_ai.elements import DoorElem, LevelElem, ScheduleElem, WallElem, WindowElem
+from bim_ai.elements import DoorElem, LevelElem, ScheduleElem, WallElem, WallTypeElem, WindowElem
 from bim_ai.schedule_csv import schedule_payload_to_csv, schedule_payload_with_column_subset
 from bim_ai.schedule_derivation import derive_schedule_table
 
@@ -40,8 +40,14 @@ def test_door_schedule_rough_opening_from_host_wall_height() -> None:
     tbl = derive_schedule_table(doc, "sch")
     row = tbl["rows"][0]
     assert row["hostHeightMm"] == 2800
+    assert row["roughOpeningWidthMm"] == 900
+    assert row["roughOpeningHeightMm"] == 2800
+    assert row["hostWallTypeId"] == ""
+    assert row["hostWallTypeDisplay"] == ""
     assert row["roughOpeningAreaM2"] == 2.52
     assert tbl["totals"]["roughOpeningAreaM2"] == 2.52
+    assert tbl["totals"]["sumRoughOpeningWidthMm"] == 900
+    assert tbl["totals"]["sumRoughOpeningHeightMm"] == 2800
 
 
 def test_door_schedule_rough_opening_includes_interior_reveal() -> None:
@@ -74,6 +80,8 @@ def test_door_schedule_rough_opening_includes_interior_reveal() -> None:
     tbl = derive_schedule_table(doc, "sch")
     row = tbl["rows"][0]
     want = (900.0 + 100.0) * 2800.0 / 1_000_000.0
+    assert row["roughOpeningWidthMm"] == 1000
+    assert row["roughOpeningHeightMm"] == 2800
     assert row["roughOpeningAreaM2"] == round(want, 6)
     assert tbl["totals"]["roughOpeningAreaM2"] == round(want, 6)
 
@@ -109,11 +117,15 @@ def test_window_schedule_opening_area_aspect_head_height() -> None:
     tbl = derive_schedule_table(doc, "sch")
     row = tbl["rows"][0]
     assert row["openingAreaM2"] == 1.8
+    assert row["roughOpeningWidthMm"] == 1200
+    assert row["roughOpeningHeightMm"] == 1500
     assert row["roughOpeningAreaM2"] == 1.8
     assert row["aspectRatio"] == 0.8
     assert row["headHeightMm"] == 2400.0
     assert tbl["totals"]["totalOpeningAreaM2"] == 1.8
     assert tbl["totals"]["roughOpeningAreaM2"] == 1.8
+    assert tbl["totals"]["sumRoughOpeningWidthMm"] == 1200
+    assert tbl["totals"]["sumRoughOpeningHeightMm"] == 1500
 
 
 def test_window_schedule_rough_opening_includes_interior_reveal() -> None:
@@ -152,6 +164,41 @@ def test_window_schedule_rough_opening_includes_interior_reveal() -> None:
     assert row["roughOpeningAreaM2"] == round(want_rough, 6)
     assert tbl["totals"]["roughOpeningAreaM2"] == round(want_rough, 6)
     assert tbl["totals"]["totalOpeningAreaM2"] == 1.8
+    assert row["roughOpeningWidthMm"] == 1280
+
+
+def test_door_schedule_host_wall_type_labels_resolve_wall_type_element() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lv": LevelElem(kind="level", id="lv", name="L1", elevationMm=0),
+            "wt-x": WallTypeElem(kind="wall_type", id="wt-x", name="Partition 100"),
+            "wa": WallElem(
+                kind="wall",
+                id="wa",
+                name="W",
+                levelId="lv",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 5000, "yMm": 0},
+                thicknessMm=100,
+                heightMm=2800,
+                wallTypeId="wt-x",
+            ),
+            "d1": DoorElem(
+                kind="door",
+                id="d1",
+                name="D",
+                wallId="wa",
+                alongT=0.5,
+                widthMm=900,
+            ),
+            "sch": ScheduleElem(kind="schedule", id="sch", name="Dr", filters={"category": "door"}),
+        },
+    )
+    tbl = derive_schedule_table(doc, "sch")
+    row = tbl["rows"][0]
+    assert row["hostWallTypeId"] == "wt-x"
+    assert row["hostWallTypeDisplay"] == "Partition 100"
 
 
 def test_window_schedule_csv_subset_includes_computed_columns() -> None:

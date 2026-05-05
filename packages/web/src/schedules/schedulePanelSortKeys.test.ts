@@ -14,7 +14,13 @@ describe('scheduleSortKeyChoices', () => {
 
   it('includes opening computed keys for doors and windows', () => {
     expect(scheduleSortKeyChoices('doors')).toEqual(
-      expect.arrayContaining(['hostHeightMm', 'roughOpeningAreaM2']),
+      expect.arrayContaining([
+        'hostHeightMm',
+        'roughOpeningAreaM2',
+        'roughOpeningWidthMm',
+        'roughOpeningHeightMm',
+        'hostWallTypeDisplay',
+      ]),
     );
     expect(scheduleSortKeyChoices('windows')).toEqual(
       expect.arrayContaining([
@@ -23,6 +29,9 @@ describe('scheduleSortKeyChoices', () => {
         'openingAreaM2',
         'aspectRatio',
         'headHeightMm',
+        'roughOpeningWidthMm',
+        'roughOpeningHeightMm',
+        'hostWallTypeDisplay',
       ]),
     );
   });

@@ -474,6 +474,67 @@ def test_move_level_moves_stair_baselines_where_bound():
     assert abs(lvl_b.elevation_mm - 3000) < 1e-6
 
 
+def test_derived_schedule_includes_schedule_placement_when_linked_sheet_exists():
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl-1": LevelElem(kind="level", id="lvl-1", name="EG", elevationMm=0),
+            "sh-a": SheetElem(kind="sheet", id="sh-a", name="A-101"),
+            "rm": RoomElem(
+                kind="room",
+                id="rm",
+                name="Kitchen",
+                levelId="lvl-1",
+                outlineMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 3000, "yMm": 0},
+                    {"xMm": 3000, "yMm": 2000},
+                    {"xMm": 0, "yMm": 2000},
+                ],
+            ),
+            "sch-1": ScheduleElem(
+                kind="schedule",
+                id="sch-1",
+                name="Rooms",
+                sheetId="sh-a",
+                filters={"category": "room"},
+            ),
+        },
+    )
+    tbl = derive_schedule_table(doc, "sch-1")
+    assert tbl["schedulePlacement"] == {"sheetId": "sh-a", "sheetName": "A-101"}
+
+
+def test_derived_schedule_omits_schedule_placement_when_sheet_missing():
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl-1": LevelElem(kind="level", id="lvl-1", name="EG", elevationMm=0),
+            "rm": RoomElem(
+                kind="room",
+                id="rm",
+                name="Kitchen",
+                levelId="lvl-1",
+                outlineMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 3000, "yMm": 0},
+                    {"xMm": 3000, "yMm": 2000},
+                    {"xMm": 0, "yMm": 2000},
+                ],
+            ),
+            "sch-1": ScheduleElem(
+                kind="schedule",
+                id="sch-1",
+                name="Rooms",
+                sheetId="no-sheet",
+                filters={"category": "room"},
+            ),
+        },
+    )
+    tbl = derive_schedule_table(doc, "sch-1")
+    assert "schedulePlacement" not in tbl
+
+
 def test_schedule_csv_contains_room_headers():
     doc = Document(
         revision=1,

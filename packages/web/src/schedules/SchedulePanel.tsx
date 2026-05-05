@@ -47,11 +47,11 @@ function findScheduleIdForCategory(
 function scheduleGroupingKeyChoices(tab: TabKey): readonly string[] {
   switch (tab) {
     case 'doors': {
-      return ['levelId', 'familyTypeId', 'wallId'];
+      return ['levelId', 'familyTypeId', 'wallId', 'hostWallTypeId', 'hostWallTypeDisplay'];
     }
 
     case 'windows': {
-      return ['levelId', 'familyTypeId', 'wallId'];
+      return ['levelId', 'familyTypeId', 'wallId', 'hostWallTypeId', 'hostWallTypeDisplay'];
     }
 
     case 'rooms': {
@@ -95,7 +95,11 @@ export function scheduleSortKeyChoices(tab: TabKey): readonly string[] {
         'level',
         'widthMm',
         'hostHeightMm',
+        'roughOpeningWidthMm',
+        'roughOpeningHeightMm',
         'roughOpeningAreaM2',
+        'hostWallTypeId',
+        'hostWallTypeDisplay',
         'familyTypeId',
         'materialKey',
         'materialDisplay',
@@ -110,10 +114,14 @@ export function scheduleSortKeyChoices(tab: TabKey): readonly string[] {
         'widthMm',
         'heightMm',
         'sillMm',
+        'roughOpeningWidthMm',
+        'roughOpeningHeightMm',
         'roughOpeningAreaM2',
         'openingAreaM2',
         'aspectRatio',
         'headHeightMm',
+        'hostWallTypeId',
+        'hostWallTypeDisplay',
         'familyTypeId',
         'materialKey',
         'materialDisplay',

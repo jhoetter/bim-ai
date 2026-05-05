@@ -33,7 +33,11 @@ from bim_ai.room_derivation import (
     authoritative_vacant_area_m2_filtered,
 )
 from bim_ai.schedule_field_registry import column_metadata_bundle, stable_column_keys
-from bim_ai.type_material_registry import family_type_display_label, material_display_label
+from bim_ai.type_material_registry import (
+    family_type_display_label,
+    material_display_label,
+    wall_type_display_label,
+)
 
 
 def _plan_view_id_to_owning_sheet(doc: Document) -> dict[str, tuple[str, str]]:
@@ -100,6 +104,8 @@ _NUMERIC_SCHEDULE_FIELDS: frozenset[str] = frozenset(
         "runMm",
         "cropDepthMm",
         "hostHeightMm",
+        "roughOpeningWidthMm",
+        "roughOpeningHeightMm",
         "roughOpeningAreaM2",
         "openingAreaM2",
         "aspectRatio",
@@ -424,15 +430,23 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                 lid = w_lv.get(e.wall_id, "")
                 host_h = float(w_h_mm.get(e.wall_id, 0.0))
                 rough_w_mm = 2.0 * hosted_opening_half_span_mm(e)
+                host_wall = doc.elements.get(e.wall_id)
+                host_wt_id = ""
+                if isinstance(host_wall, WallElem):
+                    host_wt_id = (host_wall.wall_type_id or "").strip()
                 rows.append(
                     {
                         "elementId": e.id,
                         "name": e.name,
                         "wallId": e.wall_id,
+                        "hostWallTypeId": host_wt_id,
+                        "hostWallTypeDisplay": wall_type_display_label(doc, host_wt_id or None),
                         "levelId": lid,
                         "level": lvl_lab.get(lid, lid or "—"),
                         "widthMm": e.width_mm,
                         "hostHeightMm": round(host_h, 3),
+                        "roughOpeningWidthMm": round(rough_w_mm, 3),
+                        "roughOpeningHeightMm": round(host_h, 3),
                         "roughOpeningAreaM2": round(rough_w_mm * host_h / 1_000_000.0, 6),
                         "familyTypeId": getattr(e, "family_type_id", "") or "",
                         "materialKey": (getattr(e, "material_key", None) or "").strip(),
@@ -456,16 +470,24 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                 rough_w_mm = 2.0 * hosted_opening_half_span_mm(e)
                 opening_m2 = wmm * hmm / 1_000_000.0
                 ar = round(wmm / hmm, 6) if hmm > 0 else 0.0
+                host_wall = doc.elements.get(e.wall_id)
+                host_wt_id = ""
+                if isinstance(host_wall, WallElem):
+                    host_wt_id = (host_wall.wall_type_id or "").strip()
                 rows.append(
                     {
                         "elementId": e.id,
                         "name": e.name,
                         "wallId": e.wall_id,
+                        "hostWallTypeId": host_wt_id,
+                        "hostWallTypeDisplay": wall_type_display_label(doc, host_wt_id or None),
                         "levelId": lid,
                         "level": lvl_lab.get(lid, lid or "—"),
                         "widthMm": e.width_mm,
                         "heightMm": e.height_mm,
                         "sillMm": e.sill_height_mm,
+                        "roughOpeningWidthMm": round(rough_w_mm, 3),
+                        "roughOpeningHeightMm": round(hmm, 3),
                         "roughOpeningAreaM2": round(rough_w_mm * hmm / 1_000_000.0, 6),
                         "openingAreaM2": round(opening_m2, 6),
                         "aspectRatio": ar,
@@ -819,6 +841,12 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                 sum(float(r.get("widthMm") or 0.0) for r in leaf_rows) / max(len(leaf_rows), 1),
                 3,
             ),
+            "sumRoughOpeningWidthMm": round(
+                sum(float(r.get("roughOpeningWidthMm") or 0.0) for r in leaf_rows), 3
+            ),
+            "sumRoughOpeningHeightMm": round(
+                sum(float(r.get("roughOpeningHeightMm") or 0.0) for r in leaf_rows), 3
+            ),
             "roughOpeningAreaM2": round(
                 sum(float(r.get("roughOpeningAreaM2") or 0.0) for r in leaf_rows), 6
             ),
@@ -830,6 +858,12 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
         totals = {
             "kind": "door",
             "rowCount": len(leaf_rows),
+            "sumRoughOpeningWidthMm": round(
+                sum(float(r.get("roughOpeningWidthMm") or 0.0) for r in leaf_rows), 3
+            ),
+            "sumRoughOpeningHeightMm": round(
+                sum(float(r.get("roughOpeningHeightMm") or 0.0) for r in leaf_rows), 3
+            ),
             "roughOpeningAreaM2": round(
                 sum(float(r.get("roughOpeningAreaM2") or 0.0) for r in leaf_rows), 6
             ),
@@ -890,6 +924,11 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
         "groupKeys": group_keys,
         **({"groupedSections": grouped} if grouped else {"rows": rows}),
     }
+    placement_sid = (sch.sheet_id or "").strip()
+    if placement_sid:
+        pel = doc.elements.get(placement_sid)
+        if isinstance(pel, SheetElem):
+            out["schedulePlacement"] = {"sheetId": placement_sid, "sheetName": pel.name or ""}
     if totals:
         out["totals"] = totals
     if cat == "room":
