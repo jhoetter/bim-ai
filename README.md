@@ -29,3 +29,12 @@ See `spec/prd.md` for product scope.
 | `dev`     | compose up + API + web               |
 | `verify`  | Format, lint, arch, TC, tests, build |
 | `seed`    | Populate demo model idempotently     |
+
+## V1 Release
+
+The v1 release is governed by a deterministic evidence package, a full CI gate suite, and five
+interlocking manifests that prove coherent app behavior, replay determinism, PRD/tracker alignment,
+explicit limitations, and cross-surface evidence coverage. The complete operator procedure —
+pre-flight checks, CI gate invocation, evidence regeneration, fixture replay, manifest
+interpretation, and acceptance verdict — is documented in
+[spec/release-runbook-v1.md](spec/release-runbook-v1.md).
