@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import math
+
 import pytest
 
 from bim_ai.commands import CreateLevelCmd, CreateRoofCmd
 from bim_ai.document import Document
-from bim_ai.elements import LevelElem, PlanViewElem, RoofElem, SectionCutElem
+from bim_ai.elements import LevelElem, PlanViewElem, RoofElem, RoofTypeElem, SectionCutElem
 from bim_ai.engine import apply_inplace
 from bim_ai.export_gltf import document_to_gltf
 from bim_ai.plan_projection_wire import resolve_plan_projection_wire
@@ -188,6 +190,7 @@ def test_gltf_manifest_and_mesh_differs_from_mass_box_for_gable_roof() -> None:
         revision=1,
         elements={
             "lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=2600),
+            "rt-shingle": RoofTypeElem(kind="roof_type", id="rt-shingle", name="Asphalt"),
             "r1": RoofElem(
                 kind="roof",
                 id="r1",
@@ -196,21 +199,37 @@ def test_gltf_manifest_and_mesh_differs_from_mass_box_for_gable_roof() -> None:
                 footprint_mm=list(_RECT_FP),
                 slope_deg=32,
                 roof_geometry_mode="gable_pitched_rectangle",
+                roof_type_id="rt-shingle",
             ),
         },
     )
     g = document_to_gltf(doc)
     ext = g["extensions"]["BIM_AI_exportManifest_v0"]
     assert ext["meshEncoding"] == (
-        "bim_ai_box_primitive_v0+bim_ai_gable_roof_v0+bim_ai_layered_assembly_witness_v0"
+        "bim_ai_box_primitive_v0+bim_ai_gable_roof_v0+bim_ai_roof_geometry_evidence_v1"
+        "+bim_ai_layered_assembly_witness_v0"
     )
-    ev = ext.get("roofGeometryEvidence_v0")
-    assert ev is not None and ev.get("format") == "roofGeometryEvidence_v0"
+    ev = ext.get("roofGeometryEvidence_v1")
+    assert ev is not None and ev.get("format") == "roofGeometryEvidence_v1"
     assert len(ev["roofs"]) == 1
+    row = ev["roofs"][0]
+    assert row["roofTopologyToken"] == "gable"
+    assert row["footprintVertexCount"] == 4
+    assert row["footprintPlanWinding"] == "ccw"
+    assert row["roofTypeId"] == "rt-shingle"
+    assert row["roofTypeName"] == "Asphalt"
+    assert row["ridgeAxisPlan"] == "alongZ"
+    assert row["ridgeSegmentPlanMm"] == [[3000.0, 0.0], [3000.0, 4000.0]]
+    rise_expect = 3000.0 * math.tan(math.radians(32.0))
+    assert pytest.approx(row["ridgeRiseMm"], rel=1e-6) == rise_expect
+    assert pytest.approx(row["ridgeZMm"], rel=1e-6) == 2600.0 + rise_expect
     roof_mesh = next(m for m in g["meshes"] if m["name"] == "roof:r1")
     pos_ix = roof_mesh["primitives"][0]["attributes"]["POSITION"]
     pos_acc = g["accessors"][pos_ix]
     assert pos_acc["count"] == 18
+    node = next(n for n in g["nodes"] if n.get("name") == "roof:r1")
+    nx = node.get("extras") or {}
+    assert nx.get("bimAiRoofGeometryEvidence_v1") == row
 
 
 def test_gltf_mass_box_roof_has_base_mesh_encoding_only() -> None:
@@ -231,9 +250,21 @@ def test_gltf_mass_box_roof_has_base_mesh_encoding_only() -> None:
     g = document_to_gltf(doc)
     ext = g["extensions"]["BIM_AI_exportManifest_v0"]
     assert ext["meshEncoding"] == (
-        "bim_ai_box_primitive_v0+bim_ai_layered_assembly_witness_v0"
+        "bim_ai_box_primitive_v0+bim_ai_roof_geometry_evidence_v1+bim_ai_layered_assembly_witness_v0"
     )
-    assert ext.get("roofGeometryEvidence_v0") is None
+    ev = ext.get("roofGeometryEvidence_v1")
+    assert ev is not None and ev.get("format") == "roofGeometryEvidence_v1"
+    mb = ev["roofs"][0]
+    assert mb["roofTopologyToken"] == "mass_box_proxy"
+    assert mb["ridgeInferable"] is False
+    assert "ridgeSegmentPlanMm" not in mb
     roof_mesh = next(m for m in g["meshes"] if m["name"] == "roof:roof-1")
     pos_ix = roof_mesh["primitives"][0]["attributes"]["POSITION"]
     assert g["accessors"][pos_ix]["count"] == 36
+
+
+@pytest.mark.skip(reason="WP-B04: hip / irregular polygon ridge topology remains out of scope (prompt non-goals)")
+def test_hip_roof_topology_evidence_skipped_until_solver() -> None:
+    """Placeholder for future bounded hip/valley evidence once a deterministic solver exists."""
+
+    pass

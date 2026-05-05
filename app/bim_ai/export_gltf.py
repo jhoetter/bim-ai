@@ -19,6 +19,7 @@ from bim_ai.elements import (
     DoorElem,
     LevelElem,
     RoofElem,
+    RoofTypeElem,
     RoomElem,
     SiteElem,
     StairElem,
@@ -31,8 +32,22 @@ from bim_ai.material_assembly_resolve import (
     material_assembly_manifest_evidence,
 )
 from bim_ai.opening_cut_primitives import xz_bounds_mm_from_poly
-from bim_ai.roof_geometry import gable_ridge_rise_mm, outer_rect_extent
-from bim_ai.stair_plan_proxy import stair_riser_count_plan_proxy
+from bim_ai.roof_geometry import (
+    RidgeAxisPlan,
+    footprint_is_valid_axis_aligned_rectangle_mm,
+    gable_ridge_rise_mm,
+    gable_ridge_segment_plan_mm,
+    outer_rect_extent,
+    plan_polygon_signed_area_mm2,
+    plan_polygon_winding_token,
+)
+from bim_ai.stair_plan_proxy import (
+    stair_documentation_diagnostics,
+    stair_plan_up_down_label,
+    stair_riser_count_plan_proxy,
+    stair_run_bearing_deg_ccw_from_plan_x,
+    stair_tread_count_straight_plan_proxy,
+)
 from bim_ai.wall_join_evidence import collect_wall_corner_join_evidence_v0
 
 EXPORT_GEOMETRY_KINDS: frozenset[str] = frozenset(
@@ -89,33 +104,82 @@ def exchange_parity_manifest_fields(
     }
 
 
-def roof_geometry_manifest_evidence_v0(doc: Document) -> dict[str, Any] | None:
+def _document_has_gable_roof_mesh(doc: Document) -> bool:
+    return any(
+        isinstance(e, RoofElem) and e.roof_geometry_mode == "gable_pitched_rectangle"
+        for e in doc.elements.values()
+    )
+
+
+def _roof_geometry_evidence_v1_row(doc: Document, e: RoofElem) -> dict[str, Any] | None:
+    pts = [(float(p.x_mm), float(p.y_mm)) for p in e.footprint_mm]
+    if len(pts) < 3:
+        return None
+    area_mm2 = plan_polygon_signed_area_mm2(pts)
+    winding = plan_polygon_winding_token(area_mm2)
+    x0_mm, x1_mm, z0_mm, z1_mm = outer_rect_extent(pts)
+    span_x = float(x1_mm - x0_mm)
+    span_z = float(z1_mm - z0_mm)
+    slope = float(e.slope_deg or 25.0)
+    oh = round(float(e.overhang_mm), 3)
+
+    row: dict[str, Any] = {
+        "elementId": e.id,
+        "roofGeometryMode": e.roof_geometry_mode,
+        "footprintVertexCount": len(pts),
+        "footprintPlanWinding": winding,
+        "planSpanXmMm": round(span_x, 3),
+        "planSpanZmMm": round(span_z, 3),
+        "slopeDeg": round(slope, 3),
+        "overhangMm": oh,
+        "roofElementName": e.name,
+    }
+    tid = (e.roof_type_id or "").strip()
+    if tid:
+        row["roofTypeId"] = tid
+        rt_el = doc.elements.get(tid)
+        if isinstance(rt_el, RoofTypeElem):
+            row["roofTypeName"] = rt_el.name
+
+    if e.roof_geometry_mode == "mass_box":
+        row["roofTopologyToken"] = "mass_box_proxy"
+        row["ridgeInferable"] = False
+        return row
+
+    if footprint_is_valid_axis_aligned_rectangle_mm(pts):
+        rise_mm, axis_str = gable_ridge_rise_mm(span_x, span_z, slope)
+        axis_plan = cast(RidgeAxisPlan, axis_str)
+        lvl = doc.elements.get(e.reference_level_id)
+        eave_mm = float(lvl.elevation_mm) if isinstance(lvl, LevelElem) else 0.0
+        ridge_z = eave_mm + rise_mm
+        seg_a, seg_b = gable_ridge_segment_plan_mm(x0_mm, x1_mm, z0_mm, z1_mm, axis_plan)
+        row["roofTopologyToken"] = "gable"
+        row["ridgeAxisPlan"] = axis_str
+        row["ridgeSegmentPlanMm"] = [
+            [round(seg_a[0], 3), round(seg_a[1], 3)],
+            [round(seg_b[0], 3), round(seg_b[1], 3)],
+        ]
+        row["ridgeRiseMm"] = round(rise_mm, 3)
+        row["ridgeZMm"] = round(ridge_z, 3)
+        row["eavePlateZMm"] = round(eave_mm, 3)
+    else:
+        row["roofTopologyToken"] = "skipped_invalid_gable_footprint"
+
+    return row
+
+
+def roof_geometry_manifest_evidence_v1(doc: Document) -> dict[str, Any] | None:
     rows: list[dict[str, Any]] = []
     for eid in sorted(doc.elements.keys()):
-        e = doc.elements[eid]
-        if not isinstance(e, RoofElem) or e.roof_geometry_mode != "gable_pitched_rectangle":
+        el = doc.elements[eid]
+        if not isinstance(el, RoofElem):
             continue
-        pts = [(p.x_mm, p.y_mm) for p in e.footprint_mm]
-        x0_mm, x1_mm, z0_mm, z1_mm = outer_rect_extent(pts)
-        span_x = float(x1_mm - x0_mm)
-        span_z = float(z1_mm - z0_mm)
-        slope = float(e.slope_deg or 25.0)
-        rise_mm, axis = gable_ridge_rise_mm(span_x, span_z, slope)
-        rows.append(
-            {
-                "elementId": eid,
-                "roofGeometryMode": "gable_pitched_rectangle",
-                "ridgeAxisPlan": axis,
-                "spanXmMm": round(span_x, 3),
-                "spanZmMm": round(span_z, 3),
-                "ridgeRiseMm": round(rise_mm, 3),
-                "slopeDeg": round(slope, 3),
-                "overhangMm": round(float(e.overhang_mm), 3),
-            }
-        )
+        row = _roof_geometry_evidence_v1_row(doc, el)
+        if row is not None:
+            rows.append(row)
     if not rows:
         return None
-    return {"format": "roofGeometryEvidence_v0", "roofs": rows}
+    return {"format": "roofGeometryEvidence_v1", "roofs": rows}
 
 
 def stair_geometry_manifest_evidence_v0(doc: Document) -> dict[str, Any] | None:
@@ -137,16 +201,28 @@ def stair_geometry_manifest_evidence_v0(doc: Document) -> dict[str, Any] | None:
         rx1, ry1 = float(e.run_end.x_mm), float(e.run_end.y_mm)
         run_len = math.hypot(rx1 - rx0, ry1 - ry0)
         rc_proxy = stair_riser_count_plan_proxy(doc, e, run_length_mm=run_len)
-        rows.append(
-            {
-                "elementId": eid,
-                "baseLevelId": e.base_level_id,
-                "topLevelId": e.top_level_id,
-                "storyRiseMm": round(rise_story, 3),
-                "midRunElevationMm": round(z_lo + rise_story * 0.5, 3),
-                "riserCountPlanProxy": rc_proxy,
-            }
-        )
+        bearing = stair_run_bearing_deg_ccw_from_plan_x(rx0, ry0, rx1, ry1)
+        row_ev: dict[str, Any] = {
+            "elementId": eid,
+            "baseLevelId": e.base_level_id,
+            "topLevelId": e.top_level_id,
+            "baseLevelName": bl.name,
+            "topLevelName": tl.name,
+            "storyRiseMm": round(rise_story, 3),
+            "totalRiseMm": round(rise_story, 3),
+            "midRunElevationMm": round(z_lo + rise_story * 0.5, 3),
+            "riserCountPlanProxy": rc_proxy,
+            "treadCountPlanProxy": stair_tread_count_straight_plan_proxy(rc_proxy),
+            "runBearingDegCcFromPlanX": bearing,
+            "planUpDownLabel": stair_plan_up_down_label(
+                float(bl.elevation_mm),
+                float(tl.elevation_mm),
+            ),
+        }
+        diags = stair_documentation_diagnostics(doc, e, riser_count_plan_proxy=rc_proxy)
+        if diags:
+            row_ev["stairDocumentationDiagnostics"] = diags
+        rows.append(row_ev)
     if not rows:
         return None
     return {"format": "stairGeometryEvidence_v0", "stairs": rows}
@@ -179,15 +255,17 @@ def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
     parity = exchange_parity_manifest_fields_from_document(doc)
     cut_warns = collect_hosted_cut_manifest_warnings(doc)
     skew_hosted = collect_skew_wall_hosted_opening_evidence_v0(doc)
-    rgeom_roofs = roof_geometry_manifest_evidence_v0(doc)
+    rgeom_roofs = roof_geometry_manifest_evidence_v1(doc)
     stair_geom = stair_geometry_manifest_evidence_v0(doc)
     site_ctx = site_context_manifest_evidence_v0(doc)
     corner_joins = collect_wall_corner_join_evidence_v0(doc)
     layer_cut_align = collect_layered_assembly_cut_alignment_evidence_v0(doc)
     layer_asm_witness = collect_layered_assembly_witness_v0(doc)
     mesh_enc = "bim_ai_box_primitive_v0"
-    if rgeom_roofs:
+    if _document_has_gable_roof_mesh(doc):
         mesh_enc += "+bim_ai_gable_roof_v0"
+    if rgeom_roofs:
+        mesh_enc += "+bim_ai_roof_geometry_evidence_v1"
     if corner_joins:
         mesh_enc += "+bim_ai_wall_corner_joins_v0"
     if skew_hosted:
@@ -211,7 +289,7 @@ def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
     if asm_ev:
         base["materialAssemblyEvidence_v0"] = asm_ev
     if rgeom_roofs:
-        base["roofGeometryEvidence_v0"] = rgeom_roofs
+        base["roofGeometryEvidence_v1"] = rgeom_roofs
     if stair_geom:
         base["stairGeometryEvidence_v0"] = stair_geom
     if corner_joins:
@@ -900,11 +978,19 @@ def _document_to_gltf_tree_and_bins(doc: Document) -> tuple[dict[str, Any], byte
             yaw = 0.0
             trans_t = (0.0, 0.0, 0.0)
             mat_kind = "roof"
+            roof_el = doc.elements.get(gv.elem_id)
+            roof_ev = (
+                _roof_geometry_evidence_v1_row(doc, roof_el)
+                if isinstance(roof_el, RoofElem)
+                else None
+            )
             extras = {
                 "bimAiEncoding": mf_payload["meshEncoding"],
                 "elementId": gv.elem_id,
                 "bimAiRoofGeometryMode": "gable_pitched_rectangle",
             }
+            if roof_ev is not None:
+                extras["bimAiRoofGeometryEvidence_v1"] = roof_ev
 
         vtx_off = len(bins)
         bins.extend(vbytes)
