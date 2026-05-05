@@ -1,10 +1,17 @@
 from __future__ import annotations
 
+import hashlib
+
 from bim_ai.evidence_manifest import (
+    MINIMAL_PROBE_PNG_BYTES_V1,
+    MINIMAL_PROBE_PNG_CANONICAL_SHA256_V1,
     artifact_ingest_correlation_v1,
     evidence_closure_review_v1,
     evidence_diff_ingest_fix_loop_v1,
     evidence_lifecycle_signal_v1,
+    merge_server_png_byte_ingest_into_evidence_closure_review_v1,
+    parse_png_dimensions_v1,
+    server_png_byte_ingest_report_v1,
 )
 
 
@@ -65,7 +72,9 @@ def test_evidence_closure_review_inventory_lists_sorted_png_basenames() -> None:
     assert ac["canonicalPairCount"] == len(ingest["targets"])
     dig = ac["ingestManifestDigestSha256"]
     assert isinstance(dig, str) and len(dig) == 64
-    assert dig == artifact_ingest_correlation_v1(list(ingest["targets"]))["ingestManifestDigestSha256"]
+    assert (
+        dig == artifact_ingest_correlation_v1(list(ingest["targets"]))["ingestManifestDigestSha256"]
+    )
     gaps = out["screenshotHintGaps_v1"]
     assert gaps["format"] == "screenshotHintGaps_v1"
     assert gaps["hasGaps"] is False
@@ -317,3 +326,182 @@ def test_evidence_diff_ingest_fix_loop_pixel_pending_when_inventory_complete() -
     fl = evidence_diff_ingest_fix_loop_v1(closure)
     assert fl["needsFixLoop"] is True
     assert fl["blockerCodes"] == ["pixel_diff_ingest_pending"]
+
+
+def test_parse_png_dimensions_v1_minimal_probe() -> None:
+    w, h = parse_png_dimensions_v1(MINIMAL_PROBE_PNG_BYTES_V1)
+    assert (w, h) == (1, 1)
+
+
+def test_minimal_probe_png_sha256_constant_matches_bytes() -> None:
+    assert (
+        hashlib.sha256(MINIMAL_PROBE_PNG_BYTES_V1).hexdigest()
+        == MINIMAL_PROBE_PNG_CANONICAL_SHA256_V1
+    )
+
+
+def test_server_png_byte_ingest_report_v1_match_and_skipped() -> None:
+    rep_match = server_png_byte_ingest_report_v1(
+        MINIMAL_PROBE_PNG_BYTES_V1,
+        expected_canonical_sha256_baseline=MINIMAL_PROBE_PNG_CANONICAL_SHA256_V1,
+    )
+    assert rep_match["format"] == "serverPngByteIngest_v1"
+    assert rep_match["canonicalDigestSha256"] == MINIMAL_PROBE_PNG_CANONICAL_SHA256_V1
+    assert rep_match["byteLength"] == len(MINIMAL_PROBE_PNG_BYTES_V1)
+    comp = rep_match["comparison"]
+    assert isinstance(comp, dict)
+    assert comp["result"] == "match"
+
+    rep_skip = server_png_byte_ingest_report_v1(
+        MINIMAL_PROBE_PNG_BYTES_V1,
+        expected_canonical_sha256_baseline=None,
+    )
+    assert rep_skip["comparison"]["result"] == "skipped_no_baseline"
+
+
+def test_server_png_byte_ingest_report_v1_mismatch() -> None:
+    rep = server_png_byte_ingest_report_v1(
+        MINIMAL_PROBE_PNG_BYTES_V1,
+        expected_canonical_sha256_baseline="0" * 64,
+    )
+    assert rep["comparison"]["result"] == "mismatch"
+
+
+def test_merge_server_png_byte_ingest_into_closure_review_v1() -> None:
+    pkg = "a" * 64
+    closure = evidence_closure_review_v1(
+        package_semantic_digest_sha256=pkg,
+        deterministic_sheet_evidence=[
+            {
+                "sheetId": "s1",
+                "playwrightSuggestedFilenames": {"pngViewport": "x.png", "pngFullSheet": "y.png"},
+                "correlation": {"semanticDigestSha256": pkg},
+            }
+        ],
+        deterministic_3d_view_evidence=[],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+    )
+    merged = merge_server_png_byte_ingest_into_evidence_closure_review_v1(
+        closure,
+        png_bytes=MINIMAL_PROBE_PNG_BYTES_V1,
+        expected_canonical_sha256_baseline=MINIMAL_PROBE_PNG_CANONICAL_SHA256_V1,
+    )
+    pix = merged["pixelDiffExpectation"]
+    assert isinstance(pix, dict)
+    assert pix["status"] == "compared"
+    spi = pix.get("serverPngByteIngest_v1")
+    assert isinstance(spi, dict)
+    assert spi.get("linkedBaselinePngBasename") == "x.png"
+    assert spi["comparison"]["result"] == "match"
+
+
+def test_merge_server_png_byte_ingest_skipped_without_baseline_sets_ingested() -> None:
+    pkg = "b" * 64
+    closure = evidence_closure_review_v1(
+        package_semantic_digest_sha256=pkg,
+        deterministic_sheet_evidence=[
+            {
+                "sheetId": "s1",
+                "playwrightSuggestedFilenames": {
+                    "pngViewport": "only.png",
+                    "pngFullSheet": "full.png",
+                },
+                "correlation": {"semanticDigestSha256": pkg},
+            }
+        ],
+        deterministic_3d_view_evidence=[],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+    )
+    merged = merge_server_png_byte_ingest_into_evidence_closure_review_v1(
+        closure,
+        png_bytes=MINIMAL_PROBE_PNG_BYTES_V1,
+        expected_canonical_sha256_baseline=None,
+    )
+    pix = merged["pixelDiffExpectation"]
+    assert isinstance(pix, dict)
+    assert pix["status"] == "ingested"
+    assert pix["serverPngByteIngest_v1"]["comparison"]["result"] == "skipped_no_baseline"
+
+
+def test_merge_server_png_byte_ingest_mismatch_sets_status_mismatch() -> None:
+    pkg = "d" * 64
+    closure = evidence_closure_review_v1(
+        package_semantic_digest_sha256=pkg,
+        deterministic_sheet_evidence=[
+            {
+                "sheetId": "s1",
+                "playwrightSuggestedFilenames": {"pngViewport": "x.png", "pngFullSheet": "y.png"},
+                "correlation": {"semanticDigestSha256": pkg},
+            }
+        ],
+        deterministic_3d_view_evidence=[],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+    )
+    merged = merge_server_png_byte_ingest_into_evidence_closure_review_v1(
+        closure,
+        png_bytes=MINIMAL_PROBE_PNG_BYTES_V1,
+        expected_canonical_sha256_baseline="a" * 64,
+    )
+    pix = merged["pixelDiffExpectation"]
+    assert isinstance(pix, dict)
+    assert pix["status"] == "mismatch"
+    assert pix["serverPngByteIngest_v1"]["comparison"]["result"] == "mismatch"
+
+
+def test_merge_server_png_byte_ingest_invalid_png_sets_parse_failure() -> None:
+    pkg = "c" * 64
+    closure = evidence_closure_review_v1(
+        package_semantic_digest_sha256=pkg,
+        deterministic_sheet_evidence=[
+            {
+                "sheetId": "s1",
+                "playwrightSuggestedFilenames": {"pngViewport": "x.png", "pngFullSheet": "y.png"},
+                "correlation": {"semanticDigestSha256": pkg},
+            }
+        ],
+        deterministic_3d_view_evidence=[],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+    )
+    merged = merge_server_png_byte_ingest_into_evidence_closure_review_v1(
+        closure,
+        png_bytes=b"not-a-png",
+        expected_canonical_sha256_baseline=MINIMAL_PROBE_PNG_CANONICAL_SHA256_V1,
+    )
+    pix = merged["pixelDiffExpectation"]
+    assert isinstance(pix, dict)
+    assert pix["status"] == "ingested"
+    spi = pix["serverPngByteIngest_v1"]
+    assert spi["canonicalDigestSha256"] is None
+    assert "png_parse_failed" in str(spi["comparison"].get("skippedReason", ""))
+
+
+def test_evidence_diff_ingest_fix_loop_clear_when_server_png_probe_merged() -> None:
+    pkg = "f" * 64
+    closure = evidence_closure_review_v1(
+        package_semantic_digest_sha256=pkg,
+        deterministic_sheet_evidence=[
+            {
+                "sheetId": "s1",
+                "playwrightSuggestedFilenames": {
+                    "pngViewport": "a-viewport.png",
+                    "pngFullSheet": "z-full.png",
+                },
+                "correlation": {"semanticDigestSha256": pkg},
+            }
+        ],
+        deterministic_3d_view_evidence=[],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+    )
+    merged = merge_server_png_byte_ingest_into_evidence_closure_review_v1(
+        closure,
+        png_bytes=MINIMAL_PROBE_PNG_BYTES_V1,
+        expected_canonical_sha256_baseline=MINIMAL_PROBE_PNG_CANONICAL_SHA256_V1,
+    )
+    fl = evidence_diff_ingest_fix_loop_v1(merged)
+    assert fl["needsFixLoop"] is False
+    assert fl["blockerCodes"] == []

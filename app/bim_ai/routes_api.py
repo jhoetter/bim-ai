@@ -38,6 +38,8 @@ from bim_ai.engine import (
     try_commit_bundle,
 )
 from bim_ai.evidence_manifest import (
+    MINIMAL_PROBE_PNG_BYTES_V1,
+    MINIMAL_PROBE_PNG_CANONICAL_SHA256_V1,
     agent_evidence_closure_hints,
     deterministic_3d_view_evidence_manifest,
     deterministic_plan_view_evidence_manifest,
@@ -50,6 +52,7 @@ from bim_ai.evidence_manifest import (
     evidence_package_semantic_digest_sha256,
     expected_screenshot_captures,
     export_link_map,
+    merge_server_png_byte_ingest_into_evidence_closure_review_v1,
     plan_view_wire_index,
 )
 from bim_ai.export_gltf import build_visual_export_manifest, document_to_glb_bytes, document_to_gltf
@@ -217,7 +220,12 @@ async def create_empty_model(
             status_code=409,
             detail="Model slug already exists for this project",
         ) from None
-    return {"id": str(mid), "projectId": str(project_id), "slug": body.slug, "revision": row.revision}
+    return {
+        "id": str(mid),
+        "projectId": str(project_id),
+        "slug": body.slug,
+        "revision": row.revision,
+    }
 
 
 @api_router.get("/models/{model_id}/snapshot")
@@ -306,7 +314,9 @@ async def evidence_package(
         },
         "exportLinks": export_link_map(model_id),
         "planViews": pv_index,
-        "expectedScreenshotCaptures": expected_screenshot_captures([str(p["id"]) for p in pv_index]),
+        "expectedScreenshotCaptures": expected_screenshot_captures(
+            [str(p["id"]) for p in pv_index]
+        ),
         "recommendedCapture": [
             {
                 "id": "cockpit_plan_3d",
@@ -361,7 +371,7 @@ async def evidence_package(
     payload["suggestedEvidenceArtifactBasename"] = f"bim-ai-evidence-{digest[:16]}-r{doc.revision}"
     payload["suggestedEvidenceBundleFilenames"] = {
         "format": "evidenceBundleFilenames_v1",
-        "evidencePackageJson": f'{payload["suggestedEvidenceArtifactBasename"]}-evidence-package.json',
+        "evidencePackageJson": f"{payload['suggestedEvidenceArtifactBasename']}-evidence-package.json",
     }
     payload["recommendedPngEvidenceBackend"] = "playwright_ci"
     payload["svgRasterBackendAvailable"] = True
@@ -393,12 +403,18 @@ async def evidence_package(
         semantic_digest_sha256=digest,
         semantic_digest_prefix16=str(payload["semanticDigestPrefix16"]),
     )
-    payload["evidenceClosureReview_v1"] = evidence_closure_review_v1(
-        package_semantic_digest_sha256=digest,
-        deterministic_sheet_evidence=payload["deterministicSheetEvidence"],
-        deterministic_3d_view_evidence=payload["deterministic3dViewEvidence"],
-        deterministic_plan_view_evidence=payload["deterministicPlanViewEvidence"],
-        deterministic_section_cut_evidence=payload["deterministicSectionCutEvidence"],
+    payload["evidenceClosureReview_v1"] = (
+        merge_server_png_byte_ingest_into_evidence_closure_review_v1(
+            evidence_closure_review_v1(
+                package_semantic_digest_sha256=digest,
+                deterministic_sheet_evidence=payload["deterministicSheetEvidence"],
+                deterministic_3d_view_evidence=payload["deterministic3dViewEvidence"],
+                deterministic_plan_view_evidence=payload["deterministicPlanViewEvidence"],
+                deterministic_section_cut_evidence=payload["deterministicSectionCutEvidence"],
+            ),
+            png_bytes=MINIMAL_PROBE_PNG_BYTES_V1,
+            expected_canonical_sha256_baseline=MINIMAL_PROBE_PNG_CANONICAL_SHA256_V1,
+        )
     )
     payload["evidenceDiffIngestFixLoop_v1"] = evidence_diff_ingest_fix_loop_v1(
         payload["evidenceClosureReview_v1"]
@@ -620,7 +636,9 @@ async def sheet_preview_pdf_export(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     pdf_blob = sheet_elem_to_pdf_bytes(doc, sh)
 
-    fname = "".join(ch for ch in getattr(sh, "id", "") if ch.isalnum() or ch in ("-", "_")) or "sheet"
+    fname = (
+        "".join(ch for ch in getattr(sh, "id", "") if ch.isalnum() or ch in ("-", "_")) or "sheet"
+    )
 
     return Response(
         content=pdf_blob,
@@ -722,9 +740,7 @@ async def export_bcf_topics(
     if row is None:
         raise HTTPException(status_code=404, detail="Model not found")
     doc = Document.model_validate(row.document)
-    topics = [
-        e.model_dump(by_alias=True) for e in doc.elements.values() if isinstance(e, BcfElem)
-    ]
+    topics = [e.model_dump(by_alias=True) for e in doc.elements.values() if isinstance(e, BcfElem)]
     return {
         "modelId": str(model_id),
         "revision": doc.revision,

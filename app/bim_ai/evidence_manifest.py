@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import struct
 from typing import Any
 from urllib.parse import quote
 from uuid import UUID
@@ -435,6 +436,213 @@ def pixel_diff_expectation_v1_with_ingest(expected_png_basenames: list[str]) -> 
     }
     base["artifactIngestCorrelation_v1"] = artifact_ingest_correlation_v1(targets)
     return base
+
+
+PNG_SIGNATURE_V1 = b"\x89PNG\r\n\x1a\n"
+
+# Minimal valid 1×1 RGB8 PNG (stdlib-only ingest probe; not a Playwright baseline file).
+MINIMAL_PROBE_PNG_BYTES_V1 = bytes.fromhex(
+    "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c489"
+    "0000000a49444154789c63000100000500010d0a2db400000000494544ae426082"
+)
+MINIMAL_PROBE_PNG_CANONICAL_SHA256_V1 = hashlib.sha256(MINIMAL_PROBE_PNG_BYTES_V1).hexdigest()
+
+
+def parse_png_dimensions_v1(png_bytes: bytes) -> tuple[int, int]:
+    """Return ``(width, height)`` from PNG IHDR using stdlib parsing only."""
+
+    if len(png_bytes) < 8 + 8 + 13 + 4:
+        raise ValueError("png_too_short_for_ihdr")
+    if png_bytes[:8] != PNG_SIGNATURE_V1:
+        raise ValueError("png_bad_signature")
+    offset = 8
+    while offset + 12 <= len(png_bytes):
+        chunk_len = struct.unpack_from(">I", png_bytes, offset)[0]
+        chunk_type = png_bytes[offset + 4 : offset + 8]
+        data_start = offset + 8
+        data_end = data_start + chunk_len
+        if data_end + 4 > len(png_bytes):
+            raise ValueError("png_truncated_chunk")
+        if chunk_type == b"IHDR":
+            if chunk_len < 8:
+                raise ValueError("png_ihdr_too_short")
+            width, height = struct.unpack_from(">II", png_bytes, data_start)
+            if width < 1 or height < 1:
+                raise ValueError("png_non_positive_dimensions")
+            return int(width), int(height)
+        offset = data_end + 4
+    raise ValueError("png_missing_ihdr")
+
+
+def server_png_byte_ingest_report_v1(
+    png_bytes: bytes,
+    *,
+    expected_canonical_sha256_baseline: str | None,
+) -> dict[str, Any]:
+    """Deterministic metadata + optional SHA-256 equality check over raw PNG bytes."""
+
+    canonical = hashlib.sha256(png_bytes).hexdigest()
+    width, height = parse_png_dimensions_v1(png_bytes)
+    byte_len = len(png_bytes)
+
+    if expected_canonical_sha256_baseline is None:
+        comparison: dict[str, Any] = {
+            "format": "pngByteDigestComparison_v1",
+            "comparisonKind": "canonical_png_bytes_to_expected_sha256",
+            "result": "skipped_no_baseline",
+            "skippedReason": (
+                "expected_canonical_sha256_baseline was omitted; ingested dimensions "
+                "and canonical png_file_sha256 only."
+            ),
+            "expectedBaselineSha256": None,
+        }
+        return {
+            "format": "serverPngByteIngest_v1",
+            "canonicalDigestKind": "png_file_sha256",
+            "canonicalDigestSha256": canonical,
+            "derivativeDigestSha256": None,
+            "derivativeDigestNote": (
+                "This ingest path does not distinguish derivative raster bytes from "
+                "canonical file bytes; only png_file_sha256 is emitted."
+            ),
+            "width": width,
+            "height": height,
+            "byteLength": byte_len,
+            "comparison": comparison,
+            "probeNote": (
+                "Ingest record derived from caller-supplied PNG bytes (probe or artifact); "
+                "does not imply Playwright committed baseline bytes were read server-side."
+            ),
+        }
+
+    exp_norm = str(expected_canonical_sha256_baseline).strip().lower()
+    if len(exp_norm) != 64 or any(c not in "0123456789abcdef" for c in exp_norm):
+        comparison = {
+            "format": "pngByteDigestComparison_v1",
+            "comparisonKind": "canonical_png_bytes_to_expected_sha256",
+            "result": "skipped_no_baseline",
+            "skippedReason": "expected_canonical_sha256_baseline is not a 64-char hex sha256",
+            "expectedBaselineSha256": expected_canonical_sha256_baseline,
+        }
+        return {
+            "format": "serverPngByteIngest_v1",
+            "canonicalDigestKind": "png_file_sha256",
+            "canonicalDigestSha256": canonical,
+            "derivativeDigestSha256": None,
+            "derivativeDigestNote": (
+                "This ingest path does not distinguish derivative raster bytes from "
+                "canonical file bytes; only png_file_sha256 is emitted."
+            ),
+            "width": width,
+            "height": height,
+            "byteLength": byte_len,
+            "comparison": comparison,
+            "probeNote": (
+                "Ingest record derived from caller-supplied PNG bytes (probe or artifact); "
+                "does not imply Playwright committed baseline bytes were read server-side."
+            ),
+        }
+
+    matched = canonical == exp_norm
+    comparison = {
+        "format": "pngByteDigestComparison_v1",
+        "comparisonKind": "canonical_png_bytes_to_expected_sha256",
+        "result": "match" if matched else "mismatch",
+        "skippedReason": None,
+        "expectedBaselineSha256": exp_norm,
+    }
+    return {
+        "format": "serverPngByteIngest_v1",
+        "canonicalDigestKind": "png_file_sha256",
+        "canonicalDigestSha256": canonical,
+        "derivativeDigestSha256": None,
+        "derivativeDigestNote": (
+            "This ingest path does not distinguish derivative raster bytes from "
+            "canonical file bytes; only png_file_sha256 is emitted."
+        ),
+        "width": width,
+        "height": height,
+        "byteLength": byte_len,
+        "comparison": comparison,
+        "probeNote": (
+            "Ingest record derived from caller-supplied PNG bytes (probe or artifact); "
+            "does not imply Playwright committed baseline bytes were read server-side."
+        ),
+    }
+
+
+def merge_server_png_byte_ingest_into_evidence_closure_review_v1(
+    evidence_closure_review: dict[str, Any],
+    *,
+    png_bytes: bytes,
+    expected_canonical_sha256_baseline: str | None,
+) -> dict[str, Any]:
+    """Attach ``serverPngByteIngest_v1`` and advance ``pixelDiffExpectation.status``."""
+
+    out = dict(evidence_closure_review)
+    pix_raw = out.get("pixelDiffExpectation")
+    if not isinstance(pix_raw, dict):
+        return out
+    pix = dict(pix_raw)
+
+    ingest_raw = pix.get("ingestChecklist_v1")
+    linked_bn: str | None = None
+    if isinstance(ingest_raw, dict):
+        tgts = ingest_raw.get("targets")
+        if isinstance(tgts, list) and tgts:
+            t0 = tgts[0]
+            if isinstance(t0, dict):
+                bn = t0.get("baselinePngBasename")
+                if isinstance(bn, str) and bn:
+                    linked_bn = bn
+
+    try:
+        ingest_report = server_png_byte_ingest_report_v1(
+            png_bytes,
+            expected_canonical_sha256_baseline=expected_canonical_sha256_baseline,
+        )
+    except ValueError as exc:
+        ingest_report = {
+            "format": "serverPngByteIngest_v1",
+            "canonicalDigestKind": "png_file_sha256",
+            "canonicalDigestSha256": None,
+            "derivativeDigestSha256": None,
+            "derivativeDigestNote": (
+                "This ingest path does not distinguish derivative raster bytes from "
+                "canonical file bytes; only png_file_sha256 is emitted."
+            ),
+            "width": None,
+            "height": None,
+            "byteLength": len(png_bytes),
+            "comparison": {
+                "format": "pngByteDigestComparison_v1",
+                "comparisonKind": "canonical_png_bytes_to_expected_sha256",
+                "result": "skipped_no_baseline",
+                "skippedReason": f"png_parse_failed:{exc}",
+                "expectedBaselineSha256": expected_canonical_sha256_baseline,
+            },
+            "probeNote": "PNG bytes failed IHDR parse; no canonical digest recorded.",
+        }
+
+    if linked_bn is not None:
+        ingest_report = dict(ingest_report)
+        ingest_report["linkedBaselinePngBasename"] = linked_bn
+
+    pix["serverPngByteIngest_v1"] = ingest_report
+    comp = ingest_report.get("comparison") if isinstance(ingest_report, dict) else None
+    result = comp.get("result") if isinstance(comp, dict) else None
+
+    if result == "match":
+        pix["status"] = "compared"
+    elif result == "mismatch":
+        pix["status"] = "mismatch"
+    elif result == "skipped_no_baseline":
+        pix["status"] = "ingested"
+    else:
+        pix["status"] = "ingested"
+
+    out["pixelDiffExpectation"] = pix
+    return out
 
 
 def screenshot_hint_gaps_v1(

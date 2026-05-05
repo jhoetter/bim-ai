@@ -90,6 +90,14 @@ export function AgentReviewPane() {
       artifactIngestDigestSha256Full: string | null;
       artifactIngestScreenshotsRootHint: string | null;
       artifactIngestCanonicalPairCount: number | null;
+      serverPngByteIngestWidth: number | null;
+      serverPngByteIngestHeight: number | null;
+      serverPngByteIngestByteLength: number | null;
+      serverPngByteIngestCanonicalDigestFull: string | null;
+      serverPngByteIngestCanonicalDigestTail: string | null;
+      serverPngByteIngestComparisonResult: string | null;
+      serverPngByteIngestSkippedReason: string | null;
+      serverPngByteIngestLinkedBasename: string | null;
     } | null;
     lifecycleSignal: Record<string, unknown> | null;
     agentFollowThrough: Record<string, unknown> | null;
@@ -286,6 +294,14 @@ export function AgentReviewPane() {
         let artifactIngestDigestSha256Full: string | null = null;
         let artifactIngestScreenshotsRootHint: string | null = null;
         let artifactIngestCanonicalPairCount: number | null = null;
+        let serverPngByteIngestWidth: number | null = null;
+        let serverPngByteIngestHeight: number | null = null;
+        let serverPngByteIngestByteLength: number | null = null;
+        let serverPngByteIngestCanonicalDigestFull: string | null = null;
+        let serverPngByteIngestCanonicalDigestTail: string | null = null;
+        let serverPngByteIngestComparisonResult: string | null = null;
+        let serverPngByteIngestSkippedReason: string | null = null;
+        let serverPngByteIngestLinkedBasename: string | null = null;
         if (pixRaw && typeof pixRaw === 'object') {
           const p = pixRaw as Record<string, unknown>;
           pixelDiffStatus = typeof p.status === 'string' ? p.status : null;
@@ -318,6 +334,33 @@ export function AgentReviewPane() {
               artifactIngestCanonicalPairCount = pc;
             }
           }
+          const spiRaw = p.serverPngByteIngest_v1;
+          if (spiRaw && typeof spiRaw === 'object') {
+            const spi = spiRaw as Record<string, unknown>;
+            const w = spi.width;
+            const h = spi.height;
+            const bl = spi.byteLength;
+            if (typeof w === 'number' && Number.isFinite(w)) serverPngByteIngestWidth = w;
+            if (typeof h === 'number' && Number.isFinite(h)) serverPngByteIngestHeight = h;
+            if (typeof bl === 'number' && Number.isFinite(bl)) serverPngByteIngestByteLength = bl;
+            const cdig = spi.canonicalDigestSha256;
+            if (typeof cdig === 'string' && /^[a-f0-9]{64}$/.test(cdig)) {
+              serverPngByteIngestCanonicalDigestFull = cdig;
+              serverPngByteIngestCanonicalDigestTail =
+                cdig.length >= 12 ? cdig.slice(-12) : cdig;
+            }
+            const compRaw = spi.comparison;
+            if (compRaw && typeof compRaw === 'object') {
+              const comp = compRaw as Record<string, unknown>;
+              if (typeof comp.result === 'string') {
+                serverPngByteIngestComparisonResult = comp.result;
+              }
+              const sr = comp.skippedReason;
+              if (typeof sr === 'string' && sr) serverPngByteIngestSkippedReason = sr;
+            }
+            const lb = spi.linkedBaselinePngBasename;
+            if (typeof lb === 'string' && lb) serverPngByteIngestLinkedBasename = lb;
+          }
         }
         const primaryCount =
           typeof e.primaryScreenshotArtifactCount === 'number' &&
@@ -338,6 +381,14 @@ export function AgentReviewPane() {
           artifactIngestDigestSha256Full,
           artifactIngestScreenshotsRootHint,
           artifactIngestCanonicalPairCount,
+          serverPngByteIngestWidth,
+          serverPngByteIngestHeight,
+          serverPngByteIngestByteLength,
+          serverPngByteIngestCanonicalDigestFull,
+          serverPngByteIngestCanonicalDigestTail,
+          serverPngByteIngestComparisonResult,
+          serverPngByteIngestSkippedReason,
+          serverPngByteIngestLinkedBasename,
         };
 
         const sgRaw = e.screenshotHintGaps_v1;
@@ -1281,6 +1332,78 @@ export function AgentReviewPane() {
                       Playwright screenshots root hint:{' '}
                       <code className="text-[9px]">
                         {evidenceArtifactSummary.closureReview.artifactIngestScreenshotsRootHint}
+                      </code>
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
+              {evidenceArtifactSummary.closureReview.serverPngByteIngestComparisonResult !== null ||
+              evidenceArtifactSummary.closureReview.serverPngByteIngestCanonicalDigestFull !==
+                null ? (
+                <div
+                  data-testid="server-png-byte-ingest-callout"
+                  className="mt-2 rounded border border-border/40 bg-muted/10 p-2"
+                >
+                  <div className="text-[10px] font-semibold text-muted">
+                    Server PNG byte ingest (
+                    <code className="text-[10px]">serverPngByteIngest_v1</code>)
+                  </div>
+                  <p className="mt-1 text-[10px] text-muted">
+                    comparison.result:{' '}
+                    <code className="font-mono text-[10px]">
+                      {evidenceArtifactSummary.closureReview.serverPngByteIngestComparisonResult ??
+                        '—'}
+                    </code>
+                  </p>
+                  {evidenceArtifactSummary.closureReview.serverPngByteIngestWidth !== null &&
+                  evidenceArtifactSummary.closureReview.serverPngByteIngestHeight !== null ? (
+                    <p className="mt-0.5 text-[10px] text-muted">
+                      dimensions:{' '}
+                      <code className="font-mono text-[10px]">
+                        {evidenceArtifactSummary.closureReview.serverPngByteIngestWidth}×
+                        {evidenceArtifactSummary.closureReview.serverPngByteIngestHeight}
+                      </code>
+                      {evidenceArtifactSummary.closureReview.serverPngByteIngestByteLength !==
+                      null ? (
+                        <>
+                          {' '}
+                          · bytes{' '}
+                          <code className="font-mono text-[10px]">
+                            {String(
+                              evidenceArtifactSummary.closureReview.serverPngByteIngestByteLength,
+                            )}
+                          </code>
+                        </>
+                      ) : null}
+                    </p>
+                  ) : null}
+                  {evidenceArtifactSummary.closureReview.serverPngByteIngestCanonicalDigestFull ? (
+                    <p className="mt-0.5 text-[10px] text-muted">
+                      canonicalDigestSha256 (
+                      <code className="text-[10px]">png_file_sha256</code>):{' '}
+                      <code className="font-mono text-[10px]">
+                        {evidenceArtifactSummary.closureReview.serverPngByteIngestCanonicalDigestFull.slice(
+                          0,
+                          12,
+                        )}
+                        …
+                        {evidenceArtifactSummary.closureReview.serverPngByteIngestCanonicalDigestTail}
+                      </code>
+                    </p>
+                  ) : null}
+                  {evidenceArtifactSummary.closureReview.serverPngByteIngestSkippedReason ? (
+                    <p className="mt-0.5 text-[10px] text-muted">
+                      skippedReason:{' '}
+                      <code className="text-[9px]">
+                        {evidenceArtifactSummary.closureReview.serverPngByteIngestSkippedReason}
+                      </code>
+                    </p>
+                  ) : null}
+                  {evidenceArtifactSummary.closureReview.serverPngByteIngestLinkedBasename ? (
+                    <p className="mt-0.5 text-[10px] text-muted">
+                      checklist link (first baseline basename):{' '}
+                      <code className="font-mono text-[10px]">
+                        {evidenceArtifactSummary.closureReview.serverPngByteIngestLinkedBasename}
                       </code>
                     </p>
                   ) : null}
