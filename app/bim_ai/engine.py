@@ -117,7 +117,15 @@ from bim_ai.export_ifc import (
 from bim_ai.roof_geometry import assert_valid_gable_pitched_rectangle_footprint_mm
 
 _AUTHORITATIVE_REPLAY_V0_TYPES: frozenset[str] = frozenset(
-    {"createLevel", "createWall", "createRoomOutline", "insertDoorOnWall", "insertWindowOnWall"}
+    {
+        "createLevel",
+        "createFloor",
+        "createWall",
+        "createRoomOutline",
+        "insertDoorOnWall",
+        "insertWindowOnWall",
+        "createSlabOpening",
+    }
 )
 
 command_adapter = TypeAdapter(Command)
@@ -1543,6 +1551,7 @@ def _authoritative_replay_v0_preflight(doc: Document, cmds_raw: list[dict[str, A
 
     declared: set[str] = set()
     known_levels: set[str] = {eid for eid, el in doc.elements.items() if isinstance(el, LevelElem)}
+    known_floors: set[str] = {eid for eid, el in doc.elements.items() if isinstance(el, FloorElem)}
     known_walls: set[str] = {eid for eid, el in doc.elements.items() if isinstance(el, WallElem)}
 
     for cmd in cmds_raw:
@@ -1559,6 +1568,20 @@ def _authoritative_replay_v0_preflight(doc: Document, cmds_raw: list[dict[str, A
                     return "merge_id_collision"
                 declared.add(eid)
                 known_levels.add(eid)
+
+        elif t == "createFloor":
+            lid = cmd.get("levelId")
+            if not isinstance(lid, str) or not lid.strip():
+                return "merge_reference_unresolved"
+            ls = lid.strip()
+            if ls not in known_levels:
+                return "merge_reference_unresolved"
+            eid = _authoritative_replay_v0_declared_id(cmd)
+            if eid is not None:
+                if eid in doc.elements or eid in declared:
+                    return "merge_id_collision"
+                declared.add(eid)
+                known_floors.add(eid)
 
         elif t == "createWall":
             lid = cmd.get("levelId")
@@ -1580,6 +1603,19 @@ def _authoritative_replay_v0_preflight(doc: Document, cmds_raw: list[dict[str, A
                 return "merge_reference_unresolved"
             ls = lid.strip()
             if ls not in known_levels:
+                return "merge_reference_unresolved"
+            eid = _authoritative_replay_v0_declared_id(cmd)
+            if eid is not None:
+                if eid in doc.elements or eid in declared:
+                    return "merge_id_collision"
+                declared.add(eid)
+
+        elif t == "createSlabOpening":
+            hid = cmd.get("hostFloorId")
+            if not isinstance(hid, str) or not hid.strip():
+                return "merge_reference_unresolved"
+            hs = hid.strip()
+            if hs not in known_floors:
                 return "merge_reference_unresolved"
             eid = _authoritative_replay_v0_declared_id(cmd)
             if eid is not None:
@@ -1638,10 +1674,11 @@ def try_apply_kernel_ifc_authoritative_replay_v0(
 ) -> tuple[bool, Document | None, list[dict[str, Any]], list[Violation], str]:
     """Apply ``authoritativeReplay_v0`` commands via ``try_commit_bundle`` (additive merge).
 
-    OpenBIM slice: ``createLevel`` / ``createWall`` / ``createRoomOutline`` / ``insertDoorOnWall`` /
-    ``insertWindowOnWall`` payloads from ``build_kernel_ifc_authoritative_replay_sketch_v0``. Runs
-    preflight for id collisions and unresolved references vs the current document plus preceding
-    commands in the bundle. Returns raw command dicts that were validated (third tuple element).
+    OpenBIM slice: ``createLevel`` / ``createFloor`` / ``createWall`` / ``createRoomOutline`` /
+    ``insertDoorOnWall`` / ``insertWindowOnWall`` / ``createSlabOpening`` payloads from
+    ``build_kernel_ifc_authoritative_replay_sketch_v0``. Runs preflight for id collisions and
+    unresolved references vs the current document plus preceding commands in the bundle. Returns raw
+    command dicts that were validated (third tuple element).
     """
 
     if sketch.get("available") is not True:

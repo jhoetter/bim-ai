@@ -1,7 +1,10 @@
 import { ApiHttpError } from './api';
 
 /** Status line when the server rejects undo/redo/apply with 409 conflict + optional replayDiagnostics. */
-export function formatCollaboration409Status(actionLabel: 'Undo' | 'Redo' | 'Apply', e: ApiHttpError): string | null {
+export function formatCollaboration409Status(
+  actionLabel: 'Undo' | 'Redo' | 'Apply',
+  e: ApiHttpError,
+): string | null {
   if (e.status !== 409) return null;
 
   const d = e.detail;
@@ -20,7 +23,8 @@ export function formatCollaboration409Status(actionLabel: 'Undo' | 'Redo' | 'App
       ? Number((replay as { firstBlockingCommandIndex?: unknown }).firstBlockingCommandIndex)
       : NaN;
 
-  const stepHint = Number.isFinite(stepRaw) && stepRaw >= 0 ? ` (step ${Math.floor(stepRaw) + 1})` : '';
+  const stepHint =
+    Number.isFinite(stepRaw) && stepRaw >= 0 ? ` (step ${Math.floor(stepRaw) + 1})` : '';
 
   return reason
     ? `${actionLabel} blocked: ${reason}${stepHint}`

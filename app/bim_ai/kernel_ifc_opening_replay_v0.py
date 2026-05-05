@@ -157,7 +157,7 @@ def build_wall_hosted_opening_replay_commands_v0(
             try:
                 if not rel.is_a("IfcRelVoidsElement"):
                     continue
-                host = getattr(rel, "RelatingBuildingElement", None)
+                host = getattr(rel, "RelatingBuildingElement", None) or getattr(rel, "RelatedBuildingElement", None)
                 if host is not None and host.is_a("IfcWall"):
                     wall_host = host
                     break

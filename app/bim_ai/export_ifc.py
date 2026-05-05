@@ -3,11 +3,18 @@
 from __future__ import annotations
 
 import math
+from collections import Counter
 from typing import Any
 
 import numpy as np
 
-from bim_ai.commands import CreateLevelCmd, CreateRoomOutlineCmd, CreateWallCmd
+from bim_ai.commands import (
+    CreateFloorCmd,
+    CreateLevelCmd,
+    CreateRoomOutlineCmd,
+    CreateSlabOpeningCmd,
+    CreateWallCmd,
+)
 from bim_ai.document import Document
 from bim_ai.elements import (
     DoorElem,
@@ -720,6 +727,150 @@ def _kernel_space_footprint_outline_mm(space: Any) -> list[tuple[float, float]] 
     return out_mm if len(out_mm) >= 3 else None
 
 
+def _ifc_inverse_seq_local(val: Any) -> list[Any]:
+    """IfcOpenShell inverses may be ``[]``, ``()``, one entity, or None — do not use ``or []``."""
+
+    if val is None:
+        return []
+    if isinstance(val, (list, tuple)):
+        return [x for x in val if x is not None]
+    return [val]
+
+
+def _ifc_rel_voids_host_building_element(rel: Any) -> Any | None:
+    """Host element from ``IfcRelVoidsElement`` (tolerate attribute naming variants)."""
+
+    for attr in ("RelatingBuildingElement", "RelatedBuildingElement"):
+        h = getattr(rel, attr, None)
+        if h is not None:
+            return h
+    return None
+
+
+def _ifc_try_product_is_a(product: Any, root: str) -> bool:
+    try:
+        return bool(product.is_a(root))
+    except Exception:
+        return False
+
+
+def _kernel_horizontal_extrusion_footprint_mm_and_thickness(
+    product: Any,
+) -> tuple[list[tuple[float, float]], float] | None:
+    """Plan outline (mm) + slab-style extrusion depth (mm) for kernel ``IfcExtrudedAreaSolid`` bodies."""
+
+    if ifc_placement is None:
+        return None
+    ex = _first_body_extruded_area_solid(product)
+    if ex is None:
+        return None
+    try:
+        depth_mm = abs(float(ex.Depth)) * 1000.0
+    except Exception:
+        return None
+    if depth_mm <= 1e-3:
+        return None
+    swept = getattr(ex, "SweptArea", None)
+    if swept is None or not swept.is_a("IfcArbitraryClosedProfileDef"):
+        return None
+    outer = getattr(swept, "OuterCurve", None)
+    if outer is None:
+        return None
+    poly = _profile_xy_polyline_mm(outer)
+    if not poly or len(poly) < 3:
+        return None
+
+    M = ifc_placement.get_local_placement(product.ObjectPlacement)
+    out_mm: list[tuple[float, float]] = []
+    for lx, ly in poly:
+        v = M @ np.array([float(lx), float(ly), 0.0, 1.0])
+        out_mm.append((float(v[0]), float(v[1])))
+
+    def _same_poly_close(a: tuple[float, float], b: tuple[float, float], tol: float = 1e-2) -> bool:
+        return abs(a[0] - b[0]) < tol and abs(a[1] - b[1]) < tol
+
+    if len(out_mm) >= 2 and _same_poly_close(out_mm[0], out_mm[-1]):
+        out_mm = out_mm[:-1]
+    if len(out_mm) < 3:
+        return None
+    return out_mm, float(depth_mm)
+
+
+def _kernel_slab_opening_replay_element_id(opening: Any) -> str:
+    """Recover kernel slab-opening id — export names slab voids ``op:<kernelElemId>``."""
+
+    gid = str(getattr(opening, "GlobalId", None) or "")
+    nm = str(getattr(opening, "Name", None) or "").strip()
+    if nm.startswith("op:"):
+        rest = nm[3:].strip()
+        if rest:
+            return rest
+    return _ifc_global_id_slug(gid)
+
+
+def _void_rel_and_host_for_opening(opening: Any, model: Any) -> tuple[Any | None, Any | None]:
+    """Locate ``IfcRelVoidsElement`` + host for ``opening`` (inverse first, linear scan fallback)."""
+
+    og = str(getattr(opening, "GlobalId", None) or "")
+
+    def _opening_matches(ro: Any) -> bool:
+        if ro is None:
+            return False
+        try:
+            if ro is opening:
+                return True
+        except Exception:
+            pass
+        rg = str(getattr(ro, "GlobalId", None) or "")
+        return bool(og and rg and og == rg)
+
+    for rel in _ifc_inverse_seq_local(getattr(opening, "VoidsElements", None)):
+        try:
+            if not rel.is_a("IfcRelVoidsElement"):
+                continue
+        except Exception:
+            continue
+        ro = getattr(rel, "RelatedOpeningElement", None)
+        if not _opening_matches(ro):
+            continue
+        host = _ifc_rel_voids_host_building_element(rel)
+        if host is None:
+            continue
+        return rel, host
+
+    for rel in model.by_type("IfcRelVoidsElement") or []:
+        try:
+            if not rel.is_a("IfcRelVoidsElement"):
+                continue
+        except Exception:
+            continue
+        ro = getattr(rel, "RelatedOpeningElement", None)
+        if not _opening_matches(ro):
+            continue
+        host = _ifc_rel_voids_host_building_element(rel)
+        if host is None:
+            continue
+        return rel, host
+
+    return None, None
+
+
+def _ifc_model_has_slab_void_opening_topology_v0(model: Any) -> bool:
+    for rel in model.by_type("IfcRelVoidsElement") or []:
+        try:
+            if not rel.is_a("IfcRelVoidsElement"):
+                continue
+        except Exception:
+            continue
+        ro = getattr(rel, "RelatedOpeningElement", None)
+        if ro is None or not _ifc_try_product_is_a(ro, "IfcOpeningElement"):
+            continue
+        host = _ifc_rel_voids_host_building_element(rel)
+        if host is not None and _ifc_try_product_is_a(host, "IfcSlab"):
+            return True
+    return False
+
+
 def _space_pset_programme_cmd_kwargs(bucket: dict[str, Any]) -> dict[str, Any]:
     """IFC ``Pset_SpaceCommon`` programme strings → optional ``CreateRoomOutlineCmd`` kwargs."""
 
@@ -759,12 +910,31 @@ def _space_pset_programme_json_fields(bucket: dict[str, Any]) -> dict[str, str]:
 
 
 def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> dict[str, Any]:
-    """Deterministic createLevel + createWall + opening inserts + createRoomOutline payloads from kernel IFC."""
+    """Deterministic kernel IFC replay: levels, slabs, walls, inserts, slab voids, rooms."""
 
     has_opening_products = bool(
         (model.by_type("IfcDoor") or []) or (model.by_type("IfcWindow") or [])
     )
-    subset = {"levels": True, "walls": True, "spaces": True, "openings": has_opening_products}
+    has_floor_products = bool(model.by_type("IfcSlab") or [])
+    has_slab_void_topology = _ifc_model_has_slab_void_opening_topology_v0(model)
+
+    authoritative_subset_unreachable = {
+        "levels": False,
+        "walls": False,
+        "spaces": False,
+        "openings": False,
+        "floors": False,
+        "slabVoids": False,
+    }
+
+    subset = {
+        "levels": True,
+        "walls": True,
+        "spaces": True,
+        "openings": has_opening_products,
+        "floors": has_floor_products,
+        "slabVoids": has_slab_void_topology,
+    }
     unsupported = _import_scope_unsupported_ifc_products_v0(model)
 
     if ifc_elem_util is None:
@@ -773,7 +943,7 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
             "available": False,
             "reason": "ifcopenshell_util_unavailable",
             "replayKind": AUTHORITATIVE_REPLAY_KIND_V0,
-            "authoritativeSubset": {"levels": False, "walls": False, "spaces": False, "openings": False},
+            "authoritativeSubset": dict(authoritative_subset_unreachable),
             "unsupportedIfcProducts": unsupported,
         }
 
@@ -807,9 +977,61 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
             ).model_dump(mode="json", by_alias=True)
         )
 
+    extraction_gaps: list[dict[str, Any]] = []
+
+    floor_cmds: list[dict[str, Any]] = []
+    slab_global_id_to_kernel_ref: dict[str, str] = {}
+    slabs_skipped_no_reference = 0
+
+    for slab in sorted(model.by_type("IfcSlab") or [], key=lambda s: str(getattr(s, "GlobalId", None) or "")):
+        ps_sl = ifc_elem_util.get_psets(slab)
+        bucket_sl = ps_sl.get("Pset_SlabCommon") or {}
+        ref_sl = bucket_sl.get("Reference")
+        ref_s = ref_sl.strip() if isinstance(ref_sl, str) else ""
+        if not ref_s:
+            slabs_skipped_no_reference += 1
+            continue
+
+        st_gid_sl = _product_host_storey_global_id(slab)
+        if not st_gid_sl or st_gid_sl not in storey_gid_to_level_id:
+            extraction_gaps.append(
+                {
+                    "slabGlobalId": str(getattr(slab, "GlobalId", None) or ""),
+                    "reason": "missing_or_unknown_host_storey",
+                }
+            )
+            continue
+
+        geo_sl = _kernel_horizontal_extrusion_footprint_mm_and_thickness(slab)
+        if geo_sl is None:
+            extraction_gaps.append(
+                {
+                    "slabGlobalId": str(getattr(slab, "GlobalId", None) or ""),
+                    "kernelReference": ref_s,
+                    "reason": "slab_body_extrusion_unreadable",
+                }
+            )
+            continue
+        outline_sl, thick_mm = geo_sl
+        thick_mm = float(_clamp(thick_mm, 50.0, 1800.0))
+        sname = str(getattr(slab, "Name", None) or "") or ref_s
+        floor_cmds.append(
+            CreateFloorCmd(
+                id=ref_s,
+                name=sname,
+                level_id=storey_gid_to_level_id[st_gid_sl],
+                boundary_mm=[Vec2Mm(x_mm=px, y_mm=py) for px, py in outline_sl],
+                thickness_mm=thick_mm,
+            ).model_dump(mode="json", by_alias=True)
+        )
+        sgid = str(getattr(slab, "GlobalId", None) or "")
+        if sgid:
+            slab_global_id_to_kernel_ref[sgid] = ref_s
+
+    floor_cmds.sort(key=lambda c: str(c.get("id") or ""))
+
     wall_cmds: list[dict[str, Any]] = []
     wall_global_id_to_kernel_ref: dict[str, str] = {}
-    extraction_gaps: list[dict[str, Any]] = []
     walls_skipped_no_reference = 0
 
     for wal in sorted(model.by_type("IfcWall") or [], key=lambda w: str(getattr(w, "GlobalId", None) or "")):
@@ -859,6 +1081,119 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
         storey_gid_to_elev_mm=storey_gid_to_elev_mm,
         extraction_gaps=extraction_gaps,
     )
+
+    slab_opening_cmds: list[dict[str, Any]] = []
+    skip_detail_rows: list[dict[str, Any]] = []
+    wall_host_opening_skipped_v0 = 0
+
+    for op in sorted(
+        model.by_type("IfcOpeningElement") or [], key=lambda o: str(getattr(o, "GlobalId", None) or "")
+    ):
+        op_gid = str(getattr(op, "GlobalId", None) or "")
+        _rel, host = _void_rel_and_host_for_opening(op, model)
+        if host is None:
+            skip_detail_rows.append(
+                {
+                    "openingGlobalId": op_gid,
+                    "hostGlobalId": None,
+                    "hostClass": None,
+                    "reason": "missing_void_relationship_v0",
+                }
+            )
+            continue
+        host_gid = str(getattr(host, "GlobalId", None) or "")
+        host_cls = "Unknown"
+        try:
+            host_cls = str(host.is_a())
+        except Exception:
+            pass
+
+        if _ifc_try_product_is_a(host, "IfcWall"):
+            wall_host_opening_skipped_v0 += 1
+            continue
+        if _ifc_try_product_is_a(host, "IfcRoof"):
+            skip_detail_rows.append(
+                {
+                    "openingGlobalId": op_gid,
+                    "hostGlobalId": host_gid,
+                    "hostClass": host_cls,
+                    "reason": "roof_host_not_supported_v0",
+                }
+            )
+            continue
+        if not _ifc_try_product_is_a(host, "IfcSlab"):
+            skip_detail_rows.append(
+                {
+                    "openingGlobalId": op_gid,
+                    "hostGlobalId": host_gid,
+                    "hostClass": host_cls,
+                    "reason": "unsupported_host_kind_v0",
+                }
+            )
+            continue
+
+        floor_ref = slab_global_id_to_kernel_ref.get(host_gid)
+        if not floor_ref:
+            skip_detail_rows.append(
+                {
+                    "openingGlobalId": op_gid,
+                    "hostGlobalId": host_gid,
+                    "hostClass": "IfcSlab",
+                    "reason": "slab_host_missing_kernel_reference_v0",
+                }
+            )
+            continue
+
+        geo_op = _kernel_horizontal_extrusion_footprint_mm_and_thickness(op)
+        if geo_op is None:
+            skip_detail_rows.append(
+                {
+                    "openingGlobalId": op_gid,
+                    "hostGlobalId": host_gid,
+                    "hostClass": "IfcSlab",
+                    "reason": "opening_body_extrusion_unreadable_v0",
+                }
+            )
+            continue
+        outline_op, _dep_op = geo_op
+        if len(outline_op) < 3:
+            skip_detail_rows.append(
+                {
+                    "openingGlobalId": op_gid,
+                    "hostGlobalId": host_gid,
+                    "hostClass": "IfcSlab",
+                    "reason": "opening_outline_degenerate_v0",
+                }
+            )
+            continue
+
+        elem_id = _kernel_slab_opening_replay_element_id(op)
+        oname = str(getattr(op, "Name", None) or "").strip() or elem_id
+        slab_opening_cmds.append(
+            CreateSlabOpeningCmd(
+                id=elem_id,
+                name=oname,
+                host_floor_id=floor_ref,
+                boundary_mm=[Vec2Mm(x_mm=px, y_mm=py) for px, py in outline_op],
+            ).model_dump(mode="json", by_alias=True)
+        )
+
+    slab_opening_cmds.sort(key=lambda c: str(c.get("id") or ""))
+
+    skip_ctr: Counter[str] = Counter()
+    skip_ctr["IfcWall:wall_host_opening_handled_by_door_window_path_v0"] = wall_host_opening_skipped_v0
+    for row in skip_detail_rows:
+        hk = row.get("hostClass") if row.get("hostClass") is not None else "None"
+        skip_ctr[f"{hk}:{row.get('reason')}"] += 1
+
+    slab_roof_hosted_void_skip_v0 = {
+        "schemaVersion": 0,
+        "countsByHostKindAndReason": dict(sorted(skip_ctr.items())),
+        "detailRows": sorted(
+            skip_detail_rows,
+            key=lambda r: (str(r.get("openingGlobalId") or ""), str(r.get("reason") or "")),
+        ),
+    }
 
     room_cmds: list[dict[str, Any]] = []
     ids_space_rows: list[dict[str, Any]] = []
@@ -917,6 +1252,10 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
     room_cmds.sort(key=lambda c: str(c.get("id") or ""))
     ids_space_rows.sort(key=lambda r: (r["identityReference"], r["ifcGlobalId"]))
 
+    merged_cmds = (
+        level_cmds + floor_cmds + wall_cmds + door_cmds + win_cmds + slab_opening_cmds + room_cmds
+    )
+
     return {
         "schemaVersion": KERNEL_IFC_AUTHORITATIVE_REPLAY_SCHEMA_VERSION,
         "available": True,
@@ -929,9 +1268,11 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
             "counts IfcProduct classes outside the kernel exchange slice (not replay targets)."
         ),
         "kernelWallSkippedNoReference": walls_skipped_no_reference,
+        "kernelSlabSkippedNoReference": slabs_skipped_no_reference,
         "kernelSpaceSkippedNoReference": spaces_skipped_no_reference,
         "kernelDoorSkippedNoReference": kernel_door_skip,
         "kernelWindowSkippedNoReference": kernel_window_skip,
+        "slabRoofHostedVoidReplaySkipped_v0": slab_roof_hosted_void_skip_v0,
         "idsAuthoritativeReplayMap_v0": {
             "schemaVersion": 0,
             "note": (
@@ -941,9 +1282,11 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
             ),
             "spaces": ids_space_rows,
         },
-        "commands": level_cmds + wall_cmds + door_cmds + win_cmds + room_cmds,
+        "commands": merged_cmds,
         "extractionGaps": extraction_gaps,
     }
+
+
 
 
 def build_kernel_ifc_authoritative_replay_sketch_v0(step_text: str) -> dict[str, Any]:
@@ -955,7 +1298,14 @@ def build_kernel_ifc_authoritative_replay_sketch_v0(step_text: str) -> dict[str,
             "available": False,
             "reason": "ifcopenshell_not_installed",
             "replayKind": AUTHORITATIVE_REPLAY_KIND_V0,
-            "authoritativeSubset": {"levels": False, "walls": False, "spaces": False, "openings": False},
+            "authoritativeSubset": {
+                "levels": False,
+                "walls": False,
+                "spaces": False,
+                "openings": False,
+                "floors": False,
+                "slabVoids": False,
+            },
             "unsupportedIfcProducts": {"schemaVersion": 0, "countsByClass": {}},
         }
     import ifcopenshell
@@ -1671,7 +2021,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
 
         op_profile.append(op_profile[0])
 
-        op_el = ifcopenshell.api.root.create_entity(f, ifc_class="IfcOpeningElement", name=sop.name or oid)
+        op_el = ifcopenshell.api.root.create_entity(f, ifc_class="IfcOpeningElement", name=f"op:{oid}")
 
         rep_op = add_slab_representation(f, body_ctx, depth=open_depth, polyline=op_profile)
 

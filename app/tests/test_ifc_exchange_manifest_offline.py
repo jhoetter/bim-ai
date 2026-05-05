@@ -199,7 +199,14 @@ def test_authoritative_replay_sketch_unavailable_when_ifcopenshell_missing() -> 
     assert out["available"] is False
     assert out["reason"] == "ifcopenshell_not_installed"
     assert out["replayKind"] == "authoritative_kernel_slice_v0"
-    assert out["authoritativeSubset"] == {"levels": False, "walls": False, "spaces": False, "openings": False}
+    assert out["authoritativeSubset"] == {
+        "levels": False,
+        "walls": False,
+        "spaces": False,
+        "openings": False,
+        "floors": False,
+        "slabVoids": False,
+    }
 
 
 def test_ifc_manifest_scope_lists_authoritative_replay_bullet() -> None:

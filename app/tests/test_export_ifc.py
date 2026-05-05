@@ -746,6 +746,8 @@ def test_ifc_summarize_command_sketch_includes_authoritative_replay_v0() -> None
         "walls": True,
         "spaces": True,
         "openings": False,
+        "floors": False,
+        "slabVoids": False,
     }
     assert any(c.get("type") == "createLevel" for c in auth["commands"])
     assert any(c.get("type") == "createWall" for c in auth["commands"])
@@ -788,6 +790,8 @@ def test_ifc_authoritative_replay_v0_space_outline_and_ids_map() -> None:
     sketch = build_kernel_ifc_authoritative_replay_sketch_v0(step)
     assert sketch["available"] is True
     assert sketch["authoritativeSubset"]["spaces"] is True
+    assert sketch["authoritativeSubset"].get("floors") is True
+    assert sketch["authoritativeSubset"].get("slabVoids") is False
     assert sketch["authoritativeSubset"].get("openings") is False
     assert sketch.get("kernelSpaceSkippedNoReference") == 0
 
@@ -856,6 +860,7 @@ def test_ifc_authoritative_replay_v0_apply_to_empty_document() -> None:
     assert sketch["available"] is True
     assert sketch["authoritativeSubset"].get("openings") is False
     want_levels = sum(1 for c in sketch["commands"] if c["type"] == "createLevel")
+    want_floors = sum(1 for c in sketch["commands"] if c["type"] == "createFloor")
     want_walls = sum(1 for c in sketch["commands"] if c["type"] == "createWall")
     want_rooms = sum(1 for c in sketch["commands"] if c["type"] == "createRoomOutline")
     assert want_levels >= 1 and want_rooms >= 1
@@ -872,6 +877,7 @@ def test_ifc_authoritative_replay_v0_apply_to_empty_document() -> None:
         if isinstance(k, str):
             by_kind[k] = by_kind.get(k, 0) + 1
     assert by_kind.get("level", 0) == want_levels
+    assert by_kind.get("floor", 0) == want_floors
     assert by_kind.get("wall", 0) == want_walls
     assert by_kind.get("room", 0) == want_rooms
     assert not viols or not any(v.blocking or v.severity == "error" for v in viols)
@@ -925,9 +931,81 @@ def test_ifc_authoritative_replay_v0_hosted_openings_roundtrip() -> None:
     assert len(win_cmds) == 1
     assert win_cmds[0].get("wallId") == "w-main" and win_cmds[0].get("id") == "win-1"
 
+    skip_ev = sketch.get("slabRoofHostedVoidReplaySkipped_v0") or {}
+    assert skip_ev.get("schemaVersion") == 0
+    counts = skip_ev.get("countsByHostKindAndReason") or {}
+    assert counts.get("IfcWall:wall_host_opening_handled_by_door_window_path_v0") == 2
+
     empty = Document(revision=0, elements={})
     ok, new_doc, _cmds, viols, code = try_apply_kernel_ifc_authoritative_replay_v0(empty, sketch)
     assert ok is True and code == "ok" and new_doc is not None
     assert "d-1" in new_doc.elements and "win-1" in new_doc.elements
+    assert not viols or not any(v.blocking or v.severity == "error" for v in viols)
+
+def test_ifc_authoritative_replay_v0_slab_floor_and_opening_roundtrip() -> None:
+    doc = Document(
+        revision=508,
+        elements={
+            "l0": LevelElem(kind="level", id="l0", name="G", elevationMm=0),
+            "w-a": WallElem(
+                kind="wall",
+                id="w-a",
+                name="W",
+                levelId="l0",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 5500, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+            "fl-1": FloorElem(
+                kind="floor",
+                id="fl-1",
+                name="S",
+                levelId="l0",
+                boundaryMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 6000, "yMm": 0},
+                    {"xMm": 6000, "yMm": 5000},
+                    {"xMm": 0, "yMm": 5000},
+                ],
+                thicknessMm=220,
+            ),
+            "so-1": SlabOpeningElem(
+                kind="slab_opening",
+                id="so-1",
+                name="O",
+                hostFloorId="fl-1",
+                boundaryMm=[
+                    {"xMm": 900, "yMm": 900},
+                    {"xMm": 1900, "yMm": 900},
+                    {"xMm": 1900, "yMm": 1700},
+                    {"xMm": 900, "yMm": 1700},
+                ],
+            ),
+        },
+    )
+    step = export_ifc_model_step(doc)
+    sketch = build_kernel_ifc_authoritative_replay_sketch_v0(step)
+    assert sketch["available"] is True
+    assert sketch["authoritativeSubset"].get("floors") is True
+    assert sketch["authoritativeSubset"].get("slabVoids") is True
+
+    floor_cmds = [c for c in sketch["commands"] if c["type"] == "createFloor"]
+    void_cmds = [c for c in sketch["commands"] if c["type"] == "createSlabOpening"]
+    assert len(floor_cmds) == 1 and floor_cmds[0].get("id") == "fl-1"
+    assert len(void_cmds) == 1
+    assert void_cmds[0].get("id") == "so-1" and void_cmds[0].get("hostFloorId") == "fl-1"
+
+    typ_order = [c["type"] for c in sketch["commands"]]
+    assert typ_order.index("createFloor") < typ_order.index("createWall")
+    assert typ_order.index("createWall") < typ_order.index("createSlabOpening")
+
+    counts = (sketch.get("slabRoofHostedVoidReplaySkipped_v0") or {}).get("countsByHostKindAndReason") or {}
+    assert counts.get("IfcWall:wall_host_opening_handled_by_door_window_path_v0", 0) == 0
+
+    empty = Document(revision=0, elements={})
+    ok, new_doc, _cmds, viols, code = try_apply_kernel_ifc_authoritative_replay_v0(empty, sketch)
+    assert ok is True and code == "ok" and new_doc is not None
+    assert "fl-1" in new_doc.elements and "so-1" in new_doc.elements
     assert not viols or not any(v.blocking or v.severity == "error" for v in viols)
 

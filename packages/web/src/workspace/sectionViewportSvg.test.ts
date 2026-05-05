@@ -65,7 +65,10 @@ describe('Section viewport documentation helpers', () => {
       }),
     ).toBe('Concrete structure · edge-on');
     expect(
-      formatSectionDocMaterialHintCaption({ materialLabel: 'structure', cutPatternHint: 'alongCut' }),
+      formatSectionDocMaterialHintCaption({
+        materialLabel: 'structure',
+        cutPatternHint: 'alongCut',
+      }),
     ).toBe('structure · along-cut');
   });
 });

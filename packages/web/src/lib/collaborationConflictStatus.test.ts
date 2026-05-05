@@ -10,28 +10,20 @@ describe('formatCollaboration409Status', () => {
   });
 
   it('includes reason and 1-based step hint from replayDiagnostics', () => {
-    const e = new ApiHttpError(
-      409,
-      'constraint blocked',
-      {
-        reason: 'wall constraint',
-        replayDiagnostics: { firstBlockingCommandIndex: 2 },
-      },
-    );
+    const e = new ApiHttpError(409, 'constraint blocked', {
+      reason: 'wall constraint',
+      replayDiagnostics: { firstBlockingCommandIndex: 2 },
+    });
     expect(formatCollaboration409Status('Apply', e)).toBe(
       'Apply blocked: wall constraint (step 3)',
     );
   });
 
   it('uses conflict fallback when reason is missing', () => {
-    const e = new ApiHttpError(
-      409,
-      '409 Conflict',
-      { replayDiagnostics: { firstBlockingCommandIndex: 1 } },
-    );
-    expect(formatCollaboration409Status('Undo', e)).toBe(
-      'Undo blocked (model conflict). (step 2)',
-    );
+    const e = new ApiHttpError(409, '409 Conflict', {
+      replayDiagnostics: { firstBlockingCommandIndex: 1 },
+    });
+    expect(formatCollaboration409Status('Undo', e)).toBe('Undo blocked (model conflict). (step 2)');
   });
 
   it('matches redo label', () => {
