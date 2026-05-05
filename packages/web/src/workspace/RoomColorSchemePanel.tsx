@@ -12,6 +12,7 @@ import {
   normalizeSchemeColorHex,
   rowHasProgrammeOrDepartment,
 } from './roomColorSchemeCanon';
+import { roomColorSchemeLegendReadoutParts } from '../schedules/roomColorSchemeLegendReadout';
 
 const SINGLETON_SCHEME_ID = 'bim-room-color-scheme';
 
@@ -247,6 +248,44 @@ export function RoomColorSchemePanel({ onUpsertSemantic }: Props) {
         />
 
         <PlanWireLegendReadout wireReadout={wireReadout} />
+
+        {hasSingletonDoc ? (
+          <div
+            className="space-y-1 border-t border-border pt-2"
+            data-testid="room-color-scheme-override-evidence-readout"
+          >
+            <div className="font-semibold text-muted">Override evidence</div>
+            {(() => {
+              const el = elementsById[SINGLETON_SCHEME_ID];
+              const rows = el?.kind === 'room_color_scheme' ? (el.schemeRows ?? []) : [];
+              const fakeEv = {
+                format: 'roomColorSchemeOverrideEvidence_v1' as const,
+                schemeIdentity: SINGLETON_SCHEME_ID,
+                overrideRowCount: rows.length,
+                rows: rows.map((r, i) => ({
+                  programmeCode: r.programmeCode,
+                  department: r.department,
+                  label: (r.programmeCode ?? r.department ?? '').toString().trim() || null,
+                  schemeColorHex: r.schemeColorHex,
+                  orderIndex: i,
+                  advisoryCodes: [],
+                })),
+                rowDigestSha256: '',
+                advisoryFindings: [],
+              };
+              const lines = roomColorSchemeLegendReadoutParts(fakeEv);
+              return (
+                <ul className="space-y-0.5 font-mono text-[10px]">
+                  {lines.map((l, i) => (
+                    <li key={`override-ev-${i}`} className="text-foreground">
+                      {l}
+                    </li>
+                  ))}
+                </ul>
+              );
+            })()}
+          </div>
+        ) : null}
 
         <div className="border-t border-border pt-2 text-[10px] text-muted">
           Room schedules use <span className="font-mono">programmeCode</span>/

@@ -15,6 +15,7 @@ from bim_ai.document import Document
 from bim_ai.elements import (
     LevelElem,
     PlanViewElem,
+    RoomColorSchemeElem,
     RoomElem,
     ScheduleElem,
     SectionCutElem,
@@ -22,6 +23,7 @@ from bim_ai.elements import (
     ViewpointElem,
 )
 from bim_ai.plan_projection_wire import resolve_plan_projection_wire
+from bim_ai.room_color_scheme_override_evidence import build_room_color_scheme_override_evidence_v1
 from bim_ai.room_finish_schedule import (
     peer_finish_set_by_level,
     room_finish_legend_correlation_v1_for_wire,
@@ -836,6 +838,83 @@ def viewport_evidence_hints_v0(vps_raw: list[Any]) -> list[dict[str, Any]]:
         hints.append({"viewportId": vid, "geom": geom, "crop": crop})
 
     return sorted(hints, key=lambda r: str(r.get("viewportId") or ""))
+
+
+def room_color_scheme_legend_placement_evidence_v1(
+    doc: Document, vps_raw: list[Any]
+) -> dict[str, Any]:
+    """Sheet-level evidence for placed room color scheme legends."""
+    scheme_elem: RoomColorSchemeElem | None = None
+    for el in doc.elements.values():
+        if isinstance(el, RoomColorSchemeElem):
+            scheme_elem = el
+            break
+
+    override_ev = build_room_color_scheme_override_evidence_v1(scheme_elem)
+
+    placed_rows: list[dict[str, Any]] = []
+    for i, vp_any in enumerate(vps_raw):
+        if not isinstance(vp_any, dict):
+            continue
+        vp = vp_any
+        vr = vp.get("viewRef") or vp.get("view_ref")
+        if not isinstance(vr, str) or ":" not in vr:
+            continue
+        kind_raw, ref_raw = vr.split(":", 1)
+        if kind_raw.strip().lower() != "plan":
+            continue
+        pv_id = ref_raw.strip()
+        if not pv_id:
+            continue
+        vid = str(vp.get("viewportId") or vp.get("viewport_id") or "").strip()
+        if not vid:
+            vid = f"__implicit_{i}"
+
+        x_mm, y_mm, w_mm, h_mm = read_viewport_mm_box(vp)
+
+        wire = resolve_plan_projection_wire(
+            doc,
+            plan_view_id=pv_id,
+            fallback_level_id=None,
+            global_plan_presentation="default",
+            sheet_viewport_row_for_crop=vp,
+        )
+        tup = _room_programme_legend_segments_from_wire(wire)
+        if tup is None:
+            continue
+        legend_rows, digest, row_count, _doc_seg, _list_seg = tup
+
+        placed_row: dict[str, Any] = {
+            "viewportId": vid,
+            "planViewRef": pv_id,
+            "placementXMm": x_mm,
+            "placementYMm": y_mm,
+            "viewportWidthMm": w_mm,
+            "viewportHeightMm": h_mm,
+            "legendRowCount": row_count,
+            "legendDigestSha256": digest,
+            "schemeSource": "override" if (scheme_elem is not None and override_ev.get("overrideRowCount", 0) > 0) else "hashed_fallback",
+        }
+        if scheme_elem is not None:
+            placed_row["schemeIdentity"] = scheme_elem.id
+            placed_row["schemeOverrideRowCount"] = override_ev.get("overrideRowCount", 0)
+        placed_rows.append(placed_row)
+
+    placed_rows.sort(key=lambda r: str(r.get("viewportId") or ""))
+
+    import hashlib as _hl
+    blob = json.dumps(placed_rows, sort_keys=True, separators=(",", ":"))
+    placement_digest = _hl.sha256(blob.encode("utf-8")).hexdigest()
+
+    return {
+        "format": "roomColorSchemeLegendPlacementEvidence_v1",
+        "placedLegendCount": len(placed_rows),
+        "placementDigestSha256": placement_digest,
+        "schemeIdentity": scheme_elem.id if scheme_elem is not None else None,
+        "schemeOverrideRowCount": override_ev.get("overrideRowCount", 0),
+        "overrideEvidence": override_ev,
+        "placedRows": placed_rows,
+    }
 
 
 def plan_room_programme_legend_hints_v0(doc: Document, vps_raw: list[Any]) -> list[dict[str, Any]]:

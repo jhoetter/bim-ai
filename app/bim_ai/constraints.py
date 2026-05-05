@@ -25,6 +25,7 @@ from bim_ai.elements import (
     LevelElem,
     PlanTagStyleElem,
     PlanViewElem,
+    RoomColorSchemeElem,
     RoomElem,
     RoomSeparationElem,
     ScheduleElem,
@@ -60,6 +61,7 @@ from bim_ai.material_assembly_resolve import (
     material_catalog_audit_rows,
 )
 from bim_ai.plan_aa_room_separation import axis_aligned_room_separation_splits_rectangle
+from bim_ai.room_color_scheme_override_evidence import scheme_override_advisory_violations_for_doc
 from bim_ai.room_derivation import compute_room_boundary_derivation
 from bim_ai.room_finish_schedule import peer_finish_set_by_level
 from bim_ai.sheet_titleblock_revision_issue_v1 import (
@@ -174,6 +176,10 @@ _RULE_DISCIPLINE: dict[str, str] = {
     "plan_view_tag_style_target_mismatch": "architecture",
     "plan_view_tag_style_override": "architecture",
     "plan_template_tag_style_ref_invalid": "architecture",
+    "room_color_scheme_identity_missing": "architecture",
+    "room_color_scheme_row_missing_label": "architecture",
+    "room_color_scheme_row_invalid_fill_color": "architecture",
+    "room_color_scheme_row_duplicate_override_key": "architecture",
 }
 
 _MATERIAL_CATALOG_AUDIT_RULE_IDS: dict[str, str] = {
@@ -2185,5 +2191,35 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
     viols.extend(_agent_brief_advisory_violations(elements))
     viols.extend(_exchange_advisory_violations(elements))
     viols.extend(_plan_view_tag_style_advisor_violations(elements))
+    viols.extend(_room_color_scheme_advisory_violations(elements))
     viols.sort(key=lambda v: (v.rule_id, tuple(sorted(v.element_ids)), v.severity))
     return annotate_violation_disciplines(viols)
+
+
+def _room_color_scheme_advisory_violations(elements: dict[str, Element]) -> list[Violation]:
+    scheme_elem: RoomColorSchemeElem | None = None
+    for el in elements.values():
+        if isinstance(el, RoomColorSchemeElem):
+            scheme_elem = el
+            break
+    has_rooms = any(isinstance(el, RoomElem) for el in elements.values())
+    if not has_rooms:
+        return []
+    raw_findings = scheme_override_advisory_violations_for_doc(scheme_elem)
+    out: list[Violation] = []
+    for f in raw_findings:
+        code = str(f.get("code") or "")
+        severity_raw = str(f.get("severity") or "info")
+        severity: Literal["error", "warning", "info"] = (
+            severity_raw if severity_raw in {"error", "warning", "info"} else "info"
+        )
+        eids = [scheme_elem.id] if scheme_elem is not None else []
+        out.append(
+            Violation(
+                rule_id=code,
+                severity=severity,
+                message=str(f.get("message") or code),
+                element_ids=eids,
+            )
+        )
+    return out

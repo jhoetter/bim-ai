@@ -19,6 +19,7 @@ import {
 } from './sheetRevisionIssueManifestV1';
 import { scheduleTableRendererV1SheetReadout } from '../schedules/scheduleTableRendererV1';
 import { formatSchedulePaginationPlacementReadout } from '../schedules/schedulePanelRegistryChrome';
+import { roomColorSchemeLegendPlacementReadoutLines } from './roomColorSchemeLegendPlacementReadout';
 
 type SheetEl = Extract<Element, { kind: 'sheet' }>;
 
@@ -655,6 +656,28 @@ export function SheetDocumentationManifest(props: {
           </div>
         </div>
       ) : null}
+
+      {evidence.status === 'ready' && deterministicRow ? (() => {
+        const placementEv = deterministicRow.roomColorSchemeLegendPlacementEvidence_v1;
+        const placementLines = roomColorSchemeLegendPlacementReadoutLines(placementEv);
+        return placementLines.length > 0 ? (
+          <div
+            className="mt-3 space-y-1 border-t border-border pt-2"
+            data-testid="sheet-manifest-room-color-scheme-legend-placement-readout"
+          >
+            <div className="text-[10px] font-semibold uppercase text-muted">
+              Room color scheme legend placement (v1)
+            </div>
+            <ul className="space-y-0.5 font-mono text-[10px]">
+              {placementLines.map((l, i) => (
+                <li key={`legend-placement-${i}`} className="text-foreground whitespace-pre">
+                  {l}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null;
+      })() : null}
 
       <div className="mt-3 space-y-1 border-t border-border pt-2">
         <div className="text-[10px] font-semibold uppercase text-muted">

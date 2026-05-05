@@ -77,6 +77,7 @@ from bim_ai.plan_projection_wire import (
     section_cut_projection_wire,
 )
 from bim_ai.prd_blocking_advisor_matrix import build_prd_blocking_advisor_matrix
+from bim_ai.room_color_scheme_override_evidence import build_room_color_scheme_override_evidence_v1
 from bim_ai.room_derivation_preview import (
     room_derivation_candidates_review,
     room_derivation_preview,
@@ -511,6 +512,11 @@ async def evidence_package(
     )
     payload["v1CloseoutReadinessManifest_v1"] = build_v1_closeout_readiness_manifest_v1()
     payload["prdAdvisorMatrix_v1"] = build_prd_blocking_advisor_matrix()
+    scheme_elem = next(
+        (e for e in doc.elements.values() if hasattr(e, "kind") and e.kind == "room_color_scheme"),
+        None,
+    )
+    payload["roomColorSchemeOverrideEvidence_v1"] = build_room_color_scheme_override_evidence_v1(scheme_elem)
     return payload
 
 
