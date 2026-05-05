@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from bim_ai.commands import UpsertPlanTagStyleCmd, UpsertPlanViewCmd, UpsertViewTemplateCmd
 from bim_ai.constraints import _plan_view_tag_style_advisor_violations, evaluate
 from bim_ai.document import Document
 from bim_ai.elements import (
@@ -11,9 +10,7 @@ from bim_ai.elements import (
     PlanViewElem,
     ViewTemplateElem,
 )
-from bim_ai.engine import apply_inplace
 from bim_ai.plan_projection_wire import plan_projection_wire_from_request
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -270,7 +267,6 @@ def test_plan_view_browser_hierarchy_absent_for_unpinned() -> None:
 
 
 def test_plan_view_browser_hierarchy_reflects_template_link() -> None:
-    tmpl = ViewTemplateElem(kind="view_template", id="tmpl1", name="MyTemplate")
     style = _make_tag_style("ts-open", "opening")
     tmpl_with_style = ViewTemplateElem(
         kind="view_template",
