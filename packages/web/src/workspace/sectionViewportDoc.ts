@@ -1,5 +1,34 @@
 /** Pure helpers for section viewport documentation labels (deterministic UX copy). */
 
+/** Deterministic stair documentation line from `sectionProjectionPrimitives_v1.stairs`. */
+export function formatSectionStairDocumentationCaption(
+  stairs: ReadonlyArray<Record<string, unknown>>,
+): string | null {
+  if (stairs.length === 0) return null;
+  const ordered = [...stairs].sort((a, b) => {
+    const ea = String(a.elementId ?? a.id ?? '');
+    const eb = String(b.elementId ?? b.id ?? '');
+    return ea.localeCompare(eb);
+  });
+  const parts: string[] = [];
+  for (const w of ordered) {
+    const eid = String(w.elementId ?? w.id ?? '').trim();
+    if (!eid) continue;
+    const rc = Number(w.riserCountPlanProxy);
+    const tc = Number(w.treadCountPlanProxy);
+    const rise = Number(w.storyRiseMm);
+    const ud = typeof w.planUpDownLabel === 'string' ? w.planUpDownLabel.trim() : '';
+    const segs: string[] = [eid];
+    if (Number.isFinite(rc)) segs.push(`R=${Math.round(rc)}`);
+    if (Number.isFinite(tc)) segs.push(`T=${Math.round(tc)}`);
+    if (Number.isFinite(rise) && rise > 0) segs.push(`rise=${Math.round(rise)}mm`);
+    if (ud) segs.push(ud);
+    parts.push(segs.join(' '));
+  }
+  if (parts.length === 0) return null;
+  return `Stair doc · ${parts.join(' · ')}`;
+}
+
 export type SectionWallCutHatchKind = 'edgeOn' | 'alongCut';
 
 export type SectionSheetCalloutRow = { id: string; name: string };

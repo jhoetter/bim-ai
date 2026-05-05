@@ -20,10 +20,13 @@ import {
 } from '../plan/symbology';
 import {
   formatSectionAlongCutSpanMmLabel,
+  formatSectionCutIdentityLine,
+  formatSectionCutPlaneContext,
   formatSectionDocMaterialHintCaption,
   formatSectionElevationSpanMmLabel,
   formatSectionLevelDatumCaption,
   formatSectionSheetCalloutsLabel,
+  formatSectionStairDocumentationCaption,
   formatSectionWallHatchReadout,
   parseSectionWallCutHatchKind,
   summarizeWallCutHatchKinds,
@@ -141,6 +144,7 @@ export function SectionViewportSvg(props: {
     materialHints: SectionDocMaterialHint[];
     wallHatchSummary: SectionWallHatchSummary;
     levelMarkersTotalFromServer: number;
+    stairDocCaption: string | null;
   };
 
   const [layers, setLayers] = useState<LayerSnap | null>(null);
@@ -293,9 +297,11 @@ export function SectionViewportSvg(props: {
         }
 
         const stairRects: UzPrim[] = [];
+        const stairDocSource: Record<string, unknown>[] = [];
         const stairsRaw = prim?.stairs;
         if (Array.isArray(stairsRaw)) {
           for (const w of stairsRaw as Record<string, unknown>[]) {
+            stairDocSource.push(w);
             const p = asUz(w);
             if (!p) continue;
             const halfU =
@@ -307,6 +313,7 @@ export function SectionViewportSvg(props: {
             stairRects.push({ ...p, uStartMm: uLo, uEndMm: uHi });
           }
         }
+        const stairDocCaption = formatSectionStairDocumentationCaption(stairDocSource);
 
         const roofLines: RoofPrim[] = [];
         const roofsRaw = prim?.roofs;
@@ -447,6 +454,7 @@ export function SectionViewportSvg(props: {
             materialHints,
             wallHatchSummary,
             levelMarkersTotalFromServer,
+            stairDocCaption,
           });
         }
       } catch (e) {
@@ -495,6 +503,13 @@ export function SectionViewportSvg(props: {
       });
       if (lvl) {
         rows.push({ key: 'lvl-datum', text: lvl, testId: 'section-level-datum-caption' });
+      }
+      if (layers.stairDocCaption) {
+        rows.push({
+          key: 'stair-doc',
+          text: layers.stairDocCaption,
+          testId: 'section-stair-doc-caption',
+        });
       }
     }
     return rows;

@@ -45,7 +45,13 @@ from bim_ai.roof_geometry import (
     mass_box_roof_proxy_peak_z_mm,
     outer_rect_extent,
 )
-from bim_ai.stair_plan_proxy import stair_riser_count_plan_proxy
+from bim_ai.stair_plan_proxy import (
+    stair_documentation_diagnostics,
+    stair_plan_up_down_label,
+    stair_riser_count_plan_proxy,
+    stair_run_bearing_deg_ccw_from_plan_x,
+    stair_tread_count_straight_plan_proxy,
+)
 from bim_ai.type_material_registry import material_display_label
 
 _EPS = 1e-6
@@ -778,6 +784,7 @@ def build_section_projection_primitives(
             zb, zt = zt, zb
         run_len_mm = _hypot(rx1 - rx0, ry1 - ry0)
         rc_proxy = stair_riser_count_plan_proxy(doc, e, run_length_mm=run_len_mm)
+        bearing = stair_run_bearing_deg_ccw_from_plan_x(rx0, ry0, rx1, ry1)
         stair_row: dict[str, Any] = {
             "id": f"stair:{e.id}:0",
             "elementId": e.id,
@@ -789,17 +796,31 @@ def build_section_projection_primitives(
             "riserMm": round(float(e.riser_mm), 3),
             "treadMm": round(float(e.tread_mm), 3),
             "riserCountPlanProxy": rc_proxy,
+            "treadCountPlanProxy": stair_tread_count_straight_plan_proxy(rc_proxy),
+            "runBearingDegCcFromPlanX": bearing,
             "proxyKind": "runRampExtents",
         }
         bl = doc.elements.get(e.base_level_id)
         tl_ev = doc.elements.get(e.top_level_id)
+        if isinstance(bl, LevelElem):
+            stair_row["baseLevelName"] = bl.name
+        if isinstance(tl_ev, LevelElem):
+            stair_row["topLevelName"] = tl_ev.name
         if isinstance(bl, LevelElem) and isinstance(tl_ev, LevelElem):
             z_lo = float(min(bl.elevation_mm, tl_ev.elevation_mm))
             z_hi = float(max(bl.elevation_mm, tl_ev.elevation_mm))
             rise_story = z_hi - z_lo
+            stair_row["planUpDownLabel"] = stair_plan_up_down_label(
+                float(bl.elevation_mm),
+                float(tl_ev.elevation_mm),
+            )
             if rise_story > 1e-3:
                 stair_row["storyRiseMm"] = round(rise_story, 3)
+                stair_row["totalRiseMm"] = round(rise_story, 3)
                 stair_row["midRunElevationMm"] = round(z_lo + rise_story * 0.5, 3)
+        diags = stair_documentation_diagnostics(doc, e, riser_count_plan_proxy=rc_proxy)
+        if diags:
+            stair_row["stairDocumentationDiagnostics"] = diags
         stairs.append(stair_row)
 
     roofs: list[dict[str, Any]] = []

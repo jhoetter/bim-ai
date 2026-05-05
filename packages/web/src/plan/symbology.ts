@@ -587,7 +587,25 @@ function rebuildPlanMeshesFromWire(
             riserMm: Number(row.riserMm ?? 175),
             treadMm: Number(row.treadMm ?? 275),
           } as Extract<Element, { kind: 'stair' }>);
-    const g = stairPlanThree(stairEl, elementsById);
+    const hasDoc =
+      row.runBearingDegCcFromPlanX !== undefined ||
+      row.planUpDownLabel !== undefined ||
+      row.stairPlanBreakVisibilityToken !== undefined;
+    const wireDoc = hasDoc
+      ? {
+          runBearingDegCcFromPlanX:
+            typeof row.runBearingDegCcFromPlanX === 'number'
+              ? Number(row.runBearingDegCcFromPlanX)
+              : undefined,
+          planUpDownLabel:
+            typeof row.planUpDownLabel === 'string' ? row.planUpDownLabel : undefined,
+          stairPlanBreakVisibilityToken:
+            typeof row.stairPlanBreakVisibilityToken === 'string'
+              ? row.stairPlanBreakVisibilityToken
+              : undefined,
+        }
+      : undefined;
+    const g = stairPlanThree(stairEl, elementsById, wireDoc);
     if (g) holder.add(g);
   }
 
@@ -977,11 +995,19 @@ function computeStairPlanRiserCount(
   return Math.max(2, Math.min(36, n2));
 }
 
+/** Optional documentation overlays from `planProjectionPrimitives_v1.stairs[]` (Prompt-2). */
+type StairPlanWireDocOverlays = {
+  runBearingDegCcFromPlanX?: number;
+  planUpDownLabel?: string;
+  stairPlanBreakVisibilityToken?: string;
+};
+
 /** Footprint tread preview on the stair base level (OG plan hides it). */
 
 function stairPlanThree(
   stair: Extract<Element, { kind: 'stair' }>,
   elementsById?: Record<string, Element>,
+  wireDoc?: StairPlanWireDocOverlays | null,
 ): THREE.Group | null {
   const sx = stair.runStartMm.xMm / 1000;
   const sz = stair.runStartMm.yMm / 1000;
@@ -1059,6 +1085,60 @@ function stairPlanThree(
           new THREE.LineBasicMaterial({ color: '#94a3b8', transparent: true, opacity: 0.45 }),
         ),
       );
+    }
+  }
+
+  if (wireDoc) {
+    const mx = (sx + ex) * 0.5;
+    const mz = (sz + ez) * 0.5;
+    const yDoc = PLAN_Y + 0.024;
+    let bx = uxDir;
+    let bz = uzDir;
+    if (
+      wireDoc.runBearingDegCcFromPlanX !== undefined &&
+      Number.isFinite(wireDoc.runBearingDegCcFromPlanX)
+    ) {
+      const rad = (wireDoc.runBearingDegCcFromPlanX * Math.PI) / 180;
+      bx = Math.cos(rad);
+      bz = Math.sin(rad);
+    }
+    const alen = Math.min(len, 0.55) * 0.35;
+    const tip = new THREE.Vector3(mx + bx * alen * 0.45, yDoc, mz + bz * alen * 0.45);
+    const tail = new THREE.Vector3(mx - bx * alen * 0.55, yDoc, mz - bz * alen * 0.55);
+    const arrMat = new THREE.LineBasicMaterial({
+      color: '#0ea5e9',
+      transparent: true,
+      opacity: 0.88,
+    });
+    g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([tail, tip]), arrMat));
+    const perpX = -bz * 0.06;
+    const perpZ = bx * 0.06;
+    const b1 = new THREE.Vector3(tip.x - bx * 0.12 + perpX, yDoc, tip.z - bz * 0.12 + perpZ);
+    const b2 = new THREE.Vector3(tip.x - bx * 0.12 - perpX, yDoc, tip.z - bz * 0.12 - perpZ);
+    g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([tip, b1]), arrMat));
+    g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([tip, b2]), arrMat));
+
+    const label = wireDoc.planUpDownLabel?.trim();
+    if (label) {
+      const lx = sx + uxDir * Math.min(len * 0.2, 0.35);
+      const lz = sz + uzDir * Math.min(len * 0.2, 0.35);
+      g.add(planAnnotationLabelSprite(lx, lz, label, stair.id, 0.85));
+    }
+
+    if (wireDoc.stairPlanBreakVisibilityToken === 'cutSplitsSpan') {
+      const zx = mx - bz * (stair.widthMm / 2000) * 0.35;
+      const zz = mz + bx * (stair.widthMm / 2000) * 0.35;
+      const zig = 0.04;
+      const p0 = new THREE.Vector3(zx - bx * zig, PLAN_Y + 0.026, zz - bz * zig);
+      const p1 = new THREE.Vector3(zx + bx * zig, PLAN_Y + 0.026, zz + bz * zig);
+      const p2 = new THREE.Vector3(zx + bx * zig * 2, PLAN_Y + 0.026, zz + bz * zig * 2);
+      const brkMat = new THREE.LineBasicMaterial({
+        color: '#64748b',
+        transparent: true,
+        opacity: 0.7,
+      });
+      g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([p0, p1]), brkMat));
+      g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([p1, p2]), brkMat));
     }
   }
 

@@ -296,6 +296,9 @@ describe('PlanCanvas server wire primitives path (WP-C03)', () => {
           runEndMm: { x: 1000, y: 3500 },
           widthMm: 1100,
           riserCountPlanProxy: 16,
+          runBearingDegCcFromPlanX: 90,
+          planUpDownLabel: 'UP',
+          stairPlanBreakVisibilityToken: 'cutSplitsSpan',
         },
       ],
       roofs: [],
@@ -315,9 +318,9 @@ describe('PlanCanvas server wire primitives path (WP-C03)', () => {
     const stairGrp = grp.children.find((c) => c.userData?.bimPickId === 'st1');
     expect(stairGrp).toBeTruthy();
     const lineCount = countLineNodes(stairGrp!);
-    // nSteps=16 → outline 1 + 17 cross + 16 diag = 34 (kernel-aligned vs tread-only ~24)
+    // nSteps=16 → outline 1 + 17 cross + 16 diag = 34; + run arrow (3) + break zigzag (2) when wire doc present
     expect(lineCount).toBeGreaterThan(28);
-    expect(lineCount).toBe(34);
+    expect(lineCount).toBe(39);
   });
 
   it('adds sprite overlays only when planAnnotationHints and planTagLabel are set', () => {

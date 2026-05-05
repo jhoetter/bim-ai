@@ -1412,6 +1412,11 @@ def test_plan_projection_includes_stair_primitive() -> None:
     assert sts[0]["riserMm"] == 175
     assert sts[0]["treadMm"] == 275
     assert sts[0]["riserCountPlanProxy"] == 16
+    assert sts[0]["treadCountPlanProxy"] == 15
+    assert sts[0]["runBearingDegCcFromPlanX"] == pytest.approx(90.0)
+    assert sts[0]["planUpDownLabel"] == "UP"
+    assert sts[0]["baseLevelName"] == "G"
+    assert sts[0]["topLevelName"] == "OG"
 
 
 def test_section_projection_stair_includes_riser_count_plan_proxy() -> None:
@@ -1446,8 +1451,13 @@ def test_section_projection_stair_includes_riser_count_plan_proxy() -> None:
     assert len(sts) == 1
     assert sts[0]["elementId"] == "st1"
     assert sts[0]["riserCountPlanProxy"] == 16
+    assert sts[0]["treadCountPlanProxy"] == 15
+    assert sts[0]["planUpDownLabel"] == "UP"
+    assert sts[0]["runBearingDegCcFromPlanX"] == pytest.approx(90.0)
     assert sts[0]["riserMm"] == 175
     assert sts[0]["treadMm"] == 275
+    assert sts[0]["baseLevelName"] == "G"
+    assert sts[0]["topLevelName"] == "OG"
 
 
 def test_plan_projection_wire_plan_graphic_hints_order_coarse_vs_fine() -> None:

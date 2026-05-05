@@ -8,6 +8,7 @@ import {
   formatSectionElevationSpanMmLabel,
   formatSectionLevelDatumCaption,
   formatSectionSheetCalloutsLabel,
+  formatSectionStairDocumentationCaption,
   formatSectionWallHatchReadout,
   summarizeWallCutHatchKinds,
 } from './sectionViewportDoc';
@@ -95,6 +96,29 @@ describe('Section viewport documentation helpers', () => {
       'Level datums: markers outside current z-span',
     );
     expect(formatSectionLevelDatumCaption({ inViewCount: 2, totalFromServer: 3 })).toBe('');
+  });
+
+  it('formats stair documentation caption from section stair primitives', () => {
+    expect(
+      formatSectionStairDocumentationCaption([
+        {
+          elementId: 'st-b',
+          riserCountPlanProxy: 16,
+          treadCountPlanProxy: 15,
+          storyRiseMm: 2800,
+          planUpDownLabel: 'UP',
+        },
+        {
+          elementId: 'st-a',
+          riserCountPlanProxy: 10,
+          treadCountPlanProxy: 9,
+          storyRiseMm: 1600,
+          planUpDownLabel: 'UP',
+        },
+      ]),
+    ).toBe(
+      'Stair doc · st-a R=10 T=9 rise=1600mm UP · st-b R=16 T=15 rise=2800mm UP',
+    );
   });
 
   it('formats cut plane context with run and 8-way view heading', () => {

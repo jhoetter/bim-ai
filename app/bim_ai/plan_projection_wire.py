@@ -55,7 +55,14 @@ from bim_ai.section_projection_primitives import (
     _wall_vertical_span_mm,
     build_section_projection_primitives,
 )
-from bim_ai.stair_plan_proxy import stair_riser_count_plan_proxy
+from bim_ai.stair_plan_proxy import (
+    stair_documentation_diagnostics,
+    stair_plan_break_visibility_token,
+    stair_plan_up_down_label,
+    stair_riser_count_plan_proxy,
+    stair_run_bearing_deg_ccw_from_plan_x,
+    stair_tread_count_straight_plan_proxy,
+)
 
 
 def _level_elevation_mm(doc: Document, level_id: str) -> float:
@@ -1020,6 +1027,12 @@ def _build_plan_primitive_lists(
                 float(e.run_end.y_mm) - float(e.run_start.y_mm),
             )
             rc_proxy = stair_riser_count_plan_proxy(doc, e, run_length_mm=run_len_mm)
+            bearing = stair_run_bearing_deg_ccw_from_plan_x(
+                float(e.run_start.x_mm),
+                float(e.run_start.y_mm),
+                float(e.run_end.x_mm),
+                float(e.run_end.y_mm),
+            )
             stair_row: dict[str, Any] = {
                 "id": e.id,
                 "baseLevelId": e.base_level_id,
@@ -1027,6 +1040,8 @@ def _build_plan_primitive_lists(
                 "riserMm": round(float(e.riser_mm), 3),
                 "treadMm": round(float(e.tread_mm), 3),
                 "riserCountPlanProxy": rc_proxy,
+                "treadCountPlanProxy": stair_tread_count_straight_plan_proxy(rc_proxy),
+                "runBearingDegCcFromPlanX": bearing,
                 "runStartMm": {
                     "x": round(e.run_start.x_mm, 3),
                     "y": round(e.run_start.y_mm, 3),
@@ -1039,13 +1054,29 @@ def _build_plan_primitive_lists(
             }
             blv = doc.elements.get(e.base_level_id)
             tlv = doc.elements.get(e.top_level_id)
+            if isinstance(blv, LevelElem):
+                stair_row["baseLevelName"] = blv.name
+            if isinstance(tlv, LevelElem):
+                stair_row["topLevelName"] = tlv.name
             if isinstance(blv, LevelElem) and isinstance(tlv, LevelElem):
                 z_lo = float(min(blv.elevation_mm, tlv.elevation_mm))
                 z_hi = float(max(blv.elevation_mm, tlv.elevation_mm))
                 rise_story = z_hi - z_lo
+                stair_row["planUpDownLabel"] = stair_plan_up_down_label(
+                    float(blv.elevation_mm),
+                    float(tlv.elevation_mm),
+                )
                 if rise_story > 1e-3:
                     stair_row["storyRiseMm"] = round(rise_story, 3)
+                    stair_row["totalRiseMm"] = round(rise_story, 3)
                     stair_row["midRunElevationMm"] = round(z_lo + rise_story * 0.5, 3)
+                    if view_range_clip_mm is not None:
+                        br = stair_plan_break_visibility_token(view_range_clip_mm, sz0, sz1)
+                        if br is not None:
+                            stair_row["stairPlanBreakVisibilityToken"] = br
+            diags = stair_documentation_diagnostics(doc, e, riser_count_plan_proxy=rc_proxy)
+            if diags:
+                stair_row["stairDocumentationDiagnostics"] = diags
             stairs.append(stair_row)
         elif isinstance(e, RoofElem):
             ref = getattr(e, "reference_level_id", "") or ""
