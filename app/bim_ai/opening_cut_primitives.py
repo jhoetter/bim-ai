@@ -7,8 +7,13 @@ Non-rectangular outlines stay on the proxy/bounding-box path in callers.
 from __future__ import annotations
 
 import math
+from typing import Any
 
-from bim_ai.elements import DoorElem, WallElem, WindowElem
+from bim_ai.document import Document
+from bim_ai.elements import DoorElem, FloorElem, SlabOpeningElem, WallElem, WindowElem
+
+# Same gap as section_projection_primitives / cut_solid_kernel floor panelization.
+SLAB_OPENING_PANEL_GAP_MM = 40.0
 
 
 def clamp(v: float, lo: float, hi: float) -> float:
@@ -238,3 +243,99 @@ def floor_panels_axis_aligned_rect_with_single_hole_mm(
         ox0, ox1, oy0, oy1,
         min_gap_mm=min_gap_mm,
     )
+
+
+def _polygon_area_abs_mm2(poly_mm: list[tuple[float, float]]) -> float:
+    if len(poly_mm) < 3:
+        return 0.0
+    s = 0.0
+    for i, (x1, y1) in enumerate(poly_mm):
+        x2, y2 = poly_mm[(i + 1) % len(poly_mm)]
+        s += x1 * y2 - x2 * y1
+    return abs(s) * 0.5
+
+
+def _polygon_perimeter_closed_mm(poly_mm: list[tuple[float, float]]) -> float:
+    if len(poly_mm) < 2:
+        return 0.0
+    n = len(poly_mm)
+    t = 0.0
+    for i in range(n):
+        x1, y1 = poly_mm[i]
+        x2, y2 = poly_mm[(i + 1) % n]
+        t += math.hypot(x2 - x1, y2 - y1)
+    return t
+
+
+def _slab_openings_per_host_floor(doc: Document) -> dict[str, int]:
+    out: dict[str, int] = {}
+    for e in doc.elements.values():
+        if isinstance(e, SlabOpeningElem):
+            hid = e.host_floor_id
+            out[hid] = out.get(hid, 0) + 1
+    return out
+
+
+def slab_opening_documentation_row_v0(doc: Document, opening: SlabOpeningElem) -> dict[str, Any] | None:
+    """Deterministic slab void documentation row (plan/section/export readouts; WP-B03)."""
+
+    host_any = doc.elements.get(opening.host_floor_id)
+    if not isinstance(host_any, FloorElem):
+        return None
+    host = host_any
+
+    op_pts = [(float(p.x_mm), float(p.y_mm)) for p in opening.boundary_mm]
+    if len(op_pts) < 3:
+        return None
+
+    per_host = _slab_openings_per_host_floor(doc)
+    n_host = int(per_host.get(host.id, 0))
+
+    fx0, fx1, fy0, fy1 = outer_rect_extent_mm(op_pts)
+    bounds = {
+        "minX": round(fx0, 3),
+        "minY": round(fy0, 3),
+        "maxX": round(fx1, 3),
+        "maxY": round(fy1, 3),
+    }
+    area = round(_polygon_area_abs_mm2(op_pts), 3)
+    perim = round(_polygon_perimeter_closed_mm(op_pts), 3)
+
+    skip_reason: str | None = None
+    if n_host > 1:
+        skip_reason = "multi_slab_void_on_host"
+    else:
+        floor_pts = [(float(p.x_mm), float(p.y_mm)) for p in host.boundary_mm]
+        if len(floor_pts) < 3:
+            skip_reason = "non_axis_aligned_floor_outline"
+        elif not is_axis_aligned_rectangle_outline_mm(floor_pts):
+            skip_reason = "non_axis_aligned_floor_outline"
+        elif not is_axis_aligned_rectangle_outline_mm(op_pts):
+            skip_reason = "non_axis_aligned_opening_outline"
+        else:
+            panels = floor_panels_axis_aligned_rect_with_single_hole_mm(
+                floor_pts,
+                op_pts,
+                min_gap_mm=SLAB_OPENING_PANEL_GAP_MM,
+            )
+            if panels is None:
+                skip_reason = "void_panels_unresolved"
+
+    eligible = n_host == 1 and skip_reason is None
+
+    row: dict[str, Any] = {
+        "format": "slabOpeningDocumentationRow_v0",
+        "hostFloorId": host.id,
+        "hostFloorName": (host.name or "").strip() or host.id,
+        "openingId": opening.id,
+        "openingName": (opening.name or "").strip() or opening.id,
+        "documentationToken": f"so/{opening.id}@host/{host.id}",
+        "axisAlignedBoundsMm": bounds,
+        "areaMm2": area,
+        "perimeterMm": perim,
+        "panelSplitEvidence": {"eligible": eligible},
+        "skipReason": skip_reason,
+    }
+    if opening.is_shaft:
+        row["isShaft"] = True
+    return row

@@ -23,6 +23,7 @@ from bim_ai.elements import (
     RoomElem,
     RoomSeparationElem,
     SectionCutElem,
+    SlabOpeningElem,
     StairElem,
     ViewTemplateElem,
     WallElem,
@@ -30,6 +31,7 @@ from bim_ai.elements import (
 )
 from bim_ai.opening_cut_primitives import (
     hosted_opening_t_span_normalized,
+    slab_opening_documentation_row_v0,
     wall_plan_axis_aligned_xy,
     wall_plan_yaw_deg,
 )
@@ -1292,6 +1294,50 @@ def _counts_from_plan_primitives(prim: dict[str, Any]) -> tuple[int, dict[str, i
     return total, dict(sorted(counts.items()))
 
 
+def _slab_opening_documentation_rows_for_plan_view(
+    doc: Document,
+    *,
+    level: str | None,
+    hidden_semantic: set[str],
+    crop_box_mm: tuple[float, float, float, float] | None,
+    view_range_clip_mm: tuple[float, float, float] | None,
+) -> list[dict[str, Any]]:
+    """Slab void documentation rows for the active plan level and crop / view range."""
+
+    def span_in_vertical_range(z0: float, z1: float) -> bool:
+        if view_range_clip_mm is None:
+            return True
+        lo, hi, _cut = view_range_clip_mm
+        return _closed_z_intervals_overlap_mm(z0, z1, lo, hi)
+
+    def lvl_ok(lv: str | None) -> bool:
+        if not level:
+            return True
+        return lv == level if lv else False
+
+    out: list[dict[str, Any]] = []
+    for eid in sorted(eid for eid, e in doc.elements.items() if isinstance(e, SlabOpeningElem)):
+        sop = doc.elements[eid]
+        assert isinstance(sop, SlabOpeningElem)
+        host = doc.elements.get(sop.host_floor_id)
+        if not isinstance(host, FloorElem):
+            continue
+        if "floor" in hidden_semantic or not lvl_ok(host.level_id):
+            continue
+        op_poly = [(float(p.x_mm), float(p.y_mm)) for p in sop.boundary_mm]
+        if len(op_poly) < 3:
+            continue
+        if crop_box_mm is not None and not _poly_bbox_overlaps_crop(op_poly, crop_box_mm):
+            continue
+        fz0, fz1 = _floor_vertical_span_mm(doc, host)
+        if not span_in_vertical_range(fz0, fz1):
+            continue
+        row = slab_opening_documentation_row_v0(doc, sop)
+        if row is not None:
+            out.append(row)
+    return out
+
+
 def resolve_plan_projection_wire(
     doc: Document,
     *,
@@ -1518,6 +1564,18 @@ def resolve_plan_projection_wire(
             "opening": _plan_tag_style_hint_payload(res_open, "opening"),
             "room": _plan_tag_style_hint_payload(res_room, "room"),
         }
+
+    slab_doc_rows = _slab_opening_documentation_rows_for_plan_view(
+        doc,
+        level=active_level,
+        hidden_semantic=hidden_semantic,
+        crop_box_mm=effective_crop,
+        view_range_clip_mm=view_range_clip_mm,
+    )
+    out_payload["slabOpeningDocumentationEvidence_v0"] = {
+        "format": "slabOpeningDocumentationEvidence_v0",
+        "rows": slab_doc_rows,
+    }
     return out_payload
 
 

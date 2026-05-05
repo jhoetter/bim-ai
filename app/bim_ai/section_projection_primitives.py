@@ -34,10 +34,12 @@ from bim_ai.material_assembly_resolve import (
     section_assembly_alignment_fields_wall,
 )
 from bim_ai.opening_cut_primitives import (
+    SLAB_OPENING_PANEL_GAP_MM,
     floor_panels_axis_aligned_rect_with_single_hole_mm,
     hosted_opening_half_span_mm,
     hosted_opening_t_span_normalized,
     hosted_opening_u_projection_scale,
+    slab_opening_documentation_row_v0,
     wall_plan_axis_aligned_xy,
 )
 from bim_ai.roof_geometry import (
@@ -57,8 +59,6 @@ from bim_ai.type_material_registry import material_display_label
 _EPS = 1e-6
 
 _DEFAULT_DOOR_HEIGHT_MM = 2100.0
-
-_FLOOR_SLAB_PANEL_GAP_MM = 40.0
 
 
 def _hypot(dx: float, dy: float) -> float:
@@ -482,6 +482,10 @@ def build_section_projection_primitives(
                 "levelMarkers": _collect_level_markers(doc),
                 "sheetCallouts": _collect_sheet_callouts_for_section(doc, sec.id),
                 "sectionDocMaterialHints": [],
+                "slabOpeningDocumentationEvidence_v0": {
+                    "format": "slabOpeningDocumentationEvidence_v0",
+                    "rows": [],
+                },
             },
             warnings,
         )
@@ -695,7 +699,7 @@ def build_section_projection_primitives(
                 panel_rects_mm = floor_panels_axis_aligned_rect_with_single_hole_mm(
                     floor_pts,
                     op_pts,
-                    min_gap_mm=_FLOOR_SLAB_PANEL_GAP_MM,
+                    min_gap_mm=SLAB_OPENING_PANEL_GAP_MM,
                 )
 
         if panel_rects_mm:
@@ -901,5 +905,31 @@ def build_section_projection_primitives(
         primitives["sectionGeometryExtentMm"] = extent
 
     primitives["sectionDocMaterialHints"] = _build_section_doc_material_hints(doc, walls)
+
+    slab_doc_rows: list[dict[str, Any]] = []
+    for oid in sorted(eid for eid, e in doc.elements.items() if isinstance(e, SlabOpeningElem)):
+        sop = doc.elements[oid]
+        assert isinstance(sop, SlabOpeningElem)
+        host = doc.elements.get(sop.host_floor_id)
+        if not isinstance(host, FloorElem):
+            continue
+        op_poly = [(float(p.x_mm), float(p.y_mm)) for p in sop.boundary_mm]
+        if len(op_poly) < 3:
+            continue
+        if (
+            _polygon_u_span_in_strip(
+                op_poly, p0x=p0x, p0y=p0y, tx=tx, ty=ty, nx=nx, ny=ny, half=half
+            )
+            is None
+        ):
+            continue
+        row = slab_opening_documentation_row_v0(doc, sop)
+        if row is not None:
+            slab_doc_rows.append(row)
+
+    primitives["slabOpeningDocumentationEvidence_v0"] = {
+        "format": "slabOpeningDocumentationEvidence_v0",
+        "rows": slab_doc_rows,
+    }
 
     return primitives, warnings
