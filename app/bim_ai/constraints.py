@@ -201,6 +201,10 @@ _RULE_DISCIPLINE: dict[str, str] = {
     "exchange_ifc_manifest_authoritative_alignment_drift": "exchange",
     "exchange_ifc_manifest_unsupported_alignment_drift": "exchange",
     "exchange_ifc_manifest_ids_pointer_alignment_drift": "exchange",
+    "exchange_ifc_qto_stair_gap": "exchange",
+    "exchange_ifc_qto_room_gap": "exchange",
+    "exchange_ifc_pset_floor_gap": "exchange",
+    "exchange_ifc_pset_roof_gap": "exchange",
     "material_catalog_missing_layer_stack": "exchange",
     "material_catalog_stale_assembly_reference": "exchange",
     "material_catalog_missing_material": "exchange",
@@ -1014,6 +1018,94 @@ def _exchange_advisory_violations(elements: dict[str, Element]) -> list[Violatio
                 discipline="exchange",
             )
         )
+
+    # IDS adviser: per-product-kind QTO and Pset gap rules derived from coverage evidence rows.
+    ps_cov = ifc_row.get("ifcPropertySetCoverageEvidence_v0") or {}
+    if isinstance(ps_cov, dict) and ps_cov.get("available"):
+        cov_rows = list(ps_cov.get("rows") or [])
+
+        _qto_missing_token = "missing_qto_link"
+        _pset_critical_tokens = {"missing_Pset_Reference", "site_reference_join_mismatch", "reference_not_in_document"}
+
+        stair_qto_gaps = sum(
+            1 for r in cov_rows
+            if str(r.get("kernelKind") or "") == "stair"
+            and str(r.get("idsGapReasonToken") or "") == _qto_missing_token
+        )
+        if stair_qto_gaps > 0:
+            out.append(
+                Violation(
+                    rule_id="exchange_ifc_qto_stair_gap",
+                    severity="info",
+                    message=(
+                        f"IFC coverage evidence: {stair_qto_gaps} stair product(s) missing "
+                        "Qto_StairBaseQuantities linkage "
+                        "(ifcPropertySetCoverageEvidence_v0 rows with kernelKind=stair, missing_qto_link)."
+                    ),
+                    element_ids=[],
+                    discipline="exchange",
+                )
+            )
+
+        room_qto_gaps = sum(
+            1 for r in cov_rows
+            if str(r.get("kernelKind") or "") == "room"
+            and str(r.get("idsGapReasonToken") or "") == _qto_missing_token
+        )
+        if room_qto_gaps > 0:
+            out.append(
+                Violation(
+                    rule_id="exchange_ifc_qto_room_gap",
+                    severity="info",
+                    message=(
+                        f"IFC coverage evidence: {room_qto_gaps} room/space product(s) missing "
+                        "Qto_SpaceBaseQuantities linkage "
+                        "(ifcPropertySetCoverageEvidence_v0 rows with kernelKind=room, missing_qto_link)."
+                    ),
+                    element_ids=[],
+                    discipline="exchange",
+                )
+            )
+
+        floor_pset_gaps = sum(
+            1 for r in cov_rows
+            if str(r.get("kernelKind") or "") == "floor"
+            and str(r.get("idsGapReasonToken") or "") in _pset_critical_tokens
+        )
+        if floor_pset_gaps > 0:
+            out.append(
+                Violation(
+                    rule_id="exchange_ifc_pset_floor_gap",
+                    severity="info",
+                    message=(
+                        f"IFC coverage evidence: {floor_pset_gaps} floor/slab product(s) with incomplete "
+                        "Pset_SlabCommon identity fields "
+                        "(ifcPropertySetCoverageEvidence_v0 rows with kernelKind=floor)."
+                    ),
+                    element_ids=[],
+                    discipline="exchange",
+                )
+            )
+
+        roof_pset_gaps = sum(
+            1 for r in cov_rows
+            if str(r.get("kernelKind") or "") == "roof"
+            and str(r.get("idsGapReasonToken") or "") in _pset_critical_tokens
+        )
+        if roof_pset_gaps > 0:
+            out.append(
+                Violation(
+                    rule_id="exchange_ifc_pset_roof_gap",
+                    severity="info",
+                    message=(
+                        f"IFC coverage evidence: {roof_pset_gaps} roof product(s) with incomplete "
+                        "Pset_RoofCommon identity fields "
+                        "(ifcPropertySetCoverageEvidence_v0 rows with kernelKind=roof)."
+                    ),
+                    element_ids=[],
+                    discipline="exchange",
+                )
+            )
 
     return out
 

@@ -36,6 +36,7 @@ from bim_ai.ifc_material_layer_exchange_v0 import (
     try_attach_kernel_ifc_material_layer_set,
 )
 from bim_ai.ifc_property_set_coverage_evidence_v0 import (
+    build_ifc_property_set_coverage_expansion_v1,
     build_kernel_ifc_property_set_coverage_evidence_v0,
     unavailable_property_set_coverage_evidence_v0,
 )
@@ -411,6 +412,40 @@ def _count_ifc_products_with_qto_template(products: list[Any], qto_template_name
     return sum(1 for p in products if _ifc_product_defines_qto_template(p, qto_template_name))
 
 
+def _read_named_qto_values(product: Any, qto_template_name: str) -> dict[str, float]:
+    """Read scalar quantity values from a named IfcElementQuantity attached to a product."""
+    rels = getattr(product, "IsDefinedBy", None) or []
+    for rel in rels:
+        try:
+            if not rel.is_a("IfcRelDefinesByProperties"):
+                continue
+        except Exception:
+            continue
+        dfn = getattr(rel, "RelatingPropertyDefinition", None)
+        if dfn is None:
+            continue
+        try:
+            if not dfn.is_a("IfcElementQuantity"):
+                continue
+            if getattr(dfn, "Name", None) != qto_template_name:
+                continue
+        except Exception:
+            continue
+        result: dict[str, float] = {}
+        for qty in getattr(dfn, "Quantities", None) or []:
+            name = str(getattr(qty, "Name", None) or "")
+            for attr in ("CountValue", "LengthValue", "AreaValue", "VolumeValue", "WeightValue"):
+                val = getattr(qty, attr, None)
+                if val is not None:
+                    try:
+                        result[name] = float(val)
+                    except Exception:
+                        pass
+                    break
+        return result
+    return {}
+
+
 def _kernel_site_element_ids_sorted(doc: Document | None) -> list[str]:
     if doc is None:
         return []
@@ -645,6 +680,7 @@ def inspect_kernel_ifc_semantics(
             "IfcSpace": _count_ifc_products_with_qto_template(list(spaces), "Qto_SpaceBaseQuantities"),
             "IfcDoor": _count_ifc_products_with_qto_template(list(doors), "Qto_DoorBaseQuantities"),
             "IfcWindow": _count_ifc_products_with_qto_template(list(windows), "Qto_WindowBaseQuantities"),
+            "IfcStair": _count_ifc_products_with_qto_template(list(stairs), "Qto_StairBaseQuantities"),
         },
         "spaceProgrammeFields": {
             "ProgrammeCode": _count_space_programme("Pset_SpaceCommon", "ProgrammeCode"),
@@ -657,6 +693,7 @@ def inspect_kernel_ifc_semantics(
         "siteExchangeEvidence_v0": build_site_exchange_evidence_v0(doc=doc, model=model),
         "materialLayerSetReadback_v0": kernel_ifc_material_layer_set_readback_v0(model, doc),
         "propertySetCoverageEvidence_v0": build_kernel_ifc_property_set_coverage_evidence_v0(model, doc),
+        "propertySetCoverageExpansion_v1": build_ifc_property_set_coverage_expansion_v1(model),
     }
     if skip_counts:
         out["ifcKernelGeometrySkippedCounts"] = skip_counts
@@ -1469,6 +1506,7 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
     ids_roof_rows.sort(key=lambda r: (r["identityReference"], r["ifcGlobalId"]))
 
     stair_cmds: list[dict[str, Any]] = []
+    ids_stair_rows: list[dict[str, Any]] = []
     stairs_skipped_no_reference = 0
 
     for sta in sorted(model.by_type("IfcStair") or [], key=lambda s: str(getattr(s, "GlobalId", None) or "")):
@@ -1524,19 +1562,39 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
             continue
 
         stname = str(getattr(sta, "Name", None) or "") or ref_s
-        stair_cmds.append(
-            CreateStairCmd(
-                id=ref_s,
-                name=stname,
-                base_level_id=base_lvl_id,
-                top_level_id=candidates[0],
-                run_start_mm=Vec2Mm(x_mm=geo_st["start_x_mm"], y_mm=geo_st["start_y_mm"]),
-                run_end_mm=Vec2Mm(x_mm=geo_st["end_x_mm"], y_mm=geo_st["end_y_mm"]),
-                width_mm=geo_st["thickness_mm"],
-            ).model_dump(mode="json", by_alias=True, exclude={"riser_mm", "tread_mm"})
+        stair_qto = _read_named_qto_values(sta, "Qto_StairBaseQuantities")
+        stair_cmd = CreateStairCmd(
+            id=ref_s,
+            name=stname,
+            base_level_id=base_lvl_id,
+            top_level_id=candidates[0],
+            run_start_mm=Vec2Mm(x_mm=geo_st["start_x_mm"], y_mm=geo_st["start_y_mm"]),
+            run_end_mm=Vec2Mm(x_mm=geo_st["end_x_mm"], y_mm=geo_st["end_y_mm"]),
+            width_mm=geo_st["thickness_mm"],
+        ).model_dump(mode="json", by_alias=True, exclude={"riser_mm", "tread_mm"})
+        stair_cmd["totalHeightMm"] = float(geo_st["height_mm"])
+        riser_count_qto = stair_qto.get("NumberOfRisers")
+        tread_count_qto = stair_qto.get("NumberOfTreads")
+        if riser_count_qto is not None:
+            stair_cmd["riserCount"] = int(round(riser_count_qto))
+        if tread_count_qto is not None:
+            stair_cmd["treadCount"] = int(round(tread_count_qto))
+        stair_cmds.append(stair_cmd)
+        ids_stair_rows.append(
+            {
+                "ifcGlobalId": sta_gid,
+                "identityReference": ref_s,
+                "totalHeightMm": float(geo_st["height_mm"]),
+                "qtoStairBaseQuantitiesLinked": _ifc_product_defines_qto_template(
+                    sta, "Qto_StairBaseQuantities"
+                ),
+                "riserCount": int(round(riser_count_qto)) if riser_count_qto is not None else None,
+                "treadCount": int(round(tread_count_qto)) if tread_count_qto is not None else None,
+            }
         )
 
     stair_cmds.sort(key=lambda c: str(c.get("id") or ""))
+    ids_stair_rows.sort(key=lambda r: (r["identityReference"], r["ifcGlobalId"]))
 
     door_cmds, win_cmds, kernel_door_skip, kernel_window_skip = build_wall_hosted_opening_replay_commands_v0(
         model,
@@ -1770,13 +1828,16 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
                 "Per-product linkage for cleanroom IDS read-back vs authoritative replay rows: IfcSpace rows carry "
                 "programme + Qto_SpaceBaseQuantities; IfcRoof rows carry identity Reference only (no roof QTO slice); "
                 "IfcSlab / typed floor rows carry instance Reference + optional IfcSlabType Reference + "
-                "Qto_SlabBaseQuantities linkage flag. Space identity Reference aligns with "
+                "Qto_SlabBaseQuantities linkage flag; IfcStair rows carry identity Reference + "
+                "Qto_StairBaseQuantities linkage flag + riserCount/treadCount/totalHeightMm. "
+                "Space identity Reference aligns with "
                 "exchange_ifc_ids_identity_pset_gap; qtoSpaceBaseQuantitiesLinked aligns with "
                 "exchange_ifc_ids_qto_gap."
             ),
             "spaces": ids_space_rows,
             "roofs": ids_roof_rows,
             "floors": ids_floor_rows,
+            "stairs": ids_stair_rows,
         },
         "commands": merged_cmds,
         "extractionGaps": extraction_gaps,
@@ -2785,11 +2846,18 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         geo_products += 1
         attach_kernel_identity_pset(sp, "Pset_SpaceCommon", rid, **_kernel_ifc_space_export_props(rm))
         gross_area = _polygon_area_m2_xy_mm(pts_outline)
+        net_perimeter = _polygon_perimeter_m_xy_mm(pts_outline)
+        net_volume = float(gross_area) * float(prism_h_m)
         _try_attach_qto(
             f,
             sp,
             "Qto_SpaceBaseQuantities",
-            {"GrossFloorArea": float(gross_area), "NetFloorArea": float(gross_area)},
+            {
+                "GrossFloorArea": float(gross_area),
+                "NetFloorArea": float(gross_area),
+                "NetVolume": net_volume,
+                "NetPerimeter": net_perimeter,
+            },
         )
 
     for oid in sorted(eid for eid, e in doc.elements.items() if isinstance(e, SlabOpeningElem)):
@@ -2902,6 +2970,20 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         ifcopenshell.api.spatial.assign_container(f, products=[stair_ent], relating_structure=st_inst_st)
         geo_products += 1
         attach_kernel_identity_pset(stair_ent, "Pset_StairCommon", sid)
+        riser_mm_val = float(st.riser_mm) if st.riser_mm > 0 else 175.0
+        riser_count = max(1, round(rise_mm / riser_mm_val))
+        run_len_m = math.hypot(ex - sx, ey - sy)
+        _try_attach_qto(
+            f,
+            stair_ent,
+            "Qto_StairBaseQuantities",
+            {
+                "NumberOfRisers": float(riser_count),
+                "NumberOfTreads": float(max(0, riser_count - 1)),
+                "Height": rise_m,
+                "Length": run_len_m,
+            },
+        )
 
     if geo_products == 0:
 

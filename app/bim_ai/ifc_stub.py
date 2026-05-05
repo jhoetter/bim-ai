@@ -114,6 +114,7 @@ def build_ifc_property_set_coverage_evidence_v0(doc: Document) -> dict[str, Any]
 
     from bim_ai.export_ifc import IFC_AVAILABLE, export_ifc_model_step  # noqa: PLC0415
     from bim_ai.ifc_property_set_coverage_evidence_v0 import (  # noqa: PLC0415
+        build_ifc_property_set_coverage_expansion_v1,
         build_kernel_ifc_property_set_coverage_evidence_v0,
     )
 
@@ -128,9 +129,11 @@ def build_ifc_property_set_coverage_evidence_v0(doc: Document) -> dict[str, Any]
     step = export_ifc_model_step(doc)
     model = ifcopenshell.file.from_string(step)
     ev = build_kernel_ifc_property_set_coverage_evidence_v0(model, doc)
+    expansion = build_ifc_property_set_coverage_expansion_v1(model)
     return {
         "format": "ifcPropertySetCoverageEvidence_v0",
         **ev,
+        "ifcPropertySetCoverageExpansion_v1": expansion,
         "inspectPointer": (
             "inspect_kernel_ifc_semantics.propertySetCoverageEvidence_v0 — same schema as this manifest slice."
         ),

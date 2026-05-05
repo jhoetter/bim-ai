@@ -496,3 +496,62 @@ def build_kernel_ifc_property_set_coverage_evidence_v0(model: Any, doc: Document
             "slabVoidOpeningsWithoutIdentityPset": slab_void_n,
         },
     }
+
+
+def build_ifc_property_set_coverage_expansion_v1(model: Any) -> dict[str, Any]:
+    """Per-product-class pset field count expansion (ifcPropertySetCoverageExpansion_v1).
+
+    For each IFC product class in the kernel slice, collects every encountered pset name,
+    counts total fields defined across instances, and counts populated (non-None, non-empty) fields.
+    """
+    if _ifc_elem_util is None:
+        return {"schemaVersion": 1, "available": False, "reason": "ifc_elem_util_missing", "rows": []}
+
+    _KERNEL_CLASSES_AND_PSETS: list[tuple[str, str]] = [
+        ("IfcWall", "Pset_WallCommon"),
+        ("IfcSlab", "Pset_SlabCommon"),
+        ("IfcRoof", "Pset_RoofCommon"),
+        ("IfcStair", "Pset_StairCommon"),
+        ("IfcSpace", "Pset_SpaceCommon"),
+        ("IfcDoor", "Pset_DoorCommon"),
+        ("IfcWindow", "Pset_WindowCommon"),
+        ("IfcSite", "Pset_SiteCommon"),
+    ]
+
+    expansion_rows: list[dict[str, Any]] = []
+
+    for ifc_class, primary_pset in _KERNEL_CLASSES_AND_PSETS:
+        products = list(model.by_type(ifc_class) or [])
+        product_count = len(products)
+        field_count_total = 0
+        populated_count = 0
+
+        for product in products:
+            ps = _ifc_elem_util.get_psets(product)
+            bucket = ps.get(primary_pset)
+            if not isinstance(bucket, dict):
+                continue
+            for key, val in bucket.items():
+                if key == "id":
+                    continue
+                field_count_total += 1
+                if val is not None and str(val).strip():
+                    populated_count += 1
+
+        expansion_rows.append(
+            {
+                "ifcProductClass": ifc_class,
+                "primaryPsetName": primary_pset,
+                "productCount": product_count,
+                "psetFieldCountTotal": field_count_total,
+                "psetFieldPopulatedCount": populated_count,
+                "psetFieldGapCount": field_count_total - populated_count,
+                "populatedRatio": round(populated_count / field_count_total, 4) if field_count_total > 0 else None,
+            }
+        )
+
+    return {
+        "schemaVersion": 1,
+        "available": True,
+        "rows": expansion_rows,
+    }
