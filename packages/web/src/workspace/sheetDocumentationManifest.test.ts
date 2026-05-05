@@ -65,10 +65,12 @@ describe('indexViewportEvidenceHints', () => {
         crop: 'omit',
         planProjectionSegment: '',
         sectionDocumentationSegment: '',
+        scheduleDocumentationSegment: 'schDoc[id=s1 rows=0 cols=3 cat=door]',
       },
     ];
     const m = indexViewportEvidenceHints(hints);
     expect(m.size).toBe(2);
     expect(String(m.get('vp-plan')?.planProjectionSegment)).toContain('planPrim');
+    expect(String(m.get('vp-sch')?.scheduleDocumentationSegment)).toContain('schDoc');
   });
 });

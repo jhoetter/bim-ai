@@ -86,6 +86,20 @@ export function SheetDocumentationManifest(props: {
     });
   }, [authoring, sheet.viewportsMm, vpDrafts]);
 
+  /** Stable manifest table order (sheet JSON order may vary); authoring preserves draft order for UX. */
+  const manifestViewportRows = useMemo(() => {
+    if (authoring) return viewportRows;
+    return [...viewportRows].sort((a, b) => {
+      const byId = a.viewportId.localeCompare(b.viewportId);
+      if (byId !== 0) return byId;
+      const pa = parseSheetViewRef(a.viewRef);
+      const pb = parseSheetViewRef(b.viewRef);
+      const na = ((pa?.normalizedRef ?? a.viewRef) || '').trim();
+      const nb = ((pb?.normalizedRef ?? b.viewRef) || '').trim();
+      return na.localeCompare(nb);
+    });
+  }, [authoring, viewportRows]);
+
   const [evidence, setEvidence] = useState<EvidenceFetchState>({ status: 'idle' });
 
   useEffect(() => {
@@ -176,6 +190,16 @@ export function SheetDocumentationManifest(props: {
         notes.push(
           `Viewport ${row.viewportId}: view ref is not a recognized plan:/section:/schedule:/viewpoint: prefix.`,
         );
+        continue;
+      }
+      if (
+        parsed.kind === 'schedule' &&
+        parsed.refId &&
+        resolveViewportTitleFromRef(elementsById, row.viewRef) === undefined
+      ) {
+        notes.push(
+          `Viewport ${row.viewportId}: schedule ref does not resolve to a schedule element (schedule:${parsed.refId}).`,
+        );
       }
       const cropEx = viewportCropExtentsMm(row.cropMinMm, row.cropMaxMm);
       if (cropEx && (cropEx.widthMm <= 0 || cropEx.heightMm <= 0)) {
@@ -201,6 +225,7 @@ export function SheetDocumentationManifest(props: {
     evidence.status,
     modelId,
     viewportRows,
+    elementsById,
   ]);
 
   const tbEntries = sortedStringMapEntries(
@@ -290,14 +315,14 @@ export function SheetDocumentationManifest(props: {
               </tr>
             </thead>
             <tbody>
-              {viewportRows.length === 0 ? (
+              {manifestViewportRows.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="border border-border px-1 py-0.5 text-muted">
                     (no viewports)
                   </td>
                 </tr>
               ) : (
-                viewportRows.map((row) => {
+                manifestViewportRows.map((row) => {
                   const parsed = parseSheetViewRef(row.viewRef);
                   const cropEx = viewportCropExtentsMm(row.cropMinMm, row.cropMaxMm);
                   const cropLabel = cropEx ? `${cropEx.widthMm}×${cropEx.heightMm}` : 'omit';
@@ -317,6 +342,12 @@ export function SheetDocumentationManifest(props: {
                     String(hint.sectionDocumentationSegment).trim()
                   ) {
                     hintParts.push(String(hint.sectionDocumentationSegment));
+                  }
+                  if (
+                    hint?.scheduleDocumentationSegment !== undefined &&
+                    String(hint.scheduleDocumentationSegment).trim()
+                  ) {
+                    hintParts.push(String(hint.scheduleDocumentationSegment));
                   }
                   const hintLine = hintParts.join(' · ') || '—';
                   return (

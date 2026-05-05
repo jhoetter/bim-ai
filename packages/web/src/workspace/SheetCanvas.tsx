@@ -15,7 +15,7 @@ import {
   normalizeTitleblockDraftFromSheet,
 } from './sheetTitleblockAuthoring';
 import { SheetDocumentationManifest } from './SheetDocumentationManifest';
-import { resolveViewportTitleFromRef } from './sheetViewRef';
+import { parseSheetViewRef, resolveViewportTitleFromRef } from './sheetViewRef';
 import { SectionViewportSvg } from './sectionViewportSvg';
 
 type SheetEl = Extract<Element, { kind: 'sheet' }>;
@@ -282,6 +282,24 @@ function SheetCanvasWithSheet(props: {
             const secInnerW = Math.max(200, widthMm - 320);
             const secInnerH = Math.max(200, heightMm - 2700);
 
+            const parsedRef = parseSheetViewRef(viewRef);
+            const isScheduleVp = parsedRef?.kind === 'schedule' && Boolean(parsedRef.refId);
+            const scheduleEl = isScheduleVp ? elementsById[parsedRef!.refId] : undefined;
+            const scheduleResolved = scheduleEl?.kind === 'schedule';
+            const scheduleCatRaw =
+              scheduleResolved && scheduleEl.filters && typeof scheduleEl.filters === 'object'
+                ? (scheduleEl.filters as Record<string, unknown>).category
+                : undefined;
+            const scheduleCat =
+              typeof scheduleCatRaw === 'string' && scheduleCatRaw.trim()
+                ? scheduleCatRaw.trim()
+                : '';
+            const scheduleCaption = isScheduleVp
+              ? scheduleResolved
+                ? `schedule · ${parsedRef!.refId}${scheduleCat ? ` · ${scheduleCat}` : ''}`
+                : `unresolved schedule · ${parsedRef!.refId}`
+              : '';
+
             const handle = 560;
             const hx = xMm + widthMm - handle;
             const hy = yMm + heightMm - handle;
@@ -297,6 +315,7 @@ function SheetCanvasWithSheet(props: {
                   fill="#ffffff"
                   stroke="#475569"
                   strokeWidth={80}
+                  strokeDasharray={isScheduleVp ? '480 240' : undefined}
                   className={authoring ? 'cursor-move touch-none' : undefined}
                   onPointerDown={authoring ? (e) => beginDrag(e, index) : undefined}
                 />
@@ -336,6 +355,17 @@ function SheetCanvasWithSheet(props: {
                 {sub ? (
                   <text x={xMm + 200} y={yMm + 1400} fill="#64748b" style={{ fontSize: '350px' }}>
                     {sub}
+                  </text>
+                ) : null}
+                {scheduleCaption ? (
+                  <text
+                    data-testid={`sheet-viewport-schedule-caption-${index}`}
+                    x={xMm + 200}
+                    y={yMm + 2200}
+                    fill={scheduleResolved ? '#15803d' : '#b45309'}
+                    style={{ fontSize: '320px' }}
+                  >
+                    {scheduleCaption}
                   </text>
                 ) : null}
               </g>

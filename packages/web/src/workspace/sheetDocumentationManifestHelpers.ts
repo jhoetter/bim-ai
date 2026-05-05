@@ -38,6 +38,7 @@ export type ViewportEvidenceHintRow = {
   crop?: unknown;
   planProjectionSegment?: unknown;
   sectionDocumentationSegment?: unknown;
+  scheduleDocumentationSegment?: unknown;
 };
 
 export function indexViewportEvidenceHints(

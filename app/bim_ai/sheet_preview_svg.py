@@ -20,6 +20,7 @@ from bim_ai.elements import (
     ViewpointElem,
 )
 from bim_ai.plan_projection_wire import resolve_plan_projection_wire
+from bim_ai.schedule_derivation import derive_schedule_table
 from bim_ai.section_projection_primitives import build_section_projection_primitives
 
 SHEET_PRINT_RASTER_PLACEHOLDER_CONTRACT_V1 = "sheetPrintRasterPlaceholder_v1"
@@ -479,6 +480,34 @@ def format_section_viewport_documentation_segment(doc: Document, view_ref: str) 
     return "secDoc[" + " ".join(inner_parts) + "]"
 
 
+def format_schedule_viewport_documentation_segment(doc: Document, view_ref: str) -> str:
+    """Compact deterministic summary when a sheet viewport references ``schedule:``."""
+
+    if not view_ref.strip() or ":" not in view_ref:
+        return ""
+    kind_raw, ref_raw = view_ref.split(":", 1)
+    kind = kind_raw.strip().lower()
+    ref = ref_raw.strip()
+    if kind != "schedule" or not ref:
+        return ""
+    el = doc.elements.get(ref)
+    if not isinstance(el, ScheduleElem):
+        return "schDoc[missing_schedule_element]"
+    try:
+        tbl = derive_schedule_table(doc, ref)
+    except (ValueError, TypeError, KeyError):
+        return "schDoc[derive_error]"
+    cols = tbl.get("columns") or []
+    ncols = len(cols) if isinstance(cols, list) else 0
+    try:
+        total_rows = int(tbl.get("totalRows", 0))
+    except (TypeError, ValueError):
+        total_rows = 0
+    cat = str(tbl.get("category") or "")
+    sid = str(tbl.get("scheduleId") or ref)
+    return f"schDoc[id={sid} rows={total_rows} cols={ncols} cat={cat}]"
+
+
 def viewport_evidence_hints_v0(vps_raw: list[Any]) -> list[dict[str, Any]]:
     """Sorted hints for deterministic manifest consumption (WP-X01)."""
 
@@ -580,6 +609,7 @@ def viewport_evidence_hints_v1(doc: Document, vps_raw: list[Any]) -> list[dict[s
         sec_seg = (
             format_section_viewport_documentation_segment(doc, str(vr)) if isinstance(vr, str) else ""
         )
+        sch_seg = format_schedule_viewport_documentation_segment(doc, str(vr)) if isinstance(vr, str) else ""
 
         hints.append(
             {
@@ -588,6 +618,7 @@ def viewport_evidence_hints_v1(doc: Document, vps_raw: list[Any]) -> list[dict[s
                 "crop": crop,
                 "planProjectionSegment": plan_seg,
                 "sectionDocumentationSegment": sec_seg,
+                "scheduleDocumentationSegment": sch_seg,
             }
         )
 
@@ -669,11 +700,18 @@ def sheet_viewport_export_listing_lines(doc: Document, sh: SheetElem) -> list[st
 
         proj_seg = format_sheet_plan_viewport_projection_segment(doc, vp) if isinstance(vp, dict) else ""
 
+        sch_seg = (
+            format_schedule_viewport_documentation_segment(doc, str(vr_raw))
+            if isinstance(vr_raw, str)
+            else ""
+        )
+
         geo_tail = (
             geo
             + (f" · {crop_seg}" if crop_seg else "")
             + (f" · {doc_seg}" if doc_seg else "")
             + (f" · {proj_seg}" if proj_seg else "")
+            + (f" · {sch_seg}" if sch_seg else "")
         )
 
         lines.append(str(f"{label}{suffix}{geo_tail}")[:220])
@@ -688,7 +726,8 @@ def _viewport_export_correlation_segment_bytes(hint_row: dict[str, Any]) -> byte
     crop = str(hint_row.get("crop") or "")
     plan_s = str(hint_row.get("planProjectionSegment") or "")
     sec_s = str(hint_row.get("sectionDocumentationSegment") or "")
-    return f"{crop}\n{plan_s}\n{sec_s}".encode()
+    sch_s = str(hint_row.get("scheduleDocumentationSegment") or "")
+    return f"{crop}\n{plan_s}\n{sec_s}\n{sch_s}".encode()
 
 
 def build_sheet_print_raster_print_contract_v3(
@@ -873,6 +912,16 @@ def sheet_elem_to_svg(doc: Document, sh: SheetElem) -> str:
                 f'fill="#b45309" font-size="280px">{esc_proj}</text>'
             )
 
+        sch_seg_svg = format_schedule_viewport_documentation_segment(doc, str(vr)) if isinstance(vr, str) else ""
+        sch_block = ""
+        if sch_seg_svg:
+            esc_sch = html.escape(sch_seg_svg)
+            sch_block = (
+                f'<text x="{x_mm + 200}" y="{y_mm + 3000}" '
+                f'data-schedule-doc-token="scheduleDocumentationSegment" '
+                f'fill="#15803d" font-size="280px">{esc_sch}</text>'
+            )
+
         viewport_blocks.append(
             "<g>"
             f'<rect x="{x_mm}" y="{y_mm}" width="{width_mm}" height="{height_mm}" '
@@ -884,6 +933,7 @@ def sheet_elem_to_svg(doc: Document, sh: SheetElem) -> str:
             f"{crop_block}"
             f"{doc_block}"
             f"{proj_block}"
+            f"{sch_block}"
             "</g>"
         )
 

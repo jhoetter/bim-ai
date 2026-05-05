@@ -34,6 +34,7 @@ from bim_ai.elements import (
     RoomColorSchemeRow,
     RoomElem,
     RoomSeparationElem,
+    ScheduleElem,
     SectionCutElem,
     SheetElem,
     SlabOpeningElem,
@@ -65,6 +66,7 @@ from bim_ai.sheet_preview_svg import (
     sheet_elem_to_svg,
     sheet_print_raster_print_surrogate_png_bytes_v2,
     validate_sheet_print_raster_print_contract_v3,
+    viewport_evidence_hints_v1,
 )
 from bim_ai.type_material_registry import merged_registry_payload
 
@@ -495,6 +497,97 @@ def test_deterministic_sheet_evidence_viewport_hints_v0_sorted_and_crop() -> Non
     assert arow["crop"] == "mn=7,8 mx=9,11"
     assert arow.get("planProjectionSegment") == ""
     assert arow.get("sectionDocumentationSegment") == ""
+    assert arow.get("scheduleDocumentationSegment") == ""
+
+
+def test_viewport_evidence_hints_v1_schedule_documentation_segment_sorted() -> None:
+    doc = Document(
+        revision=3,
+        elements={
+            "sch-1": ScheduleElem(
+                kind="schedule",
+                id="sch-1",
+                name="Doors",
+                filters={"category": "door"},
+            ),
+            "sheet-b": SheetElem(
+                kind="sheet",
+                id="sheet-b",
+                name="S",
+                viewportsMm=[
+                    {
+                        "viewportId": "z-sch",
+                        "viewRef": "schedule:sch-1",
+                        "xMm": 0,
+                        "yMm": 0,
+                        "widthMm": 100,
+                        "heightMm": 100,
+                    },
+                    {
+                        "viewportId": "a-bad",
+                        "viewRef": "schedule:no-such-schedule",
+                        "xMm": 10,
+                        "yMm": 10,
+                        "widthMm": 50,
+                        "heightMm": 50,
+                    },
+                ],
+            ),
+        },
+    )
+    sh = doc.elements["sheet-b"]
+    assert isinstance(sh, SheetElem)
+    hints = viewport_evidence_hints_v1(doc, list(sh.viewports_mm or []))
+    assert [h["viewportId"] for h in hints] == ["a-bad", "z-sch"]
+
+    bad = next(h for h in hints if h["viewportId"] == "a-bad")
+    assert bad.get("scheduleDocumentationSegment") == "schDoc[missing_schedule_element]"
+
+    good = next(h for h in hints if h["viewportId"] == "z-sch")
+    tbl = derive_schedule_table(doc, "sch-1")
+    cat = str(tbl.get("category") or "")
+    ncols = len(tbl.get("columns") or [])
+    try:
+        nrows = int(tbl.get("totalRows", 0))
+    except (TypeError, ValueError):
+        nrows = 0
+    assert good.get("scheduleDocumentationSegment") == (
+        f"schDoc[id=sch-1 rows={nrows} cols={ncols} cat={cat}]"
+    )
+
+
+def test_sheet_preview_svg_includes_schedule_documentation_token() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "sch-1": ScheduleElem(
+                kind="schedule",
+                id="sch-1",
+                name="W",
+                filters={"category": "window"},
+            ),
+            "sheet-s": SheetElem(
+                kind="sheet",
+                id="sheet-s",
+                name="S",
+                viewportsMm=[
+                    {
+                        "viewportId": "v1",
+                        "viewRef": "schedule:sch-1",
+                        "xMm": 1000,
+                        "yMm": 1000,
+                        "widthMm": 8000,
+                        "heightMm": 6000,
+                    },
+                ],
+            ),
+        },
+    )
+    sh = doc.elements["sheet-s"]
+    assert isinstance(sh, SheetElem)
+    svg = sheet_elem_to_svg(doc, sh)
+    assert 'data-schedule-doc-token="scheduleDocumentationSegment"' in svg
+    assert "schDoc[" in svg
 
 
 def test_deterministic_plan_view_evidence_rows_sorted_and_stems() -> None:
