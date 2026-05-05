@@ -16,6 +16,11 @@ import { formatAgentReviewActionDetails } from './agentReviewActionDetails';
 import { parseAgentReviewActionsV1, type AgentReviewActionRow } from './agentReviewActions';
 import { summarizeArtifactUploadManifestV1 } from './artifactUploadManifestReadout';
 import {
+  EvidenceBaselineLifecycleReadoutV1Table,
+  parseEvidenceBaselineLifecycleReadoutV1,
+  type EvidenceBaselineLifecycleReadoutWire,
+} from './evidenceBaselineLifecycleReadout';
+import {
   summarizeBcfRoundtripEvidenceSummary,
   type BcfRoundtripEvidenceSummaryWire,
 } from './bcfRoundtripEvidenceSummaryFormat';
@@ -143,6 +148,7 @@ export function AgentReviewPane() {
     } | null;
     reviewActions: AgentReviewActionRow[];
     artifactUploadManifestReadout: string[] | null;
+    baselineLifecycleReadout: EvidenceBaselineLifecycleReadoutWire | null;
   };
 
   const assumptionsJson = useMemo(() => {
@@ -287,6 +293,7 @@ export function AgentReviewPane() {
       performanceGate: null,
       reviewActions: [],
       artifactUploadManifestReadout: null,
+      baselineLifecycleReadout: null,
     });
 
     if (!evidenceTxt) return empty();
@@ -339,6 +346,10 @@ export function AgentReviewPane() {
       if (aumLines.length > 0) {
         artifactUploadManifestReadout = aumLines;
       }
+
+      let baselineLifecycleReadout: EvidenceArtifactSummary['baselineLifecycleReadout'] = null;
+      const lifecycleRoRaw = payload.evidenceBaselineLifecycleReadout_v1;
+      baselineLifecycleReadout = parseEvidenceBaselineLifecycleReadoutV1(lifecycleRoRaw);
 
       let diffFixLoop: EvidenceArtifactSummary['diffFixLoop'] = null;
       const dflRaw = payload.evidenceDiffIngestFixLoop_v1;
@@ -845,6 +856,7 @@ export function AgentReviewPane() {
         performanceGate,
         reviewActions,
         artifactUploadManifestReadout,
+        baselineLifecycleReadout,
       };
     } catch {
       return {
@@ -867,6 +879,7 @@ export function AgentReviewPane() {
         performanceGate: null,
         reviewActions: [],
         artifactUploadManifestReadout: null,
+        baselineLifecycleReadout: null,
       };
     }
   }, [evidenceTxt, revision]);
@@ -1417,6 +1430,7 @@ export function AgentReviewPane() {
       evidenceArtifactSummary.lifecycleSignal ||
       evidenceArtifactSummary.diffFixLoop?.needsFixLoop ||
       evidenceArtifactSummary.performanceGate ||
+      evidenceArtifactSummary.baselineLifecycleReadout ||
       evidenceArtifactSummary.reviewActions.length ? (
         <div className="rounded border border-border bg-background/40 p-2">
           <div className="text-[10px] font-semibold text-muted">Evidence artifact correlation</div>
@@ -1763,6 +1777,11 @@ export function AgentReviewPane() {
                 Advisory mock gate (no wall-clock probe); echoes fix-loop blockers only.
               </p>
             </div>
+          ) : null}
+          {evidenceArtifactSummary.baselineLifecycleReadout ? (
+            <EvidenceBaselineLifecycleReadoutV1Table
+              readout={evidenceArtifactSummary.baselineLifecycleReadout}
+            />
           ) : null}
           {evidenceArtifactSummary.diffFixLoop?.needsFixLoop ? (
             <div

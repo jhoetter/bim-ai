@@ -52,6 +52,7 @@ from bim_ai.evidence_manifest import (
     deterministic_section_cut_evidence_manifest,
     deterministic_sheet_evidence_manifest,
     evidence_agent_follow_through_v1,
+    evidence_baseline_lifecycle_readout_v1,
     evidence_closure_review_v1,
     evidence_diff_ingest_fix_loop_v1,
     evidence_lifecycle_signal_v1,
@@ -485,6 +486,11 @@ async def evidence_package(
         evidence_diff_ingest_fix_loop=payload["evidenceDiffIngestFixLoop_v1"],
         evidence_review_performance_gate=payload["evidenceReviewPerformanceGate_v1"],
         evidence_ref_resolution=ref_res,
+    )
+    payload["evidenceBaselineLifecycleReadout_v1"] = evidence_baseline_lifecycle_readout_v1(
+        evidence_closure_review=payload["evidenceClosureReview_v1"],
+        evidence_diff_ingest_fix_loop=payload["evidenceDiffIngestFixLoop_v1"],
+        evidence_review_performance_gate=payload["evidenceReviewPerformanceGate_v1"],
     )
     return payload
 

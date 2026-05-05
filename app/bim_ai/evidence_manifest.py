@@ -30,6 +30,9 @@ from bim_ai.sheet_preview_svg import (
     sheet_svg_utf8_sha256,
     viewport_evidence_hints_v1,
 )
+from bim_ai.sheet_titleblock_revision_issue_v1 import (
+    build_sheet_titleblock_revision_issue_manifest_v1,
+)
 
 PLAYWRIGHT_EVIDENCE_SCREENSHOTS_ROOT_HINT = (
     "packages/web/e2e/__screenshots__/evidence-baselines/evidence-baselines.spec.ts/"
@@ -217,6 +220,9 @@ def deterministic_sheet_evidence_manifest(
                 "detailCalloutReadout_v0": detail_callout_readout_rows_v0(doc, sh),
                 "planRoomProgrammeLegendHints_v0": plan_room_programme_legend_hints_v0(
                     doc, list(sh.viewports_mm or [])
+                ),
+                "sheetTitleblockRevisionIssueManifest_v1": build_sheet_titleblock_revision_issue_manifest_v1(
+                    sh
                 ),
                 "correlation": {
                     "format": "evidenceSheetCorrelation_v1",
@@ -993,6 +999,154 @@ def evidence_review_performance_gate_v1(fix_loop: dict[str, Any]) -> dict[str, A
     }
 
 
+
+def evidence_baseline_lifecycle_readout_v1(
+    *,
+    evidence_closure_review: dict[str, Any],
+    evidence_diff_ingest_fix_loop: dict[str, Any],
+    evidence_review_performance_gate: dict[str, Any],
+) -> dict[str, Any]:
+    """Derivative lifecycle table: baseline ids, fixture/digest status, next actions, CI gate hints."""
+
+    raw_codes = evidence_diff_ingest_fix_loop.get("blockerCodes")
+    rc_list = raw_codes if isinstance(raw_codes, list) else []
+    fix_codes: list[str] = sorted(str(x) for x in rc_list if isinstance(x, str))
+    gate_closed = bool(evidence_review_performance_gate.get("gateClosed"))
+
+    echo_raw = evidence_review_performance_gate.get("blockerCodesEcho")
+    echo_list = echo_raw if isinstance(echo_raw, list) else []
+    echo_codes: list[str] = sorted(str(x) for x in echo_list if isinstance(x, str))
+    rollup_ci = (
+        f"performance_gate_gateClosed={str(gate_closed).lower()};"
+        f"blocker_codes_echo={' '.join(echo_codes) if echo_codes else 'none'}"
+    )
+
+    pix = evidence_closure_review.get("pixelDiffExpectation")
+    ingest_targets: list[Any] = []
+    if isinstance(pix, dict):
+        ing = pix.get("ingestChecklist_v1")
+        if isinstance(ing, dict) and isinstance(ing.get("targets"), list):
+            ingest_targets = list(ing["targets"])
+
+    norm_rows: list[dict[str, str]] = []
+    for raw in ingest_targets:
+        if not isinstance(raw, dict):
+            continue
+        b = raw.get("baselinePngBasename")
+        d = raw.get("expectedDiffBasename")
+        if (
+            isinstance(b, str)
+            and isinstance(d, str)
+            and b.endswith(".png")
+            and d.endswith(".png")
+        ):
+            norm_rows.append({"baselinePngBasename": b, "expectedDiffBasename": d})
+    norm_rows.sort(key=lambda r: (r["baselinePngBasename"], r["expectedDiffBasename"]))
+    ingest_count = len(norm_rows)
+    expected_ids = sorted({r["baselinePngBasename"] for r in norm_rows})
+
+    committed_bn: set[str] = set()
+    if isinstance(pix, dict):
+        cpi = pix.get("committedPngBaselineIngests_v1")
+        if isinstance(cpi, dict):
+            ent = cpi.get("entries")
+            if isinstance(ent, list):
+                for e in ent:
+                    if isinstance(e, dict):
+                        bn = e.get("baselinePngBasename")
+                        if isinstance(bn, str):
+                            committed_bn.add(bn)
+
+    actual_digest: str | None = None
+    if isinstance(pix, dict):
+        ac_corr = pix.get("artifactIngestCorrelation_v1")
+        if isinstance(ac_corr, dict):
+            ad = ac_corr.get("ingestManifestDigestSha256")
+            if isinstance(ad, str) and len(ad) == 64:
+                actual_digest = ad
+
+    digestrollup: str
+    if ingest_count == 0:
+        digestrollup = "not_applicable"
+    elif actual_digest is None:
+        digestrollup = "unknown"
+    else:
+        expected_dig = str(
+            artifact_ingest_correlation_v1(ingest_targets)["ingestManifestDigestSha256"]
+        )
+        digestrollup = "aligned" if expected_dig == actual_digest else "mismatch"
+
+    missing_committed_any = bool(expected_ids) and any(bn not in committed_bn for bn in expected_ids)
+
+    def rollup_next_action() -> str:
+        if ingest_count == 0:
+            return "noop_no_baseline_targets"
+        if "artifact_ingest_correlation_digest_mismatch" in fix_codes:
+            return "investigate_diff"
+        if "correlation_digest_stale_or_missing" in fix_codes:
+            return "investigate_diff"
+        if "screenshot_filename_slots_incomplete" in fix_codes:
+            return "missing_artifact"
+        if missing_committed_any:
+            return "missing_artifact"
+        if "pixel_diff_ingest_pending" in fix_codes:
+            return "run_pixel_diff_ingest"
+        return "accept_baseline"
+
+    rollup_action = rollup_next_action()
+
+    def row_next_action(baseline_bn: str) -> str:
+        if ingest_count == 0:
+            return "noop_no_baseline_targets"
+        if "artifact_ingest_correlation_digest_mismatch" in fix_codes:
+            return "investigate_diff"
+        if "correlation_digest_stale_or_missing" in fix_codes:
+            return "investigate_diff"
+        if "screenshot_filename_slots_incomplete" in fix_codes:
+            return "missing_artifact"
+        if baseline_bn not in committed_bn:
+            return "missing_artifact"
+        if "pixel_diff_ingest_pending" in fix_codes:
+            return "run_pixel_diff_ingest"
+        return "accept_baseline"
+
+    row_objs: list[dict[str, Any]] = []
+    digest_cell = digestrollup if ingest_count else "not_applicable"
+    for r in norm_rows:
+        bn = r["baselinePngBasename"]
+        com_status = "present" if bn in committed_bn else "missing"
+        row_objs.append(
+            {
+                "baselinePngBasename": bn,
+                "expectedDiffBasename": r["expectedDiffBasename"],
+                "committedFixtureStatus": com_status,
+                "digestCorrelationStatus": digest_cell,
+                "suggestedNextAction": row_next_action(bn),
+                "ciGateHint": rollup_ci,
+            }
+        )
+
+    return {
+        "format": "evidenceBaselineLifecycleReadout_v1",
+        "semanticDigestExclusionNote": (
+            "evidenceBaselineLifecycleReadout_v1 is derivative; excluded from semanticDigestSha256."
+        ),
+        "expectedBaselineIds": expected_ids,
+        "ingestTargetCount": ingest_count,
+        "rollupDigestCorrelationStatus": digestrollup,
+        "rollupSuggestedNextAction": rollup_action,
+        "rollupCiGateHint": rollup_ci,
+        "fixLoopBlockerCodes": fix_codes,
+        "gateClosed": gate_closed,
+        "rows": row_objs,
+        "notes": (
+            "Deterministic join of evidenceClosureReview_v1 pixel ingest checklist, "
+            "committedPngBaselineIngests_v1, evidenceDiffIngestFixLoop_v1 blockerCodes, "
+            "and evidenceReviewPerformanceGate_v1."
+        ),
+    }
+
+
 def evidence_closure_review_v1(
     *,
     package_semantic_digest_sha256: str,
@@ -1090,11 +1244,13 @@ def agent_evidence_closure_hints() -> dict[str, Any]:
         "bcfRoundtripEvidenceSummaryField": "bcfRoundtripEvidenceSummary_v1",
         "artifactUploadManifestField": "artifactUploadManifest_v1",
         "agentGeneratedBundleQaChecklistField": "agentGeneratedBundleQaChecklist_v1",
+        "evidenceBaselineLifecycleReadoutField": "evidenceBaselineLifecycleReadout_v1",
         "semanticDigestOmitsDerivativeSummariesNote": (
             "semanticDigestSha256 excludes bcfTopicsIndex_v1, agentReviewActions_v1, "
             "evidenceDiffIngestFixLoop_v1, evidenceReviewPerformanceGate_v1, "
             "evidenceAgentFollowThrough_v1, artifactUploadManifest_v1, "
-            "and agentGeneratedBundleQaChecklist_v1 so deterministic row digests stay stable."
+            "agentGeneratedBundleQaChecklist_v1, and evidenceBaselineLifecycleReadout_v1 "
+            "so deterministic row digests stay stable."
         ),
         "playwrightEvidenceSpecRelPath": "packages/web/e2e/evidence-baselines.spec.ts",
         "suggestedRegenerationCommands": [
@@ -1786,6 +1942,7 @@ _DIGEST_EXCLUDED_KEYS = frozenset(
         "evidenceAgentFollowThrough_v1",
         "artifactUploadManifest_v1",
         "agentGeneratedBundleQaChecklist_v1",
+        "evidenceBaselineLifecycleReadout_v1",
     }
 )
 
