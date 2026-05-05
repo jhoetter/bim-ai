@@ -170,8 +170,11 @@ def test_collaboration_replay_hints_lists_409_fields() -> None:
     h = collaboration_replay_conflict_hints_v1()
     assert h["constraintRejectedHttpStatus"] == 409
     assert "replayDiagnostics" in h["typicalErrorBodyFields"]
-    assert "firstBlockingCommandIndex" in h["replayDiagnosticsFields"]
-    assert "blockingViolationRuleIds" in h["replayDiagnosticsFields"]
+    fields = h["replayDiagnosticsFields"]
+    assert "firstBlockingCommandIndex" in fields
+    assert "blockingViolationRuleIds" in fields
+    assert "replayPerformanceBudget_v1" in fields
+    assert "replayPerformanceBudgetNote" in h
 
 
 def test_agent_evidence_closure_hints_names_follow_through_field() -> None:

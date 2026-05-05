@@ -11,6 +11,7 @@ from bim_ai.evidence_manifest import (
     evidence_closure_review_v1,
     evidence_diff_ingest_fix_loop_v1,
     evidence_lifecycle_signal_v1,
+    evidence_package_semantic_digest_sha256,
     evidence_review_performance_gate_v1,
     merge_committed_png_baseline_bytes_into_evidence_closure_review_v1,
     merge_committed_png_fixture_baselines_into_evidence_closure_review_v1,
@@ -19,6 +20,34 @@ from bim_ai.evidence_manifest import (
     read_committed_evidence_png_fixture_bytes_v1,
     server_png_byte_ingest_report_v1,
 )
+
+
+def test_digest_stable_when_follow_through_replay_hints_differ_derivative_only() -> None:
+    """evidenceAgentFollowThrough_v1 (incl. collaboration replay hints docs) omits semantic digest."""
+    root = {"format": "evidencePackage_v1", "revision": 1, "modelId": "m1"}
+    a = {
+        **root,
+        "evidenceAgentFollowThrough_v1": {
+            "format": "evidenceAgentFollowThrough_v1",
+            "collaborationReplayConflictHints_v1": {
+                "format": "collaborationReplayConflictHints_v1",
+                "docVariant": "alpha",
+                "replayDiagnosticsFields": ["commandCount"],
+            },
+        },
+    }
+    b = {
+        **root,
+        "evidenceAgentFollowThrough_v1": {
+            "format": "evidenceAgentFollowThrough_v1",
+            "collaborationReplayConflictHints_v1": {
+                "format": "collaborationReplayConflictHints_v1",
+                "docVariant": "beta",
+                "replayDiagnosticsFields": ["replayPerformanceBudget_v1"],
+            },
+        },
+    }
+    assert evidence_package_semantic_digest_sha256(a) == evidence_package_semantic_digest_sha256(b)
 
 
 def test_evidence_closure_review_inventory_lists_sorted_png_basenames() -> None:

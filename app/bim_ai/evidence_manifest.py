@@ -1370,9 +1370,15 @@ def collaboration_replay_conflict_hints_v1() -> dict[str, Any]:
         "replayDiagnosticsFields": [
             "commandCount",
             "commandTypesInOrder",
+            "replayPerformanceBudget_v1",
             "firstBlockingCommandIndex",
             "blockingViolationRuleIds",
         ],
+        "replayPerformanceBudgetNote": (
+            "Nested object replayPerformanceBudget_v1: deterministic commandCount, sorted commandTypeHistogram, "
+            "largeBundleWarn / warningCodes / agentBundleAdvisory for large bundles, declaredDiagnosticsBudgetMs* "
+            "ceilings mirrored from diagnostics perf guards, optional firstBlockingCommandIndex when constraints fail."
+        ),
         "firstBlockingCommandIndexNote": (
             "Emitted when replay outcome indicates constraint_error; omitted for successful dry outcomes."
         ),

@@ -186,6 +186,7 @@ def test_bundle_replay_diagnostics_datum_commands_large_mix_under_budget() -> No
     assert diag["commandCount"] == 5000
     assert diag["commandTypesInOrder"][0] == "moveLevelElevation"
     assert diag["commandTypesInOrder"][1] == "createLevel"
+    assert diag["replayPerformanceBudget_v1"]["largeBundleWarn"] is True
 
     if os.environ.get("CI") == "true" or os.environ.get("GITHUB_ACTIONS") == "true":
         assert elapsed < 1.0

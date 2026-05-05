@@ -8,6 +8,7 @@ import time
 from bim_ai.document import Document
 from bim_ai.elements import LevelElem
 from bim_ai.engine import (
+    AGENT_LARGE_BUNDLE_ADVISORY_TEXT_V1,
     bundle_replay_diagnostics,
     replay_bundle_diagnostics_for_outcome,
     try_commit_bundle,
@@ -35,6 +36,17 @@ def test_bundle_replay_diagnostics_large_list_under_budget() -> None:
 
     assert diag["commandCount"] == 5000
     assert diag["commandTypesInOrder"] == ["createWall"] * 5000
+    budget = diag["replayPerformanceBudget_v1"]
+    assert budget["format"] == "replayPerformanceBudget_v1"
+    assert budget["commandCount"] == 5000
+    assert budget["commandTypeHistogram"] == [{"commandType": "createWall", "count": 5000}]
+    assert budget["distinctCommandTypeCount"] == 1
+    assert budget["largeBundleWarn"] is True
+    assert budget["warningCodes"] == ["large_command_bundle"]
+    assert budget["agentBundleAdvisory"] == AGENT_LARGE_BUNDLE_ADVISORY_TEXT_V1
+    assert budget["declaredDiagnosticsBudgetMsLocal"] == 350
+    assert budget["declaredDiagnosticsBudgetMsCi"] == 1000
+    assert "firstBlockingCommandIndex" not in budget
 
     if os.environ.get("CI") == "true" or os.environ.get("GITHUB_ACTIONS") == "true":
         assert elapsed < 1.0
@@ -64,6 +76,28 @@ def test_replay_diagnostics_for_ok_outcome_has_no_blocking_index() -> None:
     assert "firstBlockingCommandIndex" not in diag
     assert diag["commandCount"] == 1
     assert diag["commandTypesInOrder"] == ["createWall"]
+    bok = diag["replayPerformanceBudget_v1"]
+    assert bok["largeBundleWarn"] is False
+    assert bok["warningCodes"] == []
+    assert bok["agentBundleAdvisory"] == ""
+    assert "firstBlockingCommandIndex" not in bok
+
+
+def test_bundle_replay_diagnostics_histogram_sorted_by_command_type() -> None:
+    cmds = [
+        {"type": "zLast"},
+        {"type": "aFirst"},
+        {"type": "mMid"},
+        {"type": "aFirst"},
+    ]
+    diag = bundle_replay_diagnostics(cmds)
+    hist = diag["replayPerformanceBudget_v1"]["commandTypeHistogram"]
+    assert [row["commandType"] for row in hist] == ["aFirst", "mMid", "zLast"]
+    assert hist == [
+        {"commandType": "aFirst", "count": 2},
+        {"commandType": "mMid", "count": 1},
+        {"commandType": "zLast", "count": 1},
+    ]
 
 
 def test_undo_restore_wall_with_missing_level_blocked() -> None:
@@ -98,6 +132,8 @@ def test_undo_restore_wall_with_missing_level_blocked() -> None:
     )
     assert diag.get("firstBlockingCommandIndex") == 0
     assert diag.get("blockingViolationRuleIds") == ["wall_missing_level"]
+    bb = diag["replayPerformanceBudget_v1"]
+    assert bb.get("firstBlockingCommandIndex") == 0
 
 
 def test_bundle_replay_diagnostics_second_command_blocks_first_valid() -> None:
@@ -132,3 +168,5 @@ def test_bundle_replay_diagnostics_second_command_blocks_first_valid() -> None:
     diag = replay_bundle_diagnostics_for_outcome(doc, cmds, outcome_code="constraint_error")
     assert diag.get("firstBlockingCommandIndex") == 1
     assert diag.get("blockingViolationRuleIds") == ["wall_missing_level"]
+    bb = diag["replayPerformanceBudget_v1"]
+    assert bb.get("firstBlockingCommandIndex") == 1

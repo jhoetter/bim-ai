@@ -61,7 +61,28 @@ export function formatCollaboration409Status(
         : ` · cmds: ${head}`;
   }
 
+  let budgetPeek = '';
+  const budgetRaw =
+    replay &&
+    typeof replay === 'object' &&
+    replay !== null &&
+    'replayPerformanceBudget_v1' in replay
+      ? (replay as { replayPerformanceBudget_v1?: unknown }).replayPerformanceBudget_v1
+      : undefined;
+  if (budgetRaw && typeof budgetRaw === 'object' && budgetRaw !== null) {
+    const b = budgetRaw as { largeBundleWarn?: unknown; agentBundleAdvisory?: unknown };
+    const warn = b.largeBundleWarn === true;
+    const advRaw = typeof b.agentBundleAdvisory === 'string' ? b.agentBundleAdvisory.trim() : '';
+    if (advRaw.length > 0) {
+      const maxLen = 90;
+      const clipped = advRaw.length > maxLen ? `${advRaw.slice(0, maxLen)}…` : advRaw;
+      budgetPeek = ` · bundle: ${clipped}`;
+    } else if (warn) {
+      budgetPeek = ' · bundle: large command bundle (replayPerformanceBudget_v1)';
+    }
+  }
+
   return reason
-    ? `${actionLabel} blocked: ${reason}${stepHint}${rulesHint}${cmdPeek}`
-    : `${actionLabel} blocked (model conflict).${stepHint}${rulesHint}${cmdPeek}`;
+    ? `${actionLabel} blocked: ${reason}${stepHint}${rulesHint}${cmdPeek}${budgetPeek}`
+    : `${actionLabel} blocked (model conflict).${stepHint}${rulesHint}${cmdPeek}${budgetPeek}`;
 }
