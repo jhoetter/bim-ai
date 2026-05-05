@@ -58,6 +58,7 @@ import { RoomColorSchemePanel } from './workspace/RoomColorSchemePanel';
 import { SiteAuthoringPanel } from './workspace/SiteAuthoringPanel';
 import { SectionPlaceholderPane } from './workspace/SectionPlaceholderPane';
 import { SheetCanvas } from './workspace/SheetCanvas';
+import { MaterialLayerStackWorkbench } from './workspace/MaterialLayerStackWorkbench';
 
 async function fetchSnap(modelId: string): Promise<Snapshot> {
   const res = await fetch(`/api/models/${encodeURIComponent(modelId)}/snapshot`);
@@ -1624,6 +1625,7 @@ export function Workspace() {
                 </label>
               </div>
             ) : null}
+            <MaterialLayerStackWorkbench selected={selected} elementsById={elementsById} />
             <pre className="max-h-[40vh] overflow-auto whitespace-pre-wrap text-[11px]">
               {JSON.stringify(selected ?? { hint: 'pick' }, null, 2)}
             </pre>
