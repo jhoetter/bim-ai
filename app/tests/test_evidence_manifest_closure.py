@@ -1,16 +1,21 @@
 from __future__ import annotations
 
 import hashlib
+from pathlib import Path
 
 from bim_ai.evidence_manifest import (
     MINIMAL_PROBE_PNG_BYTES_V1,
     MINIMAL_PROBE_PNG_CANONICAL_SHA256_V1,
     artifact_ingest_correlation_v1,
+    committed_evidence_png_fixture_dir_v1,
     evidence_closure_review_v1,
     evidence_diff_ingest_fix_loop_v1,
     evidence_lifecycle_signal_v1,
+    merge_committed_png_baseline_bytes_into_evidence_closure_review_v1,
+    merge_committed_png_fixture_baselines_into_evidence_closure_review_v1,
     merge_server_png_byte_ingest_into_evidence_closure_review_v1,
     parse_png_dimensions_v1,
+    read_committed_evidence_png_fixture_bytes_v1,
     server_png_byte_ingest_report_v1,
 )
 
@@ -505,3 +510,176 @@ def test_evidence_diff_ingest_fix_loop_clear_when_server_png_probe_merged() -> N
     fl = evidence_diff_ingest_fix_loop_v1(merged)
     assert fl["needsFixLoop"] is False
     assert fl["blockerCodes"] == []
+
+
+EVIDENCE_PNG_FIXTURE_DIR = Path(__file__).resolve().parent / "fixtures" / "evidence"
+FIX_PARITY_BN = "committed-baseline-probe-parity-v1.png"
+FIX_ALT_BN = "committed-baseline-alt-1x1-v1.png"
+
+
+def test_read_committed_evidence_png_fixture_bytes_matches_minimal_probe() -> None:
+    data = read_committed_evidence_png_fixture_bytes_v1(FIX_PARITY_BN)
+    assert data == MINIMAL_PROBE_PNG_BYTES_V1
+
+
+def test_merge_committed_png_baseline_bytes_ingests_sorted_fixture_rows() -> None:
+    pkg = "9" * 64
+    parity = (EVIDENCE_PNG_FIXTURE_DIR / FIX_PARITY_BN).read_bytes()
+    alt = (EVIDENCE_PNG_FIXTURE_DIR / FIX_ALT_BN).read_bytes()
+    closure = evidence_closure_review_v1(
+        package_semantic_digest_sha256=pkg,
+        deterministic_sheet_evidence=[
+            {
+                "sheetId": "s1",
+                "playwrightSuggestedFilenames": {
+                    "pngViewport": FIX_PARITY_BN,
+                    "pngFullSheet": FIX_ALT_BN,
+                },
+                "correlation": {"semanticDigestSha256": pkg},
+            }
+        ],
+        deterministic_3d_view_evidence=[],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+    )
+    expected_digest = closure["packageSemanticDigestSha256"]
+    merged = merge_committed_png_baseline_bytes_into_evidence_closure_review_v1(
+        closure,
+        baseline_png_bytes_by_basename={FIX_PARITY_BN: parity, FIX_ALT_BN: alt},
+    )
+    assert merged["packageSemanticDigestSha256"] == expected_digest
+    cpi = merged["pixelDiffExpectation"]["committedPngBaselineIngests_v1"]
+    assert cpi["format"] == "committedPngBaselineIngests_v1"
+    entries = cpi["entries"]
+    assert [e["baselinePngBasename"] for e in entries] == sorted([FIX_ALT_BN, FIX_PARITY_BN])
+    for e in entries:
+        spi = e["serverPngByteIngest_v1"]
+        assert spi["format"] == "serverPngByteIngest_v1"
+        assert spi["ingestSourceKind"] == "committed_repository_fixture"
+        assert spi["comparison"]["result"] == "match"
+        assert spi["width"] == 1 and spi["height"] == 1
+        bn = e["baselinePngBasename"]
+        raw = parity if bn == FIX_PARITY_BN else alt
+        assert spi["canonicalDigestSha256"] == hashlib.sha256(raw).hexdigest()
+
+
+def test_merge_committed_png_fixture_baselines_from_disc() -> None:
+    assert committed_evidence_png_fixture_dir_v1().resolve() == EVIDENCE_PNG_FIXTURE_DIR.resolve()
+    pkg = "8" * 64
+    closure = evidence_closure_review_v1(
+        package_semantic_digest_sha256=pkg,
+        deterministic_sheet_evidence=[
+            {
+                "sheetId": "s1",
+                "playwrightSuggestedFilenames": {
+                    "pngViewport": FIX_PARITY_BN,
+                    "pngFullSheet": FIX_ALT_BN,
+                },
+                "correlation": {"semanticDigestSha256": pkg},
+            }
+        ],
+        deterministic_3d_view_evidence=[],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+    )
+    merged = merge_committed_png_fixture_baselines_into_evidence_closure_review_v1(closure)
+    assert merged["pixelDiffExpectation"]["committedPngBaselineIngests_v1"]["format"] == (
+        "committedPngBaselineIngests_v1"
+    )
+    assert len(merged["pixelDiffExpectation"]["committedPngBaselineIngests_v1"]["entries"]) == 2
+
+
+def test_committed_ingest_preserves_artifact_correlation_and_lifecycle_digest() -> None:
+    pkg = "7" * 64
+    parity = (EVIDENCE_PNG_FIXTURE_DIR / FIX_PARITY_BN).read_bytes()
+    alt = (EVIDENCE_PNG_FIXTURE_DIR / FIX_ALT_BN).read_bytes()
+    closure = evidence_closure_review_v1(
+        package_semantic_digest_sha256=pkg,
+        deterministic_sheet_evidence=[
+            {
+                "sheetId": "s1",
+                "playwrightSuggestedFilenames": {
+                    "pngViewport": FIX_PARITY_BN,
+                    "pngFullSheet": FIX_ALT_BN,
+                },
+                "correlation": {"semanticDigestSha256": pkg},
+            }
+        ],
+        deterministic_3d_view_evidence=[],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+    )
+    pix_before = closure["pixelDiffExpectation"]
+    ac_dig = pix_before["artifactIngestCorrelation_v1"]["ingestManifestDigestSha256"]
+    merged = merge_committed_png_baseline_bytes_into_evidence_closure_review_v1(
+        closure,
+        baseline_png_bytes_by_basename={FIX_PARITY_BN: parity, FIX_ALT_BN: alt},
+    )
+    pix = merged["pixelDiffExpectation"]
+    assert pix["artifactIngestCorrelation_v1"]["ingestManifestDigestSha256"] == ac_dig
+    sig = evidence_lifecycle_signal_v1(
+        package_semantic_digest_sha256=pkg,
+        suggested_evidence_artifact_basename="bim-test",
+        evidence_closure_review=merged,
+    )
+    assert sig["artifactIngestManifestDigestSha256"] == ac_dig
+
+
+def test_committed_ingest_coexists_with_artifact_ingest_correlation_digest_mismatch() -> None:
+    pkg = "6" * 64
+    parity = (EVIDENCE_PNG_FIXTURE_DIR / FIX_PARITY_BN).read_bytes()
+    alt = (EVIDENCE_PNG_FIXTURE_DIR / FIX_ALT_BN).read_bytes()
+    closure = evidence_closure_review_v1(
+        package_semantic_digest_sha256=pkg,
+        deterministic_sheet_evidence=[
+            {
+                "sheetId": "s1",
+                "playwrightSuggestedFilenames": {
+                    "pngViewport": FIX_PARITY_BN,
+                    "pngFullSheet": FIX_ALT_BN,
+                },
+                "correlation": {"semanticDigestSha256": pkg},
+            }
+        ],
+        deterministic_3d_view_evidence=[],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+    )
+    merged = merge_committed_png_baseline_bytes_into_evidence_closure_review_v1(
+        closure,
+        baseline_png_bytes_by_basename={FIX_PARITY_BN: parity, FIX_ALT_BN: alt},
+    )
+    pix = dict(merged["pixelDiffExpectation"])
+    ac_raw = pix["artifactIngestCorrelation_v1"]
+    ac = dict(ac_raw)
+    ac["ingestManifestDigestSha256"] = "1" * 64
+    pix["artifactIngestCorrelation_v1"] = ac
+    tampered = {**merged, "pixelDiffExpectation": pix}
+    fl = evidence_diff_ingest_fix_loop_v1(tampered)
+    assert "artifact_ingest_correlation_digest_mismatch" in fl["blockerCodes"]
+    assert tampered["pixelDiffExpectation"]["committedPngBaselineIngests_v1"]["entries"]
+
+
+def test_merge_committed_png_baseline_bytes_invalid_png_records_parse_failure() -> None:
+    pkg = "5" * 64
+    closure = evidence_closure_review_v1(
+        package_semantic_digest_sha256=pkg,
+        deterministic_sheet_evidence=[
+            {
+                "sheetId": "s1",
+                "playwrightSuggestedFilenames": {"pngViewport": "x.png", "pngFullSheet": "y.png"},
+                "correlation": {"semanticDigestSha256": pkg},
+            }
+        ],
+        deterministic_3d_view_evidence=[],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+    )
+    merged = merge_committed_png_baseline_bytes_into_evidence_closure_review_v1(
+        closure,
+        baseline_png_bytes_by_basename={"x.png": b"not-a-png"},
+    )
+    e0 = merged["pixelDiffExpectation"]["committedPngBaselineIngests_v1"]["entries"][0]
+    assert e0["baselinePngBasename"] == "x.png"
+    comp = e0["serverPngByteIngest_v1"]["comparison"]
+    assert "png_parse_failed" in str(comp.get("skippedReason", ""))

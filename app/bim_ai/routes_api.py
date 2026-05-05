@@ -52,6 +52,7 @@ from bim_ai.evidence_manifest import (
     evidence_package_semantic_digest_sha256,
     expected_screenshot_captures,
     export_link_map,
+    merge_committed_png_fixture_baselines_into_evidence_closure_review_v1,
     merge_server_png_byte_ingest_into_evidence_closure_review_v1,
     plan_view_wire_index,
 )
@@ -403,7 +404,7 @@ async def evidence_package(
         semantic_digest_sha256=digest,
         semantic_digest_prefix16=str(payload["semanticDigestPrefix16"]),
     )
-    payload["evidenceClosureReview_v1"] = (
+    payload["evidenceClosureReview_v1"] = merge_committed_png_fixture_baselines_into_evidence_closure_review_v1(
         merge_server_png_byte_ingest_into_evidence_closure_review_v1(
             evidence_closure_review_v1(
                 package_semantic_digest_sha256=digest,

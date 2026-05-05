@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 import struct
+from pathlib import Path
 from typing import Any
 from urllib.parse import quote
 from uuid import UUID
@@ -258,6 +259,7 @@ def deterministic_3d_view_evidence_manifest(
                 "viewerClipCapElevMm": vp.viewer_clip_cap_elev_mm,
                 "viewerClipFloorElevMm": vp.viewer_clip_floor_elev_mm,
                 "hiddenSemanticKinds3d": list(vp.hidden_semantic_kinds_3d or []),
+                "cutawayStyle": vp.cutaway_style,
                 "playwrightSuggestedFilenames": {
                     "pngViewport": f"{stem}.png",
                 },
@@ -646,6 +648,167 @@ def merge_server_png_byte_ingest_into_evidence_closure_review_v1(
     return out
 
 
+def committed_evidence_png_fixture_dir_v1() -> Path:
+    """Directory for committed PNG baselines under the ``app`` tree (repo / CI layouts).
+
+    May be absent in minimal installs that omit ``tests/``; callers should treat a missing
+    directory as “no committed baselines”.
+    """
+
+    return Path(__file__).resolve().parent.parent / "tests" / "fixtures" / "evidence"
+
+
+def safe_committed_evidence_png_basename_v1(basename: str) -> str:
+    if not isinstance(basename, str) or not basename:
+        raise ValueError("committed_evidence_png_bad_basename")
+    if basename != os.path.basename(basename):
+        raise ValueError("committed_evidence_png_bad_basename")
+    for sep in ("/", "\\", ".."):
+        if sep in basename:
+            raise ValueError("committed_evidence_png_bad_basename")
+    if not basename.endswith(".png"):
+        raise ValueError("committed_evidence_png_bad_basename")
+    return basename
+
+
+def read_committed_evidence_png_fixture_bytes_v1(basename: str) -> bytes:
+    safe = safe_committed_evidence_png_basename_v1(basename)
+    path = committed_evidence_png_fixture_dir_v1() / safe
+    return path.read_bytes()
+
+
+_COMMITTED_FIXTURE_PROBE_NOTE_V1 = (
+    "Ingest record derived from committed repository fixture bytes under "
+    "app/tests/fixtures/evidence keyed by ingestChecklist_v1 baselinePngBasename."
+)
+
+
+def merge_committed_png_baseline_bytes_into_evidence_closure_review_v1(
+    evidence_closure_review: dict[str, Any],
+    *,
+    baseline_png_bytes_by_basename: dict[str, bytes],
+) -> dict[str, Any]:
+    """Attach ``committedPngBaselineIngests_v1`` with per-baseline ``serverPngByteIngest_v1`` rows."""
+
+    out = dict(evidence_closure_review)
+    pix_raw = out.get("pixelDiffExpectation")
+    if not isinstance(pix_raw, dict):
+        return out
+    pix = dict(pix_raw)
+
+    ingest_raw = pix.get("ingestChecklist_v1")
+    if not isinstance(ingest_raw, dict):
+        out["pixelDiffExpectation"] = pix
+        return out
+    tgts = ingest_raw.get("targets")
+    if not isinstance(tgts, list):
+        out["pixelDiffExpectation"] = pix
+        return out
+
+    entries: list[dict[str, Any]] = []
+    for t in tgts:
+        if not isinstance(t, dict):
+            continue
+        bn_raw = t.get("baselinePngBasename")
+        if not isinstance(bn_raw, str) or bn_raw not in baseline_png_bytes_by_basename:
+            continue
+        try:
+            safe_committed_evidence_png_basename_v1(bn_raw)
+        except ValueError:
+            continue
+        raw_png = baseline_png_bytes_by_basename[bn_raw]
+        expected_sha = hashlib.sha256(raw_png).hexdigest()
+        try:
+            rep = server_png_byte_ingest_report_v1(
+                raw_png,
+                expected_canonical_sha256_baseline=expected_sha,
+            )
+        except ValueError as exc:
+            rep = {
+                "format": "serverPngByteIngest_v1",
+                "canonicalDigestKind": "png_file_sha256",
+                "canonicalDigestSha256": None,
+                "derivativeDigestSha256": None,
+                "derivativeDigestNote": (
+                    "This ingest path does not distinguish derivative raster bytes from "
+                    "canonical file bytes; only png_file_sha256 is emitted."
+                ),
+                "width": None,
+                "height": None,
+                "byteLength": len(raw_png),
+                "comparison": {
+                    "format": "pngByteDigestComparison_v1",
+                    "comparisonKind": "canonical_png_bytes_to_expected_sha256",
+                    "result": "skipped_no_baseline",
+                    "skippedReason": f"png_parse_failed:{exc}",
+                    "expectedBaselineSha256": expected_sha,
+                },
+                "probeNote": "PNG bytes failed IHDR parse; no canonical digest recorded.",
+                "ingestSourceKind": "committed_repository_fixture",
+            }
+        else:
+            rep = dict(rep)
+            rep["probeNote"] = _COMMITTED_FIXTURE_PROBE_NOTE_V1
+            rep["ingestSourceKind"] = "committed_repository_fixture"
+
+        entries.append({"baselinePngBasename": bn_raw, "serverPngByteIngest_v1": rep})
+
+    entries.sort(key=lambda e: str(e.get("baselinePngBasename", "")))
+    if entries:
+        pix["committedPngBaselineIngests_v1"] = {
+            "format": "committedPngBaselineIngests_v1",
+            "entries": entries,
+        }
+    else:
+        pix.pop("committedPngBaselineIngests_v1", None)
+
+    out["pixelDiffExpectation"] = pix
+    return out
+
+
+def merge_committed_png_fixture_baselines_into_evidence_closure_review_v1(
+    evidence_closure_review: dict[str, Any],
+) -> dict[str, Any]:
+    """Load matching basenames from :func:`committed_evidence_png_fixture_dir_v1` when present."""
+
+    root = committed_evidence_png_fixture_dir_v1()
+    if not root.is_dir():
+        return evidence_closure_review
+
+    pix_raw = evidence_closure_review.get("pixelDiffExpectation")
+    if not isinstance(pix_raw, dict):
+        return evidence_closure_review
+    ingest_raw = pix_raw.get("ingestChecklist_v1")
+    if not isinstance(ingest_raw, dict):
+        return evidence_closure_review
+    tgts = ingest_raw.get("targets")
+    if not isinstance(tgts, list):
+        return evidence_closure_review
+
+    by_bn: dict[str, bytes] = {}
+    for t in tgts:
+        if not isinstance(t, dict):
+            continue
+        bn = t.get("baselinePngBasename")
+        if not isinstance(bn, str):
+            continue
+        try:
+            safe_committed_evidence_png_basename_v1(bn)
+        except ValueError:
+            continue
+        path = root / bn
+        if path.is_file():
+            by_bn[bn] = path.read_bytes()
+
+    if not by_bn:
+        return evidence_closure_review
+
+    return merge_committed_png_baseline_bytes_into_evidence_closure_review_v1(
+        evidence_closure_review,
+        baseline_png_bytes_by_basename=by_bn,
+    )
+
+
 def screenshot_hint_gaps_v1(
     *,
     deterministic_sheet_evidence: list[dict[str, Any]],
@@ -884,6 +1047,8 @@ def agent_evidence_closure_hints() -> dict[str, Any]:
         "deterministicPngBasenamesField": "expectedDeterministicPngBasenames",
         "screenshotHintGapsField": "screenshotHintGaps_v1",
         "pixelDiffIngestChecklistField": "ingestChecklist_v1",
+        "committedPngBaselineIngestsField": "committedPngBaselineIngests_v1",
+        "committedEvidencePngFixturesRelDir": "app/tests/fixtures/evidence",
         "artifactIngestCorrelationNestedField": "artifactIngestCorrelation_v1",
         "artifactIngestCorrelationFullPath": (
             "evidenceClosureReview_v1.pixelDiffExpectation.artifactIngestCorrelation_v1"
