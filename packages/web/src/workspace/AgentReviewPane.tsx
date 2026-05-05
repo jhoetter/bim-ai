@@ -117,6 +117,12 @@ export function AgentReviewPane() {
       needsFixLoop: boolean;
       blockerCodes: string[];
     } | null;
+    performanceGate: {
+      gateClosed: boolean;
+      enforcement: string | null;
+      probeKind: string | null;
+      blockerCodesEcho: string[];
+    } | null;
     reviewActions: AgentReviewActionRow[];
   };
 
@@ -176,6 +182,7 @@ export function AgentReviewPane() {
       suggestedBasenameHint: null,
       mismatchNotes: [],
       diffFixLoop: null,
+      performanceGate: null,
       reviewActions: [],
     });
 
@@ -234,6 +241,24 @@ export function AgentReviewPane() {
           diffFixLoop = {
             needsFixLoop: d.needsFixLoop === true,
             blockerCodes,
+          };
+        }
+      }
+
+      let performanceGate: EvidenceArtifactSummary['performanceGate'] = null;
+      const pgRaw = payload.evidenceReviewPerformanceGate_v1;
+      if (pgRaw && typeof pgRaw === 'object') {
+        const g = pgRaw as Record<string, unknown>;
+        if (g.format === 'evidenceReviewPerformanceGate_v1') {
+          const echoRaw = g.blockerCodesEcho;
+          const blockerCodesEcho = Array.isArray(echoRaw)
+            ? echoRaw.filter((x): x is string => typeof x === 'string')
+            : [];
+          performanceGate = {
+            gateClosed: g.gateClosed === true,
+            enforcement: typeof g.enforcement === 'string' ? g.enforcement : null,
+            probeKind: typeof g.probeKind === 'string' ? g.probeKind : null,
+            blockerCodesEcho,
           };
         }
       }
@@ -706,6 +731,7 @@ export function AgentReviewPane() {
         suggestedBasenameHint: basename,
         mismatchNotes,
         diffFixLoop,
+        performanceGate,
         reviewActions,
       };
     } catch {
@@ -726,6 +752,7 @@ export function AgentReviewPane() {
         suggestedBasenameHint: null,
         mismatchNotes: ['Could not parse evidence JSON for artifact summary.'],
         diffFixLoop: null,
+        performanceGate: null,
         reviewActions: [],
       };
     }
@@ -1187,6 +1214,7 @@ export function AgentReviewPane() {
       evidenceArtifactSummary.closureReview ||
       evidenceArtifactSummary.lifecycleSignal ||
       evidenceArtifactSummary.diffFixLoop?.needsFixLoop ||
+      evidenceArtifactSummary.performanceGate ||
       evidenceArtifactSummary.reviewActions.length ? (
         <div className="rounded border border-border bg-background/40 p-2">
           <div className="text-[10px] font-semibold text-muted">Evidence artifact correlation</div>
@@ -1484,6 +1512,54 @@ export function AgentReviewPane() {
                   </li>
                 ) : null}
               </ul>
+            </div>
+          ) : null}
+          {evidenceArtifactSummary.performanceGate ? (
+            <div
+              data-testid="evidence-review-performance-gate"
+              className={`mt-2 rounded border p-2 text-[10px] ${
+                evidenceArtifactSummary.performanceGate.gateClosed
+                  ? 'border-emerald-500/35 bg-emerald-500/5'
+                  : 'border-amber-500/35 bg-amber-500/5'
+              }`}
+            >
+              <div className="font-semibold text-muted">
+                Evidence review performance gate (
+                <code className="text-[9px]">evidenceReviewPerformanceGate_v1</code>)
+              </div>
+              <p className="mt-1 text-muted">
+                gateClosed:{' '}
+                <code className="font-mono text-[9px]">
+                  {String(evidenceArtifactSummary.performanceGate.gateClosed)}
+                </code>
+                {evidenceArtifactSummary.performanceGate.probeKind ? (
+                  <>
+                    {' '}
+                    · probeKind{' '}
+                    <code className="font-mono text-[9px]">
+                      {evidenceArtifactSummary.performanceGate.probeKind}
+                    </code>
+                  </>
+                ) : null}
+                {evidenceArtifactSummary.performanceGate.enforcement ? (
+                  <>
+                    {' '}
+                    ·{' '}
+                    <code className="font-mono text-[9px]">
+                      {evidenceArtifactSummary.performanceGate.enforcement}
+                    </code>
+                  </>
+                ) : null}
+              </p>
+              <p className="mt-1 text-muted">
+                blockerCodesEcho:{' '}
+                <code className="text-[9px]">
+                  {evidenceArtifactSummary.performanceGate.blockerCodesEcho.join(', ') || '—'}
+                </code>
+              </p>
+              <p className="mt-0.5 text-[9px] text-muted">
+                Advisory mock gate (no wall-clock probe); echoes fix-loop blockers only.
+              </p>
             </div>
           ) : null}
           {evidenceArtifactSummary.diffFixLoop?.needsFixLoop ? (

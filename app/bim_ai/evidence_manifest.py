@@ -964,6 +964,33 @@ def evidence_diff_ingest_fix_loop_v1(evidence_closure_review: dict[str, Any]) ->
     }
 
 
+def evidence_review_performance_gate_v1(fix_loop: dict[str, Any]) -> dict[str, Any]:
+    """Advisory mock gate derived from fix-loop blockers (no wall-clock probes; digest-excluded)."""
+
+    raw_codes = fix_loop.get("blockerCodes")
+    codes: list[str]
+    if isinstance(raw_codes, list):
+        codes = sorted(str(x) for x in raw_codes if isinstance(x, str))
+    else:
+        codes = []
+    needs_fix = bool(fix_loop.get("needsFixLoop"))
+    return {
+        "format": "evidenceReviewPerformanceGate_v1",
+        "probeKind": "deterministic_contract_v1",
+        "enforcement": "advisory_mock",
+        "gateClosed": not needs_fix,
+        "blockerCodesEcho": codes,
+        "advisoryBudgetHintsMs_v1": {
+            "format": "advisoryBudgetHintsMs_v1",
+            "evidencePackageJsonParse": 50,
+            "agentReviewEvidenceSectionRender": 200,
+        },
+        "notes": (
+            "Derived from evidenceDiffIngestFixLoop_v1 only; no timing telemetry; offline/CI-safe contract."
+        ),
+    }
+
+
 def evidence_closure_review_v1(
     *,
     package_semantic_digest_sha256: str,
@@ -1056,11 +1083,12 @@ def agent_evidence_closure_hints() -> dict[str, Any]:
         "artifactIngestManifestDigestSha256LifecycleField": "artifactIngestManifestDigestSha256",
         "evidenceLifecycleSignalField": "evidenceLifecycleSignal_v1",
         "evidenceDiffIngestFixLoopField": "evidenceDiffIngestFixLoop_v1",
+        "evidenceReviewPerformanceGateField": "evidenceReviewPerformanceGate_v1",
         "evidenceAgentFollowThroughField": "evidenceAgentFollowThrough_v1",
         "semanticDigestOmitsDerivativeSummariesNote": (
             "semanticDigestSha256 excludes bcfTopicsIndex_v1, agentReviewActions_v1, "
-            "evidenceDiffIngestFixLoop_v1, and evidenceAgentFollowThrough_v1 so deterministic "
-            "row digests stay stable."
+            "evidenceDiffIngestFixLoop_v1, evidenceReviewPerformanceGate_v1, and "
+            "evidenceAgentFollowThrough_v1 so deterministic row digests stay stable."
         ),
         "playwrightEvidenceSpecRelPath": "packages/web/e2e/evidence-baselines.spec.ts",
         "suggestedRegenerationCommands": [
@@ -1404,6 +1432,7 @@ _DIGEST_EXCLUDED_KEYS = frozenset(
         "bcfTopicsIndex_v1",
         "agentReviewActions_v1",
         "evidenceDiffIngestFixLoop_v1",
+        "evidenceReviewPerformanceGate_v1",
         "evidenceAgentFollowThrough_v1",
     }
 )

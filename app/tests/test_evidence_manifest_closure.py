@@ -11,6 +11,7 @@ from bim_ai.evidence_manifest import (
     evidence_closure_review_v1,
     evidence_diff_ingest_fix_loop_v1,
     evidence_lifecycle_signal_v1,
+    evidence_review_performance_gate_v1,
     merge_committed_png_baseline_bytes_into_evidence_closure_review_v1,
     merge_committed_png_fixture_baselines_into_evidence_closure_review_v1,
     merge_server_png_byte_ingest_into_evidence_closure_review_v1,
@@ -201,6 +202,60 @@ def test_evidence_lifecycle_signal_v1_matches_closure_review() -> None:
         evidence_closure_review=stale_closure,
     )
     assert stale_sig["correlationFullyConsistent"] is False
+
+
+def test_evidence_review_performance_gate_closed_when_fix_loop_clear() -> None:
+    pkg = "f" * 64
+    closure = evidence_closure_review_v1(
+        package_semantic_digest_sha256=pkg,
+        deterministic_sheet_evidence=[
+            {
+                "sheetId": "s1",
+                "playwrightSuggestedFilenames": {"pngViewport": "a.png", "pngFullSheet": "b.png"},
+                "correlation": {"semanticDigestSha256": pkg},
+            }
+        ],
+        deterministic_3d_view_evidence=[],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+    )
+    merged = merge_server_png_byte_ingest_into_evidence_closure_review_v1(
+        closure,
+        png_bytes=MINIMAL_PROBE_PNG_BYTES_V1,
+        expected_canonical_sha256_baseline=MINIMAL_PROBE_PNG_CANONICAL_SHA256_V1,
+    )
+    fl = evidence_diff_ingest_fix_loop_v1(merged)
+    gate = evidence_review_performance_gate_v1(fl)
+    assert gate["format"] == "evidenceReviewPerformanceGate_v1"
+    assert gate["probeKind"] == "deterministic_contract_v1"
+    assert gate["enforcement"] == "advisory_mock"
+    assert gate["gateClosed"] is True
+    assert gate["blockerCodesEcho"] == []
+    hints = gate["advisoryBudgetHintsMs_v1"]
+    assert isinstance(hints, dict)
+    assert hints.get("format") == "advisoryBudgetHintsMs_v1"
+    assert hints.get("evidencePackageJsonParse") == 50
+
+
+def test_evidence_review_performance_gate_open_echoes_sorted_blockers() -> None:
+    pkg = "a" * 64
+    closure = evidence_closure_review_v1(
+        package_semantic_digest_sha256=pkg,
+        deterministic_sheet_evidence=[
+            {
+                "sheetId": "s1",
+                "playwrightSuggestedFilenames": {"pngViewport": "x.png", "pngFullSheet": "y.png"},
+                "correlation": {"semanticDigestSha256": "b" * 64},
+            }
+        ],
+        deterministic_3d_view_evidence=[],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+    )
+    fl = evidence_diff_ingest_fix_loop_v1(closure)
+    gate = evidence_review_performance_gate_v1(fl)
+    assert gate["gateClosed"] is False
+    assert gate["blockerCodesEcho"] == ["correlation_digest_stale_or_missing"]
 
 
 def test_evidence_diff_ingest_fix_loop_clear_when_pixel_marked_ingested() -> None:

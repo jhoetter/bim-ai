@@ -592,6 +592,20 @@ async function sharedRoutes(page: Page, layoutPreset: string) {
             blockerCodes: [],
             notes: 'mock clean closure — pixel diff marked ingested for e2e fix-loop panel',
           },
+          evidenceReviewPerformanceGate_v1: {
+            format: 'evidenceReviewPerformanceGate_v1',
+            probeKind: 'deterministic_contract_v1',
+            enforcement: 'advisory_mock',
+            gateClosed: true,
+            blockerCodesEcho: [],
+            advisoryBudgetHintsMs_v1: {
+              format: 'advisoryBudgetHintsMs_v1',
+              evidencePackageJsonParse: 50,
+              agentReviewEvidenceSectionRender: 200,
+            },
+            notes:
+              'mock performance gate — derived from fix-loop only; no timing telemetry (e2e Agent Review)',
+          },
           evidenceAgentFollowThrough_v1: {
             format: 'evidenceAgentFollowThrough_v1',
             semanticDigestExclusionNote: 'mock',
@@ -687,6 +701,7 @@ async function sharedRoutes(page: Page, layoutPreset: string) {
             evidenceClosureReviewField: 'evidenceClosureReview_v1',
             pixelDiffExpectationNestedField: 'pixelDiffExpectation',
             evidenceDiffIngestFixLoopField: 'evidenceDiffIngestFixLoop_v1',
+            evidenceReviewPerformanceGateField: 'evidenceReviewPerformanceGate_v1',
             deterministicPngBasenamesField: 'expectedDeterministicPngBasenames',
             playwrightEvidenceSpecRelPath: 'packages/web/e2e/evidence-baselines.spec.ts',
             suggestedRegenerationCommands: [
@@ -896,5 +911,11 @@ test.describe('evidence PNG baselines', () => {
     await expect(page.getByText('Agent cockpit')).toBeVisible();
     await page.getByRole('button', { name: 'Fetch evidence-package JSON' }).click();
     await expect(page.getByTestId('evidence-diff-fix-loop-callout')).toHaveCount(0);
+    const perfGate = page.getByTestId('evidence-review-performance-gate');
+    await expect(perfGate).toBeVisible();
+    await expect(perfGate).toContainText('gateClosed:');
+    await expect(perfGate).toContainText('true');
+    await expect(perfGate).toContainText('deterministic_contract_v1');
+    await expect(perfGate).toContainText('advisory_mock');
   });
 });

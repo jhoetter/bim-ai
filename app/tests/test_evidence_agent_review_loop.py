@@ -21,6 +21,7 @@ from bim_ai.evidence_manifest import (
     artifact_ingest_correlation_v1,
     evidence_closure_review_v1,
     evidence_package_semantic_digest_sha256,
+    evidence_review_performance_gate_v1,
 )
 
 
@@ -204,6 +205,17 @@ def test_engine_applies_enriched_bcf_and_agent_records() -> None:
     dev = doc.elements["dev-1"]
     assert isinstance(dev, AgentDeviationElem)
     assert dev.related_assumption_id == "asm-1"
+
+
+def test_evidence_digest_ignores_evidence_review_performance_gate_v1() -> None:
+    base = {"format": "evidencePackage_v1", "revision": 1, "modelId": "x"}
+    open_gate = evidence_review_performance_gate_v1(
+        {"needsFixLoop": True, "blockerCodes": ["z_block", "a_block"]}
+    )
+    closed_gate = evidence_review_performance_gate_v1({"needsFixLoop": False, "blockerCodes": []})
+    a = {**base, "evidenceReviewPerformanceGate_v1": open_gate}
+    b = {**base, "evidenceReviewPerformanceGate_v1": closed_gate}
+    assert evidence_package_semantic_digest_sha256(a) == evidence_package_semantic_digest_sha256(b)
 
 
 def test_evidence_digest_ignores_evidence_diff_ingest_fix_loop_v1() -> None:

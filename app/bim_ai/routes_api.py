@@ -50,6 +50,7 @@ from bim_ai.evidence_manifest import (
     evidence_diff_ingest_fix_loop_v1,
     evidence_lifecycle_signal_v1,
     evidence_package_semantic_digest_sha256,
+    evidence_review_performance_gate_v1,
     expected_screenshot_captures,
     export_link_map,
     merge_committed_png_fixture_baselines_into_evidence_closure_review_v1,
@@ -419,6 +420,9 @@ async def evidence_package(
     )
     payload["evidenceDiffIngestFixLoop_v1"] = evidence_diff_ingest_fix_loop_v1(
         payload["evidenceClosureReview_v1"]
+    )
+    payload["evidenceReviewPerformanceGate_v1"] = evidence_review_performance_gate_v1(
+        payload["evidenceDiffIngestFixLoop_v1"]
     )
     payload["evidenceLifecycleSignal_v1"] = evidence_lifecycle_signal_v1(
         package_semantic_digest_sha256=digest,
