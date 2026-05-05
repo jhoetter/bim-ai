@@ -35,6 +35,10 @@ from bim_ai.ifc_material_layer_exchange_v0 import (
     kernel_ifc_material_layer_set_readback_v0,
     try_attach_kernel_ifc_material_layer_set,
 )
+from bim_ai.ifc_property_set_coverage_evidence_v0 import (
+    build_kernel_ifc_property_set_coverage_evidence_v0,
+    unavailable_property_set_coverage_evidence_v0,
+)
 from bim_ai.kernel_ifc_opening_replay_v0 import build_wall_hosted_opening_replay_commands_v0
 from bim_ai.material_assembly_resolve import (
     resolved_layers_for_floor,
@@ -524,6 +528,9 @@ def inspect_kernel_ifc_semantics(
                 doc=doc,
                 unavailable_reason="ifcopenshell_not_installed",
             )
+            row["propertySetCoverageEvidence_v0"] = unavailable_property_set_coverage_evidence_v0(
+                "ifcopenshell_not_installed",
+            )
         return row
 
     text: str | None = step_text
@@ -539,6 +546,9 @@ def inspect_kernel_ifc_semantics(
                 doc=doc,
                 unavailable_reason="kernel_not_eligible",
             )
+            row["propertySetCoverageEvidence_v0"] = unavailable_property_set_coverage_evidence_v0(
+                "kernel_not_eligible",
+            )
             return row
         text = export_ifc_model_step(doc)
 
@@ -553,6 +563,9 @@ def inspect_kernel_ifc_semantics(
             row["siteExchangeEvidence_v0"] = build_site_exchange_evidence_v0(
                 doc=doc,
                 unavailable_reason="no_document_or_step",
+            )
+            row["propertySetCoverageEvidence_v0"] = unavailable_property_set_coverage_evidence_v0(
+                "no_document_or_step",
             )
         return row
 
@@ -643,6 +656,7 @@ def inspect_kernel_ifc_semantics(
         "importScopeUnsupportedIfcProducts_v0": _import_scope_unsupported_ifc_products_v0(model),
         "siteExchangeEvidence_v0": build_site_exchange_evidence_v0(doc=doc, model=model),
         "materialLayerSetReadback_v0": kernel_ifc_material_layer_set_readback_v0(model, doc),
+        "propertySetCoverageEvidence_v0": build_kernel_ifc_property_set_coverage_evidence_v0(model, doc),
     }
     if skip_counts:
         out["ifcKernelGeometrySkippedCounts"] = skip_counts
@@ -1940,6 +1954,19 @@ def summarize_kernel_ifc_semantic_roundtrip(doc: Document) -> dict[str, Any]:
     else:
         material_layer_readback = {"allMatched": True}
 
+    pc_ins = inspection.get("propertySetCoverageEvidence_v0")
+    property_set_coverage: dict[str, Any] | None = None
+    if isinstance(pc_ins, dict) and pc_ins.get("available"):
+        pcs = pc_ins.get("summary") if isinstance(pc_ins.get("summary"), dict) else {}
+        property_set_coverage = {
+            "inspectPointer": "inspect_kernel_ifc_semantics.propertySetCoverageEvidence_v0",
+            "rowsTotal": int(pcs.get("rowsTotal") or 0),
+            "rowsWithGap": int(pcs.get("rowsWithGap") or 0),
+            "idsGapReasonCounts": dict(pcs.get("idsGapReasonCounts") or {}),
+            "allRowsGapFree": int(pcs.get("rowsWithGap") or 0) == 0,
+            "slabVoidOpeningsWithoutIdentityPset": int(pcs.get("slabVoidOpeningsWithoutIdentityPset") or 0),
+        }
+
     sketch_limit = 48
     qto_names_sk = list(inspection.get("qtoTemplates") or [])
     command_sketch = {
@@ -1969,6 +1996,7 @@ def summarize_kernel_ifc_semantic_roundtrip(doc: Document) -> dict[str, Any]:
             "identityCoverage": identity_coverage,
             "qtoCoverage": qto_coverage,
             "materialLayerReadback": material_layer_readback,
+            "propertySetCoverage": property_set_coverage,
             "allProductCountsMatch": all_pc_match,
             "allProgrammeFieldsMatch": all_prog_match,
             "allIdentityReferencesMatch": all_id_match,

@@ -72,6 +72,10 @@ def test_ifc_manifest_reports_kernel_geometry_skip_counts_without_ifcopenshell()
         },
     )
     mf = build_ifc_exchange_manifest_payload(doc)
+    if IFC_AVAILABLE:
+        assert "ifcPropertySetCoverageEvidence_v0" in mf
+    else:
+        assert "ifcPropertySetCoverageEvidence_v0" not in mf
     skips = mf.get("ifcKernelGeometrySkippedCounts") or {}
     assert skips.get("door_missing_host_wall") == 1
     asm = mf.get("materialAssemblyEvidence_v0")
@@ -128,6 +132,7 @@ def test_ifc_semantic_scope_mentions_material_layer_readback_evidence() -> None:
     blob = "\n".join(str(x) for x in supported)
     assert "materialLayerSetReadback_v0" in blob
     assert "ifcMaterialLayerSetReadbackEvidence_v0" in blob
+    assert "propertySetCoverageEvidence_v0" in blob
 
 
 def test_ifc_manifest_includes_material_layer_readback_when_ifc_installed() -> None:
@@ -189,6 +194,46 @@ def test_ifc_manifest_includes_material_layer_readback_when_ifc_installed() -> N
     assert ev.get("format") == "ifcMaterialLayerSetReadbackEvidence_v0"
     assert ev.get("available") is True
     assert (ev.get("summary") or {}).get("hostsCompared", 0) >= 1
+
+
+def test_ifc_manifest_includes_property_set_coverage_when_ifc_installed() -> None:
+    if not IFC_AVAILABLE:
+        pytest.skip("ifcopenshell not installed (pip install '.[ifc]')")
+
+    doc = Document(
+        revision=204,
+        elements={
+            "lvl-g": LevelElem(kind="level", id="lvl-g", name="G", elevationMm=0),
+            "w-a": WallElem(
+                kind="wall",
+                id="w-a",
+                name="W",
+                levelId="lvl-g",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 3000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+            "fl": FloorElem(
+                kind="floor",
+                id="fl",
+                name="S",
+                levelId="lvl-g",
+                boundaryMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 3500, "yMm": 0},
+                    {"xMm": 3500, "yMm": 2500},
+                    {"xMm": 0, "yMm": 2500},
+                ],
+                thicknessMm=130,
+            ),
+        },
+    )
+    mf = build_ifc_exchange_manifest_payload(doc)
+    cov = mf.get("ifcPropertySetCoverageEvidence_v0") or {}
+    assert cov.get("format") == "ifcPropertySetCoverageEvidence_v0"
+    assert cov.get("available") is True
+    assert int((cov.get("summary") or {}).get("rowsTotal") or 0) >= 1
 
 
 def test_summarize_kernel_ifc_semantic_roundtrip_stub_when_ifcopenshell_missing() -> None:
@@ -253,6 +298,9 @@ def test_inspect_kernel_ifc_semantics_stub_when_ifcopenshell_missing() -> None:
     assert rep["available"] is False
     assert rep["reason"] == "ifcopenshell_not_installed"
     assert rep["matrixVersion"] == 1
+    pc0 = rep.get("propertySetCoverageEvidence_v0") or {}
+    assert pc0.get("available") is False
+    assert pc0.get("reason") == "ifcopenshell_not_installed"
     sx = rep.get("siteExchangeEvidence_v0") or {}
     assert sx.get("kernelSiteCount") == 1
     assert sx["reason"] == "ifcopenshell_not_installed"

@@ -615,6 +615,20 @@ def test_ifc_inspection_matrix_covers_storeys_spaces_qtos_and_programme_fields()
     rep = inspect_kernel_ifc_semantics(doc=doc)
     assert rep["available"] is True
     assert rep["matrixVersion"] == 1
+    pcov = rep.get("propertySetCoverageEvidence_v0") or {}
+    assert pcov.get("available") is True
+    assert int((pcov.get("summary") or {}).get("rowsTotal") or 0) >= 1
+    wall_rows_cov = [r for r in (pcov.get("rows") or []) if r.get("kernelKind") == "wall"]
+    assert wall_rows_cov
+    assert wall_rows_cov[0].get("idsGapReasonToken") == "ids_ok"
+    room_rows_cov = [r for r in (pcov.get("rows") or []) if r.get("kernelKind") == "room"]
+    assert room_rows_cov
+    rr_cov = room_rows_cov[0]
+    assert rr_cov.get("idsGapReasonToken") == "ids_ok"
+    crit_cov = rr_cov.get("criticalPropertiesByPset") or {}
+    psc_keys_cov = crit_cov.get("Pset_SpaceCommon") or []
+    assert "Reference" in psc_keys_cov
+    assert "ProgrammeCode" in psc_keys_cov
     us0 = rep.get("importScopeUnsupportedIfcProducts_v0") or {}
     assert us0.get("schemaVersion") == 0
     assert us0.get("countsByClass") == {}
@@ -660,6 +674,10 @@ def test_ifc_inspection_matrix_covers_storeys_spaces_qtos_and_programme_fields()
 
     rt = summarize_kernel_ifc_semantic_roundtrip(doc)
     assert rt["roundtripChecks"] is not None
+    rt_pcov = rt["roundtripChecks"].get("propertySetCoverage") or {}
+    assert isinstance(rt_pcov, dict)
+    assert rt_pcov.get("allRowsGapFree") is True
+    assert int(rt_pcov.get("rowsTotal") or 0) >= 1
     assert rt["roundtripChecks"]["allQtoLinksMatch"] is True
     assert rt["roundtripChecks"]["allChecksPass"] is True
     assert rt["commandSketch"] is not None

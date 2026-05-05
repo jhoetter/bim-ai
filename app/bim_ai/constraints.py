@@ -49,6 +49,10 @@ from bim_ai.ifc_stub import build_ifc_exchange_manifest_payload
 from bim_ai.material_assembly_resolve import material_assembly_manifest_evidence
 from bim_ai.plan_aa_room_separation import axis_aligned_room_separation_splits_rectangle
 from bim_ai.room_derivation import compute_room_boundary_derivation
+from bim_ai.sheet_titleblock_revision_issue_v1 import (
+    normalize_titleblock_revision_issue_v1,
+    sheet_revision_issue_metadata_present,
+)
 
 ROOM_PLAN_OVERLAP_THRESHOLD_MM2 = 50_000.0
 
@@ -123,6 +127,7 @@ _RULE_DISCIPLINE: dict[str, str] = {
     "schedule_opening_host_wall_type_incomplete": "coordination",
     "schedule_sheet_viewport_missing": "coordination",
     "sheet_missing_titleblock": "coordination",
+    "sheet_revision_issue_metadata_missing": "coordination",
     "sheet_viewport_zero_extent": "coordination",
     "exchange_manifest_ifc_gltf_slice_mismatch": "exchange",
     "exchange_ifc_unhandled_geometry_present": "exchange",
@@ -1648,6 +1653,31 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
                         "elementId": sh_el.id,
                         "key": "titleBlock",
                         "value": _SHEET_DEFAULT_TITLEBLOCK_SYMBOL,
+                    },
+                )
+            )
+
+        tb_norm = normalize_titleblock_revision_issue_v1(sh_el.titleblock_parameters)
+        if (
+            rows_raw
+            and (sh_el.title_block or "").strip()
+            and not sheet_revision_issue_metadata_present(tb_norm)
+        ):
+            viols.append(
+                Violation(
+                    rule_id="sheet_revision_issue_metadata_missing",
+                    severity="warning",
+                    message=(
+                        "Sheet has a title block and viewports but titleblock revision/issue metadata is incomplete: "
+                        "set revisionId and/or revision code (revisionCode or legacy revision) in "
+                        "titleblockParameters."
+                    ),
+                    element_ids=[sh_el.id],
+                    quick_fix_command={
+                        "type": "updateElementProperty",
+                        "elementId": sh_el.id,
+                        "key": "titleblockParametersPatch",
+                        "value": json.dumps({"revisionId": "TBR-REV", "revisionCode": "A"}, sort_keys=True),
                     },
                 )
             )
