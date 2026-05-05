@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from datetime import UTC, datetime
 from typing import Annotated, Any
 from uuid import UUID, uuid4
@@ -649,6 +650,7 @@ async def sheet_print_raster_png_export(
     svg = sheet_elem_to_svg(doc, sh)
     blob = sheet_print_raster_print_surrogate_png_bytes_v2(doc, sh, svg)
     svg_sha = sheet_svg_utf8_sha256(svg)
+    png_digest = hashlib.sha256(blob).hexdigest()
     return Response(
         content=blob,
         media_type="image/png",
@@ -656,6 +658,7 @@ async def sheet_print_raster_png_export(
             "Cache-Control": "public, max-age=60",
             "X-Bim-Ai-Sheet-Print-Raster-Contract": SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2,
             "X-Bim-Ai-Sheet-Svg-Sha256": svg_sha,
+            "X-Bim-Ai-Sheet-Print-Raster-Png-Sha256": png_digest,
             "X-Bim-Ai-Sheet-Print-Raster-Width": str(SHEET_PRINT_RASTER_STAMP_WIDTH_PX),
             "X-Bim-Ai-Sheet-Print-Raster-Height": str(SHEET_PRINT_RASTER_SURROGATE_V2_HEIGHT_PX),
         },

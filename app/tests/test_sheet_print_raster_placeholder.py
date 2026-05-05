@@ -9,15 +9,19 @@ from bim_ai.elements import LevelElem, PlanViewElem, SectionCutElem, SheetElem
 from bim_ai.sheet_preview_svg import (
     SHEET_PRINT_RASTER_LAYOUT_STAMP_CONTRACT_V1,
     SHEET_PRINT_RASTER_PLACEHOLDER_CONTRACT_V1,
+    SHEET_PRINT_RASTER_PRINT_CONTRACT_V3_FORMAT,
     SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2,
     SHEET_PRINT_RASTER_STAMP_HEIGHT_PX,
     SHEET_PRINT_RASTER_STAMP_WIDTH_PX,
     SHEET_PRINT_RASTER_SURROGATE_V2_HEIGHT_PX,
+    build_sheet_print_raster_print_contract_v3,
+    png_ihdr_wh_bit_depth_color_type,
     sheet_elem_to_svg,
     sheet_print_raster_layout_stamp_png_bytes_v1,
     sheet_print_raster_placeholder_png_bytes_v1,
     sheet_print_raster_print_surrogate_png_bytes_v2,
     sheet_svg_utf8_sha256,
+    validate_sheet_print_raster_print_contract_v3,
     viewport_evidence_hints_v1,
 )
 
@@ -113,6 +117,91 @@ def test_viewport_evidence_hints_v1_plan_and_section_segments() -> None:
         [{"viewportId": "v2", "viewRef": "section:sec1", "xMm": 0, "yMm": 0, "widthMm": 1000, "heightMm": 1000}],
     )
     assert hints2[0]["sectionDocumentationSegment"].startswith("secDoc[")
+
+
+def test_png_ihdr_reads_expected_wh_rgb8() -> None:
+    png = sheet_print_raster_placeholder_png_bytes_v1("<svg/>")
+    ihdr = png_ihdr_wh_bit_depth_color_type(png)
+    assert ihdr == (1, 1, 8, 2)
+
+
+def test_sheet_print_raster_print_contract_v3_segments_and_validation() -> None:
+    lvl = LevelElem(kind="level", id="lvl", name="L", elevationMm=0)
+    pv = PlanViewElem(kind="plan_view", id="pv1", name="P", levelId="lvl")
+    sec = SectionCutElem(
+        kind="section_cut",
+        id="sec1",
+        name="Cut",
+        lineStartMm={"xMm": 0, "yMm": 0},
+        lineEndMm={"xMm": 0, "yMm": 1000},
+    )
+    sh = SheetElem(
+        kind="sheet",
+        id="s_plan_sec",
+        name="S",
+        titleBlock="TB",
+        titleblockParameters={"revision": "B"},
+        paperWidthMm=59400,
+        paperHeightMm=42000,
+        viewportsMm=[
+            {
+                "viewportId": "pv",
+                "label": "Plan",
+                "viewRef": "plan:pv1",
+                "xMm": 100,
+                "yMm": 50,
+                "widthMm": 900,
+                "heightMm": 700,
+            },
+            {
+                "viewportId": "sx",
+                "label": "Section",
+                "viewRef": "section:sec1",
+                "xMm": 1100,
+                "yMm": 60,
+                "widthMm": 800,
+                "heightMm": 600,
+            },
+        ],
+    )
+    doc = Document(revision=8, elements={"lvl": lvl, "pv1": pv, "sec1": sec, "s_plan_sec": sh})
+    svg = sheet_elem_to_svg(doc, sh)
+    png = sheet_print_raster_print_surrogate_png_bytes_v2(doc, sh, svg)
+    v3 = build_sheet_print_raster_print_contract_v3(doc, sh, svg, png)
+
+    assert v3["format"] == SHEET_PRINT_RASTER_PRINT_CONTRACT_V3_FORMAT
+    assert v3["surrogateVersion"] == SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2
+    assert v3["paperSizeKey"] == "59400x42000mm"
+    assert len(v3["layoutBandsMm"]) == 2
+    assert v3["layoutBandsMm"][0]["viewportId"] == "pv"
+    corr = v3["viewportSegmentCorrelation"]
+    assert len(corr) == 2
+    by_id = {row["viewportId"]: row["segmentCorrelationDigestSha256"] for row in corr}
+    assert by_id["pv"] != by_id["sx"]
+    assert all(len(d) == 64 for d in by_id.values())
+    assert len(v3["pdfListingSegmentsDigestSha256"]) == 64
+
+    hints = viewport_evidence_hints_v1(doc, list(sh.viewports_mm or []))
+    for row in hints:
+        if row["viewportId"] == "pv":
+            assert row["planProjectionSegment"]
+    assert v3["valid"] is True
+
+    ok, errs = validate_sheet_print_raster_print_contract_v3(v3, png, doc, sh, svg)
+    assert ok and errs == []
+
+    png_bad = bytearray(png)
+    png_bad[-1] ^= 1
+    bad_ok, bad_errs = validate_sheet_print_raster_print_contract_v3(v3, bytes(png_bad), doc, sh, svg)
+    assert not bad_ok
+    assert bad_errs
+
+    forged = dict(v3)
+    forged["pngByteSha256"] = "0" * 64
+    forge_ok, forge_errs = validate_sheet_print_raster_print_contract_v3(forged, png, doc, sh, svg)
+    assert not forge_ok
+    assert any("png_byte_sha256" in e for e in forge_errs)
+
 
 def _png_decompress_rgb_rows(png: bytes) -> tuple[int, int, list[bytes]]:
     assert png.startswith(b"\x89PNG\r\n\x1a\n")

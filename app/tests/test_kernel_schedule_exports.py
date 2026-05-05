@@ -31,12 +31,12 @@ from bim_ai.ifc_stub import (
 )
 from bim_ai.schedule_csv import schedule_payload_to_csv, schedule_payload_with_column_subset
 from bim_ai.schedule_derivation import derive_schedule_table
-from bim_ai.sheet_preview_pdf import sheet_viewport_export_listing_lines
 from bim_ai.sheet_preview_svg import (
     format_viewport_crop_export_segment,
     pick_sheet,
     resolve_view_ref_title,
     sheet_elem_to_svg,
+    sheet_viewport_export_listing_lines,
 )
 
 

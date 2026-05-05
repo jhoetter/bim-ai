@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import html
 import math
+import re
 import struct
 import zlib
 from typing import Any
@@ -33,6 +34,8 @@ SHEET_PRINT_RASTER_TITLEBLOCK_BAND_PX = 16
 SHEET_PRINT_RASTER_SURROGATE_V2_HEIGHT_PX = (
     SHEET_PRINT_RASTER_STAMP_HEIGHT_PX + SHEET_PRINT_RASTER_TITLEBLOCK_BAND_PX
 )
+
+SHEET_PRINT_RASTER_PRINT_CONTRACT_V3_FORMAT = "sheetPrintRasterPrintContract_v3"
 
 
 def sheet_svg_utf8_sha256(svg_text: str) -> str:
@@ -77,6 +80,28 @@ def _encode_png_rgb8_rgb(width: int, height: int, rows_rgb: list[bytes]) -> byte
         + _png_pack_chunk(b"IDAT", idat)
         + _png_pack_chunk(b"IEND", b"")
     )
+
+
+def png_ihdr_wh_bit_depth_color_type(png: bytes) -> tuple[int, int, int, int] | None:
+    """Return ``(width, height, bit_depth, color_type)`` from the first IHDR chunk, or ``None``."""
+
+    if not png.startswith(b"\x89PNG\r\n\x1a\n"):
+        return None
+    pos = 8
+    while pos + 8 <= len(png):
+        ln = int.from_bytes(png[pos : pos + 4], "big")
+        ctype = png[pos + 4 : pos + 8]
+        chunk = png[pos + 8 : pos + 8 + ln]
+        pos += 12 + ln
+        if ctype == b"IHDR":
+            if len(chunk) < 13:
+                return None
+            w = int.from_bytes(chunk[0:4], "big")
+            h = int.from_bytes(chunk[4:8], "big")
+            return (w, h, int(chunk[8]), int(chunk[9]))
+        if ctype == b"IEND":
+            break
+    return None
 
 
 def _stamp_bg_rgb(svg_digest: bytes) -> tuple[int, int, int]:
@@ -264,6 +289,22 @@ def read_viewport_mm_box(vp: dict[str, Any]) -> tuple[float, float, float, float
     return (nx, ny, max(10.0, nw), max(10.0, nh))
 
 
+def sheet_viewport_stamp_rects_mm_ordered(sh: SheetElem) -> list[tuple[str, float, float, float, float]]:
+    """Viewport rectangles sorted like ``_sheet_print_raster_layout_stamp_rows`` fill order."""
+
+    rects: list[tuple[str, float, float, float, float]] = []
+    for i, vp_any in enumerate(sh.viewports_mm or []):
+        if not isinstance(vp_any, dict):
+            continue
+        vp = vp_any
+        vid = str(vp.get("viewportId") or vp.get("viewport_id") or "").strip()
+        if not vid:
+            vid = f"__implicit_{i}"
+        x_mm, y_mm, w_mm, h_mm = read_viewport_mm_box(vp)
+        rects.append((vid, x_mm, y_mm, w_mm, h_mm))
+    return sorted(rects, key=lambda t: (t[0], t[1], t[2]))
+
+
 def _vp_axis_xy(
     obj: Any, keys_x: tuple[str, ...], keys_y: tuple[str, ...]
 ) -> tuple[float | None, float | None]:
@@ -356,8 +397,9 @@ def format_section_viewport_documentation_segment(doc: Document, view_ref: str) 
     """Stable documentation substring for sheet exports when viewport references a section cut.
 
     Includes level counts / elevation span, optional along-cut geometry span ``uGeomSpanMm`` (integer
-    millimetres from ``sectionGeometryExtentMm``), optional callout ids, and optional wall hatch mix
-    ``wh=E{n}A{m}`` (edge-on vs along-cut ``walls[]`` rows) when any walls are present.
+    millimetres from ``sectionGeometryExtentMm``), optional callout ids, optional wall hatch mix
+    ``wh=E{n}A{m}`` (edge-on vs along-cut ``walls[]`` rows) when any walls are present, and optional
+    ``mh={n}`` (count of ``sectionDocMaterialHints``) when that list is non-empty.
     """
 
     if not view_ref.strip() or ":" not in view_ref:
@@ -429,6 +471,10 @@ def format_section_viewport_documentation_segment(doc: Document, view_ref: str) 
                 along_cut += 1
     if edge_on > 0 or along_cut > 0:
         inner_parts.append(f"wh=E{edge_on}A{along_cut}")
+
+    mh_raw = prim.get("sectionDocMaterialHints") or []
+    if isinstance(mh_raw, list) and len(mh_raw) > 0:
+        inner_parts.append(f"mh={len(mh_raw)}")
 
     return "secDoc[" + " ".join(inner_parts) + "]"
 
@@ -580,6 +626,184 @@ def resolve_view_ref_title(doc: Document, view_ref: str) -> str | None:
     return None
 
 
+def sheet_viewport_export_listing_lines(doc: Document, sh: SheetElem) -> list[str]:
+    """Stable viewport lines for PDF exports and deterministic evidence correlations."""
+
+    lines: list[str] = []
+
+    raw_vps = sh.viewports_mm or []
+
+    for i, vp in enumerate(raw_vps):
+        if not isinstance(vp, dict):
+            continue
+        label = vp.get("label") or vp.get("Label") or f"Viewport {i + 1}"
+        vr_raw = vp.get("viewRef") or vp.get("view_ref")
+
+        ttl = ""
+
+        suffix = ""
+
+        if isinstance(vr_raw, str) and vr_raw:
+
+            ttl = resolve_view_ref_title(doc, vr_raw) or ""
+
+            ttl_part = f" — {ttl}" if ttl else ""
+
+            suffix = f" · {vr_raw}{ttl_part}"
+
+        elif vr_raw:
+
+            suffix = f" · {vr_raw}"
+
+        x_mm, y_mm, w_mm, h_mm = read_viewport_mm_box(vp)
+
+        geo = f" [{x_mm:g},{y_mm:g}] {w_mm:g}×{h_mm:g} mm"
+
+        crop_seg = format_viewport_crop_export_segment(vp)
+
+        doc_seg = (
+            format_section_viewport_documentation_segment(doc, str(vr_raw))
+            if isinstance(vr_raw, str)
+            else ""
+        )
+
+        proj_seg = format_sheet_plan_viewport_projection_segment(doc, vp) if isinstance(vp, dict) else ""
+
+        geo_tail = (
+            geo
+            + (f" · {crop_seg}" if crop_seg else "")
+            + (f" · {doc_seg}" if doc_seg else "")
+            + (f" · {proj_seg}" if proj_seg else "")
+        )
+
+        lines.append(str(f"{label}{suffix}{geo_tail}")[:220])
+
+    if not lines:
+        lines.append("No viewports on sheet.")
+
+    return lines
+
+
+def _viewport_export_correlation_segment_bytes(hint_row: dict[str, Any]) -> bytes:
+    crop = str(hint_row.get("crop") or "")
+    plan_s = str(hint_row.get("planProjectionSegment") or "")
+    sec_s = str(hint_row.get("sectionDocumentationSegment") or "")
+    return f"{crop}\n{plan_s}\n{sec_s}".encode()
+
+
+def build_sheet_print_raster_print_contract_v3(
+    doc: Document, sh: SheetElem, svg_text: str, png_bytes: bytes
+) -> dict[str, Any]:
+    """Deterministic surrogate print-raster correlation metadata (+ explicit validation checks)."""
+
+    svg_sha = sheet_svg_utf8_sha256(svg_text)
+    png_sha = hashlib.sha256(png_bytes).hexdigest()
+
+    hints = viewport_evidence_hints_v1(doc, list(sh.viewports_mm or []))
+    viewport_segment_correlation = [
+        {
+            "viewportId": str(row.get("viewportId") or ""),
+            "segmentCorrelationDigestSha256": hashlib.sha256(
+                _viewport_export_correlation_segment_bytes(row)
+            ).hexdigest(),
+        }
+        for row in hints
+    ]
+
+    ordered_rects = sheet_viewport_stamp_rects_mm_ordered(sh)
+    layout_bands_mm = [
+        {"viewportId": vid, "xMm": x_mm, "yMm": y_mm, "widthMm": w_mm, "heightMm": h_mm}
+        for vid, x_mm, y_mm, w_mm, h_mm in ordered_rects
+    ]
+
+    listing_blob = "\n".join(sheet_viewport_export_listing_lines(doc, sh)).encode("utf-8")
+    pdf_list_digest = hashlib.sha256(listing_blob).hexdigest()
+
+    tb_digest = hashlib.sha256(_titleblock_surrogate_payload_bytes(sh)).hexdigest()
+
+    pw = float(sh.paper_width_mm or 42_000.0)
+    ph = float(sh.paper_height_mm or 29_700.0)
+    paper_key = f"{int(round(pw))}x{int(round(ph))}mm"
+
+    expected_png = sheet_print_raster_print_surrogate_png_bytes_v2(doc, sh, svg_text)
+    ihdr = png_ihdr_wh_bit_depth_color_type(png_bytes)
+
+    checks: list[dict[str, Any]] = []
+    ihdr_ok = ihdr is not None
+    checks.append({"id": "png_ihdr_wh", "ok": ihdr_ok})
+    wh_ok = False
+    rgb_ok = False
+    if ihdr:
+        w_px, h_px, bd, ct = ihdr
+        wh_ok = w_px == SHEET_PRINT_RASTER_STAMP_WIDTH_PX and h_px == SHEET_PRINT_RASTER_SURROGATE_V2_HEIGHT_PX
+        rgb_ok = bd == 8 and ct == 2
+    checks.append({"id": "png_wh_surrogate_v2", "ok": wh_ok})
+    checks.append({"id": "png_rgb8", "ok": rgb_ok})
+    checks.append({"id": "png_sha256", "ok": True})
+    surrogate_ok = png_bytes == expected_png
+    checks.append({"id": "surrogate_png_bytes_match_v2", "ok": surrogate_ok})
+    checks.append({"id": "segments_recomputed", "ok": True})
+
+    valid = bool(all(bool(c.get("ok")) for c in checks))
+
+    return {
+        "format": SHEET_PRINT_RASTER_PRINT_CONTRACT_V3_FORMAT,
+        "artifactName": "sheet-print-raster.png",
+        "surrogateVersion": SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2,
+        "widthPx": SHEET_PRINT_RASTER_STAMP_WIDTH_PX,
+        "heightPx": SHEET_PRINT_RASTER_SURROGATE_V2_HEIGHT_PX,
+        "colorMode": "rgb8",
+        "paperWidthMm": pw,
+        "paperHeightMm": ph,
+        "paperSizeKey": paper_key,
+        "titleblockSymbol": "title_block",
+        "titleblockParameterDigestSha256": tb_digest,
+        "layoutBandsMm": layout_bands_mm,
+        "viewportSegmentCorrelation": viewport_segment_correlation,
+        "pdfListingSegmentsDigestSha256": pdf_list_digest,
+        "svgContentSha256": svg_sha,
+        "pngByteSha256": png_sha,
+        "checks": checks,
+        "valid": valid,
+    }
+
+
+def validate_sheet_print_raster_print_contract_v3(
+    contract: dict[str, Any],
+    png_bytes: bytes,
+    doc: Document,
+    sh: SheetElem,
+    svg_text: str,
+) -> tuple[bool, list[str]]:
+    """Rebuild the contract from inputs and verify digests + segments match."""
+
+    errors: list[str] = []
+
+    if str(contract.get("format") or "") != SHEET_PRINT_RASTER_PRINT_CONTRACT_V3_FORMAT:
+        errors.append("contract_format_invalid")
+
+    act_png_sha = hashlib.sha256(png_bytes).hexdigest()
+    if str(contract.get("pngByteSha256") or "") != act_png_sha:
+        errors.append("png_byte_sha256_mismatch_actual_bytes")
+
+    rebuilt = build_sheet_print_raster_print_contract_v3(doc, sh, svg_text, png_bytes)
+    for field in (
+        "svgContentSha256",
+        "pngByteSha256",
+        "titleblockParameterDigestSha256",
+        "pdfListingSegmentsDigestSha256",
+        "layoutBandsMm",
+        "viewportSegmentCorrelation",
+    ):
+        if contract.get(field) != rebuilt.get(field):
+            errors.append(f"field_mismatch:{field}")
+
+    if not rebuilt.get("valid"):
+        errors.append("rebuilt_contract_not_valid")
+
+    return (len(errors) == 0, errors)
+
+
 def sheet_elem_to_svg(doc: Document, sh: SheetElem) -> str:
     w_mm = float(sh.paper_width_mm or 42_000)
     h_mm = float(sh.paper_height_mm or 29_700)
@@ -630,8 +854,13 @@ def sheet_elem_to_svg(doc: Document, sh: SheetElem) -> str:
         doc_block = ""
         if sec_seg:
             esc_sec = html.escape(sec_seg)
+            mh_match = re.search(r"\bmh=(\d+)\b", sec_seg)
+            mh_attr = (
+                f' data-section-doc-mh="{mh_match.group(1)}"' if mh_match is not None else ""
+            )
             doc_block = (
                 f'<text x="{x_mm + 200}" y="{y_mm + 2200}" '
+                f'data-section-doc-token="sectionDocumentationSegment"{mh_attr} '
                 f'fill="#5b21b6" font-size="280px">{esc_sec}</text>'
             )
 

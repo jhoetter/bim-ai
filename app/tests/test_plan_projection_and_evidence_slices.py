@@ -47,7 +47,12 @@ from bim_ai.plan_projection_wire import (
     section_cut_projection_wire,
 )
 from bim_ai.schedule_derivation import derive_schedule_table
-from bim_ai.sheet_preview_svg import plan_room_programme_legend_hints_v0
+from bim_ai.sheet_preview_svg import (
+    plan_room_programme_legend_hints_v0,
+    sheet_elem_to_svg,
+    sheet_print_raster_print_surrogate_png_bytes_v2,
+    validate_sheet_print_raster_print_contract_v3,
+)
 from bim_ai.type_material_registry import merged_registry_payload
 
 
@@ -354,6 +359,20 @@ def test_deterministic_sheet_evidence_rows_stable() -> None:
     assert corr.get("semanticDigestPrefix16") == "a" * 16
     assert corr.get("modelRevision") == 2
     assert corr.get("suggestedEvidenceBundleEvidencePackageJson") == "pfx-evidence-package.json"
+
+    sh_ev = doc.elements["sheet-a"]
+    assert isinstance(sh_ev, SheetElem)
+    svg_body = sheet_elem_to_svg(doc, sh_ev)
+    placeholder_png = sheet_print_raster_print_surrogate_png_bytes_v2(doc, sh_ev, svg_body)
+    ingest_png_sha = (rows[0].get("sheetPrintRasterIngest_v1") or {}).get("placeholderPngSha256")
+    assert ingest_png_sha == hashlib.sha256(placeholder_png).hexdigest()
+    v3 = rows[0].get("sheetPrintRasterPrintContract_v3") or {}
+    assert v3.get("format") == "sheetPrintRasterPrintContract_v3"
+    assert v3.get("pngByteSha256") == ingest_png_sha
+    ok_rows, errs_rows = validate_sheet_print_raster_print_contract_v3(
+        v3, placeholder_png, doc, sh_ev, svg_body
+    )
+    assert ok_rows, errs_rows
 
 
 def test_deterministic_sheet_evidence_viewport_hints_v0_sorted_and_crop() -> None:

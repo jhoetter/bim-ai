@@ -9,71 +9,7 @@ from reportlab.pdfgen import canvas as pdf_canvas
 
 from bim_ai.document import Document
 from bim_ai.elements import SheetElem
-from bim_ai.sheet_preview_svg import (
-    format_section_viewport_documentation_segment,
-    format_sheet_plan_viewport_projection_segment,
-    format_viewport_crop_export_segment,
-    read_viewport_mm_box,
-    resolve_view_ref_title,
-)
-
-
-def sheet_viewport_export_listing_lines(doc: Document, sh: SheetElem) -> list[str]:
-    """Stable viewport lines for PDF and pytest (compression-safe)."""
-
-    lines: list[str] = []
-
-    raw_vps = sh.viewports_mm or []
-
-    for i, vp in enumerate(raw_vps):
-        if not isinstance(vp, dict):
-            continue
-        label = vp.get("label") or vp.get("Label") or f"Viewport {i + 1}"
-        vr_raw = vp.get("viewRef") or vp.get("view_ref")
-
-        ttl = ""
-
-        suffix = ""
-
-        if isinstance(vr_raw, str) and vr_raw:
-
-            ttl = resolve_view_ref_title(doc, vr_raw) or ""
-
-            ttl_part = f" — {ttl}" if ttl else ""
-
-            suffix = f" · {vr_raw}{ttl_part}"
-
-        elif vr_raw:
-
-            suffix = f" · {vr_raw}"
-
-        x_mm, y_mm, w_mm, h_mm = read_viewport_mm_box(vp)
-
-        geo = f" [{x_mm:g},{y_mm:g}] {w_mm:g}×{h_mm:g} mm"
-
-        crop_seg = format_viewport_crop_export_segment(vp)
-
-        doc_seg = (
-            format_section_viewport_documentation_segment(doc, str(vr_raw))
-            if isinstance(vr_raw, str)
-            else ""
-        )
-
-        proj_seg = format_sheet_plan_viewport_projection_segment(doc, vp) if isinstance(vp, dict) else ""
-
-        geo_tail = (
-            geo
-            + (f" · {crop_seg}" if crop_seg else "")
-            + (f" · {doc_seg}" if doc_seg else "")
-            + (f" · {proj_seg}" if proj_seg else "")
-        )
-
-        lines.append(str(f"{label}{suffix}{geo_tail}")[:220])
-
-    if not lines:
-        lines.append("No viewports on sheet.")
-
-    return lines
+from bim_ai.sheet_preview_svg import sheet_viewport_export_listing_lines
 
 
 def sheet_elem_to_pdf_bytes(doc: Document, sh: SheetElem) -> bytes:
