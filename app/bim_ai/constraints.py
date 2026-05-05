@@ -65,7 +65,7 @@ from bim_ai.material_assembly_resolve import (
 )
 from bim_ai.plan_aa_room_separation import axis_aligned_room_separation_splits_rectangle
 from bim_ai.room_color_scheme_override_evidence import scheme_override_advisory_violations_for_doc
-from bim_ai.room_derivation import compute_room_boundary_derivation
+from bim_ai.room_derivation import compute_room_boundary_derivation, detect_unbounded_rooms_v1
 from bim_ai.room_finish_schedule import peer_finish_set_by_level
 from bim_ai.schedule_sheet_export_parity import (
     ADV_CSV_DIVERGES as _PARITY_ADV_CSV_DIVERGES,
@@ -241,6 +241,8 @@ _RULE_DISCIPLINE: dict[str, str] = {
     "prd_closeout_advisor_readiness_status_drift": "agent",
     "prd_closeout_section_missing_in_readiness": "agent",
     "prd_closeout_reason_code_drift": "agent",
+    # New rules — wave-4 prompt-2
+    "room_boundary_open": "architecture",
     # New rules — wave-4 prompt-7
     "schedule_not_placed_on_sheet": "coordination",
     "sheet_viewport_schedule_stale": "coordination",
@@ -267,6 +269,7 @@ _RULE_BLOCKING_CLASS: dict[str, str] = {
     "stair_geometry_unreasonable": "geometry",
     "stair_missing_levels": "geometry",
     "stair_comfort_eu_proxy": "geometry",
+    "room_boundary_open": "geometry",
     # documentation
     "level_duplicate_elevation": "documentation",
     "level_datum_parent_cycle": "documentation",
@@ -2762,6 +2765,7 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
     viols.extend(_plan_view_tag_style_advisor_violations(elements))
     viols.extend(_room_color_scheme_advisory_violations(elements))
     viols.extend(_section_on_sheet_advisory_violations(elements))
+    viols.extend(_room_boundary_open_violations(elements))
     viols.sort(key=lambda v: (v.rule_id, tuple(sorted(v.element_ids)), v.severity))
     annotated = annotate_violation_disciplines(viols)
     return annotate_violation_blocking_classes(annotated)
@@ -3054,3 +3058,24 @@ def fix_sheet_viewport_refresh(doc: Document) -> dict[str, Any]:
         "skipped": not ok,
         "reason": f"refreshed_{stale_count}_viewport(s)" if ok else f"commit_failed:{code}",
     }
+
+
+def _room_boundary_open_violations(elements: dict[str, Element]) -> list[Violation]:
+    doc_snap = Document(revision=0, elements=dict(elements))
+    unbounded_ids = detect_unbounded_rooms_v1(doc_snap)
+    out: list[Violation] = []
+    for rid in unbounded_ids:
+        el = elements.get(rid)
+        name = el.name if hasattr(el, "name") else rid
+        out.append(
+            Violation(
+                rule_id="room_boundary_open",
+                severity="warning",
+                message=(
+                    f"Room '{name}' ({rid}) has an open boundary — "
+                    "it is not fully enclosed by axis-aligned walls or room separations."
+                ),
+                element_ids=[rid],
+            )
+        )
+    return out

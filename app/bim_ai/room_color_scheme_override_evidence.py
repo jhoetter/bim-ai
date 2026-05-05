@@ -8,7 +8,8 @@ import re
 from collections.abc import Iterable
 from typing import Any
 
-from bim_ai.elements import RoomColorSchemeElem, RoomColorSchemeRow
+from bim_ai.document import Document
+from bim_ai.elements import RoomColorSchemeElem, RoomColorSchemeRow, RoomElem
 
 _HEX_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
 
@@ -188,3 +189,85 @@ def legend_rows_from_scheme_overrides(
                 entry["department"] = (row.department or "").strip()
             seen[key] = entry
     return sorted(seen.values(), key=lambda r: (str(r.get("label", "")), str(r.get("schemeColorHex", ""))))
+
+
+def _room_area_m2(room: RoomElem) -> float:
+    pts = room.outline_mm
+    n = len(pts)
+    if n < 3:
+        return 0.0
+    a = 0.0
+    for i in range(n):
+        p = pts[i]
+        q = pts[(i + 1) % n]
+        a += p.x_mm * q.y_mm - q.x_mm * p.y_mm
+    return abs(a / 2.0) / 1_000_000.0
+
+
+def roomColourSchemeLegendEvidence_v1(doc: Document) -> dict[str, Any]:
+    """Deterministic legend manifest: scheme name → sorted list of matching rooms with area.
+
+    Returns a dict with ``format``, ``schemeIdentity``, ``legendRows`` (sorted by canonical
+    key), ``legendRowCount``, and ``legendDigestSha256``.  Same doc always yields same digest.
+    """
+    scheme_elem: RoomColorSchemeElem | None = next(
+        (e for e in doc.elements.values() if isinstance(e, RoomColorSchemeElem)),
+        None,
+    )
+    scheme_id = scheme_elem.id if scheme_elem else None
+    scheme_rows_list = list(scheme_elem.scheme_rows) if scheme_elem else []
+    rooms = [e for e in doc.elements.values() if isinstance(e, RoomElem)]
+
+    legend_entries: list[dict[str, Any]] = []
+    for sr in scheme_rows_list:
+        key_prog = (sr.programme_code or "").strip().lower()
+        key_dept = (sr.department or "").strip().lower()
+        hex_val = _validate_hex(sr.scheme_color_hex) or "#888888"
+        label = _label_for_row(sr)
+
+        matching_rooms: list[dict[str, Any]] = []
+        for rm in rooms:
+            rm_prog = (rm.programme_code or "").strip().lower()
+            rm_dept = (rm.department or "").strip().lower()
+            matched = False
+            if key_prog and rm_prog == key_prog:
+                matched = True
+            if key_dept and rm_dept == key_dept:
+                matched = True
+            if not matched:
+                continue
+            area = _room_area_m2(rm)
+            matching_rooms.append(
+                {
+                    "roomId": rm.id,
+                    "roomName": rm.name,
+                    "areaM2": round(area, 3),
+                }
+            )
+        matching_rooms.sort(key=lambda r: (str(r["roomName"]), str(r["roomId"])))
+
+        legend_entries.append(
+            {
+                "colourHex": hex_val,
+                "label": label or None,
+                "programmeCode": (sr.programme_code or "").strip() or None,
+                "department": (sr.department or "").strip() or None,
+                "matchingRooms": matching_rooms,
+                "totalAreaM2": round(sum(r["areaM2"] for r in matching_rooms), 3),
+            }
+        )
+
+    legend_entries.sort(
+        key=lambda r: (str(r.get("label") or ""), str(r.get("colourHex") or ""))
+    )
+    digest = hashlib.sha256(
+        json.dumps(legend_entries, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+
+    return {
+        "format": "roomColourSchemeLegendEvidence_v1",
+        "schemeIdentity": scheme_id,
+        "legendRowCount": len(legend_entries),
+        "legendRows": legend_entries,
+        "legendDigestSha256": digest,
+    }
