@@ -4,7 +4,15 @@ from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from bim_ai.elements import CameraMm, EvidenceRef, RoomColorSchemeRow, Vec2Mm, WallTypeLayer
+from bim_ai.elements import (
+    CameraMm,
+    EvidenceRef,
+    PlanTagBadgeStyle,
+    PlanTagTarget,
+    RoomColorSchemeRow,
+    Vec2Mm,
+    WallTypeLayer,
+)
 from bim_ai.roof_geometry import RoofGeometryMode
 
 
@@ -458,6 +466,26 @@ class UpsertViewTemplateCmd(BaseModel):
     plan_room_fill_opacity_scale: float | None = Field(default=None, alias="planRoomFillOpacityScale")
     plan_show_opening_tags: bool | None = Field(default=None, alias="planShowOpeningTags")
     plan_show_room_labels: bool | None = Field(default=None, alias="planShowRoomLabels")
+    default_plan_opening_tag_style_id: str | None = Field(
+        default=None, alias="defaultPlanOpeningTagStyleId"
+    )
+    default_plan_room_tag_style_id: str | None = Field(
+        default=None, alias="defaultPlanRoomTagStyleId"
+    )
+
+
+class UpsertPlanTagStyleCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["upsertPlanTagStyle"] = "upsertPlanTagStyle"
+    id: str | None = None
+    name: str = "Plan tag style"
+    tag_target: PlanTagTarget = Field(alias="tagTarget")
+    label_fields: list[str] = Field(default_factory=list, alias="labelFields")
+    text_size_pt: float = Field(default=10.0, alias="textSizePt", gt=0)
+    leader_visible: bool = Field(default=True, alias="leaderVisible")
+    badge_style: PlanTagBadgeStyle = Field(default="none", alias="badgeStyle")
+    color_token: str = Field(default="default", alias="colorToken")
+    sort_key: int = Field(default=0, alias="sortKey")
 
 
 class UpsertSheetCmd(BaseModel):
@@ -526,6 +554,8 @@ class UpsertPlanViewCmd(BaseModel):
     plan_room_fill_opacity_scale: float | None = Field(default=None, alias="planRoomFillOpacityScale")
     plan_show_opening_tags: bool | None = Field(default=None, alias="planShowOpeningTags")
     plan_show_room_labels: bool | None = Field(default=None, alias="planShowRoomLabels")
+    plan_opening_tag_style_id: str | None = Field(default=None, alias="planOpeningTagStyleId")
+    plan_room_tag_style_id: str | None = Field(default=None, alias="planRoomTagStyleId")
 
 
 class CreateCalloutCmd(BaseModel):
@@ -626,6 +656,7 @@ Command = Annotated[
     | UpsertScheduleCmd
     | UpsertScheduleFiltersCmd
     | UpsertRoomVolumeCmd
+    | UpsertPlanTagStyleCmd
     | UpsertPlanViewCmd
     | CreateCalloutCmd
     | CreateBcfTopicCmd

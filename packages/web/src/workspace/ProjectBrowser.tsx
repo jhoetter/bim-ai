@@ -17,7 +17,21 @@ function newDupPlanViewId(prefix: string) {
   }
 }
 
-function viewTemplateEvidenceLine(vt: Extract<Element, { kind: 'view_template' }>): string {
+function shortTemplateTagRef(
+  elementsById: Record<string, Element>,
+  ref: string | null | undefined,
+  lane: 'opening' | 'room',
+): string {
+  if (ref == null || ref === '') return '∅';
+  const e = elementsById[ref];
+  if (e?.kind !== 'plan_tag_style' || e.tagTarget !== lane) return '!';
+  return e.id.length > 12 ? `${e.id.slice(0, 10)}…` : e.id;
+}
+
+function viewTemplateEvidenceLine(
+  elementsById: Record<string, Element>,
+  vt: Extract<Element, { kind: 'view_template' }>,
+): string {
   const d =
     vt.planDetailLevel === undefined || vt.planDetailLevel === null
       ? 'inherit→medium'
@@ -25,7 +39,9 @@ function viewTemplateEvidenceLine(vt: Extract<Element, { kind: 'view_template' }
   const fill = vt.planRoomFillOpacityScale ?? 1;
   const ot = (vt.planShowOpeningTags ?? false) ? 'on' : 'off';
   const rl = (vt.planShowRoomLabels ?? false) ? 'on' : 'off';
-  return `${vt.scale} · ${d} · fill ${fill} · tags ${ot}/${rl}`;
+  const oRef = shortTemplateTagRef(elementsById, vt.defaultPlanOpeningTagStyleId, 'opening');
+  const rRef = shortTemplateTagRef(elementsById, vt.defaultPlanRoomTagStyleId, 'room');
+  return `${vt.scale} · ${d} · fill ${fill} · tags ${ot}/${rl} · tagDef o:${oRef} r:${rRef}`;
 }
 
 function planViewTooltip(
@@ -138,6 +154,8 @@ export function ProjectBrowser(props: {
     }
     if (pv.planShowOpeningTags !== undefined) cmd.planShowOpeningTags = pv.planShowOpeningTags;
     if (pv.planShowRoomLabels !== undefined) cmd.planShowRoomLabels = pv.planShowRoomLabels;
+    if (pv.planOpeningTagStyleId) cmd.planOpeningTagStyleId = pv.planOpeningTagStyleId;
+    if (pv.planRoomTagStyleId) cmd.planRoomTagStyleId = pv.planRoomTagStyleId;
     if (pv.underlayLevelId) cmd.underlayLevelId = pv.underlayLevelId;
     if (pv.phaseId) cmd.phaseId = pv.phaseId;
     if (pv.categoriesHidden?.length) cmd.categoriesHidden = [...pv.categoriesHidden];
@@ -264,13 +282,13 @@ export function ProjectBrowser(props: {
                 <button
                   type="button"
                   className="w-full px-2 py-0.5 text-left text-[10px]"
-                  title={`view_template · ${vt.name} · ${viewTemplateEvidenceLine(vt)}`}
+                  title={`view_template · ${vt.name} · ${viewTemplateEvidenceLine(props.elementsById, vt)}`}
                   onClick={() => useBimStore.getState().select(vt.id)}
                 >
                   <span className="text-muted">view_template ·</span> {vt.name}
                 </button>
                 <div className="pl-2 font-mono text-[9px] leading-tight text-muted">
-                  {viewTemplateEvidenceLine(vt)}
+                  {viewTemplateEvidenceLine(props.elementsById, vt)}
                 </div>
               </li>
             ))}

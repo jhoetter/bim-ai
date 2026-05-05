@@ -1,4 +1,4 @@
-import type { Element } from '@bim-ai/core';
+import type { Element, PlanTagTarget } from '@bim-ai/core';
 
 import type { PlanAnnotationHintsResolved, PlanGraphicHintsResolved } from './planProjectionWire';
 import type { PlanPresentationPreset } from './symbology';
@@ -226,6 +226,89 @@ export function resolvePlanAnnotationHints(
   return { openingTagsVisible, roomLabelsVisible };
 }
 
+export const BUILTIN_PLAN_TAG_OPENING_ID = 'builtin-plan-tag-opening';
+export const BUILTIN_PLAN_TAG_ROOM_ID = 'builtin-plan-tag-room';
+
+export type PlanTagStyleLane = PlanTagTarget;
+
+export type ResolvedPlanTagStyleLane = {
+  resolvedStyleId: string;
+  resolvedStyleName: string;
+  source: 'plan_view' | 'view_template' | 'builtin';
+  textSizePt: number;
+};
+
+function builtinPlanTagLane(lane: PlanTagStyleLane): ResolvedPlanTagStyleLane {
+  return {
+    resolvedStyleId: lane === 'opening' ? BUILTIN_PLAN_TAG_OPENING_ID : BUILTIN_PLAN_TAG_ROOM_ID,
+    resolvedStyleName: 'Builtin',
+    source: 'builtin',
+    textSizePt: 10,
+  };
+}
+
+function resolvedPlanTagFromRef(
+  elementsById: Record<string, Element>,
+  ref: string | null | undefined,
+  lane: PlanTagStyleLane,
+  source: ResolvedPlanTagStyleLane['source'],
+): ResolvedPlanTagStyleLane {
+  if (!ref) return builtinPlanTagLane(lane);
+  const style = elementsById[ref];
+  if (style?.kind !== 'plan_tag_style' || style.tagTarget !== lane) {
+    return builtinPlanTagLane(lane);
+  }
+  return {
+    resolvedStyleId: style.id,
+    resolvedStyleName: style.name,
+    source,
+    textSizePt: style.textSizePt,
+  };
+}
+
+/** Mirrors server `plan_view` → `view_template` → builtin precedence (WP-C02). */
+
+export function resolvePlanTagStyleLane(
+  elementsById: Record<string, Element>,
+  planViewId: string | undefined,
+  lane: PlanTagStyleLane,
+): ResolvedPlanTagStyleLane {
+  if (!planViewId) return builtinPlanTagLane(lane);
+  const pv = elementsById[planViewId];
+  if (!pv || pv.kind !== 'plan_view') return builtinPlanTagLane(lane);
+
+  const pvRef = lane === 'opening' ? pv.planOpeningTagStyleId : pv.planRoomTagStyleId;
+  if (pvRef) return resolvedPlanTagFromRef(elementsById, pvRef, lane, 'plan_view');
+
+  let tmpl: Extract<Element, { kind: 'view_template' }> | undefined;
+  if (pv.viewTemplateId) {
+    const t = elementsById[pv.viewTemplateId];
+    if (t?.kind === 'view_template') tmpl = t;
+  }
+  const tRef =
+    lane === 'opening' ? tmpl?.defaultPlanOpeningTagStyleId : tmpl?.defaultPlanRoomTagStyleId;
+  if (tRef) return resolvedPlanTagFromRef(elementsById, tRef, lane, 'view_template');
+
+  return builtinPlanTagLane(lane);
+}
+
+export function formatPlanTagStyleMatrixCell(r: ResolvedPlanTagStyleLane): string {
+  return `${r.resolvedStyleId} · ${r.resolvedStyleName} · ${r.source}`;
+}
+
+export function planTemplateDefaultTagStyleCell(
+  elementsById: Record<string, Element>,
+  tmpl: Extract<Element, { kind: 'view_template' }> | undefined,
+  lane: PlanTagStyleLane,
+): string {
+  if (!tmpl) return '—';
+  const tRef =
+    lane === 'opening' ? tmpl.defaultPlanOpeningTagStyleId : tmpl.defaultPlanRoomTagStyleId;
+  return formatPlanTagStyleMatrixCell(
+    resolvedPlanTagFromRef(elementsById, tRef, lane, 'view_template'),
+  );
+}
+
 export type PlanGraphicsMatrixRow = {
   label: string;
   template: string;
@@ -262,7 +345,13 @@ export function planViewProjectBrowserEvidenceLine(
 
   const d = g?.detailLevel ?? 'medium';
   const fill = g?.roomFillOpacityScale ?? 1;
-  return `pres ${formatPlanPresentationStored(pres)} · ${d} · fill ${fill} · tags ${annotationTriEffective(a.openingTagsVisible)}/${annotationTriEffective(a.roomLabelsVisible)}`;
+  const oSt = resolvePlanTagStyleLane(elementsById, planViewId, 'opening');
+  const rSt = resolvePlanTagStyleLane(elementsById, planViewId, 'room');
+  const oAbbrev =
+    oSt.resolvedStyleId === BUILTIN_PLAN_TAG_OPENING_ID ? 'builtin' : oSt.resolvedStyleId;
+  const rAbbrev =
+    rSt.resolvedStyleId === BUILTIN_PLAN_TAG_ROOM_ID ? 'builtin' : rSt.resolvedStyleId;
+  return `pres ${formatPlanPresentationStored(pres)} · ${d} · fill ${fill} · tags ${annotationTriEffective(a.openingTagsVisible)}/${annotationTriEffective(a.roomLabelsVisible)} · tagStyles o=${oAbbrev} r=${rAbbrev}`;
 }
 
 /** Template | stored plan_view | effective matrix for Inspector production review. */
@@ -307,6 +396,29 @@ export function planViewGraphicsMatrixRows(
   const pvLabels = annotationTriStored(el.planShowRoomLabels);
   const effLabels = annotationTriEffective(a.roomLabelsVisible);
 
+  const tmplOpenStyle = planTemplateDefaultTagStyleCell(elementsById, tmpl, 'opening');
+  const tmplRoomStyle = planTemplateDefaultTagStyleCell(elementsById, tmpl, 'room');
+
+  const pvOpenRef = el.planOpeningTagStyleId;
+  const openStored = pvOpenRef
+    ? formatPlanTagStyleMatrixCell(
+        resolvedPlanTagFromRef(elementsById, pvOpenRef, 'opening', 'plan_view'),
+      )
+    : 'inherit';
+  const openEff = formatPlanTagStyleMatrixCell(
+    resolvePlanTagStyleLane(elementsById, planViewId, 'opening'),
+  );
+
+  const pvRoomRef = el.planRoomTagStyleId;
+  const roomStored = pvRoomRef
+    ? formatPlanTagStyleMatrixCell(
+        resolvedPlanTagFromRef(elementsById, pvRoomRef, 'room', 'plan_view'),
+      )
+    : 'inherit';
+  const roomEff = formatPlanTagStyleMatrixCell(
+    resolvePlanTagStyleLane(elementsById, planViewId, 'room'),
+  );
+
   const tmplHiddenRaw = tmpl?.hiddenCategories?.length ?? 0;
   const pvHiddenRaw = el.categoriesHidden?.length ?? 0;
   const effHiddenKinds = String(display.hiddenSemanticKinds.size);
@@ -347,6 +459,18 @@ export function planViewGraphicsMatrixRows(
       template: vtLabels,
       stored: pvLabels,
       effective: effLabels,
+    },
+    {
+      label: 'Opening tag style',
+      template: tmplOpenStyle,
+      stored: openStored,
+      effective: openEff,
+    },
+    {
+      label: 'Room tag style',
+      template: tmplRoomStyle,
+      stored: roomStored,
+      effective: roomEff,
     },
     {
       label: 'Hidden categories',
@@ -395,6 +519,18 @@ export function viewTemplateGraphicsMatrixRows(
 
   const hiddenCount = el.hiddenCategories?.length ?? 0;
 
+  const vtOpenStyle = formatPlanTagStyleMatrixCell(
+    resolvedPlanTagFromRef(
+      elementsById,
+      el.defaultPlanOpeningTagStyleId,
+      'opening',
+      'view_template',
+    ),
+  );
+  const vtRoomStyle = formatPlanTagStyleMatrixCell(
+    resolvedPlanTagFromRef(elementsById, el.defaultPlanRoomTagStyleId, 'room', 'view_template'),
+  );
+
   const dash = '—';
 
   return [
@@ -433,6 +569,18 @@ export function viewTemplateGraphicsMatrixRows(
       template: dash,
       stored: labelsEff,
       effective: labelsEff,
+    },
+    {
+      label: 'Opening tag style',
+      template: dash,
+      stored: vtOpenStyle,
+      effective: vtOpenStyle,
+    },
+    {
+      label: 'Room tag style',
+      template: dash,
+      stored: vtRoomStyle,
+      effective: vtRoomStyle,
     },
     {
       label: 'Hidden categories',
@@ -490,11 +638,25 @@ export function planViewInheritanceSummaryLines(
   const pvLabels =
     el.planShowRoomLabels === undefined ? 'inherit' : el.planShowRoomLabels ? 'on' : 'off';
 
+  const pvOpenRef =
+    el.planOpeningTagStyleId === undefined || el.planOpeningTagStyleId === null
+      ? 'inherit'
+      : el.planOpeningTagStyleId;
+  const pvRoomRef =
+    el.planRoomTagStyleId === undefined || el.planRoomTagStyleId === null
+      ? 'inherit'
+      : el.planRoomTagStyleId;
+
+  const effOpen = resolvePlanTagStyleLane(elementsById, planViewId, 'opening');
+  const effRoom = resolvePlanTagStyleLane(elementsById, planViewId, 'room');
+
   return [
     `Graphics: detail=${effDetail}, lineWeight×=${g?.lineWeightScale ?? 1}, roomFill=${effFill}`,
     `Stored plan_view: detail=${pvDetail}, roomFill=${pvFill}`,
     `Template: detail=${vtDetail}, roomFill=${vtFill}`,
     `Opening tags: effective=${a.openingTagsVisible ? 'on' : 'off'}; plan_view=${pvOpening}; template=${tmpl ? (tmpl.planShowOpeningTags ? 'on' : 'off') : '—'}`,
     `Room labels: effective=${a.roomLabelsVisible ? 'on' : 'off'}; plan_view=${pvLabels}; template=${tmpl ? (tmpl.planShowRoomLabels ? 'on' : 'off') : '—'}`,
+    `Opening tag style: effective=${formatPlanTagStyleMatrixCell(effOpen)}; plan_view.stored=${pvOpenRef === 'inherit' ? 'inherit' : String(pvOpenRef)}; template.default=${tmpl?.defaultPlanOpeningTagStyleId ?? '—'}`,
+    `Room tag style: effective=${formatPlanTagStyleMatrixCell(effRoom)}; plan_view.stored=${pvRoomRef === 'inherit' ? 'inherit' : String(pvRoomRef)}; template.default=${tmpl?.defaultPlanRoomTagStyleId ?? '—'}`,
   ];
 }

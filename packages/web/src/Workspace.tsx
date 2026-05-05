@@ -1292,6 +1292,7 @@ export function Workspace() {
                   variant="plan_view"
                   selected={selected}
                   revision={revision}
+                  elementsById={elementsById}
                   onPersistProperty={(key, value) => {
                     void onSemantic({
                       type: 'updateElementProperty',
@@ -1485,6 +1486,7 @@ export function Workspace() {
                 <SavedViewTemplateGraphicsAuthoring
                   selected={selected}
                   revision={revision}
+                  elementsById={elementsById}
                   onPersistProperty={(key, value) => {
                     void onSemantic({
                       type: 'updateElementProperty',

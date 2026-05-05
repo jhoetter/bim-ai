@@ -5,7 +5,8 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-from typing import Any
+from dataclasses import dataclass
+from typing import Any, Literal
 
 from bim_ai.document import Document
 from bim_ai.elements import (
@@ -14,6 +15,7 @@ from bim_ai.elements import (
     FloorElem,
     GridLineElem,
     LevelElem,
+    PlanTagStyleElem,
     PlanViewElem,
     RoofElem,
     RoomColorSchemeElem,
@@ -197,6 +199,189 @@ def _room_plan_tag_label(room: RoomElem) -> str:
         return code
     suf = room.id[-4:] if len(room.id) >= 4 else room.id
     return f"R-{suf}"
+
+
+BUILTIN_PLAN_TAG_OPENING_ID = "builtin-plan-tag-opening"
+BUILTIN_PLAN_TAG_ROOM_ID = "builtin-plan-tag-room"
+_OPENING_BUILTIN_LABEL_FIELDS = ["name", "elementId"]
+_ROOM_BUILTIN_LABEL_FIELDS = ["name", "programmeCode", "elementId"]
+
+
+@dataclass
+class _ResolvedPlanTagStyleLane:
+    style_id: str
+    name: str
+    source: Literal["plan_view", "view_template", "builtin"]
+    warnings: list[dict[str, Any]]
+    catalog: PlanTagStyleElem | None
+
+
+def _warning_sort_key(w: dict[str, Any]) -> tuple[str, str, str, str]:
+    return (
+        str(w.get("code", "")),
+        str(w.get("message", "")),
+        str(w.get("ref", "")),
+        str(w.get("lane", "")),
+    )
+
+
+def _resolve_plan_tag_style_lane(
+    doc: Document,
+    pv: PlanViewElem | None,
+    lane: Literal["opening", "room"],
+) -> _ResolvedPlanTagStyleLane:
+    warnings: list[dict[str, Any]] = []
+    ref: str | None = None
+    source: Literal["plan_view", "view_template", "builtin"] = "builtin"
+    if pv is not None:
+        ref = pv.plan_opening_tag_style_id if lane == "opening" else pv.plan_room_tag_style_id
+        if ref:
+            source = "plan_view"
+    tmpl: ViewTemplateElem | None = None
+    if pv is not None and pv.view_template_id:
+        te = doc.elements.get(pv.view_template_id)
+        if isinstance(te, ViewTemplateElem):
+            tmpl = te
+    if not ref and tmpl is not None:
+        ref = (
+            tmpl.default_plan_opening_tag_style_id
+            if lane == "opening"
+            else tmpl.default_plan_room_tag_style_id
+        )
+        if ref:
+            source = "view_template"
+    if not ref:
+        bid = BUILTIN_PLAN_TAG_OPENING_ID if lane == "opening" else BUILTIN_PLAN_TAG_ROOM_ID
+        return _ResolvedPlanTagStyleLane(bid, "Builtin", "builtin", warnings, None)
+    el = doc.elements.get(ref)
+    if not isinstance(el, PlanTagStyleElem):
+        warnings.append(
+            {
+                "code": "planTagStyleRefInvalid",
+                "message": f"Plan tag style ref '{ref}' is missing or is not plan_tag_style; using builtin.",
+                "ref": ref,
+                "lane": lane,
+            }
+        )
+        bid = BUILTIN_PLAN_TAG_OPENING_ID if lane == "opening" else BUILTIN_PLAN_TAG_ROOM_ID
+        return _ResolvedPlanTagStyleLane(bid, "Builtin", "builtin", warnings, None)
+    expected: Literal["opening", "room"] = lane
+    if el.tag_target != expected:
+        warnings.append(
+            {
+                "code": "planTagStyleTargetMismatch",
+                "message": (
+                    f"Plan tag style '{ref}' targets '{el.tag_target}' but assigned lane is '{lane}'; "
+                    "using builtin."
+                ),
+                "ref": ref,
+                "lane": lane,
+            }
+        )
+        bid = BUILTIN_PLAN_TAG_OPENING_ID if lane == "opening" else BUILTIN_PLAN_TAG_ROOM_ID
+        return _ResolvedPlanTagStyleLane(bid, "Builtin", "builtin", warnings, None)
+    return _ResolvedPlanTagStyleLane(el.id, el.name, source, warnings, el)
+
+
+def _plan_tag_style_hint_payload(
+    res: _ResolvedPlanTagStyleLane, lane: Literal["opening", "room"]
+) -> dict[str, Any]:
+    warn_sorted = sorted(res.warnings, key=_warning_sort_key)
+    if res.catalog is not None:
+        e = res.catalog
+        return {
+            "resolvedStyleId": res.style_id,
+            "resolvedStyleName": e.name,
+            "source": res.source,
+            "tagTarget": e.tag_target,
+            "labelFields": list(e.label_fields),
+            "textSizePt": round(float(e.text_size_pt), 4),
+            "leaderVisible": bool(e.leader_visible),
+            "badgeStyle": e.badge_style,
+            "colorToken": str(e.color_token),
+            "warnings": warn_sorted,
+        }
+    lf = _OPENING_BUILTIN_LABEL_FIELDS if lane == "opening" else _ROOM_BUILTIN_LABEL_FIELDS
+    return {
+        "resolvedStyleId": res.style_id,
+        "resolvedStyleName": res.name,
+        "source": res.source,
+        "tagTarget": lane,
+        "labelFields": list(lf),
+        "textSizePt": 10.0,
+        "leaderVisible": True,
+        "badgeStyle": "none",
+        "colorToken": "default",
+        "warnings": warn_sorted,
+    }
+
+
+def _format_opening_tag_with_style(o: DoorElem | WindowElem, catalog: PlanTagStyleElem | None) -> str:
+    if catalog is None:
+        return _opening_plan_tag_label(o)
+    fields = catalog.label_fields
+    if not fields:
+        return _opening_plan_tag_label(o)
+    parts: list[str] = []
+    for f in fields:
+        if f == "name":
+            n = (o.name or "").strip()
+            if n:
+                parts.append(_plan_tag_label_trunc(n))
+        elif f == "programmeCode":
+            continue
+        elif f == "elementId":
+            parts.append(o.id)
+        elif f == "widthMm":
+            parts.append(str(round(float(o.width_mm), 3)))
+        elif f == "heightMm":
+            if isinstance(o, WindowElem):
+                parts.append(str(round(float(o.height_mm), 3)))
+        elif f == "sillHeightMm":
+            if isinstance(o, WindowElem):
+                parts.append(str(round(float(o.sill_height_mm), 3)))
+    joined = " · ".join(x for x in parts if x)
+    if not joined:
+        return _opening_plan_tag_label(o)
+    return _plan_tag_label_trunc(joined)
+
+
+def _format_room_tag_with_style(room: RoomElem, catalog: PlanTagStyleElem | None) -> str:
+    if catalog is None:
+        return _room_plan_tag_label(room)
+    fields = catalog.label_fields
+    if not fields:
+        return _room_plan_tag_label(room)
+    parts: list[str] = []
+    for f in fields:
+        if f == "name":
+            n = (room.name or "").strip()
+            if n:
+                parts.append(_plan_tag_label_trunc(n))
+        elif f == "programmeCode":
+            c = (room.programme_code or "").strip()
+            if c:
+                parts.append(_plan_tag_label_trunc(c, max_len=20))
+        elif f == "elementId":
+            parts.append(room.id)
+        elif f == "department":
+            d = (room.department or "").strip()
+            if d:
+                parts.append(_plan_tag_label_trunc(d, max_len=24))
+        elif f == "functionLabel":
+            fl = (room.function_label or "").strip()
+            if fl:
+                parts.append(_plan_tag_label_trunc(fl, max_len=24))
+        elif f == "finishSet":
+            fs = (room.finish_set or "").strip()
+            if fs:
+                parts.append(_plan_tag_label_trunc(fs, max_len=20))
+        elif f == "targetAreaM2" and room.target_area_m2 is not None:
+            parts.append(str(round(float(room.target_area_m2), 3)))
+    joined = " · ".join(x for x in parts if x)
+    if not joined:
+        return _room_plan_tag_label(room)
+    return _plan_tag_label_trunc(joined)
 
 
 def _plan_annotation_hints_for_pinned_view(doc: Document, pv: PlanViewElem) -> dict[str, bool]:
@@ -438,6 +623,8 @@ def _build_plan_primitive_lists(
     line_weight_hint: float = 1.0,
     opening_tags_visible: bool = False,
     room_labels_visible: bool = False,
+    opening_tag_catalog: PlanTagStyleElem | None = None,
+    room_tag_catalog: PlanTagStyleElem | None = None,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     """2D primitives for deterministic server-side plan previews."""
 
@@ -531,7 +718,7 @@ def _build_plan_primitive_lists(
             if (e.function_label or "").strip():
                 row["functionLabel"] = (e.function_label or "").strip()
             if room_labels_visible:
-                row["planTagLabel"] = _room_plan_tag_label(e)
+                row["planTagLabel"] = _format_room_tag_with_style(e, room_tag_catalog)
             rooms.append(row)
         elif isinstance(e, DoorElem):
             w = doc.elements.get(e.wall_id)
@@ -565,7 +752,7 @@ def _build_plan_primitive_lists(
             if not wall_plan_axis_aligned_xy(w):
                 dout["wallYawDeg"] = wall_plan_yaw_deg(w)
             if opening_tags_visible:
-                dout["planTagLabel"] = _opening_plan_tag_label(e)
+                dout["planTagLabel"] = _format_opening_tag_with_style(e, opening_tag_catalog)
             doors.append(dout)
         elif isinstance(e, WindowElem):
             w = doc.elements.get(e.wall_id)
@@ -601,7 +788,7 @@ def _build_plan_primitive_lists(
             if not wall_plan_axis_aligned_xy(w):
                 wrow["wallYawDeg"] = wall_plan_yaw_deg(w)
             if opening_tags_visible:
-                wrow["planTagLabel"] = _opening_plan_tag_label(e)
+                wrow["planTagLabel"] = _format_opening_tag_with_style(e, opening_tag_catalog)
             windows.append(wrow)
         elif isinstance(e, StairElem):
             if "stair" in hidden_semantic or not lvl_ok(e.base_level_id):
@@ -927,6 +1114,18 @@ def resolve_plan_projection_wire(
 
     scheme_rows = _document_room_scheme_rows(doc)
 
+    res_open: _ResolvedPlanTagStyleLane | None = None
+    res_room: _ResolvedPlanTagStyleLane | None = None
+    tag_warn_bucket: list[dict[str, Any]] = []
+    opening_cat: PlanTagStyleElem | None = None
+    room_cat: PlanTagStyleElem | None = None
+    if pinned_pv_elem is not None:
+        res_open = _resolve_plan_tag_style_lane(doc, pinned_pv_elem, "opening")
+        res_room = _resolve_plan_tag_style_lane(doc, pinned_pv_elem, "room")
+        tag_warn_bucket = list(res_open.warnings) + list(res_room.warnings)
+        opening_cat = res_open.catalog
+        room_cat = res_room.catalog
+
     prim, prim_warn = _build_plan_primitive_lists(
         doc,
         level=active_level,
@@ -937,8 +1136,13 @@ def resolve_plan_projection_wire(
         line_weight_hint=line_weight_scale,
         opening_tags_visible=opening_vis,
         room_labels_visible=room_lab_vis,
+        opening_tag_catalog=opening_cat,
+        room_tag_catalog=room_cat,
     )
-    all_warnings = list(extra_prim_warn) + list(prim_warn)
+    all_warnings = sorted(
+        list(extra_prim_warn) + list(prim_warn) + tag_warn_bucket,
+        key=_warning_sort_key,
+    )
     legend = _room_color_legend_payload(
         doc,
         level=active_level,
@@ -971,6 +1175,11 @@ def resolve_plan_projection_wire(
         out_payload["planGraphicHints"] = plan_graphic_hints
     if plan_ann is not None:
         out_payload["planAnnotationHints"] = plan_ann
+    if pinned_pv_elem is not None and res_open is not None and res_room is not None:
+        out_payload["planTagStyleHints"] = {
+            "opening": _plan_tag_style_hint_payload(res_open, "opening"),
+            "room": _plan_tag_style_hint_payload(res_room, "room"),
+        }
     return out_payload
 
 

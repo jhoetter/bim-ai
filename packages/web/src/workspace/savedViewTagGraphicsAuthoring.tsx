@@ -13,9 +13,23 @@ export function SavedViewTagGraphicsAuthoring(props: {
   variant: 'plan_view';
   selected: PlanViewEl;
   revision: number;
+  elementsById: Record<string, Element>;
   onPersistProperty: OnPersist;
 }) {
-  const { selected, revision, onPersistProperty } = props;
+  const { selected, revision, onPersistProperty, elementsById } = props;
+
+  const openingStyles = Object.values(elementsById)
+    .filter(
+      (e): e is Extract<Element, { kind: 'plan_tag_style' }> =>
+        e.kind === 'plan_tag_style' && e.tagTarget === 'opening',
+    )
+    .sort((a, b) => a.sortKey - b.sortKey || a.name.localeCompare(b.name));
+  const roomStyles = Object.values(elementsById)
+    .filter(
+      (e): e is Extract<Element, { kind: 'plan_tag_style' }> =>
+        e.kind === 'plan_tag_style' && e.tagTarget === 'room',
+    )
+    .sort((a, b) => a.sortKey - b.sortKey || a.name.localeCompare(b.name));
 
   return (
     <>
@@ -106,6 +120,40 @@ export function SavedViewTagGraphicsAuthoring(props: {
             <option value="false">off</option>
           </select>
         </label>
+        <label className="block text-[10px] text-muted">
+          Opening tag style (stored)
+          <select
+            className="mt-1 w-full rounded border border-border bg-background px-2 py-1 text-[11px]"
+            value={selected.planOpeningTagStyleId ?? ''}
+            onChange={(e) => {
+              onPersistProperty('planOpeningTagStyleId', e.target.value);
+            }}
+          >
+            <option value="">inherit from template</option>
+            {openingStyles.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name} · {s.id}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="block text-[10px] text-muted">
+          Room tag style (stored)
+          <select
+            className="mt-1 w-full rounded border border-border bg-background px-2 py-1 text-[11px]"
+            value={selected.planRoomTagStyleId ?? ''}
+            onChange={(e) => {
+              onPersistProperty('planRoomTagStyleId', e.target.value);
+            }}
+          >
+            <option value="">inherit from template</option>
+            {roomStyles.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name} · {s.id}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
     </>
   );
@@ -116,9 +164,23 @@ export function SavedViewTagGraphicsAuthoring(props: {
 export function SavedViewTemplateGraphicsAuthoring(props: {
   selected: ViewTemplateEl;
   revision: number;
+  elementsById: Record<string, Element>;
   onPersistProperty: OnPersist;
 }) {
-  const { selected, revision, onPersistProperty } = props;
+  const { selected, revision, onPersistProperty, elementsById } = props;
+
+  const openingStyles = Object.values(elementsById)
+    .filter(
+      (e): e is Extract<Element, { kind: 'plan_tag_style' }> =>
+        e.kind === 'plan_tag_style' && e.tagTarget === 'opening',
+    )
+    .sort((a, b) => a.sortKey - b.sortKey || a.name.localeCompare(b.name));
+  const roomStyles = Object.values(elementsById)
+    .filter(
+      (e): e is Extract<Element, { kind: 'plan_tag_style' }> =>
+        e.kind === 'plan_tag_style' && e.tagTarget === 'room',
+    )
+    .sort((a, b) => a.sortKey - b.sortKey || a.name.localeCompare(b.name));
 
   return (
     <>
@@ -182,6 +244,40 @@ export function SavedViewTemplateGraphicsAuthoring(props: {
         >
           <option value="false">off</option>
           <option value="true">on</option>
+        </select>
+      </label>
+      <label className="block text-[10px] text-muted">
+        Default opening tag style
+        <select
+          className="mt-1 w-full rounded border border-border bg-background px-2 py-1 text-[11px]"
+          value={selected.defaultPlanOpeningTagStyleId ?? ''}
+          onChange={(e) => {
+            onPersistProperty('defaultPlanOpeningTagStyleId', e.target.value);
+          }}
+        >
+          <option value="">builtin / none</option>
+          {openingStyles.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name} · {s.id}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="block text-[10px] text-muted">
+        Default room tag style
+        <select
+          className="mt-1 w-full rounded border border-border bg-background px-2 py-1 text-[11px]"
+          value={selected.defaultPlanRoomTagStyleId ?? ''}
+          onChange={(e) => {
+            onPersistProperty('defaultPlanRoomTagStyleId', e.target.value);
+          }}
+        >
+          <option value="">builtin / none</option>
+          {roomStyles.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name} · {s.id}
+            </option>
+          ))}
         </select>
       </label>
     </>

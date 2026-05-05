@@ -2,18 +2,155 @@ import type { Element } from '@bim-ai/core';
 import { describe, expect, it } from 'vitest';
 
 import {
+  BUILTIN_PLAN_TAG_OPENING_ID,
   canonHiddenCategory,
+  formatPlanTagStyleMatrixCell,
   planViewGraphicsMatrixRows,
   planViewInheritanceSummaryLines,
   planViewProjectBrowserEvidenceLine,
   resolvePlanGraphicHints,
+  resolvePlanTagStyleLane,
   resolvePlanViewDisplay,
   viewTemplateGraphicsMatrixRows,
   viewpointOrbit3dEvidenceLine,
 } from './planProjection';
-import { extractPlanGraphicHints } from './planProjectionWire';
+import { extractPlanGraphicHints, extractPlanTagStyleHints } from './planProjectionWire';
 
 describe('planProjection', () => {
+  it('extractPlanTagStyleHints reads server block', () => {
+    const h = extractPlanTagStyleHints({
+      planTagStyleHints: {
+        opening: {
+          resolvedStyleId: 's1',
+          resolvedStyleName: 'N',
+          source: 'view_template',
+          textSizePt: 12,
+        },
+      },
+    });
+    expect(h?.opening?.resolvedStyleId).toBe('s1');
+    expect(h?.opening?.textSizePt).toBe(12);
+  });
+
+  it('resolvePlanTagStyleLane uses plan_view then template then builtin', () => {
+    const elementsById = {
+      st: {
+        kind: 'plan_tag_style' as const,
+        id: 'st',
+        name: 'Style',
+        tagTarget: 'opening' as const,
+        labelFields: [] as string[],
+        textSizePt: 14,
+        leaderVisible: true,
+        badgeStyle: 'none' as const,
+        colorToken: 'default',
+        sortKey: 0,
+      },
+      vt: {
+        kind: 'view_template' as const,
+        id: 'vt',
+        name: 'T',
+        scale: 'scale_100' as const,
+        planShowOpeningTags: false,
+        planShowRoomLabels: false,
+        defaultPlanOpeningTagStyleId: 'st',
+      },
+      pv: {
+        kind: 'plan_view' as const,
+        id: 'pv',
+        name: 'P',
+        levelId: 'lv',
+        viewTemplateId: 'vt',
+      },
+      lv: { kind: 'level' as const, id: 'lv', name: 'L', elevationMm: 0 },
+    } as Record<string, Element>;
+    const fromTmpl = resolvePlanTagStyleLane(elementsById, 'pv', 'opening');
+    expect(fromTmpl.resolvedStyleId).toBe('st');
+    expect(fromTmpl.source).toBe('view_template');
+
+    const elementsPv = {
+      ...elementsById,
+      pv: {
+        ...elementsById.pv,
+        planOpeningTagStyleId: 'st',
+      },
+    } as Record<string, Element>;
+    const fromPv = resolvePlanTagStyleLane(elementsPv, 'pv', 'opening');
+    expect(fromPv.source).toBe('plan_view');
+
+    const none = resolvePlanTagStyleLane(elementsById, 'missing', 'opening');
+    expect(none.resolvedStyleId).toBe(BUILTIN_PLAN_TAG_OPENING_ID);
+  });
+
+  it('planViewGraphicsMatrixRows includes tag style rows', () => {
+    const st = {
+      kind: 'plan_tag_style' as const,
+      id: 'st',
+      name: 'Style',
+      tagTarget: 'opening' as const,
+      labelFields: [] as string[],
+      textSizePt: 10,
+      leaderVisible: true,
+      badgeStyle: 'none' as const,
+      colorToken: 'default',
+      sortKey: 0,
+    };
+    const elementsById = {
+      st,
+      vt: {
+        kind: 'view_template' as const,
+        id: 'vt',
+        name: 'T',
+        scale: 'scale_100' as const,
+        planShowOpeningTags: true,
+        planShowRoomLabels: false,
+        defaultPlanOpeningTagStyleId: 'st',
+      },
+      pv: {
+        kind: 'plan_view' as const,
+        id: 'pv',
+        name: 'P',
+        levelId: 'lv',
+        viewTemplateId: 'vt',
+      },
+      lv: { kind: 'level' as const, id: 'lv', name: 'L', elevationMm: 0 },
+    } as Record<string, Element>;
+    const rows = planViewGraphicsMatrixRows(elementsById, 'pv');
+    const oRow = rows.find((r) => r.label === 'Opening tag style');
+    expect(oRow).toBeDefined();
+    expect(oRow?.effective).toContain('st');
+    expect(oRow?.effective).toContain(
+      formatPlanTagStyleMatrixCell(resolvePlanTagStyleLane(elementsById, 'pv', 'opening')),
+    );
+  });
+
+  it('planViewProjectBrowserEvidenceLine mentions tag styles', () => {
+    const elementsById = {
+      pv: {
+        kind: 'plan_view' as const,
+        id: 'pv',
+        name: 'P',
+        levelId: 'lv',
+      },
+      lv: { kind: 'level' as const, id: 'lv', name: 'L', elevationMm: 0 },
+    } as Record<string, Element>;
+    expect(planViewProjectBrowserEvidenceLine(elementsById, 'pv')).toMatch(/tagStyles/);
+  });
+
+  it('planViewInheritanceSummaryLines includes tag style lines', () => {
+    const elementsById = {
+      pv: {
+        kind: 'plan_view' as const,
+        id: 'pv',
+        name: 'P',
+        levelId: 'lv',
+      },
+      lv: { kind: 'level' as const, id: 'lv', name: 'L', elevationMm: 0 },
+    } as Record<string, Element>;
+    const lines = planViewInheritanceSummaryLines(elementsById, 'pv');
+    expect(lines.some((l) => l.startsWith('Opening tag style:'))).toBe(true);
+  });
+
   it('maps common category aliases', () => {
     expect(canonHiddenCategory('Rooms')).toBe('room');
     expect(canonHiddenCategory('grid-lines')).toBe('grid_line');

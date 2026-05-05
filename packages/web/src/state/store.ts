@@ -818,6 +818,14 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
     }
     const pso = readPlanViewBoolOverride(raw.planShowOpeningTags ?? raw.plan_show_opening_tags);
     const psr = readPlanViewBoolOverride(raw.planShowRoomLabels ?? raw.plan_show_room_labels);
+    const pot =
+      typeof (raw.planOpeningTagStyleId ?? raw.plan_opening_tag_style_id) === 'string'
+        ? String(raw.planOpeningTagStyleId ?? raw.plan_opening_tag_style_id).trim()
+        : null;
+    const prt =
+      typeof (raw.planRoomTagStyleId ?? raw.plan_room_tag_style_id) === 'string'
+        ? String(raw.planRoomTagStyleId ?? raw.plan_room_tag_style_id).trim()
+        : null;
     return {
       kind: 'plan_view',
       id,
@@ -842,6 +850,8 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
       ...(planRoomFillOpacityScale !== undefined ? { planRoomFillOpacityScale } : {}),
       ...(pso !== undefined ? { planShowOpeningTags: pso } : {}),
       ...(psr !== undefined ? { planShowRoomLabels: psr } : {}),
+      ...(pot ? { planOpeningTagStyleId: pot } : {}),
+      ...(prt ? { planRoomTagStyleId: prt } : {}),
     };
   }
 
@@ -875,6 +885,15 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
       raw.planShowRoomLabels ?? raw.plan_show_room_labels,
       false,
     );
+    const dpo =
+      typeof (raw.defaultPlanOpeningTagStyleId ?? raw.default_plan_opening_tag_style_id) ===
+      'string'
+        ? String(raw.defaultPlanOpeningTagStyleId ?? raw.default_plan_opening_tag_style_id).trim()
+        : null;
+    const dpr =
+      typeof (raw.defaultPlanRoomTagStyleId ?? raw.default_plan_room_tag_style_id) === 'string'
+        ? String(raw.defaultPlanRoomTagStyleId ?? raw.default_plan_room_tag_style_id).trim()
+        : null;
     return {
       kind: 'view_template',
       id,
@@ -886,6 +905,8 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
       ...(planRoomFillOpacityScale !== undefined ? { planRoomFillOpacityScale } : {}),
       planShowOpeningTags,
       planShowRoomLabels,
+      ...(dpo ? { defaultPlanOpeningTagStyleId: dpo } : {}),
+      ...(dpr ? { defaultPlanRoomTagStyleId: dpr } : {}),
     };
   }
 
@@ -1006,6 +1027,33 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
         | string
         | null,
       ...(relatedElementIds.length ? { relatedElementIds } : {}),
+    };
+  }
+
+  if (kind === 'plan_tag_style') {
+    const ttRaw = raw.tagTarget ?? raw.tag_target;
+    const tagTarget: 'opening' | 'room' = ttRaw === 'room' ? 'room' : 'opening';
+    const lfRaw = raw.labelFields ?? raw.label_fields;
+    const labelFields = Array.isArray(lfRaw)
+      ? lfRaw.filter((x): x is string => typeof x === 'string')
+      : [];
+    const bs = raw.badgeStyle ?? raw.badge_style;
+    const badgeStyle = bs === 'rounded' || bs === 'flag' ? bs : ('none' as const);
+    const tsp = Number(raw.textSizePt ?? raw.text_size_pt ?? 10);
+    return {
+      kind: 'plan_tag_style',
+      id,
+      name,
+      tagTarget,
+      labelFields,
+      textSizePt: Number.isFinite(tsp) && tsp > 0 ? tsp : 10,
+      leaderVisible: readViewTemplateBool(raw.leaderVisible ?? raw.leader_visible, true),
+      badgeStyle,
+      colorToken:
+        typeof raw.colorToken === 'string' || typeof raw.color_token === 'string'
+          ? String(raw.colorToken ?? raw.color_token)
+          : 'default',
+      sortKey: Number(raw.sortKey ?? raw.sort_key ?? 0) || 0,
     };
   }
 

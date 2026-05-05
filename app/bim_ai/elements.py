@@ -389,6 +389,26 @@ class SectionCutElem(BaseModel):
     segmented_path_mm: list[Vec2Mm] = Field(default_factory=list, alias="segmentedPathMm")
 
 
+PlanTagTarget = Literal["opening", "room"]
+PlanTagBadgeStyle = Literal["none", "rounded", "flag"]
+
+
+class PlanTagStyleElem(BaseModel):
+    """Replayable catalog entry for plan opening tags / room labels (view-template slice)."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["plan_tag_style"] = "plan_tag_style"
+    id: str
+    name: str = "Plan tag style"
+    tag_target: PlanTagTarget = Field(alias="tagTarget")
+    label_fields: list[str] = Field(default_factory=list, alias="labelFields")
+    text_size_pt: float = Field(default=10.0, alias="textSizePt", gt=0)
+    leader_visible: bool = Field(default=True, alias="leaderVisible")
+    badge_style: PlanTagBadgeStyle = Field(default="none", alias="badgeStyle")
+    color_token: str = Field(default="default", alias="colorToken")
+    sort_key: int = Field(default=0, alias="sortKey")
+
+
 class PlanViewElem(BaseModel):
     """First-class floor-plan view artifact (Revit-like plan definitions)."""
 
@@ -415,6 +435,8 @@ class PlanViewElem(BaseModel):
     plan_room_fill_opacity_scale: float | None = Field(default=None, alias="planRoomFillOpacityScale")
     plan_show_opening_tags: bool | None = Field(default=None, alias="planShowOpeningTags")
     plan_show_room_labels: bool | None = Field(default=None, alias="planShowRoomLabels")
+    plan_opening_tag_style_id: str | None = Field(default=None, alias="planOpeningTagStyleId")
+    plan_room_tag_style_id: str | None = Field(default=None, alias="planRoomTagStyleId")
 
 
 class ViewTemplateElem(BaseModel):
@@ -434,6 +456,12 @@ class ViewTemplateElem(BaseModel):
     )
     plan_show_opening_tags: bool = Field(default=False, alias="planShowOpeningTags")
     plan_show_room_labels: bool = Field(default=False, alias="planShowRoomLabels")
+    default_plan_opening_tag_style_id: str | None = Field(
+        default=None, alias="defaultPlanOpeningTagStyleId"
+    )
+    default_plan_room_tag_style_id: str | None = Field(
+        default=None, alias="defaultPlanRoomTagStyleId"
+    )
 
 
 class SheetElem(BaseModel):
@@ -538,6 +566,7 @@ ElementKind = Literal[
     "room_separation",
     "plan_region",
     "tag_definition",
+    "plan_tag_style",
     "join_geometry",
     "section_cut",
     "plan_view",
@@ -576,6 +605,7 @@ Element = Annotated[
     | RoomSeparationElem
     | PlanRegionElem
     | TagDefinitionElem
+    | PlanTagStyleElem
     | JoinGeometryElem
     | SectionCutElem
     | PlanViewElem

@@ -9,6 +9,7 @@ import {
   extractPlanAnnotationHints,
   extractPlanGraphicHints,
   extractPlanPrimitives,
+  extractPlanTagStyleHints,
   extractRoomColorLegend,
   extractRoomProgrammeLegendEvidenceV0,
   fetchPlanProjectionWire,
@@ -16,6 +17,7 @@ import {
 import {
   resolvePlanAnnotationHints,
   resolvePlanGraphicHints,
+  resolvePlanTagStyleLane,
   resolvePlanViewDisplay,
 } from './planProjection';
 import { rebuildPlanMeshes } from './symbology';
@@ -130,6 +132,9 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
   const [wireAnnotationHints, setWireAnnotationHints] = useState<ReturnType<
     typeof extractPlanAnnotationHints
   > | null>(null);
+  const [wireTagStyleHints, setWireTagStyleHints] = useState<ReturnType<
+    typeof extractPlanTagStyleHints
+  > | null>(null);
 
   const elementsById = useBimStore((s) => s.elementsById);
   const selectedId = useBimStore((s) => s.selectedId);
@@ -165,6 +170,17 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
     return resolvePlanAnnotationHints(elementsById, activePlanViewId);
   }, [wireAnnotationHints, elementsById, activePlanViewId]);
 
+  const planTagFontScales = useMemo(() => {
+    const pvId = display.planViewElementId;
+    const ro = resolvePlanTagStyleLane(elementsById, pvId, 'opening');
+    const rr = resolvePlanTagStyleLane(elementsById, pvId, 'room');
+    const bo = wireTagStyleHints?.opening?.textSizePt;
+    const br = wireTagStyleHints?.room?.textSizePt;
+    const openingPt = typeof bo === 'number' && Number.isFinite(bo) ? bo : ro.textSizePt;
+    const roomPt = typeof br === 'number' && Number.isFinite(br) ? br : rr.textSizePt;
+    return { opening: openingPt / 10, room: roomPt / 10 };
+  }, [wireTagStyleHints, elementsById, display.planViewElementId]);
+
   const hiddenKey = useMemo(
     () => [...display.hiddenSemanticKinds].sort().join('|'),
     [display.hiddenSemanticKinds],
@@ -187,6 +203,7 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
         setRoomColorLegend([]);
         setWireGraphicHints(null);
         setWireAnnotationHints(null);
+        setWireTagStyleHints(null);
       });
       return () => {
         cancel = true;
@@ -210,12 +227,14 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
         setRoomColorLegend(legendRows);
         setWireGraphicHints(extractPlanGraphicHints(payload));
         setWireAnnotationHints(extractPlanAnnotationHints(payload));
+        setWireTagStyleHints(extractPlanTagStyleHints(payload));
       } catch {
         if (!cancel) setPlanProjectionPrimitives(null);
         if (!cancel) setPlanRoomSchemeWireReadout(null);
         if (!cancel) setRoomColorLegend([]);
         if (!cancel) setWireGraphicHints(null);
         if (!cancel) setWireAnnotationHints(null);
+        if (!cancel) setWireTagStyleHints(null);
       }
     })();
     return () => {
@@ -301,6 +320,7 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
       wirePrimitives,
       planGraphicHints: mergedGraphicHints,
       planAnnotationHints: mergedAnnotationHints,
+      planTagFontScales,
     });
     for (let i = grp.children.length - 1; i >= 0; i--) {
       const ch = grp.children[i]!;
@@ -324,6 +344,7 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
   }, [
     mergedGraphicHints,
     mergedAnnotationHints,
+    planTagFontScales,
     display.presentation,
     display.hiddenSemanticKinds,
     displayLevelId,

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import uuid
-from typing import Any, cast
+from typing import Any, Literal, cast
 
 from pydantic import TypeAdapter
 
@@ -49,6 +49,7 @@ from bim_ai.commands import (
     UpdateOpeningCleanroomCmd,
     UpsertFamilyTypeCmd,
     UpsertFloorTypeCmd,
+    UpsertPlanTagStyleCmd,
     UpsertPlanViewCmd,
     UpsertProjectSettingsCmd,
     UpsertRoofTypeCmd,
@@ -86,6 +87,7 @@ from bim_ai.elements import (
     LevelElem,
     PlanDetailLevelPlan,
     PlanRegionElem,
+    PlanTagStyleElem,
     PlanViewElem,
     ProjectSettingsElem,
     RailingElem,
@@ -186,6 +188,57 @@ def _parse_view_template_bool(raw: str) -> bool:
     if s in {"false", "0"}:
         return False
     raise ValueError("planShowOpeningTags/planShowRoomLabels(view_template): must be true|false")
+
+
+_OPENING_LABEL_FIELD_ORDER = (
+    "name",
+    "programmeCode",
+    "elementId",
+    "widthMm",
+    "heightMm",
+    "sillHeightMm",
+)
+_ROOM_LABEL_FIELD_ORDER = (
+    "name",
+    "programmeCode",
+    "elementId",
+    "department",
+    "functionLabel",
+    "finishSet",
+    "targetAreaM2",
+)
+
+
+def _normalize_plan_tag_label_fields(
+    target: Literal["opening", "room"],
+    fields: list[str],
+) -> list[str]:
+    allowed = _OPENING_LABEL_FIELD_ORDER if target == "opening" else _ROOM_LABEL_FIELD_ORDER
+    allowed_set = frozenset(allowed)
+    seen: set[str] = set()
+    out: list[str] = []
+    for f in fields:
+        if f not in allowed_set or f in seen:
+            continue
+        seen.add(f)
+        out.append(f)
+    return out
+
+
+def _validate_plan_tag_style_ref(
+    els: dict[str, Element],
+    ref: str | None,
+    lane: Literal["opening", "room"],
+) -> None:
+    if not ref:
+        return
+    el = els.get(ref)
+    if not isinstance(el, PlanTagStyleElem):
+        raise ValueError("plan tag style ref must reference plan_tag_style")
+    if el.tag_target != lane:
+        raise ValueError(
+            f"plan tag style targets '{el.tag_target}' but this slot expects '{lane}' elements"
+        )
 
 
 def _stripped_optional_str(val: str | None) -> str | None:
@@ -788,12 +841,25 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 elif cmd.key == "planShowRoomLabels":
                     v = _parse_plan_view_bool_override(cmd.value)
                     els[cmd.element_id] = el.model_copy(update={"plan_show_room_labels": v})
+                elif cmd.key == "planOpeningTagStyleId":
+                    if raw == "":
+                        els[cmd.element_id] = el.model_copy(update={"plan_opening_tag_style_id": None})
+                    else:
+                        _validate_plan_tag_style_ref(els, raw, "opening")
+                        els[cmd.element_id] = el.model_copy(update={"plan_opening_tag_style_id": raw})
+                elif cmd.key == "planRoomTagStyleId":
+                    if raw == "":
+                        els[cmd.element_id] = el.model_copy(update={"plan_room_tag_style_id": None})
+                    else:
+                        _validate_plan_tag_style_ref(els, raw, "room")
+                        els[cmd.element_id] = el.model_copy(update={"plan_room_tag_style_id": raw})
                 else:
                     raise ValueError(
                         "plan_view updates: key=planPresentation | categoriesHidden | underlayLevelId | "
                         "viewTemplateId | cropMinMm | cropMaxMm | viewRangeBottomMm | viewRangeTopMm | "
                         "cutPlaneOffsetMm | discipline | phaseId | planDetailLevel | planRoomFillOpacityScale | "
-                        "planShowOpeningTags | planShowRoomLabels | name"
+                        "planShowOpeningTags | planShowRoomLabels | planOpeningTagStyleId | planRoomTagStyleId | "
+                        "name"
                     )
             elif isinstance(el, ViewTemplateElem):
                 raw_vt = cmd.value.strip()
@@ -824,10 +890,31 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                         els[cmd.element_id] = el.model_copy(
                             update={"plan_room_fill_opacity_scale": vscale}
                         )
+                elif cmd.key == "defaultPlanOpeningTagStyleId":
+                    if raw_vt == "":
+                        els[cmd.element_id] = el.model_copy(
+                            update={"default_plan_opening_tag_style_id": None}
+                        )
+                    else:
+                        _validate_plan_tag_style_ref(els, raw_vt, "opening")
+                        els[cmd.element_id] = el.model_copy(
+                            update={"default_plan_opening_tag_style_id": raw_vt}
+                        )
+                elif cmd.key == "defaultPlanRoomTagStyleId":
+                    if raw_vt == "":
+                        els[cmd.element_id] = el.model_copy(
+                            update={"default_plan_room_tag_style_id": None}
+                        )
+                    else:
+                        _validate_plan_tag_style_ref(els, raw_vt, "room")
+                        els[cmd.element_id] = el.model_copy(
+                            update={"default_plan_room_tag_style_id": raw_vt}
+                        )
                 else:
                     raise ValueError(
                         "view_template updates: key=planDetailLevel | planRoomFillOpacityScale | "
-                        "planShowOpeningTags | planShowRoomLabels | name"
+                        "planShowOpeningTags | planShowRoomLabels | defaultPlanOpeningTagStyleId | "
+                        "defaultPlanRoomTagStyleId | name"
                     )
             elif isinstance(el, ViewpointElem):
                 raw = cmd.value.strip()
@@ -904,6 +991,10 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                     "planRoomFillOpacityScale(view_template float 0..1 or empty resets default 1.0) | "
                     "planShowOpeningTags(plan_view true|false or empty inherit; view_template true|false only) | "
                     "planShowRoomLabels(plan_view true|false or empty inherit; view_template true|false only) | "
+                    "planOpeningTagStyleId(plan_view plan_tag_style id or empty inherit) | "
+                    "planRoomTagStyleId(plan_view plan_tag_style id or empty inherit) | "
+                    "defaultPlanOpeningTagStyleId(view_template plan_tag_style id or empty clear) | "
+                    "defaultPlanRoomTagStyleId(view_template plan_tag_style id or empty clear) | "
                     "viewerClipCapElevMm(viewpoint) | viewerClipFloorElevMm(viewpoint) | "
                     "hiddenSemanticKinds3d(viewpoint JSON array) | "
                     "familyTypeId(door/window) | materialKey(door/window) | "
@@ -1253,6 +1344,17 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
 
         case UpsertViewTemplateCmd():
             vt = cmd.id or new_id()
+            prior_tmpl = els.get(vt) if isinstance(els.get(vt), ViewTemplateElem) else None
+            d_open = cmd.default_plan_opening_tag_style_id
+            if prior_tmpl is not None and "default_plan_opening_tag_style_id" not in cmd.model_fields_set:
+                d_open = prior_tmpl.default_plan_opening_tag_style_id
+            if d_open is not None:
+                _validate_plan_tag_style_ref(els, d_open, "opening")
+            d_room = cmd.default_plan_room_tag_style_id
+            if prior_tmpl is not None and "default_plan_room_tag_style_id" not in cmd.model_fields_set:
+                d_room = prior_tmpl.default_plan_room_tag_style_id
+            if d_room is not None:
+                _validate_plan_tag_style_ref(els, d_room, "room")
             scale = cmd.scale if cmd.scale in {"scale_50", "scale_100", "scale_200"} else "scale_100"
             pdl = _plan_detail_default_medium(cmd.plan_detail_level)
             pfo = _clamp_unit_interval(cmd.plan_room_fill_opacity_scale, 1.0)
@@ -1267,6 +1369,8 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 plan_room_fill_opacity_scale=pfo,
                 plan_show_opening_tags=cmd.plan_show_opening_tags is True,
                 plan_show_room_labels=cmd.plan_show_room_labels is True,
+                default_plan_opening_tag_style_id=d_open,
+                default_plan_room_tag_style_id=d_room,
             )
 
         case UpsertSheetCmd():
@@ -1349,6 +1453,17 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
             } else "default"
             pdl_override = _optional_plan_detail_override(cmd.plan_detail_level)
             pfo_override = _optional_room_fill_scale(cmd.plan_room_fill_opacity_scale)
+            prior_pv = els.get(pvid) if isinstance(els.get(pvid), PlanViewElem) else None
+            open_style = cmd.plan_opening_tag_style_id
+            if prior_pv is not None and "plan_opening_tag_style_id" not in cmd.model_fields_set:
+                open_style = prior_pv.plan_opening_tag_style_id
+            if open_style is not None:
+                _validate_plan_tag_style_ref(els, open_style, "opening")
+            room_style = cmd.plan_room_tag_style_id
+            if prior_pv is not None and "plan_room_tag_style_id" not in cmd.model_fields_set:
+                room_style = prior_pv.plan_room_tag_style_id
+            if room_style is not None:
+                _validate_plan_tag_style_ref(els, room_style, "room")
             els[pvid] = PlanViewElem(
                 kind="plan_view",
                 id=pvid,
@@ -1369,6 +1484,30 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 plan_room_fill_opacity_scale=pfo_override,
                 plan_show_opening_tags=cmd.plan_show_opening_tags,
                 plan_show_room_labels=cmd.plan_show_room_labels,
+                plan_opening_tag_style_id=open_style,
+                plan_room_tag_style_id=room_style,
+            )
+
+        case UpsertPlanTagStyleCmd():
+            sid = cmd.id or new_id()
+            prior = els.get(sid)
+            if prior is not None and not isinstance(prior, PlanTagStyleElem):
+                raise ValueError("upsertPlanTagStyle.id must reference plan_tag_style when element exists")
+            tt = cmd.tag_target
+            if tt not in ("opening", "room"):
+                raise ValueError("upsertPlanTagStyle.tagTarget must be opening|room")
+            lf = _normalize_plan_tag_label_fields(tt, list(cmd.label_fields or []))
+            els[sid] = PlanTagStyleElem(
+                kind="plan_tag_style",
+                id=sid,
+                name=cmd.name,
+                tag_target=tt,
+                label_fields=lf,
+                text_size_pt=float(cmd.text_size_pt),
+                leader_visible=bool(cmd.leader_visible),
+                badge_style=cmd.badge_style,
+                color_token=str(cmd.color_token or "default"),
+                sort_key=int(cmd.sort_key),
             )
 
         case CreateCalloutCmd():

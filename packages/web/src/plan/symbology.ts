@@ -256,6 +256,7 @@ function rebuildPlanMeshesFromWire(
     wirePrimitives: PlanProjectionPrimitivesV1Wire;
     roomFillOpacityScale?: number;
     planAnnotationHints?: PlanAnnotationHintsResolved | null;
+    planTagFontScales?: { opening: number; room: number } | null;
   },
 ): void {
   while (holder.children.length) holder.remove(holder.children[0]!);
@@ -265,6 +266,8 @@ function rebuildPlanMeshesFromWire(
   const selectedId = opts.selectedId;
   const roomFillOpacityScale = opts.roomFillOpacityScale ?? 1;
   const ann = opts.planAnnotationHints ?? null;
+  const tagOpenScale = opts.planTagFontScales?.opening ?? 1;
+  const tagRoomScale = opts.planTagFontScales?.room ?? 1;
 
   const wallsRaw = Array.isArray(prim.walls) ? (prim.walls as Record<string, unknown>[]) : [];
   const wallsByWireId = new Map<string, Extract<Element, { kind: 'wall' }>>();
@@ -326,7 +329,15 @@ function rebuildPlanMeshesFromWire(
           typeof rl.cz === 'number' &&
           Number.isFinite(rl.cz)
         ) {
-          holder.add(planAnnotationLabelSprite(rl.cx, rl.cz, labelRaw, mesh.userData.bimPickId));
+          holder.add(
+            planAnnotationLabelSprite(
+              rl.cx,
+              rl.cz,
+              labelRaw,
+              mesh.userData.bimPickId,
+              tagRoomScale,
+            ),
+          );
         }
       }
     }
@@ -374,7 +385,7 @@ function rebuildPlanMeshesFromWire(
         doorGrp.updateMatrixWorld(true);
         const pos = new THREE.Vector3();
         doorGrp.getWorldPosition(pos);
-        holder.add(planAnnotationLabelSprite(pos.x, pos.z, labelRaw, doorEl.id));
+        holder.add(planAnnotationLabelSprite(pos.x, pos.z, labelRaw, doorEl.id, tagOpenScale));
       }
     }
   }
@@ -394,7 +405,7 @@ function rebuildPlanMeshesFromWire(
         winGrp.updateMatrixWorld(true);
         const pos = new THREE.Vector3();
         winGrp.getWorldPosition(pos);
-        holder.add(planAnnotationLabelSprite(pos.x, pos.z, labelRaw, winEl.id));
+        holder.add(planAnnotationLabelSprite(pos.x, pos.z, labelRaw, winEl.id, tagOpenScale));
       }
     }
   }
@@ -455,6 +466,7 @@ export function rebuildPlanMeshes(
     wirePrimitives?: PlanProjectionPrimitivesV1Wire | null;
     planGraphicHints?: PlanGraphicHintsResolved | null;
     planAnnotationHints?: PlanAnnotationHintsResolved | null;
+    planTagFontScales?: { opening: number; room: number } | null;
   },
 ): void {
   while (holder.children.length) holder.remove(holder.children[0]!);
@@ -470,6 +482,7 @@ export function rebuildPlanMeshes(
       wirePrimitives: opts.wirePrimitives,
       roomFillOpacityScale,
       planAnnotationHints: opts.planAnnotationHints ?? null,
+      planTagFontScales: opts.planTagFontScales ?? null,
     });
     return;
   }
@@ -985,7 +998,9 @@ function planAnnotationLabelSprite(
   czM: number,
   text: string,
   pickId?: string,
+  fontScale = 1,
 ): THREE.Sprite {
+  const scaleMul = Number.isFinite(fontScale) && fontScale > 0 ? fontScale : 1;
   const trimmed = text.trim().slice(0, 96);
   const safe = trimmed.length ? trimmed : '—';
 
@@ -994,7 +1009,7 @@ function planAnnotationLabelSprite(
     const mat = new THREE.SpriteMaterial({ color: '#1e293b', transparent: true, opacity: 0.92 });
     const sprite = new THREE.Sprite(mat);
     sprite.position.set(cxM, PLAN_Y + 0.003, czM);
-    sprite.scale.set(0.08, 0.03, 1);
+    sprite.scale.set(0.08 * scaleMul, 0.03 * scaleMul, 1);
     sprite.renderOrder = 10;
     sprite.userData.planAnnotationOverlay = true;
     if (pickId) sprite.userData.bimPickId = pickId;
@@ -1071,7 +1086,7 @@ function planAnnotationLabelSprite(
   });
   const sprite = new THREE.Sprite(mat);
   sprite.position.set(cxM, PLAN_Y + 0.003, czM);
-  sprite.scale.set(0.22, 0.22 * (canvas.height / canvas.width), 1);
+  sprite.scale.set(0.22 * scaleMul, 0.22 * (canvas.height / canvas.width) * scaleMul, 1);
   sprite.renderOrder = 10;
   sprite.userData.planAnnotationOverlay = true;
   if (pickId) sprite.userData.bimPickId = pickId;

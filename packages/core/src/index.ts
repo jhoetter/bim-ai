@@ -24,6 +24,7 @@ export type ElemKind =
   | 'tag_definition'
   | 'join_geometry'
   | 'section_cut'
+  | 'plan_tag_style'
   | 'plan_view'
   | 'view_template'
   | 'sheet'
@@ -38,6 +39,10 @@ export type XY = { xMm: number; yMm: number };
 
 /** Floor-plan graphic detail preset (view template + optional plan_view override). */
 export type PlanDetailLevelPlan = 'coarse' | 'medium' | 'fine';
+
+export type PlanTagTarget = 'opening' | 'room';
+
+export type PlanTagBadgeStyle = 'none' | 'rounded' | 'flag';
 
 export type XYZ = { xMm: number; yMm: number; zMm: number };
 
@@ -302,6 +307,18 @@ export type Element =
       segmentedPathMm?: XY[];
     }
   | {
+      kind: 'plan_tag_style';
+      id: string;
+      name: string;
+      tagTarget: PlanTagTarget;
+      labelFields: string[];
+      textSizePt: number;
+      leaderVisible: boolean;
+      badgeStyle: PlanTagBadgeStyle;
+      colorToken: string;
+      sortKey: number;
+    }
+  | {
       kind: 'plan_view';
       id: string;
       name: string;
@@ -321,6 +338,8 @@ export type Element =
       planRoomFillOpacityScale?: number | null;
       planShowOpeningTags?: boolean;
       planShowRoomLabels?: boolean;
+      planOpeningTagStyleId?: string | null;
+      planRoomTagStyleId?: string | null;
     }
   | {
       kind: 'view_template';
@@ -333,6 +352,8 @@ export type Element =
       planRoomFillOpacityScale?: number;
       planShowOpeningTags?: boolean;
       planShowRoomLabels?: boolean;
+      defaultPlanOpeningTagStyleId?: string | null;
+      defaultPlanRoomTagStyleId?: string | null;
     }
   | {
       kind: 'sheet';

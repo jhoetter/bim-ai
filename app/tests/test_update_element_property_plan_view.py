@@ -4,11 +4,12 @@ import json
 
 import pytest
 
-from bim_ai.commands import UpdateElementPropertyCmd
+from bim_ai.commands import UpdateElementPropertyCmd, UpsertPlanTagStyleCmd, UpsertPlanViewCmd
 from bim_ai.document import Document
 from bim_ai.elements import (
     CameraMm,
     LevelElem,
+    PlanTagStyleElem,
     PlanViewElem,
     Vec3Mm,
     ViewpointElem,
@@ -263,3 +264,125 @@ def test_view_template_plan_detail_level_and_room_fill_via_update_element_proper
     assert isinstance(vt3, ViewTemplateElem)
     assert vt3.plan_detail_level is None
     assert vt3.plan_room_fill_opacity_scale == 1.0
+
+
+def test_plan_view_plan_tag_style_assign_clear_and_wrong_target() -> None:
+    ostyle = PlanTagStyleElem(
+        kind="plan_tag_style",
+        id="pts-o",
+        name="O",
+        tagTarget="opening",
+        labelFields=[],
+    )
+    rstyle = PlanTagStyleElem(
+        kind="plan_tag_style",
+        id="pts-r",
+        name="R",
+        tagTarget="room",
+        labelFields=[],
+    )
+    els = {
+        "lv": LevelElem(kind="level", id="lv", name="EG", elevationMm=0),
+        "pts-o": ostyle,
+        "pts-r": rstyle,
+        "pv": PlanViewElem(
+            kind="plan_view",
+            id="pv",
+            name="Test",
+            levelId="lv",
+        ),
+    }
+    doc = Document(revision=1, elements=els)
+    apply_inplace(doc, UpdateElementPropertyCmd(elementId="pv", key="planOpeningTagStyleId", value="pts-o"))
+    pv = doc.elements["pv"]
+    assert isinstance(pv, PlanViewElem)
+    assert pv.plan_opening_tag_style_id == "pts-o"
+
+    apply_inplace(doc, UpdateElementPropertyCmd(elementId="pv", key="planOpeningTagStyleId", value=""))
+    pv2 = doc.elements["pv"]
+    assert isinstance(pv2, PlanViewElem)
+    assert pv2.plan_opening_tag_style_id is None
+
+    with pytest.raises(
+        ValueError,
+        match="plan tag style targets 'room' but this slot expects 'opening'",
+    ):
+        apply_inplace(
+            doc,
+            UpdateElementPropertyCmd(elementId="pv", key="planOpeningTagStyleId", value="pts-r"),
+        )
+
+
+def test_upsert_plan_view_preserves_tag_styles_when_omitted_from_payload() -> None:
+    ostyle = PlanTagStyleElem(
+        kind="plan_tag_style",
+        id="pts-o2",
+        name="O2",
+        tagTarget="opening",
+        labelFields=[],
+    )
+    rstyle = PlanTagStyleElem(
+        kind="plan_tag_style",
+        id="pts-r2",
+        name="R2",
+        tagTarget="room",
+        labelFields=[],
+    )
+    lv = LevelElem(kind="level", id="lv", name="EG", elevationMm=0)
+    doc = Document(
+        revision=1,
+        elements={
+            "lv": lv,
+            "pts-o2": ostyle,
+            "pts-r2": rstyle,
+        },
+    )
+    apply_inplace(
+        doc,
+        UpsertPlanViewCmd(
+            id="pv-x",
+            name="P",
+            levelId="lv",
+            planOpeningTagStyleId="pts-o2",
+            planRoomTagStyleId="pts-r2",
+        ),
+    )
+    apply_inplace(
+        doc,
+        UpsertPlanViewCmd.model_validate(
+            {
+                "type": "upsertPlanView",
+                "id": "pv-x",
+                "name": "P2",
+                "levelId": "lv",
+            }
+        ),
+    )
+    pv = doc.elements["pv-x"]
+    assert isinstance(pv, PlanViewElem)
+    assert pv.plan_opening_tag_style_id == "pts-o2"
+    assert pv.plan_room_tag_style_id == "pts-r2"
+
+
+def test_upsert_plan_tag_style_cmd_replay() -> None:
+    doc = Document(revision=1, elements={})
+    apply_inplace(
+        doc,
+        UpsertPlanTagStyleCmd(
+            id="cat1",
+            name="Catalog 1",
+            tagTarget="opening",
+            labelFields=["elementId", "name"],
+            textSizePt=11,
+            leaderVisible=False,
+            badgeStyle="rounded",
+            colorToken="dim",
+            sortKey=3,
+        ),
+    )
+    st = doc.elements["cat1"]
+    assert isinstance(st, PlanTagStyleElem)
+    assert st.label_fields == ["elementId", "name"]
+    assert st.text_size_pt == 11
+    assert st.leader_visible is False
+    assert st.badge_style == "rounded"

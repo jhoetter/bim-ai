@@ -21,6 +21,7 @@ from bim_ai.elements import (
     DoorElem,
     FloorElem,
     LevelElem,
+    PlanTagStyleElem,
     PlanViewElem,
     RoomColorSchemeRow,
     RoomElem,
@@ -44,6 +45,7 @@ from bim_ai.evidence_manifest import (
     evidence_package_semantic_digest_sha256,
 )
 from bim_ai.plan_projection_wire import (
+    BUILTIN_PLAN_TAG_OPENING_ID,
     plan_projection_wire_from_request,
     resolve_plan_projection_wire,
     section_cut_projection_wire,
@@ -1484,3 +1486,100 @@ def test_room_color_scheme_prefers_programme_match_over_department() -> None:
     out = plan_projection_wire_from_request(doc, plan_view_id=None, fallback_level_id="lvl")
     prim = ((out["primitives"] or {}).get("rooms") or [])[0]
     assert prim["schemeColorHex"] == "#222222"
+
+
+def test_plan_projection_plan_tag_style_hints_and_custom_opening_label() -> None:
+    style = PlanTagStyleElem(
+        kind="plan_tag_style",
+        id="pts-elid",
+        name="Ids",
+        tagTarget="opening",
+        labelFields=["elementId"],
+        textSizePt=12,
+    )
+    tmpl = ViewTemplateElem(
+        kind="view_template",
+        id="vt-ts",
+        name="T",
+        planShowOpeningTags=True,
+        planShowRoomLabels=False,
+        defaultPlanOpeningTagStyleId="pts-elid",
+    )
+    pv = PlanViewElem(
+        kind="plan_view",
+        id="pv-ts",
+        name="P",
+        levelId="lvl",
+        viewTemplateId="vt-ts",
+    )
+    lvl = LevelElem(kind="level", id="lvl", name="L", elevationMm=0)
+    wall = WallElem(
+        kind="wall",
+        id="w-h",
+        name="Host",
+        levelId="lvl",
+        start={"xMm": 0, "yMm": 0},
+        end={"xMm": 6000, "yMm": 0},
+        thicknessMm=200,
+        heightMm=2800,
+    )
+    door = DoorElem(kind="door", id="d-tg", name="Entry", wallId="w-h", alongT=0.5, widthMm=900)
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": lvl,
+            "pts-elid": style,
+            "vt-ts": tmpl,
+            "pv-ts": pv,
+            "w-h": wall,
+            "d-tg": door,
+        },
+    )
+    out = plan_projection_wire_from_request(doc, plan_view_id="pv-ts", fallback_level_id=None)
+    hints = out.get("planTagStyleHints") or {}
+    oh = hints.get("opening") or {}
+    assert oh.get("resolvedStyleId") == "pts-elid"
+    assert oh.get("source") == "view_template"
+    assert oh.get("textSizePt") == 12.0
+    doors_row = (out.get("primitives") or {}).get("doors") or []
+    drow = next(r for r in doors_row if r.get("id") == "d-tg")
+    assert drow.get("planTagLabel") == "d-tg"
+
+
+def test_plan_projection_invalid_plan_tag_style_ref_builtin_and_warning() -> None:
+    tmpl = ViewTemplateElem(
+        kind="view_template",
+        id="vt-bad",
+        name="T",
+        planShowOpeningTags=True,
+        planShowRoomLabels=False,
+    )
+    pv = PlanViewElem(
+        kind="plan_view",
+        id="pv-bad",
+        name="P",
+        levelId="lvl",
+        viewTemplateId="vt-bad",
+        planOpeningTagStyleId="missing-style",
+    )
+    lvl = LevelElem(kind="level", id="lvl", name="L", elevationMm=0)
+    wall = WallElem(
+        kind="wall",
+        id="w1",
+        name="W",
+        levelId="lvl",
+        start={"xMm": 0, "yMm": 0},
+        end={"xMm": 3000, "yMm": 0},
+        thicknessMm=200,
+        heightMm=2800,
+    )
+    door = DoorElem(kind="door", id="d1", name="D", wallId="w1", alongT=0.5, widthMm=900)
+    doc = Document(
+        revision=1,
+        elements={"lvl": lvl, "vt-bad": tmpl, "pv-bad": pv, "w1": wall, "d1": door},
+    )
+    out = plan_projection_wire_from_request(doc, plan_view_id="pv-bad", fallback_level_id=None)
+    hints = out.get("planTagStyleHints") or {}
+    assert (hints.get("opening") or {}).get("resolvedStyleId") == BUILTIN_PLAN_TAG_OPENING_ID
+    codes = [str(w.get("code", "")) for w in (out.get("warnings") or [])]
+    assert "planTagStyleRefInvalid" in codes

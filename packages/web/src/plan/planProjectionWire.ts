@@ -16,9 +16,24 @@ export type PlanProjectionPrimitivesV1Wire = Record<string, unknown> & {
   format: 'planProjectionPrimitives_v1';
 };
 
+export type PlanTagStyleHintLaneWire = {
+  resolvedStyleId: string;
+  resolvedStyleName: string;
+  source: string;
+  textSizePt: number;
+  labelFields?: string[];
+  tagTarget?: string;
+};
+
+export type PlanTagStyleHintsWire = {
+  opening?: PlanTagStyleHintLaneWire;
+  room?: PlanTagStyleHintLaneWire;
+};
+
 export type PlanProjectionWirePayload = Record<string, unknown> & {
   format?: string;
   primitives?: PlanProjectionPrimitivesV1Wire;
+  planTagStyleHints?: PlanTagStyleHintsWire;
 };
 
 /** Resolved template + presentation graphic multipliers (`plan_projection_wire.planGraphicHints`). */
@@ -167,6 +182,44 @@ export function extractRoomProgrammeLegendEvidenceV0(
     ...(schemeOverridesSource !== undefined ? { schemeOverridesSource } : {}),
     ...(schemeOverrideRowCount !== undefined ? { schemeOverrideRowCount } : {}),
   };
+}
+
+function readPlanTagStyleLaneHint(raw: unknown): PlanTagStyleHintLaneWire | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const o = raw as Record<string, unknown>;
+  const id = typeof o.resolvedStyleId === 'string' ? o.resolvedStyleId : '';
+  const nm = typeof o.resolvedStyleName === 'string' ? o.resolvedStyleName : '';
+  const src = typeof o.source === 'string' ? o.source : '';
+  const tsp = Number(o.textSizePt ?? o.text_size_pt ?? 10);
+  if (!id || !src || !Number.isFinite(tsp)) return null;
+  const lfRaw = o.labelFields ?? o.label_fields;
+  const labelFields = Array.isArray(lfRaw)
+    ? lfRaw.filter((x): x is string => typeof x === 'string')
+    : undefined;
+  const tt = o.tagTarget ?? o.tag_target;
+  return {
+    resolvedStyleId: id,
+    resolvedStyleName: nm,
+    source: src,
+    textSizePt: tsp,
+    ...(labelFields?.length ? { labelFields } : {}),
+    ...(typeof tt === 'string' && tt ? { tagTarget: tt } : {}),
+  };
+}
+
+/** Server `planTagStyleHints` when plan view is pinned (WP-C02). */
+
+export function extractPlanTagStyleHints(
+  payload: Record<string, unknown> | null | undefined,
+): PlanTagStyleHintsWire | null {
+  if (!payload || typeof payload !== 'object') return null;
+  const h = payload.planTagStyleHints ?? payload.plan_tag_style_hints;
+  if (!h || typeof h !== 'object') return null;
+  const o = h as Record<string, unknown>;
+  const opening = readPlanTagStyleLaneHint(o.opening);
+  const room = readPlanTagStyleLaneHint(o.room);
+  if (!opening && !room) return null;
+  return { ...(opening ? { opening } : {}), ...(room ? { room } : {}) };
 }
 
 export function isPlanProjectionPrimitivesV1(p: unknown): p is PlanProjectionPrimitivesV1Wire {
