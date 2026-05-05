@@ -13,6 +13,7 @@ from bim_ai.elements import (
     WallElem,
     WallTypeElem,
 )
+from bim_ai.type_material_registry import material_display_label
 
 _CUT_THICKNESS_MATCH_EPS_MM = 0.05
 
@@ -339,6 +340,29 @@ def layered_assembly_witness_row_for_roof(doc: Document, roof: RoofElem) -> dict
         "layerSource": layer_src,
         "skipReason": skip_reason,
     }
+
+
+def roof_surface_material_readout_v0(doc: Document, roof: RoofElem) -> dict[str, Any]:
+    """Typed roof layer stack + primary material label for manifests / section / plan readouts."""
+
+    w = layered_assembly_witness_row_for_roof(doc, roof)
+    skip = w.get("skipReason")
+    out: dict[str, Any] = {"layerStackSkipReason": skip}
+    if skip is not None:
+        return out
+    summaries = w.get("layerSummaries") or []
+    primary_key = ""
+    for s in summaries:
+        mk = str(s.get("materialKey") or "").strip()
+        if mk:
+            primary_key = mk
+            break
+    out["layerStackCount"] = int(w["layerCount"])
+    out["layerStackTotalThicknessMm"] = float(w["layerTotalThicknessMm"])
+    if primary_key:
+        out["primaryMaterialKey"] = primary_key
+    out["primaryMaterialLabel"] = material_display_label(doc, primary_key or None)
+    return out
 
 
 def collect_layered_assembly_witness_v0(doc: Document) -> dict[str, Any] | None:

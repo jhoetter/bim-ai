@@ -6,7 +6,7 @@ import hashlib
 import json
 import math
 from dataclasses import dataclass
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 from bim_ai.document import Document
 from bim_ai.elements import (
@@ -29,6 +29,7 @@ from bim_ai.elements import (
     WallElem,
     WindowElem,
 )
+from bim_ai.material_assembly_resolve import roof_surface_material_readout_v0
 from bim_ai.opening_cut_primitives import (
     hosted_opening_t_span_normalized,
     slab_opening_documentation_row_v0,
@@ -41,6 +42,8 @@ from bim_ai.plan_category_graphics import (
     resolve_plan_category_graphics_for_pinned_view,
 )
 from bim_ai.roof_geometry import (
+    RidgeAxisPlan,
+    gable_rectangle_fascia_edge_plan_token_v0,
     gable_ridge_rise_mm,
     mass_box_roof_proxy_peak_z_mm,
     outer_rect_extent,
@@ -1097,11 +1100,16 @@ def _build_plan_primitive_lists(
                 "referenceLevelId": ref,
                 "footprintMm": fp,
                 **_roof_plan_wire_geometry_fields(doc, e),
+                **roof_surface_material_readout_v0(doc, e),
                 "lineWeightHint": round(float(line_weight_hint) * float(r_wt), 4),
                 "linePatternToken": r_pat,
                 "planCategoryGraphicKey": "roof",
                 "planOutlineSemantics": "roof_footprint_projection",
             }
+            if e.roof_geometry_mode == "gable_pitched_rectangle" and roof_row.get("ridgeAxisPlan"):
+                roof_row["roofFasciaEdgePlanToken"] = gable_rectangle_fascia_edge_plan_token_v0(
+                    cast(RidgeAxisPlan, roof_row["ridgeAxisPlan"]),
+                )
             roofs.append(roof_row)
         elif isinstance(e, GridLineElem):
             elv = getattr(e, "level_id", None)

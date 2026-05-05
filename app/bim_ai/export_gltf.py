@@ -30,11 +30,13 @@ from bim_ai.material_assembly_resolve import (
     collect_layered_assembly_cut_alignment_evidence_v0,
     collect_layered_assembly_witness_v0,
     material_assembly_manifest_evidence,
+    roof_surface_material_readout_v0,
 )
 from bim_ai.opening_cut_primitives import xz_bounds_mm_from_poly
 from bim_ai.roof_geometry import (
     RidgeAxisPlan,
     footprint_is_valid_axis_aligned_rectangle_mm,
+    gable_rectangle_fascia_edge_plan_token_v0,
     gable_ridge_rise_mm,
     gable_ridge_segment_plan_mm,
     outer_rect_extent,
@@ -144,9 +146,7 @@ def _roof_geometry_evidence_v1_row(doc: Document, e: RoofElem) -> dict[str, Any]
     if e.roof_geometry_mode == "mass_box":
         row["roofTopologyToken"] = "mass_box_proxy"
         row["ridgeInferable"] = False
-        return row
-
-    if footprint_is_valid_axis_aligned_rectangle_mm(pts):
+    elif footprint_is_valid_axis_aligned_rectangle_mm(pts):
         rise_mm, axis_str = gable_ridge_rise_mm(span_x, span_z, slope)
         axis_plan = cast(RidgeAxisPlan, axis_str)
         lvl = doc.elements.get(e.reference_level_id)
@@ -165,6 +165,11 @@ def _roof_geometry_evidence_v1_row(doc: Document, e: RoofElem) -> dict[str, Any]
     else:
         row["roofTopologyToken"] = "skipped_invalid_gable_footprint"
 
+    row.update(roof_surface_material_readout_v0(doc, e))
+    if row.get("roofTopologyToken") == "gable" and "ridgeAxisPlan" in row:
+        row["roofFasciaEdgePlanToken"] = gable_rectangle_fascia_edge_plan_token_v0(
+            cast(RidgeAxisPlan, row["ridgeAxisPlan"]),
+        )
     return row
 
 

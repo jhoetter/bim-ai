@@ -91,6 +91,14 @@ def gable_ridge_segment_plan_mm(
     return (xm, z0_mm), (xm, z1_mm)
 
 
+def gable_rectangle_fascia_edge_plan_token_v0(ridge_axis: RidgeAxisPlan) -> str:
+    """Deterministic plan-axis roles for rectangle gable roofs (eaves parallel to ridge; rake at gable ends)."""
+
+    if ridge_axis == "alongX":
+        return "eaveParallelPlanX_gableRakeParallelPlanZ"
+    return "eaveParallelPlanZ_gableRakeParallelPlanX"
+
+
 def mass_box_roof_proxy_peak_z_mm(reference_level_elevation_mm: float, slope_deg: float | None) -> float:
     """Section/plan proxy peak for roofGeometryMode=mass_box (800 mm nominal half-run heuristic)."""
 

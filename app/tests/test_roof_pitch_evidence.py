@@ -8,7 +8,14 @@ import pytest
 
 from bim_ai.commands import CreateLevelCmd, CreateRoofCmd
 from bim_ai.document import Document
-from bim_ai.elements import LevelElem, PlanViewElem, RoofElem, RoofTypeElem, SectionCutElem
+from bim_ai.elements import (
+    LevelElem,
+    PlanViewElem,
+    RoofElem,
+    RoofTypeElem,
+    SectionCutElem,
+    WallTypeLayer,
+)
 from bim_ai.engine import apply_inplace
 from bim_ai.export_gltf import document_to_gltf
 from bim_ai.plan_projection_wire import resolve_plan_projection_wire
@@ -88,6 +95,12 @@ def test_section_roof_primitive_gable_carries_pitch_fields() -> None:
     assert row["roofGeometryMode"] == "gable_pitched_rectangle"
     assert row["ridgeAxisPlan"] in {"alongX", "alongZ"}
     assert pytest.approx(row["slopeDeg"], rel=1e-6) == 35
+    assert row["layerStackSkipReason"] == "roof_missing_roof_type_id"
+    assert row["roofFasciaEdgePlanToken"] == (
+        "eaveParallelPlanZ_gableRakeParallelPlanX"
+        if row["ridgeAxisPlan"] == "alongZ"
+        else "eaveParallelPlanX_gableRakeParallelPlanZ"
+    )
 
 
 SHARED_GABLE_EVIDENCE_KEYS = (
@@ -101,6 +114,8 @@ SHARED_GABLE_EVIDENCE_KEYS = (
     "ridgeZMm",
     "eavePlateZMm",
     "proxyKind",
+    "layerStackSkipReason",
+    "roofFasciaEdgePlanToken",
 )
 
 
@@ -176,7 +191,14 @@ def test_plan_wire_mass_box_roof_z_mid_matches_section_primitive() -> None:
     pr = plan_row[0]
     sec_prim, _w = build_section_projection_primitives(doc, doc.elements["sec"])
     sr = (sec_prim.get("roofs") or [])[0]
-    mass_keys = ("roofGeometryMode", "slopeDeg", "overhangMm", "zMidMm", "proxyKind")
+    mass_keys = (
+        "roofGeometryMode",
+        "slopeDeg",
+        "overhangMm",
+        "zMidMm",
+        "proxyKind",
+        "layerStackSkipReason",
+    )
     for k in mass_keys:
         p_v, s_v = pr[k], sr[k]
         if isinstance(p_v, str):
@@ -223,6 +245,9 @@ def test_gltf_manifest_and_mesh_differs_from_mass_box_for_gable_roof() -> None:
     rise_expect = 3000.0 * math.tan(math.radians(32.0))
     assert pytest.approx(row["ridgeRiseMm"], rel=1e-6) == rise_expect
     assert pytest.approx(row["ridgeZMm"], rel=1e-6) == 2600.0 + rise_expect
+    assert row["layerStackSkipReason"] == "roof_type_without_layers"
+    assert row["roofFasciaEdgePlanToken"] == "eaveParallelPlanZ_gableRakeParallelPlanX"
+    assert "layerStackCount" not in row
     roof_mesh = next(m for m in g["meshes"] if m["name"] == "roof:r1")
     pos_ix = roof_mesh["primitives"][0]["attributes"]["POSITION"]
     pos_acc = g["accessors"][pos_ix]
@@ -257,6 +282,7 @@ def test_gltf_mass_box_roof_has_base_mesh_encoding_only() -> None:
     mb = ev["roofs"][0]
     assert mb["roofTopologyToken"] == "mass_box_proxy"
     assert mb["ridgeInferable"] is False
+    assert mb["layerStackSkipReason"] == "roof_missing_roof_type_id"
     assert "ridgeSegmentPlanMm" not in mb
     roof_mesh = next(m for m in g["meshes"] if m["name"] == "roof:roof-1")
     pos_ix = roof_mesh["primitives"][0]["attributes"]["POSITION"]
@@ -268,3 +294,72 @@ def test_hip_roof_topology_evidence_skipped_until_solver() -> None:
     """Placeholder for future bounded hip/valley evidence once a deterministic solver exists."""
 
     pass
+
+
+def test_gable_roof_typed_layers_surface_evidence_manifest_plan_section_agree() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=2600),
+            "pv": PlanViewElem(kind="plan_view", id="pv-rt", name="P", levelId="lvl"),
+            "rt-deck": RoofTypeElem(
+                kind="roof_type",
+                id="rt-deck",
+                name="Built-up",
+                layers=[
+                    WallTypeLayer(
+                        thickness_mm=18.0,
+                        layer_function="structure",
+                        material_key="mat-osb-roof-deck-v1",
+                    ),
+                    WallTypeLayer(
+                        thickness_mm=120.0,
+                        layer_function="insulation",
+                        material_key="mat-insulation-roof-board-v1",
+                    ),
+                ],
+            ),
+            "r1": RoofElem(
+                kind="roof",
+                id="r1",
+                name="Roof",
+                reference_level_id="lvl",
+                footprint_mm=list(_RECT_FP),
+                overhang_mm=400,
+                slope_deg=35,
+                roof_geometry_mode="gable_pitched_rectangle",
+                roof_type_id="rt-deck",
+            ),
+            "sec": SectionCutElem(
+                kind="section_cut",
+                id="sec-1",
+                name="Sec",
+                line_start_mm={"xMm": 500, "yMm": 2000},
+                line_end_mm={"xMm": 5500, "yMm": 2000},
+                crop_depth_mm=6000,
+            ),
+        },
+    )
+    g = document_to_gltf(doc)
+    row = g["extensions"]["BIM_AI_exportManifest_v0"]["roofGeometryEvidence_v1"]["roofs"][0]
+    assert row["layerStackSkipReason"] is None
+    assert row["layerStackCount"] == 2
+    assert row["layerStackTotalThicknessMm"] == 138.0
+    assert row["primaryMaterialKey"] == "mat-osb-roof-deck-v1"
+    assert row["primaryMaterialLabel"] == "OSB structural deck"
+    assert row["roofFasciaEdgePlanToken"] == "eaveParallelPlanZ_gableRakeParallelPlanX"
+
+    pw = resolve_plan_projection_wire(doc, plan_view_id="pv-rt", fallback_level_id="lvl")
+    plan_row = (pw.get("primitives") or {}).get("roofs") or []
+    assert len(plan_row) == 1
+    pr = plan_row[0]
+    sec_row = (build_section_projection_primitives(doc, doc.elements["sec"])[0].get("roofs") or [])[0]
+    for k in (
+        "layerStackSkipReason",
+        "layerStackCount",
+        "layerStackTotalThicknessMm",
+        "primaryMaterialKey",
+        "primaryMaterialLabel",
+        "roofFasciaEdgePlanToken",
+    ):
+        assert pr[k] == sec_row[k] == row[k]

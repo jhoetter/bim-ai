@@ -238,6 +238,12 @@ def test_build_visual_export_manifest_includes_roof_assembly_evidence():
     assert len(layers) == 2
     assert float(layers[0]["thicknessMm"]) == 18.0
     assert float(layers[1]["thicknessMm"]) == 120.0
+    rgeo = ext.get("roofGeometryEvidence_v1")
+    assert rgeo is not None
+    rrow = rgeo["roofs"][0]
+    assert rrow["layerStackSkipReason"] is None
+    assert rrow["layerStackCount"] == 2
+    assert rrow["layerStackTotalThicknessMm"] == 138.0
 
 
 def test_document_to_gltf_subset_counts_and_manifest_extension():

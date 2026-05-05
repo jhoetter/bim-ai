@@ -8,7 +8,7 @@ Crop is a symmetric perpendicular band of half-width ``cropDepthMm / 2`` about t
 from __future__ import annotations
 
 import math
-from typing import Any
+from typing import Any, cast
 
 from bim_ai.document import Document
 from bim_ai.elements import (
@@ -30,6 +30,7 @@ from bim_ai.material_assembly_resolve import (
     layered_assembly_witness_row_for_roof,
     layered_assembly_witness_row_for_wall,
     resolved_layers_for_wall,
+    roof_surface_material_readout_v0,
     section_assembly_alignment_fields_floor,
     section_assembly_alignment_fields_wall,
 )
@@ -43,6 +44,8 @@ from bim_ai.opening_cut_primitives import (
     wall_plan_axis_aligned_xy,
 )
 from bim_ai.roof_geometry import (
+    RidgeAxisPlan,
+    gable_rectangle_fascia_edge_plan_token_v0,
     gable_ridge_rise_mm,
     mass_box_roof_proxy_peak_z_mm,
     outer_rect_extent,
@@ -838,6 +841,7 @@ def build_section_projection_primitives(
             continue
         u_lo, u_hi = span
         mode = e.roof_geometry_mode
+        roof_mat = roof_surface_material_readout_v0(doc, e)
         if mode == "gable_pitched_rectangle":
             x0, x1, z0, z1 = outer_rect_extent(poly)
             span_x = float(x1 - x0)
@@ -865,6 +869,10 @@ def build_section_projection_primitives(
                     "planSpanZmMm": round(span_z, 3),
                     "ridgeRiseMm": round(rise_mm, 3),
                     "layerAssemblyWitness_v0": layered_assembly_witness_row_for_roof(doc, e),
+                    "roofFasciaEdgePlanToken": gable_rectangle_fascia_edge_plan_token_v0(
+                        cast(RidgeAxisPlan, ridge_axis),
+                    ),
+                    **roof_mat,
                 }
             )
         else:
@@ -882,6 +890,7 @@ def build_section_projection_primitives(
                     "overhangMm": round(float(e.overhang_mm), 3),
                     "proxyKind": "footprintChord",
                     "layerAssemblyWitness_v0": layered_assembly_witness_row_for_roof(doc, e),
+                    **roof_mat,
                 }
             )
 
