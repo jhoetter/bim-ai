@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from bim_ai.document import Document
@@ -22,6 +24,7 @@ from bim_ai.export_ifc import (
     IFC_AVAILABLE,
     IFC_ENCODING_KERNEL_V1,
     build_kernel_ifc_authoritative_replay_sketch_v0,
+    build_kernel_ifc_authoritative_replay_sketch_v0_from_model,
     export_ifc_model_step,
     inspect_kernel_ifc_semantics,
     summarize_kernel_ifc_semantic_roundtrip,
@@ -748,6 +751,7 @@ def test_ifc_summarize_command_sketch_includes_authoritative_replay_v0() -> None
         "openings": False,
         "floors": False,
         "slabVoids": False,
+        "stairs": False,
     }
     assert any(c.get("type") == "createLevel" for c in auth["commands"])
     assert any(c.get("type") == "createWall" for c in auth["commands"])
@@ -792,6 +796,7 @@ def test_ifc_authoritative_replay_v0_space_outline_and_ids_map() -> None:
     assert sketch["authoritativeSubset"]["spaces"] is True
     assert sketch["authoritativeSubset"].get("floors") is True
     assert sketch["authoritativeSubset"].get("slabVoids") is False
+    assert sketch["authoritativeSubset"].get("stairs") is False
     assert sketch["authoritativeSubset"].get("openings") is False
     assert sketch.get("kernelSpaceSkippedNoReference") == 0
 
@@ -1009,3 +1014,212 @@ def test_ifc_authoritative_replay_v0_slab_floor_and_opening_roundtrip() -> None:
     assert "fl-1" in new_doc.elements and "so-1" in new_doc.elements
     assert not viols or not any(v.blocking or v.severity == "error" for v in viols)
 
+
+def _replay_stair_assign_extrusion_depth_mm(product: Any, depth_mm: float) -> None:
+    rep = getattr(product, "Representation", None)
+    if rep is None:
+        return
+    for r in rep.Representations or []:
+        try:
+            if getattr(r, "RepresentationIdentifier", None) != "Body":
+                continue
+        except Exception:
+            continue
+        for it in r.Items or []:
+            try:
+                if it.is_a("IfcExtrudedAreaSolid"):
+                    it.Depth = float(depth_mm)
+                    return
+            except Exception:
+                continue
+
+
+def test_ifc_authoritative_replay_v0_stair_roundtrip_and_apply() -> None:
+    doc = Document(
+        revision=511,
+        elements={
+            "l0": LevelElem(kind="level", id="l0", name="G", elevationMm=0),
+            "l1": LevelElem(kind="level", id="l1", name="U", elevationMm=3000),
+            "w-a": WallElem(
+                kind="wall",
+                id="w-a",
+                name="W",
+                levelId="l0",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 4500, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+            "st-1": StairElem(
+                kind="stair",
+                id="st-1",
+                name="Main",
+                baseLevelId="l0",
+                topLevelId="l1",
+                runStartMm={"xMm": 500, "yMm": 800},
+                runEndMm={"xMm": 2800, "yMm": 800},
+                widthMm=1100,
+            ),
+        },
+    )
+    step = export_ifc_model_step(doc)
+    sketch = build_kernel_ifc_authoritative_replay_sketch_v0(step)
+    assert sketch["available"] is True
+    assert sketch["authoritativeSubset"]["stairs"] is True
+    assert sketch.get("kernelStairSkippedNoReference") == 0
+    stair_cmds = [c for c in sketch["commands"] if c["type"] == "createStair"]
+    assert len(stair_cmds) == 1
+    sc = stair_cmds[0]
+    assert sc["id"] == "st-1"
+    assert "riserMm" not in sc and "treadMm" not in sc
+    level_cmds = [c for c in sketch["commands"] if c["type"] == "createLevel"]
+    by_elev = {float(c["elevationMm"]): c["id"] for c in level_cmds}
+    assert sc["baseLevelId"] == by_elev[0.0]
+    assert sc["topLevelId"] == by_elev[3000.0]
+    assert abs(sc["runStartMm"]["xMm"] - 500) < 0.15
+    assert abs(sc["runStartMm"]["yMm"] - 800) < 0.15
+    assert abs(sc["runEndMm"]["xMm"] - 2800) < 0.15
+    assert abs(sc["runEndMm"]["yMm"] - 800) < 0.15
+    assert abs(float(sc["widthMm"]) - 1100) < 0.15
+
+    typ_order = [c["type"] for c in sketch["commands"]]
+    assert typ_order.index("createWall") < typ_order.index("createStair")
+
+    empty = Document(revision=0, elements={})
+    ok, new_doc, _cmds, viols, code = try_apply_kernel_ifc_authoritative_replay_v0(empty, sketch)
+    assert ok is True and code == "ok" and new_doc is not None
+    st_el = new_doc.elements.get("st-1")
+    assert isinstance(st_el, StairElem)
+    assert st_el.base_level_id == sc["baseLevelId"]
+    assert st_el.top_level_id == sc["topLevelId"]
+    assert abs(st_el.run_start.x_mm - sc["runStartMm"]["xMm"]) < 0.2
+    assert abs(st_el.width_mm - float(sc["widthMm"])) < 0.2
+
+
+def test_ifc_authoritative_replay_v0_stair_missing_reference_skipped() -> None:
+    import ifcopenshell
+    import ifcopenshell.util.element as ue
+    from ifcopenshell.api.pset.edit_pset import edit_pset
+
+    doc = Document(
+        revision=512,
+        elements={
+            "l0": LevelElem(kind="level", id="l0", name="G", elevationMm=0),
+            "l1": LevelElem(kind="level", id="l1", name="U", elevationMm=3000),
+            "w-a": WallElem(
+                kind="wall",
+                id="w-a",
+                name="W",
+                levelId="l0",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 3500, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+            "st-1": StairElem(
+                kind="stair",
+                id="st-1",
+                name="S",
+                baseLevelId="l0",
+                topLevelId="l1",
+                runStartMm={"xMm": 100, "yMm": 100},
+                runEndMm={"xMm": 2000, "yMm": 100},
+                widthMm=1000,
+            ),
+        },
+    )
+    step = export_ifc_model_step(doc)
+    model = ifcopenshell.file.from_string(step)
+    st = model.by_type("IfcStair")[0]
+    pinfo = ue.get_psets(st, psets_only=False)["Pset_StairCommon"]
+    ps = model.by_id(pinfo["id"])
+    edit_pset(model, pset=ps, properties={"Reference": ""})
+
+    sketch = build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model)
+    assert sketch["available"] is True
+    assert [c for c in sketch["commands"] if c["type"] == "createStair"] == []
+    assert sketch.get("kernelStairSkippedNoReference") == 1
+    assert any(g.get("reason") == "stair_missing_pset_reference" for g in sketch.get("extractionGaps") or [])
+
+
+def test_ifc_authoritative_replay_v0_stair_top_level_unresolved_skipped() -> None:
+    import ifcopenshell
+
+    doc = Document(
+        revision=513,
+        elements={
+            "l0": LevelElem(kind="level", id="l0", name="G", elevationMm=0),
+            "l1": LevelElem(kind="level", id="l1", name="U", elevationMm=3000),
+            "w-a": WallElem(
+                kind="wall",
+                id="w-a",
+                name="W",
+                levelId="l0",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 3500, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+            "st-1": StairElem(
+                kind="stair",
+                id="st-1",
+                name="S",
+                baseLevelId="l0",
+                topLevelId="l1",
+                runStartMm={"xMm": 100, "yMm": 100},
+                runEndMm={"xMm": 2000, "yMm": 100},
+                widthMm=1000,
+            ),
+        },
+    )
+    step = export_ifc_model_step(doc)
+    model = ifcopenshell.file.from_string(step)
+    st = model.by_type("IfcStair")[0]
+    _replay_stair_assign_extrusion_depth_mm(st, 2800.0)
+
+    sketch = build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model)
+    assert sketch["available"] is True
+    assert [c for c in sketch["commands"] if c["type"] == "createStair"] == []
+    assert any(g.get("reason") == "stair_top_level_unresolved" for g in sketch.get("extractionGaps") or [])
+
+
+def test_ifc_authoritative_replay_v0_stairs_before_hosted_openings_in_command_order() -> None:
+    doc = Document(
+        revision=514,
+        elements={
+            "l0": LevelElem(kind="level", id="l0", name="G", elevationMm=0),
+            "l1": LevelElem(kind="level", id="l1", name="U", elevationMm=3000),
+            "w-main": WallElem(
+                kind="wall",
+                id="w-main",
+                name="W",
+                levelId="l0",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 6000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+            "d-1": DoorElem(
+                kind="door",
+                id="d-1",
+                name="D1",
+                wallId="w-main",
+                alongT=0.4,
+                widthMm=900,
+            ),
+            "st-1": StairElem(
+                kind="stair",
+                id="st-1",
+                name="S",
+                baseLevelId="l0",
+                topLevelId="l1",
+                runStartMm={"xMm": 4100, "yMm": 200},
+                runEndMm={"xMm": 5200, "yMm": 200},
+                widthMm=1000,
+            ),
+        },
+    )
+    step = export_ifc_model_step(doc)
+    sketch = build_kernel_ifc_authoritative_replay_sketch_v0(step)
+    typ_order = [c["type"] for c in sketch["commands"]]
+    assert typ_order.index("createStair") < typ_order.index("insertDoorOnWall")

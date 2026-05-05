@@ -13,6 +13,7 @@ from bim_ai.commands import (
     CreateLevelCmd,
     CreateRoomOutlineCmd,
     CreateSlabOpeningCmd,
+    CreateStairCmd,
     CreateWallCmd,
 )
 from bim_ai.document import Document
@@ -909,6 +910,43 @@ def _space_pset_programme_json_fields(bucket: dict[str, Any]) -> dict[str, str]:
     return fields
 
 
+AUTHORITATIVE_REPLAY_STAIR_TOP_LEVEL_TOL_MM = 1.0
+
+
+def _replay_level_ids_matching_elevation_mm(
+    *,
+    target_elevation_mm: float,
+    storey_gid_to_level_id: dict[str, str],
+    storey_gid_to_elev_mm: dict[str, float],
+    tol_mm: float,
+) -> list[str]:
+    """Return sorted unique replay level ids whose storey elevation matches target within tol."""
+
+    matched: set[str] = set()
+    for gid, lvl_id in storey_gid_to_level_id.items():
+        raw = storey_gid_to_elev_mm.get(gid)
+        if raw is None:
+            continue
+        if abs(float(raw) - float(target_elevation_mm)) <= tol_mm:
+            matched.add(lvl_id)
+    return sorted(matched)
+
+
+def _sort_authoritative_replay_extraction_gaps_v0(gaps: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Stable ordering for replay skip / gap rows (reason, then GlobalId-bearing keys)."""
+
+    def key_row(row: dict[str, Any]) -> tuple[str, str]:
+        reason = str(row.get("reason") or "")
+        gids: list[str] = []
+        for k, v in row.items():
+            if k.endswith("GlobalId") and v is not None:
+                gids.append(f"{k}={v}")
+        gids.sort()
+        return (reason, "|".join(gids))
+
+    return sorted(gaps, key=key_row)
+
+
 def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> dict[str, Any]:
     """Deterministic kernel IFC replay: levels, slabs, walls, inserts, slab voids, rooms."""
 
@@ -917,6 +955,7 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
     )
     has_floor_products = bool(model.by_type("IfcSlab") or [])
     has_slab_void_topology = _ifc_model_has_slab_void_opening_topology_v0(model)
+    has_stair_products = bool(model.by_type("IfcStair") or [])
 
     authoritative_subset_unreachable = {
         "levels": False,
@@ -925,6 +964,7 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
         "openings": False,
         "floors": False,
         "slabVoids": False,
+        "stairs": False,
     }
 
     subset = {
@@ -934,6 +974,7 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
         "openings": has_opening_products,
         "floors": has_floor_products,
         "slabVoids": has_slab_void_topology,
+        "stairs": has_stair_products,
     }
     unsupported = _import_scope_unsupported_ifc_products_v0(model)
 
@@ -1074,6 +1115,76 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
             wall_global_id_to_kernel_ref[wgid] = ref_s
 
     wall_cmds.sort(key=lambda c: str(c.get("id") or ""))
+
+    stair_cmds: list[dict[str, Any]] = []
+    stairs_skipped_no_reference = 0
+
+    for sta in sorted(model.by_type("IfcStair") or [], key=lambda s: str(getattr(s, "GlobalId", None) or "")):
+        sta_gid = str(getattr(sta, "GlobalId", None) or "")
+        ps_sta = ifc_elem_util.get_psets(sta)
+        bucket_sta = ps_sta.get("Pset_StairCommon") or {}
+        ref_sta = bucket_sta.get("Reference")
+        ref_s = ref_sta.strip() if isinstance(ref_sta, str) else ""
+        if not ref_s:
+            stairs_skipped_no_reference += 1
+            extraction_gaps.append({"stairGlobalId": sta_gid, "reason": "stair_missing_pset_reference"})
+            continue
+
+        st_gid_hs = _product_host_storey_global_id(sta)
+        if not st_gid_hs or st_gid_hs not in storey_gid_to_level_id:
+            extraction_gaps.append(
+                {
+                    "stairGlobalId": sta_gid,
+                    "kernelReference": ref_s,
+                    "reason": "stair_missing_or_unknown_host_storey",
+                }
+            )
+            continue
+
+        geo_st = _kernel_wall_plan_geometry_mm(sta)
+        if geo_st is None:
+            extraction_gaps.append(
+                {
+                    "stairGlobalId": sta_gid,
+                    "kernelReference": ref_s,
+                    "reason": "stair_body_extrusion_unreadable",
+                }
+            )
+            continue
+
+        base_lvl_id = storey_gid_to_level_id[st_gid_hs]
+        base_elev_mm = float(storey_gid_to_elev_mm.get(st_gid_hs, 0.0))
+        target_top_mm = base_elev_mm + float(geo_st["height_mm"])
+        candidates = _replay_level_ids_matching_elevation_mm(
+            target_elevation_mm=target_top_mm,
+            storey_gid_to_level_id=storey_gid_to_level_id,
+            storey_gid_to_elev_mm=storey_gid_to_elev_mm,
+            tol_mm=AUTHORITATIVE_REPLAY_STAIR_TOP_LEVEL_TOL_MM,
+        )
+        if len(candidates) != 1:
+            extraction_gaps.append(
+                {
+                    "stairGlobalId": sta_gid,
+                    "kernelReference": ref_s,
+                    "reason": "stair_top_level_unresolved",
+                }
+            )
+            continue
+
+        stname = str(getattr(sta, "Name", None) or "") or ref_s
+        stair_cmds.append(
+            CreateStairCmd(
+                id=ref_s,
+                name=stname,
+                base_level_id=base_lvl_id,
+                top_level_id=candidates[0],
+                run_start_mm=Vec2Mm(x_mm=geo_st["start_x_mm"], y_mm=geo_st["start_y_mm"]),
+                run_end_mm=Vec2Mm(x_mm=geo_st["end_x_mm"], y_mm=geo_st["end_y_mm"]),
+                width_mm=geo_st["thickness_mm"],
+            ).model_dump(mode="json", by_alias=True, exclude={"riser_mm", "tread_mm"})
+        )
+
+    stair_cmds.sort(key=lambda c: str(c.get("id") or ""))
 
     door_cmds, win_cmds, kernel_door_skip, kernel_window_skip = build_wall_hosted_opening_replay_commands_v0(
         model,
@@ -1252,8 +1363,17 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
     room_cmds.sort(key=lambda c: str(c.get("id") or ""))
     ids_space_rows.sort(key=lambda r: (r["identityReference"], r["ifcGlobalId"]))
 
+    extraction_gaps = _sort_authoritative_replay_extraction_gaps_v0(extraction_gaps)
+
     merged_cmds = (
-        level_cmds + floor_cmds + wall_cmds + door_cmds + win_cmds + slab_opening_cmds + room_cmds
+        level_cmds
+        + floor_cmds
+        + wall_cmds
+        + stair_cmds
+        + door_cmds
+        + win_cmds
+        + slab_opening_cmds
+        + room_cmds
     )
 
     return {
@@ -1272,6 +1392,7 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
         "kernelSpaceSkippedNoReference": spaces_skipped_no_reference,
         "kernelDoorSkippedNoReference": kernel_door_skip,
         "kernelWindowSkippedNoReference": kernel_window_skip,
+        "kernelStairSkippedNoReference": stairs_skipped_no_reference,
         "slabRoofHostedVoidReplaySkipped_v0": slab_roof_hosted_void_skip_v0,
         "idsAuthoritativeReplayMap_v0": {
             "schemaVersion": 0,
@@ -1305,6 +1426,7 @@ def build_kernel_ifc_authoritative_replay_sketch_v0(step_text: str) -> dict[str,
                 "openings": False,
                 "floors": False,
                 "slabVoids": False,
+                "stairs": False,
             },
             "unsupportedIfcProducts": {"schemaVersion": 0, "countsByClass": {}},
         }

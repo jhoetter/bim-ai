@@ -206,6 +206,7 @@ def test_authoritative_replay_sketch_unavailable_when_ifcopenshell_missing() -> 
         "openings": False,
         "floors": False,
         "slabVoids": False,
+        "stairs": False,
     }
 
 
@@ -234,6 +235,7 @@ def test_ifc_manifest_scope_lists_authoritative_replay_bullet() -> None:
     assert any("idsAuthoritativeReplayMap_v0" in str(x) for x in supported)
     assert any("try_apply_kernel_ifc_authoritative_replay_v0" in str(x) for x in supported)
     assert any("insertDoorOnWall" in str(x) for x in supported)
+    assert any("createStair" in str(x) for x in supported)
     unsupported = scope.get("importMergeUnsupported") or []
     assert any("try_apply_kernel_ifc_authoritative_replay_v0" in str(x) for x in unsupported)
 
