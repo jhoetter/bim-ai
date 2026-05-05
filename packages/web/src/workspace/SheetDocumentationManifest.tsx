@@ -12,7 +12,13 @@ import type { SheetViewportMmDraft } from './sheetViewportAuthoring';
 import { normalizeViewportRaw, readViewportMmBox } from './sheetViewportAuthoring';
 import { parseSheetViewRef, resolveViewportTitleFromRef } from './sheetViewRef';
 import { detailCalloutUnresolvedReason } from './sheetDetailCalloutReadout';
+import {
+  buildSheetTitleblockRevisionIssueManifestV1FromNorm,
+  normalizeTitleblockRevisionIssueV1,
+  sheetRevisionIssueMetadataPresent,
+} from './sheetRevisionIssueManifestV1';
 import { scheduleTableRendererV1SheetReadout } from '../schedules/scheduleTableRendererV1';
+import { formatSchedulePaginationPlacementReadout } from '../schedules/schedulePanelRegistryChrome';
 
 type SheetEl = Extract<Element, { kind: 'sheet' }>;
 
@@ -52,6 +58,11 @@ export function SheetDocumentationManifest(props: {
   const titleblockParametersDisplay = useMemo(
     () => (authoring ? mergedTitleblockParametersForUpsert(priorTp, tbDraft) : { ...priorTp }),
     [authoring, priorTp, tbDraft],
+  );
+
+  const revisionIssueNorm = useMemo(
+    () => normalizeTitleblockRevisionIssueV1(titleblockParametersDisplay),
+    [titleblockParametersDisplay],
   );
 
   const effectiveTitleblockSymbol = authoring
@@ -150,6 +161,39 @@ export function SheetDocumentationManifest(props: {
     return (rows as Record<string, unknown>[]).find((r) => String(r.sheetId ?? '') === sheet.id);
   }, [evidence, sheet.id]);
 
+  const revisionIssueReadout = useMemo(() => {
+    if (evidence.status === 'ready' && deterministicRow) {
+      const raw = deterministicRow.sheetTitleblockRevisionIssueManifest_v1;
+      if (raw && typeof raw === 'object') {
+        const o = raw as Record<string, unknown>;
+        const pick = (k: string) => String(o[k] ?? '');
+        return {
+          provenance: 'evidence-package' as const,
+          revisionId: pick('revisionId'),
+          revisionCode: pick('revisionCode'),
+          revisionDate: pick('revisionDate'),
+          revisionDescription: pick('revisionDescription'),
+          issueStatus: pick('issueStatus'),
+          revisionDescriptionDigestPrefix8: pick('revisionDescriptionDigestPrefix8'),
+          titleblockDisplaySegment: pick('titleblockDisplaySegment'),
+          exportListingSegment: pick('exportListingSegment'),
+        };
+      }
+    }
+    const m = buildSheetTitleblockRevisionIssueManifestV1FromNorm(revisionIssueNorm);
+    return {
+      provenance: 'sheet' as const,
+      revisionId: m.revisionId,
+      revisionCode: m.revisionCode,
+      revisionDate: m.revisionDate,
+      revisionDescription: m.revisionDescription,
+      issueStatus: m.issueStatus,
+      revisionDescriptionDigestPrefix8: m.revisionDescriptionDigestPrefix8,
+      titleblockDisplaySegment: m.titleblockDisplaySegment,
+      exportListingSegment: m.exportListingSegment,
+    };
+  }, [deterministicRow, evidence.status, revisionIssueNorm]);
+
   const hintsByViewportId = useMemo(
     () => indexViewportEvidenceHints(deterministicRow?.viewportEvidenceHints_v0),
     [deterministicRow],
@@ -212,6 +256,15 @@ export function SheetDocumentationManifest(props: {
         'Title block symbol is blank while viewports exist (aligns with sheet_missing_titleblock checks).',
       );
     }
+    if (
+      viewportRows.length > 0 &&
+      effectiveTitleblockSymbol &&
+      !sheetRevisionIssueMetadataPresent(revisionIssueNorm)
+    ) {
+      notes.push(
+        'Revision/issue metadata is missing revision id and revision code in titleblock parameters (aligns with sheet_revision_issue_metadata_missing checks).',
+      );
+    }
     for (const row of viewportRows) {
       const parsed = parseSheetViewRef(row.viewRef);
       if (!row.viewRef.trim()) {
@@ -266,6 +319,7 @@ export function SheetDocumentationManifest(props: {
     modelId,
     viewportRows,
     elementsById,
+    revisionIssueNorm,
   ]);
 
   const tbEntries = sortedStringMapEntries(
@@ -337,6 +391,34 @@ export function SheetDocumentationManifest(props: {
         </table>
       </div>
 
+      <div
+        className="mt-3 space-y-1 border-t border-border pt-2"
+        data-testid="sheet-manifest-revision-issue-readout"
+      >
+        <div className="text-[10px] font-semibold uppercase text-muted">
+          Revision / issue manifest (v1)
+        </div>
+        <div className="text-[9px] text-muted">provenance: {revisionIssueReadout.provenance}</div>
+        <dl className="grid grid-cols-[minmax(0,180px)_1fr] gap-x-2 gap-y-0.5 font-mono text-[10px]">
+          <dt className="text-muted">revisionId</dt>
+          <dd>{revisionIssueReadout.revisionId || '—'}</dd>
+          <dt className="text-muted">revisionCode</dt>
+          <dd>{revisionIssueReadout.revisionCode || '—'}</dd>
+          <dt className="text-muted">revisionDate</dt>
+          <dd>{revisionIssueReadout.revisionDate || '—'}</dd>
+          <dt className="text-muted">issueStatus</dt>
+          <dd>{revisionIssueReadout.issueStatus || '—'}</dd>
+          <dt className="text-muted">revisionDescriptionDigestPrefix8</dt>
+          <dd>{revisionIssueReadout.revisionDescriptionDigestPrefix8 || '—'}</dd>
+          <dt className="text-muted">titleblockDisplaySegment</dt>
+          <dd className="break-all">{revisionIssueReadout.titleblockDisplaySegment || '—'}</dd>
+          <dt className="text-muted">exportListingSegment</dt>
+          <dd className="break-all">{revisionIssueReadout.exportListingSegment || '—'}</dd>
+          <dt className="text-muted">revisionDescription</dt>
+          <dd className="break-all">{revisionIssueReadout.revisionDescription || '—'}</dd>
+        </dl>
+      </div>
+
       <div className="mt-3 space-y-1 border-t border-border pt-2">
         <div className="text-[10px] font-semibold uppercase text-muted">Viewports</div>
         <div className="overflow-x-auto">
@@ -396,6 +478,10 @@ export function SheetDocumentationManifest(props: {
                     hintParts.push(schSeg);
                     const tblSeg = scheduleTableRendererV1SheetReadout(schSeg, elementsById);
                     if (tblSeg) hintParts.push(tblSeg);
+                    const pagLine = formatSchedulePaginationPlacementReadout(
+                      hint?.schedulePaginationPlacementEvidence_v0,
+                    );
+                    if (pagLine) hintParts.push(pagLine);
                   }
                   if (
                     hint?.roomProgrammeLegendDocumentationSegment !== undefined &&

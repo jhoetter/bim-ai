@@ -4,6 +4,7 @@ import {
   buildScheduleTableCsvUrl,
   columnFieldRoleHint,
   columnMetadataCategoryLine,
+  formatSchedulePaginationPlacementReadout,
   formatSchedulePlacementReadout,
   scheduleRegistryEngineReadoutParts,
 } from './schedulePanelRegistryChrome';
@@ -38,6 +39,30 @@ describe('columnFieldRoleHint', () => {
 
   it('suffixes trimmed role', () => {
     expect(columnFieldRoleHint({ role: 'number' })).toBe(' · number');
+  });
+});
+
+describe('formatSchedulePaginationPlacementReadout', () => {
+  it('returns null for invalid or wrong format', () => {
+    expect(formatSchedulePaginationPlacementReadout(null)).toBe(null);
+    expect(formatSchedulePaginationPlacementReadout({ format: 'other' })).toBe(null);
+  });
+
+  it('formats segment summary and digest prefix', () => {
+    const s = formatSchedulePaginationPlacementReadout({
+      format: 'schedulePaginationPlacementEvidence_v0',
+      segmentCount: 2,
+      totalRows: 25,
+      rowsPerSegment: 8,
+      clipStatus: 'multi_segment',
+      placementStatus: 'placed',
+      digestSha256: 'abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789',
+    });
+    expect(s).toContain('pag segs=2');
+    expect(s).toContain('rows=25');
+    expect(s).toContain('rps=8');
+    expect(s).toContain('clip=multi_segment');
+    expect(s).toContain('h=abcdef012345');
   });
 });
 

@@ -35,7 +35,15 @@ from bim_ai.room_derivation import (
     room_separation_axis_summary_v0_payload,
     vacant_derived_metrics_for_authority,
 )
+from bim_ai.room_finish_schedule import (
+    build_room_finish_schedule_evidence_v1,
+    peer_finish_set_by_level,
+    room_finish_schedule_row_extensions,
+)
 from bim_ai.schedule_field_registry import column_metadata_bundle, stable_column_keys
+from bim_ai.schedule_pagination_placement_evidence import (
+    build_schedule_pagination_placement_evidence_v0,
+)
 from bim_ai.type_material_registry import (
     family_type_display_label,
     material_display_label,
@@ -403,6 +411,9 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
     rows: list[dict[str, Any]] = []
 
     if cat == "room":
+        room_peer_finish = peer_finish_set_by_level(
+            e for e in doc.elements.values() if isinstance(e, RoomElem)
+        )
         for e in doc.elements.values():
             if isinstance(e, RoomElem):
                 pts = [{"xMm": float(p.x_mm), "yMm": float(p.y_mm)} for p in e.outline_mm]
@@ -421,6 +432,9 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                     "functionLabel": (e.function_label or "").strip(),
                     "finishSet": (e.finish_set or "").strip(),
                 }
+                row.update(
+                    room_finish_schedule_row_extensions(e, peer_by_level=room_peer_finish),
+                )
                 if e.target_area_m2 is not None:
                     tgm = float(e.target_area_m2)
                     row["targetAreaM2"] = round(tgm, 3)
@@ -832,6 +846,16 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
             "rowCount": len(leaf_rows),
             "areaM2": round(sum(float(r.get("areaM2") or 0.0) for r in leaf_rows), 4),
             "perimeterM": round(sum(float(r.get("perimeterM") or 0.0) for r in leaf_rows), 4),
+            "finishCompleteCount": sum(
+                1 for r in leaf_rows if r.get("finishState") == "complete"
+            ),
+            "finishMissingCount": sum(1 for r in leaf_rows if r.get("finishState") == "missing"),
+            "finishPeerSuggestedCount": sum(
+                1 for r in leaf_rows if r.get("finishState") == "peer_suggested"
+            ),
+            "finishNotRequiredCount": sum(
+                1 for r in leaf_rows if r.get("finishState") == "not_required"
+            ),
             **({"targetAreaM2": round(sum(tgt_vals), 4)} if tgt_vals else {}),
         }
     elif cat == "window" and leaf_rows:
@@ -979,6 +1003,14 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
             except (TypeError, ValueError):
                 pass
         out["roomProgrammeClosure_v0"] = closure
+        out["roomFinishScheduleEvidence_v1"] = build_room_finish_schedule_evidence_v1(leaf_rows)
+    out["schedulePaginationPlacementEvidence_v0"] = build_schedule_pagination_placement_evidence_v0(
+        doc,
+        schedule_id,
+        schedule_el=sch,
+        leaf_rows=leaf_rows,
+        total_rows=total_rows,
+    )
     return out
 
 

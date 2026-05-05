@@ -33,6 +33,7 @@ import {
   buildScheduleTableCsvUrl,
   columnFieldRoleHint,
   columnMetadataCategoryLine,
+  formatSchedulePaginationPlacementReadout,
   formatSchedulePlacementReadout,
   scheduleRegistryEngineReadoutParts,
   type ScheduleFieldMeta,
@@ -1827,9 +1828,12 @@ export function SchedulePanel(props: {
     if (!srvActive) return null;
     const data = srvActive.data as Record<string, unknown>;
     const placementLine = formatSchedulePlacementReadout(data.schedulePlacement);
+    const pagLine = formatSchedulePaginationPlacementReadout(
+      data.schedulePaginationPlacementEvidence_v0,
+    );
     const regLine = columnMetadataCategoryLine(data);
     const engParts = scheduleRegistryEngineReadoutParts(data);
-    if (!placementLine && !regLine && engParts.length === 0) return null;
+    if (!placementLine && !regLine && engParts.length === 0 && !pagLine) return null;
 
     return (
       <div
@@ -1838,6 +1842,14 @@ export function SchedulePanel(props: {
       >
         {regLine ? <div className="text-foreground/90">{regLine}</div> : null}
         {placementLine ? <div className="text-foreground/90">{placementLine}</div> : null}
+        {pagLine ? (
+          <div
+            className="font-mono text-[10px] leading-snug text-foreground/90"
+            data-testid="schedule-pagination-placement-readout"
+          >
+            {pagLine}
+          </div>
+        ) : null}
         {engParts.length ? (
           <div className="font-mono text-[10px] leading-snug">{engParts.join(' · ')}</div>
         ) : null}

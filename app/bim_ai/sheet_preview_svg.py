@@ -15,13 +15,22 @@ from bim_ai.document import Document
 from bim_ai.elements import (
     LevelElem,
     PlanViewElem,
+    RoomElem,
     ScheduleElem,
     SectionCutElem,
     SheetElem,
     ViewpointElem,
 )
 from bim_ai.plan_projection_wire import resolve_plan_projection_wire
+from bim_ai.room_finish_schedule import (
+    peer_finish_set_by_level,
+    room_finish_legend_correlation_v1_for_wire,
+)
 from bim_ai.schedule_derivation import derive_schedule_table
+from bim_ai.schedule_pagination_placement_evidence import (
+    build_schedule_pagination_placement_evidence_v0,
+    flatten_leaf_rows_from_schedule_table_payload,
+)
 from bim_ai.section_projection_primitives import build_section_projection_primitives
 
 SHEET_PRINT_RASTER_PLACEHOLDER_CONTRACT_V1 = "sheetPrintRasterPlaceholder_v1"
@@ -537,6 +546,12 @@ def format_plan_projection_export_segment(wire: dict[str, Any]) -> str:
         canon_f = json.dumps(fed_rows, sort_keys=True, separators=(",", ":"), default=str)
         h12 = hashlib.sha256(canon_f.encode("utf-8")).hexdigest()[:12]
         base = f"{base} woCutFed[n={len(fed_rows)} h={h12}]"
+    wjs = wire.get("wallCornerJoinSummary_v1")
+    wj_joins = wjs.get("joins") if isinstance(wjs, dict) else None
+    if isinstance(wj_joins, list) and len(wj_joins) > 0:
+        canon_j = json.dumps(wj_joins, sort_keys=True, separators=(",", ":"), default=str)
+        j12 = hashlib.sha256(canon_j.encode("utf-8")).hexdigest()[:12]
+        base = f"{base} wjSum[n={len(wj_joins)} h={j12}]"
     return base
 
 
@@ -855,6 +870,24 @@ def plan_room_programme_legend_hints_v0(doc: Document, vps_raw: list[Any]) -> li
                     row["schemeOverrideRowCount"] = soc
             except (TypeError, ValueError):
                 pass
+        prim = wire.get("primitives") or {}
+        raw_rooms = prim.get("rooms") or []
+        corr_rooms: list[RoomElem] = []
+        for rp in raw_rooms:
+            if not isinstance(rp, dict):
+                continue
+            rid = str(rp.get("id") or "").strip()
+            el = doc.elements.get(rid)
+            if isinstance(el, RoomElem):
+                corr_rooms.append(el)
+        peer_doc = peer_finish_set_by_level(
+            e for e in doc.elements.values() if isinstance(e, RoomElem)
+        )
+        row["roomFinishLegendCorrelation_v1"] = room_finish_legend_correlation_v1_for_wire(
+            legend_rows=list(legend_rows),
+            rooms=corr_rooms,
+            peer_by_level=peer_doc,
+        )
         out.append(row)
 
     return sorted(out, key=lambda r: str(r.get("viewportId") or ""))
@@ -891,18 +924,44 @@ def viewport_evidence_hints_v1(doc: Document, vps_raw: list[Any]) -> list[dict[s
         room_leg_seg = format_room_programme_legend_documentation_segment(doc, vp)
         dc_seg = format_detail_callout_documentation_segment(doc, vp, i)
 
-        hints.append(
-            {
-                "viewportId": vid,
-                "geom": geom,
-                "crop": crop,
-                "planProjectionSegment": plan_seg,
-                "sectionDocumentationSegment": sec_seg,
-                "scheduleDocumentationSegment": sch_seg,
-                "roomProgrammeLegendDocumentationSegment": room_leg_seg,
-                "detailCalloutDocumentationSegment": dc_seg,
-            }
-        )
+        sch_pag_ev: dict[str, Any] | None = None
+        if isinstance(vr, str) and vr.strip() and ":" in vr:
+            kind_vp, ref_vp = vr.split(":", 1)
+            if kind_vp.strip().lower() == "schedule":
+                sid_sched = ref_vp.strip()
+                if sid_sched:
+                    el_sch = doc.elements.get(sid_sched)
+                    if isinstance(el_sch, ScheduleElem):
+                        try:
+                            tbl_hint = derive_schedule_table(doc, sid_sched)
+                        except ValueError:
+                            tbl_hint = None
+                        if tbl_hint is not None:
+                            leaf_h = flatten_leaf_rows_from_schedule_table_payload(tbl_hint)
+                            tr_h = int(tbl_hint.get("totalRows") or 0)
+                            sch_pag_ev = build_schedule_pagination_placement_evidence_v0(
+                                doc,
+                                sid_sched,
+                                schedule_el=el_sch,
+                                leaf_rows=leaf_h,
+                                total_rows=tr_h,
+                                viewport_height_mm=h_mm,
+                                sheet_viewport_id=vid,
+                            )
+
+        row_hint: dict[str, Any] = {
+            "viewportId": vid,
+            "geom": geom,
+            "crop": crop,
+            "planProjectionSegment": plan_seg,
+            "sectionDocumentationSegment": sec_seg,
+            "scheduleDocumentationSegment": sch_seg,
+            "roomProgrammeLegendDocumentationSegment": room_leg_seg,
+            "detailCalloutDocumentationSegment": dc_seg,
+        }
+        if sch_pag_ev is not None:
+            row_hint["schedulePaginationPlacementEvidence_v0"] = sch_pag_ev
+        hints.append(row_hint)
 
     return sorted(hints, key=lambda r: str(r.get("viewportId") or ""))
 
@@ -1019,7 +1078,13 @@ def _viewport_export_correlation_segment_bytes(hint_row: dict[str, Any]) -> byte
     sch_s = str(hint_row.get("scheduleDocumentationSegment") or "")
     leg_s = str(hint_row.get("roomProgrammeLegendDocumentationSegment") or "")
     dc_s = str(hint_row.get("detailCalloutDocumentationSegment") or "")
-    return f"{crop}\n{plan_s}\n{sec_s}\n{sch_s}\n{leg_s}\n{dc_s}".encode()
+    pag = hint_row.get("schedulePaginationPlacementEvidence_v0")
+    pag_tail = ""
+    if isinstance(pag, dict):
+        d = pag.get("digestSha256")
+        if isinstance(d, str) and d.strip():
+            pag_tail = f"schPagDigest={d.strip()}"
+    return f"{crop}\n{plan_s}\n{sec_s}\n{sch_s}\n{leg_s}\n{dc_s}\n{pag_tail}".encode()
 
 
 def build_sheet_print_raster_print_contract_v3(

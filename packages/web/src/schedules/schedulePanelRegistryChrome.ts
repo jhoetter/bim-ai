@@ -37,6 +37,29 @@ export function formatSchedulePlacementReadout(placement: unknown): string | nul
   return `Sheet placement: ${sheetId}`;
 }
 
+/** Compact readout for `schedulePaginationPlacementEvidence_v0` from schedule table API. */
+export function formatSchedulePaginationPlacementReadout(ev: unknown): string | null {
+  if (typeof ev !== 'object' || ev === null) return null;
+  const o = ev as Record<string, unknown>;
+  if (String(o.format ?? '').trim() !== 'schedulePaginationPlacementEvidence_v0') return null;
+  const segs = Number(o.segmentCount ?? o.segment_count ?? 0);
+  const rows = Number(o.totalRows ?? o.total_rows ?? 0);
+  const rps = Number(o.rowsPerSegment ?? o.rows_per_segment ?? 0);
+  const clip = String(o.clipStatus ?? o.clip_status ?? '').trim();
+  const place = String(o.placementStatus ?? o.placement_status ?? '').trim();
+  const dig = String(o.digestSha256 ?? o.digest_sha256 ?? '').trim();
+  const dig12 = dig.length >= 12 ? dig.slice(0, 12) : dig;
+  const parts = [
+    `pag segs=${Number.isFinite(segs) ? segs : '—'}`,
+    `rows=${Number.isFinite(rows) ? rows : '—'}`,
+    `rps=${Number.isFinite(rps) ? rps : '—'}`,
+  ];
+  if (place) parts.push(`place=${place}`);
+  if (clip) parts.push(`clip=${clip}`);
+  if (dig12) parts.push(`h=${dig12}`);
+  return parts.join(' · ');
+}
+
 function str(v: unknown): string | undefined {
   if (v == null) return undefined;
   if (typeof v === 'string') return v;
