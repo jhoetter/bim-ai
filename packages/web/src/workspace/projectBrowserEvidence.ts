@@ -1,5 +1,6 @@
 import type { Element } from '@bim-ai/core';
 
+import { readViewportRoleFromRaw } from './sheetDetailCalloutReadout';
 import { sheetsReferencingSectionCut } from './sheetViewRef';
 
 /** Monospace subtitle token for pinned plan_view level (no new kernel fields). */
@@ -39,7 +40,18 @@ export function sheetProjectBrowserEvidenceLine(
   sheet: Extract<Element, { kind: 'sheet' }>,
 ): string {
   const tb = titleblockToken(sheet);
-  const vps = Array.isArray(sheet.viewportsMm) ? sheet.viewportsMm.length : 0;
+  const vpArr = Array.isArray(sheet.viewportsMm) ? sheet.viewportsMm : [];
+  const vps = vpArr.length;
+  let detailCallouts = 0;
+  for (const vp of vpArr) {
+    if (
+      vp &&
+      typeof vp === 'object' &&
+      readViewportRoleFromRaw(vp as Record<string, unknown>) === 'detail_callout'
+    ) {
+      detailCallouts += 1;
+    }
+  }
   const pKeys = sheet.titleblockParameters ? Object.keys(sheet.titleblockParameters).length : 0;
   const pw = sheet.paperWidthMm;
   const ph = sheet.paperHeightMm;
@@ -51,7 +63,12 @@ export function sheetProjectBrowserEvidenceLine(
     Number.isFinite(pw) &&
     Number.isFinite(ph);
   const paper = paperOk ? `${pw}×${ph}mm` : '';
-  const parts = [`titleBlock=${tb}`, `viewports=${vps}`, `tbParams=${pKeys}`];
+  const parts = [
+    `titleBlock=${tb}`,
+    `viewports=${vps}`,
+    `detailCallouts=${detailCallouts}`,
+    `tbParams=${pKeys}`,
+  ];
   if (paper) parts.push(`paper=${paper}`);
   return parts.join(' · ');
 }

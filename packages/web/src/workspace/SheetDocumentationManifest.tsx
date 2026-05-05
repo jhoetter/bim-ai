@@ -11,6 +11,7 @@ import {
 import type { SheetViewportMmDraft } from './sheetViewportAuthoring';
 import { normalizeViewportRaw, readViewportMmBox } from './sheetViewportAuthoring';
 import { parseSheetViewRef, resolveViewportTitleFromRef } from './sheetViewRef';
+import { detailCalloutUnresolvedReason } from './sheetDetailCalloutReadout';
 import { scheduleTableRendererV1SheetReadout } from '../schedules/scheduleTableRendererV1';
 
 type SheetEl = Extract<Element, { kind: 'sheet' }>;
@@ -67,6 +68,7 @@ export function SheetDocumentationManifest(props: {
         detailNumber: d.detailNumber,
         scale: d.scale,
         viewportLocked: d.viewportLocked,
+        viewportRole: d.viewportRole,
         xMm: d.xMm,
         yMm: d.yMm,
         widthMm: d.widthMm,
@@ -85,6 +87,7 @@ export function SheetDocumentationManifest(props: {
         detailNumber: n.detailNumber,
         scale: n.scale,
         viewportLocked: n.viewportLocked,
+        viewportRole: n.viewportRole,
         xMm: box.xMm,
         yMm: box.yMm,
         widthMm: box.widthMm,
@@ -195,6 +198,13 @@ export function SheetDocumentationManifest(props: {
     return raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : null;
   }, [deterministicRow]);
 
+  const detailCalloutReadoutRows = useMemo(() => {
+    if (evidence.status !== 'ready' || !deterministicRow) return [];
+    const raw = deterministicRow.detailCalloutReadout_v0;
+    if (!Array.isArray(raw)) return [];
+    return raw.filter((r) => r && typeof r === 'object') as Record<string, unknown>[];
+  }, [deterministicRow, evidence.status]);
+
   const advisorNotes = useMemo(() => {
     const notes: string[] = [];
     if (viewportRows.length > 0 && !effectiveTitleblockSymbol) {
@@ -226,6 +236,14 @@ export function SheetDocumentationManifest(props: {
       const cropEx = viewportCropExtentsMm(row.cropMinMm, row.cropMaxMm);
       if (cropEx && (cropEx.widthMm <= 0 || cropEx.heightMm <= 0)) {
         notes.push(`Viewport ${row.viewportId}: crop extents are zero or degenerate in mm space.`);
+      }
+      if (row.viewportRole === 'detail_callout') {
+        const dcReason = detailCalloutUnresolvedReason(elementsById, row.viewRef);
+        if (dcReason) {
+          notes.push(
+            `Viewport ${row.viewportId}: detail callout target is unresolved (${dcReason}).`,
+          );
+        }
       }
     }
     if (!modelId) {
@@ -326,6 +344,7 @@ export function SheetDocumentationManifest(props: {
             <thead>
               <tr className="bg-muted/30">
                 <th className="border border-border px-1 py-0.5 text-left">viewportId</th>
+                <th className="border border-border px-1 py-0.5 text-left">role</th>
                 <th className="border border-border px-1 py-0.5 text-left">label</th>
                 <th className="border border-border px-1 py-0.5 text-left">viewRef (normalized)</th>
                 <th className="border border-border px-1 py-0.5 text-left">kind</th>
@@ -343,7 +362,7 @@ export function SheetDocumentationManifest(props: {
             <tbody>
               {manifestViewportRows.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="border border-border px-1 py-0.5 text-muted">
+                  <td colSpan={12} className="border border-border px-1 py-0.5 text-muted">
                     (no viewports)
                   </td>
                 </tr>
@@ -384,6 +403,12 @@ export function SheetDocumentationManifest(props: {
                   ) {
                     hintParts.push(String(hint.roomProgrammeLegendDocumentationSegment).trim());
                   }
+                  if (
+                    hint?.detailCalloutDocumentationSegment !== undefined &&
+                    String(hint.detailCalloutDocumentationSegment).trim()
+                  ) {
+                    hintParts.push(String(hint.detailCalloutDocumentationSegment).trim());
+                  }
                   const hintLine = hintParts.join(' · ') || '—';
                   const planLeg = planLegendHintsByViewportId.get(row.viewportId);
                   const legRowsRaw = planLeg?.legendRows;
@@ -401,6 +426,7 @@ export function SheetDocumentationManifest(props: {
                   return (
                     <tr key={row.viewportId}>
                       <td className="border border-border px-1 py-0.5">{row.viewportId}</td>
+                      <td className="border border-border px-1 py-0.5">{row.viewportRole}</td>
                       <td className="border border-border px-1 py-0.5">{row.label}</td>
                       <td className="border border-border px-1 py-0.5">
                         {(parsed?.normalizedRef ?? '').trim() || row.viewRef.trim() || '—'}
@@ -476,6 +502,73 @@ export function SheetDocumentationManifest(props: {
           </table>
         </div>
       </div>
+
+      {evidence.status === 'ready' && deterministicRow ? (
+        <div className="mt-3 space-y-1 border-t border-border pt-2">
+          <div className="text-[10px] font-semibold uppercase text-muted">
+            Detail callouts (readout v0)
+          </div>
+          <div
+            className="overflow-x-auto"
+            data-testid="sheet-manifest-detail-callout-readout"
+          >
+            <table className="min-w-[1100px] border-collapse border border-border font-mono text-[10px]">
+              <thead>
+                <tr className="bg-muted/30">
+                  <th className="border border-border px-1 py-0.5 text-left">viewportId</th>
+                  <th className="border border-border px-1 py-0.5 text-left">viewportRole</th>
+                  <th className="border border-border px-1 py-0.5 text-left">parentSheetId</th>
+                  <th className="border border-border px-1 py-0.5 text-left">parentSheetName</th>
+                  <th className="border border-border px-1 py-0.5 text-left">referencedViewRefRaw</th>
+                  <th className="border border-border px-1 py-0.5 text-left">
+                    referencedViewRefNormalized
+                  </th>
+                  <th className="border border-border px-1 py-0.5 text-left">referencedTargetKind</th>
+                  <th className="border border-border px-1 py-0.5 text-left">referencedTargetId</th>
+                  <th className="border border-border px-1 py-0.5 text-left">resolvedTargetTitle</th>
+                  <th className="border border-border px-1 py-0.5 text-left">
+                    placeholderDetailNumber
+                  </th>
+                  <th className="border border-border px-1 py-0.5 text-left">
+                    placeholderDetailTitle
+                  </th>
+                  <th className="border border-border px-1 py-0.5 text-left">unresolvedReason</th>
+                </tr>
+              </thead>
+              <tbody>
+                {detailCalloutReadoutRows.length === 0 ? (
+                  <tr>
+                    <td colSpan={12} className="border border-border px-1 py-0.5 text-muted">
+                      (no detail callout viewports)
+                    </td>
+                  </tr>
+                ) : (
+                  detailCalloutReadoutRows.map((r, i) => (
+                    <tr key={`dc-readout-${String(r.viewportId ?? i)}`}>
+                      <td className="border border-border px-1 py-0.5">{String(r.viewportId ?? '')}</td>
+                      <td className="border border-border px-1 py-0.5">{String(r.viewportRole ?? '')}</td>
+                      <td className="border border-border px-1 py-0.5">{String(r.parentSheetId ?? '')}</td>
+                      <td className="border border-border px-1 py-0.5">{String(r.parentSheetName ?? '')}</td>
+                      <td className="border border-border px-1 py-0.5">{String(r.referencedViewRefRaw ?? '')}</td>
+                      <td className="border border-border px-1 py-0.5">
+                        {String(r.referencedViewRefNormalized ?? '')}
+                      </td>
+                      <td className="border border-border px-1 py-0.5">
+                        {String(r.referencedTargetKind ?? '')}
+                      </td>
+                      <td className="border border-border px-1 py-0.5">{String(r.referencedTargetId ?? '')}</td>
+                      <td className="border border-border px-1 py-0.5">{String(r.resolvedTargetTitle ?? '')}</td>
+                      <td className="border border-border px-1 py-0.5">{String(r.placeholderDetailNumber ?? '')}</td>
+                      <td className="border border-border px-1 py-0.5">{String(r.placeholderDetailTitle ?? '')}</td>
+                      <td className="border border-border px-1 py-0.5">{String(r.unresolvedReason ?? '')}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : null}
 
       <div className="mt-3 space-y-1 border-t border-border pt-2">
         <div className="text-[10px] font-semibold uppercase text-muted">

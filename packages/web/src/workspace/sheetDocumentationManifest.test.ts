@@ -54,6 +54,17 @@ describe('indexViewportEvidenceHints', () => {
     expect(String(m.get('vp-leg')?.roomProgrammeLegendDocumentationSegment)).toContain('roomLegDoc');
   });
 
+  it('indexes detail callout documentation segment', () => {
+    const m = indexViewportEvidenceHints([
+      {
+        viewportId: 'vp-dc',
+        crop: 'omit',
+        detailCalloutDocumentationSegment: 'detailCo[vp=vp-dc ref=plan:x status=ok ttl=y]',
+      },
+    ]);
+    expect(String(m.get('vp-dc')?.detailCalloutDocumentationSegment)).toContain('detailCo');
+  });
+
   it('indexes hints by viewportId', () => {
     const m = indexViewportEvidenceHints([
       { viewportId: 'vp-a', crop: 'omit', planProjectionSegment: 'planPrim[x]' },

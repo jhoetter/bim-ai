@@ -40,6 +40,7 @@ export type ViewportEvidenceHintRow = {
   sectionDocumentationSegment?: unknown;
   scheduleDocumentationSegment?: unknown;
   roomProgrammeLegendDocumentationSegment?: unknown;
+  detailCalloutDocumentationSegment?: unknown;
 };
 
 export function indexViewportEvidenceHints(

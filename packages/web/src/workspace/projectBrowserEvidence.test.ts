@@ -47,7 +47,9 @@ describe('sheetProjectBrowserEvidenceLine', () => {
       viewportsMm: [{ viewRef: 'plan:p1' }, { viewRef: 'sec:sec1' }] as unknown[],
       titleblockParameters: { SheetNumber: 'A101', DesignedBy: 'x' },
     };
-    expect(sheetProjectBrowserEvidenceLine(sheet)).toBe('titleBlock=∅ · viewports=2 · tbParams=2');
+    expect(sheetProjectBrowserEvidenceLine(sheet)).toBe(
+      'titleBlock=∅ · viewports=2 · detailCallouts=0 · tbParams=2',
+    );
   });
 
   it('truncates long title blocks and adds paper size when finite', () => {
@@ -66,6 +68,7 @@ describe('sheetProjectBrowserEvidenceLine', () => {
     expect(line.startsWith('titleBlock=')).toBe(true);
     expect(line).toContain('…');
     expect(line).toContain('viewports=0');
+    expect(line).toContain('detailCallouts=0');
     expect(line).toContain('paper=420×297mm');
   });
 });

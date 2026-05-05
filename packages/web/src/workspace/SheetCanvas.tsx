@@ -17,6 +17,10 @@ import {
 } from './sheetTitleblockAuthoring';
 import { SheetDocumentationManifest } from './SheetDocumentationManifest';
 import { parseSheetViewRef, resolveViewportTitleFromRef } from './sheetViewRef';
+import {
+  buildPlaceholderDetailTitle,
+  detailCalloutUnresolvedReason,
+} from './sheetDetailCalloutReadout';
 import { SectionViewportSvg } from './sectionViewportSvg';
 
 type SheetEl = Extract<Element, { kind: 'sheet' }>;
@@ -167,6 +171,7 @@ function SheetCanvasWithSheet(props: {
     detailNumber: string;
     scale: string;
     viewportLocked: boolean;
+    viewportRole: 'standard' | 'detail_callout';
     index: number;
   }> = authoring
     ? vpDrafts.map((d, index) => ({
@@ -180,16 +185,18 @@ function SheetCanvasWithSheet(props: {
         detailNumber: d.detailNumber,
         scale: d.scale,
         viewportLocked: d.viewportLocked,
+        viewportRole: d.viewportRole,
         index,
       }))
     : vps.map((vpRaw, index) => {
         const vp = vpRaw as Record<string, unknown>;
+        const n = normalizeViewportRaw(vp, index);
         const box = readViewportMmBox(vp);
         const viewRefRaw = vp.viewRef ?? vp.view_ref;
         const label = typeof vp.label === 'string' ? vp.label : 'Viewport';
         const meta = readViewportPresentationMeta(vp);
         return {
-          key: String(vp.viewportId ?? vp.viewport_id ?? `${box.xMm}_${box.yMm}_${index}`),
+          key: n.viewportId || String(vp.viewportId ?? vp.viewport_id ?? `${box.xMm}_${box.yMm}_${index}`),
           xMm: box.xMm,
           yMm: box.yMm,
           widthMm: box.widthMm,
@@ -199,6 +206,7 @@ function SheetCanvasWithSheet(props: {
           detailNumber: meta.detailNumber,
           scale: meta.scale,
           viewportLocked: meta.viewportLocked,
+          viewportRole: n.viewportRole,
           index,
         };
       });
@@ -352,19 +360,25 @@ function SheetCanvasWithSheet(props: {
               detailNumber,
               scale,
               viewportLocked,
+              viewportRole,
               index,
             } = row;
             const resolved = resolveViewportTitleFromRef(elementsById, viewRef);
-            const primary = resolved ?? label;
+            const detailReason = detailCalloutUnresolvedReason(elementsById, viewRef);
+            const isDetailCallout = viewportRole === 'detail_callout';
+            const primary = isDetailCallout
+              ? buildPlaceholderDetailTitle(detailNumber, resolved, detailReason)
+              : resolved ?? label;
             const sub = viewRef.trim() ? viewRef : '';
+            const parsedRef = parseSheetViewRef(viewRef);
             const secId =
-              modelId && (viewRef.startsWith('section:') || viewRef.startsWith('sec:'))
-                ? viewRef.split(':', 2)[1]?.trim()
+              modelId && parsedRef?.kind === 'section' && parsedRef.refId
+                ? parsedRef.refId
                 : '';
+
             const secInnerW = Math.max(200, widthMm - 320);
             const secInnerH = Math.max(200, heightMm - 2700);
 
-            const parsedRef = parseSheetViewRef(viewRef);
             const isScheduleVp = parsedRef?.kind === 'schedule' && Boolean(parsedRef.refId);
             const scheduleEl = isScheduleVp ? elementsById[parsedRef!.refId] : undefined;
             const scheduleResolved = scheduleEl?.kind === 'schedule';
@@ -394,6 +408,9 @@ function SheetCanvasWithSheet(props: {
             const detailTrim = detailNumber.trim();
             const scaleTrim = scale.trim();
             const canDragResize = authoring && !viewportLocked;
+            const vpStroke = isDetailCallout ? '#7c3aed' : '#475569';
+            const vpDash =
+              isDetailCallout || isScheduleVp ? '480 240' : undefined;
 
             return (
               <g key={row.key}>
@@ -404,9 +421,9 @@ function SheetCanvasWithSheet(props: {
                   width={widthMm}
                   height={heightMm}
                   fill="#ffffff"
-                  stroke="#475569"
+                  stroke={vpStroke}
                   strokeWidth={80}
-                  strokeDasharray={isScheduleVp ? '480 240' : undefined}
+                  strokeDasharray={vpDash}
                   className={canDragResize ? 'cursor-move touch-none' : undefined}
                   onPointerDown={canDragResize ? (e) => beginDrag(e, index) : undefined}
                 />
@@ -439,6 +456,16 @@ function SheetCanvasWithSheet(props: {
                       heightPx={secInnerH}
                     />
                   </svg>
+                ) : null}
+                {isDetailCallout ? (
+                  <text
+                    x={xMm + 200}
+                    y={yMm + 520}
+                    fill="#7c3aed"
+                    style={{ fontSize: '320px' }}
+                  >
+                    detail callout
+                  </text>
                 ) : null}
                 <text x={xMm + 200} y={yMm + 900} fill="#475569" style={{ fontSize: '600px' }}>
                   {primary}
