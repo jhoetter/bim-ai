@@ -259,15 +259,6 @@ export function SheetDocumentationManifest(props: {
     return rows.filter((r) => r && typeof r === 'object') as Record<string, unknown>[];
   }, [deterministicRow, evidence.status]);
 
-  const sectionOnSheetIntegrationRows = useMemo(() => {
-    if (evidence.status !== 'ready' || !deterministicRow) return [];
-    const ev = deterministicRow.sectionOnSheetIntegrationEvidence_v1;
-    if (!ev || typeof ev !== 'object') return [];
-    const rows = (ev as Record<string, unknown>).rows;
-    if (!Array.isArray(rows)) return [];
-    return rows.filter((r) => r && typeof r === 'object') as Record<string, unknown>[];
-  }, [deterministicRow, evidence.status]);
-
   const advisorNotes = useMemo(() => {
     const notes: string[] = [];
     if (viewportRows.length > 0 && !effectiveTitleblockSymbol) {
@@ -316,25 +307,6 @@ export function SheetDocumentationManifest(props: {
             `Viewport ${row.viewportId}: detail callout target is unresolved (${dcReason}).`,
           );
         }
-      }
-    }
-    for (const intRow of sectionOnSheetIntegrationRows) {
-      const vid = String(intRow.viewportId ?? '');
-      const secId = String(intRow.sectionViewId ?? '');
-      if (intRow.cutLinePresent === false) {
-        notes.push(
-          `Section viewport '${vid}' (section cut '${secId}'): cut line is degenerate — no cut-line digest (aligns with section_on_sheet_cut_line_missing).`,
-        );
-      }
-      if (String(intRow.sectionProfileToken ?? '') === 'noGeometry_v1') {
-        notes.push(
-          `Section viewport '${vid}' (section cut '${secId}'): no resolvable profile token — no roof witness, geometry extent, or level markers found (aligns with section_on_sheet_profile_token_missing).`,
-        );
-      }
-      if (!String(intRow.sheetRevIssDocCrossRef ?? '').trim()) {
-        notes.push(
-          `Section viewport '${vid}' (section cut '${secId}'): sheet revision/issue cross-reference is empty — titleblock revision metadata is absent (aligns with section_on_sheet_revision_issue_unresolved).`,
-        );
       }
     }
     for (const intRow of sectionOnSheetIntegrationRows) {
