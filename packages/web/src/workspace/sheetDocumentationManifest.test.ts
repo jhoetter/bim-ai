@@ -4,16 +4,18 @@ import {
   indexViewportEvidenceHints,
   sheetExportHrefTriple,
   viewportCropExtentsMm,
-} from './sheetDocumentationManifest';
+} from './sheetDocumentationManifestHelpers';
 
 describe('viewportCropExtentsMm', () => {
   it('returns absolute span between corners', () => {
-    expect(
-      viewportCropExtentsMm({ xMm: 1, yMm: 2 }, { xMm: 5, yMm: 10 }),
-    ).toEqual({ widthMm: 4, heightMm: 8 });
-    expect(
-      viewportCropExtentsMm({ xMm: 9, yMm: 9 }, { xMm: 1, yMm: 1 }),
-    ).toEqual({ widthMm: 8, heightMm: 8 });
+    expect(viewportCropExtentsMm({ xMm: 1, yMm: 2 }, { xMm: 5, yMm: 10 })).toEqual({
+      widthMm: 4,
+      heightMm: 8,
+    });
+    expect(viewportCropExtentsMm({ xMm: 9, yMm: 9 }, { xMm: 1, yMm: 1 })).toEqual({
+      widthMm: 8,
+      heightMm: 8,
+    });
   });
 
   it('returns null when corners missing', () => {

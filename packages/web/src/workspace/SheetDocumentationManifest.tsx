@@ -7,7 +7,7 @@ import {
   indexViewportEvidenceHints,
   sheetExportHrefTriple,
   viewportCropExtentsMm,
-} from './sheetDocumentationManifest';
+} from './sheetDocumentationManifestHelpers';
 import type { SheetViewportMmDraft } from './sheetViewportAuthoring';
 import { normalizeViewportRaw, readViewportMmBox } from './sheetViewportAuthoring';
 import { parseSheetViewRef, resolveViewportTitleFromRef } from './sheetViewRef';
@@ -121,9 +121,7 @@ export function SheetDocumentationManifest(props: {
     if (evidence.status !== 'ready') return null;
     const rows = evidence.payload.deterministicSheetEvidence;
     if (!Array.isArray(rows)) return null;
-    return (rows as Record<string, unknown>[]).find(
-      (r) => String(r.sheetId ?? '') === sheet.id,
-    );
+    return (rows as Record<string, unknown>[]).find((r) => String(r.sheetId ?? '') === sheet.id);
   }, [evidence, sheet.id]);
 
   const hintsByViewportId = useMemo(
@@ -199,7 +197,7 @@ export function SheetDocumentationManifest(props: {
   }, [
     deterministicRow,
     effectiveTitleblockSymbol,
-    evidence.message,
+    evidence.status === 'error' ? evidence.message : undefined,
     evidence.status,
     modelId,
     viewportRows,
@@ -327,7 +325,9 @@ export function SheetDocumentationManifest(props: {
                       <td className="border border-border px-1 py-0.5">
                         {(parsed?.normalizedRef ?? '').trim() || row.viewRef.trim() || '—'}
                       </td>
-                      <td className="border border-border px-1 py-0.5">{parsed?.kind ?? 'unknown'}</td>
+                      <td className="border border-border px-1 py-0.5">
+                        {parsed?.kind ?? 'unknown'}
+                      </td>
                       <td className="border border-border px-1 py-0.5 whitespace-nowrap">
                         [{row.xMm},{row.yMm}] {row.widthMm}×{row.heightMm}
                       </td>

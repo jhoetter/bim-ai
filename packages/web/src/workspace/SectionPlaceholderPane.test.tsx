@@ -4,7 +4,10 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import type { Element } from '@bim-ai/core';
 
-import { SectionPlaceholderPane, SECTION_WORKBENCH_NO_WALL_CAPTION } from './SectionPlaceholderPane';
+import {
+  SectionPlaceholderPane,
+  SECTION_WORKBENCH_NO_WALL_CAPTION,
+} from './SectionPlaceholderPane';
 import { useBimStore } from '../state/store';
 
 vi.mock('./sectionViewportSvg', () => ({
@@ -14,17 +17,21 @@ vi.mock('./sectionViewportSvg', () => ({
 }));
 
 describe('SectionPlaceholderPane', () => {
-  const containers: HTMLDivElement[] = [];
+  const rendered: Array<{ container: HTMLDivElement; root: ReturnType<typeof createRoot> }> = [];
 
   beforeAll(() => {
-    (globalThis as unknown as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+    (globalThis as unknown as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT =
+      true;
   });
 
   afterEach(() => {
-    for (const c of containers) {
-      c.remove();
+    for (const { container, root } of rendered) {
+      act(() => {
+        root.unmount();
+      });
+      container.remove();
     }
-    containers.length = 0;
+    rendered.length = 0;
     act(() => {
       useBimStore.getState().hydrateFromSnapshot({
         modelId: '',
@@ -32,15 +39,15 @@ describe('SectionPlaceholderPane', () => {
         elements: {},
         violations: [],
       });
+      useBimStore.setState({ selectedId: undefined, modelId: undefined });
     });
-    useBimStore.setState({ selectedId: undefined, modelId: undefined });
   });
 
   function renderPane(ui: ReactElement) {
     const container = document.createElement('div');
     document.body.appendChild(container);
-    containers.push(container);
     const root = createRoot(container);
+    rendered.push({ container, root });
     act(() => {
       root.render(ui);
     });
@@ -117,7 +124,9 @@ describe('SectionPlaceholderPane', () => {
         violations: [],
       });
     });
-    useBimStore.setState({ selectedId: undefined });
+    act(() => {
+      useBimStore.setState({ selectedId: undefined });
+    });
     const el = renderPane(<SectionPlaceholderPane activeLevelLabel="L1" modelId="m1" />);
     const buttons = Array.from(el.querySelectorAll('button')).filter((b) =>
       b.textContent?.includes('Cut B'),

@@ -40,7 +40,9 @@ export type ViewportEvidenceHintRow = {
   sectionDocumentationSegment?: unknown;
 };
 
-export function indexViewportEvidenceHints(hintsRaw: unknown): Map<string, ViewportEvidenceHintRow> {
+export function indexViewportEvidenceHints(
+  hintsRaw: unknown,
+): Map<string, ViewportEvidenceHintRow> {
   const m = new Map<string, ViewportEvidenceHintRow>();
   if (!Array.isArray(hintsRaw)) return m;
   for (const row of hintsRaw) {

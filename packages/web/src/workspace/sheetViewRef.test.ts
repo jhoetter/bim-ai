@@ -8,6 +8,9 @@ import {
   sheetsReferencingSectionCut,
 } from './sheetViewRef';
 
+type SheetEl = Extract<Element, { kind: 'sheet' }>;
+type SheetViewportMm = NonNullable<SheetEl['viewportsMm']>;
+
 describe('parseSheetViewRef', () => {
   it('normalizes sec: and vp: prefixes', () => {
     expect(parseSheetViewRef('sec:sc1')).toEqual({
@@ -60,14 +63,14 @@ describe('sheetsReferencingSectionCut', () => {
         kind: 'sheet',
         id: 'sh-b',
         name: 'B sheet',
-        viewportsMm: [{ viewRef: `section:${scA}` }, { viewRef: 'plan:pv1' }] as Element['viewportsMm'],
-      } as Extract<Element, { kind: 'sheet' }>,
+        viewportsMm: [{ viewRef: `section:${scA}` }, { viewRef: 'plan:pv1' }] as SheetViewportMm,
+      } as SheetEl,
       shA: {
         kind: 'sheet',
         id: 'sh-a',
         name: 'A sheet',
-        viewportsMm: [{ view_ref: `sec:${scA}` }] as unknown as Element['viewportsMm'],
-      } as Extract<Element, { kind: 'sheet' }>,
+        viewportsMm: [{ view_ref: `sec:${scA}` }] as unknown as SheetViewportMm,
+      } as SheetEl,
       [scA]: {
         kind: 'section_cut',
         id: scA,
@@ -106,8 +109,8 @@ describe('sheetsReferencingSectionCut', () => {
         kind: 'sheet',
         id: 'sh',
         name: 'S',
-        viewportsMm: [{ viewRef: 'section:other' }] as Element['viewportsMm'],
-      } as Extract<Element, { kind: 'sheet' }>,
+        viewportsMm: [{ viewRef: 'section:other' }] as SheetViewportMm,
+      } as SheetEl,
     };
     expect(sheetsReferencingSectionCut(elementsById, 'missing')).toEqual([]);
   });
