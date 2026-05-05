@@ -20,6 +20,10 @@ import {
   type BcfRoundtripEvidenceSummaryWire,
 } from './bcfRoundtripEvidenceSummaryFormat';
 import { formatStagedArtifactResolutionMode } from './formatStagedArtifactResolutionMode';
+import {
+  buildBrowserRenderingBudgetReadoutV1,
+  formatBrowserRenderingBudgetLines,
+} from './browserRenderingBudgetReadout';
 
 type JsonText = string;
 
@@ -236,6 +240,25 @@ export function AgentReviewPane() {
   };
 
   const elementsById = useBimStore((s) => s.elementsById);
+
+  const planProjectionPrimitives = useBimStore((s) => s.planProjectionPrimitives);
+  const scheduleBudgetHydration = useBimStore((s) => s.scheduleBudgetHydration);
+
+  const browserRenderingBudgetReadout = useMemo(
+    () =>
+      buildBrowserRenderingBudgetReadoutV1({
+        elementsById,
+        planProjectionPrimitives,
+        scheduleHydratedRowCount: scheduleBudgetHydration?.rowCount ?? null,
+        scheduleHydratedTab: scheduleBudgetHydration?.tab ?? null,
+      }),
+    [elementsById, planProjectionPrimitives, scheduleBudgetHydration],
+  );
+
+  const browserRenderingBudgetLines = useMemo(
+    () => formatBrowserRenderingBudgetLines(browserRenderingBudgetReadout),
+    [browserRenderingBudgetReadout],
+  );
 
   const authoredRoomStats = useMemo(() => {
     const rooms = Object.values(elementsById).filter((e) => e.kind === 'room');
@@ -937,6 +960,22 @@ export function AgentReviewPane() {
         <p className="mt-1 text-muted">
           Active model <code className="text-[10px]">{modelId ?? '—'}</code> · revision r{revision}
         </p>
+      </div>
+
+      <div
+        className="rounded border border-border bg-background/40 p-2"
+        data-testid="agent-review-browser-rendering-budget"
+      >
+        <div className="text-[10px] font-semibold text-muted">
+          Browser rendering budget (browserRenderingBudgetReadout_v1)
+        </div>
+        <ul className="mt-1 list-disc space-y-0.5 ps-4 text-[10px] text-muted">
+          {browserRenderingBudgetLines.map((ln, idx) => (
+            <li key={`br-${idx}`}>
+              <code className="whitespace-pre-wrap break-all font-mono text-[9px]">{ln}</code>
+            </li>
+          ))}
+        </ul>
       </div>
 
       <div className="rounded border border-border bg-background/40 p-2">

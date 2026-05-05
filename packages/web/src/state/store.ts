@@ -88,6 +88,8 @@ type StoreState = {
   planProjectionPrimitives: PlanProjectionPrimitivesV1Wire | null;
   /** Last plan wire legend + programme digest readout for workbench panels (Prompt-3 room scheme). */
   planRoomSchemeWireReadout: PlanRoomSchemeWireReadout | null;
+  /** Active Schedules tab row count for browser rendering budget readout (Prompt-8). */
+  scheduleBudgetHydration: { tab: string; rowCount: number } | null;
   viewerClipElevMm: number | null;
   /** Optional lower bound — clips geometry *below* this world Y (mm) for a reproducible slab cut. */
   viewerClipFloorElevMm: number | null;
@@ -136,6 +138,7 @@ type StoreState = {
   setViewerClipFloorElevMm: (mm: number | null) => void;
   setPlanProjectionPrimitives: (p: PlanProjectionPrimitivesV1Wire | null) => void;
   setPlanRoomSchemeWireReadout: (readout: PlanRoomSchemeWireReadout | null) => void;
+  setScheduleBudgetHydration: (v: { tab: string; rowCount: number } | null) => void;
   toggleViewerCategoryHidden: (semanticKind: string) => void;
   /** Apply saved 3D viewpoint clip planes + semantic category hides (WP-E02/E03). */
   applyOrbitViewpointPreset: (opts: {
@@ -1285,6 +1288,8 @@ export const useBimStore = create<StoreState>((set, get) => {
 
     planRoomSchemeWireReadout: null,
 
+    scheduleBudgetHydration: null,
+
     hydrateFromSnapshot: (snap) => {
       const elements: Record<string, Element> = {};
 
@@ -1311,6 +1316,8 @@ export const useBimStore = create<StoreState>((set, get) => {
         planProjectionPrimitives: null,
 
         planRoomSchemeWireReadout: null,
+
+        scheduleBudgetHydration: null,
 
         activePlanViewId: prevPv && elements[prevPv]?.kind === 'plan_view' ? prevPv : undefined,
         activeViewpointId: prevVp && elements[prevVp]?.kind === 'viewpoint' ? prevVp : undefined,
@@ -1350,6 +1357,8 @@ export const useBimStore = create<StoreState>((set, get) => {
         planProjectionPrimitives: null,
 
         planRoomSchemeWireReadout: null,
+
+        scheduleBudgetHydration: null,
 
         activePlanViewId: pv && merged[pv]?.kind === 'plan_view' ? pv : undefined,
         activeViewpointId: vp && merged[vp]?.kind === 'viewpoint' ? vp : undefined,
@@ -1457,6 +1466,8 @@ export const useBimStore = create<StoreState>((set, get) => {
         : set({ planProjectionPrimitives }),
 
     setPlanRoomSchemeWireReadout: (planRoomSchemeWireReadout) => set({ planRoomSchemeWireReadout }),
+
+    setScheduleBudgetHydration: (scheduleBudgetHydration) => set({ scheduleBudgetHydration }),
 
     toggleViewerCategoryHidden: (semanticKind) =>
       set(() => {
