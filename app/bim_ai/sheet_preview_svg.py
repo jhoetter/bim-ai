@@ -1443,6 +1443,155 @@ def build_sheet_print_raster_print_contract_v3(
     }
 
 
+def viewport_production_metadata_v1(
+    doc: Document,
+    vp: dict[str, Any],
+    index: int,
+    sheet_id: str,
+) -> dict[str, Any]:
+    """Production metadata for a single placed viewport (WP-E05 hardening)."""
+    vid = str(vp.get("viewportId") or vp.get("viewport_id") or "").strip()
+    if not vid:
+        vid = f"__implicit_{index}"
+
+    vr = vp.get("viewRef") or vp.get("view_ref")
+    view_type = "unknown"
+    view_name = ""
+    if isinstance(vr, str) and ":" in vr:
+        parsed = parse_sheet_view_ref(vr)
+        view_type = parsed["kind"] if parsed["kind"] != "unknown" else "unknown"
+        view_name = resolve_view_ref_title(doc, vr) or ""
+
+    x_mm, y_mm, w_mm, h_mm = read_viewport_mm_box(vp)
+
+    cmn, cmx = read_viewport_crop_min_max(vp)
+    crop_bounds_mm: dict[str, float] | None = None
+    if cmn is not None and cmx is not None:
+        crop_bounds_mm = {
+            "xMinMm": min(cmn[0], cmx[0]),
+            "yMinMm": min(cmn[1], cmx[1]),
+            "xMaxMm": max(cmn[0], cmx[0]),
+            "yMaxMm": max(cmn[1], cmx[1]),
+        }
+
+    scale_factor: float | None = None
+    is_clipped = False
+    if crop_bounds_mm is not None:
+        crop_w = crop_bounds_mm["xMaxMm"] - crop_bounds_mm["xMinMm"]
+        crop_h = crop_bounds_mm["yMaxMm"] - crop_bounds_mm["yMinMm"]
+        if crop_w > 0 and crop_h > 0:
+            scale_x = w_mm / crop_w
+            scale_y = h_mm / crop_h
+            scale_factor = round(min(scale_x, scale_y), 6)
+            is_clipped = w_mm < crop_w or h_mm < crop_h
+
+    return {
+        "format": "viewportProductionMetadata_v1",
+        "viewportId": vid,
+        "viewType": view_type,
+        "viewName": view_name,
+        "scaleFactor": scale_factor,
+        "cropBoundsMm": crop_bounds_mm,
+        "isClipped": is_clipped,
+        "sheetId": sheet_id,
+    }
+
+
+def sheetViewportProductionManifest_v1(doc: Document, sheet_id: str) -> dict[str, Any]:
+    """Ordered list of viewport production metadata for a sheet with a manifest digest."""
+    sh = pick_sheet(doc, sheet_id)
+    rows: list[dict[str, Any]] = []
+    for i, vp_any in enumerate(sh.viewports_mm or []):
+        if not isinstance(vp_any, dict):
+            continue
+        rows.append(viewport_production_metadata_v1(doc, vp_any, i, sheet_id))
+    rows.sort(key=lambda r: str(r.get("viewportId") or ""))
+
+    canon = json.dumps(rows, sort_keys=True, separators=(",", ":"), default=str)
+    digest = hashlib.sha256(canon.encode("utf-8")).hexdigest()
+    return {
+        "format": "sheetViewportProductionManifest_v1",
+        "sheetId": sheet_id,
+        "viewportCount": len(rows),
+        "viewports": rows,
+        "manifestDigestSha256": digest,
+    }
+
+
+def sheetExportSegmentCompleteness_v1(doc: Document, sheet_id: str) -> dict[str, Any]:
+    """Per-viewport export segment completeness for a sheet (WP-E06 hardening)."""
+    sh = pick_sheet(doc, sheet_id)
+    rows: list[dict[str, Any]] = []
+    advisor_entries: list[dict[str, Any]] = []
+
+    for i, vp_any in enumerate(sh.viewports_mm or []):
+        if not isinstance(vp_any, dict):
+            continue
+        vp = vp_any
+        vid = str(vp.get("viewportId") or vp.get("viewport_id") or "").strip()
+        if not vid:
+            vid = f"__implicit_{i}"
+
+        vr = vp.get("viewRef") or vp.get("view_ref")
+        segment_tokens: list[str] = []
+        missing_tokens: list[str] = []
+
+        if isinstance(vr, str) and ":" in vr:
+            kind_raw, _ref_raw = vr.split(":", 1)
+            kind = kind_raw.strip().lower()
+
+            if kind == "plan":
+                seg = format_sheet_plan_viewport_projection_segment(doc, vp)
+                if seg:
+                    segment_tokens.append("planPrim")
+                else:
+                    missing_tokens.append("planPrim")
+            elif kind in {"section", "sec"}:
+                seg = format_section_viewport_documentation_segment(doc, str(vr))
+                if seg:
+                    segment_tokens.append("secDoc")
+                else:
+                    missing_tokens.append("secDoc")
+            elif kind == "schedule":
+                seg = format_schedule_viewport_documentation_segment(doc, str(vr))
+                if seg:
+                    segment_tokens.append("schDoc")
+                else:
+                    missing_tokens.append("schDoc")
+
+        if read_viewport_role(vp) == "detail_callout":
+            dc_seg = format_detail_callout_documentation_segment(doc, vp, i)
+            if dc_seg:
+                segment_tokens.append("detailCo")
+            else:
+                missing_tokens.append("detailCo")
+
+        rows.append({"viewportId": vid, "segmentTokens": segment_tokens, "missingTokens": missing_tokens})
+        for mt in missing_tokens:
+            advisor_entries.append({
+                "severity": "info",
+                "viewportId": vid,
+                "missingSegmentToken": mt,
+                "message": f"Viewport {vid!r} is missing export segment token '{mt}'",
+            })
+
+    rows.sort(key=lambda r: str(r.get("viewportId") or ""))
+
+    vp_count = len(rows)
+    complete_count = sum(1 for r in rows if not r["missingTokens"])
+    completeness_pct = round(100.0 * complete_count / vp_count, 1) if vp_count > 0 else 100.0
+
+    return {
+        "format": "sheetExportSegmentCompleteness_v1",
+        "sheetId": sheet_id,
+        "viewportCount": vp_count,
+        "completeViewportCount": complete_count,
+        "completenessPercent": completeness_pct,
+        "viewports": rows,
+        "advisorEntries": advisor_entries,
+    }
+
+
 def validate_sheet_print_raster_print_contract_v3(
     contract: dict[str, Any],
     png_bytes: bytes,

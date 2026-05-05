@@ -7,6 +7,17 @@ from typing import Any
 
 from bim_ai.elements import SheetElem
 
+_TITLEBLOCK_EXPECTED_FIELDS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("projectName", ("projectName", "project")),
+    ("projectNumber", ("projectNumber",)),
+    ("sheetName", ("sheetName",)),
+    ("sheetNumber", ("sheetNumber", "sheetNo")),
+    ("drawnBy", ("drawnBy",)),
+    ("checkedBy", ("checkedBy",)),
+    ("date", ("issueDate", "date")),
+    ("revision", ("revisionCode", "revision")),
+)
+
 SHEET_TITLEBLOCK_REVISION_ISSUE_MANIFEST_V1 = "sheetTitleblockRevisionIssueManifest_v1"
 
 
@@ -99,6 +110,39 @@ def build_sheet_titleblock_revision_issue_manifest_v1(sh: SheetElem) -> dict[str
         "revisionDescriptionDigestPrefix8": d8,
         "titleblockDisplaySegment": format_sheet_rev_iss_titleblock_display_segment_v1(norm),
         "exportListingSegment": format_sheet_rev_iss_export_listing_segment_v1(norm),
+    }
+
+
+def titleblockFieldCompleteness_v1(sh: SheetElem) -> dict[str, Any]:
+    """Expected vs populated titleblock fields with coverage percentage (WP-E05 hardening)."""
+    tb = sh.titleblock_parameters or {}
+    fields: list[dict[str, Any]] = []
+
+    for field_name, keys in _TITLEBLOCK_EXPECTED_FIELDS:
+        value = ""
+        if field_name == "sheetName":
+            value = (sh.name or "").strip()
+        else:
+            for k in keys:
+                v = tb.get(k)
+                if v is not None:
+                    s = str(v).strip()
+                    if s:
+                        value = s
+                        break
+        fields.append({"field": field_name, "populated": bool(value), "value": value})
+
+    total = len(fields)
+    populated = sum(1 for f in fields if f["populated"])
+    coverage_pct = round(100.0 * populated / total, 1) if total > 0 else 0.0
+
+    return {
+        "format": "titleblockFieldCompleteness_v1",
+        "sheetId": sh.id,
+        "fields": fields,
+        "populatedCount": populated,
+        "totalCount": total,
+        "coveragePercent": coverage_pct,
     }
 
 

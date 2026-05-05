@@ -68,6 +68,7 @@ from bim_ai.evidence_manifest import (
     merge_committed_png_fixture_baselines_into_evidence_closure_review_v1,
     merge_server_png_byte_ingest_into_evidence_closure_review_v1,
     plan_view_wire_index,
+    sheetProductionEvidenceBaseline_v1,
 )
 from bim_ai.export_gltf import build_visual_export_manifest, document_to_glb_bytes, document_to_gltf
 from bim_ai.export_ifc import export_ifc_model_step
@@ -81,7 +82,10 @@ from bim_ai.plan_projection_wire import (
     section_cut_projection_wire,
 )
 from bim_ai.prd_blocking_advisor_matrix import build_prd_blocking_advisor_matrix
-from bim_ai.room_color_scheme_override_evidence import build_room_color_scheme_override_evidence_v1
+from bim_ai.room_color_scheme_override_evidence import (
+    build_room_color_scheme_override_evidence_v1,
+    roomColourSchemeLegendEvidence_v1,
+)
 from bim_ai.room_derivation_preview import (
     room_derivation_candidates_review,
     room_derivation_preview,
@@ -388,6 +392,12 @@ async def evidence_package(
         fallback_level_id=fl0,
         global_plan_presentation="default",
     )
+    payload["advisorSeveritySummary_v1"] = {
+        "format": "advisorSeveritySummary_v1",
+        "error": sum(1 for x in viols if x.get("severity") == "error"),
+        "warning": sum(1 for x in viols if x.get("severity") == "warning"),
+        "info": sum(1 for x in viols if x.get("severity") == "info"),
+    }
     payload["semanticDigestSha256"] = evidence_package_semantic_digest_sha256(payload)
     digest = str(payload["semanticDigestSha256"])
     payload["semanticDigestPrefix16"] = digest[:16]
@@ -530,6 +540,8 @@ async def evidence_package(
         None,
     )
     payload["roomColorSchemeOverrideEvidence_v1"] = build_room_color_scheme_override_evidence_v1(scheme_elem)
+    payload["roomColourSchemeLegendEvidence_v1"] = roomColourSchemeLegendEvidence_v1(doc)
+    payload["sheetProductionBaseline_v1"] = sheetProductionEvidenceBaseline_v1(doc)
     payload["evidencePackageDigestInvariants_v1"] = evidence_package_digest_invariants_v1(payload)
     return payload
 

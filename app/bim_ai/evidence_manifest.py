@@ -43,10 +43,14 @@ from bim_ai.sheet_preview_svg import (
     sheet_print_raster_print_surrogate_png_bytes_v2,
     sheet_svg_utf8_sha256,
     sheet_viewport_export_listing_lines,
+    sheetExportSegmentCompleteness_v1,
+    sheetViewportProductionManifest_v1,
     viewport_evidence_hints_v1,
 )
 from bim_ai.sheet_titleblock_revision_issue_v1 import (
     build_sheet_titleblock_revision_issue_manifest_v1,
+    normalize_titleblock_revision_issue_v1,
+    titleblockFieldCompleteness_v1,
 )
 
 PLAYWRIGHT_EVIDENCE_SCREENSHOTS_ROOT_HINT = (
@@ -2111,6 +2115,45 @@ def evidence_agent_follow_through_v1(
     }
 
 
+def sheetProductionEvidenceBaseline_v1(doc: Document) -> dict[str, Any]:
+    """Per-sheet production baseline: viewport count, segment completeness %, titleblock coverage %, manifest digest."""
+    sheets = sorted(
+        (e for e in doc.elements.values() if isinstance(e, SheetElem)),
+        key=lambda s: s.id,
+    )
+    rows: list[dict[str, Any]] = []
+    for sh in sheets:
+        vp_count = sum(1 for vp in (sh.viewports_mm or []) if isinstance(vp, dict))
+
+        seg_comp = sheetExportSegmentCompleteness_v1(doc, sh.id)
+        seg_pct = float(seg_comp.get("completenessPercent", 100.0))
+
+        tb_comp = titleblockFieldCompleteness_v1(sh)
+        tb_pct = float(tb_comp.get("coveragePercent", 0.0))
+
+        norm = normalize_titleblock_revision_issue_v1(sh.titleblock_parameters)
+        rev_iss_count = sum(1 for v in norm.values() if v)
+
+        manifest = sheetViewportProductionManifest_v1(doc, sh.id)
+        manifest_digest = str(manifest.get("manifestDigestSha256") or "")
+
+        rows.append({
+            "sheetId": sh.id,
+            "sheetName": sh.name or sh.id,
+            "viewportCount": vp_count,
+            "segmentCompletenessPercent": seg_pct,
+            "titleblockCoveragePercent": tb_pct,
+            "revisionIssueFieldCount": rev_iss_count,
+            "manifestDigestSha256": manifest_digest,
+        })
+
+    return {
+        "format": "sheetProductionEvidenceBaseline_v1",
+        "sheetCount": len(rows),
+        "sheets": rows,
+    }
+
+
 # Derivative summaries from ``agent_evidence_review_loop`` — omit so deterministic-row digests stay stable.
 # Public alias so CI gates and tests can enumerate and document the exclusion set.
 DIGEST_EXCLUDED_KEYS: frozenset[str] = frozenset(
@@ -2356,6 +2399,8 @@ DIGEST_INCLUDED_KEYS: frozenset[str] = frozenset(
         "agentEvidenceClosureHints",
         "agentBriefCommandProtocol_v1",
         "roomColorSchemeOverrideEvidence_v1",
+        "roomColourSchemeLegendEvidence_v1",
+        "sheetProductionBaseline_v1",
     }
 )
 
