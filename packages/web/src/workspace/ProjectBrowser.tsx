@@ -7,6 +7,14 @@ import {
   planViewProjectBrowserEvidenceLine,
   viewpointOrbit3dEvidenceLine,
 } from '../plan/planProjection';
+import {
+  planLevelEvidenceToken,
+  scheduleProjectBrowserEvidenceLine,
+  sectionCutBrowserTooltipTitle,
+  sectionCutProjectBrowserEvidenceLine,
+  sheetProjectBrowserEvidenceLine,
+  siteProjectBrowserEvidenceLine,
+} from './projectBrowserEvidence';
 import { useBimStore } from '../state/store';
 
 function newDupPlanViewId(prefix: string) {
@@ -49,6 +57,7 @@ function planViewTooltip(
   elementsById: Record<string, Element>,
 ): string {
   const parts = [`plan_view (${pv.name})`];
+  parts.push(planLevelEvidenceToken(elementsById, pv.levelId));
   parts.push(`discipline: ${pv.discipline ?? 'architecture'}`);
   const tid = pv.viewTemplateId;
   if (tid) {
@@ -57,18 +66,6 @@ function planViewTooltip(
   }
   parts.push(planViewProjectBrowserEvidenceLine(elementsById, pv.id));
   return parts.join(' · ');
-}
-
-function siteProjectBrowserEvidenceLine(
-  elementsById: Record<string, Element>,
-  site: Extract<Element, { kind: 'site' }>,
-): string {
-  const n = site.boundaryMm?.length ?? 0;
-  const ctxCount = site.contextObjects?.length ?? 0;
-  const lid = site.referenceLevelId;
-  const l = elementsById[lid];
-  const lvl = l?.kind === 'level' ? l.name : lid;
-  return `boundaryVerts=${n} · context=${ctxCount} · refLevel=${lvl}`;
 }
 
 /** Lightweight project-browser band: plan views grouped separately from mixed explorer. */
@@ -245,28 +242,6 @@ export function ProjectBrowser(props: {
   return (
     <div className="space-y-2 text-[11px]">
       <div className="font-semibold text-muted">Project browser</div>
-      {sites.length ? (
-        <div className="space-y-1">
-          <div className="text-[10px] uppercase tracking-wide text-muted">Sites</div>
-          <ul className="space-y-0.5">
-            {sites.map((st) => (
-              <li key={st.id} className="flex flex-col gap-0.5">
-                <button
-                  type="button"
-                  className="w-full px-2 py-0.5 text-left text-[10px]"
-                  title="Select site in explorer / inspector"
-                  onClick={() => useBimStore.getState().select(st.id)}
-                >
-                  <span className="text-muted">site ·</span> {st.name}
-                </button>
-                <div className="pl-2 font-mono text-[9px] leading-tight text-muted">
-                  {siteProjectBrowserEvidenceLine(props.elementsById, st)}
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
       {planViewsSorted.length ? (
         <div className="space-y-1">
           <div className="text-[10px] uppercase tracking-wide text-muted">Floor plans</div>
@@ -294,6 +269,7 @@ export function ProjectBrowser(props: {
                         className="pl-2 font-mono text-[9px] leading-tight text-muted"
                         data-bim-plan-view-evidence={pv.id}
                       >
+                        {planLevelEvidenceToken(props.elementsById, pv.levelId)} ·{' '}
                         {planViewProjectBrowserEvidenceLine(props.elementsById, pv.id)}
                       </div>
                       {props.onUpsertSemantic ? (
@@ -338,20 +314,82 @@ export function ProjectBrowser(props: {
         </div>
       ) : null}
 
+      {sheets.length ? (
+        <div className="space-y-1">
+          <div className="text-[10px] uppercase tracking-wide text-muted">Sheets</div>
+          <ul className="space-y-0.5">
+            {sheets.map((sh) => (
+              <li key={sh.id} className="flex flex-col gap-0.5">
+                <Btn
+                  type="button"
+                  variant="quiet"
+                  className="w-full px-2 py-0.5 text-left text-[10px]"
+                  title={`Select sheet (${sh.name}) in explorer / inspector`}
+                  onClick={() => useBimStore.getState().select(sh.id)}
+                >
+                  <span className="text-muted">sheet ·</span> {sh.name}
+                </Btn>
+                <div
+                  className="pl-2 font-mono text-[9px] leading-tight text-muted"
+                  data-bim-sheet-evidence={sh.id}
+                >
+                  {sheetProjectBrowserEvidenceLine(sh)}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {schedules.length ? (
+        <div className="space-y-1">
+          <div className="text-[10px] uppercase tracking-wide text-muted">Schedules</div>
+          <ul className="space-y-0.5">
+            {schedules.map((schRow) => (
+              <li key={schRow.id} className="flex flex-col gap-0.5">
+                <Btn
+                  type="button"
+                  variant="quiet"
+                  className="w-full px-2 py-0.5 text-left text-[10px]"
+                  title={`Select schedule (${schRow.name}) in explorer / inspector`}
+                  onClick={() => useBimStore.getState().select(schRow.id)}
+                >
+                  <span className="text-muted">schedule ·</span> {schRow.name}
+                </Btn>
+                <div
+                  className="pl-2 font-mono text-[9px] leading-tight text-muted"
+                  data-bim-schedule-evidence={schRow.id}
+                >
+                  {scheduleProjectBrowserEvidenceLine(props.elementsById, schRow)}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
       {sectionCuts.length ? (
         <div className="space-y-1">
-          <div className="text-[10px] uppercase tracking-wide text-muted">Section cuts</div>
+          <div className="text-[10px] uppercase tracking-wide text-muted">
+            Sections & elevations
+          </div>
           <ul className="space-y-0.5">
             {sectionCuts.map((sc) => (
-              <li key={sc.id}>
+              <li key={sc.id} className="flex flex-col gap-0.5">
                 <button
                   type="button"
-                  className="w-full px-2 py-0.5 text-left font-mono text-[10px] text-muted underline"
-                  title="Inspect in explorer"
+                  className="w-full px-2 py-0.5 text-left text-[10px] underline decoration-muted underline-offset-2"
+                  title={sectionCutBrowserTooltipTitle(props.elementsById, sc)}
                   onClick={() => useBimStore.getState().select(sc.id)}
                 >
-                  section_cut · {sc.name}
+                  <span className="text-muted">section_cut ·</span> {sc.name}
                 </button>
+                <div
+                  className="pl-2 font-mono text-[9px] leading-tight text-muted"
+                  data-bim-section-evidence={sc.id}
+                >
+                  {sectionCutProjectBrowserEvidenceLine(props.elementsById, sc)}
+                </div>
               </li>
             ))}
           </ul>
@@ -362,8 +400,8 @@ export function ProjectBrowser(props: {
         <div className="space-y-1">
           <div className="text-[10px] uppercase tracking-wide text-muted">3D saved views</div>
           <p className="pl-0.5 text-[9px] leading-snug text-muted">
-            Each row summarizes persisted clip/cutaway on the saved <span className="font-mono">viewpoint</span>{' '}
-            element—activate to mirror in 3D and read the viewport HUD.
+            Rows show persisted clip/cutaway on <span className="font-mono">viewpoint</span> —
+            activate to mirror in 3D.
           </p>
           <ul className="space-y-0.5">
             {viewpoints3d.map((vp) => (
@@ -413,42 +451,23 @@ export function ProjectBrowser(props: {
         </div>
       ) : null}
 
-      {schedules.length ? (
+      {sites.length ? (
         <div className="space-y-1">
-          <div className="text-[10px] uppercase tracking-wide text-muted">Schedules (refs)</div>
-          <ul className="font-mono text-[10px] text-muted">
-            {schedules.map((s) => (
-              <li key={s.id}>
-                · {s.name}{' '}
+          <div className="text-[10px] uppercase tracking-wide text-muted">Sites</div>
+          <ul className="space-y-0.5">
+            {sites.map((st) => (
+              <li key={st.id} className="flex flex-col gap-0.5">
                 <button
                   type="button"
-                  className="underline"
-                  title="Inspect in explorer"
-                  onClick={() => useBimStore.getState().select(s.id)}
+                  className="w-full px-2 py-0.5 text-left text-[10px]"
+                  title="Select site in explorer / inspector"
+                  onClick={() => useBimStore.getState().select(st.id)}
                 >
-                  [{s.id}]
+                  <span className="text-muted">site ·</span> {st.name}
                 </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
-
-      {sheets.length ? (
-        <div className="space-y-1">
-          <div className="text-[10px] uppercase tracking-wide text-muted">Sheets</div>
-          <ul className="font-mono text-[10px] text-muted">
-            {sheets.map((s) => (
-              <li key={s.id}>
-                sheet ·{' '}
-                <button
-                  type="button"
-                  className="underline"
-                  title="Inspect in explorer"
-                  onClick={() => useBimStore.getState().select(s.id)}
-                >
-                  {s.name}
-                </button>
+                <div className="pl-2 font-mono text-[9px] leading-tight text-muted">
+                  {siteProjectBrowserEvidenceLine(props.elementsById, st)}
+                </div>
               </li>
             ))}
           </ul>
