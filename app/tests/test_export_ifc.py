@@ -10,6 +10,7 @@ from bim_ai.document import Document
 from bim_ai.elements import (
     DoorElem,
     FloorElem,
+    FloorTypeElem,
     LevelElem,
     RoofElem,
     RoomElem,
@@ -18,6 +19,7 @@ from bim_ai.elements import (
     StairElem,
     Vec2Mm,
     WallElem,
+    WallTypeLayer,
     WindowElem,
 )
 from bim_ai.engine import try_apply_kernel_ifc_authoritative_replay_v0
@@ -905,6 +907,7 @@ def test_ifc_authoritative_replay_v0_space_outline_and_ids_map() -> None:
     ids_map = sketch["idsAuthoritativeReplayMap_v0"]
     assert ids_map["schemaVersion"] == 0
     assert ids_map.get("roofs") == []
+    assert len(ids_map.get("floors") or []) == 1
     assert len(ids_map["spaces"]) == 1
     row = ids_map["spaces"][0]
     assert row["identityReference"] == "rm-1"
@@ -1099,6 +1102,110 @@ def test_ifc_authoritative_replay_v0_slab_floor_and_opening_roundtrip() -> None:
     assert ok is True and code == "ok" and new_doc is not None
     assert "fl-1" in new_doc.elements and "so-1" in new_doc.elements
     assert not viols or not any(v.blocking or v.severity == "error" for v in viols)
+
+
+def test_ifc_authoritative_replay_v0_typed_floor_ids_map_floor_type_id_command() -> None:
+    doc = Document(
+        revision=530,
+        elements={
+            "l0": LevelElem(kind="level", id="l0", name="G", elevationMm=0),
+            "ft-1": FloorTypeElem(
+                kind="floor_type",
+                id="ft-1",
+                name="Concrete 220",
+                layers=[WallTypeLayer(thicknessMm=220, function="structure", materialKey=None)],
+            ),
+            "fl-t": FloorElem(
+                kind="floor",
+                id="fl-t",
+                name="typed",
+                levelId="l0",
+                floorTypeId="ft-1",
+                boundaryMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 4000, "yMm": 0},
+                    {"xMm": 4000, "yMm": 3000},
+                    {"xMm": 0, "yMm": 3000},
+                ],
+                thicknessMm=220,
+            ),
+        },
+    )
+    step = export_ifc_model_step(doc)
+    sketch = build_kernel_ifc_authoritative_replay_sketch_v0(step)
+    assert sketch["available"] is True
+    ids_map = sketch["idsAuthoritativeReplayMap_v0"]
+    floors = ids_map.get("floors") or []
+    assert len(floors) == 1
+    assert floors[0]["identityReference"] == "fl-t"
+    assert floors[0]["floorTypeIdentityReference"] == "ft-1"
+    assert floors[0]["qtoSlabBaseQuantitiesLinked"] is True
+
+    floor_cmds = [c for c in sketch["commands"] if c["type"] == "createFloor"]
+    assert len(floor_cmds) == 1
+    assert floor_cmds[0]["id"] == "fl-t"
+    assert floor_cmds[0]["floorTypeId"] == "ft-1"
+
+    tf_ev = sketch.get("typedFloorAuthoritativeReplayEvidence_v0") or {}
+    assert tf_ev.get("schemaVersion") == 0
+    assert tf_ev.get("createFloorReplayCommandCount") == 1
+    assert tf_ev.get("idsFloorRowsCount") == 1
+
+
+def test_ifc_authoritative_replay_v0_typed_floor_preflight_floor_type_must_exist() -> None:
+    doc = Document(
+        revision=531,
+        elements={
+            "l0": LevelElem(kind="level", id="l0", name="G", elevationMm=0),
+            "ft-1": FloorTypeElem(
+                kind="floor_type",
+                id="ft-1",
+                name="Concrete 220",
+                layers=[WallTypeLayer(thicknessMm=220, function="structure", materialKey=None)],
+            ),
+            "fl-t": FloorElem(
+                kind="floor",
+                id="fl-t",
+                name="typed",
+                levelId="l0",
+                floorTypeId="ft-1",
+                boundaryMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 3500, "yMm": 0},
+                    {"xMm": 3500, "yMm": 2500},
+                    {"xMm": 0, "yMm": 2500},
+                ],
+                thicknessMm=220,
+            ),
+        },
+    )
+    step = export_ifc_model_step(doc)
+    sketch = build_kernel_ifc_authoritative_replay_sketch_v0(step)
+    assert sketch["available"] is True
+    assert any(
+        c.get("type") == "createFloor" and c.get("floorTypeId") == "ft-1" for c in sketch["commands"]
+    )
+
+    empty = Document(revision=0, elements={})
+    ok, _nd, _c, _v, code = try_apply_kernel_ifc_authoritative_replay_v0(empty, sketch)
+    assert ok is False and code == "merge_reference_unresolved"
+
+    seeded = Document(
+        revision=3,
+        elements={
+            "ft-1": FloorTypeElem(
+                kind="floor_type",
+                id="ft-1",
+                name="Concrete 220",
+                layers=[WallTypeLayer(thicknessMm=220, function="structure", materialKey=None)],
+            ),
+        },
+    )
+    ok2, new_doc, _c2, _v2, code2 = try_apply_kernel_ifc_authoritative_replay_v0(seeded, sketch)
+    assert ok2 is True and code2 == "ok" and new_doc is not None
+    fl_applied = new_doc.elements.get("fl-t")
+    assert isinstance(fl_applied, FloorElem)
+    assert fl_applied.floor_type_id == "ft-1"
 
 
 def _replay_stair_assign_extrusion_depth_mm(product: Any, depth_mm: float) -> None:
@@ -1382,6 +1489,7 @@ def test_ifc_authoritative_replay_v0_roof_roundtrip_and_apply() -> None:
 
     ids_map = sketch["idsAuthoritativeReplayMap_v0"]
     assert len(ids_map["roofs"]) == 1
+    assert ids_map.get("floors") == []
     assert ids_map["roofs"][0]["identityReference"] == "rf-1"
 
     typ_order = [c["type"] for c in sketch["commands"]]

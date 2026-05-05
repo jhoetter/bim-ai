@@ -1094,6 +1094,61 @@ def _replay_level_ids_matching_elevation_mm(
     return sorted(matched)
 
 
+_AUTHORITATIVE_REPLAY_SLAB_PREDEFINED_ALLOWED_V0: frozenset[str] = frozenset(
+    {"", "FLOOR", "BASESLAB", "NOTDEFINED", "USERDEFINED"}
+)
+
+
+def _ifc_slab_predefined_type_token_v0(slab: Any) -> str:
+    """Upper token for IfcSlab ``PredefinedType`` (empty when unset / readable)."""
+
+    try:
+        import ifcopenshell.util.element as ieu
+
+        raw = ieu.get_predefined_type(slab)
+    except Exception:
+        raw = getattr(slab, "PredefinedType", None)
+    if raw is None:
+        return ""
+    s = str(raw).strip()
+    if not s:
+        return ""
+    if "." in s:
+        s = s.split(".")[-1]
+    return s.upper().replace(" ", "")
+
+
+def _ifc_slab_type_identity_reference_v0(slab: Any) -> str | None:
+    """``Pset_SlabCommon.Reference`` on related IfcSlabType, when present."""
+
+    if ifc_elem_util is None:
+        return None
+    try:
+        import ifcopenshell.util.element as ieu
+
+        st = ieu.get_type(slab)
+    except Exception:
+        st = None
+    if st is None:
+        return None
+    try:
+        ps = ifc_elem_util.get_psets(st)
+        bucket = ps.get("Pset_SlabCommon") or {}
+        ref = bucket.get("Reference")
+        s = ref.strip() if isinstance(ref, str) else ""
+        return s or None
+    except Exception:
+        return None
+
+
+def _slab_gap_reason_counts_v0(gaps: list[dict[str, Any]]) -> dict[str, int]:
+    ctr: Counter[str] = Counter()
+    for row in gaps:
+        if row.get("slabGlobalId"):
+            ctr[str(row.get("reason") or "unknown")] += 1
+    return dict(sorted(ctr.items()))
+
+
 def _sort_authoritative_replay_extraction_gaps_v0(gaps: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Stable ordering for replay skip / gap rows (reason, then GlobalId-bearing keys)."""
 
@@ -1186,10 +1241,14 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
     extraction_gaps: list[dict[str, Any]] = []
 
     floor_cmds: list[dict[str, Any]] = []
+    ids_floor_rows: list[dict[str, Any]] = []
     slab_global_id_to_kernel_ref: dict[str, str] = {}
     slabs_skipped_no_reference = 0
 
-    for slab in sorted(model.by_type("IfcSlab") or [], key=lambda s: str(getattr(s, "GlobalId", None) or "")):
+    all_slabs_seq = list(model.by_type("IfcSlab") or [])
+    slab_ifc_product_count_v0 = len(all_slabs_seq)
+
+    for slab in sorted(all_slabs_seq, key=lambda s: str(getattr(s, "GlobalId", None) or "")):
         ps_sl = ifc_elem_util.get_psets(slab)
         bucket_sl = ps_sl.get("Pset_SlabCommon") or {}
         ref_sl = bucket_sl.get("Reference")
@@ -1197,6 +1256,23 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
         if not ref_s:
             slabs_skipped_no_reference += 1
             continue
+
+        ptok = _ifc_slab_predefined_type_token_v0(slab)
+        if ptok not in _AUTHORITATIVE_REPLAY_SLAB_PREDEFINED_ALLOWED_V0:
+            extraction_gaps.append(
+                {
+                    "slabGlobalId": str(getattr(slab, "GlobalId", None) or ""),
+                    "kernelReference": ref_s,
+                    "reason": "unsupported_slab_predefined_type",
+                    "slabPredefinedType": ptok,
+                }
+            )
+            continue
+
+        type_ref_raw = _ifc_slab_type_identity_reference_v0(slab)
+        floor_type_for_cmd: str | None = (
+            type_ref_raw if (type_ref_raw is not None and type_ref_raw.strip() != ref_s) else None
+        )
 
         st_gid_sl = _product_host_storey_global_id(slab)
         if not st_gid_sl or st_gid_sl not in storey_gid_to_level_id:
@@ -1228,13 +1304,25 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
                 level_id=storey_gid_to_level_id[st_gid_sl],
                 boundary_mm=[Vec2Mm(x_mm=px, y_mm=py) for px, py in outline_sl],
                 thickness_mm=thick_mm,
-            ).model_dump(mode="json", by_alias=True)
+                floor_type_id=floor_type_for_cmd,
+            ).model_dump(mode="json", by_alias=True, exclude_none=True)
         )
         sgid = str(getattr(slab, "GlobalId", None) or "")
         if sgid:
             slab_global_id_to_kernel_ref[sgid] = ref_s
+        ids_floor_rows.append(
+            {
+                "ifcGlobalId": sgid,
+                "identityReference": ref_s,
+                "floorTypeIdentityReference": type_ref_raw,
+                "qtoSlabBaseQuantitiesLinked": _ifc_product_defines_qto_template(
+                    slab, "Qto_SlabBaseQuantities"
+                ),
+            }
+        )
 
     floor_cmds.sort(key=lambda c: str(c.get("id") or ""))
+    ids_floor_rows.sort(key=lambda r: (r["identityReference"], r["ifcGlobalId"]))
 
     wall_cmds: list[dict[str, Any]] = []
     wall_global_id_to_kernel_ref: dict[str, str] = {}
@@ -1605,6 +1693,21 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
 
     extraction_gaps = _sort_authoritative_replay_extraction_gaps_v0(extraction_gaps)
 
+    slab_gap_ctr = _slab_gap_reason_counts_v0(extraction_gaps)
+    typed_floor_skip_ctr: dict[str, int] = {
+        "slab_missing_pset_reference_v0": int(slabs_skipped_no_reference),
+    }
+    for reason, n in slab_gap_ctr.items():
+        typed_floor_skip_ctr[f"slab_gap:{reason}"] = int(n)
+
+    typed_floor_authoritative_replay_evidence_v0: dict[str, Any] = {
+        "schemaVersion": 0,
+        "slabIfcProductCount": slab_ifc_product_count_v0,
+        "createFloorReplayCommandCount": len(floor_cmds),
+        "idsFloorRowsCount": len(ids_floor_rows),
+        "skipCountersByReason": dict(sorted(typed_floor_skip_ctr.items())),
+    }
+
     merged_cmds = (
         level_cmds
         + floor_cmds
@@ -1636,16 +1739,20 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
         "kernelStairSkippedNoReference": stairs_skipped_no_reference,
         "kernelRoofSkippedNoReference": roofs_skipped_no_reference,
         "slabRoofHostedVoidReplaySkipped_v0": slab_roof_hosted_void_skip_v0,
+        "typedFloorAuthoritativeReplayEvidence_v0": typed_floor_authoritative_replay_evidence_v0,
         "idsAuthoritativeReplayMap_v0": {
             "schemaVersion": 0,
             "note": (
                 "Per-product linkage for cleanroom IDS read-back vs authoritative replay rows: IfcSpace rows carry "
-                "programme + Qto_SpaceBaseQuantities; IfcRoof rows carry identity Reference only (no roof QTO slice). "
-                "Space identity Reference aligns with exchange_ifc_ids_identity_pset_gap; "
-                "qtoSpaceBaseQuantitiesLinked aligns with exchange_ifc_ids_qto_gap."
+                "programme + Qto_SpaceBaseQuantities; IfcRoof rows carry identity Reference only (no roof QTO slice); "
+                "IfcSlab / typed floor rows carry instance Reference + optional IfcSlabType Reference + "
+                "Qto_SlabBaseQuantities linkage flag. Space identity Reference aligns with "
+                "exchange_ifc_ids_identity_pset_gap; qtoSpaceBaseQuantitiesLinked aligns with "
+                "exchange_ifc_ids_qto_gap."
             ),
             "spaces": ids_space_rows,
             "roofs": ids_roof_rows,
+            "floors": ids_floor_rows,
         },
         "commands": merged_cmds,
         "extractionGaps": extraction_gaps,
@@ -1956,6 +2063,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
     import ifcopenshell.api.project
     import ifcopenshell.api.root
     import ifcopenshell.api.spatial
+    import ifcopenshell.api.type
     import ifcopenshell.api.unit
     from ifcopenshell.api.geometry.add_slab_representation import add_slab_representation
     from ifcopenshell.api.geometry.add_wall_representation import add_wall_representation
@@ -2019,6 +2127,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
     geo_products = 0
     wall_products: dict[str, Any] = {}
     slab_products: dict[str, Any] = {}
+    slab_type_entities: dict[str, Any] = {}
 
     def attach_kernel_identity_pset(product: Any, pset_name: str, reference: str, **props: Any) -> None:
         try:
@@ -2113,6 +2222,26 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         slab_products[fid] = slab
         geo_products += 1
         attach_kernel_identity_pset(slab, "Pset_SlabCommon", fid)
+
+        ftid = (fl.floor_type_id or "").strip()
+        if ftid:
+            st_ent = slab_type_entities.get(ftid)
+            if st_ent is None:
+                st_ent = ifcopenshell.api.root.create_entity(
+                    f, ifc_class="IfcSlabType", name=fl.name or ftid
+                )
+                if hasattr(st_ent, "PredefinedType"):
+                    st_ent.PredefinedType = "NOTDEFINED"
+                attach_kernel_identity_pset(st_ent, "Pset_SlabCommon", ftid)
+                slab_type_entities[ftid] = st_ent
+            ifcopenshell.api.type.assign_type(
+                f,
+                related_objects=[slab],
+                relating_type=st_ent,
+                should_map_representations=False,
+            )
+        if hasattr(slab, "PredefinedType"):
+            slab.PredefinedType = "FLOOR"
 
         slab_area_m2 = _polygon_area_m2_xy_mm(pts)
         slab_perm_m = _polygon_perimeter_m_xy_mm(

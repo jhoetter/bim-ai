@@ -464,11 +464,14 @@ def _ids_authoritative_replay_map_pointer_suffix(summary: dict[str, Any]) -> str
         return ""
     spaces = ids_map.get("spaces")
     roofs = ids_map.get("roofs")
+    floors = ids_map.get("floors")
     n_space = len(spaces) if isinstance(spaces, list) else 0
     n_roof = len(roofs) if isinstance(roofs, list) else 0
+    n_floor = len(floors) if isinstance(floors, list) else 0
     return (
         " IDS linkage evidence: "
-        f"{n_space} IfcSpace row(s), {n_roof} IfcRoof row(s) under summarize_kernel_ifc_semantic_roundtrip."
+        f"{n_space} IfcSpace row(s), {n_roof} IfcRoof row(s), {n_floor} IfcSlab typed-floor row(s) under "
+        "summarize_kernel_ifc_semantic_roundtrip."
         "commandSketch.authoritativeReplay_v0.idsAuthoritativeReplayMap_v0."
     )
 

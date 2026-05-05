@@ -1899,6 +1899,12 @@ def _authoritative_replay_v0_preflight(doc: Document, cmds_raw: list[dict[str, A
             ls = lid.strip()
             if ls not in known_levels:
                 return "merge_reference_unresolved"
+            ftid_raw = cmd.get("floorTypeId")
+            if isinstance(ftid_raw, str) and ftid_raw.strip():
+                fts = ftid_raw.strip()
+                ft_el = doc.elements.get(fts)
+                if not isinstance(ft_el, FloorTypeElem):
+                    return "merge_reference_unresolved"
             eid = _authoritative_replay_v0_declared_id(cmd)
             if eid is not None:
                 if eid in doc.elements or eid in declared:

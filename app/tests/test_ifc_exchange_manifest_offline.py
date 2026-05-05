@@ -453,6 +453,36 @@ def test_try_apply_authoritative_replay_v0_roof_reference_level_unresolved() -> 
     assert len(cmds) == 1
 
 
+def test_try_apply_authoritative_replay_v0_floor_floor_type_unresolved() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl-g": LevelElem(kind="level", id="lvl-g", name="G", elevationMm=0),
+        },
+    )
+    sketch = _sketch_with_commands(
+        cmds=[
+            {
+                "type": "createFloor",
+                "id": "fl-new",
+                "name": "F",
+                "levelId": "lvl-g",
+                "boundaryMm": [
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 1000, "yMm": 0},
+                    {"xMm": 1000, "yMm": 1000},
+                    {"xMm": 0, "yMm": 1000},
+                ],
+                "thicknessMm": 220,
+                "floorTypeId": "missing-floor-type-id",
+            },
+        ]
+    )
+    ok, new_doc, cmds, _v, code = try_apply_kernel_ifc_authoritative_replay_v0(doc, sketch)
+    assert ok is False and new_doc is None and code == "merge_reference_unresolved"
+    assert len(cmds) == 1
+
+
 def test_try_apply_authoritative_replay_v0_sketch_unavailable() -> None:
     empty = Document(revision=0, elements={})
     sketch = {"available": False, "reason": "ifcopenshell_not_installed"}
