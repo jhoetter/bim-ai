@@ -542,6 +542,50 @@ class ValidationRuleElem(BaseModel):
     rule_json: dict[str, Any] = Field(default_factory=dict, alias="ruleJson")
 
 
+SiteContextType = Literal["tree", "shrub", "neighbor_proxy", "entourage"]
+
+
+class SiteContextObjectRow(BaseModel):
+    """Lightweight non-BIM context marker (entourage / neighboring mass proxy)."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    id: str
+    context_type: SiteContextType = Field(alias="contextType")
+    label: str = ""
+    position_mm: Vec2Mm = Field(alias="positionMm")
+    scale: float = Field(default=1.0, gt=0)
+    category: str = "site_entourage"
+
+
+class SiteElem(BaseModel):
+    """Bounded site pad + optional orientation / setbacks / context entourage rows."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["site"] = "site"
+    id: str
+    name: str = "Site"
+    reference_level_id: str = Field(alias="referenceLevelId")
+    boundary_mm: list[Vec2Mm] = Field(alias="boundaryMm")
+    pad_thickness_mm: float = Field(alias="padThicknessMm", default=80.0, gt=0)
+    base_offset_mm: float = Field(
+        default=0.0,
+        alias="baseOffsetMm",
+        description="Offset from reference level elevation to bottom of pad (mm).",
+    )
+    north_deg_cw_from_plan_x: float | None = Field(
+        default=None,
+        alias="northDegCwFromPlanX",
+        description="Clockwise degrees from +plan X to project north (plan view).",
+    )
+    uniform_setback_mm: float | None = Field(
+        default=None,
+        alias="uniformSetbackMm",
+        ge=0,
+        description="Optional uniform property setback metadata (mm), documentary v0.",
+    )
+    context_objects: list[SiteContextObjectRow] = Field(default_factory=list, alias="contextObjects")
+
+
 ElementKind = Literal[
     "project_settings",
     "room_color_scheme",
@@ -578,6 +622,7 @@ ElementKind = Literal[
     "agent_assumption",
     "agent_deviation",
     "validation_rule",
+    "site",
 ]
 
 
@@ -616,6 +661,7 @@ Element = Annotated[
     | BcfElem
     | AgentAssumptionElem
     | AgentDeviationElem
-    | ValidationRuleElem,
+    | ValidationRuleElem
+    | SiteElem,
     Field(discriminator="kind"),
 ]

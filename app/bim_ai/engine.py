@@ -59,6 +59,7 @@ from bim_ai.commands import (
     UpsertScheduleFiltersCmd,
     UpsertSheetCmd,
     UpsertSheetViewportsCmd,
+    UpsertSiteCmd,
     UpsertTagDefinitionCmd,
     UpsertValidationRuleCmd,
     UpsertViewTemplateCmd,
@@ -100,6 +101,8 @@ from bim_ai.elements import (
     ScheduleElem,
     SectionCutElem,
     SheetElem,
+    SiteContextObjectRow,
+    SiteElem,
     SlabOpeningElem,
     StairElem,
     TagDefinitionElem,
@@ -124,6 +127,7 @@ _AUTHORITATIVE_REPLAY_V0_TYPES: frozenset[str] = frozenset(
         "createFloor",
         "createWall",
         "createRoomOutline",
+        "createStair",
         "insertDoorOnWall",
         "insertWindowOnWall",
         "createSlabOpening",
@@ -390,6 +394,67 @@ def _canonical_room_scheme_rows(rows: list[RoomColorSchemeRow]) -> list[RoomColo
     out_keys = sorted(keyed.keys(), key=lambda x: (x[0], x[1]))
     return [keyed[k] for k in out_keys]
 
+
+def _polygon_signed_area_xy_mm(pts: list[tuple[float, float]]) -> float:
+    n = len(pts)
+    if n < 3:
+        return 0.0
+    s = 0.0
+    for i in range(n):
+        x1, y1 = pts[i]
+        x2, y2 = pts[(i + 1) % n]
+        s += x1 * y2 - x2 * y1
+    return 0.5 * s
+
+
+def _site_boundary_turn_cross_products_xy_mm(pts: list[tuple[float, float]]) -> list[float]:
+    """Cross of successive edge vectors at each vertex; strictly convex CCW ⇒ all > 0."""
+    n = len(pts)
+    out: list[float] = []
+    for i in range(n):
+        p0 = pts[(i - 1) % n]
+        p1 = pts[i]
+        p2 = pts[(i + 1) % n]
+        ax, ay = p1[0] - p0[0], p1[1] - p0[1]
+        bx, by = p2[0] - p1[0], p2[1] - p1[1]
+        out.append(ax * by - ay * bx)
+    return out
+
+
+def _canonical_site_boundary_mm(raw: list[Vec2Mm]) -> list[Vec2Mm]:
+    """Dedupe consecutive points, enforce CCW, rotate lexicographically smallest vertex first."""
+
+    tuples = [(round(float(p.x_mm), 6), round(float(p.y_mm), 6)) for p in raw]
+    cleaned: list[tuple[float, float]] = []
+    for t in tuples:
+        if cleaned and cleaned[-1] == t:
+            continue
+        cleaned.append(t)
+    if len(cleaned) >= 2 and cleaned[0] == cleaned[-1]:
+        cleaned.pop()
+    if len(cleaned) < 3:
+        raise ValueError("site.boundaryMm requires ≥3 distinct vertices")
+    idx_min = min(range(len(cleaned)), key=lambda i: (cleaned[i][0], cleaned[i][1]))
+    rotated = cleaned[idx_min:] + cleaned[:idx_min]
+    area = _polygon_signed_area_xy_mm(rotated)
+    if area < 0:
+        rotated = list(reversed(rotated))
+        idx_min = min(range(len(rotated)), key=lambda i: (rotated[i][0], rotated[i][1]))
+        rotated = rotated[idx_min:] + rotated[:idx_min]
+        area = _polygon_signed_area_xy_mm(rotated)
+    if area <= 0:
+        raise ValueError("site.boundaryMm must form a non-degenerate CCW polygon")
+    crosses = _site_boundary_turn_cross_products_xy_mm(rotated)
+    if not all(c > 1e-9 for c in crosses):
+        raise ValueError("site.boundaryMm must be strictly convex CCW (no collinear or concave vertices)")
+    return [Vec2Mm(xMm=a[0], yMm=a[1]) for a in rotated]
+
+
+def _canonical_site_context_rows(rows: list[SiteContextObjectRow]) -> list[SiteContextObjectRow]:
+    by_id = {r.id: r for r in rows}
+    if len(by_id) != len(rows):
+        raise ValueError("site.contextObjects must have unique ids")
+    return [by_id[k] for k in sorted(by_id.keys())]
 
 
 def apply_inplace(doc: Document, cmd: Command) -> None:
@@ -1588,6 +1653,35 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 related_element_ids=sorted(cmd.related_element_ids),
             )
 
+        case UpsertSiteCmd():
+            sid = cmd.id
+            prev_el = els.get(sid)
+            if prev_el is not None and not isinstance(prev_el, SiteElem):
+                raise ValueError("upsertSite.id must reference site when element exists")
+            lid = cmd.reference_level_id
+            if lid not in els or not isinstance(els[lid], LevelElem):
+                raise ValueError("upsertSite.referenceLevelId must reference an existing Level")
+            if cmd.pad_thickness_mm <= 0:
+                raise ValueError("upsertSite.padThicknessMm must be > 0")
+            boundary = _canonical_site_boundary_mm(list(cmd.boundary_mm))
+            ctx = _canonical_site_context_rows(list(cmd.context_objects))
+            us = cmd.uniform_setback_mm
+            if us is not None and float(us) < 0:
+                raise ValueError("upsertSite.uniformSetbackMm must be ≥ 0 when set")
+            north = cmd.north_deg_cw_from_plan_x
+            els[sid] = SiteElem(
+                kind="site",
+                id=sid,
+                name=cmd.name,
+                reference_level_id=lid,
+                boundary_mm=boundary,
+                pad_thickness_mm=float(cmd.pad_thickness_mm),
+                base_offset_mm=float(cmd.base_offset_mm),
+                north_deg_cw_from_plan_x=float(north) if north is not None else None,
+                uniform_setback_mm=float(us) if us is not None else None,
+                context_objects=ctx,
+            )
+
         case UpsertValidationRuleCmd():
             vid = cmd.id or new_id()
             els[vid] = ValidationRuleElem(
@@ -1762,6 +1856,20 @@ def _authoritative_replay_v0_preflight(doc: Document, cmds_raw: list[dict[str, A
                     return "merge_id_collision"
                 declared.add(eid)
 
+        elif t == "createStair":
+            for lid_key in ("baseLevelId", "topLevelId"):
+                lid = cmd.get(lid_key)
+                if not isinstance(lid, str) or not lid.strip():
+                    return "merge_reference_unresolved"
+                ls = lid.strip()
+                if ls not in known_levels:
+                    return "merge_reference_unresolved"
+            eid = _authoritative_replay_v0_declared_id(cmd)
+            if eid is not None:
+                if eid in doc.elements or eid in declared:
+                    return "merge_id_collision"
+                declared.add(eid)
+
         elif t in {"insertDoorOnWall", "insertWindowOnWall"}:
             wid = cmd.get("wallId")
             if not isinstance(wid, str) or not wid.strip():
@@ -1813,8 +1921,9 @@ def try_apply_kernel_ifc_authoritative_replay_v0(
 ) -> tuple[bool, Document | None, list[dict[str, Any]], list[Violation], str]:
     """Apply ``authoritativeReplay_v0`` commands via ``try_commit_bundle`` (additive merge).
 
-    OpenBIM slice: ``createLevel`` / ``createFloor`` / ``createWall`` / ``createRoomOutline`` /
-    ``insertDoorOnWall`` / ``insertWindowOnWall`` / ``createSlabOpening`` payloads from
+    OpenBIM slice: ``createLevel`` / ``createFloor`` / ``createWall`` / ``createStair`` /
+    ``createRoomOutline`` / ``insertDoorOnWall`` / ``insertWindowOnWall`` /
+    ``createSlabOpening`` payloads from
     ``build_kernel_ifc_authoritative_replay_sketch_v0``. Runs preflight for id collisions and
     unresolved references vs the current document plus preceding commands in the bundle. Returns raw
     command dicts that were validated (third tuple element).

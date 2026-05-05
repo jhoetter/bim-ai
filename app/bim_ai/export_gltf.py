@@ -20,6 +20,7 @@ from bim_ai.elements import (
     LevelElem,
     RoofElem,
     RoomElem,
+    SiteElem,
     StairElem,
     WallElem,
     WindowElem,
@@ -51,7 +52,7 @@ def _kind_counts(doc: Document) -> dict[str, int]:
 def _unsupported_geometry_entries(counts_by_kind: dict[str, int]) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     for k in sorted(counts_by_kind.keys()):
-        if k in EXPORT_GEOMETRY_KINDS or k == "level":
+        if k in EXPORT_GEOMETRY_KINDS or k in {"level", "site"}:
             continue
         out.append({"kind": k, "count": counts_by_kind[k]})
     return out
@@ -151,12 +152,36 @@ def stair_geometry_manifest_evidence_v0(doc: Document) -> dict[str, Any] | None:
     return {"format": "stairGeometryEvidence_v0", "stairs": rows}
 
 
+def site_context_manifest_evidence_v0(doc: Document) -> dict[str, Any] | None:
+    rows: list[dict[str, Any]] = []
+    for eid in sorted(doc.elements.keys()):
+        e = doc.elements[eid]
+        if not isinstance(e, SiteElem):
+            continue
+        row: dict[str, Any] = {
+            "elementId": eid,
+            "vertexCount": len(e.boundary_mm),
+            "contextObjectCount": len(e.context_objects),
+            "padThicknessMm": round(float(e.pad_thickness_mm), 6),
+            "baseOffsetMm": round(float(e.base_offset_mm), 6),
+        }
+        if e.north_deg_cw_from_plan_x is not None:
+            row["northDegCwFromPlanX"] = round(float(e.north_deg_cw_from_plan_x), 6)
+        if e.uniform_setback_mm is not None:
+            row["uniformSetbackMm"] = round(float(e.uniform_setback_mm), 6)
+        rows.append(row)
+    if not rows:
+        return None
+    return {"format": "siteContextEvidence_v0", "sites": rows}
+
+
 def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
     parity = exchange_parity_manifest_fields_from_document(doc)
     cut_warns = collect_hosted_cut_manifest_warnings(doc)
     skew_hosted = collect_skew_wall_hosted_opening_evidence_v0(doc)
     rgeom_roofs = roof_geometry_manifest_evidence_v0(doc)
     stair_geom = stair_geometry_manifest_evidence_v0(doc)
+    site_ctx = site_context_manifest_evidence_v0(doc)
     corner_joins = collect_wall_corner_join_evidence_v0(doc)
     layer_cut_align = collect_layered_assembly_cut_alignment_evidence_v0(doc)
     layer_asm_witness = collect_layered_assembly_witness_v0(doc)
@@ -171,6 +196,8 @@ def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
         mesh_enc += "+bim_ai_layered_assembly_cut_alignment_v0"
     if layer_asm_witness:
         mesh_enc += "+bim_ai_layered_assembly_witness_v0"
+    if site_ctx:
+        mesh_enc += "+bim_ai_site_context_v0"
     base: dict[str, Any] = {
         **parity,
         "meshEncoding": mesh_enc,
@@ -193,6 +220,8 @@ def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
         base["layeredAssemblyCutAlignmentEvidence_v0"] = layer_cut_align
     if layer_asm_witness:
         base["layeredAssemblyWitness_v0"] = layer_asm_witness
+    if site_ctx:
+        base["siteContextEvidence_v0"] = site_ctx
     return base
 
 
@@ -307,6 +336,15 @@ class _GableRoofVisual:
     ridge_axis: str
 
 
+@dataclass(frozen=True, slots=True)
+class _SitePadVisual:
+    elem_id: str
+    interleaved: bytes
+    vertex_count: int
+    translation_m: tuple[float, float, float]
+    yaw_rad: float
+
+
 def _triangle_unit_normal(
     v0: tuple[float, float, float],
     v1: tuple[float, float, float],
@@ -382,6 +420,54 @@ def _gable_roof_interleaved_world_m(gr: _GableRoofVisual) -> tuple[bytes, int]:
     return bytes(buf), vcount
 
 
+def _site_extruded_pad_interleaved_m(
+    local_xz_m: list[tuple[float, float]],
+    thickness_m: float,
+) -> tuple[bytes, int]:
+    """Extruded convex polygon in xz (local); bottom y=0, top y=thickness_m."""
+
+    buf = bytearray()
+    n = len(local_xz_m)
+    if n < 3 or thickness_m <= 1e-12:
+        return bytes(buf), 0
+    y0 = 0.0
+    y1 = thickness_m
+    for i in range(1, n - 1):
+        x0, z0 = local_xz_m[0]
+        x1, z1 = local_xz_m[i]
+        x2, z2 = local_xz_m[i + 1]
+        p0 = (x0, y1, z0)
+        p1 = (x1, y1, z1)
+        p2 = (x2, y1, z2)
+        _emit_tri(buf, p0, p1, p2, _triangle_unit_normal(p0, p1, p2))
+    for i in range(1, n - 1):
+        x0, z0 = local_xz_m[0]
+        x1, z1 = local_xz_m[i]
+        x2, z2 = local_xz_m[i + 1]
+        b0 = (x0, y0, z0)
+        b1 = (x1, y0, z1)
+        b2 = (x2, y0, z2)
+        _emit_tri(buf, b0, b2, b1, _triangle_unit_normal(b0, b2, b1))
+    for i in range(n):
+        x0, z0 = local_xz_m[i]
+        x1, z1 = local_xz_m[(i + 1) % n]
+        dx, dz = x1 - x0, z1 - z0
+        nx_h = -dz
+        nz_h = dx
+        ln = math.hypot(nx_h, nz_h)
+        if ln < 1e-12:
+            continue
+        nx_h /= ln
+        nz_h /= ln
+        p00 = (x0, y0, z0)
+        p01 = (x0, y1, z0)
+        p10 = (x1, y0, z1)
+        p11 = (x1, y1, z1)
+        _emit_tri(buf, p00, p10, p11, (nx_h, 0.0, nz_h))
+        _emit_tri(buf, p00, p11, p01, (nx_h, 0.0, nz_h))
+    return bytes(buf), len(buf) // VERT_BYTES
+
+
 def _collect_gable_roof_visual_slices(doc: Document) -> list[_GableRoofVisual]:
     out: list[_GableRoofVisual] = []
     for rid in sorted(eid for eid, e in doc.elements.items() if isinstance(e, RoofElem)):
@@ -411,6 +497,41 @@ def _collect_gable_roof_visual_slices(doc: Document) -> list[_GableRoofVisual]:
     return out
 
 
+def _collect_site_pad_visuals(doc: Document) -> list[_SitePadVisual]:
+    out: list[_SitePadVisual] = []
+    for sid in sorted(eid for eid, e in doc.elements.items() if isinstance(e, SiteElem)):
+        site = doc.elements[sid]
+        assert isinstance(site, SiteElem)
+        pts = [(float(p.x_mm), float(p.y_mm)) for p in site.boundary_mm]
+        nv = len(pts)
+        if nv < 3:
+            continue
+        cx_mm = sum(px for px, _ in pts) / nv
+        cz_mm = sum(pz for _, pz in pts) / nv
+        cx_m = cx_mm / 1000.0
+        cz_m = cz_mm / 1000.0
+        local_m = [(px / 1000.0 - cx_m, pz / 1000.0 - cz_m) for px, pz in pts]
+        th_m = float(site.pad_thickness_mm) / 1000.0
+        interleaved, vcount = _site_extruded_pad_interleaved_m(local_m, th_m)
+        if vcount <= 0:
+            continue
+        lvl = doc.elements.get(site.reference_level_id)
+        elev = lvl.elevation_mm / 1000.0 if isinstance(lvl, LevelElem) else 0.0
+        elev_bottom = elev + float(site.base_offset_mm) / 1000.0
+        nd = site.north_deg_cw_from_plan_x
+        yaw_rad = math.radians(-float(nd)) if nd is not None else 0.0
+        out.append(
+            _SitePadVisual(
+                elem_id=sid,
+                interleaved=interleaved,
+                vertex_count=vcount,
+                translation_m=(cx_m, elev_bottom, cz_m),
+                yaw_rad=yaw_rad,
+            )
+        )
+    return out
+
+
 def _interleaved_position_min_max(interleaved: bytes, vcount: int) -> tuple[list[float], list[float]]:
     mn = [math.inf, math.inf, math.inf]
     mx = [-math.inf, -math.inf, -math.inf]
@@ -426,23 +547,59 @@ def _interleaved_position_min_max(interleaved: bytes, vcount: int) -> tuple[list
     return mn, mx
 
 
+def _interleaved_bounds_world_y_trs(
+    interleaved: bytes,
+    vcount: int,
+    trans: tuple[float, float, float],
+    yaw: float,
+) -> tuple[list[float], list[float]]:
+    """Expand interleaved local POSITION normals into world AABB after yaw-Y + translation."""
+
+    cy, sy = math.cos(yaw), math.sin(yaw)
+    tx, ty, tz = trans
+    mn = [math.inf, math.inf, math.inf]
+    mx = [-math.inf, -math.inf, -math.inf]
+    for i in range(vcount):
+        off = VERT_BYTES * i
+        lx, ly, lz = struct.unpack_from("<fff", interleaved, off)
+        rx = lx * cy + lz * sy
+        rz = -lx * sy + lz * cy
+        px = rx + tx
+        py = ly + ty
+        pz = rz + tz
+        mn[0] = min(mn[0], px)
+        mn[1] = min(mn[1], py)
+        mn[2] = min(mn[2], pz)
+        mx[0] = max(mx[0], px)
+        mx[1] = max(mx[1], py)
+        mx[2] = max(mx[2], pz)
+    return mn, mx
+
+
 def _visual_geom_entry_sort_key(
-    pair: tuple[Literal["box", "gable"], _GeomBox | _GableRoofVisual],
+    pair: tuple[Literal["box", "gable", "site_pad"], Any],
 ) -> tuple[str, str]:
     tag, payload = pair
     if tag == "box":
         gb = cast(_GeomBox, payload)
         return (gb.kind, gb.elem_id)
+    if tag == "site_pad":
+        sp = cast(_SitePadVisual, payload)
+        return ("site", sp.elem_id)
     gv = cast(_GableRoofVisual, payload)
     return ("roof", gv.elem_id)
 
 
-def _collect_visual_geom_entries(doc: Document) -> list[tuple[Literal["box", "gable"], _GeomBox | _GableRoofVisual]]:
-    entries: list[tuple[Literal["box", "gable"], _GeomBox | _GableRoofVisual]] = [
+def _collect_visual_geom_entries(
+    doc: Document,
+) -> list[tuple[Literal["box", "gable", "site_pad"], Any]]:
+    entries: list[tuple[Literal["box", "gable", "site_pad"], Any]] = [
         ("box", b) for b in _collect_geom_boxes(doc)
     ]
     for gv in _collect_gable_roof_visual_slices(doc):
         entries.append(("gable", gv))
+    for sp in _collect_site_pad_visuals(doc):
+        entries.append(("site_pad", sp))
     entries.sort(key=_visual_geom_entry_sort_key)
     return entries
 
@@ -545,6 +702,49 @@ def _collect_geom_boxes(doc: Document) -> list[_GeomBox]:
         hz = (span_z / 1000.0) / 2.0
         boxes.append(_GeomBox("room", rm_id, (cx_mm / 1000.0, ty, cz_mm / 1000.0), 0.0, hx, slab_half, hz))
 
+    for site_id in sorted(eid for eid, e in doc.elements.items() if isinstance(e, SiteElem)):
+        site = doc.elements[site_id]
+        assert isinstance(site, SiteElem)
+        bpts = [(float(p.x_mm), float(p.y_mm)) for p in site.boundary_mm]
+        nv = len(bpts)
+        if nv < 3:
+            continue
+        cx_mm = sum(px for px, _ in bpts) / nv
+        cz_mm = sum(pz for _, pz in bpts) / nv
+        cx_m = cx_mm / 1000.0
+        cz_m = cz_mm / 1000.0
+        nd = site.north_deg_cw_from_plan_x
+        yaw = math.radians(-float(nd)) if nd is not None else 0.0
+        c = math.cos(yaw)
+        s = math.sin(yaw)
+        lvl = doc.elements.get(site.reference_level_id)
+        elev = lvl.elevation_mm / 1000.0 if isinstance(lvl, LevelElem) else 0.0
+        elev_bottom = elev + float(site.base_offset_mm) / 1000.0
+        th_m = float(site.pad_thickness_mm) / 1000.0
+        marker_y = elev_bottom + th_m * 0.5 + 0.06
+        for row in site.context_objects:
+            px_m = row.position_mm.x_mm / 1000.0
+            pz_m = row.position_mm.y_mm / 1000.0
+            lx = px_m - cx_m
+            lz = pz_m - cz_m
+            wx = cx_m + lx * c + lz * s
+            wz = cz_m + (-lx * s + lz * c)
+            wy = marker_y
+            sc = _clamp(float(row.scale), 0.2, 3.0)
+            hx = hz = 0.12 * sc
+            hy = 0.35 * sc
+            boxes.append(
+                _GeomBox(
+                    "site",
+                    f"{site_id}:ctx:{row.id}",
+                    (wx, wy, wz),
+                    0.0,
+                    hx,
+                    hy,
+                    hz,
+                )
+            )
+
     return boxes
 
 
@@ -582,6 +782,7 @@ _KIND_MAT_IDX = {
     "room": 5,
     "stair": 6,
     "slab_opening": 7,
+    "site": 8,
 }
 
 _GLB_MAT_SLOTS: tuple[tuple[str, tuple[float, float, float], float], ...] = (
@@ -593,6 +794,7 @@ _GLB_MAT_SLOTS: tuple[tuple[str, tuple[float, float, float], float], ...] = (
     ("room", (96 / 255, 165 / 255, 250 / 255), 0.85),
     ("stair", (202 / 255, 138 / 255, 4 / 255), 0.8),
     ("slab_opening", (236 / 255, 72 / 255, 153 / 255), 0.78),
+    ("site", (87 / 255, 149 / 255, 92 / 255), 0.88),
 )
 
 
@@ -664,6 +866,29 @@ def _document_to_gltf_tree_and_bins(doc: Document) -> tuple[dict[str, Any], byte
             trans_t = (float(gb.translation[0]), float(gb.translation[1]), float(gb.translation[2]))
             mat_kind = gb.kind
             extras = {"bimAiEncoding": mf_payload["meshEncoding"], "elementId": gb.elem_id}
+        elif tag == "site_pad":
+            sp = cast(_SitePadVisual, payload)
+            vbytes = sp.interleaved
+            vcount = sp.vertex_count
+            if vcount <= 0:
+                continue
+            pos_min, pos_max = _interleaved_bounds_world_y_trs(
+                vbytes, vcount, sp.translation_m, sp.yaw_rad
+            )
+            geom_kind = "site"
+            elem_id_f = sp.elem_id
+            yaw = sp.yaw_rad
+            trans_t = (
+                float(sp.translation_m[0]),
+                float(sp.translation_m[1]),
+                float(sp.translation_m[2]),
+            )
+            mat_kind = "site"
+            extras = {
+                "bimAiEncoding": mf_payload["meshEncoding"],
+                "elementId": sp.elem_id,
+                "bimAiSemantic": "site_pad",
+            }
         else:
             gv = cast(_GableRoofVisual, payload)
             vbytes, vcount = _gable_roof_interleaved_world_m(gv)

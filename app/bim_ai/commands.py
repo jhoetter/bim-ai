@@ -10,6 +10,7 @@ from bim_ai.elements import (
     PlanTagBadgeStyle,
     PlanTagTarget,
     RoomColorSchemeRow,
+    SiteContextObjectRow,
     Vec2Mm,
     WallTypeLayer,
 )
@@ -607,6 +608,20 @@ class UpsertValidationRuleCmd(BaseModel):
     rule_json: dict[str, Any] = Field(alias="ruleJson", default_factory=dict)
 
 
+class UpsertSiteCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["upsertSite"] = "upsertSite"
+    id: str
+    name: str = "Site"
+    reference_level_id: str = Field(alias="referenceLevelId")
+    boundary_mm: list[Vec2Mm] = Field(alias="boundaryMm")
+    pad_thickness_mm: float = Field(alias="padThicknessMm", default=80.0)
+    base_offset_mm: float = Field(default=0.0, alias="baseOffsetMm")
+    north_deg_cw_from_plan_x: float | None = Field(default=None, alias="northDegCwFromPlanX")
+    uniform_setback_mm: float | None = Field(default=None, alias="uniformSetbackMm")
+    context_objects: list[SiteContextObjectRow] = Field(default_factory=list, alias="contextObjects")
+
+
 Command = Annotated[
     CreateLevelCmd
     | CreateWallCmd
@@ -662,6 +677,7 @@ Command = Annotated[
     | CreateBcfTopicCmd
     | CreateAgentAssumptionCmd
     | CreateAgentDeviationCmd
-    | UpsertValidationRuleCmd,
+    | UpsertValidationRuleCmd
+    | UpsertSiteCmd,
     Field(discriminator="type"),
 ]

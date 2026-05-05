@@ -103,7 +103,7 @@ def test_document_to_gltf_wall_level_metadata_semantic_nodes():
     manifest = g["extensions"]["BIM_AI_exportManifest_v0"]
     assert manifest["countsByKind"]["wall"] == 1
     assert manifest["countsByKind"]["level"] == 1
-    assert len(g["materials"]) == 8
+    assert len(g["materials"]) == 9
     wall_mesh = next(m for m in g["meshes"] if str(m["name"]).startswith("wall:"))
     prim = wall_mesh["primitives"][0]
     assert prim["material"] == 0

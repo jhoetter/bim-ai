@@ -29,6 +29,7 @@ export type ElemKind =
   | 'view_template'
   | 'sheet'
   | 'schedule'
+  | 'site'
   | 'callout'
   | 'bcf'
   | 'agent_assumption'
@@ -36,6 +37,17 @@ export type ElemKind =
   | 'validation_rule';
 
 export type XY = { xMm: number; yMm: number };
+
+export type SiteContextType = 'tree' | 'shrub' | 'neighbor_proxy' | 'entourage';
+
+export type SiteContextObjectRow = {
+  id: string;
+  contextType: SiteContextType;
+  label?: string;
+  positionMm: XY;
+  scale?: number;
+  category?: string;
+};
 
 /** Floor-plan graphic detail preset (view template + optional plan_view override). */
 export type PlanDetailLevelPlan = 'coarse' | 'medium' | 'fine';
@@ -372,6 +384,18 @@ export type Element =
       sheetId?: string | null;
       filters?: Record<string, unknown>;
       grouping?: Record<string, unknown>;
+    }
+  | {
+      kind: 'site';
+      id: string;
+      name: string;
+      referenceLevelId: string;
+      boundaryMm: XY[];
+      padThicknessMm?: number;
+      baseOffsetMm?: number;
+      northDegCwFromPlanX?: number | null;
+      uniformSetbackMm?: number | null;
+      contextObjects?: SiteContextObjectRow[];
     }
   | { kind: 'callout'; id: string; name: string; parentSheetId: string; outlineMm: XY[] }
   | {
