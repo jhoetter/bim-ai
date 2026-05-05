@@ -46,6 +46,7 @@ from bim_ai.roof_geometry import (
 )
 from bim_ai.stair_plan_proxy import (
     stair_documentation_diagnostics,
+    stair_documentation_placeholders_v0,
     stair_plan_up_down_label,
     stair_riser_count_plan_proxy,
     stair_run_bearing_deg_ccw_from_plan_x,
@@ -214,7 +215,9 @@ def stair_geometry_manifest_evidence_v0(doc: Document) -> dict[str, Any] | None:
         rx1, ry1 = float(e.run_end.x_mm), float(e.run_end.y_mm)
         run_len = math.hypot(rx1 - rx0, ry1 - ry0)
         rc_proxy = stair_riser_count_plan_proxy(doc, e, run_length_mm=run_len)
+        tc_proxy = stair_tread_count_straight_plan_proxy(rc_proxy)
         bearing = stair_run_bearing_deg_ccw_from_plan_x(rx0, ry0, rx1, ry1)
+        ud_lab = stair_plan_up_down_label(float(bl.elevation_mm), float(tl.elevation_mm))
         row_ev: dict[str, Any] = {
             "elementId": eid,
             "baseLevelId": e.base_level_id,
@@ -225,14 +228,26 @@ def stair_geometry_manifest_evidence_v0(doc: Document) -> dict[str, Any] | None:
             "totalRiseMm": round(rise_story, 3),
             "midRunElevationMm": round(z_lo + rise_story * 0.5, 3),
             "riserCountPlanProxy": rc_proxy,
-            "treadCountPlanProxy": stair_tread_count_straight_plan_proxy(rc_proxy),
+            "treadCountPlanProxy": tc_proxy,
             "runBearingDegCcFromPlanX": bearing,
-            "planUpDownLabel": stair_plan_up_down_label(
-                float(bl.elevation_mm),
-                float(tl.elevation_mm),
-            ),
+            "planUpDownLabel": ud_lab,
         }
-        diags = stair_documentation_diagnostics(doc, e, riser_count_plan_proxy=rc_proxy)
+        ph = stair_documentation_placeholders_v0(
+            e,
+            run_length_mm=run_len,
+            plan_up_down_label=ud_lab,
+            riser_count_plan_proxy=rc_proxy,
+            tread_count_plan_proxy=tc_proxy,
+        )
+        if ph is not None:
+            row_ev["stairDocumentationPlaceholders_v0"] = ph
+            row_ev["stairPlanSectionDocumentationLabel"] = ph["stairPlanSectionDocumentationLabel"]
+        diags = stair_documentation_diagnostics(
+            doc,
+            e,
+            riser_count_plan_proxy=rc_proxy,
+            run_length_mm=run_len,
+        )
         if diags:
             row_ev["stairDocumentationDiagnostics"] = diags
         rows.append(row_ev)

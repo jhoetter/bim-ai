@@ -599,7 +599,11 @@ function rebuildPlanMeshesFromWire(
     const hasDoc =
       row.runBearingDegCcFromPlanX !== undefined ||
       row.planUpDownLabel !== undefined ||
-      row.stairPlanBreakVisibilityToken !== undefined;
+      row.stairPlanBreakVisibilityToken !== undefined ||
+      row.stairPlanSectionDocumentationLabel !== undefined ||
+      row.stairDocumentationPlaceholders_v0 !== undefined;
+    const phRaw = row.stairDocumentationPlaceholders_v0;
+    const phObj = phRaw && typeof phRaw === 'object' ? (phRaw as Record<string, unknown>) : null;
     const wireDoc = hasDoc
       ? {
           runBearingDegCcFromPlanX:
@@ -611,6 +615,21 @@ function rebuildPlanMeshesFromWire(
           stairPlanBreakVisibilityToken:
             typeof row.stairPlanBreakVisibilityToken === 'string'
               ? row.stairPlanBreakVisibilityToken
+              : undefined,
+          stairPlanSectionDocumentationLabel:
+            typeof row.stairPlanSectionDocumentationLabel === 'string'
+              ? row.stairPlanSectionDocumentationLabel
+              : undefined,
+          stairDocumentationPlaceholders_v0:
+            phObj &&
+            phObj.bottomLandingFootprintBoundsMm &&
+            phObj.topLandingFootprintBoundsMm &&
+            typeof phObj.bottomLandingFootprintBoundsMm === 'object' &&
+            typeof phObj.topLandingFootprintBoundsMm === 'object'
+              ? {
+                  bottomLandingFootprintBoundsMm: phObj.bottomLandingFootprintBoundsMm as BoundsXYmm,
+                  topLandingFootprintBoundsMm: phObj.topLandingFootprintBoundsMm as BoundsXYmm,
+                }
               : undefined,
         }
       : undefined;
@@ -1005,10 +1024,23 @@ function computeStairPlanRiserCount(
 }
 
 /** Optional documentation overlays from `planProjectionPrimitives_v1.stairs[]` (Prompt-2). */
+
+type BoundsXYmm = {
+  minXmMm: number;
+  maxXmMm: number;
+  minYmMm: number;
+  maxYmMm: number;
+};
+
 type StairPlanWireDocOverlays = {
   runBearingDegCcFromPlanX?: number;
   planUpDownLabel?: string;
   stairPlanBreakVisibilityToken?: string;
+  stairPlanSectionDocumentationLabel?: string;
+  stairDocumentationPlaceholders_v0?: {
+    bottomLandingFootprintBoundsMm?: BoundsXYmm;
+    topLandingFootprintBoundsMm?: BoundsXYmm;
+  };
 };
 
 /** Footprint tread preview on the stair base level (OG plan hides it). */
@@ -1127,11 +1159,37 @@ function stairPlanThree(
     g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([tip, b1]), arrMat));
     g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([tip, b2]), arrMat));
 
-    const label = wireDoc.planUpDownLabel?.trim();
-    if (label) {
+    const ph = wireDoc.stairDocumentationPlaceholders_v0;
+    if (ph?.bottomLandingFootprintBoundsMm && ph?.topLandingFootprintBoundsMm) {
+      const yLand = PLAN_Y + 0.021;
+      const landMat = new THREE.LineBasicMaterial({
+        color: '#a78bfa',
+        transparent: true,
+        opacity: 0.52,
+      });
+      for (const b of [ph.bottomLandingFootprintBoundsMm, ph.topLandingFootprintBoundsMm]) {
+        const x0 = b.minXmMm / 1000;
+        const x1 = b.maxXmMm / 1000;
+        const z0 = b.minYmMm / 1000;
+        const z1 = b.maxYmMm / 1000;
+        const ring = [
+          new THREE.Vector3(x0, yLand, z0),
+          new THREE.Vector3(x1, yLand, z0),
+          new THREE.Vector3(x1, yLand, z1),
+          new THREE.Vector3(x0, yLand, z1),
+          new THREE.Vector3(x0, yLand, z0),
+        ];
+        g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(ring), landMat));
+      }
+    }
+
+    const ann =
+      wireDoc.stairPlanSectionDocumentationLabel?.trim() || wireDoc.planUpDownLabel?.trim();
+    if (ann) {
       const lx = sx + uxDir * Math.min(len * 0.2, 0.35);
       const lz = sz + uzDir * Math.min(len * 0.2, 0.35);
-      g.add(planAnnotationLabelSprite(lx, lz, label, stair.id, 0.85));
+      const tagScale = wireDoc.stairPlanSectionDocumentationLabel ? 0.62 : 0.85;
+      g.add(planAnnotationLabelSprite(lx, lz, ann, stair.id, tagScale));
     }
 
     if (wireDoc.stairPlanBreakVisibilityToken === 'cutSplitsSpan') {

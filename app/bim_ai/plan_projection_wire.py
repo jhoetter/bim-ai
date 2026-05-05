@@ -65,6 +65,7 @@ from bim_ai.section_projection_primitives import (
 )
 from bim_ai.stair_plan_proxy import (
     stair_documentation_diagnostics,
+    stair_documentation_placeholders_v0,
     stair_plan_break_visibility_token,
     stair_plan_up_down_label,
     stair_riser_count_plan_proxy,
@@ -1059,6 +1060,7 @@ def _build_plan_primitive_lists(
                 float(e.run_end.y_mm) - float(e.run_start.y_mm),
             )
             rc_proxy = stair_riser_count_plan_proxy(doc, e, run_length_mm=run_len_mm)
+            tc_proxy = stair_tread_count_straight_plan_proxy(rc_proxy)
             bearing = stair_run_bearing_deg_ccw_from_plan_x(
                 float(e.run_start.x_mm),
                 float(e.run_start.y_mm),
@@ -1072,7 +1074,7 @@ def _build_plan_primitive_lists(
                 "riserMm": round(float(e.riser_mm), 3),
                 "treadMm": round(float(e.tread_mm), 3),
                 "riserCountPlanProxy": rc_proxy,
-                "treadCountPlanProxy": stair_tread_count_straight_plan_proxy(rc_proxy),
+                "treadCountPlanProxy": tc_proxy,
                 "runBearingDegCcFromPlanX": bearing,
                 "runStartMm": {
                     "x": round(e.run_start.x_mm, 3),
@@ -1106,7 +1108,27 @@ def _build_plan_primitive_lists(
                         br = stair_plan_break_visibility_token(view_range_clip_mm, sz0, sz1)
                         if br is not None:
                             stair_row["stairPlanBreakVisibilityToken"] = br
-            diags = stair_documentation_diagnostics(doc, e, riser_count_plan_proxy=rc_proxy)
+            ud_lab = (
+                stair_plan_up_down_label(float(blv.elevation_mm), float(tlv.elevation_mm))
+                if isinstance(blv, LevelElem) and isinstance(tlv, LevelElem)
+                else "—"
+            )
+            ph = stair_documentation_placeholders_v0(
+                e,
+                run_length_mm=run_len_mm,
+                plan_up_down_label=ud_lab,
+                riser_count_plan_proxy=rc_proxy,
+                tread_count_plan_proxy=tc_proxy,
+            )
+            if ph is not None:
+                stair_row["stairDocumentationPlaceholders_v0"] = ph
+                stair_row["stairPlanSectionDocumentationLabel"] = ph["stairPlanSectionDocumentationLabel"]
+            diags = stair_documentation_diagnostics(
+                doc,
+                e,
+                riser_count_plan_proxy=rc_proxy,
+                run_length_mm=run_len_mm,
+            )
             if diags:
                 stair_row["stairDocumentationDiagnostics"] = diags
             stairs.append(stair_row)

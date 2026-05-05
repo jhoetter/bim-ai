@@ -18,11 +18,19 @@ export function formatSectionStairDocumentationCaption(
     const tc = Number(w.treadCountPlanProxy);
     const rise = Number(w.storyRiseMm);
     const ud = typeof w.planUpDownLabel === 'string' ? w.planUpDownLabel.trim() : '';
+    const docLab =
+      typeof w.stairPlanSectionDocumentationLabel === 'string'
+        ? w.stairPlanSectionDocumentationLabel.trim()
+        : '';
     const segs: string[] = [eid];
-    if (Number.isFinite(rc)) segs.push(`R=${Math.round(rc)}`);
-    if (Number.isFinite(tc)) segs.push(`T=${Math.round(tc)}`);
-    if (Number.isFinite(rise) && rise > 0) segs.push(`rise=${Math.round(rise)}mm`);
-    if (ud) segs.push(ud);
+    if (docLab) {
+      segs.push(docLab);
+    } else {
+      if (Number.isFinite(rc)) segs.push(`R=${Math.round(rc)}`);
+      if (Number.isFinite(tc)) segs.push(`T=${Math.round(tc)}`);
+      if (Number.isFinite(rise) && rise > 0) segs.push(`rise=${Math.round(rise)}mm`);
+      if (ud) segs.push(ud);
+    }
     parts.push(segs.join(' '));
   }
   if (parts.length === 0) return null;

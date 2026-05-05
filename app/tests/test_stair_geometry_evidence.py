@@ -55,6 +55,31 @@ def test_plan_section_gltf_stair_story_rise_agree_when_levels_resolve() -> None:
     assert p_st["planUpDownLabel"] == "UP"
     assert "stairPlanBreakVisibilityToken" not in p_st
 
+    ph_p = p_st["stairDocumentationPlaceholders_v0"]
+    assert ph_p["stairRailingGuardPlaceholderSideTokens"] == [
+        "rail_guard_left_of_run",
+        "rail_guard_right_of_run",
+    ]
+    assert ph_p["stairPlanSectionDocumentationLabel"] == p_st["stairPlanSectionDocumentationLabel"]
+    assert ph_p["bottomLandingFootprintBoundsMm"] == {
+        "minXmMm": -560.0,
+        "maxXmMm": 0.0,
+        "minYmMm": -550.0,
+        "maxYmMm": 550.0,
+    }
+    assert ph_p["topLandingFootprintBoundsMm"] == {
+        "minXmMm": 5000.0,
+        "maxXmMm": 5560.0,
+        "minYmMm": -550.0,
+        "maxYmMm": 550.0,
+    }
+    assert ph_p["stairTotalRunLandingFootprintBoundsMm"] == {
+        "minXmMm": -560.0,
+        "maxXmMm": 5560.0,
+        "minYmMm": -550.0,
+        "maxYmMm": 550.0,
+    }
+
     sec_prim, _w = build_section_projection_primitives(doc, doc.elements["sec"])
     s_st = (sec_prim.get("stairs") or [])[0]
     assert s_st["storyRiseMm"] == pytest.approx(3200.0)
@@ -65,6 +90,8 @@ def test_plan_section_gltf_stair_story_rise_agree_when_levels_resolve() -> None:
     assert s_st["planUpDownLabel"] == "UP"
     assert s_st["runBearingDegCcFromPlanX"] == pytest.approx(0.0)
     assert "stairPlanBreakVisibilityToken" not in s_st
+    assert s_st["stairDocumentationPlaceholders_v0"] == ph_p
+    assert s_st["stairPlanSectionDocumentationLabel"] == ph_p["stairPlanSectionDocumentationLabel"]
 
     ext = export_manifest_extension_payload(doc)
     sg = ext.get("stairGeometryEvidence_v0")
@@ -81,6 +108,102 @@ def test_plan_section_gltf_stair_story_rise_agree_when_levels_resolve() -> None:
     assert row["planUpDownLabel"] == "UP"
     assert row["baseLevelName"] == "G"
     assert row["topLevelName"] == "L1"
+    assert row["stairDocumentationPlaceholders_v0"] == ph_p
+
+
+def test_plan_stair_break_visibility_span_fully_below_cut() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L", elevationMm=0),
+            "lvl1": LevelElem(kind="level", id="lvl1", name="L1", elevationMm=3200),
+            "pv": PlanViewElem(
+                kind="plan_view",
+                id="pv",
+                name="P",
+                levelId="lvl",
+                viewRangeBottomMm=-800,
+                viewRangeTopMm=4800,
+                cutPlaneOffsetMm=3500,
+            ),
+            "st": StairElem(
+                kind="stair",
+                id="st",
+                name="S",
+                baseLevelId="lvl",
+                topLevelId="lvl1",
+                runStartMm={"xMm": 0, "yMm": 0},
+                runEndMm={"xMm": 3000, "yMm": 0},
+                riserMm=160,
+                treadMm=280,
+            ),
+        },
+    )
+    out = resolve_plan_projection_wire(doc, plan_view_id="pv", fallback_level_id="lvl")
+    st = ((out.get("primitives") or {}).get("stairs") or [])[0]
+    assert st["stairPlanBreakVisibilityToken"] == "spanFullyBelowCut"
+
+
+def test_plan_stair_break_visibility_span_fully_above_cut() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L", elevationMm=0),
+            "lvl1": LevelElem(kind="level", id="lvl1", name="L1", elevationMm=3200),
+            "pv": PlanViewElem(
+                kind="plan_view",
+                id="pv",
+                name="P",
+                levelId="lvl",
+                viewRangeBottomMm=-800,
+                viewRangeTopMm=4800,
+                cutPlaneOffsetMm=-200,
+            ),
+            "st": StairElem(
+                kind="stair",
+                id="st",
+                name="S",
+                baseLevelId="lvl",
+                topLevelId="lvl1",
+                runStartMm={"xMm": 0, "yMm": 0},
+                runEndMm={"xMm": 3000, "yMm": 0},
+                riserMm=160,
+                treadMm=280,
+            ),
+        },
+    )
+    out = resolve_plan_projection_wire(doc, plan_view_id="pv", fallback_level_id="lvl")
+    st = ((out.get("primitives") or {}).get("stairs") or [])[0]
+    assert st["stairPlanBreakVisibilityToken"] == "spanFullyAboveCut"
+
+
+def test_plan_stair_placeholder_omitted_when_run_length_degenerate() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl0": LevelElem(kind="level", id="lvl0", name="G", elevationMm=0),
+            "lvl1": LevelElem(kind="level", id="lvl1", name="L1", elevationMm=3200),
+            "pv": PlanViewElem(kind="plan_view", id="pv", name="P", levelId="lvl0"),
+            "sx": StairElem(
+                kind="stair",
+                id="sx",
+                name="S",
+                baseLevelId="lvl0",
+                topLevelId="lvl1",
+                runStartMm={"xMm": 500.0, "yMm": 100.0},
+                runEndMm={"xMm": 500.0, "yMm": 100.0},
+                widthMm=1000,
+                riserMm=160,
+                treadMm=280,
+            ),
+        },
+    )
+    out = plan_projection_wire_from_request(doc, plan_view_id="pv", fallback_level_id="lvl0")
+    row = ((out.get("primitives") or {}).get("stairs") or [])[0]
+    assert "stairDocumentationPlaceholders_v0" not in row
+    assert "stairPlanSectionDocumentationLabel" not in row
+    codes = {d["code"] for d in (row.get("stairDocumentationDiagnostics") or [])}
+    assert "stair_run_length_degenerate" in codes
 
 
 def test_plan_stair_break_visibility_respects_cut_plane() -> None:
@@ -188,3 +311,7 @@ def test_plan_wire_without_resolved_levels_omits_stair_story_mm() -> None:
     assert "midRunElevationMm" not in rows
     diags = rows.get("stairDocumentationDiagnostics") or []
     assert any(d.get("code") == "stair_missing_level" and d.get("role") == "top" for d in diags)
+    ph = rows.get("stairDocumentationPlaceholders_v0")
+    assert ph is not None
+    assert ph["stairPlanSectionDocumentationLabel"].startswith("—·")
+    assert "stairRailingGuardPlaceholderSideTokens" in ph

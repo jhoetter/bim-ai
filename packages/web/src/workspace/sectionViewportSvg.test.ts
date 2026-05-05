@@ -121,6 +121,21 @@ describe('Section viewport documentation helpers', () => {
     );
   });
 
+  it('prefers stairPlanSectionDocumentationLabel in section stair caption when present', () => {
+    expect(
+      formatSectionStairDocumentationCaption([
+        {
+          elementId: 's1',
+          riserCountPlanProxy: 20,
+          treadCountPlanProxy: 19,
+          storyRiseMm: 3200,
+          planUpDownLabel: 'UP',
+          stairPlanSectionDocumentationLabel: 'UP·R20·T19·W1100',
+        },
+      ]),
+    ).toBe('Stair doc · s1 UP·R20·T19·W1100');
+  });
+
   it('formats cut plane context with run and 8-way view heading', () => {
     expect(
       formatSectionCutPlaneContext({

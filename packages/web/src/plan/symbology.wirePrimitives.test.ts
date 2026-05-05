@@ -341,6 +341,21 @@ describe('PlanCanvas server wire primitives path (WP-C03)', () => {
           runBearingDegCcFromPlanX: 90,
           planUpDownLabel: 'UP',
           stairPlanBreakVisibilityToken: 'cutSplitsSpan',
+          stairPlanSectionDocumentationLabel: 'UP·R16·T15·W1100',
+          stairDocumentationPlaceholders_v0: {
+            bottomLandingFootprintBoundsMm: {
+              minXmMm: 450,
+              maxXmMm: 1550,
+              minYmMm: -50,
+              maxYmMm: 500,
+            },
+            topLandingFootprintBoundsMm: {
+              minXmMm: 450,
+              maxXmMm: 1550,
+              minYmMm: 3500,
+              maxYmMm: 4050,
+            },
+          },
         },
       ],
       roofs: [],
@@ -360,9 +375,10 @@ describe('PlanCanvas server wire primitives path (WP-C03)', () => {
     const stairGrp = grp.children.find((c) => c.userData?.bimPickId === 'st1');
     expect(stairGrp).toBeTruthy();
     const lineCount = countLineNodes(stairGrp!);
-    // nSteps=16 → outline 1 + 17 cross + 16 diag = 34; + run arrow (3) + break zigzag (2) when wire doc present
+    // nSteps=16 → outline 1 + 17 cross + 16 diag = 34; + run arrow (3) + break zigzag (2) +
+    // landing placeholder outlines (2) when placeholders present → 41
     expect(lineCount).toBeGreaterThan(28);
-    expect(lineCount).toBe(39);
+    expect(lineCount).toBe(41);
   });
 
   it('adds sprite overlays only when planAnnotationHints and planTagLabel are set', () => {
