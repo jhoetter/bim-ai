@@ -4,7 +4,22 @@ from __future__ import annotations
 
 import csv
 import io
+import json
 from typing import Any
+
+
+def _schedule_row_csv_cell(v: Any) -> str:
+    if v is None or v == "":
+        return ""
+    if isinstance(v, bool):
+        return "true" if v else "false"
+    if isinstance(v, dict | list):
+        return json.dumps(v, sort_keys=True, separators=(",", ":"))
+    if isinstance(v, int):
+        return str(v)
+    if isinstance(v, float):
+        return str(int(v)) if v == int(v) else f"{v:g}"
+    return str(v)
 
 
 def _scalar_totals_csv_cell(v: Any) -> str:
@@ -91,7 +106,7 @@ def schedule_payload_to_csv(payload: dict[str, Any], *, include_totals_csv: bool
             for r in grp:
                 if not isinstance(r, dict):
                     continue
-                w.writerow([str(label), *[str(r.get(k, "")) for k in keys]])
+                w.writerow([str(label), *[_schedule_row_csv_cell(r.get(k, "")) for k in keys]])
         return _maybe_append_totals_block(buf.getvalue(), payload, include_totals_csv=include_totals_csv)
 
     rows_raw = payload.get("rows")
@@ -105,6 +120,6 @@ def schedule_payload_to_csv(payload: dict[str, Any], *, include_totals_csv: bool
     keys = cols if cols else sorted({k for r in rows for k in r})
     w.writerow(keys)
     for r in rows:
-        w.writerow([str(r.get(k, "")) for k in keys])
+        w.writerow([_schedule_row_csv_cell(r.get(k, "")) for k in keys])
 
     return _maybe_append_totals_block(buf.getvalue(), payload, include_totals_csv=include_totals_csv)

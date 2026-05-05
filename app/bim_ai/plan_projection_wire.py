@@ -72,6 +72,7 @@ from bim_ai.stair_plan_proxy import (
     stair_plan_up_down_label,
     stair_riser_count_plan_proxy,
     stair_run_bearing_deg_ccw_from_plan_x,
+    stair_schedule_row_extensions_v1,
     stair_tread_count_straight_plan_proxy,
 )
 from bim_ai.wall_join_evidence import collect_wall_corner_join_summary_v1
@@ -1140,6 +1141,11 @@ def _build_plan_primitive_lists(
             )
             if diags:
                 stair_row["stairDocumentationDiagnostics"] = diags
+            _sx = stair_schedule_row_extensions_v1(doc, e)
+            if ph is None:
+                _sx = dict(_sx)
+                _sx.pop("stairPlanSectionDocumentationLabel", None)
+            stair_row.update(_sx)
             stairs.append(stair_row)
         elif isinstance(e, RoofElem):
             ref = getattr(e, "reference_level_id", "") or ""
@@ -1595,6 +1601,180 @@ def _wall_opening_cut_fidelity_rows_for_plan_view(
     return out
 
 
+def _grid_axis_bucket_token(dx: float, dy: float) -> str:
+    if not math.isfinite(dx) or not math.isfinite(dy):
+        return "D"
+    adx = abs(dx)
+    ady = abs(dy)
+    if adx < 1e-9 and ady < 1e-9:
+        return "D"
+    if ady <= 1e-9 * max(1.0, adx):
+        return "H"
+    if adx <= 1e-9 * max(1.0, ady):
+        return "V"
+    ang = math.degrees(math.atan2(dy, dx)) % 180.0
+    if ang < 15.0 or ang > 165.0:
+        return "H"
+    if 75.0 < ang < 105.0:
+        return "V"
+    return "D"
+
+
+def _planar_segments_intersect_xy(
+    ax: float,
+    ay: float,
+    bx: float,
+    by: float,
+    cx: float,
+    cy: float,
+    dx: float,
+    dy: float,
+) -> bool:
+    """True when closed segments AB and CD share at least one point in the XY plane."""
+
+    _eps = 1e-7
+
+    def orient(px: float, py: float, qx: float, qy: float, rx: float, ry: float) -> float:
+        return (qy - py) * (rx - qx) - (qx - px) * (ry - qy)
+
+    def on_seg(px: float, py: float, qx: float, qy: float, rx: float, ry: float) -> bool:
+        return (
+            min(px, qx) - _eps <= rx <= max(px, qx) + _eps
+            and min(py, qy) - _eps <= ry <= max(py, qy) + _eps
+        )
+
+    o1 = orient(ax, ay, bx, by, cx, cy)
+    o2 = orient(ax, ay, bx, by, dx, dy)
+    o3 = orient(cx, cy, dx, dy, ax, ay)
+    o4 = orient(cx, cy, dx, dy, bx, by)
+
+    def sgn(val: float) -> int:
+        if val > _eps:
+            return 1
+        if val < -_eps:
+            return -1
+        return 0
+
+    s1, s2, s3, s4 = sgn(o1), sgn(o2), sgn(o3), sgn(o4)
+
+    if s1 != s2 and s3 != s4:
+        return True
+    if s1 == 0 and on_seg(ax, ay, bx, by, cx, cy):
+        return True
+    if s2 == 0 and on_seg(ax, ay, bx, by, dx, dy):
+        return True
+    if s3 == 0 and on_seg(cx, cy, dx, dy, ax, ay):
+        return True
+    if s4 == 0 and on_seg(cx, cy, dx, dy, bx, by):
+        return True
+    return False
+
+
+def _plan_grid_datum_evidence_v0(
+    doc: Document,
+    *,
+    level: str | None,
+    hidden_semantic: set[str],
+    associated_plan_view_id: str | None,
+    active_level_id: str | None,
+    crop_box_mm: tuple[float, float, float, float] | None,
+    view_range_clip_mm: tuple[float, float, float] | None,
+) -> dict[str, Any]:
+    """Compact grid/datum digest; mirrors `_build_plan_primitive_lists` grid visibility filters."""
+
+    rows: list[dict[str, Any]] = []
+    for eid in sorted(doc.elements.keys()):
+        e = doc.elements[eid]
+        if not isinstance(e, GridLineElem):
+            continue
+        elv = getattr(e, "level_id", None)
+        if "grid_line" in hidden_semantic or (level and elv is not None and elv != level):
+            continue
+        if crop_box_mm is not None and not _segment_intersects_crop_xy(
+            e.start.x_mm, e.start.y_mm, e.end.x_mm, e.end.y_mm, crop_box_mm
+        ):
+            continue
+        if view_range_clip_mm is not None and elv is not None:
+            gz = _level_elevation_mm(doc, elv)
+            lo, hi, _cu = view_range_clip_mm
+            if not _closed_z_intervals_overlap_mm(gz, gz, lo, hi):
+                continue
+
+        ddx = float(e.end.x_mm - e.start.x_mm)
+        ddy = float(e.end.y_mm - e.start.y_mm)
+        axis = _grid_axis_bucket_token(ddx, ddy)
+        reference_ok = True
+        reason_code: str | None = None
+        if elv is not None:
+            host = doc.elements.get(elv)
+            if not isinstance(host, LevelElem):
+                reference_ok = False
+                reason_code = "datum_grid_reference_missing"
+
+        row: dict[str, Any] = {
+            "gridId": e.id,
+            "levelId": elv,
+            "axisToken": axis,
+            "referenceOk": reference_ok,
+        }
+        if not reference_ok and reason_code is not None:
+            row["reasonCode"] = reason_code
+        rows.append(row)
+
+    return {
+        "format": "planGridDatumEvidence_v0",
+        "associatedPlanViewId": associated_plan_view_id,
+        "activeLevelId": active_level_id,
+        "rows": rows,
+    }
+
+
+def _section_datum_elevation_evidence_v0(
+    doc: Document,
+    sec: SectionCutElem,
+    prim: dict[str, Any],
+    warnings: list[dict[str, Any]],
+) -> dict[str, Any]:
+    degenerate = any(str(w.get("code") or "") == "degenerateCutLine" for w in warnings)
+    markers = prim.get("levelMarkers") or []
+    out: dict[str, Any] = {
+        "format": "sectionDatumElevationEvidence_v0",
+        "levelMarkerCount": len(markers),
+    }
+    if degenerate:
+        out["reasonCode"] = "degenerateCutLine"
+        out["gridCrossingCount"] = None
+        return out
+
+    sx0 = float(sec.line_start_mm.x_mm)
+    sy0 = float(sec.line_start_mm.y_mm)
+    sx1 = float(sec.line_end_mm.x_mm)
+    sy1 = float(sec.line_end_mm.y_mm)
+    if not math.isfinite(sx0 + sy0 + sx1 + sy1) or math.hypot(sx1 - sx0, sy1 - sy0) < 1e-6:
+        out["reasonCode"] = "degenerateCutLine"
+        out["gridCrossingCount"] = None
+        return out
+
+    crossings = 0
+    for eid in sorted(doc.elements.keys()):
+        e = doc.elements[eid]
+        if not isinstance(e, GridLineElem):
+            continue
+        if _planar_segments_intersect_xy(
+            sx0,
+            sy0,
+            sx1,
+            sy1,
+            float(e.start.x_mm),
+            float(e.start.y_mm),
+            float(e.end.x_mm),
+            float(e.end.y_mm),
+        ):
+            crossings += 1
+    out["gridCrossingCount"] = crossings
+    return out
+
+
 def resolve_plan_projection_wire(
     doc: Document,
     *,
@@ -1855,6 +2035,15 @@ def resolve_plan_projection_wire(
     )
     if wj_summary is not None:
         out_payload["wallCornerJoinSummary_v1"] = wj_summary
+    out_payload["planGridDatumEvidence_v0"] = _plan_grid_datum_evidence_v0(
+        doc,
+        level=active_level,
+        hidden_semantic=hidden_semantic,
+        associated_plan_view_id=pinned_pv,
+        active_level_id=active_level,
+        crop_box_mm=effective_crop,
+        view_range_clip_mm=view_range_clip_mm,
+    )
     return out_payload
 
 
@@ -1918,5 +2107,8 @@ def section_cut_projection_wire(doc: Document, section_cut_id: str) -> dict[str,
         "primitives": prim,
         "countsByVisibleKind": dict(sorted(counts.items())),
         "elementCountRough": sum(1 for e in doc.elements.values() if isinstance(e, WallElem)),
+        "sectionDatumElevationEvidence_v0": _section_datum_elevation_evidence_v0(
+            doc, sec, prim, prim_warnings
+        ),
     }
 

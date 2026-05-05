@@ -5,12 +5,13 @@ from __future__ import annotations
 import pytest
 
 from bim_ai.document import Document
-from bim_ai.elements import LevelElem, PlanViewElem, SectionCutElem, StairElem
+from bim_ai.elements import LevelElem, PlanViewElem, ScheduleElem, SectionCutElem, StairElem
 from bim_ai.export_gltf import export_manifest_extension_payload
 from bim_ai.plan_projection_wire import (
     plan_projection_wire_from_request,
     resolve_plan_projection_wire,
 )
+from bim_ai.schedule_derivation import derive_schedule_table
 from bim_ai.section_projection_primitives import build_section_projection_primitives
 
 
@@ -40,6 +41,12 @@ def test_plan_section_gltf_stair_story_rise_agree_when_levels_resolve() -> None:
                 line_start_mm={"xMm": 2500, "yMm": -2000},
                 line_end_mm={"xMm": 2500, "yMm": 8000},
                 crop_depth_mm=12000,
+            ),
+            "sch-st": ScheduleElem(
+                kind="schedule",
+                id="sch-st",
+                name="Stairs",
+                filters={"category": "stair"},
             ),
         },
     )
@@ -109,6 +116,13 @@ def test_plan_section_gltf_stair_story_rise_agree_when_levels_resolve() -> None:
     assert row["baseLevelName"] == "G"
     assert row["topLevelName"] == "L1"
     assert row["stairDocumentationPlaceholders_v0"] == ph_p
+
+    st_tab = derive_schedule_table(doc, "sch-st")
+    sch_row = st_tab["rows"][0]
+    corr = sch_row["stairScheduleCorrelationToken"]
+    assert corr == p_st["stairScheduleCorrelationToken"]
+    assert corr == s_st["stairScheduleCorrelationToken"]
+    assert corr == row["stairScheduleCorrelationToken"]
 
 
 def test_plan_stair_break_visibility_span_fully_below_cut() -> None:

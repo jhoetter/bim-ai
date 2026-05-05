@@ -46,6 +46,7 @@ import {
   type ScheduleTableModelV1,
 } from './scheduleTableRendererV1';
 import { roomFinishScheduleEvidenceReadoutParts } from './roomFinishScheduleEvidenceReadout';
+import { stairScheduleEvidenceReadoutLines } from './stairScheduleEvidenceReadout';
 import { compactScheduleOpeningAdvisoryLines } from './scheduleOpeningAdvisoriesReadout';
 
 export { resolveScheduleSortDescending, scheduleTotalsReadoutParts } from './schedulePayloadTotals';
@@ -816,6 +817,13 @@ export function SchedulePanel(props: {
     if (tab !== 'rooms' || !srvActive?.data) return [];
     return roomFinishScheduleEvidenceReadoutParts(
       (srvActive.data as Record<string, unknown>).roomFinishScheduleEvidence_v1,
+    );
+  }, [tab, srvActive]);
+
+  const stairScheduleServerEvidenceLines = useMemo(() => {
+    if (tab !== 'stairs' || !srvActive?.data) return [];
+    return stairScheduleEvidenceReadoutLines(
+      flattenSchedulePayloadRows(srvActive.data as Record<string, unknown>),
     );
   }, [tab, srvActive]);
 
@@ -2118,6 +2126,19 @@ export function SchedulePanel(props: {
             {renderRegistryColumnPicker()}
             {renderRegistryScheduleTable(registryTableModelV1)}
             {renderTotals(registryTableModelV1.footerParts)}
+            {tab === 'stairs' && stairScheduleServerEvidenceLines.length ? (
+              <div
+                data-testid="stair-schedule-evidence-readout"
+                className="mt-2 rounded border border-border/60 px-2 py-1.5 text-[10px] text-muted"
+              >
+                <div className="font-semibold text-foreground/90">Stair schedule evidence</div>
+                <ul className="mt-1 list-disc space-y-0.5 ps-4 font-mono leading-snug">
+                  {stairScheduleServerEvidenceLines.map((line) => (
+                    <li key={line}>{line}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
           </div>
         ) : (
           <div className="mt-3 text-[11px] text-muted">{MSG_NO_ROWS}</div>

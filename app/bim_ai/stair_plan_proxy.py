@@ -11,6 +11,7 @@ from bim_ai.elements import LevelElem, StairElem
 _STAIR_DOC_Z_EPS_MM = 1e-3
 _STAIR_DOC_RANGE_EPS_MM = 1e-6
 _STAIR_RUN_LENGTH_DOC_EPS_MM = 1e-3
+_STAIR_SCHEDULE_CORR_LABEL_SENTINEL = "__no_label__"
 
 
 def _axis_aligned_bounds_mm(pts: list[tuple[float, float]]) -> dict[str, float]:
@@ -224,3 +225,103 @@ def stair_documentation_diagnostics(
                 }
             )
     return out
+
+
+def stair_schedule_correlation_token_v0(*, element_id: str, documentation_label: str) -> str:
+    """Stable correlation handle for schedule, plan, section, and manifest stair evidence."""
+    lab = documentation_label.strip() or _STAIR_SCHEDULE_CORR_LABEL_SENTINEL
+    return f"stairSchCorr_v0|{element_id}|{lab}"
+
+
+def stair_schedule_row_extensions_v1(doc: Document, stair: StairElem) -> dict[str, Any]:
+    """Deterministic stair schedule quantities, guardrail readback, and correlation token."""
+    rx0, ry0 = float(stair.run_start.x_mm), float(stair.run_start.y_mm)
+    rx1, ry1 = float(stair.run_end.x_mm), float(stair.run_end.y_mm)
+    run_len_mm = math.hypot(rx1 - rx0, ry1 - ry0)
+
+    bl = doc.elements.get(stair.base_level_id)
+    tl = doc.elements.get(stair.top_level_id)
+    base_ok = isinstance(bl, LevelElem)
+    top_ok = isinstance(tl, LevelElem)
+
+    ud_lab = "—"
+    total_rise_mm: float | None = None
+    if base_ok and top_ok:
+        ble = bl if isinstance(bl, LevelElem) else None
+        tle = tl if isinstance(tl, LevelElem) else None
+        if ble is not None and tle is not None:
+            ud_lab = stair_plan_up_down_label(float(ble.elevation_mm), float(tle.elevation_mm))
+            z_lo = float(min(ble.elevation_mm, tle.elevation_mm))
+            z_hi = float(max(ble.elevation_mm, tle.elevation_mm))
+            rise_story = z_hi - z_lo
+            if rise_story > _STAIR_DOC_Z_EPS_MM:
+                total_rise_mm = round(rise_story, 3)
+
+    rc_proxy = stair_riser_count_plan_proxy(doc, stair, run_length_mm=run_len_mm)
+    tc_proxy = stair_tread_count_straight_plan_proxy(rc_proxy)
+
+    ph = stair_documentation_placeholders_v0(
+        stair,
+        run_length_mm=run_len_mm,
+        plan_up_down_label=ud_lab,
+        riser_count_plan_proxy=rc_proxy,
+        tread_count_plan_proxy=tc_proxy,
+    )
+    if ph is not None:
+        doc_label = str(ph["stairPlanSectionDocumentationLabel"])
+    else:
+        doc_label = stair_plan_section_documentation_label_v0(
+            plan_up_down_label=ud_lab,
+            riser_count_plan_proxy=rc_proxy,
+            tread_count_plan_proxy=tc_proxy,
+            width_mm=float(stair.width_mm),
+        )
+
+    token = stair_schedule_correlation_token_v0(element_id=stair.id, documentation_label=doc_label)
+
+    status = "complete"
+    degenerate = run_len_mm <= _STAIR_RUN_LENGTH_DOC_EPS_MM
+    if degenerate:
+        status = "degenerate_run"
+    elif not base_ok or not top_ok:
+        status = "missing_levels"
+    elif float(stair.riser_mm) <= 1e-6 or float(stair.tread_mm) <= 1e-6:
+        status = "incomplete_riser_tread"
+
+    riser_h = round(float(stair.riser_mm), 3) if float(stair.riser_mm) > 1e-6 else None
+    tread_d = round(float(stair.tread_mm), 3) if float(stair.tread_mm) > 1e-6 else None
+
+    total_run_mm: float | None = None
+    if not degenerate:
+        total_run_mm = round(run_len_mm, 3)
+
+    landing_count: int | None
+    landing_bounds: dict[str, float] | None
+    guard_tokens: list[str]
+    if ph is not None:
+        landing_count = 2
+        landing_bounds = dict(ph["stairTotalRunLandingFootprintBoundsMm"])
+        guard_tokens = list(ph["stairRailingGuardPlaceholderSideTokens"])
+    else:
+        landing_count = 0
+        landing_bounds = None
+        guard_tokens = []
+        if ph is None and not degenerate and status == "complete":
+            status = "guardrail_uncorrelated"
+
+    return {
+        "riserCount": rc_proxy,
+        "treadCount": tc_proxy,
+        "riserHeightMm": riser_h,
+        "treadDepthMm": tread_d,
+        "totalRiseMm": total_rise_mm,
+        "totalRunMm": total_run_mm,
+        "landingCount": landing_count,
+        "landingFootprintBoundsMm": landing_bounds,
+        "guardrailPlaceholderSideTokens": guard_tokens,
+        "stairPlanSectionDocumentationLabel": doc_label,
+        "stairQuantityDerivationStatus": status,
+        "baseLevelResolves": base_ok,
+        "topLevelResolves": top_ok,
+        "stairScheduleCorrelationToken": token,
+    }

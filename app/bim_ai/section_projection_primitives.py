@@ -64,6 +64,7 @@ from bim_ai.stair_plan_proxy import (
     stair_plan_up_down_label,
     stair_riser_count_plan_proxy,
     stair_run_bearing_deg_ccw_from_plan_x,
+    stair_schedule_row_extensions_v1,
     stair_tread_count_straight_plan_proxy,
 )
 from bim_ai.type_material_registry import material_display_label
@@ -893,6 +894,11 @@ def build_section_projection_primitives(
         )
         if diags:
             stair_row["stairDocumentationDiagnostics"] = diags
+        _sx = stair_schedule_row_extensions_v1(doc, e)
+        if ph is None:
+            _sx = dict(_sx)
+            _sx.pop("stairPlanSectionDocumentationLabel", None)
+        stair_row.update(_sx)
         stairs.append(stair_row)
 
     roofs: list[dict[str, Any]] = []
