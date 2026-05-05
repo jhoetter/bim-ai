@@ -43,6 +43,17 @@ describe('sheetExportHrefTriple', () => {
 });
 
 describe('indexViewportEvidenceHints', () => {
+  it('indexes room programme legend documentation segment', () => {
+    const m = indexViewportEvidenceHints([
+      {
+        viewportId: 'vp-leg',
+        crop: 'omit',
+        roomProgrammeLegendDocumentationSegment: 'roomLegDoc[n=1 sha=a]',
+      },
+    ]);
+    expect(String(m.get('vp-leg')?.roomProgrammeLegendDocumentationSegment)).toContain('roomLegDoc');
+  });
+
   it('indexes hints by viewportId', () => {
     const m = indexViewportEvidenceHints([
       { viewportId: 'vp-a', crop: 'omit', planProjectionSegment: 'planPrim[x]' },

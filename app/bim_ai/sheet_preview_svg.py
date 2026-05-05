@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import html
+import json
 import math
 import re
 import struct
@@ -37,6 +38,8 @@ SHEET_PRINT_RASTER_SURROGATE_V2_HEIGHT_PX = (
 )
 
 SHEET_PRINT_RASTER_PRINT_CONTRACT_V3_FORMAT = "sheetPrintRasterPrintContract_v3"
+
+ROOM_PROGRAMME_LEGEND_DOC_TITLE = "Room programme legend"
 
 
 def sheet_svg_utf8_sha256(svg_text: str) -> str:
@@ -369,29 +372,123 @@ def format_plan_projection_export_segment(wire: dict[str, Any]) -> str:
     nd = len(prim.get("doors") or [])
     nwi = len(prim.get("windows") or [])
     ns = len(prim.get("stairs") or [])
-    return f"planPrim[w={nw},f={nf},r={nr},d={nd},wi={nwi},s={ns}]"
+    base = f"planPrim[w={nw},f={nf},r={nr},d={nd},wi={nwi},s={ns}]"
+    ev = wire.get("slabOpeningDocumentationEvidence_v0")
+    rows = ev.get("rows") if isinstance(ev, dict) else None
+    if isinstance(rows, list) and len(rows) > 0:
+        canon = json.dumps(rows, sort_keys=True, separators=(",", ":"), default=str)
+        d12 = hashlib.sha256(canon.encode("utf-8")).hexdigest()[:12]
+        return f"{base} soDoc[n={len(rows)} h={d12}]"
+    return base
 
 
 def format_sheet_plan_viewport_projection_segment(doc: Document, vp: dict[str, Any]) -> str:
     """Plan projection slice for a sheet viewport row when viewRef targets a plan_view."""
 
+    wire = _plan_sheet_viewport_projection_wire(doc, vp)
+    if wire is None:
+        return ""
+    return format_plan_projection_export_segment(wire)
+
+
+def _plan_sheet_viewport_projection_wire(doc: Document, vp: dict[str, Any]) -> dict[str, Any] | None:
     vr = vp.get("viewRef") or vp.get("view_ref")
     if not isinstance(vr, str) or ":" not in vr:
-        return ""
+        return None
     kind_raw, ref_raw = vr.split(":", 1)
     if kind_raw.strip().lower() != "plan":
-        return ""
+        return None
     pv_id = ref_raw.strip()
     if not pv_id:
-        return ""
-    wire = resolve_plan_projection_wire(
+        return None
+    return resolve_plan_projection_wire(
         doc,
         plan_view_id=pv_id,
         fallback_level_id=None,
         global_plan_presentation="default",
         sheet_viewport_row_for_crop=vp,
     )
-    return format_plan_projection_export_segment(wire)
+
+
+def _normalized_sorted_room_color_legend_rows(
+    wire: dict[str, Any],
+) -> tuple[list[dict[str, str]], str, int] | None:
+    raw = wire.get("roomColorLegend")
+    if not isinstance(raw, list) or len(raw) == 0:
+        return None
+    ev = wire.get("roomProgrammeLegendEvidence_v0")
+    if not isinstance(ev, dict):
+        return None
+    digest = str(ev.get("legendDigestSha256") or ev.get("legend_digest_sha256") or "").strip()
+    if len(digest) != 64:
+        return None
+    rows: list[dict[str, str]] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        label = str(item.get("label") or "").strip()
+        if not label:
+            continue
+        hx = str(item.get("schemeColorHex") or item.get("scheme_color_hex") or "#888888").strip()
+        pc = str(item.get("programmeCode") or item.get("programme_code") or "").strip()
+        dept = str(item.get("department") or "").strip()
+        fn = str(item.get("functionLabel") or item.get("function_label") or "").strip()
+        rows.append(
+            {
+                "label": label,
+                "schemeColorHex": hx,
+                "programmeCode": pc,
+                "department": dept,
+                "functionLabel": fn,
+            }
+        )
+    if not rows:
+        return None
+    rows.sort(
+        key=lambda r: (
+            r["label"],
+            r["schemeColorHex"],
+            r["programmeCode"],
+            r["department"],
+            r["functionLabel"],
+        )
+    )
+    return rows, digest, len(rows)
+
+
+def _room_programme_legend_segments_from_wire(
+    wire: dict[str, Any],
+) -> tuple[list[dict[str, str]], str, int, str, str] | None:
+    tup = _normalized_sorted_room_color_legend_rows(wire)
+    if tup is None:
+        return None
+    rows, digest, n = tup
+    body = json.dumps(rows, sort_keys=True, separators=(",", ":"))
+    doc_seg = (
+        f"roomLegDoc[title={ROOM_PROGRAMME_LEGEND_DOC_TITLE} rows={n} sha={digest} body={body}]"
+    )
+    listing_seg = f"roomLegDoc[n={n} sha={digest}]"
+    return rows, digest, n, doc_seg, listing_seg
+
+
+def format_room_programme_legend_documentation_segment(doc: Document, vp: dict[str, Any]) -> str:
+    """Stable room colour / programme legend readout for plan sheet viewports."""
+
+    wire = _plan_sheet_viewport_projection_wire(doc, vp)
+    if wire is None:
+        return ""
+    out = _room_programme_legend_segments_from_wire(wire)
+    return out[3] if out else ""
+
+
+def format_room_programme_legend_listing_segment(doc: Document, vp: dict[str, Any]) -> str:
+    """Short legend token for PDF viewport listing lines (fits typical truncation budgets)."""
+
+    wire = _plan_sheet_viewport_projection_wire(doc, vp)
+    if wire is None:
+        return ""
+    out = _room_programme_legend_segments_from_wire(wire)
+    return out[4] if out else ""
 
 
 def format_section_viewport_documentation_segment(doc: Document, view_ref: str) -> str:
@@ -476,6 +573,13 @@ def format_section_viewport_documentation_segment(doc: Document, view_ref: str) 
     mh_raw = prim.get("sectionDocMaterialHints") or []
     if isinstance(mh_raw, list) and len(mh_raw) > 0:
         inner_parts.append(f"mh={len(mh_raw)}")
+
+    so_ev = prim.get("slabOpeningDocumentationEvidence_v0")
+    so_rows = so_ev.get("rows") if isinstance(so_ev, dict) else None
+    if isinstance(so_rows, list) and len(so_rows) > 0:
+        canon_so = json.dumps(so_rows, sort_keys=True, separators=(",", ":"), default=str)
+        d12_so = hashlib.sha256(canon_so.encode("utf-8")).hexdigest()[:12]
+        inner_parts.append(f"soDoc[n={len(so_rows)} h={d12_so}]")
 
     return "secDoc[" + " ".join(inner_parts) + "]"
 
@@ -563,21 +667,30 @@ def plan_room_programme_legend_hints_v0(doc: Document, vps_raw: list[Any]) -> li
             global_plan_presentation="default",
             sheet_viewport_row_for_crop=vp,
         )
+        readout = _room_programme_legend_segments_from_wire(wire)
+        if readout is None:
+            continue
+        legend_rows, digest, row_count, documentation_segment, _listing = readout
+        row: dict[str, Any] = {
+            "viewportId": vid,
+            "legendDigestSha256": digest,
+            "rowCount": row_count,
+            "legendTitle": ROOM_PROGRAMME_LEGEND_DOC_TITLE,
+            "legendRows": legend_rows,
+            "documentationSegment": documentation_segment,
+        }
         ev = wire.get("roomProgrammeLegendEvidence_v0")
-        if not isinstance(ev, dict):
-            continue
-        digest_raw = ev.get("legendDigestSha256") or ev.get("legend_digest_sha256")
-        digest = str(digest_raw).strip()
-        if not digest:
-            continue
-        rows_raw = ev.get("rowCount", ev.get("row_count"))
-        try:
-            row_count = int(rows_raw)
-        except (TypeError, ValueError):
-            continue
-        out.append(
-            {"viewportId": vid, "legendDigestSha256": digest, "rowCount": row_count}
-        )
+        if isinstance(ev, dict):
+            so = ev.get("schemeOverridesSource") or ev.get("scheme_overrides_source")
+            if isinstance(so, str) and so.strip():
+                row["schemeOverridesSource"] = so.strip()
+            try:
+                soc = int(ev.get("schemeOverrideRowCount", ev.get("scheme_override_row_count", 0)))
+                if soc > 0:
+                    row["schemeOverrideRowCount"] = soc
+            except (TypeError, ValueError):
+                pass
+        out.append(row)
 
     return sorted(out, key=lambda r: str(r.get("viewportId") or ""))
 
@@ -610,6 +723,7 @@ def viewport_evidence_hints_v1(doc: Document, vps_raw: list[Any]) -> list[dict[s
             format_section_viewport_documentation_segment(doc, str(vr)) if isinstance(vr, str) else ""
         )
         sch_seg = format_schedule_viewport_documentation_segment(doc, str(vr)) if isinstance(vr, str) else ""
+        room_leg_seg = format_room_programme_legend_documentation_segment(doc, vp)
 
         hints.append(
             {
@@ -619,6 +733,7 @@ def viewport_evidence_hints_v1(doc: Document, vps_raw: list[Any]) -> list[dict[s
                 "planProjectionSegment": plan_seg,
                 "sectionDocumentationSegment": sec_seg,
                 "scheduleDocumentationSegment": sch_seg,
+                "roomProgrammeLegendDocumentationSegment": room_leg_seg,
             }
         )
 
@@ -706,12 +821,17 @@ def sheet_viewport_export_listing_lines(doc: Document, sh: SheetElem) -> list[st
             else ""
         )
 
+        leg_list_seg = (
+            format_room_programme_legend_listing_segment(doc, vp) if isinstance(vp, dict) else ""
+        )
+
         geo_tail = (
             geo
             + (f" · {crop_seg}" if crop_seg else "")
             + (f" · {doc_seg}" if doc_seg else "")
             + (f" · {proj_seg}" if proj_seg else "")
             + (f" · {sch_seg}" if sch_seg else "")
+            + (f" · {leg_list_seg}" if leg_list_seg else "")
         )
 
         lines.append(str(f"{label}{suffix}{geo_tail}")[:220])
@@ -727,7 +847,8 @@ def _viewport_export_correlation_segment_bytes(hint_row: dict[str, Any]) -> byte
     plan_s = str(hint_row.get("planProjectionSegment") or "")
     sec_s = str(hint_row.get("sectionDocumentationSegment") or "")
     sch_s = str(hint_row.get("scheduleDocumentationSegment") or "")
-    return f"{crop}\n{plan_s}\n{sec_s}\n{sch_s}".encode()
+    leg_s = str(hint_row.get("roomProgrammeLegendDocumentationSegment") or "")
+    return f"{crop}\n{plan_s}\n{sec_s}\n{sch_s}\n{leg_s}".encode()
 
 
 def build_sheet_print_raster_print_contract_v3(
@@ -922,6 +1043,16 @@ def sheet_elem_to_svg(doc: Document, sh: SheetElem) -> str:
                 f'fill="#15803d" font-size="280px">{esc_sch}</text>'
             )
 
+        leg_seg_svg = format_room_programme_legend_documentation_segment(doc, vp)
+        leg_block = ""
+        if leg_seg_svg:
+            esc_leg = html.escape(leg_seg_svg)
+            leg_block = (
+                f'<text x="{x_mm + 200}" y="{y_mm + 3400}" '
+                f'data-room-programme-legend-doc-token="roomProgrammeLegendDocumentationSegment" '
+                f'fill="#0e7490" font-size="260px">{esc_leg}</text>'
+            )
+
         viewport_blocks.append(
             "<g>"
             f'<rect x="{x_mm}" y="{y_mm}" width="{width_mm}" height="{height_mm}" '
@@ -934,6 +1065,7 @@ def sheet_elem_to_svg(doc: Document, sh: SheetElem) -> str:
             f"{doc_block}"
             f"{proj_block}"
             f"{sch_block}"
+            f"{leg_block}"
             "</g>"
         )
 

@@ -14,6 +14,7 @@ from bim_ai.commands import (
     CreateLevelCmd,
     CreateRoofCmd,
     CreateRoomRectangleCmd,
+    CreateSlabOpeningCmd,
     CreateWallCmd,
     UpsertPlanViewCmd,
     UpsertRoomColorSchemeCmd,
@@ -62,9 +63,13 @@ from bim_ai.plan_projection_wire import (
 from bim_ai.schedule_derivation import derive_schedule_table
 from bim_ai.section_projection_primitives import build_section_projection_primitives
 from bim_ai.sheet_preview_svg import (
+    format_plan_projection_export_segment,
+    format_room_programme_legend_documentation_segment,
+    format_section_viewport_documentation_segment,
     plan_room_programme_legend_hints_v0,
     sheet_elem_to_svg,
     sheet_print_raster_print_surrogate_png_bytes_v2,
+    sheet_viewport_export_listing_lines,
     validate_sheet_print_raster_print_contract_v3,
     viewport_evidence_hints_v1,
 )
@@ -396,6 +401,160 @@ def test_section_floor_emits_multiple_panels_when_slab_opening_subtracts_outer_r
     assert "floor:fl:pane-4" in ids
     assert all(str(f.get("elementId")) == "fl" for f in fls)
     assert out["countsByVisibleKind"]["floor"] == len(fls)
+    so_ev = prim.get("slabOpeningDocumentationEvidence_v0") or {}
+    so_rows = so_ev.get("rows") or []
+    assert len(so_rows) == 1
+    assert so_rows[0]["openingId"] == "so"
+    assert so_rows[0]["skipReason"] is None
+    assert so_rows[0]["panelSplitEvidence"]["eligible"] is True
+    sec_seg = format_section_viewport_documentation_segment(doc, "section:sec-a")
+    assert "soDoc[n=1" in sec_seg
+
+
+def test_plan_wire_slab_opening_documentation_evidence_v0() -> None:
+    doc = Document(revision=1, elements={})
+    apply_inplace(doc, CreateLevelCmd(id="lvl", name="L", elevationMm=0))
+    apply_inplace(doc, UpsertPlanViewCmd(id="pv", name="P", level_id="lvl"))
+    apply_inplace(
+        doc,
+        CreateFloorCmd(
+            id="fl",
+            name="Slab",
+            level_id="lvl",
+            boundary_mm=[
+                {"xMm": 0, "yMm": 0},
+                {"xMm": 5000, "yMm": 0},
+                {"xMm": 5000, "yMm": 4000},
+                {"xMm": 0, "yMm": 4000},
+            ],
+            thickness_mm=220,
+        ),
+    )
+    apply_inplace(
+        doc,
+        CreateSlabOpeningCmd(
+            id="so-1",
+            name="Lobby",
+            host_floor_id="fl",
+            boundary_mm=[
+                {"xMm": 900, "yMm": 900},
+                {"xMm": 1900, "yMm": 900},
+                {"xMm": 1900, "yMm": 1700},
+                {"xMm": 900, "yMm": 1700},
+            ],
+        ),
+    )
+    wire = plan_projection_wire_from_request(doc, plan_view_id="pv")
+    ev = wire.get("slabOpeningDocumentationEvidence_v0") or {}
+    rows = ev.get("rows") or []
+    assert len(rows) == 1
+    r0 = rows[0]
+    assert r0["openingId"] == "so-1"
+    assert r0["hostFloorId"] == "fl"
+    assert r0["axisAlignedBoundsMm"] == {
+        "minX": 900.0,
+        "minY": 900.0,
+        "maxX": 1900.0,
+        "maxY": 1700.0,
+    }
+    assert r0["areaMm2"] == 800000.0
+    assert r0["perimeterMm"] == 3600.0
+    assert r0["skipReason"] is None
+    assert r0["panelSplitEvidence"]["eligible"] is True
+    assert r0["documentationToken"] == "so/so-1@host/fl"
+    seg = format_plan_projection_export_segment(wire)
+    assert "soDoc[n=1" in seg
+
+
+def test_plan_wire_slab_opening_documentation_multi_void_skip() -> None:
+    doc = Document(revision=1, elements={})
+    apply_inplace(doc, CreateLevelCmd(id="lvl", name="L", elevationMm=0))
+    apply_inplace(doc, UpsertPlanViewCmd(id="pv", name="P", level_id="lvl"))
+    apply_inplace(
+        doc,
+        CreateFloorCmd(
+            id="fl",
+            name="Slab",
+            level_id="lvl",
+            boundary_mm=[
+                {"xMm": 0, "yMm": 0},
+                {"xMm": 5000, "yMm": 0},
+                {"xMm": 5000, "yMm": 4000},
+                {"xMm": 0, "yMm": 4000},
+            ],
+        ),
+    )
+    apply_inplace(
+        doc,
+        CreateSlabOpeningCmd(
+            id="so-a",
+            name="A",
+            host_floor_id="fl",
+            boundary_mm=[
+                {"xMm": 500, "yMm": 500},
+                {"xMm": 700, "yMm": 500},
+                {"xMm": 700, "yMm": 700},
+                {"xMm": 500, "yMm": 700},
+            ],
+        ),
+    )
+    apply_inplace(
+        doc,
+        CreateSlabOpeningCmd(
+            id="so-b",
+            name="B",
+            host_floor_id="fl",
+            boundary_mm=[
+                {"xMm": 900, "yMm": 900},
+                {"xMm": 1100, "yMm": 900},
+                {"xMm": 1100, "yMm": 1100},
+                {"xMm": 900, "yMm": 1100},
+            ],
+        ),
+    )
+    wire = plan_projection_wire_from_request(doc, plan_view_id="pv")
+    rows = (wire.get("slabOpeningDocumentationEvidence_v0") or {}).get("rows") or []
+    assert len(rows) == 2
+    assert all(r["skipReason"] == "multi_slab_void_on_host" for r in rows)
+    assert all(r["panelSplitEvidence"]["eligible"] is False for r in rows)
+
+
+def test_plan_wire_slab_opening_documentation_non_axis_aligned_opening() -> None:
+    doc = Document(revision=1, elements={})
+    apply_inplace(doc, CreateLevelCmd(id="lvl", name="L", elevationMm=0))
+    apply_inplace(doc, UpsertPlanViewCmd(id="pv", name="P", level_id="lvl"))
+    apply_inplace(
+        doc,
+        CreateFloorCmd(
+            id="fl",
+            name="Slab",
+            level_id="lvl",
+            boundary_mm=[
+                {"xMm": 0, "yMm": 0},
+                {"xMm": 5000, "yMm": 0},
+                {"xMm": 5000, "yMm": 4000},
+                {"xMm": 0, "yMm": 4000},
+            ],
+        ),
+    )
+    apply_inplace(
+        doc,
+        CreateSlabOpeningCmd(
+            id="so-t",
+            name="Tri",
+            host_floor_id="fl",
+            boundary_mm=[
+                {"xMm": 1000, "yMm": 1000},
+                {"xMm": 2000, "yMm": 1000},
+                {"xMm": 1500, "yMm": 1800},
+            ],
+        ),
+    )
+    wire = plan_projection_wire_from_request(doc, plan_view_id="pv")
+    rows = (wire.get("slabOpeningDocumentationEvidence_v0") or {}).get("rows") or []
+    assert len(rows) == 1
+    assert rows[0]["skipReason"] == "non_axis_aligned_opening_outline"
+    assert rows[0]["panelSplitEvidence"]["eligible"] is False
 
 
 def test_merged_registry_has_builtin_format() -> None:
@@ -1741,9 +1900,19 @@ def test_room_programme_legend_replay_matches_schedule_and_sheet_manifest() -> N
 
     sh = doc.elements["sh-1"]
     hints = plan_room_programme_legend_hints_v0(doc, list(sh.viewports_mm or []))
-    assert hints == [
-        {"viewportId": "vp-plan", "legendDigestSha256": digest, "rowCount": 2},
-    ]
+    assert len(hints) == 1
+    h0 = hints[0]
+    assert h0["viewportId"] == "vp-plan"
+    assert h0["legendDigestSha256"] == digest
+    assert h0["rowCount"] == 2
+    assert h0["legendTitle"] == "Room programme legend"
+    legend_rows = h0["legendRows"]
+    assert isinstance(legend_rows, list) and len(legend_rows) == 2
+    row_labels = [str(r["label"]) for r in legend_rows]
+    assert row_labels == sorted(row_labels)
+    doc_seg = h0["documentationSegment"]
+    assert isinstance(doc_seg, str) and doc_seg.startswith("roomLegDoc[title=Room programme legend")
+    assert digest in doc_seg
 
     man_rows = deterministic_sheet_evidence_manifest(
         model_id=uuid4(),
@@ -1754,6 +1923,78 @@ def test_room_programme_legend_replay_matches_schedule_and_sheet_manifest() -> N
     )
     assert len(man_rows) == 1
     assert man_rows[0].get("planRoomProgrammeLegendHints_v0") == hints
+
+    vhints = viewport_evidence_hints_v1(doc, list(sh.viewports_mm or []))
+    vh0 = next(h for h in vhints if h["viewportId"] == "vp-plan")
+    assert vh0["roomProgrammeLegendDocumentationSegment"] == doc_seg
+
+    lines = sheet_viewport_export_listing_lines(doc, sh)
+    assert any("roomLegDoc[n=2 sha=" in ln and digest in ln for ln in lines)
+
+    svg = sheet_elem_to_svg(doc, sh)
+    assert 'data-room-programme-legend-doc-token="roomProgrammeLegendDocumentationSegment"' in svg
+    assert "roomLegDoc[" in svg
+
+
+def test_room_programme_legend_documentation_sorted_labels() -> None:
+    """Legend documentation segment sorts rows by label regardless of room creation order."""
+
+    doc = Document(revision=1, elements={})
+    apply_inplace(doc, CreateLevelCmd(id="lvl", name="G", elevationMm=0))
+    apply_inplace(
+        doc,
+        CreateRoomRectangleCmd(
+            roomId="rm-z",
+            name="Zed",
+            levelId="lvl",
+            origin={"xMm": 0, "yMm": 0},
+            widthMm=2000,
+            depthMm=2000,
+        ),
+    )
+    apply_inplace(
+        doc,
+        CreateRoomRectangleCmd(
+            roomId="rm-a",
+            name="Ada",
+            levelId="lvl",
+            origin={"xMm": 4000, "yMm": 0},
+            widthMm=2000,
+            depthMm=2000,
+        ),
+    )
+    apply_inplace(
+        doc,
+        UpsertPlanViewCmd(
+            id="pv-1",
+            name="Floor plan",
+            levelId="lvl",
+            planPresentation="room_scheme",
+        ),
+    )
+    apply_inplace(doc, UpsertSheetCmd(id="sh-1", name="A101"))
+    apply_inplace(
+        doc,
+        UpsertSheetViewportsCmd(
+            sheetId="sh-1",
+            viewportsMm=[
+                {
+                    "viewportId": "vp",
+                    "label": "Plan",
+                    "viewRef": "plan:pv-1",
+                    "xMm": 100,
+                    "yMm": 200,
+                    "widthMm": 5000,
+                    "heightMm": 4000,
+                },
+            ],
+        ),
+    )
+    sh = doc.elements["sh-1"]
+    vp = list(sh.viewports_mm or [])[0]
+    assert isinstance(vp, dict)
+    seg = format_room_programme_legend_documentation_segment(doc, vp)
+    assert seg.index("Ada") < seg.index("Zed")
 
 
 def test_room_color_scheme_overrides_primitive_legend_digest() -> None:

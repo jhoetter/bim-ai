@@ -152,6 +152,19 @@ export function SheetDocumentationManifest(props: {
     [deterministicRow],
   );
 
+  const planLegendHintsByViewportId = useMemo(() => {
+    const m = new Map<string, Record<string, unknown>>();
+    if (evidence.status !== 'ready' || !deterministicRow) return m;
+    const raw = deterministicRow.planRoomProgrammeLegendHints_v0;
+    if (!Array.isArray(raw)) return m;
+    for (const h of raw) {
+      if (!h || typeof h !== 'object') continue;
+      const id = String((h as { viewportId?: unknown }).viewportId ?? '').trim();
+      if (id) m.set(id, h as Record<string, unknown>);
+    }
+    return m;
+  }, [deterministicRow, evidence.status]);
+
   const exportHrefs = useMemo(() => {
     if (!modelId) return null;
     return deterministicRow
@@ -365,7 +378,26 @@ export function SheetDocumentationManifest(props: {
                     const tblSeg = scheduleTableRendererV1SheetReadout(schSeg, elementsById);
                     if (tblSeg) hintParts.push(tblSeg);
                   }
+                  if (
+                    hint?.roomProgrammeLegendDocumentationSegment !== undefined &&
+                    String(hint.roomProgrammeLegendDocumentationSegment).trim()
+                  ) {
+                    hintParts.push(String(hint.roomProgrammeLegendDocumentationSegment).trim());
+                  }
                   const hintLine = hintParts.join(' · ') || '—';
+                  const planLeg = planLegendHintsByViewportId.get(row.viewportId);
+                  const legRowsRaw = planLeg?.legendRows;
+                  const legendRows =
+                    Array.isArray(legRowsRaw) && legRowsRaw.length > 0
+                      ? (legRowsRaw as Array<Record<string, unknown>>).filter(
+                          (r) => r && typeof r === 'object',
+                        )
+                      : [];
+                  const legendTitleRaw = planLeg?.legendTitle;
+                  const legendTitle =
+                    typeof legendTitleRaw === 'string' && legendTitleRaw.trim()
+                      ? legendTitleRaw.trim()
+                      : null;
                   return (
                     <tr key={row.viewportId}>
                       <td className="border border-border px-1 py-0.5">{row.viewportId}</td>
@@ -393,7 +425,48 @@ export function SheetDocumentationManifest(props: {
                         {resolveViewportTitleFromRef(elementsById, row.viewRef) ?? '—'}
                       </td>
                       <td className="border border-border px-1 py-0.5 align-top break-all">
-                        {hintLine}
+                        <div className="space-y-1">
+                          <div data-testid={`sheet-manifest-viewport-evidence-${row.viewportId}`}>
+                            {hintLine}
+                          </div>
+                          {legendTitle && legendRows.length > 0 ? (
+                            <div
+                              data-testid={`sheet-manifest-room-legend-readout-${row.viewportId}`}
+                              className="rounded border border-border/60 bg-muted/20 px-1 py-0.5"
+                            >
+                              <div className="font-semibold text-foreground">{legendTitle}</div>
+                              <ul className="mt-0.5 list-none space-y-0.5 pl-0">
+                                {legendRows.map((lr, li) => {
+                                  const lab = String(lr.label ?? '').trim() || '—';
+                                  const hx = String(lr.schemeColorHex ?? lr.scheme_color_hex ?? '').trim() || '#888888';
+                                  const pc = String(lr.programmeCode ?? lr.programme_code ?? '').trim();
+                                  const dept = String(lr.department ?? '').trim();
+                                  const fn = String(lr.functionLabel ?? lr.function_label ?? '').trim();
+                                  const keyBits = [pc, dept, fn].filter(Boolean);
+                                  return (
+                                    <li
+                                      key={`${row.viewportId}-leg-${li}-${lab}-${hx}`}
+                                      className="flex items-start gap-1"
+                                    >
+                                      <span
+                                        className="mt-0.5 inline-block size-2.5 shrink-0 rounded-sm border border-border"
+                                        style={{ backgroundColor: hx }}
+                                        title={lab}
+                                      />
+                                      <span className="min-w-0">
+                                        <span className="text-foreground">{lab}</span>
+                                        <span className="block font-mono text-[9px] text-muted">
+                                          {hx}
+                                          {keyBits.length ? ` · ${keyBits.join(' · ')}` : ''}
+                                        </span>
+                                      </span>
+                                    </li>
+                                  );
+                                })}
+                              </ul>
+                            </div>
+                          ) : null}
+                        </div>
                       </td>
                     </tr>
                   );

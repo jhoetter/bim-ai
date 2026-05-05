@@ -112,6 +112,7 @@ def test_viewport_evidence_hints_v1_plan_and_section_segments() -> None:
         [{"viewportId": "v", "viewRef": "plan:pv1", "xMm": 0, "yMm": 0, "widthMm": 1000, "heightMm": 1000}],
     )
     assert hints[0]["planProjectionSegment"].startswith("planPrim[")
+    assert hints[0].get("roomProgrammeLegendDocumentationSegment") == ""
     hints2 = viewport_evidence_hints_v1(
         doc,
         [{"viewportId": "v2", "viewRef": "section:sec1", "xMm": 0, "yMm": 0, "widthMm": 1000, "heightMm": 1000}],

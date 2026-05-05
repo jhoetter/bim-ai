@@ -1,6 +1,6 @@
 import type { Element } from '@bim-ai/core';
 
-import { useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 
 import type { SheetViewportMmDraft } from './sheetViewportAuthoring';
 import {
@@ -96,6 +96,65 @@ function SheetCanvasWithSheet(props: {
   const xRight = wMm - 2600;
 
   const scrollCls = bleed ? '' : ' max-h-[360px]';
+
+  const [planLegendHints, setPlanLegendHints] = useState<
+    Record<string, { rowCount: number; digestPrefix: string }>
+  >({});
+
+  useEffect(() => {
+    if (!modelId) {
+      setPlanLegendHints({});
+      return;
+    }
+    const ac = new AbortController();
+    void (async () => {
+      try {
+        const res = await fetch(`/api/models/${encodeURIComponent(modelId)}/evidence-package`, {
+          signal: ac.signal,
+        });
+        if (!res.ok) {
+          setPlanLegendHints({});
+          return;
+        }
+        const payload = JSON.parse(await res.text()) as Record<string, unknown>;
+        const rows = payload.deterministicSheetEvidence;
+        if (!Array.isArray(rows)) {
+          setPlanLegendHints({});
+          return;
+        }
+        const drow = (rows as Record<string, unknown>[]).find(
+          (r) => String(r.sheetId ?? '') === sh.id,
+        );
+        if (!drow) {
+          setPlanLegendHints({});
+          return;
+        }
+        const hints = drow.planRoomProgrammeLegendHints_v0;
+        if (!Array.isArray(hints)) {
+          setPlanLegendHints({});
+          return;
+        }
+        const next: Record<string, { rowCount: number; digestPrefix: string }> = {};
+        for (const h of hints) {
+          if (!h || typeof h !== 'object') continue;
+          const vid = String((h as { viewportId?: unknown }).viewportId ?? '').trim();
+          if (!vid) continue;
+          const rc = (h as { rowCount?: unknown }).rowCount;
+          const n = typeof rc === 'number' ? rc : Number(rc);
+          const dig = String((h as { legendDigestSha256?: unknown }).legendDigestSha256 ?? '');
+          next[vid] = {
+            rowCount: Number.isFinite(n) ? n : 0,
+            digestPrefix: dig.slice(0, 8),
+          };
+        }
+        setPlanLegendHints(next);
+      } catch (e) {
+        if (e instanceof DOMException && e.name === 'AbortError') return;
+        setPlanLegendHints({});
+      }
+    })();
+    return () => ac.abort();
+  }, [modelId, sh.id]);
 
   const paintRows: Array<{
     key: string;
@@ -323,6 +382,12 @@ function SheetCanvasWithSheet(props: {
                 : `unresolved schedule · ${parsedRef!.refId}`
               : '';
 
+            const planLegendHint = planLegendHints[row.key];
+            const planLegendCaption =
+              parsedRef?.kind === 'plan' && planLegendHint && planLegendHint.rowCount > 0
+                ? `legend · ${planLegendHint.rowCount} rows · ${planLegendHint.digestPrefix}…`
+                : '';
+
             const handle = 560;
             const hx = xMm + widthMm - handle;
             const hy = yMm + heightMm - handle;
@@ -426,6 +491,17 @@ function SheetCanvasWithSheet(props: {
                     style={{ fontSize: '320px' }}
                   >
                     {scheduleCaption}
+                  </text>
+                ) : null}
+                {planLegendCaption ? (
+                  <text
+                    data-testid={`sheet-viewport-plan-legend-caption-${index}`}
+                    x={xMm + 200}
+                    y={yMm + 2600}
+                    fill="#0e7490"
+                    style={{ fontSize: '300px' }}
+                  >
+                    {planLegendCaption}
                   </text>
                 ) : null}
               </g>
