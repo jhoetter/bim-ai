@@ -6,6 +6,10 @@ import {
   sheetExportHrefTriple,
   viewportCropExtentsMm,
 } from './sheetDocumentationManifestHelpers';
+import {
+  formatSheetRevIssExportListingSegmentV1,
+  normalizeTitleblockRevisionIssueV1,
+} from './sheetRevisionIssueManifestV1';
 import { scheduleTableRendererV1SheetReadout } from '../schedules/scheduleTableRendererV1';
 
 describe('viewportCropExtentsMm', () => {
@@ -96,6 +100,21 @@ describe('indexViewportEvidenceHints', () => {
     expect(m.size).toBe(2);
     expect(String(m.get('vp-plan')?.planProjectionSegment)).toContain('planPrim');
     expect(String(m.get('vp-sch')?.scheduleDocumentationSegment)).toContain('schDoc');
+  });
+});
+
+describe('titleblockRevisionIssueSegmentsV1', () => {
+  it('formats listing segment with deterministic inner token ordering', () => {
+    const norm = normalizeTitleblockRevisionIssueV1({
+      revisionId: 'R-1',
+      revisionCode: 'B',
+      revisionDate: '2026-05-05',
+      issueStatus: 'issued',
+      revisionDescription: 'x',
+    });
+    expect(formatSheetRevIssExportListingSegmentV1(norm)).toMatch(/^sheetRevIssList\[/);
+    expect(formatSheetRevIssExportListingSegmentV1(norm)).toContain('id=R-1');
+    expect(formatSheetRevIssExportListingSegmentV1(norm)).toContain('code=B');
   });
 });
 

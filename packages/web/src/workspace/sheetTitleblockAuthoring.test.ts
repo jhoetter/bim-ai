@@ -13,6 +13,14 @@ function emptyDraft(): SheetTitleblockDraft {
 
     revision: '',
 
+    revisionId: '',
+
+    revisionDate: '',
+
+    revisionDescription: '',
+
+    issueStatus: '',
+
     projectName: '',
 
     drawnBy: '',

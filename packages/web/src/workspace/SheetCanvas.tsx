@@ -22,6 +22,10 @@ import {
   detailCalloutUnresolvedReason,
 } from './sheetDetailCalloutReadout';
 import { SectionViewportSvg } from './sectionViewportSvg';
+import {
+  formatSheetRevIssTitleblockDisplaySegmentV1,
+  normalizeTitleblockRevisionIssueV1,
+} from './sheetRevisionIssueManifestV1';
 
 type SheetEl = Extract<Element, { kind: 'sheet' }>;
 
@@ -95,6 +99,10 @@ function SheetCanvasWithSheet(props: {
     );
   }
   if (String(issued).trim()) footerLines.push(String(issued).trim());
+
+  const revIssSeg = formatSheetRevIssTitleblockDisplaySegmentV1(
+    normalizeTitleblockRevisionIssueV1(tp as Record<string, string>),
+  );
 
   const footerY0 = Math.max(2800, hMm - 5200);
   const xRight = wMm - 2600;
@@ -348,6 +356,19 @@ function SheetCanvasWithSheet(props: {
                 {txt}
               </text>
             ))}
+
+          {revIssSeg ? (
+            <text
+              data-testid="sheet-canvas-revision-issue-doc-token"
+              x={xRight}
+              y={footerY0 + footerLines.map((txt) => txt.trim()).filter(Boolean).length * 760}
+              fill="#0369a1"
+              style={{ fontSize: '520px' }}
+              textAnchor="end"
+            >
+              {revIssSeg}
+            </text>
+          ) : null}
 
           {paintRows.map((row) => {
             const {

@@ -1,4 +1,4 @@
-"""Deterministic sheet evidence manifest tests (sort order, schedule pagination hints — Prompt 6)."""
+"""Deterministic sheet evidence manifest tests (sort order, revision/issue manifest, schedule pagination — Prompt 4/6)."""
 
 from __future__ import annotations
 
@@ -6,11 +6,15 @@ import hashlib
 from uuid import uuid4
 
 from bim_ai.document import Document
-from bim_ai.elements import LevelElem, RoomElem, ScheduleElem, SheetElem
+from bim_ai.elements import LevelElem, PlanViewElem, RoomElem, ScheduleElem, SheetElem
 from bim_ai.evidence_manifest import deterministic_sheet_evidence_manifest
 from bim_ai.sheet_preview_svg import (
     _viewport_export_correlation_segment_bytes,
     viewport_evidence_hints_v1,
+)
+from bim_ai.sheet_titleblock_revision_issue_v1 import (
+    SHEET_TITLEBLOCK_REVISION_ISSUE_MANIFEST_V1,
+    build_sheet_titleblock_revision_issue_manifest_v1,
 )
 
 
@@ -31,6 +35,54 @@ def test_deterministic_sheet_evidence_sorted_by_sheet_id() -> None:
         semantic_digest_prefix16="c" * 16,
     )
     assert [r["sheetId"] for r in rows] == ["a-sh", "z-sh"]
+
+
+def test_sheet_titleblock_revision_issue_manifest_v1_on_row() -> None:
+    sid = uuid4()
+    doc = Document(
+        revision=3,
+        elements={
+            "sh1": SheetElem(
+                kind="sheet",
+                id="sh1",
+                name="S1",
+                titleBlock="TB1",
+                titleblock_parameters={
+                    "revisionId": "R-001",
+                    "revisionCode": "B",
+                    "revisionDate": "2026-05-05",
+                    "revisionDescription": "issued for review",
+                    "issueStatus": "for_review",
+                },
+                viewportsMm=[
+                    {"viewportId": "vp1", "viewRef": "plan:pv", "xMm": 0, "yMm": 0, "widthMm": 50, "heightMm": 50},
+                ],
+            ),
+            "pv": PlanViewElem(kind="plan_view", id="pv", name="P", levelId="lvl"),
+            "lvl": LevelElem(kind="level", id="lvl", name="G", elevationMm=0),
+        },
+    )
+    rows = deterministic_sheet_evidence_manifest(
+        model_id=sid,
+        doc=doc,
+        evidence_artifact_basename="q",
+        semantic_digest_sha256="d" * 64,
+        semantic_digest_prefix16="d" * 16,
+    )
+    assert len(rows) == 1
+    raw = rows[0].get("sheetTitleblockRevisionIssueManifest_v1")
+    assert isinstance(raw, dict)
+    assert raw.get("format") == SHEET_TITLEBLOCK_REVISION_ISSUE_MANIFEST_V1
+    assert raw.get("revisionId") == "R-001"
+    assert raw.get("revisionCode") == "B"
+    assert raw.get("revisionDate") == "2026-05-05"
+    assert raw.get("revisionDescription") == "issued for review"
+    assert raw.get("issueStatus") == "for_review"
+    assert raw.get("titleblockDisplaySegment", "").startswith("sheetRevIssDoc[")
+    assert "sheetRevIssList[" in str(raw.get("exportListingSegment", ""))
+    sh = doc.elements["sh1"]
+    assert isinstance(sh, SheetElem)
+    assert raw == build_sheet_titleblock_revision_issue_manifest_v1(sh)
 
 
 def test_deterministic_sheet_evidence_schedule_pagination_on_viewport_hints() -> None:

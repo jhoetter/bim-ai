@@ -1061,8 +1061,29 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 raw_sh = cmd.value.strip()
                 if cmd.key == "titleBlock":
                     els[cmd.element_id] = el.model_copy(update={"title_block": raw_sh or None})
+                elif cmd.key == "titleblockParametersPatch":
+                    try:
+                        patch_obj = json.loads(cmd.value)
+                    except json.JSONDecodeError as exc:
+                        raise ValueError("titleblockParametersPatch must be a JSON object string") from exc
+                    if not isinstance(patch_obj, dict):
+                        raise ValueError("titleblockParametersPatch must decode to an object")
+                    merged = dict(el.titleblock_parameters or {})
+                    for pk, pv in patch_obj.items():
+                        key_s = str(pk)
+                        if isinstance(pv, str):
+                            vv = pv.strip()
+                            if vv:
+                                merged[key_s] = vv
+                            else:
+                                merged.pop(key_s, None)
+                        elif pv is None:
+                            merged.pop(key_s, None)
+                        else:
+                            merged[key_s] = str(pv)
+                    els[cmd.element_id] = el.model_copy(update={"titleblock_parameters": merged})
                 else:
-                    raise ValueError("sheet updates: key=titleBlock | name")
+                    raise ValueError("sheet updates: key=titleBlock | titleblockParametersPatch | name")
             else:
                 raise ValueError(
                     "Only updateElementProperty key=name | label(grid) | title(issue) | "
@@ -1087,7 +1108,7 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                     "viewerClipCapElevMm(viewpoint) | viewerClipFloorElevMm(viewpoint) | "
                     "hiddenSemanticKinds3d(viewpoint JSON array) | cutawayStyle(viewpoint) | "
                     "familyTypeId(door/window) | materialKey(door/window) | "
-                    "sheetId(schedule) | titleBlock(sheet) supported in v2"
+                    "sheetId(schedule) | titleBlock(sheet) | titleblockParametersPatch(sheet JSON object) supported in v2"
                 )
 
         case SaveViewpointCmd():

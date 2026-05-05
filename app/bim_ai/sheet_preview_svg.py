@@ -32,6 +32,12 @@ from bim_ai.schedule_pagination_placement_evidence import (
     flatten_leaf_rows_from_schedule_table_payload,
 )
 from bim_ai.section_projection_primitives import build_section_projection_primitives
+from bim_ai.sheet_titleblock_revision_issue_v1 import (
+    format_sheet_rev_iss_export_listing_segment_v1,
+    format_sheet_rev_iss_titleblock_display_segment_v1,
+    normalize_titleblock_revision_issue_v1,
+    surrogate_payload_revision_issue_tail,
+)
 
 SHEET_PRINT_RASTER_PLACEHOLDER_CONTRACT_V1 = "sheetPrintRasterPlaceholder_v1"
 
@@ -222,7 +228,7 @@ def _titleblock_surrogate_payload_bytes(sh: SheetElem) -> bytes:
 
     tb = sh.titleblock_parameters or {}
     sheet_no_raw = tb.get("sheetNumber") or tb.get("sheetNo") or ""
-    revision_raw = tb.get("revision") or ""
+    revision_raw = tb.get("revision") or tb.get("revisionCode") or ""
     project_raw = tb.get("projectName") or tb.get("project") or ""
     drawn_raw = tb.get("drawnBy") or ""
     chk_raw = tb.get("checkedBy") or ""
@@ -239,7 +245,12 @@ def _titleblock_surrogate_payload_bytes(sh: SheetElem) -> bytes:
         str(chk_raw),
         str(issued_raw),
     )
-    return "\n".join(parts).encode("utf-8")
+    base = "\n".join(parts)
+    norm = normalize_titleblock_revision_issue_v1(tb)
+    disp_preview = format_sheet_rev_iss_titleblock_display_segment_v1(norm)
+    if disp_preview:
+        return (base + "\n" + surrogate_payload_revision_issue_tail(norm)).encode("utf-8")
+    return base.encode("utf-8")
 
 
 def _titleblock_surrogate_band_rows(sh: SheetElem, svg_text: str) -> list[bytes]:
@@ -1003,6 +1014,11 @@ def sheet_viewport_export_listing_lines(doc: Document, sh: SheetElem) -> list[st
 
     lines: list[str] = []
 
+    tb_norm = normalize_titleblock_revision_issue_v1(sh.titleblock_parameters)
+    list_seg = format_sheet_rev_iss_export_listing_segment_v1(tb_norm)
+    if list_seg:
+        lines.append(list_seg)
+
     raw_vps = sh.viewports_mm or []
 
     for i, vp in enumerate(raw_vps):
@@ -1210,7 +1226,7 @@ def sheet_elem_to_svg(doc: Document, sh: SheetElem) -> str:
 
     tb_params = sh.titleblock_parameters or {}
     sheet_no_raw = tb_params.get("sheetNumber") or tb_params.get("sheetNo") or ""
-    revision_raw = tb_params.get("revision") or ""
+    revision_raw = tb_params.get("revision") or tb_params.get("revisionCode") or ""
     project_raw = tb_params.get("projectName") or tb_params.get("project") or ""
     drawn_raw = tb_params.get("drawnBy") or ""
     chk_raw = tb_params.get("checkedBy") or ""
@@ -1335,6 +1351,9 @@ def sheet_elem_to_svg(doc: Document, sh: SheetElem) -> str:
     y_line = tb_ix
     step = 760
 
+    rev_norm = normalize_titleblock_revision_issue_v1(tb_params)
+    rev_disp_seg = format_sheet_rev_iss_titleblock_display_segment_v1(rev_norm)
+
     hdr_parts = []
     if sheet_no_raw.strip():
         hdr_parts.append(sheet_no_raw.strip())
@@ -1363,6 +1382,15 @@ def sheet_elem_to_svg(doc: Document, sh: SheetElem) -> str:
 
     footer_xml = "".join(footer_xml_parts)
 
+    rev_issue_xml = ""
+    if rev_disp_seg:
+        rev_esc = html.escape(rev_disp_seg)
+        tok = html.escape("sheetRevIssDoc")
+        rev_issue_xml = (
+            f'<text x="{x_right}" y="{y_line}" fill="#0369a1" font-size="520px" text-anchor="end" '
+            f'data-sheet-revision-iss-doc-token="{tok}">{rev_esc}</text>'
+        )
+
     return (
         f'<?xml version="1.0" encoding="UTF-8"?>\n'
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w_mm} {h_mm}" '
@@ -1372,6 +1400,7 @@ def sheet_elem_to_svg(doc: Document, sh: SheetElem) -> str:
         f'<text x="2400" y="2400" fill="#1e293b" font-size="1200px">A1 metaphor — {title}</text>'
         f'<text x="2400" y="3600" fill="#64748b" font-size="800px">TB {tb}</text>'
         f"{footer_xml}"
+        f"{rev_issue_xml}"
         f"{vps_xml}"
         f"</svg>"
     )

@@ -8,6 +8,14 @@ export type SheetTitleblockDraft = {
 
   revision: string;
 
+  revisionId: string;
+
+  revisionDate: string;
+
+  revisionDescription: string;
+
+  issueStatus: string;
+
   projectName: string;
 
   drawnBy: string;
@@ -27,7 +35,15 @@ export function normalizeTitleblockDraftFromSheet(sh: SheetEl): SheetTitleblockD
 
     sheetNumber: String(tp.sheetNumber ?? tp.sheetNo ?? ''),
 
-    revision: String(tp.revision ?? ''),
+    revision: String(tp.revision ?? tp.revisionCode ?? ''),
+
+    revisionId: String(tp.revisionId ?? ''),
+
+    revisionDate: String(tp.revisionDate ?? ''),
+
+    revisionDescription: String(tp.revisionDescription ?? ''),
+
+    issueStatus: String(tp.issueStatus ?? ''),
 
     projectName: String(tp.projectName ?? tp.project ?? ''),
 
@@ -43,6 +59,14 @@ const MANAGED_TB_KEYS: (keyof Omit<SheetTitleblockDraft, 'titleBlock'>)[] = [
   'sheetNumber',
 
   'revision',
+
+  'revisionId',
+
+  'revisionDate',
+
+  'revisionDescription',
+
+  'issueStatus',
 
   'projectName',
 
@@ -136,6 +160,14 @@ export function SheetTitleblockEditor(props: {
         {row('sheetNumber', 'sheetNumber')}
 
         {row('revision', 'revision')}
+
+        {row('revisionId', 'revisionId')}
+
+        {row('revisionDate', 'revisionDate')}
+
+        {row('revisionDescription', 'revisionDescription')}
+
+        {row('issueStatus', 'issueStatus')}
 
         {row('projectName', 'projectName')}
 

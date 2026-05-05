@@ -50,6 +50,7 @@ _TRACEABILITY_ROWS: list[dict[str, object]] = [
         ],
         "paths": [
             "app/tests/test_constraints_sheet_documentation_advisory.py",
+            "app/tests/test_constraints.py",
         ],
     },
     {

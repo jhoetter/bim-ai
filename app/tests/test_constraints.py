@@ -2,13 +2,17 @@
 
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from bim_ai.constraints import evaluate
 from bim_ai.document import Document
-from bim_ai.elements import FloorElem, LevelElem, WallElem
+from bim_ai.elements import FloorElem, LevelElem, PlanViewElem, SheetElem, WallElem
+from bim_ai.engine import try_commit
 from bim_ai.export_ifc import IFC_AVAILABLE
 from bim_ai.ifc_stub import build_ifc_exchange_manifest_payload
+from bim_ai.sheet_titleblock_revision_issue_v1 import normalize_titleblock_revision_issue_v1
 
 
 def test_evaluate_returns_list_for_minimal_wall_document() -> None:
@@ -67,3 +71,83 @@ def test_ifc_manifest_exports_property_coverage_slice_when_kernel_eligible() -> 
     ev = mf.get("ifcPropertySetCoverageEvidence_v0") or {}
     assert ev.get("format") == "ifcPropertySetCoverageEvidence_v0"
     assert ev.get("available") is True
+
+
+def test_sheet_revision_issue_metadata_missing_when_vp_and_titleblock_empty_metadata() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="G", elevationMm=0),
+            "pv": PlanViewElem(kind="plan_view", id="pv", name="PV", levelId="lvl"),
+            "sx": SheetElem(
+                kind="sheet",
+                id="sx",
+                name="S",
+                titleBlock="TB",
+                viewportsMm=[
+                    {"viewportId": "vp1", "viewRef": "plan:pv", "xMm": 0, "yMm": 0, "widthMm": 100, "heightMm": 100},
+                ],
+            ),
+        },
+    )
+    viols = evaluate(dict(doc.elements))
+    assert any(v.rule_id == "sheet_revision_issue_metadata_missing" for v in viols)
+
+
+def test_sheet_revision_issue_metadata_missing_not_fired_when_code_present() -> None:
+    doc = Document(
+        revision=2,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="G", elevationMm=0),
+            "pv": PlanViewElem(kind="plan_view", id="pv", name="PV", levelId="lvl"),
+            "sx": SheetElem(
+                kind="sheet",
+                id="sx",
+                name="S",
+                titleBlock="TB",
+                titleblock_parameters={"revision": "A"},
+                viewportsMm=[
+                    {"viewportId": "vp1", "viewRef": "plan:pv", "xMm": 0, "yMm": 0, "widthMm": 100, "heightMm": 100},
+                ],
+            ),
+        },
+    )
+    viols = evaluate(dict(doc.elements))
+    assert not any(v.rule_id == "sheet_revision_issue_metadata_missing" for v in viols)
+
+
+def test_sheet_revision_issue_quick_fix_merge_titleblock_patch() -> None:
+    doc = Document(
+        revision=3,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="G", elevationMm=0),
+            "pv": PlanViewElem(kind="plan_view", id="pv", name="PV", levelId="lvl"),
+            "sx": SheetElem(
+                kind="sheet",
+                id="sx",
+                name="S",
+                titleBlock="TB",
+                viewportsMm=[
+                    {"viewportId": "vp1", "viewRef": "plan:pv", "xMm": 0, "yMm": 0, "widthMm": 100, "heightMm": 100},
+                ],
+            ),
+        },
+    )
+    viol = next(v for v in evaluate(dict(doc.elements)) if v.rule_id == "sheet_revision_issue_metadata_missing")
+    qf = viol.quick_fix_command
+    assert isinstance(qf, dict)
+    assert qf.get("type") == "updateElementProperty"
+    assert qf.get("key") == "titleblockParametersPatch"
+
+    ok, new_doc, _cmd, _viols, err = try_commit(doc, qf)
+    assert ok and err == "ok" and new_doc is not None
+
+    sx2 = new_doc.elements["sx"]
+    assert isinstance(sx2, SheetElem)
+    params = normalize_titleblock_revision_issue_v1(dict(sx2.titleblock_parameters or {}))
+
+    patch_obj = json.loads(str(qf.get("value") or "{}"))
+    assert isinstance(patch_obj, dict)
+
+    ids = {(params["revisionId"], params["revisionCode"])}
+    assert ids == {(str(patch_obj.get("revisionId") or "").strip(), str(patch_obj.get("revisionCode") or "").strip())}
