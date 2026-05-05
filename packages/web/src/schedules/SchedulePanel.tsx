@@ -45,6 +45,7 @@ import {
   type ScheduleTableBodyRowV1,
   type ScheduleTableModelV1,
 } from './scheduleTableRendererV1';
+import { roomFinishScheduleEvidenceReadoutParts } from './roomFinishScheduleEvidenceReadout';
 import { compactScheduleOpeningAdvisoryLines } from './scheduleOpeningAdvisoriesReadout';
 
 export { resolveScheduleSortDescending, scheduleTotalsReadoutParts } from './schedulePayloadTotals';
@@ -810,6 +811,13 @@ export function SchedulePanel(props: {
   const totals = srvActive
     ? (srvActive.data.totals as Record<string, unknown> | undefined)
     : undefined;
+
+  const roomFinishScheduleEvidenceLines = useMemo(() => {
+    if (tab !== 'rooms' || !srvActive?.data) return [];
+    return roomFinishScheduleEvidenceReadoutParts(
+      (srvActive.data as Record<string, unknown>).roomFinishScheduleEvidence_v1,
+    );
+  }, [tab, srvActive]);
 
   type GenericDerived = {
     columns: string[];
@@ -1983,6 +1991,16 @@ export function SchedulePanel(props: {
             {srvActive ? renderTotals() : null}
           </div>
         )
+      ) : null}
+
+      {tab === 'rooms' && roomFinishScheduleEvidenceLines.length ? (
+        <div
+          data-testid="room-finish-schedule-evidence-readout"
+          className="mt-2 rounded border border-border/60 px-2 py-1.5 text-[10px] text-muted"
+        >
+          <div className="font-semibold text-foreground/90">Room finish schedule evidence</div>
+          <div className="mt-0.5 font-mono leading-snug">{roomFinishScheduleEvidenceLines.join(' · ')}</div>
+        </div>
       ) : null}
 
       {tab === 'doors' ? (

@@ -42,4 +42,19 @@ describe('scheduleTotalsReadoutParts', () => {
     expect(parts.some((p) => p.includes('glazing'))).toBe(true);
     expect(parts.some((p) => p.includes('rough opening'))).toBe(true);
   });
+
+  it('includes room finish totals when present', () => {
+    const parts = scheduleTotalsReadoutParts({
+      kind: 'room',
+      rowCount: 3,
+      areaM2: 12,
+      perimeterM: 40,
+      finishCompleteCount: 1,
+      finishMissingCount: 1,
+      finishPeerSuggestedCount: 1,
+    });
+    expect(parts.some((p) => p.includes('finish OK 1'))).toBe(true);
+    expect(parts.some((p) => p.includes('finish missing 1'))).toBe(true);
+    expect(parts.some((p) => p.includes('finish peer 1'))).toBe(true);
+  });
 });

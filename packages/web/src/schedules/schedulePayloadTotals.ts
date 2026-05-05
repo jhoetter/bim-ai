@@ -29,6 +29,18 @@ export function scheduleTotalsReadoutParts(totals: Record<string, unknown> | und
     if (tsum != null && tsum !== '' && Number.isFinite(Number(tsum))) {
       parts.push(`sum target ${Number(tsum).toFixed(3)} m²`);
     }
+    const fc = totals.finishCompleteCount ?? totals.finish_complete_count;
+    if (fc != null && fc !== '' && Number.isFinite(Number(fc))) {
+      parts.push(`finish OK ${Number(fc)}`);
+    }
+    const fm = totals.finishMissingCount ?? totals.finish_missing_count;
+    if (fm != null && fm !== '' && Number.isFinite(Number(fm))) {
+      parts.push(`finish missing ${Number(fm)}`);
+    }
+    const fps = totals.finishPeerSuggestedCount ?? totals.finish_peer_suggested_count;
+    if (fps != null && fps !== '' && Number.isFinite(Number(fps))) {
+      parts.push(`finish peer ${Number(fps)}`);
+    }
   }
 
   if (kind === 'door') {

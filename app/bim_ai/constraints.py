@@ -49,6 +49,7 @@ from bim_ai.ifc_stub import build_ifc_exchange_manifest_payload
 from bim_ai.material_assembly_resolve import material_assembly_manifest_evidence
 from bim_ai.plan_aa_room_separation import axis_aligned_room_separation_splits_rectangle
 from bim_ai.room_derivation import compute_room_boundary_derivation
+from bim_ai.room_finish_schedule import peer_finish_set_by_level
 from bim_ai.sheet_titleblock_revision_issue_v1 import (
     normalize_titleblock_revision_issue_v1,
     sheet_revision_issue_metadata_present,
@@ -956,16 +957,7 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
                 )
             )
 
-    finish_set_donor_by_level: dict[str, str] = {}
-    _rooms_grouped: dict[str, list[RoomElem]] = defaultdict(list)
-    for r in rooms:
-        _rooms_grouped[r.level_id].append(r)
-    for _lid, mates in _rooms_grouped.items():
-        for r in sorted(mates, key=lambda rr: rr.id):
-            donor_fs = (r.finish_set or "").strip()
-            if donor_fs:
-                finish_set_donor_by_level[_lid] = donor_fs
-                break
+    finish_set_donor_by_level = peer_finish_set_by_level(rooms)
 
     for room in rooms:
         pts = [(p.x_mm, p.y_mm) for p in room.outline_mm]

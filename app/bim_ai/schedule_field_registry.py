@@ -26,6 +26,10 @@ SCHEDULE_COLUMN_ORDER: dict[str, tuple[str, ...]] = {
         "department",
         "functionLabel",
         "finishSet",
+        "finishState",
+        "legendLabel",
+        "levelPeerFinishSet",
+        "peerSuggestedFinishSet",
         "familyTypeId",
     ),
     "door": (
@@ -169,6 +173,26 @@ SCHEDULE_COLUMN_METADATA: dict[str, dict[str, ColumnMeta]] = {
         "department": {"label": "Department", "role": "text"},
         "functionLabel": {"label": "Function", "role": "text"},
         "finishSet": {"label": "Finish set", "role": "text"},
+        "finishState": {
+            "label": "Finish metadata state",
+            "role": "text",
+            "help": "complete, not_required, missing, or peer_suggested (aligned with advisor).",
+        },
+        "legendLabel": {
+            "label": "Legend label",
+            "role": "text",
+            "help": "Key aligned with plan room colour legend (programme/dept precedence).",
+        },
+        "levelPeerFinishSet": {
+            "label": "Level peer finish",
+            "role": "text",
+            "help": "First non-empty finish on level (sorted room ids); correlation only.",
+        },
+        "peerSuggestedFinishSet": {
+            "label": "Peer-suggested finish",
+            "role": "text",
+            "help": "Set when finishState is peer_suggested (matches quick-fix source).",
+        },
     },
     "door": {
         "hostWallTypeId": {"label": "Host wall type", "role": "identity"},
