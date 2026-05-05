@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  AGENT_REVIEW_DEFAULTS,
   beginCellEdit,
   cycleSort,
   moveViewport,
@@ -8,10 +9,15 @@ import {
   SECTION_ELEVATION_DEFAULTS,
   setFilter,
   SHEET_DEFAULTS,
+  sortAgentActions,
   toggleColumnVisibility,
+  type AgentReviewAction,
   type SheetViewport,
+  visibleAgentActions,
   withActiveSection,
+  withActionFilter,
   withFarClip,
+  withSelectedManifest,
   withViewTemplate,
 } from './modeSurfaces';
 
@@ -119,5 +125,36 @@ describe('Schedule surface — spec §20.6', () => {
 
   it('setFilter updates the filter expression', () => {
     expect(setFilter(SCHEDULE_DEFAULTS, 'kind=window').filterExpression).toBe('kind=window');
+  });
+});
+
+describe('Agent Review surface — spec §20.7', () => {
+  const queue: AgentReviewAction[] = [
+    { id: 'a', label: 'Info A', severity: 'info' },
+    { id: 'b', label: 'Blocking B', severity: 'blocking' },
+    { id: 'c', label: 'Warn C', severity: 'warning' },
+  ];
+
+  it('starts with no selection or filter', () => {
+    expect(AGENT_REVIEW_DEFAULTS.selectedManifestId).toBeNull();
+    expect(AGENT_REVIEW_DEFAULTS.actionFilter).toBeNull();
+  });
+
+  it('sortAgentActions floats blocking to the top, then warning, then info', () => {
+    const sorted = sortAgentActions(queue);
+    expect(sorted.map((a) => a.severity)).toEqual(['blocking', 'warning', 'info']);
+  });
+
+  it('visibleAgentActions respects the filter', () => {
+    const state = { ...AGENT_REVIEW_DEFAULTS, actionQueue: queue };
+    expect(visibleAgentActions(state).map((a) => a.id)).toEqual(['b', 'c', 'a']);
+    const filtered = visibleAgentActions(withActionFilter(state, 'warning'));
+    expect(filtered.map((a) => a.id)).toEqual(['c']);
+  });
+
+  it('withSelectedManifest sets and clears the manifest id', () => {
+    const set = withSelectedManifest(AGENT_REVIEW_DEFAULTS, 'seed-evid-1');
+    expect(set.selectedManifestId).toBe('seed-evid-1');
+    expect(withSelectedManifest(set, null).selectedManifestId).toBeNull();
   });
 });

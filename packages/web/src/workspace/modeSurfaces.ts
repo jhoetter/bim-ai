@@ -5,8 +5,8 @@
  * own section so the corresponding `ModeAdapter` (WP-UI-D03) can
  * capture/restore via these helpers.
  *
- * Currently exposes: WP-UI-E04 Section / Elevation, WP-UI-E01 Sheet,
- * WP-UI-E02 Schedule. Agent surface follows in a subsequent commit.
+ * Exposes: WP-UI-E04 Section / Elevation, WP-UI-E01 Sheet,
+ * WP-UI-E02 Schedule, WP-UI-E03 Agent Review.
  */
 
 /* ────────────────────────────────────────────────────────────────────── */
@@ -184,4 +184,65 @@ export function cycleSort(state: ScheduleSurfaceState, columnKey: string): Sched
 
 export function setFilter(state: ScheduleSurfaceState, expression: string): ScheduleSurfaceState {
   return { ...state, filterExpression: expression };
+}
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* E03 — Agent Review (§20.7)                                               */
+/* ────────────────────────────────────────────────────────────────────── */
+
+export type AgentReviewSeverity = 'info' | 'warning' | 'blocking';
+
+export interface AgentReviewAction {
+  id: string;
+  label: string;
+  severity: AgentReviewSeverity;
+  /** Optional payload reference into the manifest tree. */
+  manifestPath?: string;
+}
+
+export interface AgentReviewSurfaceState {
+  /** Selected manifest leaf id (matches `seed-` evidence ids etc). */
+  selectedManifestId: string | null;
+  /** Pending action queue ordered by severity (blocking first). */
+  actionQueue: AgentReviewAction[];
+  /** Filter expression on the action queue. */
+  actionFilter: AgentReviewSeverity | null;
+}
+
+export const AGENT_REVIEW_DEFAULTS: AgentReviewSurfaceState = {
+  selectedManifestId: null,
+  actionQueue: [],
+  actionFilter: null,
+};
+
+const SEVERITY_RANK: Record<AgentReviewSeverity, number> = {
+  blocking: 0,
+  warning: 1,
+  info: 2,
+};
+
+/** Sort actions so blocking ones float to the top of the queue. */
+export function sortAgentActions(actions: AgentReviewAction[]): AgentReviewAction[] {
+  return [...actions].sort((a, b) => SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity]);
+}
+
+/** Apply the active severity filter, returning a fresh action list. */
+export function visibleAgentActions(state: AgentReviewSurfaceState): AgentReviewAction[] {
+  const sorted = sortAgentActions(state.actionQueue);
+  if (!state.actionFilter) return sorted;
+  return sorted.filter((a) => a.severity === state.actionFilter);
+}
+
+export function withSelectedManifest(
+  state: AgentReviewSurfaceState,
+  id: string | null,
+): AgentReviewSurfaceState {
+  return { ...state, selectedManifestId: id };
+}
+
+export function withActionFilter(
+  state: AgentReviewSurfaceState,
+  severity: AgentReviewSeverity | null,
+): AgentReviewSurfaceState {
+  return { ...state, actionFilter: severity };
 }
