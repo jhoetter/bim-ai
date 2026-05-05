@@ -543,6 +543,104 @@ def _plan_annotation_hints_for_pinned_view(doc: Document, pv: PlanViewElem) -> d
     return {"openingTagsVisible": opening_tags_visible, "roomLabelsVisible": room_labels_visible}
 
 
+def _plan_view_browser_hierarchy_v0(
+    doc: Document,
+    pv: PlanViewElem,
+    cat_res: dict[str, ResolvedPlanCategoryGraphic] | None,
+    res_open: _ResolvedPlanTagStyleLane | None,
+    res_room: _ResolvedPlanTagStyleLane | None,
+    plan_ann: dict[str, bool] | None,
+) -> dict[str, Any]:
+    """Deterministic project-browser hierarchy summary for a pinned plan view (WP-C01/C05).
+
+    Documents the template/tag/category matrix state for evidence review.  Each entry
+    includes the resolved *effective_source* so callers can determine which tier won.
+    """
+    tmpl: ViewTemplateElem | None = None
+    if pv.view_template_id:
+        te = doc.elements.get(pv.view_template_id)
+        if isinstance(te, ViewTemplateElem):
+            tmpl = te
+
+    # Tag style summary
+    def _tag_summary(lane_res: _ResolvedPlanTagStyleLane | None, lane: str) -> dict[str, Any]:
+        if lane_res is None:
+            return {"lane": lane, "resolvedStyleId": None, "effectiveSource": "builtin", "warnings": []}
+        return {
+            "lane": lane,
+            "resolvedStyleId": lane_res.style_id,
+            "resolvedStyleName": lane_res.name,
+            "effectiveSource": lane_res.source,
+            "warnings": sorted(lane_res.warnings, key=lambda w: (str(w.get("code", "")), str(w.get("lane", "")))),
+        }
+
+    # Category graphics source summary
+    cat_source_counts: dict[str, int] = {"default": 0, "template": 0, "plan_view": 0}
+    cat_rows: list[dict[str, Any]] = []
+    if cat_res is not None:
+        from bim_ai.plan_category_graphics import PLAN_CATEGORY_GRAPHIC_KEYS
+
+        for key in PLAN_CATEGORY_GRAPHIC_KEYS:
+            r = cat_res[key]
+            # Report dominant source (plan_view > template > default)
+            dominant = r.line_weight_source if not r.line_weight_is_defaulted else r.line_pattern_source
+            if r.line_weight_is_defaulted and r.line_pattern_is_defaulted:
+                dominant = "default"
+            elif r.line_weight_source == "plan_view" or r.line_pattern_source == "plan_view":
+                dominant = "plan_view"
+            elif r.line_weight_source == "template" or r.line_pattern_source == "template":
+                dominant = "template"
+            else:
+                dominant = "default"
+            cat_source_counts[dominant] = cat_source_counts.get(dominant, 0) + 1
+            cat_rows.append(
+                {
+                    "categoryKey": key,
+                    "lineWeightSource": r.line_weight_source,
+                    "linePatternSource": r.line_pattern_source,
+                    "effectiveSource": dominant,
+                    "lineWeightFactor": r.line_weight_factor,
+                    "linePatternToken": r.line_pattern_token,
+                }
+            )
+
+    annotation: dict[str, Any] = {}
+    if plan_ann is not None:
+        opening_vis = bool(plan_ann.get("openingTagsVisible"))
+        room_vis = bool(plan_ann.get("roomLabelsVisible"))
+        # Determine source for annotation flags
+        opening_src = (
+            "plan_view"
+            if pv.plan_show_opening_tags is not None
+            else ("view_template" if tmpl is not None else "default")
+        )
+        room_src = (
+            "plan_view"
+            if pv.plan_show_room_labels is not None
+            else ("view_template" if tmpl is not None else "default")
+        )
+        annotation = {
+            "openingTagsVisible": opening_vis,
+            "openingTagsSource": opening_src,
+            "roomLabelsVisible": room_vis,
+            "roomLabelsSource": room_src,
+        }
+
+    return {
+        "format": "planViewBrowserHierarchy_v0",
+        "planViewId": pv.id,
+        "planViewName": pv.name,
+        "levelId": pv.level_id,
+        "viewTemplateId": tmpl.id if tmpl else None,
+        "viewTemplateName": tmpl.name if tmpl else None,
+        "discipline": pv.discipline,
+        "tagStyles": [_tag_summary(res_open, "opening"), _tag_summary(res_room, "room")],
+        "categoryGraphicsSourceCounts": cat_source_counts,
+        "categoryGraphicsRows": cat_rows,
+        "annotationHints": annotation,
+    }
+
+
 def _hosted_xy_mm_on_wall(opening: DoorElem | WindowElem, wall: WallElem) -> tuple[float, float]:
     sx, sy = wall.start.x_mm, wall.start.y_mm
     dx = wall.end.x_mm - sx
@@ -2003,6 +2101,15 @@ def resolve_plan_projection_wire(
             "opening": _plan_tag_style_hint_payload(res_open, "opening"),
             "room": _plan_tag_style_hint_payload(res_room, "room"),
         }
+    if pinned_pv_elem is not None:
+        out_payload["planViewBrowserHierarchy_v0"] = _plan_view_browser_hierarchy_v0(
+            doc,
+            pinned_pv_elem,
+            cat_res=cat_res,
+            res_open=res_open,
+            res_room=res_room,
+            plan_ann=plan_ann,
+        )
 
     slab_doc_rows = _slab_opening_documentation_rows_for_plan_view(
         doc,

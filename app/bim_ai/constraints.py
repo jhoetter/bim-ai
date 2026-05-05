@@ -23,6 +23,7 @@ from bim_ai.elements import (
     FloorElem,
     GridLineElem,
     LevelElem,
+    PlanTagStyleElem,
     PlanViewElem,
     RoomElem,
     RoomSeparationElem,
@@ -32,6 +33,7 @@ from bim_ai.elements import (
     SlabOpeningElem,
     StairElem,
     ValidationRuleElem,
+    ViewTemplateElem,
     WallElem,
     WindowElem,
 )
@@ -167,6 +169,11 @@ _RULE_DISCIPLINE: dict[str, str] = {
     "agent_brief_assumption_unresolved": "agent",
     "agent_brief_deviation_unacknowledged": "agent",
     "agent_brief_assumption_reference_broken": "agent",
+    "plan_view_tag_style_fallback": "architecture",
+    "plan_view_tag_style_ref_invalid": "architecture",
+    "plan_view_tag_style_target_mismatch": "architecture",
+    "plan_view_tag_style_override": "architecture",
+    "plan_template_tag_style_ref_invalid": "architecture",
 }
 
 _MATERIAL_CATALOG_AUDIT_RULE_IDS: dict[str, str] = {
@@ -882,6 +889,189 @@ def _exchange_advisory_violations(elements: dict[str, Element]) -> list[Violatio
                         )
                     )
 
+    return out
+
+
+def _plan_view_tag_style_advisor_violations(elements: dict[str, Element]) -> list[Violation]:
+    """Advisor rules for plan tag style matrix gaps (WP-C01/C02/V01).
+
+    Emits violations when:
+    - A plan view or template holds a tag-style ref that is missing or has the wrong tagTarget.
+    - A plan view has opening tags / room labels active but both plan and template lack an explicit
+      style (pure builtin fallback — advisory, not blocking).
+    - A plan view explicitly overrides the tag style set by its template (informational).
+    """
+    out: list[Violation] = []
+
+    plan_views = [e for e in elements.values() if isinstance(e, PlanViewElem)]
+    view_templates = {e.id: e for e in elements.values() if isinstance(e, ViewTemplateElem)}
+
+    def _resolve_tmpl(pv: PlanViewElem) -> ViewTemplateElem | None:
+        if pv.view_template_id:
+            return view_templates.get(pv.view_template_id)
+        return None
+
+    def _tag_style_elem(ref: str | None) -> PlanTagStyleElem | None:
+        if not ref:
+            return None
+        el = elements.get(ref)
+        return el if isinstance(el, PlanTagStyleElem) else None
+
+    def _ref_missing_or_wrong(ref: str | None, expected_target: str) -> str | None:
+        if not ref:
+            return None
+        el = elements.get(ref)
+        if el is None:
+            return "missing"
+        if not isinstance(el, PlanTagStyleElem):
+            return "wrong_kind"
+        if el.tag_target != expected_target:
+            return "wrong_target"
+        return None
+
+    # View template refs
+    for tmpl in view_templates.values():
+        for lane, ref in (
+            ("opening", tmpl.default_plan_opening_tag_style_id),
+            ("room", tmpl.default_plan_room_tag_style_id),
+        ):
+            reason = _ref_missing_or_wrong(ref, lane)
+            if reason == "wrong_target":
+                out.append(
+                    Violation(
+                        rule_id="plan_view_tag_style_target_mismatch",
+                        severity="warning",
+                        message=(
+                            f"View template '{tmpl.name}' default{lane.capitalize()}TagStyleId "
+                            f"'{ref}' targets the wrong tag lane; effective style falls back to builtin."
+                        ),
+                        element_ids=[tmpl.id],
+                    )
+                )
+            elif reason in ("missing", "wrong_kind"):
+                out.append(
+                    Violation(
+                        rule_id="plan_template_tag_style_ref_invalid",
+                        severity="warning",
+                        message=(
+                            f"View template '{tmpl.name}' default{lane.capitalize()}TagStyleId "
+                            f"'{ref}' does not resolve to a plan_tag_style element ({reason}); "
+                            "effective style falls back to builtin."
+                        ),
+                        element_ids=[tmpl.id],
+                    )
+                )
+
+    # Plan view refs and matrix advisory
+    for pv in sorted(plan_views, key=lambda x: x.id):
+        tmpl = _resolve_tmpl(pv)
+
+        for lane, pv_ref, tmpl_default_ref in (
+            (
+                "opening",
+                pv.plan_opening_tag_style_id,
+                tmpl.default_plan_opening_tag_style_id if tmpl else None,
+            ),
+            (
+                "room",
+                pv.plan_room_tag_style_id,
+                tmpl.default_plan_room_tag_style_id if tmpl else None,
+            ),
+        ):
+            # Plan-view explicit ref that is invalid
+            reason = _ref_missing_or_wrong(pv_ref, lane)
+            if reason == "wrong_target":
+                out.append(
+                    Violation(
+                        rule_id="plan_view_tag_style_target_mismatch",
+                        severity="warning",
+                        message=(
+                            f"Plan view '{pv.name}' plan{lane.capitalize()}TagStyleId "
+                            f"'{pv_ref}' targets the wrong tag lane; effective style falls back to builtin."
+                        ),
+                        element_ids=[pv.id],
+                    )
+                )
+            elif reason in ("missing", "wrong_kind"):
+                out.append(
+                    Violation(
+                        rule_id="plan_view_tag_style_ref_invalid",
+                        severity="warning",
+                        message=(
+                            f"Plan view '{pv.name}' plan{lane.capitalize()}TagStyleId "
+                            f"'{pv_ref}' does not resolve to a plan_tag_style element ({reason}); "
+                            "effective style falls back to builtin."
+                        ),
+                        element_ids=[pv.id],
+                    )
+                )
+
+            # Advisory: plan view overrides template default tag style with a different valid style
+            if (
+                pv_ref
+                and tmpl_default_ref
+                and pv_ref != tmpl_default_ref
+                and reason is None
+                and _ref_missing_or_wrong(tmpl_default_ref, lane) is None
+            ):
+                out.append(
+                    Violation(
+                        rule_id="plan_view_tag_style_override",
+                        severity="info",
+                        message=(
+                            f"Plan view '{pv.name}' overrides its template's default "
+                            f"{lane} tag style (template: '{tmpl_default_ref}', "
+                            f"plan override: '{pv_ref}')."
+                        ),
+                        element_ids=[pv.id],
+                    )
+                )
+
+        # Advisory: tags active but purely falling back to builtin (no style configured anywhere)
+        opening_tags_on = (
+            pv.plan_show_opening_tags
+            if pv.plan_show_opening_tags is not None
+            else (tmpl.plan_show_opening_tags if tmpl else False)
+        )
+        room_labels_on = (
+            pv.plan_show_room_labels
+            if pv.plan_show_room_labels is not None
+            else (tmpl.plan_show_room_labels if tmpl else False)
+        )
+
+        for lane, tags_on, pv_ref_attr, tmpl_ref_attr in (
+            (
+                "opening",
+                opening_tags_on,
+                pv.plan_opening_tag_style_id,
+                tmpl.default_plan_opening_tag_style_id if tmpl else None,
+            ),
+            (
+                "room",
+                room_labels_on,
+                pv.plan_room_tag_style_id,
+                tmpl.default_plan_room_tag_style_id if tmpl else None,
+            ),
+        ):
+            if not tags_on:
+                continue
+            has_valid_pv_ref = bool(pv_ref_attr) and _ref_missing_or_wrong(pv_ref_attr, lane) is None
+            has_valid_tmpl_ref = bool(tmpl_ref_attr) and _ref_missing_or_wrong(tmpl_ref_attr, lane) is None
+            if not has_valid_pv_ref and not has_valid_tmpl_ref:
+                out.append(
+                    Violation(
+                        rule_id="plan_view_tag_style_fallback",
+                        severity="info",
+                        message=(
+                            f"Plan view '{pv.name}' has {lane} tags visible but no custom tag style "
+                            "is configured on the plan view or its template; the builtin fallback "
+                            "style is active. Assign a plan_tag_style for consistent labelling."
+                        ),
+                        element_ids=[pv.id],
+                    )
+                )
+
+    out.sort(key=lambda v: (v.rule_id, tuple(sorted(v.element_ids)), v.severity))
     return out
 
 
@@ -1994,5 +2184,6 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
 
     viols.extend(_agent_brief_advisory_violations(elements))
     viols.extend(_exchange_advisory_violations(elements))
+    viols.extend(_plan_view_tag_style_advisor_violations(elements))
     viols.sort(key=lambda v: (v.rule_id, tuple(sorted(v.element_ids)), v.severity))
     return annotate_violation_disciplines(viols)

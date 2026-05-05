@@ -409,6 +409,43 @@ export type PlanGraphicsMatrixRow = {
   template: string;
   stored: string;
   effective: string;
+  /** Which tier provided the effective value: plan_view, view_template, or system default. */
+  effectiveSource?: 'plan_view' | 'view_template' | 'default';
+};
+
+/** All category keys in stable display order (mirrors PLAN_CATEGORY_GRAPHIC_KEYS). */
+export const PLAN_CATEGORY_GRAPHIC_DISPLAY_KEYS: readonly PlanCategoryGraphicCategoryKey[] = [
+  'wall',
+  'floor',
+  'roof',
+  'room',
+  'door',
+  'window',
+  'stair',
+  'grid_line',
+  'room_separation',
+  'dimension',
+] as const;
+
+/** Per-category source summary for the project browser / advisor. */
+export type PlanCategoryGraphicSourceRow = {
+  categoryKey: PlanCategoryGraphicCategoryKey;
+  lineWeightSource: 'plan_view' | 'view_template' | 'default';
+  linePatternSource: 'plan_view' | 'view_template' | 'default';
+  effectiveSource: 'plan_view' | 'view_template' | 'default';
+  lineWeightFactor: number;
+  linePatternToken: string;
+};
+
+/** Compact tag/annotation source summary for the project browser. */
+export type PlanViewBrowserHierarchyState = {
+  viewTemplateId: string | undefined;
+  viewTemplateName: string | undefined;
+  openingTagSource: 'plan_view' | 'view_template' | 'builtin';
+  roomTagSource: 'plan_view' | 'view_template' | 'builtin';
+  categoryDefaultCount: number;
+  categoryTemplateCount: number;
+  categoryPlanViewCount: number;
 };
 
 function formatPlanPresentationStored(pres: PlanPresentationPreset): string {
@@ -472,6 +509,82 @@ export function planViewProjectBrowserEvidenceLine(
       ? ''
       : ` · catWall f=${cat.wall.lineWeightFactor} pat=${cat.wall.linePatternToken} · catGrid pat=${cat.grid_line.linePatternToken}`;
   return `pres ${formatPlanPresentationStored(pres)} · ${d} · fill ${fill} · tags ${annotationTriEffective(a.openingTagsVisible)}/${annotationTriEffective(a.roomLabelsVisible)} · tagStyles o=${oAbbrev} r=${rAbbrev}${catBit}`;
+}
+
+/**
+ * Per-category source readout for all 10 categories (plan_view / view_template / default).
+ * Used for project browser evidence and advisor display (WP-C01/C02/C03).
+ */
+export function planViewCategoryGraphicsSourceReadout(
+  elementsById: Record<string, Element>,
+  planViewId: string,
+): PlanCategoryGraphicSourceRow[] {
+  const cat = resolvePlanCategoryGraphics(elementsById, planViewId);
+  if (cat == null) return [];
+
+  return PLAN_CATEGORY_GRAPHIC_DISPLAY_KEYS.map((key) => {
+    const r = cat[key];
+    const wSrc =
+      r.lineWeightSource === 'plan_view'
+        ? 'plan_view'
+        : r.lineWeightSource === 'template'
+          ? 'view_template'
+          : 'default';
+    const pSrc =
+      r.linePatternSource === 'plan_view'
+        ? 'plan_view'
+        : r.linePatternSource === 'template'
+          ? 'view_template'
+          : 'default';
+    const effSrc =
+      wSrc === 'plan_view' || pSrc === 'plan_view'
+        ? 'plan_view'
+        : wSrc === 'view_template' || pSrc === 'view_template'
+          ? 'view_template'
+          : 'default';
+    return {
+      categoryKey: key,
+      lineWeightSource: wSrc,
+      linePatternSource: pSrc,
+      effectiveSource: effSrc,
+      lineWeightFactor: r.lineWeightFactor,
+      linePatternToken: r.linePatternToken,
+    };
+  });
+}
+
+/**
+ * Compact browser hierarchy state summarising template link and tag/category source counts.
+ * Feeds the project browser template-bucket summary for v1 review (WP-C05).
+ */
+export function planViewBrowserHierarchyState(
+  elementsById: Record<string, Element>,
+  planViewId: string,
+): PlanViewBrowserHierarchyState {
+  const el = elementsById[planViewId];
+  const pv = el?.kind === 'plan_view' ? el : undefined;
+
+  const tmplId = pv?.viewTemplateId;
+  const tmplEl = tmplId ? elementsById[tmplId] : undefined;
+  const tmpl = tmplEl?.kind === 'view_template' ? tmplEl : undefined;
+
+  const oSt = resolvePlanTagStyleLane(elementsById, planViewId, 'opening');
+  const rSt = resolvePlanTagStyleLane(elementsById, planViewId, 'room');
+
+  const catRows = planViewCategoryGraphicsSourceReadout(elementsById, planViewId);
+  const catDefaultCount = catRows.filter((r) => r.effectiveSource === 'default').length;
+  const catTemplateCount = catRows.filter((r) => r.effectiveSource === 'view_template').length;
+  const catPlanViewCount = catRows.filter((r) => r.effectiveSource === 'plan_view').length;
+
+  return {
+    viewTemplateId: tmpl?.id,
+    viewTemplateName: tmpl?.name,
+    openingTagSource: oSt.source,
+    roomTagSource: rSt.source,
+    categoryDefaultCount: catDefaultCount,
+    categoryTemplateCount: catTemplateCount,
+    categoryPlanViewCount: catPlanViewCount,
+  };
 }
 
 /** Template | stored plan_view | effective matrix for Inspector production review. */
@@ -570,28 +683,36 @@ export function planViewGraphicsMatrixRows(
       stored: '—',
       effective: String(g?.lineWeightScale ?? 1),
     },
-    {
-      label: 'Category wall Δw/pattern',
-      template:
-        tmpl == null
-          ? '—'
-          : formatCategoryGraphicsMatrixCell(tmpl.planCategoryGraphics, 'wall'),
-      stored: formatCategoryGraphicsMatrixCell(el.planCategoryGraphics, 'wall'),
-      effective: catEff
-        ? formatCategoryGraphicsEffectiveCell(catEff.wall)
-        : 'f=1 pat=solid',
-    },
-    {
-      label: 'Category grid Δw/pattern',
-      template:
-        tmpl == null
-          ? '—'
-          : formatCategoryGraphicsMatrixCell(tmpl.planCategoryGraphics, 'grid_line'),
-      stored: formatCategoryGraphicsMatrixCell(el.planCategoryGraphics, 'grid_line'),
-      effective: catEff
-        ? formatCategoryGraphicsEffectiveCell(catEff.grid_line)
-        : 'f=1 pat=solid',
-    },
+    ...PLAN_CATEGORY_GRAPHIC_DISPLAY_KEYS.map((key) => {
+      const defaultPat = key === 'room_separation' ? 'dash_short' : 'solid';
+      const resolved = catEff?.[key];
+      const effStr = resolved
+        ? formatCategoryGraphicsEffectiveCell(resolved)
+        : `f=1 pat=${defaultPat}`;
+      const src = resolved
+        ? (() => {
+            if (
+              resolved.lineWeightSource === 'plan_view' ||
+              resolved.linePatternSource === 'plan_view'
+            )
+              return 'plan_view' as const;
+            if (
+              resolved.lineWeightSource === 'template' ||
+              resolved.linePatternSource === 'template'
+            )
+              return 'view_template' as const;
+            return 'default' as const;
+          })()
+        : ('default' as const);
+      return {
+        label: `Cat ${key}`,
+        template:
+          tmpl == null ? '—' : formatCategoryGraphicsMatrixCell(tmpl.planCategoryGraphics, key),
+        stored: formatCategoryGraphicsMatrixCell(el.planCategoryGraphics, key),
+        effective: effStr,
+        effectiveSource: src,
+      };
+    }),
     {
       label: 'Opening tags',
       template: vtOpening,

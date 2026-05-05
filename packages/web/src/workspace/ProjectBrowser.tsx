@@ -4,6 +4,7 @@ import type { Element } from '@bim-ai/core';
 import { Btn } from '@bim-ai/ui';
 
 import {
+  planViewBrowserHierarchyState,
   planViewProjectBrowserEvidenceLine,
   viewpointOrbit3dEvidenceLine,
 } from '../plan/planProjection';
@@ -65,6 +66,11 @@ function planViewTooltip(
     parts.push(t?.kind === 'view_template' ? `template: ${t.name}` : `templateRef: ${tid}`);
   }
   parts.push(planViewProjectBrowserEvidenceLine(elementsById, pv.id));
+  const h = planViewBrowserHierarchyState(elementsById, pv.id);
+  parts.push(
+    `catSrc: def=${h.categoryDefaultCount} tmpl=${h.categoryTemplateCount} pv=${h.categoryPlanViewCount}`,
+  );
+  parts.push(`tagSrc: o=${h.openingTagSource} r=${h.roomTagSource}`);
   return parts.join(' · ');
 }
 
@@ -272,6 +278,28 @@ export function ProjectBrowser(props: {
                         {planLevelEvidenceToken(props.elementsById, pv.levelId)} ·{' '}
                         {planViewProjectBrowserEvidenceLine(props.elementsById, pv.id)}
                       </div>
+                      {(() => {
+                        const h = planViewBrowserHierarchyState(props.elementsById, pv.id);
+                        const hasNonDefault =
+                          h.categoryTemplateCount > 0 || h.categoryPlanViewCount > 0;
+                        const tagNonBuiltin =
+                          h.openingTagSource !== 'builtin' || h.roomTagSource !== 'builtin';
+                        if (!hasNonDefault && !tagNonBuiltin) return null;
+                        return (
+                          <div
+                            className="pl-2 font-mono text-[9px] leading-tight text-muted/70"
+                            data-bim-plan-view-hierarchy={pv.id}
+                          >
+                            {hasNonDefault
+                              ? `catSrc tmpl=${h.categoryTemplateCount} pv=${h.categoryPlanViewCount}`
+                              : null}
+                            {hasNonDefault && tagNonBuiltin ? ' · ' : null}
+                            {tagNonBuiltin
+                              ? `tagSrc o=${h.openingTagSource} r=${h.roomTagSource}`
+                              : null}
+                          </div>
+                        );
+                      })()}
                       {props.onUpsertSemantic ? (
                         <button
                           type="button"
