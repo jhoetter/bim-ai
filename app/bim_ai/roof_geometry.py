@@ -7,6 +7,14 @@ from typing import Literal
 
 RoofGeometryMode = Literal["mass_box", "gable_pitched_rectangle"]
 
+RoofGeometrySupportTokenV0 = Literal[
+    "gable_pitched_rectangle_supported",
+    "hip_candidate_deferred",
+    "valley_candidate_deferred",
+    "non_rectangular_footprint_deferred",
+    "missing_slope_or_level",
+]
+
 FootprintPlanWinding = Literal["ccw", "cw", "degenerate"]
 RidgeAxisPlan = Literal["alongX", "alongZ"]
 
@@ -49,6 +57,104 @@ def plan_polygon_winding_token(area_mm2: float, *, eps_mm2: float = 1.0) -> Foot
     if abs(area_mm2) <= eps_mm2:
         return "degenerate"
     return "ccw" if area_mm2 > 0 else "cw"
+
+
+def plan_simple_polygon_is_convex_mm(
+    pts: list[tuple[float, float]],
+    *,
+    cross_eps: float = 1e-6,
+) -> bool:
+    """Plan convexity for a simple closed ring (x/z); collinear segments are ignored for sign."""
+
+    n = len(pts)
+    if n < 3:
+        return False
+    signs: list[int] = []
+    for i in range(n):
+        x0, z0 = pts[i]
+        x1, z1 = pts[(i + 1) % n]
+        x2, z2 = pts[(i + 2) % n]
+        v1x, v1z = x1 - x0, z1 - z0
+        v2x, v2z = x2 - x1, z2 - z1
+        cross = v1x * v2z - v1z * v2x
+        if abs(cross) <= cross_eps:
+            continue
+        signs.append(1 if cross > 0 else -1)
+    if not signs:
+        return False
+    return len(set(signs)) <= 1
+
+
+def plan_simple_polygon_is_concave_mm(
+    pts: list[tuple[float, float]],
+    *,
+    area_eps_mm2: float = 1.0,
+    cross_eps: float = 1e-6,
+) -> bool:
+    """True when footprint has an interior reflex corner (e.g. L-shape)."""
+
+    if len(pts) < 3:
+        return False
+    area = plan_polygon_signed_area_mm2(pts)
+    if plan_polygon_winding_token(area, eps_mm2=area_eps_mm2) == "degenerate":
+        return False
+    return not plan_simple_polygon_is_convex_mm(pts, cross_eps=cross_eps)
+
+
+def gable_pitched_rectangle_elevation_supported_v0(
+    *,
+    footprint_mm: list[tuple[float, float]],
+    roof_geometry_mode: RoofGeometryMode,
+    reference_level_resolves: bool,
+    slope_deg: float | None,
+) -> bool:
+    """True when gable ridge / gable mesh is representative (rectangle + mode + level + slope)."""
+
+    return (
+        roof_geometry_support_token_v0(
+            footprint_mm=footprint_mm,
+            roof_geometry_mode=roof_geometry_mode,
+            reference_level_resolves=reference_level_resolves,
+            slope_deg=slope_deg,
+        )
+        == "gable_pitched_rectangle_supported"
+    )
+
+
+def roof_geometry_support_token_v0(
+    *,
+    footprint_mm: list[tuple[float, float]],
+    roof_geometry_mode: RoofGeometryMode,
+    reference_level_resolves: bool,
+    slope_deg: float | None,
+) -> RoofGeometrySupportTokenV0 | None:
+    """Deterministic hip/valley/skip matrix; None for ordinary mass_box axis-aligned rectangles."""
+
+    if not reference_level_resolves or len(footprint_mm) < 3 or slope_deg is None:
+        return "missing_slope_or_level"
+
+    area = plan_polygon_signed_area_mm2(footprint_mm)
+    if plan_polygon_winding_token(area) == "degenerate":
+        return "non_rectangular_footprint_deferred"
+
+    if plan_simple_polygon_is_concave_mm(footprint_mm):
+        return "valley_candidate_deferred"
+
+    if (
+        roof_geometry_mode == "gable_pitched_rectangle"
+        and footprint_is_valid_axis_aligned_rectangle_mm(footprint_mm)
+    ):
+        return "gable_pitched_rectangle_supported"
+
+    is_convex = plan_simple_polygon_is_convex_mm(footprint_mm)
+    is_rect = footprint_is_valid_axis_aligned_rectangle_mm(footprint_mm)
+    if is_convex and len(footprint_mm) >= 4 and not is_rect:
+        return "hip_candidate_deferred"
+
+    if roof_geometry_mode == "mass_box" and is_rect and is_convex:
+        return None
+
+    return "non_rectangular_footprint_deferred"
 
 
 def footprint_is_valid_axis_aligned_rectangle_mm(footprint_mm: list[tuple[float, float]]) -> bool:

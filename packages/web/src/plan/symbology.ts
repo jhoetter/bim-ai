@@ -218,6 +218,7 @@ function planFloorRoofOutlineWireGroup(
     pickId: string;
     lineWeightHint: number;
     linePatternToken?: string | null;
+    roofGeometrySupportToken?: string | null;
   },
 ): THREE.Group {
   const grp = new THREE.Group();
@@ -232,6 +233,9 @@ function planFloorRoofOutlineWireGroup(
 
   if (outlineMm.length < 2) {
     grp.userData.bimPickId = opts.pickId;
+    if (opts.kind === 'roof' && opts.roofGeometrySupportToken) {
+      grp.userData.bimAiRoofGeometrySupportToken = opts.roofGeometrySupportToken;
+    }
     return grp;
   }
 
@@ -259,6 +263,9 @@ function planFloorRoofOutlineWireGroup(
   }
 
   grp.userData.bimPickId = opts.pickId;
+  if (opts.kind === 'roof' && opts.roofGeometrySupportToken) {
+    grp.userData.bimAiRoofGeometrySupportToken = opts.roofGeometrySupportToken;
+  }
   return grp;
 }
 
@@ -497,14 +504,16 @@ function rebuildPlanMeshesFromWire(
     if (outline.length < 2) continue;
     const lwh = Number(rf.lineWeightHint ?? rf.line_weight_hint ?? 1);
     const patRaw = rf.linePatternToken ?? rf.line_pattern_token;
-    holder.add(
-      planFloorRoofOutlineWireGroup(outline, {
-        kind: 'roof',
-        pickId: String(rf.id ?? ''),
-        lineWeightHint: lwh,
-        linePatternToken: typeof patRaw === 'string' ? patRaw : undefined,
-      }),
-    );
+    const supportTokRaw = rf.roofGeometrySupportToken;
+    const supportTok = typeof supportTokRaw === 'string' && supportTokRaw.trim() ? supportTokRaw.trim() : null;
+    const grp = planFloorRoofOutlineWireGroup(outline, {
+      kind: 'roof',
+      pickId: String(rf.id ?? ''),
+      lineWeightHint: lwh,
+      linePatternToken: typeof patRaw === 'string' ? patRaw : undefined,
+      roofGeometrySupportToken: supportTok,
+    });
+    holder.add(grp);
   }
 
   for (const w of wallsByWireId.values()) holder.add(planWallMesh(w, selectedId));

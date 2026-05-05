@@ -101,6 +101,7 @@ def test_section_roof_primitive_gable_carries_pitch_fields() -> None:
         if row["ridgeAxisPlan"] == "alongZ"
         else "eaveParallelPlanX_gableRakeParallelPlanZ"
     )
+    assert row["roofGeometrySupportToken"] == "gable_pitched_rectangle_supported"
 
 
 SHARED_GABLE_EVIDENCE_KEYS = (
@@ -116,6 +117,7 @@ SHARED_GABLE_EVIDENCE_KEYS = (
     "proxyKind",
     "layerStackSkipReason",
     "roofFasciaEdgePlanToken",
+    "roofGeometrySupportToken",
 )
 
 
@@ -205,6 +207,8 @@ def test_plan_wire_mass_box_roof_z_mid_matches_section_primitive() -> None:
             assert p_v == s_v
         else:
             assert pytest.approx(float(p_v), rel=1e-9, abs=1e-6) == float(s_v), k
+    assert "roofGeometrySupportToken" not in pr
+    assert "roofGeometrySupportToken" not in sr
 
 
 def test_gltf_manifest_and_mesh_differs_from_mass_box_for_gable_roof() -> None:
@@ -247,6 +251,7 @@ def test_gltf_manifest_and_mesh_differs_from_mass_box_for_gable_roof() -> None:
     assert pytest.approx(row["ridgeZMm"], rel=1e-6) == 2600.0 + rise_expect
     assert row["layerStackSkipReason"] == "roof_type_without_layers"
     assert row["roofFasciaEdgePlanToken"] == "eaveParallelPlanZ_gableRakeParallelPlanX"
+    assert row["roofGeometrySupportToken"] == "gable_pitched_rectangle_supported"
     assert "layerStackCount" not in row
     roof_mesh = next(m for m in g["meshes"] if m["name"] == "roof:r1")
     pos_ix = roof_mesh["primitives"][0]["attributes"]["POSITION"]
@@ -284,16 +289,165 @@ def test_gltf_mass_box_roof_has_base_mesh_encoding_only() -> None:
     assert mb["ridgeInferable"] is False
     assert mb["layerStackSkipReason"] == "roof_missing_roof_type_id"
     assert "ridgeSegmentPlanMm" not in mb
+    assert "roofGeometrySupportToken" not in mb
     roof_mesh = next(m for m in g["meshes"] if m["name"] == "roof:roof-1")
     pos_ix = roof_mesh["primitives"][0]["attributes"]["POSITION"]
     assert g["accessors"][pos_ix]["count"] == 36
 
 
-@pytest.mark.skip(reason="WP-B04: hip / irregular polygon ridge topology remains out of scope (prompt non-goals)")
-def test_hip_roof_topology_evidence_skipped_until_solver() -> None:
-    """Placeholder for future bounded hip/valley evidence once a deterministic solver exists."""
+def test_mass_box_hex_footprint_emits_hip_candidate_deferred_token() -> None:
+    cx_m = 5000.0
+    cz_m = 5000.0
+    r_mm = 2500.0
+    hex_fp: list[dict[str, float]] = []
+    for i in range(6):
+        ang = (math.pi / 3.0) * float(i) - math.pi / 6.0
+        hex_fp.append(
+            {"xMm": round(cx_m + r_mm * math.cos(ang), 6), "yMm": round(cz_m + r_mm * math.sin(ang), 6)}
+        )
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=2400),
+            "r-hex": RoofElem(
+                kind="roof",
+                id="r-hex",
+                name="Hip-ish",
+                reference_level_id="lvl",
+                footprint_mm=hex_fp,
+                slope_deg=30.0,
+                roof_geometry_mode="mass_box",
+            ),
+        },
+    )
+    g = document_to_gltf(doc)
+    row = g["extensions"]["BIM_AI_exportManifest_v0"]["roofGeometryEvidence_v1"]["roofs"][0]
+    assert row["roofGeometrySupportToken"] == "hip_candidate_deferred"
+    assert row["roofTopologyToken"] == "mass_box_proxy"
 
-    pass
+
+_L_SHAPED_FP = (
+    {"xMm": 0, "yMm": 0},
+    {"xMm": 6000, "yMm": 0},
+    {"xMm": 6000, "yMm": 3000},
+    {"xMm": 3000, "yMm": 3000},
+    {"xMm": 3000, "yMm": 6000},
+    {"xMm": 0, "yMm": 6000},
+)
+
+
+def test_mass_box_concave_footprint_emits_valley_candidate_token() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=2200),
+            "r-L": RoofElem(
+                kind="roof",
+                id="r-L",
+                name="L-roof",
+                reference_level_id="lvl",
+                footprint_mm=list(_L_SHAPED_FP),
+                slope_deg=28.0,
+                roof_geometry_mode="mass_box",
+            ),
+        },
+    )
+    row = document_to_gltf(doc)["extensions"]["BIM_AI_exportManifest_v0"]["roofGeometryEvidence_v1"]["roofs"][0]
+    assert row["roofGeometrySupportToken"] == "valley_candidate_deferred"
+
+
+def test_triangle_footprint_emits_non_rectangular_token() -> None:
+    tri = (
+        {"xMm": 0, "yMm": 0},
+        {"xMm": 5000, "yMm": 0},
+        {"xMm": 2500, "yMm": 3500},
+    )
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=2100),
+            "r-tri": RoofElem(
+                kind="roof",
+                id="r-tri",
+                name="Tri",
+                reference_level_id="lvl",
+                footprint_mm=list(tri),
+                slope_deg=27.0,
+                roof_geometry_mode="mass_box",
+            ),
+        },
+    )
+    row = document_to_gltf(doc)["extensions"]["BIM_AI_exportManifest_v0"]["roofGeometryEvidence_v1"]["roofs"][0]
+    assert row["roofGeometrySupportToken"] == "non_rectangular_footprint_deferred"
+
+
+def test_roof_missing_reference_level_emits_missing_slope_or_level_token() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=2000),
+            "r-bad": RoofElem(
+                kind="roof",
+                id="r-bad",
+                name="R",
+                reference_level_id="missing-level",
+                footprint_mm=list(_RECT_FP),
+                slope_deg=25.0,
+                roof_geometry_mode="mass_box",
+            ),
+        },
+    )
+    row = document_to_gltf(doc)["extensions"]["BIM_AI_exportManifest_v0"]["roofGeometryEvidence_v1"]["roofs"][0]
+    assert row["roofGeometrySupportToken"] == "missing_slope_or_level"
+
+
+def test_roof_explicit_none_slope_emits_missing_slope_or_level_token() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=2000),
+            "r-ns": RoofElem(
+                kind="roof",
+                id="r-ns",
+                name="R",
+                reference_level_id="lvl",
+                footprint_mm=list(_RECT_FP),
+                slope_deg=None,
+                roof_geometry_mode="mass_box",
+            ),
+        },
+    )
+    row = document_to_gltf(doc)["extensions"]["BIM_AI_exportManifest_v0"]["roofGeometryEvidence_v1"]["roofs"][0]
+    assert row["roofGeometrySupportToken"] == "missing_slope_or_level"
+
+
+def test_deferred_gable_non_rectangle_footprint_uses_box_mesh_skips_gable_encoding() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=2600),
+            "rt-shingle": RoofTypeElem(kind="roof_type", id="rt-shingle", name="Asphalt"),
+            "r-defer": RoofElem(
+                kind="roof",
+                id="r-defer",
+                name="Roof",
+                reference_level_id="lvl",
+                footprint_mm=list(_L_SHAPED_FP),
+                slope_deg=30.0,
+                roof_geometry_mode="gable_pitched_rectangle",
+                roof_type_id="rt-shingle",
+            ),
+        },
+    )
+    g = document_to_gltf(doc)
+    ext = g["extensions"]["BIM_AI_exportManifest_v0"]
+    assert "bim_ai_gable_roof_v0" not in ext["meshEncoding"]
+    row = ext["roofGeometryEvidence_v1"]["roofs"][0]
+    assert row["roofGeometrySupportToken"] == "valley_candidate_deferred"
+    assert row["roofTopologyToken"] == "skipped_invalid_gable_footprint"
+    roof_mesh = next(m for m in g["meshes"] if m["name"] == "roof:r-defer")
+    pos_ix = roof_mesh["primitives"][0]["attributes"]["POSITION"]
+    assert g["accessors"][pos_ix]["count"] == 36
 
 
 def test_gable_roof_typed_layers_surface_evidence_manifest_plan_section_agree() -> None:
@@ -348,6 +502,7 @@ def test_gable_roof_typed_layers_surface_evidence_manifest_plan_section_agree() 
     assert row["primaryMaterialKey"] == "mat-osb-roof-deck-v1"
     assert row["primaryMaterialLabel"] == "OSB structural deck"
     assert row["roofFasciaEdgePlanToken"] == "eaveParallelPlanZ_gableRakeParallelPlanX"
+    assert row["roofGeometrySupportToken"] == "gable_pitched_rectangle_supported"
 
     pw = resolve_plan_projection_wire(doc, plan_view_id="pv-rt", fallback_level_id="lvl")
     plan_row = (pw.get("primitives") or {}).get("roofs") or []
@@ -361,5 +516,6 @@ def test_gable_roof_typed_layers_surface_evidence_manifest_plan_section_agree() 
         "primaryMaterialKey",
         "primaryMaterialLabel",
         "roofFasciaEdgePlanToken",
+        "roofGeometrySupportToken",
     ):
         assert pr[k] == sec_row[k] == row[k]

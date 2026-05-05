@@ -244,6 +244,7 @@ def test_build_visual_export_manifest_includes_roof_assembly_evidence():
     assert rrow["layerStackSkipReason"] is None
     assert rrow["layerStackCount"] == 2
     assert rrow["layerStackTotalThicknessMm"] == 138.0
+    assert "roofGeometrySupportToken" not in rrow
 
 
 def test_document_to_gltf_subset_counts_and_manifest_extension():
