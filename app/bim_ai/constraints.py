@@ -3037,7 +3037,7 @@ def fix_sheet_viewport_refresh(doc: Document) -> dict[str, Any]:
                         needs_update = True
                         stale_count += 1
                         continue
-                except Exception:
+                except (ValueError, TypeError, AttributeError):
                     pass
             updated_vps.append(vp)
         if needs_update:

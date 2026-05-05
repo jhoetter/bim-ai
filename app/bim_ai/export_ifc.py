@@ -439,7 +439,7 @@ def _read_named_qto_values(product: Any, qto_template_name: str) -> dict[str, fl
                 if val is not None:
                     try:
                         result[name] = float(val)
-                    except Exception:
+                    except (ValueError, TypeError):
                         pass
                     break
         return result
@@ -996,11 +996,8 @@ def _void_rel_and_host_for_opening(opening: Any, model: Any) -> tuple[Any | None
     def _opening_matches(ro: Any) -> bool:
         if ro is None:
             return False
-        try:
-            if ro is opening:
-                return True
-        except Exception:
-            pass
+        if ro is opening:
+            return True
         rg = str(getattr(ro, "GlobalId", None) or "")
         return bool(og and rg and og == rg)
 
@@ -1626,7 +1623,7 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
         host_cls = "Unknown"
         try:
             host_cls = str(host.is_a())
-        except Exception:
+        except AttributeError:
             pass
 
         if _ifc_try_product_is_a(host, "IfcWall"):

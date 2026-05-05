@@ -4,6 +4,11 @@ from __future__ import annotations
 
 import math
 
+import ifcopenshell
+import ifcopenshell.api.pset
+import ifcopenshell.api.root
+import pytest
+
 from bim_ai.document import Document
 from bim_ai.elements import (
     FloorElem,
@@ -13,6 +18,19 @@ from bim_ai.elements import (
     StairElem,
     WallElem,
 )
+from bim_ai.export_ifc import (
+    IFC_AVAILABLE,
+    build_kernel_ifc_authoritative_replay_sketch_v0,
+    export_ifc_model_step,
+    inspect_kernel_ifc_semantics,
+)
+from bim_ai.ifc_property_set_coverage_evidence_v0 import (
+    build_ifc_property_set_coverage_expansion_v1,
+    build_kernel_ifc_property_set_coverage_evidence_v0,
+)
+from bim_ai.ifc_stub import build_ifc_exchange_manifest_payload
+
+pytestmark = pytest.mark.skipif(not IFC_AVAILABLE, reason="ifcopenshell not installed (pip install '.[ifc]')")
 
 
 def _make_full_doc() -> Document:
@@ -86,10 +104,6 @@ def _make_full_doc() -> Document:
 
 def test_stair_qto_emitted_in_ifc_export() -> None:
     """Exported IFC STEP includes Qto_StairBaseQuantities attached to IfcStair."""
-    import ifcopenshell
-
-    from bim_ai.export_ifc import export_ifc_model_step
-
     doc = _make_full_doc()
     step = export_ifc_model_step(doc)
     model = ifcopenshell.file.from_string(step)
@@ -101,10 +115,6 @@ def test_stair_qto_emitted_in_ifc_export() -> None:
 
 def test_stair_qto_fields_present() -> None:
     """Qto_StairBaseQuantities contains NumberOfRisers, NumberOfTreads, Height, Length."""
-    import ifcopenshell
-
-    from bim_ai.export_ifc import export_ifc_model_step
-
     doc = _make_full_doc()
     step = export_ifc_model_step(doc)
     model = ifcopenshell.file.from_string(step)
@@ -159,10 +169,6 @@ def test_stair_qto_fields_present() -> None:
 
 def test_room_qto_includes_perimeter_and_volume() -> None:
     """Qto_SpaceBaseQuantities includes NetPerimeter and NetVolume in addition to NetFloorArea."""
-    import ifcopenshell
-
-    from bim_ai.export_ifc import export_ifc_model_step
-
     doc = _make_full_doc()
     step = export_ifc_model_step(doc)
     model = ifcopenshell.file.from_string(step)
@@ -208,11 +214,6 @@ def test_room_qto_includes_perimeter_and_volume() -> None:
 
 def test_stair_authoritative_replay_includes_total_height_mm() -> None:
     """Stair replay commands carry totalHeightMm derived from geometry."""
-    from bim_ai.export_ifc import (
-        build_kernel_ifc_authoritative_replay_sketch_v0,
-        export_ifc_model_step,
-    )
-
     doc = _make_full_doc()
     step = export_ifc_model_step(doc)
     sketch = build_kernel_ifc_authoritative_replay_sketch_v0(step)
@@ -228,11 +229,6 @@ def test_stair_authoritative_replay_includes_total_height_mm() -> None:
 
 def test_stair_authoritative_replay_includes_riser_and_tread_count() -> None:
     """Stair replay commands carry riserCount and treadCount from Qto_StairBaseQuantities."""
-    from bim_ai.export_ifc import (
-        build_kernel_ifc_authoritative_replay_sketch_v0,
-        export_ifc_model_step,
-    )
-
     doc = _make_full_doc()
     step = export_ifc_model_step(doc)
     sketch = build_kernel_ifc_authoritative_replay_sketch_v0(step)
@@ -249,11 +245,6 @@ def test_stair_authoritative_replay_includes_riser_and_tread_count() -> None:
 
 def test_ids_authoritative_replay_map_includes_stairs_section() -> None:
     """idsAuthoritativeReplayMap_v0 includes a 'stairs' section with typed rows."""
-    from bim_ai.export_ifc import (
-        build_kernel_ifc_authoritative_replay_sketch_v0,
-        export_ifc_model_step,
-    )
-
     doc = _make_full_doc()
     step = export_ifc_model_step(doc)
     sketch = build_kernel_ifc_authoritative_replay_sketch_v0(step)
@@ -276,13 +267,6 @@ def test_ids_authoritative_replay_map_includes_stairs_section() -> None:
 
 def test_property_set_coverage_expansion_v1_includes_floor_and_roof() -> None:
     """ifcPropertySetCoverageExpansion_v1 covers IfcSlab and IfcRoof product classes."""
-    import ifcopenshell
-
-    from bim_ai.export_ifc import export_ifc_model_step
-    from bim_ai.ifc_property_set_coverage_evidence_v0 import (
-        build_ifc_property_set_coverage_expansion_v1,
-    )
-
     doc = _make_full_doc()
     step = export_ifc_model_step(doc)
     model = ifcopenshell.file.from_string(step)
@@ -298,13 +282,6 @@ def test_property_set_coverage_expansion_v1_includes_floor_and_roof() -> None:
 
 def test_property_set_coverage_expansion_v1_field_counts() -> None:
     """Per-class rows have positive field counts where products are emitted."""
-    import ifcopenshell
-
-    from bim_ai.export_ifc import export_ifc_model_step
-    from bim_ai.ifc_property_set_coverage_evidence_v0 import (
-        build_ifc_property_set_coverage_expansion_v1,
-    )
-
     doc = _make_full_doc()
     step = export_ifc_model_step(doc)
     model = ifcopenshell.file.from_string(step)
@@ -322,8 +299,6 @@ def test_property_set_coverage_expansion_v1_field_counts() -> None:
 
 def test_ifc_manifest_property_set_coverage_includes_expansion_v1() -> None:
     """ifc_manifest_v0.ifcPropertySetCoverageEvidence_v0 includes ifcPropertySetCoverageExpansion_v1."""
-    from bim_ai.ifc_stub import build_ifc_exchange_manifest_payload
-
     doc = _make_full_doc()
     manifest = build_ifc_exchange_manifest_payload(doc)
 
@@ -339,8 +314,6 @@ def test_ifc_manifest_property_set_coverage_includes_expansion_v1() -> None:
 
 def test_qto_linked_products_includes_ifc_stair() -> None:
     """inspect_kernel_ifc_semantics.qtoLinkedProducts includes IfcStair."""
-    from bim_ai.export_ifc import export_ifc_model_step, inspect_kernel_ifc_semantics
-
     doc = _make_full_doc()
     step = export_ifc_model_step(doc)
     inspection = inspect_kernel_ifc_semantics(doc=doc, step_text=step)
@@ -353,14 +326,6 @@ def test_qto_linked_products_includes_ifc_stair() -> None:
 
 def test_ids_adviser_exchange_ifc_pset_floor_gap_fires_for_orphan_floor() -> None:
     """exchange_ifc_pset_floor_gap fires when floor has missing Reference pset."""
-    import ifcopenshell
-    import ifcopenshell.api.pset
-    import ifcopenshell.api.root
-
-    from bim_ai.ifc_property_set_coverage_evidence_v0 import (
-        build_kernel_ifc_property_set_coverage_evidence_v0,
-    )
-
     doc = Document(
         revision=5002,
         elements={
@@ -390,8 +355,6 @@ def test_ids_adviser_exchange_ifc_pset_floor_gap_fires_for_orphan_floor() -> Non
             ),
         },
     )
-
-    from bim_ai.export_ifc import export_ifc_model_step
 
     step = export_ifc_model_step(doc)
     model = ifcopenshell.file.from_string(step)
@@ -435,13 +398,6 @@ def test_ids_adviser_exchange_ifc_pset_roof_gap_rule_registered() -> None:
 
 def test_floor_pset_coverage_row_in_property_set_coverage_evidence() -> None:
     """build_kernel_ifc_property_set_coverage_evidence_v0 emits rows for IfcSlab with Pset_SlabCommon."""
-    import ifcopenshell
-
-    from bim_ai.export_ifc import export_ifc_model_step
-    from bim_ai.ifc_property_set_coverage_evidence_v0 import (
-        build_kernel_ifc_property_set_coverage_evidence_v0,
-    )
-
     doc = _make_full_doc()
     step = export_ifc_model_step(doc)
     model = ifcopenshell.file.from_string(step)
@@ -459,13 +415,6 @@ def test_floor_pset_coverage_row_in_property_set_coverage_evidence() -> None:
 
 def test_roof_pset_coverage_row_in_property_set_coverage_evidence() -> None:
     """build_kernel_ifc_property_set_coverage_evidence_v0 emits rows for IfcRoof with Pset_RoofCommon."""
-    import ifcopenshell
-
-    from bim_ai.export_ifc import export_ifc_model_step
-    from bim_ai.ifc_property_set_coverage_evidence_v0 import (
-        build_kernel_ifc_property_set_coverage_evidence_v0,
-    )
-
     doc = _make_full_doc()
     step = export_ifc_model_step(doc)
     model = ifcopenshell.file.from_string(step)
@@ -481,13 +430,6 @@ def test_roof_pset_coverage_row_in_property_set_coverage_evidence() -> None:
 
 def test_stair_pset_coverage_row_ids_token_ok_for_well_formed_stair() -> None:
     """Stair coverage rows have ids_ok token when Pset_StairCommon.Reference matches document element."""
-    import ifcopenshell
-
-    from bim_ai.export_ifc import export_ifc_model_step
-    from bim_ai.ifc_property_set_coverage_evidence_v0 import (
-        build_kernel_ifc_property_set_coverage_evidence_v0,
-    )
-
     doc = _make_full_doc()
     step = export_ifc_model_step(doc)
     model = ifcopenshell.file.from_string(step)
@@ -502,13 +444,6 @@ def test_stair_pset_coverage_row_ids_token_ok_for_well_formed_stair() -> None:
 
 def test_property_set_coverage_expansion_v1_schema_version() -> None:
     """ifcPropertySetCoverageExpansion_v1 carries schemaVersion=1."""
-    import ifcopenshell
-
-    from bim_ai.export_ifc import export_ifc_model_step
-    from bim_ai.ifc_property_set_coverage_evidence_v0 import (
-        build_ifc_property_set_coverage_expansion_v1,
-    )
-
     doc = _make_full_doc()
     step = export_ifc_model_step(doc)
     model = ifcopenshell.file.from_string(step)
