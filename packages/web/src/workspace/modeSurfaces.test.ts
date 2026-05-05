@@ -1,9 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
+  beginCellEdit,
+  cycleSort,
   moveViewport,
   resizeViewport,
+  SCHEDULE_DEFAULTS,
   SECTION_ELEVATION_DEFAULTS,
+  setFilter,
   SHEET_DEFAULTS,
+  toggleColumnVisibility,
   type SheetViewport,
   withActiveSection,
   withFarClip,
@@ -70,5 +75,49 @@ describe('Sheet surface — spec §20.5', () => {
     const big = resizeViewport(baseVp, 1000, 500);
     expect(big.widthMm).toBe(39000);
     expect(big.heightMm).toBe(25500);
+  });
+});
+
+describe('Schedule surface — spec §20.6', () => {
+  it('defaults to idle (no active schedule, no editing cell)', () => {
+    expect(SCHEDULE_DEFAULTS.activeScheduleId).toBeNull();
+    expect(SCHEDULE_DEFAULTS.editingCell).toBeNull();
+    expect(SCHEDULE_DEFAULTS.sort).toBeNull();
+  });
+
+  it('beginCellEdit sets and clears the edit target', () => {
+    const editing = beginCellEdit(SCHEDULE_DEFAULTS, {
+      rowId: 'row-1',
+      columnKey: 'mark',
+    });
+    expect(editing.editingCell).toEqual({ rowId: 'row-1', columnKey: 'mark' });
+    const cleared = beginCellEdit(editing, null);
+    expect(cleared.editingCell).toBeNull();
+  });
+
+  it('toggleColumnVisibility flips the column boolean', () => {
+    const seeded = {
+      ...SCHEDULE_DEFAULTS,
+      columns: [
+        { key: 'mark', label: 'Mark', visible: true },
+        { key: 'width', label: 'Width', visible: false },
+      ],
+    };
+    const next = toggleColumnVisibility(seeded, 'width');
+    expect(next.columns.find((c) => c.key === 'width')!.visible).toBe(true);
+  });
+
+  it('cycleSort flows none → asc → desc → none on the same column', () => {
+    let state = SCHEDULE_DEFAULTS;
+    state = cycleSort(state, 'mark');
+    expect(state.sort).toEqual({ columnKey: 'mark', descending: false });
+    state = cycleSort(state, 'mark');
+    expect(state.sort).toEqual({ columnKey: 'mark', descending: true });
+    state = cycleSort(state, 'mark');
+    expect(state.sort).toBeNull();
+  });
+
+  it('setFilter updates the filter expression', () => {
+    expect(setFilter(SCHEDULE_DEFAULTS, 'kind=window').filterExpression).toBe('kind=window');
   });
 });

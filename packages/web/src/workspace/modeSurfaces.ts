@@ -5,8 +5,8 @@
  * own section so the corresponding `ModeAdapter` (WP-UI-D03) can
  * capture/restore via these helpers.
  *
- * Currently exposes: WP-UI-E04 Section / Elevation, WP-UI-E01 Sheet.
- * Schedule / Agent surfaces follow in subsequent commits.
+ * Currently exposes: WP-UI-E04 Section / Elevation, WP-UI-E01 Sheet,
+ * WP-UI-E02 Schedule. Agent surface follows in a subsequent commit.
  */
 
 /* ────────────────────────────────────────────────────────────────────── */
@@ -114,4 +114,74 @@ export function resizeViewport(
     widthMm: Math.max(minMm, vp.widthMm + dWidthMm),
     heightMm: Math.max(minMm, vp.heightMm + dHeightMm),
   };
+}
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* E02 — Schedule mode (§20.6)                                              */
+/* ────────────────────────────────────────────────────────────────────── */
+
+export interface ScheduleColumn {
+  key: string;
+  label: string;
+  visible: boolean;
+}
+
+export interface ScheduleSort {
+  columnKey: string;
+  descending: boolean;
+}
+
+export interface ScheduleSurfaceState {
+  /** Active schedule id (one of the 5 spec'd schedules in the seed house). */
+  activeScheduleId: string | null;
+  /** Editing cell coordinates (rowId × columnKey) — null when idle. */
+  editingCell: { rowId: string; columnKey: string } | null;
+  /** Column visibility / order — left rail toggles. */
+  columns: ScheduleColumn[];
+  /** Active sort. Null when sort is unspecified. */
+  sort: ScheduleSort | null;
+  /** Filter expression in the right-rail inspector. */
+  filterExpression: string;
+}
+
+export const SCHEDULE_DEFAULTS: ScheduleSurfaceState = {
+  activeScheduleId: null,
+  editingCell: null,
+  columns: [],
+  sort: null,
+  filterExpression: '',
+};
+
+/** Begin editing a cell. Calling with `null` exits edit mode. */
+export function beginCellEdit(
+  state: ScheduleSurfaceState,
+  cell: { rowId: string; columnKey: string } | null,
+): ScheduleSurfaceState {
+  return { ...state, editingCell: cell };
+}
+
+/** Toggle a column's visibility. */
+export function toggleColumnVisibility(
+  state: ScheduleSurfaceState,
+  columnKey: string,
+): ScheduleSurfaceState {
+  return {
+    ...state,
+    columns: state.columns.map((c) => (c.key === columnKey ? { ...c, visible: !c.visible } : c)),
+  };
+}
+
+/** Cycle sort direction on a column: none → asc → desc → none. */
+export function cycleSort(state: ScheduleSurfaceState, columnKey: string): ScheduleSurfaceState {
+  if (!state.sort || state.sort.columnKey !== columnKey) {
+    return { ...state, sort: { columnKey, descending: false } };
+  }
+  if (!state.sort.descending) {
+    return { ...state, sort: { columnKey, descending: true } };
+  }
+  return { ...state, sort: null };
+}
+
+export function setFilter(state: ScheduleSurfaceState, expression: string): ScheduleSurfaceState {
+  return { ...state, filterExpression: expression };
 }
