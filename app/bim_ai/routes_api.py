@@ -57,6 +57,7 @@ from bim_ai.evidence_manifest import (
     evidence_closure_review_v1,
     evidence_diff_ingest_fix_loop_v1,
     evidence_lifecycle_signal_v1,
+    evidence_package_digest_invariants_v1,
     evidence_package_semantic_digest_sha256,
     evidence_review_performance_gate_v1,
     expected_screenshot_captures,
@@ -517,6 +518,7 @@ async def evidence_package(
         None,
     )
     payload["roomColorSchemeOverrideEvidence_v1"] = build_room_color_scheme_override_evidence_v1(scheme_elem)
+    payload["evidencePackageDigestInvariants_v1"] = evidence_package_digest_invariants_v1(payload)
     return payload
 
 

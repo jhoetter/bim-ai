@@ -21,6 +21,9 @@ from bim_ai.elements import (
     SheetElem,
     ViewpointElem,
 )
+from bim_ai.section_on_sheet_integration_evidence_v1 import (
+    build_section_on_sheet_integration_evidence_v1,
+)
 from bim_ai.sheet_preview_svg import (
     FULL_RASTER_RENDERER_STATUS_UNAVAILABLE,
     SHEET_EXPORT_PDF_MIME_TYPE,
@@ -276,6 +279,9 @@ def deterministic_sheet_evidence_manifest(
                 ),
                 "sheetTitleblockRevisionIssueManifest_v1": build_sheet_titleblock_revision_issue_manifest_v1(
                     sh
+                ),
+                "sectionOnSheetIntegrationEvidence_v1": build_section_on_sheet_integration_evidence_v1(
+                    doc, sh
                 ),
                 "sheetExportArtifactManifest_v1": sheet_export_artifact_manifest,
                 "correlation": {
@@ -2292,3 +2298,95 @@ def evidence_package_semantic_digest_sha256(payload: dict[str, Any]) -> str:
 
     body = json.dumps(shallow, sort_keys=True, separators=(",", ":"), default=str)
     return hashlib.sha256(body.encode("utf-8")).hexdigest()
+
+
+# Static registry of all known top-level keys that contribute to the semantic digest.
+# These are the keys present in the payload at the time evidence_package_semantic_digest_sha256()
+# is called, plus post-digest keys that are not in DIGEST_EXCLUDED_KEYS.
+DIGEST_INCLUDED_KEYS: frozenset[str] = frozenset(
+    {
+        # Pre-digest keys (present when semanticDigestSha256 is computed)
+        "format",
+        "modelId",
+        "revision",
+        "elementCount",
+        "countsByKind",
+        "summary",
+        "validate",
+        "exportLinks",
+        "planViews",
+        "expectedScreenshotCaptures",
+        "recommendedCapture",
+        "scheduleIds",
+        "roomDerivationPreview",
+        "roomDerivationCandidates",
+        "typeMaterialRegistry",
+        "hint",
+        "sheetRasterNote",
+        "planProjectionWireSample",
+        # Post-digest non-excluded keys
+        "semanticDigestPrefix16",
+        "suggestedEvidenceArtifactBasename",
+        "suggestedEvidenceBundleFilenames",
+        "recommendedPngEvidenceBackend",
+        "svgRasterBackendAvailable",
+        "deterministicSheetEvidence",
+        "deterministic3dViewEvidence",
+        "deterministicPlanViewEvidence",
+        "deterministicSectionCutEvidence",
+        "evidenceClosureReview_v1",
+        "evidenceLifecycleSignal_v1",
+        "agentEvidenceClosureHints",
+        "agentBriefCommandProtocol_v1",
+        "roomColorSchemeOverrideEvidence_v1",
+    }
+)
+
+
+def evidence_package_digest_invariants_v1(payload: dict[str, Any]) -> dict[str, Any]:
+    """Enumerate which top-level keys contribute to vs are excluded from the semantic digest.
+
+    Computes the invariants structure over the final assembled payload.  Unknown keys are those
+    present in the payload that are neither in the included nor excluded registries — the advisory
+    rule ``evidence_package_unknown_top_level_key`` fires for each.
+    """
+    # The invariants key itself is meta; exclude it from classification.
+    _META_KEY = "evidencePackageDigestInvariants_v1"
+
+    actual_keys = frozenset(payload.keys()) - {_META_KEY}
+    unknown = sorted(actual_keys - DIGEST_INCLUDED_KEYS - DIGEST_EXCLUDED_KEYS)
+
+    excluded_rules = digest_exclusion_rules_v1()
+    excluded_key_rationale: list[dict[str, Any]] = []
+    for key in sorted(DIGEST_EXCLUDED_KEYS):
+        excluded_key_rationale.append(
+            {
+                "key": key,
+                "rationale": excluded_rules["rationale"],
+                "enforcementNote": excluded_rules["enforcementNote"],
+            }
+        )
+
+    advisory_findings: list[dict[str, Any]] = [
+        {
+            "ruleId": "evidence_package_unknown_top_level_key",
+            "severity": "warning",
+            "keyName": k,
+            "message": (
+                f"Top-level key {k!r} is not registered in DIGEST_INCLUDED_KEYS or "
+                "DIGEST_EXCLUDED_KEYS. Explicitly categorise it to keep digest invariants stable."
+            ),
+        }
+        for k in unknown
+    ]
+
+    body: dict[str, Any] = {
+        "format": "evidencePackageDigestInvariants_v1",
+        "digestIncludedTopLevelKeys": sorted(DIGEST_INCLUDED_KEYS),
+        "digestExcludedTopLevelKeys": excluded_key_rationale,
+        "unknownTopLevelKeys": unknown,
+        "advisoryFindings": advisory_findings,
+    }
+    canonical = json.dumps(body, sort_keys=True, separators=(",", ":"))
+    digest = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+    return {**body, "evidencePackageDigestInvariantsDigestSha256": digest}

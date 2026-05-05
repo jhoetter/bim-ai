@@ -38,6 +38,11 @@ import {
   buildBrowserRenderingBudgetReadoutV1,
   formatBrowserRenderingBudgetLines,
 } from './browserRenderingBudgetReadout';
+import {
+  formatAgentReviewReadoutConsistencyClosureLines,
+  parseAgentReviewReadoutConsistencyClosureV1,
+  type AgentReviewReadoutConsistencyClosureV1,
+} from './agentReviewReadoutConsistencyClosure';
 
 type JsonText = string;
 
@@ -158,6 +163,7 @@ export function AgentReviewPane() {
     reviewActions: AgentReviewActionRow[];
     artifactUploadManifestReadout: string[] | null;
     baselineLifecycleReadout: EvidenceBaselineLifecycleReadoutWire | null;
+    consistencyClosure: AgentReviewReadoutConsistencyClosureV1 | null;
   };
 
   const assumptionsJson = useMemo(() => {
@@ -263,6 +269,38 @@ export function AgentReviewPane() {
       if (dr !== null && typeof dr === 'object' && !Array.isArray(dr)) {
         return parseAgentBriefAcceptanceReadoutV1(
           (dr as Record<string, unknown>).agentBriefAcceptanceReadout_v1,
+        );
+      }
+    } catch {
+      return null;
+    }
+    return null;
+  }, [dryRunTxt]);
+
+  const evidenceConsistencyClosure = useMemo(() => {
+    if (!evidenceTxt) return null;
+    try {
+      const root = JSON.parse(evidenceTxt) as Record<string, unknown>;
+      const pay = root.payload ?? root.evidencePackage;
+      if (pay !== null && typeof pay === 'object' && !Array.isArray(pay)) {
+        return parseAgentReviewReadoutConsistencyClosureV1(
+          (pay as Record<string, unknown>).agentReviewReadoutConsistencyClosure_v1,
+        );
+      }
+    } catch {
+      return null;
+    }
+    return null;
+  }, [evidenceTxt]);
+
+  const dryRunConsistencyClosure = useMemo(() => {
+    if (!dryRunTxt) return null;
+    try {
+      const root = JSON.parse(dryRunTxt) as Record<string, unknown>;
+      const dr = root.dryRun;
+      if (dr !== null && typeof dr === 'object' && !Array.isArray(dr)) {
+        return parseAgentReviewReadoutConsistencyClosureV1(
+          (dr as Record<string, unknown>).agentReviewReadoutConsistencyClosure_v1,
         );
       }
     } catch {
@@ -391,6 +429,10 @@ export function AgentReviewPane() {
       let baselineLifecycleReadout: EvidenceArtifactSummary['baselineLifecycleReadout'] = null;
       const lifecycleRoRaw = payload.evidenceBaselineLifecycleReadout_v1;
       baselineLifecycleReadout = parseEvidenceBaselineLifecycleReadoutV1(lifecycleRoRaw);
+
+      const consistencyClosure = parseAgentReviewReadoutConsistencyClosureV1(
+        payload.agentReviewReadoutConsistencyClosure_v1,
+      );
 
       let diffFixLoop: EvidenceArtifactSummary['diffFixLoop'] = null;
       const dflRaw = payload.evidenceDiffIngestFixLoop_v1;
@@ -898,6 +940,7 @@ export function AgentReviewPane() {
         reviewActions,
         artifactUploadManifestReadout,
         baselineLifecycleReadout,
+        consistencyClosure,
       };
     } catch {
       return {
@@ -921,6 +964,7 @@ export function AgentReviewPane() {
         reviewActions: [],
         artifactUploadManifestReadout: null,
         baselineLifecycleReadout: null,
+        consistencyClosure: null,
       };
     }
   }, [evidenceTxt, revision]);
@@ -1466,6 +1510,58 @@ export function AgentReviewPane() {
             readout={evidenceAcceptanceReadout}
           />
           <AgentBriefAcceptanceReadoutV1Table title="Last bundle dry-run readout" readout={dryRunAcceptanceReadout} />
+        </div>
+      ) : null}
+
+      {evidenceConsistencyClosure !== null || dryRunConsistencyClosure !== null ? (
+        <div
+          data-testid="agent-review-readout-consistency-closure"
+          className="rounded border border-border bg-background/40 p-2"
+        >
+          <div className="text-[10px] font-semibold text-muted">
+            Agent Review readout consistency closure (agentReviewReadoutConsistencyClosure_v1)
+          </div>
+          <p className="mt-1 text-[10px] text-muted">
+            Cross-checks field presence, bundle id, and evidence digest drift across the five Agent
+            Review readouts. Rows are{' '}
+            <code className="text-[9px]">aligned</code>,{' '}
+            <code className="text-[9px]">missing_fields</code>,{' '}
+            <code className="text-[9px]">bundle_id_drift</code>, or{' '}
+            <code className="text-[9px]">digest_drift</code>.
+          </p>
+          <div className="mt-2 grid gap-2 md:grid-cols-2">
+            <div>
+              <div className="text-[10px] font-medium text-muted">
+                Evidence-package snapshot
+              </div>
+              <pre className="mt-1 max-h-40 overflow-auto rounded border border-border/60 bg-background p-2 font-mono text-[10px] leading-snug">
+                {formatAgentReviewReadoutConsistencyClosureLines(evidenceConsistencyClosure).join('\n')}
+              </pre>
+            </div>
+            <div>
+              <div className="text-[10px] font-medium text-muted">
+                Last bundle dry-run
+              </div>
+              <pre className="mt-1 max-h-40 overflow-auto rounded border border-border/60 bg-background p-2 font-mono text-[10px] leading-snug">
+                {formatAgentReviewReadoutConsistencyClosureLines(dryRunConsistencyClosure).join('\n')}
+              </pre>
+            </div>
+          </div>
+          {(evidenceConsistencyClosure?.advisoryFindings.length ?? 0) > 0 ? (
+            <div className="mt-2 rounded border border-amber-500/35 bg-amber-500/5 p-2">
+              <div className="text-[10px] font-semibold text-amber-800 dark:text-amber-400">
+                Consistency advisories ({evidenceConsistencyClosure!.advisoryFindings.length})
+              </div>
+              <ul className="mt-1 list-disc space-y-0.5 ps-4 text-[10px] text-muted">
+                {evidenceConsistencyClosure!.advisoryFindings.map((f, i) => (
+                  <li key={i}>
+                    <code className="font-mono text-[9px]">[{f.severity}] {f.ruleId}</code>
+                    {' '}({f.readoutId}){': '}{f.message}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
         </div>
       ) : null}
 

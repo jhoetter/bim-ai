@@ -1,6 +1,11 @@
 from __future__ import annotations
 
-from bim_ai.evidence_manifest import evidence_package_semantic_digest_sha256
+from bim_ai.evidence_manifest import (
+    DIGEST_EXCLUDED_KEYS,
+    DIGEST_INCLUDED_KEYS,
+    evidence_package_digest_invariants_v1,
+    evidence_package_semantic_digest_sha256,
+)
 
 
 def test_evidence_digest_ignores_generated_at_stamp() -> None:
@@ -93,4 +98,90 @@ def test_evidence_digest_canonicalizes_plan_projection_sample_primitives() -> No
             },
         },
     }
+    assert evidence_package_semantic_digest_sha256(base) == evidence_package_semantic_digest_sha256(swapped)
+
+
+# ── evidencePackageDigestInvariants_v1 ────────────────────────────────────────
+
+
+def test_digest_invariants_included_excluded_sets_are_disjoint() -> None:
+    assert DIGEST_INCLUDED_KEYS.isdisjoint(DIGEST_EXCLUDED_KEYS), (
+        "A key appears in both DIGEST_INCLUDED_KEYS and DIGEST_EXCLUDED_KEYS: "
+        f"{DIGEST_INCLUDED_KEYS & DIGEST_EXCLUDED_KEYS}"
+    )
+
+
+def test_digest_invariants_no_unknowns_for_known_payload() -> None:
+    payload: dict = {k: None for k in DIGEST_INCLUDED_KEYS | DIGEST_EXCLUDED_KEYS}
+    result = evidence_package_digest_invariants_v1(payload)
+    assert result["unknownTopLevelKeys"] == [], result["unknownTopLevelKeys"]
+    assert result["advisoryFindings"] == []
+
+
+def test_digest_invariants_detects_unknown_key() -> None:
+    payload: dict = {
+        "format": "evidencePackage_v1",
+        "revision": 1,
+        "newUnregisteredKey": "oops",
+    }
+    result = evidence_package_digest_invariants_v1(payload)
+    assert "newUnregisteredKey" in result["unknownTopLevelKeys"]
+    assert any(
+        f["ruleId"] == "evidence_package_unknown_top_level_key"
+        and f["keyName"] == "newUnregisteredKey"
+        for f in result["advisoryFindings"]
+    )
+
+
+def test_digest_invariants_excludes_meta_key_from_classification() -> None:
+    payload: dict = {
+        "format": "evidencePackage_v1",
+        "revision": 1,
+        "evidencePackageDigestInvariants_v1": {},
+    }
+    result = evidence_package_digest_invariants_v1(payload)
+    assert "evidencePackageDigestInvariants_v1" not in result["unknownTopLevelKeys"]
+    assert "evidencePackageDigestInvariants_v1" not in result["digestIncludedTopLevelKeys"]
+
+
+def test_digest_invariants_digest_is_stable_under_key_ordering_permutation() -> None:
+    payload_a: dict = {k: None for k in DIGEST_INCLUDED_KEYS | DIGEST_EXCLUDED_KEYS}
+    payload_b = dict(reversed(list(payload_a.items())))
+    inv_a = evidence_package_digest_invariants_v1(payload_a)
+    inv_b = evidence_package_digest_invariants_v1(payload_b)
+    assert inv_a["evidencePackageDigestInvariantsDigestSha256"] == inv_b["evidencePackageDigestInvariantsDigestSha256"]
+
+
+def test_digest_invariants_digest_changes_when_unknown_key_added() -> None:
+    payload_clean: dict = {k: None for k in DIGEST_INCLUDED_KEYS | DIGEST_EXCLUDED_KEYS}
+    payload_dirty = dict(payload_clean)
+    payload_dirty["unexpectedKey_v99"] = "surprise"
+    inv_clean = evidence_package_digest_invariants_v1(payload_clean)
+    inv_dirty = evidence_package_digest_invariants_v1(payload_dirty)
+    assert inv_clean["evidencePackageDigestInvariantsDigestSha256"] != inv_dirty["evidencePackageDigestInvariantsDigestSha256"]
+
+
+def test_digest_invariants_excluded_keys_list_has_rationale() -> None:
+    payload: dict = {"format": "evidencePackage_v1"}
+    result = evidence_package_digest_invariants_v1(payload)
+    excluded = result["digestExcludedTopLevelKeys"]
+    assert isinstance(excluded, list)
+    assert len(excluded) == len(DIGEST_EXCLUDED_KEYS)
+    for row in excluded:
+        assert "key" in row and "rationale" in row
+
+
+def test_semantic_digest_stable_under_schedule_id_ordering() -> None:
+    s1 = {"id": "sch-b", "name": "Schedule B"}
+    s2 = {"id": "sch-a", "name": "Schedule A"}
+    base = {"format": "evidencePackage_v1", "revision": 1, "modelId": "x", "scheduleIds": [s1, s2]}
+    swapped = {**base, "scheduleIds": [s2, s1]}
+    assert evidence_package_semantic_digest_sha256(base) == evidence_package_semantic_digest_sha256(swapped)
+
+
+def test_semantic_digest_stable_under_plan_view_ordering() -> None:
+    p1 = {"id": "pv-b", "name": "Plan B"}
+    p2 = {"id": "pv-a", "name": "Plan A"}
+    base = {"format": "evidencePackage_v1", "revision": 1, "modelId": "x", "planViews": [p1, p2]}
+    swapped = {**base, "planViews": [p2, p1]}
     assert evidence_package_semantic_digest_sha256(base) == evidence_package_semantic_digest_sha256(swapped)
