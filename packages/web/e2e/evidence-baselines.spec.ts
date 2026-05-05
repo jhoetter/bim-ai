@@ -684,6 +684,14 @@ async function sharedRoutes(page: Page, layoutPreset: string) {
               unresolvedCount: 0,
               hasUnresolvedEvidenceRefs: false,
             },
+            bcfRoundtripEvidenceSummary_v1: {
+              format: 'bcfRoundtripEvidenceSummary_v1',
+              bcfTopicCount: 0,
+              viewpointAndScreenshotRefCount: 0,
+              modelElementReferenceCount: 0,
+              unresolvedReferenceCount: 0,
+              topicsWithLinkedViolationRuleIds: [],
+            },
             collaborationReplayConflictHints_v1: {
               format: 'collaborationReplayConflictHints_v1',
               constraintRejectedHttpStatus: 409,

@@ -86,6 +86,13 @@ def test_evidence_agent_follow_through_v1_shape() -> None:
     assert res["unresolvedCount"] == 0
     assert res["hasUnresolvedEvidenceRefs"] is False
     assert ft["collaborationReplayConflictHints_v1"]["format"] == "collaborationReplayConflictHints_v1"
+    rts = ft["bcfRoundtripEvidenceSummary_v1"]
+    assert rts["format"] == "bcfRoundtripEvidenceSummary_v1"
+    assert rts["bcfTopicCount"] == 0
+    assert rts["viewpointAndScreenshotRefCount"] == 0
+    assert rts["modelElementReferenceCount"] == 0
+    assert rts["unresolvedReferenceCount"] == 0
+    assert rts["topicsWithLinkedViolationRuleIds"] == []
 
 
 def test_staged_artifact_links_v1_github_actions_mode_without_secrets(
@@ -166,6 +173,32 @@ def test_evidence_ref_resolution_flags_missing_sheet() -> None:
     assert row["evidenceRef"]["sheetId"] == "missing-sheet"
 
 
+def test_evidence_ref_resolution_flags_unresolved_bcf_viewpoint_ref_anchor() -> None:
+    idx = {
+        "format": "bcfTopicsIndex_v1",
+        "topics": [
+            {
+                "topicKind": "bcf",
+                "topicId": "t-bcf",
+                "elementIds": [],
+                "viewpointRef": "vp-missing",
+                "evidenceRefs": [],
+            }
+        ],
+    }
+    res = evidence_ref_resolution_v1(
+        bcf_topics_index=idx,
+        deterministic_sheet_evidence=[],
+        deterministic_3d_view_evidence=[],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+    )
+    assert res["unresolvedCount"] == 1
+    row = res["unresolvedEvidenceRefs"][0]
+    assert row["evidenceRef"]["kind"] == "bcf_viewpoint_ref"
+    assert row["evidenceRef"]["viewpointId"] == "vp-missing"
+
+
 def test_collaboration_replay_hints_lists_409_fields() -> None:
     h = collaboration_replay_conflict_hints_v1()
     assert h["constraintRejectedHttpStatus"] == 409
@@ -180,6 +213,7 @@ def test_collaboration_replay_hints_lists_409_fields() -> None:
 def test_agent_evidence_closure_hints_names_follow_through_field() -> None:
     h = agent_evidence_closure_hints()
     assert h.get("evidenceAgentFollowThroughField") == "evidenceAgentFollowThrough_v1"
+    assert h.get("bcfRoundtripEvidenceSummaryField") == "bcfRoundtripEvidenceSummary_v1"
     assert "evidenceAgentFollowThrough_v1" in str(h.get("semanticDigestOmitsDerivativeSummariesNote"))
 
 
@@ -242,3 +276,100 @@ def test_follow_through_with_realistic_bcf_and_rows() -> None:
     )
     assert ft["bcfIssueCoordinationCheck_v1"]["documentBcfTopicCount"] == 1
     assert ft["evidenceRefResolution_v1"]["unresolvedCount"] == 0
+    rts = ft["bcfRoundtripEvidenceSummary_v1"]
+    assert rts["bcfTopicCount"] == 1
+    assert rts["viewpointAndScreenshotRefCount"] == 1
+    assert rts["modelElementReferenceCount"] == 0
+    assert rts["unresolvedReferenceCount"] == 0
+    assert rts["topicsWithLinkedViolationRuleIds"] == []
+
+
+def test_bcf_roundtrip_summary_links_violations_to_topic_elements() -> None:
+    mid = UUID("00000000-0000-0000-0000-000000000099")
+    doc = Document(
+        revision=1,
+        elements={
+            "bcf-1": BcfElem(
+                kind="bcf",
+                id="bcf-1",
+                title="T",
+                element_ids=["elem-a", "elem-b"],
+            ),
+        },
+    )
+    idx = bcf_topics_index_v1(doc)
+    ft = evidence_agent_follow_through_v1(
+        model_id=mid,
+        doc=doc,
+        package_semantic_digest_sha256="d" * 64,
+        suggested_evidence_artifact_basename="pfx",
+        bcf_topics_index=idx,
+        deterministic_sheet_evidence=[],
+        deterministic_3d_view_evidence=[],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+        violations=[
+            {"ruleId": "z_rule", "elementIds": ["elem-b"]},
+            {"ruleId": "a_rule", "elementIds": ["elem-b"]},
+            {"ruleId": "orphan", "elementIds": ["other"]},
+        ],
+    )
+    rts = ft["bcfRoundtripEvidenceSummary_v1"]
+    assert rts["modelElementReferenceCount"] == 2
+    assert rts["topicsWithLinkedViolationRuleIds"] == [
+        {"topicKind": "bcf", "topicId": "bcf-1", "violationRuleIds": ["a_rule", "z_rule"]},
+    ]
+
+
+def test_bcf_roundtrip_summary_unresolved_matches_anchor_resolution() -> None:
+    idx = {
+        "format": "bcfTopicsIndex_v1",
+        "topics": [
+            {
+                "topicKind": "bcf",
+                "topicId": "t1",
+                "elementIds": [],
+                "viewpointRef": "vp-x",
+                "evidenceRefs": [],
+            }
+        ],
+    }
+    mid = UUID("00000000-0000-0000-0000-000000000012")
+    ft = evidence_agent_follow_through_v1(
+        model_id=mid,
+        doc=Document(revision=0, elements={}),
+        package_semantic_digest_sha256="e" * 64,
+        suggested_evidence_artifact_basename="pfx",
+        bcf_topics_index=idx,
+        deterministic_sheet_evidence=[],
+        deterministic_3d_view_evidence=[],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+    )
+    assert ft["evidenceRefResolution_v1"]["unresolvedCount"] == 1
+    assert ft["bcfRoundtripEvidenceSummary_v1"]["unresolvedReferenceCount"] == 1
+
+
+def test_bcf_topic_count_matches_document_after_engine_create_bcf_topic() -> None:
+    from bim_ai.engine import apply_inplace, coerce_command
+
+    doc = Document(revision=1, elements={})
+    apply_inplace(
+        doc,
+        coerce_command({"type": "createBcfTopic", "id": "imported-bcf", "title": "Imported"}),
+    )
+    idx = bcf_topics_index_v1(doc)
+    mid = UUID("00000000-0000-0000-0000-000000000077")
+    ft = evidence_agent_follow_through_v1(
+        model_id=mid,
+        doc=doc,
+        package_semantic_digest_sha256="f" * 64,
+        suggested_evidence_artifact_basename="pfx",
+        bcf_topics_index=idx,
+        deterministic_sheet_evidence=[],
+        deterministic_3d_view_evidence=[],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+    )
+    assert ft["bcfRoundtripEvidenceSummary_v1"]["bcfTopicCount"] == 1
+    assert len([e for e in doc.elements.values() if isinstance(e, BcfElem)]) == 1

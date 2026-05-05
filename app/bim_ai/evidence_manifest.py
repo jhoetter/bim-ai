@@ -1085,6 +1085,7 @@ def agent_evidence_closure_hints() -> dict[str, Any]:
         "evidenceDiffIngestFixLoopField": "evidenceDiffIngestFixLoop_v1",
         "evidenceReviewPerformanceGateField": "evidenceReviewPerformanceGate_v1",
         "evidenceAgentFollowThroughField": "evidenceAgentFollowThrough_v1",
+        "bcfRoundtripEvidenceSummaryField": "bcfRoundtripEvidenceSummary_v1",
         "semanticDigestOmitsDerivativeSummariesNote": (
             "semanticDigestSha256 excludes bcfTopicsIndex_v1, agentReviewActions_v1, "
             "evidenceDiffIngestFixLoop_v1, evidenceReviewPerformanceGate_v1, and "
@@ -1197,6 +1198,73 @@ def evidence_ref_resolution_v1(
                     },
                 }
             )
+
+        if tk == "bcf":
+            vpref = t.get("viewpointRef")
+            if isinstance(vpref, str) and vpref.strip() and vpref not in vp_by_id:
+                unresolved.append(
+                    {
+                        "topicKind": tk,
+                        "topicId": tid,
+                        "evidenceRef": {
+                            "kind": "bcf_viewpoint_ref",
+                            "sheetId": None,
+                            "viewpointId": vpref,
+                            "planViewId": None,
+                            "sectionCutId": None,
+                            "pngBasename": None,
+                        },
+                    }
+                )
+            pvid = t.get("planViewId")
+            if isinstance(pvid, str) and pvid.strip() and pvid not in plan_by_id:
+                unresolved.append(
+                    {
+                        "topicKind": tk,
+                        "topicId": tid,
+                        "evidenceRef": {
+                            "kind": "bcf_plan_view",
+                            "sheetId": None,
+                            "viewpointId": None,
+                            "planViewId": pvid,
+                            "sectionCutId": None,
+                            "pngBasename": None,
+                        },
+                    }
+                )
+            scid = t.get("sectionCutId")
+            if isinstance(scid, str) and scid.strip() and scid not in sec_by_id:
+                unresolved.append(
+                    {
+                        "topicKind": tk,
+                        "topicId": tid,
+                        "evidenceRef": {
+                            "kind": "bcf_section_cut",
+                            "sheetId": None,
+                            "viewpointId": None,
+                            "planViewId": None,
+                            "sectionCutId": scid,
+                            "pngBasename": None,
+                        },
+                    }
+                )
+        elif tk == "issue":
+            ivp = t.get("viewpointId")
+            if isinstance(ivp, str) and ivp.strip() and ivp not in vp_by_id:
+                unresolved.append(
+                    {
+                        "topicKind": tk,
+                        "topicId": tid,
+                        "evidenceRef": {
+                            "kind": "issue_viewpoint",
+                            "sheetId": None,
+                            "viewpointId": ivp,
+                            "planViewId": None,
+                            "sectionCutId": None,
+                            "pngBasename": None,
+                        },
+                    }
+                )
 
     unresolved.sort(
         key=lambda x: (
@@ -1360,6 +1428,92 @@ def bcf_issue_coordination_check_v1(
     }
 
 
+def bcf_roundtrip_evidence_summary_v1(
+    *,
+    doc: Document,
+    bcf_topics_index: dict[str, Any],
+    violations: list[dict[str, Any]] | None,
+    evidence_ref_resolution: dict[str, Any],
+) -> dict[str, Any]:
+    """Deterministic BCF/issue round-trip readout for agent review (digest-excluded parent)."""
+
+    doc_bcf = sum(1 for e in doc.elements.values() if isinstance(e, BcfElem))
+    topics = bcf_topics_index.get("topics") if isinstance(bcf_topics_index, dict) else None
+    topic_list = topics if isinstance(topics, list) else []
+
+    viewpoint_and_shot = 0
+    model_element_ref_ct = 0
+    topics_linked: list[dict[str, Any]] = []
+
+    viol_rows: list[tuple[str, frozenset[str]]] = []
+    for v in violations or []:
+        if not isinstance(v, dict):
+            continue
+        rid = str(v.get("ruleId") or "").strip()
+        if not rid:
+            continue
+        raw_eids = v.get("elementIds")
+        eid_set = frozenset(
+            str(x) for x in (raw_eids if isinstance(raw_eids, list) else []) if x is not None
+        )
+        viol_rows.append((rid, eid_set))
+
+    for t in topic_list:
+        if not isinstance(t, dict):
+            continue
+        tk = str(t.get("topicKind") or "")
+        tid = str(t.get("topicId") or "")
+        raw_eids = t.get("elementIds")
+        el_list = [str(x) for x in (raw_eids if isinstance(raw_eids, list) else []) if x is not None]
+        model_element_ref_ct += len(el_list)
+        topic_eids = frozenset(el_list)
+
+        if tk == "bcf":
+            vpref = t.get("viewpointRef")
+            if isinstance(vpref, str) and vpref.strip():
+                viewpoint_and_shot += 1
+        elif tk == "issue":
+            ivp = t.get("viewpointId")
+            if isinstance(ivp, str) and ivp.strip():
+                viewpoint_and_shot += 1
+
+        refs_raw = t.get("evidenceRefs")
+        refs = refs_raw if isinstance(refs_raw, list) else []
+        for ref in refs:
+            if not isinstance(ref, dict):
+                continue
+            rk = ref.get("kind")
+            if rk in ("viewpoint", "deterministic_png"):
+                viewpoint_and_shot += 1
+
+        linked: set[str] = set()
+        for rid, veids in viol_rows:
+            if topic_eids & veids:
+                linked.add(rid)
+        if linked:
+            topics_linked.append(
+                {
+                    "topicKind": tk,
+                    "topicId": tid,
+                    "violationRuleIds": sorted(linked),
+                }
+            )
+
+    topics_linked.sort(key=lambda x: (str(x.get("topicKind") or ""), str(x.get("topicId") or "")))
+
+    ur_raw = evidence_ref_resolution.get("unresolvedCount")
+    unresolved_ct = int(ur_raw) if isinstance(ur_raw, int) else 0
+
+    return {
+        "format": "bcfRoundtripEvidenceSummary_v1",
+        "bcfTopicCount": doc_bcf,
+        "viewpointAndScreenshotRefCount": viewpoint_and_shot,
+        "modelElementReferenceCount": model_element_ref_ct,
+        "unresolvedReferenceCount": unresolved_ct,
+        "topicsWithLinkedViolationRuleIds": topics_linked,
+    }
+
+
 def collaboration_replay_conflict_hints_v1() -> dict[str, Any]:
     """Static pointers for collaboration constraint failures (bundle 409 + replay diagnostics)."""
 
@@ -1400,8 +1554,17 @@ def evidence_agent_follow_through_v1(
     deterministic_3d_view_evidence: list[dict[str, Any]],
     deterministic_plan_view_evidence: list[dict[str, Any]],
     deterministic_section_cut_evidence: list[dict[str, Any]],
+    violations: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Programmatic rollup: staged artifact link contract, BCF coordination, ref resolution, replay hints."""
+
+    ref_resolution = evidence_ref_resolution_v1(
+        bcf_topics_index=bcf_topics_index,
+        deterministic_sheet_evidence=deterministic_sheet_evidence,
+        deterministic_3d_view_evidence=deterministic_3d_view_evidence,
+        deterministic_plan_view_evidence=deterministic_plan_view_evidence,
+        deterministic_section_cut_evidence=deterministic_section_cut_evidence,
+    )
 
     return {
         "format": "evidenceAgentFollowThrough_v1",
@@ -1419,12 +1582,12 @@ def evidence_agent_follow_through_v1(
             doc=doc,
             bcf_topics_index=bcf_topics_index,
         ),
-        "evidenceRefResolution_v1": evidence_ref_resolution_v1(
+        "evidenceRefResolution_v1": ref_resolution,
+        "bcfRoundtripEvidenceSummary_v1": bcf_roundtrip_evidence_summary_v1(
+            doc=doc,
             bcf_topics_index=bcf_topics_index,
-            deterministic_sheet_evidence=deterministic_sheet_evidence,
-            deterministic_3d_view_evidence=deterministic_3d_view_evidence,
-            deterministic_plan_view_evidence=deterministic_plan_view_evidence,
-            deterministic_section_cut_evidence=deterministic_section_cut_evidence,
+            violations=violations,
+            evidence_ref_resolution=ref_resolution,
         ),
         "collaborationReplayConflictHints_v1": collaboration_replay_conflict_hints_v1(),
     }
