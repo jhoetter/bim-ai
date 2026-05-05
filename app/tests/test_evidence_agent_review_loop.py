@@ -18,6 +18,7 @@ from bim_ai.elements import (
 )
 from bim_ai.engine import apply_inplace, coerce_command
 from bim_ai.evidence_manifest import (
+    artifact_ingest_correlation_v1,
     evidence_closure_review_v1,
     evidence_package_semantic_digest_sha256,
 )
@@ -248,3 +249,58 @@ def test_agent_review_actions_v1_adds_remediate_when_closure_needs_fix_loop() ->
         "evidenceClosureReview_v1.pixelDiffExpectation.artifactIngestCorrelation_v1"
     )
     assert tgt["playwrightEvidenceScreenshotsRootHint"] == ac["playwrightEvidenceScreenshotsRootHint"]
+
+
+def test_agent_review_actions_remediate_includes_expected_actual_digest_on_mismatch_blocker() -> None:
+    pkg = "f" * 64
+    closure = evidence_closure_review_v1(
+        package_semantic_digest_sha256=pkg,
+        deterministic_sheet_evidence=[
+            {
+                "sheetId": "s1",
+                "playwrightSuggestedFilenames": {
+                    "pngViewport": "a-viewport.png",
+                    "pngFullSheet": "z-full.png",
+                },
+                "correlation": {"semanticDigestSha256": pkg},
+            }
+        ],
+        deterministic_3d_view_evidence=[],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+    )
+    pix = closure["pixelDiffExpectation"]
+    assert isinstance(pix, dict)
+    pix = dict(pix)
+    ac_raw = pix["artifactIngestCorrelation_v1"]
+    assert isinstance(ac_raw, dict)
+    ac = dict(ac_raw)
+    ac["ingestManifestDigestSha256"] = "0" * 64
+    pix["artifactIngestCorrelation_v1"] = ac
+    tampered = {**closure, "pixelDiffExpectation": pix}
+    out = agent_review_actions_v1(
+        doc=Document(revision=1, elements={}),
+        deterministic_sheet_evidence=[],
+        deterministic_3d_view_evidence=[],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+        violations=[],
+        evidence_closure_review=tampered,
+    )
+    remediate = [a for a in out["actions"] if a["kind"] == "remediateEvidenceDiffIngest"]
+    assert len(remediate) == 1
+    tgt = remediate[0]["target"]
+    assert tgt["blockerCodes"] == [
+        "artifact_ingest_correlation_digest_mismatch",
+        "pixel_diff_ingest_pending",
+    ]
+    ingest = tampered["pixelDiffExpectation"]["ingestChecklist_v1"]
+    assert isinstance(ingest, dict)
+    tgts = ingest["targets"]
+    assert isinstance(tgts, list)
+    exp = artifact_ingest_correlation_v1(list(tgts))["ingestManifestDigestSha256"]
+    assert tgt["ingestManifestDigestExpectedSha256"] == exp
+    assert tgt["ingestManifestDigestActualSha256"] == "0" * 64
+    assert tgt["pixelDiffIngestChecklistField"] == (
+        "evidenceClosureReview_v1.pixelDiffExpectation.ingestChecklist_v1"
+    )

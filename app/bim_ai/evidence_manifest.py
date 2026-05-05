@@ -19,6 +19,7 @@ from bim_ai.elements import (
 )
 from bim_ai.sheet_preview_svg import (
     SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2,
+    build_sheet_print_raster_print_contract_v3,
     plan_room_programme_legend_hints_v0,
     sheet_elem_to_svg,
     sheet_print_raster_print_surrogate_png_bytes_v2,
@@ -198,6 +199,9 @@ def deterministic_sheet_evidence_manifest(
                         ),
                     },
                 },
+                "sheetPrintRasterPrintContract_v3": build_sheet_print_raster_print_contract_v3(
+                    doc, sh, svg_body, placeholder_png
+                ),
                 "playwrightSuggestedFilenames": {
                     "svgProbe": f"{stem}.svg.probe.txt",
                     "pdfProbe": f"{stem}.pdf.probe.bin",
@@ -549,14 +553,25 @@ def evidence_diff_ingest_fix_loop_v1(evidence_closure_review: dict[str, Any]) ->
     if gap_has:
         blockers.append("screenshot_filename_slots_incomplete")
 
+    pix = evidence_closure_review.get("pixelDiffExpectation")
+    ingest_targets: list[Any] = []
+    if isinstance(pix, dict):
+        ing = pix.get("ingestChecklist_v1")
+        if isinstance(ing, dict) and isinstance(ing.get("targets"), list):
+            ingest_targets = ing["targets"]
+            ac_corr = pix.get("artifactIngestCorrelation_v1")
+            if isinstance(ac_corr, dict):
+                actual_digest = ac_corr.get("ingestManifestDigestSha256")
+                if isinstance(actual_digest, str) and len(actual_digest) == 64:
+                    expected_digest = artifact_ingest_correlation_v1(ingest_targets)[
+                        "ingestManifestDigestSha256"
+                    ]
+                    if expected_digest != actual_digest:
+                        blockers.append("artifact_ingest_correlation_digest_mismatch")
+
     correlation_ok = isinstance(cons, dict) and cons.get("isFullyConsistent") is True
     if correlation_ok and not gap_has:
-        pix = evidence_closure_review.get("pixelDiffExpectation")
-        ingest_targets: list[Any] = []
         if isinstance(pix, dict):
-            ing = pix.get("ingestChecklist_v1")
-            if isinstance(ing, dict) and isinstance(ing.get("targets"), list):
-                ingest_targets = ing["targets"]
             status_ok = pix.get("status") == "not_run"
             if status_ok and len(ingest_targets) > 0:
                 blockers.append("pixel_diff_ingest_pending")
@@ -568,6 +583,9 @@ def evidence_diff_ingest_fix_loop_v1(evidence_closure_review: dict[str, Any]) ->
         "blockerCodes": codes,
         "notes": (
             "Derivative of evidenceClosureReview_v1; excluded from semanticDigestSha256. "
+            "artifact_ingest_correlation_digest_mismatch when "
+            "pixelDiffExpectation.artifactIngestCorrelation_v1.ingestManifestDigestSha256 "
+            "differs from artifact_ingest_correlation_v1(ingestChecklist_v1.targets). "
             "pixel_diff_ingest_pending applies only when correlation is consistent and required "
             "Playwright PNG slots are present (screenshot gaps cleared first)."
         ),

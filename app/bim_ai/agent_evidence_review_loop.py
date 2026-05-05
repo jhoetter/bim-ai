@@ -8,7 +8,10 @@ from typing import Any
 
 from bim_ai.document import Document
 from bim_ai.elements import AgentDeviationElem, BcfElem, EvidenceRef, IssueElem
-from bim_ai.evidence_manifest import evidence_diff_ingest_fix_loop_v1
+from bim_ai.evidence_manifest import (
+    artifact_ingest_correlation_v1,
+    evidence_diff_ingest_fix_loop_v1,
+)
 
 
 def _remediate_evidence_diff_ingest_target(
@@ -36,6 +39,20 @@ def _remediate_evidence_diff_ingest_target(
             hint = ac.get("playwrightEvidenceScreenshotsRootHint")
             if isinstance(hint, str) and hint:
                 target["playwrightEvidenceScreenshotsRootHint"] = hint
+            if "artifact_ingest_correlation_digest_mismatch" in frozenset(blockers):
+                ing_raw = pix.get("ingestChecklist_v1")
+                if isinstance(ing_raw, dict) and isinstance(ing_raw.get("targets"), list):
+                    tgts = ing_raw["targets"]
+                    mismatch_actual = ac.get("ingestManifestDigestSha256")
+                    if isinstance(mismatch_actual, str) and len(mismatch_actual) == 64:
+                        mismatch_expected = artifact_ingest_correlation_v1(tgts)[
+                            "ingestManifestDigestSha256"
+                        ]
+                        target["ingestManifestDigestExpectedSha256"] = mismatch_expected
+                        target["ingestManifestDigestActualSha256"] = mismatch_actual
+                target["pixelDiffIngestChecklistField"] = (
+                    "evidenceClosureReview_v1.pixelDiffExpectation.ingestChecklist_v1"
+                )
     return target
 
 

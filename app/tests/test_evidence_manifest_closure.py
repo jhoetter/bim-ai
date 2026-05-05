@@ -254,6 +254,48 @@ def test_evidence_diff_ingest_fix_loop_screenshot_gaps_suppresses_pixel_pending(
     assert fl["blockerCodes"] == ["screenshot_filename_slots_incomplete"]
 
 
+def test_evidence_diff_ingest_fix_loop_flags_artifact_ingest_correlation_digest_mismatch() -> None:
+    pkg = "f" * 64
+    closure = evidence_closure_review_v1(
+        package_semantic_digest_sha256=pkg,
+        deterministic_sheet_evidence=[
+            {
+                "sheetId": "s1",
+                "playwrightSuggestedFilenames": {
+                    "pngViewport": "a-viewport.png",
+                    "pngFullSheet": "z-full.png",
+                },
+                "correlation": {"semanticDigestSha256": pkg},
+            }
+        ],
+        deterministic_3d_view_evidence=[],
+        deterministic_plan_view_evidence=[],
+        deterministic_section_cut_evidence=[],
+    )
+    pix = closure["pixelDiffExpectation"]
+    assert isinstance(pix, dict)
+    pix = dict(pix)
+    ac_raw = pix["artifactIngestCorrelation_v1"]
+    assert isinstance(ac_raw, dict)
+    ac = dict(ac_raw)
+    ac["ingestManifestDigestSha256"] = "0" * 64
+    pix["artifactIngestCorrelation_v1"] = ac
+    tampered = {**closure, "pixelDiffExpectation": pix}
+    fl = evidence_diff_ingest_fix_loop_v1(tampered)
+    assert fl["needsFixLoop"] is True
+    ingest = tampered["pixelDiffExpectation"]["ingestChecklist_v1"]
+    assert isinstance(ingest, dict)
+    targets = ingest["targets"]
+    assert isinstance(targets, list)
+    expected_digest = artifact_ingest_correlation_v1(list(targets))["ingestManifestDigestSha256"]
+    assert isinstance(expected_digest, str) and len(expected_digest) == 64
+    assert expected_digest != "0" * 64
+    assert fl["blockerCodes"] == [
+        "artifact_ingest_correlation_digest_mismatch",
+        "pixel_diff_ingest_pending",
+    ]
+
+
 def test_evidence_diff_ingest_fix_loop_pixel_pending_when_inventory_complete() -> None:
     pkg = "f" * 64
     closure = evidence_closure_review_v1(
