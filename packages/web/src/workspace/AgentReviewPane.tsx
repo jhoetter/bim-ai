@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 
 import { Btn } from '@bim-ai/ui';
 
+import { collaborationConflictQueueInspectionLinesFromHints } from '../lib/collaborationConflictQueue';
 import { useBimStore } from '../state/store';
 import {
   formatAgentBriefCommandProtocolReadout,
@@ -9,11 +10,12 @@ import {
 } from './agentBriefCommandProtocol';
 import { formatAgentReviewActionDetails } from './agentReviewActionDetails';
 import { parseAgentReviewActionsV1, type AgentReviewActionRow } from './agentReviewActions';
-import { formatStagedArtifactResolutionMode } from './formatStagedArtifactResolutionMode';
+import { summarizeArtifactUploadManifestV1 } from './artifactUploadManifestReadout';
 import {
   summarizeBcfRoundtripEvidenceSummary,
   type BcfRoundtripEvidenceSummaryWire,
 } from './bcfRoundtripEvidenceSummaryFormat';
+import { formatStagedArtifactResolutionMode } from './formatStagedArtifactResolutionMode';
 
 type JsonText = string;
 
@@ -132,6 +134,7 @@ export function AgentReviewPane() {
       blockerCodesEcho: string[];
     } | null;
     reviewActions: AgentReviewActionRow[];
+    artifactUploadManifestReadout: string[] | null;
   };
 
   const assumptionsJson = useMemo(() => {
@@ -224,6 +227,7 @@ export function AgentReviewPane() {
       diffFixLoop: null,
       performanceGate: null,
       reviewActions: [],
+      artifactUploadManifestReadout: null,
     });
 
     if (!evidenceTxt) return empty();
@@ -267,6 +271,14 @@ export function AgentReviewPane() {
       const ftRaw = payload.evidenceAgentFollowThrough_v1;
       if (ftRaw && typeof ftRaw === 'object') {
         agentFollowThrough = ftRaw as Record<string, unknown>;
+      }
+
+      let artifactUploadManifestReadout: EvidenceArtifactSummary['artifactUploadManifestReadout'] =
+        null;
+      const aumRaw = payload.artifactUploadManifest_v1;
+      const aumLines = summarizeArtifactUploadManifestV1(aumRaw);
+      if (aumLines.length > 0) {
+        artifactUploadManifestReadout = aumLines;
       }
 
       let diffFixLoop: EvidenceArtifactSummary['diffFixLoop'] = null;
@@ -773,6 +785,7 @@ export function AgentReviewPane() {
         diffFixLoop,
         performanceGate,
         reviewActions,
+        artifactUploadManifestReadout,
       };
     } catch {
       return {
@@ -794,6 +807,7 @@ export function AgentReviewPane() {
         diffFixLoop: null,
         performanceGate: null,
         reviewActions: [],
+        artifactUploadManifestReadout: null,
       };
     }
   }, [evidenceTxt, revision]);
@@ -1678,6 +1692,23 @@ export function AgentReviewPane() {
               </p>
             </div>
           ) : null}
+          {evidenceArtifactSummary.artifactUploadManifestReadout?.length ? (
+            <div
+              className="mt-2 rounded border border-border/60 bg-background/30 p-2"
+              data-testid="artifact-upload-manifest-readout"
+            >
+              <div className="text-[10px] font-semibold text-muted">
+                Artifact upload manifest (artifactUploadManifest_v1)
+              </div>
+              <ul className="mt-1 list-disc space-y-0.5 ps-4 text-[10px] text-muted">
+                {evidenceArtifactSummary.artifactUploadManifestReadout.map((ln, idx) => (
+                  <li key={`aum-${idx}`}>
+                    <code className="whitespace-pre-wrap break-all font-mono text-[9px]">{ln}</code>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
           {evidenceArtifactSummary.agentFollowThrough ? (
             <div className="mt-2 rounded border border-border/60 bg-background/30 p-2">
               <div className="flex flex-wrap items-start justify-between gap-2">
@@ -1800,20 +1831,31 @@ export function AgentReviewPane() {
                       </>
                     ) : null}
                     {collab && typeof collab.constraintRejectedHttpStatus === 'number' ? (
-                      <li>
-                        Collaboration bundle conflicts: HTTP{' '}
-                        <code className="font-mono">{collab.constraintRejectedHttpStatus}</code>
-                        {Array.isArray(collab.typicalErrorBodyFields) ? (
-                          <>
-                            {' '}
-                            · fields{' '}
-                            <code className="text-[9px]">
-                              {(collab.typicalErrorBodyFields as unknown[])
-                                .filter((x): x is string => typeof x === 'string')
-                                .join(', ')}
-                            </code>
-                          </>
-                        ) : null}
+                      <li className="space-y-0.5">
+                        <span>
+                          Collaboration bundle conflicts: HTTP{' '}
+                          <code className="font-mono">{collab.constraintRejectedHttpStatus}</code>
+                          {Array.isArray(collab.typicalErrorBodyFields) ? (
+                            <>
+                              {' '}
+                              · fields{' '}
+                              <code className="text-[9px]">
+                                {(collab.typicalErrorBodyFields as unknown[])
+                                  .filter((x): x is string => typeof x === 'string')
+                                  .join(', ')}
+                              </code>
+                            </>
+                          ) : null}
+                        </span>
+                        <div className="mt-0.5 text-[9px] text-muted/90">
+                          Conflict queue inspection (live readout also appears in the Workspace header on
+                          409):
+                        </div>
+                        <ul className="list-disc space-y-0.5 ps-4">
+                          {collaborationConflictQueueInspectionLinesFromHints().map((ln) => (
+                            <li key={ln}>{ln}</li>
+                          ))}
+                        </ul>
                       </li>
                     ) : null}
                   </ul>

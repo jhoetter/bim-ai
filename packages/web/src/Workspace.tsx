@@ -12,6 +12,10 @@ import type {
 
 import { Btn, Panel } from '@bim-ai/ui';
 
+import {
+  buildCollaborationConflictQueueV1,
+  type CollaborationConflictQueueV1,
+} from './lib/collaborationConflictQueue';
 import { formatCollaboration409Status } from './lib/collaborationConflictStatus';
 import {
   ApiHttpError,
@@ -170,6 +174,8 @@ export function Workspace() {
 
   const [bootErr, setBootErr] = useState<string | null>(null);
   const [status, setStatus] = useState('Loading…');
+  const [collaborationConflictQueue, setCollaborationConflictQueue] =
+    useState<CollaborationConflictQueueV1 | null>(null);
 
   const [wsOn, setWsOn] = useState(false);
 
@@ -301,10 +307,16 @@ export function Workspace() {
 
         if (r.revision !== undefined) pushServer(r.revision, r.elements, r.violations);
 
+        setCollaborationConflictQueue(null);
         setStatus('Applied');
       } catch (e) {
         const collaboration =
           e instanceof ApiHttpError ? formatCollaboration409Status('Apply', e) : null;
+        if (e instanceof ApiHttpError && e.status === 409) {
+          setCollaborationConflictQueue(buildCollaborationConflictQueueV1(e.detail));
+        } else {
+          setCollaborationConflictQueue(null);
+        }
         setStatus(collaboration ?? (e instanceof Error ? e.message : String(e)));
       }
     },
@@ -337,10 +349,16 @@ export function Workspace() {
           { userId: uid },
         );
         if (r.revision !== undefined) pushServer(r.revision, r.elements, r.violations);
+        setCollaborationConflictQueue(null);
         setStatus('Applied');
       } catch (e) {
         const collaboration =
           e instanceof ApiHttpError ? formatCollaboration409Status('Apply', e) : null;
+        if (e instanceof ApiHttpError && e.status === 409) {
+          setCollaborationConflictQueue(buildCollaborationConflictQueueV1(e.detail));
+        } else {
+          setCollaborationConflictQueue(null);
+        }
         setStatus(collaboration ?? (e instanceof Error ? e.message : String(e)));
       }
     },
@@ -402,15 +420,22 @@ export function Workspace() {
           setAct(evs);
         });
 
+        setCollaborationConflictQueue(null);
         setStatus(u ? 'Undone' : 'Redone');
       } catch (e) {
         const label = u ? 'Undo' : 'Redo';
         const collaboration =
           e instanceof ApiHttpError ? formatCollaboration409Status(label, e) : null;
         if (collaboration) {
+          if (e instanceof ApiHttpError && e.status === 409) {
+            setCollaborationConflictQueue(buildCollaborationConflictQueueV1(e.detail));
+          } else {
+            setCollaborationConflictQueue(null);
+          }
           setStatus(collaboration);
           return;
         }
+        setCollaborationConflictQueue(null);
         setStatus(e instanceof Error ? e.message : String(e));
       }
     },
@@ -484,6 +509,7 @@ export function Workspace() {
 
         setBootErr(null);
 
+        setCollaborationConflictQueue(null);
         setStatus('Ready');
 
         /** E2E builds set VITE_E2E_DISABLE_WS — no backend; avoid Vite preview forwarding /ws to :8500. */
@@ -940,6 +966,48 @@ export function Workspace() {
             </Btn>
           </div>
         </div>
+        {collaborationConflictQueue ? (
+          <div
+            data-testid="collaboration-conflict-queue-readout"
+            className="mx-auto mt-2 max-w-[1400px] rounded border border-amber-500/40 bg-background/40 px-3 py-2 text-[10px] text-muted"
+          >
+            <div className="font-semibold text-amber-800 dark:text-amber-300/90">
+              Collaboration conflict queue (collaborationConflictQueue_v1)
+            </div>
+            <p className="mt-1">{collaborationConflictQueue.inspectionReadout}</p>
+            {collaborationConflictQueue.inspectionReadoutSecondary ? (
+              <p className="mt-0.5">{collaborationConflictQueue.inspectionReadoutSecondary}</p>
+            ) : null}
+            <ul className="mt-1 list-disc space-y-0.5 ps-4">
+              <li>
+                Retry advice:{' '}
+                <code className="font-mono text-[9px]">{collaborationConflictQueue.retryAdvice}</code>
+                {collaborationConflictQueue.reason ? (
+                  <>
+                    {' '}
+                    · reason <code className="font-mono text-[9px]">{collaborationConflictQueue.reason}</code>
+                  </>
+                ) : null}
+              </li>
+              {collaborationConflictQueue.rows.length ? (
+                <li>
+                  {collaborationConflictQueue.rows.length} blocking row(s) · rules{' '}
+                  <code className="text-[9px]">
+                    {collaborationConflictQueue.rows.map((r) => r.ruleId).join(', ')}
+                  </code>
+                </li>
+              ) : null}
+              {collaborationConflictQueue.firstBlockingCommandStep1Based !== null ? (
+                <li>
+                  Blocking command step {collaborationConflictQueue.firstBlockingCommandStep1Based}
+                  {collaborationConflictQueue.blockingCommandType
+                    ? ` (${collaborationConflictQueue.blockingCommandType})`
+                    : ''}
+                </li>
+              ) : null}
+            </ul>
+          </div>
+        ) : null}
       </div>
 
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} actions={palette} />
