@@ -13,6 +13,24 @@ function countLineNodes(root: THREE.Object3D): number {
   return n;
 }
 
+function countLineLoopNodes(root: THREE.Object3D): number {
+  let n = 0;
+  if (root instanceof THREE.LineLoop) n += 1;
+  for (const c of root.children) n += countLineLoopNodes(c);
+  return n;
+}
+
+function someLineHasDashedMaterial(root: THREE.Object3D): boolean {
+  let found = false;
+  root.traverse((o) => {
+    if (!(o instanceof THREE.Line)) return;
+    const m = o.material;
+    const mm = Array.isArray(m) ? m[0] : m;
+    if (mm instanceof THREE.LineDashedMaterial) found = true;
+  });
+  return found;
+}
+
 function countAnnotationOverlaySprites(root: THREE.Object3D): number {
   let n = 0;
   const u = root.userData as { planAnnotationOverlay?: unknown };
@@ -132,6 +150,87 @@ describe('PlanCanvas server wire primitives path (WP-C03)', () => {
         return mm instanceof THREE.LineDashedMaterial;
       }),
     ).toBe(true);
+  });
+
+  it('uses dashed Line for wire floor outline when linePatternToken is non-solid', () => {
+    const primitives = {
+      format: 'planProjectionPrimitives_v1',
+      walls: [],
+      floors: [
+        {
+          id: 'fl1',
+          levelId: 'lvl',
+          outlineMm: [
+            [0, 0],
+            [3000, 0],
+            [3000, 2000],
+            [0, 2000],
+          ],
+          lineWeightHint: 1,
+          linePatternToken: 'dash_short',
+        },
+      ],
+      rooms: [],
+      doors: [],
+      windows: [],
+      stairs: [],
+      roofs: [],
+      gridLines: [],
+      roomSeparations: [],
+      dimensions: [],
+    } as const;
+
+    const grp = new THREE.Group();
+    rebuildPlanMeshes(grp, {}, {
+      activeLevelId: 'lvl',
+      wirePrimitives: primitives as unknown as PlanProjectionPrimitivesV1Wire,
+    });
+
+    let mesh = false;
+    grp.traverse((o) => {
+      if (o instanceof THREE.Mesh) mesh = true;
+    });
+    expect(mesh).toBe(true);
+    expect(someLineHasDashedMaterial(grp)).toBe(true);
+    expect(countLineLoopNodes(grp)).toBe(0);
+  });
+
+  it('uses LineLoop for wire floor outline when linePatternToken is solid', () => {
+    const primitives = {
+      format: 'planProjectionPrimitives_v1',
+      walls: [],
+      floors: [
+        {
+          id: 'fl1',
+          levelId: 'lvl',
+          outlineMm: [
+            [0, 0],
+            [3000, 0],
+            [3000, 2000],
+            [0, 2000],
+          ],
+          lineWeightHint: 1,
+          linePatternToken: 'solid',
+        },
+      ],
+      rooms: [],
+      doors: [],
+      windows: [],
+      stairs: [],
+      roofs: [],
+      gridLines: [],
+      roomSeparations: [],
+      dimensions: [],
+    } as const;
+
+    const grp = new THREE.Group();
+    rebuildPlanMeshes(grp, {}, {
+      activeLevelId: 'lvl',
+      wirePrimitives: primitives as unknown as PlanProjectionPrimitivesV1Wire,
+    });
+
+    expect(countLineLoopNodes(grp)).toBeGreaterThan(0);
+    expect(someLineHasDashedMaterial(grp)).toBe(false);
   });
 
   it('uses level rise for stair tread divisions when levels are in elementsById', () => {

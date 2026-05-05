@@ -206,6 +206,62 @@ function horizontalOutlineMesh(
   return mesh;
 }
 
+const PLAN_FLOOR_FILL_OPACITY_BASE = 0.16;
+
+const PLAN_ROOF_FILL_OPACITY_BASE = 0.2;
+
+/** Wire-path floor/roof: category-weighted fill + closed outline stroke (pattern from server). */
+function planFloorRoofOutlineWireGroup(
+  outlineMm: Array<{ xMm: number; yMm: number }>,
+  opts: {
+    kind: 'floor' | 'roof';
+    pickId: string;
+    lineWeightHint: number;
+    linePatternToken?: string | null;
+  },
+): THREE.Group {
+  const grp = new THREE.Group();
+  const color = opts.kind === 'floor' ? '#22c55e' : '#f97316';
+  const fillY = opts.kind === 'floor' ? PLAN_Y + 0.001 : PLAN_Y + 0.004;
+  const strokeY = fillY + 0.0004;
+  const baseOp = opts.kind === 'floor' ? PLAN_FLOOR_FILL_OPACITY_BASE : PLAN_ROOF_FILL_OPACITY_BASE;
+  const lwh =
+    Number.isFinite(opts.lineWeightHint) && opts.lineWeightHint > 0 ? opts.lineWeightHint : 1;
+  const fillOpacity = Math.min(0.34, Math.max(0.06, baseOp * Math.min(1.35, lwh / 1.12)));
+  grp.add(horizontalOutlineMesh(outlineMm, fillY, color, fillOpacity, opts.pickId));
+
+  if (outlineMm.length < 2) {
+    grp.userData.bimPickId = opts.pickId;
+    return grp;
+  }
+
+  const pts = outlineMm.map((p) => new THREE.Vector3(ux(p.xMm), strokeY, uz(p.yMm)));
+  const dashSpec = planLinePatternDashWorldUnits(opts.linePatternToken ?? undefined);
+  if (dashSpec == null) {
+    const loop = new THREE.LineLoop(
+      new THREE.BufferGeometry().setFromPoints(pts),
+      new THREE.LineBasicMaterial({ color, depthTest: true }),
+    );
+    loop.userData.bimPickId = opts.pickId;
+    grp.add(loop);
+  } else {
+    const closed = [...pts, pts[0]!];
+    const mat = new THREE.LineDashedMaterial({
+      color,
+      dashSize: dashSpec.dashSize,
+      gapSize: dashSpec.gapSize,
+      depthTest: true,
+    });
+    const ln = new THREE.Line(new THREE.BufferGeometry().setFromPoints(closed), mat);
+    ln.computeLineDistances();
+    ln.userData.bimPickId = opts.pickId;
+    grp.add(ln);
+  }
+
+  grp.userData.bimPickId = opts.pickId;
+  return grp;
+}
+
 /** Server `ROOM_PLAN_OVERLAP_THRESHOLD_MM2` in `app/bim_ai/constraints.py` (`room_overlap_plan`). */
 export const ROOM_PLAN_OVERLAP_ADVISOR_MM2 = 50_000;
 
@@ -423,14 +479,32 @@ function rebuildPlanMeshesFromWire(
   for (const f of floors) {
     const outline = outlineMmFromWire(f.outlineMm);
     if (outline.length < 2) continue;
-    holder.add(horizontalOutlineMesh(outline, PLAN_Y + 0.001, '#22c55e', 0.16, String(f.id ?? '')));
+    const lwh = Number(f.lineWeightHint ?? f.line_weight_hint ?? 1);
+    const patRaw = f.linePatternToken ?? f.line_pattern_token;
+    holder.add(
+      planFloorRoofOutlineWireGroup(outline, {
+        kind: 'floor',
+        pickId: String(f.id ?? ''),
+        lineWeightHint: lwh,
+        linePatternToken: typeof patRaw === 'string' ? patRaw : undefined,
+      }),
+    );
   }
 
   const roofs = Array.isArray(prim.roofs) ? (prim.roofs as Record<string, unknown>[]) : [];
   for (const rf of roofs) {
     const outline = outlineMmFromWire(rf.footprintMm);
     if (outline.length < 2) continue;
-    holder.add(horizontalOutlineMesh(outline, PLAN_Y + 0.004, '#f97316', 0.2, String(rf.id ?? '')));
+    const lwh = Number(rf.lineWeightHint ?? rf.line_weight_hint ?? 1);
+    const patRaw = rf.linePatternToken ?? rf.line_pattern_token;
+    holder.add(
+      planFloorRoofOutlineWireGroup(outline, {
+        kind: 'roof',
+        pickId: String(rf.id ?? ''),
+        lineWeightHint: lwh,
+        linePatternToken: typeof patRaw === 'string' ? patRaw : undefined,
+      }),
+    );
   }
 
   for (const w of wallsByWireId.values()) holder.add(planWallMesh(w, selectedId));

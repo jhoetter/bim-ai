@@ -9,8 +9,10 @@ from uuid import uuid4
 import pytest
 
 from bim_ai.commands import (
+    CreateFloorCmd,
     CreateGridLineCmd,
     CreateLevelCmd,
+    CreateRoofCmd,
     CreateRoomRectangleCmd,
     CreateWallCmd,
     UpsertPlanViewCmd,
@@ -1327,6 +1329,86 @@ def test_plan_category_graphic_hints_v0_and_primitives() -> None:
     gprim = next(g for g in prim["gridLines"] if g["id"] == "g1")
     assert gprim["linePatternToken"] == "dot"
     assert gprim["lineWeightHint"] == pytest.approx(1.0, rel=0, abs=1e-3)
+
+
+def test_plan_category_graphic_hints_floor_roof_outline_primitives() -> None:
+    doc = Document(revision=1, elements={})
+    apply_inplace(doc, CreateLevelCmd(id="lvl", name="G", elevationMm=0))
+    apply_inplace(
+        doc,
+        UpsertViewTemplateCmd(
+            id="vt",
+            name="T",
+            plan_category_graphics=[
+                PlanCategoryGraphicRow(category_key="floor", line_weight_factor=1.2),
+                PlanCategoryGraphicRow(category_key="roof", line_pattern_token="dash_long"),
+            ],
+        ),
+    )
+    apply_inplace(
+        doc,
+        UpsertPlanViewCmd(
+            id="pv",
+            name="P",
+            level_id="lvl",
+            view_template_id="vt",
+            plan_category_graphics=[
+                PlanCategoryGraphicRow(category_key="roof", line_pattern_token="dot"),
+            ],
+        ),
+    )
+    apply_inplace(
+        doc,
+        CreateFloorCmd(
+            id="fl1",
+            name="F",
+            level_id="lvl",
+            boundary_mm=[
+                {"xMm": 0, "yMm": 0},
+                {"xMm": 3000, "yMm": 0},
+                {"xMm": 3000, "yMm": 2000},
+                {"xMm": 0, "yMm": 2000},
+            ],
+        ),
+    )
+    apply_inplace(
+        doc,
+        CreateRoofCmd(
+            id="rf1",
+            name="R",
+            reference_level_id="lvl",
+            footprint_mm=[
+                {"xMm": 1000, "yMm": 1000},
+                {"xMm": 4000, "yMm": 1000},
+                {"xMm": 4000, "yMm": 3000},
+                {"xMm": 1000, "yMm": 3000},
+            ],
+            roof_geometry_mode="mass_box",
+        ),
+    )
+
+    out = plan_projection_wire_from_request(doc, plan_view_id="pv", fallback_level_id=None)
+    cat = out["planCategoryGraphicHints_v0"]
+    floor_cat = next(r for r in cat["rows"] if r["categoryKey"] == "floor")
+    assert floor_cat["lineWeightFactor"] == 1.2
+    roof_cat = next(r for r in cat["rows"] if r["categoryKey"] == "roof")
+    assert roof_cat["linePatternToken"] == "dot"
+    assert roof_cat["linePatternSource"] == "plan_view"
+
+    prim = out["primitives"]
+    fprim = next(f for f in prim["floors"] if f["id"] == "fl1")
+    assert fprim["linePatternToken"] == "solid"
+    assert fprim["planCategoryGraphicKey"] == "floor"
+    assert fprim["planOutlineSemantics"] == "slab_level_outline"
+    assert fprim["lineWeightHint"] == pytest.approx(1.2 * float(out["planGraphicHints"]["lineWeightScale"]), rel=0, abs=0.02)
+
+    rprim = next(r for r in prim["roofs"] if r["id"] == "rf1")
+    assert rprim["linePatternToken"] == "dot"
+    assert rprim["planCategoryGraphicKey"] == "roof"
+    assert rprim["planOutlineSemantics"] == "roof_footprint_projection"
+    assert rprim["lineWeightHint"] == pytest.approx(
+        float(out["planGraphicHints"]["lineWeightScale"]), rel=0, abs=0.02
+    )
 
 
 def test_room_programme_legend_replay_matches_schedule_and_sheet_manifest() -> None:

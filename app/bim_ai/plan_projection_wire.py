@@ -712,7 +712,18 @@ def _build_plan_primitive_lists(
             if crop_box is not None and not _poly_bbox_overlaps_crop(floor_pts, crop_box):
                 continue
             outlines = [[round(p.x_mm, 3), round(p.y_mm, 3)] for p in e.boundary_mm]
-            floors.append({"id": e.id, "levelId": e.level_id, "outlineMm": outlines})
+            f_wt, f_pat = cat_eff("floor")
+            floors.append(
+                {
+                    "id": e.id,
+                    "levelId": e.level_id,
+                    "outlineMm": outlines,
+                    "lineWeightHint": round(float(line_weight_hint) * float(f_wt), 4),
+                    "linePatternToken": f_pat,
+                    "planCategoryGraphicKey": "floor",
+                    "planOutlineSemantics": "slab_level_outline",
+                }
+            )
         elif isinstance(e, RoomElem):
             if "room" in hidden_semantic or not lvl_ok(e.level_id):
                 continue
@@ -856,11 +867,16 @@ def _build_plan_primitive_lists(
             if crop_box is not None and not _poly_bbox_overlaps_crop(fp_pts, crop_box):
                 continue
             fp = [[round(p.x_mm, 3), round(p.y_mm, 3)] for p in e.footprint_mm]
+            r_wt, r_pat = cat_eff("roof")
             roof_row: dict[str, Any] = {
                 "id": e.id,
                 "referenceLevelId": ref,
                 "footprintMm": fp,
                 **_roof_plan_wire_geometry_fields(doc, e),
+                "lineWeightHint": round(float(line_weight_hint) * float(r_wt), 4),
+                "linePatternToken": r_pat,
+                "planCategoryGraphicKey": "roof",
+                "planOutlineSemantics": "roof_footprint_projection",
             }
             roofs.append(roof_row)
         elif isinstance(e, GridLineElem):
