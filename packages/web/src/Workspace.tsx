@@ -64,6 +64,8 @@ import { SectionPlaceholderPane } from './workspace/SectionPlaceholderPane';
 import { SheetCanvas } from './workspace/SheetCanvas';
 import { RoomSeparationAuthoringWorkbench } from './workspace/RoomSeparationAuthoringWorkbench';
 import { LevelDatumStackWorkbench } from './workspace/LevelDatumStackWorkbench';
+import { syncLastLevelElevationPropagationFromApplyResponse } from './workspace/levelDatumPropagationSync';
+import { buildPlanGridDatumInspectorLine } from './workspace/planViewDatumGridReadout';
 import { MaterialLayerStackWorkbench } from './workspace/MaterialLayerStackWorkbench';
 import { RoofAuthoringWorkbench } from './workspace/RoofAuthoringWorkbench';
 import {
@@ -1776,7 +1778,12 @@ export function Workspace() {
                 });
               }}
             />
-            <MaterialLayerStackWorkbench selected={selected} elementsById={elementsById} />
+            <MaterialLayerStackWorkbench
+              selected={selected}
+              elementsById={elementsById}
+              revision={revision}
+              onUpsertSemantic={(cmd) => void onSemantic(cmd)}
+            />
             <pre className="max-h-[40vh] overflow-auto whitespace-pre-wrap text-[11px]">
               {JSON.stringify(selected ?? { hint: 'pick' }, null, 2)}
             </pre>

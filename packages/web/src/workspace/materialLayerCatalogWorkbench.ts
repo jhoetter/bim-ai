@@ -3,6 +3,13 @@ import type { Element, WallLayerFunction, WallTypeLayer } from '@bim-ai/core';
 /** Aligns with `bim_ai.material_assembly_resolve._CUT_THICKNESS_MATCH_EPS_MM`. */
 export const CUT_THICKNESS_MATCH_EPS_MM = 0.05;
 
+/** Allowed layer functions for layered type authoring (matches core `WallLayerFunction`). */
+export const ALLOWED_WALL_LAYER_FUNCTIONS: Readonly<WallLayerFunction[]> = [
+  'structure',
+  'insulation',
+  'finish',
+];
+
 /** Mirrors `bim_ai.type_material_registry.builtin_type_material_registry` materialSeeds (keep in sync). */
 export const BUILTIN_MATERIAL_DISPLAY: Readonly<Record<string, string>> = {
   'mat-concrete-structure-v1': 'Concrete structure',
@@ -281,6 +288,75 @@ export function resolveMaterialLayerReadout(
   }
 
   return null;
+}
+
+export type LayerAuthoringDraftRow = {
+  index: number;
+  thicknessMm: number;
+  function: WallLayerFunction;
+  materialKey: string;
+};
+
+export function materialRowsToDraft(rows: MaterialLayerRow[]): LayerAuthoringDraftRow[] {
+  return rows.map((r) => ({
+    index: r.index,
+    thicknessMm: r.thicknessMm,
+    function: r.function,
+    materialKey: r.materialKey,
+  }));
+}
+
+export function validateLayerAuthoringDraft(rows: LayerAuthoringDraftRow[]): string[] {
+  const errs: string[] = [];
+  if (!rows.length) {
+    errs.push('At least one layer is required.');
+  }
+  for (const r of rows) {
+    if (!(Number.isFinite(r.thicknessMm) && r.thicknessMm > 0)) {
+      errs.push(`Layer ${r.index}: thickness must be a positive number (mm).`);
+    }
+    if (!ALLOWED_WALL_LAYER_FUNCTIONS.includes(r.function)) {
+      errs.push(`Layer ${r.index}: unsupported function "${String(r.function)}".`);
+    }
+  }
+  return errs;
+}
+
+export type LayeredTypeElement = Extract<Element, { kind: 'wall_type' | 'floor_type' | 'roof_type' }>;
+
+export function buildUpsertLayeredTypeCommand(
+  el: LayeredTypeElement,
+  rows: LayerAuthoringDraftRow[],
+): Record<string, unknown> {
+  const layers: WallTypeLayer[] = rows.map((r) => ({
+    thicknessMm: roundThicknessMm(Number(r.thicknessMm)),
+    function: r.function,
+    materialKey: r.materialKey.trim(),
+  }));
+
+  if (el.kind === 'wall_type') {
+    return {
+      type: 'upsertWallType',
+      id: el.id,
+      name: (el.name ?? '').trim() || el.id,
+      basisLine: el.basisLine ?? 'center',
+      layers,
+    };
+  }
+  if (el.kind === 'floor_type') {
+    return {
+      type: 'upsertFloorType',
+      id: el.id,
+      name: (el.name ?? '').trim() || el.id,
+      layers,
+    };
+  }
+  return {
+    type: 'upsertRoofType',
+    id: el.id,
+    name: (el.name ?? '').trim() || el.id,
+    layers,
+  };
 }
 
 export function supportedMaterialLayerWorkbenchKinds(kind: string | undefined): boolean {

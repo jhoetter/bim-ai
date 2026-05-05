@@ -30,6 +30,7 @@ from bim_ai.material_assembly_resolve import (
     collect_layered_assembly_cut_alignment_evidence_v0,
     collect_layered_assembly_witness_v0,
     material_assembly_manifest_evidence,
+    material_catalog_audit_evidence_v0,
     roof_surface_material_readout_v0,
 )
 from bim_ai.opening_cut_primitives import xz_bounds_mm_from_poly
@@ -55,6 +56,7 @@ from bim_ai.stair_plan_proxy import (
     stair_plan_up_down_label,
     stair_riser_count_plan_proxy,
     stair_run_bearing_deg_ccw_from_plan_x,
+    stair_schedule_row_extensions_v1,
     stair_tread_count_straight_plan_proxy,
 )
 from bim_ai.wall_join_evidence import (
@@ -301,6 +303,7 @@ def stair_geometry_manifest_evidence_v0(doc: Document) -> dict[str, Any] | None:
         )
         if diags:
             row_ev["stairDocumentationDiagnostics"] = diags
+        row_ev.update(stair_schedule_row_extensions_v1(doc, e))
         rows.append(row_ev)
     if not rows:
         return None
@@ -380,6 +383,9 @@ def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
     asm_ev = material_assembly_manifest_evidence(doc)
     if asm_ev:
         base["materialAssemblyEvidence_v0"] = asm_ev
+    cat_ev = material_catalog_audit_evidence_v0(doc)
+    if cat_ev:
+        base["materialCatalogAuditEvidence_v0"] = cat_ev
     if rgeom_roofs:
         base["roofGeometryEvidence_v1"] = rgeom_roofs
     if stair_geom:

@@ -332,6 +332,16 @@ def test_roof_and_stair_totals_rollups():
     ts = derive_schedule_table(doc, "sch-s")
     assert ts["totals"]["kind"] == "stair"
     assert ts["totals"]["totalRunMm"] > 0
+    csv_body = schedule_payload_to_csv(ts, include_totals_csv=False)
+    rdr = csv.reader(StringIO(csv_body))
+    header = next(rdr)
+    assert "stairScheduleCorrelationToken" in header
+    assert "landingFootprintBoundsMm" in header
+    row1 = next(rdr)
+    by_key = dict(zip(header, row1, strict=True))
+    assert by_key["elementId"] == "st1"
+    assert by_key["stairScheduleCorrelationToken"].startswith("stairSchCorr_v0|st1|")
+    assert '"maxXmMm"' in by_key["landingFootprintBoundsMm"]
 
 
 def test_window_schedule_group_alias():

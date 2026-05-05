@@ -154,6 +154,10 @@ def test_build_visual_export_manifest_includes_material_assembly_evidence_with_l
     hosts = asm.get("hosts") or []
     assert len(hosts) >= 1
     assert any(h.get("hostElementId") == "w1" for h in hosts)
+    cat = ext.get("materialCatalogAuditEvidence_v0")
+    assert cat is not None
+    assert cat.get("format") == "materialCatalogAuditEvidence_v0"
+    assert len(cat.get("rows") or []) >= 1
 
 
 def test_build_visual_export_manifest_includes_layered_assembly_cut_alignment_evidence() -> None:

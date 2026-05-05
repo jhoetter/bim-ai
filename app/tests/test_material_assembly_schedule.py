@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import ifcopenshell
 import pytest
 
 from bim_ai.commands import (
@@ -28,7 +27,11 @@ from bim_ai.elements import (
 from bim_ai.engine import apply_inplace
 from bim_ai.export_ifc import IFC_AVAILABLE, export_ifc_model_step
 from bim_ai.ifc_material_layer_exchange_v0 import kernel_ifc_material_layer_set_readback_v0
-from bim_ai.material_assembly_resolve import resolved_layers_for_roof, resolved_layers_for_wall
+from bim_ai.material_assembly_resolve import (
+    material_catalog_audit_rows,
+    resolved_layers_for_roof,
+    resolved_layers_for_wall,
+)
 from bim_ai.roof_layered_prism_evidence_v1 import build_roof_layered_prism_witness_v1
 from bim_ai.schedule_derivation import derive_schedule_table
 
@@ -175,8 +178,16 @@ def test_material_assembly_schedule_quantities():
                 id="ft",
                 name="FT",
                 layers=[
-                    WallTypeLayer(thicknessMm=100, layer_function="structure"),
-                    WallTypeLayer(thicknessMm=40, layer_function="finish"),
+                    WallTypeLayer(
+                        thicknessMm=100,
+                        layer_function="structure",
+                        material_key="mat-concrete-structure-v1",
+                    ),
+                    WallTypeLayer(
+                        thicknessMm=40,
+                        layer_function="finish",
+                        material_key="mat-gwb-finish-v1",
+                    ),
                 ],
             ),
             "sch-mat": ScheduleElem(kind="schedule", id="sch-mat", name="Materials"),
@@ -243,6 +254,14 @@ def test_material_assembly_schedule_quantities():
     assert float(f0["layerOffsetFromExteriorMm"]) == 0.0
     assert float(f1["assemblyTotalThicknessMm"]) == 140.0
     assert float(f1["layerOffsetFromExteriorMm"]) == 100.0
+
+    for r in wall_rows:
+        assert r["catalogAuditStatus"] == "clean"
+        assert r["layerPropagationStatus"] == "clean"
+        assert len(str(r["assemblyMaterialKeysDigest"])) == 64
+    for r in floor_rows:
+        assert r["catalogAuditStatus"] == "clean"
+        assert r["layerPropagationStatus"] == "clean"
 
 
 def test_material_assembly_schedule_includes_roof_layers():
@@ -432,6 +451,8 @@ def test_roof_schedule_includes_roof_type_columns():
 
 @pytest.mark.skipif(not IFC_AVAILABLE, reason="ifcopenshell not installed (pip install '.[ifc]')")
 def test_ifc_material_readback_matches_resolved_wall_layers() -> None:
+    import ifcopenshell  # noqa: PLC0415
+
     doc = Document(
         revision=1,
         elements={
@@ -482,3 +503,73 @@ def test_ifc_material_readback_matches_resolved_wall_layers() -> None:
     )
     assert row.get("readbackState") == "matched"
     assert row.get("docLayerCount") == 2
+
+    apply_inplace(
+        doc,
+        UpsertWallTypeCmd(
+            type="upsertWallType",
+            id="wt",
+            name="WT",
+            basis_line="center",
+            layers=[
+                WallTypeLayer(
+                    thicknessMm=90,
+                    layer_function="structure",
+                    material_key="mat-concrete-structure-v1",
+                ),
+                WallTypeLayer(
+                    thicknessMm=60,
+                    layer_function="finish",
+                    material_key="mat-gwb-finish-v1",
+                ),
+            ],
+        ),
+    )
+    w_after = doc.elements["w1"]
+    assert isinstance(w_after, WallElem)
+    assert w_after.thickness_mm == 150
+
+    step2 = export_ifc_model_step(doc)
+    model2 = ifcopenshell.file.from_string(step2)
+    rb2 = kernel_ifc_material_layer_set_readback_v0(model2, doc)
+    row_b = next(
+        h
+        for h in (rb2.get("hosts") or [])
+        if h.get("hostElementId") == "w1" and h.get("hostKind") == "wall"
+    )
+    assert row_b.get("readbackState") == "matched"
+    assert row_b.get("docLayerCount") == 2
+
+
+def test_material_catalog_audit_rows_sorted_deterministically() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=0),
+            "z-wall": WallElem(
+                kind="wall",
+                id="z-wall",
+                name="Z",
+                level_id="lvl",
+                start=Vec2Mm(x_mm=0, y_mm=0),
+                end=Vec2Mm(x_mm=1000, y_mm=0),
+                thickness_mm=100,
+                height_mm=2800,
+            ),
+            "a-wall": WallElem(
+                kind="wall",
+                id="a-wall",
+                name="A",
+                level_id="lvl",
+                start=Vec2Mm(x_mm=0, y_mm=0),
+                end=Vec2Mm(x_mm=1000, y_mm=0),
+                thickness_mm=100,
+                height_mm=2800,
+            ),
+        },
+    )
+    rows = material_catalog_audit_rows(doc)
+    keys = [(str(r["hostKind"]), str(r["hostElementId"])) for r in rows]
+    assert keys == sorted(keys)
+    assert keys[0][1] == "a-wall"
+    assert keys[1][1] == "z-wall"

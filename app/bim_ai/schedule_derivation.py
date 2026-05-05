@@ -21,6 +21,7 @@ from bim_ai.elements import (
     WindowElem,
 )
 from bim_ai.material_assembly_resolve import (
+    material_catalog_audit_rows,
     resolved_layers_for_floor,
     resolved_layers_for_roof,
     resolved_layers_for_wall,
@@ -44,6 +45,7 @@ from bim_ai.schedule_field_registry import column_metadata_bundle, stable_column
 from bim_ai.schedule_pagination_placement_evidence import (
     build_schedule_pagination_placement_evidence_v0,
 )
+from bim_ai.stair_plan_proxy import stair_schedule_row_extensions_v1
 from bim_ai.type_material_registry import (
     family_type_display_label,
     material_display_label,
@@ -113,6 +115,13 @@ _NUMERIC_SCHEDULE_FIELDS: frozenset[str] = frozenset(
         "footprintPerimeterM",
         "riseMm",
         "runMm",
+        "riserCount",
+        "treadCount",
+        "riserHeightMm",
+        "treadDepthMm",
+        "totalRiseMm",
+        "totalRunMm",
+        "landingCount",
         "cropDepthMm",
         "hostHeightMm",
         "roughOpeningWidthMm",
@@ -587,20 +596,20 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                 p0 = e.run_start.x_mm, e.run_start.y_mm
                 p1 = e.run_end.x_mm, e.run_end.y_mm
                 run_mm = ((p1[0] - p0[0]) ** 2 + (p1[1] - p0[1]) ** 2) ** 0.5
-                rows.append(
-                    {
-                        "elementId": e.id,
-                        "name": e.name,
-                        "baseLevelId": e.base_level_id,
-                        "topLevelId": e.top_level_id,
-                        "baseLevel": lvl_lab.get(e.base_level_id, e.base_level_id),
-                        "topLevel": lvl_lab.get(e.top_level_id, e.top_level_id),
-                        "riseMm": round(float(rise_mm), 3),
-                        "runMm": round(float(run_mm), 3),
-                        "widthMm": round(float(e.width_mm), 3),
-                        "familyTypeId": "",
-                    }
-                )
+                row_st: dict[str, Any] = {
+                    "elementId": e.id,
+                    "name": e.name,
+                    "baseLevelId": e.base_level_id,
+                    "topLevelId": e.top_level_id,
+                    "baseLevel": lvl_lab.get(e.base_level_id, e.base_level_id),
+                    "topLevel": lvl_lab.get(e.top_level_id, e.top_level_id),
+                    "riseMm": round(float(rise_mm), 3),
+                    "runMm": round(float(run_mm), 3),
+                    "widthMm": round(float(e.width_mm), 3),
+                    "familyTypeId": "",
+                }
+                row_st.update(stair_schedule_row_extensions_v1(doc, e))
+                rows.append(row_st)
 
     elif cat == "sheet":
         for e in doc.elements.values():
@@ -650,6 +659,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                 )
 
     elif cat == "material_assembly":
+        audit_by_host = {str(r["hostElementId"]): r for r in material_catalog_audit_rows(doc)}
         for e in doc.elements.values():
             if isinstance(e, WallElem):
                 layers = resolved_layers_for_wall(doc, e)
@@ -663,33 +673,37 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                 asm_id = (e.wall_type_id or "").strip()
                 total_thk = sum(float(lyr["thicknessMm"]) for lyr in layers)
                 offset_mm = 0.0
+                audit_row = audit_by_host.get(e.id)
                 for idx, lyr in enumerate(layers):
                     tk = str(lyr.get("materialKey") or "").strip()
                     th_mm = float(lyr["thicknessMm"])
                     th_m = th_mm / 1000.0
                     fn = str(lyr.get("function") or "").strip()
                     vol = gross_face_m2 * th_m
-                    rows.append(
-                        {
-                            "elementId": f"{e.id}:layer-{idx}",
-                            "name": e.name,
-                            "hostElementId": e.id,
-                            "hostKind": "wall",
-                            "assemblyTypeId": asm_id,
-                            "assemblyTotalThicknessMm": round(total_thk, 6),
-                            "layerOffsetFromExteriorMm": round(offset_mm, 6),
-                            "layerIndex": idx,
-                            "layerFunction": fn,
-                            "materialKey": tk,
-                            "materialDisplay": material_display_label(doc, tk or None),
-                            "thicknessMm": round(th_mm, 6),
-                            "grossAreaM2": round(gross_face_m2, 8),
-                            "grossVolumeM3": round(vol, 12),
-                            "levelId": lid,
-                            "level": lev,
-                            "familyTypeId": "",
-                        }
-                    )
+                    row_w: dict[str, Any] = {
+                        "elementId": f"{e.id}:layer-{idx}",
+                        "name": e.name,
+                        "hostElementId": e.id,
+                        "hostKind": "wall",
+                        "assemblyTypeId": asm_id,
+                        "assemblyTotalThicknessMm": round(total_thk, 6),
+                        "layerOffsetFromExteriorMm": round(offset_mm, 6),
+                        "layerIndex": idx,
+                        "layerFunction": fn,
+                        "materialKey": tk,
+                        "materialDisplay": material_display_label(doc, tk or None),
+                        "thicknessMm": round(th_mm, 6),
+                        "grossAreaM2": round(gross_face_m2, 8),
+                        "grossVolumeM3": round(vol, 12),
+                        "levelId": lid,
+                        "level": lev,
+                        "familyTypeId": "",
+                    }
+                    if audit_row:
+                        row_w["catalogAuditStatus"] = audit_row["catalogStatus"]
+                        row_w["assemblyMaterialKeysDigest"] = audit_row["assemblyMaterialKeysDigest"]
+                        row_w["layerPropagationStatus"] = audit_row["propagationStatus"]
+                    rows.append(row_w)
                     offset_mm += th_mm
             elif isinstance(e, FloorElem):
                 layers = resolved_layers_for_floor(doc, e)
@@ -699,33 +713,37 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                 asm_id = (e.floor_type_id or "").strip()
                 total_thk = sum(float(lyr["thicknessMm"]) for lyr in layers)
                 offset_mm = 0.0
+                audit_row = audit_by_host.get(e.id)
                 for idx, lyr in enumerate(layers):
                     tk = str(lyr.get("materialKey") or "").strip()
                     th_mm = float(lyr["thicknessMm"])
                     th_m = th_mm / 1000.0
                     fn = str(lyr.get("function") or "").strip()
                     vol = slab_m2 * th_m
-                    rows.append(
-                        {
-                            "elementId": f"{e.id}:layer-{idx}",
-                            "name": e.name,
-                            "hostElementId": e.id,
-                            "hostKind": "floor",
-                            "assemblyTypeId": asm_id,
-                            "assemblyTotalThicknessMm": round(total_thk, 6),
-                            "layerOffsetFromExteriorMm": round(offset_mm, 6),
-                            "layerIndex": idx,
-                            "layerFunction": fn,
-                            "materialKey": tk,
-                            "materialDisplay": material_display_label(doc, tk or None),
-                            "thicknessMm": round(th_mm, 6),
-                            "grossAreaM2": round(slab_m2, 8),
-                            "grossVolumeM3": round(vol, 12),
-                            "levelId": e.level_id,
-                            "level": lev,
-                            "familyTypeId": "",
-                        }
-                    )
+                    row_f: dict[str, Any] = {
+                        "elementId": f"{e.id}:layer-{idx}",
+                        "name": e.name,
+                        "hostElementId": e.id,
+                        "hostKind": "floor",
+                        "assemblyTypeId": asm_id,
+                        "assemblyTotalThicknessMm": round(total_thk, 6),
+                        "layerOffsetFromExteriorMm": round(offset_mm, 6),
+                        "layerIndex": idx,
+                        "layerFunction": fn,
+                        "materialKey": tk,
+                        "materialDisplay": material_display_label(doc, tk or None),
+                        "thicknessMm": round(th_mm, 6),
+                        "grossAreaM2": round(slab_m2, 8),
+                        "grossVolumeM3": round(vol, 12),
+                        "levelId": e.level_id,
+                        "level": lev,
+                        "familyTypeId": "",
+                    }
+                    if audit_row:
+                        row_f["catalogAuditStatus"] = audit_row["catalogStatus"]
+                        row_f["assemblyMaterialKeysDigest"] = audit_row["assemblyMaterialKeysDigest"]
+                        row_f["layerPropagationStatus"] = audit_row["propagationStatus"]
+                    rows.append(row_f)
                     offset_mm += th_mm
             elif isinstance(e, RoofElem):
                 layers = resolved_layers_for_roof(doc, e)
@@ -738,33 +756,37 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                 asm_id = (e.roof_type_id or "").strip()
                 total_thk = sum(float(lyr["thicknessMm"]) for lyr in layers)
                 offset_mm = 0.0
+                audit_row = audit_by_host.get(e.id)
                 for idx, lyr in enumerate(layers):
                     tk = str(lyr.get("materialKey") or "").strip()
                     th_mm = float(lyr["thicknessMm"])
                     th_m = th_mm / 1000.0
                     fn = str(lyr.get("function") or "").strip()
                     vol = footprint_m2 * th_m
-                    rows.append(
-                        {
-                            "elementId": f"{e.id}:layer-{idx}",
-                            "name": e.name,
-                            "hostElementId": e.id,
-                            "hostKind": "roof",
-                            "assemblyTypeId": asm_id,
-                            "assemblyTotalThicknessMm": round(total_thk, 6),
-                            "layerOffsetFromExteriorMm": round(offset_mm, 6),
-                            "layerIndex": idx,
-                            "layerFunction": fn,
-                            "materialKey": tk,
-                            "materialDisplay": material_display_label(doc, tk or None),
-                            "thicknessMm": round(th_mm, 6),
-                            "grossAreaM2": round(footprint_m2, 8),
-                            "grossVolumeM3": round(vol, 12),
-                            "levelId": lid,
-                            "level": lev,
-                            "familyTypeId": "",
-                        }
-                    )
+                    row_r: dict[str, Any] = {
+                        "elementId": f"{e.id}:layer-{idx}",
+                        "name": e.name,
+                        "hostElementId": e.id,
+                        "hostKind": "roof",
+                        "assemblyTypeId": asm_id,
+                        "assemblyTotalThicknessMm": round(total_thk, 6),
+                        "layerOffsetFromExteriorMm": round(offset_mm, 6),
+                        "layerIndex": idx,
+                        "layerFunction": fn,
+                        "materialKey": tk,
+                        "materialDisplay": material_display_label(doc, tk or None),
+                        "thicknessMm": round(th_mm, 6),
+                        "grossAreaM2": round(footprint_m2, 8),
+                        "grossVolumeM3": round(vol, 12),
+                        "levelId": lid,
+                        "level": lev,
+                        "familyTypeId": "",
+                    }
+                    if audit_row:
+                        row_r["catalogAuditStatus"] = audit_row["catalogStatus"]
+                        row_r["assemblyMaterialKeysDigest"] = audit_row["assemblyMaterialKeysDigest"]
+                        row_r["layerPropagationStatus"] = audit_row["propagationStatus"]
+                    rows.append(row_r)
                     offset_mm += th_mm
 
     else:

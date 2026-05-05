@@ -82,6 +82,10 @@ def test_ifc_manifest_reports_kernel_geometry_skip_counts_without_ifcopenshell()
     assert asm is not None
     assert asm.get("format") == "materialAssemblyEvidence_v0"
     assert len(asm.get("hosts") or []) >= 2
+    cat = mf.get("materialCatalogAuditEvidence_v0")
+    assert cat is not None
+    assert cat.get("format") == "materialCatalogAuditEvidence_v0"
+    assert len(cat.get("rows") or []) >= 2
 
 
 def test_ifc_manifest_includes_semantic_import_scope_and_expected_kinds_hint() -> None:

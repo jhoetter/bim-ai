@@ -6,10 +6,12 @@ import {
   BUILTIN_MATERIAL_DISPLAY,
   CUT_THICKNESS_MATCH_EPS_MM,
   buildMaterialStackEvidenceToken,
+  buildUpsertLayeredTypeCommand,
   formatLayerFunctionRole,
   resolveMaterialDisplayLabel,
   resolveMaterialLayerReadout,
   roundThicknessMm,
+  validateLayerAuthoringDraft,
 } from './materialLayerCatalogWorkbench';
 
 const emptyDoc: Record<string, Element> = {};
@@ -206,5 +208,74 @@ describe('materialLayerCatalogWorkbench', () => {
     expect(tok).toContain('layers=2');
     expect(tok).toContain('align=match');
     expect(tok).toContain('src=type_stack');
+  });
+
+  it('validateLayerAuthoringDraft rejects empty or bad thickness', () => {
+    expect(validateLayerAuthoringDraft([]).length).toBeGreaterThan(0);
+    expect(
+      validateLayerAuthoringDraft([
+        { index: 0, thicknessMm: -1, function: 'structure', materialKey: '' },
+      ]).length,
+    ).toBeGreaterThan(0);
+    expect(
+      validateLayerAuthoringDraft([
+        { index: 0, thicknessMm: 100, function: 'structure', materialKey: '' },
+      ]),
+    ).toEqual([]);
+  });
+
+  it('buildUpsertLayeredTypeCommand preserves wall basisLine and rounds thickness', () => {
+    const wt: Element = {
+      kind: 'wall_type',
+      id: 'wt',
+      name: 'Composite',
+      basisLine: 'face_interior',
+      layers: [],
+    };
+    const cmd = buildUpsertLayeredTypeCommand(wt, [
+      { index: 0, thicknessMm: 100.123456, function: 'structure', materialKey: 'mat-a' },
+      { index: 1, thicknessMm: 50, function: 'finish', materialKey: '  mat-b  ' },
+    ]);
+    expect(cmd).toMatchObject({
+      type: 'upsertWallType',
+      id: 'wt',
+      name: 'Composite',
+      basisLine: 'face_interior',
+    });
+    expect(cmd.layers).toEqual([
+      { thicknessMm: 100.123, function: 'structure', materialKey: 'mat-a' },
+      { thicknessMm: 50, function: 'finish', materialKey: 'mat-b' },
+    ]);
+  });
+
+  it('buildUpsertLayeredTypeCommand builds floor and roof upserts', () => {
+    const ft: Element = {
+      kind: 'floor_type',
+      id: 'ft',
+      name: 'Slab',
+      layers: [],
+    };
+    expect(
+      buildUpsertLayeredTypeCommand(ft, [
+        { index: 0, thicknessMm: 200, function: 'structure', materialKey: '' },
+      ]),
+    ).toMatchObject({
+      type: 'upsertFloorType',
+      id: 'ft',
+    });
+    const rt: Element = {
+      kind: 'roof_type',
+      id: 'rt',
+      name: 'Deck',
+      layers: [],
+    };
+    expect(
+      buildUpsertLayeredTypeCommand(rt, [
+        { index: 0, thicknessMm: 22, function: 'structure', materialKey: 'x' },
+      ]),
+    ).toMatchObject({
+      type: 'upsertRoofType',
+      id: 'rt',
+    });
   });
 });

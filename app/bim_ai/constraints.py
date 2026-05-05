@@ -13,6 +13,9 @@ from bim_ai.datum_levels import (
 )
 from bim_ai.document import Document
 from bim_ai.elements import (
+    AgentAssumptionElem,
+    AgentDeviationElem,
+    BcfElem,
     DimensionElem,
     DoorElem,
     Element,
@@ -46,7 +49,10 @@ from bim_ai.export_ifc import (
 )
 from bim_ai.geometry import Poly, approx_overlap_area_mm2, sat_overlap, wall_corners
 from bim_ai.ifc_stub import build_ifc_exchange_manifest_payload
-from bim_ai.material_assembly_resolve import material_assembly_manifest_evidence
+from bim_ai.material_assembly_resolve import (
+    material_assembly_manifest_evidence,
+    material_catalog_audit_rows,
+)
 from bim_ai.plan_aa_room_separation import axis_aligned_room_separation_splits_rectangle
 from bim_ai.room_derivation import compute_room_boundary_derivation
 from bim_ai.room_finish_schedule import peer_finish_set_by_level
@@ -54,6 +60,7 @@ from bim_ai.sheet_titleblock_revision_issue_v1 import (
     normalize_titleblock_revision_issue_v1,
     sheet_revision_issue_metadata_present,
 )
+from bim_ai.stair_plan_proxy import stair_schedule_row_extensions_v1
 
 ROOM_PLAN_OVERLAP_THRESHOLD_MM2 = 50_000.0
 
@@ -85,6 +92,10 @@ _RULE_DISCIPLINE: dict[str, str] = {
     "level_duplicate_elevation": "structure",
     "level_datum_parent_cycle": "structure",
     "level_datum_parent_offset_mismatch": "structure",
+    "level_parent_unresolved": "structure",
+    "datum_grid_reference_missing": "structure",
+    "elevation_marker_view_unresolved": "structure",
+    "section_level_reference_missing": "coordination",
     "wall_missing_level": "structure",
     "wall_zero_length": "structure",
     "wall_constraint_levels_inverted": "structure",
@@ -113,6 +124,9 @@ _RULE_DISCIPLINE: dict[str, str] = {
     "stair_missing_levels": "architecture",
     "stair_geometry_unreasonable": "architecture",
     "stair_comfort_eu_proxy": "architecture",
+    "stair_schedule_degenerate_run": "architecture",
+    "stair_schedule_incomplete_riser_tread": "architecture",
+    "stair_schedule_guardrail_placeholder_uncorrelated": "architecture",
     "ids_cleanroom_door_without_family_type": "agent",
     "ids_cleanroom_window_without_family_type": "agent",
     "ids_cleanroom_door_pressure_metadata_missing": "agent",
@@ -138,6 +152,35 @@ _RULE_DISCIPLINE: dict[str, str] = {
     "exchange_ifc_ids_identity_pset_gap": "exchange",
     "exchange_ifc_ids_qto_gap": "exchange",
     "exchange_ifc_material_layer_readback_mismatch": "exchange",
+    "material_catalog_missing_layer_stack": "exchange",
+    "material_catalog_stale_assembly_reference": "exchange",
+    "material_catalog_missing_material": "exchange",
+    "material_catalog_unsupported_layer_function": "exchange",
+    "material_catalog_not_propagated": "exchange",
+    "agent_brief_assumption_unresolved": "agent",
+    "agent_brief_deviation_unacknowledged": "agent",
+    "agent_brief_assumption_reference_broken": "agent",
+}
+
+_MATERIAL_CATALOG_AUDIT_RULE_IDS: dict[str, str] = {
+    "missing_layer_stack": "material_catalog_missing_layer_stack",
+    "stale_reference": "material_catalog_stale_assembly_reference",
+    "missing_material": "material_catalog_missing_material",
+    "unsupported_function": "material_catalog_unsupported_layer_function",
+    "not_propagated": "material_catalog_not_propagated",
+}
+
+_MATERIAL_CATALOG_AUDIT_MESSAGES: dict[str, str] = {
+    "missing_layer_stack": (
+        "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack)."
+    ),
+    "stale_reference": "Assembly type id does not resolve to a layered type element in the document.",
+    "missing_material": "Typed layer stack exists but one or more layers lack a catalog materialKey.",
+    "unsupported_function": "Layer uses a wall-layer function token outside the kernel catalog slice.",
+    "not_propagated": (
+        "Typed layer stack thickness does not match instance/cut thickness within epsilon "
+        "(see material_assembly_resolve layered assembly cut metrics)."
+    ),
 }
 
 
@@ -554,6 +597,44 @@ def _ids_authoritative_replay_map_pointer_suffix(summary: dict[str, Any]) -> str
     )
 
 
+def _agent_brief_advisory_violations(elements: dict[str, Element]) -> list[Violation]:
+    """Deterministic agent-brief closure hints (discipline=agent); advisory severities."""
+
+    assumption_ids = {eid for eid, el in elements.items() if isinstance(el, AgentAssumptionElem)}
+    out: list[Violation] = []
+    for _eid, el in sorted(elements.items(), key=lambda x: x[0]):
+        if isinstance(el, AgentAssumptionElem) and el.closure_status == "open":
+            out.append(
+                Violation(
+                    rule_id="agent_brief_assumption_unresolved",
+                    severity="warning",
+                    message="Agent assumption has closureStatus=open; resolve, accept, or defer.",
+                    element_ids=[el.id],
+                )
+            )
+        elif isinstance(el, AgentDeviationElem):
+            if not el.acknowledged:
+                out.append(
+                    Violation(
+                        rule_id="agent_brief_deviation_unacknowledged",
+                        severity="warning",
+                        message="Agent deviation is not acknowledged.",
+                        element_ids=[el.id],
+                    )
+                )
+            rid = el.related_assumption_id
+            if rid is not None and rid.strip() and rid not in assumption_ids:
+                out.append(
+                    Violation(
+                        rule_id="agent_brief_assumption_reference_broken",
+                        severity="warning",
+                        message=f"Deviation references missing assumption id {rid!r}.",
+                        element_ids=[el.id],
+                    )
+                )
+    return out
+
+
 def _exchange_advisory_violations(elements: dict[str, Element]) -> list[Violation]:
     out: list[Violation] = []
     try:
@@ -770,6 +851,47 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
             )
         )
 
+    for lv in sorted(levels, key=lambda x: x.id):
+        pid = lv.parent_level_id
+        if pid is None or not str(pid).strip():
+            continue
+        parent_el = elements.get(pid)
+        if parent_el is None or not isinstance(parent_el, LevelElem):
+            viols.append(
+                Violation(
+                    rule_id="level_parent_unresolved",
+                    severity="error",
+                    message="Level parentLevelId does not resolve to a level element.",
+                    element_ids=sorted({lv.id, pid}),
+                )
+            )
+
+    for e in elements.values():
+        if isinstance(e, PlanViewElem):
+            plid = e.level_id
+            if plid and str(plid).strip() and plid not in lvl_by_id:
+                viols.append(
+                    Violation(
+                        rule_id="elevation_marker_view_unresolved",
+                        severity="error",
+                        message="Plan view references unknown level.",
+                        element_ids=[e.id],
+                    )
+                )
+        if isinstance(e, BcfElem):
+            sid = e.section_cut_id
+            if sid and str(sid).strip():
+                tgt = elements.get(sid)
+                if not isinstance(tgt, SectionCutElem):
+                    viols.append(
+                        Violation(
+                            rule_id="section_level_reference_missing",
+                            severity="error",
+                            message="BCF issue references unknown section cut.",
+                            element_ids=sorted({e.id, sid}),
+                        )
+                    )
+
     if level_datum_topo_order_if_acyclic(elements) is not None:
         for lv in sorted(levels, key=lambda x: x.id):
             pid = lv.parent_level_id
@@ -930,6 +1052,16 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
                     rule_id="grid_zero_length",
                     severity="error",
                     message="Grid line is degenerate (< 5 mm).",
+                    element_ids=[g.id],
+                )
+            )
+        glid = g.level_id
+        if glid is not None and str(glid).strip() and str(glid) not in lvl_by_id:
+            viols.append(
+                Violation(
+                    rule_id="datum_grid_reference_missing",
+                    severity="error",
+                    message="Grid line references unknown level for datum association.",
                     element_ids=[g.id],
                 )
             )
@@ -1300,6 +1432,8 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
                 )
             )
 
+    stair_adv_doc = Document(revision=1, elements=dict(elements))
+
     for st in elements.values():
         if not isinstance(st, StairElem):
             continue
@@ -1347,6 +1481,51 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
                         element_ids=[st.id],
                     )
                 )
+
+        sx = stair_schedule_row_extensions_v1(stair_adv_doc, st)
+        st_stat = str(sx.get("stairQuantityDerivationStatus") or "")
+        if st_stat == "degenerate_run":
+            viols.append(
+                Violation(
+                    rule_id="stair_schedule_degenerate_run",
+                    severity="warning",
+                    message="Stair run length is degenerate; schedule run and guardrail readback are unreliable.",
+                    element_ids=[st.id],
+                )
+            )
+            viols.append(
+                Violation(
+                    rule_id="stair_schedule_guardrail_placeholder_uncorrelated",
+                    severity="info",
+                    message="Guardrail placeholder readback is unavailable without a stable stair run segment.",
+                    element_ids=[st.id],
+                )
+            )
+        elif st_stat == "incomplete_riser_tread":
+            viols.append(
+                Violation(
+                    rule_id="stair_schedule_incomplete_riser_tread",
+                    severity="warning",
+                    message="Stair riser/tread sizing or riser count is unusable for schedule quantity readback.",
+                    element_ids=[st.id],
+                )
+            )
+
+    doc_audit = Document(revision=1, elements=dict(elements))
+    for audit_row in material_catalog_audit_rows(doc_audit):
+        stat = str(audit_row.get("catalogStatus") or "")
+        rule_id = _MATERIAL_CATALOG_AUDIT_RULE_IDS.get(stat)
+        if rule_id is None:
+            continue
+        viols.append(
+            Violation(
+                rule_id=rule_id,
+                severity="info",
+                message=_MATERIAL_CATALOG_AUDIT_MESSAGES.get(stat, "Material catalog audit issue."),
+                element_ids=[str(audit_row["hostElementId"])],
+                discipline="exchange",
+            )
+        )
 
     val_rules = [vr for vr in elements.values() if isinstance(vr, ValidationRuleElem)]
     enforce_clean_door = any(
@@ -1732,5 +1911,7 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
                     )
                 )
 
+    viols.extend(_agent_brief_advisory_violations(elements))
     viols.extend(_exchange_advisory_violations(elements))
+    viols.sort(key=lambda v: (v.rule_id, tuple(sorted(v.element_ids)), v.severity))
     return annotate_violation_disciplines(viols)

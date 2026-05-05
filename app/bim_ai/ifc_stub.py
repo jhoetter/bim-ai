@@ -17,7 +17,10 @@ from bim_ai.export_ifc import (
     kernel_expected_ifc_emit_counts,
     kernel_export_eligible,
 )
-from bim_ai.material_assembly_resolve import material_assembly_manifest_evidence
+from bim_ai.material_assembly_resolve import (
+    material_assembly_manifest_evidence,
+    material_catalog_audit_evidence_v0,
+)
 
 IFC_ENCODING_EMPTY_SHELL = "bim_ai_ifc_empty_shell_v0"
 
@@ -151,6 +154,9 @@ def build_ifc_exchange_manifest_payload(doc: Document) -> dict[str, Any]:
     asm_ev = material_assembly_manifest_evidence(doc)
     if asm_ev:
         out["materialAssemblyEvidence_v0"] = asm_ev
+    cat_ev = material_catalog_audit_evidence_v0(doc)
+    if cat_ev:
+        out["materialCatalogAuditEvidence_v0"] = cat_ev
     ml_ev = build_ifc_material_layer_set_readback_evidence_v0(doc)
     if ml_ev:
         out["ifcMaterialLayerSetReadbackEvidence_v0"] = ml_ev
