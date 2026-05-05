@@ -2575,3 +2575,4 @@ def _section_on_sheet_advisory_violations(elements: dict[str, Element]) -> list[
                     )
                 )
     return out
+
