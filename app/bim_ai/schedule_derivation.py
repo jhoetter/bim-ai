@@ -9,15 +9,18 @@ from bim_ai.document import Document
 from bim_ai.elements import (
     DoorElem,
     FloorElem,
+    FloorTypeElem,
     LevelElem,
     PlanViewElem,
     RoofElem,
+    RoofTypeElem,
     RoomElem,
     ScheduleElem,
     SectionCutElem,
     SheetElem,
     StairElem,
     WallElem,
+    WallTypeElem,
     WindowElem,
 )
 from bim_ai.material_assembly_resolve import (
@@ -33,6 +36,7 @@ from bim_ai.room_derivation import (
 from bim_ai.room_derivation import (
     ROOM_CLOSURE_BLOCKING_DIAGNOSTIC_CODES,
     compute_room_boundary_derivation,
+    detect_unbounded_rooms_v1,
     room_separation_axis_summary_v0_payload,
     vacant_derived_metrics_for_authority,
 )
@@ -108,12 +112,15 @@ _NUMERIC_SCHEDULE_FIELDS: frozenset[str] = frozenset(
         "heightMm",
         "sillMm",
         "thicknessMm",
+        "totalThicknessMm",
+        "materialAssemblyLayers",
         "layerIndex",
         "grossAreaM2",
         "grossVolumeM3",
         "viewportCount",
         "overhangMm",
         "slopeDeg",
+        "pitchDeg",
         "footprintAreaM2",
         "footprintPerimeterM",
         "riseMm",
@@ -137,6 +144,36 @@ _NUMERIC_SCHEDULE_FIELDS: frozenset[str] = frozenset(
         "layerOffsetFromExteriorMm",
     }
 )
+
+
+def _floor_type_name(doc: Document, floor_type_id: str | None) -> str:
+    fid = (floor_type_id or "").strip()
+    if not fid:
+        return ""
+    ft = doc.elements.get(fid)
+    if isinstance(ft, FloorTypeElem):
+        return (ft.name or "").strip()
+    return ""
+
+
+def _roof_type_name(doc: Document, roof_type_id: str | None) -> str:
+    rid = (roof_type_id or "").strip()
+    if not rid:
+        return ""
+    rt = doc.elements.get(rid)
+    if isinstance(rt, RoofTypeElem):
+        return (rt.name or "").strip()
+    return ""
+
+
+def _wall_type_name(doc: Document, wall_type_id: str | None) -> str:
+    wid = (wall_type_id or "").strip()
+    if not wid:
+        return ""
+    wt = doc.elements.get(wid)
+    if isinstance(wt, WallTypeElem):
+        return (wt.name or "").strip()
+    return ""
 
 
 def _resolve_sort_descending(filt: dict[str, Any], sch_group: dict[str, Any]) -> bool:
@@ -426,6 +463,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
         room_peer_finish = peer_finish_set_by_level(
             e for e in doc.elements.values() if isinstance(e, RoomElem)
         )
+        unbounded_room_ids: frozenset[str] = frozenset(detect_unbounded_rooms_v1(doc))
         for e in doc.elements.values():
             if isinstance(e, RoomElem):
                 pts = [{"xMm": float(p.x_mm), "yMm": float(p.y_mm)} for p in e.outline_mm]
@@ -441,6 +479,8 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                     "familyTypeId": "",
                     "programmeCode": (e.programme_code or "").strip(),
                     "department": (e.department or "").strip(),
+                    "programmeGroup": (e.programme_group or "").strip(),
+                    "isBoundaryOpen": e.id in unbounded_room_ids,
                     "functionLabel": (e.function_label or "").strip(),
                     "finishSet": (e.finish_set or "").strip(),
                 }
@@ -470,6 +510,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                         "wallId": e.wall_id,
                         "hostWallTypeId": host_wt_id,
                         "hostWallTypeDisplay": wall_type_display_label(doc, host_wt_id or None),
+                        "hostWallTypeName": _wall_type_name(doc, host_wt_id or None),
                         "levelId": lid,
                         "level": lvl_lab.get(lid, lid or "—"),
                         "widthMm": e.width_mm,
@@ -510,6 +551,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                         "wallId": e.wall_id,
                         "hostWallTypeId": host_wt_id,
                         "hostWallTypeDisplay": wall_type_display_label(doc, host_wt_id or None),
+                        "hostWallTypeName": _wall_type_name(doc, host_wt_id or None),
                         "levelId": lid,
                         "level": lvl_lab.get(lid, lid or "—"),
                         "widthMm": e.width_mm,
@@ -539,13 +581,20 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                 lev = lvl_lab.get(e.level_id, e.level_id)
                 pts = [{"xMm": float(p.x_mm), "yMm": float(p.y_mm)} for p in e.boundary_mm]
                 area, perimeter = _room_polygon_area_perimeter_sqm(pts)
+                ftid = (e.floor_type_id or "").strip()
+                flayers = resolved_layers_for_floor(doc, e)
+                total_thk = round(sum(float(ly["thicknessMm"]) for ly in flayers), 6) if flayers else round(float(e.thickness_mm), 3)
                 rows.append(
                     {
                         "elementId": e.id,
                         "name": e.name,
                         "levelId": e.level_id,
                         "level": lev,
+                        "floorTypeId": ftid,
+                        "typeName": _floor_type_name(doc, ftid or None),
                         "thicknessMm": round(float(e.thickness_mm), 3),
+                        "materialAssemblyLayers": len(flayers),
+                        "totalThicknessMm": total_thk,
                         "areaM2": round(area, 3),
                         "perimeterM": round(perimeter, 3),
                         "familyTypeId": "",
@@ -567,20 +616,23 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                     if rlayers
                     else None
                 )
+                rtid = (e.roof_type_id or "").strip()
+                slope = round(float(e.slope_deg or 0.0), 3)
                 row_root: dict[str, Any] = {
                     "elementId": e.id,
                     "name": e.name,
                     "referenceLevelId": e.reference_level_id,
                     "referenceLevel": rl,
+                    "roofTypeId": rtid,
+                    "typeName": _roof_type_name(doc, rtid or None),
+                    "materialAssemblyLayers": len(rlayers),
                     "overhangMm": round(float(e.overhang_mm or 0.0), 3),
-                    "slopeDeg": round(float(e.slope_deg or 0.0), 3),
+                    "slopeDeg": slope,
+                    "pitchDeg": slope,
                     "footprintAreaM2": round(area, 3),
                     "footprintPerimeterM": round(perimeter, 3),
                     "familyTypeId": "",
                 }
-                rtid = (e.roof_type_id or "").strip()
-                if rtid:
-                    row_root["roofTypeId"] = rtid
                 if total_asm_thk is not None:
                     row_root["assemblyTotalThicknessMm"] = total_asm_thk
                 rows.append(row_root)

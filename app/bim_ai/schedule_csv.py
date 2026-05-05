@@ -5,7 +5,10 @@ from __future__ import annotations
 import csv
 import io
 import json
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from bim_ai.document import Document
 
 
 def _schedule_row_csv_cell(v: Any) -> str:
@@ -123,3 +126,44 @@ def schedule_payload_to_csv(payload: dict[str, Any], *, include_totals_csv: bool
         w.writerow([_schedule_row_csv_cell(r.get(k, "")) for k in keys])
 
     return _maybe_append_totals_block(buf.getvalue(), payload, include_totals_csv=include_totals_csv)
+
+
+def scheduleCsvExportParityEvidence_v1(doc: Document) -> dict[str, Any]:
+    """Per-category row/column counts + content digest for all schedules in doc."""
+
+    import hashlib
+
+    from bim_ai.schedule_derivation import derive_schedule_table, list_schedule_ids
+
+    by_cat: dict[str, Any] = {}
+    for sch_id in list_schedule_ids(doc):
+        try:
+            payload = derive_schedule_table(doc, sch_id)
+        except Exception:
+            continue
+        cat = str(payload.get("category") or "")
+        csv_txt = schedule_payload_to_csv(payload)
+        csv_lines = [ln for ln in csv_txt.splitlines() if ln.strip()]
+        csv_row_count = max(0, len(csv_lines) - 1)
+        cols = list(payload.get("columns") or [])
+        grouped = payload.get("groupedSections")
+        if isinstance(grouped, dict):
+            json_row_count = sum(len(v) for v in grouped.values() if isinstance(v, list))
+        else:
+            rows_raw = payload.get("rows")
+            json_row_count = len(rows_raw) if isinstance(rows_raw, list) else 0
+        digest = hashlib.sha256(csv_txt.encode("utf-8")).hexdigest()
+        by_cat[cat] = {
+            "category": cat,
+            "scheduleId": sch_id,
+            "csvRowCount": csv_row_count,
+            "jsonRowCount": json_row_count,
+            "columnCount": len(cols),
+            "columns": cols,
+            "csvContentDigestSha256": digest,
+            "parityAligned": csv_row_count == json_row_count,
+        }
+    return {
+        "format": "scheduleCsvExportParityEvidence_v1",
+        "categories": by_cat,
+    }

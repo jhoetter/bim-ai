@@ -24,6 +24,8 @@ SCHEDULE_COLUMN_ORDER: dict[str, tuple[str, ...]] = {
         "areaDeltaM2",
         "programmeCode",
         "department",
+        "programmeGroup",
+        "isBoundaryOpen",
         "functionLabel",
         "finishSet",
         "finishState",
@@ -38,6 +40,7 @@ SCHEDULE_COLUMN_ORDER: dict[str, tuple[str, ...]] = {
         "wallId",
         "hostWallTypeId",
         "hostWallTypeDisplay",
+        "hostWallTypeName",
         "levelId",
         "level",
         "widthMm",
@@ -56,6 +59,7 @@ SCHEDULE_COLUMN_ORDER: dict[str, tuple[str, ...]] = {
         "wallId",
         "hostWallTypeId",
         "hostWallTypeDisplay",
+        "hostWallTypeName",
         "levelId",
         "level",
         "widthMm",
@@ -77,7 +81,11 @@ SCHEDULE_COLUMN_ORDER: dict[str, tuple[str, ...]] = {
         "name",
         "levelId",
         "level",
+        "floorTypeId",
+        "typeName",
         "thicknessMm",
+        "materialAssemblyLayers",
+        "totalThicknessMm",
         "areaM2",
         "perimeterM",
         "familyTypeId",
@@ -88,9 +96,12 @@ SCHEDULE_COLUMN_ORDER: dict[str, tuple[str, ...]] = {
         "referenceLevelId",
         "referenceLevel",
         "roofTypeId",
+        "typeName",
         "assemblyTotalThicknessMm",
+        "materialAssemblyLayers",
         "overhangMm",
         "slopeDeg",
+        "pitchDeg",
         "footprintAreaM2",
         "footprintPerimeterM",
         "familyTypeId",
@@ -214,6 +225,7 @@ SCHEDULE_COLUMN_METADATA: dict[str, dict[str, ColumnMeta]] = {
     "door": {
         "hostWallTypeId": {"label": "Host wall type", "role": "identity"},
         "hostWallTypeDisplay": {"label": "Host wall type name", "role": "text"},
+        "hostWallTypeName": {"label": "Host wall type name (resolved)", "role": "text"},
         "widthMm": {"label": "Width (mm)", "role": "integer"},
         "hostHeightMm": {"label": "Host height (mm)", "role": "integer"},
         "roughOpeningWidthMm": {"label": "Rough opening width (mm)", "role": "integer"},
@@ -227,6 +239,7 @@ SCHEDULE_COLUMN_METADATA: dict[str, dict[str, ColumnMeta]] = {
     "window": {
         "hostWallTypeId": {"label": "Host wall type", "role": "identity"},
         "hostWallTypeDisplay": {"label": "Host wall type name", "role": "text"},
+        "hostWallTypeName": {"label": "Host wall type name (resolved)", "role": "text"},
         "widthMm": {"label": "Width (mm)", "role": "integer"},
         "heightMm": {"label": "Height (mm)", "role": "integer"},
         "sillMm": {"label": "Sill (mm)", "role": "integer"},
@@ -249,7 +262,11 @@ SCHEDULE_COLUMN_METADATA: dict[str, dict[str, ColumnMeta]] = {
         "elementId": {"label": "Element Id", "role": "id"},
         "name": {"label": "Name", "role": "text"},
         "level": {"label": "Level", "role": "text"},
+        "floorTypeId": {"label": "Floor type", "role": "identity"},
+        "typeName": {"label": "Type name", "role": "text"},
         "thicknessMm": {"label": "Thickness (mm)", "role": "number"},
+        "materialAssemblyLayers": {"label": "Assembly layers", "role": "integer"},
+        "totalThicknessMm": {"label": "Assembly thickness (mm)", "role": "number"},
         "areaM2": {"label": "Area (m²)", "role": "number"},
         "perimeterM": {"label": "Perimeter (m)", "role": "number"},
         "familyTypeId": {"label": "Family / type", "role": "identity"},
@@ -259,9 +276,12 @@ SCHEDULE_COLUMN_METADATA: dict[str, dict[str, ColumnMeta]] = {
         "name": {"label": "Name", "role": "text"},
         "referenceLevel": {"label": "Ref. level", "role": "text"},
         "roofTypeId": {"label": "Roof type", "role": "identity"},
+        "typeName": {"label": "Type name", "role": "text"},
         "assemblyTotalThicknessMm": {"label": "Assembly thickness (mm)", "role": "number"},
+        "materialAssemblyLayers": {"label": "Assembly layers", "role": "integer"},
         "overhangMm": {"label": "Overhang (mm)", "role": "number"},
         "slopeDeg": {"label": "Slope (°)", "role": "number"},
+        "pitchDeg": {"label": "Pitch (°)", "role": "number", "help": "Architectural pitch in degrees; mirrors slopeDeg for parity."},
         "footprintAreaM2": {"label": "Footprint (m²)", "role": "number"},
         "footprintPerimeterM": {"label": "Footprint perimeter (m)", "role": "number"},
         "familyTypeId": {"label": "Family / type", "role": "identity"},
@@ -417,4 +437,29 @@ def column_metadata_bundle(category: str) -> dict[str, Any]:
     return {
         "category": cat,
         "fields": cols or {},
+    }
+
+
+def scheduleFieldRegistryCoverageEvidence_v1() -> dict[str, Any]:
+    """Per-category dict of registered fields vs metadata-covered fields with coverage %."""
+
+    categories: dict[str, Any] = {}
+    for cat, order in SCHEDULE_COLUMN_ORDER.items():
+        registered = list(order)
+        registered_set = set(registered)
+        meta_fields = set(SCHEDULE_COLUMN_METADATA.get(cat, {}).keys())
+        covered = sorted(registered_set & meta_fields)
+        uncovered = sorted(registered_set - meta_fields)
+        pct = round(len(covered) / max(len(registered_set), 1) * 100, 1)
+        categories[cat] = {
+            "category": cat,
+            "registeredFieldCount": len(registered_set),
+            "metadataCoveredCount": len(covered),
+            "coveragePct": pct,
+            "coveredFields": covered,
+            "uncoveredFields": uncovered,
+        }
+    return {
+        "format": "scheduleFieldRegistryCoverageEvidence_v1",
+        "categories": categories,
     }
