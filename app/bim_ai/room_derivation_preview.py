@@ -23,7 +23,9 @@ from bim_ai.room_derivation import (
 _SNAP_MM = 50.0
 
 
-def _grid_lines_along_aa_bbox_boundary(doc: Document, *, level_id: str, bbox: dict[str, Any]) -> list[str]:
+def _grid_lines_along_aa_bbox_boundary(
+    doc: Document, *, level_id: str, bbox: dict[str, Any]
+) -> list[str]:
     tol = _SNAP_MM * 1.25
     mn = bbox.get("min") or {}
     mx = bbox.get("max") or {}
@@ -84,7 +86,7 @@ def room_derivation_preview(doc: Document) -> dict[str, Any]:
     preview_out = dict(bundle)
     preview_out["diagnostics"] = diagnostics_sorted
     preview_out["diagnosticCount"] = len(diagnostics_sorted)
-    preview_out["authorityVersion"] = "axis_aa_authoritative_v1"
+    preview_out["authorityVersion"] = "axis_aa_authoritative_v2"
     return preview_out
 
 
@@ -171,7 +173,9 @@ def room_derivation_candidates_review(doc: Document) -> dict[str, Any]:
             if abb is None:
                 continue
             rx_lo, ry_lo, rx_hi, ry_hi, room_area_m2 = _candidate_bbox_nums(abb)
-            inter_m2 = aa_rect_intersection_area_m2(cx_lo, cy_lo, cx_hi, cy_hi, rx_lo, ry_lo, rx_hi, ry_hi)
+            inter_m2 = aa_rect_intersection_area_m2(
+                cx_lo, cy_lo, cx_hi, cy_hi, rx_lo, ry_lo, rx_hi, ry_hi
+            )
             if inter_m2 <= 0:
                 continue
             union_den = cand_area_m2 + room_area_m2 - inter_m2
@@ -190,7 +194,9 @@ def room_derivation_candidates_review(doc: Document) -> dict[str, Any]:
                 }
             )
 
-        comparison_rows.sort(key=lambda r: (-float(r.get("iouApprox") or 0.0), str(r.get("roomId"))))
+        comparison_rows.sort(
+            key=lambda r: (-float(r.get("iouApprox") or 0.0), str(r.get("roomId")))
+        )
 
         if overlap_best >= 0.82:
             warnings_local.append(
@@ -241,7 +247,9 @@ def room_derivation_candidates_review(doc: Document) -> dict[str, Any]:
             bx_lo, by_lo, bx_hi, by_hi, area_b = _candidate_bbox_nums(bbox_b)
             if area_b <= 1e-9:
                 continue
-            inter_m2 = aa_rect_intersection_area_m2(ax_lo, ay_lo, ax_hi, ay_hi, bx_lo, by_lo, bx_hi, by_hi)
+            inter_m2 = aa_rect_intersection_area_m2(
+                ax_lo, ay_lo, ax_hi, ay_hi, bx_lo, by_lo, bx_hi, by_hi
+            )
             smaller = min(area_a, area_b)
             if smaller <= 0:
                 continue
@@ -279,7 +287,9 @@ def room_derivation_candidates_review(doc: Document) -> dict[str, Any]:
         "format": "roomDerivationCandidates_v1",
         "heuristicVersion": preview.get("heuristicVersion"),
         "candidateCount": len(out_candidates),
-        "candidates": sorted(out_candidates, key=lambda x: (x.get("levelId", ""), x.get("candidateId", ""))),
+        "candidates": sorted(
+            out_candidates, key=lambda x: (x.get("levelId", ""), x.get("candidateId", ""))
+        ),
     }
 
 

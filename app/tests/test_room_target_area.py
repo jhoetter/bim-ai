@@ -178,6 +178,10 @@ def test_derive_room_schedule_includes_room_programme_closure_v0_when_no_room_ro
     assert isinstance(closure, dict)
     assert closure.get("authoritativeVacantDerivedAreaM2") == pytest.approx(16.0, rel=1e-2)
     assert closure.get("authoritativeVacantFootprintCount") == 1
+    assert closure.get("previewHeuristicVacantDerivedAreaM2") == pytest.approx(0.0, abs=1e-4)
+    assert closure.get("previewHeuristicVacantFootprintCount") == 0
+    assert closure.get("authoritativeVacantClosureComplete") is True
+    assert closure.get("nonAuthoritativeReasonCodes") == []
 
 
 def test_derive_room_schedule_programme_residual_without_vacant_footprint() -> None:
@@ -199,3 +203,72 @@ def test_derive_room_schedule_programme_residual_without_vacant_footprint() -> N
     assert totals.get("areaM2") == pytest.approx(16.0, rel=1e-2)
     assert closure.get("authoritativeVacantDerivedAreaM2") == pytest.approx(0.0, abs=1e-4)
     assert closure.get("programmeScheduleResidualM2") == pytest.approx(6.5, rel=1e-2)
+    assert closure.get("previewHeuristicVacantDerivedAreaM2") == pytest.approx(0.0, abs=1e-4)
+    assert closure.get("previewHeuristicVacantFootprintCount") == 0
+    assert closure.get("authoritativeVacantClosureComplete") is True
+    assert closure.get("nonAuthoritativeReasonCodes") == []
+
+
+def test_derive_room_schedule_closure_flags_preview_derived_when_walls_conflict_with_room() -> None:
+    lvl = LevelElem(kind="level", id="lvl-1", name="Ground", elevation_mm=0)
+    walls = (
+        WallElem(
+            kind="wall",
+            id="w-s",
+            name="S",
+            levelId="lvl-1",
+            start={"xMm": 0, "yMm": 0},
+            end={"xMm": 4000, "yMm": 0},
+            thicknessMm=200,
+            heightMm=2800,
+        ),
+        WallElem(
+            kind="wall",
+            id="w-n",
+            name="N",
+            levelId="lvl-1",
+            start={"xMm": 0, "yMm": 4000},
+            end={"xMm": 4000, "yMm": 4000},
+            thicknessMm=200,
+            heightMm=2800,
+        ),
+        WallElem(
+            kind="wall",
+            id="w-w",
+            name="W",
+            levelId="lvl-1",
+            start={"xMm": 0, "yMm": 0},
+            end={"xMm": 0, "yMm": 4000},
+            thicknessMm=200,
+            heightMm=2800,
+        ),
+        WallElem(
+            kind="wall",
+            id="w-e",
+            name="E",
+            levelId="lvl-1",
+            start={"xMm": 4000, "yMm": 0},
+            end={"xMm": 4000, "yMm": 4000},
+            thicknessMm=200,
+            heightMm=2800,
+        ),
+    )
+    rm = RoomElem(
+        kind="room",
+        id="rm-1",
+        name="Lab",
+        level_id="lvl-1",
+        outline_mm=_sq(((0.0, 0.0), (4000.0, 0.0), (4000.0, 4000.0), (0.0, 4000.0))),
+        target_area_m2=22.5,
+    )
+    sch = ScheduleElem(kind="schedule", id="sch-room", name="Rooms", filters={"category": "room"})
+    doc = Document(
+        revision=2,
+        elements={"lvl-1": lvl, **{w.id: w for w in walls}, "rm-1": rm, "sch-room": sch},
+    )
+    closure = derive_schedule_table(doc, "sch-room").get("roomProgrammeClosure_v0") or {}
+    assert closure.get("previewHeuristicVacantDerivedAreaM2") == pytest.approx(16.0, rel=1e-2)
+    assert closure.get("authoritativeVacantClosureComplete") is False
+    nar = closure.get("nonAuthoritativeReasonCodes") or []
+    assert "preview_heuristic_vacant_footprints_not_in_closure_totals" in nar
+    assert "authoritative_vacant_unavailable_but_preview_present" in nar

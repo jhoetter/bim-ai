@@ -257,15 +257,122 @@ def collect_axis_aligned_boundary_segments(doc: Document) -> dict[str, list[Axis
     return dict(segments_by_level)
 
 
-HEURISTIC_VERSION = "room_deriv_preview_v3"
+def _wall_or_sep_long_enough_for_boundary(ent: WallElem | RoomSeparationElem) -> bool:
+    if isinstance(ent, WallElem):
+        x0, y0 = ent.start.x_mm, ent.start.y_mm
+        x1, y1 = ent.end.x_mm, ent.end.y_mm
+    else:
+        x0, y0 = ent.start.x_mm, ent.start.y_mm
+        x1, y1 = ent.end.x_mm, ent.end.y_mm
+    return math.hypot(x1 - x0, y1 - y0) >= 80.0
+
+
+def collect_non_axis_boundary_element_ids_by_level(doc: Document) -> dict[str, list[str]]:
+    """Walls / room separations long enough to matter but not axis-aligned (diagonal / near-diagonal)."""
+    by_level: defaultdict[str, list[str]] = defaultdict(list)
+    for ent in doc.elements.values():
+        if isinstance(ent, WallElem):
+            if not _wall_or_sep_long_enough_for_boundary(ent):
+                continue
+            if axis_aligned_wall_segment(ent) is not None:
+                continue
+            by_level[ent.level_id].append(ent.id)
+        elif isinstance(ent, RoomSeparationElem):
+            if not _wall_or_sep_long_enough_for_boundary(ent):
+                continue
+            if axis_aligned_room_separation_segment(ent) is not None:
+                continue
+            by_level[ent.level_id].append(ent.id)
+    for lid in by_level:
+        by_level[lid] = sorted(set(by_level[lid]))
+    return dict(by_level)
+
+
+NON_AXIS_SKIPPED_IDS_SAMPLE_CAP = 48
+
+# Overlap ratio vs min candidate area (matches room_derivation_preview sibling warning).
+_DERIVED_CANDIDATE_OVERLAP_AMBIGUITY_RATIO = 0.12
+
+HEURISTIC_VERSION = "room_deriv_preview_v4"
 # Bounding combinations(seglist,4); huge parallel wall pools are non-closing-only-h edges.
 ROOM_AX_RECT_SEGMENT_ENUM_CAP = 72
+
+ROOM_CLOSURE_BLOCKING_DIAGNOSTIC_CODES: frozenset[str] = frozenset(
+    {
+        "axis_boundary_segment_enum_cap",
+        "axis_segments_missing_orientation_mix",
+        "non_axis_boundary_segments_skipped",
+    }
+)
+
+
+def vacant_derived_metrics_for_authority(
+    bundle: dict[str, Any],
+    *,
+    allowed_level_ids: frozenset[str] | None,
+    authority: Literal["authoritative", "preview_heuristic"],
+) -> tuple[float, int]:
+    """Sum approximate area (m²) and count for derived rectangles with the given authority (optional level scope)."""
+
+    total_area = 0.0
+    n = 0
+    for c in bundle.get("axisAlignedRectangleCandidates") or []:
+        if not isinstance(c, dict):
+            continue
+        if c.get("derivationAuthority") != authority:
+            continue
+        lid = str(c.get("levelId") or "")
+        if allowed_level_ids is not None and lid not in allowed_level_ids:
+            continue
+        try:
+            total_area += float(c.get("approxAreaM2") or 0.0)
+        except (TypeError, ValueError):
+            continue
+        n += 1
+    return round(total_area, 4), n
+
+
+def _bbox_nums_mm(bbox: dict[str, Any]) -> tuple[float, float, float, float, float]:
+    mn = bbox.get("min") or {}
+    mx = bbox.get("max") or {}
+    x_lo = float(mn.get("x") or 0)
+    y_lo = float(mn.get("y") or 0)
+    x_hi = float(mx.get("x") or 0)
+    y_hi = float(mx.get("y") or 0)
+    area = max(0.0, (x_hi - x_lo) / 1000.0) * max(0.0, (y_hi - y_lo) / 1000.0)
+    return x_lo, y_lo, x_hi, y_hi, area
+
+
+def _pairwise_preview_overlap_flags(cands: list[dict[str, Any]]) -> set[int]:
+    """Indices into cands (same level) to downgrade for overlapping derived footprint ambiguity."""
+    if len(cands) < 2:
+        return set()
+    bad: set[int] = set()
+    for i in range(len(cands)):
+        bbox_i = cands[i].get("bboxMm") if isinstance(cands[i].get("bboxMm"), dict) else {}
+        ix0, iy0, ix1, iy1, ia = _bbox_nums_mm(bbox_i)
+        if ia <= 1e-12:
+            continue
+        for j in range(i + 1, len(cands)):
+            bbox_j = cands[j].get("bboxMm") if isinstance(cands[j].get("bboxMm"), dict) else {}
+            jx0, jy0, jx1, jy1, ja = _bbox_nums_mm(bbox_j)
+            if ja <= 1e-12:
+                continue
+            inter = aa_rect_intersection_area_m2(ix0, iy0, ix1, iy1, jx0, jy0, jx1, jy1)
+            smaller = min(ia, ja)
+            if smaller <= 0:
+                continue
+            if inter / smaller >= _DERIVED_CANDIDATE_OVERLAP_AMBIGUITY_RATIO:
+                bad.add(i)
+                bad.add(j)
+    return bad
 
 
 def compute_room_boundary_derivation(doc: Document) -> dict[str, Any]:
     """Single deterministic bundle: candidates, classification, diagnostics, preview warnings."""
     lvl_names = {e.id: e.name or e.id for e in doc.elements.values() if isinstance(e, LevelElem)}
     segments_by_level = collect_axis_aligned_boundary_segments(doc)
+    non_axis_by_level = collect_non_axis_boundary_element_ids_by_level(doc)
 
     candidates: list[dict[str, Any]] = []
     for lid, seglist in segments_by_level.items():
@@ -312,16 +419,63 @@ def compute_room_boundary_derivation(doc: Document) -> dict[str, Any]:
     for lid, segs in sorted(segments_by_level.items(), key=lambda x: x[0]):
         if not segs:
             continue
+        wall_ids_lvl = sorted({s[4] for s in segs if s[5] == "wall"})
+        sep_ids_lvl = sorted({s[4] for s in segs if s[5] == "room_separation"})
+        all_seg_ids = sorted(set(wall_ids_lvl) | set(sep_ids_lvl))
+        axes_lvl = {s[0] for s in segs}
+
+        if len(segs) > ROOM_AX_RECT_SEGMENT_ENUM_CAP:
+            diagnostics.append(
+                {
+                    "code": "axis_boundary_segment_enum_cap",
+                    "severity": "info",
+                    "levelId": lid,
+                    "diagnosticId": _stable_diag_id_enum_cap(
+                        lid, all_seg_ids, ROOM_AX_RECT_SEGMENT_ENUM_CAP
+                    ),
+                    "segmentCount": len(segs),
+                    "cap": ROOM_AX_RECT_SEGMENT_ENUM_CAP,
+                    "elementIds": all_seg_ids,
+                    "elementIdsSample": all_seg_ids[:NON_AXIS_SKIPPED_IDS_SAMPLE_CAP],
+                    "message": (
+                        "Orthogonal boundary segment count exceeds the axis-aligned rectangle enumeration cap; "
+                        "derived footprints are skipped for this level until the model is simplified or split."
+                    ),
+                }
+            )
+
+        if len(segs) >= 4 and ("h" not in axes_lvl or "v" not in axes_lvl):
+            diagnostics.append(
+                {
+                    "code": "axis_segments_missing_orientation_mix",
+                    "severity": "info",
+                    "levelId": lid,
+                    "diagnosticId": _stable_diag_id_orientation_mix(lid, wall_ids_lvl, sep_ids_lvl),
+                    "segmentCounts": {
+                        "wall": len(wall_ids_lvl),
+                        "room_separation": len(sep_ids_lvl),
+                    },
+                    "elementIds": all_seg_ids,
+                    "message": (
+                        "Orthogonal segments exist but both horizontal and vertical orientations are not present; "
+                        "cannot close an axis-aligned rectangle from this boundary set."
+                    ),
+                }
+            )
+
         if len(segs) < 4:
-            wall_ids_lvl = sorted(s[4] for s in segs if s[5] == "wall")
-            sep_ids_lvl = sorted(s[4] for s in segs if s[5] == "room_separation")
             diagnostics.append(
                 {
                     "code": "axis_segments_insufficient_for_closure",
                     "severity": "info",
                     "levelId": lid,
-                    "diagnosticId": _stable_diag_id_axis_insufficient(lid, wall_ids_lvl, sep_ids_lvl),
-                    "segmentCounts": {"wall": len(wall_ids_lvl), "room_separation": len(sep_ids_lvl)},
+                    "diagnosticId": _stable_diag_id_axis_insufficient(
+                        lid, wall_ids_lvl, sep_ids_lvl
+                    ),
+                    "segmentCounts": {
+                        "wall": len(wall_ids_lvl),
+                        "room_separation": len(sep_ids_lvl),
+                    },
                     "elementIds": sorted(set(wall_ids_lvl) | set(sep_ids_lvl)),
                     "message": (
                         "Orthogonal wall and/or room separation segments exist on this level but fewer than four; "
@@ -329,6 +483,26 @@ def compute_room_boundary_derivation(doc: Document) -> dict[str, Any]:
                     ),
                 }
             )
+
+    for lid, skipped_all in sorted(non_axis_by_level.items(), key=lambda x: x[0]):
+        if not skipped_all:
+            continue
+        sample = skipped_all[:NON_AXIS_SKIPPED_IDS_SAMPLE_CAP]
+        diagnostics.append(
+            {
+                "code": "non_axis_boundary_segments_skipped",
+                "severity": "info",
+                "levelId": lid,
+                "diagnosticId": _stable_diag_id_non_axis_skipped(lid, skipped_all),
+                "skippedCount": len(skipped_all),
+                "elementIds": skipped_all,
+                "skippedElementIdsSample": sample,
+                "message": (
+                    "One or more walls or room separations are long enough to bound space but are not axis-aligned; "
+                    "they are excluded from axis-aligned rectangle derivation."
+                ),
+            }
+        )
 
     warnings: list[dict[str, Any]] = []
     enriched: list[dict[str, Any]] = []
@@ -368,7 +542,9 @@ def compute_room_boundary_derivation(doc: Document) -> dict[str, Any]:
             authority_reasons.append("overlaps_authored_room_bbox")
 
         if pierce or overlap_auth:
-            derivation_authority: Literal["authoritative", "preview_heuristic"] = "preview_heuristic"
+            derivation_authority: Literal["authoritative", "preview_heuristic"] = (
+                "preview_heuristic"
+            )
         else:
             derivation_authority = "authoritative"
             auth_count += 1
@@ -407,17 +583,44 @@ def compute_room_boundary_derivation(doc: Document) -> dict[str, Any]:
                 }
             )
 
+    by_level_idxs: defaultdict[str, list[int]] = defaultdict(list)
+    for idx, ec in enumerate(enriched):
+        by_level_idxs[str(ec.get("levelId") or "")].append(idx)
+    overlap_downgrade: set[int] = set()
+    for _lid, idxs in sorted(by_level_idxs.items(), key=lambda x: x[0]):
+        if len(idxs) < 2:
+            continue
+        level_cands = [enriched[i] for i in idxs]
+        bad_local = _pairwise_preview_overlap_flags(level_cands)
+        for j in bad_local:
+            overlap_downgrade.add(idxs[j])
+
+    for gi in overlap_downgrade:
+        ec = enriched[gi]
+        reasons = sorted(
+            set(ec.get("authorityReasonCodes") or []) | {"overlapping_derived_candidate_footprint"}
+        )
+        ec["authorityReasonCodes"] = reasons
+        ec["derivationAuthority"] = "preview_heuristic"
+
+    auth_count = sum(1 for ec in enriched if ec.get("derivationAuthority") == "authoritative")
+
     return {
         "heuristicVersion": HEURISTIC_VERSION,
         "axisAlignedRectangleCandidates": sorted(enriched, key=_sig),
         "candidateCount": len(dedup),
         "authoritativeCandidateCount": auth_count,
-        "diagnostics": sorted(diagnostics, key=lambda d: (str(d.get("levelId")), str(d.get("code")), str(d.get("diagnosticId")))),
+        "diagnostics": sorted(
+            diagnostics,
+            key=lambda d: (str(d.get("levelId")), str(d.get("code")), str(d.get("diagnosticId"))),
+        ),
         "warnings": warnings,
     }
 
 
-def _stable_diag_id_axis_insufficient(level_id: str, wall_ids: list[str], sep_ids: list[str]) -> str:
+def _stable_diag_id_axis_insufficient(
+    level_id: str, wall_ids: list[str], sep_ids: list[str]
+) -> str:
     body = json.dumps(
         {"levelId": level_id, "wallIds": wall_ids, "sepIds": sep_ids},
         sort_keys=True,
@@ -427,7 +630,38 @@ def _stable_diag_id_axis_insufficient(level_id: str, wall_ids: list[str], sep_id
 
 
 def _stable_diag_id_ambiguous(level_id: str, bbox: dict[str, Any], sep_ids: list[str]) -> str:
-    body = json.dumps({"levelId": level_id, "bboxMm": bbox, "sepIds": sep_ids}, sort_keys=True, separators=(",", ":"))
+    body = json.dumps(
+        {"levelId": level_id, "bboxMm": bbox, "sepIds": sep_ids},
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return hashlib.sha256(body.encode()).hexdigest()[:16]
+
+
+def _stable_diag_id_enum_cap(level_id: str, element_ids_sorted: list[str], cap: int) -> str:
+    body = json.dumps(
+        {"cap": cap, "elementIds": element_ids_sorted, "levelId": level_id},
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return hashlib.sha256(body.encode()).hexdigest()[:16]
+
+
+def _stable_diag_id_orientation_mix(level_id: str, wall_ids: list[str], sep_ids: list[str]) -> str:
+    body = json.dumps(
+        {"levelId": level_id, "sepIds": sep_ids, "wallIds": wall_ids},
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return hashlib.sha256(body.encode()).hexdigest()[:16]
+
+
+def _stable_diag_id_non_axis_skipped(level_id: str, skipped_ids_sorted: list[str]) -> str:
+    body = json.dumps(
+        {"levelId": level_id, "skippedIds": skipped_ids_sorted},
+        sort_keys=True,
+        separators=(",", ":"),
+    )
     return hashlib.sha256(body.encode()).hexdigest()[:16]
 
 
@@ -438,22 +672,9 @@ def authoritative_vacant_area_m2_filtered(
 ) -> tuple[float, int]:
     """Sum area and count of authoritative vacant rectangles, optionally restricted to levels."""
     bundle = compute_room_boundary_derivation(doc)
-    total_area = 0.0
-    n = 0
-    for c in bundle.get("axisAlignedRectangleCandidates") or []:
-        if not isinstance(c, dict):
-            continue
-        if c.get("derivationAuthority") != "authoritative":
-            continue
-        lid = str(c.get("levelId") or "")
-        if allowed_level_ids is not None and lid not in allowed_level_ids:
-            continue
-        try:
-            total_area += float(c.get("approxAreaM2") or 0.0)
-        except (TypeError, ValueError):
-            continue
-        n += 1
-    return round(total_area, 4), n
+    return vacant_derived_metrics_for_authority(
+        bundle, allowed_level_ids=allowed_level_ids, authority="authoritative"
+    )
 
 
 def authoritative_vacant_footprints_m2_summary(doc: Document) -> tuple[float, int]:

@@ -86,15 +86,16 @@ _RULE_DISCIPLINE: dict[str, str] = {
     "dimension_zero_length": "architecture",
     "dimension_bad_level": "structure",
     "room_outline_degenerate": "architecture",
-
     "room_programme_metadata_hint": "architecture",
     "room_finish_metadata_hint": "architecture",
     "room_target_area_mismatch": "architecture",
-
     "room_programme_inconsistent_within_level": "architecture",
     "room_outline_spans_axis_room_separation": "architecture",
     "room_overlap_plan": "architecture",
     "room_boundary_axis_closure_insufficient_segments": "architecture",
+    "room_boundary_axis_segment_enum_cap": "architecture",
+    "room_boundary_axis_segments_missing_orientation_mix": "architecture",
+    "room_boundary_non_axis_segments_skipped": "architecture",
     "room_derived_interior_separation_ambiguous": "architecture",
     "door_off_wall": "architecture",
     "door_not_on_wall": "architecture",
@@ -118,12 +119,9 @@ _RULE_DISCIPLINE: dict[str, str] = {
     "schedule_sheet_viewport_missing": "coordination",
     "sheet_missing_titleblock": "coordination",
     "sheet_viewport_zero_extent": "coordination",
-
     "exchange_manifest_ifc_gltf_slice_mismatch": "exchange",
-
     "exchange_ifc_unhandled_geometry_present": "exchange",
     "exchange_ifc_kernel_geometry_skip_summary": "exchange",
-
     "exchange_ifc_roundtrip_count_mismatch": "exchange",
     "exchange_ifc_roundtrip_programme_mismatch": "exchange",
     "exchange_ifc_ids_identity_pset_gap": "exchange",
@@ -478,7 +476,6 @@ def _ids_authoritative_replay_map_pointer_suffix(summary: dict[str, Any]) -> str
 def _exchange_advisory_violations(elements: dict[str, Element]) -> list[Violation]:
     out: list[Violation] = []
     try:
-
         doc = Document(revision=1, elements=dict(elements))  # type: ignore[arg-type]
     except Exception:
         return []
@@ -486,9 +483,7 @@ def _exchange_advisory_violations(elements: dict[str, Element]) -> list[Violatio
     parity_keys = (
         "elementCount",
         "countsByKind",
-
         "exportedGeometryKinds",
-
         "unsupportedDocumentKindsDetailed",
     )
 
@@ -504,13 +499,9 @@ def _exchange_advisory_violations(elements: dict[str, Element]) -> list[Violatio
         out.append(
             Violation(
                 rule_id="exchange_manifest_ifc_gltf_slice_mismatch",
-
                 severity="warning",
-
                 message="IFC exchange manifest parity slice differs from glTF export manifest (investigate exporter drift).",
-
                 element_ids=[],
-
             )
         )
 
@@ -521,7 +512,6 @@ def _exchange_advisory_violations(elements: dict[str, Element]) -> list[Violatio
     missing: list[str] = []
 
     for k in sorted(EXPORT_GEOMETRY_KINDS):
-
         if cbk.get(k, 0) > 0 and k not in IFC_EXCHANGE_EMITTABLE_GEOMETRY_KINDS:
             missing.append(f"{k}:{cbk[k]}")
 
@@ -535,9 +525,7 @@ def _exchange_advisory_violations(elements: dict[str, Element]) -> list[Violatio
                     + ", ".join(missing)
                     + "."
                 ),
-
                 element_ids=[],
-
             )
         )
 
@@ -550,9 +538,7 @@ def _exchange_advisory_violations(elements: dict[str, Element]) -> list[Violatio
                 severity="info",
                 message=(
                     "IFC kernel export skips some instances (see ifcKernelGeometrySkippedCounts on "
-                    "ifc-manifest / evidence slice): "
-                    + ", ".join(parts)
-                    + "."
+                    "ifc-manifest / evidence slice): " + ", ".join(parts) + "."
                 ),
                 element_ids=[],
                 discipline="exchange",
@@ -609,8 +595,7 @@ def _exchange_advisory_violations(elements: dict[str, Element]) -> list[Violatio
                         severity="info",
                         message=(
                             "Cleanroom IDS validation is active but IFC read-back shows incomplete "
-                            "Pset_*Common Reference coverage on some emitted products."
-                            + ids_ptr
+                            "Pset_*Common Reference coverage on some emitted products." + ids_ptr
                         ),
                         element_ids=[],
                         discipline="exchange",
@@ -1011,6 +996,45 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
                 )
             )
             continue
+        if code == "axis_boundary_segment_enum_cap":
+            viols.append(
+                Violation(
+                    rule_id="room_boundary_axis_segment_enum_cap",
+                    severity="info",
+                    message=str(
+                        d.get("message")
+                        or "Orthogonal boundary segment count exceeds the axis-aligned rectangle enumeration cap."
+                    ),
+                    element_ids=sorted(d.get("elementIds") or []),
+                )
+            )
+            continue
+        if code == "axis_segments_missing_orientation_mix":
+            viols.append(
+                Violation(
+                    rule_id="room_boundary_axis_segments_missing_orientation_mix",
+                    severity="info",
+                    message=str(
+                        d.get("message")
+                        or "Orthogonal segments lack both horizontal and vertical orientations for rectangle closure."
+                    ),
+                    element_ids=sorted(d.get("elementIds") or []),
+                )
+            )
+            continue
+        if code == "non_axis_boundary_segments_skipped":
+            viols.append(
+                Violation(
+                    rule_id="room_boundary_non_axis_segments_skipped",
+                    severity="info",
+                    message=str(
+                        d.get("message")
+                        or "Non-axis-aligned walls or room separations are excluded from axis-aligned derivation."
+                    ),
+                    element_ids=sorted(d.get("elementIds") or []),
+                )
+            )
+            continue
         if code == "ambiguous_interior_separation":
             eids: set[str] = set()
             for k in ("separationIds", "wallIds"):
@@ -1029,6 +1053,7 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
                     element_ids=sorted(eids),
                 )
             )
+            continue
 
     rooms_by_level: dict[str, list[RoomElem]] = defaultdict(list)
     for room in rooms:
@@ -1036,9 +1061,7 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
 
     for _lvl, mates in rooms_by_level.items():
         peers_meta = [
-            rr
-            for rr in mates
-            if (rr.programme_code or "").strip() or (rr.department or "").strip()
+            rr for rr in mates if (rr.programme_code or "").strip() or (rr.department or "").strip()
         ]
         if not peers_meta:
             continue
@@ -1399,7 +1422,12 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
 
         def _ftype_has_pressure_rating(ft_el: FamilyTypeElem) -> bool:
             p = ft_el.parameters or {}
-            for key in ("pressureRating", "pressure_rating", "PressureClass", "cleanroomPressureClass"):
+            for key in (
+                "pressureRating",
+                "pressure_rating",
+                "PressureClass",
+                "cleanroomPressureClass",
+            ):
                 val = p.get(key)
                 if isinstance(val, str) and val.strip():
                     return True

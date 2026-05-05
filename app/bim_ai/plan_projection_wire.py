@@ -44,17 +44,105 @@ from bim_ai.roof_geometry import (
     outer_rect_extent,
 )
 from bim_ai.room_derivation import (
+    HEURISTIC_VERSION as ROOM_BOUNDARY_HEURISTIC_VERSION,
+)
+from bim_ai.room_derivation import (
     compute_room_boundary_derivation,
     footprint_outline_mm_rectangle,
     stable_footprint_id,
 )
-from bim_ai.section_projection_primitives import build_section_projection_primitives
+from bim_ai.section_projection_primitives import (
+    _wall_vertical_span_mm,
+    build_section_projection_primitives,
+)
 from bim_ai.stair_plan_proxy import stair_riser_count_plan_proxy
 
 
 def _level_elevation_mm(doc: Document, level_id: str) -> float:
     el = doc.elements.get(level_id)
     return float(el.elevation_mm) if isinstance(el, LevelElem) else 0.0
+
+
+_RANGE_EPS_MM = 1e-6
+
+
+def _closed_z_intervals_overlap_mm(z0: float, z1: float, lo: float, hi: float) -> bool:
+    a0, a1 = (z0, z1) if z0 <= z1 else (z1, z0)
+    return not (a1 < lo - _RANGE_EPS_MM or a0 > hi + _RANGE_EPS_MM)
+
+
+def _plan_view_range_authoring_incomplete(pv: PlanViewElem) -> bool:
+    b = pv.view_range_bottom_mm
+    t = pv.view_range_top_mm
+    c = pv.cut_plane_offset_mm
+    has_any = b is not None or t is not None or c is not None
+    has_full = b is not None and t is not None
+    return has_any and not has_full
+
+
+def _resolve_plan_view_range_clip_mm(doc: Document, pv: PlanViewElem) -> tuple[float, float, float] | None:
+    b = pv.view_range_bottom_mm
+    t = pv.view_range_top_mm
+    if b is None or t is None:
+        return None
+    level_z = _level_elevation_mm(doc, pv.level_id)
+    z_lo = level_z + float(b)
+    z_hi = level_z + float(t)
+    if z_lo > z_hi:
+        z_lo, z_hi = z_hi, z_lo
+    cut_off = pv.cut_plane_offset_mm
+    cut_z = level_z + float(cut_off if cut_off is not None else 0.0)
+    return (z_lo, z_hi, cut_z)
+
+
+def _room_vertical_span_mm(doc: Document, rm: RoomElem) -> tuple[float, float]:
+    """World Z span (mm) for room prism; aligns with ``export_ifc._vertical_span_m`` semantics."""
+
+    floor_z = _level_elevation_mm(doc, rm.level_id)
+    if rm.upper_limit_level_id:
+        ceil_el = doc.elements.get(rm.upper_limit_level_id)
+        ceiling_z = float(ceil_el.elevation_mm) if isinstance(ceil_el, LevelElem) else floor_z + 2800.0
+    else:
+        ceiling_z = floor_z + 2800.0
+    offset = float(rm.volume_ceiling_offset_mm) if rm.volume_ceiling_offset_mm is not None else 0.0
+    ceiling_z -= offset
+    if ceiling_z < floor_z + 1000.0:
+        ceiling_z = floor_z + 2200.0
+    return floor_z, ceiling_z
+
+
+def _floor_vertical_span_mm(doc: Document, fl: FloorElem) -> tuple[float, float]:
+    z0 = _level_elevation_mm(doc, fl.level_id)
+    z1 = z0 + float(fl.thickness_mm) + float(fl.insulation_extension_mm)
+    return z0, z1
+
+
+def _roof_vertical_span_mm(doc: Document, e: RoofElem) -> tuple[float, float]:
+    zb = _level_elevation_mm(doc, e.reference_level_id)
+    mode = e.roof_geometry_mode
+    slope = float(e.slope_deg or 25.0)
+    if mode == "gable_pitched_rectangle":
+        poly = [(float(p.x_mm), float(p.y_mm)) for p in e.footprint_mm]
+        x0, x1, z0, z1 = outer_rect_extent(poly)
+        span_x = float(x1 - x0)
+        span_z = float(z1 - z0)
+        rise_mm, _ridge_axis = gable_ridge_rise_mm(span_x, span_z, slope)
+        return zb, zb + rise_mm
+    z_mid = mass_box_roof_proxy_peak_z_mm(zb, e.slope_deg)
+    return zb, z_mid
+
+
+def _stair_vertical_span_mm(doc: Document, st: StairElem) -> tuple[float, float]:
+    blv = doc.elements.get(st.base_level_id)
+    tlv = doc.elements.get(st.top_level_id)
+    if isinstance(blv, LevelElem) and isinstance(tlv, LevelElem):
+        z0 = float(blv.elevation_mm)
+        z1 = float(tlv.elevation_mm)
+        if z1 < z0:
+            z0, z1 = z1, z0
+        return z0, z1
+    z0 = _level_elevation_mm(doc, st.base_level_id)
+    return z0, z0
 
 
 def _roof_plan_wire_geometry_fields(doc: Document, e: RoofElem) -> dict[str, Any]:
@@ -580,11 +668,12 @@ def _derived_room_boundary_evidence_for_wire(
     *,
     active_level_id: str | None,
     effective_crop_mm: tuple[float, float, float, float] | None,
+    room_boundary_bundle: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     """Authoritative vacant axis rectangles for plan inspection (deterministic; crop-filtered)."""
     if not active_level_id:
         return []
-    bundle = compute_room_boundary_derivation(doc)
+    bundle = room_boundary_bundle if room_boundary_bundle is not None else compute_room_boundary_derivation(doc)
     out: list[dict[str, Any]] = []
     for c in bundle.get("axisAlignedRectangleCandidates") or []:
         if not isinstance(c, dict):
@@ -615,6 +704,63 @@ def _derived_room_boundary_evidence_for_wire(
             }
         )
     return sorted(out, key=lambda x: str(x.get("footprintId") or ""))
+
+
+def _derived_room_boundary_diagnostics_for_wire(
+    *,
+    active_level_id: str | None,
+    effective_crop_mm: tuple[float, float, float, float] | None,
+    bundle: dict[str, Any],
+) -> dict[str, Any]:
+    """Summarize authority mix and level diagnostics without changing primitives."""
+    hv = str(bundle.get("heuristicVersion") or ROOM_BOUNDARY_HEURISTIC_VERSION)
+    if not active_level_id:
+        return {
+            "format": "derivedRoomBoundaryDiagnostics_v0",
+            "boundaryHeuristicVersion": hv,
+            "activeLevelId": None,
+            "authoritativeFootprintCountIntersectingCrop": 0,
+            "previewHeuristicFootprintCountIntersectingCrop": 0,
+            "levelDiagnosticCodes": [],
+        }
+
+    auth_n = 0
+    prev_n = 0
+    for c in bundle.get("axisAlignedRectangleCandidates") or []:
+        if not isinstance(c, dict):
+            continue
+        if str(c.get("levelId") or "") != active_level_id:
+            continue
+        bbox = c.get("bboxMm")
+        if not isinstance(bbox, dict):
+            continue
+        outline_pts = footprint_outline_mm_rectangle(bbox)
+        pts = [(float(d["xMm"]), float(d["yMm"])) for d in outline_pts]
+        if effective_crop_mm is not None and not _poly_bbox_overlaps_crop(pts, effective_crop_mm):
+            continue
+        if c.get("derivationAuthority") == "authoritative":
+            auth_n += 1
+        else:
+            prev_n += 1
+
+    level_diag_codes = sorted(
+        {
+            str(d.get("code") or "")
+            for d in bundle.get("diagnostics") or []
+            if isinstance(d, dict)
+            and str(d.get("levelId") or "") == active_level_id
+            and str(d.get("code") or "")
+        }
+    )
+
+    return {
+        "format": "derivedRoomBoundaryDiagnostics_v0",
+        "boundaryHeuristicVersion": hv,
+        "activeLevelId": active_level_id,
+        "authoritativeFootprintCountIntersectingCrop": auth_n,
+        "previewHeuristicFootprintCountIntersectingCrop": prev_n,
+        "levelDiagnosticCodes": level_diag_codes,
+    }
 
 
 def _build_plan_primitive_lists(
@@ -1190,6 +1336,8 @@ def resolve_plan_projection_wire(
         scheme_rows=scheme_rows,
     )
 
+    room_boundary_bundle = compute_room_boundary_derivation(doc)
+
     out_payload: dict[str, Any] = {
         "format": "planProjectionWire_v1",
         "planViewElementId": pinned_pv,
@@ -1209,6 +1357,12 @@ def resolve_plan_projection_wire(
             doc,
             active_level_id=active_level,
             effective_crop_mm=effective_crop,
+            room_boundary_bundle=room_boundary_bundle,
+        ),
+        "derivedRoomBoundaryDiagnostics_v0": _derived_room_boundary_diagnostics_for_wire(
+            active_level_id=active_level,
+            effective_crop_mm=effective_crop,
+            bundle=room_boundary_bundle,
         ),
     }
     if plan_graphic_hints is not None:

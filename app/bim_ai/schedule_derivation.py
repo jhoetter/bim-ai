@@ -30,7 +30,9 @@ from bim_ai.room_derivation import (
     HEURISTIC_VERSION as ROOM_BOUNDARY_HEURISTIC_VERSION,
 )
 from bim_ai.room_derivation import (
-    authoritative_vacant_area_m2_filtered,
+    ROOM_CLOSURE_BLOCKING_DIAGNOSTIC_CODES,
+    compute_room_boundary_derivation,
+    vacant_derived_metrics_for_authority,
 )
 from bim_ai.schedule_field_registry import column_metadata_bundle, stable_column_keys
 from bim_ai.type_material_registry import (
@@ -530,10 +532,14 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                 pts = [{"xMm": float(p.x_mm), "yMm": float(p.y_mm)} for p in e.footprint_mm]
                 area, perimeter = _room_polygon_area_perimeter_sqm(pts)
                 rlayers = resolved_layers_for_roof(doc, e)
-                total_asm_thk = round(
-                    sum(float(ly["thicknessMm"]) for ly in rlayers),
-                    6,
-                ) if rlayers else None
+                total_asm_thk = (
+                    round(
+                        sum(float(ly["thicknessMm"]) for ly in rlayers),
+                        6,
+                    )
+                    if rlayers
+                    else None
+                )
                 row_root: dict[str, Any] = {
                     "elementId": e.id,
                     "name": e.name,
@@ -818,20 +824,14 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
     totals: dict[str, Any] = {}
     if cat == "room" and leaf_rows:
         tgt_vals = [
-            float(r["targetAreaM2"])
-            for r in leaf_rows
-            if r.get("targetAreaM2") is not None
+            float(r["targetAreaM2"]) for r in leaf_rows if r.get("targetAreaM2") is not None
         ]
         totals = {
             "kind": "room",
             "rowCount": len(leaf_rows),
             "areaM2": round(sum(float(r.get("areaM2") or 0.0) for r in leaf_rows), 4),
             "perimeterM": round(sum(float(r.get("perimeterM") or 0.0) for r in leaf_rows), 4),
-            **(
-                {"targetAreaM2": round(sum(tgt_vals), 4)}
-                if tgt_vals
-                else {}
-            ),
+            **({"targetAreaM2": round(sum(tgt_vals), 4)} if tgt_vals else {}),
         }
     elif cat == "window" and leaf_rows:
         totals = {
@@ -898,9 +898,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
         totals = {
             "kind": "material_assembly",
             "rowCount": len(leaf_rows),
-            "grossVolumeM3": round(
-                sum(float(r.get("grossVolumeM3") or 0.0) for r in leaf_rows), 8
-            ),
+            "grossVolumeM3": round(sum(float(r.get("grossVolumeM3") or 0.0) for r in leaf_rows), 8),
         }
 
     out: dict[str, Any] = {
@@ -933,12 +931,43 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
         out["totals"] = totals
     if cat == "room":
         lvl_allow = _allowed_levels_from_schedule_filter_equals(filter_equals)
-        vacant_m2, vacant_n = authoritative_vacant_area_m2_filtered(doc, allowed_level_ids=lvl_allow)
+        rb = compute_room_boundary_derivation(doc)
+        vacant_m2, vacant_n = vacant_derived_metrics_for_authority(
+            rb, allowed_level_ids=lvl_allow, authority="authoritative"
+        )
+        preview_m2, preview_n = vacant_derived_metrics_for_authority(
+            rb, allowed_level_ids=lvl_allow, authority="preview_heuristic"
+        )
+        blocking_scope = False
+        non_auth_reason_codes: set[str] = set()
+        for diag in rb.get("diagnostics") or []:
+            if not isinstance(diag, dict):
+                continue
+            code = str(diag.get("code") or "")
+            if code not in ROOM_CLOSURE_BLOCKING_DIAGNOSTIC_CODES:
+                continue
+            lvl_d = str(diag.get("levelId") or "")
+            if lvl_allow is not None and lvl_d not in lvl_allow:
+                continue
+            blocking_scope = True
+            non_auth_reason_codes.add(code)
+
+        incomplete_auth = preview_m2 > 0 and vacant_m2 == 0
+        authoritative_closure_complete = not (incomplete_auth or blocking_scope)
+        if preview_m2 > 0:
+            non_auth_reason_codes.add("preview_heuristic_vacant_footprints_not_in_closure_totals")
+        if incomplete_auth:
+            non_auth_reason_codes.add("authoritative_vacant_unavailable_but_preview_present")
+
         closure = {
             "format": "roomProgrammeClosure_v0",
             "boundaryHeuristicVersion": ROOM_BOUNDARY_HEURISTIC_VERSION,
             "authoritativeVacantDerivedAreaM2": vacant_m2,
             "authoritativeVacantFootprintCount": vacant_n,
+            "previewHeuristicVacantDerivedAreaM2": preview_m2,
+            "previewHeuristicVacantFootprintCount": preview_n,
+            "authoritativeVacantClosureComplete": authoritative_closure_complete,
+            "nonAuthoritativeReasonCodes": sorted(non_auth_reason_codes),
         }
         if totals and "targetAreaM2" in totals:
             try:

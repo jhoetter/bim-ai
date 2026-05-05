@@ -1178,6 +1178,12 @@ def test_plan_projection_derived_room_boundary_evidence_v0_authoritative() -> No
     assert len(ev) >= 1
     assert ev[0].get("derivationAuthority") == "authoritative"
     assert sorted(ev[0].get("boundaryWallIds") or []) == sorted(w.id for w in walls)
+    diag = out.get("derivedRoomBoundaryDiagnostics_v0") or {}
+    assert diag.get("format") == "derivedRoomBoundaryDiagnostics_v0"
+    assert diag.get("boundaryHeuristicVersion") == "room_deriv_preview_v4"
+    assert diag.get("activeLevelId") == "lvl-1"
+    assert diag.get("authoritativeFootprintCountIntersectingCrop") >= 1
+    assert diag.get("previewHeuristicFootprintCountIntersectingCrop") == 0
 
 
 def test_plan_projection_derived_room_boundary_evidence_v0_filtered_by_crop() -> None:
@@ -1247,6 +1253,9 @@ def test_plan_projection_derived_room_boundary_evidence_v0_filtered_by_crop() ->
         sheet_viewport_row_for_crop=None,
     )
     assert (out.get("derivedRoomBoundaryEvidence_v0") or []) == []
+    diag = out.get("derivedRoomBoundaryDiagnostics_v0") or {}
+    assert diag.get("authoritativeFootprintCountIntersectingCrop") == 0
+    assert diag.get("previewHeuristicFootprintCountIntersectingCrop") == 0
 
 
 def test_plan_projection_includes_stair_primitive() -> None:

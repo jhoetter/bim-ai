@@ -32,7 +32,9 @@ def test_room_outline_spans_axis_room_separation_info() -> None:
         ),
     }
     vs = evaluate(els)
-    ours = [v for v in vs if getattr(v, "rule_id", None) == "room_outline_spans_axis_room_separation"]
+    ours = [
+        v for v in vs if getattr(v, "rule_id", None) == "room_outline_spans_axis_room_separation"
+    ]
     assert len(ours) == 1
     assert set(getattr(ours[0], "element_ids", []) or []) == {"rm-a", "sep-1"}
 
@@ -61,7 +63,9 @@ def test_room_programme_inconsistent_within_level_warns_blank_peer() -> None:
     }
     vs = evaluate(els)
 
-    ours = [v for v in vs if getattr(v, "rule_id", None) == "room_programme_inconsistent_within_level"]
+    ours = [
+        v for v in vs if getattr(v, "rule_id", None) == "room_programme_inconsistent_within_level"
+    ]
     assert len(ours) == 1
 
     ids = getattr(ours[0], "element_ids", []) or []
@@ -97,7 +101,9 @@ def test_room_programme_inconsistent_skips_quick_fix_when_peer_has_department_on
         ),
     }
     vs = evaluate(els)
-    ours = [v for v in vs if getattr(v, "rule_id", None) == "room_programme_inconsistent_within_level"]
+    ours = [
+        v for v in vs if getattr(v, "rule_id", None) == "room_programme_inconsistent_within_level"
+    ]
     assert len(ours) == 1
     assert ours[0].quick_fix_command is None
 
@@ -195,10 +201,35 @@ def test_room_boundary_axis_closure_insufficient_segments_rule() -> None:
     }
     vs = evaluate(els)
     ours = [
-        v for v in vs if getattr(v, "rule_id", None) == "room_boundary_axis_closure_insufficient_segments"
+        v
+        for v in vs
+        if getattr(v, "rule_id", None) == "room_boundary_axis_closure_insufficient_segments"
     ]
     assert len(ours) == 1
     assert sorted(ours[0].element_ids) == sorted(["w-h", "w-v"])
+
+
+def test_room_boundary_non_axis_segments_skipped_rule() -> None:
+    lvl = LevelElem(kind="level", id="lvl-1", name="EG", elevation_mm=0)
+    els = {
+        "lvl-1": lvl,
+        "w-diag": WallElem(
+            kind="wall",
+            id="w-diag",
+            name="D",
+            levelId="lvl-1",
+            start={"xMm": 0, "yMm": 0},
+            end={"xMm": 4000, "yMm": 4000},
+            thicknessMm=200,
+            heightMm=2800,
+        ),
+    }
+    vs = evaluate(els)
+    ours = [
+        v for v in vs if getattr(v, "rule_id", None) == "room_boundary_non_axis_segments_skipped"
+    ]
+    assert len(ours) == 1
+    assert ours[0].element_ids == ["w-diag"]
 
 
 def test_room_derived_interior_separation_ambiguous_rule() -> None:
@@ -260,4 +291,3 @@ def test_room_derived_interior_separation_ambiguous_rule() -> None:
     ]
     assert len(ours) >= 1
     assert {"rs-mid", "w-s", "w-n", "w-w", "w-e"}.issubset(set(ours[0].element_ids))
-
