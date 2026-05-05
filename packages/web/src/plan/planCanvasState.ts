@@ -5,9 +5,8 @@
  * controller is testable without DOM/canvas; the visual layer in
  * `PlanCanvas.tsx` consumes them in WP-UI-B01 and beyond.
  *
- * This module exposes WP-UI-B01 (drafting paint state) and WP-UI-B02
- * (snap engine + pointer classifier). PlanCamera (WP-UI-B03) lands in
- * a follow-up commit.
+ * This module composes WP-UI-B01 (drafting paint state), WP-UI-B02
+ * (snap engine + pointer classifier), and WP-UI-B03 (plan camera).
  */
 
 import {
@@ -206,4 +205,110 @@ export function classifyPointerStart(event: PointerStartLike): PointerIntent {
     return 'drag-move';
   }
   return 'idle';
+}
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* B03 — Plan camera                                                        */
+/* ────────────────────────────────────────────────────────────────────── */
+
+export interface PlanCameraSnapshot {
+  plotScale: number; // 1:N denominator
+  centerMm: { xMm: number; yMm: number };
+  activeLevelId: string;
+}
+
+export interface PlanCameraConfig {
+  /** Min/max plot scale denominator (5 → very zoomed, 5000 → far out). */
+  minScale: number;
+  maxScale: number;
+}
+
+const CAMERA_DEFAULTS: PlanCameraConfig = { minScale: 5, maxScale: 5000 };
+
+export class PlanCamera {
+  private snapshotState: PlanCameraSnapshot;
+  private config: PlanCameraConfig;
+  private levelOrder: string[];
+
+  constructor(
+    initial: PlanCameraSnapshot,
+    levelOrder: string[],
+    config: Partial<PlanCameraConfig> = {},
+  ) {
+    this.snapshotState = { ...initial, centerMm: { ...initial.centerMm } };
+    this.config = { ...CAMERA_DEFAULTS, ...config };
+    this.levelOrder = [...levelOrder];
+  }
+
+  snapshot(): PlanCameraSnapshot {
+    return {
+      plotScale: this.snapshotState.plotScale,
+      centerMm: { ...this.snapshotState.centerMm },
+      activeLevelId: this.snapshotState.activeLevelId,
+    };
+  }
+
+  /** Wheel zoom; positive `delta` zooms out (numerator increases). */
+  wheelZoom(delta: number, anchorMm?: { xMm: number; yMm: number }): void {
+    const { minScale, maxScale } = this.config;
+    const factor = delta > 0 ? 1.15 : 1 / 1.15;
+    const next = clamp(this.snapshotState.plotScale * factor, minScale, maxScale);
+    if (anchorMm) {
+      // Anchor zoom: shift center toward anchor proportional to scale change.
+      const ratio = 1 - this.snapshotState.plotScale / next;
+      this.snapshotState.centerMm = {
+        xMm:
+          this.snapshotState.centerMm.xMm +
+          (anchorMm.xMm - this.snapshotState.centerMm.xMm) * ratio,
+        yMm:
+          this.snapshotState.centerMm.yMm +
+          (anchorMm.yMm - this.snapshotState.centerMm.yMm) * ratio,
+      };
+    }
+    this.snapshotState.plotScale = next;
+  }
+
+  /** Pan by world-mm delta. */
+  panMm(dxMm: number, dyMm: number): void {
+    this.snapshotState.centerMm = {
+      xMm: this.snapshotState.centerMm.xMm + dxMm,
+      yMm: this.snapshotState.centerMm.yMm + dyMm,
+    };
+  }
+
+  /** Zoom-to-fit a bbox; `padding` in mm. */
+  fit(
+    bbox: { minMm: { xMm: number; yMm: number }; maxMm: { xMm: number; yMm: number } },
+    padding = 1000,
+  ): void {
+    const cx = (bbox.minMm.xMm + bbox.maxMm.xMm) / 2;
+    const cy = (bbox.minMm.yMm + bbox.maxMm.yMm) / 2;
+    const span = Math.max(bbox.maxMm.xMm - bbox.minMm.xMm, bbox.maxMm.yMm - bbox.minMm.yMm, 1);
+    const proposed = (span + padding * 2) / 100; // span 10 m → ~1:100
+    this.snapshotState.centerMm = { xMm: cx, yMm: cy };
+    this.snapshotState.plotScale = clamp(proposed, this.config.minScale, this.config.maxScale);
+  }
+
+  /** PageUp / PageDown level cycling per §14.6. */
+  cycleLevel(direction: 'up' | 'down'): string {
+    const idx = this.levelOrder.indexOf(this.snapshotState.activeLevelId);
+    if (idx < 0) return this.snapshotState.activeLevelId;
+    const delta = direction === 'down' ? 1 : -1;
+    const nextIdx = (idx + delta + this.levelOrder.length) % this.levelOrder.length;
+    const nextId = this.levelOrder[nextIdx]!;
+    this.snapshotState.activeLevelId = nextId;
+    return nextId;
+  }
+
+  /** Empty-state copy per §14.7. */
+  emptyStateMessage(): { headline: string; hint: string } {
+    return {
+      headline: 'This level is empty.',
+      hint: 'Press W to draw a wall, or insert the seed house from the Project menu.',
+    };
+  }
+}
+
+function clamp(v: number, lo: number, hi: number): number {
+  return Math.max(lo, Math.min(hi, v));
 }

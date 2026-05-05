@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   classifyPointerStart,
   draftingPaintFor,
+  PlanCamera,
   SnapEngine,
   type SnapCandidate,
 } from './planCanvasState';
@@ -111,5 +112,61 @@ describe('classifyPointerStart — §14.3', () => {
   });
   it('plain LMB → drag-move', () => {
     expect(classifyPointerStart({ button: 0 })).toBe('drag-move');
+  });
+});
+
+describe('PlanCamera — §14.5 / §14.6 / §14.7', () => {
+  const baseSnapshot = {
+    plotScale: 100,
+    centerMm: { xMm: 0, yMm: 0 },
+    activeLevelId: 'lvl-ground',
+  };
+  const order = ['lvl-ground', 'lvl-upper', 'lvl-roof'];
+
+  it('wheelZoom dampens within bounds', () => {
+    const cam = new PlanCamera(baseSnapshot, order);
+    for (let i = 0; i < 100; i++) cam.wheelZoom(1);
+    expect(cam.snapshot().plotScale).toBeLessThanOrEqual(5000);
+    for (let i = 0; i < 100; i++) cam.wheelZoom(-1);
+    expect(cam.snapshot().plotScale).toBeGreaterThanOrEqual(5);
+  });
+
+  it('panMm shifts the center', () => {
+    const cam = new PlanCamera(baseSnapshot, order);
+    cam.panMm(100, 50);
+    expect(cam.snapshot().centerMm).toEqual({ xMm: 100, yMm: 50 });
+  });
+
+  it('fit centers and clamps to plotScale bounds', () => {
+    const cam = new PlanCamera(baseSnapshot, order);
+    cam.fit({
+      minMm: { xMm: 0, yMm: 0 },
+      maxMm: { xMm: 12000, yMm: 8000 },
+    });
+    const snap = cam.snapshot();
+    expect(snap.centerMm).toEqual({ xMm: 6000, yMm: 4000 });
+    expect(snap.plotScale).toBeGreaterThanOrEqual(5);
+  });
+
+  it('cycleLevel rotates through the level order with wrap', () => {
+    const cam = new PlanCamera(baseSnapshot, order);
+    expect(cam.cycleLevel('down')).toBe('lvl-upper');
+    expect(cam.cycleLevel('down')).toBe('lvl-roof');
+    expect(cam.cycleLevel('down')).toBe('lvl-ground');
+    expect(cam.cycleLevel('up')).toBe('lvl-roof');
+  });
+
+  it('emptyStateMessage matches §14.7', () => {
+    const cam = new PlanCamera(baseSnapshot, order);
+    const msg = cam.emptyStateMessage();
+    expect(msg.headline).toBe('This level is empty.');
+    expect(msg.hint).toMatch(/Press W to draw a wall/);
+  });
+
+  it('wheelZoom anchors toward cursor when anchorMm is provided', () => {
+    const cam = new PlanCamera(baseSnapshot, order);
+    cam.wheelZoom(1, { xMm: 1000, yMm: 0 });
+    const snap = cam.snapshot();
+    expect(snap.centerMm.xMm).not.toBe(0);
   });
 });
