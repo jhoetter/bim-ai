@@ -52,6 +52,26 @@ export type SiteContextObjectRow = {
 /** Floor-plan graphic detail preset (view template + optional plan_view override). */
 export type PlanDetailLevelPlan = 'coarse' | 'medium' | 'fine';
 
+export type PlanCategoryGraphicCategoryKey =
+  | 'wall'
+  | 'floor'
+  | 'roof'
+  | 'room'
+  | 'door'
+  | 'window'
+  | 'stair'
+  | 'grid_line'
+  | 'room_separation'
+  | 'dimension';
+
+export type PlanLinePatternToken = 'solid' | 'dash_short' | 'dash_long' | 'dot';
+
+export type PlanCategoryGraphicRow = {
+  categoryKey: PlanCategoryGraphicCategoryKey;
+  lineWeightFactor?: number | null;
+  linePatternToken?: PlanLinePatternToken | null;
+};
+
 export type PlanTagTarget = 'opening' | 'room';
 
 export type PlanTagBadgeStyle = 'none' | 'rounded' | 'flag';
@@ -352,6 +372,7 @@ export type Element =
       planShowRoomLabels?: boolean;
       planOpeningTagStyleId?: string | null;
       planRoomTagStyleId?: string | null;
+      planCategoryGraphics?: PlanCategoryGraphicRow[];
     }
   | {
       kind: 'view_template';
@@ -366,6 +387,7 @@ export type Element =
       planShowRoomLabels?: boolean;
       defaultPlanOpeningTagStyleId?: string | null;
       defaultPlanRoomTagStyleId?: string | null;
+      planCategoryGraphics?: PlanCategoryGraphicRow[];
     }
   | {
       kind: 'sheet';

@@ -6,21 +6,27 @@ import hashlib
 import json
 from uuid import uuid4
 
+import pytest
+
 from bim_ai.commands import (
+    CreateGridLineCmd,
     CreateLevelCmd,
     CreateRoomRectangleCmd,
+    CreateWallCmd,
     UpsertPlanViewCmd,
     UpsertRoomColorSchemeCmd,
     UpsertScheduleCmd,
     UpsertScheduleFiltersCmd,
     UpsertSheetCmd,
     UpsertSheetViewportsCmd,
+    UpsertViewTemplateCmd,
 )
 from bim_ai.document import Document
 from bim_ai.elements import (
     DoorElem,
     FloorElem,
     LevelElem,
+    PlanCategoryGraphicRow,
     PlanTagStyleElem,
     PlanViewElem,
     RoomColorSchemeRow,
@@ -1256,6 +1262,71 @@ def test_plan_projection_wire_plan_graphic_hints_order_coarse_vs_fine() -> None:
     assert hints_fine["detailLevel"] == "fine"
     assert hints_coarse["detailLevel"] == "coarse"
 
+
+def test_plan_category_graphic_hints_v0_and_primitives() -> None:
+    doc = Document(revision=1, elements={})
+    apply_inplace(doc, CreateLevelCmd(id="lvl", name="G", elevationMm=0))
+    apply_inplace(
+        doc,
+        UpsertViewTemplateCmd(
+            id="vt",
+            name="T",
+            plan_category_graphics=[
+                PlanCategoryGraphicRow(category_key="wall", line_weight_factor=1.25),
+                PlanCategoryGraphicRow(category_key="grid_line", line_pattern_token="dash_short"),
+            ],
+        ),
+    )
+    apply_inplace(
+        doc,
+        UpsertPlanViewCmd(
+            id="pv",
+            name="P",
+            level_id="lvl",
+            view_template_id="vt",
+            plan_category_graphics=[
+                PlanCategoryGraphicRow(category_key="grid_line", line_pattern_token="dot"),
+            ],
+        ),
+    )
+    apply_inplace(
+        doc,
+        CreateWallCmd(
+            id="w",
+            name="W",
+            level_id="lvl",
+            start={"xMm": 0, "yMm": 0},
+            end={"xMm": 3000, "yMm": 0},
+        ),
+    )
+    apply_inplace(
+        doc,
+        CreateGridLineCmd(
+            id="g1",
+            name="A",
+            level_id="lvl",
+            start={"xMm": 0, "yMm": 0},
+            end={"xMm": 0, "yMm": 5000},
+        ),
+    )
+
+    out = plan_projection_wire_from_request(doc, plan_view_id="pv", fallback_level_id=None)
+    cat = out["planCategoryGraphicHints_v0"]
+    assert cat["format"] == "planCategoryGraphicHints_v0"
+    assert "rowsDigestSha256" in cat
+    wall_row = next(r for r in cat["rows"] if r["categoryKey"] == "wall")
+    assert wall_row["lineWeightFactor"] == 1.25
+    assert wall_row["lineWeightSource"] == "template"
+    grid_row = next(r for r in cat["rows"] if r["categoryKey"] == "grid_line")
+    assert grid_row["linePatternToken"] == "dot"
+    assert grid_row["linePatternSource"] == "plan_view"
+
+    prim = out["primitives"]
+    wprim = next(w for w in prim["walls"] if w["id"] == "w")
+    assert wprim["lineWeightHint"] == pytest.approx(1.25, rel=0, abs=1e-3)
+    gprim = next(g for g in prim["gridLines"] if g["id"] == "g1")
+    assert gprim["linePatternToken"] == "dot"
+    assert gprim["lineWeightHint"] == pytest.approx(1.0, rel=0, abs=1e-3)
 
 
 def test_room_programme_legend_replay_matches_schedule_and_sheet_manifest() -> None:

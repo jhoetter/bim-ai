@@ -33,6 +33,11 @@ from bim_ai.opening_cut_primitives import (
     wall_plan_axis_aligned_xy,
     wall_plan_yaw_deg,
 )
+from bim_ai.plan_category_graphics import (
+    ResolvedPlanCategoryGraphic,
+    plan_category_graphic_hints_v0_payload,
+    resolve_plan_category_graphics_for_pinned_view,
+)
 from bim_ai.roof_geometry import (
     gable_ridge_rise_mm,
     mass_box_roof_proxy_peak_z_mm,
@@ -625,6 +630,7 @@ def _build_plan_primitive_lists(
     room_labels_visible: bool = False,
     opening_tag_catalog: PlanTagStyleElem | None = None,
     room_tag_catalog: PlanTagStyleElem | None = None,
+    category_resolved: dict[str, ResolvedPlanCategoryGraphic] | None = None,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     """2D primitives for deterministic server-side plan previews."""
 
@@ -664,6 +670,14 @@ def _build_plan_primitive_lists(
     room_separations: list[dict[str, Any]] = []
     dimensions: list[dict[str, Any]] = []
 
+    def cat_eff(key: str) -> tuple[float, str]:
+        if category_resolved is None:
+            if key == "room_separation":
+                return (1.0, "dash_short")
+            return (1.0, "solid")
+        r = category_resolved[key]
+        return (r.line_weight_factor, r.line_pattern_token)
+
     def lvl_ok(lv: str | None) -> bool:
         if not level:
             return True
@@ -679,6 +693,7 @@ def _build_plan_primitive_lists(
                 e.start.x_mm, e.start.y_mm, e.end.x_mm, e.end.y_mm, crop_box
             ):
                 continue
+            w_wt, _w_pat = cat_eff("wall")
             walls.append(
                 {
                     "id": e.id,
@@ -687,7 +702,7 @@ def _build_plan_primitive_lists(
                     "endMm": {"x": round(e.end.x_mm, 3), "y": round(e.end.y_mm, 3)},
                     "thicknessMm": round(e.thickness_mm, 3),
                     "heightMm": round(e.height_mm, 3),
-                    "lineWeightHint": round(float(line_weight_hint), 4),
+                    "lineWeightHint": round(float(line_weight_hint) * float(w_wt), 4),
                 }
             )
         elif isinstance(e, FloorElem):
@@ -858,12 +873,15 @@ def _build_plan_primitive_lists(
                 e.start.x_mm, e.start.y_mm, e.end.x_mm, e.end.y_mm, crop_box
             ):
                 continue
+            g_wt, g_pat = cat_eff("grid_line")
             grid_lines.append(
                 {
                     "id": e.id,
                     "levelId": elv,
                     "startMm": {"x": round(e.start.x_mm, 3), "y": round(e.start.y_mm, 3)},
                     "endMm": {"x": round(e.end.x_mm, 3), "y": round(e.end.y_mm, 3)},
+                    "linePatternToken": g_pat,
+                    "lineWeightHint": round(float(line_weight_hint) * float(g_wt), 4),
                 }
             )
         elif isinstance(e, RoomSeparationElem):
@@ -873,12 +891,15 @@ def _build_plan_primitive_lists(
                 e.start.x_mm, e.start.y_mm, e.end.x_mm, e.end.y_mm, crop_box
             ):
                 continue
+            s_wt, s_pat = cat_eff("room_separation")
             room_separations.append(
                 {
                     "id": e.id,
                     "levelId": e.level_id,
                     "startMm": {"x": round(e.start.x_mm, 3), "y": round(e.start.y_mm, 3)},
                     "endMm": {"x": round(e.end.x_mm, 3), "y": round(e.end.y_mm, 3)},
+                    "linePatternToken": s_pat,
+                    "lineWeightHint": round(float(line_weight_hint) * float(s_wt), 4),
                 }
             )
         elif isinstance(e, DimensionElem):
@@ -1088,12 +1109,14 @@ def resolve_plan_projection_wire(
     plan_ann: dict[str, bool] | None = None
     opening_vis = False
     room_lab_vis = False
+    cat_res: dict[str, ResolvedPlanCategoryGraphic] | None = None
     if pinned_pv_elem is not None:
         plan_graphic_hints = _plan_graphic_hints_for_pinned_view(doc, pinned_pv_elem)
         line_weight_scale = float(plan_graphic_hints["lineWeightScale"])
         plan_ann = _plan_annotation_hints_for_pinned_view(doc, pinned_pv_elem)
         opening_vis = bool(plan_ann["openingTagsVisible"])
         room_lab_vis = bool(plan_ann["roomLabelsVisible"])
+        cat_res = resolve_plan_category_graphics_for_pinned_view(doc, pinned_pv_elem)
 
     extra_prim_warn: list[dict[str, Any]] = []
     sheet_crop_box: tuple[float, float, float, float] | None = None
@@ -1138,6 +1161,7 @@ def resolve_plan_projection_wire(
         room_labels_visible=room_lab_vis,
         opening_tag_catalog=opening_cat,
         room_tag_catalog=room_cat,
+        category_resolved=cat_res,
     )
     all_warnings = sorted(
         list(extra_prim_warn) + list(prim_warn) + tag_warn_bucket,
@@ -1173,6 +1197,10 @@ def resolve_plan_projection_wire(
     }
     if plan_graphic_hints is not None:
         out_payload["planGraphicHints"] = plan_graphic_hints
+    if cat_res is not None and pinned_pv_elem is not None:
+        out_payload["planCategoryGraphicHints_v0"] = plan_category_graphic_hints_v0_payload(
+            doc, pinned_pv=pinned_pv_elem, resolved=cat_res
+        )
     if plan_ann is not None:
         out_payload["planAnnotationHints"] = plan_ann
     if pinned_pv_elem is not None and res_open is not None and res_room is not None:

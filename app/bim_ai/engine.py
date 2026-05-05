@@ -86,6 +86,7 @@ from bim_ai.elements import (
     IssueElem,
     JoinGeometryElem,
     LevelElem,
+    PlanCategoryGraphicRow,
     PlanDetailLevelPlan,
     PlanRegionElem,
     PlanTagStyleElem,
@@ -118,6 +119,10 @@ from bim_ai.elements import (
 from bim_ai.export_ifc import (
     AUTHORITATIVE_REPLAY_KIND_V0,
     KERNEL_IFC_AUTHORITATIVE_REPLAY_SCHEMA_VERSION,
+)
+from bim_ai.plan_category_graphics import (
+    normalize_plan_category_graphics_rows,
+    parse_plan_category_graphics_property_json,
 )
 from bim_ai.roof_geometry import assert_valid_gable_pitched_rectangle_footprint_mm
 
@@ -918,13 +923,16 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                     else:
                         _validate_plan_tag_style_ref(els, raw, "room")
                         els[cmd.element_id] = el.model_copy(update={"plan_room_tag_style_id": raw})
+                elif cmd.key == "planCategoryGraphics":
+                    pcg = parse_plan_category_graphics_property_json(cmd.value)
+                    els[cmd.element_id] = el.model_copy(update={"plan_category_graphics": pcg})
                 else:
                     raise ValueError(
                         "plan_view updates: key=planPresentation | categoriesHidden | underlayLevelId | "
                         "viewTemplateId | cropMinMm | cropMaxMm | viewRangeBottomMm | viewRangeTopMm | "
                         "cutPlaneOffsetMm | discipline | phaseId | planDetailLevel | planRoomFillOpacityScale | "
                         "planShowOpeningTags | planShowRoomLabels | planOpeningTagStyleId | planRoomTagStyleId | "
-                        "name"
+                        "planCategoryGraphics | name"
                     )
             elif isinstance(el, ViewTemplateElem):
                 raw_vt = cmd.value.strip()
@@ -975,11 +983,14 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                         els[cmd.element_id] = el.model_copy(
                             update={"default_plan_room_tag_style_id": raw_vt}
                         )
+                elif cmd.key == "planCategoryGraphics":
+                    pcg_vt = parse_plan_category_graphics_property_json(cmd.value)
+                    els[cmd.element_id] = el.model_copy(update={"plan_category_graphics": pcg_vt})
                 else:
                     raise ValueError(
                         "view_template updates: key=planDetailLevel | planRoomFillOpacityScale | "
                         "planShowOpeningTags | planShowRoomLabels | defaultPlanOpeningTagStyleId | "
-                        "defaultPlanRoomTagStyleId | name"
+                        "defaultPlanRoomTagStyleId | planCategoryGraphics | name"
                     )
             elif isinstance(el, ViewpointElem):
                 raw = cmd.value.strip()
@@ -1060,6 +1071,7 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                     "planRoomTagStyleId(plan_view plan_tag_style id or empty inherit) | "
                     "defaultPlanOpeningTagStyleId(view_template plan_tag_style id or empty clear) | "
                     "defaultPlanRoomTagStyleId(view_template plan_tag_style id or empty clear) | "
+                    "planCategoryGraphics(plan_view|view_template JSON array) | "
                     "viewerClipCapElevMm(viewpoint) | viewerClipFloorElevMm(viewpoint) | "
                     "hiddenSemanticKinds3d(viewpoint JSON array) | "
                     "familyTypeId(door/window) | materialKey(door/window) | "
@@ -1423,6 +1435,11 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
             scale = cmd.scale if cmd.scale in {"scale_50", "scale_100", "scale_200"} else "scale_100"
             pdl = _plan_detail_default_medium(cmd.plan_detail_level)
             pfo = _clamp_unit_interval(cmd.plan_room_fill_opacity_scale, 1.0)
+            pcg_t: list[PlanCategoryGraphicRow] = []
+            if "plan_category_graphics" in cmd.model_fields_set:
+                pcg_t = normalize_plan_category_graphics_rows(cmd.plan_category_graphics or [])
+            elif prior_tmpl is not None:
+                pcg_t = list(prior_tmpl.plan_category_graphics)
             els[vt] = ViewTemplateElem(
                 kind="view_template",
                 id=vt,
@@ -1436,6 +1453,7 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 plan_show_room_labels=cmd.plan_show_room_labels is True,
                 default_plan_opening_tag_style_id=d_open,
                 default_plan_room_tag_style_id=d_room,
+                plan_category_graphics=pcg_t,
             )
 
         case UpsertSheetCmd():
@@ -1529,6 +1547,11 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 room_style = prior_pv.plan_room_tag_style_id
             if room_style is not None:
                 _validate_plan_tag_style_ref(els, room_style, "room")
+            pcg_pv: list[PlanCategoryGraphicRow] = []
+            if "plan_category_graphics" in cmd.model_fields_set:
+                pcg_pv = normalize_plan_category_graphics_rows(cmd.plan_category_graphics or [])
+            elif prior_pv is not None:
+                pcg_pv = list(prior_pv.plan_category_graphics)
             els[pvid] = PlanViewElem(
                 kind="plan_view",
                 id=pvid,
@@ -1551,6 +1574,7 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 plan_show_room_labels=cmd.plan_show_room_labels,
                 plan_opening_tag_style_id=open_style,
                 plan_room_tag_style_id=room_style,
+                plan_category_graphics=pcg_pv,
             )
 
         case UpsertPlanTagStyleCmd():

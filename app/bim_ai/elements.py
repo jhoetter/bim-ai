@@ -409,6 +409,31 @@ class PlanTagStyleElem(BaseModel):
     sort_key: int = Field(default=0, alias="sortKey")
 
 
+PlanCategoryGraphicCategoryKey = Literal[
+    "wall",
+    "floor",
+    "roof",
+    "room",
+    "door",
+    "window",
+    "stair",
+    "grid_line",
+    "room_separation",
+    "dimension",
+]
+
+PlanLinePatternTokenPlan = Literal["solid", "dash_short", "dash_long", "dot"]
+
+
+class PlanCategoryGraphicRow(BaseModel):
+    """Per-category plan line weight factor and line pattern token (template + plan_view override)."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    category_key: PlanCategoryGraphicCategoryKey = Field(alias="categoryKey")
+    line_weight_factor: float | None = Field(default=None, alias="lineWeightFactor", gt=0, le=3)
+    line_pattern_token: PlanLinePatternTokenPlan | None = Field(default=None, alias="linePatternToken")
+
+
 class PlanViewElem(BaseModel):
     """First-class floor-plan view artifact (Revit-like plan definitions)."""
 
@@ -437,6 +462,10 @@ class PlanViewElem(BaseModel):
     plan_show_room_labels: bool | None = Field(default=None, alias="planShowRoomLabels")
     plan_opening_tag_style_id: str | None = Field(default=None, alias="planOpeningTagStyleId")
     plan_room_tag_style_id: str | None = Field(default=None, alias="planRoomTagStyleId")
+    plan_category_graphics: list[PlanCategoryGraphicRow] = Field(
+        default_factory=list,
+        alias="planCategoryGraphics",
+    )
 
 
 class ViewTemplateElem(BaseModel):
@@ -461,6 +490,10 @@ class ViewTemplateElem(BaseModel):
     )
     default_plan_room_tag_style_id: str | None = Field(
         default=None, alias="defaultPlanRoomTagStyleId"
+    )
+    plan_category_graphics: list[PlanCategoryGraphicRow] = Field(
+        default_factory=list,
+        alias="planCategoryGraphics",
     )
 
 

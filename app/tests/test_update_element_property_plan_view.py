@@ -386,3 +386,52 @@ def test_upsert_plan_tag_style_cmd_replay() -> None:
     assert st.text_size_pt == 11
     assert st.leader_visible is False
     assert st.badge_style == "rounded"
+
+
+def test_plan_view_plan_category_graphics_json_roundtrip() -> None:
+    els = {
+        "lv": LevelElem(kind="level", id="lv", name="EG", elevationMm=0),
+        "pv": PlanViewElem(kind="plan_view", id="pv", name="Test", levelId="lv"),
+    }
+    doc = Document(revision=1, elements=els)
+    payload = json.dumps(
+        [{"categoryKey": "wall", "lineWeightFactor": 1.1, "linePatternToken": "dash_long"}]
+    )
+    apply_inplace(
+        doc,
+        UpdateElementPropertyCmd(elementId="pv", key="planCategoryGraphics", value=payload),
+    )
+    pv = doc.elements["pv"]
+    assert isinstance(pv, PlanViewElem)
+    assert len(pv.plan_category_graphics) == 1
+    assert pv.plan_category_graphics[0].category_key == "wall"
+    assert pv.plan_category_graphics[0].line_weight_factor == pytest.approx(1.1)
+    assert pv.plan_category_graphics[0].line_pattern_token == "dash_long"
+
+    apply_inplace(
+        doc,
+        UpdateElementPropertyCmd(elementId="pv", key="planCategoryGraphics", value=""),
+    )
+    pv2 = doc.elements["pv"]
+    assert isinstance(pv2, PlanViewElem)
+    assert pv2.plan_category_graphics == []
+
+
+def test_view_template_plan_category_graphics_json() -> None:
+    els = {
+        "vt": ViewTemplateElem(kind="view_template", id="vt", name="T"),
+    }
+    doc = Document(revision=1, elements=els)
+    apply_inplace(
+        doc,
+        UpdateElementPropertyCmd(
+            elementId="vt",
+            key="planCategoryGraphics",
+            value=json.dumps([{"categoryKey": "grid_line", "linePatternToken": "dot"}]),
+        ),
+    )
+    vt = doc.elements["vt"]
+    assert isinstance(vt, ViewTemplateElem)
+    assert len(vt.plan_category_graphics) == 1
+    assert vt.plan_category_graphics[0].category_key == "grid_line"
+    assert vt.plan_category_graphics[0].line_pattern_token == "dot"

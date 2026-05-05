@@ -7,6 +7,7 @@ import { collectWallAnchors, snapPlanPoint } from './snapEngine';
 import {
   buildPlanProjectionQuery,
   extractPlanAnnotationHints,
+  extractPlanCategoryGraphicHintsV0,
   extractPlanGraphicHints,
   extractPlanPrimitives,
   extractPlanTagStyleHints,
@@ -223,6 +224,7 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
         setPlanRoomSchemeWireReadout({
           roomColorLegendRows: legendRows,
           programmeLegendEvidence: extractRoomProgrammeLegendEvidenceV0(payload),
+          planCategoryGraphicHintsV0: extractPlanCategoryGraphicHintsV0(payload),
         });
         setRoomColorLegend(legendRows);
         setWireGraphicHints(extractPlanGraphicHints(payload));

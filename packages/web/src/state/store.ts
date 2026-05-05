@@ -15,6 +15,7 @@ import type {
 import type { PlanPresentationPreset } from '../plan/symbology';
 import type {
   PlanProjectionPrimitivesV1Wire,
+  PlanCategoryGraphicHintsV0Wire,
   PlanRoomColorLegendRow,
   RoomProgrammeLegendEvidenceV0,
 } from '../plan/planProjectionWire';
@@ -22,6 +23,7 @@ import type {
 export type PlanRoomSchemeWireReadout = {
   roomColorLegendRows: PlanRoomColorLegendRow[];
   programmeLegendEvidence: RoomProgrammeLegendEvidenceV0 | null;
+  planCategoryGraphicHintsV0?: PlanCategoryGraphicHintsV0Wire | null;
 };
 
 export type ViewerMode = 'plan_canvas' | 'orbit_3d';

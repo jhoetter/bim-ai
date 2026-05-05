@@ -251,7 +251,10 @@ export function ProjectBrowser(props: {
                       >
                         plan_view · {pv.name}
                       </Btn>
-                      <div className="pl-2 font-mono text-[9px] leading-tight text-muted">
+                      <div
+                        className="pl-2 font-mono text-[9px] leading-tight text-muted"
+                        data-bim-plan-view-evidence={pv.id}
+                      >
                         {planViewProjectBrowserEvidenceLine(props.elementsById, pv.id)}
                       </div>
                       {props.onUpsertSemantic ? (

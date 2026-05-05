@@ -1,4 +1,10 @@
-import type { Element, PlanTagTarget } from '@bim-ai/core';
+import type {
+  Element,
+  PlanCategoryGraphicCategoryKey,
+  PlanCategoryGraphicRow,
+  PlanLinePatternToken,
+  PlanTagTarget,
+} from '@bim-ai/core';
 
 import type { PlanAnnotationHintsResolved, PlanGraphicHintsResolved } from './planProjectionWire';
 import type { PlanPresentationPreset } from './symbology';
@@ -189,6 +195,95 @@ export function resolvePlanGraphicHints(
   };
 }
 
+export const PLAN_CATEGORY_GRAPHIC_KEYS: readonly PlanCategoryGraphicCategoryKey[] = [
+  'wall',
+  'floor',
+  'roof',
+  'room',
+  'door',
+  'window',
+  'stair',
+  'grid_line',
+  'room_separation',
+  'dimension',
+];
+
+export type ResolvedPlanCategoryGraphic = {
+  lineWeightFactor: number;
+  linePatternToken: PlanLinePatternToken;
+  lineWeightSource: 'default' | 'template' | 'plan_view';
+  linePatternSource: 'default' | 'template' | 'plan_view';
+  lineWeightIsDefaulted: boolean;
+  linePatternIsDefaulted: boolean;
+};
+
+function categoryGraphicsRowMap(rows: PlanCategoryGraphicRow[] | undefined) {
+  return new Map((rows ?? []).map((r) => [r.categoryKey, r]));
+}
+
+/** Client merge mirror of server `resolve_plan_category_graphics_for_pinned_view`. */
+
+export function resolvePlanCategoryGraphics(
+  elementsById: Record<string, Element>,
+  activePlanViewId: string | undefined,
+): Record<PlanCategoryGraphicCategoryKey, ResolvedPlanCategoryGraphic> | null {
+  if (!activePlanViewId) return null;
+  const el = elementsById[activePlanViewId];
+  if (!el || el.kind !== 'plan_view') return null;
+
+  let tmpl: Extract<Element, { kind: 'view_template' }> | undefined;
+  if (el.viewTemplateId) {
+    const t = elementsById[el.viewTemplateId];
+    if (t?.kind === 'view_template') tmpl = t;
+  }
+  const tmplMap = categoryGraphicsRowMap(tmpl?.planCategoryGraphics);
+  const pvMap = categoryGraphicsRowMap(el.planCategoryGraphics);
+  const out = {} as Record<PlanCategoryGraphicCategoryKey, ResolvedPlanCategoryGraphic>;
+  for (const key of PLAN_CATEGORY_GRAPHIC_KEYS) {
+    let f = 1;
+    let pat: PlanLinePatternToken = key === 'room_separation' ? 'dash_short' : 'solid';
+    let wSrc: 'default' | 'template' | 'plan_view' = 'default';
+    let pSrc: 'default' | 'template' | 'plan_view' = 'default';
+    let wDef = true;
+    let pDef = true;
+    const tr = tmplMap.get(key);
+    if (tr) {
+      if (tr.lineWeightFactor != null && Number.isFinite(tr.lineWeightFactor)) {
+        f = tr.lineWeightFactor;
+        wSrc = 'template';
+        wDef = false;
+      }
+      if (tr.linePatternToken) {
+        pat = tr.linePatternToken;
+        pSrc = 'template';
+        pDef = false;
+      }
+    }
+    const pr = pvMap.get(key);
+    if (pr) {
+      if (pr.lineWeightFactor != null && Number.isFinite(pr.lineWeightFactor)) {
+        f = pr.lineWeightFactor;
+        wSrc = 'plan_view';
+        wDef = false;
+      }
+      if (pr.linePatternToken) {
+        pat = pr.linePatternToken;
+        pSrc = 'plan_view';
+        pDef = false;
+      }
+    }
+    out[key] = {
+      lineWeightFactor: Math.round(f * 10000) / 10000,
+      linePatternToken: pat,
+      lineWeightSource: wSrc,
+      linePatternSource: pSrc,
+      lineWeightIsDefaulted: wDef,
+      linePatternIsDefaulted: pDef,
+    };
+  }
+  return out;
+}
+
 /** Mirrors server `_plan_annotation_hints_for_pinned_view` until wire payloads arrive. */
 
 export function resolvePlanAnnotationHints(
@@ -331,6 +426,26 @@ function annotationTriEffective(v: boolean): string {
   return v ? 'on' : 'off';
 }
 
+function formatCategoryGraphicsMatrixCell(
+  rows: PlanCategoryGraphicRow[] | undefined,
+  key: PlanCategoryGraphicCategoryKey,
+): string {
+  const r = rows?.find((x) => x.categoryKey === key);
+  if (!r) return 'inherit';
+  const parts: string[] = [];
+  if (r.lineWeightFactor != null && Number.isFinite(r.lineWeightFactor)) {
+    parts.push(`f=${r.lineWeightFactor}`);
+  }
+  if (r.linePatternToken) {
+    parts.push(`pat=${r.linePatternToken}`);
+  }
+  return parts.length ? parts.join(' ') : 'inherit';
+}
+
+function formatCategoryGraphicsEffectiveCell(r: ResolvedPlanCategoryGraphic): string {
+  return `f=${r.lineWeightFactor} pat=${r.linePatternToken}`;
+}
+
 /**
  * Compact Effective · detail/fill/tags line for Project Browser (plan_view rows).
  */
@@ -351,7 +466,12 @@ export function planViewProjectBrowserEvidenceLine(
     oSt.resolvedStyleId === BUILTIN_PLAN_TAG_OPENING_ID ? 'builtin' : oSt.resolvedStyleId;
   const rAbbrev =
     rSt.resolvedStyleId === BUILTIN_PLAN_TAG_ROOM_ID ? 'builtin' : rSt.resolvedStyleId;
-  return `pres ${formatPlanPresentationStored(pres)} · ${d} · fill ${fill} · tags ${annotationTriEffective(a.openingTagsVisible)}/${annotationTriEffective(a.roomLabelsVisible)} · tagStyles o=${oAbbrev} r=${rAbbrev}`;
+  const cat = resolvePlanCategoryGraphics(elementsById, planViewId);
+  const catBit =
+    cat == null
+      ? ''
+      : ` · catWall f=${cat.wall.lineWeightFactor} pat=${cat.wall.linePatternToken} · catGrid pat=${cat.grid_line.linePatternToken}`;
+  return `pres ${formatPlanPresentationStored(pres)} · ${d} · fill ${fill} · tags ${annotationTriEffective(a.openingTagsVisible)}/${annotationTriEffective(a.roomLabelsVisible)} · tagStyles o=${oAbbrev} r=${rAbbrev}${catBit}`;
 }
 
 /** Template | stored plan_view | effective matrix for Inspector production review. */
@@ -423,6 +543,8 @@ export function planViewGraphicsMatrixRows(
   const pvHiddenRaw = el.categoriesHidden?.length ?? 0;
   const effHiddenKinds = String(display.hiddenSemanticKinds.size);
 
+  const catEff = resolvePlanCategoryGraphics(elementsById, planViewId);
+
   return [
     {
       label: 'Presentation',
@@ -447,6 +569,28 @@ export function planViewGraphicsMatrixRows(
       template: '—',
       stored: '—',
       effective: String(g?.lineWeightScale ?? 1),
+    },
+    {
+      label: 'Category wall Δw/pattern',
+      template:
+        tmpl == null
+          ? '—'
+          : formatCategoryGraphicsMatrixCell(tmpl.planCategoryGraphics, 'wall'),
+      stored: formatCategoryGraphicsMatrixCell(el.planCategoryGraphics, 'wall'),
+      effective: catEff
+        ? formatCategoryGraphicsEffectiveCell(catEff.wall)
+        : 'f=1 pat=solid',
+    },
+    {
+      label: 'Category grid Δw/pattern',
+      template:
+        tmpl == null
+          ? '—'
+          : formatCategoryGraphicsMatrixCell(tmpl.planCategoryGraphics, 'grid_line'),
+      stored: formatCategoryGraphicsMatrixCell(el.planCategoryGraphics, 'grid_line'),
+      effective: catEff
+        ? formatCategoryGraphicsEffectiveCell(catEff.grid_line)
+        : 'f=1 pat=solid',
     },
     {
       label: 'Opening tags',

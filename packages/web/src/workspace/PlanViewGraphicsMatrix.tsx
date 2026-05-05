@@ -7,7 +7,10 @@ export function PlanViewGraphicsMatrix(props: {
 }) {
   if (!props.rows.length) return null;
   return (
-    <div className="border-border mt-2 rounded border border-dashed border-border p-2 pt-2">
+    <div
+      className="border-border mt-2 rounded border border-dashed border-border p-2 pt-2"
+      data-bim-plan-graphics-matrix="1"
+    >
       <div className="mb-1.5 font-semibold text-muted">Graphics and annotations matrix</div>
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-[10px]">

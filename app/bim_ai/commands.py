@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from bim_ai.elements import (
     CameraMm,
     EvidenceRef,
+    PlanCategoryGraphicRow,
     PlanTagBadgeStyle,
     PlanTagTarget,
     RoomColorSchemeRow,
@@ -473,6 +474,10 @@ class UpsertViewTemplateCmd(BaseModel):
     default_plan_room_tag_style_id: str | None = Field(
         default=None, alias="defaultPlanRoomTagStyleId"
     )
+    plan_category_graphics: list[PlanCategoryGraphicRow] | None = Field(
+        default=None,
+        alias="planCategoryGraphics",
+    )
 
 
 class UpsertPlanTagStyleCmd(BaseModel):
@@ -557,6 +562,10 @@ class UpsertPlanViewCmd(BaseModel):
     plan_show_room_labels: bool | None = Field(default=None, alias="planShowRoomLabels")
     plan_opening_tag_style_id: str | None = Field(default=None, alias="planOpeningTagStyleId")
     plan_room_tag_style_id: str | None = Field(default=None, alias="planRoomTagStyleId")
+    plan_category_graphics: list[PlanCategoryGraphicRow] | None = Field(
+        default=None,
+        alias="planCategoryGraphics",
+    )
 
 
 class CreateCalloutCmd(BaseModel):

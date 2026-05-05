@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-import type { Element } from '@bim-ai/core';
+import type { Element, PlanLinePatternToken } from '@bim-ai/core';
 
 import {
   coerceVec2Mm,
@@ -14,6 +14,26 @@ import { deterministicSchemeColorHex } from './roomSchemeColor';
 /** Plan slice elevation in world units (walls still render with real height elsewhere). */
 
 const PLAN_Y = 0.02;
+
+/** World-space dash gaps for plan linework (grid, room separation) from server tokens. */
+
+export function planLinePatternDashWorldUnits(
+  token: string | null | undefined,
+): { dashSize: number; gapSize: number } | null {
+  const t = (token ?? 'solid') as PlanLinePatternToken;
+  switch (t) {
+    case 'solid':
+      return null;
+    case 'dash_short':
+      return { dashSize: 0.06, gapSize: 0.04 };
+    case 'dash_long':
+      return { dashSize: 0.12, gapSize: 0.06 };
+    case 'dot':
+      return { dashSize: 0.02, gapSize: 0.05 };
+    default:
+      return null;
+  }
+}
 
 /** Documentation-style plan projection knobs (WP-C01/C02/C03). */
 
@@ -229,22 +249,76 @@ function roomSeparationLineFromMm(
   start: { xMm: number; yMm: number },
   end: { xMm: number; yMm: number },
   id: string,
+  linePatternToken?: string | null,
 ): THREE.Line {
   const pts = [
     new THREE.Vector3(ux(start.xMm), PLAN_Y + 0.003, uz(start.yMm)),
     new THREE.Vector3(ux(end.xMm), PLAN_Y + 0.003, uz(end.yMm)),
   ];
   const geo = new THREE.BufferGeometry().setFromPoints(pts);
+  const tok =
+    linePatternToken === undefined || linePatternToken === null || linePatternToken === ''
+      ? 'dash_short'
+      : linePatternToken;
+  const dashSpec = planLinePatternDashWorldUnits(tok);
+  if (dashSpec == null) {
+    const line = new THREE.Line(
+      geo,
+      new THREE.LineBasicMaterial({ color: '#a855f7', linewidth: 1, depthTest: true }),
+    );
+    line.userData.bimPickId = id;
+    return line;
+  }
   const mat = new THREE.LineDashedMaterial({
     color: '#a855f7',
-    dashSize: 0.06,
-    gapSize: 0.04,
+    dashSize: dashSpec.dashSize,
+    gapSize: dashSpec.gapSize,
     depthTest: true,
   });
   const line = new THREE.Line(geo, mat);
   line.computeLineDistances();
   line.userData.bimPickId = id;
   return line;
+}
+
+function gridLineThreeFromPlanWire(
+  gl: Extract<Element, { kind: 'grid_line' }>,
+  linePatternToken?: string | null,
+): THREE.Group {
+  const grp = new THREE.Group();
+
+  const pts = [
+    new THREE.Vector3(ux(gl.start.xMm), PLAN_Y, uz(gl.start.yMm)),
+
+    new THREE.Vector3(ux(gl.end.xMm), PLAN_Y, uz(gl.end.yMm)),
+  ];
+
+  const dashSpec = planLinePatternDashWorldUnits(linePatternToken ?? undefined);
+  if (dashSpec == null) {
+    grp.add(
+      new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints(pts),
+
+        new THREE.LineBasicMaterial({ color: '#64748b', linewidth: 2 }),
+      ),
+    );
+  } else {
+    const mat = new THREE.LineDashedMaterial({
+      color: '#64748b',
+      dashSize: dashSpec.dashSize,
+      gapSize: dashSpec.gapSize,
+      depthTest: true,
+    });
+    const ln = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), mat);
+    ln.computeLineDistances();
+    grp.add(ln);
+  }
+
+  grp.userData.bimPickId = gl.id;
+
+  grp.userData.gridLabel = gl.label;
+
+  return grp;
 }
 
 function rebuildPlanMeshesFromWire(
@@ -289,7 +363,9 @@ function rebuildPlanMeshesFromWire(
       end: coerceVec2Mm(g.endMm),
       ...(g.levelId !== undefined && g.levelId !== null ? { levelId: String(g.levelId) } : {}),
     };
-    holder.add(gridLineThree(gl));
+    const patRaw = g.linePatternToken ?? g.line_pattern_token;
+    const linePat = typeof patRaw === 'string' ? patRaw : undefined;
+    holder.add(gridLineThreeFromPlanWire(gl, linePat));
   }
 
   const rooms = Array.isArray(prim.rooms) ? (prim.rooms as Record<string, unknown>[]) : [];
@@ -367,7 +443,15 @@ function rebuildPlanMeshesFromWire(
     if (!sid) continue;
     const sMm = coerceVec2Mm(row.startMm);
     const eMm = coerceVec2Mm(row.endMm);
-    holder.add(roomSeparationLineFromMm(sMm, eMm, sid));
+    const patRaw = row.linePatternToken ?? row.line_pattern_token;
+    holder.add(
+      roomSeparationLineFromMm(
+        sMm,
+        eMm,
+        sid,
+        typeof patRaw === 'string' ? patRaw : undefined,
+      ),
+    );
   }
 
   const doors = Array.isArray(prim.doors) ? (prim.doors as Record<string, unknown>[]) : [];

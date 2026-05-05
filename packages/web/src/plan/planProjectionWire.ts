@@ -30,10 +30,29 @@ export type PlanTagStyleHintsWire = {
   room?: PlanTagStyleHintLaneWire;
 };
 
+export type PlanCategoryGraphicHintRowWire = {
+  categoryKey: string;
+  lineWeightFactor: number;
+  linePatternToken: string;
+  lineWeightSource: string;
+  linePatternSource: string;
+  lineWeightIsDefaulted: boolean;
+  linePatternIsDefaulted: boolean;
+};
+
+export type PlanCategoryGraphicHintsV0Wire = {
+  format: 'planCategoryGraphicHints_v0';
+  planViewElementId?: string | null;
+  viewTemplateElementId?: string | null;
+  rows: PlanCategoryGraphicHintRowWire[];
+  rowsDigestSha256?: string;
+};
+
 export type PlanProjectionWirePayload = Record<string, unknown> & {
   format?: string;
   primitives?: PlanProjectionPrimitivesV1Wire;
   planTagStyleHints?: PlanTagStyleHintsWire;
+  planCategoryGraphicHints_v0?: PlanCategoryGraphicHintsV0Wire;
 };
 
 /** Resolved template + presentation graphic multipliers (`plan_projection_wire.planGraphicHints`). */
@@ -102,6 +121,88 @@ export function extractPlanAnnotationHints(
   return {
     openingTagsVisible: readWireAnnotationBool(o.openingTagsVisible ?? o.opening_tags_visible),
     roomLabelsVisible: readWireAnnotationBool(o.roomLabelsVisible ?? o.room_labels_visible),
+  };
+}
+
+function readPlanCategoryHintRowWire(raw: unknown): PlanCategoryGraphicHintRowWire | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const o = raw as Record<string, unknown>;
+  const categoryKey = typeof o.categoryKey === 'string' ? o.categoryKey : '';
+  const lineWeightFactor = Number(o.lineWeightFactor ?? o.line_weight_factor);
+  const linePatternToken =
+    typeof o.linePatternToken === 'string'
+      ? o.linePatternToken
+      : typeof o.line_pattern_token === 'string'
+        ? o.line_pattern_token
+        : '';
+  const lineWeightSource =
+    typeof o.lineWeightSource === 'string'
+      ? o.lineWeightSource
+      : typeof o.line_weight_source === 'string'
+        ? o.line_weight_source
+        : 'default';
+  const linePatternSource =
+    typeof o.linePatternSource === 'string'
+      ? o.linePatternSource
+      : typeof o.line_pattern_source === 'string'
+        ? o.line_pattern_source
+        : 'default';
+  const lineWeightIsDefaulted = Boolean(o.lineWeightIsDefaulted ?? o.line_weight_is_defaulted);
+  const linePatternIsDefaulted = Boolean(o.linePatternIsDefaulted ?? o.line_pattern_is_defaulted);
+  if (!categoryKey || !Number.isFinite(lineWeightFactor) || !linePatternToken) return null;
+  return {
+    categoryKey,
+    lineWeightFactor,
+    linePatternToken,
+    lineWeightSource,
+    linePatternSource,
+    lineWeightIsDefaulted,
+    linePatternIsDefaulted,
+  };
+}
+
+export function extractPlanCategoryGraphicHintsV0(
+  payload: Record<string, unknown> | null | undefined,
+): PlanCategoryGraphicHintsV0Wire | null {
+  if (!payload || typeof payload !== 'object') return null;
+  const raw =
+    (payload as { planCategoryGraphicHints_v0?: unknown }).planCategoryGraphicHints_v0 ??
+    (payload as { planCategoryGraphicHintsV0?: unknown }).planCategoryGraphicHintsV0;
+  if (!raw || typeof raw !== 'object') return null;
+  const o = raw as Record<string, unknown>;
+  if (o.format !== 'planCategoryGraphicHints_v0') return null;
+  const rowsRaw = o.rows;
+  if (!Array.isArray(rowsRaw)) return null;
+  const rows: PlanCategoryGraphicHintRowWire[] = [];
+  for (const r of rowsRaw) {
+    const row = readPlanCategoryHintRowWire(r);
+    if (row) rows.push(row);
+  }
+  if (!rows.length) return null;
+  const pv =
+    typeof o.planViewElementId === 'string'
+      ? o.planViewElementId
+      : typeof o.plan_view_element_id === 'string'
+        ? o.plan_view_element_id
+        : undefined;
+  const vt =
+    typeof o.viewTemplateElementId === 'string'
+      ? o.viewTemplateElementId
+      : typeof o.view_template_element_id === 'string'
+        ? o.view_template_element_id
+        : undefined;
+  const dig =
+    typeof o.rowsDigestSha256 === 'string'
+      ? o.rowsDigestSha256
+      : typeof o.rows_digest_sha256 === 'string'
+        ? o.rows_digest_sha256
+        : undefined;
+  return {
+    format: 'planCategoryGraphicHints_v0',
+    ...(pv !== undefined ? { planViewElementId: pv } : {}),
+    ...(vt !== undefined ? { viewTemplateElementId: vt } : {}),
+    rows,
+    ...(dig !== undefined ? { rowsDigestSha256: dig } : {}),
   };
 }
 
