@@ -58,6 +58,7 @@ import { RoomColorSchemePanel } from './workspace/RoomColorSchemePanel';
 import { SiteAuthoringPanel } from './workspace/SiteAuthoringPanel';
 import { SectionPlaceholderPane } from './workspace/SectionPlaceholderPane';
 import { SheetCanvas } from './workspace/SheetCanvas';
+import { LevelDatumStackWorkbench } from './workspace/LevelDatumStackWorkbench';
 import { MaterialLayerStackWorkbench } from './workspace/MaterialLayerStackWorkbench';
 
 async function fetchSnap(modelId: string): Promise<Snapshot> {
@@ -1625,6 +1626,11 @@ export function Workspace() {
                 </label>
               </div>
             ) : null}
+            <LevelDatumStackWorkbench
+              selected={selected}
+              elementsById={elementsById}
+              violations={violations}
+            />
             <MaterialLayerStackWorkbench selected={selected} elementsById={elementsById} />
             <pre className="max-h-[40vh] overflow-auto whitespace-pre-wrap text-[11px]">
               {JSON.stringify(selected ?? { hint: 'pick' }, null, 2)}
