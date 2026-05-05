@@ -4,10 +4,17 @@ import * as THREE from 'three';
 
 import type { Element } from '@bim-ai/core';
 
-import { OrbitViewpointPersistedHud } from './OrbitViewpointPersistedHud';
+import {
+  OrbitViewpointPersistedHud,
+  type OrbitViewpointPersistFieldPayload,
+} from './OrbitViewpointPersistedHud';
+
 import { useBimStore } from './state/store';
 
-type Props = { wsConnected: boolean };
+type Props = {
+  wsConnected: boolean;
+  onPersistViewpointField?: (payload: OrbitViewpointPersistFieldPayload) => void | Promise<void>;
+};
 
 type WallElem = Extract<Element, { kind: 'wall' }>;
 
@@ -313,7 +320,7 @@ function applyClippingPlanesToMeshes(root: THREE.Object3D, planes: THREE.Plane[]
   });
 }
 
-export function Viewport({ wsConnected }: Props) {
+export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
   void wsConnected;
 
   const mountRef = useRef<HTMLDivElement | null>(null);
@@ -676,6 +683,7 @@ export function Viewport({ wsConnected }: Props) {
       <OrbitViewpointPersistedHud
         activeViewpointId={activeViewpointId}
         viewpoint={persistedOrbitViewpoint}
+        onPersistField={onPersistViewpointField}
       />
 
       <div ref={mountRef} className="size-full cursor-grab active:cursor-grabbing" />

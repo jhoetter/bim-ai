@@ -507,6 +507,24 @@ describe('planProjection', () => {
       }),
     ).toBe('Box clip (cap + floor)');
 
+    expect(
+      viewpointOrbit3dCutawayStyleToken({
+        ...base,
+        viewerClipCapElevMm: 4000,
+        viewerClipFloorElevMm: 1000,
+        cutawayStyle: 'none',
+      }),
+    ).toBe('none');
+    expect(
+      viewpointOrbit3dEvidenceLine({
+        ...base,
+        viewerClipCapElevMm: 4000,
+        viewerClipFloorElevMm: 1000,
+        hiddenSemanticKinds3d: [],
+        cutawayStyle: 'none',
+      }),
+    ).toBe('clip cap 4000 · floor 1000 · 0 hid · cut:none');
+
     expect(viewpointOrbit3dCutawayStyleToken({ ...base, mode: 'plan_2d' })).toBe('none');
   });
 

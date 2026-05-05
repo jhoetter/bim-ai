@@ -187,11 +187,27 @@ def test_viewpoint_clip_and_hidden_categories() -> None:
     apply_inplace(
         doc, UpdateElementPropertyCmd(elementId="vp", key="viewerClipCapElevMm", value="")
     )
-    vp = doc.elements["vp"]
-    assert isinstance(vp, ViewpointElem)
-    assert vp.viewer_clip_cap_elev_mm is None
-    assert vp.viewer_clip_floor_elev_mm == 0
-    assert vp.hidden_semantic_kinds_3d == ["roof"]
+    vp_final = doc.elements["vp"]
+    assert isinstance(vp_final, ViewpointElem)
+    assert vp_final.viewer_clip_cap_elev_mm is None
+    assert vp_final.viewer_clip_floor_elev_mm == 0
+    assert vp_final.hidden_semantic_kinds_3d == ["roof"]
+
+    apply_inplace(doc, UpdateElementPropertyCmd(elementId="vp", key="cutawayStyle", value="box"))
+    vp_box = doc.elements["vp"]
+    assert isinstance(vp_box, ViewpointElem)
+    assert vp_box.cutaway_style == "box"
+
+    apply_inplace(doc, UpdateElementPropertyCmd(elementId="vp", key="cutawayStyle", value=""))
+    vp_clear_cut = doc.elements["vp"]
+    assert isinstance(vp_clear_cut, ViewpointElem)
+    assert vp_clear_cut.cutaway_style is None
+
+    apply_inplace(doc, UpdateElementPropertyCmd(elementId="vp", key="cutawayStyle", value="none"))
+    vp_none_explicit = doc.elements["vp"]
+    assert isinstance(vp_none_explicit, ViewpointElem)
+    assert vp_none_explicit.cutaway_style == "none"
+    assert vp_none_explicit.viewer_clip_floor_elev_mm == 0
 
 
 def test_plan_view_plan_annotation_flags_and_template_inheritance() -> None:

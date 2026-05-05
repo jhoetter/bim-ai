@@ -1,6 +1,7 @@
+import { fireEvent } from '@testing-library/react';
 import { act, type ReactElement } from 'react';
 import { createRoot } from 'react-dom/client';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { OrbitViewpointPersistedHud } from './OrbitViewpointPersistedHud';
 
@@ -90,5 +91,50 @@ describe('OrbitViewpointPersistedHud', () => {
     expect(el.textContent).toContain('Cap clip only');
     expect(el.textContent).toContain('Floor (mm)');
     expect(el.textContent).toContain('—');
+  });
+
+  it('authoring mode blur and cutaway change call onPersistField', () => {
+    const onPersistField = vi.fn();
+    const viewpoint = {
+      kind: 'viewpoint' as const,
+      id: 'vp-auth',
+      name: 'Editable',
+      mode: 'orbit_3d' as const,
+      camera: cameraFixture(),
+      viewerClipCapElevMm: 1000,
+      hiddenSemanticKinds3d: [],
+    };
+    const el = renderHud(
+      <OrbitViewpointPersistedHud
+        activeViewpointId="vp-auth"
+        viewpoint={viewpoint}
+        onPersistField={onPersistField}
+      />,
+    );
+
+    const cap = el.querySelector('[data-testid="orbit-vp-cap-mm"]') as HTMLInputElement;
+    expect(cap).toBeTruthy();
+
+    act(() => {
+      fireEvent.change(cap, { target: { value: '2400' } });
+      fireEvent.blur(cap);
+    });
+
+    expect(onPersistField).toHaveBeenCalledWith({
+      elementId: 'vp-auth',
+      key: 'viewerClipCapElevMm',
+      value: '2400',
+    });
+
+    const cut = el.querySelector('[data-testid="orbit-vp-cutaway-select"]') as HTMLSelectElement;
+    act(() => {
+      fireEvent.change(cut, { target: { value: 'box' } });
+    });
+
+    expect(onPersistField).toHaveBeenCalledWith({
+      elementId: 'vp-auth',
+      key: 'cutawayStyle',
+      value: 'box',
+    });
   });
 });

@@ -242,6 +242,9 @@ class DimensionElem(BaseModel):
     tag_definition_id: str | None = Field(default=None, alias="tagDefinitionId")
 
 
+ViewpointCutawayStyle = Literal["none", "cap", "floor", "box"]
+
+
 class ViewpointElem(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True)
     kind: Literal["viewpoint"] = "viewpoint"
@@ -252,6 +255,7 @@ class ViewpointElem(BaseModel):
     viewer_clip_cap_elev_mm: float | None = Field(default=None, alias="viewerClipCapElevMm")
     viewer_clip_floor_elev_mm: float | None = Field(default=None, alias="viewerClipFloorElevMm")
     hidden_semantic_kinds_3d: list[str] = Field(default_factory=list, alias="hiddenSemanticKinds3d")
+    cutaway_style: ViewpointCutawayStyle | None = Field(default=None, alias="cutawayStyle")
 
 
 class IssueElem(BaseModel):

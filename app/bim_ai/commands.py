@@ -244,6 +244,9 @@ class SaveViewpointCmd(BaseModel):
     viewer_clip_cap_elev_mm: float | None = Field(default=None, alias="viewerClipCapElevMm")
     viewer_clip_floor_elev_mm: float | None = Field(default=None, alias="viewerClipFloorElevMm")
     hidden_semantic_kinds_3d: list[str] = Field(default_factory=list, alias="hiddenSemanticKinds3d")
+    cutaway_style: Literal["none", "cap", "floor", "box"] | None = Field(
+        default=None, alias="cutawayStyle"
+    )
 
 
 class UpsertProjectSettingsCmd(BaseModel):

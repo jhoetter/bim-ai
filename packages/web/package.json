@@ -28,6 +28,7 @@
   "devDependencies": {
     "@playwright/test": "1.53.2",
     "@tailwindcss/forms": "^0.5.10",
+    "@testing-library/react": "^16.0.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@types/three": "^0.172.0",

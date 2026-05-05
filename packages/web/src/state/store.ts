@@ -502,6 +502,12 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
               .map((s) => s),
           }
         : {}),
+      ...(() => {
+        const csRaw = raw.cutawayStyle ?? raw.cutaway_style;
+        if (csRaw !== 'none' && csRaw !== 'cap' && csRaw !== 'floor' && csRaw !== 'box')
+          return {};
+        return { cutawayStyle: csRaw };
+      })(),
     };
   }
 

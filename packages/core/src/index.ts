@@ -243,6 +243,7 @@ export type Element =
       viewerClipCapElevMm?: number | null;
       viewerClipFloorElevMm?: number | null;
       hiddenSemanticKinds3d?: string[];
+      cutawayStyle?: 'none' | 'cap' | 'floor' | 'box' | null;
     }
   | {
       kind: 'issue';

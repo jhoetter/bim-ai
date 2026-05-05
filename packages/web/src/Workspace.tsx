@@ -310,86 +310,68 @@ export function Workspace() {
     [pushServer],
   );
 
-  const persistViewpointHiddenKinds = useCallback(async () => {
-    const st = useBimStore.getState();
-    const mid = st.modelId;
-    const uid = st.userId;
-    const vid = st.activeViewpointId;
-    if (!mid || !vid || st.viewerMode !== 'orbit_3d') return;
+  const persistViewpointField = useCallback(
+    async (payload: { elementId: string; key: string; value: string }) => {
+      const st = useBimStore.getState();
+      const mid = st.modelId;
+      const uid = st.userId;
+      if (!mid || st.viewerMode !== 'orbit_3d') return;
 
-    const vpEl = st.elementsById[vid];
-    if (!vpEl || vpEl.kind !== 'viewpoint') return;
+      const vid = st.activeViewpointId;
+      if (!vid || vid !== payload.elementId) return;
 
-    const hidden = VIEWER_HIDDEN_KIND_KEYS.filter((k) => st.viewerCategoryHidden[k]);
+      const vpEl = st.elementsById[vid];
+      if (!vpEl || vpEl.kind !== 'viewpoint') return;
 
-    try {
-      const r = await applyCommand(
-        mid,
-        {
-          type: 'updateElementProperty',
-
-          elementId: vid,
-
-          key: 'hiddenSemanticKinds3d',
-
-          value: JSON.stringify(hidden),
-        },
-        { userId: uid },
-      );
-
-      if (r.revision !== undefined) pushServer(r.revision, r.elements, r.violations);
-      setStatus('Applied');
-    } catch (e) {
-      const collaboration =
-        e instanceof ApiHttpError ? formatCollaboration409Status('Apply', e) : null;
-      setStatus(collaboration ?? (e instanceof Error ? e.message : String(e)));
-    }
-  }, [pushServer]);
-
-  const persistViewpointClipPlanes = useCallback(async () => {
-    const st = useBimStore.getState();
-    const mid = st.modelId;
-    const uid = st.userId;
-    const vid = st.activeViewpointId;
-    if (!mid || !vid || st.viewerMode !== 'orbit_3d') return;
-
-    const vpEl = st.elementsById[vid];
-    if (!vpEl || vpEl.kind !== 'viewpoint') return;
-
-    try {
-      for (const tup of [
-        [
-          'viewerClipCapElevMm',
-          st.viewerClipElevMm == null ? '' : String(st.viewerClipElevMm),
-        ] as const,
-        [
-          'viewerClipFloorElevMm',
-          st.viewerClipFloorElevMm == null ? '' : String(st.viewerClipFloorElevMm),
-        ] as const,
-      ]) {
+      try {
         const r = await applyCommand(
           mid,
           {
             type: 'updateElementProperty',
-
-            elementId: vid,
-
-            key: tup[0],
-
-            value: tup[1],
+            elementId: payload.elementId,
+            key: payload.key,
+            value: payload.value,
           },
           { userId: uid },
         );
         if (r.revision !== undefined) pushServer(r.revision, r.elements, r.violations);
+        setStatus('Applied');
+      } catch (e) {
+        const collaboration =
+          e instanceof ApiHttpError ? formatCollaboration409Status('Apply', e) : null;
+        setStatus(collaboration ?? (e instanceof Error ? e.message : String(e)));
       }
+    },
+    [pushServer],
+  );
 
-      setStatus('Applied');
-    } catch (e) {
-      const collaboration =
-        e instanceof ApiHttpError ? formatCollaboration409Status('Apply', e) : null;
-      setStatus(collaboration ?? (e instanceof Error ? e.message : String(e)));
-    }
-  }, [pushServer]);
+  const persistViewpointHiddenKinds = useCallback(async () => {
+    const st = useBimStore.getState();
+    const vid = st.activeViewpointId;
+    if (!vid) return;
+    const hidden = VIEWER_HIDDEN_KIND_KEYS.filter((k) => st.viewerCategoryHidden[k]);
+    await persistViewpointField({
+      elementId: vid,
+      key: 'hiddenSemanticKinds3d',
+      value: JSON.stringify(hidden),
+    });
+  }, [persistViewpointField]);
+
+  const persistViewpointClipPlanes = useCallback(async () => {
+    const st = useBimStore.getState();
+    const vid = st.activeViewpointId;
+    if (!vid) return;
+    await persistViewpointField({
+      elementId: vid,
+      key: 'viewerClipCapElevMm',
+      value: st.viewerClipElevMm == null ? '' : String(st.viewerClipElevMm),
+    });
+    await persistViewpointField({
+      elementId: vid,
+      key: 'viewerClipFloorElevMm',
+      value: st.viewerClipFloorElevMm == null ? '' : String(st.viewerClipFloorElevMm),
+    });
+  }, [persistViewpointField]);
 
   const undoRedo = useCallback(
     async (u: boolean) => {
@@ -821,7 +803,7 @@ export function Workspace() {
         return (
           <div className="grid min-h-[360px] grid-cols-1 gap-2 xl:grid-cols-2">
             {plan}
-            <Viewport wsConnected={wsOn} />
+            <Viewport wsConnected={wsOn} onPersistViewpointField={persistViewpointField} />
           </div>
         );
       case 'split_plan_section':
@@ -866,7 +848,7 @@ export function Workspace() {
           </div>
         );
       default:
-        return viewerMode === 'plan_canvas' ? plan : <Viewport wsConnected={wsOn} />;
+        return viewerMode === 'plan_canvas' ? plan : <Viewport wsConnected={wsOn} onPersistViewpointField={persistViewpointField} />;
     }
   };
 

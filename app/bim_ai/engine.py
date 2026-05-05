@@ -1018,12 +1018,22 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                         except json.JSONDecodeError as exc:
                             raise ValueError("hiddenSemanticKinds3d must be a JSON array of strings") from exc
                     els[cmd.element_id] = el.model_copy(update={"hidden_semantic_kinds_3d": hid})
+                elif cmd.key == "cutawayStyle":
+                    raw_cut = cmd.value.strip()
+                    cut_v: str | None = None
+                    if raw_cut != "":
+                        if raw_cut not in ("none", "cap", "floor", "box"):
+                            raise ValueError(
+                                "cutawayStyle must be empty (inherit) or none|cap|floor|box"
+                            )
+                        cut_v = raw_cut
+                    els[cmd.element_id] = el.model_copy(update={"cutaway_style": cut_v})
                 elif cmd.key == "name" and hasattr(el, "name"):
                     els[cmd.element_id] = el.model_copy(update={"name": cmd.value})
                 else:
                     raise ValueError(
                         "viewpoint updates: key=viewerClipCapElevMm | viewerClipFloorElevMm | "
-                        "hiddenSemanticKinds3d | name"
+                        "hiddenSemanticKinds3d | cutawayStyle | name"
                     )
             elif isinstance(el, (DoorElem, WindowElem)):
                 raw_v = cmd.value.strip()
@@ -1073,7 +1083,7 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                     "defaultPlanRoomTagStyleId(view_template plan_tag_style id or empty clear) | "
                     "planCategoryGraphics(plan_view|view_template JSON array) | "
                     "viewerClipCapElevMm(viewpoint) | viewerClipFloorElevMm(viewpoint) | "
-                    "hiddenSemanticKinds3d(viewpoint JSON array) | "
+                    "hiddenSemanticKinds3d(viewpoint JSON array) | cutawayStyle(viewpoint) | "
                     "familyTypeId(door/window) | materialKey(door/window) | "
                     "sheetId(schedule) | titleBlock(sheet) supported in v2"
                 )
@@ -1091,6 +1101,7 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 viewer_clip_cap_elev_mm=cmd.viewer_clip_cap_elev_mm,
                 viewer_clip_floor_elev_mm=cmd.viewer_clip_floor_elev_mm,
                 hidden_semantic_kinds_3d=list(cmd.hidden_semantic_kinds_3d or []),
+                cutaway_style=cmd.cutaway_style,
             )
 
         case UpsertProjectSettingsCmd():

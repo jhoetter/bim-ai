@@ -741,11 +741,23 @@ export function viewTemplateGraphicsMatrixRows(
 
 const ORBIT_HIDDEN_KINDS_MAX_CHARS = 72;
 
-/** Stable token derived from which elevation clip planes are authored (no separate persisted style enum). */
+export type OrbitViewCutawayStyleToken = 'none' | 'cap' | 'floor' | 'box';
+
+function viewpointPersistedCutawayStyle(
+  vp: Extract<Element, { kind: 'viewpoint' }>,
+): OrbitViewCutawayStyleToken | undefined {
+  const s = vp.cutawayStyle;
+  if (s === 'none' || s === 'cap' || s === 'floor' || s === 'box') return s;
+  return undefined;
+}
+
+/** Stable cut token: prefers persisted `cutawayStyle` when set; else derived from clip elevations. */
 export function viewpointOrbit3dCutawayStyleToken(
   vp: Extract<Element, { kind: 'viewpoint' }>,
-): 'none' | 'cap' | 'floor' | 'box' {
+): OrbitViewCutawayStyleToken {
   if (vp.mode !== 'orbit_3d') return 'none';
+  const persisted = viewpointPersistedCutawayStyle(vp);
+  if (persisted !== undefined) return persisted;
   const hasCap = vp.viewerClipCapElevMm != null && Number.isFinite(vp.viewerClipCapElevMm);
   const hasFloor =
     vp.viewerClipFloorElevMm != null && Number.isFinite(vp.viewerClipFloorElevMm);
@@ -755,7 +767,7 @@ export function viewpointOrbit3dCutawayStyleToken(
   return 'none';
 }
 
-/** Human-readable cutaway / section-box style for HUD (from clip fields only). */
+/** Human-readable cutaway / section-box style (explicit `cutawayStyle` when set, else clip-derived). */
 export function viewpointOrbit3dCutawayStyleLabel(vp: Extract<Element, { kind: 'viewpoint' }>): string {
   const t = viewpointOrbit3dCutawayStyleToken(vp);
   switch (t) {
