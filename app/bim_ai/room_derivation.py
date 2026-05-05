@@ -686,6 +686,7 @@ def compute_room_boundary_derivation(doc: Document) -> dict[str, Any]:
         "axisAlignedRectangleCandidates": sorted(enriched, key=_sig),
         "candidateCount": len(dedup),
         "authoritativeCandidateCount": auth_count,
+        "unboundedRoomIds": detect_unbounded_rooms_v1(doc),
         "diagnostics": sorted(
             diagnostics,
             key=lambda d: (str(d.get("levelId")), str(d.get("code")), str(d.get("diagnosticId"))),
@@ -770,6 +771,45 @@ def stable_footprint_id(cand_dict: dict[str, Any]) -> str:
     }
     body = json.dumps(canon, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(body.encode()).hexdigest()[:24]
+
+
+_UNBOUNDED_PROXIMITY_MM = 1500.0
+
+
+def detect_unbounded_rooms_v1(doc: Document) -> list[str]:
+    """Return room element IDs whose boundary is open (not fully enclosed by walls/room separations).
+
+    A room is considered unbounded when fewer than 4 distinct axis-aligned boundary segments
+    (walls or room separations) exist within _UNBOUNDED_PROXIMITY_MM of its bounding box on
+    the same level.  A fully enclosed axis-aligned rectangle needs at minimum 2 horizontal
+    and 2 vertical boundary segments.
+    """
+    segs_by_level = collect_axis_aligned_boundary_segments(doc)
+    result: list[str] = []
+    for ent in doc.elements.values():
+        if not isinstance(ent, RoomElem):
+            continue
+        bb = outline_aa_bbox_mm(ent)
+        if bb is None:
+            result.append(ent.id)
+            continue
+        rx0 = bb["min"]["x"] - _UNBOUNDED_PROXIMITY_MM
+        ry0 = bb["min"]["y"] - _UNBOUNDED_PROXIMITY_MM
+        rx1 = bb["max"]["x"] + _UNBOUNDED_PROXIMITY_MM
+        ry1 = bb["max"]["y"] + _UNBOUNDED_PROXIMITY_MM
+        segs = segs_by_level.get(ent.level_id, [])
+        near_count = 0
+        for seg in segs:
+            kind, c, mn, mx = seg[0], seg[1], seg[2], seg[3]
+            if kind == "h":
+                if ry0 <= c <= ry1 and mn <= rx1 and mx >= rx0:
+                    near_count += 1
+            else:
+                if rx0 <= c <= rx1 and mn <= ry1 and mx >= ry0:
+                    near_count += 1
+        if near_count < 4:
+            result.append(ent.id)
+    return sorted(result)
 
 
 def footprint_outline_mm_rectangle(bbox: dict[str, Any]) -> list[dict[str, float]]:

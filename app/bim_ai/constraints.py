@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from collections import defaultdict
+from enum import StrEnum
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -111,6 +112,15 @@ _SHEET_VIEWPORT_MIN_SIDE_MM = 10.0
 _SHEET_DEFAULT_TITLEBLOCK_SYMBOL = "A1"
 
 
+class AdvisorBlockingClass(StrEnum):
+    geometry = "geometry"
+    exchange = "exchange"
+    documentation = "documentation"
+    schedule = "schedule"
+    sheet = "sheet"
+    evidence = "evidence"
+
+
 class Violation(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     rule_id: str = Field(alias="ruleId")
@@ -120,6 +130,7 @@ class Violation(BaseModel):
     blocking: bool = Field(default=False, alias="blocking")
     quick_fix_command: dict[str, Any] | None = Field(default=None, alias="quickFixCommand")
     discipline: str | None = Field(default=None, alias="discipline")
+    blocking_class: str | None = Field(default=None, alias="blockingClass")
 
 
 _RULE_DISCIPLINE: dict[str, str] = {
@@ -230,6 +241,129 @@ _RULE_DISCIPLINE: dict[str, str] = {
     "prd_closeout_advisor_readiness_status_drift": "agent",
     "prd_closeout_section_missing_in_readiness": "agent",
     "prd_closeout_reason_code_drift": "agent",
+    # New rules — wave-4 prompt-7
+    "schedule_not_placed_on_sheet": "coordination",
+    "sheet_viewport_schedule_stale": "coordination",
+    "schedule_field_registry_gap": "coordination",
+}
+
+_RULE_BLOCKING_CLASS: dict[str, str] = {
+    # geometry
+    "wall_overlap": "geometry",
+    "window_overlaps_door": "geometry",
+    "wall_zero_length": "geometry",
+    "wall_missing_level": "geometry",
+    "wall_constraint_levels_inverted": "geometry",
+    "grid_zero_length": "geometry",
+    "door_off_wall": "geometry",
+    "door_not_on_wall": "geometry",
+    "window_off_wall": "geometry",
+    "floor_missing_level": "geometry",
+    "floor_polygon_degenerate": "geometry",
+    "slab_opening_missing_floor": "geometry",
+    "slab_opening_polygon_degenerate": "geometry",
+    "room_outline_degenerate": "geometry",
+    "room_overlap_plan": "geometry",
+    "stair_geometry_unreasonable": "geometry",
+    "stair_missing_levels": "geometry",
+    "stair_comfort_eu_proxy": "geometry",
+    # documentation
+    "level_duplicate_elevation": "documentation",
+    "level_datum_parent_cycle": "documentation",
+    "level_datum_parent_offset_mismatch": "documentation",
+    "level_parent_unresolved": "documentation",
+    "datum_grid_reference_missing": "documentation",
+    "elevation_marker_view_unresolved": "documentation",
+    "section_level_reference_missing": "documentation",
+    "dimension_zero_length": "documentation",
+    "dimension_bad_level": "documentation",
+    "room_programme_metadata_hint": "documentation",
+    "room_finish_metadata_hint": "documentation",
+    "room_target_area_mismatch": "documentation",
+    "room_programme_inconsistent_within_level": "documentation",
+    "room_outline_spans_axis_room_separation": "documentation",
+    "room_boundary_axis_closure_insufficient_segments": "documentation",
+    "room_boundary_axis_segment_enum_cap": "documentation",
+    "room_boundary_axis_segments_missing_orientation_mix": "documentation",
+    "room_boundary_non_axis_segments_skipped": "documentation",
+    "room_derived_interior_separation_ambiguous": "documentation",
+    "stair_schedule_degenerate_run": "documentation",
+    "stair_schedule_incomplete_riser_tread": "documentation",
+    "stair_schedule_guardrail_placeholder_uncorrelated": "documentation",
+    "ids_cleanroom_door_without_family_type": "documentation",
+    "ids_cleanroom_window_without_family_type": "documentation",
+    "ids_cleanroom_door_pressure_metadata_missing": "documentation",
+    "ids_cleanroom_family_type_unknown": "documentation",
+    "ids_cleanroom_cleanroom_class_missing": "documentation",
+    "ids_cleanroom_interlock_grade_missing": "documentation",
+    "ids_cleanroom_opening_finish_material_missing": "documentation",
+    "plan_view_tag_style_fallback": "documentation",
+    "plan_view_tag_style_ref_invalid": "documentation",
+    "plan_view_tag_style_target_mismatch": "documentation",
+    "plan_view_tag_style_override": "documentation",
+    "plan_template_tag_style_ref_invalid": "documentation",
+    "room_color_scheme_identity_missing": "documentation",
+    "room_color_scheme_row_missing_label": "documentation",
+    "room_color_scheme_row_invalid_fill_color": "documentation",
+    "room_color_scheme_row_duplicate_override_key": "documentation",
+    # schedule
+    "schedule_opening_identifier_missing": "schedule",
+    "schedule_opening_orphan_host": "schedule",
+    "schedule_opening_family_type_incomplete": "schedule",
+    "schedule_opening_host_wall_type_incomplete": "schedule",
+    "schedule_orphan_sheet_ref": "schedule",
+    "schedule_sheet_viewport_missing": "schedule",
+    "schedule_sheet_export_parity_csv_diverges": "schedule",
+    "schedule_sheet_export_parity_json_diverges": "schedule",
+    "schedule_sheet_export_parity_listing_diverges": "schedule",
+    "schedule_not_placed_on_sheet": "schedule",
+    "sheet_viewport_schedule_stale": "schedule",
+    "schedule_field_registry_gap": "schedule",
+    # sheet
+    "plan_view_sheet_viewport_crop_missing": "sheet",
+    "plan_view_sheet_viewport_crop_inverted": "sheet",
+    "plan_view_sheet_viewport_zero_extent": "sheet",
+    "sheet_viewport_unknown_ref": "sheet",
+    "sheet_missing_titleblock": "sheet",
+    "sheet_revision_issue_metadata_missing": "sheet",
+    "sheet_viewport_zero_extent": "sheet",
+    "section_on_sheet_cut_line_missing": "sheet",
+    "section_on_sheet_profile_token_missing": "sheet",
+    "section_on_sheet_revision_issue_unresolved": "sheet",
+    # exchange
+    "exchange_manifest_ifc_gltf_slice_mismatch": "exchange",
+    "exchange_ifc_unhandled_geometry_present": "exchange",
+    "exchange_ifc_kernel_geometry_skip_summary": "exchange",
+    "exchange_ifc_roundtrip_count_mismatch": "exchange",
+    "exchange_ifc_roundtrip_programme_mismatch": "exchange",
+    "exchange_ifc_ids_identity_pset_gap": "exchange",
+    "exchange_ifc_ids_qto_gap": "exchange",
+    "exchange_ifc_material_layer_readback_mismatch": "exchange",
+    "exchange_ifc_import_preview_extraction_gaps": "exchange",
+    "exchange_ifc_import_preview_unsupported_products": "exchange",
+    "exchange_ifc_import_preview_ids_pointer_gap": "exchange",
+    "exchange_ifc_import_preview_id_collision": "exchange",
+    "exchange_ifc_manifest_authoritative_alignment_drift": "exchange",
+    "exchange_ifc_manifest_unsupported_alignment_drift": "exchange",
+    "exchange_ifc_manifest_ids_pointer_alignment_drift": "exchange",
+    "material_catalog_missing_layer_stack": "exchange",
+    "material_catalog_stale_assembly_reference": "exchange",
+    "material_catalog_missing_material": "exchange",
+    "material_catalog_unsupported_layer_function": "exchange",
+    "material_catalog_not_propagated": "exchange",
+    "gltf_export_manifest_expected_extension_missing": "exchange",
+    "gltf_export_manifest_extension_order_drift": "exchange",
+    "exchange_ifc_qto_stair_gap": "exchange",
+    "exchange_ifc_qto_room_gap": "exchange",
+    "exchange_ifc_pset_floor_gap": "exchange",
+    "exchange_ifc_pset_roof_gap": "exchange",
+    # evidence
+    "agent_brief_assumption_unresolved": "evidence",
+    "agent_brief_deviation_unacknowledged": "evidence",
+    "agent_brief_assumption_reference_broken": "evidence",
+    "prd_closeout_advisor_readiness_status_drift": "evidence",
+    "prd_closeout_section_missing_in_readiness": "evidence",
+    "prd_closeout_reason_code_drift": "evidence",
 }
 
 _MATERIAL_CATALOG_AUDIT_RULE_IDS: dict[str, str] = {
@@ -336,6 +470,14 @@ def annotate_violation_disciplines(violations: list[Violation]) -> list[Violatio
     for v in violations:
         d = _RULE_DISCIPLINE.get(v.rule_id, "architecture")
         out.append(v.model_copy(update={"discipline": d}))
+    return out
+
+
+def annotate_violation_blocking_classes(violations: list[Violation]) -> list[Violation]:
+    out: list[Violation] = []
+    for v in violations:
+        bc = _RULE_BLOCKING_CLASS.get(v.rule_id, AdvisorBlockingClass.documentation.value)
+        out.append(v.model_copy(update={"blocking_class": bc}))
     return out
 
 
@@ -2349,6 +2491,123 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
                 )
             )
 
+    # schedule_not_placed_on_sheet: schedule exists but has no sheetId at all
+    for sc_el in sorted(elements.values(), key=lambda x: x.id):
+        if not isinstance(sc_el, ScheduleElem):
+            continue
+        if (sc_el.sheet_id or "").strip():
+            continue  # has a sheetId — handled by orphan/viewport rules
+        sheets_available = sorted(
+            (e for e in elements.values() if isinstance(e, SheetElem)),
+            key=lambda s: s.id,
+        )
+        qfix_unplaced: dict[str, Any] | None = None
+        if sheets_available:
+            first_sh = sheets_available[0]
+            existing_vps = list(first_sh.viewports_mm or [])
+            new_vp_unplaced: dict[str, Any] = {
+                "viewportId": f"vp-autoplace-schedule-{sc_el.id}",
+                "label": sc_el.name or "Schedule",
+                "viewRef": f"schedule:{sc_el.id}",
+                "xMm": _SCHEDULE_VIEWPORT_AUTOPLACE_X_MM,
+                "yMm": _SCHEDULE_VIEWPORT_AUTOPLACE_Y_MM,
+                "widthMm": _SCHEDULE_VIEWPORT_AUTOPLACE_WIDTH_MM,
+                "heightMm": _SCHEDULE_VIEWPORT_AUTOPLACE_HEIGHT_MM,
+            }
+            qfix_unplaced = {
+                "type": "upsertSheetViewports",
+                "sheetId": first_sh.id,
+                "viewportsMm": existing_vps + [new_vp_unplaced],
+            }
+        viols.append(
+            Violation(
+                rule_id="schedule_not_placed_on_sheet",
+                severity="warning",
+                message=(
+                    f"Schedule {sc_el.id!r} exists but is not placed on any sheet "
+                    "(sheetId is empty; assign sheetId to enable documentation linkage)."
+                ),
+                element_ids=[sc_el.id],
+                quick_fix_command=qfix_unplaced,
+            )
+        )
+
+    # sheet_viewport_schedule_stale: viewport rowCount cache disagrees with derived rows
+    for sh_stale in sorted(
+        (e for e in elements.values() if isinstance(e, SheetElem)), key=lambda s: s.id
+    ):
+        for vp_stale in sh_stale.viewports_mm or []:
+            if not isinstance(vp_stale, dict):
+                continue
+            vr_stale = vp_stale.get("viewRef") or vp_stale.get("view_ref")
+            if not isinstance(vr_stale, str) or not vr_stale.startswith("schedule:"):
+                continue
+            sc_id_stale = vr_stale.split(":", 1)[1].strip()
+            cached_rc = vp_stale.get("rowCount")
+            if cached_rc is None:
+                continue  # no cached count — rule is silent
+            try:
+                cached_rc_int = int(cached_rc)
+            except (TypeError, ValueError):
+                continue
+            sc_tgt_stale = elements.get(sc_id_stale)
+            if not isinstance(sc_tgt_stale, ScheduleElem):
+                continue
+            try:
+                from bim_ai.schedule_derivation import derive_schedule_table as _derive_tbl
+                _stale_doc = Document(revision=1, elements=dict(elements))  # type: ignore[arg-type]
+                tbl_stale = _derive_tbl(_stale_doc, sc_id_stale)
+                derived_rc = int(tbl_stale.get("totalRows") or 0)
+            except Exception:
+                continue
+            if derived_rc != cached_rc_int:
+                updated_vps_stale = [
+                    {**v, "rowCount": derived_rc} if (
+                        isinstance(v, dict)
+                        and (v.get("viewRef") or v.get("view_ref")) == vr_stale
+                    ) else v
+                    for v in (sh_stale.viewports_mm or [])
+                ]
+                viols.append(
+                    Violation(
+                        rule_id="sheet_viewport_schedule_stale",
+                        severity="warning",
+                        message=(
+                            f"Schedule viewport for {sc_id_stale!r} on sheet {sh_stale.id!r} has "
+                            f"cached rowCount={cached_rc_int} but current derivation yields "
+                            f"{derived_rc} rows; re-derive the schedule to refresh."
+                        ),
+                        element_ids=[sh_stale.id, sc_id_stale],
+                        quick_fix_command={
+                            "type": "upsertSheetViewports",
+                            "sheetId": sh_stale.id,
+                            "viewportsMm": updated_vps_stale,
+                        },
+                    )
+                )
+
+    # schedule_field_registry_gap: schedule category has no registered column order
+    for sc_gap in sorted(elements.values(), key=lambda x: x.id):
+        if not isinstance(sc_gap, ScheduleElem):
+            continue
+        filt_gap = dict(sc_gap.filters or {})
+        cat_gap = str(filt_gap.get("category") or filt_gap.get("Category") or "").strip().lower()
+        if not cat_gap:
+            continue
+        from bim_ai.schedule_field_registry import SCHEDULE_COLUMN_ORDER as _SCO
+        if cat_gap not in _SCO:
+            viols.append(
+                Violation(
+                    rule_id="schedule_field_registry_gap",
+                    severity="info",
+                    message=(
+                        f"Schedule {sc_gap.id!r} uses category {cat_gap!r} which has no registered "
+                        "column order in SCHEDULE_COLUMN_ORDER; custom field ordering may be inconsistent."
+                    ),
+                    element_ids=[sc_gap.id],
+                )
+            )
+
     parity_doc = Document(revision=1, elements=dict(elements))  # type: ignore[arg-type]
     parity_rows = collect_schedule_sheet_export_parity_rows_for_doc(parity_doc)
     parity_token_to_rule = {
@@ -2504,7 +2763,8 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
     viols.extend(_room_color_scheme_advisory_violations(elements))
     viols.extend(_section_on_sheet_advisory_violations(elements))
     viols.sort(key=lambda v: (v.rule_id, tuple(sorted(v.element_ids)), v.severity))
-    return annotate_violation_disciplines(viols)
+    annotated = annotate_violation_disciplines(viols)
+    return annotate_violation_blocking_classes(annotated)
 
 
 def _plan_on_sheet_advisory_violations(
@@ -2668,3 +2928,129 @@ def _section_on_sheet_advisory_violations(elements: dict[str, Element]) -> list[
                 )
     return out
 
+
+def advisorBlockingClassSummary_v1(doc: Document) -> dict[str, Any]:
+    """Per-class violation counts at each severity for a document."""
+    viols = evaluate(doc.elements)  # type: ignore[arg-type]
+    counts: dict[str, dict[str, int]] = {
+        cls.value: {"error": 0, "warning": 0, "info": 0}
+        for cls in AdvisorBlockingClass
+    }
+    for v in viols:
+        bc = _RULE_BLOCKING_CLASS.get(v.rule_id, AdvisorBlockingClass.documentation.value)
+        sev = v.severity
+        if bc in counts and sev in counts[bc]:
+            counts[bc][sev] += 1
+    return {
+        "format": "advisorBlockingClassSummary_v1",
+        "perClass": counts,
+        "totalViolations": len(viols),
+    }
+
+
+def fix_schedule_sheet_placement(doc: Document) -> dict[str, Any]:
+    """Quick-fix: assign unplaced schedules to the first available sheet and add viewports.
+
+    Returns quickFixResult_v1 with {applied, skipped, reason}.
+    """
+    from bim_ai.engine import try_commit_bundle
+
+    schedules = sorted(
+        (e for e in doc.elements.values() if isinstance(e, ScheduleElem)),
+        key=lambda s: s.id,
+    )
+    sheets = sorted(
+        (e for e in doc.elements.values() if isinstance(e, SheetElem)),
+        key=lambda s: s.id,
+    )
+    unplaced = [s for s in schedules if not (s.sheet_id or "").strip()]
+
+    if not unplaced:
+        return {"applied": False, "skipped": True, "reason": "no_unplaced_schedules"}
+    if not sheets:
+        return {"applied": False, "skipped": True, "reason": "no_sheets_available"}
+
+    target_sheet = sheets[0]
+    new_vps = list(target_sheet.viewports_mm or [])
+    for sch in unplaced:
+        new_vps.append(
+            {
+                "viewportId": f"vp-autoplace-schedule-{sch.id}",
+                "label": sch.name or "Schedule",
+                "viewRef": f"schedule:{sch.id}",
+                "xMm": _SCHEDULE_VIEWPORT_AUTOPLACE_X_MM,
+                "yMm": _SCHEDULE_VIEWPORT_AUTOPLACE_Y_MM,
+                "widthMm": _SCHEDULE_VIEWPORT_AUTOPLACE_WIDTH_MM,
+                "heightMm": _SCHEDULE_VIEWPORT_AUTOPLACE_HEIGHT_MM,
+            }
+        )
+
+    commands: list[dict[str, Any]] = [
+        {
+            "type": "upsertSheetViewports",
+            "sheetId": target_sheet.id,
+            "viewportsMm": new_vps,
+        }
+    ]
+    ok, _new_doc, _cmds, _viols, code = try_commit_bundle(doc, commands)
+    return {
+        "applied": ok,
+        "skipped": not ok,
+        "reason": f"placed_{len(unplaced)}_on_{target_sheet.id}" if ok else f"commit_failed:{code}",
+    }
+
+
+def fix_sheet_viewport_refresh(doc: Document) -> dict[str, Any]:
+    """Quick-fix: update stale schedule viewport rowCounts to match current derivation.
+
+    Returns quickFixResult_v1 with {applied, skipped, reason}.
+    """
+    from bim_ai.engine import try_commit_bundle
+    from bim_ai.schedule_derivation import derive_schedule_table
+
+    stale_count = 0
+    commands: list[dict[str, Any]] = []
+
+    for sh_el in sorted(
+        (e for e in doc.elements.values() if isinstance(e, SheetElem)), key=lambda s: s.id
+    ):
+        needs_update = False
+        updated_vps: list[Any] = []
+        for vp in sh_el.viewports_mm or []:
+            if not isinstance(vp, dict):
+                updated_vps.append(vp)
+                continue
+            vr = vp.get("viewRef") or vp.get("view_ref")
+            cached_rc = vp.get("rowCount")
+            if isinstance(vr, str) and vr.startswith("schedule:") and cached_rc is not None:
+                sc_id = vr.split(":", 1)[1].strip()
+                try:
+                    cached_int = int(cached_rc)
+                    tbl = derive_schedule_table(doc, sc_id)
+                    derived_rc = int(tbl.get("totalRows") or 0)
+                    if derived_rc != cached_int:
+                        updated_vps.append({**vp, "rowCount": derived_rc})
+                        needs_update = True
+                        stale_count += 1
+                        continue
+                except Exception:
+                    pass
+            updated_vps.append(vp)
+        if needs_update:
+            commands.append(
+                {
+                    "type": "upsertSheetViewports",
+                    "sheetId": sh_el.id,
+                    "viewportsMm": updated_vps,
+                }
+            )
+
+    if not commands:
+        return {"applied": False, "skipped": True, "reason": "no_stale_viewports"}
+
+    ok, _new_doc, _cmds, _viols, code = try_commit_bundle(doc, commands)
+    return {
+        "applied": ok,
+        "skipped": not ok,
+        "reason": f"refreshed_{stale_count}_viewport(s)" if ok else f"commit_failed:{code}",
+    }

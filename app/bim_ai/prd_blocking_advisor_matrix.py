@@ -192,11 +192,14 @@ _PRD_ADVISOR_ROWS: list[dict[str, Any]] = [
         "prdNeedle": "Schedules: missing required fields, duplicate marks, fields not available.",
         "requiredRuleIds": sorted(
             [
+                "schedule_field_registry_gap",
+                "schedule_not_placed_on_sheet",
                 "schedule_opening_family_type_incomplete",
                 "schedule_opening_host_wall_type_incomplete",
                 "schedule_opening_identifier_missing",
                 "schedule_opening_orphan_host",
                 "schedule_sheet_viewport_missing",
+                "sheet_viewport_schedule_stale",
             ]
         ),
         "status": "pass",
@@ -205,6 +208,10 @@ _PRD_ADVISOR_ROWS: list[dict[str, Any]] = [
             {
                 "kind": "pytest_module",
                 "path": "app/tests/test_schedule_required_field_advisories.py",
+            },
+            {
+                "kind": "pytest_module",
+                "path": "app/tests/test_advisor_blocking_class_expansion.py",
             },
             {"kind": "wp_ref", "id": "WP-V01"},
         ],
@@ -466,4 +473,50 @@ def prd_advisor_matrix_summary() -> dict[str, Any]:
         ),
         "matrixContentDigestSha256": m["matrixContentDigestSha256"],
         "validationErrors": m["validationErrors"],
+    }
+
+
+def prdBlockingAdvisorMatrixExpansion_v1() -> dict[str, Any]:
+    """Complete rule inventory with blocking class, severity, and quick-fix availability (PRD §11-§15)."""
+    from bim_ai.constraints import (  # noqa: PLC0415
+        _RULE_BLOCKING_CLASS,
+        AdvisorBlockingClass,
+    )
+
+    _NEW_RULE_SEVERITY: dict[str, str] = {
+        "schedule_not_placed_on_sheet": "warning",
+        "sheet_viewport_schedule_stale": "warning",
+        "schedule_field_registry_gap": "info",
+    }
+    _NEW_RULE_HAS_QUICK_FIX: dict[str, bool] = {
+        "schedule_not_placed_on_sheet": True,
+        "sheet_viewport_schedule_stale": True,
+        "schedule_field_registry_gap": False,
+    }
+
+    new_rule_ids = sorted(_NEW_RULE_SEVERITY.keys())
+    new_rows = [
+        {
+            "ruleId": rid,
+            "blockingClass": _RULE_BLOCKING_CLASS.get(rid, AdvisorBlockingClass.documentation.value),
+            "severity": _NEW_RULE_SEVERITY[rid],
+            "hasQuickFix": _NEW_RULE_HAS_QUICK_FIX[rid],
+            "prdSection": "§11",
+        }
+        for rid in new_rule_ids
+    ]
+
+    full_inventory = [
+        {
+            "ruleId": rid,
+            "blockingClass": _RULE_BLOCKING_CLASS[rid],
+        }
+        for rid in sorted(_RULE_BLOCKING_CLASS.keys())
+    ]
+
+    return {
+        "format": "prdBlockingAdvisorMatrixExpansion_v1",
+        "newRules": new_rows,
+        "fullRuleInventory": full_inventory,
+        "totalRules": len(full_inventory),
     }
