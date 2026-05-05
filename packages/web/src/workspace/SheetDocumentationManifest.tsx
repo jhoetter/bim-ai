@@ -11,6 +11,7 @@ import {
 import type { SheetViewportMmDraft } from './sheetViewportAuthoring';
 import { normalizeViewportRaw, readViewportMmBox } from './sheetViewportAuthoring';
 import { parseSheetViewRef, resolveViewportTitleFromRef } from './sheetViewRef';
+import { scheduleTableRendererV1SheetReadout } from '../schedules/scheduleTableRendererV1';
 
 type SheetEl = Extract<Element, { kind: 'sheet' }>;
 
@@ -359,7 +360,10 @@ export function SheetDocumentationManifest(props: {
                     hint?.scheduleDocumentationSegment !== undefined &&
                     String(hint.scheduleDocumentationSegment).trim()
                   ) {
-                    hintParts.push(String(hint.scheduleDocumentationSegment));
+                    const schSeg = String(hint.scheduleDocumentationSegment).trim();
+                    hintParts.push(schSeg);
+                    const tblSeg = scheduleTableRendererV1SheetReadout(schSeg, elementsById);
+                    if (tblSeg) hintParts.push(tblSeg);
                   }
                   const hintLine = hintParts.join(' · ') || '—';
                   return (

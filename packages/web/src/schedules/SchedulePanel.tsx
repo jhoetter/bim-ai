@@ -27,6 +27,15 @@ import {
   scheduleRegistryEngineReadoutParts,
   type ScheduleFieldMeta,
 } from './schedulePanelRegistryChrome';
+import { resolveScheduleSortDescending, scheduleTotalsReadoutParts } from './schedulePayloadTotals';
+import {
+  buildScheduleTableModelV1,
+  SCHEDULE_TABLE_EMPTY_V1,
+  type ScheduleTableBodyRowV1,
+  type ScheduleTableModelV1,
+} from './scheduleTableRendererV1';
+
+export { resolveScheduleSortDescending, scheduleTotalsReadoutParts } from './schedulePayloadTotals';
 
 type TabKey = 'rooms' | 'doors' | 'windows' | 'floors' | 'roofs' | 'stairs' | 'plans' | 'sheets';
 
@@ -227,65 +236,6 @@ function flattenSchedulePayloadRows(data: Record<string, unknown>): Record<strin
   }
 
   return [];
-}
-
-/** Precedence matches server `_resolve_sort_descending` (filters, then grouping). */
-export function resolveScheduleSortDescending(
-  filters: Record<string, unknown>,
-  grouping: Record<string, unknown> | undefined,
-): boolean {
-  for (const src of [filters, grouping ?? {}]) {
-    const v = src.sortDescending ?? src.sort_descending;
-    if (typeof v === 'boolean') return v;
-    if (typeof v === 'string' && ['true', '1', 'yes'].includes(v.trim().toLowerCase())) return true;
-  }
-  return false;
-}
-
-export function scheduleTotalsReadoutParts(totals: Record<string, unknown> | undefined): string[] {
-  if (!totals) return [];
-
-  const kind = String(totals.kind ?? '');
-
-  const parts: string[] = [];
-
-  parts.push(`${totals.rowCount ?? totals.row_count ?? '?'} rows`);
-
-  if (kind === 'room') {
-    parts.push(`sum area ${Number(totals.areaM2 ?? 0).toFixed(3)} m2`);
-    parts.push(`sum perimeter ${Number(totals.perimeterM ?? 0).toFixed(3)} m`);
-    const tsum = totals.targetAreaM2 ?? totals.target_area_m2;
-    if (tsum != null && tsum !== '' && Number.isFinite(Number(tsum))) {
-      parts.push(`sum target ${Number(tsum).toFixed(3)} m²`);
-    }
-  }
-
-  if (kind === 'door') {
-    parts.push(`sum rough opening ${Number(totals.roughOpeningAreaM2 ?? 0).toFixed(6)} m²`);
-  }
-
-  if (kind === 'window') {
-    parts.push(`avg width ${Number(totals.averageWidthMm ?? 0).toFixed(1)} mm`);
-    parts.push(`sum rough opening ${Number(totals.roughOpeningAreaM2 ?? 0).toFixed(6)} m²`);
-    const glaze = totals.totalOpeningAreaM2 ?? totals.total_opening_area_m2;
-    if (glaze != null && glaze !== '' && Number.isFinite(Number(glaze))) {
-      parts.push(`sum glazing ${Number(glaze).toFixed(6)} m²`);
-    }
-  }
-
-  if (kind === 'floor') parts.push(`sum area ${Number(totals.areaM2 ?? 0).toFixed(3)} m²`);
-
-  if (kind === 'roof') parts.push(`footprint ${Number(totals.footprintAreaM2 ?? 0).toFixed(3)} m²`);
-
-  if (kind === 'stair') parts.push(`total run ${Number(totals.totalRunMm ?? 0).toFixed(1)} mm`);
-
-  if (kind === 'sheet') parts.push(`viewports ${Number(totals.totalViewports ?? 0)}`);
-
-  if (kind === 'material_assembly') {
-    parts.push(`gross volume ${Number(totals.grossVolumeM3 ?? 0).toFixed(8)} m³`);
-  }
-
-  return parts;
 }
 
 type RoomVm = {
@@ -809,6 +759,29 @@ export function SchedulePanel(props: {
     return all.filter((c) => want.has(c));
   }, [registrySchedule, registryPickKey, registryVisibleCols, schedulePersistedColumns]);
 
+  const registryTableModelV1: ScheduleTableModelV1 | null = useMemo(() => {
+    if (
+      tab !== 'floors' &&
+      tab !== 'roofs' &&
+      tab !== 'stairs' &&
+      tab !== 'plans' &&
+      tab !== 'sheets'
+    ) {
+      return null;
+    }
+
+    if (!srvActive || srvActive.tab !== tab) return null;
+
+    const d = srvActive.data as Record<string, unknown>;
+    const cols = Array.isArray(d.columns) ? (d.columns as string[]) : [];
+    if (!cols.length) return null;
+
+    return buildScheduleTableModelV1({
+      payload: d,
+      visibleColumnKeys: visibleRegistryColumns.length ? visibleRegistryColumns : undefined,
+    });
+  }, [srvActive, tab, visibleRegistryColumns]);
+
   function toggleRegistryColumn(columnKey: string) {
     if (!registryPickKey || !registrySchedule) return;
     const all = registrySchedule.columns;
@@ -979,10 +952,15 @@ export function SchedulePanel(props: {
     URL.revokeObjectURL(objectUrl);
   }
 
-  function renderTotals() {
-    if (!totals) return null;
+  function renderTotals(footerPartsOverride?: string[]) {
+    const parts =
+      footerPartsOverride !== undefined
+        ? footerPartsOverride
+        : totals
+          ? scheduleTotalsReadoutParts(totals)
+          : [];
 
-    const parts = scheduleTotalsReadoutParts(totals);
+    if (!parts.length) return null;
 
     return (
       <div
@@ -1475,44 +1453,96 @@ export function SchedulePanel(props: {
     );
   }
 
-  function renderRegistryScheduleTable(g: GenericDerived, columnKeys: string[]) {
-    const cols = columnKeys.length ? columnKeys : g.columns;
-    const headers = cols.map((c) => g.fieldLabels[c] ?? c);
+  function renderRegistryScheduleTable(model: ScheduleTableModelV1) {
+    const cols = model.columns.map((c) => c.key);
+    const colSpan = Math.max(cols.length, 1);
 
-    const rowsKeyed: Array<Record<string, unknown> & { id: string }> = g.rows.map((r, i) => ({
-      ...r,
-      id: String(r.elementId ?? (r as { element_id?: string }).element_id ?? `row-${i}`),
-    }));
+    const colGroup = (
+      <colgroup>
+        {model.columns.map((c) => (
+          <col key={c.key} style={{ width: `${c.displayWidthHintPx}px` }} />
+        ))}
+      </colgroup>
+    );
+
+    const headerRow = (
+      <tr>
+        {model.columns.map((c) => (
+          <th key={c.key} className="align-bottom px-1 text-left text-[10px] font-normal">
+            <div>{c.headerLabel}</div>
+            {c.unitLabel || c.roleLabel ? (
+              <div className="text-[9px] font-normal text-muted opacity-90">
+                {[c.unitLabel, c.roleLabel].filter(Boolean).join(' · ')}
+              </div>
+            ) : null}
+          </th>
+        ))}
+      </tr>
+    );
+
+    const maxVisualRows = Math.max(model.bodyRows.length, 1);
 
     return (
       <div data-testid="schedule-registry-table">
-        <VirtualScrollRows<Record<string, unknown> & { id: string }>
-          maxHeightPx={Math.min(
-            SCHED_TABLE_VIEWPORT_PX,
-            SCHED_TABLE_ROW_PX * Math.max(rowsKeyed.length, 1),
-          )}
-          rowHeightPx={SCHED_TABLE_ROW_PX}
-          colSpan={cols.length}
-          rows={rowsKeyed}
-          header={
-            <tr>
-              {headers.map((h) => (
-                <th key={h} className="text-left text-[10px] font-normal">
-                  {h}
-                </th>
-              ))}
-            </tr>
-          }
-          renderRow={(r) => (
-            <tr className="border-t border-border/60">
-              {cols.map((c) => (
-                <td key={c} className="max-w-[140px] truncate text-[10px]">
-                  {formatScheduleCell(r[c])}
-                </td>
-              ))}
-            </tr>
-          )}
-        />
+        <div
+          data-testid="schedule-table-title"
+          className="mb-1 text-[11px] font-semibold leading-snug text-foreground"
+        >
+          {model.title}
+        </div>
+
+        {!model.bodyRows.length ? (
+          <div
+            data-testid="schedule-table-empty"
+            className="rounded border border-border/40 px-2 py-1 font-mono text-[10px] text-muted"
+            title={model.emptyToken ?? SCHEDULE_TABLE_EMPTY_V1}
+          >
+            {model.emptyToken ?? SCHEDULE_TABLE_EMPTY_V1}
+          </div>
+        ) : (
+          <VirtualScrollRows<ScheduleTableBodyRowV1>
+            maxHeightPx={Math.min(SCHED_TABLE_VIEWPORT_PX, SCHED_TABLE_ROW_PX * maxVisualRows)}
+            rowHeightPx={SCHED_TABLE_ROW_PX}
+            colSpan={colSpan}
+            colGroup={colGroup}
+            rows={model.bodyRows}
+            header={headerRow}
+            renderRow={(row) => {
+              switch (row.kind) {
+                case 'groupHeader': {
+                  return (
+                    <tr className="border-t border-border/60 bg-accent/15">
+                      <td
+                        colSpan={colSpan}
+                        className="px-2 py-0.5 text-[10px] font-semibold text-muted"
+                      >
+                        {row.label}
+                      </td>
+                    </tr>
+                  );
+                }
+
+                case 'data': {
+                  return (
+                    <tr className="border-t border-border/60">
+                      {cols.map((cKey) => (
+                        <td key={cKey} className="max-w-[140px] truncate px-1 text-[10px]">
+                          {formatScheduleCell(row.record[cKey])}
+                        </td>
+                      ))}
+                    </tr>
+                  );
+                }
+
+                default: {
+                  const exhaustive: never = row;
+
+                  return exhaustive;
+                }
+              }
+            }}
+          />
+        )}
       </div>
     );
   }
@@ -1763,11 +1793,11 @@ export function SchedulePanel(props: {
           </div>
         ) : serverErr ? null : srvActive?.tab !== tab ? (
           <div className="mt-3 text-[11px] text-muted">{MSG_LOADING}</div>
-        ) : registrySchedule && registrySchedule.rows.length > 0 ? (
+        ) : registryTableModelV1 ? (
           <div className="mt-2">
             {renderRegistryColumnPicker()}
-            {renderRegistryScheduleTable(registrySchedule, visibleRegistryColumns)}
-            {renderTotals()}
+            {renderRegistryScheduleTable(registryTableModelV1)}
+            {renderTotals(registryTableModelV1.footerParts)}
           </div>
         ) : (
           <div className="mt-3 text-[11px] text-muted">{MSG_NO_ROWS}</div>

@@ -1,3 +1,4 @@
+import type { Element } from '@bim-ai/core';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -5,6 +6,7 @@ import {
   sheetExportHrefTriple,
   viewportCropExtentsMm,
 } from './sheetDocumentationManifestHelpers';
+import { scheduleTableRendererV1SheetReadout } from '../schedules/scheduleTableRendererV1';
 
 describe('viewportCropExtentsMm', () => {
   it('returns absolute span between corners', () => {
@@ -72,5 +74,16 @@ describe('indexViewportEvidenceHints', () => {
     expect(m.size).toBe(2);
     expect(String(m.get('vp-plan')?.planProjectionSegment)).toContain('planPrim');
     expect(String(m.get('vp-sch')?.scheduleDocumentationSegment)).toContain('schDoc');
+  });
+});
+
+describe('scheduleTableRendererV1SheetReadout', () => {
+  it('adds tblV1 token with resolved schedule name for sheet manifest hints', () => {
+    const elementsById = {
+      s1: { kind: 'schedule', id: 's1', name: 'Room Schedule' },
+    } as Record<string, Element>;
+    expect(
+      scheduleTableRendererV1SheetReadout('schDoc[id=s1 rows=0 cols=3 cat=room]', elementsById),
+    ).toBe('tblV1[id=s1 name=Room Schedule rows=0 cols=3 cat=room]');
   });
 });

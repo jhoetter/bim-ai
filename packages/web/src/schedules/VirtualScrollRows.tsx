@@ -10,10 +10,20 @@ export function VirtualScrollRows<T extends { id: string }>(props: {
   colSpan: number;
   tableClassName?: string;
   emptyHint?: ReactNode;
+  colGroup?: ReactNode;
   renderRow: (row: T) => ReactNode;
 }) {
-  const { rows, maxHeightPx, rowHeightPx, colSpan, renderRow, emptyHint, header, tableClassName } =
-    props;
+  const {
+    rows,
+    maxHeightPx,
+    rowHeightPx,
+    colSpan,
+    renderRow,
+    emptyHint,
+    header,
+    tableClassName,
+    colGroup,
+  } = props;
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const [scrollTop, setScrollTop] = useState(0);
   const viewH = maxHeightPx;
@@ -37,6 +47,7 @@ export function VirtualScrollRows<T extends { id: string }>(props: {
       onScroll={(e) => setScrollTop(e.currentTarget.scrollTop)}
     >
       <table className={tableClassName ?? 'mt-2 w-full text-left text-[11px]'}>
+        {colGroup}
         <thead className="sticky top-0 z-[1] bg-surface shadow-sm">{header}</thead>
         <tbody>
           {padTop > 0 ? (
