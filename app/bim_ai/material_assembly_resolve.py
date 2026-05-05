@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 from bim_ai.document import Document
 from bim_ai.elements import (
@@ -17,6 +17,9 @@ from bim_ai.elements import (
 _CUT_THICKNESS_MATCH_EPS_MM = 0.05
 
 HostKindCut = Literal["wall", "floor", "roof"]
+LayerAssemblySourceWitness_v0 = Literal[
+    "type_stack", "instance_fallback", "roof_type_stack", "none"
+]
 
 
 def resolved_layers_for_wall(doc: Document, wall: WallElem) -> list[dict[str, Any]]:
@@ -248,6 +251,113 @@ def section_assembly_alignment_fields_floor(doc: Document, floor: FloorElem) -> 
         "assemblyCutThicknessMm": m["cutThicknessMm"],
         "assemblyLayerStackMatchesCutThickness": m["layerStackMatchesCutThickness"],
     }
+
+
+
+def _normalize_layer_summaries(layers: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [
+        {
+            "function": str(lyr["function"]),
+            "materialKey": str(lyr.get("materialKey") or "").strip(),
+            "thicknessMm": round(float(lyr["thicknessMm"]), 3),
+        }
+        for lyr in layers
+    ]
+
+
+def layered_assembly_witness_row_for_wall(doc: Document, wall: WallElem) -> dict[str, Any]:
+    typed = _typed_wall_layers(doc, wall) is not None
+    layers_raw = resolved_layers_for_wall(doc, wall)
+    summaries = _normalize_layer_summaries(layers_raw)
+    total_mm = round(sum(float(s["thicknessMm"]) for s in summaries), 3)
+    m = layer_stack_cut_metrics_for_wall(doc, wall)
+    layer_src: LayerAssemblySourceWitness_v0 = "type_stack" if typed else "instance_fallback"
+    asm_type = (wall.wall_type_id or "").strip()
+    return {
+        "hostElementId": wall.id,
+        "hostKind": "wall",
+        "assemblyTypeId": asm_type,
+        "layerSummaries": summaries,
+        "layerCount": len(summaries),
+        "layerTotalThicknessMm": total_mm,
+        "cutProxyThicknessMm": round(float(wall.thickness_mm), 3),
+        "layerStackMatchesCutThickness": m["layerStackMatchesCutThickness"],
+        "layerSource": layer_src,
+        "skipReason": None,
+    }
+
+
+def layered_assembly_witness_row_for_floor(doc: Document, floor: FloorElem) -> dict[str, Any]:
+    typed = _typed_floor_layers(doc, floor) is not None
+    layers_raw = resolved_layers_for_floor(doc, floor)
+    summaries = _normalize_layer_summaries(layers_raw)
+    total_mm = round(sum(float(s["thicknessMm"]) for s in summaries), 3)
+    m = layer_stack_cut_metrics_for_floor(doc, floor)
+    layer_src: LayerAssemblySourceWitness_v0 = "type_stack" if typed else "instance_fallback"
+    asm_type = (floor.floor_type_id or "").strip()
+    return {
+        "hostElementId": floor.id,
+        "hostKind": "floor",
+        "assemblyTypeId": asm_type,
+        "layerSummaries": summaries,
+        "layerCount": len(summaries),
+        "layerTotalThicknessMm": total_mm,
+        "cutProxyThicknessMm": round(float(floor.thickness_mm), 3),
+        "layerStackMatchesCutThickness": m["layerStackMatchesCutThickness"],
+        "layerSource": layer_src,
+        "skipReason": None,
+    }
+
+
+def layered_assembly_witness_row_for_roof(doc: Document, roof: RoofElem) -> dict[str, Any]:
+    rt_id = (roof.roof_type_id or "").strip()
+    layers_raw = resolved_layers_for_roof(doc, roof)
+    summaries = _normalize_layer_summaries(layers_raw)
+    total_mm = round(sum(float(s["thicknessMm"]) for s in summaries), 3)
+    m = layer_stack_cut_metrics_for_roof(doc, roof)
+    skip_reason: str | None
+    layer_src: LayerAssemblySourceWitness_v0
+    if not rt_id:
+        layer_src = "none"
+        skip_reason = "roof_missing_roof_type_id"
+    elif not summaries:
+        layer_src = "none"
+        skip_reason = "roof_type_without_layers"
+    else:
+        layer_src = "roof_type_stack"
+        skip_reason = None
+    asm_type = rt_id if rt_id else ""
+    return {
+        "hostElementId": roof.id,
+        "hostKind": "roof",
+        "assemblyTypeId": asm_type,
+        "layerSummaries": summaries,
+        "layerCount": len(summaries),
+        "layerTotalThicknessMm": total_mm,
+        "cutProxyThicknessMm": None,
+        "layerStackMatchesCutThickness": m["layerStackMatchesCutThickness"],
+        "layerSource": layer_src,
+        "skipReason": skip_reason,
+    }
+
+
+def collect_layered_assembly_witness_v0(doc: Document) -> dict[str, Any] | None:
+    witnesses: list[dict[str, Any]] = []
+    for eid in sorted(eid for eid, e in doc.elements.items() if isinstance(e, WallElem)):
+        w = cast(WallElem, doc.elements[eid])
+        witnesses.append(layered_assembly_witness_row_for_wall(doc, w))
+    for eid in sorted(eid for eid, e in doc.elements.items() if isinstance(e, FloorElem)):
+        fl = cast(FloorElem, doc.elements[eid])
+        witnesses.append(layered_assembly_witness_row_for_floor(doc, fl))
+    for eid in sorted(eid for eid, e in doc.elements.items() if isinstance(e, RoofElem)):
+        rf = cast(RoofElem, doc.elements[eid])
+        witnesses.append(layered_assembly_witness_row_for_roof(doc, rf))
+    if not witnesses:
+        return None
+    witnesses.sort(
+        key=lambda r: (str(r["hostKind"]), str(r["hostElementId"]), str(r["assemblyTypeId"]))
+    )
+    return {"format": "layeredAssemblyWitness_v0", "witnesses": witnesses}
 
 
 def material_assembly_manifest_evidence(doc: Document) -> dict[str, Any] | None:

@@ -201,7 +201,9 @@ def test_gltf_manifest_and_mesh_differs_from_mass_box_for_gable_roof() -> None:
     )
     g = document_to_gltf(doc)
     ext = g["extensions"]["BIM_AI_exportManifest_v0"]
-    assert ext["meshEncoding"] == "bim_ai_box_primitive_v0+bim_ai_gable_roof_v0"
+    assert ext["meshEncoding"] == (
+        "bim_ai_box_primitive_v0+bim_ai_gable_roof_v0+bim_ai_layered_assembly_witness_v0"
+    )
     ev = ext.get("roofGeometryEvidence_v0")
     assert ev is not None and ev.get("format") == "roofGeometryEvidence_v0"
     assert len(ev["roofs"]) == 1
@@ -228,7 +230,9 @@ def test_gltf_mass_box_roof_has_base_mesh_encoding_only() -> None:
     )
     g = document_to_gltf(doc)
     ext = g["extensions"]["BIM_AI_exportManifest_v0"]
-    assert ext["meshEncoding"] == "bim_ai_box_primitive_v0"
+    assert ext["meshEncoding"] == (
+        "bim_ai_box_primitive_v0+bim_ai_layered_assembly_witness_v0"
+    )
     assert ext.get("roofGeometryEvidence_v0") is None
     roof_mesh = next(m for m in g["meshes"] if m["name"] == "roof:roof-1")
     pos_ix = roof_mesh["primitives"][0]["attributes"]["POSITION"]

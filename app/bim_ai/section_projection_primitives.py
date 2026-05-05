@@ -26,6 +26,9 @@ from bim_ai.elements import (
     WindowElem,
 )
 from bim_ai.material_assembly_resolve import (
+    layered_assembly_witness_row_for_floor,
+    layered_assembly_witness_row_for_roof,
+    layered_assembly_witness_row_for_wall,
     section_assembly_alignment_fields_floor,
     section_assembly_alignment_fields_wall,
 )
@@ -237,6 +240,7 @@ def _append_floor_u_span_primitive(
     asm_floor = section_assembly_alignment_fields_floor(doc, floor_el)
     if asm_floor:
         row.update(asm_floor)
+    row["layerAssemblyWitness_v0"] = layered_assembly_witness_row_for_floor(doc, floor_el)
     floors.append(row)
 
 
@@ -520,6 +524,7 @@ def build_section_projection_primitives(
         asm_wall = section_assembly_alignment_fields_wall(doc, e)
         if asm_wall:
             wall_row.update(asm_wall)
+        wall_row["layerAssemblyWitness_v0"] = layered_assembly_witness_row_for_wall(doc, e)
         walls.append(wall_row)
         wall_clip_by_id[e.id] = (u_lo, u_hi)
 
@@ -784,6 +789,7 @@ def build_section_projection_primitives(
                     "planSpanXmMm": round(span_x, 3),
                     "planSpanZmMm": round(span_z, 3),
                     "ridgeRiseMm": round(rise_mm, 3),
+                    "layerAssemblyWitness_v0": layered_assembly_witness_row_for_roof(doc, e),
                 }
             )
         else:
@@ -800,6 +806,7 @@ def build_section_projection_primitives(
                     "slopeDeg": round(float(e.slope_deg or 25.0), 3),
                     "overhangMm": round(float(e.overhang_mm), 3),
                     "proxyKind": "footprintChord",
+                    "layerAssemblyWitness_v0": layered_assembly_witness_row_for_roof(doc, e),
                 }
             )
 

@@ -7,6 +7,8 @@ from bim_ai.elements import (
     FloorElem,
     FloorTypeElem,
     LevelElem,
+    RoofElem,
+    RoofTypeElem,
     SectionCutElem,
     Vec2Mm,
     WallElem,
@@ -15,6 +17,7 @@ from bim_ai.elements import (
 )
 from bim_ai.material_assembly_resolve import (
     collect_layered_assembly_cut_alignment_evidence_v0,
+    collect_layered_assembly_witness_v0,
     layer_stack_cut_metrics_for_wall,
 )
 from bim_ai.section_projection_primitives import build_section_projection_primitives
@@ -167,6 +170,13 @@ def test_section_wall_row_includes_assembly_fields_for_typed_wall() -> None:
     assert row["assemblyLayerTotalThicknessMm"] == 150.0
     assert row["assemblyCutThicknessMm"] == 150.0
     assert row["assemblyLayerStackMatchesCutThickness"] is True
+    wit = row.get("layerAssemblyWitness_v0") or {}
+    assert wit.get("layerSource") == "type_stack"
+    assert wit.get("skipReason") is None
+    assert wit.get("layerSummaries") == [
+        {"function": "structure", "materialKey": "", "thicknessMm": 90.0},
+        {"function": "finish", "materialKey": "", "thicknessMm": 60.0},
+    ]
 
 
 def test_section_floor_row_includes_assembly_fields_for_typed_floor() -> None:
@@ -226,3 +236,207 @@ def test_section_floor_row_includes_assembly_fields_for_typed_floor() -> None:
     assert row["assemblyLayerTotalThicknessMm"] == 200.0
     assert row["assemblyCutThicknessMm"] == 200.0
     assert row["assemblyLayerStackMatchesCutThickness"] is True
+    wit = row.get("layerAssemblyWitness_v0") or {}
+    assert wit.get("layerSource") == "type_stack"
+    assert len(wit.get("layerSummaries") or []) == 2
+    assert (wit.get("layerSummaries") or [{}])[0]["materialKey"] == "mat-concrete-structure-v1"
+
+
+def test_collect_layered_assembly_witness_v0_stable_sort_floor_before_walls_alphabetical() -> None:
+    wt = WallTypeElem(
+        kind="wall_type",
+        id="wt",
+        name="WT",
+        layers=[WallTypeLayer(thicknessMm=100, layer_function="structure")],
+    )
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=0),
+            "wt": wt,
+            "w-z": WallElem(
+                kind="wall",
+                id="w-z",
+                name="Wz",
+                levelId="lvl",
+                start={"xMm": 0, "yMm": 3000},
+                end={"xMm": 6000, "yMm": 3000},
+                thicknessMm=100,
+                heightMm=2800,
+                wallTypeId="wt",
+            ),
+            "w-a": WallElem(
+                kind="wall",
+                id="w-a",
+                name="Wa",
+                levelId="lvl",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 6000, "yMm": 0},
+                thicknessMm=100,
+                heightMm=2800,
+                wallTypeId="wt",
+            ),
+            "fl": FloorElem(
+                kind="floor",
+                id="fl-z",
+                name="F",
+                level_id="lvl",
+                boundary_mm=[
+                    Vec2Mm(x_mm=0, y_mm=4000),
+                    Vec2Mm(x_mm=6000, y_mm=4000),
+                    Vec2Mm(x_mm=6000, y_mm=5000),
+                    Vec2Mm(x_mm=0, y_mm=5000),
+                ],
+                thickness_mm=150,
+                floor_type_id=None,
+            ),
+        },
+    )
+    ev = collect_layered_assembly_witness_v0(doc)
+    assert ev is not None
+    hosts = ev["witnesses"]
+    assert [str(r["hostKind"]) + ":" + str(r["hostElementId"]) for r in hosts] == [
+        "floor:fl-z",
+        "wall:w-a",
+        "wall:w-z",
+    ]
+
+
+def test_collect_layered_assembly_witness_v0_untyped_wall_is_instance_fallback() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=0),
+            "w1": WallElem(
+                kind="wall",
+                id="w1",
+                name="W",
+                levelId="lvl",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 3000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+        },
+    )
+    ev = collect_layered_assembly_witness_v0(doc)
+    assert ev is not None
+    wit = ev["witnesses"][0]
+    assert wit["hostElementId"] == "w1"
+    assert wit["layerSource"] == "instance_fallback"
+    assert wit["skipReason"] is None
+    assert wit["layerSummaries"] == [
+        {"function": "structure", "materialKey": "", "thicknessMm": 200.0},
+    ]
+    assert wit["layerStackMatchesCutThickness"] is True
+
+
+def test_collect_layered_assembly_witness_v0_roof_without_type_has_skip_reason() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=0),
+            "r1": RoofElem(
+                kind="roof",
+                id="r1",
+                name="R",
+                reference_level_id="lvl",
+                footprint_mm=[
+                    Vec2Mm(x_mm=0, y_mm=0),
+                    Vec2Mm(x_mm=2000, y_mm=0),
+                    Vec2Mm(x_mm=2000, y_mm=2000),
+                    Vec2Mm(x_mm=0, y_mm=2000),
+                ],
+                roof_geometry_mode="mass_box",
+            ),
+        },
+    )
+    ev = collect_layered_assembly_witness_v0(doc)
+    assert ev is not None
+    row = ev["witnesses"][0]
+    assert row["hostKind"] == "roof"
+    assert row["layerSource"] == "none"
+    assert row["skipReason"] == "roof_missing_roof_type_id"
+
+
+def test_collect_layered_assembly_witness_v0_roof_type_without_layers_skip_reason() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=0),
+            "rt-empty": RoofTypeElem(kind="roof_type", id="rt-empty", name="E", layers=[]),
+            "r1": RoofElem(
+                kind="roof",
+                id="r1",
+                name="R",
+                reference_level_id="lvl",
+                footprint_mm=[
+                    Vec2Mm(x_mm=0, y_mm=0),
+                    Vec2Mm(x_mm=2000, y_mm=0),
+                    Vec2Mm(x_mm=2000, y_mm=2000),
+                    Vec2Mm(x_mm=0, y_mm=2000),
+                ],
+                roof_geometry_mode="mass_box",
+                roof_type_id="rt-empty",
+            ),
+        },
+    )
+    ev = collect_layered_assembly_witness_v0(doc)
+    assert ev is not None
+    row = ev["witnesses"][0]
+    assert row["layerSource"] == "none"
+    assert row["skipReason"] == "roof_type_without_layers"
+
+
+def test_section_roof_row_includes_layer_assembly_witness_for_typed_roof() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=0),
+            "rt": RoofTypeElem(
+                kind="roof_type",
+                id="rt",
+                name="RT",
+                layers=[
+                    WallTypeLayer(thicknessMm=18, layer_function="structure"),
+                    WallTypeLayer(thicknessMm=120, layer_function="insulation"),
+                ],
+            ),
+            "r1": RoofElem(
+                kind="roof",
+                id="r1",
+                name="R",
+                reference_level_id="lvl",
+                footprint_mm=[
+                    Vec2Mm(x_mm=0, y_mm=0),
+                    Vec2Mm(x_mm=2000, y_mm=0),
+                    Vec2Mm(x_mm=2000, y_mm=2000),
+                    Vec2Mm(x_mm=0, y_mm=2000),
+                ],
+                roof_geometry_mode="mass_box",
+                roof_type_id="rt",
+            ),
+            "sec": SectionCutElem(
+                kind="section_cut",
+                id="sec-r",
+                name="S",
+                line_start_mm={"xMm": -500, "yMm": 1000},
+                line_end_mm={"xMm": 2500, "yMm": 1000},
+                crop_depth_mm=8000,
+            ),
+        },
+    )
+    sec = doc.elements["sec"]
+    assert isinstance(sec, SectionCutElem)
+    prim, _w = build_section_projection_primitives(doc, sec)
+    roofs = prim.get("roofs") or []
+    assert len(roofs) == 1
+    rw = roofs[0]
+    assert rw["elementId"] == "r1"
+    wit = rw.get("layerAssemblyWitness_v0") or {}
+    assert wit.get("layerSource") == "roof_type_stack"
+    assert wit.get("skipReason") is None
+    assert wit.get("cutProxyThicknessMm") is None
+    assert wit.get("layerStackMatchesCutThickness") is None
+    assert len(wit.get("layerSummaries") or []) == 2
+    assert float((wit.get("layerSummaries") or [{}])[0]["thicknessMm"]) == 18.0

@@ -179,12 +179,19 @@ def test_build_visual_export_manifest_includes_layered_assembly_cut_alignment_ev
     )
     ext = export_manifest_extension_payload(doc)
     assert "bim_ai_layered_assembly_cut_alignment_v0" in ext["meshEncoding"]
+    assert "bim_ai_layered_assembly_witness_v0" in ext["meshEncoding"]
     cut_ev = ext.get("layeredAssemblyCutAlignmentEvidence_v0")
     assert cut_ev is not None
     assert cut_ev["format"] == "layeredAssemblyCutAlignmentEvidence_v0"
     h0 = cut_ev["hosts"][0]
     assert h0["hostElementId"] == "w1"
     assert h0["layerStackMatchesCutThickness"] is True
+    wit_ev = ext.get("layeredAssemblyWitness_v0")
+    assert wit_ev is not None
+    assert wit_ev["format"] == "layeredAssemblyWitness_v0"
+    w0 = wit_ev["witnesses"][0]
+    assert w0["hostElementId"] == "w1"
+    assert len(w0.get("layerSummaries") or []) == 2
 
 
 def test_build_visual_export_manifest_includes_roof_assembly_evidence():

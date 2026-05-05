@@ -26,6 +26,7 @@ from bim_ai.elements import (
 )
 from bim_ai.material_assembly_resolve import (
     collect_layered_assembly_cut_alignment_evidence_v0,
+    collect_layered_assembly_witness_v0,
     material_assembly_manifest_evidence,
 )
 from bim_ai.opening_cut_primitives import xz_bounds_mm_from_poly
@@ -158,6 +159,7 @@ def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
     stair_geom = stair_geometry_manifest_evidence_v0(doc)
     corner_joins = collect_wall_corner_join_evidence_v0(doc)
     layer_cut_align = collect_layered_assembly_cut_alignment_evidence_v0(doc)
+    layer_asm_witness = collect_layered_assembly_witness_v0(doc)
     mesh_enc = "bim_ai_box_primitive_v0"
     if rgeom_roofs:
         mesh_enc += "+bim_ai_gable_roof_v0"
@@ -167,6 +169,8 @@ def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
         mesh_enc += "+bim_ai_skew_wall_hosted_openings_v0"
     if layer_cut_align:
         mesh_enc += "+bim_ai_layered_assembly_cut_alignment_v0"
+    if layer_asm_witness:
+        mesh_enc += "+bim_ai_layered_assembly_witness_v0"
     base: dict[str, Any] = {
         **parity,
         "meshEncoding": mesh_enc,
@@ -187,6 +191,8 @@ def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
         base["wallCornerJoinEvidence_v0"] = corner_joins
     if layer_cut_align:
         base["layeredAssemblyCutAlignmentEvidence_v0"] = layer_cut_align
+    if layer_asm_witness:
+        base["layeredAssemblyWitness_v0"] = layer_asm_witness
     return base
 
 
