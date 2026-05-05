@@ -55,6 +55,9 @@ export type RoomProgrammeLegendEvidenceV0 = {
   colorSeedPolicy?: string;
   orthogonalTo?: string[];
   notes?: string;
+  /** Present when authoritative `bim-room-color-scheme` rows override hash fallback colours. */
+  schemeOverridesSource?: string;
+  schemeOverrideRowCount?: number;
 };
 
 export function extractPlanGraphicHints(
@@ -144,6 +147,16 @@ export function extractRoomProgrammeLegendEvidenceV0(
     orthogonalTo = orthoRaw.filter((x): x is string => typeof x === 'string');
   }
   const notes = typeof o.notes === 'string' ? o.notes : undefined;
+  const sos = o.schemeOverridesSource ?? o.scheme_overrides_source;
+  const schemeOverridesSource = typeof sos === 'string' && sos.trim() ? sos.trim() : undefined;
+  const sorc = o.schemeOverrideRowCount ?? o.scheme_override_row_count;
+  let schemeOverrideRowCount: number | undefined;
+  if (typeof sorc === 'number' && Number.isFinite(sorc)) {
+    schemeOverrideRowCount = sorc;
+  } else if (typeof sorc === 'string' && sorc.trim()) {
+    const p = Number(sorc);
+    if (Number.isFinite(p)) schemeOverrideRowCount = p;
+  }
   return {
     format: 'roomProgrammeLegendEvidence_v0',
     legendDigestSha256: digest,
@@ -151,6 +164,8 @@ export function extractRoomProgrammeLegendEvidenceV0(
     ...(policy !== undefined ? { colorSeedPolicy: policy } : {}),
     ...(orthogonalTo !== undefined && orthogonalTo.length ? { orthogonalTo } : {}),
     ...(notes !== undefined ? { notes } : {}),
+    ...(schemeOverridesSource !== undefined ? { schemeOverridesSource } : {}),
+    ...(schemeOverrideRowCount !== undefined ? { schemeOverrideRowCount } : {}),
   };
 }
 

@@ -13,7 +13,16 @@ import type {
 } from '@bim-ai/core';
 
 import type { PlanPresentationPreset } from '../plan/symbology';
-import type { PlanProjectionPrimitivesV1Wire } from '../plan/planProjectionWire';
+import type {
+  PlanProjectionPrimitivesV1Wire,
+  PlanRoomColorLegendRow,
+  RoomProgrammeLegendEvidenceV0,
+} from '../plan/planProjectionWire';
+
+export type PlanRoomSchemeWireReadout = {
+  roomColorLegendRows: PlanRoomColorLegendRow[];
+  programmeLegendEvidence: RoomProgrammeLegendEvidenceV0 | null;
+};
 
 export type ViewerMode = 'plan_canvas' | 'orbit_3d';
 
@@ -75,6 +84,8 @@ type StoreState = {
   activeViewpointId?: string;
   /** When set, plan canvas prefers server `planProjectionWire_v1.primitives` (WP-C02/C03). */
   planProjectionPrimitives: PlanProjectionPrimitivesV1Wire | null;
+  /** Last plan wire legend + programme digest readout for workbench panels (Prompt-3 room scheme). */
+  planRoomSchemeWireReadout: PlanRoomSchemeWireReadout | null;
   viewerClipElevMm: number | null;
   /** Optional lower bound — clips geometry *below* this world Y (mm) for a reproducible slab cut. */
   viewerClipFloorElevMm: number | null;
@@ -122,6 +133,7 @@ type StoreState = {
   setViewerClipElevMm: (mm: number | null) => void;
   setViewerClipFloorElevMm: (mm: number | null) => void;
   setPlanProjectionPrimitives: (p: PlanProjectionPrimitivesV1Wire | null) => void;
+  setPlanRoomSchemeWireReadout: (readout: PlanRoomSchemeWireReadout | null) => void;
   toggleViewerCategoryHidden: (semanticKind: string) => void;
   /** Apply saved 3D viewpoint clip planes + semantic category hides (WP-E02/E03). */
   applyOrbitViewpointPreset: (opts: {
@@ -1215,6 +1227,8 @@ export const useBimStore = create<StoreState>((set, get) => {
 
     planProjectionPrimitives: null,
 
+    planRoomSchemeWireReadout: null,
+
     hydrateFromSnapshot: (snap) => {
       const elements: Record<string, Element> = {};
 
@@ -1239,6 +1253,8 @@ export const useBimStore = create<StoreState>((set, get) => {
         activeLevelId:
           curLevel && elements[curLevel]?.kind === 'level' ? curLevel : defaultLevelId(elements),
         planProjectionPrimitives: null,
+
+        planRoomSchemeWireReadout: null,
 
         activePlanViewId: prevPv && elements[prevPv]?.kind === 'plan_view' ? prevPv : undefined,
         activeViewpointId: prevVp && elements[prevVp]?.kind === 'viewpoint' ? prevVp : undefined,
@@ -1276,6 +1292,9 @@ export const useBimStore = create<StoreState>((set, get) => {
         violations: (d.violations ?? []).map(coerceViolation),
 
         planProjectionPrimitives: null,
+
+        planRoomSchemeWireReadout: null,
+
         activePlanViewId: pv && merged[pv]?.kind === 'plan_view' ? pv : undefined,
         activeViewpointId: vp && merged[vp]?.kind === 'viewpoint' ? vp : undefined,
       });
@@ -1376,7 +1395,12 @@ export const useBimStore = create<StoreState>((set, get) => {
 
     setViewerClipFloorElevMm: (viewerClipFloorElevMm) => set({ viewerClipFloorElevMm }),
 
-    setPlanProjectionPrimitives: (planProjectionPrimitives) => set({ planProjectionPrimitives }),
+    setPlanProjectionPrimitives: (planProjectionPrimitives) =>
+      planProjectionPrimitives === null
+        ? set({ planProjectionPrimitives: null, planRoomSchemeWireReadout: null })
+        : set({ planProjectionPrimitives }),
+
+    setPlanRoomSchemeWireReadout: (planRoomSchemeWireReadout) => set({ planRoomSchemeWireReadout }),
 
     toggleViewerCategoryHidden: (semanticKind) =>
       set(() => {

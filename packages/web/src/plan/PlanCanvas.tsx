@@ -10,6 +10,7 @@ import {
   extractPlanGraphicHints,
   extractPlanPrimitives,
   extractRoomColorLegend,
+  extractRoomProgrammeLegendEvidenceV0,
   fetchPlanProjectionWire,
 } from './planProjectionWire';
 import {
@@ -136,6 +137,7 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
   const revision = useBimStore((s) => s.revision);
   const planProjectionPrimitives = useBimStore((s) => s.planProjectionPrimitives);
   const setPlanProjectionPrimitives = useBimStore((s) => s.setPlanProjectionPrimitives);
+  const setPlanRoomSchemeWireReadout = useBimStore((s) => s.setPlanRoomSchemeWireReadout);
   const activePlanViewId = useBimStore((s) => s.activePlanViewId);
   const planPresentation = useBimStore((s) => s.planPresentationPreset);
   const planTool = useBimStore((s) => s.planTool);
@@ -181,6 +183,7 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
       queueMicrotask(() => {
         if (cancel) return;
         setPlanProjectionPrimitives(null);
+        setPlanRoomSchemeWireReadout(null);
         setRoomColorLegend([]);
         setWireGraphicHints(null);
         setWireAnnotationHints(null);
@@ -198,12 +201,18 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
         });
         const payload = await fetchPlanProjectionWire(modelId, qs);
         if (cancel) return;
+        const legendRows = extractRoomColorLegend(payload);
         setPlanProjectionPrimitives(extractPlanPrimitives(payload));
-        setRoomColorLegend(extractRoomColorLegend(payload));
+        setPlanRoomSchemeWireReadout({
+          roomColorLegendRows: legendRows,
+          programmeLegendEvidence: extractRoomProgrammeLegendEvidenceV0(payload),
+        });
+        setRoomColorLegend(legendRows);
         setWireGraphicHints(extractPlanGraphicHints(payload));
         setWireAnnotationHints(extractPlanAnnotationHints(payload));
       } catch {
         if (!cancel) setPlanProjectionPrimitives(null);
+        if (!cancel) setPlanRoomSchemeWireReadout(null);
         if (!cancel) setRoomColorLegend([]);
         if (!cancel) setWireGraphicHints(null);
         if (!cancel) setWireAnnotationHints(null);
@@ -219,6 +228,7 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
     lvlId,
     planPresentation,
     setPlanProjectionPrimitives,
+    setPlanRoomSchemeWireReadout,
   ]);
 
   const resizeCam = useCallback(() => {

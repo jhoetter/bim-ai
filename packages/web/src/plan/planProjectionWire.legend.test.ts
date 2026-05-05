@@ -38,4 +38,37 @@ describe('extractRoomColorLegend', () => {
     expect(ev!.orthogonalTo).toEqual(['derivedRoomBoundaryEvidence_v0']);
     expect(ev!.notes).toBe('Test note');
   });
+
+  it('extractRoomProgrammeLegendEvidenceV0 reads schemeOverridesSource and schemeOverrideRowCount', () => {
+    const ev = extractRoomProgrammeLegendEvidenceV0({
+      format: 'planProjectionWire_v1',
+      roomProgrammeLegendEvidence_v0: {
+        format: 'roomProgrammeLegendEvidence_v0',
+        legendDigestSha256: 'b'.repeat(64),
+        rowCount: 2,
+        schemeOverridesSource: 'bim-room-color-scheme',
+        schemeOverrideRowCount: 1,
+      },
+    });
+    expect(ev).not.toBeNull();
+    expect(ev!.schemeOverridesSource).toBe('bim-room-color-scheme');
+    expect(ev!.schemeOverrideRowCount).toBe(1);
+  });
+
+  it('extractRoomProgrammeLegendEvidenceV0 reads snake_case scheme override aliases', () => {
+    const ev = extractRoomProgrammeLegendEvidenceV0({
+      format: 'planProjectionWire_v1',
+      roomProgrammeLegendEvidence_v0: {
+        format: 'roomProgrammeLegendEvidence_v0',
+        legendDigestSha256: 'c'.repeat(64),
+        row_count: 4,
+        scheme_overrides_source: 'bim-room-color-scheme',
+        scheme_override_row_count: 3,
+      },
+    });
+    expect(ev).not.toBeNull();
+    expect(ev!.rowCount).toBe(4);
+    expect(ev!.schemeOverridesSource).toBe('bim-room-color-scheme');
+    expect(ev!.schemeOverrideRowCount).toBe(3);
+  });
 });
