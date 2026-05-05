@@ -60,11 +60,17 @@ def test_export_manifest_includes_wall_corner_join_evidence_for_l_walls() -> Non
     )
     ext = export_manifest_extension_payload(doc)
     assert "bim_ai_wall_corner_joins_v0" in ext["meshEncoding"]
+    assert "bim_ai_wall_corner_join_summary_v1" in ext["meshEncoding"]
     jev = ext.get("wallCornerJoinEvidence_v0")
     assert jev is not None
     assert jev["format"] == "wallCornerJoinEvidence_v0"
     assert len(jev["joins"]) == 1
     assert jev["joins"][0]["joinKind"] == "corner"
+    summ = ext.get("wallCornerJoinSummary_v1")
+    assert summ is not None
+    assert summ["format"] == "wallCornerJoinSummary_v1"
+    assert len(summ["joins"]) == 1
+    assert summ["joins"][0]["joinKind"] == "butt"
 
 
 def test_gltf_manifest_lists_unsupported_kinds_when_no_geometry_categories():

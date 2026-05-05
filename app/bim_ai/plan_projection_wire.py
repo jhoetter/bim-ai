@@ -72,6 +72,7 @@ from bim_ai.stair_plan_proxy import (
     stair_run_bearing_deg_ccw_from_plan_x,
     stair_tread_count_straight_plan_proxy,
 )
+from bim_ai.wall_join_evidence import collect_wall_corner_join_summary_v1
 from bim_ai.wall_opening_cut_fidelity import (
     build_wall_opening_cut_fidelity_row,
     corner_join_rows_for_document,
@@ -1408,6 +1409,108 @@ def _slab_opening_documentation_rows_for_plan_view(
     return out
 
 
+def _wall_corner_join_summary_for_plan_view(
+    doc: Document,
+    *,
+    level: str | None,
+    hidden_semantic: set[str],
+    crop_box_mm: tuple[float, float, float, float] | None,
+    view_range_clip_mm: tuple[float, float, float] | None,
+) -> dict[str, Any] | None:
+    """Corner/overlap join rows filtered like wall-opening cut-fidelity visibility gates."""
+
+    full = collect_wall_corner_join_summary_v1(doc)
+    if not full:
+        return None
+    raw_joins = full.get("joins")
+    if not isinstance(raw_joins, list):
+        return None
+
+    def span_in_vertical_range(z0: float, z1: float) -> bool:
+        if view_range_clip_mm is None:
+            return True
+        lo, hi, _cut = view_range_clip_mm
+        return _closed_z_intervals_overlap_mm(z0, z1, lo, hi)
+
+    def lvl_ok(lv: str | None) -> bool:
+        if not level:
+            return True
+        return lv == level if lv else False
+
+    def opening_visible(oid: str) -> bool:
+        e = doc.elements.get(oid)
+        if isinstance(e, DoorElem):
+            w = doc.elements.get(e.wall_id)
+            if not isinstance(w, WallElem):
+                return False
+            if (
+                "door" in hidden_semantic
+                or "wall" in hidden_semantic
+                or not lvl_ok(w.level_id)
+            ):
+                return False
+            cx_mm, cy_mm = _hosted_xy_mm_on_wall(e, w)
+            crop_box = crop_box_mm
+            if crop_box is not None:
+                opening_ok = _point_in_crop_xy(cx_mm, cy_mm, crop_box) or _segment_intersects_crop_xy(
+                    w.start.x_mm, w.start.y_mm, w.end.x_mm, w.end.y_mm, crop_box
+                )
+                if not opening_ok:
+                    return False
+            dwz0, dwz1 = _wall_vertical_span_mm(doc, w)
+            return span_in_vertical_range(dwz0, dwz1)
+        if isinstance(e, WindowElem):
+            w = doc.elements.get(e.wall_id)
+            if not isinstance(w, WallElem):
+                return False
+            if (
+                "window" in hidden_semantic
+                or "wall" in hidden_semantic
+                or not lvl_ok(w.level_id)
+            ):
+                return False
+            cx_mm, cy_mm = _hosted_xy_mm_on_wall(e, w)
+            crop_box = crop_box_mm
+            if crop_box is not None:
+                opening_ok = _point_in_crop_xy(cx_mm, cy_mm, crop_box) or _segment_intersects_crop_xy(
+                    w.start.x_mm, w.start.y_mm, w.end.x_mm, w.end.y_mm, crop_box
+                )
+                if not opening_ok:
+                    return False
+            wwz0, wwz1 = _wall_vertical_span_mm(doc, w)
+            return span_in_vertical_range(wwz0, wwz1)
+        return False
+
+    out_joins: list[dict[str, Any]] = []
+    for row in raw_joins:
+        if not isinstance(row, dict):
+            continue
+        lvl_id = row.get("levelId")
+        if level and str(lvl_id or "") != level:
+            continue
+        vm = row.get("vertexMm")
+        if not isinstance(vm, dict):
+            continue
+        try:
+            vx = float(vm["xMm"])
+            vy = float(vm["yMm"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if crop_box_mm is not None and not _point_in_crop_xy(vx, vy, crop_box_mm):
+            continue
+        oids = row.get("affectedOpeningIds")
+        if not isinstance(oids, list):
+            oids = []
+        filtered = sorted(str(x) for x in oids if opening_visible(str(x)))
+        new_row = dict(row)
+        new_row["affectedOpeningIds"] = filtered
+        out_joins.append(new_row)
+
+    if not out_joins:
+        return None
+    return {"format": "wallCornerJoinSummary_v1", "joins": out_joins}
+
+
 def _wall_opening_cut_fidelity_rows_for_plan_view(
     doc: Document,
     *,
@@ -1734,6 +1837,15 @@ def resolve_plan_projection_wire(
         "format": "wallOpeningCutFidelityEvidence_v1",
         "rows": fed_plan_rows,
     }
+    wj_summary = _wall_corner_join_summary_for_plan_view(
+        doc,
+        level=active_level,
+        hidden_semantic=hidden_semantic,
+        crop_box_mm=effective_crop,
+        view_range_clip_mm=view_range_clip_mm,
+    )
+    if wj_summary is not None:
+        out_payload["wallCornerJoinSummary_v1"] = wj_summary
     return out_payload
 
 

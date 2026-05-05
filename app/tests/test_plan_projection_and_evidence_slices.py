@@ -561,6 +561,44 @@ def test_plan_wire_slab_opening_documentation_evidence_v0() -> None:
     assert "soDoc[n=1" in seg
 
 
+def test_plan_wire_wall_corner_join_summary_v1_and_listing_segment() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=0),
+            "pv": PlanViewElem(kind="plan_view", id="pv", name="P", levelId="lvl"),
+            "wh": WallElem(
+                kind="wall",
+                id="wh",
+                name="H",
+                levelId="lvl",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 4000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+            "wv": WallElem(
+                kind="wall",
+                id="wv",
+                name="V",
+                levelId="lvl",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 0, "yMm": 3000},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+        },
+    )
+    wire = plan_projection_wire_from_request(doc, plan_view_id="pv", fallback_level_id=None)
+    wjs = wire.get("wallCornerJoinSummary_v1")
+    assert isinstance(wjs, dict)
+    assert wjs["format"] == "wallCornerJoinSummary_v1"
+    assert len(wjs["joins"]) == 1
+    assert wjs["joins"][0]["joinKind"] == "butt"
+    seg = format_plan_projection_export_segment(wire)
+    assert "wjSum[n=1 h=" in seg
+
+
 def test_plan_wire_slab_opening_documentation_multi_void_skip() -> None:
     doc = Document(revision=1, elements={})
     apply_inplace(doc, CreateLevelCmd(id="lvl", name="L", elevationMm=0))

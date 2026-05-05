@@ -52,7 +52,10 @@ from bim_ai.stair_plan_proxy import (
     stair_run_bearing_deg_ccw_from_plan_x,
     stair_tread_count_straight_plan_proxy,
 )
-from bim_ai.wall_join_evidence import collect_wall_corner_join_evidence_v0
+from bim_ai.wall_join_evidence import (
+    collect_wall_corner_join_evidence_v0,
+    collect_wall_corner_join_summary_v1,
+)
 from bim_ai.wall_opening_cut_fidelity import collect_wall_opening_cut_fidelity_evidence_v1
 
 EXPORT_GEOMETRY_KINDS: frozenset[str] = frozenset(
@@ -287,6 +290,7 @@ def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
     stair_geom = stair_geometry_manifest_evidence_v0(doc)
     site_ctx = site_context_manifest_evidence_v0(doc)
     corner_joins = collect_wall_corner_join_evidence_v0(doc)
+    corner_join_summary = collect_wall_corner_join_summary_v1(doc)
     wall_opening_cut_fidelity = collect_wall_opening_cut_fidelity_evidence_v1(doc)
     layer_cut_align = collect_layered_assembly_cut_alignment_evidence_v0(doc)
     layer_asm_witness = collect_layered_assembly_witness_v0(doc)
@@ -297,6 +301,8 @@ def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
         mesh_enc += "+bim_ai_roof_geometry_evidence_v1"
     if corner_joins:
         mesh_enc += "+bim_ai_wall_corner_joins_v0"
+    if corner_join_summary:
+        mesh_enc += "+bim_ai_wall_corner_join_summary_v1"
     if skew_hosted:
         mesh_enc += "+bim_ai_skew_wall_hosted_openings_v0"
     if wall_opening_cut_fidelity:
@@ -327,6 +333,8 @@ def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
         base["stairGeometryEvidence_v0"] = stair_geom
     if corner_joins:
         base["wallCornerJoinEvidence_v0"] = corner_joins
+    if corner_join_summary:
+        base["wallCornerJoinSummary_v1"] = corner_join_summary
     if layer_cut_align:
         base["layeredAssemblyCutAlignmentEvidence_v0"] = layer_cut_align
     if layer_asm_witness:

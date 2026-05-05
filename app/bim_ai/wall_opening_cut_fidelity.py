@@ -17,12 +17,12 @@ from bim_ai.opening_cut_primitives import (
     hosted_opening_u_projection_scale,
     wall_plan_axis_aligned_xy,
 )
-from bim_ai.wall_join_evidence import collect_wall_corner_join_evidence_v0
+from bim_ai.wall_join_evidence import (
+    CORNER_JOIN_BAND_CLEARANCE_MM,
+    collect_wall_corner_join_evidence_v0,
+)
 
 _EPS = 1e-6
-
-# Extra plan clearance beyond reveal-expanded half-width + half wall thickness for L-corner warning band.
-_CORNER_JOIN_CLEARANCE_MM = 150.0
 
 
 def _wall_length_mm(w: WallElem) -> float:
@@ -112,7 +112,7 @@ def _pick_corner_interaction(
     ax, ay = _hosted_anchor_xy_mm(opening, wall)
     half_m = hosted_opening_half_span_mm(opening)
     th_half = float(wall.thickness_mm) * 0.5
-    radius = half_m + th_half + _CORNER_JOIN_CLEARANCE_MM
+    radius = half_m + th_half + CORNER_JOIN_BAND_CLEARANCE_MM
 
     picked: tuple[float, str, float, float] | None = None
     for j in joins:
