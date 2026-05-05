@@ -118,9 +118,104 @@ def test_plan_projection_wire_emits_room_separations_and_counts() -> None:
     prim = out.get("primitives") or {}
     rss = prim.get("roomSeparations") or []
     assert len(rss) == 1
-    assert rss[0]["id"] == "rs-1"
+    row = rss[0]
+    assert row["id"] == "rs-1"
+    assert row["name"] == "Sep"
+    assert row["lengthMm"] == 3000.0
+    assert row["axisAlignedBoundarySegmentEligible"] is True
+    assert "axisBoundarySegmentExcludedReason" not in row
+    assert row["onAuthoritativeDerivedFootprintBoundary"] is False
+    assert row["piercesDerivedRectangleInterior"] is False
 
 
+def test_plan_projection_wire_room_separation_axis_excluded_reasons() -> None:
+    lvl = LevelElem(kind="level", id="lvl", name="L", elevationMm=0)
+    short = RoomSeparationElem(
+        kind="room_separation",
+        id="rs-short",
+        name="Short",
+        levelId="lvl",
+        start={"xMm": 0.0, "yMm": 0.0},
+        end={"xMm": 40.0, "yMm": 0.0},
+    )
+    diagonal = RoomSeparationElem(
+        kind="room_separation",
+        id="rs-diag",
+        name="Diag",
+        levelId="lvl",
+        start={"xMm": 0.0, "yMm": 0.0},
+        end={"xMm": 3000.0, "yMm": 3000.0},
+    )
+    doc = Document(revision=1, elements={"lvl": lvl, "rs-short": short, "rs-diag": diagonal})
+    out = plan_projection_wire_from_request(doc, plan_view_id=None, fallback_level_id="lvl")
+    prim = out.get("primitives") or {}
+    by_id = {r["id"]: r for r in prim.get("roomSeparations") or []}
+    assert by_id["rs-short"]["axisAlignedBoundarySegmentEligible"] is False
+    assert by_id["rs-short"]["axisBoundarySegmentExcludedReason"] == "too_short"
+    assert by_id["rs-diag"]["axisAlignedBoundarySegmentEligible"] is False
+    assert by_id["rs-diag"]["axisBoundarySegmentExcludedReason"] == "non_axis_aligned"
+
+
+def test_plan_projection_wire_room_separation_interior_pierce_flag() -> None:
+    """Axis-aligned rectangle + vertical separator through interior → pierce flag on wire row."""
+    lvl = LevelElem(kind="level", id="lvl-1", name="EG", elevationMm=0)
+    walls = (
+        WallElem(
+            kind="wall",
+            id="w-s",
+            name="S",
+            levelId="lvl-1",
+            start={"xMm": 0, "yMm": 0},
+            end={"xMm": 4000, "yMm": 0},
+            thicknessMm=200,
+            heightMm=2800,
+        ),
+        WallElem(
+            kind="wall",
+            id="w-n",
+            name="N",
+            levelId="lvl-1",
+            start={"xMm": 0, "yMm": 4000},
+            end={"xMm": 4000, "yMm": 4000},
+            thicknessMm=200,
+            heightMm=2800,
+        ),
+        WallElem(
+            kind="wall",
+            id="w-w",
+            name="W",
+            levelId="lvl-1",
+            start={"xMm": 0, "yMm": 0},
+            end={"xMm": 0, "yMm": 4000},
+            thicknessMm=200,
+            heightMm=2800,
+        ),
+        WallElem(
+            kind="wall",
+            id="w-e",
+            name="E",
+            levelId="lvl-1",
+            start={"xMm": 4000, "yMm": 0},
+            end={"xMm": 4000, "yMm": 4000},
+            thicknessMm=200,
+            heightMm=2800,
+        ),
+    )
+    sep = RoomSeparationElem(
+        kind="room_separation",
+        id="rs-mid",
+        name="Mid",
+        levelId="lvl-1",
+        start={"xMm": 2000, "yMm": 500},
+        end={"xMm": 2000, "yMm": 3500},
+    )
+    doc = Document(revision=1, elements={"lvl-1": lvl, "rs-mid": sep, **{w.id: w for w in walls}})
+    out = plan_projection_wire_from_request(doc, plan_view_id=None, fallback_level_id="lvl-1")
+    rss = (out.get("primitives") or {}).get("roomSeparations") or []
+    assert len(rss) == 1
+    assert rss[0]["id"] == "rs-mid"
+    assert rss[0]["piercesDerivedRectangleInterior"] is True
+    assert rss[0]["axisAlignedBoundarySegmentEligible"] is True
 def test_section_projection_wire_reports_missing_section() -> None:
     doc = Document(revision=1, elements={})
     out = section_cut_projection_wire(doc, "nope")
@@ -596,6 +691,7 @@ def test_deterministic_sheet_evidence_rows_stable() -> None:
     assert rows[0]["playwrightSuggestedFilenames"]["pngViewport"].startswith("pfx-sheet-sheet-a")
     assert rows[0]["playwrightSuggestedFilenames"]["pngFullSheet"] == "pfx-sheet-sheet-a-full.png"
     assert rows[0].get("viewportEvidenceHints_v0") == []
+    assert rows[0].get("detailCalloutReadout_v0") == []
     assert rows[0].get("planRoomProgrammeLegendHints_v0") == []
     corr = rows[0].get("correlation") or {}
     assert corr.get("semanticDigestPrefix16") == "a" * 16
@@ -657,6 +753,73 @@ def test_deterministic_sheet_evidence_viewport_hints_v0_sorted_and_crop() -> Non
     assert arow.get("planProjectionSegment") == ""
     assert arow.get("sectionDocumentationSegment") == ""
     assert arow.get("scheduleDocumentationSegment") == ""
+    assert zrow.get("detailCalloutDocumentationSegment") == ""
+    assert arow.get("detailCalloutDocumentationSegment") == ""
+
+
+def test_deterministic_sheet_detail_callout_readout_v0_sorted_and_resolution() -> None:
+    sid = uuid4()
+    lvl = LevelElem(kind="level", id="lvl", name="L", elevationMm=0)
+    doc = Document(
+        revision=9,
+        elements={
+            "lvl": lvl,
+            "pv1": PlanViewElem(kind="plan_view", id="pv1", name="EG", levelId="lvl"),
+            "sec1": SectionCutElem(
+                kind="section_cut",
+                id="sec1",
+                name="Cut A",
+                lineStartMm={"xMm": 0, "yMm": 0},
+                lineEndMm={"xMm": 1000, "yMm": 0},
+            ),
+            "sh-dc": SheetElem(
+                kind="sheet",
+                id="sh-dc",
+                name="DC",
+                viewportsMm=[
+                    {
+                        "viewportId": "vp-b",
+                        "viewportRole": "detail_callout",
+                        "viewRef": "plan:no-such-plan",
+                        "detailNumber": "2",
+                        "label": "B",
+                        "xMm": 0,
+                        "yMm": 0,
+                        "widthMm": 1000,
+                        "heightMm": 800,
+                    },
+                    {
+                        "viewportId": "vp-a",
+                        "viewport_role": "detail_callout",
+                        "viewRef": "sec:sec1",
+                        "detailNumber": "1",
+                        "label": "A",
+                        "xMm": 0,
+                        "yMm": 0,
+                        "widthMm": 1000,
+                        "heightMm": 800,
+                    },
+                ],
+            ),
+        },
+    )
+    rows = deterministic_sheet_evidence_manifest(
+        model_id=sid,
+        doc=doc,
+        evidence_artifact_basename="pfx",
+        semantic_digest_sha256="c" * 64,
+        semantic_digest_prefix16="c" * 16,
+    )
+    dc = rows[0]["detailCalloutReadout_v0"]
+    assert [r["viewportId"] for r in dc] == ["vp-a", "vp-b"]
+    ra = next(r for r in dc if r["viewportId"] == "vp-a")
+    assert ra["referencedViewRefNormalized"] == "section:sec1"
+    assert ra["resolvedTargetTitle"] == "Cut A"
+    assert ra["placeholderDetailTitle"] == "Detail 1 — Cut A"
+    assert ra["unresolvedReason"] == ""
+    rb = next(r for r in dc if r["viewportId"] == "vp-b")
+    assert rb["unresolvedReason"] == "unresolved_plan_view"
+    assert rb["placeholderDetailTitle"] == "Detail 2 — unresolved"
 
 
 def test_viewport_evidence_hints_v1_schedule_documentation_segment_sorted() -> None:

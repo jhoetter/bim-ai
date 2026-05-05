@@ -62,6 +62,7 @@ describe('SheetDocumentationManifest viewport metadata columns', () => {
             detailNumber: '4B',
             scale: '1:100',
             viewportLocked: true,
+            viewportRole: 'standard',
             xMm: 10,
             yMm: 20,
             widthMm: 100,

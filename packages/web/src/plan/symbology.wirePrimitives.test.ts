@@ -89,6 +89,48 @@ describe('PlanCanvas server wire primitives path (WP-C03)', () => {
     expect(grp.children.some((c) => 'isMesh' in c && (c as THREE.Mesh).isMesh)).toBe(true);
   });
 
+  it('exposes bimAiRoofGeometrySupportToken on roof outline group userData when server sends roofGeometrySupportToken', () => {
+    const primitives = {
+      format: 'planProjectionPrimitives_v1',
+      walls: [],
+      floors: [],
+      rooms: [],
+      doors: [],
+      windows: [],
+      stairs: [],
+      roofs: [
+        {
+          id: 'r-skip',
+          footprintMm: [
+            [0, 0],
+            [3000, 0],
+            [3000, 2000],
+            [0, 2000],
+          ],
+          roofGeometrySupportToken: 'valley_candidate_deferred',
+          lineWeightHint: 1,
+          linePatternToken: 'solid',
+        },
+      ],
+      gridLines: [],
+      roomSeparations: [],
+      dimensions: [],
+    } as const;
+
+    const grp = new THREE.Group();
+    rebuildPlanMeshes(grp, {}, {
+      activeLevelId: 'lvl',
+      wirePrimitives: primitives as unknown as PlanProjectionPrimitivesV1Wire,
+    });
+
+    const matches: string[] = [];
+    grp.traverse((o) => {
+      const tok = (o.userData as { bimAiRoofGeometrySupportToken?: unknown }).bimAiRoofGeometrySupportToken;
+      if (typeof tok === 'string') matches.push(tok);
+    });
+    expect(matches).toContain('valley_candidate_deferred');
+  });
+
   it('adds dashed Line instances for wire roomSeparations', () => {
     const wall: Extract<Element, { kind: 'wall' }> = {
       kind: 'wall',

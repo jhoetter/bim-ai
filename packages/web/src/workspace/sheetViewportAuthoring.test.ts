@@ -73,6 +73,7 @@ describe('normalizeViewportRaw', () => {
     expect(a.viewportId).toMatch(/^vp-0-/);
     expect(a.cropMinMm).toBe(null);
     expect(a.cropMaxMm).toBe(null);
+    expect(a.viewportRole).toBe('standard');
   });
 
   it('parses snake_case crop aliases when both corners are present', () => {
@@ -153,6 +154,34 @@ describe('normalizeViewportRaw', () => {
     expect(d.scale).toBe('1:75');
     expect(d.viewportLocked).toBe(true);
   });
+
+  it('hydrates viewportRole from camelCase or snake_case', () => {
+    const d1 = normalizeViewportRaw(
+      {
+        viewportId: 'dc',
+        xMm: 0,
+        yMm: 0,
+        widthMm: 10,
+        heightMm: 10,
+        viewRef: 'plan:x',
+        viewportRole: 'detail_callout',
+      },
+      0,
+    );
+    expect(d1.viewportRole).toBe('detail_callout');
+    const d2 = normalizeViewportRaw(
+      {
+        xMm: 0,
+        yMm: 0,
+        widthMm: 10,
+        heightMm: 10,
+        viewRef: '',
+        viewport_role: 'Detail-Callout',
+      },
+      1,
+    );
+    expect(d2.viewportRole).toBe('detail_callout');
+  });
 });
 
 describe('readViewportPresentationMeta', () => {
@@ -173,6 +202,7 @@ describe('sheetViewportsMmFromDrafts', () => {
       detailNumber: '',
       scale: '',
       viewportLocked: false,
+      viewportRole: 'standard' as const,
       xMm: 0,
       yMm: 0,
       widthMm: 10,
@@ -209,6 +239,7 @@ describe('sheetViewportsMmFromDrafts', () => {
         detailNumber: '  ',
         scale: '',
         viewportLocked: false,
+        viewportRole: 'standard',
         xMm: 1,
         yMm: 2,
         widthMm: 100,
@@ -223,6 +254,7 @@ describe('sheetViewportsMmFromDrafts', () => {
         detailNumber: '2',
         scale: '1:100',
         viewportLocked: true,
+        viewportRole: 'detail_callout',
         xMm: 0,
         yMm: 0,
         widthMm: 10,
@@ -234,10 +266,12 @@ describe('sheetViewportsMmFromDrafts', () => {
     expect(rows[0]).not.toHaveProperty('detailNumber');
     expect(rows[0]).not.toHaveProperty('scale');
     expect(rows[0]).not.toHaveProperty('viewportLocked');
+    expect(rows[0]).not.toHaveProperty('viewportRole');
     expect(rows[1]).toMatchObject({
       detailNumber: '2',
       scale: '1:100',
       viewportLocked: true,
+      viewportRole: 'detail_callout',
     });
   });
 });

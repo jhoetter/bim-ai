@@ -32,6 +32,7 @@ from bim_ai.room_derivation import (
 from bim_ai.room_derivation import (
     ROOM_CLOSURE_BLOCKING_DIAGNOSTIC_CODES,
     compute_room_boundary_derivation,
+    room_separation_axis_summary_v0_payload,
     vacant_derived_metrics_for_authority,
 )
 from bim_ai.schedule_field_registry import column_metadata_bundle, stable_column_keys
@@ -968,6 +969,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
             "previewHeuristicVacantFootprintCount": preview_n,
             "authoritativeVacantClosureComplete": authoritative_closure_complete,
             "nonAuthoritativeReasonCodes": sorted(non_auth_reason_codes),
+            "roomSeparationAxisSummary_v0": room_separation_axis_summary_v0_payload(doc, rb),
         }
         if totals and "targetAreaM2" in totals:
             try:

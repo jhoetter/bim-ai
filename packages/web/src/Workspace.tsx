@@ -62,8 +62,13 @@ import { RoomColorSchemePanel } from './workspace/RoomColorSchemePanel';
 import { SiteAuthoringPanel } from './workspace/SiteAuthoringPanel';
 import { SectionPlaceholderPane } from './workspace/SectionPlaceholderPane';
 import { SheetCanvas } from './workspace/SheetCanvas';
+import { RoomSeparationAuthoringWorkbench } from './workspace/RoomSeparationAuthoringWorkbench';
 import { LevelDatumStackWorkbench } from './workspace/LevelDatumStackWorkbench';
 import { MaterialLayerStackWorkbench } from './workspace/MaterialLayerStackWorkbench';
+import {
+  buildBrowserRenderingBudgetReadoutV1,
+  formatBrowserRenderingBudgetLines,
+} from './workspace/browserRenderingBudgetReadout';
 
 async function fetchSnap(modelId: string): Promise<Snapshot> {
   const res = await fetch(`/api/models/${encodeURIComponent(modelId)}/snapshot`);
@@ -189,6 +194,8 @@ export function Workspace() {
   const violations = useBimStore((s) => s.violations);
   const selectedId = useBimStore((s) => s.selectedId);
   const elementsById = useBimStore((s) => s.elementsById);
+  const planProjectionPrimitives = useBimStore((s) => s.planProjectionPrimitives);
+  const scheduleBudgetHydration = useBimStore((s) => s.scheduleBudgetHydration);
   const viewerMode = useBimStore((s) => s.viewerMode);
   const planTool = useBimStore((s) => s.planTool);
   const activeLv = useBimStore((s) => s.activeLevelId);
@@ -276,6 +283,17 @@ export function Workspace() {
 
         .sort((a, b) => a.elevationMm - b.elevationMm),
     [elementsById],
+  );
+
+  const browserRenderingBudgetReadout = useMemo(
+    () =>
+      buildBrowserRenderingBudgetReadoutV1({
+        elementsById,
+        planProjectionPrimitives,
+        scheduleHydratedRowCount: scheduleBudgetHydration?.rowCount ?? null,
+        scheduleHydratedTab: scheduleBudgetHydration?.tab ?? null,
+      }),
+    [elementsById, planProjectionPrimitives, scheduleBudgetHydration],
   );
 
   const lvResolved = activeLv ?? levels[0]?.id ?? '';
@@ -1008,6 +1026,17 @@ export function Workspace() {
             </ul>
           </div>
         ) : null}
+        <div
+          data-testid="browser-rendering-budget-readout"
+          className="mx-auto mt-2 max-w-[1400px] rounded border border-border bg-muted/15 px-3 py-2 text-[10px] text-muted"
+        >
+          <div className="font-semibold text-foreground">
+            Browser rendering budget (browserRenderingBudgetReadout_v1)
+          </div>
+          <pre className="mt-1 max-h-[28vh] overflow-auto whitespace-pre-wrap font-mono text-[9px]">
+            {formatBrowserRenderingBudgetLines(browserRenderingBudgetReadout).join('\n')}
+          </pre>
+        </div>
       </div>
 
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} actions={palette} />
@@ -1694,6 +1723,15 @@ export function Workspace() {
                 </label>
               </div>
             ) : null}
+            <RoomSeparationAuthoringWorkbench
+              selected={selected}
+              elementsById={elementsById}
+              wirePrimitives={planProjectionPrimitives}
+              levels={levels}
+              defaultLevelId={lvResolved}
+              revision={revision}
+              onUpsertSemantic={(cmd) => void onSemantic(cmd)}
+            />
             <LevelDatumStackWorkbench
               selected={selected}
               elementsById={elementsById}

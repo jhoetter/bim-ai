@@ -104,6 +104,82 @@ def axis_aligned_room_separation_segment(r: RoomSeparationElem) -> AxisSeg | Non
     return None
 
 
+def room_separation_axis_segment_meta(r: RoomSeparationElem) -> tuple[bool, str | None]:
+    """Axis-aligned pool eligibility and exclusion reason (matches axis_aligned_room_separation_segment)."""
+    if axis_aligned_room_separation_segment(r) is not None:
+        return True, None
+    x0, y0 = r.start.x_mm, r.start.y_mm
+    x1, y1 = r.end.x_mm, r.end.y_mm
+    if math.hypot(x1 - x0, y1 - y0) < 80.0:
+        return False, "too_short"
+    return False, "non_axis_aligned"
+
+
+def room_separation_derived_bundle_sets(bundle: dict[str, Any]) -> tuple[set[str], set[str]]:
+    """Authoritative perimeter separation ids and ids that pierce a derived rectangle interior."""
+    auth_perim: set[str] = set()
+    for c in bundle.get("axisAlignedRectangleCandidates") or []:
+        if not isinstance(c, dict):
+            continue
+        if c.get("derivationAuthority") != "authoritative":
+            continue
+        for sid in c.get("boundarySeparationIds") or []:
+            auth_perim.add(str(sid))
+
+    interior: set[str] = set()
+    for w in bundle.get("warnings") or []:
+        if not isinstance(w, dict):
+            continue
+        if w.get("code") != "derivedRectangleInteriorRoomSeparation":
+            continue
+        for sid in w.get("separationIds") or []:
+            interior.add(str(sid))
+    for d in bundle.get("diagnostics") or []:
+        if not isinstance(d, dict):
+            continue
+        if d.get("code") != "ambiguous_interior_separation":
+            continue
+        for sid in d.get("separationIds") or []:
+            interior.add(str(sid))
+    return auth_perim, interior
+
+
+def room_separation_plan_wire_row_fields_by_id(
+    doc: Document, bundle: dict[str, Any]
+) -> dict[str, dict[str, Any]]:
+    """Per room_separation element id: derivation flags for plan wire primitives."""
+    auth_perim, interior = room_separation_derived_bundle_sets(bundle)
+    out: dict[str, dict[str, Any]] = {}
+    for e in doc.elements.values():
+        if not isinstance(e, RoomSeparationElem):
+            continue
+        eligible, reason = room_separation_axis_segment_meta(e)
+        out[e.id] = {
+            "axisAlignedBoundarySegmentEligible": eligible,
+            "axisBoundarySegmentExcludedReason": reason,
+            "onAuthoritativeDerivedFootprintBoundary": e.id in auth_perim,
+            "piercesDerivedRectangleInterior": e.id in interior,
+        }
+    return out
+
+
+def room_separation_axis_summary_v0_payload(doc: Document, bundle: dict[str, Any]) -> dict[str, Any]:
+    """Compact counts for room schedule closure (roomProgrammeClosure_v0)."""
+    auth_perim, interior = room_separation_derived_bundle_sets(bundle)
+    seps = [e for e in doc.elements.values() if isinstance(e, RoomSeparationElem)]
+    sep_ids = {e.id for e in seps}
+    elig = sum(1 for e in seps if axis_aligned_room_separation_segment(e) is not None)
+    total = len(seps)
+    return {
+        "format": "roomSeparationAxisSummary_v0",
+        "totalCount": total,
+        "axisAlignedEligibleCount": elig,
+        "nonAxisAlignedOrShortCount": max(0, total - elig),
+        "onAuthoritativePerimeterCount": len(auth_perim & sep_ids),
+        "interiorPierceCount": len(interior & sep_ids),
+    }
+
+
 def quad_closes_rectangle(
     segs: tuple[AxisSeg, AxisSeg, AxisSeg, AxisSeg],
 ) -> dict[str, Any] | None:

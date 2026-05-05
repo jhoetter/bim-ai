@@ -6,7 +6,7 @@ import pytest
 
 from bim_ai.commands import UpdateElementPropertyCmd
 from bim_ai.document import Document
-from bim_ai.elements import LevelElem, RoomElem, ScheduleElem, Vec2Mm, WallElem
+from bim_ai.elements import LevelElem, RoomElem, RoomSeparationElem, ScheduleElem, Vec2Mm, WallElem
 from bim_ai.engine import apply_inplace
 from bim_ai.schedule_derivation import derive_schedule_table
 
@@ -182,8 +182,31 @@ def test_derive_room_schedule_includes_room_programme_closure_v0_when_no_room_ro
     assert closure.get("previewHeuristicVacantFootprintCount") == 0
     assert closure.get("authoritativeVacantClosureComplete") is True
     assert closure.get("nonAuthoritativeReasonCodes") == []
+    axis = closure.get("roomSeparationAxisSummary_v0") or {}
+    assert axis.get("format") == "roomSeparationAxisSummary_v0"
+    assert axis.get("totalCount") == 0
+    assert axis.get("axisAlignedEligibleCount") == 0
 
 
+def test_derive_room_schedule_closure_includes_room_separation_axis_summary() -> None:
+    lvl = LevelElem(kind="level", id="lvl-1", name="Ground", elevation_mm=0)
+    sep = RoomSeparationElem(
+        kind="room_separation",
+        id="rs-1",
+        name="S",
+        levelId="lvl-1",
+        start={"xMm": 0.0, "yMm": 0.0},
+        end={"xMm": 2000.0, "yMm": 0.0},
+    )
+    sch = ScheduleElem(kind="schedule", id="sch-room", name="Rooms", filters={"category": "room"})
+    doc = Document(revision=1, elements={"lvl-1": lvl, "rs-1": sep, "sch-room": sch})
+    table = derive_schedule_table(doc, "sch-room")
+    closure = table.get("roomProgrammeClosure_v0") or {}
+    axis = closure.get("roomSeparationAxisSummary_v0") or {}
+    assert axis.get("format") == "roomSeparationAxisSummary_v0"
+    assert axis.get("totalCount") == 1
+    assert axis.get("axisAlignedEligibleCount") == 1
+    assert axis.get("nonAxisAlignedOrShortCount") == 0
 def test_derive_room_schedule_programme_residual_without_vacant_footprint() -> None:
     lvl = LevelElem(kind="level", id="lvl-1", name="Ground", elevation_mm=0)
     rm = RoomElem(
