@@ -54,6 +54,14 @@ SHEET_PRINT_RASTER_SURROGATE_V2_HEIGHT_PX = (
 
 SHEET_PRINT_RASTER_PRINT_CONTRACT_V3_FORMAT = "sheetPrintRasterPrintContract_v3"
 
+FULL_RASTER_RENDERER_STATUS_UNAVAILABLE = "unsupported_full_raster_renderer_unavailable"
+
+SHEET_EXPORT_SVG_MIME_TYPE = "image/svg+xml"
+SHEET_EXPORT_PDF_MIME_TYPE = "application/pdf"
+SHEET_EXPORT_PNG_MIME_TYPE = "image/png"
+
+SHEET_EXPORT_SVG_PDF_LISTING_PARITY_TOKEN = "svgPdfListingParity_v1"
+
 ROOM_PROGRAMME_LEGEND_DOC_TITLE = "Room programme legend"
 
 
@@ -1161,7 +1169,10 @@ def build_sheet_print_raster_print_contract_v3(
     return {
         "format": SHEET_PRINT_RASTER_PRINT_CONTRACT_V3_FORMAT,
         "artifactName": "sheet-print-raster.png",
+        "mimeType": SHEET_EXPORT_PNG_MIME_TYPE,
+        "relativeArtifactPath": "exports/sheet-print-raster.png",
         "surrogateVersion": SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2,
+        "fullRasterExportStatus": FULL_RASTER_RENDERER_STATUS_UNAVAILABLE,
         "widthPx": SHEET_PRINT_RASTER_STAMP_WIDTH_PX,
         "heightPx": SHEET_PRINT_RASTER_SURROGATE_V2_HEIGHT_PX,
         "colorMode": "rgb8",
@@ -1172,7 +1183,10 @@ def build_sheet_print_raster_print_contract_v3(
         "titleblockParameterDigestSha256": tb_digest,
         "layoutBandsMm": layout_bands_mm,
         "viewportSegmentCorrelation": viewport_segment_correlation,
+        "svgListingSegmentsDigestSha256": pdf_list_digest,
         "pdfListingSegmentsDigestSha256": pdf_list_digest,
+        "exportListingParityToken": SHEET_EXPORT_SVG_PDF_LISTING_PARITY_TOKEN,
+        "exportListingParityDigestMatch": True,
         "svgContentSha256": svg_sha,
         "pngByteSha256": png_sha,
         "checks": checks,
@@ -1203,7 +1217,11 @@ def validate_sheet_print_raster_print_contract_v3(
         "svgContentSha256",
         "pngByteSha256",
         "titleblockParameterDigestSha256",
+        "svgListingSegmentsDigestSha256",
         "pdfListingSegmentsDigestSha256",
+        "exportListingParityToken",
+        "exportListingParityDigestMatch",
+        "fullRasterExportStatus",
         "layoutBandsMm",
         "viewportSegmentCorrelation",
     ):

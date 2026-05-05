@@ -7,6 +7,11 @@ import zlib
 from bim_ai.document import Document
 from bim_ai.elements import LevelElem, PlanViewElem, SectionCutElem, SheetElem
 from bim_ai.sheet_preview_svg import (
+    FULL_RASTER_RENDERER_STATUS_UNAVAILABLE,
+    SHEET_EXPORT_PDF_MIME_TYPE,
+    SHEET_EXPORT_PNG_MIME_TYPE,
+    SHEET_EXPORT_SVG_MIME_TYPE,
+    SHEET_EXPORT_SVG_PDF_LISTING_PARITY_TOKEN,
     SHEET_PRINT_RASTER_LAYOUT_STAMP_CONTRACT_V1,
     SHEET_PRINT_RASTER_PLACEHOLDER_CONTRACT_V1,
     SHEET_PRINT_RASTER_PRINT_CONTRACT_V3_FORMAT,
@@ -305,4 +310,66 @@ def test_print_surrogate_v2_titleblock_metadata_changes_png() -> None:
     p1 = sheet_print_raster_print_surrogate_png_bytes_v2(doc, sh1, svg1)
     p2 = sheet_print_raster_print_surrogate_png_bytes_v2(doc, sh2, svg2)
     assert p1 != p2
+
+
+def test_print_contract_v3_mime_type_and_artifact_path() -> None:
+    sh = SheetElem(kind="sheet", id="s1", name="S")
+    doc = Document(revision=1, elements={"s1": sh})
+    svg = sheet_elem_to_svg(doc, sh)
+    png = sheet_print_raster_print_surrogate_png_bytes_v2(doc, sh, svg)
+    c = build_sheet_print_raster_print_contract_v3(doc, sh, svg, png)
+    assert c["mimeType"] == SHEET_EXPORT_PNG_MIME_TYPE
+    assert c["mimeType"] == "image/png"
+    assert c["relativeArtifactPath"] == "exports/sheet-print-raster.png"
+    assert c["artifactName"] == "sheet-print-raster.png"
+
+
+def test_print_contract_v3_full_raster_fallback_token() -> None:
+    sh = SheetElem(kind="sheet", id="s1", name="S")
+    doc = Document(revision=1, elements={"s1": sh})
+    svg = sheet_elem_to_svg(doc, sh)
+    png = sheet_print_raster_print_surrogate_png_bytes_v2(doc, sh, svg)
+    c = build_sheet_print_raster_print_contract_v3(doc, sh, svg, png)
+    assert c["fullRasterExportStatus"] == FULL_RASTER_RENDERER_STATUS_UNAVAILABLE
+    assert c["fullRasterExportStatus"] == "unsupported_full_raster_renderer_unavailable"
+
+
+def test_print_contract_v3_svg_pdf_listing_parity() -> None:
+    sh = SheetElem(
+        kind="sheet",
+        id="s1",
+        name="S",
+        viewportsMm=[{"viewportId": "v1", "viewRef": "", "xMm": 0, "yMm": 0, "widthMm": 100, "heightMm": 100}],
+    )
+    doc = Document(revision=1, elements={"s1": sh})
+    svg = sheet_elem_to_svg(doc, sh)
+    png = sheet_print_raster_print_surrogate_png_bytes_v2(doc, sh, svg)
+    c = build_sheet_print_raster_print_contract_v3(doc, sh, svg, png)
+    assert c["svgListingSegmentsDigestSha256"] == c["pdfListingSegmentsDigestSha256"]
+    assert len(c["svgListingSegmentsDigestSha256"]) == 64
+    assert c["exportListingParityToken"] == SHEET_EXPORT_SVG_PDF_LISTING_PARITY_TOKEN
+    assert c["exportListingParityToken"] == "svgPdfListingParity_v1"
+    assert c["exportListingParityDigestMatch"] is True
+
+
+def test_print_contract_v3_mime_constants() -> None:
+    assert SHEET_EXPORT_SVG_MIME_TYPE == "image/svg+xml"
+    assert SHEET_EXPORT_PDF_MIME_TYPE == "application/pdf"
+    assert SHEET_EXPORT_PNG_MIME_TYPE == "image/png"
+
+
+def test_validate_contract_v3_checks_new_fields() -> None:
+    sh = SheetElem(kind="sheet", id="sx", name="X")
+    doc = Document(revision=1, elements={"sx": sh})
+    svg = sheet_elem_to_svg(doc, sh)
+    png = sheet_print_raster_print_surrogate_png_bytes_v2(doc, sh, svg)
+    c = build_sheet_print_raster_print_contract_v3(doc, sh, svg, png)
+    ok, errs = validate_sheet_print_raster_print_contract_v3(c, png, doc, sh, svg)
+    assert ok and errs == []
+
+    forged = dict(c)
+    forged["fullRasterExportStatus"] = "some_other_status"
+    bad_ok, bad_errs = validate_sheet_print_raster_print_contract_v3(forged, png, doc, sh, svg)
+    assert not bad_ok
+    assert any("fullRasterExportStatus" in e for e in bad_errs)
 

@@ -22,6 +22,11 @@ from bim_ai.elements import (
     ViewpointElem,
 )
 from bim_ai.sheet_preview_svg import (
+    FULL_RASTER_RENDERER_STATUS_UNAVAILABLE,
+    SHEET_EXPORT_PDF_MIME_TYPE,
+    SHEET_EXPORT_PNG_MIME_TYPE,
+    SHEET_EXPORT_SVG_MIME_TYPE,
+    SHEET_EXPORT_SVG_PDF_LISTING_PARITY_TOKEN,
     SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2,
     build_sheet_print_raster_print_contract_v3,
     detail_callout_readout_rows_v0,
@@ -29,6 +34,7 @@ from bim_ai.sheet_preview_svg import (
     sheet_elem_to_svg,
     sheet_print_raster_print_surrogate_png_bytes_v2,
     sheet_svg_utf8_sha256,
+    sheet_viewport_export_listing_lines,
     viewport_evidence_hints_v1,
 )
 from bim_ai.sheet_titleblock_revision_issue_v1 import (
@@ -183,6 +189,45 @@ def deterministic_sheet_evidence_manifest(
         placeholder_png = sheet_print_raster_print_surrogate_png_bytes_v2(doc, sh, svg_body)
         placeholder_png_sha = hashlib.sha256(placeholder_png).hexdigest()
 
+        listing_blob = "\n".join(sheet_viewport_export_listing_lines(doc, sh)).encode("utf-8")
+        export_listing_digest = hashlib.sha256(listing_blob).hexdigest()
+
+        sheet_export_artifact_manifest: dict[str, Any] = {
+            "format": "sheetExportArtifactManifest_v1",
+            "sheetId": sh.id,
+            "artifacts": [
+                {
+                    "artifactName": "sheet-preview.svg",
+                    "mimeType": SHEET_EXPORT_SVG_MIME_TYPE,
+                    "relativeArtifactPath": "exports/sheet-preview.svg",
+                    "digestSha256": svg_sha,
+                },
+                {
+                    "artifactName": "sheet-preview.pdf",
+                    "mimeType": SHEET_EXPORT_PDF_MIME_TYPE,
+                    "relativeArtifactPath": "exports/sheet-preview.pdf",
+                    "digestSha256": None,
+                    "note": "PDF bytes not deterministically available server-side; correlate via exportListingDigestSha256.",
+                },
+                {
+                    "artifactName": "sheet-print-raster.png",
+                    "mimeType": SHEET_EXPORT_PNG_MIME_TYPE,
+                    "relativeArtifactPath": "exports/sheet-print-raster.png",
+                    "digestSha256": placeholder_png_sha,
+                    "surrogateContract": SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2,
+                    "fullRasterExportStatus": FULL_RASTER_RENDERER_STATUS_UNAVAILABLE,
+                },
+            ],
+            "exportListingParityToken": SHEET_EXPORT_SVG_PDF_LISTING_PARITY_TOKEN,
+            "ciBaselineCorrelation": {
+                "format": "sheetExportCiBaselineCorrelation_v1",
+                "sheetId": sh.id,
+                "svgDigestSha256": svg_sha,
+                "pngDigestSha256": placeholder_png_sha,
+                "exportListingDigestSha256": export_listing_digest,
+            },
+        }
+
         rows.append(
             {
                 "sheetId": sh.id,
@@ -225,6 +270,7 @@ def deterministic_sheet_evidence_manifest(
                 "sheetTitleblockRevisionIssueManifest_v1": build_sheet_titleblock_revision_issue_manifest_v1(
                     sh
                 ),
+                "sheetExportArtifactManifest_v1": sheet_export_artifact_manifest,
                 "correlation": {
                     "format": "evidenceSheetCorrelation_v1",
                     "semanticDigestSha256": semantic_digest_sha256,
