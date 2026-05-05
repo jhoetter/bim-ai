@@ -14,6 +14,7 @@ app/uv.lock
 **/*.pyc
 app/.venv/
 .idea/
+.claude/
 *.local
 packages/web/playwright-report/
 packages/web/test-results/
