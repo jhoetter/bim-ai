@@ -5,6 +5,7 @@ import { useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } fro
 import type { SheetViewportMmDraft } from './sheetViewportAuthoring';
 import {
   readViewportMmBox,
+  readViewportPresentationMeta,
   SheetViewportEditor,
   normalizeViewportRaw,
   clampViewportMmPosition,
@@ -104,6 +105,9 @@ function SheetCanvasWithSheet(props: {
     heightMm: number;
     viewRef: string;
     label: string;
+    detailNumber: string;
+    scale: string;
+    viewportLocked: boolean;
     index: number;
   }> = authoring
     ? vpDrafts.map((d, index) => ({
@@ -114,6 +118,9 @@ function SheetCanvasWithSheet(props: {
         heightMm: d.heightMm,
         viewRef: d.viewRef,
         label: d.label,
+        detailNumber: d.detailNumber,
+        scale: d.scale,
+        viewportLocked: d.viewportLocked,
         index,
       }))
     : vps.map((vpRaw, index) => {
@@ -121,6 +128,7 @@ function SheetCanvasWithSheet(props: {
         const box = readViewportMmBox(vp);
         const viewRefRaw = vp.viewRef ?? vp.view_ref;
         const label = typeof vp.label === 'string' ? vp.label : 'Viewport';
+        const meta = readViewportPresentationMeta(vp);
         return {
           key: String(vp.viewportId ?? vp.viewport_id ?? `${box.xMm}_${box.yMm}_${index}`),
           xMm: box.xMm,
@@ -129,6 +137,9 @@ function SheetCanvasWithSheet(props: {
           heightMm: box.heightMm,
           viewRef: typeof viewRefRaw === 'string' ? viewRefRaw : '',
           label,
+          detailNumber: meta.detailNumber,
+          scale: meta.scale,
+          viewportLocked: meta.viewportLocked,
           index,
         };
       });
@@ -140,7 +151,7 @@ function SheetCanvasWithSheet(props: {
     const svg = svgRef.current;
     if (!svg) return;
     const d = vpDrafts[index];
-    if (!d) return;
+    if (!d || d.viewportLocked) return;
     const m = clientToSvgMm(svg, e.clientX, e.clientY);
     dragRef.current = { index, grabDX: m.x - d.xMm, grabDY: m.y - d.yMm };
 
@@ -185,7 +196,8 @@ function SheetCanvasWithSheet(props: {
     e.stopPropagation();
     const svg = svgRef.current;
     if (!svg) return;
-    if (!vpDrafts[index]) return;
+    const row = vpDrafts[index];
+    if (!row || row.viewportLocked) return;
     resizeRef.current = { index };
 
     const onMove = (ev: PointerEvent) => {
@@ -271,7 +283,18 @@ function SheetCanvasWithSheet(props: {
             ))}
 
           {paintRows.map((row) => {
-            const { xMm, yMm, widthMm, heightMm, viewRef, label, index } = row;
+            const {
+              xMm,
+              yMm,
+              widthMm,
+              heightMm,
+              viewRef,
+              label,
+              detailNumber,
+              scale,
+              viewportLocked,
+              index,
+            } = row;
             const resolved = resolveViewportTitleFromRef(elementsById, viewRef);
             const primary = resolved ?? label;
             const sub = viewRef.trim() ? viewRef : '';
@@ -303,6 +326,9 @@ function SheetCanvasWithSheet(props: {
             const handle = 560;
             const hx = xMm + widthMm - handle;
             const hy = yMm + heightMm - handle;
+            const detailTrim = detailNumber.trim();
+            const scaleTrim = scale.trim();
+            const canDragResize = authoring && !viewportLocked;
 
             return (
               <g key={row.key}>
@@ -316,10 +342,10 @@ function SheetCanvasWithSheet(props: {
                   stroke="#475569"
                   strokeWidth={80}
                   strokeDasharray={isScheduleVp ? '480 240' : undefined}
-                  className={authoring ? 'cursor-move touch-none' : undefined}
-                  onPointerDown={authoring ? (e) => beginDrag(e, index) : undefined}
+                  className={canDragResize ? 'cursor-move touch-none' : undefined}
+                  onPointerDown={canDragResize ? (e) => beginDrag(e, index) : undefined}
                 />
-                {authoring ? (
+                {canDragResize ? (
                   <rect
                     data-testid={`sheet-viewport-resize-${index}`}
                     x={hx}
@@ -352,9 +378,43 @@ function SheetCanvasWithSheet(props: {
                 <text x={xMm + 200} y={yMm + 900} fill="#475569" style={{ fontSize: '600px' }}>
                   {primary}
                 </text>
+                {detailTrim ? (
+                  <text
+                    data-testid={`sheet-viewport-detail-${index}`}
+                    x={xMm + widthMm - 200}
+                    y={yMm + 820}
+                    fill="#475569"
+                    style={{ fontSize: '480px' }}
+                    textAnchor="end"
+                  >
+                    {detailTrim}
+                  </text>
+                ) : null}
                 {sub ? (
                   <text x={xMm + 200} y={yMm + 1400} fill="#64748b" style={{ fontSize: '350px' }}>
                     {sub}
+                  </text>
+                ) : null}
+                {scaleTrim ? (
+                  <text
+                    data-testid={`sheet-viewport-scale-${index}`}
+                    x={xMm + 200}
+                    y={yMm + 1800}
+                    fill="#64748b"
+                    style={{ fontSize: '340px' }}
+                  >
+                    scale {scaleTrim}
+                  </text>
+                ) : null}
+                {authoring && viewportLocked ? (
+                  <text
+                    x={xMm + widthMm - 200}
+                    y={yMm + heightMm - 320}
+                    fill="#94a3b8"
+                    style={{ fontSize: '280px' }}
+                    textAnchor="end"
+                  >
+                    locked
                   </text>
                 ) : null}
                 {scheduleCaption ? (

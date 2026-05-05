@@ -2,6 +2,8 @@ import type { Element } from '@bim-ai/core';
 import type { Dispatch, SetStateAction } from 'react';
 import { Fragment } from 'react';
 
+import { parseSheetViewRef } from './sheetViewRef';
+
 /** Normalized authoring row for replayable `upsertSheetViewports`. */
 
 export type Vec2MmDraft = { xMm: number; yMm: number };
@@ -12,6 +14,12 @@ export type SheetViewportMmDraft = {
   label: string;
 
   viewRef: string;
+
+  detailNumber: string;
+
+  scale: string;
+
+  viewportLocked: boolean;
 
   xMm: number;
 
@@ -56,6 +64,30 @@ function readCropCorner(
   return { xMm: x, yMm: y };
 }
 
+function readViewportLockedFlag(raw: Record<string, unknown>): boolean {
+  const v = raw.viewportLocked ?? raw.viewport_locked ?? raw.locked;
+  if (v === true || v === 1) return true;
+  if (typeof v === 'string' && v.trim().toLowerCase() === 'true') return true;
+  return false;
+}
+
+/** Detail number, scale token, and lock flag from a persisted viewport row (read-only surfaces / hydration). */
+export function readViewportPresentationMeta(raw: Record<string, unknown>): {
+  detailNumber: string;
+  scale: string;
+  viewportLocked: boolean;
+} {
+  const dn = raw.detailNumber ?? raw.detail_number;
+  const sc = raw.scale;
+  const detailNumber = (
+    typeof dn === 'string' ? dn : dn != null && typeof dn !== 'object' ? String(dn) : ''
+  ).trim();
+  const scale = (
+    typeof sc === 'string' ? sc : sc != null && typeof sc !== 'object' ? String(sc) : ''
+  ).trim();
+  return { detailNumber, scale, viewportLocked: readViewportLockedFlag(raw) };
+}
+
 export function sheetViewportsMmFromDrafts(
   rows: SheetViewportMmDraft[],
 ): Record<string, unknown>[] {
@@ -75,6 +107,11 @@ export function sheetViewportsMmFromDrafts(
 
       heightMm: r.heightMm,
     };
+    const d = r.detailNumber.trim();
+    if (d) row.detailNumber = d;
+    const sc = r.scale.trim();
+    if (sc) row.scale = sc;
+    if (r.viewportLocked) row.viewportLocked = true;
     if (r.cropMinMm !== null && r.cropMaxMm !== null) {
       row.cropMinMm = { xMm: r.cropMinMm.xMm, yMm: r.cropMinMm.yMm };
       row.cropMaxMm = { xMm: r.cropMaxMm.xMm, yMm: r.cropMaxMm.yMm };
@@ -171,6 +208,7 @@ export function normalizeViewportRaw(
   const cmin = readCropCorner(raw, 'cropMinMm', 'crop_min_mm');
   const cmax = readCropCorner(raw, 'cropMaxMm', 'crop_max_mm');
   const hasCrop = cmin !== null && cmax !== null;
+  const { detailNumber, scale, viewportLocked } = readViewportPresentationMeta(raw);
 
   return {
     viewportId:
@@ -179,6 +217,9 @@ export function normalizeViewportRaw(
         : `vp-${index}-${fp}`,
     label: typeof labelRaw === 'string' ? labelRaw : 'Viewport',
     viewRef,
+    detailNumber,
+    scale,
+    viewportLocked,
     xMm: nx,
     yMm: ny,
     widthMm: nw,
@@ -288,6 +329,12 @@ export function SheetViewportEditor(props: {
 
           viewRef: ref,
 
+          detailNumber: '',
+
+          scale: '',
+
+          viewportLocked: false,
+
           xMm: x,
 
           yMm: y,
@@ -313,12 +360,20 @@ export function SheetViewportEditor(props: {
 
       <div className="text-muted">{props.sheetName}</div>
 
-      <div className="mt-2 grid grid-cols-[minmax(0,3fr)_minmax(0,2fr)_minmax(0,3fr)_repeat(4,minmax(0,1fr))] gap-x-1 gap-y-2 font-mono text-[9px] text-muted">
+      <div className="mt-2 grid grid-cols-[minmax(0,2.2fr)_minmax(0,1.8fr)_minmax(0,2.6fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.7fr)_repeat(4,minmax(0,0.95fr))] gap-x-1 gap-y-2 font-mono text-[9px] text-muted">
         <span>viewportId</span>
 
         <span>label</span>
 
         <span>viewRef</span>
+
+        <span>kind</span>
+
+        <span>detail #</span>
+
+        <span>scale</span>
+
+        <span>lock</span>
 
         <span>xMm</span>
 
@@ -349,6 +404,39 @@ export function SheetViewportEditor(props: {
               value={row.viewRef}
               onChange={(e) => patchRow(idx, { viewRef: e.target.value }, drafts, setDrafts)}
             />
+
+            <span
+              className="self-center truncate font-mono text-[10px] text-foreground/80"
+              title={parseSheetViewRef(row.viewRef)?.normalizedRef ?? ''}
+            >
+              {parseSheetViewRef(row.viewRef)?.kind ?? 'unknown'}
+            </span>
+
+            <input
+              className="w-full rounded border border-border bg-background px-1 py-0.5 font-mono text-[10px]"
+              aria-label="Detail number"
+              value={row.detailNumber}
+              onChange={(e) => patchRow(idx, { detailNumber: e.target.value }, drafts, setDrafts)}
+            />
+
+            <input
+              className="w-full rounded border border-border bg-background px-1 py-0.5 font-mono text-[10px]"
+              aria-label="Scale"
+              placeholder="1:100"
+              value={row.scale}
+              onChange={(e) => patchRow(idx, { scale: e.target.value }, drafts, setDrafts)}
+            />
+
+            <label className="flex items-center justify-center gap-0.5 self-center">
+              <input
+                type="checkbox"
+                checked={row.viewportLocked}
+                aria-label="Viewport locked"
+                onChange={(e) =>
+                  patchRow(idx, { viewportLocked: e.target.checked }, drafts, setDrafts)
+                }
+              />
+            </label>
 
             <input
               className="w-full rounded border border-border bg-background px-1 py-0.5 font-mono text-[10px]"

@@ -7,6 +7,7 @@ import {
   normalizeViewportRaw,
   parsePlanViewRefId,
   readViewportMmBox,
+  readViewportPresentationMeta,
   sheetViewportsMmFromDrafts,
 } from './sheetViewportAuthoring';
 
@@ -133,30 +134,60 @@ describe('normalizeViewportRaw', () => {
     expect(box.widthMm).toBe(220);
     expect(box.heightMm).toBe(170);
   });
-});
 
-describe('sheetViewportsMmFromDrafts', () => {
-  it('serializes crop only when both corners are set', () => {
-    const rows = sheetViewportsMmFromDrafts([
+  it('hydrates detail number, scale, and lock from camelCase and snake_case aliases', () => {
+    const d = normalizeViewportRaw(
       {
-        viewportId: 'a',
-        label: '',
-        viewRef: '',
         xMm: 0,
         yMm: 0,
         widthMm: 10,
         heightMm: 10,
+        viewRef: 'plan:x',
+        detail_number: '  A3 ',
+        scale: ' 1:75 ',
+        viewport_locked: true,
+      },
+      0,
+    );
+    expect(d.detailNumber).toBe('A3');
+    expect(d.scale).toBe('1:75');
+    expect(d.viewportLocked).toBe(true);
+  });
+});
+
+describe('readViewportPresentationMeta', () => {
+  it('reads locked from locked alias and coerces strings', () => {
+    expect(readViewportPresentationMeta({ locked: 'true', scale: '1:50' })).toEqual({
+      detailNumber: '',
+      scale: '1:50',
+      viewportLocked: true,
+    });
+  });
+});
+
+describe('sheetViewportsMmFromDrafts', () => {
+  it('serializes crop only when both corners are set', () => {
+    const base = {
+      label: '',
+      viewRef: '',
+      detailNumber: '',
+      scale: '',
+      viewportLocked: false,
+      xMm: 0,
+      yMm: 0,
+      widthMm: 10,
+      heightMm: 10,
+    };
+    const rows = sheetViewportsMmFromDrafts([
+      {
+        viewportId: 'a',
+        ...base,
         cropMinMm: { xMm: 1, yMm: 2 },
         cropMaxMm: { xMm: 3, yMm: 4 },
       },
       {
         viewportId: 'b',
-        label: '',
-        viewRef: '',
-        xMm: 0,
-        yMm: 0,
-        widthMm: 10,
-        heightMm: 10,
+        ...base,
         cropMinMm: { xMm: 1, yMm: 2 },
         cropMaxMm: null,
       },
@@ -167,6 +198,47 @@ describe('sheetViewportsMmFromDrafts', () => {
     });
     expect('cropMinMm' in rows[1]).toBe(false);
     expect('cropMaxMm' in rows[1]).toBe(false);
+  });
+
+  it('omits blank detail and scale; emits viewportLocked only when true', () => {
+    const rows = sheetViewportsMmFromDrafts([
+      {
+        viewportId: 'z',
+        label: 'V',
+        viewRef: 'plan:p1',
+        detailNumber: '  ',
+        scale: '',
+        viewportLocked: false,
+        xMm: 1,
+        yMm: 2,
+        widthMm: 100,
+        heightMm: 100,
+        cropMinMm: null,
+        cropMaxMm: null,
+      },
+      {
+        viewportId: 'w',
+        label: 'W',
+        viewRef: 'section:s1',
+        detailNumber: '2',
+        scale: '1:100',
+        viewportLocked: true,
+        xMm: 0,
+        yMm: 0,
+        widthMm: 10,
+        heightMm: 10,
+        cropMinMm: null,
+        cropMaxMm: null,
+      },
+    ]);
+    expect(rows[0]).not.toHaveProperty('detailNumber');
+    expect(rows[0]).not.toHaveProperty('scale');
+    expect(rows[0]).not.toHaveProperty('viewportLocked');
+    expect(rows[1]).toMatchObject({
+      detailNumber: '2',
+      scale: '1:100',
+      viewportLocked: true,
+    });
   });
 });
 

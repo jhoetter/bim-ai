@@ -61,7 +61,11 @@ export function SheetDocumentationManifest(props: {
     if (authoring) {
       return vpDrafts.map((d) => ({
         viewportId: d.viewportId,
+        label: d.label,
         viewRef: d.viewRef,
+        detailNumber: d.detailNumber,
+        scale: d.scale,
+        viewportLocked: d.viewportLocked,
         xMm: d.xMm,
         yMm: d.yMm,
         widthMm: d.widthMm,
@@ -75,7 +79,11 @@ export function SheetDocumentationManifest(props: {
       const box = readViewportMmBox(vp);
       return {
         viewportId: n.viewportId,
+        label: n.label,
         viewRef: n.viewRef,
+        detailNumber: n.detailNumber,
+        scale: n.scale,
+        viewportLocked: n.viewportLocked,
         xMm: box.xMm,
         yMm: box.yMm,
         widthMm: box.widthMm,
@@ -300,12 +308,16 @@ export function SheetDocumentationManifest(props: {
       <div className="mt-3 space-y-1 border-t border-border pt-2">
         <div className="text-[10px] font-semibold uppercase text-muted">Viewports</div>
         <div className="overflow-x-auto">
-          <table className="min-w-[720px] border-collapse border border-border font-mono text-[10px]">
+          <table className="min-w-[960px] border-collapse border border-border font-mono text-[10px]">
             <thead>
               <tr className="bg-muted/30">
                 <th className="border border-border px-1 py-0.5 text-left">viewportId</th>
+                <th className="border border-border px-1 py-0.5 text-left">label</th>
                 <th className="border border-border px-1 py-0.5 text-left">viewRef (normalized)</th>
                 <th className="border border-border px-1 py-0.5 text-left">kind</th>
+                <th className="border border-border px-1 py-0.5 text-left">detail #</th>
+                <th className="border border-border px-1 py-0.5 text-left">scale</th>
+                <th className="border border-border px-1 py-0.5 text-left">locked</th>
                 <th className="border border-border px-1 py-0.5 text-left">sheet box (mm)</th>
                 <th className="border border-border px-1 py-0.5 text-left">crop extents (mm)</th>
                 <th className="border border-border px-1 py-0.5 text-left">resolved title</th>
@@ -317,7 +329,7 @@ export function SheetDocumentationManifest(props: {
             <tbody>
               {manifestViewportRows.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="border border-border px-1 py-0.5 text-muted">
+                  <td colSpan={11} className="border border-border px-1 py-0.5 text-muted">
                     (no viewports)
                   </td>
                 </tr>
@@ -353,11 +365,21 @@ export function SheetDocumentationManifest(props: {
                   return (
                     <tr key={row.viewportId}>
                       <td className="border border-border px-1 py-0.5">{row.viewportId}</td>
+                      <td className="border border-border px-1 py-0.5">{row.label}</td>
                       <td className="border border-border px-1 py-0.5">
                         {(parsed?.normalizedRef ?? '').trim() || row.viewRef.trim() || '—'}
                       </td>
                       <td className="border border-border px-1 py-0.5">
                         {parsed?.kind ?? 'unknown'}
+                      </td>
+                      <td className="border border-border px-1 py-0.5">
+                        {row.detailNumber.trim() || '—'}
+                      </td>
+                      <td className="border border-border px-1 py-0.5">
+                        {row.scale.trim() || '—'}
+                      </td>
+                      <td className="border border-border px-1 py-0.5">
+                        {row.viewportLocked ? 'yes' : '—'}
                       </td>
                       <td className="border border-border px-1 py-0.5 whitespace-nowrap">
                         [{row.xMm},{row.yMm}] {row.widthMm}×{row.heightMm}
