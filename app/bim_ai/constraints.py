@@ -649,9 +649,13 @@ def _exchange_advisory_violations(elements: dict[str, Element]) -> list[Violatio
         "unsupportedDocumentKindsDetailed",
     )
 
-    ifc_row = build_ifc_exchange_manifest_payload(doc)
-
-    gltf_ext = build_visual_export_manifest(doc)["extensions"]["BIM_AI_exportManifest_v0"]
+    try:
+        ifc_row = build_ifc_exchange_manifest_payload(doc)
+        gltf_ext = build_visual_export_manifest(doc)["extensions"]["BIM_AI_exportManifest_v0"]
+    except Exception:
+        # Exchange advisories must not mask primary constraint errors, for example
+        # zero-length walls that exporter libraries cannot serialize.
+        return out
 
     ifc_slice = {k: ifc_row[k] for k in parity_keys if k in ifc_row}
 
