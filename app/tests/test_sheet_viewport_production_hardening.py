@@ -2,23 +2,21 @@
 
 from __future__ import annotations
 
-import hashlib
-import json
 from uuid import uuid4
-
-import pytest
 
 from bim_ai.document import Document
 from bim_ai.elements import LevelElem, PlanViewElem, ScheduleElem, SectionCutElem, SheetElem
-from bim_ai.evidence_manifest import deterministic_sheet_evidence_manifest, sheetProductionEvidenceBaseline_v1
+from bim_ai.evidence_manifest import (
+    deterministic_sheet_evidence_manifest,
+    sheetProductionEvidenceBaseline_v1,
+)
 from bim_ai.sheet_preview_svg import (
+    sheet_elem_to_svg,
     sheetExportSegmentCompleteness_v1,
     sheetViewportProductionManifest_v1,
-    sheet_elem_to_svg,
     viewport_production_metadata_v1,
 )
 from bim_ai.sheet_titleblock_revision_issue_v1 import titleblockFieldCompleteness_v1
-
 
 # ---------------------------------------------------------------------------
 # Helpers
