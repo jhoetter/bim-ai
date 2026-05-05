@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import json
+
 from bim_ai.document import Document
 from bim_ai.elements import CameraMm, Vec3Mm, ViewpointElem
 from bim_ai.export_gltf import (
+    build_visual_export_manifest,
     collect_saved_3d_view_clip_evidence_v1,
+    document_to_gltf,
     export_manifest_extension_payload,
 )
 from bim_ai.model_summary import compute_model_summary
@@ -230,3 +234,100 @@ class TestModelSummarySaved3dClipSummary:
         assert clip_sum["clipEnabledCount"] == 1
         assert clip_sum["sectionBoxEnabledCount"] == 1
         assert clip_sum["totalHiddenCategoryCount"] == 3
+
+
+class TestGltfJsonReadbackSaved3dClipEvidence:
+    """Validate clip/section-box evidence survives full glTF JSON serialization (WP-X02 readback)."""
+
+    def _readback_clip_ev(self, doc: Document) -> dict:
+        readback = json.loads(json.dumps(document_to_gltf(doc)))
+        return readback["extensions"]["BIM_AI_exportManifest_v0"]["saved3dViewClipEvidence_v1"]
+
+    def test_section_box_bounds_survive_gltf_json_round_trip(self) -> None:
+        vp = ViewpointElem(
+            kind="viewpoint",
+            id="vp-rt",
+            name="RT",
+            camera=_camera(),
+            mode="orbit_3d",
+            sectionBoxEnabled=True,
+            sectionBoxMinMm={"xMm": -500.0, "yMm": -200.0, "zMm": 0.0},
+            sectionBoxMaxMm={"xMm": 6000.0, "yMm": 4500.0, "zMm": 3200.0},
+            viewerClipCapElevMm=3200.0,
+            viewerClipFloorElevMm=0.0,
+            hiddenSemanticKinds3d=["roof", "stair"],
+            cutawayStyle="cap",
+        )
+        doc = Document(revision=1, elements={"vp-rt": vp})
+        clip_ev = self._readback_clip_ev(doc)
+        assert clip_ev["format"] == "saved3dViewClipEvidence_v1"
+        assert clip_ev["viewCount"] == 1
+        row = clip_ev["views"][0]
+        assert row["viewId"] == "vp-rt"
+        assert row["viewName"] == "RT"
+        assert row["clipEnabled"] is True
+        assert row["sectionBoxEnabled"] is True
+        assert row["sectionBoxMinMm"] == {"xMm": -500.0, "yMm": -200.0, "zMm": 0.0}
+        assert row["sectionBoxMaxMm"] == {"xMm": 6000.0, "yMm": 4500.0, "zMm": 3200.0}
+        assert row["viewerClipCapElevMm"] == 3200.0
+        assert row["viewerClipFloorElevMm"] == 0.0
+        assert row["hiddenCategoryCount"] == 2
+        assert row["cutawayStyle"] == "cap"
+
+    def test_hidden_category_count_survives_json_round_trip(self) -> None:
+        vp = ViewpointElem(
+            kind="viewpoint",
+            id="vp-hc",
+            name="HidCat",
+            camera=_camera(),
+            mode="orbit_3d",
+            hiddenSemanticKinds3d=["roof", "stair", "railing"],
+        )
+        doc = Document(revision=1, elements={"vp-hc": vp})
+        clip_ev = self._readback_clip_ev(doc)
+        assert clip_ev["views"][0]["hiddenCategoryCount"] == 3
+
+    def test_no_clip_metadata_absent_keys_in_json(self) -> None:
+        vp = _vp_basic("vp-bare")
+        doc = Document(revision=1, elements={"vp-bare": vp})
+        clip_ev = self._readback_clip_ev(doc)
+        row = clip_ev["views"][0]
+        assert "sectionBoxMinMm" not in row
+        assert "sectionBoxMaxMm" not in row
+        assert row["clipEnabled"] is False
+
+    def test_multiple_views_sorted_by_id_in_json(self) -> None:
+        vp_z = _vp_basic("vp-z", "Z")
+        vp_a = _vp_basic("vp-a", "A")
+        doc = Document(revision=1, elements={"vp-z": vp_z, "vp-a": vp_a})
+        clip_ev = self._readback_clip_ev(doc)
+        assert clip_ev["viewCount"] == 2
+        ids = [r["viewId"] for r in clip_ev["views"]]
+        assert ids == sorted(ids)
+
+    def test_build_visual_export_manifest_json_readback(self) -> None:
+        vp = ViewpointElem(
+            kind="viewpoint",
+            id="vp-mv",
+            name="ManifestView",
+            camera=_camera(),
+            mode="orbit_3d",
+            sectionBoxEnabled=False,
+            hiddenSemanticKinds3d=["door"],
+        )
+        doc = Document(revision=1, elements={"vp-mv": vp})
+        manifest = build_visual_export_manifest(doc)
+        readback = json.loads(json.dumps(manifest))
+        clip_ev = readback["extensions"]["BIM_AI_exportManifest_v0"]["saved3dViewClipEvidence_v1"]
+        row = clip_ev["views"][0]
+        assert row["viewId"] == "vp-mv"
+        assert row["viewName"] == "ManifestView"
+        assert row["sectionBoxEnabled"] is False
+        assert row["hiddenCategoryCount"] == 1
+
+    def test_mesh_encoding_token_present_in_json_readback(self) -> None:
+        vp = _vp_basic("vp-enc")
+        doc = Document(revision=1, elements={"vp-enc": vp})
+        readback = json.loads(json.dumps(document_to_gltf(doc)))
+        enc = readback["extensions"]["BIM_AI_exportManifest_v0"]["meshEncoding"]
+        assert "+bim_ai_saved_3d_view_clip_v1" in enc

@@ -29,6 +29,12 @@ export const BROWSER_BUDGET_WARN_SHEET_VIEWPORT_COUNT = 48;
 /** Hydrated schedule table body rows (active Schedules tab). */
 export const BROWSER_BUDGET_WARN_SCHEDULE_TABLE_ROWS = 5000;
 
+/**
+ * Saved orbit_3d viewpoints with clip/section-box metadata shown as evidence lines in
+ * ProjectBrowser. Each viewpoint with a section box renders a longer subtitle row.
+ */
+export const BROWSER_BUDGET_WARN_SAVED_3D_CLIP_VIEWS = 20;
+
 /** Over-budget: 2× warn. Rendering is significantly impacted at or above this threshold. */
 export const BROWSER_BUDGET_OVER_BUDGET_PLAN_WIRE_ENTRIES = 50000;
 
@@ -40,6 +46,9 @@ export const BROWSER_BUDGET_OVER_BUDGET_SHEET_VIEWPORT_COUNT = 96;
 
 /** Over-budget: 2× warn. */
 export const BROWSER_BUDGET_OVER_BUDGET_SCHEDULE_TABLE_ROWS = 10000;
+
+/** Over-budget: 2× warn. */
+export const BROWSER_BUDGET_OVER_BUDGET_SAVED_3D_CLIP_VIEWS = 40;
 
 export type BrowserRenderingBudgetMetricStatus = 'ok' | 'warn';
 
@@ -71,13 +80,17 @@ export type ProgressiveRenderingReasonCode =
   | 'schedule_stale_not_hydrated'
   | 'schedule_in_budget'
   | 'schedule_deferred_large_row_count'
-  | 'schedule_over_budget_very_large_row_count';
+  | 'schedule_over_budget_very_large_row_count'
+  | 'saved_3d_clip_in_budget'
+  | 'saved_3d_clip_deferred_large_count'
+  | 'saved_3d_clip_over_budget_very_large_count';
 
 export type BrowserRenderingBudgetMetricId =
   | 'plan_wire_primitives'
   | 'model_elements'
   | 'sheet_viewports'
-  | 'schedule_table_rows';
+  | 'schedule_table_rows'
+  | 'saved_3d_view_clip_fields';
 
 export type BrowserRenderingBudgetMetricRow = {
   id: BrowserRenderingBudgetMetricId;
@@ -124,6 +137,18 @@ export function countSheetViewports(elementsById: Record<string, Element>): numb
   return n;
 }
 
+/**
+ * Count saved orbit_3d viewpoints whose clip/section-box evidence fields are rendered as
+ * evidence lines in ProjectBrowser. Each entry adds a subtitle row (WP-E02/WP-X02/WP-P01).
+ */
+export function countSaved3dViewClipFields(elementsById: Record<string, Element>): number {
+  let n = 0;
+  for (const e of Object.values(elementsById)) {
+    if (e.kind === 'viewpoint' && e.mode === 'orbit_3d') n += 1;
+  }
+  return n;
+}
+
 function computeProgressiveState(
   value: number,
   warnLimit: number,
@@ -166,6 +191,7 @@ function pickSuggestedRoute(rows: BrowserRenderingBudgetMetricRow[]): string {
     'model_elements',
     'sheet_viewports',
     'schedule_table_rows',
+    'saved_3d_view_clip_fields',
   ];
   const byId = new Map(actionableRows.map((r) => [r.id, r]));
   for (const id of priority) {
@@ -180,6 +206,8 @@ function pickSuggestedRoute(rows: BrowserRenderingBudgetMetricRow[]): string {
         return 'Investigate sheets: reduce placed viewports per sheet or split sheets — review Sheet canvas + documentation manifest.';
       case 'schedule_table_rows':
         return 'Investigate schedules: narrow filters/grouping, export column subsets, or split schedule elements — review Schedules panel + registry tabs.';
+      case 'saved_3d_view_clip_fields':
+        return 'Investigate 3D saved views: reduce saved orbit_3d viewpoints or consolidate clip/section-box evidence — review Project Browser 3D saved-view band and `saved3dViewClipEvidence_v1` in the export manifest.';
     }
   }
   return 'Review Workspace rendering budget readout rows for the first warn.';
@@ -208,6 +236,7 @@ export function buildBrowserRenderingBudgetReadoutV1(opts: {
   const elementCount = Object.keys(opts.elementsById).length;
   const wireCount = countPlanWirePrimitiveEntries(opts.planProjectionPrimitives);
   const viewportCount = countSheetViewports(opts.elementsById);
+  const saved3dClipCount = countSaved3dViewClipFields(opts.elementsById);
 
   const scheduleValue = opts.scheduleHydratedRowCount;
   const scheduleHydrated = scheduleValue !== null && scheduleValue !== undefined;
@@ -255,6 +284,15 @@ export function buildBrowserRenderingBudgetReadoutV1(opts: {
         : schedState === 'deferred'
           ? 'schedule_deferred_large_row_count'
           : 'schedule_in_budget';
+
+  // Saved 3D view clip fields (orbit_3d viewpoints with clip/section-box evidence in ProjectBrowser)
+  const saved3dClipState = computeProgressiveState(saved3dClipCount, BROWSER_BUDGET_WARN_SAVED_3D_CLIP_VIEWS, BROWSER_BUDGET_OVER_BUDGET_SAVED_3D_CLIP_VIEWS);
+  const saved3dClipReasonCode: ProgressiveRenderingReasonCode =
+    saved3dClipState === 'over_budget'
+      ? 'saved_3d_clip_over_budget_very_large_count'
+      : saved3dClipState === 'deferred'
+        ? 'saved_3d_clip_deferred_large_count'
+        : 'saved_3d_clip_in_budget';
 
   const rowsUnsorted: BrowserRenderingBudgetMetricRow[] = [
     {
@@ -307,6 +345,16 @@ export function buildBrowserRenderingBudgetReadoutV1(opts: {
         : opts.scheduleHydratedTab
           ? `tab=${opts.scheduleHydratedTab}`
           : undefined,
+    },
+    {
+      id: 'saved_3d_view_clip_fields',
+      label: 'Saved 3D views · clip/section-box evidence rows',
+      value: saved3dClipCount,
+      limit: BROWSER_BUDGET_WARN_SAVED_3D_CLIP_VIEWS,
+      overBudgetLimit: BROWSER_BUDGET_OVER_BUDGET_SAVED_3D_CLIP_VIEWS,
+      status: progressiveStateToStatus(saved3dClipState),
+      progressiveState: saved3dClipState,
+      reasonCode: saved3dClipReasonCode,
     },
   ];
 

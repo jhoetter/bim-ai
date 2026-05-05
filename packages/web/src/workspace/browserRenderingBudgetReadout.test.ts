@@ -6,14 +6,17 @@ import type { PlanProjectionPrimitivesV1Wire } from '../plan/planProjectionWire'
 import {
   BROWSER_BUDGET_OVER_BUDGET_ELEMENT_COUNT,
   BROWSER_BUDGET_OVER_BUDGET_PLAN_WIRE_ENTRIES,
+  BROWSER_BUDGET_OVER_BUDGET_SAVED_3D_CLIP_VIEWS,
   BROWSER_BUDGET_OVER_BUDGET_SCHEDULE_TABLE_ROWS,
   BROWSER_BUDGET_OVER_BUDGET_SHEET_VIEWPORT_COUNT,
   BROWSER_BUDGET_WARN_ELEMENT_COUNT,
   BROWSER_BUDGET_WARN_PLAN_WIRE_ENTRIES,
+  BROWSER_BUDGET_WARN_SAVED_3D_CLIP_VIEWS,
   BROWSER_BUDGET_WARN_SCHEDULE_TABLE_ROWS,
   BROWSER_BUDGET_WARN_SHEET_VIEWPORT_COUNT,
   buildBrowserRenderingBudgetReadoutV1,
   countPlanWirePrimitiveEntries,
+  countSaved3dViewClipFields,
   countSheetViewports,
   formatBrowserRenderingBudgetLines,
 } from './browserRenderingBudgetReadout';
@@ -198,8 +201,20 @@ describe('browserRenderingBudgetReadout', () => {
     const warnsSorted = [...warns].sort((a, b) => a.localeCompare(b));
     expect(warns).toEqual(warnsSorted);
 
-    const oksSorted = [...oks].sort((a, b) => a.localeCompare(b));
-    expect(oks).toEqual(oksSorted);
+    // ok rows: stale before in_budget (by progressiveState), then alphabetically within each state
+    const staleOks = r.rows.filter((x) => x.status === 'ok' && x.progressiveState === 'stale').map((x) => x.id);
+    const inBudgetOks = r.rows.filter((x) => x.status === 'ok' && x.progressiveState === 'in_budget').map((x) => x.id);
+    // stale rows appear before in_budget rows in the sorted output
+    for (const staleId of staleOks) {
+      for (const inBudgetId of inBudgetOks) {
+        const staleIdx = r.rows.findIndex((x) => x.id === staleId);
+        const inBudgetIdx = r.rows.findIndex((x) => x.id === inBudgetId);
+        expect(staleIdx).toBeLessThan(inBudgetIdx);
+      }
+    }
+    // within each state group, rows are alphabetically sorted
+    expect(staleOks).toEqual([...staleOks].sort((a, b) => a.localeCompare(b)));
+    expect(inBudgetOks).toEqual([...inBudgetOks].sort((a, b) => a.localeCompare(b)));
   });
 
   it('suggested route prioritizes plan wire over elements when both warn', () => {
@@ -606,6 +621,112 @@ describe('browserRenderingBudgetReadout', () => {
       expect(byId.get('model_elements')!.overBudgetLimit).toBe(BROWSER_BUDGET_OVER_BUDGET_ELEMENT_COUNT);
       expect(byId.get('sheet_viewports')!.overBudgetLimit).toBe(BROWSER_BUDGET_OVER_BUDGET_SHEET_VIEWPORT_COUNT);
       expect(byId.get('schedule_table_rows')!.overBudgetLimit).toBe(BROWSER_BUDGET_OVER_BUDGET_SCHEDULE_TABLE_ROWS);
+      expect(byId.get('saved_3d_view_clip_fields')!.overBudgetLimit).toBe(BROWSER_BUDGET_OVER_BUDGET_SAVED_3D_CLIP_VIEWS);
     });
+  });
+});
+
+describe('countSaved3dViewClipFields', () => {
+  it('counts orbit_3d viewpoints only', () => {
+    const els: Record<string, Element> = {
+      vp1: { kind: 'viewpoint', id: 'vp1', name: 'A', mode: 'orbit_3d', camera: { position: { xMm: 0, yMm: 0, zMm: 0 }, target: { xMm: 0, yMm: 0, zMm: 0 }, up: { xMm: 0, yMm: 1, zMm: 0 } } },
+      vp2: { kind: 'viewpoint', id: 'vp2', name: 'B', mode: 'orbit_3d', camera: { position: { xMm: 0, yMm: 0, zMm: 0 }, target: { xMm: 0, yMm: 0, zMm: 0 }, up: { xMm: 0, yMm: 1, zMm: 0 } } },
+      vp3: { kind: 'viewpoint', id: 'vp3', name: 'C', mode: 'plan_2d', camera: { position: { xMm: 0, yMm: 0, zMm: 0 }, target: { xMm: 0, yMm: 0, zMm: 0 }, up: { xMm: 0, yMm: 1, zMm: 0 } } },
+      lvl: { kind: 'level', id: 'lvl', name: 'L0', elevationMm: 0 },
+    };
+    expect(countSaved3dViewClipFields(els)).toBe(2);
+  });
+
+  it('returns 0 when no orbit_3d viewpoints', () => {
+    expect(countSaved3dViewClipFields({})).toBe(0);
+  });
+});
+
+describe('saved_3d_view_clip_fields budget metric', () => {
+  function makeOrbit3dElements(count: number): Record<string, Element> {
+    const out: Record<string, Element> = {};
+    for (let i = 0; i < count; i++) {
+      const id = `vp${i}`;
+      out[id] = {
+        kind: 'viewpoint',
+        id,
+        name: id,
+        mode: 'orbit_3d',
+        camera: {
+          position: { xMm: 0, yMm: 0, zMm: 5000 },
+          target: { xMm: 0, yMm: 0, zMm: 0 },
+          up: { xMm: 0, yMm: 1, zMm: 0 },
+        },
+      };
+    }
+    return out;
+  }
+
+  it('is in_budget when orbit_3d count is below warn threshold', () => {
+    const els = makeOrbit3dElements(BROWSER_BUDGET_WARN_SAVED_3D_CLIP_VIEWS - 1);
+    const r = buildBrowserRenderingBudgetReadoutV1({
+      elementsById: els,
+      planProjectionPrimitives: null,
+      scheduleHydratedRowCount: null,
+      scheduleHydratedTab: null,
+    });
+    const row = r.rows.find((x) => x.id === 'saved_3d_view_clip_fields')!;
+    expect(row).toBeDefined();
+    expect(row.progressiveState).toBe('in_budget');
+    expect(row.reasonCode).toBe('saved_3d_clip_in_budget');
+    expect(row.value).toBe(BROWSER_BUDGET_WARN_SAVED_3D_CLIP_VIEWS - 1);
+  });
+
+  it('is deferred at warn threshold', () => {
+    const els = makeOrbit3dElements(BROWSER_BUDGET_WARN_SAVED_3D_CLIP_VIEWS);
+    const r = buildBrowserRenderingBudgetReadoutV1({
+      elementsById: els,
+      planProjectionPrimitives: null,
+      scheduleHydratedRowCount: null,
+      scheduleHydratedTab: null,
+    });
+    const row = r.rows.find((x) => x.id === 'saved_3d_view_clip_fields')!;
+    expect(row.progressiveState).toBe('deferred');
+    expect(row.reasonCode).toBe('saved_3d_clip_deferred_large_count');
+    expect(row.status).toBe('warn');
+  });
+
+  it('is over_budget at over-budget threshold', () => {
+    const els = makeOrbit3dElements(BROWSER_BUDGET_OVER_BUDGET_SAVED_3D_CLIP_VIEWS);
+    const r = buildBrowserRenderingBudgetReadoutV1({
+      elementsById: els,
+      planProjectionPrimitives: null,
+      scheduleHydratedRowCount: null,
+      scheduleHydratedTab: null,
+    });
+    const row = r.rows.find((x) => x.id === 'saved_3d_view_clip_fields')!;
+    expect(row.progressiveState).toBe('over_budget');
+    expect(row.reasonCode).toBe('saved_3d_clip_over_budget_very_large_count');
+  });
+
+  it('formats budget line for saved_3d_view_clip_fields', () => {
+    const els = makeOrbit3dElements(3);
+    const r = buildBrowserRenderingBudgetReadoutV1({
+      elementsById: els,
+      planProjectionPrimitives: null,
+      scheduleHydratedRowCount: null,
+      scheduleHydratedTab: null,
+    });
+    const lines = formatBrowserRenderingBudgetLines(r);
+    const clipLine = lines.find((l) => l.includes('saved_3d_view_clip_fields'));
+    expect(clipLine).toBeDefined();
+    expect(clipLine).toContain('saved_3d_clip_in_budget');
+    expect(clipLine).toContain('3/');
+  });
+
+  it('suggests investigation route when saved_3d_view_clip_fields is in warn state', () => {
+    const els = makeOrbit3dElements(BROWSER_BUDGET_WARN_SAVED_3D_CLIP_VIEWS + 5);
+    const r = buildBrowserRenderingBudgetReadoutV1({
+      elementsById: els,
+      planProjectionPrimitives: null,
+      scheduleHydratedRowCount: null,
+      scheduleHydratedTab: null,
+    });
+    expect(r.suggestedInvestigationRoute).toContain('3D saved views');
   });
 });
