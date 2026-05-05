@@ -76,3 +76,44 @@ export function resolveViewportTitleFromRef(
   }
   return undefined;
 }
+
+export type SheetSectionViewportRefRow = {
+  sheetId: string;
+  sheetName: string;
+  /** Normalized `section:{id}` (from `sec:` alias when applicable). */
+  viewRefNormalized: string;
+  rawViewRef: string;
+};
+
+/** Sheets whose `viewportsMm` include a viewport targeting `sectionCutId` (`section:` / `sec:`). */
+
+export function sheetsReferencingSectionCut(
+  elementsById: Record<string, Element>,
+  sectionCutId: string,
+): SheetSectionViewportRefRow[] {
+  const rows: SheetSectionViewportRefRow[] = [];
+
+  for (const el of Object.values(elementsById)) {
+    if (el.kind !== 'sheet') continue;
+    const vps = (el.viewportsMm ?? []) as Array<Record<string, unknown>>;
+    for (const vp of vps) {
+      const parsed = parseSheetViewRef(vp.viewRef ?? vp.view_ref);
+      if (!parsed || parsed.kind !== 'section') continue;
+      if (parsed.refId !== sectionCutId) continue;
+      rows.push({
+        sheetId: el.id,
+        sheetName: el.name ?? el.id,
+        viewRefNormalized: parsed.normalizedRef,
+        rawViewRef: parsed.rawRef,
+      });
+    }
+  }
+
+  rows.sort((a, b) => {
+    const bySheet = a.sheetId.localeCompare(b.sheetId);
+    if (bySheet !== 0) return bySheet;
+    return a.rawViewRef.localeCompare(b.rawViewRef);
+  });
+
+  return rows;
+}

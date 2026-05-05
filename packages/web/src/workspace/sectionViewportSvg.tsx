@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { fetchSectionProjectionWire } from '../plan/sectionProjectionWire';
 import {
@@ -105,6 +105,8 @@ export function SectionViewportSvg(props: {
   sectionCutId: string;
   widthPx: number;
   heightPx: number;
+  /** Fires after projection resolves; `false` when there are no wall primitives (empty framing). */
+  onWallPrimitivesKnown?: (hasWalls: boolean) => void;
 }) {
   const [err, setErr] = useState<string | null>(null);
 
@@ -156,6 +158,9 @@ export function SectionViewportSvg(props: {
   const winStroke = 1 * strokeScale;
   const doorStroke = 1.75 * strokeScale;
 
+  const onWallPrimitivesKnownRef = useRef(props.onWallPrimitivesKnown);
+  onWallPrimitivesKnownRef.current = props.onWallPrimitivesKnown;
+
   useEffect(() => {
     let cancel = false;
     void (async () => {
@@ -171,6 +176,7 @@ export function SectionViewportSvg(props: {
           if (!cancel) {
             setErr(null);
             setLayers(null);
+            onWallPrimitivesKnownRef.current?.(false);
           }
           return;
         }
@@ -398,6 +404,7 @@ export function SectionViewportSvg(props: {
 
         if (!cancel) {
           setErr(null);
+          onWallPrimitivesKnownRef.current?.(true);
           setLayers({
             wallPathsEdgeOn,
             wallPathsAlongCut,
@@ -425,6 +432,7 @@ export function SectionViewportSvg(props: {
         if (!cancel) {
           setErr(e instanceof Error ? e.message : String(e));
           setLayers(null);
+          onWallPrimitivesKnownRef.current?.(false);
         }
       }
     })();

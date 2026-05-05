@@ -828,7 +828,10 @@ export function Workspace() {
         return (
           <div className="flex flex-col gap-2">
             {plan}
-            <SectionPlaceholderPane activeLevelLabel={activeLevelLabel} />
+            <SectionPlaceholderPane
+              activeLevelLabel={activeLevelLabel}
+              modelId={modelId ?? undefined}
+            />
           </div>
         );
 
@@ -837,7 +840,10 @@ export function Workspace() {
           <div className="flex flex-col gap-2">
             {plan}
 
-            <SectionPlaceholderPane activeLevelLabel={activeLevelLabel} />
+            <SectionPlaceholderPane
+              activeLevelLabel={activeLevelLabel}
+              modelId={modelId ?? undefined}
+            />
 
             <Panel title="Sheet canvas (preview)">
               <SheetCanvas
