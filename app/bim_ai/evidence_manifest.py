@@ -2168,6 +2168,7 @@ DIGEST_EXCLUDED_KEYS: frozenset[str] = frozenset(
         "artifactUploadManifest_v1",
         "agentGeneratedBundleQaChecklist_v1",
         "evidenceBaselineLifecycleReadout_v1",
+        "v1AcceptanceProofMatrix_v1",
         "v1CloseoutReadinessManifest_v1",
         "agentBriefAcceptanceReadout_v1",
         "prdAdvisorMatrix_v1",

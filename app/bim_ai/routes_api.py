@@ -111,6 +111,7 @@ from bim_ai.tables import (
     UndoStackRecord,
 )
 from bim_ai.type_material_registry import merged_registry_payload
+from bim_ai.v1_acceptance_proof_matrix import build_v1_acceptance_proof_matrix_v1
 from bim_ai.v1_closeout_readiness_manifest import build_v1_closeout_readiness_manifest_v1
 
 
@@ -533,6 +534,7 @@ async def evidence_package(
         readout_browser_rendering_budget=None,
         closure_hints=payload["agentEvidenceClosureHints"],
     )
+    payload["v1AcceptanceProofMatrix_v1"] = build_v1_acceptance_proof_matrix_v1(doc)
     payload["v1CloseoutReadinessManifest_v1"] = build_v1_closeout_readiness_manifest_v1()
     payload["prdAdvisorMatrix_v1"] = build_prd_blocking_advisor_matrix()
     scheme_elem = next(
