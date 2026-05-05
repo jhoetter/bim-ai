@@ -1,6 +1,12 @@
 /** Pure helpers for registry schedule panel (plans/sheets tabs) — testable empty-state routing. */
 
-export type RegistryModelTab = 'floors' | 'roofs' | 'stairs' | 'plans' | 'sheets';
+export type RegistryModelTab =
+  | 'floors'
+  | 'roofs'
+  | 'stairs'
+  | 'plans'
+  | 'sheets'
+  | 'assemblies';
 
 export const MSG_OPEN_SAVED_MODEL = 'Open a saved model to load server schedules.';
 
@@ -30,6 +36,10 @@ export function scheduleCategoryScheduleNoun(tab: RegistryModelTab): string {
 
     case 'sheets': {
       return 'sheet';
+    }
+
+    case 'assemblies': {
+      return 'material assembly';
     }
 
     default: {

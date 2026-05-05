@@ -19,6 +19,7 @@ describe('schedulePanelPlansSheetsUi', () => {
     expect(noScheduleElementMessage('plans')).toContain('plan view');
     expect(noScheduleElementMessage('sheets')).toContain('sheet');
     expect(noScheduleElementMessage('floors')).toContain('floor');
+    expect(noScheduleElementMessage('assemblies')).toContain('material assembly');
   });
 
   it('exports stable copy for loading / no rows / open model / no sheet elements', () => {

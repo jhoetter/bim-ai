@@ -18,7 +18,16 @@ import {
   MSG_OPEN_SAVED_MODEL,
   noScheduleElementMessage,
   registryNoModelMode,
+  type RegistryModelTab,
 } from './schedulePanelPlansSheetsUi';
+import {
+  missingRequiredFieldKeys,
+  presetById,
+  presetFieldReadoutRows,
+  presetsForCategory,
+  resolvePresetColumnsForExport,
+  type SchedulePresetCategory,
+} from './scheduleDefinitionPresets';
 import {
   buildScheduleTableCsvUrl,
   columnFieldRoleHint,
@@ -37,7 +46,42 @@ import {
 
 export { resolveScheduleSortDescending, scheduleTotalsReadoutParts } from './schedulePayloadTotals';
 
-type TabKey = 'rooms' | 'doors' | 'windows' | 'floors' | 'roofs' | 'stairs' | 'plans' | 'sheets';
+type TabKey =
+  | 'rooms'
+  | 'doors'
+  | 'windows'
+  | 'floors'
+  | 'roofs'
+  | 'stairs'
+  | 'plans'
+  | 'sheets'
+  | 'assemblies';
+
+function registryScheduleTab(tab: TabKey): tab is RegistryModelTab {
+  return (
+    tab === 'floors' ||
+    tab === 'roofs' ||
+    tab === 'stairs' ||
+    tab === 'plans' ||
+    tab === 'sheets' ||
+    tab === 'assemblies'
+  );
+}
+
+function tabToPresetCategory(tab: TabKey): SchedulePresetCategory | null {
+  switch (tab) {
+    case 'rooms':
+      return 'room';
+    case 'doors':
+      return 'door';
+    case 'windows':
+      return 'window';
+    case 'assemblies':
+      return 'material_assembly';
+    default:
+      return null;
+  }
+}
 
 const SCHED_TABLE_ROW_PX = 28;
 const SCHED_TABLE_VIEWPORT_PX = 220;
@@ -93,6 +137,18 @@ function scheduleGroupingKeyChoices(tab: TabKey): readonly string[] {
 
     case 'sheets': {
       return ['titleBlock', 'name', 'planViewNames'];
+    }
+
+    case 'assemblies': {
+      return [
+        'levelId',
+        'hostKind',
+        'assemblyTypeId',
+        'hostElementId',
+        'materialKey',
+        'layerIndex',
+        'layerFunction',
+      ];
     }
 
     default: {
@@ -178,6 +234,26 @@ export function scheduleSortKeyChoices(tab: TabKey): readonly string[] {
       return ['name', 'elementId', 'viewportCount', 'titleBlock', 'planViewNames'];
     }
 
+    case 'assemblies': {
+      return [
+        'name',
+        'elementId',
+        'level',
+        'hostKind',
+        'hostElementId',
+        'layerIndex',
+        'layerFunction',
+        'materialKey',
+        'materialDisplay',
+        'thicknessMm',
+        'grossAreaM2',
+        'grossVolumeM3',
+        'assemblyTypeId',
+        'assemblyTotalThicknessMm',
+        'layerOffsetFromExteriorMm',
+      ];
+    }
+
     default: {
       const exhaustive: never = tab;
 
@@ -195,6 +271,7 @@ function levelFilterFieldForTab(
     case 'windows':
     case 'floors':
     case 'plans':
+    case 'assemblies':
       return 'levelId';
     case 'roofs':
       return 'referenceLevelId';
@@ -404,6 +481,10 @@ export function SchedulePanel(props: {
     () => findScheduleIdForCategory(props.elementsById, 'sheet'),
     [props.elementsById],
   );
+  const sidAssemblies = useMemo(
+    () => findScheduleIdForCategory(props.elementsById, 'material_assembly'),
+    [props.elementsById],
+  );
 
   const sidForTab = useMemo(() => {
     switch (tab) {
@@ -423,10 +504,27 @@ export function SchedulePanel(props: {
         return sidPlans;
       case 'sheets':
         return sidSheets;
+      case 'assemblies':
+        return sidAssemblies;
       default:
         return undefined;
     }
-  }, [tab, sidRooms, sidDoors, sidWins, sidFloors, sidRoofs, sidStairs, sidPlans, sidSheets]);
+  }, [
+    tab,
+    sidRooms,
+    sidDoors,
+    sidWins,
+    sidFloors,
+    sidRoofs,
+    sidStairs,
+    sidPlans,
+    sidSheets,
+    sidAssemblies,
+  ]);
+
+  const [presetIdByCategory, setPresetIdByCategory] = useState<
+    Partial<Record<SchedulePresetCategory, string>>
+  >({});
 
   const [openingWidthGtDraft, setOpeningWidthGtDraft] = useState('');
   const [openingWidthLtDraft, setOpeningWidthLtDraft] = useState('');
@@ -711,14 +809,7 @@ export function SchedulePanel(props: {
   };
 
   const registrySchedule: GenericDerived | null = useMemo(() => {
-    if (
-      tab !== 'floors' &&
-      tab !== 'roofs' &&
-      tab !== 'stairs' &&
-      tab !== 'plans' &&
-      tab !== 'sheets'
-    )
-      return null;
+    if (!registryScheduleTab(tab)) return null;
 
     if (!srvActive || srvActive.tab !== tab) return null;
 
@@ -742,11 +833,7 @@ export function SchedulePanel(props: {
   }, [srvActive, tab]);
 
   const registryPickKey =
-    srvActive &&
-    registrySchedule &&
-    (tab === 'floors' || tab === 'roofs' || tab === 'stairs' || tab === 'plans' || tab === 'sheets')
-      ? srvActive.scheduleId
-      : null;
+    srvActive && registrySchedule && registryScheduleTab(tab) ? srvActive.scheduleId : null;
 
   const visibleRegistryColumns = useMemo(() => {
     if (!registrySchedule) return [] as string[];
@@ -760,13 +847,7 @@ export function SchedulePanel(props: {
   }, [registrySchedule, registryPickKey, registryVisibleCols, schedulePersistedColumns]);
 
   const registryTableModelV1: ScheduleTableModelV1 | null = useMemo(() => {
-    if (
-      tab !== 'floors' &&
-      tab !== 'roofs' &&
-      tab !== 'stairs' &&
-      tab !== 'plans' &&
-      tab !== 'sheets'
-    ) {
+    if (!registryScheduleTab(tab)) {
       return null;
     }
 
@@ -881,15 +962,22 @@ export function SchedulePanel(props: {
       .join('\n');
   }
 
+  function scheduleExportColumnSubset(): string[] | undefined {
+    if (!srvActive?.scheduleId || !props.modelId || srvActive.tab !== tab) return undefined;
+    const d = srvActive.data as Record<string, unknown>;
+    const allCols = Array.isArray(d.columns) ? (d.columns as string[]) : [];
+    if (!allCols.length) return undefined;
+    const persisted = schedulePersistedColumns(srvActive.scheduleId);
+    const sel = registryVisibleCols[srvActive.scheduleId] ?? persisted;
+    if (!sel?.length) return undefined;
+    const filtered = sel.filter((c) => allCols.includes(c));
+    if (!filtered.length || filtered.length >= allCols.length) return undefined;
+    return filtered;
+  }
+
   async function downloadCsv() {
     if (srvActive?.scheduleId && props.modelId && srvActive.tab === tab) {
-      const subset =
-        registrySchedule &&
-        srvActive.scheduleId === registryPickKey &&
-        visibleRegistryColumns.length > 0 &&
-        visibleRegistryColumns.length < registrySchedule.columns.length
-          ? visibleRegistryColumns
-          : undefined;
+      const subset = scheduleExportColumnSubset();
       const csvEndpoint = buildScheduleTableCsvUrl(props.modelId, srvActive.scheduleId, {
         columns: subset,
         includeScheduleTotalsCsv: true,
@@ -916,7 +1004,9 @@ export function SchedulePanel(props: {
                     ? 'plan_view'
                     : tab === 'sheets'
                       ? 'sheet'
-                      : 'room';
+                      : tab === 'assemblies'
+                        ? 'assembly'
+                        : 'room';
 
       const blob = new Blob([body], { type: 'text/csv;charset=utf-8' });
 
@@ -935,7 +1025,15 @@ export function SchedulePanel(props: {
     }
 
     const ext =
-      tab === 'windows' ? 'window' : tab === 'doors' ? 'door' : tab === 'sheets' ? 'sheet' : 'room';
+      tab === 'windows'
+        ? 'window'
+        : tab === 'doors'
+          ? 'door'
+          : tab === 'sheets'
+            ? 'sheet'
+            : tab === 'assemblies'
+              ? 'assembly'
+              : 'room';
 
     const blob = new Blob([csvForTab()], { type: 'text/csv;charset=utf-8' });
 
@@ -1551,6 +1649,111 @@ export function SchedulePanel(props: {
     srvActive?.scheduleId && props.modelId && srvActive.tab === tab,
   );
 
+  function renderScheduleDefinitionPresetsStrip() {
+    const cat = tabToPresetCategory(tab);
+    if (!cat || !srvActive || srvActive.tab !== tab || !props.modelId) return null;
+
+    const d = srvActive.data as Record<string, unknown>;
+    const columns = Array.isArray(d.columns) ? (d.columns as string[]) : [];
+    if (!columns.length) return null;
+
+    const rawMeta = d.columnMetadata as
+      | { fields?: Record<string, ScheduleFieldMeta> }
+      | undefined;
+    const fieldMeta = rawMeta?.fields ?? {};
+
+    const list = presetsForCategory(cat);
+    if (!list.length) return null;
+
+    const selectedId = presetIdByCategory[cat] ?? list[0]!.id;
+    const preset = presetById(selectedId) ?? list[0]!;
+    const missing = missingRequiredFieldKeys(preset, columns);
+    const readout = presetFieldReadoutRows(preset, fieldMeta);
+
+    function applyPresetToExport() {
+      if (!props.onScheduleFiltersCommit || !sidForTab) return;
+      const el = props.elementsById[sidForTab];
+      if (el?.kind !== 'schedule') return;
+      const keys = preset.fields.map((f) => f.fieldKey);
+      const narrowed = resolvePresetColumnsForExport(keys, columns);
+      if (!narrowed.length) return;
+      const prevF = (el.filters ?? {}) as Record<string, unknown>;
+      props.onScheduleFiltersCommit(sidForTab, { ...prevF, displayColumnKeys: narrowed });
+      setRegistryVisibleCols((prev) => ({ ...prev, [sidForTab]: narrowed }));
+    }
+
+    return (
+      <div
+        data-testid="schedule-definition-presets"
+        className="mt-2 rounded border border-border/50 bg-background/30 px-2 py-1.5 text-[10px] text-muted"
+      >
+        <div className="font-semibold text-foreground">Definition presets · export columns</div>
+        <div className="mt-1 flex flex-wrap items-center gap-2">
+          <label className="flex flex-wrap items-center gap-2">
+            <span>Preset</span>
+            <select
+              className="max-w-[240px] rounded border border-border bg-background px-2 py-0.5 font-mono text-[10px]"
+              value={selectedId}
+              onChange={(e) =>
+                setPresetIdByCategory((prev) => ({ ...prev, [cat]: e.target.value }))
+              }
+            >
+              {list.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          {props.onScheduleFiltersCommit ? (
+            <button
+              type="button"
+              className="rounded border border-border/60 px-2 py-0.5 text-[10px] text-foreground hover:bg-accent/20"
+              data-testid="schedule-preset-apply-export"
+              onClick={applyPresetToExport}
+            >
+              Apply to export
+            </button>
+          ) : null}
+        </div>
+        {missing.length ? (
+          <div className="mt-1 text-[10px] text-amber-500">
+            Required fields missing from this table response: {missing.join(', ')}
+          </div>
+        ) : null}
+        <div className="mt-2 max-h-40 overflow-y-auto font-mono leading-snug">
+          <table className="w-full border-collapse text-[9px]">
+            <thead>
+              <tr className="border-b border-border/40 text-left text-muted">
+                <th className="py-0.5 pr-2 font-normal">Field</th>
+                <th className="py-0.5 pr-2 font-normal">Label</th>
+                <th className="py-0.5 pr-2 font-normal">Role</th>
+                <th className="py-0.5 pr-2 font-normal">Req</th>
+                <th className="py-0.5 font-normal">CSV hint</th>
+              </tr>
+            </thead>
+            <tbody>
+              {readout.map((row) => (
+                <tr key={row.fieldKey} className="border-b border-border/30 align-top">
+                  <td className="py-0.5 pr-2 text-foreground">{row.fieldKey}</td>
+                  <td className="py-0.5 pr-2">{row.label}</td>
+                  <td className="py-0.5 pr-2">
+                    {row.roleReadout}
+                    {row.unitHint ? (
+                      <span className="text-muted"> · {row.unitHint}</span>
+                    ) : null}
+                  </td>
+                  <td className="py-0.5 pr-2">{row.token}</td>
+                  <td className="py-0.5 text-muted">{row.csvExportHint ?? '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
   function renderRegistryChrome() {
     if (!srvActive) return null;
     const data = srvActive.data as Record<string, unknown>;
@@ -1602,6 +1805,7 @@ export function SchedulePanel(props: {
               ['stairs', 'Stairs'],
               ['plans', 'Plans'],
               ['sheets', 'Sheets'],
+              ['assemblies', 'Assemblies'],
             ] as const
           ).map(([k, label]) => (
             <button
@@ -1640,6 +1844,8 @@ export function SchedulePanel(props: {
 
       {renderRegistryChrome()}
       {serverErr ? <div className="mt-2 text-[10px] text-amber-500">{serverErr}</div> : null}
+
+      {renderScheduleDefinitionPresetsStrip()}
 
       {renderScheduleDefinitionToolbar()}
 
@@ -1766,7 +1972,8 @@ export function SchedulePanel(props: {
       tab === 'roofs' ||
       tab === 'stairs' ||
       tab === 'plans' ||
-      tab === 'sheets' ? (
+      tab === 'sheets' ||
+      tab === 'assemblies' ? (
         !props.modelId ? (
           tab === 'sheets' ? (
             registryNoModelMode(sheets.length) === 'sheetsLocal' ? (
@@ -1789,7 +1996,7 @@ export function SchedulePanel(props: {
           )
         ) : !sidForTab ? (
           <div className="mt-3 text-[11px] text-muted">
-            {noScheduleElementMessage(tab)}
+            {noScheduleElementMessage(tab as RegistryModelTab)}
           </div>
         ) : serverErr ? null : srvActive?.tab !== tab ? (
           <div className="mt-3 text-[11px] text-muted">{MSG_LOADING}</div>
