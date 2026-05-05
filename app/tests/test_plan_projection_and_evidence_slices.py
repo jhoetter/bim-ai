@@ -31,6 +31,8 @@ from bim_ai.elements import (
     StairElem,
     ViewTemplateElem,
     WallElem,
+    WallTypeElem,
+    WallTypeLayer,
     WindowElem,
 )
 from bim_ai.engine import apply_inplace
@@ -47,6 +49,7 @@ from bim_ai.plan_projection_wire import (
     section_cut_projection_wire,
 )
 from bim_ai.schedule_derivation import derive_schedule_table
+from bim_ai.section_projection_primitives import build_section_projection_primitives
 from bim_ai.sheet_preview_svg import (
     plan_room_programme_legend_hints_v0,
     sheet_elem_to_svg,
@@ -150,6 +153,15 @@ def test_section_projection_wire_emits_wall_u_span_for_perpendicular_cut() -> No
     assert abs(float(ext["uMaxMm"]) - float(ext["uMinMm"]) - span) < 1.0
     assert float(ext["zMinMm"]) == float(ws[0]["zBottomMm"])
     assert float(ext["zMaxMm"]) == float(ws[0]["zTopMm"])
+    hints = prim.get("sectionDocMaterialHints") or []
+    assert len(hints) == 1
+    assert hints[0]["tokenId"] == ws[0]["id"]
+    assert hints[0]["wallElementId"] == "w1"
+    assert hints[0]["materialLabel"] == "structure"
+    assert hints[0]["cutPatternHint"] == "edgeOn"
+    assert float(hints[0]["uAnchorMm"]) == round(
+        0.5 * (float(ws[0]["uStartMm"]) + float(ws[0]["uEndMm"])), 3
+    )
 
 
 def test_section_projection_wire_wall_parallel_to_cut_is_along_cut_hatch() -> None:
@@ -178,6 +190,65 @@ def test_section_projection_wire_wall_parallel_to_cut_is_along_cut_hatch() -> No
     ws = (out.get("primitives") or {}).get("walls") or []
     assert len(ws) == 1
     assert ws[0]["cutHatchKind"] == "alongCut"
+    hints = (out.get("primitives") or {}).get("sectionDocMaterialHints") or []
+    assert len(hints) == 1
+    assert hints[0]["cutPatternHint"] == "alongCut"
+    assert hints[0]["materialLabel"] == "structure"
+
+
+def test_section_projection_primitives_degenerate_cut_emits_empty_section_doc_material_hints() -> None:
+    sec = SectionCutElem(
+        kind="section_cut",
+        id="sec-degen",
+        name="X",
+        lineStartMm={"xMm": 0.0, "yMm": 0.0},
+        lineEndMm={"xMm": 0.0, "yMm": 0.0},
+        cropDepthMm=1000.0,
+    )
+    doc = Document(revision=1, elements={"sec-degen": sec})
+    prim, _w = build_section_projection_primitives(doc, sec)
+    assert prim.get("sectionDocMaterialHints") == []
+
+
+def test_section_projection_wire_typed_wall_material_hint_uses_builtin_display_label() -> None:
+    lvl = LevelElem(kind="level", id="lvl", name="L", elevationMm=300.0)
+    wt = WallTypeElem(
+        kind="wall_type",
+        id="wt",
+        name="WT",
+        layers=[
+            WallTypeLayer(
+                thicknessMm=200,
+                layer_function="structure",
+                materialKey="mat-concrete-structure-v1",
+            ),
+        ],
+    )
+    wall = WallElem(
+        kind="wall",
+        id="w1",
+        name="W",
+        levelId="lvl",
+        start={"xMm": 0.0, "yMm": 0.0},
+        end={"xMm": 6000.0, "yMm": 0.0},
+        thicknessMm=200.0,
+        heightMm=2800.0,
+        wallTypeId="wt",
+    )
+    sec = SectionCutElem(
+        kind="section_cut",
+        id="sec-a",
+        name="A-A",
+        lineStartMm={"xMm": 3000.0, "yMm": -5000.0},
+        lineEndMm={"xMm": 3000.0, "yMm": 5000.0},
+        cropDepthMm=9000.0,
+    )
+    doc = Document(revision=1, elements={"lvl": lvl, "wt": wt, "w1": wall, "sec-a": sec})
+    out = section_cut_projection_wire(doc, "sec-a")
+    hints = (out.get("primitives") or {}).get("sectionDocMaterialHints") or []
+    assert len(hints) == 1
+    assert hints[0]["materialLabel"] == "Concrete structure"
+    assert hints[0]["wallElementId"] == "w1"
 
 
 def test_section_projection_wire_emits_door_when_cut_hits_host_wall() -> None:

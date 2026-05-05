@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   formatSectionAlongCutSpanMmLabel,
+  formatSectionDocMaterialHintCaption,
   formatSectionElevationSpanMmLabel,
   formatSectionSheetCalloutsLabel,
   summarizeWallCutHatchKinds,
@@ -54,5 +55,17 @@ describe('Section viewport documentation helpers', () => {
 
   it('uses id-only token when name matches id', () => {
     expect(formatSectionSheetCalloutsLabel([{ id: 'co-1', name: 'co-1' }])).toBe('Callouts · co-1');
+  });
+
+  it('formats material doc hint captions from server fields', () => {
+    expect(
+      formatSectionDocMaterialHintCaption({
+        materialLabel: 'Concrete structure',
+        cutPatternHint: 'edgeOn',
+      }),
+    ).toBe('Concrete structure · edge-on');
+    expect(
+      formatSectionDocMaterialHintCaption({ materialLabel: 'structure', cutPatternHint: 'alongCut' }),
+    ).toBe('structure · along-cut');
   });
 });

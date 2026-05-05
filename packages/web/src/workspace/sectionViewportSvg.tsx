@@ -7,6 +7,7 @@ import {
   SECTION_VIEWPORT_LABEL_FONT_MIN_PX,
   SECTION_VIEWPORT_LEVEL_SPAN_BRACKET_MARGIN_PX,
   SECTION_VIEWPORT_LEVEL_SPAN_LABEL_MIN_PX,
+  SECTION_VIEWPORT_MATERIAL_HINT_MIN_VIEW_PX,
   SECTION_VIEWPORT_OPENING_TAG_MIN_PX,
   SECTION_VIEWPORT_SCALE_BASELINE_PX,
   SECTION_VIEWPORT_STROKE_SCALE_MAX,
@@ -19,9 +20,11 @@ import {
 } from '../plan/symbology';
 import {
   formatSectionAlongCutSpanMmLabel,
+  formatSectionDocMaterialHintCaption,
   formatSectionElevationSpanMmLabel,
   formatSectionSheetCalloutsLabel,
   parseSectionWallCutHatchKind,
+  type SectionDocMaterialHint,
   type SectionSheetCalloutRow,
 } from './sectionViewportDoc';
 
@@ -125,6 +128,7 @@ export function SectionViewportSvg(props: {
     advisory: string | null;
     calloutsCaption: string | null;
     sectionGeomExtent: { uMinMm: number; uMaxMm: number } | null;
+    materialHints: SectionDocMaterialHint[];
   };
 
   const [layers, setLayers] = useState<LayerSnap | null>(null);
@@ -137,6 +141,7 @@ export function SectionViewportSvg(props: {
   const strokeScale = clampedStrokeScale(props.widthPx, props.heightPx);
   const lvlPx = labelFontPx(props.widthPx, props.heightPx);
   const openingTagMinPx = SECTION_VIEWPORT_OPENING_TAG_MIN_PX;
+  const materialHintMinPx = SECTION_VIEWPORT_MATERIAL_HINT_MIN_VIEW_PX;
   const borderStroke = 3 * strokeScale;
   const patternWallLineEdgeOn = 3.5 * strokeScale;
   const patternWallLineAlongCut =
@@ -206,6 +211,26 @@ export function SectionViewportSvg(props: {
             sectionGeomExtent = { uMinMm: gu0, uMaxMm: gu1 };
           }
         }
+
+        const mhRaw = prim?.sectionDocMaterialHints;
+        const materialHints: SectionDocMaterialHint[] = [];
+        if (Array.isArray(mhRaw)) {
+          for (const row of mhRaw as Record<string, unknown>[]) {
+            if (typeof row !== 'object' || row === null) continue;
+            const o = row as Record<string, unknown>;
+            const tid = String(o.tokenId ?? '').trim();
+            if (!tid) continue;
+            materialHints.push({
+              tokenId: tid,
+              wallElementId: String(o.wallElementId ?? ''),
+              materialLabel: String(o.materialLabel ?? ''),
+              cutPatternHint: parseSectionWallCutHatchKind(o.cutPatternHint),
+              uAnchorMm: Number(o.uAnchorMm ?? 0),
+              zAnchorMm: Number(o.zAnchorMm ?? 0),
+            });
+          }
+        }
+        materialHints.sort((a, b) => a.tokenId.localeCompare(b.tokenId));
 
         const asUz = (w: Record<string, unknown>): UzPrim | null => ({
           uStartMm: Number(w.uStartMm ?? 0),
@@ -393,6 +418,7 @@ export function SectionViewportSvg(props: {
             advisory,
             calloutsCaption,
             sectionGeomExtent,
+            materialHints,
           });
         }
       } catch (e) {
@@ -571,6 +597,31 @@ export function SectionViewportSvg(props: {
               strokeWidth={wallStroke}
             />
           ))}
+
+          {Math.min(props.widthPx, props.heightPx) >= materialHintMinPx
+            ? layers.materialHints.map((h) => {
+                const x = (h.uAnchorMm - layers.u0) * layers.sx;
+                const y = (layers.z1 - h.zAnchorMm) * layers.sy;
+                return (
+                  <text
+                    key={`mh-${h.tokenId}`}
+                    x={x}
+                    y={y}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fill="#3730a3"
+                    data-section-doc-token={h.tokenId}
+                    style={{
+                      fontSize: Math.max(7, 8.5 * strokeScale),
+                      fontWeight: 500,
+                    }}
+                    pointerEvents="none"
+                  >
+                    {formatSectionDocMaterialHintCaption(h)}
+                  </text>
+                );
+              })
+            : null}
 
           {roofChordPath.map((d, i) => (
             <path

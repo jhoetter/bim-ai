@@ -29,6 +29,7 @@ from bim_ai.material_assembly_resolve import (
     layered_assembly_witness_row_for_floor,
     layered_assembly_witness_row_for_roof,
     layered_assembly_witness_row_for_wall,
+    resolved_layers_for_wall,
     section_assembly_alignment_fields_floor,
     section_assembly_alignment_fields_wall,
 )
@@ -45,6 +46,7 @@ from bim_ai.roof_geometry import (
     outer_rect_extent,
 )
 from bim_ai.stair_plan_proxy import stair_riser_count_plan_proxy
+from bim_ai.type_material_registry import material_display_label
 
 _EPS = 1e-6
 
@@ -62,6 +64,53 @@ def _level_elevation_mm(doc: Document, level_id: str) -> float:
     if isinstance(el, LevelElem):
         return float(el.elevation_mm)
     return 0.0
+
+
+def _section_doc_material_label_for_wall(doc: Document, wall: WallElem) -> str:
+    layers = resolved_layers_for_wall(doc, wall)
+    material_key = ""
+    for lyr in layers:
+        if str(lyr.get("function") or "") == "structure":
+            material_key = str(lyr.get("materialKey") or "").strip()
+            break
+    if not material_key and layers:
+        material_key = str(layers[0].get("materialKey") or "").strip()
+    label = material_display_label(doc, material_key or None)
+    if label:
+        return label
+    if material_key:
+        return material_key
+    return "structure"
+
+
+def _build_section_doc_material_hints(
+    doc: Document,
+    walls: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    hints: list[dict[str, Any]] = []
+    for row in walls:
+        eid = str(row.get("elementId") or "")
+        wall_el = doc.elements.get(eid)
+        if not isinstance(wall_el, WallElem):
+            continue
+        u0 = float(row["uStartMm"])
+        u1 = float(row["uEndMm"])
+        z0 = float(row["zBottomMm"])
+        z1 = float(row["zTopMm"])
+        hatch = row.get("cutHatchKind")
+        cut_pattern = hatch if hatch in ("edgeOn", "alongCut") else "alongCut"
+        hints.append(
+            {
+                "tokenId": str(row["id"]),
+                "wallElementId": eid,
+                "materialLabel": _section_doc_material_label_for_wall(doc, wall_el),
+                "cutPatternHint": cut_pattern,
+                "uAnchorMm": round(0.5 * (u0 + u1), 3),
+                "zAnchorMm": round(0.5 * (z0 + z1), 3),
+            }
+        )
+    hints.sort(key=lambda h: str(h["tokenId"]))
+    return hints
 
 
 def _wall_vertical_span_mm(doc: Document, w: WallElem) -> tuple[float, float]:
@@ -426,6 +475,7 @@ def build_section_projection_primitives(
                 "roofs": [],
                 "levelMarkers": _collect_level_markers(doc),
                 "sheetCallouts": _collect_sheet_callouts_for_section(doc, sec.id),
+                "sectionDocMaterialHints": [],
             },
             warnings,
         )
@@ -828,5 +878,7 @@ def build_section_projection_primitives(
     extent = _section_geometry_extent_mm(walls, floors, rooms, stairs, roofs, doors, windows)
     if extent is not None:
         primitives["sectionGeometryExtentMm"] = extent
+
+    primitives["sectionDocMaterialHints"] = _build_section_doc_material_hints(doc, walls)
 
     return primitives, warnings

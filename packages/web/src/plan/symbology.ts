@@ -43,6 +43,10 @@ export const SECTION_VIEWPORT_STROKE_SCALE_MAX = 1.35;
 
 export const SECTION_VIEWPORT_OPENING_TAG_MIN_PX = 14;
 
+/** Min viewport minor axis (px) before drawing `sectionDocMaterialHints` labels (WP-E04/C03). */
+
+export const SECTION_VIEWPORT_MATERIAL_HINT_MIN_VIEW_PX = 20;
+
 export const SECTION_VIEWPORT_ADVISORY_MAX_CHARS = 96;
 
 /** Tile size (px) for edge-on (cut-through) wall hatch in section viewport SVG (WP-E04/C03). */

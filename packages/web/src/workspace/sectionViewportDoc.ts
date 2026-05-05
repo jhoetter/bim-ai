@@ -9,6 +9,39 @@ export function parseSectionWallCutHatchKind(raw: unknown): SectionWallCutHatchK
   return raw === 'edgeOn' ? 'edgeOn' : 'alongCut';
 }
 
+/** One row from server `sectionDocMaterialHints` (WP-E04 / prompt-5). */
+
+export type SectionDocMaterialHint = {
+  tokenId: string;
+  wallElementId: string;
+  materialLabel: string;
+  cutPatternHint: SectionWallCutHatchKind;
+  uAnchorMm: number;
+  zAnchorMm: number;
+};
+
+function cutPatternDocSuffix(kind: SectionWallCutHatchKind): string {
+  switch (kind) {
+    case 'edgeOn':
+      return 'edge-on';
+    case 'alongCut':
+      return 'along-cut';
+    default: {
+      const _exhaustive: never = kind;
+      return _exhaustive;
+    }
+  }
+}
+
+/** Single-line caption: server `materialLabel` + hatch kind (deterministic; no client-side registry). */
+
+export function formatSectionDocMaterialHintCaption(hint: {
+  materialLabel: string;
+  cutPatternHint: SectionWallCutHatchKind;
+}): string {
+  return `${hint.materialLabel} · ${cutPatternDocSuffix(hint.cutPatternHint)}`;
+}
+
 export function formatSectionElevationSpanMmLabel(zMinMm: number, zMaxMm: number): string {
   const span = Math.abs(zMaxMm - zMinMm);
 
