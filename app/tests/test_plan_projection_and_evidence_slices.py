@@ -957,7 +957,7 @@ def test_plan_projection_room_legend_matches_primitives_when_programme_shared() 
     assert isinstance(leg_ev.get("legendDigestSha256"), str) and len(leg_ev["legendDigestSha256"]) == 64
 
 
-def test_plan_projection_crop_authored_filters_and_emits_range_warning() -> None:
+def test_plan_projection_crop_authored_composes_with_view_range_clip() -> None:
     doc = Document(
         revision=1,
         elements={
@@ -997,9 +997,137 @@ def test_plan_projection_crop_authored_filters_and_emits_range_warning() -> None
     out = plan_projection_wire_from_request(doc, plan_view_id="pv1", fallback_level_id="lvl")
     codes = {w.get("code") for w in out.get("warnings", []) if isinstance(w, dict)}
     assert "cropBoxNotApplied" not in codes
-    assert "viewRangeNotApplied" in codes
+    assert "viewRangeNotApplied" not in codes
+    ev = out.get("planViewRangeEvidence_v0") or {}
+    assert ev.get("format") == "planViewRangeEvidence_v0"
+    assert ev.get("bottomZMm") == -1200.0
+    assert ev.get("topZMm") == 4200.0
+    assert ev.get("cutPlaneZMm") == 0.0
     walls = (out.get("primitives") or {}).get("walls") or []
     assert [w.get("id") for w in walls] == ["w-a"]
+
+
+def test_plan_projection_view_range_excludes_wall_below_clip() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L", elevationMm=0),
+            "pv1": PlanViewElem(
+                kind="plan_view",
+                id="pv1",
+                name="EG",
+                levelId="lvl",
+                viewRangeBottomMm=3000,
+                viewRangeTopMm=5000,
+            ),
+            "w": WallElem(
+                kind="wall",
+                id="w-low",
+                name="W",
+                levelId="lvl",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 2000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+        },
+    )
+    out = plan_projection_wire_from_request(doc, plan_view_id="pv1", fallback_level_id="lvl")
+    assert (out.get("primitives") or {}).get("walls") == []
+
+
+def test_plan_projection_view_range_excludes_wall_above_clip() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L", elevationMm=0),
+            "pv1": PlanViewElem(
+                kind="plan_view",
+                id="pv1",
+                name="EG",
+                levelId="lvl",
+                viewRangeBottomMm=-8000,
+                viewRangeTopMm=-500,
+            ),
+            "w": WallElem(
+                kind="wall",
+                id="w-above",
+                name="W",
+                levelId="lvl",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 2000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+        },
+    )
+    out = plan_projection_wire_from_request(doc, plan_view_id="pv1", fallback_level_id="lvl")
+    assert (out.get("primitives") or {}).get("walls") == []
+
+
+def test_plan_projection_view_range_normalizes_inverted_bottom_top_offsets() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L", elevationMm=0),
+            "pv1": PlanViewElem(
+                kind="plan_view",
+                id="pv1",
+                name="EG",
+                levelId="lvl",
+                viewRangeBottomMm=800,
+                viewRangeTopMm=-200,
+                cutPlaneOffsetMm=300,
+            ),
+            "w": WallElem(
+                kind="wall",
+                id="w-a",
+                name="W",
+                levelId="lvl",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 2000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+        },
+    )
+    out = plan_projection_wire_from_request(doc, plan_view_id="pv1", fallback_level_id="lvl")
+    ev = out.get("planViewRangeEvidence_v0") or {}
+    assert ev.get("bottomZMm") == -200.0
+    assert ev.get("topZMm") == 800.0
+    assert ev.get("cutPlaneZMm") == 300.0
+    walls = (out.get("primitives") or {}).get("walls") or []
+    assert [x.get("id") for x in walls] == ["w-a"]
+
+
+def test_plan_projection_view_range_incomplete_authorship_warns() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L", elevationMm=0),
+            "pv1": PlanViewElem(
+                kind="plan_view",
+                id="pv1",
+                name="EG",
+                levelId="lvl",
+                viewRangeBottomMm=500,
+            ),
+            "w": WallElem(
+                kind="wall",
+                id="w-a",
+                name="W",
+                levelId="lvl",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 2000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+        },
+    )
+    out = plan_projection_wire_from_request(doc, plan_view_id="pv1", fallback_level_id="lvl")
+    codes = {w.get("code") for w in out.get("warnings", []) if isinstance(w, dict)}
+    assert "viewRangeNotApplied" in codes
+    assert out.get("planViewRangeEvidence_v0") is None
 
 
 def test_plan_projection_sheet_viewport_crop_intersects_plan_crop() -> None:

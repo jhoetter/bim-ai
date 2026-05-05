@@ -669,10 +669,16 @@ def _derived_room_boundary_evidence_for_wire(
     active_level_id: str | None,
     effective_crop_mm: tuple[float, float, float, float] | None,
     room_boundary_bundle: dict[str, Any] | None = None,
+    view_range_clip_mm: tuple[float, float, float] | None = None,
 ) -> list[dict[str, Any]]:
     """Authoritative vacant axis rectangles for plan inspection (deterministic; crop-filtered)."""
     if not active_level_id:
         return []
+    if view_range_clip_mm is not None:
+        lo, hi, _cut = view_range_clip_mm
+        lvl_z = _level_elevation_mm(doc, active_level_id)
+        if not _closed_z_intervals_overlap_mm(lvl_z, lvl_z, lo, hi):
+            return []
     bundle = room_boundary_bundle if room_boundary_bundle is not None else compute_room_boundary_derivation(doc)
     out: list[dict[str, Any]] = []
     for c in bundle.get("axisAlignedRectangleCandidates") or []:
@@ -711,6 +717,8 @@ def _derived_room_boundary_diagnostics_for_wire(
     active_level_id: str | None,
     effective_crop_mm: tuple[float, float, float, float] | None,
     bundle: dict[str, Any],
+    doc: Document | None = None,
+    view_range_clip_mm: tuple[float, float, float] | None = None,
 ) -> dict[str, Any]:
     """Summarize authority mix and level diagnostics without changing primitives."""
     hv = str(bundle.get("heuristicVersion") or ROOM_BOUNDARY_HEURISTIC_VERSION)
@@ -723,6 +731,19 @@ def _derived_room_boundary_diagnostics_for_wire(
             "previewHeuristicFootprintCountIntersectingCrop": 0,
             "levelDiagnosticCodes": [],
         }
+
+    if view_range_clip_mm is not None and doc is not None:
+        lo, hi, _cut = view_range_clip_mm
+        lvl_z = _level_elevation_mm(doc, active_level_id)
+        if not _closed_z_intervals_overlap_mm(lvl_z, lvl_z, lo, hi):
+            return {
+                "format": "derivedRoomBoundaryDiagnostics_v0",
+                "boundaryHeuristicVersion": hv,
+                "activeLevelId": active_level_id,
+                "authoritativeFootprintCountIntersectingCrop": 0,
+                "previewHeuristicFootprintCountIntersectingCrop": 0,
+                "levelDiagnosticCodes": [],
+            }
 
     auth_n = 0
     prev_n = 0
@@ -777,10 +798,17 @@ def _build_plan_primitive_lists(
     opening_tag_catalog: PlanTagStyleElem | None = None,
     room_tag_catalog: PlanTagStyleElem | None = None,
     category_resolved: dict[str, ResolvedPlanCategoryGraphic] | None = None,
+    view_range_clip_mm: tuple[float, float, float] | None = None,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     """2D primitives for deterministic server-side plan previews."""
 
     warnings: list[dict[str, Any]] = []
+
+    def span_in_vertical_range(z0: float, z1: float) -> bool:
+        if view_range_clip_mm is None:
+            return True
+        lo, hi, _cut = view_range_clip_mm
+        return _closed_z_intervals_overlap_mm(z0, z1, lo, hi)
 
     crop_box = crop_box_mm
     if pinned_pv_el is not None:
@@ -793,15 +821,11 @@ def _build_plan_primitive_lists(
                     "message": "Plan viewport crop requires both cropMinMm and cropMaxMm; primitives are not cropped.",
                 }
             )
-        if (
-            pinned_pv_el.view_range_bottom_mm is not None
-            or pinned_pv_el.view_range_top_mm is not None
-            or pinned_pv_el.cut_plane_offset_mm is not None
-        ):
+        if _plan_view_range_authoring_incomplete(pinned_pv_el):
             warnings.append(
                 {
                     "code": "viewRangeNotApplied",
-                    "message": "View range / cut-plane overrides are authored but vertical cut extents are not applied to 2D primitives.",
+                    "message": "Plan view range is incomplete (both viewRangeBottomMm and viewRangeTopMm are required for vertical filtering); vertical clip is not applied.",
                 }
             )
 
@@ -839,6 +863,9 @@ def _build_plan_primitive_lists(
                 e.start.x_mm, e.start.y_mm, e.end.x_mm, e.end.y_mm, crop_box
             ):
                 continue
+            wz0, wz1 = _wall_vertical_span_mm(doc, e)
+            if not span_in_vertical_range(wz0, wz1):
+                continue
             w_wt, _w_pat = cat_eff("wall")
             walls.append(
                 {
@@ -856,6 +883,9 @@ def _build_plan_primitive_lists(
                 continue
             floor_pts = [(p.x_mm, p.y_mm) for p in e.boundary_mm]
             if crop_box is not None and not _poly_bbox_overlaps_crop(floor_pts, crop_box):
+                continue
+            fz0, fz1 = _floor_vertical_span_mm(doc, e)
+            if not span_in_vertical_range(fz0, fz1):
                 continue
             outlines = [[round(p.x_mm, 3), round(p.y_mm, 3)] for p in e.boundary_mm]
             f_wt, f_pat = cat_eff("floor")
@@ -875,6 +905,9 @@ def _build_plan_primitive_lists(
                 continue
             room_pts = [(p.x_mm, p.y_mm) for p in e.outline_mm]
             if crop_box is not None and not _poly_bbox_overlaps_crop(room_pts, crop_box):
+                continue
+            rmz0, rmz1 = _room_vertical_span_mm(doc, e)
+            if not span_in_vertical_range(rmz0, rmz1):
                 continue
             outlines = [[round(p.x_mm, 3), round(p.y_mm, 3)] for p in e.outline_mm]
             row: dict[str, Any] = {
@@ -910,6 +943,9 @@ def _build_plan_primitive_lists(
                 )
                 if not opening_ok:
                     continue
+            dwz0, dwz1 = _wall_vertical_span_mm(doc, w)
+            if not span_in_vertical_range(dwz0, dwz1):
+                continue
             dout: dict[str, Any] = {
                 "id": e.id,
                 "wallId": e.wall_id,
@@ -944,6 +980,9 @@ def _build_plan_primitive_lists(
                 )
                 if not opening_ok:
                     continue
+            wwz0, wwz1 = _wall_vertical_span_mm(doc, w)
+            if not span_in_vertical_range(wwz0, wwz1):
+                continue
             wrow: dict[str, Any] = {
                 "id": e.id,
                 "wallId": e.wall_id,
@@ -972,6 +1011,9 @@ def _build_plan_primitive_lists(
                 e.run_end.y_mm,
                 crop_box,
             ):
+                continue
+            sz0, sz1 = _stair_vertical_span_mm(doc, e)
+            if not span_in_vertical_range(sz0, sz1):
                 continue
             run_len_mm = math.hypot(
                 float(e.run_end.x_mm) - float(e.run_start.x_mm),
@@ -1012,6 +1054,9 @@ def _build_plan_primitive_lists(
             fp_pts = [(p.x_mm, p.y_mm) for p in e.footprint_mm]
             if crop_box is not None and not _poly_bbox_overlaps_crop(fp_pts, crop_box):
                 continue
+            rfz0, rfz1 = _roof_vertical_span_mm(doc, e)
+            if not span_in_vertical_range(rfz0, rfz1):
+                continue
             fp = [[round(p.x_mm, 3), round(p.y_mm, 3)] for p in e.footprint_mm]
             r_wt, r_pat = cat_eff("roof")
             roof_row: dict[str, Any] = {
@@ -1035,6 +1080,11 @@ def _build_plan_primitive_lists(
                 e.start.x_mm, e.start.y_mm, e.end.x_mm, e.end.y_mm, crop_box
             ):
                 continue
+            if view_range_clip_mm is not None and elv is not None:
+                gz = _level_elevation_mm(doc, elv)
+                lo, hi, _cu = view_range_clip_mm
+                if not _closed_z_intervals_overlap_mm(gz, gz, lo, hi):
+                    continue
             g_wt, g_pat = cat_eff("grid_line")
             grid_lines.append(
                 {
@@ -1053,6 +1103,11 @@ def _build_plan_primitive_lists(
                 e.start.x_mm, e.start.y_mm, e.end.x_mm, e.end.y_mm, crop_box
             ):
                 continue
+            if view_range_clip_mm is not None:
+                sepz = _level_elevation_mm(doc, e.level_id)
+                lo, hi, _cu = view_range_clip_mm
+                if not _closed_z_intervals_overlap_mm(sepz, sepz, lo, hi):
+                    continue
             s_wt, s_pat = cat_eff("room_separation")
             room_separations.append(
                 {
@@ -1071,6 +1126,11 @@ def _build_plan_primitive_lists(
                 e.a_mm.x_mm, e.a_mm.y_mm, e.b_mm.x_mm, e.b_mm.y_mm, crop_box
             ):
                 continue
+            if view_range_clip_mm is not None:
+                dmz = _level_elevation_mm(doc, e.level_id)
+                lo, hi, _cu = view_range_clip_mm
+                if not _closed_z_intervals_overlap_mm(dmz, dmz, lo, hi):
+                    continue
             dimensions.append(
                 {
                     "id": e.id,
@@ -1103,6 +1163,7 @@ def _room_color_legend_payload(
     level: str | None,
     hidden_semantic: set[str],
     scheme_rows: list[RoomColorSchemeRow],
+    view_range_clip_mm: tuple[float, float, float] | None = None,
 ) -> list[dict[str, Any]]:
     if "room" in hidden_semantic:
         return []
@@ -1113,6 +1174,11 @@ def _room_color_legend_payload(
             continue
         if level and e.level_id != level:
             continue
+        if view_range_clip_mm is not None:
+            lo, hi, _cut = view_range_clip_mm
+            rz0, rz1 = _room_vertical_span_mm(doc, e)
+            if not _closed_z_intervals_overlap_mm(rz0, rz1, lo, hi):
+                continue
         label = (
             (e.programme_code or "").strip()
             or (e.department or "").strip()
@@ -1172,6 +1238,29 @@ def _room_programme_legend_evidence_v0(
     return payload
 
 
+def _counts_from_plan_primitives(prim: dict[str, Any]) -> tuple[int, dict[str, int]]:
+    key_map = (
+        ("walls", "wall"),
+        ("floors", "floor"),
+        ("rooms", "room"),
+        ("doors", "door"),
+        ("windows", "window"),
+        ("stairs", "stair"),
+        ("roofs", "roof"),
+        ("gridLines", "grid_line"),
+        ("roomSeparations", "room_separation"),
+        ("dimensions", "dimension"),
+    )
+    counts: dict[str, int] = {}
+    total = 0
+    for pk, ck in key_map:
+        n = len(prim.get(pk) or [])
+        if n:
+            counts[ck] = n
+            total += n
+    return total, dict(sorted(counts.items()))
+
+
 def resolve_plan_projection_wire(
     doc: Document,
     *,
@@ -1213,6 +1302,10 @@ def resolve_plan_projection_wire(
                 presentation = str(pres_raw)
             else:
                 presentation = "default"
+
+    view_range_clip_mm: tuple[float, float, float] | None = None
+    if pinned_pv_elem is not None:
+        view_range_clip_mm = _resolve_plan_view_range_clip_mm(doc, pinned_pv_elem)
 
     def kind_visible(kind: str) -> bool:
         return kind not in hidden_semantic
@@ -1324,7 +1417,10 @@ def resolve_plan_projection_wire(
         opening_tag_catalog=opening_cat,
         room_tag_catalog=room_cat,
         category_resolved=cat_res,
+        view_range_clip_mm=view_range_clip_mm,
     )
+    if view_range_clip_mm is not None:
+        eligible, counts = _counts_from_plan_primitives(prim)
     all_warnings = sorted(
         list(extra_prim_warn) + list(prim_warn) + tag_warn_bucket,
         key=_warning_sort_key,
@@ -1334,6 +1430,7 @@ def resolve_plan_projection_wire(
         level=active_level,
         hidden_semantic=hidden_semantic,
         scheme_rows=scheme_rows,
+        view_range_clip_mm=view_range_clip_mm,
     )
 
     room_boundary_bundle = compute_room_boundary_derivation(doc)
@@ -1358,13 +1455,25 @@ def resolve_plan_projection_wire(
             active_level_id=active_level,
             effective_crop_mm=effective_crop,
             room_boundary_bundle=room_boundary_bundle,
+            view_range_clip_mm=view_range_clip_mm,
         ),
         "derivedRoomBoundaryDiagnostics_v0": _derived_room_boundary_diagnostics_for_wire(
             active_level_id=active_level,
             effective_crop_mm=effective_crop,
             bundle=room_boundary_bundle,
+            doc=doc,
+            view_range_clip_mm=view_range_clip_mm,
         ),
     }
+    if view_range_clip_mm is not None and pinned_pv_elem is not None:
+        z_lo, z_hi, cut_z = view_range_clip_mm
+        out_payload["planViewRangeEvidence_v0"] = {
+            "format": "planViewRangeEvidence_v0",
+            "bottomZMm": round(float(z_lo), 3),
+            "topZMm": round(float(z_hi), 3),
+            "cutPlaneZMm": round(float(cut_z), 3),
+            "associatedLevelId": pinned_pv_elem.level_id,
+        }
     if plan_graphic_hints is not None:
         out_payload["planGraphicHints"] = plan_graphic_hints
     if cat_res is not None and pinned_pv_elem is not None:
