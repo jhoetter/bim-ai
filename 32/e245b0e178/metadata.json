@@ -39,6 +39,12 @@
       "transcript": "/32/e245b0e178/4/full.jsonl",
       "content_hash": "/32/e245b0e178/4/content_hash.txt",
       "prompt": "/32/e245b0e178/4/prompt.txt"
+    },
+    {
+      "metadata": "/32/e245b0e178/5/metadata.json",
+      "transcript": "/32/e245b0e178/5/full.jsonl",
+      "content_hash": "/32/e245b0e178/5/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
