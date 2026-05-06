@@ -14,6 +14,7 @@ import {
   planWallMesh,
   doorGroupThree,
   planWindowMesh,
+  planWallOpeningMesh,
   stairPlanThree,
   roomMesh,
   planAnnotationLabelSprite,
@@ -658,6 +659,16 @@ function rebuildPlanMeshesFromWire(
         holder.add(planAnnotationLabelSprite(pos.x, pos.z, labelRaw, winEl.id, tagOpenScale));
       }
     }
+  }
+
+  // KRN-04: render frameless wall_opening cuts as plan rectangles. These don't
+  // come through the server prim emission path yet — read directly from
+  // elementsById and resolve their host wall.
+  for (const el of Object.values(elementsById)) {
+    if (el.kind !== 'wall_opening') continue;
+    const host = resolveWallForWire(el.hostWallId, elementsById, wallsByWireId);
+    if (!host) continue;
+    holder.add(planWallOpeningMesh(el, host, selectedId));
   }
 
   const stairsRaw = Array.isArray(prim.stairs) ? (prim.stairs as Record<string, unknown>[]) : [];

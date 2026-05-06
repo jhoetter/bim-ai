@@ -74,6 +74,7 @@ type Props = {
 
 type DoorElem = Extract<Element, { kind: 'door' }>;
 type WindowElem = Extract<Element, { kind: 'window' }>;
+type WallOpeningElem = Extract<Element, { kind: 'wall_opening' }>;
 
 /** Small key+label hint chip used in the navigation HUD. */
 function NavHint({ k, label }: { k: string; label: string }) {
@@ -810,6 +811,7 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
     // Single pass: bucket hosted elements and build reverse maps for dep propagation.
     const doorsByWall = new Map<string, DoorElem[]>();
     const winsByWall = new Map<string, WindowElem[]>();
+    const wallOpeningsByWall = new Map<string, WallOpeningElem[]>();
     const railingsByStair = new Map<string, string[]>();
     const elemsByLevel = new Map<string, string[]>();
 
@@ -824,6 +826,11 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
         const arr = winsByWall.get(w.wallId) ?? [];
         arr.push(w);
         winsByWall.set(w.wallId, arr);
+      } else if (e.kind === 'wall_opening') {
+        const wo = e as WallOpeningElem;
+        const arr = wallOpeningsByWall.get(wo.hostWallId) ?? [];
+        arr.push(wo);
+        wallOpeningsByWall.set(wo.hostWallId, arr);
       }
       if (e.kind === 'railing') {
         const rl = e as Extract<Element, { kind: 'railing' }>;
@@ -874,12 +881,16 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
           // Wall geometry change → its hosted openings need new positions.
           for (const d of doorsByWall.get(id) ?? []) extraDirty.add(d.id);
           for (const w of winsByWall.get(id) ?? []) extraDirty.add(w.id);
+          for (const wo of wallOpeningsByWall.get(id) ?? []) extraDirty.add(wo.id);
           break;
         case 'door':
           extraDirty.add((e as DoorElem).wallId);
           break;
         case 'window':
           extraDirty.add((e as WindowElem).wallId);
+          break;
+        case 'wall_opening':
+          extraDirty.add((e as WallOpeningElem).hostWallId);
           break;
         case 'level':
           for (const eid of elemsByLevel.get(id) ?? []) extraDirty.add(eid);
@@ -896,11 +907,13 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       const e = curr[id];
       if (e?.kind === 'door') extraDirty.add((e as DoorElem).wallId);
       if (e?.kind === 'window') extraDirty.add((e as WindowElem).wallId);
+      if (e?.kind === 'wall_opening') extraDirty.add((e as WallOpeningElem).hostWallId);
     }
     for (const id of removedIds) {
       const e = prev[id];
       if (e?.kind === 'door') extraDirty.add((e as DoorElem).wallId);
       if (e?.kind === 'window') extraDirty.add((e as WindowElem).wallId);
+      if (e?.kind === 'wall_opening') extraDirty.add((e as WallOpeningElem).hostWallId);
     }
     for (const id of extraDirty) {
       if (!addedIds.has(id) && !removedIds.has(id)) changedIds.add(id);
@@ -913,6 +926,9 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
         }
         for (const w of winsByWall.get(id) ?? []) {
           if (!addedIds.has(w.id) && !removedIds.has(w.id)) changedIds.add(w.id);
+        }
+        for (const wo of wallOpeningsByWall.get(id) ?? []) {
+          if (!addedIds.has(wo.id) && !removedIds.has(wo.id)) changedIds.add(wo.id);
         }
       }
     }
@@ -968,9 +984,10 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
           const elev = elevationMForLevel(e.levelId, curr);
           const doors = doorsByWall.get(id) ?? [];
           const wins = winsByWall.get(id) ?? [];
+          const wallOps = wallOpeningsByWall.get(id) ?? [];
           if (
             CSG_ENABLED &&
-            (doors.length > 0 || wins.length > 0) &&
+            (doors.length > 0 || wins.length > 0 || wallOps.length > 0) &&
             !e.roofAttachmentId &&
             !e.isCurtainWall &&
             !e.wallTypeId
@@ -1006,6 +1023,13 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
                 heightMm: w.heightMm,
                 sillHeightMm: w.sillHeightMm,
                 alongT: w.alongT,
+                wallHeightMm: e.heightMm,
+              })),
+              wallOpenings: wallOps.map((wo) => ({
+                alongTStart: wo.alongTStart,
+                alongTEnd: wo.alongTEnd,
+                sillHeightMm: wo.sillHeightMm,
+                headHeightMm: wo.headHeightMm,
                 wallHeightMm: e.heightMm,
               })),
             };

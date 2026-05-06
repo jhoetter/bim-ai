@@ -8,6 +8,7 @@ export type ElemKind =
   | 'wall'
   | 'door'
   | 'window'
+  | 'wall_opening'
   | 'room'
   | 'grid_line'
   | 'dimension'
@@ -132,6 +133,24 @@ export type FamilyDiscipline =
   | 'beam'
   | 'generic';
 
+export type DoorOperationType =
+  | 'swing_single'
+  | 'swing_double'
+  | 'sliding_single'
+  | 'sliding_double'
+  | 'bi_fold'
+  | 'pocket'
+  | 'pivot'
+  | 'automatic_double';
+
+export type WindowOutlineKind =
+  | 'rectangle'
+  | 'arched_top'
+  | 'gable_trapezoid'
+  | 'circle'
+  | 'octagon'
+  | 'custom';
+
 export type WallLocationLine =
   | 'wall-centerline'
   | 'finish-face-exterior'
@@ -250,6 +269,8 @@ export type Element =
       revealInteriorMm?: number | null;
       interlockGrade?: string | null;
       lodPlan?: 'simple' | 'detailed' | null;
+      operationType?: DoorOperationType;
+      slidingTrackSide?: 'wall_face' | 'in_pocket';
       overrideParams?: Record<string, unknown>;
     }
   | {
@@ -268,7 +289,20 @@ export type Element =
       interlockGrade?: string | null;
       sealRebateMm?: number | null;
       lodPlan?: 'simple' | 'detailed' | null;
+      outlineKind?: WindowOutlineKind;
+      outlineMm?: XY[];
+      attachedRoofId?: string | null;
       overrideParams?: Record<string, unknown>;
+    }
+  | {
+      kind: 'wall_opening';
+      id: string;
+      name?: string;
+      hostWallId: string;
+      alongTStart: number;
+      alongTEnd: number;
+      sillHeightMm: number;
+      headHeightMm: number;
     }
   | {
       kind: 'room';

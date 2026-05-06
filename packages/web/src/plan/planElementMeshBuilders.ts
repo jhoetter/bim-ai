@@ -378,6 +378,74 @@ export function planWindowMesh(
   return grp;
 }
 
+/**
+ * KRN-04 plan symbol: rectangular outline spanning the opening's wall-length
+ * interval, drawn in the wall thickness (matches Revit's wall-opening symbol).
+ * No frame, no swing, no glazing line — just the cut outline.
+ */
+export function planWallOpeningMesh(
+  op: Extract<Element, { kind: 'wall_opening' }>,
+  wall: Extract<Element, { kind: 'wall' }>,
+  selectedId?: string,
+): THREE.Group {
+  const grp = new THREE.Group();
+
+  const sx = ux(wall.start.xMm);
+  const sz = uz(wall.start.yMm);
+  const seg = segmentDir(wall);
+
+  const tStart = THREE.MathUtils.clamp(Math.min(op.alongTStart, op.alongTEnd), 0, 1);
+  const tEnd = THREE.MathUtils.clamp(Math.max(op.alongTStart, op.alongTEnd), 0, 1);
+  const tMid = (tStart + tEnd) / 2;
+
+  const px = sx + seg.nx * seg.lenM * tMid;
+  const pz = sz + seg.nz * seg.lenM * tMid;
+
+  const yaw = Math.atan2(seg.nz, seg.nx);
+  grp.position.set(px, 0, pz);
+  grp.rotation.y = yaw;
+
+  const widthM = Math.max(0.05, (tEnd - tStart) * seg.lenM);
+  const depthM = THREE.MathUtils.clamp(wall.thicknessMm / 1000 + 0.01, 0.05, 1);
+
+  const palette = getPlanPalette();
+  const isSelected = op.id === selectedId;
+  const outlineColor = isSelected ? palette.doorSelected : palette.doorSwing;
+
+  const half = depthM / 2;
+  const w2 = widthM / 2;
+  const corners = [
+    new THREE.Vector3(-w2, PLAN_Y + 0.025, -half),
+    new THREE.Vector3(w2, PLAN_Y + 0.025, -half),
+    new THREE.Vector3(w2, PLAN_Y + 0.025, half),
+    new THREE.Vector3(-w2, PLAN_Y + 0.025, half),
+    new THREE.Vector3(-w2, PLAN_Y + 0.025, -half),
+  ];
+  const outline = new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints(corners),
+    new THREE.LineBasicMaterial({ color: outlineColor, linewidth: 1 }),
+  );
+  outline.userData.bimPickId = op.id;
+  outline.renderOrder = 2;
+  grp.add(outline);
+
+  // Diagonal slash inside the rectangle distinguishes wall_opening from door/window.
+  const slashPts = [
+    new THREE.Vector3(-w2, PLAN_Y + 0.025, -half),
+    new THREE.Vector3(w2, PLAN_Y + 0.025, half),
+  ];
+  const slash = new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints(slashPts),
+    new THREE.LineBasicMaterial({ color: outlineColor, linewidth: 1 }),
+  );
+  slash.userData.bimPickId = op.id;
+  slash.renderOrder = 2;
+  grp.add(slash);
+
+  grp.userData.bimPickId = op.id;
+  return grp;
+}
+
 /** Match kernel `stair_riser_count_plan_proxy` (rise / riser when levels resolve). */
 export function computeStairPlanRiserCount(
   stair: Extract<Element, { kind: 'stair' }>,

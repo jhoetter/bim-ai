@@ -168,6 +168,20 @@ class WallElem(BaseModel):
     is_curtain_wall: bool = Field(default=False, alias="isCurtainWall")
 
 
+DoorOperationType = Literal[
+    "swing_single",
+    "swing_double",
+    "sliding_single",
+    "sliding_double",
+    "bi_fold",
+    "pocket",
+    "pivot",
+    "automatic_double",
+]
+
+DoorSlidingTrackSide = Literal["wall_face", "in_pocket"]
+
+
 class DoorElem(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True)
     kind: Literal["door"] = "door"
@@ -182,6 +196,20 @@ class DoorElem(BaseModel):
     reveal_interior_mm: float | None = Field(default=None, alias="revealInteriorMm")
     interlock_grade: str | None = Field(default=None, alias="interlockGrade")
     lod_plan: Literal["simple", "detailed"] | None = Field(default=None, alias="lodPlan")
+    operation_type: DoorOperationType | None = Field(default=None, alias="operationType")
+    sliding_track_side: DoorSlidingTrackSide | None = Field(
+        default=None, alias="slidingTrackSide"
+    )
+
+
+WindowOutlineKind = Literal[
+    "rectangle",
+    "arched_top",
+    "gable_trapezoid",
+    "circle",
+    "octagon",
+    "custom",
+]
 
 
 class WindowElem(BaseModel):
@@ -201,6 +229,31 @@ class WindowElem(BaseModel):
     interlock_grade: str | None = Field(default=None, alias="interlockGrade")
     seal_rebate_mm: float | None = Field(default=None, alias="sealRebateMm")
     lod_plan: Literal["simple", "detailed"] | None = Field(default=None, alias="lodPlan")
+    outline_kind: WindowOutlineKind | None = Field(default=None, alias="outlineKind")
+    outline_mm: list[Vec2Mm] | None = Field(default=None, alias="outlineMm")
+    attached_roof_id: str | None = Field(default=None, alias="attachedRoofId")
+
+
+class WallOpeningElem(BaseModel):
+    """Frameless rectangular cut in a host wall (no door / window family)."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["wall_opening"] = "wall_opening"
+    id: str
+    name: str = "Wall opening"
+    host_wall_id: str = Field(alias="hostWallId")
+    along_t_start: float = Field(alias="alongTStart", ge=0, le=1)
+    along_t_end: float = Field(alias="alongTEnd", ge=0, le=1)
+    sill_height_mm: float = Field(alias="sillHeightMm", ge=0)
+    head_height_mm: float = Field(alias="headHeightMm", ge=0)
+
+    @model_validator(mode="after")
+    def _check_bounds(self) -> WallOpeningElem:
+        if self.along_t_start >= self.along_t_end:
+            raise ValueError("wall_opening alongTStart must be < alongTEnd")
+        if self.head_height_mm <= self.sill_height_mm:
+            raise ValueError("wall_opening headHeightMm must be > sillHeightMm")
+        return self
 
 
 class RoomElem(BaseModel):
@@ -692,6 +745,7 @@ ElementKind = Literal[
     "wall",
     "door",
     "window",
+    "wall_opening",
     "room",
     "grid_line",
     "dimension",
@@ -733,6 +787,7 @@ Element = Annotated[
     | WallElem
     | DoorElem
     | WindowElem
+    | WallOpeningElem
     | RoomElem
     | GridLineElem
     | DimensionElem

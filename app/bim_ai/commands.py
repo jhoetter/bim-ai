@@ -392,6 +392,30 @@ class CreateSlabOpeningCmd(BaseModel):
     is_shaft: bool = Field(default=False, alias="isShaft")
 
 
+class CreateWallOpeningCmd(BaseModel):
+    """KRN-04: frameless rectangular wall opening (CSG cut, no family)."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createWallOpening"] = "createWallOpening"
+    id: str | None = None
+    name: str = "Wall opening"
+    host_wall_id: str = Field(alias="hostWallId")
+    along_t_start: float = Field(alias="alongTStart", ge=0, le=1)
+    along_t_end: float = Field(alias="alongTEnd", ge=0, le=1)
+    sill_height_mm: float = Field(alias="sillHeightMm", ge=0)
+    head_height_mm: float = Field(alias="headHeightMm", ge=0)
+
+
+class UpdateWallOpeningCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["updateWallOpening"] = "updateWallOpening"
+    opening_id: str = Field(alias="openingId")
+    along_t_start: float | None = Field(default=None, alias="alongTStart")
+    along_t_end: float | None = Field(default=None, alias="alongTEnd")
+    sill_height_mm: float | None = Field(default=None, alias="sillHeightMm")
+    head_height_mm: float | None = Field(default=None, alias="headHeightMm")
+
+
 class CreateBalconyCmd(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     type: Literal["createBalcony"] = "createBalcony"
@@ -771,6 +795,8 @@ Command = Annotated[
     | AttachWallTopToRoofCmd
     | CreateStairCmd
     | CreateSlabOpeningCmd
+    | CreateWallOpeningCmd
+    | UpdateWallOpeningCmd
     | CreateRailingCmd
     | CreateBalconyCmd
     | UpsertFamilyTypeCmd

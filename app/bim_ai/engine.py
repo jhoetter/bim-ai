@@ -38,6 +38,7 @@ from bim_ai.commands import (
     CreateText3dCmd,
     CreateWallChainCmd,
     CreateWallCmd,
+    CreateWallOpeningCmd,
     CreateWallTypeCmd,
     DeleteElementCmd,
     DeleteElementsCmd,
@@ -54,6 +55,7 @@ from bim_ai.commands import (
     UpdateOpeningCleanroomCmd,
     UpdatePlanViewCropCmd,
     UpdatePlanViewRangeCmd,
+    UpdateWallOpeningCmd,
     UpsertFamilyTypeCmd,
     UpsertFloorTypeCmd,
     UpsertPlanTagStyleCmd,
@@ -123,6 +125,7 @@ from bim_ai.elements import (
     ViewTemplateElem,
     WallBasisLine,
     WallElem,
+    WallOpeningElem,
     WallTypeElem,
     WindowElem,
 )
@@ -1466,6 +1469,62 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 position_mm=cmd.position_mm,
                 rotation_deg=cmd.rotation_deg,
                 material_key=cmd.material_key,
+            )
+
+        case CreateWallOpeningCmd():
+            oid = cmd.id or new_id()
+            if oid in els:
+                raise ValueError(f"duplicate element id '{oid}'")
+            host = els.get(cmd.host_wall_id)
+            if not isinstance(host, WallElem):
+                raise ValueError("createWallOpening.hostWallId must reference a wall")
+            if cmd.along_t_start >= cmd.along_t_end:
+                raise ValueError("createWallOpening.alongTStart must be < alongTEnd")
+            if cmd.head_height_mm <= cmd.sill_height_mm:
+                raise ValueError("createWallOpening.headHeightMm must be > sillHeightMm")
+            if cmd.head_height_mm > host.height_mm:
+                raise ValueError(
+                    "createWallOpening.headHeightMm must not exceed host wall height"
+                )
+            els[oid] = WallOpeningElem(
+                kind="wall_opening",
+                id=oid,
+                name=cmd.name,
+                host_wall_id=cmd.host_wall_id,
+                along_t_start=cmd.along_t_start,
+                along_t_end=cmd.along_t_end,
+                sill_height_mm=cmd.sill_height_mm,
+                head_height_mm=cmd.head_height_mm,
+            )
+
+        case UpdateWallOpeningCmd():
+            wo = els.get(cmd.opening_id)
+            if not isinstance(wo, WallOpeningElem):
+                raise ValueError("updateWallOpening.openingId must reference a wall_opening")
+            host_wall = els.get(wo.host_wall_id)
+            if not isinstance(host_wall, WallElem):
+                raise ValueError("updateWallOpening host wall missing")
+            new_along_start = (
+                cmd.along_t_start if cmd.along_t_start is not None else wo.along_t_start
+            )
+            new_along_end = cmd.along_t_end if cmd.along_t_end is not None else wo.along_t_end
+            new_sill = cmd.sill_height_mm if cmd.sill_height_mm is not None else wo.sill_height_mm
+            new_head = cmd.head_height_mm if cmd.head_height_mm is not None else wo.head_height_mm
+            if new_along_start >= new_along_end:
+                raise ValueError("updateWallOpening alongTStart must be < alongTEnd")
+            if new_head <= new_sill:
+                raise ValueError("updateWallOpening headHeightMm must be > sillHeightMm")
+            if new_head > host_wall.height_mm:
+                raise ValueError(
+                    "updateWallOpening headHeightMm must not exceed host wall height"
+                )
+            els[cmd.opening_id] = wo.model_copy(
+                update={
+                    "along_t_start": new_along_start,
+                    "along_t_end": new_along_end,
+                    "sill_height_mm": new_sill,
+                    "head_height_mm": new_head,
+                }
             )
 
         case CreateBalconyCmd():
