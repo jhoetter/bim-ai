@@ -906,7 +906,7 @@ Profile families (introduced in V2-11) optionally referenced via `profileFamilyI
 | VIE-02 | Per-element / per-family-geometry visibility per detail level    | M      | `open`    | FAM-01     |
 | VIE-03 | Named elevation views (N/S/E/W) + auto-generation                | M      | `open`    | —          |
 | VIE-04 | Temporary isolate / hide category                                | S      | `open`    | —          |
-| VIE-05 | Plan view auto-generation when a level is created                | S      | `open`    | —          |
+| VIE-05 | Plan view auto-generation when a level is created                | S      | `done`    | —          |
 | VIE-06 | Project templates (starter models)                               | M      | `open`    | —          |
 | VIE-07 | Pin element / unpin (UP shortcut, prevents accidental edit)      | S      | `open`    | —          |
 
@@ -988,7 +988,7 @@ Profile families (introduced in V2-11) optionally referenced via `profileFamilyI
 
 **Acceptance.** Creating a level "Roof Deck" results in both the level *and* a "Roof Deck — Plan" plan view appearing in the project browser without further user action.
 
-**Effort.** S — 2 days.
+**Effort.** S — 2 days. **Done in commit 85aae161** (engine emits the companion `plan_view` directly in `apply_inplace(CreateLevelCmd)`; pytest covers default-on, explicit id, and `alsoCreatePlanView: false`).
 
 ### VIE-06 — Project templates
 
