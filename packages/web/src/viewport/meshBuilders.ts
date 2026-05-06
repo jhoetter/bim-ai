@@ -5,7 +5,7 @@ import { buildDoorGeometry } from '../families/geometryFns/doorGeometry';
 import { buildWindowGeometry } from '../families/geometryFns/windowGeometry';
 import { getFamilyById, getTypeById } from '../families/familyCatalog';
 import { getBuiltInWallType, type WallTypeAssembly } from '../families/wallTypeCatalog';
-import type { ViewportPaintBundle } from './materials';
+import { isStandingSeamMetalKey, resolveMaterial, type ViewportPaintBundle } from './materials';
 import { categoryColorOr, addEdges, readToken } from './sceneHelpers';
 import { roofHeightAtPoint } from './roofHeightSampler';
 import { makeLayeredWallMesh } from './meshBuilders.layeredWall';
@@ -1026,10 +1026,12 @@ export function makeRoofMassMesh(
     }
   }
 
+  const roofMatSpec = resolveMaterial(roof.materialKey);
   const roofColor =
+    roofMatSpec?.baseColor ??
     roof.materialKey ??
     (roof.roofGeometryMode === 'flat' ? '#d8d8d4' : categoryColorOr(paint, 'roof'));
-  const roofIsLight = !!roof.materialKey;
+  const roofIsCustom = !!roof.materialKey;
 
   const mesh = new THREE.Mesh(
     geom,
@@ -1037,14 +1039,19 @@ export function makeRoofMassMesh(
       color: roofColor,
       transparent: true,
       opacity: 0.94,
-      roughness: roofIsLight ? 0.9 : (paint?.categories.roof.roughness ?? 0.74),
-      metalness: paint?.categories.roof.metalness ?? 0.0,
-      envMapIntensity: roofIsLight ? 0.1 : 1.0,
+      roughness:
+        roofMatSpec?.roughness ?? (roofIsCustom ? 0.9 : (paint?.categories.roof.roughness ?? 0.74)),
+      metalness: roofMatSpec?.metalness ?? paint?.categories.roof.metalness ?? 0.0,
+      envMapIntensity: roofIsCustom && !roofMatSpec ? 0.1 : 1.0,
       side: THREE.DoubleSide,
     }),
   );
   mesh.userData.bimPickId = roof.id;
   addEdges(mesh);
+
+  if (isStandingSeamMetalKey(roof.materialKey)) {
+    addStandingSeamPattern(mesh, roof, b, eaveY);
+  }
   return mesh;
 }
 
@@ -1155,6 +1162,213 @@ export function addCladdingBoards(
     addEdges(board);
     mesh.add(board);
   }
+}
+
+/**
+ * MAT-01 Part B — raised standing-seam pattern for metal roofs.
+ *
+ * Adds vertical seam ridges running up the slope (or parallel to the long
+ * edge for flat roofs). Seam strips are added as children of `roofMesh` in
+ * world space, so the roof mesh itself must be in world coordinates with no
+ * outer transform applied (the existing `makeRoofMassMesh` builds geometry
+ * directly in world coords).
+ *
+ * - `flat` roofs: seams run parallel to the longer rectangle dimension at
+ *   the slab's top surface.
+ * - `gable` / `hip` / `asymmetric_gable`: seams run perpendicular to the
+ *   ridge (i.e. up the slope), one set per slope panel.
+ *
+ * Default spacing 600 mm and seam height 25 mm keep the pattern visible at
+ * building scale without overwhelming.
+ */
+export function addStandingSeamPattern(
+  roofMesh: THREE.Mesh,
+  roof: Extract<Element, { kind: 'roof' }>,
+  bounds: { minX: number; maxX: number; minZ: number; maxZ: number },
+  eaveYWorld: number,
+  seamSpacingMm = 600,
+  seamHeightMm = 25,
+): void {
+  const seamSpacingM = Math.max(0.05, seamSpacingMm / 1000);
+  const seamHeightM = THREE.MathUtils.clamp(seamHeightMm / 1000, 0.005, 0.05);
+  const seamThicknessM = 0.012; // 12 mm — thin raised ridge
+  const ox0 = bounds.minX / 1000;
+  const ox1 = bounds.maxX / 1000;
+  const oz0 = bounds.minZ / 1000;
+  const oz1 = bounds.maxZ / 1000;
+  const spanX = ox1 - ox0;
+  const spanZ = oz1 - oz0;
+  if (spanX <= 0 || spanZ <= 0) return;
+
+  const matSpec = resolveMaterial(roof.materialKey);
+  const seamColor = matSpec?.baseColor ?? '#3a3d3f';
+  const seamMat = new THREE.MeshStandardMaterial({
+    color: seamColor,
+    roughness: matSpec?.roughness ?? 0.35,
+    metalness: matSpec?.metalness ?? 0.7,
+  });
+
+  const flatSlabThick = 0.15; // mirror the value used in makeRoofMassMesh
+  if (roof.roofGeometryMode === 'flat') {
+    const topY = eaveYWorld + flatSlabThick;
+    const seamsAlongX = spanX >= spanZ;
+    if (seamsAlongX) {
+      // Seams run parallel to X axis, spaced along Z.
+      const count = Math.max(1, Math.round(spanZ / seamSpacingM));
+      for (let i = 1; i < count; i++) {
+        const cz = oz0 + (i / count) * spanZ;
+        const seam = new THREE.Mesh(
+          new THREE.BoxGeometry(spanX, seamHeightM, seamThicknessM),
+          seamMat,
+        );
+        seam.position.set((ox0 + ox1) / 2, topY + seamHeightM / 2, cz);
+        seam.userData.bimPickId = roof.id;
+        seam.userData.seam = true;
+        roofMesh.add(seam);
+      }
+    } else {
+      const count = Math.max(1, Math.round(spanX / seamSpacingM));
+      for (let i = 1; i < count; i++) {
+        const cx = ox0 + (i / count) * spanX;
+        const seam = new THREE.Mesh(
+          new THREE.BoxGeometry(seamThicknessM, seamHeightM, spanZ),
+          seamMat,
+        );
+        seam.position.set(cx, topY + seamHeightM / 2, (oz0 + oz1) / 2);
+        seam.userData.bimPickId = roof.id;
+        seam.userData.seam = true;
+        roofMesh.add(seam);
+      }
+    }
+    return;
+  }
+
+  // Sloped roof — derive ridge orientation from the same logic as
+  // _buildGableGeometry so seams visually match the slope panels.
+  const slopeRad = (THREE.MathUtils.clamp(Number(roof.slopeDeg ?? 25), 5, 70) * Math.PI) / 180;
+  let ridgeAlongX: boolean;
+  if (roof.ridgeAxis === 'x') ridgeAlongX = true;
+  else if (roof.ridgeAxis === 'z') ridgeAlongX = false;
+  else ridgeAlongX = spanX >= spanZ;
+
+  const halfPerpSpan = ridgeAlongX ? spanZ / 2 : spanX / 2;
+  if (halfPerpSpan <= 0) return;
+  const slopeLenM = halfPerpSpan / Math.cos(slopeRad);
+
+  if (ridgeAlongX) {
+    const rz = (oz0 + oz1) / 2;
+    const ridgeYMid = eaveYWorld + halfPerpSpan * Math.tan(slopeRad);
+    const seamCount = Math.max(2, Math.floor(spanX / seamSpacingM) + 1);
+    for (let i = 0; i < seamCount; i++) {
+      const t = seamCount === 1 ? 0.5 : i / (seamCount - 1);
+      const x = ox0 + t * spanX;
+      // South slope: oz0 → rz, eaveY → ridgeY (Y up, Z up)
+      addSlopeSeam(
+        roofMesh,
+        seamMat,
+        roof.id,
+        x,
+        (eaveYWorld + ridgeYMid) / 2,
+        (oz0 + rz) / 2,
+        slopeLenM,
+        seamHeightM,
+        seamThicknessM,
+        -slopeRad,
+        true,
+      );
+      // North slope: oz1 → rz, eaveY → ridgeY (Y up, Z down toward ridge)
+      addSlopeSeam(
+        roofMesh,
+        seamMat,
+        roof.id,
+        x,
+        (eaveYWorld + ridgeYMid) / 2,
+        (oz1 + rz) / 2,
+        slopeLenM,
+        seamHeightM,
+        seamThicknessM,
+        slopeRad + Math.PI,
+        true,
+      );
+    }
+  } else {
+    const rx = (ox0 + ox1) / 2;
+    const ridgeYMid = eaveYWorld + halfPerpSpan * Math.tan(slopeRad);
+    const seamCount = Math.max(2, Math.floor(spanZ / seamSpacingM) + 1);
+    for (let i = 0; i < seamCount; i++) {
+      const t = seamCount === 1 ? 0.5 : i / (seamCount - 1);
+      const z = oz0 + t * spanZ;
+      addSlopeSeam(
+        roofMesh,
+        seamMat,
+        roof.id,
+        (ox0 + rx) / 2,
+        (eaveYWorld + ridgeYMid) / 2,
+        z,
+        slopeLenM,
+        seamHeightM,
+        seamThicknessM,
+        -slopeRad,
+        false,
+      );
+      addSlopeSeam(
+        roofMesh,
+        seamMat,
+        roof.id,
+        (ox1 + rx) / 2,
+        (eaveYWorld + ridgeYMid) / 2,
+        z,
+        slopeLenM,
+        seamHeightM,
+        seamThicknessM,
+        slopeRad + Math.PI,
+        false,
+      );
+    }
+  }
+}
+
+/** Helper for `addStandingSeamPattern`: position a single seam strip on
+ * one face of a sloped roof. The strip's local +Z runs along the slope,
+ * +Y is the protrusion above the slope. `tiltAroundX` controls slope
+ * orientation when the ridge runs along X; otherwise we apply the tilt
+ * around Z and orient the strip's long axis along world X. */
+function addSlopeSeam(
+  parent: THREE.Mesh,
+  mat: THREE.MeshStandardMaterial,
+  pickId: string,
+  cx: number,
+  cy: number,
+  cz: number,
+  slopeLenM: number,
+  seamHeightM: number,
+  seamThicknessM: number,
+  tiltRad: number,
+  ridgeAlongX: boolean,
+): void {
+  let geom: THREE.BoxGeometry;
+  if (ridgeAlongX) {
+    // Long axis along world Z (before rotation around X).
+    geom = new THREE.BoxGeometry(seamThicknessM, seamHeightM, slopeLenM);
+  } else {
+    // Long axis along world X (rotate around Z).
+    geom = new THREE.BoxGeometry(slopeLenM, seamHeightM, seamThicknessM);
+  }
+  const seam = new THREE.Mesh(geom, mat);
+  seam.position.set(cx, cy, cz);
+  if (ridgeAlongX) {
+    seam.rotation.x = tiltRad;
+  } else {
+    seam.rotation.z = -tiltRad;
+  }
+  // Lift the seam so its base sits on the slope surface (centre is at the
+  // slope midpoint by construction; offset along the rotated +Y by
+  // seamHeightM/2). The rotation already orients +Y to the slope normal.
+  const localUp = new THREE.Vector3(0, seamHeightM / 2, 0).applyEuler(seam.rotation);
+  seam.position.add(localUp);
+  seam.userData.bimPickId = pickId;
+  seam.userData.seam = true;
+  parent.add(seam);
 }
 
 export function makeSlopedWallMesh(
@@ -1325,15 +1539,18 @@ export function makeWallMesh(
   const perpX = (-dz / len) * locFrac * thick;
   const perpZ = (dx / len) * locFrac * thick;
 
+  const wallMatSpec = resolveMaterial(wall.materialKey);
   const isWhite = wall.materialKey === 'white_cladding' || wall.materialKey === 'white_render';
-  const wallBaseColor = isWhite ? '#f4f4f0' : categoryColorOr(paint, 'wall');
+  const wallBaseColor =
+    wallMatSpec?.baseColor ?? (isWhite ? '#f4f4f0' : categoryColorOr(paint, 'wall'));
   const mesh = new THREE.Mesh(
     new THREE.BoxGeometry(len, height, thick),
     new THREE.MeshStandardMaterial({
       color: wallBaseColor,
-      roughness: isWhite ? 0.92 : (paint?.categories.wall.roughness ?? 0.85),
-      metalness: paint?.categories.wall.metalness ?? 0.0,
-      envMapIntensity: isWhite ? 0.08 : 1.0,
+      roughness:
+        wallMatSpec?.roughness ?? (isWhite ? 0.92 : (paint?.categories.wall.roughness ?? 0.85)),
+      metalness: wallMatSpec?.metalness ?? paint?.categories.wall.metalness ?? 0.0,
+      envMapIntensity: isWhite || wallMatSpec?.category === 'render' ? 0.08 : 1.0,
     }),
   );
   mesh.position.set(sx + dx / 2 + perpX, yBase + height / 2, sz + dz / 2 + perpZ);
@@ -1343,6 +1560,8 @@ export function makeWallMesh(
   if (wall.materialKey === 'timber_cladding') addCladdingBoards(mesh, len, height, thick);
   else if (wall.materialKey === 'white_cladding')
     addCladdingBoards(mesh, len, height, thick, 120, 10, '#f4f4f0');
+  else if (wallMatSpec?.category === 'cladding')
+    addCladdingBoards(mesh, len, height, thick, 150, 8, wallMatSpec.baseColor);
 
   // GAP-R5 — slab-edge expression strip: thin horizontal band straddling
   // the slab line at the base of every elevated single-thickness wall, so

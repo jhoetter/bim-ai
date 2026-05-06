@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
+  isStandingSeamMetalKey,
+  listMaterials,
+  materialBaseColor,
   resolveAllCategoryMaterials,
   resolveCategoryMaterial,
   resolveLighting,
+  resolveMaterial,
   resolveSelection,
   resolveViewportPaintBundle,
   type ElementCategoryToken,
@@ -141,5 +145,108 @@ describe('resolveViewportPaintBundle', () => {
     expect(Object.keys(bundle.categories).length).toBe(ALL_CATS.length);
     expect(bundle.lighting.sun.elevationDeg).toBe(35);
     expect(bundle.selection.selectedLineWidth).toBe(2);
+  });
+});
+
+describe('MAT-01 — material registry', () => {
+  // Every key listed in target-house-seed.md §1.7 (Material + Colour Summary)
+  // plus the legacy keys that authoring code already references must resolve.
+  const REQUIRED_KEYS = [
+    // Cladding
+    'timber_cladding',
+    'white_cladding',
+    'cladding_beige_grey',
+    'cladding_warm_wood',
+    'cladding_dark_grey',
+    // Render
+    'white_render',
+    'render_light_grey',
+    'render_beige',
+    'render_terracotta',
+    // Aluminium
+    'aluminium_dark_grey',
+    'aluminium_natural',
+    'aluminium_black',
+    // Brick
+    'brick_red',
+    'brick_yellow',
+    'brick_grey',
+    // Stone
+    'stone_limestone',
+    'stone_slate',
+    'stone_sandstone',
+    // Concrete
+    'concrete_smooth',
+    'concrete_board_formed',
+    // Glass
+    'glass_clear',
+    'glass_low_iron',
+    'glass_fritted',
+    'glass_obscured',
+    // Standing-seam metal roof
+    'metal_standing_seam_dark_grey',
+    'metal_standing_seam_zinc',
+    'metal_standing_seam_copper',
+  ];
+
+  it.each(REQUIRED_KEYS)('resolves %s to a PBR spec', (key) => {
+    const spec = resolveMaterial(key);
+    expect(spec).not.toBeNull();
+    expect(spec!.key).toBe(key);
+    expect(spec!.baseColor).toMatch(/^#[0-9a-f]{6}$/i);
+    expect(spec!.roughness).toBeGreaterThanOrEqual(0);
+    expect(spec!.roughness).toBeLessThanOrEqual(1);
+    expect(spec!.metalness).toBeGreaterThanOrEqual(0);
+    expect(spec!.metalness).toBeLessThanOrEqual(1);
+    expect(spec!.category).toBeTruthy();
+    expect(spec!.displayName).toBeTruthy();
+  });
+
+  it('returns null for unknown materialKeys', () => {
+    expect(resolveMaterial('definitely_not_a_real_key')).toBeNull();
+    expect(resolveMaterial(null)).toBeNull();
+    expect(resolveMaterial(undefined)).toBeNull();
+    expect(resolveMaterial('')).toBeNull();
+  });
+
+  it('falls back to neutral grey for unknown keys via materialBaseColor', () => {
+    expect(materialBaseColor('definitely_not_a_real_key')).toBe('#cccccc');
+    expect(materialBaseColor(null)).toBe('#cccccc');
+  });
+
+  it('listMaterials returns every registered spec', () => {
+    const all = listMaterials();
+    const keys = new Set(all.map((s) => s.key));
+    for (const k of REQUIRED_KEYS) {
+      expect(keys.has(k)).toBe(true);
+    }
+  });
+
+  it('aluminium variants are flagged metal with metalness ≥ 0.5', () => {
+    for (const k of ['aluminium_dark_grey', 'aluminium_natural', 'aluminium_black']) {
+      const spec = resolveMaterial(k)!;
+      expect(spec.category).toBe('metal');
+      expect(spec.metalness).toBeGreaterThanOrEqual(0.5);
+    }
+  });
+
+  it('standing-seam metal roof variants identify via isStandingSeamMetalKey', () => {
+    expect(isStandingSeamMetalKey('metal_standing_seam_dark_grey')).toBe(true);
+    expect(isStandingSeamMetalKey('metal_standing_seam_zinc')).toBe(true);
+    expect(isStandingSeamMetalKey('metal_standing_seam_copper')).toBe(true);
+    expect(isStandingSeamMetalKey('aluminium_natural')).toBe(false);
+    expect(isStandingSeamMetalKey('cladding_warm_wood')).toBe(false);
+    expect(isStandingSeamMetalKey(null)).toBe(false);
+    expect(isStandingSeamMetalKey(undefined)).toBe(false);
+  });
+
+  it('standing-seam metal roof variants are categorised metal_roof', () => {
+    for (const k of [
+      'metal_standing_seam_dark_grey',
+      'metal_standing_seam_zinc',
+      'metal_standing_seam_copper',
+    ]) {
+      expect(resolveMaterial(k)!.category).toBe('metal_roof');
+    }
   });
 });

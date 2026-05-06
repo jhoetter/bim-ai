@@ -233,3 +233,387 @@ export function resolveViewportPaintBundle(options: ResolveOptions = {}): Viewpo
     selection: resolveSelection(options),
   };
 }
+
+// ─── MAT-01 — material-key registry ──────────────────────────────────────
+// Per-`materialKey` PBR catalog. Category materials (above) drive the
+// fallback colour/roughness for an element kind; individual elements can
+// override with a `materialKey` from this registry to pick a specific
+// finish (cladding species, render colour, metal type, etc.).
+
+/** High-level grouping used by UI filters and plan/section hatch lookup. */
+export type MaterialCategoryKind =
+  | 'cladding'
+  | 'render'
+  | 'metal'
+  | 'metal_roof'
+  | 'brick'
+  | 'stone'
+  | 'concrete'
+  | 'glass'
+  | 'timber'
+  | 'membrane'
+  | 'plaster'
+  | 'placeholder'
+  | 'air';
+
+export interface MaterialPbrSpec {
+  /** Stable lookup key — matches `materialKey` on element shapes. */
+  key: string;
+  /** Hex base colour (sRGB). */
+  baseColor: string;
+  /** PBR roughness (0=mirror, 1=fully rough). */
+  roughness: number;
+  /** PBR metalness (0=dielectric, 1=metal). */
+  metalness: number;
+  category: MaterialCategoryKind;
+  /** Optional URL to a normal map texture (deferred — used by future PRs). */
+  normalMapUrl?: string;
+  /** Optional plan/section hatch pattern label. */
+  hatchPattern?: string;
+  /** Human label for schedules / UI. */
+  displayName: string;
+}
+
+const MATERIAL_REGISTRY: Record<string, MaterialPbrSpec> = {
+  // ── existing default keys (preserved for legacy authoring) ────────────
+  timber_cladding: {
+    key: 'timber_cladding',
+    baseColor: '#7c5b3b',
+    roughness: 0.85,
+    metalness: 0,
+    category: 'cladding',
+    displayName: 'Timber cladding',
+  },
+  white_cladding: {
+    key: 'white_cladding',
+    baseColor: '#f4f4f0',
+    roughness: 0.92,
+    metalness: 0,
+    category: 'cladding',
+    displayName: 'White cladding',
+  },
+  white_render: {
+    key: 'white_render',
+    baseColor: '#f4f4f0',
+    roughness: 0.92,
+    metalness: 0,
+    category: 'render',
+    displayName: 'White render',
+  },
+  // Existing wall-layer keys used by wallTypeCatalog — registered here so
+  // every materialKey referenced anywhere in the app resolves to a spec.
+  timber_frame_insulation: {
+    key: 'timber_frame_insulation',
+    baseColor: '#d6b675',
+    roughness: 0.95,
+    metalness: 0,
+    category: 'timber',
+    displayName: 'Timber frame + insulation',
+  },
+  timber_stud: {
+    key: 'timber_stud',
+    baseColor: '#cf9b56',
+    roughness: 0.9,
+    metalness: 0,
+    category: 'timber',
+    displayName: 'Timber stud',
+  },
+  vcl_membrane: {
+    key: 'vcl_membrane',
+    baseColor: '#b9c0c8',
+    roughness: 0.7,
+    metalness: 0,
+    category: 'membrane',
+    displayName: 'VCL membrane',
+  },
+  plasterboard: {
+    key: 'plasterboard',
+    baseColor: '#ece8de',
+    roughness: 0.92,
+    metalness: 0,
+    category: 'plaster',
+    displayName: 'Plasterboard',
+  },
+  plaster: {
+    key: 'plaster',
+    baseColor: '#efe9d8',
+    roughness: 0.92,
+    metalness: 0,
+    category: 'plaster',
+    displayName: 'Plaster',
+  },
+  masonry_brick: {
+    key: 'masonry_brick',
+    baseColor: '#a45a3f',
+    roughness: 0.9,
+    metalness: 0,
+    category: 'brick',
+    hatchPattern: 'brick',
+    displayName: 'Masonry brick',
+  },
+  masonry_block: {
+    key: 'masonry_block',
+    baseColor: '#bcb6a8',
+    roughness: 0.9,
+    metalness: 0,
+    category: 'brick',
+    hatchPattern: 'block',
+    displayName: 'Masonry block',
+  },
+  air: {
+    key: 'air',
+    baseColor: '#ffffff',
+    roughness: 1,
+    metalness: 0,
+    category: 'air',
+    displayName: 'Air gap',
+  },
+
+  // ── MAT-01 cladding variants (target-house §1.7) ──────────────────────
+  cladding_beige_grey: {
+    key: 'cladding_beige_grey',
+    baseColor: '#c4b59a',
+    roughness: 0.85,
+    metalness: 0,
+    category: 'cladding',
+    displayName: 'Beige-grey cladding',
+  },
+  cladding_warm_wood: {
+    key: 'cladding_warm_wood',
+    baseColor: '#a87a44',
+    roughness: 0.85,
+    metalness: 0,
+    category: 'cladding',
+    displayName: 'Warm wood cladding',
+  },
+  cladding_dark_grey: {
+    key: 'cladding_dark_grey',
+    baseColor: '#3a3d3f',
+    roughness: 0.85,
+    metalness: 0,
+    category: 'cladding',
+    displayName: 'Dark-grey cladding',
+  },
+
+  // ── MAT-01 render variants ───────────────────────────────────────────
+  render_light_grey: {
+    key: 'render_light_grey',
+    baseColor: '#cfd0cd',
+    roughness: 0.92,
+    metalness: 0,
+    category: 'render',
+    displayName: 'Light-grey render',
+  },
+  render_beige: {
+    key: 'render_beige',
+    baseColor: '#d8c8a8',
+    roughness: 0.92,
+    metalness: 0,
+    category: 'render',
+    displayName: 'Beige render',
+  },
+  render_terracotta: {
+    key: 'render_terracotta',
+    baseColor: '#a85432',
+    roughness: 0.92,
+    metalness: 0,
+    category: 'render',
+    displayName: 'Terracotta render',
+  },
+
+  // ── MAT-01 aluminium variants ────────────────────────────────────────
+  aluminium_dark_grey: {
+    key: 'aluminium_dark_grey',
+    baseColor: '#3d4042',
+    roughness: 0.3,
+    metalness: 0.6,
+    category: 'metal',
+    displayName: 'Dark-grey aluminium',
+  },
+  aluminium_natural: {
+    key: 'aluminium_natural',
+    baseColor: '#a8acaf',
+    roughness: 0.2,
+    metalness: 0.85,
+    category: 'metal',
+    displayName: 'Natural aluminium',
+  },
+  aluminium_black: {
+    key: 'aluminium_black',
+    baseColor: '#1c1d1e',
+    roughness: 0.4,
+    metalness: 0.55,
+    category: 'metal',
+    displayName: 'Black aluminium',
+  },
+
+  // ── MAT-01 brick variants ────────────────────────────────────────────
+  brick_red: {
+    key: 'brick_red',
+    baseColor: '#8a3a26',
+    roughness: 0.9,
+    metalness: 0,
+    category: 'brick',
+    hatchPattern: 'brick',
+    displayName: 'Red brick',
+  },
+  brick_yellow: {
+    key: 'brick_yellow',
+    baseColor: '#c5a857',
+    roughness: 0.9,
+    metalness: 0,
+    category: 'brick',
+    hatchPattern: 'brick',
+    displayName: 'Yellow brick',
+  },
+  brick_grey: {
+    key: 'brick_grey',
+    baseColor: '#7a7873',
+    roughness: 0.9,
+    metalness: 0,
+    category: 'brick',
+    hatchPattern: 'brick',
+    displayName: 'Grey brick',
+  },
+
+  // ── MAT-01 stone variants ────────────────────────────────────────────
+  stone_limestone: {
+    key: 'stone_limestone',
+    baseColor: '#d8d0bc',
+    roughness: 0.88,
+    metalness: 0,
+    category: 'stone',
+    hatchPattern: 'stone',
+    displayName: 'Limestone',
+  },
+  stone_slate: {
+    key: 'stone_slate',
+    baseColor: '#3e3a35',
+    roughness: 0.7,
+    metalness: 0,
+    category: 'stone',
+    hatchPattern: 'stone',
+    displayName: 'Slate',
+  },
+  stone_sandstone: {
+    key: 'stone_sandstone',
+    baseColor: '#b89968',
+    roughness: 0.88,
+    metalness: 0,
+    category: 'stone',
+    hatchPattern: 'stone',
+    displayName: 'Sandstone',
+  },
+
+  // ── MAT-01 concrete variants ─────────────────────────────────────────
+  concrete_smooth: {
+    key: 'concrete_smooth',
+    baseColor: '#9c9a94',
+    roughness: 0.7,
+    metalness: 0,
+    category: 'concrete',
+    hatchPattern: 'concrete',
+    displayName: 'Smooth concrete',
+  },
+  concrete_board_formed: {
+    key: 'concrete_board_formed',
+    baseColor: '#a8a59c',
+    roughness: 0.85,
+    metalness: 0,
+    category: 'concrete',
+    hatchPattern: 'concrete',
+    displayName: 'Board-formed concrete',
+  },
+
+  // ── MAT-01 glass variants ────────────────────────────────────────────
+  glass_clear: {
+    key: 'glass_clear',
+    baseColor: '#b8d6e6',
+    roughness: 0.05,
+    metalness: 0,
+    category: 'glass',
+    displayName: 'Clear glass',
+  },
+  glass_low_iron: {
+    key: 'glass_low_iron',
+    baseColor: '#d2e6ee',
+    roughness: 0.05,
+    metalness: 0,
+    category: 'glass',
+    displayName: 'Low-iron glass',
+  },
+  glass_fritted: {
+    key: 'glass_fritted',
+    baseColor: '#dfe6ea',
+    roughness: 0.35,
+    metalness: 0,
+    category: 'glass',
+    displayName: 'Fritted glass',
+  },
+  glass_obscured: {
+    key: 'glass_obscured',
+    baseColor: '#e6ecef',
+    roughness: 0.55,
+    metalness: 0,
+    category: 'glass',
+    displayName: 'Obscured glass',
+  },
+
+  // ── MAT-01 standing-seam metal roof variants ─────────────────────────
+  metal_standing_seam_dark_grey: {
+    key: 'metal_standing_seam_dark_grey',
+    baseColor: '#3a3d3f',
+    roughness: 0.35,
+    metalness: 0.7,
+    category: 'metal_roof',
+    displayName: 'Standing-seam metal — dark grey',
+  },
+  metal_standing_seam_zinc: {
+    key: 'metal_standing_seam_zinc',
+    baseColor: '#7a7d80',
+    roughness: 0.35,
+    metalness: 0.7,
+    category: 'metal_roof',
+    displayName: 'Standing-seam metal — zinc',
+  },
+  metal_standing_seam_copper: {
+    key: 'metal_standing_seam_copper',
+    baseColor: '#b86b3c',
+    roughness: 0.35,
+    metalness: 0.7,
+    category: 'metal_roof',
+    displayName: 'Standing-seam metal — copper',
+  },
+
+  // Placeholder for unloaded / unresolved family instances (KRN-09 forward dep).
+  placeholder_unloaded: {
+    key: 'placeholder_unloaded',
+    baseColor: '#ff66cc',
+    roughness: 0.6,
+    metalness: 0,
+    category: 'placeholder',
+    displayName: 'Placeholder (unloaded)',
+  },
+};
+
+/** Resolve a `materialKey` to its PBR spec, or null if unknown. */
+export function resolveMaterial(materialKey: string | null | undefined): MaterialPbrSpec | null {
+  if (!materialKey) return null;
+  return MATERIAL_REGISTRY[materialKey] ?? null;
+}
+
+/** Read-only view of every registered material spec. */
+export function listMaterials(): MaterialPbrSpec[] {
+  return Object.values(MATERIAL_REGISTRY);
+}
+
+/** Cheap base-colour lookup (legacy callers); falls back to neutral grey. */
+export function materialBaseColor(materialKey: string | null | undefined): string {
+  return resolveMaterial(materialKey)?.baseColor ?? '#cccccc';
+}
+
+/** True when a `materialKey` is a standing-seam metal roof variant. */
+export function isStandingSeamMetalKey(materialKey: string | null | undefined): boolean {
+  if (!materialKey) return false;
+  return materialKey.startsWith('metal_standing_seam_');
+}

@@ -1,3 +1,5 @@
+import { materialBaseColor } from '../viewport/materials';
+
 /**
  * Built-in wall-type assemblies — FL-08.
  *
@@ -116,6 +118,11 @@ export function visibleLayerCount(assembly: WallTypeAssembly): number {
   return assembly.layers.filter((l) => l.function !== 'air').length;
 }
 
+/**
+ * Layer-specific colour overrides preserved for backwards compatibility.
+ * Reads first; otherwise falls through to the MAT-01 PBR registry in
+ * `viewport/materials.ts`.
+ */
 export const WALL_LAYER_MATERIAL_HEX: Readonly<Record<string, string>> = {
   timber_cladding: '#7c5b3b',
   timber_frame_insulation: '#d6b675',
@@ -130,5 +137,6 @@ export const WALL_LAYER_MATERIAL_HEX: Readonly<Record<string, string>> = {
 
 export function materialHexFor(materialKey: string | null | undefined): string {
   if (!materialKey) return '#cccccc';
-  return WALL_LAYER_MATERIAL_HEX[materialKey] ?? '#cccccc';
+  if (WALL_LAYER_MATERIAL_HEX[materialKey]) return WALL_LAYER_MATERIAL_HEX[materialKey];
+  return materialBaseColor(materialKey);
 }
