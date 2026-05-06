@@ -414,6 +414,20 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
         if (csRaw !== 'none' && csRaw !== 'cap' && csRaw !== 'floor' && csRaw !== 'box') return {};
         return { cutawayStyle: csRaw };
       })(),
+      ...(Array.isArray(raw.hiddenElementIds) || Array.isArray(raw.hidden_element_ids)
+        ? {
+            hiddenElementIds: (
+              (raw.hiddenElementIds ?? raw.hidden_element_ids) as unknown[]
+            ).filter((x): x is string => typeof x === 'string'),
+          }
+        : {}),
+      ...(Array.isArray(raw.isolatedElementIds) || Array.isArray(raw.isolated_element_ids)
+        ? {
+            isolatedElementIds: (
+              (raw.isolatedElementIds ?? raw.isolated_element_ids) as unknown[]
+            ).filter((x): x is string => typeof x === 'string'),
+          }
+        : {}),
     };
   }
 
@@ -1094,6 +1108,46 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
       ...(raw.isSymmetryRef != null || raw.is_symmetry_ref != null
         ? { isSymmetryRef: Boolean(raw.isSymmetryRef ?? raw.is_symmetry_ref) }
         : {}),
+    };
+  }
+
+  if (kind === 'selection_set') {
+    const rulesRaw = raw.filterRules ?? raw.filter_rules ?? [];
+    const filterRules = Array.isArray(rulesRaw)
+      ? rulesRaw
+          .filter((r): r is Record<string, unknown> => r != null && typeof r === 'object')
+          .map((r) => ({
+            field: (['category', 'level', 'typeName'].includes(r.field as string)
+              ? r.field
+              : 'category') as 'category' | 'level' | 'typeName',
+            operator: (r.operator === 'contains' ? 'contains' : 'equals') as 'equals' | 'contains',
+            value: String(r.value ?? ''),
+          }))
+      : [];
+    return { kind: 'selection_set', id, name, filterRules };
+  }
+
+  if (kind === 'clash_test') {
+    const coerceIds = (v: unknown): string[] =>
+      Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
+    const resultsRaw = raw.results ?? [];
+    const results = Array.isArray(resultsRaw)
+      ? resultsRaw
+          .filter((r): r is Record<string, unknown> => r != null && typeof r === 'object')
+          .map((r) => ({
+            elementIdA: String(r.elementIdA ?? r.element_id_a ?? ''),
+            elementIdB: String(r.elementIdB ?? r.element_id_b ?? ''),
+            distanceMm: Number(r.distanceMm ?? r.distance_mm ?? 0),
+          }))
+      : [];
+    return {
+      kind: 'clash_test',
+      id,
+      name,
+      setAIds: coerceIds(raw.setAIds ?? raw.set_a_ids),
+      setBIds: coerceIds(raw.setBIds ?? raw.set_b_ids),
+      toleranceMm: Number(raw.toleranceMm ?? raw.tolerance_mm ?? 50),
+      ...(results.length ? { results } : {}),
     };
   }
 

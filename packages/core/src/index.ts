@@ -41,7 +41,9 @@ export type ElemKind =
   | 'color_fill_legend'
   | 'shared_param_file'
   | 'project_param'
-  | 'reference_plane';
+  | 'reference_plane'
+  | 'selection_set'
+  | 'clash_test';
 
 export type XY = { xMm: number; yMm: number };
 
@@ -144,6 +146,18 @@ export type SharedParamEntry = {
 export type SharedParamGroup = {
   groupName: string;
   parameters: SharedParamEntry[];
+};
+
+export type SelectionSetRule = {
+  field: 'category' | 'level' | 'typeName';
+  operator: 'equals' | 'contains';
+  value: string;
+};
+
+export type ClashResult = {
+  elementIdA: string;
+  elementIdB: string;
+  distanceMm: number;
 };
 
 export type Element =
@@ -300,6 +314,8 @@ export type Element =
       sectionBoxEnabled?: boolean | null;
       sectionBoxMinMm?: { xMm: number; yMm: number; zMm: number } | null;
       sectionBoxMaxMm?: { xMm: number; yMm: number; zMm: number } | null;
+      hiddenElementIds?: string[];
+      isolatedElementIds?: string[];
     }
   | {
       kind: 'issue';
@@ -595,6 +611,21 @@ export type Element =
       isVertical: boolean;
       offsetMm: number;
       isSymmetryRef?: boolean;
+    }
+  | {
+      kind: 'selection_set';
+      id: string;
+      name: string;
+      filterRules: SelectionSetRule[];
+    }
+  | {
+      kind: 'clash_test';
+      id: string;
+      name: string;
+      setAIds: string[];
+      setBIds: string[];
+      toleranceMm: number;
+      results?: ClashResult[];
     };
 
 export type Violation = {

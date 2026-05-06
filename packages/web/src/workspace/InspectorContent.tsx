@@ -360,6 +360,21 @@ export function InspectorPropertiesFor(
           ) : null}
         </div>
       );
+    case 'selection_set':
+      return (
+        <div>
+          <FieldRow label={f('name')} value={el.name} />
+          <FieldRow label={f('ruleCount')} value={String(el.filterRules.length)} />
+        </div>
+      );
+    case 'clash_test':
+      return (
+        <div>
+          <FieldRow label={f('name')} value={el.name} />
+          <FieldRow label={f('toleranceMm')} value={`${el.toleranceMm} mm`} />
+          <FieldRow label={f('clashResults')} value={String(el.results?.length ?? 0)} />
+        </div>
+      );
     default:
       return <p className="text-sm text-muted">{t('inspector.noParams', { kind: el.kind })}</p>;
   }
