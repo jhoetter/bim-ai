@@ -1,0 +1,64 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "5b0703eb4195",
+  "session_id": "be1b7ff7-9e29-4054-936c-c2f418410ea7",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-06T15:32:33.543764Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "OPEN_TASKS.md",
+    "spec/prompts/wave-01/README.md",
+    "spec/prompts/wave-01/WP-V2-01a-options-bar.md",
+    "spec/prompts/wave-01/WP-V2-01b-modify-tools.md",
+    "spec/prompts/wave-01/WP-V2-14-plan-canvas.md",
+    "spec/workpackage-master-tracker.md"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "1f5c7879c2bb",
+  "checkpoint_transcript_start": 216,
+  "transcript_lines_at_start": 216,
+  "token_usage": {
+    "input_tokens": 12,
+    "cache_creation_tokens": 12531,
+    "cache_read_tokens": 1313596,
+    "output_tokens": 5716,
+    "api_call_count": 11
+  },
+  "session_metrics": {
+    "turn_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-06T15:32:33.53042Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 598,
+    "human_modified": 216,
+    "human_removed": 0,
+    "total_committed": 598,
+    "total_lines_changed": 814,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 814,
+      "user_lines_removed": 108,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "OPEN_TASKS.md": 6,
+        "spec/prompts/wave-01/README.md": 62,
+        "spec/prompts/wave-01/WP-V2-01a-options-bar.md": 106,
+        "spec/prompts/wave-01/WP-V2-01b-modify-tools.md": 194,
+        "spec/prompts/wave-01/WP-V2-14-plan-canvas.md": 145,
+        "spec/workpackage-master-tracker.md": 301
+      },
+      "user_removed_per_file": {
+        "OPEN_TASKS.md": 108
+      }
+    }
+  ]
+}
