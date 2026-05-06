@@ -665,6 +665,22 @@ function applyClippingPlanesToMeshes(root: THREE.Object3D, planes: THREE.Plane[]
   });
 }
 
+/** Small key+label hint chip used in the navigation HUD. */
+function NavHint({ k, label }: { k: string; label: string }) {
+  return (
+    <span className="flex items-center gap-1">
+      <kbd className="rounded border border-border/70 bg-surface-strong px-1 py-0.5 font-mono leading-none">
+        {k}
+      </kbd>
+      <span>{label}</span>
+    </span>
+  );
+}
+
+function Sep() {
+  return <span className="opacity-30">·</span>;
+}
+
 export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
   void wsConnected;
 
@@ -1499,6 +1515,41 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
           onHome={handleViewCubeHome}
         />
       </div>
+
+      {/* Walk mode controls bar — shown while pointer is locked */}
+      {walkActive ? (
+        <div className="pointer-events-none absolute bottom-12 left-1/2 z-20 -translate-x-1/2">
+          <div className="flex items-center gap-2 rounded-full border border-border bg-surface/90 px-4 py-1.5 text-[11px] text-muted shadow-md backdrop-blur-sm">
+            <NavHint k="WASD" label="Move" />
+            <Sep />
+            <NavHint k="Mouse" label="Look" />
+            <Sep />
+            <NavHint k="Shift" label="Run" />
+            <Sep />
+            <NavHint k="Q/E" label="Up/Down" />
+            <Sep />
+            <NavHint k="PgUp/PgDn" label="Floor" />
+            <Sep />
+            <NavHint k="Esc" label="Exit" />
+          </div>
+        </div>
+      ) : (
+        <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2">
+          <div className="flex items-center gap-1.5 rounded-full border border-border/60 bg-surface/70 px-3 py-1 text-[10px] text-muted/80 backdrop-blur-sm">
+            <NavHint k="LMB" label="Orbit" />
+            <Sep />
+            <NavHint k="RMB/Shift" label="Pan" />
+            <Sep />
+            <NavHint k="Scroll" label="Zoom" />
+            <Sep />
+            <NavHint k="F" label="Fit" />
+            <Sep />
+            <NavHint k="H" label="Reset" />
+            <Sep />
+            <span className="opacity-70">? for all shortcuts</span>
+          </div>
+        </div>
+      )}
 
       <div className="pointer-events-auto absolute bottom-3 left-3 z-20 flex flex-col items-start gap-1.5">
         <button

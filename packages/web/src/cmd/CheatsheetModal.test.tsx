@@ -42,7 +42,7 @@ describe('<CheatsheetModal /> — spec §19', () => {
     );
     const search = getByLabelText('Filter shortcuts') as HTMLInputElement;
     fireEvent.change(search, { target: { value: 'orbit' } });
-    expect(queryByText('Orbit (3D)')).not.toBeNull();
+    expect(queryByText('Orbit')).not.toBeNull();
     // Random unrelated entry shouldn't survive.
     expect(queryByText('Confirm / Apply')).toBeNull();
   });

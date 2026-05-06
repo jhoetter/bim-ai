@@ -9,7 +9,7 @@ import {
 describe('cheatsheet — spec §19', () => {
   it('groups entries into sections', () => {
     const ids = CHEATSHEET.map((s) => s.id);
-    expect(ids).toEqual(['global', 'modes', 'tools', 'pointer', 'history', 'shell']);
+    expect(ids).toEqual(['global', 'modes', 'tools', 'nav3d', 'walk', 'nav2d', 'history', 'shell']);
   });
 
   it('every documented spec action is present', () => {
