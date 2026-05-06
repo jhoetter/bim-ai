@@ -40,6 +40,19 @@ import { OnboardingTour } from '../onboarding/OnboardingTour';
 import { readOnboardingProgress } from '../onboarding/tour';
 import { ToolPalette } from '../tools/ToolPalette';
 import { TOOL_REGISTRY, type ToolDisabledContext, type ToolId } from '../tools/toolRegistry';
+import { TabBar } from './TabBar';
+import {
+  EMPTY_TABS,
+  activateOrOpenKind,
+  activateTab,
+  closeTab,
+  cycleActive,
+  openTab,
+  tabFromElement,
+  type TabKind,
+  type TabsState,
+  type ViewTab,
+} from './tabsModel';
 
 /**
  * RedesignedWorkspace — composition route for the §11–§17 chrome.
@@ -100,6 +113,39 @@ export function RedesignedWorkspace(): JSX.Element {
   const [tourOpen, setTourOpen] = useState<boolean>(() => !readOnboardingProgress().completed);
   const [seedLoading, setSeedLoading] = useState(false);
   const [seedError, setSeedError] = useState<string | null>(null);
+  const [tabsState, setTabsState] = useState<TabsState>(EMPTY_TABS);
+
+  /* ── Tab helpers (§11.3) ──────────────────────────────────────────── */
+  const activeTab: ViewTab | null = useMemo(
+    () =>
+      tabsState.activeId ? tabsState.tabs.find((t) => t.id === tabsState.activeId) ?? null : null,
+    [tabsState],
+  );
+
+  const handleTabActivate = useCallback(
+    (id: string) => {
+      setTabsState((s) => {
+        const next = activateTab(s, id);
+        const t = next.tabs.find((x) => x.id === id);
+        // Keep the store in sync with the active tab's target.
+        if (t && (t.kind === 'plan' || t.kind === 'plan-3d') && t.targetId) {
+          setActiveLevelId(t.targetId);
+        }
+        return next;
+      });
+    },
+    [setActiveLevelId],
+  );
+
+  const handleTabClose = useCallback((id: string) => {
+    setTabsState((s) => closeTab(s, id));
+  }, []);
+
+  const openTabFromElement = useCallback((el: Element) => {
+    const partial = tabFromElement(el);
+    if (!partial) return;
+    setTabsState((s) => openTab(s, partial));
+  }, []);
 
   const insertSeedHouse = useCallback(async (): Promise<void> => {
     setSeedLoading(true);
@@ -129,14 +175,38 @@ export function RedesignedWorkspace(): JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // After the seed has hydrated and there are levels in the store,
+  // open a default Plan tab on the active level if no tabs exist yet.
+  useEffect(() => {
+    if (tabsState.tabs.length > 0) return;
+    const levels = (Object.values(elementsById) as Element[]).filter(
+      (e): e is Extract<Element, { kind: 'level' }> => e.kind === 'level',
+    );
+    if (levels.length === 0) return;
+    const targetLevel =
+      levels.find((l) => l.id === activeLevelId) ??
+      levels.sort((a, b) => a.elevationMm - b.elevationMm)[0];
+    if (!targetLevel) return;
+    setTabsState((s) =>
+      openTab(s, { kind: 'plan', targetId: targetLevel.id, label: `Plan · ${targetLevel.name}` }),
+    );
+  }, [elementsById, activeLevelId, tabsState.tabs.length]);
+
   /* ── Mode wiring (§7 + §20) ────────────────────────────────────────── */
   const handleModeChange = useCallback(
     (next: WorkspaceMode) => {
       setMode(next);
       if (next === 'plan' || next === 'plan-3d') setViewerMode('plan_canvas');
       else if (next === '3d') setViewerMode('orbit_3d');
+      // Activate or open a tab of the matching kind so the canvas
+      // mounts the right view.
+      setTabsState((s) => {
+        const fallback = defaultTabFallbackForKind(next, elementsById, activeLevelId);
+        if (!fallback) return s;
+        return activateOrOpenKind(s, next as TabKind, fallback);
+      });
     },
-    [setViewerMode],
+    [setViewerMode, elementsById, activeLevelId],
   );
 
   /* ── Global hotkeys: 1–7 modes, ?, V/W/D/M/S/etc tools ─────────────── */
@@ -162,6 +232,18 @@ export function RedesignedWorkspace(): JSX.Element {
       if ((event.key === 'k' || event.key === 'K') && (event.metaKey || event.ctrlKey)) {
         event.preventDefault();
         setPaletteOpen((v) => !v);
+        return;
+      }
+      // Tab cycling — Ctrl/⌘+Tab forward, Ctrl/⌘+Shift+Tab back.
+      if (event.key === 'Tab' && (event.metaKey || event.ctrlKey)) {
+        event.preventDefault();
+        setTabsState((s) => cycleActive(s, event.shiftKey ? 'backward' : 'forward'));
+        return;
+      }
+      // Close active tab — Ctrl/⌘+W.
+      if ((event.key === 'w' || event.key === 'W') && (event.metaKey || event.ctrlKey)) {
+        event.preventDefault();
+        setTabsState((s) => (s.activeId ? closeTab(s, s.activeId) : s));
         return;
       }
       // Tool hotkeys — match the spec'd letters from TOOL_REGISTRY.
@@ -397,25 +479,49 @@ export function RedesignedWorkspace(): JSX.Element {
       <OnboardingTour open={tourOpen} onClose={() => setTourOpen(false)} />
       <AppShell
         topBar={
-          <div className="flex w-full items-center">
-            <TopBar
-              mode={mode}
-              onModeChange={handleModeChange}
-              projectName="BIM AI seed"
-              theme={theme}
-              onThemeToggle={handleThemeToggle}
-              onCommandPalette={() => setPaletteOpen(true)}
-              collaboratorsCount={undefined}
-              avatarInitials="BA"
+          <div className="flex w-full flex-col">
+            <div className="flex w-full items-center">
+              <TopBar
+                mode={mode}
+                onModeChange={handleModeChange}
+                projectName="BIM AI seed"
+                theme={theme}
+                onThemeToggle={handleThemeToggle}
+                onCommandPalette={() => setPaletteOpen(true)}
+                collaboratorsCount={undefined}
+                avatarInitials="BA"
+              />
+              <a
+                href="/legacy"
+                className="ml-2 mr-3 whitespace-nowrap rounded-md px-2 py-1 text-xs text-muted hover:bg-surface-strong"
+                data-testid="legacy-route-link"
+                title="Open the v1 panel-stack view"
+              >
+                Legacy
+              </a>
+            </div>
+            <TabBar
+              tabs={tabsState.tabs}
+              activeId={tabsState.activeId}
+              onActivate={(id) => {
+                handleTabActivate(id);
+                const t = tabsState.tabs.find((x) => x.id === id);
+                if (t) {
+                  if (t.kind === 'plan' || t.kind === 'plan-3d') setViewerMode('plan_canvas');
+                  else if (t.kind === '3d') setViewerMode('orbit_3d');
+                  setMode(t.kind as WorkspaceMode);
+                }
+              }}
+              onClose={handleTabClose}
+              onAdd={(kind) => {
+                const fallback = defaultTabFallbackForKind(kind, elementsById, activeLevelId);
+                if (!fallback) return;
+                setTabsState((s) => activateOrOpenKind(s, kind, fallback));
+                setMode(kind as WorkspaceMode);
+                if (kind === 'plan' || kind === 'plan-3d') setViewerMode('plan_canvas');
+                else if (kind === '3d') setViewerMode('orbit_3d');
+              }}
             />
-            <a
-              href="/legacy"
-              className="ml-2 mr-3 whitespace-nowrap rounded-md px-2 py-1 text-xs text-muted hover:bg-surface-strong"
-              data-testid="legacy-route-link"
-              title="Open the v1 panel-stack view"
-            >
-              Legacy
-            </a>
           </div>
         }
         leftRail={
@@ -435,30 +541,36 @@ export function RedesignedWorkspace(): JSX.Element {
               }
               if (el.kind === 'level') {
                 setActiveLevelId(id);
+                openTabFromElement(el);
                 handleModeChange('plan');
                 return;
               }
               if (el.kind === 'plan_view') {
+                openTabFromElement(el);
                 handleModeChange('plan');
                 select(id);
                 return;
               }
               if (el.kind === 'viewpoint') {
+                openTabFromElement(el);
                 handleModeChange('3d');
                 select(id);
                 return;
               }
               if (el.kind === 'section_cut') {
+                openTabFromElement(el);
                 handleModeChange('section');
                 select(id);
                 return;
               }
               if (el.kind === 'sheet') {
+                openTabFromElement(el);
                 handleModeChange('sheet');
                 select(id);
                 return;
               }
               if (el.kind === 'schedule') {
+                openTabFromElement(el);
                 handleModeChange('schedule');
                 select(id);
                 return;
@@ -487,9 +599,13 @@ export function RedesignedWorkspace(): JSX.Element {
               disabledContext={toolDisabledContext}
             />
             <CanvasMount
-              mode={mode}
+              mode={(activeTab?.kind as WorkspaceMode | undefined) ?? mode}
               viewerMode={viewerMode}
-              activeLevelId={activeLevelId ?? ''}
+              activeLevelId={
+                activeTab?.kind === 'plan' || activeTab?.kind === 'plan-3d'
+                  ? activeTab.targetId ?? activeLevelId ?? ''
+                  : activeLevelId ?? ''
+              }
               elementsById={elementsById}
             />
           </div>
@@ -714,6 +830,56 @@ function InspectorEmptyTab({ message }: { message: string }): JSX.Element {
 
 function humanKindLabel(kind: string): string {
   return kind.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+/** Default tab descriptor when a mode pill (or tab `+`) is clicked
+ * with no specific element. Picks the active level for plan/plan-3d,
+ * the first viewpoint for 3d, the first section for section, etc. */
+function defaultTabFallbackForKind(
+  kind: WorkspaceMode | TabKind,
+  elementsById: Record<string, Element>,
+  activeLevelId: string | undefined,
+): { targetId?: string; label: string } | null {
+  const all = Object.values(elementsById) as Element[];
+  if (kind === 'plan' || kind === 'plan-3d') {
+    const levels = all
+      .filter((e): e is Extract<Element, { kind: 'level' }> => e.kind === 'level')
+      .sort((a, b) => a.elevationMm - b.elevationMm);
+    const lvl = levels.find((l) => l.id === activeLevelId) ?? levels[0];
+    if (!lvl) return { label: kind === 'plan' ? 'Plan' : 'Plan + 3D' };
+    return {
+      targetId: lvl.id,
+      label: kind === 'plan' ? `Plan · ${lvl.name}` : `Plan + 3D · ${lvl.name}`,
+    };
+  }
+  if (kind === '3d') {
+    const vp = all.find(
+      (e): e is Extract<Element, { kind: 'viewpoint' }> => e.kind === 'viewpoint',
+    );
+    if (vp) return { targetId: vp.id, label: `3D · ${vp.name}` };
+    return { label: '3D · Default' };
+  }
+  if (kind === 'section') {
+    const sec = all.find(
+      (e): e is Extract<Element, { kind: 'section_cut' }> => e.kind === 'section_cut',
+    );
+    if (sec) return { targetId: sec.id, label: `Section · ${sec.name}` };
+    return { label: 'Section' };
+  }
+  if (kind === 'sheet') {
+    const sht = all.find((e): e is Extract<Element, { kind: 'sheet' }> => e.kind === 'sheet');
+    if (sht) return { targetId: sht.id, label: `Sheet · ${sht.name}` };
+    return { label: 'Sheet' };
+  }
+  if (kind === 'schedule') {
+    const s = all.find((e): e is Extract<Element, { kind: 'schedule' }> => e.kind === 'schedule');
+    if (s) return { targetId: s.id, label: `Schedule · ${s.name}` };
+    return { label: 'Schedule' };
+  }
+  if (kind === 'agent') {
+    return { label: 'Agent review' };
+  }
+  return null;
 }
 
 /** Suppress an unused-import warning in case the keyboard bindings change. */

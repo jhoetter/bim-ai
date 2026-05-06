@@ -79,7 +79,7 @@ export function AppShell({
 
   const style: CSSProperties = {
     display: 'grid',
-    gridTemplateRows: 'var(--shell-topbar-height) minmax(0, 1fr) var(--shell-statusbar-height)',
+    gridTemplateRows: 'auto minmax(0, 1fr) var(--shell-statusbar-height)',
     gridTemplateColumns: gridColumnsForState(leftCollapsed, rightCollapsed),
     gridTemplateAreas: `
       "topbar topbar topbar"

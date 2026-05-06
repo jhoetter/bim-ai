@@ -1,0 +1,155 @@
+import { type JSX, useEffect, useRef, useState } from 'react';
+import { ICON_SIZE, Icons, type LucideLikeIcon } from '@bim-ai/ui';
+
+import { TAB_KIND_LABEL, type TabKind, type ViewTab } from './tabsModel';
+
+/**
+ * TabBar — spec §11.3.
+ *
+ * Horizontal strip of open-view tabs sitting between the TopBar and
+ * the canvas. Each tab carries a `kind` icon, a truncated label, and a
+ * close ✕ button. Trailing `+` opens an "add view" popover.
+ */
+
+const TAB_KIND_ICON: Record<TabKind, LucideLikeIcon> = {
+  plan: Icons.floor!,
+  '3d': Icons.family!, // Component (cube) — used for 3D views
+  'plan-3d': Icons.floor!,
+  section: Icons.section!,
+  sheet: Icons.sheet!,
+  schedule: Icons.schedule!,
+  agent: Icons.agent!,
+};
+
+export interface TabBarProps {
+  tabs: ViewTab[];
+  activeId: string | null;
+  onActivate: (id: string) => void;
+  onClose: (id: string) => void;
+  /** Called when the user clicks a "+ {kind}" entry in the trailing
+   * popover. The kind names a target the host should resolve (e.g.
+   * "+ Plan" → open the active level as a tab). */
+  onAdd?: (kind: TabKind) => void;
+}
+
+const ADDABLE_KINDS: TabKind[] = ['plan', '3d', 'plan-3d', 'section', 'sheet', 'schedule', 'agent'];
+
+export function TabBar({ tabs, activeId, onActivate, onClose, onAdd }: TabBarProps): JSX.Element {
+  const [popoverOpen, setPopoverOpen] = useState(false);
+  const popoverRef = useRef<HTMLDivElement | null>(null);
+
+  // Click-outside closes the popover.
+  useEffect(() => {
+    if (!popoverOpen) return;
+    const onDoc = (e: MouseEvent): void => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        setPopoverOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, [popoverOpen]);
+
+  return (
+    <div
+      role="tablist"
+      aria-label="Open views"
+      data-testid="view-tabs"
+      className="flex items-end gap-0.5 border-b border-border bg-surface-strong px-2 pt-1"
+      style={{ height: 36 }}
+    >
+      {tabs.length === 0 ? (
+        <div className="px-2 pb-1.5 text-xs text-muted">No views open</div>
+      ) : null}
+      {tabs.map((tab) => {
+        const Icon = TAB_KIND_ICON[tab.kind] ?? Icons.floor!;
+        const isActive = tab.id === activeId;
+        const truncated = tab.label.length > 22 ? tab.label.slice(0, 21) + '…' : tab.label;
+        return (
+          <div
+            key={tab.id}
+            role="tab"
+            aria-selected={isActive}
+            data-tab-id={tab.id}
+            data-active={isActive ? 'true' : 'false'}
+            className={[
+              'group flex items-center gap-1.5 rounded-t-md border border-b-0 px-2.5 py-1 text-xs transition-colors',
+              isActive
+                ? 'border-border bg-background text-foreground'
+                : 'border-transparent bg-surface text-muted hover:bg-surface-strong hover:text-foreground',
+            ].join(' ')}
+            style={
+              isActive
+                ? { boxShadow: 'inset 0 -2px 0 0 var(--color-accent)' }
+                : undefined
+            }
+          >
+            <button
+              type="button"
+              onClick={() => onActivate(tab.id)}
+              className="flex items-center gap-1.5 outline-none"
+              title={`${TAB_KIND_LABEL[tab.kind]} · ${tab.label}`}
+              data-testid={`tab-activate-${tab.id}`}
+            >
+              <Icon size={ICON_SIZE.chrome} aria-hidden="true" />
+              <span className="whitespace-nowrap">{truncated}</span>
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onClose(tab.id);
+              }}
+              aria-label={`Close ${tab.label}`}
+              data-testid={`tab-close-${tab.id}`}
+              className={[
+                'rounded p-0.5 hover:bg-surface',
+                isActive ? 'opacity-70 hover:opacity-100' : 'opacity-0 group-hover:opacity-70',
+              ].join(' ')}
+            >
+              <Icons.close size={12} aria-hidden="true" />
+            </button>
+          </div>
+        );
+      })}
+      <div className="relative ml-1" ref={popoverRef}>
+        <button
+          type="button"
+          onClick={() => setPopoverOpen((v) => !v)}
+          aria-label="Open new view"
+          data-testid="tab-add-button"
+          className="rounded-md border border-border bg-surface px-2 py-1 text-xs text-muted hover:bg-surface-strong hover:text-foreground"
+        >
+          +
+        </button>
+        {popoverOpen ? (
+          <div
+            role="menu"
+            data-testid="tab-add-popover"
+            className="absolute left-0 top-full z-30 mt-1 flex min-w-[180px] flex-col rounded-md border border-border bg-surface shadow-elev-2"
+          >
+            {ADDABLE_KINDS.map((kind) => {
+              const Icon = TAB_KIND_ICON[kind];
+              return (
+                <button
+                  key={kind}
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setPopoverOpen(false);
+                    onAdd?.(kind);
+                  }}
+                  className="flex items-center gap-2 px-3 py-1.5 text-left text-xs text-foreground hover:bg-surface-strong"
+                  data-testid={`tab-add-${kind}`}
+                >
+                  <Icon size={ICON_SIZE.chrome} aria-hidden="true" />
+                  <span>+ {TAB_KIND_LABEL[kind]}</span>
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
