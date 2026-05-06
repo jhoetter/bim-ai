@@ -1,0 +1,60 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "2e1c8ac0381d",
+  "session_id": "6f09d396-ae92-461d-9110-4c6ab8b93c19",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-06T17:10:07.542167Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/core/src/index.ts",
+    "packages/web/src/ErrorBoundary.tsx",
+    "packages/web/src/logger.ts",
+    "packages/web/src/plan/PlanCanvas.tsx",
+    "packages/web/src/plan/planElementMeshBuilders.ts",
+    "packages/web/src/state/store.ts",
+    "packages/web/src/state/storeTypes.ts",
+    "packages/web/src/tools/toolGrammar.ts",
+    "packages/web/src/tools/toolRegistry.ts",
+    "packages/web/src/viewport/meshBuilders.ts",
+    "packages/web/src/workspace/RedesignedWorkspace.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "7f7bfe535c97",
+  "token_usage": {
+    "input_tokens": 28,
+    "cache_creation_tokens": 102582,
+    "cache_read_tokens": 2407396,
+    "output_tokens": 18000,
+    "api_call_count": 26
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-06T17:10:07.528974Z",
+    "agent_lines": 220,
+    "agent_removed": 22,
+    "human_added": 203,
+    "human_modified": 4,
+    "human_removed": 0,
+    "total_committed": 426,
+    "total_lines_changed": 455,
+    "agent_percentage": 53.18681318681319,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 72,
+      "user_lines_removed": 3,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/web/src/ErrorBoundary.tsx": 56,
+        "packages/web/src/workspace/RedesignedWorkspace.tsx": 16
+      },
+      "user_removed_per_file": {
+        "packages/web/src/workspace/RedesignedWorkspace.tsx": 3
+      }
+    }
+  ]
+}
