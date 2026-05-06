@@ -346,14 +346,14 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       if (data.index) geom.setIndex(new THREE.BufferAttribute(data.index, 1));
 
       const paintNow = paintBundleRef.current;
-      const csgBaseColor =
-        csgMeta?.materialKey === 'white_cladding' || csgMeta?.materialKey === 'white_render'
-          ? '#f4f4f0'
-          : categoryColorOr(paintNow, 'wall');
+      const csgIsWhite =
+        csgMeta?.materialKey === 'white_cladding' || csgMeta?.materialKey === 'white_render';
+      const csgBaseColor = csgIsWhite ? '#f4f4f0' : categoryColorOr(paintNow, 'wall');
       const wallMat = new THREE.MeshStandardMaterial({
         color: csgBaseColor,
-        roughness: paintNow?.categories.wall.roughness ?? 0.85,
+        roughness: csgIsWhite ? 0.92 : (paintNow?.categories.wall.roughness ?? 0.85),
         metalness: paintNow?.categories.wall.metalness ?? 0.0,
+        envMapIntensity: csgIsWhite ? 0.08 : 1.0,
       });
 
       const mesh = new THREE.Mesh(geom, wallMat);
