@@ -41,6 +41,7 @@ import { ViewCube } from './viewport/ViewCube';
 import { type ViewCubePick } from './viewport/viewCubeAlignment';
 import { SectionBox } from './viewport/sectionBox';
 import { WalkController, classifyKey as classifyWalkKey } from './viewport/walkMode';
+import { roofHeightAtPoint } from './viewport/roofHeightSampler';
 
 const CATEGORY_FALLBACK_COLOR_HEX = '#cbd5e1';
 
@@ -770,11 +771,82 @@ function addCladdingBoards(
   }
 }
 
+function makeSlopedWallMesh(
+  wall: WallElem,
+  roof: Extract<Element, { kind: 'roof' }>,
+  elevM: number,
+  paint: ViewportPaintBundle | null,
+  elementsById: Record<string, Element>,
+): THREE.Mesh {
+  const sx = wall.start.xMm;  const sz = wall.start.yMm;
+  const ex = wall.end.xMm;    const ez = wall.end.yMm;
+
+  const dx = ex - sx;  const dz = ez - sz;
+  const len = Math.max(1, Math.hypot(dx, dz));
+  const ux = dx / len;  const uz = dz / len;
+  const nx = -uz;       const nz =  ux;
+
+  const thick = THREE.MathUtils.clamp(wall.thicknessMm / 1000, 0.05, 2);
+  const halfT = thick / 2;
+
+  const hStart = roofHeightAtPoint(roof, elementsById, sx, sz);
+  const hEnd   = roofHeightAtPoint(roof, elementsById, ex, ez);
+
+  const yBase = elevM;
+
+  const sxF = (sx / 1000) + nx * halfT;  const szF = (sz / 1000) + nz * halfT;
+  const exF = (ex / 1000) + nx * halfT;  const ezF = (ez / 1000) + nz * halfT;
+  const sxB = (sx / 1000) - nx * halfT;  const szB = (sz / 1000) - nz * halfT;
+  const exB = (ex / 1000) - nx * halfT;  const ezB = (ez / 1000) - nz * halfT;
+
+  const positions = new Float32Array([
+    sxF, yBase,   szF,  // 0 start-front-base
+    exF, yBase,   ezF,  // 1 end-front-base
+    exF, hEnd,    ezF,  // 2 end-front-top
+    sxF, hStart,  szF,  // 3 start-front-top
+    sxB, yBase,   szB,  // 4 start-back-base
+    exB, yBase,   ezB,  // 5 end-back-base
+    exB, hEnd,    ezB,  // 6 end-back-top
+    sxB, hStart,  szB,  // 7 start-back-top
+  ]);
+
+  const indices = new Uint16Array([
+    0,1,2, 0,2,3,   // front face
+    5,4,7, 5,7,6,   // back face
+    4,0,3, 4,3,7,   // left cap (start)
+    1,5,6, 1,6,2,   // right cap (end)
+    4,5,1, 4,1,0,   // bottom
+    3,2,6, 3,6,7,   // top (sloped)
+  ]);
+
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geom.setIndex(new THREE.BufferAttribute(indices, 1));
+  geom.computeVertexNormals();
+
+  const mat = new THREE.MeshStandardMaterial({
+    color: categoryColorOr(paint, 'wall'),
+    roughness: paint?.categories.wall.roughness ?? 0.85,
+    metalness: paint?.categories.wall.metalness ?? 0.0,
+  });
+  const mesh = new THREE.Mesh(geom, mat);
+  mesh.userData.bimPickId = wall.id;
+  addEdges(mesh);
+  return mesh;
+}
+
 function makeWallMesh(
   wall: WallElem,
   elevM: number,
   paint: ViewportPaintBundle | null,
+  elementsById?: Record<string, Element>,
 ): THREE.Mesh {
+  if (wall.roofAttachmentId && elementsById) {
+    const roof = elementsById[wall.roofAttachmentId];
+    if (roof?.kind === 'roof') {
+      return makeSlopedWallMesh(wall, roof as Extract<Element, { kind: 'roof' }>, elevM, paint, elementsById);
+    }
+  }
   const sx = wall.start.xMm / 1000;
   const sz = wall.start.yMm / 1000;
   const ex = wall.end.xMm / 1000;
@@ -1980,7 +2052,7 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
           const elev  = elevationMForLevel(e.levelId, curr);
           const doors = doorsByWall.get(id) ?? [];
           const wins  = winsByWall.get(id)  ?? [];
-          if (CSG_ENABLED && (doors.length > 0 || wins.length > 0)) {
+          if (CSG_ENABLED && (doors.length > 0 || wins.length > 0) && !e.roofAttachmentId) {
             // Dispatch CSG to the worker; show a solid-wall placeholder immediately.
             const sx = e.start.xMm / 1000;
             const sz = e.start.yMm / 1000;
@@ -2019,7 +2091,7 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
           }
           // Always produce a placeholder (solid wall); the worker will swap it
           // with the CSG result when ready, or it stays if CSG is disabled.
-          obj = makeWallMesh(e, elev, paint);
+          obj = makeWallMesh(e, elev, paint, curr);
           break;
         }
         case 'door': {
