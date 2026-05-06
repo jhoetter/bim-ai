@@ -1,0 +1,5 @@
+please look into everything spec-wise / tracker-wise in the repo in spec that is a md. i want to understand: how many kind of trackers / specifications do we have? what of that is already implemented, what isn't?
+
+---
+
+which of the spec files are fuly implemented?
