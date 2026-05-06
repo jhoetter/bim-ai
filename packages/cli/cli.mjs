@@ -365,6 +365,41 @@ async function cmdExport(kind, modelId, outPath) {
     }
     return;
   }
+  if (kind === 'json') {
+    if (!modelId) usage();
+    const snap = await fetchJson(
+      'GET',
+      `${base}/api/models/${encodeURIComponent(modelId)}/snapshot`,
+    );
+    const doc = {
+      _format: 'bimAiSnapshot_v1',
+      _revision: snap.revision ?? null,
+      modelId: snap.modelId ?? modelId,
+      revision: snap.revision ?? null,
+      elements: snap.elements ?? {},
+      violations: snap.violations ?? [],
+    };
+    const text = `${JSON.stringify(doc, null, 2)}\n`;
+    if (outPath && outPath !== '-') {
+      await fs.writeFile(outPath, text, 'utf8');
+      console.log(
+        JSON.stringify(
+          {
+            ok: true,
+            out: outPath,
+            chars: text.length,
+            revision: doc.revision,
+            elementCount: Object.keys(doc.elements).length,
+          },
+          null,
+          2,
+        ),
+      );
+    } else {
+      process.stdout.write(text);
+    }
+    return;
+  }
   console.error(`export ${kind}: not implemented (see spec/workpackage-master-tracker.md backlog).`);
   process.exit(2);
 }
@@ -392,6 +427,7 @@ Commands:
   export gltf [--out <path>]           download model.gltf JSON (default: stdout; needs BIM_AI_MODEL_ID)
   export glb [--out <path>]            download model.glb binary (default: stdout; needs BIM_AI_MODEL_ID)
   export ifc [--out <path>]            download model.ifc (default: stdout; needs BIM_AI_MODEL_ID)
+  export json [--out <path>]           snapshot JSON (full elements + violations; default: stdout; needs BIM_AI_MODEL_ID)
   summary                             GET model summary rollup
   validate                            GET violations + summary + counts
   command-log [limit]                  GET undo/command history with full commands JSON
@@ -401,8 +437,8 @@ Commands:
   dry-run [file|-]                     POST single command dry-run
   plan-house --brief <path> --out <path> [--model-hint id]
                                        validate brief JSON → write starter command bundle (one-family preset)
-  export json                          reserved (stub)
-  diff --from … --to …                 reserved (stub)
+  diff --from <rev> --to <rev> [--out <path>] [--text] [--summary-only]
+                                       element-level diff between two revisions of the model
   watch                               WebSocket watcher (continuous live commits — no Synchronize step required)
 
 Collaboration model:
