@@ -1666,8 +1666,22 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
     overlap_tol_mm2 = 120.0
     for lw in walls_by_level.values():
         n = len(lw)
+        # Pre-compute AABBs to quickly skip non-overlapping pairs without expensive SAT.
+        bboxes: list[tuple[float, float, float, float]] = []
+        for w in lw:
+            half_t = w.thickness_mm / 2
+            bboxes.append((
+                min(w.start.x_mm, w.end.x_mm) - half_t,
+                min(w.start.y_mm, w.end.y_mm) - half_t,
+                max(w.start.x_mm, w.end.x_mm) + half_t,
+                max(w.start.y_mm, w.end.y_mm) + half_t,
+            ))
         for i in range(n):
+            ax0, ay0, ax1, ay1 = bboxes[i]
             for j in range(i + 1, n):
+                bx0, by0, bx1, by1 = bboxes[j]
+                if ax1 < bx0 or bx1 < ax0 or ay1 < by0 or by1 < ay0:
+                    continue
                 a = lw[i]
                 b = lw[j]
                 pa = wall_corners(

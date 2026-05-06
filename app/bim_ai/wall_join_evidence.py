@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import math
+from collections import defaultdict
 from typing import Any
 
 from bim_ai.document import Document
@@ -267,158 +268,187 @@ def collect_wall_corner_join_summary_v1(doc: Document) -> dict[str, Any] | None:
 
     joins: list[dict[str, Any]] = []
 
-    for i, ia in enumerate(wall_ids):
-        wa = by_id[ia]
-        ua = _wall_unit_xy(wa)
-        if ua is None:
+    # Pre-compute per-wall data and group by endpoint to avoid O(n²) all-pairs scan.
+    unit_by_wall: dict[str, tuple[float, float] | None] = {}
+    pts_by_wall: dict[str, set[tuple[float, float]]] = {}
+    walls_by_endpoint: defaultdict[tuple[float, float], list[str]] = defaultdict(list)
+    for wid in wall_ids:
+        w = by_id[wid]
+        unit_by_wall[wid] = _wall_unit_xy(w)
+        if unit_by_wall[wid] is None:
             continue
-        for ib in wall_ids[i + 1 :]:
-            wb = by_id[ib]
-            if wb.level_id != wa.level_id:
-                continue
-            ub = _wall_unit_xy(wb)
-            if ub is None:
-                continue
-            dot = abs(ua[0] * ub[0] + ua[1] * ub[1])
-            pts_a = _endpoints_rounded_mm(wa)
-            pts_b = _endpoints_rounded_mm(wb)
-            common = pts_a & pts_b
-            if len(common) != 1:
-                continue
-            vx, vy = next(iter(common))
-            vx_r = round(float(vx), 3)
-            vy_r = round(float(vy), 3)
-            wids = sorted([wa.id, wb.id])
+        pts = _endpoints_rounded_mm(w)
+        pts_by_wall[wid] = pts
+        for pt in pts:
+            walls_by_endpoint[pt].append(wid)
 
-            if dot >= _PARALLEL_DOT:
-                continue
+    # Only check pairs that share at least one endpoint (corner candidates).
+    corner_checked: set[tuple[str, str]] = set()
+    for wlist in walls_by_endpoint.values():
+        for i in range(len(wlist)):
+            ia = wlist[i]
+            for j in range(i + 1, len(wlist)):
+                ib = wlist[j]
+                pair_key = (min(ia, ib), max(ia, ib))
+                if pair_key in corner_checked:
+                    continue
+                corner_checked.add(pair_key)
+                wa = by_id[ia]
+                wb = by_id[ib]
+                if wb.level_id != wa.level_id:
+                    continue
+                ua = unit_by_wall[ia]
+                ub = unit_by_wall[ib]
+                if ua is None or ub is None:
+                    continue
+                dot = abs(ua[0] * ub[0] + ua[1] * ub[1])
+                common = pts_by_wall[ia] & pts_by_wall[ib]
+                if len(common) != 1:
+                    continue
+                vx, vy = next(iter(common))
+                vx_r = round(float(vx), 3)
+                vy_r = round(float(vy), 3)
+                wids = sorted([wa.id, wb.id])
 
-            aa_a = wall_plan_axis_aligned_xy(wa)
-            aa_b = wall_plan_axis_aligned_xy(wb)
+                if dot >= _PARALLEL_DOT:
+                    continue
 
-            if dot <= _PERP_DOT:
-                if aa_a and aa_b:
-                    kind = "butt"
-                    skip_reason = None
+                aa_a = wall_plan_axis_aligned_xy(wa)
+                aa_b = wall_plan_axis_aligned_xy(wb)
+
+                if dot <= _PERP_DOT:
+                    if aa_a and aa_b:
+                        kind = "butt"
+                        skip_reason = None
+                    else:
+                        kind = "miter_candidate"
+                        skip_reason = None
                 else:
-                    kind = "miter_candidate"
-                    skip_reason = None
-            else:
-                kind = "unsupported_skew"
-                skip_reason = "non_square_corner"
+                    kind = "unsupported_skew"
+                    skip_reason = "non_square_corner"
 
-            affected = _collect_affected_opening_ids_corner(
-                doc, wall_a=wa, wall_b=wb, vx=vx_r, vy=vy_r
-            )
-            joins.append(
-                {
-                    "joinId": _corner_join_id(wa.level_id, vx_r, vy_r, wids[0], wids[1]),
-                    "wallIds": wids,
-                    "vertexMm": {"xMm": vx_r, "yMm": vy_r},
-                    "levelId": wa.level_id,
-                    "joinKind": kind,
-                    "planDisplayToken": _plan_token_for_kind(kind),
-                    "affectedOpeningIds": affected,
-                    "skipReason": skip_reason,
-                }
-            )
+                affected = _collect_affected_opening_ids_corner(
+                    doc, wall_a=wa, wall_b=wb, vx=vx_r, vy=vy_r
+                )
+                joins.append(
+                    {
+                        "joinId": _corner_join_id(wa.level_id, vx_r, vy_r, wids[0], wids[1]),
+                        "wallIds": wids,
+                        "vertexMm": {"xMm": vx_r, "yMm": vy_r},
+                        "levelId": wa.level_id,
+                        "joinKind": kind,
+                        "planDisplayToken": _plan_token_for_kind(kind),
+                        "affectedOpeningIds": affected,
+                        "skipReason": skip_reason,
+                    }
+                )
 
-    overlap_keys: set[tuple[str, str, str, float, float]] = set()
-    for i, ia in enumerate(wall_ids):
-        wa = by_id[ia]
-        iax = _aa_wall_dom_axis_interval(wa)
+    # Group axis-aligned walls by (level, axis-kind, rounded anchor) to find overlapping pairs
+    # without an O(n²) all-pairs scan.
+    ax_cache: dict[str, tuple[str, float, float, float] | None] = {}
+    ax_groups: defaultdict[tuple[str, str, float], list[str]] = defaultdict(list)
+    for wid in wall_ids:
+        iax = _aa_wall_dom_axis_interval(by_id[wid])
+        ax_cache[wid] = iax
         if iax is None:
             continue
-        for ib in wall_ids[i + 1 :]:
-            wb = by_id[ib]
-            if wb.level_id != wa.level_id:
-                continue
-            ibx = _aa_wall_dom_axis_interval(wb)
-            if ibx is None:
-                continue
-            if iax[0] != ibx[0]:
+        ax_groups[(by_id[wid].level_id, iax[0], round(iax[1], 3))].append(wid)
+
+    overlap_keys: set[tuple[str, str, str, float, float]] = set()
+    for group_wids in ax_groups.values():
+        for i in range(len(group_wids)):
+            ia = group_wids[i]
+            wa = by_id[ia]
+            iax = ax_cache[ia]
+            if iax is None:
                 continue
             kind_ax, anchor_a, lo_a, hi_a = iax
-            _, anchor_b, lo_b, hi_b = ibx
-            if kind_ax == "h":
-                if abs(anchor_a - anchor_b) > _EPS_MM:
+            for j in range(i + 1, len(group_wids)):
+                ib = group_wids[j]
+                wb = by_id[ib]
+                ibx = ax_cache[ib]
+                if ibx is None:
                     continue
-                lo = max(lo_a, lo_b)
-                hi = min(hi_a, hi_b)
-                overlap_len = hi - lo
-                if overlap_len <= _EPS_MM:
-                    continue
-                y_line = (anchor_a + anchor_b) * 0.5
-                cx = round((lo + hi) * 0.5, 3)
-                cy = round(y_line, 3)
-                wids = sorted([wa.id, wb.id])
-                dedupe = (wa.level_id, wids[0], wids[1], round(lo, 3), round(hi, 3))
-                if dedupe in overlap_keys:
-                    continue
-                overlap_keys.add(dedupe)
-                jid = _overlap_join_id(
-                    wa.level_id,
-                    wids[0],
-                    wids[1],
-                    axis_key="h",
-                    anchor=y_line,
-                    lo=lo,
-                    hi=hi,
-                )
-                affected = _collect_affected_opening_ids_overlap_h(
-                    doc,
-                    wall_a=wa,
-                    wall_b=wb,
-                    y_line=y_line,
-                    x_lo=lo,
-                    x_hi=hi,
-                )
-            else:
-                if abs(anchor_a - anchor_b) > _EPS_MM:
-                    continue
-                lo = max(lo_a, lo_b)
-                hi = min(hi_a, hi_b)
-                overlap_len = hi - lo
-                if overlap_len <= _EPS_MM:
-                    continue
-                x_line = (anchor_a + anchor_b) * 0.5
-                cx = round(x_line, 3)
-                cy = round((lo + hi) * 0.5, 3)
-                wids = sorted([wa.id, wb.id])
-                dedupe = (wa.level_id, wids[0], wids[1], round(lo, 3), round(hi, 3))
-                if dedupe in overlap_keys:
-                    continue
-                overlap_keys.add(dedupe)
-                jid = _overlap_join_id(
-                    wa.level_id,
-                    wids[0],
-                    wids[1],
-                    axis_key="v",
-                    anchor=x_line,
-                    lo=lo,
-                    hi=hi,
-                )
-                affected = _collect_affected_opening_ids_overlap_v(
-                    doc,
-                    wall_a=wa,
-                    wall_b=wb,
-                    x_line=x_line,
-                    y_lo=lo,
-                    y_hi=hi,
-                )
+                _, anchor_b, lo_b, hi_b = ibx
+                if kind_ax == "h":
+                    if abs(anchor_a - anchor_b) > _EPS_MM:
+                        continue
+                    lo = max(lo_a, lo_b)
+                    hi = min(hi_a, hi_b)
+                    overlap_len = hi - lo
+                    if overlap_len <= _EPS_MM:
+                        continue
+                    y_line = (anchor_a + anchor_b) * 0.5
+                    cx = round((lo + hi) * 0.5, 3)
+                    cy = round(y_line, 3)
+                    wids = sorted([wa.id, wb.id])
+                    dedupe = (wa.level_id, wids[0], wids[1], round(lo, 3), round(hi, 3))
+                    if dedupe in overlap_keys:
+                        continue
+                    overlap_keys.add(dedupe)
+                    jid = _overlap_join_id(
+                        wa.level_id,
+                        wids[0],
+                        wids[1],
+                        axis_key="h",
+                        anchor=y_line,
+                        lo=lo,
+                        hi=hi,
+                    )
+                    affected = _collect_affected_opening_ids_overlap_h(
+                        doc,
+                        wall_a=wa,
+                        wall_b=wb,
+                        y_line=y_line,
+                        x_lo=lo,
+                        x_hi=hi,
+                    )
+                else:
+                    if abs(anchor_a - anchor_b) > _EPS_MM:
+                        continue
+                    lo = max(lo_a, lo_b)
+                    hi = min(hi_a, hi_b)
+                    overlap_len = hi - lo
+                    if overlap_len <= _EPS_MM:
+                        continue
+                    x_line = (anchor_a + anchor_b) * 0.5
+                    cx = round(x_line, 3)
+                    cy = round((lo + hi) * 0.5, 3)
+                    wids = sorted([wa.id, wb.id])
+                    dedupe = (wa.level_id, wids[0], wids[1], round(lo, 3), round(hi, 3))
+                    if dedupe in overlap_keys:
+                        continue
+                    overlap_keys.add(dedupe)
+                    jid = _overlap_join_id(
+                        wa.level_id,
+                        wids[0],
+                        wids[1],
+                        axis_key="v",
+                        anchor=x_line,
+                        lo=lo,
+                        hi=hi,
+                    )
+                    affected = _collect_affected_opening_ids_overlap_v(
+                        doc,
+                        wall_a=wa,
+                        wall_b=wb,
+                        x_line=x_line,
+                        y_lo=lo,
+                        y_hi=hi,
+                    )
 
-            joins.append(
-                {
-                    "joinId": jid,
-                    "wallIds": wids,
-                    "vertexMm": {"xMm": cx, "yMm": cy},
-                    "levelId": wa.level_id,
-                    "joinKind": "proxy_overlap",
-                    "planDisplayToken": _plan_token_for_kind("proxy_overlap"),
-                    "affectedOpeningIds": affected,
-                    "skipReason": "overlap_proxy_join",
-                }
-            )
+                joins.append(
+                    {
+                        "joinId": jid,
+                        "wallIds": wids,
+                        "vertexMm": {"xMm": cx, "yMm": cy},
+                        "levelId": wa.level_id,
+                        "joinKind": "proxy_overlap",
+                        "planDisplayToken": _plan_token_for_kind("proxy_overlap"),
+                        "affectedOpeningIds": affected,
+                        "skipReason": "overlap_proxy_join",
+                    }
+                )
 
     if not joins:
         return None
