@@ -1,0 +1,262 @@
+import type { TFunction } from 'i18next';
+
+import type { Element } from '@bim-ai/core';
+
+import type { CommandCandidate } from '../cmd/commandPaletteSources';
+import { BUILT_IN_FAMILIES } from '../families/familyCatalog';
+import type { UxComment } from '../state/store';
+import type { ToolId } from '../tools/toolRegistry';
+import type { LeftRailSection } from './LeftRail';
+
+export function mapComments(rows: Record<string, unknown>[]): UxComment[] {
+  return rows.map((row) => ({
+    id: String(row.id ?? ''),
+    userDisplay: String(row.userDisplay ?? row.user_display ?? ''),
+    body: String(row.body ?? ''),
+    elementId: (row.elementId ?? row.element_id ?? null) as string | null,
+    levelId: (row.levelId ?? row.level_id ?? null) as string | null,
+    anchorXMm:
+      row.anchorXMm !== undefined
+        ? Number(row.anchorXMm)
+        : row.anchor_x_mm !== undefined
+          ? Number(row.anchor_x_mm)
+          : null,
+    anchorYMm:
+      row.anchorYMm !== undefined
+        ? Number(row.anchorYMm)
+        : row.anchor_y_mm !== undefined
+          ? Number(row.anchor_y_mm)
+          : null,
+    resolved: Boolean(row.resolved),
+    createdAt: String(row.createdAt ?? row.created_at ?? ''),
+  }));
+}
+
+export const KNOWN_PLAN_TOOLS = new Set<ToolId>([
+  'select',
+  'wall',
+  'door',
+  'window',
+  'room',
+  'dimension',
+]);
+
+export type LegacyPlanTool =
+  | 'select'
+  | 'wall'
+  | 'floor'
+  | 'door'
+  | 'window'
+  | 'room'
+  | 'room_rectangle'
+  | 'grid'
+  | 'dimension'
+  | 'align'
+  | 'split'
+  | 'trim'
+  | 'wall-join'
+  | 'wall-opening'
+  | 'shaft'
+  | 'column'
+  | 'beam'
+  | 'ceiling';
+
+export function toolIdToLegacy(tool: ToolId): LegacyPlanTool | null {
+  if (KNOWN_PLAN_TOOLS.has(tool)) return tool as LegacyPlanTool;
+  return null;
+}
+
+export function legacyToToolId(legacy: LegacyPlanTool): ToolId {
+  if (legacy === 'room_rectangle') return 'room';
+  if (legacy === 'grid') return 'select';
+  return legacy as ToolId;
+}
+
+export function buildBrowserSections(elementsById: Record<string, Element>): LeftRailSection[] {
+  const all = Object.values(elementsById) as Element[];
+  const levels = all
+    .filter((e): e is Extract<Element, { kind: 'level' }> => e.kind === 'level')
+    .sort((a, b) => a.elevationMm - b.elevationMm);
+  const planViews = all.filter(
+    (e): e is Extract<Element, { kind: 'plan_view' }> => e.kind === 'plan_view',
+  );
+  const viewpoints = all.filter(
+    (e): e is Extract<Element, { kind: 'viewpoint' }> => e.kind === 'viewpoint',
+  );
+  const sections = all.filter(
+    (e): e is Extract<Element, { kind: 'section_cut' }> => e.kind === 'section_cut',
+  );
+  const sheets = all.filter((e): e is Extract<Element, { kind: 'sheet' }> => e.kind === 'sheet');
+  const schedules = all.filter(
+    (e): e is Extract<Element, { kind: 'schedule' }> => e.kind === 'schedule',
+  );
+  return [
+    {
+      id: 'project',
+      label: 'Project',
+      rows: [
+        {
+          id: 'levels',
+          label: 'Levels',
+          children: levels.map((l) => ({ id: l.id, label: l.name, hint: `${l.elevationMm}mm` })),
+        },
+      ],
+    },
+    {
+      id: 'views',
+      label: 'Views',
+      rows: [
+        {
+          id: 'plans',
+          label: 'Floor Plans',
+          children: planViews.map((p) => ({ id: p.id, label: p.name })),
+        },
+        {
+          id: 'viewpoints',
+          label: '3D Views',
+          children: viewpoints.map((v) => ({ id: v.id, label: v.name })),
+        },
+        {
+          id: 'sections',
+          label: 'Sections',
+          children: sections.map((s) => ({ id: s.id, label: s.name })),
+        },
+      ],
+    },
+    {
+      id: 'sheets',
+      label: 'Sheets',
+      rows: sheets.map((s) => ({ id: s.id, label: s.name })),
+    },
+    {
+      id: 'schedules',
+      label: 'Schedules',
+      rows: schedules.map((s) => ({ id: s.id, label: s.name })),
+    },
+    {
+      id: 'types',
+      label: 'Types',
+      rows: [
+        {
+          id: 'wall-types',
+          label: 'Wall Types',
+          children: [
+            ...all
+              .filter(
+                (e): e is Extract<Element, { kind: 'wall_type' }> => e.kind === 'wall_type',
+              )
+              .map((t) => ({ id: t.id, label: t.name, hint: `${t.layers.length} layers` })),
+            { id: 'new-wall-type', label: '+ New Wall Type' },
+          ],
+        },
+        {
+          id: 'floor-types',
+          label: 'Floor Types',
+          children: [
+            ...all
+              .filter(
+                (e): e is Extract<Element, { kind: 'floor_type' }> => e.kind === 'floor_type',
+              )
+              .map((t) => ({ id: t.id, label: t.name, hint: `${t.layers.length} layers` })),
+            { id: 'new-floor-type', label: '+ New Floor Type' },
+          ],
+        },
+        {
+          id: 'roof-types',
+          label: 'Roof Types',
+          children: [
+            ...all
+              .filter(
+                (e): e is Extract<Element, { kind: 'roof_type' }> => e.kind === 'roof_type',
+              )
+              .map((t) => ({ id: t.id, label: t.name, hint: `${t.layers.length} layers` })),
+            { id: 'new-roof-type', label: '+ New Roof Type' },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'families',
+      label: 'Families',
+      rows: (['door', 'window', 'stair', 'railing'] as const)
+        .map((disc) => {
+          const discLabel = (
+            { door: 'Doors', window: 'Windows', stair: 'Stairs', railing: 'Railings' } as const
+          )[disc];
+          const customOfDisc = all.filter(
+            (e): e is Extract<Element, { kind: 'family_type' }> =>
+              e.kind === 'family_type' && e.discipline === disc,
+          );
+          const builtInRows = BUILT_IN_FAMILIES.filter((f) => f.discipline === disc).map(
+            (fam) => ({
+              id: fam.id,
+              label: fam.name,
+              children: fam.defaultTypes.map((t) => ({ id: t.id, label: t.name })),
+            }),
+          );
+          const customRows = customOfDisc.map((ct) => ({
+            id: ct.id,
+            label: String(ct.parameters.name ?? ct.id),
+            hint: 'custom',
+          }));
+          return {
+            id: `fam-group-${disc}`,
+            label: discLabel,
+            children: [...builtInRows, ...customRows],
+          };
+        })
+        .filter((g) => g.children.length > 0),
+    },
+  ];
+}
+
+export function buildPaletteCandidates(
+  elementsById: Record<string, Element>,
+  toolRegistry: Record<string, { id: ToolId; label: string; tooltip?: string; hotkey: string }>,
+  t: TFunction,
+): CommandCandidate[] {
+  const items: CommandCandidate[] = [];
+  for (const tool of Object.values(toolRegistry)) {
+    items.push({
+      id: `tool.${tool.id}`,
+      kind: 'tool',
+      label: tool.label,
+      keywords: tool.tooltip ?? '',
+      hint: tool.hotkey,
+    });
+  }
+  for (const el of Object.values(elementsById) as Element[]) {
+    if (el.kind === 'plan_view') {
+      items.push({ id: el.id, kind: 'view', label: `Plan: ${el.name}`, keywords: 'plan view' });
+    } else if (el.kind === 'viewpoint') {
+      items.push({ id: el.id, kind: 'view', label: `3D: ${el.name}`, keywords: 'viewpoint orbit' });
+    } else if (el.kind === 'section_cut') {
+      items.push({ id: el.id, kind: 'view', label: `Section: ${el.name}`, keywords: 'section cut' });
+    }
+  }
+  let elemCount = 0;
+  for (const el of Object.values(elementsById) as Element[]) {
+    if (el.kind !== 'wall' && el.kind !== 'door' && el.kind !== 'window' && el.kind !== 'room')
+      continue;
+    if (elemCount > 60) break;
+    items.push({
+      id: el.id,
+      kind: 'element',
+      label: `${el.kind}: ${(el as { name?: string }).name ?? el.id}`,
+      keywords: el.kind,
+    });
+    elemCount++;
+  }
+  items.push(
+    { id: 'settings.theme.light', kind: 'setting', label: 'Theme: light', keywords: 'light' },
+    { id: 'settings.theme.dark', kind: 'setting', label: 'Theme: dark', keywords: 'dark' },
+    {
+      id: 'settings.language.toggle',
+      kind: 'setting',
+      label: t('cmd.language'),
+      keywords: 'language lang sprache',
+    },
+  );
+  items.push({ id: 'agent.review', kind: 'agent', label: 'Run Agent Review' });
+  return items;
+}

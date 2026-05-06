@@ -1,0 +1,112 @@
+import type { CSSProperties, JSX, RefObject } from 'react';
+
+import type { Element } from '@bim-ai/core';
+
+import { Viewport } from '../Viewport';
+import { ErrorBoundary } from '../ErrorBoundary';
+import { PlanCanvas, type PlanCameraHandle } from '../plan/PlanCanvas';
+import {
+  AgentReviewModeShell,
+  ScheduleModeShell,
+  SectionModeShell,
+  SheetModeShell,
+} from './ModeShells';
+import type { WorkspaceMode } from './TopBar';
+
+export const canvasContainerStyle: CSSProperties = {
+  position: 'relative',
+  width: '100%',
+  height: '100%',
+};
+
+export function CanvasMount({
+  mode,
+  viewerMode,
+  activeLevelId,
+  elementsById,
+  onSemanticCommand,
+  cameraHandleRef,
+  initialCamera,
+  preferredSheetId,
+  modelId,
+  wsOn,
+  onPersistViewpointField,
+}: {
+  mode: WorkspaceMode;
+  viewerMode: 'plan_canvas' | 'orbit_3d';
+  activeLevelId: string;
+  elementsById: Record<string, Element>;
+  onSemanticCommand: (cmd: Record<string, unknown>) => void;
+  cameraHandleRef?: RefObject<PlanCameraHandle | null>;
+  initialCamera?: { centerMm?: { xMm: number; yMm: number }; halfMm?: number };
+  preferredSheetId?: string;
+  modelId?: string;
+  wsOn?: boolean;
+  onPersistViewpointField?: (p: {
+    elementId: string;
+    key: string;
+    value: string;
+  }) => void | Promise<void>;
+}): JSX.Element {
+  if (mode === 'plan-3d') {
+    return (
+      <div
+        style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', height: '100%', width: '100%' }}
+      >
+        <div style={{ position: 'relative', borderRight: '1px solid var(--color-border)' }}>
+          <PlanCanvas
+            wsConnected={wsOn ?? false}
+            activeLevelResolvedId={activeLevelId ?? ''}
+            onSemanticCommand={onSemanticCommand}
+            cameraHandleRef={cameraHandleRef}
+            initialCamera={initialCamera}
+          />
+        </div>
+        <div style={{ position: 'relative' }}>
+          <Viewport wsConnected={wsOn ?? false} onPersistViewpointField={onPersistViewpointField} />
+        </div>
+      </div>
+    );
+  }
+  if (mode === '3d')
+    return (
+      <ErrorBoundary label="Viewport3D">
+        <Viewport wsConnected={wsOn ?? false} onPersistViewpointField={onPersistViewpointField} />
+      </ErrorBoundary>
+    );
+  if (mode === 'plan')
+    return (
+      <PlanCanvas
+        wsConnected={wsOn ?? false}
+        activeLevelResolvedId={activeLevelId}
+        onSemanticCommand={onSemanticCommand}
+        cameraHandleRef={cameraHandleRef}
+        initialCamera={initialCamera}
+      />
+    );
+  if (mode === 'section')
+    return <SectionModeShell activeLevelLabel={activeLevelId} modelId={modelId} />;
+  if (mode === 'sheet')
+    return <SheetModeShell elementsById={elementsById} preferredSheetId={preferredSheetId} />;
+  if (mode === 'schedule')
+    return (
+      <ErrorBoundary label="SchedulePanel">
+        <ScheduleModeShell elementsById={elementsById} />
+      </ErrorBoundary>
+    );
+  if (mode === 'agent')
+    return (
+      <ErrorBoundary label="AgentReviewPane">
+        <AgentReviewModeShell onApplyQuickFix={onSemanticCommand} />
+      </ErrorBoundary>
+    );
+  return viewerMode === 'orbit_3d' ? (
+    <Viewport wsConnected={wsOn ?? false} onPersistViewpointField={onPersistViewpointField} />
+  ) : (
+    <PlanCanvas
+      wsConnected={wsOn ?? false}
+      activeLevelResolvedId={activeLevelId}
+      onSemanticCommand={onSemanticCommand}
+    />
+  );
+}
