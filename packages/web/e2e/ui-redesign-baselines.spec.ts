@@ -3,37 +3,82 @@ import { expect, test } from '@playwright/test';
 /**
  * UI redesign visual regression baselines — spec §28 last row + §11–§17.
  *
- * One screenshot per redesigned chrome surface. Each test currently
- * targets the existing Workspace until the redesigned components are
- * adopted; the snapshots will refresh once each WP's surface is wired
- * in. Setting the test as `test.fixme` keeps the harness wired but
- * flags it as not-yet-baselined per the spec's deferred-evidence note.
+ * One screenshot per redesigned chrome surface. The /redesign route
+ * mounts the composed shell (TopBar / LeftRail / Inspector / StatusBar
+ * / ToolPalette + Plan / Viewport canvas) so these snapshots cover the
+ * §11–§17 surfaces in one go.
+ *
+ * Run with `pnpm exec playwright test --update-snapshots` from
+ * `packages/web/` to (re)generate baselines locally.
  */
 
-const SURFACES = [
-  { id: 'app-shell', label: '§8 App shell — full chrome at 1440 × 900' },
-  { id: 'top-bar', label: '§11 TopBar — left + center mode pills + right' },
-  { id: 'left-rail', label: '§12 Project Browser tree' },
-  { id: 'right-rail', label: '§13 Inspector tabs + numeric field' },
-  { id: 'status-bar', label: '§17 StatusBar clusters' },
-  { id: 'tool-palette', label: '§16 Top-floating tool palette' },
-  { id: 'plan-canvas', label: '§14 Plan canvas drafting' },
-  { id: '3d-viewport', label: '§15 3D viewport + ViewCube' },
-];
+const VIEWPORT = { width: 1440, height: 900 };
 
-test.describe('UI redesign visual baselines (§28 last row)', () => {
-  for (const surface of SURFACES) {
-    // eslint-disable-next-line playwright/no-skipped-test
-    test.fixme(`${surface.id} — ${surface.label}`, // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    async ({ page }) => {
-      // Placeholder — real assertion lands once each WP-UI-A* surface
-      // is composed inside Workspace.tsx (post-Phase adoption sweep).
-      await page.goto('/');
-      await expect(page.locator('body')).toBeVisible();
-      await expect(page).toHaveScreenshot(`${surface.id}.png`, {
-        fullPage: false,
-        maxDiffPixelRatio: 0.05,
-      });
+test.describe('UI redesign — chrome baselines', () => {
+  test.use({ viewport: VIEWPORT });
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/redesign');
+    await page.waitForSelector('[data-testid="app-shell"]');
+  });
+
+  test('app-shell light @ 1440 × 900', async ({ page }) => {
+    await page.evaluate(() => {
+      document.documentElement.setAttribute('data-theme', 'light');
     });
-  }
+    await expect(page).toHaveScreenshot('app-shell-light.png', {
+      fullPage: false,
+      maxDiffPixelRatio: 0.07,
+    });
+  });
+
+  test('app-shell dark @ 1440 × 900', async ({ page }) => {
+    await page.evaluate(() => {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    });
+    await expect(page).toHaveScreenshot('app-shell-dark.png', {
+      fullPage: false,
+      maxDiffPixelRatio: 0.07,
+    });
+  });
+
+  test('top-bar mode pills', async ({ page }) => {
+    const topbar = page.getByTestId('topbar');
+    await expect(topbar).toBeVisible();
+    await expect(topbar).toHaveScreenshot('top-bar.png', {
+      maxDiffPixelRatio: 0.05,
+    });
+  });
+
+  test('left-rail Project Browser', async ({ page }) => {
+    const rail = page.getByTestId('app-shell-left-rail');
+    await expect(rail).toBeVisible();
+    await expect(rail).toHaveScreenshot('left-rail.png', {
+      maxDiffPixelRatio: 0.05,
+    });
+  });
+
+  test('right-rail Inspector empty state', async ({ page }) => {
+    const rail = page.getByTestId('inspector');
+    await expect(rail).toBeVisible();
+    await expect(rail).toHaveScreenshot('right-rail-empty.png', {
+      maxDiffPixelRatio: 0.05,
+    });
+  });
+
+  test('status-bar clusters', async ({ page }) => {
+    const bar = page.getByTestId('status-bar');
+    await expect(bar).toBeVisible();
+    await expect(bar).toHaveScreenshot('status-bar.png', {
+      maxDiffPixelRatio: 0.05,
+    });
+  });
+
+  test('tool-palette plan mode', async ({ page }) => {
+    const palette = page.getByTestId('tool-palette');
+    await expect(palette).toBeVisible();
+    await expect(palette).toHaveScreenshot('tool-palette.png', {
+      maxDiffPixelRatio: 0.05,
+    });
+  });
 });

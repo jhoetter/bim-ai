@@ -905,7 +905,11 @@ export function Workspace() {
           </div>
         );
       default:
-        return viewerMode === 'plan_canvas' ? plan : <Viewport wsConnected={wsOn} onPersistViewpointField={persistViewpointField} />;
+        return viewerMode === 'plan_canvas' ? (
+          plan
+        ) : (
+          <Viewport wsConnected={wsOn} onPersistViewpointField={persistViewpointField} />
+        );
     }
   };
 
@@ -993,6 +997,14 @@ export function Workspace() {
             <Btn type="button" variant="quiet" onClick={() => void toggleStoredTheme()}>
               Theme
             </Btn>
+
+            <a
+              href="/redesign"
+              className="rounded-md px-3 py-1 text-sm text-accent hover:bg-background"
+              data-testid="redesign-route-link"
+            >
+              Try redesign →
+            </a>
           </div>
         </div>
         {collaborationConflictQueue ? (
@@ -1016,11 +1028,16 @@ export function Workspace() {
             <ul className="mt-1 list-disc space-y-0.5 ps-4">
               <li>
                 Retry advice:{' '}
-                <code className="font-mono text-[9px]">{collaborationConflictQueue.retryAdvice}</code>
+                <code className="font-mono text-[9px]">
+                  {collaborationConflictQueue.retryAdvice}
+                </code>
                 {collaborationConflictQueue.reason ? (
                   <>
                     {' '}
-                    · reason <code className="font-mono text-[9px]">{collaborationConflictQueue.reason}</code>
+                    · reason{' '}
+                    <code className="font-mono text-[9px]">
+                      {collaborationConflictQueue.reason}
+                    </code>
                   </>
                 ) : null}
               </li>
