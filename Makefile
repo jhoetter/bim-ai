@@ -16,7 +16,7 @@ PNPM := pnpm
 #   2000 → bim-ai web (:8500 API)  <-- this repo (avoids 3xxx used by sister apps)
 WEB_PORT ?= 2000
 API_PORT ?= 8500
-design ?= conservative
+design ?= default
 
 .PHONY: help install dev dev-api dev-web kill-ports seed \
 	db-up db-down db-reset db-logs \
