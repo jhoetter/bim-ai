@@ -28,8 +28,8 @@ A workpackage is `done` when all of: (a) TypeScript typechecks clean (`pnpm exec
 | Wave 2                                     | View System + Wall Depth + Openings                | `done`      |
 | [Wave 3](#wave-3--element-depth)           | Element Depth (Structural, Curtain Wall, Ceilings) | `done`      |
 | [Wave 4](#wave-4--data-layer)              | Data Layer (Rooms V2, Parameters, Schedules)       | `done`      |
-| [Wave 5](#wave-5--families--collaboration) | Families + Collaboration                           | **CURRENT** |
-| [Wave 6](#wave-6--coordination--export)    | Coordination + Export                              | `open`      |
+| [Wave 5](#wave-5--families--collaboration) | Families + Collaboration                           | `done`      |
+| [Wave 6](#wave-6--coordination--export)    | Coordination + Export                              | **CURRENT** |
 
 _Waves 0–2 fully merged to main. Prompt files deleted._
 
@@ -100,8 +100,8 @@ Batch B (after A merged):
 
 | WP       | Title                                                                                             | State  |
 | -------- | ------------------------------------------------------------------------------------------------- | ------ |
-| WP-V2-11 | Family Editor V2 (template env, parametric dims + EQ, type params, void geometry, profile family) | `open` |
-| WP-V2-12 | Collaboration V2 (Worksets, Copy/Monitor, Synchronize, Purge Unused, Starting View)               | `open` |
+| WP-V2-11 | Family Editor V2 (template env, parametric dims + EQ, type params, void geometry, profile family) | `done` |
+| WP-V2-12 | Collaboration V2 (Worksets, Copy/Monitor, Synchronize, Purge Unused, Starting View)               | `done` |
 
 ### WP-V2-11 — Family Editor V2
 
@@ -122,7 +122,7 @@ Batch B (after A merged):
 
 **Goal:** Selection Sets, Clash Detection, NWC/coordination bundle export.
 
-**Prompt files:** `spec/prompts/wave-06/` — create when Wave 5 is fully merged.
+**Prompt files:** `spec/prompts/wave-06/` — ready. WP-V2-13 is the only WP.
 
 | WP       | Title                                                                                       | State  |
 | -------- | ------------------------------------------------------------------------------------------- | ------ |
