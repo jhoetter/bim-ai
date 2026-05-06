@@ -116,3 +116,7 @@
 
   Both must pass. Visual verification: glazing panes should show a faint sky
   reflection after this change.
+
+---
+
+commited and pushed?
