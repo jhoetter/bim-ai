@@ -200,6 +200,7 @@ export function RedesignedWorkspace(): JSX.Element {
   const violations = useBimStore((s) => s.violations);
   const activityEvents = useBimStore((s) => s.activityEvents);
   const setActivity = useBimStore((s) => s.setActivity);
+  const setOrthoSnapHold = useBimStore((s) => s.setOrthoSnapHold);
   const applyDelta = useBimStore((s) => s.applyDelta);
   const setPresencePeers = useBimStore((s) => s.setPresencePeers);
   const mergeComment = useBimStore((s) => s.mergeComment);
@@ -583,6 +584,24 @@ export function RedesignedWorkspace(): JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Presence heartbeat — sends viewer/selection state to collaborators every ~2.3s
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      const ws = wsRef.current;
+      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+      const st = useBimStore.getState();
+      ws.send(JSON.stringify({
+        type: 'presence_update',
+        peerId: st.peerId,
+        userId: st.userId,
+        name: st.userDisplayName,
+        selectionId: st.selectedId,
+        viewer: st.viewerMode,
+      }));
+    }, 2300);
+    return () => window.clearInterval(id);
+  }, []);
+
   // After the seed has hydrated, prune any restored tabs whose targets
   // no longer exist (e.g. a sheet deleted between sessions). If the
   // pruned set is empty, open a default Plan tab on the first level.
@@ -671,6 +690,8 @@ export function RedesignedWorkspace(): JSX.Element {
         void handleUndoRedo(event.shiftKey ? false : true);
         return;
       }
+      // Ortho snap hold on Shift
+      if (event.shiftKey) setOrthoSnapHold(true);
       // Tool hotkeys — match the spec'd letters from TOOL_REGISTRY.
       const upper = event.key.length === 1 ? event.key.toUpperCase() : event.key;
       const hotkeyLabel = event.shiftKey ? `Shift+${upper}` : upper;
@@ -685,9 +706,16 @@ export function RedesignedWorkspace(): JSX.Element {
         }
       }
     };
+    const onKeyUp = (event: globalThis.KeyboardEvent): void => {
+      if (!event.shiftKey) setOrthoSnapHold(false);
+    };
     document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [handleModeChange, handleUndoRedo, setPlanTool]);
+    document.addEventListener('keyup', onKeyUp);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('keyup', onKeyUp);
+    };
+  }, [handleModeChange, handleUndoRedo, setPlanTool, setOrthoSnapHold]);
 
   /* ── Project Browser sections ─────────────────────────────────────── */
   const browserSections = useMemo<LeftRailSection[]>(() => {
