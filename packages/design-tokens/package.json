@@ -9,7 +9,9 @@
     "./tailwind-preset": "./src/tailwind-preset.ts",
     "./tokens-default.css": "./src/tokens-default.css",
     "./tokens-dark.css": "./src/tokens-dark.css",
-    "./tokens-drafting.css": "./src/tokens-drafting.css"
+    "./tokens-drafting.css": "./src/tokens-drafting.css",
+    "./conservative.css": "./src/conservative/conservative.css",
+    "./tokens-conservative.css": "./src/conservative/tokens-conservative.css"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json --noEmit",

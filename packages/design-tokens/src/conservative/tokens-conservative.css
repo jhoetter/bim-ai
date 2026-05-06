@@ -1,0 +1,125 @@
+/* Borrowed from ~/repos/hof-os — slate / navy enterprise palette with serif
+ * UI type and tight radii (PE / institutional). Imported as a *preview*
+ * design system so we can A/B-compare the BIM AI chrome against an
+ * alternative token set without forking components.
+ *
+ * Naming note: this preset uses the hof `--color-*` token namespace,
+ * whereas BIM AI's primary tokens use the same `--color-*` chrome surface
+ * but additional `--draft-*` / `--cat-*` drafting tokens. To preview, swap
+ * the BIM AI tokens-default.css import for this file in
+ * src/design-systems/conservative.css. Drafting tokens still come from
+ * tokens-drafting.css.
+ */
+:root {
+  --bit-orange: #b45309;
+  --bit-orange-light: color-mix(in srgb, var(--bit-orange) 14%, transparent);
+  --hof-green: #047857;
+  --color-background: #fafaf9;
+  --color-foreground: #0c0a09;
+  --color-card: #ffffff;
+  --color-sidebar-background: #f5f5f4;
+  --color-border: #d6d3d1;
+  --color-accent: #1e3a8a;
+  --color-muted-foreground: #57534e;
+  --color-primary: #0c0a09;
+  --color-primary-foreground: #ffffff;
+  --color-input: #ffffff;
+  --color-destructive: #991b1b;
+  --color-destructive-bg: rgba(153, 27, 27, 0.08);
+  --color-success: var(--hof-green);
+  --color-success-bg: color-mix(in srgb, var(--hof-green) 10%, transparent);
+  --color-hover: #e7e5e4;
+  --color-surface: #f5f5f4;
+  --color-secondary: var(--color-muted-foreground);
+  --color-tertiary: #a8a29e;
+  --color-divider: var(--color-border);
+  --accent: var(--color-accent);
+  --error: var(--color-destructive);
+  --font-sans: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  --hof-dt-frozen-edge: color-mix(in srgb, var(--color-foreground) 12%, var(--color-border));
+  --hof-dt-checkbox-border: color-mix(in srgb, var(--color-foreground) 10%, var(--color-border));
+  --hof-dt-checkbox-bg: var(--color-background);
+  --hof-dt-checkbox-hover-border: color-mix(in srgb, var(--color-foreground) 18%, var(--color-border));
+  --hof-app-footer-bar-height: 3.5rem;
+  --hof-body-font-features: normal;
+  --hof-radius-sm: 0px;
+  --hof-radius-md: 0.125rem;
+  --hof-radius-lg: 0.25rem;
+  --hof-radius-xl: 0.25rem;
+
+  /* BIM AI bridge: alias hof tokens onto our `--surface-*` / `--border-*`
+   * naming so existing components don't need to be rewritten. */
+  --color-surface-strong: var(--color-hover);
+  --color-surface-muted: var(--color-sidebar-background);
+  --color-border-strong: color-mix(in srgb, var(--color-foreground) 14%, var(--color-border));
+  --color-accent-foreground: var(--color-primary-foreground);
+  --color-accent-soft: color-mix(in srgb, var(--color-accent) 10%, var(--color-background));
+  --color-warning: #b45309;
+  --color-danger: var(--color-destructive);
+  --color-info: var(--color-accent);
+  --color-ring: color-mix(in srgb, var(--color-accent) 38%, transparent);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.hof-theme-light):not(.hof-theme-dark) {
+    --bit-orange: #d97706;
+    --bit-orange-light: color-mix(in srgb, var(--bit-orange) 18%, transparent);
+    --hof-green: #34d399;
+    --color-background: #0c0a09;
+    --color-foreground: #fafaf9;
+    --color-card: #1c1917;
+    --color-sidebar-background: #1c1917;
+    --color-border: #44403c;
+    --color-accent: #93c5fd;
+    --color-muted-foreground: #a8a29e;
+    --color-primary: #fafaf9;
+    --color-primary-foreground: #0c0a09;
+    --color-input: #292524;
+    --color-destructive: #fca5a5;
+    --color-destructive-bg: rgba(252, 165, 165, 0.12);
+    --color-success: var(--hof-green);
+    --color-success-bg: color-mix(in srgb, var(--hof-green) 14%, transparent);
+    --color-hover: #292524;
+    --color-surface: #1c1917;
+    --color-secondary: var(--color-muted-foreground);
+    --color-tertiary: #78716c;
+    --color-divider: var(--color-border);
+    --accent: var(--color-accent);
+    --error: var(--color-destructive);
+    --hof-dt-checkbox-border: color-mix(in srgb, var(--color-foreground) 22%, var(--color-border));
+    --hof-dt-checkbox-bg: var(--color-input);
+    --hof-dt-checkbox-hover-border: color-mix(in srgb, var(--color-foreground) 36%, var(--color-border));
+  }
+}
+
+:root[data-theme='dark'],
+:root.hof-theme-dark,
+:root.dark {
+  --bit-orange: #d97706;
+  --bit-orange-light: color-mix(in srgb, var(--bit-orange) 18%, transparent);
+  --hof-green: #34d399;
+  --color-background: #0c0a09;
+  --color-foreground: #fafaf9;
+  --color-card: #1c1917;
+  --color-sidebar-background: #1c1917;
+  --color-border: #44403c;
+  --color-accent: #93c5fd;
+  --color-muted-foreground: #a8a29e;
+  --color-primary: #fafaf9;
+  --color-primary-foreground: #0c0a09;
+  --color-input: #292524;
+  --color-destructive: #fca5a5;
+  --color-destructive-bg: rgba(252, 165, 165, 0.12);
+  --color-success: var(--hof-green);
+  --color-success-bg: color-mix(in srgb, var(--hof-green) 14%, transparent);
+  --color-hover: #292524;
+  --color-surface: #1c1917;
+  --color-secondary: var(--color-muted-foreground);
+  --color-tertiary: #78716c;
+  --color-divider: var(--color-border);
+  --accent: var(--color-accent);
+  --error: var(--color-destructive);
+  --hof-dt-checkbox-border: color-mix(in srgb, var(--color-foreground) 22%, var(--color-border));
+  --hof-dt-checkbox-bg: var(--color-input);
+  --hof-dt-checkbox-hover-border: color-mix(in srgb, var(--color-foreground) 36%, var(--color-border));
+}

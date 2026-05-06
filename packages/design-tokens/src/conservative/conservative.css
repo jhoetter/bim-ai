@@ -1,0 +1,14 @@
+/* Conservative preview design system — borrowed from ~/repos/hof-os.
+ *
+ * Wires the slate / navy enterprise tokens (serif type, tight radii)
+ * onto the BIM AI shell. Drafting tokens (paper, grid, category fills)
+ * still come from tokens-drafting.css since hof-os has no drafting
+ * surface. To preview, flip the import in
+ * packages/web/src/design-systems/default.css from
+ * tokens-default.css to ./conservative/conservative.css. */
+
+@import './tokens-conservative.css';
+
+/* Reuse the BIM AI drafting palette so Plan + 3D canvas stays paper-like
+ * even when the chrome is conservative. */
+@import '../tokens-drafting.css';

@@ -29,8 +29,8 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   const ds = resolveDesignSystemId(env);
   const cssPath =
-    ds === 'default'
-      ? path.resolve(__dirname, `src/design-systems/default.css`)
+    ds === 'conservative'
+      ? path.resolve(__dirname, `src/design-systems/conservative.css`)
       : path.resolve(__dirname, `src/design-systems/default.css`);
 
   const apiPort = env.API_PORT ?? process.env.API_PORT ?? '8500';
