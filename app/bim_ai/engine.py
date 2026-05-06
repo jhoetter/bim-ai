@@ -494,6 +494,18 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 offset_from_parent_mm=cmd.offset_from_parent_mm,
             )
             propagate_dependent_level_elevations(els)
+            # VIE-05: optionally create a companion "<name> — Plan" plan view in
+            # the same step so the common path (level then plan) is one action.
+            if cmd.also_create_plan_view:
+                pv_id = cmd.plan_view_id or new_id()
+                if pv_id in els:
+                    raise ValueError(f"duplicate element id '{pv_id}'")
+                els[pv_id] = PlanViewElem(
+                    kind="plan_view",
+                    id=pv_id,
+                    name=f"{cmd.name} — Plan",
+                    level_id=eid,
+                )
 
         case CreateWallCmd():
             eid = cmd.id or new_id()

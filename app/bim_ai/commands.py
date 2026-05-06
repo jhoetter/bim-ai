@@ -27,6 +27,10 @@ class CreateLevelCmd(BaseModel):
     datum_kind: str | None = Field(default=None, alias="datumKind")
     parent_level_id: str | None = Field(default=None, alias="parentLevelId")
     offset_from_parent_mm: float = Field(default=0, alias="offsetFromParentMm")
+    # VIE-05: when True (default), the engine also creates a "<name> — Plan"
+    # plan_view referencing the new level so the common flow needs no follow-up.
+    also_create_plan_view: bool = Field(default=True, alias="alsoCreatePlanView")
+    plan_view_id: str | None = Field(default=None, alias="planViewId")
 
 
 class CreateWallCmd(BaseModel):
