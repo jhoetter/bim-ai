@@ -70,6 +70,14 @@ export default defineConfig(({ mode }) => {
     },
     test: {
       environment: 'jsdom',
+      coverage: {
+        provider: 'v8',
+        thresholds: {
+          lines: 50,
+          functions: 70,
+          branches: 70,
+        },
+      },
     },
   };
 });

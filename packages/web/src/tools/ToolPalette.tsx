@@ -1,8 +1,16 @@
-import { type CSSProperties, type JSX, type KeyboardEvent, useCallback, useRef } from 'react';
+import {
+  type CSSProperties,
+  Fragment,
+  type JSX,
+  type KeyboardEvent,
+  useCallback,
+  useRef,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icons, ICON_SIZE } from '@bim-ai/ui';
 import {
   isToolDisabled,
+  MODIFY_TOOL_IDS,
   paletteForMode,
   type ToolDisabledContext,
   type ToolId,
@@ -74,45 +82,51 @@ export function ToolPalette({
       style={paletteStyle}
       className="flex items-center gap-0.5 rounded-md border border-border bg-background/95 px-1.5 py-1.5 shadow-elev-2 backdrop-blur-sm"
     >
-      {tools.map((tool) => {
+      {tools.map((tool, idx) => {
         const Icon = Icons[tool.icon]!;
         const enablement = isToolDisabled(tool.id, disabledContext, t);
         const isActive = tool.id === activeTool;
+        const isFirstModify =
+          MODIFY_TOOL_IDS.has(tool.id) && (idx === 0 || !MODIFY_TOOL_IDS.has(tools[idx - 1]!.id));
         return (
-          <button
-            key={tool.id}
-            ref={setRef(tool.id)}
-            type="button"
-            aria-label={`${tool.label} (${tool.hotkey})`}
-            aria-pressed={isActive}
-            aria-keyshortcuts={tool.hotkey}
-            aria-disabled={enablement.disabled}
-            tabIndex={isActive ? 0 : -1}
-            disabled={enablement.disabled}
-            title={enablement.disabled ? enablement.reason : tool.tooltip}
-            data-tool={tool.id}
-            data-active={isActive ? 'true' : 'false'}
-            onClick={() => {
-              if (enablement.disabled) return;
-              if (tool.id === 'tag') onTagSubmenu?.();
-              else onToolSelect(tool.id);
-            }}
-            className={[
-              'relative inline-flex h-8 w-8 items-center justify-center rounded transition-colors',
-              isActive
-                ? 'bg-accent text-accent-foreground shadow-sm'
-                : 'text-muted hover:bg-surface hover:text-foreground',
-              enablement.disabled ? 'opacity-40' : '',
-            ].join(' ')}
-          >
-            <Icon size={16} aria-hidden="true" />
-            <span
-              aria-hidden="true"
-              className="pointer-events-none absolute bottom-0.5 right-0.5 text-[8px] font-medium opacity-60 tabular-nums"
+          <Fragment key={tool.id}>
+            {isFirstModify && (
+              <div aria-hidden="true" className="mx-0.5 h-5 w-px self-center bg-border" />
+            )}
+            <button
+              ref={setRef(tool.id)}
+              type="button"
+              aria-label={`${tool.label} (${tool.hotkey})`}
+              aria-pressed={isActive}
+              aria-keyshortcuts={tool.hotkey}
+              aria-disabled={enablement.disabled}
+              tabIndex={isActive ? 0 : -1}
+              disabled={enablement.disabled}
+              title={enablement.disabled ? enablement.reason : tool.tooltip}
+              data-tool={tool.id}
+              data-active={isActive ? 'true' : 'false'}
+              onClick={() => {
+                if (enablement.disabled) return;
+                if (tool.id === 'tag') onTagSubmenu?.();
+                else onToolSelect(tool.id);
+              }}
+              className={[
+                'relative inline-flex h-8 w-8 items-center justify-center rounded transition-colors',
+                isActive
+                  ? 'bg-accent text-accent-foreground shadow-sm'
+                  : 'text-muted hover:bg-surface hover:text-foreground',
+                enablement.disabled ? 'opacity-40' : '',
+              ].join(' ')}
             >
-              {tool.hotkey.replace('Shift+', '⇧')}
-            </span>
-          </button>
+              <Icon size={16} aria-hidden="true" />
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute bottom-0.5 right-0.5 text-[8px] font-medium opacity-60 tabular-nums"
+              >
+                {tool.hotkey.replace('Shift+', '⇧')}
+              </span>
+            </button>
+          </Fragment>
         );
       })}
     </div>

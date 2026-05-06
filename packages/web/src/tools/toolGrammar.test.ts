@@ -8,12 +8,18 @@ import {
   flipDoorHand,
   flipDoorSwing,
   flipSectionDepth,
+  initialAlignState,
   initialDimensionState,
   initialFloorState,
   initialRoofState,
   initialSectionDraft,
+  initialSplitState,
+  initialTrimState,
   initialWallChainState,
   RAILING_DEFAULTS,
+  reduceAlign,
+  reduceSplit,
+  reduceTrim,
   reduceWallChain,
   setDimensionKind,
   STAIR_RISER_MM_DEFAULT,
@@ -247,5 +253,121 @@ describe('Tag families — §16.5', () => {
       'tag-room',
       'tag-by-category',
     ]);
+  });
+});
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* Align reducer                                                             */
+/* ────────────────────────────────────────────────────────────────────── */
+
+describe('Align reducer', () => {
+  it('transitions pick-reference → pick-element on first click', () => {
+    let state = initialAlignState();
+    state = reduceAlign(state, { kind: 'activate' }).state;
+    const result = reduceAlign(state, { kind: 'click', pointMm: { xMm: 100, yMm: 200 } });
+    expect(result.state.phase).toBe('pick-element');
+    expect(result.state.referenceMm).toEqual({ xMm: 100, yMm: 200 });
+    expect(result.effect.commitAlign).toBeUndefined();
+    expect(result.effect.stillActive).toBe(true);
+  });
+
+  it('emits commitAlign on second click and returns to pick-reference', () => {
+    let state = initialAlignState();
+    state = reduceAlign(state, { kind: 'activate' }).state;
+    state = reduceAlign(state, { kind: 'click', pointMm: { xMm: 100, yMm: 200 } }).state;
+    const result = reduceAlign(state, { kind: 'click', pointMm: { xMm: 300, yMm: 400 } });
+    expect(result.effect.commitAlign).toEqual({
+      referenceMm: { xMm: 100, yMm: 200 },
+      targetMm: { xMm: 300, yMm: 400 },
+    });
+    expect(result.state.phase).toBe('pick-reference');
+    expect(result.state.referenceMm).toBeNull();
+    expect(result.effect.stillActive).toBe(true);
+  });
+
+  it('resets to pick-reference on cancel', () => {
+    let state = initialAlignState();
+    state = reduceAlign(state, { kind: 'activate' }).state;
+    state = reduceAlign(state, { kind: 'click', pointMm: { xMm: 100, yMm: 0 } }).state;
+    expect(state.phase).toBe('pick-element');
+    const result = reduceAlign(state, { kind: 'cancel' });
+    expect(result.state.phase).toBe('pick-reference');
+    expect(result.state.referenceMm).toBeNull();
+    expect(result.effect.stillActive).toBe(true);
+  });
+});
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* Split reducer                                                             */
+/* ────────────────────────────────────────────────────────────────────── */
+
+describe('Split reducer', () => {
+  it('emits commitSplit on click while active', () => {
+    let state = initialSplitState();
+    state = reduceSplit(state, { kind: 'activate' }).state;
+    const result = reduceSplit(state, { kind: 'click', pointMm: { xMm: 500, yMm: 300 } });
+    expect(result.effect.commitSplit).toEqual({ pointMm: { xMm: 500, yMm: 300 } });
+    expect(result.effect.stillActive).toBe(true);
+  });
+
+  it('stays active after a split', () => {
+    let state = initialSplitState();
+    state = reduceSplit(state, { kind: 'activate' }).state;
+    const after = reduceSplit(state, {
+      kind: 'click',
+      pointMm: { xMm: 100, yMm: 100 },
+    }).state;
+    expect(after.active).toBe(true);
+  });
+
+  it('does not emit commitSplit when inactive', () => {
+    const state = initialSplitState();
+    const result = reduceSplit(state, { kind: 'click', pointMm: { xMm: 0, yMm: 0 } });
+    expect(result.effect.commitSplit).toBeUndefined();
+    expect(result.effect.stillActive).toBe(false);
+  });
+});
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* Trim reducer                                                              */
+/* ────────────────────────────────────────────────────────────────────── */
+
+describe('Trim reducer', () => {
+  it('stores referenceId on click-reference', () => {
+    let state = initialTrimState();
+    state = reduceTrim(state, { kind: 'activate' }).state;
+    const result = reduceTrim(state, { kind: 'click-reference', elementId: 'wall-1' });
+    expect(result.state.phase).toBe('pick-target');
+    expect(result.state.referenceId).toBe('wall-1');
+    expect(result.effect.commitTrim).toBeUndefined();
+    expect(result.effect.stillActive).toBe(true);
+  });
+
+  it('emits commitTrim on click-target and returns to pick-reference', () => {
+    let state = initialTrimState();
+    state = reduceTrim(state, { kind: 'activate' }).state;
+    state = reduceTrim(state, { kind: 'click-reference', elementId: 'wall-1' }).state;
+    const result = reduceTrim(state, {
+      kind: 'click-target',
+      elementId: 'wall-2',
+      endHint: 'start',
+    });
+    expect(result.effect.commitTrim).toEqual({
+      referenceId: 'wall-1',
+      targetId: 'wall-2',
+      endHint: 'start',
+    });
+    expect(result.state.phase).toBe('pick-reference');
+    expect(result.state.referenceId).toBeNull();
+    expect(result.effect.stillActive).toBe(true);
+  });
+
+  it('resets on cancel', () => {
+    let state = initialTrimState();
+    state = reduceTrim(state, { kind: 'activate' }).state;
+    state = reduceTrim(state, { kind: 'click-reference', elementId: 'wall-1' }).state;
+    const result = reduceTrim(state, { kind: 'cancel' });
+    expect(result.state.phase).toBe('pick-reference');
+    expect(result.state.referenceId).toBeNull();
   });
 });

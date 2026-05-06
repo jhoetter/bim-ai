@@ -4,14 +4,17 @@ Generated 2026-05-06. Updated after each workpackage.
 
 ## Status Overview
 
-| #   | Workpackage                                          | Status     | Commit   |
-| --- | ---------------------------------------------------- | ---------- | -------- |
-| WP1 | Fix silent `.catch(() => {})` error swallowing       | ✅ done    | c80cac94 |
-| WP2 | Break down `Viewport.tsx` (3 079 → 1 431 lines)      | ✅ done    | 3b190199 |
-| WP3 | Break down `AgentReviewPane.tsx` (2 730 → 849 lines) | ✅ done    | 7d0da943 |
-| WP4 | Break down `SchedulePanel.tsx` (2 216 → 1 883 lines) | ✅ done    | 19574b34 |
-| WP5 | Add unit tests to `@bim-ai/core`                     | ⏳ pending | —        |
-| WP6 | Enable Vitest coverage thresholds                    | ⏳ pending | —        |
+| #   | Workpackage                                          | Status  | Commit   |
+| --- | ---------------------------------------------------- | ------- | -------- |
+| WP1 | Fix silent `.catch(() => {})` error swallowing       | ✅ done | c80cac94 |
+| WP2 | Break down `Viewport.tsx` (3 079 → 1 431 lines)      | ✅ done | 3b190199 |
+| WP3 | Break down `AgentReviewPane.tsx` (2 730 → 849 lines) | ✅ done | 7d0da943 |
+| WP4 | Break down `SchedulePanel.tsx` (2 216 → 1 883 lines) | ✅ done | 19574b34 |
+| WP5 | Add unit tests to untested web logic (65 new tests)  | ✅ done | 0af6467e |
+| WP6 | Enable Vitest coverage thresholds                    | ✅ done | d25a2e1d |
+| WP7 | Extract `symbology.ts` element builders (1 648 → 977)| ✅ done | 2cb9ba1f |
+| WP8 | Extract `store.ts` types into `storeTypes.ts`        | ✅ done | 2cb9ba1f |
+| WP9 | Fix `LegacyPlanTool` exhaustiveness gap              | ✅ done | 2cb9ba1f |
 
 ---
 

@@ -1,6 +1,7 @@
 import type { ComponentType, SVGAttributes } from 'react';
 import {
   AlertTriangle,
+  AlignCenterHorizontal,
   Camera,
   ChevronDown,
   ChevronRight,
@@ -10,6 +11,7 @@ import {
   Eye,
   EyeOff,
   FileBadge2,
+  GitMerge,
   Grid3x3,
   Home,
   Link2,
@@ -18,6 +20,7 @@ import {
   Moon,
   MousePointer2,
   Redo2,
+  Scissors,
   Search,
   Settings2,
   Sparkles,
@@ -101,6 +104,11 @@ export { StairIcon as StairsIcon } from '@bim-ai/icons';
 export const Icons: Record<string, LucideLikeIcon> = {
   // Selection & manipulation
   select: MousePointer2,
+
+  // Modify tools
+  align: AlignCenterHorizontal,
+  split: Scissors,
+  trim: GitMerge,
 
   // Drawing tools — all now BIM-native from @bim-ai/icons
   wall: WallIcon,
@@ -188,6 +196,9 @@ export const Icons: Record<string, LucideLikeIcon> = {
 /** Human-readable default labels for `aria-label` on icon-only buttons. */
 export const IconLabels: Record<keyof typeof Icons, string> = {
   select: 'Select',
+  align: 'Align',
+  split: 'Split element',
+  trim: 'Trim / Extend',
   wall: 'Wall',
   door: 'Door',
   window: 'Window',

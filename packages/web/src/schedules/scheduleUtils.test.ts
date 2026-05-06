@@ -28,7 +28,8 @@ describe('fmtRoomScheduleOptM2', () => {
   it('formats null as em-dash', () => expect(fmtRoomScheduleOptM2(null)).toBe('—'));
   it('formats undefined as em-dash', () => expect(fmtRoomScheduleOptM2(undefined)).toBe('—'));
   it('formats NaN as em-dash', () => expect(fmtRoomScheduleOptM2(NaN)).toBe('—'));
-  it('formats a number to 3 decimal places', () => expect(fmtRoomScheduleOptM2(25.5)).toBe('25.500'));
+  it('formats a number to 3 decimal places', () =>
+    expect(fmtRoomScheduleOptM2(25.5)).toBe('25.500'));
 });
 
 describe('flattenSchedulePayloadRows', () => {
@@ -64,17 +65,31 @@ describe('flattenSchedulePayloadRows', () => {
 describe('levelFilterFieldForTab', () => {
   it('returns levelId for rooms', () => expect(levelFilterFieldForTab('rooms')).toBe('levelId'));
   it('returns levelId for doors', () => expect(levelFilterFieldForTab('doors')).toBe('levelId'));
-  it('returns levelId for windows', () => expect(levelFilterFieldForTab('windows')).toBe('levelId'));
+  it('returns levelId for windows', () =>
+    expect(levelFilterFieldForTab('windows')).toBe('levelId'));
   it('returns levelId for floors', () => expect(levelFilterFieldForTab('floors')).toBe('levelId'));
   it('returns levelId for plans', () => expect(levelFilterFieldForTab('plans')).toBe('levelId'));
-  it('returns levelId for assemblies', () => expect(levelFilterFieldForTab('assemblies')).toBe('levelId'));
-  it('returns referenceLevelId for roofs', () => expect(levelFilterFieldForTab('roofs')).toBe('referenceLevelId'));
-  it('returns baseLevelId for stairs', () => expect(levelFilterFieldForTab('stairs')).toBe('baseLevelId'));
+  it('returns levelId for assemblies', () =>
+    expect(levelFilterFieldForTab('assemblies')).toBe('levelId'));
+  it('returns referenceLevelId for roofs', () =>
+    expect(levelFilterFieldForTab('roofs')).toBe('referenceLevelId'));
+  it('returns baseLevelId for stairs', () =>
+    expect(levelFilterFieldForTab('stairs')).toBe('baseLevelId'));
   it('returns null for sheets', () => expect(levelFilterFieldForTab('sheets')).toBeNull());
 });
 
 describe('scheduleSortKeyChoices', () => {
-  const ALL_TABS = ['rooms', 'doors', 'windows', 'floors', 'roofs', 'stairs', 'plans', 'sheets', 'assemblies'] as const;
+  const ALL_TABS = [
+    'rooms',
+    'doors',
+    'windows',
+    'floors',
+    'roofs',
+    'stairs',
+    'plans',
+    'sheets',
+    'assemblies',
+  ] as const;
 
   it('returns non-empty array for every tab', () => {
     for (const tab of ALL_TABS) {
@@ -89,7 +104,8 @@ describe('scheduleSortKeyChoices', () => {
   });
 
   it('doors include widthMm', () => expect(scheduleSortKeyChoices('doors')).toContain('widthMm'));
-  it('windows include heightMm', () => expect(scheduleSortKeyChoices('windows')).toContain('heightMm'));
+  it('windows include heightMm', () =>
+    expect(scheduleSortKeyChoices('windows')).toContain('heightMm'));
   it('rooms include areaM2', () => expect(scheduleSortKeyChoices('rooms')).toContain('areaM2'));
 });
 
@@ -105,7 +121,17 @@ describe('scheduleGroupingKeyChoices', () => {
   });
 
   it('returns non-empty array for every tab', () => {
-    const tabs = ['rooms', 'doors', 'windows', 'floors', 'roofs', 'stairs', 'plans', 'sheets', 'assemblies'] as const;
+    const tabs = [
+      'rooms',
+      'doors',
+      'windows',
+      'floors',
+      'roofs',
+      'stairs',
+      'plans',
+      'sheets',
+      'assemblies',
+    ] as const;
     for (const tab of tabs) {
       expect(scheduleGroupingKeyChoices(tab).length).toBeGreaterThan(0);
     }
@@ -116,7 +142,8 @@ describe('tabToPresetCategory', () => {
   it('maps rooms to room', () => expect(tabToPresetCategory('rooms')).toBe('room'));
   it('maps doors to door', () => expect(tabToPresetCategory('doors')).toBe('door'));
   it('maps windows to window', () => expect(tabToPresetCategory('windows')).toBe('window'));
-  it('maps assemblies to material_assembly', () => expect(tabToPresetCategory('assemblies')).toBe('material_assembly'));
+  it('maps assemblies to material_assembly', () =>
+    expect(tabToPresetCategory('assemblies')).toBe('material_assembly'));
   it('returns null for floors', () => expect(tabToPresetCategory('floors')).toBeNull());
   it('returns null for roofs', () => expect(tabToPresetCategory('roofs')).toBeNull());
   it('returns null for stairs', () => expect(tabToPresetCategory('stairs')).toBeNull());
@@ -176,7 +203,15 @@ describe('roomRowsFromServer', () => {
 
 describe('doorRowsFromServer', () => {
   it('maps rows correctly', () => {
-    const rows = [{ elementId: 'd1', name: 'Door 1', level: 'L1', widthMm: 900, familyTypeId: 'builtin:door:single:900x2100' }];
+    const rows = [
+      {
+        elementId: 'd1',
+        name: 'Door 1',
+        level: 'L1',
+        widthMm: 900,
+        familyTypeId: 'builtin:door:single:900x2100',
+      },
+    ];
     const result = doorRowsFromServer(rows);
     expect(result[0]).toMatchObject({ id: 'd1', name: 'Door 1', widthMm: 900 });
   });
@@ -188,7 +223,9 @@ describe('doorRowsFromServer', () => {
 
 describe('winRowsFromServer', () => {
   it('maps rows correctly', () => {
-    const rows = [{ elementId: 'w1', name: 'Win 1', level: 'L1', widthMm: 1200, heightMm: 1500, sillMm: 900 }];
+    const rows = [
+      { elementId: 'w1', name: 'Win 1', level: 'L1', widthMm: 1200, heightMm: 1500, sillMm: 900 },
+    ];
     const result = winRowsFromServer(rows);
     expect(result[0]).toMatchObject({ id: 'w1', widthMm: 1200, heightMm: 1500, sillMm: 900 });
   });
