@@ -220,6 +220,8 @@ function makeFloorSlabMesh(
     }),
   );
   mesh.position.set(0, elev, 0);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
   mesh.userData.bimPickId = floor.id;
   addEdges(mesh, 20);
   return mesh;
@@ -563,11 +565,14 @@ function makeSiteMesh(
       color: categoryColorOr(paint, 'site'),
       roughness: paint?.categories.site.roughness ?? 0.95,
       metalness: paint?.categories.site.metalness ?? 0.0,
+      aoMapIntensity: 0,
       transparent: true,
       opacity: 0.85,
     }),
   );
   mesh.position.set(0, elev + baseOffset - padTh, 0);
+  mesh.castShadow = false;
+  mesh.receiveShadow = true;
   mesh.userData.bimPickId = site.id;
   addEdges(mesh);
   return mesh;
