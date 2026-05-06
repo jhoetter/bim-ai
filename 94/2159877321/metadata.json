@@ -5,6 +5,17 @@
   "branch": "main",
   "checkpoints_count": 1,
   "files_touched": [
+    "packages/web/src/Viewport.tsx",
+    "packages/web/src/plan/planElementMeshBuilders.ts",
+    "packages/web/src/schedules/scheduleSheetExportParityReadout.test.ts",
+    "packages/web/src/schedules/scheduleTableRendererV1.ts",
+    "packages/web/src/state/store.ts",
+    "packages/web/src/tools/ToolPalette.tsx",
+    "packages/web/src/viewport/meshBuilders.ts",
+    "packages/web/src/workspace/Inspector.tsx",
+    "packages/web/src/workspace/RedesignedWorkspace.tsx",
+    "packages/web/src/workspace/SheetDocumentationManifest.tsx",
+    "packages/web/src/workspace/TabBar.tsx",
     "packages/web/src/workspace/sectionViewportSvg.tsx"
   ],
   "sessions": [
@@ -13,13 +24,19 @@
       "transcript": "/94/2159877321/0/full.jsonl",
       "content_hash": "/94/2159877321/0/content_hash.txt",
       "prompt": "/94/2159877321/0/prompt.txt"
+    },
+    {
+      "metadata": "/94/2159877321/1/metadata.json",
+      "transcript": "/94/2159877321/1/full.jsonl",
+      "content_hash": "/94/2159877321/1/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
-    "input_tokens": 97,
-    "cache_creation_tokens": 223401,
-    "cache_read_tokens": 6240074,
-    "output_tokens": 146353,
-    "api_call_count": 79
+    "input_tokens": 160,
+    "cache_creation_tokens": 265001,
+    "cache_read_tokens": 11453645,
+    "output_tokens": 169239,
+    "api_call_count": 142
   }
 }
