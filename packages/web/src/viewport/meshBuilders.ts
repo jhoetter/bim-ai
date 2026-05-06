@@ -935,7 +935,13 @@ export function addCladdingBoards(
   const boardH = wallHeightM - 0.05;
   const boardD = pitchM - 0.002; // slight gap between boards
   const color = colorOverride ?? readToken('--cat-timber-cladding', '#8B6340');
-  const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.85, metalness: 0.0 });
+  const isOverride = colorOverride !== undefined;
+  const mat = new THREE.MeshStandardMaterial({
+    color,
+    roughness: isOverride ? 0.92 : 0.85,
+    metalness: 0.0,
+    envMapIntensity: isOverride ? 0.08 : 1.0,
+  });
 
   for (let i = 0; i < count; i++) {
     const board = new THREE.Mesh(new THREE.BoxGeometry(boardD, boardH, boardProtrude), mat);
@@ -1091,16 +1097,15 @@ export function makeWallMesh(
   const len = Math.max(0.001, Math.hypot(dx, dz));
   const height = THREE.MathUtils.clamp(wall.heightMm / 1000, 0.25, 40);
   const thick = THREE.MathUtils.clamp(wall.thicknessMm / 1000, 0.05, 2);
-  const wallBaseColor =
-    wall.materialKey === 'white_cladding' || wall.materialKey === 'white_render'
-      ? '#f4f4f0'
-      : categoryColorOr(paint, 'wall');
+  const isWhite = wall.materialKey === 'white_cladding' || wall.materialKey === 'white_render';
+  const wallBaseColor = isWhite ? '#f4f4f0' : categoryColorOr(paint, 'wall');
   const mesh = new THREE.Mesh(
     new THREE.BoxGeometry(len, height, thick),
     new THREE.MeshStandardMaterial({
       color: wallBaseColor,
-      roughness: paint?.categories.wall.roughness ?? 0.85,
+      roughness: isWhite ? 0.92 : (paint?.categories.wall.roughness ?? 0.85),
       metalness: paint?.categories.wall.metalness ?? 0.0,
+      envMapIntensity: isWhite ? 0.08 : 1.0,
     }),
   );
   mesh.position.set(sx + dx / 2, elevM + height / 2, sz + dz / 2);
