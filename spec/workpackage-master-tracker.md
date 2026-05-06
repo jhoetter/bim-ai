@@ -923,7 +923,7 @@ Profile families (introduced in V2-11) optionally referenced via `profileFamilyI
 
 **Acceptance.** Switching the demo plan view from Fine → Coarse visibly simplifies rendering; switching back restores layer detail.
 
-**Effort.** M — 1 week.
+**Effort.** M — 1 week. **Helpers landed in commit a0883092** — `wallPlanLinesForDetailLevel`, `doorPlanFeatureCount`, `windowPlanFeatureCount`, `stairPlanFeatureCount`, plus curtain gating and a presentational `PlanDetailLevelToolbar`. Hooking the helpers into `planProjection.ts` / `planElementMeshBuilders.ts` so the rule reaches the on-screen pixels still pending — but the canonical line counts + feature gates are now isolated and unit-testable.
 
 ### VIE-02 — Per-element / per-family-geometry visibility per detail level
 
