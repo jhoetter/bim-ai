@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Icons, IconLabels, ICON_SIZE, type LucideLikeIcon } from '@bim-ai/ui';
 
 /**
@@ -106,6 +107,7 @@ export function LeftRail({
   defaultExpanded,
   onRowContextMenu,
 }: LeftRailProps): JSX.Element {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set(defaultExpanded ?? []));
   const [query, setQuery] = useState('');
   const [focusedId, setFocusedId] = useState<string | undefined>(activeRowId);
@@ -196,7 +198,7 @@ export function LeftRail({
       </div>
       <div
         role="tree"
-        aria-label="Project browser"
+        aria-label={t('workspace.projectBrowser')}
         tabIndex={0}
         onKeyDown={handleKey}
         className="flex-1 overflow-y-auto py-2"
@@ -236,9 +238,10 @@ export function LeftRail({
 
 /** Slim (56 px) icon strip used by AppShell when the rail is collapsed. */
 export function LeftRailCollapsed({ sections }: { sections: LeftRailSection[] }): JSX.Element {
+  const { t } = useTranslation();
   return (
     <nav
-      aria-label="Project browser sections"
+      aria-label={t('workspace.projectBrowserSections')}
       className="flex h-full flex-col items-center gap-2 border-r border-border bg-surface py-3"
     >
       {sections.map((s) => {
@@ -266,12 +269,13 @@ function SearchField({
   value: string;
   onChange: (v: string) => void;
 }): JSX.Element {
+  const { t } = useTranslation();
   return (
     <label className="flex items-center gap-2 rounded-md border border-border bg-background px-2 py-1.5 text-sm focus-within:ring-2 focus-within:ring-offset-0">
       <Icons.search size={ICON_SIZE.chrome} className="text-muted" aria-hidden="true" />
       <input
         type="search"
-        placeholder="Search project"
+        placeholder={t('workspace.searchProject')}
         aria-label={IconLabels.search}
         value={value}
         onChange={(e) => onChange(e.target.value)}

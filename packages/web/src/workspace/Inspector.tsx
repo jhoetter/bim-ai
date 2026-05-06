@@ -11,6 +11,7 @@ import {
   useMemo,
   useState,
 } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Icons, IconLabels, ICON_SIZE, type LucideLikeIcon } from '@bim-ai/ui';
 
 /**
@@ -76,19 +77,20 @@ export function Inspector({
   onClearSelection,
   defaultTab = 'properties',
 }: InspectorProps): JSX.Element {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<InspectorTab>(defaultTab);
   const tablistId = useId();
 
   const hasGraphics = tabs.graphics !== undefined;
   const tabDefs = useMemo<{ id: InspectorTab; label: string }[]>(() => {
     const defs: { id: InspectorTab; label: string }[] = [
-      { id: 'properties', label: 'Properties' },
-      { id: 'constraints', label: 'Constraints' },
-      { id: 'identity', label: 'Identity' },
+      { id: 'properties', label: t('inspector.tabs.properties') },
+      { id: 'constraints', label: t('inspector.tabs.constraints') },
+      { id: 'identity', label: t('inspector.tabs.identity') },
     ];
-    if (hasGraphics) defs.push({ id: 'graphics', label: 'Graphics' });
+    if (hasGraphics) defs.push({ id: 'graphics', label: t('inspector.tabs.graphics') });
     return defs;
-  }, [hasGraphics]);
+  }, [hasGraphics, t]);
 
   useEffect(() => {
     if (activeTab === 'graphics' && !hasGraphics) setActiveTab('properties');
@@ -113,9 +115,9 @@ export function Inspector({
       case 'properties':
         return tabs.properties;
       case 'constraints':
-        return tabs.constraints ?? <EmptyTab message="No constraints for this element." />;
+        return tabs.constraints ?? <EmptyTab message={t('inspector.noConstraintsMeta')} />;
       case 'identity':
-        return tabs.identity ?? <EmptyTab message="No identity metadata." />;
+        return tabs.identity ?? <EmptyTab message={t('inspector.noIdentityMeta')} />;
       case 'graphics':
         return tabs.graphics ?? null;
       default:
@@ -135,7 +137,7 @@ export function Inspector({
           <div
             role="tablist"
             id={tablistId}
-            aria-label="Inspector tabs"
+            aria-label={t('inspector.tabs.ariaLabel')}
             onKeyDown={handleTabKey}
             className="flex border-b border-border px-3"
           >
@@ -216,6 +218,7 @@ function InspectorFooter({
   onApply?: () => void;
   onReset?: () => void;
 }): JSX.Element {
+  const { t } = useTranslation();
   const handleKey = useCallback(
     (event: KeyboardEvent<HTMLDivElement>) => {
       if (event.key === 'Enter') {
@@ -238,14 +241,14 @@ function InspectorFooter({
         onClick={onReset}
         className="rounded-md px-2 py-1 text-sm text-muted hover:bg-surface-strong"
       >
-        Reset (Esc)
+        {t('inspector.footer.reset')}
       </button>
       <button
         type="button"
         onClick={onApply}
         className="rounded-md bg-accent px-3 py-1 text-sm text-accent-foreground hover:opacity-90"
       >
-        Apply (⏎)
+        {t('inspector.footer.apply')}
       </button>
     </div>
   );
@@ -256,11 +259,12 @@ function InspectorEmpty({
 }: {
   actions: { hotkey: string; label: string; onTrigger?: () => void }[];
 }): JSX.Element {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-1 flex-col gap-3 px-3 py-6 text-sm">
-      <p className="text-foreground">No selection.</p>
+      <p className="text-foreground">{t('inspector.empty.noSelection')}</p>
       <p className="text-xs text-muted">
-        Click an element on the canvas, or press <kbd>V</kbd> to select.
+        {t('inspector.empty.hint')}
       </p>
       {actions.length ? (
         <div className="rounded-md border border-border bg-surface-strong p-3">
@@ -268,7 +272,7 @@ function InspectorEmpty({
             className="mb-2 text-xs uppercase text-muted"
             style={{ letterSpacing: 'var(--text-eyebrow-tracking)' }}
           >
-            Quick actions
+            {t('inspector.empty.quickActions')}
           </div>
           <ul className="flex flex-col gap-1">
             {actions.map((a) => {
@@ -370,6 +374,7 @@ export function NumericField({
   step = 1,
   ariaLabel,
 }: NumericFieldProps): JSX.Element {
+  const { t } = useTranslation();
   const [unit, setUnit] = useState<LengthUnit>(initialUnit);
   const [draft, setDraft] = useState<string>(() => formatForUnit(valueMm, initialUnit));
   const [error, setError] = useState<boolean>(false);
@@ -429,7 +434,7 @@ export function NumericField({
         <button
           type="button"
           onClick={cycleUnit}
-          aria-label={`Cycle units (current: ${unit})`}
+          aria-label={t('inspector.cycleUnits', { unit })}
           className="rounded-sm border border-border px-1.5 text-xs text-muted hover:bg-surface-strong"
         >
           {unit}

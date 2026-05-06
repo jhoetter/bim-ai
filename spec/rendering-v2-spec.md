@@ -1109,12 +1109,462 @@ V2 is complete when:
 | R3-04 | Selection via OutlinePass | Materials | Viewport.tsx | M |
 | R4-01 | Section cut interior reveal (stencil cap) | Section | Viewport.tsx | L |
 | R4-02 | Ortho / parallel projection toggle | Camera | Viewport.tsx, cameraRig.ts | M |
+| FL-01 | Family + Type data model | Families | core/src/index.ts | M |
+| FL-02 | Built-in family catalog (doors, windows) | Families | new familyCatalog.ts | L |
+| FL-03 | Renderer reads familyTypeId | Families | Viewport.tsx | M |
+| FL-04 | Additional family catalogs (stair, railing, wall types) | Families | familyCatalog.ts | L |
+| FL-05 | Type selector in Inspector | Families | Inspector.tsx | M |
+| FL-06 | Family library browser panel | Families | new FamilyLibraryPanel.tsx | L |
+| FL-07 | Custom type authoring | Families | new FamilyTypeEditor.tsx | L |
+| FL-08 | System family layer stack (wall/floor/roof assemblies) | Families | core + Viewport.tsx | XL |
 
-**Effort key:** S = ½ day · M = 1 day · L = 2–3 days.
+**Effort key:** S = ½ day · M = 1 day · L = 2–3 days · XL = 1 week+.
 
-**Recommended order:** R1-01 → R1-02 → R1-05 → R1-03 → R1-04 → R2-07 →
-R2-02 → R2-03 → R2-04 → R2-05 → R2-06 → R2-01 → R3-01 → R3-02 → R3-03 →
-R3-04 → R4-01 → R4-02.
+**Recommended order:** R1 (done) → R2 → R3 → FL-01 → FL-02 → FL-03 →
+R4-01 → FL-05 → FL-04 → FL-06 → FL-07 → FL-08 → R4-02.
 
-Start with the pipeline (R1) — shadows and edges deliver the biggest visual
-jump per hour of work and require no geometry changes.
+Start with the pipeline (R1, done) — shadows and edges deliver the biggest
+visual jump per hour of work and require no geometry changes. Family system
+(FL) should begin once R2 geometry is stable, since FL-03 makes the renderer
+consume family geometry instead of the R2 box-replacement functions.
+
+---
+
+## Phase FL — Family & Type System
+
+A family system lets users choose between different door styles, window
+operation types, stair configurations, etc. — exactly like Revit's loadable
+family library. The geometry for each element kind is generated from a
+**Family** (parametric geometry template) + **Type** (named parameter set) +
+**Instance** (placed element with optional per-instance overrides).
+
+### Background: how Revit structures this
+
+| Tier | What it is | Examples |
+|---|---|---|
+| **Family** | Parametric geometry template; defines which parameters drive the shape | "Single-Flush Door", "Double-Hung Window", "Straight Stair" |
+| **Type** | Named snapshot of parameter values for a Family | "Single-Flush : 900×2100", "Double-Hung : 1200×1500" |
+| **Instance** | Placed occurrence; inherits Type params, can override some | `door-001` placed in wall, `widthMm` fixed by Type, `materialKey` overridden to "oak" |
+| **System family** | Special: Wall/Floor/Roof/Ceiling. Type = layer assembly (materials + thicknesses). No file. | "Exterior – Brick 90 + Insulation 100 + Stud 150" |
+
+Our current model already has `family_type` elements and `familyTypeId` on
+door/window instances — the reference exists, the schema and renderer wiring
+do not.
+
+---
+
+### FL-01 · Family + Type data model
+
+**What exists today:**
+```ts
+// core/src/index.ts
+{ kind: 'family_type'; id: string; discipline: 'door'|'window'|'generic';
+  parameters: Record<string, unknown>; }
+
+// door/window instances:
+{ familyTypeId?: string | null; }
+```
+
+`family_type` has no `name`, no `familyId` (which template it belongs to),
+and `parameters` is an untyped blob with no schema enforcement.
+
+**What to build:**
+
+**1. Extend `family_type` in `core/src/index.ts`:**
+```ts
+{
+  kind:       'family_type';
+  id:         string;
+  name:       string;          // "Single Flush : 900×2100"
+  familyId:   string;          // which FamilyDefinition this belongs to
+  discipline: FamilyDiscipline;
+  parameters: Record<string, unknown>;  // typed by the family's schema
+  isBuiltIn?: boolean;         // true = ships with app, false = user-created
+}
+
+type FamilyDiscipline =
+  | 'door' | 'window' | 'stair' | 'railing'
+  | 'wall_type' | 'floor_type' | 'roof_type'    // system families
+  | 'column' | 'beam'                            // structural (future)
+  | 'generic';
+```
+
+**2. Add `FamilyDefinition` type** (not an Element — lives in the catalog,
+not in the project model):
+```ts
+// packages/web/src/families/familyCatalog.ts (new file)
+export interface FamilyParamDef {
+  key:      string;
+  label:    string;
+  type:     'length_mm' | 'angle_deg' | 'material_key' | 'boolean' | 'option';
+  default:  unknown;
+  options?: string[];       // for 'option' type
+  min?:     number;         // for 'length_mm' / 'angle_deg'
+  max?:     number;
+  instanceOverridable: boolean;  // can an instance override this param?
+}
+
+export interface FamilyDefinition {
+  id:         string;       // e.g. 'door.single-flush'
+  name:       string;       // "Single Flush Door"
+  discipline: FamilyDiscipline;
+  thumbnail?: string;       // base64 PNG or URL for library browser
+  params:     FamilyParamDef[];
+  defaultTypes: Omit<FamilyTypeElement, 'kind' | 'id'>[];  // shipped types
+}
+```
+
+**3. Instance-level override mechanism:**  
+When the renderer resolves geometry for a door instance, the parameter
+resolution order (highest to lowest priority) is:
+```
+instance.overrideParams[key]        // per-instance override (new field)
+  ?? familyType.parameters[key]     // type-level default
+  ?? familyDef.params[key].default  // family-level default
+  ?? instance.widthMm / heightMm    // legacy inline fallback
+```
+
+Add `overrideParams?: Record<string, unknown>` to door/window/stair/railing
+element kinds in `core/src/index.ts`.
+
+**Acceptance:** `family_type` elements in the store have `name` and
+`familyId`. Instances can carry `overrideParams`. Vitest: type-level and
+instance-level override resolution tested as a pure function.
+
+---
+
+### FL-02 · Built-in family catalog — doors and windows
+
+**What to build:**
+
+A static catalog file `packages/web/src/families/familyCatalog.ts` that
+exports a `BUILT_IN_FAMILIES: FamilyDefinition[]` array and a
+`BUILT_IN_TYPES: Omit<FamilyTypeElement, 'kind' | 'id'>[]` array.
+
+**Door families (minimum viable set):**
+
+| Family ID | Name | Key params | Notes |
+|---|---|---|---|
+| `door.single-flush` | Single Flush Door | width, height, frameProfileMm, swing (L/R), material | Most common residential/commercial |
+| `door.double-leaf` | Double Leaf Door | totalWidth, height, frameProfileMm, activeleaf (L/R) | Entry doors, double swing |
+| `door.sliding` | Sliding Door | width, height, panelCount (1/2), frameProfileMm | Terrace / balcony |
+| `door.bifold` | Bifold Door | totalWidth, height, leafCount (2/4), frameProfileMm | Wardrobe, room divider |
+
+**Default types per door family (examples):**
+
+`door.single-flush` ships with:
+- "762 × 1981 — Timber" (UK standard 2'6" × 6'6")
+- "838 × 1981 — Timber" (UK standard 2'9" × 6'6")
+- "900 × 2100 — Timber" (metric standard)
+- "900 × 2100 — Aluminium" (commercial, metalness 0.6)
+- "1000 × 2100 — Timber" (wide leaf)
+
+**Window families (minimum viable set):**
+
+| Family ID | Name | Key params | Notes |
+|---|---|---|---|
+| `window.fixed` | Fixed Light | width, height, frameProfileMm, glazingLayers (1/2/3) | No operable part |
+| `window.casement` | Casement Window | width, height, frameProfileMm, openingDir (L/R/top) | Side-hung or top-hung |
+| `window.double-hung` | Double-Hung Window | width, height, frameProfileMm, raisedRailMm | Both sashes slide |
+| `window.sliding` | Sliding Window | width, height, frameProfileMm, panelCount (2/3) | Horizontal slide |
+| `window.fixed-casement` | Fixed + Casement | totalWidth, height, fixedRatio, casementSide | Common residential |
+
+**Default types per window family (examples):**
+
+`window.casement` ships with:
+- "600 × 900 — Aluminium White" (bathroom / utility)
+- "900 × 1200 — Aluminium White" (standard residential)
+- "1200 × 1500 — Aluminium White" (living room)
+- "600 × 900 — Timber" (heritage / traditional)
+
+**Geometry function per family:**
+
+Each `FamilyDefinition` has a geometry function signature:
+```ts
+type FamilyGeometryFn = (
+  params: Record<string, unknown>,
+  paint: ViewportPaintBundle | null,
+) => THREE.Group;
+```
+
+For `door.single-flush` this is the R2-02 geometry (frame + panel) but now
+parameterised by `frameProfileMm` and `material` rather than hardcoded.
+For `door.sliding` the geometry is a different function (no frame reveal,
+instead a track header + sliding panel).
+
+**Acceptance:** `BUILT_IN_FAMILIES` exports at least 4 door + 5 window
+families. Each has ≥3 default types. Vitest: 15+ assertions covering param
+resolution, type count per family, and that each family has a geometry
+function that returns a `THREE.Group` with at least one child mesh.
+
+---
+
+### FL-03 · Renderer reads familyTypeId
+
+**What exists today:**
+`makeDoorMesh` and `makeWindowMesh` (post R2-02/03) use inline element
+params (`door.widthMm`, `door.heightMm`). `door.familyTypeId` is never read.
+
+**What to build:**
+
+In the scene-build loop in `Viewport.tsx`, before calling `makeDoorMesh`,
+look up the family type and merge its parameters:
+```ts
+function resolveElementParams(
+  el: DoorElem | WindowElem,
+  elementsById: Record<string, Element>,
+): ResolvedDoorParams | ResolvedWindowParams {
+  const typeEl = el.familyTypeId
+    ? (elementsById[el.familyTypeId] as FamilyTypeElement | undefined)
+    : undefined;
+  const familyDef = typeEl
+    ? BUILT_IN_FAMILIES.find(f => f.id === typeEl.familyId)
+      ?? USER_FAMILIES.find(f => f.id === typeEl.familyId)
+    : undefined;
+
+  // Priority: instance override > type params > family default > inline
+  const get = (key: string, fallback: unknown) =>
+    el.overrideParams?.[key]
+    ?? typeEl?.parameters[key]
+    ?? familyDef?.params.find(p => p.key === key)?.default
+    ?? fallback;
+
+  return {
+    widthMm:        get('widthMm',        el.widthMm)        as number,
+    heightMm:       get('heightMm',       el.heightMm ?? 2100) as number,
+    frameProfileMm: get('frameProfileMm', 70)                 as number,
+    materialKey:    get('materialKey',    el.materialKey)     as string | null,
+    operationType:  get('operationType',  'single-flush')     as string,
+    // ... etc.
+  };
+}
+```
+
+Then dispatch to the right geometry function based on `familyDef.id`:
+```ts
+const params = resolveElementParams(door, elementsById);
+const familyId = typeEl?.familyId ?? 'door.single-flush';
+const geometryFn = FAMILY_GEOMETRY_FNS[familyId] ?? defaultDoorGeometry;
+const mesh = geometryFn(params, paint);
+```
+
+This means a door with `familyTypeId = "door.single-flush:900x2100-timber"`
+will render the correct single-flush geometry with timber material, while a
+door with `familyTypeId = "door.sliding:1800x2100-alum"` will render a
+completely different sliding-door geometry.
+
+**Acceptance:** Placing two doors with different `familyTypeId` values in the
+seed model renders visually different geometry. Vitest: `resolveElementParams`
+unit-tested for all three override levels.
+
+---
+
+### FL-04 · Additional family catalogs
+
+Extend `familyCatalog.ts` beyond doors and windows once FL-02 and FL-03 are
+stable:
+
+**Stair families:**
+
+| Family ID | Name | Key params |
+|---|---|---|
+| `stair.straight` | Straight Stair | width, riserCount, riserMm, treadMm, stringer (open/closed) |
+| `stair.l-shaped` | L-Shaped Stair | width, riserCount, riserMm, treadMm, landingSize, turnDir (L/R) |
+| `stair.u-shaped` | U-Shaped Stair | width, riserCount, riserMm, treadMm, landingWidth |
+| `stair.spiral` | Spiral Stair | diameter, riserCount, riserMm, handedness (CW/CCW) |
+
+**Railing families:**
+
+| Family ID | Name | Key params |
+|---|---|---|
+| `railing.glass-panel` | Glass Panel Railing | guardHeightMm, panelThickMm, postSpacingMm, topRailMm |
+| `railing.baluster` | Baluster Railing | guardHeightMm, balusterSpacingMm, balusterSect, postSect, topRailMm |
+| `railing.cable` | Cable Railing | guardHeightMm, cableCount, cableDiameterMm, postSect |
+
+**Acceptance:** Each catalog has ≥2 families with ≥2 default types each.
+Geometry functions return visually distinguishable results for different
+families of the same discipline.
+
+---
+
+### FL-05 · Type selector in Inspector
+
+**What to build:**
+
+When a door or window is selected, the Inspector Properties tab shows a
+**Type** picker at the top, above the numeric fields:
+
+```
+┌─────────────────────────────────────┐
+│ Type  [Single Flush : 900×2100 ▾]  │  ← dropdown or button opening a popover
+│                                     │
+│ Width        900 mm                 │
+│ Height      2100 mm                 │
+│ Frame profile  70 mm                │
+│ Material    [Timber ▾]              │
+│ Swing        [Left ▾]              │
+└─────────────────────────────────────┘
+```
+
+The type picker opens a popover listing all types for the same family, grouped
+by family within the discipline. Changing the type fires an
+`updateElementProperty` semantic command for `familyTypeId`.
+
+**Instance override indicators:** If an instance param differs from the type
+default, show a small dot next to the field label and a "Reset to type" link.
+
+**Acceptance:** Selecting a door shows its current type name. Changing the
+type in the Inspector updates the 3D mesh immediately (via store → render
+loop). Vitest: type change dispatches correct semantic command.
+
+---
+
+### FL-06 · Family library browser panel
+
+A dedicated panel (accessible from the Project Browser left rail or via ⌘K
+`> Browse families`) showing the full built-in catalog plus any user-defined
+types:
+
+```
+┌────────────────────────────────────────┐
+│  Family Library              [+ New]   │
+│  ────────────────────────────────────  │
+│  🔍 Search families…                   │
+│                                        │
+│  ▾ Doors                               │
+│    Single Flush Door          4 types  │
+│    Double Leaf Door           3 types  │
+│    Sliding Door               2 types  │
+│  ▾ Windows                             │
+│    Fixed Light                3 types  │
+│    Casement                   4 types  │
+│    Double-Hung                2 types  │
+│  ▾ Stairs                              │
+│    Straight Stair             2 types  │
+│  ▾ Railings                            │
+│    Baluster Railing           2 types  │
+└────────────────────────────────────────┘
+```
+
+Clicking a type shows a thumbnail preview (rendered via an offscreen
+`THREE.WebGLRenderer` into a 128×128 canvas), the parameter list, and a
+**"Place"** button that sets the active tool to the corresponding element
+draw tool pre-loaded with that type.
+
+**Thumbnail generation:** On first access per type, render the family geometry
+function with default params into an offscreen canvas at 128×128, store as a
+blob URL in a module-level cache.
+
+**Acceptance:** Panel lists all built-in families grouped by discipline.
+Search filters by name. Clicking a type shows its params. Thumbnails render
+within 200ms (cached after first render). Placing a type from the panel starts
+the draw tool with the correct `familyTypeId`.
+
+---
+
+### FL-07 · Custom type authoring
+
+Allow users to create their own types within a built-in family (e.g. a custom
+"900 × 2400 — Black Aluminium" door type):
+
+```
+Family:  Single Flush Door
+Name:    900 × 2400 Black Alum
+────────────────────────────
+Width        900 mm
+Height      2400 mm
+Frame profile  60 mm
+Material     Aluminium
+Swing        Left
+────────────────────────────
+[Cancel]              [Save type]
+```
+
+On save, a `family_type` element is added to the project model (not the
+catalog) with `isBuiltIn: false`. It appears in the type selector and library
+browser alongside built-in types, visually distinguished (e.g. "Custom" badge).
+
+Custom types are persisted in the project snapshot (`elementsById`). They are
+not shared across projects unless exported.
+
+**Export/import:** A "Share type" action serialises the `family_type` element
+to a JSON file that can be imported into another project.
+
+**Acceptance:** User can create, name, edit, and delete custom types. Custom
+types appear in the Inspector type picker and library browser. They persist
+across page reloads (in snapshot). JSON export round-trips cleanly.
+
+---
+
+### FL-08 · System family layer stack (wall / floor / roof assemblies)
+
+This is the deepest work and maps to Revit's "System Families." Instead of
+walls having a single `thicknessMm` and flat color, a wall type is defined as
+an ordered stack of material layers:
+
+```ts
+interface WallLayerAssembly {
+  familyId:   'wall_type';
+  name:       string;            // "Ext. Timber Cladding on Timber Frame"
+  layers: {
+    name:     string;            // "Cladding", "Air gap", "Frame + Insulation"
+    thicknessMm: number;
+    materialKey: string;         // maps to PBR params + color token
+    function:  'structure' | 'insulation' | 'finish' | 'membrane' | 'air';
+    exterior?: boolean;
+  }[];
+}
+```
+
+**Renderer implications:** When a wall has a `familyTypeId` pointing to a
+`wall_type`, the renderer extrudes each layer as a separate `BoxGeometry`
+offset from the wall centreline. The exterior finish layer renders with cladding
+geometry (FL-03 / R3-03). The structural layer renders with its own PBR params.
+
+**Built-in wall assemblies (minimum viable set):**
+
+| ID | Name | Layers |
+|---|---|---|
+| `wall.ext-timber` | Ext. Timber Frame | Cladding 18mm + Air gap 25mm + Frame+Ins 140mm + VCL 3mm + Plasterboard 12.5mm |
+| `wall.ext-masonry` | Ext. Brick Cavity | Brick 102mm + Cavity 75mm + Block 100mm + Plaster 13mm |
+| `wall.int-partition` | Int. Timber Partition | Plasterboard 12.5mm + Stud 89mm + Plasterboard 12.5mm |
+| `wall.int-blockwork` | Int. Blockwork | Plaster 13mm + Block 100mm + Plaster 13mm |
+
+**Plan view impact:** Layer boundaries should draw as thin lines in the plan
+canvas, matching the Revit plan drawing convention where you see the full layer
+stack cross-section. This connects to B01 (plan drafting visuals).
+
+**Acceptance:** A wall with a `wall_type` familyTypeId renders as a multi-layer
+extrusion in 3D. Total thickness matches the sum of layer thicknesses. Each
+layer has correct color and roughness from its `materialKey`. Plan view shows
+layer boundary lines.
+
+---
+
+### FL — Implementation notes
+
+**Where families live:**
+- Built-in catalog: `packages/web/src/families/familyCatalog.ts` — static
+  module, zero runtime cost, tree-shaken for families not used
+- User-defined types: in `elementsById` (project model) as `family_type`
+  elements with `isBuiltIn: false`
+- Geometry functions: `packages/web/src/families/geometryFns/` — one file per
+  discipline (`doorGeometry.ts`, `windowGeometry.ts`, etc.)
+
+**Parameter type safety:**
+
+Each `FamilyDefinition.params` array is the schema. A `validateTypeParams`
+function checks all required keys are present and within bounds before saving.
+The renderer's `resolveElementParams` never throws — it always has a fallback.
+
+**Extensibility:**
+
+The catalog is designed to be extended by:
+1. Adding entries to `BUILT_IN_FAMILIES` in `familyCatalog.ts`
+2. Adding a geometry function to `geometryFns/`
+3. Wiring the family ID into the renderer dispatch table
+
+A third-party library of families (e.g. a furniture catalog, structural
+columns) can be added as a separate npm package that exports a
+`FamilyDefinition[]` array — the browser merges it with `BUILT_IN_FAMILIES`
+at startup. No server required.

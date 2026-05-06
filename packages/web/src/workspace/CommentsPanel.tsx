@@ -1,4 +1,5 @@
 import { useState, type JSX } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Icons, ICON_SIZE } from '@bim-ai/ui';
 import type { UxComment } from '../state/store';
 
@@ -17,6 +18,7 @@ export function CommentsPanel({
   onResolve,
   onClose,
 }: CommentsPanelProps): JSX.Element {
+  const { t } = useTranslation();
   const [text, setText] = useState('');
   const [posting, setPosting] = useState(false);
 
@@ -37,10 +39,10 @@ export function CommentsPanel({
       className="flex w-72 flex-col gap-3 rounded-lg border border-border bg-background p-4 shadow-elev-2"
     >
       <div className="flex items-center justify-between">
-        <span className="text-sm font-semibold text-foreground">Comments</span>
+        <span className="text-sm font-semibold text-foreground">{t('workspace.comments')}</span>
         <button
           type="button"
-          aria-label="Close comments"
+          aria-label={t('workspace.closeComments')}
           onClick={onClose}
           className="rounded-md p-1 text-muted hover:bg-surface hover:text-foreground"
         >
@@ -52,7 +54,7 @@ export function CommentsPanel({
           data-testid="comment-input"
           className="w-full rounded border border-border bg-surface p-2 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent"
           rows={3}
-          placeholder="Add a comment…"
+          placeholder={t('workspace.addComment')}
           value={text}
           onChange={(e) => setText(e.target.value)}
         />
@@ -63,12 +65,12 @@ export function CommentsPanel({
           onClick={() => void handlePost()}
           className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-accent-foreground hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {posting ? 'Posting…' : 'Post'}
+          {posting ? t('workspace.posting') : t('workspace.post')}
         </button>
       </div>
       <ul data-testid="comments-list" className="max-h-[40vh] space-y-2 overflow-auto">
         {comments.length === 0 ? (
-          <li className="text-xs text-muted">No comments yet.</li>
+          <li className="text-xs text-muted">{t('workspace.noComments')}</li>
         ) : (
           comments.map((c) => (
             <li

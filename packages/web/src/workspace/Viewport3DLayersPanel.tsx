@@ -1,4 +1,5 @@
 import { type JSX } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export const VIEWER_HIDDEN_KIND_KEYS = [
   'wall',
@@ -35,16 +36,16 @@ export function Viewport3DLayersPanel({
   onClipFloorBlur,
   activeViewpointId,
 }: Viewport3DLayersPanelProps): JSX.Element {
+  const { t } = useTranslation();
   return (
     <div data-testid="viewport3d-layers-panel" className="flex flex-col gap-3 px-3 py-3">
       <div className="text-[10px] font-semibold uppercase tracking-widest text-muted">
-        3D Layers
+        {t('layers3d.heading')}
       </div>
 
       {activeViewpointId ? (
         <p className="text-[10px] text-muted">
-          Toggles update viewpoint{' '}
-          <span className="font-mono">{activeViewpointId}</span>.
+          {t('layers3d.viewpointToggleHint', { id: activeViewpointId })}
         </p>
       ) : null}
 
@@ -57,13 +58,13 @@ export function Viewport3DLayersPanel({
               checked={!viewerCategoryHidden[lk]}
               onChange={() => onToggleCategory(lk)}
             />
-            <span className="capitalize">{lk}</span>
+            <span>{t(`tools.${lk}.label`)}</span>
           </label>
         ))}
       </div>
 
       <label className="block text-[10px] text-muted">
-        Section box — cap Y (mm, clips above; empty = off)
+        {t('layers3d.sectionBoxCap')}
         <input
           data-testid="clip-elev-input"
           className="mt-1 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px]"
@@ -84,7 +85,7 @@ export function Viewport3DLayersPanel({
       </label>
 
       <label className="block text-[10px] text-muted">
-        Section box — floor Y (mm, clips below; empty = off)
+        {t('layers3d.sectionBoxFloor')}
         <input
           data-testid="clip-floor-input"
           className="mt-1 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px]"

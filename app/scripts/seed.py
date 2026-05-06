@@ -293,6 +293,31 @@ def _house_commands() -> list[dict]:
         },
     ]
 
+    # ── Railing ───────────────────────────────────────────────────────────────
+    cmds.append({
+        "type": "createRailing", "id": "railing-stair", "name": "Stair railing",
+        "hostedStairId": "stair-main",
+        "pathMm": [
+            {"xMm": 7400, "yMm": 680},
+            {"xMm": 11000, "yMm": 680},
+        ],
+        "guardHeightMm": 1000,
+    })
+
+    # ── Site ──────────────────────────────────────────────────────────────────
+    cmds.append({
+        "type": "upsertSite", "id": "site-main", "name": "Site",
+        "referenceLevelId": "lvl-1",
+        "boundaryMm": [
+            {"xMm": -4000, "yMm": -4000},
+            {"xMm": 16000, "yMm": -4000},
+            {"xMm": 16000, "yMm": 12400},
+            {"xMm": -4000, "yMm": 12400},
+        ],
+        "padThicknessMm": 300,
+        "baseOffsetMm": 0,
+    })
+
     # ── Section cut ───────────────────────────────────────────────────────────
     cmds.append({
         "type": "createSectionCut", "id": "sec-ew", "name": "Section A–A",

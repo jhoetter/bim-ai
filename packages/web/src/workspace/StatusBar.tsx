@@ -7,6 +7,7 @@ import {
   useId,
   useState,
 } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Icons, ICON_SIZE } from '@bim-ai/ui';
 import type { CollaborationConflictQueueV1 } from '../lib/collaborationConflictQueue';
 
@@ -111,12 +112,6 @@ function Divider(): JSX.Element {
   return <span aria-hidden="true" className="inline-block h-3 w-px bg-border" />;
 }
 
-const RETRY_LABELS: Record<string, string> = {
-  safe: 'safe retry',
-  blocked: 'blocked',
-  requires_manual_edit: 'manual edit',
-};
-
 function ConflictSlot({
   queue,
   onClear,
@@ -124,8 +119,14 @@ function ConflictSlot({
   queue: CollaborationConflictQueueV1;
   onClear?: () => void;
 }): JSX.Element {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
-  const retryLabel = RETRY_LABELS[queue.retryAdvice] ?? queue.retryAdvice;
+  const retryLabels: Record<string, string> = {
+    safe: t('statusbar.conflict.safeRetry'),
+    blocked: t('statusbar.conflict.blocked'),
+    requires_manual_edit: t('statusbar.conflict.manualEdit'),
+  };
+  const retryLabel = retryLabels[queue.retryAdvice] ?? queue.retryAdvice;
   return (
     <div className="relative flex items-center">
       <button
@@ -134,10 +135,10 @@ function ConflictSlot({
         data-testid="conflict-pill"
         onClick={() => setExpanded((v) => !v)}
         className="flex items-center gap-1 rounded-sm px-1.5 py-0.5 font-medium text-amber-700 hover:bg-amber-50 dark:text-amber-300 dark:hover:bg-amber-950/30"
-        title="Collaboration conflict — click to expand"
+        title={t('statusbar.conflict.pill')}
       >
         <Icons.advisorWarning size={ICON_SIZE.chrome} aria-hidden="true" />
-        <span>Conflict</span>
+        <span>{t('statusbar.conflict.label')}</span>
         <span className="rounded bg-amber-100 px-1 py-px text-[9px] dark:bg-amber-900/40">
           {retryLabel}
         </span>
@@ -146,16 +147,16 @@ function ConflictSlot({
         <div
           data-testid="collaboration-conflict-queue-readout"
           role="dialog"
-          aria-label="Collaboration conflict details"
+          aria-label={t('statusbar.conflict.dialogAriaLabel')}
           className="absolute bottom-full right-0 z-50 mb-1 w-96 rounded border border-amber-500/40 bg-surface px-3 py-2 text-[10px] shadow-elev-2"
         >
           <div className="flex items-center justify-between">
             <span className="font-semibold text-amber-800 dark:text-amber-300">
-              Collaboration conflict
+              {t('statusbar.conflict.heading')}
             </span>
             <button
               type="button"
-              aria-label="Dismiss conflict"
+              aria-label={t('statusbar.conflict.dismissAriaLabel')}
               data-testid="conflict-dismiss"
               onClick={() => {
                 setExpanded(false);
@@ -210,6 +211,7 @@ function LevelCluster({
   levels: { id: string; label: string }[];
   onLevelChange?: (id: string) => void;
 }): JSX.Element {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const popoverId = useId();
   const close = useCallback(() => setOpen(false), []);
@@ -238,17 +240,17 @@ function LevelCluster({
         aria-controls={popoverId}
         aria-haspopup="menu"
         onClick={() => setOpen((v) => !v)}
-        title="Active level — PageUp/PageDown to cycle"
+        title={t('statusbar.levelTitle')}
         className="rounded-sm px-1.5 py-0.5 hover:bg-surface-strong"
       >
-        Level: <span className="font-medium text-foreground">{level.label}</span>
+        {t('statusbar.levelLabel')} <span className="font-medium text-foreground">{level.label}</span>
         <Icons.disclosureOpen size={ICON_SIZE.chrome} aria-hidden="true" className="ml-1 inline" />
       </button>
       {open ? (
         <div
           id={popoverId}
           role="menu"
-          aria-label="Levels"
+          aria-label={t('statusbar.levels')}
           className="absolute bottom-full left-0 z-50 mb-1 w-48 rounded-md border border-border bg-surface text-sm shadow-elev-2"
         >
           {levels.map((l) => (
@@ -266,7 +268,7 @@ function LevelCluster({
               ].join(' ')}
             >
               {l.label}
-              {l.id === level.id ? <span className="text-xs text-muted">active</span> : null}
+              {l.id === level.id ? <span className="text-xs text-muted">{t('statusbar.levelActive')}</span> : null}
             </button>
           ))}
         </div>
@@ -276,9 +278,10 @@ function LevelCluster({
 }
 
 function ToolCluster({ toolLabel }: { toolLabel: string | null }): JSX.Element {
+  const { t } = useTranslation();
   return (
-    <div aria-live="polite" className="flex items-center gap-1" title="Active tool">
-      Tool: <span className="font-medium text-foreground">{toolLabel ?? '—'}</span>
+    <div aria-live="polite" className="flex items-center gap-1" title={t('statusbar.toolTitle')}>
+      {t('statusbar.toolLabel')} <span className="font-medium text-foreground">{toolLabel ?? '—'}</span>
     </div>
   );
 }
@@ -290,13 +293,14 @@ function SnapCluster({
   snapModes: { id: string; label: string; on: boolean }[];
   onSnapToggle?: (id: string) => void;
 }): JSX.Element {
+  const { t } = useTranslation();
   return (
-    <div className="flex items-center gap-1" title="Snap modes — F3 to cycle">
+    <div className="flex items-center gap-1" title={t('statusbar.snapTitle')}>
       <Icons.snap size={ICON_SIZE.chrome} aria-hidden="true" className="text-muted" />
-      <span>Snap:</span>
-      <div role="group" aria-label="Snap modes" className="flex items-center gap-1">
+      <span>{t('statusbar.snapLabel')}</span>
+      <div role="group" aria-label={t('statusbar.snapModes')} className="flex items-center gap-1">
         {snapModes.length === 0 ? (
-          <span className="text-muted">off</span>
+          <span className="text-muted">{t('statusbar.snapOff')}</span>
         ) : (
           snapModes.map((s) => (
             <button
@@ -327,17 +331,18 @@ function GridCluster({
   gridOn: boolean;
   onGridToggle?: () => void;
 }): JSX.Element {
+  const { t } = useTranslation();
   return (
     <button
       type="button"
       role="switch"
       aria-checked={gridOn}
       onClick={onGridToggle}
-      title="Grid (F7)"
+      title={t('statusbar.gridTitle')}
       className="flex items-center gap-1 rounded-sm px-1.5 py-0.5 hover:bg-surface-strong"
     >
       <Icons.grid size={ICON_SIZE.chrome} aria-hidden="true" />
-      Grid: <span className="font-medium">{gridOn ? 'ON' : 'OFF'}</span>
+      {t('statusbar.gridLabel')} <span className="font-medium">{gridOn ? t('statusbar.gridOn') : t('statusbar.gridOff')}</span>
     </button>
   );
 }
@@ -347,8 +352,9 @@ function CoordCluster({
 }: {
   cursorMm: { xMm: number; yMm: number } | null;
 }): JSX.Element {
+  const { t } = useTranslation();
   return (
-    <div aria-live="polite" aria-label="Cursor coordinates" className="font-mono text-xs">
+    <div aria-live="polite" aria-label={t('statusbar.coordsLabel')} className="font-mono text-xs">
       {cursorMm
         ? `X ${(cursorMm.xMm / 1000).toFixed(2)} m   Y ${(cursorMm.yMm / 1000).toFixed(2)} m`
         : 'X —   Y —'}
@@ -365,13 +371,14 @@ function UndoCluster({
   onUndo?: () => void;
   onRedo?: () => void;
 }): JSX.Element {
+  const { t } = useTranslation();
   return (
     <div className="flex items-center gap-1">
       <button
         type="button"
         onClick={onUndo}
-        title="Undo (⌘Z)"
-        aria-label="Undo"
+        title={t('statusbar.undoTitle')}
+        aria-label={t('statusbar.undoLabel')}
         className="inline-flex h-5 w-5 items-center justify-center rounded-sm text-muted hover:bg-surface-strong"
       >
         <Icons.undo size={ICON_SIZE.chrome} aria-hidden="true" />
@@ -380,8 +387,8 @@ function UndoCluster({
       <button
         type="button"
         onClick={onRedo}
-        title="Redo (⇧⌘Z)"
-        aria-label="Redo"
+        title={t('statusbar.redoTitle')}
+        aria-label={t('statusbar.redoLabel')}
         className="inline-flex h-5 w-5 items-center justify-center rounded-sm text-muted hover:bg-surface-strong"
       >
         <Icons.redo size={ICON_SIZE.chrome} aria-hidden="true" />
@@ -391,36 +398,34 @@ function UndoCluster({
 }
 
 function WsCluster({ state }: { state: StatusWsState }): JSX.Element {
-  const palette: Record<StatusWsState, { color: string; label: string }> = {
-    connected: { color: 'var(--color-success)', label: 'connected' },
-    reconnecting: { color: 'var(--color-warning)', label: 'reconnecting' },
-    offline: { color: 'var(--color-danger)', label: 'offline' },
+  const { t } = useTranslation();
+  const wsColors: Record<StatusWsState, string> = {
+    connected: 'var(--color-success)',
+    reconnecting: 'var(--color-warning)',
+    offline: 'var(--color-danger)',
   };
-  const { color, label } = palette[state];
+  const color = wsColors[state];
+  const label = t(`statusbar.ws.${state}`);
   return (
     <div
       aria-live={state === 'offline' ? 'assertive' : 'polite'}
-      title={`Connection: ${label}`}
+      title={t('statusbar.connection', { label })}
       className="flex items-center gap-1"
     >
       <Icons.online size={ICON_SIZE.chrome} aria-hidden="true" style={{ color }} />
-      <span>ws:</span>
+      <span>{t('statusbar.wsLabel')}</span>
       <span style={{ color }}>{label}</span>
     </div>
   );
 }
 
 function SaveCluster({ state }: { state: StatusSaveState }): JSX.Element {
-  const text: Record<StatusSaveState, string> = {
-    saved: 'saved',
-    saving: 'saving…',
-    unsynced: 'unsynced',
-    error: 'save failed',
-  };
+  const { t } = useTranslation();
+  const label = t(`statusbar.save.${state}`);
   return (
     <div
       aria-live={state === 'error' ? 'assertive' : 'polite'}
-      title={`Save state: ${text[state]}`}
+      title={t('statusbar.save.title', { state: label })}
       className="font-medium"
       style={{
         color:
@@ -431,7 +436,7 @@ function SaveCluster({ state }: { state: StatusSaveState }): JSX.Element {
               : 'var(--color-foreground)',
       }}
     >
-      {text[state]}
+      {label}
     </div>
   );
 }

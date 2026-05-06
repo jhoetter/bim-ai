@@ -1,4 +1,5 @@
 import { type CSSProperties, type JSX, type KeyboardEvent, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Icons, ICON_SIZE } from '@bim-ai/ui';
 import {
   isToolDisabled,
@@ -39,7 +40,8 @@ export function ToolPalette({
   disabledContext,
   onTagSubmenu,
 }: ToolPaletteProps): JSX.Element {
-  const tools = paletteForMode(mode);
+  const { t } = useTranslation();
+  const tools = paletteForMode(mode, t);
   const refs = useRef<Map<ToolId, HTMLButtonElement>>(new Map());
   const setRef = useCallback(
     (id: ToolId) => (el: HTMLButtonElement | null) => {
@@ -74,7 +76,7 @@ export function ToolPalette({
     >
       {tools.map((tool) => {
         const Icon = Icons[tool.icon]!;
-        const enablement = isToolDisabled(tool.id, disabledContext);
+        const enablement = isToolDisabled(tool.id, disabledContext, t);
         const isActive = tool.id === activeTool;
         return (
           <button

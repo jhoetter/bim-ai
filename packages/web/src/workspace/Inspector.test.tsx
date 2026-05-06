@@ -1,6 +1,16 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
+import { I18nextProvider } from 'react-i18next';
 import { Inspector, NumericField, evaluateExpression, type InspectorSelection } from './Inspector';
+import i18n from '../i18n';
+
+function renderWithI18n(ui: React.ReactElement) {
+  return render(ui, {
+    wrapper: ({ children }: { children: React.ReactNode }) => (
+      <I18nextProvider i18n={i18n}>{children}</I18nextProvider>
+    ),
+  });
+}
 
 afterEach(() => {
   cleanup();
@@ -13,7 +23,7 @@ const selection: InspectorSelection = {
 
 describe('Inspector — spec §13', () => {
   it('renders the empty state with quick actions when nothing is selected', () => {
-    const { getByText } = render(
+    const { getByText } = renderWithI18n(
       <Inspector
         selection={null}
         tabs={{ properties: <div /> }}
@@ -29,7 +39,7 @@ describe('Inspector — spec §13', () => {
   });
 
   it('renders header, three tabs, and Properties body when selection set', () => {
-    const { getByText, getAllByRole } = render(
+    const { getByText, getAllByRole } = renderWithI18n(
       <Inspector
         selection={selection}
         tabs={{
@@ -46,7 +56,7 @@ describe('Inspector — spec §13', () => {
   });
 
   it('switches body when tab is clicked', () => {
-    const { getByText, queryByText } = render(
+    const { getByText, queryByText } = renderWithI18n(
       <Inspector
         selection={selection}
         tabs={{
@@ -62,7 +72,7 @@ describe('Inspector — spec §13', () => {
   });
 
   it('cycles tabs with ArrowLeft / ArrowRight', () => {
-    const { getByRole, getByText } = render(
+    const { getByRole, getByText } = renderWithI18n(
       <Inspector
         selection={selection}
         tabs={{
@@ -84,7 +94,7 @@ describe('Inspector — spec §13', () => {
   it('shows Apply / Reset footer only when dirty', () => {
     const onApply = vi.fn();
     const onReset = vi.fn();
-    const { queryByText, rerender, getByText } = render(
+    const { queryByText, rerender, getByText } = renderWithI18n(
       <Inspector
         selection={selection}
         tabs={{ properties: <div>props</div> }}
@@ -111,7 +121,7 @@ describe('Inspector — spec §13', () => {
 
   it('emits onClearSelection when the close button is clicked', () => {
     const onClearSelection = vi.fn();
-    const { getByLabelText } = render(
+    const { getByLabelText } = renderWithI18n(
       <Inspector
         selection={selection}
         tabs={{ properties: <div>props</div> }}
@@ -138,14 +148,14 @@ describe('evaluateExpression — §13.3 numeric grammar', () => {
 
 describe('NumericField', () => {
   it('renders the value in the chosen unit', () => {
-    const { getByLabelText } = render(
+    const { getByLabelText } = renderWithI18n(
       <NumericField label="Width" valueMm={1500} onCommitMm={() => undefined} unit="m" />,
     );
     expect((getByLabelText('Width') as HTMLInputElement).value).toBe('1.500');
   });
 
   it('cycles units mm → cm → m → mm', () => {
-    const { getByRole } = render(
+    const { getByRole } = renderWithI18n(
       <NumericField label="Width" valueMm={1500} onCommitMm={() => undefined} />,
     );
     const chip = getByRole('button');
@@ -160,7 +170,7 @@ describe('NumericField', () => {
 
   it('commits an expression on blur', () => {
     const onCommitMm = vi.fn();
-    const { getByLabelText } = render(
+    const { getByLabelText } = renderWithI18n(
       <NumericField label="Width" valueMm={1500} onCommitMm={onCommitMm} />,
     );
     const input = getByLabelText('Width') as HTMLInputElement;
@@ -170,7 +180,7 @@ describe('NumericField', () => {
   });
 
   it('flags invalid expressions via aria-invalid', () => {
-    const { getByLabelText } = render(
+    const { getByLabelText } = renderWithI18n(
       <NumericField label="Width" valueMm={1500} onCommitMm={() => undefined} />,
     );
     const input = getByLabelText('Width') as HTMLInputElement;

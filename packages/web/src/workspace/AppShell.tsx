@@ -7,6 +7,7 @@ import {
   useEffect,
   useState,
 } from 'react';
+import { useTranslation } from 'react-i18next';
 
 /**
  * AppShell — the canonical layout grid for the BIM AI workspace.
@@ -38,6 +39,9 @@ export interface AppShellProps {
   defaultLeftCollapsed?: boolean;
   /** Initial collapsed state for the right rail. Defaults to false. */
   defaultRightCollapsed?: boolean;
+  /** Controlled left-rail collapsed state. When provided, overrides internal state. */
+  leftCollapsed?: boolean;
+  onLeftCollapsedChange?: (v: boolean) => void;
   /** Override the document target for the global `[` / `]` hotkeys.
    * Used by tests to scope the listeners. */
   hotkeyTarget?: Document | HTMLElement;
@@ -52,10 +56,27 @@ export function AppShell({
   statusBar,
   defaultLeftCollapsed = false,
   defaultRightCollapsed = false,
+  leftCollapsed: leftCollapsedProp,
+  onLeftCollapsedChange,
   hotkeyTarget,
 }: AppShellProps): JSX.Element {
-  const [leftCollapsed, setLeftCollapsed] = useState(defaultLeftCollapsed);
+  const { t } = useTranslation();
+  const [leftCollapsedInternal, setLeftCollapsedInternal] = useState(defaultLeftCollapsed);
   const [rightCollapsed, setRightCollapsed] = useState(defaultRightCollapsed);
+
+  const isControlled = leftCollapsedProp !== undefined;
+  const leftCollapsed = isControlled ? leftCollapsedProp : leftCollapsedInternal;
+  const setLeftCollapsed = useCallback(
+    (updater: boolean | ((prev: boolean) => boolean)) => {
+      const next = typeof updater === 'function' ? updater(leftCollapsed) : updater;
+      if (isControlled) {
+        onLeftCollapsedChange?.(next);
+      } else {
+        setLeftCollapsedInternal(next);
+      }
+    },
+    [isControlled, leftCollapsed, onLeftCollapsedChange],
+  );
 
   const handleKey = useCallback((event: KeyboardEvent | globalThis.KeyboardEvent) => {
     if (shouldIgnoreKey(event)) return;
@@ -66,7 +87,7 @@ export function AppShell({
       event.preventDefault();
       setRightCollapsed((v) => !v);
     }
-  }, []);
+  }, [setLeftCollapsed]);
 
   useEffect(() => {
     const target: Document | HTMLElement | undefined =
@@ -107,7 +128,7 @@ export function AppShell({
         {topBar}
       </div>
       <aside
-        aria-label="Project browser"
+        aria-label={t('workspace.projectBrowser')}
         data-testid="app-shell-left-rail"
         style={{ gridArea: 'leftRail', minWidth: 0 }}
         className="flex flex-col border-r border-border bg-surface"
@@ -115,7 +136,7 @@ export function AppShell({
         {leftCollapsed ? (leftRailCollapsed ?? null) : leftRail}
       </aside>
       <main
-        aria-label="Canvas"
+        aria-label={t('workspace.canvasLabel')}
         data-testid="app-shell-canvas"
         style={{ gridArea: 'canvas', minWidth: 0, minHeight: 0 }}
         className="relative overflow-hidden bg-background"
@@ -123,7 +144,7 @@ export function AppShell({
         {canvas}
       </main>
       <aside
-        aria-label="Inspector"
+        aria-label={t('workspace.inspectorLabel')}
         data-testid="app-shell-right-rail"
         style={{ gridArea: 'rightRail', minWidth: 0, minHeight: 0, overflow: 'hidden' }}
         className="flex flex-col border-l border-border bg-surface"

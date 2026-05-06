@@ -1,19 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CHEATSHEET,
+  getCheatsheetData,
   filterCheatsheet,
   flattenCheatsheet,
   shouldOpenCheatsheet,
 } from './cheatsheetData';
+import i18n from '../i18n';
+
+const t = i18n.t.bind(i18n);
 
 describe('cheatsheet — spec §19', () => {
   it('groups entries into sections', () => {
-    const ids = CHEATSHEET.map((s) => s.id);
+    const ids = getCheatsheetData(t).map((s) => s.id);
     expect(ids).toEqual(['global', 'modes', 'tools', 'nav3d', 'walk', 'nav2d', 'history', 'shell']);
   });
 
   it('every documented spec action is present', () => {
-    const flat = flattenCheatsheet();
+    const flat = flattenCheatsheet(t);
     const required = [
       'Command palette',
       'Show this cheatsheet',
@@ -49,18 +52,18 @@ describe('cheatsheet — spec §19', () => {
   });
 
   it('filterCheatsheet returns the full set when query is empty', () => {
-    expect(filterCheatsheet('').length).toBe(CHEATSHEET.length);
+    expect(filterCheatsheet('', t).length).toBe(getCheatsheetData(t).length);
   });
 
   it('filterCheatsheet narrows to matching action / keys', () => {
-    const filtered = filterCheatsheet('orbit');
+    const filtered = filterCheatsheet('orbit', t);
     const flat = filtered.flatMap((s) => s.entries);
     expect(flat.every((e) => /orbit/i.test(`${e.action} ${e.keys}`))).toBe(true);
     expect(flat.length).toBeGreaterThan(0);
   });
 
   it('filterCheatsheet returns empty when no match', () => {
-    expect(filterCheatsheet('zzzzzzz').length).toBe(0);
+    expect(filterCheatsheet('zzzzzzz', t).length).toBe(0);
   });
 });
 

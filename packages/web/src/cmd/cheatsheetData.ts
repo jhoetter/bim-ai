@@ -1,10 +1,4 @@
-/**
- * Cheatsheet data — spec §19.
- *
- * Canonical keyboard-shortcut catalogue. Grouped by section so the
- * `?`-modal can render an organised list. Tests assert that every
- * spec'd action lives here.
- */
+import type { TFunction } from 'i18next';
 
 export interface CheatsheetEntry {
   action: string;
@@ -17,118 +11,124 @@ export interface CheatsheetSection {
   entries: CheatsheetEntry[];
 }
 
-export const CHEATSHEET: CheatsheetSection[] = [
-  {
-    id: 'global',
-    label: 'Global',
-    entries: [
-      { action: 'Command palette', keys: '⌘K / Ctrl+K' },
-      { action: 'Show this cheatsheet', keys: '?' },
-      { action: 'Cancel', keys: 'Escape' },
-      { action: 'Confirm / Apply', keys: 'Enter' },
-      { action: 'Save bundle', keys: '⌘S' },
-      { action: 'Toggle theme', keys: '⌘⇧L' },
-    ],
-  },
-  {
-    id: 'modes',
-    label: 'Workspace modes',
-    entries: [
-      { action: 'Plan', keys: '1' },
-      { action: '3D', keys: '2' },
-      { action: 'Plan + 3D', keys: '3' },
-      { action: 'Section', keys: '4' },
-      { action: 'Sheet', keys: '5' },
-      { action: 'Schedule', keys: '6' },
-      { action: 'Agent', keys: '7' },
-    ],
-  },
-  {
-    id: 'tools',
-    label: 'Drawing tools',
-    entries: [
-      { action: 'Select', keys: 'V' },
-      { action: 'Wall', keys: 'W' },
-      { action: 'Door', keys: 'D' },
-      { action: 'Window', keys: 'Shift+W' },
-      { action: 'Floor', keys: 'F (plan canvas)' },
-      { action: 'Roof', keys: 'R' },
-      { action: 'Stair', keys: 'S' },
-      { action: 'Railing', keys: 'Shift+R' },
-      { action: 'Room marker', keys: 'M' },
-      { action: 'Dimension', keys: 'Shift+D' },
-      { action: 'Section', keys: 'Shift+S' },
-      { action: 'Tag', keys: 'T' },
-    ],
-  },
-  {
-    id: 'nav3d',
-    label: '3D navigation (orbit mode)',
-    entries: [
-      { action: 'Orbit', keys: 'LMB drag · Alt+LMB' },
-      { action: 'Pan', keys: 'RMB drag · Shift+LMB · MMB drag' },
-      { action: 'Zoom in / out', keys: 'Scroll wheel · Pinch' },
-      { action: 'Zoom step', keys: '⌘= / ⌘-' },
-      { action: 'Fit all to view', keys: 'F' },
-      { action: 'Fit selection', keys: '⌘F / Ctrl+F' },
-      { action: 'Reset view', keys: 'H · Home' },
-      { action: 'Enter walk mode', keys: 'Click Walk button (bottom-left)' },
-    ],
-  },
-  {
-    id: 'walk',
-    label: '3D navigation (walk mode)',
-    entries: [
-      { action: 'Move forward / back', keys: 'W / S · ↑ / ↓' },
-      { action: 'Strafe left / right', keys: 'A / D · ← / →' },
-      { action: 'Ascend / descend', keys: 'E / Q' },
-      { action: 'Run', keys: 'Shift (hold)' },
-      { action: 'Look around', keys: 'Mouse (pointer locked)' },
-      { action: 'Jump to floor above', keys: 'PageUp' },
-      { action: 'Jump to floor below', keys: 'PageDown' },
-      { action: 'Exit walk mode', keys: 'Esc' },
-    ],
-  },
-  {
-    id: 'nav2d',
-    label: '2D plan navigation',
-    entries: [
-      { action: 'Pan', keys: 'LMB drag (empty space) · RMB drag · Space+LMB · MMB' },
-      { action: 'Zoom in / out', keys: 'Scroll wheel · Pinch' },
-      { action: 'Zoom presets', keys: 'Click scale bar (bottom-left)' },
-      { action: 'Fit to view', keys: 'Shift+F · scale bar → Fit to view' },
-    ],
-  },
-  {
-    id: 'history',
-    label: 'History',
-    entries: [
-      { action: 'Undo', keys: '⌘Z' },
-      { action: 'Redo', keys: '⇧⌘Z' },
-    ],
-  },
-  {
-    id: 'shell',
-    label: 'Shell',
-    entries: [
-      { action: 'Toggle left rail', keys: '[' },
-      { action: 'Toggle right rail', keys: ']' },
-    ],
-  },
-];
-
-/** Flat list of every action — useful for tests. */
-export function flattenCheatsheet(): CheatsheetEntry[] {
-  return CHEATSHEET.flatMap((s) => s.entries);
+export function getCheatsheetData(t: TFunction): CheatsheetSection[] {
+  return [
+    {
+      id: 'global',
+      label: t('cheatsheet.sections.global'),
+      entries: [
+        { action: t('cheatsheet.actions.commandPalette'), keys: '⌘K / Ctrl+K' },
+        { action: t('cheatsheet.actions.showCheatsheet'), keys: '?' },
+        { action: t('cheatsheet.actions.cancel'), keys: 'Escape' },
+        { action: t('cheatsheet.actions.confirmApply'), keys: 'Enter' },
+        { action: t('cheatsheet.actions.saveBundle'), keys: '⌘S' },
+        { action: t('cheatsheet.actions.toggleTheme'), keys: '⌘⇧L' },
+      ],
+    },
+    {
+      id: 'modes',
+      label: t('cheatsheet.sections.modes'),
+      entries: [
+        { action: t('cheatsheet.actions.modePlan'), keys: '1' },
+        { action: t('cheatsheet.actions.mode3d'), keys: '2' },
+        { action: t('cheatsheet.actions.modePlan3d'), keys: '3' },
+        { action: t('cheatsheet.actions.modeSection'), keys: '4' },
+        { action: t('cheatsheet.actions.modeSheet'), keys: '5' },
+        { action: t('cheatsheet.actions.modeSchedule'), keys: '6' },
+        { action: t('cheatsheet.actions.modeAgent'), keys: '7' },
+      ],
+    },
+    {
+      id: 'tools',
+      label: t('cheatsheet.sections.tools'),
+      entries: [
+        { action: t('cheatsheet.actions.toolSelect'), keys: 'V' },
+        { action: t('cheatsheet.actions.toolWall'), keys: 'W' },
+        { action: t('cheatsheet.actions.toolDoor'), keys: 'D' },
+        { action: t('cheatsheet.actions.toolWindow'), keys: 'Shift+W' },
+        { action: t('cheatsheet.actions.toolFloor'), keys: 'F (plan canvas)' },
+        { action: t('cheatsheet.actions.toolRoof'), keys: 'R' },
+        { action: t('cheatsheet.actions.toolStair'), keys: 'S' },
+        { action: t('cheatsheet.actions.toolRailing'), keys: 'Shift+R' },
+        { action: t('cheatsheet.actions.toolRoom'), keys: 'M' },
+        { action: t('cheatsheet.actions.toolDimension'), keys: 'Shift+D' },
+        { action: t('cheatsheet.actions.toolSection'), keys: 'Shift+S' },
+        { action: t('cheatsheet.actions.toolTag'), keys: 'T' },
+      ],
+    },
+    {
+      id: 'nav3d',
+      label: t('cheatsheet.sections.nav3d'),
+      entries: [
+        { action: t('cheatsheet.actions.orbit'), keys: 'LMB drag · Alt+LMB' },
+        { action: t('cheatsheet.actions.pan'), keys: 'RMB drag · Shift+LMB · MMB drag' },
+        { action: t('cheatsheet.actions.zoomInOut'), keys: 'Scroll wheel · Pinch' },
+        { action: t('cheatsheet.actions.zoomStep'), keys: '⌘= / ⌘-' },
+        { action: t('cheatsheet.actions.fitAll'), keys: 'F' },
+        { action: t('cheatsheet.actions.fitSelection'), keys: '⌘F / Ctrl+F' },
+        { action: t('cheatsheet.actions.resetView'), keys: 'H · Home' },
+        { action: t('cheatsheet.actions.enterWalk'), keys: 'Click Walk button (bottom-left)' },
+      ],
+    },
+    {
+      id: 'walk',
+      label: t('cheatsheet.sections.walk'),
+      entries: [
+        { action: t('cheatsheet.actions.moveForwardBack'), keys: 'W / S · ↑ / ↓' },
+        { action: t('cheatsheet.actions.strafeLeftRight'), keys: 'A / D · ← / →' },
+        { action: t('cheatsheet.actions.ascendDescend'), keys: 'E / Q' },
+        { action: t('cheatsheet.actions.run'), keys: 'Shift (hold)' },
+        { action: t('cheatsheet.actions.lookAround'), keys: 'Mouse (pointer locked)' },
+        { action: t('cheatsheet.actions.jumpFloorAbove'), keys: 'PageUp' },
+        { action: t('cheatsheet.actions.jumpFloorBelow'), keys: 'PageDown' },
+        { action: t('cheatsheet.actions.exitWalk'), keys: 'Esc' },
+      ],
+    },
+    {
+      id: 'nav2d',
+      label: t('cheatsheet.sections.nav2d'),
+      entries: [
+        {
+          action: t('cheatsheet.actions.pan'),
+          keys: 'LMB drag (empty space) · RMB drag · Space+LMB · MMB',
+        },
+        { action: t('cheatsheet.actions.zoomInOut'), keys: 'Scroll wheel · Pinch' },
+        { action: t('cheatsheet.actions.zoomPresets'), keys: 'Click scale bar (bottom-left)' },
+        {
+          action: t('cheatsheet.actions.fitToView'),
+          keys: 'Shift+F · scale bar → Fit to view',
+        },
+      ],
+    },
+    {
+      id: 'history',
+      label: t('cheatsheet.sections.history'),
+      entries: [
+        { action: t('cheatsheet.actions.undo'), keys: '⌘Z' },
+        { action: t('cheatsheet.actions.redo'), keys: '⇧⌘Z' },
+      ],
+    },
+    {
+      id: 'shell',
+      label: t('cheatsheet.sections.shell'),
+      entries: [
+        { action: t('cheatsheet.actions.toggleLeftRail'), keys: '[' },
+        { action: t('cheatsheet.actions.toggleRightRail'), keys: ']' },
+      ],
+    },
+  ];
 }
 
-/** Filter entries that match `query` (case-insensitive substring on
- * action or keys). Empty query returns the original sections. */
-export function filterCheatsheet(query: string): CheatsheetSection[] {
+export function flattenCheatsheet(t: TFunction): CheatsheetEntry[] {
+  return getCheatsheetData(t).flatMap((s) => s.entries);
+}
+
+export function filterCheatsheet(query: string, t: TFunction): CheatsheetSection[] {
+  const data = getCheatsheetData(t);
   const q = query.trim().toLowerCase();
-  if (!q) return CHEATSHEET;
+  if (!q) return data;
   const out: CheatsheetSection[] = [];
-  for (const s of CHEATSHEET) {
+  for (const s of data) {
     const entries = s.entries.filter(
       (e) => e.action.toLowerCase().includes(q) || e.keys.toLowerCase().includes(q),
     );

@@ -1,7 +1,19 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
+import { I18nextProvider } from 'react-i18next';
 import { ToolPalette } from './ToolPalette';
 import { paletteForMode } from './toolRegistry';
+import i18n from '../i18n';
+
+const tIdentity = (key: string) => key;
+
+function renderWithI18n(ui: React.ReactElement) {
+  return render(ui, {
+    wrapper: ({ children }: { children: React.ReactNode }) => (
+      <I18nextProvider i18n={i18n}>{children}</I18nextProvider>
+    ),
+  });
+}
 
 afterEach(() => {
   cleanup();
@@ -11,7 +23,7 @@ const ENABLED_CTX = { hasAnyWall: true, hasAnyFloor: true, hasAnySelection: fals
 
 describe('paletteForMode — spec §16.1', () => {
   it('plan mode includes Wall/Door/Window/Floor/Roof/Stair/Room/Dimension/Section/Tag/Select', () => {
-    const ids = paletteForMode('plan').map((t) => t.id);
+    const ids = paletteForMode('plan', tIdentity as never).map((t) => t.id);
     for (const required of [
       'select',
       'wall',
@@ -30,14 +42,14 @@ describe('paletteForMode — spec §16.1', () => {
   });
 
   it('schedule mode only includes select', () => {
-    const ids = paletteForMode('schedule').map((t) => t.id);
+    const ids = paletteForMode('schedule', tIdentity as never).map((t) => t.id);
     expect(ids).toEqual(['select']);
   });
 });
 
 describe('<ToolPalette /> — spec §16', () => {
   it('renders all plan-mode tools as toolbar buttons', () => {
-    const { getByLabelText } = render(
+    const { getByLabelText } = renderWithI18n(
       <ToolPalette
         mode="plan"
         activeTool="select"
@@ -51,7 +63,7 @@ describe('<ToolPalette /> — spec §16', () => {
   });
 
   it('marks the active tool with aria-pressed and tabIndex 0', () => {
-    const { getByLabelText, getAllByRole } = render(
+    const { getByLabelText, getAllByRole } = renderWithI18n(
       <ToolPalette
         mode="plan"
         activeTool="wall"
@@ -72,7 +84,7 @@ describe('<ToolPalette /> — spec §16', () => {
 
   it('emits onToolSelect when a tool is clicked', () => {
     const onSelect = vi.fn();
-    const { getByLabelText } = render(
+    const { getByLabelText } = renderWithI18n(
       <ToolPalette
         mode="plan"
         activeTool="select"
@@ -86,7 +98,7 @@ describe('<ToolPalette /> — spec §16', () => {
 
   it('cycles tools with ArrowRight / ArrowLeft', () => {
     const onSelect = vi.fn();
-    const { getByRole } = render(
+    const { getByRole } = renderWithI18n(
       <ToolPalette
         mode="plan"
         activeTool="select"
@@ -101,7 +113,7 @@ describe('<ToolPalette /> — spec §16', () => {
   });
 
   it('disables Floor when no walls exist and surfaces the reason', () => {
-    const { getByLabelText } = render(
+    const { getByLabelText } = renderWithI18n(
       <ToolPalette
         mode="plan"
         activeTool="select"
@@ -117,7 +129,7 @@ describe('<ToolPalette /> — spec §16', () => {
   it('Tag button dispatches onTagSubmenu instead of onToolSelect', () => {
     const onSelect = vi.fn();
     const onTag = vi.fn();
-    const { getByLabelText } = render(
+    const { getByLabelText } = renderWithI18n(
       <ToolPalette
         mode="plan"
         activeTool="select"

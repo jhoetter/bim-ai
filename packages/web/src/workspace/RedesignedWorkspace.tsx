@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Element } from '@bim-ai/core';
 import { ICON_SIZE, Icons } from '@bim-ai/ui';
 
@@ -68,7 +69,7 @@ import { type CommandCandidate } from '../cmd/commandPaletteSources';
 import { OnboardingTour } from '../onboarding/OnboardingTour';
 import { readOnboardingProgress, resetOnboarding } from '../onboarding/tour';
 import { ToolPalette } from '../tools/ToolPalette';
-import { TOOL_REGISTRY, type ToolDisabledContext, type ToolId } from '../tools/toolRegistry';
+import { getToolRegistry, type ToolDisabledContext, type ToolId } from '../tools/toolRegistry';
 import { TabBar } from './TabBar';
 import { Viewport3DLayersPanel, VIEWER_HIDDEN_KIND_KEYS } from './Viewport3DLayersPanel';
 import { AuthoringWorkbenchesPanel } from './AuthoringWorkbenchesPanel';
@@ -149,6 +150,12 @@ const PERSPECTIVE_OPTIONS: { id: PerspectiveId; label: string }[] = [
   { id: 'agent', label: 'Agent' },
 ];
 
+const PLAN_STYLE_OPTIONS = [
+  { id: 'default', label: 'Neutral' },
+  { id: 'opening_focus', label: 'Opening focus' },
+  { id: 'room_scheme', label: 'Room scheme' },
+];
+
 const KNOWN_PLAN_TOOLS = new Set<ToolId>(['select', 'wall', 'door', 'window', 'room', 'dimension']);
 
 type LegacyPlanTool =
@@ -173,6 +180,8 @@ function legacyToToolId(legacy: LegacyPlanTool): ToolId {
 }
 
 export function RedesignedWorkspace(): JSX.Element {
+  const { t, i18n } = useTranslation();
+  const toolRegistry = useMemo(() => getToolRegistry(t), [t]);
   const elementsById = useBimStore((s) => s.elementsById);
   const hydrateFromSnapshot = useBimStore((s) => s.hydrateFromSnapshot);
   const viewerMode = useBimStore((s) => s.viewerMode);
@@ -215,6 +224,7 @@ export function RedesignedWorkspace(): JSX.Element {
     viewerMode === 'orbit_3d' ? '3d' : 'plan',
   );
   const [theme, setTheme] = useState<Theme>(() => (getCurrentTheme() as Theme) ?? 'light');
+  const [leftRailCollapsed, setLeftRailCollapsed] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [cheatsheetOpen, setCheatsheetOpen] = useState(false);
   const [recentCommandIds, setRecentCommandIds] = useState<string[]>([]);
@@ -701,8 +711,8 @@ export function RedesignedWorkspace(): JSX.Element {
       // Tool hotkeys — match the spec'd letters from TOOL_REGISTRY.
       const upper = event.key.length === 1 ? event.key.toUpperCase() : event.key;
       const hotkeyLabel = event.shiftKey ? `Shift+${upper}` : upper;
-      const tool = (Object.values(TOOL_REGISTRY) as { id: ToolId; hotkey: string }[]).find(
-        (t) => t.hotkey === hotkeyLabel,
+      const tool = (Object.values(toolRegistry) as { id: ToolId; hotkey: string }[]).find(
+        (tool) => tool.hotkey === hotkeyLabel,
       );
       if (tool) {
         const legacy = toolIdToLegacy(tool.id);
@@ -887,7 +897,7 @@ export function RedesignedWorkspace(): JSX.Element {
   const paletteCandidates = useMemo<CommandCandidate[]>(() => {
     const items: CommandCandidate[] = [];
     // Tool sources
-    for (const tool of Object.values(TOOL_REGISTRY)) {
+    for (const tool of Object.values(toolRegistry)) {
       items.push({
         id: `tool.${tool.id}`,
         kind: 'tool',
@@ -934,11 +944,12 @@ export function RedesignedWorkspace(): JSX.Element {
     items.push(
       { id: 'settings.theme.light', kind: 'setting', label: 'Theme: light', keywords: 'light' },
       { id: 'settings.theme.dark', kind: 'setting', label: 'Theme: dark', keywords: 'dark' },
+      { id: 'settings.language.toggle', kind: 'setting', label: t('cmd.language'), keywords: 'language lang sprache' },
     );
     // Agent
     items.push({ id: 'agent.review', kind: 'agent', label: 'Run Agent Review' });
     return items;
-  }, [elementsById]);
+  }, [elementsById, t]);
 
   const handlePalettePick = useCallback(
     (cand: CommandCandidate) => {
@@ -961,11 +972,17 @@ export function RedesignedWorkspace(): JSX.Element {
         }
         return;
       }
+      if (cand.id === 'settings.language.toggle') {
+        const next = i18n.language === 'de' ? 'en' : 'de';
+        void i18n.changeLanguage(next);
+        localStorage.setItem('bim-ai:lang', next);
+        return;
+      }
       if (cand.kind === 'view') {
         select(cand.id);
       }
     },
-    [select, setPlanTool],
+    [i18n, select, setPlanTool],
   );
 
   /* ── Empty-state per §25 ──────────────────────────────────────────── */
@@ -1015,6 +1032,8 @@ export function RedesignedWorkspace(): JSX.Element {
         }}
       />
       <AppShell
+        leftCollapsed={leftRailCollapsed}
+        onLeftCollapsedChange={setLeftRailCollapsed}
         topBar={
           <div className="flex w-full flex-col">
             <div className="flex w-full items-center">
@@ -1024,41 +1043,22 @@ export function RedesignedWorkspace(): JSX.Element {
                 projectName="BIM AI seed"
                 projectNameRef={projectNameRef}
                 onProjectNameClick={() => setProjectMenuOpen((v) => !v)}
+                onHamburgerClick={() => setLeftRailCollapsed((v) => !v)}
                 theme={theme}
                 onThemeToggle={handleThemeToggle}
                 onCommandPalette={() => setPaletteOpen(true)}
+                onSettings={() => setCheatsheetOpen(true)}
                 collaboratorsCount={Object.keys(presencePeers).length || undefined}
                 onCollaboratorsClick={() => setCommentsOpen((v) => !v)}
                 peers={Object.values(presencePeers)}
                 avatarInitials={userDisplayName ? userDisplayName.slice(0, 2).toUpperCase() : 'BA'}
+                perspectiveOptions={PERSPECTIVE_OPTIONS}
+                perspectiveValue={perspectiveId}
+                onPerspectiveChange={(v) => setPerspectiveId(v as PerspectiveId)}
+                planStyleOptions={PLAN_STYLE_OPTIONS}
+                planStyleValue={planPresentationPreset}
+                onPlanStyleChange={(v) => setPlanPresentationPreset(v as 'default' | 'opening_focus' | 'room_scheme')}
               />
-              <div className="ml-2 mr-3 flex shrink-0 items-center gap-2">
-                <select
-                  className="rounded border border-border bg-background px-2 py-1 text-[11px] text-foreground"
-                  value={perspectiveId}
-                  onChange={(e) => setPerspectiveId(e.target.value as PerspectiveId)}
-                  title="Perspective"
-                  aria-label="Perspective"
-                >
-                  {PERSPECTIVE_OPTIONS.map((o) => (
-                    <option key={o.id} value={o.id}>{o.label}</option>
-                  ))}
-                </select>
-                <select
-                  className="rounded border border-border bg-background px-2 py-1 text-[11px] text-foreground"
-                  value={planPresentationPreset}
-                  onChange={(e) => {
-                    const v = e.target.value as 'default' | 'opening_focus' | 'room_scheme';
-                    setPlanPresentationPreset(v);
-                  }}
-                  title="Plan style"
-                  aria-label="Plan style"
-                >
-                  <option value="default">Neutral</option>
-                  <option value="opening_focus">Opening focus</option>
-                  <option value="room_scheme">Room scheme</option>
-                </select>
-              </div>
             </div>
             <TabBar
               tabs={tabsState.tabs}
@@ -1250,18 +1250,18 @@ export function RedesignedWorkspace(): JSX.Element {
                           }
                         />
                       ) : (
-                        InspectorPropertiesFor(el)
+                        InspectorPropertiesFor(el, t)
                       )
                     ) : (
                       <InspectorEmptyTab message="No element selected." />
                     ),
                     constraints: el ? (
-                      InspectorConstraintsFor(el)
+                      InspectorConstraintsFor(el, t)
                     ) : (
                       <InspectorEmptyTab message="No element selected." />
                     ),
                     identity: el ? (
-                      InspectorIdentityFor(el)
+                      InspectorIdentityFor(el, t)
                     ) : (
                       <InspectorEmptyTab message="No element selected." />
                     ),
@@ -1364,7 +1364,7 @@ export function RedesignedWorkspace(): JSX.Element {
             level={activeLevel}
             levels={levels}
             onLevelChange={setActiveLevelId}
-            toolLabel={TOOL_REGISTRY[legacyToToolId(planTool)]?.label ?? null}
+            toolLabel={toolRegistry[legacyToToolId(planTool)]?.label ?? null}
             gridOn={true}
             cursorMm={cursorMm}
             undoDepth={undoDepth}

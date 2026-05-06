@@ -1,16 +1,17 @@
+import { useTranslation } from 'react-i18next';
 import type { ViewerMode } from '../state/store';
-import { CHEATSHEET } from './cheatsheetData';
+import { getCheatsheetData } from './cheatsheetData';
 
 type Props = { open: boolean; onClose: () => void; viewerMode: ViewerMode };
 
-// Navigation sections shown in the sidebar cheatsheet.
 const NAV_SECTION_IDS = new Set(['nav3d', 'walk', 'nav2d', 'global', 'history']);
 
 export function Cheatsheet({ open, onClose, viewerMode }: Props) {
+  const { t } = useTranslation();
   void viewerMode;
   if (!open) return null;
 
-  const sections = CHEATSHEET.filter((s) => NAV_SECTION_IDS.has(s.id));
+  const sections = getCheatsheetData(t).filter((s) => NAV_SECTION_IDS.has(s.id));
 
   return (
     <div

@@ -138,6 +138,31 @@ the measured direction.
 
 ---
 
+## Railing
+
+Railings render in 3D as a top-rail tube along `pathMm` at `guardHeightMm` above the
+base level. For stair-hosted railings the elevation interpolates linearly from the
+stair `baseLevelId` to `topLevelId`.
+
+| Requirement | Notes |
+|---|---|
+| `pathMm` ≥ 2 points | Free-standing or hosted, path must have at least 2 plan points |
+| Elevation source | `hostedStairId` → interpolated base→top level elev; no host → 0 m |
+
+---
+
+## Site
+
+Site renders in 3D as a flat pad (`ExtrudeGeometry`) whose top surface sits at
+`referenceLevelId.elevationMm + baseOffsetMm` and extends downward by `padThicknessMm`.
+
+| Requirement | Notes |
+|---|---|
+| `referenceLevelId` | Must resolve to a `LevelElem` |
+| `boundaryMm` | ≥ 3 non-degenerate vertices |
+
+---
+
 ## Summary checklist for a complete seed / demo model
 
 - [ ] Roof: `roofGeometryMode: "gable_pitched_rectangle"` + 4-corner axis-aligned footprint + `slopeDeg` set
@@ -145,3 +170,5 @@ the measured direction.
 - [ ] Section cut: `cropDepthMm` ≥ building depth; line spans the full footprint
 - [ ] Floors: `roomBounded` only when rooms tile the full area without gaps
 - [ ] Viewpoint `vp-001` exists for the default 3D camera position
+- [ ] Railing: `pathMm` with ≥ 2 points; `hostedStairId` for correct stair elevation
+- [ ] Site: `boundaryMm` covering the full site; `padThicknessMm` + `baseOffsetMm` for ground level

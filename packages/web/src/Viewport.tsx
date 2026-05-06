@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { Brush, Evaluator, SUBTRACTION } from 'three-bvh-csg';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
@@ -95,7 +96,12 @@ function addEdges(
   return lines;
 }
 
-type WallElem = Extract<Element, { kind: 'wall' }>;
+type WallElem   = Extract<Element, { kind: 'wall' }>;
+type DoorElem   = Extract<Element, { kind: 'door' }>;
+type WindowElem = Extract<Element, { kind: 'window' }>;
+
+// CSG wall-opening cuts: enabled by default; set VITE_ENABLE_CSG=false to disable.
+const CSG_ENABLED = import.meta.env.VITE_ENABLE_CSG !== 'false';
 
 /** Footprints use world XZ with z ← plan yMm */
 
@@ -736,6 +742,92 @@ function makeWallMesh(
   mesh.userData.bimPickId = wall.id;
   addEdges(mesh);
   return mesh;
+}
+
+// R2-01: wall mesh with door/window openings CSG-subtracted.
+// Operates in wall-local space (wall brush at identity), then positions
+// the result mesh at the wall's world centre with the wall's yaw.
+function makeWallWithOpenings(
+  wall: WallElem,
+  elevM: number,
+  hostedDoors: DoorElem[],
+  hostedWindows: WindowElem[],
+  paint: ViewportPaintBundle | null,
+  selectedId: string | undefined,
+  evaluator: Evaluator,
+): THREE.Mesh {
+  const sx  = wall.start.xMm / 1000;
+  const sz  = wall.start.yMm / 1000;
+  const dx  = wall.end.xMm / 1000 - sx;
+  const dz  = wall.end.yMm / 1000 - sz;
+  const len = Math.max(0.001, Math.hypot(dx, dz));
+  const height = THREE.MathUtils.clamp(wall.heightMm / 1000, 0.25, 40);
+  const thick  = THREE.MathUtils.clamp(wall.thicknessMm / 1000, 0.05, 2);
+  const yaw    = Math.atan2(dz, dx);
+  const wcx    = sx + dx / 2;
+  const wcz    = sz + dz / 2;
+  const wcy    = elevM + height / 2;
+
+  const wallMat = new THREE.MeshStandardMaterial({
+    color:
+      wall.id === selectedId
+        ? (paint?.selection.selectedColor ?? '#fb923c')
+        : categoryColorOr(paint, 'wall'),
+    roughness: paint?.categories.wall.roughness ?? 0.85,
+  });
+
+  try {
+    // Wall brush at identity — geometry centred on (0,0,0) in wall-local space.
+    let wallBrush = new Brush(new THREE.BoxGeometry(len, height, thick), wallMat);
+    wallBrush.updateMatrixWorld();
+
+    for (const door of hostedDoors) {
+      // Cutter spans full door height from floor; add tolerance so the cut goes
+      // cleanly through the wall face (+0.04 wide, +0.01 tall, +0.1 deep).
+      const leafH  = THREE.MathUtils.clamp((wall.heightMm / 1000) * 0.86, 0.6, 2.5);
+      const cutW   = THREE.MathUtils.clamp(door.widthMm / 1000, 0.35, 4) + 0.04;
+      const cutH   = Math.min(leafH + 0.01, height - 0.01);
+      const cutD   = thick + 0.1;
+      // localX: (alongT=0.5) → 0; (alongT=0) → −len/2; (alongT=1) → +len/2
+      const localX = (door.alongT - 0.5) * len;
+      // localY: bottom of cutter sits on floor (world y=elevM = local y=−height/2)
+      const localY = cutH / 2 - height / 2;
+
+      const cutter = new Brush(new THREE.BoxGeometry(cutW, cutH, cutD));
+      cutter.position.set(localX, localY, 0);
+      cutter.updateMatrixWorld();
+      wallBrush = evaluator.evaluate(wallBrush, cutter, SUBTRACTION);
+      wallBrush.updateMatrixWorld();
+    }
+
+    for (const win of hostedWindows) {
+      const sill   = THREE.MathUtils.clamp(win.sillHeightMm / 1000, 0.06, wall.heightMm / 1000 - 0.08);
+      const outerH = THREE.MathUtils.clamp(win.heightMm / 1000, 0.05, wall.heightMm / 1000 - sill - 0.06);
+      const outerW = THREE.MathUtils.clamp(win.widthMm / 1000, 0.14, 4);
+      const cutW   = outerW + 0.04;
+      const cutH   = outerH + 0.02;
+      const cutD   = thick + 0.1;
+      const localX = (win.alongT - 0.5) * len;
+      // localY: sill is from floor (local −height/2), cutter centre = sill + cutH/2 − height/2
+      const localY = sill + cutH / 2 - height / 2;
+
+      const cutter = new Brush(new THREE.BoxGeometry(cutW, cutH, cutD));
+      cutter.position.set(localX, localY, 0);
+      cutter.updateMatrixWorld();
+      wallBrush = evaluator.evaluate(wallBrush, cutter, SUBTRACTION);
+      wallBrush.updateMatrixWorld();
+    }
+
+    const mesh = new THREE.Mesh(wallBrush.geometry, wallMat);
+    mesh.position.set(wcx, wcy, wcz);
+    mesh.rotation.y = yaw;
+    mesh.userData.bimPickId = wall.id;
+    addEdges(mesh);
+    return mesh;
+  } catch {
+    // CSG failed (e.g. degenerate geometry) — fall back to solid wall.
+    return makeWallMesh(wall, elevM, paint, selectedId);
+  }
 }
 
 function makeDoorMesh(
@@ -1727,11 +1819,36 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       root.add(makeFloorSlabMesh(f, elementsById, paint));
     }
 
+    // R2-01: pre-group hosted doors + windows by wall so CSG can cut openings.
+    const doorsByWall = new Map<string, DoorElem[]>();
+    const winsByWall  = new Map<string, WindowElem[]>();
+    for (const e of Object.values(elementsById)) {
+      if (e.kind === 'door' && !skipCat(e)) {
+        const d = e as DoorElem;
+        const arr = doorsByWall.get(d.wallId) ?? [];
+        arr.push(d);
+        doorsByWall.set(d.wallId, arr);
+      } else if (e.kind === 'window' && !skipCat(e)) {
+        const w = e as WindowElem;
+        const arr = winsByWall.get(w.wallId) ?? [];
+        arr.push(w);
+        winsByWall.set(w.wallId, arr);
+      }
+    }
+
+    // One Evaluator instance reused across all wall CSG operations this build.
+    const csgEvaluator = CSG_ENABLED ? new Evaluator() : null;
+
     for (const w of walls) {
       if (skipCat(w)) continue;
-      const elev = elevationMForLevel(w.levelId, elementsById);
-
-      root.add(makeWallMesh(w, elev, paint, selectedId));
+      const elev  = elevationMForLevel(w.levelId, elementsById);
+      const doors = doorsByWall.get(w.id) ?? [];
+      const wins  = winsByWall.get(w.id) ?? [];
+      if (csgEvaluator && (doors.length > 0 || wins.length > 0)) {
+        root.add(makeWallWithOpenings(w, elev, doors, wins, paint, selectedId, csgEvaluator));
+      } else {
+        root.add(makeWallMesh(w, elev, paint, selectedId));
+      }
     }
 
     for (const e of Object.values(elementsById)) {

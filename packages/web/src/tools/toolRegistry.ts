@@ -16,6 +16,8 @@
  * registry by the `kind` discriminator.
  */
 
+import type { TFunction } from 'i18next';
+
 import type { IconName } from '@bim-ai/ui';
 
 export type ToolId =
@@ -46,106 +48,107 @@ export interface ToolDefinition {
   tooltip?: string;
 }
 
-export const TOOL_REGISTRY: Record<ToolId, ToolDefinition> = {
-  select: {
-    id: 'select',
-    label: 'Select',
-    icon: 'select',
-    hotkey: 'V',
-    modes: ['plan', '3d', 'plan-3d', 'section', 'sheet', 'schedule', 'agent'],
-    tooltip: 'Pick or marquee-select elements',
-  },
-  wall: {
-    id: 'wall',
-    label: 'Wall',
-    icon: 'wall',
-    hotkey: 'W',
-    modes: ['plan', 'plan-3d'],
-    tooltip: 'Draw a wall (chain mode; Tab cycles location-line)',
-  },
-  door: {
-    id: 'door',
-    label: 'Door',
-    icon: 'door',
-    hotkey: 'D',
-    modes: ['plan', 'plan-3d'],
-    tooltip: 'Insert door on wall (Spacebar flips swing)',
-  },
-  window: {
-    id: 'window',
-    label: 'Window',
-    icon: 'window',
-    hotkey: 'Shift+W',
-    modes: ['plan', 'plan-3d'],
-    tooltip: 'Insert window on wall',
-  },
-  floor: {
-    id: 'floor',
-    label: 'Floor',
-    icon: 'floor',
-    hotkey: 'F',
-    modes: ['plan', 'plan-3d'],
-    tooltip: 'Pick walls or sketch a floor outline',
-  },
-  roof: {
-    id: 'roof',
-    label: 'Roof',
-    icon: 'roof',
-    hotkey: 'R',
-    modes: ['plan', 'plan-3d'],
-    tooltip: 'Pick walls or sketch a roof outline',
-  },
-  stair: {
-    id: 'stair',
-    label: 'Stair',
-    icon: 'stair',
-    hotkey: 'S',
-    modes: ['plan', 'plan-3d'],
-    tooltip: 'Two-click run; auto-computes risers',
-  },
-  railing: {
-    id: 'railing',
-    label: 'Railing',
-    icon: 'railing',
-    hotkey: 'Shift+R',
-    modes: ['plan', 'plan-3d', '3d'],
-    tooltip: 'Pick host (stair / slab edge) or sketch path',
-  },
-  room: {
-    id: 'room',
-    label: 'Room',
-    icon: 'room',
-    hotkey: 'M',
-    modes: ['plan', 'plan-3d'],
-    tooltip: 'Drop room marker in centroid of bounded area',
-  },
-  dimension: {
-    id: 'dimension',
-    label: 'Dimension',
-    icon: 'dimension',
-    hotkey: 'Shift+D',
-    modes: ['plan', 'plan-3d', 'section'],
-    tooltip: 'Linear / Aligned / Angular / Radial / Diameter',
-  },
-  section: {
-    id: 'section',
-    label: 'Section',
-    icon: 'section',
-    hotkey: 'Shift+S',
-    modes: ['plan', 'plan-3d', 'section'],
-    tooltip: 'Two-click section line + depth direction',
-  },
-  tag: {
-    id: 'tag',
-    label: 'Tag',
-    icon: 'tag',
-    hotkey: 'T',
-    modes: ['plan', 'plan-3d'],
-    tooltip: 'Tag dropdown (Door / Window / Wall / Room / By category)',
-  },
-};
+export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
+  return {
+    select: {
+      id: 'select',
+      label: t('tools.select.label'),
+      icon: 'select',
+      hotkey: 'V',
+      modes: ['plan', '3d', 'plan-3d', 'section', 'sheet', 'schedule', 'agent'],
+      tooltip: t('tools.select.tooltip'),
+    },
+    wall: {
+      id: 'wall',
+      label: t('tools.wall.label'),
+      icon: 'wall',
+      hotkey: 'W',
+      modes: ['plan', 'plan-3d'],
+      tooltip: t('tools.wall.tooltip'),
+    },
+    door: {
+      id: 'door',
+      label: t('tools.door.label'),
+      icon: 'door',
+      hotkey: 'D',
+      modes: ['plan', 'plan-3d'],
+      tooltip: t('tools.door.tooltip'),
+    },
+    window: {
+      id: 'window',
+      label: t('tools.window.label'),
+      icon: 'window',
+      hotkey: 'Shift+W',
+      modes: ['plan', 'plan-3d'],
+      tooltip: t('tools.window.tooltip'),
+    },
+    floor: {
+      id: 'floor',
+      label: t('tools.floor.label'),
+      icon: 'floor',
+      hotkey: 'F',
+      modes: ['plan', 'plan-3d'],
+      tooltip: t('tools.floor.tooltip'),
+    },
+    roof: {
+      id: 'roof',
+      label: t('tools.roof.label'),
+      icon: 'roof',
+      hotkey: 'R',
+      modes: ['plan', 'plan-3d'],
+      tooltip: t('tools.roof.tooltip'),
+    },
+    stair: {
+      id: 'stair',
+      label: t('tools.stair.label'),
+      icon: 'stair',
+      hotkey: 'S',
+      modes: ['plan', 'plan-3d'],
+      tooltip: t('tools.stair.tooltip'),
+    },
+    railing: {
+      id: 'railing',
+      label: t('tools.railing.label'),
+      icon: 'railing',
+      hotkey: 'Shift+R',
+      modes: ['plan', 'plan-3d', '3d'],
+      tooltip: t('tools.railing.tooltip'),
+    },
+    room: {
+      id: 'room',
+      label: t('tools.room.label'),
+      icon: 'room',
+      hotkey: 'M',
+      modes: ['plan', 'plan-3d'],
+      tooltip: t('tools.room.tooltip'),
+    },
+    dimension: {
+      id: 'dimension',
+      label: t('tools.dimension.label'),
+      icon: 'dimension',
+      hotkey: 'Shift+D',
+      modes: ['plan', 'plan-3d', 'section'],
+      tooltip: t('tools.dimension.tooltip'),
+    },
+    section: {
+      id: 'section',
+      label: t('tools.section.label'),
+      icon: 'section',
+      hotkey: 'Shift+S',
+      modes: ['plan', 'plan-3d', 'section'],
+      tooltip: t('tools.section.tooltip'),
+    },
+    tag: {
+      id: 'tag',
+      label: t('tools.tag.label'),
+      icon: 'tag',
+      hotkey: 'T',
+      modes: ['plan', 'plan-3d'],
+      tooltip: t('tools.tag.tooltip'),
+    },
+  };
+}
 
-/** Ordered palette layout per spec §16.1: select | tools | tag-subdropdown. */
 const PALETTE_ORDER: ToolId[] = [
   'select',
   'wall',
@@ -161,8 +164,9 @@ const PALETTE_ORDER: ToolId[] = [
   'tag',
 ];
 
-export function paletteForMode(mode: WorkspaceMode): ToolDefinition[] {
-  return PALETTE_ORDER.map((id) => TOOL_REGISTRY[id]).filter((t) => t.modes.includes(mode));
+export function paletteForMode(mode: WorkspaceMode, t: TFunction): ToolDefinition[] {
+  const registry = getToolRegistry(t);
+  return PALETTE_ORDER.map((id) => registry[id]).filter((tool) => tool.modes.includes(mode));
 }
 
 export interface ToolDisabledContext {
@@ -171,26 +175,28 @@ export interface ToolDisabledContext {
   hasAnySelection: boolean;
 }
 
-/** Tool-level enablement — `floor` requires a wall, `railing` requires a
- * stair or floor, etc. Used by §16.2 to dim disabled buttons. */
 export function isToolDisabled(
   toolId: ToolId,
   ctx: ToolDisabledContext,
+  t: TFunction,
 ): { disabled: boolean; reason?: string } {
   switch (toolId) {
     case 'floor':
-      if (!ctx.hasAnyWall) return { disabled: true, reason: 'Draw a wall first' };
+      if (!ctx.hasAnyWall)
+        return { disabled: true, reason: t('tools.disabled.drawWallFirst') };
       return { disabled: false };
     case 'roof':
-      if (!ctx.hasAnyWall) return { disabled: true, reason: 'Draw a wall first' };
+      if (!ctx.hasAnyWall)
+        return { disabled: true, reason: t('tools.disabled.drawWallFirst') };
       return { disabled: false };
     case 'railing':
       if (!ctx.hasAnyFloor && !ctx.hasAnyWall) {
-        return { disabled: true, reason: 'Add a stair or slab first' };
+        return { disabled: true, reason: t('tools.disabled.addStairFirst') };
       }
       return { disabled: false };
     case 'dimension':
-      if (!ctx.hasAnyWall) return { disabled: true, reason: 'Nothing to dimension' };
+      if (!ctx.hasAnyWall)
+        return { disabled: true, reason: t('tools.disabled.nothingToDimension') };
       return { disabled: false };
     default:
       return { disabled: false };

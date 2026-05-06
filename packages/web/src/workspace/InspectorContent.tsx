@@ -1,4 +1,6 @@
 import { useState, type JSX } from 'react';
+import type { TFunction } from 'i18next';
+import { useTranslation } from 'react-i18next';
 import type { Element } from '@bim-ai/core';
 
 import { planViewGraphicsMatrixRows, viewTemplateGraphicsMatrixRows } from '../plan/planProjection';
@@ -40,168 +42,171 @@ function fmtMm(value: number | null | undefined): string {
   return `${value.toFixed(0)} mm`;
 }
 
-export function InspectorPropertiesFor(el: Element): JSX.Element {
+export function InspectorPropertiesFor(el: Element, t: TFunction): JSX.Element {
+  const f = (key: string) => t(`inspector.fields.${key}`);
   switch (el.kind) {
     case 'wall':
       return (
         <div>
-          <FieldRow label="Type" value="Generic — wall" />
-          <FieldRow label="Thickness" value={fmtMm(el.thicknessMm)} />
-          <FieldRow label="Height" value={fmtMm(el.heightMm)} />
-          <FieldRow label="Level" value={el.levelId} mono />
-          <FieldRow label="Start" value={`${fmtMm(el.start.xMm)} · ${fmtMm(el.start.yMm)}`} mono />
-          <FieldRow label="End" value={`${fmtMm(el.end.xMm)} · ${fmtMm(el.end.yMm)}`} mono />
+          <FieldRow label={f('type')} value="Generic — wall" />
+          <FieldRow label={f('thickness')} value={fmtMm(el.thicknessMm)} />
+          <FieldRow label={f('height')} value={fmtMm(el.heightMm)} />
+          <FieldRow label={f('level')} value={el.levelId} mono />
+          <FieldRow label={f('start')} value={`${fmtMm(el.start.xMm)} · ${fmtMm(el.start.yMm)}`} mono />
+          <FieldRow label={f('end')} value={`${fmtMm(el.end.xMm)} · ${fmtMm(el.end.yMm)}`} mono />
         </div>
       );
     case 'door':
       return (
         <div>
-          <FieldRow label="Family" value={el.familyTypeId ?? 'Generic 900 × 2100'} mono />
-          <FieldRow label="Width" value={fmtMm(el.widthMm)} />
-          <FieldRow label="Wall" value={el.wallId} mono />
-          <FieldRow label="Along T" value={el.alongT.toFixed(3)} mono />
+          <FieldRow label={f('family')} value={el.familyTypeId ?? 'Generic 900 × 2100'} mono />
+          <FieldRow label={f('width')} value={fmtMm(el.widthMm)} />
+          <FieldRow label={f('wall')} value={el.wallId} mono />
+          <FieldRow label={f('alongT')} value={el.alongT.toFixed(3)} mono />
         </div>
       );
     case 'window':
       return (
         <div>
-          <FieldRow label="Family" value={el.familyTypeId ?? 'Generic 1200 × 1500'} mono />
-          <FieldRow label="Width" value={fmtMm(el.widthMm)} />
-          <FieldRow label="Height" value={fmtMm(el.heightMm)} />
-          <FieldRow label="Sill height" value={fmtMm(el.sillHeightMm)} />
-          <FieldRow label="Wall" value={el.wallId} mono />
+          <FieldRow label={f('family')} value={el.familyTypeId ?? 'Generic 1200 × 1500'} mono />
+          <FieldRow label={f('width')} value={fmtMm(el.widthMm)} />
+          <FieldRow label={f('height')} value={fmtMm(el.heightMm)} />
+          <FieldRow label={f('sillHeight')} value={fmtMm(el.sillHeightMm)} />
+          <FieldRow label={f('wall')} value={el.wallId} mono />
         </div>
       );
     case 'floor':
       return (
         <div>
-          <FieldRow label="Type" value={el.floorTypeId ?? 'Generic 220 mm slab'} mono />
-          <FieldRow label="Thickness" value={fmtMm(el.thicknessMm)} />
-          <FieldRow label="Structure thickness" value={fmtMm(el.structureThicknessMm)} />
-          <FieldRow label="Finish thickness" value={fmtMm(el.finishThicknessMm)} />
-          <FieldRow label="Level" value={el.levelId} mono />
-          <FieldRow label="Boundary points" value={String(el.boundaryMm.length)} />
+          <FieldRow label={f('type')} value={el.floorTypeId ?? 'Generic 220 mm slab'} mono />
+          <FieldRow label={f('thickness')} value={fmtMm(el.thicknessMm)} />
+          <FieldRow label={f('structureThickness')} value={fmtMm(el.structureThicknessMm)} />
+          <FieldRow label={f('finishThickness')} value={fmtMm(el.finishThicknessMm)} />
+          <FieldRow label={f('level')} value={el.levelId} mono />
+          <FieldRow label={f('boundaryPoints')} value={String(el.boundaryMm.length)} />
         </div>
       );
     case 'roof':
       return (
         <div>
-          <FieldRow label="Type" value={el.roofTypeId ?? 'Generic gable'} mono />
-          <FieldRow label="Slope" value={`${(el.slopeDeg ?? 0).toFixed(1)}°`} />
-          <FieldRow label="Overhang" value={fmtMm(el.overhangMm)} />
-          <FieldRow label="Reference level" value={el.referenceLevelId} mono />
-          <FieldRow label="Footprint points" value={String(el.footprintMm.length)} />
+          <FieldRow label={f('type')} value={el.roofTypeId ?? 'Generic gable'} mono />
+          <FieldRow label={f('slope')} value={`${(el.slopeDeg ?? 0).toFixed(1)}°`} />
+          <FieldRow label={f('overhang')} value={fmtMm(el.overhangMm)} />
+          <FieldRow label={f('referenceLevel')} value={el.referenceLevelId} mono />
+          <FieldRow label={f('footprintPoints')} value={String(el.footprintMm.length)} />
         </div>
       );
     case 'stair':
       return (
         <div>
-          <FieldRow label="Width" value={fmtMm(el.widthMm)} />
-          <FieldRow label="Riser" value={fmtMm(el.riserMm)} />
-          <FieldRow label="Tread" value={fmtMm(el.treadMm)} />
-          <FieldRow label="Base level" value={el.baseLevelId} mono />
-          <FieldRow label="Top level" value={el.topLevelId} mono />
+          <FieldRow label={f('width')} value={fmtMm(el.widthMm)} />
+          <FieldRow label={f('riser')} value={fmtMm(el.riserMm)} />
+          <FieldRow label={f('tread')} value={fmtMm(el.treadMm)} />
+          <FieldRow label={f('baseLevel')} value={el.baseLevelId} mono />
+          <FieldRow label={f('topLevel')} value={el.topLevelId} mono />
         </div>
       );
     case 'room':
       return (
         <div>
-          <FieldRow label="Programme" value={el.programmeCode ?? '—'} />
-          <FieldRow label="Department" value={el.department ?? '—'} />
-          <FieldRow label="Function" value={el.functionLabel ?? '—'} />
-          <FieldRow label="Finish set" value={el.finishSet ?? '—'} />
-          <FieldRow label="Level" value={el.levelId} mono />
-          <FieldRow label="Outline points" value={String(el.outlineMm.length)} />
+          <FieldRow label={f('programme')} value={el.programmeCode ?? '—'} />
+          <FieldRow label={f('department')} value={el.department ?? '—'} />
+          <FieldRow label={f('function')} value={el.functionLabel ?? '—'} />
+          <FieldRow label={f('finishSet')} value={el.finishSet ?? '—'} />
+          <FieldRow label={f('level')} value={el.levelId} mono />
+          <FieldRow label={f('outlinePoints')} value={String(el.outlineMm.length)} />
         </div>
       );
     case 'level':
       return (
         <div>
-          <FieldRow label="Elevation" value={fmtMm(el.elevationMm)} />
-          <FieldRow label="Datum kind" value={el.datumKind ?? '—'} mono />
+          <FieldRow label={f('elevation')} value={fmtMm(el.elevationMm)} />
+          <FieldRow label={f('datumKind')} value={el.datumKind ?? '—'} mono />
         </div>
       );
     case 'section_cut':
       return (
         <div>
           <FieldRow
-            label="Line start"
+            label={f('lineStart')}
             value={`${fmtMm(el.lineStartMm.xMm)} · ${fmtMm(el.lineStartMm.yMm)}`}
             mono
           />
           <FieldRow
-            label="Line end"
+            label={f('lineEnd')}
             value={`${fmtMm(el.lineEndMm.xMm)} · ${fmtMm(el.lineEndMm.yMm)}`}
             mono
           />
-          <FieldRow label="Crop depth" value={fmtMm(el.cropDepthMm)} />
+          <FieldRow label={f('cropDepth')} value={fmtMm(el.cropDepthMm)} />
         </div>
       );
     case 'plan_view':
       return (
         <div>
-          <FieldRow label="Level" value={el.levelId} mono />
-          <FieldRow label="Presentation" value={el.planPresentation ?? 'default'} />
-          {el.viewTemplateId ? <FieldRow label="Template" value={el.viewTemplateId} mono /> : null}
-          {el.underlayLevelId ? <FieldRow label="Underlay" value={el.underlayLevelId} mono /> : null}
+          <FieldRow label={f('level')} value={el.levelId} mono />
+          <FieldRow label={f('presentation')} value={el.planPresentation ?? 'default'} />
+          {el.viewTemplateId ? <FieldRow label={f('template')} value={el.viewTemplateId} mono /> : null}
+          {el.underlayLevelId ? <FieldRow label={f('underlay')} value={el.underlayLevelId} mono /> : null}
         </div>
       );
     case 'viewpoint':
       return (
         <div>
-          <FieldRow label="Name" value={el.name} />
-          <FieldRow label="Id" value={el.id} mono />
+          <FieldRow label={f('name')} value={el.name} />
+          <FieldRow label={f('id')} value={el.id} mono />
         </div>
       );
     case 'view_template':
       return (
         <div>
-          <FieldRow label="Scale" value={el.scale} mono />
-          {el.planDetailLevel ? <FieldRow label="Detail level" value={el.planDetailLevel} /> : null}
+          <FieldRow label={f('scale')} value={el.scale} mono />
+          {el.planDetailLevel ? <FieldRow label={f('detailLevel')} value={el.planDetailLevel} /> : null}
         </div>
       );
     default:
-      return <p className="text-sm text-muted">No parameters surface for `{el.kind}` yet.</p>;
+      return <p className="text-sm text-muted">{t('inspector.noParams', { kind: el.kind })}</p>;
   }
 }
 
-export function InspectorConstraintsFor(el: Element): JSX.Element {
+export function InspectorConstraintsFor(el: Element, t: TFunction): JSX.Element {
+  const f = (key: string) => t(`inspector.fields.${key}`);
   switch (el.kind) {
     case 'wall':
       return (
         <div>
-          <FieldRow label="Wall join" value="Auto" />
-          <FieldRow label="Wrap rule" value="Default" />
-          <FieldRow label="Room bounding" value="Yes" />
-          <FieldRow label="Location line" value="Wall centerline" />
+          <FieldRow label={f('wallJoin')} value="Auto" />
+          <FieldRow label={f('wrapRule')} value="Default" />
+          <FieldRow label={f('roomBounding')} value="Yes" />
+          <FieldRow label={f('locationLine')} value="Wall centerline" />
         </div>
       );
     case 'floor':
       return (
         <div>
-          <FieldRow label="Room bounding" value={el.roomBounded ? 'Yes' : 'No'} />
-          <FieldRow label="Slab top elevation" value="(derived)" />
+          <FieldRow label={f('roomBounding')} value={el.roomBounded ? 'Yes' : 'No'} />
+          <FieldRow label={f('slabTopElevation')} value="(derived)" />
         </div>
       );
     case 'roof':
       return (
         <div>
-          <FieldRow label="Geometry mode" value={el.roofGeometryMode ?? 'mass_box'} mono />
+          <FieldRow label={f('geometryMode')} value={el.roofGeometryMode ?? 'mass_box'} mono />
         </div>
       );
     default:
-      return <p className="text-sm text-muted">No constraints surface for `{el.kind}` yet.</p>;
+      return <p className="text-sm text-muted">{t('inspector.noConstraints', { kind: el.kind })}</p>;
   }
 }
 
-export function InspectorIdentityFor(el: Element): JSX.Element {
+export function InspectorIdentityFor(el: Element, t: TFunction): JSX.Element {
+  const f = (key: string) => t(`inspector.fields.${key}`);
   return (
     <div>
-      <FieldRow label="Kind" value={el.kind} mono />
-      <FieldRow label="Id" value={el.id} mono />
-      <FieldRow label="Name" value={(el as { name?: string }).name ?? '—'} />
-      <FieldRow label="Mark" value={(el as { mark?: string }).mark ?? '—'} />
-      <FieldRow label="Comments" value={(el as { comments?: string }).comments ?? '—'} />
+      <FieldRow label={f('kind')} value={el.kind} mono />
+      <FieldRow label={f('id')} value={el.id} mono />
+      <FieldRow label={f('name')} value={(el as { name?: string }).name ?? '—'} />
+      <FieldRow label={f('mark')} value={(el as { mark?: string }).mark ?? '—'} />
+      <FieldRow label={f('comments')} value={(el as { comments?: string }).comments ?? '—'} />
     </div>
   );
 }
@@ -275,6 +280,9 @@ export function InspectorPlanViewEditor({
     (e): e is Extract<Element, { kind: 'view_template' }> => e.kind === 'view_template',
   );
 
+  const { t } = useTranslation();
+  const pv = (key: string) => t(`inspector.planView.${key}`);
+
   const [cropDraft, setCropDraft] = useState({
     minX: el.cropMinMm ? String(el.cropMinMm.xMm) : '',
     minY: el.cropMinMm ? String(el.cropMinMm.yMm) : '',
@@ -285,7 +293,7 @@ export function InspectorPlanViewEditor({
   return (
     <div className="space-y-2 text-[11px]">
       <label className={LABEL_CLS}>
-        Name
+        {pv('namePlaceholder')}
         <input
           className={INPUT_CLS}
           defaultValue={el.name}
@@ -299,26 +307,26 @@ export function InspectorPlanViewEditor({
       </label>
 
       <label className={LABEL_CLS}>
-        Plan presentation
+        {pv('planPresentation')}
         <select
           className={INPUT_CLS}
           value={el.planPresentation ?? 'default'}
           onChange={(e) => onPersistProperty('planPresentation', e.target.value)}
         >
-          <option value="default">Neutral</option>
-          <option value="opening_focus">Opening focus</option>
-          <option value="room_scheme">Room scheme</option>
+          <option value="default">{pv('neutralPresentation')}</option>
+          <option value="opening_focus">{pv('openingFocus')}</option>
+          <option value="room_scheme">{pv('roomScheme')}</option>
         </select>
       </label>
 
       <label className={LABEL_CLS}>
-        Underlay level
+        {pv('underlayLevel')}
         <select
           className={INPUT_CLS}
           value={el.underlayLevelId && levels.some((l) => l.id === el.underlayLevelId) ? el.underlayLevelId : ''}
           onChange={(e) => onPersistProperty('underlayLevelId', e.target.value)}
         >
-          <option value="">none</option>
+          <option value="">{pv('none')}</option>
           {levels.map((l) => (
             <option key={l.id} value={l.id}>{l.name}</option>
           ))}
@@ -328,20 +336,20 @@ export function InspectorPlanViewEditor({
       {templates.length > 0 ? (
         <>
           <label className={LABEL_CLS}>
-            View template (link)
+            {pv('viewTemplateLink')}
             <select
               className={INPUT_CLS}
-              value={el.viewTemplateId && templates.some((t) => t.id === el.viewTemplateId) ? el.viewTemplateId : ''}
+              value={el.viewTemplateId && templates.some((tmpl) => tmpl.id === el.viewTemplateId) ? el.viewTemplateId : ''}
               onChange={(e) => onPersistProperty('viewTemplateId', e.target.value)}
             >
-              <option value="">none</option>
-              {templates.map((t) => (
-                <option key={t.id} value={t.id}>{t.name}</option>
+              <option value="">{pv('none')}</option>
+              {templates.map((tmpl) => (
+                <option key={tmpl.id} value={tmpl.id}>{tmpl.name}</option>
               ))}
             </select>
           </label>
           <label className={LABEL_CLS}>
-            Apply template (stamps values)
+            {pv('applyTemplate')}
             <select
               className={INPUT_CLS}
               value=""
@@ -351,9 +359,9 @@ export function InspectorPlanViewEditor({
                 onPersistProperty('__applyTemplate__', JSON.stringify({ planViewId: el.id, templateId: tid }));
               }}
             >
-              <option value="">— select to apply —</option>
-              {templates.map((t) => (
-                <option key={t.id} value={t.id}>{t.name}</option>
+              <option value="">{pv('selectToApply')}</option>
+              {templates.map((tmpl) => (
+                <option key={tmpl.id} value={tmpl.id}>{tmpl.name}</option>
               ))}
             </select>
           </label>
@@ -361,7 +369,7 @@ export function InspectorPlanViewEditor({
       ) : null}
 
       <div className="border-t border-border pt-2 space-y-2">
-        <div className="font-semibold text-muted">Crop (2D, mm)</div>
+        <div className="font-semibold text-muted">{pv('crop')}</div>
         <div className="grid grid-cols-2 gap-2">
           {(['minX', 'minY', 'maxX', 'maxY'] as const).map((k) => (
             <label key={k} className={LABEL_CLS}>
@@ -386,7 +394,7 @@ export function InspectorPlanViewEditor({
               onPersistProperty('cropMaxMm', JSON.stringify({ xMm: xx, yMm: xy }));
             }}
           >
-            Apply crop
+            {pv('applyCrop')}
           </button>
           <button
             type="button"
@@ -397,18 +405,18 @@ export function InspectorPlanViewEditor({
               setCropDraft({ minX: '', minY: '', maxX: '', maxY: '' });
             }}
           >
-            Clear crop
+            {pv('clearCrop')}
           </button>
         </div>
       </div>
 
       <div className="border-t border-border pt-2 space-y-2">
-        <div className="font-semibold text-muted">View range / cut</div>
+        <div className="font-semibold text-muted">{pv('viewRange')}</div>
         {(
           [
-            { key: 'viewRangeBottomMm', label: 'Range bottom (mm)', val: el.viewRangeBottomMm },
-            { key: 'viewRangeTopMm', label: 'Range top (mm)', val: el.viewRangeTopMm },
-            { key: 'cutPlaneOffsetMm', label: 'Cut plane offset (mm)', val: el.cutPlaneOffsetMm },
+            { key: 'viewRangeBottomMm', label: pv('rangeBottom'), val: el.viewRangeBottomMm },
+            { key: 'viewRangeTopMm', label: pv('rangeTop'), val: el.viewRangeTopMm },
+            { key: 'cutPlaneOffsetMm', label: pv('cutPlaneOffset'), val: el.cutPlaneOffsetMm },
           ] as { key: string; label: string; val: number | null | undefined }[]
         ).map(({ key, label, val }) => (
           <label key={key} className={LABEL_CLS}>
@@ -417,7 +425,7 @@ export function InspectorPlanViewEditor({
               className={INPUT_CLS}
               defaultValue={val == null ? '' : String(val)}
               key={`${key}-${el.id}-${val ?? 'null'}-${revision}`}
-              placeholder="empty clears"
+              placeholder={pv('emptyClearsPlaceholder')}
               inputMode="decimal"
               onBlur={(e) => onPersistProperty(key, e.target.value.trim())}
             />
@@ -438,12 +446,15 @@ export function InspectorRoomEditor({
   revision: number;
   onPersistProperty: (key: string, value: string) => void;
 }): JSX.Element {
+  const { t } = useTranslation();
+  const f = (key: string) => t(`inspector.fields.${key}`);
+  const r = (key: string) => t(`inspector.room.${key}`);
   const fields: { key: string; label: string; val: string | null | undefined; inputMode?: string }[] = [
-    { key: 'name', label: 'Name', val: el.name },
-    { key: 'programmeCode', label: 'Programme code', val: el.programmeCode },
-    { key: 'department', label: 'Department', val: el.department },
-    { key: 'functionLabel', label: 'Function label', val: el.functionLabel },
-    { key: 'finishSet', label: 'Finish set', val: el.finishSet },
+    { key: 'name', label: f('name'), val: el.name },
+    { key: 'programmeCode', label: r('programmeCode'), val: el.programmeCode },
+    { key: 'department', label: f('department'), val: el.department },
+    { key: 'functionLabel', label: r('functionLabel'), val: el.functionLabel },
+    { key: 'finishSet', label: f('finishSet'), val: el.finishSet },
   ];
 
   return (
@@ -464,18 +475,18 @@ export function InspectorRoomEditor({
         </label>
       ))}
       <label className={LABEL_CLS}>
-        Target area (m²)
+        {r('targetArea')}
         <input
           className={INPUT_CLS}
           defaultValue={el.targetAreaM2 == null ? '' : String(el.targetAreaM2)}
           key={`rm-tgt-${el.id}-${el.targetAreaM2 ?? 'x'}-${revision}`}
-          placeholder="optional"
+          placeholder={r('optional')}
           inputMode="decimal"
           onBlur={(e) => onPersistProperty('targetAreaM2', e.target.value.trim())}
         />
       </label>
-      <FieldRow label="Level" value={el.levelId} mono />
-      <FieldRow label="Outline points" value={String(el.outlineMm.length)} />
+      <FieldRow label={f('level')} value={el.levelId} mono />
+      <FieldRow label={f('outlinePoints')} value={String(el.outlineMm.length)} />
     </div>
   );
 }
@@ -490,11 +501,12 @@ export function InspectorViewpointEditor({
   revision: number;
   onPersistProperty: (key: string, value: string) => void;
 }): JSX.Element {
+  const { t } = useTranslation();
   return (
     <div className="space-y-2 text-[11px]">
-      <p className="text-[10px] text-muted">Clip + layer toggles persist while this viewpoint is active.</p>
+      <p className="text-[10px] text-muted">{t('inspector.viewpoint.hint')}</p>
       <label className={LABEL_CLS}>
-        Name
+        {t('inspector.fields.name')}
         <input
           className={INPUT_CLS}
           defaultValue={el.name}
@@ -520,11 +532,12 @@ export function InspectorViewTemplateEditor({
   revision: number;
   onPersistProperty: (key: string, value: string) => void;
 }): JSX.Element {
+  const { t } = useTranslation();
   return (
     <div className="space-y-2 text-[11px]">
-      <p className="text-[10px] font-semibold text-muted">View template (replayable defaults)</p>
+      <p className="text-[10px] font-semibold text-muted">{t('inspector.viewTemplate.heading')}</p>
       <label className={LABEL_CLS}>
-        Name
+        {t('inspector.fields.name')}
         <input
           className={INPUT_CLS}
           defaultValue={el.name}
@@ -536,7 +549,7 @@ export function InspectorViewTemplateEditor({
           }}
         />
       </label>
-      <FieldRow label="Scale" value={el.scale} mono />
+      <FieldRow label={t('inspector.fields.scale')} value={el.scale} mono />
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import type { Element } from '@bim-ai/core';
 
@@ -51,13 +52,14 @@ export function RoomSeparationAuthoringWorkbench({
 
   const lv0 = levels[0]?.id ?? '';
   const effectiveLevelId = levelId || lv0;
+  const { t } = useTranslation();
 
   return (
     <div
       className="border-border mb-3 space-y-2 border-b pb-3 text-[11px]"
       data-testid="room-separation-authoring-workbench"
     >
-      <div className="font-semibold text-muted">Room separation</div>
+      <div className="font-semibold text-muted">{t('roomSeparation.heading')}</div>
 
       {readout ? (
         <div className="space-y-1 rounded border border-border bg-muted/15 p-2 text-[10px]" data-testid="room-separation-readout">
@@ -92,14 +94,14 @@ export function RoomSeparationAuthoringWorkbench({
         </div>
       ) : (
         <div className="rounded border border-dashed border-border p-2 text-[10px] text-muted">
-          Select a room separation line to inspect derivation flags (plan wire augments readout).
+          {t('roomSeparation.selectHint')}
         </div>
       )}
 
-      <div className="text-[10px] font-medium text-muted">Add axis-aligned segment</div>
+      <div className="text-[10px] font-medium text-muted">{t('roomSeparation.addSegment')}</div>
       <div className="grid grid-cols-2 gap-2 text-[10px]" key={`rs-author-${revision}`}>
         <label className="block text-muted">
-          Level
+          {t('roomSeparation.level')}
           <select
             className="mt-1 w-full rounded border border-border bg-background px-1 py-1 font-mono text-[10px]"
             value={effectiveLevelId}
@@ -113,7 +115,7 @@ export function RoomSeparationAuthoringWorkbench({
           </select>
         </label>
         <label className="block text-muted">
-          Name
+          {t('roomSeparation.name')}
           <input
             className="mt-1 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px]"
             value={nameDraft}
@@ -121,7 +123,7 @@ export function RoomSeparationAuthoringWorkbench({
           />
         </label>
         <label className="block text-muted">
-          Start X mm
+          {t('roomSeparation.startX')}
           <input
             className="mt-1 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px]"
             value={sx}
@@ -129,7 +131,7 @@ export function RoomSeparationAuthoringWorkbench({
           />
         </label>
         <label className="block text-muted">
-          Start Y mm
+          {t('roomSeparation.startY')}
           <input
             className="mt-1 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px]"
             value={sy}
@@ -137,7 +139,7 @@ export function RoomSeparationAuthoringWorkbench({
           />
         </label>
         <label className="block text-muted">
-          End X mm
+          {t('roomSeparation.endX')}
           <input
             className="mt-1 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px]"
             value={ex}
@@ -145,7 +147,7 @@ export function RoomSeparationAuthoringWorkbench({
           />
         </label>
         <label className="block text-muted">
-          End Y mm
+          {t('roomSeparation.endY')}
           <input
             className="mt-1 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px]"
             value={ey}
