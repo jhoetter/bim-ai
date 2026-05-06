@@ -229,6 +229,10 @@ export type Element =
       curtainWallHCount?: number | null;
       locationLine?: WallLocationLine;
       worksetId?: string | null;
+      /** GAP-R5: opt out of the per-wall slab-edge expression strip on
+       * elevated walls. When unset / null, the strip is emitted on any
+       * single-thickness wall at level elevation > 0. */
+      floorEdgeStripDisabled?: boolean | null;
     }
   | {
       kind: 'door';

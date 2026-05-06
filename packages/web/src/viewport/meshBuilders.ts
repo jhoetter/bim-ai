@@ -1177,14 +1177,25 @@ export function makeWallMesh(
   else if (wall.materialKey === 'white_cladding')
     addCladdingBoards(mesh, len, height, thick, 120, 10, '#f4f4f0');
 
-  // Slab edge strip: thin horizontal band at the base of every elevated wall,
-  // expressing the floor plate at the level transition (e.g. 1st→2nd floor).
-  if (yBase > 0.01) {
-    const edgeH = 0.12; // 120 mm deep band
+  // GAP-R5 — slab-edge expression strip: thin horizontal band straddling
+  // the slab line at the base of every elevated single-thickness wall, so
+  // upper-floor walls read with a visible concrete plate. Layered walls
+  // express their slab edge through the layer stack itself, so we skip
+  // them here. `floorEdgeStripDisabled` is the per-instance opt-out.
+  if (yBase > 0.01 && !wall.wallTypeId && wall.floorEdgeStripDisabled !== true) {
+    const edgeH = 0.05; // 50 mm total band height (30 mm above + 20 mm below)
     const edgeP = 0.03; // 30 mm projection proud of wall face
-    const edgeMat = new THREE.MeshStandardMaterial({ color: '#c8c8c4', roughness: 0.6 });
+    const edgeMat = new THREE.MeshStandardMaterial({
+      color: paint?.categories.slab_edge.color ?? '#9a9a92',
+      roughness: paint?.categories.slab_edge.roughness ?? 0.6,
+      metalness: paint?.categories.slab_edge.metalness ?? 0,
+    });
     const edgeMesh = new THREE.Mesh(new THREE.BoxGeometry(len, edgeH, thick + edgeP * 2), edgeMat);
-    edgeMesh.position.set(0, -height / 2 + edgeH / 2, 0);
+    // Centre the strip 5 mm above the slab line (=> 30 mm above, 20 mm below).
+    edgeMesh.position.set(0, -height / 2 + 0.005, 0);
+    edgeMesh.castShadow = edgeMesh.receiveShadow = true;
+    edgeMesh.userData.bimPickId = wall.id;
+    edgeMesh.userData.slabEdge = true;
     addEdges(edgeMesh);
     mesh.add(edgeMesh);
   }

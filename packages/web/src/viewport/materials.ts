@@ -21,7 +21,8 @@ export type ElementCategoryToken =
   | 'room'
   | 'site'
   | 'section'
-  | 'sheet';
+  | 'sheet'
+  | 'slab_edge';
 
 export interface CategoryMaterialSpec {
   category: ElementCategoryToken;
@@ -77,6 +78,7 @@ const CATEGORY_TOKEN: Record<ElementCategoryToken, string> = {
   site: '--cat-site',
   section: '--cat-section',
   sheet: '--cat-sheet',
+  slab_edge: '--cat-slab-edge',
 };
 
 const FALLBACK_CATEGORY_COLOR: Record<ElementCategoryToken, string> = {
@@ -91,6 +93,7 @@ const FALLBACK_CATEGORY_COLOR: Record<ElementCategoryToken, string> = {
   site: 'hsl(80 20% 80%)',
   section: 'hsl(0 70% 50%)',
   sheet: 'hsl(220 6% 80%)',
+  slab_edge: '#9a9a92',
 };
 
 export interface TokenReader {
@@ -136,6 +139,7 @@ const PER_CATEGORY_PBR: Record<ElementCategoryToken, { roughness: number; metaln
   site: { roughness: 0.95, metalness: 0.0 },
   section: { roughness: 0.85, metalness: 0.0 },
   sheet: { roughness: 0.85, metalness: 0.0 },
+  slab_edge: { roughness: 0.6, metalness: 0.0 },
 };
 
 /** Resolve a category material spec from the live tokens.

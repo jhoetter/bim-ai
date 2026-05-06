@@ -21,6 +21,7 @@ const ALL_CATS: ElementCategoryToken[] = [
   'site',
   'section',
   'sheet',
+  'slab_edge',
 ];
 
 function fakeReader(map: Record<string, string>): TokenReader {
@@ -58,6 +59,7 @@ describe('resolveCategoryMaterial — spec §15.5', () => {
       site: { roughness: 0.95, metalness: 0.0 },
       section: { roughness: 0.85, metalness: 0.0 },
       sheet: { roughness: 0.85, metalness: 0.0 },
+      slab_edge: { roughness: 0.6, metalness: 0.0 },
     };
     for (const cat of ALL_CATS) {
       const spec = resolveCategoryMaterial(cat, { reader });

@@ -223,6 +223,13 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
       ...((raw.worksetId ?? raw.workset_id)
         ? { worksetId: String(raw.worksetId ?? raw.workset_id) }
         : {}),
+      ...(raw.floorEdgeStripDisabled != null || raw.floor_edge_strip_disabled != null
+        ? {
+            floorEdgeStripDisabled: Boolean(
+              raw.floorEdgeStripDisabled ?? raw.floor_edge_strip_disabled,
+            ),
+          }
+        : {}),
     };
   }
 
