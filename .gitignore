@@ -15,6 +15,8 @@ app/uv.lock
 app/.venv/
 .idea/
 .claude/
+.DS_Store
+.cursor/hooks.json
 *.local
 packages/web/playwright-report/
 packages/web/test-results/
