@@ -49,6 +49,11 @@ export interface LightingSpec {
     skyColor: string;
     groundColor: string;
   };
+  ssao: {
+    kernelRadius: number;
+    minDistance: number;
+    maxDistance: number;
+  };
 }
 
 export interface SelectionSpec {
@@ -164,6 +169,11 @@ export function resolveLighting(): LightingSpec {
       intensity: 0.45,
       skyColor: '#d3e2ff',
       groundColor: '#d8d3c4',
+    },
+    ssao: {
+      kernelRadius: 0.25,
+      minDistance: 0.001,
+      maxDistance: 0.12,
     },
   };
 }
