@@ -176,7 +176,10 @@ type LegacyPlanTool =
   | 'room'
   | 'room_rectangle'
   | 'grid'
-  | 'dimension';
+  | 'dimension'
+  | 'align'
+  | 'split'
+  | 'trim';
 
 function toolIdToLegacy(tool: ToolId): LegacyPlanTool | null {
   if (KNOWN_PLAN_TOOLS.has(tool)) return tool as LegacyPlanTool;
