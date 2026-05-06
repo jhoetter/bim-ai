@@ -3,7 +3,7 @@
   "checkpoint_id": "18d267735266",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 6,
+  "checkpoints_count": 7,
   "files_touched": [
     "packages/web/src/workspace/RedesignedWorkspace.tsx"
   ],
@@ -55,13 +55,19 @@
       "transcript": "/18/d267735266/7/full.jsonl",
       "content_hash": "/18/d267735266/7/content_hash.txt",
       "prompt": "/18/d267735266/7/prompt.txt"
+    },
+    {
+      "metadata": "/18/d267735266/8/metadata.json",
+      "transcript": "/18/d267735266/8/full.jsonl",
+      "content_hash": "/18/d267735266/8/content_hash.txt",
+      "prompt": "/18/d267735266/8/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 5048,
-    "cache_creation_tokens": 708242,
-    "cache_read_tokens": 48294933,
-    "output_tokens": 260118,
-    "api_call_count": 574
+    "input_tokens": 5173,
+    "cache_creation_tokens": 916046,
+    "cache_read_tokens": 55003089,
+    "output_tokens": 362527,
+    "api_call_count": 681
   }
 }
