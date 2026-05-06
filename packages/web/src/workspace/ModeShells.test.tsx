@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
+import { I18nextProvider } from 'react-i18next';
 import type { Element } from '@bim-ai/core';
 import {
   AgentReviewModeShell,
@@ -8,6 +9,11 @@ import {
   SheetModeShell,
 } from './ModeShells';
 import { useBimStore } from '../state/store';
+import i18n from '../i18n';
+
+function renderWithI18n(ui: React.ReactElement) {
+  return render(<I18nextProvider i18n={i18n}>{ui}</I18nextProvider>);
+}
 
 vi.mock('./SheetCanvas', () => ({
   SheetCanvas: ({
@@ -115,7 +121,7 @@ describe('AgentReviewModeShell — spec §20.7 / WP-UI-E01–E04', () => {
 
   it('mounts and shows empty advisory state when no violations', () => {
     useBimStore.setState({ violations: [] });
-    const { getByTestId, getByText } = render(
+    const { getByTestId, getByText } = renderWithI18n(
       <AgentReviewModeShell onApplyQuickFix={() => {}} />,
     );
     expect(getByTestId('agent-review-mode-shell')).toBeTruthy();
@@ -134,13 +140,13 @@ describe('AgentReviewModeShell — spec §20.7 / WP-UI-E01–E04', () => {
         } as never,
       ],
     });
-    const { getByText } = render(<AgentReviewModeShell onApplyQuickFix={() => {}} />);
+    const { getByText } = renderWithI18n(<AgentReviewModeShell onApplyQuickFix={() => {}} />);
     expect(getByText('Door too narrow')).toBeTruthy();
   });
 
   it('dispatches preset change via onPreset', () => {
     useBimStore.setState({ buildingPreset: 'residential' });
-    const { getByRole } = render(<AgentReviewModeShell onApplyQuickFix={() => {}} />);
+    const { getByRole } = renderWithI18n(<AgentReviewModeShell onApplyQuickFix={() => {}} />);
     const select = getByRole('combobox');
     fireEvent.change(select, { target: { value: 'commercial' } });
     expect(useBimStore.getState().buildingPreset).toBe('commercial');
@@ -161,7 +167,7 @@ describe('AgentReviewModeShell — spec §20.7 / WP-UI-E01–E04', () => {
         } as never,
       ],
     });
-    const { getByText } = render(<AgentReviewModeShell onApplyQuickFix={spy} />);
+    const { getByText } = renderWithI18n(<AgentReviewModeShell onApplyQuickFix={spy} />);
     fireEvent.click(getByText('Apply suggested fix'));
     expect(spy).toHaveBeenCalledWith(qfCmd);
   });

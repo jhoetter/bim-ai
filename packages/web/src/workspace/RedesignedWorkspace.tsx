@@ -1333,7 +1333,7 @@ export function RedesignedWorkspace(): JSX.Element {
                 />
               </div>
               <div className="border-t border-border p-3">
-                <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted">Advisor</div>
+                <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted">{t('advisor.heading')}</div>
                 <AdvisorPanel
                   violations={violations}
                   selectionId={selectedId ?? undefined}
@@ -1346,7 +1346,7 @@ export function RedesignedWorkspace(): JSX.Element {
               </div>
               {activityEvents.length > 0 ? (
                 <div className="border-t border-border p-3">
-                  <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted">Activity</div>
+                  <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted">{t('activity.heading')}</div>
                   <ul className="space-y-1 text-[11px] text-muted">
                     {activityEvents.map((a) => (
                       <li key={a.id}>

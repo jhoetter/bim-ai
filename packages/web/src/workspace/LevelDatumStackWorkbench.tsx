@@ -1,8 +1,9 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import type { Element, Violation } from '@bim-ai/core';
 
-import { recommendedContextForRuleId } from '../advisor/advisorViolationContext';
+import { translatedContextForRuleId } from '../advisor/advisorViolationContext';
 import { useBimStore } from '../state/store';
 
 import {
@@ -21,6 +22,7 @@ type Props = {
 };
 
 export function LevelDatumStackWorkbench({ selected, elementsById, violations }: Props) {
+  const { t } = useTranslation();
   const rows = useMemo(() => buildLevelDatumStackRows(elementsById), [elementsById]);
   const levelIds = useMemo(() => levelIdsFromDatumRows(rows), [rows]);
   const lastPropagation = useBimStore((s) => s.lastLevelElevationPropagationEvidence);
@@ -126,7 +128,7 @@ export function LevelDatumStackWorkbench({ selected, elementsById, violations }:
                     ids: {v.elementIds.join(', ')}
                   </div>
                 ) : null}
-                <div className="mt-0.5 text-[9px] text-muted">{recommendedContextForRuleId(v.ruleId)}</div>
+                <div className="mt-0.5 text-[9px] text-muted">{translatedContextForRuleId(v.ruleId, t)}</div>
               </li>
             ))}
           </ul>

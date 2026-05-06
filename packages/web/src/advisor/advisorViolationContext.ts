@@ -1,3 +1,4 @@
+import type { TFunction } from 'i18next';
 import type { Violation } from '@bim-ai/core';
 
 /** Human-oriented hint for where to look in the authoring UI (no new server fields). */
@@ -53,6 +54,20 @@ export function recommendedContextForRuleId(ruleId: string): string {
     default:
       return 'Inspect related elements and Advisor message; use perspective filter to narrow discipline.';
   }
+}
+
+/** Translated version of `recommendedContextForRuleId` — uses i18n when available, falls back to English. */
+export function translatedContextForRuleId(ruleId: string, t: TFunction): string {
+  return t(`violation.ctx.${ruleId}`, {
+    defaultValue: t('violation.ctx._default', {
+      defaultValue: recommendedContextForRuleId(ruleId),
+    }),
+  });
+}
+
+/** Snake_case ruleId → readable title fallback when no i18n key is defined. */
+export function humanizeRuleId(ruleId: string): string {
+  return ruleId.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 function firstViewRefFromViewports(cmd: Record<string, unknown>): string | null {
