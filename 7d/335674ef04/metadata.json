@@ -3,7 +3,7 @@
   "checkpoint_id": "7d335674ef04",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 1,
+  "checkpoints_count": 3,
   "files_touched": [
     "AGENTS.md",
     "spec/prompts/wave-02/WP-V2-02-wall-depth.md",
@@ -16,13 +16,19 @@
       "transcript": "/7d/335674ef04/0/full.jsonl",
       "content_hash": "/7d/335674ef04/0/content_hash.txt",
       "prompt": "/7d/335674ef04/0/prompt.txt"
+    },
+    {
+      "metadata": "/7d/335674ef04/1/metadata.json",
+      "transcript": "/7d/335674ef04/1/full.jsonl",
+      "content_hash": "/7d/335674ef04/1/content_hash.txt",
+      "prompt": "/7d/335674ef04/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 8,
-    "cache_creation_tokens": 11537,
-    "cache_read_tokens": 348999,
-    "output_tokens": 2261,
-    "api_call_count": 6
+    "input_tokens": 99,
+    "cache_creation_tokens": 160598,
+    "cache_read_tokens": 10769437,
+    "output_tokens": 37417,
+    "api_call_count": 91
   }
 }
