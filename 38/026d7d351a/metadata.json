@@ -3,7 +3,7 @@
   "checkpoint_id": "38026d7d351a",
   "strategy": "manual-commit",
   "branch": "r3-04-outline-selection",
-  "checkpoints_count": 3,
+  "checkpoints_count": 4,
   "files_touched": [
     "packages/web/src/Viewport.tsx",
     "packages/web/src/workspace/Viewport3DLayersPanel.test.tsx"
@@ -20,13 +20,19 @@
       "transcript": "/38/026d7d351a/1/full.jsonl",
       "content_hash": "/38/026d7d351a/1/content_hash.txt",
       "prompt": "/38/026d7d351a/1/prompt.txt"
+    },
+    {
+      "metadata": "/38/026d7d351a/2/metadata.json",
+      "transcript": "/38/026d7d351a/2/full.jsonl",
+      "content_hash": "/38/026d7d351a/2/content_hash.txt",
+      "prompt": "/38/026d7d351a/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 84,
-    "cache_creation_tokens": 181537,
-    "cache_read_tokens": 5748649,
-    "output_tokens": 92376,
-    "api_call_count": 74
+    "input_tokens": 111,
+    "cache_creation_tokens": 217565,
+    "cache_read_tokens": 6575913,
+    "output_tokens": 110526,
+    "api_call_count": 97
   }
 }
