@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import { I18nextProvider } from 'react-i18next';
-import { FamilyEditorWorkbench } from './FamilyEditorWorkbench';
+import { FamilyEditorWorkbench, resolveFamilyParamValue } from './FamilyEditorWorkbench';
 import i18n from '../i18n';
 
 function renderWithI18n(ui: React.ReactElement) {
@@ -39,5 +39,104 @@ describe('<FamilyEditorWorkbench />', () => {
     fireEvent.click(getByText('Load into Project'));
     expect(warnSpy).toHaveBeenCalledWith('load-into-project stub', expect.anything());
     warnSpy.mockRestore();
+  });
+});
+
+describe('FAM-09 — flex test mode', () => {
+  it('flex sidebar is hidden until Flex toggle is on', () => {
+    const { queryByLabelText, getByText } = renderWithI18n(<FamilyEditorWorkbench />);
+    expect(queryByLabelText('Flex parameter sidebar')).toBeNull();
+    fireEvent.click(getByText('Flex'));
+    expect(queryByLabelText('Flex parameter sidebar')).not.toBeNull();
+  });
+
+  it('flex value overrides default at canvas resolution time', () => {
+    const { getByText, getByLabelText, getByTestId, getAllByRole } = renderWithI18n(
+      <FamilyEditorWorkbench />,
+    );
+
+    // Author one parameter named "Width" with default 1200
+    fireEvent.click(getAllByRole('button').find((b) => b.textContent === 'Add parameter')!);
+    const textInputs = getAllByRole('textbox') as HTMLInputElement[];
+    fireEvent.change(textInputs[0], { target: { value: 'Width' } });
+    fireEvent.change(textInputs[1], { target: { value: 'Width' } });
+    const numericInputs = getAllByRole('spinbutton') as HTMLInputElement[];
+    fireEvent.change(numericInputs[0], { target: { value: '1200' } });
+
+    // Enter flex mode
+    fireEvent.click(getByText('Flex'));
+
+    // Type 1500 in the flex input for Width
+    const flexInput = getByLabelText('flex-Width') as HTMLInputElement;
+    fireEvent.change(flexInput, { target: { value: '1500' } });
+
+    // Resolved value reflects the flex override
+    expect(getByTestId('resolved-Width').textContent).toContain('1500');
+  });
+
+  it('exiting flex mode discards flex values; defaults unchanged', () => {
+    const { getByText, getByLabelText, queryByLabelText, getAllByRole } = renderWithI18n(
+      <FamilyEditorWorkbench />,
+    );
+
+    fireEvent.click(getAllByRole('button').find((b) => b.textContent === 'Add parameter')!);
+    const textInputs = getAllByRole('textbox') as HTMLInputElement[];
+    fireEvent.change(textInputs[0], { target: { value: 'Width' } });
+    fireEvent.change(textInputs[1], { target: { value: 'Width' } });
+    const defaultInput = (getAllByRole('spinbutton') as HTMLInputElement[])[0];
+    fireEvent.change(defaultInput, { target: { value: '1200' } });
+
+    fireEvent.click(getByText('Flex'));
+    fireEvent.change(getByLabelText('flex-Width'), { target: { value: '1500' } });
+
+    // Exit flex mode
+    fireEvent.click(getByText('Flex'));
+    // Sidebar gone
+    expect(queryByLabelText('Flex parameter sidebar')).toBeNull();
+
+    // Default value is still 1200 (not overwritten)
+    const defaultAfter = (getAllByRole('spinbutton') as HTMLInputElement[])[0];
+    expect(defaultAfter.value).toBe('1200');
+
+    // Re-entering flex shows empty input again (flex values discarded)
+    fireEvent.click(getByText('Flex'));
+    expect((getByLabelText('flex-Width') as HTMLInputElement).value).toBe('');
+  });
+
+  it('Reset button clears flex values without exiting flex mode', () => {
+    const { getByText, getByLabelText, getAllByRole } = renderWithI18n(<FamilyEditorWorkbench />);
+    fireEvent.click(getAllByRole('button').find((b) => b.textContent === 'Add parameter')!);
+    fireEvent.click(getByText('Flex'));
+    const flexInput = getByLabelText('flex-param_1') as HTMLInputElement;
+    fireEvent.change(flexInput, { target: { value: '999' } });
+    expect(flexInput.value).toBe('999');
+    fireEvent.click(getByText('Reset'));
+    expect((getByLabelText('flex-param_1') as HTMLInputElement).value).toBe('');
+  });
+});
+
+describe('resolveFamilyParamValue', () => {
+  const param = {
+    key: 'Width',
+    label: 'Width',
+    type: 'length_mm' as const,
+    default: 1200,
+    formula: '',
+  };
+
+  it('returns default when no overrides given', () => {
+    expect(resolveFamilyParamValue(param)).toBe(1200);
+  });
+
+  it('returns default when overrides do not contain key', () => {
+    expect(resolveFamilyParamValue(param, { Other: 99 })).toBe(1200);
+  });
+
+  it('returns override when present and non-empty', () => {
+    expect(resolveFamilyParamValue(param, { Width: 1500 })).toBe(1500);
+  });
+
+  it('falls back to default when override is empty string', () => {
+    expect(resolveFamilyParamValue(param, { Width: '' })).toBe(1200);
   });
 });

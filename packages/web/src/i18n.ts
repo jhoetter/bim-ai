@@ -686,6 +686,11 @@ i18n.init({
           addParameter: 'Add parameter',
           formulaLabel: 'Formula',
           loadIntoProject: 'Load into Project',
+          flexToggle: 'Flex',
+          flexHeading: 'Flex parameters',
+          flexSidebarAriaLabel: 'Flex parameter sidebar',
+          flexReset: 'Reset',
+          flexNoParams: 'Add a parameter to flex it.',
         },
         coordination: {
           selectionSets: 'Selection Sets',
@@ -1393,6 +1398,11 @@ i18n.init({
           addParameter: 'Parameter hinzufügen',
           formulaLabel: 'Formel',
           loadIntoProject: 'In Projekt laden',
+          flexToggle: 'Flex',
+          flexHeading: 'Flex-Parameter',
+          flexSidebarAriaLabel: 'Flex-Parameter-Seitenleiste',
+          flexReset: 'Zurücksetzen',
+          flexNoParams: 'Einen Parameter anlegen, um ihn zu flexen.',
         },
         coordination: {
           selectionSets: 'Auswahl-Sets',
