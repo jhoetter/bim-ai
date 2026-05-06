@@ -22,14 +22,14 @@ Generated 2026-05-06. Updated after each workpackage.
 
 | #    | Workpackage                                                    | Status     | Commit |
 | ---- | -------------------------------------------------------------- | ---------- | ------ |
-| WP-A | Tests for `evidenceArtifactParser.ts` (857 lines, 0% cov)     | ✅ done    | —      |
-| WP-B | Tests for plan geometry helpers (`planElementMeshBuilders.ts`) | ✅ done    | —      |
-| WP-C | Tests for `store.ts` actions (`hydrateFromSnapshot`, `applyDelta`) | ✅ done | —   |
-| WP-D | Add `ErrorBoundary` wrapper around main app sections           | ✅ done    | —      |
-| WP-E | Decompose `SchedulePanel.tsx` — extract `ScheduleDefinitionToolbar` | ⬜ todo | —  |
-| WP-F | Decompose `RedesignedWorkspace.tsx` (1 862 lines)              | ⬜ todo    | —      |
-| WP-G | Structured error-logging utility (replace raw console.error)   | ✅ done    | —      |
-| WP-H | Raise coverage thresholds 50/70/70 → 53/71/71                  | ✅ done    | —      |
+| WP-A | Tests for `evidenceArtifactParser.ts` (857 lines, 0% cov)     | ✅ done    | e82e99ab |
+| WP-B | Tests for plan geometry helpers (`planElementMeshBuilders.ts`) | ✅ done    | d78c3405 |
+| WP-C | Tests for `store.ts` actions (`hydrateFromSnapshot`, `applyDelta`) | ✅ done | e104f7e6 |
+| WP-D | Add `ErrorBoundary` wrapper around main app sections           | ✅ done    | cb38d6ae |
+| WP-E | Decompose `SchedulePanel.tsx` — extract `ScheduleDefinitionToolbar` | ⬜ todo | —      |
+| WP-F | Decompose `RedesignedWorkspace.tsx` (1 862 lines)              | ⬜ todo    | —        |
+| WP-G | Structured error-logging utility (replace raw console.error)   | ✅ done    | 7780670a |
+| WP-H | Raise coverage thresholds 50/70/70 → 53/71/71                  | ✅ done    | 7780670a |
 
 ---
 
