@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "05cd3370855d",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "CODE_QUALITY.md",
+    "packages/web/src/state/store.test.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/05/cd3370855d/0/metadata.json",
+      "transcript": "/05/cd3370855d/0/full.jsonl",
+      "content_hash": "/05/cd3370855d/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 0
+  }
+}
