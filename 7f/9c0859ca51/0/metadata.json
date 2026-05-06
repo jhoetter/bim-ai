@@ -1,0 +1,60 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "7f9c0859ca51",
+  "session_id": "63bae4ed-8358-4517-9476-a965271617b4",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-06T20:16:36.422345Z",
+  "branch": "wp-i-delete-code-quality-md",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "HANDOVER.md"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "8f53195c6615",
+  "token_usage": {
+    "input_tokens": 19,
+    "cache_creation_tokens": 37416,
+    "cache_read_tokens": 407202,
+    "output_tokens": 10963,
+    "api_call_count": 13
+  },
+  "session_metrics": {
+    "turn_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-06T20:16:36.416109Z",
+    "agent_lines": 0,
+    "agent_removed": 227,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 0,
+    "total_lines_changed": 441,
+    "agent_percentage": 51.47392290249433,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 227
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 227
+    }
+  ]
+}

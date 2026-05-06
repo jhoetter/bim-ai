@@ -1,0 +1,25 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "7f9c0859ca51",
+  "strategy": "manual-commit",
+  "branch": "wp-i-delete-code-quality-md",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "HANDOVER.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/7f/9c0859ca51/0/metadata.json",
+      "transcript": "/7f/9c0859ca51/0/full.jsonl",
+      "content_hash": "/7f/9c0859ca51/0/content_hash.txt",
+      "prompt": "/7f/9c0859ca51/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 19,
+    "cache_creation_tokens": 37416,
+    "cache_read_tokens": 407202,
+    "output_tokens": 10963,
+    "api_call_count": 13
+  }
+}

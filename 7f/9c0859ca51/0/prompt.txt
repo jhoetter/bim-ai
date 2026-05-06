@@ -1,0 +1,6 @@
+how would you rate the code quality / architecture ?
+
+---
+
+ok, then please make the improvements; always: create a branch, build the work package, commit and push, then merge with main, and then continue
+   with the next? and once you are fully done with all, remove the @CODE_QUALITY.md ?
