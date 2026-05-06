@@ -3,7 +3,7 @@
   "checkpoint_id": "b462ab29a9c3",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     "spec/prd/revit-tutorial-parity-cleanroom-roadmap.md",
     "spec/prompts/wave-02/README.md",
@@ -21,13 +21,19 @@
       "transcript": "/b4/62ab29a9c3/0/full.jsonl",
       "content_hash": "/b4/62ab29a9c3/0/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/b4/62ab29a9c3/1/metadata.json",
+      "transcript": "/b4/62ab29a9c3/1/full.jsonl",
+      "content_hash": "/b4/62ab29a9c3/1/content_hash.txt",
+      "prompt": "/b4/62ab29a9c3/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 0,
-    "cache_creation_tokens": 0,
-    "cache_read_tokens": 0,
-    "output_tokens": 0,
-    "api_call_count": 0
+    "input_tokens": 1150,
+    "cache_creation_tokens": 738444,
+    "cache_read_tokens": 48859451,
+    "output_tokens": 282844,
+    "api_call_count": 488
   }
 }
