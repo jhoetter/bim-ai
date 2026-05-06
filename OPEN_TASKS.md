@@ -74,22 +74,6 @@ Per-category line weight / pattern / color overrides per plan view exist in the 
 
 ---
 
-### T-15 · Sheet canvas + section pane
-
-**WP target:** WP-UI-A12 (view tabs) · **Source:** `workspace/SheetCanvas.tsx`, `workspace/SectionPlaceholderPane.tsx` · **Status:** `open`
-
-Sheet mode and Section mode have placeholder shells in the redesign (`SheetModeShell`, `SectionModeShell` in `workspace/ModeShells.tsx`). The actual rendering components exist:
-- `SheetCanvas.tsx` — titleblock, placed views, viewports
-- `SectionPlaceholderPane.tsx` — section/elevation view
-
-**Next moves:**
-- Swap `SheetModeShell` placeholder for `<SheetCanvas>` wired to the active sheet id from `tabsModel`
-- Swap `SectionModeShell` placeholder for `<SectionPlaceholderPane>`
-- Vitest smoke for canvas mount
-- Update §5 + §28 WP-UI-A12 when done
-
----
-
 ## How to add a new task
 
 1. Append a new `### T-NN · Title` heading at the end of the relevant section.
