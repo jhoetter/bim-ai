@@ -1,0 +1,44 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "ab0c8d824db1",
+  "session_id": "72487ddb-1045-443d-b083-155fc50cda25",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-06T20:19:35.962368Z",
+  "branch": "wp-k-split-routes-api",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/workspace/CanvasMount.tsx",
+    "packages/web/src/workspace/ModeShells.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "4d99768a4ab8",
+  "token_usage": {
+    "input_tokens": 14,
+    "cache_creation_tokens": 17191,
+    "cache_read_tokens": 262118,
+    "output_tokens": 2481,
+    "api_call_count": 12
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-06T20:19:35.95946Z",
+    "agent_lines": 10,
+    "agent_removed": 1,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 10,
+    "total_lines_changed": 11,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}

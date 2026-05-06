@@ -2,7 +2,7 @@
   "cli_version": "0.6.0",
   "checkpoint_id": "ab0c8d824db1",
   "strategy": "manual-commit",
-  "branch": "feat/wp-ui-b01-drafting-visuals",
+  "branch": "wp-k-split-routes-api",
   "checkpoints_count": 0,
   "files_touched": [
     "packages/web/src/workspace/CanvasMount.tsx",
@@ -26,13 +26,19 @@
       "transcript": "/ab/0c8d824db1/2/full.jsonl",
       "content_hash": "/ab/0c8d824db1/2/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/ab/0c8d824db1/3/metadata.json",
+      "transcript": "/ab/0c8d824db1/3/full.jsonl",
+      "content_hash": "/ab/0c8d824db1/3/content_hash.txt",
+      "prompt": "/ab/0c8d824db1/3/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 23,
-    "cache_creation_tokens": 96923,
-    "cache_read_tokens": 1267699,
-    "output_tokens": 20048,
-    "api_call_count": 23
+    "input_tokens": 37,
+    "cache_creation_tokens": 114114,
+    "cache_read_tokens": 1529817,
+    "output_tokens": 22529,
+    "api_call_count": 35
   }
 }
