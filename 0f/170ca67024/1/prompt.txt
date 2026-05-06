@@ -27,3 +27,7 @@ even now i am thinking: is it possible to consolidate basically everything into 
 ---
 
 is the @spec/prd/revit-production-parity-ai-agent-prd.md still needed, or also fully completed? or is it a good reference for what was implemented? but then it is outdated? and what are PRD tests? do we run automated tests against the PRD? is that even needed?
+
+---
+
+yeah that sounds very good, absolutely reasonable. go ahead
