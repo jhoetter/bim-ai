@@ -179,14 +179,12 @@ def _house_commands() -> list[dict]:
             "roofGeometryMode": "gable_pitched_rectangle",
         },
         {
-            # Annex near-flat roof: slopeDeg=5 (minimum), lvl-ann ref (no walls at that level
-            # → eaveY = 3200 mm, ridge only 175 mm above eave — essentially flat)
+            # Annex flat roof: mode=flat → 150mm slab at eaveY=3200mm, light grey.
             "type": "createRoof", "id": "roof-ann", "name": "Annex flat roof",
             "referenceLevelId": "lvl-ann",
             "footprintMm": _ANNEX_FOOTPRINT,
             "overhangMm": 0,
-            "slopeDeg": 5,
-            "roofGeometryMode": "gable_pitched_rectangle",
+            "roofGeometryMode": "flat",
         },
     ]
 

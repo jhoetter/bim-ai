@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 from typing import Literal
 
-RoofGeometryMode = Literal["mass_box", "gable_pitched_rectangle"]
+RoofGeometryMode = Literal["mass_box", "gable_pitched_rectangle", "flat"]
 
 RoofGeometrySupportTokenV0 = Literal[
     "gable_pitched_rectangle_supported",

@@ -1340,6 +1340,7 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 slope_deg=cmd.slope_deg,
                 roof_geometry_mode=cmd.roof_geometry_mode,
                 roof_type_id=rtid,
+                material_key=cmd.material_key,
             )
 
         case ExtendFloorInsulationCmd():

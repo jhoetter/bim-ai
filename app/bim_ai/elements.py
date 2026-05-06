@@ -303,6 +303,7 @@ class RoofElem(BaseModel):
     edge_slope_flags: dict[str, bool] = Field(default_factory=dict, alias="edgeSlopeFlags")
     roof_geometry_mode: RoofGeometryMode = Field(default="mass_box", alias="roofGeometryMode")
     roof_type_id: str | None = Field(default=None, alias="roofTypeId")
+    material_key: str | None = Field(default=None, alias="materialKey")
 
 
 class StairElem(BaseModel):
