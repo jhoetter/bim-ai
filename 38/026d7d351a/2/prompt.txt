@@ -1,1 +1,5 @@
 currently have certain elnts with bad keyboard UX; e.g. i can open the cmd+k with cmd+k, but not leave it with esc; analyze these gaps please, and fix them
+
+---
+
+nope, not yet working. if i open cmd+k, i cant leave via esc..
