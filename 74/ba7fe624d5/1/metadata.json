@@ -1,0 +1,29 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "74ba7fe624d5",
+  "session_id": "9b283bf3-c5eb-4c3e-ade5-fae96e29dd50",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-06T13:02:10.434211Z",
+  "branch": "gw-04-curtain-wall-renderer",
+  "checkpoints_count": 0,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "ca6ea83b9b91",
+  "token_usage": {
+    "input_tokens": 17,
+    "cache_creation_tokens": 22026,
+    "cache_read_tokens": 364813,
+    "output_tokens": 4226,
+    "api_call_count": 15
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}
