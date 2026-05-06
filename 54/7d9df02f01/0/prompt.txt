@@ -1,0 +1,323 @@
+so now everything you mentioned is fully done?
+
+---
+
+but the js CI still fails:
+Run cd packages/web && pnpm exec playwright test
+[WebServer] 
+[WebServer] (!) Some chunks are larger than 500 kB after minification. Consider:
+[WebServer] - Using dynamic import() to code-split the application
+[WebServer] - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+[WebServer] - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+
+Running 21 tests using 2 workers
+
+  ✘  2 e2e/evidence-baselines.spec.ts:757:3 › evidence PNG baselines › coordination layout: sheet + schedules panel (9.1s)
+  ✘  3 e2e/evidence-baselines.spec.ts:768:3 › evidence PNG baselines › schedules_focus docked rails (9.7s)
+  ✘  1 e2e/cockpit-smoke.spec.ts:71:3 › cockpit hydration › shows Plan + 3D layout and mocked room labels (30.4s)
+  ✘  4 e2e/evidence-baselines.spec.ts:778:3 › evidence PNG baselines › split plan + 3D: canvases visible (11.1s)
+  ✘  5 e2e/golden-bundle-plan.spec.ts:202:3 › golden bundle affordances › lists longitudinal section cuts and exposes plan style presets (8.2s)
+  ✘  6 e2e/evidence-baselines.spec.ts:786:3 › evidence PNG baselines › coordination layout: deterministic manifest sheet PNG basename (9.2s)
+  ✘  7 e2e/golden-bundle-plan.spec.ts:219:3 › golden bundle affordances › project browser lists floor plans, section cuts, and split viewpoint groups (8.3s)
+  ✘  8 e2e/evidence-baselines.spec.ts:796:3 › evidence PNG baselines › deterministic manifest: full-sheet SVG screenshot (9.0s)
+  ✘  9 e2e/golden-bundle-plan.spec.ts:234:3 › golden bundle affordances › sheet canvas renders section viewport from replayed viewportsMm (8.7s)
+  ✘  11 e2e/golden-bundle-plan.spec.ts:252:3 › golden bundle affordances › applies evidence3d clip query params on 3D section box controls (8.8s)
+  ✘  12 e2e/ui-redesign-baselines.spec.ts:25:3 › UI redesign — chrome baselines › app-shell light @ 1440 × 900 (13.4s)
+  ✘  13 e2e/ui-redesign-baselines.spec.ts:35:3 › UI redesign — chrome baselines › app-shell dark @ 1440 × 900 (13.2s)
+  ✘  14 e2e/ui-redesign-baselines.spec.ts:45:3 › UI redesign — chrome baselines › top-bar mode pills (12.4s)
+  ✘  10 e2e/evidence-baselines.spec.ts:804:3 › evidence PNG baselines › named plan_views change EG openings vs OG room presentation (1.0m)
+  ✓  16 e2e/evidence-baselines.spec.ts:815:3 › evidence PNG baselines › evidence-package exposes closure review inventory (6.7s)
+  ✘  15 e2e/ui-redesign-baselines.spec.ts:53:3 › UI redesign — chrome baselines › left-rail Project Browser (11.9s)
+  ✓  17 e2e/evidence-baselines.spec.ts:884:3 › evidence PNG baselines › sheet-print-raster.png: print-surrogate v2 response headers (5.3s)
+  ✘  18 e2e/ui-redesign-baselines.spec.ts:61:3 › UI redesign — chrome baselines › right-rail Inspector empty state (12.9s)
+  ✘  19 e2e/evidence-baselines.spec.ts:913:3 › evidence PNG baselines › agent_review layout: fix-loop callout hidden when evidence package clean (9.7s)
+  ✓  20 e2e/ui-redesign-baselines.spec.ts:69:3 › UI redesign — chrome baselines › status-bar clusters (7.0s)
+  ✘  21 e2e/ui-redesign-baselines.spec.ts:77:3 › UI redesign — chrome baselines › tool-palette plan mode (9.8s)
+
+
+  1) e2e/cockpit-smoke.spec.ts:71:3 › cockpit hydration › shows Plan + 3D layout and mocked room labels 
+
+    Error: Timed out 30000ms waiting for expect(locator).toBeVisible()
+
+    Locator: getByText('Explorer')
+    Expected: visible
+    Received: <element(s) not found>
+    Call log:
+      - Expect "toBeVisible" with timeout 30000ms
+      - waiting for getByText('Explorer')
+
+
+
+
+      257 |     await page.waitForSelector('[data-testid="app-shell"]', { timeout: 30_000 });
+      258 |
+    > 259 |     await expect(page.getByLabel(/Section box — cap Y/i)).toHaveValue('5600');
+          |                                                           ^
+      260 |     await expect(page.getByLabel(/Section box — floor Y/i)).toHaveValue('2000');
+      261 |   });
+      262 | });
+        at /home/runner/work/bim-ai/bim-ai/packages/web/e2e/golden-bundle-plan.spec.ts:259:59
+
+    Error Context: test-results/golden-bundle-plan-golden--558b9--on-3D-section-box-controls/error-context.md
+
+  13) e2e/ui-redesign-baselines.spec.ts:25:3 › UI redesign — chrome baselines › app-shell light @ 1440 × 900 
+
+    Error: Timed out 5000ms waiting for expect(page).toHaveScreenshot(expected)
+
+      Timeout 5000ms exceeded.
+
+    Expected: /home/runner/work/bim-ai/bim-ai/packages/web/e2e/__screenshots__/ui-redesign-baselines.spec.ts/linux/app-shell-light.png
+    Received: /home/runner/work/bim-ai/bim-ai/packages/web/test-results/ui-redesign-baselines-UI-r-f5c07--app-shell-light-1440-×-900/app-shell-light-actual.png
+        Diff: /home/runner/work/bim-ai/bim-ai/packages/web/test-results/ui-redesign-baselines-UI-r-f5c07--app-shell-light-1440-×-900/app-shell-light-diff.png
+
+    Call log:
+      - Expect "toHaveScreenshot(app-shell-light.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - 577823 pixels (ratio 0.45 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - Timeout 5000ms exceeded.
+
+
+      27 |       document.documentElement.setAttribute('data-theme', 'light');
+      28 |     });
+    > 29 |     await expect(page).toHaveScreenshot('app-shell-light.png', {
+         |                        ^
+      30 |       fullPage: false,
+      31 |       maxDiffPixelRatio: 0.07,
+      32 |     });
+        at /home/runner/work/bim-ai/bim-ai/packages/web/e2e/ui-redesign-baselines.spec.ts:29:24
+
+    attachment #1: app-shell-light-expected.png (image/png) ────────────────────────────────────────
+    e2e/__screenshots__/ui-redesign-baselines.spec.ts/linux/app-shell-light.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: app-shell-light-actual.png (image/png) ──────────────────────────────────────────
+    test-results/ui-redesign-baselines-UI-r-f5c07--app-shell-light-1440-×-900/app-shell-light-actual.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #3: app-shell-light-diff.png (image/png) ────────────────────────────────────────────
+    test-results/ui-redesign-baselines-UI-r-f5c07--app-shell-light-1440-×-900/app-shell-light-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/ui-redesign-baselines-UI-r-f5c07--app-shell-light-1440-×-900/error-context.md
+
+  14) e2e/ui-redesign-baselines.spec.ts:35:3 › UI redesign — chrome baselines › app-shell dark @ 1440 × 900 
+
+    Error: Timed out 5000ms waiting for expect(page).toHaveScreenshot(expected)
+
+      Timeout 5000ms exceeded.
+
+    Expected: /home/runner/work/bim-ai/bim-ai/packages/web/e2e/__screenshots__/ui-redesign-baselines.spec.ts/linux/app-shell-dark.png
+
+    Call log:
+      - Expect "toHaveScreenshot(app-shell-dark.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - Timeout 5000ms exceeded.
+
+
+      37 |       document.documentElement.setAttribute('data-theme', 'dark');
+      38 |     });
+    > 39 |     await expect(page).toHaveScreenshot('app-shell-dark.png', {
+         |                        ^
+      40 |       fullPage: false,
+      41 |       maxDiffPixelRatio: 0.07,
+      42 |     });
+        at /home/runner/work/bim-ai/bim-ai/packages/web/e2e/ui-redesign-baselines.spec.ts:39:24
+
+    attachment #1: app-shell-dark-expected.png (image/png) ─────────────────────────────────────────
+    e2e/__screenshots__/ui-redesign-baselines.spec.ts/linux/app-shell-dark.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/ui-redesign-baselines-UI-r-a31f7-s-app-shell-dark-1440-×-900/error-context.md
+
+  15) e2e/ui-redesign-baselines.spec.ts:45:3 › UI redesign — chrome baselines › top-bar mode pills ─
+
+    Error: Timed out 5000ms waiting for expect(locator).toHaveScreenshot(expected)
+
+      Timeout 5000ms exceeded.
+
+    Expected: /home/runner/work/bim-ai/bim-ai/packages/web/e2e/__screenshots__/ui-redesign-baselines.spec.ts/linux/top-bar.png
+
+    Call log:
+      - Expect "toHaveScreenshot(top-bar.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - waiting for getByTestId('topbar')
+        - locator resolved to <div role="banner" data-testid="topbar" class="flex w-full items-center gap-4 border-b border-border bg-background px-4">…</div>
+      - taking element screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - attempting scroll into view action
+        - waiting for element to be stable
+      - Timeout 5000ms exceeded.
+
+
+      46 |     const topbar = page.getByTestId('topbar');
+      47 |     await expect(topbar).toBeVisible();
+    > 48 |     await expect(topbar).toHaveScreenshot('top-bar.png', {
+         |                          ^
+      49 |       maxDiffPixelRatio: 0.05,
+      50 |     });
+      51 |   });
+        at /home/runner/work/bim-ai/bim-ai/packages/web/e2e/ui-redesign-baselines.spec.ts:48:26
+
+    attachment #1: top-bar-expected.png (image/png) ────────────────────────────────────────────────
+    e2e/__screenshots__/ui-redesign-baselines.spec.ts/linux/top-bar.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/ui-redesign-baselines-UI-r-95ac6-aselines-top-bar-mode-pills/error-context.md
+
+  16) e2e/ui-redesign-baselines.spec.ts:53:3 › UI redesign — chrome baselines › left-rail Project Browser 
+
+    Error: Timed out 5000ms waiting for expect(locator).toHaveScreenshot(expected)
+
+      Timeout 5000ms exceeded.
+
+    Expected: /home/runner/work/bim-ai/bim-ai/packages/web/e2e/__screenshots__/ui-redesign-baselines.spec.ts/linux/left-rail.png
+
+    Call log:
+      - Expect "toHaveScreenshot(left-rail.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - waiting for getByTestId('app-shell-left-rail')
+        - locator resolved to <aside aria-label="Project browser" data-testid="app-shell-left-rail" class="flex flex-col border-r border-border bg-surface">…</aside>
+      - taking element screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - attempting scroll into view action
+        - waiting for element to be stable
+      - Timeout 5000ms exceeded.
+
+
+      54 |     const rail = page.getByTestId('app-shell-left-rail');
+      55 |     await expect(rail).toBeVisible();
+    > 56 |     await expect(rail).toHaveScreenshot('left-rail.png', {
+         |                        ^
+      57 |       maxDiffPixelRatio: 0.05,
+      58 |     });
+      59 |   });
+        at /home/runner/work/bim-ai/bim-ai/packages/web/e2e/ui-redesign-baselines.spec.ts:56:24
+
+    attachment #1: left-rail-expected.png (image/png) ──────────────────────────────────────────────
+    e2e/__screenshots__/ui-redesign-baselines.spec.ts/linux/left-rail.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/ui-redesign-baselines-UI-r-9137f-s-left-rail-Project-Browser/error-context.md
+
+  17) e2e/ui-redesign-baselines.spec.ts:61:3 › UI redesign — chrome baselines › right-rail Inspector empty state 
+
+    Error: Timed out 5000ms waiting for expect(locator).toHaveScreenshot(expected)
+
+      Timeout 5000ms exceeded.
+
+    Expected: /home/runner/work/bim-ai/bim-ai/packages/web/e2e/__screenshots__/ui-redesign-baselines.spec.ts/linux/right-rail-empty.png
+
+    Call log:
+      - Expect "toHaveScreenshot(right-rail-empty.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - waiting for getByTestId('inspector')
+        - locator resolved to <div data-dirty="false" data-testid="inspector" class="flex h-full flex-col overflow-hidden bg-surface">…</div>
+      - taking element screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - attempting scroll into view action
+        - waiting for element to be stable
+      - Timeout 5000ms exceeded.
+
+
+      62 |     const rail = page.getByTestId('inspector');
+      63 |     await expect(rail).toBeVisible();
+    > 64 |     await expect(rail).toHaveScreenshot('right-rail-empty.png', {
+         |                        ^
+      65 |       maxDiffPixelRatio: 0.05,
+      66 |     });
+      67 |   });
+        at /home/runner/work/bim-ai/bim-ai/packages/web/e2e/ui-redesign-baselines.spec.ts:64:24
+
+    attachment #1: right-rail-empty-expected.png (image/png) ───────────────────────────────────────
+    e2e/__screenshots__/ui-redesign-baselines.spec.ts/linux/right-rail-empty.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/ui-redesign-baselines-UI-r-ebc19--rail-Inspector-empty-state/error-context.md
+
+  18) e2e/ui-redesign-baselines.spec.ts:77:3 › UI redesign — chrome baselines › tool-palette plan mode 
+
+    Error: Timed out 5000ms waiting for expect(locator).toHaveScreenshot(expected)
+
+      Timeout 5000ms exceeded.
+
+    Expected: /home/runner/work/bim-ai/bim-ai/packages/web/e2e/__screenshots__/ui-redesign-baselines.spec.ts/linux/tool-palette.png
+    Received: /home/runner/work/bim-ai/bim-ai/packages/web/test-results/ui-redesign-baselines-UI-r-d975a-ines-tool-palette-plan-mode/tool-palette-actual.png
+        Diff: /home/runner/work/bim-ai/bim-ai/packages/web/test-results/ui-redesign-baselines-UI-r-d975a-ines-tool-palette-plan-mode/tool-palette-diff.png
+
+    Call log:
+      - Expect "toHaveScreenshot(tool-palette.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - waiting for getByTestId('tool-palette')
+        - locator resolved to <div role="toolbar" aria-label="Drawing tools" data-testid="tool-palette" class="flex items-center gap-0.5 rounded-md border border-border bg-background/95 px-1.5 py-1.5 shadow-elev-2 backdrop-blur-sm">…</div>
+      - taking element screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - attempting scroll into view action
+        - waiting for element to be stable
+      - Expected an image 84px by 42px, received 64px by 38px. 956 pixels (ratio 0.28 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - waiting for getByTestId('tool-palette')
+      - Timeout 5000ms exceeded.
+
+
+      78 |     const palette = page.getByTestId('tool-palette');
+      79 |     await expect(palette).toBeVisible();
+    > 80 |     await expect(palette).toHaveScreenshot('tool-palette.png', {
+         |                           ^
+      81 |       maxDiffPixelRatio: 0.05,
+      82 |     });
+      83 |   });
+        at /home/runner/work/bim-ai/bim-ai/packages/web/e2e/ui-redesign-baselines.spec.ts:80:27
+
+    attachment #1: tool-palette-expected.png (image/png) ───────────────────────────────────────────
+    e2e/__screenshots__/ui-redesign-baselines.spec.ts/linux/tool-palette.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: tool-palette-actual.png (image/png) ─────────────────────────────────────────────
+    test-results/ui-redesign-baselines-UI-r-d975a-ines-tool-palette-plan-mode/tool-palette-actual.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #3: tool-palette-diff.png (image/png) ───────────────────────────────────────────────
+    test-results/ui-redesign-baselines-UI-r-d975a-ines-tool-palette-plan-mode/tool-palette-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/ui-redesign-baselines-UI-r-d975a-ines-tool-palette-plan-mode/error-context.md
+
+  18 failed
+    e2e/cockpit-smoke.spec.ts:71:3 › cockpit hydration › shows Plan + 3D layout and mocked room labels 
+    e2e/evidence-baselines.spec.ts:757:3 › evidence PNG baselines › coordination layout: sheet + schedules panel 
+    e2e/evidence-baselines.spec.ts:768:3 › evidence PNG baselines › schedules_focus docked rails ───
+    e2e/evidence-baselines.spec.ts:778:3 › evidence PNG baselines › split plan + 3D: canvases visible 
+    e2e/evidence-baselines.spec.ts:786:3 › evidence PNG baselines › coordination layout: deterministic manifest sheet PNG basename 
+    e2e/evidence-baselines.spec.ts:796:3 › evidence PNG baselines › deterministic manifest: full-sheet SVG screenshot 
+    e2e/evidence-baselines.spec.ts:804:3 › evidence PNG baselines › named plan_views change EG openings vs OG room presentation 
+    e2e/evidence-baselines.spec.ts:913:3 › evidence PNG baselines › agent_review layout: fix-loop callout hidden when evidence package clean 
+    e2e/golden-bundle-plan.spec.ts:202:3 › golden bundle affordances › lists longitudinal section cuts and exposes plan style presets 
+    e2e/golden-bundle-plan.spec.ts:219:3 › golden bundle affordances › project browser lists floor plans, section cuts, and split viewpoint groups 
+    e2e/golden-bundle-plan.spec.ts:234:3 › golden bundle affordances › sheet canvas renders section viewport from replayed viewportsMm 
+    e2e/golden-bundle-plan.spec.ts:252:3 › golden bundle affordances › applies evidence3d clip query params on 3D section box controls 
+    e2e/ui-redesign-baselines.spec.ts:25:3 › UI redesign — chrome baselines › app-shell light @ 1440 × 900 
+    e2e/ui-redesign-baselines.spec.ts:35:3 › UI redesign — chrome baselines › app-shell dark @ 1440 × 900 
+    e2e/ui-redesign-baselines.spec.ts:45:3 › UI redesign — chrome baselines › top-bar mode pills ───
+    e2e/ui-redesign-baselines.spec.ts:53:3 › UI redesign — chrome baselines › left-rail Project Browser 
+    e2e/ui-redesign-baselines.spec.ts:61:3 › UI redesign — chrome baselines › right-rail Inspector empty state 
+    e2e/ui-redesign-baselines.spec.ts:77:3 › UI redesign — chrome baselines › tool-palette plan mode 
+  3 passed (2.7m)
+Error: Process completed with exit code 1.
+can you fix that?
