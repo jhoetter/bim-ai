@@ -365,7 +365,7 @@ async function cmdExport(kind, modelId, outPath) {
     }
     return;
   }
-  console.error(`export ${kind}: not implemented (see spec/openbim-compatibility.md roadmap).`);
+  console.error(`export ${kind}: not implemented (see spec/workpackage-master-tracker.md backlog).`);
   process.exit(2);
 }
 

@@ -12,8 +12,6 @@ from bim_ai.v1_closeout_readiness_manifest import build_v1_closeout_readiness_ma
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 
-_REQUIRED_WP = ("WP-A01", "WP-A02", "WP-A04", "WP-V01", "WP-F01")
-
 
 def _canonical_without_digest(manifest: dict) -> str:
     body = {k: v for k, v in manifest.items() if k != "manifestContentDigestSha256"}
@@ -60,17 +58,6 @@ def test_required_gate_paths_and_kinds() -> None:
     assert gate_ids == sorted(gate_ids)
 
 
-@pytest.mark.skipif(
-    not (REPO_ROOT / "spec" / "revit-production-parity-workpackage-tracker.md").exists(),
-    reason="spec/revit-production-parity-workpackage-tracker.md was deleted (superseded by workpackage-master-tracker.md)",
-)
-def test_tracker_contains_required_workpackages() -> None:
-    tr = REPO_ROOT / "spec" / "revit-production-parity-workpackage-tracker.md"
-    text = tr.read_text(encoding="utf-8")
-    for wp in _REQUIRED_WP:
-        assert f"| {wp} |" in text
-
-
 def test_golden_cli_gate_structural_ok_in_repo() -> None:
     m = build_v1_closeout_readiness_manifest_v1()
     gates = {g["id"]: g for g in m["gates"] if isinstance(g, dict)}
@@ -109,7 +96,6 @@ def test_classification_not_release_ready_when_gate_fails(monkeypatch: pytest.Mo
 
     def bad_gates(
         *,
-        tracker_text: str | None = None,
         ci_yml_text: str | None = None,
     ) -> list[dict]:
         return [

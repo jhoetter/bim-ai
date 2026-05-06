@@ -1,7 +1,7 @@
 """Deterministic v1 closeout / CI readiness manifest (prompt-8/prompt-7 / WP-A01,A02,A04,V01,F01).
 
-Built from repo-local structural checks only (paths, tracker substrings). No network or timing.
-Includes PRD blocking advisor matrix summary from prd_blocking_advisor_matrix.
+Built from repo-local structural checks only (paths, gate substrings). No network or timing.
+Includes PRD advisor matrix summary from prd_blocking_advisor_matrix.
 """
 
 from __future__ import annotations
@@ -13,11 +13,7 @@ from typing import Any, Literal
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 
-_TRACKER_PATH = _REPO_ROOT / "spec" / "revit-production-parity-workpackage-tracker.md"
-_PRD_PATH = _REPO_ROOT / "spec" / "prd" / "revit-production-parity-ai-agent-prd.md"
 _CI_YML_PATH = _REPO_ROOT / ".github" / "workflows" / "ci.yml"
-
-_REQUIRED_WP_IDS: tuple[str, ...] = ("WP-A01", "WP-A02", "WP-A04", "WP-V01", "WP-F01")
 
 
 def _deferred_blockers_v1() -> list[dict[str, Any]]:
@@ -46,7 +42,7 @@ def _deferred_blockers_v1() -> list[dict[str, Any]]:
     return rows
 
 
-def _gate_rows(*, tracker_text: str | None, ci_yml_text: str | None) -> list[dict[str, Any]]:
+def _gate_rows(*, ci_yml_text: str | None) -> list[dict[str, Any]]:
     gates: list[dict[str, Any]] = []
 
     def add_path_gate(
@@ -94,34 +90,6 @@ def _gate_rows(*, tracker_text: str | None, ci_yml_text: str | None) -> list[dic
         gate_id="pytest_prd_traceability_matrix",
         gate_kind="required_pytest_module",
         rel_path="app/tests/test_prd_traceability_matrix.py",
-    )
-
-    prd_ok = _PRD_PATH.is_file()
-    gates.append(
-        {
-            "id": "prd_file_present",
-            "gateKind": "prd_traceability_expectation",
-            "path": str(_PRD_PATH.relative_to(_REPO_ROOT)).replace("\\", "/"),
-            "structuralOk": prd_ok,
-            "note": "PRD source for traceability matrix needles and §15 expectations.",
-        }
-    )
-
-    tracker_ok = _TRACKER_PATH.is_file()
-    wp_substrings = [f"| {_wp} |" for _wp in _REQUIRED_WP_IDS]
-    wp_ok = bool(tracker_text) and all(s in tracker_text for s in wp_substrings)
-
-    gates.append(
-        {
-            "id": "tracker_workpackages_present",
-            "gateKind": "tracker_closeout_rows",
-            "path": str(_TRACKER_PATH.relative_to(_REPO_ROOT)).replace("\\", "/"),
-            "structuralOk": tracker_ok and wp_ok,
-            "note": (
-                f"Tracker must include table rows: {', '.join(_REQUIRED_WP_IDS)} "
-                f"(substring match `{wp_substrings[0]}` …)."
-            ),
-        }
     )
 
     ci_ok = False
@@ -199,14 +167,6 @@ def _prd_closeout_cross_correlation_safe() -> dict[str, Any] | None:
 
 
 def build_v1_closeout_readiness_manifest_v1() -> dict[str, Any]:
-    tracker_text: str | None
-    try:
-        tracker_text = (
-            _TRACKER_PATH.read_text(encoding="utf-8") if _TRACKER_PATH.is_file() else None
-        )
-    except OSError:
-        tracker_text = None
-
     ci_yml_text: str | None
     try:
         ci_yml_text = _CI_YML_PATH.read_text(encoding="utf-8") if _CI_YML_PATH.is_file() else None
@@ -214,7 +174,7 @@ def build_v1_closeout_readiness_manifest_v1() -> dict[str, Any]:
         ci_yml_text = None
 
     deferred = _deferred_blockers_v1()
-    gates = _gate_rows(tracker_text=tracker_text, ci_yml_text=ci_yml_text)
+    gates = _gate_rows(ci_yml_text=ci_yml_text)
     classification, cls_details = _release_classification_v1(gates=gates, deferred=deferred)
 
     cross_correlation = _prd_closeout_cross_correlation_safe()
@@ -231,10 +191,9 @@ def build_v1_closeout_readiness_manifest_v1() -> dict[str, Any]:
         "agentNextActions": sorted(
             [
                 "Do not claim v1 or workpackage done unless tracker Done Rule and evidence match.",
-                "Run focused closeout pytest: app/tests/test_prd_traceability_matrix.py, "
-                "test_one_family_bundle_roundtrip.py, test_evidence_manifest_closure.py",
-                "Read spec/prd/revit-production-parity-ai-agent-prd.md and "
-                "spec/revit-production-parity-workpackage-tracker.md before closing a wave.",
+                "Run focused closeout pytest: test_one_family_bundle_roundtrip.py, "
+                "test_evidence_manifest_closure.py",
+                "Read spec/workpackage-master-tracker.md before closing a backlog item.",
                 "Use GET …/evidence-package field v1CloseoutReadinessManifest_v1 for gate rows; "
                 "deferredBlockers are not completed work.",
             ]

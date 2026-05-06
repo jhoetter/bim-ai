@@ -31,9 +31,12 @@ ALLOWED_WAIVER_REASON_CODES: frozenset[str] = frozenset(
     }
 )
 
-# ── Canonical PRD advisor matrix rows ─────────────────────────────────────────
+# ── Canonical advisor matrix rows ─────────────────────────────────────────────
 # Rows are sorted by `id` (alphabetical) for deterministic ordering.
-# PRD needle strings must appear verbatim in spec/prd/revit-production-parity-ai-agent-prd.md.
+# `prdNeedle` historically anchored a markdown PRD; it now serves as the
+# in-code documentation of the validation class for each row. See the
+# workpackage tracker (`spec/workpackage-master-tracker.md`) for outstanding
+# backlog associated with these classes.
 
 _PRD_ADVISOR_ROWS: list[dict[str, Any]] = [
     # §11 Datum
@@ -77,7 +80,7 @@ _PRD_ADVISOR_ROWS: list[dict[str, Any]] = [
         ),
         "status": "deferred",
         "waiverReasonCode": "v1_scope_deferred",
-        "waiverEvidenceLink": "spec/revit-production-parity-workpackage-tracker.md",
+        "waiverEvidenceLink": "spec/workpackage-master-tracker.md",
         "waiverNote": (
             "Cleanroom is a specialized vertical outside core v1 wave 1/2 scope. "
             "Rules exist for structural checks; full UX/IDS enforcement deferred per tracker."
@@ -155,7 +158,7 @@ _PRD_ADVISOR_ROWS: list[dict[str, Any]] = [
         "requiredRuleIds": [],
         "status": "deferred",
         "waiverReasonCode": "no_rule_impl_v1",
-        "waiverEvidenceLink": "spec/revit-production-parity-workpackage-tracker.md",
+        "waiverEvidenceLink": "spec/workpackage-master-tracker.md",
         "waiverNote": (
             "No roof-specific constraint rules implemented in v1. "
             "Roof geometry evidence exists (roofGeometryEvidence_v0) but dedicated advisor "
@@ -235,7 +238,7 @@ _PRD_ADVISOR_ROWS: list[dict[str, Any]] = [
         ),
         "status": "partial",
         "waiverReasonCode": "partial_coverage_v1",
-        "waiverEvidenceLink": "spec/revit-production-parity-workpackage-tracker.md",
+        "waiverEvidenceLink": "spec/workpackage-master-tracker.md",
         "goldenBundleCoverage": [
             {"kind": "pytest_module", "path": "app/tests/test_constraints.py"},
             {

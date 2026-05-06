@@ -1,13 +1,12 @@
-"""Tests for the PRD blocking advisor matrix (Prompt-7 / WP-V01, WP-A01, WP-A02, WP-A04, WP-F01).
+"""Tests for the blocking advisor matrix (Prompt-7 / WP-V01, WP-A01, WP-A02, WP-A04, WP-F01).
 
 Validates:
 - Matrix is deterministic across repeated calls
-- Every PRD section has an explicit pass/warn/block/deferred status
+- Every advisor section has an explicit pass/warn/block/deferred status
 - Every deferred item has an allowed waiver reason code and evidence link
 - Missing/invalid waiver evidence fails validation
 - Blocking statuses are surfaced in the v1 closeout readiness manifest
 - Golden bundle coverage paths exist in the repo
-- PRD needles appear verbatim in the PRD source file
 """
 
 from __future__ import annotations
@@ -27,7 +26,6 @@ from bim_ai.prd_blocking_advisor_matrix import (
 from bim_ai.v1_closeout_readiness_manifest import build_v1_closeout_readiness_manifest_v1
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
-PRD_PATH = REPO_ROOT / "spec" / "prd" / "revit-production-parity-ai-agent-prd.md"
 
 
 # ── Determinism ───────────────────────────────────────────────────────────────
@@ -150,7 +148,7 @@ def test_validation_rejects_unknown_waiver_reason_code() -> None:
             "requiredRuleIds": [],
             "status": "deferred",
             "waiverReasonCode": "UNKNOWN_MADE_UP_CODE",
-            "waiverEvidenceLink": "spec/revit-production-parity-workpackage-tracker.md",
+            "waiverEvidenceLink": "spec/workpackage-master-tracker.md",
             "goldenBundleCoverage": [],
         }
     ]
@@ -169,7 +167,7 @@ def test_validation_rejects_deferred_row_missing_waiver_code() -> None:
             "prdNeedle": "test needle",
             "requiredRuleIds": [],
             "status": "deferred",
-            "waiverEvidenceLink": "spec/revit-production-parity-workpackage-tracker.md",
+            "waiverEvidenceLink": "spec/workpackage-master-tracker.md",
             "goldenBundleCoverage": [],
         }
     ]
@@ -248,25 +246,7 @@ def test_canonical_rows_have_no_validation_errors() -> None:
     )
 
 
-# ── PRD needle and path existence ─────────────────────────────────────────────
-
-
-def test_prd_needles_exist_in_prd_source() -> None:
-    if not PRD_PATH.is_file():
-        pytest.fail(f"PRD missing at: {PRD_PATH}")
-    prd_text = PRD_PATH.read_text(encoding="utf-8")
-    m = build_prd_blocking_advisor_matrix()
-    missing = []
-    for row in m["rows"]:
-        needle = str(row.get("prdNeedle") or "")
-        if needle and needle not in prd_text:
-            missing.append((row["id"], needle))
-    if missing:
-        detail = "\n".join(f"  {rid!r}: {n!r}" for rid, n in missing)
-        pytest.fail(
-            f"PRD needles not found in {PRD_PATH}:\n{detail}\n"
-            "Update the PRD or adjust prdNeedle in the same change-set."
-        )
+# ── Path existence ────────────────────────────────────────────────────────────
 
 
 def test_golden_bundle_coverage_paths_exist() -> None:
