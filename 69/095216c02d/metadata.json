@@ -3,10 +3,15 @@
   "checkpoint_id": "69095216c02d",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "CODE_QUALITY.md",
-    "packages/web/src/workspace/RedesignedWorkspace.tsx"
+    "packages/web/src/workspace/RedesignedWorkspace.tsx",
+    "spec/prompts/wave-01/README.md",
+    "spec/prompts/wave-01/WP-V2-01a-options-bar.md",
+    "spec/prompts/wave-01/WP-V2-01b-modify-tools.md",
+    "spec/prompts/wave-01/WP-V2-14-plan-canvas.md",
+    "spec/target-house-seed.md"
   ],
   "sessions": [
     {
@@ -14,13 +19,19 @@
       "transcript": "/69/095216c02d/0/full.jsonl",
       "content_hash": "/69/095216c02d/0/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/69/095216c02d/1/metadata.json",
+      "transcript": "/69/095216c02d/1/full.jsonl",
+      "content_hash": "/69/095216c02d/1/content_hash.txt",
+      "prompt": "/69/095216c02d/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 170,
-    "cache_creation_tokens": 52542,
-    "cache_read_tokens": 1286764,
-    "output_tokens": 19665,
-    "api_call_count": 35
+    "input_tokens": 757,
+    "cache_creation_tokens": 750538,
+    "cache_read_tokens": 42780131,
+    "output_tokens": 352359,
+    "api_call_count": 478
   }
 }
