@@ -74,7 +74,7 @@ export function TopBar({
       data-testid="topbar"
       role="banner"
       style={topBarStyle}
-      className="flex w-full items-center gap-4 border-b border-border bg-surface px-4"
+      className="flex w-full items-center gap-4 border-b border-border bg-background px-4"
     >
       <TopBarLeft
         projectName={projectName}
@@ -117,8 +117,8 @@ function TopBarLeft({
       <IconButton Icon={Icons.hamburger} label={IconLabels.hamburger} onClick={onHamburgerClick} />
       <div
         aria-label="BIM AI"
-        className="flex h-7 w-7 items-center justify-center rounded-sm bg-accent text-accent-foreground"
-        style={{ fontWeight: 700, fontSize: 12 }}
+        className="flex h-6 w-6 items-center justify-center rounded bg-accent text-accent-foreground"
+        style={{ fontWeight: 700, fontSize: 11, letterSpacing: '0.01em' }}
       >
         BA
       </div>
@@ -126,14 +126,14 @@ function TopBarLeft({
         type="button"
         ref={projectNameRef}
         onClick={onProjectNameClick}
-        className="flex items-center gap-1 rounded-md px-2 py-1 text-sm font-medium hover:bg-surface-strong"
+        className="flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-semibold text-foreground hover:bg-surface"
         aria-haspopup="menu"
         data-testid="topbar-project-name"
       >
         <span className="truncate" style={{ maxWidth: 160 }}>
           {projectName}
         </span>
-        <Icons.disclosureOpen size={ICON_SIZE.chrome} aria-hidden="true" />
+        <Icons.disclosureOpen size={14} className="text-muted" aria-hidden="true" />
       </button>
     </div>
   );
@@ -192,15 +192,24 @@ function TopBarModePills({
             tabIndex={active ? 0 : -1}
             onClick={() => onModeChange(m.id)}
             data-active={active ? 'true' : 'false'}
+            title={`${m.label} (${m.hotkey})`}
             className={[
-              'rounded-md px-3 py-1 text-sm transition-colors',
+              'relative rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
               active
-                ? 'bg-accent text-accent-foreground'
-                : 'text-foreground hover:bg-surface-strong',
+                ? 'bg-accent/10 text-accent'
+                : 'text-muted hover:bg-surface hover:text-foreground',
             ].join(' ')}
+            style={active ? { boxShadow: 'inset 0 -2px 0 0 var(--color-accent)' } : undefined}
           >
             {m.label}
-            <span className="ml-1.5 text-xs opacity-60" aria-hidden="true">
+            <span
+              aria-hidden="true"
+              className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded px-1 text-[10px] font-medium tabular-nums"
+              style={{
+                background: active ? 'var(--color-accent)' : 'var(--color-surface-strong)',
+                color: active ? 'var(--color-accent-foreground)' : 'var(--color-muted)',
+              }}
+            >
               {m.hotkey}
             </span>
           </button>
@@ -234,9 +243,9 @@ function TopBarRight({
         onClick={onCommandPalette}
         aria-label={IconLabels.commandPalette}
         aria-keyshortcuts="Meta+K Control+K"
-        className="flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1 text-sm text-muted hover:bg-surface-strong"
+        className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-2.5 py-1 text-xs font-medium text-muted shadow-sm hover:border-border hover:bg-surface-strong hover:text-foreground"
       >
-        <Icons.commandPalette size={ICON_SIZE.chrome} />
+        <Icons.commandPalette size={14} />
         <span>⌘K</span>
       </button>
       <IconButton
@@ -255,7 +264,7 @@ function TopBarRight({
       />
       <div
         aria-label="Account"
-        className="flex h-7 w-7 items-center justify-center rounded-pill bg-surface-strong text-xs text-foreground"
+        className="flex h-7 w-7 items-center justify-center rounded-full border border-border bg-surface font-medium text-xs text-foreground shadow-sm"
       >
         {(avatarInitials ?? '··').slice(0, 2)}
       </div>
@@ -293,7 +302,7 @@ function IconButton({
       title={label}
       data-testid={testId}
       data-current-theme={currentTheme}
-      className="relative inline-flex h-8 w-8 items-center justify-center rounded-md text-foreground hover:bg-surface-strong"
+      className="relative inline-flex h-8 w-8 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface hover:text-foreground"
     >
       <Icon size={ICON_SIZE.topbar} aria-hidden="true" />
       {typeof badge === 'number' && badge > 0 ? (

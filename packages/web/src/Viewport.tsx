@@ -1063,7 +1063,7 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
         />
       ) : null}
 
-      <div className="pointer-events-auto absolute right-3 top-3 z-20">
+      <div className="pointer-events-auto absolute right-4 top-4 z-20">
         <ViewCube
           currentAzimuth={currentAzimuth}
           currentElevation={currentElevation}

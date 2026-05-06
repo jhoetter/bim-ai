@@ -67,8 +67,8 @@ export function TabBar({
       role="tablist"
       aria-label="Open views"
       data-testid="view-tabs"
-      className="flex items-end gap-0.5 border-b border-border bg-surface-strong px-2 pt-1"
-      style={{ height: 36 }}
+      className="flex items-end gap-0.5 border-b border-border bg-surface px-2 pt-1.5"
+      style={{ height: 38 }}
     >
       {tabs.length === 0 ? (
         <div className="px-2 pb-1.5 text-xs text-muted">No views open</div>
@@ -119,15 +119,15 @@ export function TabBar({
               setDragOverIdx(null);
             }}
             className={[
-              'group flex items-center gap-1.5 rounded-t-md border border-b-0 px-2.5 py-1 text-xs transition-colors',
+              'group flex items-center gap-1.5 rounded-t-md border border-b-0 px-3 py-1.5 text-xs font-medium transition-colors',
               isActive
-                ? 'border-border bg-background text-foreground'
-                : 'border-transparent bg-surface text-muted hover:bg-surface-strong hover:text-foreground',
+                ? 'border-border bg-background text-foreground shadow-sm'
+                : 'border-transparent text-muted hover:bg-background/60 hover:text-foreground',
               isDragOver ? 'ring-2 ring-accent ring-offset-0' : '',
             ].join(' ')}
             style={
               isActive
-                ? { boxShadow: 'inset 0 -2px 0 0 var(--color-accent)' }
+                ? { boxShadow: 'inset 0 -2px 0 0 var(--color-accent), 0 -1px 3px 0 rgba(0,0,0,0.04)' }
                 : undefined
             }
           >
@@ -139,7 +139,11 @@ export function TabBar({
               title={`${TAB_KIND_LABEL[tab.kind]} · ${tab.label}`}
               data-testid={`tab-activate-${tab.id}`}
             >
-              <Icon size={ICON_SIZE.chrome} aria-hidden="true" />
+              <Icon
+                size={13}
+                aria-hidden="true"
+                className={isActive ? 'text-accent' : 'text-muted'}
+              />
               <span className="whitespace-nowrap">{truncated}</span>
             </button>
             <button
@@ -151,11 +155,11 @@ export function TabBar({
               aria-label={`Close ${tab.label}`}
               data-testid={`tab-close-${tab.id}`}
               className={[
-                'rounded p-0.5 hover:bg-surface',
-                isActive ? 'opacity-70 hover:opacity-100' : 'opacity-0 group-hover:opacity-70',
+                'rounded p-0.5 hover:bg-surface-strong',
+                isActive ? 'opacity-50 hover:opacity-100' : 'opacity-0 group-hover:opacity-50 group-hover:hover:opacity-100',
               ].join(' ')}
             >
-              <Icons.close size={12} aria-hidden="true" />
+              <Icons.close size={11} aria-hidden="true" />
             </button>
           </div>
         );
@@ -166,7 +170,8 @@ export function TabBar({
           onClick={() => setPopoverOpen((v) => !v)}
           aria-label="Open new view"
           data-testid="tab-add-button"
-          className="rounded-md border border-border bg-surface px-2 py-1 text-xs text-muted hover:bg-surface-strong hover:text-foreground"
+          className="flex h-6 w-6 items-center justify-center rounded text-muted hover:bg-surface-strong hover:text-foreground"
+          style={{ fontSize: 16, lineHeight: 1 }}
         >
           +
         </button>

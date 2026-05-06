@@ -70,7 +70,7 @@ export function ToolPalette({
       data-testid="tool-palette"
       onKeyDown={handleKey}
       style={paletteStyle}
-      className="flex items-center gap-1 rounded-pill border border-border bg-surface px-2 py-1 shadow-elev-2"
+      className="flex items-center gap-0.5 rounded-xl border border-border bg-background/95 px-1.5 py-1.5 shadow-elev-2 backdrop-blur-sm"
     >
       {tools.map((tool) => {
         const Icon = Icons[tool.icon]!;
@@ -96,17 +96,17 @@ export function ToolPalette({
               else onToolSelect(tool.id);
             }}
             className={[
-              'relative inline-flex h-9 w-9 items-center justify-center rounded-md transition-colors',
+              'relative inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors',
               isActive
-                ? 'bg-accent text-accent-foreground'
-                : 'text-foreground hover:bg-surface-strong',
+                ? 'bg-accent text-accent-foreground shadow-sm'
+                : 'text-muted hover:bg-surface hover:text-foreground',
               enablement.disabled ? 'opacity-40' : '',
             ].join(' ')}
           >
-            <Icon size={ICON_SIZE.toolPalette} aria-hidden="true" />
+            <Icon size={16} aria-hidden="true" />
             <span
               aria-hidden="true"
-              className="pointer-events-none absolute bottom-0.5 right-1 text-[9px] opacity-80"
+              className="pointer-events-none absolute bottom-0.5 right-0.5 text-[8px] font-medium opacity-60 tabular-nums"
             >
               {tool.hotkey.replace('Shift+', '⇧')}
             </span>

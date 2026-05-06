@@ -40,7 +40,7 @@ export interface ViewCubeProps {
   className?: string;
 }
 
-const CUBE_SIZE_PX = 80;
+const CUBE_SIZE_PX = 68;
 const HALF = CUBE_SIZE_PX / 2;
 const DRAG_THRESHOLD_PX = 4;
 
@@ -163,52 +163,56 @@ export function ViewCube({
       role="group"
       aria-label="ViewCube"
       onKeyDown={handleKey}
-      className={['flex flex-col items-end gap-1.5', className ?? ''].join(' ')}
+      className={[
+        'flex flex-col items-center gap-1.5 rounded-xl border border-border/60 bg-background/80 p-1.5 shadow-elev-2 backdrop-blur-sm',
+        className ?? '',
+      ].join(' ')}
     >
-      <div className="flex items-start gap-2">
-        {/* Stage: drag here to orbit; click a face/corner to snap. */}
-        <div
-          data-testid="view-cube-stage"
-          style={stageStyle}
-          onPointerDown={handlePointerDown}
-          onClickCapture={handleClickCapture}
-        >
-          <div style={cubeStyle} data-cube-stage="true">
-            {FACES.map((face) => (
-              <CubeFace
-                key={face.id}
-                face={face}
-                onClick={() => emit({ kind: 'face', face: face.id })}
-              />
-            ))}
-          </div>
-
-          {TOP_CORNERS.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => emit({ kind: 'corner', corner: c.id })}
-              aria-label={`Align camera to ${c.id}`}
-              data-corner={c.id}
-              style={{
-                position: 'absolute',
-                left: c.left,
-                top: c.top,
-                transform: 'translate(-50%, -50%)',
-                width: 14,
-                height: 14,
-                borderRadius: 7,
-                border: '1px solid var(--color-border)',
-                background: 'var(--color-surface)',
-                cursor: 'pointer',
-                opacity: 0.85,
-                padding: 0,
-              }}
-              className="hover:bg-surface-strong"
+      {/* Stage: drag here to orbit; click a face/corner to snap. */}
+      <div
+        data-testid="view-cube-stage"
+        style={stageStyle}
+        onPointerDown={handlePointerDown}
+        onClickCapture={handleClickCapture}
+      >
+        <div style={cubeStyle} data-cube-stage="true">
+          {FACES.map((face) => (
+            <CubeFace
+              key={face.id}
+              face={face}
+              onClick={() => emit({ kind: 'face', face: face.id })}
             />
           ))}
         </div>
 
+        {TOP_CORNERS.map((c) => (
+          <button
+            key={c.id}
+            type="button"
+            onClick={() => emit({ kind: 'corner', corner: c.id })}
+            aria-label={`Align camera to ${c.id}`}
+            data-corner={c.id}
+            style={{
+              position: 'absolute',
+              left: c.left,
+              top: c.top,
+              transform: 'translate(-50%, -50%)',
+              width: 12,
+              height: 12,
+              borderRadius: 6,
+              border: '1px solid var(--color-border)',
+              background: 'var(--color-surface)',
+              cursor: 'pointer',
+              opacity: 0.8,
+              padding: 0,
+            }}
+            className="hover:bg-surface-strong"
+          />
+        ))}
+      </div>
+
+      <div className="flex w-full items-center justify-between gap-1">
+        <Compass currentAzimuth={currentAzimuth} />
         <button
           type="button"
           onClick={() => {
@@ -217,13 +221,11 @@ export function ViewCube({
           }}
           aria-label="Reset to default view"
           title="Drag cube to orbit · click face to align · click ↺ to reset"
-          className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border bg-surface text-foreground shadow-elev-2 hover:bg-surface-strong"
+          className="inline-flex h-5 w-5 items-center justify-center rounded text-muted hover:bg-surface hover:text-foreground"
         >
-          <Icons.viewCubeReset size={ICON_SIZE.chrome} aria-hidden="true" />
+          <Icons.viewCubeReset size={12} aria-hidden="true" />
         </button>
       </div>
-
-      <Compass currentAzimuth={currentAzimuth} />
     </div>
   );
 }
@@ -241,16 +243,17 @@ function CubeFace({ face, onClick }: { face: FaceDef; onClick: () => void }): JS
     background: bgColor,
     border: '1px solid var(--color-border)',
     color: 'var(--color-foreground)',
-    fontSize: 9,
-    fontWeight: 700,
-    letterSpacing: '0.08em',
+    fontSize: 7,
+    fontWeight: 600,
+    letterSpacing: '0.1em',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     cursor: 'grab',
     backfaceVisibility: 'hidden',
-    boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--color-border) 60%, transparent)',
+    boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--color-border) 40%, transparent)',
     userSelect: 'none',
+    opacity: 0.9,
   };
 
   return (
@@ -275,10 +278,10 @@ function Compass({ currentAzimuth }: { currentAzimuth: number }): JSX.Element {
       aria-label={`Compass · north toward ${label}`}
       data-testid="view-cube-compass"
       data-cardinal={label}
-      className="flex items-center gap-1 rounded-pill border border-border bg-surface px-2 py-0.5 text-xs"
+      className="flex items-center gap-0.5 text-[10px] font-medium text-muted"
     >
-      <span aria-hidden="true">⌖</span>
-      <span className="font-medium">{label}</span>
+      <span aria-hidden="true" className="opacity-50">⌖</span>
+      <span>{label}</span>
     </div>
   );
 }
