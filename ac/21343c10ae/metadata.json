@@ -3,15 +3,17 @@
   "checkpoint_id": "ac21343c10ae",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 4,
+  "checkpoints_count": 5,
   "files_touched": [
     "packages/web/src/plan/symbology.ts",
     "packages/web/src/viewport/cameraRig.test.ts",
     "packages/web/src/viewport/cameraRig.ts",
     "packages/web/src/workspace/AuthoringWorkbenchesPanel.test.tsx",
     "packages/web/src/workspace/AuthoringWorkbenchesPanel.tsx",
+    "packages/web/src/workspace/ModeShells.test.tsx",
     "packages/web/src/workspace/ModeShells.tsx",
     "packages/web/src/workspace/RedesignedWorkspace.semanticCommand.test.tsx",
+    "packages/web/src/workspace/RedesignedWorkspace.test.tsx",
     "packages/web/src/workspace/RedesignedWorkspace.tsx",
     "packages/web/src/workspace/Viewport3DLayersPanel.test.tsx",
     "packages/web/src/workspace/Viewport3DLayersPanel.tsx"
@@ -34,13 +36,19 @@
       "transcript": "/ac/21343c10ae/2/full.jsonl",
       "content_hash": "/ac/21343c10ae/2/content_hash.txt",
       "prompt": "/ac/21343c10ae/2/prompt.txt"
+    },
+    {
+      "metadata": "/ac/21343c10ae/3/metadata.json",
+      "transcript": "/ac/21343c10ae/3/full.jsonl",
+      "content_hash": "/ac/21343c10ae/3/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
-    "input_tokens": 4811,
-    "cache_creation_tokens": 573465,
-    "cache_read_tokens": 36606143,
-    "output_tokens": 210074,
-    "api_call_count": 423
+    "input_tokens": 4813,
+    "cache_creation_tokens": 573806,
+    "cache_read_tokens": 36708936,
+    "output_tokens": 210240,
+    "api_call_count": 425
   }
 }
