@@ -19,3 +19,7 @@ ok, one quick fix: i hate the "empty state" of the UX. it says something like th
 ---
 
 commit and push your changes
+
+---
+
+create a document defining everything that is a gap still, as workpackages. that will be version 2 then, once we can really render a house like that. be really specific, go into details. not shallow, but i really want to get there...
