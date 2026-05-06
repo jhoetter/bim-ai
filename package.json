@@ -16,7 +16,8 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,yml,yaml}\"",
     "architecture": "node scripts/check-architecture.mjs",
     "verify": "pnpm format:check && pnpm lint:root && pnpm architecture && pnpm typecheck && pnpm test && pnpm build",
-    "build:dist": "pnpm --filter @bim-ai/hofos-ui build"
+    "build:dist": "pnpm --filter @bim-ai/hofos-ui build",
+    "prepare": "git config core.hooksPath .githooks"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
