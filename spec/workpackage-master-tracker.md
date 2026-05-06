@@ -82,7 +82,7 @@ Batch B — run after Batch A is fully merged to main:
 
 | WP        | Title                              | Prompt file                         | Branch                        | State  | Depends on       |
 | --------- | ---------------------------------- | ----------------------------------- | ----------------------------- | ------ | ---------------- |
-| WP-V2-01a | Options Bar context strip          | `wave-01/WP-V2-01a-options-bar.md`  | `feat/wp-v2-01a-options-bar`  | `open` | —                |
+| WP-V2-01a | Options Bar context strip          | `wave-01/WP-V2-01a-options-bar.md`  | `feat/wp-v2-01a-options-bar`  | `done` | —                |
 | WP-V2-14  | Plan Canvas — wire B01/B02/B03     | `wave-01/WP-V2-14-plan-canvas.md`   | `feat/wp-v2-14-plan-canvas`   | `open` | —                |
 | WP-V2-01b | Modify tools + selection direction | `wave-01/WP-V2-01b-modify-tools.md` | `feat/wp-v2-01b-modify-tools` | `open` | WP-V2-01a merged |
 
