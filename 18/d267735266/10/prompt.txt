@@ -17,3 +17,7 @@ It might be that it's in the S3 bucket on the database. I don't know. But the cu
 ---
 
 any other things we should seed that we can currently do and that should be visualized? or is it complete now? and are you 100% certain everything can be rendered in all planes?
+
+---
+
+yes please fix all that; i want revit-level parity
