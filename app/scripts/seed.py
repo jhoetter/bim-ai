@@ -7,21 +7,6 @@ from datetime import UTC, datetime
 
 from bim_ai.db import SessionMaker, init_db_schema
 from bim_ai.document import Document
-from bim_ai.elements import (
-    CameraMm,
-    DimensionElem,
-    DoorElem,
-    Element,
-    GridLineElem,
-    IssueElem,
-    LevelElem,
-    RoomElem,
-    Vec2Mm,
-    Vec3Mm,
-    ViewpointElem,
-    WallElem,
-    WindowElem,
-)
 from bim_ai.engine import try_commit_bundle
 from bim_ai.tables import CommentRecord, ModelRecord, ProjectRecord
 
@@ -29,142 +14,325 @@ PROJECT_ID = uuid.uuid5(uuid.NAMESPACE_URL, "bim-ai:project:demo")
 MODEL_ID = uuid.uuid5(uuid.NAMESPACE_URL, "bim-ai:model:demo-main")
 COMMENT_ID = uuid.uuid5(uuid.NAMESPACE_URL, "bim-ai:comment:demo-1")
 
+# Ground floor footprint (12 m × 8.4 m rectangle, CCW, origin at SW corner)
+_FOOTPRINT_MM = [
+    {"xMm": 0, "yMm": 0},
+    {"xMm": 12000, "yMm": 0},
+    {"xMm": 12000, "yMm": 8400},
+    {"xMm": 0, "yMm": 8400},
+]
 
-def demo_document() -> Document:
-    wall_spine = "wall-001"
-    wall_ns = "wall-002"
+# Stair shaft cutout in upper slab (hall zone, east side)
+_STAIR_SHAFT_MM = [
+    {"xMm": 7200, "yMm": 500},
+    {"xMm": 11200, "yMm": 500},
+    {"xMm": 11200, "yMm": 1700},
+    {"xMm": 7200, "yMm": 1700},
+]
 
-    elems: dict[str, Element] = {
-        "lvl-1": LevelElem(kind="level", id="lvl-1", name="Ground", elevationMm=0),
-        "lvl-2": LevelElem(kind="level", id="lvl-2", name="Upper", elevationMm=3000),
-        wall_spine: WallElem(
-            kind="wall",
-            id=wall_spine,
-            name="Spine wall",
-            levelId="lvl-1",
-            start=Vec2Mm(xMm=0, yMm=0),
-            end=Vec2Mm(xMm=14000, yMm=0),
-            thicknessMm=200,
-            heightMm=2800,
-        ),
-        wall_ns: WallElem(
-            kind="wall",
-            id=wall_ns,
-            name="North façade",
-            levelId="lvl-1",
-            start=Vec2Mm(xMm=0, yMm=-4000),
-            end=Vec2Mm(xMm=14000, yMm=-4000),
-            thicknessMm=200,
-            heightMm=2800,
-        ),
-        "wall-020": WallElem(
-            kind="wall",
-            id="wall-020",
-            name="West end",
-            levelId="lvl-1",
-            start=Vec2Mm(xMm=0, yMm=-4000),
-            end=Vec2Mm(xMm=0, yMm=2000),
-            thicknessMm=200,
-            heightMm=2800,
-        ),
-        "wall-up-1": WallElem(
-            kind="wall",
-            id="wall-up-1",
-            name="Upper spine",
-            levelId="lvl-2",
-            start=Vec2Mm(xMm=2000, yMm=-2000),
-            end=Vec2Mm(xMm=9000, yMm=-2000),
-            thicknessMm=200,
-            heightMm=2800,
-        ),
-        "door-001": DoorElem(
-            kind="door",
-            id="door-001",
-            name="Entry",
-            wallId=wall_spine,
-            alongT=0.25,
-            widthMm=900,
-        ),
-        "win-001": WindowElem(
-            kind="window",
-            id="win-001",
-            name="Ribbon window",
-            wallId=wall_ns,
-            alongT=0.45,
-            widthMm=2200,
-            sillHeightMm=900,
-            heightMm=1600,
-        ),
-        "room-001": RoomElem(
-            kind="room",
-            id="room-001",
-            name="Open office",
-            levelId="lvl-1",
-            outlineMm=[
-                Vec2Mm(xMm=3000, yMm=-3000),
-                Vec2Mm(xMm=11000, yMm=-3000),
-                Vec2Mm(xMm=11000, yMm=-500),
-                Vec2Mm(xMm=3000, yMm=-500),
+
+def _house_commands() -> list[dict]:
+    """Return the full command bundle that builds the seed house.
+
+    Layout — two-storey single-family home, 12 m × 8.4 m rectangular footprint:
+
+    Ground (lvl-1, 0 mm):
+      West half (0–6 m)  → Living room (open plan)
+      East half (6–12 m), south zone (0–4.2 m) → Entrance hall + stair
+      East half (6–12 m), north zone (4.2–8.4 m) → Kitchen / dining
+
+    Upper (lvl-2, 2 800 mm):
+      South half (0–4.2 m) → Bedroom A
+      North half (4.2–8.4 m) → Bedroom B
+    """
+    cmds: list[dict] = []
+
+    # ── Levels ──────────────────────────────────────────────────────────────
+    cmds += [
+        {"type": "createLevel", "id": "lvl-1", "name": "Ground", "elevationMm": 0},
+        {"type": "createLevel", "id": "lvl-2", "name": "Upper", "elevationMm": 2800},
+    ]
+
+    # ── Ground exterior walls (closed CCW loop) ──────────────────────────────
+    cmds += [
+        {
+            "type": "createWall", "id": "w-south", "name": "South facade",
+            "levelId": "lvl-1",
+            "start": {"xMm": 0, "yMm": 0}, "end": {"xMm": 12000, "yMm": 0},
+            "thicknessMm": 200, "heightMm": 2800,
+        },
+        {
+            "type": "createWall", "id": "w-east", "name": "East facade",
+            "levelId": "lvl-1",
+            "start": {"xMm": 12000, "yMm": 0}, "end": {"xMm": 12000, "yMm": 8400},
+            "thicknessMm": 200, "heightMm": 2800,
+        },
+        {
+            "type": "createWall", "id": "w-north", "name": "North facade",
+            "levelId": "lvl-1",
+            "start": {"xMm": 12000, "yMm": 8400}, "end": {"xMm": 0, "yMm": 8400},
+            "thicknessMm": 200, "heightMm": 2800,
+        },
+        {
+            "type": "createWall", "id": "w-west", "name": "West facade",
+            "levelId": "lvl-1",
+            "start": {"xMm": 0, "yMm": 8400}, "end": {"xMm": 0, "yMm": 0},
+            "thicknessMm": 200, "heightMm": 2800,
+        },
+    ]
+
+    # ── Ground interior walls ────────────────────────────────────────────────
+    cmds += [
+        {
+            "type": "createWall", "id": "w-spine", "name": "N-S spine",
+            "levelId": "lvl-1",
+            "start": {"xMm": 6000, "yMm": 200}, "end": {"xMm": 6000, "yMm": 8200},
+            "thicknessMm": 150, "heightMm": 2800,
+        },
+        {
+            "type": "createWall", "id": "w-cross", "name": "Kitchen partition",
+            "levelId": "lvl-1",
+            "start": {"xMm": 6150, "yMm": 4200}, "end": {"xMm": 11800, "yMm": 4200},
+            "thicknessMm": 150, "heightMm": 2800,
+        },
+    ]
+
+    # ── Upper exterior walls (stacked directly above ground) ─────────────────
+    cmds += [
+        {
+            "type": "createWall", "id": "wu-south", "name": "Upper south facade",
+            "levelId": "lvl-2",
+            "start": {"xMm": 0, "yMm": 0}, "end": {"xMm": 12000, "yMm": 0},
+            "thicknessMm": 200, "heightMm": 2600,
+        },
+        {
+            "type": "createWall", "id": "wu-east", "name": "Upper east facade",
+            "levelId": "lvl-2",
+            "start": {"xMm": 12000, "yMm": 0}, "end": {"xMm": 12000, "yMm": 8400},
+            "thicknessMm": 200, "heightMm": 2600,
+        },
+        {
+            "type": "createWall", "id": "wu-north", "name": "Upper north facade",
+            "levelId": "lvl-2",
+            "start": {"xMm": 12000, "yMm": 8400}, "end": {"xMm": 0, "yMm": 8400},
+            "thicknessMm": 200, "heightMm": 2600,
+        },
+        {
+            "type": "createWall", "id": "wu-west", "name": "Upper west facade",
+            "levelId": "lvl-2",
+            "start": {"xMm": 0, "yMm": 8400}, "end": {"xMm": 0, "yMm": 0},
+            "thicknessMm": 200, "heightMm": 2600,
+        },
+    ]
+
+    # ── Upper interior wall (bedroom divider) ────────────────────────────────
+    cmds.append({
+        "type": "createWall", "id": "wu-bed-split", "name": "Bedroom divider",
+        "levelId": "lvl-2",
+        "start": {"xMm": 200, "yMm": 4200}, "end": {"xMm": 11800, "yMm": 4200},
+        "thicknessMm": 150, "heightMm": 2600,
+    })
+
+    # ── Floors ───────────────────────────────────────────────────────────────
+    cmds += [
+        {
+            "type": "createFloor", "id": "fl-ground", "name": "Ground slab",
+            "levelId": "lvl-1", "boundaryMm": _FOOTPRINT_MM,
+            "thicknessMm": 200, "structureThicknessMm": 150, "finishThicknessMm": 50,
+        },
+        {
+            "type": "createFloor", "id": "fl-upper", "name": "Upper slab",
+            "levelId": "lvl-2", "boundaryMm": _FOOTPRINT_MM,
+            "thicknessMm": 220, "structureThicknessMm": 160, "finishThicknessMm": 60,
+        },
+    ]
+
+    # ── Stair shaft opening in upper slab ────────────────────────────────────
+    cmds.append({
+        "type": "createSlabOpening", "id": "shaft-stair", "name": "Stair shaft",
+        "hostFloorId": "fl-upper", "boundaryMm": _STAIR_SHAFT_MM, "isShaft": True,
+    })
+
+    # ── Roof ─────────────────────────────────────────────────────────────────
+    # roofGeometryMode must be "gable_pitched_rectangle" (not the default "mass_box")
+    # to produce a glTF mesh in 3D. Requires exactly 4 axis-aligned rect corners + slopeDeg.
+    cmds.append({
+        "type": "createRoof", "id": "roof-main", "name": "Pitched roof",
+        "referenceLevelId": "lvl-2", "footprintMm": _FOOTPRINT_MM,
+        "overhangMm": 500, "slopeDeg": 30,
+        "roofGeometryMode": "gable_pitched_rectangle",
+    })
+
+    # ── Stair (entrance hall, runs east–west) ─────────────────────────────────
+    cmds.append({
+        "type": "createStair", "id": "stair-main", "name": "Main stair",
+        "baseLevelId": "lvl-1", "topLevelId": "lvl-2",
+        "runStartMm": {"xMm": 7400, "yMm": 1100},
+        "runEndMm": {"xMm": 11000, "yMm": 1100},
+        "widthMm": 900, "riserMm": 175, "treadMm": 275,
+    })
+
+    # ── Doors ─────────────────────────────────────────────────────────────────
+    cmds += [
+        {
+            "type": "insertDoorOnWall", "id": "d-front", "name": "Front door",
+            "wallId": "w-south", "alongT": 0.18, "widthMm": 980,
+        },
+        {
+            "type": "insertDoorOnWall", "id": "d-spine-s", "name": "Hall door south",
+            "wallId": "w-spine", "alongT": 0.22, "widthMm": 900,
+        },
+        {
+            "type": "insertDoorOnWall", "id": "d-spine-n", "name": "Kitchen door",
+            "wallId": "w-spine", "alongT": 0.72, "widthMm": 900,
+        },
+        {
+            "type": "insertDoorOnWall", "id": "d-cross", "name": "Kitchen internal door",
+            "wallId": "w-cross", "alongT": 0.15, "widthMm": 820,
+        },
+    ]
+
+    # ── Windows (ground) ─────────────────────────────────────────────────────
+    cmds += [
+        {
+            "type": "insertWindowOnWall", "id": "win-living-s", "name": "Living south window",
+            "wallId": "w-south", "alongT": 0.7, "widthMm": 2400,
+            "heightMm": 1400, "sillHeightMm": 800,
+        },
+        {
+            "type": "insertWindowOnWall", "id": "win-east-g", "name": "East window",
+            "wallId": "w-east", "alongT": 0.72, "widthMm": 1600,
+            "heightMm": 1200, "sillHeightMm": 900,
+        },
+        {
+            "type": "insertWindowOnWall", "id": "win-north-g", "name": "North window",
+            "wallId": "w-north", "alongT": 0.35, "widthMm": 1800,
+            "heightMm": 1200, "sillHeightMm": 900,
+        },
+        {
+            "type": "insertWindowOnWall", "id": "win-west-g", "name": "West window",
+            "wallId": "w-west", "alongT": 0.5, "widthMm": 1600,
+            "heightMm": 1200, "sillHeightMm": 900,
+        },
+    ]
+
+    # ── Windows (upper) ──────────────────────────────────────────────────────
+    cmds += [
+        {
+            "type": "insertWindowOnWall", "id": "win-upper-sw", "name": "Upper south-west window",
+            "wallId": "wu-south", "alongT": 0.2, "widthMm": 1400,
+            "heightMm": 1200, "sillHeightMm": 900,
+        },
+        {
+            "type": "insertWindowOnWall", "id": "win-upper-se", "name": "Upper south-east window",
+            "wallId": "wu-south", "alongT": 0.7, "widthMm": 1400,
+            "heightMm": 1200, "sillHeightMm": 900,
+        },
+        {
+            "type": "insertWindowOnWall", "id": "win-upper-n", "name": "Upper north window",
+            "wallId": "wu-north", "alongT": 0.5, "widthMm": 1600,
+            "heightMm": 1200, "sillHeightMm": 900,
+        },
+    ]
+
+    # ── Rooms (ground) ───────────────────────────────────────────────────────
+    cmds += [
+        {
+            "type": "createRoomOutline", "id": "room-living", "name": "Living room",
+            "levelId": "lvl-1",
+            "outlineMm": [
+                {"xMm": 200, "yMm": 200},
+                {"xMm": 5800, "yMm": 200},
+                {"xMm": 5800, "yMm": 8200},
+                {"xMm": 200, "yMm": 8200},
             ],
-        ),
-        "grid-a": GridLineElem(
-            kind="grid_line",
-            id="grid-a",
-            name="Axis A",
-            label="A",
-            levelId=None,
-            start=Vec2Mm(xMm=-2000, yMm=-5000),
-            end=Vec2Mm(xMm=16000, yMm=-5000),
-        ),
-        "grid-b": GridLineElem(
-            kind="grid_line",
-            id="grid-b",
-            name="Axis B",
-            label="B",
-            levelId=None,
-            start=Vec2Mm(xMm=-2000, yMm=-2000),
-            end=Vec2Mm(xMm=16000, yMm=-2000),
-        ),
-        "grid-1": GridLineElem(
-            kind="grid_line",
-            id="grid-1",
-            name="Line 1",
-            label="1",
-            levelId=None,
-            start=Vec2Mm(xMm=14000, yMm=-6000),
-            end=Vec2Mm(xMm=14000, yMm=2500),
-        ),
-        "dim-001": DimensionElem(
-            kind="dimension",
-            id="dim-001",
-            name="Width check",
-            levelId="lvl-1",
-            aMm=Vec2Mm(xMm=0, yMm=0),
-            bMm=Vec2Mm(xMm=8000, yMm=0),
-            offsetMm=Vec2Mm(xMm=0, yMm=1200),
-        ),
-        "vp-001": ViewpointElem(
-            kind="viewpoint",
-            id="vp-001",
-            name="Default orbit",
-            camera=CameraMm(
-                position=Vec3Mm(xMm=9500, yMm=-7500, zMm=6500),
-                target=Vec3Mm(xMm=4000, yMm=-1500, zMm=0),
-                up=Vec3Mm(xMm=0, yMm=0, zMm=1),
-            ),
-            mode="orbit_3d",
-        ),
-        "issue-001": IssueElem(
-            kind="issue",
-            id="issue-001",
-            title="Starter issue — coordination kickoff",
-            status="open",
-            elementIds=[wall_spine, "door-001"],
-            viewpointId="vp-001",
-        ),
-    }
+        },
+        {
+            "type": "createRoomOutline", "id": "room-entrance", "name": "Entrance hall",
+            "levelId": "lvl-1",
+            "outlineMm": [
+                {"xMm": 6200, "yMm": 200},
+                {"xMm": 11800, "yMm": 200},
+                {"xMm": 11800, "yMm": 4050},
+                {"xMm": 6200, "yMm": 4050},
+            ],
+        },
+        {
+            "type": "createRoomOutline", "id": "room-kitchen", "name": "Kitchen / dining",
+            "levelId": "lvl-1",
+            "outlineMm": [
+                {"xMm": 6200, "yMm": 4350},
+                {"xMm": 11800, "yMm": 4350},
+                {"xMm": 11800, "yMm": 8200},
+                {"xMm": 6200, "yMm": 8200},
+            ],
+        },
+    ]
 
-    return Document(revision=1, elements=elems)
+    # ── Rooms (upper) ────────────────────────────────────────────────────────
+    cmds += [
+        {
+            "type": "createRoomOutline", "id": "room-bed-a", "name": "Bedroom A",
+            "levelId": "lvl-2",
+            "outlineMm": [
+                {"xMm": 200, "yMm": 200},
+                {"xMm": 11800, "yMm": 200},
+                {"xMm": 11800, "yMm": 4050},
+                {"xMm": 200, "yMm": 4050},
+            ],
+        },
+        {
+            "type": "createRoomOutline", "id": "room-bed-b", "name": "Bedroom B",
+            "levelId": "lvl-2",
+            "outlineMm": [
+                {"xMm": 200, "yMm": 4350},
+                {"xMm": 11800, "yMm": 4350},
+                {"xMm": 11800, "yMm": 8200},
+                {"xMm": 200, "yMm": 8200},
+            ],
+        },
+    ]
+
+    # ── Section cut ───────────────────────────────────────────────────────────
+    cmds.append({
+        "type": "createSectionCut", "id": "sec-ew", "name": "Section A–A",
+        "lineStartMm": {"xMm": -1000, "yMm": 4200},
+        "lineEndMm": {"xMm": 13000, "yMm": 4200},
+        "cropDepthMm": 6000,
+    })
+
+    # ── Dimension ────────────────────────────────────────────────────────────
+    cmds.append({
+        "type": "createDimension", "id": "dim-width", "name": "House width",
+        "levelId": "lvl-1",
+        "aMm": {"xMm": 0, "yMm": -800},
+        "bMm": {"xMm": 12000, "yMm": -800},
+        "offsetMm": {"xMm": 0, "yMm": 600},
+    })
+
+    # ── Viewpoints ───────────────────────────────────────────────────────────
+    cmds += [
+        {
+            "type": "saveViewpoint", "id": "vp-001", "name": "Default orbit",
+            "mode": "orbit_3d",
+            "camera": {
+                "position": {"xMm": 20000, "yMm": -7000, "zMm": 10000},
+                "target": {"xMm": 6000, "yMm": 4200, "zMm": 1400},
+                "up": {"xMm": 0, "yMm": 0, "zMm": 1},
+            },
+        },
+        {
+            "type": "saveViewpoint", "id": "vp-ne", "name": "NE iso",
+            "mode": "orbit_3d",
+            "camera": {
+                "position": {"xMm": 20000, "yMm": 16000, "zMm": 12000},
+                "target": {"xMm": 6000, "yMm": 4200, "zMm": 1400},
+                "up": {"xMm": 0, "yMm": 0, "zMm": 1},
+            },
+        },
+    ]
+
+    return cmds
 
 
 def document_wire(doc: Document) -> dict:
@@ -176,22 +344,14 @@ def document_wire(doc: Document) -> dict:
 
 async def seed_async() -> None:
     await init_db_schema()
-    demo = demo_document()
-    ok_bundle, demo2, _, _, _code = try_commit_bundle(
-        demo,
-        [
-            {
-                "type": "createRoomRectangle",
-                "levelId": "lvl-1",
-                "origin": {"xMm": 15500, "yMm": -5500},
-                "widthMm": 2600,
-                "depthMm": 1900,
-            }
-        ],
-    )
-    if ok_bundle:
-        demo = demo2
-    demo_wire = document_wire(demo)
+
+    empty_doc = Document(revision=0, elements={})
+    ok, house_doc, _cmds, violations, code = try_commit_bundle(empty_doc, _house_commands())
+    if not ok:
+        blocking = [v for v in violations if getattr(v, "blocking", False)]
+        raise RuntimeError(f"Seed house bundle failed ({code}): {blocking}")
+
+    house_wire = document_wire(house_doc)
     now = datetime.now(UTC)
 
     async with SessionMaker() as session:
@@ -205,13 +365,13 @@ async def seed_async() -> None:
                     id=MODEL_ID,
                     project_id=PROJECT_ID,
                     slug="main",
-                    revision=demo.revision,
-                    document=demo_wire,
+                    revision=house_doc.revision,
+                    document=house_wire,
                 ),
             )
         else:
-            row.document = demo_wire
-            row.revision = demo.revision
+            row.document = house_wire
+            row.revision = house_doc.revision
             row.slug = "main"
             row.project_id = PROJECT_ID
 
@@ -222,11 +382,11 @@ async def seed_async() -> None:
                     id=COMMENT_ID,
                     model_id=MODEL_ID,
                     user_display="Seed bot",
-                    body="Try Plan ( toolbar ) · Snap + tools: Wall / Door / Window / Room / Grid / Dimension.",
+                    body="Welcome! Explore the two-storey house — try Plan views, Section A–A, or switch to 3D orbit.",
                     element_id=None,
                     level_id="lvl-1",
-                    anchor_x_mm=6200,
-                    anchor_y_mm=-2800,
+                    anchor_x_mm=3000,
+                    anchor_y_mm=4200,
                     resolved=False,
                     created_at=now,
                     updated_at=now,
