@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import * as THREE from 'three';
 
@@ -10,6 +10,32 @@ import {
 } from './OrbitViewpointPersistedHud';
 
 import { useBimStore } from './state/store';
+import {
+  CameraRig,
+  classifyHotkey,
+  classifyPointer,
+  createCameraRig,
+  wheelDelta,
+} from './viewport/cameraRig';
+import {
+  liveTokenReader,
+  resolveViewportPaintBundle,
+  type ElementCategoryToken,
+  type ViewportPaintBundle,
+} from './viewport/materials';
+import { ViewCube } from './viewport/ViewCube';
+import { type ViewCubePick } from './viewport/viewCubeAlignment';
+
+const CATEGORY_FALLBACK_COLOR_HEX = '#cbd5e1';
+
+function categoryColorOr(bundle: ViewportPaintBundle | null, cat: ElementCategoryToken): string {
+  return bundle?.categories[cat]?.color ?? CATEGORY_FALLBACK_COLOR_HEX;
+}
+
+function readToken(name: string, fallback: string): string {
+  const v = liveTokenReader().read(name);
+  return v && v.trim().length > 0 ? v : fallback;
+}
 
 type Props = {
   wsConnected: boolean;
@@ -101,6 +127,7 @@ function wallYaw(wall: WallElem) {
 function makeFloorSlabMesh(
   floor: Extract<Element, { kind: 'floor' }>,
   elementsById: Record<string, Element>,
+  paint: ViewportPaintBundle | null,
 ): THREE.Mesh {
   const b = xzBoundsMm(floor.boundaryMm ?? []);
 
@@ -112,8 +139,8 @@ function makeFloorSlabMesh(
     new THREE.BoxGeometry(b.spanX / 1000, th, b.spanZ / 1000),
 
     new THREE.MeshStandardMaterial({
-      color: '#22c55e',
-      roughness: 0.9,
+      color: categoryColorOr(paint, 'floor'),
+      roughness: paint?.categories.floor.roughness ?? 0.9,
       transparent: true,
       opacity: 0.92,
     }),
@@ -129,6 +156,7 @@ function makeFloorSlabMesh(
 function makeRoofMassMesh(
   roof: Extract<Element, { kind: 'roof' }>,
   elementsById: Record<string, Element>,
+  paint: ViewportPaintBundle | null,
 ): THREE.Mesh {
   const b = xzBoundsMm(roof.footprintMm ?? []);
 
@@ -146,10 +174,10 @@ function makeRoofMassMesh(
     new THREE.BoxGeometry(spanX, rise, spanZ),
 
     new THREE.MeshStandardMaterial({
-      color: '#fb923c',
+      color: categoryColorOr(paint, 'roof'),
       transparent: true,
       opacity: 0.94,
-      roughness: 0.74,
+      roughness: paint?.categories.roof.roughness ?? 0.74,
       metalness: 0.04,
     }),
   );
@@ -164,6 +192,7 @@ function makeRoofMassMesh(
 function makeStairVolumeMesh(
   stair: Extract<Element, { kind: 'stair' }>,
   elementsById: Record<string, Element>,
+  paint: ViewportPaintBundle | null,
   selectedId?: string,
 ): THREE.Mesh {
   const sx = stair.runStartMm.xMm / 1000;
@@ -198,7 +227,12 @@ function makeStairVolumeMesh(
   const mesh = new THREE.Mesh(
     new THREE.BoxGeometry(len, rise, width),
 
-    new THREE.MeshStandardMaterial({ color: stair.id === selectedId ? '#fcd34d' : '#ca8a04' }),
+    new THREE.MeshStandardMaterial({
+      color:
+        stair.id === selectedId
+          ? (paint?.selection.selectedColor ?? '#fcd34d')
+          : categoryColorOr(paint, 'stair'),
+    }),
   );
 
   mesh.position.set(sx + dx / 2, elevBase + rise / 2, sz + dz / 2);
@@ -210,7 +244,12 @@ function makeStairVolumeMesh(
   return mesh;
 }
 
-function makeWallMesh(wall: WallElem, elevM: number, selectedId?: string): THREE.Mesh {
+function makeWallMesh(
+  wall: WallElem,
+  elevM: number,
+  paint: ViewportPaintBundle | null,
+  selectedId?: string,
+): THREE.Mesh {
   const sx = wall.start.xMm / 1000;
   const sz = wall.start.yMm / 1000;
   const ex = wall.end.xMm / 1000;
@@ -222,7 +261,13 @@ function makeWallMesh(wall: WallElem, elevM: number, selectedId?: string): THREE
   const thick = THREE.MathUtils.clamp(wall.thicknessMm / 1000, 0.05, 2);
   const mesh = new THREE.Mesh(
     new THREE.BoxGeometry(len, height, thick),
-    new THREE.MeshStandardMaterial({ color: wall.id === selectedId ? '#fb923c' : '#cbd5e1' }),
+    new THREE.MeshStandardMaterial({
+      color:
+        wall.id === selectedId
+          ? (paint?.selection.selectedColor ?? '#fb923c')
+          : categoryColorOr(paint, 'wall'),
+      roughness: paint?.categories.wall.roughness ?? 0.85,
+    }),
   );
   mesh.position.set(sx + dx / 2, elevM + height / 2, sz + dz / 2);
   mesh.rotation.y = Math.atan2(dz, dx);
@@ -234,6 +279,7 @@ function makeDoorMesh(
   door: Extract<Element, { kind: 'door' }>,
   wall: WallElem,
   elevM: number,
+  paint: ViewportPaintBundle | null,
   sid?: string,
 ) {
   const { px, pz } = hostedXZ(door, wall);
@@ -242,7 +288,12 @@ function makeDoorMesh(
   const depth = THREE.MathUtils.clamp(wall.thicknessMm / 1000 + 0.08, 0.08, 2);
   const mesh = new THREE.Mesh(
     new THREE.BoxGeometry(width, height, depth),
-    new THREE.MeshStandardMaterial({ color: door.id === sid ? '#fde047' : '#67e8f9' }),
+    new THREE.MeshStandardMaterial({
+      color:
+        door.id === sid
+          ? (paint?.selection.selectedColor ?? '#fde047')
+          : categoryColorOr(paint, 'door'),
+    }),
   );
   mesh.position.set(px, elevM + height / 2, pz);
   mesh.rotation.y = wallYaw(wall);
@@ -254,6 +305,7 @@ function makeWindowMesh(
   win: Extract<Element, { kind: 'window' }>,
   wall: WallElem,
   elevM: number,
+  paint: ViewportPaintBundle | null,
   sid?: string,
 ) {
   const { px, pz } = hostedXZ(win, wall);
@@ -266,7 +318,10 @@ function makeWindowMesh(
     new THREE.MeshStandardMaterial({
       transparent: true,
       opacity: 0.84,
-      color: win.id === sid ? '#ddd6fe' : '#e9d5ff',
+      color:
+        win.id === sid
+          ? (paint?.selection.selectedColor ?? '#ddd6fe')
+          : categoryColorOr(paint, 'window'),
     }),
   );
   mesh.position.set(px, elevM + sill + h / 2, pz);
@@ -275,12 +330,19 @@ function makeWindowMesh(
   return mesh;
 }
 
-function makeRoomRibbon(room: Extract<Element, { kind: 'room' }>, elevM: number) {
+function makeRoomRibbon(
+  room: Extract<Element, { kind: 'room' }>,
+  elevM: number,
+  paint: ViewportPaintBundle | null,
+) {
   const pts = room.outlineMm.map(
     (p) => new THREE.Vector3(p.xMm / 1000, elevM + 0.035, p.yMm / 1000),
   );
   const geom = new THREE.BufferGeometry().setFromPoints(pts);
-  const loop = new THREE.LineLoop(geom, new THREE.LineBasicMaterial({ color: '#60a5fa' }));
+  const loop = new THREE.LineLoop(
+    geom,
+    new THREE.LineBasicMaterial({ color: paint?.selection.selectedColor ?? '#60a5fa' }),
+  );
   loop.userData.bimPickId = room.id;
   return loop;
 }
@@ -308,6 +370,17 @@ function elemViewerCategory(e: Element): ViewerCatKey | null {
   }
 }
 
+function computeRootBoundingBox(
+  root: THREE.Object3D,
+): { min: { x: number; y: number; z: number }; max: { x: number; y: number; z: number } } | null {
+  const box = new THREE.Box3().setFromObject(root);
+  if (!Number.isFinite(box.min.x) || !Number.isFinite(box.max.x)) return null;
+  return {
+    min: { x: box.min.x, y: box.min.y, z: box.min.z },
+    max: { x: box.max.x, y: box.max.y, z: box.max.z },
+  };
+}
+
 function applyClippingPlanesToMeshes(root: THREE.Object3D, planes: THREE.Plane[]) {
   if (!planes.length) return;
   root.traverse((node) => {
@@ -329,6 +402,10 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const rootGroupRef = useRef<THREE.Group | null>(null);
   const rafRef = useRef<number | null>(null);
+  /** Live paint bundle for the rendered scene. Rebuilt on theme change. */
+  const paintBundleRef = useRef<ViewportPaintBundle | null>(null);
+  /** Live CameraRig instance — replaces the legacy ad-hoc spherical rig. */
+  const cameraRigRef = useRef<CameraRig | null>(null);
   /** Set by the mount effect so we can snap the orbit rig to saved `viewpoint` cameras. */
   const orbitRigApiRef = useRef<{
     applyViewpointMm: (pose: {
@@ -337,6 +414,8 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       up: { xMm: number; yMm: number; zMm: number };
     }) => void;
   } | null>(null);
+
+  const [currentAzimuth, setCurrentAzimuth] = useState(Math.PI / 4);
 
   const elementsById = useBimStore((s) => s.elementsById);
 
@@ -363,21 +442,41 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
     if (!el) return;
     const host = el;
 
+    /** Resolve drafting + lighting tokens once at mount; theme switches will
+     * trigger a rebuild via the dependency on `elementsById` etc. */
+    const paint = resolveViewportPaintBundle();
+    paintBundleRef.current = paint;
+
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
     renderer.localClippingEnabled = true;
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    renderer.setClearColor('#0b1220', 1);
+    renderer.setClearColor(readToken('--color-background', '#0b1220'), 1);
     rendererRef.current = renderer;
     host.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
 
     sceneRef.current = scene;
-    scene.add(new THREE.HemisphereLight(0xffffff, 0x223344, 0.85));
-    const dir = new THREE.DirectionalLight(0xffffff, 0.95);
+    const hemi = new THREE.HemisphereLight(
+      new THREE.Color(paint.lighting.hemi.skyColor),
+      new THREE.Color(paint.lighting.hemi.groundColor),
+      paint.lighting.hemi.intensity,
+    );
+    scene.add(hemi);
+    const dir = new THREE.DirectionalLight(
+      new THREE.Color(paint.lighting.sun.color),
+      paint.lighting.sun.intensity,
+    );
     dir.position.set(8, 12, 6);
     scene.add(dir);
-    scene.add(new THREE.GridHelper(160, 32, '#223042', '#1a2738'));
+    scene.add(
+      new THREE.GridHelper(
+        160,
+        32,
+        readToken('--draft-grid-major', '#223042'),
+        readToken('--draft-grid-minor', '#1a2738'),
+      ),
+    );
 
     const root = new THREE.Group();
 
@@ -389,60 +488,54 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
 
     cameraRef.current = camera;
 
-    /** World mapping matches mesh build: Three.X ← plan xMm, Three.Y ← elev zMm, Three.Z ← plan yMm */
-    const rig = {
-      az: Math.PI / 4,
-
-      elv: 0.45,
-
+    /** Spec §15.3 camera rig replaces the legacy in-line spherical rig. */
+    const rig = createCameraRig({
+      target: { x: 0, y: 1.35, z: 0 },
+      up: { x: 0, y: 1, z: 0 },
+      azimuth: Math.PI / 4,
+      elevation: 0.45,
       radius: 16,
-
-      target: new THREE.Vector3(0, 1.35, 0),
-
-      up: new THREE.Vector3(0, 1, 0),
-    };
-    let dragging = false;
-
+      minRadius: 4,
+      maxRadius: 80,
+    });
+    cameraRigRef.current = rig;
+    let dragging: 'orbit' | 'pan' | null = null;
     let dragMoved = false;
     let lastX = 0;
     let lastY = 0;
     const raycaster = new THREE.Raycaster();
     const ndc = new THREE.Vector2();
 
-    function placeCamera() {
-      camera.position.set(
-        rig.target.x + rig.radius * Math.cos(rig.elv) * Math.sin(rig.az),
-
-        rig.target.y + rig.radius * Math.sin(rig.elv),
-
-        rig.target.z + rig.radius * Math.cos(rig.elv) * Math.cos(rig.az),
-      );
-
-      camera.up.copy(rig.up).normalize();
-
-      camera.lookAt(rig.target);
+    function placeCamera(): void {
+      const snap = rig.snapshot();
+      camera.position.set(snap.position.x, snap.position.y, snap.position.z);
+      camera.up.set(snap.up.x, snap.up.y, snap.up.z).normalize();
+      camera.lookAt(snap.target.x, snap.target.y, snap.target.z);
+      setCurrentAzimuth(snap.azimuth);
     }
 
     placeCamera();
 
     orbitRigApiRef.current = {
       applyViewpointMm: (pose) => {
-        rig.target.set(pose.target.xMm / 1000, pose.target.zMm / 1000, pose.target.yMm / 1000);
-        rig.up.set(pose.up.xMm / 1000, pose.up.zMm / 1000, pose.up.yMm / 1000).normalize();
-        if (rig.up.lengthSq() < 1e-8) rig.up.set(0, 1, 0);
-        const px = pose.position.xMm / 1000;
-
-        const py = pose.position.zMm / 1000;
-
-        const pz = pose.position.yMm / 1000;
-        const dx = px - rig.target.x;
-
-        const dy = py - rig.target.y;
-
-        const dz = pz - rig.target.z;
-        rig.radius = Math.max(1e-3, Math.hypot(dx, dy, dz));
-        rig.elv = Math.asin(THREE.MathUtils.clamp(dy / rig.radius, -0.995, 0.995));
-        rig.az = Math.atan2(dx, dz);
+        // Existing axis convention: pose.target.zMm → THREE.Y; pose.target.yMm → THREE.Z.
+        rig.applyViewpoint(
+          {
+            x: pose.position.xMm / 1000,
+            y: pose.position.zMm / 1000,
+            z: pose.position.yMm / 1000,
+          },
+          {
+            x: pose.target.xMm / 1000,
+            y: pose.target.zMm / 1000,
+            z: pose.target.yMm / 1000,
+          },
+          {
+            x: pose.up.xMm / 1000,
+            y: pose.up.zMm / 1000,
+            z: pose.up.yMm / 1000,
+          },
+        );
         placeCamera();
       },
     };
@@ -471,55 +564,86 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
     ro.observe(host);
     onResize();
 
-    function onDown(ev: PointerEvent) {
-      dragging = true;
+    function onDown(ev: PointerEvent): void {
+      // Treat plain LMB as orbit (legacy compatibility) but also accept the
+      // §15.3 grammar (Alt+LMB / MMB / Shift+MMB).
+      const intent = classifyPointer({
+        button: ev.button,
+        altKey: ev.altKey,
+        shiftKey: ev.shiftKey,
+      });
+      if (intent === 'pan') dragging = 'pan';
+      else if (intent === 'orbit') dragging = 'orbit';
+      else if (ev.button === 0)
+        dragging = 'orbit'; // legacy LMB orbit
+      else dragging = null;
       dragMoved = false;
-
       lastX = ev.clientX;
       lastY = ev.clientY;
       (ev.target as HTMLElement).setPointerCapture(ev.pointerId);
     }
 
-    function onUp(ev: PointerEvent) {
-      dragging = false;
-
+    function onUp(ev: PointerEvent): void {
+      const wasDragging = dragging;
+      dragging = null;
       try {
         (ev.target as HTMLElement).releasePointerCapture(ev.pointerId);
       } catch {
         /* noop */
       }
-
-      if (!dragMoved) pick(ev.clientX, ev.clientY);
+      if (!dragMoved && wasDragging === 'orbit') pick(ev.clientX, ev.clientY);
     }
 
-    function onMove(ev: PointerEvent) {
+    function onMove(ev: PointerEvent): void {
       if (!dragging) return;
-
       const dx = ev.clientX - lastX;
-
       const dy = ev.clientY - lastY;
       if (Math.hypot(dx, dy) > 2) dragMoved = true;
       lastX = ev.clientX;
       lastY = ev.clientY;
-      rig.az += dx * 0.006;
-
-      rig.elv = THREE.MathUtils.clamp(rig.elv - dy * 0.006, 0.12, Math.PI / 2 - 0.08);
+      if (dragging === 'orbit') rig.orbit(dx, dy);
+      else rig.pan(dx, dy);
       placeCamera();
     }
 
-    function onWheel(ev: WheelEvent) {
-      rig.radius = THREE.MathUtils.clamp(rig.radius + ev.deltaY * 0.012, 4, 80);
+    function onWheel(ev: WheelEvent): void {
+      rig.dolly(wheelDelta({ deltaY: ev.deltaY, ctrlKey: ev.ctrlKey, metaKey: ev.metaKey }));
+      placeCamera();
+    }
 
+    function onKey(ev: KeyboardEvent): void {
+      const target = ev.target as HTMLElement | null;
+      if (target) {
+        const tag = target.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+        if (target.isContentEditable) return;
+      }
+      const hk = classifyHotkey({ key: ev.key, ctrlKey: ev.ctrlKey, metaKey: ev.metaKey });
+      if (!hk) return;
+      ev.preventDefault();
+      if (hk.kind === 'frame-all') {
+        const box = computeRootBoundingBox(root);
+        if (box) rig.frame(box);
+      } else if (hk.kind === 'frame-selection') {
+        // For now the same effect as frame-all; selection-aware framing comes
+        // with the inspector parameter wiring.
+        const box = computeRootBoundingBox(root);
+        if (box) rig.frame(box);
+      } else if (hk.kind === 'reset') {
+        rig.reset();
+      } else if (hk.kind === 'zoom-in') {
+        rig.zoomBy(0.85);
+      } else if (hk.kind === 'zoom-out') {
+        rig.zoomBy(1.18);
+      }
       placeCamera();
     }
 
     renderer.domElement.addEventListener('pointerdown', onDown);
-
     renderer.domElement.addEventListener('pointerup', onUp);
-
     renderer.domElement.addEventListener('pointermove', onMove);
-
     renderer.domElement.addEventListener('wheel', onWheel, { passive: true });
+    document.addEventListener('keydown', onKey);
 
     function tick() {
       renderer.render(scene, camera);
@@ -531,18 +655,18 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
 
     return () => {
       orbitRigApiRef.current = null;
+      cameraRigRef.current = null;
+      paintBundleRef.current = null;
 
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
 
       ro.disconnect();
 
       renderer.domElement.removeEventListener('pointerdown', onDown);
-
       renderer.domElement.removeEventListener('pointerup', onUp);
-
       renderer.domElement.removeEventListener('pointermove', onMove);
-
       renderer.domElement.removeEventListener('wheel', onWheel);
+      document.removeEventListener('keydown', onKey);
 
       renderer.dispose();
 
@@ -607,18 +731,20 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
 
     const wallById = Object.fromEntries(walls.map((w) => [w.id, w]));
 
+    const paint = paintBundleRef.current;
+
     for (const f of Object.values(elementsById)) {
       if (f.kind !== 'floor') continue;
       if (skipCat(f)) continue;
 
-      root.add(makeFloorSlabMesh(f, elementsById));
+      root.add(makeFloorSlabMesh(f, elementsById, paint));
     }
 
     for (const w of walls) {
       if (skipCat(w)) continue;
       const elev = elevationMForLevel(w.levelId, elementsById);
 
-      root.add(makeWallMesh(w, elev, selectedId));
+      root.add(makeWallMesh(w, elev, paint, selectedId));
     }
 
     for (const e of Object.values(elementsById)) {
@@ -631,7 +757,7 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
 
       const elev = elevationMForLevel(hw.levelId, elementsById);
 
-      root.add(makeDoorMesh(e, hw, elev, selectedId));
+      root.add(makeDoorMesh(e, hw, elev, paint, selectedId));
     }
 
     for (const e of Object.values(elementsById)) {
@@ -644,32 +770,79 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
 
       const elev = elevationMForLevel(hw.levelId, elementsById);
 
-      root.add(makeWindowMesh(e, hw, elev, selectedId));
+      root.add(makeWindowMesh(e, hw, elev, paint, selectedId));
     }
 
     for (const e of Object.values(elementsById)) {
       if (e.kind !== 'stair') continue;
       if (skipCat(e)) continue;
 
-      root.add(makeStairVolumeMesh(e, elementsById, selectedId));
+      root.add(makeStairVolumeMesh(e, elementsById, paint, selectedId));
     }
 
     for (const e of Object.values(elementsById)) {
       if (e.kind !== 'room') continue;
       if (skipCat(e)) continue;
 
-      root.add(makeRoomRibbon(e, elevationMForLevel(e.levelId, elementsById)));
+      root.add(makeRoomRibbon(e, elevationMForLevel(e.levelId, elementsById), paint));
     }
 
     for (const rf of Object.values(elementsById)) {
       if (rf.kind !== 'roof') continue;
       if (skipCat(rf)) continue;
 
-      root.add(makeRoofMassMesh(rf, elementsById));
+      root.add(makeRoofMassMesh(rf, elementsById, paint));
     }
 
     applyClippingPlanesToMeshes(root, clippingPlanes);
   }, [elementsById, selectedId, viewerCategoryHidden, viewerClipElevMm, viewerClipFloorElevMm]);
+
+  const handleViewCubePick = useCallback(
+    (
+      _pick: ViewCubePick,
+      alignment: { azimuth: number; elevation: number; up: { x: number; y: number; z: number } },
+    ): void => {
+      const rig = cameraRigRef.current;
+      if (!rig) return;
+      const snap = rig.snapshot();
+      rig.applyViewpoint(
+        {
+          x:
+            snap.target.x +
+            snap.radius * Math.cos(alignment.elevation) * Math.sin(alignment.azimuth),
+          y: snap.target.y + snap.radius * Math.sin(alignment.elevation),
+          z:
+            snap.target.z +
+            snap.radius * Math.cos(alignment.elevation) * Math.cos(alignment.azimuth),
+        },
+        snap.target,
+        alignment.up,
+      );
+      const camera = cameraRef.current;
+      if (camera) {
+        const next = rig.snapshot();
+        camera.position.set(next.position.x, next.position.y, next.position.z);
+        camera.up.set(next.up.x, next.up.y, next.up.z).normalize();
+        camera.lookAt(next.target.x, next.target.y, next.target.z);
+        setCurrentAzimuth(next.azimuth);
+      }
+    },
+    [],
+  );
+
+  const handleViewCubeHome = useCallback((): void => {
+    const rig = cameraRigRef.current;
+    if (!rig) return;
+    rig.reset();
+    const camera = cameraRef.current;
+    if (camera) {
+      const snap = rig.snapshot();
+      camera.position.set(snap.position.x, snap.position.y, snap.position.z);
+      camera.up.set(snap.up.x, snap.up.y, snap.up.z).normalize();
+      camera.lookAt(snap.target.x, snap.target.y, snap.target.z);
+      setCurrentAzimuth(snap.azimuth);
+    }
+  }, []);
 
   return (
     <div
@@ -677,7 +850,7 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       className="relative h-[min(740px,calc(100vh-260px))] w-full overflow-hidden rounded-lg border border-border bg-background"
     >
       <div className="pointer-events-none absolute left-3 top-3 z-10 rounded-full border border-border bg-surface/80 px-3 py-1 text-[11px] text-muted backdrop-blur">
-        3D orbit · LMB pick · drag · zoom
+        3D orbit · LMB pick · drag · zoom · F frames · H resets
       </div>
 
       <OrbitViewpointPersistedHud
@@ -685,6 +858,14 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
         viewpoint={persistedOrbitViewpoint}
         onPersistField={onPersistViewpointField}
       />
+
+      <div className="pointer-events-auto absolute right-3 top-3 z-20">
+        <ViewCube
+          currentAzimuth={currentAzimuth}
+          onPick={handleViewCubePick}
+          onHome={handleViewCubeHome}
+        />
+      </div>
 
       <div ref={mountRef} className="size-full cursor-grab active:cursor-grabbing" />
     </div>
