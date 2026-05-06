@@ -69,7 +69,7 @@ Batch B (after A merged):
 | WP       | Title                                                                                                   | State  |
 | -------- | ------------------------------------------------------------------------------------------------------- | ------ |
 | WP-V2-09 | Room + Area V2 (Room Bounding, Color Fill, separation lines, deletion via schedule)                     | `done` |
-| WP-V2-10 | Parameters + Shared Parameters (Shared Params file, Project Params, Calculate Totals, Sorting/Grouping) | `open` |
+| WP-V2-10 | Parameters + Shared Parameters (Shared Params file, Project Params, Calculate Totals, Sorting/Grouping) | `done` |
 
 ### WP-V2-09 — Room + Area V2
 
