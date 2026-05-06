@@ -64,16 +64,22 @@ describe('evaluateViewFilters', () => {
     // Wall without materialKey — should NOT be hidden
     expect(evaluateViewFilters(makeWall(), [filter])).toMatchObject({ visible: true });
     // Wall with materialKey=concrete — should be hidden
-    expect(evaluateViewFilters(makeWall({ materialKey: 'concrete' }), [filter])).toMatchObject({ visible: false });
+    expect(evaluateViewFilters(makeWall({ materialKey: 'concrete' }), [filter])).toMatchObject({
+      visible: false,
+    });
   });
 
   it('later filters win (last match wins)', () => {
     const f1: ViewFilter = {
-      id: 'f1', name: 'First', rules: [{ field: 'kind', operator: 'equals', value: 'wall' }],
+      id: 'f1',
+      name: 'First',
+      rules: [{ field: 'kind', operator: 'equals', value: 'wall' }],
       override: { projection: { lineWeightFactor: 2 } },
     };
     const f2: ViewFilter = {
-      id: 'f2', name: 'Second', rules: [{ field: 'kind', operator: 'equals', value: 'wall' }],
+      id: 'f2',
+      name: 'Second',
+      rules: [{ field: 'kind', operator: 'equals', value: 'wall' }],
       override: { projection: { lineWeightFactor: 3 } },
     };
     expect(evaluateViewFilters(makeWall(), [f1, f2]).lineWeightFactor).toBe(3);
@@ -81,7 +87,8 @@ describe('evaluateViewFilters', () => {
 
   it('not-equals operator matches correctly', () => {
     const filter: ViewFilter = {
-      id: 'f1', name: 'Non-walls',
+      id: 'f1',
+      name: 'Non-walls',
       rules: [{ field: 'kind', operator: 'not-equals', value: 'floor' }],
       override: { visible: false },
     };

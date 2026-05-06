@@ -33,18 +33,18 @@ It is NOT yet in `packages/ui/src/icons.tsx` — you must add it there.
 
 ## Files to touch
 
-| File | Change |
-|---|---|
-| `packages/core/src/index.ts` | Add `'ceiling'` to `ElemKind`; add ceiling shape to `Element` union |
-| `packages/web/src/tools/toolRegistry.ts` | Add `'ceiling'` to `ToolId`, `getToolRegistry`, `PALETTE_ORDER` |
-| `packages/web/src/state/storeTypes.ts` | Add `'ceiling'` to `PlanTool` |
-| `packages/web/src/tools/toolGrammar.ts` | Append `CeilingState`/`reduceCeiling` |
-| `packages/web/src/plan/PlanCanvas.tsx` | Import + state ref + tool change + click dispatch + escape |
-| `packages/ui/src/icons.tsx` | Import `CeilingIcon`; add to `Icons` map + `IconLabels` |
-| `packages/web/src/plan/symbology.ts` | Add ceiling outline loop in `rebuildPlanMeshes` |
-| `packages/web/src/viewport/meshBuilders.ts` | Append `makeCeilingMesh` |
-| `packages/web/src/Viewport.tsx` | Import `makeCeilingMesh`; add `case 'ceiling'` |
-| `packages/web/src/i18n.ts` | Add tool labels (EN + DE) |
+| File                                        | Change                                                              |
+| ------------------------------------------- | ------------------------------------------------------------------- |
+| `packages/core/src/index.ts`                | Add `'ceiling'` to `ElemKind`; add ceiling shape to `Element` union |
+| `packages/web/src/tools/toolRegistry.ts`    | Add `'ceiling'` to `ToolId`, `getToolRegistry`, `PALETTE_ORDER`     |
+| `packages/web/src/state/storeTypes.ts`      | Add `'ceiling'` to `PlanTool`                                       |
+| `packages/web/src/tools/toolGrammar.ts`     | Append `CeilingState`/`reduceCeiling`                               |
+| `packages/web/src/plan/PlanCanvas.tsx`      | Import + state ref + tool change + click dispatch + escape          |
+| `packages/ui/src/icons.tsx`                 | Import `CeilingIcon`; add to `Icons` map + `IconLabels`             |
+| `packages/web/src/plan/symbology.ts`        | Add ceiling outline loop in `rebuildPlanMeshes`                     |
+| `packages/web/src/viewport/meshBuilders.ts` | Append `makeCeilingMesh`                                            |
+| `packages/web/src/Viewport.tsx`             | Import `makeCeilingMesh`; add `case 'ceiling'`                      |
+| `packages/web/src/i18n.ts`                  | Add tool labels (EN + DE)                                           |
 
 Read all 10 files in a single parallel batch before making any edits.
 
@@ -57,12 +57,14 @@ Read all 10 files in a single parallel batch before making any edits.
 **Edit 1 — add `'ceiling'` to ElemKind** (line 36):
 
 Old:
+
 ```ts
   | 'column'
   | 'beam';
 ```
 
 New:
+
 ```ts
   | 'column'
   | 'beam'
@@ -74,6 +76,7 @@ Note: after WP-V2-06 is merged, `ElemKind` will end with `| 'column' | 'beam';` 
 **Edit 2 — add ceiling shape to Element union** (after the beam member, before the final `;`):
 
 Old:
+
 ```ts
   | {
       kind: 'beam';
@@ -91,6 +94,7 @@ Old:
 ```
 
 New:
+
 ```ts
   | {
       kind: 'beam';
@@ -124,12 +128,14 @@ New:
 **Edit 1 — ToolId** (after `| 'beam';`):
 
 Old:
+
 ```ts
   | 'column'
   | 'beam';
 ```
 
 New:
+
 ```ts
   | 'column'
   | 'beam'
@@ -139,6 +145,7 @@ New:
 **Edit 2 — getToolRegistry** — append ceiling entry after beam:
 
 Old:
+
 ```ts
     beam: {
       id: 'beam',
@@ -153,6 +160,7 @@ Old:
 ```
 
 New:
+
 ```ts
     beam: {
       id: 'beam',
@@ -177,6 +185,7 @@ New:
 **Edit 3 — PALETTE_ORDER** (after `'beam',`):
 
 Old:
+
 ```ts
   'column',
   'beam',
@@ -184,6 +193,7 @@ Old:
 ```
 
 New:
+
 ```ts
   'column',
   'beam',
@@ -198,12 +208,14 @@ New:
 **Edit — PlanTool union** (after `| 'beam';`):
 
 Old:
+
 ```ts
   | 'column'
   | 'beam';
 ```
 
 New:
+
 ```ts
   | 'column'
   | 'beam'
@@ -217,7 +229,6 @@ New:
 **Append to end of file** (after the closing `}` of `reduceBeam`):
 
 ```ts
-
 /* ────────────────────────────────────────────────────────────────────── */
 /* C18 Ceiling — sketch polygon (same grammar as Shaft)                     */
 /* ────────────────────────────────────────────────────────────────────── */
@@ -286,6 +297,7 @@ keep the cast to avoid a type error, or just return `{ phase: 'idle' } as Ceilin
 **Edit 1 — imports** (after the BeamState import added by WP-V2-06):
 
 Old:
+
 ```ts
   initialBeamState,
   reduceBeam,
@@ -294,6 +306,7 @@ Old:
 ```
 
 New:
+
 ```ts
   initialBeamState,
   reduceBeam,
@@ -307,19 +320,22 @@ New:
 **Edit 2 — state refs** (after `beamStateRef`):
 
 Old:
+
 ```ts
-  const beamStateRef = useRef<BeamState>(initialBeamState());
+const beamStateRef = useRef<BeamState>(initialBeamState());
 ```
 
 New:
+
 ```ts
-  const beamStateRef = useRef<BeamState>(initialBeamState());
-  const ceilingStateRef = useRef<CeilingState>(initialCeilingState());
+const beamStateRef = useRef<BeamState>(initialBeamState());
+const ceilingStateRef = useRef<CeilingState>(initialCeilingState());
 ```
 
 **Edit 3 — tool change handler** (after beam reset, before closing `}`):
 
 Old:
+
 ```ts
     } else if (planTool === 'beam') {
       beamStateRef.current = initialBeamState();
@@ -327,6 +343,7 @@ Old:
 ```
 
 New:
+
 ```ts
     } else if (planTool === 'beam') {
       beamStateRef.current = initialBeamState();
@@ -338,6 +355,7 @@ New:
 **Edit 4 — click dispatch** — add ceiling handler after beam click block. The beam block ends with:
 
 Old:
+
 ```ts
       if (planTool === 'beam') {
         const { state, effect } = reduceBeam(beamStateRef.current, { kind: 'click', pointMm: sp });
@@ -352,6 +370,7 @@ Old:
 ```
 
 New:
+
 ```ts
       if (planTool === 'beam') {
         const { state, effect } = reduceBeam(beamStateRef.current, { kind: 'click', pointMm: sp });
@@ -392,6 +411,7 @@ New:
 **Edit 5 — escape handler** (after beam escape):
 
 Old:
+
 ```ts
         } else if (planTool === 'beam') {
           beamStateRef.current = initialBeamState();
@@ -399,6 +419,7 @@ Old:
 ```
 
 New:
+
 ```ts
         } else if (planTool === 'beam') {
           beamStateRef.current = initialBeamState();
@@ -414,12 +435,14 @@ New:
 **Edit 1 — imports from @bim-ai/icons** (add `CeilingIcon` alongside ColumnIcon + BeamIcon):
 
 Old:
+
 ```ts
   ColumnIcon,
   BeamIcon,
 ```
 
 New:
+
 ```ts
   ColumnIcon,
   BeamIcon,
@@ -429,12 +452,14 @@ New:
 **Edit 2 — Icons map** (add after beam entry):
 
 Old:
+
 ```ts
   column: ColumnIcon,
   beam: BeamIcon,
 ```
 
 New:
+
 ```ts
   column: ColumnIcon,
   beam: BeamIcon,
@@ -444,12 +469,14 @@ New:
 **Edit 3 — IconLabels map** (add after beam entry):
 
 Old:
+
 ```ts
   column: 'Column',
   beam: 'Beam',
 ```
 
 New:
+
 ```ts
   column: 'Column',
   beam: 'Beam',
@@ -459,12 +486,14 @@ New:
 **Edit 4 — re-export** (add `CeilingIcon` to the bottom re-exports):
 
 Old:
+
 ```ts
   ColumnIcon,
   BeamIcon,
 ```
 
 New:
+
 ```ts
   ColumnIcon,
   BeamIcon,
@@ -478,6 +507,7 @@ New:
 Add a ceiling outline loop after the roof loop (line 901) and before the walls loop.
 
 **Old** (after roof loop ending at line 901):
+
 ```ts
   }
 
@@ -485,6 +515,7 @@ Add a ceiling outline loop after the roof loop (line 901) and before the walls l
 ```
 
 **New:**
+
 ```ts
   }
 
@@ -519,7 +550,6 @@ extended. The loop itself is correct — the type guard just needs to compile.
 **Append to end of file** (after line 1573 + any column/beam additions from WP-V2-06):
 
 ```ts
-
 export function makeCeilingMesh(
   ceiling: Extract<Element, { kind: 'ceiling' }>,
   elementsById: Record<string, Element>,
@@ -569,6 +599,7 @@ export function makeCeilingMesh(
 **Edit 1 — imports** (add `makeCeilingMesh` alongside the other mesh builders):
 
 Old:
+
 ```ts
   makeColumnMesh,
   makeBeamMesh,
@@ -576,6 +607,7 @@ Old:
 ```
 
 New:
+
 ```ts
   makeColumnMesh,
   makeBeamMesh,
@@ -586,6 +618,7 @@ New:
 **Edit 2 — switch cases** (add ceiling before the column case):
 
 Old:
+
 ```ts
         case 'column': {
           const elev = elevationMForLevel(e.levelId, curr);
@@ -595,6 +628,7 @@ Old:
 ```
 
 New:
+
 ```ts
         case 'ceiling':
           obj = makeCeilingMesh(e, curr, paint);
@@ -613,6 +647,7 @@ New:
 **English — add ceiling tool label** (after beam labels):
 
 Old:
+
 ```ts
           beam: {
             label: 'Beam',
@@ -622,6 +657,7 @@ Old:
 ```
 
 New:
+
 ```ts
           beam: {
             label: 'Beam',
@@ -637,6 +673,7 @@ New:
 **German — add ceiling tool label** (after beam labels):
 
 Old:
+
 ```ts
           beam: {
             label: 'Träger',
@@ -646,6 +683,7 @@ Old:
 ```
 
 New:
+
 ```ts
           beam: {
             label: 'Träger',
@@ -674,12 +712,14 @@ pnpm --filter web typecheck
 Add the following imports at the top alongside the existing ones:
 
 Old:
+
 ```ts
   initialBeamState,
   reduceBeam,
 ```
 
 New:
+
 ```ts
   initialBeamState,
   reduceBeam,
@@ -690,7 +730,6 @@ New:
 Append at end of file:
 
 ```ts
-
 describe('Ceiling reducer', () => {
   it('transitions to sketch on first click', () => {
     const s0 = initialCeilingState();
@@ -706,7 +745,11 @@ describe('Ceiling reducer', () => {
   });
   it('emits commitCeiling with ≥3 vertices on close-loop', () => {
     let state = initialCeilingState();
-    const pts = [{ xMm: 0, yMm: 0 }, { xMm: 1000, yMm: 0 }, { xMm: 1000, yMm: 1000 }];
+    const pts = [
+      { xMm: 0, yMm: 0 },
+      { xMm: 1000, yMm: 0 },
+      { xMm: 1000, yMm: 1000 },
+    ];
     for (const p of pts) state = reduceCeiling(state, { kind: 'click', pointMm: p }).state;
     const { effect } = reduceCeiling(state, { kind: 'close-loop' });
     expect(effect.commitCeiling?.verticesMm).toHaveLength(3);

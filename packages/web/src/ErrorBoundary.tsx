@@ -40,7 +40,14 @@ export class ErrorBoundary extends Component<Props, State> {
           <p style={{ fontWeight: 600, color: 'var(--color-error, #e55)' }}>
             Something went wrong in {this.props.label ?? 'this panel'}.
           </p>
-          <p style={{ fontFamily: 'monospace', fontSize: '0.75rem', maxWidth: 480, textAlign: 'center' }}>
+          <p
+            style={{
+              fontFamily: 'monospace',
+              fontSize: '0.75rem',
+              maxWidth: 480,
+              textAlign: 'center',
+            }}
+          >
             {this.state.error.message}
           </p>
           <button

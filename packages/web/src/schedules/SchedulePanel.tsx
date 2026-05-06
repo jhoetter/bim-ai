@@ -13,10 +13,7 @@ import {
   registryNoModelMode,
   type RegistryModelTab,
 } from './schedulePanelPlansSheetsUi';
-import {
-  buildScheduleTableCsvUrl,
-  type ScheduleFieldMeta,
-} from './schedulePanelRegistryChrome';
+import { buildScheduleTableCsvUrl, type ScheduleFieldMeta } from './schedulePanelRegistryChrome';
 import { scheduleTotalsReadoutParts } from './schedulePayloadTotals';
 import { buildScheduleTableModelV1, type ScheduleTableModelV1 } from './scheduleTableRenderer';
 import { roomFinishScheduleEvidenceReadoutParts } from './roomFinishScheduleEvidenceReadout';
@@ -880,7 +877,9 @@ export function SchedulePanel(props: {
     );
   }
 
-  const csvUsesServerEndpoint = Boolean(srvActive?.scheduleId && props.modelId && srvActive.tab === tab);
+  const csvUsesServerEndpoint = Boolean(
+    srvActive?.scheduleId && props.modelId && srvActive.tab === tab,
+  );
 
   return (
     <div
@@ -992,7 +991,10 @@ export function SchedulePanel(props: {
         </div>
       ) : null}
 
-      {props.onScheduleFiltersCommit && sidForTab && srvActive?.scheduleId === sidForTab && props.modelId ? (
+      {props.onScheduleFiltersCommit &&
+      sidForTab &&
+      srvActive?.scheduleId === sidForTab &&
+      props.modelId ? (
         <ScheduleDefinitionToolbar
           tab={tab}
           scheduleId={sidForTab}

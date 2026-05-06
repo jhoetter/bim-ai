@@ -142,9 +142,7 @@ export function buildBrowserSections(elementsById: Record<string, Element>): Lef
           label: 'Wall Types',
           children: [
             ...all
-              .filter(
-                (e): e is Extract<Element, { kind: 'wall_type' }> => e.kind === 'wall_type',
-              )
+              .filter((e): e is Extract<Element, { kind: 'wall_type' }> => e.kind === 'wall_type')
               .map((t) => ({ id: t.id, label: t.name, hint: `${t.layers.length} layers` })),
             { id: 'new-wall-type', label: '+ New Wall Type' },
           ],
@@ -154,9 +152,7 @@ export function buildBrowserSections(elementsById: Record<string, Element>): Lef
           label: 'Floor Types',
           children: [
             ...all
-              .filter(
-                (e): e is Extract<Element, { kind: 'floor_type' }> => e.kind === 'floor_type',
-              )
+              .filter((e): e is Extract<Element, { kind: 'floor_type' }> => e.kind === 'floor_type')
               .map((t) => ({ id: t.id, label: t.name, hint: `${t.layers.length} layers` })),
             { id: 'new-floor-type', label: '+ New Floor Type' },
           ],
@@ -166,9 +162,7 @@ export function buildBrowserSections(elementsById: Record<string, Element>): Lef
           label: 'Roof Types',
           children: [
             ...all
-              .filter(
-                (e): e is Extract<Element, { kind: 'roof_type' }> => e.kind === 'roof_type',
-              )
+              .filter((e): e is Extract<Element, { kind: 'roof_type' }> => e.kind === 'roof_type')
               .map((t) => ({ id: t.id, label: t.name, hint: `${t.layers.length} layers` })),
             { id: 'new-roof-type', label: '+ New Roof Type' },
           ],
@@ -187,13 +181,11 @@ export function buildBrowserSections(elementsById: Record<string, Element>): Lef
             (e): e is Extract<Element, { kind: 'family_type' }> =>
               e.kind === 'family_type' && e.discipline === disc,
           );
-          const builtInRows = BUILT_IN_FAMILIES.filter((f) => f.discipline === disc).map(
-            (fam) => ({
-              id: fam.id,
-              label: fam.name,
-              children: fam.defaultTypes.map((t) => ({ id: t.id, label: t.name })),
-            }),
-          );
+          const builtInRows = BUILT_IN_FAMILIES.filter((f) => f.discipline === disc).map((fam) => ({
+            id: fam.id,
+            label: fam.name,
+            children: fam.defaultTypes.map((t) => ({ id: t.id, label: t.name })),
+          }));
           const customRows = customOfDisc.map((ct) => ({
             id: ct.id,
             label: String(ct.parameters.name ?? ct.id),
@@ -231,7 +223,12 @@ export function buildPaletteCandidates(
     } else if (el.kind === 'viewpoint') {
       items.push({ id: el.id, kind: 'view', label: `3D: ${el.name}`, keywords: 'viewpoint orbit' });
     } else if (el.kind === 'section_cut') {
-      items.push({ id: el.id, kind: 'view', label: `Section: ${el.name}`, keywords: 'section cut' });
+      items.push({
+        id: el.id,
+        kind: 'view',
+        label: `Section: ${el.name}`,
+        keywords: 'section cut',
+      });
     }
   }
   let elemCount = 0;

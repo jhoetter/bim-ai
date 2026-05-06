@@ -904,7 +904,15 @@ export function rebuildPlanMeshes(
     if (cl.kind !== 'ceiling') continue;
     if (kindHidden('ceiling')) continue;
     if (level && cl.levelId !== level) continue;
-    holder.add(horizontalOutlineMesh(cl.boundaryMm, PLAN_Y + 0.003, getPlanPalette().floorOutline, 0.14, cl.id));
+    holder.add(
+      horizontalOutlineMesh(
+        cl.boundaryMm,
+        PLAN_Y + 0.003,
+        getPlanPalette().floorOutline,
+        0.14,
+        cl.id,
+      ),
+    );
   }
 
   for (const wall of walls) holder.add(planWallMesh(wall, opts.selectedId, lineWeightScale));

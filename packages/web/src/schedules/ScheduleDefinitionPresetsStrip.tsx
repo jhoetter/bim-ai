@@ -86,9 +86,7 @@ export function ScheduleDefinitionPresetsStrip({
           <select
             className="max-w-[240px] rounded border border-border bg-background px-2 py-0.5 font-mono text-[10px]"
             value={selectedId}
-            onChange={(e) =>
-              setPresetIdByCategory((prev) => ({ ...prev, [cat]: e.target.value }))
-            }
+            onChange={(e) => setPresetIdByCategory((prev) => ({ ...prev, [cat]: e.target.value }))}
           >
             {list.map((p) => (
               <option key={p.id} value={p.id}>

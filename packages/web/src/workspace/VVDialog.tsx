@@ -539,7 +539,11 @@ export function VVDialog({
                 color: tab === t ? 'var(--color-foreground)' : 'var(--color-muted)',
               }}
             >
-              {t === 'model' ? 'Model Categories' : t === 'annotation' ? 'Annotation Categories' : 'Filters'}
+              {t === 'model'
+                ? 'Model Categories'
+                : t === 'annotation'
+                  ? 'Annotation Categories'
+                  : 'Filters'}
             </button>
           ))}
         </div>

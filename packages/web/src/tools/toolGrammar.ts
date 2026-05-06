@@ -645,7 +645,10 @@ export function reduceWallJoin(
   if (event.kind === 'accept' && state.phase === 'selected') {
     return {
       state: initialWallJoinState(),
-      effect: { commitJoin: { wallIds: state.wallIds, variant: state.joinVariant }, stillActive: true },
+      effect: {
+        commitJoin: { wallIds: state.wallIds, variant: state.joinVariant },
+        stillActive: true,
+      },
     };
   }
   return { state, effect: { stillActive: true } };
@@ -700,7 +703,12 @@ export function reduceWallOpening(
       effect: { stillActive: true },
     };
   }
-  if (event.kind === 'drag-end' && state.phase === 'define-rect' && state.hostWallId && state.anchorMm) {
+  if (
+    event.kind === 'drag-end' &&
+    state.phase === 'define-rect' &&
+    state.hostWallId &&
+    state.anchorMm
+  ) {
     return {
       state: initialWallOpeningState(),
       effect: {

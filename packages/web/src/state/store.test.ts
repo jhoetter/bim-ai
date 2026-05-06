@@ -80,7 +80,7 @@ describe('hydrateFromSnapshot', () => {
       modelId: 'm1',
       revision: 1,
       elements: {
-        'd1': { kind: 'door', name: 'D1', wallId: 'w1', alongT: 0.5, widthMm: 900 },
+        d1: { kind: 'door', name: 'D1', wallId: 'w1', alongT: 0.5, widthMm: 900 },
       },
       violations: [],
     });
@@ -140,7 +140,9 @@ describe('hydrateFromSnapshot', () => {
       modelId: 'm1',
       revision: 1,
       elements: {},
-      violations: [{ rule_id: 'SNAKE_RULE', severity: 'error', message: 'Err', elementIds: [] }] as unknown as import('@bim-ai/core').Violation[],
+      violations: [
+        { rule_id: 'SNAKE_RULE', severity: 'error', message: 'Err', elementIds: [] },
+      ] as unknown as import('@bim-ai/core').Violation[],
     });
     expect(useBimStore.getState().violations[0]?.ruleId).toBe('SNAKE_RULE');
   });
@@ -173,7 +175,11 @@ describe('hydrateFromSnapshot', () => {
   });
 
   it('resets planProjectionPrimitives to null on hydrate', () => {
-    useBimStore.setState({ planProjectionPrimitives: { primitives: [] } as unknown as import('./storeTypes').StoreState['planProjectionPrimitives'] });
+    useBimStore.setState({
+      planProjectionPrimitives: {
+        primitives: [],
+      } as unknown as import('./storeTypes').StoreState['planProjectionPrimitives'],
+    });
     const { hydrateFromSnapshot } = useBimStore.getState();
     hydrateFromSnapshot({ modelId: 'm1', revision: 1, elements: {}, violations: [] });
     expect(useBimStore.getState().planProjectionPrimitives).toBeNull();
@@ -185,7 +191,7 @@ describe('hydrateFromSnapshot', () => {
       hydrateFromSnapshot({
         modelId: 'm1',
         revision: 1,
-        elements: { 'e1': { kind: 'unknown_future_kind', name: 'X' } },
+        elements: { e1: { kind: 'unknown_future_kind', name: 'X' } },
         violations: [],
       }),
     ).not.toThrow();
@@ -197,7 +203,9 @@ describe('hydrateFromSnapshot', () => {
 describe('applyDelta', () => {
   it('updates revision', () => {
     useBimStore.setState({ revision: 1, elementsById: {} });
-    useBimStore.getState().applyDelta({ revision: 5, elements: {}, violations: [], removedIds: [] });
+    useBimStore
+      .getState()
+      .applyDelta({ revision: 5, elements: {}, violations: [], removedIds: [] });
     expect(useBimStore.getState().revision).toBe(5);
   });
 
@@ -214,7 +222,15 @@ describe('applyDelta', () => {
 
   it('merges new elements into existing ones', () => {
     useBimStore.setState({
-      elementsById: { 'lvl-0': { kind: 'level', id: 'lvl-0', name: 'Ground', elevationMm: 0, offsetFromParentMm: 0 } },
+      elementsById: {
+        'lvl-0': {
+          kind: 'level',
+          id: 'lvl-0',
+          name: 'Ground',
+          elevationMm: 0,
+          offsetFromParentMm: 0,
+        },
+      },
     });
     useBimStore.getState().applyDelta({
       revision: 3,
@@ -230,8 +246,32 @@ describe('applyDelta', () => {
   it('removes elements listed in removedIds', () => {
     useBimStore.setState({
       elementsById: {
-        'w1': { kind: 'wall', id: 'w1', name: 'W1', levelId: '', start: { xMm: 0, yMm: 0 }, end: { xMm: 0, yMm: 0 }, thicknessMm: 200, heightMm: 2800, baseConstraintOffsetMm: 0, topConstraintOffsetMm: 0, insulationExtensionMm: 0 },
-        'w2': { kind: 'wall', id: 'w2', name: 'W2', levelId: '', start: { xMm: 0, yMm: 0 }, end: { xMm: 0, yMm: 0 }, thicknessMm: 200, heightMm: 2800, baseConstraintOffsetMm: 0, topConstraintOffsetMm: 0, insulationExtensionMm: 0 },
+        w1: {
+          kind: 'wall',
+          id: 'w1',
+          name: 'W1',
+          levelId: '',
+          start: { xMm: 0, yMm: 0 },
+          end: { xMm: 0, yMm: 0 },
+          thicknessMm: 200,
+          heightMm: 2800,
+          baseConstraintOffsetMm: 0,
+          topConstraintOffsetMm: 0,
+          insulationExtensionMm: 0,
+        },
+        w2: {
+          kind: 'wall',
+          id: 'w2',
+          name: 'W2',
+          levelId: '',
+          start: { xMm: 0, yMm: 0 },
+          end: { xMm: 0, yMm: 0 },
+          thicknessMm: 200,
+          heightMm: 2800,
+          baseConstraintOffsetMm: 0,
+          topConstraintOffsetMm: 0,
+          insulationExtensionMm: 0,
+        },
       },
     });
     useBimStore.getState().applyDelta({
@@ -247,7 +287,9 @@ describe('applyDelta', () => {
 
   it('supports snake_case removed_ids', () => {
     useBimStore.setState({
-      elementsById: { 'r1': { kind: 'level', id: 'r1', name: 'X', elevationMm: 0, offsetFromParentMm: 0 } },
+      elementsById: {
+        r1: { kind: 'level', id: 'r1', name: 'X', elevationMm: 0, offsetFromParentMm: 0 },
+      },
     });
     useBimStore.getState().applyDelta({
       revision: 5,
@@ -259,7 +301,9 @@ describe('applyDelta', () => {
   });
 
   it('replaces violations', () => {
-    useBimStore.setState({ violations: [{ ruleId: 'OLD', severity: 'warning', message: '', elementIds: [] }] });
+    useBimStore.setState({
+      violations: [{ ruleId: 'OLD', severity: 'warning', message: '', elementIds: [] }],
+    });
     useBimStore.getState().applyDelta({
       revision: 2,
       elements: {},
@@ -272,15 +316,27 @@ describe('applyDelta', () => {
   });
 
   it('clears planProjectionPrimitives on delta', () => {
-    useBimStore.setState({ planProjectionPrimitives: { primitives: [] } as unknown as import('./storeTypes').StoreState['planProjectionPrimitives'] });
-    useBimStore.getState().applyDelta({ revision: 2, elements: {}, violations: [], removedIds: [] });
+    useBimStore.setState({
+      planProjectionPrimitives: {
+        primitives: [],
+      } as unknown as import('./storeTypes').StoreState['planProjectionPrimitives'],
+    });
+    useBimStore
+      .getState()
+      .applyDelta({ revision: 2, elements: {}, violations: [], removedIds: [] });
     expect(useBimStore.getState().planProjectionPrimitives).toBeNull();
   });
 
   it('clears activePlanViewId when plan_view element removed', () => {
     useBimStore.setState({
       activePlanViewId: 'pv1',
-      elementsById: { 'pv1': { kind: 'plan_view', id: 'pv1', name: 'PV1' } as unknown as import('@bim-ai/core').Element },
+      elementsById: {
+        pv1: {
+          kind: 'plan_view',
+          id: 'pv1',
+          name: 'PV1',
+        } as unknown as import('@bim-ai/core').Element,
+      },
     });
     useBimStore.getState().applyDelta({
       revision: 3,
@@ -336,19 +392,33 @@ describe('simple setters', () => {
 
   it('mergeComment inserts new comment', () => {
     useBimStore.setState({ comments: [] });
-    useBimStore.getState().mergeComment({ id: 'c1', userDisplay: 'Bob', body: 'Hello', resolved: false });
+    useBimStore
+      .getState()
+      .mergeComment({ id: 'c1', userDisplay: 'Bob', body: 'Hello', resolved: false });
     expect(useBimStore.getState().comments).toHaveLength(1);
   });
 
   it('mergeComment replaces existing comment with same id', () => {
-    useBimStore.setState({ comments: [{ id: 'c1', userDisplay: 'Bob', body: 'Old', resolved: false }] });
-    useBimStore.getState().mergeComment({ id: 'c1', userDisplay: 'Bob', body: 'Updated', resolved: true });
+    useBimStore.setState({
+      comments: [{ id: 'c1', userDisplay: 'Bob', body: 'Old', resolved: false }],
+    });
+    useBimStore
+      .getState()
+      .mergeComment({ id: 'c1', userDisplay: 'Bob', body: 'Updated', resolved: true });
     expect(useBimStore.getState().comments).toHaveLength(1);
     expect(useBimStore.getState().comments[0]?.body).toBe('Updated');
   });
 
   it('setActivity sets events', () => {
-    const events = [{ id: 1, userId: 'u1', revisionAfter: 5, createdAt: '2026-01-01', commandTypes: ['add_wall'] }];
+    const events = [
+      {
+        id: 1,
+        userId: 'u1',
+        revisionAfter: 5,
+        createdAt: '2026-01-01',
+        commandTypes: ['add_wall'],
+      },
+    ];
     useBimStore.getState().setActivity(events);
     expect(useBimStore.getState().activityEvents).toEqual(events);
   });

@@ -21,7 +21,9 @@ export function ScheduleRegistryChrome({ srvActive }: { srvActive: ServerSchedul
 
   const data = srvActive.data;
   const placementLine = formatSchedulePlacementReadout(data.schedulePlacement);
-  const pagLine = formatSchedulePaginationPlacementReadout(data.schedulePaginationPlacementEvidence_v0);
+  const pagLine = formatSchedulePaginationPlacementReadout(
+    data.schedulePaginationPlacementEvidence_v0,
+  );
   const regLine = columnMetadataCategoryLine(data);
   const engParts = scheduleRegistryEngineReadoutParts(data);
   const parityRows = parseScheduleSheetExportParityRows(data.scheduleSheetExportParityEvidence_v1);

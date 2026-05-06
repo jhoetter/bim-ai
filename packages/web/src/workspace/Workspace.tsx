@@ -1,11 +1,4 @@
-import {
-  type JSX,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Element } from '@bim-ai/core';
 
@@ -23,14 +16,12 @@ import {
 } from '../lib/api';
 import { syncLastLevelElevationPropagationFromApplyResponse } from './levelDatumPropagationSync';
 import { planToolsForPerspective } from './planToolsByPerspective';
-import { buildCollaborationConflictQueueV1, type CollaborationConflictQueueV1 } from '../lib/collaborationConflictQueue';
-import type { Snapshot, Violation } from '@bim-ai/core';
 import {
-  useBimStore,
-  toggleTheme,
-  getCurrentTheme,
-  type Theme,
-} from '../state/store';
+  buildCollaborationConflictQueueV1,
+  type CollaborationConflictQueueV1,
+} from '../lib/collaborationConflictQueue';
+import type { Snapshot, Violation } from '@bim-ai/core';
+import { useBimStore, toggleTheme, getCurrentTheme, type Theme } from '../state/store';
 import type { PerspectiveId } from '@bim-ai/core';
 import { modeForHotkey } from '../state/modeController';
 import { patternFor } from '../state/uiStates';
@@ -100,7 +91,6 @@ import {
  * §12 Project Browser, §13 Inspector, §16 Tool palette, §17 StatusBar.
  */
 
-
 const PERSPECTIVE_OPTIONS: { id: PerspectiveId; label: string }[] = [
   { id: 'architecture', label: 'Architecture' },
   { id: 'structure', label: 'Structure' },
@@ -154,7 +144,8 @@ export function Workspace(): JSX.Element {
   const [cheatsheetOpen, setCheatsheetOpen] = useState(false);
   const [recentCommandIds, setRecentCommandIds] = useState<string[]>([]);
   const [tourOpen, setTourOpen] = useState<boolean>(() => !readOnboardingProgress().completed);
-  const { insertSeedHouse, seedLoading, seedError, setSeedError, wsOn, codePresetIds } = useWorkspaceSnapshot();
+  const { insertSeedHouse, seedLoading, seedError, setSeedError, wsOn, codePresetIds } =
+    useWorkspaceSnapshot();
   const [_collaborationConflictQueue, setCollaborationConflictQueue] =
     useState<CollaborationConflictQueueV1 | null>(null);
   const [projectMenuOpen, setProjectMenuOpen] = useState(false);
@@ -770,7 +761,6 @@ export function Workspace(): JSX.Element {
             onModeChange={handleModeChange}
           />
         }
-
         leftRailCollapsed={<LeftRailCollapsed sections={browserSections} />}
         canvas={
           <div style={canvasContainerStyle} data-testid="redesign-canvas-root">
@@ -819,7 +809,6 @@ export function Workspace(): JSX.Element {
             codePresetIds={codePresetIds}
           />
         }
-
         statusBar={
           <StatusBar
             level={activeLevel}

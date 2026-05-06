@@ -1586,9 +1586,7 @@ export function makeColumnMesh(
   const hM = THREE.MathUtils.clamp((col.hMm ?? 300) / 1000, 0.05, 2);
   const baseOff = (col.baseConstraintOffsetMm ?? 0) / 1000;
   const topOff = col.topConstraintOffsetMm != null ? col.topConstraintOffsetMm / 1000 : 0;
-  const heightM = col.heightMm != null
-    ? THREE.MathUtils.clamp(col.heightMm / 1000, 0.25, 40)
-    : 3.0;
+  const heightM = col.heightMm != null ? THREE.MathUtils.clamp(col.heightMm / 1000, 0.25, 40) : 3.0;
   const yBase = elevM + baseOff;
   const geo = new THREE.BoxGeometry(bM, heightM, hM);
   const mat = new THREE.MeshStandardMaterial({
@@ -1597,7 +1595,11 @@ export function makeColumnMesh(
     metalness: paint?.categories.wall.metalness ?? 0,
   });
   const mesh = new THREE.Mesh(geo, mat);
-  mesh.position.set(col.positionMm.xMm / 1000, yBase + heightM / 2 + topOff, col.positionMm.yMm / 1000);
+  mesh.position.set(
+    col.positionMm.xMm / 1000,
+    yBase + heightM / 2 + topOff,
+    col.positionMm.yMm / 1000,
+  );
   mesh.rotation.y = THREE.MathUtils.degToRad(col.rotationDeg ?? 0);
   addEdges(mesh);
   return mesh;

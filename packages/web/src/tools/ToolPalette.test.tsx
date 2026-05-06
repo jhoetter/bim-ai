@@ -109,7 +109,7 @@ describe('<ToolPalette /> — spec §16', () => {
     fireEvent.keyDown(getByRole('toolbar'), { key: 'ArrowRight' });
     expect(onSelect).toHaveBeenLastCalledWith('wall');
     fireEvent.keyDown(getByRole('toolbar'), { key: 'ArrowLeft' });
-    expect(onSelect).toHaveBeenLastCalledWith('shaft'); // wraps backwards from select
+    expect(onSelect).toHaveBeenLastCalledWith('ceiling'); // wraps backwards from select
   });
 
   it('disables Floor when no walls exist and surfaces the reason', () => {

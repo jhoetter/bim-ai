@@ -6,30 +6,30 @@ Generated 2026-05-06. Updated after each workpackage.
 
 ### Wave 1 — C grade baseline (all done)
 
-| #   | Workpackage                                          | Status  | Commit   |
-| --- | ---------------------------------------------------- | ------- | -------- |
-| WP1 | Fix silent `.catch(() => {})` error swallowing       | ✅ done | c80cac94 |
-| WP2 | Break down `Viewport.tsx` (3 079 → 1 431 lines)      | ✅ done | 3b190199 |
-| WP3 | Break down `AgentReviewPane.tsx` (2 730 → 849 lines) | ✅ done | 7d0da943 |
-| WP4 | Break down `SchedulePanel.tsx` (2 216 → 1 883 lines) | ✅ done | 19574b34 |
-| WP5 | Add unit tests to untested web logic (65 new tests)  | ✅ done | 0af6467e |
-| WP6 | Enable Vitest coverage thresholds                    | ✅ done | d25a2e1d |
-| WP7 | Extract `symbology.ts` element builders (1 648 → 977)| ✅ done | 2cb9ba1f |
-| WP8 | Extract `store.ts` types into `storeTypes.ts`        | ✅ done | 2cb9ba1f |
-| WP9 | Fix `LegacyPlanTool` exhaustiveness gap              | ✅ done | 2cb9ba1f |
+| #   | Workpackage                                           | Status  | Commit   |
+| --- | ----------------------------------------------------- | ------- | -------- |
+| WP1 | Fix silent `.catch(() => {})` error swallowing        | ✅ done | c80cac94 |
+| WP2 | Break down `Viewport.tsx` (3 079 → 1 431 lines)       | ✅ done | 3b190199 |
+| WP3 | Break down `AgentReviewPane.tsx` (2 730 → 849 lines)  | ✅ done | 7d0da943 |
+| WP4 | Break down `SchedulePanel.tsx` (2 216 → 1 883 lines)  | ✅ done | 19574b34 |
+| WP5 | Add unit tests to untested web logic (65 new tests)   | ✅ done | 0af6467e |
+| WP6 | Enable Vitest coverage thresholds                     | ✅ done | d25a2e1d |
+| WP7 | Extract `symbology.ts` element builders (1 648 → 977) | ✅ done | 2cb9ba1f |
+| WP8 | Extract `store.ts` types into `storeTypes.ts`         | ✅ done | 2cb9ba1f |
+| WP9 | Fix `LegacyPlanTool` exhaustiveness gap               | ✅ done | 2cb9ba1f |
 
 ### Wave 2 — C → B (current)
 
-| #    | Workpackage                                                    | Status     | Commit |
-| ---- | -------------------------------------------------------------- | ---------- | ------ |
-| WP-A | Tests for `evidenceArtifactParser.ts` (857 lines, 0% cov)     | ✅ done    | e82e99ab |
-| WP-B | Tests for plan geometry helpers (`planElementMeshBuilders.ts`) | ✅ done    | d78c3405 |
-| WP-C | Tests for `store.ts` actions (`hydrateFromSnapshot`, `applyDelta`) | ✅ done | e104f7e6 |
-| WP-D | Add `ErrorBoundary` wrapper around main app sections           | ✅ done    | cb38d6ae |
+| #    | Workpackage                                                         | Status  | Commit   |
+| ---- | ------------------------------------------------------------------- | ------- | -------- |
+| WP-A | Tests for `evidenceArtifactParser.ts` (857 lines, 0% cov)           | ✅ done | e82e99ab |
+| WP-B | Tests for plan geometry helpers (`planElementMeshBuilders.ts`)      | ✅ done | d78c3405 |
+| WP-C | Tests for `store.ts` actions (`hydrateFromSnapshot`, `applyDelta`)  | ✅ done | e104f7e6 |
+| WP-D | Add `ErrorBoundary` wrapper around main app sections                | ✅ done | cb38d6ae |
 | WP-E | Decompose `SchedulePanel.tsx` — extract `ScheduleDefinitionToolbar` | ✅ done | 6e2afa3f |
-| WP-F | Decompose `RedesignedWorkspace.tsx` (1 862 lines)              | ✅ done    | 1774f345 |
-| WP-G | Structured error-logging utility (replace raw console.error)   | ✅ done    | 7780670a |
-| WP-H | Raise coverage thresholds 50/70/70 → 53/71/71                  | ✅ done    | 7780670a |
+| WP-F | Decompose `RedesignedWorkspace.tsx` (1 862 lines)                   | ✅ done | 1774f345 |
+| WP-G | Structured error-logging utility (replace raw console.error)        | ✅ done | 7780670a |
+| WP-H | Raise coverage thresholds 50/70/70 → 53/71/71                       | ✅ done | 7780670a |
 
 ---
 

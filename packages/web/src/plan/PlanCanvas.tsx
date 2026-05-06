@@ -862,11 +862,16 @@ export function PlanCanvas({
       }
       clearMarqueeLine();
       marqueeRef.current = { active: false, sx: 0, sy: 0, ex: 0, ey: 0, direction: null };
-      if (planTool === 'wall-opening' && wallOpeningStateRef.current.phase === 'define-rect' && wallOpeningAnchorRef.current) {
+      if (
+        planTool === 'wall-opening' &&
+        wallOpeningStateRef.current.phase === 'define-rect' &&
+        wallOpeningAnchorRef.current
+      ) {
         const sp = snapped(ev.clientX, ev.clientY);
         if (sp) {
           const { effect } = reduceWallOpening(wallOpeningStateRef.current, {
-            kind: 'drag-end', cornerMm: sp,
+            kind: 'drag-end',
+            cornerMm: sp,
           });
           wallOpeningStateRef.current = initialWallOpeningState();
           wallOpeningAnchorRef.current = null;
@@ -1108,7 +1113,10 @@ export function PlanCanvas({
           if (el.kind !== 'wall') continue;
           for (const pt of [el.start, el.end]) {
             const d = Math.hypot(sp.xMm - pt.xMm, sp.yMm - pt.yMm);
-            if (d < bestDist) { bestDist = d; bestCorner = pt; }
+            if (d < bestDist) {
+              bestDist = d;
+              bestCorner = pt;
+            }
           }
         }
         if (bestCorner && bestDist <= threshMm) {
@@ -1144,11 +1152,16 @@ export function PlanCanvas({
             const mx = (el.start.xMm + el.end.xMm) / 2;
             const mz = (el.start.yMm + el.end.yMm) / 2;
             const d = Math.hypot(sp.xMm - mx, sp.yMm - mz);
-            if (d < bestDist) { bestDist = d; bestWall = el.id; }
+            if (d < bestDist) {
+              bestDist = d;
+              bestWall = el.id;
+            }
           }
           if (bestWall && bestDist <= threshMm * 8) {
             const { state } = reduceWallOpening(wallOpeningStateRef.current, {
-              kind: 'click-wall', wallId: bestWall, pointMm: sp,
+              kind: 'click-wall',
+              wallId: bestWall,
+              pointMm: sp,
             });
             wallOpeningStateRef.current = state;
             wallOpeningAnchorRef.current = sp;
@@ -1161,7 +1174,11 @@ export function PlanCanvas({
         const rect2 = rnd.domElement.getBoundingClientRect();
         const worldPerPxMm2 = (2 * camRef.current.half * 1000) / Math.max(1, rect2.width);
         const threshMm2 = 12 * worldPerPxMm2;
-        if (fst && shaftStateRef.current.verticesMm.length >= 3 && Math.hypot(sp.xMm - fst.xMm, sp.yMm - fst.yMm) <= threshMm2) {
+        if (
+          fst &&
+          shaftStateRef.current.verticesMm.length >= 3 &&
+          Math.hypot(sp.xMm - fst.xMm, sp.yMm - fst.yMm) <= threshMm2
+        ) {
           const { effect } = reduceShaft(shaftStateRef.current, { kind: 'close-loop' });
           shaftStateRef.current = initialShaftState();
           if (effect.commitShaft) {
@@ -1196,9 +1213,10 @@ export function PlanCanvas({
         const rect = rnd.domElement.getBoundingClientRect();
         const worldPerPxMm = (2 * camRef.current.half * 1000) / Math.max(1, rect.width);
         const threshMm = 12 * worldPerPxMm;
-        const fst = ceilingStateRef.current.phase === 'sketch'
-          ? ceilingStateRef.current.verticesMm[0]
-          : undefined;
+        const fst =
+          ceilingStateRef.current.phase === 'sketch'
+            ? ceilingStateRef.current.verticesMm[0]
+            : undefined;
         if (
           fst &&
           (ceilingStateRef.current as { verticesMm: unknown[] }).verticesMm.length >= 3 &&

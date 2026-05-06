@@ -33,16 +33,16 @@ Icons `ColumnIcon` and `BeamIcon` are **already imported** in `packages/ui/src/i
 
 ## Files to touch
 
-| File | Change |
-|---|---|
-| `packages/core/src/index.ts` | Add `'column' \| 'beam'` to `ElemKind`; add element shapes to `Element` union |
-| `packages/web/src/tools/toolRegistry.ts` | Add to `ToolId`, `getToolRegistry`, `PALETTE_ORDER` |
-| `packages/web/src/state/storeTypes.ts` | Add to `PlanTool` |
-| `packages/web/src/tools/toolGrammar.ts` | Append `ColumnState`/`reduceColumn` + `BeamState`/`reduceBeam` |
-| `packages/web/src/plan/PlanCanvas.tsx` | Import + state refs + tool change + click dispatch + escape |
-| `packages/web/src/viewport/meshBuilders.ts` | Append `makeColumnMesh` + `makeBeamMesh` |
-| `packages/web/src/Viewport.tsx` | Import mesh builders + add `case 'column'` + `case 'beam'` |
-| `packages/web/src/i18n.ts` | Add tool labels (EN + DE) |
+| File                                        | Change                                                                        |
+| ------------------------------------------- | ----------------------------------------------------------------------------- |
+| `packages/core/src/index.ts`                | Add `'column' \| 'beam'` to `ElemKind`; add element shapes to `Element` union |
+| `packages/web/src/tools/toolRegistry.ts`    | Add to `ToolId`, `getToolRegistry`, `PALETTE_ORDER`                           |
+| `packages/web/src/state/storeTypes.ts`      | Add to `PlanTool`                                                             |
+| `packages/web/src/tools/toolGrammar.ts`     | Append `ColumnState`/`reduceColumn` + `BeamState`/`reduceBeam`                |
+| `packages/web/src/plan/PlanCanvas.tsx`      | Import + state refs + tool change + click dispatch + escape                   |
+| `packages/web/src/viewport/meshBuilders.ts` | Append `makeColumnMesh` + `makeBeamMesh`                                      |
+| `packages/web/src/Viewport.tsx`             | Import mesh builders + add `case 'column'` + `case 'beam'`                    |
+| `packages/web/src/i18n.ts`                  | Add tool labels (EN + DE)                                                     |
 
 Read all 8 files in a single parallel batch before making any edits.
 
@@ -55,6 +55,7 @@ Read all 8 files in a single parallel batch before making any edits.
 **Edit 1 — add to ElemKind** (line 36):
 
 Old:
+
 ```ts
   | 'bcf'
   | 'agent_assumption'
@@ -63,6 +64,7 @@ Old:
 ```
 
 New:
+
 ```ts
   | 'bcf'
   | 'agent_assumption'
@@ -75,11 +77,13 @@ New:
 **Edit 2 — add element shapes to Element union** (line 500 — after the last member `validation_rule`):
 
 Old:
+
 ```ts
   | { kind: 'validation_rule'; id: string; name: string; ruleJson: Record<string, unknown> };
 ```
 
 New:
+
 ```ts
   | { kind: 'validation_rule'; id: string; name: string; ruleJson: Record<string, unknown> }
   | {
@@ -119,12 +123,14 @@ New:
 **Edit 1 — ToolId union** (line 40–41):
 
 Old:
+
 ```ts
   | 'wall-opening'
   | 'shaft';
 ```
 
 New:
+
 ```ts
   | 'wall-opening'
   | 'shaft'
@@ -135,6 +141,7 @@ New:
 **Edit 2 — getToolRegistry** — append column and beam entries inside the return object, right after the `shaft` entry (before the closing `};`):
 
 Old:
+
 ```ts
     shaft: {
       id: 'shaft',
@@ -149,6 +156,7 @@ Old:
 ```
 
 New:
+
 ```ts
     shaft: {
       id: 'shaft',
@@ -181,6 +189,7 @@ New:
 **Edit 3 — PALETTE_ORDER** (line 227):
 
 Old:
+
 ```ts
   'wall-opening',
   'shaft',
@@ -188,6 +197,7 @@ Old:
 ```
 
 New:
+
 ```ts
   'wall-opening',
   'shaft',
@@ -203,12 +213,14 @@ New:
 **Edit — PlanTool union** (line 42–43):
 
 Old:
+
 ```ts
   | 'wall-opening'
   | 'shaft';
 ```
 
 New:
+
 ```ts
   | 'wall-opening'
   | 'shaft'
@@ -223,7 +235,6 @@ New:
 **Append to end of file** (after the closing `}` of `reduceShaft`, currently line 770):
 
 ```ts
-
 /* ────────────────────────────────────────────────────────────────────── */
 /* C16 Column — single-click placement                                      */
 /* ────────────────────────────────────────────────────────────────────── */
@@ -325,6 +336,7 @@ export function reduceBeam(
 **Edit 1 — imports** (line 19–21):
 
 Old:
+
 ```ts
   type WallOpeningState,
   type ShaftState,
@@ -332,6 +344,7 @@ Old:
 ```
 
 New:
+
 ```ts
   type WallOpeningState,
   type ShaftState,
@@ -347,20 +360,23 @@ New:
 **Edit 2 — state refs** (line 184):
 
 Old:
+
 ```ts
-  const shaftStateRef = useRef<ShaftState>(initialShaftState());
+const shaftStateRef = useRef<ShaftState>(initialShaftState());
 ```
 
 New:
+
 ```ts
-  const shaftStateRef = useRef<ShaftState>(initialShaftState());
-  const columnStateRef = useRef<ColumnState>(initialColumnState());
-  const beamStateRef = useRef<BeamState>(initialBeamState());
+const shaftStateRef = useRef<ShaftState>(initialShaftState());
+const columnStateRef = useRef<ColumnState>(initialColumnState());
+const beamStateRef = useRef<BeamState>(initialBeamState());
 ```
 
 **Edit 3 — tool change handler** (lines 419–421):
 
 Old:
+
 ```ts
     } else if (planTool === 'shaft') {
       shaftStateRef.current = initialShaftState();
@@ -368,6 +384,7 @@ Old:
 ```
 
 New:
+
 ```ts
     } else if (planTool === 'shaft') {
       shaftStateRef.current = initialShaftState();
@@ -381,6 +398,7 @@ New:
 **Edit 4 — click dispatch** — add column and beam handlers immediately after the shaft click block. The shaft block ends with:
 
 Old:
+
 ```ts
         bumpGeom((x) => x + 1);
         return;
@@ -389,6 +407,7 @@ Old:
 ```
 
 New:
+
 ```ts
         bumpGeom((x) => x + 1);
         return;
@@ -417,6 +436,7 @@ New:
 **Edit 5 — escape handler** (lines 1252–1253):
 
 Old:
+
 ```ts
         } else if (planTool === 'shaft') {
           shaftStateRef.current = initialShaftState();
@@ -424,6 +444,7 @@ Old:
 ```
 
 New:
+
 ```ts
         } else if (planTool === 'shaft') {
           shaftStateRef.current = initialShaftState();
@@ -441,7 +462,6 @@ New:
 **Append to end of file** (after line 1573):
 
 ```ts
-
 export function makeColumnMesh(
   col: Extract<Element, { kind: 'column' }>,
   elevM: number,
@@ -451,9 +471,7 @@ export function makeColumnMesh(
   const hM = THREE.MathUtils.clamp((col.hMm ?? 300) / 1000, 0.05, 2);
   const baseOff = (col.baseConstraintOffsetMm ?? 0) / 1000;
   const topOff = col.topConstraintOffsetMm != null ? col.topConstraintOffsetMm / 1000 : 0;
-  const heightM = col.heightMm != null
-    ? THREE.MathUtils.clamp(col.heightMm / 1000, 0.25, 40)
-    : 3.0;
+  const heightM = col.heightMm != null ? THREE.MathUtils.clamp(col.heightMm / 1000, 0.25, 40) : 3.0;
   const yBase = elevM + baseOff;
   const geo = new THREE.BoxGeometry(bM, heightM, hM);
   const mat = new THREE.MeshStandardMaterial({
@@ -462,7 +480,11 @@ export function makeColumnMesh(
     metalness: paint?.categories.wall.metalness ?? 0,
   });
   const mesh = new THREE.Mesh(geo, mat);
-  mesh.position.set(col.positionMm.xMm / 1000, yBase + heightM / 2 + topOff, col.positionMm.yMm / 1000);
+  mesh.position.set(
+    col.positionMm.xMm / 1000,
+    yBase + heightM / 2 + topOff,
+    col.positionMm.yMm / 1000,
+  );
   mesh.rotation.y = THREE.MathUtils.degToRad(col.rotationDeg ?? 0);
   addEdges(mesh);
   return mesh;
@@ -503,6 +525,7 @@ export function makeBeamMesh(
 **Edit 1 — imports** (lines 54–57):
 
 Old:
+
 ```ts
   makeBalconyMesh,
   makeRailingMesh,
@@ -511,6 +534,7 @@ Old:
 ```
 
 New:
+
 ```ts
   makeBalconyMesh,
   makeRailingMesh,
@@ -523,6 +547,7 @@ New:
 **Edit 2 — switch cases** — add column and beam before the site case (around line 1037):
 
 Old:
+
 ```ts
         case 'site':
           obj = makeSiteMesh(e, curr, paint);
@@ -532,6 +557,7 @@ Old:
 ```
 
 New:
+
 ```ts
         case 'column': {
           const elev = elevationMForLevel(e.levelId, curr);
@@ -557,6 +583,7 @@ New:
 Add tool labels for column and beam in both languages. The tools section ends at `disabled:` block.
 
 **English — old** (in `tools:` block):
+
 ```ts
           trim: {
             label: 'Trim / Extend',
@@ -566,6 +593,7 @@ Add tool labels for column and beam in both languages. The tools section ends at
 ```
 
 **English — new:**
+
 ```ts
           trim: {
             label: 'Trim / Extend',
@@ -583,6 +611,7 @@ Add tool labels for column and beam in both languages. The tools section ends at
 ```
 
 **German — old** (in `tools:` block):
+
 ```ts
           trim: {
             label: 'Trim / Extend',
@@ -592,6 +621,7 @@ Add tool labels for column and beam in both languages. The tools section ends at
 ```
 
 **German — new:**
+
 ```ts
           trim: {
             label: 'Trim / Extend',
@@ -626,7 +656,6 @@ All grammar tests must pass. Typecheck must have 0 errors.
 Append at the end of the file (after the last `});` closing brace):
 
 ```ts
-
 describe('Column reducer', () => {
   it('emits commitColumn on click', () => {
     const s0 = initialColumnState();
@@ -643,7 +672,10 @@ describe('Column reducer', () => {
 
 describe('Beam reducer', () => {
   it('transitions to first-point on first click', () => {
-    const { state } = reduceBeam(initialBeamState(), { kind: 'click', pointMm: { xMm: 0, yMm: 0 } });
+    const { state } = reduceBeam(initialBeamState(), {
+      kind: 'click',
+      pointMm: { xMm: 0, yMm: 0 },
+    });
     expect(state.phase).toBe('first-point');
   });
   it('emits commitBeam on second click', () => {
@@ -666,12 +698,14 @@ describe('Beam reducer', () => {
 The test file **already imports** `initialShaftState`, `reduceShaft` etc. at the top. Add the new imports alongside them:
 
 Old (in the imports block at top of the file):
+
 ```ts
   initialShaftState,
   reduceShaft,
 ```
 
 New:
+
 ```ts
   initialShaftState,
   reduceShaft,

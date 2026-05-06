@@ -20,13 +20,7 @@ describe('uz', () => {
 
 // ─── segmentDir ──────────────────────────────────────────────────────────────
 
-const makeWall = (
-  x0: number,
-  y0: number,
-  x1: number,
-  y1: number,
-  thicknessMm = 200,
-) =>
+const makeWall = (x0: number, y0: number, x1: number, y1: number, thicknessMm = 200) =>
   ({
     kind: 'wall' as const,
     id: 'w1',
@@ -171,7 +165,12 @@ describe('polygonAreaMm2', () => {
   it('returns 0 for degenerate polygon (< 3 points)', () => {
     expect(polygonAreaMm2([])).toBe(0);
     expect(polygonAreaMm2([{ xMm: 0, yMm: 0 }])).toBe(0);
-    expect(polygonAreaMm2([{ xMm: 0, yMm: 0 }, { xMm: 1000, yMm: 0 }])).toBe(0);
+    expect(
+      polygonAreaMm2([
+        { xMm: 0, yMm: 0 },
+        { xMm: 1000, yMm: 0 },
+      ]),
+    ).toBe(0);
   });
 
   it('returns 0 for collinear points', () => {
@@ -186,14 +185,16 @@ describe('polygonAreaMm2', () => {
 
 // ─── computeStairPlanRiserCount ───────────────────────────────────────────────
 
-const makeStair = (overrides: Partial<{
-  runStartMm: { xMm: number; yMm: number };
-  runEndMm: { xMm: number; yMm: number };
-  treadMm: number;
-  riserMm: number;
-  baseLevelId: string;
-  topLevelId: string;
-}> = {}) =>
+const makeStair = (
+  overrides: Partial<{
+    runStartMm: { xMm: number; yMm: number };
+    runEndMm: { xMm: number; yMm: number };
+    treadMm: number;
+    riserMm: number;
+    baseLevelId: string;
+    topLevelId: string;
+  }> = {},
+) =>
   ({
     kind: 'stair' as const,
     id: 'stair-1',

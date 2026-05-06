@@ -21,15 +21,15 @@ A workpackage is `done` when all of: (a) TypeScript typechecks clean (`pnpm exec
 
 ## Wave Map — Overview
 
-| Wave                                                   | Theme                                              | Status      |
-| ------------------------------------------------------ | -------------------------------------------------- | ----------- |
-| Wave 0                                                 | Meta / Bootstrap — tracker, docs                   | `done`      |
-| Wave 1                                                 | Interaction Foundation + Plan Canvas               | `done`      |
-| Wave 2                                                 | View System + Wall Depth + Openings                | `done`      |
-| [Wave 3](#wave-3--element-depth)                       | Element Depth (Structural, Curtain Wall, Ceilings) | **CURRENT** |
-| [Wave 4](#wave-4--data-layer)                          | Data Layer (Rooms V2, Parameters, Schedules)       | `open`      |
-| [Wave 5](#wave-5--families--collaboration)             | Families + Collaboration                           | `open`      |
-| [Wave 6](#wave-6--coordination--export)                | Coordination + Export                              | `open`      |
+| Wave                                       | Theme                                              | Status      |
+| ------------------------------------------ | -------------------------------------------------- | ----------- |
+| Wave 0                                     | Meta / Bootstrap — tracker, docs                   | `done`      |
+| Wave 1                                     | Interaction Foundation + Plan Canvas               | `done`      |
+| Wave 2                                     | View System + Wall Depth + Openings                | `done`      |
+| [Wave 3](#wave-3--element-depth)           | Element Depth (Structural, Curtain Wall, Ceilings) | **CURRENT** |
+| [Wave 4](#wave-4--data-layer)              | Data Layer (Rooms V2, Parameters, Schedules)       | `open`      |
+| [Wave 5](#wave-5--families--collaboration) | Families + Collaboration                           | `open`      |
+| [Wave 6](#wave-6--coordination--export)    | Coordination + Export                              | `open`      |
 
 _Waves 0–2 fully merged to main. Prompt files deleted._
 
@@ -52,11 +52,11 @@ Batch B (after A merged):
   WP-V2-08    feat/wp-v2-08-ceilings        depends on column/beam entries added by WP-V2-06
 ```
 
-| WP       | Title                                                               | Branch                       | State  | Depends on      |
-| -------- | ------------------------------------------------------------------- | ---------------------------- | ------ | --------------- |
-| WP-V2-07 | Curtain Wall grid params + Inspector (vCount/hCount fields)         | `feat/wp-v2-07-curtain-wall` | `done` | —               |
-| WP-V2-06 | Structural Elements (column + beam: types, tools, mesh builders)    | `feat/wp-v2-06-structural`   | `done` | —               |
-| WP-V2-08 | Ceilings (sketch ceiling, plan outline, 3D slab)                    | `feat/wp-v2-08-ceilings`     | `done` | WP-V2-06 merged |
+| WP       | Title                                                            | Branch                       | State  | Depends on      |
+| -------- | ---------------------------------------------------------------- | ---------------------------- | ------ | --------------- |
+| WP-V2-07 | Curtain Wall grid params + Inspector (vCount/hCount fields)      | `feat/wp-v2-07-curtain-wall` | `done` | —               |
+| WP-V2-06 | Structural Elements (column + beam: types, tools, mesh builders) | `feat/wp-v2-06-structural`   | `done` | —               |
+| WP-V2-08 | Ceilings (sketch ceiling, plan outline, 3D slab)                 | `feat/wp-v2-08-ceilings`     | `done` | WP-V2-06 merged |
 
 ---
 

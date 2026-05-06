@@ -479,22 +479,41 @@ describe('WallJoin reducer', () => {
 describe('WallOpening reducer', () => {
   it('transitions pick-wall → define-rect on click-wall', () => {
     const s0 = initialWallOpeningState();
-    const { state } = reduceWallOpening(s0, { kind: 'click-wall', wallId: 'w1', pointMm: { xMm: 100, yMm: 200 } });
+    const { state } = reduceWallOpening(s0, {
+      kind: 'click-wall',
+      wallId: 'w1',
+      pointMm: { xMm: 100, yMm: 200 },
+    });
     expect(state.phase).toBe('define-rect');
     expect(state.hostWallId).toBe('w1');
     expect(state.anchorMm).toEqual({ xMm: 100, yMm: 200 });
   });
   it('emits commitWallOpening on drag-end and returns to pick-wall', () => {
     let state = initialWallOpeningState();
-    state = reduceWallOpening(state, { kind: 'click-wall', wallId: 'w1', pointMm: { xMm: 0, yMm: 0 } }).state;
-    const { state: next, effect } = reduceWallOpening(state, { kind: 'drag-end', cornerMm: { xMm: 500, yMm: 500 } });
-    expect(effect.commitWallOpening).toEqual({ hostWallId: 'w1', anchorMm: { xMm: 0, yMm: 0 }, cornerMm: { xMm: 500, yMm: 500 } });
+    state = reduceWallOpening(state, {
+      kind: 'click-wall',
+      wallId: 'w1',
+      pointMm: { xMm: 0, yMm: 0 },
+    }).state;
+    const { state: next, effect } = reduceWallOpening(state, {
+      kind: 'drag-end',
+      cornerMm: { xMm: 500, yMm: 500 },
+    });
+    expect(effect.commitWallOpening).toEqual({
+      hostWallId: 'w1',
+      anchorMm: { xMm: 0, yMm: 0 },
+      cornerMm: { xMm: 500, yMm: 500 },
+    });
     expect(next.phase).toBe('pick-wall');
     expect(effect.stillActive).toBe(true);
   });
   it('resets to pick-wall on cancel', () => {
     let state = initialWallOpeningState();
-    state = reduceWallOpening(state, { kind: 'click-wall', wallId: 'w1', pointMm: { xMm: 0, yMm: 0 } }).state;
+    state = reduceWallOpening(state, {
+      kind: 'click-wall',
+      wallId: 'w1',
+      pointMm: { xMm: 0, yMm: 0 },
+    }).state;
     const { state: next } = reduceWallOpening(state, { kind: 'cancel' });
     expect(next.phase).toBe('pick-wall');
   });
@@ -516,7 +535,11 @@ describe('Shaft reducer', () => {
   });
   it('emits commitShaft with ≥3 vertices on close-loop', () => {
     let state = initialShaftState();
-    const pts = [{ xMm: 0, yMm: 0 }, { xMm: 1000, yMm: 0 }, { xMm: 1000, yMm: 1000 }];
+    const pts = [
+      { xMm: 0, yMm: 0 },
+      { xMm: 1000, yMm: 0 },
+      { xMm: 1000, yMm: 1000 },
+    ];
     for (const p of pts) state = reduceShaft(state, { kind: 'click', pointMm: p }).state;
     const { effect } = reduceShaft(state, { kind: 'close-loop' });
     expect(effect.commitShaft?.verticesMm).toHaveLength(3);
@@ -546,7 +569,10 @@ describe('Column reducer', () => {
 
 describe('Beam reducer', () => {
   it('transitions to first-point on first click', () => {
-    const { state } = reduceBeam(initialBeamState(), { kind: 'click', pointMm: { xMm: 0, yMm: 0 } });
+    const { state } = reduceBeam(initialBeamState(), {
+      kind: 'click',
+      pointMm: { xMm: 0, yMm: 0 },
+    });
     expect(state.phase).toBe('first-point');
   });
   it('emits commitBeam on second click', () => {
@@ -570,7 +596,10 @@ describe('Ceiling reducer', () => {
     expect(initialCeilingState().phase).toBe('idle');
   });
   it('transitions to sketch on first click', () => {
-    const { state } = reduceCeiling(initialCeilingState(), { kind: 'click', pointMm: { xMm: 0, yMm: 0 } });
+    const { state } = reduceCeiling(initialCeilingState(), {
+      kind: 'click',
+      pointMm: { xMm: 0, yMm: 0 },
+    });
     expect(state.phase).toBe('sketch');
   });
   it('accumulates vertices in sketch phase', () => {

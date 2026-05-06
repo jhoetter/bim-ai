@@ -23,9 +23,7 @@ describe('parseEvidenceArtifact — null / empty input', () => {
 describe('parseEvidenceArtifact — invalid JSON', () => {
   it('returns mismatch note on malformed JSON', () => {
     const r = parseEvidenceArtifact('{bad json', 1);
-    expect(r.mismatchNotes).toContain(
-      'Could not parse evidence JSON for artifact summary.',
-    );
+    expect(r.mismatchNotes).toContain('Could not parse evidence JSON for artifact summary.');
     expect(r.sheetRows).toEqual([]);
   });
 });
@@ -385,7 +383,11 @@ describe('parseEvidenceArtifact — mismatchNotes', () => {
   it('adds revision mismatch note when evidence revision differs from store', () => {
     const payload = { modelRevision: 5 };
     const r = parseEvidenceArtifact(JSON.stringify(payload), 10);
-    expect(r.mismatchNotes.some((n) => n.includes('modelRevision') && n.includes('5') && n.includes('10'))).toBe(true);
+    expect(
+      r.mismatchNotes.some(
+        (n) => n.includes('modelRevision') && n.includes('5') && n.includes('10'),
+      ),
+    ).toBe(true);
   });
 
   it('no revision mismatch note when revisions match', () => {

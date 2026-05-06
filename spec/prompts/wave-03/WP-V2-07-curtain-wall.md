@@ -32,12 +32,12 @@ element type so the grid can be authored explicitly, and exposes those fields in
 
 ## Files to touch
 
-| File | Change |
-|---|---|
-| `packages/core/src/index.ts` | Add `curtainWallVCount`, `curtainWallHCount` optional fields to wall |
-| `packages/web/src/viewport/meshBuilders.ts` | Use wall fields when present in `makeCurtainWallMesh` |
-| `packages/web/src/workspace/InspectorContent.tsx` | Add 2 numeric inputs (visible only when `isCurtainWall`) |
-| `packages/web/src/i18n.ts` | Add `cwVCount` and `cwHCount` keys (EN + DE) |
+| File                                              | Change                                                               |
+| ------------------------------------------------- | -------------------------------------------------------------------- |
+| `packages/core/src/index.ts`                      | Add `curtainWallVCount`, `curtainWallHCount` optional fields to wall |
+| `packages/web/src/viewport/meshBuilders.ts`       | Use wall fields when present in `makeCurtainWallMesh`                |
+| `packages/web/src/workspace/InspectorContent.tsx` | Add 2 numeric inputs (visible only when `isCurtainWall`)             |
+| `packages/web/src/i18n.ts`                        | Add `cwVCount` and `cwHCount` keys (EN + DE)                         |
 
 Read all 4 files in a single parallel batch before making any edits.
 
@@ -50,12 +50,14 @@ Read all 4 files in a single parallel batch before making any edits.
 Add two optional fields to the wall element type.
 
 **Old** (line 191–192):
+
 ```ts
       isCurtainWall?: boolean;
       locationLine?: WallLocationLine;
 ```
 
 **New:**
+
 ```ts
       isCurtainWall?: boolean;
       curtainWallVCount?: number | null;
@@ -70,6 +72,7 @@ Add two optional fields to the wall element type.
 Update `makeCurtainWallMesh` to use the new fields. The current hardcoded section is at lines 1203–1224.
 
 **Old:**
+
 ```ts
   const PANEL_W = 1.5;
   const PANEL_H = 1.2;
@@ -92,6 +95,7 @@ Update `makeCurtainWallMesh` to use the new fields. The current hardcoded sectio
 ```
 
 **New:**
+
 ```ts
   const PANEL_W = 1.5;
   const PANEL_H = 1.2;
@@ -127,6 +131,7 @@ Add two numeric inputs after the curtain wall checkbox (around line 92). They ar
 conditionally rendered only when `el.isCurtainWall` is true.
 
 **Old** (after curtain wall `</div>`, before wallType row):
+
 ```tsx
           </div>
 
@@ -135,6 +140,7 @@ conditionally rendered only when `el.isCurtainWall` is true.
 ```
 
 **New:**
+
 ```tsx
           </div>
 
@@ -188,12 +194,14 @@ conditionally rendered only when `el.isCurtainWall` is true.
 Add two keys in `inspector.fields` for both English (line ~195) and German (line ~838) translations.
 
 **English — old** (inside `inspector.fields`):
+
 ```ts
             curtainWall: 'Curtain Wall',
             wallType: 'Wall Type',
 ```
 
 **English — new:**
+
 ```ts
             curtainWall: 'Curtain Wall',
             cwVCount: 'V bays',
@@ -202,12 +210,14 @@ Add two keys in `inspector.fields` for both English (line ~195) and German (line
 ```
 
 **German — old** (inside `inspector.fields`):
+
 ```ts
             curtainWall: 'Vorhangfassade',
             wallType: 'Wandtyp',
 ```
 
 **German — new:**
+
 ```ts
             curtainWall: 'Vorhangfassade',
             cwVCount: 'V-Felder',
