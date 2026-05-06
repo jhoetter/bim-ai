@@ -60,3 +60,7 @@ so all committed and pushed?
 ---
 
 please commit + push your changes
+
+---
+
+that is a separate agent working on performance improvements. just commit and push your stuff; if something was removed, re-apply it
