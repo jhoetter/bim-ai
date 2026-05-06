@@ -8,6 +8,7 @@ import {
   useState,
 } from 'react';
 import { Icons, ICON_SIZE } from '@bim-ai/ui';
+import type { CollaborationConflictQueueV1 } from '../lib/collaborationConflictQueue';
 
 /**
  * StatusBar — spec §17.
@@ -46,6 +47,8 @@ export interface StatusBarProps {
   onRedo?: () => void;
   wsState?: StatusWsState;
   saveState?: StatusSaveState;
+  conflictQueue?: CollaborationConflictQueueV1 | null;
+  onClearConflict?: () => void;
 }
 
 export function StatusBar({
@@ -63,13 +66,15 @@ export function StatusBar({
   onRedo,
   wsState = 'connected',
   saveState = 'saved',
+  conflictQueue,
+  onClearConflict,
 }: StatusBarProps): JSX.Element {
   return (
     <div
       data-testid="status-bar"
       role="contentinfo"
       style={statusStyle}
-      className="flex w-full items-center gap-3 border-t border-border bg-surface px-4 text-xs"
+      className="relative flex w-full items-center gap-3 border-t border-border bg-surface px-4 text-xs"
     >
       <LevelCluster level={level} levels={levels} onLevelChange={onLevelChange} />
       <Divider />
@@ -81,6 +86,12 @@ export function StatusBar({
       <Divider />
       <CoordCluster cursorMm={cursorMm ?? null} />
       <div className="ml-auto flex items-center gap-3">
+        {conflictQueue ? (
+          <>
+            <ConflictSlot queue={conflictQueue} onClear={onClearConflict} />
+            <Divider />
+          </>
+        ) : null}
         <UndoCluster depth={undoDepth ?? 0} onUndo={onUndo} onRedo={onRedo} />
         <Divider />
         <WsCluster state={wsState} />
@@ -98,6 +109,96 @@ const statusStyle: CSSProperties = {
 
 function Divider(): JSX.Element {
   return <span aria-hidden="true" className="inline-block h-3 w-px bg-border" />;
+}
+
+const RETRY_LABELS: Record<string, string> = {
+  safe: 'safe retry',
+  blocked: 'blocked',
+  requires_manual_edit: 'manual edit',
+};
+
+function ConflictSlot({
+  queue,
+  onClear,
+}: {
+  queue: CollaborationConflictQueueV1;
+  onClear?: () => void;
+}): JSX.Element {
+  const [expanded, setExpanded] = useState(false);
+  const retryLabel = RETRY_LABELS[queue.retryAdvice] ?? queue.retryAdvice;
+  return (
+    <div className="relative flex items-center">
+      <button
+        type="button"
+        aria-expanded={expanded}
+        data-testid="conflict-pill"
+        onClick={() => setExpanded((v) => !v)}
+        className="flex items-center gap-1 rounded-sm px-1.5 py-0.5 font-medium text-amber-700 hover:bg-amber-50 dark:text-amber-300 dark:hover:bg-amber-950/30"
+        title="Collaboration conflict — click to expand"
+      >
+        <Icons.advisorWarning size={ICON_SIZE.chrome} aria-hidden="true" />
+        <span>Conflict</span>
+        <span className="rounded bg-amber-100 px-1 py-px text-[9px] dark:bg-amber-900/40">
+          {retryLabel}
+        </span>
+      </button>
+      {expanded ? (
+        <div
+          data-testid="collaboration-conflict-queue-readout"
+          role="dialog"
+          aria-label="Collaboration conflict details"
+          className="absolute bottom-full right-0 z-50 mb-1 w-96 rounded border border-amber-500/40 bg-surface px-3 py-2 text-[10px] shadow-elev-2"
+        >
+          <div className="flex items-center justify-between">
+            <span className="font-semibold text-amber-800 dark:text-amber-300">
+              Collaboration conflict
+            </span>
+            <button
+              type="button"
+              aria-label="Dismiss conflict"
+              data-testid="conflict-dismiss"
+              onClick={() => {
+                setExpanded(false);
+                onClear?.();
+              }}
+              className="rounded-sm px-1 py-0.5 text-muted hover:bg-surface-strong"
+            >
+              ✕
+            </button>
+          </div>
+          <p className="mt-1 text-foreground">{queue.inspectionReadout}</p>
+          {queue.inspectionReadoutSecondary ? (
+            <p className="mt-0.5 text-muted">{queue.inspectionReadoutSecondary}</p>
+          ) : null}
+          {queue.mergePreflightReadout ? (
+            <p className="mt-0.5 text-muted">{queue.mergePreflightReadout}</p>
+          ) : null}
+          <ul className="mt-1 list-disc space-y-0.5 ps-4 text-muted">
+            <li>
+              Retry advice: <code className="font-mono text-[9px]">{queue.retryAdvice}</code>
+              {queue.reason ? (
+                <>
+                  {' · '}reason <code className="font-mono text-[9px]">{queue.reason}</code>
+                </>
+              ) : null}
+            </li>
+            {queue.rows.length > 0 ? (
+              <li>
+                {queue.rows.length} blocking row(s) · rules{' '}
+                <code className="text-[9px]">{queue.rows.map((r) => r.ruleId).join(', ')}</code>
+              </li>
+            ) : null}
+            {queue.firstBlockingCommandStep1Based !== null ? (
+              <li>
+                Blocking command step {queue.firstBlockingCommandStep1Based}
+                {queue.blockingCommandType ? ` (${queue.blockingCommandType})` : ''}
+              </li>
+            ) : null}
+          </ul>
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
 function LevelCluster({

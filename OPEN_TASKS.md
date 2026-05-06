@@ -37,34 +37,6 @@ These features existed in `Workspace.tsx` (now at `/legacy`) and are not yet wir
 
 ---
 
-### T-10 · Collaboration conflict queue readout
-
-**WP target:** WP-UI-A06 (StatusBar) · **Source:** `Workspace.tsx` lines 1019–1071 · **Status:** `open`
-
-The collision infrastructure is complete but dark in the redesign. `packages/web/src/lib/collaborationConflictQueue.ts` detects `merge_id_collision` events from the WebSocket; `collaborationConflictStatus.ts` formats them. `RedesignedWorkspace.tsx` never subscribes to the conflict queue, so merge conflicts surface only as a generic `seedError`.
-
-**Next moves:**
-- Subscribe to `collaborationConflictQueueV1` in `RedesignedWorkspace.tsx` (mirror old lines 185–186, 337–347, 459–465)
-- Add a conflict pill / expandable row to `StatusBar.tsx` that shows `inspectionReadout`, `retryAdvice`, `reason`, `blockingCommandType`
-- Add vitest for the new StatusBar conflict slot
-- Update §5 + §28 WP-UI-A06 when done
-
----
-
-### T-11 · 3D layer visibility panel
-
-**WP target:** WP-UI-B04/B08 (3D viewport) · **Source:** `Workspace.tsx` lines 1173–1240 · **Status:** `open`
-
-The per-category visibility state is fully implemented (`viewerCategoryHidden`, `toggleViewerCategoryHidden`, `viewerClipElevMm`, `viewerClipFloorElevMm`, `setViewerClipElevMm`, `setViewerClipFloorElevMm` in the store) but has no UI surface in the redesign. The old workspace had a "3D layers" panel exposing category toggles (wall/floor/roof/stair/door/window/room) and section-box clip elevation sliders.
-
-**Next moves:**
-- Author a `Viewport3DLayersPanel.tsx` component (or add a collapsible section to Inspector) with per-category toggle rows + clip-elevation numeric inputs
-- Wire into `RedesignedWorkspace.tsx` as a side panel or Inspector tab when the active view is 3D/Plan+3D
-- Vitest for panel render + dispatch
-- Update §5 + §28 WP-UI-B04/B08 when done
-
----
-
 ### T-13 · Authoring workbenches
 
 **WP target:** WP-UI-C (tools) · **Source:** `Workspace.tsx` lines 1812–1860 · **Status:** `open`

@@ -138,3 +138,86 @@ describe('StatusBar — spec §17', () => {
     expect(getByLabelText('Cursor coordinates').textContent).toContain('X —');
   });
 });
+
+describe('StatusBar — conflict slot (T-10)', () => {
+  const baseConflict = {
+    format: 'collaborationConflictQueue_v1' as const,
+    reason: 'merge_id_collision',
+    firstBlockingCommandIndex: 0,
+    firstBlockingCommandStep1Based: 1,
+    blockingCommandType: 'create_wall',
+    blockingRuleIds: ['rule-A'],
+    affectedElementIds: ['el-1'],
+    rows: [
+      {
+        ruleId: 'rule-A',
+        elementIds: ['el-1'],
+        severity: 'error' as const,
+        blocking: true,
+        message: 'ID collision',
+      },
+    ],
+    inspectionReadout: 'Blocking step 1 (create_wall). Cross-check in Advisor.',
+    inspectionReadoutSecondary: 'Retry: fix command references before re-applying.',
+    retryAdvice: 'requires_manual_edit' as const,
+    mergePreflightReadout: null,
+    mergePreflightReadoutSecondary: null,
+  };
+
+  it('shows the conflict pill when conflictQueue is provided', () => {
+    const { getByTestId } = render(
+      <StatusBar
+        level={{ id: 'lvl-ground', label: 'Ground' }}
+        conflictQueue={baseConflict}
+      />,
+    );
+    expect(getByTestId('conflict-pill')).toBeTruthy();
+  });
+
+  it('does not show the conflict pill when conflictQueue is null', () => {
+    const { queryByTestId } = render(
+      <StatusBar level={{ id: 'lvl-ground', label: 'Ground' }} conflictQueue={null} />,
+    );
+    expect(queryByTestId('conflict-pill')).toBeNull();
+  });
+
+  it('expands the detail panel on click and shows inspectionReadout + retryAdvice + reason', () => {
+    const { getByTestId } = render(
+      <StatusBar
+        level={{ id: 'lvl-ground', label: 'Ground' }}
+        conflictQueue={baseConflict}
+      />,
+    );
+    fireEvent.click(getByTestId('conflict-pill'));
+    const panel = getByTestId('collaboration-conflict-queue-readout');
+    expect(panel.textContent).toContain('Blocking step 1 (create_wall)');
+    expect(panel.textContent).toContain('requires_manual_edit');
+    expect(panel.textContent).toContain('merge_id_collision');
+    expect(panel.textContent).toContain('create_wall');
+  });
+
+  it('shows the human-readable retry label in the pill badge', () => {
+    const { getByTestId } = render(
+      <StatusBar
+        level={{ id: 'lvl-ground', label: 'Ground' }}
+        conflictQueue={baseConflict}
+      />,
+    );
+    expect(getByTestId('conflict-pill').textContent).toContain('manual edit');
+  });
+
+  it('calls onClearConflict and collapses when the dismiss button is clicked', () => {
+    const onClearConflict = vi.fn();
+    const { getByTestId } = render(
+      <StatusBar
+        level={{ id: 'lvl-ground', label: 'Ground' }}
+        conflictQueue={baseConflict}
+        onClearConflict={onClearConflict}
+      />,
+    );
+    fireEvent.click(getByTestId('conflict-pill'));
+    fireEvent.click(getByTestId('conflict-dismiss'));
+    expect(onClearConflict).toHaveBeenCalled();
+    expect(getByTestId('conflict-pill').getAttribute('aria-expanded')).toBe('false');
+  });
+});
