@@ -1,0 +1,71 @@
+T1 — R3-01: Per-category PBR (materials.ts only)
+
+  ▎ Start with: git checkout -b r3-01-pbr-tuning
+
+  You are working on packages/web/src/viewport/materials.ts in a BIM (architectural CAD)
+  web app. There are no other files to touch.
+
+  CONTEXT
+  =======
+  The file currently exports resolveCategoryMaterial(), which returns a
+  CategoryMaterialSpec for each element category (wall, floor, roof, door,
+  window, stair, railing, room, site, section, sheet).
+
+  Right now ALL categories share a single DEFAULT_PBR object:
+    const DEFAULT_PBR = { roughness: 0.85, metalness: 0, aoIntensity: 0.4 }
+
+  This means wall, railing, glazing etc. all get roughness=0.85, metalness=0.
+  That is wrong. Railing should be metallic steel; glazing near-mirror; etc.
+
+  There is also a ResolveOptions interface with optional roughness/metalness/
+  aoIntensity overrides used by tests — keep that working.
+
+  TASK
+  ====
+  1. Add a PER_CATEGORY_PBR lookup table constant (typed as
+     Record<ElementCategoryToken, { roughness: number; metalness: number }>)
+     with these values (from the rendering spec):
+
+     wall:     roughness 0.80, metalness 0.00
+     floor:    roughness 0.90, metalness 0.00
+     roof:     roughness 0.85, metalness 0.00
+     door:     roughness 0.70, metalness 0.00
+     window:   roughness 0.60, metalness 0.05   ← window FRAME (not glazing)
+     stair:    roughness 0.85, metalness 0.00
+     railing:  roughness 0.35, metalness 0.65   ← brushed stainless
+     room:     roughness 0.85, metalness 0.00   ← no 3D mesh but needs a value
+     site:     roughness 0.95, metalness 0.00
+     section:  roughness 0.85, metalness 0.00
+     sheet:    roughness 0.85, metalness 0.00
+
+  2. Add CSS token reading for per-category PBR overrides. Before falling back
+     to the table above, try to read --cat-CATEGORY-roughness and
+     --cat-CATEGORY-metalness via the TokenReader. Use parseFloat(); if the
+     result is NaN fall through to the table value. Example:
+
+       const rawR = reader.read(`--cat-${category}-roughness`);
+       const roughness = rawR !== null && !Number.isNaN(parseFloat(rawR))
+         ? parseFloat(rawR)
+         : PER_CATEGORY_PBR[category].roughness;
+
+  3. Update resolveCategoryMaterial() to use the per-category roughness/metalness
+     instead of DEFAULT_PBR. Keep the ResolveOptions.roughness / .metalness
+     OVERRIDES working — they take highest priority (used by tests that pin
+     specific values).
+
+     Priority order (highest first):
+       options.roughness  → if provided, use it
+       CSS token          → if token present and parseable, use it
+       PER_CATEGORY_PBR   → always defined
+
+  4. aoIntensity stays at DEFAULT_PBR.aoIntensity (0.4) for all categories
+     unless overridden via ResolveOptions.aoIntensity.
+
+  5. Update packages/web/src/viewport/materials.test.ts:
+     - The test "reads --cat-* tokens for every category" currently asserts
+       expect(spec.roughness).toBe(0.85) and expect(spec.metalness).toBe(0)
+       for ALL categories. Replace these with per-category assert
+
+---
+
+commited and pushed?

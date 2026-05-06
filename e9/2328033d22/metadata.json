@@ -3,7 +3,7 @@
   "checkpoint_id": "e92328033d22",
   "strategy": "manual-commit",
   "branch": "r3-01-pbr-tuning",
-  "checkpoints_count": 0,
+  "checkpoints_count": 2,
   "files_touched": [
     "packages/web/src/viewport/materials.test.ts",
     "packages/web/src/viewport/materials.ts"
@@ -26,13 +26,19 @@
       "transcript": "/e9/2328033d22/2/full.jsonl",
       "content_hash": "/e9/2328033d22/2/content_hash.txt",
       "prompt": "/e9/2328033d22/2/prompt.txt"
+    },
+    {
+      "metadata": "/e9/2328033d22/3/metadata.json",
+      "transcript": "/e9/2328033d22/3/full.jsonl",
+      "content_hash": "/e9/2328033d22/3/content_hash.txt",
+      "prompt": "/e9/2328033d22/3/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 60,
-    "cache_creation_tokens": 54011,
-    "cache_read_tokens": 3271849,
-    "output_tokens": 17094,
-    "api_call_count": 56
+    "input_tokens": 74,
+    "cache_creation_tokens": 72628,
+    "cache_read_tokens": 3455826,
+    "output_tokens": 20978,
+    "api_call_count": 64
   }
 }
