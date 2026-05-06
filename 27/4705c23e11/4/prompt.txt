@@ -32,3 +32,7 @@ ok perfect. please give me the prompt for T4. is T4 the last of R3?
 ---
 
 T4 should be done, can you confirm?
+
+---
+
+ok then next spec planning please :)
