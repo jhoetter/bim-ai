@@ -1,0 +1,125 @@
+my CI/Cd is failing:
+Run cd packages/web && pnpm exec playwright test
+[WebServer] 
+[WebServer] (!) Some chunks are larger than 500 kB after minification. Consider:
+[WebServer] - Using dynamic import() to code-split the application
+[WebServer] - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+[WebServer] - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+
+Running 21 tests using 2 workers
+
+  -  2 e2e/evidence-baselines.spec.ts:757:3 › evidence PNG baselines › coordination layout: sheet + schedules panel
+  -  3 e2e/evidence-baselines.spec.ts:772:3 › evidence PNG baselines › schedules_focus docked rails
+  ✓  1 e2e/cockpit-smoke.spec.ts:71:3 › cockpit hydration › shows Plan + 3D layout and mocked room labels (4.2s)
+  -  5 e2e/golden-bundle-plan.spec.ts:202:3 › golden bundle affordances › lists longitudinal section cuts and exposes plan style presets
+  -  6 e2e/golden-bundle-plan.spec.ts:223:3 › golden bundle affordances › project browser lists floor plans, section cuts, and split viewpoint groups
+  ✘  4 e2e/evidence-baselines.spec.ts:786:3 › evidence PNG baselines › split plan + 3D: canvases visible (1.0m)
+  -  8 e2e/evidence-baselines.spec.ts:796:3 › evidence PNG baselines › coordination layout: deterministic manifest sheet PNG basename
+  -  9 e2e/evidence-baselines.spec.ts:810:3 › evidence PNG baselines › deterministic manifest: full-sheet SVG screenshot
+  -  10 e2e/evidence-baselines.spec.ts:822:3 › evidence PNG baselines › named plan_views change EG openings vs OG room presentation
+  ✘  7 e2e/golden-bundle-plan.spec.ts:242:3 › golden bundle affordances › sheet canvas renders section viewport from replayed viewportsMm (1.0m)
+  -  12 e2e/golden-bundle-plan.spec.ts:264:3 › golden bundle affordances › applies evidence3d clip query params on 3D section box controls
+  ✓  11 e2e/evidence-baselines.spec.ts:837:3 › evidence PNG baselines › evidence-package exposes closure review inventory (5.0s)
+  -  13 e2e/ui-redesign-baselines.spec.ts:25:3 › UI redesign — chrome baselines › app-shell light @ 1440 × 900
+  ✓  14 e2e/evidence-baselines.spec.ts:906:3 › evidence PNG baselines › sheet-print-raster.png: print-surrogate v2 response headers (5.8s)
+  -  16 e2e/evidence-baselines.spec.ts:935:3 › evidence PNG baselines › agent_review layout: fix-loop callout hidden when evidence package clean
+  -  15 e2e/ui-redesign-baselines.spec.ts:39:3 › UI redesign — chrome baselines › app-shell dark @ 1440 × 900
+  -  17 e2e/ui-redesign-baselines.spec.ts:53:3 › UI redesign — chrome baselines › top-bar mode pills
+  -  18 e2e/ui-redesign-baselines.spec.ts:65:3 › UI redesign — chrome baselines › left-rail Project Browser
+  -  19 e2e/ui-redesign-baselines.spec.ts:77:3 › UI redesign — chrome baselines › right-rail Inspector empty state
+  ✓  20 e2e/ui-redesign-baselines.spec.ts:89:3 › UI redesign — chrome baselines › status-bar clusters (7.3s)
+  -  21 e2e/ui-redesign-baselines.spec.ts:97:3 › UI redesign — chrome baselines › tool-palette plan mode
+
+
+  1) e2e/evidence-baselines.spec.ts:786:3 › evidence PNG baselines › split plan + 3D: canvases visible 
+
+    Test timeout of 60000ms exceeded.
+
+    Error: locator.click: Test timeout of 60000ms exceeded.
+    Call log:
+      - waiting for getByRole('tab', { name: /Plan \+ 3D/i })
+        - locator resolved to <button role="tab" type="button" tabindex="-1" data-active="false" aria-selected="false" aria-keyshortcuts="3" title="Plan + 3D (3)" class="relative rounded px-3 py-1.5 text-sm font-medium transition-colors text-muted hover:bg-surface hover:text-foreground">…</button>
+      - attempting click action
+        2 × waiting for element to be visible, enabled and stable
+          - element is visible, enabled and stable
+          - scrolling into view if needed
+          - done scrolling
+          - <div aria-hidden="true"></div> from <div tabindex="0" role="dialog" aria-modal="true" aria-label="Onboarding tour" data-testid="onboarding-tour">…</div> subtree intercepts pointer events
+        - retrying click action
+        - waiting 20ms
+        2 × waiting for element to be visible, enabled and stable
+          - element is visible, enabled and stable
+          - scrolling into view if needed
+          - done scrolling
+          - <div aria-hidden="true"></div> from <div tabindex="0" role="dialog" aria-modal="true" aria-label="Onboarding tour" data-testid="onboarding-tour">…</div> subtree intercepts pointer events
+        - retrying click action
+          - waiting 100ms
+        84 × waiting for element to be visible, enabled and stable
+           - element is visible, enabled and stable
+           - scrolling into view if needed
+           - done scrolling
+           - <div aria-hidden="true"></div> from <div tabindex="0" role="dialog" aria-modal="true" aria-label="Onboarding tour" data-testid="onboarding-tour">…</div> subtree intercepts pointer events
+         - retrying click action
+           - waiting 500ms
+
+
+      789 |     await page.waitForSelector('[data-testid="app-shell"]', { timeout: 30_000 });
+      790 |     // workspaceLayoutPreset is dead code; navigate to plan-3d mode explicitly
+    > 791 |     await page.getByRole('tab', { name: /Plan \+ 3D/i }).click();
+          |                                                          ^
+      792 |     await expect(page.getByTestId('plan-canvas')).toBeVisible();
+      793 |     await expect(page.getByTestId('orbit-3d-viewport')).toBeVisible({ timeout: 10_000 });
+      794 |   });
+        at /home/runner/work/bim-ai/bim-ai/packages/web/e2e/evidence-baselines.spec.ts:791:58
+
+    Error Context: test-results/evidence-baselines-evidenc-10c5c-it-plan-3D-canvases-visible/error-context.md
+
+  2) e2e/golden-bundle-plan.spec.ts:242:3 › golden bundle affordances › sheet canvas renders section viewport from replayed viewportsMm 
+
+    Test timeout of 60000ms exceeded.
+
+    Error: locator.click: Test timeout of 60000ms exceeded.
+    Call log:
+      - waiting for getByTestId('left-rail-row-hf-sheet-ga01')
+        - locator resolved to <button type="button" tabindex="-1" aria-level="1" role="treeitem" data-active="false" aria-selected="false" data-testid="left-rail-row-hf-sheet-ga01" class="flex h-7 w-full items-center gap-1.5 pr-3 text-sm text-foreground hover:bg-surface-strong">…</button>
+      - attempting click action
+        2 × waiting for element to be visible, enabled and stable
+          - element is visible, enabled and stable
+          - scrolling into view if needed
+          - done scrolling
+          - <div aria-hidden="true"></div> from <div tabindex="0" role="dialog" aria-modal="true" aria-label="Onboarding tour" data-testid="onboarding-tour">…</div> subtree intercepts pointer events
+        - retrying click action
+        - waiting 20ms
+        2 × waiting for element to be visible, enabled and stable
+          - element is visible, enabled and stable
+          - scrolling into view if needed
+          - done scrolling
+          - <div aria-hidden="true"></div> from <div tabindex="0" role="dialog" aria-modal="true" aria-label="Onboarding tour" data-testid="onboarding-tour">…</div> subtree intercepts pointer events
+        - retrying click action
+          - waiting 100ms
+        86 × waiting for element to be visible, enabled and stable
+           - element is visible, enabled and stable
+           - scrolling into view if needed
+           - done scrolling
+           - <div aria-hidden="true"></div> from <div tabindex="0" role="dialog" aria-modal="true" aria-label="Onboarding tour" data-testid="onboarding-tour">…</div> subtree intercepts pointer events
+         - retrying click action
+           - waiting 500ms
+
+
+      249 |     // workspaceLayoutPreset is dead code; navigate to sheet mode by clicking the sheet row
+      250 |     await page.waitForSelector('[data-testid="left-rail-row-hf-sheet-ga01"]', { timeout: 15_000 });
+    > 251 |     await page.getByTestId('left-rail-row-hf-sheet-ga01').click();
+          |                                                           ^
+      252 |
+      253 |     const canvas = page.getByTestId('sheet-canvas');
+      254 |     await expect(canvas).toBeVisible({ timeout: 10_000 });
+        at /home/runner/work/bim-ai/bim-ai/packages/web/e2e/golden-bundle-plan.spec.ts:251:59
+
+    Error Context: test-results/golden-bundle-plan-golden--53d1f-t-from-replayed-viewportsMm/error-context.md
+
+  2 failed
+    e2e/evidence-baselines.spec.ts:786:3 › evidence PNG baselines › split plan + 3D: canvases visible 
+    e2e/golden-bundle-plan.spec.ts:242:3 › golden bundle affordances › sheet canvas renders section viewport from replayed viewportsMm 
+  15 skipped
+  4 passed (1.8m)
+Error: Process completed with exit code 1. can you fix that
