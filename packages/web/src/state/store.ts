@@ -723,16 +723,24 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
   }
 
   if (kind === 'family_type') {
+    const validDisciplines = [
+      'door', 'window', 'stair', 'railing',
+      'wall_type', 'floor_type', 'roof_type',
+      'column', 'beam', 'generic',
+    ] as const;
     const d = raw.discipline;
-    const discipline = d === 'door' || d === 'window' || d === 'generic' ? d : 'generic';
+    const discipline = validDisciplines.includes(d as never) ? (d as typeof validDisciplines[number]) : 'generic';
     return {
       kind: 'family_type',
       id,
+      name: typeof raw.name === 'string' ? raw.name : '',
+      familyId: typeof raw.familyId === 'string' ? raw.familyId : (typeof raw.family_id === 'string' ? raw.family_id : ''),
       discipline,
       parameters:
         raw.parameters && typeof raw.parameters === 'object'
           ? (raw.parameters as Record<string, unknown>)
           : {},
+      ...(raw.isBuiltIn != null ? { isBuiltIn: Boolean(raw.isBuiltIn) } : {}),
     };
   }
 

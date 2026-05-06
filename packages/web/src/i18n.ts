@@ -312,8 +312,10 @@ i18n.init({
           walkTitle:
             'Walk mode — WASD move · mouse-look · Shift run · PageUp/PageDown switch floor · Esc exit',
           sectionBoxTitle: 'Section box (clipping AABB)',
+          orthoTitle: 'Orthographic / parallel projection',
           walkLabel: 'Walk',
           sectionBoxLabel: 'Section box',
+          orthoLabel: 'Ortho',
           on: 'ON',
           off: 'OFF',
           shortcutsHint: '? for all shortcuts',
@@ -905,8 +907,10 @@ i18n.init({
           walkTitle:
             'Walk-Modus — WASD bewegen · Maus schauen · Shift rennen · PageUp/PageDown Etage wechseln · Esc beenden',
           sectionBoxTitle: 'Schnittbox (AABB-Clipping)',
+          orthoTitle: 'Orthogonale / parallele Projektion',
           walkLabel: 'Walk',
           sectionBoxLabel: 'Schnittbox',
+          orthoLabel: 'Ortho',
           on: 'AN',
           off: 'AUS',
           shortcutsHint: '? für alle Tastenkürzel',

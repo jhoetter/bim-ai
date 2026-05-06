@@ -108,6 +108,12 @@ export type EvidenceRef = {
   pngBasename?: string | null;
 };
 
+export type FamilyDiscipline =
+  | 'door' | 'window' | 'stair' | 'railing'
+  | 'wall_type' | 'floor_type' | 'roof_type'
+  | 'column' | 'beam'
+  | 'generic';
+
 export type Element =
   | {
       kind: 'project_settings';
@@ -182,6 +188,7 @@ export type Element =
       revealInteriorMm?: number | null;
       interlockGrade?: string | null;
       lodPlan?: 'simple' | 'detailed' | null;
+      overrideParams?: Record<string, unknown>;
     }
   | {
       kind: 'window';
@@ -199,6 +206,7 @@ export type Element =
       interlockGrade?: string | null;
       sealRebateMm?: number | null;
       lodPlan?: 'simple' | 'detailed' | null;
+      overrideParams?: Record<string, unknown>;
     }
   | {
       kind: 'room';
@@ -295,6 +303,7 @@ export type Element =
       widthMm: number;
       riserMm: number;
       treadMm: number;
+      overrideParams?: Record<string, unknown>;
     }
   | {
       kind: 'slab_opening';
@@ -311,12 +320,16 @@ export type Element =
       hostedStairId?: string | null;
       pathMm: XY[];
       guardHeightMm?: number;
+      overrideParams?: Record<string, unknown>;
     }
   | {
       kind: 'family_type';
       id: string;
-      discipline: 'door' | 'window' | 'generic';
+      name: string;
+      familyId: string;
+      discipline: FamilyDiscipline;
       parameters: Record<string, unknown>;
+      isBuiltIn?: boolean;
     }
   | { kind: 'room_separation'; id: string; name: string; levelId: string; start: XY; end: XY }
   | {
