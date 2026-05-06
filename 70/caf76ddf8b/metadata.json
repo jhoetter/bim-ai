@@ -1,0 +1,25 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "70caf76ddf8b",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/web/src/workspace/Inspector.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/70/caf76ddf8b/0/metadata.json",
+      "transcript": "/70/caf76ddf8b/0/full.jsonl",
+      "content_hash": "/70/caf76ddf8b/0/content_hash.txt",
+      "prompt": "/70/caf76ddf8b/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 4616,
+    "cache_creation_tokens": 299155,
+    "cache_read_tokens": 23099348,
+    "output_tokens": 119564,
+    "api_call_count": 238
+  }
+}
