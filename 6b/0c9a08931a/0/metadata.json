@@ -1,0 +1,60 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "6b0c9a08931a",
+  "session_id": "71c4971b-d8b8-40f5-8f15-200fd1e676d4",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-06T17:57:55.696263Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "spec/workpackage-master-tracker.md"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "64f72ce2fab9",
+  "checkpoint_transcript_start": 63,
+  "transcript_lines_at_start": 63,
+  "token_usage": {
+    "input_tokens": 6,
+    "cache_creation_tokens": 7913,
+    "cache_read_tokens": 125576,
+    "output_tokens": 945,
+    "api_call_count": 4
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-06T17:57:55.69358Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 1,
+    "human_removed": 0,
+    "total_committed": 0,
+    "total_lines_changed": 1,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 1143,
+      "user_lines_removed": 1,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/web/src/workspace/CanvasMount.tsx": 112,
+        "packages/web/src/workspace/RedesignedWorkspace.tsx": 3,
+        "packages/web/src/workspace/WorkspaceHelpers.tsx": 148,
+        "packages/web/src/workspace/WorkspaceLeftRail.tsx": 153,
+        "packages/web/src/workspace/WorkspaceRightRail.tsx": 318,
+        "packages/web/src/workspace/useWorkspaceSnapshot.ts": 150,
+        "packages/web/src/workspace/workspaceUtils.ts": 259
+      },
+      "user_removed_per_file": {
+        "packages/web/src/workspace/RedesignedWorkspace.tsx": 1
+      }
+    }
+  ]
+}
