@@ -8,11 +8,16 @@ Validates:
 - Every row has a valid coverage token
 - Coverage counts sum to total rows
 - staleTrackerRows are sorted and each references a real tracker WP ID
+
+SKIP REASON: spec/revit-production-parity-workpackage-tracker.md was deleted in
+commit e441173e (superseded by spec/workpackage-master-tracker.md). These tests
+were written against the old Wave-5 tracker format and are no longer active.
 """
 
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pytest
 
@@ -22,6 +27,12 @@ from bim_ai.prd_tracker_reconciliation_v1 import (
     build_prd_tracker_reconciliation_manifest_v1,
     parse_prd_section_anchors_v1,
     parse_tracker_workpackages_v1,
+)
+
+_TRACKER_PATH = Path(__file__).resolve().parents[2] / "spec" / "revit-production-parity-workpackage-tracker.md"
+pytestmark = pytest.mark.skipif(
+    not _TRACKER_PATH.exists(),
+    reason="spec/revit-production-parity-workpackage-tracker.md was deleted (superseded by workpackage-master-tracker.md)",
 )
 
 # Section number prefixes that require tracker coverage per the prompt spec.
