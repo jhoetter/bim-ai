@@ -354,7 +354,15 @@ export type Element =
       slopeDeg?: number | null;
       edgeSlopeFlags?: Record<string, boolean>;
       ridgeAxis?: 'x' | 'z' | null;
-      roofGeometryMode?: 'mass_box' | 'gable_pitched_rectangle' | 'hip' | 'flat';
+      roofGeometryMode?:
+        | 'mass_box'
+        | 'gable_pitched_rectangle'
+        | 'asymmetric_gable'
+        | 'hip'
+        | 'flat';
+      ridgeOffsetTransverseMm?: number;
+      eaveHeightLeftMm?: number;
+      eaveHeightRightMm?: number;
       roofTypeId?: string | null;
       materialKey?: string | null;
     }

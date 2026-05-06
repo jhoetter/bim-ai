@@ -67,6 +67,45 @@ export function roofHeightAtPoint(
   const z = zMm / 1000;
   const tan = Math.tan(slopeRad);
 
+  if (roof.roofGeometryMode === 'asymmetric_gable') {
+    const ridgeOffsetM = (roof.ridgeOffsetTransverseMm ?? 0) / 1000;
+    const eaveLeftY =
+      roof.eaveHeightLeftMm != null ? refElev + roof.eaveHeightLeftMm / 1000 : eaveY;
+    const eaveRightY =
+      roof.eaveHeightRightMm != null ? refElev + roof.eaveHeightRightMm / 1000 : eaveY;
+    if (ridgeAlongX) {
+      const halfSpan = (oz1 - oz0) / 2;
+      const center = (oz0 + oz1) / 2;
+      const offset = Math.max(-halfSpan + 1e-6, Math.min(halfSpan - 1e-6, ridgeOffsetM));
+      const rz = center + offset;
+      const leftRun = halfSpan + offset;
+      const ridgeY = eaveLeftY + leftRun * tan;
+      if (z <= rz) {
+        const t = leftRun > 0 ? (z - oz0) / leftRun : 0;
+        return eaveLeftY + Math.max(0, Math.min(1, t)) * (ridgeY - eaveLeftY);
+      } else {
+        const rightRun = halfSpan - offset;
+        const t = rightRun > 0 ? (z - rz) / rightRun : 0;
+        return ridgeY + Math.max(0, Math.min(1, t)) * (eaveRightY - ridgeY);
+      }
+    } else {
+      const halfSpan = (ox1 - ox0) / 2;
+      const center = (ox0 + ox1) / 2;
+      const offset = Math.max(-halfSpan + 1e-6, Math.min(halfSpan - 1e-6, ridgeOffsetM));
+      const rx = center + offset;
+      const leftRun = halfSpan + offset;
+      const ridgeY = eaveLeftY + leftRun * tan;
+      if (x <= rx) {
+        const t = leftRun > 0 ? (x - ox0) / leftRun : 0;
+        return eaveLeftY + Math.max(0, Math.min(1, t)) * (ridgeY - eaveLeftY);
+      } else {
+        const rightRun = halfSpan - offset;
+        const t = rightRun > 0 ? (x - rx) / rightRun : 0;
+        return ridgeY + Math.max(0, Math.min(1, t)) * (eaveRightY - ridgeY);
+      }
+    }
+  }
+
   if (roof.roofGeometryMode === 'hip') {
     if (ridgeAlongX) {
       const halfSpanZ = (oz1 - oz0) / 2;

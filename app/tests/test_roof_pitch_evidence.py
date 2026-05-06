@@ -638,3 +638,93 @@ def test_gable_roof_typed_layers_surface_evidence_manifest_plan_section_agree() 
     assert scw_m["sectionProfileToken_v0"] == "gableLayeredPrismChord_v1"
     assert scw_m["roofSectionCutSupportToken_v0"] == "gable_rectangle_layered_prism_v1"
     assert scw_m["layerReadouts"] == prism["layerReadouts"]
+
+
+def test_replay_create_asymmetric_gable_persists_offset_and_eaves() -> None:
+    """KRN-11: asymmetric_gable mode round-trips ridge offset + per-side eaves."""
+
+    doc = Document(revision=1, elements={})
+    apply_inplace(doc, CreateLevelCmd(id="lvl", name="G", elevationMm=0))
+    apply_inplace(
+        doc,
+        CreateRoofCmd(
+            id="r-asym",
+            name="Asym Roof",
+            reference_level_id="lvl",
+            footprint_mm=[dict(xMm=p["xMm"], yMm=p["yMm"]) for p in _RECT_FP],
+            slope_deg=30.0,
+            roof_geometry_mode="asymmetric_gable",
+            ridge_offset_transverse_mm=1500.0,
+            eave_height_left_mm=2400.0,
+            eave_height_right_mm=3200.0,
+        ),
+    )
+    r = doc.elements["r-asym"]
+    assert isinstance(r, RoofElem)
+    assert r.roof_geometry_mode == "asymmetric_gable"
+    assert r.ridge_offset_transverse_mm == pytest.approx(1500.0)
+    assert r.eave_height_left_mm == pytest.approx(2400.0)
+    assert r.eave_height_right_mm == pytest.approx(3200.0)
+
+
+def test_section_roof_primitive_asymmetric_gable_carries_ridge_offset() -> None:
+    """KRN-11: section projection emits ridge offset + reflects asymmetric ridge height."""
+
+    # 6000 × 4000 mm rectangle, ridge alongX (long axis), offset 1000 mm in z
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=0),
+            "r1": RoofElem(
+                kind="roof",
+                id="r1",
+                name="R",
+                reference_level_id="lvl",
+                footprint_mm=list(_RECT_FP),
+                overhang_mm=400,
+                slope_deg=45.0,
+                roof_geometry_mode="asymmetric_gable",
+                ridge_offset_transverse_mm=1000.0,
+                eave_height_left_mm=0.0,
+                eave_height_right_mm=0.0,
+            ),
+            "sec": SectionCutElem(
+                kind="section_cut",
+                id="sec-1",
+                name="Sec",
+                line_start_mm={"xMm": 500, "yMm": 2000},
+                line_end_mm={"xMm": 5500, "yMm": 2000},
+                crop_depth_mm=6000,
+            ),
+        },
+    )
+    prim, _w = build_section_projection_primitives(doc, doc.elements["sec"])
+    assert len(prim["roofs"]) == 1
+    row = prim["roofs"][0]
+    assert row["roofGeometryMode"] == "asymmetric_gable"
+    assert row["ridgeOffsetTransverseMm"] == pytest.approx(1000.0)
+    # 6000 × 4000 rect: ridge parallels the short axis (alongZ), so transverse half-run
+    # is on x: halfSpan = 6000/2 = 3000. Offset = +1000 → leftRun = 4000.
+    # ridgeRise = 4000 * tan(45°) = 4000 mm.
+    assert row["ridgeAxisPlan"] == "alongZ"
+    assert row["ridgeRiseMm"] == pytest.approx(4000.0, rel=1e-3)
+    assert row["ridgeZMm"] == pytest.approx(4000.0, rel=1e-3)
+    assert row["proxyKind"] == "gablePitchedRectangleChord"
+
+
+def test_asymmetric_gable_rejects_non_rectangle_footprint() -> None:
+    """KRN-11: asymmetric_gable inherits gable_pitched_rectangle's footprint constraint."""
+
+    doc = Document(revision=1, elements={})
+    apply_inplace(doc, CreateLevelCmd(id="lvl", name="G", elevationMm=0))
+    bad = [{"xMm": 0, "yMm": 0}, {"xMm": 3000, "yMm": 0}, {"xMm": 1500, "yMm": 2000}]
+    with pytest.raises(ValueError, match="exactly 4 vertices"):
+        apply_inplace(
+            doc,
+            CreateRoofCmd(
+                reference_level_id="lvl",
+                footprint_mm=bad,
+                roof_geometry_mode="asymmetric_gable",
+                ridge_offset_transverse_mm=500.0,
+            ),
+        )

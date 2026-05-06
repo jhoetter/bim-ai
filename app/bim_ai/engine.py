@@ -1373,7 +1373,7 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                         raise ValueError(
                             "createRoof.roofTypeId must reference an existing roof_type"
                         )
-            if cmd.roof_geometry_mode == "gable_pitched_rectangle":
+            if cmd.roof_geometry_mode in ("gable_pitched_rectangle", "asymmetric_gable"):
                 assert_valid_gable_pitched_rectangle_footprint_mm(
                     [(p.x_mm, p.y_mm) for p in cmd.footprint_mm]
                 )
@@ -1386,6 +1386,9 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 overhang_mm=cmd.overhang_mm,
                 slope_deg=cmd.slope_deg,
                 roof_geometry_mode=cmd.roof_geometry_mode,
+                ridge_offset_transverse_mm=cmd.ridge_offset_transverse_mm,
+                eave_height_left_mm=cmd.eave_height_left_mm,
+                eave_height_right_mm=cmd.eave_height_right_mm,
                 roof_type_id=rtid,
                 material_key=cmd.material_key,
             )

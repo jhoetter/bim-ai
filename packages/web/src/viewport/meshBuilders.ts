@@ -429,6 +429,156 @@ function _buildGableGeometry(
   return g;
 }
 
+// Asymmetric gable: ridge offset transversely from the rectangle center, with
+// optional independent eave heights on each side. Ridge height is derived from
+// the LEFT slope: `ridgeY = eaveLeftY + (halfSpan + offset) * tan(slopeRad)`.
+// The right slope angle is implicit (steeper or shallower depending on offset
+// sign and per-side eave heights).
+function _buildAsymmetricGableGeometry(
+  ox0: number,
+  ox1: number,
+  oz0: number,
+  oz1: number,
+  eaveLeftY: number,
+  eaveRightY: number,
+  slopeRad: number,
+  ridgeAlongX: boolean,
+  ridgeOffsetM: number,
+): THREE.BufferGeometry {
+  let positions: number[];
+  if (ridgeAlongX) {
+    const halfSpan = (oz1 - oz0) / 2;
+    const center = (oz0 + oz1) / 2;
+    const offset = Math.max(-halfSpan + 1e-6, Math.min(halfSpan - 1e-6, ridgeOffsetM));
+    const rz = center + offset;
+    const leftRun = halfSpan + offset;
+    const ridgeY = eaveLeftY + leftRun * Math.tan(slopeRad);
+    positions = [
+      ox0,
+      eaveLeftY,
+      oz0,
+      ox1,
+      eaveLeftY,
+      oz0,
+      ox0,
+      ridgeY,
+      rz,
+      ox1,
+      eaveLeftY,
+      oz0,
+      ox1,
+      ridgeY,
+      rz,
+      ox0,
+      ridgeY,
+      rz,
+      ox0,
+      ridgeY,
+      rz,
+      ox1,
+      ridgeY,
+      rz,
+      ox0,
+      eaveRightY,
+      oz1,
+      ox1,
+      ridgeY,
+      rz,
+      ox1,
+      eaveRightY,
+      oz1,
+      ox0,
+      eaveRightY,
+      oz1,
+      ox0,
+      eaveLeftY,
+      oz0,
+      ox0,
+      ridgeY,
+      rz,
+      ox0,
+      eaveRightY,
+      oz1,
+      ox1,
+      eaveLeftY,
+      oz0,
+      ox1,
+      eaveRightY,
+      oz1,
+      ox1,
+      ridgeY,
+      rz,
+    ];
+  } else {
+    const halfSpan = (ox1 - ox0) / 2;
+    const center = (ox0 + ox1) / 2;
+    const offset = Math.max(-halfSpan + 1e-6, Math.min(halfSpan - 1e-6, ridgeOffsetM));
+    const rx = center + offset;
+    const leftRun = halfSpan + offset;
+    const ridgeY = eaveLeftY + leftRun * Math.tan(slopeRad);
+    positions = [
+      ox0,
+      eaveLeftY,
+      oz0,
+      ox0,
+      eaveLeftY,
+      oz1,
+      rx,
+      ridgeY,
+      oz0,
+      ox0,
+      eaveLeftY,
+      oz1,
+      rx,
+      ridgeY,
+      oz1,
+      rx,
+      ridgeY,
+      oz0,
+      rx,
+      ridgeY,
+      oz0,
+      rx,
+      ridgeY,
+      oz1,
+      ox1,
+      eaveRightY,
+      oz0,
+      rx,
+      ridgeY,
+      oz1,
+      ox1,
+      eaveRightY,
+      oz1,
+      ox1,
+      eaveRightY,
+      oz0,
+      ox0,
+      eaveLeftY,
+      oz0,
+      rx,
+      ridgeY,
+      oz0,
+      ox1,
+      eaveRightY,
+      oz0,
+      ox0,
+      eaveLeftY,
+      oz1,
+      ox1,
+      eaveRightY,
+      oz1,
+      rx,
+      ridgeY,
+      oz1,
+    ];
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  g.computeVertexNormals();
+  return g;
+}
+
 function _buildHipGeometry(
   ox0: number,
   ox1: number,
@@ -854,6 +1004,23 @@ export function makeRoofMassMesh(
       geom = _buildLShapeGeometry(rawPts, ovMm, eaveY, slopeRad);
     } else if (roof.roofGeometryMode === 'hip') {
       geom = _buildHipGeometry(ox0, ox1, oz0, oz1, eaveY, slopeRad, ridgeAlongX);
+    } else if (roof.roofGeometryMode === 'asymmetric_gable') {
+      const ridgeOffsetM = (roof.ridgeOffsetTransverseMm ?? 0) / 1000;
+      const eaveLeftY =
+        roof.eaveHeightLeftMm != null ? refElev + roof.eaveHeightLeftMm / 1000 : eaveY;
+      const eaveRightY =
+        roof.eaveHeightRightMm != null ? refElev + roof.eaveHeightRightMm / 1000 : eaveY;
+      geom = _buildAsymmetricGableGeometry(
+        ox0,
+        ox1,
+        oz0,
+        oz1,
+        eaveLeftY,
+        eaveRightY,
+        slopeRad,
+        ridgeAlongX,
+        ridgeOffsetM,
+      );
     } else {
       geom = _buildGableGeometry(ox0, ox1, oz0, oz1, eaveY, slopeRad, ridgeAlongX);
     }

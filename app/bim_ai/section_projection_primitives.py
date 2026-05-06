@@ -1112,7 +1112,33 @@ def build_section_projection_primitives(
             slope = float(e.slope_deg or 25.0)
             rise_mm, ridge_axis = gable_ridge_rise_mm(span_x, span_z, slope)
             zb = _level_elevation_mm(doc, e.reference_level_id)
-            ridge_z = zb + rise_mm
+            # For asymmetric gables, recompute ridge height/offset from per-side eaves.
+            ridge_offset_mm = 0.0
+            if mode == "asymmetric_gable":
+                ridge_offset_mm = float(e.ridge_offset_transverse_mm or 0.0)
+                # halfSpan is the run perpendicular to the ridge, so:
+                #   ridgeAxis = alongX → cross-axis = z, halfSpan = span_z / 2
+                #   ridgeAxis = alongZ → cross-axis = x, halfSpan = span_x / 2
+                half_span = (span_z if ridge_axis == "alongX" else span_x) / 2.0
+                # Clamp offset so the ridge stays inside the rectangle.
+                clamped = max(-half_span + 1.0, min(half_span - 1.0, ridge_offset_mm))
+                left_run_mm = half_span + clamped
+                eave_left_abs_mm = (
+                    zb + float(e.eave_height_left_mm)
+                    if e.eave_height_left_mm is not None
+                    else zb
+                )
+                eave_right_abs_mm = (
+                    zb + float(e.eave_height_right_mm)
+                    if e.eave_height_right_mm is not None
+                    else zb
+                )
+                rise_mm = left_run_mm * math.tan(math.radians(slope))
+                ridge_z = eave_left_abs_mm + rise_mm
+                # Use lower eave as the eave plate datum for section evidence.
+                zb = min(eave_left_abs_mm, eave_right_abs_mm)
+            else:
+                ridge_z = zb + rise_mm
             prism_w, prism_skip = build_roof_layered_prism_witness_v1(doc, e)
             gable_row: dict[str, Any] = {
                 "id": f"roof:{e.id}:0",
@@ -1126,6 +1152,7 @@ def build_section_projection_primitives(
                 "zMidMm": round(ridge_z, 3),
                 "proxyKind": "gablePitchedRectangleChord",
                 "ridgeAxisPlan": ridge_axis,
+                "ridgeOffsetTransverseMm": round(ridge_offset_mm, 3),
                 "slopeDeg": round(slope, 3),
                 "overhangMm": round(float(e.overhang_mm), 3),
                 "planSpanXmMm": round(span_x, 3),

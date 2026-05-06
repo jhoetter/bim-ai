@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 from typing import Literal
 
-RoofGeometryMode = Literal["mass_box", "gable_pitched_rectangle", "flat"]
+RoofGeometryMode = Literal["mass_box", "gable_pitched_rectangle", "asymmetric_gable", "flat"]
 
 RoofGeometrySupportTokenV0 = Literal[
     "gable_pitched_rectangle_supported",
@@ -162,7 +162,7 @@ def roof_geometry_support_token_v0(
         return "valley_candidate_deferred"
 
     if (
-        roof_geometry_mode == "gable_pitched_rectangle"
+        roof_geometry_mode in ("gable_pitched_rectangle", "asymmetric_gable")
         and footprint_is_valid_axis_aligned_rectangle_mm(footprint_mm)
     ):
         return "gable_pitched_rectangle_supported"

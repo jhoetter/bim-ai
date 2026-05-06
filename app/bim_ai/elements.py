@@ -302,6 +302,9 @@ class RoofElem(BaseModel):
     slope_deg: float | None = Field(default=25.0, alias="slopeDeg")
     edge_slope_flags: dict[str, bool] = Field(default_factory=dict, alias="edgeSlopeFlags")
     roof_geometry_mode: RoofGeometryMode = Field(default="mass_box", alias="roofGeometryMode")
+    ridge_offset_transverse_mm: float | None = Field(default=None, alias="ridgeOffsetTransverseMm")
+    eave_height_left_mm: float | None = Field(default=None, alias="eaveHeightLeftMm")
+    eave_height_right_mm: float | None = Field(default=None, alias="eaveHeightRightMm")
     roof_type_id: str | None = Field(default=None, alias="roofTypeId")
     material_key: str | None = Field(default=None, alias="materialKey")
 
