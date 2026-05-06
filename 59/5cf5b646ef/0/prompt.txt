@@ -7,3 +7,7 @@ also, i notice that revit is "tab-based", i.e. i can create many tabs for the di
 ---
 
 which open tasks are there? write them all down. are they documented somewhere?
+
+---
+
+write them really into some md so it is EASY to find them directly, that they don't get lost. then commit + push all
