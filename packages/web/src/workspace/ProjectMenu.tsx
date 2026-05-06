@@ -31,6 +31,8 @@ export interface ProjectMenuProps {
   onSaveSnapshot?: () => void;
   onRestoreSnapshot?: (file: File) => void;
   onNewClear?: () => void;
+  /** Replay the onboarding tour from the beginning (spec §24). */
+  onReplayTour?: () => void;
 }
 
 export function ProjectMenu({
@@ -43,6 +45,7 @@ export function ProjectMenu({
   onSaveSnapshot,
   onRestoreSnapshot,
   onNewClear,
+  onReplayTour,
 }: ProjectMenuProps): JSX.Element | null {
   const popoverRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -172,6 +175,20 @@ export function ProjectMenu({
             onNewClear?.();
           }}
         />
+        {onReplayTour ? (
+          <>
+            <div className="my-1 border-t border-border" />
+            <MenuItem
+              label="Replay onboarding tour"
+              icon="agent"
+              testId="project-menu-replay-tour"
+              onClick={() => {
+                onOpenChange(false);
+                onReplayTour();
+              }}
+            />
+          </>
+        ) : null}
       </ul>
     </div>
   );

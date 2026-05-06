@@ -39,7 +39,7 @@ import { CheatsheetModal } from '../cmd/CheatsheetModal';
 import { RedesignedCommandPalette } from '../cmd/RedesignedCommandPalette';
 import { type CommandCandidate } from '../cmd/commandPaletteSources';
 import { OnboardingTour } from '../onboarding/OnboardingTour';
-import { readOnboardingProgress } from '../onboarding/tour';
+import { readOnboardingProgress, resetOnboarding } from '../onboarding/tour';
 import { ToolPalette } from '../tools/ToolPalette';
 import { TOOL_REGISTRY, type ToolDisabledContext, type ToolId } from '../tools/toolRegistry';
 import { TabBar } from './TabBar';
@@ -646,6 +646,10 @@ export function RedesignedWorkspace(): JSX.Element {
         onSaveSnapshot={handleSaveSnapshot}
         onRestoreSnapshot={(f) => void handleRestoreSnapshot(f)}
         onNewClear={handleNewClear}
+        onReplayTour={() => {
+          resetOnboarding();
+          setTourOpen(true);
+        }}
       />
       <AppShell
         topBar={

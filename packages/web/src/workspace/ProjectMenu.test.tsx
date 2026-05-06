@@ -78,4 +78,21 @@ describe('<ProjectMenu /> — T-03', () => {
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
+
+  it('does not render replay tour item when onReplayTour is omitted', () => {
+    const { queryByTestId } = render(<Harness open={true} onOpenChange={() => {}} />);
+    expect(queryByTestId('project-menu-replay-tour')).toBeNull();
+  });
+
+  it('renders replay tour item when onReplayTour is provided and fires callback', () => {
+    const onOpenChange = vi.fn();
+    const onReplayTour = vi.fn();
+    const { getByTestId } = render(
+      <Harness open={true} onOpenChange={onOpenChange} onReplayTour={onReplayTour} />,
+    );
+    expect(getByTestId('project-menu-replay-tour')).toBeTruthy();
+    fireEvent.click(getByTestId('project-menu-replay-tour'));
+    expect(onReplayTour).toHaveBeenCalledTimes(1);
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
 });
