@@ -4,7 +4,9 @@
   "strategy": "manual-commit",
   "branch": "feat/wp-v2-03a-vv-dialog",
   "checkpoints_count": 1,
-  "files_touched": null,
+  "files_touched": [
+    "spec/workpackage-master-tracker.md"
+  ],
   "sessions": [
     {
       "metadata": "/a4/70c7da97ab/0/metadata.json",
@@ -17,6 +19,12 @@
       "transcript": "/a4/70c7da97ab/1/full.jsonl",
       "content_hash": "/a4/70c7da97ab/1/content_hash.txt",
       "prompt": "/a4/70c7da97ab/1/prompt.txt"
+    },
+    {
+      "metadata": "/a4/70c7da97ab/2/metadata.json",
+      "transcript": "/a4/70c7da97ab/2/full.jsonl",
+      "content_hash": "/a4/70c7da97ab/2/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
