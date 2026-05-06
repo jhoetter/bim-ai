@@ -163,6 +163,30 @@ describe('tabsModel — spec §11.3', () => {
     expect(noOp).toBe(s);
   });
 
+  it('snapshotViewport stores planCamera for plan tabs (T-07 follow-up)', () => {
+    let s = openTab(EMPTY_TABS, { kind: 'plan', targetId: 'lvl-0', label: 'Plan · L0' });
+    s = snapshotViewport(s, 'plan:lvl-0', {
+      planCamera: { centerMm: { xMm: 1500, yMm: -800 }, halfMm: 12000 },
+    });
+    expect(s.tabs[0]?.viewportState?.planCamera).toEqual({
+      centerMm: { xMm: 1500, yMm: -800 },
+      halfMm: 12000,
+    });
+  });
+
+  it('snapshotViewport merges planCamera without clobbering orbitCamera', () => {
+    let s = openTab(EMPTY_TABS, { kind: 'plan-3d', targetId: 'lvl-0', label: 'Plan+3D · L0' });
+    s = snapshotViewport(s, 'plan-3d:lvl-0', {
+      orbitCameraPoseMm: { eyeMm: { xMm: 10, yMm: 5, zMm: 10 }, targetMm: { xMm: 0, yMm: 0, zMm: 0 } },
+    });
+    s = snapshotViewport(s, 'plan-3d:lvl-0', {
+      ...s.tabs[0]!.viewportState,
+      planCamera: { centerMm: { xMm: 500, yMm: 200 }, halfMm: 8000 },
+    });
+    expect(s.tabs[0]?.viewportState?.orbitCameraPoseMm?.eyeMm?.xMm).toBe(10);
+    expect(s.tabs[0]?.viewportState?.planCamera?.centerMm?.xMm).toBe(500);
+  });
+
   it('reorderTab is a no-op when from === to', () => {
     let s = openTab(EMPTY_TABS, { kind: 'plan', targetId: 'l0', label: 'L0' });
     s = openTab(s, { kind: '3d', targetId: 'v1', label: 'V1' });

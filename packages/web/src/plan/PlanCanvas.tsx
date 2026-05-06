@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import type { Element } from '@bim-ai/core';
 
@@ -104,13 +104,30 @@ function guessGridLabel(sxMm: number, syMm: number, exMm: number, eyMm: number) 
     : String.fromCharCode(66 + Math.min(10, Math.floor(Math.abs(exMm - sxMm + 8200) / 4200)));
 }
 
+/** Imperative handle so the tab host can snapshot / restore the 2D camera
+ * without continuous callbacks. Fill via cameraHandleRef prop. */
+export interface PlanCameraHandle {
+  getSnapshot(): { centerMm: { xMm: number; yMm: number }; halfMm: number };
+  applySnapshot(snap: { centerMm?: { xMm?: number; yMm?: number }; halfMm?: number }): void;
+}
+
 type Props = {
   wsConnected: boolean;
   activeLevelResolvedId: string;
   onSemanticCommand: (cmd: Record<string, unknown>) => void;
+  /** Ref filled with the imperative camera handle once the canvas mounts. */
+  cameraHandleRef?: RefObject<PlanCameraHandle | null>;
+  /** Camera to restore on mount (ignored after first render). */
+  initialCamera?: { centerMm?: { xMm: number; yMm: number }; halfMm?: number };
 };
 
-export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticCommand }: Props) {
+export function PlanCanvas({
+  wsConnected,
+  activeLevelResolvedId,
+  onSemanticCommand,
+  cameraHandleRef,
+  initialCamera,
+}: Props) {
   void wsConnected;
   const theme = useTheme();
   const mountRef = useRef<HTMLDivElement | null>(null);
@@ -121,7 +138,11 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
   const previewRef = useRef<THREE.Line | null>(null);
   const dragRef = useRef({ dragging: false, lastXmm: 0, lastZmm: 0, camX: 0, camZ: 0 });
   const skipClickRef = useRef(false);
-  const camRef = useRef({ camX: 0, camZ: -2.8, half: 22 });
+  const camRef = useRef({
+    camX: initialCamera?.centerMm ? initialCamera.centerMm.xMm / 1000 : 0,
+    camZ: initialCamera?.centerMm ? initialCamera.centerMm.yMm / 1000 : -2.8,
+    half: initialCamera?.halfMm !== undefined ? initialCamera.halfMm / 1000 : 22,
+  });
   const draftRef = useRef<Draft | undefined>(undefined);
   const [hudMm, setHudMm] = useState<{ xMm: number; yMm: number }>();
   const [halfUi, setHalfUi] = useState(22);
@@ -279,6 +300,29 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
     camera.updateProjectionMatrix();
     setHalfUi(camRef.current.half);
   }, []);
+
+  useEffect(() => {
+    if (!cameraHandleRef) return;
+    cameraHandleRef.current = {
+      getSnapshot: () => ({
+        centerMm: { xMm: camRef.current.camX * 1000, yMm: camRef.current.camZ * 1000 },
+        halfMm: camRef.current.half * 1000,
+      }),
+      applySnapshot: (snap) => {
+        if (snap.centerMm) {
+          camRef.current.camX = (snap.centerMm.xMm ?? camRef.current.camX * 1000) / 1000;
+          camRef.current.camZ = (snap.centerMm.yMm ?? camRef.current.camZ * 1000) / 1000;
+        }
+        if (snap.halfMm !== undefined) {
+          camRef.current.half = snap.halfMm / 1000;
+        }
+        resizeCam();
+      },
+    };
+    return () => {
+      if (cameraHandleRef) cameraHandleRef.current = null;
+    };
+  }, [cameraHandleRef, resizeCam]);
 
   useEffect(() => {
     draftRef.current = undefined;

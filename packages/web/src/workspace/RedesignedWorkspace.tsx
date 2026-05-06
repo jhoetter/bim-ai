@@ -2,6 +2,7 @@ import {
   type CSSProperties,
   type JSX,
   type KeyboardEvent,
+  type RefObject,
   useCallback,
   useEffect,
   useMemo,
@@ -12,7 +13,7 @@ import type { Element } from '@bim-ai/core';
 import { ICON_SIZE, Icons } from '@bim-ai/ui';
 
 import { Viewport } from '../Viewport';
-import { PlanCanvas } from '../plan/PlanCanvas';
+import { PlanCanvas, type PlanCameraHandle } from '../plan/PlanCanvas';
 import { applyCommand, bootstrap } from '../lib/api';
 import type { Snapshot, Violation } from '@bim-ai/core';
 import { useBimStore, toggleTheme, getCurrentTheme, type Theme } from '../state/store';
@@ -55,6 +56,7 @@ import {
   type TabKind,
   type TabsState,
   type ViewTab,
+  type ViewportSnapshot,
 } from './tabsModel';
 import { persistTabs, pruneTabsAgainstElements, readPersistedTabs } from './tabsPersistence';
 import { ProjectMenu, type ProjectMenuItemRecent } from './ProjectMenu';
@@ -131,6 +133,7 @@ export function RedesignedWorkspace(): JSX.Element {
     readRecentProjects().map((r) => ({ id: r.id, label: r.label })),
   );
   const projectNameRef = useRef<HTMLButtonElement | null>(null);
+  const planCameraHandleRef = useRef<PlanCameraHandle | null>(null);
   const [tabsState, setTabsState] = useState<TabsState>(() => readPersistedTabs() ?? EMPTY_TABS);
 
   /** Persist tabs on every change (T-06). */
@@ -147,6 +150,8 @@ export function RedesignedWorkspace(): JSX.Element {
 
   const handleTabActivate = useCallback(
     (id: string) => {
+      let pendingPlanCamera: ViewportSnapshot['planCamera'] | undefined;
+
       setTabsState((s) => {
         if (s.activeId === id) return s;
         // Snapshot the outgoing tab's viewport state so it can be restored
@@ -154,13 +159,25 @@ export function RedesignedWorkspace(): JSX.Element {
         let snapshotted = s;
         if (s.activeId) {
           const outgoing = s.tabs.find((x) => x.id === s.activeId);
-          if (outgoing && (outgoing.kind === '3d' || outgoing.kind === 'plan-3d')) {
-            const pose = useBimStore.getState().orbitCameraPoseMm;
-            if (pose) {
-              snapshotted = snapshotViewport(s, s.activeId, {
-                ...(outgoing.viewportState ?? {}),
-                orbitCameraPoseMm: { eyeMm: pose.position, targetMm: pose.target },
-              });
+          if (outgoing) {
+            if (outgoing.kind === '3d' || outgoing.kind === 'plan-3d') {
+              const pose = useBimStore.getState().orbitCameraPoseMm;
+              if (pose) {
+                snapshotted = snapshotViewport(snapshotted, s.activeId, {
+                  ...(outgoing.viewportState ?? {}),
+                  orbitCameraPoseMm: { eyeMm: pose.position, targetMm: pose.target },
+                });
+              }
+            }
+            // Snapshot the 2D plan camera for plan tabs (T-07 follow-up).
+            if (outgoing.kind === 'plan' || outgoing.kind === 'plan-3d') {
+              const planSnap = planCameraHandleRef.current?.getSnapshot();
+              if (planSnap) {
+                snapshotted = snapshotViewport(snapshotted, s.activeId, {
+                  ...(snapshotted.tabs.find((x) => x.id === s.activeId)?.viewportState ?? {}),
+                  planCamera: planSnap,
+                });
+              }
             }
           }
         }
@@ -171,7 +188,7 @@ export function RedesignedWorkspace(): JSX.Element {
         if ((t.kind === 'plan' || t.kind === 'plan-3d') && t.targetId) {
           setActiveLevelId(t.targetId);
         }
-        // Restore the incoming tab's camera, if it has one.
+        // Restore the incoming tab's 3D camera, if it has one.
         const restored = t.viewportState?.orbitCameraPoseMm;
         if (restored?.eyeMm && restored.targetMm) {
           useBimStore.getState().setOrbitCameraFromViewpointMm({
@@ -180,8 +197,18 @@ export function RedesignedWorkspace(): JSX.Element {
             up: { xMm: 0, yMm: 1, zMm: 0 },
           });
         }
+        // Capture the incoming plan camera for post-setState apply (plan-to-plan case).
+        if (t.kind === 'plan' || t.kind === 'plan-3d') {
+          pendingPlanCamera = t.viewportState?.planCamera;
+        }
         return next;
       });
+
+      // Apply plan camera to the already-mounted PlanCanvas (plan-to-plan switch).
+      // For 3D→plan switches, initialCamera prop handles restore at mount time.
+      if (pendingPlanCamera) {
+        planCameraHandleRef.current?.applySnapshot(pendingPlanCamera);
+      }
     },
     [setActiveLevelId],
   );
@@ -754,6 +781,8 @@ export function RedesignedWorkspace(): JSX.Element {
               }
               elementsById={elementsById}
               onSemanticCommand={(cmd) => void onSemanticCommand(cmd)}
+              cameraHandleRef={planCameraHandleRef}
+              initialCamera={activeTab?.viewportState?.planCamera}
             />
           </div>
         }
@@ -871,12 +900,16 @@ function CanvasMount({
   activeLevelId,
   elementsById,
   onSemanticCommand,
+  cameraHandleRef,
+  initialCamera,
 }: {
   mode: WorkspaceMode;
   viewerMode: 'plan_canvas' | 'orbit_3d';
   activeLevelId: string;
   elementsById: Record<string, Element>;
   onSemanticCommand: (cmd: Record<string, unknown>) => void;
+  cameraHandleRef?: RefObject<PlanCameraHandle | null>;
+  initialCamera?: { centerMm?: { xMm: number; yMm: number }; halfMm?: number };
 }): JSX.Element {
   if (mode === 'plan-3d') {
     return (
@@ -888,6 +921,8 @@ function CanvasMount({
             wsConnected={false}
             activeLevelResolvedId={activeLevelId ?? ''}
             onSemanticCommand={onSemanticCommand}
+            cameraHandleRef={cameraHandleRef}
+            initialCamera={initialCamera}
           />
         </div>
         <div style={{ position: 'relative' }}>
@@ -903,6 +938,8 @@ function CanvasMount({
         wsConnected={false}
         activeLevelResolvedId={activeLevelId}
         onSemanticCommand={onSemanticCommand}
+        cameraHandleRef={cameraHandleRef}
+        initialCamera={initialCamera}
       />
     );
   if (mode === 'section') return <SectionModeShell elementsById={elementsById} />;
