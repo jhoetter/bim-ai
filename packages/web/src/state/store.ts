@@ -339,6 +339,9 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
         ? { roofAttachmentId: String(raw.roofAttachmentId ?? raw.roof_attachment_id) }
         : {}),
       insulationExtensionMm: Number(raw.insulationExtensionMm ?? raw.insulation_extension_mm ?? 0),
+      ...(raw.isCurtainWall != null || raw.is_curtain_wall != null
+        ? { isCurtainWall: Boolean(raw.isCurtainWall ?? raw.is_curtain_wall) }
+        : {}),
     };
   }
 
