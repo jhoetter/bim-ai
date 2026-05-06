@@ -1,0 +1,30 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "6a00efd1c52b",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "spec/prompts/wave-02/README.md",
+    "spec/prompts/wave-02/WP-V2-02-wall-depth.md",
+    "spec/prompts/wave-02/WP-V2-03a-vv-dialog.md",
+    "spec/prompts/wave-02/WP-V2-03b-view-filters.md",
+    "spec/prompts/wave-02/WP-V2-04-openings.md",
+    "spec/workpackage-master-tracker.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/6a/00efd1c52b/0/metadata.json",
+      "transcript": "/6a/00efd1c52b/0/full.jsonl",
+      "content_hash": "/6a/00efd1c52b/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 0
+  }
+}
