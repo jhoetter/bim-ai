@@ -4,14 +4,20 @@ import {
   initialSplitState,
   initialTrimState,
   initialWallJoinState,
+  initialWallOpeningState,
+  initialShaftState,
   reduceAlign,
   reduceSplit,
   reduceTrim,
   reduceWallJoin,
+  reduceWallOpening,
+  reduceShaft,
   type AlignState,
   type SplitState,
   type TrimState,
   type WallJoinState,
+  type WallOpeningState,
+  type ShaftState,
 } from '../tools/toolGrammar';
 import * as THREE from 'three';
 import type { Element } from '@bim-ai/core';
@@ -173,6 +179,9 @@ export function PlanCanvas({
   const splitStateRef = useRef<SplitState>(initialSplitState());
   const trimStateRef = useRef<TrimState>(initialTrimState());
   const wallJoinStateRef = useRef<WallJoinState>(initialWallJoinState());
+  const wallOpeningStateRef = useRef<WallOpeningState>(initialWallOpeningState());
+  const wallOpeningAnchorRef = useRef<{ xMm: number; yMm: number } | null>(null);
+  const shaftStateRef = useRef<ShaftState>(initialShaftState());
   const marqueeRef = useRef<{
     active: boolean;
     sx: number;
@@ -405,6 +414,10 @@ export function PlanCanvas({
     } else if (planTool === 'wall-join') {
       const { state } = reduceWallJoin(wallJoinStateRef.current, { kind: 'activate' });
       wallJoinStateRef.current = state;
+    } else if (planTool === 'wall-opening') {
+      wallOpeningStateRef.current = initialWallOpeningState();
+    } else if (planTool === 'shaft') {
+      shaftStateRef.current = initialShaftState();
     }
   }, [planTool]);
 
@@ -787,7 +800,7 @@ export function PlanCanvas({
       skipClickRef.current = false;
     };
 
-    const onUpWindow = () => {
+    const onUpWindow = (ev: PointerEvent) => {
       dragRef.current.dragging = false;
       if (snapIndicatorRef.current) snapIndicatorRef.current.visible = false;
       setSnapLabel(null);
@@ -831,6 +844,19 @@ export function PlanCanvas({
       }
       clearMarqueeLine();
       marqueeRef.current = { active: false, sx: 0, sy: 0, ex: 0, ey: 0, direction: null };
+      if (planTool === 'wall-opening' && wallOpeningStateRef.current.phase === 'define-rect' && wallOpeningAnchorRef.current) {
+        const sp = snapped(ev.clientX, ev.clientY);
+        if (sp) {
+          const { effect } = reduceWallOpening(wallOpeningStateRef.current, {
+            kind: 'drag-end', cornerMm: sp,
+          });
+          wallOpeningStateRef.current = initialWallOpeningState();
+          wallOpeningAnchorRef.current = null;
+          if (effect.commitWallOpening) {
+            console.warn('stub: wall-opening command not implemented', effect.commitWallOpening);
+          }
+        }
+      }
     };
 
     const onClick = (ev: MouseEvent) => {
@@ -1087,6 +1113,49 @@ export function PlanCanvas({
         }
         return;
       }
+      if (planTool === 'wall-opening') {
+        if (wallOpeningStateRef.current.phase === 'pick-wall') {
+          // Find nearest wall
+          const rect = rnd.domElement.getBoundingClientRect();
+          const worldPerPxMm = (2 * camRef.current.half * 1000) / Math.max(1, rect.width);
+          const threshMm = 12 * worldPerPxMm;
+          let bestWall: string | null = null;
+          let bestDist = Infinity;
+          for (const el of Object.values(elementsById)) {
+            if (el.kind !== 'wall') continue;
+            const mx = (el.start.xMm + el.end.xMm) / 2;
+            const mz = (el.start.yMm + el.end.yMm) / 2;
+            const d = Math.hypot(sp.xMm - mx, sp.yMm - mz);
+            if (d < bestDist) { bestDist = d; bestWall = el.id; }
+          }
+          if (bestWall && bestDist <= threshMm * 8) {
+            const { state } = reduceWallOpening(wallOpeningStateRef.current, {
+              kind: 'click-wall', wallId: bestWall, pointMm: sp,
+            });
+            wallOpeningStateRef.current = state;
+            wallOpeningAnchorRef.current = sp;
+          }
+        }
+        return;
+      }
+      if (planTool === 'shaft') {
+        const fst = shaftStateRef.current.verticesMm[0];
+        const rect2 = rnd.domElement.getBoundingClientRect();
+        const worldPerPxMm2 = (2 * camRef.current.half * 1000) / Math.max(1, rect2.width);
+        const threshMm2 = 12 * worldPerPxMm2;
+        if (fst && shaftStateRef.current.verticesMm.length >= 3 && Math.hypot(sp.xMm - fst.xMm, sp.yMm - fst.yMm) <= threshMm2) {
+          const { effect } = reduceShaft(shaftStateRef.current, { kind: 'close-loop' });
+          shaftStateRef.current = initialShaftState();
+          if (effect.commitShaft) {
+            console.warn('stub: shaft command not implemented', effect.commitShaft);
+          }
+        } else {
+          const { state } = reduceShaft(shaftStateRef.current, { kind: 'click', pointMm: sp });
+          shaftStateRef.current = state;
+        }
+        bumpGeom((x) => x + 1);
+        return;
+      }
       if (planTool === 'room') {
         let rm = draftRef.current;
         if (!rm || rm.kind !== 'room') {
@@ -1177,6 +1246,11 @@ export function PlanCanvas({
         } else if (planTool === 'wall-join') {
           const { state } = reduceWallJoin(wallJoinStateRef.current, { kind: 'cancel' });
           wallJoinStateRef.current = state;
+        } else if (planTool === 'wall-opening') {
+          wallOpeningStateRef.current = initialWallOpeningState();
+          wallOpeningAnchorRef.current = null;
+        } else if (planTool === 'shaft') {
+          shaftStateRef.current = initialShaftState();
         }
         clearMarqueeLine();
         marqueeRef.current = { active: false, sx: 0, sy: 0, ex: 0, ey: 0, direction: null };
