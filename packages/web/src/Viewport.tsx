@@ -911,37 +911,48 @@ function makeRoofMassMesh(
       : 0;
   const eaveY = refElev + wallTopM;
 
-  const slopeRad = (THREE.MathUtils.clamp(Number(roof.slopeDeg ?? 25), 5, 70) * Math.PI) / 180;
-  const spanXm = b.spanX / 1000;
-  const spanZm = b.spanZ / 1000;
-
-  // Ridge axis: explicit field takes priority; else use longer plan axis.
-  let ridgeAlongX: boolean;
-  if (roof.ridgeAxis === 'x') ridgeAlongX = true;
-  else if (roof.ridgeAxis === 'z') ridgeAlongX = false;
-  else ridgeAlongX = spanXm >= spanZm;
-
   const ox0 = b.minX / 1000;
   const ox1 = b.maxX / 1000;
   const oz0 = b.minZ / 1000;
   const oz1 = b.maxZ / 1000;
 
-  // L-shape detection: polygon area / convex hull area < 0.85
-  const isLShape = rawPts.length >= 6 && _compactnessRatio(rawPts) < 0.85;
-
   let geom: THREE.BufferGeometry;
-  if (isLShape) {
-    geom = _buildLShapeGeometry(rawPts, ovMm, eaveY, slopeRad);
-  } else if (roof.roofGeometryMode === 'hip') {
-    geom = _buildHipGeometry(ox0, ox1, oz0, oz1, eaveY, slopeRad, ridgeAlongX);
+  if (roof.roofGeometryMode === 'flat') {
+    const slabThick = 0.15;
+    geom = new THREE.BoxGeometry(ox1 - ox0, slabThick, oz1 - oz0);
+    geom.translate((ox0 + ox1) / 2, eaveY + slabThick / 2, (oz0 + oz1) / 2);
   } else {
-    geom = _buildGableGeometry(ox0, ox1, oz0, oz1, eaveY, slopeRad, ridgeAlongX);
+    const slopeRad = (THREE.MathUtils.clamp(Number(roof.slopeDeg ?? 25), 5, 70) * Math.PI) / 180;
+    const spanXm = b.spanX / 1000;
+    const spanZm = b.spanZ / 1000;
+
+    // Ridge axis: explicit field takes priority; else use longer plan axis.
+    let ridgeAlongX: boolean;
+    if (roof.ridgeAxis === 'x') ridgeAlongX = true;
+    else if (roof.ridgeAxis === 'z') ridgeAlongX = false;
+    else ridgeAlongX = spanXm >= spanZm;
+
+    // L-shape detection: polygon area / convex hull area < 0.85
+    const isLShape = rawPts.length >= 6 && _compactnessRatio(rawPts) < 0.85;
+
+    if (isLShape) {
+      geom = _buildLShapeGeometry(rawPts, ovMm, eaveY, slopeRad);
+    } else if (roof.roofGeometryMode === 'hip') {
+      geom = _buildHipGeometry(ox0, ox1, oz0, oz1, eaveY, slopeRad, ridgeAlongX);
+    } else {
+      geom = _buildGableGeometry(ox0, ox1, oz0, oz1, eaveY, slopeRad, ridgeAlongX);
+    }
   }
+
+  const roofColor =
+    roof.roofGeometryMode === 'flat'
+      ? (roof.materialKey ?? '#d8d8d4')
+      : categoryColorOr(paint, 'roof');
 
   const mesh = new THREE.Mesh(
     geom,
     new THREE.MeshStandardMaterial({
-      color: categoryColorOr(paint, 'roof'),
+      color: roofColor,
       transparent: true,
       opacity: 0.94,
       roughness: paint?.categories.roof.roughness ?? 0.74,

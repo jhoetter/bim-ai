@@ -296,8 +296,9 @@ export type Element =
       slopeDeg?: number | null;
       edgeSlopeFlags?: Record<string, boolean>;
       ridgeAxis?: 'x' | 'z' | null;
-      roofGeometryMode?: 'mass_box' | 'gable_pitched_rectangle' | 'hip';
+      roofGeometryMode?: 'mass_box' | 'gable_pitched_rectangle' | 'hip' | 'flat';
       roofTypeId?: string | null;
+      materialKey?: string | null;
     }
   | {
       kind: 'stair';

@@ -339,6 +339,7 @@ class CreateRoofCmd(BaseModel):
     slope_deg: float | None = Field(default=25, alias="slopeDeg")
     roof_geometry_mode: RoofGeometryMode = Field(default="mass_box", alias="roofGeometryMode")
     roof_type_id: str | None = Field(default=None, alias="roofTypeId")
+    material_key: str | None = Field(default=None, alias="materialKey")
 
 
 class ExtendFloorInsulationCmd(BaseModel):
