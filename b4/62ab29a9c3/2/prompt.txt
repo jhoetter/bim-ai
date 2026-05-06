@@ -1031,3 +1031,7 @@ what will come after that? a new wave?
 ---
 
 is the tracker you currently have the only important one remaining?
+
+---
+
+can you remove the stale / historical ones? and also the tutorial - parity - cleanroom -roadmap.
