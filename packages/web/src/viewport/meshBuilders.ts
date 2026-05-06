@@ -1223,13 +1223,23 @@ export function makeCurtainWallMesh(
   const group = new THREE.Group();
   group.userData.bimPickId = wall.id;
 
-  const glassMat = new THREE.MeshStandardMaterial({
-    color: 0x88ccee,
+  // GAP-R7 — physically-based glass: depthWrite=false is the load-bearing
+  // setting here. Without it, the glass plane writes to the z-buffer and
+  // occludes interior elements (stairs, walls) drawn afterwards even though
+  // the fragment is "transparent". transmission/roughness/thickness give the
+  // panel its physical lensing so the interior is visibly framed by the
+  // glazing rather than tinted-over.
+  const glassMat = new THREE.MeshPhysicalMaterial({
+    color: 0xb8d6e6,
     transparent: true,
-    opacity: 0.32,
+    opacity: 0.4,
+    transmission: 0.95,
     roughness: 0.05,
-    metalness: 0.1,
+    metalness: 0,
+    thickness: 0.005,
+    ior: 1.5,
     side: THREE.DoubleSide,
+    depthWrite: false,
   });
   const glassMesh = new THREE.Mesh(new THREE.PlaneGeometry(len, height), glassMat);
   glassMesh.position.set(sx + dx / 2, elevM + height / 2, sz + dz / 2);
