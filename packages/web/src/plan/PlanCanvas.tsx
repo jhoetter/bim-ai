@@ -495,6 +495,7 @@ export function PlanCanvas({
       planGraphicHints: mergedGraphicHints,
       planAnnotationHints: mergedAnnotationHints,
       planTagFontScales,
+      plotScale,
     });
 
     // B01 — apply hatch visibility per scale (no-op until hatch meshes are added)
@@ -510,25 +511,29 @@ export function PlanCanvas({
       const ch = grp.children[i]!;
       if ((ch.userData as { draftingGrid?: unknown }).draftingGrid) grp.remove(ch);
     }
+    // B01 — major/minor grid driven by draftingPaintFor visibility flags (spec §14.5).
+    const { showMajor, showMinor } = draftingRef.current?.grid ?? { showMajor: true, showMinor: false };
     const span = camRef.current.half * 3.8;
-    const step = orthoExtents(camRef.current.half).stepMm / 1000;
-    const gv: THREE.Vector3[] = [];
-    for (let x = -span; x <= span; x += step) {
-      gv.push(new THREE.Vector3(x, SLICE_Y, -span), new THREE.Vector3(x, SLICE_Y, span));
-    }
-    for (let z = -span; z <= span; z += step) {
-      gv.push(new THREE.Vector3(-span, SLICE_Y, z), new THREE.Vector3(span, SLICE_Y, z));
-    }
-    const grid = new THREE.LineSegments(
-      new THREE.BufferGeometry().setFromPoints(gv),
-      new THREE.LineBasicMaterial({
-        color: readPlanToken('--draft-grid-major', '#223042'),
-        transparent: true,
-        opacity: 0.35,
-      }),
-    );
-    grid.userData.draftingGrid = true;
-    grp.add(grid);
+    const minorStep = orthoExtents(camRef.current.half).stepMm / 1000;
+    const majorStep = minorStep * 5;
+    const addDraftGrid = (step: number, color: string, opacity: number) => {
+      const gv: THREE.Vector3[] = [];
+      for (let x = -span; x <= span; x += step) {
+        gv.push(new THREE.Vector3(x, SLICE_Y, -span), new THREE.Vector3(x, SLICE_Y, span));
+      }
+      for (let z = -span; z <= span; z += step) {
+        gv.push(new THREE.Vector3(-span, SLICE_Y, z), new THREE.Vector3(span, SLICE_Y, z));
+      }
+      if (!gv.length) return;
+      const g = new THREE.LineSegments(
+        new THREE.BufferGeometry().setFromPoints(gv),
+        new THREE.LineBasicMaterial({ color, transparent: true, opacity }),
+      );
+      g.userData.draftingGrid = true;
+      grp.add(g);
+    };
+    if (showMajor) addDraftGrid(majorStep, readPlanToken('--draft-grid-major', '#223042'), 0.45);
+    if (showMinor) addDraftGrid(minorStep, readPlanToken('--draft-grid-minor', '#1a2738'), 0.25);
   }, [
     mergedGraphicHints,
     mergedAnnotationHints,

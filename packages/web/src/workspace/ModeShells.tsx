@@ -55,9 +55,11 @@ export function SectionModeShell({
 export function SheetModeShell({
   elementsById,
   preferredSheetId,
+  modelId,
 }: {
   elementsById: Record<string, Element>;
   preferredSheetId?: string;
+  modelId?: string;
 }): JSX.Element {
   const evidenceFullBleed = new URLSearchParams(window.location.search).has('evidenceSheetFull');
   return (
@@ -65,6 +67,7 @@ export function SheetModeShell({
       <SheetCanvas
         elementsById={elementsById}
         preferredSheetId={preferredSheetId}
+        modelId={modelId}
         evidenceFullBleed={evidenceFullBleed}
       />
     </div>
