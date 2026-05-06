@@ -58,6 +58,7 @@ import {
   makeBeamMesh,
   makeCeilingMesh,
 } from './viewport/meshBuilders';
+import { resolveWindowOutline } from './families/geometryFns/windowOutline';
 import {
   elemViewerCategory,
   computeRootBoundingBox,
@@ -1023,13 +1024,22 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
                 alongT: d.alongT,
                 wallHeightMm: e.heightMm,
               })),
-              windows: wins.map((w) => ({
-                widthMm: w.widthMm,
-                heightMm: w.heightMm,
-                sillHeightMm: w.sillHeightMm,
-                alongT: w.alongT,
-                wallHeightMm: e.heightMm,
-              })),
+              windows: wins.map((w) => {
+                const outlineKind = w.outlineKind ?? 'rectangle';
+                let outlinePolygonMm: { xMm: number; yMm: number }[] | undefined = undefined;
+                if (outlineKind !== 'rectangle') {
+                  const poly = resolveWindowOutline(w, e, curr);
+                  if (poly && poly.length >= 3) outlinePolygonMm = poly;
+                }
+                return {
+                  widthMm: w.widthMm,
+                  heightMm: w.heightMm,
+                  sillHeightMm: w.sillHeightMm,
+                  alongT: w.alongT,
+                  wallHeightMm: e.heightMm,
+                  ...(outlinePolygonMm ? { outlinePolygonMm } : {}),
+                };
+              }),
               wallOpenings: wallOps.map((wo) => ({
                 alongTStart: wo.alongTStart,
                 alongTEnd: wo.alongTEnd,
@@ -1059,7 +1069,7 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
           const w = e as WindowElem;
           const wall = curr[w.wallId] as WallElem | undefined;
           if (!wall) break;
-          obj = makeWindowMesh(w, wall, elevationMForLevel(wall.levelId, curr), paint);
+          obj = makeWindowMesh(w, wall, elevationMForLevel(wall.levelId, curr), paint, curr);
           break;
         }
         case 'stair':

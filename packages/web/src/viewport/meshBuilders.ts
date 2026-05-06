@@ -1836,16 +1836,25 @@ export function makeWindowMesh(
   wall: WallElem,
   elevM: number,
   paint: ViewportPaintBundle | null,
+  elementsById?: Record<string, Element>,
 ): THREE.Group {
   const typeEntry = win.familyTypeId ? getTypeById(win.familyTypeId) : undefined;
   const familyDef = typeEntry ? getFamilyById(typeEntry.familyId) : undefined;
-  const group = buildWindowGeometry({ win, wall, elevM, paint, familyDef });
+  const group = buildWindowGeometry({ win, wall, elevM, paint, familyDef, elementsById });
   const { px, pz } = hostedXZ(win, wall);
   const rawSill = Number(win.sillHeightMm);
   const sillM = Math.max(0.06, Math.min(rawSill / 1000, (wall.heightMm - 80) / 1000));
-  const rawH = Number(win.heightMm);
-  const outerH = Math.max(0.05, Math.min(rawH / 1000, (wall.heightMm - rawSill - 60) / 1000));
-  group.position.set(px, elevM + sillM + outerH / 2, pz);
+  const outlineKind = win.outlineKind ?? 'rectangle';
+  // Non-rectangular outlines anchor at sill — group origin sits at sill level
+  // (matches outline-space origin). Rectangular path keeps the original
+  // centred-on-rect behaviour for backwards compatibility.
+  if (outlineKind !== 'rectangle') {
+    group.position.set(px, elevM + sillM, pz);
+  } else {
+    const rawH = Number(win.heightMm);
+    const outerH = Math.max(0.05, Math.min(rawH / 1000, (wall.heightMm - rawSill - 60) / 1000));
+    group.position.set(px, elevM + sillM + outerH / 2, pz);
+  }
   group.rotation.y = wallYaw(wall);
   return group;
 }

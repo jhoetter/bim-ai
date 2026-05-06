@@ -18,6 +18,12 @@ export type WindowCutParams = {
   sillHeightMm: number;
   alongT: number;
   wallHeightMm: number;
+  /**
+   * KRN-12: optional outline polygon in wall-face coords (origin at sill-centre,
+   * mm). When present, the worker extrudes this polygon through the wall
+   * thickness instead of the axis-aligned rectangular cutter.
+   */
+  outlinePolygonMm?: { xMm: number; yMm: number }[];
 };
 
 export type WallOpeningCutParams = {

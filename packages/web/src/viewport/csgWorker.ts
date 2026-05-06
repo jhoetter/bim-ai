@@ -86,9 +86,31 @@ ctx.onmessage = (evt: MessageEvent<CsgRequest>) => {
     }
 
     for (const win of windows) {
-      const { cutW, cutH, cutD, localX, localY } = windowCutterGeometry(win, len, height, thick);
-      const cutter = new Brush(new THREE.BoxGeometry(cutW, cutH, cutD));
-      cutter.position.set(localX, localY, 0);
+      let cutter: InstanceType<typeof Brush>;
+      if (win.outlinePolygonMm && win.outlinePolygonMm.length >= 3) {
+        // KRN-12: extrude the outline polygon through the wall thickness.
+        const shape = new THREE.Shape();
+        const sillM = THREE.MathUtils.clamp(win.sillHeightMm / 1000, 0, height - 0.02);
+        const localOriginY = sillM - height / 2;
+        const localOriginX = (win.alongT - 0.5) * len;
+        const poly = win.outlinePolygonMm;
+        shape.moveTo(poly[0].xMm / 1000, poly[0].yMm / 1000);
+        for (let i = 1; i < poly.length; i++) {
+          shape.lineTo(poly[i].xMm / 1000, poly[i].yMm / 1000);
+        }
+        const cutD = thick + 0.1;
+        const geom = new THREE.ExtrudeGeometry(shape, {
+          depth: cutD,
+          bevelEnabled: false,
+        });
+        // ExtrudeGeometry extrudes along +Z; centre on wall thickness axis.
+        geom.translate(localOriginX, localOriginY, -cutD / 2);
+        cutter = new Brush(geom);
+      } else {
+        const { cutW, cutH, cutD, localX, localY } = windowCutterGeometry(win, len, height, thick);
+        cutter = new Brush(new THREE.BoxGeometry(cutW, cutH, cutD));
+        cutter.position.set(localX, localY, 0);
+      }
       cutter.updateMatrixWorld();
       wallBrush = evaluator.evaluate(wallBrush, cutter, SUBTRACTION);
       wallBrush.updateMatrixWorld();

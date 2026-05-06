@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { Element } from '@bim-ai/core';
 import type { ViewportPaintBundle } from '../../viewport/materials';
 import { resolveParam, type FamilyDefinition } from '../types';
+import { resolveWindowOutline, resolveWindowOutlineKind } from './windowOutline';
 
 export type WindowGeomInput = {
   win: Extract<Element, { kind: 'window' }>;
@@ -9,6 +10,8 @@ export type WindowGeomInput = {
   elevM: number;
   paint: ViewportPaintBundle | null;
   familyDef: FamilyDefinition | undefined;
+  /** Required for `outlineKind: 'gable_trapezoid'` to look up `attachedRoofId`. */
+  elementsById?: Record<string, Element>;
 };
 
 const FALLBACK_COLOR = '#cbd5e1';
@@ -35,7 +38,7 @@ function addEdges(mesh: THREE.Mesh): void {
 }
 
 export function buildWindowGeometry(input: WindowGeomInput): THREE.Group {
-  const { win, wall, paint, familyDef } = input;
+  const { win, wall, paint, familyDef, elementsById } = input;
 
   const ip = win.overrideParams;
   const typeEntry = win.familyTypeId
@@ -62,9 +65,6 @@ export function buildWindowGeometry(input: WindowGeomInput): THREE.Group {
   const depth = THREE.MathUtils.clamp(rawDepthMm / 1000, 0.06, 0.5);
   const frameSect = frameSectMm / 1000;
 
-  const glazingW = Math.max(outerW - 2 * frameSect, 0.01);
-  const glazingH = Math.max(outerH - 2 * frameSect, 0.01);
-
   const frameColor = paint?.categories.window.color ?? FALLBACK_COLOR;
   const frameMat = new THREE.MeshStandardMaterial({
     color: frameColor,
@@ -74,6 +74,53 @@ export function buildWindowGeometry(input: WindowGeomInput): THREE.Group {
 
   const group = new THREE.Group();
   group.userData.bimPickId = win.id;
+
+  const glazingMat = new THREE.MeshStandardMaterial({
+    color: readGlazingColor(),
+    roughness: 0.05,
+    metalness: 0.0,
+    opacity: glazingAlpha,
+    transparent: true,
+    side: THREE.DoubleSide,
+    envMapIntensity: 1.2,
+  });
+
+  const outlineKind = resolveWindowOutlineKind(win);
+  const outlinePoly =
+    outlineKind === 'rectangle'
+      ? null
+      : elementsById
+        ? resolveWindowOutline(win, wall, elementsById)
+        : null;
+
+  if (outlinePoly && outlinePoly.length >= 3) {
+    // KRN-12: variable-shape outline. Glass pane = polygon-shaped extruded
+    // sliver (a thin extrusion through wall thickness gives the glass body).
+    // Frame omitted for non-rectangular outlines until FAM-02 lands — sweep
+    // along the polygon perimeter is a separate workpackage.
+    // outline coords are in mm with origin at sill-centre; group origin sits
+    // at sill-centre (caller positions accordingly).
+    const shape = new THREE.Shape();
+    shape.moveTo(outlinePoly[0].xMm / 1000, outlinePoly[0].yMm / 1000);
+    for (let i = 1; i < outlinePoly.length; i++) {
+      shape.lineTo(outlinePoly[i].xMm / 1000, outlinePoly[i].yMm / 1000);
+    }
+    shape.lineTo(outlinePoly[0].xMm / 1000, outlinePoly[0].yMm / 1000);
+    const glassGeom = new THREE.ExtrudeGeometry(shape, {
+      depth: 0.012,
+      bevelEnabled: false,
+    });
+    glassGeom.translate(0, 0, -0.006);
+    const glazing = new THREE.Mesh(glassGeom, glazingMat);
+    glazing.castShadow = false;
+    glazing.userData.bimPickId = win.id;
+    group.add(glazing);
+    return group;
+  }
+
+  // Rectangular path — original frame + glass + optional mullion render.
+  const glazingW = Math.max(outerW - 2 * frameSect, 0.01);
+  const glazingH = Math.max(outerH - 2 * frameSect, 0.01);
 
   const frameGroup = new THREE.Group();
 
@@ -97,15 +144,6 @@ export function buildWindowGeometry(input: WindowGeomInput): THREE.Group {
 
   group.add(frameGroup);
 
-  const glazingMat = new THREE.MeshStandardMaterial({
-    color: readGlazingColor(),
-    roughness: 0.05,
-    metalness: 0.0,
-    opacity: glazingAlpha,
-    transparent: true,
-    side: THREE.DoubleSide,
-    envMapIntensity: 1.2,
-  });
   const glazing = new THREE.Mesh(new THREE.BoxGeometry(glazingW, glazingH, 0.006), glazingMat);
   glazing.castShadow = false;
   glazing.userData.bimPickId = win.id;
