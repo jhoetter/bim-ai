@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "e92328033d22",
+  "strategy": "manual-commit",
+  "branch": "r3-01-pbr-tuning",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/viewport/materials.test.ts",
+    "packages/web/src/viewport/materials.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/e9/2328033d22/0/metadata.json",
+      "transcript": "/e9/2328033d22/0/full.jsonl",
+      "content_hash": "/e9/2328033d22/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 26,
+    "cache_creation_tokens": 11921,
+    "cache_read_tokens": 2464915,
+    "output_tokens": 9154,
+    "api_call_count": 26
+  }
+}
