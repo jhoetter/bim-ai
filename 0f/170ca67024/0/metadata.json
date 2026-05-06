@@ -1,0 +1,44 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "0f170ca67024",
+  "session_id": "737cd4f1-cd12-4dfc-9a1c-f5878af48a26",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-06T22:08:08.113116Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/core/src/index.ts",
+    "packages/web/src/state/store.ts",
+    "packages/web/src/viewport/materials.test.ts",
+    "packages/web/src/viewport/materials.ts",
+    "packages/web/src/viewport/meshBuilders.slabEdge.test.ts",
+    "packages/web/src/viewport/meshBuilders.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-opus-4-7",
+  "turn_id": "bc26625740e7",
+  "checkpoint_transcript_start": 597,
+  "transcript_lines_at_start": 597,
+  "token_usage": {
+    "input_tokens": 31,
+    "cache_creation_tokens": 23536,
+    "cache_read_tokens": 8077309,
+    "output_tokens": 12800,
+    "api_call_count": 31
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-06T22:08:08.092363Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 89,
+    "human_modified": 7,
+    "human_removed": 0,
+    "total_committed": 89,
+    "total_lines_changed": 96,
+    "agent_percentage": 0,
+    "metric_version": 2
+  }
+}
