@@ -3,7 +3,7 @@
   "checkpoint_id": "7ab203a02b01",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     "CODE_QUALITY.md"
   ],
@@ -13,13 +13,19 @@
       "transcript": "/7a/b203a02b01/0/full.jsonl",
       "content_hash": "/7a/b203a02b01/0/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/7a/b203a02b01/1/metadata.json",
+      "transcript": "/7a/b203a02b01/1/full.jsonl",
+      "content_hash": "/7a/b203a02b01/1/content_hash.txt",
+      "prompt": "/7a/b203a02b01/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 0,
-    "cache_creation_tokens": 0,
-    "cache_read_tokens": 0,
-    "output_tokens": 0,
-    "api_call_count": 0
+    "input_tokens": 1170,
+    "cache_creation_tokens": 748003,
+    "cache_read_tokens": 51670674,
+    "output_tokens": 288652,
+    "api_call_count": 508
   }
 }
