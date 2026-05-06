@@ -155,3 +155,145 @@ export {
   PinIcon,
   UnpinIcon,
 } from './edit';
+
+// Architectural extended
+export {
+  WallSweepIcon,
+  WallRevealIcon,
+  ComponentIcon,
+  RoofExtrusionIcon,
+  RoofSoffitIcon,
+  FasciaIcon,
+  GutterIcon,
+  CurtainSystemIcon,
+  CurtainGridIcon,
+  VerticalOpeningIcon,
+  DormerOpeningIcon,
+  FaceOpeningIcon,
+  RoomSeparatorIcon,
+  AreaBoundaryIcon,
+  ReferencePlaneIcon,
+  WorkPlaneIcon,
+  ModelLineIcon,
+  ModelTextIcon,
+  StairPathIcon,
+} from './architectural-extended';
+
+// Structural extended
+export {
+  BeamSystemIcon,
+  FoundationSlabIcon,
+  SlabEdgeIcon,
+  AreaReinforcementIcon,
+  PathReinforcementIcon,
+  FabricSheetIcon,
+  ShearStudIcon,
+  AnchorIcon,
+  BoltIcon,
+  WeldIcon,
+  AnalyticalNodeIcon,
+  StructuralLoadIcon,
+  BoundaryConditionIcon,
+} from './structural-extended';
+
+// MEP extended
+export {
+  FlexDuctIcon,
+  DuctFittingIcon,
+  DuctAccessoryIcon,
+  DuctInsulationIcon,
+  DuctLiningIcon,
+  FlexPipeIcon,
+  PipeFittingIcon,
+  PipeAccessoryIcon,
+  PipeInsulationIcon,
+  CableTrayFittingIcon,
+  ConduitFittingIcon,
+  ElectricalWireIcon,
+  SwitchSystemIcon,
+  LightingSwitchIcon,
+  CommunicationDeviceIcon,
+  FireAlarmDeviceIcon,
+  DataDeviceIcon,
+  NurseCallIcon,
+  SecurityDeviceIcon,
+  HVACZoneIcon,
+  PanelScheduleIcon,
+  DuctSystemIcon,
+  PipingSystemIcon,
+  ValveIcon,
+} from './mep-extended';
+
+// Views extended
+export {
+  ReflectedCeilingPlanIcon,
+  StructuralPlanIcon,
+  AreaPlanIcon,
+  DetailViewIcon,
+  DraftingViewIcon,
+  WalkthroughIcon,
+  LegendIcon,
+  SheetListIcon,
+  NoteBlockIcon,
+  ViewListIcon,
+  PanelScheduleViewIcon,
+  GraphicalColumnScheduleIcon,
+  ViewReferenceIcon,
+} from './views-extended';
+
+// Annotation extended
+export {
+  AngularDimensionIcon,
+  RadialDimensionIcon,
+  ArcLengthDimensionIcon,
+  OrdinalDimensionIcon,
+  SpotCoordinateIcon,
+  ElevationTagIcon,
+  FilledRegionIcon,
+  MaskingRegionIcon,
+  DetailComponentIcon,
+  RepeatingDetailIcon,
+  InsulationAnnotationIcon,
+  TextAnnotationIcon,
+  MultiCategoryTagIcon,
+  MaterialTagIcon,
+  RoomTagIcon,
+  SpaceTagIcon,
+  AreaTagIcon,
+  StairTagIcon,
+  SymbolIcon,
+  StairPathAnnotationIcon,
+  ReferencePointIcon,
+} from './annotation-extended';
+
+// Edit basic / modify operations
+export {
+  MoveIcon,
+  CopyIcon,
+  RotateIcon,
+  ScaleIcon,
+  OffsetIcon,
+  DeleteIcon,
+  JoinGeometryIcon,
+  UnjoinGeometryIcon,
+  SwitchJoinOrderIcon,
+  WallJoinsIcon,
+  PaintMaterialIcon,
+  MeasureBetweenIcon,
+  MeasureAlongIcon,
+  UngroupIcon,
+} from './edit-basic';
+
+// Collaboration & project management
+export {
+  ReloadLatestIcon,
+  EditingRequestIcon,
+  CopyMonitorIcon,
+  CoordinationReviewIcon,
+  PurgeUnusedIcon,
+  TransferProjectStandardsIcon,
+  ProjectInfoIcon,
+  ProjectParametersIcon,
+  SharedParametersIcon,
+  ObjectStylesIcon,
+} from './collaboration';
