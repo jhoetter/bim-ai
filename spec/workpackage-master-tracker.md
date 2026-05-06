@@ -1034,7 +1034,7 @@ Profile families (introduced in V2-11) optionally referenced via `profileFamilyI
 | KRN-01 | `property_line` element kind                                 | `SiteElem.uniform_setback_mm` exists; no line element yet. Used for site setbacks and zoning visualisation.     | M      | `open` |
 | KRN-02 | Concave / L-shaped roof footprint 3D mesh                    | Today: `valley_candidate_deferred` placeholder; section view OK. Substantially smaller after SKT-01 lands.      | M      | `open` |
 | KRN-03 | Hip roof (convex polygon >4 corners) 3D mesh                 | Today: `hip_candidate_deferred` placeholder; section view OK. Substantially smaller after SKT-01 lands.         | M      | `open` |
-| KRN-04 | `wall_opening` element kind (rectangular, no host family)    | Distinct from doors / windows. Used for shafts, MEP penetrations, basement ducts. Renders as CSG cut, no frame. | S      | `open` |
+| KRN-04 | `wall_opening` element kind (rectangular, no host family)    | Distinct from doors / windows. Used for shafts, MEP penetrations, basement ducts. Renders as CSG cut, no frame. | S      | `done` (3661b112) |
 | KRN-05 | Reference work planes in projects (not just family editor)   | Project-level `reference_plane` element. Sketch sessions and family placements anchor to active ref plane.      | M      | `open` |
 | KRN-06 | Project base point + survey point + internal origin           | Today no explicit origin elements. Required for shared coordinates with linked CAD/IFC and for round-trip exchange. | M  | `open` |
 | KRN-07 | Multi-run stairs (dog-leg, L-shape, U-shape, spiral, winders) | Today's `stair` element is single-run. Real stairs are runs + landings, optionally sketch-based for arbitrary shapes. | L | `open` |
