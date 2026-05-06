@@ -70,7 +70,6 @@ function orderedColumnKeys(
 ): string[] {
   const all = Array.isArray(payload.columns) ? (payload.columns as string[]) : [];
   if (!visibleColumnKeys?.length) return all;
-  const want = new Set(visibleColumnKeys);
   return visibleColumnKeys.filter((c) => all.includes(c));
 }
 

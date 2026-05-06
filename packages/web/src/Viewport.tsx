@@ -59,7 +59,6 @@ import {
   makeCeilingMesh,
 } from './viewport/meshBuilders';
 import {
-  type ViewerCatKey,
   elemViewerCategory,
   computeRootBoundingBox,
   aabbWireframeVertices,
@@ -179,9 +178,6 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
     if (!el || el.kind !== 'viewpoint' || el.mode !== 'orbit_3d') return null;
     return el;
   }, [activeViewpointId, elementsById]);
-
-  const activeCamera = () =>
-    orthoMode ? (orthoCameraRef.current ?? cameraRef.current!) : cameraRef.current!;
 
   useEffect(() => {
     const el = mountRef.current;
@@ -709,6 +705,9 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
 
     tick();
 
+    const pendingCsg = pendingCsgRef.current;
+    const pendingCsgMeta = pendingCsgMetaRef.current;
+
     return () => {
       orbitRigApiRef.current = null;
       cameraRigRef.current = null;
@@ -748,15 +747,14 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       hasAutoFittedRef.current = false;
       csgWorkerRef.current?.terminate();
       csgWorkerRef.current = null;
-      pendingCsgRef.current.clear();
-      pendingCsgMetaRef.current.clear();
+      pendingCsg.clear();
+      pendingCsgMeta.clear();
 
       host.removeChild(renderer.domElement);
     };
     // `theme` is included so the renderer rebuilds when the user toggles
     // light/dark — token-driven materials are resolved at mount time and
     // need fresh values when the data-theme attribute flips. Spec §32 V11.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [theme]);
 
   useEffect(() => {
@@ -1135,7 +1133,6 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
     }
 
     prevElementsByIdRef.current = curr;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [elementsById, viewerCategoryHidden, theme]);
 
   // ── Clipping planes + section-box cage ───────────────────────────────────

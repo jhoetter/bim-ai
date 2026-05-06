@@ -2,7 +2,7 @@ import { type JSX, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ICON_SIZE, Icons, type LucideLikeIcon } from '@bim-ai/ui';
 
-import { TAB_KIND_LABEL, type TabKind, type ViewTab } from './tabsModel';
+import { type TabKind, type ViewTab } from './tabsModel';
 
 /**
  * TabBar — spec §11.3.

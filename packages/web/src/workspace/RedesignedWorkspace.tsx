@@ -1,7 +1,5 @@
 import {
   type JSX,
-  type KeyboardEvent,
-  type RefObject,
   useCallback,
   useEffect,
   useMemo,
@@ -40,7 +38,6 @@ import { AppShell } from './AppShell';
 import { TopBar, type WorkspaceMode } from './TopBar';
 import { LeftRailCollapsed } from './LeftRail';
 import { getToolRegistry, type ToolDisabledContext, type ToolId } from '../tools/toolRegistry';
-import { VIEWER_HIDDEN_KIND_KEYS } from './Viewport3DLayersPanel';
 import { TabBar } from './TabBar';
 import {
   EMPTY_TABS,
@@ -90,7 +87,6 @@ import {
   legacyToToolId,
   mapComments,
   toolIdToLegacy,
-  type LegacyPlanTool,
 } from './workspaceUtils';
 
 /**
@@ -161,7 +157,7 @@ export function RedesignedWorkspace(): JSX.Element {
   const [recentCommandIds, setRecentCommandIds] = useState<string[]>([]);
   const [tourOpen, setTourOpen] = useState<boolean>(() => !readOnboardingProgress().completed);
   const { insertSeedHouse, seedLoading, seedError, setSeedError, wsOn, codePresetIds } = useWorkspaceSnapshot();
-  const [collaborationConflictQueue, setCollaborationConflictQueue] =
+  const [_collaborationConflictQueue, setCollaborationConflictQueue] =
     useState<CollaborationConflictQueueV1 | null>(null);
   const [projectMenuOpen, setProjectMenuOpen] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
@@ -278,7 +274,7 @@ export function RedesignedWorkspace(): JSX.Element {
     downloadSnapshot(payload);
     const next = pushRecentProject(payload);
     setRecentProjects(next.map((r) => ({ id: r.id, label: r.label })));
-  }, []);
+  }, [setSeedError]);
 
   const handleRestoreSnapshot = useCallback(
     async (file: File): Promise<void> => {
@@ -291,7 +287,7 @@ export function RedesignedWorkspace(): JSX.Element {
         setSeedError(err instanceof Error ? err.message : 'Failed to read snapshot');
       }
     },
-    [hydrateFromSnapshot],
+    [hydrateFromSnapshot, setSeedError],
   );
 
   const handlePickRecent = useCallback(
@@ -365,7 +361,7 @@ export function RedesignedWorkspace(): JSX.Element {
         }
       }
     },
-    [hydrateFromSnapshot],
+    [hydrateFromSnapshot, setSeedError],
   );
 
   /* ── Undo / Redo ────────────────────────────────────────────────────── */
@@ -422,39 +418,6 @@ export function RedesignedWorkspace(): JSX.Element {
     },
     [onSemanticCommand],
   );
-
-  const persistViewpointHiddenKinds = useCallback(async () => {
-    const st = useBimStore.getState();
-    const vid = st.activeViewpointId;
-    if (!vid || st.viewerMode !== 'orbit_3d') return;
-    const hidden = VIEWER_HIDDEN_KIND_KEYS.filter((k) => st.viewerCategoryHidden[k]);
-    await onSemanticCommand({
-      type: 'updateElementProperty',
-      elementId: vid,
-      key: 'hiddenSemanticKinds3d',
-      value: JSON.stringify(hidden),
-    });
-  }, [onSemanticCommand]);
-
-  const persistViewpointClipPlanes = useCallback(async () => {
-    const st = useBimStore.getState();
-    const vid = st.activeViewpointId;
-    if (!vid || st.viewerMode !== 'orbit_3d') return;
-    await onSemanticCommand({
-      type: 'updateElementProperty',
-      elementId: vid,
-      key: 'viewerClipCapElevMm',
-      value: st.viewerClipElevMm == null ? '' : String(st.viewerClipElevMm),
-    });
-    await onSemanticCommand({
-      type: 'updateElementProperty',
-      elementId: vid,
-      key: 'viewerClipFloorElevMm',
-      value: st.viewerClipFloorElevMm == null ? '' : String(st.viewerClipFloorElevMm),
-    });
-  }, [onSemanticCommand]);
-
-
 
   // After the seed has hydrated, prune any restored tabs whose targets
   // no longer exist (e.g. a sheet deleted between sessions). If the
@@ -577,7 +540,7 @@ export function RedesignedWorkspace(): JSX.Element {
       document.removeEventListener('keydown', onKey);
       document.removeEventListener('keyup', onKeyUp);
     };
-  }, [handleModeChange, handleUndoRedo, setPlanTool, setOrthoSnapHold, openVVDialog]);
+  }, [handleModeChange, handleUndoRedo, setPlanTool, setOrthoSnapHold, openVVDialog, toolRegistry]);
 
   const browserSections = useMemo(() => buildBrowserSections(elementsById), [elementsById]);
 

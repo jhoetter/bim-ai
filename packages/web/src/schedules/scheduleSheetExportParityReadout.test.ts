@@ -4,8 +4,6 @@ import type { Violation } from '@bim-ai/core';
 
 import {
   PARITY_TOKEN_ALIGNED,
-  PARITY_TOKEN_CSV_DIVERGES,
-  PARITY_TOKEN_LISTING_DIVERGES,
   PARITY_TOKEN_PLACEMENT_MISSING,
   SCHEDULE_SHEET_EXPORT_PARITY_FORMAT,
   compactScheduleSheetExportParityAdvisoryLines,

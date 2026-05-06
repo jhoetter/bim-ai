@@ -55,11 +55,10 @@ export function SheetDocumentationManifest(props: {
       : 29_700;
   const orientation = paperW >= paperH ? 'landscape' : 'portrait';
 
-  const priorTp = (sheet.titleblockParameters ?? {}) as Record<string, string>;
-  const titleblockParametersDisplay = useMemo(
-    () => (authoring ? mergedTitleblockParametersForUpsert(priorTp, tbDraft) : { ...priorTp }),
-    [authoring, priorTp, tbDraft],
-  );
+  const titleblockParametersDisplay = useMemo(() => {
+    const priorTp = (sheet.titleblockParameters ?? {}) as Record<string, string>;
+    return authoring ? mergedTitleblockParametersForUpsert(priorTp, tbDraft) : { ...priorTp };
+  }, [authoring, sheet.titleblockParameters, tbDraft]);
 
   const revisionIssueNorm = useMemo(
     () => normalizeTitleblockRevisionIssueV1(titleblockParametersDisplay),
@@ -259,6 +258,7 @@ export function SheetDocumentationManifest(props: {
     return rows.filter((r) => r && typeof r === 'object') as Record<string, unknown>[];
   }, [deterministicRow, evidence.status]);
 
+  const evidenceMessage = evidence.status === 'error' ? evidence.message : undefined;
   const advisorNotes = useMemo(() => {
     const notes: string[] = [];
     if (viewportRows.length > 0 && !effectiveTitleblockSymbol) {
@@ -334,7 +334,7 @@ export function SheetDocumentationManifest(props: {
       );
     } else if (evidence.status === 'error') {
       notes.push(
-        `Evidence-package fetch failed (${evidence.message}); export correlation rows may be stale or absent.`,
+        `Evidence-package fetch failed (${evidenceMessage}); export correlation rows may be stale or absent.`,
       );
     } else if (evidence.status === 'ready' && !deterministicRow) {
       notes.push('Evidence-package has no deterministicSheetEvidence row for this sheet id.');
@@ -343,7 +343,7 @@ export function SheetDocumentationManifest(props: {
   }, [
     deterministicRow,
     effectiveTitleblockSymbol,
-    evidence.status === 'error' ? evidence.message : undefined,
+    evidenceMessage,
     evidence.status,
     modelId,
     viewportRows,

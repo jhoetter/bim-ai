@@ -12,15 +12,7 @@ import type {
 
 import type { PlanPresentationPreset } from '../plan/symbology';
 
-import type {
-  PlanRoomSchemeWireReadout,
-  ViewerMode,
-  PlanTool,
-  PresencePeers,
-  UxComment,
-  ActivityEvent,
-  StoreState,
-} from './storeTypes';
+import type { StoreState } from './storeTypes';
 
 export type {
   PlanRoomSchemeWireReadout,

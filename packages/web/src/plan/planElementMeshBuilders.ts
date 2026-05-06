@@ -17,7 +17,7 @@ import {
   PLAN_DOOR_SWING_ARC_SEMI_MINOR_FACTOR_FOCUS,
   PLAN_WINDOW_SILL_LINE_WIDTH,
 } from './symbology';
-import type { PlanPresentationPreset, BoundsXYmm, StairPlanWireDocOverlays } from './symbology';
+import type { PlanPresentationPreset, StairPlanWireDocOverlays } from './symbology';
 
 function planLocationLineOffsetFrac(loc: WallLocationLine): number {
   switch (loc) {

@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import type { CsgRequest, CsgResponse } from './csgWorker';
 import type { Element, WallLocationLine } from '@bim-ai/core';
 import { buildDoorGeometry } from '../families/geometryFns/doorGeometry';
 import { buildWindowGeometry } from '../families/geometryFns/windowGeometry';

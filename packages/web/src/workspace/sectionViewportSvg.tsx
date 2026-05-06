@@ -20,8 +20,6 @@ import {
 } from '../plan/symbology';
 import {
   formatSectionAlongCutSpanMmLabel,
-  formatSectionCutIdentityLine,
-  formatSectionCutPlaneContext,
   formatSectionDocMaterialHintCaption,
   formatSectionElevationSpanMmLabel,
   formatSectionLevelDatumCaption,

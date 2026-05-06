@@ -7,7 +7,7 @@ import {
   useRef,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Icons, ICON_SIZE } from '@bim-ai/ui';
+import { Icons } from '@bim-ai/ui';
 import {
   isToolDisabled,
   MODIFY_TOOL_IDS,

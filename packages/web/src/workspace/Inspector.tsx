@@ -123,7 +123,7 @@ export function Inspector({
       default:
         return null;
     }
-  }, [activeTab, selection, tabs]);
+  }, [activeTab, selection, tabs, t]);
 
   return (
     <div
@@ -330,7 +330,6 @@ export function evaluateExpression(raw: string): number | null {
   if (!trimmed) return null;
   if (!/^[\d+\-*/().\s]+$/.test(trimmed)) return null;
   try {
-    // eslint-disable-next-line @typescript-eslint/no-implied-eval
     const value = Function(`'use strict'; return (${trimmed});`)();
     return Number.isFinite(value) ? Number(value) : null;
   } catch {
