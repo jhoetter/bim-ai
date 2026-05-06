@@ -1,51 +1,79 @@
 import type { ComponentType, SVGAttributes } from 'react';
 import {
   AlertTriangle,
-  BrickWall,
   Camera,
   ChevronDown,
   ChevronRight,
   CircleDot,
   Command,
-  Component,
-  DoorOpen,
   ExternalLink,
   Eye,
   EyeOff,
   FileBadge2,
-  FileText,
-  GalleryVerticalEnd,
   Grid3x3,
   Home,
-  LayoutGrid,
   Link2,
   Magnet,
   Menu,
   Moon,
   MousePointer2,
-  RectangleHorizontal,
   Redo2,
-  Ruler,
-  Scissors,
   Search,
   Settings2,
-  Slash,
   Sparkles,
-  Square,
   Sun,
-  Table,
-  Tag,
-  Triangle,
   Undo2,
   Users,
   X,
 } from 'lucide-react';
+import {
+  // Phase 1 — drawing tools
+  WallIcon,
+  DoorIcon,
+  WindowIcon,
+  FloorIcon,
+  RoofIcon,
+  StairIcon,
+  RailingIcon,
+  RoomIcon,
+  DimensionIcon,
+  SectionIcon,
+  TagIcon,
+  CurtainWallIcon,
+  ColumnIcon,
+  BeamIcon,
+  // Phase 2 — views & annotations
+  PlanViewIcon,
+  SectionViewIcon,
+  ElevationViewIcon,
+  OrbitViewIcon,
+  SheetIcon,
+  ScheduleViewIcon,
+  CalloutIcon,
+  ViewpointIcon,
+  SectionBoxIcon,
+  GridLineIcon,
+  LevelIcon,
+  DetailLineIcon,
+  // Phase 3 — organization & coordination
+  FamilyIcon,
+  FamilyTypeIcon,
+  GroupIcon,
+  AssemblyIcon,
+  LinkedModelIcon,
+  MaterialIcon,
+  WallLayerIcon,
+  PhaseIcon,
+  IssueIcon,
+  ClashIcon,
+  ValidationRuleIcon,
+  DeviationIcon,
+} from '@bim-ai/icons';
 
 /**
  * BIM AI chrome icon set — the single import surface for icon usage outside
- * the canvas. Sourced from `lucide-react` per spec §10. Custom SVGs are
- * only permitted for documented lucide gaps (currently `Stairs`); canvas
- * symbology lives separately under `packages/web/src/plan/symbology/*`.
+ * the canvas. BIM-specific icons come from `@bim-ai/icons`; generic chrome
+ * icons (chevrons, close, search, etc.) come from `lucide-react`.
  *
  * Default visual rules (spec §10):
  *   - Default size 16 px in dense chrome; 18 px in tool palette; 20 px in
@@ -64,32 +92,8 @@ export type LucideLikeIcon = ComponentType<
   }
 >;
 
-/** Lucide-equivalent custom icon. Used only where lucide-react lacks a glyph
- * (e.g. `Stairs`). Stroke style mimics lucide's default `1.5` width to keep
- * the chrome cohesive. */
-export const StairsIcon: LucideLikeIcon = ({
-  size = 24,
-  strokeWidth = 1.5,
-  absoluteStrokeWidth: _absoluteStrokeWidth,
-  ...rest
-}) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth={strokeWidth}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    aria-hidden="true"
-    focusable="false"
-    {...rest}
-  >
-    <path d="M21 4h-5v4h-4v4H8v4H3v4h18z" />
-  </svg>
-);
+/** @deprecated use StairIcon from @bim-ai/icons. Kept for test backwards compat. */
+export { StairIcon as StairsIcon } from '@bim-ai/icons';
 
 /** Spec §10.1 "concept → icon" registry. Single source of truth for chrome
  * icons. Tools / shell / dialogs read from here so the assignments can be
@@ -98,39 +102,67 @@ export const Icons: Record<string, LucideLikeIcon> = {
   // Selection & manipulation
   select: MousePointer2,
 
-  // Drawing tools
-  wall: BrickWall,
-  wallAlt: Slash,
-  door: DoorOpen,
-  window: RectangleHorizontal,
-  floor: LayoutGrid,
-  roof: Triangle,
-  stair: StairsIcon,
-  railing: GalleryVerticalEnd,
-  room: Square,
-  dimension: Ruler,
-  section: Scissors,
+  // Drawing tools — all now BIM-native from @bim-ai/icons
+  wall: WallIcon,
+  door: DoorIcon,
+  window: WindowIcon,
+  floor: FloorIcon,
+  roof: RoofIcon,
+  stair: StairIcon,
+  railing: RailingIcon,
+  room: RoomIcon,
+  dimension: DimensionIcon,
+  section: SectionIcon,
+  tag: TagIcon,
+  curtainWall: CurtainWallIcon,
+  column: ColumnIcon,
+  beam: BeamIcon,
 
-  // Documents
-  sheet: FileText,
-  schedule: Table,
-  family: Component,
+  // Views & documentation — BIM-native
+  planView: PlanViewIcon,
+  sectionView: SectionViewIcon,
+  elevationView: ElevationViewIcon,
+  orbitView: OrbitViewIcon,
+  sheet: SheetIcon,
+  schedule: ScheduleViewIcon,
+  callout: CalloutIcon,
+  viewpoint: ViewpointIcon,
+  sectionBox: SectionBoxIcon,
+  gridLine: GridLineIcon,
+  level: LevelIcon,
+  detailLine: DetailLineIcon,
 
-  // Camera / view
+  // Organization & data — BIM-native
+  family: FamilyIcon,
+  familyType: FamilyTypeIcon,
+  group: GroupIcon,
+  assembly: AssemblyIcon,
+  linkedModel: LinkedModelIcon,
+  material: MaterialIcon,
+  wallLayer: WallLayerIcon,
+  phase: PhaseIcon,
+
+  // Coordination — BIM-native
+  issue: IssueIcon,
+  clash: ClashIcon,
+  validationRule: ValidationRuleIcon,
+  deviation: DeviationIcon,
+
+  // Camera / view — lucide (generic)
   saveViewpoint: Camera,
   layerOn: Eye,
   layerOff: EyeOff,
   viewCubeReset: Home,
 
-  // History
+  // History — lucide (generic)
   undo: Undo2,
   redo: Redo2,
 
-  // Theme
+  // Theme — lucide (generic)
   themeLight: Sun,
   themeDark: Moon,
 
-  // Navigation / global chrome
+  // Navigation / global chrome — lucide (generic)
   commandPalette: Command,
   search: Search,
   settings: Settings2,
@@ -140,28 +172,23 @@ export const Icons: Record<string, LucideLikeIcon> = {
   externalLink: ExternalLink,
   proportional: Link2,
 
-  // Disclosure
+  // Disclosure — lucide (generic)
   disclosureClosed: ChevronRight,
   disclosureOpen: ChevronDown,
 
-  // Status / signals
+  // Status / signals — lucide (generic) + BIM-native
   agent: Sparkles,
   evidence: FileBadge2,
   advisorWarning: AlertTriangle,
   online: CircleDot,
   snap: Magnet,
   grid: Grid3x3,
-
-  // Tags
-  tag: Tag,
 };
 
-/** Human-readable default labels used for `aria-label` when an icon button
- * does not provide its own. Keep these in sync with Icons keys. */
+/** Human-readable default labels for `aria-label` on icon-only buttons. */
 export const IconLabels: Record<keyof typeof Icons, string> = {
   select: 'Select',
   wall: 'Wall',
-  wallAlt: 'Wall',
   door: 'Door',
   window: 'Window',
   floor: 'Floor',
@@ -171,9 +198,34 @@ export const IconLabels: Record<keyof typeof Icons, string> = {
   room: 'Room',
   dimension: 'Dimension',
   section: 'Section',
+  tag: 'Tag',
+  curtainWall: 'Curtain wall',
+  column: 'Column',
+  beam: 'Beam',
+  planView: 'Plan view',
+  sectionView: 'Section view',
+  elevationView: 'Elevation view',
+  orbitView: '3D view',
   sheet: 'Sheet',
   schedule: 'Schedule',
+  callout: 'Callout',
+  viewpoint: 'Viewpoint',
+  sectionBox: 'Section box',
+  gridLine: 'Grid line',
+  level: 'Level',
+  detailLine: 'Detail line',
   family: 'Family',
+  familyType: 'Family type',
+  group: 'Group',
+  assembly: 'Assembly',
+  linkedModel: 'Linked model',
+  material: 'Material',
+  wallLayer: 'Wall layer',
+  phase: 'Phase',
+  issue: 'Issue',
+  clash: 'Clash',
+  validationRule: 'Validation rule',
+  deviation: 'Deviation',
   saveViewpoint: 'Save viewpoint',
   layerOn: 'Show layer',
   layerOff: 'Hide layer',
@@ -198,7 +250,6 @@ export const IconLabels: Record<keyof typeof Icons, string> = {
   online: 'Online',
   snap: 'Snap',
   grid: 'Grid',
-  tag: 'Tag',
 };
 
 export type IconName = keyof typeof Icons;
@@ -209,3 +260,46 @@ export const ICON_SIZE = {
   toolPalette: 18,
   topbar: 20,
 } as const;
+
+// Re-export all BIM icons so consumers can import them from @bim-ai/ui without
+// adding a direct dependency on @bim-ai/icons.
+export {
+  WallIcon,
+  DoorIcon,
+  WindowIcon,
+  FloorIcon,
+  RoofIcon,
+  StairIcon,
+  RailingIcon,
+  RoomIcon,
+  DimensionIcon,
+  SectionIcon,
+  TagIcon,
+  CurtainWallIcon,
+  ColumnIcon,
+  BeamIcon,
+  PlanViewIcon,
+  SectionViewIcon,
+  ElevationViewIcon,
+  OrbitViewIcon,
+  SheetIcon,
+  ScheduleViewIcon,
+  CalloutIcon,
+  ViewpointIcon,
+  SectionBoxIcon,
+  GridLineIcon,
+  LevelIcon,
+  DetailLineIcon,
+  FamilyIcon,
+  FamilyTypeIcon,
+  GroupIcon,
+  AssemblyIcon,
+  LinkedModelIcon,
+  MaterialIcon,
+  WallLayerIcon,
+  PhaseIcon,
+  IssueIcon,
+  ClashIcon,
+  ValidationRuleIcon,
+  DeviationIcon,
+} from '@bim-ai/icons';
