@@ -1328,7 +1328,11 @@ export function RedesignedWorkspace(): JSX.Element {
                           }
                         />
                       ) : (
-                        InspectorPropertiesFor(el, t)
+                        InspectorPropertiesFor(el, t, {
+                          elementsById,
+                          onPropertyChange: (property, value) =>
+                            void onSemanticCommand({ type: 'updateElementProperty', elementId: el.id, key: property, value }),
+                        })
                       )
                     ) : (
                       <InspectorEmptyTab message="No element selected." />
