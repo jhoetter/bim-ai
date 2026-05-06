@@ -3,14 +3,17 @@
   "checkpoint_id": "292aaa19460a",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "packages/web/src/cmd/CheatsheetModal.test.tsx",
     "packages/web/src/cmd/CheatsheetModal.tsx",
     "packages/web/src/cmd/RedesignedCommandPalette.test.tsx",
+    "packages/web/src/i18n.ts",
     "packages/web/src/workspace/CommentsPanel.test.tsx",
     "packages/web/src/workspace/InspectorContent.test.tsx",
+    "packages/web/src/workspace/RedesignedWorkspace.test.tsx",
     "packages/web/src/workspace/StatusBar.test.tsx",
+    "packages/web/src/workspace/TabBar.test.tsx",
     "packages/web/src/workspace/TabBar.tsx",
     "packages/web/src/workspace/TopBar.test.tsx"
   ],
@@ -20,13 +23,19 @@
       "transcript": "/29/2aaa19460a/0/full.jsonl",
       "content_hash": "/29/2aaa19460a/0/content_hash.txt",
       "prompt": "/29/2aaa19460a/0/prompt.txt"
+    },
+    {
+      "metadata": "/29/2aaa19460a/1/metadata.json",
+      "transcript": "/29/2aaa19460a/1/full.jsonl",
+      "content_hash": "/29/2aaa19460a/1/content_hash.txt",
+      "prompt": "/29/2aaa19460a/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 268,
-    "cache_creation_tokens": 327796,
-    "cache_read_tokens": 22810274,
-    "output_tokens": 136760,
-    "api_call_count": 230
+    "input_tokens": 354,
+    "cache_creation_tokens": 493074,
+    "cache_read_tokens": 29562253,
+    "output_tokens": 262217,
+    "api_call_count": 304
   }
 }
