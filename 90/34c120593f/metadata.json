@@ -4,20 +4,31 @@
   "strategy": "manual-commit",
   "branch": "main",
   "checkpoints_count": 1,
-  "files_touched": null,
+  "files_touched": [
+    "spec/prompts/wave-01/README.md",
+    "spec/prompts/wave-01/WP-V2-01a-options-bar.md",
+    "spec/prompts/wave-01/WP-V2-01b-modify-tools.md",
+    "spec/prompts/wave-01/WP-V2-14-plan-canvas.md"
+  ],
   "sessions": [
     {
       "metadata": "/90/34c120593f/0/metadata.json",
       "transcript": "/90/34c120593f/0/full.jsonl",
       "content_hash": "/90/34c120593f/0/content_hash.txt",
       "prompt": "/90/34c120593f/0/prompt.txt"
+    },
+    {
+      "metadata": "/90/34c120593f/1/metadata.json",
+      "transcript": "/90/34c120593f/1/full.jsonl",
+      "content_hash": "/90/34c120593f/1/content_hash.txt",
+      "prompt": "/90/34c120593f/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 789,
-    "cache_creation_tokens": 155995,
-    "cache_read_tokens": 13615026,
-    "output_tokens": 72493,
-    "api_call_count": 137
+    "input_tokens": 799,
+    "cache_creation_tokens": 160731,
+    "cache_read_tokens": 13920016,
+    "output_tokens": 73870,
+    "api_call_count": 147
   }
 }
