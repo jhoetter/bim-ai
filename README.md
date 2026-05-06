@@ -20,6 +20,7 @@ Ports follow the sibling “suite” spacing; see `Makefile` comments.
 - **Infra**: Docker Compose Postgres (5545 host), Redis (6392), MinIO (9120/9121) — placeholders for uploads v2.
 
 See `spec/prd.md` for product scope.
+Active UI to-do list: [`OPEN_TASKS.md`](./OPEN_TASKS.md).
 
 ## Makefile
 
