@@ -1,0 +1,70 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "3dd6ef8e7b81",
+  "session_id": "a57be30b-ab45-48cd-a42c-e3fe5d501f45",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-06T16:43:49.013199Z",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "CODE_QUALITY.md",
+    "packages/ui/src/icons.tsx",
+    "packages/web/package.json",
+    "packages/web/src/i18n.ts",
+    "packages/web/src/plan/PlanCanvas.tsx",
+    "packages/web/src/plan/symbology.ts",
+    "packages/web/src/schedules/scheduleUtils.test.ts",
+    "packages/web/src/state/store.ts",
+    "packages/web/src/tools/ToolPalette.test.tsx",
+    "packages/web/src/tools/ToolPalette.tsx",
+    "packages/web/src/tools/toolGrammar.test.ts",
+    "packages/web/src/tools/toolGrammar.ts",
+    "packages/web/src/tools/toolRegistry.ts",
+    "packages/web/src/viewport/meshBuilders.ts",
+    "packages/web/src/workspace/RedesignedWorkspace.tsx",
+    "packages/web/vite.config.ts",
+    "pnpm-lock.yaml",
+    "spec/workpackage-master-tracker.md"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "a7e1d1c7f96f",
+  "token_usage": {
+    "input_tokens": 789,
+    "cache_creation_tokens": 155995,
+    "cache_read_tokens": 13615026,
+    "output_tokens": 72493,
+    "api_call_count": 137
+  },
+  "session_metrics": {
+    "turn_count": 7
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-06T16:43:48.997105Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 0,
+    "total_lines_changed": 0,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 1034,
+      "agent_lines_removed": 906
+    }
+  ]
+}

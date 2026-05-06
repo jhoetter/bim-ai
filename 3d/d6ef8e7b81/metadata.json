@@ -1,0 +1,42 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "3dd6ef8e7b81",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "CODE_QUALITY.md",
+    "packages/ui/src/icons.tsx",
+    "packages/web/package.json",
+    "packages/web/src/i18n.ts",
+    "packages/web/src/plan/PlanCanvas.tsx",
+    "packages/web/src/plan/symbology.ts",
+    "packages/web/src/schedules/scheduleUtils.test.ts",
+    "packages/web/src/state/store.ts",
+    "packages/web/src/tools/ToolPalette.test.tsx",
+    "packages/web/src/tools/ToolPalette.tsx",
+    "packages/web/src/tools/toolGrammar.test.ts",
+    "packages/web/src/tools/toolGrammar.ts",
+    "packages/web/src/tools/toolRegistry.ts",
+    "packages/web/src/viewport/meshBuilders.ts",
+    "packages/web/src/workspace/RedesignedWorkspace.tsx",
+    "packages/web/vite.config.ts",
+    "pnpm-lock.yaml",
+    "spec/workpackage-master-tracker.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/3d/d6ef8e7b81/0/metadata.json",
+      "transcript": "/3d/d6ef8e7b81/0/full.jsonl",
+      "content_hash": "/3d/d6ef8e7b81/0/content_hash.txt",
+      "prompt": "/3d/d6ef8e7b81/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 789,
+    "cache_creation_tokens": 155995,
+    "cache_read_tokens": 13615026,
+    "output_tokens": 72493,
+    "api_call_count": 137
+  }
+}
