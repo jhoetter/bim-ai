@@ -183,7 +183,9 @@ type LegacyPlanTool =
   | 'align'
   | 'split'
   | 'trim'
-  | 'wall-join';
+  | 'wall-join'
+  | 'wall-opening'
+  | 'shaft';
 
 function toolIdToLegacy(tool: ToolId): LegacyPlanTool | null {
   if (KNOWN_PLAN_TOOLS.has(tool)) return tool as LegacyPlanTool;

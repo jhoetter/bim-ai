@@ -13,16 +13,20 @@ import {
   initialFloorState,
   initialRoofState,
   initialSectionDraft,
+  initialShaftState,
   initialSplitState,
   initialTrimState,
   initialWallChainState,
   initialWallJoinState,
+  initialWallOpeningState,
   RAILING_DEFAULTS,
   reduceAlign,
+  reduceShaft,
   reduceSplit,
   reduceTrim,
   reduceWallChain,
   reduceWallJoin,
+  reduceWallOpening,
   setDimensionKind,
   STAIR_RISER_MM_DEFAULT,
   TAG_FAMILIES,
@@ -463,5 +467,59 @@ describe('WallJoin reducer', () => {
     const { state: next } = reduceWallJoin(state, { kind: 'cycle' });
     expect(next.phase).toBe('idle');
     expect(next.joinVariant).toBe('miter');
+  });
+});
+
+describe('WallOpening reducer', () => {
+  it('transitions pick-wall → define-rect on click-wall', () => {
+    const s0 = initialWallOpeningState();
+    const { state } = reduceWallOpening(s0, { kind: 'click-wall', wallId: 'w1', pointMm: { xMm: 100, yMm: 200 } });
+    expect(state.phase).toBe('define-rect');
+    expect(state.hostWallId).toBe('w1');
+    expect(state.anchorMm).toEqual({ xMm: 100, yMm: 200 });
+  });
+  it('emits commitWallOpening on drag-end and returns to pick-wall', () => {
+    let state = initialWallOpeningState();
+    state = reduceWallOpening(state, { kind: 'click-wall', wallId: 'w1', pointMm: { xMm: 0, yMm: 0 } }).state;
+    const { state: next, effect } = reduceWallOpening(state, { kind: 'drag-end', cornerMm: { xMm: 500, yMm: 500 } });
+    expect(effect.commitWallOpening).toEqual({ hostWallId: 'w1', anchorMm: { xMm: 0, yMm: 0 }, cornerMm: { xMm: 500, yMm: 500 } });
+    expect(next.phase).toBe('pick-wall');
+    expect(effect.stillActive).toBe(true);
+  });
+  it('resets to pick-wall on cancel', () => {
+    let state = initialWallOpeningState();
+    state = reduceWallOpening(state, { kind: 'click-wall', wallId: 'w1', pointMm: { xMm: 0, yMm: 0 } }).state;
+    const { state: next } = reduceWallOpening(state, { kind: 'cancel' });
+    expect(next.phase).toBe('pick-wall');
+  });
+});
+
+describe('Shaft reducer', () => {
+  it('transitions to sketch on first click', () => {
+    const s0 = initialShaftState();
+    const { state } = reduceShaft(s0, { kind: 'click', pointMm: { xMm: 0, yMm: 0 } });
+    expect(state.phase).toBe('sketch');
+    expect(state.verticesMm).toHaveLength(1);
+  });
+  it('accumulates vertices on subsequent clicks', () => {
+    let state = initialShaftState();
+    state = reduceShaft(state, { kind: 'click', pointMm: { xMm: 0, yMm: 0 } }).state;
+    state = reduceShaft(state, { kind: 'click', pointMm: { xMm: 1000, yMm: 0 } }).state;
+    state = reduceShaft(state, { kind: 'click', pointMm: { xMm: 1000, yMm: 1000 } }).state;
+    expect(state.verticesMm).toHaveLength(3);
+  });
+  it('emits commitShaft with ≥3 vertices on close-loop', () => {
+    let state = initialShaftState();
+    const pts = [{ xMm: 0, yMm: 0 }, { xMm: 1000, yMm: 0 }, { xMm: 1000, yMm: 1000 }];
+    for (const p of pts) state = reduceShaft(state, { kind: 'click', pointMm: p }).state;
+    const { effect } = reduceShaft(state, { kind: 'close-loop' });
+    expect(effect.commitShaft?.verticesMm).toHaveLength(3);
+    expect(effect.stillActive).toBe(true);
+  });
+  it('does not emit on close-loop with fewer than 3 vertices', () => {
+    let state = initialShaftState();
+    state = reduceShaft(state, { kind: 'click', pointMm: { xMm: 0, yMm: 0 } }).state;
+    const { effect } = reduceShaft(state, { kind: 'close-loop' });
+    expect(effect.commitShaft).toBeUndefined();
   });
 });

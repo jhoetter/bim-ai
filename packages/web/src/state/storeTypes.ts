@@ -38,7 +38,9 @@ export type PlanTool =
   | 'align'
   | 'split'
   | 'trim'
-  | 'wall-join';
+  | 'wall-join'
+  | 'wall-opening'
+  | 'shaft';
 
 export type PresencePeers = Record<
   string,

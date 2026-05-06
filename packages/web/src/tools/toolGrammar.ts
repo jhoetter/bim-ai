@@ -650,3 +650,121 @@ export function reduceWallJoin(
   }
   return { state, effect: { stillActive: true } };
 }
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* Wall Opening — §16 Openings                                            */
+/* ────────────────────────────────────────────────────────────────────── */
+
+export interface WallOpeningState {
+  phase: 'pick-wall' | 'define-rect';
+  hostWallId: string | null;
+  anchorMm: { xMm: number; yMm: number } | null;
+}
+
+export type WallOpeningEvent =
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'click-wall'; wallId: string; pointMm: { xMm: number; yMm: number } }
+  | { kind: 'drag-end'; cornerMm: { xMm: number; yMm: number } }
+  | { kind: 'cancel' };
+
+export interface WallOpeningEffect {
+  commitWallOpening?: {
+    hostWallId: string;
+    anchorMm: { xMm: number; yMm: number };
+    cornerMm: { xMm: number; yMm: number };
+  };
+  stillActive: boolean;
+}
+
+export function initialWallOpeningState(): WallOpeningState {
+  return { phase: 'pick-wall', hostWallId: null, anchorMm: null };
+}
+
+export function reduceWallOpening(
+  state: WallOpeningState,
+  event: WallOpeningEvent,
+): { state: WallOpeningState; effect: WallOpeningEffect } {
+  if (event.kind === 'activate') {
+    return { state: initialWallOpeningState(), effect: { stillActive: true } };
+  }
+  if (event.kind === 'deactivate') {
+    return { state: initialWallOpeningState(), effect: { stillActive: false } };
+  }
+  if (event.kind === 'cancel') {
+    return { state: initialWallOpeningState(), effect: { stillActive: true } };
+  }
+  if (event.kind === 'click-wall' && state.phase === 'pick-wall') {
+    return {
+      state: { phase: 'define-rect', hostWallId: event.wallId, anchorMm: event.pointMm },
+      effect: { stillActive: true },
+    };
+  }
+  if (event.kind === 'drag-end' && state.phase === 'define-rect' && state.hostWallId && state.anchorMm) {
+    return {
+      state: initialWallOpeningState(),
+      effect: {
+        commitWallOpening: {
+          hostWallId: state.hostWallId,
+          anchorMm: state.anchorMm,
+          cornerMm: event.cornerMm,
+        },
+        stillActive: true,
+      },
+    };
+  }
+  return { state, effect: { stillActive: true } };
+}
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* Shaft — §16 Openings                                                   */
+/* ────────────────────────────────────────────────────────────────────── */
+
+export interface ShaftState {
+  phase: 'idle' | 'sketch';
+  verticesMm: Array<{ xMm: number; yMm: number }>;
+}
+
+export type ShaftEvent =
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'click'; pointMm: { xMm: number; yMm: number } }
+  | { kind: 'close-loop' }
+  | { kind: 'cancel' };
+
+export interface ShaftEffect {
+  commitShaft?: { verticesMm: Array<{ xMm: number; yMm: number }> };
+  stillActive: boolean;
+}
+
+export function initialShaftState(): ShaftState {
+  return { phase: 'idle', verticesMm: [] };
+}
+
+export function reduceShaft(
+  state: ShaftState,
+  event: ShaftEvent,
+): { state: ShaftState; effect: ShaftEffect } {
+  if (event.kind === 'activate') {
+    return { state: initialShaftState(), effect: { stillActive: true } };
+  }
+  if (event.kind === 'deactivate') {
+    return { state: initialShaftState(), effect: { stillActive: false } };
+  }
+  if (event.kind === 'cancel') {
+    return { state: initialShaftState(), effect: { stillActive: true } };
+  }
+  if (event.kind === 'click') {
+    return {
+      state: { phase: 'sketch', verticesMm: [...state.verticesMm, event.pointMm] },
+      effect: { stillActive: true },
+    };
+  }
+  if (event.kind === 'close-loop' && state.verticesMm.length >= 3) {
+    return {
+      state: initialShaftState(),
+      effect: { commitShaft: { verticesMm: state.verticesMm }, stillActive: true },
+    };
+  }
+  return { state, effect: { stillActive: true } };
+}
