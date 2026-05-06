@@ -1,0 +1,28 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "4ed52f81f3f0",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/core/src/index.ts",
+    "packages/web/src/i18n.ts",
+    "packages/web/src/state/store.ts",
+    "packages/web/src/viewport/cameraRig.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/4e/d52f81f3f0/0/metadata.json",
+      "transcript": "/4e/d52f81f3f0/0/full.jsonl",
+      "content_hash": "/4e/d52f81f3f0/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 21,
+    "cache_creation_tokens": 44550,
+    "cache_read_tokens": 767396,
+    "output_tokens": 16434,
+    "api_call_count": 19
+  }
+}
