@@ -1,0 +1,5 @@
+❯ read HANDOVER.md, then OPEN_TASKS.md. describe to me, what is the goal?
+
+---
+
+focus on part 3. commit and push once you are done. other ai agents are wokring on the branch, dont be surprised. just focus on your task
