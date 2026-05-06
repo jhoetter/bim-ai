@@ -1,6 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
+import { I18nextProvider } from 'react-i18next';
 import { CheatsheetModal } from './CheatsheetModal';
+import i18n from '../i18n';
+
+function renderWithI18n(ui: React.ReactElement) {
+  return render(<I18nextProvider i18n={i18n}>{ui}</I18nextProvider>);
+}
 
 afterEach(() => {
   cleanup();
@@ -8,12 +14,12 @@ afterEach(() => {
 
 describe('<CheatsheetModal /> — spec §19', () => {
   it('renders nothing when closed', () => {
-    const { queryByTestId } = render(<CheatsheetModal open={false} onClose={() => undefined} />);
+    const { queryByTestId } = renderWithI18n(<CheatsheetModal open={false} onClose={() => undefined} />);
     expect(queryByTestId('cheatsheet-modal')).toBeNull();
   });
 
   it('renders the dialog when open with section labels', () => {
-    const { getByText, getByTestId } = render(
+    const { getByText, getByTestId } = renderWithI18n(
       <CheatsheetModal open={true} onClose={() => undefined} />,
     );
     expect(getByTestId('cheatsheet-modal')).toBeTruthy();
@@ -24,20 +30,20 @@ describe('<CheatsheetModal /> — spec §19', () => {
 
   it('Escape closes the modal', () => {
     const onClose = vi.fn();
-    const { getByTestId } = render(<CheatsheetModal open={true} onClose={onClose} />);
+    const { getByTestId } = renderWithI18n(<CheatsheetModal open={true} onClose={onClose} />);
     fireEvent.keyDown(getByTestId('cheatsheet-modal'), { key: 'Escape' });
     expect(onClose).toHaveBeenCalled();
   });
 
   it('clicking the backdrop closes the modal', () => {
     const onClose = vi.fn();
-    const { getByTestId } = render(<CheatsheetModal open={true} onClose={onClose} />);
+    const { getByTestId } = renderWithI18n(<CheatsheetModal open={true} onClose={onClose} />);
     fireEvent.click(getByTestId('cheatsheet-modal'));
     expect(onClose).toHaveBeenCalled();
   });
 
   it('filter narrows the entry set', () => {
-    const { getByLabelText, queryByText } = render(
+    const { getByLabelText, queryByText } = renderWithI18n(
       <CheatsheetModal open={true} onClose={() => undefined} />,
     );
     const search = getByLabelText('Filter shortcuts') as HTMLInputElement;
@@ -49,7 +55,7 @@ describe('<CheatsheetModal /> — spec §19', () => {
 
   it('Close button dispatches onClose', () => {
     const onClose = vi.fn();
-    const { getByLabelText } = render(<CheatsheetModal open={true} onClose={onClose} />);
+    const { getByLabelText } = renderWithI18n(<CheatsheetModal open={true} onClose={onClose} />);
     fireEvent.click(getByLabelText('Close cheatsheet'));
     expect(onClose).toHaveBeenCalled();
   });

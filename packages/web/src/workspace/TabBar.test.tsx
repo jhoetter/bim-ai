@@ -1,7 +1,15 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
+import { I18nextProvider } from 'react-i18next';
 import { TabBar } from './TabBar';
 import type { ViewTab } from './tabsModel';
+import i18n from '../i18n';
+
+function renderWithI18n(ui: React.ReactElement) {
+  return render(ui, {
+    wrapper: ({ children }) => <I18nextProvider i18n={i18n}>{children}</I18nextProvider>,
+  });
+}
 
 afterEach(() => {
   cleanup();
@@ -15,7 +23,7 @@ const tabs: ViewTab[] = [
 
 describe('TabBar — spec §11.3', () => {
   it('renders one tab per descriptor with active state', () => {
-    const { getByTestId } = render(
+    const { getByTestId } = renderWithI18n(
       <TabBar tabs={tabs} activeId="3d:vp1" onActivate={() => {}} onClose={() => {}} />,
     );
     expect(getByTestId('view-tabs')).toBeTruthy();
@@ -28,7 +36,7 @@ describe('TabBar — spec §11.3', () => {
 
   it('clicking a tab fires onActivate with the id', () => {
     const onActivate = vi.fn();
-    const { getByTestId } = render(
+    const { getByTestId } = renderWithI18n(
       <TabBar tabs={tabs} activeId="plan:l0" onActivate={onActivate} onClose={() => {}} />,
     );
     fireEvent.click(getByTestId('tab-activate-3d:vp1'));
@@ -37,7 +45,7 @@ describe('TabBar — spec §11.3', () => {
 
   it('clicking ✕ fires onClose with the id', () => {
     const onClose = vi.fn();
-    const { getByTestId } = render(
+    const { getByTestId } = renderWithI18n(
       <TabBar tabs={tabs} activeId="plan:l0" onActivate={() => {}} onClose={onClose} />,
     );
     fireEvent.click(getByTestId('tab-close-sheet:a101'));
@@ -45,7 +53,7 @@ describe('TabBar — spec §11.3', () => {
   });
 
   it('shows "no views open" copy when tabs is empty', () => {
-    const { getByText } = render(
+    const { getByText } = renderWithI18n(
       <TabBar tabs={[]} activeId={null} onActivate={() => {}} onClose={() => {}} />,
     );
     expect(getByText('No views open')).toBeTruthy();
@@ -53,7 +61,7 @@ describe('TabBar — spec §11.3', () => {
 
   it('drag from one tab to another fires onReorder with the indices (T-05)', () => {
     const onReorder = vi.fn();
-    const { getByTestId } = render(
+    const { getByTestId } = renderWithI18n(
       <TabBar
         tabs={tabs}
         activeId="plan:l0"
@@ -79,7 +87,7 @@ describe('TabBar — spec §11.3', () => {
 
   it('+ button opens add-view popover', () => {
     const onAdd = vi.fn();
-    const { getByTestId } = render(
+    const { getByTestId } = renderWithI18n(
       <TabBar
         tabs={tabs}
         activeId="plan:l0"

@@ -1,6 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
+import { I18nextProvider } from 'react-i18next';
+import i18n from '../i18n';
+
+function renderWithProviders(ui: React.ReactElement) {
+  return render(ui, {
+    wrapper: ({ children }) => (
+      <I18nextProvider i18n={i18n}>
+        <MemoryRouter initialEntries={['/redesign']}>{children}</MemoryRouter>
+      </I18nextProvider>
+    ),
+  });
+}
 
 // Stub the Three.js-mounting canvases so jsdom can render the chrome.
 vi.mock('../Viewport', () => ({
@@ -24,11 +36,7 @@ afterEach(() => {
 
 describe('<RedesignedWorkspace /> — smoke', () => {
   it('renders the AppShell, TopBar, LeftRail, Inspector, StatusBar slots', () => {
-    const { getByTestId, getByRole } = render(
-      <MemoryRouter initialEntries={['/redesign']}>
-        <RedesignedWorkspace />
-      </MemoryRouter>,
-    );
+    const { getByTestId, getByRole } = renderWithProviders(<RedesignedWorkspace />);
     expect(getByTestId('app-shell')).toBeTruthy();
     expect(getByTestId('topbar')).toBeTruthy();
     expect(getByRole('tree', { name: 'Project browser' })).toBeTruthy();
@@ -37,31 +45,19 @@ describe('<RedesignedWorkspace /> — smoke', () => {
   });
 
   it('mounts the redesign canvas root', () => {
-    const { getByTestId } = render(
-      <MemoryRouter initialEntries={['/redesign']}>
-        <RedesignedWorkspace />
-      </MemoryRouter>,
-    );
+    const { getByTestId } = renderWithProviders(<RedesignedWorkspace />);
     expect(getByTestId('redesign-canvas-root')).toBeTruthy();
   });
 
   it('shows the empty-state overlay when no walls exist', () => {
-    const { getByText } = render(
-      <MemoryRouter initialEntries={['/redesign']}>
-        <RedesignedWorkspace />
-      </MemoryRouter>,
-    );
+    const { getByText } = renderWithProviders(<RedesignedWorkspace />);
     // §25 canvas overlay — shows "Loading model…" while seed fetch is in flight,
     // then falls back to "This level is empty." once fetch settles.
     expect(getByText(/Loading model|This level is empty/)).toBeTruthy();
   });
 
   it('renders the floating tool palette', () => {
-    const { getByTestId } = render(
-      <MemoryRouter initialEntries={['/redesign']}>
-        <RedesignedWorkspace />
-      </MemoryRouter>,
-    );
+    const { getByTestId } = renderWithProviders(<RedesignedWorkspace />);
     expect(getByTestId('tool-palette')).toBeTruthy();
   });
 });

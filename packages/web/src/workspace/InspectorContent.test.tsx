@@ -7,6 +7,9 @@ import {
   InspectorIdentityFor,
   InspectorPropertiesFor,
 } from './InspectorContent';
+import i18n from '../i18n';
+
+const t = i18n.t.bind(i18n);
 
 afterEach(() => {
   cleanup();
@@ -47,19 +50,19 @@ const stair = {
 
 describe('InspectorPropertiesFor — spec §13', () => {
   it('renders wall properties', () => {
-    const { getByText } = render(InspectorPropertiesFor(wall));
+    const { getByText } = render(InspectorPropertiesFor(wall, t));
     expect(getByText('200 mm')).toBeTruthy();
     expect(getByText('2.80 m')).toBeTruthy();
   });
 
   it('renders door alongT and width', () => {
-    const { getByText } = render(InspectorPropertiesFor(door));
+    const { getByText } = render(InspectorPropertiesFor(door, t));
     expect(getByText('900 mm')).toBeTruthy();
     expect(getByText('0.500')).toBeTruthy();
   });
 
   it('renders stair risers/treads', () => {
-    const { getByText } = render(InspectorPropertiesFor(stair));
+    const { getByText } = render(InspectorPropertiesFor(stair, t));
     expect(getByText('176 mm')).toBeTruthy();
     expect(getByText('280 mm')).toBeTruthy();
   });
@@ -67,19 +70,19 @@ describe('InspectorPropertiesFor — spec §13', () => {
 
 describe('InspectorConstraintsFor', () => {
   it('renders wall constraints (location line, wrap rule)', () => {
-    const { getByText } = render(InspectorConstraintsFor(wall));
+    const { getByText } = render(InspectorConstraintsFor(wall, t));
     expect(getByText('Wall centerline')).toBeTruthy();
   });
 
   it('falls back gracefully for unsupported kinds', () => {
-    const { getByText } = render(InspectorConstraintsFor(door));
+    const { getByText } = render(InspectorConstraintsFor(door, t));
     expect(getByText(/No constraints surface/)).toBeTruthy();
   });
 });
 
 describe('InspectorIdentityFor', () => {
   it('renders kind, id, and name', () => {
-    const { getByText } = render(InspectorIdentityFor(wall));
+    const { getByText } = render(InspectorIdentityFor(wall, t));
     expect(getByText('wall')).toBeTruthy();
     expect(getByText('seed-w-eg-south')).toBeTruthy();
     expect(getByText('EG South')).toBeTruthy();

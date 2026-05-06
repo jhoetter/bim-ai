@@ -1,6 +1,7 @@
-import { type JSX, type KeyboardEvent, useCallback, useEffect, useState } from 'react';
+import { type JSX, type KeyboardEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Icons, ICON_SIZE } from '@bim-ai/ui';
-import { CHEATSHEET, filterCheatsheet } from './cheatsheetData';
+import { getCheatsheetData, filterCheatsheet } from './cheatsheetData';
 
 /**
  * Cheatsheet modal — spec §19.
@@ -16,7 +17,9 @@ export interface CheatsheetModalProps {
 }
 
 export function CheatsheetModal({ open, onClose }: CheatsheetModalProps): JSX.Element | null {
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
+  const allSections = useMemo(() => getCheatsheetData(t), [t]);
 
   useEffect(() => {
     if (!open) setQuery('');
@@ -33,13 +36,13 @@ export function CheatsheetModal({ open, onClose }: CheatsheetModalProps): JSX.El
   );
 
   if (!open) return null;
-  const sections = filterCheatsheet(query);
+  const sections = filterCheatsheet(query, t);
 
   return (
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Keyboard cheatsheet"
+      aria-label={t('cheatsheet.modalAriaLabel')}
       data-testid="cheatsheet-modal"
       onKeyDown={handleBackdropKey}
       style={{
@@ -66,11 +69,11 @@ export function CheatsheetModal({ open, onClose }: CheatsheetModalProps): JSX.El
             aria-hidden="true"
             className="text-muted"
           />
-          <h2 className="flex-1 text-md font-medium text-foreground">Keyboard shortcuts</h2>
+          <h2 className="flex-1 text-md font-medium text-foreground">{t('cheatsheet.actions.showCheatsheet')}</h2>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close cheatsheet"
+            aria-label={t('cheatsheet.closeAriaLabel')}
             className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted hover:bg-surface-strong"
           >
             <Icons.close size={ICON_SIZE.chrome} aria-hidden="true" />
@@ -79,8 +82,8 @@ export function CheatsheetModal({ open, onClose }: CheatsheetModalProps): JSX.El
         <div className="border-b border-border px-4 py-2">
           <input
             type="search"
-            placeholder="Filter shortcuts (e.g. wall, mode, undo)"
-            aria-label="Filter shortcuts"
+            placeholder={t('cheatsheet.filterPlaceholder')}
+            aria-label={t('cheatsheet.filterAriaLabel')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             autoFocus
@@ -89,7 +92,7 @@ export function CheatsheetModal({ open, onClose }: CheatsheetModalProps): JSX.El
         </div>
         <div className="flex-1 overflow-y-auto px-4 py-3">
           {sections.length === 0 ? (
-            <p className="py-6 text-center text-sm text-muted">No shortcuts match.</p>
+            <p className="py-6 text-center text-sm text-muted">{t('cheatsheet.noMatches')}</p>
           ) : (
             sections.map((section) => (
               <div key={section.id} className="mb-4">
@@ -117,7 +120,7 @@ export function CheatsheetModal({ open, onClose }: CheatsheetModalProps): JSX.El
           )}
         </div>
         <div className="border-t border-border bg-surface-muted px-4 py-2 text-xs text-muted">
-          {CHEATSHEET.flatMap((s) => s.entries).length} shortcuts · Esc to close
+          {allSections.flatMap((s) => s.entries).length} shortcuts · Esc to close
         </div>
       </div>
     </div>

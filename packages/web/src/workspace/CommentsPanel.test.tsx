@@ -1,7 +1,15 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, waitFor } from '@testing-library/react';
+import { I18nextProvider } from 'react-i18next';
 import { CommentsPanel } from './CommentsPanel';
 import type { UxComment } from '../state/store';
+import i18n from '../i18n';
+
+function renderWithI18n(ui: React.ReactElement) {
+  return render(ui, {
+    wrapper: ({ children }) => <I18nextProvider i18n={i18n}>{children}</I18nextProvider>,
+  });
+}
 
 afterEach(() => {
   cleanup();
@@ -30,7 +38,7 @@ const SAMPLE_COMMENTS: UxComment[] = [
 
 describe('CommentsPanel', () => {
   it('renders the panel heading and close button', () => {
-    const { getByTestId, getByText, getByLabelText } = render(
+    const { getByTestId, getByText, getByLabelText } = renderWithI18n(
       <CommentsPanel
         comments={[]}
         userDisplay="Alice"
@@ -45,7 +53,7 @@ describe('CommentsPanel', () => {
   });
 
   it('shows "No comments yet." when list is empty', () => {
-    const { getByTestId } = render(
+    const { getByTestId } = renderWithI18n(
       <CommentsPanel
         comments={[]}
         userDisplay="Alice"
@@ -58,7 +66,7 @@ describe('CommentsPanel', () => {
   });
 
   it('renders comment entries with userDisplay + body', () => {
-    const { getByText } = render(
+    const { getByText } = renderWithI18n(
       <CommentsPanel
         comments={SAMPLE_COMMENTS}
         userDisplay="Alice"
@@ -73,7 +81,7 @@ describe('CommentsPanel', () => {
   });
 
   it('shows Resolve button for open comments and Reopen for resolved', () => {
-    const { getAllByTestId } = render(
+    const { getAllByTestId } = renderWithI18n(
       <CommentsPanel
         comments={SAMPLE_COMMENTS}
         userDisplay="Alice"
@@ -88,7 +96,7 @@ describe('CommentsPanel', () => {
 
   it('calls onResolve with toggled state when Resolve clicked', async () => {
     const onResolve = vi.fn().mockResolvedValue(undefined);
-    const { getAllByTestId } = render(
+    const { getAllByTestId } = renderWithI18n(
       <CommentsPanel
         comments={SAMPLE_COMMENTS}
         userDisplay="Alice"
@@ -105,7 +113,7 @@ describe('CommentsPanel', () => {
 
   it('calls onResolve with false when Reopen is clicked', async () => {
     const onResolve = vi.fn().mockResolvedValue(undefined);
-    const { getAllByTestId } = render(
+    const { getAllByTestId } = renderWithI18n(
       <CommentsPanel
         comments={SAMPLE_COMMENTS}
         userDisplay="Bob"
@@ -122,7 +130,7 @@ describe('CommentsPanel', () => {
 
   it('calls onPost with trimmed text and clears input', async () => {
     const onPost = vi.fn().mockResolvedValue(undefined);
-    const { getByTestId } = render(
+    const { getByTestId } = renderWithI18n(
       <CommentsPanel
         comments={[]}
         userDisplay="Alice"
@@ -141,7 +149,7 @@ describe('CommentsPanel', () => {
   });
 
   it('Post button is disabled when input is empty', () => {
-    const { getByTestId } = render(
+    const { getByTestId } = renderWithI18n(
       <CommentsPanel
         comments={[]}
         userDisplay="Alice"
@@ -155,7 +163,7 @@ describe('CommentsPanel', () => {
 
   it('calls onClose when close button is clicked', () => {
     const onClose = vi.fn();
-    const { getByLabelText } = render(
+    const { getByLabelText } = renderWithI18n(
       <CommentsPanel
         comments={[]}
         userDisplay="Alice"

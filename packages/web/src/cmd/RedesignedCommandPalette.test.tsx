@@ -1,7 +1,15 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
+import { I18nextProvider } from 'react-i18next';
 import { RedesignedCommandPalette } from './RedesignedCommandPalette';
 import type { CommandCandidate } from './commandPaletteSources';
+import i18n from '../i18n';
+
+function renderWithI18n(ui: React.ReactElement) {
+  return render(ui, {
+    wrapper: ({ children }) => <I18nextProvider i18n={i18n}>{children}</I18nextProvider>,
+  });
+}
 
 beforeAll(() => {
   // jsdom lacks ResizeObserver and scrollIntoView — cmdk uses both on mount.
@@ -41,7 +49,7 @@ const candidates: CommandCandidate[] = [
 
 describe('<RedesignedCommandPalette /> — spec §18', () => {
   it('renders nothing when closed', () => {
-    const { queryByTestId } = render(
+    const { queryByTestId } = renderWithI18n(
       <RedesignedCommandPalette
         open={false}
         onOpenChange={() => undefined}
@@ -53,7 +61,7 @@ describe('<RedesignedCommandPalette /> — spec §18', () => {
   });
 
   it('opens with the empty-state hints when no query', () => {
-    const { getByText } = render(
+    const { getByText } = renderWithI18n(
       <RedesignedCommandPalette
         open={true}
         onOpenChange={() => undefined}
@@ -66,7 +74,7 @@ describe('<RedesignedCommandPalette /> — spec §18', () => {
   });
 
   it('filters via the prefix grammar', () => {
-    const { getByPlaceholderText, getByText, queryByText } = render(
+    const { getByPlaceholderText, getByText, queryByText } = renderWithI18n(
       <RedesignedCommandPalette
         open={true}
         onOpenChange={() => undefined}
@@ -82,7 +90,7 @@ describe('<RedesignedCommandPalette /> — spec §18', () => {
 
   it('emits onPick on item select', () => {
     const onPick = vi.fn();
-    const { getByText } = render(
+    const { getByText } = renderWithI18n(
       <RedesignedCommandPalette
         open={true}
         onOpenChange={() => undefined}
@@ -101,7 +109,7 @@ describe('<RedesignedCommandPalette /> — spec §18', () => {
 
   it('Close button dispatches onOpenChange(false)', () => {
     const onOpenChange = vi.fn();
-    const { getByLabelText } = render(
+    const { getByLabelText } = renderWithI18n(
       <RedesignedCommandPalette
         open={true}
         onOpenChange={onOpenChange}

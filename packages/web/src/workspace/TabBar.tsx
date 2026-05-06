@@ -1,4 +1,5 @@
 import { type JSX, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ICON_SIZE, Icons, type LucideLikeIcon } from '@bim-ai/ui';
 
 import { TAB_KIND_LABEL, type TabKind, type ViewTab } from './tabsModel';
@@ -45,6 +46,7 @@ export function TabBar({
   onAdd,
   onReorder,
 }: TabBarProps): JSX.Element {
+  const { t } = useTranslation();
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [dragSrc, setDragSrc] = useState<number | null>(null);
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
@@ -65,13 +67,13 @@ export function TabBar({
   return (
     <div
       role="tablist"
-      aria-label="Open views"
+      aria-label={t('workspace.openViews')}
       data-testid="view-tabs"
       className="flex items-end gap-0.5 border-b border-border bg-surface px-2 pt-1.5"
       style={{ height: 38 }}
     >
       {tabs.length === 0 ? (
-        <div className="px-2 pb-1.5 text-xs text-muted">No views open</div>
+        <div className="px-2 pb-1.5 text-xs text-muted">{t('workspace.noViewsOpen')}</div>
       ) : null}
       {tabs.map((tab, idx) => {
         const Icon = TAB_KIND_ICON[tab.kind] ?? Icons.floor!;
@@ -134,9 +136,9 @@ export function TabBar({
             <button
               type="button"
               onClick={() => onActivate(tab.id)}
-              aria-label={`${TAB_KIND_LABEL[tab.kind]}: ${tab.label}`}
+              aria-label={`${t(`workspace.tabs.${tab.kind}`)}: ${tab.label}`}
               className="flex items-center gap-1.5 rounded"
-              title={`${TAB_KIND_LABEL[tab.kind]} · ${tab.label}`}
+              title={`${t(`workspace.tabs.${tab.kind}`)} · ${tab.label}`}
               data-testid={`tab-activate-${tab.id}`}
             >
               <Icon
@@ -152,7 +154,7 @@ export function TabBar({
                 e.stopPropagation();
                 onClose(tab.id);
               }}
-              aria-label={`Close ${tab.label}`}
+              aria-label={t('workspace.closeTab', { label: tab.label })}
               data-testid={`tab-close-${tab.id}`}
               className={[
                 'rounded p-0.5 hover:bg-surface-strong',
@@ -164,11 +166,11 @@ export function TabBar({
           </div>
         );
       })}
-      <div className="relative ml-1" ref={popoverRef}>
+      <div className="relative ml-1 mb-1.5" ref={popoverRef}>
         <button
           type="button"
           onClick={() => setPopoverOpen((v) => !v)}
-          aria-label="Open new view"
+          aria-label={t('workspace.openNewView')}
           data-testid="tab-add-button"
           className="flex h-6 w-6 items-center justify-center rounded text-muted hover:bg-surface-strong hover:text-foreground"
           style={{ fontSize: 16, lineHeight: 1 }}
@@ -196,7 +198,7 @@ export function TabBar({
                   data-testid={`tab-add-${kind}`}
                 >
                   <Icon size={ICON_SIZE.chrome} aria-hidden="true" />
-                  <span>+ {TAB_KIND_LABEL[kind]}</span>
+                  <span>+ {t(`workspace.tabs.${kind}`)}</span>
                 </button>
               );
             })}

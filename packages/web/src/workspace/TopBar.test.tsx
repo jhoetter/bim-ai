@@ -1,6 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
+import { I18nextProvider } from 'react-i18next';
 import { TopBar, WORKSPACE_MODES } from './TopBar';
+import i18n from '../i18n';
+
+function renderWithI18n(ui: React.ReactElement) {
+  return render(ui, {
+    wrapper: ({ children }) => <I18nextProvider i18n={i18n}>{children}</I18nextProvider>,
+  });
+}
 
 afterEach(() => {
   cleanup();
@@ -13,7 +21,7 @@ const baseProps = {
 
 describe('TopBar — spec §11', () => {
   it('renders all 7 mode pills with hotkey hints', () => {
-    const { getAllByRole } = render(
+    const { getAllByRole } = renderWithI18n(
       <TopBar {...baseProps} mode="plan" onModeChange={() => undefined} />,
     );
     const tabs = getAllByRole('tab');
@@ -24,7 +32,7 @@ describe('TopBar — spec §11', () => {
   });
 
   it('marks the active pill with aria-selected and tabIndex 0', () => {
-    const { getAllByRole } = render(
+    const { getAllByRole } = renderWithI18n(
       <TopBar {...baseProps} mode="3d" onModeChange={() => undefined} />,
     );
     const tabs = getAllByRole('tab');
@@ -37,7 +45,7 @@ describe('TopBar — spec §11', () => {
 
   it('invokes onModeChange when a pill is clicked', () => {
     const onModeChange = vi.fn();
-    const { getAllByRole } = render(
+    const { getAllByRole } = renderWithI18n(
       <TopBar {...baseProps} mode="plan" onModeChange={onModeChange} />,
     );
     const sectionPill = getAllByRole('tab').find((t) => t.textContent?.startsWith('Section'));
@@ -47,7 +55,7 @@ describe('TopBar — spec §11', () => {
 
   it('cycles modes with ArrowRight / ArrowLeft', () => {
     const onModeChange = vi.fn();
-    const { getByRole } = render(<TopBar {...baseProps} mode="plan" onModeChange={onModeChange} />);
+    const { getByRole } = renderWithI18n(<TopBar {...baseProps} mode="plan" onModeChange={onModeChange} />);
     const tablist = getByRole('tablist');
     fireEvent.keyDown(tablist, { key: 'ArrowRight' });
     expect(onModeChange).toHaveBeenLastCalledWith('3d');
@@ -56,7 +64,7 @@ describe('TopBar — spec §11', () => {
   });
 
   it('renders Sun when theme=dark and Moon when theme=light', () => {
-    const { rerender, getByTestId } = render(
+    const { rerender, getByTestId } = renderWithI18n(
       <TopBar
         {...baseProps}
         mode="plan"
@@ -83,7 +91,7 @@ describe('TopBar — spec §11', () => {
 
   it('shows the project name and emits onProjectNameClick on click', () => {
     const onProjectNameClick = vi.fn();
-    const { getByText } = render(
+    const { getByText } = renderWithI18n(
       <TopBar
         {...baseProps}
         projectName="My project"
@@ -97,7 +105,7 @@ describe('TopBar — spec §11', () => {
   });
 
   it('renders the collaborator badge when count > 0', () => {
-    const { getByTestId } = render(
+    const { getByTestId } = renderWithI18n(
       <TopBar {...baseProps} mode="plan" onModeChange={() => undefined} collaboratorsCount={3} />,
     );
     expect(getByTestId('topbar-badge').textContent).toBe('3');
@@ -105,7 +113,7 @@ describe('TopBar — spec §11', () => {
 
   it('emits onCommandPalette when ⌘K button is clicked', () => {
     const onCommandPalette = vi.fn();
-    const { getByText } = render(
+    const { getByText } = renderWithI18n(
       <TopBar
         {...baseProps}
         mode="plan"
@@ -122,7 +130,7 @@ describe('TopBar — spec §11', () => {
       { name: 'Alice', color: '#f00' },
       { name: 'Bob' },
     ];
-    const { getByTestId } = render(
+    const { getByTestId } = renderWithI18n(
       <TopBar {...baseProps} mode="plan" onModeChange={() => undefined} peers={peers} />,
     );
     const container = getByTestId('peer-avatars');
@@ -132,14 +140,14 @@ describe('TopBar — spec §11', () => {
   });
 
   it('does not render peer-avatars div when peers list is empty', () => {
-    const { queryByTestId } = render(
+    const { queryByTestId } = renderWithI18n(
       <TopBar {...baseProps} mode="plan" onModeChange={() => undefined} peers={[]} />,
     );
     expect(queryByTestId('peer-avatars')).toBeNull();
   });
 
   it('renders avatarInitials in the account tile', () => {
-    const { getByLabelText } = render(
+    const { getByLabelText } = renderWithI18n(
       <TopBar {...baseProps} mode="plan" onModeChange={() => undefined} avatarInitials="JH" />,
     );
     expect(getByLabelText('Account').textContent).toBe('JH');

@@ -1,6 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
+import { I18nextProvider } from 'react-i18next';
 import { StatusBar } from './StatusBar';
+import i18n from '../i18n';
+
+function renderWithI18n(ui: React.ReactElement) {
+  return render(<I18nextProvider i18n={i18n}>{ui}</I18nextProvider>);
+}
 
 afterEach(() => {
   cleanup();
@@ -8,7 +14,7 @@ afterEach(() => {
 
 describe('StatusBar — spec §17', () => {
   it('renders all clusters', () => {
-    const { getByText, getByLabelText } = render(
+    const { getByText, getByLabelText } = renderWithI18n(
       <StatusBar
         level={{ id: 'lvl-ground', label: 'Ground' }}
         levels={[{ id: 'lvl-ground', label: 'Ground' }]}
@@ -36,7 +42,7 @@ describe('StatusBar — spec §17', () => {
 
   it('opens level popover and emits onLevelChange', () => {
     const onLevelChange = vi.fn();
-    const { getByText, getByRole } = render(
+    const { getByText, getByRole } = renderWithI18n(
       <StatusBar
         level={{ id: 'lvl-ground', label: 'Ground' }}
         levels={[
@@ -54,7 +60,7 @@ describe('StatusBar — spec §17', () => {
 
   it('cycles levels with PageUp / PageDown', () => {
     const onLevelChange = vi.fn();
-    const { getByText } = render(
+    const { getByText } = renderWithI18n(
       <StatusBar
         level={{ id: 'lvl-ground', label: 'Ground' }}
         levels={[
@@ -72,7 +78,7 @@ describe('StatusBar — spec §17', () => {
 
   it('toggles snap modes via switch buttons', () => {
     const onSnapToggle = vi.fn();
-    const { getByText } = render(
+    const { getByText } = renderWithI18n(
       <StatusBar
         level={{ id: 'lvl-ground', label: 'Ground' }}
         snapModes={[
@@ -88,7 +94,7 @@ describe('StatusBar — spec §17', () => {
 
   it('grid switch reflects state and emits onGridToggle', () => {
     const onGridToggle = vi.fn();
-    const { getByText } = render(
+    const { getByText } = renderWithI18n(
       <StatusBar
         level={{ id: 'lvl-ground', label: 'Ground' }}
         gridOn={false}
@@ -101,7 +107,7 @@ describe('StatusBar — spec §17', () => {
   });
 
   it('uses aria-live="assertive" when ws is offline', () => {
-    const { getByText } = render(
+    const { getByText } = renderWithI18n(
       <StatusBar level={{ id: 'lvl-ground', label: 'Ground' }} wsState="offline" />,
     );
     const offline = getByText('offline');
@@ -109,7 +115,7 @@ describe('StatusBar — spec §17', () => {
   });
 
   it('uses aria-live="assertive" when save state is error', () => {
-    const { getByText } = render(
+    const { getByText } = renderWithI18n(
       <StatusBar level={{ id: 'lvl-ground', label: 'Ground' }} saveState="error" />,
     );
     const failed = getByText('save failed');
@@ -119,7 +125,7 @@ describe('StatusBar — spec §17', () => {
   it('emits onUndo / onRedo for the undo cluster', () => {
     const onUndo = vi.fn();
     const onRedo = vi.fn();
-    const { getByLabelText } = render(
+    const { getByLabelText } = renderWithI18n(
       <StatusBar
         level={{ id: 'lvl-ground', label: 'Ground' }}
         undoDepth={2}
@@ -134,7 +140,7 @@ describe('StatusBar — spec §17', () => {
   });
 
   it('renders a placeholder when cursor is off-canvas', () => {
-    const { getByLabelText } = render(<StatusBar level={{ id: 'lvl-ground', label: 'Ground' }} />);
+    const { getByLabelText } = renderWithI18n(<StatusBar level={{ id: 'lvl-ground', label: 'Ground' }} />);
     expect(getByLabelText('Cursor coordinates').textContent).toContain('X —');
   });
 });
@@ -165,7 +171,7 @@ describe('StatusBar — conflict slot (T-10)', () => {
   };
 
   it('shows the conflict pill when conflictQueue is provided', () => {
-    const { getByTestId } = render(
+    const { getByTestId } = renderWithI18n(
       <StatusBar
         level={{ id: 'lvl-ground', label: 'Ground' }}
         conflictQueue={baseConflict}
@@ -175,14 +181,14 @@ describe('StatusBar — conflict slot (T-10)', () => {
   });
 
   it('does not show the conflict pill when conflictQueue is null', () => {
-    const { queryByTestId } = render(
+    const { queryByTestId } = renderWithI18n(
       <StatusBar level={{ id: 'lvl-ground', label: 'Ground' }} conflictQueue={null} />,
     );
     expect(queryByTestId('conflict-pill')).toBeNull();
   });
 
   it('expands the detail panel on click and shows inspectionReadout + retryAdvice + reason', () => {
-    const { getByTestId } = render(
+    const { getByTestId } = renderWithI18n(
       <StatusBar
         level={{ id: 'lvl-ground', label: 'Ground' }}
         conflictQueue={baseConflict}
@@ -197,7 +203,7 @@ describe('StatusBar — conflict slot (T-10)', () => {
   });
 
   it('shows the human-readable retry label in the pill badge', () => {
-    const { getByTestId } = render(
+    const { getByTestId } = renderWithI18n(
       <StatusBar
         level={{ id: 'lvl-ground', label: 'Ground' }}
         conflictQueue={baseConflict}
@@ -208,7 +214,7 @@ describe('StatusBar — conflict slot (T-10)', () => {
 
   it('calls onClearConflict and collapses when the dismiss button is clicked', () => {
     const onClearConflict = vi.fn();
-    const { getByTestId } = render(
+    const { getByTestId } = renderWithI18n(
       <StatusBar
         level={{ id: 'lvl-ground', label: 'Ground' }}
         conflictQueue={baseConflict}
