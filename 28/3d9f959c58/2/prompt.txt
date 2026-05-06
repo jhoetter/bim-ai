@@ -1,0 +1,11 @@
+Read the file `spec/prompts/wave-01/WP-V2-01b-modify-tools.md` and implement
+  everything described in it.
+
+  Start by reading these files to understand the current state:
+  - packages/web/src/tools/toolRegistry.ts
+  - packages/web/src/tools/toolGrammar.ts
+  - packages/web/src/plan/PlanCanvas.tsx
+  - packages/web/src/plan/planCanvasState.ts
+
+  Then implement, test, and commit on branch `feat/wp-v2-01b-modify-tools`.
+  Push the branch when done.
