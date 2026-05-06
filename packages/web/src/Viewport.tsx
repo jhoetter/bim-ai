@@ -318,55 +318,79 @@ function makeStairVolumeMesh(
   elementsById: Record<string, Element>,
   paint: ViewportPaintBundle | null,
   selectedId?: string,
-): THREE.Mesh {
+): THREE.Group {
+  const group = new THREE.Group();
+
   const sx = stair.runStartMm.xMm / 1000;
-
   const sz = stair.runStartMm.yMm / 1000;
-
   const ex = stair.runEndMm.xMm / 1000;
-
   const ez = stair.runEndMm.yMm / 1000;
-
   const dx = ex - sx;
-
   const dz = ez - sz;
+  const runLen = Math.max(1e-3, Math.hypot(dx, dz));
+  const stairWidth = THREE.MathUtils.clamp(stair.widthMm / 1000, 0.3, 4);
 
-  const len = Math.max(1e-3, Math.hypot(dx, dz));
+  const baseLevelElev = elevationMForLevel(stair.baseLevelId, elementsById);
+  const topLevelElev = elevationMForLevel(stair.topLevelId, elementsById);
+  const totalRise = Math.max(Math.abs(topLevelElev - baseLevelElev), 0.1);
 
-  const width = THREE.MathUtils.clamp(stair.widthMm / 1000, 0.3, 4);
-
-  const bl = elementsById[stair.baseLevelId];
-
-  const tl = elementsById[stair.topLevelId];
-
-  const riseMm =
-    bl?.kind === 'level' && tl?.kind === 'level'
-      ? Math.abs(tl.elevationMm - bl.elevationMm)
-      : stair.riserMm * 16;
-
-  const rise = THREE.MathUtils.clamp(riseMm / 1000, 0.5, 12);
-
-  const elevBase = elevationMForLevel(stair.baseLevelId, elementsById);
-
-  const mesh = new THREE.Mesh(
-    new THREE.BoxGeometry(len, rise, width),
-
-    new THREE.MeshStandardMaterial({
-      color:
-        stair.id === selectedId
-          ? (paint?.selection.selectedColor ?? '#fcd34d')
-          : categoryColorOr(paint, 'stair'),
-    }),
+  const riserCount = Math.max(
+    Math.round((totalRise * 1000) / (stair.riserMm > 0 ? stair.riserMm : 175)),
+    2,
   );
+  const riserH = totalRise / riserCount;
+  const treadDepth = runLen / riserCount;
+  const treadThick = 0.040;
+  const angle = Math.atan2(dz, dx);
 
-  mesh.position.set(sx + dx / 2, elevBase + rise / 2, sz + dz / 2);
+  const stairColor =
+    stair.id === selectedId
+      ? (paint?.selection.selectedColor ?? '#fcd34d')
+      : categoryColorOr(paint, 'stair');
+  const mat = new THREE.MeshStandardMaterial({ color: stairColor });
 
-  mesh.rotation.y = Math.atan2(dx, dz);
+  const treadGeom = new THREE.BoxGeometry(treadDepth, treadThick, stairWidth);
+  for (let i = 0; i < riserCount; i++) {
+    const treadMesh = new THREE.Mesh(treadGeom, mat);
+    const cx = sx + ((i + 0.5) / riserCount) * dx;
+    const cz = sz + ((i + 0.5) / riserCount) * dz;
+    // top surface of tread i sits at baseLevelElev + (i+1)*riserH
+    const cy = baseLevelElev + (i + 1) * riserH - treadThick / 2;
+    treadMesh.position.set(cx, cy, cz);
+    treadMesh.rotation.y = angle;
+    treadMesh.castShadow = true;
+    treadMesh.receiveShadow = true;
+    treadMesh.userData.bimPickId = stair.id;
+    addEdges(treadMesh);
+    group.add(treadMesh);
+  }
 
-  mesh.userData.bimPickId = stair.id;
+  // Side stringer plates offset laterally by ±stairWidth/2 along local Z
+  // Local Z world direction for rotation.y = angle: (sin angle, 0, cos angle) = (dz/runLen, 0, dx/runLen)
+  const stringerGeom = new THREE.BoxGeometry(runLen, totalRise, 0.025);
+  const midCx = (sx + ex) / 2;
+  const midCz = (sz + ez) / 2;
+  const midCy = baseLevelElev + totalRise / 2;
+  const perpX = dz / runLen;
+  const perpZ = dx / runLen;
 
-  addEdges(mesh);
-  return mesh;
+  for (const side of [-1, 1] as const) {
+    const stringer = new THREE.Mesh(stringerGeom, mat);
+    stringer.position.set(
+      midCx + perpX * side * (stairWidth / 2),
+      midCy,
+      midCz + perpZ * side * (stairWidth / 2),
+    );
+    stringer.rotation.y = angle;
+    stringer.castShadow = true;
+    stringer.receiveShadow = true;
+    stringer.userData.bimPickId = stair.id;
+    addEdges(stringer);
+    group.add(stringer);
+  }
+
+  group.userData.bimPickId = stair.id;
+  return group;
 }
 
 function makeWallMesh(
