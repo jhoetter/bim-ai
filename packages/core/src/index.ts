@@ -43,7 +43,10 @@ export type ElemKind =
   | 'project_param'
   | 'reference_plane'
   | 'selection_set'
-  | 'clash_test';
+  | 'clash_test'
+  | 'text_3d';
+
+export type Text3dFontFamily = 'helvetiker' | 'optimer' | 'gentilis';
 
 export type XY = { xMm: number; yMm: number };
 
@@ -638,6 +641,17 @@ export type Element =
       setBIds: string[];
       toleranceMm: number;
       results?: ClashResult[];
+    }
+  | {
+      kind: 'text_3d';
+      id: string;
+      text: string;
+      fontFamily: Text3dFontFamily;
+      fontSizeMm: number;
+      depthMm: number;
+      positionMm: XYZ;
+      rotationDeg: number;
+      materialKey?: string | null;
     };
 
 export type Violation = {

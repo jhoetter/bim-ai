@@ -12,7 +12,9 @@ from bim_ai.elements import (
     PlanTagTarget,
     RoomColorSchemeRow,
     SiteContextObjectRow,
+    Text3dFontFamily,
     Vec2Mm,
+    Vec3Mm,
     WallTypeLayer,
 )
 from bim_ai.roof_geometry import RoofGeometryMode
@@ -720,6 +722,21 @@ class UpsertSiteCmd(BaseModel):
     )
 
 
+class CreateText3dCmd(BaseModel):
+    """FAM-06: extruded 3D letterforms placed in model space."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createText3d"] = "createText3d"
+    id: str | None = None
+    text: str
+    font_family: Text3dFontFamily = Field(default="helvetiker", alias="fontFamily")
+    font_size_mm: float = Field(default=200.0, alias="fontSizeMm", gt=0)
+    depth_mm: float = Field(default=50.0, alias="depthMm", gt=0)
+    position_mm: Vec3Mm = Field(alias="positionMm")
+    rotation_deg: float = Field(default=0.0, alias="rotationDeg")
+    material_key: str | None = Field(default=None, alias="materialKey")
+
+
 Command = Annotated[
     CreateLevelCmd
     | CreateWallCmd
@@ -781,6 +798,7 @@ Command = Annotated[
     | CreateAgentAssumptionCmd
     | CreateAgentDeviationCmd
     | UpsertValidationRuleCmd
-    | UpsertSiteCmd,
+    | UpsertSiteCmd
+    | CreateText3dCmd,
     Field(discriminator="type"),
 ]

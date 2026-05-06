@@ -35,6 +35,7 @@ from bim_ai.commands import (
     CreateSectionCutCmd,
     CreateSlabOpeningCmd,
     CreateStairCmd,
+    CreateText3dCmd,
     CreateWallChainCmd,
     CreateWallCmd,
     CreateWallTypeCmd,
@@ -114,6 +115,7 @@ from bim_ai.elements import (
     SiteElem,
     SlabOpeningElem,
     StairElem,
+    Text3dElem,
     TagDefinitionElem,
     ValidationRuleElem,
     Vec2Mm,
@@ -1446,6 +1448,24 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 host_floor_id=cmd.host_floor_id,
                 boundary_mm=cmd.boundary_mm,
                 is_shaft=cmd.is_shaft,
+            )
+
+        case CreateText3dCmd():
+            tid = cmd.id or new_id()
+            if tid in els:
+                raise ValueError(f"duplicate element id '{tid}'")
+            if not cmd.text:
+                raise ValueError("createText3d.text must be a non-empty string")
+            els[tid] = Text3dElem(
+                kind="text_3d",
+                id=tid,
+                text=cmd.text,
+                font_family=cmd.font_family,
+                font_size_mm=cmd.font_size_mm,
+                depth_mm=cmd.depth_mm,
+                position_mm=cmd.position_mm,
+                rotation_deg=cmd.rotation_deg,
+                material_key=cmd.material_key,
             )
 
         case CreateBalconyCmd():

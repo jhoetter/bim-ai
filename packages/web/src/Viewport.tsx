@@ -65,6 +65,7 @@ import {
   applyClippingPlanesToMeshes,
   makeClipPlaneCap,
 } from './viewport/sceneUtils';
+import { getResolvedText3dFont, loadText3dFont, makeText3dMesh } from './viewport/text3dGeometry';
 
 type Props = {
   wsConnected: boolean;
@@ -141,6 +142,8 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
   const [orthoMode, setOrthoMode] = useState(false);
   const [walkActive, setWalkActive] = useState(false);
   const [sectionBoxActive, setSectionBoxActive] = useState(false);
+  const [text3dRebuildTick, setText3dRebuildTick] = useState(0);
+  const text3dPendingRef = useRef<Set<string>>(new Set());
   const walkControllerRef = useRef<WalkController | null>(null);
   const sectionBoxRef = useRef<SectionBox | null>(null);
   const sectionBoxCageRef = useRef<THREE.LineSegments | null>(null);
@@ -916,6 +919,15 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
 
     const toRemove = new Set([...removedIds, ...changedIds]);
     const toRebuild = new Set([...addedIds, ...changedIds]);
+    // text_3d rebuilds that were skipped because their font wasn't loaded yet
+    // are re-attempted on tick bump.
+    for (const tid of text3dPendingRef.current) {
+      if (curr[tid]?.kind === 'text_3d' && !cache.has(tid)) {
+        toRebuild.add(tid);
+      } else {
+        text3dPendingRef.current.delete(tid);
+      }
+    }
 
     // Remove stale meshes — dispose GPU resources to avoid leaks.
     for (const id of toRemove) {
@@ -1052,6 +1064,25 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
         case 'site':
           obj = makeSiteMesh(e, curr, paint);
           break;
+        case 'text_3d': {
+          const t = e as Extract<Element, { kind: 'text_3d' }>;
+          const font = getResolvedText3dFont(t.fontFamily);
+          if (!font) {
+            // Font not yet loaded — kick off async load and bump the rebuild
+            // tick when ready so this element gets re-attempted.
+            text3dPendingRef.current.add(id);
+            void loadText3dFont(t.fontFamily).then(
+              () => setText3dRebuildTick((n) => n + 1),
+              () => {
+                /* swallow — error will surface next tick */
+              },
+            );
+            break;
+          }
+          obj = makeText3dMesh(t, font, paint);
+          text3dPendingRef.current.delete(id);
+          break;
+        }
         default:
           break;
       }
@@ -1134,7 +1165,7 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
     }
 
     prevElementsByIdRef.current = curr;
-  }, [elementsById, viewerCategoryHidden, theme]);
+  }, [elementsById, viewerCategoryHidden, theme, text3dRebuildTick]);
 
   // ── Clipping planes + section-box cage ───────────────────────────────────
   // Runs only when clip elevation or section box changes — not on every element edit.

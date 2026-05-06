@@ -357,6 +357,24 @@ class BalconyElem(BaseModel):
     balustrade_height_mm: float = Field(default=1050, alias="balustradeHeightMm")
 
 
+Text3dFontFamily = Literal["helvetiker", "optimer", "gentilis"]
+
+
+class Text3dElem(BaseModel):
+    """Extruded 3D letterforms (FAM-06). Real geometric text — distinct from text annotations."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["text_3d"] = "text_3d"
+    id: str
+    text: str = ""
+    font_family: Text3dFontFamily = Field(default="helvetiker", alias="fontFamily")
+    font_size_mm: float = Field(default=200.0, alias="fontSizeMm", gt=0)
+    depth_mm: float = Field(default=50.0, alias="depthMm", gt=0)
+    position_mm: Vec3Mm = Field(alias="positionMm")
+    rotation_deg: float = Field(default=0.0, alias="rotationDeg")
+    material_key: str | None = Field(default=None, alias="materialKey")
+
+
 class FamilyTypeElem(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True)
     kind: Literal["family_type"] = "family_type"
@@ -701,6 +719,7 @@ ElementKind = Literal[
     "agent_deviation",
     "validation_rule",
     "site",
+    "text_3d",
 ]
 
 
@@ -741,6 +760,7 @@ Element = Annotated[
     | AgentAssumptionElem
     | AgentDeviationElem
     | ValidationRuleElem
-    | SiteElem,
+    | SiteElem
+    | Text3dElem,
     Field(discriminator="kind"),
 ]
