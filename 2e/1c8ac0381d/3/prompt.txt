@@ -1,0 +1,38 @@
+a1 and a2 are implemented, can you check? would we now have the next agent?
+
+---
+
+double check, because the agent said ⏺ Branch is clean and pushed. Here's a summary of what was implemented:
+
+  WP-V2-01a — Options Bar context strip is complete and pushed on feat/wp-v2-01a-options-bar.
+
+  What was built:
+
+  - OptionsBar.tsx (packages/web/src/workspace/) — reads planTool from the Zustand store and renders:
+    - Wall tool: a <select> dropdown for all 6 WallLocationLine values plus a "Tab to cycle" caption
+    - Floor tool: a "Boundary Offset:" number input (mm)
+    - All other tools: returns null (zero height, invisible)
+  - store.ts — added wallLocationLine: WallLocationLine (default 'wall-centerline'), floorBoundaryOffsetMm: number (default 0), and their setters; also
+  added 'floor' to PlanTool and LegacyPlanTool
+  - AppShell.tsx — added an optionsbar CSS grid row (auto) between topbar and canvas rows, with <OptionsBar /> embedded directly
+  - OptionsBar.test.tsx — 4 vitest cases covering the 4 spec-requ
+
+---
+
+check again should be good now
+
+---
+
+B is also done
+
+---
+
+what is planned for after wave 3? how many waves do you have planned?
+
+---
+
+how are they depending on one another? i.e. the whole waves, not workpackages within the waves?
+
+---
+
+where are we currently?
