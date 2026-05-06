@@ -139,43 +139,62 @@ Batch B — run after Batch A is fully merged to main:
 
 ## Wave 2 — View System + Wall Depth + Openings
 
-**Goal:** Add the Visibility/Graphics dialog (VV), View Filters, View Range, Underlay, Crop Region. Deepen wall location line into the backend. Add Wall Opening tool. Close R2-01 (CSG cuts).
+**Goal:** Add the Visibility/Graphics dialog (VV), View Filters, View Range/Underlay UI. Deepen wall location line geometry offset + Wall Joins tool. Add Wall Opening + Shaft tools.
 
-**Prompt files:** `spec/prompts/wave-02/` — create when Wave 1 is fully merged.
+**Note — R2-01 already closed (2026-05-06):** `three-bvh-csg` is already a dependency. `packages/web/src/viewport/csgWorker.ts` fully implements door/window CSG in a Web Worker. `CSG_ENABLED` defaults to `true`. WP-V2-04 only needs authoring tools, not rendering.
 
-| WP       | Title                                                          | State  | Notes                                                                                      |
-| -------- | -------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------ |
-| WP-V2-03 | View Control System (VV, Filters, Range, Underlay, Crop)       | `open` | Largest WP in wave; can be split into 03a (VV + Filters) and 03b (Range + Underlay + Crop) |
-| WP-V2-02 | Wall System Depth (layer editor, location line backend, joins) | `open` | Frontend already has locationLine type; backend schema needs layer editing                 |
-| WP-V2-04 | Openings + Voids (Wall Opening, Shaft, R2-01 CSG)              | `open` | R2-01 needs `three-bvh-csg` dep                                                            |
+**Prompt files:** `spec/prompts/wave-02/` — delete after all WPs merged.
 
-### WP-V2-03 — View Control System
+### Execution order
 
-**Scope:**
+```
+Batch A (parallel — no shared files):
+  WP-V2-02    feat/wp-v2-02-wall-depth        meshBuilders.ts, planElementMeshBuilders.ts, toolRegistry.ts, toolGrammar.ts, PlanCanvas.tsx
+  WP-V2-03a   feat/wp-v2-03a-vv-dialog        New VVDialog.tsx, store.ts, planProjection.ts, AppShell.tsx
 
-- **VV dialog (Visibility/Graphics):** Per-category line weight/color/pattern overrides; projection vs cut overrides independent; tabs for Model / Annotation / Imported categories.
-- **View Filters:** Rule-based filter definitions (field + operator + value) → named override bundle (projection fill, cut fill, line color) → applied to views. UI: Filters tab in VV dialog.
-- **View Range:** Cut Plane mm, Bottom mm, Underlay level dropdown — editable per view with live preview in plan.
-- **Underlay:** Show a second level's plan as a ghosted layer beneath the active level.
-- **Crop Region:** Interactive crop rectangle per plan view; show/hide toggle; tight to building button.
-- **Reflected Ceiling Plan (RCP):** A distinct view type with `lookDown: false` rendering.
+Batch B (parallel after Batch A merged — no shared files):
+  WP-V2-04    feat/wp-v2-04-openings           toolRegistry.ts, toolGrammar.ts, PlanCanvas.tsx
+  WP-V2-03b   feat/wp-v2-03b-view-filters      store.ts, New ViewRangePanel.tsx, VVDialog.tsx (Filters tab), planProjection.ts
+```
+
+### WP table
+
+| WP        | Title                                              | Prompt file                          | Branch                          | State  | Depends on    |
+| --------- | -------------------------------------------------- | ------------------------------------ | ------------------------------- | ------ | ------------- |
+| WP-V2-02  | Wall System Depth (location line offset + joins)   | `wave-02/WP-V2-02-wall-depth.md`    | `feat/wp-v2-02-wall-depth`      | `open` | —             |
+| WP-V2-03a | VV Dialog (category overrides)                     | `wave-02/WP-V2-03a-vv-dialog.md`    | `feat/wp-v2-03a-vv-dialog`      | `open` | —             |
+| WP-V2-04  | Openings (Wall Opening + Shaft tools)              | `wave-02/WP-V2-04-openings.md`      | `feat/wp-v2-04-openings`        | `open` | Batch A merged |
+| WP-V2-03b | View Filters + View Range / Underlay UI            | `wave-02/WP-V2-03b-view-filters.md` | `feat/wp-v2-03b-view-filters`   | `open` | WP-V2-03a merged |
 
 ### WP-V2-02 — Wall System Depth
 
 **Scope:**
+- **Location line offset:** When `locationLine !== 'wall-centerline'`, offset wall geometry perpendicularly by `±thicknessMm/2` in `makeWallMesh` and plan wire builder.
+- **Wall Joins tool (`'wall-join'`):** Modify-tab tool; click corner → cycle miter/butt/square variants (N key) → accept (Enter). Grammar reducer + PlanCanvas dispatch.
+- **Base/Top offset:** Ensure `baseOffsetMm` and `topConstraintOffsetMm` are applied in `makeWallMesh` height calculation.
 
-- **Layer structure editor:** In-place table (function enum + material key + thickness mm + wraps checkbox) editable in Inspector → Edit Type → Structure. Backend stores layers as ordered array on `WallType`.
-- **Location line backend application:** When `locationLine !== 'wall-centerline'`, offset wall geometry by half-thickness in the appropriate direction when generating plan wire and 3D mesh.
-- **Wall Joins tool:** Modify-tab tool that lets user click a corner and cycle miter/butt/square variants via Next button. Grammar: click corner → show join variants → cycle with N key → accept with Enter.
-- **Base/Top Offset deepening:** Ensure `baseOffsetMm` and `topConstraintOffsetMm` are editable in Inspector and applied in both plan and 3D.
+### WP-V2-03a — VV Dialog
+
+**Scope:**
+- **VVDialog.tsx:** New modal with Model / Annotation tabs; per-category visibility checkbox, projection/cut line color + weight overrides.
+- **store.ts:** `categoryOverrides: CategoryOverrides` on `plan_view`; `setCategoryOverride` action.
+- **planProjection.ts:** Apply `categoryOverrides` after template resolution in `resolvePlanCategoryGraphics`.
+- **AppShell.tsx:** `V` key shortcut to open dialog; `vvDialogOpen` Zustand state.
 
 ### WP-V2-04 — Openings + Voids
 
 **Scope:**
+- **Wall Opening tool (`'wall-opening'`):** Pick wall → drag rect → `commitWallOpening` effect (stubbed). Plan canvas draws dashed rect preview.
+- **Shaft tool (`'shaft'`):** Click polygon vertices → close loop → `commitShaft` effect (stubbed). Plan canvas draws in-progress polygon.
+- R2-01 (CSG) is already done — no renderer work needed.
 
-- **Wall Opening tool:** Click a wall → drag rectangle to define void cutout (distinct from door/window hosted opening). Backend: `wall_opening` element with `hostWallId`, `widthMm`, `heightMm`, `sillMm`.
-- **Shaft Opening:** Multi-story vertical void — rectangle in plan, spans from base level to top level. Backend: `shaft_opening` element.
-- **R2-01 CSG wall cuts:** Add `three-bvh-csg` dep. In `makeWallMesh`, subtract door/window cutter volumes. Gate behind `VITE_ENABLE_CSG=true`.
+### WP-V2-03b — View Filters + View Range UI
+
+**Scope:**
+- **ViewFilter data model:** `viewFilters: ViewFilter[]` on `plan_view`; Zustand add/update/remove actions.
+- **evaluateViewFilters():** Pure function in `planProjection.ts`; PlanCanvas uses it to skip invisible elements.
+- **VVDialog Filters tab:** List/add/edit view filter rules and overrides (depends on WP-V2-03a).
+- **ViewRangePanel.tsx:** Inspector panel for cutPlaneOffsetMm, viewRangeBottomMm, viewRangeTopMm, underlayLevelId — all editable, already stored in plan_view.
 
 ---
 
