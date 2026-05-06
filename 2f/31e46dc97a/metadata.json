@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "2f31e46dc97a",
+  "strategy": "manual-commit",
+  "branch": "feat/wp-v2-14-plan-canvas",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/workspace/AgentReviewPane.tsx",
+    "packages/web/src/workspace/review/EvidenceArtifactCorrelationPanel.tsx",
+    "packages/web/src/workspace/review/evidenceArtifactParser.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/2f/31e46dc97a/0/metadata.json",
+      "transcript": "/2f/31e46dc97a/0/full.jsonl",
+      "content_hash": "/2f/31e46dc97a/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 4,
+    "cache_creation_tokens": 8576,
+    "cache_read_tokens": 266979,
+    "output_tokens": 4670,
+    "api_call_count": 4
+  }
+}
