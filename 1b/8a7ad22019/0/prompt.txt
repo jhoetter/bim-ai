@@ -1,0 +1,151 @@
+i also have watched a six hour entry to revit video and made notes:
+The Complete Revit Course: Chronological Breakdown (Hours 1-6)
+This document provides a detailed step-by-step and chronological breakdown of the first six hours of the tutorial, focusing on goals, actions, and specific tool usage in Autodesk Revit.
+
+Hour 1: Setup, Interface, and Basics [00:00:00 - 01:00:00]
+1. Course Intro & Software Installation [00:00:00 - 00:09:35]
+Goal: Introduce the final project (Villa Simon and Maria in Kerala, India) and install the software.
+Actions: The instructor highlights the final 3D model. Navigates to the Autodesk website, selects the educational/home use free trial, creates an account, downloads the 15GB file, and installs Revit 2026.
+
+2. Revit User Interface Tour & Setup [00:09:35 - 00:28:02]
+Goal: Familiarize the user with the workspace and set up the starting template.
+Actions: Opens Revit to the Home Screen. Clicks New under Models and selects the Imperial Multi-discipline template. Organizes the Project Browser to the right and keeps Properties on the left. Demonstrates the Ribbon tabs and emphasizes that changes in the Properties palette apply when the cursor moves back to the drawing workspace. Shows how to toggle Dark/Light mode in File > Options.
+
+3. Linking CAD & Setting the Project Base Point [00:28:02 - 00:36:46]
+Goal: Import a 2D AutoCAD floor plan and anchor it to Revit's internal origin.
+Actions: Uses Insert > Link CAD to bring in the Ground Floor DWG. Types VV (Visibility/Graphics) to reveal the Internal Origin and Project Base Point. Unpins the CAD drawing (UP), uses the Move tool (MV) to align a column's corner to the origin, and repins it.
+
+4. Creating Vertical Levels [00:36:46 - 00:45:59]
+Goal: Define vertical height parameters for floors and roofs.
+Actions: Navigates to the North Elevation. Renames default levels to "Ground Floor Slab Top" and "First Floor Slab Top" (10 ft). Uses the Level tool (LL) to draw new horizontal levels: "Lintel LVL" (7 ft) and "Parapet Level" (13 ft). Copies levels 2 inches up to create "Finish Floor" levels.
+
+5. Drawing Structural Grids [00:45:59 - 00:51:44]
+Goal: Trace grid lines from the CAD plan for a structural framework.
+Actions: Declutters CAD by querying and hiding dimension layers. Uses Architecture > Grid (GR) to draw horizontal lines (A, B, C) and vertical lines (1, 2, 3), copying them so they auto-number. Modifies the grid type to show bubbles on both ends.
+
+6. Visibility Graphics & Creating Floor Plan Views [00:51:44 - 01:00:00]
+Goal: Generate working views for the custom levels.
+Actions: Deletes default floor plan views. Goes to View > Plan Views > Floor Plan, unchecks "Do not duplicate existing views", highlights the custom slab and finish floor levels, and generates new plan views.
+
+Hour 2: Walls, Slabs, and First Custom Family [01:00:00 - 02:00:00]
+1. Modeling Exterior and Interior Walls [01:01:32]
+Goal: Trace the 3D walls of the house over the CAD file.
+Actions: Links the CAD file again. Selects Architecture > Wall (WA) using a Generic 8" type. Sets constraints from Ground Floor to First Floor Slab Top. Traces the perimeter using Finish Face: Exterior. Creates a custom 200mm wall type to exactly match the CAD. Traces 6" interior walls.
+
+2. Adding Wall Layers (Plaster Finishes) [01:16:34]
+Goal: Add realistic plaster layers to structural walls.
+Actions: Changes wall location lines to Core Centerline. Edits the wall structure to add an 18mm "Finish 1" exterior layer and a 12mm "Finish 2" interior layer. Creates a "Plaster White" material and sets the view to "Fine" detail to see the layers.
+
+3. Modeling Floor Slabs [01:25:27]
+Goal: Create concrete slabs for ground and first floors.
+Actions: Uses Floor: Structural (Generic 12"). Uses Pick Lines (with the Tab key) to select the exterior core of the structural wall. Trims corners to create a loop and finishes. Links the First Floor CAD and repeats for the upper floor, leaving a stair opening.
+
+4. Introduction to View Underlays [01:35:08]
+Goal: See the ground floor while working on the first floor.
+Actions: In View Properties, sets the Underlay Base Level to Ground Floor Slab Top and Top Level to First Floor Slab Top, looking down. The ground floor appears faded.
+
+5. Building a Custom Parametric Door Family [01:38:10]
+Goal: Build a parametric wooden door.
+Actions: Opens the Metric Door template. Renames parameters to Rough Width and Rough Height. Draws reference planes and assigns a "Frame Width" parameter. Extrudes the frame and shutter panel. Assigns wood materials and flexes the family by testing custom dimensions (e.g., 1200x2400).
+
+6. Saving and Placing the Door [01:56:40]
+Goal: Bring the custom door into the project.
+Actions: Saves the family as `A_Door_Single Wooden_2026`. Loads it into the project and places it on a 3D wall. Creates a specific 4ft x 7ft type and uses the Move tool to align it with the CAD plan.
+
+Hour 3: Nested Families and Advanced Windows [02:00:00 - 03:00:00]
+1. Nested Families: 2D Door Swing Symbol [02:00:43 - 02:08:07]
+Goal: Create a 2D swing arc for floor plans.
+Actions: Creates a new Metric Detail Item. Draws a 90-degree start-end radius arc snapped to reference planes. Loads it into the main door family. Uses a formula: `Rough Width - (2 * Frame Width)` to automate the swing size.
+
+2. Finalizing Door Types & 3D Visibility [02:08:07 - 02:16:21]
+Goal: Ensure doors look correct in 2D vs. 3D.
+Actions: Creates standard types (4x7, 3x7, 2.5x7). Selects the 3D panel extrusion and unchecks "Plan/RCP" in Visibility Settings so it hides in 2D floor plans. Loads the finalized door back into the project.
+
+3. Starting the Parametric Window Family [02:16:21 - 02:26:28]
+Goal: Build a double-casement window.
+Actions: Uses the Metric Window template. Sets up reference planes for a center mullion. Extrudes the main frame and assigns a Sill Offset parameter as an Instance Parameter.
+
+4. Building the Nested Window Shutter [02:26:28 - 02:49:56]
+Goal: Create moving glass panels to nest into the frame.
+Actions: Creates a new generic model for the shutter frame and glass. Adjusts the View Range (Cut Plane to 450mm) to see the extrusions. Loads it into the window. Uses the formula `(Rough Width / 2) - Frame Width - (Frame Width / 2)` to automatically size the shutters. Mirrors the shutter to the other side.
+
+5. Window 2D Symbols & Advanced Visibility [02:49:56 - 03:00:00]
+Goal: Add visibility controls and a frameless option.
+Actions: Loads the 2D swing arc. Hides 3D geometry in Coarse view and replaces it with a simple dashed symbolic line. Creates a frameless glass shutter, loads it, and adds Yes/No parameters to toggle between framed and frameless styles instantly.
+
+Hour 4: Handles, Tiles, and 2D Furniture [03:00:00 - 04:00:00]
+1. Finalizing Window Types & Parameter Explanations [03:00:00 - 03:10:46]
+Goal: Wrap up the window and explain parameters.
+Actions: Explains Type parameters (change one, change all) vs. Instance parameters (change individually). Demonstrates by giving three identical windows different Sill Offsets.
+
+2. Creating Window Handles using "Sweep" [03:10:46 - 03:22:18]
+Goal: Add 3D handles to the window.
+Actions: Opens a Face-Based generic model. Uses the Sweep tool: draws a path line, edits the profile to draw a 10mm circle, and finishes to create a cylinder. Loads and places it onto the interior window face.
+
+3. Bonus Tip: Coarse Scale Fill Patterns [03:22:18 - 03:24:00]
+Goal: Make 3D walls visually distinct from CAD lines.
+Actions: Edits the wall type properties, changing "Coarse Scale Fill Pattern" to a solid black fill.
+
+4. Modeling Floor Tiles & Hatches [03:24:00 - 03:33:30]
+Goal: Add a 2-inch floor finish with tiles.
+Actions: Duplicates a floor type to 2" thick. Assigns a Model Hatch pattern (2ft x 2ft crosshatch). Traces the wall cores and uses the Align tool to perfectly anchor the grout lines to the corner of the room.
+
+5. Downloading Libraries & Placing 3D Furniture [03:33:30 - 03:39:46]
+Goal: Access standard Revit furniture.
+Actions: Downloads the 2GB Autodesk Content library. Uses Load Autodesk Family to grab a sofa, coffee table, and toilet, placing them using the Component tool.
+
+6. Building a Custom Parametric Chair [03:39:46 - 04:00:00]
+Goal: Create a lightweight chair that is 2D in plan but 3D in perspective.
+Actions: Draws a 2D Masking Region in the floor plan to block out floor tiles. In the elevation, models simple 3D extrusions for the seat, back, and legs. Turns off "Plan/RCP" visibility for the 3D parts to keep floor plans lightweight.
+
+Hour 5: Advanced Arrays, Formulas, and Stairs [04:00:00 - 05:00:00]
+1. Building a Parametric Dining Table [04:00:00 - 04:08:31]
+Goal: Create a stretchable table base.
+Actions: Uses Metric Furniture System. Assigns instance parameters to Length and Width. Extrudes the top and circular legs, locking them to the adjustable planes.
+
+2. Advanced Formulas & Nested Array Chairs [04:08:31 - 04:34:10]
+Goal: Automatically populate chairs based on table length.
+Actions: Nests the chair into the table. Uses the Array tool to copy chairs along the edge. Adds a formula: `if(Table Width < 1400 mm, 1, rounddown((Table Width - 2 * Chair Offset) / (Chair Width + Chair Spacing)))`. Creates visibility rules to toggle center and head-of-table chairs.
+
+3. Family Cleanup & The "Warehouse" Project [04:34:10 - 04:40:56]
+Goal: Store custom families.
+Actions: Fixes dimension lines. Creates a blank Revit project ("Library Furniture 2026") and places all custom families inside it with 3D model text labels.
+
+4. Copy/Pasting Furniture into the House [04:40:56 - 04:46:26]
+Goal: Furnish the main project quickly.
+Actions: Uses Ctrl+C / Ctrl+V to copy 2D parametric kitchen islands, sofas, and wardrobes directly from the Library project into the house floor plan.
+
+5. Modeling the Main Concrete Stairs [04:46:26 - 04:58:48]
+Goal: Build the dog-legged concrete staircase.
+Actions: Declutters CAD stair lines using Query. Uses Architecture > Stair (Monolithic). Overrides "Desired Number of Risers" to 20 for a 6" step. Draws up 10 steps, clicks across the landing, and draws the remaining 10. Removes the default nosing in Edit Type.
+
+6. Mini Stair Workshop (Deep Dive Intro) [04:58:48 - 05:00:00]
+Goal: Introduce completely custom stairs.
+Actions: Shows how to "Convert to Sketch-based" and begins demonstrating how to draw custom boundary and riser lines.
+
+Hour 6: Facades, Rooms, Areas, and Polish [05:00:00 - 05:51:27]
+1. Mini Stair Workshop: Sketch-Based & Special Stairs [05:00:00 - 05:08:04]
+Goal: Draw custom shaped stairs and test out-of-the-box templates.
+Actions: Uses the pencil icon (Create Sketch) to manually draw green boundary lines, black riser lines, and a blue stair path line to create a funky custom stair. Demonstrates Spirals and L/U-Shaped winders.
+
+2. Modeling the Facade: Custom Curtain Walls [05:08:04 - 05:23:57]
+Goal: Create the slatted wooden facade screen.
+Actions: Duplicates a Curtain Wall type. Replaces the glass with an "Empty System Panel". Sets the vertical grid spacing to 3.5". Duplicates a rectangular mullion profile to be exactly 1"x2" and applies it. Draws the wall with a 1/4" offset over the CAD lines.
+
+3. Placing Rooms & Room Separators [05:23:57 - 05:30:57]
+Goal: Define and label spaces.
+Actions: Uses Architecture > Room to tag fully enclosed spaces. For open plans and porches, draws invisible Room Separator lines to trap the room volume before tagging.
+
+4. Model Cleanup & Alignment [05:30:57 - 05:34:24]
+Goal: Fix a modeling inaccuracy.
+Actions: Uses Isolate Category to perfectly align a slightly off-center 3D wall perfectly flush with the 2D CAD boundary lines.
+
+5. Calculating Total Built-Up Area [05:34:24 - 05:45:54]
+Goal: Get exact square footage.
+Actions: Uses Area Boundary (with "Apply area rules" unchecked) to trace the exact perimeter of the house, explicitly including covered porches. Places an Area tag, yielding 831 sq ft.
+
+6. Final Polish: Parapet Walls & Slab Adjustments [05:45:54 - 05:51:27]
+Goal: Finalize the roof.
+Actions: Drops the top of all exterior walls by -6" so they sit perfectly under the concrete roof slab. Uses a generic 200mm wall, sets the base to the roof level and Top to unconnected 3ft, and traces the perimeter to build a parapet wall.
+
+of course, i dont care again tooo much about that i can open a file, install the software etc, but it is an EXTREMELY helpful video to udnerstand really all of the levels existing. please also see how that fits into the backlog..
