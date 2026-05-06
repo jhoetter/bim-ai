@@ -1,1 +1,5 @@
 can you add .DS_Store to gitignore? also the hooks.json for cursor?
+
+---
+
+yeah please remove .DS_Store from the git history. then commit and push your changes (only yours)
