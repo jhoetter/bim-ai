@@ -1,0 +1,114 @@
+{
+  "name": "Residential EU",
+  "description": "European residential starter — three levels, 3×3 default grid, project base point at origin, sample 3D label.",
+  "templateScaffold": true,
+  "snapshot": {
+    "revision": 1,
+    "elements": {
+      "internal_origin": {
+        "kind": "internal_origin",
+        "id": "internal_origin"
+      },
+      "tmpl-pbp": {
+        "kind": "project_base_point",
+        "id": "tmpl-pbp",
+        "positionMm": { "xMm": 0, "yMm": 0, "zMm": 0 },
+        "angleToTrueNorthDeg": 0
+      },
+      "tmpl-lvl-ground": {
+        "kind": "level",
+        "id": "tmpl-lvl-ground",
+        "name": "Ground Floor",
+        "elevationMm": 0
+      },
+      "tmpl-lvl-first": {
+        "kind": "level",
+        "id": "tmpl-lvl-first",
+        "name": "First Floor",
+        "elevationMm": 3000
+      },
+      "tmpl-lvl-roof": {
+        "kind": "level",
+        "id": "tmpl-lvl-roof",
+        "name": "Roof",
+        "elevationMm": 6000
+      },
+      "tmpl-plan-ground": {
+        "kind": "plan_view",
+        "id": "tmpl-plan-ground",
+        "name": "Ground Floor — Plan",
+        "levelId": "tmpl-lvl-ground"
+      },
+      "tmpl-plan-first": {
+        "kind": "plan_view",
+        "id": "tmpl-plan-first",
+        "name": "First Floor — Plan",
+        "levelId": "tmpl-lvl-first"
+      },
+      "tmpl-plan-roof": {
+        "kind": "plan_view",
+        "id": "tmpl-plan-roof",
+        "name": "Roof — Plan",
+        "levelId": "tmpl-lvl-roof"
+      },
+      "tmpl-grid-1": {
+        "kind": "grid_line",
+        "id": "tmpl-grid-1",
+        "name": "Grid 1",
+        "label": "1",
+        "start": { "xMm": 0, "yMm": -2000 },
+        "end": { "xMm": 0, "yMm": 10000 }
+      },
+      "tmpl-grid-2": {
+        "kind": "grid_line",
+        "id": "tmpl-grid-2",
+        "name": "Grid 2",
+        "label": "2",
+        "start": { "xMm": 4000, "yMm": -2000 },
+        "end": { "xMm": 4000, "yMm": 10000 }
+      },
+      "tmpl-grid-3": {
+        "kind": "grid_line",
+        "id": "tmpl-grid-3",
+        "name": "Grid 3",
+        "label": "3",
+        "start": { "xMm": 8000, "yMm": -2000 },
+        "end": { "xMm": 8000, "yMm": 10000 }
+      },
+      "tmpl-grid-A": {
+        "kind": "grid_line",
+        "id": "tmpl-grid-A",
+        "name": "Grid A",
+        "label": "A",
+        "start": { "xMm": -2000, "yMm": 0 },
+        "end": { "xMm": 10000, "yMm": 0 }
+      },
+      "tmpl-grid-B": {
+        "kind": "grid_line",
+        "id": "tmpl-grid-B",
+        "name": "Grid B",
+        "label": "B",
+        "start": { "xMm": -2000, "yMm": 4000 },
+        "end": { "xMm": 10000, "yMm": 4000 }
+      },
+      "tmpl-grid-C": {
+        "kind": "grid_line",
+        "id": "tmpl-grid-C",
+        "name": "Grid C",
+        "label": "C",
+        "start": { "xMm": -2000, "yMm": 8000 },
+        "end": { "xMm": 10000, "yMm": 8000 }
+      },
+      "tmpl-text-label": {
+        "kind": "text_3d",
+        "id": "tmpl-text-label",
+        "text": "Kerala House",
+        "fontFamily": "helvetiker",
+        "fontSizeMm": 200,
+        "depthMm": 50,
+        "positionMm": { "xMm": 0, "yMm": -2000, "zMm": 0 },
+        "rotationDeg": 0
+      }
+    }
+  }
+}

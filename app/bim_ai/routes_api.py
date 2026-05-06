@@ -27,6 +27,11 @@ from bim_ai.diff_engine import compute_element_diff
 from bim_ai.document import Document
 from bim_ai.elements import Element, LevelElem, PlanViewElem
 from bim_ai.engine import clone_document, ensure_internal_origin, try_commit_bundle
+from bim_ai.template_loader import (
+    list_templates,
+    load_template_snapshot,
+    template_exists,
+)
 from bim_ai.evidence_manifest import (
     MINIMAL_PROBE_PNG_BYTES_V1,
     MINIMAL_PROBE_PNG_CANONICAL_SHA256_V1,
@@ -142,6 +147,8 @@ async def bootstrap(session: AsyncSession = Depends(get_session)) -> dict[str, A
 
 class CreateEmptyModelBody(BaseModel):
     slug: str = Field(min_length=1, max_length=128)
+    # VIE-06: optional template id (e.g. "residential-eu") to seed the model.
+    template_id: str | None = Field(default=None, alias="templateId")
 
 
 @api_router.post("/projects/{project_id}/models")
@@ -154,15 +161,29 @@ async def create_empty_model(
     if proj is None:
         raise HTTPException(status_code=404, detail="Project not found")
     mid = uuid4()
-    empty_doc = Document(revision=1, elements={})  # type: ignore[arg-type]
+
+    if body.template_id:
+        if not template_exists(body.template_id):
+            raise HTTPException(
+                status_code=404, detail=f"Template '{body.template_id}' not found"
+            )
+        try:
+            seed_doc = load_template_snapshot(body.template_id)
+        except (FileNotFoundError, LookupError) as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        # Reset revision so the new model starts at 1 regardless of template state.
+        seed_doc.revision = 1
+    else:
+        seed_doc = Document(revision=1, elements={})  # type: ignore[arg-type]
+
     # KRN-06: every new model has the singleton internal_origin from inception.
-    ensure_internal_origin(empty_doc)
-    wire = document_to_wire(empty_doc)
+    ensure_internal_origin(seed_doc)
+    wire = document_to_wire(seed_doc)
     row = ModelRecord(
         id=mid,
         project_id=project_id,
         slug=body.slug,
-        revision=empty_doc.revision,
+        revision=seed_doc.revision,
         document=wire,
     )
     session.add(row)
@@ -179,6 +200,24 @@ async def create_empty_model(
         "projectId": str(project_id),
         "slug": body.slug,
         "revision": row.revision,
+        "templateId": body.template_id,
+    }
+
+
+@api_router.get("/templates")
+async def list_template_catalog() -> dict[str, Any]:
+    """VIE-06: enumerate built-in project templates."""
+    rows = list_templates()
+    return {
+        "templates": [
+            {
+                "id": t.id,
+                "name": t.name,
+                "description": t.description,
+                "thumbnailUrl": t.thumbnail_url,
+            }
+            for t in rows
+        ]
     }
 
 

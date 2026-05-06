@@ -907,7 +907,7 @@ Profile families (introduced in V2-11) optionally referenced via `profileFamilyI
 | VIE-03 | Named elevation views (N/S/E/W) + auto-generation                | M      | `open`    | —          |
 | VIE-04 | Temporary isolate / hide category                                | S      | `done`    | —          |
 | VIE-05 | Plan view auto-generation when a level is created                | S      | `done`    | —          |
-| VIE-06 | Project templates (starter models)                               | M      | `open`    | —          |
+| VIE-06 | Project templates (starter models)                               | M      | `done`    | —          |
 | VIE-07 | Pin element / unpin (UP shortcut, prevents accidental edit)      | S      | `done`    | —          |
 
 ### VIE-01 — Detail levels render binding

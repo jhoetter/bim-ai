@@ -250,10 +250,18 @@ async function cmdBootstrapCli() {
   console.log(JSON.stringify(json, null, 2));
 }
 
-async function cmdInitModel(projectId, slug) {
-  const json = await fetchJson('POST', `${base}/api/projects/${encodeURIComponent(projectId)}/models`, {
-    slug,
-  });
+async function cmdInitModel(projectId, slug, templateId) {
+  const body = templateId ? { slug, templateId } : { slug };
+  const json = await fetchJson(
+    'POST',
+    `${base}/api/projects/${encodeURIComponent(projectId)}/models`,
+    body,
+  );
+  console.log(JSON.stringify(json, null, 2));
+}
+
+async function cmdListTemplates() {
+  const json = await fetchJson('GET', `${base}/api/templates`);
   console.log(JSON.stringify(json, null, 2));
 }
 
@@ -469,8 +477,10 @@ function usage() {
 
 Commands:
   bootstrap                           GET /api/bootstrap (projects + models)
-  init-model --project-id <uuid> [--slug slug]
+  init-model --project-id <uuid> [--slug slug] [--template <id>]
                                        POST empty model row (agents use BIM_AI_MODEL_ID from output)
+                                       --template seeds from app/bim_ai/templates/<id>.json (e.g. residential-eu)
+  templates                           GET /api/templates (catalog of project templates)
   schema                              GET /api/schema (commands + presets ids)
   presets                             summarize schema + building presets
   snapshot                            GET snapshot (needs BIM_AI_MODEL_ID)
@@ -529,16 +539,22 @@ async function main() {
       const rest = argv.slice(1);
       let pid;
       let slug = `empty-${Date.now().toString(36)}`;
+      let templateId;
       for (let i = 0; i < rest.length; i++) {
         const a = rest[i];
         if (a === '--project-id' && rest[i + 1]) pid = rest[++i];
         else if (a === '--slug' && rest[i + 1]) slug = rest[++i];
+        else if (a === '--template' && rest[i + 1]) templateId = rest[++i];
       }
       if (!pid) {
         console.error('init-model requires --project-id <uuid> (run bim-ai bootstrap first).');
         usage();
       }
-      await cmdInitModel(pid, slug);
+      await cmdInitModel(pid, slug, templateId);
+      return;
+    }
+    if (cmd === 'templates') {
+      await cmdListTemplates();
       return;
     }
     if (cmd === 'schema') {
