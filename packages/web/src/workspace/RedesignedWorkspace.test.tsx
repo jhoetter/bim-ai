@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 
@@ -12,8 +12,14 @@ vi.mock('../plan/PlanCanvas', () => ({
 
 import { RedesignedWorkspace } from './RedesignedWorkspace';
 
+beforeEach(() => {
+  // Suppress the OnboardingTour dialog so aria-modal doesn't hide canvas content.
+  localStorage.setItem('bim.onboarding-completed', JSON.stringify({ completed: true }));
+});
+
 afterEach(() => {
   cleanup();
+  localStorage.removeItem('bim.onboarding-completed');
 });
 
 describe('<RedesignedWorkspace /> — smoke', () => {
@@ -45,8 +51,9 @@ describe('<RedesignedWorkspace /> — smoke', () => {
         <RedesignedWorkspace />
       </MemoryRouter>,
     );
-    // §25 canvas-empty headline
-    expect(getByText('This level is empty.')).toBeTruthy();
+    // §25 canvas overlay — shows "Loading model…" while seed fetch is in flight,
+    // then falls back to "This level is empty." once fetch settles.
+    expect(getByText(/Loading model|This level is empty/)).toBeTruthy();
   });
 
   it('renders the floating tool palette', () => {

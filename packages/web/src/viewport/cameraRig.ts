@@ -214,6 +214,11 @@ export class CameraRig {
       up: { ...this.state.up },
     };
   }
+
+  /** Shift the look-at target by a world-space delta (used for cursor-anchored zoom). */
+  nudgeTarget(delta: { x: number; y: number; z: number }): void {
+    this.state.target = add(this.state.target, delta);
+  }
 }
 
 /* ────────────────────────────────────────────────────────────────────── */
@@ -233,22 +238,25 @@ export interface PointerEventLike {
 
 /** Map a pointer event to the documented intent.
  *
- *   - Alt + LMB      → orbit
- *   - Middle button  → orbit (no modifier) / pan with Shift
- *   - Shift + MMB    → pan
+ *   - LMB            → orbit (primary gesture)
+ *   - Alt + LMB      → orbit (explicit alt path)
+ *   - RMB (button 2) → orbit (Revit / Rhino convention)
+ *   - MMB (button 1) → pan  (middle-drag pans, natural for scroll wheels)
  *   - Two-finger trackpad scroll arrives as wheel (handled separately)
  */
 export function classifyPointer(event: PointerEventLike): PointerIntent {
   const isLmb = event.button === 0;
   const isMmb = event.button === 1;
-  if (isMmb && event.shiftKey) return 'pan';
-  if (isMmb) return 'orbit';
+  const isRmb = event.button === 2;
+  if (isMmb) return 'pan';
+  if (isRmb) return 'orbit';
   if (isLmb && event.altKey) return 'orbit';
   return 'idle';
 }
 
 export type WheelEventLike = {
   deltaY: number;
+  deltaMode?: number;
   metaKey?: boolean;
   ctrlKey?: boolean;
 };
@@ -257,7 +265,9 @@ export type WheelEventLike = {
 export function wheelDelta(event: WheelEventLike): number {
   // Trackpad pinch arrives as ctrl+wheel on most browsers.
   if (event.metaKey || event.ctrlKey) return event.deltaY * 0.5;
-  return event.deltaY;
+  // Normalize across deltaMode: 0=pixel, 1=line (~20px), 2=page (~600px).
+  const m = event.deltaMode ?? 0;
+  return m === 1 ? event.deltaY * 20 : m === 2 ? event.deltaY * 600 : event.deltaY;
 }
 
 /* Hotkey resolution for §15.3. */

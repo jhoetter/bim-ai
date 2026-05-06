@@ -9,27 +9,36 @@ import {
 } from './ModeShells';
 import { useBimStore } from '../state/store';
 
+vi.mock('./SheetCanvas', () => ({
+  SheetCanvas: ({
+    preferredSheetId,
+  }: {
+    preferredSheetId?: string;
+    elementsById: Record<string, Element>;
+  }) => <div data-testid="sheet-canvas" data-preferred-sheet-id={preferredSheetId ?? ''} />,
+}));
+
+vi.mock('./SectionPlaceholderPane', () => ({
+  SectionPlaceholderPane: ({
+    activeLevelLabel,
+    modelId,
+  }: {
+    activeLevelLabel: string;
+    modelId?: string;
+  }) => (
+    <div
+      data-testid="section-placeholder-pane"
+      data-level={activeLevelLabel}
+      data-model-id={modelId ?? ''}
+    />
+  ),
+}));
+
 afterEach(() => {
   cleanup();
 });
 
 const elementsById: Record<string, Element> = {
-  'seed-sec-aa': {
-    kind: 'section_cut',
-    id: 'seed-sec-aa',
-    name: 'A–A',
-    lineStartMm: { xMm: 0, yMm: 0 },
-    lineEndMm: { xMm: 12000, yMm: 0 },
-    cropDepthMm: 9000,
-  } as Extract<Element, { kind: 'section_cut' }>,
-  'seed-sec-bb': {
-    kind: 'section_cut',
-    id: 'seed-sec-bb',
-    name: 'B–B',
-    lineStartMm: { xMm: 0, yMm: 0 },
-    lineEndMm: { xMm: 0, yMm: 9000 },
-    cropDepthMm: 9000,
-  } as Extract<Element, { kind: 'section_cut' }>,
   'seed-sheet-a101': {
     kind: 'sheet',
     id: 'seed-sheet-a101',
@@ -56,33 +65,44 @@ const elementsById: Record<string, Element> = {
 };
 
 describe('SectionModeShell — spec §20.4', () => {
-  it('lists section cuts and renders a preview for the active one', () => {
-    const { getAllByText, getByTestId } = render(<SectionModeShell elementsById={elementsById} />);
+  it('renders the section-mode-shell wrapper with SectionPlaceholderPane', () => {
+    const { getByTestId } = render(<SectionModeShell activeLevelLabel="Level 1" />);
     expect(getByTestId('section-mode-shell')).toBeTruthy();
-    expect(getAllByText('A–A').length).toBeGreaterThanOrEqual(1);
-    expect(getAllByText('B–B').length).toBeGreaterThanOrEqual(1);
+    expect(getByTestId('section-placeholder-pane')).toBeTruthy();
   });
 
-  it('switches active section on click', () => {
-    const { getAllByText, getByText } = render(<SectionModeShell elementsById={elementsById} />);
-    fireEvent.click(getAllByText('B–B')[0]!);
-    // Crop depth readout reflects the active section.
-    expect(getByText(/crop depth · 9000/)).toBeTruthy();
+  it('passes activeLevelLabel and modelId through to SectionPlaceholderPane', () => {
+    const { getByTestId } = render(
+      <SectionModeShell activeLevelLabel="L2" modelId="model-abc" />,
+    );
+    const pane = getByTestId('section-placeholder-pane');
+    expect(pane.getAttribute('data-level')).toBe('L2');
+    expect(pane.getAttribute('data-model-id')).toBe('model-abc');
   });
 });
 
 describe('SheetModeShell — spec §20.5', () => {
-  it('renders the active sheet paper with its viewports', () => {
-    const { getByTestId, getAllByText } = render(<SheetModeShell elementsById={elementsById} />);
+  it('renders the sheet-mode-shell wrapper with SheetCanvas', () => {
+    const { getByTestId } = render(<SheetModeShell elementsById={elementsById} />);
     expect(getByTestId('sheet-mode-shell')).toBeTruthy();
-    expect(getAllByText('A-101').length).toBeGreaterThanOrEqual(1);
-    expect(getByTestId('sheet-viewport-vp-eg')).toBeTruthy();
+    expect(getByTestId('sheet-canvas')).toBeTruthy();
+  });
+
+  it('passes preferredSheetId to SheetCanvas', () => {
+    const { getByTestId } = render(
+      <SheetModeShell elementsById={elementsById} preferredSheetId="seed-sheet-a101" />,
+    );
+    expect(getByTestId('sheet-canvas').getAttribute('data-preferred-sheet-id')).toBe(
+      'seed-sheet-a101',
+    );
   });
 });
 
 describe('ScheduleModeShell — spec §20.6', () => {
   it('renders the schedule grid for the active id', () => {
-    const { getByTestId, getAllByText } = render(<ScheduleModeShell elementsById={elementsById} />);
+    const { getByTestId, getAllByText } = render(
+      <ScheduleModeShell elementsById={elementsById} />,
+    );
     expect(getByTestId('schedule-mode-shell')).toBeTruthy();
     expect(getAllByText('Door schedule').length).toBeGreaterThanOrEqual(1);
   });

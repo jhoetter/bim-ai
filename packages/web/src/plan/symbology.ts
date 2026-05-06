@@ -732,6 +732,65 @@ function rebuildPlanMeshesFromWire(
   }
 }
 
+function sectionCutPlanThree(sc: Extract<Element, { kind: 'section_cut' }>): THREE.Group {
+  const group = new THREE.Group();
+  group.userData.bimPickId = sc.id;
+
+  const sx = ux(sc.lineStartMm.xMm);
+  const sz = uz(sc.lineStartMm.yMm);
+  const ex = ux(sc.lineEndMm.xMm);
+  const ez = uz(sc.lineEndMm.yMm);
+  const Y = PLAN_Y + 0.007;
+  const color = readToken('--cat-section', '#ef4444');
+
+  // Dashed cut body
+  const linePts = [new THREE.Vector3(sx, Y, sz), new THREE.Vector3(ex, Y, ez)];
+  const lineGeom = new THREE.BufferGeometry().setFromPoints(linePts);
+  const lineMat = new THREE.LineDashedMaterial({ color, dashSize: 0.35, gapSize: 0.14 });
+  const line = new THREE.Line(lineGeom, lineMat);
+  line.computeLineDistances();
+  group.add(line);
+
+  // Direction along cut and right-hand perpendicular (view direction).
+  const dx = ex - sx;
+  const dz = ez - sz;
+  const len = Math.max(0.001, Math.hypot(dx, dz));
+  const nx = dx / len;
+  const nz = dz / len;
+  const vx = nz;
+  const vz = -nx;
+
+  const STUB = 0.25;
+  const ARROW = 0.55;
+  for (const [px, pz] of [
+    [sx, sz],
+    [ex, ez],
+  ] as [number, number][]) {
+    const stubPts = [
+      new THREE.Vector3(px - nz * STUB, Y, pz + nx * STUB),
+      new THREE.Vector3(px + nz * STUB, Y, pz - nx * STUB),
+    ];
+    group.add(
+      new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints(stubPts),
+        new THREE.LineBasicMaterial({ color }),
+      ),
+    );
+    const arrPts = [
+      new THREE.Vector3(px, Y, pz),
+      new THREE.Vector3(px + vx * ARROW, Y, pz + vz * ARROW),
+    ];
+    group.add(
+      new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints(arrPts),
+        new THREE.LineBasicMaterial({ color }),
+      ),
+    );
+  }
+
+  return group;
+}
+
 export function rebuildPlanMeshes(
   holder: THREE.Object3D,
 
@@ -879,6 +938,12 @@ export function rebuildPlanMeshes(
     if (level && dm.levelId !== level) continue;
 
     holder.add(dimensionsThree(dm));
+  }
+
+  for (const sc of Object.values(elementsById)) {
+    if (sc.kind !== 'section_cut') continue;
+    if (kindHidden('section_cut')) continue;
+    holder.add(sectionCutPlanThree(sc));
   }
 }
 

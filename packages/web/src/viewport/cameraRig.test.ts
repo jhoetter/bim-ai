@@ -89,8 +89,11 @@ describe('classifyPointer', () => {
   it('Alt + LMB → orbit', () => {
     expect(classifyPointer({ button: 0, altKey: true })).toBe('orbit');
   });
-  it('Middle mouse → orbit', () => {
-    expect(classifyPointer({ button: 1 })).toBe('orbit');
+  it('Middle mouse → pan', () => {
+    expect(classifyPointer({ button: 1 })).toBe('pan');
+  });
+  it('Right mouse → orbit', () => {
+    expect(classifyPointer({ button: 2 })).toBe('orbit');
   });
   it('Shift + Middle mouse → pan', () => {
     expect(classifyPointer({ button: 1, shiftKey: true })).toBe('pan');
@@ -106,6 +109,12 @@ describe('wheelDelta', () => {
   });
   it('dampens pinch (ctrl-modified)', () => {
     expect(wheelDelta({ deltaY: 24, ctrlKey: true })).toBe(12);
+  });
+  it('normalises deltaMode=1 (line scroll)', () => {
+    expect(wheelDelta({ deltaY: 3, deltaMode: 1 })).toBe(60);
+  });
+  it('normalises deltaMode=2 (page scroll)', () => {
+    expect(wheelDelta({ deltaY: 1, deltaMode: 2 })).toBe(600);
   });
 });
 

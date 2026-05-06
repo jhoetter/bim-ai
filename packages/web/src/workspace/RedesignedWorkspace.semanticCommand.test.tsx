@@ -23,10 +23,14 @@ vi.mock('../plan/PlanCanvas', () => ({
 
 const mockApplyCommand = vi.fn();
 const mockBootstrap = vi.fn();
-vi.mock('../lib/api', () => ({
-  applyCommand: (...args: unknown[]) => mockApplyCommand(...args),
-  bootstrap: (...args: unknown[]) => mockBootstrap(...args),
-}));
+vi.mock('../lib/api', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../lib/api')>();
+  return {
+    ...actual,
+    applyCommand: (...args: unknown[]) => mockApplyCommand(...args),
+    bootstrap: (...args: unknown[]) => mockBootstrap(...args),
+  };
+});
 
 import { RedesignedWorkspace } from './RedesignedWorkspace';
 import { useBimStore } from '../state/store';

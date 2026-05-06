@@ -36,7 +36,6 @@ import { LeftRail, LeftRailCollapsed, type LeftRailSection } from './LeftRail';
 import { Inspector, type InspectorSelection } from './Inspector';
 import {
   InspectorConstraintsFor,
-  InspectorGraphicsFor,
   InspectorIdentityFor,
   InspectorPropertiesFor,
 } from './InspectorContent';
@@ -918,6 +917,8 @@ export function RedesignedWorkspace(): JSX.Element {
               onSemanticCommand={(cmd) => void onSemanticCommand(cmd)}
               cameraHandleRef={planCameraHandleRef}
               initialCamera={activeTab?.viewportState?.planCamera}
+              preferredSheetId={activeTab?.kind === 'sheet' ? (activeTab.targetId ?? undefined) : undefined}
+              modelId={modelId ?? undefined}
             />
           </div>
         }
@@ -942,22 +943,6 @@ export function RedesignedWorkspace(): JSX.Element {
                 ) : (
                   <InspectorEmptyTab message="No element selected." />
                 ),
-                graphics:
-                  el && (el.kind === 'plan_view' || el.kind === 'view_template') ? (
-                    <InspectorGraphicsFor
-                      el={el}
-                      elementsById={elementsById}
-                      revision={revision}
-                      onPersistProperty={(key, value) =>
-                        void onSemanticCommand({
-                          type: 'updateElementProperty',
-                          elementId: el.id,
-                          key,
-                          value,
-                        })
-                      }
-                    />
-                  ) : undefined,
               }}
               emptyStateActions={[
                 {
@@ -1000,8 +985,6 @@ export function RedesignedWorkspace(): JSX.Element {
             undoDepth={0}
             wsState="connected"
             saveState="saved"
-            conflictQueue={collaborationConflictQueue}
-            onClearConflict={() => setCollaborationConflictQueue(null)}
           />
         }
       />
@@ -1055,6 +1038,8 @@ function CanvasMount({
   onSemanticCommand,
   cameraHandleRef,
   initialCamera,
+  preferredSheetId,
+  modelId,
 }: {
   mode: WorkspaceMode;
   viewerMode: 'plan_canvas' | 'orbit_3d';
@@ -1063,6 +1048,8 @@ function CanvasMount({
   onSemanticCommand: (cmd: Record<string, unknown>) => void;
   cameraHandleRef?: RefObject<PlanCameraHandle | null>;
   initialCamera?: { centerMm?: { xMm: number; yMm: number }; halfMm?: number };
+  preferredSheetId?: string;
+  modelId?: string;
 }): JSX.Element {
   if (mode === 'plan-3d') {
     return (
@@ -1095,8 +1082,8 @@ function CanvasMount({
         initialCamera={initialCamera}
       />
     );
-  if (mode === 'section') return <SectionModeShell elementsById={elementsById} />;
-  if (mode === 'sheet') return <SheetModeShell elementsById={elementsById} />;
+  if (mode === 'section') return <SectionModeShell activeLevelLabel={activeLevelId} modelId={modelId} />;
+  if (mode === 'sheet') return <SheetModeShell elementsById={elementsById} preferredSheetId={preferredSheetId} />;
   if (mode === 'schedule') return <ScheduleModeShell elementsById={elementsById} />;
   if (mode === 'agent')
     return <AgentReviewModeShell onApplyQuickFix={onSemanticCommand} />;
