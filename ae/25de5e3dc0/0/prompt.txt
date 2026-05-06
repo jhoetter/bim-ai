@@ -7,3 +7,7 @@ wave 6 is now also done. delete buckets 1 and 2. for bucket 3, i will look into 
 ---
 
 what about files like @spec/rendering-v2-spec.md ? look into the other md files, which of those also are completed?
+
+---
+
+write a prompt that i can copy-paste to another subagent which will implement missing parts of FL-06, FL-08, R5 and R7.
