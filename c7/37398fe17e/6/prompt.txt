@@ -1,0 +1,14 @@
+Agent E — R2-05 (railing balusters)
+  Work in /Users/jhoetter/repos/bim-ai. Read spec/rendering-v2-spec.md
+  section R2-05. Extend makeRailingMesh in packages/web/src/Viewport.tsx
+  (which currently builds only the rail cap segments) to also add square
+  posts (50 mm) at each pathMm vertex and evenly spaced balusters (12 mm
+  square, 115 mm clear gap) between posts. Heights interpolated for sloped
+  sections. Override material: roughness 0.35, metalness 0.65.
+
+  Only touch makeRailingMesh. Do not touch any other factory functions.
+  Run pnpm --filter web typecheck before committing.
+  Commit: "feat(3d): R2-05 — railing post + baluster geometry"
+  Push to origin/main when done.
+
+  Task: R2-05
