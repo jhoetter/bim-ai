@@ -42,7 +42,8 @@ export type PlanTool =
   | 'wall-opening'
   | 'shaft'
   | 'column'
-  | 'beam';
+  | 'beam'
+  | 'ceiling';
 
 export type PresencePeers = Record<
   string,

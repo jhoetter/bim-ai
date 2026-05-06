@@ -1630,3 +1630,39 @@ export function makeBeamMesh(
   addEdges(mesh);
   return mesh;
 }
+
+export function makeCeilingMesh(
+  ceiling: Extract<Element, { kind: 'ceiling' }>,
+  elementsById: Record<string, Element>,
+  paint: ViewportPaintBundle | null,
+): THREE.Mesh {
+  const elev = elevationMForLevel(ceiling.levelId, elementsById);
+  const heightOff = (ceiling.heightOffsetMm ?? 0) / 1000;
+  const th = THREE.MathUtils.clamp((ceiling.thicknessMm ?? 50) / 1000, 0.02, 0.5);
+  const boundary = ceiling.boundaryMm ?? [];
+  const shape = new THREE.Shape(
+    boundary.length >= 3
+      ? boundary.map((p) => new THREE.Vector2(p.xMm / 1000, -p.yMm / 1000))
+      : [
+          new THREE.Vector2(0, 0),
+          new THREE.Vector2(4, 0),
+          new THREE.Vector2(4, -4),
+          new THREE.Vector2(0, -4),
+        ],
+  );
+  const geom = new THREE.ExtrudeGeometry(shape, { depth: th, bevelEnabled: false });
+  geom.rotateX(-Math.PI / 2);
+  const mesh = new THREE.Mesh(
+    geom,
+    new THREE.MeshStandardMaterial({
+      color: categoryColorOr(paint, 'floor'),
+      roughness: paint?.categories.floor.roughness ?? 0.9,
+      transparent: true,
+      opacity: 0.7,
+    }),
+  );
+  mesh.position.set(0, elev + heightOff, 0);
+  mesh.userData.bimPickId = ceiling.id;
+  addEdges(mesh, 20);
+  return mesh;
+}

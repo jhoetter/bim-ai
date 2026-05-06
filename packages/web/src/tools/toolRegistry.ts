@@ -40,7 +40,8 @@ export type ToolId =
   | 'wall-opening'
   | 'shaft'
   | 'column'
-  | 'beam';
+  | 'beam'
+  | 'ceiling';
 
 /** Modify-group tool IDs — used by ToolPalette to insert a separator. */
 export const MODIFY_TOOL_IDS = new Set<ToolId>(['align', 'split', 'trim', 'wall-join']);
@@ -221,6 +222,14 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       modes: ['plan', 'plan-3d'],
       tooltip: t('tools.beam.tooltip'),
     },
+    ceiling: {
+      id: 'ceiling',
+      label: t('tools.ceiling.label'),
+      icon: 'ceiling',
+      hotkey: 'CL',
+      modes: ['plan', 'plan-3d'],
+      tooltip: t('tools.ceiling.tooltip'),
+    },
   };
 }
 
@@ -245,6 +254,7 @@ const PALETTE_ORDER: ToolId[] = [
   'shaft',
   'column',
   'beam',
+  'ceiling',
 ];
 
 export function paletteForMode(mode: WorkspaceMode, t: TFunction): ToolDefinition[] {

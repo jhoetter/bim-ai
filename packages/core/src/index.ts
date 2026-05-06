@@ -36,7 +36,8 @@ export type ElemKind =
   | 'agent_deviation'
   | 'validation_rule'
   | 'column'
-  | 'beam';
+  | 'beam'
+  | 'ceiling';
 
 export type XY = { xMm: number; yMm: number };
 
@@ -529,6 +530,16 @@ export type Element =
       materialKey?: string | null;
       startColumnId?: string | null;
       endColumnId?: string | null;
+    }
+  | {
+      kind: 'ceiling';
+      id: string;
+      name: string;
+      levelId: string;
+      boundaryMm: XY[];
+      heightOffsetMm: number;
+      thicknessMm: number;
+      ceilingTypeId?: string | null;
     };
 
 export type Violation = {

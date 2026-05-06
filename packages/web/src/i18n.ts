@@ -57,6 +57,10 @@ i18n.init({
             label: 'Beam',
             tooltip: 'Two-click structural beam (BM)',
           },
+          ceiling: {
+            label: 'Ceiling',
+            tooltip: 'Sketch ceiling boundary polygon (CL)',
+          },
           disabled: {
             drawWallFirst: 'Draw a wall first',
             addStairFirst: 'Add a stair or slab first',
@@ -709,6 +713,10 @@ i18n.init({
           beam: {
             label: 'Träger',
             tooltip: 'Zwei Klicks für einen Träger (BM)',
+          },
+          ceiling: {
+            label: 'Decke',
+            tooltip: 'Deckenumriss skizzieren (CL)',
           },
           disabled: {
             drawWallFirst: 'Zuerst eine Wand zeichnen',

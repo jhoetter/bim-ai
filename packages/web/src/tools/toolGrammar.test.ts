@@ -18,6 +18,8 @@ import {
   reduceColumn,
   initialBeamState,
   reduceBeam,
+  initialCeilingState,
+  reduceCeiling,
   initialSplitState,
   initialTrimState,
   initialWallChainState,
@@ -559,6 +561,40 @@ describe('Beam reducer', () => {
     let state = initialBeamState();
     state = reduceBeam(state, { kind: 'click', pointMm: { xMm: 0, yMm: 0 } }).state;
     const { state: next } = reduceBeam(state, { kind: 'cancel' });
+    expect(next.phase).toBe('idle');
+  });
+});
+
+describe('Ceiling reducer', () => {
+  it('starts in idle phase', () => {
+    expect(initialCeilingState().phase).toBe('idle');
+  });
+  it('transitions to sketch on first click', () => {
+    const { state } = reduceCeiling(initialCeilingState(), { kind: 'click', pointMm: { xMm: 0, yMm: 0 } });
+    expect(state.phase).toBe('sketch');
+  });
+  it('accumulates vertices in sketch phase', () => {
+    let state = initialCeilingState();
+    state = reduceCeiling(state, { kind: 'click', pointMm: { xMm: 0, yMm: 0 } }).state;
+    state = reduceCeiling(state, { kind: 'click', pointMm: { xMm: 5000, yMm: 0 } }).state;
+    state = reduceCeiling(state, { kind: 'click', pointMm: { xMm: 5000, yMm: 4000 } }).state;
+    expect(state.phase).toBe('sketch');
+    if (state.phase === 'sketch') expect(state.verticesMm).toHaveLength(3);
+  });
+  it('commits polygon when closing back to first vertex (≥3 verts)', () => {
+    let state = initialCeilingState();
+    state = reduceCeiling(state, { kind: 'click', pointMm: { xMm: 0, yMm: 0 } }).state;
+    state = reduceCeiling(state, { kind: 'click', pointMm: { xMm: 5000, yMm: 0 } }).state;
+    state = reduceCeiling(state, { kind: 'click', pointMm: { xMm: 5000, yMm: 4000 } }).state;
+    const { effect } = reduceCeiling(state, { kind: 'close-loop' });
+    expect(effect.commitCeiling).toBeDefined();
+    expect(effect.commitCeiling?.verticesMm).toHaveLength(3);
+    expect(effect.stillActive).toBe(true);
+  });
+  it('resets to idle on cancel', () => {
+    let state = initialCeilingState();
+    state = reduceCeiling(state, { kind: 'click', pointMm: { xMm: 0, yMm: 0 } }).state;
+    const { state: next } = reduceCeiling(state, { kind: 'cancel' });
     expect(next.phase).toBe('idle');
   });
 });

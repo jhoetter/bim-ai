@@ -24,6 +24,9 @@ import {
   initialBeamState,
   reduceBeam,
   type BeamState,
+  initialCeilingState,
+  reduceCeiling,
+  type CeilingState,
 } from '../tools/toolGrammar';
 import * as THREE from 'three';
 import type { Element } from '@bim-ai/core';
@@ -190,6 +193,7 @@ export function PlanCanvas({
   const shaftStateRef = useRef<ShaftState>(initialShaftState());
   const columnStateRef = useRef<ColumnState>(initialColumnState());
   const beamStateRef = useRef<BeamState>(initialBeamState());
+  const ceilingStateRef = useRef<CeilingState>(initialCeilingState());
   const marqueeRef = useRef<{
     active: boolean;
     sx: number;
@@ -430,6 +434,8 @@ export function PlanCanvas({
       columnStateRef.current = initialColumnState();
     } else if (planTool === 'beam') {
       beamStateRef.current = initialBeamState();
+    } else if (planTool === 'ceiling') {
+      ceilingStateRef.current = initialCeilingState();
     }
   }, [planTool]);
 
@@ -1186,6 +1192,30 @@ export function PlanCanvas({
         bumpGeom((x) => x + 1);
         return;
       }
+      if (planTool === 'ceiling') {
+        const rect = rnd.domElement.getBoundingClientRect();
+        const worldPerPxMm = (2 * camRef.current.half * 1000) / Math.max(1, rect.width);
+        const threshMm = 12 * worldPerPxMm;
+        const fst = ceilingStateRef.current.phase === 'sketch'
+          ? ceilingStateRef.current.verticesMm[0]
+          : undefined;
+        if (
+          fst &&
+          (ceilingStateRef.current as { verticesMm: unknown[] }).verticesMm.length >= 3 &&
+          Math.hypot(sp.xMm - fst.xMm, sp.yMm - fst.yMm) <= threshMm
+        ) {
+          const { effect } = reduceCeiling(ceilingStateRef.current, { kind: 'close-loop' });
+          ceilingStateRef.current = initialCeilingState();
+          if (effect.commitCeiling) {
+            console.warn('stub: ceiling command not implemented', effect.commitCeiling);
+          }
+        } else {
+          const { state } = reduceCeiling(ceilingStateRef.current, { kind: 'click', pointMm: sp });
+          ceilingStateRef.current = state;
+        }
+        bumpGeom((x) => x + 1);
+        return;
+      }
       if (planTool === 'room') {
         let rm = draftRef.current;
         if (!rm || rm.kind !== 'room') {
@@ -1285,6 +1315,8 @@ export function PlanCanvas({
           columnStateRef.current = initialColumnState();
         } else if (planTool === 'beam') {
           beamStateRef.current = initialBeamState();
+        } else if (planTool === 'ceiling') {
+          ceilingStateRef.current = initialCeilingState();
         }
         clearMarqueeLine();
         marqueeRef.current = { active: false, sx: 0, sy: 0, ex: 0, ey: 0, direction: null };

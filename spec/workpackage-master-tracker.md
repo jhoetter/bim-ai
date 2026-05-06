@@ -219,7 +219,7 @@ Batch B (after A merged):
 | -------- | --------------------------------------------------------------------------- | ---------------------------- | ------ | ---------- |
 | WP-V2-07 | Curtain Wall grid params + Inspector (vCount/hCount fields)                 | `feat/wp-v2-07-curtain-wall` | `done` | — |
 | WP-V2-06 | Structural Elements (column + beam: types, tools, mesh builders)            | `feat/wp-v2-06-structural`   | `open` | — |
-| WP-V2-08 | Ceilings (sketch ceiling, plan outline, 3D slab)                            | `feat/wp-v2-08-ceilings`     | `open` | WP-V2-06 merged |
+| WP-V2-08 | Ceilings (sketch ceiling, plan outline, 3D slab)                            | `feat/wp-v2-08-ceilings`     | `done` | WP-V2-06 merged |
 
 ### WP-V2-06 — Structural Elements
 

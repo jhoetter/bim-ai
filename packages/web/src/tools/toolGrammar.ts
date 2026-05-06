@@ -861,3 +861,59 @@ export function reduceBeam(
   }
   return { state, effect: { stillActive: true } };
 }
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* C18 Ceiling — sketch polygon (same grammar as Shaft)                     */
+/* ────────────────────────────────────────────────────────────────────── */
+
+export type CeilingState =
+  | { phase: 'idle' }
+  | { phase: 'sketch'; verticesMm: Array<{ xMm: number; yMm: number }> };
+
+export type CeilingEvent =
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'click'; pointMm: { xMm: number; yMm: number } }
+  | { kind: 'close-loop' }
+  | { kind: 'cancel' };
+
+export interface CeilingEffect {
+  commitCeiling?: { verticesMm: Array<{ xMm: number; yMm: number }> };
+  stillActive: boolean;
+}
+
+export function initialCeilingState(): CeilingState {
+  return { phase: 'idle' } as CeilingState;
+}
+
+export function reduceCeiling(
+  state: CeilingState,
+  event: CeilingEvent,
+): { state: CeilingState; effect: CeilingEffect } {
+  if (event.kind === 'activate') {
+    return { state: { phase: 'idle' }, effect: { stillActive: true } };
+  }
+  if (event.kind === 'deactivate') {
+    return { state: { phase: 'idle' }, effect: { stillActive: false } };
+  }
+  if (event.kind === 'cancel') {
+    return { state: { phase: 'idle' }, effect: { stillActive: true } };
+  }
+  if (event.kind === 'click') {
+    const prev = state.phase === 'sketch' ? state.verticesMm : [];
+    return {
+      state: { phase: 'sketch', verticesMm: [...prev, event.pointMm] },
+      effect: { stillActive: true },
+    };
+  }
+  if (event.kind === 'close-loop') {
+    const verts = state.phase === 'sketch' ? state.verticesMm : [];
+    if (verts.length >= 3) {
+      return {
+        state: { phase: 'idle' },
+        effect: { commitCeiling: { verticesMm: verts }, stillActive: true },
+      };
+    }
+  }
+  return { state, effect: { stillActive: true } };
+}

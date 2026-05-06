@@ -56,6 +56,7 @@ import {
   makeSiteMesh,
   makeColumnMesh,
   makeBeamMesh,
+  makeCeilingMesh,
 } from './viewport/meshBuilders';
 import {
   type ViewerCatKey,
@@ -1046,6 +1047,9 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
           obj = makeBeamMesh(e, elev, paint);
           break;
         }
+        case 'ceiling':
+          obj = makeCeilingMesh(e, curr, paint);
+          break;
         case 'site':
           obj = makeSiteMesh(e, curr, paint);
           break;

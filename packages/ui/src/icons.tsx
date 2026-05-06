@@ -47,6 +47,7 @@ import {
   CurtainWallIcon,
   ColumnIcon,
   BeamIcon,
+  CeilingIcon,
   // Phase 2 — views & annotations
   PlanViewIcon,
   SectionViewIcon,
@@ -130,6 +131,7 @@ export const Icons: Record<string, LucideLikeIcon> = {
   curtainWall: CurtainWallIcon,
   column: ColumnIcon,
   beam: BeamIcon,
+  ceiling: CeilingIcon,
 
   // Views & documentation — BIM-native
   planView: PlanViewIcon,
@@ -221,6 +223,7 @@ export const IconLabels: Record<keyof typeof Icons, string> = {
   curtainWall: 'Curtain wall',
   column: 'Column',
   beam: 'Beam',
+  ceiling: 'Ceiling',
   planView: 'Plan view',
   sectionView: 'Section view',
   elevationView: 'Elevation view',
@@ -297,6 +300,7 @@ export {
   CurtainWallIcon,
   ColumnIcon,
   BeamIcon,
+  CeilingIcon,
   PlanViewIcon,
   SectionViewIcon,
   ElevationViewIcon,
