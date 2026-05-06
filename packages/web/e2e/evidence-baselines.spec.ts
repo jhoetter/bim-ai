@@ -755,7 +755,10 @@ async function sharedRoutes(page: Page, layoutPreset: string) {
 
 test.describe('evidence PNG baselines', () => {
   test('coordination layout: sheet + schedules panel', async ({ page }) => {
-    test.skip(true, 'workspaceLayoutPreset is dead code; schedule-panel testid never appears in workspace');
+    test.skip(
+      true,
+      'workspaceLayoutPreset is dead code; schedule-panel testid never appears in workspace',
+    );
     await sharedRoutes(page, 'coordination');
     await page.goto('/');
     await page.waitForSelector('[data-testid="app-shell"]', { timeout: 30_000 });
@@ -767,7 +770,10 @@ test.describe('evidence PNG baselines', () => {
   });
 
   test('schedules_focus docked rails', async ({ page }) => {
-    test.skip(true, 'workspaceLayoutPreset is dead code; schedule-panel testid never appears in workspace');
+    test.skip(
+      true,
+      'workspaceLayoutPreset is dead code; schedule-panel testid never appears in workspace',
+    );
     await sharedRoutes(page, 'schedules_focus');
     await page.goto('/');
     await page.waitForSelector('[data-testid="app-shell"]', { timeout: 30_000 });
@@ -788,7 +794,10 @@ test.describe('evidence PNG baselines', () => {
   });
 
   test('coordination layout: deterministic manifest sheet PNG basename', async ({ page }) => {
-    test.skip(true, 'workspaceLayoutPreset is dead code; sheet-canvas screenshot baselines need regeneration on Linux');
+    test.skip(
+      true,
+      'workspaceLayoutPreset is dead code; sheet-canvas screenshot baselines need regeneration on Linux',
+    );
     await sharedRoutes(page, 'coordination');
     await page.goto('/');
     await page.waitForSelector('[data-testid="app-shell"]', { timeout: 30_000 });
@@ -799,7 +808,10 @@ test.describe('evidence PNG baselines', () => {
   });
 
   test('deterministic manifest: full-sheet SVG screenshot', async ({ page }) => {
-    test.skip(true, 'workspaceLayoutPreset is dead code; sheet-svg screenshot baselines need regeneration on Linux');
+    test.skip(
+      true,
+      'workspaceLayoutPreset is dead code; sheet-svg screenshot baselines need regeneration on Linux',
+    );
     await sharedRoutes(page, 'coordination');
     await page.goto('/?evidenceSheetFull=1');
     await page.waitForSelector('[data-testid="app-shell"]', { timeout: 30_000 });
@@ -808,7 +820,10 @@ test.describe('evidence PNG baselines', () => {
   });
 
   test('named plan_views change EG openings vs OG room presentation', async ({ page }) => {
-    test.skip(true, 'plan_view tab buttons do not exist in current UI; screenshot baselines need regeneration on Linux');
+    test.skip(
+      true,
+      'plan_view tab buttons do not exist in current UI; screenshot baselines need regeneration on Linux',
+    );
     await sharedRoutes(page, 'split_plan_3d');
     await page.goto('/');
     await page.waitForSelector('[data-testid="app-shell"]', { timeout: 30_000 });
@@ -920,7 +935,10 @@ test.describe('evidence PNG baselines', () => {
   test('agent_review layout: fix-loop callout hidden when evidence package clean', async ({
     page,
   }) => {
-    test.skip(true, 'AgentReviewPane (with evidence-diff-fix-loop-callout) is not rendered in current agent mode shell; current shell shows AdvisorPanel instead');
+    test.skip(
+      true,
+      'AgentReviewPane (with evidence-diff-fix-loop-callout) is not rendered in current agent mode shell; current shell shows AdvisorPanel instead',
+    );
     await sharedRoutes(page, 'agent_review');
     await page.goto('/');
     await page.waitForSelector('[data-testid="app-shell"]', { timeout: 30_000 });

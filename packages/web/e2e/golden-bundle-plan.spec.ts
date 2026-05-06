@@ -200,7 +200,10 @@ test.describe('golden bundle affordances', () => {
   });
 
   test('lists longitudinal section cuts and exposes plan style presets', async ({ page }) => {
-    test.skip(true, 'Left-rail section IDs are not shown as HTML text; Sheets section header is not a button in current UI');
+    test.skip(
+      true,
+      'Left-rail section IDs are not shown as HTML text; Sheets section header is not a button in current UI',
+    );
     await page.goto('/');
     await page.waitForSelector('[data-testid="app-shell"]', { timeout: 30_000 });
 
@@ -220,7 +223,10 @@ test.describe('golden bundle affordances', () => {
   test('project browser lists floor plans, section cuts, and split viewpoint groups', async ({
     page,
   }) => {
-    test.skip(true, 'Left-rail labels use "Floor Plans"/"Sections"/"3D Views" not "Floor plans"/"Section cuts"/"3D saved views"; viewpoints are not split into 3D vs plan groups');
+    test.skip(
+      true,
+      'Left-rail labels use "Floor Plans"/"Sections"/"3D Views" not "Floor plans"/"Section cuts"/"3D saved views"; viewpoints are not split into 3D vs plan groups',
+    );
     await page.goto('/');
     await page.waitForSelector('[data-testid="app-shell"]', { timeout: 30_000 });
 
@@ -256,7 +262,10 @@ test.describe('golden bundle affordances', () => {
   });
 
   test('applies evidence3d clip query params on 3D section box controls', async ({ page }) => {
-    test.skip(true, 'evidence3dClipCapMm/evidence3dClipFloorMm URL params are not implemented; section box inputs only appear in 3D mode layers panel');
+    test.skip(
+      true,
+      'evidence3dClipCapMm/evidence3dClipFloorMm URL params are not implemented; section box inputs only appear in 3D mode layers panel',
+    );
     await page.addInitScript(() => {
       localStorage.setItem('bim.workspaceLayout', 'split_plan_3d');
     });
