@@ -3,7 +3,7 @@
   "checkpoint_id": "38026d7d351a",
   "strategy": "manual-commit",
   "branch": "r3-04-outline-selection",
-  "checkpoints_count": 4,
+  "checkpoints_count": 6,
   "files_touched": [
     "packages/web/src/Viewport.tsx",
     "packages/web/src/viewport/materials.test.ts",
@@ -34,14 +34,20 @@
       "transcript": "/38/026d7d351a/3/full.jsonl",
       "content_hash": "/38/026d7d351a/3/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/38/026d7d351a/4/metadata.json",
+      "transcript": "/38/026d7d351a/4/full.jsonl",
+      "content_hash": "/38/026d7d351a/4/content_hash.txt",
+      "prompt": "/38/026d7d351a/4/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 280,
-    "cache_creation_tokens": 433591,
-    "cache_read_tokens": 20446838,
-    "output_tokens": 194157,
-    "api_call_count": 252
+    "input_tokens": 377,
+    "cache_creation_tokens": 563250,
+    "cache_read_tokens": 27767982,
+    "output_tokens": 274621,
+    "api_call_count": 339
   },
   "combined_attribution": {
     "calculated_at": "2026-05-06T10:37:42.815417Z",
