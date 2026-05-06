@@ -11,3 +11,7 @@ so not all tasks are done yet, right?
 ---
 
 yes
+
+---
+
+so all is implemented and pushed? also tracked somewhere documentation-wise?
