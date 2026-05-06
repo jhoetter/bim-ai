@@ -687,7 +687,7 @@ class SketchSession:
 | FAM-04 | Conditional formula support (`if()`, `rounddown()`, `mod()`)   | M      | `open` | —          |
 | FAM-05 | Array tool (linear + radial, parameter-driven count)          | L      | `open` | FAM-04, FAM-01 |
 | FAM-06 | 3D text element kind                                          | S      | `done` | —          |
-| FAM-07 | Mirror tool (axis reflection in family editor + project)      | S      | `open` | —          |
+| FAM-07 | Mirror tool (axis reflection in family editor + project)      | S      | `done` | done in 9b1658bf |
 | FAM-08 | Component tool + external family catalog (Autodesk-style)     | M      | `open` | FAM-01     |
 | FAM-09 | "Flex the family" parameter test mode                         | S      | `done` | done in 21d8f228 |
 | FAM-10 | Cross-project family / element copy-paste                     | M      | `open` | —          |
