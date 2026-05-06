@@ -821,10 +821,10 @@ export function makeRoofMassMesh(
     }
   }
 
-  const roofColor =
-    roof.roofGeometryMode === 'flat'
-      ? (roof.materialKey ?? '#d8d8d4')
-      : categoryColorOr(paint, 'roof');
+  const roofColor = roof.materialKey ?? (
+    roof.roofGeometryMode === 'flat' ? '#d8d8d4' : categoryColorOr(paint, 'roof')
+  );
+  const roofIsLight = !!roof.materialKey;
 
   const mesh = new THREE.Mesh(
     geom,
@@ -832,8 +832,9 @@ export function makeRoofMassMesh(
       color: roofColor,
       transparent: true,
       opacity: 0.94,
-      roughness: paint?.categories.roof.roughness ?? 0.74,
+      roughness: roofIsLight ? 0.9 : (paint?.categories.roof.roughness ?? 0.74),
       metalness: paint?.categories.roof.metalness ?? 0.0,
+      envMapIntensity: roofIsLight ? 0.1 : 1.0,
       side: THREE.DoubleSide,
     }),
   );
