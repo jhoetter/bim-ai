@@ -14,13 +14,20 @@ import { ICON_SIZE, Icons } from '@bim-ai/ui';
 
 import { Viewport } from '../Viewport';
 import { PlanCanvas, type PlanCameraHandle } from '../plan/PlanCanvas';
-import { applyCommand, bootstrap, ApiHttpError } from '../lib/api';
+import {
+  applyCommand,
+  bootstrap,
+  ApiHttpError,
+  fetchComments,
+  postComment,
+  patchCommentResolved,
+} from '../lib/api';
 import {
   buildCollaborationConflictQueueV1,
   type CollaborationConflictQueueV1,
 } from '../lib/collaborationConflictQueue';
 import type { Snapshot, Violation } from '@bim-ai/core';
-import { useBimStore, toggleTheme, getCurrentTheme, type Theme } from '../state/store';
+import { useBimStore, toggleTheme, getCurrentTheme, type Theme, type UxComment } from '../state/store';
 import { modeForHotkey } from '../state/modeController';
 import { patternFor } from '../state/uiStates';
 import { AppShell } from './AppShell';
@@ -29,6 +36,7 @@ import { LeftRail, LeftRailCollapsed, type LeftRailSection } from './LeftRail';
 import { Inspector, type InspectorSelection } from './Inspector';
 import {
   InspectorConstraintsFor,
+  InspectorGraphicsFor,
   InspectorIdentityFor,
   InspectorPropertiesFor,
 } from './InspectorContent';
@@ -38,6 +46,7 @@ import {
   SectionModeShell,
   SheetModeShell,
 } from './ModeShells';
+import { CommentsPanel } from './CommentsPanel';
 import { StatusBar } from './StatusBar';
 import { CheatsheetModal } from '../cmd/CheatsheetModal';
 import { RedesignedCommandPalette } from '../cmd/RedesignedCommandPalette';
@@ -87,6 +96,30 @@ import {
  * §12 Project Browser, §13 Inspector, §16 Tool palette, §17 StatusBar.
  */
 
+function mapComments(rows: Record<string, unknown>[]): UxComment[] {
+  return rows.map((row) => ({
+    id: String(row.id ?? ''),
+    userDisplay: String(row.userDisplay ?? row.user_display ?? ''),
+    body: String(row.body ?? ''),
+    elementId: (row.elementId ?? row.element_id ?? null) as string | null,
+    levelId: (row.levelId ?? row.level_id ?? null) as string | null,
+    anchorXMm:
+      row.anchorXMm !== undefined
+        ? Number(row.anchorXMm)
+        : row.anchor_x_mm !== undefined
+          ? Number(row.anchor_x_mm)
+          : null,
+    anchorYMm:
+      row.anchorYMm !== undefined
+        ? Number(row.anchorYMm)
+        : row.anchor_y_mm !== undefined
+          ? Number(row.anchor_y_mm)
+          : null,
+    resolved: Boolean(row.resolved),
+    createdAt: String(row.createdAt ?? row.created_at ?? ''),
+  }));
+}
+
 const KNOWN_PLAN_TOOLS = new Set<ToolId>(['select', 'wall', 'door', 'window', 'room', 'dimension']);
 
 type LegacyPlanTool =
@@ -129,6 +162,12 @@ export function RedesignedWorkspace(): JSX.Element {
   const viewerClipFloorElevMm = useBimStore((s) => s.viewerClipFloorElevMm);
   const setViewerClipFloorElevMm = useBimStore((s) => s.setViewerClipFloorElevMm);
   const activeViewpointId = useBimStore((s) => s.activeViewpointId);
+  const presencePeers = useBimStore((s) => s.presencePeers);
+  const userDisplayName = useBimStore((s) => s.userDisplayName);
+  const modelId = useBimStore((s) => s.modelId);
+  const comments = useBimStore((s) => s.comments);
+  const revision = useBimStore((s) => s.revision);
+  const setComments = useBimStore((s) => s.setComments);
 
   const [mode, setMode] = useState<WorkspaceMode>(() =>
     viewerMode === 'orbit_3d' ? '3d' : 'plan',
@@ -143,6 +182,7 @@ export function RedesignedWorkspace(): JSX.Element {
   const [collaborationConflictQueue, setCollaborationConflictQueue] =
     useState<CollaborationConflictQueueV1 | null>(null);
   const [projectMenuOpen, setProjectMenuOpen] = useState(false);
+  const [commentsOpen, setCommentsOpen] = useState(false);
   const [recentProjects, setRecentProjects] = useState<ProjectMenuItemRecent[]>(() =>
     readRecentProjects().map((r) => ({ id: r.id, label: r.label })),
   );
@@ -283,6 +323,32 @@ export function RedesignedWorkspace(): JSX.Element {
     hydrateFromSnapshot({ modelId: 'empty', revision: 0, elements: {}, violations: [] });
     setTabsState(EMPTY_TABS);
   }, [hydrateFromSnapshot]);
+
+  /* ── Comments + presence handlers (T-16) ─────────────────────────── */
+  const handleCommentPost = useCallback(
+    async (body: string): Promise<void> => {
+      if (!modelId) return;
+      await postComment(modelId, {
+        userDisplay: userDisplayName || 'Guest',
+        body,
+        levelId: activeLevelId ?? undefined,
+        elementId: selectedId ?? undefined,
+      });
+      const c = await fetchComments(modelId);
+      setComments(mapComments((c.comments ?? []) as Record<string, unknown>[]));
+    },
+    [modelId, userDisplayName, activeLevelId, selectedId, setComments],
+  );
+
+  const handleCommentResolve = useCallback(
+    async (commentId: string, resolved: boolean): Promise<void> => {
+      if (!modelId) return;
+      await patchCommentResolved(modelId, commentId, resolved);
+      const c = await fetchComments(modelId);
+      setComments(mapComments((c.comments ?? []) as Record<string, unknown>[]));
+    },
+    [modelId, setComments],
+  );
 
   /* ── Semantic command dispatch (from PlanCanvas / Viewport) ────────── */
   const onSemanticCommand = useCallback(
@@ -685,6 +751,20 @@ export function RedesignedWorkspace(): JSX.Element {
         onPick={handlePalettePick}
       />
       <OnboardingTour open={tourOpen} onClose={() => setTourOpen(false)} />
+      {commentsOpen ? (
+        <div
+          data-testid="comments-overlay"
+          style={{ position: 'fixed', top: 56, right: 12, zIndex: 50 }}
+        >
+          <CommentsPanel
+            comments={comments}
+            userDisplay={userDisplayName || 'Guest'}
+            onPost={handleCommentPost}
+            onResolve={handleCommentResolve}
+            onClose={() => setCommentsOpen(false)}
+          />
+        </div>
+      ) : null}
       <ProjectMenu
         open={projectMenuOpen}
         onOpenChange={setProjectMenuOpen}
@@ -713,8 +793,10 @@ export function RedesignedWorkspace(): JSX.Element {
                 theme={theme}
                 onThemeToggle={handleThemeToggle}
                 onCommandPalette={() => setPaletteOpen(true)}
-                collaboratorsCount={undefined}
-                avatarInitials="BA"
+                collaboratorsCount={Object.keys(presencePeers).length || undefined}
+                onCollaboratorsClick={() => setCommentsOpen((v) => !v)}
+                peers={Object.values(presencePeers)}
+                avatarInitials={userDisplayName ? userDisplayName.slice(0, 2).toUpperCase() : 'BA'}
               />
               <a
                 href="/legacy"
@@ -860,6 +942,22 @@ export function RedesignedWorkspace(): JSX.Element {
                 ) : (
                   <InspectorEmptyTab message="No element selected." />
                 ),
+                graphics:
+                  el && (el.kind === 'plan_view' || el.kind === 'view_template') ? (
+                    <InspectorGraphicsFor
+                      el={el}
+                      elementsById={elementsById}
+                      revision={revision}
+                      onPersistProperty={(key, value) =>
+                        void onSemanticCommand({
+                          type: 'updateElementProperty',
+                          elementId: el.id,
+                          key,
+                          value,
+                        })
+                      }
+                    />
+                  ) : undefined,
               }}
               emptyStateActions={[
                 {
@@ -902,6 +1000,8 @@ export function RedesignedWorkspace(): JSX.Element {
             undoDepth={0}
             wsState="connected"
             saveState="saved"
+            conflictQueue={collaborationConflictQueue}
+            onClearConflict={() => setCollaborationConflictQueue(null)}
           />
         }
       />

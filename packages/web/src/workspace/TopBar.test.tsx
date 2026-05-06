@@ -116,4 +116,32 @@ describe('TopBar — spec §11', () => {
     fireEvent.click(getByText('⌘K').parentElement!);
     expect(onCommandPalette).toHaveBeenCalled();
   });
+
+  it('renders peer avatar chips from the peers prop', () => {
+    const peers = [
+      { name: 'Alice', color: '#f00' },
+      { name: 'Bob' },
+    ];
+    const { getByTestId } = render(
+      <TopBar {...baseProps} mode="plan" onModeChange={() => undefined} peers={peers} />,
+    );
+    const container = getByTestId('peer-avatars');
+    expect(container.children).toHaveLength(2);
+    expect(container.children[0]!.textContent).toBe('AL');
+    expect(container.children[1]!.textContent).toBe('BO');
+  });
+
+  it('does not render peer-avatars div when peers list is empty', () => {
+    const { queryByTestId } = render(
+      <TopBar {...baseProps} mode="plan" onModeChange={() => undefined} peers={[]} />,
+    );
+    expect(queryByTestId('peer-avatars')).toBeNull();
+  });
+
+  it('renders avatarInitials in the account tile', () => {
+    const { getByLabelText } = render(
+      <TopBar {...baseProps} mode="plan" onModeChange={() => undefined} avatarInitials="JH" />,
+    );
+    expect(getByLabelText('Account').textContent).toBe('JH');
+  });
 });

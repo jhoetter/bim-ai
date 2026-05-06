@@ -51,6 +51,8 @@ export interface TopBarProps {
   onCollaboratorsClick?: () => void;
   /** Identifier shown as the avatar fallback when no avatar URL is provided. */
   avatarInitials?: string;
+  /** Presence peers to render as avatar chips (up to 6). */
+  peers?: Array<{ name?: string; color?: string }>;
 }
 
 export function TopBar({
@@ -67,6 +69,7 @@ export function TopBar({
   collaboratorsCount,
   onCollaboratorsClick,
   avatarInitials,
+  peers,
 }: TopBarProps): JSX.Element {
   const tablistId = useId();
   return (
@@ -91,6 +94,7 @@ export function TopBar({
         collaboratorsCount={collaboratorsCount}
         onCollaboratorsClick={onCollaboratorsClick}
         avatarInitials={avatarInitials}
+        peers={peers}
       />
     </div>
   );
@@ -195,17 +199,12 @@ function TopBarModePills({
             title={`${m.label} (${m.hotkey})`}
             className={[
               'relative rounded px-3 py-1.5 text-sm font-medium transition-colors',
-              active
-                ? 'text-accent'
-                : 'text-muted hover:bg-surface hover:text-foreground',
+              active ? 'text-accent' : 'text-muted hover:bg-surface hover:text-foreground',
             ].join(' ')}
             style={active ? { boxShadow: 'inset 0 -2px 0 0 var(--color-accent)' } : undefined}
           >
             {m.label}
-            <span
-              aria-hidden="true"
-              className="ml-1.5 text-[10px] tabular-nums opacity-40"
-            >
+            <span aria-hidden="true" className="ml-1.5 text-[10px] tabular-nums opacity-40">
               {m.hotkey}
             </span>
           </button>
@@ -223,6 +222,7 @@ function TopBarRight({
   collaboratorsCount,
   onCollaboratorsClick,
   avatarInitials,
+  peers,
 }: {
   theme: 'light' | 'dark';
   onThemeToggle?: () => void;
@@ -231,6 +231,7 @@ function TopBarRight({
   collaboratorsCount?: number;
   onCollaboratorsClick?: () => void;
   avatarInitials?: string;
+  peers?: Array<{ name?: string; color?: string }>;
 }): JSX.Element {
   return (
     <div className="flex items-center gap-2">
@@ -244,6 +245,24 @@ function TopBarRight({
         <Icons.commandPalette size={14} />
         <span>⌘K</span>
       </button>
+      {peers && peers.length > 0 ? (
+        <div
+          data-testid="peer-avatars"
+          className="flex items-center gap-0.5"
+          aria-label="Active collaborators"
+        >
+          {peers.slice(0, 6).map((p, i) => (
+            <div
+              key={i}
+              title={p.name ?? 'Anonymous'}
+              className="flex h-6 w-6 items-center justify-center rounded-full border border-border text-[10px] font-medium text-foreground"
+              style={{ backgroundColor: p.color ?? 'var(--color-surface-strong)' }}
+            >
+              {(p.name ?? '?').slice(0, 2).toUpperCase()}
+            </div>
+          ))}
+        </div>
+      ) : null}
       <IconButton
         Icon={Icons.collaborators}
         label={IconLabels.collaborators}
