@@ -187,6 +187,7 @@ export function RedesignedWorkspace(): JSX.Element {
   const planPresentationPreset = useBimStore((s) => s.planPresentationPreset);
   const setPlanPresentationPreset = useBimStore((s) => s.setPlanPresentationPreset);
   const violations = useBimStore((s) => s.violations);
+  const activityEvents = useBimStore((s) => s.activityEvents);
 
   const [mode, setMode] = useState<WorkspaceMode>(() =>
     viewerMode === 'orbit_3d' ? '3d' : 'plan',
@@ -1096,6 +1097,18 @@ export function RedesignedWorkspace(): JSX.Element {
                   perspective={perspectiveId}
                 />
               </div>
+              {activityEvents.length > 0 ? (
+                <div className="max-h-36 shrink-0 overflow-y-auto border-t border-border p-3">
+                  <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted">Activity</div>
+                  <ul className="space-y-1 text-[11px] text-muted">
+                    {activityEvents.map((a) => (
+                      <li key={a.id}>
+                        r{a.revisionAfter} · {a.commandTypes[0] ?? '?'}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
             </div>
           );
         })()}
