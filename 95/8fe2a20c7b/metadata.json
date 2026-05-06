@@ -1,0 +1,31 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "958fe2a20c7b",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "packages/core/src/index.ts",
+    "packages/web/src/i18n.ts",
+    "packages/web/src/schedules/ScheduleDefinitionToolbar.tsx",
+    "packages/web/src/schedules/scheduleDefinitionPresets.test.ts",
+    "packages/web/src/schedules/scheduleDefinitionPresets.ts",
+    "packages/web/src/state/store.ts",
+    "packages/web/src/workspace/InspectorContent.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/95/8fe2a20c7b/0/metadata.json",
+      "transcript": "/95/8fe2a20c7b/0/full.jsonl",
+      "content_hash": "/95/8fe2a20c7b/0/content_hash.txt",
+      "prompt": "/95/8fe2a20c7b/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 12,
+    "cache_creation_tokens": 12753,
+    "cache_read_tokens": 146450,
+    "output_tokens": 1286,
+    "api_call_count": 8
+  }
+}
