@@ -153,6 +153,76 @@ const FIXED_WINDOW: FamilyDefinition = {
   ],
 };
 
+// ── stair families ────────────────────────────────────────────────────────────
+
+const STRAIGHT_STAIR: FamilyDefinition = {
+  id:         'builtin:stair:straight',
+  name:       'Straight Stair',
+  discipline: 'stair',
+  params: [
+    lengthParam('widthMm',  'Width',       1200, { min: 600, max: 3000, instanceOverridable: true }),
+    lengthParam('riserMm',  'Riser Height',  175, { min: 100, max: 220,  instanceOverridable: false }),
+    lengthParam('treadMm',  'Tread Depth',   280, { min: 200, max: 400,  instanceOverridable: false }),
+  ],
+  defaultTypes: [
+    {
+      id:         'builtin:stair:straight:1200',
+      name:       'Straight 1200 wide',
+      familyId:   'builtin:stair:straight',
+      discipline: 'stair',
+      parameters: { widthMm: 1200, riserMm: 175, treadMm: 280 },
+      isBuiltIn:  true,
+    },
+    {
+      id:         'builtin:stair:straight:900',
+      name:       'Straight 900 wide',
+      familyId:   'builtin:stair:straight',
+      discipline: 'stair',
+      parameters: { widthMm: 900, riserMm: 175, treadMm: 280 },
+      isBuiltIn:  true,
+    },
+    {
+      id:         'builtin:stair:straight:1500',
+      name:       'Straight 1500 wide',
+      familyId:   'builtin:stair:straight',
+      discipline: 'stair',
+      parameters: { widthMm: 1500, riserMm: 175, treadMm: 280 },
+      isBuiltIn:  true,
+    },
+  ],
+};
+
+// ── railing families ──────────────────────────────────────────────────────────
+
+const POST_AND_RAIL: FamilyDefinition = {
+  id:         'builtin:railing:post_and_rail',
+  name:       'Post and Rail',
+  discipline: 'railing',
+  params: [
+    lengthParam('guardHeightMm', 'Guard Height',   1050, { min: 900, max: 1200, instanceOverridable: true }),
+    lengthParam('postSectMm',    'Post Section',     50, { instanceOverridable: false }),
+    lengthParam('balSpacingMm',  'Baluster Spacing', 115, { instanceOverridable: false }),
+  ],
+  defaultTypes: [
+    {
+      id:         'builtin:railing:post_and_rail:1050',
+      name:       'Post and Rail 1050',
+      familyId:   'builtin:railing:post_and_rail',
+      discipline: 'railing',
+      parameters: { guardHeightMm: 1050 },
+      isBuiltIn:  true,
+    },
+    {
+      id:         'builtin:railing:post_and_rail:1100',
+      name:       'Post and Rail 1100',
+      familyId:   'builtin:railing:post_and_rail',
+      discipline: 'railing',
+      parameters: { guardHeightMm: 1100 },
+      isBuiltIn:  true,
+    },
+  ],
+};
+
 // ── exports ───────────────────────────────────────────────────────────────────
 
 export const BUILT_IN_FAMILIES: FamilyDefinition[] = [
@@ -160,6 +230,8 @@ export const BUILT_IN_FAMILIES: FamilyDefinition[] = [
   DOUBLE_DOOR,
   CASEMENT_WINDOW,
   FIXED_WINDOW,
+  STRAIGHT_STAIR,
+  POST_AND_RAIL,
 ];
 
 export function getFamilyById(id: string): FamilyDefinition | undefined {
