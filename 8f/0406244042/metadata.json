@@ -3,7 +3,7 @@
   "checkpoint_id": "8f0406244042",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 3,
+  "checkpoints_count": 4,
   "files_touched": [
     "spec/ui-ux-redesign-v1-spec.md"
   ],
@@ -37,13 +37,19 @@
       "transcript": "/8f/0406244042/4/full.jsonl",
       "content_hash": "/8f/0406244042/4/content_hash.txt",
       "prompt": "/8f/0406244042/4/prompt.txt"
+    },
+    {
+      "metadata": "/8f/0406244042/5/metadata.json",
+      "transcript": "/8f/0406244042/5/full.jsonl",
+      "content_hash": "/8f/0406244042/5/content_hash.txt",
+      "prompt": "/8f/0406244042/5/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 4782,
-    "cache_creation_tokens": 566009,
-    "cache_read_tokens": 34897878,
-    "output_tokens": 199988,
-    "api_call_count": 392
+    "input_tokens": 4970,
+    "cache_creation_tokens": 809395,
+    "cache_read_tokens": 50164533,
+    "output_tokens": 290358,
+    "api_call_count": 560
   }
 }
