@@ -6,10 +6,8 @@ import {
   useRef,
   useState,
 } from 'react';
-import { Icons, ICON_SIZE } from '@bim-ai/ui';
 import {
   alignmentForPick,
-  compassLabelFromAzimuth,
   type ViewCubeAlignment,
   type ViewCubeCorner,
   type ViewCubeFace,
@@ -35,7 +33,6 @@ export interface ViewCubeProps {
   onPick: (pick: ViewCubePick, alignment: ViewCubeAlignment) => void;
   /** Raw pixel deltas during a drag. Viewport calls rig.orbit(dx, dy). */
   onDrag?: (dxPx: number, dyPx: number) => void;
-  onHome?: () => void;
   /** Optional className for positioning. */
   className?: string;
 }
@@ -78,7 +75,6 @@ export function ViewCube({
   currentElevation,
   onPick,
   onDrag,
-  onHome,
   className,
 }: ViewCubeProps): JSX.Element {
   const dragRef = useRef({ dragging: false, totalMoved: 0 });
@@ -93,7 +89,6 @@ export function ViewCube({
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       emit({ kind: 'home' });
-      onHome?.();
     }
   }
 
@@ -209,22 +204,6 @@ export function ViewCube({
         ))}
       </div>
 
-      {/* Compass + reset: fade in on hover so the cube is clean by default. */}
-      <div className="flex items-center gap-1.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
-        <Compass currentAzimuth={currentAzimuth} />
-        <button
-          type="button"
-          onClick={() => {
-            emit({ kind: 'home' });
-            onHome?.();
-          }}
-          aria-label="Reset to default view"
-          title="Click to reset camera"
-          className="inline-flex h-4 w-4 items-center justify-center rounded text-muted hover:text-foreground"
-        >
-          <Icons.viewCubeReset size={11} aria-hidden="true" />
-        </button>
-      </div>
     </div>
   );
 }
@@ -266,21 +245,5 @@ function CubeFace({ face, onClick }: { face: FaceDef; onClick: () => void }): JS
     >
       {face.label}
     </button>
-  );
-}
-
-function Compass({ currentAzimuth }: { currentAzimuth: number }): JSX.Element {
-  const label = compassLabelFromAzimuth(currentAzimuth);
-  return (
-    <div
-      role="img"
-      aria-label={`Compass · north toward ${label}`}
-      data-testid="view-cube-compass"
-      data-cardinal={label}
-      className="flex items-center gap-0.5 text-[10px] font-medium text-muted"
-    >
-      <span aria-hidden="true" className="opacity-50">⌖</span>
-      <span>{label}</span>
-    </div>
   );
 }

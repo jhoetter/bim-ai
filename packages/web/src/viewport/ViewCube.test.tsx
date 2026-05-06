@@ -38,17 +38,6 @@ describe('<ViewCube /> — spec §15.4', () => {
     expect(alignment.up).toEqual({ x: 0, y: 0, z: 1 });
   });
 
-  it('home button emits a `home` pick and onHome', () => {
-    const onPick = vi.fn();
-    const onHome = vi.fn();
-    const { getByLabelText } = render(
-      <ViewCube currentAzimuth={0} currentElevation={0.45} onPick={onPick} onHome={onHome} />,
-    );
-    fireEvent.click(getByLabelText('Reset to default view'));
-    expect(onPick.mock.calls[0]![0]).toEqual({ kind: 'home' });
-    expect(onHome).toHaveBeenCalled();
-  });
-
   it('corner buttons emit corner picks', () => {
     const onPick = vi.fn();
     const { getByLabelText } = render(<ViewCube currentAzimuth={0} currentElevation={0.45} onPick={onPick} />);
