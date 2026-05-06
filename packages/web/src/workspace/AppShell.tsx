@@ -86,8 +86,9 @@ export function AppShell({
       "leftRail canvas rightRail"
       "statusbar statusbar statusbar"
     `,
-    minHeight: '100vh',
+    height: '100dvh',
     width: '100%',
+    overflow: 'hidden',
     background: 'var(--color-background)',
     color: 'var(--color-foreground)',
   };
@@ -124,7 +125,7 @@ export function AppShell({
       <aside
         aria-label="Inspector"
         data-testid="app-shell-right-rail"
-        style={{ gridArea: 'rightRail', minWidth: 0 }}
+        style={{ gridArea: 'rightRail', minWidth: 0, minHeight: 0, overflow: 'hidden' }}
         className="flex flex-col border-l border-border bg-surface"
         hidden={rightCollapsed}
       >

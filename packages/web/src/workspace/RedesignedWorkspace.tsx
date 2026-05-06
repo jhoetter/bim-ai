@@ -1198,8 +1198,8 @@ export function RedesignedWorkspace(): JSX.Element {
           const el = selectedId ? elementsById[selectedId] : undefined;
           const show3dLayers = mode === '3d' || mode === 'plan-3d';
           return (
-            <div className="flex h-full flex-col overflow-hidden">
-              <div className="min-h-0 flex-1 overflow-hidden">
+            <div className="h-full overflow-y-auto">
+              <div>
                 <Inspector
                   selection={inspectorSelection}
                   tabs={{
@@ -1312,7 +1312,7 @@ export function RedesignedWorkspace(): JSX.Element {
                 />
               </div>
               {show3dLayers ? (
-                <div className="max-h-64 shrink-0 overflow-y-auto border-t border-border">
+                <div className="border-t border-border">
                   <Viewport3DLayersPanel
                     viewerCategoryHidden={viewerCategoryHidden}
                     onToggleCategory={toggleViewerCategoryHidden}
@@ -1324,7 +1324,7 @@ export function RedesignedWorkspace(): JSX.Element {
                   />
                 </div>
               ) : null}
-              <div className="max-h-[40vh] shrink-0 overflow-y-auto border-t border-border">
+              <div className="border-t border-border">
                 <AuthoringWorkbenchesPanel
                   selected={el}
                   elementsById={elementsById}
@@ -1332,7 +1332,7 @@ export function RedesignedWorkspace(): JSX.Element {
                   onUpsertSemantic={(cmd) => void onSemanticCommand(cmd)}
                 />
               </div>
-              <div className="max-h-[40vh] shrink-0 overflow-y-auto border-t border-border p-3">
+              <div className="border-t border-border p-3">
                 <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted">Advisor</div>
                 <AdvisorPanel
                   violations={violations}
@@ -1345,7 +1345,7 @@ export function RedesignedWorkspace(): JSX.Element {
                 />
               </div>
               {activityEvents.length > 0 ? (
-                <div className="max-h-36 shrink-0 overflow-y-auto border-t border-border p-3">
+                <div className="border-t border-border p-3">
                   <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted">Activity</div>
                   <ul className="space-y-1 text-[11px] text-muted">
                     {activityEvents.map((a) => (
