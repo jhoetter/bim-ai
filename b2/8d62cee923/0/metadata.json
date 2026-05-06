@@ -1,0 +1,61 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "b28d62cee923",
+  "session_id": "082420e8-a25b-431a-b60b-93969b063738",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-06T07:33:01.845976Z",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [
+    ".env.example",
+    "Makefile",
+    "packages/web/src/design-systems/conservative.css"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "e1745cbe2a9a",
+  "token_usage": {
+    "input_tokens": 654,
+    "cache_creation_tokens": 64469,
+    "cache_read_tokens": 2004962,
+    "output_tokens": 19484,
+    "api_call_count": 44
+  },
+  "session_metrics": {
+    "turn_count": 3
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-06T07:33:01.827299Z",
+    "agent_lines": 19,
+    "agent_removed": 2,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 19,
+    "total_lines_changed": 21,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 405,
+      "user_lines_removed": 0,
+      "agent_lines_added": 346,
+      "agent_lines_removed": 172,
+      "user_added_per_file": {
+        ".superset/config.json": 8,
+        "app/scripts/seed.py": 3,
+        "prompt-ui.md": 247,
+        "spec/element-rendering-requirements.md": 147
+      }
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "b28d62cee923",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [
+    ".env.example",
+    "Makefile",
+    "packages/web/src/design-systems/conservative.css"
+  ],
+  "sessions": [
+    {
+      "metadata": "/b2/8d62cee923/0/metadata.json",
+      "transcript": "/b2/8d62cee923/0/full.jsonl",
+      "content_hash": "/b2/8d62cee923/0/content_hash.txt",
+      "prompt": "/b2/8d62cee923/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 654,
+    "cache_creation_tokens": 64469,
+    "cache_read_tokens": 2004962,
+    "output_tokens": 19484,
+    "api_call_count": 44
+  }
+}
