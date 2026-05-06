@@ -3,9 +3,11 @@
   "checkpoint_id": "6ed563c7208f",
   "strategy": "manual-commit",
   "branch": "feat/wp-v2-14-plan-canvas",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
-    "CODE_QUALITY.md"
+    "CODE_QUALITY.md",
+    "packages/web/src/plan/PlanCanvas.tsx",
+    "packages/web/src/plan/planCanvasState.test.ts"
   ],
   "sessions": [
     {
@@ -13,13 +15,19 @@
       "transcript": "/6e/d563c7208f/0/full.jsonl",
       "content_hash": "/6e/d563c7208f/0/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/6e/d563c7208f/1/metadata.json",
+      "transcript": "/6e/d563c7208f/1/full.jsonl",
+      "content_hash": "/6e/d563c7208f/1/content_hash.txt",
+      "prompt": "/6e/d563c7208f/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 209,
-    "cache_creation_tokens": 106840,
-    "cache_read_tokens": 4842958,
-    "output_tokens": 45860,
-    "api_call_count": 74
+    "input_tokens": 421,
+    "cache_creation_tokens": 331323,
+    "cache_read_tokens": 17957893,
+    "output_tokens": 130337,
+    "api_call_count": 224
   }
 }
