@@ -13,6 +13,7 @@ import {
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icons, IconLabels, ICON_SIZE, type LucideLikeIcon } from '@bim-ai/ui';
+import { evaluateFormula } from '../lib/expressionEvaluator';
 
 /**
  * Inspector / Right rail — spec §13.
@@ -321,20 +322,13 @@ function EmptyTab({ message }: { message: string }): JSX.Element {
 /* ────────────────────────────────────────────────────────────────────── */
 
 /**
- * Evaluate a §13.3 numeric expression. Supports `+`, `-`, `*`, `/`,
- * parentheses, and decimal numbers. Returns `null` for invalid input
- * so callers can keep the prior value and surface an error inline.
+ * Evaluate a §13.3 numeric expression. Delegates to FAM-04's
+ * :func:`evaluateFormula` for safe parsing — no `eval()` /
+ * `new Function()`. Identifiers / functions are not exposed in this
+ * surface; pass an empty parameter map so bare names still error.
  */
 export function evaluateExpression(raw: string): number | null {
-  const trimmed = raw.trim();
-  if (!trimmed) return null;
-  if (!/^[\d+\-*/().\s]+$/.test(trimmed)) return null;
-  try {
-    const value = Function(`'use strict'; return (${trimmed});`)();
-    return Number.isFinite(value) ? Number(value) : null;
-  } catch {
-    return null;
-  }
+  return evaluateFormula(raw, {});
 }
 
 const UNIT_CYCLE = ['mm', 'cm', 'm'] as const;

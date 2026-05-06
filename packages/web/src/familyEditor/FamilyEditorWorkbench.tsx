@@ -1,6 +1,7 @@
 import { useMemo, useState, type JSX } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { FamilyParamDef } from '../families/types';
+import { validateFormula } from '../lib/expressionEvaluator';
 
 type Template = 'generic_model' | 'door' | 'window' | 'profile';
 
@@ -182,51 +183,66 @@ export function FamilyEditorWorkbench(): JSX.Element {
             </tr>
           </thead>
           <tbody>
-            {params.map((param, i) => (
-              <tr key={i}>
-                <td>
-                  <input
-                    value={param.key}
-                    onChange={(e) => updateParam(i, { key: e.target.value })}
-                  />
-                </td>
-                <td>
-                  <input
-                    value={param.label}
-                    onChange={(e) => updateParam(i, { label: e.target.value })}
-                  />
-                </td>
-                <td>
-                  <select
-                    value={param.type}
-                    onChange={(e) =>
-                      updateParam(i, { type: e.target.value as FamilyParamDef['type'] })
-                    }
-                  >
-                    <option value="length_mm">length_mm</option>
-                    <option value="angle_deg">angle_deg</option>
-                    <option value="material_key">material_key</option>
-                    <option value="boolean">boolean</option>
-                    <option value="option">option</option>
-                  </select>
-                </td>
-                <td>
-                  {(param.type === 'length_mm' || param.type === 'angle_deg') && (
+            {params.map((param, i) => {
+              const otherParams = params.filter((_, j) => j !== i).map((p) => p.key);
+              const formulaError = validateFormula(param.formula, otherParams);
+              return (
+                <tr key={i}>
+                  <td>
                     <input
-                      type="number"
-                      value={param.default as number}
-                      onChange={(e) => updateParam(i, { default: Number(e.target.value) })}
+                      value={param.key}
+                      onChange={(e) => updateParam(i, { key: e.target.value })}
                     />
-                  )}
-                </td>
-                <td>
-                  <input
-                    value={param.formula}
-                    onChange={(e) => updateParam(i, { formula: e.target.value })}
-                  />
-                </td>
-              </tr>
-            ))}
+                  </td>
+                  <td>
+                    <input
+                      value={param.label}
+                      onChange={(e) => updateParam(i, { label: e.target.value })}
+                    />
+                  </td>
+                  <td>
+                    <select
+                      value={param.type}
+                      onChange={(e) =>
+                        updateParam(i, { type: e.target.value as FamilyParamDef['type'] })
+                      }
+                    >
+                      <option value="length_mm">length_mm</option>
+                      <option value="angle_deg">angle_deg</option>
+                      <option value="material_key">material_key</option>
+                      <option value="boolean">boolean</option>
+                      <option value="option">option</option>
+                    </select>
+                  </td>
+                  <td>
+                    {(param.type === 'length_mm' || param.type === 'angle_deg') && (
+                      <input
+                        type="number"
+                        value={param.default as number}
+                        onChange={(e) => updateParam(i, { default: Number(e.target.value) })}
+                      />
+                    )}
+                  </td>
+                  <td>
+                    <input
+                      value={param.formula}
+                      aria-invalid={formulaError !== null}
+                      aria-label={`formula-${param.key}`}
+                      onChange={(e) => updateParam(i, { formula: e.target.value })}
+                    />
+                    {formulaError && (
+                      <span
+                        role="alert"
+                        className="ml-1 text-xs text-danger"
+                        data-testid={`formula-error-${param.key}`}
+                      >
+                        {formulaError}
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
         <button onClick={addParam}>{t('familyEditor.addParameter')}</button>
