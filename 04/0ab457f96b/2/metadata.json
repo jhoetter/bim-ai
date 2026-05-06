@@ -1,0 +1,60 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "040ab457f96b",
+  "session_id": "fed76d39-de78-43e0-acff-d2fa6795d771",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-06T21:12:00.270146Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "CLAUDE.md",
+    "packages/web/src/schedules/ScheduleDefinitionToolbar.tsx",
+    "packages/web/src/schedules/scheduleDefinitionPresets.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "e7126977b0cf",
+  "token_usage": {
+    "input_tokens": 18,
+    "cache_creation_tokens": 21845,
+    "cache_read_tokens": 360681,
+    "output_tokens": 8076,
+    "api_call_count": 14
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-06T21:12:00.267356Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 12,
+    "total_committed": 0,
+    "total_lines_changed": 12,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 36,
+      "user_lines_removed": 12,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        ".githooks/commit-msg": 4,
+        ".githooks/post-commit": 4,
+        ".githooks/post-rewrite": 4,
+        ".githooks/pre-push": 5,
+        ".githooks/prepare-commit-msg": 3,
+        "CLAUDE.md": 3,
+        "packages/web/src/schedules/ScheduleDefinitionToolbar.tsx": 6,
+        "packages/web/src/schedules/scheduleDefinitionPresets.ts": 7
+      },
+      "user_removed_per_file": {
+        "CLAUDE.md": 3,
+        "packages/web/src/schedules/ScheduleDefinitionToolbar.tsx": 8,
+        "packages/web/src/schedules/scheduleDefinitionPresets.ts": 1
+      }
+    }
+  ]
+}
