@@ -1,0 +1,81 @@
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render } from '@testing-library/react';
+import { useRef } from 'react';
+import { ProjectMenu } from './ProjectMenu';
+
+afterEach(() => {
+  cleanup();
+});
+
+function Harness({
+  open,
+  onOpenChange,
+  ...rest
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+} & Partial<Parameters<typeof ProjectMenu>[0]>) {
+  const anchor = useRef<HTMLButtonElement | null>(null);
+  return (
+    <>
+      <button ref={anchor} data-testid="anchor">
+        anchor
+      </button>
+      <ProjectMenu
+        open={open}
+        onOpenChange={onOpenChange}
+        anchorRef={anchor}
+        {...rest}
+      />
+    </>
+  );
+}
+
+describe('<ProjectMenu /> — T-03', () => {
+  it('renders nothing when closed', () => {
+    const { queryByTestId } = render(<Harness open={false} onOpenChange={() => {}} />);
+    expect(queryByTestId('project-menu')).toBeNull();
+  });
+
+  it('renders the standard menu items when open', () => {
+    const { getByTestId } = render(<Harness open={true} onOpenChange={() => {}} />);
+    expect(getByTestId('project-menu')).toBeTruthy();
+    expect(getByTestId('project-menu-insert-seed')).toBeTruthy();
+    expect(getByTestId('project-menu-save-snapshot')).toBeTruthy();
+    expect(getByTestId('project-menu-open-snapshot')).toBeTruthy();
+    expect(getByTestId('project-menu-new-clear')).toBeTruthy();
+  });
+
+  it('renders recent project rows', () => {
+    const { getByTestId } = render(
+      <Harness
+        open={true}
+        onOpenChange={() => {}}
+        recent={[
+          { id: 'r1', label: 'Project Alpha' },
+          { id: 'r2', label: 'Project Beta' },
+        ]}
+      />,
+    );
+    expect(getByTestId('project-menu-recent-r1')).toBeTruthy();
+    expect(getByTestId('project-menu-recent-r2')).toBeTruthy();
+  });
+
+  it('clicking a menu item closes the menu and fires the callback', () => {
+    const onOpenChange = vi.fn();
+    const onInsertSeed = vi.fn();
+    const { getByTestId } = render(
+      <Harness open={true} onOpenChange={onOpenChange} onInsertSeed={onInsertSeed} />,
+    );
+    fireEvent.click(getByTestId('project-menu-insert-seed'));
+    expect(onInsertSeed).toHaveBeenCalledTimes(1);
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it('Escape closes the menu', () => {
+    const onOpenChange = vi.fn();
+    render(<Harness open={true} onOpenChange={onOpenChange} />);
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+});

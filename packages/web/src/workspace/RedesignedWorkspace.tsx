@@ -57,6 +57,15 @@ import {
   type ViewTab,
 } from './tabsModel';
 import { persistTabs, pruneTabsAgainstElements, readPersistedTabs } from './tabsPersistence';
+import { ProjectMenu, type ProjectMenuItemRecent } from './ProjectMenu';
+import {
+  buildSnapshotPayload,
+  downloadSnapshot,
+  findRecentProject,
+  pushRecentProject,
+  readRecentProjects,
+  readSnapshotFile,
+} from './projectSnapshots';
 
 /**
  * RedesignedWorkspace — composition route for the §11–§17 chrome.
@@ -117,6 +126,11 @@ export function RedesignedWorkspace(): JSX.Element {
   const [tourOpen, setTourOpen] = useState<boolean>(() => !readOnboardingProgress().completed);
   const [seedLoading, setSeedLoading] = useState(false);
   const [seedError, setSeedError] = useState<string | null>(null);
+  const [projectMenuOpen, setProjectMenuOpen] = useState(false);
+  const [recentProjects, setRecentProjects] = useState<ProjectMenuItemRecent[]>(() =>
+    readRecentProjects().map((r) => ({ id: r.id, label: r.label })),
+  );
+  const projectNameRef = useRef<HTMLButtonElement | null>(null);
   const [tabsState, setTabsState] = useState<TabsState>(() => readPersistedTabs() ?? EMPTY_TABS);
 
   /** Persist tabs on every change (T-06). */
@@ -181,6 +195,53 @@ export function RedesignedWorkspace(): JSX.Element {
     if (!partial) return;
     setTabsState((s) => openTab(s, partial));
   }, []);
+
+  /* ── Project menu handlers (T-03) ─────────────────────────────────── */
+  const handleSaveSnapshot = useCallback(() => {
+    const st = useBimStore.getState();
+    if (!st.modelId) {
+      setSeedError('Nothing to save — bootstrap a model first.');
+      return;
+    }
+    const snap: Snapshot = {
+      modelId: st.modelId,
+      revision: st.revision ?? 0,
+      elements: st.elementsById as unknown as Record<string, unknown>,
+      violations: [],
+    };
+    const payload = buildSnapshotPayload(snap);
+    downloadSnapshot(payload);
+    const next = pushRecentProject(payload);
+    setRecentProjects(next.map((r) => ({ id: r.id, label: r.label })));
+  }, []);
+
+  const handleRestoreSnapshot = useCallback(
+    async (file: File): Promise<void> => {
+      try {
+        const payload = await readSnapshotFile(file);
+        hydrateFromSnapshot(payload.snapshot);
+        const next = pushRecentProject(payload);
+        setRecentProjects(next.map((r) => ({ id: r.id, label: r.label })));
+      } catch (err) {
+        setSeedError(err instanceof Error ? err.message : 'Failed to read snapshot');
+      }
+    },
+    [hydrateFromSnapshot],
+  );
+
+  const handlePickRecent = useCallback(
+    (id: string) => {
+      const found = findRecentProject(id);
+      if (!found) return;
+      hydrateFromSnapshot(found.payload.snapshot);
+    },
+    [hydrateFromSnapshot],
+  );
+
+  const handleNewClear = useCallback(() => {
+    hydrateFromSnapshot({ modelId: 'empty', revision: 0, elements: {}, violations: [] });
+    setTabsState(EMPTY_TABS);
+  }, [hydrateFromSnapshot]);
 
   /* ── Semantic command dispatch (from PlanCanvas / Viewport) ────────── */
   const onSemanticCommand = useCallback(
@@ -548,6 +609,17 @@ export function RedesignedWorkspace(): JSX.Element {
         onPick={handlePalettePick}
       />
       <OnboardingTour open={tourOpen} onClose={() => setTourOpen(false)} />
+      <ProjectMenu
+        open={projectMenuOpen}
+        onOpenChange={setProjectMenuOpen}
+        anchorRef={projectNameRef}
+        recent={recentProjects}
+        onPickRecent={handlePickRecent}
+        onInsertSeed={() => void insertSeedHouse()}
+        onSaveSnapshot={handleSaveSnapshot}
+        onRestoreSnapshot={(f) => void handleRestoreSnapshot(f)}
+        onNewClear={handleNewClear}
+      />
       <AppShell
         topBar={
           <div className="flex w-full flex-col">
@@ -556,6 +628,8 @@ export function RedesignedWorkspace(): JSX.Element {
                 mode={mode}
                 onModeChange={handleModeChange}
                 projectName="BIM AI seed"
+                projectNameRef={projectNameRef}
+                onProjectNameClick={() => setProjectMenuOpen((v) => !v)}
                 theme={theme}
                 onThemeToggle={handleThemeToggle}
                 onCommandPalette={() => setPaletteOpen(true)}

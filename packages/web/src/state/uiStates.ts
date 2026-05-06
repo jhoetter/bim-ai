@@ -31,7 +31,7 @@ export const UI_STATE_PATTERNS: Record<UiStateKind, UiStatePattern> = {
     kind: 'canvas-empty',
     severity: 'info',
     headline: 'This level is empty.',
-    hint: 'Press W to draw a wall, or insert the seed house from the Project menu.',
+    hint: 'Press W to draw a wall, click "Insert seed house" below, or use the project menu (top-left BIM AI seed ▾).',
     cta: { label: 'Insert seed house', intent: 'primary', action: 'project.insert-seed' },
     ariaLive: 'off',
   },

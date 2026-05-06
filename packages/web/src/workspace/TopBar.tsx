@@ -40,6 +40,8 @@ export interface TopBarProps {
   onModeChange: (next: WorkspaceMode) => void;
   projectName: string;
   onProjectNameClick?: () => void;
+  /** Forwarded to the project-name pill so external popovers can anchor. */
+  projectNameRef?: React.RefObject<HTMLButtonElement | null>;
   onHamburgerClick?: () => void;
   theme: 'light' | 'dark';
   onThemeToggle?: () => void;
@@ -56,6 +58,7 @@ export function TopBar({
   onModeChange,
   projectName,
   onProjectNameClick,
+  projectNameRef,
   onHamburgerClick,
   theme,
   onThemeToggle,
@@ -76,6 +79,7 @@ export function TopBar({
       <TopBarLeft
         projectName={projectName}
         onProjectNameClick={onProjectNameClick}
+        projectNameRef={projectNameRef}
         onHamburgerClick={onHamburgerClick}
       />
       <TopBarModePills tablistId={tablistId} mode={mode} onModeChange={onModeChange} />
@@ -100,10 +104,12 @@ const topBarStyle: CSSProperties = {
 function TopBarLeft({
   projectName,
   onProjectNameClick,
+  projectNameRef,
   onHamburgerClick,
 }: {
   projectName: string;
   onProjectNameClick?: () => void;
+  projectNameRef?: React.RefObject<HTMLButtonElement | null>;
   onHamburgerClick?: () => void;
 }): JSX.Element {
   return (
@@ -118,9 +124,11 @@ function TopBarLeft({
       </div>
       <button
         type="button"
+        ref={projectNameRef}
         onClick={onProjectNameClick}
         className="flex items-center gap-1 rounded-md px-2 py-1 text-sm font-medium hover:bg-surface-strong"
         aria-haspopup="menu"
+        data-testid="topbar-project-name"
       >
         <span className="truncate" style={{ maxWidth: 160 }}>
           {projectName}
