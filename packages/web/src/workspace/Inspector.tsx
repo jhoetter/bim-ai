@@ -52,8 +52,9 @@ export interface InspectorProps {
     identity?: ReactNode;
   };
   /** Quick-action lines for the empty state — typically tool hints
-   * sourced from the active mode. */
-  emptyStateActions?: { hotkey: string; label: string }[];
+   * sourced from the active mode. `onTrigger` makes them clickable; if
+   * omitted, rows render as static hints with a key chip only. */
+  emptyStateActions?: { hotkey: string; label: string; onTrigger?: () => void }[];
   /** When `true` Apply / Reset footer is shown. */
   dirty?: boolean;
   onApply?: () => void;
@@ -240,7 +241,7 @@ function InspectorFooter({
 function InspectorEmpty({
   actions,
 }: {
-  actions: { hotkey: string; label: string }[];
+  actions: { hotkey: string; label: string; onTrigger?: () => void }[];
 }): JSX.Element {
   return (
     <div className="flex flex-1 flex-col gap-3 px-3 py-6 text-sm">
@@ -257,17 +258,38 @@ function InspectorEmpty({
             Quick actions
           </div>
           <ul className="flex flex-col gap-1">
-            {actions.map((a) => (
-              <li
-                key={`${a.hotkey}:${a.label}`}
-                className="flex items-center justify-between text-xs text-foreground"
-              >
-                <span>{a.label}</span>
-                <kbd className="rounded-sm bg-background px-1.5 py-0.5 font-mono text-[11px] text-muted">
-                  {a.hotkey}
-                </kbd>
-              </li>
-            ))}
+            {actions.map((a) => {
+              const inner = (
+                <>
+                  <span>{a.label}</span>
+                  <kbd className="rounded-sm bg-background px-1.5 py-0.5 font-mono text-[11px] text-muted">
+                    {a.hotkey}
+                  </kbd>
+                </>
+              );
+              if (a.onTrigger) {
+                return (
+                  <li key={`${a.hotkey}:${a.label}`}>
+                    <button
+                      type="button"
+                      onClick={a.onTrigger}
+                      data-testid={`inspector-quick-action-${a.hotkey.toLowerCase()}`}
+                      className="flex w-full items-center justify-between rounded px-1.5 py-1 text-left text-xs text-foreground hover:bg-background"
+                    >
+                      {inner}
+                    </button>
+                  </li>
+                );
+              }
+              return (
+                <li
+                  key={`${a.hotkey}:${a.label}`}
+                  className="flex items-center justify-between text-xs text-foreground"
+                >
+                  {inner}
+                </li>
+              );
+            })}
           </ul>
         </div>
       ) : null}

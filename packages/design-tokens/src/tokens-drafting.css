@@ -10,31 +10,33 @@
 
 :root,
 :root[data-theme='light'] {
-  /* §9.2 Color — drafting (canvas only), light */
-  --draft-paper: hsl(40 30% 99%);
-  --draft-grid-major: hsl(220 12% 88%);
-  --draft-grid-minor: hsl(220 12% 95%);
-  --draft-construction-blue: hsl(213 80% 56%);
-  --draft-witness: hsl(213 30% 50%);
-  --draft-cut: hsl(220 18% 14%);
-  --draft-projection: hsl(220 12% 38%);
-  --draft-hidden: hsl(220 10% 60%);
+  /* §9.2 Color — drafting (canvas only), light. Hex literals (not modern
+   * `hsl(h s% l%)` syntax) so Three.js's Color.set() parses every value
+   * correctly across browsers. */
+  --draft-paper: #fdfcf9;
+  --draft-grid-major: #d8dcde;
+  --draft-grid-minor: #ecedef;
+  --draft-construction-blue: #2f7fd1;
+  --draft-witness: #5a7da3;
+  --draft-cut: #1d2330;
+  --draft-projection: #5a6173;
+  --draft-hidden: #9098a4;
   --draft-selection: var(--color-accent);
-  --draft-hover: color-mix(in srgb, hsl(214 88% 50%) 60%, hsl(0 0% 100%));
-  --draft-snap: hsl(38 92% 50%);
+  --draft-hover: #79b1f1;
+  --draft-snap: #f59e0b;
 
   /* §9.3 Color — element categories (3D + plan fill), light */
-  --cat-wall: hsl(220 6% 60%);
-  --cat-floor: hsl(36 18% 70%);
-  --cat-roof: hsl(0 18% 40%);
-  --cat-door: hsl(28 30% 45%);
-  --cat-window: hsl(213 60% 70%);
-  --cat-stair: hsl(220 6% 35%);
-  --cat-railing: hsl(220 6% 28%);
-  --cat-room: hsl(150 24% 86%);
-  --cat-site: hsl(80 20% 80%);
-  --cat-section: hsl(0 70% 50%);
-  --cat-sheet: hsl(220 6% 80%);
+  --cat-wall: #969aa1;
+  --cat-floor: #c2b6a3;
+  --cat-roof: #7a4949;
+  --cat-door: #957155;
+  --cat-window: #9bbbe0;
+  --cat-stair: #54585f;
+  --cat-railing: #43464d;
+  --cat-room: #c9dfd2;
+  --cat-site: #cbd1bd;
+  --cat-section: #d93d3d;
+  --cat-sheet: #c9cbcf;
 
   /* §9.10 Drafting line weights at 1:50 plot scale (in px) */
   --draft-lw-cut-major: 2px;
@@ -48,29 +50,30 @@
 
 :root[data-theme='dark'],
 :root.dark {
-  /* §9.2 Color — drafting (canvas only), dark */
-  --draft-paper: hsl(220 14% 12%);
-  --draft-grid-major: hsl(220 10% 24%);
-  --draft-grid-minor: hsl(220 10% 18%);
-  --draft-construction-blue: hsl(213 95% 64%);
-  --draft-witness: hsl(213 30% 70%);
-  --draft-cut: hsl(220 14% 92%);
-  --draft-projection: hsl(220 12% 66%);
-  --draft-hidden: hsl(220 10% 50%);
+  /* §9.2 Color — drafting (canvas only), dark. Hex literals (see light
+   * note above). */
+  --draft-paper: #1a1d24;
+  --draft-grid-major: #383d47;
+  --draft-grid-minor: #292d35;
+  --draft-construction-blue: #4ea2f7;
+  --draft-witness: #8aa8c9;
+  --draft-cut: #e6e8ee;
+  --draft-projection: #a3a8b7;
+  --draft-hidden: #757a87;
   --draft-selection: var(--color-accent);
-  --draft-hover: color-mix(in srgb, hsl(213 95% 62%) 60%, hsl(220 14% 10%));
-  --draft-snap: hsl(40 95% 62%);
+  --draft-hover: #2c4a78;
+  --draft-snap: #f3b03d;
 
   /* §9.3 Color — element categories, dark */
-  --cat-wall: hsl(220 6% 50%);
-  --cat-floor: hsl(36 14% 38%);
-  --cat-roof: hsl(0 18% 50%);
-  --cat-door: hsl(28 30% 60%);
-  --cat-window: hsl(213 60% 50%);
-  --cat-stair: hsl(220 6% 70%);
-  --cat-railing: hsl(220 6% 75%);
-  --cat-room: hsl(150 18% 22%);
-  --cat-site: hsl(80 14% 22%);
-  --cat-section: hsl(0 80% 62%);
-  --cat-sheet: hsl(220 6% 30%);
+  --cat-wall: #7a7d83;
+  --cat-floor: #6b5f4f;
+  --cat-roof: #944f4f;
+  --cat-door: #b48a64;
+  --cat-window: #5482b3;
+  --cat-stair: #adafb5;
+  --cat-railing: #b8babf;
+  --cat-room: #2e4439;
+  --cat-site: #353d2e;
+  --cat-section: #f15252;
+  --cat-sheet: #4a4d52;
 }

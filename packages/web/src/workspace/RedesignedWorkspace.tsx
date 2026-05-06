@@ -12,6 +12,8 @@ import { ICON_SIZE, Icons } from '@bim-ai/ui';
 
 import { Viewport } from '../Viewport';
 import { PlanCanvas } from '../plan/PlanCanvas';
+import { bootstrap } from '../lib/api';
+import type { Snapshot } from '@bim-ai/core';
 import { useBimStore, toggleTheme, getCurrentTheme, type Theme } from '../state/store';
 import { modeForHotkey } from '../state/modeController';
 import { patternFor } from '../state/uiStates';
@@ -77,6 +79,7 @@ function legacyToToolId(legacy: LegacyPlanTool): ToolId {
 
 export function RedesignedWorkspace(): JSX.Element {
   const elementsById = useBimStore((s) => s.elementsById);
+  const hydrateFromSnapshot = useBimStore((s) => s.hydrateFromSnapshot);
   const viewerMode = useBimStore((s) => s.viewerMode);
   const setViewerMode = useBimStore((s) => s.setViewerMode);
   const planTool = useBimStore((s) => s.planTool);
@@ -95,6 +98,36 @@ export function RedesignedWorkspace(): JSX.Element {
   const [cheatsheetOpen, setCheatsheetOpen] = useState(false);
   const [recentCommandIds, setRecentCommandIds] = useState<string[]>([]);
   const [tourOpen, setTourOpen] = useState<boolean>(() => !readOnboardingProgress().completed);
+  const [seedLoading, setSeedLoading] = useState(false);
+  const [seedError, setSeedError] = useState<string | null>(null);
+
+  const insertSeedHouse = useCallback(async (): Promise<void> => {
+    setSeedLoading(true);
+    setSeedError(null);
+    try {
+      const bx = await bootstrap();
+      const pj = bx.projects as Record<string, unknown>[] | undefined;
+      const m0 = pj?.[0]?.models as Array<{ id?: unknown }> | undefined;
+      const mid = m0?.[0]?.id;
+      if (typeof mid !== 'string') throw new Error('No models — run make seed');
+      const snapRes = await fetch(`/api/models/${encodeURIComponent(mid)}/snapshot`);
+      if (!snapRes.ok) throw new Error(`snapshot ${snapRes.status}`);
+      const snap = (await snapRes.json()) as Snapshot;
+      hydrateFromSnapshot(snap);
+    } catch (err) {
+      setSeedError(err instanceof Error ? err.message : 'Failed to load seed');
+    } finally {
+      setSeedLoading(false);
+    }
+  }, [hydrateFromSnapshot]);
+
+  useEffect(() => {
+    const isEmpty = Object.keys(elementsById).length === 0;
+    if (!isEmpty) return;
+    void insertSeedHouse();
+    // Run-once bootstrap: re-running is the user's job via the empty-state CTA.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   /* ── Mode wiring (§7 + §20) ────────────────────────────────────────── */
   const handleModeChange = useCallback(
@@ -390,12 +423,47 @@ export function RedesignedWorkspace(): JSX.Element {
             sections={browserSections}
             activeRowId={activeLevelId}
             onRowActivate={(id) => {
-              // Activate level if matching id
-              const isLevel = browserSections
-                .find((s) => s.id === 'project')
-                ?.rows.find((r) => r.id === 'levels')
-                ?.children?.some((c) => c.id === id);
-              if (isLevel) setActiveLevelId(id);
+              const el = elementsById[id];
+              if (!el) {
+                // Levels nest under "project" → "levels"; check the nested children.
+                const isLevel = browserSections
+                  .find((s) => s.id === 'project')
+                  ?.rows.find((r) => r.id === 'levels')
+                  ?.children?.some((c) => c.id === id);
+                if (isLevel) setActiveLevelId(id);
+                return;
+              }
+              if (el.kind === 'level') {
+                setActiveLevelId(id);
+                handleModeChange('plan');
+                return;
+              }
+              if (el.kind === 'plan_view') {
+                handleModeChange('plan');
+                select(id);
+                return;
+              }
+              if (el.kind === 'viewpoint') {
+                handleModeChange('3d');
+                select(id);
+                return;
+              }
+              if (el.kind === 'section_cut') {
+                handleModeChange('section');
+                select(id);
+                return;
+              }
+              if (el.kind === 'sheet') {
+                handleModeChange('sheet');
+                select(id);
+                return;
+              }
+              if (el.kind === 'schedule') {
+                handleModeChange('schedule');
+                select(id);
+                return;
+              }
+              select(id);
             }}
           />
         }
@@ -403,7 +471,14 @@ export function RedesignedWorkspace(): JSX.Element {
         canvas={
           <div style={canvasContainerStyle} data-testid="redesign-canvas-root">
             {showEmptyState ? (
-              <EmptyStateOverlay headline={emptyHint.headline} hint={emptyHint.hint} />
+              <EmptyStateOverlay
+                headline={emptyHint.headline}
+                hint={emptyHint.hint}
+                ctaLabel={emptyHint.cta?.label ?? null}
+                ctaPending={seedLoading}
+                ctaError={seedError}
+                onCta={() => void insertSeedHouse()}
+              />
             ) : null}
             <FloatingPalette
               mode={mode}
@@ -442,9 +517,30 @@ export function RedesignedWorkspace(): JSX.Element {
                 ),
               }}
               emptyStateActions={[
-                { hotkey: 'W', label: 'Draw a wall' },
-                { hotkey: 'D', label: 'Insert a door' },
-                { hotkey: 'M', label: 'Drop a room marker' },
+                {
+                  hotkey: 'W',
+                  label: 'Draw a wall',
+                  onTrigger: () => {
+                    if (mode !== 'plan' && mode !== 'plan-3d') handleModeChange('plan');
+                    setPlanTool('wall');
+                  },
+                },
+                {
+                  hotkey: 'D',
+                  label: 'Insert a door',
+                  onTrigger: () => {
+                    if (mode !== 'plan' && mode !== 'plan-3d') handleModeChange('plan');
+                    setPlanTool('door');
+                  },
+                },
+                {
+                  hotkey: 'M',
+                  label: 'Drop a room marker',
+                  onTrigger: () => {
+                    if (mode !== 'plan' && mode !== 'plan-3d') handleModeChange('plan');
+                    setPlanTool('room');
+                  },
+                },
               ]}
               onClearSelection={() => select(undefined)}
             />
@@ -559,7 +655,21 @@ function CanvasMount({
   );
 }
 
-function EmptyStateOverlay({ headline, hint }: { headline: string; hint: string }): JSX.Element {
+function EmptyStateOverlay({
+  headline,
+  hint,
+  ctaLabel,
+  ctaPending,
+  ctaError,
+  onCta,
+}: {
+  headline: string;
+  hint: string;
+  ctaLabel: string | null;
+  ctaPending: boolean;
+  ctaError: string | null;
+  onCta: () => void;
+}): JSX.Element {
   return (
     <div
       role="status"
@@ -574,9 +684,25 @@ function EmptyStateOverlay({ headline, hint }: { headline: string; hint: string 
         pointerEvents: 'none',
       }}
     >
-      <div className="flex flex-col items-center gap-1 rounded-lg bg-surface/85 px-6 py-4 text-center shadow-elev-2 backdrop-blur">
+      <div className="pointer-events-auto flex flex-col items-center gap-3 rounded-lg bg-surface/95 px-6 py-5 text-center shadow-elev-2 backdrop-blur">
         <div className="text-md font-medium text-foreground">{headline}</div>
         <div className="text-sm text-muted">{hint}</div>
+        {ctaLabel ? (
+          <button
+            type="button"
+            onClick={onCta}
+            disabled={ctaPending}
+            data-testid="canvas-empty-cta"
+            className="rounded-md bg-accent px-4 py-1.5 text-sm font-medium text-accent-foreground shadow-elev-1 hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {ctaPending ? 'Loading…' : ctaLabel}
+          </button>
+        ) : null}
+        {ctaError ? (
+          <div className="text-xs text-danger" data-testid="canvas-empty-error">
+            {ctaError}
+          </div>
+        ) : null}
       </div>
     </div>
   );

@@ -707,11 +707,8 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
   return (
     <div
       data-testid="plan-canvas"
-      className="relative h-[min(740px,calc(100vh-260px))] w-full overflow-hidden rounded-lg border border-border bg-background"
+      className="relative h-full w-full overflow-hidden bg-background"
     >
-      <div className="pointer-events-none absolute left-3 top-3 z-10 rounded-md border border-border bg-surface/80 px-3 py-1 text-[11px] text-muted backdrop-blur">
-        Plan · pan Shift+LMB / MMB · zoom wheel · Esc cancels · tool {planTool}
-      </div>
       <div className="pointer-events-none absolute right-3 bottom-14 z-10 rounded border border-border bg-surface/80 px-2 py-1 font-mono text-[10px] text-muted backdrop-blur">
         {hudMm
           ? `X ${(hudMm.xMm / 1000).toFixed(2)} m · Y ${(hudMm.yMm / 1000).toFixed(2)} m`

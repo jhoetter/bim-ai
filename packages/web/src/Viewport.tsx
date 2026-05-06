@@ -1009,17 +1009,16 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
   return (
     <div
       data-testid="orbit-3d-viewport"
-      className="relative h-[min(740px,calc(100vh-260px))] w-full overflow-hidden rounded-lg border border-border bg-background"
+      className="relative h-full w-full overflow-hidden bg-background"
     >
-      <div className="pointer-events-none absolute left-3 top-3 z-10 rounded-full border border-border bg-surface/80 px-3 py-1 text-[11px] text-muted backdrop-blur">
-        3D orbit · LMB pick · drag · zoom · F frames · H resets
-      </div>
 
-      <OrbitViewpointPersistedHud
-        activeViewpointId={activeViewpointId}
-        viewpoint={persistedOrbitViewpoint}
-        onPersistField={onPersistViewpointField}
-      />
+      {activeViewpointId ? (
+        <OrbitViewpointPersistedHud
+          activeViewpointId={activeViewpointId}
+          viewpoint={persistedOrbitViewpoint}
+          onPersistField={onPersistViewpointField}
+        />
+      ) : null}
 
       <div className="pointer-events-auto absolute right-3 top-3 z-20">
         <ViewCube

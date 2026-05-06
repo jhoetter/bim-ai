@@ -4,6 +4,7 @@ import {
   alignmentForPick,
   compassLabelFromAzimuth,
   type ViewCubeAlignment,
+  type ViewCubeCorner,
   type ViewCubeFace,
   type ViewCubePick,
 } from './viewCubeAlignment';
@@ -11,15 +12,15 @@ import {
 /**
  * ViewCube widget — spec §15.4.
  *
- * 96 × 96 px square sitting top-right of the 3D canvas. Faces, edges, and
- * corners are pickable; clicking emits a normalized `ViewCubePick`. A
- * dedicated `Home` button to the right snaps to the saved default view
- * (mirrors a double-click on the cube center). Compass ring under the
- * cube shows the active cardinal label derived from `currentAzimuth`.
+ * 96 × 96 px CSS-3D cube sitting top-right of the 3D canvas. Faces +
+ * top corners are pickable. The cube rotates to mirror the live
+ * camera's azimuth (passed in via `currentAzimuth`) so the viewer
+ * always sees the cube oriented like the scene below.
  *
- * Animation: callers tween between the current and target alignments
- * over `--motion-slow` (240 ms) using `--ease-snap`. This component does
- * not own that tween — it just emits picks.
+ * This implementation uses CSS `transform-style: preserve-3d` rather
+ * than a second Three.js renderer — it ships in ~1.5 kB instead of
+ * the ~120 kB cost of bringing up a tiny WebGL context for a 96 px
+ * widget.
  */
 
 export interface ViewCubeProps {
@@ -30,16 +31,33 @@ export interface ViewCubeProps {
   className?: string;
 }
 
-const FACES: ViewCubeFace[] = ['FRONT', 'BACK', 'LEFT', 'RIGHT', 'TOP', 'BOTTOM'];
+const CUBE_SIZE_PX = 80;
+const HALF = CUBE_SIZE_PX / 2;
+const TILT_DEG = 25; // looking slightly down at the cube
+// Corner picks (top of cube). Bottom corners are not exposed in the
+// chrome — viewers don't typically want to look up at scenes.
+const TOP_CORNERS: { id: ViewCubeCorner; left: string; top: string }[] = [
+  { id: 'TOP-NW', left: '6%', top: '6%' },
+  { id: 'TOP-NE', left: '94%', top: '6%' },
+  { id: 'TOP-SW', left: '6%', top: '94%' },
+  { id: 'TOP-SE', left: '94%', top: '94%' },
+];
 
-const FACE_GRID: Record<ViewCubeFace, { gridColumn: number; gridRow: number }> = {
-  TOP: { gridColumn: 2, gridRow: 1 },
-  LEFT: { gridColumn: 1, gridRow: 2 },
-  FRONT: { gridColumn: 2, gridRow: 2 },
-  RIGHT: { gridColumn: 3, gridRow: 2 },
-  BOTTOM: { gridColumn: 2, gridRow: 3 },
-  BACK: { gridColumn: 4, gridRow: 2 },
-};
+interface FaceDef {
+  id: ViewCubeFace;
+  label: string;
+  /** Transform that places the face on the cube. */
+  transform: string;
+}
+
+const FACES: FaceDef[] = [
+  { id: 'FRONT', label: 'FRONT', transform: `rotateY(0deg) translateZ(${HALF}px)` },
+  { id: 'BACK', label: 'BACK', transform: `rotateY(180deg) translateZ(${HALF}px)` },
+  { id: 'RIGHT', label: 'RIGHT', transform: `rotateY(90deg) translateZ(${HALF}px)` },
+  { id: 'LEFT', label: 'LEFT', transform: `rotateY(-90deg) translateZ(${HALF}px)` },
+  { id: 'TOP', label: 'TOP', transform: `rotateX(90deg) translateZ(${HALF}px)` },
+  { id: 'BOTTOM', label: 'BOTTOM', transform: `rotateX(-90deg) translateZ(${HALF}px)` },
+];
 
 export function ViewCube({
   currentAzimuth,
@@ -59,6 +77,24 @@ export function ViewCube({
     }
   }
 
+  // Cube rotates so its FRONT faces the viewer based on currentAzimuth.
+  // Three.js azimuth: 0 = +Z, π/2 = +X. CSS rotateY rotates clockwise
+  // looking from +Y down. Negate so the cube tracks scene rotation.
+  const azimuthDeg = (-currentAzimuth * 180) / Math.PI;
+  const stageStyle: CSSProperties = {
+    perspective: '320px',
+    width: CUBE_SIZE_PX,
+    height: CUBE_SIZE_PX,
+    position: 'relative',
+  };
+  const cubeStyle: CSSProperties = {
+    position: 'absolute',
+    inset: 0,
+    transformStyle: 'preserve-3d',
+    transform: `rotateX(${-TILT_DEG}deg) rotateY(${azimuthDeg}deg)`,
+    transition: 'transform var(--motion-slow) var(--ease-snap)',
+  };
+
   return (
     <div
       data-testid="view-cube"
@@ -68,7 +104,39 @@ export function ViewCube({
       className={['flex flex-col items-end gap-1.5', className ?? ''].join(' ')}
     >
       <div className="flex items-start gap-2">
-        <FaceCross emit={emit} />
+        <div style={stageStyle}>
+          <div style={cubeStyle} data-cube-stage="true">
+            {FACES.map((face) => (
+              <CubeFace key={face.id} face={face} onClick={() => emit({ kind: 'face', face: face.id })} />
+            ))}
+          </div>
+          {/* Top-corner pick zones — overlay the cube stage. Hover-only,
+           * picks emit corner alignments (NE-Iso etc.). */}
+          {TOP_CORNERS.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => emit({ kind: 'corner', corner: c.id })}
+              aria-label={`Align camera to ${c.id}`}
+              data-corner={c.id}
+              style={{
+                position: 'absolute',
+                left: c.left,
+                top: c.top,
+                transform: 'translate(-50%, -50%)',
+                width: 14,
+                height: 14,
+                borderRadius: 7,
+                border: '1px solid var(--color-border)',
+                background: 'var(--color-surface)',
+                cursor: 'pointer',
+                opacity: 0.85,
+                padding: 0,
+              }}
+              className="hover:bg-surface-strong"
+            />
+          ))}
+        </div>
         <button
           type="button"
           onClick={() => {
@@ -76,57 +144,46 @@ export function ViewCube({
             onHome?.();
           }}
           aria-label="Reset to default view"
-          title="Click face to align camera; drag to orbit; double-click for default view."
+          title="Click face to align camera; corners pick isos; double-click home for default view."
           className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border bg-surface text-foreground shadow-elev-2 hover:bg-surface-strong"
         >
           <Icons.viewCubeReset size={ICON_SIZE.chrome} aria-hidden="true" />
         </button>
       </div>
       <Compass currentAzimuth={currentAzimuth} />
-      <CornerEdgeRow emit={emit} />
     </div>
   );
 }
 
-function FaceCross({ emit }: { emit: (pick: ViewCubePick) => void }): JSX.Element {
-  const containerStyle: CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(4, var(--space-8))',
-    gridTemplateRows: 'repeat(3, var(--space-8))',
-    gap: '1px',
-    background: 'var(--color-border)',
-    padding: '1px',
-    borderRadius: 'var(--radius-md)',
-    boxShadow: 'var(--elev-2)',
+function CubeFace({ face, onClick }: { face: FaceDef; onClick: () => void }): JSX.Element {
+  const style: CSSProperties = {
+    position: 'absolute',
+    inset: 0,
+    transform: face.transform,
+    background: 'var(--color-surface)',
+    border: '1px solid var(--color-border)',
+    color: 'var(--color-foreground)',
+    fontSize: 10,
+    fontWeight: 600,
+    letterSpacing: '0.06em',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    backfaceVisibility: 'hidden',
+    boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--color-border) 60%, transparent)',
   };
   return (
-    <div style={containerStyle} aria-label="ViewCube faces">
-      {FACES.map((face) => {
-        const cell = FACE_GRID[face];
-        return (
-          <button
-            key={face}
-            type="button"
-            onClick={() => emit({ kind: 'face', face })}
-            aria-label={`Align camera to ${face}`}
-            data-face={face}
-            style={{
-              gridColumn: cell.gridColumn,
-              gridRow: cell.gridRow,
-              background: 'var(--color-surface)',
-              color: 'var(--color-foreground)',
-              fontSize: 9,
-              fontWeight: 600,
-              letterSpacing: 'var(--text-eyebrow-tracking)',
-              borderRadius: 2,
-            }}
-            className="hover:bg-surface-strong"
-          >
-            {face}
-          </button>
-        );
-      })}
-    </div>
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={`Align camera to ${face.label}`}
+      data-face={face.id}
+      style={style}
+      className="hover:!bg-surface-strong"
+    >
+      {face.label}
+    </button>
   );
 }
 
@@ -143,37 +200,5 @@ function Compass({ currentAzimuth }: { currentAzimuth: number }): JSX.Element {
       <span aria-hidden="true">⌖</span>
       <span className="font-medium">{label}</span>
     </div>
-  );
-}
-
-function CornerEdgeRow({ emit }: { emit: (pick: ViewCubePick) => void }): JSX.Element {
-  return (
-    <div className="flex flex-wrap items-center gap-1 text-xs">
-      <CornerButton emit={emit} corner="TOP-NE" label="NE-Iso" />
-      <CornerButton emit={emit} corner="TOP-NW" label="NW-Iso" />
-      <CornerButton emit={emit} corner="TOP-SE" label="SE-Iso" />
-      <CornerButton emit={emit} corner="TOP-SW" label="SW-Iso" />
-    </div>
-  );
-}
-
-function CornerButton({
-  emit,
-  corner,
-  label,
-}: {
-  emit: (pick: ViewCubePick) => void;
-  corner: 'TOP-NE' | 'TOP-NW' | 'TOP-SE' | 'TOP-SW';
-  label: string;
-}): JSX.Element {
-  return (
-    <button
-      type="button"
-      onClick={() => emit({ kind: 'corner', corner })}
-      aria-label={`Align camera to ${corner}`}
-      className="rounded-sm border border-border bg-surface px-1.5 py-0.5 text-xs hover:bg-surface-strong"
-    >
-      {label}
-    </button>
   );
 }
