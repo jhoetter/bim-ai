@@ -25,6 +25,7 @@ import {
   InspectorPropertiesFor,
 } from './InspectorContent';
 import { StatusBar } from './StatusBar';
+import { CheatsheetModal } from '../cmd/CheatsheetModal';
 import { ToolPalette } from '../tools/ToolPalette';
 import { TOOL_REGISTRY, type ToolDisabledContext, type ToolId } from '../tools/toolRegistry';
 
@@ -254,103 +255,106 @@ export function RedesignedWorkspace(): JSX.Element {
 
   /* ── Compose AppShell slots ───────────────────────────────────────── */
   return (
-    <AppShell
-      topBar={
-        <div className="flex w-full items-center">
-          <TopBar
-            mode={mode}
-            onModeChange={handleModeChange}
-            projectName="BIM AI seed"
-            theme={theme}
-            onThemeToggle={handleThemeToggle}
-            onCommandPalette={() => setPaletteOpen(true)}
-            collaboratorsCount={undefined}
-            avatarInitials="BA"
-          />
-          <a
-            href="/legacy"
-            className="ml-2 mr-3 whitespace-nowrap rounded-md px-2 py-1 text-xs text-muted hover:bg-surface-strong"
-            data-testid="legacy-route-link"
-            title="Open the v1 panel-stack view"
-          >
-            Legacy
-          </a>
-        </div>
-      }
-      leftRail={
-        <LeftRail
-          sections={browserSections}
-          activeRowId={activeLevelId}
-          onRowActivate={(id) => {
-            // Activate level if matching id
-            const isLevel = browserSections
-              .find((s) => s.id === 'project')
-              ?.rows.find((r) => r.id === 'levels')
-              ?.children?.some((c) => c.id === id);
-            if (isLevel) setActiveLevelId(id);
-          }}
-        />
-      }
-      leftRailCollapsed={<LeftRailCollapsed sections={browserSections} />}
-      canvas={
-        <div style={canvasContainerStyle} data-testid="redesign-canvas-root">
-          {showEmptyState ? (
-            <EmptyStateOverlay headline={emptyHint.headline} hint={emptyHint.hint} />
-          ) : null}
-          <FloatingPalette
-            mode={mode}
-            activeTool={legacyToToolId(planTool)}
-            onToolSelect={handleToolSelect}
-            disabledContext={toolDisabledContext}
-          />
-          <CanvasMount mode={mode} viewerMode={viewerMode} activeLevelId={activeLevelId ?? ''} />
-        </div>
-      }
-      rightRail={(() => {
-        const el = selectedId ? elementsById[selectedId] : undefined;
-        return (
-          <Inspector
-            selection={inspectorSelection}
-            tabs={{
-              properties: el ? (
-                InspectorPropertiesFor(el)
-              ) : (
-                <InspectorEmptyTab message="No element selected." />
-              ),
-              constraints: el ? (
-                InspectorConstraintsFor(el)
-              ) : (
-                <InspectorEmptyTab message="No element selected." />
-              ),
-              identity: el ? (
-                InspectorIdentityFor(el)
-              ) : (
-                <InspectorEmptyTab message="No element selected." />
-              ),
+    <>
+      <CheatsheetModal open={cheatsheetOpen} onClose={() => setCheatsheetOpen(false)} />
+      <AppShell
+        topBar={
+          <div className="flex w-full items-center">
+            <TopBar
+              mode={mode}
+              onModeChange={handleModeChange}
+              projectName="BIM AI seed"
+              theme={theme}
+              onThemeToggle={handleThemeToggle}
+              onCommandPalette={() => setPaletteOpen(true)}
+              collaboratorsCount={undefined}
+              avatarInitials="BA"
+            />
+            <a
+              href="/legacy"
+              className="ml-2 mr-3 whitespace-nowrap rounded-md px-2 py-1 text-xs text-muted hover:bg-surface-strong"
+              data-testid="legacy-route-link"
+              title="Open the v1 panel-stack view"
+            >
+              Legacy
+            </a>
+          </div>
+        }
+        leftRail={
+          <LeftRail
+            sections={browserSections}
+            activeRowId={activeLevelId}
+            onRowActivate={(id) => {
+              // Activate level if matching id
+              const isLevel = browserSections
+                .find((s) => s.id === 'project')
+                ?.rows.find((r) => r.id === 'levels')
+                ?.children?.some((c) => c.id === id);
+              if (isLevel) setActiveLevelId(id);
             }}
-            emptyStateActions={[
-              { hotkey: 'W', label: 'Draw a wall' },
-              { hotkey: 'D', label: 'Insert a door' },
-              { hotkey: 'M', label: 'Drop a room marker' },
-            ]}
-            onClearSelection={() => select(undefined)}
           />
-        );
-      })()}
-      statusBar={
-        <StatusBar
-          level={activeLevel}
-          levels={levels}
-          onLevelChange={setActiveLevelId}
-          toolLabel={TOOL_REGISTRY[legacyToToolId(planTool)]?.label ?? null}
-          gridOn={true}
-          cursorMm={cursorMm}
-          undoDepth={0}
-          wsState="connected"
-          saveState="saved"
-        />
-      }
-    />
+        }
+        leftRailCollapsed={<LeftRailCollapsed sections={browserSections} />}
+        canvas={
+          <div style={canvasContainerStyle} data-testid="redesign-canvas-root">
+            {showEmptyState ? (
+              <EmptyStateOverlay headline={emptyHint.headline} hint={emptyHint.hint} />
+            ) : null}
+            <FloatingPalette
+              mode={mode}
+              activeTool={legacyToToolId(planTool)}
+              onToolSelect={handleToolSelect}
+              disabledContext={toolDisabledContext}
+            />
+            <CanvasMount mode={mode} viewerMode={viewerMode} activeLevelId={activeLevelId ?? ''} />
+          </div>
+        }
+        rightRail={(() => {
+          const el = selectedId ? elementsById[selectedId] : undefined;
+          return (
+            <Inspector
+              selection={inspectorSelection}
+              tabs={{
+                properties: el ? (
+                  InspectorPropertiesFor(el)
+                ) : (
+                  <InspectorEmptyTab message="No element selected." />
+                ),
+                constraints: el ? (
+                  InspectorConstraintsFor(el)
+                ) : (
+                  <InspectorEmptyTab message="No element selected." />
+                ),
+                identity: el ? (
+                  InspectorIdentityFor(el)
+                ) : (
+                  <InspectorEmptyTab message="No element selected." />
+                ),
+              }}
+              emptyStateActions={[
+                { hotkey: 'W', label: 'Draw a wall' },
+                { hotkey: 'D', label: 'Insert a door' },
+                { hotkey: 'M', label: 'Drop a room marker' },
+              ]}
+              onClearSelection={() => select(undefined)}
+            />
+          );
+        })()}
+        statusBar={
+          <StatusBar
+            level={activeLevel}
+            levels={levels}
+            onLevelChange={setActiveLevelId}
+            toolLabel={TOOL_REGISTRY[legacyToToolId(planTool)]?.label ?? null}
+            gridOn={true}
+            cursorMm={cursorMm}
+            undoDepth={0}
+            wsState="connected"
+            saveState="saved"
+          />
+        }
+      />
+    </>
   );
 }
 
