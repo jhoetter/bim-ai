@@ -1,0 +1,155 @@
+You are implementing FL-08 in a BIM web app (monorepo at /Users/jhoetter/repos/bim-ai).
+  Start with: git checkout main && git pull origin main
+
+  ## What already exists (do NOT rewrite these)
+  - `packages/web/src/workspace/materialLayerCatalogWorkbench.ts`
+    — logic: resolveMaterialLayerReadout, buildUpsertLayeredTypeCommand, validateLayerAuthoringDraft,
+      materialRowsToDraft, LayerAuthoringDraftRow, BUILTIN_MATERIAL_DISPLAY, etc.
+  - `packages/web/src/workspace/MaterialLayerStackWorkbench.tsx`
+    — renders the layer table; editing cells works for wall_type/floor_type/roof_type instances;
+      has an "Apply type stack" button that calls onUpsertSemantic(buildUpsertLayeredTypeCommand(...))
+    — LIMITATION: no way to add or remove rows (fix this in Task B below)
+  - `packages/web/src/workspace/AuthoringWorkbenchesPanel.tsx`
+    — mounts MaterialLayerStackWorkbench; already wired into RedesignedWorkspace
+
+  ## Three tasks
+
+  ---
+
+  ### Task A — "Types" section in the left-rail browser
+
+  File: `packages/web/src/workspace/RedesignedWorkspace.tsx`
+
+  Read the `browserSections` useMemo (around line 740).
+  It already has sections: project, views, sheets, schedules, families.
+  Add a new section after 'schedules' and before 'families':
+
+  ```ts
+  {
+    id: 'types',
+    label: 'Types',
+    rows: [
+      {
+        id: 'wall-types',
+        label: 'Wall Types',
+        children: (Object.values(elementsById) as Element[])
+          .filter((e): e is Extract<Element, { kind: 'wall_type' }> => e.kind === 'wall_type')
+          .map((t) => ({ id: t.id, label: t.name, hint: `${t.layers.length} layers` })),
+      },
+      {
+        id: 'floor-types',
+        label: 'Floor Types',
+        children: (Object.values(elementsById) as Element[])
+          .filter((e): e is Extract<Element, { kind: 'floor_type' }> => e.kind === 'floor_type')
+          .map((t) => ({ id: t.id, label: t.name, hint: `${t.layers.length} layers` })),
+      },
+      {
+        id: 'roof-types',
+        label: 'Roof Types',
+        children: (Object.values(elementsById) as Element[])
+          .filter((e): e is Extract<Element, { kind: 'roof_type' }> => e.kind === 'roof_type')
+          .map((t) => ({ id: t.id, label: t.name, hint: `${t.layers.length} layers` })),
+      },
+    ].filter((g) => g.children.length > 0),
+  },
+
+  Clicking a type row in the browser should select it (set selectedId). The existing
+  onRowActivate handler already calls setSelectedId(id) for unknown ids — check that
+  it falls through to that default for wall_type/floor_type/roof_type ids.
+
+  Also add a "New type" button row to each group. Use an action hint or a separate
+  onNewType callback — look at how FL-06 added custom family types and follow the same
+  pattern. The button should call:
+  void onSemanticCommand({
+    type: 'upsertWallType',   // or upsertFloorType / upsertRoofType
+    name: 'New Wall Type',
+    basisLine: 'center',
+    layers: [{ thicknessMm: 200, function: 'structure', materialKey: '' }],
+  })
+  Use crypto.randomUUID() as the id if the backend requires one (check the test file
+  app/tests/test_material_assembly_schedule.py line ~69 to see if id is required or
+  optional in the command — if optional, omit it).
+
+  ---
+  Task B — Add/remove rows in MaterialLayerStackWorkbench
+
+  File: packages/web/src/workspace/MaterialLayerStackWorkbench.tsx
+
+  In the typeAuthoring block (where draftRows.length rows are rendered and
+  "Apply type stack" button exists), add:
+
+  Add row button (below the table, before Apply):
+  <button
+    type="button"
+    className="rounded border border-border px-2 py-0.5 text-[10px] text-muted hover:text-foreground"
+    onClick={() =>
+      setDraftRows((prev) => [
+        ...prev,
+        { index: prev.length, thicknessMm: 100, function: 'finish', materialKey: '' },
+      ])
+    }
+  >
+    + Add layer
+  </button>
+
+  Remove row button (as a last column in each row):
+  Add a <th> header cell for the remove column, and in each <tr> add:
+  <td className="p-1">
+    <button
+      type="button"
+      className="text-[10px] text-muted hover:text-destructive"
+      onClick={() =>
+        setDraftRows((prev) =>
+          prev.filter((r) => r.index !== row.index).map((r, i) => ({ ...r, index: i })),
+        )
+      }
+    >
+      ×
+    </button>
+  </td>
+
+  ---
+  Task C — Type picker in wall/floor/roof inspector
+
+  File: packages/web/src/workspace/InspectorContent.tsx
+
+  The InspectorPropertiesFor function already accepts an options parameter with
+  elementsById and onPropertyChange (added in GW-05).
+
+  In the case 'wall': block, below the existing roof attachment select,
+  add a wall type picker:
+  <div className="flex items-center gap-2 py-0.5">
+    <span className="text-xs text-muted w-28 shrink-0">{f('wallType')}</span>
+    <select
+      className="flex-1 text-xs bg-surface border border-border rounded px-1 py-0.5"
+      value={el.wallTypeId ?? ''}
+      onChange={e2 => onPropertyChange?.('wallTypeId', e2.target.value || null)}
+    >
+      <option value="">— None —</option>
+      {Object.values(elementsById)
+        .filter((e): e is Extract<Element, { kind: 'wall_type' }> => e.kind === 'wall_type')
+        .map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+    </select>
+  </div>
+
+  Similarly for case 'floor': — add a floorTypeId picker using floor_type elements.
+  Similarly for case 'roof': — add a roofTypeId picker using roof_type elements.
+
+  Also add i18n keys to packages/web/src/i18n.ts (both en and de blocks):
+    wallType: 'Wall Type',        // DE: 'Wandtyp'
+    floorType: 'Floor Type',      // DE: 'Deckentyp'
+    roofType: 'Roof Type',        // DE: 'Dachtyp'
+
+  ---
+  Verification
+
+    pnpm --filter @bim-ai/web typecheck
+    pnpm --filter @bim-ai/web test -- --run
+
+  Both must pass with 0 errors.
+
+  Branch & commit
+
+  Branch: fl-08-type-catalog-ui
+  Commit: "feat(ui): FL-08 — wall/floor/roof type catalog browser + layer authoring"
+  Push to origin.

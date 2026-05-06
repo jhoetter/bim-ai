@@ -1,0 +1,46 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "cb177ab4ee9d",
+  "session_id": "731a3bcf-755f-4b42-9c5c-91c634885c41",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-06T14:09:24.123435Z",
+  "branch": "fl-08-type-catalog-ui",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/i18n.ts",
+    "packages/web/src/workspace/InspectorContent.tsx",
+    "packages/web/src/workspace/MaterialLayerStackWorkbench.tsx",
+    "packages/web/src/workspace/RedesignedWorkspace.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "4dcdabc5e53d",
+  "token_usage": {
+    "input_tokens": 28,
+    "cache_creation_tokens": 41645,
+    "cache_read_tokens": 970391,
+    "output_tokens": 10480,
+    "api_call_count": 26
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-06T14:09:24.113634Z",
+    "agent_lines": 0,
+    "agent_removed": 6,
+    "human_added": 180,
+    "human_modified": 15,
+    "human_removed": 0,
+    "total_committed": 189,
+    "total_lines_changed": 201,
+    "agent_percentage": 2.9850746268656714,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}
