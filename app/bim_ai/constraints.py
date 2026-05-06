@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 from collections import defaultdict
 from enum import StrEnum
 from typing import Any, Literal
@@ -484,6 +485,94 @@ def _room_bbox(room: RoomElem) -> tuple[float, float, float, float]:
     xs = [p.x_mm for p in room.outline_mm]
     ys = [p.y_mm for p in room.outline_mm]
     return min(xs), max(xs), min(ys), max(ys)
+
+
+_ROOM_UNENCLOSED_PARALLEL_TOL_RAD = math.radians(4.0)
+_ROOM_UNENCLOSED_GAP_TOL_MM = 50.0
+_ROOM_UNENCLOSED_SEPARATION_PERP_TOL_MM = 150.0
+
+
+def _segment_axis_coverage(
+    edge_start: tuple[float, float],
+    edge_end: tuple[float, float],
+    seg_start: tuple[float, float],
+    seg_end: tuple[float, float],
+    perp_tol_mm: float,
+    angle_tol_rad: float = _ROOM_UNENCLOSED_PARALLEL_TOL_RAD,
+) -> tuple[float, float] | None:
+    """Project (seg_start, seg_end) onto the polygon edge axis if it is nearly
+    parallel and lies within ``perp_tol_mm`` of the edge's infinite line.
+
+    Returns ``(t0, t1)`` clipped to ``[0, edge_length]`` (mm-along-edge from
+    ``edge_start``), or ``None`` if the segment doesn't qualify.
+    """
+    dx = edge_end[0] - edge_start[0]
+    dy = edge_end[1] - edge_start[1]
+    edge_len = math.hypot(dx, dy)
+    if edge_len < 1.0:
+        return None
+    ux, uy = dx / edge_len, dy / edge_len
+    nx, ny = -uy, ux
+
+    sdx = seg_end[0] - seg_start[0]
+    sdy = seg_end[1] - seg_start[1]
+    seg_len = math.hypot(sdx, sdy)
+    if seg_len < 1.0:
+        return None
+
+    # |cross of unit-edge and seg| / seg_len = sin(angle)
+    sin_angle = abs(ux * sdy - uy * sdx) / seg_len
+    if sin_angle > math.sin(angle_tol_rad):
+        return None
+
+    qa_x = seg_start[0] - edge_start[0]
+    qa_y = seg_start[1] - edge_start[1]
+    qb_x = seg_end[0] - edge_start[0]
+    qb_y = seg_end[1] - edge_start[1]
+    if abs(qa_x * nx + qa_y * ny) > perp_tol_mm:
+        return None
+    if abs(qb_x * nx + qb_y * ny) > perp_tol_mm:
+        return None
+
+    t_a = qa_x * ux + qa_y * uy
+    t_b = qb_x * ux + qb_y * uy
+    t0 = max(0.0, min(t_a, t_b))
+    t1 = min(edge_len, max(t_a, t_b))
+    if t1 - t0 < 1.0:
+        return None
+    return (t0, t1)
+
+
+def _interval_union_uncovered(
+    intervals: list[tuple[float, float]],
+    target_len: float,
+    allowed_gap_mm: float = _ROOM_UNENCLOSED_GAP_TOL_MM,
+) -> list[tuple[float, float]]:
+    """Return uncovered sub-intervals of ``[0, target_len]`` after merging
+    ``intervals`` (gaps smaller than ``allowed_gap_mm`` are bridged).
+    """
+    if target_len <= 0:
+        return []
+    merged: list[list[float]] = []
+    for s, e in sorted(intervals):
+        s = max(0.0, s)
+        e = min(target_len, e)
+        if e <= s:
+            continue
+        if merged and s <= merged[-1][1] + allowed_gap_mm:
+            merged[-1][1] = max(merged[-1][1], e)
+        else:
+            merged.append([s, e])
+
+    uncovered: list[tuple[float, float]] = []
+    cursor = 0.0
+    for s, e in merged:
+        if s > cursor + allowed_gap_mm:
+            uncovered.append((cursor, s))
+        cursor = max(cursor, e)
+    if cursor < target_len - allowed_gap_mm:
+        uncovered.append((cursor, target_len))
+    return uncovered
 
 
 def _wall_length_mm(wall: WallElem) -> float:
@@ -2057,6 +2146,88 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
                             element_ids=sorted({ri.id, rj.id}),
                         )
                     )
+
+    # VAL-01: room_unenclosed — wall-graph closure check.
+    # For each room polygon edge, verify continuous coverage by walls or
+    # room-separation lines on the same level. Distinct from room_no_door
+    # (centroid heuristic): catches rooms whose boundary has true gaps.
+    if rooms:
+        walls_by_lvl: dict[
+            str, list[tuple[tuple[float, float], tuple[float, float], float]]
+        ] = defaultdict(list)
+        for w in walls:
+            walls_by_lvl[w.level_id].append(
+                (
+                    (w.start.x_mm, w.start.y_mm),
+                    (w.end.x_mm, w.end.y_mm),
+                    max(50.0, float(w.thickness_mm)),
+                )
+            )
+        seps_by_lvl: dict[str, list[tuple[tuple[float, float], tuple[float, float]]]] = (
+            defaultdict(list)
+        )
+        for sep in room_separations:
+            seps_by_lvl[sep.level_id].append(
+                ((sep.start.x_mm, sep.start.y_mm), (sep.end.x_mm, sep.end.y_mm))
+            )
+
+        for room in rooms:
+            outline = [(p.x_mm, p.y_mm) for p in room.outline_mm]
+            if len(outline) < 3:
+                continue
+            wall_segs = walls_by_lvl.get(room.level_id, [])
+            sep_segs = seps_by_lvl.get(room.level_id, [])
+            if not wall_segs and not sep_segs:
+                viols.append(
+                    Violation(
+                        rule_id="room_unenclosed",
+                        severity="warning",
+                        message=(
+                            "Room has no walls or room-separation lines on its level; "
+                            "boundary is not enclosed."
+                        ),
+                        element_ids=[room.id],
+                    )
+                )
+                continue
+
+            uncovered_edges: list[int] = []
+            n_edges = len(outline)
+            for i in range(n_edges):
+                p1 = outline[i]
+                p2 = outline[(i + 1) % n_edges]
+                edge_len = math.hypot(p2[0] - p1[0], p2[1] - p1[1])
+                if edge_len < 1.0:
+                    continue
+                intervals: list[tuple[float, float]] = []
+                for seg_a, seg_b, thk in wall_segs:
+                    perp_tol = max(thk / 2.0 + 50.0, 150.0)
+                    iv = _segment_axis_coverage(p1, p2, seg_a, seg_b, perp_tol)
+                    if iv is not None:
+                        intervals.append(iv)
+                for seg_a, seg_b in sep_segs:
+                    iv = _segment_axis_coverage(
+                        p1, p2, seg_a, seg_b, _ROOM_UNENCLOSED_SEPARATION_PERP_TOL_MM
+                    )
+                    if iv is not None:
+                        intervals.append(iv)
+                uncovered = _interval_union_uncovered(intervals, edge_len)
+                if uncovered:
+                    uncovered_edges.append(i)
+
+            if uncovered_edges:
+                viols.append(
+                    Violation(
+                        rule_id="room_unenclosed",
+                        severity="warning",
+                        message=(
+                            f"Room boundary has {len(uncovered_edges)} edge(s) without a "
+                            f"backing wall or room-separation line on the same level "
+                            f"(uncovered edge indices: {uncovered_edges})."
+                        ),
+                        element_ids=[room.id],
+                    )
+                )
 
     if len(doors) == 0 and len(windows) == 0 and len(rooms) > 0:
         for room in rooms:
