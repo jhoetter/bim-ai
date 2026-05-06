@@ -1309,7 +1309,7 @@ Use cases: target-house §1.6 east-slope dormer cut-out opening to the flat roof
 
 | ID     | Item                                                  | Note                                                                                                                    | Effort | State  |
 | ------ | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------ | ------ |
-| CLI-01 | `bim-ai export json`                                  | Stub at `packages/cli/cli.mjs:404`; ifc / gltf / glb already shipped. Should emit canonical command-bundle JSON for agents. | XS     | `open` |
+| CLI-01 | `bim-ai export json`                                  | Stub at `packages/cli/cli.mjs:404`; ifc / gltf / glb already shipped. Should emit canonical command-bundle JSON for agents. | XS     | `done` (in 674836de) |
 | CLI-02 | `bim-ai diff --from <rev> --to <rev>`                 | Stub at `packages/cli/cli.mjs:372`. Element-level diff between two revisions of the same model.                          | M      | `open` |
 | AGT-01 | Closed iterative-correction agent loop                 | `evidence-package` + `apply-bundle --dry-run` ship; the loop wiring (read evidence → generate patch → apply → re-evaluate) is manual. | L      | `open` |
 
