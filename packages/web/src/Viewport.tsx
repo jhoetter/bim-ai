@@ -1039,13 +1039,14 @@ function addCladdingBoards(
   wallThickM: number,
   boardWidthMm = 120,
   gapMm = 10,
+  colorOverride?: string,
 ): void {
   const pitchM = (boardWidthMm + gapMm) / 1000;
   const count = Math.max(1, Math.floor(wallLenM / pitchM));
   const boardProtrude = 0.012; // 12 mm proud of wall face
   const boardH = wallHeightM - 0.05;
   const boardD = pitchM - 0.002; // slight gap between boards
-  const color = readToken('--cat-timber-cladding', '#8B6340');
+  const color = colorOverride ?? readToken('--cat-timber-cladding', '#8B6340');
   const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.85, metalness: 0.0 });
 
   for (let i = 0; i < count; i++) {
@@ -1202,10 +1203,14 @@ function makeWallMesh(
   const len = Math.max(0.001, Math.hypot(dx, dz));
   const height = THREE.MathUtils.clamp(wall.heightMm / 1000, 0.25, 40);
   const thick = THREE.MathUtils.clamp(wall.thicknessMm / 1000, 0.05, 2);
+  const wallBaseColor =
+    wall.materialKey === 'white_cladding' || wall.materialKey === 'white_render'
+      ? '#f4f4f0'
+      : categoryColorOr(paint, 'wall');
   const mesh = new THREE.Mesh(
     new THREE.BoxGeometry(len, height, thick),
     new THREE.MeshStandardMaterial({
-      color: categoryColorOr(paint, 'wall'),
+      color: wallBaseColor,
       roughness: paint?.categories.wall.roughness ?? 0.85,
       metalness: paint?.categories.wall.metalness ?? 0.0,
     }),
@@ -1215,6 +1220,7 @@ function makeWallMesh(
   mesh.userData.bimPickId = wall.id;
   addEdges(mesh);
   if (wall.materialKey === 'timber_cladding') addCladdingBoards(mesh, len, height, thick);
+  else if (wall.materialKey === 'white_cladding') addCladdingBoards(mesh, len, height, thick, 120, 10, '#f4f4f0');
   return mesh;
 }
 
@@ -1893,8 +1899,12 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       if (data.index) geom.setIndex(new THREE.BufferAttribute(data.index, 1));
 
       const paintNow = paintBundleRef.current;
+      const csgBaseColor =
+        csgMeta?.materialKey === 'white_cladding' || csgMeta?.materialKey === 'white_render'
+          ? '#f4f4f0'
+          : categoryColorOr(paintNow, 'wall');
       const wallMat = new THREE.MeshStandardMaterial({
-        color: categoryColorOr(paintNow, 'wall'),
+        color: csgBaseColor,
         roughness: paintNow?.categories.wall.roughness ?? 0.85,
         metalness: paintNow?.categories.wall.metalness ?? 0.0,
       });
@@ -1908,6 +1918,8 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       addEdges(mesh);
       if (csgMeta?.materialKey === 'timber_cladding')
         addCladdingBoards(mesh, csgMeta.len, csgMeta.height, csgMeta.thick);
+      else if (csgMeta?.materialKey === 'white_cladding')
+        addCladdingBoards(mesh, csgMeta.len, csgMeta.height, csgMeta.thick, 120, 10, '#f4f4f0');
       applyClippingPlanesToMeshes(mesh, clippingPlanesRef.current);
 
       cacheNow.set(data.jobId, mesh);

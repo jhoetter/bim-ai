@@ -84,19 +84,19 @@ def _house_commands() -> list[dict]:
             "type": "createWall", "id": "w-s-main", "name": "South facade (main)",
             "levelId": "lvl-1",
             "start": {"xMm": 0,    "yMm": 0}, "end": {"xMm": 7000, "yMm": 0},
-            "thicknessMm": 200, "heightMm": 3000, "materialKey": "timber_cladding",
+            "thicknessMm": 200, "heightMm": 3000, "materialKey": "white_cladding",
         },
         {
             "type": "createWall", "id": "w-west", "name": "West facade",
             "levelId": "lvl-1",
             "start": {"xMm": 0, "yMm": 0}, "end": {"xMm": 0, "yMm": 8000},
-            "thicknessMm": 200, "heightMm": 3000, "materialKey": "timber_cladding",
+            "thicknessMm": 200, "heightMm": 3000, "materialKey": "white_cladding",
         },
         {
             "type": "createWall", "id": "w-n-main", "name": "North facade (main)",
             "levelId": "lvl-1",
             "start": {"xMm": 0, "yMm": 8000}, "end": {"xMm": 7000, "yMm": 8000},
-            "thicknessMm": 200, "heightMm": 3000, "materialKey": "timber_cladding",
+            "thicknessMm": 200, "heightMm": 3000, "materialKey": "white_cladding",
         },
     ]
 
@@ -106,19 +106,19 @@ def _house_commands() -> list[dict]:
             "type": "createWall", "id": "w-s-ann", "name": "South facade (annex)",
             "levelId": "lvl-1",
             "start": {"xMm": 7000, "yMm": 0}, "end": {"xMm": 11000, "yMm": 0},
-            "thicknessMm": 200, "heightMm": 3200, "materialKey": "timber_cladding",
+            "thicknessMm": 200, "heightMm": 3200, "materialKey": "white_render",
         },
         {
             "type": "createWall", "id": "w-east", "name": "East facade (annex)",
             "levelId": "lvl-1",
             "start": {"xMm": 11000, "yMm": 0}, "end": {"xMm": 11000, "yMm": 6000},
-            "thicknessMm": 200, "heightMm": 3200,
+            "thicknessMm": 200, "heightMm": 3200, "materialKey": "white_render",
         },
         {
             "type": "createWall", "id": "w-n-ann", "name": "North facade (annex)",
             "levelId": "lvl-1",
             "start": {"xMm": 11000, "yMm": 6000}, "end": {"xMm": 7000, "yMm": 6000},
-            "thicknessMm": 200, "heightMm": 3200,
+            "thicknessMm": 200, "heightMm": 3200, "materialKey": "white_render",
         },
     ]
 
@@ -135,20 +135,20 @@ def _house_commands() -> list[dict]:
             "type": "createWall", "id": "wu-west", "name": "Upper west facade",
             "levelId": "lvl-2",
             "start": {"xMm": 0, "yMm": 0}, "end": {"xMm": 0, "yMm": 8000},
-            "thicknessMm": 200, "heightMm": 2800, "materialKey": "timber_cladding",
+            "thicknessMm": 200, "heightMm": 2800, "materialKey": "white_cladding",
         },
         {
             "type": "createWall", "id": "wu-north", "name": "Upper north facade",
             "levelId": "lvl-2",
             "start": {"xMm": 0, "yMm": 8000}, "end": {"xMm": 7000, "yMm": 8000},
-            "thicknessMm": 200, "heightMm": 2800, "materialKey": "timber_cladding",
+            "thicknessMm": 200, "heightMm": 2800, "materialKey": "white_cladding",
         },
         {
             # East gable end wall — faces annex flat roof
             "type": "createWall", "id": "wu-east", "name": "Upper east gable",
             "levelId": "lvl-2",
             "start": {"xMm": 7000, "yMm": 0}, "end": {"xMm": 7000, "yMm": 8000},
-            "thicknessMm": 200, "heightMm": 2800, "materialKey": "timber_cladding",
+            "thicknessMm": 200, "heightMm": 2800, "materialKey": "white_cladding",
         },
     ]
 
@@ -337,22 +337,24 @@ def _house_commands() -> list[dict]:
     # (Three.js maps: X→x, Z→y-plan, Y→elevation)
     cmds += [
         {
-            # South-east iso — matches the reference sketch perspective
-            "type": "saveViewpoint", "id": "vp-se", "name": "SE iso (sketch view)",
+            # Primary sketch view — SSW, ~25° west of due south, elevation ~30°.
+            # From this angle: south gable face dominates, annex (east) appears
+            # to the right, west face visible as thin left edge — matches sketch.
+            "type": "saveViewpoint", "id": "vp-ssw", "name": "SSW iso (sketch view)",
+            "mode": "orbit_3d",
+            "camera": {
+                "position": {"xMm": -5000, "yMm": -14000, "zMm": 11000},
+                "target":   {"xMm": 4000,  "yMm": 4000,   "zMm": 3500},
+                "up":       {"xMm": 0,     "yMm": 0,      "zMm": 1},
+            },
+        },
+        {
+            # Secondary — south-east iso (annex on left, useful for east-side views)
+            "type": "saveViewpoint", "id": "vp-se", "name": "SE iso",
             "mode": "orbit_3d",
             "camera": {
                 "position": {"xMm": 18000, "yMm": -8000, "zMm": 13000},
                 "target":   {"xMm": 5000,  "yMm": 4000,  "zMm": 4000},
-                "up":       {"xMm": 0,     "yMm": 0,     "zMm": 1},
-            },
-        },
-        {
-            # Default 3D orbit — slightly elevated south-west view
-            "type": "saveViewpoint", "id": "vp-sw", "name": "SW orbit",
-            "mode": "orbit_3d",
-            "camera": {
-                "position": {"xMm": -8000, "yMm": -5000, "zMm": 11000},
-                "target":   {"xMm": 3500,  "yMm": 4000,  "zMm": 3500},
                 "up":       {"xMm": 0,     "yMm": 0,     "zMm": 1},
             },
         },
@@ -408,7 +410,7 @@ async def seed_async() -> None:
                     id=COMMENT_ID,
                     model_id=MODEL_ID,
                     user_display="Seed bot",
-                    body="Sketch house loaded — main gable volume (curtain wall south face) + annex flat roof. SE iso viewpoint matches the reference sketch.",
+                    body="Sketch house loaded — white board-and-batten main volume, curtain wall south gable, smooth-render annex. SSW viewpoint matches the reference sketch angle.",
                     element_id=None,
                     level_id="lvl-1",
                     anchor_x_mm=3500,
