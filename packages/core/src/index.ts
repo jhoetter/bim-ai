@@ -120,6 +120,14 @@ export type FamilyDiscipline =
   | 'beam'
   | 'generic';
 
+export type WallLocationLine =
+  | 'wall-centerline'
+  | 'finish-face-exterior'
+  | 'finish-face-interior'
+  | 'core-centerline'
+  | 'core-face-exterior'
+  | 'core-face-interior';
+
 export type Element =
   | {
       kind: 'project_settings';
@@ -181,6 +189,7 @@ export type Element =
       roofAttachmentId?: string | null;
       insulationExtensionMm?: number;
       isCurtainWall?: boolean;
+      locationLine?: WallLocationLine;
     }
   | {
       kind: 'door';
@@ -410,6 +419,7 @@ export type Element =
       planOpeningTagStyleId?: string | null;
       planRoomTagStyleId?: string | null;
       planCategoryGraphics?: PlanCategoryGraphicRow[];
+      categoryOverrides?: Record<string, unknown>;
     }
   | {
       kind: 'view_template';

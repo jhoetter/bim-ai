@@ -213,6 +213,13 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
       ...(raw.isCurtainWall != null || raw.is_curtain_wall != null
         ? { isCurtainWall: Boolean(raw.isCurtainWall ?? raw.is_curtain_wall) }
         : {}),
+      ...(raw.locationLine || raw.location_line
+        ? {
+            locationLine: String(
+              raw.locationLine ?? raw.location_line,
+            ) as import('@bim-ai/core').WallLocationLine,
+          }
+        : {}),
     };
   }
 

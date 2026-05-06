@@ -1,0 +1,84 @@
+import { describe, expect, it } from 'vitest';
+import type { Element } from '@bim-ai/core';
+import { makeWallMesh } from './meshBuilders';
+
+type WallElem = Extract<Element, { kind: 'wall' }>;
+
+const baseWall: WallElem = {
+  kind: 'wall',
+  id: 'w1',
+  name: 'Test wall',
+  levelId: 'lvl0',
+  start: { xMm: 0, yMm: 0 },
+  end: { xMm: 1000, yMm: 0 },
+  thicknessMm: 300,
+  heightMm: 2800,
+};
+
+describe('makeWallMesh — locationLine offset', () => {
+  it('wall-centerline: mesh positioned at axis midpoint (no perpendicular offset)', () => {
+    const wall: WallElem = { ...baseWall, locationLine: 'wall-centerline' };
+    const mesh = makeWallMesh(wall, 0, null);
+    expect(mesh.position.x).toBeCloseTo(0.5, 5);
+    expect(mesh.position.z).toBeCloseTo(0, 5);
+  });
+
+  it('no locationLine: defaults to wall-centerline (no offset)', () => {
+    const mesh = makeWallMesh(baseWall, 0, null);
+    expect(mesh.position.x).toBeCloseTo(0.5, 5);
+    expect(mesh.position.z).toBeCloseTo(0, 5);
+  });
+
+  it('finish-face-exterior (thicknessMm=300, horizontal wall): mesh Z shifts +0.15 m', () => {
+    // Horizontal wall along X: perpendicular is +Z direction
+    // locFrac=0.5, thick=0.3 → perpZ = (dx/len)*0.5*0.3 = 0.15
+    const wall: WallElem = { ...baseWall, locationLine: 'finish-face-exterior' };
+    const mesh = makeWallMesh(wall, 0, null);
+    expect(mesh.position.x).toBeCloseTo(0.5, 5);
+    expect(mesh.position.z).toBeCloseTo(0.15, 5);
+  });
+
+  it('finish-face-interior (thicknessMm=300, horizontal wall): mesh Z shifts -0.15 m', () => {
+    const wall: WallElem = { ...baseWall, locationLine: 'finish-face-interior' };
+    const mesh = makeWallMesh(wall, 0, null);
+    expect(mesh.position.x).toBeCloseTo(0.5, 5);
+    expect(mesh.position.z).toBeCloseTo(-0.15, 5);
+  });
+
+  it('core-face-exterior: same offset as finish-face-exterior', () => {
+    const wall: WallElem = { ...baseWall, locationLine: 'core-face-exterior' };
+    const mesh = makeWallMesh(wall, 0, null);
+    expect(mesh.position.z).toBeCloseTo(0.15, 5);
+  });
+
+  it('core-centerline: no offset (treated as wall-centerline)', () => {
+    const wall: WallElem = { ...baseWall, locationLine: 'core-centerline' };
+    const mesh = makeWallMesh(wall, 0, null);
+    expect(mesh.position.z).toBeCloseTo(0, 5);
+  });
+
+  it('baseConstraintOffsetMm shifts mesh Y position', () => {
+    const wall: WallElem = { ...baseWall, baseConstraintOffsetMm: 500 };
+    const mesh = makeWallMesh(wall, 0, null);
+    // yBase = 0 + 0.5 = 0.5, height = 2.8, y = 0.5 + 2.8/2 = 1.9
+    expect(mesh.position.y).toBeCloseTo(0.5 + 2.8 / 2, 3);
+  });
+
+  it('topConstraintLevelId adjusts wall height', () => {
+    const topLevel: Extract<Element, { kind: 'level' }> = {
+      kind: 'level',
+      id: 'lvl1',
+      name: 'Level 1',
+      elevationMm: 3000,
+    };
+    const elementsById: Record<string, Element> = { lvl1: topLevel };
+    const wall: WallElem = {
+      ...baseWall,
+      topConstraintLevelId: 'lvl1',
+      topConstraintOffsetMm: 0,
+    };
+    // elevM=0, baseOff=0, yBase=0; topElevM=3, topOff=0 → height=3-0=3
+    const mesh = makeWallMesh(wall, 0, null, elementsById);
+    expect(mesh.position.y).toBeCloseTo(0 + 3 / 2, 5);
+  });
+});

@@ -3,12 +3,15 @@ import {
   initialAlignState,
   initialSplitState,
   initialTrimState,
+  initialWallJoinState,
   reduceAlign,
   reduceSplit,
   reduceTrim,
+  reduceWallJoin,
   type AlignState,
   type SplitState,
   type TrimState,
+  type WallJoinState,
 } from '../tools/toolGrammar';
 import * as THREE from 'three';
 import type { Element } from '@bim-ai/core';
@@ -169,6 +172,7 @@ export function PlanCanvas({
   const alignStateRef = useRef<AlignState>(initialAlignState());
   const splitStateRef = useRef<SplitState>(initialSplitState());
   const trimStateRef = useRef<TrimState>(initialTrimState());
+  const wallJoinStateRef = useRef<WallJoinState>(initialWallJoinState());
   const marqueeRef = useRef<{
     active: boolean;
     sx: number;
@@ -388,6 +392,7 @@ export function PlanCanvas({
     alignStateRef.current = initialAlignState();
     splitStateRef.current = initialSplitState();
     trimStateRef.current = initialTrimState();
+    wallJoinStateRef.current = initialWallJoinState();
     if (planTool === 'align') {
       const { state } = reduceAlign(alignStateRef.current, { kind: 'activate' });
       alignStateRef.current = state;
@@ -397,6 +402,9 @@ export function PlanCanvas({
     } else if (planTool === 'trim') {
       const { state } = reduceTrim(trimStateRef.current, { kind: 'activate' });
       trimStateRef.current = state;
+    } else if (planTool === 'wall-join') {
+      const { state } = reduceWallJoin(wallJoinStateRef.current, { kind: 'activate' });
+      wallJoinStateRef.current = state;
     }
   }, [planTool]);
 
@@ -1046,6 +1054,39 @@ export function PlanCanvas({
         }
         return;
       }
+      if (planTool === 'wall-join') {
+        const rect = rnd.domElement.getBoundingClientRect();
+        const worldPerPxMm = (2 * camRef.current.half * 1000) / Math.max(1, rect.width);
+        const threshMm = 12 * worldPerPxMm;
+        let bestCorner: { xMm: number; yMm: number } | null = null;
+        let bestDist = Infinity;
+        for (const el of Object.values(elementsById)) {
+          if (el.kind !== 'wall') continue;
+          for (const pt of [el.start, el.end]) {
+            const d = Math.hypot(sp.xMm - pt.xMm, sp.yMm - pt.yMm);
+            if (d < bestDist) { bestDist = d; bestCorner = pt; }
+          }
+        }
+        if (bestCorner && bestDist <= threshMm) {
+          const cornerWallIds: string[] = [];
+          for (const el of Object.values(elementsById)) {
+            if (el.kind !== 'wall') continue;
+            if (
+              Math.hypot(bestCorner.xMm - el.start.xMm, bestCorner.yMm - el.start.yMm) < 1 ||
+              Math.hypot(bestCorner.xMm - el.end.xMm, bestCorner.yMm - el.end.yMm) < 1
+            ) {
+              cornerWallIds.push(el.id);
+            }
+          }
+          const { state } = reduceWallJoin(wallJoinStateRef.current, {
+            kind: 'click-corner',
+            cornerMm: bestCorner,
+            wallIds: cornerWallIds,
+          });
+          wallJoinStateRef.current = state;
+        }
+        return;
+      }
       if (planTool === 'room') {
         let rm = draftRef.current;
         if (!rm || rm.kind !== 'room') {
@@ -1133,10 +1174,25 @@ export function PlanCanvas({
         } else if (planTool === 'trim') {
           const { state } = reduceTrim(trimStateRef.current, { kind: 'cancel' });
           trimStateRef.current = state;
+        } else if (planTool === 'wall-join') {
+          const { state } = reduceWallJoin(wallJoinStateRef.current, { kind: 'cancel' });
+          wallJoinStateRef.current = state;
         }
         clearMarqueeLine();
         marqueeRef.current = { active: false, sx: 0, sy: 0, ex: 0, ey: 0, direction: null };
         bumpGeom((x) => x + 1);
+      }
+      if (planTool === 'wall-join' && wallJoinStateRef.current.phase === 'selected') {
+        if (ev.key === 'n' || ev.key === 'N') {
+          const { state } = reduceWallJoin(wallJoinStateRef.current, { kind: 'cycle' });
+          wallJoinStateRef.current = state;
+        } else if (ev.key === 'Enter') {
+          const { state, effect } = reduceWallJoin(wallJoinStateRef.current, { kind: 'accept' });
+          wallJoinStateRef.current = state;
+          if (effect.commitJoin) {
+            console.warn('stub: wall-join command not implemented', effect.commitJoin);
+          }
+        }
       }
       if (ev.code === 'Space') {
         ev.preventDefault();
