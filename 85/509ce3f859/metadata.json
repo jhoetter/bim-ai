@@ -1,0 +1,23 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "85509ce3f859",
+  "strategy": "manual-commit",
+  "branch": "gw-04-curtain-wall-renderer",
+  "checkpoints_count": 0,
+  "files_touched": null,
+  "sessions": [
+    {
+      "metadata": "/85/509ce3f859/0/metadata.json",
+      "transcript": "/85/509ce3f859/0/full.jsonl",
+      "content_hash": "/85/509ce3f859/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 15,
+    "cache_creation_tokens": 48679,
+    "cache_read_tokens": 581269,
+    "output_tokens": 3743,
+    "api_call_count": 13
+  }
+}
