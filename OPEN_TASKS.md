@@ -21,9 +21,13 @@ Last updated: 2026-05-06.
 
 ## §28 WP-UI rows — table-level audit
 
-Every row in §28 is `partial`. The §4 done-rule (real surface adoption + a11y + WCAG + reduced-motion + Playwright baseline + lucide-only + tokens-only) is not yet met for any. This is intentional — the redesign is shippable in its current state. Closing each row toward `done` is its own sweep, tracked separately when one is scheduled.
+40 of 43 rows are now `done` (2026-05-06 sweep). Three rows remain `partial`:
 
-If you start a `partial → done` sweep, list the rows you're targeting *here* under a new "## Sweep: <name>" heading, then move closed rows to §6 (Sprint Ledger).
+- **WP-UI-B01** (2D Plan canvas — drafting visuals): `planCanvasState.draftingPaintFor` not directly used in PlanCanvas.tsx; canvas achieves token-driven paint via symbology.ts but scale-dependent line weights and hatch visibility are not yet wired.
+- **WP-UI-B02** (2D Plan canvas — pointer + snap grammar): `planCanvasState.classifyPointerStart` not used; PlanCanvas has its own pointer classification.
+- **WP-UI-B03** (2D Plan canvas — zoom/pan/level/empty state): `planCanvasState.PlanCamera` not used; PlanCanvas has its own zoom/pan/camera. Anchor-toward-cursor zoom and strict 1:5–1:5000 bounds not applied.
+
+Next sweep: wire `PlanCamera`, `SnapEngine`, and `draftingPaintFor` into `PlanCanvas.tsx` to close B01–B03.
 
 ---
 

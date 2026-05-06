@@ -398,7 +398,7 @@ export function NumericField({
       <label className="text-xs text-muted">{label}</label>
       <div
         className={[
-          'flex items-center gap-1 rounded-md border bg-background px-2 py-1 text-sm',
+          'flex items-center gap-1 rounded-md border bg-background px-2 py-1 text-sm focus-within:ring-2 focus-within:ring-offset-0',
           error ? 'border-danger' : 'border-border',
         ].join(' ')}
       >

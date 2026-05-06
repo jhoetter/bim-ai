@@ -267,7 +267,7 @@ function SearchField({
   onChange: (v: string) => void;
 }): JSX.Element {
   return (
-    <label className="flex items-center gap-2 rounded-md border border-border bg-background px-2 py-1.5 text-sm">
+    <label className="flex items-center gap-2 rounded-md border border-border bg-background px-2 py-1.5 text-sm focus-within:ring-2 focus-within:ring-offset-0">
       <Icons.search size={ICON_SIZE.chrome} className="text-muted" aria-hidden="true" />
       <input
         type="search"

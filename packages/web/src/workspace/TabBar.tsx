@@ -134,7 +134,8 @@ export function TabBar({
             <button
               type="button"
               onClick={() => onActivate(tab.id)}
-              className="flex items-center gap-1.5 outline-none"
+              aria-label={`${TAB_KIND_LABEL[tab.kind]}: ${tab.label}`}
+              className="flex items-center gap-1.5 rounded"
               title={`${TAB_KIND_LABEL[tab.kind]} · ${tab.label}`}
               data-testid={`tab-activate-${tab.id}`}
             >
