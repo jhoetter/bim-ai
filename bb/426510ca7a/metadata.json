@@ -21,13 +21,19 @@
       "transcript": "/bb/426510ca7a/1/full.jsonl",
       "content_hash": "/bb/426510ca7a/1/content_hash.txt",
       "prompt": "/bb/426510ca7a/1/prompt.txt"
+    },
+    {
+      "metadata": "/bb/426510ca7a/2/metadata.json",
+      "transcript": "/bb/426510ca7a/2/full.jsonl",
+      "content_hash": "/bb/426510ca7a/2/content_hash.txt",
+      "prompt": "/bb/426510ca7a/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 236,
-    "cache_creation_tokens": 301361,
-    "cache_read_tokens": 19905315,
-    "output_tokens": 131123,
-    "api_call_count": 208
+    "input_tokens": 273,
+    "cache_creation_tokens": 328971,
+    "cache_read_tokens": 21853441,
+    "output_tokens": 141495,
+    "api_call_count": 243
   }
 }
