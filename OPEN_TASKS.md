@@ -13,22 +13,6 @@ Last updated: 2026-05-06.
 
 ## High-impact (user-visible, blocks daily use)
 
-### T-04 · Re-capture Playwright baselines
-**WP target**: WP-UI-H01 · **Source**: chat thread after `dddda700` · **Status**: open
-
-Baselines in `packages/web/e2e/__screenshots__/ui-redesign-baselines.spec.ts/darwin/` were captured before:
-- The canvas-full-bleed fix (V01)
-- The 3D ViewCube replacement (V04)
-- The TabBar addition (V15)
-
-The current 7 PNGs are stale; CI diff will fail.
-
-**Next moves**:
-```sh
-cd packages/web && pnpm exec playwright test --update-snapshots
-```
-Visually verify the new PNGs look right, then commit.
-
 ---
 
 ## Medium (deferred from earlier WPs, called out in commits but not in spec)
