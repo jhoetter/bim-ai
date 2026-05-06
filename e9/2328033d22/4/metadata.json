@@ -1,0 +1,56 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "e92328033d22",
+  "session_id": "d572216e-83b4-4ea8-a05a-f1db9bef2396",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-06T10:22:43.062084Z",
+  "branch": "r3-01-pbr-tuning",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/viewport/materials.test.ts",
+    "packages/web/src/viewport/materials.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "63124e00ab2f",
+  "token_usage": {
+    "input_tokens": 27,
+    "cache_creation_tokens": 29447,
+    "cache_read_tokens": 815787,
+    "output_tokens": 5580,
+    "api_call_count": 25
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-06T10:22:43.053442Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 4,
+    "total_committed": 0,
+    "total_lines_changed": 4,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 72,
+      "user_lines_removed": 36,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/web/src/viewport/materials.test.ts": 15,
+        "packages/web/src/viewport/materials.ts": 23,
+        "packages/web/src/workspace/RoomSeparationAuthoringWorkbench.tsx": 3,
+        "packages/web/src/workspace/SiteAuthoringPanel.tsx": 31
+      },
+      "user_removed_per_file": {
+        "packages/web/src/viewport/materials.test.ts": 2,
+        "packages/web/src/viewport/materials.ts": 2,
+        "packages/web/src/workspace/RoomSeparationAuthoringWorkbench.tsx": 3,
+        "packages/web/src/workspace/SiteAuthoringPanel.tsx": 29
+      }
+    }
+  ]
+}
