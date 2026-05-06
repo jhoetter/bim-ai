@@ -26,8 +26,8 @@ A workpackage is `done` when all of: (a) TypeScript typechecks clean (`pnpm exec
 | Wave                                                   | Theme                                              | Status      |
 | ------------------------------------------------------ | -------------------------------------------------- | ----------- |
 | [Wave 0](#wave-0--meta--bootstrap)                     | Meta / Bootstrap — tracker, docs                   | `done`      |
-| [Wave 1](#wave-1--interaction-foundation--plan-canvas) | Interaction Foundation + Plan Canvas               | **CURRENT** |
-| [Wave 2](#wave-2--view-system--wall-depth--openings)   | View System + Wall Depth + Openings                | `open`      |
+| [Wave 1](#wave-1--interaction-foundation--plan-canvas) | Interaction Foundation + Plan Canvas               | `done`      |
+| [Wave 2](#wave-2--view-system--wall-depth--openings)   | View System + Wall Depth + Openings                | **CURRENT** |
 | [Wave 3](#wave-3--element-depth)                       | Element Depth (Structural, Curtain Wall, Ceilings) | `open`      |
 | [Wave 4](#wave-4--data-layer)                          | Data Layer (Rooms V2, Parameters, Schedules)       | `open`      |
 | [Wave 5](#wave-5--families--collaboration)             | Families + Collaboration                           | `open`      |
@@ -65,7 +65,7 @@ R2-01 (CSG wall cuts for doors/windows) remains open — will be addressed in Wa
 
 **Goal:** Close the three partial WP-UI-B0x plan-canvas gaps; add the Options Bar UI strip; add Align / Split / Trim-Extend modify tools; wire selection direction and snap feedback.
 
-**Prompt files:** `spec/prompts/wave-01/` — delete this directory after all WPs merge to main.
+**Prompt files:** Deleted after all WPs merged to main (2026-05-06).
 
 ### Execution order
 
