@@ -95,10 +95,13 @@ export const LODIcon = bimIcon(
   <path d="M2 20H22 M3 15H8V20H3z M9 11H14V20H9z M15 7H21V20H15z M15 12H20 M15 16H20" />,
 );
 
-// ── Quantity takeoff: table of items with a quantities column ─────────────────
+// ── Quantity takeoff: wide description column + narrow right quantity column ───
+// 4 rows (vs ScheduleViewIcon's 3) + asymmetric vertical divider close to the
+// right edge clearly signals "description | qty" table layout — distinct from
+// the symmetric 3×3 schedule grid.
 export const QuantityTakeoffIcon = bimIcon(
   'QuantityTakeoffIcon',
-  <path d="M4 3H20V21H4z M16 3V21 M4 8H20 M4 12H20 M4 16H20 M4 19H20" />,
+  <path d="M4 4H20V20H4z M4 9H20 M4 13H20 M4 17H20 M16 4V20" />,
 );
 
 // ── Energy model: lightning bolt indicating energy analysis mode ───────────────
@@ -107,14 +110,14 @@ export const EnergyModelIcon = bimIcon(
   <path d="M14 2L6 14H12L10 22L18 10H12z" />,
 );
 
-// ── Scope box: wireframe bounding box with a front cutting plane ──────────────
+// ── Scope box: 2D bounding rectangle controlling reference-plane extents ──────
+// A solid outer boundary with dashed crosshairs signals a 2D extent-control box
+// (grids/levels are clipped to this boundary). Clearly distinct from the 3D
+// isometric SectionBoxIcon.
 export const ScopeBoxIcon = bimIcon(
   'ScopeBoxIcon',
   <>
-    <path d="M3 15H13V20H3z" />
-    <path d="M3 15L8 10H18L13 15" />
-    <path d="M13 15L18 10V15L13 20z" strokeDasharray="2 1.5" />
-    <path d="M8 10V5L3 10" strokeDasharray="2 1.5" />
-    <path d="M8 5H18" strokeDasharray="2 1.5" />
+    <path d="M4 4H20V20H4z" />
+    <path d="M12 4V20 M4 12H20" strokeDasharray="3 2" />
   </>,
 );

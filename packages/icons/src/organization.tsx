@@ -43,16 +43,26 @@ export const MaterialIcon = bimIcon(
   <path d="M2 18H22V21H2z M5 14H19V18H5z M7 10H17V14H7z M9 6H15V10H9z" />,
 );
 
-// ── Wall layer: wall outline with layer boundaries and vertical hatch lines ───
+// ── Wall layer: three material layers with hatching showing different finishes ─
+// Left layer = brick (horizontal bed joints), middle = insulation (diagonal),
+// right = finish (plain). Readable at small sizes; 5 close lines collapsed into
+// 3 clearly-spaced layers with material-type hints.
 export const WallLayerIcon = bimIcon(
   'WallLayerIcon',
-  <path d="M2 4H22V20H2z M8 4V20 M16 4V20 M10 4V20 M12 4V20 M14 4V20" />,
+  <>
+    <path d="M2 4H22V20H2z M7 4V20 M17 4V20" />
+    <path d="M3 9H7 M3 13H7 M3 17H7" />
+    <path d="M8 7L17 10 M8 12L17 15 M8 15L17 18" />
+  </>,
 );
 
-// ── Phase / timeline bracket: horizontal timeline with phase bracket above ────
+// ── Phase: two sequential project phases as bars on a timeline ───────────────
+// Left bar (taller = earlier/larger phase) + right bar (shorter = current phase)
+// sitting on a shared baseline. Immediately reads as "phased construction
+// schedule" rather than the previous bracket-on-timeline ambiguity.
 export const PhaseIcon = bimIcon(
   'PhaseIcon',
-  <path d="M2 12H22 M8 12V6H16V12 M10 4H14 M12 4V6" />,
+  <path d="M2 14H22 M3 6H11V14H3z M11 8H21V14H11z" />,
 );
 
 // ── BCF issue / flag: flagpole with V-notch pennant ───────────────────────────
