@@ -54,6 +54,8 @@ import {
   makeBalconyMesh,
   makeRailingMesh,
   makeSiteMesh,
+  makeColumnMesh,
+  makeBeamMesh,
 } from './viewport/meshBuilders';
 import {
   type ViewerCatKey,
@@ -1034,6 +1036,16 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
         case 'balcony':
           obj = makeBalconyMesh(e, curr, paint);
           break;
+        case 'column': {
+          const elev = elevationMForLevel(e.levelId, curr);
+          obj = makeColumnMesh(e, elev, paint);
+          break;
+        }
+        case 'beam': {
+          const elev = elevationMForLevel(e.levelId, curr);
+          obj = makeBeamMesh(e, elev, paint);
+          break;
+        }
         case 'site':
           obj = makeSiteMesh(e, curr, paint);
           break;

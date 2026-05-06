@@ -768,3 +768,96 @@ export function reduceShaft(
   }
   return { state, effect: { stillActive: true } };
 }
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* C16 Column — single-click placement                                      */
+/* ────────────────────────────────────────────────────────────────────── */
+
+export type ColumnState = { phase: 'idle' };
+
+export type ColumnEvent =
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'click'; pointMm: { xMm: number; yMm: number } }
+  | { kind: 'cancel' };
+
+export interface ColumnEffect {
+  commitColumn?: { positionMm: { xMm: number; yMm: number } };
+  stillActive: boolean;
+}
+
+export function initialColumnState(): ColumnState {
+  return { phase: 'idle' };
+}
+
+export function reduceColumn(
+  state: ColumnState,
+  event: ColumnEvent,
+): { state: ColumnState; effect: ColumnEffect } {
+  if (event.kind === 'deactivate') {
+    return { state: initialColumnState(), effect: { stillActive: false } };
+  }
+  if (event.kind === 'activate' || event.kind === 'cancel') {
+    return { state: initialColumnState(), effect: { stillActive: event.kind === 'activate' } };
+  }
+  if (event.kind === 'click') {
+    return {
+      state: initialColumnState(),
+      effect: { commitColumn: { positionMm: event.pointMm }, stillActive: true },
+    };
+  }
+  return { state, effect: { stillActive: true } };
+}
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* C17 Beam — two-click line placement                                      */
+/* ────────────────────────────────────────────────────────────────────── */
+
+export type BeamState =
+  | { phase: 'idle' }
+  | { phase: 'first-point'; startMm: { xMm: number; yMm: number } };
+
+export type BeamEvent =
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'click'; pointMm: { xMm: number; yMm: number } }
+  | { kind: 'cancel' };
+
+export interface BeamEffect {
+  commitBeam?: { startMm: { xMm: number; yMm: number }; endMm: { xMm: number; yMm: number } };
+  stillActive: boolean;
+}
+
+export function initialBeamState(): BeamState {
+  return { phase: 'idle' };
+}
+
+export function reduceBeam(
+  state: BeamState,
+  event: BeamEvent,
+): { state: BeamState; effect: BeamEffect } {
+  if (event.kind === 'deactivate') {
+    return { state: initialBeamState(), effect: { stillActive: false } };
+  }
+  if (event.kind === 'activate' || event.kind === 'cancel') {
+    return { state: initialBeamState(), effect: { stillActive: event.kind === 'activate' } };
+  }
+  if (event.kind === 'click') {
+    if (state.phase === 'idle') {
+      return {
+        state: { phase: 'first-point', startMm: event.pointMm },
+        effect: { stillActive: true },
+      };
+    }
+    if (state.phase === 'first-point') {
+      return {
+        state: initialBeamState(),
+        effect: {
+          commitBeam: { startMm: state.startMm, endMm: event.pointMm },
+          stillActive: true,
+        },
+      };
+    }
+  }
+  return { state, effect: { stillActive: true } };
+}

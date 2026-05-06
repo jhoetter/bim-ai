@@ -18,6 +18,12 @@ import {
   type WallJoinState,
   type WallOpeningState,
   type ShaftState,
+  initialColumnState,
+  reduceColumn,
+  type ColumnState,
+  initialBeamState,
+  reduceBeam,
+  type BeamState,
 } from '../tools/toolGrammar';
 import * as THREE from 'three';
 import type { Element } from '@bim-ai/core';
@@ -182,6 +188,8 @@ export function PlanCanvas({
   const wallOpeningStateRef = useRef<WallOpeningState>(initialWallOpeningState());
   const wallOpeningAnchorRef = useRef<{ xMm: number; yMm: number } | null>(null);
   const shaftStateRef = useRef<ShaftState>(initialShaftState());
+  const columnStateRef = useRef<ColumnState>(initialColumnState());
+  const beamStateRef = useRef<BeamState>(initialBeamState());
   const marqueeRef = useRef<{
     active: boolean;
     sx: number;
@@ -418,6 +426,10 @@ export function PlanCanvas({
       wallOpeningStateRef.current = initialWallOpeningState();
     } else if (planTool === 'shaft') {
       shaftStateRef.current = initialShaftState();
+    } else if (planTool === 'column') {
+      columnStateRef.current = initialColumnState();
+    } else if (planTool === 'beam') {
+      beamStateRef.current = initialBeamState();
     }
   }, [planTool]);
 
@@ -1156,6 +1168,24 @@ export function PlanCanvas({
         bumpGeom((x) => x + 1);
         return;
       }
+      if (planTool === 'column') {
+        const { effect } = reduceColumn(columnStateRef.current, { kind: 'click', pointMm: sp });
+        columnStateRef.current = initialColumnState();
+        if (effect.commitColumn) {
+          console.warn('stub: column placement not implemented', effect.commitColumn);
+        }
+        bumpGeom((x) => x + 1);
+        return;
+      }
+      if (planTool === 'beam') {
+        const { state, effect } = reduceBeam(beamStateRef.current, { kind: 'click', pointMm: sp });
+        beamStateRef.current = state;
+        if (effect.commitBeam) {
+          console.warn('stub: beam placement not implemented', effect.commitBeam);
+        }
+        bumpGeom((x) => x + 1);
+        return;
+      }
       if (planTool === 'room') {
         let rm = draftRef.current;
         if (!rm || rm.kind !== 'room') {
@@ -1251,6 +1281,10 @@ export function PlanCanvas({
           wallOpeningAnchorRef.current = null;
         } else if (planTool === 'shaft') {
           shaftStateRef.current = initialShaftState();
+        } else if (planTool === 'column') {
+          columnStateRef.current = initialColumnState();
+        } else if (planTool === 'beam') {
+          beamStateRef.current = initialBeamState();
         }
         clearMarqueeLine();
         marqueeRef.current = { active: false, sx: 0, sy: 0, ex: 0, ey: 0, direction: null };

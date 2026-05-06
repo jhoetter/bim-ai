@@ -40,7 +40,9 @@ export type PlanTool =
   | 'trim'
   | 'wall-join'
   | 'wall-opening'
-  | 'shaft';
+  | 'shaft'
+  | 'column'
+  | 'beam';
 
 export type PresencePeers = Record<
   string,

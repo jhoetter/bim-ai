@@ -49,6 +49,14 @@ i18n.init({
             label: 'Trim / Extend',
             tooltip: 'Click reference line, then segment to trim or extend (TR)',
           },
+          column: {
+            label: 'Column',
+            tooltip: 'Click to place a structural column (CO)',
+          },
+          beam: {
+            label: 'Beam',
+            tooltip: 'Two-click structural beam (BM)',
+          },
           disabled: {
             drawWallFirst: 'Draw a wall first',
             addStairFirst: 'Add a stair or slab first',
@@ -693,6 +701,14 @@ i18n.init({
           tag: {
             label: 'Beschriftung',
             tooltip: 'Beschriftungs-Dropdown (Tür / Fenster / Wand / Raum / Nach Kategorie)',
+          },
+          column: {
+            label: 'Stütze',
+            tooltip: 'Klicken zum Platzieren einer Stütze (CO)',
+          },
+          beam: {
+            label: 'Träger',
+            tooltip: 'Zwei Klicks für einen Träger (BM)',
           },
           disabled: {
             drawWallFirst: 'Zuerst eine Wand zeichnen',

@@ -14,6 +14,10 @@ import {
   initialRoofState,
   initialSectionDraft,
   initialShaftState,
+  initialColumnState,
+  reduceColumn,
+  initialBeamState,
+  reduceBeam,
   initialSplitState,
   initialTrimState,
   initialWallChainState,
@@ -521,5 +525,40 @@ describe('Shaft reducer', () => {
     state = reduceShaft(state, { kind: 'click', pointMm: { xMm: 0, yMm: 0 } }).state;
     const { effect } = reduceShaft(state, { kind: 'close-loop' });
     expect(effect.commitShaft).toBeUndefined();
+  });
+});
+
+describe('Column reducer', () => {
+  it('emits commitColumn on click', () => {
+    const s0 = initialColumnState();
+    const { effect } = reduceColumn(s0, { kind: 'click', pointMm: { xMm: 1000, yMm: 2000 } });
+    expect(effect.commitColumn?.positionMm).toEqual({ xMm: 1000, yMm: 2000 });
+    expect(effect.stillActive).toBe(true);
+  });
+  it('stays idle after cancel', () => {
+    const { state, effect } = reduceColumn(initialColumnState(), { kind: 'cancel' });
+    expect(state.phase).toBe('idle');
+    expect(effect.stillActive).toBe(false);
+  });
+});
+
+describe('Beam reducer', () => {
+  it('transitions to first-point on first click', () => {
+    const { state } = reduceBeam(initialBeamState(), { kind: 'click', pointMm: { xMm: 0, yMm: 0 } });
+    expect(state.phase).toBe('first-point');
+  });
+  it('emits commitBeam on second click', () => {
+    let state = initialBeamState();
+    state = reduceBeam(state, { kind: 'click', pointMm: { xMm: 0, yMm: 0 } }).state;
+    const { effect } = reduceBeam(state, { kind: 'click', pointMm: { xMm: 5000, yMm: 0 } });
+    expect(effect.commitBeam?.startMm).toEqual({ xMm: 0, yMm: 0 });
+    expect(effect.commitBeam?.endMm).toEqual({ xMm: 5000, yMm: 0 });
+    expect(effect.stillActive).toBe(true);
+  });
+  it('resets to idle after cancel', () => {
+    let state = initialBeamState();
+    state = reduceBeam(state, { kind: 'click', pointMm: { xMm: 0, yMm: 0 } }).state;
+    const { state: next } = reduceBeam(state, { kind: 'cancel' });
+    expect(next.phase).toBe('idle');
   });
 });

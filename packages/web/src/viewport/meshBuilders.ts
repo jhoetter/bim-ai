@@ -1577,3 +1577,56 @@ export function makeBalconyMesh(
   void paint; // unused but kept for API consistency
   return group;
 }
+
+export function makeColumnMesh(
+  col: Extract<Element, { kind: 'column' }>,
+  elevM: number,
+  paint: ViewportPaintBundle | null,
+): THREE.Mesh {
+  const bM = THREE.MathUtils.clamp((col.bMm ?? 300) / 1000, 0.05, 2);
+  const hM = THREE.MathUtils.clamp((col.hMm ?? 300) / 1000, 0.05, 2);
+  const baseOff = (col.baseConstraintOffsetMm ?? 0) / 1000;
+  const topOff = col.topConstraintOffsetMm != null ? col.topConstraintOffsetMm / 1000 : 0;
+  const heightM = col.heightMm != null
+    ? THREE.MathUtils.clamp(col.heightMm / 1000, 0.25, 40)
+    : 3.0;
+  const yBase = elevM + baseOff;
+  const geo = new THREE.BoxGeometry(bM, heightM, hM);
+  const mat = new THREE.MeshStandardMaterial({
+    color: categoryColorOr(paint, 'wall'),
+    roughness: paint?.categories.wall.roughness ?? 0.8,
+    metalness: paint?.categories.wall.metalness ?? 0,
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.set(col.positionMm.xMm / 1000, yBase + heightM / 2 + topOff, col.positionMm.yMm / 1000);
+  mesh.rotation.y = THREE.MathUtils.degToRad(col.rotationDeg ?? 0);
+  addEdges(mesh);
+  return mesh;
+}
+
+export function makeBeamMesh(
+  beam: Extract<Element, { kind: 'beam' }>,
+  elevM: number,
+  paint: ViewportPaintBundle | null,
+): THREE.Mesh {
+  const sx = beam.startMm.xMm / 1000;
+  const sz = beam.startMm.yMm / 1000;
+  const ex = beam.endMm.xMm / 1000;
+  const ez = beam.endMm.yMm / 1000;
+  const dx = ex - sx;
+  const dz = ez - sz;
+  const len = Math.max(0.001, Math.hypot(dx, dz));
+  const wM = THREE.MathUtils.clamp((beam.widthMm ?? 200) / 1000, 0.05, 1);
+  const hM = THREE.MathUtils.clamp((beam.heightMm ?? 400) / 1000, 0.05, 1);
+  const geo = new THREE.BoxGeometry(len, hM, wM);
+  const mat = new THREE.MeshStandardMaterial({
+    color: categoryColorOr(paint, 'wall'),
+    roughness: paint?.categories.wall.roughness ?? 0.8,
+    metalness: paint?.categories.wall.metalness ?? 0,
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.set(sx + dx / 2, elevM - hM / 2, sz + dz / 2);
+  mesh.rotation.y = Math.atan2(dz, dx);
+  addEdges(mesh);
+  return mesh;
+}
