@@ -179,6 +179,8 @@ i18n.init({
             locationLine: 'Location line',
             slabTopElevation: 'Slab top elevation',
             geometryMode: 'Geometry mode',
+            roofAttachment: 'Roof Attachment',
+            curtainWall: 'Curtain Wall',
           },
           planView: {
             namePlaceholder: 'Name',
@@ -774,6 +776,8 @@ i18n.init({
             locationLine: 'Bezugslinie',
             slabTopElevation: 'Plattenoberseite',
             geometryMode: 'Geometriemodus',
+            roofAttachment: 'Dachanschluss',
+            curtainWall: 'Vorhangfassade',
           },
           planView: {
             namePlaceholder: 'Name',

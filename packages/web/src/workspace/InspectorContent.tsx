@@ -44,20 +44,51 @@ function fmtMm(value: number | null | undefined): string {
   return `${value.toFixed(0)} mm`;
 }
 
-export function InspectorPropertiesFor(el: Element, t: TFunction): JSX.Element {
+export function InspectorPropertiesFor(
+  el: Element,
+  t: TFunction,
+  options?: {
+    elementsById?: Record<string, Element>;
+    onPropertyChange?: (property: string, value: unknown) => void;
+  },
+): JSX.Element {
   const f = (key: string) => t(`inspector.fields.${key}`);
   switch (el.kind) {
-    case 'wall':
+    case 'wall': {
+      const { elementsById = {}, onPropertyChange } = options ?? {};
+      const roofs = Object.values(elementsById).filter((e): e is Extract<Element, { kind: 'roof' }> => e.kind === 'roof');
       return (
-        <div>
-          <FieldRow label={f('type')} value="Generic — wall" />
+        <div className="flex flex-col gap-2">
           <FieldRow label={f('thickness')} value={fmtMm(el.thicknessMm)} />
-          <FieldRow label={f('height')} value={fmtMm(el.heightMm)} />
-          <FieldRow label={f('level')} value={el.levelId} mono />
-          <FieldRow label={f('start')} value={`${fmtMm(el.start.xMm)} · ${fmtMm(el.start.yMm)}`} mono />
-          <FieldRow label={f('end')} value={`${fmtMm(el.end.xMm)} · ${fmtMm(el.end.yMm)}`} mono />
+          <FieldRow label={f('height')}    value={fmtMm(el.heightMm)} />
+          <FieldRow label={f('level')}     value={el.levelId} mono />
+
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">{f('roofAttachment')}</span>
+            <select
+              className="flex-1 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              value={el.roofAttachmentId ?? ''}
+              onChange={e2 => onPropertyChange?.('roofAttachmentId', e2.target.value || null)}
+            >
+              <option value="">— None —</option>
+              {roofs.map(r => (
+                <option key={r.id} value={r.id}>{r.name ?? r.id}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">{f('curtainWall')}</span>
+            <input
+              type="checkbox"
+              checked={el.isCurtainWall ?? false}
+              onChange={e2 => onPropertyChange?.('isCurtainWall', e2.target.checked)}
+              className="accent-primary"
+            />
+          </div>
         </div>
       );
+    }
     case 'door':
       return (
         <div>
