@@ -1,0 +1,1 @@
+now, please look into how we can achieve a great overall dependency structure for this; we have for some epics really great tables with overview what depends on what; i'd like to have that overall, so i can understand e.g. whether i could fully parallelize work across the epics or not. for instance, i have dependencies within an epic but not across all epics.
