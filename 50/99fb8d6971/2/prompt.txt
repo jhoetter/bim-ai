@@ -43,3 +43,7 @@ nice, but the zooming in/out still feels too slow honestly. we need to have some
 ---
 
 how can i navigate in the 3d? it seems i am stuck to the origin? (0/0/0)? how does revit handle this?
+
+---
+
+the walk feature is cool, but feels super off. here as well, how can we make it extremely natural and great? also in terms of moving around but also the different layers we have (levels of the house)?
