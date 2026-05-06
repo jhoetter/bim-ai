@@ -404,9 +404,63 @@ async function cmdExport(kind, modelId, outPath) {
   process.exit(2);
 }
 
-async function cmdDiff() {
-  console.error('diff: not implemented (planned for agent self-review vs revisions).');
-  process.exit(2);
+function diffToText(diff) {
+  const lines = [];
+  lines.push(
+    `# bim-ai diff  rev ${diff.fromRevision} -> ${diff.toRevision}  (model ${diff.modelId})`,
+  );
+  const s = diff.summary ?? {};
+  lines.push(
+    `# added=${s.addedCount ?? 0} removed=${s.removedCount ?? 0} modified=${s.modifiedCount ?? 0}`,
+  );
+  for (const a of diff.added ?? []) {
+    const name = a && typeof a.name === 'string' ? a.name : '';
+    lines.push(`+ ${a?.kind ?? '?'} ${a?.id ?? '?'}${name ? ` (${name})` : ''}`);
+  }
+  for (const r of diff.removed ?? []) {
+    const name = r && typeof r.name === 'string' ? r.name : '';
+    lines.push(`- ${r?.kind ?? '?'} ${r?.id ?? '?'}${name ? ` (${name})` : ''}`);
+  }
+  for (const m of diff.modified ?? []) {
+    lines.push(`* ${m?.kind ?? '?'} ${m?.id ?? '?'}`);
+    for (const fc of m?.fieldChanges ?? []) {
+      lines.push(`    ${fc.field}: ${JSON.stringify(fc.from)} -> ${JSON.stringify(fc.to)}`);
+    }
+  }
+  return `${lines.join('\n')}\n`;
+}
+
+async function cmdDiff(modelId, fromRev, toRev, outPath, asText, summaryOnly) {
+  if (!modelId) usage();
+  const params = [];
+  if (fromRev != null) params.push(`fromRev=${encodeURIComponent(String(fromRev))}`);
+  if (toRev != null) params.push(`toRev=${encodeURIComponent(String(toRev))}`);
+  const qs = params.length ? `?${params.join('&')}` : '';
+  const url = `${base}/api/models/${encodeURIComponent(modelId)}/diff${qs}`;
+  const json = await fetchJson('GET', url);
+
+  let payload = json;
+  let text;
+  if (asText) {
+    text = diffToText(summaryOnly ? { ...json, added: [], removed: [], modified: [] } : json);
+  } else {
+    if (summaryOnly) {
+      payload = {
+        modelId: json.modelId,
+        fromRevision: json.fromRevision,
+        toRevision: json.toRevision,
+        summary: json.summary,
+      };
+    }
+    text = `${JSON.stringify(payload, null, 2)}\n`;
+  }
+
+  if (outPath && outPath !== '-') {
+    await fs.writeFile(outPath, text, 'utf8');
+    console.log(JSON.stringify({ ok: true, out: outPath, chars: text.length }, null, 2));
+  } else {
+    process.stdout.write(text);
+  }
 }
 
 function usage() {
@@ -573,7 +627,21 @@ async function main() {
       return;
     }
     if (cmd === 'diff') {
-      await cmdDiff();
+      const rest = argv.slice(1);
+      let fromRev;
+      let toRev;
+      let outArg;
+      let asText = false;
+      let summaryOnly = false;
+      for (let i = 0; i < rest.length; i++) {
+        const a = rest[i];
+        if (a === '--from' && rest[i + 1]) fromRev = rest[++i];
+        else if (a === '--to' && rest[i + 1]) toRev = rest[++i];
+        else if (a === '--out' && rest[i + 1]) outArg = rest[++i];
+        else if (a === '--text') asText = true;
+        else if (a === '--summary-only') summaryOnly = true;
+      }
+      await cmdDiff(modelId, fromRev, toRev, outArg, asText, summaryOnly);
       return;
     }
 

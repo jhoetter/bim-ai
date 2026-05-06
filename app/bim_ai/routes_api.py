@@ -7,7 +7,7 @@ from uuid import UUID, uuid4
 from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, Field, TypeAdapter
-from sqlalchemy import select
+from sqlalchemy import desc, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -23,8 +23,10 @@ from bim_ai.agent_review_readout_consistency_closure import (
 from bim_ai.codes import BUILDING_PRESETS
 from bim_ai.commands import Command
 from bim_ai.db import SessionMaker, get_session
+from bim_ai.diff_engine import compute_element_diff
 from bim_ai.document import Document
 from bim_ai.elements import Element, LevelElem, PlanViewElem
+from bim_ai.engine import clone_document, try_commit_bundle
 from bim_ai.evidence_manifest import (
     MINIMAL_PROBE_PNG_BYTES_V1,
     MINIMAL_PROBE_PNG_CANONICAL_SHA256_V1,
@@ -78,7 +80,7 @@ from bim_ai.routes_exports import exports_router
 from bim_ai.schedule_csv import schedule_payload_to_csv, schedule_payload_with_column_subset
 from bim_ai.schedule_derivation import derive_schedule_table, list_schedule_ids
 from bim_ai.sheet_preview_svg import SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2
-from bim_ai.tables import ModelRecord, ProjectRecord
+from bim_ai.tables import ModelRecord, ProjectRecord, UndoStackRecord
 from bim_ai.type_material_registry import merged_registry_payload
 from bim_ai.v1_acceptance_proof_matrix import build_v1_acceptance_proof_matrix_v1
 from bim_ai.v1_closeout_readiness_manifest import build_v1_closeout_readiness_manifest_v1
@@ -194,6 +196,81 @@ async def snapshot(model_id: UUID, session: AsyncSession = Depends(get_session))
         "revision": doc.revision,
         "elements": {k: v.model_dump(by_alias=True) for k, v in doc.elements.items()},
         "violations": violations_wire(doc.elements),
+    }
+
+
+async def _document_at_revision(
+    session: AsyncSession, model_id: UUID, current: Document, target_rev: int
+) -> Document:
+    """Reconstruct ``current`` rolled back to ``target_rev`` by replaying
+    undo bundles in reverse-revision order. Returns a fresh ``Document``;
+    the ``revision`` attribute is informational and may not equal
+    ``target_rev`` after the engine bumps the counter — element state is
+    what matters for diff.
+    """
+    if target_rev == current.revision:
+        return clone_document(current)
+    res = await session.execute(
+        select(UndoStackRecord)
+        .where(
+            UndoStackRecord.model_id == model_id,
+            UndoStackRecord.revision_after > target_rev,
+            UndoStackRecord.revision_after <= current.revision,
+        )
+        .order_by(desc(UndoStackRecord.revision_after), desc(UndoStackRecord.id))
+    )
+    rolling = clone_document(current)
+    for entry in res.scalars().all():
+        ok, new_doc, _cmds, _viols, _code = try_commit_bundle(rolling, list(entry.undo_commands))
+        if ok and new_doc is not None:
+            rolling = new_doc
+        else:
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    "Cannot reconstruct historical revision — undo replay failed at "
+                    f"revision_after={entry.revision_after}"
+                ),
+            )
+    return rolling
+
+
+@api_router.get("/models/{model_id}/diff")
+async def model_diff(
+    model_id: UUID,
+    fromRev: Annotated[int | None, Query(ge=1)] = None,  # noqa: N803 — wire-format alias
+    toRev: Annotated[int | None, Query(ge=1)] = None,  # noqa: N803
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    current = Document.model_validate(row.document)
+
+    to_rev = toRev if toRev is not None else current.revision
+    from_rev = fromRev if fromRev is not None else max(1, to_rev - 1)
+
+    if from_rev > current.revision or to_rev > current.revision:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Revision out of range: model is at revision {current.revision} "
+                f"(fromRev={from_rev}, toRev={to_rev})."
+            ),
+        )
+
+    doc_to = await _document_at_revision(session, model_id, current, to_rev)
+    doc_from = await _document_at_revision(session, model_id, current, from_rev)
+
+    elements_from = {k: v.model_dump(by_alias=True) for k, v in doc_from.elements.items()}
+    elements_to = {k: v.model_dump(by_alias=True) for k, v in doc_to.elements.items()}
+
+    diff = compute_element_diff(elements_from, elements_to)
+    return {
+        "modelId": str(model_id),
+        "fromRevision": from_rev,
+        "toRevision": to_rev,
+        **diff,
     }
 
 
