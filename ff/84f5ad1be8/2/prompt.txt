@@ -1,0 +1,1 @@
+read HANDOVER.md, then OPEN_TASKS.md. describe to me, work on workpackage 30. dont be surprised, other AI agents are wokring on other workpackages in the meantime. commit and push your stuff once done
