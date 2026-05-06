@@ -3,7 +3,7 @@
   "checkpoint_id": "724cc58d13ed",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 0,
+  "checkpoints_count": 2,
   "files_touched": [
     "app/bim_ai/prd_tracker_reconciliation_v1.py",
     "app/tests/test_prd_tracker_reconciliation_v1.py",
@@ -17,13 +17,19 @@
       "transcript": "/72/4cc58d13ed/0/full.jsonl",
       "content_hash": "/72/4cc58d13ed/0/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/72/4cc58d13ed/1/metadata.json",
+      "transcript": "/72/4cc58d13ed/1/full.jsonl",
+      "content_hash": "/72/4cc58d13ed/1/content_hash.txt",
+      "prompt": "/72/4cc58d13ed/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 8,
-    "cache_creation_tokens": 5415,
-    "cache_read_tokens": 2192066,
-    "output_tokens": 4660,
-    "api_call_count": 8
+    "input_tokens": 265,
+    "cache_creation_tokens": 295002,
+    "cache_read_tokens": 35014806,
+    "output_tokens": 124373,
+    "api_call_count": 210
   }
 }
