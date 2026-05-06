@@ -81,7 +81,9 @@ def minimal_empty_ifc_skeleton() -> str:
     )
 
 
-def build_ifc_material_layer_set_readback_evidence_v0(doc: Document) -> dict[str, Any] | None:
+def build_ifc_material_layer_set_readback_evidence_v0(
+    doc: Document, *, _cached_step: str | None = None
+) -> dict[str, Any] | None:
     """Re-parse exported STEP for material layer read-back (lazy import avoids export cycle at load)."""
 
     from bim_ai.export_ifc import IFC_AVAILABLE, export_ifc_model_step  # noqa: PLC0415
@@ -97,7 +99,7 @@ def build_ifc_material_layer_set_readback_evidence_v0(doc: Document) -> dict[str
     except ImportError:
         return None
 
-    step = export_ifc_model_step(doc)
+    step = _cached_step if _cached_step is not None else export_ifc_model_step(doc)
     model = ifcopenshell.file.from_string(step)
     rb = kernel_ifc_material_layer_set_readback_v0(model, doc)
     return {
@@ -109,7 +111,9 @@ def build_ifc_material_layer_set_readback_evidence_v0(doc: Document) -> dict[str
     }
 
 
-def build_ifc_property_set_coverage_evidence_v0(doc: Document) -> dict[str, Any] | None:
+def build_ifc_property_set_coverage_evidence_v0(
+    doc: Document, *, _cached_step: str | None = None
+) -> dict[str, Any] | None:
     """Re-parse exported STEP for per-product pset/QTO coverage slice (lazy import)."""
 
     from bim_ai.export_ifc import IFC_AVAILABLE, export_ifc_model_step  # noqa: PLC0415
@@ -126,7 +130,7 @@ def build_ifc_property_set_coverage_evidence_v0(doc: Document) -> dict[str, Any]
     except ImportError:
         return None
 
-    step = export_ifc_model_step(doc)
+    step = _cached_step if _cached_step is not None else export_ifc_model_step(doc)
     model = ifcopenshell.file.from_string(step)
     ev = build_kernel_ifc_property_set_coverage_evidence_v0(model, doc)
     expansion = build_ifc_property_set_coverage_expansion_v1(model)
@@ -275,7 +279,9 @@ def build_ifc_exchange_manifest_closure_v0(
     }
 
 
-def build_ifc_import_preview_v0_for_manifest(doc: Document) -> dict[str, Any]:
+def build_ifc_import_preview_v0_for_manifest(
+    doc: Document, *, _cached_step: str | None = None
+) -> dict[str, Any]:
     """IFC import preview slice for manifest (offline stub when IfcOpenShell absent or not eligible)."""
 
     from bim_ai.export_ifc import IFC_AVAILABLE, export_ifc_model_step  # noqa: PLC0415
@@ -322,11 +328,13 @@ def build_ifc_import_preview_v0_for_manifest(doc: Document) -> dict[str, Any]:
             },
         }
 
-    step = export_ifc_model_step(doc)
+    step = _cached_step if _cached_step is not None else export_ifc_model_step(doc)
     return build_ifc_import_preview_v0(step)
 
 
-def build_ifc_unsupported_merge_map_v0_for_manifest(doc: Document) -> dict[str, Any]:
+def build_ifc_unsupported_merge_map_v0_for_manifest(
+    doc: Document, *, _cached_step: str | None = None
+) -> dict[str, Any]:
     """IFC unsupported merge map slice for manifest (mergeConstraints always present offline)."""
 
     from bim_ai.export_ifc import IFC_AVAILABLE, export_ifc_model_step  # noqa: PLC0415
@@ -355,7 +363,7 @@ def build_ifc_unsupported_merge_map_v0_for_manifest(doc: Document) -> dict[str, 
             "mergeConstraints": merge_constraints,
         }
 
-    step = export_ifc_model_step(doc)
+    step = _cached_step if _cached_step is not None else export_ifc_model_step(doc)
     return build_ifc_unsupported_merge_map_v0(step)
 
 
@@ -388,15 +396,24 @@ def build_ifc_exchange_manifest_payload(doc: Document) -> dict[str, Any]:
     cat_ev = material_catalog_audit_evidence_v0(doc)
     if cat_ev:
         out["materialCatalogAuditEvidence_v0"] = cat_ev
-    ml_ev = build_ifc_material_layer_set_readback_evidence_v0(doc)
+    # Compute IFC STEP once and reuse it across all sub-functions that need it.
+    # kernel_export_eligible already checks IFC_AVAILABLE, so emitting=True implies IFC is present.
+    _step: str | None = None
+    if emitting:
+        try:
+            from bim_ai.export_ifc import export_ifc_model_step  # noqa: PLC0415
+            _step = export_ifc_model_step(doc)
+        except Exception:
+            pass
+    ml_ev = build_ifc_material_layer_set_readback_evidence_v0(doc, _cached_step=_step)
     if ml_ev:
         out["ifcMaterialLayerSetReadbackEvidence_v0"] = ml_ev
-    ps_ev = build_ifc_property_set_coverage_evidence_v0(doc)
+    ps_ev = build_ifc_property_set_coverage_evidence_v0(doc, _cached_step=_step)
     if ps_ev:
         out["ifcPropertySetCoverageEvidence_v0"] = ps_ev
     out["siteExchangeEvidence_v0"] = build_site_exchange_evidence_v0_for_manifest(doc)
-    out["ifcImportPreview_v0"] = build_ifc_import_preview_v0_for_manifest(doc)
-    out["ifcUnsupportedMergeMap_v0"] = build_ifc_unsupported_merge_map_v0_for_manifest(doc)
+    out["ifcImportPreview_v0"] = build_ifc_import_preview_v0_for_manifest(doc, _cached_step=_step)
+    out["ifcUnsupportedMergeMap_v0"] = build_ifc_unsupported_merge_map_v0_for_manifest(doc, _cached_step=_step)
     out["ifcExchangeManifestClosure_v0"] = build_ifc_exchange_manifest_closure_v0(
         out["ifcImportPreview_v0"],
         out["ifcUnsupportedMergeMap_v0"],

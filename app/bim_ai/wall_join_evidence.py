@@ -206,43 +206,57 @@ def collect_wall_corner_join_evidence_v0(doc: Document) -> dict[str, Any] | None
     """Pairs of axis-aligned walls on one level sharing exactly one snapped vertex, directions ~perpendicular."""
 
     walls = [e for e in doc.elements.values() if isinstance(e, WallElem)]
-    wall_ids = sorted(w.id for w in walls)
     by_id: dict[str, WallElem] = {w.id: w for w in walls}
 
     joins: list[dict[str, Any]] = []
 
-    for i, ia in enumerate(wall_ids):
-        wa = by_id[ia]
-        if not wall_plan_axis_aligned_xy(wa):
+    # Pre-compute per-wall data; skip non-axis-aligned walls early.
+    unit_by_wall: dict[str, tuple[float, float]] = {}
+    pts_by_wall: dict[str, set[tuple[float, float]]] = {}
+    walls_by_endpoint: defaultdict[tuple[float, float], list[str]] = defaultdict(list)
+    for w in walls:
+        if not wall_plan_axis_aligned_xy(w):
             continue
-        ua = _wall_unit_xy(wa)
-        if ua is None:
+        u = _wall_unit_xy(w)
+        if u is None:
             continue
-        for ib in wall_ids[i + 1 :]:
-            wb = by_id[ib]
-            if wb.level_id != wa.level_id:
-                continue
-            if not wall_plan_axis_aligned_xy(wb):
-                continue
-            ub = _wall_unit_xy(wb)
-            if ub is None:
-                continue
-            if abs(ua[0] * ub[0] + ua[1] * ub[1]) > 0.05:
-                continue
-            pts_a = _endpoints_rounded_mm(wa)
-            pts_b = _endpoints_rounded_mm(wb)
-            common = pts_a & pts_b
-            if len(common) != 1:
-                continue
-            vx, vy = next(iter(common))
-            joins.append(
-                {
-                    "wallIds": sorted([wa.id, wb.id]),
-                    "vertexMm": {"xMm": round(vx, 3), "yMm": round(vy, 3)},
-                    "levelId": wa.level_id,
-                    "joinKind": "corner",
-                }
-            )
+        unit_by_wall[w.id] = u
+        pts = _endpoints_rounded_mm(w)
+        pts_by_wall[w.id] = pts
+        for pt in pts:
+            walls_by_endpoint[pt].append(w.id)
+
+    # Only check pairs that share at least one endpoint — avoids O(n²) all-pairs scan.
+    corner_checked: set[tuple[str, str]] = set()
+    for wlist in walls_by_endpoint.values():
+        for i in range(len(wlist)):
+            ia = wlist[i]
+            for j in range(i + 1, len(wlist)):
+                ib = wlist[j]
+                pair_key = (min(ia, ib), max(ia, ib))
+                if pair_key in corner_checked:
+                    continue
+                corner_checked.add(pair_key)
+                wa = by_id[ia]
+                wb = by_id[ib]
+                if wb.level_id != wa.level_id:
+                    continue
+                ua = unit_by_wall[ia]
+                ub = unit_by_wall[ib]
+                if abs(ua[0] * ub[0] + ua[1] * ub[1]) > 0.05:
+                    continue
+                common = pts_by_wall[ia] & pts_by_wall[ib]
+                if len(common) != 1:
+                    continue
+                vx, vy = next(iter(common))
+                joins.append(
+                    {
+                        "wallIds": sorted([wa.id, wb.id]),
+                        "vertexMm": {"xMm": round(vx, 3), "yMm": round(vy, 3)},
+                        "levelId": wa.level_id,
+                        "joinKind": "corner",
+                    }
+                )
 
     if not joins:
         return None

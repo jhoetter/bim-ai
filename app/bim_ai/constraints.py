@@ -54,11 +54,7 @@ from bim_ai.export_ifc import (
     summarize_kernel_ifc_semantic_roundtrip,
 )
 from bim_ai.geometry import Poly, approx_overlap_area_mm2, sat_overlap, wall_corners
-from bim_ai.ifc_stub import (
-    build_ifc_exchange_manifest_payload,
-    build_ifc_import_preview_v0_for_manifest,
-    build_ifc_unsupported_merge_map_v0_for_manifest,
-)
+from bim_ai.ifc_stub import build_ifc_exchange_manifest_payload
 from bim_ai.material_assembly_resolve import (
     material_assembly_manifest_evidence,
     material_catalog_audit_rows,
@@ -1021,12 +1017,9 @@ def _exchange_advisory_violations(elements: dict[str, Element]) -> list[Violatio
                 )
 
     if ifcopenshell_available() and kernel_export_eligible(doc):
-        try:
-            preview = build_ifc_import_preview_v0_for_manifest(doc)
-            merge_map = build_ifc_unsupported_merge_map_v0_for_manifest(doc)
-        except Exception:
-            preview = {}
-            merge_map = {}
+        # ifc_row is already computed above; reuse cached values instead of re-exporting.
+        preview = ifc_row.get("ifcImportPreview_v0") or {}
+        merge_map = ifc_row.get("ifcUnsupportedMergeMap_v0") or {}
 
         if preview.get("available"):
             unresolved_count = int(preview.get("unresolvedReferenceCount") or 0)
