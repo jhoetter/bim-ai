@@ -64,6 +64,21 @@ type Props = {
   onPersistViewpointField?: (payload: OrbitViewpointPersistFieldPayload) => void | Promise<void>;
 };
 
+function addEdges(
+  mesh: THREE.Mesh,
+  thresholdAngleDeg = 15,
+): THREE.LineSegments {
+  const color = readToken('--color-foreground', '#1a1a1a');
+  const edges = new THREE.EdgesGeometry(mesh.geometry, thresholdAngleDeg);
+  const mat = new THREE.LineBasicMaterial({ color, linewidth: 1 });
+  const lines = new THREE.LineSegments(edges, mat);
+  lines.renderOrder = 1;
+  lines.castShadow = false;
+  lines.receiveShadow = false;
+  mesh.add(lines);
+  return lines;
+}
+
 type WallElem = Extract<Element, { kind: 'wall' }>;
 
 /** Footprints use world XZ with z ← plan yMm */
@@ -151,15 +166,38 @@ function makeFloorSlabMesh(
   elementsById: Record<string, Element>,
   paint: ViewportPaintBundle | null,
 ): THREE.Mesh {
-  const b = xzBoundsMm(floor.boundaryMm ?? []);
-
   const elev = elevationMForLevel(floor.levelId, elementsById);
-
   const th = THREE.MathUtils.clamp(floor.thicknessMm / 1000, 0.05, 1.8);
+  const boundary = floor.boundaryMm ?? [];
+
+  // Build shape in shape-XY (plan X→shape X, plan Y negated→shape Y).
+  // After ExtrudeGeometry + rotateX(-π/2): shape X→world X, extrude depth→world Y, −shapeY→world Z.
+  const shape = new THREE.Shape(
+    boundary.length >= 3
+      ? boundary.map((p) => new THREE.Vector2(p.xMm / 1000, -p.yMm / 1000))
+      : [
+          new THREE.Vector2(0, 0),
+          new THREE.Vector2(6, 0),
+          new THREE.Vector2(6, -6),
+          new THREE.Vector2(0, -6),
+        ],
+  );
+
+  // Punch holes for any slab openings hosted by this floor.
+  for (const el of Object.values(elementsById)) {
+    if (el.kind !== 'slab_opening' || el.hostFloorId !== floor.id) continue;
+    const hPts = el.boundaryMm ?? [];
+    if (hPts.length < 3) continue;
+    shape.holes.push(
+      new THREE.Path(hPts.map((p) => new THREE.Vector2(p.xMm / 1000, -p.yMm / 1000))),
+    );
+  }
+
+  const geom = new THREE.ExtrudeGeometry(shape, { depth: th, bevelEnabled: false });
+  geom.rotateX(-Math.PI / 2);
 
   const mesh = new THREE.Mesh(
-    new THREE.BoxGeometry(b.spanX / 1000, th, b.spanZ / 1000)
-
+    geom,
     new THREE.MeshStandardMaterial({
       color: categoryColorOr(paint, 'floor'),
       roughness: paint?.categories.floor.roughness ?? 0.9,
@@ -167,11 +205,9 @@ function makeFloorSlabMesh(
       opacity: 0.92,
     }),
   );
-
-  mesh.position.set(b.cx / 1000, elev + th / 2, b.cz / 1000);
-
+  mesh.position.set(0, elev, 0);
   mesh.userData.bimPickId = floor.id;
-
+  addEdges(mesh, 20);
   return mesh;
 }
 
@@ -865,8 +901,9 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
 
       const beforeSnap = rig.snapshot();
 
-      // Dolly: multiplicative, so speed is proportional to current distance
-      rig.dolly(normY);
+      // Multiplicative zoom: ~30 % per mouse notch, consistent at all distances.
+      // Pinch (ctrlKey) already arrives half-scaled by wheelDelta; zoomBy handles the rest.
+      rig.zoomBy(Math.exp(normY * 0.003));
 
       // Cursor-anchored zoom: keep the world point under the cursor fixed.
       // Formula: nudge = deltaR * (cursorRayDir + sphericalDir)

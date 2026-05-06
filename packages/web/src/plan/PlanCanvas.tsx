@@ -768,18 +768,44 @@ export function PlanCanvas({
       const ndcX = ((ev.clientX - rect.left) / rect.width) * 2 - 1;
       const ndcY = -(((ev.clientY - rect.top) / rect.height) * 2 - 1);
       const asp = rect.width / Math.max(1, rect.height);
-      const raw = ev.deltaMode === 1 ? ev.deltaY * 20 : ev.deltaMode === 2 ? ev.deltaY * 600 : ev.deltaY;
-      const oldHalf = camRef.current.half;
-      const newHalf = THREE.MathUtils.clamp(
-        oldHalf * Math.exp(raw * 0.001),
-        minZoomRef.current,
-        420,
-      );
-      const dH = oldHalf - newHalf;
-      camRef.current.half = newHalf;
-      // Anchor cursor: shift camera so the world point under the cursor stays fixed.
-      camRef.current.camX += ndcX * asp * dH;
-      camRef.current.camZ -= ndcY * dH;
+      const norm = (d: number) =>
+        ev.deltaMode === 1 ? d * 20 : ev.deltaMode === 2 ? d * 600 : d;
+      const rawY = norm(ev.deltaY);
+      const rawX = norm(ev.deltaX);
+
+      if (ev.ctrlKey || ev.metaKey) {
+        // Trackpad pinch — macOS sends ctrlKey+wheel. Use higher sensitivity
+        // so the gesture feels 1-to-1 with finger spread/pinch.
+        const oldHalf = camRef.current.half;
+        const newHalf = THREE.MathUtils.clamp(
+          oldHalf * Math.exp(rawY * 0.008),
+          minZoomRef.current,
+          420,
+        );
+        const dH = oldHalf - newHalf;
+        camRef.current.half = newHalf;
+        camRef.current.camX += ndcX * asp * dH;
+        camRef.current.camZ -= ndcY * dH;
+      } else {
+        // Mouse wheel or two-finger trackpad scroll.
+        // Y → zoom at ~30 % per mouse notch; X → pan so a sideways swipe
+        // scrolls the canvas rather than accidentally zooming.
+        const oldHalf = camRef.current.half;
+        const newHalf = THREE.MathUtils.clamp(
+          oldHalf * Math.exp(rawY * 0.003),
+          minZoomRef.current,
+          420,
+        );
+        const dH = oldHalf - newHalf;
+        camRef.current.half = newHalf;
+        camRef.current.camX += ndcX * asp * dH;
+        camRef.current.camZ -= ndcY * dH;
+        if (Math.abs(rawX) > 1) {
+          // Horizontal two-finger swipe → pan X.
+          const worldPerPx = (2 * oldHalf * asp) / Math.max(1, rect.width);
+          camRef.current.camX += rawX * worldPerPx;
+        }
+      }
       resizeCam();
     };
 
