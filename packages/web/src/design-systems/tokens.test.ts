@@ -176,6 +176,28 @@ describe('design tokens — §9.2 / §9.3 / §9.10 (drafting)', () => {
   });
 });
 
+describe('design tokens — conservative palette (chrome coverage)', () => {
+  const tokensConservative = readTokens('conservative/tokens-conservative.css');
+
+  it.each(lightChrome)('overrides chrome token %s in conservative palette', (token) => {
+    expect(tokensConservative).toContain(`${token}:`);
+  });
+
+  it('overrides --font-sans in conservative palette', () => {
+    expect(tokensConservative).toContain('--font-sans:');
+  });
+
+  it('provides dark overrides for chrome tokens in conservative palette', () => {
+    const darkBlock =
+      tokensConservative.split("data-theme='dark'")[1] ??
+      tokensConservative.split('prefers-color-scheme: dark')[1] ??
+      '';
+    for (const token of ['--color-background', '--color-foreground', '--color-border', '--color-accent']) {
+      expect(darkBlock).toContain(`${token}:`);
+    }
+  });
+});
+
 describe('tokens-default — backwards-compat aliases', () => {
   it.each([
     '--background',
