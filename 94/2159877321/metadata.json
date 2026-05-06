@@ -1,0 +1,25 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "942159877321",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/web/src/workspace/sectionViewportSvg.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/94/2159877321/0/metadata.json",
+      "transcript": "/94/2159877321/0/full.jsonl",
+      "content_hash": "/94/2159877321/0/content_hash.txt",
+      "prompt": "/94/2159877321/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 97,
+    "cache_creation_tokens": 223401,
+    "cache_read_tokens": 6240074,
+    "output_tokens": 146353,
+    "api_call_count": 79
+  }
+}
