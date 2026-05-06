@@ -1203,6 +1203,34 @@ function applyClippingPlanesToMeshes(root: THREE.Object3D, planes: THREE.Plane[]
   });
 }
 
+function makeClipPlaneCap(plane: THREE.Plane, capColor: string): THREE.Mesh {
+  const capGeom = new THREE.PlaneGeometry(500, 500);
+  const capMat  = new THREE.MeshBasicMaterial({
+    color: capColor,
+    side: THREE.DoubleSide,
+    stencilWrite: true,
+    stencilRef: 1,
+    stencilFunc: THREE.EqualStencilFunc,
+    stencilFail: THREE.KeepStencilOp,
+    stencilZFail: THREE.KeepStencilOp,
+    stencilZPass: THREE.ReplaceStencilOp,
+    depthWrite: false,
+  });
+  const cap = new THREE.Mesh(capGeom, capMat);
+  cap.renderOrder = 2;
+  cap.userData.isClipCap = true;
+
+  cap.onBeforeRender = () => {
+    cap.position.copy(plane.normal).multiplyScalar(-plane.constant);
+    const quat = new THREE.Quaternion().setFromUnitVectors(
+      new THREE.Vector3(0, 0, 1),
+      plane.normal.clone().negate(),
+    );
+    cap.quaternion.copy(quat);
+  };
+  return cap;
+}
+
 /** Small key+label hint chip used in the navigation HUD. */
 function NavHint({ k, label }: { k: string; label: string }) {
   return (
@@ -1227,11 +1255,14 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const orthoCameraRef = useRef<THREE.OrthographicCamera | null>(null);
   const rootGroupRef = useRef<THREE.Group | null>(null);
   const rafRef = useRef<number | null>(null);
   /** Live paint bundle for the rendered scene. Rebuilt on theme change. */
   const paintBundleRef = useRef<ViewportPaintBundle | null>(null);
   const composerRef = useRef<EffectComposer | null>(null);
+  const renderPassRef = useRef<RenderPass | null>(null);
+  const ssaoPassRef = useRef<SSAOPass | null>(null);
   const outlinePassRef = useRef<OutlinePass | null>(null);
   const bimPickMapRef = useRef<Map<string, THREE.Object3D>>(new Map());
   /** Snapshot of elementsById from the previous render — used to diff for incremental updates. */
@@ -1262,11 +1293,13 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
 
   const [currentAzimuth, setCurrentAzimuth] = useState(Math.PI / 4);
   const [currentElevation, setCurrentElevation] = useState(0.45);
+  const [orthoMode, setOrthoMode] = useState(false);
   const [walkActive, setWalkActive] = useState(false);
   const [sectionBoxActive, setSectionBoxActive] = useState(false);
   const walkControllerRef = useRef<WalkController | null>(null);
   const sectionBoxRef = useRef<SectionBox | null>(null);
   const sectionBoxCageRef = useRef<THREE.LineSegments | null>(null);
+  const clipCapsRef = useRef<THREE.Mesh[]>([]);
 
   const elementsById = useBimStore((s) => s.elementsById);
   const theme = useTheme();
@@ -1301,6 +1334,10 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
     return el;
   }, [activeViewpointId, elementsById]);
 
+  const activeCamera = () => orthoMode
+    ? (orthoCameraRef.current ?? cameraRef.current!)
+    : cameraRef.current!;
+
   useEffect(() => {
     const el = mountRef.current;
     if (!el) return;
@@ -1311,7 +1348,7 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
     const paint = resolveViewportPaintBundle();
     paintBundleRef.current = paint;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, stencil: true });
     renderer.localClippingEnabled = true;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -1376,8 +1413,14 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
 
     cameraRef.current = camera;
 
+    const orthoCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.05, 500);
+    orthoCamera.up.set(0, 1, 0);
+    orthoCameraRef.current = orthoCamera;
+
     const composer = new EffectComposer(renderer);
-    composer.addPass(new RenderPass(scene, camera));
+    const renderPass = new RenderPass(scene, camera);
+    composer.addPass(renderPass);
+    renderPassRef.current = renderPass;
     const ssao = new SSAOPass(scene, camera, host.clientWidth || 1, host.clientHeight || 1);
     ssao.kernelRadius = paint.lighting.ssao.kernelRadius;
     ssao.minDistance = paint.lighting.ssao.minDistance;
@@ -1387,6 +1430,7 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       ssao.enabled = false;
     }
     composer.addPass(ssao);
+    ssaoPassRef.current = ssao;
     const outlinePass = new OutlinePass(
       new THREE.Vector2(host.clientWidth || 1, host.clientHeight || 1),
       scene,
@@ -1518,6 +1562,12 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       camera.lookAt(snap.target.x, snap.target.y, snap.target.z);
       setCurrentAzimuth(snap.azimuth);
       setCurrentElevation(snap.elevation);
+      const oc = orthoCameraRef.current;
+      if (oc) {
+        oc.position.copy(camera.position);
+        oc.up.copy(camera.up);
+        oc.lookAt(snap.target.x, snap.target.y, snap.target.z);
+      }
     }
 
     placeCamera();
@@ -1559,13 +1609,20 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
 
     function onResize() {
       const w = host.clientWidth || 1;
-
       const h = host.clientHeight || 1;
       renderer.setSize(w, h);
       composer.setSize(w, h);
       ssao.setSize(w, h);
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
+      const oc = orthoCameraRef.current;
+      if (oc) {
+        const f = rig.orthoFrustum(w / h);
+        oc.left = f.left; oc.right = f.right;
+        oc.top = f.top; oc.bottom = f.bottom;
+        oc.near = f.near; oc.far = f.far;
+        oc.updateProjectionMatrix();
+      }
     }
 
     const ro = new ResizeObserver(onResize);
@@ -1814,6 +1871,9 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
 
       composerRef.current?.dispose();
       composerRef.current = null;
+      orthoCameraRef.current = null;
+      renderPassRef.current = null;
+      ssaoPassRef.current = null;
       sunRef.current = null;
       envMapRef.current?.dispose();
       envMapRef.current = null;
@@ -1840,6 +1900,34 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
     if (!orbitCameraPoseMm) return;
     orbitRigApiRef.current?.applyViewpointMm(orbitCameraPoseMm);
   }, [orbitCameraNonce, orbitCameraPoseMm]);
+
+  useEffect(() => {
+    const cam = orthoMode
+      ? (orthoCameraRef.current ?? cameraRef.current!)
+      : cameraRef.current!;
+    if (!cam) return;
+    if (renderPassRef.current) renderPassRef.current.camera = cam;
+    if (ssaoPassRef.current) ssaoPassRef.current.camera = cam;
+    if (outlinePassRef.current) outlinePassRef.current.renderCamera = cam;
+    if (orthoMode && orthoCameraRef.current && cameraRigRef.current) {
+      const renderer = rendererRef.current;
+      const w = renderer?.domElement.clientWidth || 1;
+      const h = renderer?.domElement.clientHeight || 1;
+      const f = cameraRigRef.current.orthoFrustum(w / h);
+      const oc = orthoCameraRef.current;
+      oc.left = f.left; oc.right = f.right;
+      oc.top = f.top; oc.bottom = f.bottom;
+      oc.near = f.near; oc.far = f.far;
+      oc.updateProjectionMatrix();
+      const persp = cameraRef.current;
+      if (persp) {
+        oc.position.copy(persp.position);
+        oc.up.copy(persp.up);
+        const snap = cameraRigRef.current.snapshot();
+        oc.lookAt(snap.target.x, snap.target.y, snap.target.z);
+      }
+    }
+  }, [orthoMode]);
 
   // ── Incremental geometry effect ──────────────────────────────────────────
   // Diffs elementsById against the previous snapshot and surgically adds,
@@ -2149,6 +2237,10 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
     const rnd  = rendererRef.current;
     if (!root) return;
 
+    // Remove stale cap meshes from the previous rebuild.
+    for (const c of clipCapsRef.current) sceneRef.current?.remove(c);
+    clipCapsRef.current = [];
+
     const sectionBox    = sectionBoxRef.current;
     const sectionPlanes = sectionBox && sectionBoxActive ? sectionBox.clippingPlanes() : [];
     const clipElevM =
@@ -2181,6 +2273,18 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
     clippingPlanesRef.current = planes;
     applyClippingPlanesToMeshes(root, planes);
 
+    // Configure stencil on every scene mesh so clipped back-faces write stencil value 1.
+    root.traverse(obj => {
+      if (!(obj instanceof THREE.Mesh) || obj.userData.isClipCap) return;
+      const mat = obj.material as THREE.MeshStandardMaterial;
+      mat.stencilWrite = true;
+      mat.stencilRef = 1;
+      mat.stencilFunc = THREE.AlwaysStencilFunc;
+      mat.stencilFail = THREE.KeepStencilOp;
+      mat.stencilZFail = THREE.ReplaceStencilOp;
+      mat.stencilZPass = THREE.KeepStencilOp;
+    });
+
     // Section-box wireframe cage.
     if (sectionBoxCageRef.current) {
       root.remove(sectionBoxCageRef.current);
@@ -2200,6 +2304,19 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       cage.userData.bimPickId = '__section_box_cage';
       sectionBoxCageRef.current = cage;
       root.add(cage);
+    }
+
+    // Build stencil cap meshes for each active clipping plane.
+    if (sectionBoxActive && planes.length > 0) {
+      const capColor = readColorToken('--color-surface-strong', '#f0f0f0');
+      const newCaps: THREE.Mesh[] = [];
+      for (const plane of planes) {
+        const cap = makeClipPlaneCap(plane, capColor);
+        (cap.material as THREE.MeshBasicMaterial).clippingPlanes = planes.filter(p => p !== plane);
+        sceneRef.current?.add(cap);
+        newCaps.push(cap);
+      }
+      clipCapsRef.current = newCaps;
     }
   }, [viewerClipElevMm, viewerClipFloorElevMm, sectionBoxActive]);
 
@@ -2396,6 +2513,19 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
           title={t('viewport.sectionBoxTitle')}
         >
           {t('viewport.sectionBoxLabel')}: {sectionBoxActive ? t('viewport.on') : t('viewport.off')}
+        </button>
+        <button
+          type="button"
+          onClick={() => setOrthoMode((v) => !v)}
+          aria-pressed={orthoMode}
+          data-active={orthoMode ? 'true' : 'false'}
+          className={[
+            'rounded-md border border-border px-2 py-1 text-xs',
+            orthoMode ? 'bg-accent text-accent-foreground' : 'bg-surface text-foreground',
+          ].join(' ')}
+          title={t('viewport.orthoTitle')}
+        >
+          {t('viewport.orthoLabel')}: {orthoMode ? t('viewport.on') : t('viewport.off')}
         </button>
         {sectionBoxActive && sectionBoxRef.current ? (
           <span
