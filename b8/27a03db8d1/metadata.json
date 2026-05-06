@@ -3,7 +3,7 @@
   "checkpoint_id": "b827a03db8d1",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "packages/web/src/workspace/CommentsPanel.test.tsx",
     "packages/web/src/workspace/CommentsPanel.tsx",
@@ -23,13 +23,19 @@
       "transcript": "/b8/27a03db8d1/1/full.jsonl",
       "content_hash": "/b8/27a03db8d1/1/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/b8/27a03db8d1/2/metadata.json",
+      "transcript": "/b8/27a03db8d1/2/full.jsonl",
+      "content_hash": "/b8/27a03db8d1/2/content_hash.txt",
+      "prompt": "/b8/27a03db8d1/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 4610,
-    "cache_creation_tokens": 305672,
-    "cache_read_tokens": 22168193,
-    "output_tokens": 128203,
-    "api_call_count": 232
+    "input_tokens": 4657,
+    "cache_creation_tokens": 371258,
+    "cache_read_tokens": 24238361,
+    "output_tokens": 142512,
+    "api_call_count": 275
   }
 }
