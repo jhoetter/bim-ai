@@ -36,9 +36,27 @@ export function buildSeedHouseV2Commands() {
 
   // ── 1. Levels (3) ───────────────────────────────────────────────────────
   cmds.push(
-    { type: 'createLevel', id: 'seed-lvl-ground', name: 'Ground', elevationMm: 0 },
-    { type: 'createLevel', id: 'seed-lvl-upper', name: 'Upper', elevationMm: 3000 },
-    { type: 'createLevel', id: 'seed-lvl-roof-apex', name: 'Roof Apex', elevationMm: 5800 },
+    {
+      type: 'createLevel',
+      id: 'seed-lvl-ground',
+      name: 'Ground',
+      elevationMm: 0,
+      alsoCreatePlanView: false,
+    },
+    {
+      type: 'createLevel',
+      id: 'seed-lvl-upper',
+      name: 'Upper',
+      elevationMm: 3000,
+      alsoCreatePlanView: false,
+    },
+    {
+      type: 'createLevel',
+      id: 'seed-lvl-roof-apex',
+      name: 'Roof Apex',
+      elevationMm: 5800,
+      alsoCreatePlanView: false,
+    },
   );
 
   // ── 2. Site + terrace (1 site, terrace pad as a -50 mm slab) ────────────

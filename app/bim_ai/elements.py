@@ -145,6 +145,7 @@ class LevelElem(BaseModel):
     datum_kind: str | None = Field(default=None, alias="datumKind")
     parent_level_id: str | None = Field(default=None, alias="parentLevelId")
     offset_from_parent_mm: float = Field(default=0, alias="offsetFromParentMm")
+    pinned: bool = Field(default=False)
 
 
 class WallElem(BaseModel):
@@ -166,6 +167,7 @@ class WallElem(BaseModel):
     insulation_extension_mm: float = Field(default=0, alias="insulationExtensionMm")
     material_key: str | None = Field(default=None, alias="materialKey")
     is_curtain_wall: bool = Field(default=False, alias="isCurtainWall")
+    pinned: bool = Field(default=False)
 
 
 DoorOperationType = Literal[
@@ -200,6 +202,7 @@ class DoorElem(BaseModel):
     sliding_track_side: DoorSlidingTrackSide | None = Field(
         default=None, alias="slidingTrackSide"
     )
+    pinned: bool = Field(default=False)
 
 
 WindowOutlineKind = Literal[
@@ -232,6 +235,7 @@ class WindowElem(BaseModel):
     outline_kind: WindowOutlineKind | None = Field(default=None, alias="outlineKind")
     outline_mm: list[Vec2Mm] | None = Field(default=None, alias="outlineMm")
     attached_roof_id: str | None = Field(default=None, alias="attachedRoofId")
+    pinned: bool = Field(default=False)
 
 
 class WallOpeningElem(BaseModel):
@@ -246,6 +250,7 @@ class WallOpeningElem(BaseModel):
     along_t_end: float = Field(alias="alongTEnd", ge=0, le=1)
     sill_height_mm: float = Field(alias="sillHeightMm", ge=0)
     head_height_mm: float = Field(alias="headHeightMm", ge=0)
+    pinned: bool = Field(default=False)
 
     @model_validator(mode="after")
     def _check_bounds(self) -> WallOpeningElem:
@@ -271,6 +276,7 @@ class RoomElem(BaseModel):
     function_label: str | None = Field(default=None, alias="functionLabel")
     finish_set: str | None = Field(default=None, alias="finishSet")
     target_area_m2: float | None = Field(default=None, alias="targetAreaM2")
+    pinned: bool = Field(default=False)
 
 
 class GridLineElem(BaseModel):
@@ -278,6 +284,7 @@ class GridLineElem(BaseModel):
     kind: Literal["grid_line"] = "grid_line"
     id: str
     name: str = "Grid"
+    pinned: bool = Field(default=False)
     start: Vec2Mm
     end: Vec2Mm
     label: str = ""
@@ -296,6 +303,7 @@ class DimensionElem(BaseModel):
     ref_element_id_a: str | None = Field(default=None, alias="refElementIdA")
     ref_element_id_b: str | None = Field(default=None, alias="refElementIdB")
     tag_definition_id: str | None = Field(default=None, alias="tagDefinitionId")
+    pinned: bool = Field(default=False)
 
 
 ViewpointCutawayStyle = Literal["none", "cap", "floor", "box"]
@@ -342,6 +350,7 @@ class FloorElem(BaseModel):
     floor_type_id: str | None = Field(default=None, alias="floorTypeId")
     insulation_extension_mm: float = Field(default=0, alias="insulationExtensionMm")
     room_bounded: bool = Field(default=False, alias="roomBounded")
+    pinned: bool = Field(default=False)
 
 
 class RoofElem(BaseModel):
@@ -360,6 +369,7 @@ class RoofElem(BaseModel):
     eave_height_right_mm: float | None = Field(default=None, alias="eaveHeightRightMm")
     roof_type_id: str | None = Field(default=None, alias="roofTypeId")
     material_key: str | None = Field(default=None, alias="materialKey")
+    pinned: bool = Field(default=False)
 
 
 class StairElem(BaseModel):
@@ -374,6 +384,7 @@ class StairElem(BaseModel):
     width_mm: float = Field(alias="widthMm", default=1000)
     riser_mm: float = Field(alias="riserMm", default=175)
     tread_mm: float = Field(alias="treadMm", default=275)
+    pinned: bool = Field(default=False)
 
 
 class SlabOpeningElem(BaseModel):
@@ -384,6 +395,7 @@ class SlabOpeningElem(BaseModel):
     host_floor_id: str = Field(alias="hostFloorId")
     boundary_mm: list[Vec2Mm] = Field(alias="boundaryMm")
     is_shaft: bool = Field(default=False, alias="isShaft")
+    pinned: bool = Field(default=False)
 
 
 class RailingElem(BaseModel):
@@ -394,6 +406,7 @@ class RailingElem(BaseModel):
     hosted_stair_id: str | None = Field(default=None, alias="hostedStairId")
     path_mm: list[Vec2Mm] = Field(alias="pathMm")
     guard_height_mm: float = Field(alias="guardHeightMm", default=1040)
+    pinned: bool = Field(default=False)
 
 
 class BalconyElem(BaseModel):
@@ -408,6 +421,7 @@ class BalconyElem(BaseModel):
     projection_mm: float = Field(default=650, alias="projectionMm")
     slab_thickness_mm: float = Field(default=150, alias="slabThicknessMm")
     balustrade_height_mm: float = Field(default=1050, alias="balustradeHeightMm")
+    pinned: bool = Field(default=False)
 
 
 Text3dFontFamily = Literal["helvetiker", "optimer", "gentilis"]
@@ -444,6 +458,7 @@ class RoomSeparationElem(BaseModel):
     level_id: str = Field(alias="levelId")
     start: Vec2Mm
     end: Vec2Mm
+    pinned: bool = Field(default=False)
 
 
 class PlanRegionElem(BaseModel):
@@ -486,6 +501,7 @@ class SectionCutElem(BaseModel):
     line_end_mm: Vec2Mm = Field(alias="lineEndMm")
     crop_depth_mm: float = Field(default=8500, alias="cropDepthMm")
     segmented_path_mm: list[Vec2Mm] = Field(default_factory=list, alias="segmentedPathMm")
+    pinned: bool = Field(default=False)
 
 
 PlanTagTarget = Literal["opening", "room"]

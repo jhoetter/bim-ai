@@ -61,6 +61,7 @@ class MoveWallDeltaCmd(BaseModel):
     wall_id: str = Field(alias="wallId")
     dx_mm: float = Field(alias="dxMm")
     dy_mm: float = Field(alias="dyMm")
+    force_pin_override: bool = Field(default=False, alias="forcePinOverride")
 
 
 class MoveWallEndpointsCmd(BaseModel):
@@ -69,6 +70,7 @@ class MoveWallEndpointsCmd(BaseModel):
     wall_id: str = Field(alias="wallId")
     start: Vec2Mm
     end: Vec2Mm
+    force_pin_override: bool = Field(default=False, alias="forcePinOverride")
 
 
 class InsertDoorOnWallCmd(BaseModel):
@@ -131,6 +133,7 @@ class MoveGridLineEndpointsCmd(BaseModel):
     grid_line_id: str = Field(alias="gridLineId")
     start: Vec2Mm
     end: Vec2Mm
+    force_pin_override: bool = Field(default=False, alias="forcePinOverride")
 
 
 class CreateDimensionCmd(BaseModel):
@@ -150,6 +153,24 @@ class CreateDimensionCmd(BaseModel):
 class DeleteElementCmd(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     type: Literal["deleteElement"] = "deleteElement"
+    element_id: str = Field(alias="elementId")
+    # VIE-07: caller may set this to bypass the pinned-element block.
+    force_pin_override: bool = Field(default=False, alias="forcePinOverride")
+
+
+class PinElementCmd(BaseModel):
+    """VIE-07 — set pinned=True on an element."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["pinElement"] = "pinElement"
+    element_id: str = Field(alias="elementId")
+
+
+class UnpinElementCmd(BaseModel):
+    """VIE-07 — set pinned=False on an element."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["unpinElement"] = "unpinElement"
     element_id: str = Field(alias="elementId")
 
 
@@ -226,6 +247,7 @@ class MoveLevelElevationCmd(BaseModel):
     type: Literal["moveLevelElevation"] = "moveLevelElevation"
     level_id: str = Field(alias="levelId")
     elevation_mm: float = Field(alias="elevationMm")
+    force_pin_override: bool = Field(default=False, alias="forcePinOverride")
 
 
 class CreateIssueFromViolationCmd(BaseModel):
@@ -243,6 +265,7 @@ class UpdateElementPropertyCmd(BaseModel):
     element_id: str = Field(alias="elementId")
     key: str
     value: str | bool | int | float | None = ""
+    force_pin_override: bool = Field(default=False, alias="forcePinOverride")
 
 
 class SaveViewpointCmd(BaseModel):
@@ -852,6 +875,8 @@ Command = Annotated[
     | UpsertValidationRuleCmd
     | UpsertSiteCmd
     | CreateText3dCmd
-    | MirrorElementsCmd,
+    | MirrorElementsCmd
+    | PinElementCmd
+    | UnpinElementCmd,
     Field(discriminator="type"),
 ]

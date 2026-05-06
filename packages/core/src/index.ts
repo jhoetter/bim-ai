@@ -228,6 +228,7 @@ export type Element =
       offsetFromParentMm?: number;
       worksetId?: string | null;
       monitorSourceId?: string | null;
+      pinned?: boolean;
     }
   | {
       kind: 'wall';
@@ -255,6 +256,7 @@ export type Element =
        * elevated walls. When unset / null, the strip is emitted on any
        * single-thickness wall at level elevation > 0. */
       floorEdgeStripDisabled?: boolean | null;
+      pinned?: boolean;
     }
   | {
       kind: 'door';
@@ -272,6 +274,7 @@ export type Element =
       operationType?: DoorOperationType;
       slidingTrackSide?: 'wall_face' | 'in_pocket';
       overrideParams?: Record<string, unknown>;
+      pinned?: boolean;
     }
   | {
       kind: 'window';
@@ -293,6 +296,7 @@ export type Element =
       outlineMm?: XY[];
       attachedRoofId?: string | null;
       overrideParams?: Record<string, unknown>;
+      pinned?: boolean;
     }
   | {
       kind: 'wall_opening';
@@ -318,6 +322,7 @@ export type Element =
       finishSet?: string | null;
       targetAreaM2?: number | null;
       volumeM3?: number | null;
+      pinned?: boolean;
     }
   | {
       kind: 'grid_line';
@@ -329,6 +334,7 @@ export type Element =
       levelId?: string | null;
       worksetId?: string | null;
       monitorSourceId?: string | null;
+      pinned?: boolean;
     }
   | {
       kind: 'dimension';
@@ -341,6 +347,7 @@ export type Element =
       refElementIdA?: string | null;
       refElementIdB?: string | null;
       tagDefinitionId?: string | null;
+      pinned?: boolean;
     }
   | {
       kind: 'viewpoint';
@@ -380,6 +387,7 @@ export type Element =
       insulationExtensionMm?: number;
       roomBounded?: boolean;
       worksetId?: string | null;
+      pinned?: boolean;
     }
   | {
       kind: 'roof';
@@ -402,6 +410,7 @@ export type Element =
       eaveHeightRightMm?: number;
       roofTypeId?: string | null;
       materialKey?: string | null;
+      pinned?: boolean;
     }
   | {
       kind: 'stair';
@@ -415,6 +424,7 @@ export type Element =
       riserMm: number;
       treadMm: number;
       overrideParams?: Record<string, unknown>;
+      pinned?: boolean;
     }
   | {
       kind: 'slab_opening';
@@ -423,6 +433,7 @@ export type Element =
       hostFloorId: string;
       boundaryMm: XY[];
       isShaft?: boolean;
+      pinned?: boolean;
     }
   | {
       kind: 'railing';
@@ -432,6 +443,7 @@ export type Element =
       pathMm: XY[];
       guardHeightMm?: number;
       overrideParams?: Record<string, unknown>;
+      pinned?: boolean;
     }
   | {
       kind: 'family_type';
@@ -451,8 +463,17 @@ export type Element =
       projectionMm?: number;
       slabThicknessMm?: number;
       balustradeHeightMm?: number;
+      pinned?: boolean;
     }
-  | { kind: 'room_separation'; id: string; name: string; levelId: string; start: XY; end: XY }
+  | {
+      kind: 'room_separation';
+      id: string;
+      name: string;
+      levelId: string;
+      start: XY;
+      end: XY;
+      pinned?: boolean;
+    }
   | {
       kind: 'plan_region';
       id: string;
@@ -477,6 +498,7 @@ export type Element =
       lineEndMm: XY;
       cropDepthMm?: number;
       segmentedPathMm?: XY[];
+      pinned?: boolean;
     }
   | {
       kind: 'plan_tag_style';

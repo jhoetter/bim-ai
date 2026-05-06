@@ -425,6 +425,62 @@ export function InspectorIdentityFor(el: Element, t: TFunction): JSX.Element {
   );
 }
 
+/**
+ * VIE-07: pin / unpin toggle exposed in the Inspector header. Renders nothing
+ * for element kinds that don't carry a `pinned` field, so it's safe to drop in
+ * unconditionally on any selected element.
+ */
+export function InspectorPinToggle({
+  el,
+  onPin,
+  onUnpin,
+}: {
+  el: Element;
+  onPin: (elementId: string) => void;
+  onUnpin: (elementId: string) => void;
+}): JSX.Element | null {
+  const pinned = (el as { pinned?: boolean }).pinned ?? false;
+  // The 'pinned' marker is optional on the union; treat its presence (even
+  // when false) as "this kind supports pinning". Since TypeScript widens the
+  // union at runtime, gate on a known set of pinnable kinds.
+  const PINNABLE = new Set<string>([
+    'wall',
+    'door',
+    'window',
+    'level',
+    'grid_line',
+    'room',
+    'floor',
+    'roof',
+    'stair',
+    'slab_opening',
+    'railing',
+    'balcony',
+    'dimension',
+    'room_separation',
+    'section_cut',
+  ]);
+  if (!PINNABLE.has(el.kind)) return null;
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={pinned}
+      data-pin-toggle="1"
+      data-pinned={pinned ? '1' : '0'}
+      onClick={() => (pinned ? onUnpin(el.id) : onPin(el.id))}
+      className={[
+        'inline-flex items-center gap-1 rounded border px-2 py-1 text-xs',
+        pinned ? 'border-amber-500 bg-amber-100 text-amber-900' : 'border-border text-muted',
+      ].join(' ')}
+      title={pinned ? 'Unpin (UP)' : 'Pin (UP)'}
+    >
+      <span aria-hidden>📌</span>
+      <span>{pinned ? 'Pinned' : 'Pin'}</span>
+    </button>
+  );
+}
+
 export function InspectorGraphicsFor({
   el,
   elementsById,

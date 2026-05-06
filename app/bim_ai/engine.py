@@ -50,6 +50,8 @@ from bim_ai.commands import (
     MoveLevelElevationCmd,
     MoveWallDeltaCmd,
     MoveWallEndpointsCmd,
+    PinElementCmd,
+    UnpinElementCmd,
     RestoreElementCmd,
     SaveViewpointCmd,
     UpdateElementPropertyCmd,
@@ -472,8 +474,42 @@ def _canonical_site_context_rows(rows: list[SiteContextObjectRow]) -> list[SiteC
     return [by_id[k] for k in sorted(by_id.keys())]
 
 
+_PIN_BLOCKED_TARGETS: dict[type, str] = {
+    MoveWallDeltaCmd: "wall_id",
+    MoveWallEndpointsCmd: "wall_id",
+    MoveGridLineEndpointsCmd: "grid_line_id",
+    MoveLevelElevationCmd: "level_id",
+    UpdateElementPropertyCmd: "element_id",
+    DeleteElementCmd: "element_id",
+}
+
+
+def _enforce_pin_block(els: dict[str, Element], cmd: Command) -> None:
+    """VIE-07: refuse mutating commands targeting a pinned element.
+
+    Caller can opt out per call by setting `forcePinOverride=true`. Pin/unpin
+    themselves are exempt (they always need to be runnable).
+    """
+
+    target_attr = _PIN_BLOCKED_TARGETS.get(type(cmd))
+    if target_attr is None:
+        return
+    if getattr(cmd, "force_pin_override", False):
+        return
+    target_id = getattr(cmd, target_attr, None)
+    if not isinstance(target_id, str):
+        return
+    target = els.get(target_id)
+    if is_element_pinned(target):
+        raise ValueError(
+            f"pinned_element_blocked: '{target_id}' is pinned; "
+            "set forcePinOverride=true or unpin first"
+        )
+
+
 def apply_inplace(doc: Document, cmd: Command) -> None:
     els = doc.elements
+    _enforce_pin_block(els, cmd)
     match cmd:
         case CreateLevelCmd():
             eid = cmd.id or new_id()
@@ -2082,6 +2118,37 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
 
         case MirrorElementsCmd():
             _apply_mirror_elements(els, cmd)
+
+        case PinElementCmd():
+            target = els.get(cmd.element_id)
+            if target is None:
+                raise ValueError(f"pinElement.elementId unknown: '{cmd.element_id}'")
+            if not _supports_pin(target):
+                raise ValueError(
+                    f"pinElement.elementId '{cmd.element_id}' kind '{target.kind}' is not pinnable"
+                )
+            els[cmd.element_id] = target.model_copy(update={"pinned": True})
+
+        case UnpinElementCmd():
+            target = els.get(cmd.element_id)
+            if target is None:
+                raise ValueError(f"unpinElement.elementId unknown: '{cmd.element_id}'")
+            if not _supports_pin(target):
+                # Unpinning a non-pinnable element is a no-op rather than an error.
+                return
+            els[cmd.element_id] = target.model_copy(update={"pinned": False})
+
+
+def _supports_pin(el: Element) -> bool:
+    """VIE-07: pinned is declared on a representative subset of element kinds."""
+    return "pinned" in type(el).model_fields
+
+
+def is_element_pinned(el: Element | None) -> bool:
+    """VIE-07: True iff the element exposes a pinned field set to True."""
+    if el is None:
+        return False
+    return bool(getattr(el, "pinned", False))
 
 
 def _reflect_point_xy_mm(
