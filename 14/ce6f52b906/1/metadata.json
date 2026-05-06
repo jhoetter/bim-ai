@@ -1,0 +1,51 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "14ce6f52b906",
+  "session_id": "bb3cf0bb-f384-4179-9af8-a917a5f6df45",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-06T21:53:26.656691Z",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "packages/web/src/families/FamilyLibraryPanel.test.tsx",
+    "packages/web/src/families/FamilyLibraryPanel.tsx",
+    "packages/web/src/families/thumbnailCache.ts",
+    "packages/web/src/workspace/Workspace.tsx",
+    "packages/web/src/workspace/WorkspaceLeftRail.tsx",
+    "packages/web/src/workspace/workspaceUtils.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "89e8a590de78",
+  "token_usage": {
+    "input_tokens": 163,
+    "cache_creation_tokens": 186750,
+    "cache_read_tokens": 13700349,
+    "output_tokens": 73456,
+    "api_call_count": 123
+  },
+  "session_metrics": {
+    "turn_count": 8
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-06T21:53:26.641914Z",
+    "agent_lines": 685,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 685,
+    "total_lines_changed": 685,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 20,
+      "agent_lines_removed": 0
+    }
+  ]
+}
