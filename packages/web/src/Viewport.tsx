@@ -587,9 +587,40 @@ function makeRailingMesh(
 
   const mat = new THREE.MeshStandardMaterial({
     color: categoryColorOr(paint, 'railing'),
-    roughness: paint?.categories.railing.roughness ?? 0.6,
-    metalness: paint?.categories.railing.metalness ?? 0.3,
+    roughness: 0.35,
+    metalness: 0.65,
   });
+
+  // Pre-compute cumulative parametric t at each vertex for slope interpolation
+  const vertexT: number[] = [0];
+  let cumForT = 0;
+  for (let i = 1; i < pts.length; i++) {
+    cumForT += Math.hypot(
+      (pts[i]!.xMm - pts[i - 1]!.xMm) / 1000,
+      (pts[i]!.yMm - pts[i - 1]!.yMm) / 1000,
+    );
+    vertexT.push(totalPlanLen > 0 ? cumForT / totalPlanLen : 1);
+  }
+
+  // Square posts at each path vertex
+  const postSect = 0.05;
+  const postGeom = new THREE.BoxGeometry(postSect, guardH, postSect);
+  for (let i = 0; i < pts.length; i++) {
+    const t = vertexT[i]!;
+    const floorY = baseElev + t * (topElev - baseElev);
+    const post = new THREE.Mesh(postGeom, mat);
+    post.position.set(pts[i]!.xMm / 1000, floorY + guardH / 2, pts[i]!.yMm / 1000);
+    post.castShadow = post.receiveShadow = true;
+    post.userData.bimPickId = railing.id;
+    addEdges(post);
+    group.add(post);
+  }
+
+  // Rail cap segments + balusters between posts
+  const capSect = 0.045;
+  const balW = 0.012;
+  const balSpacing = 0.115;
+  const balGeom = new THREE.BoxGeometry(balW, guardH, balW);
 
   let cumLen = 0;
   for (let i = 0; i < pts.length - 1; i++) {
@@ -603,17 +634,37 @@ function makeRailingMesh(
     const tA = totalPlanLen > 0 ? cumLen / totalPlanLen : 0;
     cumLen += planSeg;
     const tB = totalPlanLen > 0 ? cumLen / totalPlanLen : 1;
-    const elevA = baseElev + tA * (topElev - baseElev) + guardH;
-    const elevB = baseElev + tB * (topElev - baseElev) + guardH;
+    const floorA = baseElev + tA * (topElev - baseElev);
+    const floorB = baseElev + tB * (topElev - baseElev);
+    const elevA = floorA + guardH;
+    const elevB = floorB + guardH;
     const riseY = elevB - elevA;
 
+    // Rail cap segment
     const railLen = Math.sqrt(planSeg * planSeg + riseY * riseY);
-    const rail = new THREE.Mesh(new THREE.BoxGeometry(railLen, 0.05, 0.05), mat);
+    const rail = new THREE.Mesh(new THREE.BoxGeometry(railLen, capSect, capSect), mat);
     rail.position.set((ax + bx) / 2, (elevA + elevB) / 2, (az + bz) / 2);
     const dir = new THREE.Vector3(bx - ax, riseY, bz - az).normalize();
     rail.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), dir);
+    rail.castShadow = rail.receiveShadow = true;
+    rail.userData.bimPickId = railing.id;
     addEdges(rail);
     group.add(rail);
+
+    // Evenly spaced balusters between the two posts
+    const balCount = Math.max(0, Math.floor(planSeg / balSpacing));
+    for (let j = 0; j < balCount; j++) {
+      const tLocal = (j + 0.5) / balCount;
+      const bxj = ax + tLocal * (bx - ax);
+      const bzj = az + tLocal * (bz - az);
+      const floorYj = floorA + tLocal * (floorB - floorA);
+      const bal = new THREE.Mesh(balGeom, mat);
+      bal.position.set(bxj, floorYj + guardH / 2, bzj);
+      bal.castShadow = bal.receiveShadow = true;
+      bal.userData.bimPickId = railing.id;
+      addEdges(bal);
+      group.add(bal);
+    }
   }
 
   return group;
