@@ -1,0 +1,60 @@
+my CI/CD is failing for js: Run cd packages/web && pnpm exec playwright test
+[WebServer] 
+[WebServer] (!) Some chunks are larger than 500 kB after minification. Consider:
+[WebServer] - Using dynamic import() to code-split the application
+[WebServer] - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+[WebServer] - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+
+Running 21 tests using 2 workers
+
+  -  2 e2e/evidence-baselines.spec.ts:758:3 › evidence PNG baselines › coordination layout: sheet + schedules panel
+  -  3 e2e/evidence-baselines.spec.ts:773:3 › evidence PNG baselines › schedules_focus docked rails
+  ✓  1 e2e/cockpit-smoke.spec.ts:71:3 › cockpit hydration › shows Plan + 3D layout and mocked room labels (4.3s)
+  -  5 e2e/golden-bundle-plan.spec.ts:203:3 › golden bundle affordances › lists longitudinal section cuts and exposes plan style presets
+  -  6 e2e/golden-bundle-plan.spec.ts:224:3 › golden bundle affordances › project browser lists floor plans, section cuts, and split viewpoint groups
+  ✓  4 e2e/evidence-baselines.spec.ts:787:3 › evidence PNG baselines › split plan + 3D: canvases visible (9.4s)
+  -  8 e2e/evidence-baselines.spec.ts:797:3 › evidence PNG baselines › coordination layout: deterministic manifest sheet PNG basename
+  -  9 e2e/evidence-baselines.spec.ts:811:3 › evidence PNG baselines › deterministic manifest: full-sheet SVG screenshot
+  -  10 e2e/evidence-baselines.spec.ts:823:3 › evidence PNG baselines › named plan_views change EG openings vs OG room presentation
+  ✓  11 e2e/evidence-baselines.spec.ts:838:3 › evidence PNG baselines › evidence-package exposes closure review inventory (4.5s)
+  ✓  12 e2e/evidence-baselines.spec.ts:907:3 › evidence PNG baselines › sheet-print-raster.png: print-surrogate v2 response headers (3.9s)
+  -  13 e2e/evidence-baselines.spec.ts:936:3 › evidence PNG baselines › agent_review layout: fix-loop callout hidden when evidence package clean
+  -  14 e2e/ui-redesign-baselines.spec.ts:25:3 › UI redesign — chrome baselines › app-shell light @ 1440 × 900
+  -  15 e2e/ui-redesign-baselines.spec.ts:39:3 › UI redesign — chrome baselines › app-shell dark @ 1440 × 900
+  ✘  7 e2e/golden-bundle-plan.spec.ts:243:3 › golden bundle affordances › sheet canvas renders section viewport from replayed viewportsMm (21.2s)
+  -  17 e2e/golden-bundle-plan.spec.ts:265:3 › golden bundle affordances › applies evidence3d clip query params on 3D section box controls
+  -  16 e2e/ui-redesign-baselines.spec.ts:53:3 › UI redesign — chrome baselines › top-bar mode pills
+  -  18 e2e/ui-redesign-baselines.spec.ts:65:3 › UI redesign — chrome baselines › left-rail Project Browser
+  -  19 e2e/ui-redesign-baselines.spec.ts:77:3 › UI redesign — chrome baselines › right-rail Inspector empty state
+  ✓  20 e2e/ui-redesign-baselines.spec.ts:89:3 › UI redesign — chrome baselines › status-bar clusters (7.2s)
+  -  21 e2e/ui-redesign-baselines.spec.ts:97:3 › UI redesign — chrome baselines › tool-palette plan mode
+
+
+  1) e2e/golden-bundle-plan.spec.ts:243:3 › golden bundle affordances › sheet canvas renders section viewport from replayed viewportsMm 
+
+    Error: Timed out 15000ms waiting for expect(locator).toBeVisible()
+
+    Locator: getByTestId('sheet-canvas').locator('svg svg path[fill^="url(#"]').first()
+    Expected: visible
+    Received: <element(s) not found>
+    Call log:
+      - Expect "toBeVisible" with timeout 15000ms
+      - waiting for getByTestId('sheet-canvas').locator('svg svg path[fill^="url(#"]').first()
+
+
+      257 |
+      258 |     // Nested `SectionViewportSvg`: wall mass uses hatch fill (async projection fetch).
+    > 259 |     await expect(canvas.locator('svg svg path[fill^="url(#"]').first()).toBeVisible({
+          |                                                                         ^
+      260 |       timeout: 15_000,
+      261 |     });
+      262 |     await expect(canvas.getByText(/EG · 0\.00 m/).first()).toBeVisible({ timeout: 15_000 });
+        at /home/runner/work/bim-ai/bim-ai/packages/web/e2e/golden-bundle-plan.spec.ts:259:73
+
+    Error Context: test-results/golden-bundle-plan-golden--53d1f-t-from-replayed-viewportsMm/error-context.md
+
+  1 failed
+    e2e/golden-bundle-plan.spec.ts:243:3 › golden bundle affordances › sheet canvas renders section viewport from replayed viewportsMm 
+  15 skipped
+  5 passed (54.5s)
+Error: Process completed with exit code 1. can you please fix, then commit and push?
