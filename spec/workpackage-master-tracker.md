@@ -1263,7 +1263,7 @@ Use cases: target-house §1.6 east-slope dormer cut-out opening to the flat roof
 | ID     | Item                                                  | Note                                                                                            | Effort | State  |
 | ------ | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ------ | ------ |
 | ANN-01 | Detail components (`detail_line`, `detail_region`, `text_note`) | View-local 2D linework; not in 3D. `detail_region` overlaps with SKT-01 (sketch mode for filled regions). | M      | `open` |
-| ANN-02 | Section / elevation generation from a wall face        | Right-click wall face → "Generate Elevation" → creates `section_cut` perpendicular + new `plan_view`. | S      | `open` |
+| ANN-02 | Section / elevation generation from a wall face        | Right-click wall face → "Generate Elevation" → creates `section_cut` perpendicular + new `plan_view`. Pure params helper landed in commit b3c0e20b — wires straight into VIE-03 / CreateSectionCut. Right-click menu hookup pending. | S      | `partial` |
 
 ### Materials & visual rendering
 
