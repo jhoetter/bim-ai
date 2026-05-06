@@ -3,7 +3,7 @@
   "checkpoint_id": "391d35a3fcb5",
   "strategy": "manual-commit",
   "branch": "feat/wp-v2-03a-vv-dialog",
-  "checkpoints_count": 3,
+  "checkpoints_count": 4,
   "files_touched": [
     "packages/web/src/plan/planProjection.ts",
     "packages/web/src/workspace/VVDialog.test.tsx",
@@ -27,13 +27,19 @@
       "transcript": "/39/1d35a3fcb5/2/full.jsonl",
       "content_hash": "/39/1d35a3fcb5/2/content_hash.txt",
       "prompt": "/39/1d35a3fcb5/2/prompt.txt"
+    },
+    {
+      "metadata": "/39/1d35a3fcb5/3/metadata.json",
+      "transcript": "/39/1d35a3fcb5/3/full.jsonl",
+      "content_hash": "/39/1d35a3fcb5/3/content_hash.txt",
+      "prompt": "/39/1d35a3fcb5/3/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 202,
-    "cache_creation_tokens": 338415,
-    "cache_read_tokens": 21278651,
-    "output_tokens": 75707,
-    "api_call_count": 194
+    "input_tokens": 13790,
+    "cache_creation_tokens": 604283,
+    "cache_read_tokens": 37742602,
+    "output_tokens": 179661,
+    "api_call_count": 368
   }
 }
