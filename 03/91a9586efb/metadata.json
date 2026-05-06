@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "0391a9586efb",
+  "strategy": "manual-commit",
+  "branch": "r3-02-sky-envmap",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/icons/src/architectural.tsx",
+    "packages/icons/src/mep.tsx",
+    "packages/icons/src/structural.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/03/91a9586efb/0/metadata.json",
+      "transcript": "/03/91a9586efb/0/full.jsonl",
+      "content_hash": "/03/91a9586efb/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 54,
+    "cache_creation_tokens": 100073,
+    "cache_read_tokens": 3336662,
+    "output_tokens": 53346,
+    "api_call_count": 48
+  }
+}
