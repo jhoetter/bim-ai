@@ -409,23 +409,47 @@ function makeDoorMesh(
   sid?: string,
 ) {
   const { px, pz } = hostedXZ(door, wall);
-  const height = THREE.MathUtils.clamp((wall.heightMm / 1000) * 0.86, 0.6, 2.2);
-  const width = THREE.MathUtils.clamp(door.widthMm / 1000, 0.35, 4);
-  const depth = THREE.MathUtils.clamp(wall.thicknessMm / 1000 + 0.08, 0.08, 2);
-  const mesh = new THREE.Mesh(
-    new THREE.BoxGeometry(width, height, depth),
-    new THREE.MeshStandardMaterial({
-      color:
-        door.id === sid
-          ? (paint?.selection.selectedColor ?? '#fde047')
-          : categoryColorOr(paint, 'door'),
-    }),
-  );
-  mesh.position.set(px, elevM + height / 2, pz);
-  mesh.rotation.y = wallYaw(wall);
-  mesh.userData.bimPickId = door.id;
-  addEdges(mesh);
-  return mesh;
+  const leafWidth  = THREE.MathUtils.clamp(door.widthMm / 1000, 0.35, 4);
+  const leafHeight = THREE.MathUtils.clamp((wall.heightMm / 1000) * 0.86, 0.6, 2.5);
+  const panelThick = 0.045;
+  const depth      = THREE.MathUtils.clamp(wall.thicknessMm / 1000, 0.08, 0.5);
+  const frameSect  = 0.07;
+
+  const doorColor = door.id === sid
+    ? (paint?.selection.selectedColor ?? '#fde047')
+    : categoryColorOr(paint, 'door');
+
+  const frameMat = new THREE.MeshStandardMaterial({ color: doorColor });
+  const panelMat = new THREE.MeshStandardMaterial({ color: doorColor, roughness: 0.75 });
+
+  function member(w: number, h: number, d: number, x: number, y: number, mat: THREE.MeshStandardMaterial): THREE.Mesh {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    m.position.set(x, y, 0);
+    m.castShadow = m.receiveShadow = true;
+    addEdges(m);
+    return m;
+  }
+
+  const frameGroup = new THREE.Group();
+  // head spans full opening width including jambs
+  frameGroup.add(member(leafWidth + 2 * frameSect, frameSect, depth, 0, leafHeight + frameSect / 2, frameMat));
+  // jamb-L
+  frameGroup.add(member(frameSect, leafHeight, depth, -(leafWidth / 2 + frameSect / 2), leafHeight / 2, frameMat));
+  // jamb-R
+  frameGroup.add(member(frameSect, leafHeight, depth,  (leafWidth / 2 + frameSect / 2), leafHeight / 2, frameMat));
+
+  // panel leaf
+  const panelMesh = member(leafWidth, leafHeight, panelThick, 0, leafHeight / 2, panelMat);
+
+  // threshold sits at floor level (centre of 0.02 m height = 0.01 m above elevM)
+  const threshMesh = member(leafWidth, 0.02, depth, 0, 0.01, frameMat);
+
+  const group = new THREE.Group();
+  group.add(frameGroup, panelMesh, threshMesh);
+  group.position.set(px, elevM, pz);
+  group.rotation.y = wallYaw(wall);
+  group.userData.bimPickId = door.id;
+  return group;
 }
 
 function makeWindowMesh(
