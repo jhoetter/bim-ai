@@ -21,6 +21,7 @@ Ports follow the sibling “suite” spacing; see `Makefile` comments.
 
 See `spec/prd.md` for product scope.
 Active UI to-do list: [`OPEN_TASKS.md`](./OPEN_TASKS.md).
+Onboarding for the next agent (or human): [`HANDOVER.md`](./HANDOVER.md).
 
 ## Makefile
 
