@@ -14,7 +14,11 @@ import { ICON_SIZE, Icons } from '@bim-ai/ui';
 
 import { Viewport } from '../Viewport';
 import { PlanCanvas, type PlanCameraHandle } from '../plan/PlanCanvas';
-import { applyCommand, bootstrap } from '../lib/api';
+import { applyCommand, bootstrap, ApiHttpError } from '../lib/api';
+import {
+  buildCollaborationConflictQueueV1,
+  type CollaborationConflictQueueV1,
+} from '../lib/collaborationConflictQueue';
 import type { Snapshot, Violation } from '@bim-ai/core';
 import { useBimStore, toggleTheme, getCurrentTheme, type Theme } from '../state/store';
 import { modeForHotkey } from '../state/modeController';
@@ -43,6 +47,7 @@ import { readOnboardingProgress, resetOnboarding } from '../onboarding/tour';
 import { ToolPalette } from '../tools/ToolPalette';
 import { TOOL_REGISTRY, type ToolDisabledContext, type ToolId } from '../tools/toolRegistry';
 import { TabBar } from './TabBar';
+import { Viewport3DLayersPanel, VIEWER_HIDDEN_KIND_KEYS } from './Viewport3DLayersPanel';
 import {
   EMPTY_TABS,
   activateOrOpenKind,
@@ -117,6 +122,13 @@ export function RedesignedWorkspace(): JSX.Element {
   const activeLevelId = useBimStore((s) => s.activeLevelId);
   const setActiveLevelId = useBimStore((s) => s.setActiveLevelId);
   const planHudMm = useBimStore((s) => s.planHudMm);
+  const viewerCategoryHidden = useBimStore((s) => s.viewerCategoryHidden);
+  const toggleViewerCategoryHidden = useBimStore((s) => s.toggleViewerCategoryHidden);
+  const viewerClipElevMm = useBimStore((s) => s.viewerClipElevMm);
+  const setViewerClipElevMm = useBimStore((s) => s.setViewerClipElevMm);
+  const viewerClipFloorElevMm = useBimStore((s) => s.viewerClipFloorElevMm);
+  const setViewerClipFloorElevMm = useBimStore((s) => s.setViewerClipFloorElevMm);
+  const activeViewpointId = useBimStore((s) => s.activeViewpointId);
 
   const [mode, setMode] = useState<WorkspaceMode>(() =>
     viewerMode === 'orbit_3d' ? '3d' : 'plan',
@@ -128,6 +140,8 @@ export function RedesignedWorkspace(): JSX.Element {
   const [tourOpen, setTourOpen] = useState<boolean>(() => !readOnboardingProgress().completed);
   const [seedLoading, setSeedLoading] = useState(false);
   const [seedError, setSeedError] = useState<string | null>(null);
+  const [collaborationConflictQueue, setCollaborationConflictQueue] =
+    useState<CollaborationConflictQueueV1 | null>(null);
   const [projectMenuOpen, setProjectMenuOpen] = useState(false);
   const [recentProjects, setRecentProjects] = useState<ProjectMenuItemRecent[]>(() =>
     readRecentProjects().map((r) => ({ id: r.id, label: r.label })),
@@ -286,14 +300,49 @@ export function RedesignedWorkspace(): JSX.Element {
             violations: (r.violations ?? []) as Violation[],
           });
         }
+        setCollaborationConflictQueue(null);
       } catch (err) {
-        // V1: surface the error in seedError-style readout. Full conflict
-        // queue (legacy `Workspace.tsx`) is out of scope here.
-        setSeedError(err instanceof Error ? err.message : 'Apply failed');
+        if (err instanceof ApiHttpError && err.status === 409) {
+          setCollaborationConflictQueue(buildCollaborationConflictQueueV1(err.detail));
+        } else {
+          setCollaborationConflictQueue(null);
+          setSeedError(err instanceof Error ? err.message : 'Apply failed');
+        }
       }
     },
     [hydrateFromSnapshot],
   );
+
+  const persistViewpointHiddenKinds = useCallback(async () => {
+    const st = useBimStore.getState();
+    const vid = st.activeViewpointId;
+    if (!vid || st.viewerMode !== 'orbit_3d') return;
+    const hidden = VIEWER_HIDDEN_KIND_KEYS.filter((k) => st.viewerCategoryHidden[k]);
+    await onSemanticCommand({
+      type: 'updateElementProperty',
+      elementId: vid,
+      key: 'hiddenSemanticKinds3d',
+      value: JSON.stringify(hidden),
+    });
+  }, [onSemanticCommand]);
+
+  const persistViewpointClipPlanes = useCallback(async () => {
+    const st = useBimStore.getState();
+    const vid = st.activeViewpointId;
+    if (!vid || st.viewerMode !== 'orbit_3d') return;
+    await onSemanticCommand({
+      type: 'updateElementProperty',
+      elementId: vid,
+      key: 'viewerClipCapElevMm',
+      value: st.viewerClipElevMm == null ? '' : String(st.viewerClipElevMm),
+    });
+    await onSemanticCommand({
+      type: 'updateElementProperty',
+      elementId: vid,
+      key: 'viewerClipFloorElevMm',
+      value: st.viewerClipFloorElevMm == null ? '' : String(st.viewerClipFloorElevMm),
+    });
+  }, [onSemanticCommand]);
 
   const insertSeedHouse = useCallback(async (): Promise<void> => {
     setSeedLoading(true);
@@ -949,7 +998,8 @@ function CanvasMount({
   if (mode === 'section') return <SectionModeShell elementsById={elementsById} />;
   if (mode === 'sheet') return <SheetModeShell elementsById={elementsById} />;
   if (mode === 'schedule') return <ScheduleModeShell elementsById={elementsById} />;
-  if (mode === 'agent') return <AgentReviewModeShell />;
+  if (mode === 'agent')
+    return <AgentReviewModeShell onApplyQuickFix={onSemanticCommand} />;
   return viewerMode === 'orbit_3d' ? (
     <Viewport wsConnected={false} />
   ) : (

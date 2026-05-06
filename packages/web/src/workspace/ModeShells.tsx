@@ -3,14 +3,12 @@ import type { Element } from '@bim-ai/core';
 import { Icons, ICON_SIZE } from '@bim-ai/ui';
 
 import {
-  AGENT_REVIEW_DEFAULTS,
   SCHEDULE_DEFAULTS,
   SECTION_ELEVATION_DEFAULTS,
   SHEET_DEFAULTS,
-  visibleAgentActions,
-  withActionFilter,
-  type AgentReviewSeverity,
 } from './modeSurfaces';
+import { AdvisorPanel } from '../advisor/AdvisorPanel';
+import { useBimStore } from '../state/store';
 
 /**
  * Mode-specific shells — spec §20.4 / §20.5 / §20.6 / §20.7.
@@ -362,80 +360,34 @@ function ScheduleGrid({
 /* Agent Review mode (§20.7)                                                */
 /* ────────────────────────────────────────────────────────────────────── */
 
-export function AgentReviewModeShell(): JSX.Element {
-  const [filter, setFilter] = useState<AgentReviewSeverity | null>(null);
-  const state = useMemo(
-    () => withActionFilter({ ...AGENT_REVIEW_DEFAULTS, actionQueue: [] }, filter),
-    [filter],
-  );
-  const actions = visibleAgentActions(state);
+export function AgentReviewModeShell({
+  onApplyQuickFix,
+}: {
+  onApplyQuickFix: (cmd: Record<string, unknown>) => void;
+}): JSX.Element {
+  const violations = useBimStore((s) => s.violations);
+  const selectedId = useBimStore((s) => s.selectedId);
+  const buildingPreset = useBimStore((s) => s.buildingPreset);
+  const setBuildingPreset = useBimStore((s) => s.setBuildingPreset);
+  const perspectiveId = useBimStore((s) => s.perspectiveId);
 
   return (
     <div
       data-testid="agent-review-mode-shell"
-      className="grid h-full w-full"
-      style={{ gridTemplateColumns: '240px 1fr 240px' }}
+      className="h-full w-full overflow-auto bg-background p-4"
     >
-      <aside className="flex flex-col gap-1 overflow-y-auto border-r border-border bg-surface px-2 py-3">
-        <div
-          className="px-1 text-xs uppercase text-muted"
-          style={{ letterSpacing: 'var(--text-eyebrow-tracking)' }}
-        >
-          Manifest tree
-        </div>
-        <p className="px-1 text-sm text-muted">Evidence manifest hydrates from the server.</p>
-      </aside>
-      <div className="overflow-auto bg-background p-4">
-        <div className="mb-3 flex items-center gap-2">
-          <Icons.agent size={ICON_SIZE.toolPalette} aria-hidden="true" className="text-accent" />
-          <h2 className="text-md font-medium text-foreground">Agent review</h2>
-        </div>
-        <p className="text-sm text-muted">
-          Inspection feed populates from the live evidence manifest. Switch back to Plan (1) or 3D
-          (2) to interact with geometry while the advisor is running.
-        </p>
+      <div className="mb-3 flex items-center gap-2">
+        <Icons.agent size={ICON_SIZE.toolPalette} aria-hidden="true" className="text-accent" />
+        <h2 className="text-md font-medium text-foreground">Advisor</h2>
       </div>
-      <aside className="flex flex-col gap-2 overflow-y-auto border-l border-border bg-surface px-2 py-3">
-        <div
-          className="px-1 text-xs uppercase text-muted"
-          style={{ letterSpacing: 'var(--text-eyebrow-tracking)' }}
-        >
-          Action queue
-        </div>
-        <div role="group" aria-label="Severity filter" className="flex items-center gap-1">
-          {(['blocking', 'warning', 'info'] as const).map((sev) => (
-            <button
-              key={sev}
-              type="button"
-              onClick={() => setFilter((cur) => (cur === sev ? null : sev))}
-              role="switch"
-              aria-checked={filter === sev}
-              className={[
-                'rounded-sm px-2 py-0.5 text-xs',
-                filter === sev
-                  ? 'bg-accent-soft text-foreground'
-                  : 'text-muted hover:bg-surface-strong',
-              ].join(' ')}
-            >
-              {sev}
-            </button>
-          ))}
-        </div>
-        {actions.length === 0 ? (
-          <p className="px-1 text-sm text-muted">No actions queued.</p>
-        ) : (
-          <ul className="flex flex-col gap-1">
-            {actions.map((a) => (
-              <li
-                key={a.id}
-                className="rounded-md bg-surface-strong px-2 py-1.5 text-xs text-foreground"
-              >
-                {a.label}
-              </li>
-            ))}
-          </ul>
-        )}
-      </aside>
+      <AdvisorPanel
+        violations={violations}
+        selectionId={selectedId ?? undefined}
+        preset={buildingPreset}
+        onPreset={setBuildingPreset}
+        onApplyQuickFix={onApplyQuickFix}
+        perspective={perspectiveId}
+      />
     </div>
   );
 }

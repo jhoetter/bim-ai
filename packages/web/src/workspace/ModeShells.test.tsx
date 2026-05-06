@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import type { Element } from '@bim-ai/core';
 import {
@@ -7,6 +7,7 @@ import {
   SectionModeShell,
   SheetModeShell,
 } from './ModeShells';
+import { useBimStore } from '../state/store';
 
 afterEach(() => {
   cleanup();
@@ -87,17 +88,61 @@ describe('ScheduleModeShell — spec §20.6', () => {
   });
 });
 
-describe('AgentReviewModeShell — spec §20.7', () => {
-  it('renders the manifest tree + action queue scaffold', () => {
-    const { getByTestId, getByText } = render(<AgentReviewModeShell />);
-    expect(getByTestId('agent-review-mode-shell')).toBeTruthy();
-    expect(getByText('Manifest tree')).toBeTruthy();
-    expect(getByText('Action queue')).toBeTruthy();
+describe('AgentReviewModeShell — spec §20.7 / WP-UI-E01–E04', () => {
+  afterEach(() => {
+    useBimStore.setState({ violations: [], buildingPreset: 'residential', selectedId: undefined });
   });
 
-  it('exposes severity filter switches', () => {
-    const { getAllByRole } = render(<AgentReviewModeShell />);
-    const switches = getAllByRole('switch');
-    expect(switches.length).toBe(3);
+  it('mounts and shows empty advisory state when no violations', () => {
+    useBimStore.setState({ violations: [] });
+    const { getByTestId, getByText } = render(
+      <AgentReviewModeShell onApplyQuickFix={() => {}} />,
+    );
+    expect(getByTestId('agent-review-mode-shell')).toBeTruthy();
+    expect(getByText(/No advisory items/)).toBeTruthy();
+  });
+
+  it('renders violation cards when violations are present', () => {
+    useBimStore.setState({
+      violations: [
+        {
+          ruleId: 'MIN_DOOR_WIDTH',
+          severity: 'warning',
+          message: 'Door too narrow',
+          blocking: false,
+          elementIds: [],
+        } as never,
+      ],
+    });
+    const { getByText } = render(<AgentReviewModeShell onApplyQuickFix={() => {}} />);
+    expect(getByText('Door too narrow')).toBeTruthy();
+  });
+
+  it('dispatches preset change via onPreset', () => {
+    useBimStore.setState({ buildingPreset: 'residential' });
+    const { getByRole } = render(<AgentReviewModeShell onApplyQuickFix={() => {}} />);
+    const select = getByRole('combobox');
+    fireEvent.change(select, { target: { value: 'commercial' } });
+    expect(useBimStore.getState().buildingPreset).toBe('commercial');
+  });
+
+  it('calls onApplyQuickFix when quick-fix button is clicked', () => {
+    const spy = vi.fn();
+    const qfCmd = { type: 'fixDoorWidth', elementId: 'door-1' };
+    useBimStore.setState({
+      violations: [
+        {
+          ruleId: 'MIN_DOOR_WIDTH',
+          severity: 'warning',
+          message: 'Door too narrow',
+          blocking: false,
+          elementIds: [],
+          quickFixCommand: qfCmd,
+        } as never,
+      ],
+    });
+    const { getByText } = render(<AgentReviewModeShell onApplyQuickFix={spy} />);
+    fireEvent.click(getByText('Apply suggested fix'));
+    expect(spy).toHaveBeenCalledWith(qfCmd);
   });
 });
