@@ -3,7 +3,7 @@
   "checkpoint_id": "0391a9586efb",
   "strategy": "manual-commit",
   "branch": "r3-02-sky-envmap",
-  "checkpoints_count": 1,
+  "checkpoints_count": 3,
   "files_touched": [
     "packages/icons/src/architectural.tsx",
     "packages/icons/src/mep.tsx",
@@ -15,13 +15,19 @@
       "transcript": "/03/91a9586efb/0/full.jsonl",
       "content_hash": "/03/91a9586efb/0/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/03/91a9586efb/1/metadata.json",
+      "transcript": "/03/91a9586efb/1/full.jsonl",
+      "content_hash": "/03/91a9586efb/1/content_hash.txt",
+      "prompt": "/03/91a9586efb/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 54,
-    "cache_creation_tokens": 100073,
-    "cache_read_tokens": 3336662,
-    "output_tokens": 53346,
-    "api_call_count": 48
+    "input_tokens": 153,
+    "cache_creation_tokens": 213563,
+    "cache_read_tokens": 10753046,
+    "output_tokens": 94762,
+    "api_call_count": 137
   }
 }

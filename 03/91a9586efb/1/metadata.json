@@ -1,0 +1,42 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "0391a9586efb",
+  "session_id": "3462728a-02b5-4043-8a6b-c88eff2d9725",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-06T10:27:32.813166Z",
+  "branch": "r3-02-sky-envmap",
+  "checkpoints_count": 2,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "f4ffae4164fe",
+  "token_usage": {
+    "input_tokens": 99,
+    "cache_creation_tokens": 113490,
+    "cache_read_tokens": 7416384,
+    "output_tokens": 41416,
+    "api_call_count": 89
+  },
+  "session_metrics": {
+    "turn_count": 4
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 26,
+      "user_lines_removed": 0,
+      "agent_lines_added": 43,
+      "agent_lines_removed": 10,
+      "user_added_per_file": {
+        "packages/web/src/Viewport.tsx": 26
+      }
+    }
+  ]
+}
