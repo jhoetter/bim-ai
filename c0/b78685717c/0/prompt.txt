@@ -1,0 +1,127 @@
+T7 — FL-05: Inspector family type picker
+
+  You are working in the monorepo at /Users/jhoetter/repos/bim-ai.
+  Your working directory for most edits is packages/web.
+
+  ## Task: FL-05 — Inspector family type picker for door + window
+
+  ### Branch
+  git checkout main && git pull && git checkout -b fl-05-inspector-type-picker
+
+  ### Context
+
+  FL-02 is merged. The catalog is at:
+    packages/web/src/families/familyCatalog.ts
+    exports: BUILT_IN_FAMILIES: FamilyDefinition[], getFamilyById(), getTypeById()
+
+  FamilyDefinition.defaultTypes entries each have: { id, name, familyId, discipline, parameters, isBuiltIn }
+
+  The Inspector currently shows door/window fields in InspectorPropertiesFor() in:
+    packages/web/src/workspace/InspectorContent.tsx  (line 59 for door, line 68 for window)
+
+  Both are currently read-only FieldRow displays. The door case shows:
+    <FieldRow label={f('family')} value={el.familyTypeId ?? 'Generic 900 × 2100'} mono />
+    <FieldRow label={f('width')} value={fmtMm(el.widthMm)} />
+    <FieldRow label={f('wall')} value={el.wallId} mono />
+    <FieldRow label={f('alongT')} value={el.alongT.toFixed(3)} mono />
+
+  The window case shows:
+    <FieldRow label={f('family')} value={el.familyTypeId ?? 'Generic 1200 × 1500'} mono />
+    + width, height, sillHeight, wall
+
+  How other editable editors work — follow this exact pattern:
+    InspectorRoomEditor in InspectorContent.tsx receives { el, revision, onPersistProperty }
+    onPersistProperty(key: string, value: string) → caller dispatches updateElementProperty command
+
+  In RedesignedWorkspace.tsx (~line 1228) it is wired as:
+    el.kind === 'room' ?
+      <InspectorRoomEditor el={el} revision={revision} onPersistProperty={(key, value) =>
+        void onSemanticCommand({ type: 'updateElementProperty', elementId: el.id, key, value })
+      } />
+
+  The Properties tab routing chain in RedesignedWorkspace.tsx (~line 1214-1253):
+    if (el.kind === 'plan_view') → InspectorPlanViewEditor
+    else if (el.kind === 'room') → InspectorRoomEditor
+    else if (el.kind === 'viewpoint') → InspectorViewpointEditor
+    else if (el.kind === 'view_template') → InspectorViewTemplateEditor
+    else → InspectorPropertiesFor(el, t)   ← door/window currently fall through here
+
+  CSS classes already in use (copy these for consistency):
+    INPUT_CLS = 'mt-1 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px]'
+    LABEL_CLS = 'block text-[10px] text-muted'
+
+  ### What to build
+
+  ─────────────────────────────────────────────
+  FILE 1: packages/web/src/workspace/InspectorContent.tsx — add two new exports
+  ─────────────────────────────────────────────
+  Add these imports at the top:
+    import { BUILT_IN_FAMILIES } from '../families/familyCatalog';
+
+  Add new exported component InspectorDoorEditor:
+
+    export function InspectorDoorEditor({
+      el, revision, onPersistProperty,
+    }: {
+      el: Extract<Element, { kind: 'door' }>;
+      revision: number;
+      onPersistProperty: (key: string, value: string) => void;
+    }): JSX.Element
+
+    Renders:
+      - A <select> labelled "Family type" populated with:
+          <option value="">Generic</option>
+          {BUILT_IN_FAMILIES that have discipline === 'door', for each family show an <optgroup label={family.name}>,
+           and inside each optgroup render one <option value={type.id}>{type.name}</option> per defaultType}
+        The select's current value = el.familyTypeId ?? ''
+        onChange: onPersistProperty('familyTypeId', e.target.value)
+      - Read-only FieldRow for width (fmtMm(el.widthMm))
+      - Read-only FieldRow for wall (el.wallId, mono)
+      - Read-only FieldRow for position (el.alongT.toFixed(3), mono)
+
+  Add new exported component InspectorWindowEditor with the same pattern:
+    - <select> for familyTypeId, discipline === 'window' families
+    - onChange: onPersistProperty('familyTypeId', e.target.value)
+    - Read-only FieldRows: width, height, sillHeight, wall
+
+  ─────────────────────────────────────────────
+  FILE 2: packages/web/src/workspace/RedesignedWorkspace.tsx — wire the new editors
+  ─────────────────────────────────────────────
+  Add InspectorDoorEditor and InspectorWindowEditor to the import from InspectorContent.
+
+  In the Properties tab routing chain (around line 1228), insert before the final
+  `InspectorPropertiesFor(el, t)` fallthrough:
+
+    ... existing plan_view / room / viewpoint / view_template branches ...
+    : el.kind === 'door' ? (
+      <InspectorDoorEditor
+        el={el}
+        revision={revision}
+        onPersistProperty={(key, value) =>
+          void onSemanticCommand({ type: 'updateElementProperty', elementId: el.id, key, value })
+        }
+      />
+    ) : el.kind === 'window' ? (
+      <InspectorWindowEditor
+        el={el}
+        revision={revision}
+        onPersistProperty={(key, value) =>
+          void onSemanticCommand({ type: 'updateElementProperty', elementId: el.id, key, value })
+        }
+      />
+    ) : (
+      InspectorPropertiesFor(el, t)
+    )
+
+  ### Acceptance criteria
+  1. pnpm -r typecheck passes.
+  2. pnpm --filter @bim-ai/web test passes (1177 tests).
+  3. Only InspectorContent.tsx and RedesignedWorkspace.tsx are modified.
+  4. No new test files needed — existing tests cover the routing.
+
+  ### After completing
+    git add packages/web/src/workspace/InspectorContent.tsx packages/web/src/workspace/RedesignedWorkspace.tsx
+    git commit -m "feat(inspector): FL-05 — family type picker for door + window"
+    git push -u origin fl-05-inspector-type-picker
+
+  Do NOT merge to main. The orchestrator will merge after review.
