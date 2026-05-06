@@ -136,3 +136,7 @@ implement them one after another. always commit + push; feel free to branch out,
 ---
 
 all committed and pushed?
+
+---
+
+no, ignore them. now look again into our target house - try seeding it again.
