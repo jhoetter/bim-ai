@@ -27,8 +27,8 @@ A workpackage is `done` when all of: (a) TypeScript typechecks clean (`pnpm exec
 | ------------------------------------------------------ | -------------------------------------------------- | ----------- |
 | [Wave 0](#wave-0--meta--bootstrap)                     | Meta / Bootstrap — tracker, docs                   | `done`      |
 | [Wave 1](#wave-1--interaction-foundation--plan-canvas) | Interaction Foundation + Plan Canvas               | `done`      |
-| [Wave 2](#wave-2--view-system--wall-depth--openings)   | View System + Wall Depth + Openings                | **CURRENT** |
-| [Wave 3](#wave-3--element-depth)                       | Element Depth (Structural, Curtain Wall, Ceilings) | `open`      |
+| [Wave 2](#wave-2--view-system--wall-depth--openings)   | View System + Wall Depth + Openings                | `done`      |
+| [Wave 3](#wave-3--element-depth)                       | Element Depth (Structural, Curtain Wall, Ceilings) | **CURRENT** |
 | [Wave 4](#wave-4--data-layer)                          | Data Layer (Rooms V2, Parameters, Schedules)       | `open`      |
 | [Wave 5](#wave-5--families--collaboration)             | Families + Collaboration                           | `open`      |
 | [Wave 6](#wave-6--coordination--export)                | Coordination + Export                              | `open`      |
@@ -162,9 +162,9 @@ Batch B (parallel after Batch A merged — no shared files):
 | WP        | Title                                              | Prompt file                          | Branch                          | State  | Depends on    |
 | --------- | -------------------------------------------------- | ------------------------------------ | ------------------------------- | ------ | ------------- |
 | WP-V2-02  | Wall System Depth (location line offset + joins)   | `wave-02/WP-V2-02-wall-depth.md`    | `feat/wp-v2-02-wall-depth`      | `done` | —             |
-| WP-V2-03a | VV Dialog (category overrides)                     | `wave-02/WP-V2-03a-vv-dialog.md`    | `feat/wp-v2-03a-vv-dialog`      | `partial` | —          |
-| WP-V2-04  | Openings (Wall Opening + Shaft tools)              | `wave-02/WP-V2-04-openings.md`      | `feat/wp-v2-04-openings`        | `open` | Batch A merged |
-| WP-V2-03b | View Filters + View Range / Underlay UI            | `wave-02/WP-V2-03b-view-filters.md` | `feat/wp-v2-03b-view-filters`   | `open` | WP-V2-03a merged |
+| WP-V2-03a | VV Dialog (category overrides)                     | `wave-02/WP-V2-03a-vv-dialog.md`    | `feat/wp-v2-03a-vv-dialog`      | `done` | —          |
+| WP-V2-04  | Openings (Wall Opening + Shaft tools)              | `wave-02/WP-V2-04-openings.md`      | `feat/wp-v2-04-openings`        | `done` | Batch A merged |
+| WP-V2-03b | View Filters + View Range / Underlay UI            | `wave-02/WP-V2-03b-view-filters.md` | `feat/wp-v2-03b-view-filters`   | `done` | WP-V2-03a merged |
 
 ### WP-V2-02 — Wall System Depth
 
@@ -202,13 +202,21 @@ Batch B (parallel after Batch A merged — no shared files):
 
 **Goal:** Add structural columns/beams, curtain wall system, ceilings.
 
-**Prompt files:** `spec/prompts/wave-03/` — create when Wave 2 is fully merged.
+**Prompt files:** `spec/prompts/wave-03/` — created 2026-05-06.
 
-| WP       | Title                                                                       | State  |
-| -------- | --------------------------------------------------------------------------- | ------ |
-| WP-V2-06 | Structural Elements (columns with b/h params, beams, structural discipline) | `open` |
-| WP-V2-07 | Curtain Wall + Envelope (grid, panel types, TAB selection, mullions)        | `open` |
-| WP-V2-08 | Ceilings (sketch ceiling, RCP view type, layer type)                        | `open` |
+### Execution order (sequential — all WPs conflict on shared files)
+
+```
+Batch A: WP-V2-07 — Curtain Wall grid params + Inspector  (no new ElemKind)
+Batch B: WP-V2-06 — Structural (column + beam)             (after A merged)
+Batch C: WP-V2-08 — Ceilings                               (after B merged)
+```
+
+| WP       | Title                                                                       | Branch                       | State  | Depends on |
+| -------- | --------------------------------------------------------------------------- | ---------------------------- | ------ | ---------- |
+| WP-V2-07 | Curtain Wall grid params + Inspector (vCount/hCount fields)                 | `feat/wp-v2-07-curtain-wall` | `open` | — |
+| WP-V2-06 | Structural Elements (column + beam: types, tools, mesh builders)            | `feat/wp-v2-06-structural`   | `open` | WP-V2-07 merged |
+| WP-V2-08 | Ceilings (sketch ceiling, plan outline, 3D slab)                            | `feat/wp-v2-08-ceilings`     | `open` | WP-V2-06 merged |
 
 ### WP-V2-06 — Structural Elements
 
