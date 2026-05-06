@@ -6,6 +6,8 @@ export type SchedulePresetCategory = 'room' | 'door' | 'window' | 'material_asse
 
 export type SchedulePresetFieldToken = 'required' | 'optional';
 
+export type ScheduleAggregation = 'sum' | 'average' | 'min' | 'max' | 'count';
+
 export type ScheduleDefinitionPresetField = {
   fieldKey: string;
   token: SchedulePresetFieldToken;
@@ -13,6 +15,8 @@ export type ScheduleDefinitionPresetField = {
   unitHint?: string;
   /** Short note for CSV / API export consumers. */
   csvExportHint?: string;
+  /** Footer aggregation for Calculate Totals (null = no footer). */
+  aggregation?: ScheduleAggregation | null;
 };
 
 export type ScheduleDefinitionPreset = {
@@ -31,10 +35,10 @@ const PRESETS: ScheduleDefinitionPreset[] = [
       { fieldKey: 'elementId', token: 'required', csvExportHint: 'Stable row id' },
       { fieldKey: 'name', token: 'required', csvExportHint: 'Room name' },
       { fieldKey: 'level', token: 'required', csvExportHint: 'Level label' },
-      { fieldKey: 'areaM2', token: 'required', unitHint: 'm²', csvExportHint: 'Derived area' },
-      { fieldKey: 'perimeterM', token: 'optional', unitHint: 'm' },
-      { fieldKey: 'targetAreaM2', token: 'optional', unitHint: 'm²' },
-      { fieldKey: 'areaDeltaM2', token: 'optional', unitHint: 'm²' },
+      { fieldKey: 'areaM2', token: 'required', unitHint: 'm²', csvExportHint: 'Derived area', aggregation: 'sum' },
+      { fieldKey: 'perimeterM', token: 'optional', unitHint: 'm', aggregation: 'sum' },
+      { fieldKey: 'targetAreaM2', token: 'optional', unitHint: 'm²', aggregation: 'sum' },
+      { fieldKey: 'areaDeltaM2', token: 'optional', unitHint: 'm²', aggregation: 'sum' },
     ],
   },
   {
@@ -150,6 +154,10 @@ const PRESETS: ScheduleDefinitionPreset[] = [
     ],
   },
 ];
+
+export function getSchedulePresets(category: SchedulePresetCategory): ScheduleDefinitionPreset[] {
+  return PRESETS.filter((p) => p.category === category);
+}
 
 export function presetsForCategory(category: SchedulePresetCategory): ScheduleDefinitionPreset[] {
   return PRESETS.filter((p) => p.category === category)

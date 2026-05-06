@@ -1020,6 +1020,45 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
     };
   }
 
+  if (kind === 'shared_param_file') {
+    const rawGroups = raw.groups ?? raw.param_groups;
+    const groups = Array.isArray(rawGroups)
+      ? rawGroups.map((g: Record<string, unknown>) => ({
+          groupName: String(g.groupName ?? g.group_name ?? ''),
+          parameters: Array.isArray(g.parameters)
+            ? g.parameters.map((p: Record<string, unknown>) => ({
+                guid: String(p.guid ?? ''),
+                name: String(p.name ?? ''),
+                dataType: String(p.dataType ?? p.data_type ?? 'text') as
+                  | 'text'
+                  | 'number'
+                  | 'integer'
+                  | 'yesno'
+                  | 'length'
+                  | 'area'
+                  | 'volume',
+              }))
+            : [],
+        }))
+      : [];
+    return { kind: 'shared_param_file', id, name, groups };
+  }
+
+  if (kind === 'project_param') {
+    const rawCats = raw.categories ?? raw.param_categories;
+    const iot = raw.instanceOrType ?? raw.instance_or_type;
+    return {
+      kind: 'project_param',
+      id,
+      name,
+      sharedParamGuid: String(raw.sharedParamGuid ?? raw.shared_param_guid ?? ''),
+      categories: Array.isArray(rawCats)
+        ? rawCats.filter((x): x is string => typeof x === 'string')
+        : [],
+      instanceOrType: iot === 'type' ? 'type' : 'instance',
+    };
+  }
+
   return null;
 }
 

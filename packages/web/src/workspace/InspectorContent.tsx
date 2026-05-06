@@ -311,6 +311,22 @@ export function InspectorPropertiesFor(
           ) : null}
         </div>
       );
+    case 'shared_param_file':
+      return (
+        <div>
+          <FieldRow label={f('name')} value={el.name} />
+          <FieldRow label={f('paramGroups')} value={String(el.groups.length)} />
+        </div>
+      );
+    case 'project_param':
+      return (
+        <div>
+          <FieldRow label={f('name')} value={el.name} />
+          <FieldRow label={f('paramGuid')} value={el.sharedParamGuid} mono />
+          <FieldRow label={f('paramCategories')} value={el.categories.join(', ') || '—'} />
+          <FieldRow label={f('instanceOrType')} value={el.instanceOrType} />
+        </div>
+      );
     case 'color_fill_legend':
       return (
         <div>

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  getSchedulePresets,
   missingRequiredFieldKeys,
   presetFieldReadoutRows,
   presetsForCategory,
@@ -110,5 +111,21 @@ describe('scheduleDefinitionPresets', () => {
     const rows = presetFieldReadoutRows(preset, {});
     expect(rows[0]?.label).toBe('wallId');
     expect(rows[0]?.roleReadout).toBe('');
+  });
+});
+
+describe('getSchedulePresets', () => {
+  it('returns room presets with aggregation on areaM2', () => {
+    const presets = getSchedulePresets('room');
+    expect(presets.length).toBeGreaterThan(0);
+    const coreArea = presets.find((p) => p.id === 'room-core-area');
+    expect(coreArea).toBeDefined();
+    const areaField = coreArea?.fields.find((f) => f.fieldKey === 'areaM2');
+    expect(areaField?.aggregation).toBe('sum');
+  });
+
+  it('returns empty array for unknown category', () => {
+    const presets = getSchedulePresets('door');
+    expect(Array.isArray(presets)).toBe(true);
   });
 });

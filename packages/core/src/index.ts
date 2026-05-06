@@ -38,7 +38,9 @@ export type ElemKind =
   | 'column'
   | 'beam'
   | 'ceiling'
-  | 'color_fill_legend';
+  | 'color_fill_legend'
+  | 'shared_param_file'
+  | 'project_param';
 
 export type XY = { xMm: number; yMm: number };
 
@@ -131,6 +133,17 @@ export type WallLocationLine =
   | 'core-centerline'
   | 'core-face-exterior'
   | 'core-face-interior';
+
+export type SharedParamEntry = {
+  guid: string;
+  name: string;
+  dataType: 'text' | 'number' | 'integer' | 'yesno' | 'length' | 'area' | 'volume';
+};
+
+export type SharedParamGroup = {
+  groupName: string;
+  parameters: SharedParamEntry[];
+};
 
 export type Element =
   | {
@@ -550,6 +563,20 @@ export type Element =
       planViewId: string;
       positionMm: XY;
       schemeField: string;
+    }
+  | {
+      kind: 'shared_param_file';
+      id: string;
+      name: string;
+      groups: SharedParamGroup[];
+    }
+  | {
+      kind: 'project_param';
+      id: string;
+      name: string;
+      sharedParamGuid: string;
+      categories: string[];
+      instanceOrType: 'instance' | 'type';
     };
 
 export type Violation = {
