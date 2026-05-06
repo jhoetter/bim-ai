@@ -19,6 +19,12 @@
       "transcript": "/bb/d1bd985fc5/1/full.jsonl",
       "content_hash": "/bb/d1bd985fc5/1/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/bb/d1bd985fc5/2/metadata.json",
+      "transcript": "/bb/d1bd985fc5/2/full.jsonl",
+      "content_hash": "/bb/d1bd985fc5/2/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
