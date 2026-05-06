@@ -42,16 +42,18 @@ _MAIN_FOOTPRINT = [
 ]
 
 _ANNEX_FOOTPRINT = [
-    {"xMm": 7000,  "yMm": 0},
-    {"xMm": 11000, "yMm": 0},
+    {"xMm": 7000,  "yMm": -500},
+    {"xMm": 11000, "yMm": -500},
     {"xMm": 11000, "yMm": 6000},
     {"xMm": 7000,  "yMm": 6000},
 ]
 
-# L-shaped ground-floor slab (main vol + annex combined)
+# Slab: main vol rectangular + annex tab that protrudes 500 mm south of y=0
 _GF_SLAB_FOOTPRINT = [
     {"xMm": 0,     "yMm": 0},
-    {"xMm": 11000, "yMm": 0},
+    {"xMm": 7000,  "yMm": 0},
+    {"xMm": 7000,  "yMm": -500},
+    {"xMm": 11000, "yMm": -500},
     {"xMm": 11000, "yMm": 6000},
     {"xMm": 7000,  "yMm": 6000},
     {"xMm": 7000,  "yMm": 8000},
@@ -101,17 +103,25 @@ def _house_commands() -> list[dict]:
     ]
 
     # ── Ground-floor exterior walls — annex (h = 3200) ──────────────────────
+    # Annex protrudes 500 mm south of the main volume south face (y=0).
     cmds += [
         {
             "type": "createWall", "id": "w-s-ann", "name": "South facade (annex)",
             "levelId": "lvl-1",
-            "start": {"xMm": 7000, "yMm": 0}, "end": {"xMm": 11000, "yMm": 0},
+            "start": {"xMm": 7000, "yMm": -500}, "end": {"xMm": 11000, "yMm": -500},
+            "thicknessMm": 200, "heightMm": 3200, "materialKey": "white_render",
+        },
+        {
+            # Short return at the junction: connects main south face to annex south face.
+            "type": "createWall", "id": "w-ann-jct", "name": "Annex junction return",
+            "levelId": "lvl-1",
+            "start": {"xMm": 7000, "yMm": 0}, "end": {"xMm": 7000, "yMm": -500},
             "thicknessMm": 200, "heightMm": 3200, "materialKey": "white_render",
         },
         {
             "type": "createWall", "id": "w-east", "name": "East facade (annex)",
             "levelId": "lvl-1",
-            "start": {"xMm": 11000, "yMm": 0}, "end": {"xMm": 11000, "yMm": 6000},
+            "start": {"xMm": 11000, "yMm": -500}, "end": {"xMm": 11000, "yMm": 6000},
             "thicknessMm": 200, "heightMm": 3200, "materialKey": "white_render",
         },
         {
@@ -207,11 +217,6 @@ def _house_commands() -> list[dict]:
             "type": "insertDoorOnWall", "id": "d-main", "name": "Main entrance",
             "wallId": "w-s-main", "alongT": 0.78, "widthMm": 980,
         },
-        {
-            # Annex entrance on south annex facade
-            "type": "insertDoorOnWall", "id": "d-ann", "name": "Annex entrance",
-            "wallId": "w-s-ann", "alongT": 0.22, "widthMm": 900,
-        },
     ]
 
     # ── Windows — ground floor ────────────────────────────────────────────────
@@ -228,16 +233,10 @@ def _house_commands() -> list[dict]:
             "widthMm": 850, "heightMm": 2100, "sillHeightMm": 100,
         },
         {
-            # Small window on annex south facade
-            "type": "insertWindowOnWall", "id": "win-ann-s", "name": "Annex south window",
-            "wallId": "w-s-ann", "alongT": 0.72,
-            "widthMm": 1200, "heightMm": 1200, "sillHeightMm": 900,
-        },
-        {
-            # Window on east (annex) facade
+            # Square window on east (annex) facade — spec: ≈750 mm sq, sill ≈1400 mm.
             "type": "insertWindowOnWall", "id": "win-ann-e", "name": "Annex east window",
             "wallId": "w-east", "alongT": 0.42,
-            "widthMm": 1200, "heightMm": 1000, "sillHeightMm": 900,
+            "widthMm": 750, "heightMm": 750, "sillHeightMm": 1400,
         },
     ]
 
@@ -245,9 +244,11 @@ def _house_commands() -> list[dict]:
     cmds += [
         {
             # Small window on upper east gable wall (looks out over annex roof)
+            # Spec: ≈1100 mm wide × 1000 mm tall, sill 900 mm, ≈2000 mm from south end.
+            # wu-east runs y=0→8000; alongT=0.25 → 2000 mm from south.
             "type": "insertWindowOnWall", "id": "win-ue", "name": "Upper east window",
-            "wallId": "wu-east", "alongT": 0.28,
-            "widthMm": 1500, "heightMm": 1200, "sillHeightMm": 900,
+            "wallId": "wu-east", "alongT": 0.25,
+            "widthMm": 1100, "heightMm": 1000, "sillHeightMm": 900,
         },
     ]
 
