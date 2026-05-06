@@ -17,3 +17,7 @@ Checking formatting...
  ELIFECYCLE  Command failed with exit code 1.
 Error: Process completed with exit code 1.
 i think hwoever the md files aren't an issue; can we exclude this from the prettier check or so? i think that hould make sense..
+
+---
+
+please commit and push
