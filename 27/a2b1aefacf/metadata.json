@@ -3,7 +3,7 @@
   "checkpoint_id": "27a2b1aefacf",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 5,
+  "checkpoints_count": 6,
   "files_touched": [
     "app/scripts/seed.py",
     "packages/web/src/Viewport.tsx",
@@ -59,13 +59,19 @@
       "transcript": "/27/a2b1aefacf/4/full.jsonl",
       "content_hash": "/27/a2b1aefacf/4/content_hash.txt",
       "prompt": "/27/a2b1aefacf/4/prompt.txt"
+    },
+    {
+      "metadata": "/27/a2b1aefacf/5/metadata.json",
+      "transcript": "/27/a2b1aefacf/5/full.jsonl",
+      "content_hash": "/27/a2b1aefacf/5/content_hash.txt",
+      "prompt": "/27/a2b1aefacf/5/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 2212,
-    "cache_creation_tokens": 167642,
-    "cache_read_tokens": 4884433,
-    "output_tokens": 49849,
-    "api_call_count": 86
+    "input_tokens": 2214,
+    "cache_creation_tokens": 168263,
+    "cache_read_tokens": 5004795,
+    "output_tokens": 50156,
+    "api_call_count": 88
   }
 }
