@@ -1252,6 +1252,7 @@ function makeCurtainWallMesh(
   wall: WallElem,
   elevM: number,
   paint: ViewportPaintBundle | null,
+  elementsById?: Record<string, Element>,
 ): THREE.Group {
   const sx = wall.start.xMm / 1000;
   const sz = wall.start.yMm / 1000;
@@ -1310,6 +1311,73 @@ function makeCurtainWallMesh(
     hm.rotation.y = yaw;
     addEdges(hm);
     group.add(hm);
+  }
+
+  // Gable triangle glazing: when the wall has a roofAttachmentId pointing at a
+  // gable/hip roof, extend the glass + mullions up into the triangular zone above
+  // the rectangular wall top (eave to ridge).
+  if (wall.roofAttachmentId && elementsById) {
+    const roofEl = elementsById[wall.roofAttachmentId];
+    if (roofEl?.kind === 'roof' && roofEl.roofGeometryMode !== 'flat') {
+      const roof = roofEl as Extract<Element, { kind: 'roof' }>;
+      const eaveYw = elevM + height;
+
+      // Sample N+1 heights along the wall at fine resolution
+      const N = Math.max(8, Math.round(len / (PANEL_W / 4)));
+      const hSamples: number[] = [];
+      for (let i = 0; i <= N; i++) {
+        const t = i / N;
+        const xMm = wall.start.xMm + t * (wall.end.xMm - wall.start.xMm);
+        const zMm = wall.start.yMm + t * (wall.end.yMm - wall.start.yMm);
+        hSamples.push(roofHeightAtPoint(roof, elementsById, xMm, zMm));
+      }
+
+      const maxH = Math.max(...hSamples);
+      if (maxH > eaveYw + 0.02) {
+        // Build glass mesh for the gable triangle zone as quads between sample columns
+        const triPositions: number[] = [];
+        const triIndices: number[] = [];
+        let vIdx = 0;
+        for (let i = 0; i < N; i++) {
+          const t0 = i / N;
+          const t1 = (i + 1) / N;
+          const x0w = sx + t0 * dx, z0w = sz + t0 * dz;
+          const x1w = sx + t1 * dx, z1w = sz + t1 * dz;
+          const h0 = Math.max(hSamples[i], eaveYw);
+          const h1 = Math.max(hSamples[i + 1], eaveYw);
+          if (h0 <= eaveYw + 0.001 && h1 <= eaveYw + 0.001) continue;
+          // Quad: BL, BR, TR, TL
+          triPositions.push(x0w, eaveYw, z0w, x1w, eaveYw, z1w, x1w, h1, z1w, x0w, h0, z0w);
+          triIndices.push(vIdx, vIdx + 1, vIdx + 2, vIdx, vIdx + 2, vIdx + 3);
+          vIdx += 4;
+        }
+        if (triPositions.length > 0) {
+          const triGeom = new THREE.BufferGeometry();
+          triGeom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(triPositions), 3));
+          triGeom.setIndex(triIndices);
+          triGeom.computeVertexNormals();
+          group.add(new THREE.Mesh(triGeom, glassMat));
+        }
+
+        // Vertical mullions in the gable triangle zone
+        const vCountTri = Math.max(1, Math.round(len / PANEL_W));
+        for (let i = 0; i <= vCountTri; i++) {
+          const t = i / vCountTri;
+          const xMm = wall.start.xMm + t * (wall.end.xMm - wall.start.xMm);
+          const zMm = wall.start.yMm + t * (wall.end.yMm - wall.start.yMm);
+          const topY = roofHeightAtPoint(roof, elementsById, xMm, zMm);
+          if (topY <= eaveYw + 0.02) continue;
+          const mullionH = topY - eaveYw;
+          const mxw = sx + t * dx;
+          const mzw = sz + t * dz;
+          const vm = new THREE.Mesh(new THREE.BoxGeometry(MW, mullionH, thick), mullionMat);
+          vm.position.set(mxw, eaveYw + mullionH / 2, mzw);
+          vm.rotation.y = yaw;
+          addEdges(vm);
+          group.add(vm);
+        }
+      }
+    }
   }
 
   return group;
@@ -2575,7 +2643,7 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
             csgWorkerRef.current?.postMessage(job);
           }
           if (e.isCurtainWall) {
-            obj = makeCurtainWallMesh(e, elev, paint);
+            obj = makeCurtainWallMesh(e, elev, paint, curr);
             break;
           }
           // Always produce a placeholder (solid wall); the worker will swap it
