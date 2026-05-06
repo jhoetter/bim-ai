@@ -1,0 +1,79 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "274705c23e11",
+  "session_id": "ea547c71-d059-4671-a2fc-5989c683b50d",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-06T11:21:17.717715Z",
+  "branch": "main",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "packages/web/src/advisor/AdvisorPanel.tsx",
+    "packages/web/src/advisor/advisorViolationContext.ts",
+    "packages/web/src/i18n.ts",
+    "packages/web/src/workspace/LevelDatumStackWorkbench.tsx",
+    "packages/web/src/workspace/ModeShells.test.tsx",
+    "packages/web/src/workspace/RedesignedWorkspace.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "ae1d7b9aad47",
+  "token_usage": {
+    "input_tokens": 12,
+    "cache_creation_tokens": 13939,
+    "cache_read_tokens": 115113,
+    "output_tokens": 1146,
+    "api_call_count": 6
+  },
+  "session_metrics": {
+    "turn_count": 3
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-06T11:21:17.715193Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 26,
+    "total_committed": 0,
+    "total_lines_changed": 26,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 365,
+      "user_lines_removed": 26,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/web/src/advisor/AdvisorPanel.tsx": 22,
+        "packages/web/src/advisor/advisorViolationContext.ts": 15,
+        "packages/web/src/i18n.ts": 312,
+        "packages/web/src/workspace/LevelDatumStackWorkbench.tsx": 4,
+        "packages/web/src/workspace/ModeShells.test.tsx": 10,
+        "packages/web/src/workspace/RedesignedWorkspace.tsx": 2
+      },
+      "user_removed_per_file": {
+        "packages/web/src/advisor/AdvisorPanel.tsx": 18,
+        "packages/web/src/workspace/LevelDatumStackWorkbench.tsx": 2,
+        "packages/web/src/workspace/ModeShells.test.tsx": 4,
+        "packages/web/src/workspace/RedesignedWorkspace.tsx": 2
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 365,
+      "agent_lines_removed": 26
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 365,
+      "agent_lines_removed": 26
+    }
+  ]
+}

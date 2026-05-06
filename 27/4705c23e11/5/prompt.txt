@@ -1,0 +1,9 @@
+what are my claude permissions? please check the settings json
+
+---
+
+please run cat and show the output here in the terminal
+
+---
+
+the claude settings json
