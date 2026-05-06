@@ -1,0 +1,44 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "292aaa19460a",
+  "session_id": "7976c4c0-59a1-435c-9fa8-c874b5368e3a",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-06T09:35:51.347118Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/web/src/cmd/CheatsheetModal.test.tsx",
+    "packages/web/src/cmd/CheatsheetModal.tsx",
+    "packages/web/src/cmd/RedesignedCommandPalette.test.tsx",
+    "packages/web/src/workspace/CommentsPanel.test.tsx",
+    "packages/web/src/workspace/InspectorContent.test.tsx",
+    "packages/web/src/workspace/StatusBar.test.tsx",
+    "packages/web/src/workspace/TabBar.tsx",
+    "packages/web/src/workspace/TopBar.test.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "69dd92ea00fb",
+  "token_usage": {
+    "input_tokens": 268,
+    "cache_creation_tokens": 327796,
+    "cache_read_tokens": 22810274,
+    "output_tokens": 136760,
+    "api_call_count": 230
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-06T09:35:51.082729Z",
+    "agent_lines": 111,
+    "agent_removed": 68,
+    "human_added": 733,
+    "human_modified": 1,
+    "human_removed": 0,
+    "total_committed": 845,
+    "total_lines_changed": 939,
+    "agent_percentage": 19.06283280085197,
+    "metric_version": 2
+  }
+}
