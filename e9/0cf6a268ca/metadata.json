@@ -1,0 +1,30 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "e90cf6a268ca",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/ui/package.json",
+    "packages/ui/src/icons.tsx",
+    "packages/ui/src/index.tsx",
+    "packages/web/package.json",
+    "packages/web/src/App.tsx",
+    "pnpm-lock.yaml"
+  ],
+  "sessions": [
+    {
+      "metadata": "/e9/0cf6a268ca/0/metadata.json",
+      "transcript": "/e9/0cf6a268ca/0/full.jsonl",
+      "content_hash": "/e9/0cf6a268ca/0/content_hash.txt",
+      "prompt": "/e9/0cf6a268ca/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 18,
+    "cache_creation_tokens": 24469,
+    "cache_read_tokens": 359062,
+    "output_tokens": 5296,
+    "api_call_count": 14
+  }
+}
