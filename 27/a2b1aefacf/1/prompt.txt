@@ -1,0 +1,9 @@
+i previously had some i18n work but my computer crashed. where are we in that terms?
+
+---
+
+nice. where can i switch between EN and DE? in the UI or somehwere else?
+
+---
+
+[Image #1] ah, understood - but even then, there are SO many not-translated topics. just look at the screenshot; from there, derive all the fields where i18n is missing and create a plan..
