@@ -20,3 +20,5 @@ app/.venv/
 *.local
 packages/web/playwright-report/
 packages/web/test-results/
+.entire/
+.superset/
