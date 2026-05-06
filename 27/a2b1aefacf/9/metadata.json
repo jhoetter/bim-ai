@@ -1,0 +1,83 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "27a2b1aefacf",
+  "session_id": "e5928574-1de9-4cde-bd03-dc09526eb05c",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-06T10:19:43.708384Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "app/scripts/seed.py",
+    "packages/web/src/Viewport.tsx",
+    "packages/web/src/cmd/Cheatsheet.tsx",
+    "packages/web/src/cmd/RedesignedCommandPalette.tsx",
+    "packages/web/src/cmd/cheatsheetData.test.ts",
+    "packages/web/src/cmd/cheatsheetData.ts",
+    "packages/web/src/main.tsx",
+    "packages/web/src/tools/ToolPalette.test.tsx",
+    "packages/web/src/tools/ToolPalette.tsx",
+    "packages/web/src/tools/toolRegistry.ts",
+    "packages/web/src/workspace/AppShell.tsx",
+    "packages/web/src/workspace/CommentsPanel.tsx",
+    "packages/web/src/workspace/Inspector.test.tsx",
+    "packages/web/src/workspace/Inspector.tsx",
+    "packages/web/src/workspace/InspectorContent.tsx",
+    "packages/web/src/workspace/LeftRail.tsx",
+    "packages/web/src/workspace/RedesignedWorkspace.tsx",
+    "packages/web/src/workspace/StatusBar.tsx",
+    "packages/web/src/workspace/TopBar.tsx",
+    "spec/element-rendering-requirements.md",
+    "spec/rendering-v2-spec.md"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "ee525cbc9145",
+  "checkpoint_transcript_start": 123,
+  "transcript_lines_at_start": 123,
+  "token_usage": {
+    "input_tokens": 18,
+    "cache_creation_tokens": 34451,
+    "cache_read_tokens": 1360145,
+    "output_tokens": 19926,
+    "api_call_count": 16
+  },
+  "session_metrics": {
+    "turn_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-06T10:19:43.697233Z",
+    "agent_lines": 1166,
+    "agent_removed": 460,
+    "human_added": 249,
+    "human_modified": 49,
+    "human_removed": 0,
+    "total_committed": 1464,
+    "total_lines_changed": 1939,
+    "agent_percentage": 83.85765858690047,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 110,
+      "user_lines_removed": 49,
+      "agent_lines_added": 1191,
+      "agent_lines_removed": 460,
+      "user_added_per_file": {
+        "packages/web/src/workspace/RedesignedWorkspace.tsx": 12,
+        "packages/web/src/workspace/TopBar.tsx": 98
+      },
+      "user_removed_per_file": {
+        "packages/web/src/workspace/RedesignedWorkspace.tsx": 27,
+        "packages/web/src/workspace/TopBar.tsx": 22
+      }
+    }
+  ]
+}
