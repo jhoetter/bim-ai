@@ -1,0 +1,79 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "504e32dbbf32",
+  "session_id": "e5928574-1de9-4cde-bd03-dc09526eb05c",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-06T10:54:58.462831Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/web/src/Viewport.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "7643ee08d664",
+  "checkpoint_transcript_start": 237,
+  "transcript_lines_at_start": 237,
+  "token_usage": {
+    "input_tokens": 26,
+    "cache_creation_tokens": 15265,
+    "cache_read_tokens": 2910412,
+    "output_tokens": 8881,
+    "api_call_count": 22
+  },
+  "session_metrics": {
+    "turn_count": 5
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-06T10:54:58.448929Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 85,
+    "human_removed": 197,
+    "total_committed": 0,
+    "total_lines_changed": 316,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 684,
+      "user_lines_removed": 366,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/web/src/Viewport.tsx": 391,
+        "packages/web/src/advisor/AdvisorPanel.tsx": 10,
+        "packages/web/src/cmd/RedesignedCommandPalette.tsx": 6,
+        "packages/web/src/i18n.ts": 26,
+        "packages/web/src/viewport/csgWorker.ts": 133,
+        "packages/web/src/workspace/AuthoringWorkbenchesPanel.test.tsx": 13,
+        "packages/web/src/workspace/CommentsPanel.tsx": 9,
+        "packages/web/src/workspace/RedesignedWorkspace.tsx": 36,
+        "packages/web/src/workspace/RoomSeparationAuthoringWorkbench.tsx": 1,
+        "packages/web/src/workspace/SiteAuthoringPanel.tsx": 39,
+        "packages/web/src/workspace/StatusBar.tsx": 11,
+        "packages/web/src/workspace/TabBar.tsx": 9
+      },
+      "user_removed_per_file": {
+        "packages/web/src/Viewport.tsx": 282,
+        "packages/web/src/advisor/AdvisorPanel.tsx": 9,
+        "packages/web/src/workspace/AuthoringWorkbenchesPanel.test.tsx": 7,
+        "packages/web/src/workspace/CommentsPanel.tsx": 1,
+        "packages/web/src/workspace/RedesignedWorkspace.tsx": 27,
+        "packages/web/src/workspace/RoomSeparationAuthoringWorkbench.tsx": 1,
+        "packages/web/src/workspace/SiteAuthoringPanel.tsx": 37,
+        "packages/web/src/workspace/TabBar.tsx": 2
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 685,
+      "agent_lines_removed": 367
+    }
+  ]
+}
