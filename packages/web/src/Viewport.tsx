@@ -701,6 +701,17 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
   const elementsById = useBimStore((s) => s.elementsById);
   const theme = useTheme();
 
+  const walkLevels = useMemo(
+    () =>
+      Object.values(elementsById)
+        .filter((e): e is Extract<Element, { kind: 'level' }> => e.kind === 'level')
+        .map((e) => e.elevationMm / 1000)
+        .sort((a, b) => a - b),
+    [elementsById],
+  );
+  const walkLevelsRef = useRef<number[]>([]);
+  walkLevelsRef.current = walkLevels;
+
   const selectedId = useBimStore((s) => s.selectedId);
 
   const viewerCategoryHidden = useBimStore((s) => s.viewerCategoryHidden);
@@ -895,6 +906,10 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
     onResize();
 
     function onDown(ev: PointerEvent): void {
+      if (walkController.snapshot().active && !document.pointerLockElement) {
+        host.requestPointerLock();
+        return;
+      }
       const intent = classifyPointer({
         button: ev.button,
         altKey: ev.altKey,
@@ -1040,6 +1055,16 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
         return;
       }
       if (ev.key === 'Shift') walkController.setRunning(true);
+      if (ev.key === 'PageUp') {
+        walkController.jumpFloor(1);
+        ev.preventDefault();
+        return;
+      }
+      if (ev.key === 'PageDown') {
+        walkController.jumpFloor(-1);
+        ev.preventDefault();
+        return;
+      }
       const wk = classifyWalkKey(ev.key);
       if (wk) {
         walkController.setKey(wk, true);
@@ -1058,6 +1083,14 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
     document.addEventListener('keydown', onWalkKeyDown);
     document.addEventListener('keyup', onWalkKeyUp);
     document.addEventListener('pointermove', onWalkPointerMove);
+
+    function onPointerLockChange(): void {
+      if (!document.pointerLockElement && walkController.snapshot().active) {
+        walkController.setActive(false);
+        setWalkActive(false);
+      }
+    }
+    document.addEventListener('pointerlockchange', onPointerLockChange);
 
     let lastFrameMs = performance.now();
     function tick() {
@@ -1107,6 +1140,7 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       document.removeEventListener('keydown', onWalkKeyDown);
       document.removeEventListener('keyup', onWalkKeyUp);
       document.removeEventListener('pointermove', onWalkPointerMove);
+      document.removeEventListener('pointerlockchange', onPointerLockChange);
       walkControllerRef.current = null;
       sectionBoxRef.current = null;
       sectionBoxCageRef.current = null;
@@ -1354,9 +1388,30 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
     sectionBoxRef.current?.setActive(sectionBoxActive);
   }, [sectionBoxActive]);
 
-  // Sync the walk controller's `active` flag with React state.
+  // Walk mode activation: seed position from orbit camera, request pointer lock, switch FOV.
   useEffect(() => {
-    walkControllerRef.current?.setActive(walkActive);
+    const wc = walkControllerRef.current;
+    const cam = cameraRef.current;
+    if (!wc) return;
+    if (walkActive) {
+      if (cam) {
+        const dir = new THREE.Vector3();
+        cam.getWorldDirection(dir);
+        const yaw = Math.atan2(dir.x, dir.z);
+        wc.teleport({ x: cam.position.x, y: cam.position.y, z: cam.position.z }, yaw);
+        cam.fov = 75;
+        cam.updateProjectionMatrix();
+      }
+      wc.setLevels(walkLevelsRef.current);
+      wc.setActive(true);
+    } else {
+      wc.setActive(false);
+      if (cam) {
+        cam.fov = 55;
+        cam.updateProjectionMatrix();
+      }
+      if (document.pointerLockElement) document.exitPointerLock();
+    }
   }, [walkActive]);
 
   const handleViewCubePick = useCallback(
@@ -1448,14 +1503,22 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       <div className="pointer-events-auto absolute bottom-3 left-3 z-20 flex flex-col items-start gap-1.5">
         <button
           type="button"
-          onClick={() => setWalkActive((v) => !v)}
+          onClick={() => {
+            const next = !walkActive;
+            setWalkActive(next);
+            if (next) {
+              mountRef.current?.requestPointerLock();
+            } else {
+              document.exitPointerLock();
+            }
+          }}
           aria-pressed={walkActive}
           data-active={walkActive ? 'true' : 'false'}
           className={[
             'rounded-md border border-border px-2 py-1 text-xs',
             walkActive ? 'bg-accent text-accent-foreground' : 'bg-surface text-foreground',
           ].join(' ')}
-          title="Walk mode (WASD + mouse-look · Esc to exit)"
+          title="Walk mode — WASD move · mouse-look · Shift run · PageUp/PageDown switch floor · Esc exit"
         >
           Walk: {walkActive ? 'ON' : 'OFF'}
         </button>

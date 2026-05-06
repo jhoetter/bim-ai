@@ -3,16 +3,15 @@
  *
  * Pure-math input model for first-person walk navigation:
  *
- *   - Toggled by `W` (when 3D pane has focus). On exit, `Esc`.
- *   - WASD moves on the ground plane (W/S forward/back, A/D strafe).
- *   - Q/E descend/ascend.
- *   - Mouse-look maps pointer deltas to yaw + pitch (clamped).
- *   - Shift modifier multiplies translation speed (`run`).
+ *   - Toggled via the walk button. Esc exits.
+ *   - WASD / arrow keys move on the ground plane.
+ *   - Q / E descend / ascend.
+ *   - PageUp / PageDown snap to the next / previous building storey.
+ *   - Mouse-look maps pointer deltas to yaw + pitch (requires pointer lock).
+ *   - Shift multiplies translation speed.
  *
- * The controller exposes `state` (yaw, pitch, position) plus an `update(dt)`
- * step that applies the active key set against the spec'd speeds. Tests
- * drive `setKey` + `mouseLook` + `update` to assert kinematic correctness
- * without a renderer.
+ * Movement uses exponential velocity smoothing so starts and stops feel
+ * physically natural rather than digital/robotic.
  */
 
 export type WalkKey = 'forward' | 'back' | 'strafeLeft' | 'strafeRight' | 'down' | 'up';
@@ -32,17 +31,21 @@ export interface WalkState {
 }
 
 export interface WalkConfig {
-  walkSpeed: number; // m/s
+  walkSpeed: number;       // m/s
   runMultiplier: number;
   mouseSensitivity: number; // radians per pixel
-  pitchClamp: number; // radians, ±
+  pitchClamp: number;      // radians, ±
+  damping: number;         // velocity smoothing rate (higher = snappier)
+  eyeHeight: number;       // m above floor datum for level snapping
 }
 
 const DEFAULT_CONFIG: WalkConfig = {
-  walkSpeed: 1.4,
-  runMultiplier: 2.4,
-  mouseSensitivity: 0.0025,
+  walkSpeed: 2.5,
+  runMultiplier: 3.0,
+  mouseSensitivity: 0.003,
   pitchClamp: Math.PI / 2 - 0.05,
+  damping: 12,
+  eyeHeight: 1.7,
 };
 
 const KEY_MAP: Record<string, WalkKey> = {
@@ -71,8 +74,10 @@ export function classifyKey(eventKey: string): WalkKey | null {
 
 export class WalkController {
   private state: WalkState;
+  private velocity: WalkVec3 = { x: 0, y: 0, z: 0 };
   private keys: Set<WalkKey> = new Set();
   private config: WalkConfig;
+  private levels: number[] = [];
 
   constructor(initial?: Partial<WalkState>, config?: Partial<WalkConfig>) {
     const defaultPosition: WalkVec3 = { x: 0, y: 1.7, z: 0 };
@@ -102,6 +107,39 @@ export class WalkController {
     if (!active) {
       this.keys.clear();
       this.state.running = false;
+      this.velocity = { x: 0, y: 0, z: 0 };
+    }
+  }
+
+  /** Warp to a world position and facing direction (yaw in radians).
+   * Resets pitch and velocity — use this for the orbit→walk handoff. */
+  teleport(pos: WalkVec3, yaw: number): void {
+    this.state.position = { ...pos };
+    this.state.yaw = yaw;
+    this.state.pitch = 0;
+    this.velocity = { x: 0, y: 0, z: 0 };
+  }
+
+  /** Register building storey floor heights (in metres, Y-up). */
+  setLevels(elevMs: number[]): void {
+    this.levels = [...elevMs].sort((a, b) => a - b);
+  }
+
+  /** Snap to the next (dir=+1) or previous (dir=-1) storey. */
+  jumpFloor(dir: 1 | -1): void {
+    const floorY = this.state.position.y - this.config.eyeHeight;
+    if (dir === 1) {
+      const next = this.levels.find((l) => l > floorY + 0.2);
+      if (next !== undefined) {
+        this.state.position.y = next + this.config.eyeHeight;
+        this.velocity.y = 0;
+      }
+    } else {
+      const prev = [...this.levels].reverse().find((l) => l < floorY - 0.2);
+      if (prev !== undefined) {
+        this.state.position.y = prev + this.config.eyeHeight;
+        this.velocity.y = 0;
+      }
     }
   }
 
@@ -127,9 +165,12 @@ export class WalkController {
     );
   }
 
-  /** Advance position by `dt` seconds against the active keys. */
+  /** Advance position by `dt` seconds using exponential velocity smoothing.
+   * Velocity approaches the target speed instantly on key press and decays
+   * smoothly on release — natural without feeling floaty. */
   update(dt: number): void {
     if (!this.state.active || dt <= 0) return;
+
     const forward = this.keys.has('forward') ? 1 : 0;
     const back = this.keys.has('back') ? 1 : 0;
     const left = this.keys.has('strafeLeft') ? 1 : 0;
@@ -138,22 +179,24 @@ export class WalkController {
     const up = this.keys.has('up') ? 1 : 0;
 
     const speed = this.config.walkSpeed * (this.state.running ? this.config.runMultiplier : 1);
-    const fwd = forward - back;
-    const sideways = right - left;
-    const vertical = up - down;
-
     const cosY = Math.cos(this.state.yaw);
     const sinY = Math.sin(this.state.yaw);
 
-    // Ground-plane forward = (sin yaw, 0, cos yaw); right = (cos yaw, 0, -sin yaw).
-    const dx = (fwd * sinY + sideways * cosY) * speed * dt;
-    const dz = (fwd * cosY - sideways * sinY) * speed * dt;
-    const dy = vertical * speed * dt;
+    // Target velocity in each axis based on active keys.
+    const tvx = ((forward - back) * sinY + (right - left) * cosY) * speed;
+    const tvz = ((forward - back) * cosY - (right - left) * sinY) * speed;
+    const tvy = (up - down) * speed;
+
+    // Exponential smoothing: snappy feel with no digital snap.
+    const f = 1 - Math.exp(-this.config.damping * dt);
+    this.velocity.x += (tvx - this.velocity.x) * f;
+    this.velocity.y += (tvy - this.velocity.y) * f;
+    this.velocity.z += (tvz - this.velocity.z) * f;
 
     this.state.position = {
-      x: this.state.position.x + dx,
-      y: this.state.position.y + dy,
-      z: this.state.position.z + dz,
+      x: this.state.position.x + this.velocity.x * dt,
+      y: this.state.position.y + this.velocity.y * dt,
+      z: this.state.position.z + this.velocity.z * dt,
     };
   }
 

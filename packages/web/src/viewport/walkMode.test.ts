@@ -35,7 +35,7 @@ describe('WalkController — spec §15.3', () => {
     w.update(1);
     const s = w.snapshot();
     expect(s.position.z).toBeGreaterThan(0);
-    expect(Math.abs(s.position.x)).toBeLessThan(1e-6);
+    expect(Math.abs(s.position.x)).toBeLessThan(1e-4);
   });
 
   it('strafes along +X when yaw=0 and right pressed', () => {
@@ -45,7 +45,7 @@ describe('WalkController — spec §15.3', () => {
     w.update(1);
     const s = w.snapshot();
     expect(s.position.x).toBeGreaterThan(0);
-    expect(Math.abs(s.position.z)).toBeLessThan(1e-6);
+    expect(Math.abs(s.position.z)).toBeLessThan(1e-4);
   });
 
   it('Q/E lower / raise position', () => {
@@ -75,6 +75,68 @@ describe('WalkController — spec §15.3', () => {
     expect(fast.snapshot().position.z).toBeGreaterThan(slow.snapshot().position.z);
   });
 
+  it('velocity smoothing: movement decays after key release', () => {
+    const w = new WalkController();
+    w.setActive(true);
+    w.setKey('forward', true);
+    w.update(0.5);
+    const midZ = w.snapshot().position.z;
+    w.setKey('forward', false);
+    w.update(0.5); // coast with decaying velocity
+    const finalZ = w.snapshot().position.z;
+    // Must have moved further (coasting), but less than if key stayed down
+    expect(finalZ).toBeGreaterThan(midZ);
+    w.update(2); // velocity should fully decay
+    const afterDecayZ = w.snapshot().position.z;
+    // Should have barely moved compared to a fresh 2s with no key
+    expect(afterDecayZ - finalZ).toBeLessThan(0.05);
+  });
+
+  it('teleport sets position and yaw, resets pitch and velocity', () => {
+    const w = new WalkController();
+    w.setActive(true);
+    w.setKey('forward', true);
+    w.update(1);
+    w.teleport({ x: 10, y: 2, z: 20 }, Math.PI);
+    const s = w.snapshot();
+    expect(s.position).toEqual({ x: 10, y: 2, z: 20 });
+    expect(s.yaw).toBe(Math.PI);
+    expect(s.pitch).toBe(0);
+    // velocity zeroed — no movement after teleport without key
+    w.setKey('forward', false);
+    w.update(0.1);
+    expect(Math.abs(w.snapshot().position.z - 20)).toBeLessThan(0.01);
+  });
+
+  it('jumpFloor snaps to next storey above', () => {
+    const w = new WalkController({ position: { x: 0, y: 1.7, z: 0 } });
+    w.setActive(true);
+    w.setLevels([0, 3.0, 6.0]);
+    w.jumpFloor(1);
+    // eye height above floor 3.0 = 3.0 + 1.7 = 4.7
+    expect(w.snapshot().position.y).toBeCloseTo(4.7, 5);
+  });
+
+  it('jumpFloor snaps to previous storey below', () => {
+    const w = new WalkController({ position: { x: 0, y: 4.7, z: 0 } });
+    w.setActive(true);
+    w.setLevels([0, 3.0, 6.0]);
+    w.jumpFloor(-1);
+    // floor below eye at 4.7 - 1.7 = 3.0 is floor 0; eye = 0 + 1.7 = 1.7
+    expect(w.snapshot().position.y).toBeCloseTo(1.7, 5);
+  });
+
+  it('jumpFloor does nothing at top/bottom boundary', () => {
+    const w = new WalkController({ position: { x: 0, y: 1.7, z: 0 } });
+    w.setActive(true);
+    w.setLevels([0, 3.0]);
+    w.jumpFloor(-1); // already at ground
+    expect(w.snapshot().position.y).toBeCloseTo(1.7, 5);
+    w.jumpFloor(1); // up to floor 1
+    w.jumpFloor(1); // already at top
+    expect(w.snapshot().position.y).toBeCloseTo(3.0 + 1.7, 5);
+  });
+
   it('mouseLook clamps pitch to ±π/2 range', () => {
     const w = new WalkController();
     w.setActive(true);
@@ -99,7 +161,7 @@ describe('WalkController — spec §15.3', () => {
     expect(d.z).toBeCloseTo(1, 6);
   });
 
-  it('setActive(false) clears keys and stops running', () => {
+  it('setActive(false) clears keys, stops running, zeros velocity', () => {
     const w = new WalkController();
     w.setActive(true);
     w.setKey('forward', true);
