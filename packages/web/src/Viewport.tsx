@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Brush, Evaluator, SUBTRACTION } from 'three-bvh-csg';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { SSAOPass } from 'three/addons/postprocessing/SSAOPass.js';
@@ -623,7 +624,7 @@ function makeRoofMassMesh(
       transparent: true,
       opacity: 0.94,
       roughness: paint?.categories.roof.roughness ?? 0.74,
-      metalness: 0.04,
+      metalness: paint?.categories.roof.metalness ?? 0.0,
       side: THREE.DoubleSide,
     }),
   );
@@ -636,7 +637,6 @@ function makeStairVolumeMesh(
   stair: Extract<Element, { kind: 'stair' }>,
   elementsById: Record<string, Element>,
   paint: ViewportPaintBundle | null,
-  selectedId?: string,
 ): THREE.Group {
   const group = new THREE.Group();
 
@@ -662,11 +662,10 @@ function makeStairVolumeMesh(
   const treadThick = 0.040;
   const angle = Math.atan2(dz, dx);
 
-  const stairColor =
-    stair.id === selectedId
-      ? (paint?.selection.selectedColor ?? '#fcd34d')
-      : categoryColorOr(paint, 'stair');
-  const mat = new THREE.MeshStandardMaterial({ color: stairColor });
+  const mat = new THREE.MeshStandardMaterial({
+    color: categoryColorOr(paint, 'stair'),
+    roughness: paint?.categories.stair.roughness ?? 0.85,
+  });
 
   const treadGeom = new THREE.BoxGeometry(treadDepth, treadThick, stairWidth);
   for (let i = 0; i < riserCount; i++) {
@@ -716,7 +715,6 @@ function makeWallMesh(
   wall: WallElem,
   elevM: number,
   paint: ViewportPaintBundle | null,
-  selectedId?: string,
 ): THREE.Mesh {
   const sx = wall.start.xMm / 1000;
   const sz = wall.start.yMm / 1000;
@@ -730,11 +728,9 @@ function makeWallMesh(
   const mesh = new THREE.Mesh(
     new THREE.BoxGeometry(len, height, thick),
     new THREE.MeshStandardMaterial({
-      color:
-        wall.id === selectedId
-          ? (paint?.selection.selectedColor ?? '#fb923c')
-          : categoryColorOr(paint, 'wall'),
+      color: categoryColorOr(paint, 'wall'),
       roughness: paint?.categories.wall.roughness ?? 0.85,
+      metalness: paint?.categories.wall.metalness ?? 0.0,
     }),
   );
   mesh.position.set(sx + dx / 2, elevM + height / 2, sz + dz / 2);
@@ -753,7 +749,6 @@ function makeWallWithOpenings(
   hostedDoors: DoorElem[],
   hostedWindows: WindowElem[],
   paint: ViewportPaintBundle | null,
-  selectedId: string | undefined,
   evaluator: Evaluator,
 ): THREE.Mesh {
   const sx  = wall.start.xMm / 1000;
@@ -769,11 +764,9 @@ function makeWallWithOpenings(
   const wcy    = elevM + height / 2;
 
   const wallMat = new THREE.MeshStandardMaterial({
-    color:
-      wall.id === selectedId
-        ? (paint?.selection.selectedColor ?? '#fb923c')
-        : categoryColorOr(paint, 'wall'),
+    color: categoryColorOr(paint, 'wall'),
     roughness: paint?.categories.wall.roughness ?? 0.85,
+    metalness: paint?.categories.wall.metalness ?? 0.0,
   });
 
   try {
@@ -826,7 +819,7 @@ function makeWallWithOpenings(
     return mesh;
   } catch {
     // CSG failed (e.g. degenerate geometry) — fall back to solid wall.
-    return makeWallMesh(wall, elevM, paint, selectedId);
+    return makeWallMesh(wall, elevM, paint);
   }
 }
 
@@ -835,7 +828,6 @@ function makeDoorMesh(
   wall: WallElem,
   elevM: number,
   paint: ViewportPaintBundle | null,
-  sid?: string,
 ) {
   const { px, pz } = hostedXZ(door, wall);
   const leafWidth  = THREE.MathUtils.clamp(door.widthMm / 1000, 0.35, 4);
@@ -844,12 +836,16 @@ function makeDoorMesh(
   const depth      = THREE.MathUtils.clamp(wall.thicknessMm / 1000, 0.08, 0.5);
   const frameSect  = 0.07;
 
-  const doorColor = door.id === sid
-    ? (paint?.selection.selectedColor ?? '#fde047')
-    : categoryColorOr(paint, 'door');
-
-  const frameMat = new THREE.MeshStandardMaterial({ color: doorColor });
-  const panelMat = new THREE.MeshStandardMaterial({ color: doorColor, roughness: 0.75 });
+  const frameColor = categoryColorOr(paint, 'door');
+  const frameMat = new THREE.MeshStandardMaterial({
+    color: frameColor,
+    roughness: paint?.categories.door.roughness ?? 0.70,
+    metalness: paint?.categories.door.metalness ?? 0.0,
+  });
+  const panelMat = new THREE.MeshStandardMaterial({
+    color: frameColor,
+    roughness: paint?.categories.door.roughness ?? 0.70,
+  });
 
   function member(w: number, h: number, d: number, x: number, y: number, mat: THREE.MeshStandardMaterial): THREE.Mesh {
     const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
@@ -886,7 +882,6 @@ function makeWindowMesh(
   wall: WallElem,
   elevM: number,
   paint: ViewportPaintBundle | null,
-  sid?: string,
 ) {
   const { px, pz } = hostedXZ(win, wall);
   const sill = THREE.MathUtils.clamp(win.sillHeightMm / 1000, 0.06, wall.heightMm / 1000 - 0.08);
@@ -901,11 +896,11 @@ function makeWindowMesh(
   const glazingW = Math.max(outerW - 2 * frameSect, 0.01);
   const glazingH = Math.max(outerH - 2 * frameSect, 0.01);
 
-  const frameColor =
-    win.id === sid
-      ? (paint?.selection.selectedColor ?? '#ddd6fe')
-      : categoryColorOr(paint, 'window');
-  const frameMat = new THREE.MeshStandardMaterial({ color: frameColor });
+  const frameMat = new THREE.MeshStandardMaterial({
+    color: categoryColorOr(paint, 'window'),
+    roughness: paint?.categories.window.roughness ?? 0.60,
+    metalness: paint?.categories.window.metalness ?? 0.05,
+  });
 
   const group = new THREE.Group();
   group.userData.bimPickId = win.id;
@@ -1263,6 +1258,8 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
   /** Live paint bundle for the rendered scene. Rebuilt on theme change. */
   const paintBundleRef = useRef<ViewportPaintBundle | null>(null);
   const composerRef = useRef<EffectComposer | null>(null);
+  const outlinePassRef = useRef<OutlinePass | null>(null);
+  const bimPickMapRef = useRef<Map<string, THREE.Object3D>>(new Map());
   const sunRef = useRef<THREE.DirectionalLight | null>(null);
   /** Live CameraRig instance — replaces the legacy ad-hoc spherical rig. */
   const cameraRigRef = useRef<CameraRig | null>(null);
@@ -1393,6 +1390,18 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       ssao.enabled = false;
     }
     composer.addPass(ssao);
+    const outlinePass = new OutlinePass(
+      new THREE.Vector2(host.clientWidth || 1, host.clientHeight || 1),
+      scene,
+      camera,
+    );
+    outlinePass.edgeStrength  = 3.0;
+    outlinePass.edgeGlow      = 0.3;
+    outlinePass.edgeThickness = 1.5;
+    outlinePass.visibleEdgeColor.set(paint.selection.selectedColor);
+    outlinePass.hiddenEdgeColor.set(paint.selection.selectedColor);
+    composer.addPass(outlinePass);
+    outlinePassRef.current = outlinePass;
     composer.addPass(new OutputPass());
     composerRef.current = composer;
 
@@ -1845,9 +1854,9 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       const doors = doorsByWall.get(w.id) ?? [];
       const wins  = winsByWall.get(w.id) ?? [];
       if (csgEvaluator && (doors.length > 0 || wins.length > 0)) {
-        root.add(makeWallWithOpenings(w, elev, doors, wins, paint, selectedId, csgEvaluator));
+        root.add(makeWallWithOpenings(w, elev, doors, wins, paint, csgEvaluator));
       } else {
-        root.add(makeWallMesh(w, elev, paint, selectedId));
+        root.add(makeWallMesh(w, elev, paint));
       }
     }
 
@@ -1861,7 +1870,7 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
 
       const elev = elevationMForLevel(hw.levelId, elementsById);
 
-      root.add(makeDoorMesh(e, hw, elev, paint, selectedId));
+      root.add(makeDoorMesh(e, hw, elev, paint));
     }
 
     for (const e of Object.values(elementsById)) {
@@ -1874,14 +1883,14 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
 
       const elev = elevationMForLevel(hw.levelId, elementsById);
 
-      root.add(makeWindowMesh(e, hw, elev, paint, selectedId));
+      root.add(makeWindowMesh(e, hw, elev, paint));
     }
 
     for (const e of Object.values(elementsById)) {
       if (e.kind !== 'stair') continue;
       if (skipCat(e)) continue;
 
-      root.add(makeStairVolumeMesh(e, elementsById, paint, selectedId));
+      root.add(makeStairVolumeMesh(e, elementsById, paint));
     }
 
     for (const e of Object.values(elementsById)) {
@@ -1968,6 +1977,22 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       }
     }
 
+    // Build pick map and reapply outline pass to current selection.
+    const pickMap = new Map<string, THREE.Object3D>();
+    root.children.forEach(obj => {
+      const id = obj.userData.bimPickId as string | undefined;
+      if (id) pickMap.set(id, obj);
+    });
+    bimPickMapRef.current = pickMap;
+
+    const op = outlinePassRef.current;
+    if (op) {
+      const sel = selectedId ? pickMap.get(selectedId) : undefined;
+      op.selectedObjects = sel ? [sel] : [];
+      op.visibleEdgeColor.set(paint?.selection.selectedColor ?? '#fb923c');
+      op.hiddenEdgeColor.set(paint?.selection.selectedColor ?? '#fb923c');
+    }
+
     // First-geometry auto-fit: set orbit target to building centroid so the
     // rig doesn't stay stuck at the world origin when the building is elsewhere.
     if (!hasAutoFittedRef.current) {
@@ -1986,13 +2011,19 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
     }
   }, [
     elementsById,
-    selectedId,
     viewerCategoryHidden,
     viewerClipElevMm,
     viewerClipFloorElevMm,
     sectionBoxActive,
     theme,
   ]);
+
+  useEffect(() => {
+    const op = outlinePassRef.current;
+    if (!op) return;
+    const sel = selectedId ? bimPickMapRef.current.get(selectedId) : undefined;
+    op.selectedObjects = sel ? [sel] : [];
+  }, [selectedId]);
 
   // Sync the section-box controller's `active` flag with React state.
   useEffect(() => {
