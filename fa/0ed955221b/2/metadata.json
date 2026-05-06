@@ -1,9 +1,11 @@
 {
   "cli_version": "0.6.0",
   "checkpoint_id": "fa0ed955221b",
+  "session_id": "d77badc6-de84-4061-8b72-a56b714cd02e",
   "strategy": "manual-commit",
+  "created_at": "2026-05-06T21:14:16.947303Z",
   "branch": "main",
-  "checkpoints_count": 2,
+  "checkpoints_count": 0,
   "files_touched": [
     "Makefile",
     "app/bim_ai/agent_brief_acceptance_readout.py",
@@ -118,31 +120,50 @@
     "packages/web/src/i18n.ts",
     "packages/web/src/state/store.ts"
   ],
-  "sessions": [
-    {
-      "metadata": "/fa/0ed955221b/0/metadata.json",
-      "transcript": "/fa/0ed955221b/0/full.jsonl",
-      "content_hash": "/fa/0ed955221b/0/content_hash.txt",
-      "prompt": "/fa/0ed955221b/0/prompt.txt"
-    },
-    {
-      "metadata": "/fa/0ed955221b/1/metadata.json",
-      "transcript": "/fa/0ed955221b/1/full.jsonl",
-      "content_hash": "/fa/0ed955221b/1/content_hash.txt",
-      "prompt": "/fa/0ed955221b/1/prompt.txt"
-    },
-    {
-      "metadata": "/fa/0ed955221b/2/metadata.json",
-      "transcript": "/fa/0ed955221b/2/full.jsonl",
-      "content_hash": "/fa/0ed955221b/2/content_hash.txt",
-      "prompt": "/fa/0ed955221b/2/prompt.txt"
-    }
-  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "f0b771f5d214",
   "token_usage": {
-    "input_tokens": 53,
-    "cache_creation_tokens": 138232,
-    "cache_read_tokens": 1739474,
-    "output_tokens": 23386,
-    "api_call_count": 37
-  }
+    "input_tokens": 21,
+    "cache_creation_tokens": 109368,
+    "cache_read_tokens": 1215080,
+    "output_tokens": 13260,
+    "api_call_count": 15
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-06T21:14:16.933867Z",
+    "agent_lines": 2823,
+    "agent_removed": 1122,
+    "human_added": 43,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 2866,
+    "total_lines_changed": 3988,
+    "agent_percentage": 98.92176529588767,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 36,
+      "user_lines_removed": 12,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        ".githooks/commit-msg": 4,
+        ".githooks/post-commit": 4,
+        ".githooks/post-rewrite": 4,
+        ".githooks/pre-push": 5,
+        ".githooks/prepare-commit-msg": 3,
+        "CLAUDE.md": 3,
+        "packages/web/src/schedules/ScheduleDefinitionToolbar.tsx": 6,
+        "packages/web/src/schedules/scheduleDefinitionPresets.ts": 7
+      },
+      "user_removed_per_file": {
+        "CLAUDE.md": 3,
+        "packages/web/src/schedules/ScheduleDefinitionToolbar.tsx": 8,
+        "packages/web/src/schedules/scheduleDefinitionPresets.ts": 1
+      }
+    }
+  ]
 }
