@@ -59,3 +59,7 @@ so all is impemented and commited and pushed?
 ---
 
 [Image #4] [Image #5] not sure if because of our changes, but i now need to scroll to see the bottom panel and such; that is of course terrible design. could rather come from the integration of legacy features, but i want that you now look into ensuring that our overall UX is fantastic, even with newly introuced components
+
+---
+
+[Image #6] certain elements like e.g. the + icon of the tabs is not correctly positionined; can you run through UI once and check that all is really well positioned and thenc ommit + push?
