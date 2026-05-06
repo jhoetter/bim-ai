@@ -1,0 +1,44 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "24353282ea9b",
+  "session_id": "e266e595-9ba9-45d4-bd49-b867ef3491fc",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-06T09:01:47.08404Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "9834368853fa",
+  "token_usage": {
+    "input_tokens": 38,
+    "cache_creation_tokens": 55167,
+    "cache_read_tokens": 1070586,
+    "output_tokens": 7125,
+    "api_call_count": 30
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 91,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "app/scripts/seed.py": 25,
+        "packages/web/src/workspace/RedesignedWorkspace.tsx": 39,
+        "spec/element-rendering-requirements.md": 27
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 52,
+      "agent_lines_removed": 0
+    }
+  ]
+}
