@@ -1,0 +1,70 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "cfa91175928b",
+  "session_id": "f544ab2b-40bf-46be-a1a3-c8b279d88f29",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-06T07:27:40.382049Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "897cee0e5065",
+  "checkpoint_transcript_start": 84,
+  "transcript_lines_at_start": 84,
+  "token_usage": {
+    "input_tokens": 5,
+    "cache_creation_tokens": 8245,
+    "cache_read_tokens": 358595,
+    "output_tokens": 1700,
+    "api_call_count": 5
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 868,
+      "user_lines_removed": 277,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        ".env.example": 1,
+        ".superset/config.json": 8,
+        "Makefile": 3,
+        "OPEN_TASKS.md": 6,
+        "app/bim_ai/constraints.py": 14,
+        "app/bim_ai/wall_join_evidence.py": 1,
+        "app/scripts/seed.py": 327,
+        "packages/web/src/Viewport.tsx": 20,
+        "packages/web/src/design-systems/conservative.css": 15,
+        "packages/web/src/viewport/ViewCube.test.tsx": 47,
+        "packages/web/src/viewport/ViewCube.tsx": 115,
+        "packages/web/src/workspace/Inspector.tsx": 1,
+        "packages/web/src/workspace/LeftRail.tsx": 1,
+        "packages/web/src/workspace/TabBar.tsx": 2,
+        "prompt-ui.md": 247,
+        "spec/ui-ux-redesign-v1-spec.md": 60
+      },
+      "user_removed_per_file": {
+        "Makefile": 2,
+        "OPEN_TASKS.md": 2,
+        "app/scripts/seed.py": 170,
+        "packages/web/src/viewport/ViewCube.test.tsx": 6,
+        "packages/web/src/viewport/ViewCube.tsx": 35,
+        "packages/web/src/workspace/Inspector.tsx": 1,
+        "packages/web/src/workspace/LeftRail.tsx": 1,
+        "packages/web/src/workspace/TabBar.tsx": 1,
+        "spec/ui-ux-redesign-v1-spec.md": 59
+      }
+    }
+  ]
+}
