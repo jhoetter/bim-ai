@@ -46,10 +46,12 @@ export const CurtainPanelIcon = bimIcon(
   <path d="M5 4H19V20H5z M7 4V20 M17 4V20 M5 6H19 M5 18H19 M5 4L19 20" />,
 );
 
-// ── Mullion: vertical and horizontal structural members crossing at centre ────
+// ── Mullion: T-profile cross-section — wide flange + narrow web ───────────────
+// Plan/section view of a curtain-wall mullion member. Clearly distinct from
+// the old plus-sign shape.
 export const MullionIcon = bimIcon(
   'MullionIcon',
-  <path d="M11 2H13V22H11z M2 11H22V13H2z" />,
+  <path d="M8 4H16V8H14V20H10V8H8z" />,
 );
 
 // ── Skylight: plan glazing unit with diagonal X + sun above ──────────────────
@@ -61,9 +63,13 @@ export const SkyLightIcon = bimIcon(
   </>,
 );
 
-// ── Partition: non-structural single-line wall with open arrowhead end caps ───
-// The open end caps distinguish it from structural WallIcon (two parallel lines).
+// ── Partition: room boundary split by a thin (non-structural) dividing wall ───
+// Two spaces separated by a thin wall — clearly distinct from the structural
+// WallIcon (two parallel lines) and the old resize-cursor-like arrow shape.
 export const PartitionIcon = bimIcon(
   'PartitionIcon',
-  <path d="M2 12H22 M5 8L2 12L5 16 M19 8L22 12L19 16" />,
+  <>
+    <path d="M2 4H22V20H2z" />
+    <path d="M11 4H13V20H11z" />
+  </>,
 );

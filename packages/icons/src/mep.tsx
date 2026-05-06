@@ -39,36 +39,53 @@ export const CableTrayIcon = bimIcon(
   <path d="M2 9H22V15H2z M6 9V15 M10 9V15 M14 9V15 M18 9V15" />,
 );
 
-// ── Conduit: rectangular body with circular cross-section end cap ─────────────
+// ── Conduit: three concentric circles — wall thickness + bore + cable inside ──
+// Standard electrical drawing symbol for conduit shown in cross-section.
+// Completely distinct from PipeIcon (which shows a side/perspective view).
 export const ConduitIcon = bimIcon(
   'ConduitIcon',
-  <path d="M2 9H18A3 3 0 0 1 18 15H2V9" />,
+  <>
+    <circle cx="12" cy="12" r="8" />
+    <circle cx="12" cy="12" r="4.5" />
+    <circle cx="12" cy="12" r="1.5" />
+  </>,
 );
 
-// ── Mechanical equipment: plan footprint with motor/fan symbol ────────────────
+// ── Mechanical equipment: equipment housing with 6-blade fan/impeller ────────
+// The rotating fan wheel inside the box enclosure unambiguously signals rotating
+// mechanical equipment (AHU, fan coil, pump). Clearly distinct from
+// PlumbingFixtureIcon (oval basin) and MepSpaceIcon (diagonal-X circle).
 export const MechanicalEquipmentIcon = bimIcon(
   'MechanicalEquipmentIcon',
   <>
     <path d="M3 5H21V19H3z" />
-    <circle cx="12" cy="12" r="4" />
-    <path d="M12 8V16 M8 12H16" />
+    <circle cx="12" cy="12" r="5" />
+    <circle cx="12" cy="12" r="1.5" />
+    <path d="M12 10.5V7 M13.3 11.3L15.5 9.5 M13.3 12.8L15.5 14.5 M12 13.5V17 M10.7 12.8L8.5 14.5 M10.7 11.3L8.5 9.5" />
   </>,
 );
 
-// ── Plumbing fixture: plan outline of sink with basin and faucet ─────────────
+// ── Plumbing fixture: plan view of sink — oval basin + T-shaped faucet ───────
+// Standard plan-view lavatory symbol: rectangular surround, oval basin, faucet.
+// Clearly distinct from MechanicalEquipmentIcon (fan wheel).
 export const PlumbingFixtureIcon = bimIcon(
   'PlumbingFixtureIcon',
   <>
-    <path d="M5 5H19V19H5z" />
-    <circle cx="12" cy="12" r="4" />
-    <path d="M12 7V9 M10 8H14" />
+    <path d="M4 5H20V19H4z" />
+    <ellipse cx="12" cy="13" rx="5" ry="4" />
+    <path d="M10 7H14 M12 7V9" />
   </>,
 );
 
-// ── Lighting fixture: rectangular ceiling light with cross diagonals (RCP) ───
+// ── Lighting fixture: 2-lamp fluorescent (RCP plan view) ─────────────────────
+// Two vertical lamp tubes inside a rectangular fixture housing — the standard
+// RCP symbol for a fluorescent ceiling fixture. Distinct from DuctRectIcon (X).
 export const LightingFixtureIcon = bimIcon(
   'LightingFixtureIcon',
-  <path d="M3 9H21V15H3z M3 9L21 15 M21 9L3 15" />,
+  <>
+    <path d="M4 9H20V15H4z" />
+    <path d="M8 9V15 M16 9V15" />
+  </>,
 );
 
 // ── Electrical panel: distribution board with circuit breaker rows ───────────
