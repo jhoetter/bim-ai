@@ -1793,3 +1793,169 @@ def test_ifc_roof_without_roof_type_id_does_not_emit_pset_bim_ai_kernel() -> Non
     assert len(roof_cmds) == 1
     # Default after replay is None — no roof_type_id should be emitted.
     assert roof_cmds[0].get("roofTypeId") in (None, "", False)
+
+
+def test_ifc_gable_roof_emits_triangular_extrusion_body() -> None:
+    """IFC-02: gable_pitched_rectangle roofs export with a 3-vertex triangular profile."""
+    import ifcopenshell
+
+    doc = Document(
+        revision=700,
+        elements={
+            "l0": LevelElem(kind="level", id="l0", name="G", elevationMm=0),
+            "l1": LevelElem(kind="level", id="l1", name="OG", elevationMm=2800),
+            "rf-gable": RoofElem(
+                kind="roof",
+                id="rf-gable",
+                name="Gable Roof",
+                referenceLevelId="l1",
+                footprintMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 6000, "yMm": 0},
+                    {"xMm": 6000, "yMm": 4000},
+                    {"xMm": 0, "yMm": 4000},
+                ],
+                overhangMm=400,
+                slopeDeg=35,
+                roofGeometryMode="gable_pitched_rectangle",
+            ),
+        },
+    )
+    step = export_ifc_model_step(doc)
+    model = ifcopenshell.file.from_string(step)
+    roofs_m = model.by_type("IfcRoof") or []
+    assert len(roofs_m) == 1
+    rf = roofs_m[0]
+    rep = rf.Representation
+    body = None
+    for r in rep.Representations or []:
+        if getattr(r, "RepresentationIdentifier", None) == "Body":
+            body = r
+            break
+    assert body is not None
+    items = list(body.Items or [])
+    assert len(items) == 1
+    extrusion = items[0]
+    assert extrusion.is_a("IfcExtrudedAreaSolid")
+    profile = extrusion.SweptArea
+    assert profile.is_a("IfcArbitraryClosedProfileDef")
+    pts = list(profile.OuterCurve.Points)
+    # 3 unique gable vertices + closure → 4 entries.
+    assert len(pts) == 4
+    # Footprint 6000 × 4000: kernel ridge convention parallels the shorter span
+    # (alongZ, 4000), so the cross-section spans the longer axis = 6000 mm.
+    xs = [p.Coordinates[0] for p in pts]
+    ys = [p.Coordinates[1] for p in pts]
+    assert pytest.approx(max(xs) - min(xs), abs=1e-3) == 6.0
+    # Symmetric ridge at offset 0, slope 35° → rise = 3.0 * tan(35°)
+    import math as _m
+
+    expected_rise_m = 3.0 * _m.tan(_m.radians(35))
+    assert pytest.approx(max(ys), abs=1e-2) == expected_rise_m
+
+    insp = inspect_kernel_ifc_semantics(doc=doc, step_text=step)
+    assert insp["identityPsets"]["roofWithGablePitchedBodyV0"] == 1
+
+
+def test_ifc_flat_roof_does_not_emit_gable_body() -> None:
+    """IFC-02: flat (mass_box) roofs keep the existing slab-style extrusion."""
+    doc = Document(
+        revision=701,
+        elements={
+            "l0": LevelElem(kind="level", id="l0", name="G", elevationMm=0),
+            "rf-flat": RoofElem(
+                kind="roof",
+                id="rf-flat",
+                name="Flat Roof",
+                referenceLevelId="l0",
+                footprintMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 5000, "yMm": 0},
+                    {"xMm": 5000, "yMm": 3000},
+                    {"xMm": 0, "yMm": 3000},
+                ],
+                overhangMm=200,
+                slopeDeg=2,
+                roofGeometryMode="mass_box",
+            ),
+        },
+    )
+    step = export_ifc_model_step(doc)
+    insp = inspect_kernel_ifc_semantics(doc=doc, step_text=step)
+    assert insp["identityPsets"]["roofWithGablePitchedBodyV0"] == 0
+
+
+def test_ifc_gable_roof_geometry_mode_round_trips_through_replay() -> None:
+    """IFC-02: roofGeometryMode + footprint round-trip through export → replay."""
+    doc = Document(
+        revision=702,
+        elements={
+            "l0": LevelElem(kind="level", id="l0", name="G", elevationMm=0),
+            "l1": LevelElem(kind="level", id="l1", name="OG", elevationMm=2800),
+            "rf-gable": RoofElem(
+                kind="roof",
+                id="rf-gable",
+                name="Gable Roof",
+                referenceLevelId="l1",
+                footprintMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 6500, "yMm": 0},
+                    {"xMm": 6500, "yMm": 4500},
+                    {"xMm": 0, "yMm": 4500},
+                ],
+                overhangMm=300,
+                slopeDeg=30,
+                roofGeometryMode="gable_pitched_rectangle",
+            ),
+        },
+    )
+    step = export_ifc_model_step(doc)
+    sketch = build_kernel_ifc_authoritative_replay_sketch_v0(step)
+    roof_cmds = [c for c in sketch["commands"] if c["type"] == "createRoof"]
+    assert len(roof_cmds) == 1
+    rc = roof_cmds[0]
+    assert rc["roofGeometryMode"] == "gable_pitched_rectangle"
+    # Footprint is recovered from Pset_BimAiKernel.BimAiRoofPlanFootprintMm.
+    fp = [(float(p["xMm"]), float(p["yMm"])) for p in rc["footprintMm"]]
+    assert (0.0, 0.0) in fp
+    assert (6500.0, 0.0) in fp
+    assert (6500.0, 4500.0) in fp
+    assert (0.0, 4500.0) in fp
+
+
+def test_ifc_asymmetric_gable_roof_round_trips_offset_and_eaves() -> None:
+    """IFC-02: asymmetric_gable mode + ridge offset + per-side eaves round-trip."""
+    doc = Document(
+        revision=703,
+        elements={
+            "l0": LevelElem(kind="level", id="l0", name="G", elevationMm=0),
+            "l1": LevelElem(kind="level", id="l1", name="OG", elevationMm=2800),
+            "rf-asym": RoofElem(
+                kind="roof",
+                id="rf-asym",
+                name="Asymmetric Roof",
+                referenceLevelId="l1",
+                footprintMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 8000, "yMm": 0},
+                    {"xMm": 8000, "yMm": 6000},
+                    {"xMm": 0, "yMm": 6000},
+                ],
+                overhangMm=300,
+                slopeDeg=40,
+                roofGeometryMode="asymmetric_gable",
+                ridgeOffsetTransverseMm=1500,
+                eaveHeightLeftMm=2400,
+                eaveHeightRightMm=3200,
+            ),
+        },
+    )
+    step = export_ifc_model_step(doc)
+    sketch = build_kernel_ifc_authoritative_replay_sketch_v0(step)
+    roof_cmds = [c for c in sketch["commands"] if c["type"] == "createRoof"]
+    assert len(roof_cmds) == 1
+    rc = roof_cmds[0]
+    assert rc["roofGeometryMode"] == "asymmetric_gable"
+    assert rc["ridgeOffsetTransverseMm"] == pytest.approx(1500.0)
+    assert rc["eaveHeightLeftMm"] == pytest.approx(2400.0)
+    assert rc["eaveHeightRightMm"] == pytest.approx(3200.0)

@@ -46,6 +46,10 @@ from bim_ai.material_assembly_resolve import (
     resolved_layers_for_roof,
     resolved_layers_for_wall,
 )
+from bim_ai.roof_geometry import (
+    footprint_is_valid_axis_aligned_rectangle_mm,
+    gable_half_run_mm_and_ridge_axis,
+)
 
 try:
     import ifcopenshell  # noqa: F401
@@ -655,6 +659,44 @@ def inspect_kernel_ifc_semantics(
                 c += 1
         return c
 
+    def _count_roofs_with_gable_body_v0(ifc_roofs: list[Any]) -> int:
+        """IFC-02: count roofs whose body extrusion has a 3-vertex triangular profile."""
+        c = 0
+        for rfp in ifc_roofs:
+            ex = _first_body_extruded_area_solid(rfp)
+            if ex is None:
+                continue
+            swept = getattr(ex, "SweptArea", None)
+            if swept is None:
+                continue
+            try:
+                if not swept.is_a("IfcArbitraryClosedProfileDef"):
+                    continue
+            except Exception:
+                continue
+            outer = getattr(swept, "OuterCurve", None)
+            if outer is None:
+                continue
+            poly = _profile_xy_polyline_mm(outer)
+            if not poly:
+                continue
+            # Triangle: 3 unique points (closed polyline gives 4 entries with the
+            # first repeated). Anything other than 3 unique vertices is not a gable.
+            unique = []
+            for pt in poly:
+                if not unique or (
+                    abs(pt[0] - unique[-1][0]) > 1e-6 or abs(pt[1] - unique[-1][1]) > 1e-6
+                ):
+                    unique.append(pt)
+            if len(unique) >= 2 and (
+                abs(unique[0][0] - unique[-1][0]) < 1e-6
+                and abs(unique[0][1] - unique[-1][1]) < 1e-6
+            ):
+                unique = unique[:-1]
+            if len(unique) == 3:
+                c += 1
+        return c
+
     qto_names = sorted({str(q.Name) for q in qtys if getattr(q, "Name", None)})
 
     out: dict[str, Any] = {
@@ -686,6 +728,9 @@ def inspect_kernel_ifc_semantics(
             "roofWithBimAiRoofTypeId": _count_pset_property(
                 list(roofs), "Pset_BimAiKernel", "BimAiRoofTypeId"
             ),
+            # IFC-02: count roofs whose IFC body uses a triangular gable
+            # cross-section profile (vs the default flat extrusion).
+            "roofWithGablePitchedBodyV0": _count_roofs_with_gable_body_v0(list(roofs)),
             "stairWithPsetStairCommonReference": _count_pset_ref(list(stairs), "Pset_StairCommon"),
             "siteWithPsetSiteCommonReference": _count_pset_ref(
                 list(site_products), "Pset_SiteCommon"
@@ -1493,18 +1538,47 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
             )
             continue
 
-        geo_rf = _kernel_horizontal_extrusion_footprint_mm_and_thickness(rfl)
-        if geo_rf is None:
-            extraction_gaps.append(
-                {
-                    "roofGlobalId": rf_gid,
-                    "kernelReference": ref_s,
-                    "reason": "roof_body_extrusion_unreadable",
-                }
-            )
-            continue
-        outline_rf, depth_mm = geo_rf
-        rise_m = float(depth_mm) / 1000.0
+        # IFC-01 / IFC-02: BimAiKernel pset carries the kernel roof_type_id and,
+        # for gable / asymmetric_gable bodies, the original plan footprint and
+        # geometry mode. When present, we use these to round-trip without having
+        # to invert the gable extrusion's placement and triangular profile.
+        bucket_bim_ai = ps_rf.get("Pset_BimAiKernel") or {}
+        roof_type_id_raw = bucket_bim_ai.get("BimAiRoofTypeId")
+        roof_type_id_replay: str | None = (
+            roof_type_id_raw.strip()
+            if isinstance(roof_type_id_raw, str) and roof_type_id_raw.strip()
+            else None
+        )
+        bim_ai_geometry_mode = bucket_bim_ai.get("BimAiRoofGeometryMode")
+        bim_ai_footprint_raw = bucket_bim_ai.get("BimAiRoofPlanFootprintMm")
+
+        outline_rf: list[tuple[float, float]] | None = None
+        rise_m: float | None = None
+        if isinstance(bim_ai_footprint_raw, str) and bim_ai_footprint_raw.strip():
+            try:
+                pts: list[tuple[float, float]] = []
+                for chunk in bim_ai_footprint_raw.split(";"):
+                    a, b = chunk.split(",")
+                    pts.append((float(a), float(b)))
+                if len(pts) >= 3:
+                    outline_rf = pts
+            except Exception:
+                outline_rf = None
+
+        if outline_rf is None:
+            geo_rf = _kernel_horizontal_extrusion_footprint_mm_and_thickness(rfl)
+            if geo_rf is None:
+                extraction_gaps.append(
+                    {
+                        "roofGlobalId": rf_gid,
+                        "kernelReference": ref_s,
+                        "reason": "roof_body_extrusion_unreadable",
+                    }
+                )
+                continue
+            outline_rf, depth_mm = geo_rf
+            rise_m = float(depth_mm) / 1000.0
+
         elev_mm = float(storey_gid_to_elev_mm.get(st_gid_rf, 0.0))
         roof_z_m = _replay_roof_world_z_center_m(rfl, storey_elev_mm=elev_mm)
         if roof_z_m is None:
@@ -1521,18 +1595,37 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
         overhang_mm = _replay_infer_roof_overhang_mm_from_placement(
             roof_z_center_m=roof_z_m,
             storey_elev_m=elev_m,
-            rise_m=rise_m,
+            rise_m=rise_m if rise_m is not None else 0.5,
         )
-        slope_deg = _replay_infer_roof_slope_deg_from_prism_rise_m(rise_m=rise_m)
+        slope_deg = _replay_infer_roof_slope_deg_from_prism_rise_m(
+            rise_m=rise_m if rise_m is not None else 0.5
+        )
 
-        # IFC-01: round-trip kernel `roofTypeId` from Pset_BimAiKernel.BimAiRoofTypeId.
-        bucket_bim_ai = ps_rf.get("Pset_BimAiKernel") or {}
-        roof_type_id_raw = bucket_bim_ai.get("BimAiRoofTypeId")
-        roof_type_id_replay: str | None = (
-            roof_type_id_raw.strip()
-            if isinstance(roof_type_id_raw, str) and roof_type_id_raw.strip()
-            else None
-        )
+        replay_mode: str = "mass_box"
+        if isinstance(bim_ai_geometry_mode, str) and bim_ai_geometry_mode in (
+            "mass_box",
+            "gable_pitched_rectangle",
+            "asymmetric_gable",
+            "flat",
+        ):
+            replay_mode = bim_ai_geometry_mode
+
+        ridge_offset_mm: float | None = None
+        eave_left_mm: float | None = None
+        eave_right_mm: float | None = None
+        for raw_key, target in (
+            ("BimAiRoofRidgeOffsetTransverseMm", "ridge_offset"),
+            ("BimAiRoofEaveHeightLeftMm", "eave_left"),
+            ("BimAiRoofEaveHeightRightMm", "eave_right"),
+        ):
+            v = bucket_bim_ai.get(raw_key)
+            if isinstance(v, (int, float)):
+                if target == "ridge_offset":
+                    ridge_offset_mm = float(v)
+                elif target == "eave_left":
+                    eave_left_mm = float(v)
+                else:
+                    eave_right_mm = float(v)
 
         rname = str(getattr(rfl, "Name", None) or "") or ref_s
         roof_cmds.append(
@@ -1543,7 +1636,10 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
                 footprint_mm=[Vec2Mm(x_mm=px, y_mm=py) for px, py in outline_rf],
                 overhang_mm=overhang_mm,
                 slope_deg=slope_deg,
-                roof_geometry_mode="mass_box",
+                roof_geometry_mode=replay_mode,  # type: ignore[arg-type]
+                ridge_offset_transverse_mm=ridge_offset_mm,
+                eave_height_left_mm=eave_left_mm,
+                eave_height_right_mm=eave_right_mm,
                 roof_type_id=roof_type_id_replay,
             ).model_dump(mode="json", by_alias=True)
         )
@@ -2989,7 +3085,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         rp_mm = [(p.x_mm, p.y_mm) for p in rf.footprint_mm]
         if len(rp_mm) < 3:
             continue
-        cx_mm, cz_mm, _, _ = _xz_bounds_mm(rp_mm)
+        cx_mm, cz_mm, span_x_mm, span_z_mm = _xz_bounds_mm(rp_mm)
         ov = _clamp(float(rf.overhang_mm or 0) / 1000.0, 0.0, 5.0)
         elev = float(_elev_m(doc, rf.reference_level_id))
         rise = float(_clamp(float(rf.slope_deg or 25) / 70.0, 0.25, 2.8))
@@ -2997,19 +3093,169 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         cx_m = cx_mm / 1000.0
         cy_m = cz_mm / 1000.0
 
-        r_profile: list[tuple[float, float]] = []
-        for px, py in rp_mm:
-            r_profile.append((px / 1000.0 - cx_m, py / 1000.0 - cy_m))
+        # IFC-02: emit a gable-shaped triangular extrusion when the kernel
+        # roofGeometryMode is gable_pitched_rectangle or asymmetric_gable AND
+        # the footprint is a valid axis-aligned rectangle. Falls back to the
+        # original flat slab prism for mass_box / flat / hip / l_shape modes.
+        use_gable_body = (
+            rf.roof_geometry_mode in ("gable_pitched_rectangle", "asymmetric_gable")
+            and footprint_is_valid_axis_aligned_rectangle_mm(rp_mm)
+        )
 
-        r_profile.append(r_profile[0])
+        if use_gable_body:
+            # Eave plate elevation: walls on the reference level give the eave Y.
+            walls_at_ref = [
+                w
+                for w in doc.elements.values()
+                if isinstance(w, WallElem) and w.level_id == rf.reference_level_id
+            ]
+            wall_top_m = max(
+                ((w.height_mm or 0) / 1000.0 for w in walls_at_ref),
+                default=0.0,
+            )
+            eave_z_m = elev + wall_top_m
 
-        roof_ent = ifcopenshell.api.root.create_entity(f, ifc_class="IfcRoof", name=rf.name or rid)
-        rep_rf = add_slab_representation(f, body_ctx, depth=rise, polyline=r_profile)
+            # Determine ridge axis using the same predicate as the kernel.
+            _half_run_mm, ridge_axis_token = gable_half_run_mm_and_ridge_axis(
+                span_x_mm, span_z_mm
+            )
+            ridge_along_x = ridge_axis_token == "alongX"
+            # The cross-axis is perpendicular to the ridge.
+            perp_span_mm = span_z_mm if ridge_along_x else span_x_mm
+            along_ridge_mm = span_x_mm if ridge_along_x else span_z_mm
+            half_perp_m = perp_span_mm / 2000.0
+            along_ridge_m = along_ridge_mm / 1000.0
 
-        rmat = np.eye(4, dtype=float)
-        rmat[0, 3] = cx_m
-        rmat[1, 3] = cy_m
-        rmat[2, 3] = roof_z_center
+            slope_deg = float(rf.slope_deg or 25.0)
+            slope_rad = math.radians(_clamp(slope_deg, 5.0, 70.0))
+
+            ridge_offset_m = (rf.ridge_offset_transverse_mm or 0.0) / 1000.0
+            # Clamp inside the rectangle so the ridge stays interior.
+            ridge_offset_m = max(-half_perp_m + 1e-6, min(half_perp_m - 1e-6, ridge_offset_m))
+
+            eave_left_z_m = (
+                elev + (rf.eave_height_left_mm or 0.0) / 1000.0
+                if rf.eave_height_left_mm is not None
+                else eave_z_m
+            )
+            eave_right_z_m = (
+                elev + (rf.eave_height_right_mm or 0.0) / 1000.0
+                if rf.eave_height_right_mm is not None
+                else eave_z_m
+            )
+            left_run_m = half_perp_m + ridge_offset_m
+            ridge_z_m = eave_left_z_m + left_run_m * math.tan(slope_rad)
+            base_z_m = min(eave_left_z_m, eave_right_z_m)
+
+            # 2D profile in the cross-section plane (X = across-ridge horizontal,
+            # Y = vertical above base_z). Anti-clockwise winding viewed from +Z.
+            triangle_pts = [
+                (-half_perp_m, eave_left_z_m - base_z_m),
+                (half_perp_m, eave_right_z_m - base_z_m),
+                (ridge_offset_m, ridge_z_m - base_z_m),
+                (-half_perp_m, eave_left_z_m - base_z_m),
+            ]
+            polyline = f.create_entity(
+                "IfcPolyline",
+                Points=[
+                    f.create_entity(
+                        "IfcCartesianPoint",
+                        Coordinates=(float(px), float(py)),
+                    )
+                    for px, py in triangle_pts
+                ],
+            )
+            profile = f.create_entity(
+                "IfcArbitraryClosedProfileDef",
+                ProfileType="AREA",
+                OuterCurve=polyline,
+            )
+            # Default placement: profile in local XY, extrusion along local +Z.
+            extruded = f.create_entity(
+                "IfcExtrudedAreaSolid",
+                SweptArea=profile,
+                Position=f.create_entity(
+                    "IfcAxis2Placement3D",
+                    Location=f.create_entity(
+                        "IfcCartesianPoint",
+                        Coordinates=(0.0, 0.0, 0.0),
+                    ),
+                    Axis=f.create_entity(
+                        "IfcDirection", DirectionRatios=(0.0, 0.0, 1.0)
+                    ),
+                    RefDirection=f.create_entity(
+                        "IfcDirection", DirectionRatios=(1.0, 0.0, 0.0)
+                    ),
+                ),
+                ExtrudedDirection=f.create_entity(
+                    "IfcDirection", DirectionRatios=(0.0, 0.0, 1.0)
+                ),
+                Depth=along_ridge_m,
+            )
+            rep_rf = f.create_entity(
+                "IfcShapeRepresentation",
+                ContextOfItems=body_ctx,
+                RepresentationIdentifier="Body",
+                RepresentationType="SweptSolid",
+                Items=(extruded,),
+            )
+
+            roof_ent = ifcopenshell.api.root.create_entity(
+                f, ifc_class="IfcRoof", name=rf.name or rid
+            )
+
+            # Build the object placement so that:
+            #   ridge_along_x → local X→world Y, local Y→world Z, local Z→world X
+            #   ridge_along_z → local X→world X, local Y→world Z, local Z→world Y
+            # Translate so the extrusion is centered on the rectangle center, base
+            # of the cross-section sits at base_z_m.
+            R = np.eye(3, dtype=float)
+            if ridge_along_x:
+                R = np.array(
+                    [
+                        [0.0, 0.0, 1.0],
+                        [1.0, 0.0, 0.0],
+                        [0.0, 1.0, 0.0],
+                    ],
+                    dtype=float,
+                )
+                origin_world = np.array(
+                    [cx_m - along_ridge_m / 2.0, cy_m, base_z_m],
+                    dtype=float,
+                )
+            else:
+                R = np.array(
+                    [
+                        [1.0, 0.0, 0.0],
+                        [0.0, 0.0, 1.0],
+                        [0.0, 1.0, 0.0],
+                    ],
+                    dtype=float,
+                )
+                origin_world = np.array(
+                    [cx_m, cy_m - along_ridge_m / 2.0, base_z_m],
+                    dtype=float,
+                )
+
+            rmat = np.eye(4, dtype=float)
+            rmat[:3, :3] = R
+            rmat[:3, 3] = origin_world
+        else:
+            r_profile: list[tuple[float, float]] = []
+            for px, py in rp_mm:
+                r_profile.append((px / 1000.0 - cx_m, py / 1000.0 - cy_m))
+
+            r_profile.append(r_profile[0])
+
+            roof_ent = ifcopenshell.api.root.create_entity(
+                f, ifc_class="IfcRoof", name=rf.name or rid
+            )
+            rep_rf = add_slab_representation(f, body_ctx, depth=rise, polyline=r_profile)
+
+            rmat = np.eye(4, dtype=float)
+            rmat[0, 3] = cx_m
+            rmat[1, 3] = cy_m
+            rmat[2, 3] = roof_z_center
 
         edit_object_placement(f, product=roof_ent, matrix=rmat)
         assign_representation(f, roof_ent, rep_rf)
@@ -3022,13 +3268,27 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         # IFC-01: round-trip kernel `roofTypeId` via a bim-ai-namespaced Pset.
         # Pset_RoofCommon.Reference is reserved for the kernel element id, so we
         # use a separate Pset_BimAiKernel that carries the roof_type_id literal.
+        # IFC-02: also store roofGeometryMode + the rectangle plan footprint so
+        # the authoritative replay can recover the kernel mode/outline without
+        # having to invert the gable extrusion's placement and triangular profile.
+        bim_ai_props: dict[str, Any] = {}
         if rf.roof_type_id:
-            attach_kernel_identity_pset(
-                roof_ent,
-                "Pset_BimAiKernel",
-                rid,
-                BimAiRoofTypeId=str(rf.roof_type_id),
+            bim_ai_props["BimAiRoofTypeId"] = str(rf.roof_type_id)
+        bim_ai_props["BimAiRoofGeometryMode"] = rf.roof_geometry_mode
+        if use_gable_body:
+            bim_ai_props["BimAiRoofPlanFootprintMm"] = ";".join(
+                f"{px:.3f},{py:.3f}" for px, py in rp_mm
             )
+            if rf.ridge_offset_transverse_mm is not None:
+                bim_ai_props["BimAiRoofRidgeOffsetTransverseMm"] = float(
+                    rf.ridge_offset_transverse_mm
+                )
+            if rf.eave_height_left_mm is not None:
+                bim_ai_props["BimAiRoofEaveHeightLeftMm"] = float(rf.eave_height_left_mm)
+            if rf.eave_height_right_mm is not None:
+                bim_ai_props["BimAiRoofEaveHeightRightMm"] = float(rf.eave_height_right_mm)
+        if bim_ai_props:
+            attach_kernel_identity_pset(roof_ent, "Pset_BimAiKernel", rid, **bim_ai_props)
         rf_layers = resolved_layers_for_roof(doc, rf)
         if rf_layers:
             try_attach_kernel_ifc_material_layer_set(
