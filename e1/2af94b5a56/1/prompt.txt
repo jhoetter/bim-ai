@@ -1,0 +1,2 @@
+▎ Read the prompt at spec/prompts/wave-02/WP-V2-03b-view-filters.md and implement it exactly as specified. Start with the branch setup command at the top
+  ▎  of the prompt.
