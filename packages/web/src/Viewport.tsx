@@ -293,6 +293,7 @@ function makeRoofMassMesh(
     }),
   );
   mesh.userData.bimPickId = roof.id;
+  addEdges(mesh);
   return mesh;
 }
 
@@ -348,6 +349,7 @@ function makeStairVolumeMesh(
 
   mesh.userData.bimPickId = stair.id;
 
+  addEdges(mesh);
   return mesh;
 }
 
@@ -379,6 +381,7 @@ function makeWallMesh(
   mesh.position.set(sx + dx / 2, elevM + height / 2, sz + dz / 2);
   mesh.rotation.y = Math.atan2(dz, dx);
   mesh.userData.bimPickId = wall.id;
+  addEdges(mesh);
   return mesh;
 }
 
@@ -405,6 +408,7 @@ function makeDoorMesh(
   mesh.position.set(px, elevM + height / 2, pz);
   mesh.rotation.y = wallYaw(wall);
   mesh.userData.bimPickId = door.id;
+  addEdges(mesh);
   return mesh;
 }
 
@@ -434,6 +438,7 @@ function makeWindowMesh(
   mesh.position.set(px, elevM + sill + h / 2, pz);
   mesh.rotation.y = wallYaw(wall);
   mesh.userData.bimPickId = win.id;
+  addEdges(mesh);
   return mesh;
 }
 
@@ -507,6 +512,7 @@ function makeRailingMesh(
     rail.position.set((ax + bx) / 2, (elevA + elevB) / 2, (az + bz) / 2);
     const dir = new THREE.Vector3(bx - ax, riseY, bz - az).normalize();
     rail.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), dir);
+    addEdges(rail);
     group.add(rail);
   }
 
@@ -549,6 +555,7 @@ function makeSiteMesh(
   );
   mesh.position.set(0, elev + baseOffset - padTh, 0);
   mesh.userData.bimPickId = site.id;
+  addEdges(mesh);
   return mesh;
 }
 
