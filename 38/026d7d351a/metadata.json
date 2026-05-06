@@ -3,9 +3,11 @@
   "checkpoint_id": "38026d7d351a",
   "strategy": "manual-commit",
   "branch": "r3-04-outline-selection",
-  "checkpoints_count": 3,
+  "checkpoints_count": 4,
   "files_touched": [
     "packages/web/src/Viewport.tsx",
+    "packages/web/src/viewport/materials.test.ts",
+    "packages/web/src/viewport/materials.ts",
     "packages/web/src/workspace/Viewport3DLayersPanel.test.tsx"
   ],
   "sessions": [
@@ -35,11 +37,11 @@
     }
   ],
   "token_usage": {
-    "input_tokens": 161,
-    "cache_creation_tokens": 280960,
-    "cache_read_tokens": 11420958,
-    "output_tokens": 136496,
-    "api_call_count": 145
+    "input_tokens": 280,
+    "cache_creation_tokens": 433591,
+    "cache_read_tokens": 20446838,
+    "output_tokens": 194157,
+    "api_call_count": 252
   },
   "combined_attribution": {
     "calculated_at": "2026-05-06T10:37:42.815417Z",

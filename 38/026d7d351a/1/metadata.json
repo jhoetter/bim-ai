@@ -3,47 +3,46 @@
   "checkpoint_id": "38026d7d351a",
   "session_id": "3462728a-02b5-4043-8a6b-c88eff2d9725",
   "strategy": "manual-commit",
-  "created_at": "2026-05-06T10:37:30.317557Z",
+  "created_at": "2026-05-06T10:49:23.926421Z",
   "branch": "r3-04-outline-selection",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "packages/web/src/Viewport.tsx",
-    "packages/web/src/workspace/Viewport3DLayersPanel.test.tsx"
+    "packages/web/src/viewport/materials.test.ts",
+    "packages/web/src/viewport/materials.ts"
   ],
   "agent": "Claude Code",
   "model": "claude-sonnet-4-6",
-  "turn_id": "f4ffae4164fe",
-  "checkpoint_transcript_start": 396,
-  "transcript_lines_at_start": 396,
+  "turn_id": "24cf90361e67",
   "token_usage": {
-    "input_tokens": 25,
-    "cache_creation_tokens": 71687,
-    "cache_read_tokens": 2077486,
-    "output_tokens": 20534,
-    "api_call_count": 23
+    "input_tokens": 144,
+    "cache_creation_tokens": 224318,
+    "cache_read_tokens": 11103366,
+    "output_tokens": 78195,
+    "api_call_count": 130
   },
   "session_metrics": {
-    "turn_count": 5
+    "turn_count": 6
   },
   "initial_attribution": {
-    "calculated_at": "2026-05-06T10:37:30.285713Z",
-    "agent_lines": 74,
-    "agent_removed": 90,
+    "calculated_at": "2026-05-06T10:49:23.883829Z",
+    "agent_lines": 38,
+    "agent_removed": 4,
     "human_added": 0,
-    "human_modified": 0,
-    "human_removed": 0,
-    "total_committed": 74,
-    "total_lines_changed": 164,
-    "agent_percentage": 100,
+    "human_modified": 199,
+    "human_removed": 192,
+    "total_committed": 237,
+    "total_lines_changed": 433,
+    "agent_percentage": 9.699769053117784,
     "metric_version": 2
   },
   "prompt_attributions": [
     {
-      "checkpoint_number": 1,
+      "checkpoint_number": 2,
       "user_lines_added": 0,
       "user_lines_removed": 0,
-      "agent_lines_added": 0,
-      "agent_lines_removed": 0
+      "agent_lines_added": 347,
+      "agent_lines_removed": 227
     }
   ]
 }
