@@ -28,6 +28,7 @@ import {
 } from '../lib/collaborationConflictQueue';
 import type { Snapshot, Violation } from '@bim-ai/core';
 import { useBimStore, toggleTheme, getCurrentTheme, type Theme, type UxComment } from '../state/store';
+import type { PerspectiveId } from '@bim-ai/core';
 import { modeForHotkey } from '../state/modeController';
 import { patternFor } from '../state/uiStates';
 import { AppShell } from './AppShell';
@@ -123,6 +124,15 @@ function mapComments(rows: Record<string, unknown>[]): UxComment[] {
   }));
 }
 
+const PERSPECTIVE_OPTIONS: { id: PerspectiveId; label: string }[] = [
+  { id: 'architecture', label: 'Architecture' },
+  { id: 'structure', label: 'Structure' },
+  { id: 'mep', label: 'MEP' },
+  { id: 'coordination', label: 'Coordination' },
+  { id: 'construction', label: 'Construction' },
+  { id: 'agent', label: 'Agent' },
+];
+
 const KNOWN_PLAN_TOOLS = new Set<ToolId>(['select', 'wall', 'door', 'window', 'room', 'dimension']);
 
 type LegacyPlanTool =
@@ -171,6 +181,10 @@ export function RedesignedWorkspace(): JSX.Element {
   const comments = useBimStore((s) => s.comments);
   const revision = useBimStore((s) => s.revision);
   const setComments = useBimStore((s) => s.setComments);
+  const perspectiveId = useBimStore((s) => s.perspectiveId);
+  const setPerspectiveId = useBimStore((s) => s.setPerspectiveId);
+  const planPresentationPreset = useBimStore((s) => s.planPresentationPreset);
+  const setPlanPresentationPreset = useBimStore((s) => s.setPlanPresentationPreset);
 
   const [mode, setMode] = useState<WorkspaceMode>(() =>
     viewerMode === 'orbit_3d' ? '3d' : 'plan',
@@ -801,14 +815,41 @@ export function RedesignedWorkspace(): JSX.Element {
                 peers={Object.values(presencePeers)}
                 avatarInitials={userDisplayName ? userDisplayName.slice(0, 2).toUpperCase() : 'BA'}
               />
-              <a
-                href="/legacy"
-                className="ml-2 mr-3 whitespace-nowrap rounded-md px-2 py-1 text-xs text-muted hover:bg-surface-strong"
-                data-testid="legacy-route-link"
-                title="Open the v1 panel-stack view"
-              >
-                Legacy
-              </a>
+              <div className="ml-2 mr-3 flex shrink-0 items-center gap-2">
+                <select
+                  className="rounded border border-border bg-background px-2 py-1 text-[11px] text-foreground"
+                  value={perspectiveId}
+                  onChange={(e) => setPerspectiveId(e.target.value as PerspectiveId)}
+                  title="Perspective"
+                  aria-label="Perspective"
+                >
+                  {PERSPECTIVE_OPTIONS.map((o) => (
+                    <option key={o.id} value={o.id}>{o.label}</option>
+                  ))}
+                </select>
+                <select
+                  className="rounded border border-border bg-background px-2 py-1 text-[11px] text-foreground"
+                  value={planPresentationPreset}
+                  onChange={(e) => {
+                    const v = e.target.value as 'default' | 'opening_focus' | 'room_scheme';
+                    setPlanPresentationPreset(v);
+                  }}
+                  title="Plan style"
+                  aria-label="Plan style"
+                >
+                  <option value="default">Neutral</option>
+                  <option value="opening_focus">Opening focus</option>
+                  <option value="room_scheme">Room scheme</option>
+                </select>
+                <a
+                  href="/legacy"
+                  className="whitespace-nowrap rounded-md px-2 py-1 text-xs text-muted hover:bg-surface-strong"
+                  data-testid="legacy-route-link"
+                  title="Open the v1 panel-stack view"
+                >
+                  Legacy
+                </a>
+              </div>
             </div>
             <TabBar
               tabs={tabsState.tabs}
