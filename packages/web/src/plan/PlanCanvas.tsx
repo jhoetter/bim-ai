@@ -38,6 +38,7 @@ import { collectWallAnchors, snapPlanPoint } from './snapEngine';
 import {
   classifyPointerStart,
   draftingPaintFor,
+  PlanCamera,
   SnapEngine,
   type SnapCandidate,
 } from './planCanvasState';
@@ -243,6 +244,7 @@ export function PlanCanvas({
   const planTool = useBimStore((s) => s.planTool);
   const orthoSnapHold = useBimStore((s) => s.orthoSnapHold);
   const selectEl = useBimStore((s) => s.select);
+  const setActiveLevelId = useBimStore((s) => s.setActiveLevelId);
 
   const display = useMemo(
     () =>
@@ -287,6 +289,15 @@ export function PlanCanvas({
     [elementsById, displayLevelId],
   );
   const lvlId = displayLevelId || activeLevelResolvedId;
+
+  // B03 — empty-state detection: true when the active level has no elements on it
+  const levelIsEmpty = useMemo(() => {
+    const chkId = displayLevelId || activeLevelResolvedId;
+    if (!chkId) return false;
+    return !Object.values(elementsById).some(
+      (e) => 'levelId' in e && (e as { levelId: string }).levelId === chkId,
+    );
+  }, [elementsById, displayLevelId, activeLevelResolvedId]);
 
   useEffect(() => {
     let cancel = false;
@@ -1399,6 +1410,23 @@ export function PlanCanvas({
           }
         }
       }
+      // B03 — PageUp/PageDown level cycling via PlanCamera.cycleLevel (spec §14.6)
+      if (ev.key === 'PageUp' || ev.key === 'PageDown') {
+        ev.preventDefault();
+        const st = useBimStore.getState();
+        const lvls = Object.values(st.elementsById)
+          .filter((e): e is Extract<Element, { kind: 'level' }> => e.kind === 'level')
+          .sort((a, b) => a.elevationMm - b.elevationMm);
+        const order = lvls.map((l) => l.id);
+        if (!order.length) return;
+        const curId = displayLevelId || activeLevelResolvedId || order[0]!;
+        const cam = new PlanCamera(
+          { plotScale: 1, centerMm: { xMm: 0, yMm: 0 }, activeLevelId: curId },
+          order,
+        );
+        const nextId = cam.cycleLevel(ev.key === 'PageUp' ? 'up' : 'down');
+        st.setActiveLevelId(nextId);
+      }
       if (ev.code === 'Space') {
         ev.preventDefault();
         spaceDownRef.current = true;
@@ -1438,11 +1466,13 @@ export function PlanCanvas({
     displayLevelId,
     elementsById,
     lvlId,
+    activeLevelResolvedId,
     onSemanticCommand,
     orthoSnapHold,
     planTool,
     resizeCam,
     selectEl,
+    setActiveLevelId,
   ]);
 
   const sb = THREE.MathUtils.clamp(halfUi * 0.25, 0.2, 6);
@@ -1496,6 +1526,14 @@ export function PlanCanvas({
           </div>
         ) : null}
       </div>
+      {/* B03 — empty-state overlay (spec §14.7): shown when the active level has no elements */}
+      {levelIsEmpty && (
+        <div className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 text-center">
+          <p className="font-medium text-foreground text-sm">This level is empty.</p>
+          <p className="text-muted text-xs">Press W to draw a wall, or insert the seed house from the Project menu.</p>
+          <p className="text-muted text-[10px] mt-1">Use PageUp / PageDown to switch levels.</p>
+        </div>
+      )}
       {/* Zoom control — scale bar + preset menu */}
       <div className="pointer-events-auto absolute left-3 bottom-3 z-10">
         {showZoomMenu && (

@@ -46,6 +46,9 @@ ignore = ["E501"]
 
 [tool.ruff.lint.per-file-ignores]
 "bim_ai/routes_api.py" = ["B008"]
+"bim_ai/routes_exports.py" = ["B008"]
+"bim_ai/routes_commands.py" = ["B008"]
+"bim_ai/routes_activity.py" = ["B008"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

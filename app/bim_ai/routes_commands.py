@@ -1,0 +1,586 @@
+from __future__ import annotations
+
+from datetime import UTC, datetime
+from typing import Any
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field
+from sqlalchemy import desc, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from bim_ai.agent_brief_acceptance_readout import agent_brief_acceptance_readout_v1
+from bim_ai.agent_brief_command_protocol import agent_brief_command_protocol_v1
+from bim_ai.agent_generated_bundle_qa_checklist import (
+    agent_generated_bundle_qa_checklist_v1,
+    validate_checks_wire,
+)
+from bim_ai.agent_review_readout_consistency_closure import (
+    agent_review_readout_consistency_closure_v1,
+)
+from bim_ai.db import get_session
+from bim_ai.document import Document
+from bim_ai.engine import (
+    bundle_replay_diagnostics,
+    clone_document,
+    compute_delta_wire,
+    diff_undo_cmds,
+    replay_bundle_diagnostics_for_outcome,
+    try_commit,
+    try_commit_bundle,
+)
+from bim_ai.evidence_manifest import (
+    agent_evidence_closure_hints,
+    export_link_map,
+)
+from bim_ai.hub import Hub
+from bim_ai.level_datum_propagation_evidence import build_level_elevation_propagation_evidence_v0
+from bim_ai.model_summary import compute_model_summary
+from bim_ai.routes_deps import (
+    _commands_include_move_level_elevation,
+    delete_redos,
+    document_to_wire,
+    get_hub,
+    load_model_row,
+    violations_wire,
+)
+from bim_ai.schedule_derivation import list_schedule_ids
+from bim_ai.tables import ModelRecord, RedoStackRecord, UndoStackRecord
+
+commands_router = APIRouter()
+
+
+class CommandEnvelope(BaseModel):
+    model_config = {"populate_by_name": True}
+
+    command: dict[str, Any]
+    client_op_id: str | None = Field(default=None, alias="clientOpId")
+    user_id: str | None = Field(default="local-dev", alias="userId")
+
+
+class BundleEnvelope(BaseModel):
+    model_config = {"populate_by_name": True}
+
+    commands: list[dict[str, Any]]
+    user_id: str | None = Field(default=None, alias="userId")
+    client_op_id: str | None = Field(default=None, alias="clientOpId")
+
+
+class UndoRedoEnvelope(BaseModel):
+    model_config = {"populate_by_name": True}
+
+    user_id: str | None = Field(default="local-dev", alias="userId")
+
+
+async def _commit_doc_and_broadcast(
+    *,
+    session: AsyncSession,
+    hub: Hub,
+    row: ModelRecord,
+    model_uuid: UUID,
+    doc_before: Document,
+    new_doc: Document,
+    client_op_id: str | None,
+) -> dict[str, Any]:
+    wire_doc = document_to_wire(new_doc)
+    row.document = wire_doc  # type: ignore[assignment]
+    row.revision = new_doc.revision
+    await session.commit()
+
+    delta = compute_delta_wire(doc_before, new_doc)
+    if client_op_id:
+        delta["clientOpId"] = client_op_id
+    await hub.broadcast_json(model_uuid, {"type": "delta", "modelId": str(model_uuid), **delta})
+
+    elems_out = wire_doc["elements"]
+    viols_wire = violations_wire(new_doc.elements)
+
+    return {
+        "ok": True,
+        "modelId": str(model_uuid),
+        "revision": new_doc.revision,
+        "elements": elems_out,
+        "violations": viols_wire,
+        "delta": delta,
+    }
+
+
+@commands_router.get("/models/{model_id}/command-log")
+async def command_log_full(
+    model_id: UUID,
+    limit: int = 120,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    safe_limit = min(max(limit, 1), 250)
+    res = await session.execute(
+        select(UndoStackRecord)
+        .where(UndoStackRecord.model_id == model_id)
+        .order_by(desc(UndoStackRecord.id))
+        .limit(safe_limit),
+    )
+    rows = res.scalars().all()
+
+    entries: list[dict[str, Any]] = []
+    for u in rows:
+        entries.append(
+            {
+                "id": u.id,
+                "userId": u.user_id,
+                "revisionAfter": u.revision_after,
+                "createdAt": u.created_at.isoformat(),
+                "appliedCommands": list(u.forward_commands),
+            }
+        )
+
+    return {"modelId": str(row.id), "entries": entries}
+
+
+@commands_router.post("/models/{model_id}/commands")
+async def apply_command(
+    model_id: UUID,
+    body: CommandEnvelope,
+    session: AsyncSession = Depends(get_session),
+    hub: Hub = Depends(get_hub),
+) -> dict[str, Any]:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+
+    uid = body.user_id or "local-dev"
+
+    baseline_doc = Document.model_validate(row.document)
+    doc_before = clone_document(baseline_doc)
+
+    try:
+        ok, new_doc, _cmd_obj, violations, code = try_commit(baseline_doc, body.command)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Invalid command: {exc}") from exc
+
+    if not ok or new_doc is None:
+        viols_wire = [v.model_dump(by_alias=True) for v in violations]
+        raise HTTPException(status_code=409, detail={"reason": code, "violations": viols_wire})
+
+    undo_cmds = diff_undo_cmds(doc_before, new_doc)
+    await delete_redos(session, model_id, uid)
+
+    undo_row = UndoStackRecord(
+        model_id=model_id,
+        user_id=uid,
+        revision_after=new_doc.revision,
+        forward_commands=[body.command],
+        undo_commands=undo_cmds,
+        created_at=datetime.now(UTC),
+    )
+    session.add(undo_row)
+
+    wire_doc = document_to_wire(new_doc)
+    row.document = wire_doc  # type: ignore[assignment]
+    row.revision = new_doc.revision
+    await session.commit()
+
+    delta = compute_delta_wire(doc_before, new_doc)
+    if body.client_op_id:
+        delta["clientOpId"] = body.client_op_id
+
+    await hub.broadcast_json(
+        model_id,
+        {"type": "delta", "modelId": str(model_id), **delta},
+    )
+
+    elems_out = wire_doc["elements"]
+    viols_wire = violations_wire(new_doc.elements)
+
+    payload: dict[str, Any] = {
+        "ok": True,
+        "modelId": str(model_id),
+        "revision": new_doc.revision,
+        "elements": elems_out,
+        "violations": viols_wire,
+        "appliedCommand": body.command,
+        "clientOpId": body.client_op_id,
+        "delta": delta,
+    }
+    if _commands_include_move_level_elevation([body.command]):
+        payload["levelElevationPropagationEvidence_v0"] = build_level_elevation_propagation_evidence_v0(
+            doc_before,
+            new_doc,
+            applied_commands=[body.command],
+        )
+    return payload
+
+
+@commands_router.post("/models/{model_id}/commands/dry-run")
+async def dry_run_command(
+    model_id: UUID,
+    body: CommandEnvelope,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+
+    baseline_doc = Document.model_validate(row.document)
+    baseline_summary = compute_model_summary(baseline_doc)
+
+    try:
+        ok, new_doc, _cmd_obj, violations, code = try_commit(baseline_doc, body.command)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Invalid command: {exc}") from exc
+
+    viols_wire = [v.model_dump(by_alias=True) for v in violations]
+
+    if not ok or new_doc is None:
+        return {
+            "ok": False,
+            "modelId": str(model_id),
+            "reason": code,
+            "violations": viols_wire,
+            "summaryBefore": baseline_summary,
+            "summaryAfter": None,
+            "wouldRevision": None,
+            "appliedCommandPreview": body.command,
+        }
+
+    return {
+        "ok": True,
+        "modelId": str(model_id),
+        "reason": code,
+        "violations": viols_wire,
+        "summaryBefore": baseline_summary,
+        "summaryAfter": compute_model_summary(new_doc),
+        "wouldRevision": new_doc.revision,
+        "appliedCommandPreview": body.command,
+    }
+
+
+@commands_router.post("/models/{model_id}/commands/bundle")
+async def apply_command_bundle(
+    model_id: UUID,
+    body: BundleEnvelope,
+    session: AsyncSession = Depends(get_session),
+    hub: Hub = Depends(get_hub),
+) -> dict[str, Any]:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+
+    uid = body.user_id or "local-dev"
+    baseline_doc = Document.model_validate(row.document)
+    doc_before = clone_document(baseline_doc)
+
+    try:
+        ok, new_doc, _cmds, violations, code = try_commit_bundle(baseline_doc, body.commands)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Invalid bundle: {exc}") from exc
+
+    if not ok or new_doc is None:
+        viols_wire = [v.model_dump(by_alias=True) for v in violations]
+
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "reason": code,
+                "violations": viols_wire,
+                "replayDiagnostics": replay_bundle_diagnostics_for_outcome(
+                    baseline_doc,
+                    body.commands,
+                    outcome_code=code,
+                ),
+            },
+        )
+
+    undo_cmds = diff_undo_cmds(doc_before, new_doc)
+
+    await delete_redos(session, model_id, uid)
+
+    undo_row = UndoStackRecord(
+        model_id=model_id,
+        user_id=uid,
+        revision_after=new_doc.revision,
+        forward_commands=body.commands,
+        undo_commands=undo_cmds,
+        created_at=datetime.now(UTC),
+    )
+
+    session.add(undo_row)
+
+    wire_doc = document_to_wire(new_doc)
+
+    row.document = wire_doc  # type: ignore[assignment]
+    row.revision = new_doc.revision
+
+    await session.commit()
+
+    delta = compute_delta_wire(doc_before, new_doc)
+
+    if body.client_op_id:
+        delta["clientOpId"] = body.client_op_id
+
+    await hub.broadcast_json(
+        model_id,
+        {"type": "delta", "modelId": str(model_id), **delta},
+    )
+
+    elems_out = wire_doc["elements"]
+
+    viols_wire = violations_wire(new_doc.elements)
+
+    payload: dict[str, Any] = {
+        "ok": True,
+        "modelId": str(model_id),
+        "revision": new_doc.revision,
+        "elements": elems_out,
+        "violations": viols_wire,
+        "appliedCommands": body.commands,
+        "clientOpId": body.client_op_id,
+        "delta": delta,
+        "replayDiagnostics": bundle_replay_diagnostics(body.commands),
+    }
+    if _commands_include_move_level_elevation(body.commands):
+        payload["levelElevationPropagationEvidence_v0"] = build_level_elevation_propagation_evidence_v0(
+            doc_before,
+            new_doc,
+            applied_commands=body.commands,
+        )
+    return payload
+
+
+@commands_router.post("/models/{model_id}/commands/bundle/dry-run")
+async def dry_run_command_bundle(
+    model_id: UUID,
+    body: BundleEnvelope,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+
+    baseline_doc = Document.model_validate(row.document)
+    baseline_summary = compute_model_summary(baseline_doc)
+
+    try:
+        ok, new_doc, _cmds, violations, code = try_commit_bundle(baseline_doc, body.commands)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Invalid bundle: {exc}") from exc
+
+    viols_wire = [v.model_dump(by_alias=True) for v in violations]
+
+    brief_proto = agent_brief_command_protocol_v1(
+        doc=baseline_doc,
+        proposed_commands=list(body.commands),
+        validation_violations=viols_wire,
+    )
+    schedule_rows = [
+        {"id": sid, "name": baseline_doc.elements[sid].name}
+        for sid in list_schedule_ids(baseline_doc)
+    ]
+    qa_checklist = agent_generated_bundle_qa_checklist_v1(
+        brief_protocol=brief_proto,
+        validate=validate_checks_wire(viols_wire),
+        schedule_ids=schedule_rows,
+        export_links=export_link_map(model_id),
+        deterministic_sheet_evidence=None,
+        deterministic_plan_view_evidence=None,
+        evidence_diff_ingest_fix_loop=None,
+        evidence_review_performance_gate=None,
+        evidence_ref_resolution=None,
+    )
+    accept_readout = agent_brief_acceptance_readout_v1(
+        doc=baseline_doc,
+        brief_protocol=brief_proto,
+        qa_checklist=qa_checklist,
+        artifact_upload_manifest=None,
+        validation_violations=viols_wire,
+    )
+    dry_run_closure_hints = agent_evidence_closure_hints()
+    consistency_closure = agent_review_readout_consistency_closure_v1(
+        readout_brief_acceptance=accept_readout,
+        readout_bundle_qa_checklist=qa_checklist,
+        readout_merge_preflight=None,
+        readout_baseline_lifecycle=None,
+        readout_browser_rendering_budget=None,
+        closure_hints=dry_run_closure_hints,
+    )
+    if not ok or new_doc is None:
+        return {
+            "ok": False,
+            "modelId": str(model_id),
+            "reason": code,
+            "violations": viols_wire,
+            "summaryBefore": baseline_summary,
+            "summaryAfter": None,
+            "wouldRevision": None,
+            "appliedCommandsPreview": body.commands,
+            "replayDiagnostics": replay_bundle_diagnostics_for_outcome(
+                baseline_doc,
+                body.commands,
+                outcome_code=code,
+            ),
+            "agentBriefCommandProtocol_v1": brief_proto,
+            "agentGeneratedBundleQaChecklist_v1": qa_checklist,
+            "agentBriefAcceptanceReadout_v1": accept_readout,
+            "agentReviewReadoutConsistencyClosure_v1": consistency_closure,
+        }
+
+    return {
+        "ok": True,
+        "modelId": str(model_id),
+        "reason": code,
+        "violations": viols_wire,
+        "summaryBefore": baseline_summary,
+        "summaryAfter": compute_model_summary(new_doc),
+        "wouldRevision": new_doc.revision,
+        "appliedCommandsPreview": body.commands,
+        "replayDiagnostics": bundle_replay_diagnostics(body.commands),
+        "agentBriefCommandProtocol_v1": brief_proto,
+        "agentGeneratedBundleQaChecklist_v1": qa_checklist,
+        "agentBriefAcceptanceReadout_v1": accept_readout,
+        "agentReviewReadoutConsistencyClosure_v1": consistency_closure,
+    }
+
+
+@commands_router.post("/models/{model_id}/undo")
+async def undo_model(
+    model_id: UUID,
+    body: UndoRedoEnvelope,
+    session: AsyncSession = Depends(get_session),
+    hub: Hub = Depends(get_hub),
+) -> dict[str, Any]:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+
+    uid = body.user_id or "local-dev"
+    undo_res = await session.execute(
+        select(UndoStackRecord)
+        .where(UndoStackRecord.model_id == model_id, UndoStackRecord.user_id == uid)
+        .order_by(desc(UndoStackRecord.id))
+        .limit(1),
+    )
+    undo_row = undo_res.scalar_one_or_none()
+    if undo_row is None:
+        raise HTTPException(status_code=400, detail="Nothing to undo")
+
+    current = Document.model_validate(row.document)
+
+    baseline = clone_document(current)
+
+    ok, new_doc, _cmds, violations, code = try_commit_bundle(current, list(undo_row.undo_commands))
+
+    if not ok or new_doc is None:
+        viols_wire = [v.model_dump(by_alias=True) for v in violations]
+        undo_cmds_raw = list(undo_row.undo_commands)
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "reason": code,
+                "violations": viols_wire,
+                "replayDiagnostics": replay_bundle_diagnostics_for_outcome(
+                    current,
+                    undo_cmds_raw,
+                    outcome_code=code,
+                ),
+            },
+        )
+
+    await session.delete(undo_row)
+    session.add(
+        RedoStackRecord(
+            model_id=model_id,
+            user_id=uid,
+            revision_after=new_doc.revision,
+            forward_commands=list(undo_row.forward_commands),
+            created_at=datetime.now(UTC),
+        ),
+    )
+
+    await session.flush()
+    out = await _commit_doc_and_broadcast(
+        session=session,
+        hub=hub,
+        row=row,
+        model_uuid=model_id,
+        doc_before=baseline,
+        new_doc=new_doc,
+        client_op_id=None,
+    )
+    out["action"] = "undo"
+    return out
+
+
+@commands_router.post("/models/{model_id}/redo")
+async def redo_model(
+    model_id: UUID,
+    body: UndoRedoEnvelope,
+    session: AsyncSession = Depends(get_session),
+    hub: Hub = Depends(get_hub),
+) -> dict[str, Any]:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+
+    uid = body.user_id or "local-dev"
+    redo_res = await session.execute(
+        select(RedoStackRecord)
+        .where(RedoStackRecord.model_id == model_id, RedoStackRecord.user_id == uid)
+        .order_by(desc(RedoStackRecord.id))
+        .limit(1),
+    )
+    redo_row = redo_res.scalar_one_or_none()
+    if redo_row is None:
+        raise HTTPException(status_code=400, detail="Nothing to redo")
+
+    current = Document.model_validate(row.document)
+    baseline = clone_document(current)
+
+    ok, new_doc, _cmds, violations, code = try_commit_bundle(
+        current,
+        list(redo_row.forward_commands),
+    )
+
+    if not ok or new_doc is None:
+        viols_wire = [v.model_dump(by_alias=True) for v in violations]
+        forward_cmds = list(redo_row.forward_commands)
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "reason": code,
+                "violations": viols_wire,
+                "replayDiagnostics": replay_bundle_diagnostics_for_outcome(
+                    current,
+                    forward_cmds,
+                    outcome_code=code,
+                ),
+            },
+        )
+
+    undo_cmds = diff_undo_cmds(baseline, new_doc)
+
+    await session.delete(redo_row)
+    session.add(
+        UndoStackRecord(
+            model_id=model_id,
+            user_id=uid,
+            revision_after=new_doc.revision,
+            forward_commands=list(redo_row.forward_commands),
+            undo_commands=undo_cmds,
+            created_at=datetime.now(UTC),
+        ),
+    )
+
+    await session.flush()
+
+    out = await _commit_doc_and_broadcast(
+        session=session,
+        hub=hub,
+        row=row,
+        model_uuid=model_id,
+        doc_before=baseline,
+        new_doc=new_doc,
+        client_op_id=None,
+    )
+    out["action"] = "redo"
+    return out
