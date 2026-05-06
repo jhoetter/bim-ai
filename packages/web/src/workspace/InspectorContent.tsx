@@ -147,6 +147,7 @@ export function InspectorPropertiesFor(
                 ))}
             </select>
           </div>
+          <FieldRow label={f('workset')} value={el.worksetId ?? '—'} mono />
         </div>
       );
     }
@@ -199,6 +200,7 @@ export function InspectorPropertiesFor(
                 ))}
             </select>
           </div>
+          <FieldRow label={f('workset')} value={el.worksetId ?? '—'} mono />
         </div>
       );
     }
@@ -264,6 +266,10 @@ export function InspectorPropertiesFor(
         <div>
           <FieldRow label={f('elevation')} value={fmtMm(el.elevationMm)} />
           <FieldRow label={f('datumKind')} value={el.datumKind ?? '—'} mono />
+          <FieldRow label={f('workset')} value={el.worksetId ?? '—'} mono />
+          {el.monitorSourceId ? (
+            <FieldRow label={f('monitorSource')} value={el.monitorSourceId} mono />
+          ) : null}
         </div>
       );
     case 'section_cut':
@@ -332,6 +338,26 @@ export function InspectorPropertiesFor(
         <div>
           <FieldRow label={f('colorFillLegend')} value={el.planViewId} mono />
           <FieldRow label={f('schemeField')} value={el.schemeField} />
+        </div>
+      );
+    case 'grid_line':
+      return (
+        <div>
+          <FieldRow label={f('name')} value={el.name} />
+          <FieldRow label={f('workset')} value={el.worksetId ?? '—'} mono />
+          {el.monitorSourceId ? (
+            <FieldRow label={f('monitorSource')} value={el.monitorSourceId} mono />
+          ) : null}
+        </div>
+      );
+    case 'project_settings':
+      return (
+        <div>
+          <FieldRow label={f('name')} value={el.name ?? '—'} />
+          <FieldRow label={f('workset')} value={el.worksetId ?? '—'} mono />
+          {el.startingViewId ? (
+            <FieldRow label={f('startingView')} value={el.startingViewId} mono />
+          ) : null}
         </div>
       );
     default:

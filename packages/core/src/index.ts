@@ -322,6 +322,7 @@ export type Element =
       floorTypeId?: string | null;
       insulationExtensionMm?: number;
       roomBounded?: boolean;
+      worksetId?: string | null;
     }
   | {
       kind: 'roof';

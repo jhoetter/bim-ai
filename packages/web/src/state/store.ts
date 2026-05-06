@@ -330,6 +330,12 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
       start: coerceXY(raw.start as Record<string, unknown>),
       end: coerceXY(raw.end as Record<string, unknown>),
       levelId: typeof lid === 'string' ? lid : null,
+      ...((raw.worksetId ?? raw.workset_id)
+        ? { worksetId: String(raw.worksetId ?? raw.workset_id) }
+        : {}),
+      ...((raw.monitorSourceId ?? raw.monitor_source_id)
+        ? { monitorSourceId: String(raw.monitorSourceId ?? raw.monitor_source_id) }
+        : {}),
     };
   }
 
@@ -447,6 +453,12 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
       lengthUnit: String(raw.lengthUnit ?? raw.length_unit ?? 'millimeter'),
       angularUnitDeg: String(raw.angularUnitDeg ?? raw.angular_unit_deg ?? 'degree'),
       displayLocale: String(raw.displayLocale ?? raw.display_locale ?? 'en-US'),
+      ...((raw.worksetId ?? raw.workset_id)
+        ? { worksetId: String(raw.worksetId ?? raw.workset_id) }
+        : {}),
+      ...((raw.startingViewId ?? raw.starting_view_id)
+        ? { startingViewId: String(raw.startingViewId ?? raw.starting_view_id) }
+        : {}),
     };
   }
 
@@ -544,6 +556,9 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
         : {}),
       insulationExtensionMm: Number(raw.insulationExtensionMm ?? raw.insulation_extension_mm ?? 0),
       roomBounded: Boolean(raw.roomBounded ?? raw.room_bounded),
+      ...((raw.worksetId ?? raw.workset_id)
+        ? { worksetId: String(raw.worksetId ?? raw.workset_id) }
+        : {}),
     };
   }
 
