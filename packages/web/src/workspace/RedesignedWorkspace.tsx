@@ -24,6 +24,12 @@ import {
   InspectorIdentityFor,
   InspectorPropertiesFor,
 } from './InspectorContent';
+import {
+  AgentReviewModeShell,
+  ScheduleModeShell,
+  SectionModeShell,
+  SheetModeShell,
+} from './ModeShells';
 import { StatusBar } from './StatusBar';
 import { CheatsheetModal } from '../cmd/CheatsheetModal';
 import { RedesignedCommandPalette } from '../cmd/RedesignedCommandPalette';
@@ -405,7 +411,12 @@ export function RedesignedWorkspace(): JSX.Element {
               onToolSelect={handleToolSelect}
               disabledContext={toolDisabledContext}
             />
-            <CanvasMount mode={mode} viewerMode={viewerMode} activeLevelId={activeLevelId ?? ''} />
+            <CanvasMount
+              mode={mode}
+              viewerMode={viewerMode}
+              activeLevelId={activeLevelId ?? ''}
+              elementsById={elementsById}
+            />
           </div>
         }
         rightRail={(() => {
@@ -499,10 +510,12 @@ function CanvasMount({
   mode,
   viewerMode,
   activeLevelId,
+  elementsById,
 }: {
   mode: WorkspaceMode;
   viewerMode: 'plan_canvas' | 'orbit_3d';
   activeLevelId: string;
+  elementsById: Record<string, Element>;
 }): JSX.Element {
   if (mode === 'plan-3d') {
     return (
@@ -531,14 +544,10 @@ function CanvasMount({
         onSemanticCommand={() => undefined}
       />
     );
-  if (mode === 'sheet' || mode === 'schedule' || mode === 'agent' || mode === 'section') {
-    return (
-      <ModePlaceholder
-        title={`${capitalize(mode)} mode`}
-        body="The redesigned surface for this mode is wired through the existing canvas. Switch to Plan or 3D to explore the §11–§17 chrome."
-      />
-    );
-  }
+  if (mode === 'section') return <SectionModeShell elementsById={elementsById} />;
+  if (mode === 'sheet') return <SheetModeShell elementsById={elementsById} />;
+  if (mode === 'schedule') return <ScheduleModeShell elementsById={elementsById} />;
+  if (mode === 'agent') return <AgentReviewModeShell />;
   return viewerMode === 'orbit_3d' ? (
     <Viewport wsConnected={false} />
   ) : (
@@ -547,18 +556,6 @@ function CanvasMount({
       activeLevelResolvedId={activeLevelId}
       onSemanticCommand={() => undefined}
     />
-  );
-}
-
-function ModePlaceholder({ title, body }: { title: string; body: string }): JSX.Element {
-  return (
-    <div className="flex h-full w-full items-center justify-center bg-background">
-      <div className="flex max-w-md flex-col items-center gap-2 px-6 py-4 text-center">
-        <Icons.agent size={ICON_SIZE.toolPalette} aria-hidden="true" className="text-muted" />
-        <div className="text-md font-medium text-foreground">{title}</div>
-        <p className="text-sm text-muted">{body}</p>
-      </div>
-    </div>
   );
 }
 
@@ -591,10 +588,6 @@ function InspectorEmptyTab({ message }: { message: string }): JSX.Element {
 
 function humanKindLabel(kind: string): string {
   return kind.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-function capitalize(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 /** Suppress an unused-import warning in case the keyboard bindings change. */
