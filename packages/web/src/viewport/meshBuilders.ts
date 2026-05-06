@@ -4,9 +4,35 @@ import type { Element, WallLocationLine } from '@bim-ai/core';
 import { buildDoorGeometry } from '../families/geometryFns/doorGeometry';
 import { buildWindowGeometry } from '../families/geometryFns/windowGeometry';
 import { getFamilyById, getTypeById } from '../families/familyCatalog';
+import { getBuiltInWallType, type WallTypeAssembly } from '../families/wallTypeCatalog';
 import type { ViewportPaintBundle } from './materials';
 import { categoryColorOr, addEdges, readToken } from './sceneHelpers';
 import { roofHeightAtPoint } from './roofHeightSampler';
+import { makeLayeredWallMesh } from './meshBuilders.layeredWall';
+
+/** Resolve a wall's `wallTypeId` to a renderable assembly. Built-in catalog
+ * entries take precedence over user-authored `wall_type` elements. */
+export function resolveWallTypeAssembly(
+  wallTypeId: string,
+  elementsById?: Record<string, Element>,
+): WallTypeAssembly | null {
+  const builtIn = getBuiltInWallType(wallTypeId);
+  if (builtIn) return builtIn;
+  if (!elementsById) return null;
+  const el = elementsById[wallTypeId];
+  if (!el || el.kind !== 'wall_type') return null;
+  return {
+    id: el.id,
+    name: el.name,
+    basisLine: (el.basisLine ?? 'center') as 'center' | 'face_interior' | 'face_exterior',
+    layers: el.layers.map((l) => ({
+      name: '',
+      thicknessMm: Number(l.thicknessMm),
+      materialKey: String(l.materialKey ?? ''),
+      function: l.function as 'structure' | 'insulation' | 'finish',
+    })),
+  };
+}
 
 export type WallElem = Extract<Element, { kind: 'wall' }>;
 
@@ -1088,7 +1114,7 @@ export function makeWallMesh(
   elevM: number,
   paint: ViewportPaintBundle | null,
   elementsById?: Record<string, Element>,
-): THREE.Mesh {
+): THREE.Mesh | THREE.Group {
   if (wall.roofAttachmentId && elementsById) {
     const roof = elementsById[wall.roofAttachmentId];
     if (roof?.kind === 'roof') {
@@ -1099,6 +1125,12 @@ export function makeWallMesh(
         paint,
         elementsById,
       );
+    }
+  }
+  if (wall.wallTypeId) {
+    const assembly = resolveWallTypeAssembly(wall.wallTypeId, elementsById);
+    if (assembly) {
+      return makeLayeredWallMesh(wall, assembly, elevM, paint, elementsById);
     }
   }
   const sx = wall.start.xMm / 1000;

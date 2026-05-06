@@ -18,6 +18,8 @@ import {
   PLAN_WINDOW_SILL_LINE_WIDTH,
 } from './symbology';
 import type { PlanPresentationPreset, StairPlanWireDocOverlays } from './symbology';
+import { getBuiltInWallType, materialHexFor } from '../families/wallTypeCatalog';
+import { darkenHex } from '../viewport/meshBuilders.layeredWall';
 
 function planLocationLineOffsetFrac(loc: WallLocationLine): number {
   switch (loc) {
@@ -36,7 +38,8 @@ export function planWallMesh(
   wall: Extract<Element, { kind: 'wall' }>,
   selectedId?: string,
   lineWeightScale = 1,
-): THREE.Mesh {
+  elementsById?: Record<string, Element>,
+): THREE.Object3D {
   const { lenM: len, nx, nz } = segmentDir(wall);
 
   const sx = ux(wall.start.xMm);
@@ -72,7 +75,129 @@ export function planWallMesh(
 
   mesh.userData.bimPickId = wall.id;
 
+  // FL-08: when the wall has a wall_type, overlay layer boundary lines.
+  if (wall.wallTypeId) {
+    const lines = buildPlanWallLayerLines(wall, len, sx, sz, nx, nz, elementsById);
+    if (lines) {
+      const group = new THREE.Group();
+      group.userData.bimPickId = wall.id;
+      group.add(mesh);
+      group.add(lines);
+      return group;
+    }
+  }
+
   return mesh;
+}
+
+function resolvePlanWallAssembly(
+  wallTypeId: string,
+  elementsById?: Record<string, Element>,
+): {
+  basisLine: 'center' | 'face_interior' | 'face_exterior';
+  layers: { thicknessMm: number; materialKey: string }[];
+} | null {
+  const builtIn = getBuiltInWallType(wallTypeId);
+  if (builtIn) {
+    return {
+      basisLine: builtIn.basisLine,
+      layers: builtIn.layers.map((l) => ({
+        thicknessMm: l.thicknessMm,
+        materialKey: l.materialKey,
+      })),
+    };
+  }
+  if (!elementsById) return null;
+  const el = elementsById[wallTypeId];
+  if (!el || el.kind !== 'wall_type') return null;
+  return {
+    basisLine: (el.basisLine ?? 'center') as 'center' | 'face_interior' | 'face_exterior',
+    layers: el.layers.map((l) => ({
+      thicknessMm: Number(l.thicknessMm),
+      materialKey: String(l.materialKey ?? ''),
+    })),
+  };
+}
+
+function buildPlanWallLayerLines(
+  wall: Extract<Element, { kind: 'wall' }>,
+  lenM: number,
+  sx: number,
+  sz: number,
+  nx: number,
+  nz: number,
+  elementsById?: Record<string, Element>,
+): THREE.LineSegments | null {
+  if (!wall.wallTypeId) return null;
+  const assembly = resolvePlanWallAssembly(wall.wallTypeId, elementsById);
+  if (!assembly || assembly.layers.length === 0) return null;
+
+  const totalThickMm = assembly.layers.reduce((acc, l) => acc + l.thicknessMm, 0);
+  if (totalThickMm <= 0) return null;
+
+  // Wall normal direction (perpendicular to (nx,nz) tangent in plan space).
+  const perpX = -nz;
+  const perpZ = nx;
+
+  // Plan-space basis offset from wall centerline to the interior face.
+  let cursorMm: number;
+  switch (assembly.basisLine) {
+    case 'face_exterior':
+      cursorMm = totalThickMm / 2;
+      break;
+    case 'face_interior':
+    case 'center':
+    default:
+      cursorMm = -totalThickMm / 2;
+      break;
+  }
+
+  const positions: number[] = [];
+  const colors: number[] = [];
+
+  // Half-length along the wall axis in metres.
+  const halfLenM = lenM / 2;
+  const cxM = sx + (nx * lenM) / 2;
+  const czM = sz + (nz * lenM) / 2;
+
+  // Boundary at the start of the stack:
+  let prevCursorMm = cursorMm;
+  for (let i = 0; i < assembly.layers.length; i++) {
+    const layer = assembly.layers[i]!;
+    const boundaryMm = prevCursorMm; // line at the top edge of this layer (interior side)
+    const offM = boundaryMm / 1000;
+    const ax = cxM + perpX * offM - nx * halfLenM;
+    const az = czM + perpZ * offM - nz * halfLenM;
+    const bx = cxM + perpX * offM + nx * halfLenM;
+    const bz = czM + perpZ * offM + nz * halfLenM;
+    // Use this layer's colour darkened 30% for the inner boundary line.
+    const baseHex = materialHexFor(layer.materialKey);
+    const lineHex = darkenHex(baseHex, 0.3);
+    const color = new THREE.Color(lineHex);
+    positions.push(ax, PLAN_Y + 0.005, az, bx, PLAN_Y + 0.005, bz);
+    colors.push(color.r, color.g, color.b, color.r, color.g, color.b);
+    prevCursorMm += layer.thicknessMm;
+  }
+  // Final boundary at the exterior face:
+  const offM = prevCursorMm / 1000;
+  const ax = cxM + perpX * offM - nx * halfLenM;
+  const az = czM + perpZ * offM - nz * halfLenM;
+  const bx = cxM + perpX * offM + nx * halfLenM;
+  const bz = czM + perpZ * offM + nz * halfLenM;
+  const lastLayer = assembly.layers[assembly.layers.length - 1]!;
+  const lineHex = darkenHex(materialHexFor(lastLayer.materialKey), 0.3);
+  const color = new THREE.Color(lineHex);
+  positions.push(ax, PLAN_Y + 0.005, az, bx, PLAN_Y + 0.005, bz);
+  colors.push(color.r, color.g, color.b, color.r, color.g, color.b);
+
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3));
+  geom.setAttribute('color', new THREE.BufferAttribute(new Float32Array(colors), 3));
+  const lineMat = new THREE.LineBasicMaterial({ vertexColors: true, linewidth: 1 });
+  const lines = new THREE.LineSegments(geom, lineMat);
+  lines.userData.bimPickId = wall.id;
+  lines.userData.layerBoundary = true;
+  return lines;
 }
 
 export function doorGroupThree(

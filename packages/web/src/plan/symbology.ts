@@ -917,7 +917,8 @@ export function rebuildPlanMeshes(
     );
   }
 
-  for (const wall of walls) holder.add(planWallMesh(wall, opts.selectedId, lineWeightScale));
+  for (const wall of walls)
+    holder.add(planWallMesh(wall, opts.selectedId, lineWeightScale, elementsById));
 
   for (const rs of Object.values(elementsById)) {
     if (rs.kind !== 'room_separation') continue;

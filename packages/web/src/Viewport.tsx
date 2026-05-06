@@ -960,7 +960,8 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
             CSG_ENABLED &&
             (doors.length > 0 || wins.length > 0) &&
             !e.roofAttachmentId &&
-            !e.isCurtainWall
+            !e.isCurtainWall &&
+            !e.wallTypeId
           ) {
             // Dispatch CSG to the worker; show a solid-wall placeholder immediately.
             const sx = e.start.xMm / 1000;

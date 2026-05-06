@@ -13,6 +13,7 @@ import { useEffect, useMemo, useState, type JSX } from 'react';
 import type { Element, FamilyDiscipline } from '@bim-ai/core';
 
 import { BUILT_IN_FAMILIES } from './familyCatalog';
+import { BUILT_IN_WALL_TYPES } from './wallTypeCatalog';
 import { getThumbnail, PLACEHOLDER_THUMBNAIL } from './thumbnailCache';
 
 export type FamilyLibraryPlaceKind =
@@ -70,6 +71,18 @@ function buildCatalogByDiscipline(
         kind: fam.discipline as FamilyLibraryPlaceKind,
       });
     }
+  }
+  for (const wt of BUILT_IN_WALL_TYPES) {
+    const bucket = (out['wall_type'] ??= []);
+    bucket.push({
+      id: wt.id,
+      name: wt.name,
+      familyName: `${wt.layers.length} layers · ${wt.layers
+        .reduce((acc, l) => acc + l.thicknessMm, 0)
+        .toFixed(0)}mm`,
+      custom: false,
+      kind: 'wall_type',
+    });
   }
 
   for (const el of Object.values(elementsById)) {
