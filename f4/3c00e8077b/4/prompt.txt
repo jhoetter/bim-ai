@@ -983,3 +983,7 @@ i notice that all agents take really, really long. here is an example:   Read 2 
       packages/ui/src/icons.tsx                          |  2 -
      … +15 lines (ctrl+o to expand)
  why are they so slow? can we improve the prompts or something?
+
+---
+
+please update the prompts, yes. also write some kind of AGENTS.md or whatever that will be helpful for the future, i.e. giving the hint how an orchestrator agent and worker agent should work.
