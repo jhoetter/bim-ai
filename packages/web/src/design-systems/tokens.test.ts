@@ -192,7 +192,12 @@ describe('design tokens — conservative palette (chrome coverage)', () => {
       tokensConservative.split("data-theme='dark'")[1] ??
       tokensConservative.split('prefers-color-scheme: dark')[1] ??
       '';
-    for (const token of ['--color-background', '--color-foreground', '--color-border', '--color-accent']) {
+    for (const token of [
+      '--color-background',
+      '--color-foreground',
+      '--color-border',
+      '--color-accent',
+    ]) {
       expect(darkBlock).toContain(`${token}:`);
     }
   });

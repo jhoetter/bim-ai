@@ -82,7 +82,11 @@ export function windowCutterGeometry(
   wallThick: number,
 ): { cutW: number; cutH: number; cutD: number; localX: number; localY: number } {
   const sill = THREE.MathUtils.clamp(win.sillHeightMm / 1000, 0.06, win.wallHeightMm / 1000 - 0.08);
-  const outerH = THREE.MathUtils.clamp(win.heightMm / 1000, 0.05, win.wallHeightMm / 1000 - sill - 0.06);
+  const outerH = THREE.MathUtils.clamp(
+    win.heightMm / 1000,
+    0.05,
+    win.wallHeightMm / 1000 - sill - 0.06,
+  );
   const outerW = THREE.MathUtils.clamp(win.widthMm / 1000, 0.14, 4);
   const cutW = outerW + 0.04;
   const cutH = outerH + 0.02;
