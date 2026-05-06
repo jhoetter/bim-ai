@@ -1,0 +1,49 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "34a09bbfa95b",
+  "session_id": "72487ddb-1045-443d-b083-155fc50cda25",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-06T20:24:03.835124Z",
+  "branch": "feat/wp-ui-b03-plan-camera",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "app/bim_ai/routes_deps.py",
+    "app/bim_ai/routes_exports.py"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "4d99768a4ab8",
+  "checkpoint_transcript_start": 81,
+  "transcript_lines_at_start": 81,
+  "token_usage": {
+    "input_tokens": 2,
+    "cache_creation_tokens": 636,
+    "cache_read_tokens": 69935,
+    "output_tokens": 289,
+    "api_call_count": 2
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-06T20:24:03.83208Z",
+    "agent_lines": 519,
+    "agent_removed": 0,
+    "human_added": 807,
+    "human_modified": 1,
+    "human_removed": 0,
+    "total_committed": 1327,
+    "total_lines_changed": 2530,
+    "agent_percentage": 20.513833992094863,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}
