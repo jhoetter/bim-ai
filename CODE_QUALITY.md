@@ -4,6 +4,8 @@ Generated 2026-05-06. Updated after each workpackage.
 
 ## Status Overview
 
+### Wave 1 — C grade baseline (all done)
+
 | #   | Workpackage                                          | Status  | Commit   |
 | --- | ---------------------------------------------------- | ------- | -------- |
 | WP1 | Fix silent `.catch(() => {})` error swallowing       | ✅ done | c80cac94 |
@@ -15,6 +17,19 @@ Generated 2026-05-06. Updated after each workpackage.
 | WP7 | Extract `symbology.ts` element builders (1 648 → 977)| ✅ done | 2cb9ba1f |
 | WP8 | Extract `store.ts` types into `storeTypes.ts`        | ✅ done | 2cb9ba1f |
 | WP9 | Fix `LegacyPlanTool` exhaustiveness gap              | ✅ done | 2cb9ba1f |
+
+### Wave 2 — C → B (current)
+
+| #    | Workpackage                                                    | Status     | Commit |
+| ---- | -------------------------------------------------------------- | ---------- | ------ |
+| WP-A | Tests for `evidenceArtifactParser.ts` (857 lines, 0% cov)     | ✅ done    | —      |
+| WP-B | Tests for plan geometry helpers (`planElementMeshBuilders.ts`) | ⬜ todo    | —      |
+| WP-C | Tests for `store.ts` actions (`hydrateFromSnapshot`, `applyDelta`) | ⬜ todo | —   |
+| WP-D | Add `ErrorBoundary` wrapper around main app sections           | ⬜ todo    | —      |
+| WP-E | Decompose `SchedulePanel.tsx` — extract `ScheduleDefinitionToolbar` | ⬜ todo | —  |
+| WP-F | Decompose `RedesignedWorkspace.tsx` (1 862 lines)              | ⬜ todo    | —      |
+| WP-G | Structured error-logging utility (replace raw console.error)   | ⬜ todo    | —      |
+| WP-H | Raise coverage thresholds 50/70/70 → 65/75/75                  | ⬜ todo    | —      |
 
 ---
 
@@ -126,3 +141,74 @@ fire-and-forget semantics (callers must not be blocked). Four instances.
 **Files:** `packages/web/vitest.config.ts` (and core once WP5 done)  
 **Change:** Add `coverage: { thresholds: { lines: 70 } }` to prevent regressions.  
 **Done when:** CI fails on coverage drop below threshold.
+
+---
+
+## Wave 2 Workpackage Details (C → B)
+
+### WP-A — Tests for `evidenceArtifactParser.ts` (EASY, HIGH IMPACT)
+
+**File:** `packages/web/src/workspace/review/evidenceArtifactParser.ts` (857 lines)  
+**Why:** Pure parsing functions (`parseEvidenceArtifact`, `parseRoomCandidates`) with 0% coverage — highest ROI test target in the codebase.  
+**Approach:** Vitest, fixture strings, no mocks.  
+**Done when:** `evidenceArtifactParser.ts` ≥ 80% line coverage.
+
+---
+
+### WP-B — Tests for `planElementMeshBuilders.ts` (MEDIUM)
+
+**File:** `packages/web/src/plan/planElementMeshBuilders.ts` (700 lines)  
+**Why:** Geometry helper functions (`centroidMm`, `polygonAreaMm2`, stair riser count) are pure and untested.  
+**Approach:** Test pure math helpers directly; skip Three.js mesh constructors (need DOM).  
+**Done when:** Pure-function helpers ≥ 80% line coverage.
+
+---
+
+### WP-C — Tests for `store.ts` actions (MEDIUM)
+
+**File:** `packages/web/src/state/store.ts`  
+**Why:** `hydrateFromSnapshot` and `applyDelta` are the most critical data-path functions but have no tests.  
+**Approach:** Create store instances with `create()`, call actions, assert state shape — no mocks needed.  
+**Done when:** `hydrateFromSnapshot` and `applyDelta` covered with ≥ 5 tests each.
+
+---
+
+### WP-D — Add `ErrorBoundary` wrappers (EASY)
+
+**File:** `packages/web/src/ErrorBoundary.tsx` (new)  
+**Why:** Any uncaught render error currently crashes the entire app. An `ErrorBoundary` around major sections shows a fallback UI and logs to console instead.  
+**Approach:** Minimal class component wrapping `Viewport`, `AgentReviewPane`, and `SchedulePanel`.  
+**Done when:** Three boundaries placed; app renders fallback on child throw.
+
+---
+
+### WP-E — Decompose `SchedulePanel.tsx` (MEDIUM)
+
+**File:** `packages/web/src/schedules/SchedulePanel.tsx` (1 883 lines)  
+**Strategy:** Extract `renderScheduleDefinitionToolbar` (~350 lines) as `ScheduleDefinitionToolbar.tsx` sub-component; thread props explicitly.  
+**Done when:** `SchedulePanel.tsx` < 1 200 lines.
+
+---
+
+### WP-F — Decompose `RedesignedWorkspace.tsx` (HARD)
+
+**File:** `packages/web/src/workspace/RedesignedWorkspace.tsx` (1 862 lines)  
+**Strategy:** Extract snapshot-load logic into `useWorkspaceSnapshot.ts` hook; extract sidebar layout into `WorkspaceSidebar.tsx`.  
+**Done when:** `RedesignedWorkspace.tsx` < 1 000 lines.
+
+---
+
+### WP-G — Structured error-logging utility (EASY)
+
+**Files:** New `packages/web/src/logger.ts`; update all `console.error` call sites.  
+**Why:** Current `console.error` stubs added in WP1 have no context tagging — hard to filter in production logs.  
+**Approach:** Thin wrapper `log.error(tag, message, ...args)` — one-line change per call site, easy to swap for a real logger later.  
+**Done when:** All `console.error` in `RedesignedWorkspace.tsx` go through the logger.
+
+---
+
+### WP-H — Raise coverage thresholds (EASY, FINAL)
+
+**File:** `packages/web/vitest.config.ts`  
+**Change:** Bump `lines: 50 → 65`, `functions: 70 → 75`, `branches: 70 → 75` after WP-A through WP-C add coverage.  
+**Done when:** Thresholds updated and `pnpm test --coverage` still passes.
