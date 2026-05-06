@@ -1,9 +1,11 @@
 {
   "cli_version": "0.6.0",
   "checkpoint_id": "e3474fa5abb6",
+  "session_id": "ebac93cb-7b58-4137-920b-b2170a9cc40a",
   "strategy": "manual-commit",
+  "created_at": "2026-05-06T14:46:43.604237Z",
   "branch": "main",
-  "checkpoints_count": 3,
+  "checkpoints_count": 1,
   "files_touched": [
     "HANDOVER.md",
     "OPEN_TASKS.md",
@@ -139,43 +141,40 @@
     "spec/revit-production-parity-workpackage-tracker.md",
     "spec/ui-ux-redesign-v1-spec.md"
   ],
-  "sessions": [
-    {
-      "metadata": "/e3/474fa5abb6/0/metadata.json",
-      "transcript": "/e3/474fa5abb6/0/full.jsonl",
-      "content_hash": "/e3/474fa5abb6/0/content_hash.txt",
-      "prompt": "/e3/474fa5abb6/0/prompt.txt"
-    },
-    {
-      "metadata": "/e3/474fa5abb6/1/metadata.json",
-      "transcript": "/e3/474fa5abb6/1/full.jsonl",
-      "content_hash": "/e3/474fa5abb6/1/content_hash.txt",
-      "prompt": "/e3/474fa5abb6/1/prompt.txt"
-    },
-    {
-      "metadata": "/e3/474fa5abb6/2/metadata.json",
-      "transcript": "/e3/474fa5abb6/2/full.jsonl",
-      "content_hash": "/e3/474fa5abb6/2/content_hash.txt",
-      "prompt": "/e3/474fa5abb6/2/prompt.txt"
-    },
-    {
-      "metadata": "/e3/474fa5abb6/3/metadata.json",
-      "transcript": "/e3/474fa5abb6/3/full.jsonl",
-      "content_hash": "/e3/474fa5abb6/3/content_hash.txt",
-      "prompt": "/e3/474fa5abb6/3/prompt.txt"
-    },
-    {
-      "metadata": "/e3/474fa5abb6/4/metadata.json",
-      "transcript": "/e3/474fa5abb6/4/full.jsonl",
-      "content_hash": "/e3/474fa5abb6/4/content_hash.txt",
-      "prompt": "/e3/474fa5abb6/4/prompt.txt"
-    }
-  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "dddfcdd32416",
+  "checkpoint_transcript_start": 528,
+  "transcript_lines_at_start": 528,
   "token_usage": {
-    "input_tokens": 167,
-    "cache_creation_tokens": 292640,
-    "cache_read_tokens": 9041942,
-    "output_tokens": 169284,
-    "api_call_count": 145
-  }
+    "input_tokens": 2,
+    "cache_creation_tokens": 646,
+    "cache_read_tokens": 71116,
+    "output_tokens": 91,
+    "api_call_count": 2
+  },
+  "session_metrics": {
+    "turn_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-06T14:46:43.57576Z",
+    "agent_lines": 3458,
+    "agent_removed": 2185,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 3458,
+    "total_lines_changed": 5643,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
 }
