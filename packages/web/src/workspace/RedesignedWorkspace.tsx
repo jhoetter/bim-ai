@@ -44,6 +44,7 @@ import { patternFor } from '../state/uiStates';
 import { AppShell } from './AppShell';
 import { TopBar, type WorkspaceMode } from './TopBar';
 import { LeftRail, LeftRailCollapsed, type LeftRailSection } from './LeftRail';
+import { BUILT_IN_FAMILIES } from '../families/familyCatalog';
 import { Inspector, type InspectorSelection } from './Inspector';
 import {
   InspectorConstraintsFor,
@@ -798,6 +799,23 @@ export function RedesignedWorkspace(): JSX.Element {
         label: 'Schedules',
         rows: schedules.map((s) => ({ id: s.id, label: s.name })),
       },
+      {
+        id: 'families',
+        label: 'Families',
+        rows: (['door', 'window', 'stair', 'railing'] as const)
+          .map((disc) => ({
+            id: `fam-group-${disc}`,
+            label: ({ door: 'Doors', window: 'Windows', stair: 'Stairs', railing: 'Railings' } as const)[disc],
+            children: BUILT_IN_FAMILIES
+              .filter((f) => f.discipline === disc)
+              .map((fam) => ({
+                id: fam.id,
+                label: fam.name,
+                children: fam.defaultTypes.map((t) => ({ id: t.id, label: t.name })),
+              })),
+          }))
+          .filter((g) => g.children.length > 0),
+      },
     ];
   }, [elementsById]);
 
@@ -842,6 +860,15 @@ export function RedesignedWorkspace(): JSX.Element {
     if (!import.meta.env.DEV || !selectedId) return;
     const el = elementsById[selectedId];
     if (el) console.debug('[bim] selected element:', el);
+  }, [selectedId, elementsById]);
+
+  /* ── Active family type — highlights matching row in family browser ── */
+  const activeFamilyTypeId = useMemo(() => {
+    if (!selectedId) return undefined;
+    const el = elementsById[selectedId];
+    if (!el) return undefined;
+    if (el.kind === 'door' || el.kind === 'window') return el.familyTypeId ?? undefined;
+    return undefined;
   }, [selectedId, elementsById]);
 
   /* ── Inspector selection ──────────────────────────────────────────── */
@@ -1104,8 +1131,20 @@ export function RedesignedWorkspace(): JSX.Element {
             <div className="min-h-0 flex-1 overflow-y-auto">
             <LeftRail
               sections={browserSections}
-              activeRowId={activeLevelId}
+              activeRowId={activeFamilyTypeId ?? activeLevelId}
             onRowActivate={(id) => {
+              // Family type rows — assign to the currently selected compatible element.
+              const pickedType = BUILT_IN_FAMILIES.flatMap((f) => f.defaultTypes).find((t) => t.id === id);
+              if (pickedType) {
+                if (selectedId) {
+                  const selEl = elementsById[selectedId];
+                  if (selEl && selEl.kind === pickedType.discipline) {
+                    void onSemanticCommand({ type: 'updateElementProperty', elementId: selectedId, key: 'familyTypeId', value: id });
+                  }
+                }
+                return;
+              }
+
               const el = elementsById[id];
               if (!el) {
                 // Levels nest under "project" → "levels"; check the nested children.
