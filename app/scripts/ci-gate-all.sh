@@ -26,7 +26,7 @@ _gate() {
 _gate "ruff"                    0 bash -c "cd '${REPO_ROOT}/app' && .venv/bin/ruff check bim_ai tests"
 _gate "pytest"                  0 bash -c "cd '${REPO_ROOT}/app' && .venv/bin/pytest -x"
 _gate "typecheck"               0 bash -c "cd '${REPO_ROOT}/packages/web' && pnpm typecheck"
-_gate "vitest"                  0 bash -c "cd '${REPO_ROOT}/packages/web' && pnpm exec vitest run"
+_gate "vitest"                  0 bash -c "cd '${REPO_ROOT}/packages/web' && pnpm exec vitest run src"
 _gate "prettier"                1 bash -c "cd '${REPO_ROOT}' && pnpm exec prettier --check ."
 _gate "evidence-package-probe"  0 "${REPO_ROOT}/app/scripts/ci-evidence-package-probe.sh"
 
