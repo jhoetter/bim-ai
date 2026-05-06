@@ -28,6 +28,8 @@ import { StatusBar } from './StatusBar';
 import { CheatsheetModal } from '../cmd/CheatsheetModal';
 import { RedesignedCommandPalette } from '../cmd/RedesignedCommandPalette';
 import { type CommandCandidate } from '../cmd/commandPaletteSources';
+import { OnboardingTour } from '../onboarding/OnboardingTour';
+import { readOnboardingProgress } from '../onboarding/tour';
 import { ToolPalette } from '../tools/ToolPalette';
 import { TOOL_REGISTRY, type ToolDisabledContext, type ToolId } from '../tools/toolRegistry';
 
@@ -86,6 +88,7 @@ export function RedesignedWorkspace(): JSX.Element {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [cheatsheetOpen, setCheatsheetOpen] = useState(false);
   const [recentCommandIds, setRecentCommandIds] = useState<string[]>([]);
+  const [tourOpen, setTourOpen] = useState<boolean>(() => !readOnboardingProgress().completed);
 
   /* ── Mode wiring (§7 + §20) ────────────────────────────────────────── */
   const handleModeChange = useCallback(
@@ -352,6 +355,7 @@ export function RedesignedWorkspace(): JSX.Element {
         recentIds={recentCommandIds}
         onPick={handlePalettePick}
       />
+      <OnboardingTour open={tourOpen} onClose={() => setTourOpen(false)} />
       <AppShell
         topBar={
           <div className="flex w-full items-center">
