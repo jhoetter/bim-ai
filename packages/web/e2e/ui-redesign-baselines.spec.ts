@@ -18,7 +18,7 @@ test.describe('UI redesign — chrome baselines', () => {
   test.use({ viewport: VIEWPORT });
 
   test.beforeEach(async ({ page }) => {
-    await page.goto('/redesign');
+    await page.goto('/');
     await page.waitForSelector('[data-testid="app-shell"]');
   });
 
