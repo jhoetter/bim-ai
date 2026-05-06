@@ -19,3 +19,7 @@ yep
 ---
 
 ok so all committed and pushed?
+
+---
+
+commit and push all
