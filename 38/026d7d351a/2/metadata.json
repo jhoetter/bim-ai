@@ -3,60 +3,46 @@
   "checkpoint_id": "38026d7d351a",
   "session_id": "78f1be18-569f-4005-ac80-7885f31ed09d",
   "strategy": "manual-commit",
-  "created_at": "2026-05-06T10:37:33.459467Z",
+  "created_at": "2026-05-06T10:49:27.415403Z",
   "branch": "r3-04-outline-selection",
   "checkpoints_count": 1,
   "files_touched": [
-    "packages/web/src/Viewport.tsx",
-    "packages/web/src/workspace/Viewport3DLayersPanel.test.tsx"
+    "packages/web/src/Viewport.tsx"
   ],
   "agent": "Claude Code",
   "model": "claude-sonnet-4-6",
   "turn_id": "14fca182d9d4",
+  "checkpoint_transcript_start": 122,
+  "transcript_lines_at_start": 122,
   "token_usage": {
-    "input_tokens": 27,
-    "cache_creation_tokens": 36028,
-    "cache_read_tokens": 827264,
-    "output_tokens": 18150,
-    "api_call_count": 23
+    "input_tokens": 17,
+    "cache_creation_tokens": 15202,
+    "cache_read_tokens": 990655,
+    "output_tokens": 7906,
+    "api_call_count": 17
   },
   "session_metrics": {
-    "turn_count": 1
+    "turn_count": 2
   },
   "initial_attribution": {
-    "calculated_at": "2026-05-06T10:37:33.453974Z",
+    "calculated_at": "2026-05-06T10:49:27.407907Z",
     "agent_lines": 0,
-    "agent_removed": 49,
+    "agent_removed": 0,
     "human_added": 0,
-    "human_modified": 0,
-    "human_removed": 41,
-    "total_committed": 0,
-    "total_lines_changed": 90,
-    "agent_percentage": 54.44444444444444,
+    "human_modified": 237,
+    "human_removed": 154,
+    "total_committed": 237,
+    "total_lines_changed": 395,
+    "agent_percentage": 0,
     "metric_version": 2
   },
   "prompt_attributions": [
     {
       "checkpoint_number": 1,
-      "user_lines_added": 93,
-      "user_lines_removed": 41,
-      "agent_lines_added": 0,
-      "agent_lines_removed": 0,
-      "user_added_per_file": {
-        "packages/web/src/Viewport.tsx": 82,
-        "packages/web/src/workspace/Viewport3DLayersPanel.test.tsx": 11
-      },
-      "user_removed_per_file": {
-        "packages/web/src/Viewport.tsx": 36,
-        "packages/web/src/workspace/Viewport3DLayersPanel.test.tsx": 5
-      }
-    },
-    {
-      "checkpoint_number": 2,
       "user_lines_added": 0,
       "user_lines_removed": 0,
-      "agent_lines_added": 68,
-      "agent_lines_removed": 37
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
     }
   ]
 }
