@@ -215,6 +215,8 @@ export type ResolvedPlanCategoryGraphic = {
   linePatternSource: 'default' | 'template' | 'plan_view';
   lineWeightIsDefaulted: boolean;
   linePatternIsDefaulted: boolean;
+  visible: boolean;
+  lineColor: string | null;
 };
 
 function categoryGraphicsRowMap(rows: PlanCategoryGraphicRow[] | undefined) {
@@ -279,7 +281,33 @@ export function resolvePlanCategoryGraphics(
       linePatternSource: pSrc,
       lineWeightIsDefaulted: wDef,
       linePatternIsDefaulted: pDef,
+      visible: true,
+      lineColor: null,
     };
+  }
+  // Apply per-view category overrides (VV dialog).
+  const pvEl = elementsById[activePlanViewId];
+  if (pvEl?.kind === 'plan_view') {
+    const overrides = (pvEl.categoryOverrides ?? {}) as Record<
+      string,
+      {
+        visible?: boolean;
+        projection?: { lineWeightFactor?: number; lineColor?: string | null };
+      }
+    >;
+    for (const [catKey, ovr] of Object.entries(overrides)) {
+      const k = catKey as PlanCategoryGraphicCategoryKey;
+      if (!out[k]) continue;
+      if (ovr.visible === false) {
+        out[k].visible = false;
+      }
+      if (ovr.projection?.lineWeightFactor != null) {
+        out[k].lineWeightFactor = ovr.projection.lineWeightFactor;
+      }
+      if (ovr.projection?.lineColor != null) {
+        out[k].lineColor = ovr.projection.lineColor;
+      }
+    }
   }
   return out;
 }
