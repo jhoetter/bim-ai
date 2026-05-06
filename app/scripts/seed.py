@@ -190,6 +190,7 @@ def _house_commands() -> list[dict]:
             "overhangMm": 300,
             "slopeDeg": 30,
             "roofGeometryMode": "gable_pitched_rectangle",
+            "materialKey": "#e2e2de",
         },
         {
             # Annex flat roof: mode=flat → 150mm slab at eaveY=3200mm, light grey.
@@ -216,6 +217,11 @@ def _house_commands() -> list[dict]:
             # Main entrance on south facade, right-of-centre (near annex junction)
             "type": "insertDoorOnWall", "id": "d-main", "name": "Main entrance",
             "wallId": "w-s-main", "alongT": 0.78, "widthMm": 980,
+        },
+        {
+            # Annex entrance on south annex facade, right side (visible in reference)
+            "type": "insertDoorOnWall", "id": "d-ann", "name": "Annex entrance",
+            "wallId": "w-s-ann", "alongT": 0.78, "widthMm": 900,
         },
     ]
 
