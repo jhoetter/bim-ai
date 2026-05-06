@@ -1,0 +1,56 @@
+### T4 — GW-04: Curtain wall renderer
+
+  You are implementing GW-04 in a BIM web app (monorepo at /Users/jhoetter/repos/bim-ai).
+  Start by pulling main: git checkout main && git pull origin main
+
+  Goal
+
+  When a wall has isCurtainWall: true, render it as a glass curtain wall grid instead
+  of a solid box. The existing makeWallMesh must remain unchanged for non-curtain walls.
+
+  Prerequisites (already in main after GW-01 merges)
+
+  isCurtainWall field exists on WallElem (coerced in store.ts).
+
+  Step 1 — add makeCurtainWallMesh helper
+
+  In packages/web/src/Viewport.tsx, add a new function after makeWallMesh:
+
+  function makeCurtainWallMesh(
+    wall: WallElem,
+    elevM: number,
+    paint: ViewportPaintBundle | null,
+  ): THREE.Group {
+    const sx = wall.start.xMm / 1000;
+    const sz = wall.start.yMm / 1000;
+    const ex = wall.end.xMm / 1000;
+    const ez = wall.end.yMm / 1000;
+    const dx = ex - sx;  const dz = ez - sz;
+    const len = Math.max(0.001, Math.hypot(dx, dz));
+    const height = THREE.MathUtils.clamp(wall.heightMm / 1000, 0.25, 40);
+    const thick  = THREE.MathUtils.clamp(wall.thicknessMm / 1000, 0.05, 2);
+    const yaw    = Math.atan2(dz, dx);
+
+    const group = new THREE.Group();
+    group.userData.bimPickId = wall.id;
+
+    // Glass infill panels — one large pane per bay (subdivided by mullions below)
+    const glassMat = new THREE.MeshStandardMaterial({
+      color: 0x88ccee,
+      transparent: true,
+      opacity: 0.32,
+      roughness: 0.05,
+      metalness: 0.1,
+      side: THREE.DoubleSide,
+    });
+
+    // One glass panel spanning the full curtain wall (mullion grid drawn on top)
+    const glassGeom = new THREE.PlaneGeometry(len, height);
+    const glassMesh = new THREE.Mesh(glassGeom, glassMat);
+    glassMesh.position.set(sx + dx / 2, elevM + height / 2, sz + dz / 2);
+    glassMesh.rotation.y = yaw;
+    group.add(glassMesh);
+
+    // Mullion grid — vertical + horizontal thin boxes
+    const mullionMat = new THREE.MeshStandardMaterial({
+      color: paint?.categories.wall.col
