@@ -42,16 +42,6 @@ Visually verify the new PNGs look right, then commit.
 
 ## Medium (deferred from earlier WPs, called out in commits but not in spec)
 
-### T-06 · Tab localStorage persistence
-**WP target**: WP-UI-A12 · **Source**: commit `34b6120d` body · **Status**: deferred
-
-Open tabs are reset on every reload. Persist `tabsState` to localStorage and rehydrate on mount.
-
-**Next moves**:
-1. Serialize `tabsState` (just `tabs[]` + `activeId`) on every change to `localStorage['bim-ai:tabs']`.
-2. On `RedesignedWorkspace` mount, hydrate from localStorage if present (gate behind a feature flag if E2E reliability is a concern).
-3. Drop tabs whose `targetId` no longer exists in the store after seed bootstrap.
-
 ### T-07 · Per-tab viewport state
 **WP target**: WP-UI-A12 · **Source**: commit `34b6120d` body · **Status**: deferred
 

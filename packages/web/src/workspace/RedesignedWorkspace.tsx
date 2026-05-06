@@ -5,6 +5,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import type { Element } from '@bim-ai/core';
@@ -54,6 +55,7 @@ import {
   type TabsState,
   type ViewTab,
 } from './tabsModel';
+import { persistTabs, pruneTabsAgainstElements, readPersistedTabs } from './tabsPersistence';
 
 /**
  * RedesignedWorkspace — composition route for the §11–§17 chrome.
@@ -114,7 +116,12 @@ export function RedesignedWorkspace(): JSX.Element {
   const [tourOpen, setTourOpen] = useState<boolean>(() => !readOnboardingProgress().completed);
   const [seedLoading, setSeedLoading] = useState(false);
   const [seedError, setSeedError] = useState<string | null>(null);
-  const [tabsState, setTabsState] = useState<TabsState>(EMPTY_TABS);
+  const [tabsState, setTabsState] = useState<TabsState>(() => readPersistedTabs() ?? EMPTY_TABS);
+
+  /** Persist tabs on every change (T-06). */
+  useEffect(() => {
+    persistTabs(tabsState);
+  }, [tabsState]);
 
   /* ── Tab helpers (§11.3) ──────────────────────────────────────────── */
   const activeTab: ViewTab | null = useMemo(
@@ -201,22 +208,33 @@ export function RedesignedWorkspace(): JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // After the seed has hydrated and there are levels in the store,
-  // open a default Plan tab on the active level if no tabs exist yet.
+  // After the seed has hydrated, prune any restored tabs whose targets
+  // no longer exist (e.g. a sheet deleted between sessions). If the
+  // pruned set is empty, open a default Plan tab on the first level.
+  // Runs once when the store transitions from empty → non-empty.
+  const seededRef = useRef(false);
   useEffect(() => {
-    if (tabsState.tabs.length > 0) return;
-    const levels = (Object.values(elementsById) as Element[]).filter(
-      (e): e is Extract<Element, { kind: 'level' }> => e.kind === 'level',
-    );
-    if (levels.length === 0) return;
-    const targetLevel =
-      levels.find((l) => l.id === activeLevelId) ??
-      levels.sort((a, b) => a.elevationMm - b.elevationMm)[0];
-    if (!targetLevel) return;
-    setTabsState((s) =>
-      openTab(s, { kind: 'plan', targetId: targetLevel.id, label: `Plan · ${targetLevel.name}` }),
-    );
-  }, [elementsById, activeLevelId, tabsState.tabs.length]);
+    if (seededRef.current) return;
+    if (Object.keys(elementsById).length === 0) return;
+    seededRef.current = true;
+    setTabsState((s) => {
+      const pruned = pruneTabsAgainstElements(s, elementsById);
+      if (pruned.tabs.length > 0) return pruned;
+      const levels = (Object.values(elementsById) as Element[]).filter(
+        (e): e is Extract<Element, { kind: 'level' }> => e.kind === 'level',
+      );
+      if (levels.length === 0) return pruned;
+      const targetLevel =
+        levels.find((l) => l.id === activeLevelId) ??
+        levels.sort((a, b) => a.elevationMm - b.elevationMm)[0];
+      if (!targetLevel) return pruned;
+      return openTab(pruned, {
+        kind: 'plan',
+        targetId: targetLevel.id,
+        label: `Plan · ${targetLevel.name}`,
+      });
+    });
+  }, [elementsById, activeLevelId]);
 
   /* ── Mode wiring (§7 + §20) ────────────────────────────────────────── */
   const handleModeChange = useCallback(
