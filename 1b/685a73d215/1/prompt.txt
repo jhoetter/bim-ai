@@ -1,0 +1,1 @@
+read HANDOVER.md, then OPEN_TASKS.md. describe to me, what is the goal?
