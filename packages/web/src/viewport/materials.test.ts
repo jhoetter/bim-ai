@@ -46,11 +46,24 @@ describe('resolveCategoryMaterial — spec §15.5', () => {
       '--cat-section': 'hsl(0 70% 50%)',
       '--cat-sheet': 'hsl(220 6% 80%)',
     });
+    const PBR_EXPECTED: Record<ElementCategoryToken, { roughness: number; metalness: number }> = {
+      wall:    { roughness: 0.80, metalness: 0.00 },
+      floor:   { roughness: 0.90, metalness: 0.00 },
+      roof:    { roughness: 0.85, metalness: 0.00 },
+      door:    { roughness: 0.70, metalness: 0.00 },
+      window:  { roughness: 0.60, metalness: 0.05 },
+      stair:   { roughness: 0.85, metalness: 0.00 },
+      railing: { roughness: 0.35, metalness: 0.65 },
+      room:    { roughness: 0.85, metalness: 0.00 },
+      site:    { roughness: 0.95, metalness: 0.00 },
+      section: { roughness: 0.85, metalness: 0.00 },
+      sheet:   { roughness: 0.85, metalness: 0.00 },
+    };
     for (const cat of ALL_CATS) {
       const spec = resolveCategoryMaterial(cat, { reader });
       expect(spec.color).toBeTruthy();
-      expect(spec.roughness).toBe(0.85);
-      expect(spec.metalness).toBe(0);
+      expect(spec.roughness).toBe(PBR_EXPECTED[cat].roughness);
+      expect(spec.metalness).toBe(PBR_EXPECTED[cat].metalness);
       expect(spec.aoIntensity).toBe(0.4);
     }
   });
