@@ -2392,21 +2392,6 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
     [],
   );
 
-  const handleViewCubeHome = useCallback((): void => {
-    const rig = cameraRigRef.current;
-    if (!rig) return;
-    rig.reset();
-    const camera = cameraRef.current;
-    if (camera) {
-      const snap = rig.snapshot();
-      camera.position.set(snap.position.x, snap.position.y, snap.position.z);
-      camera.up.set(snap.up.x, snap.up.y, snap.up.z).normalize();
-      camera.lookAt(snap.target.x, snap.target.y, snap.target.z);
-      setCurrentAzimuth(snap.azimuth);
-      setCurrentElevation(snap.elevation);
-    }
-  }, []);
-
   const handleViewCubeDrag = useCallback((dxPx: number, dyPx: number): void => {
     const rig = cameraRigRef.current;
     const camera = cameraRef.current;
@@ -2440,7 +2425,6 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
           currentElevation={currentElevation}
           onPick={handleViewCubePick}
           onDrag={handleViewCubeDrag}
-          onHome={handleViewCubeHome}
         />
       </div>
 
