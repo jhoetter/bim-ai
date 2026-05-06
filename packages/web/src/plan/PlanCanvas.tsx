@@ -1,4 +1,15 @@
 import { type RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  initialAlignState,
+  initialSplitState,
+  initialTrimState,
+  reduceAlign,
+  reduceSplit,
+  reduceTrim,
+  type AlignState,
+  type SplitState,
+  type TrimState,
+} from '../tools/toolGrammar';
 import * as THREE from 'three';
 import type { Element } from '@bim-ai/core';
 
@@ -146,6 +157,7 @@ export function PlanCanvas({
   const cameraRef = useRef<THREE.OrthographicCamera | null>(null);
   const rootRef = useRef<THREE.Group | null>(null);
   const previewRef = useRef<THREE.Line | null>(null);
+  const marqueeLineRef = useRef<THREE.Line | null>(null);
   const dragRef = useRef({ dragging: false, lastXmm: 0, lastZmm: 0, camX: 0, camZ: 0 });
   const skipClickRef = useRef(false);
   const camRef = useRef({
@@ -154,6 +166,17 @@ export function PlanCanvas({
     half: initialCamera?.halfMm !== undefined ? initialCamera.halfMm / 1000 : 22,
   });
   const draftRef = useRef<Draft | undefined>(undefined);
+  const alignStateRef = useRef<AlignState>(initialAlignState());
+  const splitStateRef = useRef<SplitState>(initialSplitState());
+  const trimStateRef = useRef<TrimState>(initialTrimState());
+  const marqueeRef = useRef<{
+    active: boolean;
+    sx: number;
+    sy: number;
+    ex: number;
+    ey: number;
+    direction: 'left-to-right' | 'right-to-left' | null;
+  }>({ active: false, sx: 0, sy: 0, ex: 0, ey: 0, direction: null });
   const spaceDownRef = useRef(false);
   const draftingRef = useRef<ReturnType<typeof draftingPaintFor> | null>(null);
   const lastPlotScaleRef = useRef<number>(0);
@@ -362,6 +385,19 @@ export function PlanCanvas({
 
   useEffect(() => {
     draftRef.current = undefined;
+    alignStateRef.current = initialAlignState();
+    splitStateRef.current = initialSplitState();
+    trimStateRef.current = initialTrimState();
+    if (planTool === 'align') {
+      const { state } = reduceAlign(alignStateRef.current, { kind: 'activate' });
+      alignStateRef.current = state;
+    } else if (planTool === 'split') {
+      const { state } = reduceSplit(splitStateRef.current, { kind: 'activate' });
+      splitStateRef.current = state;
+    } else if (planTool === 'trim') {
+      const { state } = reduceTrim(trimStateRef.current, { kind: 'activate' });
+      trimStateRef.current = state;
+    }
   }, [planTool]);
 
   useEffect(() => {
@@ -540,6 +576,49 @@ export function PlanCanvas({
       grp.add(previewRef.current);
     };
 
+    const clearMarqueeLine = () => {
+      if (marqueeLineRef.current) {
+        grp.remove(marqueeLineRef.current);
+        marqueeLineRef.current.geometry.dispose();
+        marqueeLineRef.current = null;
+      }
+    };
+
+    const redrawMarqueeRect = (
+      x0Mm: number,
+      y0Mm: number,
+      x1Mm: number,
+      y1Mm: number,
+      crossing: boolean,
+    ) => {
+      clearMarqueeLine();
+      const xMn = Math.min(x0Mm, x1Mm) / 1000;
+      const xMx = Math.max(x0Mm, x1Mm) / 1000;
+      const zMn = Math.min(y0Mm, y1Mm) / 1000;
+      const zMx = Math.max(y0Mm, y1Mm) / 1000;
+      const pts = [
+        new THREE.Vector3(xMn, SLICE_Y, zMn),
+        new THREE.Vector3(xMx, SLICE_Y, zMn),
+        new THREE.Vector3(xMx, SLICE_Y, zMx),
+        new THREE.Vector3(xMn, SLICE_Y, zMx),
+        new THREE.Vector3(xMn, SLICE_Y, zMn),
+      ];
+      const geo = new THREE.BufferGeometry().setFromPoints(pts);
+      const mat = crossing
+        ? new THREE.LineDashedMaterial({
+            color: readPlanToken('--draft-construction-blue', '#fcd34d'),
+            dashSize: 0.3,
+            gapSize: 0.15,
+          })
+        : new THREE.LineBasicMaterial({
+            color: readPlanToken('--draft-construction-blue', '#fcd34d'),
+          });
+      const line = new THREE.Line(geo, mat);
+      if (crossing) line.computeLineDistances();
+      marqueeLineRef.current = line;
+      grp.add(line);
+    };
+
     const onMove = (ev: PointerEvent) => {
       const xy = snapped(ev.clientX, ev.clientY);
       setHudMm(xy);
@@ -551,6 +630,24 @@ export function PlanCanvas({
         camRef.current.camZ = dragRef.current.camZ - (rr.yMm - dragRef.current.lastZmm) / 1000;
         resizeCam();
         skipClickRef.current = true;
+        return;
+      }
+      if (marqueeRef.current.active) {
+        const rr = rayToPlanMm(rnd, camNow, ev.clientX, ev.clientY);
+        if (rr) {
+          const dir = rr.xMm > marqueeRef.current.sx ? 'left-to-right' : 'right-to-left';
+          marqueeRef.current.direction = dir;
+          marqueeRef.current.ex = rr.xMm;
+          marqueeRef.current.ey = rr.yMm;
+          redrawMarqueeRect(
+            marqueeRef.current.sx,
+            marqueeRef.current.sy,
+            rr.xMm,
+            rr.yMm,
+            dir === 'right-to-left',
+          );
+          skipClickRef.current = true;
+        }
         return;
       }
       const v = snapped(ev.clientX, ev.clientY);
@@ -649,7 +746,7 @@ export function PlanCanvas({
       if (intent === 'pan' || ev.button === 2) {
         startPan();
       } else if (intent === 'drag-move' && planTool === 'select') {
-        // LMB + select tool: pan when clicking empty space, let onClick handle element hits.
+        // LMB + select tool: pan on element hit, start marquee on empty space.
         const rectBox = rnd.domElement.getBoundingClientRect();
         const ray = new THREE.Raycaster();
         ray.setFromCamera(
@@ -663,7 +760,21 @@ export function PlanCanvas({
         const hasHit = hits.some(
           (x) => typeof (x.object.userData as { bimPickId?: unknown }).bimPickId === 'string',
         );
-        if (!hasHit) startPan();
+        if (hasHit) {
+          startPan();
+        } else {
+          const rr = rayToPlanMm(rnd, camNow, ev.clientX, ev.clientY);
+          if (rr) {
+            marqueeRef.current = {
+              active: true,
+              sx: rr.xMm,
+              sy: rr.yMm,
+              ex: rr.xMm,
+              ey: rr.yMm,
+              direction: null,
+            };
+          }
+        }
       }
       skipClickRef.current = false;
     };
@@ -672,6 +783,46 @@ export function PlanCanvas({
       dragRef.current.dragging = false;
       if (snapIndicatorRef.current) snapIndicatorRef.current.visible = false;
       setSnapLabel(null);
+
+      if (marqueeRef.current.active && marqueeRef.current.direction) {
+        const { sx, sy, ex, ey, direction } = marqueeRef.current;
+        clearMarqueeLine();
+        marqueeRef.current = { active: false, sx: 0, sy: 0, ex: 0, ey: 0, direction: null };
+
+        const xMin = Math.min(sx, ex);
+        const xMax = Math.max(sx, ex);
+        const yMin = Math.min(sy, ey);
+        const yMax = Math.max(sy, ey);
+        const ids: string[] = [];
+        for (const el of Object.values(elementsById)) {
+          if (el.kind !== 'wall') continue;
+          if (displayLevelId && el.levelId !== displayLevelId) continue;
+          if (direction === 'left-to-right') {
+            // Window: fully enclosed
+            if (
+              Math.min(el.start.xMm, el.end.xMm) >= xMin &&
+              Math.max(el.start.xMm, el.end.xMm) <= xMax &&
+              Math.min(el.start.yMm, el.end.yMm) >= yMin &&
+              Math.max(el.start.yMm, el.end.yMm) <= yMax
+            ) {
+              ids.push(el.id);
+            }
+          } else {
+            // Crossing: bbox intersects marquee
+            const elXMin = Math.min(el.start.xMm, el.end.xMm);
+            const elXMax = Math.max(el.start.xMm, el.end.xMm);
+            const elYMin = Math.min(el.start.yMm, el.end.yMm);
+            const elYMax = Math.max(el.start.yMm, el.end.yMm);
+            if (elXMax >= xMin && elXMin <= xMax && elYMax >= yMin && elYMin <= yMax) {
+              ids.push(el.id);
+            }
+          }
+        }
+        if (ids.length > 0) selectEl(ids[0]);
+        return;
+      }
+      clearMarqueeLine();
+      marqueeRef.current = { active: false, sx: 0, sy: 0, ex: 0, ey: 0, direction: null };
     };
 
     const onClick = (ev: MouseEvent) => {
@@ -809,6 +960,92 @@ export function PlanCanvas({
         bumpGeom((x) => x + 1);
         return;
       }
+      if (planTool === 'align') {
+        const { state: nextState, effect } = reduceAlign(alignStateRef.current, {
+          kind: 'click',
+          pointMm: sp,
+        });
+        alignStateRef.current = nextState;
+        if (effect.commitAlign) {
+          console.warn('stub: alignElement not implemented', effect.commitAlign);
+        }
+        return;
+      }
+      if (planTool === 'split') {
+        const { state: nextState, effect } = reduceSplit(splitStateRef.current, {
+          kind: 'click',
+          pointMm: sp,
+        });
+        splitStateRef.current = nextState;
+        if (effect.commitSplit) {
+          const nearest = nearestWallAt(
+            elementsById,
+            displayLevelId || undefined,
+            effect.commitSplit.pointMm.xMm,
+            effect.commitSplit.pointMm.yMm,
+          );
+          if (nearest && nearest.distMm < 900) {
+            console.warn('stub: splitWall not implemented', {
+              wallId: nearest.wall.id,
+              alongT: nearest.alongT,
+            });
+          }
+        }
+        return;
+      }
+      if (planTool === 'trim') {
+        const rectBox = rnd.domElement.getBoundingClientRect();
+        const ray = new THREE.Raycaster();
+        ray.setFromCamera(
+          new THREE.Vector2(
+            ((ev.clientX - rectBox.left) / rectBox.width) * 2 - 1,
+            -(((ev.clientY - rectBox.top) / rectBox.height) * 2 - 1),
+          ),
+          camNow,
+        );
+        const hits = ray.intersectObjects(grp.children, true);
+        const hitEl = hits.find(
+          (x) => typeof (x.object.userData as { bimPickId?: unknown }).bimPickId === 'string',
+        );
+        const elementId =
+          typeof (hitEl?.object.userData as { bimPickId?: unknown }).bimPickId === 'string'
+            ? (hitEl!.object.userData as { bimPickId: string }).bimPickId
+            : undefined;
+
+        if (trimStateRef.current.phase === 'pick-reference') {
+          if (elementId) {
+            const { state: nextState } = reduceTrim(trimStateRef.current, {
+              kind: 'click-reference',
+              elementId,
+            });
+            trimStateRef.current = nextState;
+          }
+        } else {
+          if (elementId) {
+            const refEl = elementId
+              ? elementsById[trimStateRef.current.referenceId ?? '']
+              : undefined;
+            const endHint: 'start' | 'end' = (() => {
+              const target = elementsById[elementId];
+              if (!target || target.kind !== 'wall') return 'start';
+              const dStart = Math.hypot(sp.xMm - target.start.xMm, sp.yMm - target.start.yMm);
+              const dEnd = Math.hypot(sp.xMm - target.end.xMm, sp.yMm - target.end.yMm);
+              return dStart < dEnd ? 'start' : 'end';
+            })();
+            void refEl;
+            const { state: nextState, effect } = reduceTrim(trimStateRef.current, {
+              kind: 'click-target',
+              elementId,
+              endHint,
+            });
+            trimStateRef.current = nextState;
+            if (effect.commitTrim) {
+              console.warn('stub: trimElement not implemented', effect.commitTrim);
+            }
+          }
+        }
+        return;
+      }
       if (planTool === 'room') {
         let rm = draftRef.current;
         if (!rm || rm.kind !== 'room') {
@@ -887,6 +1124,18 @@ export function PlanCanvas({
     const onKey = (ev: KeyboardEvent) => {
       if (ev.key === 'Escape') {
         draftRef.current = undefined;
+        if (planTool === 'align') {
+          const { state } = reduceAlign(alignStateRef.current, { kind: 'cancel' });
+          alignStateRef.current = state;
+        } else if (planTool === 'split') {
+          const { state } = reduceSplit(splitStateRef.current, { kind: 'cancel' });
+          splitStateRef.current = state;
+        } else if (planTool === 'trim') {
+          const { state } = reduceTrim(trimStateRef.current, { kind: 'cancel' });
+          trimStateRef.current = state;
+        }
+        clearMarqueeLine();
+        marqueeRef.current = { active: false, sx: 0, sy: 0, ex: 0, ey: 0, direction: null };
         bumpGeom((x) => x + 1);
       }
       if (ev.code === 'Space') {

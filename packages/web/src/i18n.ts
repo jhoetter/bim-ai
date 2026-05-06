@@ -37,6 +37,18 @@ i18n.init({
             label: 'Tag',
             tooltip: 'Tag dropdown (Door / Window / Wall / Room / By category)',
           },
+          align: {
+            label: 'Align',
+            tooltip: 'Click reference edge, then element to align (AL)',
+          },
+          split: {
+            label: 'Split Element',
+            tooltip: 'Click a wall to split it at the cursor position (SD)',
+          },
+          trim: {
+            label: 'Trim / Extend',
+            tooltip: 'Click reference line, then segment to trim or extend (TR)',
+          },
           disabled: {
             drawWallFirst: 'Draw a wall first',
             addStairFirst: 'Add a stair or slab first',

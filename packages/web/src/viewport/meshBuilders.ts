@@ -821,9 +821,9 @@ export function makeRoofMassMesh(
     }
   }
 
-  const roofColor = roof.materialKey ?? (
-    roof.roofGeometryMode === 'flat' ? '#d8d8d4' : categoryColorOr(paint, 'roof')
-  );
+  const roofColor =
+    roof.materialKey ??
+    (roof.roofGeometryMode === 'flat' ? '#d8d8d4' : categoryColorOr(paint, 'roof'));
   const roofIsLight = !!roof.materialKey;
 
   const mesh = new THREE.Mesh(

@@ -17,7 +17,10 @@ export type ToolGrammarKind =
   | 'room'
   | 'dimension'
   | 'section'
-  | 'tag';
+  | 'tag'
+  | 'align'
+  | 'split'
+  | 'trim';
 
 export type WallLocationLine =
   | 'wall-centerline'
@@ -405,3 +408,179 @@ export const TAG_FAMILIES: { id: TagFamily; label: string }[] = [
   { id: 'tag-room', label: 'Tag Room' },
   { id: 'tag-by-category', label: 'Tag by Category' },
 ];
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* Align — §16 Modify                                                       */
+/* ────────────────────────────────────────────────────────────────────── */
+
+export interface AlignState {
+  phase: 'pick-reference' | 'pick-element';
+  referenceMm: { xMm: number; yMm: number } | null;
+}
+
+export type AlignEvent =
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'click'; pointMm: { xMm: number; yMm: number } }
+  | { kind: 'cancel' };
+
+export interface AlignEffect {
+  commitAlign?: {
+    referenceMm: { xMm: number; yMm: number };
+    targetMm: { xMm: number; yMm: number };
+  };
+  stillActive: boolean;
+}
+
+export function initialAlignState(): AlignState {
+  return { phase: 'pick-reference', referenceMm: null };
+}
+
+export function reduceAlign(
+  state: AlignState,
+  event: AlignEvent,
+): { state: AlignState; effect: AlignEffect } {
+  if (event.kind === 'activate') {
+    return { state: { phase: 'pick-reference', referenceMm: null }, effect: { stillActive: true } };
+  }
+  if (event.kind === 'deactivate') {
+    return {
+      state: { phase: 'pick-reference', referenceMm: null },
+      effect: { stillActive: false },
+    };
+  }
+  if (event.kind === 'cancel') {
+    return { state: { phase: 'pick-reference', referenceMm: null }, effect: { stillActive: true } };
+  }
+  // click
+  if (state.phase === 'pick-reference') {
+    return {
+      state: { phase: 'pick-element', referenceMm: event.pointMm },
+      effect: { stillActive: true },
+    };
+  }
+  // pick-element + click → commit and return to pick-reference for next pair
+  return {
+    state: { phase: 'pick-reference', referenceMm: null },
+    effect: {
+      commitAlign: { referenceMm: state.referenceMm!, targetMm: event.pointMm },
+      stillActive: true,
+    },
+  };
+}
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* Split — §16 Modify                                                       */
+/* ────────────────────────────────────────────────────────────────────── */
+
+export interface SplitState {
+  active: boolean;
+}
+
+export type SplitEvent =
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'click'; pointMm: { xMm: number; yMm: number } }
+  | { kind: 'cancel' };
+
+export interface SplitEffect {
+  commitSplit?: { pointMm: { xMm: number; yMm: number } };
+  stillActive: boolean;
+}
+
+export function initialSplitState(): SplitState {
+  return { active: false };
+}
+
+export function reduceSplit(
+  state: SplitState,
+  event: SplitEvent,
+): { state: SplitState; effect: SplitEffect } {
+  if (event.kind === 'activate') {
+    return { state: { active: true }, effect: { stillActive: true } };
+  }
+  if (event.kind === 'deactivate') {
+    return { state: { active: false }, effect: { stillActive: false } };
+  }
+  if (event.kind === 'cancel') {
+    return { state, effect: { stillActive: true } };
+  }
+  if (!state.active) {
+    return { state, effect: { stillActive: false } };
+  }
+  // click while active → emit split, stay active (Revit stays in Split mode)
+  return {
+    state,
+    effect: { commitSplit: { pointMm: event.pointMm }, stillActive: true },
+  };
+}
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* Trim / Extend — §16 Modify                                               */
+/* ────────────────────────────────────────────────────────────────────── */
+
+export interface TrimState {
+  phase: 'pick-reference' | 'pick-target';
+  referenceId: string | null;
+}
+
+export type TrimEvent =
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'click-reference'; elementId: string }
+  | { kind: 'click-target'; elementId: string; endHint: 'start' | 'end' }
+  | { kind: 'cancel' };
+
+export interface TrimEffect {
+  commitTrim?: { referenceId: string; targetId: string; endHint: 'start' | 'end' };
+  stillActive: boolean;
+}
+
+export function initialTrimState(): TrimState {
+  return { phase: 'pick-reference', referenceId: null };
+}
+
+export function reduceTrim(
+  state: TrimState,
+  event: TrimEvent,
+): { state: TrimState; effect: TrimEffect } {
+  if (event.kind === 'activate') {
+    return {
+      state: { phase: 'pick-reference', referenceId: null },
+      effect: { stillActive: true },
+    };
+  }
+  if (event.kind === 'deactivate') {
+    return {
+      state: { phase: 'pick-reference', referenceId: null },
+      effect: { stillActive: false },
+    };
+  }
+  if (event.kind === 'cancel') {
+    return {
+      state: { phase: 'pick-reference', referenceId: null },
+      effect: { stillActive: true },
+    };
+  }
+  if (event.kind === 'click-reference') {
+    return {
+      state: { phase: 'pick-target', referenceId: event.elementId },
+      effect: { stillActive: true },
+    };
+  }
+  // click-target
+  if (state.phase !== 'pick-target' || !state.referenceId) {
+    return { state, effect: { stillActive: true } };
+  }
+  return {
+    state: { phase: 'pick-reference', referenceId: null },
+    effect: {
+      commitTrim: {
+        referenceId: state.referenceId,
+        targetId: event.elementId,
+        endHint: event.endHint,
+      },
+      stillActive: true,
+    },
+  };
+}
