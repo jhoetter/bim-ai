@@ -1,0 +1,1 @@
+[Image #1] sections are difficult to read; is that as it currently is already good, or can we improve it? how does revit do that?
