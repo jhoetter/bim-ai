@@ -1,0 +1,3 @@
+Agent A: spec/prompts/wave-02/WP-V2-02-wall-depth.md → branch feat/wp-v2-02-wall-depth
+    - Location line geometry offset in 3D + plan wire
+    - Wall Joins modify tool (wall-join, N to cycle, Enter to accept)
