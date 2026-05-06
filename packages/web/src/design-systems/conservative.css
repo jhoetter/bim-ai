@@ -4,17 +4,32 @@
  * and tight (0–0.25 rem) radii. Drafting canvas tokens still come from
  * tokens-drafting.css so the plan canvas stays paper-like.
  *
+ * Import order matters:
+ *   1. tokens-default  — structural tokens (shell dims, spacing, radius, motion,
+ *                        elevation, typography scale) that conservative doesn't redefine
+ *   2. tokens-dark     — dark-mode structural overrides
+ *   3. conservative    — overrides only the colour palette + font-family
+ *
  * To preview, set VITE_DESIGN_SYSTEM=conservative when starting Vite —
  * vite.config.ts wires the env var to this file via the
  * @bim-ai-design-system.css alias.
  */
 
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap');
+
+/* Base structural tokens — shell grid, spacing, radius, motion, elevation */
+@import '@bim-ai/design-tokens/tokens-default.css';
+@import '@bim-ai/design-tokens/tokens-dark.css';
+
+/* Conservative palette — overrides colours + font from default */
 @import '@bim-ai/design-tokens/conservative.css';
 
 html,
 body,
 #root {
   height: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 body {

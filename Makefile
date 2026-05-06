@@ -16,6 +16,7 @@ PNPM := pnpm
 #   2000 → bim-ai web (:8500 API)  <-- this repo (avoids 3xxx used by sister apps)
 WEB_PORT ?= 2000
 API_PORT ?= 8500
+design ?= conservative
 
 .PHONY: help install dev dev-api dev-web kill-ports seed \
 	db-up db-down db-reset db-logs \
@@ -25,7 +26,7 @@ API_PORT ?= 8500
 help:
 	@echo "bim-ai Makefile"
 	@echo "  install   — pnpm + Python venv"
-	@echo "  dev       — db-up + API + Web (:$(API_PORT) / :$(WEB_PORT))"
+	@echo "  dev       — db-up + API + Web (:$(API_PORT) / :$(WEB_PORT)); make dev design=conservative|default"
 	@echo "  verify    — format-check, lint, architecture, tc, pytest, vite build"
 
 install:
@@ -83,7 +84,7 @@ dev-api:
 	cd $(APP_DIR) && PYTHONPATH=. .venv/bin/python -m uvicorn bim_ai.main:app --host 127.0.0.1 --port $(API_PORT) --reload
 
 dev-web:
-	API_PORT=$(API_PORT) $(PNPM) --filter @bim-ai/web dev --port $(WEB_PORT) --host 127.0.0.1 --strictPort
+	API_PORT=$(API_PORT) VITE_DESIGN_SYSTEM=$(design) $(PNPM) --filter @bim-ai/web dev --port $(WEB_PORT) --host 127.0.0.1 --strictPort
 
 seed:
 	cd $(APP_DIR) && PYTHONPATH=. .venv/bin/python scripts/seed.py
