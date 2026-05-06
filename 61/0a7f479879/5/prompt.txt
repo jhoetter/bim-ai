@@ -1,0 +1,1 @@
+can you plan out the wave 4? what work packages are there, which can run in parallel, which are depending? can you write down for wave 4 the tasks and prompts i should hand over to sub Ai agents? ideally they work on their own branch and work there
