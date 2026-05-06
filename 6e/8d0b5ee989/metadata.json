@@ -1,0 +1,23 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "6e8d0b5ee989",
+  "strategy": "manual-commit",
+  "branch": "gap-r5-slab-edge",
+  "checkpoints_count": 1,
+  "files_touched": null,
+  "sessions": [
+    {
+      "metadata": "/6e/8d0b5ee989/0/metadata.json",
+      "transcript": "/6e/8d0b5ee989/0/full.jsonl",
+      "content_hash": "/6e/8d0b5ee989/0/content_hash.txt",
+      "prompt": "/6e/8d0b5ee989/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 429,
+    "cache_creation_tokens": 591881,
+    "cache_read_tokens": 32230070,
+    "output_tokens": 292859,
+    "api_call_count": 359
+  }
+}
