@@ -45,6 +45,8 @@ class CreateWallCmd(BaseModel):
     base_constraint_offset_mm: float = Field(default=0, alias="baseConstraintOffsetMm")
     top_constraint_offset_mm: float = Field(default=0, alias="topConstraintOffsetMm")
     insulation_extension_mm: float = Field(default=0, alias="insulationExtensionMm")
+    material_key: str | None = Field(default=None, alias="materialKey")
+    is_curtain_wall: bool = Field(default=False, alias="isCurtainWall")
 
 class MoveWallDeltaCmd(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
@@ -231,7 +233,7 @@ class UpdateElementPropertyCmd(BaseModel):
     type: Literal["updateElementProperty"] = "updateElementProperty"
     element_id: str = Field(alias="elementId")
     key: str
-    value: str
+    value: str | bool | int | float | None = ""
 
 
 class SaveViewpointCmd(BaseModel):

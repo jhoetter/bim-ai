@@ -164,6 +164,8 @@ class WallElem(BaseModel):
     top_constraint_offset_mm: float = Field(default=0, alias="topConstraintOffsetMm")
     roof_attachment_id: str | None = Field(default=None, alias="roofAttachmentId")
     insulation_extension_mm: float = Field(default=0, alias="insulationExtensionMm")
+    material_key: str | None = Field(default=None, alias="materialKey")
+    is_curtain_wall: bool = Field(default=False, alias="isCurtainWall")
 
 
 class DoorElem(BaseModel):

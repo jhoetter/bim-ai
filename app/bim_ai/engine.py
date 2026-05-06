@@ -524,6 +524,8 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 base_constraint_offset_mm=cmd.base_constraint_offset_mm,
                 top_constraint_offset_mm=cmd.top_constraint_offset_mm,
                 insulation_extension_mm=cmd.insulation_extension_mm,
+                material_key=cmd.material_key,
+                is_curtain_wall=cmd.is_curtain_wall,
             )
 
         case MoveWallDeltaCmd():
@@ -1047,8 +1049,37 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                         "viewpoint updates: key=viewerClipCapElevMm | viewerClipFloorElevMm | "
                         "hiddenSemanticKinds3d | cutawayStyle | name"
                     )
+            elif isinstance(el, WallElem):
+                def _str_val(v: object) -> str:
+                    return str(v).strip() if v is not None else ""
+                if cmd.key == "materialKey":
+                    els[cmd.element_id] = el.model_copy(update={"material_key": _str_val(cmd.value) or None})
+                elif cmd.key == "isCurtainWall":
+                    if isinstance(cmd.value, bool):
+                        cw = cmd.value
+                    else:
+                        cw = _str_val(cmd.value).lower() in ("true", "1", "yes")
+                    els[cmd.element_id] = el.model_copy(update={"is_curtain_wall": cw})
+                elif cmd.key == "roofAttachmentId":
+                    rid = _str_val(cmd.value) or None
+                    if rid is not None and rid not in els:
+                        raise ValueError("roofAttachmentId must reference an existing element")
+                    els[cmd.element_id] = el.model_copy(update={"roof_attachment_id": rid})
+                elif cmd.key == "wallTypeId":
+                    wt = _str_val(cmd.value) or None
+                    if wt is not None and not isinstance(els.get(wt), WallTypeElem):
+                        raise ValueError("wallTypeId must reference an existing wall_type")
+                    els[cmd.element_id] = el.model_copy(update={"wall_type_id": wt})
+                elif cmd.key == "heightMm":
+                    els[cmd.element_id] = el.model_copy(update={"height_mm": float(_str_val(cmd.value))})
+                elif cmd.key == "thicknessMm":
+                    els[cmd.element_id] = el.model_copy(update={"thickness_mm": float(_str_val(cmd.value))})
+                elif cmd.key == "name":
+                    els[cmd.element_id] = el.model_copy(update={"name": _str_val(cmd.value)})
+                else:
+                    raise ValueError("wall updates: key=materialKey | isCurtainWall | roofAttachmentId | wallTypeId | heightMm | thicknessMm | name")
             elif isinstance(el, (DoorElem, WindowElem)):
-                raw_v = cmd.value.strip()
+                raw_v = str(cmd.value).strip() if cmd.value is not None else ""
                 if cmd.key == "familyTypeId":
                     els[cmd.element_id] = el.model_copy(update={"family_type_id": raw_v or None})
                 elif cmd.key == "materialKey":
@@ -1138,7 +1169,9 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                     "planCategoryGraphics(plan_view|view_template JSON array) | "
                     "viewerClipCapElevMm(viewpoint) | viewerClipFloorElevMm(viewpoint) | "
                     "hiddenSemanticKinds3d(viewpoint JSON array) | cutawayStyle(viewpoint) | "
-                    "familyTypeId(door/window) | materialKey(door/window) | "
+                    "familyTypeId(door/window) | materialKey(door/window|wall) | "
+                    "isCurtainWall(wall) | roofAttachmentId(wall) | wallTypeId(wall) | "
+                    "heightMm(wall) | thicknessMm(wall) | "
                     "roofTypeId(roof) | roofGeometryMode(roof) | "
                     "sheetId(schedule) | titleBlock(sheet) | titleblockParametersPatch(sheet JSON object) supported in v2"
                 )
