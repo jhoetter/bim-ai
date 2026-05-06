@@ -230,9 +230,10 @@ export function AgentReviewPane() {
     return { count: rooms.length };
   }, [elementsById]);
 
-  const evidenceArtifactSummary = useMemo(() => parseEvidenceArtifact(evidenceTxt, revision), [evidenceTxt, revision]);
-
-
+  const evidenceArtifactSummary = useMemo(
+    () => parseEvidenceArtifact(evidenceTxt, revision),
+    [evidenceTxt, revision],
+  );
 
   const roomCandPreview = useMemo(() => parseRoomCandidates(roomCandTxt), [roomCandTxt]);
 

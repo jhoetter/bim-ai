@@ -2,9 +2,7 @@ import { Btn } from '@bim-ai/ui';
 
 import { collaborationConflictQueueInspectionLinesFromHints } from '../../lib/collaborationConflictQueue';
 import { formatAgentReviewActionDetails } from '../agentReviewActionDetails';
-import {
-  EvidenceBaselineLifecycleReadoutV1Table,
-} from '../evidenceBaselineLifecycleReadout';
+import { EvidenceBaselineLifecycleReadoutV1Table } from '../evidenceBaselineLifecycleReadout';
 import {
   summarizeBcfIssuePackageExport,
   type BcfIssuePackageExportWire,
@@ -18,9 +16,7 @@ import {
   formatIfcExchangeManifestClosureLines,
   type IfcExchangeManifestClosureWire,
 } from '../ifcExchangeManifestClosureReadout';
-import {
-  formatPrdCloseoutCrossCorrelationReadoutLines,
-} from '../prdCloseoutCrossCorrelationReadout';
+import { formatPrdCloseoutCrossCorrelationReadoutLines } from '../prdCloseoutCrossCorrelationReadout';
 import type { EvidenceArtifactSummary } from './evidenceArtifactParser';
 
 interface EvidenceArtifactCorrelationPanelProps {
@@ -39,17 +35,13 @@ export function EvidenceArtifactCorrelationPanel({
         {evidenceArtifactSummary.semanticDigestPrefix16 ? (
           <li>
             semanticDigestPrefix16:{' '}
-            <code className="text-[10px]">
-              {evidenceArtifactSummary.semanticDigestPrefix16}
-            </code>
+            <code className="text-[10px]">{evidenceArtifactSummary.semanticDigestPrefix16}</code>
           </li>
         ) : null}
         {evidenceArtifactSummary.semanticDigestSha256Tail ? (
           <li>
             semanticDigest tail:{' '}
-            <code className="text-[10px]">
-              {evidenceArtifactSummary.semanticDigestSha256Tail}
-            </code>
+            <code className="text-[10px]">{evidenceArtifactSummary.semanticDigestSha256Tail}</code>
           </li>
         ) : null}
         {evidenceArtifactSummary.semanticDigestSha256Full &&
@@ -92,9 +84,7 @@ export function EvidenceArtifactCorrelationPanel({
               ) : null}
             </ul>
           ) : (
-            <p className="mt-1 text-[10px] text-muted">
-              No deterministic PNG basenames listed.
-            </p>
+            <p className="mt-1 text-[10px] text-muted">No deterministic PNG basenames listed.</p>
           )}
           <p className="mt-2 text-[10px]">
             {evidenceArtifactSummary.closureReview.correlationFullyConsistent === true ? (
@@ -105,8 +95,8 @@ export function EvidenceArtifactCorrelationPanel({
               <span className="text-amber-600 dark:text-amber-400">
                 Stale or incomplete deterministic rows:{' '}
                 {evidenceArtifactSummary.closureReview.staleRowCount} stale digest(s),{' '}
-                {evidenceArtifactSummary.closureReview.missingDigestRowCount} missing
-                correlation digest(s).
+                {evidenceArtifactSummary.closureReview.missingDigestRowCount} missing correlation
+                digest(s).
               </span>
             ) : (
               <span className="text-muted">Correlation consistency unknown.</span>
@@ -163,14 +153,11 @@ export function EvidenceArtifactCorrelationPanel({
                   …{evidenceArtifactSummary.closureReview.artifactIngestDigestSha256Tail}
                 </code>
               </p>
-              {evidenceArtifactSummary.closureReview.artifactIngestCanonicalPairCount !==
-              null ? (
+              {evidenceArtifactSummary.closureReview.artifactIngestCanonicalPairCount !== null ? (
                 <p className="mt-0.5 text-[10px] text-muted">
                   canonicalPairCount:{' '}
                   <code className="font-mono text-[10px]">
-                    {String(
-                      evidenceArtifactSummary.closureReview.artifactIngestCanonicalPairCount,
-                    )}
+                    {String(evidenceArtifactSummary.closureReview.artifactIngestCanonicalPairCount)}
                   </code>
                 </p>
               ) : null}
@@ -185,21 +172,18 @@ export function EvidenceArtifactCorrelationPanel({
             </div>
           ) : null}
           {evidenceArtifactSummary.closureReview.serverPngByteIngestComparisonResult !== null ||
-          evidenceArtifactSummary.closureReview.serverPngByteIngestCanonicalDigestFull !==
-            null ? (
+          evidenceArtifactSummary.closureReview.serverPngByteIngestCanonicalDigestFull !== null ? (
             <div
               data-testid="server-png-byte-ingest-callout"
               className="mt-2 rounded border border-border/40 bg-muted/10 p-2"
             >
               <div className="text-[10px] font-semibold text-muted">
-                Server PNG byte ingest (
-                <code className="text-[10px]">serverPngByteIngest_v1</code>)
+                Server PNG byte ingest (<code className="text-[10px]">serverPngByteIngest_v1</code>)
               </div>
               <p className="mt-1 text-[10px] text-muted">
                 comparison.result:{' '}
                 <code className="font-mono text-[10px]">
-                  {evidenceArtifactSummary.closureReview.serverPngByteIngestComparisonResult ??
-                    '—'}
+                  {evidenceArtifactSummary.closureReview.serverPngByteIngestComparisonResult ?? '—'}
                 </code>
               </p>
               {evidenceArtifactSummary.closureReview.serverPngByteIngestWidth !== null &&
@@ -210,8 +194,7 @@ export function EvidenceArtifactCorrelationPanel({
                     {evidenceArtifactSummary.closureReview.serverPngByteIngestWidth}×
                     {evidenceArtifactSummary.closureReview.serverPngByteIngestHeight}
                   </code>
-                  {evidenceArtifactSummary.closureReview.serverPngByteIngestByteLength !==
-                  null ? (
+                  {evidenceArtifactSummary.closureReview.serverPngByteIngestByteLength !== null ? (
                     <>
                       {' '}
                       · bytes{' '}
@@ -232,11 +215,7 @@ export function EvidenceArtifactCorrelationPanel({
                       0,
                       12,
                     )}
-                    …
-                    {
-                      evidenceArtifactSummary.closureReview
-                        .serverPngByteIngestCanonicalDigestTail
-                    }
+                    …{evidenceArtifactSummary.closureReview.serverPngByteIngestCanonicalDigestTail}
                   </code>
                 </p>
               ) : null}
@@ -293,29 +272,23 @@ export function EvidenceArtifactCorrelationPanel({
             <li>
               screenshotHintGapRowCount:{' '}
               <code className="font-mono">
-                {String(
-                  evidenceArtifactSummary.lifecycleSignal.screenshotHintGapRowCount ?? '—',
-                )}
+                {String(evidenceArtifactSummary.lifecycleSignal.screenshotHintGapRowCount ?? '—')}
               </code>
             </li>
             <li>
               pixelDiffIngestTargetCount:{' '}
               <code className="font-mono">
-                {String(
-                  evidenceArtifactSummary.lifecycleSignal.pixelDiffIngestTargetCount ?? '—',
-                )}
+                {String(evidenceArtifactSummary.lifecycleSignal.pixelDiffIngestTargetCount ?? '—')}
               </code>
             </li>
             <li>
               correlationFullyConsistent:{' '}
               <code className="font-mono">
-                {String(
-                  evidenceArtifactSummary.lifecycleSignal.correlationFullyConsistent ?? '—',
-                )}
+                {String(evidenceArtifactSummary.lifecycleSignal.correlationFullyConsistent ?? '—')}
               </code>
             </li>
-            {typeof evidenceArtifactSummary.lifecycleSignal
-              .artifactIngestManifestDigestSha256 === 'string' ? (
+            {typeof evidenceArtifactSummary.lifecycleSignal.artifactIngestManifestDigestSha256 ===
+            'string' ? (
               <li data-testid="lifecycle-artifact-ingest-digest-row">
                 artifactIngestManifestDigestSha256:{' '}
                 <code className="font-mono">
@@ -324,8 +297,7 @@ export function EvidenceArtifactCorrelationPanel({
                   ).length >= 24
                     ? `${String(evidenceArtifactSummary.lifecycleSignal.artifactIngestManifestDigestSha256).slice(0, 12)}…${String(evidenceArtifactSummary.lifecycleSignal.artifactIngestManifestDigestSha256).slice(-12)}`
                     : String(
-                        evidenceArtifactSummary.lifecycleSignal
-                          .artifactIngestManifestDigestSha256,
+                        evidenceArtifactSummary.lifecycleSignal.artifactIngestManifestDigestSha256,
                       )}
                 </code>
               </li>
@@ -508,8 +480,7 @@ export function EvidenceArtifactCorrelationPanel({
           </p>
           <p className="mt-1 text-[10px] text-muted">
             Use <code className="text-[9px]">remediateEvidenceDiffIngest</code> in{' '}
-            <code className="text-[9px]">agentReviewActions_v1</code> (pinned first when
-            present).
+            <code className="text-[9px]">agentReviewActions_v1</code> (pinned first when present).
           </p>
         </div>
       ) : null}
@@ -541,11 +512,7 @@ export function EvidenceArtifactCorrelationPanel({
               variant="quiet"
               className="shrink-0 text-[10px]"
               onClick={() => {
-                const body = JSON.stringify(
-                  evidenceArtifactSummary.agentFollowThrough,
-                  null,
-                  2,
-                );
+                const body = JSON.stringify(evidenceArtifactSummary.agentFollowThrough, null, 2);
                 void navigator.clipboard.writeText(body).then(
                   () => pushStep('Copied evidenceAgentFollowThrough_v1 JSON'),
                   () => pushStep('Clipboard write failed'),
@@ -574,9 +541,7 @@ export function EvidenceArtifactCorrelationPanel({
             const roundtripFmt = summarizeBcfRoundtripEvidenceSummary(
               roundtripRaw as BcfRoundtripEvidenceSummaryWire,
             );
-            const issuePkgRaw = ft.bcfIssuePackageExport_v1 as
-              | Record<string, unknown>
-              | undefined;
+            const issuePkgRaw = ft.bcfIssuePackageExport_v1 as Record<string, unknown> | undefined;
             const issuePkgFmt = summarizeBcfIssuePackageExport(
               issuePkgRaw as BcfIssuePackageExportWire,
             );
@@ -622,8 +587,7 @@ export function EvidenceArtifactCorrelationPanel({
                 ) : null}
                 {unres !== null ? (
                   <li>
-                    Unresolved BCF/issue evidenceRefs:{' '}
-                    <code className="font-mono">{unres}</code>
+                    Unresolved BCF/issue evidenceRefs: <code className="font-mono">{unres}</code>
                   </li>
                 ) : null}
                 {roundtripRaw?.format === 'bcfRoundtripEvidenceSummary_v1' ? (
@@ -658,8 +622,7 @@ export function EvidenceArtifactCorrelationPanel({
                     ) : null}
                   </>
                 ) : null}
-                {issuePkgRaw?.format === 'bcfIssuePackageExport_v1' &&
-                issuePkgFmt.lines.length ? (
+                {issuePkgRaw?.format === 'bcfIssuePackageExport_v1' && issuePkgFmt.lines.length ? (
                   <li className="space-y-0.5" data-testid="bcf-issue-package-export-readout">
                     <span>BCF issue package export:</span>
                     <ul className="list-disc space-y-0.5 ps-4">
@@ -684,10 +647,7 @@ export function EvidenceArtifactCorrelationPanel({
                   </li>
                 ) : null}
                 {ifcClosureLines.length ? (
-                  <li
-                    className="space-y-0.5"
-                    data-testid="ifc-exchange-manifest-closure-readout"
-                  >
+                  <li className="space-y-0.5" data-testid="ifc-exchange-manifest-closure-readout">
                     <span>IFC exchange manifest closure:</span>
                     <ul className="list-disc space-y-0.5 ps-4">
                       {ifcClosureLines.map((ln) => (
@@ -716,8 +676,8 @@ export function EvidenceArtifactCorrelationPanel({
                       ) : null}
                     </span>
                     <div className="mt-0.5 text-[9px] text-muted/90">
-                      Conflict queue inspection (live readout also appears in the Workspace
-                      header on 409):
+                      Conflict queue inspection (live readout also appears in the Workspace header
+                      on 409):
                     </div>
                     <ul className="list-disc space-y-0.5 ps-4">
                       {collaborationConflictQueueInspectionLinesFromHints().map((ln) => (
@@ -783,9 +743,7 @@ export function EvidenceArtifactCorrelationPanel({
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div>
                       <span className="font-mono text-muted">{a.kind}</span>
-                      <div className="mt-0.5 font-mono text-[9px] text-muted/80">
-                        {a.actionId}
-                      </div>
+                      <div className="mt-0.5 font-mono text-[9px] text-muted/80">{a.actionId}</div>
                     </div>
                     <Btn
                       type="button"
@@ -893,9 +851,7 @@ export function EvidenceArtifactCorrelationPanel({
               <tr className="bg-surface/50">
                 <th className="border border-border px-1 py-1 text-left">Viewpoint</th>
                 <th className="border border-border px-1 py-1 text-left">PNG stem</th>
-                <th className="border border-border px-1 py-1 text-left">
-                  Evidence bundle hint
-                </th>
+                <th className="border border-border px-1 py-1 text-left">Evidence bundle hint</th>
               </tr>
             </thead>
             <tbody>
@@ -903,9 +859,7 @@ export function EvidenceArtifactCorrelationPanel({
                 <tr key={vr.viewpointId}>
                   <td className="border border-border px-1 py-1 align-top">
                     <div className="font-mono">{vr.viewpointId}</div>
-                    {vr.viewpointName ? (
-                      <div className="text-muted">{vr.viewpointName}</div>
-                    ) : null}
+                    {vr.viewpointName ? <div className="text-muted">{vr.viewpointName}</div> : null}
                   </td>
                   <td className="border border-border px-1 py-1 font-mono align-top">
                     {vr.pngViewport ?? '—'}
@@ -1018,9 +972,7 @@ export function EvidenceArtifactCorrelationPanel({
             ) : null}
             {evidenceArtifactSummary.closureHints.ciPaths.length > 0 ? (
               <>
-                <div className="font-semibold text-muted">
-                  Artifact paths (after CI download)
-                </div>
+                <div className="font-semibold text-muted">Artifact paths (after CI download)</div>
                 <ul className="list-disc space-y-0.5 ps-4">
                   {evidenceArtifactSummary.closureHints.ciPaths.map((p, i) => (
                     <li key={i}>
@@ -1046,8 +998,7 @@ export function EvidenceArtifactCorrelationPanel({
             Re-fetch <code className="text-[10px]">evidence-package</code> for{' '}
             <code className="text-[10px]">agentEvidenceClosureHints</code>, or run{' '}
             <code className="text-[10px] break-all">
-              cd packages/web && CI=true pnpm exec playwright test
-              e2e/evidence-baselines.spec.ts
+              cd packages/web && CI=true pnpm exec playwright test e2e/evidence-baselines.spec.ts
             </code>
             .
           </p>

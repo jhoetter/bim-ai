@@ -343,8 +343,7 @@ export function parseEvidenceArtifact(
         const pol = p.thresholdPolicy_v1;
         if (pol && typeof pol === 'object') {
           const t = pol as Record<string, unknown>;
-          pixelDiffThresholdEnforcement =
-            typeof t.enforcement === 'string' ? t.enforcement : null;
+          pixelDiffThresholdEnforcement = typeof t.enforcement === 'string' ? t.enforcement : null;
           const r = t.mismatchPixelRatioFailAbove;
           if (typeof r === 'number' && Number.isFinite(r)) {
             pixelMismatchRatioFailAbove = r;

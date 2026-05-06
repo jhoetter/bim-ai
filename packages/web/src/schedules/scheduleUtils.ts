@@ -259,7 +259,9 @@ export function formatScheduleCell(v: unknown): string {
   return String(v);
 }
 
-export function flattenSchedulePayloadRows(data: Record<string, unknown>): Record<string, unknown>[] {
+export function flattenSchedulePayloadRows(
+  data: Record<string, unknown>,
+): Record<string, unknown>[] {
   const rows = data.rows;
 
   if (Array.isArray(rows)) return rows as Record<string, unknown>[];
