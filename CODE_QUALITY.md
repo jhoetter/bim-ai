@@ -26,8 +26,8 @@ Generated 2026-05-06. Updated after each workpackage.
 | WP-B | Tests for plan geometry helpers (`planElementMeshBuilders.ts`) | ✅ done    | d78c3405 |
 | WP-C | Tests for `store.ts` actions (`hydrateFromSnapshot`, `applyDelta`) | ✅ done | e104f7e6 |
 | WP-D | Add `ErrorBoundary` wrapper around main app sections           | ✅ done    | cb38d6ae |
-| WP-E | Decompose `SchedulePanel.tsx` — extract `ScheduleDefinitionToolbar` | ⬜ todo | —      |
-| WP-F | Decompose `RedesignedWorkspace.tsx` (1 862 lines)              | ⬜ todo    | —        |
+| WP-E | Decompose `SchedulePanel.tsx` — extract `ScheduleDefinitionToolbar` | ✅ done | 6e2afa3f |
+| WP-F | Decompose `RedesignedWorkspace.tsx` (1 862 lines)              | ✅ done    | 1774f345 |
 | WP-G | Structured error-logging utility (replace raw console.error)   | ✅ done    | 7780670a |
 | WP-H | Raise coverage thresholds 50/70/70 → 53/71/71                  | ✅ done    | 7780670a |
 
