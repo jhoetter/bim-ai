@@ -108,3 +108,7 @@ ok, i now want that you clear the current house we have and fully plan out and t
 ---
 
 ❯ did you commit + push? please do
+
+---
+
+[Image #5] [Image #6] the house in our software doesnt look at all like the software in the sketch. what differences do you see?
