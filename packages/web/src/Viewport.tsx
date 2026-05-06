@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 
 import type { Element } from '@bim-ai/core';
 
@@ -57,6 +60,16 @@ function readColorToken(name: string, fallback: string): string {
   } catch {
     return fallback;
   }
+}
+
+function sunPositionFromAzEl(azimuthDeg: number, elevationDeg: number, radiusM = 80): THREE.Vector3 {
+  const az = THREE.MathUtils.degToRad(azimuthDeg);
+  const el = THREE.MathUtils.degToRad(elevationDeg);
+  return new THREE.Vector3(
+    radiusM * Math.cos(el) * Math.sin(az),
+    radiusM * Math.sin(el),
+    radiusM * Math.cos(el) * Math.cos(az),
+  );
 }
 
 type Props = {
@@ -662,6 +675,8 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
   const rafRef = useRef<number | null>(null);
   /** Live paint bundle for the rendered scene. Rebuilt on theme change. */
   const paintBundleRef = useRef<ViewportPaintBundle | null>(null);
+  const composerRef = useRef<EffectComposer | null>(null);
+  const sunRef = useRef<THREE.DirectionalLight | null>(null);
   /** Live CameraRig instance — replaces the legacy ad-hoc spherical rig. */
   const cameraRigRef = useRef<CameraRig | null>(null);
   const hasAutoFittedRef = useRef(false);
@@ -715,6 +730,8 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
     renderer.localClippingEnabled = true;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setClearColor(readColorToken('--color-background', '#ffffff'), 1);
     rendererRef.current = renderer;
@@ -733,8 +750,21 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       new THREE.Color(paint.lighting.sun.color),
       paint.lighting.sun.intensity,
     );
-    dir.position.set(8, 12, 6);
+    dir.castShadow = true;
+    dir.shadow.mapSize.set(paint.lighting.sun.shadowMapSize, paint.lighting.sun.shadowMapSize);
+    dir.shadow.bias = -0.001;
+    dir.shadow.camera.left   = -30;
+    dir.shadow.camera.right  =  30;
+    dir.shadow.camera.top    =  30;
+    dir.shadow.camera.bottom = -30;
+    dir.shadow.camera.near   =  0.5;
+    dir.shadow.camera.far    =  200;
+    dir.shadow.camera.updateProjectionMatrix();
+    dir.position.copy(sunPositionFromAzEl(paint.lighting.sun.azimuthDeg, paint.lighting.sun.elevationDeg));
+    dir.target.position.set(0, 0, 0);
     scene.add(dir);
+    scene.add(dir.target);
+    sunRef.current = dir;
     scene.add(
       new THREE.GridHelper(
         160,
@@ -753,6 +783,12 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
     camera.up.set(0, 1, 0);
 
     cameraRef.current = camera;
+
+    const composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, camera));
+    // SSAO and edge passes added by R1-04 and R1-05
+    composer.addPass(new OutputPass());
+    composerRef.current = composer;
 
     /** Spec §15.3 walk-mode controller — the actual key/mouse wiring is
      * a few lines below; this just creates the math state. */
@@ -838,6 +874,7 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
 
       const h = host.clientHeight || 1;
       renderer.setSize(w, h);
+      composer.setSize(w, h);
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
     }
@@ -1035,7 +1072,7 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
         placeCamera();
       }
 
-      renderer.render(scene, camera);
+      composer.render();
       rafRef.current = requestAnimationFrame(tick);
     }
 
@@ -1063,6 +1100,9 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       sectionBoxRef.current = null;
       sectionBoxCageRef.current = null;
 
+      composerRef.current?.dispose();
+      composerRef.current = null;
+      sunRef.current = null;
       renderer.dispose();
 
       host.removeChild(renderer.domElement);
@@ -1240,6 +1280,36 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       cage.userData.bimPickId = '__section_box_cage';
       sectionBoxCageRef.current = cage;
       root.add(cage);
+    }
+
+    // R1-01: tag every mesh with shadow properties; site is receiver-only.
+    const siteIds = new Set(
+      Object.values(elementsById).filter((e) => e.kind === 'site').map((e) => e.id),
+    );
+    root.traverse((obj) => {
+      if (!(obj instanceof THREE.Mesh)) return;
+      const isSite = siteIds.has(obj.userData.bimPickId as string);
+      obj.castShadow = !isSite;
+      obj.receiveShadow = true;
+    });
+
+    // R1-01: update shadow camera frustum to enclose the scene AABB.
+    const sun = sunRef.current;
+    if (sun) {
+      const sceneBox = new THREE.Box3().setFromObject(root);
+      if (Number.isFinite(sceneBox.min.x)) {
+        const size = new THREE.Vector3();
+        sceneBox.getSize(size);
+        const sceneRadiusM = Math.max(size.length() / 2, 5);
+        const frustumHalf = Math.max(sceneRadiusM * 1.2, 20);
+        sun.shadow.camera.left   = -frustumHalf;
+        sun.shadow.camera.right  =  frustumHalf;
+        sun.shadow.camera.top    =  frustumHalf;
+        sun.shadow.camera.bottom = -frustumHalf;
+        sun.shadow.camera.near   =  0.5;
+        sun.shadow.camera.far    =  sceneRadiusM * 4 + 50;
+        sun.shadow.camera.updateProjectionMatrix();
+      }
     }
 
     // First-geometry auto-fit: set orbit target to building centroid so the
