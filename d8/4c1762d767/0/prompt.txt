@@ -1,0 +1,62 @@
+CI/CD is failing: Run pytest
+============================= test session starts ==============================
+platform linux -- Python 3.12.13, pytest-9.0.3, pluggy-1.6.0
+rootdir: /home/runner/work/bim-ai/bim-ai/app
+configfile: pyproject.toml
+testpaths: tests
+plugins: asyncio-1.3.0, anyio-4.13.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 1103 items
+
+tests/test_advisor_blocking_class_expansion.py ..............            [  1%]
+tests/test_agent_brief_acceptance_readout.py ..........                  [  2%]
+tests/test_agent_brief_command_protocol.py ......                        [  2%]
+tests/test_agent_evidence_loop_closure.py ........                       [  3%]
+tests/test_agent_generated_bundle_qa_checklist.py ......                 [  3%]
+tests/test_agent_review_readout_consistency_closure.py ................. [  5%]
+.........                                                                [  6%]
+tests/test_ci_gate_runner.py .............                               [  7%]
+tests/test_constraints.py .............                                  [  8%]
+tests/test_constraints_discipline.py ....                                [  9%]
+tests/test_constraints_room_programme_consistency.py ........            [  9%]
+tests/test_constraints_schedule_sheet_link.py .........                  [ 10%]
+tests/test_constraints_sheet_documentation_advisory.py ..............    [ 11%]
+tests/test_cross_surface_evidence_audit_v1.py ....                       [ 12%]
+tests/test_cut_solid_kernel.py ...                                       [ 12%]
+tests/test_derived_performance_budget.py F..FF.                          [ 13%]
+tests/test_deterministic_sheet_evidence.py ..........                    [ 13%]
+tests/test_engine_constraints.py ......                                  [ 14%]
+tests/test_evidence_agent_follow_through.py ..................           [ 16%]
+tests/test_evidence_agent_review_loop.py .........                       [ 16%]
+tests/test_evidence_baseline_lifecycle_readout.py ......                 [ 17%]
+tests/test_evidence_manifest_closure.py ................................ [ 20%]
+.........                                                                [ 21%]
+tests/test_evidence_package_digest.py .............                      [ 22%]
+tests/test_evidence_replay_determinism_harness.py .....                  [ 22%]
+tests/test_exchange_ifc_geometry_skips_advisory.py ...                   [ 23%]
+tests/test_export_gltf.py ...........                                    [ 24%]
+tests/test_export_ifc.py ..............................                  [ 26%]
+tests/test_export_ifc_door_material_readback.py .                        [ 26%]
+tests/test_final_hardening_sweep.py ..                                   [ 27%]
+>       assert elapsed < 4.0
+E       assert 8.212422658999998 < 4.0
+
+tests/test_derived_performance_budget.py:215: AssertionError
+=============================== warnings summary ===============================
+tests/test_engine_constraints.py::test_wall_zero_length_rejected_on_endpoint_move
+tests/test_engine_constraints.py::test_wall_zero_length_rejected_on_create
+  /opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/ifcopenshell/api/geometry/create_2pt_wall.py:78: RuntimeWarning: invalid value encountered in divide
+    v /= float(np.linalg.norm(v))
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_derived_performance_budget.py::test_plan_projection_wire_budget_1200_walls_under_two_seconds - assert 3.6748197120000015 < 2.8
+FAILED tests/test_derived_performance_budget.py::test_try_commit_bundle_many_create_walls_under_three_seconds - assert 5.849639871000001 < 3.0
+FAILED tests/test_derived_performance_budget.py::test_try_commit_bundle_many_create_walls_290_under_four_seconds - assert 8.212422658999998 < 4.0
+============ 3 failed, 1093 passed, 7 skipped, 2 warnings in 31.21s ============
+Error: Process completed with exit code 1.
+please fix those tests by correcting the code so our software works again against all
+
+---
+
+did you commit and push those fixes?
