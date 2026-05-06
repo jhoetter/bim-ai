@@ -27,8 +27,8 @@ A workpackage is `done` when all of: (a) TypeScript typechecks clean (`pnpm exec
 | Wave 1                                     | Interaction Foundation + Plan Canvas               | `done`      |
 | Wave 2                                     | View System + Wall Depth + Openings                | `done`      |
 | [Wave 3](#wave-3--element-depth)           | Element Depth (Structural, Curtain Wall, Ceilings) | `done`      |
-| [Wave 4](#wave-4--data-layer)              | Data Layer (Rooms V2, Parameters, Schedules)       | **CURRENT** |
-| [Wave 5](#wave-5--families--collaboration) | Families + Collaboration                           | `open`      |
+| [Wave 4](#wave-4--data-layer)              | Data Layer (Rooms V2, Parameters, Schedules)       | `done`      |
+| [Wave 5](#wave-5--families--collaboration) | Families + Collaboration                           | **CURRENT** |
 | [Wave 6](#wave-6--coordination--export)    | Coordination + Export                              | `open`      |
 
 _Waves 0–2 fully merged to main. Prompt files deleted._
@@ -96,7 +96,7 @@ Batch B (after A merged):
 
 **Goal:** Family Editor MVP, Worksets, Copy/Monitor.
 
-**Prompt files:** `spec/prompts/wave-05/` — create when Wave 4 is fully merged.
+**Prompt files:** `spec/prompts/wave-05/` — ready. Both WPs run in parallel (Batch A).
 
 | WP       | Title                                                                                             | State  |
 | -------- | ------------------------------------------------------------------------------------------------- | ------ |
