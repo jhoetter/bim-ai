@@ -26,6 +26,8 @@ import {
 } from './InspectorContent';
 import { StatusBar } from './StatusBar';
 import { CheatsheetModal } from '../cmd/CheatsheetModal';
+import { RedesignedCommandPalette } from '../cmd/RedesignedCommandPalette';
+import { type CommandCandidate } from '../cmd/commandPaletteSources';
 import { ToolPalette } from '../tools/ToolPalette';
 import { TOOL_REGISTRY, type ToolDisabledContext, type ToolId } from '../tools/toolRegistry';
 
@@ -83,6 +85,7 @@ export function RedesignedWorkspace(): JSX.Element {
   const [theme, setTheme] = useState<Theme>(() => (getCurrentTheme() as Theme) ?? 'light');
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [cheatsheetOpen, setCheatsheetOpen] = useState(false);
+  const [recentCommandIds, setRecentCommandIds] = useState<string[]>([]);
 
   /* ── Mode wiring (§7 + §20) ────────────────────────────────────────── */
   const handleModeChange = useCallback(
@@ -248,6 +251,91 @@ export function RedesignedWorkspace(): JSX.Element {
     setTheme(next as Theme);
   }, []);
 
+  /* ── Command palette candidates (§18) ─────────────────────────────── */
+  const paletteCandidates = useMemo<CommandCandidate[]>(() => {
+    const items: CommandCandidate[] = [];
+    // Tool sources
+    for (const tool of Object.values(TOOL_REGISTRY)) {
+      items.push({
+        id: `tool.${tool.id}`,
+        kind: 'tool',
+        label: tool.label,
+        keywords: tool.tooltip ?? '',
+        hint: tool.hotkey,
+      });
+    }
+    // View sources (plan views + viewpoints + section cuts)
+    for (const el of Object.values(elementsById) as Element[]) {
+      if (el.kind === 'plan_view') {
+        items.push({ id: el.id, kind: 'view', label: `Plan: ${el.name}`, keywords: 'plan view' });
+      } else if (el.kind === 'viewpoint') {
+        items.push({
+          id: el.id,
+          kind: 'view',
+          label: `3D: ${el.name}`,
+          keywords: 'viewpoint orbit',
+        });
+      } else if (el.kind === 'section_cut') {
+        items.push({
+          id: el.id,
+          kind: 'view',
+          label: `Section: ${el.name}`,
+          keywords: 'section cut',
+        });
+      }
+    }
+    // Element sources (walls / doors / windows / rooms — top-N keep light)
+    let elemCount = 0;
+    for (const el of Object.values(elementsById) as Element[]) {
+      if (el.kind !== 'wall' && el.kind !== 'door' && el.kind !== 'window' && el.kind !== 'room')
+        continue;
+      if (elemCount > 60) break;
+      items.push({
+        id: el.id,
+        kind: 'element',
+        label: `${el.kind}: ${(el as { name?: string }).name ?? el.id}`,
+        keywords: el.kind,
+      });
+      elemCount++;
+    }
+    // Settings
+    items.push(
+      { id: 'settings.theme.light', kind: 'setting', label: 'Theme: light', keywords: 'light' },
+      { id: 'settings.theme.dark', kind: 'setting', label: 'Theme: dark', keywords: 'dark' },
+    );
+    // Agent
+    items.push({ id: 'agent.review', kind: 'agent', label: 'Run Agent Review' });
+    return items;
+  }, [elementsById]);
+
+  const handlePalettePick = useCallback(
+    (cand: CommandCandidate) => {
+      setRecentCommandIds((prev) => [cand.id, ...prev.filter((id) => id !== cand.id)].slice(0, 5));
+      if (cand.kind === 'tool') {
+        const toolId = cand.id.replace(/^tool\./, '') as ToolId;
+        const legacy = toolIdToLegacy(toolId);
+        if (legacy) setPlanTool(legacy);
+        return;
+      }
+      if (cand.kind === 'element') {
+        select(cand.id);
+        return;
+      }
+      if (cand.id === 'settings.theme.light' || cand.id === 'settings.theme.dark') {
+        const next = cand.id.endsWith('dark') ? 'dark' : 'light';
+        if (getCurrentTheme() !== next) {
+          toggleTheme();
+          setTheme(next as Theme);
+        }
+        return;
+      }
+      if (cand.kind === 'view') {
+        select(cand.id);
+      }
+    },
+    [select, setPlanTool],
+  );
+
   /* ── Empty-state per §25 ──────────────────────────────────────────── */
   const emptyHint = patternFor('canvas-empty');
   const showEmptyState =
@@ -257,6 +345,13 @@ export function RedesignedWorkspace(): JSX.Element {
   return (
     <>
       <CheatsheetModal open={cheatsheetOpen} onClose={() => setCheatsheetOpen(false)} />
+      <RedesignedCommandPalette
+        open={paletteOpen}
+        onOpenChange={setPaletteOpen}
+        candidates={paletteCandidates}
+        recentIds={recentCommandIds}
+        onPick={handlePalettePick}
+      />
       <AppShell
         topBar={
           <div className="flex w-full items-center">
