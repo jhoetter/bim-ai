@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
@@ -227,42 +229,106 @@ function makeFloorSlabMesh(
   return mesh;
 }
 
-function makeRoofMassMesh(
-  roof: Extract<Element, { kind: 'roof' }>,
-  elementsById: Record<string, Element>,
-  paint: ViewportPaintBundle | null,
-): THREE.Mesh {
-  const b = xzBoundsMm(roof.footprintMm ?? []);
+// ─── Roof geometry helpers ────────────────────────────────────────────────────
 
-  const ov = THREE.MathUtils.clamp((roof.overhangMm ?? 0) / 1000, 0, 5);
+type XYPt = { xMm: number; yMm: number };
 
-  const refElev = elevationMForLevel(roof.referenceLevelId, elementsById);
-  // Eave plate = top of the tallest wall at the reference level.
-  // Without this, the box proxy sits inside the upper-storey walls and is invisible.
-  const wallsAtRefLevel = Object.values(elementsById).filter(
-    (e): e is WallElem => e.kind === 'wall' && (e as WallElem).levelId === roof.referenceLevelId,
-  );
-  const wallTopM =
-    wallsAtRefLevel.length > 0
-      ? Math.max(...wallsAtRefLevel.map((w) => (w.heightMm ?? 0) / 1000))
-      : 0;
-  const eaveY = refElev + wallTopM;
+/**
+ * Offset each edge of a convex (or mildly concave) polygon outward by `dist` mm.
+ * Shifts each edge line outward and intersects adjacent offset lines to get corners.
+ */
+function offsetPolygonMm(pts: XYPt[], dist: number): XYPt[] {
+  const n = pts.length;
+  if (n < 3) return pts.slice();
 
-  const slopeRad = (THREE.MathUtils.clamp(Number(roof.slopeDeg ?? 25), 5, 70) * Math.PI) / 180;
-  const spanXm = b.spanX / 1000;
-  const spanZm = b.spanZ / 1000;
-  const halfSpan = Math.min(spanXm, spanZm) / 2;
+  // Signed area: positive = CCW in standard (right-hand) plan coordinates.
+  let area2 = 0;
+  for (let i = 0; i < n; i++) {
+    const a = pts[i], b = pts[(i + 1) % n];
+    area2 += a.xMm * b.yMm - b.xMm * a.yMm;
+  }
+  const sign = area2 > 0 ? 1 : -1; // +1 CCW, −1 CW
+
+  const result: XYPt[] = [];
+  for (let i = 0; i < n; i++) {
+    const A = pts[(i - 1 + n) % n];
+    const B = pts[i];
+    const C = pts[(i + 1) % n];
+
+    // Outward unit normal of edge A→B: right-perpendicular for CCW.
+    const dx1 = B.xMm - A.xMm, dy1 = B.yMm - A.yMm;
+    const len1 = Math.hypot(dx1, dy1) || 1;
+    const nx1 = (sign * dy1) / len1, ny1 = (-sign * dx1) / len1;
+
+    // Outward unit normal of edge B→C.
+    const dx2 = C.xMm - B.xMm, dy2 = C.yMm - B.yMm;
+    const len2 = Math.hypot(dx2, dy2) || 1;
+    const nx2 = (sign * dy2) / len2, ny2 = (-sign * dx2) / len2;
+
+    // Offset origin of each edge line.
+    const ox1 = A.xMm + nx1 * dist, oy1 = A.yMm + ny1 * dist;
+    const ox2 = B.xMm + nx2 * dist, oy2 = B.yMm + ny2 * dist;
+    const ux1 = dx1 / len1, uy1 = dy1 / len1;
+    const ux2 = dx2 / len2, uy2 = dy2 / len2;
+
+    // Intersect the two offset lines.
+    const det = ux1 * uy2 - uy1 * ux2;
+    if (Math.abs(det) < 1e-9) {
+      result.push({ xMm: ox2, yMm: oy2 });
+    } else {
+      const t = ((ox2 - ox1) * uy2 - (oy2 - oy1) * ux2) / det;
+      result.push({ xMm: ox1 + t * ux1, yMm: oy1 + t * uy1 });
+    }
+  }
+  return result;
+}
+
+function _polygonAreaMm2(pts: XYPt[]): number {
+  let s = 0;
+  for (let i = 0; i < pts.length; i++) {
+    const a = pts[i], b = pts[(i + 1) % pts.length];
+    s += a.xMm * b.yMm - b.xMm * a.yMm;
+  }
+  return Math.abs(s) / 2;
+}
+
+function _convexHullAreaMm2(pts: XYPt[]): number {
+  const n = pts.length;
+  if (n < 3) return 0;
+  // Gift-wrapping convex hull.
+  let start = 0;
+  for (let i = 1; i < n; i++) if (pts[i].xMm < pts[start].xMm) start = i;
+  const hull: XYPt[] = [];
+  let cur = start;
+  do {
+    hull.push(pts[cur]);
+    let next = (cur + 1) % n;
+    for (let i = 0; i < n; i++) {
+      const cross =
+        (pts[next].xMm - pts[cur].xMm) * (pts[i].yMm - pts[cur].yMm) -
+        (pts[next].yMm - pts[cur].yMm) * (pts[i].xMm - pts[cur].xMm);
+      if (cross < 0) next = i;
+    }
+    cur = next;
+  } while (cur !== start && hull.length <= n);
+  return _polygonAreaMm2(hull);
+}
+
+/** Returns polygon area / convex hull area. < 0.85 indicates an L-shaped footprint. */
+function _compactnessRatio(pts: XYPt[]): number {
+  const hullArea = _convexHullAreaMm2(pts);
+  if (hullArea < 1) return 1;
+  return _polygonAreaMm2(pts) / hullArea;
+}
+
+function _buildGableGeometry(
+  ox0: number, ox1: number, oz0: number, oz1: number,
+  eaveY: number, slopeRad: number, ridgeAlongX: boolean,
+): THREE.BufferGeometry {
+  const halfSpan = ridgeAlongX ? (oz1 - oz0) / 2 : (ox1 - ox0) / 2;
   const ridgeY = eaveY + halfSpan * Math.tan(slopeRad);
-
-  const ox0 = b.minX / 1000 - ov;
-  const ox1 = b.maxX / 1000 + ov;
-  const oz0 = b.minZ / 1000 - ov;
-  const oz1 = b.maxZ / 1000 + ov;
-
-  // Triangulated gable mesh — ridge runs along the longer plan axis.
   let positions: number[];
-  if (spanXm >= spanZm) {
-    // Ridge east-west (along X); slopes drop to south (oz0) and north (oz1).
+  if (ridgeAlongX) {
     const rz = (oz0 + oz1) / 2;
     positions = [
       // South slope
@@ -277,7 +343,6 @@ function makeRoofMassMesh(
       ox1, eaveY, oz0,  ox1, eaveY, oz1,  ox1, ridgeY, rz,
     ];
   } else {
-    // Ridge north-south (along Z); slopes drop to west (ox0) and east (ox1).
     const rx = (ox0 + ox1) / 2;
     positions = [
       // West slope
@@ -292,10 +357,258 @@ function makeRoofMassMesh(
       ox0, eaveY, oz1,  ox1, eaveY, oz1,  rx, ridgeY, oz1,
     ];
   }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  g.computeVertexNormals();
+  return g;
+}
 
-  const geom = new THREE.BufferGeometry();
-  geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-  geom.computeVertexNormals();
+function _buildHipGeometry(
+  ox0: number, ox1: number, oz0: number, oz1: number,
+  eaveY: number, slopeRad: number, ridgeAlongX: boolean,
+): THREE.BufferGeometry {
+  let positions: number[];
+  if (ridgeAlongX) {
+    const halfSpanZ = (oz1 - oz0) / 2;
+    const ridgeY = eaveY + halfSpanZ * Math.tan(slopeRad);
+    const midZ = (oz0 + oz1) / 2;
+    const rx0 = ox0 + halfSpanZ;
+    const rx1 = ox1 - halfSpanZ;
+
+    if (rx0 >= rx1) {
+      // Square or near-square → pyramid
+      const px = (ox0 + ox1) / 2;
+      positions = [
+        ox0, eaveY, oz0,  ox1, eaveY, oz0,  px, ridgeY, midZ,
+        ox1, eaveY, oz1,  ox0, eaveY, oz1,  px, ridgeY, midZ,
+        ox0, eaveY, oz1,  ox0, eaveY, oz0,  px, ridgeY, midZ,
+        ox1, eaveY, oz0,  ox1, eaveY, oz1,  px, ridgeY, midZ,
+      ];
+    } else {
+      positions = [
+        // South slope (trapezoid)
+        ox0, eaveY, oz0,  ox1, eaveY, oz0,  rx1, ridgeY, midZ,
+        ox0, eaveY, oz0,  rx1, ridgeY, midZ,  rx0, ridgeY, midZ,
+        // North slope (trapezoid)
+        ox1, eaveY, oz1,  ox0, eaveY, oz1,  rx0, ridgeY, midZ,
+        ox1, eaveY, oz1,  rx0, ridgeY, midZ,  rx1, ridgeY, midZ,
+        // West hip (triangle)
+        ox0, eaveY, oz0,  ox0, eaveY, oz1,  rx0, ridgeY, midZ,
+        // East hip (triangle)
+        ox1, eaveY, oz0,  rx1, ridgeY, midZ,  ox1, eaveY, oz1,
+      ];
+    }
+  } else {
+    const halfSpanX = (ox1 - ox0) / 2;
+    const ridgeY = eaveY + halfSpanX * Math.tan(slopeRad);
+    const midX = (ox0 + ox1) / 2;
+    const rz0 = oz0 + halfSpanX;
+    const rz1 = oz1 - halfSpanX;
+
+    if (rz0 >= rz1) {
+      const pz = (oz0 + oz1) / 2;
+      positions = [
+        ox0, eaveY, oz0,  ox1, eaveY, oz0,  midX, ridgeY, pz,
+        ox1, eaveY, oz1,  ox0, eaveY, oz1,  midX, ridgeY, pz,
+        ox0, eaveY, oz1,  ox0, eaveY, oz0,  midX, ridgeY, pz,
+        ox1, eaveY, oz0,  ox1, eaveY, oz1,  midX, ridgeY, pz,
+      ];
+    } else {
+      positions = [
+        // West slope (trapezoid)
+        ox0, eaveY, oz0,  ox0, eaveY, oz1,  midX, ridgeY, rz1,
+        ox0, eaveY, oz0,  midX, ridgeY, rz1,  midX, ridgeY, rz0,
+        // East slope (trapezoid)
+        ox1, eaveY, oz1,  ox1, eaveY, oz0,  midX, ridgeY, rz0,
+        ox1, eaveY, oz1,  midX, ridgeY, rz0,  midX, ridgeY, rz1,
+        // South hip (triangle)
+        ox0, eaveY, oz0,  midX, ridgeY, rz0,  ox1, eaveY, oz0,
+        // North hip (triangle)
+        ox0, eaveY, oz1,  ox1, eaveY, oz1,  midX, ridgeY, rz1,
+      ];
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  g.computeVertexNormals();
+  return g;
+}
+
+/**
+ * Split an L-shaped footprint into two overlapping rectangles, build a gable
+ * geometry for each, and merge them. Adds a triangular valley face at the
+ * internal junction.
+ */
+function _buildLShapeGeometry(
+  rawPts: XYPt[],
+  ovMm: number,
+  eaveY: number,
+  slopeRad: number,
+): THREE.BufferGeometry {
+  const b = xzBoundsMm(rawPts);
+  const tol = Math.max((b.spanX + b.spanZ) * 0.02, 5); // 2% of span
+
+  // Find which AABB corner is absent from the polygon — that tells us the
+  // missing rectangle and which vertex is the reflex step.
+  const aabbCorners = [
+    { side: 'sw', x: b.minX, y: b.minZ },
+    { side: 'se', x: b.maxX, y: b.minZ },
+    { side: 'nw', x: b.minX, y: b.maxZ },
+    { side: 'ne', x: b.maxX, y: b.maxZ },
+  ] as const;
+
+  let missingSide: 'sw' | 'se' | 'nw' | 'ne' = 'ne';
+  for (const c of aabbCorners) {
+    if (!rawPts.some((p) => Math.abs(p.xMm - c.x) < tol && Math.abs(p.yMm - c.y) < tol)) {
+      missingSide = c.side;
+      break;
+    }
+  }
+
+  // Find the reflex vertex (the step vertex adjacent to the missing corner).
+  // It shares one coordinate with each of the two AABB corners flanking the missing one.
+  let rv: XYPt = rawPts[0];
+  {
+    let area2 = 0;
+    const n = rawPts.length;
+    for (let i = 0; i < n; i++) {
+      const a = rawPts[i], c = rawPts[(i + 1) % n];
+      area2 += a.xMm * c.yMm - c.xMm * a.yMm;
+    }
+    const wsign = area2 > 0 ? 1 : -1;
+    for (let i = 0; i < n; i++) {
+      const A = rawPts[(i - 1 + n) % n];
+      const B = rawPts[i];
+      const C = rawPts[(i + 1) % n];
+      const cross = (B.xMm - A.xMm) * (C.yMm - B.yMm) - (B.yMm - A.yMm) * (C.xMm - B.xMm);
+      if (cross * wsign < 0) { rv = B; break; }
+    }
+  }
+
+  const ovOff = ovMm > 0 ? ovMm : 0;
+
+  // Build the two sub-rectangle AABB bounds (in mm) then convert to metres with overhang.
+  let r1: { x0: number; x1: number; z0: number; z1: number };
+  let r2: { x0: number; x1: number; z0: number; z1: number };
+
+  // Strategy: the two rectangles share one full dimension and each covers the
+  // "arm" of the L.  We choose the split so the rectangles overlap at the step.
+  switch (missingSide) {
+    case 'ne': // missing top-right → step at (rv.xMm, rv.yMm)
+      r1 = { x0: b.minX, x1: b.maxX, z0: b.minZ, z1: rv.yMm }; // full-width bottom
+      r2 = { x0: b.minX, x1: rv.xMm, z0: b.minZ, z1: b.maxZ }; // left-arm full height
+      break;
+    case 'nw': // missing top-left
+      r1 = { x0: b.minX, x1: b.maxX, z0: b.minZ, z1: rv.yMm };
+      r2 = { x0: rv.xMm, x1: b.maxX, z0: b.minZ, z1: b.maxZ };
+      break;
+    case 'se': // missing bottom-right
+      r1 = { x0: b.minX, x1: b.maxX, z0: rv.yMm, z1: b.maxZ };
+      r2 = { x0: b.minX, x1: rv.xMm, z0: b.minZ, z1: b.maxZ };
+      break;
+    case 'sw': // missing bottom-left
+    default:
+      r1 = { x0: b.minX, x1: b.maxX, z0: rv.yMm, z1: b.maxZ };
+      r2 = { x0: rv.xMm, x1: b.maxX, z0: b.minZ, z1: b.maxZ };
+      break;
+  }
+
+  function toM(r: { x0: number; x1: number; z0: number; z1: number }) {
+    return {
+      ox0: r.x0 / 1000 - ovOff / 1000,
+      ox1: r.x1 / 1000 + ovOff / 1000,
+      oz0: r.z0 / 1000 - ovOff / 1000,
+      oz1: r.z1 / 1000 + ovOff / 1000,
+    };
+  }
+
+  const m1 = toM(r1), m2 = toM(r2);
+  const ax1 = (m1.ox1 - m1.ox0) >= (m1.oz1 - m1.oz0);
+  const ax2 = (m2.ox1 - m2.ox0) >= (m2.oz1 - m2.oz0);
+
+  const g1 = _buildGableGeometry(m1.ox0, m1.ox1, m1.oz0, m1.oz1, eaveY, slopeRad, ax1);
+  const g2 = _buildGableGeometry(m2.ox0, m2.ox1, m2.oz0, m2.oz1, eaveY, slopeRad, ax2);
+
+  // Valley face — triangular face connecting the inner eave corner to the two ridges.
+  const rvxM = rv.xMm / 1000, rvzM = rv.yMm / 1000;
+  const halfSpan1 = ax1 ? (m1.oz1 - m1.oz0) / 2 : (m1.ox1 - m1.ox0) / 2;
+  const ridgeY1 = eaveY + halfSpan1 * Math.tan(slopeRad);
+  const ridgeMid1x = ax1 ? rvxM : (m1.ox0 + m1.ox1) / 2;
+  const ridgeMid1z = ax1 ? (m1.oz0 + m1.oz1) / 2 : rvzM;
+  const halfSpan2 = ax2 ? (m2.oz1 - m2.oz0) / 2 : (m2.ox1 - m2.ox0) / 2;
+  const ridgeY2 = eaveY + halfSpan2 * Math.tan(slopeRad);
+  const ridgeMid2x = ax2 ? rvxM : (m2.ox0 + m2.ox1) / 2;
+  const ridgeMid2z = ax2 ? (m2.oz0 + m2.oz1) / 2 : rvzM;
+
+  const valleyPositions = [
+    rvxM, eaveY, rvzM,
+    ridgeMid1x, ridgeY1, ridgeMid1z,
+    ridgeMid2x, ridgeY2, ridgeMid2z,
+  ];
+  const gv = new THREE.BufferGeometry();
+  gv.setAttribute('position', new THREE.Float32BufferAttribute(valleyPositions, 3));
+  gv.computeVertexNormals();
+
+  const merged = mergeGeometries([g1, g2, gv]);
+  if (!merged) {
+    // mergeGeometries can return null if all inputs are empty.
+    return g1;
+  }
+  return merged;
+}
+
+// ─── makeRoofMassMesh ────────────────────────────────────────────────────────
+
+function makeRoofMassMesh(
+  roof: Extract<Element, { kind: 'roof' }>,
+  elementsById: Record<string, Element>,
+  paint: ViewportPaintBundle | null,
+): THREE.Mesh {
+  const rawPts = roof.footprintMm ?? [];
+
+  const ovMm = THREE.MathUtils.clamp(roof.overhangMm ?? 0, 0, 5000);
+
+  // Offset footprint outward in plan space, then derive AABB for simple cases.
+  const offsetPts = ovMm > 0 && rawPts.length >= 3 ? offsetPolygonMm(rawPts, ovMm) : rawPts;
+  const b = xzBoundsMm(offsetPts.length >= 3 ? offsetPts : rawPts);
+
+  const refElev = elevationMForLevel(roof.referenceLevelId, elementsById);
+  // Eave plate = top of the tallest wall at the reference level.
+  const wallsAtRefLevel = Object.values(elementsById).filter(
+    (e): e is WallElem => e.kind === 'wall' && (e as WallElem).levelId === roof.referenceLevelId,
+  );
+  const wallTopM =
+    wallsAtRefLevel.length > 0
+      ? Math.max(...wallsAtRefLevel.map((w) => (w.heightMm ?? 0) / 1000))
+      : 0;
+  const eaveY = refElev + wallTopM;
+
+  const slopeRad = (THREE.MathUtils.clamp(Number(roof.slopeDeg ?? 25), 5, 70) * Math.PI) / 180;
+  const spanXm = b.spanX / 1000;
+  const spanZm = b.spanZ / 1000;
+
+  // Ridge axis: explicit field takes priority; else use longer plan axis.
+  let ridgeAlongX: boolean;
+  if (roof.ridgeAxis === 'x') ridgeAlongX = true;
+  else if (roof.ridgeAxis === 'z') ridgeAlongX = false;
+  else ridgeAlongX = spanXm >= spanZm;
+
+  const ox0 = b.minX / 1000;
+  const ox1 = b.maxX / 1000;
+  const oz0 = b.minZ / 1000;
+  const oz1 = b.maxZ / 1000;
+
+  // L-shape detection: polygon area / convex hull area < 0.85
+  const isLShape = rawPts.length >= 6 && _compactnessRatio(rawPts) < 0.85;
+
+  let geom: THREE.BufferGeometry;
+  if (isLShape) {
+    geom = _buildLShapeGeometry(rawPts, ovMm, eaveY, slopeRad);
+  } else if (roof.roofGeometryMode === 'hip') {
+    geom = _buildHipGeometry(ox0, ox1, oz0, oz1, eaveY, slopeRad, ridgeAlongX);
+  } else {
+    geom = _buildGableGeometry(ox0, ox1, oz0, oz1, eaveY, slopeRad, ridgeAlongX);
+  }
 
   const mesh = new THREE.Mesh(
     geom,
@@ -847,6 +1160,7 @@ function Sep() {
 
 export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
   void wsConnected;
+  const { t } = useTranslation();
 
   const mountRef = useRef<HTMLDivElement | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -1684,33 +1998,33 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       {walkActive ? (
         <div className="pointer-events-none absolute bottom-12 left-1/2 z-20 -translate-x-1/2">
           <div className="flex items-center gap-2 rounded-full border border-border bg-surface/90 px-4 py-1.5 text-[11px] text-muted shadow-md backdrop-blur-sm">
-            <NavHint k="WASD" label="Move" />
+            <NavHint k="WASD" label={t('viewport.walkHints.move')} />
             <Sep />
-            <NavHint k="Mouse" label="Look" />
+            <NavHint k="Mouse" label={t('viewport.walkHints.look')} />
             <Sep />
-            <NavHint k="Shift" label="Run" />
+            <NavHint k="Shift" label={t('viewport.walkHints.run')} />
             <Sep />
-            <NavHint k="Q/E" label="Up/Down" />
+            <NavHint k="Q/E" label={t('viewport.walkHints.upDown')} />
             <Sep />
-            <NavHint k="PgUp/PgDn" label="Floor" />
+            <NavHint k="PgUp/PgDn" label={t('viewport.walkHints.floor')} />
             <Sep />
-            <NavHint k="Esc" label="Exit" />
+            <NavHint k="Esc" label={t('viewport.walkHints.exit')} />
           </div>
         </div>
       ) : (
         <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2">
           <div className="flex items-center gap-1.5 rounded-full border border-border/60 bg-surface/70 px-3 py-1 text-[10px] text-muted/80 backdrop-blur-sm">
-            <NavHint k="LMB" label="Orbit" />
+            <NavHint k="LMB" label={t('viewport.walkHints.orbit')} />
             <Sep />
-            <NavHint k="RMB/Shift" label="Pan" />
+            <NavHint k="RMB/Shift" label={t('viewport.walkHints.pan')} />
             <Sep />
-            <NavHint k="Scroll" label="Zoom" />
+            <NavHint k="Scroll" label={t('viewport.walkHints.zoom')} />
             <Sep />
-            <NavHint k="F" label="Fit" />
+            <NavHint k="F" label={t('viewport.walkHints.fit')} />
             <Sep />
-            <NavHint k="H" label="Reset" />
+            <NavHint k="H" label={t('viewport.walkHints.reset')} />
             <Sep />
-            <span className="opacity-70">? for all shortcuts</span>
+            <span className="opacity-70">{t('viewport.shortcutsHint')}</span>
           </div>
         </div>
       )}
@@ -1733,9 +2047,9 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
             'rounded-md border border-border px-2 py-1 text-xs',
             walkActive ? 'bg-accent text-accent-foreground' : 'bg-surface text-foreground',
           ].join(' ')}
-          title="Walk mode — WASD move · mouse-look · Shift run · PageUp/PageDown switch floor · Esc exit"
+          title={t('viewport.walkTitle')}
         >
-          Walk: {walkActive ? 'ON' : 'OFF'}
+          {t('viewport.walkLabel')}: {walkActive ? t('viewport.on') : t('viewport.off')}
         </button>
         <button
           type="button"
@@ -1746,9 +2060,9 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
             'rounded-md border border-border px-2 py-1 text-xs',
             sectionBoxActive ? 'bg-accent text-accent-foreground' : 'bg-surface text-foreground',
           ].join(' ')}
-          title="Section box (clipping AABB)"
+          title={t('viewport.sectionBoxTitle')}
         >
-          Section box: {sectionBoxActive ? 'ON' : 'OFF'}
+          {t('viewport.sectionBoxLabel')}: {sectionBoxActive ? t('viewport.on') : t('viewport.off')}
         </button>
         {sectionBoxActive && sectionBoxRef.current ? (
           <span
