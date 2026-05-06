@@ -47,3 +47,7 @@ how can i navigate in the 3d? it seems i am stuck to the origin? (0/0/0)? how do
 ---
 
 the walk feature is cool, but feels super off. here as well, how can we make it extremely natural and great? also in terms of moving around but also the different layers we have (levels of the house)?
+
+---
+
+are all the commands and how to do this natural and also are the approches documented in a way the user can quickly look up / are they shown, ...? in a way that is EASY to understand?
