@@ -38,7 +38,9 @@ import {
   InspectorConstraintsFor,
   InspectorGraphicsFor,
   InspectorIdentityFor,
+  InspectorPlanViewEditor,
   InspectorPropertiesFor,
+  InspectorRoomEditor,
 } from './InspectorContent';
 import {
   AgentReviewModeShell,
@@ -934,7 +936,31 @@ export function RedesignedWorkspace(): JSX.Element {
                   selection={inspectorSelection}
                   tabs={{
                     properties: el ? (
-                      InspectorPropertiesFor(el)
+                      el.kind === 'plan_view' ? (
+                        <InspectorPlanViewEditor
+                          el={el}
+                          elementsById={elementsById}
+                          revision={revision}
+                          onPersistProperty={(key, value) => {
+                            if (key === '__applyTemplate__') {
+                              const p = JSON.parse(value) as { planViewId: string; templateId: string };
+                              void onSemanticCommand({ type: 'applyPlanViewTemplate', ...p });
+                            } else {
+                              void onSemanticCommand({ type: 'updateElementProperty', elementId: el.id, key, value });
+                            }
+                          }}
+                        />
+                      ) : el.kind === 'room' ? (
+                        <InspectorRoomEditor
+                          el={el}
+                          revision={revision}
+                          onPersistProperty={(key, value) =>
+                            void onSemanticCommand({ type: 'updateElementProperty', elementId: el.id, key, value })
+                          }
+                        />
+                      ) : (
+                        InspectorPropertiesFor(el)
+                      )
                     ) : (
                       <InspectorEmptyTab message="No element selected." />
                     ),

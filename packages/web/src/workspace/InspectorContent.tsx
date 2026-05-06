@@ -1,4 +1,4 @@
-import { type JSX } from 'react';
+import { useState, type JSX } from 'react';
 import type { Element } from '@bim-ai/core';
 
 import { planViewGraphicsMatrixRows, viewTemplateGraphicsMatrixRows } from '../plan/planProjection';
@@ -227,4 +227,232 @@ export function InspectorGraphicsFor({
     );
   }
   return null;
+}
+
+const INPUT_CLS =
+  'mt-1 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px]';
+const LABEL_CLS = 'block text-[10px] text-muted';
+
+/** Editable inspector for plan_view elements (Properties tab). */
+export function InspectorPlanViewEditor({
+  el,
+  elementsById,
+  revision,
+  onPersistProperty,
+}: {
+  el: Extract<Element, { kind: 'plan_view' }>;
+  elementsById: Record<string, Element>;
+  revision: number;
+  onPersistProperty: (key: string, value: string) => void;
+}): JSX.Element {
+  const levels = (Object.values(elementsById) as Element[]).filter(
+    (e): e is Extract<Element, { kind: 'level' }> => e.kind === 'level',
+  );
+  const templates = (Object.values(elementsById) as Element[]).filter(
+    (e): e is Extract<Element, { kind: 'view_template' }> => e.kind === 'view_template',
+  );
+
+  const [cropDraft, setCropDraft] = useState({
+    minX: el.cropMinMm ? String(el.cropMinMm.xMm) : '',
+    minY: el.cropMinMm ? String(el.cropMinMm.yMm) : '',
+    maxX: el.cropMaxMm ? String(el.cropMaxMm.xMm) : '',
+    maxY: el.cropMaxMm ? String(el.cropMaxMm.yMm) : '',
+  });
+
+  return (
+    <div className="space-y-2 text-[11px]">
+      <label className={LABEL_CLS}>
+        Name
+        <input
+          className={INPUT_CLS}
+          defaultValue={el.name}
+          key={`pv-name-${el.id}-${el.name}-${revision}`}
+          onBlur={(e) => {
+            const v = e.target.value.trim();
+            if (!v || v === el.name) return;
+            onPersistProperty('name', v);
+          }}
+        />
+      </label>
+
+      <label className={LABEL_CLS}>
+        Plan presentation
+        <select
+          className={INPUT_CLS}
+          value={el.planPresentation ?? 'default'}
+          onChange={(e) => onPersistProperty('planPresentation', e.target.value)}
+        >
+          <option value="default">Neutral</option>
+          <option value="opening_focus">Opening focus</option>
+          <option value="room_scheme">Room scheme</option>
+        </select>
+      </label>
+
+      <label className={LABEL_CLS}>
+        Underlay level
+        <select
+          className={INPUT_CLS}
+          value={el.underlayLevelId && levels.some((l) => l.id === el.underlayLevelId) ? el.underlayLevelId : ''}
+          onChange={(e) => onPersistProperty('underlayLevelId', e.target.value)}
+        >
+          <option value="">none</option>
+          {levels.map((l) => (
+            <option key={l.id} value={l.id}>{l.name}</option>
+          ))}
+        </select>
+      </label>
+
+      {templates.length > 0 ? (
+        <>
+          <label className={LABEL_CLS}>
+            View template (link)
+            <select
+              className={INPUT_CLS}
+              value={el.viewTemplateId && templates.some((t) => t.id === el.viewTemplateId) ? el.viewTemplateId : ''}
+              onChange={(e) => onPersistProperty('viewTemplateId', e.target.value)}
+            >
+              <option value="">none</option>
+              {templates.map((t) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+          </label>
+          <label className={LABEL_CLS}>
+            Apply template (stamps values)
+            <select
+              className={INPUT_CLS}
+              value=""
+              onChange={(e) => {
+                const tid = e.target.value;
+                if (!tid) return;
+                onPersistProperty('__applyTemplate__', JSON.stringify({ planViewId: el.id, templateId: tid }));
+              }}
+            >
+              <option value="">— select to apply —</option>
+              {templates.map((t) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+          </label>
+        </>
+      ) : null}
+
+      <div className="border-t border-border pt-2 space-y-2">
+        <div className="font-semibold text-muted">Crop (2D, mm)</div>
+        <div className="grid grid-cols-2 gap-2">
+          {(['minX', 'minY', 'maxX', 'maxY'] as const).map((k) => (
+            <label key={k} className={LABEL_CLS}>
+              {k}
+              <input
+                className={INPUT_CLS}
+                value={cropDraft[k]}
+                onChange={(e) => setCropDraft((d) => ({ ...d, [k]: e.target.value }))}
+              />
+            </label>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            className="flex-1 rounded border border-border bg-background px-2 py-1 text-[10px] hover:bg-surface-strong"
+            onClick={() => {
+              const nx = Number(cropDraft.minX), ny = Number(cropDraft.minY);
+              const xx = Number(cropDraft.maxX), xy = Number(cropDraft.maxY);
+              if (![nx, ny, xx, xy].every(Number.isFinite)) return;
+              onPersistProperty('cropMinMm', JSON.stringify({ xMm: nx, yMm: ny }));
+              onPersistProperty('cropMaxMm', JSON.stringify({ xMm: xx, yMm: xy }));
+            }}
+          >
+            Apply crop
+          </button>
+          <button
+            type="button"
+            className="flex-1 rounded border border-border bg-background px-2 py-1 text-[10px] hover:bg-surface-strong"
+            onClick={() => {
+              onPersistProperty('cropMinMm', '');
+              onPersistProperty('cropMaxMm', '');
+              setCropDraft({ minX: '', minY: '', maxX: '', maxY: '' });
+            }}
+          >
+            Clear crop
+          </button>
+        </div>
+      </div>
+
+      <div className="border-t border-border pt-2 space-y-2">
+        <div className="font-semibold text-muted">View range / cut</div>
+        {(
+          [
+            { key: 'viewRangeBottomMm', label: 'Range bottom (mm)', val: el.viewRangeBottomMm },
+            { key: 'viewRangeTopMm', label: 'Range top (mm)', val: el.viewRangeTopMm },
+            { key: 'cutPlaneOffsetMm', label: 'Cut plane offset (mm)', val: el.cutPlaneOffsetMm },
+          ] as { key: string; label: string; val: number | null | undefined }[]
+        ).map(({ key, label, val }) => (
+          <label key={key} className={LABEL_CLS}>
+            {label}
+            <input
+              className={INPUT_CLS}
+              defaultValue={val == null ? '' : String(val)}
+              key={`${key}-${el.id}-${val ?? 'null'}-${revision}`}
+              placeholder="empty clears"
+              inputMode="decimal"
+              onBlur={(e) => onPersistProperty(key, e.target.value.trim())}
+            />
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Editable inspector for room elements (Properties tab). */
+export function InspectorRoomEditor({
+  el,
+  revision,
+  onPersistProperty,
+}: {
+  el: Extract<Element, { kind: 'room' }>;
+  revision: number;
+  onPersistProperty: (key: string, value: string) => void;
+}): JSX.Element {
+  const fields: { key: string; label: string; val: string | null | undefined; inputMode?: string }[] = [
+    { key: 'name', label: 'Name', val: el.name },
+    { key: 'programmeCode', label: 'Programme code', val: el.programmeCode },
+    { key: 'department', label: 'Department', val: el.department },
+    { key: 'functionLabel', label: 'Function label', val: el.functionLabel },
+    { key: 'finishSet', label: 'Finish set', val: el.finishSet },
+  ];
+
+  return (
+    <div className="space-y-2 text-[11px]">
+      {fields.map(({ key, label, val }) => (
+        <label key={key} className={LABEL_CLS}>
+          {label}
+          <input
+            className={INPUT_CLS}
+            defaultValue={val ?? ''}
+            key={`rm-${key}-${el.id}-${val ?? ''}-${revision}`}
+            onBlur={(e) => {
+              const v = e.target.value.trim();
+              if (key === 'name' && (!v || v === val)) return;
+              onPersistProperty(key, v);
+            }}
+          />
+        </label>
+      ))}
+      <label className={LABEL_CLS}>
+        Target area (m²)
+        <input
+          className={INPUT_CLS}
+          defaultValue={el.targetAreaM2 == null ? '' : String(el.targetAreaM2)}
+          key={`rm-tgt-${el.id}-${el.targetAreaM2 ?? 'x'}-${revision}`}
+          placeholder="optional"
+          inputMode="decimal"
+          onBlur={(e) => onPersistProperty('targetAreaM2', e.target.value.trim())}
+        />
+      </label>
+      <FieldRow label="Level" value={el.levelId} mono />
+      <FieldRow label="Outline points" value={String(el.outlineMm.length)} />
+    </div>
+  );
 }
