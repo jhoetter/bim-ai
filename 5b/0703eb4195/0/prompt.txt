@@ -1,0 +1,9 @@
+wie vielees of code haben wir?
+
+---
+
+sollten die js dateien auch ts werden?
+
+---
+
+cool; also schon ein recht großes software projekt, richtig?
