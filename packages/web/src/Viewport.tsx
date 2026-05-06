@@ -8,6 +8,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { SSAOPass } from 'three/addons/postprocessing/SSAOPass.js';
+import { Sky } from 'three/addons/objects/Sky.js';
 
 import type { Element } from '@bim-ai/core';
 
@@ -74,6 +75,32 @@ function sunPositionFromAzEl(azimuthDeg: number, elevationDeg: number, radiusM =
     radiusM * Math.sin(el),
     radiusM * Math.cos(el) * Math.cos(az),
   );
+}
+
+function buildSkyEnvMap(
+  renderer: THREE.WebGLRenderer,
+  azimuthDeg: number,
+  elevationDeg: number,
+): THREE.Texture {
+  const sky = new Sky();
+  sky.scale.setScalar(450000);
+  const u = sky.material.uniforms;
+  u['turbidity'].value = 3;
+  u['rayleigh'].value = 0.5;
+  u['mieCoefficient'].value = 0.005;
+  u['mieDirectionalG'].value = 0.8;
+  const phi   = THREE.MathUtils.degToRad(90 - elevationDeg);
+  const theta = THREE.MathUtils.degToRad(azimuthDeg);
+  u['sunPosition'].value.setFromSphericalCoords(1, phi, theta);
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  pmrem.compileEquirectangularShader();
+  const tempScene = new THREE.Scene();
+  tempScene.add(sky);
+  const envTexture = pmrem.fromScene(tempScene).texture;
+  pmrem.dispose();
+  (sky.material as THREE.ShaderMaterial).dispose();
+  sky.geometry.dispose();
+  return envTexture;
 }
 
 type Props = {
@@ -949,6 +976,7 @@ function makeWindowMesh(
     opacity: 0.35,
     transparent: true,
     side: THREE.DoubleSide,
+    envMapIntensity: 1.2,
   });
   const glazing = new THREE.Mesh(new THREE.BoxGeometry(glazingW, glazingH, 0.006), glazingMat);
   glazing.castShadow = false;
@@ -1264,6 +1292,7 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
   const paintBundleRef = useRef<ViewportPaintBundle | null>(null);
   const composerRef = useRef<EffectComposer | null>(null);
   const sunRef = useRef<THREE.DirectionalLight | null>(null);
+  const envMapRef = useRef<THREE.Texture | null>(null);
   /** Live CameraRig instance — replaces the legacy ad-hoc spherical rig. */
   const cameraRigRef = useRef<CameraRig | null>(null);
   const hasAutoFittedRef = useRef(false);
@@ -1363,6 +1392,15 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
     scene.add(dir);
     scene.add(dir.target);
     sunRef.current = dir;
+
+    const envMap = buildSkyEnvMap(
+      renderer,
+      paint.lighting.sun.azimuthDeg,
+      paint.lighting.sun.elevationDeg,
+    );
+    scene.environment = envMap;
+    envMapRef.current = envMap;
+
     scene.add(
       new THREE.GridHelper(
         160,
@@ -1734,6 +1772,8 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       composerRef.current?.dispose();
       composerRef.current = null;
       sunRef.current = null;
+      envMapRef.current?.dispose();
+      envMapRef.current = null;
       renderer.dispose();
 
       host.removeChild(renderer.domElement);
@@ -1966,6 +2006,19 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
         sun.shadow.camera.far    =  sceneRadiusM * 4 + 50;
         sun.shadow.camera.updateProjectionMatrix();
       }
+    }
+
+    const envRnd = rendererRef.current;
+    const envSc  = sceneRef.current;
+    if (envRnd && envSc && paint) {
+      envMapRef.current?.dispose();
+      const newEnv = buildSkyEnvMap(
+        envRnd,
+        paint.lighting.sun.azimuthDeg,
+        paint.lighting.sun.elevationDeg,
+      );
+      envSc.environment = newEnv;
+      envMapRef.current = newEnv;
     }
 
     // First-geometry auto-fit: set orbit target to building centroid so the
