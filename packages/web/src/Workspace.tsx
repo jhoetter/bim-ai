@@ -999,11 +999,11 @@ export function Workspace() {
             </Btn>
 
             <a
-              href="/redesign"
+              href="/"
               className="rounded-md px-3 py-1 text-sm text-accent hover:bg-background"
               data-testid="redesign-route-link"
             >
-              Try redesign →
+              ← Back to redesign
             </a>
           </div>
         </div>

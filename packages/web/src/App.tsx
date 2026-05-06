@@ -6,8 +6,8 @@ export function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Workspace />} />
-        <Route path="/redesign" element={<RedesignedWorkspace />} />
+        <Route path="/" element={<RedesignedWorkspace />} />
+        <Route path="/legacy" element={<Workspace />} />
       </Routes>
     </BrowserRouter>
   );

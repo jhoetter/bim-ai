@@ -251,16 +251,26 @@ export function RedesignedWorkspace(): JSX.Element {
   return (
     <AppShell
       topBar={
-        <TopBar
-          mode={mode}
-          onModeChange={handleModeChange}
-          projectName="BIM AI seed"
-          theme={theme}
-          onThemeToggle={handleThemeToggle}
-          onCommandPalette={() => setPaletteOpen(true)}
-          collaboratorsCount={undefined}
-          avatarInitials="BA"
-        />
+        <div className="flex w-full items-center">
+          <TopBar
+            mode={mode}
+            onModeChange={handleModeChange}
+            projectName="BIM AI seed"
+            theme={theme}
+            onThemeToggle={handleThemeToggle}
+            onCommandPalette={() => setPaletteOpen(true)}
+            collaboratorsCount={undefined}
+            avatarInitials="BA"
+          />
+          <a
+            href="/legacy"
+            className="ml-2 mr-3 whitespace-nowrap rounded-md px-2 py-1 text-xs text-muted hover:bg-surface-strong"
+            data-testid="legacy-route-link"
+            title="Open the v1 panel-stack view"
+          >
+            Legacy
+          </a>
+        </div>
       }
       leftRail={
         <LeftRail
