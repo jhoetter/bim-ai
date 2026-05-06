@@ -174,6 +174,7 @@ export type Element =
       topConstraintOffsetMm?: number;
       roofAttachmentId?: string | null;
       insulationExtensionMm?: number;
+      isCurtainWall?: boolean;
     }
   | {
       kind: 'door';
