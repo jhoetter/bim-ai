@@ -69,3 +69,7 @@ T1 — R3-01: Per-category PBR (materials.ts only)
 ---
 
 commited and pushed?
+
+---
+
+just commit and push as in the instructions!
