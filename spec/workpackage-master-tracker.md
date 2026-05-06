@@ -908,7 +908,7 @@ Profile families (introduced in V2-11) optionally referenced via `profileFamilyI
 | VIE-04 | Temporary isolate / hide category                                | S      | `open`    | —          |
 | VIE-05 | Plan view auto-generation when a level is created                | S      | `done`    | —          |
 | VIE-06 | Project templates (starter models)                               | M      | `open`    | —          |
-| VIE-07 | Pin element / unpin (UP shortcut, prevents accidental edit)      | S      | `open`    | —          |
+| VIE-07 | Pin element / unpin (UP shortcut, prevents accidental edit)      | S      | `done`    | —          |
 
 ### VIE-01 — Detail levels render binding
 
@@ -1021,7 +1021,7 @@ Profile families (introduced in V2-11) optionally referenced via `profileFamilyI
 
 **Acceptance.** Place a grid; pin it; try to drag the grid line endpoint — drag is blocked with a "pinned" tooltip. Unpin → drag works.
 
-**Effort.** S — 3 days.
+**Effort.** S — 3 days. **Done in commit 8e5fad05** (pinned field added to 16 element kinds incl. wall/door/window/level/grid/room/floor/roof/stair/etc; PinElement/UnpinElement commands; engine refuses move*, updateElementProperty, deleteElement on pinned targets without `forcePinOverride`; InspectorPinToggle component covered by vitest).
 
 ---
 
