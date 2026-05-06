@@ -1,0 +1,69 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "cfa91175928b",
+  "session_id": "082420e8-a25b-431a-b60b-93969b063738",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-06T07:27:23.670348Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/Viewport.tsx",
+    "packages/web/src/viewport/ViewCube.test.tsx",
+    "packages/web/src/viewport/ViewCube.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "e5fa725cfe49",
+  "token_usage": {
+    "input_tokens": 636,
+    "cache_creation_tokens": 51699,
+    "cache_read_tokens": 1188270,
+    "output_tokens": 12941,
+    "api_call_count": 32
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-06T07:27:23.660762Z",
+    "agent_lines": 182,
+    "agent_removed": 41,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 182,
+    "total_lines_changed": 223,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 703,
+      "user_lines_removed": 235,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        ".env.example": 1,
+        ".superset/config.json": 8,
+        "Makefile": 3,
+        "app/scripts/seed.py": 327,
+        "packages/web/src/design-systems/conservative.css": 15,
+        "packages/web/src/workspace/Inspector.tsx": 1,
+        "packages/web/src/workspace/LeftRail.tsx": 1,
+        "packages/web/src/workspace/ProjectMenu.test.tsx": 17,
+        "packages/web/src/workspace/ProjectMenu.tsx": 17,
+        "packages/web/src/workspace/RedesignedWorkspace.tsx": 5,
+        "packages/web/src/workspace/TabBar.tsx": 2,
+        "prompt-ui.md": 247,
+        "spec/ui-ux-redesign-v1-spec.md": 59
+      },
+      "user_removed_per_file": {
+        "Makefile": 2,
+        "app/scripts/seed.py": 170,
+        "packages/web/src/workspace/Inspector.tsx": 1,
+        "packages/web/src/workspace/LeftRail.tsx": 1,
+        "packages/web/src/workspace/RedesignedWorkspace.tsx": 1,
+        "packages/web/src/workspace/TabBar.tsx": 1,
+        "spec/ui-ux-redesign-v1-spec.md": 59
+      }
+    }
+  ]
+}
