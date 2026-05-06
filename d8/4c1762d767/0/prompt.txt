@@ -60,3 +60,7 @@ please fix those tests by correcting the code so our software works again agains
 ---
 
 did you commit and push those fixes?
+
+---
+
+commit and push that. please then also check if the js tests are also working or if they are failing and act accordingly there as well
