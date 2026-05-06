@@ -1,0 +1,154 @@
+### T3 — GW-03: Sloped wall geometry
+
+  You are implementing GW-03 in a BIM web app (monorepo at /Users/jhoetter/repos/bim-ai).
+  Start by pulling main: git checkout main && git pull origin main
+
+  Goal
+
+  Modify makeWallMesh in packages/web/src/Viewport.tsx to build a trapezoidal/triangular
+  prism when the wall has roofAttachmentId pointing at a roof element. The default behaviour
+  (BoxGeometry) must be unchanged for walls without that field.
+
+  Prerequisites (already in main after Batch 1 merges)
+
+  - roofAttachmentId coercion exists in store.ts
+  - roofHeightAtPoint exported from packages/web/src/viewport/roofHeightSampler.ts
+
+  Step 1 — import roofHeightAtPoint
+
+  At the top of packages/web/src/Viewport.tsx, add:
+    import { roofHeightAtPoint } from './viewport/roofHeightSampler';
+
+  Step 2 — modify the makeWallMesh signature
+
+  makeWallMesh currently (line ~773):
+    function makeWallMesh(wall: WallElem, elevM: number, paint: ViewportPaintBundle | null): THREE.Mesh
+
+  Change it to also accept elementsById:
+    function makeWallMesh(
+      wall: WallElem,
+      elevM: number,
+      paint: ViewportPaintBundle | null,
+      elementsById?: Record<string, Element>,
+    ): THREE.Mesh | THREE.Group
+
+  (The return type widens to Group only for the sloped variant; if you'd rather keep it Mesh,
+  build the sloped geometry still as a Mesh with a custom BufferGeometry.)
+
+  Step 3 — sloped geometry branch
+
+  Add this logic at the beginning of makeWallMesh, BEFORE the BoxGeometry code:
+
+  if (wall.roofAttachmentId && elementsById) {
+    const roof = elementsById[wall.roofAttachmentId];
+    if (roof?.kind === 'roof') {
+      return makeSlopedWallMesh(wall, roof, elevM, paint, elementsById);
+    }
+  }
+
+  Step 4 — implement makeSlopedWallMesh
+
+  Add a new helper function above makeWallMesh:
+
+  function makeSlopedWallMesh(
+    wall: WallElem,
+    roof: Extract<Element, { kind: 'roof' }>,
+    elevM: number,
+    paint: ViewportPaintBundle | null,
+    elementsById: Record<string, Element>,
+  ): THREE.Mesh {
+    // Wall corners in plan space (mm)
+    const sx = wall.start.xMm;  const sz = wall.start.yMm;
+    const ex = wall.end.xMm;    const ez = wall.end.yMm;
+
+    const dx = ex - sx;  const dz = ez - sz;
+    const len = Math.max(1, Math.hypot(dx, dz));
+    const ux = dx / len;  const uz = dz / len;  // unit along wall
+    const nx = -uz;       const nz =  ux;        // unit normal (rightward when facing wall direction)
+
+    const thick = THREE.MathUtils.clamp(wall.thicknessMm / 1000, 0.05, 2);
+    const halfT = thick / 2;
+
+    // Four base corners in plan (mm), extruded ±halfT along normal
+    // (We compute roof height at wall centreline midpoints for each end)
+    const hStart = roofHeightAtPoint(roof, elementsById, sx, sz);  // metres
+    const hEnd   = roofHeightAtPoint(roof, elementsById, ex, ez);  // metres
+
+    // Base elevation
+    const yBase = elevM;
+
+    // 8 vertices of a trapezoidal prism (front face, back face)
+    // Front face: +halfT along normal  |  Back face: -halfT along normal
+    const sxF = (sx / 1000) + nx * halfT;  const szF = (sz / 1000) + nz * halfT;
+    const exF = (ex / 1000) + nx * halfT;  const ezF = (ez / 1000) + nz * halfT;
+    const sxB = (sx / 1000) - nx * halfT;  const szB = (sz / 1000) - nz * halfT;
+    const exB = (ex / 1000) - nx * halfT;  const ezB = (ez / 1000) - nz * halfT;
+
+    // positions: 24 vertices (6 quads × 4 = 24, but we triangulate → 6 quads × 2 tris × 3 verts = 36)
+    // Easier: build with indexed geometry. 8 unique verts, 12 triangles.
+    const positions = new Float32Array([
+      sxF, yBase,   szF,  // 0 start-front-base
+      exF, yBase,   ezF,  // 1 end-front-base
+      exF, hEnd,    ezF,  // 2 end-front-top
+      sxF, hStart,  szF,  // 3 start-front-top
+      sxB, yBase,   szB,  // 4 start-back-base
+      exB, yBase,   ezB,  // 5 end-back-base
+      exB, hEnd,    ezB,  // 6 end-back-top
+      sxB, hStart,  szB,  // 7 start-back-top
+    ]);
+
+    const indices = new Uint16Array([
+      0,1,2, 0,2,3,   // front face
+      5,4,7, 5,7,6,   // back face
+      4,0,3, 4,3,7,   // left cap (start)
+      1,5,6, 1,6,2,   // right cap (end)
+      4,5,1, 4,1,0,   // bottom
+      3,2,6, 3,6,7,   // top (sloped)
+    ]);
+
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geom.setIndex(new THREE.BufferAttribute(indices, 1));
+    geom.computeVertexNormals();
+
+    const mat = new THREE.MeshStandardMaterial({
+      color: categoryColorOr(paint, 'wall'),
+      roughness: paint?.categories.wall.roughness ?? 0.85,
+      metalness: paint?.categories.wall.metalness ?? 0.0,
+    });
+    const mesh = new THREE.Mesh(geom, mat);
+    mesh.userData.bimPickId = wall.id;
+    addEdges(mesh);
+    return mesh;
+  }
+
+  Step 5 — update the call sites of makeWallMesh
+
+  In the wall dispatch block (around line 1979–2022) there are TWO calls to makeWallMesh:
+  1. The placeholder at the end: obj = makeWallMesh(e, elev, paint);
+  2. Also check if there's a non-CSG path.
+
+  Pass curr (the elementsById) as the 4th argument at both call sites:
+    obj = makeWallMesh(e, elev, paint, curr);
+
+  Also check if the CSG path uses height from e.heightMm — if a sloped wall has
+  roofAttachmentId, skip CSG dispatch for it (CSG worker only knows BoxGeometry):
+  After the if (CSG_ENABLED && (doors.length > 0 || wins.length > 0)) check, add a guard:
+    if (CSG_ENABLED && (doors.length > 0 || wins.length > 0) && !e.roofAttachmentId) {
+
+  Verification
+
+    pnpm --filter @bim-ai/web typecheck
+    pnpm --filter @bim-ai/web test -- --run
+
+  Both must pass. Then manually test in the dev server:
+  1. Create a wall and a gable roof at the same level.
+  2. Set roofAttachmentId on the wall (via browser console or by temporarily adding a test
+  button in the UI) to the roof's id.
+  3. Verify the wall top follows the roof slope in the 3D view.
+
+  Branch & commit
+
+  Branch: gw-03-sloped-wall-geometry
+  Commit message: "feat(viewport): sloped wall geometry follows roof via roofAttachmentId"
+  Push to origin.
