@@ -1,0 +1,17 @@
+Agent F — R2-06 (roof polygon)
+  Work in /Users/jhoetter/repos/bim-ai. Read spec/rendering-v2-spec.md
+  section R2-06. Improve makeRoofMassMesh in packages/web/src/Viewport.tsx:
+  (1) Add offsetPolygonMm(pts, dist) helper for proper polygon overhang
+  offset (not AABB expansion). (2) Read roof.ridgeAxis to choose ridge
+  direction instead of assuming longer axis. (3) Implement hip roof mesh
+  for rectangular footprints using hip-line intersection algorithm.
+  (4) Detect L-shaped footprints (split into two rectangles, merge
+  with BufferGeometryUtils.mergeGeometries, add valley face).
+
+  Only touch makeRoofMassMesh and add the offsetPolygonMm helper.
+  Do not touch any other factory functions.
+  Run pnpm --filter web typecheck before committing.
+  Commit: "feat(3d): R2-06 — roof from footprint polygon (hip + L-shape)"
+  Push to origin/main when done.
+
+  Task: R2-06
