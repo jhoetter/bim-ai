@@ -143,6 +143,6 @@ sits visibly lower than the main building east eave. No flashing detail visible.
 
 The seed currently models all features in the architectural description above (S1–S4 fixes shipped via `app/scripts/seed.py`; `vp-ssw` viewpoint at `(-5000, -14000, 11000)`; `white_cladding` and `white_render` material keys applied; annex south wall protrudes 500 mm).
 
-Remaining renderer gaps (`GAP-R5` slab edge expression, `GAP-R7` interior visible through glass) are tracked in [`workpackage-master-tracker.md`](workpackage-master-tracker.md).
+All renderer gaps from the original target-house spec are now `done`: `GAP-R5` slab-edge expression strip and `GAP-R7` interior visible through curtain wall glass shipped on 2026-05-07. Outstanding work is tracked in [`workpackage-master-tracker.md`](workpackage-master-tracker.md).
 
 ---
