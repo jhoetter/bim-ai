@@ -1,10 +1,12 @@
 # Target House Seed — Precision Reference Spec
 
-> **Purpose.** This document is the authoritative reference for what the demo seed
-> house should look like when perfectly modelled in BIM AI. It contains an
-> architect-quality verbal description precise enough to redraw from memory,
-> the current modelling status, and a pinned list of renderer/feature gaps that
-> block a perfect result.
+> **Purpose.** Authoritative reference for what the demo seed house should look
+> like when perfectly modelled in BIM AI. Architect-quality verbal description
+> precise enough to redraw from memory.
+
+![Target house — line sketch](target-house-seed-vis.png)
+
+![Target house — colour study](target-house-vis-colored.png)
 
 ---
 
@@ -136,13 +138,3 @@ sits visibly lower than the main building east eave. No flashing detail visible.
 | Doors                    | Solid panel               | Dark / mid-tone               |
 | Mullions                 | Aluminium profile         | Dark grey                     |
 | Floor edge plate         | Concrete / steel          | Light grey                    |
-
----
-
-## 2. Seed Accuracy Status
-
-The seed currently models all features in the architectural description above (S1–S4 fixes shipped via `app/scripts/seed.py`; `vp-ssw` viewpoint at `(-5000, -14000, 11000)`; `white_cladding` and `white_render` material keys applied; annex south wall protrudes 500 mm).
-
-All renderer gaps from the original target-house spec are now `done`: `GAP-R5` slab-edge expression strip and `GAP-R7` interior visible through curtain wall glass shipped on 2026-05-07. Outstanding work is tracked in [`workpackage-master-tracker.md`](workpackage-master-tracker.md).
-
----
