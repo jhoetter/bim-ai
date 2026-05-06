@@ -1,0 +1,45 @@
+Run pnpm verify
+
+> bim-ai@0.1.0 verify /home/runner/work/bim-ai/bim-ai
+> pnpm format:check && pnpm lint:root && pnpm architecture && pnpm typecheck && pnpm test && pnpm build
+
+
+> bim-ai@0.1.0 format:check /home/runner/work/bim-ai/bim-ai
+> prettier --check "**/*.{ts,tsx,js,jsx,json,yml,yaml}"
+
+Checking formatting...
+[warn] packages/web/src/schedules/scheduleDefinitionPresets.ts
+[warn] packages/web/src/schedules/ScheduleDefinitionToolbar.tsx
+[warn] Code style issues found in 2 files. Run Prettier with --write to fix.
+ ELIFECYCLE  Command failed with exit code 1.
+ ELIFECYCLE  Command failed with exit code 1.
+Error: Process completed with exit code 1.
+
+i get very weird CI/CD js issues. can we solve this better? via hooks / claude.md?
+
+---
+
+still: Run pnpm verify
+
+> bim-ai@0.1.0 verify /home/runner/work/bim-ai/bim-ai
+> pnpm format:check && pnpm lint:root && pnpm architecture && pnpm typecheck && pnpm test && pnpm build
+
+
+> bim-ai@0.1.0 format:check /home/runner/work/bim-ai/bim-ai
+> prettier --check "**/*.{ts,tsx,js,jsx,json,yml,yaml}"
+
+Checking formatting...
+[warn] packages/web/src/schedules/scheduleDefinitionPresets.ts
+[warn] packages/web/src/schedules/ScheduleDefinitionToolbar.tsx
+[warn] Code style issues found in 2 files. Run Prettier with --write to fix.
+ ELIFECYCLE  Command failed with exit code 1.
+ ELIFECYCLE  Command failed with exit code 1.
+Error: Process completed with exit code 1. where is that from?...
+
+---
+
+ok please commit and push
+
+---
+
+just your changes ocmmited and pushed
