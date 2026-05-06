@@ -11,3 +11,7 @@ are you 100% sure? like absolutely 100%? is there NO MORE GAP whatsoever? so we 
 ---
 
 what would you recommend should be also in the redesigned version, what not? e.g. the browser rendering is for debugging, but is it e.g. still good for the console or that after a certain threshold there is a warning at least or such? agreed that an architect doesnt benefit from json stringify for debugging, i am just thinking about it
+
+---
+
+ok then go ahead and do that. once that is done - cut out the legacy view fully. no more URL path, no more code for that, ...
