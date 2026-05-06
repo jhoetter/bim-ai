@@ -822,6 +822,54 @@ class SetCurtainPanelOverrideCmd(BaseModel):
     override: CurtainPanelOverride | None = None
 
 
+# --- KRN-06: Origin element commands -------------------------------------
+
+
+class CreateProjectBasePointCmd(BaseModel):
+    """Create the (singleton) project base point. Rejects if one already exists."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createProjectBasePoint"] = "createProjectBasePoint"
+    id: str | None = None
+    position_mm: Vec3Mm = Field(alias="positionMm")
+    angle_to_true_north_deg: float = Field(default=0.0, alias="angleToTrueNorthDeg")
+
+
+class MoveProjectBasePointCmd(BaseModel):
+    """Move the project base point. Translates rendering / shared coords; geometry unchanged."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["moveProjectBasePoint"] = "moveProjectBasePoint"
+    position_mm: Vec3Mm = Field(alias="positionMm")
+
+
+class RotateProjectBasePointCmd(BaseModel):
+    """Rotate the project base point's true-north angle (degrees)."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["rotateProjectBasePoint"] = "rotateProjectBasePoint"
+    angle_to_true_north_deg: float = Field(alias="angleToTrueNorthDeg")
+
+
+class CreateSurveyPointCmd(BaseModel):
+    """Create the (singleton) survey point. Rejects if one already exists."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createSurveyPoint"] = "createSurveyPoint"
+    id: str | None = None
+    position_mm: Vec3Mm = Field(alias="positionMm")
+    shared_elevation_mm: float = Field(default=0.0, alias="sharedElevationMm")
+
+
+class MoveSurveyPointCmd(BaseModel):
+    """Move the survey point. Translates shared-coords output; geometry unchanged."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["moveSurveyPoint"] = "moveSurveyPoint"
+    position_mm: Vec3Mm = Field(alias="positionMm")
+    shared_elevation_mm: float | None = Field(default=None, alias="sharedElevationMm")
+
+
 Command = Annotated[
     CreateLevelCmd
     | CreateWallCmd
@@ -890,6 +938,11 @@ Command = Annotated[
     | MirrorElementsCmd
     | PinElementCmd
     | UnpinElementCmd
-    | SetCurtainPanelOverrideCmd,
+    | SetCurtainPanelOverrideCmd
+    | CreateProjectBasePointCmd
+    | MoveProjectBasePointCmd
+    | RotateProjectBasePointCmd
+    | CreateSurveyPointCmd
+    | MoveSurveyPointCmd,
     Field(discriminator="type"),
 ]

@@ -1341,7 +1341,8 @@ export const useBimStore = create<StoreState>((set, get) => {
 
     viewerClipFloorElevMm: null,
 
-    viewerCategoryHidden: {},
+    // KRN-06: site/origin markers hidden by default; user toggles via VV.
+    viewerCategoryHidden: { site_origin: true },
 
     orbitCameraNonce: 0,
 

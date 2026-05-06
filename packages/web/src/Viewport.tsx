@@ -66,6 +66,11 @@ import {
   makeClipPlaneCap,
 } from './viewport/sceneUtils';
 import { getResolvedText3dFont, loadText3dFont, makeText3dMesh } from './viewport/text3dGeometry';
+import {
+  makeInternalOriginMarker,
+  makeProjectBasePointMarker,
+  makeSurveyPointMarker,
+} from './viewport/originMarkers';
 
 type Props = {
   wsConnected: boolean;
@@ -1107,6 +1112,15 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
           text3dPendingRef.current.delete(id);
           break;
         }
+        case 'internal_origin':
+          obj = makeInternalOriginMarker(e);
+          break;
+        case 'project_base_point':
+          obj = makeProjectBasePointMarker(e);
+          break;
+        case 'survey_point':
+          obj = makeSurveyPointMarker(e);
+          break;
         default:
           break;
       }

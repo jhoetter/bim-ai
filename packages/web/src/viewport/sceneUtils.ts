@@ -10,7 +10,8 @@ export type ViewerCatKey =
   | 'window'
   | 'room'
   | 'railing'
-  | 'site';
+  | 'site'
+  | 'site_origin';
 
 export function elemViewerCategory(e: Element): ViewerCatKey | null {
   switch (e.kind) {
@@ -34,6 +35,10 @@ export function elemViewerCategory(e: Element): ViewerCatKey | null {
       return 'floor';
     case 'site':
       return 'site';
+    case 'internal_origin':
+    case 'project_base_point':
+    case 'survey_point':
+      return 'site_origin';
     default:
       return null;
   }

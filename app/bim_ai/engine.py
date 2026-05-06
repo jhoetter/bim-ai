@@ -32,9 +32,11 @@ from bim_ai.commands import (
     CreateRoomPolyCmd,
     CreateRoomRectangleCmd,
     CreateRoomSeparationCmd,
+    CreateProjectBasePointCmd,
     CreateSectionCutCmd,
     CreateSlabOpeningCmd,
     CreateStairCmd,
+    CreateSurveyPointCmd,
     CreateText3dCmd,
     CreateWallChainCmd,
     CreateWallCmd,
@@ -48,11 +50,14 @@ from bim_ai.commands import (
     MirrorElementsCmd,
     MoveGridLineEndpointsCmd,
     MoveLevelElevationCmd,
+    MoveProjectBasePointCmd,
+    MoveSurveyPointCmd,
     MoveWallDeltaCmd,
     MoveWallEndpointsCmd,
     PinElementCmd,
     UnpinElementCmd,
     RestoreElementCmd,
+    RotateProjectBasePointCmd,
     SaveViewpointCmd,
     SetCurtainPanelOverrideCmd,
     UpdateElementPropertyCmd,
@@ -119,8 +124,12 @@ from bim_ai.elements import (
     SheetElem,
     SiteContextObjectRow,
     SiteElem,
+    INTERNAL_ORIGIN_ID,
+    InternalOriginElem,
+    ProjectBasePointElem,
     SlabOpeningElem,
     StairElem,
+    SurveyPointElem,
     Text3dElem,
     TagDefinitionElem,
     ValidationRuleElem,
@@ -309,6 +318,21 @@ def _dump_elements(elements: dict[str, Element]) -> dict[str, Any]:
 def clone_document(doc: Document) -> Document:
     payload = {"revision": doc.revision, "elements": _dump_elements(doc.elements)}
     return Document.model_validate(payload)
+
+
+def ensure_internal_origin(doc: Document) -> Document:
+    """KRN-06: ensure the singleton `internal_origin` element exists.
+
+    Mutates `doc.elements` in place when missing and returns the same Document.
+    Idempotent. Called on model creation and on first snapshot read so legacy
+    models acquire one without requiring a migration.
+    """
+    if any(isinstance(e, InternalOriginElem) for e in doc.elements.values()):
+        return doc
+    doc.elements[INTERNAL_ORIGIN_ID] = InternalOriginElem(
+        kind="internal_origin", id=INTERNAL_ORIGIN_ID
+    )
+    return doc
 
 
 def _wall_elevation_mm(els: dict[str, Element], level_id: str) -> float:
@@ -1584,6 +1608,80 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                     "head_height_mm": new_head,
                 }
             )
+
+        case CreateProjectBasePointCmd():
+            if any(isinstance(e, ProjectBasePointElem) for e in els.values()):
+                raise ValueError(
+                    "createProjectBasePoint: a project_base_point already exists (singleton)"
+                )
+            pid = cmd.id or new_id()
+            if pid in els:
+                raise ValueError(f"duplicate element id '{pid}'")
+            els[pid] = ProjectBasePointElem(
+                kind="project_base_point",
+                id=pid,
+                position_mm=cmd.position_mm,
+                angle_to_true_north_deg=cmd.angle_to_true_north_deg,
+            )
+
+        case MoveProjectBasePointCmd():
+            target_id = next(
+                (eid for eid, e in els.items() if isinstance(e, ProjectBasePointElem)),
+                None,
+            )
+            if target_id is None:
+                raise ValueError(
+                    "moveProjectBasePoint: no project_base_point exists (create one first)"
+                )
+            existing = els[target_id]
+            assert isinstance(existing, ProjectBasePointElem)
+            els[target_id] = existing.model_copy(update={"position_mm": cmd.position_mm})
+
+        case RotateProjectBasePointCmd():
+            target_id = next(
+                (eid for eid, e in els.items() if isinstance(e, ProjectBasePointElem)),
+                None,
+            )
+            if target_id is None:
+                raise ValueError(
+                    "rotateProjectBasePoint: no project_base_point exists (create one first)"
+                )
+            existing = els[target_id]
+            assert isinstance(existing, ProjectBasePointElem)
+            els[target_id] = existing.model_copy(
+                update={"angle_to_true_north_deg": cmd.angle_to_true_north_deg}
+            )
+
+        case CreateSurveyPointCmd():
+            if any(isinstance(e, SurveyPointElem) for e in els.values()):
+                raise ValueError(
+                    "createSurveyPoint: a survey_point already exists (singleton)"
+                )
+            sid = cmd.id or new_id()
+            if sid in els:
+                raise ValueError(f"duplicate element id '{sid}'")
+            els[sid] = SurveyPointElem(
+                kind="survey_point",
+                id=sid,
+                position_mm=cmd.position_mm,
+                shared_elevation_mm=cmd.shared_elevation_mm,
+            )
+
+        case MoveSurveyPointCmd():
+            target_id = next(
+                (eid for eid, e in els.items() if isinstance(e, SurveyPointElem)),
+                None,
+            )
+            if target_id is None:
+                raise ValueError(
+                    "moveSurveyPoint: no survey_point exists (create one first)"
+                )
+            existing = els[target_id]
+            assert isinstance(existing, SurveyPointElem)
+            update: dict[str, Any] = {"position_mm": cmd.position_mm}
+            if cmd.shared_elevation_mm is not None:
+                update["shared_elevation_mm"] = cmd.shared_elevation_mm
+            els[target_id] = existing.model_copy(update=update)
 
         case CreateBalconyCmd():
             bid = cmd.id or new_id()
@@ -3153,6 +3251,8 @@ def try_commit(
 ) -> tuple[bool, Document | None, Command, list[Violation], str]:
     cmds = coerce_command(cmd_raw)
     cand = clone_document(doc)
+    # KRN-06: backfill the singleton on every commit so persisted state always has it.
+    ensure_internal_origin(cand)
     apply_inplace(cand, cmds)
 
     violations = evaluate(cand.elements)

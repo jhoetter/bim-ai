@@ -45,7 +45,10 @@ export type ElemKind =
   | 'reference_plane'
   | 'selection_set'
   | 'clash_test'
-  | 'text_3d';
+  | 'text_3d'
+  | 'project_base_point'
+  | 'survey_point'
+  | 'internal_origin';
 
 export type Text3dFontFamily = 'helvetiker' | 'optimer' | 'gentilis';
 
@@ -743,6 +746,22 @@ export type Element =
       positionMm: XYZ;
       rotationDeg: number;
       materialKey?: string | null;
+    }
+  | {
+      kind: 'project_base_point';
+      id: string;
+      positionMm: XYZ;
+      angleToTrueNorthDeg: number;
+    }
+  | {
+      kind: 'survey_point';
+      id: string;
+      positionMm: XYZ;
+      sharedElevationMm: number;
+    }
+  | {
+      kind: 'internal_origin';
+      id: string;
     };
 
 export type Violation = {

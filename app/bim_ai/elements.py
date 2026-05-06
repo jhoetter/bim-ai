@@ -485,6 +485,40 @@ class Text3dElem(BaseModel):
     material_key: str | None = Field(default=None, alias="materialKey")
 
 
+# --- KRN-06: Origin elements (project base point, survey point, internal origin) ---
+
+
+INTERNAL_ORIGIN_ID = "internal_origin"
+
+
+class ProjectBasePointElem(BaseModel):
+    """KRN-06: project base point. Singleton; defines project rendering origin."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["project_base_point"] = "project_base_point"
+    id: str
+    position_mm: Vec3Mm = Field(alias="positionMm")
+    angle_to_true_north_deg: float = Field(default=0.0, alias="angleToTrueNorthDeg")
+
+
+class SurveyPointElem(BaseModel):
+    """KRN-06: survey point. Singleton; defines shared-coordinates origin."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["survey_point"] = "survey_point"
+    id: str
+    position_mm: Vec3Mm = Field(alias="positionMm")
+    shared_elevation_mm: float = Field(default=0.0, alias="sharedElevationMm")
+
+
+class InternalOriginElem(BaseModel):
+    """KRN-06: internal origin. Singleton at modelling-space origin; never moves."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["internal_origin"] = "internal_origin"
+    id: str = INTERNAL_ORIGIN_ID
+
+
 class FamilyTypeElem(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True)
     kind: Literal["family_type"] = "family_type"
@@ -833,6 +867,9 @@ ElementKind = Literal[
     "validation_rule",
     "site",
     "text_3d",
+    "project_base_point",
+    "survey_point",
+    "internal_origin",
 ]
 
 
@@ -875,6 +912,9 @@ Element = Annotated[
     | AgentDeviationElem
     | ValidationRuleElem
     | SiteElem
-    | Text3dElem,
+    | Text3dElem
+    | ProjectBasePointElem
+    | SurveyPointElem
+    | InternalOriginElem,
     Field(discriminator="kind"),
 ]

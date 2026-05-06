@@ -17,6 +17,7 @@ const MODEL_CATEGORIES = [
   'beam',
   'ceiling',
   'site',
+  'site_origin',
 ] as const;
 
 const ANNOTATION_CATEGORIES = [
@@ -42,6 +43,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   beam: 'Beams',
   ceiling: 'Ceilings',
   site: 'Site',
+  site_origin: 'Site / Origin',
   grid_line: 'Grids',
   level_datum: 'Levels',
   dimension: 'Dimensions',

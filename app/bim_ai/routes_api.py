@@ -26,7 +26,7 @@ from bim_ai.db import SessionMaker, get_session
 from bim_ai.diff_engine import compute_element_diff
 from bim_ai.document import Document
 from bim_ai.elements import Element, LevelElem, PlanViewElem
-from bim_ai.engine import clone_document, try_commit_bundle
+from bim_ai.engine import clone_document, ensure_internal_origin, try_commit_bundle
 from bim_ai.evidence_manifest import (
     MINIMAL_PROBE_PNG_BYTES_V1,
     MINIMAL_PROBE_PNG_CANONICAL_SHA256_V1,
@@ -155,6 +155,8 @@ async def create_empty_model(
         raise HTTPException(status_code=404, detail="Project not found")
     mid = uuid4()
     empty_doc = Document(revision=1, elements={})  # type: ignore[arg-type]
+    # KRN-06: every new model has the singleton internal_origin from inception.
+    ensure_internal_origin(empty_doc)
     wire = document_to_wire(empty_doc)
     row = ModelRecord(
         id=mid,
@@ -191,6 +193,9 @@ async def snapshot(model_id: UUID, session: AsyncSession = Depends(get_session))
     if row is None:
         raise HTTPException(status_code=404, detail="Model not found")
     doc = Document.model_validate(row.document)
+    # KRN-06: backfill internal_origin for legacy models that pre-date this WP.
+    # Read-only — we don't persist; the next command commit will pick it up.
+    ensure_internal_origin(doc)
     return {
         "modelId": str(row.id),
         "revision": doc.revision,
