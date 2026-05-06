@@ -19,6 +19,11 @@ import { AppShell } from './AppShell';
 import { TopBar, type WorkspaceMode } from './TopBar';
 import { LeftRail, LeftRailCollapsed, type LeftRailSection } from './LeftRail';
 import { Inspector, type InspectorSelection } from './Inspector';
+import {
+  InspectorConstraintsFor,
+  InspectorIdentityFor,
+  InspectorPropertiesFor,
+} from './InspectorContent';
 import { StatusBar } from './StatusBar';
 import { ToolPalette } from '../tools/ToolPalette';
 import { TOOL_REGISTRY, type ToolDisabledContext, type ToolId } from '../tools/toolRegistry';
@@ -301,22 +306,37 @@ export function RedesignedWorkspace(): JSX.Element {
           <CanvasMount mode={mode} viewerMode={viewerMode} activeLevelId={activeLevelId ?? ''} />
         </div>
       }
-      rightRail={
-        <Inspector
-          selection={inspectorSelection}
-          tabs={{
-            properties: <InspectorProperties />,
-            constraints: <InspectorConstraints />,
-            identity: <InspectorIdentity />,
-          }}
-          emptyStateActions={[
-            { hotkey: 'W', label: 'Draw a wall' },
-            { hotkey: 'D', label: 'Insert a door' },
-            { hotkey: 'M', label: 'Drop a room marker' },
-          ]}
-          onClearSelection={() => select(undefined)}
-        />
-      }
+      rightRail={(() => {
+        const el = selectedId ? elementsById[selectedId] : undefined;
+        return (
+          <Inspector
+            selection={inspectorSelection}
+            tabs={{
+              properties: el ? (
+                InspectorPropertiesFor(el)
+              ) : (
+                <InspectorEmptyTab message="No element selected." />
+              ),
+              constraints: el ? (
+                InspectorConstraintsFor(el)
+              ) : (
+                <InspectorEmptyTab message="No element selected." />
+              ),
+              identity: el ? (
+                InspectorIdentityFor(el)
+              ) : (
+                <InspectorEmptyTab message="No element selected." />
+              ),
+            }}
+            emptyStateActions={[
+              { hotkey: 'W', label: 'Draw a wall' },
+              { hotkey: 'D', label: 'Insert a door' },
+              { hotkey: 'M', label: 'Drop a room marker' },
+            ]}
+            onClearSelection={() => select(undefined)}
+          />
+        );
+      })()}
       statusBar={
         <StatusBar
           level={activeLevel}
@@ -462,20 +482,8 @@ function EmptyStateOverlay({ headline, hint }: { headline: string; hint: string 
   );
 }
 
-function InspectorProperties(): JSX.Element {
-  return <p className="text-sm text-muted">Properties tab will hydrate from the engine.</p>;
-}
-
-function InspectorConstraints(): JSX.Element {
-  return (
-    <p className="text-sm text-muted">Constraints (joins, location-line, fire rating) wire next.</p>
-  );
-}
-
-function InspectorIdentity(): JSX.Element {
-  return (
-    <p className="text-sm text-muted">Identity (Type, Mark, ifcGuid, evidence digest) wire next.</p>
-  );
+function InspectorEmptyTab({ message }: { message: string }): JSX.Element {
+  return <p className="text-sm text-muted">{message}</p>;
 }
 
 function humanKindLabel(kind: string): string {
