@@ -1,0 +1,25 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "ce6cd6025730",
+  "strategy": "manual-commit",
+  "branch": "feat/wp-ui-b02-snap-grammar",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/plan/PlanCanvas.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/ce/6cd6025730/0/metadata.json",
+      "transcript": "/ce/6cd6025730/0/full.jsonl",
+      "content_hash": "/ce/6cd6025730/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 10,
+    "cache_creation_tokens": 7710,
+    "cache_read_tokens": 1080293,
+    "output_tokens": 4232,
+    "api_call_count": 10
+  }
+}
