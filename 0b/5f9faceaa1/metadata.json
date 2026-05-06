@@ -3,7 +3,7 @@
   "checkpoint_id": "0b5f9faceaa1",
   "strategy": "manual-commit",
   "branch": "fl-02-family-catalog",
-  "checkpoints_count": 2,
+  "checkpoints_count": 5,
   "files_touched": [
     "packages/web/src/Viewport.tsx",
     "packages/web/src/viewport/ViewCube.test.tsx",
@@ -21,13 +21,19 @@
       "transcript": "/0b/5f9faceaa1/1/full.jsonl",
       "content_hash": "/0b/5f9faceaa1/1/content_hash.txt",
       "prompt": "/0b/5f9faceaa1/1/prompt.txt"
+    },
+    {
+      "metadata": "/0b/5f9faceaa1/2/metadata.json",
+      "transcript": "/0b/5f9faceaa1/2/full.jsonl",
+      "content_hash": "/0b/5f9faceaa1/2/content_hash.txt",
+      "prompt": "/0b/5f9faceaa1/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 39,
-    "cache_creation_tokens": 39426,
-    "cache_read_tokens": 1012894,
-    "output_tokens": 11501,
-    "api_call_count": 35
+    "input_tokens": 93,
+    "cache_creation_tokens": 79288,
+    "cache_read_tokens": 3151659,
+    "output_tokens": 30943,
+    "api_call_count": 81
   }
 }
