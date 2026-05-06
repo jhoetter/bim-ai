@@ -1011,3 +1011,7 @@ yeah run it please
 ---
 
 b1 and b2 are done, can you validate this? if yes, what would be the next prompts for wave 3?
+
+---
+
+can they run in parallel?
