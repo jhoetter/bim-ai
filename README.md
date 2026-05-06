@@ -2,6 +2,8 @@
 
 Browser-first BIM coordination: semantic walls/doors/rooms, realtime WebSocket snapshots, constraint checks, issues, AI propose flow.
 
+> BIM AI is the first BIM authoring environment with continuous server-authoritative collaboration; there is no central file to synchronize. See [`docs/collaboration-model.md`](./docs/collaboration-model.md).
+
 ## Quickstart
 
 ```bash

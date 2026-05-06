@@ -395,15 +395,19 @@ Commands:
   summary                             GET model summary rollup
   validate                            GET violations + summary + counts
   command-log [limit]                  GET undo/command history with full commands JSON
-  apply [file|-]                       POST single command
-  apply-bundle [file|-]                POST bundle
+  apply [file|-]                       POST single command (server-authoritative; commits + broadcasts)
+  apply-bundle [file|-]                POST bundle (atomic, server-ordered; see docs/collaboration-model.md)
   apply-bundle --dry-run [file|-]      POST bundle dry-run (no commit)
   dry-run [file|-]                     POST single command dry-run
   plan-house --brief <path> --out <path> [--model-hint id]
                                        validate brief JSON → write starter command bundle (one-family preset)
   export json                          reserved (stub)
   diff --from … --to …                 reserved (stub)
-  watch                               WebSocket watcher
+  watch                               WebSocket watcher (continuous live commits — no Synchronize step required)
+
+Collaboration model:
+  Every command is server-authoritative on commit and broadcast over websocket;
+  there is no central file to Synchronize. See docs/collaboration-model.md.
 
 Env:
   BIM_AI_MODEL_ID   (required for model-scoped ops)
