@@ -1,0 +1,54 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "771adc7f9451",
+  "session_id": "e5928574-1de9-4cde-bd03-dc09526eb05c",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-06T15:50:22.353753Z",
+  "branch": "feat/wp-v2-01a-options-bar",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "packages/web/src/Viewport.tsx",
+    "packages/web/src/state/store.ts",
+    "packages/web/src/viewport/meshBuilders.ts",
+    "packages/web/src/viewport/sceneHelpers.ts",
+    "packages/web/src/viewport/sceneUtils.ts",
+    "packages/web/src/workspace/AppShell.tsx",
+    "packages/web/src/workspace/OptionsBar.test.tsx",
+    "packages/web/src/workspace/OptionsBar.tsx",
+    "packages/web/src/workspace/RedesignedWorkspace.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "bc5c3764554e",
+  "token_usage": {
+    "input_tokens": 587,
+    "cache_creation_tokens": 697996,
+    "cache_read_tokens": 41493367,
+    "output_tokens": 332694,
+    "api_call_count": 443
+  },
+  "session_metrics": {
+    "turn_count": 34
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-06T15:50:22.237674Z",
+    "agent_lines": 1814,
+    "agent_removed": 3,
+    "human_added": 75,
+    "human_modified": 15,
+    "human_removed": 0,
+    "total_committed": 1904,
+    "total_lines_changed": 1907,
+    "agent_percentage": 95.28054535920293,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}
