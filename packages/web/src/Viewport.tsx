@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { SSAOPass } from 'three/addons/postprocessing/SSAOPass.js';
 
 import type { Element } from '@bim-ai/core';
 
@@ -786,7 +787,15 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
 
     const composer = new EffectComposer(renderer);
     composer.addPass(new RenderPass(scene, camera));
-    // SSAO and edge passes added by R1-04 and R1-05
+    const ssao = new SSAOPass(scene, camera, host.clientWidth || 1, host.clientHeight || 1);
+    ssao.kernelRadius = paint.lighting.ssao.kernelRadius;
+    ssao.minDistance = paint.lighting.ssao.minDistance;
+    ssao.maxDistance = paint.lighting.ssao.maxDistance;
+    ssao.output = SSAOPass.OUTPUT.Default;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      ssao.enabled = false;
+    }
+    composer.addPass(ssao);
     composer.addPass(new OutputPass());
     composerRef.current = composer;
 
@@ -801,6 +810,7 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
     sectionBoxRef.current = sectionBox;
 
     /** Spec §15.3 camera rig replaces the legacy in-line spherical rig. */
+    hasAutoFittedRef.current = false;
     const rig = createCameraRig({
       target: { x: 0, y: 1.35, z: 0 },
       up: { x: 0, y: 1, z: 0 },
@@ -875,6 +885,7 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       const h = host.clientHeight || 1;
       renderer.setSize(w, h);
       composer.setSize(w, h);
+      ssao.setSize(w, h);
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
     }
@@ -991,12 +1002,12 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       ev.preventDefault();
       if (hk.kind === 'frame-all') {
         const box = computeRootBoundingBox(root);
-        if (box) rig.frame(box);
+        if (box) { rig.frame(box); rig.setHome(); }
       } else if (hk.kind === 'frame-selection') {
         // For now the same effect as frame-all; selection-aware framing comes
         // with the inspector parameter wiring.
         const box = computeRootBoundingBox(root);
-        if (box) rig.frame(box);
+        if (box) { rig.frame(box); rig.setHome(); }
       } else if (hk.kind === 'reset') {
         rig.reset();
       } else if (hk.kind === 'zoom-in') {
@@ -1320,6 +1331,7 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       const cam = cameraRef.current;
       if (box && rig && cam) {
         rig.frame(box);
+        rig.setHome();
         const snap = rig.snapshot();
         cam.position.set(snap.position.x, snap.position.y, snap.position.z);
         cam.up.set(snap.up.x, snap.up.y, snap.up.z).normalize();

@@ -92,8 +92,11 @@ describe('classifyPointer', () => {
   it('Middle mouse → pan', () => {
     expect(classifyPointer({ button: 1 })).toBe('pan');
   });
-  it('Right mouse → orbit', () => {
-    expect(classifyPointer({ button: 2 })).toBe('orbit');
+  it('Right mouse → pan', () => {
+    expect(classifyPointer({ button: 2 })).toBe('pan');
+  });
+  it('Shift + LMB → pan', () => {
+    expect(classifyPointer({ button: 0, shiftKey: true })).toBe('pan');
   });
   it('Shift + Middle mouse → pan', () => {
     expect(classifyPointer({ button: 1, shiftKey: true })).toBe('pan');

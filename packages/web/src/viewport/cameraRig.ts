@@ -248,8 +248,8 @@ export function classifyPointer(event: PointerEventLike): PointerIntent {
   const isLmb = event.button === 0;
   const isMmb = event.button === 1;
   const isRmb = event.button === 2;
-  if (isMmb) return 'pan';
-  if (isRmb) return 'orbit';
+  if (isMmb || isRmb) return 'pan';
+  if (isLmb && event.shiftKey) return 'pan';
   if (isLmb && event.altKey) return 'orbit';
   return 'idle';
 }
