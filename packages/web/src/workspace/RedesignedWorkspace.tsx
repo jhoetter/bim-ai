@@ -18,10 +18,19 @@ import {
   applyCommand,
   bootstrap,
   ApiHttpError,
+  fetchActivity,
+  fetchBuildingPresets,
   fetchComments,
   postComment,
   patchCommentResolved,
+  undoModel,
+  redoModel,
+  coerceDelta,
 } from '../lib/api';
+import { syncLastLevelElevationPropagationFromApplyResponse } from './levelDatumPropagationSync';
+import { planToolsForPerspective } from './planToolsByPerspective';
+import { buildPlanGridDatumInspectorLine } from './planViewDatumGridReadout';
+import { LevelStack } from '../levels/LevelStack';
 import {
   buildCollaborationConflictQueueV1,
   type CollaborationConflictQueueV1,
@@ -42,6 +51,8 @@ import {
   InspectorPlanViewEditor,
   InspectorPropertiesFor,
   InspectorRoomEditor,
+  InspectorViewpointEditor,
+  InspectorViewTemplateEditor,
 } from './InspectorContent';
 import {
   AgentReviewModeShell,
@@ -188,6 +199,12 @@ export function RedesignedWorkspace(): JSX.Element {
   const setPlanPresentationPreset = useBimStore((s) => s.setPlanPresentationPreset);
   const violations = useBimStore((s) => s.violations);
   const activityEvents = useBimStore((s) => s.activityEvents);
+  const setActivity = useBimStore((s) => s.setActivity);
+  const applyDelta = useBimStore((s) => s.applyDelta);
+  const setPresencePeers = useBimStore((s) => s.setPresencePeers);
+  const mergeComment = useBimStore((s) => s.mergeComment);
+  const buildingPreset = useBimStore((s) => s.buildingPreset);
+  const setBuildingPreset = useBimStore((s) => s.setBuildingPreset);
 
   const [mode, setMode] = useState<WorkspaceMode>(() =>
     viewerMode === 'orbit_3d' ? '3d' : 'plan',
@@ -203,7 +220,10 @@ export function RedesignedWorkspace(): JSX.Element {
     useState<CollaborationConflictQueueV1 | null>(null);
   const [projectMenuOpen, setProjectMenuOpen] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
-  const [buildingPreset, setBuildingPreset] = useState('residential');
+  const [codePresetIds, setCodePresetIds] = useState<string[]>(['residential', 'commercial', 'office']);
+  const [undoDepth, setUndoDepth] = useState(0);
+  const [wsOn, setWsOn] = useState(false);
+  const wsRef = useRef<WebSocket | null>(null);
   const [recentProjects, setRecentProjects] = useState<ProjectMenuItemRecent[]>(() =>
     readRecentProjects().map((r) => ({ id: r.id, label: r.label })),
   );
@@ -386,6 +406,8 @@ export function RedesignedWorkspace(): JSX.Element {
             elements: r.elements ?? {},
             violations: (r.violations ?? []) as Violation[],
           });
+          syncLastLevelElevationPropagationFromApplyResponse(r as Parameters<typeof syncLastLevelElevationPropagationFromApplyResponse>[0]);
+          setUndoDepth((d) => d + 1);
         }
         setCollaborationConflictQueue(null);
       } catch (err) {
@@ -398,6 +420,57 @@ export function RedesignedWorkspace(): JSX.Element {
       }
     },
     [hydrateFromSnapshot],
+  );
+
+  /* ── Undo / Redo ────────────────────────────────────────────────────── */
+  const handleUndoRedo = useCallback(
+    async (isUndo: boolean): Promise<void> => {
+      const mid = useBimStore.getState().modelId;
+      const uid = useBimStore.getState().userId;
+      if (!mid) return;
+      try {
+        const r = isUndo ? await undoModel(mid, uid) : await redoModel(mid, uid);
+        if (r.revision !== undefined) {
+          hydrateFromSnapshot({
+            modelId: mid,
+            revision: r.revision,
+            elements: r.elements ?? {},
+            violations: (r.violations ?? []) as Violation[],
+          });
+          syncLastLevelElevationPropagationFromApplyResponse(r as Parameters<typeof syncLastLevelElevationPropagationFromApplyResponse>[0]);
+          setUndoDepth((d) => Math.max(0, d + (isUndo ? -1 : 1)));
+        }
+        // Refresh activity after undo/redo
+        fetchActivity(mid).then((a) => {
+          const evs = ((a.events ?? []) as Record<string, unknown>[]).map((ev) => ({
+            id: Number(ev.id),
+            userId: String(ev.userId ?? ev.user_id ?? ''),
+            revisionAfter: Number(ev.revisionAfter ?? ev.revision_after ?? 0),
+            createdAt: String(ev.createdAt ?? ev.created_at ?? ''),
+            commandTypes: Array.isArray(ev.commandTypes) ? ev.commandTypes.map(String) : [],
+          }));
+          setActivity(evs);
+        }).catch(() => {});
+        setCollaborationConflictQueue(null);
+      } catch (err) {
+        if (err instanceof ApiHttpError && err.status === 409) {
+          setCollaborationConflictQueue(buildCollaborationConflictQueueV1(err.detail));
+        } else {
+          setCollaborationConflictQueue(null);
+        }
+      }
+    },
+    [hydrateFromSnapshot, setActivity],
+  );
+
+  /* ── Viewpoint field persistence (3D viewport internal controls) ────── */
+  const persistViewpointField = useCallback(
+    async (payload: { elementId: string; key: string; value: string }): Promise<void> => {
+      const st = useBimStore.getState();
+      if (!st.activeViewpointId || st.activeViewpointId !== payload.elementId) return;
+      await onSemanticCommand({ type: 'updateElementProperty', ...payload });
+    },
+    [onSemanticCommand],
   );
 
   const persistViewpointHiddenKinds = useCallback(async () => {
@@ -444,17 +517,68 @@ export function RedesignedWorkspace(): JSX.Element {
       if (!snapRes.ok) throw new Error(`snapshot ${snapRes.status}`);
       const snap = (await snapRes.json()) as Snapshot;
       hydrateFromSnapshot(snap);
+      // Fetch supporting data
+      fetchActivity(mid).then((a) => {
+        const evs = ((a.events ?? []) as Record<string, unknown>[]).map((ev) => ({
+          id: Number(ev.id),
+          userId: String(ev.userId ?? ev.user_id ?? ''),
+          revisionAfter: Number(ev.revisionAfter ?? ev.revision_after ?? 0),
+          createdAt: String(ev.createdAt ?? ev.created_at ?? ''),
+          commandTypes: Array.isArray(ev.commandTypes) ? ev.commandTypes.map(String) : [],
+        }));
+        setActivity(evs);
+      }).catch(() => {});
+      fetchComments(mid).then((c) => {
+        setComments(mapComments((c.comments ?? []) as Record<string, unknown>[]));
+      }).catch(() => {});
+      // Open WebSocket for real-time collaboration
+      const disableWs =
+        typeof import.meta.env.VITE_E2E_DISABLE_WS === 'string' &&
+        ['1', 'true', 'yes'].includes(import.meta.env.VITE_E2E_DISABLE_WS.trim().toLowerCase());
+      if (!disableWs) {
+        const p = window.location.protocol === 'https:' ? 'wss' : 'ws';
+        const ws = new WebSocket(`${p}://${window.location.host}/ws/${encodeURIComponent(mid)}`);
+        wsRef.current = ws;
+        ws.onopen = () => setWsOn(true);
+        ws.onclose = () => setWsOn(false);
+        ws.onmessage = (evt) => {
+          const payload = JSON.parse(String(evt.data)) as Record<string, unknown>;
+          const t = payload.type;
+          if (t === 'snapshot') {
+            const s = payload as unknown as Snapshot;
+            if (s.modelId) hydrateFromSnapshot(s);
+          } else if (t === 'delta') {
+            const dd = coerceDelta(payload);
+            if (dd) applyDelta(dd);
+          } else if (t === 'presence_state') {
+            const pl = payload.payload as Record<string, unknown> | undefined;
+            const px = ((pl?.peers as Record<string, unknown>) ?? {}) as Parameters<typeof setPresencePeers>[0];
+            setPresencePeers(px);
+          } else if (t === 'comment_event') {
+            const w = payload.payload as Record<string, unknown> | undefined;
+            if (!w) return;
+            mergeComment(mapComments([w])[0]!);
+          }
+        };
+      }
     } catch (err) {
       setSeedError(err instanceof Error ? err.message : 'Failed to load seed');
     } finally {
       setSeedLoading(false);
     }
-  }, [hydrateFromSnapshot]);
+  }, [hydrateFromSnapshot, setActivity, applyDelta, setPresencePeers, mergeComment, setComments]);
+
+  useEffect(() => {
+    void fetchBuildingPresets()
+      .then((ids) => { if (ids.length) setCodePresetIds(ids); })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const isEmpty = Object.keys(elementsById).length === 0;
     if (!isEmpty) return;
     void insertSeedHouse();
+    return () => { wsRef.current?.close(); wsRef.current = null; };
     // Run-once bootstrap: re-running is the user's job via the empty-state CTA.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -541,6 +665,12 @@ export function RedesignedWorkspace(): JSX.Element {
         setTabsState((s) => (s.activeId ? closeTab(s, s.activeId) : s));
         return;
       }
+      // Undo/Redo — Ctrl/⌘+Z / Ctrl/⌘+Shift+Z.
+      if ((event.key === 'z' || event.key === 'Z') && (event.metaKey || event.ctrlKey)) {
+        event.preventDefault();
+        void handleUndoRedo(event.shiftKey ? false : true);
+        return;
+      }
       // Tool hotkeys — match the spec'd letters from TOOL_REGISTRY.
       const upper = event.key.length === 1 ? event.key.toUpperCase() : event.key;
       const hotkeyLabel = event.shiftKey ? `Shift+${upper}` : upper;
@@ -557,7 +687,7 @@ export function RedesignedWorkspace(): JSX.Element {
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [handleModeChange, setPlanTool]);
+  }, [handleModeChange, handleUndoRedo, setPlanTool]);
 
   /* ── Project Browser sections ─────────────────────────────────────── */
   const browserSections = useMemo<LeftRailSection[]>(() => {
@@ -625,6 +755,15 @@ export function RedesignedWorkspace(): JSX.Element {
     ];
   }, [elementsById]);
 
+  /* ── Plan view grid datum readout ────────────────────────────────── */
+  const planProjectionPrimitives = useBimStore((s) => s.planProjectionPrimitives);
+  const planGridDatumLine = useMemo(() => {
+    if (!selectedId) return '';
+    const el = elementsById[selectedId];
+    if (!el || el.kind !== 'plan_view') return '';
+    return buildPlanGridDatumInspectorLine(elementsById, planProjectionPrimitives, el.id);
+  }, [selectedId, elementsById, planProjectionPrimitives]);
+
   /* ── Inspector selection ──────────────────────────────────────────── */
   const inspectorSelection = useMemo<InspectorSelection | null>(() => {
     if (!selectedId) return null;
@@ -664,6 +803,12 @@ export function RedesignedWorkspace(): JSX.Element {
     },
     [setPlanTool],
   );
+
+  // Reset to 'select' when the current tool isn't valid for the active perspective
+  const visibleLegacyTools = useMemo(() => planToolsForPerspective(perspectiveId), [perspectiveId]);
+  useEffect(() => {
+    if (!visibleLegacyTools.includes(planTool)) setPlanTool('select');
+  }, [planTool, setPlanTool, visibleLegacyTools]);
 
   const handleThemeToggle = useCallback(() => {
     const next = toggleTheme() === 'dark' ? 'dark' : 'light';
@@ -881,9 +1026,23 @@ export function RedesignedWorkspace(): JSX.Element {
           </div>
         }
         leftRail={
-          <LeftRail
-            sections={browserSections}
-            activeRowId={activeLevelId}
+          <div className="flex h-full flex-col overflow-hidden">
+            <div className="shrink-0 border-b border-border p-2">
+              <LevelStack
+                levels={(Object.values(elementsById) as Element[])
+                  .filter((e): e is Extract<Element, { kind: 'level' }> => e.kind === 'level')
+                  .sort((a, b) => a.elevationMm - b.elevationMm)}
+                activeId={activeLevelId ?? ''}
+                setActive={setActiveLevelId}
+                onElevationCommitted={(levelId, elevationMm) =>
+                  void onSemanticCommand({ type: 'moveLevelElevation', levelId, elevationMm })
+                }
+              />
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto">
+            <LeftRail
+              sections={browserSections}
+              activeRowId={activeLevelId}
             onRowActivate={(id) => {
               const el = elementsById[id];
               if (!el) {
@@ -933,7 +1092,9 @@ export function RedesignedWorkspace(): JSX.Element {
               }
               select(id);
             }}
-          />
+            />
+            </div>
+          </div>
         }
         leftRailCollapsed={<LeftRailCollapsed sections={browserSections} />}
         canvas={
@@ -968,6 +1129,8 @@ export function RedesignedWorkspace(): JSX.Element {
               initialCamera={activeTab?.viewportState?.planCamera}
               preferredSheetId={activeTab?.kind === 'sheet' ? (activeTab.targetId ?? undefined) : undefined}
               modelId={modelId ?? undefined}
+              wsOn={wsOn}
+              onPersistViewpointField={persistViewpointField}
             />
           </div>
         }
@@ -982,21 +1145,44 @@ export function RedesignedWorkspace(): JSX.Element {
                   tabs={{
                     properties: el ? (
                       el.kind === 'plan_view' ? (
-                        <InspectorPlanViewEditor
-                          el={el}
-                          elementsById={elementsById}
-                          revision={revision}
-                          onPersistProperty={(key, value) => {
-                            if (key === '__applyTemplate__') {
-                              const p = JSON.parse(value) as { planViewId: string; templateId: string };
-                              void onSemanticCommand({ type: 'applyPlanViewTemplate', ...p });
-                            } else {
-                              void onSemanticCommand({ type: 'updateElementProperty', elementId: el.id, key, value });
-                            }
-                          }}
-                        />
+                        <>
+                          {planGridDatumLine ? (
+                            <p className="mb-2 break-all font-mono text-[10px] leading-snug text-muted">
+                              {planGridDatumLine}
+                            </p>
+                          ) : null}
+                          <InspectorPlanViewEditor
+                            el={el}
+                            elementsById={elementsById}
+                            revision={revision}
+                            onPersistProperty={(key, value) => {
+                              if (key === '__applyTemplate__') {
+                                const p = JSON.parse(value) as { planViewId: string; templateId: string };
+                                void onSemanticCommand({ type: 'applyPlanViewTemplate', ...p });
+                              } else {
+                                void onSemanticCommand({ type: 'updateElementProperty', elementId: el.id, key, value });
+                              }
+                            }}
+                          />
+                        </>
                       ) : el.kind === 'room' ? (
                         <InspectorRoomEditor
+                          el={el}
+                          revision={revision}
+                          onPersistProperty={(key, value) =>
+                            void onSemanticCommand({ type: 'updateElementProperty', elementId: el.id, key, value })
+                          }
+                        />
+                      ) : el.kind === 'viewpoint' ? (
+                        <InspectorViewpointEditor
+                          el={el}
+                          revision={revision}
+                          onPersistProperty={(key, value) =>
+                            void onSemanticCommand({ type: 'updateElementProperty', elementId: el.id, key, value })
+                          }
+                        />
+                      ) : el.kind === 'view_template' ? (
+                        <InspectorViewTemplateEditor
                           el={el}
                           revision={revision}
                           onPersistProperty={(key, value) =>
@@ -1093,6 +1279,7 @@ export function RedesignedWorkspace(): JSX.Element {
                   selectionId={selectedId ?? undefined}
                   preset={buildingPreset}
                   onPreset={setBuildingPreset}
+                  codePresets={codePresetIds}
                   onApplyQuickFix={(cmd) => void onSemanticCommand(cmd)}
                   perspective={perspectiveId}
                 />
@@ -1120,8 +1307,10 @@ export function RedesignedWorkspace(): JSX.Element {
             toolLabel={TOOL_REGISTRY[legacyToToolId(planTool)]?.label ?? null}
             gridOn={true}
             cursorMm={cursorMm}
-            undoDepth={0}
-            wsState="connected"
+            undoDepth={undoDepth}
+            onUndo={() => void handleUndoRedo(true)}
+            onRedo={() => void handleUndoRedo(false)}
+            wsState={wsOn ? 'connected' : 'offline'}
             saveState="saved"
           />
         }
@@ -1178,6 +1367,8 @@ function CanvasMount({
   initialCamera,
   preferredSheetId,
   modelId,
+  wsOn,
+  onPersistViewpointField,
 }: {
   mode: WorkspaceMode;
   viewerMode: 'plan_canvas' | 'orbit_3d';
@@ -1188,6 +1379,8 @@ function CanvasMount({
   initialCamera?: { centerMm?: { xMm: number; yMm: number }; halfMm?: number };
   preferredSheetId?: string;
   modelId?: string;
+  wsOn?: boolean;
+  onPersistViewpointField?: (p: { elementId: string; key: string; value: string }) => void | Promise<void>;
 }): JSX.Element {
   if (mode === 'plan-3d') {
     return (
@@ -1196,7 +1389,7 @@ function CanvasMount({
       >
         <div style={{ position: 'relative', borderRight: '1px solid var(--color-border)' }}>
           <PlanCanvas
-            wsConnected={false}
+            wsConnected={wsOn ?? false}
             activeLevelResolvedId={activeLevelId ?? ''}
             onSemanticCommand={onSemanticCommand}
             cameraHandleRef={cameraHandleRef}
@@ -1204,16 +1397,16 @@ function CanvasMount({
           />
         </div>
         <div style={{ position: 'relative' }}>
-          <Viewport wsConnected={false} />
+          <Viewport wsConnected={wsOn ?? false} onPersistViewpointField={onPersistViewpointField} />
         </div>
       </div>
     );
   }
-  if (mode === '3d') return <Viewport wsConnected={false} />;
+  if (mode === '3d') return <Viewport wsConnected={wsOn ?? false} onPersistViewpointField={onPersistViewpointField} />;
   if (mode === 'plan')
     return (
       <PlanCanvas
-        wsConnected={false}
+        wsConnected={wsOn ?? false}
         activeLevelResolvedId={activeLevelId}
         onSemanticCommand={onSemanticCommand}
         cameraHandleRef={cameraHandleRef}
@@ -1226,10 +1419,10 @@ function CanvasMount({
   if (mode === 'agent')
     return <AgentReviewModeShell onApplyQuickFix={onSemanticCommand} />;
   return viewerMode === 'orbit_3d' ? (
-    <Viewport wsConnected={false} />
+    <Viewport wsConnected={wsOn ?? false} onPersistViewpointField={onPersistViewpointField} />
   ) : (
     <PlanCanvas
-      wsConnected={false}
+      wsConnected={wsOn ?? false}
       activeLevelResolvedId={activeLevelId}
       onSemanticCommand={onSemanticCommand}
     />

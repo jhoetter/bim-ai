@@ -137,6 +137,29 @@ export function InspectorPropertiesFor(el: Element): JSX.Element {
           <FieldRow label="Crop depth" value={fmtMm(el.cropDepthMm)} />
         </div>
       );
+    case 'plan_view':
+      return (
+        <div>
+          <FieldRow label="Level" value={el.levelId} mono />
+          <FieldRow label="Presentation" value={el.planPresentation ?? 'default'} />
+          {el.viewTemplateId ? <FieldRow label="Template" value={el.viewTemplateId} mono /> : null}
+          {el.underlayLevelId ? <FieldRow label="Underlay" value={el.underlayLevelId} mono /> : null}
+        </div>
+      );
+    case 'viewpoint':
+      return (
+        <div>
+          <FieldRow label="Name" value={el.name} />
+          <FieldRow label="Id" value={el.id} mono />
+        </div>
+      );
+    case 'view_template':
+      return (
+        <div>
+          <FieldRow label="Scale" value={el.scale} mono />
+          {el.planDetailLevel ? <FieldRow label="Detail level" value={el.planDetailLevel} /> : null}
+        </div>
+      );
     default:
       return <p className="text-sm text-muted">No parameters surface for `{el.kind}` yet.</p>;
   }
@@ -453,6 +476,67 @@ export function InspectorRoomEditor({
       </label>
       <FieldRow label="Level" value={el.levelId} mono />
       <FieldRow label="Outline points" value={String(el.outlineMm.length)} />
+    </div>
+  );
+}
+
+/** Editable name field for viewpoint elements (Properties tab). */
+export function InspectorViewpointEditor({
+  el,
+  revision,
+  onPersistProperty,
+}: {
+  el: Extract<Element, { kind: 'viewpoint' }>;
+  revision: number;
+  onPersistProperty: (key: string, value: string) => void;
+}): JSX.Element {
+  return (
+    <div className="space-y-2 text-[11px]">
+      <p className="text-[10px] text-muted">Clip + layer toggles persist while this viewpoint is active.</p>
+      <label className={LABEL_CLS}>
+        Name
+        <input
+          className={INPUT_CLS}
+          defaultValue={el.name}
+          key={`vp-name-${el.id}-${el.name}-${revision}`}
+          onBlur={(e) => {
+            const v = e.target.value.trim();
+            if (!v || v === el.name) return;
+            onPersistProperty('name', v);
+          }}
+        />
+      </label>
+    </div>
+  );
+}
+
+/** Editable name field for view_template elements (Properties tab). */
+export function InspectorViewTemplateEditor({
+  el,
+  revision,
+  onPersistProperty,
+}: {
+  el: Extract<Element, { kind: 'view_template' }>;
+  revision: number;
+  onPersistProperty: (key: string, value: string) => void;
+}): JSX.Element {
+  return (
+    <div className="space-y-2 text-[11px]">
+      <p className="text-[10px] font-semibold text-muted">View template (replayable defaults)</p>
+      <label className={LABEL_CLS}>
+        Name
+        <input
+          className={INPUT_CLS}
+          defaultValue={el.name}
+          key={`vt-name-${el.id}-${el.name}-${revision}`}
+          onBlur={(e) => {
+            const v = e.target.value.trim();
+            if (!v || v === el.name) return;
+            onPersistProperty('name', v);
+          }}
+        />
+      </label>
+      <FieldRow label="Scale" value={el.scale} mono />
     </div>
   );
 }
