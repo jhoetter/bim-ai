@@ -1,0 +1,235 @@
+You are working in **`/Users/jhoetter/repos/bim-ai`** (BIM AI —
+  browser-first BIM authoring kernel; React + Three.js front-end in
+  `packages/web`, TypeScript core in `packages/core`, Python
+  advisor/exporter backend in `app/`).
+
+  Implement four backlog items. They are independent, so do them in any
+  order. Each one must meet the project's done rule:
+  - (a) `pnpm exec tsc --noEmit` clean
+  - (b) new logic has vitest unit coverage
+  - (c) `make verify` passes
+  - (d) committed to a feature branch (do not push or open PRs — leave that
+  to the user)
+
+  **Source-of-truth specs (read before starting):**
+  - `spec/rendering-v2-spec.md` — FL-06 (~line 1456), FL-08 (~line 1533)
+  - `spec/target-house-seed.md` — GAP-R5 (~line 228), GAP-R7 (~line 261)
+  - `spec/workpackage-master-tracker.md` — current tracker
+
+  **Codebase orientation (verified 2026-05-06):**
+  - Renderer entry: `packages/web/src/Viewport.tsx` (incremental scene
+  manager, `bimPickMapRef`)
+  - Mesh builders: `packages/web/src/viewport/meshBuilders.ts`
+  - Materials: `packages/web/src/viewport/materials.ts`
+  - Family catalog: `packages/web/src/families/familyCatalog.ts`
+  (`BUILT_IN_FAMILIES`, `getFamilyById`, `getTypeById`)
+  - Family geometries: `packages/web/src/families/geometryFns/{doorGeometry,
+  windowGeometry,stairGeometry,railingGeometry}.ts`
+  - Family editor: `packages/web/src/familyEditor/FamilyEditorWorkbench.tsx`
+  - Type selector in inspector:
+  `packages/web/src/workspace/InspectorContent.tsx` (~lines 763, 890, 970)
+  - Element kinds (incl. `wall_type`, `floor_type`, `roof_type`,
+  `family_type`, `WallTypeLayer`): `packages/core/src/index.ts`
+  - Layer-stack workbench (already exists, edits only — no renderer):
+  `packages/web/src/workspace/MaterialLayerStackWorkbench.tsx`
+
+  ---
+
+  ## Task 1 — FL-06: Family Library Browser Panel
+
+  **Spec:** `spec/rendering-v2-spec.md` lines 1456–1495.
+  **Branch:** `feat/fl-06-family-library`
+
+  **Current state:**
+  - `BUILT_IN_FAMILIES` in `packages/web/src/families/familyCatalog.ts`
+  already enumerates door / window / stair / railing families with
+  `defaultTypes[]`.
+  - Inspector `<select>` for `familyTypeId` already shipped (FL-05) at
+  `InspectorContent.tsx:890` (door) and `:970` (window).
+  - **No** `FamilyLibraryPanel` component exists.
+
+  **Build:**
+  1. `packages/web/src/families/FamilyLibraryPanel.tsx`
+     - Reads `BUILT_IN_FAMILIES` plus any `kind: 'family_type'` elements in
+  `elementsById` (custom user types, FL-07).
+     - Groups by discipline (`door | window | stair | railing | wall_type |
+  floor_type | roof_type`).
+     - Search input filters family + type names (case-insensitive
+  substring).
+     - Each type row: thumbnail (128×128), name, "Place" button.
+     - Clicking "Place" sets the active draw tool in the tools store with
+  `familyTypeId` pre-loaded; closes the panel.
+  2. Thumbnail cache module `packages/web/src/families/thumbnailCache.ts`
+     - `getThumbnail(typeId): Promise<string /* blob URL */>`.
+     - On first call, instantiate one shared offscreen
+  `THREE.WebGLRenderer({ canvas: offscreenCanvas })`, render the appropriate
+   `geometryFns/*` with default-type params under a fixed camera, call
+  `canvas.toBlob()`, `URL.createObjectURL`, cache in module-level
+  `Map<typeId, string>`.
+     - Reuse renderer + scene across calls; only swap meshes.
+  3. Wire in: add a left-rail entry in
+  `packages/web/src/workspace/WorkspaceLeftRail.tsx` ("Families" tab)
+  **and** a command-palette entry in `packages/web/src/cmd/` (search "Browse
+   families") that toggles the panel open.
+  4. Tests: `packages/web/src/families/FamilyLibraryPanel.test.tsx`
+     - Renders all built-in families grouped by discipline.
+     - Search "casement" filters down to the casement window family only.
+     - Clicking "Place" on a door type calls the tools store with `kind:
+  'door'` and the right `familyTypeId`.
+     - Custom `family_type` elements appear in their discipline group with a
+   "Custom" badge.
+     - Groups by discipline (`door | window | stair | railing | wall_type | floor_type | roof_type`).
+     - Search input filters family + type names (case-insensitive substring).
+     - Each type row: thumbnail (128×128), name, "Place" button.
+     - Clicking "Place" sets the active draw tool in the tools store with `familyTypeId` pre-loaded; closes the panel.
+  2. Thumbnail cache module `packages/web/src/families/thumbnailCache.ts`
+     - `getThumbnail(typeId): Promise<string /* blob URL */>`.
+     - On first call, instantiate one shared offscreen `THREE.WebGLRenderer({ canvas: offscreenCanvas })`, render the appropriate `geometryFns/*` with
+  default-type params under a fixed camera, call `canvas.toBlob()`, `URL.createObjectURL`, cache in module-level `Map<typeId, string>`.
+     - Reuse renderer + scene across calls; only swap meshes.
+  3. Wire in: add a left-rail entry in `packages/web/src/workspace/WorkspaceLeftRail.tsx` ("Families" tab) **and** a command-palette entry in
+  `packages/web/src/cmd/` (search "Browse families") that toggles the panel open.
+  4. Tests: `packages/web/src/families/FamilyLibraryPanel.test.tsx`
+     - Renders all built-in families grouped by discipline.
+     - Search "casement" filters down to the casement window family only.
+     - Clicking "Place" on a door type calls the tools store with `kind: 'door'` and the right `familyTypeId`.
+     - Custom `family_type` elements appear in their discipline group with a "Custom" badge.
+
+  **Acceptance:** Panel lists all built-in families grouped by discipline; search filters; clicking Place starts the draw tool with the right
+  `familyTypeId`; thumbnails render within ~200ms (cached after first render).
+
+  ---
+
+  ## Task 2 — FL-08: System Family Layer Stack (renderer + plan)
+
+  **Spec:** `spec/rendering-v2-spec.md` lines 1533–1574.
+  **Branch:** `feat/fl-08-wall-layer-render`
+
+  **Current state:**
+  - Data model **done**: `wall_type` element kind in `packages/core/src/index.ts:181`; `WallTypeLayer[]`; walls reference `wallTypeId` at `:220`;
+  `basisLine?: 'center' | 'face_interior' | 'face_exterior'` already on `wall_type`.
+  - Editor **done**: `MaterialLayerStackWorkbench.tsx` allows authoring layers.
+  - Renderer **NOT done**: `makeWallMesh` (`meshBuilders.ts:1086`) ignores `wallTypeId` and uses single-thickness `BoxGeometry` plus optional
+  `addCladdingBoards`. No plan-canvas layer lines.
+
+  **Build:**
+  1. `packages/web/src/families/wallTypeCatalog.ts`
+     - `BUILT_IN_WALL_TYPES: WallTypeAssembly[]` with the four entries from spec table:
+       - `wall.ext-timber` (5 layers totalling 198.5mm)
+       - `wall.ext-masonry` (4 layers totalling 290mm)
+       - `wall.int-partition` (3 layers totalling 114mm)
+       - `wall.int-blockwork` (3 layers totalling 126mm)
+     - Each layer has `name`, `thicknessMm`, `materialKey`, `function: 'structure' | 'insulation' | 'finish' | 'membrane' | 'air'`, `exterior?: boolean`.
+     - Add to `FamilyLibraryPanel` discipline grouping (Task 1) under "Wall types".
+  2. `packages/web/src/viewport/meshBuilders.layeredWall.ts`
+     - `makeLayeredWallMesh(wall, wallType, elevM, paint, elementsById): THREE.Group`
+     - Resolve `basisLine`: stack offset starts from centerline (default), interior face, or exterior face.
+     - For each layer in order: build `BoxGeometry(thicknessMm/1000, heightM, lengthM)`, position cumulatively along wall normal, apply per-layer
+  `MeshStandardMaterial` from `materials.ts` keyed by `materialKey`.
+     - For the exterior-most `function: 'finish'` layer with `materialKey ∈ {timber_cladding, white_cladding}`, call existing `addCladdingBoards`.
+     - Air layers (`function: 'air'`) → skip mesh emit but advance offset.
+     - All layer meshes get `castShadow = receiveShadow = true`; edges via existing `addEdges` helper.
+  3. Modify `makeWallMesh` in `meshBuilders.ts:1086`: at the top, look up `elementsById[wall.wallTypeId]` if `wall.wallTypeId` is set; if it resolves to a
+  `wall_type`, dispatch to `makeLayeredWallMesh` and return. Otherwise keep current single-thickness path unchanged.
+  4. Plan view layer lines:
+     - Locate the wall plan-rendering code (likely in `packages/web/src/plan/` or `packages/web/src/workspace/`; grep for `makeWallMesh` consumers and for
+  plan canvas drawing of wall hatch).
+     - When `wallTypeId` resolves, draw thin lines parallel to the wall centerline at each cumulative layer boundary (1px stroke, color = layer
+  `materialKey` darkened 30%).
+  5. Tests:
+     - `packages/web/src/families/wallTypeCatalog.test.ts` — 4 entries, total thickness per entry matches spec.
+     - `packages/web/src/viewport/meshBuilders.layeredWall.test.ts` — `makeLayeredWallMesh` for `wall.ext-timber` returns a group with 4 visible meshes
+  (skip air gap), total bounding-box thickness ≈ 198.5mm, centered on basisLine.
+
+  **Acceptance:** A wall with `wallTypeId: 'wall.ext-timber'` renders as a 4-layer extrusion in 3D (cladding + frame+ins + VCL + plasterboard, air gap
+  omitted); total thickness within 0.5mm of 198.5mm; plan view shows layer boundary lines.
+
+  ---
+
+  ## Task 3 — GAP-R5: Floor Slab Edge Expression
+
+  **Spec:** `spec/target-house-seed.md` lines 228–240.
+  **Branch:** `feat/gap-r5-slab-edge`
+
+  **Build:**
+  1. Add `floorEdgeStripDisabled?: boolean | null` to the wall element shape in `packages/core/src/index.ts:218` (after `materialKey` on the wall block).
+  2. In `makeWallMesh` (`meshBuilders.ts:1086`):
+     - Resolve the wall's level via `elevationMForLevel(wall.levelId, elementsById)` (already imported in this file, line 78).
+     - If `levelElevM > 0` AND `wall.floorEdgeStripDisabled !== true` AND `wall.wallTypeId` is null (single-thickness path only):
+       - After the main wall mesh is added to the group, build a thin horizontal strip:
+         - Vertical thickness: 50mm (`0.05`)
+         - Length: full wall length
+         - Projection: `wall.thicknessMm / 1000 + 0.03` (i.e. 30mm beyond exterior face)
+         - Y position: at `elevM` (wall base) for 30mm above and 20mm below the slab line
+       - Material: new `slabEdge` category in `materials.ts` (`#9a9a92`, roughness 0.6, metalness 0).
+       - `castShadow = receiveShadow = true`; add edges via `addEdges`.
+  3. Test: `packages/web/src/viewport/meshBuilders.slabEdge.test.ts`
+     - Wall on level with `elevationMm: 0` → group does **not** contain a slab-edge mesh.
+     - Wall on level with `elevationMm: 3000` → group contains exactly one mesh whose Y bounding-box spans roughly `2980 → 3030 mm`.
+     - Wall with `floorEdgeStripDisabled: true` → no strip even at elevation > 0.
+     - Wall with `wallTypeId` set → no strip (handled inside layer stack instead, deferred).
+
+  **Acceptance:** loading the seeded demo house in Viewport, all upper-floor walls (level elevation 3000mm) show a continuous concrete-grey horizontal
+  strip at their base; ground-floor walls don't.
+
+  ---
+
+  ## Task 4 — GAP-R7: Interior Visible Through Glass
+
+  **Spec:** `spec/target-house-seed.md` lines 261–270.
+  **Branch:** `feat/gap-r7-interior-through-glass`
+  **Diagnose first** (this is a renderer fix, not a feature add):
+
+  Run the dev server (`pnpm --filter @bim-ai/web run dev` or as the repo's `make dev` target dictates), open the seeded demo house at the SSW viewpoint,
+  and confirm whether the staircase is **(a)** not in the scene, **(b)** in the scene but hidden behind opaque glass, or **(c)** in the scene but
+  z-occluded by transparent glass.
+
+  **Build (depends on which case):**
+
+  **Case (a) — interior elements skipped from scene:**
+  - In `Viewport.tsx`, find the geometry useEffect (incremental scene manager). Trace which element kinds get added to `bimPickMapRef`. If `stair`, `room`,
+   or interior walls are filtered when a curtain wall is present, remove that filter.
+
+  **Case (b) or (c) — opacity / depth issue (most likely):**
+  - In `makeCurtainWallMesh` (`meshBuilders.ts:1163`), find the `glassMat` material. Ensure it is `MeshPhysicalMaterial` with:
+    - `transparent: true`
+    - `transmission: 0.95`
+    - `roughness: 0.05`
+    - `thickness: 0.005`
+    - `depthWrite: false` ← critical; without this, glass writes to z-buffer and occludes anything drawn afterwards regardless of transparency.
+    - `side: THREE.DoubleSide`
+  - Same for the gable-triangle glazing path at `meshBuilders.ts:1282` (uses the same `glassMat`).
+  - Stair / railing / interior walls keep `depthWrite: true` (default). Three.js's default render order will draw opaque first, then glass — which now does
+   not z-occlude interior.
+
+  **Tests:**
+  1. `packages/web/src/viewport/glassMaterial.test.ts` — assert the curtain wall's glass material has `transparent: true`, `depthWrite: false`,
+  `transmission >= 0.9`.
+  2. `packages/web/e2e/interior-through-glass.spec.ts` — Playwright:
+     - Apply the seeded house, switch to viewpoint `vp-ssw`, take screenshot.
+     - Assert pixel-presence of the stair (sample a known pixel region in front of the curtain wall; expect non-glass color).
+     - Or use the existing snapshot harness if there is one for rendering baselines.
+
+  **Acceptance:** at the SSW viewpoint of the seeded demo, the open-tread staircase is clearly visible through the south curtain wall.
+
+  ---
+
+  ## Wrap-up after all four tasks
+
+  1. Update `spec/rendering-v2-spec.md`:
+     - At top of FL-06 subsection (line ~1456): `**Status:** done (<commit hash>).`
+     - At top of FL-08 subsection (line ~1533): same.
+  2. Update `spec/target-house-seed.md`:
+     - In §3, mark GAP-R5 and GAP-R7 with `**Status:** done` notes.
+     - Update the §4 "Modelling Roadmap" table — strike R5 / R7 rows or remove them.
+  3. From repo root: `pnpm exec tsc --noEmit && make verify` — must be clean.
+  4. Each task lives on its own branch with a single commit (or a short squashable series). Do **not** push or open PRs.
+  5. Output a final summary listing each branch + commit hash and any acceptance gaps you couldn't resolve.
+
+  If you hit ambiguity (e.g. plan canvas wall-rendering location for FL-08 task 4, or which case GAP-R7 is in), surface a question rather than guessing —
+  the user is available.
+please commit after each task and push to main
+
+---
+
+Option C
