@@ -1293,7 +1293,7 @@ Use cases: target-house §1.6 east-slope dormer cut-out opening to the flat roof
 
 | ID     | Item                                                  | Note                                                                          | Effort | State  |
 | ------ | ----------------------------------------------------- | ----------------------------------------------------------------------------- | ------ | ------ |
-| VAL-01 | Topological room enclosure (wall-graph closure)        | Replaces the `room_no_door` centroid heuristic. Detects truly-unbounded rooms. | M      | `open` |
+| VAL-01 | Topological room enclosure (wall-graph closure)        | Replaces the `room_no_door` centroid heuristic. Detects truly-unbounded rooms. | M      | `done` (in 3f7e4a28) |
 
 ### Exchange formats
 
