@@ -1,0 +1,102 @@
+T3 — R4-01: Section cut stencil cap
+
+  ▎ git checkout -b r4-01-section-stencil
+
+  You are working on packages/web/src/Viewport.tsx in a BIM web app.
+
+  CONTEXT
+  =======
+  A SectionBox controller (sectionBoxRef) exposes clipping planes that hide
+  geometry outside a box. When enabled (sectionBoxActive), all meshes have
+  the planes applied via a `applyClippingPlanesToMeshes(root, planes)` call.
+  The cut faces show raw open geometry — no cap fill.
+
+  The renderer has `renderer.localClippingEnabled = true` when any clip plane
+  is active. The EffectComposer exists with RenderPass → SSAOPass →
+  OutlinePass → OutputPass.
+
+  There is also a `SectionBox.clippingPlanes()` method and a `sectionBox`
+  element kind with a `cutPlaneNormal` / `cutPlaneOffset` in the model. The
+  spec calls for capping the cut faces with a stencil-rendered plane.
+
+  TASK
+  ====
+  Implement stencil-based clip-plane caps so that when a wall (or any mesh)
+  is sliced by a clipping plane, the cross-section face appears filled rather
+  than hollow.
+
+  1. Add a helper that builds a stencil cap mesh for a given THREE.Plane:
+
+  function makeClipPlaneCap(plane: THREE.Plane, capColor: string): THREE.Mesh {
+    const capGeom = new THREE.PlaneGeometry(500, 500);
+    const capMat  = new THREE.MeshBasicMaterial({
+      color: capColor,
+      side: THREE.DoubleSide,
+      stencilWrite: true,
+      stencilRef: 1,
+      stencilFunc: THREE.EqualStencilFunc,
+      stencilFail: THREE.KeepStencilOp,
+      stencilZFail: THREE.KeepStencilOp,
+      stencilZPass: THREE.ReplaceStencilOp,
+      depthWrite: false,
+    });
+    const cap = new THREE.Mesh(capGeom, capMat);
+    cap.renderOrder = 2;
+    cap.userData.isClipCap = true;
+
+    // Orient the cap to the plane, update each frame if the plane is live
+    cap.onBeforeRender = () => {
+      cap.position.copy(plane.normal).multiplyScalar(-plane.constant);
+      // Align the PlaneGeometry normal to the plane normal
+      const quat = new THREE.Quaternion().setFromUnitVectors(
+        new THREE.Vector3(0, 0, 1),
+        plane.normal.clone().negate(),
+      );
+      cap.quaternion.copy(quat);
+    };
+    return cap;
+  }
+
+  2. Enable stencil on every mesh in the scene so the clipped back-faces
+     write stencil value 1. In the scene-rebuild useEffect, after calling
+     `applyClippingPlanesToMeshes`, traverse root and configure stencil:
+       root.traverse(obj => {
+         if (!(obj instanceof THREE.Mesh) || obj.userData.isClipCap) return;
+         const mat = obj.material as THREE.MeshStandardMaterial;
+         mat.stencilWrite = true;
+         mat.stencilRef = 1;
+         mat.stencilFunc = THREE.AlwaysStencilFunc;
+         mat.stencilFail = THREE.KeepStencilOp;
+         mat.stencilZFail = THREE.ReplaceStencilOp;
+         mat.stencilZPass = THREE.KeepStencilOp;
+       });
+
+  3. When the section box is active, after adding all scene meshes, for each
+     active clipping plane build a cap mesh and add it to the scene:
+       if (sectionBoxActive && clippingPlanes.length > 0) {
+         const capColor = readColorToken('--color-surface-strong', '#f0f0f0');
+         for (const plane of clippingPlanes) {
+           const cap = makeClipPlaneCap(plane, capColor);
+           // Cap should not be clipped by the same plane it caps
+           cap.material.clippingPlanes = clippingPlanes.filter(p => p !== plane);
+           scene.add(cap);   // directly to scene, not root group
+         }
+       }
+     Store cap mesh refs so they can be removed on next rebuild.
+
+     Add a ref: const clipCapsRef = useRef<THREE.Mesh[]>([]);
+     At the start of the scene-rebuild effect, remove previous caps:
+       for (const c of clipCapsRef.current) sceneRef.current?.remove(c);
+       clipCapsRef.current = [];
+
+  4. Enable stencil buffer on the renderer (in the init useEffect):
+       renderer.stencil = true;
+
+  VERIFY
+  ======
+    pnpm --filter web typecheck
+    pnpm --filter web test run
+
+---
+
+all commited and pushed?
