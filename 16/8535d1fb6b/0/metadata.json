@@ -1,0 +1,75 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "168535d1fb6b",
+  "session_id": "37edc0e9-c3aa-40bd-ab74-d1a57f2f3c17",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-06T17:56:56.658205Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/web/src/Viewport.tsx",
+    "packages/web/src/i18n.ts",
+    "packages/web/src/plan/PlanCanvas.tsx",
+    "packages/web/src/state/storeTypes.ts",
+    "packages/web/src/tools/toolGrammar.test.ts",
+    "packages/web/src/tools/toolGrammar.ts",
+    "packages/web/src/tools/toolRegistry.ts",
+    "packages/web/src/viewport/meshBuilders.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "ec0cca14b62d",
+  "token_usage": {
+    "input_tokens": 4,
+    "cache_creation_tokens": 7942,
+    "cache_read_tokens": 27755,
+    "output_tokens": 556,
+    "api_call_count": 2
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-06T17:56:56.656216Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 2,
+    "total_committed": 0,
+    "total_lines_changed": 2,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 1414,
+      "user_lines_removed": 3,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/web/src/Viewport.tsx": 12,
+        "packages/web/src/i18n.ts": 16,
+        "packages/web/src/plan/PlanCanvas.tsx": 34,
+        "packages/web/src/state/storeTypes.ts": 3,
+        "packages/web/src/tools/toolGrammar.test.ts": 39,
+        "packages/web/src/tools/toolGrammar.ts": 93,
+        "packages/web/src/tools/toolRegistry.ts": 21,
+        "packages/web/src/viewport/meshBuilders.ts": 53,
+        "packages/web/src/workspace/CanvasMount.tsx": 112,
+        "packages/web/src/workspace/RedesignedWorkspace.tsx": 3,
+        "packages/web/src/workspace/WorkspaceHelpers.tsx": 148,
+        "packages/web/src/workspace/WorkspaceLeftRail.tsx": 153,
+        "packages/web/src/workspace/WorkspaceRightRail.tsx": 318,
+        "packages/web/src/workspace/useWorkspaceSnapshot.ts": 150,
+        "packages/web/src/workspace/workspaceUtils.ts": 259
+      },
+      "user_removed_per_file": {
+        "packages/web/src/state/storeTypes.ts": 1,
+        "packages/web/src/tools/toolRegistry.ts": 1,
+        "packages/web/src/workspace/RedesignedWorkspace.tsx": 1
+      }
+    }
+  ]
+}
