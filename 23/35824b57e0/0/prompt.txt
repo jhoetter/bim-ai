@@ -15,3 +15,7 @@ write them really into some md so it is EASY to find them directly, that they do
 ---
 
 ok, please now continue working on all the open topics we have left; create a plan into separate workpackages, commit and push after each is done. don't stop until fully done. if you notice that certain parts also need the backend functionality that isnt impelmented yet, go ahead and do that as well directly (i.e. full-stack); if the backend already exists, perfect (check the APIs etc).
+
+---
+
+please write a hand-over file for me that i can give an AI which lists to all relevant documents so it ca continue working
