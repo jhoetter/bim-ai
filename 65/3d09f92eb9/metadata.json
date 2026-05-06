@@ -1,0 +1,25 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "653d09f92eb9",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "spec/target-house-seed.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/65/3d09f92eb9/0/metadata.json",
+      "transcript": "/65/3d09f92eb9/0/full.jsonl",
+      "content_hash": "/65/3d09f92eb9/0/content_hash.txt",
+      "prompt": "/65/3d09f92eb9/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 23,
+    "cache_creation_tokens": 288722,
+    "cache_read_tokens": 2111911,
+    "output_tokens": 5694,
+    "api_call_count": 8
+  }
+}

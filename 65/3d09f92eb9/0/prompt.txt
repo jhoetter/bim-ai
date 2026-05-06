@@ -1,0 +1,5 @@
+yeah i updated the target house seed md, and what i updated in the other commit was the correct version. did you change that?
+
+---
+
+i want that the @spec/target-house-seed.md only describes the house, nothing regarding features. ideally, we also add the images to the markdown at the top (reference)
