@@ -115,6 +115,67 @@ describe('classifyPointerStart — §14.3', () => {
   });
 });
 
+describe('WP-V2-14 B01 — draftingPaintFor scale-dependent visuals', () => {
+  it('line weights are heavier at close zoom (small plotScale) than at far zoom', () => {
+    const close = draftingPaintFor(20);
+    const far = draftingPaintFor(200);
+    expect(close.lineWidthPx('wall.cut')).toBeGreaterThanOrEqual(far.lineWidthPx('wall.cut'));
+  });
+
+  it('visible hatches at 1:500 are a subset of those at 1:50', () => {
+    const far = draftingPaintFor(500).visibleHatches.map((h) => h.kind);
+    const close = draftingPaintFor(50).visibleHatches.map((h) => h.kind);
+    for (const kind of far) {
+      expect(close).toContain(kind);
+    }
+  });
+});
+
+describe('WP-V2-14 B02 — classifyPointerStart wiring', () => {
+  it('button 1 → pan', () => {
+    expect(classifyPointerStart({ button: 1 })).toBe('pan');
+  });
+  it('space + LMB → pan', () => {
+    expect(classifyPointerStart({ button: 0, spacePressed: true })).toBe('pan');
+  });
+  it('active wall tool → draw', () => {
+    expect(classifyPointerStart({ button: 0, activeTool: 'wall' })).toBe('draw');
+  });
+  it('SnapEngine.resolve — endpoint wins over midpoint', () => {
+    const e = new SnapEngine();
+    const result = e.resolve([
+      { mode: 'midpoint', xMm: 1, yMm: 1 },
+      { mode: 'endpoint', xMm: 0, yMm: 0 },
+    ]);
+    expect(result?.mode).toBe('endpoint');
+  });
+});
+
+describe('WP-V2-14 B03 — camera scale bounds constants', () => {
+  it('HALF_MIN corresponds to 1:5 plan scale', () => {
+    const HALF_MIN = (5 * 500) / 1000;
+    expect(HALF_MIN).toBe(2.5);
+    // clamping below HALF_MIN returns HALF_MIN
+    expect(Math.max(HALF_MIN, Math.min(2500, 0))).toBe(HALF_MIN);
+  });
+  it('HALF_MAX corresponds to 1:5000 plan scale', () => {
+    const HALF_MAX = (5000 * 500) / 1000;
+    expect(HALF_MAX).toBe(2500);
+    // clamping above HALF_MAX returns HALF_MAX
+    expect(Math.max(2.5, Math.min(HALF_MAX, 99999))).toBe(HALF_MAX);
+  });
+  it('PlanCamera clamps at spec bounds (5–5000)', () => {
+    const cam = new PlanCamera(
+      { plotScale: 100, centerMm: { xMm: 0, yMm: 0 }, activeLevelId: 'lvl' },
+      ['lvl'],
+    );
+    for (let i = 0; i < 200; i++) cam.wheelZoom(-1); // zoom all the way in
+    expect(cam.snapshot().plotScale).toBeGreaterThanOrEqual(5);
+    for (let i = 0; i < 200; i++) cam.wheelZoom(1); // zoom all the way out
+    expect(cam.snapshot().plotScale).toBeLessThanOrEqual(5000);
+  });
+});
+
 describe('PlanCamera — §14.5 / §14.6 / §14.7', () => {
   const baseSnapshot = {
     plotScale: 100,

@@ -7,6 +7,12 @@ import { useTheme } from '../state/useTheme';
 import { liveTokenReader } from '../viewport/materials';
 import { collectWallAnchors, snapPlanPoint } from './snapEngine';
 import {
+  classifyPointerStart,
+  draftingPaintFor,
+  SnapEngine,
+  type SnapCandidate,
+} from './planCanvasState';
+import {
   buildPlanProjectionQuery,
   extractPlanAnnotationHints,
   extractPlanCategoryGraphicHintsV0,
@@ -31,6 +37,10 @@ function readPlanToken(name: string, fallback: string): string {
 }
 
 const SLICE_Y = 0.02;
+
+// B03 — spec 1:5–1:5000 plan scale bounds  half = plotScale * 500mm / 1000
+const HALF_MIN = 2.5; // 1:5 (very close)
+const HALF_MAX = 2500; // 1:5000 (very far)
 
 function orthoExtents(halfWorldM: number) {
   const stepMm = halfWorldM < 5 ? 250 : halfWorldM < 12 ? 500 : halfWorldM < 24 ? 1000 : 2000;
@@ -145,7 +155,11 @@ export function PlanCanvas({
   });
   const draftRef = useRef<Draft | undefined>(undefined);
   const spaceDownRef = useRef(false);
-  const minZoomRef = useRef(2);
+  const draftingRef = useRef<ReturnType<typeof draftingPaintFor> | null>(null);
+  const lastPlotScaleRef = useRef<number>(0);
+  const snapEngineRef = useRef(new SnapEngine());
+  const snapIndicatorRef = useRef<THREE.Mesh | null>(null);
+  const [snapLabel, setSnapLabel] = useState<string | null>(null);
   const [hudMm, setHudMm] = useState<{ xMm: number; yMm: number }>();
   const [halfUi, setHalfUi] = useState(22);
   const [showZoomMenu, setShowZoomMenu] = useState(false);
@@ -341,7 +355,7 @@ export function PlanCanvas({
     const half = Math.max(halfX / asp, halfZ) * 1.15;
     camRef.current.camX = cx;
     camRef.current.camZ = cz;
-    camRef.current.half = THREE.MathUtils.clamp(half, minZoomRef.current, 420);
+    camRef.current.half = THREE.MathUtils.clamp(half, HALF_MIN, HALF_MAX);
     resizeCam();
     setShowZoomMenu(false);
   }, [resizeCam]);
@@ -389,6 +403,13 @@ export function PlanCanvas({
   useEffect(() => {
     const grp = rootRef.current;
     if (!grp) return;
+
+    // B01 — compute plot scale and resolve drafting paint for this zoom level
+    const worldHalfMm = camRef.current.half * 1000;
+    const plotScale = worldHalfMm / 500;
+    draftingRef.current = draftingPaintFor(plotScale);
+    lastPlotScaleRef.current = plotScale;
+
     const wirePrimitives = modelId ? planProjectionPrimitives : null;
     rebuildPlanMeshes(grp, elementsById, {
       activeLevelId: displayLevelId || undefined,
@@ -400,6 +421,16 @@ export function PlanCanvas({
       planAnnotationHints: mergedAnnotationHints,
       planTagFontScales,
     });
+
+    // B01 — apply hatch visibility per scale (no-op until hatch meshes are added)
+    for (const ch of grp.children) {
+      if (typeof (ch.userData as { hatchKind?: string }).hatchKind === 'string') {
+        ch.visible = draftingRef.current.visibleHatches.some(
+          (h) => h.kind === (ch.userData as { hatchKind: string }).hatchKind,
+        );
+      }
+    }
+
     for (let i = grp.children.length - 1; i >= 0; i--) {
       const ch = grp.children[i]!;
       if ((ch.userData as { draftingGrid?: unknown }).draftingGrid) grp.remove(ch);
@@ -524,6 +555,49 @@ export function PlanCanvas({
       }
       const v = snapped(ev.clientX, ev.clientY);
       if (!v) return;
+
+      // B02 — snap candidates from wall endpoints/midpoints within 12 px radius
+      const isDrawing = planTool != null && planTool !== 'select';
+      if (isDrawing) {
+        const pixH = rnd.domElement.clientHeight || 1;
+        const toleranceMm = (12 / pixH) * 2 * camRef.current.half * 1000;
+        const candidates: SnapCandidate[] = [];
+        for (const el of Object.values(elementsById)) {
+          if (el.kind !== 'wall') continue;
+          if (displayLevelId && el.levelId !== displayLevelId) continue;
+          if (Math.hypot(el.start.xMm - v.xMm, el.start.yMm - v.yMm) < toleranceMm)
+            candidates.push({ mode: 'endpoint', xMm: el.start.xMm, yMm: el.start.yMm });
+          if (Math.hypot(el.end.xMm - v.xMm, el.end.yMm - v.yMm) < toleranceMm)
+            candidates.push({ mode: 'endpoint', xMm: el.end.xMm, yMm: el.end.yMm });
+          const midXMm = (el.start.xMm + el.end.xMm) / 2;
+          const midYMm = (el.start.yMm + el.end.yMm) / 2;
+          if (Math.hypot(midXMm - v.xMm, midYMm - v.yMm) < toleranceMm)
+            candidates.push({ mode: 'midpoint', xMm: midXMm, yMm: midYMm });
+        }
+        const snap = snapEngineRef.current.resolve(candidates);
+        if (snap) {
+          if (!snapIndicatorRef.current) {
+            const indicator = new THREE.Mesh(
+              new THREE.TorusGeometry(0.05, 0.01, 8, 16),
+              new THREE.MeshBasicMaterial({ color: 0xfcd34d }),
+            );
+            indicator.userData.snapIndicator = true;
+            indicator.rotation.x = Math.PI / 2;
+            snapIndicatorRef.current = indicator;
+            grp.add(indicator);
+          }
+          snapIndicatorRef.current.position.set(snap.xMm / 1000, SLICE_Y + 0.01, snap.yMm / 1000);
+          snapIndicatorRef.current.visible = true;
+          setSnapLabel(snapEngineRef.current.pillLabel(snap));
+        } else {
+          if (snapIndicatorRef.current) snapIndicatorRef.current.visible = false;
+          setSnapLabel(null);
+        }
+      } else {
+        if (snapIndicatorRef.current) snapIndicatorRef.current.visible = false;
+        setSnapLabel(null);
+      }
+
       const p = new THREE.Vector3(v.xMm / 1000, SLICE_Y, v.yMm / 1000);
       const d = draftRef.current;
       if (planTool === 'room_rectangle' && d?.kind === 'room_rect') {
@@ -551,9 +625,16 @@ export function PlanCanvas({
     };
 
     const onDown = (ev: PointerEvent) => {
-      const forcePan =
-        (ev.buttons & 2) === 2 || (ev.buttons & 4) === 4 || ev.shiftKey || spaceDownRef.current;
-      if (forcePan) {
+      const intent = classifyPointerStart({
+        button: ev.button,
+        spacePressed: spaceDownRef.current,
+        shiftKey: ev.shiftKey,
+        altKey: ev.altKey,
+        activeTool: planTool === 'select' ? 'select' : planTool ? 'wall' : undefined,
+        dragDirection: null,
+      });
+
+      const startPan = () => {
         const rr = rayToPlanMm(rnd, camNow, ev.clientX, ev.clientY);
         if (!rr) return;
         dragRef.current = {
@@ -563,7 +644,11 @@ export function PlanCanvas({
           camX: camRef.current.camX,
           camZ: camRef.current.camZ,
         };
-      } else if (ev.button === 0 && planTool === 'select') {
+      };
+
+      if (intent === 'pan' || ev.button === 2) {
+        startPan();
+      } else if (intent === 'drag-move' && planTool === 'select') {
         // LMB + select tool: pan when clicking empty space, let onClick handle element hits.
         const rectBox = rnd.domElement.getBoundingClientRect();
         const ray = new THREE.Raycaster();
@@ -578,24 +663,15 @@ export function PlanCanvas({
         const hasHit = hits.some(
           (x) => typeof (x.object.userData as { bimPickId?: unknown }).bimPickId === 'string',
         );
-        if (!hasHit) {
-          const rr = rayToPlanMm(rnd, camNow, ev.clientX, ev.clientY);
-          if (rr) {
-            dragRef.current = {
-              dragging: true,
-              lastXmm: rr.xMm,
-              lastZmm: rr.yMm,
-              camX: camRef.current.camX,
-              camZ: camRef.current.camZ,
-            };
-          }
-        }
+        if (!hasHit) startPan();
       }
       skipClickRef.current = false;
     };
 
     const onUpWindow = () => {
       dragRef.current.dragging = false;
+      if (snapIndicatorRef.current) snapIndicatorRef.current.visible = false;
+      setSnapLabel(null);
     };
 
     const onClick = (ev: MouseEvent) => {
@@ -776,11 +852,7 @@ export function PlanCanvas({
         // Trackpad pinch — macOS sends ctrlKey+wheel. Use higher sensitivity
         // so the gesture feels 1-to-1 with finger spread/pinch.
         const oldHalf = camRef.current.half;
-        const newHalf = THREE.MathUtils.clamp(
-          oldHalf * Math.exp(rawY * 0.008),
-          minZoomRef.current,
-          420,
-        );
+        const newHalf = THREE.MathUtils.clamp(oldHalf * Math.exp(rawY * 0.008), HALF_MIN, HALF_MAX);
         const dH = oldHalf - newHalf;
         camRef.current.half = newHalf;
         camRef.current.camX += ndcX * asp * dH;
@@ -790,11 +862,7 @@ export function PlanCanvas({
         // Y → zoom at ~30 % per mouse notch; X → pan so a sideways swipe
         // scrolls the canvas rather than accidentally zooming.
         const oldHalf = camRef.current.half;
-        const newHalf = THREE.MathUtils.clamp(
-          oldHalf * Math.exp(rawY * 0.003),
-          minZoomRef.current,
-          420,
-        );
+        const newHalf = THREE.MathUtils.clamp(oldHalf * Math.exp(rawY * 0.003), HALF_MIN, HALF_MAX);
         const dH = oldHalf - newHalf;
         camRef.current.half = newHalf;
         camRef.current.camX += ndcX * asp * dH;
@@ -806,6 +874,14 @@ export function PlanCanvas({
         }
       }
       resizeCam();
+      // B01 — rebuild meshes when zoom crosses a 20% threshold so line weights update
+      const newPlotScale = (camRef.current.half * 1000) / 500;
+      if (
+        lastPlotScaleRef.current > 0 &&
+        Math.abs(newPlotScale - lastPlotScaleRef.current) / lastPlotScaleRef.current > 0.2
+      ) {
+        bumpGeom((x) => x + 1);
+      }
     };
 
     const onKey = (ev: KeyboardEvent) => {
@@ -840,6 +916,11 @@ export function PlanCanvas({
       canvas.removeEventListener('wheel', onWheel);
       window.removeEventListener('keydown', onKey);
       window.removeEventListener('keyup', onKeyUp);
+      if (snapIndicatorRef.current) {
+        grp.remove(snapIndicatorRef.current);
+        snapIndicatorRef.current.geometry.dispose();
+        snapIndicatorRef.current = null;
+      }
     };
   }, [
     anchors,
@@ -869,6 +950,11 @@ export function PlanCanvas({
           ? `X ${(hudMm.xMm / 1000).toFixed(2)} m · Y ${(hudMm.yMm / 1000).toFixed(2)} m`
           : '—'}
       </div>
+      {snapLabel && (
+        <div className="pointer-events-none absolute bottom-8 left-1/2 z-10 -translate-x-1/2 rounded border border-border bg-surface/90 px-2 py-0.5 font-mono text-[10px] text-foreground backdrop-blur">
+          {snapLabel}
+        </div>
+      )}
       <div className="pointer-events-none absolute right-3 top-14 z-10 max-w-[min(260px,calc(100%-24px))] rounded border border-border bg-surface/90 px-2 py-2 text-[10px] text-muted backdrop-blur">
         {planPresentation === 'room_scheme' && roomColorLegend.length ? (
           <div data-testid="plan-room-color-legend">
