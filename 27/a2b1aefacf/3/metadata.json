@@ -1,0 +1,134 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "27a2b1aefacf",
+  "session_id": "9bc6da43-1136-4555-8401-e2dd3540a0f1",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-06T10:19:37.965365Z",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "app/scripts/seed.py",
+    "packages/web/src/Viewport.tsx",
+    "packages/web/src/cmd/Cheatsheet.tsx",
+    "packages/web/src/cmd/RedesignedCommandPalette.tsx",
+    "packages/web/src/cmd/cheatsheetData.test.ts",
+    "packages/web/src/cmd/cheatsheetData.ts",
+    "packages/web/src/i18n.ts",
+    "packages/web/src/main.tsx",
+    "packages/web/src/tools/ToolPalette.test.tsx",
+    "packages/web/src/tools/ToolPalette.tsx",
+    "packages/web/src/tools/toolRegistry.ts",
+    "packages/web/src/workspace/AppShell.tsx",
+    "packages/web/src/workspace/CommentsPanel.tsx",
+    "packages/web/src/workspace/Inspector.test.tsx",
+    "packages/web/src/workspace/Inspector.tsx",
+    "packages/web/src/workspace/InspectorContent.tsx",
+    "packages/web/src/workspace/LeftRail.tsx",
+    "packages/web/src/workspace/RedesignedWorkspace.tsx",
+    "packages/web/src/workspace/StatusBar.tsx",
+    "packages/web/src/workspace/TopBar.tsx",
+    "packages/web/src/workspace/Viewport3DLayersPanel.tsx",
+    "spec/element-rendering-requirements.md",
+    "spec/rendering-v2-spec.md"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "fbfed8576638",
+  "token_usage": {
+    "input_tokens": 2154,
+    "cache_creation_tokens": 70721,
+    "cache_read_tokens": 2274816,
+    "output_tokens": 21857,
+    "api_call_count": 38
+  },
+  "session_metrics": {
+    "turn_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-06T10:19:37.95568Z",
+    "agent_lines": 0,
+    "agent_removed": 43,
+    "human_added": 0,
+    "human_modified": 23,
+    "human_removed": 450,
+    "total_committed": 324,
+    "total_lines_changed": 525,
+    "agent_percentage": 8.190476190476192,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 1166,
+      "user_lines_removed": 460,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "app/scripts/seed.py": 25,
+        "packages/web/src/Viewport.tsx": 121,
+        "packages/web/src/cmd/Cheatsheet.tsx": 4,
+        "packages/web/src/cmd/RedesignedCommandPalette.tsx": 11,
+        "packages/web/src/cmd/cheatsheetData.test.ts": 9,
+        "packages/web/src/cmd/cheatsheetData.ts": 114,
+        "packages/web/src/main.tsx": 5,
+        "packages/web/src/tools/ToolPalette.test.tsx": 20,
+        "packages/web/src/tools/ToolPalette.tsx": 4,
+        "packages/web/src/tools/toolRegistry.ts": 113,
+        "packages/web/src/workspace/AppShell.tsx": 5,
+        "packages/web/src/workspace/CommentsPanel.tsx": 7,
+        "packages/web/src/workspace/Inspector.test.tsx": 20,
+        "packages/web/src/workspace/Inspector.tsx": 19,
+        "packages/web/src/workspace/InspectorContent.tsx": 118,
+        "packages/web/src/workspace/LeftRail.tsx": 7,
+        "packages/web/src/workspace/RedesignedWorkspace.tsx": 20,
+        "packages/web/src/workspace/StatusBar.tsx": 49,
+        "packages/web/src/workspace/TopBar.tsx": 12,
+        "spec/element-rendering-requirements.md": 27,
+        "spec/rendering-v2-spec.md": 456
+      },
+      "user_removed_per_file": {
+        "packages/web/src/Viewport.tsx": 4,
+        "packages/web/src/cmd/Cheatsheet.tsx": 3,
+        "packages/web/src/cmd/RedesignedCommandPalette.tsx": 8,
+        "packages/web/src/cmd/cheatsheetData.test.ts": 6,
+        "packages/web/src/cmd/cheatsheetData.ts": 114,
+        "packages/web/src/main.tsx": 1,
+        "packages/web/src/tools/ToolPalette.test.tsx": 8,
+        "packages/web/src/tools/ToolPalette.tsx": 2,
+        "packages/web/src/tools/toolRegistry.ts": 107,
+        "packages/web/src/workspace/AppShell.tsx": 3,
+        "packages/web/src/workspace/CommentsPanel.tsx": 5,
+        "packages/web/src/workspace/Inspector.test.tsx": 10,
+        "packages/web/src/workspace/Inspector.tsx": 14,
+        "packages/web/src/workspace/InspectorContent.tsx": 105,
+        "packages/web/src/workspace/LeftRail.tsx": 3,
+        "packages/web/src/workspace/RedesignedWorkspace.tsx": 10,
+        "packages/web/src/workspace/StatusBar.tsx": 44,
+        "packages/web/src/workspace/TopBar.tsx": 7,
+        "spec/rendering-v2-spec.md": 6
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 1303,
+      "agent_lines_removed": 507
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 9,
+      "user_lines_removed": 7,
+      "agent_lines_added": 1496,
+      "agent_lines_removed": 509,
+      "user_added_per_file": {
+        "packages/web/src/workspace/RoomSeparationAuthoringWorkbench.tsx": 3,
+        "packages/web/src/workspace/Viewport3DLayersPanel.tsx": 6
+      },
+      "user_removed_per_file": {
+        "packages/web/src/workspace/RoomSeparationAuthoringWorkbench.tsx": 1,
+        "packages/web/src/workspace/Viewport3DLayersPanel.tsx": 6
+      }
+    }
+  ]
+}

@@ -3,7 +3,7 @@
   "checkpoint_id": "27a2b1aefacf",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 3,
+  "checkpoints_count": 5,
   "files_touched": [
     "app/scripts/seed.py",
     "packages/web/src/Viewport.tsx",
@@ -11,6 +11,7 @@
     "packages/web/src/cmd/RedesignedCommandPalette.tsx",
     "packages/web/src/cmd/cheatsheetData.test.ts",
     "packages/web/src/cmd/cheatsheetData.ts",
+    "packages/web/src/i18n.ts",
     "packages/web/src/main.tsx",
     "packages/web/src/tools/ToolPalette.test.tsx",
     "packages/web/src/tools/ToolPalette.tsx",
@@ -24,6 +25,7 @@
     "packages/web/src/workspace/RedesignedWorkspace.tsx",
     "packages/web/src/workspace/StatusBar.tsx",
     "packages/web/src/workspace/TopBar.tsx",
+    "packages/web/src/workspace/Viewport3DLayersPanel.tsx",
     "spec/element-rendering-requirements.md",
     "spec/rendering-v2-spec.md"
   ],
@@ -45,13 +47,19 @@
       "transcript": "/27/a2b1aefacf/2/full.jsonl",
       "content_hash": "/27/a2b1aefacf/2/content_hash.txt",
       "prompt": "/27/a2b1aefacf/2/prompt.txt"
+    },
+    {
+      "metadata": "/27/a2b1aefacf/3/metadata.json",
+      "transcript": "/27/a2b1aefacf/3/full.jsonl",
+      "content_hash": "/27/a2b1aefacf/3/content_hash.txt",
+      "prompt": "/27/a2b1aefacf/3/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 58,
-    "cache_creation_tokens": 96921,
-    "cache_read_tokens": 2609617,
-    "output_tokens": 27992,
-    "api_call_count": 48
+    "input_tokens": 2212,
+    "cache_creation_tokens": 167642,
+    "cache_read_tokens": 4884433,
+    "output_tokens": 49849,
+    "api_call_count": 86
   }
 }
