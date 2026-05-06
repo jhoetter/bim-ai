@@ -8,6 +8,7 @@ test.describe('golden bundle affordances', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('bim.welcome.dismissed', '1');
+      localStorage.setItem('bim.onboarding-completed', 'true');
       localStorage.setItem('bim.workspaceLayout', 'split_plan_section');
     });
 

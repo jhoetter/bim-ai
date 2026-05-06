@@ -60,6 +60,7 @@ const MOCK_ARTIFACT_INGEST_DIGEST = createHash('sha256')
 async function sharedRoutes(page: Page, layoutPreset: string) {
   await page.addInitScript((preset: string) => {
     localStorage.setItem('bim.welcome.dismissed', '1');
+    localStorage.setItem('bim.onboarding-completed', 'true');
     localStorage.setItem('bim.workspaceLayout', preset);
   }, layoutPreset);
 
