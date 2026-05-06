@@ -1,0 +1,1 @@
+implement @spec/prompts/wave-03/WP-V2-06-structural.md
