@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "3d538f320d1e",
+  "strategy": "manual-commit",
+  "branch": "feat/wp-v2-04-openings",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/ui/src/icons.tsx",
+    "packages/web/src/plan/PlanCanvas.tsx",
+    "packages/web/src/state/storeTypes.ts",
+    "packages/web/src/tools/ToolPalette.test.tsx",
+    "packages/web/src/tools/toolGrammar.test.ts",
+    "packages/web/src/tools/toolGrammar.ts",
+    "packages/web/src/tools/toolRegistry.ts",
+    "packages/web/src/workspace/RedesignedWorkspace.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/3d/538f320d1e/0/metadata.json",
+      "transcript": "/3d/538f320d1e/0/full.jsonl",
+      "content_hash": "/3d/538f320d1e/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 18,
+    "cache_creation_tokens": 14545,
+    "cache_read_tokens": 1804814,
+    "output_tokens": 10442,
+    "api_call_count": 18
+  }
+}

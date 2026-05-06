@@ -1,0 +1,43 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "3d538f320d1e",
+  "session_id": "4a1fa684-447d-4603-9f1d-3528592950a9",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-06T17:30:58.107486Z",
+  "branch": "feat/wp-v2-04-openings",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/ui/src/icons.tsx",
+    "packages/web/src/plan/PlanCanvas.tsx",
+    "packages/web/src/state/storeTypes.ts",
+    "packages/web/src/tools/ToolPalette.test.tsx",
+    "packages/web/src/tools/toolGrammar.test.ts",
+    "packages/web/src/tools/toolGrammar.ts",
+    "packages/web/src/tools/toolRegistry.ts",
+    "packages/web/src/workspace/RedesignedWorkspace.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "226b09a9e255",
+  "checkpoint_transcript_start": 146,
+  "transcript_lines_at_start": 146,
+  "token_usage": {
+    "input_tokens": 18,
+    "cache_creation_tokens": 14545,
+    "cache_read_tokens": 1804814,
+    "output_tokens": 10442,
+    "api_call_count": 18
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-06T17:30:58.095996Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 4,
+    "human_removed": 21,
+    "total_committed": 2,
+    "total_lines_changed": 25,
+    "agent_percentage": 0,
+    "metric_version": 2
+  }
+}
