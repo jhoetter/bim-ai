@@ -148,6 +148,44 @@ class LevelElem(BaseModel):
     pinned: bool = Field(default=False)
 
 
+CurtainPanelOverrideKind = Literal["empty", "system", "family_instance"]
+
+
+class CurtainPanelOverride(BaseModel):
+    """KRN-09 — per-cell substitution for a curtain-wall grid cell.
+
+    `kind`:
+      - `empty`      → leave the cell open (no glass, mullions stay)
+      - `system`     → render a solid panel using the supplied `materialKey`
+      - `family_instance` → instantiate a custom family at this cell (FAM-01)
+    """
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: CurtainPanelOverrideKind
+    family_type_id: str | None = Field(default=None, alias="familyTypeId")
+    material_key: str | None = Field(default=None, alias="materialKey")
+
+
+def curtain_grid_cell_id(v_index: int, h_index: int) -> str:
+    """Deterministic cell-id used as the key in `wall.curtainPanelOverrides`."""
+
+    return f"v{v_index}h{h_index}"
+
+
+_CELL_ID_PATTERN = re.compile(r"^v(\d+)h(\d+)$")
+
+
+def parse_curtain_grid_cell_id(cell_id: str) -> tuple[int, int]:
+    """Inverse of `curtain_grid_cell_id`. Raises ValueError on malformed ids."""
+
+    m = _CELL_ID_PATTERN.match(cell_id)
+    if not m:
+        raise ValueError(
+            f"curtain panel cell id must match v<col>h<row> (zero-indexed); got '{cell_id}'"
+        )
+    return int(m.group(1)), int(m.group(2))
+
+
 class WallElem(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True)
     kind: Literal["wall"] = "wall"
@@ -168,6 +206,11 @@ class WallElem(BaseModel):
     material_key: str | None = Field(default=None, alias="materialKey")
     is_curtain_wall: bool = Field(default=False, alias="isCurtainWall")
     pinned: bool = Field(default=False)
+    curtain_wall_v_count: int | None = Field(default=None, alias="curtainWallVCount")
+    curtain_wall_h_count: int | None = Field(default=None, alias="curtainWallHCount")
+    curtain_panel_overrides: dict[str, "CurtainPanelOverride"] | None = Field(
+        default=None, alias="curtainPanelOverrides"
+    )
 
 
 DoorOperationType = Literal[

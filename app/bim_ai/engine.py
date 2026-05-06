@@ -54,6 +54,7 @@ from bim_ai.commands import (
     UnpinElementCmd,
     RestoreElementCmd,
     SaveViewpointCmd,
+    SetCurtainPanelOverrideCmd,
     UpdateElementPropertyCmd,
     UpdateOpeningCleanroomCmd,
     UpdatePlanViewCropCmd,
@@ -593,6 +594,26 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
             if not isinstance(w, WallElem):
                 raise ValueError("move_wall_endpoints.wallId must reference a Wall")
             els[cmd.wall_id] = w.model_copy(update={"start": cmd.start, "end": cmd.end})
+
+        case SetCurtainPanelOverrideCmd():
+            wall = els.get(cmd.wall_id)
+            if not isinstance(wall, WallElem):
+                raise ValueError("setCurtainPanelOverride.wallId must reference a Wall")
+            if not wall.is_curtain_wall:
+                raise ValueError("setCurtainPanelOverride target wall must be a curtain wall")
+            # Validate the cell-id format up front so authors get a fast error
+            # instead of a silent no-op render.
+            from bim_ai.elements import parse_curtain_grid_cell_id
+
+            parse_curtain_grid_cell_id(cmd.grid_cell_id)
+            existing = dict(wall.curtain_panel_overrides or {})
+            if cmd.override is None:
+                existing.pop(cmd.grid_cell_id, None)
+            else:
+                existing[cmd.grid_cell_id] = cmd.override
+            els[cmd.wall_id] = wall.model_copy(
+                update={"curtain_panel_overrides": existing or None}
+            )
 
         case InsertDoorOnWallCmd():
             did = cmd.id or new_id()

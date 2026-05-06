@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 
-import type { Element, WallLocationLine } from '@bim-ai/core';
+import { curtainGridCellId, type Element, type WallLocationLine } from '@bim-ai/core';
+import { materialBaseColor } from '../viewport/materials';
 
 import { deterministicSchemeColorHex } from './roomSchemeColor';
 import {
@@ -87,7 +88,84 @@ export function planWallMesh(
     }
   }
 
+  // KRN-09: per-cell curtain-panel fills overlaid on the plan box.
+  if (wall.isCurtainWall && wall.curtainPanelOverrides) {
+    const fills = buildCurtainPanelPlanFills(wall, len, sx, sz, nx, nz, thick);
+    if (fills) {
+      const group = new THREE.Group();
+      group.userData.bimPickId = wall.id;
+      group.add(mesh);
+      group.add(fills);
+      return group;
+    }
+  }
+
   return mesh;
+}
+
+/**
+ * KRN-09 — overlay short rectangular fills on a curtain wall's plan symbol,
+ * one per overridden grid cell. Empty = white, system = registered material
+ * colour, family_instance = placeholder magenta. Cells without overrides
+ * leave the underlying wall-fill colour visible.
+ */
+function buildCurtainPanelPlanFills(
+  wall: Extract<Element, { kind: 'wall' }>,
+  lenM: number,
+  sx: number,
+  sz: number,
+  nx: number,
+  nz: number,
+  thickM: number,
+): THREE.Group | null {
+  const overrides = wall.curtainPanelOverrides;
+  if (!overrides) return null;
+  const vCount =
+    wall.curtainWallVCount != null
+      ? Math.max(1, wall.curtainWallVCount)
+      : Math.max(1, Math.round(wall.heightMm > 0 ? lenM / 1.5 : 1));
+  const cellLenM = lenM / vCount;
+  // The plan symbol is a flat rectangle; for each overridden cell we stack
+  // a thin coloured tile slightly above the wall fill so it reads in the
+  // top-down view without z-fighting.
+  const group = new THREE.Group();
+  group.userData.bimPickId = wall.id;
+  group.userData.curtainPanelFills = true;
+  let added = 0;
+  for (let v = 0; v < vCount; v++) {
+    // The plan symbol collapses the H grid into a single strip — we colour
+    // the cell stripe based on the override at row 0 if present, falling
+    // back to any other row that has an override (so a wood panel shows
+    // up regardless of which floor it sits on in the V/H grid).
+    const cellOverride =
+      overrides[curtainGridCellId(v, 0)] ??
+      Object.entries(overrides).find(([k]) => k.startsWith(`v${v}h`))?.[1];
+    if (!cellOverride) continue;
+    let colorHex: string;
+    if (cellOverride.kind === 'empty') colorHex = '#ffffff';
+    else if (cellOverride.kind === 'family_instance') colorHex = '#ff66cc';
+    else colorHex = materialBaseColor(cellOverride.materialKey);
+    const tileGeom = new THREE.PlaneGeometry(cellLenM * 0.9, thickM * 0.9);
+    const tileMat = new THREE.MeshBasicMaterial({
+      color: colorHex,
+      transparent: cellOverride.kind === 'empty',
+      opacity: cellOverride.kind === 'empty' ? 0.6 : 1.0,
+      side: THREE.DoubleSide,
+    });
+    const tile = new THREE.Mesh(tileGeom, tileMat);
+    const tCenter = (v + 0.5) / vCount;
+    const cxMid = sx + nx * lenM * tCenter;
+    const czMid = sz + nz * lenM * tCenter;
+    tile.position.set(cxMid, PLAN_Y + 0.01, czMid);
+    tile.rotation.x = -Math.PI / 2;
+    tile.rotation.z = -Math.atan2(nz, nx);
+    tile.userData.bimPickId = wall.id;
+    tile.userData.curtainCellId = curtainGridCellId(v, 0);
+    tile.userData.curtainPanelKind = cellOverride.kind;
+    group.add(tile);
+    added += 1;
+  }
+  return added > 0 ? group : null;
 }
 
 function resolvePlanWallAssembly(

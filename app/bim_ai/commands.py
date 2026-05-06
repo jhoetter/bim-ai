@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from bim_ai.elements import (
     CameraMm,
+    CurtainPanelOverride,
     EvidenceRef,
     PlanCategoryGraphicRow,
     PlanTagBadgeStyle,
@@ -810,6 +811,17 @@ class MirrorElementsCmd(BaseModel):
     )
 
 
+class SetCurtainPanelOverrideCmd(BaseModel):
+    """KRN-09 — install / remove a per-cell override on a curtain wall."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["setCurtainPanelOverride"] = "setCurtainPanelOverride"
+    wall_id: str = Field(alias="wallId")
+    grid_cell_id: str = Field(alias="gridCellId")
+    # `None` clears the override for the cell (revert to default glass).
+    override: CurtainPanelOverride | None = None
+
+
 Command = Annotated[
     CreateLevelCmd
     | CreateWallCmd
@@ -877,6 +889,7 @@ Command = Annotated[
     | CreateText3dCmd
     | MirrorElementsCmd
     | PinElementCmd
-    | UnpinElementCmd,
+    | UnpinElementCmd
+    | SetCurtainPanelOverrideCmd,
     Field(discriminator="type"),
 ]

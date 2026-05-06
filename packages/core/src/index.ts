@@ -159,6 +159,31 @@ export type WallLocationLine =
   | 'core-face-exterior'
   | 'core-face-interior';
 
+/**
+ * KRN-09 — kind of substitution applied to a curtain-wall grid cell.
+ *
+ * - `empty`: leave the cell open (no glass, no solid panel; mullions stay).
+ * - `system`: render the cell as a solid panel using a registered
+ *   `materialKey`. Falls back to glass if no `materialKey` is supplied.
+ * - `family_instance`: instantiate a custom family at this cell. Until
+ *   FAM-01 lands the renderer paints a placeholder panel and emits a TODO.
+ */
+export type CurtainPanelOverrideKind = 'empty' | 'system' | 'family_instance';
+
+export type CurtainPanelOverride = {
+  kind: CurtainPanelOverrideKind;
+  /** For `family_instance` overrides — id of the family type to instantiate. */
+  familyTypeId?: string | null;
+  /** For `system` overrides — `materialKey` resolved against the MAT-01 registry. */
+  materialKey?: string | null;
+};
+
+/** Build the deterministic `gridCellId` used as the key in
+ * `wall.curtainPanelOverrides`. */
+export function curtainGridCellId(vIndex: number, hIndex: number): string {
+  return `v${vIndex}h${hIndex}`;
+}
+
 export type SharedParamEntry = {
   guid: string;
   name: string;
@@ -250,6 +275,16 @@ export type Element =
       isCurtainWall?: boolean;
       curtainWallVCount?: number | null;
       curtainWallHCount?: number | null;
+      /**
+       * KRN-09 — per-cell panel overrides for curtain walls.
+       *
+       * Keys are deterministic grid-cell ids of the form `v<col>h<row>`
+       * (zero-indexed; `v` = vertical column, `h` = horizontal row). Cells
+       * without an override fall back to the default glass panel.
+       */
+      curtainPanelOverrides?: {
+        [gridCellId: string]: CurtainPanelOverride;
+      } | null;
       locationLine?: WallLocationLine;
       worksetId?: string | null;
       /** GAP-R5: opt out of the per-wall slab-edge expression strip on

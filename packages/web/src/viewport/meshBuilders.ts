@@ -1,6 +1,11 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import type { Element, WallLocationLine } from '@bim-ai/core';
+import {
+  curtainGridCellId,
+  type CurtainPanelOverride,
+  type Element,
+  type WallLocationLine,
+} from '@bim-ai/core';
 import { buildDoorGeometry } from '../families/geometryFns/doorGeometry';
 import { buildWindowGeometry } from '../families/geometryFns/windowGeometry';
 import { getFamilyById, getTypeById } from '../families/familyCatalog';
@@ -35,6 +40,43 @@ export function resolveWallTypeAssembly(
 }
 
 export type WallElem = Extract<Element, { kind: 'wall' }>;
+
+/**
+ * KRN-09 — resolve the material for a single curtain-wall grid cell.
+ *
+ * Returns:
+ *   - `null` for `kind: 'empty'` (caller skips the pane entirely)
+ *   - the registered MAT-01 material as a MeshStandardMaterial for
+ *     `kind: 'system'` with a known `materialKey`
+ *   - the `placeholder_unloaded` magenta material for `kind: 'family_instance'`
+ *     until FAM-01 lands and renders the actual family
+ *   - the supplied default glass material otherwise
+ */
+function resolveCurtainPanelMaterial(
+  override: CurtainPanelOverride | null,
+  defaultGlassMat: THREE.Material,
+): THREE.Material | null {
+  if (!override) return defaultGlassMat;
+  if (override.kind === 'empty') return null;
+  if (override.kind === 'family_instance') {
+    const placeholder = resolveMaterial('placeholder_unloaded');
+    return new THREE.MeshStandardMaterial({
+      color: placeholder?.baseColor ?? '#ff66cc',
+      roughness: placeholder?.roughness ?? 0.6,
+      metalness: placeholder?.metalness ?? 0,
+      side: THREE.DoubleSide,
+    });
+  }
+  // `system` override
+  const matSpec = resolveMaterial(override.materialKey);
+  if (!matSpec) return defaultGlassMat;
+  return new THREE.MeshStandardMaterial({
+    color: matSpec.baseColor,
+    roughness: matSpec.roughness,
+    metalness: matSpec.metalness,
+    side: THREE.DoubleSide,
+  });
+}
 
 function locationLineOffsetFrac(loc: WallLocationLine): number {
   switch (loc) {
@@ -1627,11 +1669,6 @@ export function makeCurtainWallMesh(
     side: THREE.DoubleSide,
     depthWrite: false,
   });
-  const glassMesh = new THREE.Mesh(new THREE.PlaneGeometry(len, height), glassMat);
-  glassMesh.position.set(sx + dx / 2, elevM + height / 2, sz + dz / 2);
-  glassMesh.rotation.y = yaw;
-  group.add(glassMesh);
-
   const mullionMat = new THREE.MeshStandardMaterial({
     color: categoryColorOr(paint, 'wall'),
     roughness: paint?.categories.wall.roughness ?? 0.8,
@@ -1642,11 +1679,49 @@ export function makeCurtainWallMesh(
   const PANEL_H = 1.2;
   const MW = 0.06;
 
-  // Vertical mullions at bay divisions
+  // KRN-09 — derive grid dims so we can iterate cells for overrides.
   const vCount =
     wall.curtainWallVCount != null
       ? Math.max(1, wall.curtainWallVCount)
       : Math.max(1, Math.round(len / PANEL_W));
+  const hCount =
+    wall.curtainWallHCount != null
+      ? Math.max(1, wall.curtainWallHCount)
+      : Math.max(1, Math.round(height / PANEL_H));
+  const cellW = len / vCount;
+  const cellH = height / hCount;
+  const overrides = wall.curtainPanelOverrides ?? null;
+
+  // Per-cell pane: one PlaneGeometry sized to the cell, with per-cell material
+  // resolution (default glass / empty / system solid / family-instance placeholder).
+  for (let v = 0; v < vCount; v++) {
+    for (let h = 0; h < hCount; h++) {
+      const cellId = curtainGridCellId(v, h);
+      const override = overrides ? (overrides[cellId] ?? null) : null;
+      const cellMat = resolveCurtainPanelMaterial(override, glassMat);
+      if (cellMat === null) continue; // 'empty' override — leave the bay open
+      const pane = new THREE.Mesh(new THREE.PlaneGeometry(cellW, cellH), cellMat);
+      const tCenter = (v + 0.5) / vCount;
+      pane.position.set(sx + tCenter * dx, elevM + (h + 0.5) * cellH, sz + tCenter * dz);
+      pane.rotation.y = yaw;
+      pane.userData.bimPickId = wall.id;
+      pane.userData.curtainCellId = cellId;
+      if (override?.kind === 'family_instance') {
+        // TODO(FAM-01): instantiate family ${familyTypeId} — until nested
+        // families ship, render this cell as a magenta placeholder.
+        pane.userData.curtainPanelKind = 'family_instance';
+        pane.userData.curtainPanelFamilyTypeId = override.familyTypeId ?? null;
+      } else if (override?.kind === 'system') {
+        pane.userData.curtainPanelKind = 'system';
+        pane.userData.curtainPanelMaterialKey = override.materialKey ?? null;
+      } else {
+        pane.userData.curtainPanelKind = override?.kind ?? 'glass';
+      }
+      group.add(pane);
+    }
+  }
+
+  // Vertical mullions at bay divisions
   for (let i = 0; i <= vCount; i++) {
     const t = i / vCount;
     const vm = new THREE.Mesh(new THREE.BoxGeometry(MW, height, thick), mullionMat);
@@ -1657,10 +1732,6 @@ export function makeCurtainWallMesh(
   }
 
   // Horizontal mullions at floor divisions
-  const hCount =
-    wall.curtainWallHCount != null
-      ? Math.max(1, wall.curtainWallHCount)
-      : Math.max(1, Math.round(height / PANEL_H));
   for (let i = 0; i <= hCount; i++) {
     const y = elevM + i * (height / hCount);
     const hm = new THREE.Mesh(new THREE.BoxGeometry(len, MW, thick), mullionMat);
