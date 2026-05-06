@@ -1,0 +1,76 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "9ce4e661a54d",
+  "session_id": "b5c7ba8e-ad72-461a-aba4-36e4e939da1e",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-06T07:22:41.73669Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    ".DS_Store",
+    ".gitignore"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "fb0e38ba05f7",
+  "token_usage": {
+    "input_tokens": 12,
+    "cache_creation_tokens": 7407,
+    "cache_read_tokens": 132145,
+    "output_tokens": 1138,
+    "api_call_count": 8
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-06T07:22:41.734288Z",
+    "agent_lines": 2,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 2,
+    "total_lines_changed": 2,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 365,
+      "user_lines_removed": 49,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        ".cursor/hooks.json": 40,
+        ".env.example": 1,
+        ".superset/config.json": 8,
+        "Makefile": 3,
+        "packages/web/src/design-systems/conservative.css": 1,
+        "packages/web/src/workspace/Inspector.tsx": 1,
+        "packages/web/src/workspace/LeftRail.tsx": 1,
+        "packages/web/src/workspace/ProjectMenu.tsx": 17,
+        "packages/web/src/workspace/RedesignedWorkspace.tsx": 1,
+        "packages/web/src/workspace/TabBar.tsx": 2,
+        "prompt-ui.md": 247,
+        "spec/ui-ux-redesign-v1-spec.md": 43
+      },
+      "user_removed_per_file": {
+        "Makefile": 2,
+        "packages/web/src/workspace/Inspector.tsx": 1,
+        "packages/web/src/workspace/LeftRail.tsx": 1,
+        "packages/web/src/workspace/RedesignedWorkspace.tsx": 1,
+        "packages/web/src/workspace/TabBar.tsx": 1,
+        "spec/ui-ux-redesign-v1-spec.md": 43
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 348,
+      "agent_lines_removed": 49
+    }
+  ]
+}

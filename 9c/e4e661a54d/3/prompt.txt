@@ -1,0 +1,1 @@
+can you add .DS_Store to gitignore? also the hooks.json for cursor?
