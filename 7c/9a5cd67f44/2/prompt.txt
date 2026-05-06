@@ -1,0 +1,13 @@
+i notice that generally things like editing etc are rather slow, e.g. adding a wall. please analyze deeply what is going on here. is there some subsantial issue?
+
+---
+
+yes and document these things via a tracker!
+
+---
+
+so not all tasks are done yet, right?
+
+---
+
+yes
