@@ -1,0 +1,95 @@
+T5 — FL-03: Renderer dispatches to family geometry fns
+
+  You are working in the monorepo at /Users/jhoetter/repos/bim-ai.
+  Your working directory for most edits is packages/web.
+
+  ## Task: FL-03 — Viewport reads familyTypeId and dispatches to catalog geometry fns
+
+  ### Branch
+  git checkout main && git pull && git checkout -b fl-03-renderer-dispatch
+
+  ### Context
+
+  FL-02 is merged. These files now exist and are correct — do NOT modify them:
+    packages/web/src/families/types.ts               — FamilyDefinition, resolveParam
+    packages/web/src/families/familyCatalog.ts        — BUILT_IN_FAMILIES, getFamilyById, getTypeById
+    packages/web/src/families/geometryFns/doorGeometry.ts    — buildDoorGeometry(DoorGeomInput): THREE.Group
+    packages/web/src/families/geometryFns/windowGeometry.ts  — buildWindowGeometry(WindowGeomInput): THREE.Group
+
+  DoorGeomInput = { door, wall, elevM, paint, familyDef }
+  WindowGeomInput = { win, wall, elevM, paint, familyDef }
+
+  Both returned groups have NO position/rotation applied — those must be set by the caller.
+
+  The current Viewport.tsx (packages/web/src/Viewport.tsx) has:
+    - makeDoorMesh(door, wall, elevM, paint): THREE.Group   (~line 799)
+        Sets group.position.set(px, elevM, pz) and group.rotation.y = wallYaw(wall) internally.
+    - makeWindowMesh(win, wall, elevM, paint): THREE.Group  (~line 853)
+        Sets group.position.set(px, elevM + sill + outerH/2, pz) and group.rotation.y internally.
+
+  Both are called at:
+    case 'door':   obj = makeDoorMesh(e, wall, elevM, paint)   (~line 2134)
+    case 'window': obj = makeWindowMesh(w, wall, elevM, paint) (~line 2141)
+
+  Helper functions available in Viewport.tsx:
+    hostedXZ(hosted, wall) → { px, pz }     (world-space X/Z of the opening centre)
+    wallYaw(wall) → number                   (Y-rotation angle of the wall)
+    elevationMForLevel(levelId, elementsById) → number
+
+  ### What to change — only Viewport.tsx
+
+  Add these imports near the top of Viewport.tsx (after existing Three.js imports):
+    import { buildDoorGeometry } from './families/geometryFns/doorGeometry';
+    import { buildWindowGeometry } from './families/geometryFns/windowGeometry';
+    import { getFamilyById, getTypeById } from './families/familyCatalog';
+
+  Rewrite makeDoorMesh to be a thin wrapper:
+    function makeDoorMesh(
+      door: Extract<Element, { kind: 'door' }>,
+      wall: WallElem,
+      elevM: number,
+      paint: ViewportPaintBundle | null,
+    ): THREE.Group {
+      const typeEntry = door.familyTypeId ? getTypeById(door.familyTypeId) : undefined;
+      const familyDef = typeEntry ? getFamilyById(typeEntry.familyId) : undefined;
+      const group = buildDoorGeometry({ door, wall, elevM, paint, familyDef });
+      const { px, pz } = hostedXZ(door, wall);
+      group.position.set(px, elevM, pz);
+      group.rotation.y = wallYaw(wall);
+      return group;
+    }
+
+  Rewrite makeWindowMesh to be a thin wrapper:
+    function makeWindowMesh(
+      win: Extract<Element, { kind: 'window' }>,
+      wall: WallElem,
+      elevM: number,
+      paint: ViewportPaintBundle | null,
+    ): THREE.Group {
+      const typeEntry = win.familyTypeId ? getTypeById(win.familyTypeId) : undefined;
+      const familyDef = typeEntry ? getFamilyById(typeEntry.familyId) : undefined;
+      const group = buildWindowGeometry({ win, wall, elevM, paint, familyDef });
+      const { px, pz } = hostedXZ(win, wall);
+      // Resolve sill + height to compute Y centre offset (mirrors buildWindowGeometry's clamp logic)
+      const rawSill = Number(win.sillHeightMm);
+      const sillM = Math.max(0.06, Math.min(rawSill / 1000, (wall.heightMm - 80) / 1000));
+      const rawH = Number(win.heightMm);
+      const outerH = Math.max(0.05, Math.min(rawH / 1000, (wall.heightMm - rawSill - 60) / 1000));
+      group.position.set(px, elevM + sillM + outerH / 2, pz);
+      group.rotation.y = wallYaw(wall);
+      return group;
+    }
+
+  The call sites (case 'door' / case 'window') do NOT change — they still call makeDoorMesh / makeWindowMesh.
+
+  ### Acceptance criteria
+  1. pnpm -r typecheck passes.
+  2. pnpm --filter @bim-ai/web test passes (1177 tests).
+  3. No changes to files outside Viewport.tsx and its import section.
+
+  ### After completing
+    git add packages/web/src/Viewport.tsx
+    git commit -m "feat(viewport): FL-03 — dispatch door/window rendering through family catalog"
+    git push -u origin fl-03-renderer-dispatch
+
+  Do NOT merge to main. The orchestrator will merge after review.
