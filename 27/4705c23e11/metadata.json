@@ -3,7 +3,7 @@
   "checkpoint_id": "274705c23e11",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 4,
+  "checkpoints_count": 9,
   "files_touched": [
     "packages/web/src/advisor/AdvisorPanel.tsx",
     "packages/web/src/advisor/advisorViolationContext.ts",
@@ -24,13 +24,19 @@
       "transcript": "/27/4705c23e11/1/full.jsonl",
       "content_hash": "/27/4705c23e11/1/content_hash.txt",
       "prompt": "/27/4705c23e11/1/prompt.txt"
+    },
+    {
+      "metadata": "/27/4705c23e11/2/metadata.json",
+      "transcript": "/27/4705c23e11/2/full.jsonl",
+      "content_hash": "/27/4705c23e11/2/content_hash.txt",
+      "prompt": "/27/4705c23e11/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 138,
-    "cache_creation_tokens": 266876,
-    "cache_read_tokens": 11745798,
-    "output_tokens": 167358,
-    "api_call_count": 116
+    "input_tokens": 158,
+    "cache_creation_tokens": 284901,
+    "cache_read_tokens": 12003936,
+    "output_tokens": 168638,
+    "api_call_count": 126
   }
 }
