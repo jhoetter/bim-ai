@@ -1,0 +1,25 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "9422cebee554",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "app/scripts/seed.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/94/22cebee554/0/metadata.json",
+      "transcript": "/94/22cebee554/0/full.jsonl",
+      "content_hash": "/94/22cebee554/0/content_hash.txt",
+      "prompt": "/94/22cebee554/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 654,
+    "cache_creation_tokens": 64469,
+    "cache_read_tokens": 2004962,
+    "output_tokens": 19484,
+    "api_call_count": 44
+  }
+}
