@@ -1,0 +1,17 @@
+i want that you plan out creating a library of SVG icons that is PERFECT for our use case. it should be similar in usage e.g. to lucide or such, but perfectly optimized for our BIM use cases. how would that work, so we could also import it in that way basically? and which icons would be needed?
+
+---
+
+yeah please do all 3 phases in full detail
+
+---
+
+can you add a path where i can see the whole icon library? all at once, a bit like with lucide.dev/icons?
+
+---
+
+NICE! can you think about which further icons would be helpful? really think about any that you can imagine makes sense with BIM
+
+---
+
+yes
