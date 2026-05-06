@@ -1,0 +1,62 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "ab5c13937993",
+  "session_id": "bb3cf0bb-f384-4179-9af8-a917a5f6df45",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-06T23:17:38.65152Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "nightshift/nightshift-1.md",
+    "nightshift/nightshift-2.md",
+    "nightshift/nightshift-3.md",
+    "nightshift/nightshift-4.md",
+    "nightshift/nightshift-5.md",
+    "nightshift/nightshift-6.md",
+    "nightshift/nightshift-7.md",
+    "nightshift/README.md"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "01104f295cbd",
+  "checkpoint_transcript_start": 950,
+  "transcript_lines_at_start": 950,
+  "token_usage": {
+    "input_tokens": 16,
+    "cache_creation_tokens": 55139,
+    "cache_read_tokens": 5207665,
+    "output_tokens": 53773,
+    "api_call_count": 11
+  },
+  "session_metrics": {
+    "turn_count": 20
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-06T23:17:38.612862Z",
+    "agent_lines": 1838,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 1838,
+    "total_lines_changed": 1838,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 20,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        ".githooks/commit-msg": 4,
+        ".githooks/post-commit": 4,
+        ".githooks/post-rewrite": 4,
+        ".githooks/pre-push": 5,
+        ".githooks/prepare-commit-msg": 3
+      }
+    }
+  ]
+}
