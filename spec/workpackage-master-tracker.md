@@ -856,6 +856,10 @@ Profile families (introduced in V2-11) optionally referenced via `profileFamilyI
 | KRN-08 | `area` element kind (legal / permit area calculations)        | Distinct from `room`. Areas may include exterior porches and exclude interior shafts; rules differ by jurisdiction. | M | `open` |
 | KRN-09 | Curtain wall panel kinds (empty / system / custom-family)     | Today curtain walls have grid + `materialKey`; no panel-by-panel substitution (e.g. replace one panel with door).    | M | `open` |
 | KRN-10 | Masking region (2D filled region that blocks underlying linework) | Used in family editor (Hour 4: 2D chair plan symbol blocks floor-tile hatch underneath). View-local 2D element. | S      | `open` |
+| KRN-11 | Asymmetric gable roof (ridge offset, per-side eave heights) | Today's `gable_pitched_rectangle` is symmetric. The target demo house has the ridge significantly east of center with very different east/west wall heights — currently un-authorable. | M | `open` |
+| KRN-12 | Variable-shape window outline (trapezoidal, arched, gable-end, custom polygon) | Today's window is `widthMm × heightMm` rectangle. Real architecture uses arched, eyebrow, octagonal, and gable-end-trapezoidal windows whose top edge follows the roof slope. | M | `open` |
+| KRN-13 | Non-swing door operation types (sliding, pocket, bi-fold, pivot, automatic) | Today all doors swing. Target house's loggia uses a floor-to-ceiling sliding glass door; dormer access is glass doors (sliding or bi-fold). | S | `open` |
+| KRN-14 | Dormer element kind (cuts host roof, adds own walls + roof)                  | Target house has a "massive rectangular dormer cut-out" on the east roof slope opening onto the flat roof deck. Common attic-conversion primitive in residential. | L | `open` |
 
 **KRN-04 detail.** Element shape:
 
@@ -971,6 +975,97 @@ Lets the user replace individual curtain wall panels with empty (no glass), syst
 
 Renders on plan canvas as an opaque region that occludes underlying linework / hatches; not visible in 3D. Authored via SKT-01 with `element_kind: 'masking_region'`. The Hour 4 "2D chair plan symbol" used a masking region to block the floor-tile hatch.
 
+**KRN-11 detail.** Extend the `roof` shape:
+
+```ts
+{
+  // existing fields preserved
+  roofGeometryMode:
+    | 'mass_box'
+    | 'gable_pitched_rectangle'      // existing — symmetric
+    | 'asymmetric_gable'             // new — ridge offset + per-side eave heights
+    | 'flat'
+    | 'hip'                          // pending KRN-03
+    | 'l_shape';                     // pending KRN-02
+  ridgeOffsetTransverseMm?: number;  // signed offset of ridge from rectangle center, perpendicular to ridge axis. Required when mode = 'asymmetric_gable'
+  eaveHeightLeftMm?: number;          // alternative parametrisation; either set ridgeOffsetTransverseMm or per-side eave heights
+  eaveHeightRightMm?: number;
+}
+```
+
+Rendering: extend `makeRoofMassMesh` in `meshBuilders.ts`. Vertex generation walks the rectangle perimeter, lifting the ridge edge to a position offset transversely from center (or computes the offset from per-side eave heights). The resulting mesh has different left and right pitch slopes meeting at an off-center ridge. Section view uses the same projection logic with the offset ridge as input.
+
+Bound to GAP-R-asymmetric (target-house seed §1.2) — the off-center ridge is the *core essence* of the demo house and can't be authored today.
+
+**KRN-12 detail.** Extend the `window` shape:
+
+```ts
+{
+  // existing widthMm / heightMm preserved as bounding-box
+  outlineKind?: 'rectangle' | 'arched_top' | 'gable_trapezoid' | 'circle' | 'octagon' | 'custom';
+  outlineMm?: { xMm: number; yMm: number }[];   // required when outlineKind === 'custom'; relative to host wall face, origin at sill-center
+  attachedRoofId?: string;                       // required when outlineKind === 'gable_trapezoid'; system computes outline from roof slope
+}
+```
+
+Rendering: CSG cut on host wall uses the resolved polygon (today uses an axis-aligned rectangle). Glass pane geometry uses the same outline. Frame geometry sweeps along the polygon perimeter (after FAM-02 lands; before that, frame is omitted for non-rectangular outlines).
+
+Use cases: gable-end windows (target-house §1.4 trapezoidal upper-floor window), arched windows (heritage / Mediterranean), eyebrow windows (Cape-Cod attics), octagonal windows (Victorian gable peaks), full-custom (architect-designed feature glazing).
+
+**KRN-13 detail.** Add to `door` shape:
+
+```ts
+{
+  // existing fields preserved
+  operationType?:
+    | 'swing_single'        // default; matches today's behaviour
+    | 'swing_double'
+    | 'sliding_single'
+    | 'sliding_double'
+    | 'bi_fold'
+    | 'pocket'
+    | 'pivot'
+    | 'automatic_double';
+  slidingTrackSide?: 'wall_face' | 'in_pocket';   // sliding only
+}
+```
+
+Rendering: 3D geometry varies by operation type. Plan symbol differs:
+- Swing: arc (today's symbol)
+- Sliding: parallel arrows + track line
+- Bi-fold: zigzag panel symbol
+- Pocket: dashed pocket extent
+- Pivot: pivot dot + offset arc
+- Automatic: arrows pointing away from threshold
+
+Built-in family catalog (FAM-08) ships first-class door types for each: `door.sliding-single-2400h`, `door.sliding-double-2700h`, etc.
+
+**KRN-14 detail.** Element shape:
+
+```ts
+{
+  kind: 'dormer';
+  id: string;
+  name?: string;
+  hostRoofId: string;
+  positionOnRoof: { alongRidgeMm: number; acrossRidgeMm: number };  // local roof coords; (0,0) at ridge midpoint
+  widthMm: number;
+  wallHeightMm: number;       // height of dormer side walls before its own roof starts
+  depthMm: number;            // how far the dormer projects from the host roof slope
+  dormerRoofKind: 'flat' | 'shed' | 'gable' | 'hipped';
+  dormerRoofPitchDeg?: number;
+  wallMaterialKey?: string;
+  roofMaterialKey?: string;
+  hasFloorOpening?: boolean;  // when true, the floor below the dormer is also opened (e.g. dormer extends headroom in attic)
+}
+```
+
+Engine: validation that dormer footprint fits inside host roof; CSG cut produces a clean opening through the host roof; floor below gets a matching opening when `hasFloorOpening: true`. Constraint advisory `dormer_overflow` when the dormer extends beyond host roof eaves.
+
+Rendering: cut the host roof mesh (CSG); add four dormer walls (front + two cheeks + back-against-roof) plus a dormer roof on top.
+
+Use cases: target-house §1.6 east-slope dormer cut-out opening to the flat roof deck; heritage attic conversions; modern shed dormers.
+
 ### Plan views
 
 | ID     | Item                                       | Note                                                                                                              | Effort | State  |
@@ -984,6 +1079,30 @@ Renders on plan canvas as an opaque region that occludes underlying linework / h
 | ------ | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ------ | ------ |
 | ANN-01 | Detail components (`detail_line`, `detail_region`, `text_note`) | View-local 2D linework; not in 3D. `detail_region` overlaps with SKT-01 (sketch mode for filled regions). | M      | `open` |
 | ANN-02 | Section / elevation generation from a wall face        | Right-click wall face → "Generate Elevation" → creates `section_cut` perpendicular + new `plan_view`. | S      | `open` |
+
+### Materials & visual rendering
+
+| ID     | Item                                                  | Note                                                                                                              | Effort | State  |
+| ------ | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------ | ------ |
+| MAT-01 | Material catalog enrichment + standing-seam metal roof | Today's catalog covers a handful of materialKeys (`timber_cladding`, `white_cladding`, `white_render`). Target house needs more breadth + a real visual gap: standing-seam metal roof rendering. | M      | `open` |
+
+**MAT-01 detail.** Two parts:
+
+**Part A — catalog breadth.** Add materialKeys for common architectural surfaces, each with PBR parameters (baseColor, roughness, metalness, optional normal-map texture, optional hatch pattern for plan/section):
+
+- Cladding variants: `cladding_beige_grey`, `cladding_warm_wood`, `cladding_dark_grey` (extends today's `timber_cladding` / `white_cladding`)
+- Render variants: `render_white` (shipped), `render_light_grey`, `render_beige`, `render_terracotta`
+- Aluminium: `aluminium_dark_grey`, `aluminium_natural`, `aluminium_black` (for window / door frames)
+- Brick: `brick_red`, `brick_yellow`, `brick_grey`
+- Stone: `stone_limestone`, `stone_slate`, `stone_sandstone`
+- Concrete: `concrete_smooth`, `concrete_board_formed`
+- Glass: `glass_clear`, `glass_low_iron`, `glass_fritted`, `glass_obscured`
+
+**Part B — standing-seam metal roof rendering.** Today's roof renders as a flat-coloured plane. Real metal roofs feature visible vertical seams every ~600mm. New renderer extension `addStandingSeamPattern(roofMesh, seamSpacingMm, seamHeightMm)` analogous to today's `addCladdingBoards(wallMesh, …)`. Triggers when roof's `materialKey` matches `metal_standing_seam_*`.
+
+**Acceptance.** The seeded demo house, after this WP, can author every material called out in target-house-seed.md §1.7 (Material + Colour Summary) using only built-in materialKeys. The roof shows visible standing-seam grooves at the demo's SSW viewpoint.
+
+**Effort.** M — 1.5 weeks (catalog expansion 4 days, standing-seam pattern 4 days).
 
 ### Validation
 
