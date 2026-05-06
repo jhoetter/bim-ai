@@ -950,7 +950,8 @@ export function PlanCanvas({
           dragDirection: null,
         });
         if (clickIntent === 'add-to-selection') {
-          selectEl(id === selectedId ? undefined : id);
+          const currentSel = useBimStore.getState().selectedId;
+          selectEl(id === currentSel ? undefined : id);
         } else {
           selectEl(id);
         }
