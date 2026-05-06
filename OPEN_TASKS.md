@@ -118,21 +118,6 @@ Sheet mode and Section mode have placeholder shells in the redesign (`SheetModeS
 
 ---
 
-### T-16 · Collaboration presence + comments
-
-**WP target:** WP-UI-A (app shell) · **Source:** `Workspace.tsx` lines 987–995, 1896–1960 · **Status:** `open`
-
-User presence (peer avatars, `presencePeers`, `userDisplayName`, `userId`) and the comment thread UI are wired in the old workspace but absent from the redesign. The store keys exist (`comments`, `mergeComment`, `setComments`, `presencePeers`, `setPresencePeers`, `setIdentity`).
-
-**Next moves:**
-- Add peer-avatar row to TopBar right region (wired to `presencePeers`)
-- Mount comments panel (sidebar or popover) in `RedesignedWorkspace.tsx`
-- Wire identity (`userDisplayName`, `userId`) into TopBar avatar tile
-- Vitest for presence + comment render
-- Update §5 when done
-
----
-
 ## How to add a new task
 
 1. Append a new `### T-NN · Title` heading at the end of the relevant section.
