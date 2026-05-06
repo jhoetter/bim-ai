@@ -757,7 +757,7 @@ test.describe('evidence PNG baselines', () => {
   test('coordination layout: sheet + schedules panel', async ({ page }) => {
     await sharedRoutes(page, 'coordination');
     await page.goto('/');
-    await expect(page.getByText('Ready', { exact: false })).toBeVisible({ timeout: 30_000 });
+    await page.waitForSelector('[data-testid="app-shell"]', { timeout: 30_000 });
     await expect(page.getByTestId('sheet-canvas')).toBeVisible();
     await expect(page.getByTestId('schedule-panel')).toBeVisible();
     await expect(page.getByTestId('schedule-server-derived')).toBeVisible();
@@ -768,7 +768,7 @@ test.describe('evidence PNG baselines', () => {
   test('schedules_focus docked rails', async ({ page }) => {
     await sharedRoutes(page, 'schedules_focus');
     await page.goto('/');
-    await expect(page.getByText('Ready', { exact: false })).toBeVisible({ timeout: 30_000 });
+    await page.waitForSelector('[data-testid="app-shell"]', { timeout: 30_000 });
     await expect(page.getByTestId('schedule-panel')).toBeVisible();
     await expect(page.getByTestId('schedule-server-derived')).toBeVisible();
     await expect(page.getByTestId('plan-canvas')).toBeVisible();
@@ -778,7 +778,7 @@ test.describe('evidence PNG baselines', () => {
   test('split plan + 3D: canvases visible', async ({ page }) => {
     await sharedRoutes(page, 'split_plan_3d');
     await page.goto('/');
-    await expect(page.getByText('Ready', { exact: false })).toBeVisible({ timeout: 30_000 });
+    await page.waitForSelector('[data-testid="app-shell"]', { timeout: 30_000 });
     await expect(page.getByTestId('plan-canvas')).toBeVisible();
     await expect(page.getByTestId('orbit-3d-viewport')).toBeVisible();
   });
@@ -786,7 +786,7 @@ test.describe('evidence PNG baselines', () => {
   test('coordination layout: deterministic manifest sheet PNG basename', async ({ page }) => {
     await sharedRoutes(page, 'coordination');
     await page.goto('/');
-    await expect(page.getByText('Ready', { exact: false })).toBeVisible({ timeout: 30_000 });
+    await page.waitForSelector('[data-testid="app-shell"]', { timeout: 30_000 });
     await expect(page.getByTestId('sheet-canvas')).toBeVisible();
     await expect(page.getByTestId('sheet-canvas')).toHaveScreenshot(
       MOCK_SHEET_VIEWPORT_PNG_FROM_MANIFEST,
@@ -796,7 +796,7 @@ test.describe('evidence PNG baselines', () => {
   test('deterministic manifest: full-sheet SVG screenshot', async ({ page }) => {
     await sharedRoutes(page, 'coordination');
     await page.goto('/?evidenceSheetFull=1');
-    await expect(page.getByText('Ready', { exact: false })).toBeVisible({ timeout: 30_000 });
+    await page.waitForSelector('[data-testid="app-shell"]', { timeout: 30_000 });
     await expect(page.getByTestId('sheet-svg')).toBeVisible();
     await expect(page.getByTestId('sheet-svg')).toHaveScreenshot(MOCK_SHEET_FULL_PNG_FROM_MANIFEST);
   });
@@ -804,7 +804,7 @@ test.describe('evidence PNG baselines', () => {
   test('named plan_views change EG openings vs OG room presentation', async ({ page }) => {
     await sharedRoutes(page, 'split_plan_3d');
     await page.goto('/');
-    await expect(page.getByText('Ready', { exact: false })).toBeVisible({ timeout: 30_000 });
+    await page.waitForSelector('[data-testid="app-shell"]', { timeout: 30_000 });
     await page.getByRole('button', { name: /plan_view · EG — openings/i }).click();
     await expect(page.getByTestId('plan-canvas')).toHaveScreenshot('plan-eg-openings.png');
 
@@ -815,7 +815,7 @@ test.describe('evidence PNG baselines', () => {
   test('evidence-package exposes closure review inventory', async ({ page }) => {
     await sharedRoutes(page, 'coordination');
     await page.goto('/');
-    await expect(page.getByText('Ready', { exact: false })).toBeVisible({ timeout: 30_000 });
+    await page.waitForSelector('[data-testid="app-shell"]', { timeout: 30_000 });
     const pkg = await page.evaluate(async (mid: string) => {
       const res = await fetch(`/api/models/${mid}/evidence-package`);
       return res.json() as Record<string, unknown>;
@@ -884,7 +884,7 @@ test.describe('evidence PNG baselines', () => {
   test('sheet-print-raster.png: print-surrogate v2 response headers', async ({ page }) => {
     await sharedRoutes(page, 'coordination');
     await page.goto('/');
-    await expect(page.getByText('Ready', { exact: false })).toBeVisible({ timeout: 30_000 });
+    await page.waitForSelector('[data-testid="app-shell"]', { timeout: 30_000 });
     const result = await page.evaluate(async (mid: string) => {
       const r = await fetch(
         `/api/models/${mid}/exports/sheet-print-raster.png?sheetId=hf-sheet-ga01`,
@@ -915,7 +915,7 @@ test.describe('evidence PNG baselines', () => {
   }) => {
     await sharedRoutes(page, 'agent_review');
     await page.goto('/');
-    await expect(page.getByText('Ready', { exact: false })).toBeVisible({ timeout: 30_000 });
+    await page.waitForSelector('[data-testid="app-shell"]', { timeout: 30_000 });
     await expect(page.getByText('Agent cockpit')).toBeVisible();
     await page.getByRole('button', { name: 'Fetch evidence-package JSON' }).click();
     await expect(page.getByTestId('evidence-diff-fix-loop-callout')).toHaveCount(0);

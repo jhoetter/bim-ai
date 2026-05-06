@@ -201,7 +201,7 @@ test.describe('golden bundle affordances', () => {
 
   test('lists longitudinal section cuts and exposes plan style presets', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByText('Ready', { exact: false })).toBeVisible({ timeout: 30_000 });
+    await page.waitForSelector('[data-testid="app-shell"]', { timeout: 30_000 });
 
     await expect(
       page.locator('.font-medium').filter({ hasText: /^Hall \+ stair longitudinal$/ }),
@@ -220,7 +220,7 @@ test.describe('golden bundle affordances', () => {
     page,
   }) => {
     await page.goto('/');
-    await expect(page.getByText('Ready', { exact: false })).toBeVisible({ timeout: 30_000 });
+    await page.waitForSelector('[data-testid="app-shell"]', { timeout: 30_000 });
 
     await expect(page.getByText('Floor plans', { exact: true }).first()).toBeVisible();
     await expect(page.getByText('EG working').first()).toBeVisible();
@@ -236,7 +236,7 @@ test.describe('golden bundle affordances', () => {
       localStorage.setItem('bim.workspaceLayout', 'coordination');
     });
     await page.goto('/');
-    await expect(page.getByText('Ready', { exact: false })).toBeVisible({ timeout: 30_000 });
+    await page.waitForSelector('[data-testid="app-shell"]', { timeout: 30_000 });
 
     const canvas = page.getByTestId('sheet-canvas');
     await expect(canvas).toBeVisible();
@@ -254,7 +254,7 @@ test.describe('golden bundle affordances', () => {
       localStorage.setItem('bim.workspaceLayout', 'split_plan_3d');
     });
     await page.goto('/?evidence3dClipCapMm=5600&evidence3dClipFloorMm=2000');
-    await expect(page.getByText('Ready', { exact: false })).toBeVisible({ timeout: 30_000 });
+    await page.waitForSelector('[data-testid="app-shell"]', { timeout: 30_000 });
 
     await expect(page.getByLabel(/Section box — cap Y/i)).toHaveValue('5600');
     await expect(page.getByLabel(/Section box — floor Y/i)).toHaveValue('2000');

@@ -71,13 +71,12 @@ test.describe('cockpit hydration', () => {
   test('shows Plan + 3D layout and mocked room labels', async ({ page }) => {
     const t0 = Date.now();
     await page.goto('/');
-    await expect(page.getByText('Ready', { exact: false })).toBeVisible({
+    await expect(page.getByText('Explorer')).toBeVisible({
       timeout: 30_000,
     });
     const elapsed = Date.now() - t0;
     const thresholdMs = process.env.CI ? 25_000 : 15_000;
     expect(elapsed).toBeLessThan(thresholdMs);
-    await expect(page.getByText('Explorer')).toBeVisible();
     await expect(page.getByText('Master bedroom').first()).toBeVisible();
     await expect(page.getByRole('button', { name: 'CSV' })).toBeVisible();
   });
