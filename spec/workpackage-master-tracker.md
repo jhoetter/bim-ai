@@ -684,7 +684,7 @@ class SketchSession:
 | FAM-01 | Nested families (loadable family-in-family)                   | L      | `open` | —          |
 | FAM-02 | Sweep tool (path + profile → swept solid)                     | M      | `open` | —          |
 | FAM-03 | Yes/No parameters with geometry visibility binding            | M      | `open` | FAM-01     |
-| FAM-04 | Conditional formula support (`if()`, `rounddown()`, `mod()`)   | M      | `open` | —          |
+| FAM-04 | Conditional formula support (`if()`, `rounddown()`, `mod()`)   | M      | `done` | done in e2e4c575 |
 | FAM-05 | Array tool (linear + radial, parameter-driven count)          | L      | `open` | FAM-04, FAM-01 |
 | FAM-06 | 3D text element kind                                          | S      | `done` | —          |
 | FAM-07 | Mirror tool (axis reflection in family editor + project)      | S      | `done` | done in 9b1658bf |
