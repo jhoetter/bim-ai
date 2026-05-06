@@ -25,6 +25,7 @@ from bim_ai.commands import (
     CreateJoinGeometryCmd,
     CreateLevelCmd,
     CreatePlanRegionCmd,
+    CreateBalconyCmd,
     CreateRailingCmd,
     CreateRoofCmd,
     CreateRoomOutlineCmd,
@@ -98,6 +99,7 @@ from bim_ai.elements import (
     PlanTagStyleElem,
     PlanViewElem,
     ProjectSettingsElem,
+    BalconyElem,
     RailingElem,
     RoofElem,
     RoofTypeElem,
@@ -1396,6 +1398,23 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 host_floor_id=cmd.host_floor_id,
                 boundary_mm=cmd.boundary_mm,
                 is_shaft=cmd.is_shaft,
+            )
+
+        case CreateBalconyCmd():
+            bid = cmd.id or new_id()
+            if bid in els:
+                raise ValueError(f"duplicate element id '{bid}'")
+            if cmd.wall_id not in els or not isinstance(els[cmd.wall_id], WallElem):
+                raise ValueError("createBalcony.wallId must reference an existing wall")
+            els[bid] = BalconyElem(
+                kind="balcony",
+                id=bid,
+                name=cmd.name,
+                wall_id=cmd.wall_id,
+                elevation_mm=cmd.elevation_mm,
+                projection_mm=cmd.projection_mm,
+                slab_thickness_mm=cmd.slab_thickness_mm,
+                balustrade_height_mm=cmd.balustrade_height_mm,
             )
 
         case CreateRailingCmd():
