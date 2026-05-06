@@ -1,0 +1,30 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "274705c23e11",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "packages/web/src/advisor/AdvisorPanel.tsx",
+    "packages/web/src/advisor/advisorViolationContext.ts",
+    "packages/web/src/i18n.ts",
+    "packages/web/src/workspace/LevelDatumStackWorkbench.tsx",
+    "packages/web/src/workspace/ModeShells.test.tsx",
+    "packages/web/src/workspace/RedesignedWorkspace.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/27/4705c23e11/0/metadata.json",
+      "transcript": "/27/4705c23e11/0/full.jsonl",
+      "content_hash": "/27/4705c23e11/0/content_hash.txt",
+      "prompt": "/27/4705c23e11/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 94,
+    "cache_creation_tokens": 222471,
+    "cache_read_tokens": 6116555,
+    "output_tokens": 144512,
+    "api_call_count": 78
+  }
+}
