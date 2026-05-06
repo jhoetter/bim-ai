@@ -11,3 +11,7 @@
 ---
 
 can you plan out this message-mapping table? i want a FULL translation capability...
+
+---
+
+yep
