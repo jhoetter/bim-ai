@@ -1,0 +1,84 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "ae25de5e3dc0",
+  "session_id": "bb3cf0bb-f384-4179-9af8-a917a5f6df45",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-06T21:38:31.034377Z",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "spec/core/commands.md",
+    "spec/core/constraints.md",
+    "spec/core/data-model.md",
+    "spec/prompts/wave-03/README.md",
+    "spec/prompts/wave-03/WP-V2-06-structural.md",
+    "spec/prompts/wave-03/WP-V2-07-curtain-wall.md",
+    "spec/prompts/wave-03/WP-V2-08-ceilings.md",
+    "spec/prompts/wave-04/README.md",
+    "spec/prompts/wave-04/WP-V2-09-room-v2.md",
+    "spec/prompts/wave-04/WP-V2-10-params.md",
+    "spec/prompts/wave-05/README.md",
+    "spec/prompts/wave-05/WP-V2-11-family-editor.md",
+    "spec/prompts/wave-05/WP-V2-12-collaboration.md",
+    "spec/prompts/wave-06/README.md",
+    "spec/prompts/wave-06/WP-V2-13-coordination.md",
+    "spec/workpackage-master-tracker.md"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "06d870a0895a",
+  "checkpoint_transcript_start": 119,
+  "transcript_lines_at_start": 119,
+  "token_usage": {
+    "input_tokens": 63,
+    "cache_creation_tokens": 48504,
+    "cache_read_tokens": 4351551,
+    "output_tokens": 22332,
+    "api_call_count": 43
+  },
+  "session_metrics": {
+    "turn_count": 5
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-06T21:38:31.022985Z",
+    "agent_lines": 0,
+    "agent_removed": 4331,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 138,
+    "total_committed": 1,
+    "total_lines_changed": 4469,
+    "agent_percentage": 96.9120608637279,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 20,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        ".githooks/commit-msg": 4,
+        ".githooks/post-commit": 4,
+        ".githooks/post-rewrite": 4,
+        ".githooks/pre-push": 5,
+        ".githooks/prepare-commit-msg": 3
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 21,
+      "agent_lines_removed": 4331
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 21,
+      "agent_lines_removed": 4331
+    }
+  ]
+}

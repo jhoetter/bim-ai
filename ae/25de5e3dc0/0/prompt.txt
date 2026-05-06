@@ -1,0 +1,9 @@
+please remove the ones that are already fully covered..
+
+---
+
+wave 6 is now also done. delete buckets 1 and 2. for bucket 3, i will look into next
+
+---
+
+what about files like @spec/rendering-v2-spec.md ? look into the other md files, which of those also are completed?

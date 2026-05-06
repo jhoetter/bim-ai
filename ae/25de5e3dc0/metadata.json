@@ -1,0 +1,40 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "ae25de5e3dc0",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "spec/core/commands.md",
+    "spec/core/constraints.md",
+    "spec/core/data-model.md",
+    "spec/prompts/wave-03/README.md",
+    "spec/prompts/wave-03/WP-V2-06-structural.md",
+    "spec/prompts/wave-03/WP-V2-07-curtain-wall.md",
+    "spec/prompts/wave-03/WP-V2-08-ceilings.md",
+    "spec/prompts/wave-04/README.md",
+    "spec/prompts/wave-04/WP-V2-09-room-v2.md",
+    "spec/prompts/wave-04/WP-V2-10-params.md",
+    "spec/prompts/wave-05/README.md",
+    "spec/prompts/wave-05/WP-V2-11-family-editor.md",
+    "spec/prompts/wave-05/WP-V2-12-collaboration.md",
+    "spec/prompts/wave-06/README.md",
+    "spec/prompts/wave-06/WP-V2-13-coordination.md",
+    "spec/workpackage-master-tracker.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/ae/25de5e3dc0/0/metadata.json",
+      "transcript": "/ae/25de5e3dc0/0/full.jsonl",
+      "content_hash": "/ae/25de5e3dc0/0/content_hash.txt",
+      "prompt": "/ae/25de5e3dc0/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 63,
+    "cache_creation_tokens": 48504,
+    "cache_read_tokens": 4351551,
+    "output_tokens": 22332,
+    "api_call_count": 43
+  }
+}
