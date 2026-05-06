@@ -12,8 +12,8 @@
     "typecheck": "turbo typecheck",
     "test": "turbo test",
     "clean": "turbo clean && rm -rf node_modules",
-    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml}\"",
-    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml}\"",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,yml,yaml}\"",
     "architecture": "node scripts/check-architecture.mjs",
     "verify": "pnpm format:check && pnpm lint:root && pnpm architecture && pnpm typecheck && pnpm test && pnpm build",
     "build:dist": "pnpm --filter @bim-ai/hofos-ui build"
