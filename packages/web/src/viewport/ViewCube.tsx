@@ -8,6 +8,7 @@ import {
 } from 'react';
 import {
   alignmentForPick,
+  compassLabelFromAzimuth,
   type ViewCubeAlignment,
   type ViewCubeCorner,
   type ViewCubeFace,
@@ -204,6 +205,14 @@ export function ViewCube({
         ))}
       </div>
 
+      {/* Compass ring — shows cardinal direction matching current azimuth. */}
+      <div
+        data-testid="view-cube-compass"
+        data-cardinal={compassLabelFromAzimuth(currentAzimuth)}
+        style={{ fontSize: 9, fontWeight: 700, color: 'var(--color-foreground)', opacity: 0.6, letterSpacing: '0.08em' }}
+      >
+        {compassLabelFromAzimuth(currentAzimuth)}
+      </div>
     </div>
   );
 }
