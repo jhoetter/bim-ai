@@ -184,7 +184,17 @@ function makeRoofMassMesh(
 
   const ov = THREE.MathUtils.clamp((roof.overhangMm ?? 0) / 1000, 0, 5);
 
-  const elev = elevationMForLevel(roof.referenceLevelId, elementsById);
+  const refElev = elevationMForLevel(roof.referenceLevelId, elementsById);
+  // Eave plate = top of the tallest wall at the reference level.
+  // Without this, the box proxy sits inside the upper-storey walls and is invisible.
+  const wallsAtRefLevel = Object.values(elementsById).filter(
+    (e): e is WallElem => e.kind === 'wall' && (e as WallElem).levelId === roof.referenceLevelId,
+  );
+  const wallTopM =
+    wallsAtRefLevel.length > 0
+      ? Math.max(...wallsAtRefLevel.map((w) => (w.heightMm ?? 0) / 1000))
+      : 0;
+  const elev = refElev + wallTopM;
 
   const rise = THREE.MathUtils.clamp(Number(roof.slopeDeg ?? 25) / 70, 0.25, 2.8);
 
@@ -582,6 +592,11 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
     cameraRigRef.current = rig;
     let dragging: 'orbit' | 'pan' | null = null;
     let dragMoved = false;
+    let cumulativeDragPx = 0;
+    let inertiaVx = 0;
+    let inertiaVy = 0;
+    const INERTIA_DECAY = 0.87;
+    const DRAG_THRESHOLD_PX = 5;
     let lastX = 0;
     let lastY = 0;
     const raycaster = new THREE.Raycaster();
@@ -647,8 +662,6 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
     onResize();
 
     function onDown(ev: PointerEvent): void {
-      // Treat plain LMB as orbit (legacy compatibility) but also accept the
-      // §15.3 grammar (Alt+LMB / MMB / Shift+MMB).
       const intent = classifyPointer({
         button: ev.button,
         altKey: ev.altKey,
@@ -656,10 +669,12 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       });
       if (intent === 'pan') dragging = 'pan';
       else if (intent === 'orbit') dragging = 'orbit';
-      else if (ev.button === 0)
-        dragging = 'orbit'; // legacy LMB orbit
+      else if (ev.button === 0) dragging = 'orbit'; // LMB drag = orbit (trackpad primary)
       else dragging = null;
       dragMoved = false;
+      cumulativeDragPx = 0;
+      inertiaVx = 0;
+      inertiaVy = 0;
       lastX = ev.clientX;
       lastY = ev.clientY;
       (ev.target as HTMLElement).setPointerCapture(ev.pointerId);
@@ -680,16 +695,64 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       if (!dragging) return;
       const dx = ev.clientX - lastX;
       const dy = ev.clientY - lastY;
-      if (Math.hypot(dx, dy) > 2) dragMoved = true;
       lastX = ev.clientX;
       lastY = ev.clientY;
-      if (dragging === 'orbit') rig.orbit(dx, dy);
-      else rig.pan(dx, dy);
+      cumulativeDragPx += Math.hypot(dx, dy);
+      if (cumulativeDragPx > DRAG_THRESHOLD_PX) dragMoved = true;
+      if (!dragMoved) return;
+      if (dragging === 'orbit') {
+        rig.orbit(dx, dy);
+        inertiaVx = dx;
+        inertiaVy = dy;
+      } else {
+        rig.pan(dx, dy);
+      }
       placeCamera();
     }
 
     function onWheel(ev: WheelEvent): void {
-      rig.dolly(wheelDelta({ deltaY: ev.deltaY, ctrlKey: ev.ctrlKey, metaKey: ev.metaKey }));
+      ev.preventDefault();
+
+      // Normalize cursor position to NDC for cursor-anchored zoom
+      const rect = renderer.domElement.getBoundingClientRect();
+      const ndcX = ((ev.clientX - rect.left) / rect.width) * 2 - 1;
+      const ndcY = -(((ev.clientY - rect.top) / rect.height) * 2 - 1);
+
+      // Normalize wheel delta (handles deltaMode: pixel/line/page)
+      const normY = wheelDelta({ deltaY: ev.deltaY, deltaMode: ev.deltaMode });
+
+      const beforeSnap = rig.snapshot();
+
+      // Dolly: multiplicative, so speed is proportional to current distance
+      rig.dolly(normY);
+
+      // Cursor-anchored zoom: keep the world point under the cursor fixed.
+      // Formula: nudge = deltaR * (cursorRayDir + sphericalDir)
+      // This is the exact solution for pinning the focal-plane point to the cursor.
+      const afterSnap = rig.snapshot();
+      const deltaR = beforeSnap.radius - afterSnap.radius;
+      if (Math.abs(deltaR) > 1e-4) {
+        ndc.set(ndcX, ndcY);
+        raycaster.setFromCamera(ndc, camera);
+        const D = raycaster.ray.direction; // cursor ray unit vector
+        // Spherical unit vector: from target to camera
+        const br = beforeSnap.radius;
+        const Sx = (beforeSnap.position.x - beforeSnap.target.x) / br;
+        const Sy = (beforeSnap.position.y - beforeSnap.target.y) / br;
+        const Sz = (beforeSnap.position.z - beforeSnap.target.z) / br;
+        rig.nudgeTarget({
+          x: deltaR * (D.x + Sx),
+          y: deltaR * (D.y + Sy),
+          z: deltaR * (D.z + Sz),
+        });
+      }
+
+      // Trackpad two-finger horizontal swipe → pan X
+      if (!ev.ctrlKey && Math.abs(ev.deltaX) > 1) {
+        const normX = wheelDelta({ deltaY: ev.deltaX, deltaMode: ev.deltaMode });
+        rig.pan(normX * 0.3, 0);
+      }
+
       placeCamera();
     }
 
@@ -722,9 +785,11 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
     }
 
     renderer.domElement.addEventListener('pointerdown', onDown);
+    const onContextMenu = (ev: Event): void => ev.preventDefault();
+    renderer.domElement.addEventListener('contextmenu', onContextMenu);
     renderer.domElement.addEventListener('pointerup', onUp);
     renderer.domElement.addEventListener('pointermove', onMove);
-    renderer.domElement.addEventListener('wheel', onWheel, { passive: true });
+    renderer.domElement.addEventListener('wheel', onWheel, { passive: false });
     document.addEventListener('keydown', onKey);
 
     /* ── Walk mode wiring (§15.3) ──────────────────────────────────── */
@@ -776,6 +841,14 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
         camera.lookAt(snap.position.x + dir.x, snap.position.y + dir.y, snap.position.z + dir.z);
       }
 
+      // Orbit inertia: continue rotating after mouse release, decaying to stop
+      if (!dragging && Math.hypot(inertiaVx, inertiaVy) > 0.06) {
+        rig.orbit(inertiaVx, inertiaVy);
+        inertiaVx *= INERTIA_DECAY;
+        inertiaVy *= INERTIA_DECAY;
+        placeCamera();
+      }
+
       renderer.render(scene, camera);
       rafRef.current = requestAnimationFrame(tick);
     }
@@ -792,6 +865,7 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       ro.disconnect();
 
       renderer.domElement.removeEventListener('pointerdown', onDown);
+      renderer.domElement.removeEventListener('contextmenu', onContextMenu);
       renderer.domElement.removeEventListener('pointerup', onUp);
       renderer.domElement.removeEventListener('pointermove', onMove);
       renderer.domElement.removeEventListener('wheel', onWheel);
@@ -1063,7 +1137,7 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
         />
       ) : null}
 
-      <div className="pointer-events-auto absolute right-4 top-4 z-20">
+      <div className="pointer-events-auto absolute right-6 top-6 z-20">
         <ViewCube
           currentAzimuth={currentAzimuth}
           currentElevation={currentElevation}

@@ -163,12 +163,12 @@ export function ViewCube({
       role="group"
       aria-label="ViewCube"
       onKeyDown={handleKey}
-      className={['flex flex-col items-center gap-1', className ?? ''].join(' ')}
+      className={['group flex flex-col items-center gap-1.5', className ?? ''].join(' ')}
     >
       {/* Stage: drag here to orbit; click a face/corner to snap. */}
       <div
         data-testid="view-cube-stage"
-        style={{ ...stageStyle, filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.18))' }}
+        style={{ ...stageStyle, filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.22))' }}
         onPointerDown={handlePointerDown}
         onClickCapture={handleClickCapture}
       >
@@ -182,6 +182,7 @@ export function ViewCube({
           ))}
         </div>
 
+        {/* Corner snap targets: invisible by default, appear on cube hover. */}
         {TOP_CORNERS.map((c) => (
           <button
             key={c.id}
@@ -194,21 +195,22 @@ export function ViewCube({
               left: c.left,
               top: c.top,
               transform: 'translate(-50%, -50%)',
-              width: 12,
-              height: 12,
-              borderRadius: 6,
+              width: 10,
+              height: 10,
+              borderRadius: 5,
               border: '1px solid var(--color-border)',
               background: 'var(--color-surface)',
               cursor: 'pointer',
-              opacity: 0.8,
               padding: 0,
+              transition: 'opacity 150ms',
             }}
-            className="hover:bg-surface-strong"
+            className="opacity-0 group-hover:opacity-60 hover:!opacity-100"
           />
         ))}
       </div>
 
-      <div className="flex items-center gap-2">
+      {/* Compass + reset: fade in on hover so the cube is clean by default. */}
+      <div className="flex items-center gap-1.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
         <Compass currentAzimuth={currentAzimuth} />
         <button
           type="button"
@@ -217,8 +219,8 @@ export function ViewCube({
             onHome?.();
           }}
           aria-label="Reset to default view"
-          title="Drag cube to orbit · click face to align · click ↺ to reset"
-          className="inline-flex h-4 w-4 items-center justify-center rounded text-muted/70 hover:text-foreground"
+          title="Click to reset camera"
+          className="inline-flex h-4 w-4 items-center justify-center rounded text-muted hover:text-foreground"
         >
           <Icons.viewCubeReset size={11} aria-hidden="true" />
         </button>
