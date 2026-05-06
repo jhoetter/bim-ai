@@ -37,7 +37,9 @@ from bim_ai.export_ifc import (
 )
 from bim_ai.ifc_stub import build_ifc_exchange_manifest_payload
 
-pytestmark = pytest.mark.skipif(not IFC_AVAILABLE, reason="ifcopenshell not installed (pip install '.[ifc]')")
+pytestmark = pytest.mark.skipif(
+    not IFC_AVAILABLE, reason="ifcopenshell not installed (pip install '.[ifc]')"
+)
 
 
 def test_ifc_exchange_manifest_signals_kernel_wall_slice():
@@ -73,8 +75,12 @@ def test_ifc_material_layer_set_export_and_readback_matches_document() -> None:
                 id="wt",
                 name="WT",
                 layers=[
-                    WallTypeLayer(thicknessMm=100, layer_function="structure", material_key="mat-w-structure"),
-                    WallTypeLayer(thicknessMm=50, layer_function="finish", material_key="mat-w-finish"),
+                    WallTypeLayer(
+                        thicknessMm=100, layer_function="structure", material_key="mat-w-structure"
+                    ),
+                    WallTypeLayer(
+                        thicknessMm=50, layer_function="finish", material_key="mat-w-finish"
+                    ),
                 ],
             ),
             "w-a": WallElem(
@@ -93,8 +99,12 @@ def test_ifc_material_layer_set_export_and_readback_matches_document() -> None:
                 id="ft",
                 name="FT",
                 layers=[
-                    WallTypeLayer(thicknessMm=120, layer_function="structure", material_key="mat-f-structure"),
-                    WallTypeLayer(thicknessMm=40, layer_function="finish", material_key="mat-f-finish"),
+                    WallTypeLayer(
+                        thicknessMm=120, layer_function="structure", material_key="mat-f-structure"
+                    ),
+                    WallTypeLayer(
+                        thicknessMm=40, layer_function="finish", material_key="mat-f-finish"
+                    ),
                 ],
             ),
             "fl": FloorElem(
@@ -116,8 +126,12 @@ def test_ifc_material_layer_set_export_and_readback_matches_document() -> None:
                 id="rt",
                 name="RT",
                 layers=[
-                    WallTypeLayer(thicknessMm=30, layer_function="structure", material_key="mat-r-structure"),
-                    WallTypeLayer(thicknessMm=80, layer_function="insulation", material_key="mat-r-ins"),
+                    WallTypeLayer(
+                        thicknessMm=30, layer_function="structure", material_key="mat-r-structure"
+                    ),
+                    WallTypeLayer(
+                        thicknessMm=80, layer_function="insulation", material_key="mat-r-ins"
+                    ),
                 ],
             ),
             "rf": RoofElem(
@@ -142,7 +156,9 @@ def test_ifc_material_layer_set_export_and_readback_matches_document() -> None:
     ins = inspect_kernel_ifc_semantics(doc=doc)
     ml = ins.get("materialLayerSetReadback_v0") or {}
     assert ml.get("available") is True
-    by_id = {str(h.get("hostElementId")): h for h in (ml.get("hosts") or []) if h.get("hostElementId")}
+    by_id = {
+        str(h.get("hostElementId")): h for h in (ml.get("hosts") or []) if h.get("hostElementId")
+    }
     assert by_id["w-a"].get("readbackState") == "matched"
     assert by_id["fl"].get("readbackState") == "matched"
     assert by_id["rf"].get("readbackState") == "matched"
@@ -563,6 +579,7 @@ def test_export_ifc_kernel_qto_matrix_for_wall_slab_space_door_window() -> None:
     )
 
     assert len(qtys) == 0 or linked_any
+
 
 def test_ifc_inspection_matrix_covers_storeys_spaces_qtos_and_programme_fields() -> None:
     """``inspect_kernel_ifc_semantics`` collapses read-back smoke into a single matrix dict."""
@@ -1150,6 +1167,7 @@ def test_ifc_authoritative_replay_v0_hosted_openings_roundtrip() -> None:
     assert "d-1" in new_doc.elements and "win-1" in new_doc.elements
     assert not viols or not any(v.blocking or v.severity == "error" for v in viols)
 
+
 def test_ifc_authoritative_replay_v0_slab_floor_and_opening_roundtrip() -> None:
     doc = Document(
         revision=508,
@@ -1208,7 +1226,9 @@ def test_ifc_authoritative_replay_v0_slab_floor_and_opening_roundtrip() -> None:
     assert typ_order.index("createFloor") < typ_order.index("createWall")
     assert typ_order.index("createWall") < typ_order.index("createSlabOpening")
 
-    counts = (sketch.get("slabRoofHostedVoidReplaySkipped_v0") or {}).get("countsByHostKindAndReason") or {}
+    counts = (sketch.get("slabRoofHostedVoidReplaySkipped_v0") or {}).get(
+        "countsByHostKindAndReason"
+    ) or {}
     assert counts.get("IfcWall:wall_host_opening_handled_by_door_window_path_v0", 0) == 0
 
     empty = Document(revision=0, elements={})
@@ -1297,7 +1317,8 @@ def test_ifc_authoritative_replay_v0_typed_floor_preflight_floor_type_must_exist
     sketch = build_kernel_ifc_authoritative_replay_sketch_v0(step)
     assert sketch["available"] is True
     assert any(
-        c.get("type") == "createFloor" and c.get("floorTypeId") == "ft-1" for c in sketch["commands"]
+        c.get("type") == "createFloor" and c.get("floorTypeId") == "ft-1"
+        for c in sketch["commands"]
     )
 
     empty = Document(revision=0, elements={})
@@ -1446,7 +1467,10 @@ def test_ifc_authoritative_replay_v0_stair_missing_reference_skipped() -> None:
     assert sketch["available"] is True
     assert [c for c in sketch["commands"] if c["type"] == "createStair"] == []
     assert sketch.get("kernelStairSkippedNoReference") == 1
-    assert any(g.get("reason") == "stair_missing_pset_reference" for g in sketch.get("extractionGaps") or [])
+    assert any(
+        g.get("reason") == "stair_missing_pset_reference"
+        for g in sketch.get("extractionGaps") or []
+    )
 
 
 def test_ifc_authoritative_replay_v0_stair_top_level_unresolved_skipped() -> None:
@@ -1487,7 +1511,9 @@ def test_ifc_authoritative_replay_v0_stair_top_level_unresolved_skipped() -> Non
     sketch = build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model)
     assert sketch["available"] is True
     assert [c for c in sketch["commands"] if c["type"] == "createStair"] == []
-    assert any(g.get("reason") == "stair_top_level_unresolved" for g in sketch.get("extractionGaps") or [])
+    assert any(
+        g.get("reason") == "stair_top_level_unresolved" for g in sketch.get("extractionGaps") or []
+    )
 
 
 def test_ifc_authoritative_replay_v0_stairs_before_hosted_openings_in_command_order() -> None:
@@ -1669,4 +1695,6 @@ def test_ifc_authoritative_replay_v0_roof_missing_reference_skipped() -> None:
     assert sketch["available"] is True
     assert [c for c in sketch["commands"] if c["type"] == "createRoof"] == []
     assert sketch.get("kernelRoofSkippedNoReference") == 1
-    assert any(g.get("reason") == "roof_missing_pset_reference" for g in sketch.get("extractionGaps") or [])
+    assert any(
+        g.get("reason") == "roof_missing_pset_reference" for g in sketch.get("extractionGaps") or []
+    )

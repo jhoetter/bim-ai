@@ -33,9 +33,19 @@ def test_row_order_stable() -> None:
         export_links={"a": "/x"},
         deterministic_sheet_evidence=[{"sheetId": "sh"}],
         deterministic_plan_view_evidence=[{"planViewId": "p"}],
-        evidence_diff_ingest_fix_loop={"format": "evidence_diff_ingest_fix_loop_v1", "needsFixLoop": False, "blockerCodes": []},
-        evidence_review_performance_gate={"format": "evidenceReviewPerformanceGate_v1", "gateClosed": True},
-        evidence_ref_resolution={"format": "evidenceRefResolution_v1", "hasUnresolvedEvidenceRefs": False},
+        evidence_diff_ingest_fix_loop={
+            "format": "evidence_diff_ingest_fix_loop_v1",
+            "needsFixLoop": False,
+            "blockerCodes": [],
+        },
+        evidence_review_performance_gate={
+            "format": "evidenceReviewPerformanceGate_v1",
+            "gateClosed": True,
+        },
+        evidence_ref_resolution={
+            "format": "evidenceRefResolution_v1",
+            "hasUnresolvedEvidenceRefs": False,
+        },
     )
     assert out["format"] == "agentGeneratedBundleQaChecklist_v1"
     assert out["schemaVersion"] == 1

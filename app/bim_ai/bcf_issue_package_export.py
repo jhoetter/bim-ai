@@ -23,7 +23,9 @@ def _sort_evidence_ref_dicts(refs: list[dict[str, Any]]) -> list[dict[str, Any]]
     )
 
 
-def _evidence_ref_fingerprint_for_match(topic_kind: str, topic_id: str, er: dict[str, Any]) -> tuple[str, ...]:
+def _evidence_ref_fingerprint_for_match(
+    topic_kind: str, topic_id: str, er: dict[str, Any]
+) -> tuple[str, ...]:
     return (
         topic_kind,
         topic_id,
@@ -282,7 +284,9 @@ def bcf_issue_package_export_v1(
         elif state == "missing_correlation_digest":
             counters["missing_correlation_anchor"] += 1
 
-    def push_summaries(state: str, stable_topic_id: str, tk: str, tid: str, ak: str, ar: dict[str, Any]) -> None:
+    def push_summaries(
+        state: str, stable_topic_id: str, tk: str, tid: str, ak: str, ar: dict[str, Any]
+    ) -> None:
         summ = {
             "stableTopicId": stable_topic_id,
             "topicKind": tk,
@@ -304,7 +308,9 @@ def bcf_issue_package_export_v1(
         tid = str(t.get("topicId") or "")
         stable_topic_id = f"{tk}:{tid}"
         raw_eids_t = t.get("elementIds")
-        el_list = [str(x) for x in (raw_eids_t if isinstance(raw_eids_t, list) else []) if x is not None]
+        el_list = [
+            str(x) for x in (raw_eids_t if isinstance(raw_eids_t, list) else []) if x is not None
+        ]
         topic_eids = frozenset(el_list)
 
         linked_rules: set[str] = set()
@@ -513,7 +519,9 @@ def bcf_issue_package_export_v1(
         if isinstance(bc_raw, list):
             blocker_codes = sorted({str(x) for x in bc_raw if isinstance(x, str)})
     actionable_other = (
-        counters["resolved_anchor"] + counters["stale_anchor"] + counters["missing_correlation_anchor"]
+        counters["resolved_anchor"]
+        + counters["stale_anchor"]
+        + counters["missing_correlation_anchor"]
     )
     if needs_fix and actionable_other > 0:
         remediation_tokens.extend(blocker_codes)

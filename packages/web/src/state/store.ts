@@ -167,6 +167,12 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
         ? { parentLevelId: String(raw.parentLevelId ?? raw.parent_level_id) }
         : {}),
       offsetFromParentMm: Number(raw.offsetFromParentMm ?? raw.offset_from_parent_mm ?? 0),
+      ...((raw.worksetId ?? raw.workset_id)
+        ? { worksetId: String(raw.worksetId ?? raw.workset_id) }
+        : {}),
+      ...((raw.monitorSourceId ?? raw.monitor_source_id)
+        ? { monitorSourceId: String(raw.monitorSourceId ?? raw.monitor_source_id) }
+        : {}),
     };
   }
 
@@ -213,6 +219,9 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
               raw.locationLine ?? raw.location_line,
             ) as import('@bim-ai/core').WallLocationLine,
           }
+        : {}),
+      ...((raw.worksetId ?? raw.workset_id)
+        ? { worksetId: String(raw.worksetId ?? raw.workset_id) }
         : {}),
     };
   }
@@ -1056,6 +1065,20 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
         ? rawCats.filter((x): x is string => typeof x === 'string')
         : [],
       instanceOrType: iot === 'type' ? 'type' : 'instance',
+    };
+  }
+
+  if (kind === 'reference_plane') {
+    return {
+      kind: 'reference_plane',
+      id,
+      name,
+      familyEditorId: String(raw.familyEditorId ?? raw.family_editor_id ?? ''),
+      isVertical: Boolean(raw.isVertical ?? raw.is_vertical),
+      offsetMm: Number(raw.offsetMm ?? raw.offset_mm ?? 0),
+      ...(raw.isSymmetryRef != null || raw.is_symmetry_ref != null
+        ? { isSymmetryRef: Boolean(raw.isSymmetryRef ?? raw.is_symmetry_ref) }
+        : {}),
     };
   }
 

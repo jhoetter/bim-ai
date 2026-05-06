@@ -164,7 +164,9 @@ def test_gltf_manifest_warns_on_diagonal_wall_with_opening():
 
 
 def test_gltf_manifest_embeds_extensions():
-    doc = Document(revision=2, elements={"sch": ScheduleElem(kind="schedule", id="sch-1", name="S")})
+    doc = Document(
+        revision=2, elements={"sch": ScheduleElem(kind="schedule", id="sch-1", name="S")}
+    )
     gm = build_visual_export_manifest(doc)
     ext = gm["extensions"]["BIM_AI_exportManifest_v0"]
     assert ext["elementCount"] == 1
@@ -183,7 +185,9 @@ def test_ifc_manifest_reports_counts():
 
 
 def test_build_ifc_exchange_manifest_aligned_with_schedule_only_doc():
-    doc = Document(revision=2, elements={"sch": ScheduleElem(kind="schedule", id="sch-1", name="S")})
+    doc = Document(
+        revision=2, elements={"sch": ScheduleElem(kind="schedule", id="sch-1", name="S")}
+    )
     im = build_ifc_exchange_manifest_payload(doc)
     gm = build_visual_export_manifest(doc)
     gext = gm["extensions"]["BIM_AI_exportManifest_v0"]
@@ -322,8 +326,12 @@ def test_roof_and_stair_totals_rollups():
                 runEndMm={"xMm": 3000, "yMm": 0},
                 widthMm=1000,
             ),
-            "sch-r": ScheduleElem(kind="schedule", id="sch-r", name="Roofs", filters={"category": "roof"}),
-            "sch-s": ScheduleElem(kind="schedule", id="sch-s", name="Stairs", filters={"category": "stair"}),
+            "sch-r": ScheduleElem(
+                kind="schedule", id="sch-r", name="Roofs", filters={"category": "roof"}
+            ),
+            "sch-s": ScheduleElem(
+                kind="schedule", id="sch-s", name="Stairs", filters={"category": "stair"}
+            ),
         },
     )
     tr = derive_schedule_table(doc, "sch-r")
@@ -435,7 +443,10 @@ def test_window_schedule_grouped_csv_includes_sorted_totals_footer() -> None:
 
 
 def test_upsert_plan_view_command():
-    doc = Document(revision=1, elements={"lvl-1": LevelElem(kind="level", id="lvl-1", name="EG", elevationMm=0)})
+    doc = Document(
+        revision=1,
+        elements={"lvl-1": LevelElem(kind="level", id="lvl-1", name="EG", elevationMm=0)},
+    )
     ok, new_doc, *_ = try_commit(
         doc,
         {
@@ -475,7 +486,9 @@ def test_move_level_moves_stair_baselines_where_bound():
             "s1": stair,
         },
     )
-    ok, after, *_ = try_commit(doc, {"type": "moveLevelElevation", "levelId": "b", "elevationMm": 3000})
+    ok, after, *_ = try_commit(
+        doc, {"type": "moveLevelElevation", "levelId": "b", "elevationMm": 3000}
+    )
     assert ok
     lvl_b = after.elements["b"]
 
@@ -643,7 +656,7 @@ def test_sheet_svg_legacy_w_mm_h_mm_viewport_extents():
         },
     )
     svg = sheet_elem_to_svg(doc, pick_sheet(doc, "s1"))
-    assert '2200' in svg and '1700' in svg
+    assert "2200" in svg and "1700" in svg
     assert '<rect x="500.0" y="600.0"' in svg or '<rect x="500" y="600"' in svg
 
 
@@ -800,7 +813,9 @@ def test_sheet_svg_viewport_includes_crop_export_segment():
         "cropMinMm": {"xMm": -5, "yMm": -6},
         "cropMaxMm": {"xMm": 1002, "yMm": 2003},
     }
-    doc = Document(revision=1, elements={"s1": SheetElem(kind="sheet", id="s1", name="Crop", viewportsMm=[vp])})
+    doc = Document(
+        revision=1, elements={"s1": SheetElem(kind="sheet", id="s1", name="Crop", viewportsMm=[vp])}
+    )
     svg = sheet_elem_to_svg(doc, pick_sheet(doc, "s1"))
     assert "crop[mn=-5,-6 mx=1002,2003]" in svg
 
@@ -943,7 +958,14 @@ def test_sheet_pdf_viewport_export_listing_includes_callout_documentation_token(
 
 
 def test_format_viewport_crop_export_segment_empty_without_pair():
-    partial = {"viewportId": "p", "xMm": 0, "yMm": 0, "widthMm": 10, "heightMm": 10, "cropMinMm": {"xMm": 1, "yMm": 2}}
+    partial = {
+        "viewportId": "p",
+        "xMm": 0,
+        "yMm": 0,
+        "widthMm": 10,
+        "heightMm": 10,
+        "cropMinMm": {"xMm": 1, "yMm": 2},
+    }
     assert format_viewport_crop_export_segment(partial) == ""
 
 
@@ -958,8 +980,20 @@ def test_sheet_pdf_viewport_export_listing_includes_crop_segment():
         "cropMinMm": {"xMm": 0, "yMm": 1},
         "crop_max_mm": {"x_mm": 9, "y_mm": 8},
     }
-    vp_plain = {"viewportId": "a-first", "label": "N", "xMm": 0, "yMm": 0, "widthMm": 50, "heightMm": 40}
-    doc = Document(revision=1, elements={"s1": SheetElem(kind="sheet", id="s1", name="Pdf", viewportsMm=[vp_full, vp_plain])})
+    vp_plain = {
+        "viewportId": "a-first",
+        "label": "N",
+        "xMm": 0,
+        "yMm": 0,
+        "widthMm": 50,
+        "heightMm": 40,
+    }
+    doc = Document(
+        revision=1,
+        elements={
+            "s1": SheetElem(kind="sheet", id="s1", name="Pdf", viewportsMm=[vp_full, vp_plain])
+        },
+    )
     lines = sheet_viewport_export_listing_lines(doc, pick_sheet(doc, "s1"))
     joined = "\n".join(lines)
     assert "crop[mn=" in joined

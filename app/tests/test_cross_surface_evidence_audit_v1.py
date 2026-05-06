@@ -64,7 +64,10 @@ def test_manifest_aggregate_digest_stable() -> None:
     )
 
     assert "crossSurfaceEvidenceAuditManifestDigestSha256" in m1
-    assert m1["crossSurfaceEvidenceAuditManifestDigestSha256"] == m2["crossSurfaceEvidenceAuditManifestDigestSha256"]
+    assert (
+        m1["crossSurfaceEvidenceAuditManifestDigestSha256"]
+        == m2["crossSurfaceEvidenceAuditManifestDigestSha256"]
+    )
 
 
 def test_absent_from_agent_review_readout_reports_partial_or_missing() -> None:

@@ -88,7 +88,9 @@ def test_evidence_agent_follow_through_v1_shape() -> None:
     assert res["format"] == "evidenceRefResolution_v1"
     assert res["unresolvedCount"] == 0
     assert res["hasUnresolvedEvidenceRefs"] is False
-    assert ft["collaborationReplayConflictHints_v1"]["format"] == "collaborationReplayConflictHints_v1"
+    assert (
+        ft["collaborationReplayConflictHints_v1"]["format"] == "collaborationReplayConflictHints_v1"
+    )
     rts = ft["bcfRoundtripEvidenceSummary_v1"]
     assert rts["format"] == "bcfRoundtripEvidenceSummary_v1"
     assert rts["bcfTopicCount"] == 0
@@ -131,7 +133,10 @@ def test_staged_artifact_links_v1_github_actions_mode_without_secrets(
     assert isinstance(gar, dict)
     assert gar["repository"] == "owner/sample-repo"
     assert gar["runId"] == "4242"
-    assert gar["runArtifactsWebUrl"] == "https://github.com/owner/sample-repo/actions/runs/4242#artifacts"
+    assert (
+        gar["runArtifactsWebUrl"]
+        == "https://github.com/owner/sample-repo/actions/runs/4242#artifacts"
+    )
     assert gar["commitSha"] == "deadbeef" * 5
     pw = next(r for r in out["stagedLinkRows"] if r["id"] == "playwright_evidence_ci_bundle")
     assert pw["resolvedArtifactName"] == "evidence-web-4242-playwright"

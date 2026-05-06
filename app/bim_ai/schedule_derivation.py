@@ -583,7 +583,11 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                 area, perimeter = _room_polygon_area_perimeter_sqm(pts)
                 ftid = (e.floor_type_id or "").strip()
                 flayers = resolved_layers_for_floor(doc, e)
-                total_thk = round(sum(float(ly["thicknessMm"]) for ly in flayers), 6) if flayers else round(float(e.thickness_mm), 3)
+                total_thk = (
+                    round(sum(float(ly["thicknessMm"]) for ly in flayers), 6)
+                    if flayers
+                    else round(float(e.thickness_mm), 3)
+                )
                 rows.append(
                     {
                         "elementId": e.id,
@@ -756,7 +760,9 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                     }
                     if audit_row:
                         row_w["catalogAuditStatus"] = audit_row["catalogStatus"]
-                        row_w["assemblyMaterialKeysDigest"] = audit_row["assemblyMaterialKeysDigest"]
+                        row_w["assemblyMaterialKeysDigest"] = audit_row[
+                            "assemblyMaterialKeysDigest"
+                        ]
                         row_w["layerPropagationStatus"] = audit_row["propagationStatus"]
                     rows.append(row_w)
                     offset_mm += th_mm
@@ -796,7 +802,9 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                     }
                     if audit_row:
                         row_f["catalogAuditStatus"] = audit_row["catalogStatus"]
-                        row_f["assemblyMaterialKeysDigest"] = audit_row["assemblyMaterialKeysDigest"]
+                        row_f["assemblyMaterialKeysDigest"] = audit_row[
+                            "assemblyMaterialKeysDigest"
+                        ]
                         row_f["layerPropagationStatus"] = audit_row["propagationStatus"]
                     rows.append(row_f)
                     offset_mm += th_mm
@@ -839,7 +847,9 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                     }
                     if audit_row:
                         row_r["catalogAuditStatus"] = audit_row["catalogStatus"]
-                        row_r["assemblyMaterialKeysDigest"] = audit_row["assemblyMaterialKeysDigest"]
+                        row_r["assemblyMaterialKeysDigest"] = audit_row[
+                            "assemblyMaterialKeysDigest"
+                        ]
                         row_r["layerPropagationStatus"] = audit_row["propagationStatus"]
                     rows.append(row_r)
                     offset_mm += th_mm
@@ -923,9 +933,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
             "rowCount": len(leaf_rows),
             "areaM2": round(sum(float(r.get("areaM2") or 0.0) for r in leaf_rows), 4),
             "perimeterM": round(sum(float(r.get("perimeterM") or 0.0) for r in leaf_rows), 4),
-            "finishCompleteCount": sum(
-                1 for r in leaf_rows if r.get("finishState") == "complete"
-            ),
+            "finishCompleteCount": sum(1 for r in leaf_rows if r.get("finishState") == "complete"),
             "finishMissingCount": sum(1 for r in leaf_rows if r.get("finishState") == "missing"),
             "finishPeerSuggestedCount": sum(
                 1 for r in leaf_rows if r.get("finishState") == "peer_suggested"

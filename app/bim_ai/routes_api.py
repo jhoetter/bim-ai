@@ -364,17 +364,19 @@ async def evidence_package(
         semantic_digest_sha256=digest,
         semantic_digest_prefix16=str(payload["semanticDigestPrefix16"]),
     )
-    payload["evidenceClosureReview_v1"] = merge_committed_png_fixture_baselines_into_evidence_closure_review_v1(
-        merge_server_png_byte_ingest_into_evidence_closure_review_v1(
-            evidence_closure_review_v1(
-                package_semantic_digest_sha256=digest,
-                deterministic_sheet_evidence=payload["deterministicSheetEvidence"],
-                deterministic_3d_view_evidence=payload["deterministic3dViewEvidence"],
-                deterministic_plan_view_evidence=payload["deterministicPlanViewEvidence"],
-                deterministic_section_cut_evidence=payload["deterministicSectionCutEvidence"],
-            ),
-            png_bytes=MINIMAL_PROBE_PNG_BYTES_V1,
-            expected_canonical_sha256_baseline=MINIMAL_PROBE_PNG_CANONICAL_SHA256_V1,
+    payload["evidenceClosureReview_v1"] = (
+        merge_committed_png_fixture_baselines_into_evidence_closure_review_v1(
+            merge_server_png_byte_ingest_into_evidence_closure_review_v1(
+                evidence_closure_review_v1(
+                    package_semantic_digest_sha256=digest,
+                    deterministic_sheet_evidence=payload["deterministicSheetEvidence"],
+                    deterministic_3d_view_evidence=payload["deterministic3dViewEvidence"],
+                    deterministic_plan_view_evidence=payload["deterministicPlanViewEvidence"],
+                    deterministic_section_cut_evidence=payload["deterministicSectionCutEvidence"],
+                ),
+                png_bytes=MINIMAL_PROBE_PNG_BYTES_V1,
+                expected_canonical_sha256_baseline=MINIMAL_PROBE_PNG_CANONICAL_SHA256_V1,
+            )
         )
     )
     payload["evidenceDiffIngestFixLoop_v1"] = evidence_diff_ingest_fix_loop_v1(
@@ -427,7 +429,8 @@ async def evidence_package(
     follow_raw = payload.get("evidenceAgentFollowThrough_v1")
     ref_res = (
         follow_raw.get("evidenceRefResolution_v1")
-        if isinstance(follow_raw, dict) and isinstance(follow_raw.get("evidenceRefResolution_v1"), dict)
+        if isinstance(follow_raw, dict)
+        and isinstance(follow_raw.get("evidenceRefResolution_v1"), dict)
         else None
     )
     payload["agentGeneratedBundleQaChecklist_v1"] = agent_generated_bundle_qa_checklist_v1(
@@ -453,13 +456,15 @@ async def evidence_package(
         evidence_diff_ingest_fix_loop=payload["evidenceDiffIngestFixLoop_v1"],
         evidence_review_performance_gate=payload["evidenceReviewPerformanceGate_v1"],
     )
-    payload["agentReviewReadoutConsistencyClosure_v1"] = agent_review_readout_consistency_closure_v1(
-        readout_brief_acceptance=payload.get("agentBriefAcceptanceReadout_v1"),
-        readout_bundle_qa_checklist=payload.get("agentGeneratedBundleQaChecklist_v1"),
-        readout_merge_preflight=None,
-        readout_baseline_lifecycle=payload.get("evidenceBaselineLifecycleReadout_v1"),
-        readout_browser_rendering_budget=None,
-        closure_hints=payload["agentEvidenceClosureHints"],
+    payload["agentReviewReadoutConsistencyClosure_v1"] = (
+        agent_review_readout_consistency_closure_v1(
+            readout_brief_acceptance=payload.get("agentBriefAcceptanceReadout_v1"),
+            readout_bundle_qa_checklist=payload.get("agentGeneratedBundleQaChecklist_v1"),
+            readout_merge_preflight=None,
+            readout_baseline_lifecycle=payload.get("evidenceBaselineLifecycleReadout_v1"),
+            readout_browser_rendering_budget=None,
+            closure_hints=payload["agentEvidenceClosureHints"],
+        )
     )
     payload["v1AcceptanceProofMatrix_v1"] = build_v1_acceptance_proof_matrix_v1(doc)
     payload["v1CloseoutReadinessManifest_v1"] = build_v1_closeout_readiness_manifest_v1()
@@ -468,7 +473,9 @@ async def evidence_package(
         (e for e in doc.elements.values() if hasattr(e, "kind") and e.kind == "room_color_scheme"),
         None,
     )
-    payload["roomColorSchemeOverrideEvidence_v1"] = build_room_color_scheme_override_evidence_v1(scheme_elem)
+    payload["roomColorSchemeOverrideEvidence_v1"] = build_room_color_scheme_override_evidence_v1(
+        scheme_elem
+    )
     payload["roomColourSchemeLegendEvidence_v1"] = roomColourSchemeLegendEvidence_v1(doc)
     payload["sheetProductionBaseline_v1"] = sheetProductionEvidenceBaseline_v1(doc)
     payload["evidencePackageDigestInvariants_v1"] = evidence_package_digest_invariants_v1(payload)

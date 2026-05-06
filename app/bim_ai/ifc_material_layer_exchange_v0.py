@@ -68,7 +68,9 @@ def try_attach_kernel_ifc_material_layer_set(
                     category=str(cat)[:64],
                 )
                 material_by_key_cache[cache_key] = mat_ent
-            layer_ent = ifcopenshell.api.material.add_layer(f, layer_set=material_set, material=mat_ent)
+            layer_ent = ifcopenshell.api.material.add_layer(
+                f, layer_set=material_set, material=mat_ent
+            )
             ifcopenshell.api.material.edit_layer(
                 f, layer=layer_ent, attributes={"LayerThickness": float(thickness_m)}
             )
@@ -191,7 +193,9 @@ def kernel_ifc_material_layer_set_readback_v0(model: Any, doc: Document | None) 
             n_ifc = len(mlayers_safe)
             n_doc = len(doc_layers) if doc_layers is not None else 0
 
-            thick_doc_mm = round(sum(float(lyr.get("thicknessMm", 0) or 0) for lyr in (doc_layers or [])), 3)
+            thick_doc_mm = round(
+                sum(float(lyr.get("thicknessMm", 0) or 0) for lyr in (doc_layers or [])), 3
+            )
 
             status = "partial_mismatch"
             if doc is None or doc_layers is None:
@@ -203,7 +207,10 @@ def kernel_ifc_material_layer_set_readback_v0(model: Any, doc: Document | None) 
                     a == b for a, b in zip(expect_tokens, ifc_tokens, strict=True)
                 )
                 dn = n_doc == n_ifc
-                dt = abs(thick_doc_mm - thick_ifc_mm) <= _KERNEL_IFC_MATERIAL_LAYER_READBACK_EPS_MM + 1e-6
+                dt = (
+                    abs(thick_doc_mm - thick_ifc_mm)
+                    <= _KERNEL_IFC_MATERIAL_LAYER_READBACK_EPS_MM + 1e-6
+                )
                 status = "matched" if dn and dt and tk_match else "partial_mismatch"
             elif n_ifc > 0:
                 status = "partial_mismatch"
@@ -218,12 +225,16 @@ def kernel_ifc_material_layer_set_readback_v0(model: Any, doc: Document | None) 
                     "docTotalThicknessMm": thick_doc_mm if doc_layers is not None else None,
                     "ifcLayerCount": n_ifc,
                     "ifcTotalThicknessMm": thick_ifc_mm,
-                    "materialKeysOrLabelsExpected": expect_tokens if doc_layers is not None else None,
+                    "materialKeysOrLabelsExpected": expect_tokens
+                    if doc_layers is not None
+                    else None,
                     "materialTokensReadFromIfc": ifc_tokens if ifc_tokens else None,
                     "readbackState": status,
                     "materialCatalogLabelsExpected": (
                         [
-                            material_display_label(doc, str(lyr.get("materialKey") or "").strip() or None)
+                            material_display_label(
+                                doc, str(lyr.get("materialKey") or "").strip() or None
+                            )
                             for lyr in (doc_layers or [])
                         ]
                         if doc is not None and doc_layers is not None
@@ -249,7 +260,9 @@ def kernel_ifc_material_layer_set_readback_v0(model: Any, doc: Document | None) 
     summary = {
         "hostsCompared": len(tracked),
         "hostsMatched": int(n_matched),
-        "hostsMissingIfcLayers": sum(1 for h in tracked if h.get("readbackState") == "missing_in_ifc"),
+        "hostsMissingIfcLayers": sum(
+            1 for h in tracked if h.get("readbackState") == "missing_in_ifc"
+        ),
         "hostsPartialMismatch": sum(
             1 for h in tracked if h.get("readbackState") == "partial_mismatch"
         ),

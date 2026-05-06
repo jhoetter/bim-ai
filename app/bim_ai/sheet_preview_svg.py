@@ -391,7 +391,9 @@ def build_placeholder_detail_title(
     return base
 
 
-def format_detail_callout_documentation_segment(doc: Document, vp: dict[str, Any], index: int) -> str:
+def format_detail_callout_documentation_segment(
+    doc: Document, vp: dict[str, Any], index: int
+) -> str:
     """Compact token for SVG/PDF listing / viewport hints when ``viewportRole`` is ``detail_callout``."""
 
     if read_viewport_role(vp) != "detail_callout":
@@ -475,7 +477,9 @@ def read_viewport_mm_box(vp: dict[str, Any]) -> tuple[float, float, float, float
     return (nx, ny, max(10.0, nw), max(10.0, nh))
 
 
-def sheet_viewport_stamp_rects_mm_ordered(sh: SheetElem) -> list[tuple[str, float, float, float, float]]:
+def sheet_viewport_stamp_rects_mm_ordered(
+    sh: SheetElem,
+) -> list[tuple[str, float, float, float, float]]:
     """Viewport rectangles sorted like ``_sheet_print_raster_layout_stamp_rows`` fill order."""
 
     rects: list[tuple[str, float, float, float, float]] = []
@@ -585,7 +589,9 @@ def format_sheet_plan_viewport_projection_segment(doc: Document, vp: dict[str, A
     return format_plan_projection_export_segment(wire)
 
 
-def _plan_sheet_viewport_projection_wire(doc: Document, vp: dict[str, Any]) -> dict[str, Any] | None:
+def _plan_sheet_viewport_projection_wire(
+    doc: Document, vp: dict[str, Any]
+) -> dict[str, Any] | None:
     vr = vp.get("viewRef") or vp.get("view_ref")
     if not isinstance(vr, str) or ":" not in vr:
         return None
@@ -1127,7 +1133,9 @@ def room_color_scheme_legend_placement_evidence_v1(
             "viewportHeightMm": h_mm,
             "legendRowCount": row_count,
             "legendDigestSha256": digest,
-            "schemeSource": "override" if (scheme_elem is not None and override_ev.get("overrideRowCount", 0) > 0) else "hashed_fallback",
+            "schemeSource": "override"
+            if (scheme_elem is not None and override_ev.get("overrideRowCount", 0) > 0)
+            else "hashed_fallback",
         }
         if scheme_elem is not None:
             placed_row["schemeIdentity"] = scheme_elem.id
@@ -1137,6 +1145,7 @@ def room_color_scheme_legend_placement_evidence_v1(
     placed_rows.sort(key=lambda r: str(r.get("viewportId") or ""))
 
     import hashlib as _hl
+
     blob = json.dumps(placed_rows, sort_keys=True, separators=(",", ":"))
     placement_digest = _hl.sha256(blob.encode("utf-8")).hexdigest()
 
@@ -1250,9 +1259,15 @@ def viewport_evidence_hints_v1(doc: Document, vps_raw: list[Any]) -> list[dict[s
         vr = vp.get("viewRef") or vp.get("view_ref")
         plan_seg = format_sheet_plan_viewport_projection_segment(doc, vp)
         sec_seg = (
-            format_section_viewport_documentation_segment(doc, str(vr)) if isinstance(vr, str) else ""
+            format_section_viewport_documentation_segment(doc, str(vr))
+            if isinstance(vr, str)
+            else ""
         )
-        sch_seg = format_schedule_viewport_documentation_segment(doc, str(vr)) if isinstance(vr, str) else ""
+        sch_seg = (
+            format_schedule_viewport_documentation_segment(doc, str(vr))
+            if isinstance(vr, str)
+            else ""
+        )
         room_leg_seg = format_room_programme_legend_documentation_segment(doc, vp)
         dc_seg = format_detail_callout_documentation_segment(doc, vp, i)
 
@@ -1353,7 +1368,6 @@ def sheet_viewport_export_listing_lines(doc: Document, sh: SheetElem) -> list[st
         suffix = ""
 
         if isinstance(vr_raw, str) and vr_raw:
-
             ttl = resolve_view_ref_title(doc, vr_raw) or ""
 
             ttl_part = f" — {ttl}" if ttl else ""
@@ -1361,7 +1375,6 @@ def sheet_viewport_export_listing_lines(doc: Document, sh: SheetElem) -> list[st
             suffix = f" · {vr_raw}{ttl_part}"
 
         elif vr_raw:
-
             suffix = f" · {vr_raw}"
 
         x_mm, y_mm, w_mm, h_mm = read_viewport_mm_box(vp)
@@ -1376,7 +1389,9 @@ def sheet_viewport_export_listing_lines(doc: Document, sh: SheetElem) -> list[st
             else ""
         )
 
-        proj_seg = format_sheet_plan_viewport_projection_segment(doc, vp) if isinstance(vp, dict) else ""
+        proj_seg = (
+            format_sheet_plan_viewport_projection_segment(doc, vp) if isinstance(vp, dict) else ""
+        )
 
         sch_seg = (
             format_schedule_viewport_documentation_segment(doc, str(vr_raw))
@@ -1388,7 +1403,9 @@ def sheet_viewport_export_listing_lines(doc: Document, sh: SheetElem) -> list[st
             format_room_programme_legend_listing_segment(doc, vp) if isinstance(vp, dict) else ""
         )
 
-        dc_list_seg = format_detail_callout_documentation_segment(doc, vp, i) if isinstance(vp, dict) else ""
+        dc_list_seg = (
+            format_detail_callout_documentation_segment(doc, vp, i) if isinstance(vp, dict) else ""
+        )
 
         geo_tail = (
             geo
@@ -1468,7 +1485,10 @@ def build_sheet_print_raster_print_contract_v3(
     rgb_ok = False
     if ihdr:
         w_px, h_px, bd, ct = ihdr
-        wh_ok = w_px == SHEET_PRINT_RASTER_STAMP_WIDTH_PX and h_px == SHEET_PRINT_RASTER_SURROGATE_V2_HEIGHT_PX
+        wh_ok = (
+            w_px == SHEET_PRINT_RASTER_STAMP_WIDTH_PX
+            and h_px == SHEET_PRINT_RASTER_SURROGATE_V2_HEIGHT_PX
+        )
         rgb_ok = bd == 8 and ct == 2
     checks.append({"id": "png_wh_surrogate_v2", "ok": wh_ok})
     checks.append({"id": "png_rgb8", "ok": rgb_ok})
@@ -1630,14 +1650,18 @@ def sheetExportSegmentCompleteness_v1(doc: Document, sheet_id: str) -> dict[str,
             else:
                 missing_tokens.append("detailCo")
 
-        rows.append({"viewportId": vid, "segmentTokens": segment_tokens, "missingTokens": missing_tokens})
+        rows.append(
+            {"viewportId": vid, "segmentTokens": segment_tokens, "missingTokens": missing_tokens}
+        )
         for mt in missing_tokens:
-            advisor_entries.append({
-                "severity": "info",
-                "viewportId": vid,
-                "missingSegmentToken": mt,
-                "message": f"Viewport {vid!r} is missing export segment token '{mt}'",
-            })
+            advisor_entries.append(
+                {
+                    "severity": "info",
+                    "viewportId": vid,
+                    "missingSegmentToken": mt,
+                    "message": f"Viewport {vid!r} is missing export segment token '{mt}'",
+                }
+            )
 
     rows.sort(key=lambda r: str(r.get("viewportId") or ""))
 
@@ -1735,9 +1759,7 @@ def sheet_elem_to_svg(doc: Document, sh: SheetElem) -> str:
         sub = html.escape(str(vr)) if isinstance(vr, str) and str(vr) else ""
         sub_block = ""
         if sub:
-            sub_block = (
-                f'<text x="{x_mm + 200}" y="{y_mm + 1400}" fill="#64748b" font-size="350px">{sub}</text>'
-            )
+            sub_block = f'<text x="{x_mm + 200}" y="{y_mm + 1400}" fill="#64748b" font-size="350px">{sub}</text>'
 
         crop_seg = format_viewport_crop_export_segment(vp)
 
@@ -1756,9 +1778,7 @@ def sheet_elem_to_svg(doc: Document, sh: SheetElem) -> str:
         if sec_seg:
             esc_sec = html.escape(sec_seg)
             mh_match = re.search(r"\bmh=(\d+)\b", sec_seg)
-            mh_attr = (
-                f' data-section-doc-mh="{mh_match.group(1)}"' if mh_match is not None else ""
-            )
+            mh_attr = f' data-section-doc-mh="{mh_match.group(1)}"' if mh_match is not None else ""
             doc_block = (
                 f'<text x="{x_mm + 200}" y="{y_mm + 2200}" '
                 f'data-section-doc-token="sectionDocumentationSegment"{mh_attr} '
@@ -1774,7 +1794,11 @@ def sheet_elem_to_svg(doc: Document, sh: SheetElem) -> str:
                 f'fill="#b45309" font-size="280px">{esc_proj}</text>'
             )
 
-        sch_seg_svg = format_schedule_viewport_documentation_segment(doc, str(vr)) if isinstance(vr, str) else ""
+        sch_seg_svg = (
+            format_schedule_viewport_documentation_segment(doc, str(vr))
+            if isinstance(vr, str)
+            else ""
+        )
         sch_block = ""
         if sch_seg_svg:
             esc_sch = html.escape(sch_seg_svg)
@@ -1843,9 +1867,7 @@ def sheet_elem_to_svg(doc: Document, sh: SheetElem) -> str:
 
     footer_lines = [hdr, project_raw]
     if drawn_raw.strip() or chk_raw.strip():
-        footer_lines.append(
-            f"Drn {drawn_raw.strip()} · Chk {chk_raw.strip()}".strip(" ·").strip()
-        )
+        footer_lines.append(f"Drn {drawn_raw.strip()} · Chk {chk_raw.strip()}".strip(" ·").strip())
     footer_lines.append(issued_raw)
 
     footer_xml_parts: list[str] = []

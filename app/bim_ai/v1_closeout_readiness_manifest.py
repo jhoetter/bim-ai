@@ -152,9 +152,7 @@ def _release_classification_v1(
     has_blocking_deferral = any(
         bool(d.get("blocksClassification")) is True for d in deferred if isinstance(d, dict)
     )
-    required_fail = any(
-        bool(g.get("structuralOk")) is False for g in gates if isinstance(g, dict)
-    )
+    required_fail = any(bool(g.get("structuralOk")) is False for g in gates if isinstance(g, dict))
 
     details: dict[str, Any] = {
         "allRequiredGatesStructuralOk": not required_fail,
@@ -203,7 +201,9 @@ def _prd_closeout_cross_correlation_safe() -> dict[str, Any] | None:
 def build_v1_closeout_readiness_manifest_v1() -> dict[str, Any]:
     tracker_text: str | None
     try:
-        tracker_text = _TRACKER_PATH.read_text(encoding="utf-8") if _TRACKER_PATH.is_file() else None
+        tracker_text = (
+            _TRACKER_PATH.read_text(encoding="utf-8") if _TRACKER_PATH.is_file() else None
+        )
     except OSError:
         tracker_text = None
 

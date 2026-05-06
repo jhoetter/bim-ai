@@ -22,9 +22,7 @@ from bim_ai.room_derivation_preview import room_derivation_preview
 def _saved_3d_view_clip_summary(doc: Document) -> dict[str, Any]:
     """Deterministic clip / section-box readout for all saved orbit_3d viewpoints (WP-E02)."""
     views = [
-        e
-        for e in doc.elements.values()
-        if isinstance(e, ViewpointElem) and e.mode == "orbit_3d"
+        e for e in doc.elements.values() if isinstance(e, ViewpointElem) and e.mode == "orbit_3d"
     ]
     clip_enabled_count = sum(
         1
@@ -106,9 +104,7 @@ def compute_model_summary(doc: Document) -> dict[str, Any]:
         "dimensionCount": int(kinds.get("dimension", 0)),
         "scheduleCount": int(kinds.get("schedule", 0)),
         "saved3dViewClipSummary": _saved_3d_view_clip_summary(doc),
-        "roomDerivationPreview": (
-            rd_preview := room_derivation_preview(doc)
-        ),
+        "roomDerivationPreview": (rd_preview := room_derivation_preview(doc)),
         "regenerationDiagnostics": {
             "documentRevision": doc.revision,
             "roomDerivationHeuristicVersion": rd_preview.get("heuristicVersion"),

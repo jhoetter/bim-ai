@@ -37,7 +37,9 @@ def _hosted_anchor_xy_mm(opening: DoorElem | WindowElem, wall: WallElem) -> tupl
     dy = float(wall.end.y_mm) - sy
     length_mm = max(_EPS, math.hypot(dx, dy))
     ux, uy = dx / length_mm, dy / length_mm
-    return sx + ux * float(opening.along_t) * length_mm, sy + uy * float(opening.along_t) * length_mm
+    return sx + ux * float(opening.along_t) * length_mm, sy + uy * float(
+        opening.along_t
+    ) * length_mm
 
 
 def _perp_mm(
@@ -191,7 +193,9 @@ def build_wall_opening_cut_fidelity_row(
     skip_reason: str | None = None
     if tspan is None:
         cut_status = "outside_host"
-        skip_reason = "degenerate_wall_length" if wl_mm < 10.0 else "opening_exceeds_wall_clear_span"
+        skip_reason = (
+            "degenerate_wall_length" if wl_mm < 10.0 else "opening_exceeds_wall_clear_span"
+        )
         t_norm: list[float] | None = None
     elif not wall_plan_axis_aligned_xy(w):
         cut_status = "proxy_cut"

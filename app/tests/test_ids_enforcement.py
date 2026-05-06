@@ -30,7 +30,9 @@ def test_ids_cleanroom_hint_warns_without_family():
         elements={
             "lvl-1": lvl,
             "w1": wall,
-            "d1": DoorElem(kind="door", id="d1", name="D", wall_id="w1", along_t=0.45, width_mm=920),
+            "d1": DoorElem(
+                kind="door", id="d1", name="D", wall_id="w1", along_t=0.45, width_mm=920
+            ),
             "rule": ValidationRuleElem(
                 kind="validation_rule",
                 id="ids-1",

@@ -12,12 +12,20 @@ def test_evidence_digest_ignores_generated_at_stamp() -> None:
     payload = {"format": "evidencePackage_v1", "modelId": "m", "revision": 2, "generatedAt": "a"}
     shifted = dict(payload)
     shifted["generatedAt"] = "b"
-    assert evidence_package_semantic_digest_sha256(payload) == evidence_package_semantic_digest_sha256(shifted)
+    assert evidence_package_semantic_digest_sha256(
+        payload
+    ) == evidence_package_semantic_digest_sha256(shifted)
 
 
 def test_evidence_digest_sorts_violations_deterministically() -> None:
     v1 = {"ruleId": "b", "severity": "info", "message": "m2", "elementIds": [], "blocking": False}
-    v2 = {"ruleId": "a", "severity": "info", "message": "m1", "elementIds": ["z"], "blocking": False}
+    v2 = {
+        "ruleId": "a",
+        "severity": "info",
+        "message": "m1",
+        "elementIds": ["z"],
+        "blocking": False,
+    }
     base = {
         "format": "evidencePackage_v1",
         "revision": 1,
@@ -26,13 +34,18 @@ def test_evidence_digest_sorts_violations_deterministically() -> None:
     }
     rev = dict(base)
     rev["validate"] = {"violations": [v2, v1]}
-    assert evidence_package_semantic_digest_sha256(base) == evidence_package_semantic_digest_sha256(rev)
+    assert evidence_package_semantic_digest_sha256(base) == evidence_package_semantic_digest_sha256(
+        rev
+    )
 
 
 def test_evidence_digest_canonicalizes_room_derivation_nested_lists() -> None:
     c1 = {
         "candidateId": "b",
-        "comparisonToAuthoredRooms": [{"roomId": "z", "iouApprox": 0.1}, {"roomId": "a", "iouApprox": 0.2}],
+        "comparisonToAuthoredRooms": [
+            {"roomId": "z", "iouApprox": 0.1},
+            {"roomId": "a", "iouApprox": 0.2},
+        ],
         "warnings": [{"code": "b", "message": "m2"}, {"code": "a", "message": "m1"}],
         "separationHintGridLineIds": ["g2", "g1"],
     }
@@ -46,7 +59,10 @@ def test_evidence_digest_canonicalizes_room_derivation_nested_lists() -> None:
         "format": "evidencePackage_v1",
         "revision": 1,
         "modelId": "x",
-        "roomDerivationCandidates": {"format": "roomDerivationCandidates_v1", "candidates": [c1, c2]},
+        "roomDerivationCandidates": {
+            "format": "roomDerivationCandidates_v1",
+            "candidates": [c1, c2],
+        },
     }
     rev = dict(base)
     r2 = dict(base["roomDerivationCandidates"])
@@ -56,7 +72,9 @@ def test_evidence_digest_canonicalizes_room_derivation_nested_lists() -> None:
     c1_swapped["separationHintGridLineIds"] = list(reversed(c1["separationHintGridLineIds"]))
     r2["candidates"] = [c2, c1_swapped]
     rev["roomDerivationCandidates"] = r2
-    assert evidence_package_semantic_digest_sha256(base) == evidence_package_semantic_digest_sha256(rev)
+    assert evidence_package_semantic_digest_sha256(base) == evidence_package_semantic_digest_sha256(
+        rev
+    )
 
 
 def test_evidence_digest_canonicalizes_plan_projection_sample_primitives() -> None:
@@ -98,7 +116,9 @@ def test_evidence_digest_canonicalizes_plan_projection_sample_primitives() -> No
             },
         },
     }
-    assert evidence_package_semantic_digest_sha256(base) == evidence_package_semantic_digest_sha256(swapped)
+    assert evidence_package_semantic_digest_sha256(base) == evidence_package_semantic_digest_sha256(
+        swapped
+    )
 
 
 # ── evidencePackageDigestInvariants_v1 ────────────────────────────────────────
@@ -149,7 +169,10 @@ def test_digest_invariants_digest_is_stable_under_key_ordering_permutation() -> 
     payload_b = dict(reversed(list(payload_a.items())))
     inv_a = evidence_package_digest_invariants_v1(payload_a)
     inv_b = evidence_package_digest_invariants_v1(payload_b)
-    assert inv_a["evidencePackageDigestInvariantsDigestSha256"] == inv_b["evidencePackageDigestInvariantsDigestSha256"]
+    assert (
+        inv_a["evidencePackageDigestInvariantsDigestSha256"]
+        == inv_b["evidencePackageDigestInvariantsDigestSha256"]
+    )
 
 
 def test_digest_invariants_digest_changes_when_unknown_key_added() -> None:
@@ -158,7 +181,10 @@ def test_digest_invariants_digest_changes_when_unknown_key_added() -> None:
     payload_dirty["unexpectedKey_v99"] = "surprise"
     inv_clean = evidence_package_digest_invariants_v1(payload_clean)
     inv_dirty = evidence_package_digest_invariants_v1(payload_dirty)
-    assert inv_clean["evidencePackageDigestInvariantsDigestSha256"] != inv_dirty["evidencePackageDigestInvariantsDigestSha256"]
+    assert (
+        inv_clean["evidencePackageDigestInvariantsDigestSha256"]
+        != inv_dirty["evidencePackageDigestInvariantsDigestSha256"]
+    )
 
 
 def test_digest_invariants_excluded_keys_list_has_rationale() -> None:
@@ -176,7 +202,9 @@ def test_semantic_digest_stable_under_schedule_id_ordering() -> None:
     s2 = {"id": "sch-a", "name": "Schedule A"}
     base = {"format": "evidencePackage_v1", "revision": 1, "modelId": "x", "scheduleIds": [s1, s2]}
     swapped = {**base, "scheduleIds": [s2, s1]}
-    assert evidence_package_semantic_digest_sha256(base) == evidence_package_semantic_digest_sha256(swapped)
+    assert evidence_package_semantic_digest_sha256(base) == evidence_package_semantic_digest_sha256(
+        swapped
+    )
 
 
 def test_semantic_digest_stable_under_plan_view_ordering() -> None:
@@ -184,4 +212,6 @@ def test_semantic_digest_stable_under_plan_view_ordering() -> None:
     p2 = {"id": "pv-a", "name": "Plan A"}
     base = {"format": "evidencePackage_v1", "revision": 1, "modelId": "x", "planViews": [p1, p2]}
     swapped = {**base, "planViews": [p2, p1]}
-    assert evidence_package_semantic_digest_sha256(base) == evidence_package_semantic_digest_sha256(swapped)
+    assert evidence_package_semantic_digest_sha256(base) == evidence_package_semantic_digest_sha256(
+        swapped
+    )

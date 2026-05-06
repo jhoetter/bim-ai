@@ -9,6 +9,7 @@ export interface FamilyParamDef {
   min?: number;
   max?: number;
   instanceOverridable: boolean;
+  formula?: string | null;
 }
 
 export interface FamilyDefinition {

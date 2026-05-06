@@ -77,17 +77,22 @@ def test_ci_baseline_correlation_sheet_name_matches_row_sheet_name() -> None:
     sh = SheetElem(kind="sheet", id="sh1", name="GA-001 Ground Floor")
     doc = Document(revision=1, elements={"sh1": sh})
     rows = deterministic_sheet_evidence_manifest(
-        model_id=uuid4(), doc=doc, evidence_artifact_basename="ev",
-        semantic_digest_sha256="b" * 64, semantic_digest_prefix16="b" * 16,
+        model_id=uuid4(),
+        doc=doc,
+        evidence_artifact_basename="ev",
+        semantic_digest_sha256="b" * 64,
+        semantic_digest_prefix16="b" * 16,
     )
     corr = rows[0]["sheetExportArtifactManifest_v1"]["ciBaselineCorrelation"]
     assert corr["sheetName"] == "GA-001 Ground Floor"
 
 
 def test_ci_baseline_correlation_artifact_names_are_stable() -> None:
-    row_a = _row(viewportsMm=[
-        {"viewportId": "v1", "xMm": 0, "yMm": 0, "widthMm": 100, "heightMm": 80},
-    ])
+    row_a = _row(
+        viewportsMm=[
+            {"viewportId": "v1", "xMm": 0, "yMm": 0, "widthMm": 100, "heightMm": 80},
+        ]
+    )
     row_b = _row(titleblockParameters={"revisionCode": "Z"})
     for row in (row_a, row_b):
         corr = row["sheetExportArtifactManifest_v1"]["ciBaselineCorrelation"]
@@ -111,7 +116,10 @@ def test_ci_full_raster_status_matches_artifacts_entry() -> None:
     mf = _row()["sheetExportArtifactManifest_v1"]
     corr = mf["ciBaselineCorrelation"]
     by_name = {a["artifactName"]: a for a in mf["artifacts"]}
-    assert corr["fullRasterExportStatus"] == by_name["sheet-print-raster.png"]["fullRasterExportStatus"]
+    assert (
+        corr["fullRasterExportStatus"]
+        == by_name["sheet-print-raster.png"]["fullRasterExportStatus"]
+    )
 
 
 def test_ci_full_raster_status_matches_contract_v3() -> None:
@@ -137,7 +145,9 @@ def test_ci_surrogate_contract_matches_contract_v3() -> None:
 
 def test_manifest_embedded_contract_v3_validates_cleanly() -> None:
     sh = SheetElem(
-        kind="sheet", id="sh1", name="S1",
+        kind="sheet",
+        id="sh1",
+        name="S1",
         titleblockParameters={"revisionCode": "A"},
         viewportsMm=[
             {"viewportId": "v1", "xMm": 0, "yMm": 0, "widthMm": 200, "heightMm": 150},
@@ -145,8 +155,11 @@ def test_manifest_embedded_contract_v3_validates_cleanly() -> None:
     )
     doc = Document(revision=1, elements={"sh1": sh})
     rows = deterministic_sheet_evidence_manifest(
-        model_id=uuid4(), doc=doc, evidence_artifact_basename="ev",
-        semantic_digest_sha256="c" * 64, semantic_digest_prefix16="c" * 16,
+        model_id=uuid4(),
+        doc=doc,
+        evidence_artifact_basename="ev",
+        semantic_digest_sha256="c" * 64,
+        semantic_digest_prefix16="c" * 16,
     )
     v3 = rows[0]["sheetPrintRasterPrintContract_v3"]
     svg = sheet_elem_to_svg(doc, sh)
@@ -160,8 +173,11 @@ def test_manifest_embedded_contract_v3_valid_flag_is_true() -> None:
     sh = SheetElem(kind="sheet", id="sh1", name="S1")
     doc = Document(revision=1, elements={"sh1": sh})
     rows = deterministic_sheet_evidence_manifest(
-        model_id=uuid4(), doc=doc, evidence_artifact_basename="ev",
-        semantic_digest_sha256="d" * 64, semantic_digest_prefix16="d" * 16,
+        model_id=uuid4(),
+        doc=doc,
+        evidence_artifact_basename="ev",
+        semantic_digest_sha256="d" * 64,
+        semantic_digest_prefix16="d" * 16,
     )
     v3 = rows[0]["sheetPrintRasterPrintContract_v3"]
     assert v3["valid"] is True
@@ -171,8 +187,11 @@ def test_manifest_embedded_contract_v3_full_raster_status_is_unavailable() -> No
     sh = SheetElem(kind="sheet", id="sh1", name="S1")
     doc = Document(revision=1, elements={"sh1": sh})
     rows = deterministic_sheet_evidence_manifest(
-        model_id=uuid4(), doc=doc, evidence_artifact_basename="ev",
-        semantic_digest_sha256="e" * 64, semantic_digest_prefix16="e" * 16,
+        model_id=uuid4(),
+        doc=doc,
+        evidence_artifact_basename="ev",
+        semantic_digest_sha256="e" * 64,
+        semantic_digest_prefix16="e" * 16,
     )
     v3 = rows[0]["sheetPrintRasterPrintContract_v3"]
     assert v3["fullRasterExportStatus"] == FULL_RASTER_RENDERER_STATUS_UNAVAILABLE
@@ -185,7 +204,9 @@ def test_manifest_embedded_contract_v3_full_raster_status_is_unavailable() -> No
 
 def test_contract_v3_round_trip_validate_passes() -> None:
     sh = SheetElem(
-        kind="sheet", id="sh1", name="Round-trip",
+        kind="sheet",
+        id="sh1",
+        name="Round-trip",
         titleblockParameters={"revisionCode": "RT1", "issueStatus": "issued"},
         viewportsMm=[
             {"viewportId": "va", "xMm": 10, "yMm": 20, "widthMm": 300, "heightMm": 200},
@@ -239,8 +260,11 @@ def test_fallback_token_consistent_across_manifest_contract_and_correlation() ->
     sh = SheetElem(kind="sheet", id="sh1", name="S1")
     doc = Document(revision=1, elements={"sh1": sh})
     rows = deterministic_sheet_evidence_manifest(
-        model_id=uuid4(), doc=doc, evidence_artifact_basename="ev",
-        semantic_digest_sha256="f" * 64, semantic_digest_prefix16="f" * 16,
+        model_id=uuid4(),
+        doc=doc,
+        evidence_artifact_basename="ev",
+        semantic_digest_sha256="f" * 64,
+        semantic_digest_prefix16="f" * 16,
     )
     mf = rows[0]["sheetExportArtifactManifest_v1"]
     by_name = {a["artifactName"]: a for a in mf["artifacts"]}

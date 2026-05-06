@@ -35,7 +35,9 @@ def _seeded_doc() -> Document:
             "lv1": LevelElem(kind="level", id="lv1", name="Level 1", elevationMm=0.0),
             "pv1": PlanViewElem(kind="plan_view", id="pv1", name="Level 1 Plan", levelId="lv1"),
             "sh1": SheetElem(kind="sheet", id="sh1", name="Sheet A"),
-            "vp1": ViewpointElem(kind="viewpoint", id="vp1", name="3D View", mode="orbit_3d", camera=camera),
+            "vp1": ViewpointElem(
+                kind="viewpoint", id="vp1", name="3D View", mode="orbit_3d", camera=camera
+            ),
             "sc1": SectionCutElem(
                 kind="section_cut",
                 id="sc1",

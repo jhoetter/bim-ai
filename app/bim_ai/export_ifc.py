@@ -160,7 +160,11 @@ def _space_programme_sample_from_ifc_model(model: Any, *, limit: int) -> list[di
             continue
         ref = bucket.get("Reference")
         ref_s = ref.strip() if isinstance(ref, str) else ""
-        sk = ref_s or str(getattr(sp, "Name", None) or "") or str(getattr(sp, "GlobalId", None) or "")
+        sk = (
+            ref_s
+            or str(getattr(sp, "Name", None) or "")
+            or str(getattr(sp, "GlobalId", None) or "")
+        )
         row: dict[str, Any] = {"programmeFields": chunk}
         if ref_s:
             row["reference"] = ref_s
@@ -257,14 +261,10 @@ def kernel_expected_ifc_emit_counts(doc: Document) -> dict[str, int]:
 
     wall_ids = {eid for eid, e in doc.elements.items() if isinstance(e, WallElem)}
     door_emit = sum(
-        1
-        for e in doc.elements.values()
-        if isinstance(e, DoorElem) and e.wall_id in wall_ids
+        1 for e in doc.elements.values() if isinstance(e, DoorElem) and e.wall_id in wall_ids
     )
     win_emit = sum(
-        1
-        for e in doc.elements.values()
-        if isinstance(e, WindowElem) and e.wall_id in wall_ids
+        1 for e in doc.elements.values() if isinstance(e, WindowElem) and e.wall_id in wall_ids
     )
     room_emit = sum(
         1
@@ -669,18 +669,28 @@ def inspect_kernel_ifc_semantics(
             "slabWithPsetSlabCommonReference": _count_pset_ref(list(slabs), "Pset_SlabCommon"),
             "spaceWithPsetSpaceCommonReference": _count_pset_ref(list(spaces), "Pset_SpaceCommon"),
             "doorWithPsetDoorCommonReference": _count_pset_ref(list(doors), "Pset_DoorCommon"),
-            "windowWithPsetWindowCommonReference": _count_pset_ref(list(windows), "Pset_WindowCommon"),
+            "windowWithPsetWindowCommonReference": _count_pset_ref(
+                list(windows), "Pset_WindowCommon"
+            ),
             "roofWithPsetRoofCommonReference": _count_pset_ref(list(roofs), "Pset_RoofCommon"),
             "stairWithPsetStairCommonReference": _count_pset_ref(list(stairs), "Pset_StairCommon"),
-            "siteWithPsetSiteCommonReference": _count_pset_ref(list(site_products), "Pset_SiteCommon"),
+            "siteWithPsetSiteCommonReference": _count_pset_ref(
+                list(site_products), "Pset_SiteCommon"
+            ),
         },
         "qtoLinkedProducts": {
             "IfcWall": _count_ifc_products_with_qto_template(list(walls), "Qto_WallBaseQuantities"),
             "IfcSlab": _count_ifc_products_with_qto_template(list(slabs), "Qto_SlabBaseQuantities"),
-            "IfcSpace": _count_ifc_products_with_qto_template(list(spaces), "Qto_SpaceBaseQuantities"),
+            "IfcSpace": _count_ifc_products_with_qto_template(
+                list(spaces), "Qto_SpaceBaseQuantities"
+            ),
             "IfcDoor": _count_ifc_products_with_qto_template(list(doors), "Qto_DoorBaseQuantities"),
-            "IfcWindow": _count_ifc_products_with_qto_template(list(windows), "Qto_WindowBaseQuantities"),
-            "IfcStair": _count_ifc_products_with_qto_template(list(stairs), "Qto_StairBaseQuantities"),
+            "IfcWindow": _count_ifc_products_with_qto_template(
+                list(windows), "Qto_WindowBaseQuantities"
+            ),
+            "IfcStair": _count_ifc_products_with_qto_template(
+                list(stairs), "Qto_StairBaseQuantities"
+            ),
         },
         "spaceProgrammeFields": {
             "ProgrammeCode": _count_space_programme("Pset_SpaceCommon", "ProgrammeCode"),
@@ -692,7 +702,9 @@ def inspect_kernel_ifc_semantics(
         "importScopeUnsupportedIfcProducts_v0": _import_scope_unsupported_ifc_products_v0(model),
         "siteExchangeEvidence_v0": build_site_exchange_evidence_v0(doc=doc, model=model),
         "materialLayerSetReadback_v0": kernel_ifc_material_layer_set_readback_v0(model, doc),
-        "propertySetCoverageEvidence_v0": build_kernel_ifc_property_set_coverage_evidence_v0(model, doc),
+        "propertySetCoverageEvidence_v0": build_kernel_ifc_property_set_coverage_evidence_v0(
+            model, doc
+        ),
         "propertySetCoverageExpansion_v1": build_ifc_property_set_coverage_expansion_v1(model),
     }
     if skip_counts:
@@ -1207,7 +1219,9 @@ def _slab_gap_reason_counts_v0(gaps: list[dict[str, Any]]) -> dict[str, int]:
     return dict(sorted(ctr.items()))
 
 
-def _sort_authoritative_replay_extraction_gaps_v0(gaps: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _sort_authoritative_replay_extraction_gaps_v0(
+    gaps: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
     """Stable ordering for replay skip / gap rows (reason, then GlobalId-bearing keys)."""
 
     def key_row(row: dict[str, Any]) -> tuple[str, str]:
@@ -1386,7 +1400,9 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
     wall_global_id_to_kernel_ref: dict[str, str] = {}
     walls_skipped_no_reference = 0
 
-    for wal in sorted(model.by_type("IfcWall") or [], key=lambda w: str(getattr(w, "GlobalId", None) or "")):
+    for wal in sorted(
+        model.by_type("IfcWall") or [], key=lambda w: str(getattr(w, "GlobalId", None) or "")
+    ):
         ps = ifc_elem_util.get_psets(wal)
         bucket = ps.get("Pset_WallCommon") or {}
         ref = bucket.get("Reference")
@@ -1398,14 +1414,21 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
         st_gid = _product_host_storey_global_id(wal)
         if not st_gid or st_gid not in storey_gid_to_level_id:
             extraction_gaps.append(
-                {"wallGlobalId": str(getattr(wal, "GlobalId", None) or ""), "reason": "missing_or_unknown_host_storey"}
+                {
+                    "wallGlobalId": str(getattr(wal, "GlobalId", None) or ""),
+                    "reason": "missing_or_unknown_host_storey",
+                }
             )
             continue
 
         geo = _kernel_wall_plan_geometry_mm(wal)
         if geo is None:
             extraction_gaps.append(
-                {"wallGlobalId": str(getattr(wal, "GlobalId", None) or ""), "kernelReference": ref_s, "reason": "wall_body_extrusion_unreadable"}
+                {
+                    "wallGlobalId": str(getattr(wal, "GlobalId", None) or ""),
+                    "kernelReference": ref_s,
+                    "reason": "wall_body_extrusion_unreadable",
+                }
             )
             continue
 
@@ -1431,7 +1454,9 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
     ids_roof_rows: list[dict[str, Any]] = []
     roofs_skipped_no_reference = 0
 
-    for rfl in sorted(model.by_type("IfcRoof") or [], key=lambda r: str(getattr(r, "GlobalId", None) or "")):
+    for rfl in sorted(
+        model.by_type("IfcRoof") or [], key=lambda r: str(getattr(r, "GlobalId", None) or "")
+    ):
         rf_gid = str(getattr(rfl, "GlobalId", None) or "")
         ps_rf = ifc_elem_util.get_psets(rfl)
         bucket_rf = ps_rf.get("Pset_RoofCommon") or {}
@@ -1439,7 +1464,9 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
         ref_s = ref_rf.strip() if isinstance(ref_rf, str) else ""
         if not ref_s:
             roofs_skipped_no_reference += 1
-            extraction_gaps.append({"roofGlobalId": rf_gid, "reason": "roof_missing_pset_reference"})
+            extraction_gaps.append(
+                {"roofGlobalId": rf_gid, "reason": "roof_missing_pset_reference"}
+            )
             continue
 
         st_gid_rf = _product_host_storey_global_id(rfl)
@@ -1506,7 +1533,9 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
     ids_stair_rows: list[dict[str, Any]] = []
     stairs_skipped_no_reference = 0
 
-    for sta in sorted(model.by_type("IfcStair") or [], key=lambda s: str(getattr(s, "GlobalId", None) or "")):
+    for sta in sorted(
+        model.by_type("IfcStair") or [], key=lambda s: str(getattr(s, "GlobalId", None) or "")
+    ):
         sta_gid = str(getattr(sta, "GlobalId", None) or "")
         ps_sta = ifc_elem_util.get_psets(sta)
         bucket_sta = ps_sta.get("Pset_StairCommon") or {}
@@ -1514,7 +1543,9 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
         ref_s = ref_sta.strip() if isinstance(ref_sta, str) else ""
         if not ref_s:
             stairs_skipped_no_reference += 1
-            extraction_gaps.append({"stairGlobalId": sta_gid, "reason": "stair_missing_pset_reference"})
+            extraction_gaps.append(
+                {"stairGlobalId": sta_gid, "reason": "stair_missing_pset_reference"}
+            )
             continue
 
         st_gid_hs = _product_host_storey_global_id(sta)
@@ -1593,11 +1624,13 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
     stair_cmds.sort(key=lambda c: str(c.get("id") or ""))
     ids_stair_rows.sort(key=lambda r: (r["identityReference"], r["ifcGlobalId"]))
 
-    door_cmds, win_cmds, kernel_door_skip, kernel_window_skip = build_wall_hosted_opening_replay_commands_v0(
-        model,
-        wall_global_id_to_kernel_ref=wall_global_id_to_kernel_ref,
-        storey_gid_to_elev_mm=storey_gid_to_elev_mm,
-        extraction_gaps=extraction_gaps,
+    door_cmds, win_cmds, kernel_door_skip, kernel_window_skip = (
+        build_wall_hosted_opening_replay_commands_v0(
+            model,
+            wall_global_id_to_kernel_ref=wall_global_id_to_kernel_ref,
+            storey_gid_to_elev_mm=storey_gid_to_elev_mm,
+            extraction_gaps=extraction_gaps,
+        )
     )
 
     slab_opening_cmds: list[dict[str, Any]] = []
@@ -1605,7 +1638,8 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
     wall_host_opening_skipped_v0 = 0
 
     for op in sorted(
-        model.by_type("IfcOpeningElement") or [], key=lambda o: str(getattr(o, "GlobalId", None) or "")
+        model.by_type("IfcOpeningElement") or [],
+        key=lambda o: str(getattr(o, "GlobalId", None) or ""),
     ):
         op_gid = str(getattr(op, "GlobalId", None) or "")
         _rel, host = _void_rel_and_host_for_opening(op, model)
@@ -1699,7 +1733,9 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
     slab_opening_cmds.sort(key=lambda c: str(c.get("id") or ""))
 
     skip_ctr: Counter[str] = Counter()
-    skip_ctr["IfcWall:wall_host_opening_handled_by_door_window_path_v0"] = wall_host_opening_skipped_v0
+    skip_ctr["IfcWall:wall_host_opening_handled_by_door_window_path_v0"] = (
+        wall_host_opening_skipped_v0
+    )
     for row in skip_detail_rows:
         hk = row.get("hostClass") if row.get("hostClass") is not None else "None"
         skip_ctr[f"{hk}:{row.get('reason')}"] += 1
@@ -1717,7 +1753,9 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
     ids_space_rows: list[dict[str, Any]] = []
     spaces_skipped_no_reference = 0
 
-    for spa in sorted(model.by_type("IfcSpace") or [], key=lambda s: str(getattr(s, "GlobalId", None) or "")):
+    for spa in sorted(
+        model.by_type("IfcSpace") or [], key=lambda s: str(getattr(s, "GlobalId", None) or "")
+    ):
         sp_gid = str(getattr(spa, "GlobalId", None) or "")
         ps_sp = ifc_elem_util.get_psets(spa)
         bucket_sp = ps_sp.get("Pset_SpaceCommon") or {}
@@ -1839,8 +1877,6 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
         "commands": merged_cmds,
         "extractionGaps": extraction_gaps,
     }
-
-
 
 
 def build_kernel_ifc_authoritative_replay_sketch_v0(step_text: str) -> dict[str, Any]:
@@ -1979,7 +2015,10 @@ def summarize_kernel_ifc_semantic_roundtrip(doc: Document) -> dict[str, Any]:
         "site": _tri(
             kinds_expected.get("site", 0),
             kinds_expected.get("site", 0)
-            if (inspection.get("siteExchangeEvidence_v0") or {}).get("kernelIdsMatchJoinedReference") is True
+            if (inspection.get("siteExchangeEvidence_v0") or {}).get(
+                "kernelIdsMatchJoinedReference"
+            )
+            is True
             else 0,
         ),
     }
@@ -1995,7 +2034,9 @@ def summarize_kernel_ifc_semantic_roundtrip(doc: Document) -> dict[str, Any]:
     all_qto_match = all(v["match"] for v in qto_coverage.values())
 
     all_pc_match = all(v["match"] for v in product_counts.values())
-    all_prog_match = all(v["match"] for v in programme_fields.values()) if programme_fields else True
+    all_prog_match = (
+        all(v["match"] for v in programme_fields.values()) if programme_fields else True
+    )
     all_id_match = all(v["match"] for v in identity_coverage.values())
 
     ml_ins = inspection.get("materialLayerSetReadback_v0")
@@ -2022,7 +2063,9 @@ def summarize_kernel_ifc_semantic_roundtrip(doc: Document) -> dict[str, Any]:
             "rowsWithGap": int(pcs.get("rowsWithGap") or 0),
             "idsGapReasonCounts": dict(pcs.get("idsGapReasonCounts") or {}),
             "allRowsGapFree": int(pcs.get("rowsWithGap") or 0) == 0,
-            "slabVoidOpeningsWithoutIdentityPset": int(pcs.get("slabVoidOpeningsWithoutIdentityPset") or 0),
+            "slabVoidOpeningsWithoutIdentityPset": int(
+                pcs.get("slabVoidOpeningsWithoutIdentityPset") or 0
+            ),
         }
 
     sketch_limit = 48
@@ -2037,9 +2080,15 @@ def summarize_kernel_ifc_semantic_roundtrip(doc: Document) -> dict[str, Any]:
         "qtoTemplatesFromIfc": qto_names_sk,
         "spaceProgrammeSampleFromIfc": _space_programme_sample_from_ifc_model(model, limit=8),
         "referenceIdsFromIfc": {
-            "IfcWall": _references_from_products(list(walls_m), "Pset_WallCommon", limit=sketch_limit),
-            "IfcSpace": _references_from_products(list(spaces_m), "Pset_SpaceCommon", limit=sketch_limit),
-            "IfcSite": _references_from_products(list(sites_m), "Pset_SiteCommon", limit=sketch_limit),
+            "IfcWall": _references_from_products(
+                list(walls_m), "Pset_WallCommon", limit=sketch_limit
+            ),
+            "IfcSpace": _references_from_products(
+                list(spaces_m), "Pset_SpaceCommon", limit=sketch_limit
+            ),
+            "IfcSite": _references_from_products(
+                list(sites_m), "Pset_SiteCommon", limit=sketch_limit
+            ),
         },
         "authoritativeReplay_v0": build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model),
     }
@@ -2105,7 +2154,8 @@ def build_ifc_import_preview_v0(step_text: str) -> dict[str, Any]:
             **_unavailable_base,
             "available": False,
             "reason": str(sketch.get("reason") or "sketch_unavailable"),
-            "unsupportedProducts": sketch.get("unsupportedIfcProducts") or {"schemaVersion": 0, "countsByClass": {}},
+            "unsupportedProducts": sketch.get("unsupportedIfcProducts")
+            or {"schemaVersion": 0, "countsByClass": {}},
             "safeApplyClassification": {
                 "authoritativeSliceSafeApply": False,
                 "notApplyReasons": [str(sketch.get("reason") or "sketch_unavailable")],
@@ -2138,7 +2188,10 @@ def build_ifc_import_preview_v0(step_text: str) -> dict[str, Any]:
     auth_subset: dict[str, Any] = sketch.get("authoritativeSubset") or {}
     authoritative_products = {k: bool(v) for k, v in sorted(auth_subset.items())}
 
-    unsupported: dict[str, Any] = sketch.get("unsupportedIfcProducts") or {"schemaVersion": 0, "countsByClass": {}}
+    unsupported: dict[str, Any] = sketch.get("unsupportedIfcProducts") or {
+        "schemaVersion": 0,
+        "countsByClass": {},
+    }
 
     # ID collision classes: command kinds whose replay IDs collide within the sketch itself
     # (duplicate Pset_*Common.Reference values extracted from the same STEP file).
@@ -2166,7 +2219,9 @@ def build_ifc_import_preview_v0(step_text: str) -> dict[str, Any]:
         "available": True,
         "spaces": {
             "rows": len(spaces_rows),
-            "withQtoSpaceBaseQuantitiesLinked": sum(1 for r in spaces_rows if r.get("qtoSpaceBaseQuantitiesLinked")),
+            "withQtoSpaceBaseQuantitiesLinked": sum(
+                1 for r in spaces_rows if r.get("qtoSpaceBaseQuantitiesLinked")
+            ),
         },
         "roofs": {
             "rows": len(roofs_rows),
@@ -2174,7 +2229,9 @@ def build_ifc_import_preview_v0(step_text: str) -> dict[str, Any]:
         },
         "floors": {
             "rows": len(floors_rows),
-            "withQtoSlabBaseQuantitiesLinked": sum(1 for r in floors_rows if r.get("qtoSlabBaseQuantitiesLinked")),
+            "withQtoSlabBaseQuantitiesLinked": sum(
+                1 for r in floors_rows if r.get("qtoSlabBaseQuantitiesLinked")
+            ),
         },
     }
 
@@ -2235,7 +2292,9 @@ def build_ifc_unsupported_merge_map_v0(step_text: str) -> dict[str, Any]:
 
     from bim_ai.ifc_stub import IFC_SEMANTIC_IMPORT_SCOPE_V0  # noqa: PLC0415
 
-    merge_constraints: list[str] = list(IFC_SEMANTIC_IMPORT_SCOPE_V0.get("importMergeUnsupported") or [])
+    merge_constraints: list[str] = list(
+        IFC_SEMANTIC_IMPORT_SCOPE_V0.get("importMergeUnsupported") or []
+    )
 
     if not IFC_AVAILABLE:
         return {
@@ -2250,7 +2309,10 @@ def build_ifc_unsupported_merge_map_v0(step_text: str) -> dict[str, Any]:
 
     sketch = build_kernel_ifc_authoritative_replay_sketch_v0(step_text)
 
-    unsupported_products: dict[str, Any] = sketch.get("unsupportedIfcProducts") or {"schemaVersion": 0, "countsByClass": {}}
+    unsupported_products: dict[str, Any] = sketch.get("unsupportedIfcProducts") or {
+        "schemaVersion": 0,
+        "countsByClass": {},
+    }
     extraction_gaps: list[dict[str, Any]] = [
         g for g in (sketch.get("extractionGaps") or []) if isinstance(g, dict)
     ]
@@ -2263,7 +2325,9 @@ def build_ifc_unsupported_merge_map_v0(step_text: str) -> dict[str, Any]:
     return {
         "schemaVersion": 0,
         "available": bool(sketch.get("available")),
-        "unsupportedIfcProductsByClass": dict(sorted((unsupported_products.get("countsByClass") or {}).items())),
+        "unsupportedIfcProductsByClass": dict(
+            sorted((unsupported_products.get("countsByClass") or {}).items())
+        ),
         "extractionGapsByReason": dict(sorted(gap_by_reason.items())),
         "extractionGapTotal": len(extraction_gaps),
         "mergeConstraints": merge_constraints,
@@ -2365,10 +2429,14 @@ def _vertical_span_m(doc: Document, rm: RoomElem, floor_elev_m: float) -> tuple[
 
     if rm.upper_limit_level_id:
         ceil_el = doc.elements.get(rm.upper_limit_level_id)
-        ceiling_z = ceil_el.elevation_mm / 1000.0 if isinstance(ceil_el, LevelElem) else floor_elev_m + 2.8
+        ceiling_z = (
+            ceil_el.elevation_mm / 1000.0 if isinstance(ceil_el, LevelElem) else floor_elev_m + 2.8
+        )
     else:
         ceiling_z = floor_elev_m + 2.8
-    offset = rm.volume_ceiling_offset_mm / 1000.0 if rm.volume_ceiling_offset_mm is not None else 0.0
+    offset = (
+        rm.volume_ceiling_offset_mm / 1000.0 if rm.volume_ceiling_offset_mm is not None else 0.0
+    )
     ceiling_z -= offset
     if ceiling_z < floor_elev_m + 1.0:
         ceiling_z = floor_elev_m + 2.2
@@ -2451,7 +2519,9 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
     slab_type_entities: dict[str, Any] = {}
     material_by_key_cache: dict[str, Any] = {}
 
-    def attach_kernel_identity_pset(product: Any, pset_name: str, reference: str, **props: Any) -> None:
+    def attach_kernel_identity_pset(
+        product: Any, pset_name: str, reference: str, **props: Any
+    ) -> None:
         try:
             from ifcopenshell.api.pset.add_pset import add_pset  # type: ignore import-not-found
             from ifcopenshell.api.pset.edit_pset import edit_pset  # type: ignore import-not-found
@@ -2464,7 +2534,9 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
 
         edit_pset(f, pset=pset, properties=merged)
 
-    kernel_site_ids_sorted = sorted(eid for eid, e in doc.elements.items() if isinstance(e, SiteElem))
+    kernel_site_ids_sorted = sorted(
+        eid for eid, e in doc.elements.items() if isinstance(e, SiteElem)
+    )
     if kernel_site_ids_sorted:
         first_site_el = doc.elements[kernel_site_ids_sorted[0]]
         assert isinstance(first_site_el, SiteElem)
@@ -2520,7 +2592,6 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         assert isinstance(fl, FloorElem)
         pts = [(p.x_mm, p.y_mm) for p in fl.boundary_mm]
         if len(pts) < 3:
-
             continue
         st_inst = storey_for(fl.level_id)
 
@@ -2620,7 +2691,6 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
 
         usable_t1 = 1.0 - half_t
         if usable_t1 <= usable_t0:
-
             return None
 
         ct = float(_clamp(along_t, usable_t0, usable_t1))
@@ -2656,7 +2726,6 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
 
         tsp = opening_t_extent(host_wall_ent, width_open, along_t)
         if tsp is None:
-
             return
         t_left, _tr = tsp
 
@@ -2664,8 +2733,12 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         oy_layer = float((thick_m_host - open_depth) / 2.0)
         oz = float(sill_offset_m)
 
-        opening = ifcopenshell.api.root.create_entity(f, ifc_class="IfcOpeningElement", name=f"op:{elem_name}")
-        rep_o = add_wall_representation(f, body_ctx, length=width_open, height=ih, thickness=open_depth)
+        opening = ifcopenshell.api.root.create_entity(
+            f, ifc_class="IfcOpeningElement", name=f"op:{elem_name}"
+        )
+        rep_o = add_wall_representation(
+            f, body_ctx, length=width_open, height=ih, thickness=open_depth
+        )
 
         assign_representation(f, opening, rep_o)
 
@@ -2686,11 +2759,8 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
             f,
             body_ctx,
             length=width_open,
-
             height=ih,
-
             thickness=max(panel_thickness, thick_m_host * 0.35),
-
         )
 
         assign_representation(f, filler, rep_f)
@@ -2748,20 +2818,13 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
             d.wall_id,
             wh,
             filling_class="IfcDoor",
-
             elem_name=d.name or elem_id,
-
             kernel_elem_id=elem_id,
-
             opening_width_mm=d.width_mm,
-
             along_t=d.along_t,
-
             open_height_m=dh,
-
             sill_offset_m=0.0,
             material_finish_key=d.material_key,
-
         )
 
     for elem_id in sorted(eid for eid, e in doc.elements.items() if isinstance(e, WindowElem)):
@@ -2786,16 +2849,12 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
             wh_wall,
             filling_class="IfcWindow",
             elem_name=zwin.name or elem_id,
-
             kernel_elem_id=elem_id,
-
             opening_width_mm=zwin.width_mm,
-
             along_t=zwin.along_t,
             open_height_m=wh_m,
             sill_offset_m=sill_z,
             material_finish_key=zwin.material_key,
-
         )
 
     for rid in sorted(eid for eid, e in doc.elements.items() if isinstance(e, RoomElem)):
@@ -2841,7 +2900,9 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
 
         ifcopenshell.api.aggregate.assign_object(f, products=[sp], relating_object=storey_sp)
         geo_products += 1
-        attach_kernel_identity_pset(sp, "Pset_SpaceCommon", rid, **_kernel_ifc_space_export_props(rm))
+        attach_kernel_identity_pset(
+            sp, "Pset_SpaceCommon", rid, **_kernel_ifc_space_export_props(rm)
+        )
         gross_area = _polygon_area_m2_xy_mm(pts_outline)
         net_perimeter = _polygon_perimeter_m_xy_mm(pts_outline)
         net_volume = float(gross_area) * float(prism_h_m)
@@ -2881,7 +2942,9 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
 
         op_profile.append(op_profile[0])
 
-        op_el = ifcopenshell.api.root.create_entity(f, ifc_class="IfcOpeningElement", name=f"op:{oid}")
+        op_el = ifcopenshell.api.root.create_entity(
+            f, ifc_class="IfcOpeningElement", name=f"op:{oid}"
+        )
 
         rep_op = add_slab_representation(f, body_ctx, depth=open_depth, polyline=op_profile)
 
@@ -2928,7 +2991,9 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         edit_object_placement(f, product=roof_ent, matrix=rmat)
         assign_representation(f, roof_ent, rep_rf)
         st_roof = storey_for(rf.reference_level_id)
-        ifcopenshell.api.spatial.assign_container(f, products=[roof_ent], relating_structure=st_roof)
+        ifcopenshell.api.spatial.assign_container(
+            f, products=[roof_ent], relating_structure=st_roof
+        )
         geo_products += 1
         attach_kernel_identity_pset(roof_ent, "Pset_RoofCommon", rid)
         rf_layers = resolved_layers_for_roof(doc, rf)
@@ -2960,11 +3025,17 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         elev_base = float(_elev_m(doc, st.base_level_id))
         width_m = float(_clamp(st.width_mm / 1000.0, 0.3, 4.0))
 
-        stair_ent = ifcopenshell.api.root.create_entity(f, ifc_class="IfcStair", name=st.name or sid)
-        rep_st = create_2pt_wall(f, stair_ent, body_ctx, (sx, sy), (ex, ey), elev_base, rise_m, width_m)
+        stair_ent = ifcopenshell.api.root.create_entity(
+            f, ifc_class="IfcStair", name=st.name or sid
+        )
+        rep_st = create_2pt_wall(
+            f, stair_ent, body_ctx, (sx, sy), (ex, ey), elev_base, rise_m, width_m
+        )
         assign_representation(f, stair_ent, rep_st)
         st_inst_st = storey_for(st.base_level_id)
-        ifcopenshell.api.spatial.assign_container(f, products=[stair_ent], relating_structure=st_inst_st)
+        ifcopenshell.api.spatial.assign_container(
+            f, products=[stair_ent], relating_structure=st_inst_st
+        )
         geo_products += 1
         attach_kernel_identity_pset(stair_ent, "Pset_StairCommon", sid)
         riser_mm_val = float(st.riser_mm) if st.riser_mm > 0 else 175.0
@@ -2983,8 +3054,6 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         )
 
     if geo_products == 0:
-
         return None, 0
 
     return f.wrapped_data.to_string(), geo_products
-

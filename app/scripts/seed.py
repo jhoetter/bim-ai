@@ -35,29 +35,29 @@ COMMENT_ID = uuid.uuid5(uuid.NAMESPACE_URL, "bim-ai:comment:demo-1")
 
 # ── Footprint helpers ────────────────────────────────────────────────────────
 _MAIN_FOOTPRINT = [
-    {"xMm": 0,    "yMm": 0},
+    {"xMm": 0, "yMm": 0},
     {"xMm": 7000, "yMm": 0},
     {"xMm": 7000, "yMm": 8000},
-    {"xMm": 0,    "yMm": 8000},
+    {"xMm": 0, "yMm": 8000},
 ]
 
 _ANNEX_FOOTPRINT = [
-    {"xMm": 7000,  "yMm": -500},
+    {"xMm": 7000, "yMm": -500},
     {"xMm": 11000, "yMm": -500},
     {"xMm": 11000, "yMm": 6000},
-    {"xMm": 7000,  "yMm": 6000},
+    {"xMm": 7000, "yMm": 6000},
 ]
 
 # Slab: main vol rectangular + annex tab that protrudes 500 mm south of y=0
 _GF_SLAB_FOOTPRINT = [
-    {"xMm": 0,     "yMm": 0},
-    {"xMm": 7000,  "yMm": 0},
-    {"xMm": 7000,  "yMm": -500},
+    {"xMm": 0, "yMm": 0},
+    {"xMm": 7000, "yMm": 0},
+    {"xMm": 7000, "yMm": -500},
     {"xMm": 11000, "yMm": -500},
     {"xMm": 11000, "yMm": 6000},
-    {"xMm": 7000,  "yMm": 6000},
-    {"xMm": 7000,  "yMm": 8000},
-    {"xMm": 0,     "yMm": 8000},
+    {"xMm": 7000, "yMm": 6000},
+    {"xMm": 7000, "yMm": 8000},
+    {"xMm": 0, "yMm": 8000},
 ]
 
 
@@ -75,30 +75,45 @@ def _house_commands() -> list[dict]:
 
     # ── Levels ──────────────────────────────────────────────────────────────
     cmds += [
-        {"type": "createLevel", "id": "lvl-1", "name": "Ground",      "elevationMm": 0},
-        {"type": "createLevel", "id": "lvl-2", "name": "Upper",       "elevationMm": 3000},
+        {"type": "createLevel", "id": "lvl-1", "name": "Ground", "elevationMm": 0},
+        {"type": "createLevel", "id": "lvl-2", "name": "Upper", "elevationMm": 3000},
         {"type": "createLevel", "id": "lvl-ann", "name": "Annex roof", "elevationMm": 3200},
     ]
 
     # ── Ground-floor exterior walls — main volume (h = 3000) ────────────────
     cmds += [
         {
-            "type": "createWall", "id": "w-s-main", "name": "South facade (main)",
+            "type": "createWall",
+            "id": "w-s-main",
+            "name": "South facade (main)",
             "levelId": "lvl-1",
-            "start": {"xMm": 0,    "yMm": 0}, "end": {"xMm": 7000, "yMm": 0},
-            "thicknessMm": 200, "heightMm": 3000, "materialKey": "white_cladding",
+            "start": {"xMm": 0, "yMm": 0},
+            "end": {"xMm": 7000, "yMm": 0},
+            "thicknessMm": 200,
+            "heightMm": 3000,
+            "materialKey": "white_cladding",
         },
         {
-            "type": "createWall", "id": "w-west", "name": "West facade",
+            "type": "createWall",
+            "id": "w-west",
+            "name": "West facade",
             "levelId": "lvl-1",
-            "start": {"xMm": 0, "yMm": 0}, "end": {"xMm": 0, "yMm": 8000},
-            "thicknessMm": 200, "heightMm": 3000, "materialKey": "white_cladding",
+            "start": {"xMm": 0, "yMm": 0},
+            "end": {"xMm": 0, "yMm": 8000},
+            "thicknessMm": 200,
+            "heightMm": 3000,
+            "materialKey": "white_cladding",
         },
         {
-            "type": "createWall", "id": "w-n-main", "name": "North facade (main)",
+            "type": "createWall",
+            "id": "w-n-main",
+            "name": "North facade (main)",
             "levelId": "lvl-1",
-            "start": {"xMm": 0, "yMm": 8000}, "end": {"xMm": 7000, "yMm": 8000},
-            "thicknessMm": 200, "heightMm": 3000, "materialKey": "white_cladding",
+            "start": {"xMm": 0, "yMm": 8000},
+            "end": {"xMm": 7000, "yMm": 8000},
+            "thicknessMm": 200,
+            "heightMm": 3000,
+            "materialKey": "white_cladding",
         },
     ]
 
@@ -106,29 +121,49 @@ def _house_commands() -> list[dict]:
     # Annex protrudes 500 mm south of the main volume south face (y=0).
     cmds += [
         {
-            "type": "createWall", "id": "w-s-ann", "name": "South facade (annex)",
+            "type": "createWall",
+            "id": "w-s-ann",
+            "name": "South facade (annex)",
             "levelId": "lvl-1",
-            "start": {"xMm": 7000, "yMm": -500}, "end": {"xMm": 11000, "yMm": -500},
-            "thicknessMm": 200, "heightMm": 3200, "materialKey": "white_render",
+            "start": {"xMm": 7000, "yMm": -500},
+            "end": {"xMm": 11000, "yMm": -500},
+            "thicknessMm": 200,
+            "heightMm": 3200,
+            "materialKey": "white_render",
         },
         {
             # Short return at the junction: connects main south face to annex south face.
-            "type": "createWall", "id": "w-ann-jct", "name": "Annex junction return",
+            "type": "createWall",
+            "id": "w-ann-jct",
+            "name": "Annex junction return",
             "levelId": "lvl-1",
-            "start": {"xMm": 7000, "yMm": 0}, "end": {"xMm": 7000, "yMm": -500},
-            "thicknessMm": 200, "heightMm": 3200, "materialKey": "white_render",
+            "start": {"xMm": 7000, "yMm": 0},
+            "end": {"xMm": 7000, "yMm": -500},
+            "thicknessMm": 200,
+            "heightMm": 3200,
+            "materialKey": "white_render",
         },
         {
-            "type": "createWall", "id": "w-east", "name": "East facade (annex)",
+            "type": "createWall",
+            "id": "w-east",
+            "name": "East facade (annex)",
             "levelId": "lvl-1",
-            "start": {"xMm": 11000, "yMm": -500}, "end": {"xMm": 11000, "yMm": 6000},
-            "thicknessMm": 200, "heightMm": 3200, "materialKey": "white_render",
+            "start": {"xMm": 11000, "yMm": -500},
+            "end": {"xMm": 11000, "yMm": 6000},
+            "thicknessMm": 200,
+            "heightMm": 3200,
+            "materialKey": "white_render",
         },
         {
-            "type": "createWall", "id": "w-n-ann", "name": "North facade (annex)",
+            "type": "createWall",
+            "id": "w-n-ann",
+            "name": "North facade (annex)",
             "levelId": "lvl-1",
-            "start": {"xMm": 11000, "yMm": 6000}, "end": {"xMm": 7000, "yMm": 6000},
-            "thicknessMm": 200, "heightMm": 3200, "materialKey": "white_render",
+            "start": {"xMm": 11000, "yMm": 6000},
+            "end": {"xMm": 7000, "yMm": 6000},
+            "thicknessMm": 200,
+            "heightMm": 3200,
+            "materialKey": "white_render",
         },
     ]
 
@@ -138,44 +173,74 @@ def _house_commands() -> list[dict]:
             # South gable face: full curtain-wall glazing + gable triangle glazing
             # roofAttachmentId signals the renderer to extend glass into the gable
             # triangle above the rectangular wall zone (eave → ridge).
-            "type": "createWall", "id": "wu-south", "name": "Upper south (curtain wall)",
+            "type": "createWall",
+            "id": "wu-south",
+            "name": "Upper south (curtain wall)",
             "levelId": "lvl-2",
-            "start": {"xMm": 0, "yMm": 0}, "end": {"xMm": 7000, "yMm": 0},
-            "thicknessMm": 200, "heightMm": 2800, "isCurtainWall": True,
+            "start": {"xMm": 0, "yMm": 0},
+            "end": {"xMm": 7000, "yMm": 0},
+            "thicknessMm": 200,
+            "heightMm": 2800,
+            "isCurtainWall": True,
             "roofAttachmentId": "roof-main",
         },
         {
-            "type": "createWall", "id": "wu-west", "name": "Upper west facade",
+            "type": "createWall",
+            "id": "wu-west",
+            "name": "Upper west facade",
             "levelId": "lvl-2",
-            "start": {"xMm": 0, "yMm": 0}, "end": {"xMm": 0, "yMm": 8000},
-            "thicknessMm": 200, "heightMm": 2800, "materialKey": "white_cladding",
+            "start": {"xMm": 0, "yMm": 0},
+            "end": {"xMm": 0, "yMm": 8000},
+            "thicknessMm": 200,
+            "heightMm": 2800,
+            "materialKey": "white_cladding",
         },
         {
-            "type": "createWall", "id": "wu-north", "name": "Upper north facade",
+            "type": "createWall",
+            "id": "wu-north",
+            "name": "Upper north facade",
             "levelId": "lvl-2",
-            "start": {"xMm": 0, "yMm": 8000}, "end": {"xMm": 7000, "yMm": 8000},
-            "thicknessMm": 200, "heightMm": 2800, "materialKey": "white_cladding",
+            "start": {"xMm": 0, "yMm": 8000},
+            "end": {"xMm": 7000, "yMm": 8000},
+            "thicknessMm": 200,
+            "heightMm": 2800,
+            "materialKey": "white_cladding",
         },
         {
             # East gable end wall — faces annex flat roof
-            "type": "createWall", "id": "wu-east", "name": "Upper east gable",
+            "type": "createWall",
+            "id": "wu-east",
+            "name": "Upper east gable",
             "levelId": "lvl-2",
-            "start": {"xMm": 7000, "yMm": 0}, "end": {"xMm": 7000, "yMm": 8000},
-            "thicknessMm": 200, "heightMm": 2800, "materialKey": "white_cladding",
+            "start": {"xMm": 7000, "yMm": 0},
+            "end": {"xMm": 7000, "yMm": 8000},
+            "thicknessMm": 200,
+            "heightMm": 2800,
+            "materialKey": "white_cladding",
         },
     ]
 
     # ── Floors ───────────────────────────────────────────────────────────────
     cmds += [
         {
-            "type": "createFloor", "id": "fl-gf", "name": "Ground slab",
-            "levelId": "lvl-1", "boundaryMm": _GF_SLAB_FOOTPRINT,
-            "thicknessMm": 200, "structureThicknessMm": 150, "finishThicknessMm": 50,
+            "type": "createFloor",
+            "id": "fl-gf",
+            "name": "Ground slab",
+            "levelId": "lvl-1",
+            "boundaryMm": _GF_SLAB_FOOTPRINT,
+            "thicknessMm": 200,
+            "structureThicknessMm": 150,
+            "finishThicknessMm": 50,
         },
         {
-            "type": "createFloor", "id": "fl-upper", "name": "Upper slab",
-            "levelId": "lvl-2", "boundaryMm": _MAIN_FOOTPRINT,
-            "thicknessMm": 220, "structureThicknessMm": 160, "finishThicknessMm": 60,
+            "type": "createFloor",
+            "id": "fl-upper",
+            "name": "Upper slab",
+            "levelId": "lvl-2",
+            "boundaryMm": _MAIN_FOOTPRINT,
+            "thicknessMm": 220,
+            "structureThicknessMm": 160,
+            "finishThicknessMm": 60,
         },
     ]
 
@@ -184,7 +249,9 @@ def _house_commands() -> list[dict]:
         {
             # Main gable: spanX=7000 < spanZ=8000 → ridge along Z (N–S) automatically
             # Gable triangles appear on south (y=0) and north (y=8000) faces.
-            "type": "createRoof", "id": "roof-main", "name": "Main gable roof",
+            "type": "createRoof",
+            "id": "roof-main",
+            "name": "Main gable roof",
             "referenceLevelId": "lvl-2",
             "footprintMm": _MAIN_FOOTPRINT,
             "overhangMm": 300,
@@ -194,7 +261,9 @@ def _house_commands() -> list[dict]:
         },
         {
             # Annex flat roof: mode=flat → 150mm slab at eaveY=3200mm, light grey.
-            "type": "createRoof", "id": "roof-ann", "name": "Annex flat roof",
+            "type": "createRoof",
+            "id": "roof-ann",
+            "name": "Annex flat roof",
             "referenceLevelId": "lvl-ann",
             "footprintMm": _ANNEX_FOOTPRINT,
             "overhangMm": 0,
@@ -203,25 +272,40 @@ def _house_commands() -> list[dict]:
     ]
 
     # ── Stair (east portion of main volume, runs east–west) ──────────────────
-    cmds.append({
-        "type": "createStair", "id": "stair-main", "name": "Main stair",
-        "baseLevelId": "lvl-1", "topLevelId": "lvl-2",
-        "runStartMm": {"xMm": 1500, "yMm": 1500},
-        "runEndMm":   {"xMm": 5500, "yMm": 1500},
-        "widthMm": 1000, "riserMm": 175, "treadMm": 257,
-    })
+    cmds.append(
+        {
+            "type": "createStair",
+            "id": "stair-main",
+            "name": "Main stair",
+            "baseLevelId": "lvl-1",
+            "topLevelId": "lvl-2",
+            "runStartMm": {"xMm": 1500, "yMm": 1500},
+            "runEndMm": {"xMm": 5500, "yMm": 1500},
+            "widthMm": 1000,
+            "riserMm": 175,
+            "treadMm": 257,
+        }
+    )
 
     # ── Doors ─────────────────────────────────────────────────────────────────
     cmds += [
         {
             # Main entrance on south facade, right-of-centre (near annex junction)
-            "type": "insertDoorOnWall", "id": "d-main", "name": "Main entrance",
-            "wallId": "w-s-main", "alongT": 0.78, "widthMm": 980,
+            "type": "insertDoorOnWall",
+            "id": "d-main",
+            "name": "Main entrance",
+            "wallId": "w-s-main",
+            "alongT": 0.78,
+            "widthMm": 980,
         },
         {
             # Annex entrance on south annex facade, right side (visible in reference)
-            "type": "insertDoorOnWall", "id": "d-ann", "name": "Annex entrance",
-            "wallId": "w-s-ann", "alongT": 0.78, "widthMm": 900,
+            "type": "insertDoorOnWall",
+            "id": "d-ann",
+            "name": "Annex entrance",
+            "wallId": "w-s-ann",
+            "alongT": 0.78,
+            "widthMm": 900,
         },
     ]
 
@@ -229,20 +313,35 @@ def _house_commands() -> list[dict]:
     cmds += [
         {
             # Two tall narrow windows on south facade (portrait, near left)
-            "type": "insertWindowOnWall", "id": "win-s1", "name": "South window 1",
-            "wallId": "w-s-main", "alongT": 0.14,
-            "widthMm": 850, "heightMm": 2100, "sillHeightMm": 100,
+            "type": "insertWindowOnWall",
+            "id": "win-s1",
+            "name": "South window 1",
+            "wallId": "w-s-main",
+            "alongT": 0.14,
+            "widthMm": 850,
+            "heightMm": 2100,
+            "sillHeightMm": 100,
         },
         {
-            "type": "insertWindowOnWall", "id": "win-s2", "name": "South window 2",
-            "wallId": "w-s-main", "alongT": 0.36,
-            "widthMm": 850, "heightMm": 2100, "sillHeightMm": 100,
+            "type": "insertWindowOnWall",
+            "id": "win-s2",
+            "name": "South window 2",
+            "wallId": "w-s-main",
+            "alongT": 0.36,
+            "widthMm": 850,
+            "heightMm": 2100,
+            "sillHeightMm": 100,
         },
         {
             # Square window on east (annex) facade — spec: ≈750 mm sq, sill ≈1400 mm.
-            "type": "insertWindowOnWall", "id": "win-ann-e", "name": "Annex east window",
-            "wallId": "w-east", "alongT": 0.42,
-            "widthMm": 750, "heightMm": 750, "sillHeightMm": 1400,
+            "type": "insertWindowOnWall",
+            "id": "win-ann-e",
+            "name": "Annex east window",
+            "wallId": "w-east",
+            "alongT": 0.42,
+            "widthMm": 750,
+            "heightMm": 750,
+            "sillHeightMm": 1400,
         },
     ]
 
@@ -252,101 +351,132 @@ def _house_commands() -> list[dict]:
             # Small window on upper east gable wall (looks out over annex roof)
             # Spec: ≈1100 mm wide × 1000 mm tall, sill 900 mm, ≈2000 mm from south end.
             # wu-east runs y=0→8000; alongT=0.25 → 2000 mm from south.
-            "type": "insertWindowOnWall", "id": "win-ue", "name": "Upper east window",
-            "wallId": "wu-east", "alongT": 0.25,
-            "widthMm": 1100, "heightMm": 1000, "sillHeightMm": 900,
+            "type": "insertWindowOnWall",
+            "id": "win-ue",
+            "name": "Upper east window",
+            "wallId": "wu-east",
+            "alongT": 0.25,
+            "widthMm": 1100,
+            "heightMm": 1000,
+            "sillHeightMm": 900,
         },
     ]
 
     # ── Balcony ───────────────────────────────────────────────────────────────
     # Full-width slab + glass balustrade at the upper-floor junction on the south
     # curtain-wall face, projecting 650 mm southward.
-    cmds.append({
-        "type": "createBalcony", "id": "balcony-south", "name": "South balcony",
-        "wallId": "wu-south",
-        "elevationMm": 3000,
-        "projectionMm": 650,
-        "slabThicknessMm": 150,
-        "balustradeHeightMm": 1050,
-    })
+    cmds.append(
+        {
+            "type": "createBalcony",
+            "id": "balcony-south",
+            "name": "South balcony",
+            "wallId": "wu-south",
+            "elevationMm": 3000,
+            "projectionMm": 650,
+            "slabThicknessMm": 150,
+            "balustradeHeightMm": 1050,
+        }
+    )
 
     # ── Stair railing ─────────────────────────────────────────────────────────
-    cmds.append({
-        "type": "createRailing", "id": "railing-stair", "name": "Stair railing",
-        "hostedStairId": "stair-main",
-        "pathMm": [{"xMm": 1500, "yMm": 600}, {"xMm": 5500, "yMm": 600}],
-        "guardHeightMm": 1000,
-    })
+    cmds.append(
+        {
+            "type": "createRailing",
+            "id": "railing-stair",
+            "name": "Stair railing",
+            "hostedStairId": "stair-main",
+            "pathMm": [{"xMm": 1500, "yMm": 600}, {"xMm": 5500, "yMm": 600}],
+            "guardHeightMm": 1000,
+        }
+    )
 
     # ── Rooms ─────────────────────────────────────────────────────────────────
     cmds += [
         {
-            "type": "createRoomOutline", "id": "room-living", "name": "Living / dining",
+            "type": "createRoomOutline",
+            "id": "room-living",
+            "name": "Living / dining",
             "levelId": "lvl-1",
             "outlineMm": [
-                {"xMm": 200,  "yMm": 200},
+                {"xMm": 200, "yMm": 200},
                 {"xMm": 6800, "yMm": 200},
                 {"xMm": 6800, "yMm": 7800},
-                {"xMm": 200,  "yMm": 7800},
+                {"xMm": 200, "yMm": 7800},
             ],
         },
         {
-            "type": "createRoomOutline", "id": "room-annex", "name": "Annex — utility / garage",
+            "type": "createRoomOutline",
+            "id": "room-annex",
+            "name": "Annex — utility / garage",
             "levelId": "lvl-1",
             "outlineMm": [
-                {"xMm": 7200,  "yMm": 200},
+                {"xMm": 7200, "yMm": 200},
                 {"xMm": 10800, "yMm": 200},
                 {"xMm": 10800, "yMm": 5800},
-                {"xMm": 7200,  "yMm": 5800},
+                {"xMm": 7200, "yMm": 5800},
             ],
         },
         {
-            "type": "createRoomOutline", "id": "room-upper", "name": "Open upper floor",
+            "type": "createRoomOutline",
+            "id": "room-upper",
+            "name": "Open upper floor",
             "levelId": "lvl-2",
             "outlineMm": [
-                {"xMm": 200,  "yMm": 200},
+                {"xMm": 200, "yMm": 200},
                 {"xMm": 6800, "yMm": 200},
                 {"xMm": 6800, "yMm": 7800},
-                {"xMm": 200,  "yMm": 7800},
+                {"xMm": 200, "yMm": 7800},
             ],
         },
     ]
 
     # ── Site pad ──────────────────────────────────────────────────────────────
-    cmds.append({
-        "type": "upsertSite", "id": "site-main", "name": "Site",
-        "referenceLevelId": "lvl-1",
-        "boundaryMm": [
-            {"xMm": -3000, "yMm": -3000},
-            {"xMm": 14000, "yMm": -3000},
-            {"xMm": 14000, "yMm": 11000},
-            {"xMm": -3000, "yMm": 11000},
-        ],
-        "padThicknessMm": 300,
-        "baseOffsetMm": 0,
-    })
+    cmds.append(
+        {
+            "type": "upsertSite",
+            "id": "site-main",
+            "name": "Site",
+            "referenceLevelId": "lvl-1",
+            "boundaryMm": [
+                {"xMm": -3000, "yMm": -3000},
+                {"xMm": 14000, "yMm": -3000},
+                {"xMm": 14000, "yMm": 11000},
+                {"xMm": -3000, "yMm": 11000},
+            ],
+            "padThicknessMm": 300,
+            "baseOffsetMm": 0,
+        }
+    )
 
     # ── Section cut (E–W through main volume) ─────────────────────────────────
-    cmds.append({
-        "type": "createSectionCut", "id": "sec-ew", "name": "Section A–A",
-        "lineStartMm": {"xMm": 3500, "yMm": -1000},
-        "lineEndMm":   {"xMm": 3500, "yMm": 9000},
-        "cropDepthMm": 5000,
-    })
+    cmds.append(
+        {
+            "type": "createSectionCut",
+            "id": "sec-ew",
+            "name": "Section A–A",
+            "lineStartMm": {"xMm": 3500, "yMm": -1000},
+            "lineEndMm": {"xMm": 3500, "yMm": 9000},
+            "cropDepthMm": 5000,
+        }
+    )
 
     # ── Dimensions ────────────────────────────────────────────────────────────
     cmds += [
         {
-            "type": "createDimension", "id": "dim-width", "name": "Main width",
+            "type": "createDimension",
+            "id": "dim-width",
+            "name": "Main width",
             "levelId": "lvl-1",
-            "aMm": {"xMm": 0,    "yMm": -1200},
+            "aMm": {"xMm": 0, "yMm": -1200},
             "bMm": {"xMm": 7000, "yMm": -1200},
             "offsetMm": {"xMm": 0, "yMm": 600},
         },
         {
-            "type": "createDimension", "id": "dim-total", "name": "Total width",
+            "type": "createDimension",
+            "id": "dim-total",
+            "name": "Total width",
             "levelId": "lvl-1",
-            "aMm": {"xMm": 0,     "yMm": -2000},
+            "aMm": {"xMm": 0, "yMm": -2000},
             "bMm": {"xMm": 11000, "yMm": -2000},
             "offsetMm": {"xMm": 0, "yMm": 600},
         },
@@ -360,22 +490,26 @@ def _house_commands() -> list[dict]:
             # Primary sketch view — SSW, ~25° west of due south, elevation ~30°.
             # From this angle: south gable face dominates, annex (east) appears
             # to the right, west face visible as thin left edge — matches sketch.
-            "type": "saveViewpoint", "id": "vp-ssw", "name": "SSW iso (sketch view)",
+            "type": "saveViewpoint",
+            "id": "vp-ssw",
+            "name": "SSW iso (sketch view)",
             "mode": "orbit_3d",
             "camera": {
                 "position": {"xMm": -5000, "yMm": -14000, "zMm": 11000},
-                "target":   {"xMm": 4000,  "yMm": 4000,   "zMm": 3500},
-                "up":       {"xMm": 0,     "yMm": 0,      "zMm": 1},
+                "target": {"xMm": 4000, "yMm": 4000, "zMm": 3500},
+                "up": {"xMm": 0, "yMm": 0, "zMm": 1},
             },
         },
         {
             # Secondary — south-east iso (annex on left, useful for east-side views)
-            "type": "saveViewpoint", "id": "vp-se", "name": "SE iso",
+            "type": "saveViewpoint",
+            "id": "vp-se",
+            "name": "SE iso",
             "mode": "orbit_3d",
             "camera": {
                 "position": {"xMm": 18000, "yMm": -8000, "zMm": 13000},
-                "target":   {"xMm": 5000,  "yMm": 4000,  "zMm": 4000},
-                "up":       {"xMm": 0,     "yMm": 0,     "zMm": 1},
+                "target": {"xMm": 5000, "yMm": 4000, "zMm": 4000},
+                "up": {"xMm": 0, "yMm": 0, "zMm": 1},
             },
         },
     ]

@@ -291,7 +291,9 @@ class TestUpdatePlanViewRange:
         _add_plan_view(doc)
         apply_inplace(
             doc,
-            UpdatePlanViewRangeCmd(planViewId="pv", viewRangeBottomMm=-300.0, viewRangeTopMm=3200.0),
+            UpdatePlanViewRangeCmd(
+                planViewId="pv", viewRangeBottomMm=-300.0, viewRangeTopMm=3200.0
+            ),
         )
         apply_inplace(
             doc,
@@ -319,13 +321,17 @@ class TestUpdatePlanViewRange:
         )
         apply_inplace(
             doc,
-            UpdatePlanViewRangeCmd(planViewId="pv", viewRangeBottomMm=-500.0, viewRangeTopMm=3200.0),
+            UpdatePlanViewRangeCmd(
+                planViewId="pv", viewRangeBottomMm=-500.0, viewRangeTopMm=3200.0
+            ),
         )
         wire_in_range = resolve_plan_projection_wire(doc, plan_view_id="pv", fallback_level_id="lv")
         count_in_range = wire_in_range.get("visibleElementEligibleCount", 0)
         apply_inplace(
             doc,
-            UpdatePlanViewRangeCmd(planViewId="pv", viewRangeBottomMm=5000.0, viewRangeTopMm=9000.0),
+            UpdatePlanViewRangeCmd(
+                planViewId="pv", viewRangeBottomMm=5000.0, viewRangeTopMm=9000.0
+            ),
         )
         wire_above = resolve_plan_projection_wire(doc, plan_view_id="pv", fallback_level_id="lv")
         count_above = wire_above.get("visibleElementEligibleCount", 0)

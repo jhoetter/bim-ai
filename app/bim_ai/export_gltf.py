@@ -143,8 +143,7 @@ def build_gltf_export_manifest_closure_v1(
     """
     emitted_set = set(mesh_enc.split("+"))
     parity_blob = {
-        k: payload.get(k)
-        for k in ("elementCount", "countsByKind", "exportedGeometryKinds")
+        k: payload.get(k) for k in ("elementCount", "countsByKind", "exportedGeometryKinds")
     }
 
     extension_tokens: list[str] = []
@@ -158,7 +157,12 @@ def build_gltf_export_manifest_closure_v1(
             extension_tokens.append(token)
             extension_digests[token] = digest
             presence_matrix.append(
-                {"token": token, "status": "emitted", "digestSha256": digest, "skipReasonCode": None}
+                {
+                    "token": token,
+                    "status": "emitted",
+                    "digestSha256": digest,
+                    "skipReasonCode": None,
+                }
             )
         else:
             presence_matrix.append(
@@ -447,9 +451,7 @@ def site_context_manifest_evidence_v0(doc: Document) -> dict[str, Any] | None:
 def collect_saved_3d_view_clip_evidence_v1(doc: Document) -> dict[str, Any] | None:
     """Deterministic section box / clip evidence for all saved orbit_3d viewpoints (WP-E02/WP-X02)."""
     views = [
-        e
-        for e in doc.elements.values()
-        if isinstance(e, ViewpointElem) and e.mode == "orbit_3d"
+        e for e in doc.elements.values() if isinstance(e, ViewpointElem) and e.mode == "orbit_3d"
     ]
     if not views:
         return None
@@ -459,8 +461,7 @@ def collect_saved_3d_view_clip_evidence_v1(doc: Document) -> dict[str, Any] | No
             "viewId": vp.id,
             "viewName": vp.name,
             "clipEnabled": (
-                vp.viewer_clip_cap_elev_mm is not None
-                or vp.viewer_clip_floor_elev_mm is not None
+                vp.viewer_clip_cap_elev_mm is not None or vp.viewer_clip_floor_elev_mm is not None
             ),
             "viewerClipCapElevMm": vp.viewer_clip_cap_elev_mm,
             "viewerClipFloorElevMm": vp.viewer_clip_floor_elev_mm,
@@ -878,7 +879,9 @@ def _collect_site_pad_visuals(doc: Document) -> list[_SitePadVisual]:
     return out
 
 
-def _interleaved_position_min_max(interleaved: bytes, vcount: int) -> tuple[list[float], list[float]]:
+def _interleaved_position_min_max(
+    interleaved: bytes, vcount: int
+) -> tuple[list[float], list[float]]:
     mn = [math.inf, math.inf, math.inf]
     mx = [-math.inf, -math.inf, -math.inf]
     for i in range(vcount):
@@ -1002,7 +1005,15 @@ def _collect_geom_boxes(doc: Document) -> list[_GeomBox]:
         elev_base = _elev_m(doc, st.base_level_id)
         yaw_stair = math.atan2(dx, dz)
         boxes.append(
-            _GeomBox("stair", sid, (sx + dx * 0.5, elev_base + rise / 2.0, sz + dz * 0.5), yaw_stair, length / 2.0, rise / 2.0, width / 2.0)
+            _GeomBox(
+                "stair",
+                sid,
+                (sx + dx * 0.5, elev_base + rise / 2.0, sz + dz * 0.5),
+                yaw_stair,
+                length / 2.0,
+                rise / 2.0,
+                width / 2.0,
+            )
         )
 
     for did in sorted(eid for eid, e in doc.elements.items() if isinstance(e, DoorElem)):
@@ -1018,7 +1029,9 @@ def _collect_geom_boxes(doc: Document) -> list[_GeomBox]:
         depth = _clamp(wall.thickness_mm / 1000.0 + 0.08, 0.08, 2.0)
         yaw = _wall_yaw(wall)
         hy = height / 2.0
-        boxes.append(_GeomBox("door", did, (px, elev + hy, pz), yaw, width_d / 2.0, hy, depth / 2.0))
+        boxes.append(
+            _GeomBox("door", did, (px, elev + hy, pz), yaw, width_d / 2.0, hy, depth / 2.0)
+        )
 
     for zid in sorted(eid for eid, e in doc.elements.items() if isinstance(e, WindowElem)):
         win = doc.elements[zid]
@@ -1037,7 +1050,17 @@ def _collect_geom_boxes(doc: Document) -> list[_GeomBox]:
         width_w = _clamp(win.width_mm / 1000.0, 0.14, 4.0)
         depth = _clamp(wall.thickness_mm / 1000.0 + 0.02, 0.06, 1.5)
         yaw = _wall_yaw(wall)
-        boxes.append(_GeomBox("window", zid, (px, elev + sill + h_win / 2.0, pz), yaw, width_w / 2.0, h_win / 2.0, depth / 2.0))
+        boxes.append(
+            _GeomBox(
+                "window",
+                zid,
+                (px, elev + sill + h_win / 2.0, pz),
+                yaw,
+                width_w / 2.0,
+                h_win / 2.0,
+                depth / 2.0,
+            )
+        )
 
     for rm_id in sorted(eid for eid, e in doc.elements.items() if isinstance(e, RoomElem)):
         rm = doc.elements[rm_id]
@@ -1051,7 +1074,9 @@ def _collect_geom_boxes(doc: Document) -> list[_GeomBox]:
         ty = elev + slab_half + 1e-6
         hx = (span_x / 1000.0) / 2.0
         hz = (span_z / 1000.0) / 2.0
-        boxes.append(_GeomBox("room", rm_id, (cx_mm / 1000.0, ty, cz_mm / 1000.0), 0.0, hx, slab_half, hz))
+        boxes.append(
+            _GeomBox("room", rm_id, (cx_mm / 1000.0, ty, cz_mm / 1000.0), 0.0, hx, slab_half, hz)
+        )
 
     for site_id in sorted(eid for eid, e in doc.elements.items() if isinstance(e, SiteElem)):
         site = doc.elements[site_id]
@@ -1269,7 +1294,15 @@ def _document_to_gltf_tree_and_bins(doc: Document) -> tuple[dict[str, Any], byte
         bins.extend(vbytes)
 
         vtx_bvi = len(buffer_views)
-        buffer_views.append({"buffer": 0, "byteOffset": vtx_off, "byteLength": len(vbytes), "byteStride": 24, "target": 34962})
+        buffer_views.append(
+            {
+                "buffer": 0,
+                "byteOffset": vtx_off,
+                "byteLength": len(vbytes),
+                "byteStride": 24,
+                "target": 34962,
+            }
+        )
 
         acc_pos = len(accessors)
         accessors.append(

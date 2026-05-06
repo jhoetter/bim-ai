@@ -40,7 +40,9 @@ def test_cross_correlation_manifest_digest_is_sha256() -> None:
 def test_cross_correlation_manifest_digest_stable_across_calls() -> None:
     a = build_prd_closeout_cross_correlation_manifest_v1()
     b = build_prd_closeout_cross_correlation_manifest_v1()
-    assert a["prdCloseoutCrossCorrelationDigestSha256"] == b["prdCloseoutCrossCorrelationDigestSha256"]
+    assert (
+        a["prdCloseoutCrossCorrelationDigestSha256"] == b["prdCloseoutCrossCorrelationDigestSha256"]
+    )
 
 
 # ── Row shape ─────────────────────────────────────────────────────────────────
@@ -68,7 +70,9 @@ def test_every_row_has_required_fields() -> None:
         assert "readinessGateIds" in row, f"{sid}: missing readinessGateIds"
         assert isinstance(row["readinessGateIds"], list), f"{sid}: readinessGateIds must be list"
         assert "traceabilityTestIds" in row, f"{sid}: missing traceabilityTestIds"
-        assert isinstance(row["traceabilityTestIds"], list), f"{sid}: traceabilityTestIds must be list"
+        assert isinstance(row["traceabilityTestIds"], list), (
+            f"{sid}: traceabilityTestIds must be list"
+        )
         assert "crossCorrelationToken" in row, f"{sid}: missing crossCorrelationToken"
 
 
@@ -81,7 +85,9 @@ def test_rows_sorted_by_prd_section_id() -> None:
 def test_row_prd_section_ids_are_unique() -> None:
     m = build_prd_closeout_cross_correlation_manifest_v1()
     ids = [r["prdSectionId"] for r in m["rows"]]
-    assert len(ids) == len(set(ids)), f"Duplicate prdSectionIds: {[x for x in ids if ids.count(x) > 1]}"
+    assert len(ids) == len(set(ids)), (
+        f"Duplicate prdSectionIds: {[x for x in ids if ids.count(x) > 1]}"
+    )
 
 
 # ── Token validation ──────────────────────────────────────────────────────────
@@ -100,9 +106,7 @@ def test_every_row_has_valid_cross_correlation_token() -> None:
 def test_token_counts_sum_to_total_rows() -> None:
     m = build_prd_closeout_cross_correlation_manifest_v1()
     total = sum(m["tokenCounts"].values())
-    assert total == len(m["rows"]), (
-        f"tokenCounts sum {total} != len(rows) {len(m['rows'])}"
-    )
+    assert total == len(m["rows"]), f"tokenCounts sum {total} != len(rows) {len(m['rows'])}"
 
 
 def test_manifest_has_at_least_one_aligned_row() -> None:
@@ -172,9 +176,7 @@ def test_aligned_rows_have_specific_readiness_gate_ids() -> None:
 def test_advisory_findings_identify_prd_section_ids() -> None:
     m = build_prd_closeout_cross_correlation_manifest_v1()
     for finding in m["advisoryFindings"]:
-        assert finding.get("prdSectionId"), (
-            f"Advisory finding must have prdSectionId: {finding!r}"
-        )
+        assert finding.get("prdSectionId"), f"Advisory finding must have prdSectionId: {finding!r}"
         assert finding.get("ruleId"), f"Advisory finding must have ruleId: {finding!r}"
         assert finding.get("message"), f"Advisory finding must have message: {finding!r}"
 
@@ -194,9 +196,7 @@ def test_advisory_findings_have_valid_rule_ids() -> None:
 
 def test_reason_code_drift_findings_fire_for_deferred_sections() -> None:
     m = build_prd_closeout_cross_correlation_manifest_v1()
-    deferred_ids = {
-        r["prdSectionId"] for r in m["rows"] if r["advisorMatrixStatus"] == "deferred"
-    }
+    deferred_ids = {r["prdSectionId"] for r in m["rows"] if r["advisorMatrixStatus"] == "deferred"}
     drift_finding_ids = {
         f["prdSectionId"]
         for f in m["advisoryFindings"]
@@ -266,9 +266,10 @@ def test_cross_correlation_manifest_in_readiness_matches_standalone() -> None:
     readiness = build_v1_closeout_readiness_manifest_v1()
     embedded = readiness["prdCloseoutCrossCorrelationManifest_v1"]
     standalone = build_prd_closeout_cross_correlation_manifest_v1()
-    assert embedded["prdCloseoutCrossCorrelationDigestSha256"] == standalone[
-        "prdCloseoutCrossCorrelationDigestSha256"
-    ], "Embedded and standalone cross-correlation digest must match"
+    assert (
+        embedded["prdCloseoutCrossCorrelationDigestSha256"]
+        == standalone["prdCloseoutCrossCorrelationDigestSha256"]
+    ), "Embedded and standalone cross-correlation digest must match"
 
 
 # ── Known specific sections ───────────────────────────────────────────────────

@@ -1,4 +1,5 @@
 """Pure-Python helper for summarising a CI gate run — no subprocess execution."""
+
 from __future__ import annotations
 
 import hashlib

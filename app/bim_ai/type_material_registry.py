@@ -62,8 +62,14 @@ def builtin_type_material_registry() -> dict[str, Any]:
             {"materialKey": "mat-gwb-finish-v1", "displayName": "Gypsum board finish"},
             {"materialKey": "mat-epoxy-cleanroom-v1", "displayName": "Epoxy cleanroom flooring"},
             {"materialKey": "mat-osb-roof-deck-v1", "displayName": "OSB structural deck"},
-            {"materialKey": "mat-insulation-roof-board-v1", "displayName": "Rigid insulation board"},
-            {"materialKey": "mat-membrane-roof-single-ply-v1", "displayName": "Roof membrane (single-ply)"},
+            {
+                "materialKey": "mat-insulation-roof-board-v1",
+                "displayName": "Rigid insulation board",
+            },
+            {
+                "materialKey": "mat-membrane-roof-single-ply-v1",
+                "displayName": "Roof membrane (single-ply)",
+            },
         ],
     }
 

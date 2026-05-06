@@ -29,7 +29,9 @@ from bim_ai.prd_tracker_reconciliation_v1 import (
     parse_tracker_workpackages_v1,
 )
 
-_TRACKER_PATH = Path(__file__).resolve().parents[2] / "spec" / "revit-production-parity-workpackage-tracker.md"
+_TRACKER_PATH = (
+    Path(__file__).resolve().parents[2] / "spec" / "revit-production-parity-workpackage-tracker.md"
+)
 pytestmark = pytest.mark.skipif(
     not _TRACKER_PATH.exists(),
     reason="spec/revit-production-parity-workpackage-tracker.md was deleted (superseded by workpackage-master-tracker.md)",
@@ -72,9 +74,7 @@ def test_manifest_digest_is_sha256() -> None:
 def test_manifest_digest_stable_across_calls() -> None:
     a = build_prd_tracker_reconciliation_manifest_v1()
     b = build_prd_tracker_reconciliation_manifest_v1()
-    assert (
-        a["prdTrackerReconciliationDigestSha256"] == b["prdTrackerReconciliationDigestSha256"]
-    )
+    assert a["prdTrackerReconciliationDigestSha256"] == b["prdTrackerReconciliationDigestSha256"]
 
 
 # ── Schema shape ──────────────────────────────────────────────────────────────
@@ -183,14 +183,11 @@ def test_required_sections_have_workpackage_or_deferred() -> None:
             continue
         coverage = row["coverage"]
         if coverage == "orphan":
-            failures.append(
-                f"{sid!r}: coverage=orphan (no workpackages and not deferred)"
-            )
+            failures.append(f"{sid!r}: coverage=orphan (no workpackages and not deferred)")
 
     assert not failures, (
         "Required PRD sections (§5/§6/§7/§8/§9/§11/§12/§13/§15) must have "
-        "at least one workpackage or deferred coverage:\n"
-        + "\n".join(failures)
+        "at least one workpackage or deferred coverage:\n" + "\n".join(failures)
     )
 
 
@@ -222,9 +219,7 @@ def test_every_tracker_wp_is_in_mapping_or_stale() -> None:
         if row.id not in all_mapped_wp_ids and row.id not in stale_ids:
             unaccounted.append(row.id)
 
-    assert not unaccounted, (
-        f"Tracker WP IDs not in mapping or staleTrackerRows: {unaccounted}"
-    )
+    assert not unaccounted, f"Tracker WP IDs not in mapping or staleTrackerRows: {unaccounted}"
 
 
 def test_stale_tracker_rows_sorted_by_workpackage_id() -> None:
@@ -297,10 +292,7 @@ def test_parse_tracker_workpackages_states_are_valid() -> None:
 def test_parse_prd_anchors_from_minimal_fixture(tmp_path: pytest.FixtureDef) -> None:
     prd = tmp_path / "prd.md"  # type: ignore[arg-type]
     prd.write_text(
-        "# PRD\n"
-        "## 5. Screenshot Requirements\n"
-        "### 5.1 R1 — Exterior View\n"
-        "## 6. Model Kernel\n",
+        "# PRD\n## 5. Screenshot Requirements\n### 5.1 R1 — Exterior View\n## 6. Model Kernel\n",
         encoding="utf-8",
     )
     anchors = parse_prd_section_anchors_v1(prd)
@@ -340,14 +332,10 @@ def test_mapping_has_entries_for_required_section_prefixes() -> None:
 
 def test_mapping_values_are_non_empty_lists() -> None:
     for sid, wp_list in _PRD_TO_WORKPACKAGES.items():
-        assert isinstance(wp_list, list) and wp_list, (
-            f"mapping[{sid!r}] must be a non-empty list"
-        )
+        assert isinstance(wp_list, list) and wp_list, f"mapping[{sid!r}] must be a non-empty list"
 
 
 def test_mapping_wp_ids_start_with_wp_prefix() -> None:
     for sid, wp_list in _PRD_TO_WORKPACKAGES.items():
         for wp_id in wp_list:
-            assert wp_id.startswith("WP-"), (
-                f"mapping[{sid!r}] contains non-WP ID: {wp_id!r}"
-            )
+            assert wp_id.startswith("WP-"), f"mapping[{sid!r}] contains non-WP ID: {wp_id!r}"

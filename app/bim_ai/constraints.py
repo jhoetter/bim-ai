@@ -1008,8 +1008,7 @@ def _exchange_advisory_violations(elements: dict[str, Element]) -> list[Violatio
                         message=(
                             "IFC layer stack read-back does not align with documented material assemblies "
                             "for some kernel emits (inspect_kernel_ifc_semantics.materialLayerSetReadback_v0; "
-                            "ifc_manifest_v0.ifcMaterialLayerSetReadbackEvidence_v0)."
-                            + ids_ptr
+                            "ifc_manifest_v0.ifcMaterialLayerSetReadbackEvidence_v0)." + ids_ptr
                         ),
                         element_ids=[],
                         discipline="exchange",
@@ -1041,7 +1040,9 @@ def _exchange_advisory_violations(elements: dict[str, Element]) -> list[Violatio
             unsupported_classes = dict(merge_map.get("unsupportedIfcProductsByClass") or {})
             unsupported_total = sum(unsupported_classes.values())
             if unsupported_total > 0:
-                class_summary = ", ".join(f"{cls}:{n}" for cls, n in sorted(unsupported_classes.items()))
+                class_summary = ", ".join(
+                    f"{cls}:{n}" for cls, n in sorted(unsupported_classes.items())
+                )
                 out.append(
                     Violation(
                         rule_id="exchange_ifc_import_preview_unsupported_products",
@@ -1163,10 +1164,15 @@ def _exchange_advisory_violations(elements: dict[str, Element]) -> list[Violatio
         cov_rows = list(ps_cov.get("rows") or [])
 
         _qto_missing_token = "missing_qto_link"
-        _pset_critical_tokens = {"missing_Pset_Reference", "site_reference_join_mismatch", "reference_not_in_document"}
+        _pset_critical_tokens = {
+            "missing_Pset_Reference",
+            "site_reference_join_mismatch",
+            "reference_not_in_document",
+        }
 
         stair_qto_gaps = sum(
-            1 for r in cov_rows
+            1
+            for r in cov_rows
             if str(r.get("kernelKind") or "") == "stair"
             and str(r.get("idsGapReasonToken") or "") == _qto_missing_token
         )
@@ -1186,7 +1192,8 @@ def _exchange_advisory_violations(elements: dict[str, Element]) -> list[Violatio
             )
 
         room_qto_gaps = sum(
-            1 for r in cov_rows
+            1
+            for r in cov_rows
             if str(r.get("kernelKind") or "") == "room"
             and str(r.get("idsGapReasonToken") or "") == _qto_missing_token
         )
@@ -1206,7 +1213,8 @@ def _exchange_advisory_violations(elements: dict[str, Element]) -> list[Violatio
             )
 
         floor_pset_gaps = sum(
-            1 for r in cov_rows
+            1
+            for r in cov_rows
             if str(r.get("kernelKind") or "") == "floor"
             and str(r.get("idsGapReasonToken") or "") in _pset_critical_tokens
         )
@@ -1226,7 +1234,8 @@ def _exchange_advisory_violations(elements: dict[str, Element]) -> list[Violatio
             )
 
         roof_pset_gaps = sum(
-            1 for r in cov_rows
+            1
+            for r in cov_rows
             if str(r.get("kernelKind") or "") == "roof"
             and str(r.get("idsGapReasonToken") or "") in _pset_critical_tokens
         )
@@ -1468,8 +1477,12 @@ def _plan_view_tag_style_advisor_violations(elements: dict[str, Element]) -> lis
         ):
             if not tags_on:
                 continue
-            has_valid_pv_ref = bool(pv_ref_attr) and _ref_missing_or_wrong(pv_ref_attr, lane) is None
-            has_valid_tmpl_ref = bool(tmpl_ref_attr) and _ref_missing_or_wrong(tmpl_ref_attr, lane) is None
+            has_valid_pv_ref = (
+                bool(pv_ref_attr) and _ref_missing_or_wrong(pv_ref_attr, lane) is None
+            )
+            has_valid_tmpl_ref = (
+                bool(tmpl_ref_attr) and _ref_missing_or_wrong(tmpl_ref_attr, lane) is None
+            )
             if not has_valid_pv_ref and not has_valid_tmpl_ref:
                 out.append(
                     Violation(
@@ -1663,12 +1676,14 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
         bboxes: list[tuple[float, float, float, float]] = []
         for w in lw:
             half_t = w.thickness_mm / 2
-            bboxes.append((
-                min(w.start.x_mm, w.end.x_mm) - half_t,
-                min(w.start.y_mm, w.end.y_mm) - half_t,
-                max(w.start.x_mm, w.end.x_mm) + half_t,
-                max(w.start.y_mm, w.end.y_mm) + half_t,
-            ))
+            bboxes.append(
+                (
+                    min(w.start.x_mm, w.end.x_mm) - half_t,
+                    min(w.start.y_mm, w.end.y_mm) - half_t,
+                    max(w.start.x_mm, w.end.x_mm) + half_t,
+                    max(w.start.y_mm, w.end.y_mm) + half_t,
+                )
+            )
         for i in range(n):
             ax0, ay0, ax1, ay1 = bboxes[i]
             for j in range(i + 1, n):
@@ -2565,6 +2580,7 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
                 continue
             try:
                 from bim_ai.schedule_derivation import derive_schedule_table as _derive_tbl
+
                 _stale_doc = Document(revision=1, elements=dict(elements))  # type: ignore[arg-type]
                 tbl_stale = _derive_tbl(_stale_doc, sc_id_stale)
                 derived_rc = int(tbl_stale.get("totalRows") or 0)
@@ -2572,10 +2588,9 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
                 continue
             if derived_rc != cached_rc_int:
                 updated_vps_stale = [
-                    {**v, "rowCount": derived_rc} if (
-                        isinstance(v, dict)
-                        and (v.get("viewRef") or v.get("view_ref")) == vr_stale
-                    ) else v
+                    {**v, "rowCount": derived_rc}
+                    if (isinstance(v, dict) and (v.get("viewRef") or v.get("view_ref")) == vr_stale)
+                    else v
                     for v in (sh_stale.viewports_mm or [])
                 ]
                 viols.append(
@@ -2605,6 +2620,7 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
         if not cat_gap:
             continue
         from bim_ai.schedule_field_registry import SCHEDULE_COLUMN_ORDER as _SCO
+
         if cat_gap not in _SCO:
             viols.append(
                 Violation(
@@ -2698,7 +2714,9 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
                         "type": "updateElementProperty",
                         "elementId": sh_el.id,
                         "key": "titleblockParametersPatch",
-                        "value": json.dumps({"revisionId": "TBR-REV", "revisionCode": "A"}, sort_keys=True),
+                        "value": json.dumps(
+                            {"revisionId": "TBR-REV", "revisionCode": "A"}, sort_keys=True
+                        ),
                     },
                 )
             )
@@ -2762,9 +2780,7 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
                 )
 
             if ok_kind and kind == "plan" and isinstance(targ_el, PlanViewElem):
-                _plan_on_sheet_advisory_violations(
-                    viols, sh_el, vp, targ_el
-                )
+                _plan_on_sheet_advisory_violations(viols, sh_el, vp, targ_el)
 
     viols.extend(_agent_brief_advisory_violations(elements))
     viols.extend(_exchange_advisory_violations(elements))
@@ -2944,8 +2960,7 @@ def advisorBlockingClassSummary_v1(doc: Document) -> dict[str, Any]:
     """Per-class violation counts at each severity for a document."""
     viols = evaluate(doc.elements)  # type: ignore[arg-type]
     counts: dict[str, dict[str, int]] = {
-        cls.value: {"error": 0, "warning": 0, "info": 0}
-        for cls in AdvisorBlockingClass
+        cls.value: {"error": 0, "warning": 0, "info": 0} for cls in AdvisorBlockingClass
     }
     for v in viols:
         bc = _RULE_BLOCKING_CLASS.get(v.rule_id, AdvisorBlockingClass.documentation.value)

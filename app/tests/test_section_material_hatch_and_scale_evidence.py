@@ -321,8 +321,22 @@ def test_section_viewport_scale_evidence_v1_sorted_by_viewport_id() -> None:
         name="Sheet",
         titleBlock="A1",
         viewportsMm=[
-            {"viewportId": "vp-z", "viewRef": "section:sec-1", "xMm": 10, "yMm": 10, "widthMm": 200, "heightMm": 150},
-            {"viewportId": "vp-a", "viewRef": "section:sec-1", "xMm": 10, "yMm": 200, "widthMm": 200, "heightMm": 150},
+            {
+                "viewportId": "vp-z",
+                "viewRef": "section:sec-1",
+                "xMm": 10,
+                "yMm": 10,
+                "widthMm": 200,
+                "heightMm": 150,
+            },
+            {
+                "viewportId": "vp-a",
+                "viewRef": "section:sec-1",
+                "xMm": 10,
+                "yMm": 200,
+                "widthMm": 200,
+                "heightMm": 150,
+            },
         ],
     )
     doc = Document(revision=1, elements={"lvl-1": lvl, "sec-1": sec, "sh-1": sh})

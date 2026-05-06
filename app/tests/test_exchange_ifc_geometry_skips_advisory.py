@@ -14,7 +14,9 @@ from bim_ai.elements import (
 )
 from bim_ai.export_ifc import IFC_AVAILABLE, summarize_kernel_ifc_semantic_roundtrip
 
-pytestmark = pytest.mark.skipif(not IFC_AVAILABLE, reason="ifcopenshell not installed (pip install '.[ifc]')")
+pytestmark = pytest.mark.skipif(
+    not IFC_AVAILABLE, reason="ifcopenshell not installed (pip install '.[ifc]')"
+)
 
 
 def test_exchange_advisory_info_when_ifc_skips_instances() -> None:

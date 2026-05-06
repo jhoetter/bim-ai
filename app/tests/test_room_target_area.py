@@ -207,6 +207,8 @@ def test_derive_room_schedule_closure_includes_room_separation_axis_summary() ->
     assert axis.get("totalCount") == 1
     assert axis.get("axisAlignedEligibleCount") == 1
     assert axis.get("nonAxisAlignedOrShortCount") == 0
+
+
 def test_derive_room_schedule_programme_residual_without_vacant_footprint() -> None:
     lvl = LevelElem(kind="level", id="lvl-1", name="Ground", elevation_mm=0)
     rm = RoomElem(

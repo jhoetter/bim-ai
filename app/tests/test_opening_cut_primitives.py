@@ -140,4 +140,3 @@ def test_hosted_opening_u_projection_scale_diagonal_wall_vs_cardinal_cut() -> No
     # Cut tangent along +Y: same by symmetry
     s_y = hosted_opening_u_projection_scale(wall, 0.0, 1.0)
     assert s_y == pytest.approx(2**0.5 / 2, rel=1e-9)
-

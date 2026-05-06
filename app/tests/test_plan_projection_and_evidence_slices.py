@@ -217,6 +217,8 @@ def test_plan_projection_wire_room_separation_interior_pierce_flag() -> None:
     assert rss[0]["id"] == "rs-mid"
     assert rss[0]["piercesDerivedRectangleInterior"] is True
     assert rss[0]["axisAlignedBoundarySegmentEligible"] is True
+
+
 def test_section_projection_wire_reports_missing_section() -> None:
     doc = Document(revision=1, elements={})
     out = section_cut_projection_wire(doc, "nope")
@@ -309,7 +311,9 @@ def test_section_projection_wire_wall_parallel_to_cut_is_along_cut_hatch() -> No
     assert hints[0]["materialLabel"] == "structure"
 
 
-def test_section_projection_primitives_degenerate_cut_emits_empty_section_doc_material_hints() -> None:
+def test_section_projection_primitives_degenerate_cut_emits_empty_section_doc_material_hints() -> (
+    None
+):
     sec = SectionCutElem(
         kind="section_cut",
         id="sec-degen",
@@ -433,8 +437,12 @@ def test_section_projection_wire_door_reveal_widens_opening_half_width_and_emits
         lineEndMm={"xMm": 3000.0, "yMm": 8000.0},
         cropDepthMm=12000.0,
     )
-    doc_plain = Document(revision=1, elements={"lvl": lvl, "w-host": wall, "d-plain": door_plain, "sec-a": sec})
-    doc_rev = Document(revision=1, elements={"lvl": lvl, "w-host": wall, "d-rev": door_rev, "sec-a": sec})
+    doc_plain = Document(
+        revision=1, elements={"lvl": lvl, "w-host": wall, "d-plain": door_plain, "sec-a": sec}
+    )
+    doc_rev = Document(
+        revision=1, elements={"lvl": lvl, "w-host": wall, "d-rev": door_rev, "sec-a": sec}
+    )
     out_plain = section_cut_projection_wire(doc_plain, "sec-a")
     out_rev = section_cut_projection_wire(doc_rev, "sec-a")
     ds_plain = (out_plain.get("primitives") or {}).get("doors") or []
@@ -1057,7 +1065,10 @@ def test_evidence_digest_sorts_nested_registry_and_candidates() -> None:
         "revision": 1,
         "modelId": "x",
         "roomDerivationCandidates": {"format": "x", "candidates": [cand_a, cand_b]},
-        "typeMaterialRegistry": {"format": "t", "document": {"familyTypes": [ft_b, ft_a], "wallTypes": []}},
+        "typeMaterialRegistry": {
+            "format": "t",
+            "document": {"familyTypes": [ft_b, ft_a], "wallTypes": []},
+        },
     }
     swapped = dict(base)
     swapped["roomDerivationCandidates"] = dict(base["roomDerivationCandidates"])
@@ -1069,7 +1080,9 @@ def test_evidence_digest_sorts_nested_registry_and_candidates() -> None:
     swapped_t["document"] = swapped_t_doc
     swapped["typeMaterialRegistry"] = swapped_t
 
-    assert evidence_package_semantic_digest_sha256(base) == evidence_package_semantic_digest_sha256(swapped)
+    assert evidence_package_semantic_digest_sha256(base) == evidence_package_semantic_digest_sha256(
+        swapped
+    )
 
 
 def test_plan_projection_wire_includes_floor_count() -> None:
@@ -1316,7 +1329,10 @@ def test_plan_projection_room_legend_matches_primitives_when_programme_shared() 
     leg_ev = out.get("roomProgrammeLegendEvidence_v0") or {}
     assert leg_ev.get("format") == "roomProgrammeLegendEvidence_v0"
     assert leg_ev.get("rowCount") == 1
-    assert isinstance(leg_ev.get("legendDigestSha256"), str) and len(leg_ev["legendDigestSha256"]) == 64
+    assert (
+        isinstance(leg_ev.get("legendDigestSha256"), str)
+        and len(leg_ev["legendDigestSha256"]) == 64
+    )
 
 
 def test_plan_projection_crop_authored_composes_with_view_range_clip() -> None:
@@ -1595,7 +1611,9 @@ def test_plan_projection_sheet_viewport_crop_partial_emits_warning() -> None:
         global_plan_presentation="default",
         sheet_viewport_row_for_crop=None,
     )
-    assert (out.get("primitives") or {}).get("walls") == (plain.get("primitives") or {}).get("walls")
+    assert (out.get("primitives") or {}).get("walls") == (plain.get("primitives") or {}).get(
+        "walls"
+    )
 
 
 def test_plan_projection_derived_room_boundary_evidence_v0_authoritative() -> None:
@@ -1824,7 +1842,9 @@ def test_section_projection_stair_includes_riser_count_plan_proxy() -> None:
 
 def test_plan_projection_wire_plan_graphic_hints_order_coarse_vs_fine() -> None:
     lvl = LevelElem(kind="level", id="lvl", name="L", elevationMm=0)
-    vt_fine = ViewTemplateElem(kind="view_template", id="vt-f", name="Fine", plan_detail_level="fine")
+    vt_fine = ViewTemplateElem(
+        kind="view_template", id="vt-f", name="Fine", plan_detail_level="fine"
+    )
     vt_coarse = ViewTemplateElem(
         kind="view_template",
         id="vt-c",
@@ -1855,11 +1875,19 @@ def test_plan_projection_wire_plan_graphic_hints_order_coarse_vs_fine() -> None:
         levelId=lvl.id,
         viewTemplateId="vt-c",
     )
-    doc_fine = Document(revision=1, elements={"lvl": lvl, "vt-f": vt_fine, "w": wall, "pv-f": pv_fine})
-    doc_coarse = Document(revision=1, elements={"lvl": lvl, "vt-c": vt_coarse, "w": wall, "pv-c": pv_coarse})
+    doc_fine = Document(
+        revision=1, elements={"lvl": lvl, "vt-f": vt_fine, "w": wall, "pv-f": pv_fine}
+    )
+    doc_coarse = Document(
+        revision=1, elements={"lvl": lvl, "vt-c": vt_coarse, "w": wall, "pv-c": pv_coarse}
+    )
 
-    out_fine = plan_projection_wire_from_request(doc_fine, plan_view_id="pv-f", fallback_level_id=None)
-    out_coarse = plan_projection_wire_from_request(doc_coarse, plan_view_id="pv-c", fallback_level_id=None)
+    out_fine = plan_projection_wire_from_request(
+        doc_fine, plan_view_id="pv-f", fallback_level_id=None
+    )
+    out_coarse = plan_projection_wire_from_request(
+        doc_coarse, plan_view_id="pv-c", fallback_level_id=None
+    )
 
     hints_fine = out_fine["planGraphicHints"]
     hints_coarse = out_coarse["planGraphicHints"]
@@ -2002,7 +2030,9 @@ def test_plan_category_graphic_hints_floor_roof_outline_primitives() -> None:
     assert fprim["linePatternToken"] == "solid"
     assert fprim["planCategoryGraphicKey"] == "floor"
     assert fprim["planOutlineSemantics"] == "slab_level_outline"
-    assert fprim["lineWeightHint"] == pytest.approx(1.2 * float(out["planGraphicHints"]["lineWeightScale"]), rel=0, abs=0.02)
+    assert fprim["lineWeightHint"] == pytest.approx(
+        1.2 * float(out["planGraphicHints"]["lineWeightScale"]), rel=0, abs=0.02
+    )
 
     rprim = next(r for r in prim["roofs"] if r["id"] == "rf1")
     assert rprim["linePatternToken"] == "dot"
@@ -2259,7 +2289,8 @@ def test_room_color_scheme_overrides_primitive_legend_digest() -> None:
     assert ev.get("schemeOverrideRowCount") == 1
 
     sch_codes = {
-        row.get("programmeCode") for row in (derive_schedule_table(doc, "sch-rooms").get("rows") or [])
+        row.get("programmeCode")
+        for row in (derive_schedule_table(doc, "sch-rooms").get("rows") or [])
         if isinstance(row, dict)
     }
     legend_codes = {row.get("programmeCode") for row in legend if isinstance(row, dict)}

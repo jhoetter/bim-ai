@@ -10,7 +10,9 @@ from bim_ai.section_projection_primitives import build_section_projection_primit
 from bim_ai.wall_opening_cut_fidelity import collect_wall_opening_cut_fidelity_evidence_v1
 
 
-def _axis_aligned_wall_door_doc(*, door_along_t: float = 0.5, wall_len_mm: float = 6000.0) -> Document:
+def _axis_aligned_wall_door_doc(
+    *, door_along_t: float = 0.5, wall_len_mm: float = 6000.0
+) -> Document:
     return Document(
         revision=1,
         elements={

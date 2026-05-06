@@ -103,7 +103,4 @@ def test_prd_anchor_and_coverage_paths_exist(prd_text: str, row: dict[str, objec
     missing_paths = [rp for rp in rel_paths if not (REPO_ROOT / rp).exists()]
     if missing_paths:
         detail = "\n".join(f"  - missing path (relative to repo root): {p}" for p in missing_paths)
-        pytest.fail(
-            f"PRD traceability row {row_id!r}: coverage target missing.\n"
-            f"{detail}"
-        )
+        pytest.fail(f"PRD traceability row {row_id!r}: coverage target missing.\n{detail}")

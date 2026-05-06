@@ -129,7 +129,8 @@ def test_ifc_manifest_includes_semantic_import_scope_and_expected_kinds_hint() -
     scope = mf.get("ifcSemanticImportScope_v0") or {}
     assert scope.get("schemaVersion") == IFC_SEMANTIC_IMPORT_SCOPE_V0["schemaVersion"]
     assert any(
-        "summarize_kernel_ifc_semantic_roundtrip" in str(x) for x in (scope.get("semanticReadBackSupported") or [])
+        "summarize_kernel_ifc_semantic_roundtrip" in str(x)
+        for x in (scope.get("semanticReadBackSupported") or [])
     )
     assert any(
         "importScopeUnsupportedIfcProducts_v0" in str(x)
@@ -160,8 +161,12 @@ def test_ifc_manifest_includes_material_layer_readback_when_ifc_installed() -> N
                 id="wt",
                 name="WT",
                 layers=[
-                    WallTypeLayer(thicknessMm=95, layer_function="structure", material_key="manifest-mat-a"),
-                    WallTypeLayer(thicknessMm=55, layer_function="finish", material_key="manifest-mat-b"),
+                    WallTypeLayer(
+                        thicknessMm=95, layer_function="structure", material_key="manifest-mat-a"
+                    ),
+                    WallTypeLayer(
+                        thicknessMm=55, layer_function="finish", material_key="manifest-mat-b"
+                    ),
                 ],
             ),
             "w-a": WallElem(
@@ -515,7 +520,9 @@ def test_try_apply_authoritative_replay_v0_additive_merge_ok() -> None:
             "lvl-g": LevelElem(kind="level", id="lvl-g", name="G", elevationMm=0),
         },
     )
-    sketch = _sketch_with_commands(cmds=[_minimal_create_wall_cmd(wall_id="w-new", level_id="lvl-g")])
+    sketch = _sketch_with_commands(
+        cmds=[_minimal_create_wall_cmd(wall_id="w-new", level_id="lvl-g")]
+    )
     before = clone_document(doc)
     ok, new_doc, cmds, _v, code = try_apply_kernel_ifc_authoritative_replay_v0(doc, sketch)
     assert ok is True and code == "ok"
@@ -554,7 +561,9 @@ def test_try_apply_authoritative_replay_v0_merge_reference_unresolved() -> None:
             "lvl-g": LevelElem(kind="level", id="lvl-g", name="G", elevationMm=0),
         },
     )
-    sketch = _sketch_with_commands(cmds=[_minimal_create_wall_cmd(wall_id="w-new", level_id="no-such-level")])
+    sketch = _sketch_with_commands(
+        cmds=[_minimal_create_wall_cmd(wall_id="w-new", level_id="no-such-level")]
+    )
     ok, new_doc, cmds, _v, code = try_apply_kernel_ifc_authoritative_replay_v0(doc, sketch)
     assert ok is False and new_doc is None and code == "merge_reference_unresolved"
     assert len(cmds) == 1

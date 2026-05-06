@@ -220,6 +220,4 @@ def test_no_inline_imports_in_ifc_pset_qto_deepening() -> None:
 def test_prompt_8_files_within_wave_4_scope() -> None:
     """Every file changed by prompt-8 must appear in the wave-4 allow-list."""
     out_of_scope = PROMPT_8_CHANGED_FILES - WAVE_4_TOUCHED_FILES
-    assert not out_of_scope, (
-        f"Prompt-8 changed files outside wave-4 scope: {sorted(out_of_scope)}"
-    )
+    assert not out_of_scope, f"Prompt-8 changed files outside wave-4 scope: {sorted(out_of_scope)}"

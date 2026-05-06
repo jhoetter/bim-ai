@@ -169,7 +169,9 @@ def _pick_ids_gap_token(
     return "ids_ok"
 
 
-def build_kernel_ifc_property_set_coverage_evidence_v0(model: Any, doc: Document | None) -> dict[str, Any]:
+def build_kernel_ifc_property_set_coverage_evidence_v0(
+    model: Any, doc: Document | None
+) -> dict[str, Any]:
     """Per-product IFC pset/QTO/material slice aligned with kernel export (IfcOpenShell model + optional Document)."""
 
     if _ifc_elem_util is None:
@@ -247,7 +249,9 @@ def build_kernel_ifc_property_set_coverage_evidence_v0(model: Any, doc: Document
                 ref_unknown_doc = True
             elif kernel_kind == "window" and not isinstance(doc.elements.get(rs), WindowElem):
                 ref_unknown_doc = True
-            elif kernel_kind == "floor_type" and not isinstance(doc.elements.get(rs), FloorTypeElem):
+            elif kernel_kind == "floor_type" and not isinstance(
+                doc.elements.get(rs), FloorTypeElem
+            ):
                 ref_unknown_doc = True
 
         prog_missing = False
@@ -505,7 +509,12 @@ def build_ifc_property_set_coverage_expansion_v1(model: Any) -> dict[str, Any]:
     counts total fields defined across instances, and counts populated (non-None, non-empty) fields.
     """
     if _ifc_elem_util is None:
-        return {"schemaVersion": 1, "available": False, "reason": "ifc_elem_util_missing", "rows": []}
+        return {
+            "schemaVersion": 1,
+            "available": False,
+            "reason": "ifc_elem_util_missing",
+            "rows": [],
+        }
 
     _KERNEL_CLASSES_AND_PSETS: list[tuple[str, str]] = [
         ("IfcWall", "Pset_WallCommon"),
@@ -546,7 +555,9 @@ def build_ifc_property_set_coverage_expansion_v1(model: Any) -> dict[str, Any]:
                 "psetFieldCountTotal": field_count_total,
                 "psetFieldPopulatedCount": populated_count,
                 "psetFieldGapCount": field_count_total - populated_count,
-                "populatedRatio": round(populated_count / field_count_total, 4) if field_count_total > 0 else None,
+                "populatedRatio": round(populated_count / field_count_total, 4)
+                if field_count_total > 0
+                else None,
             }
         )
 

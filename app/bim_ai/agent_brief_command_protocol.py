@@ -26,11 +26,7 @@ def agent_brief_command_protocol_v1(
         key=lambda x: x.id,
     )
     issues_open = sorted(
-        (
-            e
-            for e in doc.elements.values()
-            if isinstance(e, IssueElem) and e.status != "done"
-        ),
+        (e for e in doc.elements.values() if isinstance(e, IssueElem) and e.status != "done"),
         key=lambda x: x.id,
     )
     if bcfs:
@@ -54,9 +50,7 @@ def agent_brief_command_protocol_v1(
         e.id for e in doc.elements.values() if isinstance(e, AgentAssumptionElem)
     )
     assumption_id_set = frozenset(assumption_ids)
-    deviation_ids = sorted(
-        e.id for e in doc.elements.values() if isinstance(e, AgentDeviationElem)
-    )
+    deviation_ids = sorted(e.id for e in doc.elements.values() if isinstance(e, AgentDeviationElem))
     missing_refs: list[dict[str, str]] = []
     for e in sorted(
         (x for x in doc.elements.values() if isinstance(x, AgentDeviationElem)),

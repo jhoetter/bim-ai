@@ -68,9 +68,7 @@ def section_profile_token_from_primitives(prim: dict[str, Any]) -> str:
     return "noGeometry_v1"
 
 
-def build_section_on_sheet_integration_evidence_v1(
-    doc: Document, sh: SheetElem
-) -> dict[str, Any]:
+def build_section_on_sheet_integration_evidence_v1(doc: Document, sh: SheetElem) -> dict[str, Any]:
     """Build the section-on-sheet integration evidence payload for *sh*.
 
     Returns a ``sectionOnSheetIntegrationEvidence_v1`` dict with one row per
@@ -125,9 +123,7 @@ def build_section_on_sheet_integration_evidence_v1(
             }
         )
 
-    rows.sort(
-        key=lambda r: (str(r.get("viewportId") or ""), str(r.get("sectionViewId") or ""))
-    )
+    rows.sort(key=lambda r: (str(r.get("viewportId") or ""), str(r.get("sectionViewId") or "")))
 
     canon = json.dumps(rows, sort_keys=True, separators=(",", ":"), default=str)
     sheet_digest = hashlib.sha256(canon.encode("utf-8")).hexdigest()

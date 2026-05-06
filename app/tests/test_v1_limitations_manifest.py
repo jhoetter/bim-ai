@@ -54,10 +54,16 @@ def test_non_goals_contains_rvt_native_entry() -> None:
 def test_non_goals_contains_second_source_of_truth_entry() -> None:
     m = build_v1_limitations_manifest_v1()
     sot_entry = next(
-        (g for g in m["nonGoals"] if "second drawing" in g.lower() or "source of truth" in g.lower()),
+        (
+            g
+            for g in m["nonGoals"]
+            if "second drawing" in g.lower() or "source of truth" in g.lower()
+        ),
         None,
     )
-    assert sot_entry is not None, "nonGoals must include the 'second drawing-only source of truth' entry"
+    assert sot_entry is not None, (
+        "nonGoals must include the 'second drawing-only source of truth' entry"
+    )
 
 
 def test_partial_areas_non_empty() -> None:

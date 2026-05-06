@@ -26,14 +26,20 @@ class EmitterAuditRef:
 # Do NOT parse modules at runtime — this list is the audit input.
 _REGISTRY: tuple[EmitterAuditRef, ...] = (
     EmitterAuditRef("agentReviewActions_v1", "agent_evidence_review_loop.py"),
-    EmitterAuditRef("ifcPropertySetCoverageEvidence_v0", "ifc_property_set_coverage_evidence_v0.py"),
+    EmitterAuditRef(
+        "ifcPropertySetCoverageEvidence_v0", "ifc_property_set_coverage_evidence_v0.py"
+    ),
     EmitterAuditRef("levelElevationPropagationEvidence_v0", "level_datum_propagation_evidence.py"),
     EmitterAuditRef("roofLayeredPrismWitness_v1", "roof_layered_prism_evidence_v1.py"),
     EmitterAuditRef("roofSectionCutWitness_v0", "roof_layered_prism_evidence_v1.py"),
     EmitterAuditRef("roomColorSchemeOverrideEvidence_v1", "room_color_scheme_override_evidence.py"),
     EmitterAuditRef("roomColourSchemeLegendEvidence_v1", "room_color_scheme_override_evidence.py"),
-    EmitterAuditRef("schedulePaginationPlacementEvidence_v0", "schedule_pagination_placement_evidence.py"),
-    EmitterAuditRef("sectionOnSheetIntegrationEvidence_v1", "section_on_sheet_integration_evidence_v1.py"),
+    EmitterAuditRef(
+        "schedulePaginationPlacementEvidence_v0", "schedule_pagination_placement_evidence.py"
+    ),
+    EmitterAuditRef(
+        "sectionOnSheetIntegrationEvidence_v1", "section_on_sheet_integration_evidence_v1.py"
+    ),
     EmitterAuditRef("wallCornerJoinEvidence_v0", "wall_join_evidence.py"),
     EmitterAuditRef("wallCornerJoinSummary_v1", "wall_join_evidence.py"),
 )

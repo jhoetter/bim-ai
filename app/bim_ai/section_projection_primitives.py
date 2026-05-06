@@ -192,7 +192,9 @@ def _u_mm(
     return (x - p0x) * tx + (y - p0y) * ty
 
 
-def _clip_segment_lambda_in_perp_strip(fa: float, fb: float, half: float) -> tuple[float, float] | None:
+def _clip_segment_lambda_in_perp_strip(
+    fa: float, fb: float, half: float
+) -> tuple[float, float] | None:
     """Parameter λ in [0,1] along segment A+λ(B-A) where |f|<=half, f(λ)=fa+λ(fb-fa)."""
     d = fb - fa
     if abs(d) < _EPS:
@@ -240,7 +242,9 @@ def _hosted_xy_mm_on_wall(opening: DoorElem | WindowElem, wall: WallElem) -> tup
     dy = float(wall.end.y_mm) - sy
     length_mm = max(_EPS, _hypot(dx, dy))
     ux, uy = dx / length_mm, dy / length_mm
-    return sx + ux * float(opening.along_t) * length_mm, sy + uy * float(opening.along_t) * length_mm
+    return sx + ux * float(opening.along_t) * length_mm, sy + uy * float(
+        opening.along_t
+    ) * length_mm
 
 
 def _polygon_u_span_in_strip(
@@ -282,6 +286,7 @@ def _polygon_u_span_in_strip(
         return None
     return min(us), max(us)
 
+
 def _append_floor_u_span_primitive(
     floors: list[dict[str, Any]],
     *,
@@ -318,7 +323,6 @@ def _append_floor_u_span_primitive(
         row.update(asm_floor)
     row["layerAssemblyWitness_v0"] = layered_assembly_witness_row_for_floor(doc, floor_el)
     floors.append(row)
-
 
 
 def _roof_proxy_top_z_mm(doc: Document, r: RoofElem) -> float:
@@ -440,7 +444,10 @@ def _section_geometry_extent_mm(
     for w in roofs:
         ulo = float(w["uStartMm"])
         uhi = float(w["uEndMm"])
-        if str(w.get("proxyKind") or "") == "gablePitchedRectangleChord" and w.get("ridgeZMm") is not None:
+        if (
+            str(w.get("proxyKind") or "") == "gablePitchedRectangleChord"
+            and w.get("ridgeZMm") is not None
+        ):
             z_lo = float(w.get("eavePlateZMm") or w.get("zMidMm") or 0.0)
             z_hi = float(w.get("ridgeZMm") or w.get("zMidMm") or z_lo)
             acc(ulo, uhi, z_lo, z_hi)
@@ -494,13 +501,15 @@ def _build_section_cut_material_hints_v1(
         hatch_token = "hatch_edgeOn_v1" if hatch_kind == "edgeOn" else "hatch_alongCut_v1"
         u_span = abs(float(row.get("uEndMm") or 0) - float(row.get("uStartMm") or 0))
         z_span = abs(float(row.get("zTopMm") or 0) - float(row.get("zBottomMm") or 0))
-        hints.append({
-            "elementId": eid,
-            "elementKind": "wall",
-            "materialId": material_key,
-            "hatchPatternToken": hatch_token,
-            "cutFaceMm2": round(u_span * z_span, 3),
-        })
+        hints.append(
+            {
+                "elementId": eid,
+                "elementKind": "wall",
+                "materialId": material_key,
+                "hatchPatternToken": hatch_token,
+                "cutFaceMm2": round(u_span * z_span, 3),
+            }
+        )
     seen_floor_ids: set[str] = set()
     for row in floors:
         eid = str(row.get("elementId") or "")
@@ -520,13 +529,15 @@ def _build_section_cut_material_hints_v1(
             material_key = str(layers[0].get("materialKey") or "").strip()
         u_span = abs(float(row.get("uEndMm") or 0) - float(row.get("uStartMm") or 0))
         z_span = abs(float(row.get("zTopMm") or 0) - float(row.get("zBottomMm") or 0))
-        hints.append({
-            "elementId": eid,
-            "elementKind": "floor",
-            "materialId": material_key,
-            "hatchPatternToken": "hatch_structure_v1",
-            "cutFaceMm2": round(u_span * z_span, 3),
-        })
+        hints.append(
+            {
+                "elementId": eid,
+                "elementKind": "floor",
+                "materialId": material_key,
+                "hatchPatternToken": "hatch_structure_v1",
+                "cutFaceMm2": round(u_span * z_span, 3),
+            }
+        )
     seen_roof_ids: set[str] = set()
     for row in roofs:
         eid = str(row.get("elementId") or "")
@@ -550,13 +561,15 @@ def _build_section_cut_material_hints_v1(
             z_span = abs(float(row.get("ridgeZMm") or 0) - float(row.get("eavePlateZMm") or 0))
         else:
             z_span = 0.0
-        hints.append({
-            "elementId": eid,
-            "elementKind": "roof",
-            "materialId": material_key,
-            "hatchPatternToken": "hatch_structure_v1",
-            "cutFaceMm2": round(u_span * z_span, 3),
-        })
+        hints.append(
+            {
+                "elementId": eid,
+                "elementKind": "roof",
+                "materialId": material_key,
+                "hatchPatternToken": "hatch_structure_v1",
+                "cutFaceMm2": round(u_span * z_span, 3),
+            }
+        )
     hints.sort(key=lambda h: (str(h["elementKind"]), str(h["elementId"])))
     return hints
 
@@ -573,12 +586,14 @@ def _build_section_annotation_stubs_v1(
     for m in level_markers:
         ref_id = str(m.get("id") or "")
         label = str(m.get("name") or ref_id) or ref_id
-        stubs.append({
-            "stubKind": "level_line",
-            "referenceId": ref_id,
-            "annotationLabel": label,
-            "annotationToken": "level_line_v1",
-        })
+        stubs.append(
+            {
+                "stubKind": "level_line",
+                "referenceId": ref_id,
+                "annotationLabel": label,
+                "annotationToken": "level_line_v1",
+            }
+        )
     for eid in sorted(doc.elements.keys()):
         e = doc.elements[eid]
         if not isinstance(e, GridLineElem):
@@ -592,13 +607,15 @@ def _build_section_annotation_stubs_v1(
         u0 = _u_mm(c0x, c0y, p0x=p0x, p0y=p0y, tx=tx, ty=ty)
         u1 = _u_mm(c1x, c1y, p0x=p0x, p0y=p0y, tx=tx, ty=ty)
         label = str(e.label or e.name or eid)
-        stubs.append({
-            "stubKind": "grid_intersection",
-            "referenceId": e.id,
-            "annotationLabel": label,
-            "annotationToken": "grid_intersection_v1",
-            "uAnchorMm": round(0.5 * (u0 + u1), 3),
-        })
+        stubs.append(
+            {
+                "stubKind": "grid_intersection",
+                "referenceId": e.id,
+                "annotationLabel": label,
+                "annotationToken": "grid_intersection_v1",
+                "uAnchorMm": round(0.5 * (u0 + u1), 3),
+            }
+        )
     stubs.sort(key=lambda s: (str(s["stubKind"]), str(s["referenceId"])))
     return stubs
 
@@ -715,11 +732,7 @@ def build_section_projection_primitives(
         u_half_thickness = 0.5 * float(e.thickness_mm) * abs(wnx * tx + wny * ty)
         du = u_hi - u_lo
         # Wall perpendicular to cut tangent projects to ~constant u — expand by in-plan thickness in u.
-        cut_hatch_kind = (
-            "edgeOn"
-            if du < max(_EPS, u_half_thickness * 0.05 + 0.001)
-            else "alongCut"
-        )
+        cut_hatch_kind = "edgeOn" if du < max(_EPS, u_half_thickness * 0.05 + 0.001) else "alongCut"
         if cut_hatch_kind == "edgeOn":
             u_c = 0.5 * (u_lo + u_hi)
             half_du = max(u_half_thickness, 1.0)
@@ -792,7 +805,10 @@ def build_section_projection_primitives(
             if not wall_plan_axis_aligned_xy(w):
                 ts = hosted_opening_t_span_normalized(e, w)
                 if ts:
-                    door_row["openingTSpanNormalized"] = [round(float(ts[0]), 6), round(float(ts[1]), 6)]
+                    door_row["openingTSpanNormalized"] = [
+                        round(float(ts[0]), 6),
+                        round(float(ts[1]), 6),
+                    ]
                 door_row["uProjectionScale"] = round(float(u_scale), 6)
             doors.append(door_row)
             oid += 1
@@ -816,8 +832,10 @@ def build_section_projection_primitives(
             if u_c + half_du < u_lo_w - _EPS or u_c - half_du > u_hi_w + _EPS:
                 continue
 
-            z0 = _level_elevation_mm(doc, w.level_id) + float(w.base_constraint_offset_mm) + float(
-                e.sill_height_mm
+            z0 = (
+                _level_elevation_mm(doc, w.level_id)
+                + float(w.base_constraint_offset_mm)
+                + float(e.sill_height_mm)
             )
             z1 = z0 + float(e.height_mm)
             win_row: dict[str, Any] = {
@@ -835,7 +853,10 @@ def build_section_projection_primitives(
             if not wall_plan_axis_aligned_xy(w):
                 ts = hosted_opening_t_span_normalized(e, w)
                 if ts:
-                    win_row["openingTSpanNormalized"] = [round(float(ts[0]), 6), round(float(ts[1]), 6)]
+                    win_row["openingTSpanNormalized"] = [
+                        round(float(ts[0]), 6),
+                        round(float(ts[1]), 6),
+                    ]
                 win_row["uProjectionScale"] = round(float(u_scale), 6)
             windows.append(win_row)
             oid += 1
@@ -936,13 +957,17 @@ def build_section_projection_primitives(
         if not isinstance(e, RoomElem):
             continue
         poly = [(float(p.x_mm), float(p.y_mm)) for p in e.outline_mm]
-        span = _polygon_u_span_in_strip(poly, p0x=p0x, p0y=p0y, tx=tx, ty=ty, nx=nx, ny=ny, half=half)
+        span = _polygon_u_span_in_strip(
+            poly, p0x=p0x, p0y=p0y, tx=tx, ty=ty, nx=nx, ny=ny, half=half
+        )
         if span is None:
             continue
         u_lo, u_hi = span
         z0 = _level_elevation_mm(doc, e.level_id)
         z1 = z0 + 2800.0
-        if e.upper_limit_level_id and isinstance(doc.elements.get(e.upper_limit_level_id), LevelElem):
+        if e.upper_limit_level_id and isinstance(
+            doc.elements.get(e.upper_limit_level_id), LevelElem
+        ):
             z1 = _level_elevation_mm(doc, e.upper_limit_level_id)
         if z1 < z0:
             z0, z1 = z1, z0
@@ -1027,7 +1052,9 @@ def build_section_projection_primitives(
         )
         if ph is not None:
             stair_row["stairDocumentationPlaceholders_v0"] = ph
-            stair_row["stairPlanSectionDocumentationLabel"] = ph["stairPlanSectionDocumentationLabel"]
+            stair_row["stairPlanSectionDocumentationLabel"] = ph[
+                "stairPlanSectionDocumentationLabel"
+            ]
         diags = stair_documentation_diagnostics(
             doc,
             e,
@@ -1049,7 +1076,9 @@ def build_section_projection_primitives(
         if not isinstance(e, RoofElem):
             continue
         poly = [(float(p.x_mm), float(p.y_mm)) for p in e.footprint_mm]
-        span = _polygon_u_span_in_strip(poly, p0x=p0x, p0y=p0y, tx=tx, ty=ty, nx=nx, ny=ny, half=half)
+        span = _polygon_u_span_in_strip(
+            poly, p0x=p0x, p0y=p0y, tx=tx, ty=ty, nx=nx, ny=ny, half=half
+        )
         if span is None:
             continue
         u_lo, u_hi = span
@@ -1169,7 +1198,9 @@ def build_section_projection_primitives(
         primitives["sectionGeometryExtentMm"] = extent
 
     primitives["sectionDocMaterialHints"] = _build_section_doc_material_hints(doc, walls)
-    primitives["sectionCutMaterialHints_v1"] = _build_section_cut_material_hints_v1(doc, walls, floors, roofs)
+    primitives["sectionCutMaterialHints_v1"] = _build_section_cut_material_hints_v1(
+        doc, walls, floors, roofs
+    )
     primitives["sectionAnnotationStubs_v1"] = _build_section_annotation_stubs_v1(
         doc, sec, primitives["levelMarkers"], frame
     )

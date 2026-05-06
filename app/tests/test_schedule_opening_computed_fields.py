@@ -111,7 +111,9 @@ def test_window_schedule_opening_area_aspect_head_height() -> None:
                 heightMm=1500,
                 sillHeightMm=900,
             ),
-            "sch": ScheduleElem(kind="schedule", id="sch", name="Win", filters={"category": "window"}),
+            "sch": ScheduleElem(
+                kind="schedule", id="sch", name="Win", filters={"category": "window"}
+            ),
         },
     )
     tbl = derive_schedule_table(doc, "sch")
@@ -154,7 +156,9 @@ def test_window_schedule_rough_opening_includes_interior_reveal() -> None:
                 sillHeightMm=900,
                 revealInteriorMm=40,
             ),
-            "sch": ScheduleElem(kind="schedule", id="sch", name="Win", filters={"category": "window"}),
+            "sch": ScheduleElem(
+                kind="schedule", id="sch", name="Win", filters={"category": "window"}
+            ),
         },
     )
     tbl = derive_schedule_table(doc, "sch")
@@ -313,7 +317,9 @@ def test_window_schedule_csv_totals_footer_sorted_metric_keys() -> None:
                 heightMm=1500,
                 sillHeightMm=900,
             ),
-            "sch": ScheduleElem(kind="schedule", id="sch", name="Win", filters={"category": "window"}),
+            "sch": ScheduleElem(
+                kind="schedule", id="sch", name="Win", filters={"category": "window"}
+            ),
         },
     )
     tbl = derive_schedule_table(doc, "sch")

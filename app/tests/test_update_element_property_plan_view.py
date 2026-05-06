@@ -78,10 +78,16 @@ def test_plan_view_crop_range_discipline_phase() -> None:
             value=json.dumps({"xMm": 5000, "yMm": 4000}),
         ),
     )
-    apply_inplace(doc, UpdateElementPropertyCmd(elementId="pv", key="viewRangeBottomMm", value="-500"))
+    apply_inplace(
+        doc, UpdateElementPropertyCmd(elementId="pv", key="viewRangeBottomMm", value="-500")
+    )
     apply_inplace(doc, UpdateElementPropertyCmd(elementId="pv", key="viewRangeTopMm", value="3000"))
-    apply_inplace(doc, UpdateElementPropertyCmd(elementId="pv", key="cutPlaneOffsetMm", value="-1200"))
-    apply_inplace(doc, UpdateElementPropertyCmd(elementId="pv", key="discipline", value="structure"))
+    apply_inplace(
+        doc, UpdateElementPropertyCmd(elementId="pv", key="cutPlaneOffsetMm", value="-1200")
+    )
+    apply_inplace(
+        doc, UpdateElementPropertyCmd(elementId="pv", key="discipline", value="structure")
+    )
     apply_inplace(doc, UpdateElementPropertyCmd(elementId="pv", key="phaseId", value="ph-1"))
     pv = doc.elements["pv"]
     assert isinstance(pv, PlanViewElem)
@@ -99,7 +105,6 @@ def test_plan_view_crop_range_discipline_phase() -> None:
     assert isinstance(pv2, PlanViewElem)
     assert pv2.crop_min_mm is None
     assert pv2.phase_id is None
-
 
 
 def test_plan_view_plan_detail_level_and_room_fill_scale() -> None:
@@ -122,7 +127,9 @@ def test_plan_view_plan_detail_level_and_room_fill_scale() -> None:
         ),
     }
     doc = Document(revision=1, elements=els)
-    apply_inplace(doc, UpdateElementPropertyCmd(elementId="pv", key="planDetailLevel", value="coarse"))
+    apply_inplace(
+        doc, UpdateElementPropertyCmd(elementId="pv", key="planDetailLevel", value="coarse")
+    )
     pv = doc.elements["pv"]
     assert isinstance(pv, PlanViewElem)
     assert pv.plan_detail_level == "coarse"
@@ -140,7 +147,9 @@ def test_plan_view_plan_detail_level_and_room_fill_scale() -> None:
     assert isinstance(pv3, PlanViewElem)
     assert pv3.plan_room_fill_opacity_scale == 0.25
 
-    apply_inplace(doc, UpdateElementPropertyCmd(elementId="pv", key="planRoomFillOpacityScale", value=""))
+    apply_inplace(
+        doc, UpdateElementPropertyCmd(elementId="pv", key="planRoomFillOpacityScale", value="")
+    )
     pv4 = doc.elements["pv"]
     assert isinstance(pv4, PlanViewElem)
     assert pv4.plan_room_fill_opacity_scale is None
@@ -234,18 +243,26 @@ def test_plan_view_plan_annotation_flags_and_template_inheritance() -> None:
     assert isinstance(pv0, PlanViewElem)
     assert pv0.plan_show_opening_tags is None
 
-    apply_inplace(doc, UpdateElementPropertyCmd(elementId="pv", key="planShowOpeningTags", value="false"))
+    apply_inplace(
+        doc, UpdateElementPropertyCmd(elementId="pv", key="planShowOpeningTags", value="false")
+    )
     pv1 = doc.elements["pv"]
     assert isinstance(pv1, PlanViewElem)
     assert pv1.plan_show_opening_tags is False
 
-    apply_inplace(doc, UpdateElementPropertyCmd(elementId="pv", key="planShowOpeningTags", value=""))
+    apply_inplace(
+        doc, UpdateElementPropertyCmd(elementId="pv", key="planShowOpeningTags", value="")
+    )
     pv2 = doc.elements["pv"]
     assert isinstance(pv2, PlanViewElem)
     assert pv2.plan_show_opening_tags is None
 
-    apply_inplace(doc, UpdateElementPropertyCmd(elementId="vt", key="planShowOpeningTags", value="false"))
-    apply_inplace(doc, UpdateElementPropertyCmd(elementId="vt", key="planShowRoomLabels", value="false"))
+    apply_inplace(
+        doc, UpdateElementPropertyCmd(elementId="vt", key="planShowOpeningTags", value="false")
+    )
+    apply_inplace(
+        doc, UpdateElementPropertyCmd(elementId="vt", key="planShowRoomLabels", value="false")
+    )
     vt2 = doc.elements["vt"]
     assert isinstance(vt2, ViewTemplateElem)
     assert vt2.plan_show_opening_tags is False
@@ -261,7 +278,9 @@ def test_view_template_plan_detail_level_and_room_fill_via_update_element_proper
         plan_room_fill_opacity_scale=1.0,
     )
     doc = Document(revision=1, elements={"vt": vt})
-    apply_inplace(doc, UpdateElementPropertyCmd(elementId="vt", key="planDetailLevel", value="fine"))
+    apply_inplace(
+        doc, UpdateElementPropertyCmd(elementId="vt", key="planDetailLevel", value="fine")
+    )
     vt1 = doc.elements["vt"]
     assert isinstance(vt1, ViewTemplateElem)
     assert vt1.plan_detail_level == "fine"
@@ -275,7 +294,9 @@ def test_view_template_plan_detail_level_and_room_fill_via_update_element_proper
     assert vt2.plan_room_fill_opacity_scale == 0.35
 
     apply_inplace(doc, UpdateElementPropertyCmd(elementId="vt", key="planDetailLevel", value=""))
-    apply_inplace(doc, UpdateElementPropertyCmd(elementId="vt", key="planRoomFillOpacityScale", value=""))
+    apply_inplace(
+        doc, UpdateElementPropertyCmd(elementId="vt", key="planRoomFillOpacityScale", value="")
+    )
     vt3 = doc.elements["vt"]
     assert isinstance(vt3, ViewTemplateElem)
     assert vt3.plan_detail_level is None
@@ -309,12 +330,16 @@ def test_plan_view_plan_tag_style_assign_clear_and_wrong_target() -> None:
         ),
     }
     doc = Document(revision=1, elements=els)
-    apply_inplace(doc, UpdateElementPropertyCmd(elementId="pv", key="planOpeningTagStyleId", value="pts-o"))
+    apply_inplace(
+        doc, UpdateElementPropertyCmd(elementId="pv", key="planOpeningTagStyleId", value="pts-o")
+    )
     pv = doc.elements["pv"]
     assert isinstance(pv, PlanViewElem)
     assert pv.plan_opening_tag_style_id == "pts-o"
 
-    apply_inplace(doc, UpdateElementPropertyCmd(elementId="pv", key="planOpeningTagStyleId", value=""))
+    apply_inplace(
+        doc, UpdateElementPropertyCmd(elementId="pv", key="planOpeningTagStyleId", value="")
+    )
     pv2 = doc.elements["pv"]
     assert isinstance(pv2, PlanViewElem)
     assert pv2.plan_opening_tag_style_id is None

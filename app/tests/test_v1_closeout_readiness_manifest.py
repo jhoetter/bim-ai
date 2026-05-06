@@ -42,9 +42,18 @@ def test_required_gate_paths_and_kinds() -> None:
     gates = m.get("gates")
     assert isinstance(gates, list)
     by_id = {str(g["id"]): g for g in gates if isinstance(g, dict)}
-    assert by_id["pytest_prd_traceability_matrix"]["path"] == "app/tests/test_prd_traceability_matrix.py"
-    assert by_id["pytest_one_family_bundle_roundtrip"]["path"] == "app/tests/test_one_family_bundle_roundtrip.py"
-    assert by_id["pytest_evidence_manifest_closure"]["path"] == "app/tests/test_evidence_manifest_closure.py"
+    assert (
+        by_id["pytest_prd_traceability_matrix"]["path"]
+        == "app/tests/test_prd_traceability_matrix.py"
+    )
+    assert (
+        by_id["pytest_one_family_bundle_roundtrip"]["path"]
+        == "app/tests/test_one_family_bundle_roundtrip.py"
+    )
+    assert (
+        by_id["pytest_evidence_manifest_closure"]["path"]
+        == "app/tests/test_evidence_manifest_closure.py"
+    )
     assert by_id["golden_cli_one_family_commands"]["gateKind"] == "golden_cli_bundle_anchor"
     assert by_id["pytest_one_family_bundle_roundtrip"]["gateKind"] == "golden_bundle_roundtrip"
     gate_ids = [str(g["id"]) for g in gates if isinstance(g, dict)]
@@ -86,7 +95,9 @@ def test_default_classification_blocked_by_deferrals_never_release_ready() -> No
     assert m["releaseClassification"] != "release_ready"
 
 
-def test_classification_not_release_ready_when_deferrals_cleared(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_classification_not_release_ready_when_deferrals_cleared(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setattr(v1_manifest, "_deferred_blockers_v1", lambda: [])
     m = build_v1_closeout_readiness_manifest_v1()
     assert m["releaseClassification"] == "not_release_ready"

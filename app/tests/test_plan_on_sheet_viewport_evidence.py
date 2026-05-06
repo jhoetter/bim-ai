@@ -47,6 +47,7 @@ def _doc_with_plan_on_sheet(
 
 # ── Token tests ───────────────────────────────────────────────────────────────
 
+
 def test_token_crop_missing_when_no_plan_crop() -> None:
     doc, sh = _doc_with_plan_on_sheet()
     rows = plan_sheet_viewport_placement_evidence_v1(doc, list(sh.viewports_mm or []))
@@ -73,9 +74,7 @@ def test_token_crop_inverted_when_min_y_exceeds_max_y() -> None:
 
 
 def test_token_inside_when_no_sheet_viewport_model_crop() -> None:
-    doc, sh = _doc_with_plan_on_sheet(
-        plan_crop_min=(0.0, 0.0), plan_crop_max=(5000.0, 4000.0)
-    )
+    doc, sh = _doc_with_plan_on_sheet(plan_crop_min=(0.0, 0.0), plan_crop_max=(5000.0, 4000.0))
     rows = plan_sheet_viewport_placement_evidence_v1(doc, list(sh.viewports_mm or []))
     assert rows[0]["intersectClampToken"] == "inside"
 
@@ -104,10 +103,9 @@ def test_token_clamped_when_plan_crop_exceeds_vp_model_crop() -> None:
 
 # ── Payload shape tests ───────────────────────────────────────────────────────
 
+
 def test_evidence_row_shape() -> None:
-    doc, sh = _doc_with_plan_on_sheet(
-        plan_crop_min=(0.0, 0.0), plan_crop_max=(4000.0, 3000.0)
-    )
+    doc, sh = _doc_with_plan_on_sheet(plan_crop_min=(0.0, 0.0), plan_crop_max=(4000.0, 3000.0))
     rows = plan_sheet_viewport_placement_evidence_v1(doc, list(sh.viewports_mm or []))
     r = rows[0]
     assert r["format"] == "planSheetViewportPlacementEvidence_v1"
@@ -136,7 +134,14 @@ def test_skips_non_plan_viewports() -> None:
         id="sh-x",
         name="X",
         viewportsMm=[
-            {"viewportId": "vp-sec", "viewRef": "section:sec-1", "xMm": 0, "yMm": 0, "widthMm": 100, "heightMm": 80},
+            {
+                "viewportId": "vp-sec",
+                "viewRef": "section:sec-1",
+                "xMm": 0,
+                "yMm": 0,
+                "widthMm": 100,
+                "heightMm": 80,
+            },
         ],
     )
     doc = Document(revision=1, elements={"sh-x": sh})
@@ -150,7 +155,14 @@ def test_skips_unresolved_plan_view_id() -> None:
         id="sh-y",
         name="Y",
         viewportsMm=[
-            {"viewportId": "vp-ghost", "viewRef": "plan:nonexistent", "xMm": 0, "yMm": 0, "widthMm": 100, "heightMm": 80},
+            {
+                "viewportId": "vp-ghost",
+                "viewRef": "plan:nonexistent",
+                "xMm": 0,
+                "yMm": 0,
+                "widthMm": 100,
+                "heightMm": 80,
+            },
         ],
     )
     doc = Document(revision=1, elements={"sh-y": sh})
@@ -159,9 +171,7 @@ def test_skips_unresolved_plan_view_id() -> None:
 
 
 def test_segment_digest_is_stable() -> None:
-    doc, sh = _doc_with_plan_on_sheet(
-        plan_crop_min=(0.0, 0.0), plan_crop_max=(4000.0, 3000.0)
-    )
+    doc, sh = _doc_with_plan_on_sheet(plan_crop_min=(0.0, 0.0), plan_crop_max=(4000.0, 3000.0))
     r1 = plan_sheet_viewport_placement_evidence_v1(doc, list(sh.viewports_mm or []))
     r2 = plan_sheet_viewport_placement_evidence_v1(doc, list(sh.viewports_mm or []))
     assert r1[0]["planOnSheetSegmentDigestSha256"] == r2[0]["planOnSheetSegmentDigestSha256"]
@@ -169,11 +179,10 @@ def test_segment_digest_is_stable() -> None:
 
 # ── Evidence manifest integration ─────────────────────────────────────────────
 
+
 def test_evidence_manifest_includes_plan_sheet_placement_field() -> None:
     sid = uuid4()
-    doc, _ = _doc_with_plan_on_sheet(
-        plan_crop_min=(0.0, 0.0), plan_crop_max=(5000.0, 4000.0)
-    )
+    doc, _ = _doc_with_plan_on_sheet(plan_crop_min=(0.0, 0.0), plan_crop_max=(5000.0, 4000.0))
     rows = deterministic_sheet_evidence_manifest(
         model_id=sid,
         doc=doc,

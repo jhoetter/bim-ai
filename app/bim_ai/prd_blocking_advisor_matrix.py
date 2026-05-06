@@ -25,9 +25,9 @@ ALLOWED_STATUSES: frozenset[str] = frozenset({"pass", "warn", "block", "deferred
 
 ALLOWED_WAIVER_REASON_CODES: frozenset[str] = frozenset(
     {
-        "v1_scope_deferred",    # Explicitly out of v1 wave 1/2 scope per tracker
+        "v1_scope_deferred",  # Explicitly out of v1 wave 1/2 scope per tracker
         "partial_coverage_v1",  # Partial rule coverage; full enforcement deferred to a later wave
-        "no_rule_impl_v1",      # No constraint rule implemented yet for this PRD class in v1
+        "no_rule_impl_v1",  # No constraint rule implemented yet for this PRD class in v1
     }
 )
 
@@ -406,9 +406,7 @@ def validate_prd_advisor_matrix_rows(rows: list[dict[str, Any]]) -> list[str]:
 
     ids = [str(r.get("id") or "") for r in rows]
     if ids != sorted(ids):
-        errors.append(
-            f"Rows are not sorted by id; expected {sorted(ids)}, got {ids}"
-        )
+        errors.append(f"Rows are not sorted by id; expected {sorted(ids)}, got {ids}")
 
     return errors
 
@@ -465,12 +463,8 @@ def prd_advisor_matrix_summary() -> dict[str, Any]:
         "blockCount": m["statusCounts"].get("block", 0),
         "warnCount": m["statusCounts"].get("warn", 0),
         "passCount": m["statusCounts"].get("pass", 0),
-        "deferredSectionIds": sorted(
-            r["id"] for r in rows if r.get("status") == "deferred"
-        ),
-        "blockingSectionIds": sorted(
-            r["id"] for r in rows if r.get("status") == "block"
-        ),
+        "deferredSectionIds": sorted(r["id"] for r in rows if r.get("status") == "deferred"),
+        "blockingSectionIds": sorted(r["id"] for r in rows if r.get("status") == "block"),
         "matrixContentDigestSha256": m["matrixContentDigestSha256"],
         "validationErrors": m["validationErrors"],
     }
@@ -498,7 +492,9 @@ def prdBlockingAdvisorMatrixExpansion_v1() -> dict[str, Any]:
     new_rows = [
         {
             "ruleId": rid,
-            "blockingClass": _RULE_BLOCKING_CLASS.get(rid, AdvisorBlockingClass.documentation.value),
+            "blockingClass": _RULE_BLOCKING_CLASS.get(
+                rid, AdvisorBlockingClass.documentation.value
+            ),
             "severity": _NEW_RULE_SEVERITY[rid],
             "hasQuickFix": _NEW_RULE_HAS_QUICK_FIX[rid],
             "prdSection": "§11",

@@ -136,7 +136,9 @@ def merge_metric_spans(spans: list[tuple[float, float]]) -> list[tuple[float, fl
     return merged
 
 
-def complement_vertical_spans_m(y_floor: float, y_top: float, blocked: list[tuple[float, float]]) -> list[tuple[float, float]]:
+def complement_vertical_spans_m(
+    y_floor: float, y_top: float, blocked: list[tuple[float, float]]
+) -> list[tuple[float, float]]:
     if y_top <= y_floor + 1e-6:
         return []
     spans = merge_metric_spans(blocked)
@@ -204,7 +206,9 @@ def hosted_opening_half_span_mm(opening: DoorElem | WindowElem) -> float:
     return float(opening.width_mm) * 0.5 + reveal
 
 
-def hosted_opening_t_span_normalized(opening: DoorElem | WindowElem, wall: WallElem) -> tuple[float, float] | None:
+def hosted_opening_t_span_normalized(
+    opening: DoorElem | WindowElem, wall: WallElem
+) -> tuple[float, float] | None:
     """Rough opening ``t`` extent along the wall baseline in normalized [0,1] coordinates."""
     wl_mm = math.hypot(wall.end.x_mm - wall.start.x_mm, wall.end.y_mm - wall.start.y_mm)
 
@@ -239,8 +243,14 @@ def floor_panels_axis_aligned_rect_with_single_hole_mm(
     fx0, fx1, fy0, fy1 = outer_rect_extent_mm(floor_outline_mm)
     ox0, ox1, oy0, oy1 = outer_rect_extent_mm(opening_outline_mm)
     return subtract_axis_aligned_rect_hole_mm(
-        fx0, fx1, fy0, fy1,
-        ox0, ox1, oy0, oy1,
+        fx0,
+        fx1,
+        fy0,
+        fy1,
+        ox0,
+        ox1,
+        oy0,
+        oy1,
         min_gap_mm=min_gap_mm,
     )
 
@@ -276,7 +286,9 @@ def _slab_openings_per_host_floor(doc: Document) -> dict[str, int]:
     return out
 
 
-def slab_opening_documentation_row_v0(doc: Document, opening: SlabOpeningElem) -> dict[str, Any] | None:
+def slab_opening_documentation_row_v0(
+    doc: Document, opening: SlabOpeningElem
+) -> dict[str, Any] | None:
     """Deterministic slab void documentation row (plan/section/export readouts; WP-B03)."""
 
     host_any = doc.elements.get(opening.host_floor_id)

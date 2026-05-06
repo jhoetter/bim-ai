@@ -260,10 +260,14 @@ def test_agent_review_actions_v1_adds_remediate_when_closure_needs_fix_loop() ->
     assert tgt["artifactIngestCorrelationField"] == (
         "evidenceClosureReview_v1.pixelDiffExpectation.artifactIngestCorrelation_v1"
     )
-    assert tgt["playwrightEvidenceScreenshotsRootHint"] == ac["playwrightEvidenceScreenshotsRootHint"]
+    assert (
+        tgt["playwrightEvidenceScreenshotsRootHint"] == ac["playwrightEvidenceScreenshotsRootHint"]
+    )
 
 
-def test_agent_review_actions_remediate_includes_expected_actual_digest_on_mismatch_blocker() -> None:
+def test_agent_review_actions_remediate_includes_expected_actual_digest_on_mismatch_blocker() -> (
+    None
+):
     pkg = "f" * 64
     closure = evidence_closure_review_v1(
         package_semantic_digest_sha256=pkg,

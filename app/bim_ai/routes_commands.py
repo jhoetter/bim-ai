@@ -204,10 +204,12 @@ async def apply_command(
         "delta": delta,
     }
     if _commands_include_move_level_elevation([body.command]):
-        payload["levelElevationPropagationEvidence_v0"] = build_level_elevation_propagation_evidence_v0(
-            doc_before,
-            new_doc,
-            applied_commands=[body.command],
+        payload["levelElevationPropagationEvidence_v0"] = (
+            build_level_elevation_propagation_evidence_v0(
+                doc_before,
+                new_doc,
+                applied_commands=[body.command],
+            )
         )
     return payload
 
@@ -340,10 +342,12 @@ async def apply_command_bundle(
         "replayDiagnostics": bundle_replay_diagnostics(body.commands),
     }
     if _commands_include_move_level_elevation(body.commands):
-        payload["levelElevationPropagationEvidence_v0"] = build_level_elevation_propagation_evidence_v0(
-            doc_before,
-            new_doc,
-            applied_commands=body.commands,
+        payload["levelElevationPropagationEvidence_v0"] = (
+            build_level_elevation_propagation_evidence_v0(
+                doc_before,
+                new_doc,
+                applied_commands=body.commands,
+            )
         )
     return payload
 

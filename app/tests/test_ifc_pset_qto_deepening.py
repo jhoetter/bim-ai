@@ -30,7 +30,9 @@ from bim_ai.ifc_property_set_coverage_evidence_v0 import (
 )
 from bim_ai.ifc_stub import build_ifc_exchange_manifest_payload
 
-pytestmark = pytest.mark.skipif(not IFC_AVAILABLE, reason="ifcopenshell not installed (pip install '.[ifc]')")
+pytestmark = pytest.mark.skipif(
+    not IFC_AVAILABLE, reason="ifcopenshell not installed (pip install '.[ifc]')"
+)
 
 
 def _make_full_doc() -> Document:
@@ -110,7 +112,9 @@ def test_stair_qto_emitted_in_ifc_export() -> None:
 
     qtys = model.by_type("IfcElementQuantity")
     names = {q.Name for q in qtys if getattr(q, "Name", None)}
-    assert "Qto_StairBaseQuantities" in names, f"Stair QTO missing; QTO names present: {sorted(names)}"
+    assert "Qto_StairBaseQuantities" in names, (
+        f"Stair QTO missing; QTO names present: {sorted(names)}"
+    )
 
 
 def test_stair_qto_fields_present() -> None:
@@ -164,7 +168,9 @@ def test_stair_qto_fields_present() -> None:
 
         run_length_m = found_qto["Length"]
         expected_len = math.hypot(3500 - 1000, 0) / 1000.0
-        assert abs(run_length_m - expected_len) < 0.01, f"Run length mismatch: {run_length_m} vs {expected_len}"
+        assert abs(run_length_m - expected_len) < 0.01, (
+            f"Run length mismatch: {run_length_m} vs {expected_len}"
+        )
 
 
 def test_room_qto_includes_perimeter_and_volume() -> None:
@@ -251,7 +257,9 @@ def test_ids_authoritative_replay_map_includes_stairs_section() -> None:
 
     assert sketch["available"] is True
     ids_map = sketch.get("idsAuthoritativeReplayMap_v0") or {}
-    assert "stairs" in ids_map, f"No 'stairs' key in idsAuthoritativeReplayMap_v0: {list(ids_map.keys())}"
+    assert "stairs" in ids_map, (
+        f"No 'stairs' key in idsAuthoritativeReplayMap_v0: {list(ids_map.keys())}"
+    )
 
     stair_rows = ids_map["stairs"]
     assert isinstance(stair_rows, list)
@@ -320,7 +328,9 @@ def test_qto_linked_products_includes_ifc_stair() -> None:
 
     assert inspection["available"] is True
     qto_linked = inspection.get("qtoLinkedProducts") or {}
-    assert "IfcStair" in qto_linked, f"IfcStair missing from qtoLinkedProducts: {list(qto_linked.keys())}"
+    assert "IfcStair" in qto_linked, (
+        f"IfcStair missing from qtoLinkedProducts: {list(qto_linked.keys())}"
+    )
     assert qto_linked["IfcStair"] >= 1, f"Expected ≥1 stair with QTO, got {qto_linked['IfcStair']}"
 
 
@@ -439,7 +449,9 @@ def test_stair_pset_coverage_row_ids_token_ok_for_well_formed_stair() -> None:
     assert stair_rows, "No stair rows in property set coverage evidence"
 
     ok_rows = [r for r in stair_rows if r.get("idsGapReasonToken") == "ids_ok"]
-    assert ok_rows, f"Expected stair rows with ids_ok; got tokens: {[r.get('idsGapReasonToken') for r in stair_rows]}"
+    assert ok_rows, (
+        f"Expected stair rows with ids_ok; got tokens: {[r.get('idsGapReasonToken') for r in stair_rows]}"
+    )
 
 
 def test_property_set_coverage_expansion_v1_schema_version() -> None:

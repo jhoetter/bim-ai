@@ -94,7 +94,14 @@ def test_sheet_revision_issue_metadata_missing_when_vp_and_titleblock_empty_meta
                 name="S",
                 titleBlock="TB",
                 viewportsMm=[
-                    {"viewportId": "vp1", "viewRef": "plan:pv", "xMm": 0, "yMm": 0, "widthMm": 100, "heightMm": 100},
+                    {
+                        "viewportId": "vp1",
+                        "viewRef": "plan:pv",
+                        "xMm": 0,
+                        "yMm": 0,
+                        "widthMm": 100,
+                        "heightMm": 100,
+                    },
                 ],
             ),
         },
@@ -116,7 +123,14 @@ def test_sheet_revision_issue_metadata_missing_not_fired_when_code_present() -> 
                 titleBlock="TB",
                 titleblock_parameters={"revision": "A"},
                 viewportsMm=[
-                    {"viewportId": "vp1", "viewRef": "plan:pv", "xMm": 0, "yMm": 0, "widthMm": 100, "heightMm": 100},
+                    {
+                        "viewportId": "vp1",
+                        "viewRef": "plan:pv",
+                        "xMm": 0,
+                        "yMm": 0,
+                        "widthMm": 100,
+                        "heightMm": 100,
+                    },
                 ],
             ),
         },
@@ -137,12 +151,23 @@ def test_sheet_revision_issue_quick_fix_merge_titleblock_patch() -> None:
                 name="S",
                 titleBlock="TB",
                 viewportsMm=[
-                    {"viewportId": "vp1", "viewRef": "plan:pv", "xMm": 0, "yMm": 0, "widthMm": 100, "heightMm": 100},
+                    {
+                        "viewportId": "vp1",
+                        "viewRef": "plan:pv",
+                        "xMm": 0,
+                        "yMm": 0,
+                        "widthMm": 100,
+                        "heightMm": 100,
+                    },
                 ],
             ),
         },
     )
-    viol = next(v for v in evaluate(dict(doc.elements)) if v.rule_id == "sheet_revision_issue_metadata_missing")
+    viol = next(
+        v
+        for v in evaluate(dict(doc.elements))
+        if v.rule_id == "sheet_revision_issue_metadata_missing"
+    )
     qf = viol.quick_fix_command
     assert isinstance(qf, dict)
     assert qf.get("type") == "updateElementProperty"
@@ -159,7 +184,12 @@ def test_sheet_revision_issue_quick_fix_merge_titleblock_patch() -> None:
     assert isinstance(patch_obj, dict)
 
     ids = {(params["revisionId"], params["revisionCode"])}
-    assert ids == {(str(patch_obj.get("revisionId") or "").strip(), str(patch_obj.get("revisionCode") or "").strip())}
+    assert ids == {
+        (
+            str(patch_obj.get("revisionId") or "").strip(),
+            str(patch_obj.get("revisionCode") or "").strip(),
+        )
+    }
 
 
 def test_stair_schedule_degenerate_run_advisories() -> None:
@@ -297,4 +327,3 @@ def test_material_catalog_stale_assembly_reference_advisory() -> None:
     }
     viols = evaluate(els)
     assert any(v.rule_id == "material_catalog_stale_assembly_reference" for v in viols)
-

@@ -61,7 +61,14 @@ def test_sheet_titleblock_revision_issue_manifest_v1_on_row() -> None:
                     "issueStatus": "for_review",
                 },
                 viewportsMm=[
-                    {"viewportId": "vp1", "viewRef": "plan:pv", "xMm": 0, "yMm": 0, "widthMm": 50, "heightMm": 50},
+                    {
+                        "viewportId": "vp1",
+                        "viewRef": "plan:pv",
+                        "xMm": 0,
+                        "yMm": 0,
+                        "widthMm": 50,
+                        "heightMm": 50,
+                    },
                 ],
             ),
             "pv": PlanViewElem(kind="plan_view", id="pv", name="P", levelId="lvl"),
@@ -284,7 +291,10 @@ def test_sheet_export_artifact_manifest_v1_svg_digest_matches_svg_href_sha() -> 
     assert ci_corr["sheetId"] == "sh1"
     assert ci_corr["svgDigestSha256"] == svg_digest
     assert ci_corr["pngDigestSha256"] == by_name["sheet-print-raster.png"]["digestSha256"]
-    assert isinstance(ci_corr["exportListingDigestSha256"], str) and len(ci_corr["exportListingDigestSha256"]) == 64
+    assert (
+        isinstance(ci_corr["exportListingDigestSha256"], str)
+        and len(ci_corr["exportListingDigestSha256"]) == 64
+    )
 
 
 def test_sheet_export_artifact_manifest_v1_parity_token() -> None:
@@ -316,4 +326,7 @@ def test_sheet_export_artifact_manifest_v1_relative_paths() -> None:
     by_name = {a["artifactName"]: a for a in mf["artifacts"]}
     assert by_name["sheet-preview.svg"]["relativeArtifactPath"] == "exports/sheet-preview.svg"
     assert by_name["sheet-preview.pdf"]["relativeArtifactPath"] == "exports/sheet-preview.pdf"
-    assert by_name["sheet-print-raster.png"]["relativeArtifactPath"] == "exports/sheet-print-raster.png"
+    assert (
+        by_name["sheet-print-raster.png"]["relativeArtifactPath"]
+        == "exports/sheet-print-raster.png"
+    )

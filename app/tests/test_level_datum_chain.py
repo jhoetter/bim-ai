@@ -178,7 +178,14 @@ def test_bundle_replay_diagnostics_datum_commands_large_mix_under_budget() -> No
     cmds: list[dict[str, object]] = []
     for i in range(2500):
         cmds.append({"type": "moveLevelElevation", "levelId": "a", "elevationMm": float(i)})
-        cmds.append({"type": "createLevel", "id": f"lvl-{i}", "parentLevelId": "p", "offsetFromParentMm": 1200})
+        cmds.append(
+            {
+                "type": "createLevel",
+                "id": f"lvl-{i}",
+                "parentLevelId": "p",
+                "offsetFromParentMm": 1200,
+            }
+        )
 
     start = time.perf_counter()
     diag = bundle_replay_diagnostics(cmds)
@@ -212,7 +219,9 @@ def test_level_elevation_propagation_evidence_labels_direct_and_datum_roles():
         },
     )
     before = clone_document(doc)
-    cmds: list[dict[str, object]] = [{"type": "moveLevelElevation", "levelId": "lvl-gr", "elevationMm": 0}]
+    cmds: list[dict[str, object]] = [
+        {"type": "moveLevelElevation", "levelId": "lvl-gr", "elevationMm": 0}
+    ]
     ok, new_doc, _c, _v, code = try_commit_bundle(doc, cmds)
     assert ok is True
     assert new_doc is not None

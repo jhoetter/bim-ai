@@ -98,11 +98,11 @@ test-js:
 	$(PNPM) -w turbo test
 
 format:
-	$(PNPM) -w prettier --write "**/*.{ts,tsx,js,jsx,json,md,yml,yaml}"
+	$(PNPM) -w prettier --write "**/*.{ts,tsx,js,jsx,json,yml,yaml}"
 	cd $(APP_DIR) && .venv/bin/ruff format bim_ai tests scripts
 
 format-check:
-	$(PNPM) -w prettier --check "**/*.{ts,tsx,js,jsx,json,md,yml,yaml}"
+	$(PNPM) -w prettier --check "**/*.{ts,tsx,js,jsx,json,yml,yaml}"
 
 python-format-check:
 	cd $(APP_DIR) && .venv/bin/ruff format --check bim_ai tests scripts

@@ -254,7 +254,9 @@ def section_assembly_alignment_fields_wall(doc: Document, wall: WallElem) -> dic
     }
 
 
-def section_assembly_alignment_fields_floor(doc: Document, floor: FloorElem) -> dict[str, Any] | None:
+def section_assembly_alignment_fields_floor(
+    doc: Document, floor: FloorElem
+) -> dict[str, Any] | None:
     if _typed_floor_layers(doc, floor) is None:
         return None
     m = layer_stack_cut_metrics_for_floor(doc, floor)
@@ -264,7 +266,6 @@ def section_assembly_alignment_fields_floor(doc: Document, floor: FloorElem) -> 
         "assemblyCutThicknessMm": m["cutThicknessMm"],
         "assemblyLayerStackMatchesCutThickness": m["layerStackMatchesCutThickness"],
     }
-
 
 
 def _normalize_layer_summaries(layers: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -300,7 +301,9 @@ def _audit_status_for_typed_summaries(
     return "clean"
 
 
-def _audit_row_core(*, witness: dict[str, Any], status: MaterialCatalogAuditStatus_v0) -> dict[str, Any]:
+def _audit_row_core(
+    *, witness: dict[str, Any], status: MaterialCatalogAuditStatus_v0
+) -> dict[str, Any]:
     summaries = cast(list[dict[str, Any]], witness["layerSummaries"])
     keys = [str(s.get("materialKey") or "").strip() for s in summaries]
     total = round(sum(float(s["thicknessMm"]) for s in summaries), 3)

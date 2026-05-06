@@ -137,7 +137,8 @@ def room_finish_legend_correlation_v1_for_wire(
         seen.add(lb)
         unique_labels.append(lb)
     by_label: dict[str, dict[str, int]] = {
-        lb: {"roomCount": 0, "missingFinishCount": 0, "peerSuggestedCount": 0} for lb in unique_labels
+        lb: {"roomCount": 0, "missingFinishCount": 0, "peerSuggestedCount": 0}
+        for lb in unique_labels
     }
     for room in rooms:
         lab = legend_label_for_room_finish(room)

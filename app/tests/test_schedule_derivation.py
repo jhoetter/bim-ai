@@ -228,7 +228,9 @@ def test_stair_schedule_derives_quantities_and_correlation_token() -> None:
                 riserMm=160,
                 treadMm=280,
             ),
-            "sch-s": ScheduleElem(kind="schedule", id="sch-s", name="Stairs", filters={"category": "stair"}),
+            "sch-s": ScheduleElem(
+                kind="schedule", id="sch-s", name="Stairs", filters={"category": "stair"}
+            ),
         },
     )
     out = derive_schedule_table(doc, "sch-s")

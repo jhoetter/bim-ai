@@ -36,7 +36,9 @@ def build_level_elevation_propagation_evidence_v0(
         if not isinstance(a_el, LevelElem):
             continue
         b_el = doc_before.elements.get(lid)
-        before_mm = float(b_el.elevation_mm) if isinstance(b_el, LevelElem) else float(a_el.elevation_mm)
+        before_mm = (
+            float(b_el.elevation_mm) if isinstance(b_el, LevelElem) else float(a_el.elevation_mm)
+        )
         after_mm = float(a_el.elevation_mm)
         delta_mm = round(after_mm - before_mm, 3)
         pid_raw = a_el.parent_level_id

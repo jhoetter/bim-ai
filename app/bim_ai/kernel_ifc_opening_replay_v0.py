@@ -48,7 +48,9 @@ def _spine_world_matrix_len_m(
     return mat, length_m
 
 
-def _qto_width_height_m(ifc_elem_util: Any, filler: Any, qto_name: str) -> tuple[float | None, float | None]:
+def _qto_width_height_m(
+    ifc_elem_util: Any, filler: Any, qto_name: str
+) -> tuple[float | None, float | None]:
     ps = ifc_elem_util.get_psets(filler)
     q = ps.get(qto_name) or {}
 
@@ -61,7 +63,9 @@ def _qto_width_height_m(ifc_elem_util: Any, filler: Any, qto_name: str) -> tuple
     return _as_m("Width"), _as_m("Height")
 
 
-def _opening_width_height_mm_fallback(ifc_placement: Any, opening: Any) -> tuple[float | None, float | None]:
+def _opening_width_height_mm_fallback(
+    ifc_placement: Any, opening: Any
+) -> tuple[float | None, float | None]:
     from bim_ai.export_ifc import _first_body_extruded_area_solid, _profile_xy_polyline_mm
 
     ex = _first_body_extruded_area_solid(opening)
@@ -148,7 +152,12 @@ def build_wall_hosted_opening_replay_commands_v0(
                 continue
         if opening is None:
             _append_gap(
-                {"fillingGlobalId": fg, "kernelReference": ref_s, "kind": kind, "reason": "missing_fills_void_rel"}
+                {
+                    "fillingGlobalId": fg,
+                    "kernelReference": ref_s,
+                    "kind": kind,
+                    "reason": "missing_fills_void_rel",
+                }
             )
             return None
 
@@ -157,7 +166,9 @@ def build_wall_hosted_opening_replay_commands_v0(
             try:
                 if not rel.is_a("IfcRelVoidsElement"):
                     continue
-                host = getattr(rel, "RelatingBuildingElement", None) or getattr(rel, "RelatedBuildingElement", None)
+                host = getattr(rel, "RelatingBuildingElement", None) or getattr(
+                    rel, "RelatedBuildingElement", None
+                )
                 if host is not None and host.is_a("IfcWall"):
                     wall_host = host
                     break
@@ -209,14 +220,25 @@ def build_wall_hosted_opening_replay_commands_v0(
             elev_mm,
         )
         if len_m < 1e-9:
-            _append_gap({"wallGlobalId": wgid, "kernelReference": ref_s, "kind": kind, "reason": "wall_length_degenerate"})
+            _append_gap(
+                {
+                    "wallGlobalId": wgid,
+                    "kernelReference": ref_s,
+                    "kind": kind,
+                    "reason": "wall_length_degenerate",
+                }
+            )
             return None
 
         try:
             M_open = ifc_placement.get_local_placement(opening.ObjectPlacement)
         except Exception:
             _append_gap(
-                {"openingGlobalId": str(getattr(opening, "GlobalId", None) or ""), "kind": kind, "reason": "opening_placement_unreadable"}
+                {
+                    "openingGlobalId": str(getattr(opening, "GlobalId", None) or ""),
+                    "kind": kind,
+                    "reason": "opening_placement_unreadable",
+                }
             )
             return None
 
@@ -251,7 +273,9 @@ def build_wall_hosted_opening_replay_commands_v0(
         usable_t0 = half_t
         usable_t1 = 1.0 - half_t
         if usable_t1 <= usable_t0:
-            _append_gap({"fillingGlobalId": fg, "kind": kind, "reason": "opening_t_extent_degenerate"})
+            _append_gap(
+                {"fillingGlobalId": fg, "kind": kind, "reason": "opening_t_extent_degenerate"}
+            )
             return None
 
         t_left = lx / len_m
@@ -261,7 +285,9 @@ def build_wall_hosted_opening_replay_commands_v0(
         wall_h_mm = float(geo["height_mm"])
         wall_h_m = _clamp(wall_h_mm / 1000.0, 0.25, 40.0)
 
-        nm = str(getattr(filler, "Name", None) or "").strip() or ("Door" if kind == "door" else "Window")
+        nm = str(getattr(filler, "Name", None) or "").strip() or (
+            "Door" if kind == "door" else "Window"
+        )
 
         if kind == "door":
             return InsertDoorOnWallCmd(
@@ -297,13 +323,17 @@ def build_wall_hosted_opening_replay_commands_v0(
         ).model_dump(mode="json", by_alias=True)
 
     door_cmds: list[dict[str, Any]] = []
-    for dr in sorted(model.by_type("IfcDoor") or [], key=lambda d: str(getattr(d, "GlobalId", None) or "")):
+    for dr in sorted(
+        model.by_type("IfcDoor") or [], key=lambda d: str(getattr(d, "GlobalId", None) or "")
+    ):
         cmd = _process("door", dr)
         if cmd is not None:
             door_cmds.append(cmd)
 
     win_cmds: list[dict[str, Any]] = []
-    for win in sorted(model.by_type("IfcWindow") or [], key=lambda w: str(getattr(w, "GlobalId", None) or "")):
+    for win in sorted(
+        model.by_type("IfcWindow") or [], key=lambda w: str(getattr(w, "GlobalId", None) or "")
+    ):
         cmd = _process("window", win)
         if cmd is not None:
             win_cmds.append(cmd)

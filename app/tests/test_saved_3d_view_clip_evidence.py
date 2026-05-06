@@ -39,9 +39,7 @@ class TestCollectSaved3dViewClipEvidenceV1:
         assert collect_saved_3d_view_clip_evidence_v1(doc) is None
 
     def test_returns_none_when_only_plan_viewpoints(self) -> None:
-        vp = ViewpointElem(
-            kind="viewpoint", id="v1", name="Plan", camera=_camera(), mode="plan_2d"
-        )
+        vp = ViewpointElem(kind="viewpoint", id="v1", name="Plan", camera=_camera(), mode="plan_2d")
         doc = Document(revision=1, elements={"v1": vp})
         assert collect_saved_3d_view_clip_evidence_v1(doc) is None
 

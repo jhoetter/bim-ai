@@ -104,7 +104,9 @@ def _plan_view_range_authoring_incomplete(pv: PlanViewElem) -> bool:
     return has_any and not has_full
 
 
-def _resolve_plan_view_range_clip_mm(doc: Document, pv: PlanViewElem) -> tuple[float, float, float] | None:
+def _resolve_plan_view_range_clip_mm(
+    doc: Document, pv: PlanViewElem
+) -> tuple[float, float, float] | None:
     b = pv.view_range_bottom_mm
     t = pv.view_range_top_mm
     if b is None or t is None:
@@ -125,7 +127,9 @@ def _room_vertical_span_mm(doc: Document, rm: RoomElem) -> tuple[float, float]:
     floor_z = _level_elevation_mm(doc, rm.level_id)
     if rm.upper_limit_level_id:
         ceil_el = doc.elements.get(rm.upper_limit_level_id)
-        ceiling_z = float(ceil_el.elevation_mm) if isinstance(ceil_el, LevelElem) else floor_z + 2800.0
+        ceiling_z = (
+            float(ceil_el.elevation_mm) if isinstance(ceil_el, LevelElem) else floor_z + 2800.0
+        )
     else:
         ceiling_z = floor_z + 2800.0
     offset = float(rm.volume_ceiling_offset_mm) if rm.volume_ceiling_offset_mm is not None else 0.0
@@ -458,7 +462,9 @@ def _plan_tag_style_hint_payload(
     }
 
 
-def _format_opening_tag_with_style(o: DoorElem | WindowElem, catalog: PlanTagStyleElem | None) -> str:
+def _format_opening_tag_with_style(
+    o: DoorElem | WindowElem, catalog: PlanTagStyleElem | None
+) -> str:
     if catalog is None:
         return _opening_plan_tag_label(o)
     fields = catalog.label_fields
@@ -565,13 +571,20 @@ def _plan_view_browser_hierarchy_v0(
     # Tag style summary
     def _tag_summary(lane_res: _ResolvedPlanTagStyleLane | None, lane: str) -> dict[str, Any]:
         if lane_res is None:
-            return {"lane": lane, "resolvedStyleId": None, "effectiveSource": "builtin", "warnings": []}
+            return {
+                "lane": lane,
+                "resolvedStyleId": None,
+                "effectiveSource": "builtin",
+                "warnings": [],
+            }
         return {
             "lane": lane,
             "resolvedStyleId": lane_res.style_id,
             "resolvedStyleName": lane_res.name,
             "effectiveSource": lane_res.source,
-            "warnings": sorted(lane_res.warnings, key=lambda w: (str(w.get("code", "")), str(w.get("lane", "")))),
+            "warnings": sorted(
+                lane_res.warnings, key=lambda w: (str(w.get("code", "")), str(w.get("lane", "")))
+            ),
         }
 
     # Category graphics source summary
@@ -583,7 +596,9 @@ def _plan_view_browser_hierarchy_v0(
         for key in PLAN_CATEGORY_GRAPHIC_KEYS:
             r = cat_res[key]
             # Report dominant source (plan_view > template > default)
-            dominant = r.line_weight_source if not r.line_weight_is_defaulted else r.line_pattern_source
+            dominant = (
+                r.line_weight_source if not r.line_weight_is_defaulted else r.line_pattern_source
+            )
             if r.line_weight_is_defaulted and r.line_pattern_is_defaulted:
                 dominant = "default"
             elif r.line_weight_source == "plan_view" or r.line_pattern_source == "plan_view":
@@ -627,7 +642,9 @@ def _plan_view_browser_hierarchy_v0(
         }
 
     tmpl_view_range: dict[str, Any] | None = None
-    if tmpl is not None and (tmpl.view_range_bottom_mm is not None or tmpl.view_range_top_mm is not None):
+    if tmpl is not None and (
+        tmpl.view_range_bottom_mm is not None or tmpl.view_range_top_mm is not None
+    ):
         tmpl_view_range = {
             "viewRangeBottomMm": tmpl.view_range_bottom_mm,
             "viewRangeTopMm": tmpl.view_range_top_mm,
@@ -641,8 +658,12 @@ def _plan_view_browser_hierarchy_v0(
         "viewTemplateId": tmpl.id if tmpl else None,
         "viewTemplateName": tmpl.name if tmpl else None,
         "templateViewRange": tmpl_view_range,
-        "storedCropMinMm": {"xMm": pv.crop_min_mm.x_mm, "yMm": pv.crop_min_mm.y_mm} if pv.crop_min_mm else None,
-        "storedCropMaxMm": {"xMm": pv.crop_max_mm.x_mm, "yMm": pv.crop_max_mm.y_mm} if pv.crop_max_mm else None,
+        "storedCropMinMm": {"xMm": pv.crop_min_mm.x_mm, "yMm": pv.crop_min_mm.y_mm}
+        if pv.crop_min_mm
+        else None,
+        "storedCropMaxMm": {"xMm": pv.crop_max_mm.x_mm, "yMm": pv.crop_max_mm.y_mm}
+        if pv.crop_max_mm
+        else None,
         "storedViewRangeBottomMm": pv.view_range_bottom_mm,
         "storedViewRangeTopMm": pv.view_range_top_mm,
         "discipline": pv.discipline,
@@ -755,7 +776,9 @@ def _vp_dict_axis_xy(
     return pick(keys_x), pick(keys_y)
 
 
-def _sheet_viewport_crop_box_xy_mm(vp_row: dict[str, Any]) -> tuple[tuple[float, float, float, float] | None, bool]:
+def _sheet_viewport_crop_box_xy_mm(
+    vp_row: dict[str, Any],
+) -> tuple[tuple[float, float, float, float] | None, bool]:
     """Return (normalized sheet crop box, partial_corner_authored).
 
     partial_corner_authored is True when only one of cropMinMm/cropMaxMm is present (crop ignored).
@@ -868,7 +891,11 @@ def _derived_room_boundary_evidence_for_wire(
         lvl_z = _level_elevation_mm(doc, active_level_id)
         if not _closed_z_intervals_overlap_mm(lvl_z, lvl_z, lo, hi):
             return []
-    bundle = room_boundary_bundle if room_boundary_bundle is not None else compute_room_boundary_derivation(doc)
+    bundle = (
+        room_boundary_bundle
+        if room_boundary_bundle is not None
+        else compute_room_boundary_derivation(doc)
+    )
     out: list[dict[str, Any]] = []
     for c in bundle.get("axisAlignedRectangleCandidates") or []:
         if not isinstance(c, dict):
@@ -885,7 +912,9 @@ def _derived_room_boundary_evidence_for_wire(
         if effective_crop_mm is not None and not _poly_bbox_overlaps_crop(pts, effective_crop_mm):
             continue
         fp_id = stable_footprint_id(c)
-        outline_mm_xy = [[round(float(d["xMm"]), 3), round(float(d["yMm"]), 3)] for d in outline_pts]
+        outline_mm_xy = [
+            [round(float(d["xMm"]), 3), round(float(d["yMm"]), 3)] for d in outline_pts
+        ]
         out.append(
             {
                 "format": "derivedRoomFootprintEvidenceRow_v0",
@@ -1119,16 +1148,14 @@ def _build_plan_primitive_lists(
             w = doc.elements.get(e.wall_id)
             if not isinstance(w, WallElem):
                 continue
-            if (
-                "door" in hidden_semantic
-                or "wall" in hidden_semantic
-                or not lvl_ok(w.level_id)
-            ):
+            if "door" in hidden_semantic or "wall" in hidden_semantic or not lvl_ok(w.level_id):
                 continue
             tspan = hosted_opening_t_span_normalized(e, w)
             cx_mm, cy_mm = _hosted_xy_mm_on_wall(e, w)
             if crop_box is not None:
-                opening_ok = _point_in_crop_xy(cx_mm, cy_mm, crop_box) or _segment_intersects_crop_xy(
+                opening_ok = _point_in_crop_xy(
+                    cx_mm, cy_mm, crop_box
+                ) or _segment_intersects_crop_xy(
                     w.start.x_mm, w.start.y_mm, w.end.x_mm, w.end.y_mm, crop_box
                 )
                 if not opening_ok:
@@ -1156,16 +1183,14 @@ def _build_plan_primitive_lists(
             w = doc.elements.get(e.wall_id)
             if not isinstance(w, WallElem):
                 continue
-            if (
-                "window" in hidden_semantic
-                or "wall" in hidden_semantic
-                or not lvl_ok(w.level_id)
-            ):
+            if "window" in hidden_semantic or "wall" in hidden_semantic or not lvl_ok(w.level_id):
                 continue
             tspan = hosted_opening_t_span_normalized(e, w)
             cx_mm, cy_mm = _hosted_xy_mm_on_wall(e, w)
             if crop_box is not None:
-                opening_ok = _point_in_crop_xy(cx_mm, cy_mm, crop_box) or _segment_intersects_crop_xy(
+                opening_ok = _point_in_crop_xy(
+                    cx_mm, cy_mm, crop_box
+                ) or _segment_intersects_crop_xy(
                     w.start.x_mm, w.start.y_mm, w.end.x_mm, w.end.y_mm, crop_box
                 )
                 if not opening_ok:
@@ -1272,7 +1297,9 @@ def _build_plan_primitive_lists(
             )
             if ph is not None:
                 stair_row["stairDocumentationPlaceholders_v0"] = ph
-                stair_row["stairPlanSectionDocumentationLabel"] = ph["stairPlanSectionDocumentationLabel"]
+                stair_row["stairPlanSectionDocumentationLabel"] = ph[
+                    "stairPlanSectionDocumentationLabel"
+                ]
             diags = stair_documentation_diagnostics(
                 doc,
                 e,
@@ -1318,9 +1345,7 @@ def _build_plan_primitive_lists(
             roofs.append(roof_row)
         elif isinstance(e, GridLineElem):
             elv = getattr(e, "level_id", None)
-            if "grid_line" in hidden_semantic or (
-                level and elv is not None and elv != level
-            ):
+            if "grid_line" in hidden_semantic or (level and elv is not None and elv != level):
                 continue
             if crop_box is not None and not _segment_intersects_crop_xy(
                 e.start.x_mm, e.start.y_mm, e.end.x_mm, e.end.y_mm, crop_box
@@ -1369,7 +1394,9 @@ def _build_plan_primitive_lists(
             }
             xf = room_sep_wire_fields.get(e.id) if room_sep_wire_fields else None
             if xf:
-                row_rs["axisAlignedBoundarySegmentEligible"] = xf["axisAlignedBoundarySegmentEligible"]
+                row_rs["axisAlignedBoundarySegmentEligible"] = xf[
+                    "axisAlignedBoundarySegmentEligible"
+                ]
                 rsn = xf.get("axisBoundarySegmentExcludedReason")
                 if rsn:
                     row_rs["axisBoundarySegmentExcludedReason"] = rsn
@@ -1598,16 +1625,14 @@ def _wall_corner_join_summary_for_plan_view(
             w = doc.elements.get(e.wall_id)
             if not isinstance(w, WallElem):
                 return False
-            if (
-                "door" in hidden_semantic
-                or "wall" in hidden_semantic
-                or not lvl_ok(w.level_id)
-            ):
+            if "door" in hidden_semantic or "wall" in hidden_semantic or not lvl_ok(w.level_id):
                 return False
             cx_mm, cy_mm = _hosted_xy_mm_on_wall(e, w)
             crop_box = crop_box_mm
             if crop_box is not None:
-                opening_ok = _point_in_crop_xy(cx_mm, cy_mm, crop_box) or _segment_intersects_crop_xy(
+                opening_ok = _point_in_crop_xy(
+                    cx_mm, cy_mm, crop_box
+                ) or _segment_intersects_crop_xy(
                     w.start.x_mm, w.start.y_mm, w.end.x_mm, w.end.y_mm, crop_box
                 )
                 if not opening_ok:
@@ -1618,16 +1643,14 @@ def _wall_corner_join_summary_for_plan_view(
             w = doc.elements.get(e.wall_id)
             if not isinstance(w, WallElem):
                 return False
-            if (
-                "window" in hidden_semantic
-                or "wall" in hidden_semantic
-                or not lvl_ok(w.level_id)
-            ):
+            if "window" in hidden_semantic or "wall" in hidden_semantic or not lvl_ok(w.level_id):
                 return False
             cx_mm, cy_mm = _hosted_xy_mm_on_wall(e, w)
             crop_box = crop_box_mm
             if crop_box is not None:
-                opening_ok = _point_in_crop_xy(cx_mm, cy_mm, crop_box) or _segment_intersects_crop_xy(
+                opening_ok = _point_in_crop_xy(
+                    cx_mm, cy_mm, crop_box
+                ) or _segment_intersects_crop_xy(
                     w.start.x_mm, w.start.y_mm, w.end.x_mm, w.end.y_mm, crop_box
                 )
                 if not opening_ok:
@@ -1696,16 +1719,14 @@ def _wall_opening_cut_fidelity_rows_for_plan_view(
             w = doc.elements.get(e.wall_id)
             if not isinstance(w, WallElem):
                 continue
-            if (
-                "door" in hidden_semantic
-                or "wall" in hidden_semantic
-                or not lvl_ok(w.level_id)
-            ):
+            if "door" in hidden_semantic or "wall" in hidden_semantic or not lvl_ok(w.level_id):
                 continue
             cx_mm, cy_mm = _hosted_xy_mm_on_wall(e, w)
             crop_box = crop_box_mm
             if crop_box is not None:
-                opening_ok = _point_in_crop_xy(cx_mm, cy_mm, crop_box) or _segment_intersects_crop_xy(
+                opening_ok = _point_in_crop_xy(
+                    cx_mm, cy_mm, crop_box
+                ) or _segment_intersects_crop_xy(
                     w.start.x_mm, w.start.y_mm, w.end.x_mm, w.end.y_mm, crop_box
                 )
                 if not opening_ok:
@@ -1718,16 +1739,14 @@ def _wall_opening_cut_fidelity_rows_for_plan_view(
             w = doc.elements.get(e.wall_id)
             if not isinstance(w, WallElem):
                 continue
-            if (
-                "window" in hidden_semantic
-                or "wall" in hidden_semantic
-                or not lvl_ok(w.level_id)
-            ):
+            if "window" in hidden_semantic or "wall" in hidden_semantic or not lvl_ok(w.level_id):
                 continue
             cx_mm, cy_mm = _hosted_xy_mm_on_wall(e, w)
             crop_box = crop_box_mm
             if crop_box is not None:
-                opening_ok = _point_in_crop_xy(cx_mm, cy_mm, crop_box) or _segment_intersects_crop_xy(
+                opening_ok = _point_in_crop_xy(
+                    cx_mm, cy_mm, crop_box
+                ) or _segment_intersects_crop_xy(
                     w.start.x_mm, w.start.y_mm, w.end.x_mm, w.end.y_mm, crop_box
                 )
                 if not opening_ok:
@@ -2220,7 +2239,6 @@ def section_cut_projection_wire(doc: Document, section_cut_id: str) -> dict[str,
     sec = doc.elements.get(section_cut_id)
 
     if not isinstance(sec, SectionCutElem):
-
         return {
             "format": "sectionProjectionWire_v1",
             "errors": [{"code": "not_found", "message": "section_cut id missing or wrong kind"}],
@@ -2260,4 +2278,3 @@ def section_cut_projection_wire(doc: Document, section_cut_id: str) -> dict[str,
             doc, sec, prim, prim_warnings
         ),
     }
-

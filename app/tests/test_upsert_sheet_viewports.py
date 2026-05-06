@@ -45,7 +45,9 @@ def test_upsert_sheet_viewports_replaces_array() -> None:
 
 
 def test_upsert_sheet_viewports_persists_model_crop_metadata() -> None:
-    doc = Document(revision=1, elements={"s1": SheetElem(kind="sheet", id="s1", name="GA", viewports_mm=[])})
+    doc = Document(
+        revision=1, elements={"s1": SheetElem(kind="sheet", id="s1", name="GA", viewports_mm=[])}
+    )
     apply_inplace(
         doc,
         UpsertSheetViewportsCmd(
@@ -79,7 +81,9 @@ def test_upsert_sheet_viewports_sequential_replace() -> None:
                 kind="sheet",
                 id="s1",
                 name="GA",
-                viewports_mm=[{"viewportId": "legacy", "xMm": 0, "yMm": 0, "widthMm": 1, "heightMm": 1}],
+                viewports_mm=[
+                    {"viewportId": "legacy", "xMm": 0, "yMm": 0, "widthMm": 1, "heightMm": 1}
+                ],
             ),
         },
     )
@@ -87,7 +91,16 @@ def test_upsert_sheet_viewports_sequential_replace() -> None:
         doc,
         UpsertSheetViewportsCmd(
             sheetId="s1",
-            viewportsMm=[{"viewportId": "first", "viewRef": "plan:a", "xMm": 1, "yMm": 1, "widthMm": 10, "heightMm": 10}],
+            viewportsMm=[
+                {
+                    "viewportId": "first",
+                    "viewRef": "plan:a",
+                    "xMm": 1,
+                    "yMm": 1,
+                    "widthMm": 10,
+                    "heightMm": 10,
+                }
+            ],
         ),
     )
     apply_inplace(
@@ -95,8 +108,22 @@ def test_upsert_sheet_viewports_sequential_replace() -> None:
         UpsertSheetViewportsCmd(
             sheetId="s1",
             viewportsMm=[
-                {"viewportId": "second-a", "viewRef": "section:b", "xMm": 2, "yMm": 2, "widthMm": 20, "heightMm": 20},
-                {"viewportId": "second-b", "viewRef": "schedule:c", "xMm": 3, "yMm": 3, "widthMm": 30, "heightMm": 30},
+                {
+                    "viewportId": "second-a",
+                    "viewRef": "section:b",
+                    "xMm": 2,
+                    "yMm": 2,
+                    "widthMm": 20,
+                    "heightMm": 20,
+                },
+                {
+                    "viewportId": "second-b",
+                    "viewRef": "schedule:c",
+                    "xMm": 3,
+                    "yMm": 3,
+                    "widthMm": 30,
+                    "heightMm": 30,
+                },
             ],
         ),
     )

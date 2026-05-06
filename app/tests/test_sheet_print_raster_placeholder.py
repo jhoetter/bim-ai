@@ -91,9 +91,9 @@ def test_layout_stamp_changes_when_viewport_geometry_changes() -> None:
     doc = Document(revision=1, elements={"s1": sh1})
     svg1 = sheet_elem_to_svg(doc, sh1)
     svg2 = sheet_elem_to_svg(doc, sh2)
-    assert sheet_print_raster_layout_stamp_png_bytes_v1(doc, sh1, svg1) != sheet_print_raster_layout_stamp_png_bytes_v1(
-        doc, sh2, svg2
-    )
+    assert sheet_print_raster_layout_stamp_png_bytes_v1(
+        doc, sh1, svg1
+    ) != sheet_print_raster_layout_stamp_png_bytes_v1(doc, sh2, svg2)
 
 
 def test_layout_stamp_contract_constant() -> None:
@@ -114,13 +114,31 @@ def test_viewport_evidence_hints_v1_plan_and_section_segments() -> None:
 
     hints = viewport_evidence_hints_v1(
         doc,
-        [{"viewportId": "v", "viewRef": "plan:pv1", "xMm": 0, "yMm": 0, "widthMm": 1000, "heightMm": 1000}],
+        [
+            {
+                "viewportId": "v",
+                "viewRef": "plan:pv1",
+                "xMm": 0,
+                "yMm": 0,
+                "widthMm": 1000,
+                "heightMm": 1000,
+            }
+        ],
     )
     assert hints[0]["planProjectionSegment"].startswith("planPrim[")
     assert hints[0].get("roomProgrammeLegendDocumentationSegment") == ""
     hints2 = viewport_evidence_hints_v1(
         doc,
-        [{"viewportId": "v2", "viewRef": "section:sec1", "xMm": 0, "yMm": 0, "widthMm": 1000, "heightMm": 1000}],
+        [
+            {
+                "viewportId": "v2",
+                "viewRef": "section:sec1",
+                "xMm": 0,
+                "yMm": 0,
+                "widthMm": 1000,
+                "heightMm": 1000,
+            }
+        ],
     )
     assert hints2[0]["sectionDocumentationSegment"].startswith("secDoc[")
 
@@ -198,7 +216,9 @@ def test_sheet_print_raster_print_contract_v3_segments_and_validation() -> None:
 
     png_bad = bytearray(png)
     png_bad[-1] ^= 1
-    bad_ok, bad_errs = validate_sheet_print_raster_print_contract_v3(v3, bytes(png_bad), doc, sh, svg)
+    bad_ok, bad_errs = validate_sheet_print_raster_print_contract_v3(
+        v3, bytes(png_bad), doc, sh, svg
+    )
     assert not bad_ok
     assert bad_errs
 
@@ -282,7 +302,7 @@ def test_print_surrogate_v2_layout_rows_match_layout_stamp_v1() -> None:
     assert _w1 == _w2 == SHEET_PRINT_RASTER_STAMP_WIDTH_PX
     assert _h1 == SHEET_PRINT_RASTER_STAMP_HEIGHT_PX
     assert h2 == SHEET_PRINT_RASTER_SURROGATE_V2_HEIGHT_PX
-    assert rows1 == rows2[: SHEET_PRINT_RASTER_STAMP_HEIGHT_PX]
+    assert rows1 == rows2[:SHEET_PRINT_RASTER_STAMP_HEIGHT_PX]
 
 
 def test_print_surrogate_v2_titleblock_metadata_changes_png() -> None:
@@ -339,7 +359,9 @@ def test_print_contract_v3_svg_pdf_listing_parity() -> None:
         kind="sheet",
         id="s1",
         name="S",
-        viewportsMm=[{"viewportId": "v1", "viewRef": "", "xMm": 0, "yMm": 0, "widthMm": 100, "heightMm": 100}],
+        viewportsMm=[
+            {"viewportId": "v1", "viewRef": "", "xMm": 0, "yMm": 0, "widthMm": 100, "heightMm": 100}
+        ],
     )
     doc = Document(revision=1, elements={"s1": sh})
     svg = sheet_elem_to_svg(doc, sh)
@@ -372,4 +394,3 @@ def test_validate_contract_v3_checks_new_fields() -> None:
     bad_ok, bad_errs = validate_sheet_print_raster_print_contract_v3(forged, png, doc, sh, svg)
     assert not bad_ok
     assert any("fullRasterExportStatus" in e for e in bad_errs)
-

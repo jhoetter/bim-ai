@@ -74,7 +74,9 @@ def test_export_manifest_includes_wall_corner_join_evidence_for_l_walls() -> Non
 
 
 def test_gltf_manifest_lists_unsupported_kinds_when_no_geometry_categories():
-    doc = Document(revision=1, elements={"sch": ScheduleElem(kind="schedule", id="sch-1", name="S")})
+    doc = Document(
+        revision=1, elements={"sch": ScheduleElem(kind="schedule", id="sch-1", name="S")}
+    )
     gm = build_visual_export_manifest(doc)
     ext = gm["extensions"]["BIM_AI_exportManifest_v0"]
     assert ext["elementCount"] == 1
@@ -205,7 +207,9 @@ def test_build_visual_export_manifest_includes_layered_assembly_cut_alignment_ev
 
 
 def test_build_visual_export_manifest_includes_roof_assembly_evidence():
-    doc = Document(revision=1, elements={"lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=0)})
+    doc = Document(
+        revision=1, elements={"lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=0)}
+    )
     apply_inplace(
         doc,
         UpsertRoofTypeCmd(
@@ -257,8 +261,12 @@ def test_build_visual_export_manifest_includes_roof_assembly_evidence():
     assert "roofGeometrySupportToken" not in rrow
 
 
-def test_export_manifest_mesh_encoding_includes_roof_layered_prism_for_gable_with_typed_layers() -> None:
-    doc = Document(revision=1, elements={"lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=0)})
+def test_export_manifest_mesh_encoding_includes_roof_layered_prism_for_gable_with_typed_layers() -> (
+    None
+):
+    doc = Document(
+        revision=1, elements={"lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=0)}
+    )
     apply_inplace(
         doc,
         UpsertRoofTypeCmd(

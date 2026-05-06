@@ -246,7 +246,9 @@ def agent_review_actions_v1(
                         "guidance": f"Capture plan canvas PNG for topic {b.id} (plan {ref.plan_view_id}).",
                     }
                 )
-            elif ref.kind == "section_cut" and ref.section_cut_id and ref.section_cut_id in sec_by_id:
+            elif (
+                ref.kind == "section_cut" and ref.section_cut_id and ref.section_cut_id in sec_by_id
+            ):
                 row = sec_by_id[ref.section_cut_id]
                 pw = row.get("playwrightSuggestedFilenames")
                 ps = pw.get("pngSectionViewport") if isinstance(pw, dict) else None
@@ -472,7 +474,9 @@ def ingest_evidence_artifact_manifest_v1(
     entries: list[dict[str, Any]] = [e for e in (entries_raw or []) if isinstance(e, dict)]
 
     manifest_digest = manifest.get("packageDigestSha256")
-    reference_digest = current_package_digest if current_package_digest is not None else manifest_digest
+    reference_digest = (
+        current_package_digest if current_package_digest is not None else manifest_digest
+    )
 
     fresh: list[dict[str, Any]] = []
     stale: list[dict[str, Any]] = []
@@ -521,7 +525,9 @@ def ingest_evidence_artifact_manifest_v1(
             expected_key = f"section_cut-{eid}"
             elem_kind = "section_cut"
         if expected_key and expected_key not in manifest_keys:
-            missing.append({"artifactKey": expected_key, "elementId": eid, "elementKind": elem_kind})
+            missing.append(
+                {"artifactKey": expected_key, "elementId": eid, "elementKind": elem_kind}
+            )
 
     missing.sort(key=lambda x: str(x.get("artifactKey", "")))
 
@@ -549,7 +555,7 @@ def compute_evidence_diff_metadata_v1(
 
     def _entry_map(m: dict[str, Any]) -> dict[str, str]:
         out: dict[str, str] = {}
-        for e in (m.get("entries") or []):
+        for e in m.get("entries") or []:
             if not isinstance(e, dict):
                 continue
             k = e.get("artifactKey")
@@ -564,12 +570,8 @@ def compute_evidence_diff_metadata_v1(
     prev_keys = set(prev_map)
     curr_keys = set(curr_map)
 
-    added = [
-        {"artifactKey": k, "newDigest": curr_map[k]} for k in sorted(curr_keys - prev_keys)
-    ]
-    removed = [
-        {"artifactKey": k, "oldDigest": prev_map[k]} for k in sorted(prev_keys - curr_keys)
-    ]
+    added = [{"artifactKey": k, "newDigest": curr_map[k]} for k in sorted(curr_keys - prev_keys)]
+    removed = [{"artifactKey": k, "oldDigest": prev_map[k]} for k in sorted(prev_keys - curr_keys)]
     changed: list[dict[str, Any]] = []
     for k in sorted(prev_keys & curr_keys):
         old_d, new_d = prev_map[k], curr_map[k]
@@ -586,8 +588,7 @@ def compute_evidence_diff_metadata_v1(
             )
 
     top5 = [
-        {"artifactKey": e["artifactKey"], "deltaSummary": e["deltaSummary"]}
-        for e in changed[:5]
+        {"artifactKey": e["artifactKey"], "deltaSummary": e["deltaSummary"]} for e in changed[:5]
     ]
 
     summary: dict[str, Any] = {

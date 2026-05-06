@@ -52,7 +52,9 @@ def _append_schedule_totals_csv(buf: io.StringIO, totals: dict[str, Any]) -> Non
         w.writerow(["", key, _scalar_totals_csv_cell(scalars[key])])
 
 
-def _maybe_append_totals_block(main_csv: str, payload: dict[str, Any], *, include_totals_csv: bool) -> str:
+def _maybe_append_totals_block(
+    main_csv: str, payload: dict[str, Any], *, include_totals_csv: bool
+) -> str:
     if not include_totals_csv:
         return main_csv
     raw = payload.get("totals")
@@ -63,7 +65,9 @@ def _maybe_append_totals_block(main_csv: str, payload: dict[str, Any], *, includ
     return main_csv + tail.getvalue()
 
 
-def schedule_payload_with_column_subset(payload: dict[str, Any], columns: list[str]) -> dict[str, Any]:
+def schedule_payload_with_column_subset(
+    payload: dict[str, Any], columns: list[str]
+) -> dict[str, Any]:
     """Return a shallow copy with ``columns`` restricted (CSV/query MVP)."""
 
     if not columns:
@@ -101,7 +105,9 @@ def schedule_payload_to_csv(payload: dict[str, Any], *, include_totals_csv: bool
                     if keys:
                         break
         if not keys:
-            return _maybe_append_totals_block(buf.getvalue(), payload, include_totals_csv=include_totals_csv)
+            return _maybe_append_totals_block(
+                buf.getvalue(), payload, include_totals_csv=include_totals_csv
+            )
         w.writerow(["Group", *keys])
         for label, grp in grouped.items():
             if not isinstance(grp, list):
@@ -110,22 +116,30 @@ def schedule_payload_to_csv(payload: dict[str, Any], *, include_totals_csv: bool
                 if not isinstance(r, dict):
                     continue
                 w.writerow([str(label), *[_schedule_row_csv_cell(r.get(k, "")) for k in keys]])
-        return _maybe_append_totals_block(buf.getvalue(), payload, include_totals_csv=include_totals_csv)
+        return _maybe_append_totals_block(
+            buf.getvalue(), payload, include_totals_csv=include_totals_csv
+        )
 
     rows_raw = payload.get("rows")
     if not isinstance(rows_raw, list) or not rows_raw:
-        return _maybe_append_totals_block(buf.getvalue(), payload, include_totals_csv=include_totals_csv)
+        return _maybe_append_totals_block(
+            buf.getvalue(), payload, include_totals_csv=include_totals_csv
+        )
 
     rows = [r for r in rows_raw if isinstance(r, dict)]
     if not rows:
-        return _maybe_append_totals_block(buf.getvalue(), payload, include_totals_csv=include_totals_csv)
+        return _maybe_append_totals_block(
+            buf.getvalue(), payload, include_totals_csv=include_totals_csv
+        )
 
     keys = cols if cols else sorted({k for r in rows for k in r})
     w.writerow(keys)
     for r in rows:
         w.writerow([_schedule_row_csv_cell(r.get(k, "")) for k in keys])
 
-    return _maybe_append_totals_block(buf.getvalue(), payload, include_totals_csv=include_totals_csv)
+    return _maybe_append_totals_block(
+        buf.getvalue(), payload, include_totals_csv=include_totals_csv
+    )
 
 
 def scheduleCsvExportParityEvidence_v1(doc: Document) -> dict[str, Any]:

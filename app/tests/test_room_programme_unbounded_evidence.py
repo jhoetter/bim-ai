@@ -27,7 +27,9 @@ def _box4(x0: float, y0: float, x1: float, y1: float) -> list[Vec2Mm]:
     return _sq([(x0, y0), (x1, y0), (x1, y1), (x0, y1)])
 
 
-def _enclosing_walls(level_id: str, x0: float, y0: float, x1: float, y1: float) -> dict[str, WallElem]:
+def _enclosing_walls(
+    level_id: str, x0: float, y0: float, x1: float, y1: float
+) -> dict[str, WallElem]:
     def _w(wid: str, sx: float, sy: float, ex: float, ey: float) -> WallElem:
         return WallElem(
             kind="wall",
@@ -39,6 +41,7 @@ def _enclosing_walls(level_id: str, x0: float, y0: float, x1: float, y1: float) 
             thicknessMm=200,
             heightMm=2800,
         )
+
     return {
         "w-s": _w("w-s", x0, y0, x1, y0),
         "w-n": _w("w-n", x0, y1, x1, y1),
@@ -53,7 +56,10 @@ def _enclosing_walls(level_id: str, x0: float, y0: float, x1: float, y1: float) 
 def test_detect_unbounded_room_no_walls() -> None:
     lvl = LevelElem(kind="level", id="lv", name="G", elevationMm=0)
     room = RoomElem(
-        kind="room", id="rm-1", name="Open Room", levelId="lv",
+        kind="room",
+        id="rm-1",
+        name="Open Room",
+        levelId="lv",
         outlineMm=_box4(0, 0, 4000, 4000),
     )
     doc = Document(revision=1, elements={"lv": lvl, "rm-1": room})
@@ -64,7 +70,10 @@ def test_detect_unbounded_room_no_walls() -> None:
 def test_detect_bounded_room_with_enclosing_walls() -> None:
     lvl = LevelElem(kind="level", id="lv", name="G", elevationMm=0)
     room = RoomElem(
-        kind="room", id="rm-1", name="Enclosed Room", levelId="lv",
+        kind="room",
+        id="rm-1",
+        name="Enclosed Room",
+        levelId="lv",
         outlineMm=_box4(0, 0, 4000, 4000),
     )
     walls = _enclosing_walls("lv", 0, 0, 4000, 4000)
@@ -77,7 +86,10 @@ def test_detect_unbounded_room_with_walls_on_different_level() -> None:
     lv1 = LevelElem(kind="level", id="lv1", name="G", elevationMm=0)
     lv2 = LevelElem(kind="level", id="lv2", name="L1", elevationMm=3000)
     room = RoomElem(
-        kind="room", id="rm-1", name="Open", levelId="lv1",
+        kind="room",
+        id="rm-1",
+        name="Open",
+        levelId="lv1",
         outlineMm=_box4(0, 0, 4000, 4000),
     )
     walls = _enclosing_walls("lv2", 0, 0, 4000, 4000)
@@ -89,18 +101,45 @@ def test_detect_unbounded_room_with_walls_on_different_level() -> None:
 def test_detect_unbounded_room_with_room_separations() -> None:
     lvl = LevelElem(kind="level", id="lv", name="G", elevationMm=0)
     room = RoomElem(
-        kind="room", id="rm-1", name="Sep Enclosed", levelId="lv",
+        kind="room",
+        id="rm-1",
+        name="Sep Enclosed",
+        levelId="lv",
         outlineMm=_box4(0, 0, 4000, 4000),
     )
     seps = {
-        "sep-s": RoomSeparationElem(kind="room_separation", id="sep-s", name="S", levelId="lv",
-                                    start={"xMm": 0, "yMm": 0}, end={"xMm": 4000, "yMm": 0}),
-        "sep-n": RoomSeparationElem(kind="room_separation", id="sep-n", name="N", levelId="lv",
-                                    start={"xMm": 0, "yMm": 4000}, end={"xMm": 4000, "yMm": 4000}),
-        "sep-w": RoomSeparationElem(kind="room_separation", id="sep-w", name="W", levelId="lv",
-                                    start={"xMm": 0, "yMm": 0}, end={"xMm": 0, "yMm": 4000}),
-        "sep-e": RoomSeparationElem(kind="room_separation", id="sep-e", name="E", levelId="lv",
-                                    start={"xMm": 4000, "yMm": 0}, end={"xMm": 4000, "yMm": 4000}),
+        "sep-s": RoomSeparationElem(
+            kind="room_separation",
+            id="sep-s",
+            name="S",
+            levelId="lv",
+            start={"xMm": 0, "yMm": 0},
+            end={"xMm": 4000, "yMm": 0},
+        ),
+        "sep-n": RoomSeparationElem(
+            kind="room_separation",
+            id="sep-n",
+            name="N",
+            levelId="lv",
+            start={"xMm": 0, "yMm": 4000},
+            end={"xMm": 4000, "yMm": 4000},
+        ),
+        "sep-w": RoomSeparationElem(
+            kind="room_separation",
+            id="sep-w",
+            name="W",
+            levelId="lv",
+            start={"xMm": 0, "yMm": 0},
+            end={"xMm": 0, "yMm": 4000},
+        ),
+        "sep-e": RoomSeparationElem(
+            kind="room_separation",
+            id="sep-e",
+            name="E",
+            levelId="lv",
+            start={"xMm": 4000, "yMm": 0},
+            end={"xMm": 4000, "yMm": 4000},
+        ),
     }
     doc = Document(revision=1, elements={"lv": lvl, "rm-1": room, **seps})
     unbounded = detect_unbounded_rooms_v1(doc)
@@ -110,7 +149,10 @@ def test_detect_unbounded_room_with_room_separations() -> None:
 def test_detect_unbounded_room_degenerate_outline() -> None:
     lvl = LevelElem(kind="level", id="lv", name="G", elevationMm=0)
     room = RoomElem(
-        kind="room", id="rm-degen", name="Degen", levelId="lv",
+        kind="room",
+        id="rm-degen",
+        name="Degen",
+        levelId="lv",
         outlineMm=[Vec2Mm(x_mm=0, y_mm=0)],
     )
     doc = Document(revision=1, elements={"lv": lvl, "rm-degen": room})
@@ -123,7 +165,10 @@ def test_unbounded_room_ids_in_room_derivation_bundle() -> None:
 
     lvl = LevelElem(kind="level", id="lv", name="G", elevationMm=0)
     room = RoomElem(
-        kind="room", id="rm-open", name="Open", levelId="lv",
+        kind="room",
+        id="rm-open",
+        name="Open",
+        levelId="lv",
         outlineMm=_box4(0, 0, 3000, 3000),
     )
     doc = Document(revision=1, elements={"lv": lvl, "rm-open": room})
@@ -138,7 +183,10 @@ def test_unbounded_room_ids_in_room_derivation_bundle() -> None:
 def test_advisor_room_boundary_open_fires_for_unbounded() -> None:
     lvl = LevelElem(kind="level", id="lv", name="G", elevationMm=0)
     room = RoomElem(
-        kind="room", id="rm-1", name="Open Room", levelId="lv",
+        kind="room",
+        id="rm-1",
+        name="Open Room",
+        levelId="lv",
         outlineMm=_box4(0, 0, 4000, 4000),
     )
     violations = evaluate({"lv": lvl, "rm-1": room})
@@ -150,7 +198,10 @@ def test_advisor_room_boundary_open_fires_for_unbounded() -> None:
 def test_advisor_room_boundary_open_silent_for_bounded() -> None:
     lvl = LevelElem(kind="level", id="lv", name="G", elevationMm=0)
     room = RoomElem(
-        kind="room", id="rm-1", name="Bounded", levelId="lv",
+        kind="room",
+        id="rm-1",
+        name="Bounded",
+        levelId="lv",
         outlineMm=_box4(0, 0, 4000, 4000),
     )
     walls = _enclosing_walls("lv", 0, 0, 4000, 4000)
@@ -162,7 +213,10 @@ def test_advisor_room_boundary_open_silent_for_bounded() -> None:
 def test_advisor_room_boundary_open_discipline_is_architecture() -> None:
     lvl = LevelElem(kind="level", id="lv", name="G", elevationMm=0)
     room = RoomElem(
-        kind="room", id="rm-1", name="Open", levelId="lv",
+        kind="room",
+        id="rm-1",
+        name="Open",
+        levelId="lv",
         outlineMm=_box4(0, 0, 4000, 4000),
     )
     violations = evaluate({"lv": lvl, "rm-1": room})
@@ -181,7 +235,10 @@ def _make_room_schedule_doc(
     lvl = LevelElem(kind="level", id="lv", name="G", elevationMm=0)
     walls = _enclosing_walls("lv", 0, 0, 4000, 4000)
     room = RoomElem(
-        kind="room", id="rm-1", name="Test Room", levelId="lv",
+        kind="room",
+        id="rm-1",
+        name="Test Room",
+        levelId="lv",
         outlineMm=_box4(0, 0, 4000, 4000),
         programmeCode="A1",
         department=department,
@@ -222,7 +279,10 @@ def test_schedule_room_row_includes_is_boundary_open_false_for_bounded() -> None
 def test_schedule_room_row_includes_is_boundary_open_true_for_unbounded() -> None:
     lvl = LevelElem(kind="level", id="lv", name="G", elevationMm=0)
     room = RoomElem(
-        kind="room", id="rm-open", name="Open", levelId="lv",
+        kind="room",
+        id="rm-open",
+        name="Open",
+        levelId="lv",
         outlineMm=_box4(0, 0, 4000, 4000),
     )
     sch = ScheduleElem(kind="schedule", id="sch-1", name="Rooms", filters={"category": "room"})
@@ -237,22 +297,52 @@ def test_schedule_room_row_includes_is_boundary_open_true_for_unbounded() -> Non
 def test_schedule_filter_equals_by_department() -> None:
     lvl = LevelElem(kind="level", id="lv", name="G", elevationMm=0)
     walls_a = _enclosing_walls("lv", 0, 0, 4000, 4000)
-    walls_b = {k + "b": WallElem(
-        kind="wall", id=k + "b", name=k + "b", levelId="lv",
-        start={"xMm": v.start.x_mm + 5000, "yMm": v.start.y_mm},
-        end={"xMm": v.end.x_mm + 5000, "yMm": v.end.y_mm},
-        thicknessMm=200, heightMm=2800,
-    ) for k, v in walls_a.items()}
-    rm_a = RoomElem(kind="room", id="rm-a", name="A", levelId="lv",
-                    outlineMm=_box4(0, 0, 4000, 4000), department="North")
-    rm_b = RoomElem(kind="room", id="rm-b", name="B", levelId="lv",
-                    outlineMm=_box4(5000, 0, 9000, 4000), department="South")
-    sch = ScheduleElem(kind="schedule", id="sch-1", name="Rooms",
-                       filters={"category": "room", "filterEquals": {"department": "North"}})
-    doc = Document(revision=1, elements={
-        "lv": lvl, "rm-a": rm_a, "rm-b": rm_b, "sch-1": sch,
-        **walls_a, **walls_b,
-    })
+    walls_b = {
+        k + "b": WallElem(
+            kind="wall",
+            id=k + "b",
+            name=k + "b",
+            levelId="lv",
+            start={"xMm": v.start.x_mm + 5000, "yMm": v.start.y_mm},
+            end={"xMm": v.end.x_mm + 5000, "yMm": v.end.y_mm},
+            thicknessMm=200,
+            heightMm=2800,
+        )
+        for k, v in walls_a.items()
+    }
+    rm_a = RoomElem(
+        kind="room",
+        id="rm-a",
+        name="A",
+        levelId="lv",
+        outlineMm=_box4(0, 0, 4000, 4000),
+        department="North",
+    )
+    rm_b = RoomElem(
+        kind="room",
+        id="rm-b",
+        name="B",
+        levelId="lv",
+        outlineMm=_box4(5000, 0, 9000, 4000),
+        department="South",
+    )
+    sch = ScheduleElem(
+        kind="schedule",
+        id="sch-1",
+        name="Rooms",
+        filters={"category": "room", "filterEquals": {"department": "North"}},
+    )
+    doc = Document(
+        revision=1,
+        elements={
+            "lv": lvl,
+            "rm-a": rm_a,
+            "rm-b": rm_b,
+            "sch-1": sch,
+            **walls_a,
+            **walls_b,
+        },
+    )
     out = derive_schedule_table(doc, "sch-1")
     rows = out.get("rows") or []
     ids = {r["elementId"] for r in rows}
@@ -262,22 +352,52 @@ def test_schedule_filter_equals_by_department() -> None:
 def test_schedule_filter_equals_by_programme_group() -> None:
     lvl = LevelElem(kind="level", id="lv", name="G", elevationMm=0)
     walls_a = _enclosing_walls("lv", 0, 0, 4000, 4000)
-    walls_b = {k + "b": WallElem(
-        kind="wall", id=k + "b", name=k + "b", levelId="lv",
-        start={"xMm": v.start.x_mm + 5000, "yMm": v.start.y_mm},
-        end={"xMm": v.end.x_mm + 5000, "yMm": v.end.y_mm},
-        thicknessMm=200, heightMm=2800,
-    ) for k, v in walls_a.items()}
-    rm_a = RoomElem(kind="room", id="rm-a", name="A", levelId="lv",
-                    outlineMm=_box4(0, 0, 4000, 4000), programmeGroup="Clinical")
-    rm_b = RoomElem(kind="room", id="rm-b", name="B", levelId="lv",
-                    outlineMm=_box4(5000, 0, 9000, 4000), programmeGroup="Admin")
-    sch = ScheduleElem(kind="schedule", id="sch-1", name="Rooms",
-                       filters={"category": "room", "filterEquals": {"programmeGroup": "Clinical"}})
-    doc = Document(revision=1, elements={
-        "lv": lvl, "rm-a": rm_a, "rm-b": rm_b, "sch-1": sch,
-        **walls_a, **walls_b,
-    })
+    walls_b = {
+        k + "b": WallElem(
+            kind="wall",
+            id=k + "b",
+            name=k + "b",
+            levelId="lv",
+            start={"xMm": v.start.x_mm + 5000, "yMm": v.start.y_mm},
+            end={"xMm": v.end.x_mm + 5000, "yMm": v.end.y_mm},
+            thicknessMm=200,
+            heightMm=2800,
+        )
+        for k, v in walls_a.items()
+    }
+    rm_a = RoomElem(
+        kind="room",
+        id="rm-a",
+        name="A",
+        levelId="lv",
+        outlineMm=_box4(0, 0, 4000, 4000),
+        programmeGroup="Clinical",
+    )
+    rm_b = RoomElem(
+        kind="room",
+        id="rm-b",
+        name="B",
+        levelId="lv",
+        outlineMm=_box4(5000, 0, 9000, 4000),
+        programmeGroup="Admin",
+    )
+    sch = ScheduleElem(
+        kind="schedule",
+        id="sch-1",
+        name="Rooms",
+        filters={"category": "room", "filterEquals": {"programmeGroup": "Clinical"}},
+    )
+    doc = Document(
+        revision=1,
+        elements={
+            "lv": lvl,
+            "rm-a": rm_a,
+            "rm-b": rm_b,
+            "sch-1": sch,
+            **walls_a,
+            **walls_b,
+        },
+    )
     out = derive_schedule_table(doc, "sch-1")
     rows = out.get("rows") or []
     ids = {r["elementId"] for r in rows}
@@ -292,8 +412,9 @@ def test_update_element_property_programme_group() -> None:
     from bim_ai.engine import apply_inplace
 
     lvl = LevelElem(kind="level", id="lv", name="G", elevationMm=0)
-    room = RoomElem(kind="room", id="rm-1", name="Room", levelId="lv",
-                    outlineMm=_box4(0, 0, 3000, 3000))
+    room = RoomElem(
+        kind="room", id="rm-1", name="Room", levelId="lv", outlineMm=_box4(0, 0, 3000, 3000)
+    )
     doc = Document(revision=1, elements={"lv": lvl, "rm-1": room})
     cmd = UpdateElementPropertyCmd(
         type="updateElementProperty",
@@ -321,24 +442,46 @@ def _make_legend_doc() -> Document:
         ],
     )
     walls_a = _enclosing_walls("lv", 0, 0, 4000, 4000)
-    walls_b = {k + "b": WallElem(
-        kind="wall", id=k + "b", name=k + "b", levelId="lv",
-        start={"xMm": v.start.x_mm + 5000, "yMm": v.start.y_mm},
-        end={"xMm": v.end.x_mm + 5000, "yMm": v.end.y_mm},
-        thicknessMm=200, heightMm=2800,
-    ) for k, v in walls_a.items()}
-    rm_a = RoomElem(kind="room", id="rm-a", name="Office A", levelId="lv",
-                    outlineMm=_box4(0, 0, 4000, 4000), programmeCode="A1")
-    rm_b = RoomElem(kind="room", id="rm-b", name="Admin B", levelId="lv",
-                    outlineMm=_box4(5000, 0, 9000, 4000), department="Admin")
-    return Document(revision=1, elements={
-        "lv": lvl,
-        "bim-room-color-scheme": scheme,
-        "rm-a": rm_a,
-        "rm-b": rm_b,
-        **walls_a,
-        **walls_b,
-    })
+    walls_b = {
+        k + "b": WallElem(
+            kind="wall",
+            id=k + "b",
+            name=k + "b",
+            levelId="lv",
+            start={"xMm": v.start.x_mm + 5000, "yMm": v.start.y_mm},
+            end={"xMm": v.end.x_mm + 5000, "yMm": v.end.y_mm},
+            thicknessMm=200,
+            heightMm=2800,
+        )
+        for k, v in walls_a.items()
+    }
+    rm_a = RoomElem(
+        kind="room",
+        id="rm-a",
+        name="Office A",
+        levelId="lv",
+        outlineMm=_box4(0, 0, 4000, 4000),
+        programmeCode="A1",
+    )
+    rm_b = RoomElem(
+        kind="room",
+        id="rm-b",
+        name="Admin B",
+        levelId="lv",
+        outlineMm=_box4(5000, 0, 9000, 4000),
+        department="Admin",
+    )
+    return Document(
+        revision=1,
+        elements={
+            "lv": lvl,
+            "bim-room-color-scheme": scheme,
+            "rm-a": rm_a,
+            "rm-b": rm_b,
+            **walls_a,
+            **walls_b,
+        },
+    )
 
 
 def test_legend_evidence_format() -> None:

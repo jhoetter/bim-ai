@@ -272,7 +272,9 @@ def test_plan_stair_diagnostics_invalid_level_rise_and_mismatch() -> None:
             ),
         },
     )
-    out_flat = plan_projection_wire_from_request(doc_flat, plan_view_id="pv", fallback_level_id="lvl")
+    out_flat = plan_projection_wire_from_request(
+        doc_flat, plan_view_id="pv", fallback_level_id="lvl"
+    )
     st_flat = ((out_flat.get("primitives") or {}).get("stairs") or [])[0]
     codes_f = {d["code"] for d in (st_flat.get("stairDocumentationDiagnostics") or [])}
     assert "stair_invalid_level_rise" in codes_f
@@ -296,7 +298,9 @@ def test_plan_stair_diagnostics_invalid_level_rise_and_mismatch() -> None:
             ),
         },
     )
-    out_bad = plan_projection_wire_from_request(doc_bad, plan_view_id="pv", fallback_level_id="lvl0")
+    out_bad = plan_projection_wire_from_request(
+        doc_bad, plan_view_id="pv", fallback_level_id="lvl0"
+    )
     st_bad = ((out_bad.get("primitives") or {}).get("stairs") or [])[0]
     codes_b = {d["code"] for d in (st_bad.get("stairDocumentationDiagnostics") or [])}
     assert "stair_riser_rise_mismatch" in codes_b

@@ -50,7 +50,9 @@ def _stable_row_key(row: dict[str, Any], row_index: int) -> str:
 
 def _viewport_height_mm(vp: dict[str, Any]) -> float:
     try:
-        h = float(vp.get("heightMm") if vp.get("heightMm") is not None else vp.get("height_mm") or 0.0)
+        h = float(
+            vp.get("heightMm") if vp.get("heightMm") is not None else vp.get("height_mm") or 0.0
+        )
     except (TypeError, ValueError):
         return 0.0
     return h
@@ -164,7 +166,9 @@ def build_schedule_pagination_placement_evidence_v0(
     if height_for_pagination is None:
         rows_per_segment = max(1, total_rows) if total_rows > 0 else 1
     else:
-        rows_per_segment, geom_degenerate = _rows_per_segment_for_height(float(height_for_pagination))
+        rows_per_segment, geom_degenerate = _rows_per_segment_for_height(
+            float(height_for_pagination)
+        )
         if geom_degenerate:
             advisories.add(ADV_GEOMETRY_DEGENERATE)
 

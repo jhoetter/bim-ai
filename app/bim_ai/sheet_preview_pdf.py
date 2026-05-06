@@ -42,19 +42,16 @@ def sheet_elem_to_pdf_bytes(doc: Document, sh: SheetElem) -> bytes:
     lines = sheet_viewport_export_listing_lines(doc, sh)
 
     for ln in lines:
-
         c.drawString(margin, y, str(ln)[:120])
 
         y -= 14
 
         if y < margin:
-
             break
 
     meta = getattr(sh, "id", "")
 
     if meta:
-
         c.setFont("Helvetica", 8)
 
         c.drawString(margin, margin / 2, f"Semantic sheet element {meta}")

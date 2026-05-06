@@ -44,7 +44,9 @@ def _hosted_anchor_xy_mm(opening: DoorElem | WindowElem, wall: WallElem) -> tupl
     dy = float(wall.end.y_mm) - sy
     length_mm = max(_EPS_MM, math.hypot(dx, dy))
     ux, uy = dx / length_mm, dy / length_mm
-    return sx + ux * float(opening.along_t) * length_mm, sy + uy * float(opening.along_t) * length_mm
+    return sx + ux * float(opening.along_t) * length_mm, sy + uy * float(
+        opening.along_t
+    ) * length_mm
 
 
 def _corner_join_id(level_id: str, vx: float, vy: float, w0: str, w1: str) -> str:

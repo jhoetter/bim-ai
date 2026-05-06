@@ -74,7 +74,15 @@ def test_artifact_manifest_listing_parity_digest_match_is_true() -> None:
 def test_artifact_manifest_svg_and_pdf_listing_digests_are_equal() -> None:
     rows = _single_sheet_rows(
         viewportsMm=[
-            {"viewportId": "v1", "viewRef": "", "label": "Flr", "xMm": 0, "yMm": 0, "widthMm": 200, "heightMm": 150},
+            {
+                "viewportId": "v1",
+                "viewRef": "",
+                "label": "Flr",
+                "xMm": 0,
+                "yMm": 0,
+                "widthMm": 200,
+                "heightMm": 150,
+            },
         ]
     )
     mf = rows[0]["sheetExportArtifactManifest_v1"]
@@ -84,7 +92,15 @@ def test_artifact_manifest_svg_and_pdf_listing_digests_are_equal() -> None:
 def test_artifact_manifest_svg_listing_digest_matches_listing_blob() -> None:
     sh = _make_sheet(
         viewportsMm=[
-            {"viewportId": "v1", "viewRef": "", "label": "X", "xMm": 10, "yMm": 20, "widthMm": 100, "heightMm": 80},
+            {
+                "viewportId": "v1",
+                "viewRef": "",
+                "label": "X",
+                "xMm": 10,
+                "yMm": 20,
+                "widthMm": 100,
+                "heightMm": 80,
+            },
         ]
     )
     doc = Document(revision=2, elements={"sh1": sh})
@@ -105,7 +121,15 @@ def test_artifact_manifest_listing_digest_matches_contract_v3_digest() -> None:
     sh = _make_sheet(
         titleblockParameters={"revisionCode": "D"},
         viewportsMm=[
-            {"viewportId": "v1", "viewRef": "", "label": "Y", "xMm": 0, "yMm": 0, "widthMm": 300, "heightMm": 200},
+            {
+                "viewportId": "v1",
+                "viewRef": "",
+                "label": "Y",
+                "xMm": 0,
+                "yMm": 0,
+                "widthMm": 300,
+                "heightMm": 200,
+            },
         ],
     )
     doc = Document(revision=3, elements={"sh1": sh})
@@ -204,14 +228,20 @@ def test_ci_baseline_correlation_svg_digest_matches_svg_artifact() -> None:
     rows = _single_sheet_rows()
     mf = rows[0]["sheetExportArtifactManifest_v1"]
     by_name = {a["artifactName"]: a for a in mf["artifacts"]}
-    assert mf["ciBaselineCorrelation"]["svgDigestSha256"] == by_name["sheet-preview.svg"]["digestSha256"]
+    assert (
+        mf["ciBaselineCorrelation"]["svgDigestSha256"]
+        == by_name["sheet-preview.svg"]["digestSha256"]
+    )
 
 
 def test_ci_baseline_correlation_png_digest_matches_png_artifact() -> None:
     rows = _single_sheet_rows()
     mf = rows[0]["sheetExportArtifactManifest_v1"]
     by_name = {a["artifactName"]: a for a in mf["artifacts"]}
-    assert mf["ciBaselineCorrelation"]["pngDigestSha256"] == by_name["sheet-print-raster.png"]["digestSha256"]
+    assert (
+        mf["ciBaselineCorrelation"]["pngDigestSha256"]
+        == by_name["sheet-print-raster.png"]["digestSha256"]
+    )
 
 
 def test_ci_baseline_correlation_export_listing_digest_matches_svg_listing() -> None:
@@ -239,12 +269,36 @@ def test_two_sheets_have_independent_manifests() -> None:
         revision=1,
         elements={
             "lvl": lvl,
-            "sh1": SheetElem(kind="sheet", id="sh1", name="A", viewportsMm=[
-                {"viewportId": "v1", "viewRef": "", "xMm": 0, "yMm": 0, "widthMm": 100, "heightMm": 80},
-            ]),
-            "sh2": SheetElem(kind="sheet", id="sh2", name="B", viewportsMm=[
-                {"viewportId": "v2", "viewRef": "", "xMm": 50, "yMm": 0, "widthMm": 200, "heightMm": 160},
-            ]),
+            "sh1": SheetElem(
+                kind="sheet",
+                id="sh1",
+                name="A",
+                viewportsMm=[
+                    {
+                        "viewportId": "v1",
+                        "viewRef": "",
+                        "xMm": 0,
+                        "yMm": 0,
+                        "widthMm": 100,
+                        "heightMm": 80,
+                    },
+                ],
+            ),
+            "sh2": SheetElem(
+                kind="sheet",
+                id="sh2",
+                name="B",
+                viewportsMm=[
+                    {
+                        "viewportId": "v2",
+                        "viewRef": "",
+                        "xMm": 50,
+                        "yMm": 0,
+                        "widthMm": 200,
+                        "heightMm": 160,
+                    },
+                ],
+            ),
         },
     )
     rows = deterministic_sheet_evidence_manifest(
@@ -310,7 +364,15 @@ def test_manifest_ci_correlation_listing_digest_matches_contract_v3_pdf_listing_
     sh = _make_sheet(
         titleblockParameters={"revisionCode": "R1", "issueStatus": "for_approval"},
         viewportsMm=[
-            {"viewportId": "va", "viewRef": "", "label": "Ground", "xMm": 0, "yMm": 0, "widthMm": 500, "heightMm": 400},
+            {
+                "viewportId": "va",
+                "viewRef": "",
+                "label": "Ground",
+                "xMm": 0,
+                "yMm": 0,
+                "widthMm": 500,
+                "heightMm": 400,
+            },
         ],
     )
     doc = Document(revision=9, elements={"sh1": sh})
@@ -335,21 +397,47 @@ def test_manifest_ci_correlation_listing_digest_matches_contract_v3_pdf_listing_
 
 
 def test_listing_digest_changes_when_viewport_label_changes() -> None:
-    sh_a = _make_sheet(viewportsMm=[
-        {"viewportId": "v1", "viewRef": "", "label": "Plan", "xMm": 0, "yMm": 0, "widthMm": 100, "heightMm": 80},
-    ])
-    sh_b = _make_sheet(viewportsMm=[
-        {"viewportId": "v1", "viewRef": "", "label": "Section", "xMm": 0, "yMm": 0, "widthMm": 100, "heightMm": 80},
-    ])
+    sh_a = _make_sheet(
+        viewportsMm=[
+            {
+                "viewportId": "v1",
+                "viewRef": "",
+                "label": "Plan",
+                "xMm": 0,
+                "yMm": 0,
+                "widthMm": 100,
+                "heightMm": 80,
+            },
+        ]
+    )
+    sh_b = _make_sheet(
+        viewportsMm=[
+            {
+                "viewportId": "v1",
+                "viewRef": "",
+                "label": "Section",
+                "xMm": 0,
+                "yMm": 0,
+                "widthMm": 100,
+                "heightMm": 80,
+            },
+        ]
+    )
     doc_a = Document(revision=1, elements={"sh1": sh_a})
     doc_b = Document(revision=1, elements={"sh1": sh_b})
     rows_a = deterministic_sheet_evidence_manifest(
-        model_id=uuid4(), doc=doc_a, evidence_artifact_basename="ev",
-        semantic_digest_sha256="g" * 64, semantic_digest_prefix16="g" * 16,
+        model_id=uuid4(),
+        doc=doc_a,
+        evidence_artifact_basename="ev",
+        semantic_digest_sha256="g" * 64,
+        semantic_digest_prefix16="g" * 16,
     )
     rows_b = deterministic_sheet_evidence_manifest(
-        model_id=uuid4(), doc=doc_b, evidence_artifact_basename="ev",
-        semantic_digest_sha256="g" * 64, semantic_digest_prefix16="g" * 16,
+        model_id=uuid4(),
+        doc=doc_b,
+        evidence_artifact_basename="ev",
+        semantic_digest_sha256="g" * 64,
+        semantic_digest_prefix16="g" * 16,
     )
     assert (
         rows_a[0]["sheetExportArtifactManifest_v1"]["svgListingDigestSha256"]
@@ -360,22 +448,46 @@ def test_listing_digest_changes_when_viewport_label_changes() -> None:
 def test_parity_match_remains_true_with_multiple_viewports() -> None:
     lvl = LevelElem(kind="level", id="lvl", name="G", elevationMm=0)
     sec = SectionCutElem(
-        kind="section_cut", id="sec1", name="Cut",
-        lineStartMm={"xMm": 0, "yMm": 0}, lineEndMm={"xMm": 0, "yMm": 1000},
+        kind="section_cut",
+        id="sec1",
+        name="Cut",
+        lineStartMm={"xMm": 0, "yMm": 0},
+        lineEndMm={"xMm": 0, "yMm": 1000},
     )
     pv = PlanViewElem(kind="plan_view", id="pv1", name="P", levelId="lvl")
     sh = SheetElem(
-        kind="sheet", id="sh1", name="S1",
+        kind="sheet",
+        id="sh1",
+        name="S1",
         titleblockParameters={"revisionCode": "B"},
         viewportsMm=[
-            {"viewportId": "vp1", "viewRef": "plan:pv1", "label": "Plan", "xMm": 0, "yMm": 0, "widthMm": 500, "heightMm": 400},
-            {"viewportId": "vs1", "viewRef": "section:sec1", "label": "Section", "xMm": 600, "yMm": 0, "widthMm": 400, "heightMm": 300},
+            {
+                "viewportId": "vp1",
+                "viewRef": "plan:pv1",
+                "label": "Plan",
+                "xMm": 0,
+                "yMm": 0,
+                "widthMm": 500,
+                "heightMm": 400,
+            },
+            {
+                "viewportId": "vs1",
+                "viewRef": "section:sec1",
+                "label": "Section",
+                "xMm": 600,
+                "yMm": 0,
+                "widthMm": 400,
+                "heightMm": 300,
+            },
         ],
     )
     doc = Document(revision=1, elements={"lvl": lvl, "sec1": sec, "pv1": pv, "sh1": sh})
     rows = deterministic_sheet_evidence_manifest(
-        model_id=uuid4(), doc=doc, evidence_artifact_basename="ev",
-        semantic_digest_sha256="h" * 64, semantic_digest_prefix16="h" * 16,
+        model_id=uuid4(),
+        doc=doc,
+        evidence_artifact_basename="ev",
+        semantic_digest_sha256="h" * 64,
+        semantic_digest_prefix16="h" * 16,
     )
     mf = rows[0]["sheetExportArtifactManifest_v1"]
     assert mf["exportListingParityDigestMatch"] is True

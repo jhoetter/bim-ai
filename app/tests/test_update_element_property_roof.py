@@ -33,7 +33,9 @@ _L5 = [
 
 
 def test_update_roof_roof_type_id_assigns_and_clears() -> None:
-    doc = Document(revision=1, elements={"lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=0)})
+    doc = Document(
+        revision=1, elements={"lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=0)}
+    )
     apply_inplace(
         doc,
         UpsertRoofTypeCmd(
@@ -41,7 +43,9 @@ def test_update_roof_roof_type_id_assigns_and_clears() -> None:
             id="rt-1",
             name="Deck",
             layers=[
-                WallTypeLayer(thicknessMm=20, layer_function="structure", material_key="mat-osb-roof-deck-v1"),
+                WallTypeLayer(
+                    thicknessMm=20, layer_function="structure", material_key="mat-osb-roof-deck-v1"
+                ),
             ],
         ),
     )
@@ -72,7 +76,9 @@ def test_update_roof_roof_type_id_assigns_and_clears() -> None:
 
 
 def test_update_roof_roof_type_id_rejects_non_type() -> None:
-    doc = Document(revision=1, elements={"lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=0)})
+    doc = Document(
+        revision=1, elements={"lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=0)}
+    )
     apply_inplace(
         doc,
         CreateRoofCmd(
@@ -88,7 +94,9 @@ def test_update_roof_roof_type_id_rejects_non_type() -> None:
 
 
 def test_update_roof_geometry_mode_gable_requires_rectangle_footprint() -> None:
-    doc = Document(revision=1, elements={"lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=0)})
+    doc = Document(
+        revision=1, elements={"lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=0)}
+    )
     apply_inplace(
         doc,
         CreateRoofCmd(
@@ -173,7 +181,9 @@ def test_update_roof_roof_type_id_material_assembly_schedule_preserved() -> None
 
 
 def test_update_roof_geometry_mode_to_gable_ok_for_rectangle() -> None:
-    doc = Document(revision=1, elements={"lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=0)})
+    doc = Document(
+        revision=1, elements={"lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=0)}
+    )
     apply_inplace(
         doc,
         CreateRoofCmd(

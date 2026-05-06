@@ -1,6 +1,5 @@
 """IFC STEP skeleton + manifest fields (kernel export lives in `export_ifc.py`)."""
 
-
 from __future__ import annotations
 
 import hashlib
@@ -201,7 +200,9 @@ def _ifc_closure_unsupported_class_token(
 
     preview_classes = {
         cls
-        for cls, cnt in ((preview.get("unsupportedProducts") or {}).get("countsByClass") or {}).items()
+        for cls, cnt in (
+            (preview.get("unsupportedProducts") or {}).get("countsByClass") or {}
+        ).items()
         if int(cnt) > 0
     }
     merge_classes = {
@@ -339,7 +340,9 @@ def build_ifc_unsupported_merge_map_v0_for_manifest(
 
     from bim_ai.export_ifc import IFC_AVAILABLE, export_ifc_model_step  # noqa: PLC0415
 
-    merge_constraints: list[str] = list(IFC_SEMANTIC_IMPORT_SCOPE_V0.get("importMergeUnsupported") or [])
+    merge_constraints: list[str] = list(
+        IFC_SEMANTIC_IMPORT_SCOPE_V0.get("importMergeUnsupported") or []
+    )
 
     if not IFC_AVAILABLE:
         return {
@@ -402,6 +405,7 @@ def build_ifc_exchange_manifest_payload(doc: Document) -> dict[str, Any]:
     if emitting:
         try:
             from bim_ai.export_ifc import export_ifc_model_step  # noqa: PLC0415
+
             _step = export_ifc_model_step(doc)
         except Exception:
             pass
@@ -413,7 +417,9 @@ def build_ifc_exchange_manifest_payload(doc: Document) -> dict[str, Any]:
         out["ifcPropertySetCoverageEvidence_v0"] = ps_ev
     out["siteExchangeEvidence_v0"] = build_site_exchange_evidence_v0_for_manifest(doc)
     out["ifcImportPreview_v0"] = build_ifc_import_preview_v0_for_manifest(doc, _cached_step=_step)
-    out["ifcUnsupportedMergeMap_v0"] = build_ifc_unsupported_merge_map_v0_for_manifest(doc, _cached_step=_step)
+    out["ifcUnsupportedMergeMap_v0"] = build_ifc_unsupported_merge_map_v0_for_manifest(
+        doc, _cached_step=_step
+    )
     out["ifcExchangeManifestClosure_v0"] = build_ifc_exchange_manifest_closure_v0(
         out["ifcImportPreview_v0"],
         out["ifcUnsupportedMergeMap_v0"],
@@ -446,5 +452,7 @@ def ifc_exchange_manifest_payload(
         "ifcSemanticImportScope_v0": dict(IFC_SEMANTIC_IMPORT_SCOPE_V0),
         "kernelExpectedIfcKinds": {},
         "hint": "IFC artifact: GET /api/models/{id}/exports/model.ifc",
-        "note": ("Empty IFC hull only — parity fields aligned with `/exports/ifc-manifest` + glTF kernels."),
+        "note": (
+            "Empty IFC hull only — parity fields aligned with `/exports/ifc-manifest` + glTF kernels."
+        ),
     }

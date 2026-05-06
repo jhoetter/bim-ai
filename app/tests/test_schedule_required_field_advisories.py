@@ -6,18 +6,28 @@ from bim_ai.constraints import Violation, evaluate
 from bim_ai.elements import DoorElem, LevelElem, WallElem, WallTypeElem, WindowElem
 
 
-def _ids_sorted_by_rule_then_elements(viols: list[Violation]) -> list[tuple[str, str, tuple[str, ...]]]:
+def _ids_sorted_by_rule_then_elements(
+    viols: list[Violation],
+) -> list[tuple[str, str, tuple[str, ...]]]:
     return sorted(
-        (v.rule_id, v.severity, tuple(v.element_ids)) for v in viols if v.rule_id.startswith("schedule_opening_")
+        (v.rule_id, v.severity, tuple(v.element_ids))
+        for v in viols
+        if v.rule_id.startswith("schedule_opening_")
     )
 
 
 def test_schedule_opening_orphan_host_dual_with_door_not_on_wall() -> None:
     lvl = LevelElem(kind="level", id="lv", name="L1", elevationMm=0)
-    door = DoorElem(kind="door", id="d-orphan", name="D1", wallId="missing-wall", alongT=0.5, widthMm=900)
+    door = DoorElem(
+        kind="door", id="d-orphan", name="D1", wallId="missing-wall", alongT=0.5, widthMm=900
+    )
     elems = {"lv": lvl, "d-orphan": door}
     viols = evaluate(elems)  # type: ignore[arg-type]
-    by_rule = {v.rule_id: v for v in viols if v.rule_id in {"door_not_on_wall", "schedule_opening_orphan_host"}}
+    by_rule = {
+        v.rule_id: v
+        for v in viols
+        if v.rule_id in {"door_not_on_wall", "schedule_opening_orphan_host"}
+    }
     assert "door_not_on_wall" in by_rule
     assert "schedule_opening_orphan_host" in by_rule
     assert by_rule["door_not_on_wall"].severity == "error"

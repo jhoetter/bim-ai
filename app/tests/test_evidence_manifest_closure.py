@@ -68,9 +68,7 @@ def test_artifact_upload_manifest_v1_expected_artifacts_sorted_by_id() -> None:
     assert ids == sorted(ids)
 
 
-def test_artifact_upload_manifest_v1_side_effects_disabled_by_default_and_ci_hint_omitted() -> (
-    None
-):
+def test_artifact_upload_manifest_v1_side_effects_disabled_by_default_and_ci_hint_omitted() -> None:
     pkg = "c" * 64
     closure = evidence_closure_review_v1(
         package_semantic_digest_sha256=pkg,

@@ -40,7 +40,8 @@ export type ElemKind =
   | 'ceiling'
   | 'color_fill_legend'
   | 'shared_param_file'
-  | 'project_param';
+  | 'project_param'
+  | 'reference_plane';
 
 export type XY = { xMm: number; yMm: number };
 
@@ -153,6 +154,8 @@ export type Element =
       angularUnitDeg?: string;
       displayLocale?: string;
       name?: string;
+      worksetId?: string | null;
+      startingViewId?: string | null;
     }
   | {
       kind: 'room_color_scheme';
@@ -187,6 +190,8 @@ export type Element =
       datumKind?: string | null;
       parentLevelId?: string | null;
       offsetFromParentMm?: number;
+      worksetId?: string | null;
+      monitorSourceId?: string | null;
     }
   | {
       kind: 'wall';
@@ -209,6 +214,7 @@ export type Element =
       curtainWallVCount?: number | null;
       curtainWallHCount?: number | null;
       locationLine?: WallLocationLine;
+      worksetId?: string | null;
     }
   | {
       kind: 'door';
@@ -266,6 +272,8 @@ export type Element =
       end: XY;
       label: string;
       levelId?: string | null;
+      worksetId?: string | null;
+      monitorSourceId?: string | null;
     }
   | {
       kind: 'dimension';
@@ -577,6 +585,15 @@ export type Element =
       sharedParamGuid: string;
       categories: string[];
       instanceOrType: 'instance' | 'type';
+    }
+  | {
+      kind: 'reference_plane';
+      id: string;
+      name: string;
+      familyEditorId: string;
+      isVertical: boolean;
+      offsetMm: number;
+      isSymmetryRef?: boolean;
     };
 
 export type Violation = {

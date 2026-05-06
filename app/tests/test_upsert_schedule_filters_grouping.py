@@ -261,4 +261,3 @@ def test_upsert_schedule_filters_persists_room_area_filter_rules_replay() -> Non
     assert (tbl.get("scheduleEngine") or {}).get("filterRules") == [
         {"field": "areaM2", "op": "gt", "value": 10.0},
     ]
-

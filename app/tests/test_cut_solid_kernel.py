@@ -78,9 +78,7 @@ def test_cut_kernel_matches_geom_box_wall_floor_slab_slice() -> None:
     )
     kern = collect_wall_floor_slab_cut_boxes(doc)
     from_glb = [
-        gb
-        for gb in _collect_geom_boxes(doc)
-        if gb.kind in {"wall", "floor", "slab_opening"}
+        gb for gb in _collect_geom_boxes(doc) if gb.kind in {"wall", "floor", "slab_opening"}
     ]
     assert len(kern) == len(from_glb)
     for a, b in zip(

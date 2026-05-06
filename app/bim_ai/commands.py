@@ -48,6 +48,7 @@ class CreateWallCmd(BaseModel):
     material_key: str | None = Field(default=None, alias="materialKey")
     is_curtain_wall: bool = Field(default=False, alias="isCurtainWall")
 
+
 class MoveWallDeltaCmd(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     type: Literal["moveWallDelta"] = "moveWallDelta"
@@ -86,6 +87,7 @@ class InsertWindowOnWallCmd(BaseModel):
     sill_height_mm: float = Field(alias="sillHeightMm", default=900)
     height_mm: float = Field(alias="heightMm", default=1500)
     family_type_id: str | None = Field(default=None, alias="familyTypeId")
+
 
 class WallChainSegment(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
@@ -137,6 +139,7 @@ class CreateDimensionCmd(BaseModel):
     ref_element_id_a: str | None = Field(default=None, alias="refElementIdA")
     ref_element_id_b: str | None = Field(default=None, alias="refElementIdB")
     tag_definition_id: str | None = Field(default=None, alias="tagDefinitionId")
+
 
 class DeleteElementCmd(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
@@ -483,7 +486,9 @@ class UpsertViewTemplateCmd(BaseModel):
     disciplines_visible: list[str] = Field(default_factory=list, alias="disciplinesVisible")
     hidden_categories: list[str] = Field(default_factory=list, alias="hiddenCategories")
     plan_detail_level: str | None = Field(default=None, alias="planDetailLevel")
-    plan_room_fill_opacity_scale: float | None = Field(default=None, alias="planRoomFillOpacityScale")
+    plan_room_fill_opacity_scale: float | None = Field(
+        default=None, alias="planRoomFillOpacityScale"
+    )
     plan_show_opening_tags: bool | None = Field(default=None, alias="planShowOpeningTags")
     plan_show_room_labels: bool | None = Field(default=None, alias="planShowRoomLabels")
     default_plan_opening_tag_style_id: str | None = Field(
@@ -507,7 +512,9 @@ class UpsertPlanViewTemplateCmd(BaseModel):
     disciplines_visible: list[str] = Field(default_factory=list, alias="disciplinesVisible")
     hidden_categories: list[str] = Field(default_factory=list, alias="hiddenCategories")
     plan_detail_level: str | None = Field(default=None, alias="planDetailLevel")
-    plan_room_fill_opacity_scale: float | None = Field(default=None, alias="planRoomFillOpacityScale")
+    plan_room_fill_opacity_scale: float | None = Field(
+        default=None, alias="planRoomFillOpacityScale"
+    )
     plan_show_opening_tags: bool | None = Field(default=None, alias="planShowOpeningTags")
     plan_show_room_labels: bool | None = Field(default=None, alias="planShowRoomLabels")
     default_plan_opening_tag_style_id: str | None = Field(
@@ -624,7 +631,9 @@ class UpsertPlanViewCmd(BaseModel):
     cut_plane_offset_mm: float | None = Field(default=None, alias="cutPlaneOffsetMm")
     categories_hidden: list[str] = Field(default_factory=list, alias="categoriesHidden")
     plan_detail_level: str | None = Field(default=None, alias="planDetailLevel")
-    plan_room_fill_opacity_scale: float | None = Field(default=None, alias="planRoomFillOpacityScale")
+    plan_room_fill_opacity_scale: float | None = Field(
+        default=None, alias="planRoomFillOpacityScale"
+    )
     plan_show_opening_tags: bool | None = Field(default=None, alias="planShowOpeningTags")
     plan_show_room_labels: bool | None = Field(default=None, alias="planShowRoomLabels")
     plan_opening_tag_style_id: str | None = Field(default=None, alias="planOpeningTagStyleId")
@@ -699,7 +708,9 @@ class UpsertSiteCmd(BaseModel):
     base_offset_mm: float = Field(default=0.0, alias="baseOffsetMm")
     north_deg_cw_from_plan_x: float | None = Field(default=None, alias="northDegCwFromPlanX")
     uniform_setback_mm: float | None = Field(default=None, alias="uniformSetbackMm")
-    context_objects: list[SiteContextObjectRow] = Field(default_factory=list, alias="contextObjects")
+    context_objects: list[SiteContextObjectRow] = Field(
+        default_factory=list, alias="contextObjects"
+    )
 
 
 Command = Annotated[

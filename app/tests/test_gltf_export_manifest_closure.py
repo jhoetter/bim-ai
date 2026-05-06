@@ -220,7 +220,10 @@ def test_closure_digest_stable_under_element_id_reordering() -> None:
     closure_a = export_manifest_extension_payload(doc_a)["gltfExportManifestClosure_v1"]
     closure_b = export_manifest_extension_payload(doc_b)["gltfExportManifestClosure_v1"]
 
-    assert closure_a["gltfExportManifestClosureDigestSha256"] == closure_b["gltfExportManifestClosureDigestSha256"]
+    assert (
+        closure_a["gltfExportManifestClosureDigestSha256"]
+        == closure_b["gltfExportManifestClosureDigestSha256"]
+    )
     assert closure_a["extensionTokens"] == closure_b["extensionTokens"]
     assert closure_a["extensionDigests"] == closure_b["extensionDigests"]
 
@@ -229,7 +232,10 @@ def test_closure_digest_stable_across_repeated_calls() -> None:
     doc = _l_wall_doc()
     ext1 = export_manifest_extension_payload(doc)["gltfExportManifestClosure_v1"]
     ext2 = export_manifest_extension_payload(doc)["gltfExportManifestClosure_v1"]
-    assert ext1["gltfExportManifestClosureDigestSha256"] == ext2["gltfExportManifestClosureDigestSha256"]
+    assert (
+        ext1["gltfExportManifestClosureDigestSha256"]
+        == ext2["gltfExportManifestClosureDigestSha256"]
+    )
 
 
 def test_closure_digest_changes_when_element_added() -> None:
@@ -250,8 +256,12 @@ def test_closure_digest_changes_when_element_added() -> None:
             ),
         },
     )
-    digest_a = export_manifest_extension_payload(doc_a)["gltfExportManifestClosure_v1"]["gltfExportManifestClosureDigestSha256"]
-    digest_b = export_manifest_extension_payload(doc_b)["gltfExportManifestClosure_v1"]["gltfExportManifestClosureDigestSha256"]
+    digest_a = export_manifest_extension_payload(doc_a)["gltfExportManifestClosure_v1"][
+        "gltfExportManifestClosureDigestSha256"
+    ]
+    digest_b = export_manifest_extension_payload(doc_b)["gltfExportManifestClosure_v1"][
+        "gltfExportManifestClosureDigestSha256"
+    ]
     assert digest_a != digest_b
 
 
@@ -259,21 +269,35 @@ def test_closure_per_extension_digest_stable_under_id_reordering() -> None:
     elements_a = {
         "lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=0),
         "wh": WallElem(
-            kind="wall", id="wh", name="H", levelId="lvl",
-            start={"xMm": 0, "yMm": 0}, end={"xMm": 4000, "yMm": 0},
-            thicknessMm=200, heightMm=2800,
+            kind="wall",
+            id="wh",
+            name="H",
+            levelId="lvl",
+            start={"xMm": 0, "yMm": 0},
+            end={"xMm": 4000, "yMm": 0},
+            thicknessMm=200,
+            heightMm=2800,
         ),
         "wv": WallElem(
-            kind="wall", id="wv", name="V", levelId="lvl",
-            start={"xMm": 0, "yMm": 0}, end={"xMm": 0, "yMm": 3000},
-            thicknessMm=200, heightMm=2800,
+            kind="wall",
+            id="wv",
+            name="V",
+            levelId="lvl",
+            start={"xMm": 0, "yMm": 0},
+            end={"xMm": 0, "yMm": 3000},
+            thicknessMm=200,
+            heightMm=2800,
         ),
     }
     elements_b = {k: elements_a[k] for k in ["wv", "wh", "lvl"]}
     doc_a = Document(revision=1, elements=elements_a)
     doc_b = Document(revision=1, elements=elements_b)
-    digests_a = export_manifest_extension_payload(doc_a)["gltfExportManifestClosure_v1"]["extensionDigests"]
-    digests_b = export_manifest_extension_payload(doc_b)["gltfExportManifestClosure_v1"]["extensionDigests"]
+    digests_a = export_manifest_extension_payload(doc_a)["gltfExportManifestClosure_v1"][
+        "extensionDigests"
+    ]
+    digests_b = export_manifest_extension_payload(doc_b)["gltfExportManifestClosure_v1"][
+        "extensionDigests"
+    ]
     assert digests_a == digests_b
 
 
@@ -347,7 +371,9 @@ def test_closure_advisory_expected_extension_missing_identifies_token() -> None:
         },
     )
     viols = evaluate(doc.elements)
-    missing_viols = [v for v in viols if v.rule_id == "gltf_export_manifest_expected_extension_missing"]
+    missing_viols = [
+        v for v in viols if v.rule_id == "gltf_export_manifest_expected_extension_missing"
+    ]
     for v in missing_viols:
         assert "bim_ai_" in v.message, f"message should mention extension token: {v.message}"
 
@@ -374,7 +400,9 @@ def test_closure_advisory_extension_order_drift_message_includes_tokens() -> Non
     # Builder always uses canonical order from GLTF_KNOWN_EXTENSION_TOKENS
     assert closure["extensionTokens"] == ["bim_ai_box_primitive_v0", "bim_ai_wall_corner_joins_v0"]
     assert closure["extensionTokens"] == [
-        t for t in GLTF_KNOWN_EXTENSION_TOKENS if t in {"bim_ai_box_primitive_v0", "bim_ai_wall_corner_joins_v0"}
+        t
+        for t in GLTF_KNOWN_EXTENSION_TOKENS
+        if t in {"bim_ai_box_primitive_v0", "bim_ai_wall_corner_joins_v0"}
     ]
 
 
@@ -387,7 +415,9 @@ def test_closure_advisory_discipline_is_exchange() -> None:
         },
     )
     viols = evaluate(doc.elements)
-    missing_viols = [v for v in viols if v.rule_id == "gltf_export_manifest_expected_extension_missing"]
+    missing_viols = [
+        v for v in viols if v.rule_id == "gltf_export_manifest_expected_extension_missing"
+    ]
     for v in missing_viols:
         assert v.discipline == "exchange"
 

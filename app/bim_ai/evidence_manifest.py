@@ -190,7 +190,6 @@ def deterministic_sheet_evidence_manifest(
     bundle_json = f"{evidence_artifact_basename}-evidence-package.json"
 
     for sh in sorted(sheets, key=lambda s: s.id):
-
         safe = "".join(ch for ch in sh.id if ch.isalnum() or ch in ("-", "_")) or "sheet"
 
         qid = quote(sh.id, safe="")
@@ -282,7 +281,9 @@ def deterministic_sheet_evidence_manifest(
                     "pngFullSheet": f"{stem}-full.png",
                     "rasterPlaceholderProbe": f"{stem}.raster-placeholder.png",
                 },
-                "viewportEvidenceHints_v0": viewport_evidence_hints_v1(doc, list(sh.viewports_mm or [])),
+                "viewportEvidenceHints_v0": viewport_evidence_hints_v1(
+                    doc, list(sh.viewports_mm or [])
+                ),
                 "planSheetViewportPlacementEvidence_v1": plan_sheet_viewport_placement_evidence_v1(
                     doc, list(sh.viewports_mm or [])
                 ),
@@ -312,7 +313,6 @@ def deterministic_sheet_evidence_manifest(
                     "suggestedEvidenceBundleEvidencePackageJson": bundle_json,
                 },
             }
-
         )
 
     return rows
@@ -499,12 +499,7 @@ def artifact_ingest_correlation_v1(targets: list[dict[str, Any]]) -> dict[str, A
             continue
         b = raw.get("baselinePngBasename")
         d = raw.get("expectedDiffBasename")
-        if (
-            isinstance(b, str)
-            and isinstance(d, str)
-            and b.endswith(".png")
-            and d.endswith(".png")
-        ):
+        if isinstance(b, str) and isinstance(d, str) and b.endswith(".png") and d.endswith(".png"):
             pairs.append({"baselinePngBasename": b, "expectedDiffBasename": d})
     pairs.sort(key=lambda p: (p["baselinePngBasename"], p["expectedDiffBasename"]))
     payload = json.dumps(pairs, sort_keys=True, separators=(",", ":"), default=str)
@@ -1090,7 +1085,6 @@ def evidence_review_performance_gate_v1(fix_loop: dict[str, Any]) -> dict[str, A
     }
 
 
-
 def evidence_baseline_lifecycle_readout_v1(
     *,
     evidence_closure_review: dict[str, Any],
@@ -1125,12 +1119,7 @@ def evidence_baseline_lifecycle_readout_v1(
             continue
         b = raw.get("baselinePngBasename")
         d = raw.get("expectedDiffBasename")
-        if (
-            isinstance(b, str)
-            and isinstance(d, str)
-            and b.endswith(".png")
-            and d.endswith(".png")
-        ):
+        if isinstance(b, str) and isinstance(d, str) and b.endswith(".png") and d.endswith(".png"):
             norm_rows.append({"baselinePngBasename": b, "expectedDiffBasename": d})
     norm_rows.sort(key=lambda r: (r["baselinePngBasename"], r["expectedDiffBasename"]))
     ingest_count = len(norm_rows)
@@ -1167,7 +1156,9 @@ def evidence_baseline_lifecycle_readout_v1(
         )
         digestrollup = "aligned" if expected_dig == actual_digest else "mismatch"
 
-    missing_committed_any = bool(expected_ids) and any(bn not in committed_bn for bn in expected_ids)
+    missing_committed_any = bool(expected_ids) and any(
+        bn not in committed_bn for bn in expected_ids
+    )
 
     def rollup_next_action() -> str:
         if ingest_count == 0:
@@ -1746,7 +1737,8 @@ def artifact_upload_manifest_v1(
     bundle_hints = sal.get("bundleFilenameHints")
     bundle_json = (
         str(bundle_hints["evidencePackageJson"])
-        if isinstance(bundle_hints, dict) and isinstance(bundle_hints.get("evidencePackageJson"), str)
+        if isinstance(bundle_hints, dict)
+        and isinstance(bundle_hints.get("evidencePackageJson"), str)
         else f"{suggested_evidence_artifact_basename}-evidence-package.json"
     )
 
@@ -1952,7 +1944,9 @@ def bcf_roundtrip_evidence_summary_v1(
         tk = str(t.get("topicKind") or "")
         tid = str(t.get("topicId") or "")
         raw_eids = t.get("elementIds")
-        el_list = [str(x) for x in (raw_eids if isinstance(raw_eids, list) else []) if x is not None]
+        el_list = [
+            str(x) for x in (raw_eids if isinstance(raw_eids, list) else []) if x is not None
+        ]
         model_element_ref_ct += len(el_list)
         topic_eids = frozenset(el_list)
 
@@ -2008,7 +2002,12 @@ def collaboration_replay_conflict_hints_v1() -> dict[str, Any]:
     return {
         "format": "collaborationReplayConflictHints_v1",
         "constraintRejectedHttpStatus": 409,
-        "typicalErrorBodyFields": ["reason", "violations", "replayDiagnostics", "mergePreflight_v1"],
+        "typicalErrorBodyFields": [
+            "reason",
+            "violations",
+            "replayDiagnostics",
+            "mergePreflight_v1",
+        ],
         "replayDiagnosticsFields": [
             "commandCount",
             "commandTypesInOrder",
@@ -2137,15 +2136,17 @@ def sheetProductionEvidenceBaseline_v1(doc: Document) -> dict[str, Any]:
         manifest = sheetViewportProductionManifest_v1(doc, sh.id)
         manifest_digest = str(manifest.get("manifestDigestSha256") or "")
 
-        rows.append({
-            "sheetId": sh.id,
-            "sheetName": sh.name or sh.id,
-            "viewportCount": vp_count,
-            "segmentCompletenessPercent": seg_pct,
-            "titleblockCoveragePercent": tb_pct,
-            "revisionIssueFieldCount": rev_iss_count,
-            "manifestDigestSha256": manifest_digest,
-        })
+        rows.append(
+            {
+                "sheetId": sh.id,
+                "sheetName": sh.name or sh.id,
+                "viewportCount": vp_count,
+                "segmentCompletenessPercent": seg_pct,
+                "titleblockCoveragePercent": tb_pct,
+                "revisionIssueFieldCount": rev_iss_count,
+                "manifestDigestSha256": manifest_digest,
+            }
+        )
 
     return {
         "format": "sheetProductionEvidenceBaseline_v1",
@@ -2242,7 +2243,6 @@ def evidence_package_semantic_digest_sha256(payload: dict[str, Any]) -> str:
 
     pv = shallow.get("planViews")
     if isinstance(pv, list):
-
         shallow = dict(shallow)
         shallow["planViews"] = sorted(pv, key=lambda x: str(x.get("id", "")))
 
@@ -2286,18 +2286,17 @@ def evidence_package_semantic_digest_sha256(payload: dict[str, Any]) -> str:
                 comp = cx.get("comparisonToAuthoredRooms")
 
                 if isinstance(comp, list):
-
-                    cx["comparisonToAuthoredRooms"] = sorted(comp, key=lambda x: str(x.get("roomId", "")))
+                    cx["comparisonToAuthoredRooms"] = sorted(
+                        comp, key=lambda x: str(x.get("roomId", ""))
+                    )
 
                 wrn = cx.get("warnings")
 
                 if isinstance(wrn, list):
-
                     cx["warnings"] = sorted(
                         wrn,
                         key=lambda x: (
                             str(x.get("code", "")),
-
                             str(x.get("message", "")),
                             str(x.get("severity", "")),
                         ),
@@ -2306,7 +2305,6 @@ def evidence_package_semantic_digest_sha256(payload: dict[str, Any]) -> str:
                 sh = cx.get("separationHintGridLineIds")
 
                 if isinstance(sh, list):
-
                     cx["separationHintGridLineIds"] = sorted(str(x) for x in sh)
 
                 normed.append(cx)

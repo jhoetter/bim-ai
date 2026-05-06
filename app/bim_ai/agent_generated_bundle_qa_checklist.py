@@ -30,7 +30,10 @@ def validate_checks_wire(violations: list[dict[str, Any]]) -> dict[str, Any]:
 
     err_ct = sum(1 for x in violations if x.get("severity") == "error")
     block_ct = sum(1 for x in violations if x.get("blocking") is True)
-    return {"violations": violations, "checks": {"errorViolationCount": err_ct, "blockingViolationCount": block_ct}}
+    return {
+        "violations": violations,
+        "checks": {"errorViolationCount": err_ct, "blockingViolationCount": block_ct},
+    }
 
 
 def agent_generated_bundle_qa_checklist_v1(
@@ -256,7 +259,10 @@ def agent_generated_bundle_qa_checklist_v1(
             fix_codes = [str(x) for x in raw_fc if isinstance(x, str)]
 
     union_set: set[str] = set(brief_blockers) | set(fix_codes)
-    if isinstance(evidence_ref_resolution, dict) and evidence_ref_resolution.get("hasUnresolvedEvidenceRefs") is True:
+    if (
+        isinstance(evidence_ref_resolution, dict)
+        and evidence_ref_resolution.get("hasUnresolvedEvidenceRefs") is True
+    ):
         union_set.add("evidence_refs_unresolved")
 
     if len(union_set) == 0:

@@ -92,7 +92,9 @@ def test_room_finish_schedule_peer_suggested_and_missing() -> None:
         name="Rooms",
         filters={"category": "room"},
     )
-    doc = Document(revision=1, elements={"lv": lv, "rm-a": rm_a, "rm-b": rm_b, "rm-c": rm_c, "sch-r": sch})
+    doc = Document(
+        revision=1, elements={"lv": lv, "rm-a": rm_a, "rm-b": rm_b, "rm-c": rm_c, "sch-r": sch}
+    )
     table = derive_schedule_table(doc, "sch-r")
     by_id = {r["elementId"]: r for r in table["rows"]}
     assert by_id["rm-a"]["finishState"] == "peer_suggested"
@@ -273,7 +275,10 @@ def test_plan_room_legend_hints_finish_correlation_shape() -> None:
     h0 = hints[0]
     corr = h0.get("roomFinishLegendCorrelation_v1") or {}
     assert corr.get("format") == "roomFinishLegendCorrelation_v1"
-    assert isinstance(corr.get("correlationDigestSha256"), str) and len(corr["correlationDigestSha256"]) == 64
+    assert (
+        isinstance(corr.get("correlationDigestSha256"), str)
+        and len(corr["correlationDigestSha256"]) == 64
+    )
     by_lab = {x["label"]: x for x in (corr.get("byLegendLabel") or [])}
     assert by_lab["LAB"]["roomCount"] == 1
     assert by_lab["LAB"]["missingFinishCount"] == 1

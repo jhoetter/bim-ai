@@ -119,7 +119,9 @@ def test_validation_rule_and_blocker_derivation() -> None:
         {"ruleId": "a_block", "blocking": True, "elementIds": ["c"]},
         {"ruleId": "e_only", "severity": "error", "elementIds": ["d"]},
     ]
-    out = agent_brief_command_protocol_v1(doc=doc, proposed_commands=[], validation_violations=viols)
+    out = agent_brief_command_protocol_v1(
+        doc=doc, proposed_commands=[], validation_violations=viols
+    )
     assert out["validationRuleIds"] == ["a_block", "e_only", "z_warn"]
     assert out["validationTargetElementIds"] == ["a", "b", "c", "d"]
     assert out["unresolvedBlockers"] == ["a_block", "e_only"]

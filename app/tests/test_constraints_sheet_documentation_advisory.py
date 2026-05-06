@@ -78,7 +78,14 @@ def test_sheet_missing_titleblock_ordering_two_sheets_by_id() -> None:
         id="sh-z",
         name="Z",
         viewportsMm=[
-            {"viewportId": "v", "viewRef": "plan:pv-1", "xMm": 0, "yMm": 0, "widthMm": 10, "heightMm": 10},
+            {
+                "viewportId": "v",
+                "viewRef": "plan:pv-1",
+                "xMm": 0,
+                "yMm": 0,
+                "widthMm": 10,
+                "heightMm": 10,
+            },
         ],
     )
     sh_a = SheetElem(
@@ -86,7 +93,14 @@ def test_sheet_missing_titleblock_ordering_two_sheets_by_id() -> None:
         id="sh-a",
         name="A",
         viewportsMm=[
-            {"viewportId": "v2", "viewRef": "plan:pv-1", "xMm": 1, "yMm": 1, "widthMm": 10, "heightMm": 10},
+            {
+                "viewportId": "v2",
+                "viewRef": "plan:pv-1",
+                "xMm": 1,
+                "yMm": 1,
+                "widthMm": 10,
+                "heightMm": 10,
+            },
         ],
     )
     elems = {"lvl": lvl, "pv-1": pv, "sh-z": sh_z, "sh-a": sh_a}
@@ -377,4 +391,3 @@ def test_sheet_missing_titleblock_quick_fix_try_commit_ok() -> None:
     assert ok is True
     assert code == "ok"
     assert not any(x.rule_id == "sheet_missing_titleblock" for x in viols)
-

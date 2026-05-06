@@ -36,7 +36,9 @@ def _sq(outline_mm: tuple[tuple[float, float], ...]) -> list[Vec2Mm]:
 
 def _make_scheme_elem(rows: list[dict]) -> RoomColorSchemeElem:
     parsed = [RoomColorSchemeRow(**r) for r in rows]
-    return RoomColorSchemeElem(kind="room_color_scheme", id="bim-room-color-scheme", schemeRows=parsed)
+    return RoomColorSchemeElem(
+        kind="room_color_scheme", id="bim-room-color-scheme", schemeRows=parsed
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -55,11 +57,13 @@ def test_override_evidence_no_scheme_elem() -> None:
 
 
 def test_override_evidence_valid_rows() -> None:
-    scheme = _make_scheme_elem([
-        {"programmeCode": "LAB", "schemeColorHex": "#FF0000"},
-        {"programmeCode": "OFF", "department": "East", "schemeColorHex": "#00FF00"},
-        {"department": "Surgery", "schemeColorHex": "#0000FF"},
-    ])
+    scheme = _make_scheme_elem(
+        [
+            {"programmeCode": "LAB", "schemeColorHex": "#FF0000"},
+            {"programmeCode": "OFF", "department": "East", "schemeColorHex": "#00FF00"},
+            {"department": "Surgery", "schemeColorHex": "#0000FF"},
+        ]
+    )
     ev = build_room_color_scheme_override_evidence_v1(scheme)
     assert ev["format"] == "roomColorSchemeOverrideEvidence_v1"
     assert ev["schemeIdentity"] == "bim-room-color-scheme"
@@ -73,10 +77,12 @@ def test_override_evidence_valid_rows() -> None:
 
 
 def test_override_evidence_duplicate_key_advisory() -> None:
-    scheme = _make_scheme_elem([
-        {"programmeCode": "LAB", "schemeColorHex": "#FF0000"},
-        {"programmeCode": "LAB", "schemeColorHex": "#AABBCC"},
-    ])
+    scheme = _make_scheme_elem(
+        [
+            {"programmeCode": "LAB", "schemeColorHex": "#FF0000"},
+            {"programmeCode": "LAB", "schemeColorHex": "#AABBCC"},
+        ]
+    )
     ev = build_room_color_scheme_override_evidence_v1(scheme)
     codes = [f["code"] for f in ev["advisoryFindings"]]
     assert "room_color_scheme_row_duplicate_override_key" in codes
@@ -113,21 +119,25 @@ def test_override_evidence_digest_changes_with_color() -> None:
 
 
 def test_legend_rows_from_overrides_sorted_by_label() -> None:
-    scheme = _make_scheme_elem([
-        {"programmeCode": "Z", "schemeColorHex": "#111111"},
-        {"programmeCode": "A", "schemeColorHex": "#222222"},
-        {"programmeCode": "M", "schemeColorHex": "#333333"},
-    ])
+    scheme = _make_scheme_elem(
+        [
+            {"programmeCode": "Z", "schemeColorHex": "#111111"},
+            {"programmeCode": "A", "schemeColorHex": "#222222"},
+            {"programmeCode": "M", "schemeColorHex": "#333333"},
+        ]
+    )
     rows = legend_rows_from_scheme_overrides(scheme.scheme_rows)
     labels = [r["label"] for r in rows]
     assert labels == sorted(labels)
 
 
 def test_legend_rows_deduped_by_key() -> None:
-    scheme = _make_scheme_elem([
-        {"programmeCode": "LAB", "schemeColorHex": "#FF0000"},
-        {"programmeCode": "LAB", "schemeColorHex": "#AABBCC"},
-    ])
+    scheme = _make_scheme_elem(
+        [
+            {"programmeCode": "LAB", "schemeColorHex": "#FF0000"},
+            {"programmeCode": "LAB", "schemeColorHex": "#AABBCC"},
+        ]
+    )
     rows = legend_rows_from_scheme_overrides(scheme.scheme_rows)
     assert len(rows) == 1
 
@@ -229,7 +239,9 @@ def test_sheet_legend_placement_evidence_with_plan_viewport() -> None:
     )
     apply_inplace(
         doc,
-        UpsertPlanViewCmd(id="pv-1", name="Floor Plan", levelId="lv", planPresentation="room_scheme"),
+        UpsertPlanViewCmd(
+            id="pv-1", name="Floor Plan", levelId="lv", planPresentation="room_scheme"
+        ),
     )
     apply_inplace(doc, UpsertSheetCmd(id="sh-1", name="A101"))
     apply_inplace(
@@ -291,7 +303,9 @@ def test_sheet_legend_placement_digest_is_stable() -> None:
     )
     apply_inplace(
         doc,
-        UpsertPlanViewCmd(id="pv-1", name="Floor Plan", levelId="lv", planPresentation="room_scheme"),
+        UpsertPlanViewCmd(
+            id="pv-1", name="Floor Plan", levelId="lv", planPresentation="room_scheme"
+        ),
     )
     apply_inplace(doc, UpsertSheetCmd(id="sh-1", name="A101"))
     apply_inplace(

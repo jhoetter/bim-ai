@@ -36,7 +36,11 @@ def test_digest_is_64_hex_chars() -> None:
 
 def test_digest_matches_canonical_body() -> None:
     result = build_v1_acceptance_proof_matrix_v1(_empty_doc())
-    body = {k: v for k, v in result.items() if k not in {"manifestContentDigestSha256", "v1AcceptanceProofMatrix_v1"}}
+    body = {
+        k: v
+        for k, v in result.items()
+        if k not in {"manifestContentDigestSha256", "v1AcceptanceProofMatrix_v1"}
+    }
     canonical = json.dumps(body, sort_keys=True, separators=(",", ":"))
     expected = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
     assert result["manifestContentDigestSha256"] == expected

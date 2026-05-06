@@ -226,7 +226,9 @@ def gable_rectangle_fascia_edge_plan_token_v0(ridge_axis: RidgeAxisPlan) -> str:
     return "eaveParallelPlanZ_gableRakeParallelPlanX"
 
 
-def mass_box_roof_proxy_peak_z_mm(reference_level_elevation_mm: float, slope_deg: float | None) -> float:
+def mass_box_roof_proxy_peak_z_mm(
+    reference_level_elevation_mm: float, slope_deg: float | None
+) -> float:
     """Section/plan proxy peak for roofGeometryMode=mass_box (800 mm nominal half-run heuristic)."""
 
     slope = float(slope_deg if slope_deg is not None else 25.0)

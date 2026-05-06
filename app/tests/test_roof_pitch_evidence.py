@@ -232,7 +232,10 @@ def test_plan_wire_mass_box_roof_z_mid_matches_section_primitive() -> None:
     assert pr["roofLayeredPrismWitnessSkipReason_v0"] == sr["roofLayeredPrismWitnessSkipReason_v0"]
     sr_scw = sr["roofSectionCutWitness_v0"]
     assert sr_scw["sectionProfileToken_v0"] == "footprintChord_skipLayeredPrism_v1"
-    assert sr_scw["roofSectionCutSupportToken_v0"] == "skipped_prism_skipped_not_gable_elevation_supported_v1"
+    assert (
+        sr_scw["roofSectionCutSupportToken_v0"]
+        == "skipped_prism_skipped_not_gable_elevation_supported_v1"
+    )
     assert sr_scw["layerReadouts"] == []
 
 
@@ -333,7 +336,10 @@ def test_mass_box_hex_footprint_emits_hip_candidate_deferred_token() -> None:
     for i in range(6):
         ang = (math.pi / 3.0) * float(i) - math.pi / 6.0
         hex_fp.append(
-            {"xMm": round(cx_m + r_mm * math.cos(ang), 6), "yMm": round(cz_m + r_mm * math.sin(ang), 6)}
+            {
+                "xMm": round(cx_m + r_mm * math.cos(ang), 6),
+                "yMm": round(cz_m + r_mm * math.sin(ang), 6),
+            }
         )
     doc = Document(
         revision=1,
@@ -390,7 +396,9 @@ def test_mass_box_concave_footprint_emits_valley_candidate_token() -> None:
             ),
         },
     )
-    row = document_to_gltf(doc)["extensions"]["BIM_AI_exportManifest_v0"]["roofGeometryEvidence_v1"]["roofs"][0]
+    row = document_to_gltf(doc)["extensions"]["BIM_AI_exportManifest_v0"][
+        "roofGeometryEvidence_v1"
+    ]["roofs"][0]
     assert row["roofGeometrySupportToken"] == "valley_candidate_deferred"
     assert row["roofPlanGeometryReadout_v0"] == "footprint_proxy_deferred"
 
@@ -403,7 +411,10 @@ def test_export_manifest_roof_unsupported_shape_summary_two_tokens() -> None:
     for i in range(6):
         ang = (math.pi / 3.0) * float(i) - math.pi / 6.0
         hex_fp.append(
-            {"xMm": round(cx_m + r_mm * math.cos(ang), 6), "yMm": round(cz_m + r_mm * math.sin(ang), 6)}
+            {
+                "xMm": round(cx_m + r_mm * math.cos(ang), 6),
+                "yMm": round(cz_m + r_mm * math.sin(ang), 6),
+            }
         )
     doc = Document(
         revision=1,
@@ -462,7 +473,9 @@ def test_triangle_footprint_emits_non_rectangular_token() -> None:
             ),
         },
     )
-    row = document_to_gltf(doc)["extensions"]["BIM_AI_exportManifest_v0"]["roofGeometryEvidence_v1"]["roofs"][0]
+    row = document_to_gltf(doc)["extensions"]["BIM_AI_exportManifest_v0"][
+        "roofGeometryEvidence_v1"
+    ]["roofs"][0]
     assert row["roofGeometrySupportToken"] == "non_rectangular_footprint_deferred"
 
 
@@ -482,7 +495,9 @@ def test_roof_missing_reference_level_emits_missing_slope_or_level_token() -> No
             ),
         },
     )
-    row = document_to_gltf(doc)["extensions"]["BIM_AI_exportManifest_v0"]["roofGeometryEvidence_v1"]["roofs"][0]
+    row = document_to_gltf(doc)["extensions"]["BIM_AI_exportManifest_v0"][
+        "roofGeometryEvidence_v1"
+    ]["roofs"][0]
     assert row["roofGeometrySupportToken"] == "missing_slope_or_level"
 
 
@@ -502,7 +517,9 @@ def test_roof_explicit_none_slope_emits_missing_slope_or_level_token() -> None:
             ),
         },
     )
-    row = document_to_gltf(doc)["extensions"]["BIM_AI_exportManifest_v0"]["roofGeometryEvidence_v1"]["roofs"][0]
+    row = document_to_gltf(doc)["extensions"]["BIM_AI_exportManifest_v0"][
+        "roofGeometryEvidence_v1"
+    ]["roofs"][0]
     assert row["roofGeometrySupportToken"] == "missing_slope_or_level"
 
 
@@ -593,7 +610,9 @@ def test_gable_roof_typed_layers_surface_evidence_manifest_plan_section_agree() 
     plan_row = (pw.get("primitives") or {}).get("roofs") or []
     assert len(plan_row) == 1
     pr = plan_row[0]
-    sec_row = (build_section_projection_primitives(doc, doc.elements["sec"])[0].get("roofs") or [])[0]
+    sec_row = (build_section_projection_primitives(doc, doc.elements["sec"])[0].get("roofs") or [])[
+        0
+    ]
     for k in (
         "layerStackSkipReason",
         "layerStackCount",
@@ -605,7 +624,10 @@ def test_gable_roof_typed_layers_surface_evidence_manifest_plan_section_agree() 
         "roofPlanGeometryReadout_v0",
     ):
         assert pr[k] == sec_row[k] == row[k]
-    assert "+bim_ai_roof_layered_prism_witness_v1" in g["extensions"]["BIM_AI_exportManifest_v0"]["meshEncoding"]
+    assert (
+        "+bim_ai_roof_layered_prism_witness_v1"
+        in g["extensions"]["BIM_AI_exportManifest_v0"]["meshEncoding"]
+    )
     prism = row["roofLayeredPrismWitness_v1"]
     assert prism["format"] == "roofLayeredPrismWitness_v1"
     assert prism["roofLayeredPrismStackModel_v0"] == "vertical_stack_from_eave"

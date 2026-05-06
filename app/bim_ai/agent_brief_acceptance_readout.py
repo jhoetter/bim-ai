@@ -78,7 +78,10 @@ def _missing_assumption_refs(brief_protocol: dict[str, Any]) -> list[dict[str, s
             and isinstance(row.get("relatedAssumptionId"), str)
         ):
             out.append(
-                {"deviationId": row["deviationId"], "relatedAssumptionId": row["relatedAssumptionId"]}
+                {
+                    "deviationId": row["deviationId"],
+                    "relatedAssumptionId": row["relatedAssumptionId"],
+                }
             )
     out.sort(key=lambda x: (x["deviationId"], x["relatedAssumptionId"]))
     return out
@@ -128,7 +131,9 @@ def agent_brief_acceptance_readout_v1(
         if isinstance(e, AgentAssumptionElem) and e.closure_status == "open"
     )
     unacked_deviation_ids = sorted(
-        e.id for e in doc.elements.values() if isinstance(e, AgentDeviationElem) and not e.acknowledged
+        e.id
+        for e in doc.elements.values()
+        if isinstance(e, AgentDeviationElem) and not e.acknowledged
     )
 
     source_brief = brief_protocol.get("sourceBrief")
@@ -162,7 +167,9 @@ def agent_brief_acceptance_readout_v1(
                 "status": "fail",
                 "failureReasonCode": "unresolved_assumption",
                 "requiredAction": action,
-                "sourceCommandIds": sorted(set(assumption_ids) | {m["deviationId"] for m in missing_refs}),
+                "sourceCommandIds": sorted(
+                    set(assumption_ids) | {m["deviationId"] for m in missing_refs}
+                ),
                 "affectedWorkpackages": list(AFFECTED_WORKPACKAGES_V1),
                 "expectedEvidenceArtifacts": [],
                 "validationCommandLabels": [],
@@ -256,7 +263,9 @@ def agent_brief_acceptance_readout_v1(
                     break
         st = "warn" if checklist_warn else "pass"
         code = "no_failure" if st == "pass" else "missing_validation_command"
-        action = "" if st == "pass" else "Clear validation advisor errors before shipping the brief."
+        action = (
+            "" if st == "pass" else "Clear validation advisor errors before shipping the brief."
+        )
         rows.append(
             {
                 "gateId": "validation_commands_present",
@@ -366,7 +375,9 @@ def agent_brief_acceptance_readout_v1(
             "gateId": "failure_reason_codes",
             "label": _GATE_LABELS["failure_reason_codes"],
             "status": "pass" if meta_ok else "fail",
-            "failureReasonCode": "no_failure" if meta_ok else "protocol_command_missing_or_malformed",
+            "failureReasonCode": "no_failure"
+            if meta_ok
+            else "protocol_command_missing_or_malformed",
             "requiredAction": meta_action,
             "sourceCommandIds": [],
             "affectedWorkpackages": list(AFFECTED_WORKPACKAGES_V1),
@@ -401,7 +412,7 @@ def agent_regeneration_guidance_v1(
     """
     changed_keys: set[str] = set()
     if isinstance(diff_summary, dict):
-        for entry in (diff_summary.get("changed") or []):
+        for entry in diff_summary.get("changed") or []:
             if isinstance(entry, dict):
                 k = entry.get("artifactKey")
                 if isinstance(k, str) and k:
@@ -424,7 +435,9 @@ def agent_regeneration_guidance_v1(
             reason = "Artifact changed since last manifest; retake to synchronize with current model state."
         else:
             priority = "low"
-            reason = "Package digest changed; artifact may be stale relative to current model revision."
+            reason = (
+                "Package digest changed; artifact may be stale relative to current model revision."
+            )
 
         if key.startswith("sheet-"):
             cmd = "cd app && .venv/bin/pytest tests/test_deterministic_sheet_evidence.py -x -v"

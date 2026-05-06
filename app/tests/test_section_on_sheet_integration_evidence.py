@@ -222,7 +222,10 @@ def test_integration_evidence_digest_changes_when_section_changes() -> None:
     ev_b = build_section_on_sheet_integration_evidence_v1(doc_b, sh_b)
 
     assert ev_a["rows"][0]["cutLineDigestSha256"] != ev_b["rows"][0]["cutLineDigestSha256"]
-    assert ev_a["sectionOnSheetIntegrationDigestSha256"] != ev_b["sectionOnSheetIntegrationDigestSha256"]
+    assert (
+        ev_a["sectionOnSheetIntegrationDigestSha256"]
+        != ev_b["sectionOnSheetIntegrationDigestSha256"]
+    )
 
 
 def test_integration_evidence_no_section_viewports_gives_empty_rows() -> None:
@@ -257,8 +260,22 @@ def test_integration_evidence_only_section_viewports_included() -> None:
         name="S1",
         titleBlock="A1",
         viewportsMm=[
-            {"viewportId": "vp-plan", "viewRef": "plan:pv-1", "xMm": 0, "yMm": 0, "widthMm": 100, "heightMm": 80},
-            {"viewportId": "vp-sec", "viewRef": "section:sec-1", "xMm": 110, "yMm": 0, "widthMm": 100, "heightMm": 80},
+            {
+                "viewportId": "vp-plan",
+                "viewRef": "plan:pv-1",
+                "xMm": 0,
+                "yMm": 0,
+                "widthMm": 100,
+                "heightMm": 80,
+            },
+            {
+                "viewportId": "vp-sec",
+                "viewRef": "section:sec-1",
+                "xMm": 110,
+                "yMm": 0,
+                "widthMm": 100,
+                "heightMm": 80,
+            },
         ],
     )
     doc = Document(revision=1, elements={"lvl-1": lvl, "pv-1": pv, "sec-1": sec, "sh-1": sh})
@@ -305,8 +322,22 @@ def test_integration_evidence_rows_sorted_by_viewport_id() -> None:
         name="S1",
         titleBlock="A1",
         viewportsMm=[
-            {"viewportId": "vp-z", "viewRef": "section:sec-2", "xMm": 0, "yMm": 0, "widthMm": 100, "heightMm": 80},
-            {"viewportId": "vp-a", "viewRef": "section:sec-1", "xMm": 110, "yMm": 0, "widthMm": 100, "heightMm": 80},
+            {
+                "viewportId": "vp-z",
+                "viewRef": "section:sec-2",
+                "xMm": 0,
+                "yMm": 0,
+                "widthMm": 100,
+                "heightMm": 80,
+            },
+            {
+                "viewportId": "vp-a",
+                "viewRef": "section:sec-1",
+                "xMm": 110,
+                "yMm": 0,
+                "widthMm": 100,
+                "heightMm": 80,
+            },
         ],
     )
     doc = Document(revision=1, elements={"lvl-1": lvl, "sec-1": sec1, "sec-2": sec2, "sh-1": sh})

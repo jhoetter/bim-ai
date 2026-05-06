@@ -311,14 +311,8 @@ def _wall_elevation_mm(els: dict[str, Element], level_id: str) -> float:
 
 def _resolve_wall_height_mm(cmd: CreateWallCmd, els: dict[str, Element]) -> float:
     if cmd.base_constraint_level_id and cmd.top_constraint_level_id:
-        b = (
-            _wall_elevation_mm(els, cmd.base_constraint_level_id)
-            + cmd.base_constraint_offset_mm
-        )
-        t = (
-            _wall_elevation_mm(els, cmd.top_constraint_level_id)
-            + cmd.top_constraint_offset_mm
-        )
+        b = _wall_elevation_mm(els, cmd.base_constraint_level_id) + cmd.base_constraint_offset_mm
+        t = _wall_elevation_mm(els, cmd.top_constraint_level_id) + cmd.top_constraint_offset_mm
         return max(100.0, t - b)
     return cmd.height_mm
 
@@ -337,20 +331,16 @@ def _recompute_constrained_wall_heights(els: dict[str, Element]) -> None:
             continue
         if not (el.base_constraint_level_id and el.top_constraint_level_id):
             continue
-        b = (
-            _wall_elevation_mm(els, el.base_constraint_level_id)
-            + el.base_constraint_offset_mm
-        )
-        t = (
-            _wall_elevation_mm(els, el.top_constraint_level_id)
-            + el.top_constraint_offset_mm
-        )
+        b = _wall_elevation_mm(els, el.base_constraint_level_id) + el.base_constraint_offset_mm
+        t = _wall_elevation_mm(els, el.top_constraint_level_id) + el.top_constraint_offset_mm
         nh = max(100.0, t - b)
         if abs(nh - el.height_mm) > 1e-3:
             els[wid] = el.model_copy(update={"height_mm": nh})
 
 
-def _wall_thickness_from_type(els: dict[str, Element], wall_type_id: str | None, fallback: float) -> float:
+def _wall_thickness_from_type(
+    els: dict[str, Element], wall_type_id: str | None, fallback: float
+) -> float:
     if not wall_type_id:
         return fallback
     wt = els.get(wall_type_id)
@@ -463,7 +453,9 @@ def _canonical_site_boundary_mm(raw: list[Vec2Mm]) -> list[Vec2Mm]:
         raise ValueError("site.boundaryMm must form a non-degenerate CCW polygon")
     crosses = _site_boundary_turn_cross_products_xy_mm(rotated)
     if not all(c > 1e-9 for c in crosses):
-        raise ValueError("site.boundaryMm must be strictly convex CCW (no collinear or concave vertices)")
+        raise ValueError(
+            "site.boundaryMm must be strictly convex CCW (no collinear or concave vertices)"
+        )
     return [Vec2Mm(xMm=a[0], yMm=a[1]) for a in rotated]
 
 
@@ -847,7 +839,9 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                             if isinstance(parsed, list):
                                 hx = [str(x) for x in parsed if isinstance(x, str)]
                         except json.JSONDecodeError as exc:
-                            raise ValueError("categoriesHidden must be a JSON array of strings") from exc
+                            raise ValueError(
+                                "categoriesHidden must be a JSON array of strings"
+                            ) from exc
                     els[cmd.element_id] = el.model_copy(update={"categories_hidden": hx})
                 elif cmd.key == "underlayLevelId":
                     lv = raw or None
@@ -868,7 +862,9 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                         try:
                             parsed = json.loads(raw)
                         except json.JSONDecodeError as exc:
-                            raise ValueError("cropMinMm must be JSON object {xMm,yMm} or empty") from exc
+                            raise ValueError(
+                                "cropMinMm must be JSON object {xMm,yMm} or empty"
+                            ) from exc
                         if not isinstance(parsed, dict):
                             raise ValueError("cropMinMm must be a JSON object")
                         els[cmd.element_id] = el.model_copy(
@@ -881,7 +877,9 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                         try:
                             parsed = json.loads(raw)
                         except json.JSONDecodeError as exc:
-                            raise ValueError("cropMaxMm must be JSON object {xMm,yMm} or empty") from exc
+                            raise ValueError(
+                                "cropMaxMm must be JSON object {xMm,yMm} or empty"
+                            ) from exc
                         if not isinstance(parsed, dict):
                             raise ValueError("cropMaxMm must be a JSON object")
                         els[cmd.element_id] = el.model_copy(
@@ -917,10 +915,14 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                         els[cmd.element_id] = el.model_copy(update={"plan_detail_level": raw})
                 elif cmd.key == "planRoomFillOpacityScale":
                     if raw == "":
-                        els[cmd.element_id] = el.model_copy(update={"plan_room_fill_opacity_scale": None})
+                        els[cmd.element_id] = el.model_copy(
+                            update={"plan_room_fill_opacity_scale": None}
+                        )
                     else:
                         v = max(0.0, min(1.0, float(raw)))
-                        els[cmd.element_id] = el.model_copy(update={"plan_room_fill_opacity_scale": v})
+                        els[cmd.element_id] = el.model_copy(
+                            update={"plan_room_fill_opacity_scale": v}
+                        )
                 elif cmd.key == "planShowOpeningTags":
                     v = _parse_plan_view_bool_override(cmd.value)
                     els[cmd.element_id] = el.model_copy(update={"plan_show_opening_tags": v})
@@ -929,10 +931,14 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                     els[cmd.element_id] = el.model_copy(update={"plan_show_room_labels": v})
                 elif cmd.key == "planOpeningTagStyleId":
                     if raw == "":
-                        els[cmd.element_id] = el.model_copy(update={"plan_opening_tag_style_id": None})
+                        els[cmd.element_id] = el.model_copy(
+                            update={"plan_opening_tag_style_id": None}
+                        )
                     else:
                         _validate_plan_tag_style_ref(els, raw, "opening")
-                        els[cmd.element_id] = el.model_copy(update={"plan_opening_tag_style_id": raw})
+                        els[cmd.element_id] = el.model_copy(
+                            update={"plan_opening_tag_style_id": raw}
+                        )
                 elif cmd.key == "planRoomTagStyleId":
                     if raw == "":
                         els[cmd.element_id] = el.model_copy(update={"plan_room_tag_style_id": None})
@@ -1023,7 +1029,9 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                         floor_v = float(raw)
                         if not (floor_v >= 0):
                             raise ValueError("viewerClipFloorElevMm must be non-negative")
-                    els[cmd.element_id] = el.model_copy(update={"viewer_clip_floor_elev_mm": floor_v})
+                    els[cmd.element_id] = el.model_copy(
+                        update={"viewer_clip_floor_elev_mm": floor_v}
+                    )
                 elif cmd.key == "hiddenSemanticKinds3d":
                     hid: list[str] = []
                     if raw:
@@ -1032,7 +1040,9 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                             if isinstance(parsed, list):
                                 hid = [str(x) for x in parsed if isinstance(x, str)]
                         except json.JSONDecodeError as exc:
-                            raise ValueError("hiddenSemanticKinds3d must be a JSON array of strings") from exc
+                            raise ValueError(
+                                "hiddenSemanticKinds3d must be a JSON array of strings"
+                            ) from exc
                     els[cmd.element_id] = el.model_copy(update={"hidden_semantic_kinds_3d": hid})
                 elif cmd.key == "cutawayStyle":
                     raw_cut = cmd.value.strip()
@@ -1052,10 +1062,14 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                         "hiddenSemanticKinds3d | cutawayStyle | name"
                     )
             elif isinstance(el, WallElem):
+
                 def _str_val(v: object) -> str:
                     return str(v).strip() if v is not None else ""
+
                 if cmd.key == "materialKey":
-                    els[cmd.element_id] = el.model_copy(update={"material_key": _str_val(cmd.value) or None})
+                    els[cmd.element_id] = el.model_copy(
+                        update={"material_key": _str_val(cmd.value) or None}
+                    )
                 elif cmd.key == "isCurtainWall":
                     if isinstance(cmd.value, bool):
                         cw = cmd.value
@@ -1073,13 +1087,19 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                         raise ValueError("wallTypeId must reference an existing wall_type")
                     els[cmd.element_id] = el.model_copy(update={"wall_type_id": wt})
                 elif cmd.key == "heightMm":
-                    els[cmd.element_id] = el.model_copy(update={"height_mm": float(_str_val(cmd.value))})
+                    els[cmd.element_id] = el.model_copy(
+                        update={"height_mm": float(_str_val(cmd.value))}
+                    )
                 elif cmd.key == "thicknessMm":
-                    els[cmd.element_id] = el.model_copy(update={"thickness_mm": float(_str_val(cmd.value))})
+                    els[cmd.element_id] = el.model_copy(
+                        update={"thickness_mm": float(_str_val(cmd.value))}
+                    )
                 elif cmd.key == "name":
                     els[cmd.element_id] = el.model_copy(update={"name": _str_val(cmd.value)})
                 else:
-                    raise ValueError("wall updates: key=materialKey | isCurtainWall | roofAttachmentId | wallTypeId | heightMm | thicknessMm | name")
+                    raise ValueError(
+                        "wall updates: key=materialKey | isCurtainWall | roofAttachmentId | wallTypeId | heightMm | thicknessMm | name"
+                    )
             elif isinstance(el, (DoorElem, WindowElem)):
                 raw_v = str(cmd.value).strip() if cmd.value is not None else ""
                 if cmd.key == "familyTypeId":
@@ -1108,7 +1128,9 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                     try:
                         patch_obj = json.loads(cmd.value)
                     except json.JSONDecodeError as exc:
-                        raise ValueError("titleblockParametersPatch must be a JSON object string") from exc
+                        raise ValueError(
+                            "titleblockParametersPatch must be a JSON object string"
+                        ) from exc
                     if not isinstance(patch_obj, dict):
                         raise ValueError("titleblockParametersPatch must decode to an object")
                     merged = dict(el.titleblock_parameters or {})
@@ -1126,7 +1148,9 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                             merged[key_s] = str(pv)
                     els[cmd.element_id] = el.model_copy(update={"titleblock_parameters": merged})
                 else:
-                    raise ValueError("sheet updates: key=titleBlock | titleblockParametersPatch | name")
+                    raise ValueError(
+                        "sheet updates: key=titleBlock | titleblockParametersPatch | name"
+                    )
             elif isinstance(el, RoofElem):
                 raw_r = cmd.value.strip()
                 if cmd.key == "roofTypeId":
@@ -1139,7 +1163,9 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 elif cmd.key == "roofGeometryMode":
                     mode_s = raw_r
                     if mode_s not in ("mass_box", "gable_pitched_rectangle"):
-                        raise ValueError("roofGeometryMode must be mass_box|gable_pitched_rectangle")
+                        raise ValueError(
+                            "roofGeometryMode must be mass_box|gable_pitched_rectangle"
+                        )
                     mode = cast(RoofGeometryMode, mode_s)
                     if mode == "gable_pitched_rectangle":
                         assert_valid_gable_pitched_rectangle_footprint_mm(
@@ -1208,10 +1234,11 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
             sid = cmd.id
             prev_el = els.get(sid)
             if prev_el is not None and not isinstance(prev_el, RoomColorSchemeElem):
-                raise ValueError("upsertRoomColorScheme.id must reference room_color_scheme when element exists")
+                raise ValueError(
+                    "upsertRoomColorScheme.id must reference room_color_scheme when element exists"
+                )
             canon_rows = _canonical_room_scheme_rows(list(cmd.scheme_rows))
             els[sid] = RoomColorSchemeElem(kind="room_color_scheme", id=sid, scheme_rows=canon_rows)
-
 
         case CreateWallTypeCmd():
             tid = cmd.id or new_id()
@@ -1297,7 +1324,11 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
             if dims is not None:
                 t_mm, s_mm, f_mm = dims
             else:
-                t_mm, s_mm, f_mm = cmd.thickness_mm, cmd.structure_thickness_mm, cmd.finish_thickness_mm
+                t_mm, s_mm, f_mm = (
+                    cmd.thickness_mm,
+                    cmd.structure_thickness_mm,
+                    cmd.finish_thickness_mm,
+                )
             els[fid] = FloorElem(
                 kind="floor",
                 id=fid,
@@ -1327,7 +1358,9 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 if rtid is not None:
                     rt_el = els.get(rtid)
                     if not isinstance(rt_el, RoofTypeElem):
-                        raise ValueError("createRoof.roofTypeId must reference an existing roof_type")
+                        raise ValueError(
+                            "createRoof.roofTypeId must reference an existing roof_type"
+                        )
             if cmd.roof_geometry_mode == "gable_pitched_rectangle":
                 assert_valid_gable_pitched_rectangle_footprint_mm(
                     [(p.x_mm, p.y_mm) for p in cmd.footprint_mm]
@@ -1501,7 +1534,9 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
         case UpsertTagDefinitionCmd():
             tid_cmd = cmd.id or new_id()
             tag_kind_literal = (
-                cmd.tag_kind if cmd.tag_kind in {"room", "sill", "slab_finish", "custom"} else "custom"
+                cmd.tag_kind
+                if cmd.tag_kind in {"room", "sill", "slab_finish", "custom"}
+                else "custom"
             )
             els[tid_cmd] = TagDefinitionElem(
                 kind="tag_definition",
@@ -1542,16 +1577,24 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
             vt = cmd.id or new_id()
             prior_tmpl = els.get(vt) if isinstance(els.get(vt), ViewTemplateElem) else None
             d_open = cmd.default_plan_opening_tag_style_id
-            if prior_tmpl is not None and "default_plan_opening_tag_style_id" not in cmd.model_fields_set:
+            if (
+                prior_tmpl is not None
+                and "default_plan_opening_tag_style_id" not in cmd.model_fields_set
+            ):
                 d_open = prior_tmpl.default_plan_opening_tag_style_id
             if d_open is not None:
                 _validate_plan_tag_style_ref(els, d_open, "opening")
             d_room = cmd.default_plan_room_tag_style_id
-            if prior_tmpl is not None and "default_plan_room_tag_style_id" not in cmd.model_fields_set:
+            if (
+                prior_tmpl is not None
+                and "default_plan_room_tag_style_id" not in cmd.model_fields_set
+            ):
                 d_room = prior_tmpl.default_plan_room_tag_style_id
             if d_room is not None:
                 _validate_plan_tag_style_ref(els, d_room, "room")
-            scale = cmd.scale if cmd.scale in {"scale_50", "scale_100", "scale_200"} else "scale_100"
+            scale = (
+                cmd.scale if cmd.scale in {"scale_50", "scale_100", "scale_200"} else "scale_100"
+            )
             pdl = _plan_detail_default_medium(cmd.plan_detail_level)
             pfo = _clamp_unit_interval(cmd.plan_room_fill_opacity_scale, 1.0)
             pcg_t: list[PlanCategoryGraphicRow] = []
@@ -1579,16 +1622,24 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
             vt = cmd.id or new_id()
             prior_tmpl = els.get(vt) if isinstance(els.get(vt), ViewTemplateElem) else None
             d_open = cmd.default_plan_opening_tag_style_id
-            if prior_tmpl is not None and "default_plan_opening_tag_style_id" not in cmd.model_fields_set:
+            if (
+                prior_tmpl is not None
+                and "default_plan_opening_tag_style_id" not in cmd.model_fields_set
+            ):
                 d_open = prior_tmpl.default_plan_opening_tag_style_id
             if d_open is not None:
                 _validate_plan_tag_style_ref(els, d_open, "opening")
             d_room = cmd.default_plan_room_tag_style_id
-            if prior_tmpl is not None and "default_plan_room_tag_style_id" not in cmd.model_fields_set:
+            if (
+                prior_tmpl is not None
+                and "default_plan_room_tag_style_id" not in cmd.model_fields_set
+            ):
                 d_room = prior_tmpl.default_plan_room_tag_style_id
             if d_room is not None:
                 _validate_plan_tag_style_ref(els, d_room, "room")
-            scale = cmd.scale if cmd.scale in {"scale_50", "scale_100", "scale_200"} else "scale_100"
+            scale = (
+                cmd.scale if cmd.scale in {"scale_50", "scale_100", "scale_200"} else "scale_100"
+            )
             pdl = _plan_detail_default_medium(cmd.plan_detail_level)
             pfo = _clamp_unit_interval(cmd.plan_room_fill_opacity_scale, 1.0)
             pcg_t: list[PlanCategoryGraphicRow] = []
@@ -1737,11 +1788,16 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
             uli = cmd.underlay_level_id
             if uli is not None and uli not in els:
                 raise ValueError(f"upsertPlanView underlay unknown level '{uli}'")
-            pres = cmd.plan_presentation if cmd.plan_presentation in {
-                "default",
-                "opening_focus",
-                "room_scheme",
-            } else "default"
+            pres = (
+                cmd.plan_presentation
+                if cmd.plan_presentation
+                in {
+                    "default",
+                    "opening_focus",
+                    "room_scheme",
+                }
+                else "default"
+            )
             pdl_override = _optional_plan_detail_override(cmd.plan_detail_level)
             pfo_override = _optional_room_fill_scale(cmd.plan_room_fill_opacity_scale)
             prior_pv = els.get(pvid) if isinstance(els.get(pvid), PlanViewElem) else None
@@ -1789,7 +1845,9 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
             sid = cmd.id or new_id()
             prior = els.get(sid)
             if prior is not None and not isinstance(prior, PlanTagStyleElem):
-                raise ValueError("upsertPlanTagStyle.id must reference plan_tag_style when element exists")
+                raise ValueError(
+                    "upsertPlanTagStyle.id must reference plan_tag_style when element exists"
+                )
             tt = cmd.tag_target
             if tt not in ("opening", "room"):
                 raise ValueError("upsertPlanTagStyle.tagTarget must be opening|room")
@@ -1811,7 +1869,9 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
             cid = cmd.id or new_id()
             if cid in els:
                 raise ValueError(f"duplicate element id '{cid}'")
-            if cmd.parent_sheet_id not in els or not isinstance(els[cmd.parent_sheet_id], SheetElem):
+            if cmd.parent_sheet_id not in els or not isinstance(
+                els[cmd.parent_sheet_id], SheetElem
+            ):
                 raise ValueError("createCallout.parentSheetId must reference Sheet")
             if len(cmd.outline_mm) < 3:
                 raise ValueError("createCallout outline requires ≥3 vertices")
@@ -1985,7 +2045,8 @@ def replay_performance_budget_v1(
     """Deterministic scan summary aligned with diagnostics perf ceilings (WP-P01 / WP-X01); no wall-clock fields."""
 
     histogram = [
-        {"commandType": ctype, "count": cnt} for ctype, cnt in sorted(hist_counter.items(), key=lambda x: x[0])
+        {"commandType": ctype, "count": cnt}
+        for ctype, cnt in sorted(hist_counter.items(), key=lambda x: x[0])
     ]
     distinct = len(hist_counter)
     large_warn = command_count >= REPLAY_LARGE_BUNDLE_WARN_COMMAND_COUNT
@@ -2048,7 +2109,9 @@ def first_blocking_command_index_after_prefixes(doc: Document, cmds: list[Comman
     return None
 
 
-def blocking_violation_rule_ids_at_prefix(doc: Document, cmds: list[Command], idx: int) -> list[str]:
+def blocking_violation_rule_ids_at_prefix(
+    doc: Document, cmds: list[Command], idx: int
+) -> list[str]:
     """Sorted unique rule ids from blocking/error violations after cmds[0..idx] inclusive."""
 
     cand = clone_document(doc)
@@ -2059,7 +2122,9 @@ def blocking_violation_rule_ids_at_prefix(doc: Document, cmds: list[Command], id
     return sorted({v.rule_id for v in blocking})
 
 
-def blocking_violation_element_ids_at_prefix(doc: Document, cmds: list[Command], idx: int) -> list[str]:
+def blocking_violation_element_ids_at_prefix(
+    doc: Document, cmds: list[Command], idx: int
+) -> list[str]:
     """Sorted unique element ids from blocking/error violations after cmds[0..idx] inclusive."""
 
     cand = clone_document(doc)
@@ -2596,7 +2661,9 @@ def command_bundle_merge_preflight_v1(
             except Exception:
                 cmds_coerced = []
             first_idx = (
-                first_blocking_command_index_after_prefixes(doc, cmds_coerced) if cmds_coerced else None
+                first_blocking_command_index_after_prefixes(doc, cmds_coerced)
+                if cmds_coerced
+                else None
             )
         decl_ids = []
         cmds_for_elems = cmds_coerced
@@ -2666,7 +2733,9 @@ def replay_bundle_diagnostics_for_outcome(
         rule_ids = blocking_violation_rule_ids_at_prefix(doc, cmds, idx)
         budget_raw = base.get("replayPerformanceBudget_v1")
         budget_merged = (
-            {**budget_raw, "firstBlockingCommandIndex": idx} if isinstance(budget_raw, dict) else budget_raw
+            {**budget_raw, "firstBlockingCommandIndex": idx}
+            if isinstance(budget_raw, dict)
+            else budget_raw
         )
         return {
             **base,

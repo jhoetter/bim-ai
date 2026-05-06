@@ -134,9 +134,7 @@ def test_matrix_has_at_least_one_deferred_row() -> None:
 def test_status_counts_sum_to_total_rows() -> None:
     m = build_prd_blocking_advisor_matrix()
     total = sum(m["statusCounts"].values())
-    assert total == len(m["rows"]), (
-        f"statusCounts sum {total} != len(rows) {len(m['rows'])}"
-    )
+    assert total == len(m["rows"]), f"statusCounts sum {total} != len(rows) {len(m['rows'])}"
 
 
 # ── Validation function rejects bad input ─────────────────────────────────────

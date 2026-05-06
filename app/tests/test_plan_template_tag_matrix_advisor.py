@@ -16,6 +16,7 @@ from bim_ai.plan_projection_wire import plan_projection_wire_from_request
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_tag_style(
     eid: str,
     target: str = "opening",
@@ -139,7 +140,9 @@ def test_plan_template_tag_style_ref_invalid() -> None:
     els = {
         "lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=0),
         "tmpl1": tmpl,
-        "pv1": PlanViewElem(kind="plan_view", id="pv1", name="P", levelId="lvl", viewTemplateId="tmpl1"),
+        "pv1": PlanViewElem(
+            kind="plan_view", id="pv1", name="P", levelId="lvl", viewTemplateId="tmpl1"
+        ),
     }
     viols = _plan_view_tag_style_advisor_violations(els)
     rule_ids = [v.rule_id for v in viols]

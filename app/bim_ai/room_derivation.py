@@ -163,7 +163,9 @@ def room_separation_plan_wire_row_fields_by_id(
     return out
 
 
-def room_separation_axis_summary_v0_payload(doc: Document, bundle: dict[str, Any]) -> dict[str, Any]:
+def room_separation_axis_summary_v0_payload(
+    doc: Document, bundle: dict[str, Any]
+) -> dict[str, Any]:
     """Compact counts for room schedule closure (roomProgrammeClosure_v0)."""
     auth_perim, interior = room_separation_derived_bundle_sets(bundle)
     seps = [e for e in doc.elements.values() if isinstance(e, RoomSeparationElem)]

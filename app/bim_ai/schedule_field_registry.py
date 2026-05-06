@@ -281,7 +281,11 @@ SCHEDULE_COLUMN_METADATA: dict[str, dict[str, ColumnMeta]] = {
         "materialAssemblyLayers": {"label": "Assembly layers", "role": "integer"},
         "overhangMm": {"label": "Overhang (mm)", "role": "number"},
         "slopeDeg": {"label": "Slope (°)", "role": "number"},
-        "pitchDeg": {"label": "Pitch (°)", "role": "number", "help": "Architectural pitch in degrees; mirrors slopeDeg for parity."},
+        "pitchDeg": {
+            "label": "Pitch (°)",
+            "role": "number",
+            "help": "Architectural pitch in degrees; mirrors slopeDeg for parity.",
+        },
         "footprintAreaM2": {"label": "Footprint (m²)", "role": "number"},
         "footprintPerimeterM": {"label": "Footprint perimeter (m)", "role": "number"},
         "familyTypeId": {"label": "Family / type", "role": "identity"},

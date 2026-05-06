@@ -456,7 +456,9 @@ class PlanCategoryGraphicRow(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True)
     category_key: PlanCategoryGraphicCategoryKey = Field(alias="categoryKey")
     line_weight_factor: float | None = Field(default=None, alias="lineWeightFactor", gt=0, le=3)
-    line_pattern_token: PlanLinePatternTokenPlan | None = Field(default=None, alias="linePatternToken")
+    line_pattern_token: PlanLinePatternTokenPlan | None = Field(
+        default=None, alias="linePatternToken"
+    )
 
 
 class PlanViewElem(BaseModel):
@@ -482,7 +484,9 @@ class PlanViewElem(BaseModel):
     cut_plane_offset_mm: float | None = Field(default=None, alias="cutPlaneOffsetMm")
     categories_hidden: list[str] = Field(default_factory=list, alias="categoriesHidden")
     plan_detail_level: PlanDetailLevelPlan | None = Field(default=None, alias="planDetailLevel")
-    plan_room_fill_opacity_scale: float | None = Field(default=None, alias="planRoomFillOpacityScale")
+    plan_room_fill_opacity_scale: float | None = Field(
+        default=None, alias="planRoomFillOpacityScale"
+    )
     plan_show_opening_tags: bool | None = Field(default=None, alias="planShowOpeningTags")
     plan_show_room_labels: bool | None = Field(default=None, alias="planShowRoomLabels")
     plan_opening_tag_style_id: str | None = Field(default=None, alias="planOpeningTagStyleId")
@@ -533,7 +537,9 @@ class SheetElem(BaseModel):
     viewports_mm: list[dict[str, Any]] = Field(default_factory=list, alias="viewportsMm")
     paper_width_mm: float = Field(default=42_000, alias="paperWidthMm")
     paper_height_mm: float = Field(default=29_700, alias="paperHeightMm")
-    titleblock_parameters: dict[str, str] = Field(default_factory=dict, alias="titleblockParameters")
+    titleblock_parameters: dict[str, str] = Field(
+        default_factory=dict, alias="titleblockParameters"
+    )
 
 
 class ScheduleElem(BaseModel):
@@ -650,7 +656,9 @@ class SiteElem(BaseModel):
         ge=0,
         description="Optional uniform property setback metadata (mm), documentary v0.",
     )
-    context_objects: list[SiteContextObjectRow] = Field(default_factory=list, alias="contextObjects")
+    context_objects: list[SiteContextObjectRow] = Field(
+        default_factory=list, alias="contextObjects"
+    )
 
 
 ElementKind = Literal[

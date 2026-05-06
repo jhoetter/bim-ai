@@ -245,9 +245,7 @@ def test_bundle_id_drift_when_ids_disagree() -> None:
     brief = _brief_acceptance(
         rows=[{"expectedEvidenceArtifacts": ["bim-ai-evidence-aaa111-r1-sheet.png"]}]
     )
-    lifecycle = _baseline_lifecycle(
-        expected_baseline_ids=["bim-ai-evidence-bbb222-r2-plan.png"]
-    )
+    lifecycle = _baseline_lifecycle(expected_baseline_ids=["bim-ai-evidence-bbb222-r2-plan.png"])
     out = _call(brief_acceptance=brief, baseline_lifecycle=lifecycle)
     brief_row = next(r for r in out["rows"] if r["readoutId"] == "briefAcceptance")
     lifecycle_row = next(r for r in out["rows"] if r["readoutId"] == "baselineLifecycle")
@@ -284,12 +282,8 @@ def test_advisory_missing_fields_identifies_readout_id() -> None:
 
 
 def test_advisory_bundle_id_drift_fires() -> None:
-    brief = _brief_acceptance(
-        rows=[{"expectedEvidenceArtifacts": ["bim-ai-evidence-aaa-r1.png"]}]
-    )
-    lifecycle = _baseline_lifecycle(
-        expected_baseline_ids=["bim-ai-evidence-bbb-r2.png"]
-    )
+    brief = _brief_acceptance(rows=[{"expectedEvidenceArtifacts": ["bim-ai-evidence-aaa-r1.png"]}])
+    lifecycle = _baseline_lifecycle(expected_baseline_ids=["bim-ai-evidence-bbb-r2.png"])
     out = _call(brief_acceptance=brief, baseline_lifecycle=lifecycle)
     rule_ids = {f["ruleId"] for f in out["advisoryFindings"]}
     assert ADVISORY_BUNDLE_ID_DRIFT in rule_ids
@@ -327,9 +321,7 @@ def test_no_advisory_when_all_readouts_aligned() -> None:
     )
     # Only mergePreflight and browserRenderingBudget are null → they fire missing_fields
     # but the others should be aligned.
-    aligned_ids = {
-        r["readoutId"] for r in out["rows"] if r["consistencyToken"] == "aligned"
-    }
+    aligned_ids = {r["readoutId"] for r in out["rows"] if r["consistencyToken"] == "aligned"}
     assert "briefAcceptance" in aligned_ids
     assert "bundleQaChecklist" in aligned_ids
     assert "baselineLifecycle" in aligned_ids
@@ -387,4 +379,7 @@ def test_field_refs_use_closure_hints_values() -> None:
 def test_closure_hints_includes_consistency_closure_field() -> None:
     hints = _hints()
     assert "agentReviewReadoutConsistencyClosureField" in hints
-    assert hints["agentReviewReadoutConsistencyClosureField"] == "agentReviewReadoutConsistencyClosure_v1"
+    assert (
+        hints["agentReviewReadoutConsistencyClosureField"]
+        == "agentReviewReadoutConsistencyClosure_v1"
+    )

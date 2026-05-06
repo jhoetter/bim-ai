@@ -230,7 +230,9 @@ def test_hybrid_model_summary_exposes_scale_fields() -> None:
     assert regen["documentRevision"] == doc.revision
     assert regen["roomDerivationHeuristicVersion"] == preview["heuristicVersion"]
     assert regen["roomDerivationCandidateCount"] == preview["candidateCount"]
-    assert regen["roomDerivationAuthoritativeCount"] == preview.get("authoritativeCandidateCount", 0)
+    assert regen["roomDerivationAuthoritativeCount"] == preview.get(
+        "authoritativeCandidateCount", 0
+    )
     assert regen["roomDerivationDiagnosticCount"] == preview.get("diagnosticCount", 0)
     assert regen["roomDerivationWarningCount"] == len(preview["warnings"])
     assert regen["levelsWithRoomsSorted"] == ["lvl"]

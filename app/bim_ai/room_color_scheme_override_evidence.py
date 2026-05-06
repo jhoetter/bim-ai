@@ -94,7 +94,10 @@ def build_room_color_scheme_override_evidence_v1(
                         f"department={row.department!r}) at position {order_index}; "
                         f"first seen at position {seen_keys[key]}."
                     ),
-                    "overrideKey": {"programmeCode": row.programme_code, "department": row.department},
+                    "overrideKey": {
+                        "programmeCode": row.programme_code,
+                        "department": row.department,
+                    },
                 }
             )
         else:
@@ -107,7 +110,10 @@ def build_room_color_scheme_override_evidence_v1(
                         "code": fc,
                         "severity": "warning",
                         "message": _finding_message(fc, row, order_index),
-                        "overrideKey": {"programmeCode": row.programme_code, "department": row.department},
+                        "overrideKey": {
+                            "programmeCode": row.programme_code,
+                            "department": row.department,
+                        },
                     }
                 )
 
@@ -122,7 +128,7 @@ def build_room_color_scheme_override_evidence_v1(
             }
         )
 
-    canonical.sort(key=lambda r: (_override_key_from_dict(r)))
+    canonical.sort(key=lambda r: _override_key_from_dict(r))
     for i, row in enumerate(canonical):
         row["orderIndex"] = i
 
@@ -188,7 +194,9 @@ def legend_rows_from_scheme_overrides(
             if (row.department or "").strip():
                 entry["department"] = (row.department or "").strip()
             seen[key] = entry
-    return sorted(seen.values(), key=lambda r: (str(r.get("label", "")), str(r.get("schemeColorHex", ""))))
+    return sorted(
+        seen.values(), key=lambda r: (str(r.get("label", "")), str(r.get("schemeColorHex", "")))
+    )
 
 
 def _room_area_m2(room: RoomElem) -> float:
@@ -257,9 +265,7 @@ def roomColourSchemeLegendEvidence_v1(doc: Document) -> dict[str, Any]:
             }
         )
 
-    legend_entries.sort(
-        key=lambda r: (str(r.get("label") or ""), str(r.get("colourHex") or ""))
-    )
+    legend_entries.sort(key=lambda r: (str(r.get("label") or ""), str(r.get("colourHex") or "")))
     digest = hashlib.sha256(
         json.dumps(legend_entries, sort_keys=True, separators=(",", ":")).encode("utf-8")
     ).hexdigest()

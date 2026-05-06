@@ -50,7 +50,11 @@ def normalize_plan_category_graphics_rows(
         return []
     parsed: list[PlanCategoryGraphicRow] = []
     for raw in rows:
-        row = raw if isinstance(raw, PlanCategoryGraphicRow) else PlanCategoryGraphicRow.model_validate(raw)
+        row = (
+            raw
+            if isinstance(raw, PlanCategoryGraphicRow)
+            else PlanCategoryGraphicRow.model_validate(raw)
+        )
         ck = row.category_key
         if ck not in PLAN_CATEGORY_GRAPHIC_KEYS:
             raise ValueError(f"planCategoryGraphics unknown categoryKey '{ck}'")
@@ -81,7 +85,9 @@ def parse_plan_category_graphics_property_json(raw: str) -> list[PlanCategoryGra
         if not isinstance(item, dict):
             raise ValueError("planCategoryGraphics row must be an object")
         objs.append(item)
-    return normalize_plan_category_graphics_rows([PlanCategoryGraphicRow.model_validate(o) for o in objs])
+    return normalize_plan_category_graphics_rows(
+        [PlanCategoryGraphicRow.model_validate(o) for o in objs]
+    )
 
 
 def _row_maps_for_merge(
@@ -165,12 +171,14 @@ def build_plan_section_mark_ref_evidence_v1(
             end_in = (cx0 <= ex <= cx1) and (cy0 <= ey <= cy1)
             if not (start_in or end_in):
                 continue
-        rows.append({
-            "planViewId": pv_id,
-            "sectionId": e.id,
-            "sectionName": str(e.name or e.id),
-            "sectionMarkRefToken": "section_mark_plan_ref_v1",
-        })
+        rows.append(
+            {
+                "planViewId": pv_id,
+                "sectionId": e.id,
+                "sectionName": str(e.name or e.id),
+                "sectionMarkRefToken": "section_mark_plan_ref_v1",
+            }
+        )
     return {
         "format": "planSectionMarkRefEvidence_v1",
         "planViewId": pv_id,

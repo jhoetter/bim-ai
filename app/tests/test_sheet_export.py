@@ -43,7 +43,15 @@ def test_sheet_viewport_export_listing_prepends_revision_line() -> None:
         elements={
             "sx": _minimal_sheet(
                 viewportsMm=[
-                    {"viewportId": "v1", "viewRef": "", "label": "L1", "xMm": 0, "yMm": 0, "widthMm": 10, "heightMm": 10},
+                    {
+                        "viewportId": "v1",
+                        "viewRef": "",
+                        "label": "L1",
+                        "xMm": 0,
+                        "yMm": 0,
+                        "widthMm": 10,
+                        "heightMm": 10,
+                    },
                 ],
                 titleblockParameters={"revisionId": "R9"},
             ),
