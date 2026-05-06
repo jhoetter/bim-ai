@@ -905,7 +905,7 @@ Profile families (introduced in V2-11) optionally referenced via `profileFamilyI
 | VIE-01 | Detail levels render binding                                    | M      | `partial` | —          |
 | VIE-02 | Per-element / per-family-geometry visibility per detail level    | M      | `open`    | FAM-01     |
 | VIE-03 | Named elevation views (N/S/E/W) + auto-generation                | M      | `open`    | —          |
-| VIE-04 | Temporary isolate / hide category                                | S      | `open`    | —          |
+| VIE-04 | Temporary isolate / hide category                                | S      | `done`    | —          |
 | VIE-05 | Plan view auto-generation when a level is created                | S      | `done`    | —          |
 | VIE-06 | Project templates (starter models)                               | M      | `open`    | —          |
 | VIE-07 | Pin element / unpin (UP shortcut, prevents accidental edit)      | S      | `done`    | —          |
@@ -976,7 +976,7 @@ Profile families (introduced in V2-11) optionally referenced via `profileFamilyI
 
 **Acceptance.** Right-click a wall → Isolate Category → only walls visible in current view; click clear → all categories visible again. Switching to a different view automatically clears the temporary visibility.
 
-**Effort.** S — 3 days.
+**Effort.** S — 3 days. **Done in commit 4c9f7caa** (`temporaryVisibility` slice + setter / clear; PlanCanvas filters `elementsById` through the override before projection so view definitions stay visible; `activatePlanView` / `setActiveViewpointId` clear on view change; `TemporaryVisibilityChip` status-bar component; `isElementVisibleUnderTemporaryVisibility` pure helper. Right-click context menu + HI/HC/HR shortcuts deferred — wired through chip + setter today).
 
 ### VIE-05 — Plan view auto-generation when a level is created
 
