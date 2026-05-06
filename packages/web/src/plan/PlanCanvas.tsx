@@ -144,8 +144,11 @@ export function PlanCanvas({
     half: initialCamera?.halfMm !== undefined ? initialCamera.halfMm / 1000 : 22,
   });
   const draftRef = useRef<Draft | undefined>(undefined);
+  const spaceDownRef = useRef(false);
+  const minZoomRef = useRef(2);
   const [hudMm, setHudMm] = useState<{ xMm: number; yMm: number }>();
   const [halfUi, setHalfUi] = useState(22);
+  const [showZoomMenu, setShowZoomMenu] = useState(false);
   const [geomEpoch, bumpGeom] = useState(0);
   const [roomColorLegend, setRoomColorLegend] = useState<
     Array<{
@@ -323,6 +326,25 @@ export function PlanCanvas({
       if (cameraHandleRef) cameraHandleRef.current = null;
     };
   }, [cameraHandleRef, resizeCam]);
+
+  const handleFitToView = useCallback(() => {
+    const grp = rootRef.current;
+    const rnd = rendererRef.current;
+    if (!grp || !rnd) return;
+    const box = new THREE.Box3().setFromObject(grp);
+    if (!Number.isFinite(box.min.x)) return;
+    const cx = (box.min.x + box.max.x) / 2;
+    const cz = (box.min.z + box.max.z) / 2;
+    const halfX = (box.max.x - box.min.x) / 2;
+    const halfZ = (box.max.z - box.min.z) / 2;
+    const asp = rnd.domElement.clientWidth / Math.max(1, rnd.domElement.clientHeight);
+    const half = Math.max(halfX / asp, halfZ) * 1.15;
+    camRef.current.camX = cx;
+    camRef.current.camZ = cz;
+    camRef.current.half = THREE.MathUtils.clamp(half, minZoomRef.current, 420);
+    resizeCam();
+    setShowZoomMenu(false);
+  }, [resizeCam]);
 
   useEffect(() => {
     draftRef.current = undefined;
@@ -529,7 +551,9 @@ export function PlanCanvas({
     };
 
     const onDown = (ev: PointerEvent) => {
-      if ((ev.buttons & 2) === 2 || ev.buttons === 4 || ev.shiftKey) {
+      const forcePan =
+        (ev.buttons & 2) === 2 || (ev.buttons & 4) === 4 || ev.shiftKey || spaceDownRef.current;
+      if (forcePan) {
         const rr = rayToPlanMm(rnd, camNow, ev.clientX, ev.clientY);
         if (!rr) return;
         dragRef.current = {
@@ -539,6 +563,33 @@ export function PlanCanvas({
           camX: camRef.current.camX,
           camZ: camRef.current.camZ,
         };
+      } else if (ev.button === 0 && planTool === 'select') {
+        // LMB + select tool: pan when clicking empty space, let onClick handle element hits.
+        const rectBox = rnd.domElement.getBoundingClientRect();
+        const ray = new THREE.Raycaster();
+        ray.setFromCamera(
+          new THREE.Vector2(
+            ((ev.clientX - rectBox.left) / rectBox.width) * 2 - 1,
+            -(((ev.clientY - rectBox.top) / rectBox.height) * 2 - 1),
+          ),
+          camNow,
+        );
+        const hits = ray.intersectObjects(grp.children, true);
+        const hasHit = hits.some(
+          (x) => typeof (x.object.userData as { bimPickId?: unknown }).bimPickId === 'string',
+        );
+        if (!hasHit) {
+          const rr = rayToPlanMm(rnd, camNow, ev.clientX, ev.clientY);
+          if (rr) {
+            dragRef.current = {
+              dragging: true,
+              lastXmm: rr.xMm,
+              lastZmm: rr.yMm,
+              camX: camRef.current.camX,
+              camZ: camRef.current.camZ,
+            };
+          }
+        }
       }
       skipClickRef.current = false;
     };
@@ -712,15 +763,40 @@ export function PlanCanvas({
     };
 
     const onWheel = (ev: WheelEvent) => {
-      camRef.current.half = THREE.MathUtils.clamp(camRef.current.half + ev.deltaY * 0.011, 4, 420);
-      resizeCam();
       ev.preventDefault();
+      const rect = rnd.domElement.getBoundingClientRect();
+      const ndcX = ((ev.clientX - rect.left) / rect.width) * 2 - 1;
+      const ndcY = -(((ev.clientY - rect.top) / rect.height) * 2 - 1);
+      const asp = rect.width / Math.max(1, rect.height);
+      const raw = ev.deltaMode === 1 ? ev.deltaY * 20 : ev.deltaMode === 2 ? ev.deltaY * 600 : ev.deltaY;
+      const oldHalf = camRef.current.half;
+      const newHalf = THREE.MathUtils.clamp(
+        oldHalf * Math.exp(raw * 0.001),
+        minZoomRef.current,
+        420,
+      );
+      const dH = oldHalf - newHalf;
+      camRef.current.half = newHalf;
+      // Anchor cursor: shift camera so the world point under the cursor stays fixed.
+      camRef.current.camX += ndcX * asp * dH;
+      camRef.current.camZ -= ndcY * dH;
+      resizeCam();
     };
 
     const onKey = (ev: KeyboardEvent) => {
       if (ev.key === 'Escape') {
         draftRef.current = undefined;
         bumpGeom((x) => x + 1);
+      }
+      if (ev.code === 'Space') {
+        ev.preventDefault();
+        spaceDownRef.current = true;
+      }
+    };
+    const onKeyUp = (ev: KeyboardEvent) => {
+      if (ev.code === 'Space') {
+        spaceDownRef.current = false;
+        dragRef.current.dragging = false;
       }
     };
 
@@ -730,6 +806,7 @@ export function PlanCanvas({
     canvas.addEventListener('click', onClick);
     canvas.addEventListener('wheel', onWheel, { passive: false });
     window.addEventListener('keydown', onKey);
+    window.addEventListener('keyup', onKeyUp);
     return () => {
       canvas.removeEventListener('pointermove', onMove);
       canvas.removeEventListener('pointerdown', onDown);
@@ -737,6 +814,7 @@ export function PlanCanvas({
       canvas.removeEventListener('click', onClick);
       canvas.removeEventListener('wheel', onWheel);
       window.removeEventListener('keydown', onKey);
+      window.removeEventListener('keyup', onKeyUp);
     };
   }, [
     anchors,
@@ -752,6 +830,13 @@ export function PlanCanvas({
   ]);
 
   const sb = THREE.MathUtils.clamp(halfUi * 0.25, 0.2, 6);
+  const zoomPresets = [
+    { label: 'Close-up  2 m', half: 2 },
+    { label: 'Room      5 m', half: 5 },
+    { label: 'Floor    12 m', half: 12 },
+    { label: 'Building 25 m', half: 25 },
+    { label: 'Site     80 m', half: 80 },
+  ] as const;
   return (
     <div
       data-testid="plan-canvas"
@@ -793,8 +878,42 @@ export function PlanCanvas({
           </div>
         ) : null}
       </div>
-      <div className="pointer-events-none absolute left-3 bottom-3 z-10 rounded border border-border bg-surface/80 px-2 py-1 text-[10px] text-muted backdrop-blur">
-        ━━━ {`${(sb * 100).toFixed(0)} cm`}
+      {/* Zoom control — scale bar + preset menu */}
+      <div className="pointer-events-auto absolute left-3 bottom-3 z-10">
+        {showZoomMenu && (
+          <div className="mb-1 flex flex-col overflow-hidden rounded border border-border bg-surface/95 shadow-md backdrop-blur">
+            {zoomPresets.map(({ label, half }) => (
+              <button
+                key={label}
+                type="button"
+                className="px-3 py-1 text-left font-mono text-[10px] text-muted hover:bg-accent/20 hover:text-foreground"
+                onClick={() => {
+                  camRef.current.half = half;
+                  resizeCam();
+                  setShowZoomMenu(false);
+                }}
+              >
+                {label}
+              </button>
+            ))}
+            <div className="mx-2 border-t border-border" />
+            <button
+              type="button"
+              className="px-3 py-1 text-left font-mono text-[10px] text-muted hover:bg-accent/20 hover:text-foreground"
+              onClick={handleFitToView}
+            >
+              Fit to view
+            </button>
+          </div>
+        )}
+        <button
+          type="button"
+          title="Click for zoom presets · scroll to zoom · Space+drag to pan"
+          className="flex items-center gap-1 rounded border border-border bg-surface/80 px-2 py-1 font-mono text-[10px] text-muted backdrop-blur hover:bg-surface hover:text-foreground"
+          onClick={() => setShowZoomMenu((v) => !v)}
+        >
+          ━━━ {`${(sb * 100).toFixed(0)} cm`}
+        </button>
       </div>
       <div ref={mountRef} className="size-full cursor-crosshair" />
     </div>

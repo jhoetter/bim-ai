@@ -158,7 +158,7 @@ function makeFloorSlabMesh(
   const th = THREE.MathUtils.clamp(floor.thicknessMm / 1000, 0.05, 1.8);
 
   const mesh = new THREE.Mesh(
-    new THREE.BoxGeometry(b.spanX / 1000, th, b.spanZ / 1000),
+    new THREE.BoxGeometry(b.spanX / 1000, th, b.spanZ / 1000)
 
     new THREE.MeshStandardMaterial({
       color: categoryColorOr(paint, 'floor'),
@@ -194,30 +194,69 @@ function makeRoofMassMesh(
     wallsAtRefLevel.length > 0
       ? Math.max(...wallsAtRefLevel.map((w) => (w.heightMm ?? 0) / 1000))
       : 0;
-  const elev = refElev + wallTopM;
+  const eaveY = refElev + wallTopM;
 
-  const rise = THREE.MathUtils.clamp(Number(roof.slopeDeg ?? 25) / 70, 0.25, 2.8);
+  const slopeRad = (THREE.MathUtils.clamp(Number(roof.slopeDeg ?? 25), 5, 70) * Math.PI) / 180;
+  const spanXm = b.spanX / 1000;
+  const spanZm = b.spanZ / 1000;
+  const halfSpan = Math.min(spanXm, spanZm) / 2;
+  const ridgeY = eaveY + halfSpan * Math.tan(slopeRad);
 
-  const spanX = THREE.MathUtils.clamp(b.spanX / 1000 + ov * 0.08, 3, 200);
+  const ox0 = b.minX / 1000 - ov;
+  const ox1 = b.maxX / 1000 + ov;
+  const oz0 = b.minZ / 1000 - ov;
+  const oz1 = b.maxZ / 1000 + ov;
 
-  const spanZ = THREE.MathUtils.clamp(b.spanZ / 1000 + ov * 0.08, 3, 200);
+  // Triangulated gable mesh — ridge runs along the longer plan axis.
+  let positions: number[];
+  if (spanXm >= spanZm) {
+    // Ridge east-west (along X); slopes drop to south (oz0) and north (oz1).
+    const rz = (oz0 + oz1) / 2;
+    positions = [
+      // South slope
+      ox0, eaveY, oz0,  ox1, eaveY, oz0,  ox0, ridgeY, rz,
+      ox1, eaveY, oz0,  ox1, ridgeY, rz,  ox0, ridgeY, rz,
+      // North slope
+      ox0, ridgeY, rz,  ox1, ridgeY, rz,  ox0, eaveY, oz1,
+      ox1, ridgeY, rz,  ox1, eaveY, oz1,  ox0, eaveY, oz1,
+      // West gable
+      ox0, eaveY, oz0,  ox0, ridgeY, rz,  ox0, eaveY, oz1,
+      // East gable
+      ox1, eaveY, oz0,  ox1, eaveY, oz1,  ox1, ridgeY, rz,
+    ];
+  } else {
+    // Ridge north-south (along Z); slopes drop to west (ox0) and east (ox1).
+    const rx = (ox0 + ox1) / 2;
+    positions = [
+      // West slope
+      ox0, eaveY, oz0,  ox0, eaveY, oz1,  rx, ridgeY, oz0,
+      ox0, eaveY, oz1,  rx, ridgeY, oz1,  rx, ridgeY, oz0,
+      // East slope
+      rx, ridgeY, oz0,  rx, ridgeY, oz1,  ox1, eaveY, oz0,
+      rx, ridgeY, oz1,  ox1, eaveY, oz1,  ox1, eaveY, oz0,
+      // South gable
+      ox0, eaveY, oz0,  rx, ridgeY, oz0,  ox1, eaveY, oz0,
+      // North gable
+      ox0, eaveY, oz1,  ox1, eaveY, oz1,  rx, ridgeY, oz1,
+    ];
+  }
+
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geom.computeVertexNormals();
 
   const mesh = new THREE.Mesh(
-    new THREE.BoxGeometry(spanX, rise, spanZ),
-
+    geom,
     new THREE.MeshStandardMaterial({
       color: categoryColorOr(paint, 'roof'),
       transparent: true,
       opacity: 0.94,
       roughness: paint?.categories.roof.roughness ?? 0.74,
       metalness: 0.04,
+      side: THREE.DoubleSide,
     }),
   );
-
-  mesh.position.set(b.cx / 1000, elev + ov * 0.12 + rise / 2, b.cz / 1000);
-
   mesh.userData.bimPickId = roof.id;
-
   return mesh;
 }
 
@@ -379,7 +418,105 @@ function makeRoomRibbon(
   return loop;
 }
 
-type ViewerCatKey = 'wall' | 'floor' | 'roof' | 'stair' | 'door' | 'window' | 'room';
+function makeRailingMesh(
+  railing: Extract<Element, { kind: 'railing' }>,
+  elementsById: Record<string, Element>,
+  paint: ViewportPaintBundle | null,
+): THREE.Group {
+  const group = new THREE.Group();
+  group.userData.bimPickId = railing.id;
+
+  const guardH = THREE.MathUtils.clamp((railing.guardHeightMm ?? 1050) / 1000, 0.5, 2.2);
+  const pts = railing.pathMm ?? [];
+  if (pts.length < 2) return group;
+
+  const stair = railing.hostedStairId ? elementsById[railing.hostedStairId] : null;
+  const baseElev =
+    stair?.kind === 'stair' ? elevationMForLevel(stair.baseLevelId, elementsById) : 0;
+  const topElev =
+    stair?.kind === 'stair' ? elevationMForLevel(stair.topLevelId, elementsById) : baseElev;
+
+  let totalPlanLen = 0;
+  for (let i = 1; i < pts.length; i++) {
+    totalPlanLen += Math.hypot(
+      (pts[i]!.xMm - pts[i - 1]!.xMm) / 1000,
+      (pts[i]!.yMm - pts[i - 1]!.yMm) / 1000,
+    );
+  }
+
+  const mat = new THREE.MeshStandardMaterial({
+    color: categoryColorOr(paint, 'railing'),
+    roughness: paint?.categories.railing.roughness ?? 0.6,
+    metalness: paint?.categories.railing.metalness ?? 0.3,
+  });
+
+  let cumLen = 0;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = pts[i]!;
+    const b = pts[i + 1]!;
+    const ax = a.xMm / 1000,
+      az = a.yMm / 1000;
+    const bx = b.xMm / 1000,
+      bz = b.yMm / 1000;
+    const planSeg = Math.max(0.001, Math.hypot(bx - ax, bz - az));
+    const tA = totalPlanLen > 0 ? cumLen / totalPlanLen : 0;
+    cumLen += planSeg;
+    const tB = totalPlanLen > 0 ? cumLen / totalPlanLen : 1;
+    const elevA = baseElev + tA * (topElev - baseElev) + guardH;
+    const elevB = baseElev + tB * (topElev - baseElev) + guardH;
+    const riseY = elevB - elevA;
+
+    const railLen = Math.sqrt(planSeg * planSeg + riseY * riseY);
+    const rail = new THREE.Mesh(new THREE.BoxGeometry(railLen, 0.05, 0.05), mat);
+    rail.position.set((ax + bx) / 2, (elevA + elevB) / 2, (az + bz) / 2);
+    const dir = new THREE.Vector3(bx - ax, riseY, bz - az).normalize();
+    rail.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), dir);
+    group.add(rail);
+  }
+
+  return group;
+}
+
+function makeSiteMesh(
+  site: Extract<Element, { kind: 'site' }>,
+  elementsById: Record<string, Element>,
+  paint: ViewportPaintBundle | null,
+): THREE.Mesh {
+  const elev = elevationMForLevel(site.referenceLevelId, elementsById);
+  const baseOffset = (site.baseOffsetMm ?? 0) / 1000;
+  const padTh = THREE.MathUtils.clamp((site.padThicknessMm ?? 150) / 1000, 0.05, 2);
+  const boundary = site.boundaryMm ?? [];
+
+  const shape = new THREE.Shape(
+    boundary.length >= 3
+      ? boundary.map((p) => new THREE.Vector2(p.xMm / 1000, -p.yMm / 1000))
+      : [
+          new THREE.Vector2(-20, -20),
+          new THREE.Vector2(20, -20),
+          new THREE.Vector2(20, 20),
+          new THREE.Vector2(-20, 20),
+        ],
+  );
+
+  const geom = new THREE.ExtrudeGeometry(shape, { depth: padTh, bevelEnabled: false });
+  geom.rotateX(-Math.PI / 2);
+
+  const mesh = new THREE.Mesh(
+    geom,
+    new THREE.MeshStandardMaterial({
+      color: categoryColorOr(paint, 'site'),
+      roughness: paint?.categories.site.roughness ?? 0.95,
+      metalness: paint?.categories.site.metalness ?? 0.0,
+      transparent: true,
+      opacity: 0.85,
+    }),
+  );
+  mesh.position.set(0, elev + baseOffset - padTh, 0);
+  mesh.userData.bimPickId = site.id;
+  return mesh;
+}
+
+type ViewerCatKey = 'wall' | 'floor' | 'roof' | 'stair' | 'door' | 'window' | 'room' | 'railing' | 'site';
 
 function elemViewerCategory(e: Element): ViewerCatKey | null {
   switch (e.kind) {
@@ -397,6 +534,10 @@ function elemViewerCategory(e: Element): ViewerCatKey | null {
       return 'window';
     case 'room':
       return 'room';
+    case 'railing':
+      return 'railing';
+    case 'site':
+      return 'site';
     default:
       return null;
   }
@@ -480,6 +621,7 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
   const paintBundleRef = useRef<ViewportPaintBundle | null>(null);
   /** Live CameraRig instance — replaces the legacy ad-hoc spherical rig. */
   const cameraRigRef = useRef<CameraRig | null>(null);
+  const hasAutoFittedRef = useRef(false);
   /** Set by the mount effect so we can snap the orbit rig to saved `viewpoint` cameras. */
   const orbitRigApiRef = useRef<{
     applyViewpointMm: (pose: {
@@ -1016,6 +1158,20 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       root.add(makeRoofMassMesh(rf, elementsById, paint));
     }
 
+    for (const rl of Object.values(elementsById)) {
+      if (rl.kind !== 'railing') continue;
+      if (skipCat(rl)) continue;
+
+      root.add(makeRailingMesh(rl, elementsById, paint));
+    }
+
+    for (const si of Object.values(elementsById)) {
+      if (si.kind !== 'site') continue;
+      if (skipCat(si)) continue;
+
+      root.add(makeSiteMesh(si, elementsById, paint));
+    }
+
     applyClippingPlanesToMeshes(root, clippingPlanes);
 
     // Section-box wireframe cage so the user can see the active region.
@@ -1040,6 +1196,22 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       cage.userData.bimPickId = '__section_box_cage';
       sectionBoxCageRef.current = cage;
       root.add(cage);
+    }
+
+    // First-geometry auto-fit: set orbit target to building centroid so the
+    // rig doesn't stay stuck at the world origin when the building is elsewhere.
+    if (!hasAutoFittedRef.current) {
+      const box = computeRootBoundingBox(root);
+      const rig = cameraRigRef.current;
+      const cam = cameraRef.current;
+      if (box && rig && cam) {
+        rig.frame(box);
+        const snap = rig.snapshot();
+        cam.position.set(snap.position.x, snap.position.y, snap.position.z);
+        cam.up.set(snap.up.x, snap.up.y, snap.up.z).normalize();
+        cam.lookAt(snap.target.x, snap.target.y, snap.target.z);
+        hasAutoFittedRef.current = true;
+      }
     }
   }, [
     elementsById,
