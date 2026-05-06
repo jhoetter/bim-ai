@@ -47,6 +47,7 @@ import { LeftRail, LeftRailCollapsed, type LeftRailSection } from './LeftRail';
 import { Inspector, type InspectorSelection } from './Inspector';
 import {
   InspectorConstraintsFor,
+  InspectorDoorEditor,
   InspectorGraphicsFor,
   InspectorIdentityFor,
   InspectorPlanViewEditor,
@@ -54,6 +55,7 @@ import {
   InspectorRoomEditor,
   InspectorViewpointEditor,
   InspectorViewTemplateEditor,
+  InspectorWindowEditor,
 } from './InspectorContent';
 import {
   AgentReviewModeShell,
@@ -1243,6 +1245,22 @@ export function RedesignedWorkspace(): JSX.Element {
                         />
                       ) : el.kind === 'view_template' ? (
                         <InspectorViewTemplateEditor
+                          el={el}
+                          revision={revision}
+                          onPersistProperty={(key, value) =>
+                            void onSemanticCommand({ type: 'updateElementProperty', elementId: el.id, key, value })
+                          }
+                        />
+                      ) : el.kind === 'door' ? (
+                        <InspectorDoorEditor
+                          el={el}
+                          revision={revision}
+                          onPersistProperty={(key, value) =>
+                            void onSemanticCommand({ type: 'updateElementProperty', elementId: el.id, key, value })
+                          }
+                        />
+                      ) : el.kind === 'window' ? (
+                        <InspectorWindowEditor
                           el={el}
                           revision={revision}
                           onPersistProperty={(key, value) =>

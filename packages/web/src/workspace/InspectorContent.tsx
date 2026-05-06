@@ -3,6 +3,8 @@ import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import type { Element } from '@bim-ai/core';
 
+import { BUILT_IN_FAMILIES } from '../families/familyCatalog';
+
 import { planViewGraphicsMatrixRows, viewTemplateGraphicsMatrixRows } from '../plan/planProjection';
 import { PlanViewGraphicsMatrix } from './PlanViewGraphicsMatrix';
 import {
@@ -518,6 +520,87 @@ export function InspectorViewpointEditor({
           }}
         />
       </label>
+    </div>
+  );
+}
+
+/** Editable family type picker for door elements (Properties tab). */
+export function InspectorDoorEditor({
+  el,
+  revision,
+  onPersistProperty,
+}: {
+  el: Extract<Element, { kind: 'door' }>;
+  revision: number;
+  onPersistProperty: (key: string, value: string) => void;
+}): JSX.Element {
+  const { t } = useTranslation();
+  const f = (key: string) => t(`inspector.fields.${key}`);
+  const doorFamilies = BUILT_IN_FAMILIES.filter((fam) => fam.discipline === 'door');
+  return (
+    <div className="space-y-2 text-[11px]">
+      <label className={LABEL_CLS}>
+        {f('family')}
+        <select
+          className={INPUT_CLS}
+          value={el.familyTypeId ?? ''}
+          key={`door-ft-${el.id}-${el.familyTypeId ?? ''}-${revision}`}
+          onChange={(e) => onPersistProperty('familyTypeId', e.target.value)}
+        >
+          <option value="">Generic</option>
+          {doorFamilies.map((fam) => (
+            <optgroup key={fam.id} label={fam.name}>
+              {fam.defaultTypes.map((type) => (
+                <option key={type.id} value={type.id}>{type.name}</option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
+      </label>
+      <FieldRow label={f('width')} value={fmtMm(el.widthMm)} />
+      <FieldRow label={f('wall')} value={el.wallId} mono />
+      <FieldRow label={f('alongT')} value={el.alongT.toFixed(3)} mono />
+    </div>
+  );
+}
+
+/** Editable family type picker for window elements (Properties tab). */
+export function InspectorWindowEditor({
+  el,
+  revision,
+  onPersistProperty,
+}: {
+  el: Extract<Element, { kind: 'window' }>;
+  revision: number;
+  onPersistProperty: (key: string, value: string) => void;
+}): JSX.Element {
+  const { t } = useTranslation();
+  const f = (key: string) => t(`inspector.fields.${key}`);
+  const windowFamilies = BUILT_IN_FAMILIES.filter((fam) => fam.discipline === 'window');
+  return (
+    <div className="space-y-2 text-[11px]">
+      <label className={LABEL_CLS}>
+        {f('family')}
+        <select
+          className={INPUT_CLS}
+          value={el.familyTypeId ?? ''}
+          key={`win-ft-${el.id}-${el.familyTypeId ?? ''}-${revision}`}
+          onChange={(e) => onPersistProperty('familyTypeId', e.target.value)}
+        >
+          <option value="">Generic</option>
+          {windowFamilies.map((fam) => (
+            <optgroup key={fam.id} label={fam.name}>
+              {fam.defaultTypes.map((type) => (
+                <option key={type.id} value={type.id}>{type.name}</option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
+      </label>
+      <FieldRow label={f('width')} value={fmtMm(el.widthMm)} />
+      <FieldRow label={f('height')} value={fmtMm(el.heightMm)} />
+      <FieldRow label={f('sillHeight')} value={fmtMm(el.sillHeightMm)} />
+      <FieldRow label={f('wall')} value={el.wallId} mono />
     </div>
   );
 }
