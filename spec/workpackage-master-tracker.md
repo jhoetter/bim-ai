@@ -1300,7 +1300,7 @@ Use cases: target-house §1.6 east-slope dormer cut-out opening to the flat roof
 | ID     | Item                                                       | Note                                                                                              | Effort | State  |
 | ------ | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ------ | ------ |
 | IFC-01 | `roofTypeId` round-trip through IFC                        | Kernel has the field; `app/bim_ai/export_ifc.py` doesn't write it.                                | S      | `done` (7619ac17) |
-| IFC-02 | Distinguish `gable_pitched_rectangle` in IFC body          | Currently always emits prism mass.                                                                | M      | `open` |
+| IFC-02 | Distinguish `gable_pitched_rectangle` in IFC body          | Currently always emits prism mass.                                                                | M      | `done` (a1210886) |
 | IFC-03 | Roof-hosted void replay                                    | Today rolled up as `slabRoofHostedVoidReplaySkipped_v0` only.                                     | M      | `open` |
 | IFC-04 | Broader QTO + materials + classifications + composites     | Narrow QTO slice shipped; full takeoff pending. Layered composites become more relevant after FL-08. | L      | `open` |
 | GLT-01 | Draco / mesh compression on glTF export                    | Tracked previously under WP-X02. Lower priority given file-export is no longer critical for federation. | S      | `deferred` |
