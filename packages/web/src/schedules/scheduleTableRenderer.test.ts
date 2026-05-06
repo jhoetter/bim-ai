@@ -5,9 +5,9 @@ import {
   buildScheduleTableModelV1,
   formatScheduleTableRendererV1Readout,
   SCHEDULE_TABLE_EMPTY_V1,
-  scheduleTableRendererV1SheetReadout,
+  scheduleTableRendererSheetReadout,
   unitHintFromRegistryLabel,
-} from './scheduleTableRendererV1';
+} from './scheduleTableRenderer';
 
 describe('unitHintFromRegistryLabel', () => {
   it('extracts trailing parenthetical unit hints', () => {
@@ -124,11 +124,11 @@ describe('buildScheduleTableModelV1', () => {
   });
 });
 
-describe('scheduleTableRendererV1SheetReadout', () => {
+describe('scheduleTableRendererSheetReadout', () => {
   it('returns null for non-summary schDoc segments', () => {
-    expect(scheduleTableRendererV1SheetReadout('schDoc[missing_schedule_element]', {})).toBeNull();
-    expect(scheduleTableRendererV1SheetReadout('schDoc[derive_error]', {})).toBeNull();
-    expect(scheduleTableRendererV1SheetReadout('', {})).toBeNull();
+    expect(scheduleTableRendererSheetReadout('schDoc[missing_schedule_element]', {})).toBeNull();
+    expect(scheduleTableRendererSheetReadout('schDoc[derive_error]', {})).toBeNull();
+    expect(scheduleTableRendererSheetReadout('', {})).toBeNull();
   });
 
   it('parses schDoc summary and adds schedule name when element resolves', () => {
@@ -137,13 +137,13 @@ describe('scheduleTableRendererV1SheetReadout', () => {
     } as Record<string, Element>;
 
     const seg = 'schDoc[id=s1 rows=2 cols=5 cat=door]';
-    expect(scheduleTableRendererV1SheetReadout(seg, elementsById)).toBe(
+    expect(scheduleTableRendererSheetReadout(seg, elementsById)).toBe(
       'tblV1[id=s1 name=Door Schedule rows=2 cols=5 cat=door]',
     );
   });
 
   it('omits name when schedule element missing', () => {
-    expect(scheduleTableRendererV1SheetReadout('schDoc[id=s9 rows=1 cols=3 cat=door]', {})).toBe(
+    expect(scheduleTableRendererSheetReadout('schDoc[id=s9 rows=1 cols=3 cat=door]', {})).toBe(
       'tblV1[id=s9 rows=1 cols=3 cat=door]',
     );
   });

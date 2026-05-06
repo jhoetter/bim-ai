@@ -4,7 +4,7 @@ import {
   SCHEDULE_TABLE_EMPTY_V1,
   type ScheduleTableBodyRowV1,
   type ScheduleTableModelV1,
-} from './scheduleTableRendererV1';
+} from './scheduleTableRenderer';
 
 export function ScheduleRegistryTable({ model }: { model: ScheduleTableModelV1 }) {
   const cols = model.columns.map((c) => c.key);

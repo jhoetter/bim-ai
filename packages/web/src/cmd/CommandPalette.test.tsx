@@ -1,7 +1,7 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import { I18nextProvider } from 'react-i18next';
-import { RedesignedCommandPalette } from './RedesignedCommandPalette';
+import { CommandPalette } from './CommandPalette';
 import type { CommandCandidate } from './commandPaletteSources';
 import i18n from '../i18n';
 
@@ -47,10 +47,10 @@ const candidates: CommandCandidate[] = [
   { id: 'el.wall.1', kind: 'element', label: 'wall: hf-w-so' },
 ];
 
-describe('<RedesignedCommandPalette /> — spec §18', () => {
+describe('<CommandPalette /> — spec §18', () => {
   it('renders nothing when closed', () => {
     const { queryByTestId } = renderWithI18n(
-      <RedesignedCommandPalette
+      <CommandPalette
         open={false}
         onOpenChange={() => undefined}
         candidates={candidates}
@@ -62,7 +62,7 @@ describe('<RedesignedCommandPalette /> — spec §18', () => {
 
   it('opens with the empty-state hints when no query', () => {
     const { getByText } = renderWithI18n(
-      <RedesignedCommandPalette
+      <CommandPalette
         open={true}
         onOpenChange={() => undefined}
         candidates={candidates}
@@ -75,7 +75,7 @@ describe('<RedesignedCommandPalette /> — spec §18', () => {
 
   it('filters via the prefix grammar', () => {
     const { getByPlaceholderText, getByText, queryByText } = renderWithI18n(
-      <RedesignedCommandPalette
+      <CommandPalette
         open={true}
         onOpenChange={() => undefined}
         candidates={candidates}
@@ -91,7 +91,7 @@ describe('<RedesignedCommandPalette /> — spec §18', () => {
   it('emits onPick on item select', () => {
     const onPick = vi.fn();
     const { getByText } = renderWithI18n(
-      <RedesignedCommandPalette
+      <CommandPalette
         open={true}
         onOpenChange={() => undefined}
         candidates={candidates}
@@ -110,7 +110,7 @@ describe('<RedesignedCommandPalette /> — spec §18', () => {
   it('Close button dispatches onOpenChange(false)', () => {
     const onOpenChange = vi.fn();
     const { getByLabelText } = renderWithI18n(
-      <RedesignedCommandPalette
+      <CommandPalette
         open={true}
         onOpenChange={onOpenChange}
         candidates={candidates}

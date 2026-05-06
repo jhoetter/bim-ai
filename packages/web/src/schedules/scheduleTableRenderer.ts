@@ -202,7 +202,7 @@ export function formatScheduleTableRendererV1Readout(model: ScheduleTableModelV1
 /**
  * Narrow sheet-documentation readout: enrich deterministic `schDoc[…]` summary with schedule name when resolvable.
  */
-export function scheduleTableRendererV1SheetReadout(
+export function scheduleTableRendererSheetReadout(
   scheduleDocumentationSegment: string,
   elementsById: Record<string, Element>,
 ): string | null {

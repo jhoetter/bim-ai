@@ -1,12 +1,12 @@
 import { BrowserRouter, Route, Routes } from 'react-router';
-import { RedesignedWorkspace } from './workspace/RedesignedWorkspace';
+import { Workspace } from './workspace/Workspace';
 import { IconGallery } from './design-systems/IconGallery';
 
 export function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<RedesignedWorkspace />} />
+        <Route path="/" element={<Workspace />} />
         <Route path="/icons" element={<IconGallery />} />
       </Routes>
     </BrowserRouter>

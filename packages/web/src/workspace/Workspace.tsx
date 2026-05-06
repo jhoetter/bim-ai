@@ -72,7 +72,7 @@ import { VVDialog } from './VVDialog';
 import { CommentsPanel } from './CommentsPanel';
 import { StatusBar } from './StatusBar';
 import { CheatsheetModal } from '../cmd/CheatsheetModal';
-import { RedesignedCommandPalette } from '../cmd/RedesignedCommandPalette';
+import { CommandPalette } from '../cmd/CommandPalette';
 import { type CommandCandidate } from '../cmd/commandPaletteSources';
 import { OnboardingTour } from '../onboarding/OnboardingTour';
 import { readOnboardingProgress, resetOnboarding } from '../onboarding/tour';
@@ -90,13 +90,11 @@ import {
 } from './workspaceUtils';
 
 /**
- * RedesignedWorkspace — composition route for the §11–§17 chrome.
+ * Workspace — composition root for the §11–§17 chrome.
  *
- * Mounted at `/redesign`. Reads from `useBimStore` (same data as the
- * legacy `Workspace.tsx`) so engineers can A/B compare the two surfaces
- * without forking state. The canvas slot reuses the existing `Viewport`
- * / `PlanCanvas` components — only the chrome (TopBar / LeftRail /
- * Inspector / StatusBar / ToolPalette) is new.
+ * Mounted at `/`. Reads from `useBimStore`. The canvas slot reuses
+ * `Viewport` / `PlanCanvas` — the chrome (TopBar / LeftRail /
+ * Inspector / StatusBar / ToolPalette) is spec §11–§17.
  *
  * Spec sections wired here: §7 modes (1–7), §8 layout grid, §11 TopBar,
  * §12 Project Browser, §13 Inspector, §16 Tool palette, §17 StatusBar.
@@ -118,7 +116,7 @@ const PLAN_STYLE_OPTIONS = [
   { id: 'room_scheme', label: 'Room scheme' },
 ];
 
-export function RedesignedWorkspace(): JSX.Element {
+export function Workspace(): JSX.Element {
   const { t, i18n } = useTranslation();
   const toolRegistry = useMemo(() => getToolRegistry(t), [t]);
   const elementsById = useBimStore((s) => s.elementsById);
@@ -671,7 +669,7 @@ export function RedesignedWorkspace(): JSX.Element {
   return (
     <>
       <CheatsheetModal open={cheatsheetOpen} onClose={() => setCheatsheetOpen(false)} />
-      <RedesignedCommandPalette
+      <CommandPalette
         open={paletteOpen}
         onOpenChange={setPaletteOpen}
         candidates={paletteCandidates}

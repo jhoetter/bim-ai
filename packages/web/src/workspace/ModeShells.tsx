@@ -12,8 +12,8 @@ import { SectionPlaceholderPane } from './SectionPlaceholderPane';
  * Mode-specific shells — spec §20.4 / §20.5 / §20.6 / §20.7.
  *
  * These render the canvas-region content for the four E-WPs. The
- * RedesignedWorkspace selects the right shell by `mode`. Each shell
- * pulls its data from `useBimStore` so the redesign tracks live state.
+ * Workspace selects the right shell by `mode`. Each shell
+ * pulls its data from `useBimStore` so each shell tracks live state.
  *
  * The shells are intentionally light: structural surfaces (Project
  * Browser, viewport mounts) and readout content from the seed-house

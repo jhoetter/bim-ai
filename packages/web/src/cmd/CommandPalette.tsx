@@ -20,7 +20,7 @@ import {
  * empty-state shows the top 5 keyboard hints.
  */
 
-export interface RedesignedCommandPaletteProps {
+export interface CommandPaletteProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** Aggregated source list. The component is purely presentational —
@@ -33,13 +33,13 @@ export interface RedesignedCommandPaletteProps {
   onPick: (candidate: CommandCandidate) => void;
 }
 
-export function RedesignedCommandPalette({
+export function CommandPalette({
   open,
   onOpenChange,
   candidates,
   recentIds,
   onPick,
-}: RedesignedCommandPaletteProps): JSX.Element | null {
+}: CommandPaletteProps): JSX.Element | null {
   const { t } = useTranslation();
   const [query, setQuery] = useState('');
 

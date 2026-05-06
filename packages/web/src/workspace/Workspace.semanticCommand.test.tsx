@@ -32,7 +32,7 @@ vi.mock('../lib/api', async (importOriginal) => {
   };
 });
 
-import { RedesignedWorkspace } from './RedesignedWorkspace';
+import { Workspace } from './Workspace';
 import { useBimStore } from '../state/store';
 
 beforeEach(() => {
@@ -53,11 +53,11 @@ afterEach(() => {
   cleanup();
 });
 
-describe('<RedesignedWorkspace /> — semantic command wiring (T-01)', () => {
+describe('<Workspace /> — semantic command wiring (T-01)', () => {
   it('passes a real callback (not the no-op) to PlanCanvas', async () => {
     const { getByTestId } = render(
       <MemoryRouter initialEntries={['/redesign']}>
-        <RedesignedWorkspace />
+        <Workspace />
       </MemoryRouter>,
     );
     expect(getByTestId('stub-plan-canvas')).toBeTruthy();
@@ -79,7 +79,7 @@ describe('<RedesignedWorkspace /> — semantic command wiring (T-01)', () => {
     mockApplyCommand.mockResolvedValue({ revision: 7, elements: {}, violations: [] });
     render(
       <MemoryRouter initialEntries={['/redesign']}>
-        <RedesignedWorkspace />
+        <Workspace />
       </MemoryRouter>,
     );
     await waitFor(() => expect(planCanvasProps.current).not.toBeNull());
@@ -117,7 +117,7 @@ describe('<RedesignedWorkspace /> — semantic command wiring (T-01)', () => {
     });
     render(
       <MemoryRouter initialEntries={['/redesign']}>
-        <RedesignedWorkspace />
+        <Workspace />
       </MemoryRouter>,
     );
     await waitFor(() => expect(planCanvasProps.current).not.toBeNull());

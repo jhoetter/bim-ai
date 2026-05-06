@@ -18,7 +18,7 @@ import {
   type ScheduleFieldMeta,
 } from './schedulePanelRegistryChrome';
 import { scheduleTotalsReadoutParts } from './schedulePayloadTotals';
-import { buildScheduleTableModelV1, type ScheduleTableModelV1 } from './scheduleTableRendererV1';
+import { buildScheduleTableModelV1, type ScheduleTableModelV1 } from './scheduleTableRenderer';
 import { roomFinishScheduleEvidenceReadoutParts } from './roomFinishScheduleEvidenceReadout';
 import { stairScheduleEvidenceReadoutLines } from './stairScheduleEvidenceReadout';
 import { compactScheduleOpeningAdvisoryLines } from './scheduleOpeningAdvisoriesReadout';

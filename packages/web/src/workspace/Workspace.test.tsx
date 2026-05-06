@@ -22,7 +22,7 @@ vi.mock('../plan/PlanCanvas', () => ({
   PlanCanvas: () => <div data-testid="stub-plan-canvas" />,
 }));
 
-import { RedesignedWorkspace } from './RedesignedWorkspace';
+import { Workspace } from './Workspace';
 
 beforeEach(() => {
   // Suppress the OnboardingTour dialog so aria-modal doesn't hide canvas content.
@@ -34,9 +34,9 @@ afterEach(() => {
   localStorage.removeItem('bim.onboarding-completed');
 });
 
-describe('<RedesignedWorkspace /> — smoke', () => {
+describe('<Workspace /> — smoke', () => {
   it('renders the AppShell, TopBar, LeftRail, Inspector, StatusBar slots', () => {
-    const { getByTestId, getByRole } = renderWithProviders(<RedesignedWorkspace />);
+    const { getByTestId, getByRole } = renderWithProviders(<Workspace />);
     expect(getByTestId('app-shell')).toBeTruthy();
     expect(getByTestId('topbar')).toBeTruthy();
     expect(getByRole('tree', { name: 'Project browser' })).toBeTruthy();
@@ -45,19 +45,19 @@ describe('<RedesignedWorkspace /> — smoke', () => {
   });
 
   it('mounts the redesign canvas root', () => {
-    const { getByTestId } = renderWithProviders(<RedesignedWorkspace />);
+    const { getByTestId } = renderWithProviders(<Workspace />);
     expect(getByTestId('redesign-canvas-root')).toBeTruthy();
   });
 
   it('shows the empty-state overlay when no walls exist', () => {
-    const { getByText } = renderWithProviders(<RedesignedWorkspace />);
+    const { getByText } = renderWithProviders(<Workspace />);
     // §25 canvas overlay — shows "Loading model…" while seed fetch is in flight,
     // then falls back to "This level is empty." once fetch settles.
     expect(getByText(/Loading model|This level is empty/)).toBeTruthy();
   });
 
   it('renders the floating tool palette', () => {
-    const { getByTestId } = renderWithProviders(<RedesignedWorkspace />);
+    const { getByTestId } = renderWithProviders(<Workspace />);
     expect(getByTestId('tool-palette')).toBeTruthy();
   });
 });

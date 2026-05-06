@@ -17,7 +17,7 @@ import {
   normalizeTitleblockRevisionIssueV1,
   sheetRevisionIssueMetadataPresent,
 } from './sheetRevisionIssueManifestV1';
-import { scheduleTableRendererV1SheetReadout } from '../schedules/scheduleTableRendererV1';
+import { scheduleTableRendererSheetReadout } from '../schedules/scheduleTableRenderer';
 import { formatSchedulePaginationPlacementReadout } from '../schedules/schedulePanelRegistryChrome';
 import { roomColorSchemeLegendPlacementReadoutLines } from './roomColorSchemeLegendPlacementReadout';
 
@@ -506,7 +506,7 @@ export function SheetDocumentationManifest(props: {
                   ) {
                     const schSeg = String(hint.scheduleDocumentationSegment).trim();
                     hintParts.push(schSeg);
-                    const tblSeg = scheduleTableRendererV1SheetReadout(schSeg, elementsById);
+                    const tblSeg = scheduleTableRendererSheetReadout(schSeg, elementsById);
                     if (tblSeg) hintParts.push(tblSeg);
                     const pagLine = formatSchedulePaginationPlacementReadout(
                       hint?.schedulePaginationPlacementEvidence_v0,

@@ -12,7 +12,7 @@ import {
   formatSheetRevIssExportListingSegmentV1,
   normalizeTitleblockRevisionIssueV1,
 } from './sheetRevisionIssueManifestV1';
-import { scheduleTableRendererV1SheetReadout } from '../schedules/scheduleTableRendererV1';
+import { scheduleTableRendererSheetReadout } from '../schedules/scheduleTableRenderer';
 
 describe('viewportCropExtentsMm', () => {
   it('returns absolute span between corners', () => {
@@ -200,13 +200,13 @@ describe('planOnSheetTokenLabel', () => {
   });
 });
 
-describe('scheduleTableRendererV1SheetReadout', () => {
+describe('scheduleTableRendererSheetReadout', () => {
   it('adds tblV1 token with resolved schedule name for sheet manifest hints', () => {
     const elementsById = {
       s1: { kind: 'schedule', id: 's1', name: 'Room Schedule' },
     } as Record<string, Element>;
     expect(
-      scheduleTableRendererV1SheetReadout('schDoc[id=s1 rows=0 cols=3 cat=room]', elementsById),
+      scheduleTableRendererSheetReadout('schDoc[id=s1 rows=0 cols=3 cat=room]', elementsById),
     ).toBe('tblV1[id=s1 name=Room Schedule rows=0 cols=3 cat=room]');
   });
 });
