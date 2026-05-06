@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import type { JSX } from 'react';
 import { useBimStore } from '../state/store';
 import type { CategoryOverride, CategoryOverrides } from '../state/store';
+import type { ViewFilter } from '../state/storeTypes';
 
 const MODEL_CATEGORIES = [
   'wall',
@@ -56,7 +57,7 @@ const LINE_WEIGHTS = ['By Category', '1', '2', '3', '4', '5'] as const;
 
 const LINE_PATTERNS = ['Solid', 'Dashed', 'Dotted', 'Center'] as const;
 
-type Tab = 'model' | 'annotation';
+type Tab = 'model' | 'annotation' | 'filters';
 
 function ColorSwatch({
   color,
@@ -275,6 +276,126 @@ function CategoryRow({
   );
 }
 
+function FiltersTabBody({
+  planViewId,
+  elementsById,
+  addViewFilter,
+  removeViewFilter,
+}: {
+  planViewId: string | undefined;
+  elementsById: Record<string, import('@bim-ai/core').Element>;
+  addViewFilter: (planViewId: string, filter: ViewFilter) => void;
+  removeViewFilter: (planViewId: string, filterId: string) => void;
+}): JSX.Element {
+  const pv = planViewId ? elementsById[planViewId] : undefined;
+  const filters: ViewFilter[] =
+    pv?.kind === 'plan_view' ? ((pv.viewFilters as ViewFilter[] | undefined) ?? []) : [];
+
+  const handleAdd = () => {
+    if (!planViewId) return;
+    const newFilter: ViewFilter = {
+      id: crypto.randomUUID(),
+      name: 'New Filter',
+      rules: [{ field: '', operator: 'equals', value: '' }],
+      override: {},
+    };
+    addViewFilter(planViewId, newFilter);
+  };
+
+  return (
+    <div style={{ padding: '12px 14px' }}>
+      <div style={{ marginBottom: 10 }}>
+        <button
+          type="button"
+          onClick={handleAdd}
+          disabled={!planViewId}
+          style={{
+            padding: '5px 12px',
+            fontSize: 12,
+            border: '1px solid var(--color-border)',
+            borderRadius: 4,
+            background: 'transparent',
+            cursor: planViewId ? 'pointer' : 'not-allowed',
+            color: 'var(--color-foreground)',
+          }}
+        >
+          Add Filter
+        </button>
+      </div>
+      {filters.length === 0 ? (
+        <div style={{ fontSize: 12, color: 'var(--color-muted)', padding: '8px 0' }}>
+          No filters defined.
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {filters.map((f) => {
+            const ruleSummary = f.rules
+              .map((r) => `${r.field} ${r.operator} "${r.value}"`)
+              .join(' AND ');
+            return (
+              <div
+                key={f.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '6px 8px',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 4,
+                  background: 'var(--color-background)',
+                }}
+              >
+                <input
+                  type="text"
+                  value={f.name}
+                  readOnly
+                  style={{
+                    fontSize: 12,
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 2,
+                    padding: '2px 6px',
+                    width: 140,
+                    background: 'var(--color-surface)',
+                    color: 'var(--color-foreground)',
+                  }}
+                />
+                <span
+                  style={{
+                    fontSize: 11,
+                    color: 'var(--color-muted)',
+                    flex: 1,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {ruleSummary || '(no rules)'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => planViewId && removeViewFilter(planViewId, f.id)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: 14,
+                    color: 'var(--color-muted)',
+                    lineHeight: 1,
+                    padding: '0 2px',
+                  }}
+                  aria-label={`Remove filter ${f.name}`}
+                >
+                  ×
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function VVDialog({
   open,
   onClose,
@@ -285,6 +406,8 @@ export function VVDialog({
   const activePlanViewId = useBimStore((s) => s.activePlanViewId);
   const elementsById = useBimStore((s) => s.elementsById);
   const setCategoryOverride = useBimStore((s) => s.setCategoryOverride);
+  const addViewFilter = useBimStore((s) => s.addViewFilter);
+  const removeViewFilter = useBimStore((s) => s.removeViewFilter);
 
   const [tab, setTab] = useState<Tab>('model');
   const [draft, setDraft] = useState<CategoryOverrides>({});
@@ -400,7 +523,7 @@ export function VVDialog({
             padding: '0 14px',
           }}
         >
-          {(['model', 'annotation'] as const).map((t) => (
+          {(['model', 'annotation', 'filters'] as const).map((t) => (
             <button
               key={t}
               type="button"
@@ -416,87 +539,96 @@ export function VVDialog({
                 color: tab === t ? 'var(--color-foreground)' : 'var(--color-muted)',
               }}
             >
-              {t === 'model' ? 'Model Categories' : 'Annotation Categories'}
+              {t === 'model' ? 'Model Categories' : t === 'annotation' ? 'Annotation Categories' : 'Filters'}
             </button>
           ))}
         </div>
 
-        {/* Table */}
+        {/* Table / Filters */}
         <div style={{ overflowY: 'auto', flex: 1 }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-            <thead>
-              <tr style={{ background: 'var(--color-background)' }}>
-                <th
-                  style={{ padding: '6px 8px', textAlign: 'left', fontSize: 11, fontWeight: 600 }}
-                >
-                  Category
-                </th>
-                <th style={{ padding: '6px 8px', fontSize: 11, fontWeight: 600 }}>Visible</th>
-                <th
-                  colSpan={3}
-                  style={{
-                    padding: '6px 8px',
-                    textAlign: 'center',
-                    fontSize: 11,
-                    fontWeight: 600,
-                    borderLeft: '1px solid var(--color-border)',
-                  }}
-                >
-                  Projection
-                </th>
-                <th
-                  colSpan={3}
-                  style={{
-                    padding: '6px 8px',
-                    textAlign: 'center',
-                    fontSize: 11,
-                    fontWeight: 600,
-                    borderLeft: '1px solid var(--color-border)',
-                  }}
-                >
-                  Cut
-                </th>
-              </tr>
-              <tr style={{ background: 'var(--color-background)' }}>
-                <th style={{ padding: '4px 8px' }} />
-                <th style={{ padding: '4px 8px' }} />
-                <th
-                  style={{
-                    padding: '4px 8px',
-                    fontSize: 10,
-                    fontWeight: 500,
-                    borderLeft: '1px solid var(--color-border)',
-                  }}
-                >
-                  Color
-                </th>
-                <th style={{ padding: '4px 8px', fontSize: 10, fontWeight: 500 }}>Weight</th>
-                <th style={{ padding: '4px 8px', fontSize: 10, fontWeight: 500 }}>Pattern</th>
-                <th
-                  style={{
-                    padding: '4px 8px',
-                    fontSize: 10,
-                    fontWeight: 500,
-                    borderLeft: '1px solid var(--color-border)',
-                  }}
-                >
-                  Color
-                </th>
-                <th style={{ padding: '4px 8px', fontSize: 10, fontWeight: 500 }}>Weight</th>
-                <th style={{ padding: '4px 8px', fontSize: 10, fontWeight: 500 }}>Pattern</th>
-              </tr>
-            </thead>
-            <tbody>
-              {categories.map((cat) => (
-                <CategoryRow
-                  key={cat}
-                  categoryKey={cat}
-                  draft={draft[cat] ?? {}}
-                  onChange={(upd) => handleCategoryChange(cat, upd)}
-                />
-              ))}
-            </tbody>
-          </table>
+          {tab === 'filters' ? (
+            <FiltersTabBody
+              planViewId={activePlanViewId}
+              elementsById={elementsById}
+              addViewFilter={addViewFilter}
+              removeViewFilter={removeViewFilter}
+            />
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+              <thead>
+                <tr style={{ background: 'var(--color-background)' }}>
+                  <th
+                    style={{ padding: '6px 8px', textAlign: 'left', fontSize: 11, fontWeight: 600 }}
+                  >
+                    Category
+                  </th>
+                  <th style={{ padding: '6px 8px', fontSize: 11, fontWeight: 600 }}>Visible</th>
+                  <th
+                    colSpan={3}
+                    style={{
+                      padding: '6px 8px',
+                      textAlign: 'center',
+                      fontSize: 11,
+                      fontWeight: 600,
+                      borderLeft: '1px solid var(--color-border)',
+                    }}
+                  >
+                    Projection
+                  </th>
+                  <th
+                    colSpan={3}
+                    style={{
+                      padding: '6px 8px',
+                      textAlign: 'center',
+                      fontSize: 11,
+                      fontWeight: 600,
+                      borderLeft: '1px solid var(--color-border)',
+                    }}
+                  >
+                    Cut
+                  </th>
+                </tr>
+                <tr style={{ background: 'var(--color-background)' }}>
+                  <th style={{ padding: '4px 8px' }} />
+                  <th style={{ padding: '4px 8px' }} />
+                  <th
+                    style={{
+                      padding: '4px 8px',
+                      fontSize: 10,
+                      fontWeight: 500,
+                      borderLeft: '1px solid var(--color-border)',
+                    }}
+                  >
+                    Color
+                  </th>
+                  <th style={{ padding: '4px 8px', fontSize: 10, fontWeight: 500 }}>Weight</th>
+                  <th style={{ padding: '4px 8px', fontSize: 10, fontWeight: 500 }}>Pattern</th>
+                  <th
+                    style={{
+                      padding: '4px 8px',
+                      fontSize: 10,
+                      fontWeight: 500,
+                      borderLeft: '1px solid var(--color-border)',
+                    }}
+                  >
+                    Color
+                  </th>
+                  <th style={{ padding: '4px 8px', fontSize: 10, fontWeight: 500 }}>Weight</th>
+                  <th style={{ padding: '4px 8px', fontSize: 10, fontWeight: 500 }}>Pattern</th>
+                </tr>
+              </thead>
+              <tbody>
+                {categories.map((cat) => (
+                  <CategoryRow
+                    key={cat}
+                    categoryKey={cat}
+                    draft={draft[cat] ?? {}}
+                    onChange={(upd) => handleCategoryChange(cat, upd)}
+                  />
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
 
         {/* Footer */}

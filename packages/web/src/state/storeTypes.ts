@@ -95,6 +95,26 @@ export type CategoryOverride = {
 
 export type CategoryOverrides = Record<string, CategoryOverride>;
 
+export type FilterRule = {
+  field: string;
+  operator: 'equals' | 'not-equals' | 'contains' | 'not-contains';
+  value: string;
+};
+
+export type ViewFilter = {
+  id: string;
+  name: string;
+  rules: FilterRule[];
+  override: {
+    visible?: boolean;
+    projection?: {
+      lineColor?: string | null;
+      lineWeightFactor?: number;
+      fillColor?: string | null;
+    };
+  };
+};
+
 export type StoreState = {
   modelId?: string;
   revision: number;
@@ -191,6 +211,9 @@ export type StoreState = {
     categoryKey: string,
     override: CategoryOverride,
   ) => void;
+  addViewFilter: (planViewId: string, filter: ViewFilter) => void;
+  updateViewFilter: (planViewId: string, filterId: string, patch: Partial<ViewFilter>) => void;
+  removeViewFilter: (planViewId: string, filterId: string) => void;
 
   setActivity: (e: ActivityEvent[]) => void;
   setIdentity: (userId: string, display: string, peerId: string) => void;
