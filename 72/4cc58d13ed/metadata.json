@@ -1,0 +1,29 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "724cc58d13ed",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "app/bim_ai/prd_tracker_reconciliation_v1.py",
+    "app/tests/test_prd_tracker_reconciliation_v1.py",
+    "packages/web/src/viewport/glassMaterial.test.ts",
+    "packages/web/src/viewport/meshBuilders.ts",
+    "spec/prd/revit-production-parity-ai-agent-prd.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/72/4cc58d13ed/0/metadata.json",
+      "transcript": "/72/4cc58d13ed/0/full.jsonl",
+      "content_hash": "/72/4cc58d13ed/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 8,
+    "cache_creation_tokens": 5415,
+    "cache_read_tokens": 2192066,
+    "output_tokens": 4660,
+    "api_call_count": 8
+  }
+}
