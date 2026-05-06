@@ -170,6 +170,7 @@ const KNOWN_PLAN_TOOLS = new Set<ToolId>(['select', 'wall', 'door', 'window', 'r
 type LegacyPlanTool =
   | 'select'
   | 'wall'
+  | 'floor'
   | 'door'
   | 'window'
   | 'room'

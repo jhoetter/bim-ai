@@ -12,6 +12,7 @@ import type {
   XY,
 } from '@bim-ai/core';
 
+import type { WallLocationLine } from '../tools/toolGrammar';
 import type { PlanPresentationPreset } from '../plan/symbology';
 import type {
   PlanProjectionPrimitivesV1Wire,
@@ -32,6 +33,7 @@ export type ViewerMode = 'plan_canvas' | 'orbit_3d';
 export type PlanTool =
   | 'select'
   | 'wall'
+  | 'floor'
   | 'door'
   | 'window'
   | 'room'
@@ -98,6 +100,8 @@ type StoreState = {
   viewerClipFloorElevMm: number | null;
   /** When true for a semantic kind (`wall`, `roof`, …), that category is hidden in 3D. */
   viewerCategoryHidden: Record<string, boolean>;
+  wallLocationLine: WallLocationLine;
+  floorBoundaryOffsetMm: number;
   orthoSnapHold: boolean;
   userId: string;
   userDisplayName: string;
@@ -125,6 +129,8 @@ type StoreState = {
   setViewerMode: (m: ViewerMode) => void;
   setPlanTool: (t: PlanTool) => void;
   setActiveLevelId: (id: string | undefined) => void;
+  setWallLocationLine: (loc: WallLocationLine) => void;
+  setFloorBoundaryOffsetMm: (mm: number) => void;
   setOrthoSnapHold: (v: boolean) => void;
   setPresencePeers: (peers: PresencePeers) => void;
   setComments: (c: UxComment[]) => void;
@@ -1200,6 +1206,10 @@ export const useBimStore = create<StoreState>((set, get) => {
 
     planTool: 'select',
 
+    wallLocationLine: 'wall-centerline',
+
+    floorBoundaryOffsetMm: 0,
+
     orthoSnapHold: false,
     userId: (() => {
       try {
@@ -1403,6 +1413,10 @@ export const useBimStore = create<StoreState>((set, get) => {
     setPlanTool: (t) => set({ planTool: t }),
 
     setActiveLevelId: (id) => set({ activeLevelId: id }),
+
+    setWallLocationLine: (wallLocationLine) => set({ wallLocationLine }),
+
+    setFloorBoundaryOffsetMm: (floorBoundaryOffsetMm) => set({ floorBoundaryOffsetMm }),
 
     setOrthoSnapHold: (v) => set({ orthoSnapHold: v }),
 

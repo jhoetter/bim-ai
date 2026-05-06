@@ -1473,8 +1473,8 @@ function makeBalconyMesh(
 
   // Slab: projects outward from wall centerline; top face at elevM.
   const slabCy = elevM - slabH / 2;
-  const slabCx = sx + dx / 2 + nx * projM / 2;
-  const slabCz = sz + dz / 2 + nz * projM / 2;
+  const slabCx = sx + dx / 2 + (nx * projM) / 2;
+  const slabCz = sz + dz / 2 + (nz * projM) / 2;
   const slabMat = new THREE.MeshStandardMaterial({ color: '#c8c8c4', roughness: 0.6 });
   const slab = new THREE.Mesh(new THREE.BoxGeometry(len, slabH, projM), slabMat);
   slab.position.set(slabCx, slabCy, slabCz);
