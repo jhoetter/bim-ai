@@ -204,18 +204,21 @@ Batch B (parallel after Batch A merged — no shared files):
 
 **Prompt files:** `spec/prompts/wave-03/` — created 2026-05-06.
 
-### Execution order (sequential — all WPs conflict on shared files)
+### Execution order
 
 ```
-Batch A: WP-V2-07 — Curtain Wall grid params + Inspector  (no new ElemKind)
-Batch B: WP-V2-06 — Structural (column + beam)             (after A merged)
-Batch C: WP-V2-08 — Ceilings                               (after B merged)
+Batch A (parallel — clean merge, changes in different file sections):
+  WP-V2-07    feat/wp-v2-07-curtain-wall    core/index.ts wall block, meshBuilders inner, i18n inspector.fields
+  WP-V2-06    feat/wp-v2-06-structural      core/index.ts ElemKind+union, tool chain, meshBuilders end, i18n tools
+
+Batch B (after A merged):
+  WP-V2-08    feat/wp-v2-08-ceilings        depends on column/beam entries added by WP-V2-06
 ```
 
 | WP       | Title                                                                       | Branch                       | State  | Depends on |
 | -------- | --------------------------------------------------------------------------- | ---------------------------- | ------ | ---------- |
 | WP-V2-07 | Curtain Wall grid params + Inspector (vCount/hCount fields)                 | `feat/wp-v2-07-curtain-wall` | `open` | — |
-| WP-V2-06 | Structural Elements (column + beam: types, tools, mesh builders)            | `feat/wp-v2-06-structural`   | `open` | WP-V2-07 merged |
+| WP-V2-06 | Structural Elements (column + beam: types, tools, mesh builders)            | `feat/wp-v2-06-structural`   | `open` | — |
 | WP-V2-08 | Ceilings (sketch ceiling, plan outline, 3D slab)                            | `feat/wp-v2-08-ceilings`     | `open` | WP-V2-06 merged |
 
 ### WP-V2-06 — Structural Elements
