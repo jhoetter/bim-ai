@@ -1,0 +1,57 @@
+T2 — R4-02: Ortho / parallel projection toggle
+
+  ▎ git checkout -b r4-02-ortho-toggle
+
+  You are working in a BIM web app. Files to touch:
+    packages/web/src/viewport/cameraRig.ts   ← add ortho snapshot helper
+    packages/web/src/Viewport.tsx            ← add second camera + HUD toggle
+
+  CONTEXT
+  =======
+  CameraRig (cameraRig.ts) has a `snapshot()` method returning
+  { position, target, up, radius, azimuth, elevation }.
+  The viewport uses a single THREE.PerspectiveCamera (fov=55) stored in
+  cameraRef. The EffectComposer RenderPass is built with this camera.
+  The composer and all passes that receive `camera` must be updated when
+  the active camera changes.
+
+  TASK — cameraRig.ts
+  ===================
+  Add a method to CameraRig that computes the matching OrthographicCamera
+  frustum for the current rig state:
+
+    orthoFrustum(aspect: number): {
+      left: number; right: number; top: number; bottom: number;
+      near: number; far: number;
+    } {
+      const halfH = this.state.radius * Math.tan(
+        THREE.MathUtils.degToRad(27.5)  // half of default 55° fov
+      );
+      return {
+        left:   -halfH * aspect,
+        right:   halfH * aspect,
+        top:     halfH,
+        bottom: -halfH,
+        near:   0.05,
+        far:    500,
+      };
+    }
+
+  TASK — Viewport.tsx
+  ===================
+  1. Add state and refs:
+       const [orthoMode, setOrthoMode] = useState(false);
+       const orthoCameraRef = useRef<THREE.OrthographicCamera | null>(null);
+
+  2. In the renderer/scene init useEffect, after the PerspectiveCamera is
+     created, create and store a matching OrthographicCamera:
+       const orthoCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.05, 500);
+       orthoCamera.up.set(0, 1, 0);
+       orthoCameraRef.current = orthoCamera;
+
+  3. Add a helper (inside the component) that returns the currently active camera:
+       const activeCamera = () => orthoMode
+         ? (orthoCameraRef.current ?? cameraRef.current!)
+         : cameraRef.current!;
+
+  4. In the resize han
