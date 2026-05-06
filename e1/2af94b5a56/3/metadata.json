@@ -1,0 +1,96 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "e12af94b5a56",
+  "session_id": "be1b7ff7-9e29-4054-936c-c2f418410ea7",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-06T17:27:34.120185Z",
+  "branch": "feat/wp-v2-03b-view-filters",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/core/src/index.ts",
+    "packages/ui/src/icons.tsx",
+    "packages/web/src/plan/PlanCanvas.tsx",
+    "packages/web/src/plan/planProjection.ts",
+    "packages/web/src/state/store.ts",
+    "packages/web/src/state/storeTypes.ts",
+    "packages/web/src/tools/toolGrammar.test.ts",
+    "packages/web/src/tools/toolGrammar.ts",
+    "packages/web/src/tools/toolRegistry.ts",
+    "packages/web/src/workspace/VVDialog.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "ebff69703a1d",
+  "checkpoint_transcript_start": 862,
+  "transcript_lines_at_start": 862,
+  "token_usage": {
+    "input_tokens": 26,
+    "cache_creation_tokens": 9007,
+    "cache_read_tokens": 2448128,
+    "output_tokens": 3864,
+    "api_call_count": 16
+  },
+  "session_metrics": {
+    "turn_count": 9
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-06T17:27:34.059021Z",
+    "agent_lines": 99,
+    "agent_removed": 77,
+    "human_added": 207,
+    "human_modified": 5,
+    "human_removed": 0,
+    "total_committed": 311,
+    "total_lines_changed": 389,
+    "agent_percentage": 45.24421593830334,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 1154,
+      "user_lines_removed": 4,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/core/src/index.ts": 1,
+        "packages/ui/src/icons.tsx": 6,
+        "packages/web/src/plan/PlanCanvas.tsx": 57,
+        "packages/web/src/plan/planProjection.ts": 49,
+        "packages/web/src/schedules/RegistryColumnPicker.tsx": 45,
+        "packages/web/src/schedules/ScheduleDefinitionPresetsStrip.tsx": 145,
+        "packages/web/src/schedules/ScheduleDefinitionToolbar.tsx": 424,
+        "packages/web/src/schedules/ScheduleRegistryChrome.tsx": 69,
+        "packages/web/src/schedules/ScheduleRegistryTable.tsx": 100,
+        "packages/web/src/state/store.ts": 31,
+        "packages/web/src/state/storeTypes.ts": 26,
+        "packages/web/src/tools/toolGrammar.test.ts": 58,
+        "packages/web/src/tools/toolGrammar.ts": 118,
+        "packages/web/src/tools/toolRegistry.ts": 21,
+        "packages/web/src/workspace/VVDialog.tsx": 4
+      },
+      "user_removed_per_file": {
+        "packages/web/src/plan/PlanCanvas.tsx": 1,
+        "packages/web/src/state/storeTypes.ts": 1,
+        "packages/web/src/tools/toolRegistry.ts": 1,
+        "packages/web/src/workspace/VVDialog.tsx": 1
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 125,
+      "user_lines_removed": 3,
+      "agent_lines_added": 1258,
+      "agent_lines_removed": 81,
+      "user_added_per_file": {
+        "packages/web/src/schedules/ScheduleDefinitionToolbar.tsx": 4,
+        "packages/web/src/tools/ToolPalette.test.tsx": 1,
+        "packages/web/src/workspace/VVDialog.tsx": 120
+      },
+      "user_removed_per_file": {
+        "packages/web/src/schedules/ScheduleDefinitionToolbar.tsx": 2,
+        "packages/web/src/tools/ToolPalette.test.tsx": 1
+      }
+    }
+  ]
+}
