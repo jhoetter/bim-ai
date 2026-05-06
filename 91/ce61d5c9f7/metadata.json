@@ -1,0 +1,30 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "91ce61d5c9f7",
+  "strategy": "manual-commit",
+  "branch": "feat/wp-v2-03b-view-filters",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "packages/core/src/index.ts",
+    "packages/web/src/plan/planProjection.ts",
+    "packages/web/src/plan/planProjection.viewFilters.test.ts",
+    "packages/web/src/state/store.ts",
+    "packages/web/src/state/storeTypes.ts",
+    "packages/web/src/workspace/VVDialog.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/91/ce61d5c9f7/0/metadata.json",
+      "transcript": "/91/ce61d5c9f7/0/full.jsonl",
+      "content_hash": "/91/ce61d5c9f7/0/content_hash.txt",
+      "prompt": "/91/ce61d5c9f7/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 13,
+    "cache_creation_tokens": 5945,
+    "cache_read_tokens": 993697,
+    "output_tokens": 1362,
+    "api_call_count": 9
+  }
+}
