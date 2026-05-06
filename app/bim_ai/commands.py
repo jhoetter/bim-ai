@@ -380,6 +380,18 @@ class CreateSlabOpeningCmd(BaseModel):
     is_shaft: bool = Field(default=False, alias="isShaft")
 
 
+class CreateBalconyCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createBalcony"] = "createBalcony"
+    id: str | None = None
+    name: str = "Balcony"
+    wall_id: str = Field(alias="wallId")
+    elevation_mm: float = Field(alias="elevationMm")
+    projection_mm: float = Field(default=650, alias="projectionMm")
+    slab_thickness_mm: float = Field(default=150, alias="slabThicknessMm")
+    balustrade_height_mm: float = Field(default=1050, alias="balustradeHeightMm")
+
+
 class CreateRailingCmd(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     type: Literal["createRailing"] = "createRailing"
@@ -725,6 +737,7 @@ Command = Annotated[
     | CreateStairCmd
     | CreateSlabOpeningCmd
     | CreateRailingCmd
+    | CreateBalconyCmd
     | UpsertFamilyTypeCmd
     | AssignOpeningFamilyCmd
     | UpdateOpeningCleanroomCmd

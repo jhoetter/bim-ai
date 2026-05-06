@@ -251,6 +251,18 @@ def _house_commands() -> list[dict]:
         },
     ]
 
+    # ── Balcony ───────────────────────────────────────────────────────────────
+    # Full-width slab + glass balustrade at the upper-floor junction on the south
+    # curtain-wall face, projecting 650 mm southward.
+    cmds.append({
+        "type": "createBalcony", "id": "balcony-south", "name": "South balcony",
+        "wallId": "wu-south",
+        "elevationMm": 3000,
+        "projectionMm": 650,
+        "slabThicknessMm": 150,
+        "balustradeHeightMm": 1050,
+    })
+
     # ── Stair railing ─────────────────────────────────────────────────────────
     cmds.append({
         "type": "createRailing", "id": "railing-stair", "name": "Stair railing",

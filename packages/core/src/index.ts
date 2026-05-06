@@ -339,6 +339,16 @@ export type Element =
       parameters: Record<string, unknown>;
       isBuiltIn?: boolean;
     }
+  | {
+      kind: 'balcony';
+      id: string;
+      name: string;
+      wallId: string;
+      elevationMm: number;
+      projectionMm?: number;
+      slabThicknessMm?: number;
+      balustradeHeightMm?: number;
+    }
   | { kind: 'room_separation'; id: string; name: string; levelId: string; start: XY; end: XY }
   | {
       kind: 'plan_region';

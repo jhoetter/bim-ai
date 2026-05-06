@@ -1440,6 +1440,72 @@ function makeRoomRibbon(
   return loop;
 }
 
+function makeBalconyMesh(
+  balcony: Extract<Element, { kind: 'balcony' }>,
+  elementsById: Record<string, Element>,
+  paint: ViewportPaintBundle | null,
+): THREE.Group {
+  const group = new THREE.Group();
+  group.userData.bimPickId = balcony.id;
+
+  const wall = elementsById[balcony.wallId];
+  if (wall?.kind !== 'wall') return group;
+
+  const sx = wall.start.xMm / 1000;
+  const sz = wall.start.yMm / 1000;
+  const ex = wall.end.xMm / 1000;
+  const ez = wall.end.yMm / 1000;
+  const dx = ex - sx;
+  const dz = ez - sz;
+  const len = Math.max(0.001, Math.hypot(dx, dz));
+  const ux = dx / len;
+  const uz = dz / len;
+  // Outward normal: right of walking direction (start→end).
+  // For south wall drawn west→east (+X): right = -Z (south). ✓
+  const nx = uz;
+  const nz = -ux;
+  const yaw = Math.atan2(dz, dx);
+
+  const elevM = balcony.elevationMm / 1000;
+  const projM = THREE.MathUtils.clamp((balcony.projectionMm ?? 650) / 1000, 0.1, 3);
+  const slabH = THREE.MathUtils.clamp((balcony.slabThicknessMm ?? 150) / 1000, 0.05, 0.5);
+  const balH = THREE.MathUtils.clamp((balcony.balustradeHeightMm ?? 1050) / 1000, 0, 2);
+
+  // Slab: projects outward from wall centerline; top face at elevM.
+  const slabCy = elevM - slabH / 2;
+  const slabCx = sx + dx / 2 + nx * projM / 2;
+  const slabCz = sz + dz / 2 + nz * projM / 2;
+  const slabMat = new THREE.MeshStandardMaterial({ color: '#c8c8c4', roughness: 0.6 });
+  const slab = new THREE.Mesh(new THREE.BoxGeometry(len, slabH, projM), slabMat);
+  slab.position.set(slabCx, slabCy, slabCz);
+  slab.rotation.y = yaw;
+  addEdges(slab);
+  group.add(slab);
+
+  // Glass balustrade: frameless glass panel at outer edge, standing on slab top.
+  if (balH > 0.01) {
+    const glassMat = new THREE.MeshStandardMaterial({
+      color: 0x88ccee,
+      transparent: true,
+      opacity: 0.28,
+      roughness: 0.05,
+      metalness: 0.1,
+      side: THREE.DoubleSide,
+    });
+    const balThick = 0.018;
+    const outerCx = sx + dx / 2 + nx * projM;
+    const outerCz = sz + dz / 2 + nz * projM;
+    const balGlass = new THREE.Mesh(new THREE.BoxGeometry(len, balH, balThick), glassMat);
+    balGlass.position.set(outerCx, elevM + balH / 2, outerCz);
+    balGlass.rotation.y = yaw;
+    addEdges(balGlass);
+    group.add(balGlass);
+  }
+
+  void paint; // unused but kept for API consistency
+  return group;
+}
+
 function makeRailingMesh(
   railing: Extract<Element, { kind: 'railing' }>,
   elementsById: Record<string, Element>,
@@ -1623,6 +1689,8 @@ function elemViewerCategory(e: Element): ViewerCatKey | null {
       return 'room';
     case 'railing':
       return 'railing';
+    case 'balcony':
+      return 'floor';
     case 'site':
       return 'site';
     default:
@@ -2681,6 +2749,9 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
           break;
         case 'railing':
           obj = makeRailingMesh(e, curr, paint);
+          break;
+        case 'balcony':
+          obj = makeBalconyMesh(e, curr, paint);
           break;
         case 'site':
           obj = makeSiteMesh(e, curr, paint);

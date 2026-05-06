@@ -340,6 +340,20 @@ class RailingElem(BaseModel):
     guard_height_mm: float = Field(alias="guardHeightMm", default=1040)
 
 
+class BalconyElem(BaseModel):
+    """Slab + glass balustrade projecting from a host wall at a fixed elevation."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["balcony"] = "balcony"
+    id: str
+    name: str = "Balcony"
+    wall_id: str = Field(alias="wallId")
+    elevation_mm: float = Field(alias="elevationMm")
+    projection_mm: float = Field(default=650, alias="projectionMm")
+    slab_thickness_mm: float = Field(default=150, alias="slabThicknessMm")
+    balustrade_height_mm: float = Field(default=1050, alias="balustradeHeightMm")
+
+
 class FamilyTypeElem(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True)
     kind: Literal["family_type"] = "family_type"
@@ -699,6 +713,7 @@ Element = Annotated[
     | StairElem
     | SlabOpeningElem
     | RailingElem
+    | BalconyElem
     | FamilyTypeElem
     | RoomSeparationElem
     | PlanRegionElem
