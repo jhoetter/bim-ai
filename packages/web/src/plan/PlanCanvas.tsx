@@ -3,7 +3,13 @@ import * as THREE from 'three';
 import type { Element } from '@bim-ai/core';
 
 import { useBimStore } from '../state/store';
+import { liveTokenReader } from '../viewport/materials';
 import { collectWallAnchors, snapPlanPoint } from './snapEngine';
+
+function readPlanToken(name: string, fallback: string): string {
+  const v = liveTokenReader().read(name);
+  return v && v.trim().length > 0 ? v : fallback;
+}
 import {
   buildPlanProjectionQuery,
   extractPlanAnnotationHints,
@@ -281,7 +287,7 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
     if (!mount) return;
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio ?? 1, 2));
-    renderer.setClearColor('#0b1220', 1);
+    renderer.setClearColor(readPlanToken('--draft-paper', '#0b1220'), 1);
     mount.appendChild(renderer.domElement);
     rendererRef.current = renderer;
     const scene = new THREE.Scene();
@@ -339,7 +345,11 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
     }
     const grid = new THREE.LineSegments(
       new THREE.BufferGeometry().setFromPoints(gv),
-      new THREE.LineBasicMaterial({ color: '#223042', transparent: true, opacity: 0.35 }),
+      new THREE.LineBasicMaterial({
+        color: readPlanToken('--draft-grid-major', '#223042'),
+        transparent: true,
+        opacity: 0.35,
+      }),
     );
     grid.userData.draftingGrid = true;
     grp.add(grid);
@@ -399,7 +409,9 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
       }
       previewRef.current = new THREE.Line(
         new THREE.BufferGeometry().setFromPoints([a, b]),
-        new THREE.LineBasicMaterial({ color: '#fcd34d' }),
+        new THREE.LineBasicMaterial({
+          color: readPlanToken('--draft-construction-blue', '#fcd34d'),
+        }),
       );
       grp.add(previewRef.current);
     };
@@ -422,7 +434,7 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
       }
       previewRef.current = new THREE.Line(
         new THREE.BufferGeometry().setFromPoints(pts),
-        new THREE.LineBasicMaterial({ color: '#a7f3d0' }),
+        new THREE.LineBasicMaterial({ color: readPlanToken('--cat-room', '#a7f3d0') }),
       );
       grp.add(previewRef.current);
     };

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 
 import type { Element, PlanLinePatternToken } from '@bim-ai/core';
 
+import { liveTokenReader } from '../viewport/materials';
 import {
   coerceVec2Mm,
   isPlanProjectionPrimitivesV1,
@@ -14,6 +15,78 @@ import { deterministicSchemeColorHex } from './roomSchemeColor';
 /** Plan slice elevation in world units (walls still render with real height elsewhere). */
 
 const PLAN_Y = 0.02;
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* Plan palette — token-driven colors used in plan symbology.              */
+/*                                                                          */
+/* Read once per render (via getPlanPalette) so that a theme switch picks   */
+/* up updated `:root` custom-property values. Each token has a defensive    */
+/* fallback used when the live document has no stylesheet attached (SSR /   */
+/* jsdom-without-tokens).                                                   */
+/* ────────────────────────────────────────────────────────────────────── */
+
+interface PlanPalette {
+  wallFill: string;
+  wallSelected: string;
+  doorFill: string;
+  doorSelected: string;
+  doorSwing: string;
+  doorSwingFocus: string;
+  windowFill: string;
+  windowSelected: string;
+  windowSelectedBackline: string;
+  windowFillBackline: string;
+  windowGlass: string;
+  windowGlassFocus: string;
+  floorOutline: string;
+  roofOutline: string;
+  roomBoundary: string;
+  roomLabel: string;
+  dimLine: string;
+  dimWitness: string;
+  dimAlt: string;
+  tagBg: string;
+  tagText: string;
+  regionFill: string;
+  regionFillStrong: string;
+  hairline: string;
+  hairlineStrong: string;
+}
+
+function readToken(name: string, fallback: string): string {
+  const v = liveTokenReader().read(name);
+  return v && v.trim().length > 0 ? v : fallback;
+}
+
+function getPlanPalette(): PlanPalette {
+  return {
+    wallFill: readToken('--cat-wall', '#94a3b8'),
+    wallSelected: readToken('--color-accent', '#fb923c'),
+    doorFill: readToken('--cat-door', '#67e8f9'),
+    doorSelected: readToken('--color-accent', '#fde047'),
+    doorSwing: readToken('--draft-construction-blue', '#0ea5e9'),
+    doorSwingFocus: readToken('--draft-hover', '#bae6fd'),
+    windowFill: readToken('--cat-window', '#9333ea'),
+    windowSelected: readToken('--color-accent', '#ddd6fe'),
+    windowSelectedBackline: readToken('--color-accent', '#c4b5fd'),
+    windowFillBackline: readToken('--cat-window', '#a78bfa'),
+    windowGlass: readToken('--cat-window', '#7c3aed'),
+    windowGlassFocus: readToken('--draft-hover', '#f5d0fe'),
+    floorOutline: readToken('--cat-floor', '#22c55e'),
+    roofOutline: readToken('--cat-roof', '#f97316'),
+    roomBoundary: readToken('--cat-room', '#a855f7'),
+    roomLabel: readToken('--color-foreground', '#0f172a'),
+    dimLine: readToken('--draft-construction-blue', '#0ea5e9'),
+    dimWitness: readToken('--draft-witness', '#64748b'),
+    dimAlt: readToken('--color-warning', '#facc15'),
+    tagBg: readToken('--color-surface', '#1e293b'),
+    tagText: readToken('--color-foreground', '#0f172a'),
+    regionFill: readToken('--draft-construction-blue', '#3b82f6'),
+    regionFillStrong: readToken('--draft-construction-blue', '#1d4ed8'),
+    hairline: readToken('--color-border', '#e2e8f0'),
+    hairlineStrong: readToken('--color-border-strong', '#94a3b8'),
+  };
+}
 
 /** World-space dash gaps for plan linework (grid, room separation) from server tokens. */
 
@@ -222,7 +295,8 @@ function planFloorRoofOutlineWireGroup(
   },
 ): THREE.Group {
   const grp = new THREE.Group();
-  const color = opts.kind === 'floor' ? '#22c55e' : '#f97316';
+  const palette = getPlanPalette();
+  const color = opts.kind === 'floor' ? palette.floorOutline : palette.roofOutline;
   const fillY = opts.kind === 'floor' ? PLAN_Y + 0.001 : PLAN_Y + 0.004;
   const strokeY = fillY + 0.0004;
   const baseOp = opts.kind === 'floor' ? PLAN_FLOOR_FILL_OPACITY_BASE : PLAN_ROOF_FILL_OPACITY_BASE;
@@ -327,13 +401,17 @@ function roomSeparationLineFromMm(
   if (dashSpec == null) {
     const line = new THREE.Line(
       geo,
-      new THREE.LineBasicMaterial({ color: '#a855f7', linewidth: 1, depthTest: true }),
+      new THREE.LineBasicMaterial({
+        color: getPlanPalette().roomBoundary,
+        linewidth: 1,
+        depthTest: true,
+      }),
     );
     line.userData.bimPickId = id;
     return line;
   }
   const mat = new THREE.LineDashedMaterial({
-    color: '#a855f7',
+    color: getPlanPalette().roomBoundary,
     dashSize: dashSpec.dashSize,
     gapSize: dashSpec.gapSize,
     depthTest: true,
@@ -362,12 +440,12 @@ function gridLineThreeFromPlanWire(
       new THREE.Line(
         new THREE.BufferGeometry().setFromPoints(pts),
 
-        new THREE.LineBasicMaterial({ color: '#64748b', linewidth: 2 }),
+        new THREE.LineBasicMaterial({ color: getPlanPalette().dimWitness, linewidth: 2 }),
       ),
     );
   } else {
     const mat = new THREE.LineDashedMaterial({
-      color: '#64748b',
+      color: getPlanPalette().dimWitness,
       dashSize: dashSpec.dashSize,
       gapSize: dashSpec.gapSize,
       depthTest: true,
@@ -505,7 +583,8 @@ function rebuildPlanMeshesFromWire(
     const lwh = Number(rf.lineWeightHint ?? rf.line_weight_hint ?? 1);
     const patRaw = rf.linePatternToken ?? rf.line_pattern_token;
     const supportTokRaw = rf.roofGeometrySupportToken;
-    const supportTok = typeof supportTokRaw === 'string' && supportTokRaw.trim() ? supportTokRaw.trim() : null;
+    const supportTok =
+      typeof supportTokRaw === 'string' && supportTokRaw.trim() ? supportTokRaw.trim() : null;
     const grp = planFloorRoofOutlineWireGroup(outline, {
       kind: 'roof',
       pickId: String(rf.id ?? ''),
@@ -528,12 +607,7 @@ function rebuildPlanMeshesFromWire(
     const eMm = coerceVec2Mm(row.endMm);
     const patRaw = row.linePatternToken ?? row.line_pattern_token;
     holder.add(
-      roomSeparationLineFromMm(
-        sMm,
-        eMm,
-        sid,
-        typeof patRaw === 'string' ? patRaw : undefined,
-      ),
+      roomSeparationLineFromMm(sMm, eMm, sid, typeof patRaw === 'string' ? patRaw : undefined),
     );
   }
 
@@ -627,7 +701,8 @@ function rebuildPlanMeshesFromWire(
             typeof phObj.bottomLandingFootprintBoundsMm === 'object' &&
             typeof phObj.topLandingFootprintBoundsMm === 'object'
               ? {
-                  bottomLandingFootprintBoundsMm: phObj.bottomLandingFootprintBoundsMm as BoundsXYmm,
+                  bottomLandingFootprintBoundsMm:
+                    phObj.bottomLandingFootprintBoundsMm as BoundsXYmm,
                   topLandingFootprintBoundsMm: phObj.topLandingFootprintBoundsMm as BoundsXYmm,
                 }
               : undefined,
@@ -813,7 +888,10 @@ function planWallMesh(
 
     metalness: 0.02,
 
-    color: wall.id === selectedId ? '#fb923c' : '#94a3b8',
+    color: (() => {
+      const p = getPlanPalette();
+      return wall.id === selectedId ? p.wallSelected : p.wallFill;
+    })(),
   });
 
   const mesh = new THREE.Mesh(geom, mat);
@@ -858,7 +936,10 @@ function doorGroupThree(
     new THREE.MeshStandardMaterial({
       emissive: openingFocus ? 0x084c6e : 0x000000,
       emissiveIntensity: openingFocus ? 0.35 : 0,
-      color: door.id === selectedId ? '#fde047' : '#67e8f9',
+      color: (() => {
+        const p = getPlanPalette();
+        return door.id === selectedId ? p.doorSelected : p.doorFill;
+      })(),
     }),
   );
 
@@ -893,7 +974,13 @@ function doorGroupThree(
   const arc = new THREE.Line(
     arcGeom,
 
-    new THREE.LineBasicMaterial({ color: openingFocus ? '#bae6fd' : '#0ea5e9', linewidth: 1 }),
+    new THREE.LineBasicMaterial({
+      color: (() => {
+        const p = getPlanPalette();
+        return openingFocus ? p.doorSwingFocus : p.doorSwing;
+      })(),
+      linewidth: 1,
+    }),
   );
 
   arc.position.set(px, 0, pz);
@@ -950,13 +1037,13 @@ function planWindowMesh(
 
       opacity: openingFocus ? 0.92 : 0.55,
 
-      color: openingFocus
-        ? win.id === selectedId
-          ? '#ddd6fe'
-          : '#9333ea'
-        : win.id === selectedId
-          ? '#c4b5fd'
-          : '#a78bfa',
+      color: (() => {
+        const p = getPlanPalette();
+        if (openingFocus) {
+          return win.id === selectedId ? p.windowSelected : p.windowFill;
+        }
+        return win.id === selectedId ? p.windowSelectedBackline : p.windowFillBackline;
+      })(),
     }),
   );
 
@@ -978,7 +1065,10 @@ function planWindowMesh(
     sillGeom,
 
     new THREE.LineBasicMaterial({
-      color: openingFocus ? '#f5d0fe' : '#7c3aed',
+      color: (() => {
+        const p = getPlanPalette();
+        return openingFocus ? p.windowGlassFocus : p.windowGlass;
+      })(),
 
       linewidth: PLAN_WINDOW_SILL_LINE_WIDTH,
     }),
@@ -1080,7 +1170,11 @@ function stairPlanThree(
   g.add(
     new THREE.Line(
       new THREE.BufferGeometry().setFromPoints(outline),
-      new THREE.LineBasicMaterial({ color: '#facc15', transparent: true, opacity: 0.92 }),
+      new THREE.LineBasicMaterial({
+        color: getPlanPalette().dimAlt,
+        transparent: true,
+        opacity: 0.92,
+      }),
     ),
   );
 
@@ -1103,7 +1197,11 @@ function stairPlanThree(
     g.add(
       new THREE.Line(
         new THREE.BufferGeometry().setFromPoints([p1, p2]),
-        new THREE.LineBasicMaterial({ color: '#e2e8f0', transparent: true, opacity: 0.55 }),
+        new THREE.LineBasicMaterial({
+          color: getPlanPalette().hairline,
+          transparent: true,
+          opacity: 0.55,
+        }),
       ),
     );
 
@@ -1123,7 +1221,11 @@ function stairPlanThree(
       g.add(
         new THREE.Line(
           new THREE.BufferGeometry().setFromPoints([c1, c2]),
-          new THREE.LineBasicMaterial({ color: '#94a3b8', transparent: true, opacity: 0.45 }),
+          new THREE.LineBasicMaterial({
+            color: getPlanPalette().hairlineStrong,
+            transparent: true,
+            opacity: 0.45,
+          }),
         ),
       );
     }
@@ -1147,7 +1249,7 @@ function stairPlanThree(
     const tip = new THREE.Vector3(mx + bx * alen * 0.45, yDoc, mz + bz * alen * 0.45);
     const tail = new THREE.Vector3(mx - bx * alen * 0.55, yDoc, mz - bz * alen * 0.55);
     const arrMat = new THREE.LineBasicMaterial({
-      color: '#0ea5e9',
+      color: getPlanPalette().dimLine,
       transparent: true,
       opacity: 0.88,
     });
@@ -1163,7 +1265,7 @@ function stairPlanThree(
     if (ph?.bottomLandingFootprintBoundsMm && ph?.topLandingFootprintBoundsMm) {
       const yLand = PLAN_Y + 0.021;
       const landMat = new THREE.LineBasicMaterial({
-        color: '#a78bfa',
+        color: getPlanPalette().windowFillBackline,
         transparent: true,
         opacity: 0.52,
       });
@@ -1200,7 +1302,7 @@ function stairPlanThree(
       const p1 = new THREE.Vector3(zx + bx * zig, PLAN_Y + 0.026, zz + bz * zig);
       const p2 = new THREE.Vector3(zx + bx * zig * 2, PLAN_Y + 0.026, zz + bz * zig * 2);
       const brkMat = new THREE.LineBasicMaterial({
-        color: '#64748b',
+        color: getPlanPalette().dimWitness,
         transparent: true,
         opacity: 0.7,
       });
@@ -1257,11 +1359,11 @@ function roomMesh(
               : deterministicSchemeColorHex(seed),
         }
       : scheme === 'opening_focus'
-        ? { opacity: 0.045, color: '#1d4ed8' }
+        ? { opacity: 0.045, color: getPlanPalette().regionFillStrong }
         : {
             opacity: 0.14,
 
-            color: '#3b82f6',
+            color: getPlanPalette().regionFill,
           };
 
   const scale = opts?.roomFillOpacityScale ?? 1;
@@ -1311,7 +1413,11 @@ function planAnnotationLabelSprite(
 
   const doc = typeof globalThis.document !== 'undefined' ? globalThis.document : null;
   const emptySprite = (): THREE.Sprite => {
-    const mat = new THREE.SpriteMaterial({ color: '#1e293b', transparent: true, opacity: 0.92 });
+    const mat = new THREE.SpriteMaterial({
+      color: getPlanPalette().tagBg,
+      transparent: true,
+      opacity: 0.92,
+    });
     const sprite = new THREE.Sprite(mat);
     sprite.position.set(cxM, PLAN_Y + 0.003, czM);
     sprite.scale.set(0.08 * scaleMul, 0.03 * scaleMul, 1);
@@ -1350,7 +1456,7 @@ function planAnnotationLabelSprite(
 
   ctx.globalAlpha = 0.92;
   ctx.strokeStyle = 'rgba(255,255,255,0.78)';
-  ctx.fillStyle = '#0f172a';
+  ctx.fillStyle = getPlanPalette().tagText;
   ctx.lineWidth = 4;
   const pad = Math.max(12, Math.floor(fontPx / 16));
   const r = pad * 1.05;
@@ -1369,7 +1475,8 @@ function planAnnotationLabelSprite(
 
   ctx.globalAlpha = 1;
   ctx.font = `600 ${fontPx}px system-ui,sans-serif`;
-  ctx.fillStyle = '#fafafa';
+  // Inverse of tagText for high-contrast room/tag labels on the dark pill.
+  ctx.fillStyle = readToken('--color-background', '#fafafa');
   ctx.strokeStyle = 'rgba(255,255,255,0.35)';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
@@ -1411,7 +1518,7 @@ function gridLineThree(g: Extract<Element, { kind: 'grid_line' }>): THREE.Group 
     new THREE.Line(
       new THREE.BufferGeometry().setFromPoints(pts),
 
-      new THREE.LineBasicMaterial({ color: '#64748b', linewidth: 2 }),
+      new THREE.LineBasicMaterial({ color: getPlanPalette().dimWitness, linewidth: 2 }),
     ),
   );
 
@@ -1451,7 +1558,7 @@ function dimensionsThree(d: Extract<Element, { kind: 'dimension' }>): THREE.Line
   const ls = new THREE.LineSegments(
     geo,
 
-    new THREE.LineBasicMaterial({ color: '#f472b6' }),
+    new THREE.LineBasicMaterial({ color: getPlanPalette().wallSelected }),
   );
 
   ls.userData.dimensionSpanMm = dimSpanMm;
