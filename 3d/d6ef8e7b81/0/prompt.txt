@@ -15,3 +15,7 @@ everything committed and pushed?
 ---
 
 how would you rate our code quality in school grades?
+
+---
+
+ok, then schedule that out as well... plan all workpackages, then schedule iterations and implement them step by step and always commit + push
