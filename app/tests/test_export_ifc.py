@@ -1698,3 +1698,98 @@ def test_ifc_authoritative_replay_v0_roof_missing_reference_skipped() -> None:
     assert any(
         g.get("reason") == "roof_missing_pset_reference" for g in sketch.get("extractionGaps") or []
     )
+
+
+def test_ifc_roof_type_id_round_trips_through_pset_bim_ai_kernel() -> None:
+    """IFC-01: roofTypeId is preserved across export → re-parse → replay."""
+
+    doc = Document(
+        revision=600,
+        elements={
+            "l0": LevelElem(kind="level", id="l0", name="G", elevationMm=0),
+            "l1": LevelElem(kind="level", id="l1", name="OG", elevationMm=2800),
+            "rt-gable": RoofTypeElem(
+                kind="roof_type",
+                id="rt-gable",
+                name="Gable Deck",
+                layers=[
+                    WallTypeLayer(thicknessMm=18, layer_function="structure"),
+                    WallTypeLayer(thicknessMm=120, layer_function="insulation"),
+                ],
+            ),
+            "w-a": WallElem(
+                kind="wall",
+                id="w-a",
+                name="W",
+                levelId="l0",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 5500, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+            "rf-typed": RoofElem(
+                kind="roof",
+                id="rf-typed",
+                name="Typed Roof",
+                referenceLevelId="l1",
+                footprintMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 6500, "yMm": 0},
+                    {"xMm": 6500, "yMm": 5500},
+                    {"xMm": 0, "yMm": 5500},
+                ],
+                overhangMm=300,
+                slopeDeg=30,
+                roofTypeId="rt-gable",
+            ),
+        },
+    )
+
+    step = export_ifc_model_step(doc)
+
+    # Inspection counter sees the roof carrying the new property.
+    insp = inspect_kernel_ifc_semantics(doc=doc, step_text=step)
+    assert insp["identityPsets"]["roofWithBimAiRoofTypeId"] == 1
+
+    # Authoritative replay sketch now carries the kernel roofTypeId on createRoof.
+    sketch = build_kernel_ifc_authoritative_replay_sketch_v0(step)
+    roof_cmds = [c for c in sketch["commands"] if c["type"] == "createRoof"]
+    assert len(roof_cmds) == 1
+    rc = roof_cmds[0]
+    assert rc["id"] == "rf-typed"
+    assert rc["roofTypeId"] == "rt-gable"
+
+
+def test_ifc_roof_without_roof_type_id_does_not_emit_pset_bim_ai_kernel() -> None:
+    """IFC-01: untyped roofs do not get a Pset_BimAiKernel.BimAiRoofTypeId property."""
+
+    doc = Document(
+        revision=601,
+        elements={
+            "l0": LevelElem(kind="level", id="l0", name="G", elevationMm=0),
+            "l1": LevelElem(kind="level", id="l1", name="OG", elevationMm=2800),
+            "rf-1": RoofElem(
+                kind="roof",
+                id="rf-1",
+                name="R",
+                referenceLevelId="l1",
+                footprintMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 4000, "yMm": 0},
+                    {"xMm": 4000, "yMm": 3000},
+                    {"xMm": 0, "yMm": 3000},
+                ],
+                overhangMm=250,
+                slopeDeg=28,
+            ),
+        },
+    )
+    step = export_ifc_model_step(doc)
+    insp = inspect_kernel_ifc_semantics(doc=doc, step_text=step)
+    assert insp["identityPsets"]["roofWithBimAiRoofTypeId"] == 0
+
+    sketch = build_kernel_ifc_authoritative_replay_sketch_v0(step)
+    roof_cmds = [c for c in sketch["commands"] if c["type"] == "createRoof"]
+    assert len(roof_cmds) == 1
+    # Default after replay is None — no roof_type_id should be emitted.
+    assert roof_cmds[0].get("roofTypeId") in (None, "", False)

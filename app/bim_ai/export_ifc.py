@@ -636,6 +636,16 @@ def inspect_kernel_ifc_semantics(
                 c += 1
         return c
 
+    def _count_pset_property(ifc_products: list[Any], pset_name: str, property_name: str) -> int:
+        c = 0
+        for p in ifc_products:
+            ps = ifc_elem_util.get_psets(p)
+            bucket = ps.get(pset_name) or {}
+            v = bucket.get(property_name)
+            if isinstance(v, str) and v.strip():
+                c += 1
+        return c
+
     def _count_space_programme(pset_name: str, key: str) -> int:
         c = 0
         for sp in spaces:
@@ -673,6 +683,9 @@ def inspect_kernel_ifc_semantics(
                 list(windows), "Pset_WindowCommon"
             ),
             "roofWithPsetRoofCommonReference": _count_pset_ref(list(roofs), "Pset_RoofCommon"),
+            "roofWithBimAiRoofTypeId": _count_pset_property(
+                list(roofs), "Pset_BimAiKernel", "BimAiRoofTypeId"
+            ),
             "stairWithPsetStairCommonReference": _count_pset_ref(list(stairs), "Pset_StairCommon"),
             "siteWithPsetSiteCommonReference": _count_pset_ref(
                 list(site_products), "Pset_SiteCommon"
@@ -1512,6 +1525,15 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
         )
         slope_deg = _replay_infer_roof_slope_deg_from_prism_rise_m(rise_m=rise_m)
 
+        # IFC-01: round-trip kernel `roofTypeId` from Pset_BimAiKernel.BimAiRoofTypeId.
+        bucket_bim_ai = ps_rf.get("Pset_BimAiKernel") or {}
+        roof_type_id_raw = bucket_bim_ai.get("BimAiRoofTypeId")
+        roof_type_id_replay: str | None = (
+            roof_type_id_raw.strip()
+            if isinstance(roof_type_id_raw, str) and roof_type_id_raw.strip()
+            else None
+        )
+
         rname = str(getattr(rfl, "Name", None) or "") or ref_s
         roof_cmds.append(
             CreateRoofCmd(
@@ -1522,6 +1544,7 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
                 overhang_mm=overhang_mm,
                 slope_deg=slope_deg,
                 roof_geometry_mode="mass_box",
+                roof_type_id=roof_type_id_replay,
             ).model_dump(mode="json", by_alias=True)
         )
         ids_roof_rows.append({"ifcGlobalId": rf_gid, "identityReference": ref_s})
@@ -2996,6 +3019,16 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         )
         geo_products += 1
         attach_kernel_identity_pset(roof_ent, "Pset_RoofCommon", rid)
+        # IFC-01: round-trip kernel `roofTypeId` via a bim-ai-namespaced Pset.
+        # Pset_RoofCommon.Reference is reserved for the kernel element id, so we
+        # use a separate Pset_BimAiKernel that carries the roof_type_id literal.
+        if rf.roof_type_id:
+            attach_kernel_identity_pset(
+                roof_ent,
+                "Pset_BimAiKernel",
+                rid,
+                BimAiRoofTypeId=str(rf.roof_type_id),
+            )
         rf_layers = resolved_layers_for_roof(doc, rf)
         if rf_layers:
             try_attach_kernel_ifc_material_layer_set(
