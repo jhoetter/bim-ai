@@ -1,0 +1,5 @@
+read HANDOVER.md, then OPEN_TASKS.md. describe to me, what is the goal?
+
+---
+
+28; commit and push once you are done. dont be surprised, another agent is working on other things.
