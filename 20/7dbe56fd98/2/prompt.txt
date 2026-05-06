@@ -1043,3 +1043,7 @@ can you also furhter look into the remaining relevant ones and see whether we ca
 ---
 
 can you also furhter look into the remaining relevant ones and see whether we can consoildate them more? i dont mean the spec/core, i mean the trackers. i want to look forward, i.e. which next things we're working on (and current ones), not all historic. and simple in a document, not more? BUT BEFORE YOU do that: 08 is done, can you quickly validate?
+
+---
+
+yep please.
