@@ -3,7 +3,7 @@
   "checkpoint_id": "f15ebcaf7fca",
   "strategy": "manual-commit",
   "branch": "gap-r3-gable-glazing",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     "app/scripts/seed.py",
     "packages/web/src/Viewport.tsx"
@@ -14,13 +14,19 @@
       "transcript": "/f1/5ebcaf7fca/0/full.jsonl",
       "content_hash": "/f1/5ebcaf7fca/0/content_hash.txt",
       "prompt": "/f1/5ebcaf7fca/0/prompt.txt"
+    },
+    {
+      "metadata": "/f1/5ebcaf7fca/1/metadata.json",
+      "transcript": "/f1/5ebcaf7fca/1/full.jsonl",
+      "content_hash": "/f1/5ebcaf7fca/1/content_hash.txt",
+      "prompt": "/f1/5ebcaf7fca/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 13422,
-    "cache_creation_tokens": 113378,
-    "cache_read_tokens": 2168870,
-    "output_tokens": 46506,
-    "api_call_count": 31
+    "input_tokens": 13864,
+    "cache_creation_tokens": 725527,
+    "cache_read_tokens": 36046737,
+    "output_tokens": 354043,
+    "api_call_count": 403
   }
 }

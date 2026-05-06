@@ -1,0 +1,23 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "f15ebcaf7fca",
+  "session_id": "e5928574-1de9-4cde-bd03-dc09526eb05c",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-06T15:21:40.340479Z",
+  "branch": "gap-r3-gable-glazing",
+  "checkpoints_count": 1,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "d634c680393b",
+  "token_usage": {
+    "input_tokens": 442,
+    "cache_creation_tokens": 612149,
+    "cache_read_tokens": 33877867,
+    "output_tokens": 307537,
+    "api_call_count": 372
+  },
+  "session_metrics": {
+    "turn_count": 31
+  }
+}
