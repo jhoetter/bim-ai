@@ -200,6 +200,183 @@ function buildPlanWallLayerLines(
   return lines;
 }
 
+/**
+ * KRN-13: emit the per-operationType plan-symbol primitives in unrotated
+ * door-local coords (door centred at origin; wall axis = +x, wall thickness = z).
+ * The caller positions/rotates the returned children to align with the wall.
+ */
+export function planDoorSymbolPrimitives(
+  door: Extract<Element, { kind: 'door' }>,
+  width: number,
+  openingFocus?: boolean,
+): THREE.Object3D[] {
+  const op = door.operationType ?? 'swing_single';
+  const palette = getPlanPalette();
+  const swingColor = openingFocus ? palette.doorSwingFocus : palette.doorSwing;
+  const lineMat = new THREE.LineBasicMaterial({ color: swingColor, linewidth: 1 });
+  const dashedMat = new THREE.LineDashedMaterial({
+    color: swingColor,
+    linewidth: 1,
+    dashSize: 0.05,
+    gapSize: 0.04,
+  });
+
+  const out: THREE.Object3D[] = [];
+  const halfW = width / 2;
+
+  const swingArc = (radius: number, sign: 1 | -1, hingeOffset: number): THREE.Line => {
+    const swingMinor = openingFocus
+      ? PLAN_DOOR_SWING_ARC_SEMI_MINOR_FACTOR_FOCUS
+      : PLAN_DOOR_SWING_ARC_SEMI_MINOR_FACTOR_DEFAULT;
+    const r = radius / swingMinor;
+    const start = Math.PI / 4;
+    const end = Math.PI / 4 + Math.PI / (openingFocus ? 1.9 : 2.2);
+    const curve = new THREE.EllipseCurve(0, 0, r, r, start, end);
+    const pts = curve
+      .getPoints(28)
+      .map((p) => new THREE.Vector3(hingeOffset + sign * p.x, PLAN_Y + 0.03, -p.y));
+    const arc = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), lineMat);
+    arc.userData.bimPickId = door.id;
+    return arc;
+  };
+
+  const lineFromPts = (pts: THREE.Vector3[], dashed = false): THREE.Line => {
+    const line = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(pts),
+      dashed ? dashedMat : lineMat,
+    );
+    if (dashed) (line as THREE.Line).computeLineDistances();
+    line.userData.bimPickId = door.id;
+    return line;
+  };
+
+  switch (op) {
+    case 'swing_single':
+      out.push(swingArc(width, 1, -halfW));
+      break;
+
+    case 'swing_double':
+      out.push(swingArc(width / 2, 1, -halfW));
+      out.push(swingArc(width / 2, -1, halfW));
+      break;
+
+    case 'sliding_single': {
+      const yLine = PLAN_Y + 0.03;
+      out.push(
+        lineFromPts([new THREE.Vector3(-halfW, yLine, 0), new THREE.Vector3(halfW, yLine, 0)]),
+      );
+      const arrowSize = Math.min(0.08, width * 0.08);
+      out.push(
+        lineFromPts([
+          new THREE.Vector3(halfW - arrowSize, yLine, -arrowSize / 2),
+          new THREE.Vector3(halfW, yLine, 0),
+          new THREE.Vector3(halfW - arrowSize, yLine, arrowSize / 2),
+        ]),
+      );
+      break;
+    }
+
+    case 'sliding_double': {
+      const yLine = PLAN_Y + 0.03;
+      out.push(
+        lineFromPts([new THREE.Vector3(-halfW, yLine, 0), new THREE.Vector3(halfW, yLine, 0)]),
+      );
+      const arrow = Math.min(0.08, width * 0.08);
+      out.push(
+        lineFromPts([
+          new THREE.Vector3(-halfW + arrow, yLine, -arrow / 2),
+          new THREE.Vector3(-halfW, yLine, 0),
+          new THREE.Vector3(-halfW + arrow, yLine, arrow / 2),
+        ]),
+      );
+      out.push(
+        lineFromPts([
+          new THREE.Vector3(halfW - arrow, yLine, -arrow / 2),
+          new THREE.Vector3(halfW, yLine, 0),
+          new THREE.Vector3(halfW - arrow, yLine, arrow / 2),
+        ]),
+      );
+      break;
+    }
+
+    case 'bi_fold': {
+      const yLine = PLAN_Y + 0.03;
+      const offset = width * 0.18;
+      const quarter = width / 4;
+      // Two zigzags: \/ on left half and \/ on right half.
+      out.push(
+        lineFromPts([
+          new THREE.Vector3(-halfW, yLine, 0),
+          new THREE.Vector3(-quarter, yLine, offset),
+          new THREE.Vector3(0, yLine, 0),
+          new THREE.Vector3(quarter, yLine, offset),
+          new THREE.Vector3(halfW, yLine, 0),
+        ]),
+      );
+      break;
+    }
+
+    case 'pocket': {
+      // Dashed extent line indicating the wall pocket the panel slides into.
+      const yLine = PLAN_Y + 0.03;
+      out.push(
+        lineFromPts(
+          [new THREE.Vector3(-halfW - width, yLine, 0), new THREE.Vector3(-halfW, yLine, 0)],
+          true,
+        ),
+      );
+      // Solid panel rect inside the wall.
+      out.push(
+        lineFromPts([
+          new THREE.Vector3(-halfW * 0.95, yLine, 0),
+          new THREE.Vector3(halfW * 0.95, yLine, 0),
+        ]),
+      );
+      break;
+    }
+
+    case 'pivot': {
+      // Pivot dot offset from the leaf edge, plus an offset arc indicating swing.
+      const pivotOffset = -halfW * 0.7;
+      const pivotMat = new THREE.MeshBasicMaterial({ color: '#dc2626' });
+      const pivotDot = new THREE.Mesh(new THREE.CircleGeometry(0.04, 16), pivotMat);
+      pivotDot.rotation.x = -Math.PI / 2;
+      pivotDot.position.set(pivotOffset, PLAN_Y + 0.04, 0);
+      pivotDot.userData.bimPickId = door.id;
+      out.push(pivotDot);
+      out.push(swingArc(width * 0.7, 1, pivotOffset));
+      break;
+    }
+
+    case 'automatic_double': {
+      const yLine = PLAN_Y + 0.03;
+      const arrow = Math.min(0.1, width * 0.1);
+      // Two outward arrows pointing away from threshold.
+      out.push(
+        lineFromPts([
+          new THREE.Vector3(0, yLine, 0),
+          new THREE.Vector3(-halfW * 0.7, yLine, 0),
+          new THREE.Vector3(-halfW * 0.7 + arrow, yLine, -arrow / 2),
+          new THREE.Vector3(-halfW * 0.7, yLine, 0),
+          new THREE.Vector3(-halfW * 0.7 + arrow, yLine, arrow / 2),
+        ]),
+      );
+      out.push(
+        lineFromPts([
+          new THREE.Vector3(0, yLine, 0),
+          new THREE.Vector3(halfW * 0.7, yLine, 0),
+          new THREE.Vector3(halfW * 0.7 - arrow, yLine, -arrow / 2),
+          new THREE.Vector3(halfW * 0.7, yLine, 0),
+          new THREE.Vector3(halfW * 0.7 - arrow, yLine, arrow / 2),
+        ]),
+      );
+      break;
+    }
+  }
+
+  return out;
+}
+
 export function doorGroupThree(
   door: Extract<Element, { kind: 'door' }>,
 
@@ -246,43 +423,15 @@ export function doorGroupThree(
 
   g.add(opening);
 
-  const swingMinor = openingFocus
-    ? PLAN_DOOR_SWING_ARC_SEMI_MINOR_FACTOR_FOCUS
-    : PLAN_DOOR_SWING_ARC_SEMI_MINOR_FACTOR_DEFAULT;
-
-  const curve = new THREE.EllipseCurve(
-    0,
-    0,
-    width / swingMinor,
-
-    width / swingMinor,
-
-    Math.PI / 4,
-
-    Math.PI / 4 + Math.PI / (openingFocus ? 1.9 : 2.2),
-  );
-
-  const arcPts = curve.getPoints(28).map((p) => new THREE.Vector3(p.x, PLAN_Y + 0.03, -p.y));
-
-  const arcGeom = new THREE.BufferGeometry().setFromPoints(arcPts);
-
-  const arc = new THREE.Line(
-    arcGeom,
-
-    new THREE.LineBasicMaterial({
-      color: (() => {
-        const p = getPlanPalette();
-        return openingFocus ? p.doorSwingFocus : p.doorSwing;
-      })(),
-      linewidth: 1,
-    }),
-  );
-
-  arc.position.set(px, 0, pz);
-
-  arc.rotation.y = Math.atan2(seg.nz, seg.nx);
-
-  g.add(arc);
+  // Per-operationType symbol primitives, emitted in door-local coords and then
+  // moved/rotated to align with the wall axis.
+  const symbolGroup = new THREE.Group();
+  symbolGroup.position.set(px, 0, pz);
+  symbolGroup.rotation.y = Math.atan2(seg.nz, seg.nx);
+  for (const primitive of planDoorSymbolPrimitives(door, width, openingFocus)) {
+    symbolGroup.add(primitive);
+  }
+  g.add(symbolGroup);
 
   g.userData.bimPickId = door.id;
 
