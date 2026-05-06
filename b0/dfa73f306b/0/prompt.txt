@@ -1,0 +1,17 @@
+10 is done now; please look and ensure all is on main
+
+---
+
+yep, please plan them out as before
+
+---
+
+i can run them in parallel?
+
+---
+
+both are implemented and merged with main. please continue
+
+---
+
+done and should be merged to main, right?
