@@ -23,3 +23,7 @@ can you please consolidate overall these points into one clean tracker with open
 ---
 
 even now i am thinking: is it possible to consolidate basically everything into that single workpackage-master-tracker that is outstanding? the house seed has a description of a house, that is something different - that you can keep. but the other things: can you analyze them whether they are already completed (if yes delete them), if not merge them literally into the workpackage master tracker? i want a single point of truth document that is self-containing
+
+---
+
+is the @spec/prd/revit-production-parity-ai-agent-prd.md still needed, or also fully completed? or is it a good reference for what was implemented? but then it is outdated? and what are PRD tests? do we run automated tests against the PRD? is that even needed?
