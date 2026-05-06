@@ -512,7 +512,10 @@ export function PlanCanvas({
       if ((ch.userData as { draftingGrid?: unknown }).draftingGrid) grp.remove(ch);
     }
     // B01 — major/minor grid driven by draftingPaintFor visibility flags (spec §14.5).
-    const { showMajor, showMinor } = draftingRef.current?.grid ?? { showMajor: true, showMinor: false };
+    const { showMajor, showMinor } = draftingRef.current?.grid ?? {
+      showMajor: true,
+      showMinor: false,
+    };
     const span = camRef.current.half * 3.8;
     const minorStep = orthoExtents(camRef.current.half).stepMm / 1000;
     const majorStep = minorStep * 5;
@@ -697,15 +700,17 @@ export function PlanCanvas({
       const v = snapped(ev.clientX, ev.clientY);
       if (!v) return;
 
-      // B02 — snap candidates from wall endpoints/midpoints within 12 px radius
+      // B02 — snap candidates: endpoint, midpoint, and wall-wall intersection
       const isDrawing = planTool != null && planTool !== 'select';
       if (isDrawing) {
         const pixH = rnd.domElement.clientHeight || 1;
         const toleranceMm = (12 / pixH) * 2 * camRef.current.half * 1000;
         const candidates: SnapCandidate[] = [];
-        for (const el of Object.values(elementsById)) {
-          if (el.kind !== 'wall') continue;
-          if (displayLevelId && el.levelId !== displayLevelId) continue;
+        const levelWalls = Object.values(elementsById).filter(
+          (el): el is Extract<typeof el, { kind: 'wall' }> =>
+            el.kind === 'wall' && (!displayLevelId || el.levelId === displayLevelId),
+        );
+        for (const el of levelWalls) {
           if (Math.hypot(el.start.xMm - v.xMm, el.start.yMm - v.yMm) < toleranceMm)
             candidates.push({ mode: 'endpoint', xMm: el.start.xMm, yMm: el.start.yMm });
           if (Math.hypot(el.end.xMm - v.xMm, el.end.yMm - v.yMm) < toleranceMm)
@@ -714,6 +719,30 @@ export function PlanCanvas({
           const midYMm = (el.start.yMm + el.end.yMm) / 2;
           if (Math.hypot(midXMm - v.xMm, midYMm - v.yMm) < toleranceMm)
             candidates.push({ mode: 'midpoint', xMm: midXMm, yMm: midYMm });
+        }
+        // B02 — wall-wall intersection snaps (spec §14.3)
+        for (let i = 0; i < levelWalls.length; i++) {
+          for (let j = i + 1; j < levelWalls.length; j++) {
+            const a = levelWalls[i]!;
+            const b = levelWalls[j]!;
+            const ax = a.start.xMm,
+              az = a.start.yMm;
+            const adx = a.end.xMm - ax,
+              adz = a.end.yMm - az;
+            const bx = b.start.xMm,
+              bz = b.start.yMm;
+            const bdx = b.end.xMm - bx,
+              bdz = b.end.yMm - bz;
+            const denom = adx * bdz - adz * bdx;
+            if (Math.abs(denom) < 1e-9) continue;
+            const t = ((bx - ax) * bdz - (bz - az) * bdx) / denom;
+            const u = ((bx - ax) * adz - (bz - az) * adx) / denom;
+            if (t < 0 || t > 1 || u < 0 || u > 1) continue;
+            const ixMm = ax + adx * t;
+            const iyMm = az + adz * t;
+            if (Math.hypot(ixMm - v.xMm, iyMm - v.yMm) < toleranceMm)
+              candidates.push({ mode: 'intersection', xMm: ixMm, yMm: iyMm });
+          }
         }
         const snap = snapEngineRef.current.resolve(candidates);
         if (snap) {
@@ -912,7 +941,20 @@ export function PlanCanvas({
           typeof (h?.object.userData as { bimPickId?: unknown }).bimPickId === 'string'
             ? (h!.object.userData as { bimPickId: string }).bimPickId
             : undefined;
-        selectEl(id);
+        // B02 — classifyPointerStart add-to-selection intent: Shift+Click toggles
+        const clickIntent = classifyPointerStart({
+          button: ev.button,
+          shiftKey: ev.shiftKey,
+          altKey: ev.altKey,
+          activeTool: 'select',
+          dragDirection: null,
+        });
+        if (clickIntent === 'add-to-selection') {
+          const currentSel = useBimStore.getState().selectedId;
+          selectEl(id === currentSel ? undefined : id);
+        } else {
+          selectEl(id);
+        }
         return;
       }
       if (planTool === 'door') {
