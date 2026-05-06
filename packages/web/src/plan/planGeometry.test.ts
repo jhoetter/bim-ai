@@ -30,12 +30,15 @@ const makeWall = (
   ({
     kind: 'wall' as const,
     id: 'w1',
+    name: 'W1',
+    levelId: 'lvl0',
     start: { xMm: x0, yMm: y0 },
     end: { xMm: x1, yMm: y1 },
     thicknessMm,
     heightMm: 2800,
-    baseLevelId: 'lvl0',
-    topLevelId: 'lvl1',
+    baseConstraintOffsetMm: 0,
+    topConstraintOffsetMm: 0,
+    insulationExtensionMm: 0,
   }) as Parameters<typeof segmentDir>[0];
 
 describe('segmentDir', () => {
@@ -215,19 +218,19 @@ describe('computeStairPlanRiserCount', () => {
   it('uses elevation rise when level elements provided', () => {
     const stair = makeStair({ riserMm: 175 });
     const elementsById = {
-      lvl0: { kind: 'level', id: 'lvl0', elevationMm: 0 },
-      lvl1: { kind: 'level', id: 'lvl1', elevationMm: 2800 },
-    } as Record<string, Parameters<typeof computeStairPlanRiserCount>[1] extends Record<string, infer E> ? E : never>;
+      lvl0: { kind: 'level', id: 'lvl0', name: 'G', elevationMm: 0, offsetFromParentMm: 0 },
+      lvl1: { kind: 'level', id: 'lvl1', name: 'F1', elevationMm: 2800, offsetFromParentMm: 0 },
+    } as unknown as Record<string, import('@bim-ai/core').Element>;
     // 2800mm / 175mm riser = 16
-    const n = computeStairPlanRiserCount(stair, elementsById as Record<string, import('@bim-ai/core').Element>);
+    const n = computeStairPlanRiserCount(stair, elementsById);
     expect(n).toBe(16);
   });
 
   it('falls back to tread when base level not found', () => {
     const stair = makeStair();
     const elementsById = {
-      lvl1: { kind: 'level', id: 'lvl1', elevationMm: 2800 },
-    } as Record<string, import('@bim-ai/core').Element>;
+      lvl1: { kind: 'level', id: 'lvl1', name: 'F1', elevationMm: 2800, offsetFromParentMm: 0 },
+    } as unknown as Record<string, import('@bim-ai/core').Element>;
     const n = computeStairPlanRiserCount(stair, elementsById);
     expect(n).toBe(11);
   });

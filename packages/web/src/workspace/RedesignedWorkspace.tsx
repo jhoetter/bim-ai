@@ -70,6 +70,7 @@ import {
   SectionModeShell,
   SheetModeShell,
 } from './ModeShells';
+import { ErrorBoundary } from '../ErrorBoundary';
 import { CommentsPanel } from './CommentsPanel';
 import { StatusBar } from './StatusBar';
 import { CheatsheetModal } from '../cmd/CheatsheetModal';
@@ -1721,7 +1722,9 @@ function CanvasMount({
   }
   if (mode === '3d')
     return (
-      <Viewport wsConnected={wsOn ?? false} onPersistViewpointField={onPersistViewpointField} />
+      <ErrorBoundary label="Viewport3D">
+        <Viewport wsConnected={wsOn ?? false} onPersistViewpointField={onPersistViewpointField} />
+      </ErrorBoundary>
     );
   if (mode === 'plan')
     return (
@@ -1737,8 +1740,18 @@ function CanvasMount({
     return <SectionModeShell activeLevelLabel={activeLevelId} modelId={modelId} />;
   if (mode === 'sheet')
     return <SheetModeShell elementsById={elementsById} preferredSheetId={preferredSheetId} />;
-  if (mode === 'schedule') return <ScheduleModeShell elementsById={elementsById} />;
-  if (mode === 'agent') return <AgentReviewModeShell onApplyQuickFix={onSemanticCommand} />;
+  if (mode === 'schedule')
+    return (
+      <ErrorBoundary label="SchedulePanel">
+        <ScheduleModeShell elementsById={elementsById} />
+      </ErrorBoundary>
+    );
+  if (mode === 'agent')
+    return (
+      <ErrorBoundary label="AgentReviewPane">
+        <AgentReviewModeShell onApplyQuickFix={onSemanticCommand} />
+      </ErrorBoundary>
+    );
   return viewerMode === 'orbit_3d' ? (
     <Viewport wsConnected={wsOn ?? false} onPersistViewpointField={onPersistViewpointField} />
   ) : (

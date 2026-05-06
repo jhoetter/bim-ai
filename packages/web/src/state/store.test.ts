@@ -140,7 +140,7 @@ describe('hydrateFromSnapshot', () => {
       modelId: 'm1',
       revision: 1,
       elements: {},
-      violations: [{ rule_id: 'SNAKE_RULE', severity: 'error', message: 'Err', elementIds: [] }],
+      violations: [{ rule_id: 'SNAKE_RULE', severity: 'error', message: 'Err', elementIds: [] }] as unknown as import('@bim-ai/core').Violation[],
     });
     expect(useBimStore.getState().violations[0]?.ruleId).toBe('SNAKE_RULE');
   });
@@ -197,7 +197,7 @@ describe('hydrateFromSnapshot', () => {
 describe('applyDelta', () => {
   it('updates revision', () => {
     useBimStore.setState({ revision: 1, elementsById: {} });
-    useBimStore.getState().applyDelta({ revision: 5, elements: {}, violations: [] });
+    useBimStore.getState().applyDelta({ revision: 5, elements: {}, violations: [], removedIds: [] });
     expect(useBimStore.getState().revision).toBe(5);
   });
 
@@ -207,6 +207,7 @@ describe('applyDelta', () => {
       revision: 2,
       elements: { 'lvl-1': { kind: 'level', name: 'L1', elevationMm: 3000 } },
       violations: [],
+      removedIds: [],
     });
     expect(useBimStore.getState().elementsById['lvl-1']?.kind).toBe('level');
   });
@@ -219,6 +220,7 @@ describe('applyDelta', () => {
       revision: 3,
       elements: { 'lvl-1': { kind: 'level', name: 'First', elevationMm: 3000 } },
       violations: [],
+      removedIds: [],
     });
     const state = useBimStore.getState();
     expect(state.elementsById['lvl-0']?.kind).toBe('level');
@@ -252,7 +254,7 @@ describe('applyDelta', () => {
       elements: {},
       violations: [],
       removed_ids: ['r1'],
-    } as unknown as Parameters<typeof useBimStore.getState.prototype>[0]);
+    } as unknown as import('@bim-ai/core').ModelDelta);
     expect(useBimStore.getState().elementsById['r1']).toBeUndefined();
   });
 
@@ -262,6 +264,7 @@ describe('applyDelta', () => {
       revision: 2,
       elements: {},
       violations: [{ ruleId: 'NEW', severity: 'error', message: 'x', elementIds: ['e1'] }],
+      removedIds: [],
     });
     const { violations } = useBimStore.getState();
     expect(violations).toHaveLength(1);
@@ -270,7 +273,7 @@ describe('applyDelta', () => {
 
   it('clears planProjectionPrimitives on delta', () => {
     useBimStore.setState({ planProjectionPrimitives: { primitives: [] } as unknown as import('./storeTypes').StoreState['planProjectionPrimitives'] });
-    useBimStore.getState().applyDelta({ revision: 2, elements: {}, violations: [] });
+    useBimStore.getState().applyDelta({ revision: 2, elements: {}, violations: [], removedIds: [] });
     expect(useBimStore.getState().planProjectionPrimitives).toBeNull();
   });
 
@@ -284,7 +287,7 @@ describe('applyDelta', () => {
       elements: {},
       violations: [],
       removedIds: ['pv1'],
-    });
+    } as import('@bim-ai/core').ModelDelta);
     expect(useBimStore.getState().activePlanViewId).toBeUndefined();
   });
 });
