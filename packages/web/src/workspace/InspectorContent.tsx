@@ -3,7 +3,7 @@ import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import type { Element } from '@bim-ai/core';
 
-import { BUILT_IN_FAMILIES } from '../families/familyCatalog';
+import { BUILT_IN_FAMILIES, getFamilyById, getTypeById } from '../families/familyCatalog';
 
 import { planViewGraphicsMatrixRows, viewTemplateGraphicsMatrixRows } from '../plan/planProjection';
 import { PlanViewGraphicsMatrix } from './PlanViewGraphicsMatrix';
@@ -524,19 +524,120 @@ export function InspectorViewpointEditor({
   );
 }
 
+type CustomFamilyTypeElem = Extract<Element, { kind: 'family_type' }>;
+
+function CustomTypeForm({
+  discipline,
+  onSave,
+  onCancel,
+}: {
+  discipline: 'door' | 'window';
+  onSave: (baseFamilyId: string, name: string, params: Record<string, unknown>) => void;
+  onCancel: () => void;
+}): JSX.Element {
+  const families = BUILT_IN_FAMILIES.filter((f) => f.discipline === discipline);
+  const [baseFamilyId, setBaseFamilyId] = useState(families[0]?.id ?? '');
+  const [name, setName] = useState('');
+  const [paramDraft, setParamDraft] = useState<Record<string, string>>({});
+
+  const baseFam = getFamilyById(baseFamilyId);
+  const lengthParams = baseFam?.params.filter((p) => p.type === 'length_mm') ?? [];
+
+  function handleSave(): void {
+    const params: Record<string, unknown> = { name: name.trim(), baseFamilyId };
+    for (const p of lengthParams) {
+      const raw = paramDraft[p.key];
+      const val = raw !== undefined ? Number(raw) : (p.default as number);
+      if (Number.isFinite(val)) params[p.key] = val;
+    }
+    onSave(baseFamilyId, name.trim(), params);
+  }
+
+  return (
+    <div className="mt-1 space-y-1.5 rounded border border-border bg-background p-2">
+      <label className={LABEL_CLS}>
+        Base family
+        <select
+          className={INPUT_CLS}
+          value={baseFamilyId}
+          onChange={(e) => { setBaseFamilyId(e.target.value); setParamDraft({}); }}
+        >
+          {families.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
+        </select>
+      </label>
+      <label className={LABEL_CLS}>
+        Type name
+        <input
+          className={INPUT_CLS}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="e.g. Wide fire door"
+          autoFocus
+        />
+      </label>
+      {lengthParams.map((p) => (
+        <label key={p.key} className={LABEL_CLS}>
+          {p.label} (mm)
+          <input
+            className={INPUT_CLS}
+            type="number"
+            value={paramDraft[p.key] ?? String(p.default as number)}
+            onChange={(e) => setParamDraft((d) => ({ ...d, [p.key]: e.target.value }))}
+          />
+        </label>
+      ))}
+      <div className="flex gap-2 pt-0.5">
+        <button
+          type="button"
+          disabled={!name.trim()}
+          onClick={handleSave}
+          className="flex-1 rounded border border-border bg-surface-strong px-2 py-0.5 text-[10px] hover:bg-accent-soft disabled:opacity-40"
+        >
+          Save type
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded border border-border px-2 py-0.5 text-[10px] hover:bg-surface-strong"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /** Editable family type picker for door elements (Properties tab). */
 export function InspectorDoorEditor({
   el,
   revision,
+  elementsById = {},
   onPersistProperty,
+  onCreateType,
 }: {
   el: Extract<Element, { kind: 'door' }>;
   revision: number;
+  elementsById?: Record<string, Element>;
   onPersistProperty: (key: string, value: string) => void;
+  onCreateType?: (baseFamilyId: string, name: string, params: Record<string, unknown>) => void;
 }): JSX.Element {
   const { t } = useTranslation();
   const f = (key: string) => t(`inspector.fields.${key}`);
+  const [showForm, setShowForm] = useState(false);
   const doorFamilies = BUILT_IN_FAMILIES.filter((fam) => fam.discipline === 'door');
+  const customTypes = (Object.values(elementsById) as Element[]).filter(
+    (e): e is CustomFamilyTypeElem => e.kind === 'family_type' && e.discipline === 'door',
+  );
+
+  // resolve display name: built-in types use catalog name; custom types use parameters.name
+  function typeLabel(id: string): string {
+    const builtin = getTypeById(id);
+    if (builtin) return builtin.name;
+    const custom = elementsById[id] as CustomFamilyTypeElem | undefined;
+    return String(custom?.parameters.name ?? id);
+  }
+  void typeLabel; // used via select option text directly
+
   return (
     <div className="space-y-2 text-[11px]">
       <label className={LABEL_CLS}>
@@ -555,8 +656,34 @@ export function InspectorDoorEditor({
               ))}
             </optgroup>
           ))}
+          {customTypes.length > 0 && (
+            <optgroup label="Custom">
+              {customTypes.map((ct) => (
+                <option key={ct.id} value={ct.id}>{String(ct.parameters.name ?? ct.id)}</option>
+              ))}
+            </optgroup>
+          )}
         </select>
       </label>
+      {onCreateType && !showForm && (
+        <button
+          type="button"
+          onClick={() => setShowForm(true)}
+          className="text-[10px] text-accent hover:underline"
+        >
+          + New custom type…
+        </button>
+      )}
+      {onCreateType && showForm && (
+        <CustomTypeForm
+          discipline="door"
+          onSave={(baseFamilyId, name, params) => {
+            onCreateType(baseFamilyId, name, params);
+            setShowForm(false);
+          }}
+          onCancel={() => setShowForm(false)}
+        />
+      )}
       <FieldRow label={f('width')} value={fmtMm(el.widthMm)} />
       <FieldRow label={f('wall')} value={el.wallId} mono />
       <FieldRow label={f('alongT')} value={el.alongT.toFixed(3)} mono />
@@ -568,15 +695,24 @@ export function InspectorDoorEditor({
 export function InspectorWindowEditor({
   el,
   revision,
+  elementsById = {},
   onPersistProperty,
+  onCreateType,
 }: {
   el: Extract<Element, { kind: 'window' }>;
   revision: number;
+  elementsById?: Record<string, Element>;
   onPersistProperty: (key: string, value: string) => void;
+  onCreateType?: (baseFamilyId: string, name: string, params: Record<string, unknown>) => void;
 }): JSX.Element {
   const { t } = useTranslation();
   const f = (key: string) => t(`inspector.fields.${key}`);
+  const [showForm, setShowForm] = useState(false);
   const windowFamilies = BUILT_IN_FAMILIES.filter((fam) => fam.discipline === 'window');
+  const customTypes = (Object.values(elementsById) as Element[]).filter(
+    (e): e is CustomFamilyTypeElem => e.kind === 'family_type' && e.discipline === 'window',
+  );
+
   return (
     <div className="space-y-2 text-[11px]">
       <label className={LABEL_CLS}>
@@ -595,8 +731,34 @@ export function InspectorWindowEditor({
               ))}
             </optgroup>
           ))}
+          {customTypes.length > 0 && (
+            <optgroup label="Custom">
+              {customTypes.map((ct) => (
+                <option key={ct.id} value={ct.id}>{String(ct.parameters.name ?? ct.id)}</option>
+              ))}
+            </optgroup>
+          )}
         </select>
       </label>
+      {onCreateType && !showForm && (
+        <button
+          type="button"
+          onClick={() => setShowForm(true)}
+          className="text-[10px] text-accent hover:underline"
+        >
+          + New custom type…
+        </button>
+      )}
+      {onCreateType && showForm && (
+        <CustomTypeForm
+          discipline="window"
+          onSave={(baseFamilyId, name, params) => {
+            onCreateType(baseFamilyId, name, params);
+            setShowForm(false);
+          }}
+          onCancel={() => setShowForm(false)}
+        />
+      )}
       <FieldRow label={f('width')} value={fmtMm(el.widthMm)} />
       <FieldRow label={f('height')} value={fmtMm(el.heightMm)} />
       <FieldRow label={f('sillHeight')} value={fmtMm(el.sillHeightMm)} />

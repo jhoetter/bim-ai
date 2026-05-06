@@ -803,17 +803,30 @@ export function RedesignedWorkspace(): JSX.Element {
         id: 'families',
         label: 'Families',
         rows: (['door', 'window', 'stair', 'railing'] as const)
-          .map((disc) => ({
-            id: `fam-group-${disc}`,
-            label: ({ door: 'Doors', window: 'Windows', stair: 'Stairs', railing: 'Railings' } as const)[disc],
-            children: BUILT_IN_FAMILIES
+          .map((disc) => {
+            const discLabel = ({ door: 'Doors', window: 'Windows', stair: 'Stairs', railing: 'Railings' } as const)[disc];
+            const customOfDisc = (Object.values(elementsById) as Element[]).filter(
+              (e): e is Extract<Element, { kind: 'family_type' }> =>
+                e.kind === 'family_type' && e.discipline === disc,
+            );
+            const builtInRows = BUILT_IN_FAMILIES
               .filter((f) => f.discipline === disc)
               .map((fam) => ({
                 id: fam.id,
                 label: fam.name,
                 children: fam.defaultTypes.map((t) => ({ id: t.id, label: t.name })),
-              })),
-          }))
+              }));
+            const customRows = customOfDisc.map((ct) => ({
+              id: ct.id,
+              label: String(ct.parameters.name ?? ct.id),
+              hint: 'custom',
+            }));
+            return {
+              id: `fam-group-${disc}`,
+              label: discLabel,
+              children: [...builtInRows, ...customRows],
+            };
+          })
           .filter((g) => g.children.length > 0),
       },
     ];
@@ -1294,16 +1307,24 @@ export function RedesignedWorkspace(): JSX.Element {
                         <InspectorDoorEditor
                           el={el}
                           revision={revision}
+                          elementsById={elementsById}
                           onPersistProperty={(key, value) =>
                             void onSemanticCommand({ type: 'updateElementProperty', elementId: el.id, key, value })
+                          }
+                          onCreateType={(_baseFamilyId, _name, params) =>
+                            void onSemanticCommand({ type: 'upsertFamilyType', discipline: 'door', parameters: params })
                           }
                         />
                       ) : el.kind === 'window' ? (
                         <InspectorWindowEditor
                           el={el}
                           revision={revision}
+                          elementsById={elementsById}
                           onPersistProperty={(key, value) =>
                             void onSemanticCommand({ type: 'updateElementProperty', elementId: el.id, key, value })
+                          }
+                          onCreateType={(_baseFamilyId, _name, params) =>
+                            void onSemanticCommand({ type: 'upsertFamilyType', discipline: 'window', parameters: params })
                           }
                         />
                       ) : (
