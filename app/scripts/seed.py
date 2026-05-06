@@ -125,11 +125,14 @@ def _house_commands() -> list[dict]:
     # ── Upper-floor exterior walls — main volume only (h = 2800) ────────────
     cmds += [
         {
-            # South gable face: full curtain-wall glazing
+            # South gable face: full curtain-wall glazing + gable triangle glazing
+            # roofAttachmentId signals the renderer to extend glass into the gable
+            # triangle above the rectangular wall zone (eave → ridge).
             "type": "createWall", "id": "wu-south", "name": "Upper south (curtain wall)",
             "levelId": "lvl-2",
             "start": {"xMm": 0, "yMm": 0}, "end": {"xMm": 7000, "yMm": 0},
             "thicknessMm": 200, "heightMm": 2800, "isCurtainWall": True,
+            "roofAttachmentId": "roof-main",
         },
         {
             "type": "createWall", "id": "wu-west", "name": "Upper west facade",
