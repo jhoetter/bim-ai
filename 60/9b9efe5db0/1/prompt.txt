@@ -1,0 +1,9 @@
+Work in /Users/jhoetter/repos/bim-ai. Read spec/rendering-v2-spec.md
+  sections R1-01, R1-02, and R1-03 and implement all three as a single
+  commit. They must be done together — they all edit the renderer
+  initialization block in packages/web/src/Viewport.tsx and materials.ts.
+  Do not touch the mesh factory functions (makeWallMesh etc.) or add any
+  post-processing passes beyond RenderPass + OutputPass.
+  Run pnpm --filter web typecheck before committing.
+  Commit: "feat(3d): R1-01/02/03 — shadow map, sun direction, EffectComposer"
+  Push to origin/main when done.
