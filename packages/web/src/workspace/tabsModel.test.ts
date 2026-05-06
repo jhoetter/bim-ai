@@ -7,6 +7,7 @@ import {
   closeTab,
   cycleActive,
   openTab,
+  reorderTab,
   tabFromElement,
 } from './tabsModel';
 
@@ -125,6 +126,30 @@ describe('tabsModel — spec §11.3', () => {
       targetId: 'sht-101',
       label: 'Sheet · A-101',
     });
+  });
+
+  it('reorderTab moves a tab from one index to another and preserves activeId', () => {
+    let s = openTab(EMPTY_TABS, { kind: 'plan', targetId: 'l0', label: 'L0' });
+    s = openTab(s, { kind: '3d', targetId: 'v1', label: 'V1' });
+    s = openTab(s, { kind: 'sheet', targetId: 's1', label: 'S1' });
+    expect(s.activeId).toBe('sheet:s1');
+    s = reorderTab(s, 2, 0);
+    expect(s.tabs.map((t) => t.id)).toEqual(['sheet:s1', 'plan:l0', '3d:v1']);
+    expect(s.activeId).toBe('sheet:s1');
+  });
+
+  it('reorderTab clamps out-of-range indices', () => {
+    let s = openTab(EMPTY_TABS, { kind: 'plan', targetId: 'l0', label: 'L0' });
+    s = openTab(s, { kind: '3d', targetId: 'v1', label: 'V1' });
+    s = reorderTab(s, 99, -5);
+    expect(s.tabs.map((t) => t.id)).toEqual(['3d:v1', 'plan:l0']);
+  });
+
+  it('reorderTab is a no-op when from === to', () => {
+    let s = openTab(EMPTY_TABS, { kind: 'plan', targetId: 'l0', label: 'L0' });
+    s = openTab(s, { kind: '3d', targetId: 'v1', label: 'V1' });
+    const next = reorderTab(s, 0, 0);
+    expect(next).toBe(s);
   });
 
   it('tabFromElement returns null for non-viewable kinds', () => {

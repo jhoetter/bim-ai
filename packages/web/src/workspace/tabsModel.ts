@@ -73,6 +73,22 @@ export function activateTab(state: TabsState, id: string): TabsState {
   return { ...state, activeId: id };
 }
 
+/** Reorder a tab from one index to another. Out-of-range indices clamp.
+ * `activeId` is preserved (the active tab keeps focus, just at a new
+ * position in the list). */
+export function reorderTab(state: TabsState, fromIdx: number, toIdx: number): TabsState {
+  if (state.tabs.length === 0) return state;
+  const len = state.tabs.length;
+  const f = Math.max(0, Math.min(len - 1, fromIdx));
+  const t = Math.max(0, Math.min(len - 1, toIdx));
+  if (f === t) return state;
+  const next = [...state.tabs];
+  const [moved] = next.splice(f, 1);
+  if (!moved) return state;
+  next.splice(t, 0, moved);
+  return { ...state, tabs: next };
+}
+
 /** Cycle the active tab forward or backward. Wraps around. */
 export function cycleActive(state: TabsState, direction: 'forward' | 'backward'): TabsState {
   if (state.tabs.length === 0) return state;

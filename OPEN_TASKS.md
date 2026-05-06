@@ -42,16 +42,6 @@ Visually verify the new PNGs look right, then commit.
 
 ## Medium (deferred from earlier WPs, called out in commits but not in spec)
 
-### T-05 · Tab drag-reorder
-**WP target**: WP-UI-A12 · **Source**: commit `34b6120d` body · **Status**: deferred
-
-`workspace/TabBar.tsx` renders a static order. Spec §11.3 says drag is "deferred to a later WP — V1 ships without drag." Implement when prioritized.
-
-**Next moves**:
-1. Add `reorderTab(fromIdx, toIdx)` to `tabsModel.ts`.
-2. Wire HTML5 drag-and-drop on `<div role="tab">` in `TabBar.tsx`.
-3. Test: drag asserts `tabs` order mutates without changing `activeId`.
-
 ### T-06 · Tab localStorage persistence
 **WP target**: WP-UI-A12 · **Source**: commit `34b6120d` body · **Status**: deferred
 

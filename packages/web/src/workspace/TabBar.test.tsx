@@ -51,6 +51,32 @@ describe('TabBar — spec §11.3', () => {
     expect(getByText('No views open')).toBeTruthy();
   });
 
+  it('drag from one tab to another fires onReorder with the indices (T-05)', () => {
+    const onReorder = vi.fn();
+    const { getByTestId } = render(
+      <TabBar
+        tabs={tabs}
+        activeId="plan:l0"
+        onActivate={() => {}}
+        onClose={() => {}}
+        onReorder={onReorder}
+      />,
+    );
+    const src = getByTestId('tab-activate-plan:l0').closest('[role="tab"]') as HTMLElement;
+    const dst = getByTestId('tab-activate-sheet:a101').closest('[role="tab"]') as HTMLElement;
+    expect(src.getAttribute('draggable')).toBe('true');
+    const dt = {
+      effectAllowed: 'all',
+      dropEffect: 'none',
+      setData: () => {},
+      getData: () => '0',
+    };
+    fireEvent.dragStart(src, { dataTransfer: dt });
+    fireEvent.dragOver(dst, { dataTransfer: dt });
+    fireEvent.drop(dst, { dataTransfer: dt });
+    expect(onReorder).toHaveBeenCalledWith(0, 2);
+  });
+
   it('+ button opens add-view popover', () => {
     const onAdd = vi.fn();
     const { getByTestId } = render(

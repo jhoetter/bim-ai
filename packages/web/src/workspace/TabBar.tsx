@@ -30,12 +30,24 @@ export interface TabBarProps {
    * popover. The kind names a target the host should resolve (e.g.
    * "+ Plan" → open the active level as a tab). */
   onAdd?: (kind: TabKind) => void;
+  /** Called when the user drags a tab to a new position. The host
+   * should run the `reorderTab` reducer with the same indices. */
+  onReorder?: (fromIdx: number, toIdx: number) => void;
 }
 
 const ADDABLE_KINDS: TabKind[] = ['plan', '3d', 'plan-3d', 'section', 'sheet', 'schedule', 'agent'];
 
-export function TabBar({ tabs, activeId, onActivate, onClose, onAdd }: TabBarProps): JSX.Element {
+export function TabBar({
+  tabs,
+  activeId,
+  onActivate,
+  onClose,
+  onAdd,
+  onReorder,
+}: TabBarProps): JSX.Element {
   const [popoverOpen, setPopoverOpen] = useState(false);
+  const [dragSrc, setDragSrc] = useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
   const popoverRef = useRef<HTMLDivElement | null>(null);
 
   // Click-outside closes the popover.
@@ -61,9 +73,10 @@ export function TabBar({ tabs, activeId, onActivate, onClose, onAdd }: TabBarPro
       {tabs.length === 0 ? (
         <div className="px-2 pb-1.5 text-xs text-muted">No views open</div>
       ) : null}
-      {tabs.map((tab) => {
+      {tabs.map((tab, idx) => {
         const Icon = TAB_KIND_ICON[tab.kind] ?? Icons.floor!;
         const isActive = tab.id === activeId;
+        const isDragOver = dragOverIdx === idx && dragSrc !== null && dragSrc !== idx;
         const truncated = tab.label.length > 22 ? tab.label.slice(0, 21) + '…' : tab.label;
         return (
           <div
@@ -71,12 +84,46 @@ export function TabBar({ tabs, activeId, onActivate, onClose, onAdd }: TabBarPro
             role="tab"
             aria-selected={isActive}
             data-tab-id={tab.id}
+            data-tab-index={idx}
             data-active={isActive ? 'true' : 'false'}
+            data-drag-over={isDragOver ? 'true' : 'false'}
+            draggable={Boolean(onReorder)}
+            onDragStart={(e) => {
+              if (!onReorder) return;
+              setDragSrc(idx);
+              e.dataTransfer.effectAllowed = 'move';
+              try {
+                e.dataTransfer.setData('text/plain', String(idx));
+              } catch {
+                /* some browsers throw on setData inside synthetic events */
+              }
+            }}
+            onDragOver={(e) => {
+              if (!onReorder || dragSrc === null) return;
+              e.preventDefault();
+              e.dataTransfer.dropEffect = 'move';
+              if (dragOverIdx !== idx) setDragOverIdx(idx);
+            }}
+            onDragLeave={() => {
+              if (dragOverIdx === idx) setDragOverIdx(null);
+            }}
+            onDrop={(e) => {
+              if (!onReorder || dragSrc === null) return;
+              e.preventDefault();
+              if (dragSrc !== idx) onReorder(dragSrc, idx);
+              setDragSrc(null);
+              setDragOverIdx(null);
+            }}
+            onDragEnd={() => {
+              setDragSrc(null);
+              setDragOverIdx(null);
+            }}
             className={[
               'group flex items-center gap-1.5 rounded-t-md border border-b-0 px-2.5 py-1 text-xs transition-colors',
               isActive
                 ? 'border-border bg-background text-foreground'
                 : 'border-transparent bg-surface text-muted hover:bg-surface-strong hover:text-foreground',
+              isDragOver ? 'ring-2 ring-accent ring-offset-0' : '',
             ].join(' ')}
             style={
               isActive

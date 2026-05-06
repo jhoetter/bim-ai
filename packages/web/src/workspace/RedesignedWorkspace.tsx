@@ -48,6 +48,7 @@ import {
   closeTab,
   cycleActive,
   openTab,
+  reorderTab,
   tabFromElement,
   type TabKind,
   type TabsState,
@@ -538,6 +539,7 @@ export function RedesignedWorkspace(): JSX.Element {
                 }
               }}
               onClose={handleTabClose}
+              onReorder={(from, to) => setTabsState((s) => reorderTab(s, from, to))}
               onAdd={(kind) => {
                 const fallback = defaultTabFallbackForKind(kind, elementsById, activeLevelId);
                 if (!fallback) return;
