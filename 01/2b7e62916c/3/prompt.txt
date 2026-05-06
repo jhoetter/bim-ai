@@ -1,0 +1,107 @@
+T1 — FL-01: Family + Type data model
+
+  ▎ git checkout -b fl-01-data-model
+
+  You are working in a BIM (architectural CAD) web app monorepo. Two files to touch:
+    packages/core/src/index.ts          ← extend existing element types
+    packages/web/src/families/types.ts  ← new file to create
+
+  CONTEXT — CURRENT STATE
+  =======================
+  In packages/core/src/index.ts, the `family_type` element today is:
+    {
+      kind: 'family_type';
+      id: string;
+      discipline: 'door' | 'window' | 'generic';
+      parameters: Record<string, unknown>;
+    }
+
+  Door and window elements have `familyTypeId?: string | null` already.
+  Stair and railing elements do not have `overrideParams`.
+
+  TASK — packages/core/src/index.ts
+  ==================================
+  1. Add a FamilyDiscipline type alias above or near the family_type element
+     kind (keep it co-located so readers find it easily):
+       export type FamilyDiscipline =
+         | 'door' | 'window' | 'stair' | 'railing'
+         | 'wall_type' | 'floor_type' | 'roof_type'
+         | 'column' | 'beam'
+         | 'generic';
+
+  2. Extend the `family_type` element kind to:
+       {
+         kind: 'family_type';
+         id: string;
+         name: string;               // "Single Flush : 900×2100"
+         familyId: string;           // e.g. 'door.single-flush'
+         discipline: FamilyDiscipline;
+         parameters: Record<string, unknown>;
+         isBuiltIn?: boolean;        // true = ships with app
+       }
+
+  3. Add `overrideParams?: Record<string, unknown>` to the door, window,
+     stair, and railing element kinds. (Check each kind's shape and add the
+     optional field; do not change any existing fields.)
+
+  TASK — packages/web/src/families/types.ts (CREATE NEW FILE)
+  ============================================================
+  Create the file. It should export these interfaces (used by both the
+  catalog and the renderer — no Three.js imports, pure types):
+
+    import type { FamilyDiscipline } from '@bim-ai/core';
+
+    export interface FamilyParamDef {
+      key:      string;
+      label:    string;
+      type:     'length_mm' | 'angle_deg' | 'material_key' | 'boolean' | 'option';
+      default:  unknown;
+      options?: string[];       // for 'option' type
+      min?:     number;
+      max?:     number;
+      instanceOverridable: boolean;
+    }
+
+    export interface FamilyDefinition {
+      id:           string;   // e.g. 'door.single-flush'
+      name:         string;   // "Single Flush Door"
+      discipline:   FamilyDiscipline;
+      thumbnail?:   string;   // base64 PNG or URL, generated lazily
+      params:       FamilyParamDef[];
+      defaultTypes: {
+        name:       string;
+        familyId:   string;
+        discipline: FamilyDiscipline;
+        parameters: Record<string, unknown>;
+        isBuiltIn:  true;
+      }[];
+    }
+
+    // Parameter resolution: instance override > type params > family default > inline fallback
+    export function resolveParam(
+      key: string,
+      instanceOverrides: Record<string, unknown> | undefined,
+      typeParameters: Record<string, unknown> | undefined,
+      familyDef: FamilyDefinition | undefined,
+      inlineFallback: unknown,
+    ): unknown {
+      return (
+        instanceOverrides?.[key] ??
+        typeParameters?.[key] ??
+        familyDef?.params.find(p => p.key === key)?.default ??
+        inlineFallback
+      );
+    }
+
+  VERIFY
+  ======
+    pnpm --filter core typecheck   (if available) or
+    pnpm --filter web typecheck
+    pnpm --filter web test run
+
+  No new tests are required beyond typecheck passing. If there is a test file
+  for core types, add a smoke-test that FamilyDiscipline includes 'railing'.
+
+---
+
+all commited and pushed?
