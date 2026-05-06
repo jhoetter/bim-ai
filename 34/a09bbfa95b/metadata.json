@@ -3,7 +3,7 @@
   "checkpoint_id": "34a09bbfa95b",
   "strategy": "manual-commit",
   "branch": "feat/wp-ui-b03-plan-camera",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     "app/bim_ai/routes_activity.py",
     "app/bim_ai/routes_api.py",
@@ -18,13 +18,19 @@
       "transcript": "/34/a09bbfa95b/0/full.jsonl",
       "content_hash": "/34/a09bbfa95b/0/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/34/a09bbfa95b/1/metadata.json",
+      "transcript": "/34/a09bbfa95b/1/full.jsonl",
+      "content_hash": "/34/a09bbfa95b/1/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
-    "input_tokens": 18,
-    "cache_creation_tokens": 11781,
-    "cache_read_tokens": 2154977,
-    "output_tokens": 6170,
-    "api_call_count": 18
+    "input_tokens": 61,
+    "cache_creation_tokens": 115931,
+    "cache_read_tokens": 4313648,
+    "output_tokens": 50405,
+    "api_call_count": 55
   }
 }
