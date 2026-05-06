@@ -6,3 +6,7 @@ Agent B: spec/prompts/wave-02/WP-V2-03a-vv-dialog.md → branch feat/wp-v2-03a-v
 ---
 
 all commited and pushed?
+
+---
+
+can you merge it with main?
