@@ -2,13 +2,27 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import { ViewCube } from './ViewCube';
 
+// jsdom does not implement PointerEvent — minimal polyfill for drag tests.
+if (typeof (globalThis as Record<string, unknown>).PointerEvent === 'undefined') {
+  class PointerEvent extends MouseEvent {
+    movementX: number;
+    movementY: number;
+    constructor(type: string, init: MouseEventInit & { movementX?: number; movementY?: number } = {}) {
+      super(type, init);
+      this.movementX = init.movementX ?? 0;
+      this.movementY = init.movementY ?? 0;
+    }
+  }
+  (globalThis as Record<string, unknown>).PointerEvent = PointerEvent;
+}
+
 afterEach(() => {
   cleanup();
 });
 
 describe('<ViewCube /> — spec §15.4', () => {
   it('renders six face buttons', () => {
-    const { getByLabelText } = render(<ViewCube currentAzimuth={0} onPick={() => undefined} />);
+    const { getByLabelText } = render(<ViewCube currentAzimuth={0} currentElevation={0.45} onPick={() => undefined} />);
     for (const face of ['FRONT', 'BACK', 'LEFT', 'RIGHT', 'TOP', 'BOTTOM']) {
       expect(getByLabelText(`Align camera to ${face}`)).toBeTruthy();
     }
@@ -16,7 +30,7 @@ describe('<ViewCube /> — spec §15.4', () => {
 
   it('emits onPick with the right alignment when a face is clicked', () => {
     const onPick = vi.fn();
-    const { getByLabelText } = render(<ViewCube currentAzimuth={0} onPick={onPick} />);
+    const { getByLabelText } = render(<ViewCube currentAzimuth={0} currentElevation={0.45} onPick={onPick} />);
     fireEvent.click(getByLabelText('Align camera to TOP'));
     expect(onPick).toHaveBeenCalled();
     const [pick, alignment] = onPick.mock.calls[0]!;
@@ -28,7 +42,7 @@ describe('<ViewCube /> — spec §15.4', () => {
     const onPick = vi.fn();
     const onHome = vi.fn();
     const { getByLabelText } = render(
-      <ViewCube currentAzimuth={0} onPick={onPick} onHome={onHome} />,
+      <ViewCube currentAzimuth={0} currentElevation={0.45} onPick={onPick} onHome={onHome} />,
     );
     fireEvent.click(getByLabelText('Reset to default view'));
     expect(onPick.mock.calls[0]![0]).toEqual({ kind: 'home' });
@@ -37,17 +51,44 @@ describe('<ViewCube /> — spec §15.4', () => {
 
   it('corner buttons emit corner picks', () => {
     const onPick = vi.fn();
-    const { getByLabelText } = render(<ViewCube currentAzimuth={0} onPick={onPick} />);
+    const { getByLabelText } = render(<ViewCube currentAzimuth={0} currentElevation={0.45} onPick={onPick} />);
     fireEvent.click(getByLabelText('Align camera to TOP-NE'));
     expect(onPick.mock.calls[0]![0]).toEqual({ kind: 'corner', corner: 'TOP-NE' });
   });
 
+  it('drag on stage fires onDrag and suppresses the subsequent click', () => {
+    const onPick = vi.fn();
+    const onDrag = vi.fn();
+    const { getByTestId } = render(
+      <ViewCube currentAzimuth={0} currentElevation={0.45} onPick={onPick} onDrag={onDrag} />,
+    );
+    const stage = getByTestId('view-cube-stage');
+    // pointerdown on the inner stage div kicks off the window drag listeners.
+    fireEvent.pointerDown(stage, { button: 0, clientX: 50, clientY: 50 });
+    // Dispatch window-level pointermove events (large total movement → drag).
+    for (let i = 0; i < 10; i++) {
+      const ev = new Event('pointermove', { bubbles: true }) as PointerEvent & {
+        movementX: number;
+        movementY: number;
+      };
+      Object.defineProperty(ev, 'movementX', { value: 3 });
+      Object.defineProperty(ev, 'movementY', { value: 2 });
+      window.dispatchEvent(ev);
+    }
+    window.dispatchEvent(new Event('pointerup', { bubbles: true }));
+    // onDrag should have been called with movement deltas.
+    expect(onDrag).toHaveBeenCalledWith(3, 2);
+    // onPick should NOT fire on the subsequent click (drag suppresses it).
+    fireEvent.click(stage);
+    expect(onPick).not.toHaveBeenCalled();
+  });
+
   it('compass label reflects currentAzimuth', () => {
     const { getByTestId, rerender } = render(
-      <ViewCube currentAzimuth={0} onPick={() => undefined} />,
+      <ViewCube currentAzimuth={0} currentElevation={0.45} onPick={() => undefined} />,
     );
     expect(getByTestId('view-cube-compass').dataset.cardinal).toBe('N');
-    rerender(<ViewCube currentAzimuth={Math.PI / 2} onPick={() => undefined} />);
+    rerender(<ViewCube currentAzimuth={Math.PI / 2} currentElevation={0.45} onPick={() => undefined} />);
     expect(getByTestId('view-cube-compass').dataset.cardinal).toBe('E');
   });
 });

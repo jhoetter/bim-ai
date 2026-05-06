@@ -480,6 +480,7 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
   } | null>(null);
 
   const [currentAzimuth, setCurrentAzimuth] = useState(Math.PI / 4);
+  const [currentElevation, setCurrentElevation] = useState(0.45);
   const [walkActive, setWalkActive] = useState(false);
   const [sectionBoxActive, setSectionBoxActive] = useState(false);
   const walkControllerRef = useRef<WalkController | null>(null);
@@ -592,6 +593,7 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       camera.up.set(snap.up.x, snap.up.y, snap.up.z).normalize();
       camera.lookAt(snap.target.x, snap.target.y, snap.target.z);
       setCurrentAzimuth(snap.azimuth);
+      setCurrentElevation(snap.elevation);
     }
 
     placeCamera();
@@ -972,6 +974,7 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
     viewerClipElevMm,
     viewerClipFloorElevMm,
     sectionBoxActive,
+    theme,
   ]);
 
   // Sync the section-box controller's `active` flag with React state.
@@ -1012,6 +1015,7 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
         camera.up.set(next.up.x, next.up.y, next.up.z).normalize();
         camera.lookAt(next.target.x, next.target.y, next.target.z);
         setCurrentAzimuth(next.azimuth);
+        setCurrentElevation(next.elevation);
       }
     },
     [],
@@ -1028,7 +1032,21 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       camera.up.set(snap.up.x, snap.up.y, snap.up.z).normalize();
       camera.lookAt(snap.target.x, snap.target.y, snap.target.z);
       setCurrentAzimuth(snap.azimuth);
+      setCurrentElevation(snap.elevation);
     }
+  }, []);
+
+  const handleViewCubeDrag = useCallback((dxPx: number, dyPx: number): void => {
+    const rig = cameraRigRef.current;
+    const camera = cameraRef.current;
+    if (!rig || !camera) return;
+    rig.orbit(dxPx, dyPx);
+    const snap = rig.snapshot();
+    camera.position.set(snap.position.x, snap.position.y, snap.position.z);
+    camera.up.set(snap.up.x, snap.up.y, snap.up.z).normalize();
+    camera.lookAt(snap.target.x, snap.target.y, snap.target.z);
+    setCurrentAzimuth(snap.azimuth);
+    setCurrentElevation(snap.elevation);
   }, []);
 
   return (
@@ -1048,7 +1066,9 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       <div className="pointer-events-auto absolute right-3 top-3 z-20">
         <ViewCube
           currentAzimuth={currentAzimuth}
+          currentElevation={currentElevation}
           onPick={handleViewCubePick}
+          onDrag={handleViewCubeDrag}
           onHome={handleViewCubeHome}
         />
       </div>
