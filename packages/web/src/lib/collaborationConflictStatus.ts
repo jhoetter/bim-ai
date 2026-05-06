@@ -56,9 +56,7 @@ export function formatCollaboration409Status(
   ) {
     const head = typesRaw.slice(0, 8).join(' → ');
     cmdPeek =
-      typesRaw.length > 8
-        ? ` · cmds: ${head} → … (${typesRaw.length} total)`
-        : ` · cmds: ${head}`;
+      typesRaw.length > 8 ? ` · cmds: ${head} → … (${typesRaw.length} total)` : ` · cmds: ${head}`;
   }
 
   let budgetPeek = '';

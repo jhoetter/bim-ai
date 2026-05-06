@@ -6,7 +6,12 @@ import { AuthoringWorkbenchesPanel } from './AuthoringWorkbenchesPanel';
 
 afterEach(() => {
   cleanup();
-  useBimStore.setState({ revision: 0, violations: [], planProjectionPrimitives: null, elementsById: {} });
+  useBimStore.setState({
+    revision: 0,
+    violations: [],
+    planProjectionPrimitives: null,
+    elementsById: {},
+  });
 });
 
 const noop = () => {};

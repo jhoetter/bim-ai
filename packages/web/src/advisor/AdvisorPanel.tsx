@@ -73,7 +73,9 @@ export function AdvisorPanel(props: {
 
         {qf ? (
           <div className="mt-2 rounded border border-border/50 bg-muted/5 p-2">
-            <div className="text-[9px] font-semibold text-muted">{t('advisor.quickFixSummary')}</div>
+            <div className="text-[9px] font-semibold text-muted">
+              {t('advisor.quickFixSummary')}
+            </div>
             <ul className="mt-1 list-inside list-disc font-mono text-[9px] text-muted">
               {qf.map((line) => (
                 <li key={line} className="break-all">

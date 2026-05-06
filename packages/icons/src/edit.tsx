@@ -63,10 +63,7 @@ export const VoidIcon = bimIcon(
 );
 
 // ── Pin: drawing pin locking an element's position ───────────────────────────
-export const PinIcon = bimIcon(
-  'PinIcon',
-  <path d="M9 3H15V9L12 15L9 9z M12 15V21 M9 12H15" />,
-);
+export const PinIcon = bimIcon('PinIcon', <path d="M9 3H15V9L12 15L9 9z M12 15V21 M9 12H15" />);
 
 // ── Unpin: pin with a diagonal release slash ──────────────────────────────────
 export const UnpinIcon = bimIcon(

@@ -4,11 +4,11 @@ import type { ViewportPaintBundle } from '../../viewport/materials';
 import { resolveParam, type FamilyDefinition } from '../types';
 
 export type StairGeomInput = {
-  stair:          Extract<Element, { kind: 'stair' }>;
+  stair: Extract<Element, { kind: 'stair' }>;
   baseLevelElevM: number;
-  topLevelElevM:  number;
-  paint:          ViewportPaintBundle | null;
-  familyDef:      FamilyDefinition | undefined;
+  topLevelElevM: number;
+  paint: ViewportPaintBundle | null;
+  familyDef: FamilyDefinition | undefined;
 };
 
 const FALLBACK_COLOR = '#cbd5e1';
@@ -28,15 +28,18 @@ export function buildStairGeometry(input: StairGeomInput): THREE.Group {
 
   const ip = stair.overrideParams;
   const typeEntry = stair.overrideParams?.familyTypeId
-    ? familyDef?.defaultTypes.find(t => t.id === stair.overrideParams?.familyTypeId)
+    ? familyDef?.defaultTypes.find((t) => t.id === stair.overrideParams?.familyTypeId)
     : undefined;
   const tp = typeEntry?.parameters;
 
-  const widthMm  = THREE.MathUtils.clamp(
-    Number(resolveParam('widthMm',  ip, tp, familyDef, stair.widthMm)),
-    300, 4000,
+  const widthMm = THREE.MathUtils.clamp(
+    Number(resolveParam('widthMm', ip, tp, familyDef, stair.widthMm)),
+    300,
+    4000,
   );
-  const riserMm  = Number(resolveParam('riserMm',  ip, tp, familyDef, stair.riserMm > 0 ? stair.riserMm : 175));
+  const riserMm = Number(
+    resolveParam('riserMm', ip, tp, familyDef, stair.riserMm > 0 ? stair.riserMm : 175),
+  );
   // treadMm is informational; actual tread depth = runLen / riserCount
   Number(resolveParam('treadMm', ip, tp, familyDef, stair.treadMm));
 
@@ -53,13 +56,10 @@ export function buildStairGeometry(input: StairGeomInput): THREE.Group {
 
   const totalRise = Math.max(Math.abs(topLevelElevM - baseLevelElevM), 0.1);
 
-  const riserCount = Math.max(
-    Math.round((totalRise * 1000) / (riserMm > 0 ? riserMm : 175)),
-    2,
-  );
+  const riserCount = Math.max(Math.round((totalRise * 1000) / (riserMm > 0 ? riserMm : 175)), 2);
   const riserH = totalRise / riserCount;
   const treadDepth = runLen / riserCount;
-  const treadThick = 0.040;
+  const treadThick = 0.04;
   const angle = Math.atan2(dz, dx);
 
   const mat = new THREE.MeshStandardMaterial({

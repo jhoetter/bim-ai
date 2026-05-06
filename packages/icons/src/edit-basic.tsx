@@ -8,16 +8,10 @@
 import { bimIcon } from './icon';
 
 // ── Move: element with arrow showing displacement to new position ─────────────
-export const MoveIcon = bimIcon(
-  'MoveIcon',
-  <path d="M5 5H13V13H5z M13 13L19 19 M16 19H19V16" />,
-);
+export const MoveIcon = bimIcon('MoveIcon', <path d="M5 5H13V13H5z M13 13L19 19 M16 19H19V16" />);
 
 // ── Copy: two rectangles, one offset from the other ──────────────────────────
-export const CopyIcon = bimIcon(
-  'CopyIcon',
-  <path d="M4 8H14V18H4z M10 4H20V14H10z" />,
-);
+export const CopyIcon = bimIcon('CopyIcon', <path d="M4 8H14V18H4z M10 4H20V14H10z" />);
 
 // ── Rotate: quarter arc with rotation arrowhead at end ───────────────────────
 export const RotateIcon = bimIcon(
@@ -62,10 +56,7 @@ export const SwitchJoinOrderIcon = bimIcon(
 );
 
 // ── Wall joins: T-junction of two wall lines showing a join node ──────────────
-export const WallJoinsIcon = bimIcon(
-  'WallJoinsIcon',
-  <path d="M2 11H22V13H2z M11 2H13V11H11z" />,
-);
+export const WallJoinsIcon = bimIcon('WallJoinsIcon', <path d="M2 11H22V13H2z M11 2H13V11H11z" />);
 
 // ── Paint material: roller applying a finish to a surface ────────────────────
 export const PaintMaterialIcon = bimIcon(

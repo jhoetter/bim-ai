@@ -57,7 +57,9 @@ describe('indexViewportEvidenceHints', () => {
         roomProgrammeLegendDocumentationSegment: 'roomLegDoc[n=1 sha=a]',
       },
     ]);
-    expect(String(m.get('vp-leg')?.roomProgrammeLegendDocumentationSegment)).toContain('roomLegDoc');
+    expect(String(m.get('vp-leg')?.roomProgrammeLegendDocumentationSegment)).toContain(
+      'roomLegDoc',
+    );
   });
 
   it('indexes detail callout documentation segment', () => {
@@ -149,9 +151,7 @@ describe('extractPlanSheetViewportPlacementEvidence', () => {
   });
 
   it('skips rows with wrong format', () => {
-    const rows = extractPlanSheetViewportPlacementEvidence([
-      makeRow({ format: 'other_format' }),
-    ]);
+    const rows = extractPlanSheetViewportPlacementEvidence([makeRow({ format: 'other_format' })]);
     expect(rows).toEqual([]);
   });
 
@@ -179,7 +179,9 @@ describe('extractPlanSheetViewportPlacementEvidence', () => {
   });
 
   it('returns intersectClampToken', () => {
-    const rows = extractPlanSheetViewportPlacementEvidence([makeRow({ intersectClampToken: 'clamped' })]);
+    const rows = extractPlanSheetViewportPlacementEvidence([
+      makeRow({ intersectClampToken: 'clamped' }),
+    ]);
     expect(rows[0].intersectClampToken).toBe('clamped');
   });
 });

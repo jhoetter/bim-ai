@@ -40,7 +40,9 @@ export function boundaryMmFromAnchorSize(anchor: XY, widthMm: number, depthMm: n
   ];
 }
 
-export function boundaryAxisAlignedBoxMm(boundary: XY[]): { anchor: XY; widthMm: number; depthMm: number } | null {
+export function boundaryAxisAlignedBoxMm(
+  boundary: XY[],
+): { anchor: XY; widthMm: number; depthMm: number } | null {
   if (boundary.length < 3) return null;
   let minX = boundary[0]!.xMm;
   let minY = boundary[0]!.yMm;

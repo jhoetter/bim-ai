@@ -66,7 +66,11 @@ export function RedesignedCommandPalette({
         className="overflow-hidden rounded-xl border border-border bg-surface shadow-elev-3"
         style={{ width: 560, maxHeight: '60vh', display: 'flex', flexDirection: 'column' }}
       >
-        <Command label={t('cmd.commandsLabel')} shouldFilter={false} className="flex flex-1 flex-col">
+        <Command
+          label={t('cmd.commandsLabel')}
+          shouldFilter={false}
+          className="flex flex-1 flex-col"
+        >
           <div className="flex items-center gap-2 border-b border-border px-3 py-2">
             <Icons.commandPalette
               size={ICON_SIZE.toolPalette}
@@ -91,7 +95,9 @@ export function RedesignedCommandPalette({
           </div>
           <Command.List className="flex-1 overflow-y-auto px-2 py-2">
             {query === '' ? <EmptyHints /> : null}
-            <Command.Empty className="px-3 py-3 text-sm text-muted">{t('cmd.noMatches')}</Command.Empty>
+            <Command.Empty className="px-3 py-3 text-sm text-muted">
+              {t('cmd.noMatches')}
+            </Command.Empty>
             {query !== '' && ranked.length > 0 ? (
               <Command.Group heading={t('cmd.resultsGroup')}>
                 {ranked.map((r) => (

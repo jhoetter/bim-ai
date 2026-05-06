@@ -36,13 +36,12 @@ function renderFreshnessSummary(
         <div className="text-muted">Evidence freshness (ingestEvidenceArtifactManifest_v1)</div>
         <ul>
           <li>
-            fresh:{' '}
-            <strong data-testid="freshness-fresh-count">{freshness.freshCount}</strong>
+            fresh: <strong data-testid="freshness-fresh-count">{freshness.freshCount}</strong>
             {' / '}stale:{' '}
             <strong data-testid="freshness-stale-count">{freshness.staleCount}</strong>
             {' / '}missing:{' '}
-            <strong data-testid="freshness-missing-count">{freshness.missingCount}</strong>
-            {' '}(total: <strong>{freshness.totalCount}</strong>)
+            <strong data-testid="freshness-missing-count">{freshness.missingCount}</strong> (total:{' '}
+            <strong>{freshness.totalCount}</strong>)
           </li>
         </ul>
         {guidance && guidance.length > 0 ? (
@@ -51,9 +50,9 @@ function renderFreshnessSummary(
             <ul data-testid="regeneration-guidance-checklist">
               {guidance.map((action, idx) => (
                 <li key={idx}>
-                  <span>[{action.priority}]</span>{' '}
-                  <code>{action.artifactKey}</code>
-                  {' — '}{action.reason}
+                  <span>[{action.priority}]</span> <code>{action.artifactKey}</code>
+                  {' — '}
+                  {action.reason}
                   <div>
                     <code>$ {action.suggestedCommand}</code>
                   </div>

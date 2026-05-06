@@ -18,9 +18,7 @@ import {
 function isLayeredTypeElement(
   el: Element | undefined,
 ): el is Extract<Element, { kind: 'wall_type' | 'floor_type' | 'roof_type' }> {
-  return (
-    el?.kind === 'wall_type' || el?.kind === 'floor_type' || el?.kind === 'roof_type'
-  );
+  return el?.kind === 'wall_type' || el?.kind === 'floor_type' || el?.kind === 'roof_type';
 }
 
 type Props = {
@@ -78,9 +76,7 @@ export function MaterialLayerStackWorkbench({
   const typeAuthoring = readout.mode === 'type_element' && isLayeredTypeElement(selected);
 
   const updateDraft = (index: number, patch: Partial<LayerAuthoringDraftRow>) => {
-    setDraftRows((prev) =>
-      prev.map((row) => (row.index === index ? { ...row, ...patch } : row)),
-    );
+    setDraftRows((prev) => prev.map((row) => (row.index === index ? { ...row, ...patch } : row)));
   };
 
   const handleApply = () => {
@@ -115,8 +111,7 @@ export function MaterialLayerStackWorkbench({
         {readout.skipReason ? (
           <>
             {' '}
-            ·{' '}
-            <span className="text-amber-600 dark:text-amber-400">{readout.skipReason}</span>
+            · <span className="text-amber-600 dark:text-amber-400">{readout.skipReason}</span>
           </>
         ) : null}
       </div>
@@ -196,7 +191,9 @@ export function MaterialLayerStackWorkbench({
                       className="text-[10px] text-muted hover:text-destructive"
                       onClick={() =>
                         setDraftRows((prev) =>
-                          prev.filter((r) => r.index !== row.index).map((r, i) => ({ ...r, index: i })),
+                          prev
+                            .filter((r) => r.index !== row.index)
+                            .map((r, i) => ({ ...r, index: i })),
                         )
                       }
                     >

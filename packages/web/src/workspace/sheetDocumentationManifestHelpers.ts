@@ -143,11 +143,17 @@ export function extractPlanSheetViewportPlacementEvidence(
 /** Label for intersect/clamp token, used in UI display. */
 export function planOnSheetTokenLabel(token: string): string {
   switch (token) {
-    case 'inside': return 'inside';
-    case 'clamped': return 'clamped';
-    case 'crop_missing': return 'crop missing';
-    case 'viewport_zero_extent': return 'viewport zero extent';
-    case 'crop_inverted': return 'crop inverted';
-    default: return token;
+    case 'inside':
+      return 'inside';
+    case 'clamped':
+      return 'clamped';
+    case 'crop_missing':
+      return 'crop missing';
+    case 'viewport_zero_extent':
+      return 'viewport zero extent';
+    case 'crop_inverted':
+      return 'crop inverted';
+    default:
+      return token;
   }
 }

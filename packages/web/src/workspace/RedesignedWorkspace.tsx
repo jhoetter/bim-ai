@@ -37,7 +37,13 @@ import {
   type CollaborationConflictQueueV1,
 } from '../lib/collaborationConflictQueue';
 import type { Snapshot, Violation } from '@bim-ai/core';
-import { useBimStore, toggleTheme, getCurrentTheme, type Theme, type UxComment } from '../state/store';
+import {
+  useBimStore,
+  toggleTheme,
+  getCurrentTheme,
+  type Theme,
+  type UxComment,
+} from '../state/store';
 import type { PerspectiveId } from '@bim-ai/core';
 import { modeForHotkey } from '../state/modeController';
 import { patternFor } from '../state/uiStates';
@@ -238,7 +244,11 @@ export function RedesignedWorkspace(): JSX.Element {
     useState<CollaborationConflictQueueV1 | null>(null);
   const [projectMenuOpen, setProjectMenuOpen] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
-  const [codePresetIds, setCodePresetIds] = useState<string[]>(['residential', 'commercial', 'office']);
+  const [codePresetIds, setCodePresetIds] = useState<string[]>([
+    'residential',
+    'commercial',
+    'office',
+  ]);
   const [undoDepth, setUndoDepth] = useState(0);
   const [wsOn, setWsOn] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
@@ -258,7 +268,7 @@ export function RedesignedWorkspace(): JSX.Element {
   /* ── Tab helpers (§11.3) ──────────────────────────────────────────── */
   const activeTab: ViewTab | null = useMemo(
     () =>
-      tabsState.activeId ? tabsState.tabs.find((t) => t.id === tabsState.activeId) ?? null : null,
+      tabsState.activeId ? (tabsState.tabs.find((t) => t.id === tabsState.activeId) ?? null) : null,
     [tabsState],
   );
 
@@ -425,7 +435,9 @@ export function RedesignedWorkspace(): JSX.Element {
             elements: r.elements ?? {},
             violations: (r.violations ?? []) as Violation[],
           });
-          syncLastLevelElevationPropagationFromApplyResponse(r as Parameters<typeof syncLastLevelElevationPropagationFromApplyResponse>[0]);
+          syncLastLevelElevationPropagationFromApplyResponse(
+            r as Parameters<typeof syncLastLevelElevationPropagationFromApplyResponse>[0],
+          );
           setUndoDepth((d) => d + 1);
         }
         setCollaborationConflictQueue(null);
@@ -457,20 +469,24 @@ export function RedesignedWorkspace(): JSX.Element {
             elements: r.elements ?? {},
             violations: (r.violations ?? []) as Violation[],
           });
-          syncLastLevelElevationPropagationFromApplyResponse(r as Parameters<typeof syncLastLevelElevationPropagationFromApplyResponse>[0]);
+          syncLastLevelElevationPropagationFromApplyResponse(
+            r as Parameters<typeof syncLastLevelElevationPropagationFromApplyResponse>[0],
+          );
           setUndoDepth((d) => Math.max(0, d + (isUndo ? -1 : 1)));
         }
         // Refresh activity after undo/redo
-        fetchActivity(mid).then((a) => {
-          const evs = ((a.events ?? []) as Record<string, unknown>[]).map((ev) => ({
-            id: Number(ev.id),
-            userId: String(ev.userId ?? ev.user_id ?? ''),
-            revisionAfter: Number(ev.revisionAfter ?? ev.revision_after ?? 0),
-            createdAt: String(ev.createdAt ?? ev.created_at ?? ''),
-            commandTypes: Array.isArray(ev.commandTypes) ? ev.commandTypes.map(String) : [],
-          }));
-          setActivity(evs);
-        }).catch(() => {});
+        fetchActivity(mid)
+          .then((a) => {
+            const evs = ((a.events ?? []) as Record<string, unknown>[]).map((ev) => ({
+              id: Number(ev.id),
+              userId: String(ev.userId ?? ev.user_id ?? ''),
+              revisionAfter: Number(ev.revisionAfter ?? ev.revision_after ?? 0),
+              createdAt: String(ev.createdAt ?? ev.created_at ?? ''),
+              commandTypes: Array.isArray(ev.commandTypes) ? ev.commandTypes.map(String) : [],
+            }));
+            setActivity(evs);
+          })
+          .catch(() => {});
         setCollaborationConflictQueue(null);
       } catch (err) {
         if (err instanceof ApiHttpError && err.status === 409) {
@@ -538,19 +554,23 @@ export function RedesignedWorkspace(): JSX.Element {
       const snap = (await snapRes.json()) as Snapshot;
       hydrateFromSnapshot(snap);
       // Fetch supporting data
-      fetchActivity(mid).then((a) => {
-        const evs = ((a.events ?? []) as Record<string, unknown>[]).map((ev) => ({
-          id: Number(ev.id),
-          userId: String(ev.userId ?? ev.user_id ?? ''),
-          revisionAfter: Number(ev.revisionAfter ?? ev.revision_after ?? 0),
-          createdAt: String(ev.createdAt ?? ev.created_at ?? ''),
-          commandTypes: Array.isArray(ev.commandTypes) ? ev.commandTypes.map(String) : [],
-        }));
-        setActivity(evs);
-      }).catch(() => {});
-      fetchComments(mid).then((c) => {
-        setComments(mapComments((c.comments ?? []) as Record<string, unknown>[]));
-      }).catch(() => {});
+      fetchActivity(mid)
+        .then((a) => {
+          const evs = ((a.events ?? []) as Record<string, unknown>[]).map((ev) => ({
+            id: Number(ev.id),
+            userId: String(ev.userId ?? ev.user_id ?? ''),
+            revisionAfter: Number(ev.revisionAfter ?? ev.revision_after ?? 0),
+            createdAt: String(ev.createdAt ?? ev.created_at ?? ''),
+            commandTypes: Array.isArray(ev.commandTypes) ? ev.commandTypes.map(String) : [],
+          }));
+          setActivity(evs);
+        })
+        .catch(() => {});
+      fetchComments(mid)
+        .then((c) => {
+          setComments(mapComments((c.comments ?? []) as Record<string, unknown>[]));
+        })
+        .catch(() => {});
       // Open WebSocket for real-time collaboration
       const disableWs =
         typeof import.meta.env.VITE_E2E_DISABLE_WS === 'string' &&
@@ -572,7 +592,9 @@ export function RedesignedWorkspace(): JSX.Element {
             if (dd) applyDelta(dd);
           } else if (t === 'presence_state') {
             const pl = payload.payload as Record<string, unknown> | undefined;
-            const px = ((pl?.peers as Record<string, unknown>) ?? {}) as Parameters<typeof setPresencePeers>[0];
+            const px = ((pl?.peers as Record<string, unknown>) ?? {}) as Parameters<
+              typeof setPresencePeers
+            >[0];
             setPresencePeers(px);
           } else if (t === 'comment_event') {
             const w = payload.payload as Record<string, unknown> | undefined;
@@ -590,7 +612,9 @@ export function RedesignedWorkspace(): JSX.Element {
 
   useEffect(() => {
     void fetchBuildingPresets()
-      .then((ids) => { if (ids.length) setCodePresetIds(ids); })
+      .then((ids) => {
+        if (ids.length) setCodePresetIds(ids);
+      })
       .catch(() => {});
   }, []);
 
@@ -598,7 +622,10 @@ export function RedesignedWorkspace(): JSX.Element {
     const isEmpty = Object.keys(elementsById).length === 0;
     if (!isEmpty) return;
     void insertSeedHouse();
-    return () => { wsRef.current?.close(); wsRef.current = null; };
+    return () => {
+      wsRef.current?.close();
+      wsRef.current = null;
+    };
     // Run-once bootstrap: re-running is the user's job via the empty-state CTA.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -609,14 +636,16 @@ export function RedesignedWorkspace(): JSX.Element {
       const ws = wsRef.current;
       if (!ws || ws.readyState !== WebSocket.OPEN) return;
       const st = useBimStore.getState();
-      ws.send(JSON.stringify({
-        type: 'presence_update',
-        peerId: st.peerId,
-        userId: st.userId,
-        name: st.userDisplayName,
-        selectionId: st.selectedId,
-        viewer: st.viewerMode,
-      }));
+      ws.send(
+        JSON.stringify({
+          type: 'presence_update',
+          peerId: st.peerId,
+          userId: st.userId,
+          name: st.userDisplayName,
+          selectionId: st.selectedId,
+          viewer: st.viewerMode,
+        }),
+      );
     }, 2300);
     return () => window.clearInterval(id);
   }, []);
@@ -818,7 +847,9 @@ export function RedesignedWorkspace(): JSX.Element {
             label: 'Floor Types',
             children: [
               ...(Object.values(elementsById) as Element[])
-                .filter((e): e is Extract<Element, { kind: 'floor_type' }> => e.kind === 'floor_type')
+                .filter(
+                  (e): e is Extract<Element, { kind: 'floor_type' }> => e.kind === 'floor_type',
+                )
                 .map((t) => ({ id: t.id, label: t.name, hint: `${t.layers.length} layers` })),
               { id: 'new-floor-type', label: '+ New Floor Type' },
             ],
@@ -840,18 +871,20 @@ export function RedesignedWorkspace(): JSX.Element {
         label: 'Families',
         rows: (['door', 'window', 'stair', 'railing'] as const)
           .map((disc) => {
-            const discLabel = ({ door: 'Doors', window: 'Windows', stair: 'Stairs', railing: 'Railings' } as const)[disc];
+            const discLabel = (
+              { door: 'Doors', window: 'Windows', stair: 'Stairs', railing: 'Railings' } as const
+            )[disc];
             const customOfDisc = (Object.values(elementsById) as Element[]).filter(
               (e): e is Extract<Element, { kind: 'family_type' }> =>
                 e.kind === 'family_type' && e.discipline === disc,
             );
-            const builtInRows = BUILT_IN_FAMILIES
-              .filter((f) => f.discipline === disc)
-              .map((fam) => ({
+            const builtInRows = BUILT_IN_FAMILIES.filter((f) => f.discipline === disc).map(
+              (fam) => ({
                 id: fam.id,
                 label: fam.name,
                 children: fam.defaultTypes.map((t) => ({ id: t.id, label: t.name })),
-              }));
+              }),
+            );
             const customRows = customOfDisc.map((ct) => ({
               id: ct.id,
               label: String(ct.parameters.name ?? ct.id),
@@ -887,7 +920,10 @@ export function RedesignedWorkspace(): JSX.Element {
         scheduleHydratedRowCount: null,
         scheduleHydratedTab: null,
       });
-      console.debug('[bim] rendering budget:', formatBrowserRenderingBudgetLines(readout).join(' | '));
+      console.debug(
+        '[bim] rendering budget:',
+        formatBrowserRenderingBudgetLines(readout).join(' | '),
+      );
       const bad = readout.rows.filter(
         (r) => r.progressiveState === 'deferred' || r.progressiveState === 'over_budget',
       );
@@ -1022,7 +1058,12 @@ export function RedesignedWorkspace(): JSX.Element {
     items.push(
       { id: 'settings.theme.light', kind: 'setting', label: 'Theme: light', keywords: 'light' },
       { id: 'settings.theme.dark', kind: 'setting', label: 'Theme: dark', keywords: 'dark' },
-      { id: 'settings.language.toggle', kind: 'setting', label: t('cmd.language'), keywords: 'language lang sprache' },
+      {
+        id: 'settings.language.toggle',
+        kind: 'setting',
+        label: t('cmd.language'),
+        keywords: 'language lang sprache',
+      },
     );
     // Agent
     items.push({ id: 'agent.review', kind: 'agent', label: 'Run Agent Review' });
@@ -1135,7 +1176,9 @@ export function RedesignedWorkspace(): JSX.Element {
                 onPerspectiveChange={(v) => setPerspectiveId(v as PerspectiveId)}
                 planStyleOptions={PLAN_STYLE_OPTIONS}
                 planStyleValue={planPresentationPreset}
-                onPlanStyleChange={(v) => setPlanPresentationPreset(v as 'default' | 'opening_focus' | 'room_scheme')}
+                onPlanStyleChange={(v) =>
+                  setPlanPresentationPreset(v as 'default' | 'opening_focus' | 'room_scheme')
+                }
               />
             </div>
             <TabBar
@@ -1178,100 +1221,107 @@ export function RedesignedWorkspace(): JSX.Element {
               />
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto">
-            <LeftRail
-              sections={browserSections}
-              activeRowId={activeFamilyTypeId ?? activeLevelId}
-            onRowActivate={(id) => {
-              // "New type" action rows in the Types browser section.
-              if (id === 'new-wall-type') {
-                void onSemanticCommand({
-                  type: 'upsertWallType',
-                  id: crypto.randomUUID(),
-                  name: 'New Wall Type',
-                  basisLine: 'center',
-                  layers: [{ thicknessMm: 200, function: 'structure', materialKey: '' }],
-                });
-                return;
-              }
-              if (id === 'new-floor-type') {
-                void onSemanticCommand({
-                  type: 'upsertFloorType',
-                  id: crypto.randomUUID(),
-                  name: 'New Floor Type',
-                  layers: [{ thicknessMm: 200, function: 'structure', materialKey: '' }],
-                });
-                return;
-              }
-              if (id === 'new-roof-type') {
-                void onSemanticCommand({
-                  type: 'upsertRoofType',
-                  id: crypto.randomUUID(),
-                  name: 'New Roof Type',
-                  layers: [{ thicknessMm: 200, function: 'structure', materialKey: '' }],
-                });
-                return;
-              }
-              // Family type rows — assign to the currently selected compatible element.
-              const pickedType = BUILT_IN_FAMILIES.flatMap((f) => f.defaultTypes).find((t) => t.id === id);
-              if (pickedType) {
-                if (selectedId) {
-                  const selEl = elementsById[selectedId];
-                  if (selEl && selEl.kind === pickedType.discipline) {
-                    void onSemanticCommand({ type: 'updateElementProperty', elementId: selectedId, key: 'familyTypeId', value: id });
+              <LeftRail
+                sections={browserSections}
+                activeRowId={activeFamilyTypeId ?? activeLevelId}
+                onRowActivate={(id) => {
+                  // "New type" action rows in the Types browser section.
+                  if (id === 'new-wall-type') {
+                    void onSemanticCommand({
+                      type: 'upsertWallType',
+                      id: crypto.randomUUID(),
+                      name: 'New Wall Type',
+                      basisLine: 'center',
+                      layers: [{ thicknessMm: 200, function: 'structure', materialKey: '' }],
+                    });
+                    return;
                   }
-                }
-                return;
-              }
+                  if (id === 'new-floor-type') {
+                    void onSemanticCommand({
+                      type: 'upsertFloorType',
+                      id: crypto.randomUUID(),
+                      name: 'New Floor Type',
+                      layers: [{ thicknessMm: 200, function: 'structure', materialKey: '' }],
+                    });
+                    return;
+                  }
+                  if (id === 'new-roof-type') {
+                    void onSemanticCommand({
+                      type: 'upsertRoofType',
+                      id: crypto.randomUUID(),
+                      name: 'New Roof Type',
+                      layers: [{ thicknessMm: 200, function: 'structure', materialKey: '' }],
+                    });
+                    return;
+                  }
+                  // Family type rows — assign to the currently selected compatible element.
+                  const pickedType = BUILT_IN_FAMILIES.flatMap((f) => f.defaultTypes).find(
+                    (t) => t.id === id,
+                  );
+                  if (pickedType) {
+                    if (selectedId) {
+                      const selEl = elementsById[selectedId];
+                      if (selEl && selEl.kind === pickedType.discipline) {
+                        void onSemanticCommand({
+                          type: 'updateElementProperty',
+                          elementId: selectedId,
+                          key: 'familyTypeId',
+                          value: id,
+                        });
+                      }
+                    }
+                    return;
+                  }
 
-              const el = elementsById[id];
-              if (!el) {
-                // Levels nest under "project" → "levels"; check the nested children.
-                const isLevel = browserSections
-                  .find((s) => s.id === 'project')
-                  ?.rows.find((r) => r.id === 'levels')
-                  ?.children?.some((c) => c.id === id);
-                if (isLevel) setActiveLevelId(id);
-                return;
-              }
-              if (el.kind === 'level') {
-                setActiveLevelId(id);
-                openTabFromElement(el);
-                handleModeChange('plan');
-                return;
-              }
-              if (el.kind === 'plan_view') {
-                openTabFromElement(el);
-                handleModeChange('plan');
-                select(id);
-                return;
-              }
-              if (el.kind === 'viewpoint') {
-                openTabFromElement(el);
-                handleModeChange('3d');
-                select(id);
-                return;
-              }
-              if (el.kind === 'section_cut') {
-                openTabFromElement(el);
-                handleModeChange('section');
-                select(id);
-                return;
-              }
-              if (el.kind === 'sheet') {
-                openTabFromElement(el);
-                handleModeChange('sheet');
-                select(id);
-                return;
-              }
-              if (el.kind === 'schedule') {
-                openTabFromElement(el);
-                handleModeChange('schedule');
-                select(id);
-                return;
-              }
-              select(id);
-            }}
-            />
+                  const el = elementsById[id];
+                  if (!el) {
+                    // Levels nest under "project" → "levels"; check the nested children.
+                    const isLevel = browserSections
+                      .find((s) => s.id === 'project')
+                      ?.rows.find((r) => r.id === 'levels')
+                      ?.children?.some((c) => c.id === id);
+                    if (isLevel) setActiveLevelId(id);
+                    return;
+                  }
+                  if (el.kind === 'level') {
+                    setActiveLevelId(id);
+                    openTabFromElement(el);
+                    handleModeChange('plan');
+                    return;
+                  }
+                  if (el.kind === 'plan_view') {
+                    openTabFromElement(el);
+                    handleModeChange('plan');
+                    select(id);
+                    return;
+                  }
+                  if (el.kind === 'viewpoint') {
+                    openTabFromElement(el);
+                    handleModeChange('3d');
+                    select(id);
+                    return;
+                  }
+                  if (el.kind === 'section_cut') {
+                    openTabFromElement(el);
+                    handleModeChange('section');
+                    select(id);
+                    return;
+                  }
+                  if (el.kind === 'sheet') {
+                    openTabFromElement(el);
+                    handleModeChange('sheet');
+                    select(id);
+                    return;
+                  }
+                  if (el.kind === 'schedule') {
+                    openTabFromElement(el);
+                    handleModeChange('schedule');
+                    select(id);
+                    return;
+                  }
+                  select(id);
+                }}
+              />
             </div>
           </div>
         }
@@ -1299,14 +1349,16 @@ export function RedesignedWorkspace(): JSX.Element {
               viewerMode={viewerMode}
               activeLevelId={
                 activeTab?.kind === 'plan' || activeTab?.kind === 'plan-3d'
-                  ? activeTab.targetId ?? activeLevelId ?? ''
-                  : activeLevelId ?? ''
+                  ? (activeTab.targetId ?? activeLevelId ?? '')
+                  : (activeLevelId ?? '')
               }
               elementsById={elementsById}
               onSemanticCommand={(cmd) => void onSemanticCommand(cmd)}
               cameraHandleRef={planCameraHandleRef}
               initialCamera={activeTab?.viewportState?.planCamera}
-              preferredSheetId={activeTab?.kind === 'sheet' ? (activeTab.targetId ?? undefined) : undefined}
+              preferredSheetId={
+                activeTab?.kind === 'sheet' ? (activeTab.targetId ?? undefined) : undefined
+              }
               modelId={modelId ?? undefined}
               wsOn={wsOn}
               onPersistViewpointField={persistViewpointField}
@@ -1336,10 +1388,18 @@ export function RedesignedWorkspace(): JSX.Element {
                             revision={revision}
                             onPersistProperty={(key, value) => {
                               if (key === '__applyTemplate__') {
-                                const p = JSON.parse(value) as { planViewId: string; templateId: string };
+                                const p = JSON.parse(value) as {
+                                  planViewId: string;
+                                  templateId: string;
+                                };
                                 void onSemanticCommand({ type: 'applyPlanViewTemplate', ...p });
                               } else {
-                                void onSemanticCommand({ type: 'updateElementProperty', elementId: el.id, key, value });
+                                void onSemanticCommand({
+                                  type: 'updateElementProperty',
+                                  elementId: el.id,
+                                  key,
+                                  value,
+                                });
                               }
                             }}
                           />
@@ -1349,7 +1409,12 @@ export function RedesignedWorkspace(): JSX.Element {
                           el={el}
                           revision={revision}
                           onPersistProperty={(key, value) =>
-                            void onSemanticCommand({ type: 'updateElementProperty', elementId: el.id, key, value })
+                            void onSemanticCommand({
+                              type: 'updateElementProperty',
+                              elementId: el.id,
+                              key,
+                              value,
+                            })
                           }
                         />
                       ) : el.kind === 'viewpoint' ? (
@@ -1357,7 +1422,12 @@ export function RedesignedWorkspace(): JSX.Element {
                           el={el}
                           revision={revision}
                           onPersistProperty={(key, value) =>
-                            void onSemanticCommand({ type: 'updateElementProperty', elementId: el.id, key, value })
+                            void onSemanticCommand({
+                              type: 'updateElementProperty',
+                              elementId: el.id,
+                              key,
+                              value,
+                            })
                           }
                         />
                       ) : el.kind === 'view_template' ? (
@@ -1365,7 +1435,12 @@ export function RedesignedWorkspace(): JSX.Element {
                           el={el}
                           revision={revision}
                           onPersistProperty={(key, value) =>
-                            void onSemanticCommand({ type: 'updateElementProperty', elementId: el.id, key, value })
+                            void onSemanticCommand({
+                              type: 'updateElementProperty',
+                              elementId: el.id,
+                              key,
+                              value,
+                            })
                           }
                         />
                       ) : el.kind === 'door' ? (
@@ -1374,10 +1449,19 @@ export function RedesignedWorkspace(): JSX.Element {
                           revision={revision}
                           elementsById={elementsById}
                           onPersistProperty={(key, value) =>
-                            void onSemanticCommand({ type: 'updateElementProperty', elementId: el.id, key, value })
+                            void onSemanticCommand({
+                              type: 'updateElementProperty',
+                              elementId: el.id,
+                              key,
+                              value,
+                            })
                           }
                           onCreateType={(_baseFamilyId, _name, params) =>
-                            void onSemanticCommand({ type: 'upsertFamilyType', discipline: 'door', parameters: params })
+                            void onSemanticCommand({
+                              type: 'upsertFamilyType',
+                              discipline: 'door',
+                              parameters: params,
+                            })
                           }
                         />
                       ) : el.kind === 'window' ? (
@@ -1386,17 +1470,31 @@ export function RedesignedWorkspace(): JSX.Element {
                           revision={revision}
                           elementsById={elementsById}
                           onPersistProperty={(key, value) =>
-                            void onSemanticCommand({ type: 'updateElementProperty', elementId: el.id, key, value })
+                            void onSemanticCommand({
+                              type: 'updateElementProperty',
+                              elementId: el.id,
+                              key,
+                              value,
+                            })
                           }
                           onCreateType={(_baseFamilyId, _name, params) =>
-                            void onSemanticCommand({ type: 'upsertFamilyType', discipline: 'window', parameters: params })
+                            void onSemanticCommand({
+                              type: 'upsertFamilyType',
+                              discipline: 'window',
+                              parameters: params,
+                            })
                           }
                         />
                       ) : (
                         InspectorPropertiesFor(el, t, {
                           elementsById,
                           onPropertyChange: (property, value) =>
-                            void onSemanticCommand({ type: 'updateElementProperty', elementId: el.id, key: property, value }),
+                            void onSemanticCommand({
+                              type: 'updateElementProperty',
+                              elementId: el.id,
+                              key: property,
+                              value,
+                            }),
                         })
                       )
                     ) : (
@@ -1480,7 +1578,9 @@ export function RedesignedWorkspace(): JSX.Element {
                 />
               </div>
               <div className="border-t border-border p-3">
-                <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted">{t('advisor.heading')}</div>
+                <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted">
+                  {t('advisor.heading')}
+                </div>
                 <AdvisorPanel
                   violations={violations}
                   selectionId={selectedId ?? undefined}
@@ -1493,7 +1593,9 @@ export function RedesignedWorkspace(): JSX.Element {
               </div>
               {activityEvents.length > 0 ? (
                 <div className="border-t border-border p-3">
-                  <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted">{t('activity.heading')}</div>
+                  <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted">
+                    {t('activity.heading')}
+                  </div>
                   <ul className="space-y-1 text-[11px] text-muted">
                     {activityEvents.map((a) => (
                       <li key={a.id}>
@@ -1587,7 +1689,11 @@ function CanvasMount({
   preferredSheetId?: string;
   modelId?: string;
   wsOn?: boolean;
-  onPersistViewpointField?: (p: { elementId: string; key: string; value: string }) => void | Promise<void>;
+  onPersistViewpointField?: (p: {
+    elementId: string;
+    key: string;
+    value: string;
+  }) => void | Promise<void>;
 }): JSX.Element {
   if (mode === 'plan-3d') {
     return (
@@ -1609,7 +1715,10 @@ function CanvasMount({
       </div>
     );
   }
-  if (mode === '3d') return <Viewport wsConnected={wsOn ?? false} onPersistViewpointField={onPersistViewpointField} />;
+  if (mode === '3d')
+    return (
+      <Viewport wsConnected={wsOn ?? false} onPersistViewpointField={onPersistViewpointField} />
+    );
   if (mode === 'plan')
     return (
       <PlanCanvas
@@ -1620,11 +1729,12 @@ function CanvasMount({
         initialCamera={initialCamera}
       />
     );
-  if (mode === 'section') return <SectionModeShell activeLevelLabel={activeLevelId} modelId={modelId} />;
-  if (mode === 'sheet') return <SheetModeShell elementsById={elementsById} preferredSheetId={preferredSheetId} />;
+  if (mode === 'section')
+    return <SectionModeShell activeLevelLabel={activeLevelId} modelId={modelId} />;
+  if (mode === 'sheet')
+    return <SheetModeShell elementsById={elementsById} preferredSheetId={preferredSheetId} />;
   if (mode === 'schedule') return <ScheduleModeShell elementsById={elementsById} />;
-  if (mode === 'agent')
-    return <AgentReviewModeShell onApplyQuickFix={onSemanticCommand} />;
+  if (mode === 'agent') return <AgentReviewModeShell onApplyQuickFix={onSemanticCommand} />;
   return viewerMode === 'orbit_3d' ? (
     <Viewport wsConnected={wsOn ?? false} onPersistViewpointField={onPersistViewpointField} />
   ) : (

@@ -109,9 +109,15 @@ export type EvidenceRef = {
 };
 
 export type FamilyDiscipline =
-  | 'door' | 'window' | 'stair' | 'railing'
-  | 'wall_type' | 'floor_type' | 'roof_type'
-  | 'column' | 'beam'
+  | 'door'
+  | 'window'
+  | 'stair'
+  | 'railing'
+  | 'wall_type'
+  | 'floor_type'
+  | 'roof_type'
+  | 'column'
+  | 'beam'
   | 'generic';
 
 export type Element =

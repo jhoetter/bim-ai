@@ -33,7 +33,9 @@ export function formatElevationMmReadout(mm: number): string {
   return String(n);
 }
 
-export function countPlanViewsByLevelId(elementsById: Record<string, Element>): Map<string, number> {
+export function countPlanViewsByLevelId(
+  elementsById: Record<string, Element>,
+): Map<string, number> {
   const m = new Map<string, number>();
   for (const el of Object.values(elementsById)) {
     if (el.kind !== 'plan_view') continue;
@@ -55,9 +57,13 @@ export function resolveDatumElevationToken(
   return 'authored';
 }
 
-export function buildLevelDatumStackRows(elementsById: Record<string, Element>): LevelDatumStackRow[] {
+export function buildLevelDatumStackRows(
+  elementsById: Record<string, Element>,
+): LevelDatumStackRow[] {
   const planByLevel = countPlanViewsByLevelId(elementsById);
-  const levels = Object.values(elementsById).filter((e): e is Extract<Element, { kind: 'level' }> => e.kind === 'level');
+  const levels = Object.values(elementsById).filter(
+    (e): e is Extract<Element, { kind: 'level' }> => e.kind === 'level',
+  );
 
   const rows: LevelDatumStackRow[] = levels.map((lv) => {
     const pid = lv.parentLevelId?.trim() ? lv.parentLevelId : null;
@@ -108,7 +114,10 @@ export function filterDatumWorkbenchViolations(
 }
 
 /** Monospace-friendly one-line summary for agents / evidence (stable column order). */
-export function buildLevelDatumStackEvidenceToken(rows: LevelDatumStackRow[], selectedLevelId: string): string {
+export function buildLevelDatumStackEvidenceToken(
+  rows: LevelDatumStackRow[],
+  selectedLevelId: string,
+): string {
   const parts = rows.map((r) => {
     const par = r.parentLevelId ?? '-';
     const tok = r.elevationToken;

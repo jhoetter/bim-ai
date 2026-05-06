@@ -37,11 +37,7 @@ export function roomColorSchemeLegendReadoutParts(ev: unknown): string[] {
   const warns = (o.advisoryFindings ?? []).filter((f) => f.severity !== 'info');
   const infos = (o.advisoryFindings ?? []).filter((f) => f.severity === 'info');
 
-  const lines: string[] = [
-    `schemeIdentity ${id}`,
-    `overrideRowCount ${cnt}`,
-    `digest ${prefix}`,
-  ];
+  const lines: string[] = [`schemeIdentity ${id}`, `overrideRowCount ${cnt}`, `digest ${prefix}`];
   if (warns.length > 0) {
     lines.push(`warnings ${warns.length}`);
   }

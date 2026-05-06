@@ -388,7 +388,8 @@ i18n.init({
         },
         roomSeparation: {
           heading: 'Room separation',
-          selectHint: 'Select a room separation line to inspect derivation flags (plan wire augments readout).',
+          selectHint:
+            'Select a room separation line to inspect derivation flags (plan wire augments readout).',
           addSegment: 'Add axis-aligned segment',
           level: 'Level',
           name: 'Name',
@@ -404,7 +405,8 @@ i18n.init({
         },
         site: {
           heading: 'Site (pad boundary)',
-          evidenceNote: 'boundary vertices {{vertices}}, context markers {{markers}}, ref level {{level}}. Bounded to upsertSite; no grading, contours, or survey import — pad is a simple prism.',
+          evidenceNote:
+            'boundary vertices {{vertices}}, context markers {{markers}}, ref level {{level}}. Bounded to upsertSite; no grading, contours, or survey import — pad is a simple prism.',
           siteId: 'Site id',
           name: 'Name',
           referenceLevel: 'Reference level',
@@ -440,7 +442,8 @@ i18n.init({
           codePreset: 'Code preset',
           perspective: 'Perspective',
           quickFixSummary: 'Quick-fix command (summary)',
-          quickFixDisclaimer: 'Applying still requires an explicit click below — nothing runs automatically.',
+          quickFixDisclaimer:
+            'Applying still requires an explicit click below — nothing runs automatically.',
           applyFix: 'Apply suggested fix',
           emptySelection: 'No advisory items for selection.',
           emptyGeneral: 'No advisory items — keep sketching!',
@@ -467,9 +470,12 @@ i18n.init({
             exchange_ifc_import_preview_ids_pointer_gap: 'IFC import: IDS pointer gap',
             exchange_ifc_import_preview_unsupported_products: 'IFC import: unsupported products',
             exchange_ifc_kernel_geometry_skip_summary: 'IFC: geometry skipped',
-            exchange_ifc_manifest_authoritative_alignment_drift: 'IFC manifest: authoritative alignment drift',
-            exchange_ifc_manifest_ids_pointer_alignment_drift: 'IFC manifest: IDS pointer alignment drift',
-            exchange_ifc_manifest_unsupported_alignment_drift: 'IFC manifest: unsupported alignment drift',
+            exchange_ifc_manifest_authoritative_alignment_drift:
+              'IFC manifest: authoritative alignment drift',
+            exchange_ifc_manifest_ids_pointer_alignment_drift:
+              'IFC manifest: IDS pointer alignment drift',
+            exchange_ifc_manifest_unsupported_alignment_drift:
+              'IFC manifest: unsupported alignment drift',
             exchange_ifc_material_layer_readback_mismatch: 'IFC: material layer readback mismatch',
             exchange_ifc_pset_floor_gap: 'IFC: floor pset gap',
             exchange_ifc_pset_roof_gap: 'IFC: roof pset gap',
@@ -481,15 +487,18 @@ i18n.init({
             exchange_manifest_ifc_gltf_slice_mismatch: 'IFC/glTF manifest: slice mismatch',
             floor_missing_level: 'Floor missing level',
             floor_polygon_degenerate: 'Floor polygon degenerate',
-            gltf_export_manifest_expected_extension_missing: 'glTF export: manifest extension missing',
+            gltf_export_manifest_expected_extension_missing:
+              'glTF export: manifest extension missing',
             gltf_export_manifest_extension_order_drift: 'glTF export: extension order drift',
             grid_zero_length: 'Grid line has zero length',
             ids_cleanroom_cleanroom_class_missing: 'Cleanroom: class missing',
-            ids_cleanroom_door_pressure_metadata_missing: 'Cleanroom: door pressure metadata missing',
+            ids_cleanroom_door_pressure_metadata_missing:
+              'Cleanroom: door pressure metadata missing',
             ids_cleanroom_door_without_family_type: 'Cleanroom: door missing family type',
             ids_cleanroom_family_type_unknown: 'Cleanroom: unknown family type',
             ids_cleanroom_interlock_grade_missing: 'Cleanroom: interlock grade missing',
-            ids_cleanroom_opening_finish_material_missing: 'Cleanroom: opening finish material missing',
+            ids_cleanroom_opening_finish_material_missing:
+              'Cleanroom: opening finish material missing',
             ids_cleanroom_window_without_family_type: 'Cleanroom: window missing family type',
             level_datum_parent_cycle: 'Level datum: parent cycle',
             level_datum_parent_offset_mismatch: 'Level datum: parent offset mismatch',
@@ -506,7 +515,8 @@ i18n.init({
             prd_closeout_advisor_readiness_status_drift: 'PRD closeout: readiness status drift',
             prd_closeout_reason_code_drift: 'PRD closeout: reason code drift',
             prd_closeout_section_missing_in_readiness: 'PRD closeout: section missing in readiness',
-            room_boundary_axis_closure_insufficient_segments: 'Room boundary: insufficient axis segments',
+            room_boundary_axis_closure_insufficient_segments:
+              'Room boundary: insufficient axis segments',
             room_boundary_axis_segment_enum_cap: 'Room boundary: axis segment cap reached',
             room_boundary_axis_segments_missing_orientation_mix: 'Room boundary: orientation mix',
             room_boundary_non_axis_segments_skipped: 'Room boundary: non-axis segments skipped',
@@ -547,7 +557,8 @@ i18n.init({
             stair_geometry_unreasonable: 'Stair geometry unreasonable',
             stair_missing_levels: 'Stair: missing level references',
             stair_schedule_degenerate_run: 'Stair schedule: degenerate run',
-            stair_schedule_guardrail_placeholder_uncorrelated: 'Stair schedule: guardrail uncorrelated',
+            stair_schedule_guardrail_placeholder_uncorrelated:
+              'Stair schedule: guardrail uncorrelated',
             stair_schedule_incomplete_riser_tread: 'Stair schedule: incomplete riser/tread',
             wall_constraint_levels_inverted: 'Wall: constraint levels inverted',
             wall_missing_level: 'Wall missing level',
@@ -556,39 +567,70 @@ i18n.init({
             window_overlaps_door: 'Window overlaps door',
           },
           ctx: {
-            schedule_sheet_viewport_missing: 'Recommended: open the linked sheet, add or fix a schedule viewport (viewRef schedule:…).',
-            schedule_orphan_sheet_ref: 'Recommended: Schedules — set or clear sheetId so the schedule references a real sheet.',
-            schedule_opening_identifier_missing: 'Recommended: Schedules / properties — set door or window mark/name used on opening schedules.',
-            schedule_opening_orphan_host: 'Recommended: Restore or re-host the opening onto a valid wall (wallId) so schedule rows resolve.',
-            schedule_opening_family_type_incomplete: 'Recommended: Assign familyTypeId on the opening (type columns and type-driven schedules).',
-            schedule_opening_host_wall_type_incomplete: 'Recommended: Assign wallTypeId on the host wall (hostWallTypeId / hostWallTypeDisplay columns).',
-            schedule_sheet_export_parity_csv_diverges: 'Recommended: Schedules — re-derive the schedule table; CSV / JSON / sheet listing row counts disagree.',
-            schedule_sheet_export_parity_json_diverges: 'Recommended: Schedules — re-derive the schedule table; CSV / JSON / sheet listing row counts disagree.',
-            schedule_sheet_export_parity_listing_diverges: 'Recommended: Schedules — re-derive the schedule table; CSV / JSON / sheet listing row counts disagree.',
-            sheet_missing_titleblock: 'Recommended: Sheet authoring — set title block symbol on this sheet.',
-            sheet_viewport_zero_extent: 'Recommended: Sheet viewports — restore positive widthMm/heightMm for the listed viewport(s).',
-            sheet_viewport_unknown_ref: 'Recommended: Sheet viewports — fix or remove the unresolved viewRef.',
-            room_finish_metadata_hint: 'Recommended: Room Inspector — finishSet for documentation schedules.',
-            room_programme_metadata_hint: 'Recommended: Room Inspector — programmeCode / department for correlation.',
-            room_target_area_mismatch: 'Recommended: Room outline vs target area — adjust boundary or targetAreaM2.',
+            schedule_sheet_viewport_missing:
+              'Recommended: open the linked sheet, add or fix a schedule viewport (viewRef schedule:…).',
+            schedule_orphan_sheet_ref:
+              'Recommended: Schedules — set or clear sheetId so the schedule references a real sheet.',
+            schedule_opening_identifier_missing:
+              'Recommended: Schedules / properties — set door or window mark/name used on opening schedules.',
+            schedule_opening_orphan_host:
+              'Recommended: Restore or re-host the opening onto a valid wall (wallId) so schedule rows resolve.',
+            schedule_opening_family_type_incomplete:
+              'Recommended: Assign familyTypeId on the opening (type columns and type-driven schedules).',
+            schedule_opening_host_wall_type_incomplete:
+              'Recommended: Assign wallTypeId on the host wall (hostWallTypeId / hostWallTypeDisplay columns).',
+            schedule_sheet_export_parity_csv_diverges:
+              'Recommended: Schedules — re-derive the schedule table; CSV / JSON / sheet listing row counts disagree.',
+            schedule_sheet_export_parity_json_diverges:
+              'Recommended: Schedules — re-derive the schedule table; CSV / JSON / sheet listing row counts disagree.',
+            schedule_sheet_export_parity_listing_diverges:
+              'Recommended: Schedules — re-derive the schedule table; CSV / JSON / sheet listing row counts disagree.',
+            sheet_missing_titleblock:
+              'Recommended: Sheet authoring — set title block symbol on this sheet.',
+            sheet_viewport_zero_extent:
+              'Recommended: Sheet viewports — restore positive widthMm/heightMm for the listed viewport(s).',
+            sheet_viewport_unknown_ref:
+              'Recommended: Sheet viewports — fix or remove the unresolved viewRef.',
+            room_finish_metadata_hint:
+              'Recommended: Room Inspector — finishSet for documentation schedules.',
+            room_programme_metadata_hint:
+              'Recommended: Room Inspector — programmeCode / department for correlation.',
+            room_target_area_mismatch:
+              'Recommended: Room outline vs target area — adjust boundary or targetAreaM2.',
             level_datum_parent_cycle: 'Recommended: Levels datum chain / wall level constraints.',
-            level_datum_parent_offset_mismatch: 'Recommended: Levels datum chain / wall level constraints.',
-            wall_constraint_levels_inverted: 'Recommended: Levels datum chain / wall level constraints.',
+            level_datum_parent_offset_mismatch:
+              'Recommended: Levels datum chain / wall level constraints.',
+            wall_constraint_levels_inverted:
+              'Recommended: Levels datum chain / wall level constraints.',
             level_parent_unresolved: 'Recommended: Levels datum chain / wall level constraints.',
-            datum_grid_reference_missing: 'Recommended: Levels datum chain / wall level constraints.',
-            elevation_marker_view_unresolved: 'Recommended: Levels datum chain / wall level constraints.',
-            section_level_reference_missing: 'Recommended: Levels datum chain / wall level constraints.',
-            exchange_ifc_roundtrip_count_mismatch: 'Recommended: OpenBIM / IDS export evidence — inspect IFC manifest and advisories.',
-            exchange_ifc_roundtrip_programme_mismatch: 'Recommended: OpenBIM / IDS export evidence — inspect IFC manifest and advisories.',
-            exchange_ifc_ids_identity_pset_gap: 'Recommended: OpenBIM / IDS export evidence — inspect IFC manifest and advisories.',
-            exchange_ifc_ids_qto_gap: 'Recommended: OpenBIM / IDS export evidence — inspect IFC manifest and advisories.',
-            exchange_ifc_unhandled_geometry_present: 'Recommended: OpenBIM / IDS export evidence — inspect IFC manifest and advisories.',
-            exchange_ifc_kernel_geometry_skip_summary: 'Recommended: OpenBIM / IDS export evidence — inspect IFC manifest and advisories.',
-            exchange_manifest_ifc_gltf_slice_mismatch: 'Recommended: OpenBIM / IDS export evidence — inspect IFC manifest and advisories.',
-            exchange_ifc_manifest_authoritative_alignment_drift: 'Recommended: OpenBIM / IDS export evidence — inspect IFC manifest and advisories.',
-            exchange_ifc_manifest_unsupported_alignment_drift: 'Recommended: OpenBIM / IDS export evidence — inspect IFC manifest and advisories.',
-            exchange_ifc_manifest_ids_pointer_alignment_drift: 'Recommended: OpenBIM / IDS export evidence — inspect IFC manifest and advisories.',
-            _default: 'Inspect related elements and Advisor message; use perspective filter to narrow discipline.',
+            datum_grid_reference_missing:
+              'Recommended: Levels datum chain / wall level constraints.',
+            elevation_marker_view_unresolved:
+              'Recommended: Levels datum chain / wall level constraints.',
+            section_level_reference_missing:
+              'Recommended: Levels datum chain / wall level constraints.',
+            exchange_ifc_roundtrip_count_mismatch:
+              'Recommended: OpenBIM / IDS export evidence — inspect IFC manifest and advisories.',
+            exchange_ifc_roundtrip_programme_mismatch:
+              'Recommended: OpenBIM / IDS export evidence — inspect IFC manifest and advisories.',
+            exchange_ifc_ids_identity_pset_gap:
+              'Recommended: OpenBIM / IDS export evidence — inspect IFC manifest and advisories.',
+            exchange_ifc_ids_qto_gap:
+              'Recommended: OpenBIM / IDS export evidence — inspect IFC manifest and advisories.',
+            exchange_ifc_unhandled_geometry_present:
+              'Recommended: OpenBIM / IDS export evidence — inspect IFC manifest and advisories.',
+            exchange_ifc_kernel_geometry_skip_summary:
+              'Recommended: OpenBIM / IDS export evidence — inspect IFC manifest and advisories.',
+            exchange_manifest_ifc_gltf_slice_mismatch:
+              'Recommended: OpenBIM / IDS export evidence — inspect IFC manifest and advisories.',
+            exchange_ifc_manifest_authoritative_alignment_drift:
+              'Recommended: OpenBIM / IDS export evidence — inspect IFC manifest and advisories.',
+            exchange_ifc_manifest_unsupported_alignment_drift:
+              'Recommended: OpenBIM / IDS export evidence — inspect IFC manifest and advisories.',
+            exchange_ifc_manifest_ids_pointer_alignment_drift:
+              'Recommended: OpenBIM / IDS export evidence — inspect IFC manifest and advisories.',
+            _default:
+              'Inspect related elements and Advisor message; use perspective filter to narrow discipline.',
           },
         },
       },
@@ -988,7 +1030,8 @@ i18n.init({
         },
         roomSeparation: {
           heading: 'Raumtrennung',
-          selectHint: 'Raumtrennlinie auswählen, um Ableitungsflags zu prüfen (Planlinien ergänzen die Anzeige).',
+          selectHint:
+            'Raumtrennlinie auswählen, um Ableitungsflags zu prüfen (Planlinien ergänzen die Anzeige).',
           addSegment: 'Achsenparalleles Segment hinzufügen',
           level: 'Ebene',
           name: 'Name',
@@ -1004,7 +1047,8 @@ i18n.init({
         },
         site: {
           heading: 'Gelände (Planumgrenze)',
-          evidenceNote: 'Grenzpunkte {{vertices}}, Kontextmarker {{markers}}, Bezugsebene {{level}}. Gebunden an upsertSite; kein Gelände, Konturen oder Vermessungsimport — Planum ist ein einfaches Prisma.',
+          evidenceNote:
+            'Grenzpunkte {{vertices}}, Kontextmarker {{markers}}, Bezugsebene {{level}}. Gebunden an upsertSite; kein Gelände, Konturen oder Vermessungsimport — Planum ist ein einfaches Prisma.',
           siteId: 'Standort-Id',
           name: 'Name',
           referenceLevel: 'Bezugsebene',
@@ -1028,11 +1072,13 @@ i18n.init({
             padThicknessPositive: 'Planumdicke muss > 0 (mm) sein.',
             baseOffsetFinite: 'Basisversatz muss eine endliche Zahl (mm) sein.',
             northMustBeNumber: 'Nord (Grad CW von +X) muss eine Zahl sein, wenn angegeben.',
-            setbackNonNegative: 'Einheitlicher Abstand muss eine Zahl ≥ 0 (mm) sein, wenn angegeben.',
+            setbackNonNegative:
+              'Einheitlicher Abstand muss eine Zahl ≥ 0 (mm) sein, wenn angegeben.',
             duplicateContextId: "Doppelte contextObjects-Id '{{id}}'.",
             invalidContextType: "Ungültiger contextType für Id '{{id}}'.",
             contextScalePositive: "Maßstab des Kontexts '{{id}}' muss > 0 sein (Standard 1).",
-            contextPositionRequired: "Kontext '{{id}}' positionMm erfordert numerische xMm und yMm.",
+            contextPositionRequired:
+              "Kontext '{{id}}' positionMm erfordert numerische xMm und yMm.",
           },
         },
         advisor: {
@@ -1040,7 +1086,8 @@ i18n.init({
           codePreset: 'Normenpaket',
           perspective: 'Perspektive',
           quickFixSummary: 'Schnellkorrektur-Befehl (Zusammenfassung)',
-          quickFixDisclaimer: 'Anwenden erfordert noch einen expliziten Klick — nichts läuft automatisch.',
+          quickFixDisclaimer:
+            'Anwenden erfordert noch einen expliziten Klick — nichts läuft automatisch.',
           applyFix: 'Korrektur anwenden',
           emptySelection: 'Keine Hinweise für die Auswahl.',
           emptyGeneral: 'Keine Hinweise — weiter skizzieren!',
@@ -1065,11 +1112,15 @@ i18n.init({
             exchange_ifc_import_preview_extraction_gaps: 'IFC-Import: Extraktionslücken',
             exchange_ifc_import_preview_id_collision: 'IFC-Import: ID-Kollision',
             exchange_ifc_import_preview_ids_pointer_gap: 'IFC-Import: IDS-Zeigerlücke',
-            exchange_ifc_import_preview_unsupported_products: 'IFC-Import: Nicht unterstützte Produkte',
+            exchange_ifc_import_preview_unsupported_products:
+              'IFC-Import: Nicht unterstützte Produkte',
             exchange_ifc_kernel_geometry_skip_summary: 'IFC: Geometrie übersprungen',
-            exchange_ifc_manifest_authoritative_alignment_drift: 'IFC-Manifest: Autoritative Ausrichtungsabweichung',
-            exchange_ifc_manifest_ids_pointer_alignment_drift: 'IFC-Manifest: IDS-Zeiger-Ausrichtungsabweichung',
-            exchange_ifc_manifest_unsupported_alignment_drift: 'IFC-Manifest: Nicht unterstützte Ausrichtungsabweichung',
+            exchange_ifc_manifest_authoritative_alignment_drift:
+              'IFC-Manifest: Autoritative Ausrichtungsabweichung',
+            exchange_ifc_manifest_ids_pointer_alignment_drift:
+              'IFC-Manifest: IDS-Zeiger-Ausrichtungsabweichung',
+            exchange_ifc_manifest_unsupported_alignment_drift:
+              'IFC-Manifest: Nicht unterstützte Ausrichtungsabweichung',
             exchange_ifc_material_layer_readback_mismatch: 'IFC: Materialschicht-Rücklesefehler',
             exchange_ifc_pset_floor_gap: 'IFC: Boden-Pset-Lücke',
             exchange_ifc_pset_roof_gap: 'IFC: Dach-Pset-Lücke',
@@ -1081,15 +1132,18 @@ i18n.init({
             exchange_manifest_ifc_gltf_slice_mismatch: 'IFC/glTF-Manifest: Slice-Diskrepanz',
             floor_missing_level: 'Decke ohne Ebene',
             floor_polygon_degenerate: 'Entartetes Deckenpolygon',
-            gltf_export_manifest_expected_extension_missing: 'glTF-Export: Manifest-Erweiterung fehlt',
-            gltf_export_manifest_extension_order_drift: 'glTF-Export: Erweiterungsreihenfolge abgewichen',
+            gltf_export_manifest_expected_extension_missing:
+              'glTF-Export: Manifest-Erweiterung fehlt',
+            gltf_export_manifest_extension_order_drift:
+              'glTF-Export: Erweiterungsreihenfolge abgewichen',
             grid_zero_length: 'Achse mit Länge 0',
             ids_cleanroom_cleanroom_class_missing: 'Reinraum: Klasse fehlt',
             ids_cleanroom_door_pressure_metadata_missing: 'Reinraum: Druckmetadaten an Tür fehlen',
             ids_cleanroom_door_without_family_type: 'Reinraum: Tür ohne Familientyp',
             ids_cleanroom_family_type_unknown: 'Reinraum: Unbekannter Familientyp',
             ids_cleanroom_interlock_grade_missing: 'Reinraum: Schleusenstufe fehlt',
-            ids_cleanroom_opening_finish_material_missing: 'Reinraum: Oberflächenmaterial an Öffnung fehlt',
+            ids_cleanroom_opening_finish_material_missing:
+              'Reinraum: Oberflächenmaterial an Öffnung fehlt',
             ids_cleanroom_window_without_family_type: 'Reinraum: Fenster ohne Familientyp',
             level_datum_parent_cycle: 'Ebenendatum: Zyklus in Elternkette',
             level_datum_parent_offset_mismatch: 'Ebenendatum: Elternversatz stimmt nicht',
@@ -1105,7 +1159,8 @@ i18n.init({
             plan_view_tag_style_target_mismatch: 'Planansicht: Tag-Stil-Ziel stimmt nicht',
             prd_closeout_advisor_readiness_status_drift: 'PRD-Abschluss: Status-Abweichung',
             prd_closeout_reason_code_drift: 'PRD-Abschluss: Grundcode-Abweichung',
-            prd_closeout_section_missing_in_readiness: 'PRD-Abschluss: Abschnitt fehlt in Bereitschaft',
+            prd_closeout_section_missing_in_readiness:
+              'PRD-Abschluss: Abschnitt fehlt in Bereitschaft',
             room_boundary_axis_closure_insufficient_segments: 'Raumgrenze: Zu wenig Achssegmente',
             room_boundary_axis_segment_enum_cap: 'Raumgrenze: Achssegment-Limit erreicht',
             room_boundary_axis_segments_missing_orientation_mix: 'Raumgrenze: Orientierungsmix',
@@ -1147,7 +1202,8 @@ i18n.init({
             stair_geometry_unreasonable: 'Unplausible Treppengeometrie',
             stair_missing_levels: 'Treppe: Ebenenreferenzen fehlen',
             stair_schedule_degenerate_run: 'Treppenplan: Entarteter Lauf',
-            stair_schedule_guardrail_placeholder_uncorrelated: 'Treppenplan: Geländer nicht korreliert',
+            stair_schedule_guardrail_placeholder_uncorrelated:
+              'Treppenplan: Geländer nicht korreliert',
             stair_schedule_incomplete_riser_tread: 'Treppenplan: Stufe unvollständig',
             wall_constraint_levels_inverted: 'Wand: Ebenenbeschränkungen invertiert',
             wall_missing_level: 'Wand ohne Ebene',
@@ -1156,39 +1212,72 @@ i18n.init({
             window_overlaps_door: 'Fenster überlappt Tür',
           },
           ctx: {
-            schedule_sheet_viewport_missing: 'Empfehlung: Verknüpften Plan öffnen, Tabellenansichtsfenster (viewRef schedule:…) hinzufügen oder korrigieren.',
-            schedule_orphan_sheet_ref: 'Empfehlung: Tabellen — sheetId setzen oder leeren, sodass die Tabelle auf einen vorhandenen Plan verweist.',
-            schedule_opening_identifier_missing: 'Empfehlung: Tabellen/Eigenschaften — Mark/Name an Tür oder Fenster für Öffnungstabellen setzen.',
-            schedule_opening_orphan_host: 'Empfehlung: Öffnung auf einer gültigen Wand (wallId) neu verankern, damit Tabellenzeilen auflösen.',
-            schedule_opening_family_type_incomplete: 'Empfehlung: familyTypeId an der Öffnung zuweisen (Typspalten und typgetriebene Tabellen).',
-            schedule_opening_host_wall_type_incomplete: 'Empfehlung: wallTypeId an der Hostwand zuweisen (hostWallTypeId / hostWallTypeDisplay-Spalten).',
-            schedule_sheet_export_parity_csv_diverges: 'Empfehlung: Tabellen neu ableiten; CSV / JSON / Planauflistung stimmen nicht überein.',
-            schedule_sheet_export_parity_json_diverges: 'Empfehlung: Tabellen neu ableiten; CSV / JSON / Planauflistung stimmen nicht überein.',
-            schedule_sheet_export_parity_listing_diverges: 'Empfehlung: Tabellen neu ableiten; CSV / JSON / Planauflistung stimmen nicht überein.',
-            sheet_missing_titleblock: 'Empfehlung: Planbearbeitung — Schriftfeld-Symbol auf diesem Plan setzen.',
-            sheet_viewport_zero_extent: 'Empfehlung: Planansichtsfenster — positives widthMm/heightMm für die aufgelisteten Fenster wiederherstellen.',
-            sheet_viewport_unknown_ref: 'Empfehlung: Planansichtsfenster — nicht auflösbaren viewRef korrigieren oder entfernen.',
-            room_finish_metadata_hint: 'Empfehlung: Raum-Inspektor — finishSet für Dokumentationstabellen.',
-            room_programme_metadata_hint: 'Empfehlung: Raum-Inspektor — programmeCode / Abteilung für Korrelation.',
-            room_target_area_mismatch: 'Empfehlung: Raumumriss vs. Zielfläche — Grenze oder targetAreaM2 anpassen.',
-            level_datum_parent_cycle: 'Empfehlung: Ebenendatumkette / Wand-Ebenenbeschränkungen prüfen.',
-            level_datum_parent_offset_mismatch: 'Empfehlung: Ebenendatumkette / Wand-Ebenenbeschränkungen prüfen.',
-            wall_constraint_levels_inverted: 'Empfehlung: Ebenendatumkette / Wand-Ebenenbeschränkungen prüfen.',
-            level_parent_unresolved: 'Empfehlung: Ebenendatumkette / Wand-Ebenenbeschränkungen prüfen.',
-            datum_grid_reference_missing: 'Empfehlung: Ebenendatumkette / Wand-Ebenenbeschränkungen prüfen.',
-            elevation_marker_view_unresolved: 'Empfehlung: Ebenendatumkette / Wand-Ebenenbeschränkungen prüfen.',
-            section_level_reference_missing: 'Empfehlung: Ebenendatumkette / Wand-Ebenenbeschränkungen prüfen.',
-            exchange_ifc_roundtrip_count_mismatch: 'Empfehlung: OpenBIM / IDS-Exportnachweise — IFC-Manifest und Berater prüfen.',
-            exchange_ifc_roundtrip_programme_mismatch: 'Empfehlung: OpenBIM / IDS-Exportnachweise — IFC-Manifest und Berater prüfen.',
-            exchange_ifc_ids_identity_pset_gap: 'Empfehlung: OpenBIM / IDS-Exportnachweise — IFC-Manifest und Berater prüfen.',
-            exchange_ifc_ids_qto_gap: 'Empfehlung: OpenBIM / IDS-Exportnachweise — IFC-Manifest und Berater prüfen.',
-            exchange_ifc_unhandled_geometry_present: 'Empfehlung: OpenBIM / IDS-Exportnachweise — IFC-Manifest und Berater prüfen.',
-            exchange_ifc_kernel_geometry_skip_summary: 'Empfehlung: OpenBIM / IDS-Exportnachweise — IFC-Manifest und Berater prüfen.',
-            exchange_manifest_ifc_gltf_slice_mismatch: 'Empfehlung: OpenBIM / IDS-Exportnachweise — IFC-Manifest und Berater prüfen.',
-            exchange_ifc_manifest_authoritative_alignment_drift: 'Empfehlung: OpenBIM / IDS-Exportnachweise — IFC-Manifest und Berater prüfen.',
-            exchange_ifc_manifest_unsupported_alignment_drift: 'Empfehlung: OpenBIM / IDS-Exportnachweise — IFC-Manifest und Berater prüfen.',
-            exchange_ifc_manifest_ids_pointer_alignment_drift: 'Empfehlung: OpenBIM / IDS-Exportnachweise — IFC-Manifest und Berater prüfen.',
-            _default: 'Zugehörige Elemente und Advisor-Meldung prüfen; Perspektivfilter zur Eingrenzung nutzen.',
+            schedule_sheet_viewport_missing:
+              'Empfehlung: Verknüpften Plan öffnen, Tabellenansichtsfenster (viewRef schedule:…) hinzufügen oder korrigieren.',
+            schedule_orphan_sheet_ref:
+              'Empfehlung: Tabellen — sheetId setzen oder leeren, sodass die Tabelle auf einen vorhandenen Plan verweist.',
+            schedule_opening_identifier_missing:
+              'Empfehlung: Tabellen/Eigenschaften — Mark/Name an Tür oder Fenster für Öffnungstabellen setzen.',
+            schedule_opening_orphan_host:
+              'Empfehlung: Öffnung auf einer gültigen Wand (wallId) neu verankern, damit Tabellenzeilen auflösen.',
+            schedule_opening_family_type_incomplete:
+              'Empfehlung: familyTypeId an der Öffnung zuweisen (Typspalten und typgetriebene Tabellen).',
+            schedule_opening_host_wall_type_incomplete:
+              'Empfehlung: wallTypeId an der Hostwand zuweisen (hostWallTypeId / hostWallTypeDisplay-Spalten).',
+            schedule_sheet_export_parity_csv_diverges:
+              'Empfehlung: Tabellen neu ableiten; CSV / JSON / Planauflistung stimmen nicht überein.',
+            schedule_sheet_export_parity_json_diverges:
+              'Empfehlung: Tabellen neu ableiten; CSV / JSON / Planauflistung stimmen nicht überein.',
+            schedule_sheet_export_parity_listing_diverges:
+              'Empfehlung: Tabellen neu ableiten; CSV / JSON / Planauflistung stimmen nicht überein.',
+            sheet_missing_titleblock:
+              'Empfehlung: Planbearbeitung — Schriftfeld-Symbol auf diesem Plan setzen.',
+            sheet_viewport_zero_extent:
+              'Empfehlung: Planansichtsfenster — positives widthMm/heightMm für die aufgelisteten Fenster wiederherstellen.',
+            sheet_viewport_unknown_ref:
+              'Empfehlung: Planansichtsfenster — nicht auflösbaren viewRef korrigieren oder entfernen.',
+            room_finish_metadata_hint:
+              'Empfehlung: Raum-Inspektor — finishSet für Dokumentationstabellen.',
+            room_programme_metadata_hint:
+              'Empfehlung: Raum-Inspektor — programmeCode / Abteilung für Korrelation.',
+            room_target_area_mismatch:
+              'Empfehlung: Raumumriss vs. Zielfläche — Grenze oder targetAreaM2 anpassen.',
+            level_datum_parent_cycle:
+              'Empfehlung: Ebenendatumkette / Wand-Ebenenbeschränkungen prüfen.',
+            level_datum_parent_offset_mismatch:
+              'Empfehlung: Ebenendatumkette / Wand-Ebenenbeschränkungen prüfen.',
+            wall_constraint_levels_inverted:
+              'Empfehlung: Ebenendatumkette / Wand-Ebenenbeschränkungen prüfen.',
+            level_parent_unresolved:
+              'Empfehlung: Ebenendatumkette / Wand-Ebenenbeschränkungen prüfen.',
+            datum_grid_reference_missing:
+              'Empfehlung: Ebenendatumkette / Wand-Ebenenbeschränkungen prüfen.',
+            elevation_marker_view_unresolved:
+              'Empfehlung: Ebenendatumkette / Wand-Ebenenbeschränkungen prüfen.',
+            section_level_reference_missing:
+              'Empfehlung: Ebenendatumkette / Wand-Ebenenbeschränkungen prüfen.',
+            exchange_ifc_roundtrip_count_mismatch:
+              'Empfehlung: OpenBIM / IDS-Exportnachweise — IFC-Manifest und Berater prüfen.',
+            exchange_ifc_roundtrip_programme_mismatch:
+              'Empfehlung: OpenBIM / IDS-Exportnachweise — IFC-Manifest und Berater prüfen.',
+            exchange_ifc_ids_identity_pset_gap:
+              'Empfehlung: OpenBIM / IDS-Exportnachweise — IFC-Manifest und Berater prüfen.',
+            exchange_ifc_ids_qto_gap:
+              'Empfehlung: OpenBIM / IDS-Exportnachweise — IFC-Manifest und Berater prüfen.',
+            exchange_ifc_unhandled_geometry_present:
+              'Empfehlung: OpenBIM / IDS-Exportnachweise — IFC-Manifest und Berater prüfen.',
+            exchange_ifc_kernel_geometry_skip_summary:
+              'Empfehlung: OpenBIM / IDS-Exportnachweise — IFC-Manifest und Berater prüfen.',
+            exchange_manifest_ifc_gltf_slice_mismatch:
+              'Empfehlung: OpenBIM / IDS-Exportnachweise — IFC-Manifest und Berater prüfen.',
+            exchange_ifc_manifest_authoritative_alignment_drift:
+              'Empfehlung: OpenBIM / IDS-Exportnachweise — IFC-Manifest und Berater prüfen.',
+            exchange_ifc_manifest_unsupported_alignment_drift:
+              'Empfehlung: OpenBIM / IDS-Exportnachweise — IFC-Manifest und Berater prüfen.',
+            exchange_ifc_manifest_ids_pointer_alignment_drift:
+              'Empfehlung: OpenBIM / IDS-Exportnachweise — IFC-Manifest und Berater prüfen.',
+            _default:
+              'Zugehörige Elemente und Advisor-Meldung prüfen; Perspektivfilter zur Eingrenzung nutzen.',
           },
         },
       },

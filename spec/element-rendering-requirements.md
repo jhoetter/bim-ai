@@ -13,16 +13,17 @@ are the most common cause of "I added element X but it doesn't appear".
 The glTF exporter only emits a pitched roof mesh when **all** of the following
 hold. Any miss causes the roof to be silently omitted from the 3D scene.
 
-| Requirement | Value needed | Notes |
-|---|---|---|
-| `roofGeometryMode` | `"gable_pitched_rectangle"` | Default `"mass_box"` produces **no mesh** — it is a plan/section proxy only |
-| Footprint shape | Exactly 4 axis-aligned rectangle corners (≤1 mm tolerance) | L-shapes, hip polygons → deferred, no 3D mesh yet |
-| `slopeDeg` | non-null float | If `None`, roof is skipped |
-| `referenceLevelId` | resolves to a `LevelElem` | Broken ref → skipped |
+| Requirement        | Value needed                                               | Notes                                                                       |
+| ------------------ | ---------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `roofGeometryMode` | `"gable_pitched_rectangle"`                                | Default `"mass_box"` produces **no mesh** — it is a plan/section proxy only |
+| Footprint shape    | Exactly 4 axis-aligned rectangle corners (≤1 mm tolerance) | L-shapes, hip polygons → deferred, no 3D mesh yet                           |
+| `slopeDeg`         | non-null float                                             | If `None`, roof is skipped                                                  |
+| `referenceLevelId` | resolves to a `LevelElem`                                  | Broken ref → skipped                                                        |
 
 Extension emitted when eligible: `bim_ai_gable_roof_v0`
 
 **Unsupported footprint shapes in 3D (deferred):**
+
 - Concave / L-shaped → `"valley_candidate_deferred"`
 - Convex polygon with >4 corners (hip) → `"hip_candidate_deferred"`
 
@@ -51,11 +52,11 @@ renders by calling `GET /api/models/{id}/projection/section/{sectionCutId}`.
 
 For content to appear:
 
-| Requirement | Notes |
-|---|---|
-| Section line must intersect elements | Elements must fall within `cropDepthMm / 2` of the cut line (perp distance) |
-| `lineStartMm` / `lineEndMm` span must cover the building footprint | Short cut lines leave out geometry |
-| `cropDepthMm` large enough | For a full-building section, use ≥ building depth + some margin |
+| Requirement                                                        | Notes                                                                       |
+| ------------------------------------------------------------------ | --------------------------------------------------------------------------- |
+| Section line must intersect elements                               | Elements must fall within `cropDepthMm / 2` of the cut line (perp distance) |
+| `lineStartMm` / `lineEndMm` span must cover the building footprint | Short cut lines leave out geometry                                          |
+| `cropDepthMm` large enough                                         | For a full-building section, use ≥ building depth + some margin             |
 
 The section marker/symbol (dashed line + arrows) renders on the plan canvas
 automatically when a `section_cut` element exists on that level's plan.
@@ -103,6 +104,7 @@ clamped or dropped.
 ## Railing
 
 Railings render in 3D if:
+
 - `hostedStairId` resolves (stair-hosted railing), OR
 - `pathMm` has ≥ 2 points (free-standing railing)
 
@@ -144,10 +146,10 @@ Railings render in 3D as a top-rail tube along `pathMm` at `guardHeightMm` above
 base level. For stair-hosted railings the elevation interpolates linearly from the
 stair `baseLevelId` to `topLevelId`.
 
-| Requirement | Notes |
-|---|---|
-| `pathMm` ≥ 2 points | Free-standing or hosted, path must have at least 2 plan points |
-| Elevation source | `hostedStairId` → interpolated base→top level elev; no host → 0 m |
+| Requirement         | Notes                                                             |
+| ------------------- | ----------------------------------------------------------------- |
+| `pathMm` ≥ 2 points | Free-standing or hosted, path must have at least 2 plan points    |
+| Elevation source    | `hostedStairId` → interpolated base→top level elev; no host → 0 m |
 
 ---
 
@@ -156,10 +158,10 @@ stair `baseLevelId` to `topLevelId`.
 Site renders in 3D as a flat pad (`ExtrudeGeometry`) whose top surface sits at
 `referenceLevelId.elevationMm + baseOffsetMm` and extends downward by `padThicknessMm`.
 
-| Requirement | Notes |
-|---|---|
+| Requirement        | Notes                         |
+| ------------------ | ----------------------------- |
 | `referenceLevelId` | Must resolve to a `LevelElem` |
-| `boundaryMm` | ≥ 3 non-degenerate vertices |
+| `boundaryMm`       | ≥ 3 non-degenerate vertices   |
 
 ---
 

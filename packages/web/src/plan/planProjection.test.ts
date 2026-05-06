@@ -488,9 +488,9 @@ describe('planProjection', () => {
         viewerClipFloorElevMm: 1000,
       }),
     ).toBe('floor');
-    expect(
-      viewpointOrbit3dCutawayStyleLabel({ ...base, viewerClipFloorElevMm: 1000 }),
-    ).toBe('Floor clip only');
+    expect(viewpointOrbit3dCutawayStyleLabel({ ...base, viewerClipFloorElevMm: 1000 })).toBe(
+      'Floor clip only',
+    );
 
     expect(
       viewpointOrbit3dCutawayStyleToken({
@@ -542,14 +542,14 @@ describe('planProjection', () => {
       hiddenSemanticKinds3d: [] as string[],
     };
     // sectionBoxEnabled=false → sbox:off suffix
-    expect(
-      viewpointOrbit3dEvidenceLine({ ...base, sectionBoxEnabled: false }),
-    ).toBe('clip cap ∅ · floor ∅ · 0 hid · cut:none · sbox:off');
+    expect(viewpointOrbit3dEvidenceLine({ ...base, sectionBoxEnabled: false })).toBe(
+      'clip cap ∅ · floor ∅ · 0 hid · cut:none · sbox:off',
+    );
 
     // sectionBoxEnabled=true without bounds → sbox:on suffix
-    expect(
-      viewpointOrbit3dEvidenceLine({ ...base, sectionBoxEnabled: true }),
-    ).toBe('clip cap ∅ · floor ∅ · 0 hid · cut:none · sbox:on');
+    expect(viewpointOrbit3dEvidenceLine({ ...base, sectionBoxEnabled: true })).toBe(
+      'clip cap ∅ · floor ∅ · 0 hid · cut:none · sbox:on',
+    );
 
     // sectionBoxEnabled=true with bounds → full coordinate token
     expect(

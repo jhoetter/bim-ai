@@ -3,7 +3,11 @@
  * and evidence digest drift across the five Agent Review readouts (WP-A02/A04/F02/F03/V01).
  */
 
-export type ReadoutConsistencyToken = 'aligned' | 'bundle_id_drift' | 'digest_drift' | 'missing_fields';
+export type ReadoutConsistencyToken =
+  | 'aligned'
+  | 'bundle_id_drift'
+  | 'digest_drift'
+  | 'missing_fields';
 
 export type ReadoutId =
   | 'briefAcceptance'
@@ -87,12 +91,12 @@ export function parseAgentReviewReadoutConsistencyClosureV1(
   return {
     format: 'agentReviewReadoutConsistencyClosure_v1',
     schemaVersion: typeof r['schemaVersion'] === 'number' ? r['schemaVersion'] : 1,
-    semanticDigestExclusionNote: typeof r['semanticDigestExclusionNote'] === 'string'
-      ? r['semanticDigestExclusionNote']
-      : '',
-    readoutFieldRefs: (r['readoutFieldRefs'] && typeof r['readoutFieldRefs'] === 'object')
-      ? (r['readoutFieldRefs'] as Record<string, string>)
-      : {},
+    semanticDigestExclusionNote:
+      typeof r['semanticDigestExclusionNote'] === 'string' ? r['semanticDigestExclusionNote'] : '',
+    readoutFieldRefs:
+      r['readoutFieldRefs'] && typeof r['readoutFieldRefs'] === 'object'
+        ? (r['readoutFieldRefs'] as Record<string, string>)
+        : {},
     rows: rows as ReadoutConsistencyRow[],
     advisoryFindings: findings,
     agentReviewReadoutConsistencyClosureDigestSha256:
@@ -110,9 +114,7 @@ const TOKEN_SORT_ORDER: Record<ReadoutConsistencyToken, number> = {
 };
 
 /** Sort rows: most-actionable tokens first, then by readout order. */
-export function sortConsistencyRows(
-  rows: ReadoutConsistencyRow[],
-): ReadoutConsistencyRow[] {
+export function sortConsistencyRows(rows: ReadoutConsistencyRow[]): ReadoutConsistencyRow[] {
   return [...rows].sort((a, b) => {
     const ta = TOKEN_SORT_ORDER[a.consistencyToken as ReadoutConsistencyToken] ?? 99;
     const tb = TOKEN_SORT_ORDER[b.consistencyToken as ReadoutConsistencyToken] ?? 99;
@@ -135,9 +137,7 @@ export function formatAgentReviewReadoutConsistencyClosureLines(
     const digestNote = row.evidenceDigestSeen
       ? ` digest=${row.evidenceDigestSeen.slice(0, 8)}…`
       : '';
-    lines.push(
-      `${row.consistencyToken} ${row.readoutId}${missingNote}${bundleNote}${digestNote}`,
-    );
+    lines.push(`${row.consistencyToken} ${row.readoutId}${missingNote}${bundleNote}${digestNote}`);
   }
   if (closure.advisoryFindings.length) {
     lines.push(`advisories: ${closure.advisoryFindings.length}`);
@@ -147,8 +147,6 @@ export function formatAgentReviewReadoutConsistencyClosureLines(
   } else {
     lines.push('advisories: none');
   }
-  lines.push(
-    `digest: ${closure.agentReviewReadoutConsistencyClosureDigestSha256.slice(0, 16)}…`,
-  );
+  lines.push(`digest: ${closure.agentReviewReadoutConsistencyClosureDigestSha256.slice(0, 16)}…`);
   return lines;
 }

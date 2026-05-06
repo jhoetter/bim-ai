@@ -48,9 +48,7 @@ function renderBudgetLines(lines: string[]): HTMLDivElement {
   document.body.appendChild(container);
   const root = createRoot(container);
   act(() => {
-    root.render(
-      <pre style={{ fontFamily: 'monospace', fontSize: '9px' }}>{lines.join('\n')}</pre>,
-    );
+    root.render(<pre style={{ fontFamily: 'monospace', fontSize: '9px' }}>{lines.join('\n')}</pre>);
   });
   return container;
 }
@@ -397,6 +395,8 @@ describe('browser rendering budget — projection primitive thresholds readout',
     expect(row.overBudgetLimit).toBe(BROWSER_BUDGET_OVER_BUDGET_ELEMENT_COUNT);
     const lines = formatBrowserRenderingBudgetLines(readout);
     const elemLine = lines.find((l) => l.includes('model_elements'));
-    expect(elemLine).toContain(`${BROWSER_BUDGET_WARN_ELEMENT_COUNT}/${BROWSER_BUDGET_OVER_BUDGET_ELEMENT_COUNT}`);
+    expect(elemLine).toContain(
+      `${BROWSER_BUDGET_WARN_ELEMENT_COUNT}/${BROWSER_BUDGET_OVER_BUDGET_ELEMENT_COUNT}`,
+    );
   });
 });

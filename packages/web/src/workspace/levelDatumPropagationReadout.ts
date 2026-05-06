@@ -47,7 +47,9 @@ export function parseLevelElevationPropagationEvidence(
 }
 
 /** Single monospace line for workbench / agents (stable sort by levelId). */
-export function formatLevelDatumPropagationEvidenceLine(ev: LevelElevationPropagationEvidenceV0): string {
+export function formatLevelDatumPropagationEvidenceLine(
+  ev: LevelElevationPropagationEvidenceV0,
+): string {
   const rows = [...ev.rows].sort((a, b) => a.levelId.localeCompare(b.levelId));
   const parts = rows.map((r) => `${r.levelId}:${r.role}:Δ${r.deltaMm.toFixed(3)}`);
   return `blocked=${ev.datumPropagationBlocked} ${parts.join('|')}`;

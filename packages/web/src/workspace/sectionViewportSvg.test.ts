@@ -116,9 +116,7 @@ describe('Section viewport documentation helpers', () => {
           planUpDownLabel: 'UP',
         },
       ]),
-    ).toBe(
-      'Stair doc · st-a R=10 T=9 rise=1600mm UP · st-b R=16 T=15 rise=2800mm UP',
-    );
+    ).toBe('Stair doc · st-a R=10 T=9 rise=1600mm UP · st-b R=16 T=15 rise=2800mm UP');
   });
 
   it('prefers stairPlanSectionDocumentationLabel in section stair caption when present', () => {

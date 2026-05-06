@@ -111,10 +111,7 @@ export const MaterialTagIcon = bimIcon(
 );
 
 // ── Room tag: rectangular tag showing room name and area ─────────────────────
-export const RoomTagIcon = bimIcon(
-  'RoomTagIcon',
-  <path d="M4 7H20V17H4z M7 11H17 M7 14H13" />,
-);
+export const RoomTagIcon = bimIcon('RoomTagIcon', <path d="M4 7H20V17H4z M7 11H17 M7 14H13" />);
 
 // ── Space tag: MEP space tag with additional HVAC zone indicator ──────────────
 export const SpaceTagIcon = bimIcon(

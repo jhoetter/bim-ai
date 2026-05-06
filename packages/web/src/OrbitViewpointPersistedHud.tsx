@@ -69,8 +69,8 @@ export function OrbitViewpointPersistedHud(props: OrbitViewpointPersistedHudProp
       >
         <div className="font-semibold text-foreground/90">Saved 3D viewpoint</div>
         <p className="mt-1 leading-snug">
-          Select a saved orbit viewpoint in Project browser to inspect persisted clip and hidden-category
-          state.
+          Select a saved orbit viewpoint in Project browser to inspect persisted clip and
+          hidden-category state.
         </p>
       </div>
     );
@@ -84,8 +84,8 @@ export function OrbitViewpointPersistedHud(props: OrbitViewpointPersistedHudProp
       >
         <div className="font-semibold text-foreground/90">Saved 3D viewpoint</div>
         <p className="mt-1 leading-snug">
-          Active id <span className="font-mono text-foreground/80">{activeViewpointId}</span> is not a
-          saved orbit 3D viewpoint in the current model.
+          Active id <span className="font-mono text-foreground/80">{activeViewpointId}</span> is not
+          a saved orbit 3D viewpoint in the current model.
         </p>
       </div>
     );
@@ -146,7 +146,9 @@ export function OrbitViewpointPersistedHud(props: OrbitViewpointPersistedHudProp
         <dl className="mt-2 space-y-1 leading-snug">
           <div className="flex gap-2">
             <dt className="shrink-0 text-muted">Cap (mm)</dt>
-            <dd className="min-w-0 font-mono text-foreground/90">{fmtMm(viewpoint.viewerClipCapElevMm)}</dd>
+            <dd className="min-w-0 font-mono text-foreground/90">
+              {fmtMm(viewpoint.viewerClipCapElevMm)}
+            </dd>
           </div>
           <div className="flex gap-2">
             <dt className="shrink-0 text-muted">Floor (mm)</dt>
@@ -216,8 +218,7 @@ export function OrbitViewpointPersistedHud(props: OrbitViewpointPersistedHudProp
             />
           </label>
           <p className="text-[9px] text-muted">
-            Effective readout now:{' '}
-            <span className="text-foreground/90">{styleLabel}</span> ·{' '}
+            Effective readout now: <span className="text-foreground/90">{styleLabel}</span> ·{' '}
             <span className="break-words text-foreground/90">{hiddenReadout}</span>
           </p>
         </div>

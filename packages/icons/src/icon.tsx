@@ -17,15 +17,8 @@ export type BimIcon = ComponentType<BimIconProps>;
  * strokeWidth is 1.5; active/selected state uses 2.0 (driven by the parent).
  */
 export function bimIcon(displayName: string, paths: ReactNode): BimIcon {
-  function Icon({
-    size = 24,
-    strokeWidth = 1.5,
-    absoluteStrokeWidth,
-    ...rest
-  }: BimIconProps) {
-    const sw = absoluteStrokeWidth
-      ? (Number(strokeWidth) * 24) / Number(size)
-      : strokeWidth;
+  function Icon({ size = 24, strokeWidth = 1.5, absoluteStrokeWidth, ...rest }: BimIconProps) {
+    const sw = absoluteStrokeWidth ? (Number(strokeWidth) * 24) / Number(size) : strokeWidth;
     return (
       <svg
         xmlns="http://www.w3.org/2000/svg"

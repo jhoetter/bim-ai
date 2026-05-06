@@ -11,16 +11,10 @@ import { bimIcon } from './icon';
 // The extreme proportion contrast (2-unit column on 16-unit base) makes the
 // "point load to spread footing" relationship unmistakable. Clearly distinct
 // from StripFootingIcon (wide continuous wall above a slightly wider base).
-export const FoundationIcon = bimIcon(
-  'FoundationIcon',
-  <path d="M11 3H13V14H20V20H4V14H11z" />,
-);
+export const FoundationIcon = bimIcon('FoundationIcon', <path d="M11 3H13V14H20V20H4V14H11z" />);
 
 // ── Strip/continuous footing: wall above, widened base below in section ───────
-export const StripFootingIcon = bimIcon(
-  'StripFootingIcon',
-  <path d="M4 4H20V12H22V16H2V12H4z" />,
-);
+export const StripFootingIcon = bimIcon('StripFootingIcon', <path d="M4 4H20V12H22V16H2V12H4z" />);
 
 // ── Warren truss: top/bottom chords with zigzag diagonals ────────────────────
 export const TrussIcon = bimIcon(

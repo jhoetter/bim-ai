@@ -80,14 +80,18 @@ export function LevelDatumStackWorkbench({ selected, elementsById, violations }:
                       </div>
                       <div className="font-mono text-[9px] text-muted">{row.id}</div>
                     </td>
-                    <td className="p-1.5 text-right font-mono">{formatElevationMmReadout(row.elevationMm)}</td>
+                    <td className="p-1.5 text-right font-mono">
+                      {formatElevationMmReadout(row.elevationMm)}
+                    </td>
                     <td className="max-w-[6rem] p-1.5">
                       {row.parentLevelId ? (
                         <>
                           <div className="truncate" title={row.parentName ?? row.parentLevelId}>
                             {row.parentName ?? '—'}
                           </div>
-                          <div className="truncate font-mono text-[9px] text-muted">{row.parentLevelId}</div>
+                          <div className="truncate font-mono text-[9px] text-muted">
+                            {row.parentLevelId}
+                          </div>
                         </>
                       ) : (
                         <span className="text-muted">—</span>
@@ -128,7 +132,9 @@ export function LevelDatumStackWorkbench({ selected, elementsById, violations }:
                     ids: {v.elementIds.join(', ')}
                   </div>
                 ) : null}
-                <div className="mt-0.5 text-[9px] text-muted">{translatedContextForRuleId(v.ruleId, t)}</div>
+                <div className="mt-0.5 text-[9px] text-muted">
+                  {translatedContextForRuleId(v.ruleId, t)}
+                </div>
               </li>
             ))}
           </ul>

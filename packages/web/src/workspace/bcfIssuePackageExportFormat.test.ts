@@ -46,10 +46,7 @@ describe('summarizeBcfIssuePackageExport', () => {
         remediationHintLinkCount: 7,
       },
       fixLoopBlockerCodesEcho: ['delta', 'alpha', 'alpha'],
-      remediationHintRefs: [
-        { path: 'beta', hint: 'h' },
-        { path: 'alpha' },
-      ],
+      remediationHintRefs: [{ path: 'beta', hint: 'h' }, { path: 'alpha' }],
       unresolvedAnchorRows: [
         {
           stableTopicId: 'bcf:t2',

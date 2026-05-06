@@ -7,9 +7,7 @@ describe('scheduleSortKeyChoices', () => {
     expect(scheduleSortKeyChoices('plans')).toEqual(
       expect.arrayContaining(['sheetId', 'sheetName']),
     );
-    expect(scheduleSortKeyChoices('sheets')).toEqual(
-      expect.arrayContaining(['planViewNames']),
-    );
+    expect(scheduleSortKeyChoices('sheets')).toEqual(expect.arrayContaining(['planViewNames']));
   });
 
   it('includes opening computed keys for doors and windows', () => {

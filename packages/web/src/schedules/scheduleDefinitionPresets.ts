@@ -63,7 +63,12 @@ const PRESETS: ScheduleDefinitionPreset[] = [
       { fieldKey: 'name', token: 'required' },
       { fieldKey: 'level', token: 'required' },
       { fieldKey: 'widthMm', token: 'required', unitHint: 'mm' },
-      { fieldKey: 'roughOpeningAreaM2', token: 'required', unitHint: 'm²', csvExportHint: 'Rough opening area' },
+      {
+        fieldKey: 'roughOpeningAreaM2',
+        token: 'required',
+        unitHint: 'm²',
+        csvExportHint: 'Rough opening area',
+      },
       { fieldKey: 'roughOpeningWidthMm', token: 'optional', unitHint: 'mm' },
       { fieldKey: 'roughOpeningHeightMm', token: 'optional', unitHint: 'mm' },
       { fieldKey: 'hostHeightMm', token: 'optional', unitHint: 'mm' },
@@ -96,7 +101,12 @@ const PRESETS: ScheduleDefinitionPreset[] = [
       { fieldKey: 'widthMm', token: 'required', unitHint: 'mm' },
       { fieldKey: 'heightMm', token: 'required', unitHint: 'mm' },
       { fieldKey: 'roughOpeningAreaM2', token: 'required', unitHint: 'm²' },
-      { fieldKey: 'openingAreaM2', token: 'optional', unitHint: 'm²', csvExportHint: 'Glazing area' },
+      {
+        fieldKey: 'openingAreaM2',
+        token: 'optional',
+        unitHint: 'm²',
+        csvExportHint: 'Glazing area',
+      },
       { fieldKey: 'sillMm', token: 'optional', unitHint: 'mm' },
       { fieldKey: 'aspectRatio', token: 'optional' },
       { fieldKey: 'headHeightMm', token: 'optional', unitHint: 'mm' },
@@ -127,7 +137,12 @@ const PRESETS: ScheduleDefinitionPreset[] = [
       { fieldKey: 'layerIndex', token: 'required', csvExportHint: '0-based layer stack index' },
       { fieldKey: 'materialDisplay', token: 'required' },
       { fieldKey: 'thicknessMm', token: 'required', unitHint: 'mm' },
-      { fieldKey: 'grossAreaM2', token: 'optional', unitHint: 'm²', csvExportHint: 'Layer gross face area' },
+      {
+        fieldKey: 'grossAreaM2',
+        token: 'optional',
+        unitHint: 'm²',
+        csvExportHint: 'Layer gross face area',
+      },
       { fieldKey: 'grossVolumeM3', token: 'optional', unitHint: 'm³' },
       { fieldKey: 'layerOffsetFromExteriorMm', token: 'optional', unitHint: 'mm' },
       { fieldKey: 'assemblyTotalThicknessMm', token: 'optional', unitHint: 'mm' },
@@ -137,7 +152,9 @@ const PRESETS: ScheduleDefinitionPreset[] = [
 ];
 
 export function presetsForCategory(category: SchedulePresetCategory): ScheduleDefinitionPreset[] {
-  return PRESETS.filter((p) => p.category === category).slice().sort((a, b) => a.id.localeCompare(b.id));
+  return PRESETS.filter((p) => p.category === category)
+    .slice()
+    .sort((a, b) => a.id.localeCompare(b.id));
 }
 
 export function presetById(id: string): ScheduleDefinitionPreset | undefined {
@@ -161,7 +178,9 @@ export function missingRequiredFieldKeys(
   serverColumns: readonly string[],
 ): string[] {
   const allowed = new Set(serverColumns);
-  return preset.fields.filter((f) => f.token === 'required' && !allowed.has(f.fieldKey)).map((f) => f.fieldKey);
+  return preset.fields
+    .filter((f) => f.token === 'required' && !allowed.has(f.fieldKey))
+    .map((f) => f.fieldKey);
 }
 
 export type PresetFieldReadoutRow = {

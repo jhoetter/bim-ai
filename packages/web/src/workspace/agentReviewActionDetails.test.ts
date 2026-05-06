@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatAgentReviewActionDetails, isAgentReviewActionKindV1 } from './agentReviewActionDetails';
+import {
+  formatAgentReviewActionDetails,
+  isAgentReviewActionKindV1,
+} from './agentReviewActionDetails';
 
 describe('agentReviewActionDetails', () => {
   it('parses known kinds', () => {

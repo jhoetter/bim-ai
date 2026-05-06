@@ -129,7 +129,10 @@ export function TabBar({
             ].join(' ')}
             style={
               isActive
-                ? { boxShadow: 'inset 0 -2px 0 0 var(--color-accent), 0 -1px 3px 0 rgba(0,0,0,0.04)' }
+                ? {
+                    boxShadow:
+                      'inset 0 -2px 0 0 var(--color-accent), 0 -1px 3px 0 rgba(0,0,0,0.04)',
+                  }
                 : undefined
             }
           >
@@ -158,7 +161,9 @@ export function TabBar({
               data-testid={`tab-close-${tab.id}`}
               className={[
                 'rounded p-0.5 hover:bg-surface-strong',
-                isActive ? 'opacity-50 hover:opacity-100' : 'opacity-0 group-hover:opacity-50 group-hover:hover:opacity-100',
+                isActive
+                  ? 'opacity-50 hover:opacity-100'
+                  : 'opacity-0 group-hover:opacity-50 group-hover:hover:opacity-100',
               ].join(' ')}
             >
               <Icons.close size={11} aria-hidden="true" />

@@ -86,7 +86,13 @@ describe('hasPlacedLegends', () => {
 
   it('returns false for empty or non-matching', () => {
     expect(hasPlacedLegends(null)).toBe(false);
-    expect(hasPlacedLegends({ format: 'roomColorSchemeLegendPlacementEvidence_v1', placedLegendCount: 0, placedRows: [] })).toBe(false);
+    expect(
+      hasPlacedLegends({
+        format: 'roomColorSchemeLegendPlacementEvidence_v1',
+        placedLegendCount: 0,
+        placedRows: [],
+      }),
+    ).toBe(false);
   });
 });
 

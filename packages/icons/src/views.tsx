@@ -8,10 +8,7 @@
 import { bimIcon } from './icon';
 
 // ── Floor plan view: building outline with interior room divisions ─────────────
-export const PlanViewIcon = bimIcon(
-  'PlanViewIcon',
-  <path d="M2 4h20v16H2z M2 13h20 M13 4V13" />,
-);
+export const PlanViewIcon = bimIcon('PlanViewIcon', <path d="M2 4h20v16H2z M2 13h20 M13 4V13" />);
 
 // ── Section view: building cross-section with walls, ceiling, and door opening
 export const SectionViewIcon = bimIcon(
@@ -83,10 +80,7 @@ export const GridLineIcon = bimIcon(
 
 // ── Level datum: horizontal datum line with upward staff and triangle marker ──
 // The triangle tip marks the exact elevation point.
-export const LevelIcon = bimIcon(
-  'LevelIcon',
-  <path d="M2 14H22 M6 14V7 M3 14L6 7L9 14" />,
-);
+export const LevelIcon = bimIcon('LevelIcon', <path d="M2 14H22 M6 14V7 M3 14L6 7L9 14" />);
 
 // ── Detail line: drafted annotation line with endpoint crosshairs ─────────────
 export const DetailLineIcon = bimIcon(

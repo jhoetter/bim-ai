@@ -42,7 +42,8 @@ export function RoofAuthoringWorkbench({
 
   if (!roof) return null;
 
-  const rtVal = roof.roofTypeId && roofTypes.some((t) => t.id === roof.roofTypeId) ? roof.roofTypeId : '';
+  const rtVal =
+    roof.roofTypeId && roofTypes.some((t) => t.id === roof.roofTypeId) ? roof.roofTypeId : '';
 
   return (
     <div

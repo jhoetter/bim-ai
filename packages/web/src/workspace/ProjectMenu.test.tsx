@@ -21,12 +21,7 @@ function Harness({
       <button ref={anchor} data-testid="anchor">
         anchor
       </button>
-      <ProjectMenu
-        open={open}
-        onOpenChange={onOpenChange}
-        anchorRef={anchor}
-        {...rest}
-      />
+      <ProjectMenu open={open} onOpenChange={onOpenChange} anchorRef={anchor} {...rest} />
     </>
   );
 }

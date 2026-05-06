@@ -13,12 +13,21 @@ const fixture = (): EvidencePackageDigestInvariantsWire => ({
   format: 'evidencePackageDigestInvariants_v1',
   digestIncludedTopLevelKeys: ['format', 'modelId', 'revision'],
   digestExcludedTopLevelKeys: [
-    { key: 'generatedAt', rationale: 'Unstable timestamp', enforcementNote: 'Excluded automatically.' },
-    { key: 'semanticDigestSha256', rationale: 'Self-referential digest', enforcementNote: 'Excluded automatically.' },
+    {
+      key: 'generatedAt',
+      rationale: 'Unstable timestamp',
+      enforcementNote: 'Excluded automatically.',
+    },
+    {
+      key: 'semanticDigestSha256',
+      rationale: 'Self-referential digest',
+      enforcementNote: 'Excluded automatically.',
+    },
   ],
   unknownTopLevelKeys: [],
   advisoryFindings: [],
-  evidencePackageDigestInvariantsDigestSha256: 'abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
+  evidencePackageDigestInvariantsDigestSha256:
+    'abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
 });
 
 const fixtureWithUnknown = (): EvidencePackageDigestInvariantsWire => ({

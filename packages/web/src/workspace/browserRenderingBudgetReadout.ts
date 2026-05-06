@@ -159,11 +159,15 @@ function computeProgressiveState(
   return 'in_budget';
 }
 
-function progressiveStateToStatus(state: ProgressiveRenderingBudgetState): BrowserRenderingBudgetMetricStatus {
+function progressiveStateToStatus(
+  state: ProgressiveRenderingBudgetState,
+): BrowserRenderingBudgetMetricStatus {
   return state === 'in_budget' || state === 'stale' ? 'ok' : 'warn';
 }
 
-function sortMetricRows(rows: BrowserRenderingBudgetMetricRow[]): BrowserRenderingBudgetMetricRow[] {
+function sortMetricRows(
+  rows: BrowserRenderingBudgetMetricRow[],
+): BrowserRenderingBudgetMetricRow[] {
   const stateOrder: Record<ProgressiveRenderingBudgetState, number> = {
     over_budget: 0,
     deferred: 1,
@@ -217,11 +221,17 @@ function buildLargeModelProofSummary(rows: BrowserRenderingBudgetMetricRow[]): s
   const anyOverBudget = rows.some((r) => r.progressiveState === 'over_budget');
   const anyDeferred = rows.some((r) => r.progressiveState === 'deferred');
   if (anyOverBudget) {
-    const ids = rows.filter((r) => r.progressiveState === 'over_budget').map((r) => r.id).join(', ');
+    const ids = rows
+      .filter((r) => r.progressiveState === 'over_budget')
+      .map((r) => r.id)
+      .join(', ');
     return `Large-model proof: over_budget — metrics exceeding maximum thresholds: ${ids}.`;
   }
   if (anyDeferred) {
-    const ids = rows.filter((r) => r.progressiveState === 'deferred').map((r) => r.id).join(', ');
+    const ids = rows
+      .filter((r) => r.progressiveState === 'deferred')
+      .map((r) => r.id)
+      .join(', ');
     return `Large-model proof: deferred — metrics in deferred rendering range: ${ids}.`;
   }
   return 'Large-model proof: in_budget — all metrics below warn thresholds.';
@@ -244,7 +254,11 @@ export function buildBrowserRenderingBudgetReadoutV1(opts: {
   // Plan wire primitives
   const planState: ProgressiveRenderingBudgetState = !opts.planProjectionPrimitives
     ? 'stale'
-    : computeProgressiveState(wireCount, BROWSER_BUDGET_WARN_PLAN_WIRE_ENTRIES, BROWSER_BUDGET_OVER_BUDGET_PLAN_WIRE_ENTRIES);
+    : computeProgressiveState(
+        wireCount,
+        BROWSER_BUDGET_WARN_PLAN_WIRE_ENTRIES,
+        BROWSER_BUDGET_OVER_BUDGET_PLAN_WIRE_ENTRIES,
+      );
   const planReasonCode: ProgressiveRenderingReasonCode =
     planState === 'stale'
       ? 'plan_wire_stale_no_projection'
@@ -255,7 +269,11 @@ export function buildBrowserRenderingBudgetReadoutV1(opts: {
           : 'plan_wire_in_budget';
 
   // Model elements
-  const elemState = computeProgressiveState(elementCount, BROWSER_BUDGET_WARN_ELEMENT_COUNT, BROWSER_BUDGET_OVER_BUDGET_ELEMENT_COUNT);
+  const elemState = computeProgressiveState(
+    elementCount,
+    BROWSER_BUDGET_WARN_ELEMENT_COUNT,
+    BROWSER_BUDGET_OVER_BUDGET_ELEMENT_COUNT,
+  );
   const elemReasonCode: ProgressiveRenderingReasonCode =
     elemState === 'over_budget'
       ? 'model_elements_over_budget_very_large_count'
@@ -264,7 +282,11 @@ export function buildBrowserRenderingBudgetReadoutV1(opts: {
         : 'model_elements_in_budget';
 
   // Sheet viewports
-  const sheetState = computeProgressiveState(viewportCount, BROWSER_BUDGET_WARN_SHEET_VIEWPORT_COUNT, BROWSER_BUDGET_OVER_BUDGET_SHEET_VIEWPORT_COUNT);
+  const sheetState = computeProgressiveState(
+    viewportCount,
+    BROWSER_BUDGET_WARN_SHEET_VIEWPORT_COUNT,
+    BROWSER_BUDGET_OVER_BUDGET_SHEET_VIEWPORT_COUNT,
+  );
   const sheetReasonCode: ProgressiveRenderingReasonCode =
     sheetState === 'over_budget'
       ? 'sheet_viewports_over_budget_very_large_count'
@@ -275,7 +297,11 @@ export function buildBrowserRenderingBudgetReadoutV1(opts: {
   // Schedule rows
   const schedState: ProgressiveRenderingBudgetState = !scheduleHydrated
     ? 'stale'
-    : computeProgressiveState(scheduleValue as number, BROWSER_BUDGET_WARN_SCHEDULE_TABLE_ROWS, BROWSER_BUDGET_OVER_BUDGET_SCHEDULE_TABLE_ROWS);
+    : computeProgressiveState(
+        scheduleValue as number,
+        BROWSER_BUDGET_WARN_SCHEDULE_TABLE_ROWS,
+        BROWSER_BUDGET_OVER_BUDGET_SCHEDULE_TABLE_ROWS,
+      );
   const schedReasonCode: ProgressiveRenderingReasonCode =
     schedState === 'stale'
       ? 'schedule_stale_not_hydrated'
@@ -286,7 +312,11 @@ export function buildBrowserRenderingBudgetReadoutV1(opts: {
           : 'schedule_in_budget';
 
   // Saved 3D view clip fields (orbit_3d viewpoints with clip/section-box evidence in ProjectBrowser)
-  const saved3dClipState = computeProgressiveState(saved3dClipCount, BROWSER_BUDGET_WARN_SAVED_3D_CLIP_VIEWS, BROWSER_BUDGET_OVER_BUDGET_SAVED_3D_CLIP_VIEWS);
+  const saved3dClipState = computeProgressiveState(
+    saved3dClipCount,
+    BROWSER_BUDGET_WARN_SAVED_3D_CLIP_VIEWS,
+    BROWSER_BUDGET_OVER_BUDGET_SAVED_3D_CLIP_VIEWS,
+  );
   const saved3dClipReasonCode: ProgressiveRenderingReasonCode =
     saved3dClipState === 'over_budget'
       ? 'saved_3d_clip_over_budget_very_large_count'
@@ -368,7 +398,9 @@ export function buildBrowserRenderingBudgetReadoutV1(opts: {
 }
 
 /** Monospace lines for Agent Review / inspector surfaces. */
-export function formatBrowserRenderingBudgetLines(readout: BrowserRenderingBudgetReadoutV1): string[] {
+export function formatBrowserRenderingBudgetLines(
+  readout: BrowserRenderingBudgetReadoutV1,
+): string[] {
   const lines: string[] = [];
   lines.push('browserRenderingBudgetReadout_v1');
   for (const r of readout.rows) {

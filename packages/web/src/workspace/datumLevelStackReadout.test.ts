@@ -12,7 +12,12 @@ import {
   resolveDatumElevationToken,
 } from './datumLevelStackReadout';
 
-function lvl(id: string, name: string, elevationMm: number, extra?: Partial<Element> & Record<string, unknown>): Element {
+function lvl(
+  id: string,
+  name: string,
+  elevationMm: number,
+  extra?: Partial<Element> & Record<string, unknown>,
+): Element {
   return {
     kind: 'level',
     id,
@@ -40,10 +45,25 @@ describe('datumLevelStackReadout', () => {
   it('resolveDatumElevationToken matches constraints epsilon', () => {
     const parent = lvl('p', 'P', 1000);
     expect(resolveDatumElevationToken(2500, 1500, parent)).toBe('derived');
-    expect(resolveDatumElevationToken(2500 - LEVEL_DATUM_ELEVATION_ALIGN_EPS_MM + 0.5, 1500, parent)).toBe('derived');
-    expect(resolveDatumElevationToken(2500 - LEVEL_DATUM_ELEVATION_ALIGN_EPS_MM * 2, 1500, parent)).toBe('authored');
+    expect(
+      resolveDatumElevationToken(2500 - LEVEL_DATUM_ELEVATION_ALIGN_EPS_MM + 0.5, 1500, parent),
+    ).toBe('derived');
+    expect(
+      resolveDatumElevationToken(2500 - LEVEL_DATUM_ELEVATION_ALIGN_EPS_MM * 2, 1500, parent),
+    ).toBe('authored');
     expect(resolveDatumElevationToken(3000, 0, undefined)).toBe('unresolved_parent');
-    expect(resolveDatumElevationToken(3000, 0, { kind: 'wall', id: 'w', name: 'W', levelId: 'x', start: { xMm: 0, yMm: 0 }, end: { xMm: 1, yMm: 0 }, thicknessMm: 100, heightMm: 2000 })).toBe('unresolved_parent');
+    expect(
+      resolveDatumElevationToken(3000, 0, {
+        kind: 'wall',
+        id: 'w',
+        name: 'W',
+        levelId: 'x',
+        start: { xMm: 0, yMm: 0 },
+        end: { xMm: 1, yMm: 0 },
+        thicknessMm: 100,
+        heightMm: 2000,
+      }),
+    ).toBe('unresolved_parent');
   });
 
   it('buildLevelDatumStackRows sorts by elevation then id', () => {
@@ -60,8 +80,14 @@ describe('datumLevelStackReadout', () => {
   it('buildLevelDatumStackRows parent chain and tokens', () => {
     const doc: Record<string, Element> = {
       parent: lvl('parent', 'Parent', 1000),
-      childOk: lvl('childOk', 'Child ok', 3500, { parentLevelId: 'parent', offsetFromParentMm: 2500 }),
-      childOff: lvl('childOff', 'Child off', 9999, { parentLevelId: 'parent', offsetFromParentMm: 2500 }),
+      childOk: lvl('childOk', 'Child ok', 3500, {
+        parentLevelId: 'parent',
+        offsetFromParentMm: 2500,
+      }),
+      childOff: lvl('childOff', 'Child off', 9999, {
+        parentLevelId: 'parent',
+        offsetFromParentMm: 2500,
+      }),
       orphan: lvl('orphan', 'Orphan', 500, { parentLevelId: 'missing', offsetFromParentMm: 100 }),
     };
     const byId = Object.fromEntries(buildLevelDatumStackRows(doc).map((r) => [r.id, r]));
@@ -98,7 +124,12 @@ describe('datumLevelStackReadout', () => {
         message: 'm',
         elementIds: ['l', 'p'],
       },
-      { ruleId: 'wall_constraint_levels_inverted', severity: 'warning', message: 'w', elementIds: ['wall1'] },
+      {
+        ruleId: 'wall_constraint_levels_inverted',
+        severity: 'warning',
+        message: 'w',
+        elementIds: ['wall1'],
+      },
     ];
     const f = filterDatumWorkbenchViolations(viols, ids);
     expect(f.map((v) => v.ruleId)).toEqual(['level_datum_parent_offset_mismatch']);

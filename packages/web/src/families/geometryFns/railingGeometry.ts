@@ -4,10 +4,10 @@ import type { ViewportPaintBundle } from '../../viewport/materials';
 import { resolveParam, type FamilyDefinition } from '../types';
 
 export type RailingGeomInput = {
-  railing:   Extract<Element, { kind: 'railing' }>;
+  railing: Extract<Element, { kind: 'railing' }>;
   baseElevM: number;
-  topElevM:  number;
-  paint:     ViewportPaintBundle | null;
+  topElevM: number;
+  paint: ViewportPaintBundle | null;
   familyDef: FamilyDefinition | undefined;
 };
 
@@ -31,13 +31,14 @@ export function buildRailingGeometry(input: RailingGeomInput): THREE.Group {
 
   const ip = railing.overrideParams;
   const typeEntry = railing.overrideParams?.familyTypeId
-    ? familyDef?.defaultTypes.find(t => t.id === railing.overrideParams?.familyTypeId)
+    ? familyDef?.defaultTypes.find((t) => t.id === railing.overrideParams?.familyTypeId)
     : undefined;
   const tp = typeEntry?.parameters;
 
   const guardH = THREE.MathUtils.clamp(
     Number(resolveParam('guardHeightMm', ip, tp, familyDef, railing.guardHeightMm ?? 1050)) / 1000,
-    0.5, 2.2,
+    0.5,
+    2.2,
   );
   const postSect = Number(resolveParam('postSectMm', ip, tp, familyDef, 50)) / 1000;
   const balSpacing = Number(resolveParam('balSpacingMm', ip, tp, familyDef, 115)) / 1000;
@@ -46,7 +47,7 @@ export function buildRailingGeometry(input: RailingGeomInput): THREE.Group {
   if (pts.length < 2) return group;
 
   const baseElev = baseElevM;
-  const topElev  = topElevM;
+  const topElev = topElevM;
 
   let totalPlanLen = 0;
   for (let i = 1; i < pts.length; i++) {
@@ -92,8 +93,10 @@ export function buildRailingGeometry(input: RailingGeomInput): THREE.Group {
   for (let i = 0; i < pts.length - 1; i++) {
     const a = pts[i]!;
     const b = pts[i + 1]!;
-    const ax = a.xMm / 1000, az = a.yMm / 1000;
-    const bx = b.xMm / 1000, bz = b.yMm / 1000;
+    const ax = a.xMm / 1000,
+      az = a.yMm / 1000;
+    const bx = b.xMm / 1000,
+      bz = b.yMm / 1000;
     const planSeg = Math.max(0.001, Math.hypot(bx - ax, bz - az));
     const tA = totalPlanLen > 0 ? cumLen / totalPlanLen : 0;
     cumLen += planSeg;

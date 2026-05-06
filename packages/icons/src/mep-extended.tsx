@@ -34,10 +34,7 @@ export const DuctInsulationIcon = bimIcon(
 );
 
 // ── Duct lining: duct with interior acoustic/thermal liner ───────────────────
-export const DuctLiningIcon = bimIcon(
-  'DuctLiningIcon',
-  <path d="M2 8H22V16H2z M5 10H19V14H5z" />,
-);
+export const DuctLiningIcon = bimIcon('DuctLiningIcon', <path d="M2 8H22V16H2z M5 10H19V14H5z" />);
 
 // ── Flex pipe: corrugated flexible pipe hose ─────────────────────────────────
 export const FlexPipeIcon = bimIcon(

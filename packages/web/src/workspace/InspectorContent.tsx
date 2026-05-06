@@ -56,23 +56,27 @@ export function InspectorPropertiesFor(
   switch (el.kind) {
     case 'wall': {
       const { elementsById = {}, onPropertyChange } = options ?? {};
-      const roofs = Object.values(elementsById).filter((e): e is Extract<Element, { kind: 'roof' }> => e.kind === 'roof');
+      const roofs = Object.values(elementsById).filter(
+        (e): e is Extract<Element, { kind: 'roof' }> => e.kind === 'roof',
+      );
       return (
         <div className="flex flex-col gap-2">
           <FieldRow label={f('thickness')} value={fmtMm(el.thicknessMm)} />
-          <FieldRow label={f('height')}    value={fmtMm(el.heightMm)} />
-          <FieldRow label={f('level')}     value={el.levelId} mono />
+          <FieldRow label={f('height')} value={fmtMm(el.heightMm)} />
+          <FieldRow label={f('level')} value={el.levelId} mono />
 
           <div className="flex items-center gap-2 py-0.5">
             <span className="text-xs text-muted w-28 shrink-0">{f('roofAttachment')}</span>
             <select
               className="flex-1 text-xs bg-surface border border-border rounded px-1 py-0.5"
               value={el.roofAttachmentId ?? ''}
-              onChange={e2 => onPropertyChange?.('roofAttachmentId', e2.target.value || null)}
+              onChange={(e2) => onPropertyChange?.('roofAttachmentId', e2.target.value || null)}
             >
               <option value="">— None —</option>
-              {roofs.map(r => (
-                <option key={r.id} value={r.id}>{r.name ?? r.id}</option>
+              {roofs.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name ?? r.id}
+                </option>
               ))}
             </select>
           </div>
@@ -82,7 +86,7 @@ export function InspectorPropertiesFor(
             <input
               type="checkbox"
               checked={el.isCurtainWall ?? false}
-              onChange={e2 => onPropertyChange?.('isCurtainWall', e2.target.checked)}
+              onChange={(e2) => onPropertyChange?.('isCurtainWall', e2.target.checked)}
               className="accent-primary"
             />
           </div>
@@ -92,12 +96,16 @@ export function InspectorPropertiesFor(
             <select
               className="flex-1 text-xs bg-surface border border-border rounded px-1 py-0.5"
               value={el.wallTypeId ?? ''}
-              onChange={e2 => onPropertyChange?.('wallTypeId', e2.target.value || null)}
+              onChange={(e2) => onPropertyChange?.('wallTypeId', e2.target.value || null)}
             >
               <option value="">— None —</option>
               {Object.values(elementsById)
                 .filter((e): e is Extract<Element, { kind: 'wall_type' }> => e.kind === 'wall_type')
-                .map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                .map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
+                ))}
             </select>
           </div>
         </div>
@@ -123,7 +131,8 @@ export function InspectorPropertiesFor(
         </div>
       );
     case 'floor': {
-      const { elementsById: floorElementsById = {}, onPropertyChange: floorOnPropertyChange } = options ?? {};
+      const { elementsById: floorElementsById = {}, onPropertyChange: floorOnPropertyChange } =
+        options ?? {};
       return (
         <div className="flex flex-col gap-2">
           <FieldRow label={f('thickness')} value={fmtMm(el.thicknessMm)} />
@@ -137,19 +146,26 @@ export function InspectorPropertiesFor(
             <select
               className="flex-1 text-xs bg-surface border border-border rounded px-1 py-0.5"
               value={el.floorTypeId ?? ''}
-              onChange={e2 => floorOnPropertyChange?.('floorTypeId', e2.target.value || null)}
+              onChange={(e2) => floorOnPropertyChange?.('floorTypeId', e2.target.value || null)}
             >
               <option value="">— None —</option>
               {Object.values(floorElementsById)
-                .filter((e): e is Extract<Element, { kind: 'floor_type' }> => e.kind === 'floor_type')
-                .map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                .filter(
+                  (e): e is Extract<Element, { kind: 'floor_type' }> => e.kind === 'floor_type',
+                )
+                .map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
+                ))}
             </select>
           </div>
         </div>
       );
     }
     case 'roof': {
-      const { elementsById: roofElementsById = {}, onPropertyChange: roofOnPropertyChange } = options ?? {};
+      const { elementsById: roofElementsById = {}, onPropertyChange: roofOnPropertyChange } =
+        options ?? {};
       return (
         <div className="flex flex-col gap-2">
           <FieldRow label={f('slope')} value={`${(el.slopeDeg ?? 0).toFixed(1)}°`} />
@@ -162,12 +178,16 @@ export function InspectorPropertiesFor(
             <select
               className="flex-1 text-xs bg-surface border border-border rounded px-1 py-0.5"
               value={el.roofTypeId ?? ''}
-              onChange={e2 => roofOnPropertyChange?.('roofTypeId', e2.target.value || null)}
+              onChange={(e2) => roofOnPropertyChange?.('roofTypeId', e2.target.value || null)}
             >
               <option value="">— None —</option>
               {Object.values(roofElementsById)
                 .filter((e): e is Extract<Element, { kind: 'roof_type' }> => e.kind === 'roof_type')
-                .map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                .map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
+                ))}
             </select>
           </div>
         </div>
@@ -222,8 +242,12 @@ export function InspectorPropertiesFor(
         <div>
           <FieldRow label={f('level')} value={el.levelId} mono />
           <FieldRow label={f('presentation')} value={el.planPresentation ?? 'default'} />
-          {el.viewTemplateId ? <FieldRow label={f('template')} value={el.viewTemplateId} mono /> : null}
-          {el.underlayLevelId ? <FieldRow label={f('underlay')} value={el.underlayLevelId} mono /> : null}
+          {el.viewTemplateId ? (
+            <FieldRow label={f('template')} value={el.viewTemplateId} mono />
+          ) : null}
+          {el.underlayLevelId ? (
+            <FieldRow label={f('underlay')} value={el.underlayLevelId} mono />
+          ) : null}
         </div>
       );
     case 'viewpoint':
@@ -237,7 +261,9 @@ export function InspectorPropertiesFor(
       return (
         <div>
           <FieldRow label={f('scale')} value={el.scale} mono />
-          {el.planDetailLevel ? <FieldRow label={f('detailLevel')} value={el.planDetailLevel} /> : null}
+          {el.planDetailLevel ? (
+            <FieldRow label={f('detailLevel')} value={el.planDetailLevel} />
+          ) : null}
         </div>
       );
     default:
@@ -271,7 +297,9 @@ export function InspectorConstraintsFor(el: Element, t: TFunction): JSX.Element 
         </div>
       );
     default:
-      return <p className="text-sm text-muted">{t('inspector.noConstraints', { kind: el.kind })}</p>;
+      return (
+        <p className="text-sm text-muted">{t('inspector.noConstraints', { kind: el.kind })}</p>
+      );
   }
 }
 
@@ -400,12 +428,18 @@ export function InspectorPlanViewEditor({
         {pv('underlayLevel')}
         <select
           className={INPUT_CLS}
-          value={el.underlayLevelId && levels.some((l) => l.id === el.underlayLevelId) ? el.underlayLevelId : ''}
+          value={
+            el.underlayLevelId && levels.some((l) => l.id === el.underlayLevelId)
+              ? el.underlayLevelId
+              : ''
+          }
           onChange={(e) => onPersistProperty('underlayLevelId', e.target.value)}
         >
           <option value="">{pv('none')}</option>
           {levels.map((l) => (
-            <option key={l.id} value={l.id}>{l.name}</option>
+            <option key={l.id} value={l.id}>
+              {l.name}
+            </option>
           ))}
         </select>
       </label>
@@ -416,12 +450,18 @@ export function InspectorPlanViewEditor({
             {pv('viewTemplateLink')}
             <select
               className={INPUT_CLS}
-              value={el.viewTemplateId && templates.some((tmpl) => tmpl.id === el.viewTemplateId) ? el.viewTemplateId : ''}
+              value={
+                el.viewTemplateId && templates.some((tmpl) => tmpl.id === el.viewTemplateId)
+                  ? el.viewTemplateId
+                  : ''
+              }
               onChange={(e) => onPersistProperty('viewTemplateId', e.target.value)}
             >
               <option value="">{pv('none')}</option>
               {templates.map((tmpl) => (
-                <option key={tmpl.id} value={tmpl.id}>{tmpl.name}</option>
+                <option key={tmpl.id} value={tmpl.id}>
+                  {tmpl.name}
+                </option>
               ))}
             </select>
           </label>
@@ -433,12 +473,17 @@ export function InspectorPlanViewEditor({
               onChange={(e) => {
                 const tid = e.target.value;
                 if (!tid) return;
-                onPersistProperty('__applyTemplate__', JSON.stringify({ planViewId: el.id, templateId: tid }));
+                onPersistProperty(
+                  '__applyTemplate__',
+                  JSON.stringify({ planViewId: el.id, templateId: tid }),
+                );
               }}
             >
               <option value="">{pv('selectToApply')}</option>
               {templates.map((tmpl) => (
-                <option key={tmpl.id} value={tmpl.id}>{tmpl.name}</option>
+                <option key={tmpl.id} value={tmpl.id}>
+                  {tmpl.name}
+                </option>
               ))}
             </select>
           </label>
@@ -464,8 +509,10 @@ export function InspectorPlanViewEditor({
             type="button"
             className="flex-1 rounded border border-border bg-background px-2 py-1 text-[10px] hover:bg-surface-strong"
             onClick={() => {
-              const nx = Number(cropDraft.minX), ny = Number(cropDraft.minY);
-              const xx = Number(cropDraft.maxX), xy = Number(cropDraft.maxY);
+              const nx = Number(cropDraft.minX),
+                ny = Number(cropDraft.minY);
+              const xx = Number(cropDraft.maxX),
+                xy = Number(cropDraft.maxY);
               if (![nx, ny, xx, xy].every(Number.isFinite)) return;
               onPersistProperty('cropMinMm', JSON.stringify({ xMm: nx, yMm: ny }));
               onPersistProperty('cropMaxMm', JSON.stringify({ xMm: xx, yMm: xy }));
@@ -526,7 +573,12 @@ export function InspectorRoomEditor({
   const { t } = useTranslation();
   const f = (key: string) => t(`inspector.fields.${key}`);
   const r = (key: string) => t(`inspector.room.${key}`);
-  const fields: { key: string; label: string; val: string | null | undefined; inputMode?: string }[] = [
+  const fields: {
+    key: string;
+    label: string;
+    val: string | null | undefined;
+    inputMode?: string;
+  }[] = [
     { key: 'name', label: f('name'), val: el.name },
     { key: 'programmeCode', label: r('programmeCode'), val: el.programmeCode },
     { key: 'department', label: f('department'), val: el.department },
@@ -635,9 +687,16 @@ function CustomTypeForm({
         <select
           className={INPUT_CLS}
           value={baseFamilyId}
-          onChange={(e) => { setBaseFamilyId(e.target.value); setParamDraft({}); }}
+          onChange={(e) => {
+            setBaseFamilyId(e.target.value);
+            setParamDraft({});
+          }}
         >
-          {families.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
+          {families.map((f) => (
+            <option key={f.id} value={f.id}>
+              {f.name}
+            </option>
+          ))}
         </select>
       </label>
       <label className={LABEL_CLS}>
@@ -727,14 +786,18 @@ export function InspectorDoorEditor({
           {doorFamilies.map((fam) => (
             <optgroup key={fam.id} label={fam.name}>
               {fam.defaultTypes.map((type) => (
-                <option key={type.id} value={type.id}>{type.name}</option>
+                <option key={type.id} value={type.id}>
+                  {type.name}
+                </option>
               ))}
             </optgroup>
           ))}
           {customTypes.length > 0 && (
             <optgroup label="Custom">
               {customTypes.map((ct) => (
-                <option key={ct.id} value={ct.id}>{String(ct.parameters.name ?? ct.id)}</option>
+                <option key={ct.id} value={ct.id}>
+                  {String(ct.parameters.name ?? ct.id)}
+                </option>
               ))}
             </optgroup>
           )}
@@ -802,14 +865,18 @@ export function InspectorWindowEditor({
           {windowFamilies.map((fam) => (
             <optgroup key={fam.id} label={fam.name}>
               {fam.defaultTypes.map((type) => (
-                <option key={type.id} value={type.id}>{type.name}</option>
+                <option key={type.id} value={type.id}>
+                  {type.name}
+                </option>
               ))}
             </optgroup>
           ))}
           {customTypes.length > 0 && (
             <optgroup label="Custom">
               {customTypes.map((ct) => (
-                <option key={ct.id} value={ct.id}>{String(ct.parameters.name ?? ct.id)}</option>
+                <option key={ct.id} value={ct.id}>
+                  {String(ct.parameters.name ?? ct.id)}
+                </option>
               ))}
             </optgroup>
           )}

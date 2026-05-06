@@ -80,8 +80,7 @@ export function summarizeBcfIssuePackageExport(raw: BcfIssuePackageExportWire | 
 
   const c = raw.counts ?? {};
   const dg = raw.packageManifestDigestSha256;
-  const manifestDigestPrefix =
-    typeof dg === 'string' && dg.length >= 12 ? dg.slice(0, 16) : null;
+  const manifestDigestPrefix = typeof dg === 'string' && dg.length >= 12 ? dg.slice(0, 16) : null;
 
   const lines: string[] = [
     [
@@ -95,7 +94,9 @@ export function summarizeBcfIssuePackageExport(raw: BcfIssuePackageExportWire | 
     ].join(' · '),
   ];
   if (manifestDigestPrefix) {
-    lines.push(`Manifest digest: ${manifestDigestPrefix}… (${dg!.length === 64 ? 'sha256' : 'truncated hint'})`);
+    lines.push(
+      `Manifest digest: ${manifestDigestPrefix}… (${dg!.length === 64 ? 'sha256' : 'truncated hint'})`,
+    );
   }
 
   const topics = Array.isArray(raw.topics) ? raw.topics : [];
@@ -124,13 +125,13 @@ export function summarizeBcfIssuePackageExport(raw: BcfIssuePackageExportWire | 
   if (Array.isArray(rem) && rem.length) {
     const paths = [...rem]
       .filter((x): x is BcfIssueRemediationHintWire => typeof x === 'object' && x !== null)
-      .map((x) =>
-        typeof x.path === 'string' ? (x.hint ? `${x.path}[${x.hint}]` : x.path) : '',
-      )
+      .map((x) => (typeof x.path === 'string' ? (x.hint ? `${x.path}[${x.hint}]` : x.path) : ''))
       .filter(Boolean)
       .sort();
     if (paths.length) {
-      lines.push(`Remediation hints: ${paths.slice(0, 8).join(' · ')}${paths.length > 8 ? ' …' : ''}`);
+      lines.push(
+        `Remediation hints: ${paths.slice(0, 8).join(' · ')}${paths.length > 8 ? ' …' : ''}`,
+      );
     }
   }
 
@@ -145,7 +146,11 @@ export function summarizeBcfIssuePackageExport(raw: BcfIssuePackageExportWire | 
     for (const ln of slice) lines.push(`  · ${ln}`);
   }
 
-  pushSlice(`Stale (${raw.staleAnchorRows?.length ?? 0})`, raw.staleAnchorRows, raw.staleAnchorRowsTruncated === true);
+  pushSlice(
+    `Stale (${raw.staleAnchorRows?.length ?? 0})`,
+    raw.staleAnchorRows,
+    raw.staleAnchorRowsTruncated === true,
+  );
   pushSlice(
     `Missing correlation (${raw.missingCorrelationAnchorRows?.length ?? 0})`,
     raw.missingCorrelationAnchorRows,

@@ -16,7 +16,9 @@ function renderWithI18n(ui: React.ReactElement) {
   return render(<I18nextProvider i18n={i18n}>{ui}</I18nextProvider>);
 }
 
-function makeProps(overrides: Partial<Viewport3DLayersPanelProps> = {}): Viewport3DLayersPanelProps {
+function makeProps(
+  overrides: Partial<Viewport3DLayersPanelProps> = {},
+): Viewport3DLayersPanelProps {
   return {
     viewerCategoryHidden: {},
     onToggleCategory: vi.fn(),
@@ -49,9 +51,7 @@ describe('<Viewport3DLayersPanel />', () => {
 
   it('calls onToggleCategory when a checkbox is clicked', () => {
     const onToggleCategory = vi.fn();
-    const { getByTestId } = render(
-      <Viewport3DLayersPanel {...makeProps({ onToggleCategory })} />,
-    );
+    const { getByTestId } = render(<Viewport3DLayersPanel {...makeProps({ onToggleCategory })} />);
     fireEvent.click(getByTestId('layer-toggle-roof'));
     expect(onToggleCategory).toHaveBeenCalledOnce();
     expect(onToggleCategory).toHaveBeenCalledWith('roof');
@@ -75,9 +75,7 @@ describe('<Viewport3DLayersPanel />', () => {
 
   it('calls onSetClipElevMm with parsed number on cap input change', () => {
     const onSetClipElevMm = vi.fn();
-    const { getByTestId } = render(
-      <Viewport3DLayersPanel {...makeProps({ onSetClipElevMm })} />,
-    );
+    const { getByTestId } = render(<Viewport3DLayersPanel {...makeProps({ onSetClipElevMm })} />);
     fireEvent.change(getByTestId('clip-elev-input'), { target: { value: '3200' } });
     expect(onSetClipElevMm).toHaveBeenCalledWith(3200);
   });
@@ -102,18 +100,14 @@ describe('<Viewport3DLayersPanel />', () => {
 
   it('calls onClipElevBlur when cap input loses focus', () => {
     const onClipElevBlur = vi.fn();
-    const { getByTestId } = render(
-      <Viewport3DLayersPanel {...makeProps({ onClipElevBlur })} />,
-    );
+    const { getByTestId } = render(<Viewport3DLayersPanel {...makeProps({ onClipElevBlur })} />);
     fireEvent.blur(getByTestId('clip-elev-input'));
     expect(onClipElevBlur).toHaveBeenCalledOnce();
   });
 
   it('calls onClipFloorBlur when floor input loses focus', () => {
     const onClipFloorBlur = vi.fn();
-    const { getByTestId } = render(
-      <Viewport3DLayersPanel {...makeProps({ onClipFloorBlur })} />,
-    );
+    const { getByTestId } = render(<Viewport3DLayersPanel {...makeProps({ onClipFloorBlur })} />);
     fireEvent.blur(getByTestId('clip-floor-input'));
     expect(onClipFloorBlur).toHaveBeenCalledOnce();
   });

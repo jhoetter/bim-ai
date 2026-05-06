@@ -55,8 +55,7 @@ describe('formatCollaboration409Status', () => {
   it('appends replayPerformanceBudget_v1 advisory when present', () => {
     const advisory =
       'Large command bundles raise validation latency; sanity-check merges of agent-authored payloads before pushing to shared revisions.';
-    const clipped =
-      advisory.length > 90 ? `${advisory.slice(0, 90)}…` : advisory;
+    const clipped = advisory.length > 90 ? `${advisory.slice(0, 90)}…` : advisory;
     const e = new ApiHttpError(409, 'constraint_error', {
       reason: 'x',
       replayDiagnostics: {

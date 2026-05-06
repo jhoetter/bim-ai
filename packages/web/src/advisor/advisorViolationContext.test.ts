@@ -36,7 +36,9 @@ describe('advisorViolationContext', () => {
   });
 
   it('recommends schedule opening QA context for new rules', () => {
-    expect(recommendedContextForRuleId('schedule_opening_identifier_missing')).toMatch(/mark|name/i);
+    expect(recommendedContextForRuleId('schedule_opening_identifier_missing')).toMatch(
+      /mark|name/i,
+    );
     expect(recommendedContextForRuleId('schedule_opening_orphan_host')).toMatch(/wall/i);
     expect(recommendedContextForRuleId('schedule_opening_family_type_incomplete')).toMatch(
       /familyTypeId/i,

@@ -73,7 +73,11 @@ function readColorToken(name: string, fallback: string): string {
   }
 }
 
-function sunPositionFromAzEl(azimuthDeg: number, elevationDeg: number, radiusM = 80): THREE.Vector3 {
+function sunPositionFromAzEl(
+  azimuthDeg: number,
+  elevationDeg: number,
+  radiusM = 80,
+): THREE.Vector3 {
   const az = THREE.MathUtils.degToRad(azimuthDeg);
   const el = THREE.MathUtils.degToRad(elevationDeg);
   return new THREE.Vector3(
@@ -95,7 +99,7 @@ function buildSkyEnvMap(
   u['rayleigh'].value = 0.5;
   u['mieCoefficient'].value = 0.005;
   u['mieDirectionalG'].value = 0.8;
-  const phi   = THREE.MathUtils.degToRad(90 - elevationDeg);
+  const phi = THREE.MathUtils.degToRad(90 - elevationDeg);
   const theta = THREE.MathUtils.degToRad(azimuthDeg);
   u['sunPosition'].value.setFromSphericalCoords(1, phi, theta);
   const pmrem = new THREE.PMREMGenerator(renderer);
@@ -114,10 +118,7 @@ type Props = {
   onPersistViewpointField?: (payload: OrbitViewpointPersistFieldPayload) => void | Promise<void>;
 };
 
-function addEdges(
-  mesh: THREE.Mesh,
-  thresholdAngleDeg = 15,
-): THREE.LineSegments {
+function addEdges(mesh: THREE.Mesh, thresholdAngleDeg = 15): THREE.LineSegments {
   const color = readToken('--color-foreground', '#1a1a1a');
   const edges = new THREE.EdgesGeometry(mesh.geometry, thresholdAngleDeg);
   const mat = new THREE.LineBasicMaterial({ color, linewidth: 1 });
@@ -129,8 +130,8 @@ function addEdges(
   return lines;
 }
 
-type WallElem   = Extract<Element, { kind: 'wall' }>;
-type DoorElem   = Extract<Element, { kind: 'door' }>;
+type WallElem = Extract<Element, { kind: 'wall' }>;
+type DoorElem = Extract<Element, { kind: 'door' }>;
 type WindowElem = Extract<Element, { kind: 'window' }>;
 
 // CSG wall-opening cuts: enabled by default; set VITE_ENABLE_CSG=false to disable.
@@ -283,7 +284,8 @@ function offsetPolygonMm(pts: XYPt[], dist: number): XYPt[] {
   // Signed area: positive = CCW in standard (right-hand) plan coordinates.
   let area2 = 0;
   for (let i = 0; i < n; i++) {
-    const a = pts[i], b = pts[(i + 1) % n];
+    const a = pts[i],
+      b = pts[(i + 1) % n];
     area2 += a.xMm * b.yMm - b.xMm * a.yMm;
   }
   const sign = area2 > 0 ? 1 : -1; // +1 CCW, −1 CW
@@ -295,20 +297,28 @@ function offsetPolygonMm(pts: XYPt[], dist: number): XYPt[] {
     const C = pts[(i + 1) % n];
 
     // Outward unit normal of edge A→B: right-perpendicular for CCW.
-    const dx1 = B.xMm - A.xMm, dy1 = B.yMm - A.yMm;
+    const dx1 = B.xMm - A.xMm,
+      dy1 = B.yMm - A.yMm;
     const len1 = Math.hypot(dx1, dy1) || 1;
-    const nx1 = (sign * dy1) / len1, ny1 = (-sign * dx1) / len1;
+    const nx1 = (sign * dy1) / len1,
+      ny1 = (-sign * dx1) / len1;
 
     // Outward unit normal of edge B→C.
-    const dx2 = C.xMm - B.xMm, dy2 = C.yMm - B.yMm;
+    const dx2 = C.xMm - B.xMm,
+      dy2 = C.yMm - B.yMm;
     const len2 = Math.hypot(dx2, dy2) || 1;
-    const nx2 = (sign * dy2) / len2, ny2 = (-sign * dx2) / len2;
+    const nx2 = (sign * dy2) / len2,
+      ny2 = (-sign * dx2) / len2;
 
     // Offset origin of each edge line.
-    const ox1 = A.xMm + nx1 * dist, oy1 = A.yMm + ny1 * dist;
-    const ox2 = B.xMm + nx2 * dist, oy2 = B.yMm + ny2 * dist;
-    const ux1 = dx1 / len1, uy1 = dy1 / len1;
-    const ux2 = dx2 / len2, uy2 = dy2 / len2;
+    const ox1 = A.xMm + nx1 * dist,
+      oy1 = A.yMm + ny1 * dist;
+    const ox2 = B.xMm + nx2 * dist,
+      oy2 = B.yMm + ny2 * dist;
+    const ux1 = dx1 / len1,
+      uy1 = dy1 / len1;
+    const ux2 = dx2 / len2,
+      uy2 = dy2 / len2;
 
     // Intersect the two offset lines.
     const det = ux1 * uy2 - uy1 * ux2;
@@ -325,7 +335,8 @@ function offsetPolygonMm(pts: XYPt[], dist: number): XYPt[] {
 function _polygonAreaMm2(pts: XYPt[]): number {
   let s = 0;
   for (let i = 0; i < pts.length; i++) {
-    const a = pts[i], b = pts[(i + 1) % pts.length];
+    const a = pts[i],
+      b = pts[(i + 1) % pts.length];
     s += a.xMm * b.yMm - b.xMm * a.yMm;
   }
   return Math.abs(s) / 2;
@@ -361,8 +372,13 @@ function _compactnessRatio(pts: XYPt[]): number {
 }
 
 function _buildGableGeometry(
-  ox0: number, ox1: number, oz0: number, oz1: number,
-  eaveY: number, slopeRad: number, ridgeAlongX: boolean,
+  ox0: number,
+  ox1: number,
+  oz0: number,
+  oz1: number,
+  eaveY: number,
+  slopeRad: number,
+  ridgeAlongX: boolean,
 ): THREE.BufferGeometry {
   const halfSpan = ridgeAlongX ? (oz1 - oz0) / 2 : (ox1 - ox0) / 2;
   const ridgeY = eaveY + halfSpan * Math.tan(slopeRad);
@@ -371,29 +387,125 @@ function _buildGableGeometry(
     const rz = (oz0 + oz1) / 2;
     positions = [
       // South slope
-      ox0, eaveY, oz0,  ox1, eaveY, oz0,  ox0, ridgeY, rz,
-      ox1, eaveY, oz0,  ox1, ridgeY, rz,  ox0, ridgeY, rz,
+      ox0,
+      eaveY,
+      oz0,
+      ox1,
+      eaveY,
+      oz0,
+      ox0,
+      ridgeY,
+      rz,
+      ox1,
+      eaveY,
+      oz0,
+      ox1,
+      ridgeY,
+      rz,
+      ox0,
+      ridgeY,
+      rz,
       // North slope
-      ox0, ridgeY, rz,  ox1, ridgeY, rz,  ox0, eaveY, oz1,
-      ox1, ridgeY, rz,  ox1, eaveY, oz1,  ox0, eaveY, oz1,
+      ox0,
+      ridgeY,
+      rz,
+      ox1,
+      ridgeY,
+      rz,
+      ox0,
+      eaveY,
+      oz1,
+      ox1,
+      ridgeY,
+      rz,
+      ox1,
+      eaveY,
+      oz1,
+      ox0,
+      eaveY,
+      oz1,
       // West gable
-      ox0, eaveY, oz0,  ox0, ridgeY, rz,  ox0, eaveY, oz1,
+      ox0,
+      eaveY,
+      oz0,
+      ox0,
+      ridgeY,
+      rz,
+      ox0,
+      eaveY,
+      oz1,
       // East gable
-      ox1, eaveY, oz0,  ox1, eaveY, oz1,  ox1, ridgeY, rz,
+      ox1,
+      eaveY,
+      oz0,
+      ox1,
+      eaveY,
+      oz1,
+      ox1,
+      ridgeY,
+      rz,
     ];
   } else {
     const rx = (ox0 + ox1) / 2;
     positions = [
       // West slope
-      ox0, eaveY, oz0,  ox0, eaveY, oz1,  rx, ridgeY, oz0,
-      ox0, eaveY, oz1,  rx, ridgeY, oz1,  rx, ridgeY, oz0,
+      ox0,
+      eaveY,
+      oz0,
+      ox0,
+      eaveY,
+      oz1,
+      rx,
+      ridgeY,
+      oz0,
+      ox0,
+      eaveY,
+      oz1,
+      rx,
+      ridgeY,
+      oz1,
+      rx,
+      ridgeY,
+      oz0,
       // East slope
-      rx, ridgeY, oz0,  rx, ridgeY, oz1,  ox1, eaveY, oz0,
-      rx, ridgeY, oz1,  ox1, eaveY, oz1,  ox1, eaveY, oz0,
+      rx,
+      ridgeY,
+      oz0,
+      rx,
+      ridgeY,
+      oz1,
+      ox1,
+      eaveY,
+      oz0,
+      rx,
+      ridgeY,
+      oz1,
+      ox1,
+      eaveY,
+      oz1,
+      ox1,
+      eaveY,
+      oz0,
       // South gable
-      ox0, eaveY, oz0,  rx, ridgeY, oz0,  ox1, eaveY, oz0,
+      ox0,
+      eaveY,
+      oz0,
+      rx,
+      ridgeY,
+      oz0,
+      ox1,
+      eaveY,
+      oz0,
       // North gable
-      ox0, eaveY, oz1,  ox1, eaveY, oz1,  rx, ridgeY, oz1,
+      ox0,
+      eaveY,
+      oz1,
+      ox1,
+      eaveY,
+      oz1,
+      rx,
+      ridgeY,
+      oz1,
     ];
   }
   const g = new THREE.BufferGeometry();
@@ -403,8 +515,13 @@ function _buildGableGeometry(
 }
 
 function _buildHipGeometry(
-  ox0: number, ox1: number, oz0: number, oz1: number,
-  eaveY: number, slopeRad: number, ridgeAlongX: boolean,
+  ox0: number,
+  ox1: number,
+  oz0: number,
+  oz1: number,
+  eaveY: number,
+  slopeRad: number,
+  ridgeAlongX: boolean,
 ): THREE.BufferGeometry {
   let positions: number[];
   if (ridgeAlongX) {
@@ -418,23 +535,103 @@ function _buildHipGeometry(
       // Square or near-square → pyramid
       const px = (ox0 + ox1) / 2;
       positions = [
-        ox0, eaveY, oz0,  ox1, eaveY, oz0,  px, ridgeY, midZ,
-        ox1, eaveY, oz1,  ox0, eaveY, oz1,  px, ridgeY, midZ,
-        ox0, eaveY, oz1,  ox0, eaveY, oz0,  px, ridgeY, midZ,
-        ox1, eaveY, oz0,  ox1, eaveY, oz1,  px, ridgeY, midZ,
+        ox0,
+        eaveY,
+        oz0,
+        ox1,
+        eaveY,
+        oz0,
+        px,
+        ridgeY,
+        midZ,
+        ox1,
+        eaveY,
+        oz1,
+        ox0,
+        eaveY,
+        oz1,
+        px,
+        ridgeY,
+        midZ,
+        ox0,
+        eaveY,
+        oz1,
+        ox0,
+        eaveY,
+        oz0,
+        px,
+        ridgeY,
+        midZ,
+        ox1,
+        eaveY,
+        oz0,
+        ox1,
+        eaveY,
+        oz1,
+        px,
+        ridgeY,
+        midZ,
       ];
     } else {
       positions = [
         // South slope (trapezoid)
-        ox0, eaveY, oz0,  ox1, eaveY, oz0,  rx1, ridgeY, midZ,
-        ox0, eaveY, oz0,  rx1, ridgeY, midZ,  rx0, ridgeY, midZ,
+        ox0,
+        eaveY,
+        oz0,
+        ox1,
+        eaveY,
+        oz0,
+        rx1,
+        ridgeY,
+        midZ,
+        ox0,
+        eaveY,
+        oz0,
+        rx1,
+        ridgeY,
+        midZ,
+        rx0,
+        ridgeY,
+        midZ,
         // North slope (trapezoid)
-        ox1, eaveY, oz1,  ox0, eaveY, oz1,  rx0, ridgeY, midZ,
-        ox1, eaveY, oz1,  rx0, ridgeY, midZ,  rx1, ridgeY, midZ,
+        ox1,
+        eaveY,
+        oz1,
+        ox0,
+        eaveY,
+        oz1,
+        rx0,
+        ridgeY,
+        midZ,
+        ox1,
+        eaveY,
+        oz1,
+        rx0,
+        ridgeY,
+        midZ,
+        rx1,
+        ridgeY,
+        midZ,
         // West hip (triangle)
-        ox0, eaveY, oz0,  ox0, eaveY, oz1,  rx0, ridgeY, midZ,
+        ox0,
+        eaveY,
+        oz0,
+        ox0,
+        eaveY,
+        oz1,
+        rx0,
+        ridgeY,
+        midZ,
         // East hip (triangle)
-        ox1, eaveY, oz0,  rx1, ridgeY, midZ,  ox1, eaveY, oz1,
+        ox1,
+        eaveY,
+        oz0,
+        rx1,
+        ridgeY,
+        midZ,
+        ox1,
+        eaveY,
+        oz1,
       ];
     }
   } else {
@@ -447,23 +644,103 @@ function _buildHipGeometry(
     if (rz0 >= rz1) {
       const pz = (oz0 + oz1) / 2;
       positions = [
-        ox0, eaveY, oz0,  ox1, eaveY, oz0,  midX, ridgeY, pz,
-        ox1, eaveY, oz1,  ox0, eaveY, oz1,  midX, ridgeY, pz,
-        ox0, eaveY, oz1,  ox0, eaveY, oz0,  midX, ridgeY, pz,
-        ox1, eaveY, oz0,  ox1, eaveY, oz1,  midX, ridgeY, pz,
+        ox0,
+        eaveY,
+        oz0,
+        ox1,
+        eaveY,
+        oz0,
+        midX,
+        ridgeY,
+        pz,
+        ox1,
+        eaveY,
+        oz1,
+        ox0,
+        eaveY,
+        oz1,
+        midX,
+        ridgeY,
+        pz,
+        ox0,
+        eaveY,
+        oz1,
+        ox0,
+        eaveY,
+        oz0,
+        midX,
+        ridgeY,
+        pz,
+        ox1,
+        eaveY,
+        oz0,
+        ox1,
+        eaveY,
+        oz1,
+        midX,
+        ridgeY,
+        pz,
       ];
     } else {
       positions = [
         // West slope (trapezoid)
-        ox0, eaveY, oz0,  ox0, eaveY, oz1,  midX, ridgeY, rz1,
-        ox0, eaveY, oz0,  midX, ridgeY, rz1,  midX, ridgeY, rz0,
+        ox0,
+        eaveY,
+        oz0,
+        ox0,
+        eaveY,
+        oz1,
+        midX,
+        ridgeY,
+        rz1,
+        ox0,
+        eaveY,
+        oz0,
+        midX,
+        ridgeY,
+        rz1,
+        midX,
+        ridgeY,
+        rz0,
         // East slope (trapezoid)
-        ox1, eaveY, oz1,  ox1, eaveY, oz0,  midX, ridgeY, rz0,
-        ox1, eaveY, oz1,  midX, ridgeY, rz0,  midX, ridgeY, rz1,
+        ox1,
+        eaveY,
+        oz1,
+        ox1,
+        eaveY,
+        oz0,
+        midX,
+        ridgeY,
+        rz0,
+        ox1,
+        eaveY,
+        oz1,
+        midX,
+        ridgeY,
+        rz0,
+        midX,
+        ridgeY,
+        rz1,
         // South hip (triangle)
-        ox0, eaveY, oz0,  midX, ridgeY, rz0,  ox1, eaveY, oz0,
+        ox0,
+        eaveY,
+        oz0,
+        midX,
+        ridgeY,
+        rz0,
+        ox1,
+        eaveY,
+        oz0,
         // North hip (triangle)
-        ox0, eaveY, oz1,  ox1, eaveY, oz1,  midX, ridgeY, rz1,
+        ox0,
+        eaveY,
+        oz1,
+        ox1,
+        eaveY,
+        oz1,
+        midX,
+        ridgeY,
+        rz1,
       ];
     }
   }
@@ -511,7 +788,8 @@ function _buildLShapeGeometry(
     let area2 = 0;
     const n = rawPts.length;
     for (let i = 0; i < n; i++) {
-      const a = rawPts[i], c = rawPts[(i + 1) % n];
+      const a = rawPts[i],
+        c = rawPts[(i + 1) % n];
       area2 += a.xMm * c.yMm - c.xMm * a.yMm;
     }
     const wsign = area2 > 0 ? 1 : -1;
@@ -520,7 +798,10 @@ function _buildLShapeGeometry(
       const B = rawPts[i];
       const C = rawPts[(i + 1) % n];
       const cross = (B.xMm - A.xMm) * (C.yMm - B.yMm) - (B.yMm - A.yMm) * (C.xMm - B.xMm);
-      if (cross * wsign < 0) { rv = B; break; }
+      if (cross * wsign < 0) {
+        rv = B;
+        break;
+      }
     }
   }
 
@@ -561,15 +842,17 @@ function _buildLShapeGeometry(
     };
   }
 
-  const m1 = toM(r1), m2 = toM(r2);
-  const ax1 = (m1.ox1 - m1.ox0) >= (m1.oz1 - m1.oz0);
-  const ax2 = (m2.ox1 - m2.ox0) >= (m2.oz1 - m2.oz0);
+  const m1 = toM(r1),
+    m2 = toM(r2);
+  const ax1 = m1.ox1 - m1.ox0 >= m1.oz1 - m1.oz0;
+  const ax2 = m2.ox1 - m2.ox0 >= m2.oz1 - m2.oz0;
 
   const g1 = _buildGableGeometry(m1.ox0, m1.ox1, m1.oz0, m1.oz1, eaveY, slopeRad, ax1);
   const g2 = _buildGableGeometry(m2.ox0, m2.ox1, m2.oz0, m2.oz1, eaveY, slopeRad, ax2);
 
   // Valley face — triangular face connecting the inner eave corner to the two ridges.
-  const rvxM = rv.xMm / 1000, rvzM = rv.yMm / 1000;
+  const rvxM = rv.xMm / 1000,
+    rvzM = rv.yMm / 1000;
   const halfSpan1 = ax1 ? (m1.oz1 - m1.oz0) / 2 : (m1.ox1 - m1.ox0) / 2;
   const ridgeY1 = eaveY + halfSpan1 * Math.tan(slopeRad);
   const ridgeMid1x = ax1 ? rvxM : (m1.ox0 + m1.ox1) / 2;
@@ -580,9 +863,15 @@ function _buildLShapeGeometry(
   const ridgeMid2z = ax2 ? (m2.oz0 + m2.oz1) / 2 : rvzM;
 
   const valleyPositions = [
-    rvxM, eaveY, rvzM,
-    ridgeMid1x, ridgeY1, ridgeMid1z,
-    ridgeMid2x, ridgeY2, ridgeMid2z,
+    rvxM,
+    eaveY,
+    rvzM,
+    ridgeMid1x,
+    ridgeY1,
+    ridgeMid1z,
+    ridgeMid2x,
+    ridgeY2,
+    ridgeMid2z,
   ];
   const gv = new THREE.BufferGeometry();
   gv.setAttribute('position', new THREE.Float32BufferAttribute(valleyPositions, 3));
@@ -691,7 +980,7 @@ function makeStairVolumeMesh(
   );
   const riserH = totalRise / riserCount;
   const treadDepth = runLen / riserCount;
-  const treadThick = 0.040;
+  const treadThick = 0.04;
   const angle = Math.atan2(dz, dx);
 
   const mat = new THREE.MeshStandardMaterial({
@@ -751,21 +1040,17 @@ function addCladdingBoards(
   boardWidthMm = 120,
   gapMm = 10,
 ): void {
-  const pitchM        = (boardWidthMm + gapMm) / 1000;
-  const count         = Math.max(1, Math.floor(wallLenM / pitchM));
-  const boardProtrude = 0.012;           // 12 mm proud of wall face
-  const boardH        = wallHeightM - 0.05;
-  const boardD        = pitchM - 0.002;  // slight gap between boards
-  const color         = readToken('--cat-timber-cladding', '#8B6340');
+  const pitchM = (boardWidthMm + gapMm) / 1000;
+  const count = Math.max(1, Math.floor(wallLenM / pitchM));
+  const boardProtrude = 0.012; // 12 mm proud of wall face
+  const boardH = wallHeightM - 0.05;
+  const boardD = pitchM - 0.002; // slight gap between boards
+  const color = readToken('--cat-timber-cladding', '#8B6340');
   const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.85, metalness: 0.0 });
 
   for (let i = 0; i < count; i++) {
     const board = new THREE.Mesh(new THREE.BoxGeometry(boardD, boardH, boardProtrude), mat);
-    board.position.set(
-      (i + 0.5) * pitchM - wallLenM / 2,
-      0,
-      wallThickM / 2 + boardProtrude / 2,
-    );
+    board.position.set((i + 0.5) * pitchM - wallLenM / 2, 0, wallThickM / 2 + boardProtrude / 2);
     addEdges(board);
     mesh.add(board);
   }
@@ -778,45 +1063,100 @@ function makeSlopedWallMesh(
   paint: ViewportPaintBundle | null,
   elementsById: Record<string, Element>,
 ): THREE.Mesh {
-  const sx = wall.start.xMm;  const sz = wall.start.yMm;
-  const ex = wall.end.xMm;    const ez = wall.end.yMm;
+  const sx = wall.start.xMm;
+  const sz = wall.start.yMm;
+  const ex = wall.end.xMm;
+  const ez = wall.end.yMm;
 
-  const dx = ex - sx;  const dz = ez - sz;
+  const dx = ex - sx;
+  const dz = ez - sz;
   const len = Math.max(1, Math.hypot(dx, dz));
-  const ux = dx / len;  const uz = dz / len;
-  const nx = -uz;       const nz =  ux;
+  const ux = dx / len;
+  const uz = dz / len;
+  const nx = -uz;
+  const nz = ux;
 
   const thick = THREE.MathUtils.clamp(wall.thicknessMm / 1000, 0.05, 2);
   const halfT = thick / 2;
 
   const hStart = roofHeightAtPoint(roof, elementsById, sx, sz);
-  const hEnd   = roofHeightAtPoint(roof, elementsById, ex, ez);
+  const hEnd = roofHeightAtPoint(roof, elementsById, ex, ez);
 
   const yBase = elevM;
 
-  const sxF = (sx / 1000) + nx * halfT;  const szF = (sz / 1000) + nz * halfT;
-  const exF = (ex / 1000) + nx * halfT;  const ezF = (ez / 1000) + nz * halfT;
-  const sxB = (sx / 1000) - nx * halfT;  const szB = (sz / 1000) - nz * halfT;
-  const exB = (ex / 1000) - nx * halfT;  const ezB = (ez / 1000) - nz * halfT;
+  const sxF = sx / 1000 + nx * halfT;
+  const szF = sz / 1000 + nz * halfT;
+  const exF = ex / 1000 + nx * halfT;
+  const ezF = ez / 1000 + nz * halfT;
+  const sxB = sx / 1000 - nx * halfT;
+  const szB = sz / 1000 - nz * halfT;
+  const exB = ex / 1000 - nx * halfT;
+  const ezB = ez / 1000 - nz * halfT;
 
   const positions = new Float32Array([
-    sxF, yBase,   szF,  // 0 start-front-base
-    exF, yBase,   ezF,  // 1 end-front-base
-    exF, hEnd,    ezF,  // 2 end-front-top
-    sxF, hStart,  szF,  // 3 start-front-top
-    sxB, yBase,   szB,  // 4 start-back-base
-    exB, yBase,   ezB,  // 5 end-back-base
-    exB, hEnd,    ezB,  // 6 end-back-top
-    sxB, hStart,  szB,  // 7 start-back-top
+    sxF,
+    yBase,
+    szF, // 0 start-front-base
+    exF,
+    yBase,
+    ezF, // 1 end-front-base
+    exF,
+    hEnd,
+    ezF, // 2 end-front-top
+    sxF,
+    hStart,
+    szF, // 3 start-front-top
+    sxB,
+    yBase,
+    szB, // 4 start-back-base
+    exB,
+    yBase,
+    ezB, // 5 end-back-base
+    exB,
+    hEnd,
+    ezB, // 6 end-back-top
+    sxB,
+    hStart,
+    szB, // 7 start-back-top
   ]);
 
   const indices = new Uint16Array([
-    0,1,2, 0,2,3,   // front face
-    5,4,7, 5,7,6,   // back face
-    4,0,3, 4,3,7,   // left cap (start)
-    1,5,6, 1,6,2,   // right cap (end)
-    4,5,1, 4,1,0,   // bottom
-    3,2,6, 3,6,7,   // top (sloped)
+    0,
+    1,
+    2,
+    0,
+    2,
+    3, // front face
+    5,
+    4,
+    7,
+    5,
+    7,
+    6, // back face
+    4,
+    0,
+    3,
+    4,
+    3,
+    7, // left cap (start)
+    1,
+    5,
+    6,
+    1,
+    6,
+    2, // right cap (end)
+    4,
+    5,
+    1,
+    4,
+    1,
+    0, // bottom
+    3,
+    2,
+    6,
+    3,
+    6,
+    7, // top (sloped)
   ]);
 
   const geom = new THREE.BufferGeometry();
@@ -844,7 +1184,13 @@ function makeWallMesh(
   if (wall.roofAttachmentId && elementsById) {
     const roof = elementsById[wall.roofAttachmentId];
     if (roof?.kind === 'roof') {
-      return makeSlopedWallMesh(wall, roof as Extract<Element, { kind: 'roof' }>, elevM, paint, elementsById);
+      return makeSlopedWallMesh(
+        wall,
+        roof as Extract<Element, { kind: 'roof' }>,
+        elevM,
+        paint,
+        elementsById,
+      );
     }
   }
   const sx = wall.start.xMm / 1000;
@@ -883,10 +1229,10 @@ function makeCurtainWallMesh(
   const ez = wall.end.yMm / 1000;
   const dx = ex - sx;
   const dz = ez - sz;
-  const len    = Math.max(0.001, Math.hypot(dx, dz));
+  const len = Math.max(0.001, Math.hypot(dx, dz));
   const height = THREE.MathUtils.clamp(wall.heightMm / 1000, 0.25, 40);
-  const thick  = THREE.MathUtils.clamp(wall.thicknessMm / 1000, 0.05, 2);
-  const yaw    = Math.atan2(dz, dx);
+  const thick = THREE.MathUtils.clamp(wall.thicknessMm / 1000, 0.05, 2);
+  const yaw = Math.atan2(dz, dx);
 
   const group = new THREE.Group();
   group.userData.bimPickId = wall.id;
@@ -1144,7 +1490,16 @@ function makeSiteMesh(
   return mesh;
 }
 
-type ViewerCatKey = 'wall' | 'floor' | 'roof' | 'stair' | 'door' | 'window' | 'room' | 'railing' | 'site';
+type ViewerCatKey =
+  | 'wall'
+  | 'floor'
+  | 'roof'
+  | 'stair'
+  | 'door'
+  | 'window'
+  | 'room'
+  | 'railing'
+  | 'site';
 
 function elemViewerCategory(e: Element): ViewerCatKey | null {
   switch (e.kind) {
@@ -1238,7 +1593,7 @@ function applyClippingPlanesToMeshes(root: THREE.Object3D, planes: THREE.Plane[]
 
 function makeClipPlaneCap(plane: THREE.Plane, capColor: string): THREE.Mesh {
   const capGeom = new THREE.PlaneGeometry(500, 500);
-  const capMat  = new THREE.MeshBasicMaterial({
+  const capMat = new THREE.MeshBasicMaterial({
     color: capColor,
     side: THREE.DoubleSide,
     stencilWrite: true,
@@ -1305,11 +1660,13 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
   /** Ref-copy of selectedId so the geometry effect can read it without adding it to deps. */
   const selectedIdRef = useRef<string | undefined>(undefined);
   const prevCatHiddenRef = useRef<Record<string, boolean>>({});
-  const csgWorkerRef     = useRef<Worker | null>(null);
+  const csgWorkerRef = useRef<Worker | null>(null);
   /** Maps wallId → active CSG job nonce; responses with a mismatched nonce are stale and discarded. */
-  const pendingCsgRef    = useRef<Map<string, number>>(new Map());
-  const pendingCsgMetaRef = useRef<Map<string, { len: number; height: number; thick: number; materialKey?: string | null }>>(new Map());
-  const csgNonceRef      = useRef(0);
+  const pendingCsgRef = useRef<Map<string, number>>(new Map());
+  const pendingCsgMetaRef = useRef<
+    Map<string, { len: number; height: number; thick: number; materialKey?: string | null }>
+  >(new Map());
+  const csgNonceRef = useRef(0);
   const sunRef = useRef<THREE.DirectionalLight | null>(null);
   const envMapRef = useRef<THREE.Texture | null>(null);
   /** Live CameraRig instance — replaces the legacy ad-hoc spherical rig. */
@@ -1367,9 +1724,8 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
     return el;
   }, [activeViewpointId, elementsById]);
 
-  const activeCamera = () => orthoMode
-    ? (orthoCameraRef.current ?? cameraRef.current!)
-    : cameraRef.current!;
+  const activeCamera = () =>
+    orthoMode ? (orthoCameraRef.current ?? cameraRef.current!) : cameraRef.current!;
 
   useEffect(() => {
     const el = mountRef.current;
@@ -1406,14 +1762,16 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
     dir.castShadow = true;
     dir.shadow.mapSize.set(paint.lighting.sun.shadowMapSize, paint.lighting.sun.shadowMapSize);
     dir.shadow.bias = -0.001;
-    dir.shadow.camera.left   = -30;
-    dir.shadow.camera.right  =  30;
-    dir.shadow.camera.top    =  30;
+    dir.shadow.camera.left = -30;
+    dir.shadow.camera.right = 30;
+    dir.shadow.camera.top = 30;
     dir.shadow.camera.bottom = -30;
-    dir.shadow.camera.near   =  0.5;
-    dir.shadow.camera.far    =  200;
+    dir.shadow.camera.near = 0.5;
+    dir.shadow.camera.far = 200;
     dir.shadow.camera.updateProjectionMatrix();
-    dir.position.copy(sunPositionFromAzEl(paint.lighting.sun.azimuthDeg, paint.lighting.sun.elevationDeg));
+    dir.position.copy(
+      sunPositionFromAzEl(paint.lighting.sun.azimuthDeg, paint.lighting.sun.elevationDeg),
+    );
     dir.target.position.set(0, 0, 0);
     scene.add(dir);
     scene.add(dir.target);
@@ -1469,8 +1827,8 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       scene,
       camera,
     );
-    outlinePass.edgeStrength  = 3.0;
-    outlinePass.edgeGlow      = 0.3;
+    outlinePass.edgeStrength = 3.0;
+    outlinePass.edgeGlow = 0.3;
     outlinePass.edgeThickness = 1.5;
     outlinePass.visibleEdgeColor.set(paint.selection.selectedColor);
     outlinePass.hiddenEdgeColor.set(paint.selection.selectedColor);
@@ -1504,7 +1862,7 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       const csgMeta = pendingCsgMetaRef.current.get(data.jobId);
       pendingCsgMetaRef.current.delete(data.jobId);
 
-      const rootNow  = rootGroupRef.current;
+      const rootNow = rootGroupRef.current;
       const cacheNow = bimPickMapRef.current;
       if (!rootNow) return;
 
@@ -1531,12 +1889,12 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       const geom = new THREE.BufferGeometry();
       geom.setAttribute('position', new THREE.BufferAttribute(data.position, 3));
       if (data.normal) geom.setAttribute('normal', new THREE.BufferAttribute(data.normal, 3));
-      if (data.uv)     geom.setAttribute('uv',     new THREE.BufferAttribute(data.uv, 2));
-      if (data.index)  geom.setIndex(new THREE.BufferAttribute(data.index, 1));
+      if (data.uv) geom.setAttribute('uv', new THREE.BufferAttribute(data.uv, 2));
+      if (data.index) geom.setIndex(new THREE.BufferAttribute(data.index, 1));
 
       const paintNow = paintBundleRef.current;
-      const wallMat  = new THREE.MeshStandardMaterial({
-        color:     categoryColorOr(paintNow, 'wall'),
+      const wallMat = new THREE.MeshStandardMaterial({
+        color: categoryColorOr(paintNow, 'wall'),
         roughness: paintNow?.categories.wall.roughness ?? 0.85,
         metalness: paintNow?.categories.wall.metalness ?? 0.0,
       });
@@ -1545,7 +1903,7 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       mesh.position.set(data.wcx, data.wcy, data.wcz);
       mesh.rotation.y = data.yaw;
       mesh.userData.bimPickId = data.jobId;
-      mesh.castShadow    = true;
+      mesh.castShadow = true;
       mesh.receiveShadow = true;
       addEdges(mesh);
       if (csgMeta?.materialKey === 'timber_cladding')
@@ -1651,9 +2009,12 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       const oc = orthoCameraRef.current;
       if (oc) {
         const f = rig.orthoFrustum(w / h);
-        oc.left = f.left; oc.right = f.right;
-        oc.top = f.top; oc.bottom = f.bottom;
-        oc.near = f.near; oc.far = f.far;
+        oc.left = f.left;
+        oc.right = f.right;
+        oc.top = f.top;
+        oc.bottom = f.bottom;
+        oc.near = f.near;
+        oc.far = f.far;
         oc.updateProjectionMatrix();
       }
     }
@@ -1674,7 +2035,8 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       });
       if (intent === 'pan') dragging = 'pan';
       else if (intent === 'orbit') dragging = 'orbit';
-      else if (ev.button === 0) dragging = 'orbit'; // LMB drag = orbit (trackpad primary)
+      else if (ev.button === 0)
+        dragging = 'orbit'; // LMB drag = orbit (trackpad primary)
       else dragging = null;
       dragMoved = false;
       cumulativeDragPx = 0;
@@ -1774,12 +2136,18 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       ev.preventDefault();
       if (hk.kind === 'frame-all') {
         const box = computeRootBoundingBox(root);
-        if (box) { rig.frame(box); rig.setHome(); }
+        if (box) {
+          rig.frame(box);
+          rig.setHome();
+        }
       } else if (hk.kind === 'frame-selection') {
         // For now the same effect as frame-all; selection-aware framing comes
         // with the inspector parameter wiring.
         const box = computeRootBoundingBox(root);
-        if (box) { rig.frame(box); rig.setHome(); }
+        if (box) {
+          rig.frame(box);
+          rig.setHome();
+        }
       } else if (hk.kind === 'reset') {
         rig.reset();
       } else if (hk.kind === 'zoom-in') {
@@ -1935,9 +2303,7 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
   }, [orbitCameraNonce, orbitCameraPoseMm]);
 
   useEffect(() => {
-    const cam = orthoMode
-      ? (orthoCameraRef.current ?? cameraRef.current!)
-      : cameraRef.current!;
+    const cam = orthoMode ? (orthoCameraRef.current ?? cameraRef.current!) : cameraRef.current!;
     if (!cam) return;
     if (renderPassRef.current) renderPassRef.current.camera = cam;
     if (ssaoPassRef.current) ssaoPassRef.current.camera = cam;
@@ -1948,9 +2314,12 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       const h = renderer?.domElement.clientHeight || 1;
       const f = cameraRigRef.current.orthoFrustum(w / h);
       const oc = orthoCameraRef.current;
-      oc.left = f.left; oc.right = f.right;
-      oc.top = f.top; oc.bottom = f.bottom;
-      oc.near = f.near; oc.far = f.far;
+      oc.left = f.left;
+      oc.right = f.right;
+      oc.top = f.top;
+      oc.bottom = f.bottom;
+      oc.near = f.near;
+      oc.far = f.far;
       oc.updateProjectionMatrix();
       const persp = cameraRef.current;
       if (persp) {
@@ -1970,16 +2339,16 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
     const root = rootGroupRef.current;
     if (!root) return;
 
-    const curr  = elementsById;
-    const prev  = prevElementsByIdRef.current;
+    const curr = elementsById;
+    const prev = prevElementsByIdRef.current;
     const cache = bimPickMapRef.current;
     const paint = paintBundleRef.current;
 
     // Single pass: bucket hosted elements and build reverse maps for dep propagation.
-    const doorsByWall     = new Map<string, DoorElem[]>();
-    const winsByWall      = new Map<string, WindowElem[]>();
+    const doorsByWall = new Map<string, DoorElem[]>();
+    const winsByWall = new Map<string, WindowElem[]>();
     const railingsByStair = new Map<string, string[]>();
-    const elemsByLevel    = new Map<string, string[]>();
+    const elemsByLevel = new Map<string, string[]>();
 
     for (const [id, e] of Object.entries(curr)) {
       if (e.kind === 'door') {
@@ -2022,12 +2391,12 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
     }
 
     // Diff against previous snapshot.
-    const addedIds   = new Set<string>();
+    const addedIds = new Set<string>();
     const removedIds = new Set<string>();
     const changedIds = new Set<string>();
 
     for (const id of Object.keys(curr)) {
-      if (!(id in prev))              addedIds.add(id);
+      if (!(id in prev)) addedIds.add(id);
       else if (prev[id] !== curr[id]) changedIds.add(id);
     }
     for (const id of Object.keys(prev)) {
@@ -2043,10 +2412,18 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
           for (const d of doorsByWall.get(id) ?? []) extraDirty.add(d.id);
           for (const w of winsByWall.get(id) ?? []) extraDirty.add(w.id);
           break;
-        case 'door':   extraDirty.add((e as DoorElem).wallId); break;
-        case 'window': extraDirty.add((e as WindowElem).wallId); break;
-        case 'level':  for (const eid of elemsByLevel.get(id) ?? []) extraDirty.add(eid); break;
-        case 'stair':  for (const rid of railingsByStair.get(id) ?? []) extraDirty.add(rid); break;
+        case 'door':
+          extraDirty.add((e as DoorElem).wallId);
+          break;
+        case 'window':
+          extraDirty.add((e as WindowElem).wallId);
+          break;
+        case 'level':
+          for (const eid of elemsByLevel.get(id) ?? []) extraDirty.add(eid);
+          break;
+        case 'stair':
+          for (const rid of railingsByStair.get(id) ?? []) extraDirty.add(rid);
+          break;
       }
     };
 
@@ -2054,12 +2431,12 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
     // Added/removed hosted elements must also rebuild their host wall (CSG opening changes).
     for (const id of addedIds) {
       const e = curr[id];
-      if (e?.kind === 'door')   extraDirty.add((e as DoorElem).wallId);
+      if (e?.kind === 'door') extraDirty.add((e as DoorElem).wallId);
       if (e?.kind === 'window') extraDirty.add((e as WindowElem).wallId);
     }
     for (const id of removedIds) {
       const e = prev[id];
-      if (e?.kind === 'door')   extraDirty.add((e as DoorElem).wallId);
+      if (e?.kind === 'door') extraDirty.add((e as DoorElem).wallId);
       if (e?.kind === 'window') extraDirty.add((e as WindowElem).wallId);
     }
     for (const id of extraDirty) {
@@ -2077,8 +2454,8 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       }
     }
 
-    const toRemove  = new Set([...removedIds, ...changedIds]);
-    const toRebuild = new Set([...addedIds,   ...changedIds]);
+    const toRemove = new Set([...removedIds, ...changedIds]);
+    const toRebuild = new Set([...addedIds, ...changedIds]);
 
     // Remove stale meshes — dispose GPU resources to avoid leaks.
     for (const id of toRemove) {
@@ -2100,7 +2477,7 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
 
     // Build and insert new meshes.
     const catHidden = viewerCategoryHidden;
-    const skipCat   = (e: Element) => {
+    const skipCat = (e: Element) => {
       const ck = elemViewerCategory(e);
       return ck != null && Boolean(catHidden[ck]);
     };
@@ -2116,19 +2493,24 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
           obj = makeFloorSlabMesh(e, curr, paint);
           break;
         case 'wall': {
-          const elev  = elevationMForLevel(e.levelId, curr);
+          const elev = elevationMForLevel(e.levelId, curr);
           const doors = doorsByWall.get(id) ?? [];
-          const wins  = winsByWall.get(id)  ?? [];
-          if (CSG_ENABLED && (doors.length > 0 || wins.length > 0) && !e.roofAttachmentId && !e.isCurtainWall) {
+          const wins = winsByWall.get(id) ?? [];
+          if (
+            CSG_ENABLED &&
+            (doors.length > 0 || wins.length > 0) &&
+            !e.roofAttachmentId &&
+            !e.isCurtainWall
+          ) {
             // Dispatch CSG to the worker; show a solid-wall placeholder immediately.
             const sx = e.start.xMm / 1000;
             const sz = e.start.yMm / 1000;
             const dx = e.end.xMm / 1000 - sx;
             const dz = e.end.yMm / 1000 - sz;
-            const len    = Math.max(0.001, Math.hypot(dx, dz));
+            const len = Math.max(0.001, Math.hypot(dx, dz));
             const height = THREE.MathUtils.clamp(e.heightMm / 1000, 0.25, 40);
-            const thick  = THREE.MathUtils.clamp(e.thicknessMm / 1000, 0.05, 2);
-            const nonce  = ++csgNonceRef.current;
+            const thick = THREE.MathUtils.clamp(e.thicknessMm / 1000, 0.05, 2);
+            const nonce = ++csgNonceRef.current;
             pendingCsgRef.current.set(id, nonce);
             pendingCsgMetaRef.current.set(id, { len, height, thick, materialKey: e.materialKey });
             const job: CsgRequest = {
@@ -2142,15 +2524,15 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
               wcz: sz + dz / 2,
               yaw: Math.atan2(dz, dx),
               doors: doors.map((d) => ({
-                widthMm:      d.widthMm,
-                alongT:       d.alongT,
+                widthMm: d.widthMm,
+                alongT: d.alongT,
                 wallHeightMm: e.heightMm,
               })),
               windows: wins.map((w) => ({
-                widthMm:      w.widthMm,
-                heightMm:     w.heightMm,
+                widthMm: w.widthMm,
+                heightMm: w.heightMm,
                 sillHeightMm: w.sillHeightMm,
-                alongT:       w.alongT,
+                alongT: w.alongT,
                 wallHeightMm: e.heightMm,
               })),
             };
@@ -2172,18 +2554,29 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
           break;
         }
         case 'window': {
-          const w    = e as WindowElem;
+          const w = e as WindowElem;
           const wall = curr[w.wallId] as WallElem | undefined;
           if (!wall) break;
           obj = makeWindowMesh(w, wall, elevationMForLevel(wall.levelId, curr), paint);
           break;
         }
-        case 'stair':   obj = makeStairVolumeMesh(e, curr, paint); break;
-        case 'room':    obj = makeRoomRibbon(e, elevationMForLevel(e.levelId, curr), paint); break;
-        case 'roof':    obj = makeRoofMassMesh(e, curr, paint); break;
-        case 'railing': obj = makeRailingMesh(e, curr, paint); break;
-        case 'site':    obj = makeSiteMesh(e, curr, paint); break;
-        default: break;
+        case 'stair':
+          obj = makeStairVolumeMesh(e, curr, paint);
+          break;
+        case 'room':
+          obj = makeRoomRibbon(e, elevationMForLevel(e.levelId, curr), paint);
+          break;
+        case 'roof':
+          obj = makeRoofMassMesh(e, curr, paint);
+          break;
+        case 'railing':
+          obj = makeRailingMesh(e, curr, paint);
+          break;
+        case 'site':
+          obj = makeSiteMesh(e, curr, paint);
+          break;
+        default:
+          break;
       }
 
       if (!obj) continue;
@@ -2195,7 +2588,7 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       const isSite = e.kind === 'site';
       obj.traverse((node) => {
         if (!(node instanceof THREE.Mesh)) return;
-        node.castShadow    = !isSite;
+        node.castShadow = !isSite;
         node.receiveShadow = true;
       });
 
@@ -2217,13 +2610,13 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
           const size = new THREE.Vector3();
           sceneBox.getSize(size);
           const sceneRadiusM = Math.max(size.length() / 2, 5);
-          const frustumHalf  = Math.max(sceneRadiusM * 1.2, 20);
-          sun.shadow.camera.left   = -frustumHalf;
-          sun.shadow.camera.right  =  frustumHalf;
-          sun.shadow.camera.top    =  frustumHalf;
+          const frustumHalf = Math.max(sceneRadiusM * 1.2, 20);
+          sun.shadow.camera.left = -frustumHalf;
+          sun.shadow.camera.right = frustumHalf;
+          sun.shadow.camera.top = frustumHalf;
           sun.shadow.camera.bottom = -frustumHalf;
-          sun.shadow.camera.near   = 0.5;
-          sun.shadow.camera.far    = sceneRadiusM * 4 + 50;
+          sun.shadow.camera.near = 0.5;
+          sun.shadow.camera.far = sceneRadiusM * 4 + 50;
           sun.shadow.camera.updateProjectionMatrix();
         }
       }
@@ -2264,46 +2657,57 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
     }
 
     prevElementsByIdRef.current = curr;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [elementsById, viewerCategoryHidden, theme]);
 
   // ── Clipping planes + section-box cage ───────────────────────────────────
   // Runs only when clip elevation or section box changes — not on every element edit.
   useEffect(() => {
     const root = rootGroupRef.current;
-    const rnd  = rendererRef.current;
+    const rnd = rendererRef.current;
     if (!root) return;
 
     // Remove stale cap meshes from the previous rebuild.
     for (const c of clipCapsRef.current) sceneRef.current?.remove(c);
     clipCapsRef.current = [];
 
-    const sectionBox    = sectionBoxRef.current;
+    const sectionBox = sectionBoxRef.current;
     const sectionPlanes = sectionBox && sectionBoxActive ? sectionBox.clippingPlanes() : [];
     const clipElevM =
       viewerClipElevMm != null && Number.isFinite(viewerClipElevMm) && viewerClipElevMm >= 0
         ? viewerClipElevMm / 1000
         : null;
     const clipFloorM =
-      viewerClipFloorElevMm != null && Number.isFinite(viewerClipFloorElevMm) && viewerClipFloorElevMm >= 0
+      viewerClipFloorElevMm != null &&
+      Number.isFinite(viewerClipFloorElevMm) &&
+      viewerClipFloorElevMm >= 0
         ? viewerClipFloorElevMm / 1000
         : null;
 
     if (rnd)
-      rnd.localClippingEnabled = clipElevM != null || clipFloorM != null || sectionPlanes.length > 0;
+      rnd.localClippingEnabled =
+        clipElevM != null || clipFloorM != null || sectionPlanes.length > 0;
 
     const planes: THREE.Plane[] = [];
     for (const p of sectionPlanes) {
-      planes.push(new THREE.Plane(new THREE.Vector3(p.normal.x, p.normal.y, p.normal.z), p.constant));
+      planes.push(
+        new THREE.Plane(new THREE.Vector3(p.normal.x, p.normal.y, p.normal.z), p.constant),
+      );
     }
     if (clipElevM != null) {
       const plane = new THREE.Plane();
-      plane.setFromNormalAndCoplanarPoint(new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, clipElevM, 0));
+      plane.setFromNormalAndCoplanarPoint(
+        new THREE.Vector3(0, -1, 0),
+        new THREE.Vector3(0, clipElevM, 0),
+      );
       planes.push(plane);
     }
     if (clipFloorM != null) {
       const planeLo = new THREE.Plane();
-      planeLo.setFromNormalAndCoplanarPoint(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, clipFloorM, 0));
+      planeLo.setFromNormalAndCoplanarPoint(
+        new THREE.Vector3(0, 1, 0),
+        new THREE.Vector3(0, clipFloorM, 0),
+      );
       planes.push(planeLo);
     }
 
@@ -2311,7 +2715,7 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
     applyClippingPlanesToMeshes(root, planes);
 
     // Configure stencil on every scene mesh so clipped back-faces write stencil value 1.
-    root.traverse(obj => {
+    root.traverse((obj) => {
       if (!(obj instanceof THREE.Mesh) || obj.userData.isClipCap) return;
       const mat = obj.material as THREE.MeshStandardMaterial;
       mat.stencilWrite = true;
@@ -2328,9 +2732,9 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       sectionBoxCageRef.current = null;
     }
     if (sectionBoxActive && sectionBox) {
-      const snap  = sectionBox.snapshot();
+      const snap = sectionBox.snapshot();
       const verts = aabbWireframeVertices(snap.min, snap.max);
-      const cage  = new THREE.LineSegments(
+      const cage = new THREE.LineSegments(
         new THREE.BufferGeometry().setFromPoints(verts),
         new THREE.LineBasicMaterial({
           color: readToken('--color-accent', '#fcd34d'),
@@ -2349,7 +2753,9 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       const newCaps: THREE.Mesh[] = [];
       for (const plane of planes) {
         const cap = makeClipPlaneCap(plane, capColor);
-        (cap.material as THREE.MeshBasicMaterial).clippingPlanes = planes.filter(p => p !== plane);
+        (cap.material as THREE.MeshBasicMaterial).clippingPlanes = planes.filter(
+          (p) => p !== plane,
+        );
         sceneRef.current?.add(cap);
         newCaps.push(cap);
       }
@@ -2447,7 +2853,6 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       data-testid="orbit-3d-viewport"
       className="relative h-full w-full overflow-hidden bg-background"
     >
-
       {activeViewpointId ? (
         <OrbitViewpointPersistedHud
           activeViewpointId={activeViewpointId}

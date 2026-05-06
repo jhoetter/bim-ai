@@ -60,16 +60,10 @@ export const WallLayerIcon = bimIcon(
 // Left bar (taller = earlier/larger phase) + right bar (shorter = current phase)
 // sitting on a shared baseline. Immediately reads as "phased construction
 // schedule" rather than the previous bracket-on-timeline ambiguity.
-export const PhaseIcon = bimIcon(
-  'PhaseIcon',
-  <path d="M2 14H22 M3 6H11V14H3z M11 8H21V14H11z" />,
-);
+export const PhaseIcon = bimIcon('PhaseIcon', <path d="M2 14H22 M3 6H11V14H3z M11 8H21V14H11z" />);
 
 // ── BCF issue / flag: flagpole with V-notch pennant ───────────────────────────
-export const IssueIcon = bimIcon(
-  'IssueIcon',
-  <path d="M7 20V4H19L16 9L19 14H7z" />,
-);
+export const IssueIcon = bimIcon('IssueIcon', <path d="M7 20V4H19L16 9L19 14H7z" />);
 
 // ── Clash: two overlapping rectangles with an X marking the conflict zone ─────
 export const ClashIcon = bimIcon(

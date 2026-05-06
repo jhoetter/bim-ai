@@ -238,7 +238,15 @@ export function scheduleSortKeyChoices(tab: TabKey): readonly string[] {
     }
 
     case 'plans': {
-      return ['name', 'elementId', 'level', 'planPresentation', 'discipline', 'sheetId', 'sheetName'];
+      return [
+        'name',
+        'elementId',
+        'level',
+        'planPresentation',
+        'discipline',
+        'sheetId',
+        'sheetName',
+      ];
     }
 
     case 'sheets': {
@@ -853,9 +861,7 @@ export function SchedulePanel(props: {
     const d = srvActive.data;
     const columns = Array.isArray(d.columns) ? (d.columns as string[]) : [];
 
-    const rawMeta = d.columnMetadata as
-      | { fields?: Record<string, ScheduleFieldMeta> }
-      | undefined;
+    const rawMeta = d.columnMetadata as { fields?: Record<string, ScheduleFieldMeta> } | undefined;
     const fields = rawMeta?.fields ?? {};
 
     const fieldLabels = Object.fromEntries(
@@ -1763,9 +1769,7 @@ export function SchedulePanel(props: {
     const columns = Array.isArray(d.columns) ? (d.columns as string[]) : [];
     if (!columns.length) return null;
 
-    const rawMeta = d.columnMetadata as
-      | { fields?: Record<string, ScheduleFieldMeta> }
-      | undefined;
+    const rawMeta = d.columnMetadata as { fields?: Record<string, ScheduleFieldMeta> } | undefined;
     const fieldMeta = rawMeta?.fields ?? {};
 
     const list = presetsForCategory(cat);
@@ -1845,9 +1849,7 @@ export function SchedulePanel(props: {
                   <td className="py-0.5 pr-2">{row.label}</td>
                   <td className="py-0.5 pr-2">
                     {row.roleReadout}
-                    {row.unitHint ? (
-                      <span className="text-muted"> · {row.unitHint}</span>
-                    ) : null}
+                    {row.unitHint ? <span className="text-muted"> · {row.unitHint}</span> : null}
                   </td>
                   <td className="py-0.5 pr-2">{row.token}</td>
                   <td className="py-0.5 text-muted">{row.csvExportHint ?? '—'}</td>
@@ -1873,11 +1875,11 @@ export function SchedulePanel(props: {
       data.scheduleSheetExportParityEvidence_v1,
     );
     if (
-      !placementLine
-      && !regLine
-      && engParts.length === 0
-      && !pagLine
-      && parityRows.length === 0
+      !placementLine &&
+      !regLine &&
+      engParts.length === 0 &&
+      !pagLine &&
+      parityRows.length === 0
     ) {
       return null;
     }
@@ -2070,7 +2072,9 @@ export function SchedulePanel(props: {
           className="mt-2 rounded border border-border/60 px-2 py-1.5 text-[10px] text-muted"
         >
           <div className="font-semibold text-foreground/90">Room finish schedule evidence</div>
-          <div className="mt-0.5 font-mono leading-snug">{roomFinishScheduleEvidenceLines.join(' · ')}</div>
+          <div className="mt-0.5 font-mono leading-snug">
+            {roomFinishScheduleEvidenceLines.join(' · ')}
+          </div>
         </div>
       ) : null}
 

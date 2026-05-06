@@ -125,7 +125,10 @@ describe('browserRenderingBudgetReadout', () => {
   });
 
   it('warns on sheet viewports at and above limit', () => {
-    const viewports = Array.from({ length: BROWSER_BUDGET_WARN_SHEET_VIEWPORT_COUNT - 1 }, () => ({}));
+    const viewports = Array.from(
+      { length: BROWSER_BUDGET_WARN_SHEET_VIEWPORT_COUNT - 1 },
+      () => ({}),
+    );
     const els: Record<string, Element> = {
       s1: {
         kind: 'sheet',
@@ -202,8 +205,12 @@ describe('browserRenderingBudgetReadout', () => {
     expect(warns).toEqual(warnsSorted);
 
     // ok rows: stale before in_budget (by progressiveState), then alphabetically within each state
-    const staleOks = r.rows.filter((x) => x.status === 'ok' && x.progressiveState === 'stale').map((x) => x.id);
-    const inBudgetOks = r.rows.filter((x) => x.status === 'ok' && x.progressiveState === 'in_budget').map((x) => x.id);
+    const staleOks = r.rows
+      .filter((x) => x.status === 'ok' && x.progressiveState === 'stale')
+      .map((x) => x.id);
+    const inBudgetOks = r.rows
+      .filter((x) => x.status === 'ok' && x.progressiveState === 'in_budget')
+      .map((x) => x.id);
     // stale rows appear before in_budget rows in the sorted output
     for (const staleId of staleOks) {
       for (const inBudgetId of inBudgetOks) {
@@ -469,7 +476,9 @@ describe('browserRenderingBudgetReadout', () => {
 
   describe('over-budget thresholds are 2× warn thresholds', () => {
     it('plan wire over-budget is 2× warn', () => {
-      expect(BROWSER_BUDGET_OVER_BUDGET_PLAN_WIRE_ENTRIES).toBe(BROWSER_BUDGET_WARN_PLAN_WIRE_ENTRIES * 2);
+      expect(BROWSER_BUDGET_OVER_BUDGET_PLAN_WIRE_ENTRIES).toBe(
+        BROWSER_BUDGET_WARN_PLAN_WIRE_ENTRIES * 2,
+      );
     });
 
     it('element count over-budget is 2× warn', () => {
@@ -477,11 +486,15 @@ describe('browserRenderingBudgetReadout', () => {
     });
 
     it('sheet viewports over-budget is 2× warn', () => {
-      expect(BROWSER_BUDGET_OVER_BUDGET_SHEET_VIEWPORT_COUNT).toBe(BROWSER_BUDGET_WARN_SHEET_VIEWPORT_COUNT * 2);
+      expect(BROWSER_BUDGET_OVER_BUDGET_SHEET_VIEWPORT_COUNT).toBe(
+        BROWSER_BUDGET_WARN_SHEET_VIEWPORT_COUNT * 2,
+      );
     });
 
     it('schedule rows over-budget is 2× warn', () => {
-      expect(BROWSER_BUDGET_OVER_BUDGET_SCHEDULE_TABLE_ROWS).toBe(BROWSER_BUDGET_WARN_SCHEDULE_TABLE_ROWS * 2);
+      expect(BROWSER_BUDGET_OVER_BUDGET_SCHEDULE_TABLE_ROWS).toBe(
+        BROWSER_BUDGET_WARN_SCHEDULE_TABLE_ROWS * 2,
+      );
     });
   });
 
@@ -604,7 +617,9 @@ describe('browserRenderingBudgetReadout', () => {
       });
       const lines = formatBrowserRenderingBudgetLines(r);
       const planLine = lines.find((l) => l.includes('plan_wire_primitives'))!;
-      expect(planLine).toContain(`/${BROWSER_BUDGET_WARN_PLAN_WIRE_ENTRIES}/${BROWSER_BUDGET_OVER_BUDGET_PLAN_WIRE_ENTRIES}`);
+      expect(planLine).toContain(
+        `/${BROWSER_BUDGET_WARN_PLAN_WIRE_ENTRIES}/${BROWSER_BUDGET_OVER_BUDGET_PLAN_WIRE_ENTRIES}`,
+      );
     });
   });
 
@@ -617,11 +632,21 @@ describe('browserRenderingBudgetReadout', () => {
         scheduleHydratedTab: null,
       });
       const byId = new Map(r.rows.map((row) => [row.id, row]));
-      expect(byId.get('plan_wire_primitives')!.overBudgetLimit).toBe(BROWSER_BUDGET_OVER_BUDGET_PLAN_WIRE_ENTRIES);
-      expect(byId.get('model_elements')!.overBudgetLimit).toBe(BROWSER_BUDGET_OVER_BUDGET_ELEMENT_COUNT);
-      expect(byId.get('sheet_viewports')!.overBudgetLimit).toBe(BROWSER_BUDGET_OVER_BUDGET_SHEET_VIEWPORT_COUNT);
-      expect(byId.get('schedule_table_rows')!.overBudgetLimit).toBe(BROWSER_BUDGET_OVER_BUDGET_SCHEDULE_TABLE_ROWS);
-      expect(byId.get('saved_3d_view_clip_fields')!.overBudgetLimit).toBe(BROWSER_BUDGET_OVER_BUDGET_SAVED_3D_CLIP_VIEWS);
+      expect(byId.get('plan_wire_primitives')!.overBudgetLimit).toBe(
+        BROWSER_BUDGET_OVER_BUDGET_PLAN_WIRE_ENTRIES,
+      );
+      expect(byId.get('model_elements')!.overBudgetLimit).toBe(
+        BROWSER_BUDGET_OVER_BUDGET_ELEMENT_COUNT,
+      );
+      expect(byId.get('sheet_viewports')!.overBudgetLimit).toBe(
+        BROWSER_BUDGET_OVER_BUDGET_SHEET_VIEWPORT_COUNT,
+      );
+      expect(byId.get('schedule_table_rows')!.overBudgetLimit).toBe(
+        BROWSER_BUDGET_OVER_BUDGET_SCHEDULE_TABLE_ROWS,
+      );
+      expect(byId.get('saved_3d_view_clip_fields')!.overBudgetLimit).toBe(
+        BROWSER_BUDGET_OVER_BUDGET_SAVED_3D_CLIP_VIEWS,
+      );
     });
   });
 });
@@ -629,9 +654,39 @@ describe('browserRenderingBudgetReadout', () => {
 describe('countSaved3dViewClipFields', () => {
   it('counts orbit_3d viewpoints only', () => {
     const els: Record<string, Element> = {
-      vp1: { kind: 'viewpoint', id: 'vp1', name: 'A', mode: 'orbit_3d', camera: { position: { xMm: 0, yMm: 0, zMm: 0 }, target: { xMm: 0, yMm: 0, zMm: 0 }, up: { xMm: 0, yMm: 1, zMm: 0 } } },
-      vp2: { kind: 'viewpoint', id: 'vp2', name: 'B', mode: 'orbit_3d', camera: { position: { xMm: 0, yMm: 0, zMm: 0 }, target: { xMm: 0, yMm: 0, zMm: 0 }, up: { xMm: 0, yMm: 1, zMm: 0 } } },
-      vp3: { kind: 'viewpoint', id: 'vp3', name: 'C', mode: 'plan_2d', camera: { position: { xMm: 0, yMm: 0, zMm: 0 }, target: { xMm: 0, yMm: 0, zMm: 0 }, up: { xMm: 0, yMm: 1, zMm: 0 } } },
+      vp1: {
+        kind: 'viewpoint',
+        id: 'vp1',
+        name: 'A',
+        mode: 'orbit_3d',
+        camera: {
+          position: { xMm: 0, yMm: 0, zMm: 0 },
+          target: { xMm: 0, yMm: 0, zMm: 0 },
+          up: { xMm: 0, yMm: 1, zMm: 0 },
+        },
+      },
+      vp2: {
+        kind: 'viewpoint',
+        id: 'vp2',
+        name: 'B',
+        mode: 'orbit_3d',
+        camera: {
+          position: { xMm: 0, yMm: 0, zMm: 0 },
+          target: { xMm: 0, yMm: 0, zMm: 0 },
+          up: { xMm: 0, yMm: 1, zMm: 0 },
+        },
+      },
+      vp3: {
+        kind: 'viewpoint',
+        id: 'vp3',
+        name: 'C',
+        mode: 'plan_2d',
+        camera: {
+          position: { xMm: 0, yMm: 0, zMm: 0 },
+          target: { xMm: 0, yMm: 0, zMm: 0 },
+          up: { xMm: 0, yMm: 1, zMm: 0 },
+        },
+      },
       lvl: { kind: 'level', id: 'lvl', name: 'L0', elevationMm: 0 },
     };
     expect(countSaved3dViewClipFields(els)).toBe(2);

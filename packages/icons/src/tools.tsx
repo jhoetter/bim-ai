@@ -14,10 +14,7 @@
 import { bimIcon } from './icon';
 
 // ── Plan cross-section: two parallel lines representing wall faces ───────────
-export const WallIcon = bimIcon(
-  'WallIcon',
-  <path d="M2 9h20 M2 15h20" />,
-);
+export const WallIcon = bimIcon('WallIcon', <path d="M2 9h20 M2 15h20" />);
 
 // ── Plan door symbol: wall gap + door leaf + quarter-circle swing arc ────────
 // Hinge at (9,9). Leaf hangs to (9,15). Arc sweeps to open position (15,9).
@@ -45,16 +42,10 @@ export const FloorIcon = bimIcon(
 );
 
 // ── Elevation pitched roof: eave line + two slopes meeting at ridge ──────────
-export const RoofIcon = bimIcon(
-  'RoofIcon',
-  <path d="M2 20h20 M12 4L2 20 M12 4L22 20" />,
-);
+export const RoofIcon = bimIcon('RoofIcon', <path d="M2 20h20 M12 4L2 20 M12 4L22 20" />);
 
 // ── Plan stair: 4-tread step outline going from top-right to bottom-left ─────
-export const StairIcon = bimIcon(
-  'StairIcon',
-  <path d="M21 5H17V9H13V13H9V17H5V19H21z" />,
-);
+export const StairIcon = bimIcon('StairIcon', <path d="M21 5H17V9H13V13H9V17H5V19H21z" />);
 
 // ── Elevation railing: top rail + bottom rail + four posts ───────────────────
 export const RailingIcon = bimIcon(
@@ -99,13 +90,7 @@ export const CurtainWallIcon = bimIcon(
 );
 
 // ── Structural column plan: square section with cross hatching ───────────────
-export const ColumnIcon = bimIcon(
-  'ColumnIcon',
-  <path d="M7 7h10v10H7z M7 7L17 17 M17 7L7 17" />,
-);
+export const ColumnIcon = bimIcon('ColumnIcon', <path d="M7 7h10v10H7z M7 7L17 17 M17 7L7 17" />);
 
 // ── I-beam cross-section: top flange + bottom flange + web ───────────────────
-export const BeamIcon = bimIcon(
-  'BeamIcon',
-  <path d="M4 7h16 M4 17h16 M12 7v10" />,
-);
+export const BeamIcon = bimIcon('BeamIcon', <path d="M4 7h16 M4 17h16 M12 7v10" />);

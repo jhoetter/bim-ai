@@ -55,12 +55,18 @@ export function validateAxisAlignedSeparationSegmentMm(
   const dy = Math.abs(endYMm - startYMm);
   const len = Math.hypot(dx, dy);
   if (len < ROOM_SEPARATION_MIN_LENGTH_MM - 1e-6) {
-    return { ok: false, message: `Segment length must be at least ${ROOM_SEPARATION_MIN_LENGTH_MM} mm.` };
+    return {
+      ok: false,
+      message: `Segment length must be at least ${ROOM_SEPARATION_MIN_LENGTH_MM} mm.`,
+    };
   }
   if (dx < ROOM_SEPARATION_AXIS_ALIGN_TOL_MM || dy < ROOM_SEPARATION_AXIS_ALIGN_TOL_MM) {
     return { ok: true };
   }
-  return { ok: false, message: 'Segment must be axis-aligned (same X or same Y within tolerance).' };
+  return {
+    ok: false,
+    message: 'Segment must be axis-aligned (same X or same Y within tolerance).',
+  };
 }
 
 export function buildRoomSeparationWorkbenchReadout(
@@ -84,7 +90,8 @@ export function buildRoomSeparationWorkbenchReadout(
   let piercesDerivedRectangleInterior = false;
 
   if (wr) {
-    axisAlignedBoundarySegmentEligible = readWireBool(wr.axisAlignedBoundarySegmentEligible) ?? false;
+    axisAlignedBoundarySegmentEligible =
+      readWireBool(wr.axisAlignedBoundarySegmentEligible) ?? false;
     const rsn = wr.axisBoundarySegmentExcludedReason ?? wr.axis_boundary_segment_excluded_reason;
     if (typeof rsn === 'string' && rsn) axisBoundarySegmentExcludedReason = rsn;
     onAuthoritativeDerivedFootprintBoundary =

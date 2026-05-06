@@ -78,9 +78,7 @@ describe('SectionModeShell — spec §20.4', () => {
   });
 
   it('passes activeLevelLabel and modelId through to SectionPlaceholderPane', () => {
-    const { getByTestId } = render(
-      <SectionModeShell activeLevelLabel="L2" modelId="model-abc" />,
-    );
+    const { getByTestId } = render(<SectionModeShell activeLevelLabel="L2" modelId="model-abc" />);
     const pane = getByTestId('section-placeholder-pane');
     expect(pane.getAttribute('data-level')).toBe('L2');
     expect(pane.getAttribute('data-model-id')).toBe('model-abc');
@@ -106,9 +104,7 @@ describe('SheetModeShell — spec §20.5', () => {
 
 describe('ScheduleModeShell — spec §20.6', () => {
   it('renders the schedule grid for the active id', () => {
-    const { getByTestId, getAllByText } = render(
-      <ScheduleModeShell elementsById={elementsById} />,
-    );
+    const { getByTestId, getAllByText } = render(<ScheduleModeShell elementsById={elementsById} />);
     expect(getByTestId('schedule-mode-shell')).toBeTruthy();
     expect(getAllByText('Door schedule').length).toBeGreaterThanOrEqual(1);
   });

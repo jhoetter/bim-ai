@@ -44,7 +44,9 @@ export function formatBcfRoundtripViolationRuleLinks(
     .map((t) => ({
       topicKind: t.topicKind,
       topicId: t.topicId,
-      violationRuleIds: [...t.violationRuleIds].filter((x): x is string => typeof x === 'string').sort(),
+      violationRuleIds: [...t.violationRuleIds]
+        .filter((x): x is string => typeof x === 'string')
+        .sort(),
     }))
     .sort((a, b) => {
       const k = a.topicKind.localeCompare(b.topicKind);
@@ -52,9 +54,7 @@ export function formatBcfRoundtripViolationRuleLinks(
       return a.topicId.localeCompare(b.topicId);
     });
 
-  return rows.map(
-    (r) => `${r.topicKind}:${r.topicId} -> ${r.violationRuleIds.join(', ') || '—'}`,
-  );
+  return rows.map((r) => `${r.topicKind}:${r.topicId} -> ${r.violationRuleIds.join(', ') || '—'}`);
 }
 
 export function summarizeBcfRoundtripEvidenceSummary(
@@ -80,6 +80,8 @@ export function summarizeBcfRoundtripEvidenceSummary(
     viewpointAndScreenshotRefCount: numOrNull(raw.viewpointAndScreenshotRefCount),
     modelElementReferenceCount: numOrNull(raw.modelElementReferenceCount),
     unresolvedReferenceCount: numOrNull(raw.unresolvedReferenceCount),
-    violationRuleLinkLines: formatBcfRoundtripViolationRuleLinks(raw.topicsWithLinkedViolationRuleIds),
+    violationRuleLinkLines: formatBcfRoundtripViolationRuleLinks(
+      raw.topicsWithLinkedViolationRuleIds,
+    ),
   };
 }

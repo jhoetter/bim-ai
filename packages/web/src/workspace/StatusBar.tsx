@@ -243,7 +243,8 @@ function LevelCluster({
         title={t('statusbar.levelTitle')}
         className="rounded-sm px-1.5 py-0.5 hover:bg-surface-strong"
       >
-        {t('statusbar.levelLabel')} <span className="font-medium text-foreground">{level.label}</span>
+        {t('statusbar.levelLabel')}{' '}
+        <span className="font-medium text-foreground">{level.label}</span>
         <Icons.disclosureOpen size={ICON_SIZE.chrome} aria-hidden="true" className="ml-1 inline" />
       </button>
       {open ? (
@@ -268,7 +269,9 @@ function LevelCluster({
               ].join(' ')}
             >
               {l.label}
-              {l.id === level.id ? <span className="text-xs text-muted">{t('statusbar.levelActive')}</span> : null}
+              {l.id === level.id ? (
+                <span className="text-xs text-muted">{t('statusbar.levelActive')}</span>
+              ) : null}
             </button>
           ))}
         </div>
@@ -281,7 +284,8 @@ function ToolCluster({ toolLabel }: { toolLabel: string | null }): JSX.Element {
   const { t } = useTranslation();
   return (
     <div aria-live="polite" className="flex items-center gap-1" title={t('statusbar.toolTitle')}>
-      {t('statusbar.toolLabel')} <span className="font-medium text-foreground">{toolLabel ?? '—'}</span>
+      {t('statusbar.toolLabel')}{' '}
+      <span className="font-medium text-foreground">{toolLabel ?? '—'}</span>
     </div>
   );
 }
@@ -342,7 +346,8 @@ function GridCluster({
       className="flex items-center gap-1 rounded-sm px-1.5 py-0.5 hover:bg-surface-strong"
     >
       <Icons.grid size={ICON_SIZE.chrome} aria-hidden="true" />
-      {t('statusbar.gridLabel')} <span className="font-medium">{gridOn ? t('statusbar.gridOn') : t('statusbar.gridOff')}</span>
+      {t('statusbar.gridLabel')}{' '}
+      <span className="font-medium">{gridOn ? t('statusbar.gridOn') : t('statusbar.gridOff')}</span>
     </button>
   );
 }

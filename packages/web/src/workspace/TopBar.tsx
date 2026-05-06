@@ -282,7 +282,10 @@ function TopBarRight({
     <div className="flex items-center gap-1.5">
       {showSelects ? (
         <>
-          {perspectiveOptions && perspectiveOptions.length > 0 && perspectiveValue !== undefined && onPerspectiveChange ? (
+          {perspectiveOptions &&
+          perspectiveOptions.length > 0 &&
+          perspectiveValue !== undefined &&
+          onPerspectiveChange ? (
             <TopBarSelect
               value={perspectiveValue}
               onChange={onPerspectiveChange}
@@ -290,7 +293,10 @@ function TopBarRight({
               label={t('topbar.perspective')}
             />
           ) : null}
-          {planStyleOptions && planStyleOptions.length > 0 && planStyleValue !== undefined && onPlanStyleChange ? (
+          {planStyleOptions &&
+          planStyleOptions.length > 0 &&
+          planStyleValue !== undefined &&
+          onPlanStyleChange ? (
             <TopBarSelect
               value={planStyleValue}
               onChange={onPlanStyleChange}

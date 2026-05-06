@@ -180,12 +180,14 @@ export function AgentReviewPane() {
       missingCount: number;
       totalCount: number;
     } | null;
-    regenerationGuidance: {
-      priority: string;
-      artifactKey: string;
-      reason: string;
-      suggestedCommand: string;
-    }[] | null;
+    regenerationGuidance:
+      | {
+          priority: string;
+          artifactKey: string;
+          reason: string;
+          suggestedCommand: string;
+        }[]
+      | null;
   };
 
   const assumptionsJson = useMemo(() => {
@@ -460,7 +462,8 @@ export function AgentReviewPane() {
         payload.agentReviewReadoutConsistencyClosure_v1,
       );
 
-      let prdCloseoutCrossCorrelation: EvidenceArtifactSummary['prdCloseoutCrossCorrelation'] = null;
+      let prdCloseoutCrossCorrelation: EvidenceArtifactSummary['prdCloseoutCrossCorrelation'] =
+        null;
       const closeoutManifestRaw = payload.v1CloseoutReadinessManifest_v1;
       if (closeoutManifestRaw && typeof closeoutManifestRaw === 'object') {
         const cm = closeoutManifestRaw as Record<string, unknown>;
@@ -613,8 +616,7 @@ export function AgentReviewPane() {
             const cdig = spi.canonicalDigestSha256;
             if (typeof cdig === 'string' && /^[a-f0-9]{64}$/.test(cdig)) {
               serverPngByteIngestCanonicalDigestFull = cdig;
-              serverPngByteIngestCanonicalDigestTail =
-                cdig.length >= 12 ? cdig.slice(-12) : cdig;
+              serverPngByteIngestCanonicalDigestTail = cdig.length >= 12 ? cdig.slice(-12) : cdig;
             }
             const compRaw = spi.comparison;
             if (compRaw && typeof compRaw === 'object') {
@@ -963,9 +965,16 @@ export function AgentReviewPane() {
       }
 
       let regenerationGuidance: EvidenceArtifactSummary['regenerationGuidance'] = null;
-      const regenRaw = (typeof evidenceTxt === 'string' ? (() => {
-        try { return JSON.parse(evidenceTxt) as Record<string, unknown>; } catch { return null; }
-      })() : null);
+      const regenRaw =
+        typeof evidenceTxt === 'string'
+          ? (() => {
+              try {
+                return JSON.parse(evidenceTxt) as Record<string, unknown>;
+              } catch {
+                return null;
+              }
+            })()
+          : null;
       if (regenRaw && typeof regenRaw === 'object') {
         const rgRaw = (regenRaw as Record<string, unknown>).agentRegenerationGuidance_v1;
         if (rgRaw && typeof rgRaw === 'object') {
@@ -1120,8 +1129,9 @@ export function AgentReviewPane() {
           </li>
           <li>
             Use advisor quick-fixes before applying bundles to production models. Watch{' '}
-            <code className="text-[10px]">schedule_opening_*</code> rows for hosted openings and use the Schedules
-            panel definition presets to confirm required export columns are present on the server table.
+            <code className="text-[10px]">schedule_opening_*</code> rows for hosted openings and use
+            the Schedules panel definition presets to confirm required export columns are present on
+            the server table.
           </li>
         </ol>
       </div>
@@ -1498,8 +1508,9 @@ export function AgentReviewPane() {
         >
           <div className="text-[10px] font-semibold text-muted">Brief → command protocol</div>
           <p className="mt-1 text-[10px] text-muted">
-            Deterministic readout from model state + validation violations + optional command preview
-            (evidence-package uses an empty proposed-command list; dry-run uses your bundle).
+            Deterministic readout from model state + validation violations + optional command
+            preview (evidence-package uses an empty proposed-command list; dry-run uses your
+            bundle).
           </p>
           {evidenceBriefProtocol !== null ? (
             <div className="mt-2">
@@ -1534,8 +1545,8 @@ export function AgentReviewPane() {
           </p>
           <p className="mt-1 text-[10px] text-muted">
             Row order is stable and matches the evidence-package / dry-run payloads. Use Fetch
-            evidence-package JSON for full coverage rows; bundle dry-run narrows command + validation
-            preview.
+            evidence-package JSON for full coverage rows; bundle dry-run narrows command +
+            validation preview.
           </p>
           {evidenceQaChecklist !== null ? (
             <div className="mt-2">
@@ -1567,7 +1578,8 @@ export function AgentReviewPane() {
         >
           <div className="text-[10px] font-semibold text-muted">Brief acceptance gates</div>
           <p className="mt-1 text-[10px] text-muted">
-            Deterministic closure readout (<code className="text-[9px]">agentBriefAcceptanceReadout_v1</code>) from
+            Deterministic closure readout (
+            <code className="text-[9px]">agentBriefAcceptanceReadout_v1</code>) from
             evidence-package and bundle dry-run payloads. Line preview:
           </p>
           <div className="mt-2 grid gap-2 md:grid-cols-2">
@@ -1582,7 +1594,10 @@ export function AgentReviewPane() {
             title="Evidence-package readout (preferred for artifact expectations)"
             readout={evidenceAcceptanceReadout}
           />
-          <AgentBriefAcceptanceReadoutV1Table title="Last bundle dry-run readout" readout={dryRunAcceptanceReadout} />
+          <AgentBriefAcceptanceReadoutV1Table
+            title="Last bundle dry-run readout"
+            readout={dryRunAcceptanceReadout}
+          />
         </div>
       ) : null}
 
@@ -1596,27 +1611,26 @@ export function AgentReviewPane() {
           </div>
           <p className="mt-1 text-[10px] text-muted">
             Cross-checks field presence, bundle id, and evidence digest drift across the five Agent
-            Review readouts. Rows are{' '}
-            <code className="text-[9px]">aligned</code>,{' '}
+            Review readouts. Rows are <code className="text-[9px]">aligned</code>,{' '}
             <code className="text-[9px]">missing_fields</code>,{' '}
             <code className="text-[9px]">bundle_id_drift</code>, or{' '}
             <code className="text-[9px]">digest_drift</code>.
           </p>
           <div className="mt-2 grid gap-2 md:grid-cols-2">
             <div>
-              <div className="text-[10px] font-medium text-muted">
-                Evidence-package snapshot
-              </div>
+              <div className="text-[10px] font-medium text-muted">Evidence-package snapshot</div>
               <pre className="mt-1 max-h-40 overflow-auto rounded border border-border/60 bg-background p-2 font-mono text-[10px] leading-snug">
-                {formatAgentReviewReadoutConsistencyClosureLines(evidenceConsistencyClosure).join('\n')}
+                {formatAgentReviewReadoutConsistencyClosureLines(evidenceConsistencyClosure).join(
+                  '\n',
+                )}
               </pre>
             </div>
             <div>
-              <div className="text-[10px] font-medium text-muted">
-                Last bundle dry-run
-              </div>
+              <div className="text-[10px] font-medium text-muted">Last bundle dry-run</div>
               <pre className="mt-1 max-h-40 overflow-auto rounded border border-border/60 bg-background p-2 font-mono text-[10px] leading-snug">
-                {formatAgentReviewReadoutConsistencyClosureLines(dryRunConsistencyClosure).join('\n')}
+                {formatAgentReviewReadoutConsistencyClosureLines(dryRunConsistencyClosure).join(
+                  '\n',
+                )}
               </pre>
             </div>
           </div>
@@ -1628,8 +1642,11 @@ export function AgentReviewPane() {
               <ul className="mt-1 list-disc space-y-0.5 ps-4 text-[10px] text-muted">
                 {evidenceConsistencyClosure!.advisoryFindings.map((f, i) => (
                   <li key={i}>
-                    <code className="font-mono text-[9px]">[{f.severity}] {f.ruleId}</code>
-                    {' '}({f.readoutId}){': '}{f.message}
+                    <code className="font-mono text-[9px]">
+                      [{f.severity}] {f.ruleId}
+                    </code>{' '}
+                    ({f.readoutId}){': '}
+                    {f.message}
                   </li>
                 ))}
               </ul>
@@ -1863,15 +1880,17 @@ export function AgentReviewPane() {
                   ) : null}
                   {evidenceArtifactSummary.closureReview.serverPngByteIngestCanonicalDigestFull ? (
                     <p className="mt-0.5 text-[10px] text-muted">
-                      canonicalDigestSha256 (
-                      <code className="text-[10px]">png_file_sha256</code>):{' '}
+                      canonicalDigestSha256 (<code className="text-[10px]">png_file_sha256</code>):{' '}
                       <code className="font-mono text-[10px]">
                         {evidenceArtifactSummary.closureReview.serverPngByteIngestCanonicalDigestFull.slice(
                           0,
                           12,
                         )}
                         …
-                        {evidenceArtifactSummary.closureReview.serverPngByteIngestCanonicalDigestTail}
+                        {
+                          evidenceArtifactSummary.closureReview
+                            .serverPngByteIngestCanonicalDigestTail
+                        }
                       </code>
                     </p>
                   ) : null}
@@ -2061,9 +2080,8 @@ export function AgentReviewPane() {
                   {' / '}missing:{' '}
                   <strong data-testid="freshness-missing-count">
                     {evidenceArtifactSummary.evidenceFreshness.missingCount}
-                  </strong>
-                  {' '}(total:{' '}
-                  <strong>{evidenceArtifactSummary.evidenceFreshness.totalCount}</strong>)
+                  </strong>{' '}
+                  (total: <strong>{evidenceArtifactSummary.evidenceFreshness.totalCount}</strong>)
                 </li>
               </ul>
               {evidenceArtifactSummary.regenerationGuidance &&
@@ -2090,7 +2108,8 @@ export function AgentReviewPane() {
                           [{action.priority}]
                         </span>{' '}
                         <code className="font-mono text-[9px]">{action.artifactKey}</code>
-                        {' — '}{action.reason}
+                        {' — '}
+                        {action.reason}
                         <div className="mt-0.5">
                           <code className="whitespace-pre-wrap break-all font-mono text-[9px] text-muted">
                             $ {action.suggestedCommand}
@@ -2203,10 +2222,9 @@ export function AgentReviewPane() {
                   typeof res?.unresolvedCount === 'number' && Number.isFinite(res.unresolvedCount)
                     ? res.unresolvedCount
                     : null;
-                const roundtripRaw = ft.bcfRoundtripEvidenceSummary_v1 as Record<
-                  string,
-                  unknown
-                > | undefined;
+                const roundtripRaw = ft.bcfRoundtripEvidenceSummary_v1 as
+                  | Record<string, unknown>
+                  | undefined;
                 const roundtripFmt = summarizeBcfRoundtripEvidenceSummary(
                   roundtripRaw as BcfRoundtripEvidenceSummaryWire,
                 );
@@ -2266,9 +2284,7 @@ export function AgentReviewPane() {
                       <>
                         <li>
                           BCF round-trip summary: BCF topics{' '}
-                          <code className="font-mono">
-                            {roundtripFmt.bcfTopicCount ?? '—'}
-                          </code>
+                          <code className="font-mono">{roundtripFmt.bcfTopicCount ?? '—'}</code>
                           {' · '}viewpoint/PNG refs{' '}
                           <code className="font-mono">
                             {roundtripFmt.viewpointAndScreenshotRefCount ?? '—'}
@@ -2298,10 +2314,7 @@ export function AgentReviewPane() {
                     ) : null}
                     {issuePkgRaw?.format === 'bcfIssuePackageExport_v1' &&
                     issuePkgFmt.lines.length ? (
-                      <li
-                        className="space-y-0.5"
-                        data-testid="bcf-issue-package-export-readout"
-                      >
+                      <li className="space-y-0.5" data-testid="bcf-issue-package-export-readout">
                         <span>BCF issue package export:</span>
                         <ul className="list-disc space-y-0.5 ps-4">
                           {issuePkgFmt.lines.map((ln) => (
@@ -2325,7 +2338,10 @@ export function AgentReviewPane() {
                       </li>
                     ) : null}
                     {ifcClosureLines.length ? (
-                      <li className="space-y-0.5" data-testid="ifc-exchange-manifest-closure-readout">
+                      <li
+                        className="space-y-0.5"
+                        data-testid="ifc-exchange-manifest-closure-readout"
+                      >
                         <span>IFC exchange manifest closure:</span>
                         <ul className="list-disc space-y-0.5 ps-4">
                           {ifcClosureLines.map((ln) => (
@@ -2354,8 +2370,8 @@ export function AgentReviewPane() {
                           ) : null}
                         </span>
                         <div className="mt-0.5 text-[9px] text-muted/90">
-                          Conflict queue inspection (live readout also appears in the Workspace header on
-                          409):
+                          Conflict queue inspection (live readout also appears in the Workspace
+                          header on 409):
                         </div>
                         <ul className="list-disc space-y-0.5 ps-4">
                           {collaborationConflictQueueInspectionLinesFromHints().map((ln) => (
@@ -2407,8 +2423,8 @@ export function AgentReviewPane() {
                 Suggested agent actions (agentReviewActions_v1)
               </div>
               <p className="mt-1 text-[9px] text-muted">
-                Review aids only — inspect here or copy JSON. Does not create remote issues or run commands
-                automatically.
+                Review aids only — inspect here or copy JSON. Does not create remote issues or run
+                commands automatically.
               </p>
               <ul className="mt-2 space-y-2">
                 {evidenceArtifactSummary.reviewActions.map((a) => {

@@ -2,7 +2,8 @@
 
 import { sha256Utf8 } from '../plan/roomSchemeColor';
 
-export const SHEET_TITLEBLOCK_REVISION_ISSUE_MANIFEST_V1 = 'sheetTitleblockRevisionIssueManifest_v1';
+export const SHEET_TITLEBLOCK_REVISION_ISSUE_MANIFEST_V1 =
+  'sheetTitleblockRevisionIssueManifest_v1';
 
 function strParam(tp: Record<string, string>, keys: string[]): string {
   for (const k of keys) {
@@ -30,7 +31,11 @@ export function normalizeTitleblockRevisionIssueV1(
     revisionId: strParam(raw, ['revisionId', 'revision_id']),
     revisionCode: strParam(raw, ['revisionCode', 'revision']),
     revisionDate: strParam(raw, ['revisionDate', 'revDate', 'revision_date']),
-    revisionDescription: strParam(raw, ['revisionDescription', 'revDescription', 'revision_description']),
+    revisionDescription: strParam(raw, [
+      'revisionDescription',
+      'revDescription',
+      'revision_description',
+    ]),
     issueStatus: strParam(raw, ['issueStatus', 'issue_status', 'sheetIssueStatus']),
   };
 }
@@ -56,13 +61,17 @@ function buildRevIssInnerTokenString(norm: TitleblockRevisionIssueNormV1): strin
   return parts.join(' ');
 }
 
-export function formatSheetRevIssTitleblockDisplaySegmentV1(norm: TitleblockRevisionIssueNormV1): string {
+export function formatSheetRevIssTitleblockDisplaySegmentV1(
+  norm: TitleblockRevisionIssueNormV1,
+): string {
   const inner = buildRevIssInnerTokenString(norm);
   if (!inner) return '';
   return `sheetRevIssDoc[${inner}]`;
 }
 
-export function formatSheetRevIssExportListingSegmentV1(norm: TitleblockRevisionIssueNormV1): string {
+export function formatSheetRevIssExportListingSegmentV1(
+  norm: TitleblockRevisionIssueNormV1,
+): string {
   const inner = buildRevIssInnerTokenString(norm);
   if (!inner) return '';
   return `sheetRevIssList[${inner}]`;

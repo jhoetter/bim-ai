@@ -26,10 +26,7 @@ export const StructuralPlanIcon = bimIcon(
 );
 
 // ── Area plan: floor plan subdivided into area zones ─────────────────────────
-export const AreaPlanIcon = bimIcon(
-  'AreaPlanIcon',
-  <path d="M3 3H21V21H3z M3 12H21 M12 3V12" />,
-);
+export const AreaPlanIcon = bimIcon('AreaPlanIcon', <path d="M3 3H21V21H3z M3 12H21 M12 3V12" />);
 
 // ── Detail view: magnifier over a plan area — close-up view ──────────────────
 export const DetailViewIcon = bimIcon(

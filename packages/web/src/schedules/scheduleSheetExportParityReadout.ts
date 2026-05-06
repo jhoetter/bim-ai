@@ -127,9 +127,7 @@ export function formatScheduleSheetExportParityRowLine(row: ScheduleSheetExportP
  * Filter / sort schedule-sheet export parity advisories from the violation list,
  * for surfacing in the existing advisor UI patterns.
  */
-export function filterScheduleSheetExportParityAdvisories(
-  violations: Violation[],
-): Violation[] {
+export function filterScheduleSheetExportParityAdvisories(violations: Violation[]): Violation[] {
   const matched = violations.filter((v) => PARITY_RULE_SET.has(v.ruleId));
   return [...matched].sort((a, b) => {
     const cr = a.ruleId.localeCompare(b.ruleId);
@@ -142,9 +140,7 @@ export function filterScheduleSheetExportParityAdvisories(
   });
 }
 
-export function compactScheduleSheetExportParityAdvisoryLines(
-  violations: Violation[],
-): string[] {
+export function compactScheduleSheetExportParityAdvisoryLines(violations: Violation[]): string[] {
   return filterScheduleSheetExportParityAdvisories(violations).map((v) => {
     const ids = [...(v.elementIds ?? [])].sort((x, y) => x.localeCompare(y)).join(', ');
     return `${v.ruleId} · ${v.severity} · ${v.message}${ids ? ` · ${ids}` : ''}`;

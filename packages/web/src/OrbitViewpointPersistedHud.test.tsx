@@ -17,7 +17,8 @@ describe('OrbitViewpointPersistedHud', () => {
   const containers: HTMLDivElement[] = [];
 
   beforeAll(() => {
-    (globalThis as unknown as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+    (globalThis as unknown as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT =
+      true;
   });
 
   afterEach(() => {
@@ -39,7 +40,9 @@ describe('OrbitViewpointPersistedHud', () => {
   }
 
   it('shows guidance when no active viewpoint', () => {
-    const el = renderHud(<OrbitViewpointPersistedHud activeViewpointId={undefined} viewpoint={null} />);
+    const el = renderHud(
+      <OrbitViewpointPersistedHud activeViewpointId={undefined} viewpoint={null} />,
+    );
     expect(el.textContent).toContain('Select a saved orbit viewpoint');
     expect(el.querySelector('[data-testid="orbit-viewpoint-persisted-hud"]')).toBeTruthy();
   });

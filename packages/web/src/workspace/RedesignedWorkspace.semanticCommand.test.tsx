@@ -66,7 +66,12 @@ describe('<RedesignedWorkspace /> — semantic command wiring (T-01)', () => {
     expect(typeof fn).toBe('function');
     // The no-op was an arrow that returned undefined unconditionally — the
     // real handler should at least *try* to fire applyCommand when called.
-    fn?.({ type: 'createWall', levelId: 'l0', start: { xMm: 0, yMm: 0 }, end: { xMm: 1000, yMm: 0 } });
+    fn?.({
+      type: 'createWall',
+      levelId: 'l0',
+      start: { xMm: 0, yMm: 0 },
+      end: { xMm: 1000, yMm: 0 },
+    });
     await waitFor(() => expect(mockApplyCommand).toHaveBeenCalledTimes(1));
   });
 

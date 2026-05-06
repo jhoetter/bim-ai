@@ -880,8 +880,7 @@ export function viewpointOrbit3dCutawayStyleToken(
   const persisted = viewpointPersistedCutawayStyle(vp);
   if (persisted !== undefined) return persisted;
   const hasCap = vp.viewerClipCapElevMm != null && Number.isFinite(vp.viewerClipCapElevMm);
-  const hasFloor =
-    vp.viewerClipFloorElevMm != null && Number.isFinite(vp.viewerClipFloorElevMm);
+  const hasFloor = vp.viewerClipFloorElevMm != null && Number.isFinite(vp.viewerClipFloorElevMm);
   if (hasCap && hasFloor) return 'box';
   if (hasCap) return 'cap';
   if (hasFloor) return 'floor';
@@ -889,7 +888,9 @@ export function viewpointOrbit3dCutawayStyleToken(
 }
 
 /** Human-readable cutaway / section-box style (explicit `cutawayStyle` when set, else clip-derived). */
-export function viewpointOrbit3dCutawayStyleLabel(vp: Extract<Element, { kind: 'viewpoint' }>): string {
+export function viewpointOrbit3dCutawayStyleLabel(
+  vp: Extract<Element, { kind: 'viewpoint' }>,
+): string {
   const t = viewpointOrbit3dCutawayStyleToken(vp);
   switch (t) {
     case 'none':

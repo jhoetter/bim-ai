@@ -74,7 +74,9 @@ describe('parseAgentReviewReadoutConsistencyClosureV1', () => {
   });
 
   it('returns null when a row is malformed', () => {
-    const raw = fixture({ rows: [{ readoutId: 'briefAcceptance' }] as unknown as ReadoutConsistencyRow[] });
+    const raw = fixture({
+      rows: [{ readoutId: 'briefAcceptance' }] as unknown as ReadoutConsistencyRow[],
+    });
     expect(parseAgentReviewReadoutConsistencyClosureV1(raw)).toBeNull();
   });
 
@@ -156,7 +158,10 @@ describe('sortConsistencyRows', () => {
   });
 
   it('does not mutate the original array', () => {
-    const rows = [minimalRow('mergePreflight', 'missing_fields'), minimalRow('briefAcceptance', 'aligned')];
+    const rows = [
+      minimalRow('mergePreflight', 'missing_fields'),
+      minimalRow('briefAcceptance', 'aligned'),
+    ];
     const original = [...rows];
     sortConsistencyRows(rows);
     expect(rows[0]!.readoutId).toBe(original[0]!.readoutId);
@@ -226,7 +231,9 @@ describe('formatAgentReviewReadoutConsistencyClosureLines', () => {
     const lines = formatAgentReviewReadoutConsistencyClosureLines(
       fixture({ agentReviewReadoutConsistencyClosureDigestSha256: 'b'.repeat(64) }),
     );
-    expect(lines.some((ln) => ln.includes('digest:') && ln.includes('bbbbbbbbbbbbbbbb'))).toBe(true);
+    expect(lines.some((ln) => ln.includes('digest:') && ln.includes('bbbbbbbbbbbbbbbb'))).toBe(
+      true,
+    );
   });
 
   it('shows bundleId in row line when present', () => {

@@ -51,7 +51,11 @@ describe('roomColorSchemeLegendReadoutParts', () => {
     const ev = {
       ...BASE_EV,
       advisoryFindings: [
-        { code: 'room_color_scheme_row_duplicate_override_key', severity: 'warning', message: 'dup' },
+        {
+          code: 'room_color_scheme_row_duplicate_override_key',
+          severity: 'warning',
+          message: 'dup',
+        },
       ],
     };
     const lines = roomColorSchemeLegendReadoutParts(ev);

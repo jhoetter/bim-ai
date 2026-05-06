@@ -95,8 +95,7 @@ export function EvidencePackageDigestInvariantsReadout({ invariants }: Props) {
           </strong>
         </li>
         <li>
-          invariants digest:{' '}
-          <code className="text-[10px]">…{digestTail}</code>
+          invariants digest: <code className="text-[10px]">…{digestTail}</code>
         </li>
       </ul>
       {unknownCount > 0 ? (

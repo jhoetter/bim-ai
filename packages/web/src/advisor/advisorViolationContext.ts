@@ -75,7 +75,8 @@ function firstViewRefFromViewports(cmd: Record<string, unknown>): string | null 
   if (!Array.isArray(rows) || !rows.length) return null;
   const first = rows[0];
   if (!first || typeof first !== 'object') return null;
-  const vr = (first as Record<string, unknown>).viewRef ?? (first as Record<string, unknown>).view_ref;
+  const vr =
+    (first as Record<string, unknown>).viewRef ?? (first as Record<string, unknown>).view_ref;
   return typeof vr === 'string' && vr.trim() ? vr.trim() : null;
 }
 
@@ -130,7 +131,9 @@ export function sortViolationsDeterministic(violations: Violation[]): Violation[
   });
 }
 
-export function groupViolationsBySeverity(sorted: Violation[]): { severity: Violation['severity']; items: Violation[] }[] {
+export function groupViolationsBySeverity(
+  sorted: Violation[],
+): { severity: Violation['severity']; items: Violation[] }[] {
   const order: Violation['severity'][] = ['error', 'warning', 'info'];
   const buckets = new Map<Violation['severity'], Violation[]>();
   for (const sev of order) buckets.set(sev, []);

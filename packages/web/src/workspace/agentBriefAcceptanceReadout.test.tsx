@@ -127,7 +127,9 @@ describe('AgentBriefAcceptanceReadoutV1Table', () => {
       </div>,
     );
     expect(screen.getByTestId('agent-brief-acceptance-readout')).toBeTruthy();
-    expect(screen.getByTestId('agent-brief-acceptance-row-assumptions_linked_resolved')).toBeTruthy();
+    expect(
+      screen.getByTestId('agent-brief-acceptance-row-assumptions_linked_resolved'),
+    ).toBeTruthy();
     expect(screen.getByTestId('agent-brief-acceptance-row-failure_reason_codes')).toBeTruthy();
     expect(
       screen.getByTestId('agent-brief-acceptance-row-evidence_artifacts_expected').textContent,

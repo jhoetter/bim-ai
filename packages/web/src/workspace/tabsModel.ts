@@ -124,12 +124,10 @@ export function reorderTab(state: TabsState, fromIdx: number, toIdx: number): Ta
 /** Cycle the active tab forward or backward. Wraps around. */
 export function cycleActive(state: TabsState, direction: 'forward' | 'backward'): TabsState {
   if (state.tabs.length === 0) return state;
-  const idx = state.activeId
-    ? state.tabs.findIndex((t) => t.id === state.activeId)
-    : -1;
+  const idx = state.activeId ? state.tabs.findIndex((t) => t.id === state.activeId) : -1;
   const len = state.tabs.length;
   const delta = direction === 'forward' ? 1 : -1;
-  const nextIdx = (((idx >= 0 ? idx : 0) + delta) % len + len) % len;
+  const nextIdx = ((((idx >= 0 ? idx : 0) + delta) % len) + len) % len;
   return { ...state, activeId: state.tabs[nextIdx]?.id ?? null };
 }
 

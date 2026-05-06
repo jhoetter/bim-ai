@@ -18,9 +18,7 @@ export function summarizeArtifactUploadManifestV1(raw: unknown): string[] {
 
   const sideOn = m.sideEffectsEnabled === true;
   const sr = typeof m.sideEffectsReason === 'string' ? m.sideEffectsReason : '';
-  lines.push(
-    `Side-effect hints: ${sideOn ? 'on' : 'off'}${sr ? ` — ${truncate(sr, 140)}` : ''}`,
-  );
+  lines.push(`Side-effect hints: ${sideOn ? 'on' : 'off'}${sr ? ` — ${truncate(sr, 140)}` : ''}`);
 
   const rm = typeof m.resolutionMode === 'string' ? m.resolutionMode : null;
   if (rm) {
@@ -83,7 +81,10 @@ export function summarizeArtifactUploadManifestV1(raw: unknown): string[] {
     }
     if (reasonCodes.size > 0) {
       lines.push(
-        `Missing artifact reasons: ${[...reasonCodes].sort().map((c) => truncate(c, 40)).join(', ')}`,
+        `Missing artifact reasons: ${[...reasonCodes]
+          .sort()
+          .map((c) => truncate(c, 40))
+          .join(', ')}`,
       );
     }
   }

@@ -38,10 +38,7 @@ export const PlantingIcon = bimIcon(
 );
 
 // ── Road / access route: twin-line roadway with centre dashes ─────────────────
-export const RoadIcon = bimIcon(
-  'RoadIcon',
-  <path d="M2 9H22V15H2z M8 12H10 M14 12H16" />,
-);
+export const RoadIcon = bimIcon('RoadIcon', <path d="M2 9H22V15H2z M8 12H10 M14 12H16" />);
 
 // ── Retaining wall: wall section with diagonal earth hatching behind ──────────
 export const RetainingWallIcon = bimIcon(

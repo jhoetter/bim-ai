@@ -31,12 +31,12 @@ export interface WalkState {
 }
 
 export interface WalkConfig {
-  walkSpeed: number;       // m/s
+  walkSpeed: number; // m/s
   runMultiplier: number;
   mouseSensitivity: number; // radians per pixel
-  pitchClamp: number;      // radians, ±
-  damping: number;         // velocity smoothing rate (higher = snappier)
-  eyeHeight: number;       // m above floor datum for level snapping
+  pitchClamp: number; // radians, ±
+  damping: number; // velocity smoothing rate (higher = snappier)
+  eyeHeight: number; // m above floor datum for level snapping
 }
 
 const DEFAULT_CONFIG: WalkConfig = {

@@ -263,9 +263,7 @@ function InspectorEmpty({
   return (
     <div className="flex flex-1 flex-col gap-3 px-3 py-6 text-sm">
       <p className="text-foreground">{t('inspector.empty.noSelection')}</p>
-      <p className="text-xs text-muted">
-        {t('inspector.empty.hint')}
-      </p>
+      <p className="text-xs text-muted">{t('inspector.empty.hint')}</p>
       {actions.length ? (
         <div className="rounded-md border border-border bg-surface-strong p-3">
           <div

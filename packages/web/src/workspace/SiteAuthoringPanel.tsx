@@ -18,12 +18,7 @@ const DEFAULT_SITE_ID = 'site-v0';
 const DEFAULT_WIDTH_MM = 20_000;
 const DEFAULT_DEPTH_MM = 15_000;
 const DEFAULT_PAD_MM = 80;
-const CONTEXT_TYPES: SiteContextType[] = [
-  'tree',
-  'shrub',
-  'neighbor_proxy',
-  'entourage',
-];
+const CONTEXT_TYPES: SiteContextType[] = ['tree', 'shrub', 'neighbor_proxy', 'entourage'];
 
 function sortedSites(elementsById: Record<string, Element>): SiteRow[] {
   return Object.values(elementsById)
@@ -53,12 +48,7 @@ type Props = {
   onUpsertSemantic: (cmd: Record<string, unknown>) => void;
 };
 
-export function SiteAuthoringPanel({
-  revision,
-  elementsById,
-  levels,
-  onUpsertSemantic,
-}: Props) {
+export function SiteAuthoringPanel({ revision, elementsById, levels, onUpsertSemantic }: Props) {
   const elementsRef = useRef(elementsById);
   const levelsRef = useRef(levels);
   elementsRef.current = elementsById;
@@ -114,9 +104,7 @@ export function SiteAuthoringPanel({
     setDepthMm(d);
     setPadMm(primary.padThicknessMm ?? DEFAULT_PAD_MM);
     setBaseOffsetMm(primary.baseOffsetMm ?? 0);
-    setNorthDegText(
-      primary.northDegCwFromPlanX == null ? '' : String(primary.northDegCwFromPlanX),
-    );
+    setNorthDegText(primary.northDegCwFromPlanX == null ? '' : String(primary.northDegCwFromPlanX));
     setSetbackText(primary.uniformSetbackMm == null ? '' : String(primary.uniformSetbackMm));
     const co = [...(primary.contextObjects ?? [])].sort((a, b) => a.id.localeCompare(b.id));
     const nextCtx =
@@ -142,9 +130,7 @@ export function SiteAuthoringPanel({
       : referenceLevelId || '—';
 
   const filteredContextForPayload = (): SiteContextObjectRow[] =>
-    ctxRows
-      .filter((r) => r.id.trim().length > 0)
-      .map(({ _key: _omit, ...row }) => row);
+    ctxRows.filter((r) => r.id.trim().length > 0).map(({ _key: _omit, ...row }) => row);
 
   const evidenceContextCount = filteredContextForPayload().length;
 
@@ -225,7 +211,11 @@ export function SiteAuthoringPanel({
         setApplyError(`Context '${k}' scale must be > 0 when set (default 1).`);
         return;
       }
-      if (!r.positionMm || typeof r.positionMm.xMm !== 'number' || typeof r.positionMm.yMm !== 'number') {
+      if (
+        !r.positionMm ||
+        typeof r.positionMm.xMm !== 'number' ||
+        typeof r.positionMm.yMm !== 'number'
+      ) {
         setApplyError(`Context '${k}' positionMm requires numeric xMm and yMm.`);
         return;
       }
@@ -235,11 +225,7 @@ export function SiteAuthoringPanel({
       id: idTrim,
       name: name.trim() || 'Site',
       referenceLevelId: rid,
-      boundaryMm: boundaryMmFromAnchorSize(
-        anchor,
-        Number(widthMm),
-        Number(depthMm),
-      ),
+      boundaryMm: boundaryMmFromAnchorSize(anchor, Number(widthMm), Number(depthMm)),
       padThicknessMm: pad,
       baseOffsetMm: bo,
       northDegCwFromPlanX: north,
@@ -257,8 +243,8 @@ export function SiteAuthoringPanel({
           <span className="font-mono">{boundaryMmResolved.length}</span>, context markers{' '}
           <span className="font-mono">{evidenceContextCount}</span>, ref level{' '}
           <span className="font-mono">{refLevelName}</span>. Bounded to{' '}
-          <span className="font-mono">upsertSite</span>; no grading, contours, or survey import — pad
-          is a simple prism.
+          <span className="font-mono">upsertSite</span>; no grading, contours, or survey import —
+          pad is a simple prism.
         </div>
 
         <div className="grid grid-cols-2 gap-2">
@@ -303,9 +289,7 @@ export function SiteAuthoringPanel({
               className="mt-0.5 rounded border border-border bg-background px-1 py-0.5 font-mono text-[10px]"
               type="number"
               value={anchor.xMm}
-              onChange={(e) =>
-                setAnchor((a) => ({ ...a, xMm: Number(e.target.value) || 0 }))
-              }
+              onChange={(e) => setAnchor((a) => ({ ...a, xMm: Number(e.target.value) || 0 }))}
             />
           </label>
           <label className="flex min-w-0 flex-col text-[10px] text-muted">
@@ -314,9 +298,7 @@ export function SiteAuthoringPanel({
               className="mt-0.5 rounded border border-border bg-background px-1 py-0.5 font-mono text-[10px]"
               type="number"
               value={anchor.yMm}
-              onChange={(e) =>
-                setAnchor((a) => ({ ...a, yMm: Number(e.target.value) || 0 }))
-              }
+              onChange={(e) => setAnchor((a) => ({ ...a, yMm: Number(e.target.value) || 0 }))}
             />
           </label>
         </div>
@@ -406,9 +388,7 @@ export function SiteAuthoringPanel({
                     value={row.id}
                     onChange={(e) => {
                       const v = e.target.value;
-                      setCtxRows((rows) =>
-                        rows.map((r, i) => (i === idx ? { ...r, id: v } : r)),
-                      );
+                      setCtxRows((rows) => rows.map((r, i) => (i === idx ? { ...r, id: v } : r)));
                     }}
                   />
                 </label>
@@ -540,7 +520,12 @@ export function SiteAuthoringPanel({
           <Btn type="button" className="text-[10px]" onClick={() => void apply()}>
             Apply (upsertSite)
           </Btn>
-          <Btn type="button" variant="quiet" className="text-[10px]" onClick={() => hydrateFromDoc()}>
+          <Btn
+            type="button"
+            variant="quiet"
+            className="text-[10px]"
+            onClick={() => hydrateFromDoc()}
+          >
             Reset from doc
           </Btn>
         </div>

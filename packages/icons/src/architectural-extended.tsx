@@ -8,16 +8,10 @@
 import { bimIcon } from './icon';
 
 // ── Wall sweep: wall section with extruded profile on one face ────────────────
-export const WallSweepIcon = bimIcon(
-  'WallSweepIcon',
-  <path d="M2 10H22V14H2z M16 7H20V10H16z" />,
-);
+export const WallSweepIcon = bimIcon('WallSweepIcon', <path d="M2 10H22V14H2z M16 7H20V10H16z" />);
 
 // ── Wall reveal: wall with a recessed groove cut into one face ────────────────
-export const WallRevealIcon = bimIcon(
-  'WallRevealIcon',
-  <path d="M2 10H22V14H2z M8 10H16V12H8" />,
-);
+export const WallRevealIcon = bimIcon('WallRevealIcon', <path d="M2 10H22V14H2z M8 10H16V12H8" />);
 
 // ── Component: generic hosted family instance — box with insertion plus ───────
 export const ComponentIcon = bimIcon(
@@ -30,10 +24,7 @@ export const ComponentIcon = bimIcon(
 
 // ── Roof by extrusion: profile shape extruded into a roof form ────────────────
 // Section view of an extruded profile: a step/L profile that becomes a roof.
-export const RoofExtrusionIcon = bimIcon(
-  'RoofExtrusionIcon',
-  <path d="M4 18H20V14H14V10H8V18" />,
-);
+export const RoofExtrusionIcon = bimIcon('RoofExtrusionIcon', <path d="M4 18H20V14H14V10H8V18" />);
 
 // ── Roof soffit: the underside face of a roof overhang ───────────────────────
 // Horizontal wall with an overhanging cantilever showing the soffit underside.
@@ -43,10 +34,7 @@ export const RoofSoffitIcon = bimIcon(
 );
 
 // ── Fascia: vertical trim board at the roof eave ─────────────────────────────
-export const FasciaIcon = bimIcon(
-  'FasciaIcon',
-  <path d="M2 12H20 M20 8H22V16H20" />,
-);
+export const FasciaIcon = bimIcon('FasciaIcon', <path d="M2 12H20 M20 8H22V16H20" />);
 
 // ── Gutter: half-round drainage channel at eave level ────────────────────────
 export const GutterIcon = bimIcon(
@@ -137,10 +125,7 @@ export const ModelLineIcon = bimIcon(
 );
 
 // ── Model text: 3D text element placed in the model ──────────────────────────
-export const ModelTextIcon = bimIcon(
-  'ModelTextIcon',
-  <path d="M4 5H20 M12 5V19 M8 19H16" />,
-);
+export const ModelTextIcon = bimIcon('ModelTextIcon', <path d="M4 5H20 M12 5V19 M8 19H16" />);
 
 // ── Stair path: the up-direction arrow path annotating a stair run ────────────
 export const StairPathIcon = bimIcon(

@@ -35,10 +35,7 @@ export const RampIcon = bimIcon(
 
 // ── Conceptual mass: stepped building massing silhouette ─────────────────────
 // The stepped pyramid shape signals early-design volumetric massing.
-export const MassIcon = bimIcon(
-  'MassIcon',
-  <path d="M3 20H21V10H17V6H13V3H11V6H7V10H3z" />,
-);
+export const MassIcon = bimIcon('MassIcon', <path d="M3 20H21V10H17V6H13V3H11V6H7V10H3z" />);
 
 // ── Curtain panel: single glazing unit with frame reveals and glazing X ───────
 export const CurtainPanelIcon = bimIcon(
@@ -49,10 +46,7 @@ export const CurtainPanelIcon = bimIcon(
 // ── Mullion: T-profile cross-section — wide flange + narrow web ───────────────
 // Plan/section view of a curtain-wall mullion member. Clearly distinct from
 // the old plus-sign shape.
-export const MullionIcon = bimIcon(
-  'MullionIcon',
-  <path d="M8 4H16V8H14V20H10V8H8z" />,
-);
+export const MullionIcon = bimIcon('MullionIcon', <path d="M8 4H16V8H14V20H10V8H8z" />);
 
 // ── Skylight: plan glazing unit with diagonal X + sun above ──────────────────
 export const SkyLightIcon = bimIcon(

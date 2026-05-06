@@ -69,7 +69,9 @@ export function CheatsheetModal({ open, onClose }: CheatsheetModalProps): JSX.El
             aria-hidden="true"
             className="text-muted"
           />
-          <h2 className="flex-1 text-md font-medium text-foreground">{t('cheatsheet.actions.showCheatsheet')}</h2>
+          <h2 className="flex-1 text-md font-medium text-foreground">
+            {t('cheatsheet.actions.showCheatsheet')}
+          </h2>
           <button
             type="button"
             onClick={onClose}

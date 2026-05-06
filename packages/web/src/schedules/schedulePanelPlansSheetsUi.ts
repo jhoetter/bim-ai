@@ -1,12 +1,6 @@
 /** Pure helpers for registry schedule panel (plans/sheets tabs) — testable empty-state routing. */
 
-export type RegistryModelTab =
-  | 'floors'
-  | 'roofs'
-  | 'stairs'
-  | 'plans'
-  | 'sheets'
-  | 'assemblies';
+export type RegistryModelTab = 'floors' | 'roofs' | 'stairs' | 'plans' | 'sheets' | 'assemblies';
 
 export const MSG_OPEN_SAVED_MODEL = 'Open a saved model to load server schedules.';
 
@@ -54,7 +48,9 @@ export function noScheduleElementMessage(tab: RegistryModelTab): string {
 }
 
 /** When there is no model id, sheets may still show a local list; other tabs ask to open a model. */
-export function registryNoModelMode(sheetElementCount: number): 'openModel' | 'sheetsLocal' | 'noSheets' {
+export function registryNoModelMode(
+  sheetElementCount: number,
+): 'openModel' | 'sheetsLocal' | 'noSheets' {
   if (sheetElementCount > 0) return 'sheetsLocal';
   return 'noSheets';
 }

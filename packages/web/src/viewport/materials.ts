@@ -125,17 +125,17 @@ export interface ResolveOptions {
 const DEFAULT_PBR = { roughness: 0.85, metalness: 0, aoIntensity: 0.4 } as const;
 
 const PER_CATEGORY_PBR: Record<ElementCategoryToken, { roughness: number; metalness: number }> = {
-  wall:    { roughness: 0.80, metalness: 0.00 },
-  floor:   { roughness: 0.90, metalness: 0.00 },
-  roof:    { roughness: 0.85, metalness: 0.00 },
-  door:    { roughness: 0.70, metalness: 0.00 },
-  window:  { roughness: 0.60, metalness: 0.05 },
-  stair:   { roughness: 0.85, metalness: 0.00 },
+  wall: { roughness: 0.8, metalness: 0.0 },
+  floor: { roughness: 0.9, metalness: 0.0 },
+  roof: { roughness: 0.85, metalness: 0.0 },
+  door: { roughness: 0.7, metalness: 0.0 },
+  window: { roughness: 0.6, metalness: 0.05 },
+  stair: { roughness: 0.85, metalness: 0.0 },
   railing: { roughness: 0.35, metalness: 0.65 },
-  room:    { roughness: 0.85, metalness: 0.00 },
-  site:    { roughness: 0.95, metalness: 0.00 },
-  section: { roughness: 0.85, metalness: 0.00 },
-  sheet:   { roughness: 0.85, metalness: 0.00 },
+  room: { roughness: 0.85, metalness: 0.0 },
+  site: { roughness: 0.95, metalness: 0.0 },
+  section: { roughness: 0.85, metalness: 0.0 },
+  sheet: { roughness: 0.85, metalness: 0.0 },
 };
 
 /** Resolve a category material spec from the live tokens.

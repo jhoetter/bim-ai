@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatLevelDatumPropagationEvidenceLine, parseLevelElevationPropagationEvidence } from './levelDatumPropagationReadout';
+import {
+  formatLevelDatumPropagationEvidenceLine,
+  parseLevelElevationPropagationEvidence,
+} from './levelDatumPropagationReadout';
 
 describe('levelDatumPropagationReadout', () => {
   it('parses server evidence shape', () => {

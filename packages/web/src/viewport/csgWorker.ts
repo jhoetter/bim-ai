@@ -74,10 +74,10 @@ ctx.onmessage = (evt: MessageEvent<CsgRequest>) => {
     wallBrush.updateMatrixWorld();
 
     for (const door of doors) {
-      const leafH  = THREE.MathUtils.clamp((door.wallHeightMm / 1000) * 0.86, 0.6, 2.5);
-      const cutW   = THREE.MathUtils.clamp(door.widthMm / 1000, 0.35, 4) + 0.04;
-      const cutH   = Math.min(leafH + 0.01, height - 0.01);
-      const cutD   = thick + 0.1;
+      const leafH = THREE.MathUtils.clamp((door.wallHeightMm / 1000) * 0.86, 0.6, 2.5);
+      const cutW = THREE.MathUtils.clamp(door.widthMm / 1000, 0.35, 4) + 0.04;
+      const cutH = Math.min(leafH + 0.01, height - 0.01);
+      const cutD = thick + 0.1;
       const localX = (door.alongT - 0.5) * len;
       const localY = cutH / 2 - height / 2;
 
@@ -89,12 +89,20 @@ ctx.onmessage = (evt: MessageEvent<CsgRequest>) => {
     }
 
     for (const win of windows) {
-      const sill   = THREE.MathUtils.clamp(win.sillHeightMm / 1000, 0.06, win.wallHeightMm / 1000 - 0.08);
-      const outerH = THREE.MathUtils.clamp(win.heightMm / 1000, 0.05, win.wallHeightMm / 1000 - sill - 0.06);
+      const sill = THREE.MathUtils.clamp(
+        win.sillHeightMm / 1000,
+        0.06,
+        win.wallHeightMm / 1000 - 0.08,
+      );
+      const outerH = THREE.MathUtils.clamp(
+        win.heightMm / 1000,
+        0.05,
+        win.wallHeightMm / 1000 - sill - 0.06,
+      );
       const outerW = THREE.MathUtils.clamp(win.widthMm / 1000, 0.14, 4);
-      const cutW   = outerW + 0.04;
-      const cutH   = outerH + 0.02;
-      const cutD   = thick + 0.1;
+      const cutW = outerW + 0.04;
+      const cutH = outerH + 0.02;
+      const cutD = thick + 0.1;
       const localX = (win.alongT - 0.5) * len;
       const localY = sill + cutH / 2 - height / 2;
 
@@ -121,10 +129,22 @@ ctx.onmessage = (evt: MessageEvent<CsgRequest>) => {
 
     const transferables: Transferable[] = [position.buffer];
     if (normal) transferables.push(normal.buffer);
-    if (uv)     transferables.push(uv.buffer);
-    if (index)  transferables.push(index.buffer);
+    if (uv) transferables.push(uv.buffer);
+    if (index) transferables.push(index.buffer);
 
-    const response: CsgResponse = { ok: true, jobId, nonce, wcx, wcy, wcz, yaw, position, normal, uv, index };
+    const response: CsgResponse = {
+      ok: true,
+      jobId,
+      nonce,
+      wcx,
+      wcy,
+      wcz,
+      yaw,
+      position,
+      normal,
+      uv,
+      index,
+    };
     ctx.postMessage(response, { transfer: transferables });
   } catch {
     const response: CsgResponse = { ok: false, jobId, nonce };

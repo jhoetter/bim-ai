@@ -16,10 +16,7 @@ export const RevisionCloudIcon = bimIcon(
 
 // ── Break line: zigzag interruption of a long element ────────────────────────
 // The lightning-bolt shaped break indicates the element continues past the view.
-export const BreakLineIcon = bimIcon(
-  'BreakLineIcon',
-  <path d="M2 12H8L10 8L14 16L16 12H22" />,
-);
+export const BreakLineIcon = bimIcon('BreakLineIcon', <path d="M2 12H8L10 8L14 16L16 12H22" />);
 
 // ── Centreline: axis line with symmetry tick marks ────────────────────────────
 export const CentreLineIcon = bimIcon(

@@ -140,7 +140,9 @@ describe('StatusBar — spec §17', () => {
   });
 
   it('renders a placeholder when cursor is off-canvas', () => {
-    const { getByLabelText } = renderWithI18n(<StatusBar level={{ id: 'lvl-ground', label: 'Ground' }} />);
+    const { getByLabelText } = renderWithI18n(
+      <StatusBar level={{ id: 'lvl-ground', label: 'Ground' }} />,
+    );
     expect(getByLabelText('Cursor coordinates').textContent).toContain('X —');
   });
 });
@@ -172,10 +174,7 @@ describe('StatusBar — conflict slot (T-10)', () => {
 
   it('shows the conflict pill when conflictQueue is provided', () => {
     const { getByTestId } = renderWithI18n(
-      <StatusBar
-        level={{ id: 'lvl-ground', label: 'Ground' }}
-        conflictQueue={baseConflict}
-      />,
+      <StatusBar level={{ id: 'lvl-ground', label: 'Ground' }} conflictQueue={baseConflict} />,
     );
     expect(getByTestId('conflict-pill')).toBeTruthy();
   });
@@ -189,10 +188,7 @@ describe('StatusBar — conflict slot (T-10)', () => {
 
   it('expands the detail panel on click and shows inspectionReadout + retryAdvice + reason', () => {
     const { getByTestId } = renderWithI18n(
-      <StatusBar
-        level={{ id: 'lvl-ground', label: 'Ground' }}
-        conflictQueue={baseConflict}
-      />,
+      <StatusBar level={{ id: 'lvl-ground', label: 'Ground' }} conflictQueue={baseConflict} />,
     );
     fireEvent.click(getByTestId('conflict-pill'));
     const panel = getByTestId('collaboration-conflict-queue-readout');
@@ -204,10 +200,7 @@ describe('StatusBar — conflict slot (T-10)', () => {
 
   it('shows the human-readable retry label in the pill badge', () => {
     const { getByTestId } = renderWithI18n(
-      <StatusBar
-        level={{ id: 'lvl-ground', label: 'Ground' }}
-        conflictQueue={baseConflict}
-      />,
+      <StatusBar level={{ id: 'lvl-ground', label: 'Ground' }} conflictQueue={baseConflict} />,
     );
     expect(getByTestId('conflict-pill').textContent).toContain('manual edit');
   });

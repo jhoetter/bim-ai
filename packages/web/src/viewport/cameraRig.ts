@@ -224,17 +224,21 @@ export class CameraRig {
    * radius and the default 55° perspective FOV, so switching cameras
    * preserves the apparent size of geometry at the target. */
   orthoFrustum(aspect: number): {
-    left: number; right: number; top: number; bottom: number;
-    near: number; far: number;
+    left: number;
+    right: number;
+    top: number;
+    bottom: number;
+    near: number;
+    far: number;
   } {
     const halfH = this.state.radius * Math.tan(27.5 * (Math.PI / 180)); // half of default 55° fov
     return {
-      left:   -halfH * aspect,
-      right:   halfH * aspect,
-      top:     halfH,
+      left: -halfH * aspect,
+      right: halfH * aspect,
+      top: halfH,
       bottom: -halfH,
-      near:   0.05,
-      far:    500,
+      near: 0.05,
+      far: 500,
     };
   }
 }

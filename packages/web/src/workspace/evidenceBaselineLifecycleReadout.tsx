@@ -103,24 +103,19 @@ export function EvidenceBaselineLifecycleReadoutV1Table(props: {
         <code className="text-[9px]">evidenceBaselineLifecycleReadout_v1</code>)
       </div>
       <p className="mt-1 text-[10px] text-muted">
-        rollup:{' '}
-        <code className="font-mono text-[9px]">{readout.rollupSuggestedNextAction}</code>
+        rollup: <code className="font-mono text-[9px]">{readout.rollupSuggestedNextAction}</code>
         {' · '}digest{' '}
         <code className="font-mono text-[9px]">{readout.rollupDigestCorrelationStatus}</code>
-        {' · '}gateClosed{' '}
-        <code className="font-mono text-[9px]">{String(readout.gateClosed)}</code>
+        {' · '}gateClosed <code className="font-mono text-[9px]">{String(readout.gateClosed)}</code>
       </p>
       <p className="mt-0.5 text-[9px] text-muted">
         <code className="break-all font-mono">{readout.rollupCiGateHint}</code>
       </p>
       <p className="mt-1 text-[9px] text-muted">
-        blockers:{' '}
-        <code className="font-mono">{readout.fixLoopBlockerCodes.join(', ') || '—'}</code>
+        blockers: <code className="font-mono">{readout.fixLoopBlockerCodes.join(', ') || '—'}</code>
       </p>
       {readout.stagedUploadEligibilityNote && (
-        <p className="mt-0.5 text-[9px] italic text-muted">
-          {readout.stagedUploadEligibilityNote}
-        </p>
+        <p className="mt-0.5 text-[9px] italic text-muted">{readout.stagedUploadEligibilityNote}</p>
       )}
       <div className="mt-2 overflow-x-auto">
         <table className="w-full border-collapse text-[9px]">

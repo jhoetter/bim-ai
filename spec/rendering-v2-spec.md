@@ -40,32 +40,36 @@ is never called.
 
 1. **Enable the shadow map on the renderer** immediately after construction
    (Viewport.tsx, near `renderer = new THREE.WebGLRenderer(...)`):
+
    ```ts
    renderer.shadowMap.enabled = true;
    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
    ```
+
    `PCFSoftShadowMap` gives soft penumbra edges that match the reference
    image without the harsh aliasing of `BasicShadowMap`.
 
 2. **Configure the DirectionalLight shadow camera** when wiring the paint
    bundle (currently lines 689–694 of Viewport.tsx):
+
    ```ts
    sun.castShadow = true;
    sun.shadow.mapSize.set(
-     paint.lighting.sun.shadowMapSize,   // 2048
+     paint.lighting.sun.shadowMapSize, // 2048
      paint.lighting.sun.shadowMapSize,
    );
    // Orthographic frustum must enclose the whole building.
    // Use the model bounding box (recomputed on scene rebuild).
    const frustumHalf = Math.max(sceneRadiusM * 1.2, 20);
-   sun.shadow.camera.left   = -frustumHalf;
-   sun.shadow.camera.right  =  frustumHalf;
-   sun.shadow.camera.top    =  frustumHalf;
+   sun.shadow.camera.left = -frustumHalf;
+   sun.shadow.camera.right = frustumHalf;
+   sun.shadow.camera.top = frustumHalf;
    sun.shadow.camera.bottom = -frustumHalf;
-   sun.shadow.camera.near   = 0.5;
-   sun.shadow.camera.far    = sceneRadiusM * 4 + 50;
-   sun.shadow.bias = -0.001;   // eliminates shadow acne on flat surfaces
+   sun.shadow.camera.near = 0.5;
+   sun.shadow.camera.far = sceneRadiusM * 4 + 50;
+   sun.shadow.bias = -0.001; // eliminates shadow acne on flat surfaces
    ```
+
    `sceneRadiusM` = half the diagonal of the scene AABB, computed after
    all meshes are added.
 
@@ -73,10 +77,12 @@ is never called.
    (`makeWallMesh`, `makeFloorSlabMesh`, `makeDoorMesh`, `makeWindowMesh`,
    `makeStairVolumeMesh`, `makeRailingMesh`, `makeRoofMassMesh`,
    `makeSiteMesh`):
+
    ```ts
-   mesh.castShadow    = true;
+   mesh.castShadow = true;
    mesh.receiveShadow = true;
    ```
+
    Site slab should have `castShadow = false` (it sits on the ground and
    casts no visible shadow onto anything below it).
 
@@ -108,14 +114,15 @@ are never used.
 
 Replace the hardcoded `position.set` call with a spherical → Cartesian
 conversion using the values from the paint bundle:
+
 ```ts
 function sunPositionFromAzEl(
   azimuthDeg: number,
   elevationDeg: number,
-  radiusM = 80,             // large enough to be "at infinity" for the scene
+  radiusM = 80, // large enough to be "at infinity" for the scene
 ): THREE.Vector3 {
-  const az  = THREE.MathUtils.degToRad(azimuthDeg);
-  const el  = THREE.MathUtils.degToRad(elevationDeg);
+  const az = THREE.MathUtils.degToRad(azimuthDeg);
+  const el = THREE.MathUtils.degToRad(elevationDeg);
   return new THREE.Vector3(
     radiusM * Math.cos(el) * Math.sin(az),
     radiusM * Math.sin(el),
@@ -123,10 +130,9 @@ function sunPositionFromAzEl(
   );
 }
 
-sun.position.copy(sunPositionFromAzEl(
-  paint.lighting.sun.azimuthDeg,
-  paint.lighting.sun.elevationDeg,
-));
+sun.position.copy(
+  sunPositionFromAzEl(paint.lighting.sun.azimuthDeg, paint.lighting.sun.elevationDeg),
+);
 sun.target.position.set(0, 0, 0);
 ```
 
@@ -156,13 +162,15 @@ azimuth. Rotating the scene in walk-mode or orbit does not move the shadow
 **What to build:**
 
 Install the Three.js addons (already a peer dep):
+
 ```ts
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-import { RenderPass }     from 'three/addons/postprocessing/RenderPass.js';
-import { OutputPass }     from 'three/addons/postprocessing/OutputPass.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 ```
 
 After renderer construction:
+
 ```ts
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
@@ -199,12 +207,13 @@ import { SSAOPass } from 'three/addons/postprocessing/SSAOPass.js';
 ```
 
 After the `RenderPass` in the composer chain:
+
 ```ts
 const ssao = new SSAOPass(scene, camera, w, h);
-ssao.kernelRadius  = 0.25;   // influence radius in world metres
-ssao.minDistance   = 0.001;
-ssao.maxDistance   = 0.12;
-ssao.output        = SSAOPass.OUTPUT.Default;
+ssao.kernelRadius = 0.25; // influence radius in world metres
+ssao.minDistance = 0.001;
+ssao.maxDistance = 0.12;
+ssao.output = SSAOPass.OUTPUT.Default;
 composer.addPass(ssao);
 ```
 
@@ -213,6 +222,7 @@ soffits without muddying the flat surfaces — matching the reference image
 where AO is noticeable at corners but not overpowering.
 
 **Parameter tokens** (add to `materials.ts` `resolveLighting()`):
+
 ```ts
 ssao: {
   kernelRadius: 0.25,
@@ -249,17 +259,18 @@ element. There are two viable approaches; use approach A:
 
 In each factory function, after building the main mesh, create a companion
 `LineSegments` from `EdgesGeometry`:
+
 ```ts
 function addEdges(
   mesh: THREE.Mesh,
-  thresholdAngleDeg = 15,   // only edges with dihedral angle > 15°
+  thresholdAngleDeg = 15, // only edges with dihedral angle > 15°
   color = '#1a1a1a',
 ): THREE.LineSegments {
   const edges = new THREE.EdgesGeometry(mesh.geometry, thresholdAngleDeg);
-  const mat   = new THREE.LineBasicMaterial({ color, linewidth: 1 });
+  const mat = new THREE.LineBasicMaterial({ color, linewidth: 1 });
   const lines = new THREE.LineSegments(edges, mat);
-  lines.renderOrder = 1;   // draw on top
-  mesh.add(lines);         // child so it inherits world transform
+  lines.renderOrder = 1; // draw on top
+  mesh.add(lines); // child so it inherits world transform
   lines.castShadow = false;
   lines.receiveShadow = false;
   return lines;
@@ -278,6 +289,7 @@ surfaces.
 **Edge color:** read from token `--color-foreground` via the existing
 `readToken()` helper so edge lines are dark in light theme and light in dark
 theme:
+
 ```ts
 const edgeColor = readToken('--color-foreground', '#1a1a1a');
 ```
@@ -332,15 +344,14 @@ function makeWallWithOpenings(
 
   // 2. For each hosted door/window, build a cutter brush
   for (const hosted of hostedElements) {
-    const cutterGeom  = hosted.kind === 'door'
-      ? doorCutterGeometry(hosted, wall)
-      : windowCutterGeometry(hosted, wall);
+    const cutterGeom =
+      hosted.kind === 'door'
+        ? doorCutterGeometry(hosted, wall)
+        : windowCutterGeometry(hosted, wall);
     const cutterBrush = new Brush(cutterGeom, wallMaterial);
     cutterBrush.updateMatrixWorld();
     const evaluator = new Evaluator();
-    wallBrush.geometry = evaluator.evaluate(
-      wallBrush, cutterBrush, SUBTRACTION
-    ).geometry;
+    wallBrush.geometry = evaluator.evaluate(wallBrush, cutterBrush, SUBTRACTION).geometry;
   }
   const result = new THREE.Mesh(wallBrush.geometry, wallMaterial);
   result.userData.bimPickId = wall.id;
@@ -349,6 +360,7 @@ function makeWallWithOpenings(
 ```
 
 **Cutter volumes:**
+
 - Door cutter: same `(width, height, thickness + 0.1)` box as today's door
   proxy, placed at `hostedXZ(door, wall)` at `elevM` (floor level) so the
   cut goes to the sill.
@@ -388,6 +400,7 @@ DoorGroup
 ```
 
 **Dimensions** (all in metres, derived from `DoorElem` fields):
+
 ```
 leafWidth    = clamp(door.widthMm  / 1000, 0.35, 4)
 leafHeight   = clamp(door.heightMm / 1000, 0.6, 2.5)
@@ -399,6 +412,7 @@ jambDepth    = depth   // jambs flush with wall face
 ```
 
 **Materials:**
+
 - Frame and threshold: `door` category material (brown)
 - Panel: `door` category with slightly higher roughness (0.75 vs 0.6) to
   read as painted timber vs. bare frame
@@ -423,6 +437,7 @@ opacity. No frame, no glazing pane, no reveal.
 **What to build:**
 
 Replace with a `THREE.Group`:
+
 ```
 WindowGroup
   ├── frame        THREE.Group (4 members: head, sill, jamb-L, jamb-R)
@@ -435,6 +450,7 @@ WindowGroup
 ```
 
 **Dimensions:**
+
 ```
 outerW     = clamp(win.widthMm  / 1000, 0.14, 4)
 outerH     = clamp(win.heightMm / 1000, 0.05, 3.5)
@@ -445,6 +461,7 @@ glazingH   = outerH - 2 * frameSect
 ```
 
 **Glazing material** (new category, or use `window`):
+
 ```ts
 {
   color:       readToken('--cat-glazing', '#c8d8ea'),
@@ -490,28 +507,28 @@ function makeStairTreadGroup(
   const group = new THREE.Group();
 
   // Resolve level elevations
-  const baseLevelElev  = elevationMForLevel(stair.baseLevelId, elementsById);
-  const topLevelElev   = elevationMForLevel(stair.topLevelId,  elementsById);
-  const totalRise      = Math.abs(topLevelElev - baseLevelElev);
-  const riserCount     = Math.max(
-    stair.riserCount ?? Math.round(totalRise / (stair.riserMm ?? 175) * 1000),
+  const baseLevelElev = elevationMForLevel(stair.baseLevelId, elementsById);
+  const topLevelElev = elevationMForLevel(stair.topLevelId, elementsById);
+  const totalRise = Math.abs(topLevelElev - baseLevelElev);
+  const riserCount = Math.max(
+    stair.riserCount ?? Math.round((totalRise / (stair.riserMm ?? 175)) * 1000),
     2,
   );
-  const riserH         = totalRise / riserCount;
-  const runStart       = { x: stair.runStartMm.xMm / 1000, z: stair.runStartMm.yMm / 1000 };
-  const runEnd         = { x: stair.runEndMm.xMm   / 1000, z: stair.runEndMm.yMm   / 1000 };
-  const runLen         = Math.hypot(runEnd.x - runStart.x, runEnd.z - runStart.z);
-  const treadDepth     = runLen / riserCount;
-  const stairWidth     = clamp(stair.widthMm / 1000, 0.3, 4);
-  const angle          = Math.atan2(runEnd.z - runStart.z, runEnd.x - runStart.x);
-  const treadThick     = 0.040;  // 40 mm tread thickness
+  const riserH = totalRise / riserCount;
+  const runStart = { x: stair.runStartMm.xMm / 1000, z: stair.runStartMm.yMm / 1000 };
+  const runEnd = { x: stair.runEndMm.xMm / 1000, z: stair.runEndMm.yMm / 1000 };
+  const runLen = Math.hypot(runEnd.x - runStart.x, runEnd.z - runStart.z);
+  const treadDepth = runLen / riserCount;
+  const stairWidth = clamp(stair.widthMm / 1000, 0.3, 4);
+  const angle = Math.atan2(runEnd.z - runStart.z, runEnd.x - runStart.x);
+  const treadThick = 0.04; // 40 mm tread thickness
 
   for (let i = 0; i < riserCount; i++) {
     const treadGeom = new THREE.BoxGeometry(treadDepth, treadThick, stairWidth);
     const treadMesh = new THREE.Mesh(treadGeom, stairMat(paint));
     // Position: advance along run, step up
-    const cx = runStart.x + (i + 0.5) / riserCount * (runEnd.x - runStart.x);
-    const cz = runStart.z + (i + 0.5) / riserCount * (runEnd.z - runStart.z);
+    const cx = runStart.x + ((i + 0.5) / riserCount) * (runEnd.x - runStart.x);
+    const cz = runStart.z + ((i + 0.5) / riserCount) * (runEnd.z - runStart.z);
     const cy = baseLevelElev + (i + 0.5) * riserH + treadThick / 2;
     treadMesh.position.set(cx, cy, cz);
     treadMesh.rotation.y = angle;
@@ -522,7 +539,7 @@ function makeStairTreadGroup(
   }
 
   // Stringer (solid side plate)
-  const stringerH    = totalRise;
+  const stringerH = totalRise;
   const stringerGeom = new THREE.BoxGeometry(runLen, stringerH, 0.025);
   // ... position at run midpoint, half the total rise
   // Two stringers: left side and right side (offset ±stairWidth/2 along perp)
@@ -555,29 +572,33 @@ Extend the existing `makeRailingMesh` function — keep the rail cap segments
 and add:
 
 **Posts** (at each path vertex):
+
 ```ts
-const postH    = guardHeight;
-const postSect = 0.05;    // 50 mm square post
+const postH = guardHeight;
+const postSect = 0.05; // 50 mm square post
 const postGeom = new THREE.BoxGeometry(postSect, postH, postSect);
 // Position: at each pathMm vertex, elevated to (baseLevelElev + riseAt(vertex) + postH/2)
 ```
 
 **Balusters** (evenly spaced between posts):
+
 ```ts
-const spacing    = 0.115;    // 115 mm clear gap — UK Part K maximum
-const balW       = 0.012;    // 12 mm square baluster
-const balGeom    = new THREE.BoxGeometry(balW, balusterH, balW);
+const spacing = 0.115; // 115 mm clear gap — UK Part K maximum
+const balW = 0.012; // 12 mm square baluster
+const balGeom = new THREE.BoxGeometry(balW, balusterH, balW);
 // Count = Math.floor(segmentLen / spacing) for each segment
 // Heights interpolated between the two end-post heights for sloped sections
 ```
 
 **Rail cap** (existing horizontal top bar):
+
 ```ts
-const capSect = 0.045;   // 45 mm handrail diameter (as square approx)
+const capSect = 0.045; // 45 mm handrail diameter (as square approx)
 // Already built as segment boxes — keep but set correct height (top of post)
 ```
 
 **Material:** metal — override category default to:
+
 ```ts
 roughness: 0.35,
 metalness: 0.60,    // visible as brushed stainless, consistent with reference
@@ -608,6 +629,7 @@ of the AABB, not a true polygon offset.
 
 The existing approach is mostly correct for rectangular footprints. Fix the
 following:
+
 - Use `roof.slopeDeg` (already read), but also respect `roof.ridgeAxis`
   (`'x'` | `'z'` | null). If `ridgeAxis` is null, choose the longer bounding
   box axis.
@@ -624,8 +646,12 @@ A hip roof has four sloped faces converging to a ridge point (for square
 footprint) or ridge line (for rectangular). Algorithm:
 
 ```ts
-function makeHipRoofMesh(footprintMm: [number, number][], slopeDeg: number,
-                          overhangMm: number, eaveElevM: number): BufferGeometry {
+function makeHipRoofMesh(
+  footprintMm: [number, number][],
+  slopeDeg: number,
+  overhangMm: number,
+  eaveElevM: number,
+): BufferGeometry {
   // 1. Offset footprint outward by overhangMm
   const outer = offsetPolygonMm(footprintMm, overhangMm);
   // 2. Compute hip-line intersections using the slope angle
@@ -670,6 +696,7 @@ For L-shaped and irregular floor plans this is a gross approximation
 
 Replace the `BoxGeometry` with `THREE.ExtrudeGeometry` from the actual
 boundary polygon:
+
 ```ts
 function makeFloorSlabMesh(floor: FloorElem, ...): THREE.Mesh {
   const shape = new THREE.Shape();
@@ -702,6 +729,7 @@ reversal needed.
 
 **Slab openings:** `slab_opening` elements have a `hostFloorId` reference.
 When a slab opening exists, use it as a hole in the `THREE.Shape`:
+
 ```ts
 const opening = slabOpenings.find(o => o.hostFloorId === floor.id);
 if (opening) {
@@ -728,6 +756,7 @@ This is mostly correct. Two gaps:
    precedence is wrong: `150 / 1000 = 0.15` evaluates before `??`, so the
    nullish fallback is `0.15` m (fine), but if `padThicknessMm` is `0` this
    will return `0` not the default. Fix:
+
    ```ts
    const thick = clamp((site.padThicknessMm ?? 150) / 1000, 0.05, 2);
    ```
@@ -758,24 +787,25 @@ Extend the `CategoryMaterialBundle` type and `resolveCategoryMaterial()` to
 return category-specific physical properties. Add the following values to
 `materials.ts`:
 
-| Category | roughness | metalness | notes |
-|---|---|---|---|
-| wall | 0.80 | 0.00 | painted plaster / render |
-| floor | 0.90 | 0.00 | concrete slab |
-| roof | 0.85 | 0.00 | roof membrane / tiles |
-| door | 0.70 | 0.00 | painted timber |
-| window frame | 0.60 | 0.05 | powder-coated aluminium |
-| glazing | 0.05 | 0.00 | float glass |
-| stair | 0.85 | 0.00 | concrete tread |
-| railing | 0.35 | 0.65 | brushed stainless steel |
-| site | 0.95 | 0.00 | concrete pad |
-| room | — | — | no 3D mesh (wire outline only) |
+| Category     | roughness | metalness | notes                          |
+| ------------ | --------- | --------- | ------------------------------ |
+| wall         | 0.80      | 0.00      | painted plaster / render       |
+| floor        | 0.90      | 0.00      | concrete slab                  |
+| roof         | 0.85      | 0.00      | roof membrane / tiles          |
+| door         | 0.70      | 0.00      | painted timber                 |
+| window frame | 0.60      | 0.05      | powder-coated aluminium        |
+| glazing      | 0.05      | 0.00      | float glass                    |
+| stair        | 0.85      | 0.00      | concrete tread                 |
+| railing      | 0.35      | 0.65      | brushed stainless steel        |
+| site         | 0.95      | 0.00      | concrete pad                   |
+| room         | —         | —         | no 3D mesh (wire outline only) |
 
 Add CSS tokens for the PBR values so design can tweak without code changes:
+
 ```css
 /* tokens-drafting.css */
---cat-wall-roughness:    0.80;
---cat-wall-metalness:    0.00;
+--cat-wall-roughness: 0.8;
+--cat-wall-metalness: 0;
 --cat-railing-roughness: 0.35;
 --cat-railing-metalness: 0.65;
 /* ...etc. */
@@ -809,23 +839,23 @@ function buildEnvMap(
   sunAzimuthDeg: number,
   sunElevationDeg: number,
 ): THREE.Texture {
-  const sky    = new Sky();
+  const sky = new Sky();
   sky.scale.setScalar(450000);
   const uniforms = sky.material.uniforms;
-  uniforms['turbidity'].value    = 3;
-  uniforms['rayleigh'].value     = 0.5;
-  uniforms['mieCoefficient'].value  = 0.005;
+  uniforms['turbidity'].value = 3;
+  uniforms['rayleigh'].value = 0.5;
+  uniforms['mieCoefficient'].value = 0.005;
   uniforms['mieDirectionalG'].value = 0.8;
 
-  const phi   = THREE.MathUtils.degToRad(90 - sunElevationDeg);
+  const phi = THREE.MathUtils.degToRad(90 - sunElevationDeg);
   const theta = THREE.MathUtils.degToRad(sunAzimuthDeg);
   const sunPos = new THREE.Vector3().setFromSphericalCoords(1, phi, theta);
   uniforms['sunPosition'].value.copy(sunPos);
 
   // Render sky into a PMREMGenerator cube
   scene.add(sky);
-  const pmrem   = new THREE.PMREMGenerator(renderer);
-  const envMap  = pmrem.fromScene(sky as unknown as THREE.Scene).texture;
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const envMap = pmrem.fromScene(sky as unknown as THREE.Scene).texture;
   scene.remove(sky);
   pmrem.dispose();
   return envMap;
@@ -859,13 +889,13 @@ function addCladdingBoards(
   wallMesh: THREE.Mesh,
   wallLen: number,
   wallH: number,
-  boardWidthMm = 120,    // 120 mm board face width
-  gapMm = 10,            // 10 mm shadow gap
+  boardWidthMm = 120, // 120 mm board face width
+  gapMm = 10, // 10 mm shadow gap
 ): void {
   const pitchM = (boardWidthMm + gapMm) / 1000;
-  const count  = Math.floor(wallLen / pitchM);
+  const count = Math.floor(wallLen / pitchM);
   const boardGeom = new THREE.BoxGeometry(0.012, wallH - 0.05, pitchM - 0.01);
-  const boardMat  = new THREE.MeshStandardMaterial({
+  const boardMat = new THREE.MeshStandardMaterial({
     color: wallMesh.material.color,
     roughness: 0.85,
     metalness: 0,
@@ -873,8 +903,8 @@ function addCladdingBoards(
   for (let i = 0; i < count; i++) {
     const board = new THREE.Mesh(boardGeom, boardMat);
     board.position.set(
-      0,                      // centred on wall (local X is wall face)
-      0,                      // centred on wall height
+      0, // centred on wall (local X is wall face)
+      0, // centred on wall height
       -wallLen / 2 + (i + 0.5) * pitchM,
     );
     board.castShadow = board.receiveShadow = true;
@@ -887,6 +917,7 @@ function addCladdingBoards(
 
 For untextured walls, a `NormalMap` with 2 mm vertical groove pattern can be
 baked as a 512×512 canvas texture and applied to the wall material:
+
 ```ts
 wallMat.normalMap = buildGrooveNormalMap(boardWidthMm, gapMm);
 wallMat.normalScale.set(0.4, 0.4);
@@ -915,20 +946,17 @@ chain (already added in R1-03):
 ```ts
 import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js';
 
-const outlinePass = new OutlinePass(
-  new THREE.Vector2(w, h),
-  scene,
-  camera,
-);
-outlinePass.edgeStrength  = 3.0;
-outlinePass.edgeGlow      = 0.3;
+const outlinePass = new OutlinePass(new THREE.Vector2(w, h), scene, camera);
+outlinePass.edgeStrength = 3.0;
+outlinePass.edgeGlow = 0.3;
 outlinePass.edgeThickness = 1.5;
 outlinePass.visibleEdgeColor.set(paint.selection.selectedColor);
 outlinePass.hiddenEdgeColor.set(paint.selection.selectedColor);
-composer.addPass(outlinePass);  // before OutputPass
+composer.addPass(outlinePass); // before OutputPass
 ```
 
 On selection change (`selectedId` prop change):
+
 ```ts
 const selected = scene.getObjectByUserData('bimPickId', selectedId);
 outlinePass.selectedObjects = selected ? [selected] : [];
@@ -979,12 +1007,9 @@ Use Three.js `Plane` stencil rendering to cap the section cut:
 Implementation using the standard Three.js clipping cap demo pattern:
 
 ```ts
-function buildClipPlaneCap(
-  plane: THREE.Plane,
-  capColor: string,
-): THREE.Mesh {
+function buildClipPlaneCap(plane: THREE.Plane, capColor: string): THREE.Mesh {
   const capGeom = new THREE.PlaneGeometry(500, 500);
-  const capMat  = new THREE.MeshStandardMaterial({
+  const capMat = new THREE.MeshStandardMaterial({
     color: capColor,
     roughness: 0.9,
     metalness: 0,
@@ -1088,35 +1113,35 @@ V2 is complete when:
 
 ## Work package summary table
 
-| ID | Title | Phase | Primary file(s) | Effort |
-|---|---|---|---|---|
-| R1-01 | Shadow map enable | Pipeline | Viewport.tsx | S |
-| R1-02 | Directional light from azimuth/elevation | Pipeline | Viewport.tsx, materials.ts | S |
-| R1-03 | EffectComposer + render pass chain | Pipeline | Viewport.tsx | M |
-| R1-04 | SSAO pass | Pipeline | Viewport.tsx, materials.ts | M |
-| R1-05 | EdgesGeometry overlay on all meshes | Pipeline | Viewport.tsx | M |
-| R2-01 | Wall opening cuts (CSG) | Geometry | Viewport.tsx | L |
-| R2-02 | Door frame + panel geometry | Geometry | Viewport.tsx | M |
-| R2-03 | Window frame + glazing geometry | Geometry | Viewport.tsx | M |
-| R2-04 | Stair tread + stringer geometry | Geometry | Viewport.tsx | M |
-| R2-05 | Railing post + baluster geometry | Geometry | Viewport.tsx | M |
-| R2-06 | Roof from footprint polygon | Geometry | Viewport.tsx | L |
-| R2-07 | Floor slab from boundary polygon | Geometry | Viewport.tsx | S |
-| R2-08 | Site slab fixes | Geometry | Viewport.tsx | S |
-| R3-01 | Per-category PBR tuning | Materials | materials.ts | S |
-| R3-02 | Glazing material + env map | Materials | Viewport.tsx, materials.ts | M |
-| R3-03 | Cladding surface detail | Materials | Viewport.tsx | M |
-| R3-04 | Selection via OutlinePass | Materials | Viewport.tsx | M |
-| R4-01 | Section cut interior reveal (stencil cap) | Section | Viewport.tsx | L |
-| R4-02 | Ortho / parallel projection toggle | Camera | Viewport.tsx, cameraRig.ts | M |
-| FL-01 | Family + Type data model | Families | core/src/index.ts | M |
-| FL-02 | Built-in family catalog (doors, windows) | Families | new familyCatalog.ts | L |
-| FL-03 | Renderer reads familyTypeId | Families | Viewport.tsx | M |
-| FL-04 | Additional family catalogs (stair, railing, wall types) | Families | familyCatalog.ts | L |
-| FL-05 | Type selector in Inspector | Families | Inspector.tsx | M |
-| FL-06 | Family library browser panel | Families | new FamilyLibraryPanel.tsx | L |
-| FL-07 | Custom type authoring | Families | new FamilyTypeEditor.tsx | L |
-| FL-08 | System family layer stack (wall/floor/roof assemblies) | Families | core + Viewport.tsx | XL |
+| ID    | Title                                                   | Phase     | Primary file(s)            | Effort |
+| ----- | ------------------------------------------------------- | --------- | -------------------------- | ------ |
+| R1-01 | Shadow map enable                                       | Pipeline  | Viewport.tsx               | S      |
+| R1-02 | Directional light from azimuth/elevation                | Pipeline  | Viewport.tsx, materials.ts | S      |
+| R1-03 | EffectComposer + render pass chain                      | Pipeline  | Viewport.tsx               | M      |
+| R1-04 | SSAO pass                                               | Pipeline  | Viewport.tsx, materials.ts | M      |
+| R1-05 | EdgesGeometry overlay on all meshes                     | Pipeline  | Viewport.tsx               | M      |
+| R2-01 | Wall opening cuts (CSG)                                 | Geometry  | Viewport.tsx               | L      |
+| R2-02 | Door frame + panel geometry                             | Geometry  | Viewport.tsx               | M      |
+| R2-03 | Window frame + glazing geometry                         | Geometry  | Viewport.tsx               | M      |
+| R2-04 | Stair tread + stringer geometry                         | Geometry  | Viewport.tsx               | M      |
+| R2-05 | Railing post + baluster geometry                        | Geometry  | Viewport.tsx               | M      |
+| R2-06 | Roof from footprint polygon                             | Geometry  | Viewport.tsx               | L      |
+| R2-07 | Floor slab from boundary polygon                        | Geometry  | Viewport.tsx               | S      |
+| R2-08 | Site slab fixes                                         | Geometry  | Viewport.tsx               | S      |
+| R3-01 | Per-category PBR tuning                                 | Materials | materials.ts               | S      |
+| R3-02 | Glazing material + env map                              | Materials | Viewport.tsx, materials.ts | M      |
+| R3-03 | Cladding surface detail                                 | Materials | Viewport.tsx               | M      |
+| R3-04 | Selection via OutlinePass                               | Materials | Viewport.tsx               | M      |
+| R4-01 | Section cut interior reveal (stencil cap)               | Section   | Viewport.tsx               | L      |
+| R4-02 | Ortho / parallel projection toggle                      | Camera    | Viewport.tsx, cameraRig.ts | M      |
+| FL-01 | Family + Type data model                                | Families  | core/src/index.ts          | M      |
+| FL-02 | Built-in family catalog (doors, windows)                | Families  | new familyCatalog.ts       | L      |
+| FL-03 | Renderer reads familyTypeId                             | Families  | Viewport.tsx               | M      |
+| FL-04 | Additional family catalogs (stair, railing, wall types) | Families  | familyCatalog.ts           | L      |
+| FL-05 | Type selector in Inspector                              | Families  | Inspector.tsx              | M      |
+| FL-06 | Family library browser panel                            | Families  | new FamilyLibraryPanel.tsx | L      |
+| FL-07 | Custom type authoring                                   | Families  | new FamilyTypeEditor.tsx   | L      |
+| FL-08 | System family layer stack (wall/floor/roof assemblies)  | Families  | core + Viewport.tsx        | XL     |
 
 **Effort key:** S = ½ day · M = 1 day · L = 2–3 days · XL = 1 week+.
 
@@ -1140,12 +1165,12 @@ family library. The geometry for each element kind is generated from a
 
 ### Background: how Revit structures this
 
-| Tier | What it is | Examples |
-|---|---|---|
-| **Family** | Parametric geometry template; defines which parameters drive the shape | "Single-Flush Door", "Double-Hung Window", "Straight Stair" |
-| **Type** | Named snapshot of parameter values for a Family | "Single-Flush : 900×2100", "Double-Hung : 1200×1500" |
-| **Instance** | Placed occurrence; inherits Type params, can override some | `door-001` placed in wall, `widthMm` fixed by Type, `materialKey` overridden to "oak" |
-| **System family** | Special: Wall/Floor/Roof/Ceiling. Type = layer assembly (materials + thicknesses). No file. | "Exterior – Brick 90 + Insulation 100 + Stud 150" |
+| Tier              | What it is                                                                                  | Examples                                                                              |
+| ----------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| **Family**        | Parametric geometry template; defines which parameters drive the shape                      | "Single-Flush Door", "Double-Hung Window", "Straight Stair"                           |
+| **Type**          | Named snapshot of parameter values for a Family                                             | "Single-Flush : 900×2100", "Double-Hung : 1200×1500"                                  |
+| **Instance**      | Placed occurrence; inherits Type params, can override some                                  | `door-001` placed in wall, `widthMm` fixed by Type, `materialKey` overridden to "oak" |
+| **System family** | Special: Wall/Floor/Roof/Ceiling. Type = layer assembly (materials + thicknesses). No file. | "Exterior – Brick 90 + Insulation 100 + Stud 150"                                     |
 
 Our current model already has `family_type` elements and `familyTypeId` on
 door/window instances — the reference exists, the schema and renderer wiring
@@ -1156,6 +1181,7 @@ do not.
 ### FL-01 · Family + Type data model
 
 **What exists today:**
+
 ```ts
 // core/src/index.ts
 { kind: 'family_type'; id: string; discipline: 'door'|'window'|'generic';
@@ -1171,6 +1197,7 @@ and `parameters` is an untyped blob with no schema enforcement.
 **What to build:**
 
 **1. Extend `family_type` in `core/src/index.ts`:**
+
 ```ts
 {
   kind:       'family_type';
@@ -1191,32 +1218,34 @@ type FamilyDiscipline =
 
 **2. Add `FamilyDefinition` type** (not an Element — lives in the catalog,
 not in the project model):
+
 ```ts
 // packages/web/src/families/familyCatalog.ts (new file)
 export interface FamilyParamDef {
-  key:      string;
-  label:    string;
-  type:     'length_mm' | 'angle_deg' | 'material_key' | 'boolean' | 'option';
-  default:  unknown;
-  options?: string[];       // for 'option' type
-  min?:     number;         // for 'length_mm' / 'angle_deg'
-  max?:     number;
-  instanceOverridable: boolean;  // can an instance override this param?
+  key: string;
+  label: string;
+  type: 'length_mm' | 'angle_deg' | 'material_key' | 'boolean' | 'option';
+  default: unknown;
+  options?: string[]; // for 'option' type
+  min?: number; // for 'length_mm' / 'angle_deg'
+  max?: number;
+  instanceOverridable: boolean; // can an instance override this param?
 }
 
 export interface FamilyDefinition {
-  id:         string;       // e.g. 'door.single-flush'
-  name:       string;       // "Single Flush Door"
+  id: string; // e.g. 'door.single-flush'
+  name: string; // "Single Flush Door"
   discipline: FamilyDiscipline;
-  thumbnail?: string;       // base64 PNG or URL for library browser
-  params:     FamilyParamDef[];
-  defaultTypes: Omit<FamilyTypeElement, 'kind' | 'id'>[];  // shipped types
+  thumbnail?: string; // base64 PNG or URL for library browser
+  params: FamilyParamDef[];
+  defaultTypes: Omit<FamilyTypeElement, 'kind' | 'id'>[]; // shipped types
 }
 ```
 
 **3. Instance-level override mechanism:**  
 When the renderer resolves geometry for a door instance, the parameter
 resolution order (highest to lowest priority) is:
+
 ```
 instance.overrideParams[key]        // per-instance override (new field)
   ?? familyType.parameters[key]     // type-level default
@@ -1243,16 +1272,17 @@ exports a `BUILT_IN_FAMILIES: FamilyDefinition[]` array and a
 
 **Door families (minimum viable set):**
 
-| Family ID | Name | Key params | Notes |
-|---|---|---|---|
+| Family ID           | Name              | Key params                                           | Notes                              |
+| ------------------- | ----------------- | ---------------------------------------------------- | ---------------------------------- |
 | `door.single-flush` | Single Flush Door | width, height, frameProfileMm, swing (L/R), material | Most common residential/commercial |
-| `door.double-leaf` | Double Leaf Door | totalWidth, height, frameProfileMm, activeleaf (L/R) | Entry doors, double swing |
-| `door.sliding` | Sliding Door | width, height, panelCount (1/2), frameProfileMm | Terrace / balcony |
-| `door.bifold` | Bifold Door | totalWidth, height, leafCount (2/4), frameProfileMm | Wardrobe, room divider |
+| `door.double-leaf`  | Double Leaf Door  | totalWidth, height, frameProfileMm, activeleaf (L/R) | Entry doors, double swing          |
+| `door.sliding`      | Sliding Door      | width, height, panelCount (1/2), frameProfileMm      | Terrace / balcony                  |
+| `door.bifold`       | Bifold Door       | totalWidth, height, leafCount (2/4), frameProfileMm  | Wardrobe, room divider             |
 
 **Default types per door family (examples):**
 
 `door.single-flush` ships with:
+
 - "762 × 1981 — Timber" (UK standard 2'6" × 6'6")
 - "838 × 1981 — Timber" (UK standard 2'9" × 6'6")
 - "900 × 2100 — Timber" (metric standard)
@@ -1261,17 +1291,18 @@ exports a `BUILT_IN_FAMILIES: FamilyDefinition[]` array and a
 
 **Window families (minimum viable set):**
 
-| Family ID | Name | Key params | Notes |
-|---|---|---|---|
-| `window.fixed` | Fixed Light | width, height, frameProfileMm, glazingLayers (1/2/3) | No operable part |
-| `window.casement` | Casement Window | width, height, frameProfileMm, openingDir (L/R/top) | Side-hung or top-hung |
-| `window.double-hung` | Double-Hung Window | width, height, frameProfileMm, raisedRailMm | Both sashes slide |
-| `window.sliding` | Sliding Window | width, height, frameProfileMm, panelCount (2/3) | Horizontal slide |
-| `window.fixed-casement` | Fixed + Casement | totalWidth, height, fixedRatio, casementSide | Common residential |
+| Family ID               | Name               | Key params                                           | Notes                 |
+| ----------------------- | ------------------ | ---------------------------------------------------- | --------------------- |
+| `window.fixed`          | Fixed Light        | width, height, frameProfileMm, glazingLayers (1/2/3) | No operable part      |
+| `window.casement`       | Casement Window    | width, height, frameProfileMm, openingDir (L/R/top)  | Side-hung or top-hung |
+| `window.double-hung`    | Double-Hung Window | width, height, frameProfileMm, raisedRailMm          | Both sashes slide     |
+| `window.sliding`        | Sliding Window     | width, height, frameProfileMm, panelCount (2/3)      | Horizontal slide      |
+| `window.fixed-casement` | Fixed + Casement   | totalWidth, height, fixedRatio, casementSide         | Common residential    |
 
 **Default types per window family (examples):**
 
 `window.casement` ships with:
+
 - "600 × 900 — Aluminium White" (bathroom / utility)
 - "900 × 1200 — Aluminium White" (standard residential)
 - "1200 × 1500 — Aluminium White" (living room)
@@ -1280,6 +1311,7 @@ exports a `BUILT_IN_FAMILIES: FamilyDefinition[]` array and a
 **Geometry function per family:**
 
 Each `FamilyDefinition` has a geometry function signature:
+
 ```ts
 type FamilyGeometryFn = (
   params: Record<string, unknown>,
@@ -1309,6 +1341,7 @@ params (`door.widthMm`, `door.heightMm`). `door.familyTypeId` is never read.
 
 In the scene-build loop in `Viewport.tsx`, before calling `makeDoorMesh`,
 look up the family type and merge its parameters:
+
 ```ts
 function resolveElementParams(
   el: DoorElem | WindowElem,
@@ -1318,29 +1351,30 @@ function resolveElementParams(
     ? (elementsById[el.familyTypeId] as FamilyTypeElement | undefined)
     : undefined;
   const familyDef = typeEl
-    ? BUILT_IN_FAMILIES.find(f => f.id === typeEl.familyId)
-      ?? USER_FAMILIES.find(f => f.id === typeEl.familyId)
+    ? (BUILT_IN_FAMILIES.find((f) => f.id === typeEl.familyId) ??
+      USER_FAMILIES.find((f) => f.id === typeEl.familyId))
     : undefined;
 
   // Priority: instance override > type params > family default > inline
   const get = (key: string, fallback: unknown) =>
-    el.overrideParams?.[key]
-    ?? typeEl?.parameters[key]
-    ?? familyDef?.params.find(p => p.key === key)?.default
-    ?? fallback;
+    el.overrideParams?.[key] ??
+    typeEl?.parameters[key] ??
+    familyDef?.params.find((p) => p.key === key)?.default ??
+    fallback;
 
   return {
-    widthMm:        get('widthMm',        el.widthMm)        as number,
-    heightMm:       get('heightMm',       el.heightMm ?? 2100) as number,
-    frameProfileMm: get('frameProfileMm', 70)                 as number,
-    materialKey:    get('materialKey',    el.materialKey)     as string | null,
-    operationType:  get('operationType',  'single-flush')     as string,
+    widthMm: get('widthMm', el.widthMm) as number,
+    heightMm: get('heightMm', el.heightMm ?? 2100) as number,
+    frameProfileMm: get('frameProfileMm', 70) as number,
+    materialKey: get('materialKey', el.materialKey) as string | null,
+    operationType: get('operationType', 'single-flush') as string,
     // ... etc.
   };
 }
 ```
 
 Then dispatch to the right geometry function based on `familyDef.id`:
+
 ```ts
 const params = resolveElementParams(door, elementsById);
 const familyId = typeEl?.familyId ?? 'door.single-flush';
@@ -1366,20 +1400,20 @@ stable:
 
 **Stair families:**
 
-| Family ID | Name | Key params |
-|---|---|---|
-| `stair.straight` | Straight Stair | width, riserCount, riserMm, treadMm, stringer (open/closed) |
+| Family ID        | Name           | Key params                                                      |
+| ---------------- | -------------- | --------------------------------------------------------------- |
+| `stair.straight` | Straight Stair | width, riserCount, riserMm, treadMm, stringer (open/closed)     |
 | `stair.l-shaped` | L-Shaped Stair | width, riserCount, riserMm, treadMm, landingSize, turnDir (L/R) |
-| `stair.u-shaped` | U-Shaped Stair | width, riserCount, riserMm, treadMm, landingWidth |
-| `stair.spiral` | Spiral Stair | diameter, riserCount, riserMm, handedness (CW/CCW) |
+| `stair.u-shaped` | U-Shaped Stair | width, riserCount, riserMm, treadMm, landingWidth               |
+| `stair.spiral`   | Spiral Stair   | diameter, riserCount, riserMm, handedness (CW/CCW)              |
 
 **Railing families:**
 
-| Family ID | Name | Key params |
-|---|---|---|
-| `railing.glass-panel` | Glass Panel Railing | guardHeightMm, panelThickMm, postSpacingMm, topRailMm |
-| `railing.baluster` | Baluster Railing | guardHeightMm, balusterSpacingMm, balusterSect, postSect, topRailMm |
-| `railing.cable` | Cable Railing | guardHeightMm, cableCount, cableDiameterMm, postSect |
+| Family ID             | Name                | Key params                                                          |
+| --------------------- | ------------------- | ------------------------------------------------------------------- |
+| `railing.glass-panel` | Glass Panel Railing | guardHeightMm, panelThickMm, postSpacingMm, topRailMm               |
+| `railing.baluster`    | Baluster Railing    | guardHeightMm, balusterSpacingMm, balusterSect, postSect, topRailMm |
+| `railing.cable`       | Cable Railing       | guardHeightMm, cableCount, cableDiameterMm, postSect                |
 
 **Acceptance:** Each catalog has ≥2 families with ≥2 default types each.
 Geometry functions return visually distinguishable results for different
@@ -1504,13 +1538,13 @@ an ordered stack of material layers:
 
 ```ts
 interface WallLayerAssembly {
-  familyId:   'wall_type';
-  name:       string;            // "Ext. Timber Cladding on Timber Frame"
+  familyId: 'wall_type';
+  name: string; // "Ext. Timber Cladding on Timber Frame"
   layers: {
-    name:     string;            // "Cladding", "Air gap", "Frame + Insulation"
+    name: string; // "Cladding", "Air gap", "Frame + Insulation"
     thicknessMm: number;
-    materialKey: string;         // maps to PBR params + color token
-    function:  'structure' | 'insulation' | 'finish' | 'membrane' | 'air';
+    materialKey: string; // maps to PBR params + color token
+    function: 'structure' | 'insulation' | 'finish' | 'membrane' | 'air';
     exterior?: boolean;
   }[];
 }
@@ -1523,12 +1557,12 @@ geometry (FL-03 / R3-03). The structural layer renders with its own PBR params.
 
 **Built-in wall assemblies (minimum viable set):**
 
-| ID | Name | Layers |
-|---|---|---|
-| `wall.ext-timber` | Ext. Timber Frame | Cladding 18mm + Air gap 25mm + Frame+Ins 140mm + VCL 3mm + Plasterboard 12.5mm |
-| `wall.ext-masonry` | Ext. Brick Cavity | Brick 102mm + Cavity 75mm + Block 100mm + Plaster 13mm |
-| `wall.int-partition` | Int. Timber Partition | Plasterboard 12.5mm + Stud 89mm + Plasterboard 12.5mm |
-| `wall.int-blockwork` | Int. Blockwork | Plaster 13mm + Block 100mm + Plaster 13mm |
+| ID                   | Name                  | Layers                                                                         |
+| -------------------- | --------------------- | ------------------------------------------------------------------------------ |
+| `wall.ext-timber`    | Ext. Timber Frame     | Cladding 18mm + Air gap 25mm + Frame+Ins 140mm + VCL 3mm + Plasterboard 12.5mm |
+| `wall.ext-masonry`   | Ext. Brick Cavity     | Brick 102mm + Cavity 75mm + Block 100mm + Plaster 13mm                         |
+| `wall.int-partition` | Int. Timber Partition | Plasterboard 12.5mm + Stud 89mm + Plasterboard 12.5mm                          |
+| `wall.int-blockwork` | Int. Blockwork        | Plaster 13mm + Block 100mm + Plaster 13mm                                      |
 
 **Plan view impact:** Layer boundaries should draw as thin lines in the plan
 canvas, matching the Revit plan drawing convention where you see the full layer
@@ -1607,21 +1641,22 @@ sectionBoxActive]` effect):
 
 ### Effect dependency summary after refactor
 
-| Effect | Dependencies | Trigger |
-|---|---|---|
-| Mount (renderer + scene) | `[theme]` | Initial mount; theme switch |
-| Incremental geometry | `[elementsById, viewerCategoryHidden, theme]` | Element add/change/remove; category toggle |
-| Clipping + section box | `[viewerClipElevMm, viewerClipFloorElevMm, sectionBoxActive]` | Clip plane change; section box toggle |
-| Selection outline | `[selectedId]` | Click to select/deselect |
-| Orbit camera | `[orbitCameraNonce, orbitCameraPoseMm]` | Saved viewpoint applied |
-| Walk mode | `[walkActive]` | Walk mode toggle |
-| Section box sync | `[sectionBoxActive]` | Section box toggle |
+| Effect                   | Dependencies                                                  | Trigger                                    |
+| ------------------------ | ------------------------------------------------------------- | ------------------------------------------ |
+| Mount (renderer + scene) | `[theme]`                                                     | Initial mount; theme switch                |
+| Incremental geometry     | `[elementsById, viewerCategoryHidden, theme]`                 | Element add/change/remove; category toggle |
+| Clipping + section box   | `[viewerClipElevMm, viewerClipFloorElevMm, sectionBoxActive]` | Clip plane change; section box toggle      |
+| Selection outline        | `[selectedId]`                                                | Click to select/deselect                   |
+| Orbit camera             | `[orbitCameraNonce, orbitCameraPoseMm]`                       | Saved viewpoint applied                    |
+| Walk mode                | `[walkActive]`                                                | Walk mode toggle                           |
+| Section box sync         | `[sectionBoxActive]`                                          | Section box toggle                         |
 
 ---
 
 ### FL — Implementation notes
 
 **Where families live:**
+
 - Built-in catalog: `packages/web/src/families/familyCatalog.ts` — static
   module, zero runtime cost, tree-shaken for families not used
 - User-defined types: in `elementsById` (project model) as `family_type`
@@ -1638,6 +1673,7 @@ The renderer's `resolveElementParams` never throws — it always has a fallback.
 **Extensibility:**
 
 The catalog is designed to be extended by:
+
 1. Adding entries to `BUILT_IN_FAMILIES` in `familyCatalog.ts`
 2. Adding a geometry function to `geometryFns/`
 3. Wiring the family ID into the renderer dispatch table

@@ -182,12 +182,10 @@ export function isToolDisabled(
 ): { disabled: boolean; reason?: string } {
   switch (toolId) {
     case 'floor':
-      if (!ctx.hasAnyWall)
-        return { disabled: true, reason: t('tools.disabled.drawWallFirst') };
+      if (!ctx.hasAnyWall) return { disabled: true, reason: t('tools.disabled.drawWallFirst') };
       return { disabled: false };
     case 'roof':
-      if (!ctx.hasAnyWall)
-        return { disabled: true, reason: t('tools.disabled.drawWallFirst') };
+      if (!ctx.hasAnyWall) return { disabled: true, reason: t('tools.disabled.drawWallFirst') };
       return { disabled: false };
     case 'railing':
       if (!ctx.hasAnyFloor && !ctx.hasAnyWall) {

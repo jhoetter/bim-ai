@@ -7,7 +7,10 @@ if (typeof (globalThis as Record<string, unknown>).PointerEvent === 'undefined')
   class PointerEvent extends MouseEvent {
     movementX: number;
     movementY: number;
-    constructor(type: string, init: MouseEventInit & { movementX?: number; movementY?: number } = {}) {
+    constructor(
+      type: string,
+      init: MouseEventInit & { movementX?: number; movementY?: number } = {},
+    ) {
       super(type, init);
       this.movementX = init.movementX ?? 0;
       this.movementY = init.movementY ?? 0;
@@ -22,7 +25,9 @@ afterEach(() => {
 
 describe('<ViewCube /> — spec §15.4', () => {
   it('renders six face buttons', () => {
-    const { getByLabelText } = render(<ViewCube currentAzimuth={0} currentElevation={0.45} onPick={() => undefined} />);
+    const { getByLabelText } = render(
+      <ViewCube currentAzimuth={0} currentElevation={0.45} onPick={() => undefined} />,
+    );
     for (const face of ['FRONT', 'BACK', 'LEFT', 'RIGHT', 'TOP', 'BOTTOM']) {
       expect(getByLabelText(`Align camera to ${face}`)).toBeTruthy();
     }
@@ -30,7 +35,9 @@ describe('<ViewCube /> — spec §15.4', () => {
 
   it('emits onPick with the right alignment when a face is clicked', () => {
     const onPick = vi.fn();
-    const { getByLabelText } = render(<ViewCube currentAzimuth={0} currentElevation={0.45} onPick={onPick} />);
+    const { getByLabelText } = render(
+      <ViewCube currentAzimuth={0} currentElevation={0.45} onPick={onPick} />,
+    );
     fireEvent.click(getByLabelText('Align camera to TOP'));
     expect(onPick).toHaveBeenCalled();
     const [pick, alignment] = onPick.mock.calls[0]!;
@@ -40,7 +47,9 @@ describe('<ViewCube /> — spec §15.4', () => {
 
   it('corner buttons emit corner picks', () => {
     const onPick = vi.fn();
-    const { getByLabelText } = render(<ViewCube currentAzimuth={0} currentElevation={0.45} onPick={onPick} />);
+    const { getByLabelText } = render(
+      <ViewCube currentAzimuth={0} currentElevation={0.45} onPick={onPick} />,
+    );
     fireEvent.click(getByLabelText('Align camera to TOP-NE'));
     expect(onPick.mock.calls[0]![0]).toEqual({ kind: 'corner', corner: 'TOP-NE' });
   });
@@ -77,7 +86,9 @@ describe('<ViewCube /> — spec §15.4', () => {
       <ViewCube currentAzimuth={0} currentElevation={0.45} onPick={() => undefined} />,
     );
     expect(getByTestId('view-cube-compass').dataset.cardinal).toBe('N');
-    rerender(<ViewCube currentAzimuth={Math.PI / 2} currentElevation={0.45} onPick={() => undefined} />);
+    rerender(
+      <ViewCube currentAzimuth={Math.PI / 2} currentElevation={0.45} onPick={() => undefined} />,
+    );
     expect(getByTestId('view-cube-compass').dataset.cardinal).toBe('E');
   });
 });

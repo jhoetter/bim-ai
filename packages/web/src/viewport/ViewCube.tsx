@@ -209,7 +209,13 @@ export function ViewCube({
       <div
         data-testid="view-cube-compass"
         data-cardinal={compassLabelFromAzimuth(currentAzimuth)}
-        style={{ fontSize: 9, fontWeight: 700, color: 'var(--color-foreground)', opacity: 0.6, letterSpacing: '0.08em' }}
+        style={{
+          fontSize: 9,
+          fontWeight: 700,
+          color: 'var(--color-foreground)',
+          opacity: 0.6,
+          letterSpacing: '0.08em',
+        }}
       >
         {compassLabelFromAzimuth(currentAzimuth)}
       </div>

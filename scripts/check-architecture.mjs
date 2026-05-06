@@ -11,10 +11,11 @@ const PACKAGES_DIR = join(REPO_ROOT, "packages");
 
 const ALLOWED = {
   "@bim-ai/design-tokens": new Set(),
+  "@bim-ai/icons": new Set(),
   "@bim-ai/core": new Set(),
-  "@bim-ai/ui": new Set(["@bim-ai/design-tokens"]),
+  "@bim-ai/ui": new Set(["@bim-ai/design-tokens", "@bim-ai/icons"]),
   "@bim-ai/hofos-ui": new Set(["@bim-ai/design-tokens", "@bim-ai/ui"]),
-  "@bim-ai/web": new Set(["@bim-ai/design-tokens", "@bim-ai/ui", "@bim-ai/core"]),
+  "@bim-ai/web": new Set(["@bim-ai/design-tokens", "@bim-ai/ui", "@bim-ai/core", "@bim-ai/icons"]),
   "@bim-ai/cli": new Set(),
 };
 

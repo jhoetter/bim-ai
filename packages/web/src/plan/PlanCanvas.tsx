@@ -768,8 +768,7 @@ export function PlanCanvas({
       const ndcX = ((ev.clientX - rect.left) / rect.width) * 2 - 1;
       const ndcY = -(((ev.clientY - rect.top) / rect.height) * 2 - 1);
       const asp = rect.width / Math.max(1, rect.height);
-      const norm = (d: number) =>
-        ev.deltaMode === 1 ? d * 20 : ev.deltaMode === 2 ? d * 600 : d;
+      const norm = (d: number) => (ev.deltaMode === 1 ? d * 20 : ev.deltaMode === 2 ? d * 600 : d);
       const rawY = norm(ev.deltaY);
       const rawX = norm(ev.deltaX);
 
@@ -864,10 +863,7 @@ export function PlanCanvas({
     { label: 'Site     80 m', half: 80 },
   ] as const;
   return (
-    <div
-      data-testid="plan-canvas"
-      className="relative h-full w-full overflow-hidden bg-background"
-    >
+    <div data-testid="plan-canvas" className="relative h-full w-full overflow-hidden bg-background">
       <div className="pointer-events-none absolute right-3 bottom-14 z-10 rounded border border-border bg-surface/80 px-2 py-1 font-mono text-[10px] text-muted backdrop-blur">
         {hudMm
           ? `X ${(hudMm.xMm / 1000).toFixed(2)} m · Y ${(hudMm.yMm / 1000).toFixed(2)} m`

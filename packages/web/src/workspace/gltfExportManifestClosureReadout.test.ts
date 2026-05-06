@@ -28,7 +28,9 @@ function makeEntry(
   };
 }
 
-function makeClosure(overrides?: Partial<GltfExportManifestClosureV1>): GltfExportManifestClosureV1 {
+function makeClosure(
+  overrides?: Partial<GltfExportManifestClosureV1>,
+): GltfExportManifestClosureV1 {
   const matrix: GltfExtensionPresenceEntry[] = [
     makeEntry('bim_ai_box_primitive_v0', 'emitted', 'b'.repeat(64)),
     makeEntry('bim_ai_gable_roof_v0', 'skipped_ineligible'),
@@ -38,7 +40,11 @@ function makeClosure(overrides?: Partial<GltfExportManifestClosureV1>): GltfExpo
   ];
   return {
     format: 'gltfExportManifestClosure_v1',
-    extensionTokens: ['bim_ai_box_primitive_v0', 'bim_ai_wall_corner_joins_v0', 'bim_ai_wall_corner_join_summary_v1'],
+    extensionTokens: [
+      'bim_ai_box_primitive_v0',
+      'bim_ai_wall_corner_joins_v0',
+      'bim_ai_wall_corner_join_summary_v1',
+    ],
     extensionDigests: {
       bim_ai_box_primitive_v0: 'b'.repeat(64),
       bim_ai_wall_corner_joins_v0: 'c'.repeat(64),
@@ -94,7 +100,9 @@ describe('buildGltfExportManifestClosureReadout — null/undefined', () => {
   });
 
   it('returns empty readout for invalid format string', () => {
-    const r = buildGltfExportManifestClosureReadout({ format: 'wrong' } as unknown as GltfExportManifestClosureV1);
+    const r = buildGltfExportManifestClosureReadout({
+      format: 'wrong',
+    } as unknown as GltfExportManifestClosureV1);
     expect(r.emittedCount).toBe(0);
   });
 });

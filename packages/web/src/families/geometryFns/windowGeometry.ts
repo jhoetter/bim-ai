@@ -4,14 +4,14 @@ import type { ViewportPaintBundle } from '../../viewport/materials';
 import { resolveParam, type FamilyDefinition } from '../types';
 
 export type WindowGeomInput = {
-  win:       Extract<Element, { kind: 'window' }>;
-  wall:      Extract<Element, { kind: 'wall' }>;
-  elevM:     number;
-  paint:     ViewportPaintBundle | null;
+  win: Extract<Element, { kind: 'window' }>;
+  wall: Extract<Element, { kind: 'wall' }>;
+  elevM: number;
+  paint: ViewportPaintBundle | null;
   familyDef: FamilyDefinition | undefined;
 };
 
-const FALLBACK_COLOR   = '#cbd5e1';
+const FALLBACK_COLOR = '#cbd5e1';
 const FALLBACK_GLAZING = '#c8d8ea';
 
 function readGlazingColor(): string {
@@ -39,27 +39,27 @@ export function buildWindowGeometry(input: WindowGeomInput): THREE.Group {
 
   const ip = win.overrideParams;
   const typeEntry = win.familyTypeId
-    ? familyDef?.defaultTypes.find(t => t.id === win.familyTypeId)
+    ? familyDef?.defaultTypes.find((t) => t.id === win.familyTypeId)
     : undefined;
   const tp = typeEntry?.parameters;
 
   // Resolve sillMm first so it can inform heightMm clamp
   const rawSillMm = Number(resolveParam('sillMm', ip, tp, familyDef, win.sillHeightMm));
-  const sillMm    = THREE.MathUtils.clamp(rawSillMm, 60, wall.heightMm - 80);
+  const sillMm = THREE.MathUtils.clamp(rawSillMm, 60, wall.heightMm - 80);
 
-  const rawWidthMm  = Number(resolveParam('widthMm',  ip, tp, familyDef, win.widthMm));
+  const rawWidthMm = Number(resolveParam('widthMm', ip, tp, familyDef, win.widthMm));
   const rawHeightMm = Number(resolveParam('heightMm', ip, tp, familyDef, win.heightMm));
-  const rawDepthMm  = Number(resolveParam('frameDepthMm', ip, tp, familyDef, wall.thicknessMm + 20));
-  const frameSectMm = Number(resolveParam('frameSectMm',  ip, tp, familyDef, 60));
+  const rawDepthMm = Number(resolveParam('frameDepthMm', ip, tp, familyDef, wall.thicknessMm + 20));
+  const frameSectMm = Number(resolveParam('frameSectMm', ip, tp, familyDef, 60));
   const glazingAlpha = Number(resolveParam('glazingAlpha', ip, tp, familyDef, 0.35));
 
-  const outerW    = THREE.MathUtils.clamp(rawWidthMm  / 1000, 0.14, 4.0);
-  const outerH    = THREE.MathUtils.clamp(
+  const outerW = THREE.MathUtils.clamp(rawWidthMm / 1000, 0.14, 4.0);
+  const outerH = THREE.MathUtils.clamp(
     rawHeightMm / 1000,
     0.05,
     (wall.heightMm - sillMm - 60) / 1000,
   );
-  const depth     = THREE.MathUtils.clamp(rawDepthMm  / 1000, 0.06, 0.5);
+  const depth = THREE.MathUtils.clamp(rawDepthMm / 1000, 0.06, 0.5);
   const frameSect = frameSectMm / 1000;
 
   const glazingW = Math.max(outerW - 2 * frameSect, 0.01);
@@ -68,7 +68,7 @@ export function buildWindowGeometry(input: WindowGeomInput): THREE.Group {
   const frameColor = paint?.categories.window.color ?? FALLBACK_COLOR;
   const frameMat = new THREE.MeshStandardMaterial({
     color: frameColor,
-    roughness: paint?.categories.window.roughness ?? 0.60,
+    roughness: paint?.categories.window.roughness ?? 0.6,
     metalness: paint?.categories.window.metalness ?? 0.05,
   });
 
@@ -87,13 +87,13 @@ export function buildWindowGeometry(input: WindowGeomInput): THREE.Group {
   }
 
   // head
-  frameGroup.add(frameMesh(outerW, frameSect, depth,  0,                    outerH / 2 - frameSect / 2));
+  frameGroup.add(frameMesh(outerW, frameSect, depth, 0, outerH / 2 - frameSect / 2));
   // sill
-  frameGroup.add(frameMesh(outerW, frameSect, depth,  0,                   -(outerH / 2 - frameSect / 2)));
+  frameGroup.add(frameMesh(outerW, frameSect, depth, 0, -(outerH / 2 - frameSect / 2)));
   // jamb-L
   frameGroup.add(frameMesh(frameSect, outerH, depth, -(outerW / 2 - frameSect / 2), 0));
   // jamb-R
-  frameGroup.add(frameMesh(frameSect, outerH, depth,  (outerW / 2 - frameSect / 2), 0));
+  frameGroup.add(frameMesh(frameSect, outerH, depth, outerW / 2 - frameSect / 2, 0));
 
   group.add(frameGroup);
 
@@ -112,10 +112,7 @@ export function buildWindowGeometry(input: WindowGeomInput): THREE.Group {
   group.add(glazing);
 
   if (outerW > 1.2) {
-    const mullion = new THREE.Mesh(
-      new THREE.BoxGeometry(frameSect, glazingH, 0.012),
-      frameMat,
-    );
+    const mullion = new THREE.Mesh(new THREE.BoxGeometry(frameSect, glazingH, 0.012), frameMat);
     mullion.castShadow = mullion.receiveShadow = true;
     mullion.userData.bimPickId = win.id;
     addEdges(mullion);

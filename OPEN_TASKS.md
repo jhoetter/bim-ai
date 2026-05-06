@@ -1,10 +1,11 @@
 # Open tasks — BIM AI UI
 
-Living to-do for the redesigned UI. Anything that's *still open* lives here so it doesn't get buried in commit messages or a 1200-line spec. When a task closes, move it to spec/ui-ux-redesign-v1-spec.md §6 (Sprint Ledger) and delete its row here.
+Living to-do for the redesigned UI. Anything that's _still open_ lives here so it doesn't get buried in commit messages or a 1200-line spec. When a task closes, move it to spec/ui-ux-redesign-v1-spec.md §6 (Sprint Ledger) and delete its row here.
 
 **Counterpart docs**:
+
 - `spec/ui-ux-redesign-v1-spec.md` §32 — fuller-context visual-fidelity audit (V01–V15).
-- `spec/ui-ux-redesign-v1-spec.md` §28 — WP-UI-* table (every row is `partial`; this file enumerates the *concrete next moves*, not the WP roll-up).
+- `spec/ui-ux-redesign-v1-spec.md` §28 — WP-UI-* table (every row is `partial`; this file enumerates the *concrete next moves\*, not the WP roll-up).
 - `spec/ui-ux-redesign-v1-spec.md` §6 — sprint ledger of what already closed.
 
 Last updated: 2026-05-06.
@@ -33,7 +34,7 @@ Next sweep: wire `PlanCamera`, `SnapEngine`, and `draftingPaintFor` into `PlanCa
 
 ## Feature parity gaps — old Workspace vs. redesign
 
-These features existed in `Workspace.tsx` (now at `/legacy`) and are not yet wired into `RedesignedWorkspace.tsx`. The §5 parity dashboard did not track these because the WP-UI work packages only measured whether the *new chrome components* were built, not whether every old-workspace feature was ported.
+These features existed in `Workspace.tsx` (now at `/legacy`) and are not yet wired into `RedesignedWorkspace.tsx`. The §5 parity dashboard did not track these because the WP-UI work packages only measured whether the _new chrome components_ were built, not whether every old-workspace feature was ported.
 
 ---
 
@@ -52,6 +53,7 @@ Full specs in `spec/rendering-v2-spec.md`.
 Walls are solid `BoxGeometry`. Door and window meshes float inside the wall with no actual hole. Uses `three-bvh-csg` (to be added as dep) to subtract door/window cutter volumes from the wall mesh. Gate behind `VITE_ENABLE_CSG=true` flag.
 
 **Next moves:**
+
 - `pnpm add three-bvh-csg` to web package
 - Add `doorCutterGeometry()` / `windowCutterGeometry()` helpers in Viewport.tsx
 - Refactor `makeWallMesh` to accept hosted elements array and run CSG subtraction
@@ -66,6 +68,7 @@ Walls are solid `BoxGeometry`. Door and window meshes float inside the wall with
 Replace `makeDoorMesh` single-box proxy with a `THREE.Group`: head/jamb-L/jamb-R frame members (70 mm section) + panel leaf (45 mm thick) + threshold. Dimensions from `door.widthMm`, `door.heightMm`, `wall.thicknessMm`.
 
 **Next moves:**
+
 - Replace `makeDoorMesh` body with Group construction per spec
 - Frame material: `door` category; panel: same with roughness 0.75
 - Call `addEdges()` on each sub-mesh
@@ -80,6 +83,7 @@ Replace `makeDoorMesh` single-box proxy with a `THREE.Group`: head/jamb-L/jamb-R
 Replace `makeWindowMesh` single-box with a Group: 4-member frame (60 mm section) + glazing pane (6 mm, roughness 0.05, opacity 0.35) + mullion if width > 1.2 m.
 
 **Next moves:**
+
 - Replace `makeWindowMesh` body with Group per spec
 - New `glazing` material: roughness 0.05, opacity 0.35, `envMapIntensity 1.0`
 - Add mullion/transom logic for large openings
@@ -94,6 +98,7 @@ Replace `makeWindowMesh` single-box with a Group: 4-member frame (60 mm section)
 Replace `makeStairVolumeMesh` bounding-box proxy with a Group of per-tread `BoxGeometry` slabs (40 mm thick) stepped from base to top level, plus two side stringers.
 
 **Next moves:**
+
 - Replace `makeStairVolumeMesh` body with tread loop per spec
 - Use `stair.riserCount` (or derive from level delta / riserMm) for tread count
 - Add left/right stringer plates
@@ -108,6 +113,7 @@ Replace `makeStairVolumeMesh` bounding-box proxy with a Group of per-tread `BoxG
 `makeRailingMesh` currently builds only the rail cap segments. Extend to add square posts (50 mm) at each path vertex and evenly spaced balusters (12 mm, 115 mm clear gap) between posts.
 
 **Next moves:**
+
 - Add post loop (one per `pathMm` vertex) at correct height
 - Add baluster loop per segment (`Math.floor(segLen / 0.115)` count)
 - Metal material override: roughness 0.35, metalness 0.65
@@ -122,6 +128,7 @@ Replace `makeStairVolumeMesh` bounding-box proxy with a Group of per-tread `BoxG
 `makeRoofMassMesh` has a hand-coded single-axis gable that breaks on L-shapes and ignores `roof.ridgeAxis`. Three stages: (1) fix polygon offset for overhang, respect `ridgeAxis`; (2) hip roof from footprint; (3) L-shape valley join.
 
 **Next moves:**
+
 - Add `offsetPolygonMm(pts, dist)` helper for proper overhang
 - Read `roof.ridgeAxis` to choose ridge direction
 - Stage 2: implement hip-line intersection algorithm for rectangular hip roofs
@@ -136,6 +143,7 @@ Replace `makeStairVolumeMesh` bounding-box proxy with a Group of per-tread `BoxG
 `makeFloorSlabMesh` uses `xzBoundsMm()` AABB instead of the actual boundary polygon. Replace with `THREE.ExtrudeGeometry` from `floor.boundaryMm`. Add slab-opening holes from `slab_opening` elements that reference the floor.
 
 **Next moves:**
+
 - Replace AABB `BoxGeometry` with `THREE.Shape` + `ExtrudeGeometry` from `floor.boundaryMm`
 - Rotate extruded geometry -π/2 so footprint lies in XZ plane
 - Find `slab_opening` elements with `hostFloorId === floor.id`, add as `THREE.Path` holes
@@ -150,6 +158,7 @@ Replace `makeStairVolumeMesh` bounding-box proxy with a Group of per-tread `BoxG
 Two small bugs + one material tweak: operator-precedence bug in `padThicknessMm ?? 150 / 1000`, confirm `receiveShadow = true`, add `aoMapIntensity: 0` to suppress SSAO banding on the large flat site plane.
 
 **Next moves:**
+
 - Fix: `(site.padThicknessMm ?? 150) / 1000`
 - Confirm `receiveShadow = true`, `castShadow = false`
 - Add `aoMapIntensity: 0` to site material

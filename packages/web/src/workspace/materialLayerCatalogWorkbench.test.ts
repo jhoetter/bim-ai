@@ -148,7 +148,10 @@ describe('materialLayerCatalogWorkbench', () => {
     expect(r?.cutProxyThicknessMm).toBeNull();
 
     const noType = { ...roof, roofTypeId: null };
-    const r2 = resolveMaterialLayerReadout(noType as Element, { 'rt-1': rt, r1: noType as Element });
+    const r2 = resolveMaterialLayerReadout(noType as Element, {
+      'rt-1': rt,
+      r1: noType as Element,
+    });
     expect(r2?.layerSource).toBe('none');
     expect(r2?.skipReason).toBe('roof_missing_roof_type_id');
     expect(r2?.layers).toHaveLength(0);

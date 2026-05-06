@@ -62,7 +62,10 @@ export function RoomSeparationAuthoringWorkbench({
       <div className="font-semibold text-muted">{t('roomSeparation.heading')}</div>
 
       {readout ? (
-        <div className="space-y-1 rounded border border-border bg-muted/15 p-2 text-[10px]" data-testid="room-separation-readout">
+        <div
+          className="space-y-1 rounded border border-border bg-muted/15 p-2 text-[10px]"
+          data-testid="room-separation-readout"
+        >
           <div>
             <span className="text-muted">Name · id:</span>{' '}
             <span className="font-medium">{readout.name}</span>
@@ -73,8 +76,8 @@ export function RoomSeparationAuthoringWorkbench({
             <span className="font-mono text-muted">({readout.levelId})</span>
           </div>
           <div className="font-mono text-[9px]">
-            start ({readout.startXMm}, {readout.startYMm}) → end ({readout.endXMm}, {readout.endYMm}) · length{' '}
-            {readout.lengthMm} mm
+            start ({readout.startXMm}, {readout.startYMm}) → end ({readout.endXMm}, {readout.endYMm}
+            ) · length {readout.lengthMm} mm
           </div>
           <div>
             <span className="text-muted">Axis-aligned pool:</span>{' '}

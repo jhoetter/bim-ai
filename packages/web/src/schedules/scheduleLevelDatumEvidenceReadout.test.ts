@@ -9,6 +9,8 @@ describe('scheduleLevelDatumEvidenceReadout', () => {
     const elementsById: Record<string, Element> = {
       l1: { kind: 'level', id: 'l1', name: 'L1', elevationMm: 3200, parentLevelId: undefined },
     };
-    expect(formatScheduleLevelDatumEvidenceLine(elementsById, 'l1')).toContain('scheduleLevelDatum');
+    expect(formatScheduleLevelDatumEvidenceLine(elementsById, 'l1')).toContain(
+      'scheduleLevelDatum',
+    );
   });
 });

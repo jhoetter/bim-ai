@@ -118,14 +118,19 @@ describe('PlanCanvas server wire primitives path (WP-C03)', () => {
     } as const;
 
     const grp = new THREE.Group();
-    rebuildPlanMeshes(grp, {}, {
-      activeLevelId: 'lvl',
-      wirePrimitives: primitives as unknown as PlanProjectionPrimitivesV1Wire,
-    });
+    rebuildPlanMeshes(
+      grp,
+      {},
+      {
+        activeLevelId: 'lvl',
+        wirePrimitives: primitives as unknown as PlanProjectionPrimitivesV1Wire,
+      },
+    );
 
     const matches: string[] = [];
     grp.traverse((o) => {
-      const tok = (o.userData as { bimAiRoofGeometrySupportToken?: unknown }).bimAiRoofGeometrySupportToken;
+      const tok = (o.userData as { bimAiRoofGeometrySupportToken?: unknown })
+        .bimAiRoofGeometrySupportToken;
       if (typeof tok === 'string') matches.push(tok);
     });
     expect(matches).toContain('valley_candidate_deferred');
@@ -223,10 +228,14 @@ describe('PlanCanvas server wire primitives path (WP-C03)', () => {
     } as const;
 
     const grp = new THREE.Group();
-    rebuildPlanMeshes(grp, {}, {
-      activeLevelId: 'lvl',
-      wirePrimitives: primitives as unknown as PlanProjectionPrimitivesV1Wire,
-    });
+    rebuildPlanMeshes(
+      grp,
+      {},
+      {
+        activeLevelId: 'lvl',
+        wirePrimitives: primitives as unknown as PlanProjectionPrimitivesV1Wire,
+      },
+    );
 
     let mesh = false;
     grp.traverse((o) => {
@@ -266,10 +275,14 @@ describe('PlanCanvas server wire primitives path (WP-C03)', () => {
     } as const;
 
     const grp = new THREE.Group();
-    rebuildPlanMeshes(grp, {}, {
-      activeLevelId: 'lvl',
-      wirePrimitives: primitives as unknown as PlanProjectionPrimitivesV1Wire,
-    });
+    rebuildPlanMeshes(
+      grp,
+      {},
+      {
+        activeLevelId: 'lvl',
+        wirePrimitives: primitives as unknown as PlanProjectionPrimitivesV1Wire,
+      },
+    );
 
     expect(countLineLoopNodes(grp)).toBeGreaterThan(0);
     expect(someLineHasDashedMaterial(grp)).toBe(false);

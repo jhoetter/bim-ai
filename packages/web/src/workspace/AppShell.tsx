@@ -78,16 +78,19 @@ export function AppShell({
     [isControlled, leftCollapsed, onLeftCollapsedChange],
   );
 
-  const handleKey = useCallback((event: KeyboardEvent | globalThis.KeyboardEvent) => {
-    if (shouldIgnoreKey(event)) return;
-    if (event.key === '[') {
-      event.preventDefault();
-      setLeftCollapsed((v) => !v);
-    } else if (event.key === ']') {
-      event.preventDefault();
-      setRightCollapsed((v) => !v);
-    }
-  }, [setLeftCollapsed]);
+  const handleKey = useCallback(
+    (event: KeyboardEvent | globalThis.KeyboardEvent) => {
+      if (shouldIgnoreKey(event)) return;
+      if (event.key === '[') {
+        event.preventDefault();
+        setLeftCollapsed((v) => !v);
+      } else if (event.key === ']') {
+        event.preventDefault();
+        setRightCollapsed((v) => !v);
+      }
+    },
+    [setLeftCollapsed],
+  );
 
   useEffect(() => {
     const target: Document | HTMLElement | undefined =

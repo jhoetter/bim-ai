@@ -117,9 +117,7 @@ function buildInspectionReadout(params: {
   const idHint =
     affectedElementIds.length > 0
       ? affectedElementIds.slice(0, maxIds).join(', ') +
-        (affectedElementIds.length > maxIds
-          ? ` (+${affectedElementIds.length - maxIds} more)`
-          : '')
+        (affectedElementIds.length > maxIds ? ` (+${affectedElementIds.length - maxIds} more)` : '')
       : null;
 
   const rulesHint =
@@ -139,13 +137,17 @@ function buildInspectionReadout(params: {
       .filter(Boolean)
       .join(' · ') || null;
 
-  const primary = [stepChunk, mid, 'Cross-check in Advisor / validation.'].filter(Boolean).join(' ');
+  const primary = [stepChunk, mid, 'Cross-check in Advisor / validation.']
+    .filter(Boolean)
+    .join(' ');
 
   let secondary: string | null = null;
   if (retryAdvice === 'requires_manual_edit') {
-    secondary = 'Retry: fix command references, declared ids, or sketch payload before re-applying.';
+    secondary =
+      'Retry: fix command references, declared ids, or sketch payload before re-applying.';
   } else if (retryAdvice === 'blocked') {
-    secondary = 'Retry: not safe with the same commands — edit the model or trim the bundle, then re-try.';
+    secondary =
+      'Retry: not safe with the same commands — edit the model or trim the bundle, then re-try.';
   } else {
     secondary = 'Retry: may be safe once local model state matches the server revision.';
   }
@@ -167,9 +169,12 @@ export function formatMergePreflightV1Readout(mp: Record<string, unknown>): {
     typeof stepRaw === 'number' && Number.isFinite(stepRaw) && stepRaw >= 0
       ? Math.floor(stepRaw) + 1
       : null;
-  const cls = typeof mp.safeRetryClassification === 'string' ? mp.safeRetryClassification.trim() : '';
-  const manual = typeof mp.suggestedManualAction === 'string' ? mp.suggestedManualAction.trim() : '';
-  const agentAct = typeof mp.suggestedAgentAction === 'string' ? mp.suggestedAgentAction.trim() : '';
+  const cls =
+    typeof mp.safeRetryClassification === 'string' ? mp.safeRetryClassification.trim() : '';
+  const manual =
+    typeof mp.suggestedManualAction === 'string' ? mp.suggestedManualAction.trim() : '';
+  const agentAct =
+    typeof mp.suggestedAgentAction === 'string' ? mp.suggestedAgentAction.trim() : '';
 
   const declared = Array.isArray(mp.conflictingDeclaredIds)
     ? mp.conflictingDeclaredIds.filter((x): x is string => typeof x === 'string')
@@ -199,14 +204,18 @@ export function formatMergePreflightV1Readout(mp: Record<string, unknown>): {
     const rid = typeof hr.referenceId === 'string' ? hr.referenceId : '';
     const siRaw = hr.stepIndex;
     const si1 =
-      typeof siRaw === 'number' && Number.isFinite(siRaw) && siRaw >= 0 ? Math.floor(siRaw) + 1 : null;
+      typeof siRaw === 'number' && Number.isFinite(siRaw) && siRaw >= 0
+        ? Math.floor(siRaw) + 1
+        : null;
     missingHint =
       `missing ${rk}${rid !== '' ? `=${rid}` : ''}` + (si1 !== null ? ` @ step ${si1}` : '');
   }
 
   const digestRaw = mp.evidenceDigestSha256;
   const digestHint =
-    typeof digestRaw === 'string' && digestRaw.length >= 16 ? `digest ${digestRaw.slice(0, 16)}…` : null;
+    typeof digestRaw === 'string' && digestRaw.length >= 16
+      ? `digest ${digestRaw.slice(0, 16)}…`
+      : null;
 
   const primary = [
     reason ? `Merge preflight: ${reason}` : 'Merge preflight',
@@ -236,7 +245,9 @@ export function collaborationConflictQueueInspectionLinesFromHints(): string[] {
   ];
 }
 
-export function buildCollaborationConflictQueueV1(detail: unknown): CollaborationConflictQueueV1 | null {
+export function buildCollaborationConflictQueueV1(
+  detail: unknown,
+): CollaborationConflictQueueV1 | null {
   if (!detail || typeof detail !== 'object' || Array.isArray(detail)) return null;
   const d = detail as Record<string, unknown>;
 
@@ -256,8 +267,7 @@ export function buildCollaborationConflictQueueV1(detail: unknown): Collaboratio
 
   if (!reason && !hasViolations && !hasReplay && !hasMergePreflight) return null;
 
-  const ruleFilter =
-    blockingViolationRuleIds.length > 0 ? new Set(blockingViolationRuleIds) : null;
+  const ruleFilter = blockingViolationRuleIds.length > 0 ? new Set(blockingViolationRuleIds) : null;
 
   const rowCandidates: CollaborationConflictRowV1[] = [];
   for (const v of violationsList) {
@@ -274,7 +284,9 @@ export function buildCollaborationConflictQueueV1(detail: unknown): Collaboratio
   const blockingRuleIdsFromRows = [...new Set(rowCandidates.map((r) => r.ruleId))].sort();
 
   const blockingRuleIds =
-    blockingViolationRuleIds.length > 0 ? [...blockingViolationRuleIds].sort() : blockingRuleIdsFromRows;
+    blockingViolationRuleIds.length > 0
+      ? [...blockingViolationRuleIds].sort()
+      : blockingRuleIdsFromRows;
 
   const affectedSet = new Set<string>();
   for (const r of rowCandidates) {
@@ -294,8 +306,7 @@ export function buildCollaborationConflictQueueV1(detail: unknown): Collaboratio
   const hasBlockingRows = rowCandidates.length > 0;
   const retryAdvice = computeRetryAdvice(reason, hasBlockingRows);
 
-  const step1Based =
-    firstBlockingCommandIndex !== null ? firstBlockingCommandIndex + 1 : null;
+  const step1Based = firstBlockingCommandIndex !== null ? firstBlockingCommandIndex + 1 : null;
 
   const { primary, secondary } = buildInspectionReadout({
     step1: step1Based,

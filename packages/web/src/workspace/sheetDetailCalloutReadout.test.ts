@@ -18,7 +18,9 @@ describe('readViewportRoleFromRaw', () => {
 describe('detailCalloutUnresolvedReason', () => {
   it('returns unresolved_plan_view when plan id missing', () => {
     const elementsById = {} as Record<string, Element>;
-    expect(detailCalloutUnresolvedReason(elementsById, 'plan:missing')).toBe('unresolved_plan_view');
+    expect(detailCalloutUnresolvedReason(elementsById, 'plan:missing')).toBe(
+      'unresolved_plan_view',
+    );
   });
 
   it('returns empty when plan resolves', () => {
@@ -32,7 +34,9 @@ describe('detailCalloutUnresolvedReason', () => {
 describe('buildPlaceholderDetailTitle', () => {
   it('matches python placeholder shapes', () => {
     expect(buildPlaceholderDetailTitle('3', 'EG', '')).toBe('Detail 3 — EG');
-    expect(buildPlaceholderDetailTitle('3', undefined, 'unresolved_plan_view')).toBe('Detail 3 — unresolved');
+    expect(buildPlaceholderDetailTitle('3', undefined, 'unresolved_plan_view')).toBe(
+      'Detail 3 — unresolved',
+    );
     expect(buildPlaceholderDetailTitle('', 'EG', '')).toBe('Detail — EG');
   });
 });

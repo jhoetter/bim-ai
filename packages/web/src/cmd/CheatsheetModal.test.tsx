@@ -14,7 +14,9 @@ afterEach(() => {
 
 describe('<CheatsheetModal /> — spec §19', () => {
   it('renders nothing when closed', () => {
-    const { queryByTestId } = renderWithI18n(<CheatsheetModal open={false} onClose={() => undefined} />);
+    const { queryByTestId } = renderWithI18n(
+      <CheatsheetModal open={false} onClose={() => undefined} />,
+    );
     expect(queryByTestId('cheatsheet-modal')).toBeNull();
   });
 

@@ -4,7 +4,9 @@ type RoofElem = Extract<Element, { kind: 'roof' }>;
 
 function elevationMForLevel(levelId: string, elementsById: Record<string, Element>): number {
   const lv = elementsById[levelId];
-  return lv?.kind === 'level' ? ((lv as Extract<Element, { kind: 'level' }>).elevationMm ?? 0) / 1000 : 0;
+  return lv?.kind === 'level'
+    ? ((lv as Extract<Element, { kind: 'level' }>).elevationMm ?? 0) / 1000
+    : 0;
 }
 
 function xzBoundsMm(poly: Array<{ xMm: number; yMm: number }>) {
@@ -30,7 +32,8 @@ export function roofHeightAtPoint(
   const refElev = elevationMForLevel(roof.referenceLevelId, elementsById);
   const wallsAtRefLevel = Object.values(elementsById).filter(
     (e): e is Extract<Element, { kind: 'wall' }> =>
-      e.kind === 'wall' && (e as Extract<Element, { kind: 'wall' }>).levelId === roof.referenceLevelId,
+      e.kind === 'wall' &&
+      (e as Extract<Element, { kind: 'wall' }>).levelId === roof.referenceLevelId,
   );
   const wallTopM =
     wallsAtRefLevel.length > 0

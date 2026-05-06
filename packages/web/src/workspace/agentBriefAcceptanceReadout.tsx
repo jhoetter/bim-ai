@@ -42,7 +42,9 @@ function isRow(raw: unknown): raw is AgentBriefAcceptanceRowWire {
 }
 
 /** Parse server payload field into a typed readout, or null if missing/invalid. */
-export function parseAgentBriefAcceptanceReadoutV1(raw: unknown): AgentBriefAcceptanceReadoutWire | null {
+export function parseAgentBriefAcceptanceReadoutV1(
+  raw: unknown,
+): AgentBriefAcceptanceReadoutWire | null {
   if (!isRecord(raw)) return null;
   if (raw.format !== 'agentBriefAcceptanceReadout_v1') return null;
   const schemaVersion = raw.schemaVersion;
@@ -67,9 +69,7 @@ export function formatAgentBriefAcceptanceReadoutLines(
     'rows:',
   ];
   for (const r of readout.rows) {
-    out.push(
-      `  ${r.gateId}: status=${r.status} code=${r.failureReasonCode} label=${r.label}`,
-    );
+    out.push(`  ${r.gateId}: status=${r.status} code=${r.failureReasonCode} label=${r.label}`);
     if (r.requiredAction) out.push(`    action: ${r.requiredAction}`);
     if (r.sourceCommandIds.length) {
       out.push(`    sourceCommandIds: ${[...r.sourceCommandIds].sort().join(', ')}`);
@@ -101,7 +101,8 @@ export function AgentBriefAcceptanceReadoutV1Table(props: {
     <div className="mt-2 rounded border border-border/60 bg-background/30 p-2">
       <div className="text-[10px] font-semibold text-muted">{title}</div>
       <p className="mt-1 text-[10px] text-muted">
-        <code className="text-[9px]">agentBriefAcceptanceReadout_v1</code> — ordered acceptance gates
+        <code className="text-[9px]">agentBriefAcceptanceReadout_v1</code> — ordered acceptance
+        gates
       </p>
       <div className="mt-2 overflow-x-auto">
         <table className="w-full border-collapse text-[9px]">

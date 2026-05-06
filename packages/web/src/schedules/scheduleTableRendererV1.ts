@@ -27,8 +27,7 @@ export type ScheduleTableModelV1 = {
   footerParts: string[];
 };
 
-const SCH_DOC_OK =
-  /^schDoc\[id=([^[\]]+) rows=(\d+) cols=(\d+) cat=([^[\]]+)\]$/;
+const SCH_DOC_OK = /^schDoc\[id=([^[\]]+) rows=(\d+) cols=(\d+) cat=([^[\]]+)\]$/;
 
 /** Extract a trailing parenthetical unit snippet from registry labels, e.g. "(mm)", "(m²)". */
 export function unitHintFromRegistryLabel(label: string): string {
@@ -54,10 +53,14 @@ function roleWidthHintPx(role: string | undefined): number {
   }
 }
 
-export function columnDisplayWidthHintPx(fieldKey: string, meta: ScheduleFieldMeta | undefined): number {
+export function columnDisplayWidthHintPx(
+  fieldKey: string,
+  meta: ScheduleFieldMeta | undefined,
+): number {
   const k = fieldKey.toLowerCase();
   if (k === 'elementid' || k.endsWith('elementid')) return 72;
-  if (k.includes('display') || k === 'name' || k.includes('name')) return Math.max(roleWidthHintPx(meta?.role), 128);
+  if (k.includes('display') || k === 'name' || k.includes('name'))
+    return Math.max(roleWidthHintPx(meta?.role), 128);
   return roleWidthHintPx(meta?.role);
 }
 
@@ -122,9 +125,7 @@ function buildBodyRows(payload: Record<string, unknown>): {
         arr.forEach((r, i) => {
           const rec = r as Record<string, unknown>;
           bodyRows.push({
-            id: String(
-              rec.elementId ?? rec.element_id ?? `row-${k}-${i}`,
-            ),
+            id: String(rec.elementId ?? rec.element_id ?? `row-${k}-${i}`),
             kind: 'data',
             record: rec,
           });
@@ -135,7 +136,9 @@ function buildBodyRows(payload: Record<string, unknown>): {
     }
   }
 
-  const flat = Array.isArray(payload.rows) ? (payload.rows as Record<string, unknown>[]) : leafRowsFromPayload(payload);
+  const flat = Array.isArray(payload.rows)
+    ? (payload.rows as Record<string, unknown>[])
+    : leafRowsFromPayload(payload);
   const bodyRows: ScheduleTableBodyRowV1[] = flat.map((r, i) => ({
     id: String(r.elementId ?? (r as { element_id?: string }).element_id ?? `row-${i}`),
     kind: 'data' as const,
@@ -211,7 +214,12 @@ export function scheduleTableRendererV1SheetReadout(
   const [, idRaw, rowsStr, colsStr, catRaw] = m;
   const el = elementsById[idRaw];
   const name =
-    el?.kind === 'schedule' ? String(el.name ?? '').trim().replace(/\]/g, '').replace(/\[/g, '') : '';
+    el?.kind === 'schedule'
+      ? String(el.name ?? '')
+          .trim()
+          .replace(/\]/g, '')
+          .replace(/\[/g, '')
+      : '';
 
   const safeName = name ? ` name=${name}` : '';
   return `tblV1[id=${idRaw}${safeName} rows=${rowsStr} cols=${colsStr} cat=${catRaw}]`;

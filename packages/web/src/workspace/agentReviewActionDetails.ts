@@ -40,7 +40,9 @@ function linesForReviewTopic(target: Record<string, unknown>): AgentReviewDetail
   return out.length ? out : [{ label: 'target', value: str(target) }];
 }
 
-function linesForFocusDeterministicEvidenceRow(target: Record<string, unknown>): AgentReviewDetailLine[] {
+function linesForFocusDeterministicEvidenceRow(
+  target: Record<string, unknown>,
+): AgentReviewDetailLine[] {
   const out: AgentReviewDetailLine[] = [];
   appendIf(out, 'Row kind', target.deterministicRowKind);
   appendIf(out, 'Sheet id', target.sheetId);
@@ -80,7 +82,9 @@ function linesForAddressViolation(target: Record<string, unknown>): AgentReviewD
   return out.length ? out : [{ label: 'target', value: str(target) }];
 }
 
-function linesForRemediateEvidenceDiffIngest(target: Record<string, unknown>): AgentReviewDetailLine[] {
+function linesForRemediateEvidenceDiffIngest(
+  target: Record<string, unknown>,
+): AgentReviewDetailLine[] {
   const out: AgentReviewDetailLine[] = [];
   appendIf(out, 'Needs fix loop', target.needsFixLoop);
   const blockers = target.blockerCodes;
@@ -89,7 +93,11 @@ function linesForRemediateEvidenceDiffIngest(target: Record<string, unknown>): A
   }
   appendIf(out, 'Closure review field', target.evidenceClosureReviewField);
   appendIf(out, 'Diff ingest fix-loop field', target.evidenceDiffIngestFixLoopField);
-  appendIf(out, 'Artifact ingest manifest digest (manifest)', target.artifactIngestManifestDigestSha256);
+  appendIf(
+    out,
+    'Artifact ingest manifest digest (manifest)',
+    target.artifactIngestManifestDigestSha256,
+  );
   appendIf(out, 'Artifact ingest correlation field', target.artifactIngestCorrelationField);
   appendIf(out, 'Expected ingest digest', target.ingestManifestDigestExpectedSha256);
   appendIf(out, 'Actual ingest digest', target.ingestManifestDigestActualSha256);

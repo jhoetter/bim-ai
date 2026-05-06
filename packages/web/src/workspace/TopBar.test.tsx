@@ -55,7 +55,9 @@ describe('TopBar — spec §11', () => {
 
   it('cycles modes with ArrowRight / ArrowLeft', () => {
     const onModeChange = vi.fn();
-    const { getByRole } = renderWithI18n(<TopBar {...baseProps} mode="plan" onModeChange={onModeChange} />);
+    const { getByRole } = renderWithI18n(
+      <TopBar {...baseProps} mode="plan" onModeChange={onModeChange} />,
+    );
     const tablist = getByRole('tablist');
     fireEvent.keyDown(tablist, { key: 'ArrowRight' });
     expect(onModeChange).toHaveBeenLastCalledWith('3d');
@@ -126,10 +128,7 @@ describe('TopBar — spec §11', () => {
   });
 
   it('renders peer avatar chips from the peers prop', () => {
-    const peers = [
-      { name: 'Alice', color: '#f00' },
-      { name: 'Bob' },
-    ];
+    const peers = [{ name: 'Alice', color: '#f00' }, { name: 'Bob' }];
     const { getByTestId } = renderWithI18n(
       <TopBar {...baseProps} mode="plan" onModeChange={() => undefined} peers={peers} />,
     );

@@ -27,8 +27,20 @@ function makeManifest(
     format: 'prdCloseoutCrossCorrelationManifest_v1',
     schemaVersion: 1,
     rows: [makeRow()],
-    tokenCounts: { aligned: 1, advisor_only: 0, reason_code_drift: 0, readiness_only: 0, status_drift: 0 },
-    allowedTokens: ['aligned', 'advisor_only', 'readiness_only', 'reason_code_drift', 'status_drift'],
+    tokenCounts: {
+      aligned: 1,
+      advisor_only: 0,
+      reason_code_drift: 0,
+      readiness_only: 0,
+      status_drift: 0,
+    },
+    allowedTokens: [
+      'aligned',
+      'advisor_only',
+      'readiness_only',
+      'reason_code_drift',
+      'status_drift',
+    ],
     advisoryFindings: [],
     prdCloseoutCrossCorrelationDigestSha256: 'a'.repeat(64),
     ...overrides,
@@ -43,9 +55,7 @@ describe('parsePrdCloseoutCrossCorrelationManifestV1', () => {
   });
 
   it('returns null for wrong format', () => {
-    expect(
-      parsePrdCloseoutCrossCorrelationManifestV1({ format: 'wrong_format' }),
-    ).toBeNull();
+    expect(parsePrdCloseoutCrossCorrelationManifestV1({ format: 'wrong_format' })).toBeNull();
   });
 
   it('parses a valid manifest', () => {
@@ -170,10 +180,7 @@ describe('formatPrdCloseoutCrossCorrelationReadoutLines', () => {
 
   it('rows are sorted by prdSectionId in output', () => {
     const m = makeManifest({
-      rows: [
-        makeRow({ prdSectionId: 'prd_z_last' }),
-        makeRow({ prdSectionId: 'prd_a_first' }),
-      ],
+      rows: [makeRow({ prdSectionId: 'prd_z_last' }), makeRow({ prdSectionId: 'prd_a_first' })],
     });
     const lines = formatPrdCloseoutCrossCorrelationReadoutLines(m);
     const rowLines = lines.filter((l) => l.includes('prd_'));

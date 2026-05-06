@@ -580,10 +580,16 @@ export function SheetDocumentationManifest(props: {
                               <ul className="mt-0.5 list-none space-y-0.5 pl-0">
                                 {legendRows.map((lr, li) => {
                                   const lab = String(lr.label ?? '').trim() || '—';
-                                  const hx = String(lr.schemeColorHex ?? lr.scheme_color_hex ?? '').trim() || '#888888';
-                                  const pc = String(lr.programmeCode ?? lr.programme_code ?? '').trim();
+                                  const hx =
+                                    String(lr.schemeColorHex ?? lr.scheme_color_hex ?? '').trim() ||
+                                    '#888888';
+                                  const pc = String(
+                                    lr.programmeCode ?? lr.programme_code ?? '',
+                                  ).trim();
                                   const dept = String(lr.department ?? '').trim();
-                                  const fn = String(lr.functionLabel ?? lr.function_label ?? '').trim();
+                                  const fn = String(
+                                    lr.functionLabel ?? lr.function_label ?? '',
+                                  ).trim();
                                   const keyBits = [pc, dept, fn].filter(Boolean);
                                   return (
                                     <li
@@ -624,10 +630,7 @@ export function SheetDocumentationManifest(props: {
           <div className="text-[10px] font-semibold uppercase text-muted">
             Detail callouts (readout v0)
           </div>
-          <div
-            className="overflow-x-auto"
-            data-testid="sheet-manifest-detail-callout-readout"
-          >
+          <div className="overflow-x-auto" data-testid="sheet-manifest-detail-callout-readout">
             <table className="min-w-[1100px] border-collapse border border-border font-mono text-[10px]">
               <thead>
                 <tr className="bg-muted/30">
@@ -635,13 +638,19 @@ export function SheetDocumentationManifest(props: {
                   <th className="border border-border px-1 py-0.5 text-left">viewportRole</th>
                   <th className="border border-border px-1 py-0.5 text-left">parentSheetId</th>
                   <th className="border border-border px-1 py-0.5 text-left">parentSheetName</th>
-                  <th className="border border-border px-1 py-0.5 text-left">referencedViewRefRaw</th>
+                  <th className="border border-border px-1 py-0.5 text-left">
+                    referencedViewRefRaw
+                  </th>
                   <th className="border border-border px-1 py-0.5 text-left">
                     referencedViewRefNormalized
                   </th>
-                  <th className="border border-border px-1 py-0.5 text-left">referencedTargetKind</th>
+                  <th className="border border-border px-1 py-0.5 text-left">
+                    referencedTargetKind
+                  </th>
                   <th className="border border-border px-1 py-0.5 text-left">referencedTargetId</th>
-                  <th className="border border-border px-1 py-0.5 text-left">resolvedTargetTitle</th>
+                  <th className="border border-border px-1 py-0.5 text-left">
+                    resolvedTargetTitle
+                  </th>
                   <th className="border border-border px-1 py-0.5 text-left">
                     placeholderDetailNumber
                   </th>
@@ -661,22 +670,42 @@ export function SheetDocumentationManifest(props: {
                 ) : (
                   detailCalloutReadoutRows.map((r, i) => (
                     <tr key={`dc-readout-${String(r.viewportId ?? i)}`}>
-                      <td className="border border-border px-1 py-0.5">{String(r.viewportId ?? '')}</td>
-                      <td className="border border-border px-1 py-0.5">{String(r.viewportRole ?? '')}</td>
-                      <td className="border border-border px-1 py-0.5">{String(r.parentSheetId ?? '')}</td>
-                      <td className="border border-border px-1 py-0.5">{String(r.parentSheetName ?? '')}</td>
-                      <td className="border border-border px-1 py-0.5">{String(r.referencedViewRefRaw ?? '')}</td>
+                      <td className="border border-border px-1 py-0.5">
+                        {String(r.viewportId ?? '')}
+                      </td>
+                      <td className="border border-border px-1 py-0.5">
+                        {String(r.viewportRole ?? '')}
+                      </td>
+                      <td className="border border-border px-1 py-0.5">
+                        {String(r.parentSheetId ?? '')}
+                      </td>
+                      <td className="border border-border px-1 py-0.5">
+                        {String(r.parentSheetName ?? '')}
+                      </td>
+                      <td className="border border-border px-1 py-0.5">
+                        {String(r.referencedViewRefRaw ?? '')}
+                      </td>
                       <td className="border border-border px-1 py-0.5">
                         {String(r.referencedViewRefNormalized ?? '')}
                       </td>
                       <td className="border border-border px-1 py-0.5">
                         {String(r.referencedTargetKind ?? '')}
                       </td>
-                      <td className="border border-border px-1 py-0.5">{String(r.referencedTargetId ?? '')}</td>
-                      <td className="border border-border px-1 py-0.5">{String(r.resolvedTargetTitle ?? '')}</td>
-                      <td className="border border-border px-1 py-0.5">{String(r.placeholderDetailNumber ?? '')}</td>
-                      <td className="border border-border px-1 py-0.5">{String(r.placeholderDetailTitle ?? '')}</td>
-                      <td className="border border-border px-1 py-0.5">{String(r.unresolvedReason ?? '')}</td>
+                      <td className="border border-border px-1 py-0.5">
+                        {String(r.referencedTargetId ?? '')}
+                      </td>
+                      <td className="border border-border px-1 py-0.5">
+                        {String(r.resolvedTargetTitle ?? '')}
+                      </td>
+                      <td className="border border-border px-1 py-0.5">
+                        {String(r.placeholderDetailNumber ?? '')}
+                      </td>
+                      <td className="border border-border px-1 py-0.5">
+                        {String(r.placeholderDetailTitle ?? '')}
+                      </td>
+                      <td className="border border-border px-1 py-0.5">
+                        {String(r.unresolvedReason ?? '')}
+                      </td>
                     </tr>
                   ))
                 )}
@@ -705,11 +734,19 @@ export function SheetDocumentationManifest(props: {
                   <th className="border border-border px-1 py-0.5 text-left">viewportId</th>
                   <th className="border border-border px-1 py-0.5 text-left">sectionViewId</th>
                   <th className="border border-border px-1 py-0.5 text-left">cutLinePresent</th>
-                  <th className="border border-border px-1 py-0.5 text-left">cutLineDigest (prefix12)</th>
-                  <th className="border border-border px-1 py-0.5 text-left">sectionProfileToken</th>
+                  <th className="border border-border px-1 py-0.5 text-left">
+                    cutLineDigest (prefix12)
+                  </th>
+                  <th className="border border-border px-1 py-0.5 text-left">
+                    sectionProfileToken
+                  </th>
                   <th className="border border-border px-1 py-0.5 text-left">listingSegment</th>
-                  <th className="border border-border px-1 py-0.5 text-left">listingSegmentDigest (prefix12)</th>
-                  <th className="border border-border px-1 py-0.5 text-left">sheetRevIssDocCrossRef</th>
+                  <th className="border border-border px-1 py-0.5 text-left">
+                    listingSegmentDigest (prefix12)
+                  </th>
+                  <th className="border border-border px-1 py-0.5 text-left">
+                    sheetRevIssDocCrossRef
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -727,7 +764,9 @@ export function SheetDocumentationManifest(props: {
                     return (
                       <tr key={`sec-on-sheet-${vid || i}`}>
                         <td className="border border-border px-1 py-0.5">{vid}</td>
-                        <td className="border border-border px-1 py-0.5">{String(r.sectionViewId ?? '')}</td>
+                        <td className="border border-border px-1 py-0.5">
+                          {String(r.sectionViewId ?? '')}
+                        </td>
                         <td className="border border-border px-1 py-0.5">
                           {r.cutLinePresent === false ? 'no' : 'yes'}
                         </td>
@@ -756,27 +795,29 @@ export function SheetDocumentationManifest(props: {
         </div>
       ) : null}
 
-      {evidence.status === 'ready' && deterministicRow ? (() => {
-        const placementEv = deterministicRow.roomColorSchemeLegendPlacementEvidence_v1;
-        const placementLines = roomColorSchemeLegendPlacementReadoutLines(placementEv);
-        return placementLines.length > 0 ? (
-          <div
-            className="mt-3 space-y-1 border-t border-border pt-2"
-            data-testid="sheet-manifest-room-color-scheme-legend-placement-readout"
-          >
-            <div className="text-[10px] font-semibold uppercase text-muted">
-              Room color scheme legend placement (v1)
-            </div>
-            <ul className="space-y-0.5 font-mono text-[10px]">
-              {placementLines.map((l, i) => (
-                <li key={`legend-placement-${i}`} className="text-foreground whitespace-pre">
-                  {l}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null;
-      })() : null}
+      {evidence.status === 'ready' && deterministicRow
+        ? (() => {
+            const placementEv = deterministicRow.roomColorSchemeLegendPlacementEvidence_v1;
+            const placementLines = roomColorSchemeLegendPlacementReadoutLines(placementEv);
+            return placementLines.length > 0 ? (
+              <div
+                className="mt-3 space-y-1 border-t border-border pt-2"
+                data-testid="sheet-manifest-room-color-scheme-legend-placement-readout"
+              >
+                <div className="text-[10px] font-semibold uppercase text-muted">
+                  Room color scheme legend placement (v1)
+                </div>
+                <ul className="space-y-0.5 font-mono text-[10px]">
+                  {placementLines.map((l, i) => (
+                    <li key={`legend-placement-${i}`} className="text-foreground whitespace-pre">
+                      {l}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null;
+          })()
+        : null}
 
       <div className="mt-3 space-y-1 border-t border-border pt-2">
         <div className="text-[10px] font-semibold uppercase text-muted">

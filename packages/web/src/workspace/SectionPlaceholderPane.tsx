@@ -66,7 +66,9 @@ function SectionWorkbenchLivePreview(props: {
 
   return (
     <div className="mt-2">
-      <div className="text-[10px] font-semibold uppercase tracking-wide text-muted">Live preview</div>
+      <div className="text-[10px] font-semibold uppercase tracking-wide text-muted">
+        Live preview
+      </div>
       <div
         className="mt-1 h-[220px] max-w-[320px] overflow-hidden rounded border border-border bg-white"
         data-testid="section-workbench-preview-svg"
@@ -82,10 +84,7 @@ function SectionWorkbenchLivePreview(props: {
         />
       </div>
       {showNoWallCaption ? (
-        <p
-          className="mt-1 text-[10px] text-muted"
-          data-testid="section-workbench-no-wall-caption"
-        >
+        <p className="mt-1 text-[10px] text-muted" data-testid="section-workbench-no-wall-caption">
           {SECTION_WORKBENCH_NO_WALL_CAPTION}
         </p>
       ) : null}
@@ -177,7 +176,9 @@ export function SectionPlaceholderPane(props: { activeLevelLabel: string; modelI
             <p className="mt-2 text-[11px] leading-snug text-muted">
               No <span className="font-mono">modelId</span> in this cockpit state—live projection
               preview is unavailable. Use the list below and{' '}
-              <span className="font-semibold text-foreground/80">Project browser → Section cuts</span>{' '}
+              <span className="font-semibold text-foreground/80">
+                Project browser → Section cuts
+              </span>{' '}
               to select cuts; switch to a connected session with snapshot hydration for SVG preview.
             </p>
           )}

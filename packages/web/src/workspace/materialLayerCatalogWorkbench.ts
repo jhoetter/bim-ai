@@ -20,11 +20,7 @@ export const BUILTIN_MATERIAL_DISPLAY: Readonly<Record<string, string>> = {
   'mat-membrane-roof-single-ply-v1': 'Roof membrane (single-ply)',
 } as const;
 
-export type LayerAssemblySource =
-  | 'type_stack'
-  | 'instance_fallback'
-  | 'roof_type_stack'
-  | 'none';
+export type LayerAssemblySource = 'type_stack' | 'instance_fallback' | 'roof_type_stack' | 'none';
 
 export type MaterialLayerRow = {
   index: number;
@@ -121,9 +117,14 @@ export function resolveMaterialLayerReadout(
 ): MaterialLayerReadout | null {
   if (!selected) return null;
 
-  if (selected.kind === 'wall_type' || selected.kind === 'floor_type' || selected.kind === 'roof_type') {
+  if (
+    selected.kind === 'wall_type' ||
+    selected.kind === 'floor_type' ||
+    selected.kind === 'roof_type'
+  ) {
     const rows = mapTypeLayers(selected.layers ?? []);
-    const src: LayerAssemblySource = selected.kind === 'roof_type' ? 'roof_type_stack' : 'type_stack';
+    const src: LayerAssemblySource =
+      selected.kind === 'roof_type' ? 'roof_type_stack' : 'type_stack';
     return {
       mode: 'type_element',
       typeElementKind: selected.kind,
@@ -322,7 +323,10 @@ export function validateLayerAuthoringDraft(rows: LayerAuthoringDraftRow[]): str
   return errs;
 }
 
-export type LayeredTypeElement = Extract<Element, { kind: 'wall_type' | 'floor_type' | 'roof_type' }>;
+export type LayeredTypeElement = Extract<
+  Element,
+  { kind: 'wall_type' | 'floor_type' | 'roof_type' }
+>;
 
 export function buildUpsertLayeredTypeCommand(
   el: LayeredTypeElement,

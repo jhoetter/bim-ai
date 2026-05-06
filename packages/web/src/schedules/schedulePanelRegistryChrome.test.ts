@@ -18,7 +18,10 @@ describe('buildScheduleTableCsvUrl', () => {
 
   it('encodes ids and appends column subset', () => {
     expect(
-      buildScheduleTableCsvUrl('a/b', 'c d', { columns: ['x', 'y z'], includeScheduleTotalsCsv: true }),
+      buildScheduleTableCsvUrl('a/b', 'c d', {
+        columns: ['x', 'y z'],
+        includeScheduleTotalsCsv: true,
+      }),
     ).toBe(
       '/api/models/a%2Fb/schedules/c%20d/table?format=csv&includeScheduleTotalsCsv=true&columns=x,y%20z',
     );
@@ -73,9 +76,9 @@ describe('formatSchedulePlacementReadout', () => {
   });
 
   it('formats sheet name and id', () => {
-    expect(
-      formatSchedulePlacementReadout({ sheetName: 'A101', sheetId: 'sh-1' }),
-    ).toBe('Sheet placement: A101 (sh-1)');
+    expect(formatSchedulePlacementReadout({ sheetName: 'A101', sheetId: 'sh-1' })).toBe(
+      'Sheet placement: A101 (sh-1)',
+    );
   });
 });
 

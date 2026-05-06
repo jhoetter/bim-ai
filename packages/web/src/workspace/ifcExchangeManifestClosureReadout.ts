@@ -36,15 +36,9 @@ export function formatIfcExchangeManifestClosureLines(
 
   const lines: string[] = [];
 
-  lines.push(
-    `Authoritative products: ${tokenLabel(raw.authoritativeProductsAlignmentToken)}`,
-  );
-  lines.push(
-    `Unsupported classes: ${tokenLabel(raw.unsupportedClassAlignmentToken)}`,
-  );
-  lines.push(
-    `IDS pointer coverage: ${tokenLabel(raw.idsPointerCoverageAlignmentToken)}`,
-  );
+  lines.push(`Authoritative products: ${tokenLabel(raw.authoritativeProductsAlignmentToken)}`);
+  lines.push(`Unsupported classes: ${tokenLabel(raw.unsupportedClassAlignmentToken)}`);
+  lines.push(`IDS pointer coverage: ${tokenLabel(raw.idsPointerCoverageAlignmentToken)}`);
 
   const digest = raw.ifcExchangeManifestClosureDigestSha256;
   if (typeof digest === 'string' && /^[a-f0-9]{64}$/i.test(digest)) {

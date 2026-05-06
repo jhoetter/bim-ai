@@ -1,6 +1,12 @@
 import type { Element } from '@bim-ai/core';
 
-import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+} from 'react';
 
 import type { SheetViewportMmDraft } from './sheetViewportAuthoring';
 import {
@@ -204,7 +210,9 @@ function SheetCanvasWithSheet(props: {
         const label = typeof vp.label === 'string' ? vp.label : 'Viewport';
         const meta = readViewportPresentationMeta(vp);
         return {
-          key: n.viewportId || String(vp.viewportId ?? vp.viewport_id ?? `${box.xMm}_${box.yMm}_${index}`),
+          key:
+            n.viewportId ||
+            String(vp.viewportId ?? vp.viewport_id ?? `${box.xMm}_${box.yMm}_${index}`),
           xMm: box.xMm,
           yMm: box.yMm,
           widthMm: box.widthMm,
@@ -389,13 +397,11 @@ function SheetCanvasWithSheet(props: {
             const isDetailCallout = viewportRole === 'detail_callout';
             const primary = isDetailCallout
               ? buildPlaceholderDetailTitle(detailNumber, resolved, detailReason)
-              : resolved ?? label;
+              : (resolved ?? label);
             const sub = viewRef.trim() ? viewRef : '';
             const parsedRef = parseSheetViewRef(viewRef);
             const secId =
-              modelId && parsedRef?.kind === 'section' && parsedRef.refId
-                ? parsedRef.refId
-                : '';
+              modelId && parsedRef?.kind === 'section' && parsedRef.refId ? parsedRef.refId : '';
 
             const secInnerW = Math.max(200, widthMm - 320);
             const secInnerH = Math.max(200, heightMm - 2700);
@@ -430,8 +436,7 @@ function SheetCanvasWithSheet(props: {
             const scaleTrim = scale.trim();
             const canDragResize = authoring && !viewportLocked;
             const vpStroke = isDetailCallout ? '#7c3aed' : '#475569';
-            const vpDash =
-              isDetailCallout || isScheduleVp ? '480 240' : undefined;
+            const vpDash = isDetailCallout || isScheduleVp ? '480 240' : undefined;
 
             return (
               <g key={row.key}>
@@ -479,12 +484,7 @@ function SheetCanvasWithSheet(props: {
                   </svg>
                 ) : null}
                 {isDetailCallout ? (
-                  <text
-                    x={xMm + 200}
-                    y={yMm + 520}
-                    fill="#7c3aed"
-                    style={{ fontSize: '320px' }}
-                  >
+                  <text x={xMm + 200} y={yMm + 520} fill="#7c3aed" style={{ fontSize: '320px' }}>
                     detail callout
                   </text>
                 ) : null}

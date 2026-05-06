@@ -55,7 +55,10 @@ export function parseAgentBriefCommandProtocolV1(raw: unknown): AgentBriefComman
   for (const v of Object.values(hist)) {
     if (typeof v !== 'number') return null;
   }
-  if (!Array.isArray(raw.validationRuleIds) || !raw.validationRuleIds.every((x) => typeof x === 'string'))
+  if (
+    !Array.isArray(raw.validationRuleIds) ||
+    !raw.validationRuleIds.every((x) => typeof x === 'string')
+  )
     return null;
   if (
     !Array.isArray(raw.validationTargetElementIds) ||
@@ -101,7 +104,11 @@ export function formatAgentBriefCommandProtocolReadout(
 
   const miss = protocol.missingAssumptionReferences
     .slice()
-    .sort((a, b) => a.deviationId.localeCompare(b.deviationId) || a.relatedAssumptionId.localeCompare(b.relatedAssumptionId))
+    .sort(
+      (a, b) =>
+        a.deviationId.localeCompare(b.deviationId) ||
+        a.relatedAssumptionId.localeCompare(b.relatedAssumptionId),
+    )
     .map((m) => `  missingRef ${m.deviationId} -> ${m.relatedAssumptionId}`);
 
   return [
@@ -110,7 +117,9 @@ export function formatAgentBriefCommandProtocolReadout(
     `brief: ${protocol.sourceBrief.briefKind ?? '—'} / ${protocol.sourceBrief.briefId ?? '—'} / ${protocol.sourceBrief.briefTitle ?? '—'}`,
     `assumptionIds: ${protocol.assumptionIds.join(', ') || '—'}`,
     `deviationIds: ${protocol.deviationIds.join(', ') || '—'}`,
-    ...(miss.length ? ['missingAssumptionReferences:', ...miss] : ['missingAssumptionReferences: —']),
+    ...(miss.length
+      ? ['missingAssumptionReferences:', ...miss]
+      : ['missingAssumptionReferences: —']),
     `proposedCommandCount: ${protocol.proposedCommandCount}`,
     ...(histLines.length ? ['commandTypeHistogram:', ...histLines] : ['commandTypeHistogram: —']),
     `validationRuleIds: ${protocol.validationRuleIds.join(', ') || '—'}`,

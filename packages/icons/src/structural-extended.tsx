@@ -20,10 +20,7 @@ export const FoundationSlabIcon = bimIcon(
 );
 
 // ── Slab edge: slab section with thickened/dropped edge beam ─────────────────
-export const SlabEdgeIcon = bimIcon(
-  'SlabEdgeIcon',
-  <path d="M2 12H22V16H2z M2 16H6V20H2z" />,
-);
+export const SlabEdgeIcon = bimIcon('SlabEdgeIcon', <path d="M2 12H22V16H2z M2 16H6V20H2z" />);
 
 // ── Area reinforcement: rebar mesh over a surface area ───────────────────────
 export const AreaReinforcementIcon = bimIcon(
@@ -53,10 +50,7 @@ export const ShearStudIcon = bimIcon(
 );
 
 // ── Anchor: J-bolt or cast-in anchor embedded in concrete ────────────────────
-export const AnchorIcon = bimIcon(
-  'AnchorIcon',
-  <path d="M12 3V16 M8 16H16 M8 20H16 M8 16V20" />,
-);
+export const AnchorIcon = bimIcon('AnchorIcon', <path d="M12 3V16 M8 16H16 M8 20H16 M8 16V20" />);
 
 // ── Bolt: structural bolt with head and threaded shaft ───────────────────────
 export const BoltIcon = bimIcon(
@@ -68,10 +62,7 @@ export const BoltIcon = bimIcon(
 );
 
 // ── Weld: weld joint symbol — reference line with V-groove fillet above ───────
-export const WeldIcon = bimIcon(
-  'WeldIcon',
-  <path d="M2 16H22 M3 16L6 20 M8 16L12 8L16 16" />,
-);
+export const WeldIcon = bimIcon('WeldIcon', <path d="M2 16H22 M3 16L6 20 M8 16L12 8L16 16" />);
 
 // ── Analytical node: structural analysis point with member connections ─────────
 export const AnalyticalNodeIcon = bimIcon(
