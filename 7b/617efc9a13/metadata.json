@@ -3,7 +3,7 @@
   "checkpoint_id": "7b617efc9a13",
   "strategy": "manual-commit",
   "branch": "feat/wp-ui-b02-snap-grammar",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     "prompt-ui.md",
     "prompt.md"
@@ -14,13 +14,19 @@
       "transcript": "/7b/617efc9a13/0/full.jsonl",
       "content_hash": "/7b/617efc9a13/0/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/7b/617efc9a13/1/metadata.json",
+      "transcript": "/7b/617efc9a13/1/full.jsonl",
+      "content_hash": "/7b/617efc9a13/1/content_hash.txt",
+      "prompt": "/7b/617efc9a13/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 0,
-    "cache_creation_tokens": 0,
-    "cache_read_tokens": 0,
-    "output_tokens": 0,
-    "api_call_count": 0
+    "input_tokens": 61,
+    "cache_creation_tokens": 78994,
+    "cache_read_tokens": 3096745,
+    "output_tokens": 36030,
+    "api_call_count": 55
   }
 }

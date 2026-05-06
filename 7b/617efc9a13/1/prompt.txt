@@ -1,0 +1,5 @@
+we have several branches other than main that must still be merged, or if already merged must be deleted. can you check that and merge / delete them?
+
+---
+
+please merge those you mention, if they are SUPPOSED to be merged. the candidates to delete you can remove. keep the local branches for now
