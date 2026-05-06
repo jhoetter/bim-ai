@@ -1,0 +1,13 @@
+❯ read HANDOVER.md, then OPEN_TASKS.md. describe to me, what is the goal?
+
+---
+
+focus on part 3. commit and push once you are done. other ai agents are wokring on the branch, dont be surprised. just focus on your task
+
+---
+
+i generally need a much better 3d cube for the rotation/navigation etc; i.e. i want to be able to drag/rotate it directly, not just click on the areas. please build that
+
+---
+
+can i still click on the areas like "top" or "north" etc to go to them directly? i.e. both rotation and clicking works?

@@ -1,0 +1,64 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "d84c1762d767",
+  "session_id": "eaff5b5e-f446-4c42-a7dc-3d181e3155a3",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-06T07:30:11.333367Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "app/bim_ai/constraints.py",
+    "app/bim_ai/wall_join_evidence.py"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "e5bbf24a2db1",
+  "checkpoint_transcript_start": 284,
+  "transcript_lines_at_start": 284,
+  "token_usage": {
+    "input_tokens": 3,
+    "cache_creation_tokens": 446,
+    "cache_read_tokens": 136704,
+    "output_tokens": 771,
+    "api_call_count": 1
+  },
+  "session_metrics": {
+    "turn_count": 4
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-06T07:30:11.320327Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 139,
+    "total_committed": 0,
+    "total_lines_changed": 139,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 784,
+      "user_lines_removed": 311,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        ".env.example": 1,
+        ".superset/config.json": 8,
+        "Makefile": 3,
+        "app/bim_ai/constraints.py": 14,
+        "app/bim_ai/wall_join_evidence.py": 169,
+        "app/scripts/seed.py": 327,
+        "packages/web/src/design-systems/conservative.css": 15,
+        "prompt-ui.md": 247
+      },
+      "user_removed_per_file": {
+        "Makefile": 2,
+        "app/bim_ai/wall_join_evidence.py": 139,
+        "app/scripts/seed.py": 170
+      }
+    }
+  ]
+}
