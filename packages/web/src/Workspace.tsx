@@ -918,7 +918,16 @@ export function Workspace() {
       <div className="border-b border-border bg-surface/70 px-4 py-3">
         <div className="mx-auto flex max-w-[1400px] flex-wrap justify-between gap-3">
           <div>
-            <div className="text-[11px] uppercase text-muted">BIM AI v2</div>
+            <div className="flex items-center gap-2 text-[11px] uppercase text-muted">
+              <span>BIM AI v2 · legacy</span>
+              <a
+                href="/"
+                className="rounded border border-border px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-foreground hover:bg-surface"
+                data-testid="legacy-back-to-redesigned"
+              >
+                ← redesigned
+              </a>
+            </div>
 
             <div className="text-lg font-semibold">Floor plan + 3D</div>
 
