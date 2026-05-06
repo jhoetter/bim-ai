@@ -1,0 +1,5 @@
+if you look into recent git history, are all updates correctly documented in our trackers?
+
+---
+
+if you look closely into our trackers and analyze our work - where are we? is everything of the old design now available also in the redesign? i don't think so yet, e.g. i don't see if there are collisions and so on. please deeply analyze that part as well. i want an overview where we are
