@@ -3,7 +3,7 @@
   "checkpoint_id": "a9f7fc03bea4",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 6,
+  "checkpoints_count": 7,
   "files_touched": [
     "packages/core/src/index.ts",
     "packages/web/src/Viewport.tsx"
@@ -26,13 +26,19 @@
       "transcript": "/a9/f7fc03bea4/2/full.jsonl",
       "content_hash": "/a9/f7fc03bea4/2/content_hash.txt",
       "prompt": "/a9/f7fc03bea4/2/prompt.txt"
+    },
+    {
+      "metadata": "/a9/f7fc03bea4/3/metadata.json",
+      "transcript": "/a9/f7fc03bea4/3/full.jsonl",
+      "content_hash": "/a9/f7fc03bea4/3/content_hash.txt",
+      "prompt": "/a9/f7fc03bea4/3/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 396,
-    "cache_creation_tokens": 566906,
-    "cache_read_tokens": 31266293,
-    "output_tokens": 397701,
-    "api_call_count": 338
+    "input_tokens": 478,
+    "cache_creation_tokens": 647910,
+    "cache_read_tokens": 39452569,
+    "output_tokens": 420856,
+    "api_call_count": 416
   }
 }
