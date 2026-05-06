@@ -1,0 +1,23 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "d2841e3c45e6",
+  "strategy": "manual-commit",
+  "branch": "gap-r6-flat-roof",
+  "checkpoints_count": 1,
+  "files_touched": null,
+  "sessions": [
+    {
+      "metadata": "/d2/841e3c45e6/0/metadata.json",
+      "transcript": "/d2/841e3c45e6/0/full.jsonl",
+      "content_hash": "/d2/841e3c45e6/0/content_hash.txt",
+      "prompt": "/d2/841e3c45e6/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 424,
+    "cache_creation_tokens": 589402,
+    "cache_read_tokens": 31654964,
+    "output_tokens": 291625,
+    "api_call_count": 354
+  }
+}
