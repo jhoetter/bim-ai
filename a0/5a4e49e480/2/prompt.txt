@@ -1,0 +1,114 @@
+T2 — GW-02: Roof height sampler
+
+  You are implementing GW-02 in a BIM web app (monorepo at /Users/jhoetter/repos/bim-ai).
+
+  ## Goal
+  Create a new file `packages/web/src/viewport/roofHeightSampler.ts` that exports a single
+  function `roofHeightAtPoint(roof, elementsById, xMm, zMm): number`.
+
+  ## Context — how roof geometry is currently computed (read these files)
+  - `packages/web/src/Viewport.tsx` lines 362–401 (`_buildGableGeometry`)
+  - `packages/web/src/Viewport.tsx` lines 404–470 (`_buildHipGeometry`)
+  - `packages/web/src/Viewport.tsx` lines 600–665 (`makeRoofMassMesh`)
+  - `packages/core/src/index.ts` lines 283–294 (the `roof` element type)
+
+  ## Key formulas extracted from `_buildGableGeometry` and `makeRoofMassMesh`
+
+  eaveY comes from:
+    const refElev = elevationMForLevel(roof.referenceLevelId, elementsById);   // in metres
+    const wallsAtRefLevel = Object.values(elementsById).filter(
+      e => e.kind === 'wall' && e.levelId === roof.referenceLevelId
+    );
+    const wallTopM = wallsAtRefLevel.length > 0
+      ? Math.max(...wallsAtRefLevel.map(w => (w.heightMm ?? 0) / 1000))
+      : 0;
+    const eaveY = refElev + wallTopM;                                           // metres
+
+  Slope:
+    const slopeRad = (clamp(roof.slopeDeg ?? 25, 5, 70) * Math.PI) / 180;
+
+  AABB in metres (from the footprintMm AABB — ignore overhang for height sampling):
+    const b = xzBoundsMm(roof.footprintMm);
+    ox0 = b.minX / 1000;  ox1 = b.maxX / 1000;
+    oz0 = b.minZ / 1000;  oz1 = b.maxZ / 1000;
+
+  Ridge axis (same logic as makeRoofMassMesh):
+    if (roof.ridgeAxis === 'x') ridgeAlongX = true;
+    else if (roof.ridgeAxis === 'z') ridgeAlongX = false;
+    else ridgeAlongX = (ox1-ox0) >= (oz1-oz0);
+
+  ## Gable height at a point (x, z) both in metres
+    if (ridgeAlongX):
+      halfSpan = (oz1 - oz0) / 2
+      ridgeY = eaveY + halfSpan * tan(slopeRad)
+      height = eaveY + max(0, halfSpan - |z - (oz0+oz1)/2|) * tan(slopeRad)
+    else:
+      halfSpan = (ox1 - ox0) / 2
+      ridgeY = eaveY + halfSpan * tan(slopeRad)
+      height = eaveY + max(0, halfSpan - |x - (ox0+ox1)/2|) * tan(slopeRad)
+
+  ## Hip height at a point (x, z) both in metres
+    if (ridgeAlongX):
+      halfSpanZ = (oz1 - oz0) / 2
+      ridgeY = eaveY + halfSpanZ * tan(slopeRad)
+      dz = halfSpanZ - |z - (oz0+oz1)/2|
+      rx0 = ox0 + halfSpanZ;  rx1 = ox1 - halfSpanZ
+      if (rx0 >= rx1):   // pyramid — use min of both spans
+        dx = (ox1 - ox0) / 2 - |x - (ox0+ox1)/2|
+        height = eaveY + max(0, min(dz, dx)) * tan(slopeRad)
+      else:              // full hip
+        dx = (x < rx0) ? (x - ox0) : (x > rx1) ? (ox1 - x) : halfSpanZ
+        height = eaveY + max(0, min(dz, dx)) * tan(slopeRad)
+    else: (symmetric — swap x/z roles)
+
+  ## mass_box
+    height = eaveY  (flat — just return eaveY)
+
+  ## What to import
+  `elevationMForLevel` is exported from `packages/web/src/Viewport.tsx`.
+  Check if it IS exported; if not, just re-implement it inline:
+    function elevationMForLevel(levelId, elementsById):
+      const lv = elementsById[levelId];
+      return lv?.kind === 'level' ? (lv.elevationMm ?? 0) / 1000 : 0;
+
+  Import `Element` and `XY` from `@bim-ai/core`.
+  Import `THREE` only if you need MathUtils.clamp — if not, use `Math.min/max` instead so
+  the file stays free of Three.js imports.
+
+  ## Function signature
+  ```ts
+  import type { Element } from '@bim-ai/core';
+
+  export function roofHeightAtPoint(
+    roof: Extract<Element, { kind: 'roof' }>,
+    elementsById: Record<string, Element>,
+    xMm: number,   // plan-space X in millimetres
+    zMm: number,   // plan-space Y (which maps to Three.js Z) in millimetres
+  ): number        // world-space Y in metres
+
+  Note: plan-space yMm maps to Three.js z. So xMm → x metres, zMm → z metres.
+
+  Also write a unit-test file
+
+  packages/web/src/viewport/roofHeightSampler.test.ts
+
+  Test cases (all with slopeDeg=45 so tan=1, refLevel at elevation 0, wall height 3000 mm):
+
+  1. Gable ridgeAlongX=true, footprint 0–8000 mm × 0–6000 mm
+    - at plan center (4000, 3000): expects 3 + 3 = 6.0 m (eaveY=3, halfSpan=3)
+    - at plan (4000, 0): expects 3.0 m (at eave)
+    - at plan (4000, 1500): expects 3 + 1.5 = 4.5 m
+  2. mass_box: any point returns eaveY
+
+  Verification
+
+    pnpm --filter @bim-ai/web test -- --run roofHeightSampler
+    pnpm --filter @bim-ai/web typecheck
+
+  Both must pass with 0 failures.
+
+  Branch & commit
+
+  Branch: gw-02-roof-height-sampler
+  Commit message: "feat(viewport): roof height sampler for sloped wall geometry"
+  Push to origin.
