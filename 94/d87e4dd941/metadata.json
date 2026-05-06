@@ -3,7 +3,7 @@
   "checkpoint_id": "94d87e4dd941",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     "packages/web/src/viewport/glassMaterial.test.ts",
     "packages/web/src/viewport/meshBuilders.ts"
@@ -20,13 +20,19 @@
       "transcript": "/94/d87e4dd941/1/full.jsonl",
       "content_hash": "/94/d87e4dd941/1/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/94/d87e4dd941/2/metadata.json",
+      "transcript": "/94/d87e4dd941/2/full.jsonl",
+      "content_hash": "/94/d87e4dd941/2/content_hash.txt",
+      "prompt": "/94/d87e4dd941/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 5,
-    "cache_creation_tokens": 4824,
-    "cache_read_tokens": 1397155,
-    "output_tokens": 3592,
-    "api_call_count": 5
+    "input_tokens": 272,
+    "cache_creation_tokens": 302441,
+    "cache_read_tokens": 35682403,
+    "output_tokens": 126446,
+    "api_call_count": 212
   }
 }

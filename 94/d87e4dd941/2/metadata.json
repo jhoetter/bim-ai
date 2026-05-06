@@ -1,0 +1,52 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "94d87e4dd941",
+  "session_id": "bb3cf0bb-f384-4179-9af8-a917a5f6df45",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-06T22:11:24.346768Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "0c52a6daff68",
+  "token_usage": {
+    "input_tokens": 267,
+    "cache_creation_tokens": 297617,
+    "cache_read_tokens": 34285248,
+    "output_tokens": 122854,
+    "api_call_count": 207
+  },
+  "session_metrics": {
+    "turn_count": 11
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 20,
+      "user_lines_removed": 2340,
+      "agent_lines_added": 139,
+      "agent_lines_removed": 276,
+      "user_added_per_file": {
+        ".githooks/commit-msg": 4,
+        ".githooks/post-commit": 4,
+        ".githooks/post-rewrite": 4,
+        ".githooks/pre-push": 5,
+        ".githooks/prepare-commit-msg": 3
+      },
+      "user_removed_per_file": {
+        "spec/agent-evidence-loop.md": 27,
+        "spec/element-rendering-requirements.md": 176,
+        "spec/fixtures/cli-one-family-home.md": 29,
+        "spec/foundations/analysis.md": 77,
+        "spec/house-generation-protocol.md": 57,
+        "spec/ifc-export-wp-x03-slice.md": 122,
+        "spec/openbim-compatibility.md": 18,
+        "spec/prd/cli-agent-home-design-gaps.md": 96,
+        "spec/rendering-v2-spec.md": 1684,
+        "spec/revit-parity-decisions.md": 14,
+        "spec/ui/interactions.md": 40
+      }
+    }
+  ]
+}
