@@ -1,0 +1,1 @@
+plase implement @spec/prompts/wave-04/WP-V2-10-params.md
