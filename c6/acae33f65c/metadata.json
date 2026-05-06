@@ -8,7 +8,9 @@
     "app/bim_ai/commands.py",
     "app/bim_ai/elements.py",
     "app/bim_ai/engine.py",
-    "packages/core/src/index.ts"
+    "app/scripts/seed.py",
+    "packages/core/src/index.ts",
+    "packages/web/src/Viewport.tsx"
   ],
   "sessions": [
     {
@@ -28,13 +30,19 @@
       "transcript": "/c6/acae33f65c/2/full.jsonl",
       "content_hash": "/c6/acae33f65c/2/content_hash.txt",
       "prompt": "/c6/acae33f65c/2/prompt.txt"
+    },
+    {
+      "metadata": "/c6/acae33f65c/3/metadata.json",
+      "transcript": "/c6/acae33f65c/3/full.jsonl",
+      "content_hash": "/c6/acae33f65c/3/content_hash.txt",
+      "prompt": "/c6/acae33f65c/3/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 102,
-    "cache_creation_tokens": 66174,
-    "cache_read_tokens": 2192169,
-    "output_tokens": 15620,
-    "api_call_count": 40
+    "input_tokens": 4178,
+    "cache_creation_tokens": 126003,
+    "cache_read_tokens": 2672739,
+    "output_tokens": 30067,
+    "api_call_count": 50
   }
 }
