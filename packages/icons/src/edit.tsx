@@ -50,10 +50,16 @@ export const TrimExtendIcon = bimIcon(
   <path d="M2 12H22 M8 4V12 M16 4V12V20 M14 18L16 20L18 18" />,
 );
 
-// ── Void: element outline with a cross-hatched cutout indicating removed solid ─
+// ── Void: solid bounding box with dashed X — subtractive/cut geometry ─────────
+// Dashed lines signal "material is removed here". Previously identical to
+// OpeningIcon (solid outer+inner rect+X). The dashes make the subtraction
+// intent clear and distinguish it from all other rect+X icons.
 export const VoidIcon = bimIcon(
   'VoidIcon',
-  <path d="M4 4H20V20H4z M8 8H16V16H8z M8 8L16 16 M16 8L8 16" />,
+  <>
+    <path d="M4 4H20V20H4z" />
+    <path d="M8 8L16 16 M16 8L8 16" strokeDasharray="2 1.5" />
+  </>,
 );
 
 // ── Pin: drawing pin locking an element's position ───────────────────────────
