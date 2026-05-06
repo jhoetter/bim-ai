@@ -26,8 +26,8 @@ A workpackage is `done` when all of: (a) TypeScript typechecks clean (`pnpm exec
 | Wave 0                                     | Meta / Bootstrap — tracker, docs                   | `done`      |
 | Wave 1                                     | Interaction Foundation + Plan Canvas               | `done`      |
 | Wave 2                                     | View System + Wall Depth + Openings                | `done`      |
-| [Wave 3](#wave-3--element-depth)           | Element Depth (Structural, Curtain Wall, Ceilings) | **CURRENT** |
-| [Wave 4](#wave-4--data-layer)              | Data Layer (Rooms V2, Parameters, Schedules)       | `open`      |
+| [Wave 3](#wave-3--element-depth)           | Element Depth (Structural, Curtain Wall, Ceilings) | `done`      |
+| [Wave 4](#wave-4--data-layer)              | Data Layer (Rooms V2, Parameters, Schedules)       | **CURRENT** |
 | [Wave 5](#wave-5--families--collaboration) | Families + Collaboration                           | `open`      |
 | [Wave 6](#wave-6--coordination--export)    | Coordination + Export                              | `open`      |
 
@@ -64,11 +64,11 @@ Batch B (after A merged):
 
 **Goal:** Rooms V2, Shared Parameters, schedule depth (sorting/grouping/totals, Color Fill Legend).
 
-**Prompt files:** `spec/prompts/wave-04/` — create when Wave 3 is fully merged.
+**Prompt files:** `spec/prompts/wave-04/`
 
 | WP       | Title                                                                                                   | State  |
 | -------- | ------------------------------------------------------------------------------------------------------- | ------ |
-| WP-V2-09 | Room + Area V2 (Room Bounding, Color Fill, separation lines, deletion via schedule)                     | `open` |
+| WP-V2-09 | Room + Area V2 (Room Bounding, Color Fill, separation lines, deletion via schedule)                     | `done` |
 | WP-V2-10 | Parameters + Shared Parameters (Shared Params file, Project Params, Calculate Totals, Sorting/Grouping) | `open` |
 
 ### WP-V2-09 — Room + Area V2
