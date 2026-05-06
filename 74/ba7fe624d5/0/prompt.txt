@@ -1,0 +1,108 @@
+### T5 — GW-05: Wall inspector authoring
+
+  You are implementing GW-05 in a BIM web app (monorepo at /Users/jhoetter/repos/bim-ai).
+  Start by pulling main: git checkout main && git pull origin main
+
+  Goal
+
+  The wall inspector (Properties tab) should let users:
+  1. Pick a roof to attach the wall top to (roofAttachmentId select)
+  2. Toggle curtain wall mode (isCurtainWall checkbox)
+
+  Both edits dispatch updateElementProperty via the existing onPropertyChange callback.
+
+  Files to edit
+
+  A. packages/web/src/workspace/InspectorContent.tsx
+
+  Replace the case 'wall': block of InspectorPropertiesFor (around line 50–60) with a
+  new component. The current block renders static <FieldRow> labels; replace with an
+  interactive form.
+
+  First, update the InspectorPropertiesFor function signature to accept extra props.
+  Currently it is:
+    export function InspectorPropertiesFor(el: Element, t: TFunction): JSX.Element
+
+  Change it to:
+    export function InspectorPropertiesFor(
+      el: Element,
+      t: TFunction,
+      options?: {
+        elementsById?: Record<string, Element>;
+        onPropertyChange?: (property: string, value: unknown) => void;
+      },
+    ): JSX.Element
+
+  For the case 'wall': branch, render:
+
+  case 'wall': {
+    const { elementsById = {}, onPropertyChange } = options ?? {};
+    const roofs = Object.values(elementsById).filter((e): e is Extract<Element, {kind:'roof'}> => e.kind === 'roof');
+    return (
+      <div className="flex flex-col gap-2">
+        <FieldRow label={f('thickness')} value={fmtMm(el.thicknessMm)} />
+        <FieldRow label={f('height')}    value={fmtMm(el.heightMm)} />
+        <FieldRow label={f('level')}     value={el.levelId} mono />
+
+        {/* Roof attachment */}
+        <div className="flex items-center gap-2 py-0.5">
+          <span className="text-xs text-muted w-28 shrink-0">{f('roofAttachment')}</span>
+          <select
+            className="flex-1 text-xs bg-surface border border-border rounded px-1 py-0.5"
+            value={el.roofAttachmentId ?? ''}
+            onChange={e2 => onPropertyChange?.('roofAttachmentId', e2.target.value || null)}
+          >
+            <option value="">— None —</option>
+            {roofs.map(r => (
+              <option key={r.id} value={r.id}>{r.name ?? r.id}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Curtain wall toggle */}
+        <div className="flex items-center gap-2 py-0.5">
+          <span className="text-xs text-muted w-28 shrink-0">{f('curtainWall')}</span>
+          <input
+            type="checkbox"
+            checked={el.isCurtainWall ?? false}
+            onChange={e2 => onPropertyChange?.('isCurtainWall', e2.target.checked)}
+            className="accent-primary"
+          />
+        </div>
+      </div>
+    );
+  }
+
+  B. Add i18n keys
+
+  In packages/web/src/i18n.ts, inside both en.inspector.fields and de.inspector.fields objects, add:
+    roofAttachment: 'Roof Attachment',   // DE: 'Dachanschluss'
+    curtainWall: 'Curtain Wall',         // DE: 'Vorhangfassade'
+
+  C. packages/web/src/workspace/RedesignedWorkspace.tsx
+
+  Find where InspectorPropertiesFor is called (search for InspectorPropertiesFor().
+  It currently passes just selectedEl and t. Update every call site to also pass the
+  options object:
+    InspectorPropertiesFor(selectedEl, t, {
+      elementsById,
+      onPropertyChange: (property, value) =>
+        dispatch({ kind: 'updateElementProperty', elementId: selectedEl.id, property, value }),
+    })
+
+  (The dispatch function and elementsById are already available in scope in
+  RedesignedWorkspace; check the exact variable names by reading the file around the
+  existing InspectorPropertiesFor call.)
+
+  Verification
+
+    pnpm --filter @bim-ai/web typecheck
+    pnpm --filter @bim-ai/web test -- --run
+
+  Both must pass.
+
+  Branch & commit
+
+  Branch: gw-05-wall-inspector
+  Commit message: "feat(inspector): roof attachment + curtain wall toggle for walls"
+  Push to origin.

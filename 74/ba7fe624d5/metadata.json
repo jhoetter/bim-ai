@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "74ba7fe624d5",
+  "strategy": "manual-commit",
+  "branch": "gw-04-curtain-wall-renderer",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/i18n.ts",
+    "packages/web/src/workspace/InspectorContent.tsx",
+    "packages/web/src/workspace/RedesignedWorkspace.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/74/ba7fe624d5/0/metadata.json",
+      "transcript": "/74/ba7fe624d5/0/full.jsonl",
+      "content_hash": "/74/ba7fe624d5/0/content_hash.txt",
+      "prompt": "/74/ba7fe624d5/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 15,
+    "cache_creation_tokens": 48679,
+    "cache_read_tokens": 581269,
+    "output_tokens": 3743,
+    "api_call_count": 13
+  }
+}
