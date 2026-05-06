@@ -1509,7 +1509,9 @@ export const useBimStore = create<StoreState>((set, get) => {
 
     activatePlanView: (planViewElementId) => {
       if (!planViewElementId) {
-        set({ activePlanViewId: undefined });
+        // VIE-04: leaving the plan view also drops any temporary visibility
+        // override (matches Revit's "switching view clears it" behaviour).
+        set({ activePlanViewId: undefined, temporaryVisibility: null });
         return;
       }
       const el = get().elementsById[planViewElementId];
@@ -1522,16 +1524,25 @@ export const useBimStore = create<StoreState>((set, get) => {
       } catch {
         /* noop */
       }
+      const prior = get().temporaryVisibility;
+      // VIE-04: keep the override only when re-entering the same view.
+      const nextTemp = prior && prior.viewId === planViewElementId ? prior : null;
       set({
         activePlanViewId: planViewElementId,
         activeViewpointId: undefined,
         activeLevelId: el.levelId,
         planPresentationPreset: normalized,
         viewerMode: 'plan_canvas',
+        temporaryVisibility: nextTemp,
       });
     },
 
-    setActiveViewpointId: (viewpointElementId) => set({ activeViewpointId: viewpointElementId }),
+    setActiveViewpointId: (viewpointElementId) => {
+      const prior = get().temporaryVisibility;
+      // VIE-04: same logic for orbit_3d viewpoints.
+      const nextTemp = prior && prior.viewId === viewpointElementId ? prior : null;
+      set({ activeViewpointId: viewpointElementId, temporaryVisibility: nextTemp });
+    },
 
     setViewerClipElevMm: (viewerClipElevMm) => set({ viewerClipElevMm }),
 
@@ -1650,5 +1661,11 @@ export const useBimStore = create<StoreState>((set, get) => {
       const updated = prevFilters.filter((f) => f.id !== filterId);
       set({ elementsById: { ...elementsById, [planViewId]: { ...pv, viewFilters: updated } } });
     },
+
+    // VIE-04 — temporary isolate / hide category. Lives in client memory only;
+    // never round-trips through the engine, never persisted in snapshots.
+    temporaryVisibility: null,
+    setTemporaryVisibility: (next) => set({ temporaryVisibility: next }),
+    clearTemporaryVisibility: () => set({ temporaryVisibility: null }),
   };
 });

@@ -232,7 +232,35 @@ export function PlanCanvas({
     typeof extractPlanTagStyleHints
   > | null>(null);
 
-  const elementsById = useBimStore((s) => s.elementsById);
+  const elementsByIdRaw = useBimStore((s) => s.elementsById);
+  const temporaryVisibility = useBimStore((s) => s.temporaryVisibility);
+  // VIE-04: drop elements that the active temporary-visibility override hides
+  // before any downstream projection or hit-test sees them. View definitions
+  // (plan_view, view_template, viewpoint, …) are never gated.
+  const elementsById = useMemo(() => {
+    if (temporaryVisibility === null) return elementsByIdRaw;
+    const VIEW_DEF_KINDS = new Set<string>([
+      'plan_view',
+      'view_template',
+      'viewpoint',
+      'sheet',
+      'schedule',
+      'level',
+      'project_settings',
+      'callout',
+    ]);
+    const next: Record<string, Element> = {};
+    for (const [id, el] of Object.entries(elementsByIdRaw)) {
+      if (VIEW_DEF_KINDS.has(el.kind)) {
+        next[id] = el;
+        continue;
+      }
+      const inSet = temporaryVisibility.categories.includes(el.kind);
+      const visible = temporaryVisibility.mode === 'isolate' ? inSet : !inSet;
+      if (visible) next[id] = el;
+    }
+    return next;
+  }, [elementsByIdRaw, temporaryVisibility]);
   const selectedId = useBimStore((s) => s.selectedId);
   const modelId = useBimStore((s) => s.modelId);
   const revision = useBimStore((s) => s.revision);

@@ -218,6 +218,39 @@ export type StoreState = {
   updateViewFilter: (planViewId: string, filterId: string, patch: Partial<ViewFilter>) => void;
   removeViewFilter: (planViewId: string, filterId: string) => void;
 
+  /**
+   * VIE-04: client-only temporary visibility override scoped to one view.
+   * `mode: 'isolate'` shows only the listed categories; `mode: 'hide'` hides
+   * them. Cleared on view change or explicit reset; never persisted.
+   */
+  temporaryVisibility: TemporaryVisibility | null;
+  setTemporaryVisibility: (next: TemporaryVisibility | null) => void;
+  clearTemporaryVisibility: () => void;
+
   setActivity: (e: ActivityEvent[]) => void;
   setIdentity: (userId: string, display: string, peerId: string) => void;
 };
+
+export type TemporaryVisibilityMode = 'isolate' | 'hide';
+
+export type TemporaryVisibility = {
+  /** plan_view, viewpoint, or other view scope this override is bound to. */
+  viewId: string;
+  mode: TemporaryVisibilityMode;
+  /** Element kinds (`wall`, `door`, …) covered by the override. */
+  categories: string[];
+};
+
+/**
+ * VIE-04: returns true when an element of `kind` should be drawn under the
+ * given temporary-visibility override. Pass `null` when there's no override
+ * active — the helper short-circuits to "visible".
+ */
+export function isElementVisibleUnderTemporaryVisibility(
+  kind: string,
+  override: TemporaryVisibility | null,
+): boolean {
+  if (override === null) return true;
+  const inSet = override.categories.includes(kind);
+  return override.mode === 'isolate' ? inSet : !inSet;
+}
