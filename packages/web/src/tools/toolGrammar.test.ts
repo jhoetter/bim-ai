@@ -16,11 +16,13 @@ import {
   initialSplitState,
   initialTrimState,
   initialWallChainState,
+  initialWallJoinState,
   RAILING_DEFAULTS,
   reduceAlign,
   reduceSplit,
   reduceTrim,
   reduceWallChain,
+  reduceWallJoin,
   setDimensionKind,
   STAIR_RISER_MM_DEFAULT,
   TAG_FAMILIES,
@@ -369,5 +371,97 @@ describe('Trim reducer', () => {
     const result = reduceTrim(state, { kind: 'cancel' });
     expect(result.state.phase).toBe('pick-reference');
     expect(result.state.referenceId).toBeNull();
+  });
+});
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* WallJoin reducer                                                         */
+/* ────────────────────────────────────────────────────────────────────── */
+
+describe('WallJoin reducer', () => {
+  it('starts in idle phase', () => {
+    const state = initialWallJoinState();
+    expect(state.phase).toBe('idle');
+    expect(state.wallIds).toHaveLength(0);
+    expect(state.joinVariant).toBe('miter');
+  });
+
+  it('transitions to selected on click-corner', () => {
+    let state = initialWallJoinState();
+    state = reduceWallJoin(state, { kind: 'activate' }).state;
+    const corner = { xMm: 1000, yMm: 2000 };
+    const { state: next, effect } = reduceWallJoin(state, {
+      kind: 'click-corner',
+      cornerMm: corner,
+      wallIds: ['w1', 'w2'],
+    });
+    expect(next.phase).toBe('selected');
+    expect(next.cornerMm).toEqual(corner);
+    expect(next.wallIds).toEqual(['w1', 'w2']);
+    expect(next.joinVariant).toBe('miter');
+    expect(effect.stillActive).toBe(true);
+    expect(effect.commitJoin).toBeUndefined();
+  });
+
+  it('cycles miter → butt → square → miter on cycle events', () => {
+    let state = initialWallJoinState();
+    state = reduceWallJoin(state, {
+      kind: 'click-corner',
+      cornerMm: { xMm: 0, yMm: 0 },
+      wallIds: ['w1'],
+    }).state;
+    expect(state.joinVariant).toBe('miter');
+    state = reduceWallJoin(state, { kind: 'cycle' }).state;
+    expect(state.joinVariant).toBe('butt');
+    state = reduceWallJoin(state, { kind: 'cycle' }).state;
+    expect(state.joinVariant).toBe('square');
+    state = reduceWallJoin(state, { kind: 'cycle' }).state;
+    expect(state.joinVariant).toBe('miter');
+  });
+
+  it('emits commitJoin on accept and returns to idle', () => {
+    let state = initialWallJoinState();
+    state = reduceWallJoin(state, {
+      kind: 'click-corner',
+      cornerMm: { xMm: 0, yMm: 0 },
+      wallIds: ['w1', 'w2'],
+    }).state;
+    state = reduceWallJoin(state, { kind: 'cycle' }).state; // butt
+    const { state: next, effect } = reduceWallJoin(state, { kind: 'accept' });
+    expect(effect.commitJoin).toEqual({ wallIds: ['w1', 'w2'], variant: 'butt' });
+    expect(effect.stillActive).toBe(true);
+    expect(next.phase).toBe('idle');
+  });
+
+  it('returns to idle on cancel, stillActive stays true', () => {
+    let state = initialWallJoinState();
+    state = reduceWallJoin(state, {
+      kind: 'click-corner',
+      cornerMm: { xMm: 0, yMm: 0 },
+      wallIds: ['w1'],
+    }).state;
+    const { state: next, effect } = reduceWallJoin(state, { kind: 'cancel' });
+    expect(next.phase).toBe('idle');
+    expect(effect.stillActive).toBe(true);
+    expect(effect.commitJoin).toBeUndefined();
+  });
+
+  it('deactivate returns to idle with stillActive false', () => {
+    let state = initialWallJoinState();
+    state = reduceWallJoin(state, {
+      kind: 'click-corner',
+      cornerMm: { xMm: 0, yMm: 0 },
+      wallIds: ['w1'],
+    }).state;
+    const { state: next, effect } = reduceWallJoin(state, { kind: 'deactivate' });
+    expect(next.phase).toBe('idle');
+    expect(effect.stillActive).toBe(false);
+  });
+
+  it('cycle is a no-op while in idle phase', () => {
+    const state = initialWallJoinState();
+    const { state: next } = reduceWallJoin(state, { kind: 'cycle' });
+    expect(next.phase).toBe('idle');
+    expect(next.joinVariant).toBe('miter');
   });
 });

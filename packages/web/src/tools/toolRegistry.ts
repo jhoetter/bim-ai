@@ -35,10 +35,11 @@ export type ToolId =
   | 'tag'
   | 'align'
   | 'split'
-  | 'trim';
+  | 'trim'
+  | 'wall-join';
 
 /** Modify-group tool IDs — used by ToolPalette to insert a separator. */
-export const MODIFY_TOOL_IDS = new Set<ToolId>(['align', 'split', 'trim']);
+export const MODIFY_TOOL_IDS = new Set<ToolId>(['align', 'split', 'trim', 'wall-join']);
 
 export type WorkspaceMode = 'plan' | '3d' | 'plan-3d' | 'section' | 'sheet' | 'schedule' | 'agent';
 
@@ -176,6 +177,14 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       modes: ['plan'],
       tooltip: t('tools.trim.tooltip'),
     },
+    'wall-join': {
+      id: 'wall-join',
+      label: t('tools.wallJoin.label'),
+      icon: 'wall-join',
+      hotkey: 'WJ',
+      modes: ['plan'],
+      tooltip: t('tools.wallJoin.tooltip'),
+    },
   };
 }
 
@@ -195,6 +204,7 @@ const PALETTE_ORDER: ToolId[] = [
   'align',
   'split',
   'trim',
+  'wall-join',
 ];
 
 export function paletteForMode(mode: WorkspaceMode, t: TFunction): ToolDefinition[] {

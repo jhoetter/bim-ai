@@ -6,6 +6,9 @@
  * tools so the canvas can switch on `kind` and dispatch input.
  */
 
+export type { WallLocationLine } from '@bim-ai/core';
+import type { WallLocationLine } from '@bim-ai/core';
+
 export type ToolGrammarKind =
   | 'wall'
   | 'door'
@@ -20,15 +23,8 @@ export type ToolGrammarKind =
   | 'tag'
   | 'align'
   | 'split'
-  | 'trim';
-
-export type WallLocationLine =
-  | 'wall-centerline'
-  | 'finish-face-exterior'
-  | 'finish-face-interior'
-  | 'core-centerline'
-  | 'core-face-exterior'
-  | 'core-face-interior';
+  | 'trim'
+  | 'wall-join';
 
 export const WALL_LOCATION_LINE_ORDER: WallLocationLine[] = [
   'wall-centerline',
@@ -583,4 +579,74 @@ export function reduceTrim(
       stillActive: true,
     },
   };
+}
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* Wall Join — §16 Modify                                                   */
+/* ────────────────────────────────────────────────────────────────────── */
+
+export type WallJoinVariant = 'miter' | 'butt' | 'square';
+
+const WALL_JOIN_VARIANTS: WallJoinVariant[] = ['miter', 'butt', 'square'];
+
+export interface WallJoinState {
+  phase: 'idle' | 'selected';
+  cornerMm: { xMm: number; yMm: number } | null;
+  wallIds: string[];
+  joinVariant: WallJoinVariant;
+}
+
+export type WallJoinEvent =
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'click-corner'; cornerMm: { xMm: number; yMm: number }; wallIds: string[] }
+  | { kind: 'cycle' }
+  | { kind: 'accept' }
+  | { kind: 'cancel' };
+
+export interface WallJoinEffect {
+  commitJoin?: { wallIds: string[]; variant: WallJoinVariant };
+  stillActive: boolean;
+}
+
+export function initialWallJoinState(): WallJoinState {
+  return { phase: 'idle', cornerMm: null, wallIds: [], joinVariant: 'miter' };
+}
+
+export function reduceWallJoin(
+  state: WallJoinState,
+  event: WallJoinEvent,
+): { state: WallJoinState; effect: WallJoinEffect } {
+  if (event.kind === 'activate') {
+    return { state: initialWallJoinState(), effect: { stillActive: true } };
+  }
+  if (event.kind === 'deactivate') {
+    return { state: initialWallJoinState(), effect: { stillActive: false } };
+  }
+  if (event.kind === 'cancel') {
+    return { state: initialWallJoinState(), effect: { stillActive: true } };
+  }
+  if (event.kind === 'click-corner') {
+    return {
+      state: {
+        phase: 'selected',
+        cornerMm: event.cornerMm,
+        wallIds: event.wallIds,
+        joinVariant: 'miter',
+      },
+      effect: { stillActive: true },
+    };
+  }
+  if (event.kind === 'cycle' && state.phase === 'selected') {
+    const idx = WALL_JOIN_VARIANTS.indexOf(state.joinVariant);
+    const next = WALL_JOIN_VARIANTS[(idx + 1) % WALL_JOIN_VARIANTS.length]!;
+    return { state: { ...state, joinVariant: next }, effect: { stillActive: true } };
+  }
+  if (event.kind === 'accept' && state.phase === 'selected') {
+    return {
+      state: initialWallJoinState(),
+      effect: { commitJoin: { wallIds: state.wallIds, variant: state.joinVariant }, stillActive: true },
+    };
+  }
+  return { state, effect: { stillActive: true } };
 }

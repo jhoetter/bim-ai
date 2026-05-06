@@ -37,7 +37,8 @@ export type PlanTool =
   | 'dimension'
   | 'align'
   | 'split'
-  | 'trim';
+  | 'trim'
+  | 'wall-join';
 
 export type PresencePeers = Record<
   string,
@@ -71,6 +72,26 @@ export type ActivityEvent = {
   createdAt: string;
   commandTypes: string[];
 };
+
+export type CategoryOverride = {
+  projection?: {
+    lineWeightFactor?: number;
+    lineColor?: string | null;
+    linePattern?: string | null;
+    fillColor?: string | null;
+    halftone?: boolean;
+  };
+  cut?: {
+    lineWeightFactor?: number;
+    lineColor?: string | null;
+    linePattern?: string | null;
+    fillColor?: string | null;
+    halftone?: boolean;
+  };
+  visible?: boolean;
+};
+
+export type CategoryOverrides = Record<string, CategoryOverride>;
 
 export type StoreState = {
   modelId?: string;
@@ -159,6 +180,15 @@ export type StoreState = {
     target: { xMm: number; yMm: number; zMm: number };
     up: { xMm: number; yMm: number; zMm: number };
   }) => void;
+
+  vvDialogOpen: boolean;
+  openVVDialog: () => void;
+  closeVVDialog: () => void;
+  setCategoryOverride: (
+    planViewId: string,
+    categoryKey: string,
+    override: CategoryOverride,
+  ) => void;
 
   setActivity: (e: ActivityEvent[]) => void;
   setIdentity: (userId: string, display: string, peerId: string) => void;

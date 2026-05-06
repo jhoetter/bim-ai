@@ -109,6 +109,7 @@ export const Icons: Record<string, LucideLikeIcon> = {
   align: AlignCenterHorizontal,
   split: Scissors,
   trim: GitMerge,
+  'wall-join': GitMerge,
 
   // Drawing tools — all now BIM-native from @bim-ai/icons
   wall: WallIcon,
@@ -199,6 +200,7 @@ export const IconLabels: Record<keyof typeof Icons, string> = {
   align: 'Align',
   split: 'Split element',
   trim: 'Trim / Extend',
+  'wall-join': 'Wall Join',
   wall: 'Wall',
   door: 'Door',
   window: 'Window',

@@ -72,10 +72,12 @@ export default defineConfig(({ mode }) => {
       environment: 'jsdom',
       coverage: {
         provider: 'v8',
+        reporter: ['text', 'json-summary'],
+        reportsDirectory: '/tmp/bim-ai-coverage',
         thresholds: {
-          lines: 50,
-          functions: 70,
-          branches: 70,
+          lines: 53,
+          functions: 71,
+          branches: 71,
         },
       },
     },

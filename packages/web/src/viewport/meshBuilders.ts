@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { CsgRequest, CsgResponse } from './csgWorker';
-import type { Element } from '@bim-ai/core';
+import type { Element, WallLocationLine } from '@bim-ai/core';
 import { buildDoorGeometry } from '../families/geometryFns/doorGeometry';
 import { buildWindowGeometry } from '../families/geometryFns/windowGeometry';
 import { getFamilyById, getTypeById } from '../families/familyCatalog';
@@ -10,6 +10,19 @@ import { categoryColorOr, addEdges, readToken } from './sceneHelpers';
 import { roofHeightAtPoint } from './roofHeightSampler';
 
 export type WallElem = Extract<Element, { kind: 'wall' }>;
+
+function locationLineOffsetFrac(loc: WallLocationLine): number {
+  switch (loc) {
+    case 'finish-face-exterior':
+    case 'core-face-exterior':
+      return 0.5;
+    case 'finish-face-interior':
+    case 'core-face-interior':
+      return -0.5;
+    default:
+      return 0;
+  }
+}
 
 // CSG wall-opening cuts: enabled by default; set VITE_ENABLE_CSG=false to disable.
 export const CSG_ENABLED = import.meta.env.VITE_ENABLE_CSG !== 'false';
@@ -1096,8 +1109,24 @@ export function makeWallMesh(
   const dx = ex - sx;
   const dz = ez - sz;
   const len = Math.max(0.001, Math.hypot(dx, dz));
-  const height = THREE.MathUtils.clamp(wall.heightMm / 1000, 0.25, 40);
   const thick = THREE.MathUtils.clamp(wall.thicknessMm / 1000, 0.05, 2);
+
+  const baseOff = (wall.baseConstraintOffsetMm ?? 0) / 1000;
+  const yBase = elevM + baseOff;
+  let height: number;
+  if (wall.topConstraintLevelId && elementsById) {
+    const topLvl = elementsById[wall.topConstraintLevelId];
+    const topElevM = topLvl?.kind === 'level' ? topLvl.elevationMm / 1000 : elevM;
+    const topOff = (wall.topConstraintOffsetMm ?? 0) / 1000;
+    height = THREE.MathUtils.clamp(topElevM + topOff - yBase, 0.25, 40);
+  } else {
+    height = THREE.MathUtils.clamp(wall.heightMm / 1000, 0.25, 40);
+  }
+
+  const locFrac = locationLineOffsetFrac(wall.locationLine ?? 'wall-centerline');
+  const perpX = (-dz / len) * locFrac * thick;
+  const perpZ = (dx / len) * locFrac * thick;
+
   const isWhite = wall.materialKey === 'white_cladding' || wall.materialKey === 'white_render';
   const wallBaseColor = isWhite ? '#f4f4f0' : categoryColorOr(paint, 'wall');
   const mesh = new THREE.Mesh(
@@ -1109,7 +1138,7 @@ export function makeWallMesh(
       envMapIntensity: isWhite ? 0.08 : 1.0,
     }),
   );
-  mesh.position.set(sx + dx / 2, elevM + height / 2, sz + dz / 2);
+  mesh.position.set(sx + dx / 2 + perpX, yBase + height / 2, sz + dz / 2 + perpZ);
   mesh.rotation.y = Math.atan2(dz, dx);
   mesh.userData.bimPickId = wall.id;
   addEdges(mesh);
@@ -1119,7 +1148,7 @@ export function makeWallMesh(
 
   // Slab edge strip: thin horizontal band at the base of every elevated wall,
   // expressing the floor plate at the level transition (e.g. 1st→2nd floor).
-  if (elevM > 0.01) {
+  if (yBase > 0.01) {
     const edgeH = 0.12; // 120 mm deep band
     const edgeP = 0.03; // 30 mm projection proud of wall face
     const edgeMat = new THREE.MeshStandardMaterial({ color: '#c8c8c4', roughness: 0.6 });

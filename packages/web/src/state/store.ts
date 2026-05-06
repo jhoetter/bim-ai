@@ -29,6 +29,8 @@ export type {
   PresencePeers,
   UxComment,
   ActivityEvent,
+  CategoryOverride,
+  CategoryOverrides,
 } from './storeTypes';
 
 function coerceViolation(v: unknown): Violation {
@@ -212,6 +214,13 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
       insulationExtensionMm: Number(raw.insulationExtensionMm ?? raw.insulation_extension_mm ?? 0),
       ...(raw.isCurtainWall != null || raw.is_curtain_wall != null
         ? { isCurtainWall: Boolean(raw.isCurtainWall ?? raw.is_curtain_wall) }
+        : {}),
+      ...(raw.locationLine || raw.location_line
+        ? {
+            locationLine: String(
+              raw.locationLine ?? raw.location_line,
+            ) as import('@bim-ai/core').WallLocationLine,
+          }
         : {}),
     };
   }
@@ -738,6 +747,11 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
       typeof (raw.planRoomTagStyleId ?? raw.plan_room_tag_style_id) === 'string'
         ? String(raw.planRoomTagStyleId ?? raw.plan_room_tag_style_id).trim()
         : null;
+    const coRaw = raw.categoryOverrides ?? raw.category_overrides;
+    const categoryOverrides: Record<string, unknown> =
+      coRaw && typeof coRaw === 'object' && !Array.isArray(coRaw)
+        ? (coRaw as Record<string, unknown>)
+        : {};
     return {
       kind: 'plan_view',
       id,
@@ -764,6 +778,7 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
       ...(psr !== undefined ? { planShowRoomLabels: psr } : {}),
       ...(pot ? { planOpeningTagStyleId: pot } : {}),
       ...(prt ? { planRoomTagStyleId: prt } : {}),
+      categoryOverrides,
     };
   }
 
@@ -1438,5 +1453,26 @@ export const useBimStore = create<StoreState>((set, get) => {
 
         return { userId, userDisplayName: userDisplayName, peerId };
       }),
+
+    vvDialogOpen: false,
+
+    openVVDialog: () => set({ vvDialogOpen: true }),
+
+    closeVVDialog: () => set({ vvDialogOpen: false }),
+
+    setCategoryOverride: (planViewId, categoryKey, override) => {
+      const { elementsById } = get();
+      const pv = elementsById[planViewId];
+      if (!pv || pv.kind !== 'plan_view') return;
+      const prevOverrides =
+        (pv.categoryOverrides as import('./storeTypes').CategoryOverrides) ?? {};
+      const newOverrides = { ...prevOverrides, [categoryKey]: override };
+      set({
+        elementsById: {
+          ...elementsById,
+          [planViewId]: { ...pv, categoryOverrides: newOverrides },
+        },
+      });
+    },
   };
 });

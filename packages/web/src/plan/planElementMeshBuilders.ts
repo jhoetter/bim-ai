@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-import type { Element } from '@bim-ai/core';
+import type { Element, WallLocationLine } from '@bim-ai/core';
 
 import { deterministicSchemeColorHex } from './roomSchemeColor';
 import {
@@ -19,6 +19,19 @@ import {
 } from './symbology';
 import type { PlanPresentationPreset, BoundsXYmm, StairPlanWireDocOverlays } from './symbology';
 
+function planLocationLineOffsetFrac(loc: WallLocationLine): number {
+  switch (loc) {
+    case 'finish-face-exterior':
+    case 'core-face-exterior':
+      return 0.5;
+    case 'finish-face-interior':
+    case 'core-face-interior':
+      return -0.5;
+    default:
+      return 0;
+  }
+}
+
 export function planWallMesh(
   wall: Extract<Element, { kind: 'wall' }>,
   selectedId?: string,
@@ -33,6 +46,10 @@ export function planWallMesh(
   const angle = Math.atan2(nz, nx);
 
   const thick = THREE.MathUtils.clamp((wall.thicknessMm * lineWeightScale) / 1000, 0.02, 1.8);
+
+  const locFrac = planLocationLineOffsetFrac(wall.locationLine ?? 'wall-centerline');
+  const perpX = -nz * locFrac * thick;
+  const perpZ = nx * locFrac * thick;
 
   const geom = new THREE.BoxGeometry(len, PLAN_WALL_CENTER_SLICE_HEIGHT_M, thick);
 
@@ -49,7 +66,7 @@ export function planWallMesh(
 
   const mesh = new THREE.Mesh(geom, mat);
 
-  mesh.position.set(sx + (nx * len) / 2, PLAN_Y, sz + (nz * len) / 2);
+  mesh.position.set(sx + (nx * len) / 2 + perpX, PLAN_Y, sz + (nz * len) / 2 + perpZ);
 
   mesh.rotation.y = -angle;
 

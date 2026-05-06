@@ -14,6 +14,7 @@ import type { Element } from '@bim-ai/core';
 import { ICON_SIZE, Icons } from '@bim-ai/ui';
 
 import { Viewport } from '../Viewport';
+import { log } from '../logger';
 import { PlanCanvas, type PlanCameraHandle } from '../plan/PlanCanvas';
 import {
   applyCommand,
@@ -113,6 +114,7 @@ import {
   buildBrowserRenderingBudgetReadoutV1,
   formatBrowserRenderingBudgetLines,
 } from './browserRenderingBudgetReadout';
+import { VVDialog } from './VVDialog';
 
 /**
  * RedesignedWorkspace — composition route for the §11–§17 chrome.
@@ -180,7 +182,8 @@ type LegacyPlanTool =
   | 'dimension'
   | 'align'
   | 'split'
-  | 'trim';
+  | 'trim'
+  | 'wall-join';
 
 function toolIdToLegacy(tool: ToolId): LegacyPlanTool | null {
   if (KNOWN_PLAN_TOOLS.has(tool)) return tool as LegacyPlanTool;
@@ -227,6 +230,9 @@ export function RedesignedWorkspace(): JSX.Element {
   const violations = useBimStore((s) => s.violations);
   const activityEvents = useBimStore((s) => s.activityEvents);
   const setActivity = useBimStore((s) => s.setActivity);
+  const vvDialogOpen = useBimStore((s) => s.vvDialogOpen);
+  const openVVDialog = useBimStore((s) => s.openVVDialog);
+  const closeVVDialog = useBimStore((s) => s.closeVVDialog);
   const setOrthoSnapHold = useBimStore((s) => s.setOrthoSnapHold);
   const applyDelta = useBimStore((s) => s.applyDelta);
   const setPresencePeers = useBimStore((s) => s.setPresencePeers);
@@ -448,7 +454,7 @@ export function RedesignedWorkspace(): JSX.Element {
         setCollaborationConflictQueue(null);
       } catch (err) {
         if (err instanceof ApiHttpError && err.status === 409) {
-          console.error('[bim] 409 conflict detail:', err.detail);
+          log.error('conflict', '409 conflict detail:', err.detail);
           setCollaborationConflictQueue(buildCollaborationConflictQueueV1(err.detail));
         } else {
           setCollaborationConflictQueue(null);
@@ -491,7 +497,7 @@ export function RedesignedWorkspace(): JSX.Element {
             }));
             setActivity(evs);
           })
-          .catch((err) => console.error('[loadSnapshot] fetchActivity failed', err));
+          .catch((err) => log.error('loadSnapshot', 'fetchActivity failed', err));
         setCollaborationConflictQueue(null);
       } catch (err) {
         if (err instanceof ApiHttpError && err.status === 409) {
@@ -570,12 +576,12 @@ export function RedesignedWorkspace(): JSX.Element {
           }));
           setActivity(evs);
         })
-        .catch((err) => console.error('[insertSeedHouse] fetchActivity failed', err));
+        .catch((err) => log.error('insertSeedHouse', 'fetchActivity failed', err));
       fetchComments(mid)
         .then((c) => {
           setComments(mapComments((c.comments ?? []) as Record<string, unknown>[]));
         })
-        .catch((err) => console.error('[insertSeedHouse] fetchComments failed', err));
+        .catch((err) => log.error('insertSeedHouse', 'fetchComments failed', err));
       // Open WebSocket for real-time collaboration
       const disableWs =
         typeof import.meta.env.VITE_E2E_DISABLE_WS === 'string' &&
@@ -620,7 +626,7 @@ export function RedesignedWorkspace(): JSX.Element {
       .then((ids) => {
         if (ids.length) setCodePresetIds(ids);
       })
-      .catch((err) => console.error('[bootstrap] fetchBuildingPresets failed', err));
+      .catch((err) => log.error('bootstrap', 'fetchBuildingPresets failed', err));
   }, []);
 
   useEffect(() => {
@@ -743,6 +749,14 @@ export function RedesignedWorkspace(): JSX.Element {
         void handleUndoRedo(event.shiftKey ? false : true);
         return;
       }
+      // V opens VV (Visibility/Graphics) dialog
+      if (event.key === 'v' || event.key === 'V') {
+        if (!event.metaKey && !event.ctrlKey && !event.altKey) {
+          event.preventDefault();
+          openVVDialog();
+          return;
+        }
+      }
       // Ortho snap hold on Shift
       if (event.shiftKey) setOrthoSnapHold(true);
       // Tool hotkeys — match the spec'd letters from TOOL_REGISTRY.
@@ -768,7 +782,7 @@ export function RedesignedWorkspace(): JSX.Element {
       document.removeEventListener('keydown', onKey);
       document.removeEventListener('keyup', onKeyUp);
     };
-  }, [handleModeChange, handleUndoRedo, setPlanTool, setOrthoSnapHold]);
+  }, [handleModeChange, handleUndoRedo, setPlanTool, setOrthoSnapHold, openVVDialog]);
 
   /* ── Project Browser sections ─────────────────────────────────────── */
   const browserSections = useMemo<LeftRailSection[]>(() => {
@@ -1126,6 +1140,7 @@ export function RedesignedWorkspace(): JSX.Element {
         onPick={handlePalettePick}
       />
       <OnboardingTour open={tourOpen} onClose={() => setTourOpen(false)} />
+      <VVDialog open={vvDialogOpen} onClose={closeVVDialog} />
       {commentsOpen ? (
         <div
           data-testid="comments-overlay"
