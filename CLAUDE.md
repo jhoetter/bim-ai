@@ -1,7 +1,7 @@
 # bim-ai — Claude Code instructions
 
-## Before every commit
+## Formatting
 
-Run `pnpm format` before committing. The pre-commit hook does this automatically for staged files, but running it explicitly avoids surprises.
+Prettier runs automatically after every Edit/Write via the Claude Code PostToolUse hook — no manual `pnpm format` needed.
 
-CI runs `pnpm verify` which starts with `pnpm format:check` — unformatted files will fail the build.
+The git pre-commit hook also re-formats staged files as a safety net. CI fails on `pnpm format:check`, so both layers must stay in place.

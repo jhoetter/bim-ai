@@ -19,10 +19,7 @@ import {
   tabToPresetCategory,
   type TabKey,
 } from './scheduleUtils';
-import {
-  type ScheduleAggregation,
-  getSchedulePresets,
-} from './scheduleDefinitionPresets';
+import { type ScheduleAggregation, getSchedulePresets } from './scheduleDefinitionPresets';
 
 type ServerScheduleData = {
   tab: TabKey;
@@ -437,16 +434,17 @@ export function ScheduleDefinitionToolbar({
         );
         if (uniqueFields.length === 0) return null;
 
-        const totalsRecord = (
-          (el.grouping as { calculateTotals?: Record<string, ScheduleAggregation | null> }) ?? {}
-        ).calculateTotals ?? {};
+        const totalsRecord =
+          ((el.grouping as { calculateTotals?: Record<string, ScheduleAggregation | null> }) ?? {})
+            .calculateTotals ?? {};
 
         return (
           <div className="mt-2">
             <div className="font-semibold text-foreground">Calculate Totals</div>
             <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
               {uniqueFields.map((fd) => {
-                const cur: ScheduleAggregation | null = totalsRecord[fd.fieldKey] ?? fd.aggregation ?? null;
+                const cur: ScheduleAggregation | null =
+                  totalsRecord[fd.fieldKey] ?? fd.aggregation ?? null;
                 return (
                   <label key={fd.fieldKey} className="flex items-center gap-1">
                     <span className="font-mono">{fd.fieldKey}</span>
