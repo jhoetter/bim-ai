@@ -669,7 +669,7 @@ export function RedesignedWorkspace(): JSX.Element {
   );
 
   /* ── Empty-state per §25 ──────────────────────────────────────────── */
-  const emptyHint = patternFor('canvas-empty');
+  const emptyHint = patternFor(seedLoading ? 'canvas-loading' : 'canvas-empty');
   const showEmptyState =
     (Object.values(elementsById) as Element[]).filter((e) => e.kind === 'wall').length === 0;
 
