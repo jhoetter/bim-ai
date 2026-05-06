@@ -124,6 +124,20 @@ export interface ResolveOptions {
 
 const DEFAULT_PBR = { roughness: 0.85, metalness: 0, aoIntensity: 0.4 } as const;
 
+const PER_CATEGORY_PBR: Record<ElementCategoryToken, { roughness: number; metalness: number }> = {
+  wall:    { roughness: 0.80, metalness: 0.00 },
+  floor:   { roughness: 0.90, metalness: 0.00 },
+  roof:    { roughness: 0.85, metalness: 0.00 },
+  door:    { roughness: 0.70, metalness: 0.00 },
+  window:  { roughness: 0.60, metalness: 0.05 },
+  stair:   { roughness: 0.85, metalness: 0.00 },
+  railing: { roughness: 0.35, metalness: 0.65 },
+  room:    { roughness: 0.85, metalness: 0.00 },
+  site:    { roughness: 0.95, metalness: 0.00 },
+  section: { roughness: 0.85, metalness: 0.00 },
+  sheet:   { roughness: 0.85, metalness: 0.00 },
+};
+
 /** Resolve a category material spec from the live tokens.
  *
  * Falls back to the documented light-theme colors when a token is
@@ -135,11 +149,18 @@ export function resolveCategoryMaterial(
   const reader = options.reader ?? liveTokenReader();
   const token = CATEGORY_TOKEN[category];
   const color = reader.read(token) ?? FALLBACK_CATEGORY_COLOR[category];
+
+  const rawR = reader.read(`--cat-${category}-roughness`);
+  const cssRoughness = rawR !== null && !Number.isNaN(parseFloat(rawR)) ? parseFloat(rawR) : null;
+
+  const rawM = reader.read(`--cat-${category}-metalness`);
+  const cssMetalness = rawM !== null && !Number.isNaN(parseFloat(rawM)) ? parseFloat(rawM) : null;
+
   return {
     category,
     color,
-    roughness: options.roughness ?? DEFAULT_PBR.roughness,
-    metalness: options.metalness ?? DEFAULT_PBR.metalness,
+    roughness: options.roughness ?? cssRoughness ?? PER_CATEGORY_PBR[category].roughness,
+    metalness: options.metalness ?? cssMetalness ?? PER_CATEGORY_PBR[category].metalness,
     aoIntensity: options.aoIntensity ?? DEFAULT_PBR.aoIntensity,
   };
 }
