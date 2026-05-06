@@ -3,7 +3,7 @@
   "checkpoint_id": "9422cebee554",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "app/scripts/seed.py"
   ],
@@ -13,13 +13,19 @@
       "transcript": "/94/22cebee554/0/full.jsonl",
       "content_hash": "/94/22cebee554/0/content_hash.txt",
       "prompt": "/94/22cebee554/0/prompt.txt"
+    },
+    {
+      "metadata": "/94/22cebee554/1/metadata.json",
+      "transcript": "/94/22cebee554/1/full.jsonl",
+      "content_hash": "/94/22cebee554/1/content_hash.txt",
+      "prompt": "/94/22cebee554/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 654,
-    "cache_creation_tokens": 64469,
-    "cache_read_tokens": 2004962,
-    "output_tokens": 19484,
-    "api_call_count": 44
+    "input_tokens": 736,
+    "cache_creation_tokens": 202390,
+    "cache_read_tokens": 9843014,
+    "output_tokens": 76798,
+    "api_call_count": 118
   }
 }
