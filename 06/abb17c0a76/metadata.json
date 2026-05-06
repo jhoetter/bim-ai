@@ -1,0 +1,45 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "06abb17c0a76",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/App.tsx",
+    "packages/web/src/CommandPalette.tsx",
+    "packages/web/src/cmd/CommandPalette.test.tsx",
+    "packages/web/src/cmd/CommandPalette.tsx",
+    "packages/web/src/cmd/RedesignedCommandPalette.test.tsx",
+    "packages/web/src/cmd/RedesignedCommandPalette.tsx",
+    "packages/web/src/schedules/SchedulePanel.tsx",
+    "packages/web/src/schedules/ScheduleRegistryTable.tsx",
+    "packages/web/src/schedules/scheduleTableRenderer.test.ts",
+    "packages/web/src/schedules/scheduleTableRenderer.ts",
+    "packages/web/src/schedules/scheduleTableRendererV1.test.ts",
+    "packages/web/src/schedules/scheduleTableRendererV1.ts",
+    "packages/web/src/workspace/ModeShells.tsx",
+    "packages/web/src/workspace/RedesignedWorkspace.semanticCommand.test.tsx",
+    "packages/web/src/workspace/RedesignedWorkspace.test.tsx",
+    "packages/web/src/workspace/RedesignedWorkspace.tsx",
+    "packages/web/src/workspace/SheetDocumentationManifest.tsx",
+    "packages/web/src/workspace/Workspace.semanticCommand.test.tsx",
+    "packages/web/src/workspace/Workspace.test.tsx",
+    "packages/web/src/workspace/Workspace.tsx",
+    "packages/web/src/workspace/sheetDocumentationManifest.test.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/06/abb17c0a76/0/metadata.json",
+      "transcript": "/06/abb17c0a76/0/full.jsonl",
+      "content_hash": "/06/abb17c0a76/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 17,
+    "cache_creation_tokens": 10309,
+    "cache_read_tokens": 1739851,
+    "output_tokens": 4046,
+    "api_call_count": 17
+  }
+}
