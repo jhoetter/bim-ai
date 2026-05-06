@@ -37,6 +37,7 @@ BIM AI's equivalent of the ribbon is the `ToolPalette.tsx` (floating top-center 
 The component reads the active tool from the Zustand store and renders a narrow bar (~32 px tall, `py-1 px-3 border-b border-[var(--color-border)] bg-[var(--color-surface)]`) with tool-specific controls. When no drawing tool is active, render `null` (zero height, not just invisible).
 
 **Wall tool** — show a Location Line row:
+
 - Label: "Location Line:" (small, muted text)
 - Segmented control or dropdown with all six options from `WALL_LOCATION_LINE_ORDER`:
   - `wall-centerline` → "Wall Centerline"
@@ -49,6 +50,7 @@ The component reads the active tool from the Zustand store and renders a narrow 
 - Add keyboard shortcut hint: "Tab to cycle" in a muted caption.
 
 **Floor tool** — show an Offset row:
+
 - Label: "Boundary Offset:" with a number input (mm, default 0). Store as `floorBoundaryOffsetMm` in the tool slice of the store (or a local state if simpler). The plan canvas reads this when committing a floor boundary.
 
 **Door / Window tools** — show nothing (return `null`; the tools work from a single click on a wall and don't need options bar controls at this point).
@@ -64,6 +66,7 @@ Suggested CSS grid change: add `auto` for the options-bar row. When `OptionsBar`
 ### 3. `store.ts` — add wallLocationLine field
 
 If `wallLocationLine` is not already in the store, add:
+
 ```ts
 wallLocationLine: WallLocationLine;   // default: 'wall-centerline'
 setWallLocationLine: (loc: WallLocationLine) => void;
@@ -78,6 +81,7 @@ Verify that `PlanCanvas.tsx` or the wall draw handler reads this field and passe
 ## Tests
 
 Create `packages/web/src/workspace/OptionsBar.test.tsx` with vitest + `@testing-library/react`:
+
 1. When `activeTool === 'select'`, renders nothing (null).
 2. When `activeTool === 'wall'`, renders a control containing "Wall Centerline".
 3. Clicking "Finish Face: Exterior" calls `setWallLocationLine('finish-face-exterior')`.

@@ -20,13 +20,13 @@ The plan canvas (`packages/web/src/plan/PlanCanvas.tsx`, ~830 lines) is a Three.
 
 ## Key file locations
 
-| Path | Role |
-|---|---|
-| `packages/web/src/plan/PlanCanvas.tsx` | Main file to modify |
-| `packages/web/src/plan/planCanvasState.ts` | `draftingPaintFor`, `SnapEngine`, `classifyPointerStart` — already defined, not yet wired |
-| `packages/web/src/plan/draftingStandards.ts` | `CATEGORY_LINE_RULES`, `lineWidthPxFor`, `hatchVisibleAt`, `HATCH_SPECS` |
-| `packages/web/src/plan/planCanvasState.test.ts` | Existing tests — do not break |
-| `packages/web/src/plan/snapEngine.test.ts` | Existing snap tests |
+| Path                                            | Role                                                                                      |
+| ----------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `packages/web/src/plan/PlanCanvas.tsx`          | Main file to modify                                                                       |
+| `packages/web/src/plan/planCanvasState.ts`      | `draftingPaintFor`, `SnapEngine`, `classifyPointerStart` — already defined, not yet wired |
+| `packages/web/src/plan/draftingStandards.ts`    | `CATEGORY_LINE_RULES`, `lineWidthPxFor`, `hatchVisibleAt`, `HATCH_SPECS`                  |
+| `packages/web/src/plan/planCanvasState.test.ts` | Existing tests — do not break                                                             |
+| `packages/web/src/plan/snapEngine.test.ts`      | Existing snap tests                                                                       |
 
 ---
 
@@ -35,6 +35,7 @@ The plan canvas (`packages/web/src/plan/PlanCanvas.tsx`, ~830 lines) is a Three.
 ### What to do
 
 1. **Compute `plotScale`** from the current camera state. `plotScale` is the ratio of world-space half-height (in mm) to a reference canvas half-height (500 mm = 50 cm = a comfortable A1 half-height). Concretely:
+
    ```ts
    // camRef.current.half is in world metres
    const worldHalfMm = camRef.current.half * 1000;
@@ -42,6 +43,7 @@ The plan canvas (`packages/web/src/plan/PlanCanvas.tsx`, ~830 lines) is a Three.
    ```
 
 2. **Call `draftingPaintFor(plotScale)`** inside the render/rebuild effect (the `useEffect` that calls `rebuildPlanMeshes`). Store the result in a ref so it's available to mesh builders without causing extra re-renders:
+
    ```ts
    const draftingRef = useRef<ReturnType<typeof draftingPaintFor> | null>(null);
    // inside the effect, before rebuildPlanMeshes:
@@ -59,6 +61,7 @@ The plan canvas (`packages/web/src/plan/PlanCanvas.tsx`, ~830 lines) is a Three.
 ### Test
 
 Add cases to `packages/web/src/plan/planCanvasState.test.ts` (or a new `PlanCanvas.render.test.tsx`) that:
+
 - `draftingPaintFor(20)` returns line widths ≥ those at `draftingPaintFor(200)` (heavier at closer zoom).
 - `draftingPaintFor(500).visibleHatches` is a subset of `draftingPaintFor(50).visibleHatches` (fewer hatches at small scale).
 
@@ -69,6 +72,7 @@ Add cases to `packages/web/src/plan/planCanvasState.test.ts` (or a new `PlanCanv
 ### What to do
 
 1. **Replace inline pointer classification** in `PlanCanvas.tsx`. Currently the pointer-down handler has inline `if (spaceDownRef.current || ev.button === 1)` logic to decide between pan, drag-move, and draw. Replace this with a call to `classifyPointerStart` from `planCanvasState.ts`:
+
    ```ts
    import { classifyPointerStart, SnapEngine } from './planCanvasState';
    // inside pointer-down handler:
@@ -81,12 +85,15 @@ Add cases to `packages/web/src/plan/planCanvasState.test.ts` (or a new `PlanCanv
      dragDirection: null, // filled later on pointer-up for marquee
    });
    ```
+
    Then switch on `intent` instead of the inline conditionals. Preserve all existing behaviour — the function already maps to the same intents the canvas currently handles.
 
 2. **Instantiate SnapEngine in a ref:**
+
    ```ts
    const snapEngineRef = useRef(new SnapEngine());
    ```
+
    The SnapEngine is stateful (which modes are on) but can be reset on tool change if needed.
 
 3. **Generate snap candidates** during pointer-move while a drawing tool is active. Walk `elementsById` to find wall endpoints and midpoints within screen-pixel radius 12 of the current cursor world position. This does not need to be exhaustive — 12 px at typical zoom ≈ a few hundred mm tolerance. Push candidates as `SnapCandidate[]` and resolve via `snapEngineRef.current.resolve(candidates)`.
@@ -96,6 +103,7 @@ Add cases to `packages/web/src/plan/planCanvasState.test.ts` (or a new `PlanCanv
 ### Test
 
 Add to `planCanvasState.test.ts`:
+
 - `classifyPointerStart({ button: 1 })` → `'pan'`
 - `classifyPointerStart({ button: 0, spacePressed: true })` → `'pan'`
 - `classifyPointerStart({ button: 0, activeTool: 'wall' })` → `'draw'`
@@ -110,11 +118,11 @@ Add to `planCanvasState.test.ts`:
 The wheel handler at `PlanCanvas.tsx:765` currently clamps `half` to `[minZoomRef.current, 420]`. Replace these constants with the spec bounds:
 
 ```ts
-const PLAN_SCALE_MIN = 5;    // 1:5 — very close zoom
+const PLAN_SCALE_MIN = 5; // 1:5 — very close zoom
 const PLAN_SCALE_MAX = 5000; // 1:5000 — very far zoom
 // half = plotScale * 500mm / 1000 (to metres)
-const HALF_MIN = (PLAN_SCALE_MIN * 500) / 1000;   // = 2.5 m
-const HALF_MAX = (PLAN_SCALE_MAX * 500) / 1000;   // = 2500 m
+const HALF_MIN = (PLAN_SCALE_MIN * 500) / 1000; // = 2.5 m
+const HALF_MAX = (PLAN_SCALE_MAX * 500) / 1000; // = 2500 m
 ```
 
 Replace both occurrences of `THREE.MathUtils.clamp(…, minZoomRef.current, 420)` with `THREE.MathUtils.clamp(…, HALF_MIN, HALF_MAX)`. Also update `handleFitToView` similarly.

@@ -15,17 +15,17 @@
 
 Each runs on its own branch. No shared file conflicts between them.
 
-| Prompt | Branch | What it touches |
-|---|---|---|
+| Prompt                     | Branch                       | What it touches                                  |
+| -------------------------- | ---------------------------- | ------------------------------------------------ |
 | `WP-V2-01a-options-bar.md` | `feat/wp-v2-01a-options-bar` | New `OptionsBar.tsx`, `AppShell.tsx`, `store.ts` |
-| `WP-V2-14-plan-canvas.md` | `feat/wp-v2-14-plan-canvas` | `PlanCanvas.tsx`, `planCanvasState.ts` |
+| `WP-V2-14-plan-canvas.md`  | `feat/wp-v2-14-plan-canvas`  | `PlanCanvas.tsx`, `planCanvasState.ts`           |
 
 When both Batch A branches pass CI, merge them both to main (resolve any conflicts — they touch mostly disjoint files). Commit + push after each merge.
 
 ### Batch B — start after Batch A is fully on main
 
-| Prompt | Branch | What it touches |
-|---|---|---|
+| Prompt                      | Branch                        | What it touches                                       |
+| --------------------------- | ----------------------------- | ----------------------------------------------------- |
 | `WP-V2-01b-modify-tools.md` | `feat/wp-v2-01b-modify-tools` | `toolRegistry.ts`, `toolGrammar.ts`, `PlanCanvas.tsx` |
 
 ## Git workflow for each agent

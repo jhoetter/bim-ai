@@ -170,6 +170,7 @@ const KNOWN_PLAN_TOOLS = new Set<ToolId>(['select', 'wall', 'door', 'window', 'r
 type LegacyPlanTool =
   | 'select'
   | 'wall'
+  | 'floor'
   | 'door'
   | 'window'
   | 'room'
@@ -486,7 +487,7 @@ export function RedesignedWorkspace(): JSX.Element {
             }));
             setActivity(evs);
           })
-          .catch(() => {});
+          .catch((err) => console.error('[loadSnapshot] fetchActivity failed', err));
         setCollaborationConflictQueue(null);
       } catch (err) {
         if (err instanceof ApiHttpError && err.status === 409) {
@@ -565,12 +566,12 @@ export function RedesignedWorkspace(): JSX.Element {
           }));
           setActivity(evs);
         })
-        .catch(() => {});
+        .catch((err) => console.error('[insertSeedHouse] fetchActivity failed', err));
       fetchComments(mid)
         .then((c) => {
           setComments(mapComments((c.comments ?? []) as Record<string, unknown>[]));
         })
-        .catch(() => {});
+        .catch((err) => console.error('[insertSeedHouse] fetchComments failed', err));
       // Open WebSocket for real-time collaboration
       const disableWs =
         typeof import.meta.env.VITE_E2E_DISABLE_WS === 'string' &&
@@ -615,7 +616,7 @@ export function RedesignedWorkspace(): JSX.Element {
       .then((ids) => {
         if (ids.length) setCodePresetIds(ids);
       })
-      .catch(() => {});
+      .catch((err) => console.error('[bootstrap] fetchBuildingPresets failed', err));
   }, []);
 
   useEffect(() => {

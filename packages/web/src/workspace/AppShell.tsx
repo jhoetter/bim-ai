@@ -8,6 +8,7 @@ import {
   useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
+import { OptionsBar } from './OptionsBar';
 
 /**
  * AppShell — the canonical layout grid for the BIM AI workspace.
@@ -103,10 +104,11 @@ export function AppShell({
 
   const style: CSSProperties = {
     display: 'grid',
-    gridTemplateRows: 'auto minmax(0, 1fr) var(--shell-statusbar-height)',
+    gridTemplateRows: 'auto auto minmax(0, 1fr) var(--shell-statusbar-height)',
     gridTemplateColumns: gridColumnsForState(leftCollapsed, rightCollapsed),
     gridTemplateAreas: `
       "topbar topbar topbar"
+      "optionsbar optionsbar optionsbar"
       "leftRail canvas rightRail"
       "statusbar statusbar statusbar"
     `,
@@ -129,6 +131,9 @@ export function AppShell({
         className="flex items-center border-b border-border bg-surface"
       >
         {topBar}
+      </div>
+      <div style={{ gridArea: 'optionsbar' }}>
+        <OptionsBar />
       </div>
       <aside
         aria-label={t('workspace.projectBrowser')}
