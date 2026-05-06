@@ -315,6 +315,9 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
       end: coerceXY(raw.end as Record<string, unknown>),
       thicknessMm: Number(raw.thicknessMm ?? raw.thickness_mm ?? 200),
       heightMm: Number(raw.heightMm ?? raw.height_mm ?? 2800),
+      ...(typeof raw.materialKey === 'string' || typeof raw.material_key === 'string'
+        ? { materialKey: String(raw.materialKey ?? raw.material_key) }
+        : {}),
       ...(raw.wallTypeId || raw.wall_type_id
         ? { wallTypeId: String(raw.wallTypeId ?? raw.wall_type_id) }
         : {}),

@@ -160,6 +160,7 @@ export type Element =
       end: XY;
       thicknessMm: number;
       heightMm: number;
+      materialKey?: string | null;
       wallTypeId?: string | null;
       baseConstraintLevelId?: string | null;
       topConstraintLevelId?: string | null;

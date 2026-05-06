@@ -1539,6 +1539,84 @@ extrusion in 3D. Total thickness matches the sum of layer thicknesses. Each
 layer has correct color and roughness from its `materialKey`. Plan view shows
 layer boundary lines.
 
+## Performance architecture (implemented 2026-05-06)
+
+### Problem
+
+The original Viewport had a single monolithic `useEffect` that **nuked the
+entire Three.js scene and rebuilt every mesh synchronously on every state
+change** — including every element add, every selection click, and every
+category toggle. This was O(N) geometry work per edit, blocking the main
+thread until complete.
+
+Additionally, `makeWallWithOpenings` (CSG boolean subtraction) ran synchronously
+on the main thread for every wall that hosted doors or windows, blocking the UI
+for hundreds of milliseconds on complex models.
+
+### Solution
+
+**Incremental scene manager** (`Viewport.tsx` — geometry `useEffect`):
+
+- `bimPickMapRef` (`Map<elementId, THREE.Object3D>`) serves as the persistent
+  mesh cache. Meshes survive across renders; only changed elements are touched.
+- On each `elementsById` change the effect **diffs** against `prevElementsByIdRef`
+  to compute `addedIds`, `removedIds`, and `changedIds`.
+- **Dependency propagation** ensures cascading invalidation:
+  - Wall changed → hosted doors + windows also dirty (positions depend on wall)
+  - Door/window added/changed/removed → host wall dirty (CSG opening changes)
+  - Level elevation changed → all elements at that level dirty
+  - Stair changed → hosted railings dirty
+- Old meshes in `toRemove` are disposed (geometry + materials) to avoid GPU
+  leaks. New meshes for `toRebuild` are built and inserted.
+- Result: **O(delta) per edit** instead of O(N).
+
+**Selection decoupled from geometry** (`[selectedId]` effect):
+
+- The `selectedId` is no longer in the geometry effect's dependency array.
+- Selection changes only update the OutlinePass object list — no mesh is
+  rebuilt. This makes click-to-select free from a geometry standpoint.
+
+**Category visibility** (`viewerCategoryHidden` in geometry effect):
+
+- `mesh.visible` is toggled via a reference-equality check against the previous
+  `catHidden` object. Only a sweep over cached meshes occurs — no geometry
+  rebuild.
+
+**Clipping planes** (separate `[viewerClipElevMm, viewerClipFloorElevMm,
+sectionBoxActive]` effect):
+
+- Clipping plane changes no longer trigger geometry reconstruction. The
+  dedicated effect applies `THREE.Plane` clipping to materials on all existing
+  meshes, and manages the section-box wireframe cage independently.
+
+**CSG Web Worker** (`src/viewport/csgWorker.ts`):
+
+- `three-bvh-csg` SUBTRACTION operations run in a dedicated `Worker` instead of
+  on the main thread.
+- The main thread sends a plain-number `CsgRequest` message (wall dims, cutter
+  params, world pose) and immediately inserts a solid `makeWallMesh` placeholder.
+- The worker transfers `Float32Array` / `Uint32Array` geometry buffers back via
+  `postMessage` with the `transfer` option (zero-copy). The main thread
+  reassembles the `BufferGeometry`, disposes the placeholder, and inserts the
+  CSG mesh.
+- **Nonce-based stale result discarding**: each wall tracks an active job nonce
+  in `pendingCsgRef`. If a wall is edited again before its CSG job returns, the
+  response is silently dropped.
+- Worker lifecycle is tied to the mount effect: created on mount, terminated
+  (and cache cleared) on unmount or theme change.
+
+### Effect dependency summary after refactor
+
+| Effect | Dependencies | Trigger |
+|---|---|---|
+| Mount (renderer + scene) | `[theme]` | Initial mount; theme switch |
+| Incremental geometry | `[elementsById, viewerCategoryHidden, theme]` | Element add/change/remove; category toggle |
+| Clipping + section box | `[viewerClipElevMm, viewerClipFloorElevMm, sectionBoxActive]` | Clip plane change; section box toggle |
+| Selection outline | `[selectedId]` | Click to select/deselect |
+| Orbit camera | `[orbitCameraNonce, orbitCameraPoseMm]` | Saved viewpoint applied |
+| Walk mode | `[walkActive]` | Walk mode toggle |
+| Section box sync | `[sectionBoxActive]` | Section box toggle |
+
 ---
 
 ### FL — Implementation notes

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { Brush, Evaluator, SUBTRACTION } from 'three-bvh-csg';
+import type { CsgRequest, CsgResponse } from './viewport/csgWorker';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
@@ -738,6 +738,34 @@ function makeStairVolumeMesh(
   return group;
 }
 
+function addCladdingBoards(
+  mesh: THREE.Mesh,
+  wallLenM: number,
+  wallHeightM: number,
+  wallThickM: number,
+  boardWidthMm = 120,
+  gapMm = 10,
+): void {
+  const pitchM        = (boardWidthMm + gapMm) / 1000;
+  const count         = Math.max(1, Math.floor(wallLenM / pitchM));
+  const boardProtrude = 0.012;           // 12 mm proud of wall face
+  const boardH        = wallHeightM - 0.05;
+  const boardD        = pitchM - 0.002;  // slight gap between boards
+  const color         = readToken('--cat-timber-cladding', '#8B6340');
+  const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.85, metalness: 0.0 });
+
+  for (let i = 0; i < count; i++) {
+    const board = new THREE.Mesh(new THREE.BoxGeometry(boardD, boardH, boardProtrude), mat);
+    board.position.set(
+      (i + 0.5) * pitchM - wallLenM / 2,
+      0,
+      wallThickM / 2 + boardProtrude / 2,
+    );
+    addEdges(board);
+    mesh.add(board);
+  }
+}
+
 function makeWallMesh(
   wall: WallElem,
   elevM: number,
@@ -764,90 +792,8 @@ function makeWallMesh(
   mesh.rotation.y = Math.atan2(dz, dx);
   mesh.userData.bimPickId = wall.id;
   addEdges(mesh);
+  if (wall.materialKey === 'timber_cladding') addCladdingBoards(mesh, len, height, thick);
   return mesh;
-}
-
-// R2-01: wall mesh with door/window openings CSG-subtracted.
-// Operates in wall-local space (wall brush at identity), then positions
-// the result mesh at the wall's world centre with the wall's yaw.
-function makeWallWithOpenings(
-  wall: WallElem,
-  elevM: number,
-  hostedDoors: DoorElem[],
-  hostedWindows: WindowElem[],
-  paint: ViewportPaintBundle | null,
-  evaluator: Evaluator,
-): THREE.Mesh {
-  const sx  = wall.start.xMm / 1000;
-  const sz  = wall.start.yMm / 1000;
-  const dx  = wall.end.xMm / 1000 - sx;
-  const dz  = wall.end.yMm / 1000 - sz;
-  const len = Math.max(0.001, Math.hypot(dx, dz));
-  const height = THREE.MathUtils.clamp(wall.heightMm / 1000, 0.25, 40);
-  const thick  = THREE.MathUtils.clamp(wall.thicknessMm / 1000, 0.05, 2);
-  const yaw    = Math.atan2(dz, dx);
-  const wcx    = sx + dx / 2;
-  const wcz    = sz + dz / 2;
-  const wcy    = elevM + height / 2;
-
-  const wallMat = new THREE.MeshStandardMaterial({
-    color: categoryColorOr(paint, 'wall'),
-    roughness: paint?.categories.wall.roughness ?? 0.85,
-    metalness: paint?.categories.wall.metalness ?? 0.0,
-  });
-
-  try {
-    // Wall brush at identity — geometry centred on (0,0,0) in wall-local space.
-    let wallBrush = new Brush(new THREE.BoxGeometry(len, height, thick), wallMat);
-    wallBrush.updateMatrixWorld();
-
-    for (const door of hostedDoors) {
-      // Cutter spans full door height from floor; add tolerance so the cut goes
-      // cleanly through the wall face (+0.04 wide, +0.01 tall, +0.1 deep).
-      const leafH  = THREE.MathUtils.clamp((wall.heightMm / 1000) * 0.86, 0.6, 2.5);
-      const cutW   = THREE.MathUtils.clamp(door.widthMm / 1000, 0.35, 4) + 0.04;
-      const cutH   = Math.min(leafH + 0.01, height - 0.01);
-      const cutD   = thick + 0.1;
-      // localX: (alongT=0.5) → 0; (alongT=0) → −len/2; (alongT=1) → +len/2
-      const localX = (door.alongT - 0.5) * len;
-      // localY: bottom of cutter sits on floor (world y=elevM = local y=−height/2)
-      const localY = cutH / 2 - height / 2;
-
-      const cutter = new Brush(new THREE.BoxGeometry(cutW, cutH, cutD));
-      cutter.position.set(localX, localY, 0);
-      cutter.updateMatrixWorld();
-      wallBrush = evaluator.evaluate(wallBrush, cutter, SUBTRACTION);
-      wallBrush.updateMatrixWorld();
-    }
-
-    for (const win of hostedWindows) {
-      const sill   = THREE.MathUtils.clamp(win.sillHeightMm / 1000, 0.06, wall.heightMm / 1000 - 0.08);
-      const outerH = THREE.MathUtils.clamp(win.heightMm / 1000, 0.05, wall.heightMm / 1000 - sill - 0.06);
-      const outerW = THREE.MathUtils.clamp(win.widthMm / 1000, 0.14, 4);
-      const cutW   = outerW + 0.04;
-      const cutH   = outerH + 0.02;
-      const cutD   = thick + 0.1;
-      const localX = (win.alongT - 0.5) * len;
-      // localY: sill is from floor (local −height/2), cutter centre = sill + cutH/2 − height/2
-      const localY = sill + cutH / 2 - height / 2;
-
-      const cutter = new Brush(new THREE.BoxGeometry(cutW, cutH, cutD));
-      cutter.position.set(localX, localY, 0);
-      cutter.updateMatrixWorld();
-      wallBrush = evaluator.evaluate(wallBrush, cutter, SUBTRACTION);
-      wallBrush.updateMatrixWorld();
-    }
-
-    const mesh = new THREE.Mesh(wallBrush.geometry, wallMat);
-    mesh.position.set(wcx, wcy, wcz);
-    mesh.rotation.y = yaw;
-    mesh.userData.bimPickId = wall.id;
-    addEdges(mesh);
-    return mesh;
-  } catch {
-    // CSG failed (e.g. degenerate geometry) — fall back to solid wall.
-    return makeWallMesh(wall, elevM, paint);
-  }
 }
 
 function makeDoorMesh(
@@ -1288,6 +1234,18 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
   const composerRef = useRef<EffectComposer | null>(null);
   const outlinePassRef = useRef<OutlinePass | null>(null);
   const bimPickMapRef = useRef<Map<string, THREE.Object3D>>(new Map());
+  /** Snapshot of elementsById from the previous render — used to diff for incremental updates. */
+  const prevElementsByIdRef = useRef<Record<string, Element>>({});
+  /** Current active clipping planes — applied to newly added meshes without re-traversing the whole scene. */
+  const clippingPlanesRef = useRef<THREE.Plane[]>([]);
+  /** Ref-copy of selectedId so the geometry effect can read it without adding it to deps. */
+  const selectedIdRef = useRef<string | undefined>(undefined);
+  const prevCatHiddenRef = useRef<Record<string, boolean>>({});
+  const csgWorkerRef     = useRef<Worker | null>(null);
+  /** Maps wallId → active CSG job nonce; responses with a mismatched nonce are stale and discarded. */
+  const pendingCsgRef    = useRef<Map<string, number>>(new Map());
+  const pendingCsgMetaRef = useRef<Map<string, { len: number; height: number; thick: number; materialKey?: string | null }>>(new Map());
+  const csgNonceRef      = useRef(0);
   const sunRef = useRef<THREE.DirectionalLight | null>(null);
   const envMapRef = useRef<THREE.Texture | null>(null);
   /** Live CameraRig instance — replaces the legacy ad-hoc spherical rig. */
@@ -1325,6 +1283,7 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
   walkLevelsRef.current = walkLevels;
 
   const selectedId = useBimStore((s) => s.selectedId);
+  selectedIdRef.current = selectedId;
 
   const viewerCategoryHidden = useBimStore((s) => s.viewerCategoryHidden);
 
@@ -1452,6 +1411,81 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
      * The mount effect re-applies clipping planes on every scene rebuild. */
     const sectionBox = new SectionBox({});
     sectionBoxRef.current = sectionBox;
+
+    // CSG Web Worker — wall-opening cuts run off the main thread.
+    const csgWorker = new Worker(new URL('./viewport/csgWorker.ts', import.meta.url), {
+      type: 'module',
+    });
+    csgWorkerRef.current = csgWorker;
+
+    csgWorker.onmessage = (evt: MessageEvent<CsgResponse>) => {
+      const data = evt.data;
+
+      // Discard stale results (wall was dirtied again before this job finished).
+      if (pendingCsgRef.current.get(data.jobId) !== data.nonce) return;
+      pendingCsgRef.current.delete(data.jobId);
+      const csgMeta = pendingCsgMetaRef.current.get(data.jobId);
+      pendingCsgMetaRef.current.delete(data.jobId);
+
+      const rootNow  = rootGroupRef.current;
+      const cacheNow = bimPickMapRef.current;
+      if (!rootNow) return;
+
+      // Remove the solid-wall placeholder that was shown while CSG ran.
+      const placeholder = cacheNow.get(data.jobId);
+      if (placeholder) {
+        rootNow.remove(placeholder);
+        placeholder.traverse((node) => {
+          const m = node as THREE.Mesh;
+          if (!m.isMesh) return;
+          m.geometry?.dispose();
+          if (Array.isArray(m.material)) {
+            m.material.forEach((mat: THREE.Material) => mat.dispose());
+          } else {
+            (m.material as THREE.Material)?.dispose();
+          }
+        });
+        cacheNow.delete(data.jobId);
+      }
+
+      if (!data.ok) return; // CSG failed; no mesh to insert, done.
+
+      // Reconstruct BufferGeometry from transferable arrays.
+      const geom = new THREE.BufferGeometry();
+      geom.setAttribute('position', new THREE.BufferAttribute(data.position, 3));
+      if (data.normal) geom.setAttribute('normal', new THREE.BufferAttribute(data.normal, 3));
+      if (data.uv)     geom.setAttribute('uv',     new THREE.BufferAttribute(data.uv, 2));
+      if (data.index)  geom.setIndex(new THREE.BufferAttribute(data.index, 1));
+
+      const paintNow = paintBundleRef.current;
+      const wallMat  = new THREE.MeshStandardMaterial({
+        color:     categoryColorOr(paintNow, 'wall'),
+        roughness: paintNow?.categories.wall.roughness ?? 0.85,
+        metalness: paintNow?.categories.wall.metalness ?? 0.0,
+      });
+
+      const mesh = new THREE.Mesh(geom, wallMat);
+      mesh.position.set(data.wcx, data.wcy, data.wcz);
+      mesh.rotation.y = data.yaw;
+      mesh.userData.bimPickId = data.jobId;
+      mesh.castShadow    = true;
+      mesh.receiveShadow = true;
+      addEdges(mesh);
+      if (csgMeta?.materialKey === 'timber_cladding')
+        addCladdingBoards(mesh, csgMeta.len, csgMeta.height, csgMeta.thick);
+      applyClippingPlanesToMeshes(mesh, clippingPlanesRef.current);
+
+      cacheNow.set(data.jobId, mesh);
+      rootNow.add(mesh);
+
+      // Keep outline pass in sync if this wall is the current selection.
+      const op = outlinePassRef.current;
+      if (op) {
+        const sid = selectedIdRef.current;
+        const sel = sid ? cacheNow.get(sid) : undefined;
+        op.selectedObjects = sel ? [sel] : [];
+      }
+    };
 
     /** Spec §15.3 camera rig replaces the legacy in-line spherical rig. */
     hasAutoFittedRef.current = false;
@@ -1785,6 +1819,15 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       envMapRef.current = null;
       renderer.dispose();
 
+      // Reset incremental scene state so the next mount starts fresh.
+      bimPickMapRef.current = new Map();
+      prevElementsByIdRef.current = {};
+      hasAutoFittedRef.current = false;
+      csgWorkerRef.current?.terminate();
+      csgWorkerRef.current = null;
+      pendingCsgRef.current.clear();
+      pendingCsgMetaRef.current.clear();
+
       host.removeChild(renderer.domElement);
     };
     // `theme` is included so the renderer rebuilds when the user toggles
@@ -1798,184 +1841,356 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
     orbitRigApiRef.current?.applyViewpointMm(orbitCameraPoseMm);
   }, [orbitCameraNonce, orbitCameraPoseMm]);
 
+  // ── Incremental geometry effect ──────────────────────────────────────────
+  // Diffs elementsById against the previous snapshot and surgically adds,
+  // updates, or removes only the Three.js meshes that actually changed.
+  // This turns O(N) full-rebuild into O(delta) per edit.
   useEffect(() => {
     const root = rootGroupRef.current;
-
     if (!root) return;
 
-    while (root.children.length) root.remove(root.children[0]!);
-
-    const clipElevMRaw = viewerClipElevMm;
-    const clipElevM =
-      clipElevMRaw != null && Number.isFinite(clipElevMRaw) && clipElevMRaw >= 0
-        ? clipElevMRaw / 1000
-        : null;
-
-    const clipFloorMRaw = viewerClipFloorElevMm;
-    const clipFloorM =
-      clipFloorMRaw != null && Number.isFinite(clipFloorMRaw) && clipFloorMRaw >= 0
-        ? clipFloorMRaw / 1000
-        : null;
-
-    const rnd = rendererRef.current;
-    const sectionBox = sectionBoxRef.current;
-    const sectionPlanes = sectionBox && sectionBoxActive ? sectionBox.clippingPlanes() : [];
-    if (rnd)
-      rnd.localClippingEnabled =
-        clipElevM != null || clipFloorM != null || sectionPlanes.length > 0;
-
-    const clippingPlanes: THREE.Plane[] = [];
-    for (const p of sectionPlanes) {
-      clippingPlanes.push(
-        new THREE.Plane(new THREE.Vector3(p.normal.x, p.normal.y, p.normal.z), p.constant),
-      );
-    }
-    /** Upper cap: same semantics as the original single plane — hide everything **above** Y=clipElevM. */
-    if (clipElevM != null) {
-      const plane = new THREE.Plane();
-      plane.setFromNormalAndCoplanarPoint(
-        new THREE.Vector3(0, -1, 0),
-        new THREE.Vector3(0, clipElevM, 0),
-      );
-      clippingPlanes.push(plane);
-    }
-    /** Lower floor: hide everything **below** Y=clipFloorM when set. */
-    if (clipFloorM != null) {
-      const planeLo = new THREE.Plane();
-      planeLo.setFromNormalAndCoplanarPoint(
-        new THREE.Vector3(0, 1, 0),
-        new THREE.Vector3(0, clipFloorM, 0),
-      );
-      clippingPlanes.push(planeLo);
-    }
-    const catHidden = viewerCategoryHidden;
-
-    const skipCat = (e: Element): boolean => {
-      const ck = elemViewerCategory(e);
-      return ck != null && Boolean(catHidden[ck]);
-    };
-
-    const walls = Object.values(elementsById).filter((e): e is WallElem => e.kind === 'wall');
-
-    const wallById = Object.fromEntries(walls.map((w) => [w.id, w]));
-
+    const curr  = elementsById;
+    const prev  = prevElementsByIdRef.current;
+    const cache = bimPickMapRef.current;
     const paint = paintBundleRef.current;
 
-    for (const f of Object.values(elementsById)) {
-      if (f.kind !== 'floor') continue;
-      if (skipCat(f)) continue;
+    // Single pass: bucket hosted elements and build reverse maps for dep propagation.
+    const doorsByWall     = new Map<string, DoorElem[]>();
+    const winsByWall      = new Map<string, WindowElem[]>();
+    const railingsByStair = new Map<string, string[]>();
+    const elemsByLevel    = new Map<string, string[]>();
 
-      root.add(makeFloorSlabMesh(f, elementsById, paint));
-    }
-
-    // R2-01: pre-group hosted doors + windows by wall so CSG can cut openings.
-    const doorsByWall = new Map<string, DoorElem[]>();
-    const winsByWall  = new Map<string, WindowElem[]>();
-    for (const e of Object.values(elementsById)) {
-      if (e.kind === 'door' && !skipCat(e)) {
+    for (const [id, e] of Object.entries(curr)) {
+      if (e.kind === 'door') {
         const d = e as DoorElem;
         const arr = doorsByWall.get(d.wallId) ?? [];
         arr.push(d);
         doorsByWall.set(d.wallId, arr);
-      } else if (e.kind === 'window' && !skipCat(e)) {
+      } else if (e.kind === 'window') {
         const w = e as WindowElem;
         const arr = winsByWall.get(w.wallId) ?? [];
         arr.push(w);
         winsByWall.set(w.wallId, arr);
       }
-    }
-
-    // One Evaluator instance reused across all wall CSG operations this build.
-    const csgEvaluator = CSG_ENABLED ? new Evaluator() : null;
-
-    for (const w of walls) {
-      if (skipCat(w)) continue;
-      const elev  = elevationMForLevel(w.levelId, elementsById);
-      const doors = doorsByWall.get(w.id) ?? [];
-      const wins  = winsByWall.get(w.id) ?? [];
-      if (csgEvaluator && (doors.length > 0 || wins.length > 0)) {
-        root.add(makeWallWithOpenings(w, elev, doors, wins, paint, csgEvaluator));
-      } else {
-        root.add(makeWallMesh(w, elev, paint));
+      if (e.kind === 'railing') {
+        const rl = e as Extract<Element, { kind: 'railing' }>;
+        if (rl.hostedStairId) {
+          const arr = railingsByStair.get(rl.hostedStairId) ?? [];
+          arr.push(id);
+          railingsByStair.set(rl.hostedStairId, arr);
+        }
+      }
+      if (e.kind === 'wall' || e.kind === 'room' || e.kind === 'floor') {
+        const lid = (e as { levelId: string }).levelId;
+        const arr = elemsByLevel.get(lid) ?? [];
+        arr.push(id);
+        elemsByLevel.set(lid, arr);
+      } else if (e.kind === 'roof' || e.kind === 'site') {
+        const lid = (e as { referenceLevelId: string }).referenceLevelId;
+        const arr = elemsByLevel.get(lid) ?? [];
+        arr.push(id);
+        elemsByLevel.set(lid, arr);
+      } else if (e.kind === 'stair') {
+        const s = e as Extract<Element, { kind: 'stair' }>;
+        for (const lid of [s.baseLevelId, s.topLevelId]) {
+          const arr = elemsByLevel.get(lid) ?? [];
+          arr.push(id);
+          elemsByLevel.set(lid, arr);
+        }
       }
     }
 
-    for (const e of Object.values(elementsById)) {
-      if (e.kind !== 'door') continue;
-      if (skipCat(e)) continue;
+    // Diff against previous snapshot.
+    const addedIds   = new Set<string>();
+    const removedIds = new Set<string>();
+    const changedIds = new Set<string>();
 
-      const hw = wallById[e.wallId];
-
-      if (!hw || skipCat(hw)) continue;
-
-      const elev = elevationMForLevel(hw.levelId, elementsById);
-
-      root.add(makeDoorMesh(e, hw, elev, paint));
+    for (const id of Object.keys(curr)) {
+      if (!(id in prev))              addedIds.add(id);
+      else if (prev[id] !== curr[id]) changedIds.add(id);
+    }
+    for (const id of Object.keys(prev)) {
+      if (!(id in curr)) removedIds.add(id);
     }
 
-    for (const e of Object.values(elementsById)) {
-      if (e.kind !== 'window') continue;
-      if (skipCat(e)) continue;
+    // Propagate dependency relationships so dependent meshes are also rebuilt.
+    const extraDirty = new Set<string>();
+    const propagateOne = (id: string, e: Element) => {
+      switch (e.kind) {
+        case 'wall':
+          // Wall geometry change → its hosted openings need new positions.
+          for (const d of doorsByWall.get(id) ?? []) extraDirty.add(d.id);
+          for (const w of winsByWall.get(id) ?? []) extraDirty.add(w.id);
+          break;
+        case 'door':   extraDirty.add((e as DoorElem).wallId); break;
+        case 'window': extraDirty.add((e as WindowElem).wallId); break;
+        case 'level':  for (const eid of elemsByLevel.get(id) ?? []) extraDirty.add(eid); break;
+        case 'stair':  for (const rid of railingsByStair.get(id) ?? []) extraDirty.add(rid); break;
+      }
+    };
 
-      const hw = wallById[e.wallId];
-
-      if (!hw || skipCat(hw)) continue;
-
-      const elev = elevationMForLevel(hw.levelId, elementsById);
-
-      root.add(makeWindowMesh(e, hw, elev, paint));
+    for (const id of changedIds) propagateOne(id, curr[id] ?? prev[id]!);
+    // Added/removed hosted elements must also rebuild their host wall (CSG opening changes).
+    for (const id of addedIds) {
+      const e = curr[id];
+      if (e?.kind === 'door')   extraDirty.add((e as DoorElem).wallId);
+      if (e?.kind === 'window') extraDirty.add((e as WindowElem).wallId);
+    }
+    for (const id of removedIds) {
+      const e = prev[id];
+      if (e?.kind === 'door')   extraDirty.add((e as DoorElem).wallId);
+      if (e?.kind === 'window') extraDirty.add((e as WindowElem).wallId);
+    }
+    for (const id of extraDirty) {
+      if (!addedIds.has(id) && !removedIds.has(id)) changedIds.add(id);
+    }
+    // If a wall became dirty, also dirty its current hosted elements.
+    for (const id of [...changedIds]) {
+      if (curr[id]?.kind === 'wall') {
+        for (const d of doorsByWall.get(id) ?? []) {
+          if (!addedIds.has(d.id) && !removedIds.has(d.id)) changedIds.add(d.id);
+        }
+        for (const w of winsByWall.get(id) ?? []) {
+          if (!addedIds.has(w.id) && !removedIds.has(w.id)) changedIds.add(w.id);
+        }
+      }
     }
 
-    for (const e of Object.values(elementsById)) {
-      if (e.kind !== 'stair') continue;
-      if (skipCat(e)) continue;
+    const toRemove  = new Set([...removedIds, ...changedIds]);
+    const toRebuild = new Set([...addedIds,   ...changedIds]);
 
-      root.add(makeStairVolumeMesh(e, elementsById, paint));
+    // Remove stale meshes — dispose GPU resources to avoid leaks.
+    for (const id of toRemove) {
+      const obj = cache.get(id);
+      if (!obj) continue;
+      root.remove(obj);
+      obj.traverse((node) => {
+        const m = node as THREE.Mesh;
+        if (!m.isMesh) return;
+        m.geometry?.dispose();
+        if (Array.isArray(m.material)) {
+          m.material.forEach((mat: THREE.Material) => mat.dispose());
+        } else {
+          (m.material as THREE.Material)?.dispose();
+        }
+      });
+      cache.delete(id);
     }
 
-    for (const e of Object.values(elementsById)) {
-      if (e.kind !== 'room') continue;
-      if (skipCat(e)) continue;
+    // Build and insert new meshes.
+    const catHidden = viewerCategoryHidden;
+    const skipCat   = (e: Element) => {
+      const ck = elemViewerCategory(e);
+      return ck != null && Boolean(catHidden[ck]);
+    };
+    const planes = clippingPlanesRef.current;
 
-      root.add(makeRoomRibbon(e, elevationMForLevel(e.levelId, elementsById), paint));
+    for (const id of toRebuild) {
+      const e = curr[id];
+      if (!e) continue;
+
+      let obj: THREE.Object3D | null = null;
+      switch (e.kind) {
+        case 'floor':
+          obj = makeFloorSlabMesh(e, curr, paint);
+          break;
+        case 'wall': {
+          const elev  = elevationMForLevel(e.levelId, curr);
+          const doors = doorsByWall.get(id) ?? [];
+          const wins  = winsByWall.get(id)  ?? [];
+          if (CSG_ENABLED && (doors.length > 0 || wins.length > 0)) {
+            // Dispatch CSG to the worker; show a solid-wall placeholder immediately.
+            const sx = e.start.xMm / 1000;
+            const sz = e.start.yMm / 1000;
+            const dx = e.end.xMm / 1000 - sx;
+            const dz = e.end.yMm / 1000 - sz;
+            const len    = Math.max(0.001, Math.hypot(dx, dz));
+            const height = THREE.MathUtils.clamp(e.heightMm / 1000, 0.25, 40);
+            const thick  = THREE.MathUtils.clamp(e.thicknessMm / 1000, 0.05, 2);
+            const nonce  = ++csgNonceRef.current;
+            pendingCsgRef.current.set(id, nonce);
+            pendingCsgMetaRef.current.set(id, { len, height, thick, materialKey: e.materialKey });
+            const job: CsgRequest = {
+              jobId: id,
+              nonce,
+              len,
+              height,
+              thick,
+              wcx: sx + dx / 2,
+              wcy: elev + height / 2,
+              wcz: sz + dz / 2,
+              yaw: Math.atan2(dz, dx),
+              doors: doors.map((d) => ({
+                widthMm:      d.widthMm,
+                alongT:       d.alongT,
+                wallHeightMm: e.heightMm,
+              })),
+              windows: wins.map((w) => ({
+                widthMm:      w.widthMm,
+                heightMm:     w.heightMm,
+                sillHeightMm: w.sillHeightMm,
+                alongT:       w.alongT,
+                wallHeightMm: e.heightMm,
+              })),
+            };
+            csgWorkerRef.current?.postMessage(job);
+          }
+          // Always produce a placeholder (solid wall); the worker will swap it
+          // with the CSG result when ready, or it stays if CSG is disabled.
+          obj = makeWallMesh(e, elev, paint);
+          break;
+        }
+        case 'door': {
+          const wall = curr[(e as DoorElem).wallId] as WallElem | undefined;
+          if (!wall) break;
+          obj = makeDoorMesh(e, wall, elevationMForLevel(wall.levelId, curr), paint);
+          break;
+        }
+        case 'window': {
+          const w    = e as WindowElem;
+          const wall = curr[w.wallId] as WallElem | undefined;
+          if (!wall) break;
+          obj = makeWindowMesh(w, wall, elevationMForLevel(wall.levelId, curr), paint);
+          break;
+        }
+        case 'stair':   obj = makeStairVolumeMesh(e, curr, paint); break;
+        case 'room':    obj = makeRoomRibbon(e, elevationMForLevel(e.levelId, curr), paint); break;
+        case 'roof':    obj = makeRoofMassMesh(e, curr, paint); break;
+        case 'railing': obj = makeRailingMesh(e, curr, paint); break;
+        case 'site':    obj = makeSiteMesh(e, curr, paint); break;
+        default: break;
+      }
+
+      if (!obj) continue;
+
+      if (!obj.userData.bimPickId) obj.userData.bimPickId = id;
+      obj.visible = !skipCat(e);
+
+      // Shadow: site meshes are receivers only.
+      const isSite = e.kind === 'site';
+      obj.traverse((node) => {
+        if (!(node instanceof THREE.Mesh)) return;
+        node.castShadow    = !isSite;
+        node.receiveShadow = true;
+      });
+
+      // Apply current clipping planes to this new mesh without re-traversing the whole scene.
+      if (planes.length) {
+        applyClippingPlanesToMeshes(obj, planes);
+      }
+
+      cache.set(id, obj);
+      root.add(obj);
     }
 
-    for (const rf of Object.values(elementsById)) {
-      if (rf.kind !== 'roof') continue;
-      if (skipCat(rf)) continue;
+    // Update shadow camera frustum and outline-pass selection after any geometry change.
+    if (toRebuild.size > 0 || toRemove.size > 0) {
+      const sun = sunRef.current;
+      if (sun) {
+        const sceneBox = new THREE.Box3().setFromObject(root);
+        if (Number.isFinite(sceneBox.min.x)) {
+          const size = new THREE.Vector3();
+          sceneBox.getSize(size);
+          const sceneRadiusM = Math.max(size.length() / 2, 5);
+          const frustumHalf  = Math.max(sceneRadiusM * 1.2, 20);
+          sun.shadow.camera.left   = -frustumHalf;
+          sun.shadow.camera.right  =  frustumHalf;
+          sun.shadow.camera.top    =  frustumHalf;
+          sun.shadow.camera.bottom = -frustumHalf;
+          sun.shadow.camera.near   = 0.5;
+          sun.shadow.camera.far    = sceneRadiusM * 4 + 50;
+          sun.shadow.camera.updateProjectionMatrix();
+        }
+      }
 
-      root.add(makeRoofMassMesh(rf, elementsById, paint));
+      if (!hasAutoFittedRef.current) {
+        const box = computeRootBoundingBox(root);
+        const rig = cameraRigRef.current;
+        const cam = cameraRef.current;
+        if (box && rig && cam) {
+          rig.frame(box);
+          rig.setHome();
+          const snap = rig.snapshot();
+          cam.position.set(snap.position.x, snap.position.y, snap.position.z);
+          cam.up.set(snap.up.x, snap.up.y, snap.up.z).normalize();
+          cam.lookAt(snap.target.x, snap.target.y, snap.target.z);
+          hasAutoFittedRef.current = true;
+        }
+      }
     }
 
-    for (const rl of Object.values(elementsById)) {
-      if (rl.kind !== 'railing') continue;
-      if (skipCat(rl)) continue;
-
-      root.add(makeRailingMesh(rl, elementsById, paint));
+    // When category visibility changes, sweep all cached meshes to update visible flags.
+    if (prevCatHiddenRef.current !== catHidden) {
+      for (const [id, obj] of cache) {
+        const e = curr[id];
+        if (e) obj.visible = !skipCat(e);
+      }
+      prevCatHiddenRef.current = catHidden;
     }
 
-    for (const si of Object.values(elementsById)) {
-      if (si.kind !== 'site') continue;
-      if (skipCat(si)) continue;
-
-      root.add(makeSiteMesh(si, elementsById, paint));
+    // Re-sync outline pass in case the selected element's mesh was just replaced.
+    const op = outlinePassRef.current;
+    if (op) {
+      const sid = selectedIdRef.current;
+      const sel = sid ? cache.get(sid) : undefined;
+      op.selectedObjects = sel ? [sel] : [];
+      op.visibleEdgeColor.set(paint?.selection.selectedColor ?? '#fb923c');
+      op.hiddenEdgeColor.set(paint?.selection.selectedColor ?? '#fb923c');
     }
 
-    applyClippingPlanesToMeshes(root, clippingPlanes);
+    prevElementsByIdRef.current = curr;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [elementsById, viewerCategoryHidden, theme]);
 
-    // Section-box wireframe cage so the user can see the active region.
+  // ── Clipping planes + section-box cage ───────────────────────────────────
+  // Runs only when clip elevation or section box changes — not on every element edit.
+  useEffect(() => {
+    const root = rootGroupRef.current;
+    const rnd  = rendererRef.current;
+    if (!root) return;
+
+    const sectionBox    = sectionBoxRef.current;
+    const sectionPlanes = sectionBox && sectionBoxActive ? sectionBox.clippingPlanes() : [];
+    const clipElevM =
+      viewerClipElevMm != null && Number.isFinite(viewerClipElevMm) && viewerClipElevMm >= 0
+        ? viewerClipElevMm / 1000
+        : null;
+    const clipFloorM =
+      viewerClipFloorElevMm != null && Number.isFinite(viewerClipFloorElevMm) && viewerClipFloorElevMm >= 0
+        ? viewerClipFloorElevMm / 1000
+        : null;
+
+    if (rnd)
+      rnd.localClippingEnabled = clipElevM != null || clipFloorM != null || sectionPlanes.length > 0;
+
+    const planes: THREE.Plane[] = [];
+    for (const p of sectionPlanes) {
+      planes.push(new THREE.Plane(new THREE.Vector3(p.normal.x, p.normal.y, p.normal.z), p.constant));
+    }
+    if (clipElevM != null) {
+      const plane = new THREE.Plane();
+      plane.setFromNormalAndCoplanarPoint(new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, clipElevM, 0));
+      planes.push(plane);
+    }
+    if (clipFloorM != null) {
+      const planeLo = new THREE.Plane();
+      planeLo.setFromNormalAndCoplanarPoint(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, clipFloorM, 0));
+      planes.push(planeLo);
+    }
+
+    clippingPlanesRef.current = planes;
+    applyClippingPlanesToMeshes(root, planes);
+
+    // Section-box wireframe cage.
     if (sectionBoxCageRef.current) {
       root.remove(sectionBoxCageRef.current);
       sectionBoxCageRef.current = null;
     }
     if (sectionBoxActive && sectionBox) {
-      const snap = sectionBox.snapshot();
-      const min = snap.min;
-      const max = snap.max;
-      const verts = aabbWireframeVertices(min, max);
-      const geom = new THREE.BufferGeometry().setFromPoints(verts);
-      const cage = new THREE.LineSegments(
-        geom,
+      const snap  = sectionBox.snapshot();
+      const verts = aabbWireframeVertices(snap.min, snap.max);
+      const cage  = new THREE.LineSegments(
+        new THREE.BufferGeometry().setFromPoints(verts),
         new THREE.LineBasicMaterial({
           color: readToken('--color-accent', '#fcd34d'),
           transparent: true,
@@ -1986,91 +2201,7 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       sectionBoxCageRef.current = cage;
       root.add(cage);
     }
-
-    // R1-01: tag every mesh with shadow properties; site is receiver-only.
-    const siteIds = new Set(
-      Object.values(elementsById).filter((e) => e.kind === 'site').map((e) => e.id),
-    );
-    root.traverse((obj) => {
-      if (!(obj instanceof THREE.Mesh)) return;
-      const isSite = siteIds.has(obj.userData.bimPickId as string);
-      obj.castShadow = !isSite;
-      obj.receiveShadow = true;
-    });
-
-    // R1-01: update shadow camera frustum to enclose the scene AABB.
-    const sun = sunRef.current;
-    if (sun) {
-      const sceneBox = new THREE.Box3().setFromObject(root);
-      if (Number.isFinite(sceneBox.min.x)) {
-        const size = new THREE.Vector3();
-        sceneBox.getSize(size);
-        const sceneRadiusM = Math.max(size.length() / 2, 5);
-        const frustumHalf = Math.max(sceneRadiusM * 1.2, 20);
-        sun.shadow.camera.left   = -frustumHalf;
-        sun.shadow.camera.right  =  frustumHalf;
-        sun.shadow.camera.top    =  frustumHalf;
-        sun.shadow.camera.bottom = -frustumHalf;
-        sun.shadow.camera.near   =  0.5;
-        sun.shadow.camera.far    =  sceneRadiusM * 4 + 50;
-        sun.shadow.camera.updateProjectionMatrix();
-      }
-    }
-
-    // Rebuild Sky env map on every scene rebuild (picks up theme changes).
-    const envRnd = rendererRef.current;
-    const envSc  = sceneRef.current;
-    if (envRnd && envSc && paint) {
-      envMapRef.current?.dispose();
-      const newEnv = buildSkyEnvMap(
-        envRnd,
-        paint.lighting.sun.azimuthDeg,
-        paint.lighting.sun.elevationDeg,
-      );
-      envSc.environment = newEnv;
-      envMapRef.current = newEnv;
-    }
-
-    // Build pick map and reapply outline pass to current selection.
-    const pickMap = new Map<string, THREE.Object3D>();
-    root.children.forEach(obj => {
-      const id = obj.userData.bimPickId as string | undefined;
-      if (id) pickMap.set(id, obj);
-    });
-    bimPickMapRef.current = pickMap;
-
-    const op = outlinePassRef.current;
-    if (op) {
-      const sel = selectedId ? pickMap.get(selectedId) : undefined;
-      op.selectedObjects = sel ? [sel] : [];
-      op.visibleEdgeColor.set(paint?.selection.selectedColor ?? '#fb923c');
-      op.hiddenEdgeColor.set(paint?.selection.selectedColor ?? '#fb923c');
-    }
-
-    // First-geometry auto-fit: set orbit target to building centroid so the
-    // rig doesn't stay stuck at the world origin when the building is elsewhere.
-    if (!hasAutoFittedRef.current) {
-      const box = computeRootBoundingBox(root);
-      const rig = cameraRigRef.current;
-      const cam = cameraRef.current;
-      if (box && rig && cam) {
-        rig.frame(box);
-        rig.setHome();
-        const snap = rig.snapshot();
-        cam.position.set(snap.position.x, snap.position.y, snap.position.z);
-        cam.up.set(snap.up.x, snap.up.y, snap.up.z).normalize();
-        cam.lookAt(snap.target.x, snap.target.y, snap.target.z);
-        hasAutoFittedRef.current = true;
-      }
-    }
-  }, [
-    elementsById,
-    viewerCategoryHidden,
-    viewerClipElevMm,
-    viewerClipFloorElevMm,
-    sectionBoxActive,
-    theme,
-  ]);
+  }, [viewerClipElevMm, viewerClipFloorElevMm, sectionBoxActive]);
 
   useEffect(() => {
     const op = outlinePassRef.current;
