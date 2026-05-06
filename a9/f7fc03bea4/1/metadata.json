@@ -1,0 +1,88 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "a9f7fc03bea4",
+  "session_id": "9ccda089-cee5-43cf-9e07-be3ed2780126",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-06T09:31:22.675767Z",
+  "branch": "main",
+  "checkpoints_count": 5,
+  "files_touched": [
+    "packages/core/src/index.ts",
+    "packages/web/src/Viewport.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "7df4a63f7e21",
+  "token_usage": {
+    "input_tokens": 86,
+    "cache_creation_tokens": 165278,
+    "cache_read_tokens": 6751979,
+    "output_tokens": 125457,
+    "api_call_count": 74
+  },
+  "session_metrics": {
+    "turn_count": 5
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-06T09:31:22.462865Z",
+    "agent_lines": 366,
+    "agent_removed": 51,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 366,
+    "total_lines_changed": 417,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 6,
+      "user_lines_removed": 4,
+      "agent_lines_added": 1595,
+      "agent_lines_removed": 193,
+      "user_added_per_file": {
+        "packages/web/src/workspace/RedesignedWorkspace.tsx": 6
+      },
+      "user_removed_per_file": {
+        "packages/web/src/workspace/RedesignedWorkspace.tsx": 4
+      }
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 62,
+      "user_lines_removed": 52,
+      "agent_lines_added": 2066,
+      "agent_lines_removed": 330,
+      "user_added_per_file": {
+        "packages/web/src/i18n.ts": 8,
+        "packages/web/src/workspace/InspectorContent.tsx": 54
+      },
+      "user_removed_per_file": {
+        "packages/web/src/workspace/InspectorContent.tsx": 52
+      }
+    },
+    {
+      "checkpoint_number": 5,
+      "user_lines_added": 15,
+      "user_lines_removed": 5,
+      "agent_lines_added": 2189,
+      "agent_lines_removed": 436,
+      "user_added_per_file": {
+        "packages/web/src/i18n.ts": 8,
+        "packages/web/src/workspace/InspectorContent.tsx": 7
+      },
+      "user_removed_per_file": {
+        "packages/web/src/workspace/InspectorContent.tsx": 5
+      }
+    }
+  ]
+}
