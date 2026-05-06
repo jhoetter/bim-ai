@@ -87,7 +87,13 @@ export function CanvasMount({
   if (mode === 'section')
     return <SectionModeShell activeLevelLabel={activeLevelId} modelId={modelId} />;
   if (mode === 'sheet')
-    return <SheetModeShell elementsById={elementsById} preferredSheetId={preferredSheetId} />;
+    return (
+      <SheetModeShell
+        elementsById={elementsById}
+        preferredSheetId={preferredSheetId}
+        modelId={modelId}
+      />
+    );
   if (mode === 'schedule')
     return (
       <ErrorBoundary label="SchedulePanel">
