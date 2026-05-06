@@ -3,7 +3,7 @@
   "checkpoint_id": "696f1fdad57c",
   "strategy": "manual-commit",
   "branch": "feat/wp-v2-14-plan-canvas",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     "spec/workpackage-master-tracker.md"
   ],
@@ -13,13 +13,19 @@
       "transcript": "/69/6f1fdad57c/0/full.jsonl",
       "content_hash": "/69/6f1fdad57c/0/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/69/6f1fdad57c/1/metadata.json",
+      "transcript": "/69/6f1fdad57c/1/full.jsonl",
+      "content_hash": "/69/6f1fdad57c/1/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
-    "input_tokens": 0,
-    "cache_creation_tokens": 0,
-    "cache_read_tokens": 0,
-    "output_tokens": 0,
-    "api_call_count": 0
+    "input_tokens": 212,
+    "cache_creation_tokens": 111349,
+    "cache_read_tokens": 5201399,
+    "output_tokens": 49151,
+    "api_call_count": 77
   }
 }
