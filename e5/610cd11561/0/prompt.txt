@@ -1,0 +1,9 @@
+which of the @OPEN_TASKS.md are still relevant or actually open?
+
+---
+
+can you implement all four, one after another? always: create a branch, build the work package, commit and push, then merge with main, and then continue with the next?
+
+---
+
+can you implement all four, one after another? always: create a branch, build the work package, commit and push, then merge with main, and then continue with the next? and once you are fully done with all, remove the @OPEN_TASKS.md and push on main?
