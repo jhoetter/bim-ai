@@ -11,3 +11,7 @@ committed and pushed?
 ---
 
 pleaase push
+
+---
+
+but i dont see all icons on localhost:2000/icons
