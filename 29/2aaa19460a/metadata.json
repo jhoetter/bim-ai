@@ -3,7 +3,7 @@
   "checkpoint_id": "292aaa19460a",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 3,
+  "checkpoints_count": 4,
   "files_touched": [
     "packages/web/src/cmd/CheatsheetModal.test.tsx",
     "packages/web/src/cmd/CheatsheetModal.tsx",
@@ -41,13 +41,19 @@
       "transcript": "/29/2aaa19460a/3/full.jsonl",
       "content_hash": "/29/2aaa19460a/3/content_hash.txt",
       "prompt": "/29/2aaa19460a/3/prompt.txt"
+    },
+    {
+      "metadata": "/29/2aaa19460a/4/metadata.json",
+      "transcript": "/29/2aaa19460a/4/full.jsonl",
+      "content_hash": "/29/2aaa19460a/4/content_hash.txt",
+      "prompt": "/29/2aaa19460a/4/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 368,
-    "cache_creation_tokens": 506894,
-    "cache_read_tokens": 30487329,
-    "output_tokens": 269591,
-    "api_call_count": 318
+    "input_tokens": 376,
+    "cache_creation_tokens": 510159,
+    "cache_read_tokens": 31216374,
+    "output_tokens": 270637,
+    "api_call_count": 324
   }
 }
