@@ -3,7 +3,7 @@
   "checkpoint_id": "771adc7f9451",
   "strategy": "manual-commit",
   "branch": "feat/wp-v2-01a-options-bar",
-  "checkpoints_count": 3,
+  "checkpoints_count": 4,
   "files_touched": [
     "packages/web/src/Viewport.tsx",
     "packages/web/src/state/store.ts",
@@ -27,13 +27,19 @@
       "transcript": "/77/1adc7f9451/1/full.jsonl",
       "content_hash": "/77/1adc7f9451/1/content_hash.txt",
       "prompt": "/77/1adc7f9451/1/prompt.txt"
+    },
+    {
+      "metadata": "/77/1adc7f9451/2/metadata.json",
+      "transcript": "/77/1adc7f9451/2/full.jsonl",
+      "content_hash": "/77/1adc7f9451/2/content_hash.txt",
+      "prompt": "/77/1adc7f9451/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 732,
-    "cache_creation_tokens": 799214,
-    "cache_read_tokens": 48788745,
-    "output_tokens": 367535,
-    "api_call_count": 530
+    "input_tokens": 4876,
+    "cache_creation_tokens": 907861,
+    "cache_read_tokens": 55933300,
+    "output_tokens": 400614,
+    "api_call_count": 608
   }
 }
