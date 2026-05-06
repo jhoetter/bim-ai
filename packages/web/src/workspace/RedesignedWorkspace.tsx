@@ -50,6 +50,7 @@ import {
   cycleActive,
   openTab,
   reorderTab,
+  snapshotViewport,
   tabFromElement,
   type TabKind,
   type TabsState,
@@ -133,11 +134,37 @@ export function RedesignedWorkspace(): JSX.Element {
   const handleTabActivate = useCallback(
     (id: string) => {
       setTabsState((s) => {
-        const next = activateTab(s, id);
+        if (s.activeId === id) return s;
+        // Snapshot the outgoing tab's viewport state so it can be restored
+        // when the user comes back. T-07.
+        let snapshotted = s;
+        if (s.activeId) {
+          const outgoing = s.tabs.find((x) => x.id === s.activeId);
+          if (outgoing && (outgoing.kind === '3d' || outgoing.kind === 'plan-3d')) {
+            const pose = useBimStore.getState().orbitCameraPoseMm;
+            if (pose) {
+              snapshotted = snapshotViewport(s, s.activeId, {
+                ...(outgoing.viewportState ?? {}),
+                orbitCameraPoseMm: { eyeMm: pose.position, targetMm: pose.target },
+              });
+            }
+          }
+        }
+        const next = activateTab(snapshotted, id);
         const t = next.tabs.find((x) => x.id === id);
-        // Keep the store in sync with the active tab's target.
-        if (t && (t.kind === 'plan' || t.kind === 'plan-3d') && t.targetId) {
+        if (!t) return next;
+        // Keep the store's active level in sync with the active tab's target.
+        if ((t.kind === 'plan' || t.kind === 'plan-3d') && t.targetId) {
           setActiveLevelId(t.targetId);
+        }
+        // Restore the incoming tab's camera, if it has one.
+        const restored = t.viewportState?.orbitCameraPoseMm;
+        if (restored?.eyeMm && restored.targetMm) {
+          useBimStore.getState().setOrbitCameraFromViewpointMm({
+            position: restored.eyeMm,
+            target: restored.targetMm,
+            up: { xMm: 0, yMm: 1, zMm: 0 },
+          });
         }
         return next;
       });

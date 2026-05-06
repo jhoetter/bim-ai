@@ -8,6 +8,7 @@ import {
   cycleActive,
   openTab,
   reorderTab,
+  snapshotViewport,
   tabFromElement,
 } from './tabsModel';
 
@@ -143,6 +144,23 @@ describe('tabsModel — spec §11.3', () => {
     s = openTab(s, { kind: '3d', targetId: 'v1', label: 'V1' });
     s = reorderTab(s, 99, -5);
     expect(s.tabs.map((t) => t.id)).toEqual(['3d:v1', 'plan:l0']);
+  });
+
+  it('snapshotViewport stores per-tab camera state and is a no-op for unknown ids (T-07)', () => {
+    let s = openTab(EMPTY_TABS, { kind: '3d', targetId: 'vp1', label: 'V1' });
+    s = snapshotViewport(s, '3d:vp1', {
+      orbitCameraPoseMm: {
+        eyeMm: { xMm: 1, yMm: 2, zMm: 3 },
+        targetMm: { xMm: 0, yMm: 0, zMm: 0 },
+      },
+    });
+    expect(s.tabs[0]?.viewportState?.orbitCameraPoseMm?.eyeMm).toEqual({
+      xMm: 1,
+      yMm: 2,
+      zMm: 3,
+    });
+    const noOp = snapshotViewport(s, 'no-such-id', { planCamera: { halfMm: 5000 } });
+    expect(noOp).toBe(s);
   });
 
   it('reorderTab is a no-op when from === to', () => {

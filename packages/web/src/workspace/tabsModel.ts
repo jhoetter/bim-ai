@@ -13,6 +13,20 @@ import type { Element } from '@bim-ai/core';
 
 export type TabKind = 'plan' | '3d' | 'plan-3d' | 'section' | 'sheet' | 'schedule' | 'agent';
 
+/** Per-tab viewport state — restored when the tab is reactivated.
+ * (T-07.) Plan tabs cache the 2D camera; 3D tabs cache the orbit pose.
+ * Section / sheet / schedule tabs do not cache anything yet. */
+export interface ViewportSnapshot {
+  orbitCameraPoseMm?: {
+    eyeMm?: { xMm: number; yMm: number; zMm: number };
+    targetMm?: { xMm: number; yMm: number; zMm: number };
+  };
+  planCamera?: {
+    centerMm?: { xMm: number; yMm: number };
+    halfMm?: number;
+  };
+}
+
 export interface ViewTab {
   /** Stable id. For target-bound tabs we use `${kind}:${targetId}` so
    * re-opening the same view activates the existing tab. For modes that
@@ -24,6 +38,8 @@ export interface ViewTab {
   targetId?: string;
   /** Display label — typically the element name with a kind prefix. */
   label: string;
+  /** Cached camera/orbit state restored when the tab reactivates. */
+  viewportState?: ViewportSnapshot;
 }
 
 export interface TabsState {
@@ -71,6 +87,22 @@ export function closeTab(state: TabsState, id: string): TabsState {
 export function activateTab(state: TabsState, id: string): TabsState {
   if (!state.tabs.some((t) => t.id === id)) return state;
   return { ...state, activeId: id };
+}
+
+/** Snapshot a tab's viewport state for later restore. (T-07.) Returns
+ * the unchanged state if the id is unknown. */
+export function snapshotViewport(
+  state: TabsState,
+  id: string,
+  viewportState: ViewportSnapshot,
+): TabsState {
+  const idx = state.tabs.findIndex((t) => t.id === id);
+  if (idx === -1) return state;
+  const next = [...state.tabs];
+  const existing = next[idx];
+  if (!existing) return state;
+  next[idx] = { ...existing, viewportState };
+  return { ...state, tabs: next };
 }
 
 /** Reorder a tab from one index to another. Out-of-range indices clamp.

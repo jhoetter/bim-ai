@@ -42,16 +42,6 @@ Visually verify the new PNGs look right, then commit.
 
 ## Medium (deferred from earlier WPs, called out in commits but not in spec)
 
-### T-07 · Per-tab viewport state
-**WP target**: WP-UI-A12 · **Source**: commit `34b6120d` body · **Status**: deferred
-
-Currently all plan tabs share `useBimStore.activeLevelId`. Switching tabs mutates the global level. Spec §11.3 implies each tab should keep its own viewport state (active level for plan tabs, camera/orbit state for 3D tabs).
-
-**Next moves**:
-1. Extend `ViewTab` with `viewportState: { activeLevelId?: string; camera?: CameraSnapshot }`.
-2. On tab switch, restore the tab's viewport state instead of pulling from the store.
-3. Decide: do we mutate the store at all on tab switch, or does the canvas read straight from the active tab's state?
-
 ---
 
 ## §28 WP-UI rows — table-level audit
