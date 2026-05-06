@@ -37,29 +37,6 @@ These features existed in `Workspace.tsx` (now at `/legacy`) and are not yet wir
 
 ---
 
-### T-13 · Authoring workbenches
-
-**WP target:** WP-UI-C (tools) · **Source:** `Workspace.tsx` lines 1812–1860 · **Status:** `open`
-
-Six specialized authoring panels exist in the codebase but are not mounted in the redesign:
-
-| Panel | File | Purpose |
-|---|---|---|
-| Room separation | `workspace/RoomSeparationAuthoringWorkbench.tsx` | Draw/edit room separation lines |
-| Level datum stack | `workspace/LevelDatumStackWorkbench.tsx` | Level elevation constraints + datum chains |
-| Roof authoring | `workspace/RoofAuthoringWorkbench.tsx` | Roof footprint, slopes, overhangs |
-| Material layer stack | `workspace/MaterialLayerStackWorkbench.tsx` | Wall/floor/roof layer + material assignment |
-| Site authoring | `workspace/SiteAuthoringPanel.tsx` | Project settings, site boundary, north arrow |
-| Room color scheme | `workspace/RoomColorSchemePanel.tsx` | Per-room color schemes by department/finish |
-
-**Next moves:**
-- Decide surface: context-sensitive Inspector tab (activates when the right element kind is selected) or dedicated mode-shell panels
-- Mount each panel in `RedesignedWorkspace.tsx` wired to the same store props as old `Workspace.tsx`
-- Vitest smoke for each mount
-- Update §5 + §28 WP-UI-C rows when done
-
----
-
 ## How to add a new task
 
 1. Append a new `### T-NN · Title` heading at the end of the relevant section.

@@ -57,6 +57,7 @@ import { ToolPalette } from '../tools/ToolPalette';
 import { TOOL_REGISTRY, type ToolDisabledContext, type ToolId } from '../tools/toolRegistry';
 import { TabBar } from './TabBar';
 import { Viewport3DLayersPanel, VIEWER_HIDDEN_KIND_KEYS } from './Viewport3DLayersPanel';
+import { AuthoringWorkbenchesPanel } from './AuthoringWorkbenchesPanel';
 import {
   EMPTY_TABS,
   activateOrOpenKind,
@@ -925,70 +926,96 @@ export function RedesignedWorkspace(): JSX.Element {
         }
         rightRail={(() => {
           const el = selectedId ? elementsById[selectedId] : undefined;
+          const show3dLayers = mode === '3d' || mode === 'plan-3d';
           return (
-            <Inspector
-              selection={inspectorSelection}
-              tabs={{
-                properties: el ? (
-                  InspectorPropertiesFor(el)
-                ) : (
-                  <InspectorEmptyTab message="No element selected." />
-                ),
-                constraints: el ? (
-                  InspectorConstraintsFor(el)
-                ) : (
-                  <InspectorEmptyTab message="No element selected." />
-                ),
-                identity: el ? (
-                  InspectorIdentityFor(el)
-                ) : (
-                  <InspectorEmptyTab message="No element selected." />
-                ),
-                graphics:
-                  el && (el.kind === 'plan_view' || el.kind === 'view_template') ? (
-                    <InspectorGraphicsFor
-                      el={el}
-                      elementsById={elementsById}
-                      revision={revision}
-                      onPersistProperty={(key, value) =>
-                        void onSemanticCommand({
-                          type: 'updateElementProperty',
-                          elementId: el.id,
-                          key,
-                          value,
-                        })
-                      }
-                    />
-                  ) : undefined,
-              }}
-              emptyStateActions={[
-                {
-                  hotkey: 'W',
-                  label: 'Draw a wall',
-                  onTrigger: () => {
-                    if (mode !== 'plan' && mode !== 'plan-3d') handleModeChange('plan');
-                    setPlanTool('wall');
-                  },
-                },
-                {
-                  hotkey: 'D',
-                  label: 'Insert a door',
-                  onTrigger: () => {
-                    if (mode !== 'plan' && mode !== 'plan-3d') handleModeChange('plan');
-                    setPlanTool('door');
-                  },
-                },
-                {
-                  hotkey: 'M',
-                  label: 'Drop a room marker',
-                  onTrigger: () => {
-                    if (mode !== 'plan' && mode !== 'plan-3d') handleModeChange('plan');
-                    setPlanTool('room');
-                  },
-                },
-              ]}
-              onClearSelection={() => select(undefined)}
-            />
+            <div className="flex h-full flex-col overflow-hidden">
+              <div className="min-h-0 flex-1 overflow-hidden">
+                <Inspector
+                  selection={inspectorSelection}
+                  tabs={{
+                    properties: el ? (
+                      InspectorPropertiesFor(el)
+                    ) : (
+                      <InspectorEmptyTab message="No element selected." />
+                    ),
+                    constraints: el ? (
+                      InspectorConstraintsFor(el)
+                    ) : (
+                      <InspectorEmptyTab message="No element selected." />
+                    ),
+                    identity: el ? (
+                      InspectorIdentityFor(el)
+                    ) : (
+                      <InspectorEmptyTab message="No element selected." />
+                    ),
+                    graphics:
+                      el && (el.kind === 'plan_view' || el.kind === 'view_template') ? (
+                        <InspectorGraphicsFor
+                          el={el}
+                          elementsById={elementsById}
+                          revision={revision}
+                          onPersistProperty={(key, value) =>
+                            void onSemanticCommand({
+                              type: 'updateElementProperty',
+                              elementId: el.id,
+                              key,
+                              value,
+                            })
+                          }
+                        />
+                      ) : undefined,
+                  }}
+                  emptyStateActions={[
+                    {
+                      hotkey: 'W',
+                      label: 'Draw a wall',
+                      onTrigger: () => {
+                        if (mode !== 'plan' && mode !== 'plan-3d') handleModeChange('plan');
+                        setPlanTool('wall');
+                      },
+                    },
+                    {
+                      hotkey: 'D',
+                      label: 'Insert a door',
+                      onTrigger: () => {
+                        if (mode !== 'plan' && mode !== 'plan-3d') handleModeChange('plan');
+                        setPlanTool('door');
+                      },
+                    },
+                    {
+                      hotkey: 'M',
+                      label: 'Drop a room marker',
+                      onTrigger: () => {
+                        if (mode !== 'plan' && mode !== 'plan-3d') handleModeChange('plan');
+                        setPlanTool('room');
+                      },
+                    },
+                  ]}
+                  onClearSelection={() => select(undefined)}
+                />
+              </div>
+              {show3dLayers ? (
+                <div className="max-h-64 shrink-0 overflow-y-auto border-t border-border">
+                  <Viewport3DLayersPanel
+                    viewerCategoryHidden={viewerCategoryHidden}
+                    onToggleCategory={toggleViewerCategoryHidden}
+                    viewerClipElevMm={viewerClipElevMm}
+                    onSetClipElevMm={setViewerClipElevMm}
+                    viewerClipFloorElevMm={viewerClipFloorElevMm}
+                    onSetClipFloorElevMm={setViewerClipFloorElevMm}
+                    activeViewpointId={activeViewpointId ?? undefined}
+                  />
+                </div>
+              ) : null}
+              <div className="max-h-[40vh] shrink-0 overflow-y-auto border-t border-border">
+                <AuthoringWorkbenchesPanel
+                  selected={el}
+                  elementsById={elementsById}
+                  activeLevelId={activeLevelId ?? ''}
+                  onUpsertSemantic={(cmd) => void onSemanticCommand(cmd)}
+                />
+              </div>
+            </div>
           );
         })()}
         statusBar={
