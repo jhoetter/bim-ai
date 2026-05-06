@@ -5,14 +5,6 @@ import type { Element } from '@bim-ai/core';
 import { useBimStore } from '../state/store';
 import { VirtualScrollRows } from './VirtualScrollRows';
 import {
-  parseNumericFilterRuleThreshold,
-  parseWidthMmGtThreshold,
-  parseWidthMmLtThreshold,
-  schedulesFiltersWithNumericRule,
-  schedulesFiltersWithWidthMmGt,
-  schedulesFiltersWithWidthMmLt,
-} from './scheduleFilterWidthRules';
-import {
   MSG_LOADING,
   MSG_NO_ROWS,
   MSG_NO_SHEET_ELEMENTS,
@@ -22,57 +14,32 @@ import {
   type RegistryModelTab,
 } from './schedulePanelPlansSheetsUi';
 import {
-  missingRequiredFieldKeys,
-  presetById,
-  presetFieldReadoutRows,
-  presetsForCategory,
-  resolvePresetColumnsForExport,
-  type SchedulePresetCategory,
-} from './scheduleDefinitionPresets';
-import {
   buildScheduleTableCsvUrl,
-  columnFieldRoleHint,
-  columnMetadataCategoryLine,
-  formatSchedulePaginationPlacementReadout,
-  formatSchedulePlacementReadout,
-  scheduleRegistryEngineReadoutParts,
   type ScheduleFieldMeta,
 } from './schedulePanelRegistryChrome';
-import { resolveScheduleSortDescending, scheduleTotalsReadoutParts } from './schedulePayloadTotals';
-import {
-  buildScheduleTableModelV1,
-  SCHEDULE_TABLE_EMPTY_V1,
-  type ScheduleTableBodyRowV1,
-  type ScheduleTableModelV1,
-} from './scheduleTableRendererV1';
+import { scheduleTotalsReadoutParts } from './schedulePayloadTotals';
+import { buildScheduleTableModelV1, type ScheduleTableModelV1 } from './scheduleTableRendererV1';
 import { roomFinishScheduleEvidenceReadoutParts } from './roomFinishScheduleEvidenceReadout';
 import { stairScheduleEvidenceReadoutLines } from './stairScheduleEvidenceReadout';
 import { compactScheduleOpeningAdvisoryLines } from './scheduleOpeningAdvisoriesReadout';
-import { formatScheduleLevelDatumEvidenceLine } from './scheduleLevelDatumEvidenceReadout';
-import {
-  compactScheduleSheetExportParityAdvisoryLines,
-  formatScheduleSheetExportParityRowLine,
-  parseScheduleSheetExportParityRows,
-} from './scheduleSheetExportParityReadout';
+import { compactScheduleSheetExportParityAdvisoryLines } from './scheduleSheetExportParityReadout';
+import type { SchedulePresetCategory } from './scheduleDefinitionPresets';
+import { RegistryColumnPicker } from './RegistryColumnPicker';
+import { ScheduleDefinitionPresetsStrip } from './ScheduleDefinitionPresetsStrip';
+import { ScheduleDefinitionToolbar } from './ScheduleDefinitionToolbar';
+import { ScheduleRegistryChrome } from './ScheduleRegistryChrome';
+import { ScheduleRegistryTable } from './ScheduleRegistryTable';
 
 export { resolveScheduleSortDescending, scheduleTotalsReadoutParts } from './schedulePayloadTotals';
 export { scheduleSortKeyChoices } from './scheduleUtils';
 
 import {
   type TabKey,
-  type RoomVm,
-  type DoorVm,
-  type WinVm,
   SCHED_TABLE_ROW_PX,
   SCHED_TABLE_VIEWPORT_PX,
   ROOM_SCHED_COLSPAN,
   registryScheduleTab,
-  tabToPresetCategory,
   findScheduleIdForCategory,
-  scheduleGroupingKeyChoices,
-  scheduleSortKeyChoices,
-  levelFilterFieldForTab,
-  formatScheduleCell,
   flattenSchedulePayloadRows,
   fmtRoomScheduleOptM2,
   roomRowsFromServer,
@@ -223,47 +190,6 @@ export function SchedulePanel(props: {
   const [presetIdByCategory, setPresetIdByCategory] = useState<
     Partial<Record<SchedulePresetCategory, string>>
   >({});
-
-  const [openingWidthGtDraft, setOpeningWidthGtDraft] = useState('');
-  const [openingWidthLtDraft, setOpeningWidthLtDraft] = useState('');
-  const [roomAreaGtDraft, setRoomAreaGtDraft] = useState('');
-  const [roomAreaLtDraft, setRoomAreaLtDraft] = useState('');
-
-  const openingToolbarScheduleEl =
-    sidForTab && (tab === 'doors' || tab === 'windows') ? props.elementsById[sidForTab] : undefined;
-
-  const roomToolbarScheduleEl =
-    sidForTab && tab === 'rooms' ? props.elementsById[sidForTab] : undefined;
-
-  useEffect(() => {
-    queueMicrotask(() => {
-      if (openingToolbarScheduleEl?.kind !== 'schedule') {
-        setOpeningWidthGtDraft('');
-        setOpeningWidthLtDraft('');
-        return;
-      }
-      const f0 = { ...(openingToolbarScheduleEl.filters ?? {}) } as Record<string, unknown>;
-      const t = parseWidthMmGtThreshold(f0);
-      setOpeningWidthGtDraft(t !== null ? String(t) : '');
-      const u = parseWidthMmLtThreshold(f0);
-      setOpeningWidthLtDraft(u !== null ? String(u) : '');
-    });
-  }, [openingToolbarScheduleEl]);
-
-  useEffect(() => {
-    queueMicrotask(() => {
-      if (roomToolbarScheduleEl?.kind !== 'schedule') {
-        setRoomAreaGtDraft('');
-        setRoomAreaLtDraft('');
-        return;
-      }
-      const f0 = { ...(roomToolbarScheduleEl.filters ?? {}) } as Record<string, unknown>;
-      const minArea = parseNumericFilterRuleThreshold(f0, 'areaM2', 'gt');
-      setRoomAreaGtDraft(minArea !== null ? String(minArea) : '');
-      const maxArea = parseNumericFilterRuleThreshold(f0, 'areaM2', 'lt');
-      setRoomAreaLtDraft(maxArea !== null ? String(maxArea) : '');
-    });
-  }, [roomToolbarScheduleEl]);
 
   useEffect(() => {
     if (!props.modelId || !sidForTab) {
@@ -656,32 +582,6 @@ export function SchedulePanel(props: {
     });
   }
 
-  function renderRegistryColumnPicker() {
-    if (!registryPickKey || !registrySchedule || registrySchedule.columns.length < 2) return null;
-    return (
-      <div
-        data-testid="schedule-column-picker"
-        className="mb-2 flex flex-wrap gap-2 border-b border-border/40 pb-2 text-[10px] text-muted"
-      >
-        <span className="font-semibold text-foreground">Columns</span>
-        {registrySchedule.columns.map((c) => {
-          const on = visibleRegistryColumns.includes(c);
-          return (
-            <label key={c} className="flex cursor-pointer items-center gap-1">
-              <input type="checkbox" checked={on} onChange={() => toggleRegistryColumn(c)} />
-              <span>
-                {registrySchedule.fieldLabels[c] ?? c}
-                <span className="text-muted opacity-80">
-                  {columnFieldRoleHint(registrySchedule.fieldMeta[c])}
-                </span>
-              </span>
-            </label>
-          );
-        })}
-      </div>
-    );
-  }
-
   function csvForTab(): string {
     if (tab === 'rooms')
       return [
@@ -840,356 +740,6 @@ export function SchedulePanel(props: {
     );
   }
 
-  function renderScheduleDefinitionToolbar() {
-    if (!props.onScheduleFiltersCommit) return null;
-
-    const scheduleId = sidForTab;
-
-    if (!scheduleId || !srvActive || srvActive.scheduleId !== scheduleId || !props.modelId)
-      return null;
-
-    const el = props.elementsById[scheduleId];
-
-    if (!el || el.kind !== 'schedule') return null;
-
-    const f = { ...(el.filters ?? {}) } as Record<string, unknown>;
-
-    const ghRaw = f.groupingHint ?? f.grouping_hint;
-    const gkEl = el.grouping as { groupKeys?: unknown } | undefined;
-    const gkRaw = gkEl?.groupKeys;
-    const hintsFromFilters = Array.isArray(ghRaw)
-      ? ghRaw.filter((x): x is string => typeof x === 'string')
-      : [];
-    const hintsFromGrouping = Array.isArray(gkRaw)
-      ? gkRaw.filter((x): x is string => typeof x === 'string')
-      : [];
-    const hintList = hintsFromFilters.length > 0 ? hintsFromFilters : hintsFromGrouping;
-    const hintSet = new Set(hintList);
-
-    const sortKeys = scheduleSortKeyChoices(tab);
-
-    const groupOpts = scheduleGroupingKeyChoices(tab);
-
-    const sortVal = String(
-      f.sortBy ?? (el.grouping as { sortBy?: string } | undefined)?.sortBy ?? sortKeys[0] ?? 'name',
-    );
-
-    const sortDesc = resolveScheduleSortDescending(f, el.grouping as Record<string, unknown>);
-
-    const orderedHints = (): string[] => groupOpts.filter((gk) => hintSet.has(gk));
-
-    const groupingPayload = (hints: string[]) => ({
-      ...(el.grouping as Record<string, unknown>),
-      sortBy: sortVal,
-      groupKeys: hints,
-      sortDescending: sortDesc,
-    });
-
-    const commit = (nextF: Record<string, unknown>, nextG: Record<string, unknown>) => {
-      props.onScheduleFiltersCommit!(scheduleId, nextF, nextG);
-    };
-
-    const numericDraftThreshold = (draft: string): number | null => {
-      const trimmed = draft.trim();
-      if (trimmed === '') return null;
-      const n = Number(trimmed);
-      return Number.isFinite(n) ? n : null;
-    };
-
-    const lf = levelFilterFieldForTab(tab);
-    const feRaw = f.filterEquals ?? f.filter_equals;
-    const feObj =
-      typeof feRaw === 'object' && feRaw !== null && !Array.isArray(feRaw)
-        ? { ...(feRaw as Record<string, unknown>) }
-        : {};
-    const levelRestricted = Boolean(
-      lf && props.activeLevelId && String(feObj[lf] ?? '') === props.activeLevelId,
-    );
-
-    const numericRuleBase = (): Record<string, unknown> => ({
-      ...f,
-      sortBy: sortVal,
-      groupingHint: orderedHints(),
-      filterEquals: feObj,
-      sortDescending: sortDesc,
-    });
-
-    return (
-      <div
-        data-testid="schedule-definition-toolbar"
-        className="mt-2 rounded border border-border/60 bg-background/40 p-2 text-[10px] text-muted"
-      >
-        <div className="font-semibold text-foreground">
-          Schedule definition · upsertScheduleFilters
-        </div>
-
-        <div className="mt-2 flex flex-wrap items-center gap-3">
-          <label className="flex flex-wrap items-center gap-2">
-            <span>Sort field</span>
-
-            <select
-              className="rounded border border-border bg-background px-2 py-0.5 font-mono"
-              value={sortVal}
-              onChange={(e) => {
-                const sb = e.target.value;
-                const hints = orderedHints();
-                commit(
-                  { ...f, sortBy: sb, groupingHint: hints, sortDescending: sortDesc },
-                  {
-                    ...(el.grouping as Record<string, unknown>),
-                    sortBy: sb,
-                    groupKeys: hints,
-                    sortDescending: sortDesc,
-                  },
-                );
-              }}
-            >
-              {sortKeys.map((k) => (
-                <option key={k} value={k}>
-                  {k}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="flex cursor-pointer items-center gap-2">
-            <input
-              type="checkbox"
-              data-testid="schedule-sort-descending"
-              checked={sortDesc}
-              onChange={(e) => {
-                const desc = e.target.checked;
-                const hints = orderedHints();
-                commit(
-                  {
-                    ...f,
-                    sortBy: sortVal,
-                    groupingHint: hints,
-                    sortDescending: desc,
-                  },
-                  {
-                    ...(el.grouping as Record<string, unknown>),
-                    sortBy: sortVal,
-                    groupKeys: hints,
-                    sortDescending: desc,
-                  },
-                );
-              }}
-            />
-            <span>Descending</span>
-          </label>
-
-          {lf && props.activeLevelId ? (
-            <label className="flex cursor-pointer items-center gap-2">
-              <input
-                type="checkbox"
-                checked={levelRestricted}
-                onChange={(e) => {
-                  const on = e.target.checked;
-                  const hints = orderedHints();
-                  const nextFe = { ...feObj };
-                  if (on) nextFe[lf] = props.activeLevelId!;
-                  else delete nextFe[lf];
-                  commit(
-                    {
-                      ...f,
-                      sortBy: sortVal,
-                      groupingHint: hints,
-                      filterEquals: nextFe,
-                      sortDescending: sortDesc,
-                    },
-                    groupingPayload(hints),
-                  );
-                }}
-              />
-              <span>
-                Restrict to active level (<span className="font-mono">{lf}</span>)
-              </span>
-            </label>
-          ) : null}
-        </div>
-
-        {levelRestricted && props.activeLevelId ? (
-          <div
-            data-testid="schedule-level-datum-evidence"
-            className="mt-2 break-all font-mono text-[10px] text-muted"
-          >
-            {formatScheduleLevelDatumEvidenceLine(props.elementsById, props.activeLevelId)}
-          </div>
-        ) : null}
-
-        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
-          <span className="font-semibold text-foreground">Group by</span>
-
-          {groupOpts.map((gk) => (
-            <label key={gk} className="flex cursor-pointer items-center gap-1">
-              <input
-                type="checkbox"
-                checked={hintSet.has(gk)}
-                onChange={(e) => {
-                  const on = e.target.checked;
-
-                  const nx = new Set(hintSet);
-
-                  if (on) nx.add(gk);
-                  else nx.delete(gk);
-
-                  const nextHints = groupOpts.filter((x) => nx.has(x));
-
-                  commit(
-                    {
-                      ...f,
-                      groupingHint: nextHints,
-                      sortBy: sortVal,
-                      filterEquals: feObj,
-                      sortDescending: sortDesc,
-                    },
-                    groupingPayload(nextHints),
-                  );
-                }}
-              />
-
-              <span className="font-mono">{gk}</span>
-            </label>
-          ))}
-        </div>
-
-        {tab === 'rooms' ? (
-          <>
-            <div className="mt-2 flex flex-wrap items-center gap-3">
-              <label className="flex flex-wrap items-center gap-2">
-                <span>Min area (m²) &gt;</span>
-                <input
-                  type="number"
-                  className="w-24 rounded border border-border bg-background px-2 py-0.5 font-mono text-foreground"
-                  data-testid="schedule-filter-area-m2-gt"
-                  value={roomAreaGtDraft}
-                  onChange={(e) => {
-                    setRoomAreaGtDraft(e.target.value);
-                  }}
-                  onBlur={() => {
-                    const nextF = schedulesFiltersWithNumericRule(
-                      numericRuleBase(),
-                      'areaM2',
-                      'gt',
-                      numericDraftThreshold(roomAreaGtDraft),
-                    );
-                    commit(nextF, groupingPayload(orderedHints()));
-                  }}
-                />
-              </label>
-              <label className="flex flex-wrap items-center gap-2">
-                <span>Max area (m²) &lt;</span>
-                <input
-                  type="number"
-                  className="w-24 rounded border border-border bg-background px-2 py-0.5 font-mono text-foreground"
-                  data-testid="schedule-filter-area-m2-lt"
-                  value={roomAreaLtDraft}
-                  onChange={(e) => {
-                    setRoomAreaLtDraft(e.target.value);
-                  }}
-                  onBlur={() => {
-                    const nextF = schedulesFiltersWithNumericRule(
-                      numericRuleBase(),
-                      'areaM2',
-                      'lt',
-                      numericDraftThreshold(roomAreaLtDraft),
-                    );
-                    commit(nextF, groupingPayload(orderedHints()));
-                  }}
-                />
-              </label>
-            </div>
-            {(() => {
-              const minArea = parseNumericFilterRuleThreshold(f, 'areaM2', 'gt');
-              const maxArea = parseNumericFilterRuleThreshold(f, 'areaM2', 'lt');
-              if (minArea == null && maxArea == null) return null;
-              const parts: string[] = [];
-              if (minArea != null) parts.push(`areaM2 > ${minArea} m²`);
-              if (maxArea != null) parts.push(`areaM2 < ${maxArea} m²`);
-              return (
-                <div
-                  data-testid="schedule-filter-rules-readout"
-                  className="mt-1 text-[10px] text-foreground/90"
-                >
-                  Rules: {parts.join(' · ')}
-                </div>
-              );
-            })()}
-          </>
-        ) : null}
-
-        {tab === 'doors' || tab === 'windows' ? (
-          <>
-            <div className="mt-2 flex flex-wrap items-center gap-3">
-              <label className="flex flex-wrap items-center gap-2">
-                <span>Min width (mm) &gt;</span>
-                <input
-                  type="number"
-                  className="w-24 rounded border border-border bg-background px-2 py-0.5 font-mono text-foreground"
-                  data-testid="schedule-filter-width-mm-gt"
-                  value={openingWidthGtDraft}
-                  onChange={(e) => {
-                    setOpeningWidthGtDraft(e.target.value);
-                  }}
-                  onBlur={() => {
-                    const trimmed = openingWidthGtDraft.trim();
-                    let thresh: number | null = null;
-                    if (trimmed !== '') {
-                      const n = Number(trimmed);
-                      thresh = Number.isFinite(n) ? n : null;
-                    }
-                    const nextF = schedulesFiltersWithWidthMmGt(numericRuleBase(), thresh);
-                    commit(nextF, groupingPayload(orderedHints()));
-                  }}
-                />
-              </label>
-              <label className="flex flex-wrap items-center gap-2">
-                <span>Max width (mm) &lt;</span>
-                <input
-                  type="number"
-                  className="w-24 rounded border border-border bg-background px-2 py-0.5 font-mono text-foreground"
-                  data-testid="schedule-filter-width-mm-lt"
-                  value={openingWidthLtDraft}
-                  onChange={(e) => {
-                    setOpeningWidthLtDraft(e.target.value);
-                  }}
-                  onBlur={() => {
-                    const trimmed = openingWidthLtDraft.trim();
-                    let thresh: number | null = null;
-                    if (trimmed !== '') {
-                      const n = Number(trimmed);
-                      thresh = Number.isFinite(n) ? n : null;
-                    }
-                    const nextF = schedulesFiltersWithWidthMmLt(numericRuleBase(), thresh);
-                    commit(nextF, groupingPayload(orderedHints()));
-                  }}
-                />
-              </label>
-            </div>
-            {(() => {
-              const fw = f as Record<string, unknown>;
-              const wgt = parseWidthMmGtThreshold(fw);
-              const wlt = parseWidthMmLtThreshold(fw);
-              if (wgt == null && wlt == null) return null;
-              const parts: string[] = [];
-              if (wgt != null) parts.push(`widthMm > ${wgt} mm`);
-              if (wlt != null) parts.push(`widthMm < ${wlt} mm`);
-              return (
-                <div
-                  data-testid="schedule-filter-rules-readout"
-                  className="mt-1 text-[10px] text-foreground/90"
-                >
-                  Rules: {parts.join(' · ')}
-                </div>
-              );
-            })()}
-          </>
-        ) : null}
-      </div>
-    );
-  }
-
   function renderGroupedRooms(grp: Record<string, Record<string, unknown>[]>) {
     const keys = Object.keys(grp).sort((a, b) => a.localeCompare(b));
 
@@ -1330,264 +880,7 @@ export function SchedulePanel(props: {
     );
   }
 
-  function renderRegistryScheduleTable(model: ScheduleTableModelV1) {
-    const cols = model.columns.map((c) => c.key);
-    const colSpan = Math.max(cols.length, 1);
-
-    const colGroup = (
-      <colgroup>
-        {model.columns.map((c) => (
-          <col key={c.key} style={{ width: `${c.displayWidthHintPx}px` }} />
-        ))}
-      </colgroup>
-    );
-
-    const headerRow = (
-      <tr>
-        {model.columns.map((c) => (
-          <th key={c.key} className="align-bottom px-1 text-left text-[10px] font-normal">
-            <div>{c.headerLabel}</div>
-            {c.unitLabel || c.roleLabel ? (
-              <div className="text-[9px] font-normal text-muted opacity-90">
-                {[c.unitLabel, c.roleLabel].filter(Boolean).join(' · ')}
-              </div>
-            ) : null}
-          </th>
-        ))}
-      </tr>
-    );
-
-    const maxVisualRows = Math.max(model.bodyRows.length, 1);
-
-    return (
-      <div data-testid="schedule-registry-table">
-        <div
-          data-testid="schedule-table-title"
-          className="mb-1 text-[11px] font-semibold leading-snug text-foreground"
-        >
-          {model.title}
-        </div>
-
-        {!model.bodyRows.length ? (
-          <div
-            data-testid="schedule-table-empty"
-            className="rounded border border-border/40 px-2 py-1 font-mono text-[10px] text-muted"
-            title={model.emptyToken ?? SCHEDULE_TABLE_EMPTY_V1}
-          >
-            {model.emptyToken ?? SCHEDULE_TABLE_EMPTY_V1}
-          </div>
-        ) : (
-          <VirtualScrollRows<ScheduleTableBodyRowV1>
-            maxHeightPx={Math.min(SCHED_TABLE_VIEWPORT_PX, SCHED_TABLE_ROW_PX * maxVisualRows)}
-            rowHeightPx={SCHED_TABLE_ROW_PX}
-            colSpan={colSpan}
-            colGroup={colGroup}
-            rows={model.bodyRows}
-            header={headerRow}
-            renderRow={(row) => {
-              switch (row.kind) {
-                case 'groupHeader': {
-                  return (
-                    <tr className="border-t border-border/60 bg-accent/15">
-                      <td
-                        colSpan={colSpan}
-                        className="px-2 py-0.5 text-[10px] font-semibold text-muted"
-                      >
-                        {row.label}
-                      </td>
-                    </tr>
-                  );
-                }
-
-                case 'data': {
-                  return (
-                    <tr className="border-t border-border/60">
-                      {cols.map((cKey) => (
-                        <td key={cKey} className="max-w-[140px] truncate px-1 text-[10px]">
-                          {formatScheduleCell(row.record[cKey])}
-                        </td>
-                      ))}
-                    </tr>
-                  );
-                }
-
-                default: {
-                  const exhaustive: never = row;
-
-                  return exhaustive;
-                }
-              }
-            }}
-          />
-        )}
-      </div>
-    );
-  }
-
-  const csvUsesServerEndpoint = Boolean(
-    srvActive?.scheduleId && props.modelId && srvActive.tab === tab,
-  );
-
-  function renderScheduleDefinitionPresetsStrip() {
-    const cat = tabToPresetCategory(tab);
-    if (!cat || !srvActive || srvActive.tab !== tab || !props.modelId) return null;
-
-    const d = srvActive.data as Record<string, unknown>;
-    const columns = Array.isArray(d.columns) ? (d.columns as string[]) : [];
-    if (!columns.length) return null;
-
-    const rawMeta = d.columnMetadata as { fields?: Record<string, ScheduleFieldMeta> } | undefined;
-    const fieldMeta = rawMeta?.fields ?? {};
-
-    const list = presetsForCategory(cat);
-    if (!list.length) return null;
-
-    const selectedId = presetIdByCategory[cat] ?? list[0]!.id;
-    const preset = presetById(selectedId) ?? list[0]!;
-    const missing = missingRequiredFieldKeys(preset, columns);
-    const readout = presetFieldReadoutRows(preset, fieldMeta);
-
-    function applyPresetToExport() {
-      if (!props.onScheduleFiltersCommit || !sidForTab) return;
-      const el = props.elementsById[sidForTab];
-      if (el?.kind !== 'schedule') return;
-      const keys = preset.fields.map((f) => f.fieldKey);
-      const narrowed = resolvePresetColumnsForExport(keys, columns);
-      if (!narrowed.length) return;
-      const prevF = (el.filters ?? {}) as Record<string, unknown>;
-      props.onScheduleFiltersCommit(sidForTab, { ...prevF, displayColumnKeys: narrowed });
-      setRegistryVisibleCols((prev) => ({ ...prev, [sidForTab]: narrowed }));
-    }
-
-    return (
-      <div
-        data-testid="schedule-definition-presets"
-        className="mt-2 rounded border border-border/50 bg-background/30 px-2 py-1.5 text-[10px] text-muted"
-      >
-        <div className="font-semibold text-foreground">Definition presets · export columns</div>
-        <div className="mt-1 flex flex-wrap items-center gap-2">
-          <label className="flex flex-wrap items-center gap-2">
-            <span>Preset</span>
-            <select
-              className="max-w-[240px] rounded border border-border bg-background px-2 py-0.5 font-mono text-[10px]"
-              value={selectedId}
-              onChange={(e) =>
-                setPresetIdByCategory((prev) => ({ ...prev, [cat]: e.target.value }))
-              }
-            >
-              {list.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          {props.onScheduleFiltersCommit ? (
-            <button
-              type="button"
-              className="rounded border border-border/60 px-2 py-0.5 text-[10px] text-foreground hover:bg-accent/20"
-              data-testid="schedule-preset-apply-export"
-              onClick={applyPresetToExport}
-            >
-              Apply to export
-            </button>
-          ) : null}
-        </div>
-        {missing.length ? (
-          <div className="mt-1 text-[10px] text-amber-500">
-            Required fields missing from this table response: {missing.join(', ')}
-          </div>
-        ) : null}
-        <div className="mt-2 max-h-40 overflow-y-auto font-mono leading-snug">
-          <table className="w-full border-collapse text-[9px]">
-            <thead>
-              <tr className="border-b border-border/40 text-left text-muted">
-                <th className="py-0.5 pr-2 font-normal">Field</th>
-                <th className="py-0.5 pr-2 font-normal">Label</th>
-                <th className="py-0.5 pr-2 font-normal">Role</th>
-                <th className="py-0.5 pr-2 font-normal">Req</th>
-                <th className="py-0.5 font-normal">CSV hint</th>
-              </tr>
-            </thead>
-            <tbody>
-              {readout.map((row) => (
-                <tr key={row.fieldKey} className="border-b border-border/30 align-top">
-                  <td className="py-0.5 pr-2 text-foreground">{row.fieldKey}</td>
-                  <td className="py-0.5 pr-2">{row.label}</td>
-                  <td className="py-0.5 pr-2">
-                    {row.roleReadout}
-                    {row.unitHint ? <span className="text-muted"> · {row.unitHint}</span> : null}
-                  </td>
-                  <td className="py-0.5 pr-2">{row.token}</td>
-                  <td className="py-0.5 text-muted">{row.csvExportHint ?? '—'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    );
-  }
-
-  function renderRegistryChrome() {
-    if (!srvActive) return null;
-    const data = srvActive.data as Record<string, unknown>;
-    const placementLine = formatSchedulePlacementReadout(data.schedulePlacement);
-    const pagLine = formatSchedulePaginationPlacementReadout(
-      data.schedulePaginationPlacementEvidence_v0,
-    );
-    const regLine = columnMetadataCategoryLine(data);
-    const engParts = scheduleRegistryEngineReadoutParts(data);
-    const parityRows = parseScheduleSheetExportParityRows(
-      data.scheduleSheetExportParityEvidence_v1,
-    );
-    if (
-      !placementLine &&
-      !regLine &&
-      engParts.length === 0 &&
-      !pagLine &&
-      parityRows.length === 0
-    ) {
-      return null;
-    }
-
-    return (
-      <div
-        data-testid="schedule-registry-chrome"
-        className="mt-2 space-y-1 rounded border border-border/50 bg-background/40 px-2 py-1.5 text-[10px] text-muted"
-      >
-        {regLine ? <div className="text-foreground/90">{regLine}</div> : null}
-        {placementLine ? <div className="text-foreground/90">{placementLine}</div> : null}
-        {pagLine ? (
-          <div
-            className="font-mono text-[10px] leading-snug text-foreground/90"
-            data-testid="schedule-pagination-placement-readout"
-          >
-            {pagLine}
-          </div>
-        ) : null}
-        {parityRows.length ? (
-          <div
-            data-testid="schedule-sheet-export-parity-readout"
-            className="font-mono text-[10px] leading-snug text-foreground/90"
-          >
-            {parityRows.map((row) => (
-              <div
-                key={`${row.scheduleId}/${row.viewportId ?? ''}`}
-                data-parity-token={row.crossFormatParityToken}
-                data-schedule-id={row.scheduleId}
-              >
-                {formatScheduleSheetExportParityRowLine(row)}
-              </div>
-            ))}
-          </div>
-        ) : null}
-        {engParts.length ? (
-          <div className="font-mono text-[10px] leading-snug">{engParts.join(' · ')}</div>
-        ) : null}
-      </div>
-    );
-  }
+  const csvUsesServerEndpoint = Boolean(srvActive?.scheduleId && props.modelId && srvActive.tab === tab);
 
   return (
     <div
@@ -1655,11 +948,20 @@ export function SchedulePanel(props: {
         </button>
       </div>
 
-      {renderRegistryChrome()}
+      <ScheduleRegistryChrome srvActive={srvActive} />
       {serverErr ? <div className="mt-2 text-[10px] text-amber-500">{serverErr}</div> : null}
 
-      {renderScheduleDefinitionPresetsStrip()}
-
+      <ScheduleDefinitionPresetsStrip
+        tab={tab}
+        srvActive={srvActive}
+        modelId={props.modelId}
+        elementsById={props.elementsById}
+        onScheduleFiltersCommit={props.onScheduleFiltersCommit}
+        presetIdByCategory={presetIdByCategory}
+        setPresetIdByCategory={setPresetIdByCategory}
+        sidForTab={sidForTab}
+        setRegistryVisibleCols={setRegistryVisibleCols}
+      />
       {scheduleOpeningAdvisoryLines.length ? (
         <div
           data-testid="schedule-opening-advisories-readout"
@@ -1690,8 +992,17 @@ export function SchedulePanel(props: {
         </div>
       ) : null}
 
-      {renderScheduleDefinitionToolbar()}
-
+      {props.onScheduleFiltersCommit && sidForTab && srvActive?.scheduleId === sidForTab && props.modelId ? (
+        <ScheduleDefinitionToolbar
+          tab={tab}
+          scheduleId={sidForTab}
+          srvActive={srvActive}
+          modelId={props.modelId}
+          elementsById={props.elementsById}
+          activeLevelId={props.activeLevelId}
+          onScheduleFiltersCommit={props.onScheduleFiltersCommit}
+        />
+      ) : null}
       {tab === 'rooms' ? (
         groupedRooms && Object.keys(groupedRooms).length > 0 ? (
           <div className="mt-3">
@@ -1857,8 +1168,13 @@ export function SchedulePanel(props: {
           <div className="mt-3 text-[11px] text-muted">{MSG_LOADING}</div>
         ) : registryTableModelV1 ? (
           <div className="mt-2">
-            {renderRegistryColumnPicker()}
-            {renderRegistryScheduleTable(registryTableModelV1)}
+            <RegistryColumnPicker
+              registryPickKey={registryPickKey}
+              registrySchedule={registrySchedule}
+              visibleRegistryColumns={visibleRegistryColumns}
+              onToggleColumn={toggleRegistryColumn}
+            />
+            <ScheduleRegistryTable model={registryTableModelV1} />
             {renderTotals(registryTableModelV1.footerParts)}
             {tab === 'stairs' && stairScheduleServerEvidenceLines.length ? (
               <div
