@@ -3,7 +3,7 @@
   "checkpoint_id": "69af4c3d0840",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": [
     "packages/web/src/Viewport.tsx",
     "packages/web/src/viewport/cameraRig.test.ts",
@@ -21,13 +21,19 @@
       "transcript": "/69/af4c3d0840/1/full.jsonl",
       "content_hash": "/69/af4c3d0840/1/content_hash.txt",
       "prompt": "/69/af4c3d0840/1/prompt.txt"
+    },
+    {
+      "metadata": "/69/af4c3d0840/2/metadata.json",
+      "transcript": "/69/af4c3d0840/2/full.jsonl",
+      "content_hash": "/69/af4c3d0840/2/content_hash.txt",
+      "prompt": "/69/af4c3d0840/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 2599,
-    "cache_creation_tokens": 349345,
-    "cache_read_tokens": 20423511,
-    "output_tokens": 125936,
-    "api_call_count": 217
+    "input_tokens": 2613,
+    "cache_creation_tokens": 376236,
+    "cache_read_tokens": 21618385,
+    "output_tokens": 130813,
+    "api_call_count": 229
   }
 }
