@@ -98,6 +98,10 @@ import {
   readSnapshotFile,
 } from './projectSnapshots';
 import { AdvisorPanel } from '../advisor/AdvisorPanel';
+import {
+  buildBrowserRenderingBudgetReadoutV1,
+  formatBrowserRenderingBudgetLines,
+} from './browserRenderingBudgetReadout';
 
 /**
  * RedesignedWorkspace — composition route for the §11–§17 chrome.
@@ -230,6 +234,7 @@ export function RedesignedWorkspace(): JSX.Element {
   );
   const projectNameRef = useRef<HTMLButtonElement | null>(null);
   const planCameraHandleRef = useRef<PlanCameraHandle | null>(null);
+  const budgetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [tabsState, setTabsState] = useState<TabsState>(() => readPersistedTabs() ?? EMPTY_TABS);
 
   /** Persist tabs on every change (T-06). */
@@ -413,6 +418,7 @@ export function RedesignedWorkspace(): JSX.Element {
         setCollaborationConflictQueue(null);
       } catch (err) {
         if (err instanceof ApiHttpError && err.status === 409) {
+          console.error('[bim] 409 conflict detail:', err.detail);
           setCollaborationConflictQueue(buildCollaborationConflictQueueV1(err.detail));
         } else {
           setCollaborationConflictQueue(null);
@@ -792,6 +798,40 @@ export function RedesignedWorkspace(): JSX.Element {
     return buildPlanGridDatumInspectorLine(elementsById, planProjectionPrimitives, el.id);
   }, [selectedId, elementsById, planProjectionPrimitives]);
 
+  /* ── Debug: browser rendering budget (debounced, threshold warnings) ─ */
+  useEffect(() => {
+    if (budgetTimerRef.current) clearTimeout(budgetTimerRef.current);
+    budgetTimerRef.current = setTimeout(() => {
+      const readout = buildBrowserRenderingBudgetReadoutV1({
+        elementsById,
+        planProjectionPrimitives,
+        scheduleHydratedRowCount: null,
+        scheduleHydratedTab: null,
+      });
+      console.debug('[bim] rendering budget:', formatBrowserRenderingBudgetLines(readout).join(' | '));
+      const bad = readout.rows.filter(
+        (r) => r.progressiveState === 'deferred' || r.progressiveState === 'over_budget',
+      );
+      if (bad.length > 0) {
+        console.warn(
+          '[bim] rendering budget threshold exceeded:',
+          readout.largeModelProofSummary,
+          bad.map((r) => `${r.id}=${r.value ?? '?'}/${r.limit}`).join(', '),
+        );
+      }
+    }, 2000);
+    return () => {
+      if (budgetTimerRef.current) clearTimeout(budgetTimerRef.current);
+    };
+  }, [elementsById, planProjectionPrimitives]);
+
+  /* ── Debug: selected element dump (dev only) ─────────────────────── */
+  useEffect(() => {
+    if (!import.meta.env.DEV || !selectedId) return;
+    const el = elementsById[selectedId];
+    if (el) console.debug('[bim] selected element:', el);
+  }, [selectedId, elementsById]);
+
   /* ── Inspector selection ──────────────────────────────────────────── */
   const inspectorSelection = useMemo<InspectorSelection | null>(() => {
     if (!selectedId) return null;
@@ -1018,14 +1058,6 @@ export function RedesignedWorkspace(): JSX.Element {
                   <option value="opening_focus">Opening focus</option>
                   <option value="room_scheme">Room scheme</option>
                 </select>
-                <a
-                  href="/legacy"
-                  className="whitespace-nowrap rounded-md px-2 py-1 text-xs text-muted hover:bg-surface-strong"
-                  data-testid="legacy-route-link"
-                  title="Open the v1 panel-stack view"
-                >
-                  Legacy
-                </a>
               </div>
             </div>
             <TabBar

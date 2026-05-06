@@ -59,12 +59,17 @@ export function SheetModeShell({
   elementsById: Record<string, Element>;
   preferredSheetId?: string;
 }): JSX.Element {
+  const evidenceFullBleed = new URLSearchParams(window.location.search).has('evidenceSheetFull');
   return (
     <div
       data-testid="sheet-mode-shell"
       className="h-full w-full overflow-auto bg-background p-6"
     >
-      <SheetCanvas elementsById={elementsById} preferredSheetId={preferredSheetId} />
+      <SheetCanvas
+        elementsById={elementsById}
+        preferredSheetId={preferredSheetId}
+        evidenceFullBleed={evidenceFullBleed}
+      />
     </div>
   );
 }
