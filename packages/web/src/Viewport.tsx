@@ -25,6 +25,8 @@ import {
 } from './viewport/materials';
 import { ViewCube } from './viewport/ViewCube';
 import { type ViewCubePick } from './viewport/viewCubeAlignment';
+import { SectionBox } from './viewport/sectionBox';
+import { WalkController, classifyKey as classifyWalkKey } from './viewport/walkMode';
 
 const CATEGORY_FALLBACK_COLOR_HEX = '#cbd5e1';
 
@@ -381,6 +383,48 @@ function computeRootBoundingBox(
   };
 }
 
+function aabbWireframeVertices(
+  min: { x: number; y: number; z: number },
+  max: { x: number; y: number; z: number },
+): THREE.Vector3[] {
+  const v = (x: number, y: number, z: number): THREE.Vector3 => new THREE.Vector3(x, y, z);
+  const c000 = v(min.x, min.y, min.z);
+  const c100 = v(max.x, min.y, min.z);
+  const c010 = v(min.x, max.y, min.z);
+  const c110 = v(max.x, max.y, min.z);
+  const c001 = v(min.x, min.y, max.z);
+  const c101 = v(max.x, min.y, max.z);
+  const c011 = v(min.x, max.y, max.z);
+  const c111 = v(max.x, max.y, max.z);
+  // 12 edges as vertex pairs.
+  return [
+    c000,
+    c100,
+    c100,
+    c110,
+    c110,
+    c010,
+    c010,
+    c000,
+    c001,
+    c101,
+    c101,
+    c111,
+    c111,
+    c011,
+    c011,
+    c001,
+    c000,
+    c001,
+    c100,
+    c101,
+    c110,
+    c111,
+    c010,
+    c011,
+  ];
+}
+
 function applyClippingPlanesToMeshes(root: THREE.Object3D, planes: THREE.Plane[]) {
   if (!planes.length) return;
   root.traverse((node) => {
@@ -416,6 +460,11 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
   } | null>(null);
 
   const [currentAzimuth, setCurrentAzimuth] = useState(Math.PI / 4);
+  const [walkActive, setWalkActive] = useState(false);
+  const [sectionBoxActive, setSectionBoxActive] = useState(false);
+  const walkControllerRef = useRef<WalkController | null>(null);
+  const sectionBoxRef = useRef<SectionBox | null>(null);
+  const sectionBoxCageRef = useRef<THREE.LineSegments | null>(null);
 
   const elementsById = useBimStore((s) => s.elementsById);
 
@@ -487,6 +536,16 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
     camera.up.set(0, 1, 0);
 
     cameraRef.current = camera;
+
+    /** Spec §15.3 walk-mode controller — the actual key/mouse wiring is
+     * a few lines below; this just creates the math state. */
+    const walkController = new WalkController({}, {});
+    walkControllerRef.current = walkController;
+
+    /** Spec §15.6 section box — toggled on/off via the React state below.
+     * The mount effect re-applies clipping planes on every scene rebuild. */
+    const sectionBox = new SectionBox({});
+    sectionBoxRef.current = sectionBox;
 
     /** Spec §15.3 camera rig replaces the legacy in-line spherical rig. */
     const rig = createCameraRig({
@@ -645,9 +704,56 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
     renderer.domElement.addEventListener('wheel', onWheel, { passive: true });
     document.addEventListener('keydown', onKey);
 
-    function tick() {
-      renderer.render(scene, camera);
+    /* ── Walk mode wiring (§15.3) ──────────────────────────────────── */
+    function onWalkKeyDown(ev: KeyboardEvent): void {
+      const target = ev.target as HTMLElement | null;
+      if (target) {
+        const tag = target.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      }
+      if (!walkController.snapshot().active) return;
+      if (ev.key === 'Escape') {
+        walkController.setActive(false);
+        setWalkActive(false);
+        return;
+      }
+      if (ev.key === 'Shift') walkController.setRunning(true);
+      const wk = classifyWalkKey(ev.key);
+      if (wk) {
+        walkController.setKey(wk, true);
+        ev.preventDefault();
+      }
+    }
+    function onWalkKeyUp(ev: KeyboardEvent): void {
+      if (ev.key === 'Shift') walkController.setRunning(false);
+      const wk = classifyWalkKey(ev.key);
+      if (wk) walkController.setKey(wk, false);
+    }
+    function onWalkPointerMove(ev: PointerEvent): void {
+      if (!walkController.snapshot().active) return;
+      walkController.mouseLook(ev.movementX, ev.movementY);
+    }
+    document.addEventListener('keydown', onWalkKeyDown);
+    document.addEventListener('keyup', onWalkKeyUp);
+    document.addEventListener('pointermove', onWalkPointerMove);
 
+    let lastFrameMs = performance.now();
+    function tick() {
+      const now = performance.now();
+      const dt = Math.min(0.05, (now - lastFrameMs) / 1000);
+      lastFrameMs = now;
+
+      // Walk-mode integration drives the camera target through walkController.
+      if (walkController.snapshot().active) {
+        walkController.update(dt);
+        const snap = walkController.snapshot();
+        const dir = walkController.viewDirection();
+        camera.position.set(snap.position.x, snap.position.y, snap.position.z);
+        camera.up.set(0, 1, 0);
+        camera.lookAt(snap.position.x + dir.x, snap.position.y + dir.y, snap.position.z + dir.z);
+      }
+
+      renderer.render(scene, camera);
       rafRef.current = requestAnimationFrame(tick);
     }
 
@@ -667,6 +773,12 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       renderer.domElement.removeEventListener('pointermove', onMove);
       renderer.domElement.removeEventListener('wheel', onWheel);
       document.removeEventListener('keydown', onKey);
+      document.removeEventListener('keydown', onWalkKeyDown);
+      document.removeEventListener('keyup', onWalkKeyUp);
+      document.removeEventListener('pointermove', onWalkPointerMove);
+      walkControllerRef.current = null;
+      sectionBoxRef.current = null;
+      sectionBoxCageRef.current = null;
 
       renderer.dispose();
 
@@ -699,9 +811,18 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
         : null;
 
     const rnd = rendererRef.current;
-    if (rnd) rnd.localClippingEnabled = clipElevM != null || clipFloorM != null;
+    const sectionBox = sectionBoxRef.current;
+    const sectionPlanes = sectionBox && sectionBoxActive ? sectionBox.clippingPlanes() : [];
+    if (rnd)
+      rnd.localClippingEnabled =
+        clipElevM != null || clipFloorM != null || sectionPlanes.length > 0;
 
     const clippingPlanes: THREE.Plane[] = [];
+    for (const p of sectionPlanes) {
+      clippingPlanes.push(
+        new THREE.Plane(new THREE.Vector3(p.normal.x, p.normal.y, p.normal.z), p.constant),
+      );
+    }
     /** Upper cap: same semantics as the original single plane — hide everything **above** Y=clipElevM. */
     if (clipElevM != null) {
       const plane = new THREE.Plane();
@@ -795,7 +916,48 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
     }
 
     applyClippingPlanesToMeshes(root, clippingPlanes);
-  }, [elementsById, selectedId, viewerCategoryHidden, viewerClipElevMm, viewerClipFloorElevMm]);
+
+    // Section-box wireframe cage so the user can see the active region.
+    if (sectionBoxCageRef.current) {
+      root.remove(sectionBoxCageRef.current);
+      sectionBoxCageRef.current = null;
+    }
+    if (sectionBoxActive && sectionBox) {
+      const snap = sectionBox.snapshot();
+      const min = snap.min;
+      const max = snap.max;
+      const verts = aabbWireframeVertices(min, max);
+      const geom = new THREE.BufferGeometry().setFromPoints(verts);
+      const cage = new THREE.LineSegments(
+        geom,
+        new THREE.LineBasicMaterial({
+          color: readToken('--color-accent', '#fcd34d'),
+          transparent: true,
+          opacity: 0.85,
+        }),
+      );
+      cage.userData.bimPickId = '__section_box_cage';
+      sectionBoxCageRef.current = cage;
+      root.add(cage);
+    }
+  }, [
+    elementsById,
+    selectedId,
+    viewerCategoryHidden,
+    viewerClipElevMm,
+    viewerClipFloorElevMm,
+    sectionBoxActive,
+  ]);
+
+  // Sync the section-box controller's `active` flag with React state.
+  useEffect(() => {
+    sectionBoxRef.current?.setActive(sectionBoxActive);
+  }, [sectionBoxActive]);
+
+  // Sync the walk controller's `active` flag with React state.
+  useEffect(() => {
+    walkControllerRef.current?.setActive(walkActive);
+  }, [walkActive]);
 
   const handleViewCubePick = useCallback(
     (
@@ -865,6 +1027,43 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
           onPick={handleViewCubePick}
           onHome={handleViewCubeHome}
         />
+      </div>
+
+      <div className="pointer-events-auto absolute bottom-3 left-3 z-20 flex flex-col items-start gap-1.5">
+        <button
+          type="button"
+          onClick={() => setWalkActive((v) => !v)}
+          aria-pressed={walkActive}
+          data-active={walkActive ? 'true' : 'false'}
+          className={[
+            'rounded-md border border-border px-2 py-1 text-xs',
+            walkActive ? 'bg-accent text-accent-foreground' : 'bg-surface text-foreground',
+          ].join(' ')}
+          title="Walk mode (WASD + mouse-look · Esc to exit)"
+        >
+          Walk: {walkActive ? 'ON' : 'OFF'}
+        </button>
+        <button
+          type="button"
+          onClick={() => setSectionBoxActive((v) => !v)}
+          aria-pressed={sectionBoxActive}
+          data-active={sectionBoxActive ? 'true' : 'false'}
+          className={[
+            'rounded-md border border-border px-2 py-1 text-xs',
+            sectionBoxActive ? 'bg-accent text-accent-foreground' : 'bg-surface text-foreground',
+          ].join(' ')}
+          title="Section box (clipping AABB)"
+        >
+          Section box: {sectionBoxActive ? 'ON' : 'OFF'}
+        </button>
+        {sectionBoxActive && sectionBoxRef.current ? (
+          <span
+            data-testid="section-box-summary"
+            className="rounded-pill border border-border bg-surface px-2 py-0.5 text-[11px] font-mono text-muted"
+          >
+            {sectionBoxRef.current.summary()}
+          </span>
+        ) : null}
       </div>
 
       <div ref={mountRef} className="size-full cursor-grab active:cursor-grabbing" />
