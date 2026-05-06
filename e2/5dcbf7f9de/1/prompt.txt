@@ -144,3 +144,7 @@ no, ignore them. now look again into our target house - try seeding it again.
 ---
 
 [Image #9] still doesnt look like that at all, and the walls are sooo bright - is that on purpose? just to understand what is going on
+
+---
+
+i added a visualization from different perspectives in the spec as a image, can you see that? it is NOWHERE close to our current rendering in the browser...
