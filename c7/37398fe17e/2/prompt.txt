@@ -1,0 +1,14 @@
+Agent C — R2-03 (window frame + glazing)
+  Work in /Users/jhoetter/repos/bim-ai. Read spec/rendering-v2-spec.md
+  section R2-03. Replace makeWindowMesh in packages/web/src/Viewport.tsx
+  with a THREE.Group: 4-member frame (60 mm section) + glazing pane
+  (6 mm deep, roughness 0.05, opacity 0.35) + mullion if width > 1.2m.
+  Call addEdges() on frame members (not on glazing). Set castShadow =
+  receiveShadow = true on frame members; glazing castShadow = false.
+
+  Only touch makeWindowMesh. Do not touch any other factory functions.
+  Run pnpm --filter web typecheck before committing.
+  Commit: "feat(3d): R2-03 — window frame + glazing geometry"
+  Push to origin/main when done.
+
+  Task: R2-03
