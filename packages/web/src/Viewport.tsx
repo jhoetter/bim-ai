@@ -461,25 +461,85 @@ function makeWindowMesh(
 ) {
   const { px, pz } = hostedXZ(win, wall);
   const sill = THREE.MathUtils.clamp(win.sillHeightMm / 1000, 0.06, wall.heightMm / 1000 - 0.08);
-  const h = THREE.MathUtils.clamp(win.heightMm / 1000, 0.05, wall.heightMm / 1000 - sill - 0.06);
-  const width = THREE.MathUtils.clamp(win.widthMm / 1000, 0.14, 4);
-  const depth = THREE.MathUtils.clamp(wall.thicknessMm / 1000 + 0.02, 0.06, 1.5);
-  const mesh = new THREE.Mesh(
-    new THREE.BoxGeometry(width, h, depth),
-    new THREE.MeshStandardMaterial({
-      transparent: true,
-      opacity: 0.84,
-      color:
-        win.id === sid
-          ? (paint?.selection.selectedColor ?? '#ddd6fe')
-          : categoryColorOr(paint, 'window'),
-    }),
+  const outerW = THREE.MathUtils.clamp(win.widthMm / 1000, 0.14, 4);
+  const outerH = THREE.MathUtils.clamp(
+    win.heightMm / 1000,
+    0.05,
+    wall.heightMm / 1000 - sill - 0.06,
   );
-  mesh.position.set(px, elevM + sill + h / 2, pz);
-  mesh.rotation.y = wallYaw(wall);
-  mesh.userData.bimPickId = win.id;
-  addEdges(mesh);
-  return mesh;
+  const frameSect = 0.06;
+  const depth = THREE.MathUtils.clamp(wall.thicknessMm / 1000 + 0.02, 0.06, 0.5);
+  const glazingW = Math.max(outerW - 2 * frameSect, 0.01);
+  const glazingH = Math.max(outerH - 2 * frameSect, 0.01);
+
+  const frameColor =
+    win.id === sid
+      ? (paint?.selection.selectedColor ?? '#ddd6fe')
+      : categoryColorOr(paint, 'window');
+  const frameMat = new THREE.MeshStandardMaterial({ color: frameColor });
+
+  const group = new THREE.Group();
+  group.userData.bimPickId = win.id;
+
+  const frameGroup = new THREE.Group();
+
+  const head = new THREE.Mesh(new THREE.BoxGeometry(outerW, frameSect, depth), frameMat);
+  head.position.set(0, outerH / 2 - frameSect / 2, 0);
+  head.castShadow = head.receiveShadow = true;
+  head.userData.bimPickId = win.id;
+  addEdges(head);
+  frameGroup.add(head);
+
+  const sillMesh = new THREE.Mesh(new THREE.BoxGeometry(outerW, frameSect, depth), frameMat);
+  sillMesh.position.set(0, -(outerH / 2 - frameSect / 2), 0);
+  sillMesh.castShadow = sillMesh.receiveShadow = true;
+  sillMesh.userData.bimPickId = win.id;
+  addEdges(sillMesh);
+  frameGroup.add(sillMesh);
+
+  const jambL = new THREE.Mesh(new THREE.BoxGeometry(frameSect, outerH, depth), frameMat);
+  jambL.position.set(-(outerW / 2 - frameSect / 2), 0, 0);
+  jambL.castShadow = jambL.receiveShadow = true;
+  jambL.userData.bimPickId = win.id;
+  addEdges(jambL);
+  frameGroup.add(jambL);
+
+  const jambR = new THREE.Mesh(new THREE.BoxGeometry(frameSect, outerH, depth), frameMat);
+  jambR.position.set(outerW / 2 - frameSect / 2, 0, 0);
+  jambR.castShadow = jambR.receiveShadow = true;
+  jambR.userData.bimPickId = win.id;
+  addEdges(jambR);
+  frameGroup.add(jambR);
+
+  group.add(frameGroup);
+
+  const glazingMat = new THREE.MeshStandardMaterial({
+    color: readToken('--cat-glazing', '#c8d8ea'),
+    roughness: 0.05,
+    metalness: 0.0,
+    opacity: 0.35,
+    transparent: true,
+    side: THREE.DoubleSide,
+  });
+  const glazing = new THREE.Mesh(new THREE.BoxGeometry(glazingW, glazingH, 0.006), glazingMat);
+  glazing.castShadow = false;
+  glazing.userData.bimPickId = win.id;
+  group.add(glazing);
+
+  if (outerW > 1.2) {
+    const mullion = new THREE.Mesh(
+      new THREE.BoxGeometry(frameSect, glazingH, 0.012),
+      frameMat,
+    );
+    mullion.castShadow = mullion.receiveShadow = true;
+    mullion.userData.bimPickId = win.id;
+    addEdges(mullion);
+    group.add(mullion);
+  }
+
+  group.position.set(px, elevM + sill + outerH / 2, pz);
+  group.rotation.y = wallYaw(wall);
+  return group;
 }
 
 function makeRoomRibbon(
