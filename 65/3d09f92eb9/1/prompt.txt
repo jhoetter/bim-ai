@@ -1,0 +1,150 @@
+i want to do some more revit analysis to understand how far we've come, what further gaps there are. i recently watched a 7 hour video, where i roughly found these insights:
+📚 Hyper-Granulare UX/UI-Analyse: Definitive BIM Guide (Gesamtdokument)
+Ziel: Lückenlose Dokumentation der User Experience (UX) und des User Interfaces (UI) für die Ableitung von Software-Requirements, UX-Design-Patterns oder Schulungshandbüchern auf Basis des 7-stündigen "Definitive BIM Guide"-Workflows.
+
+🕒 Stunde 1: Projekt-Setup, Ordnerstruktur & UI-Einführung
+Zeitstempel
+Aktion & UX/UI Beschreibung
+00:00 - 02:29
+Ressourcen & Datei-Management: Der Nutzer arbeitet außerhalb von Revit im Windows Explorer. Er demonstriert den Aufbau eines Common Data Environments (CDE). Er legt manuell Ordner an: Project Files, 00_Revision, 01_BIM Deliverables etc. UX-Relevanz: BIM beginnt mit starren Datenstrukturen.
+07:43
+Revit Interface & Projektstart: Im Home-Screen klickt der Nutzer unter "Models" auf New. UX-Workaround: Anstatt den "Browse"-Button zu nutzen, kopiert der Nutzer den Dateipfad der Template-Datei aus dem Windows Explorer und fügt den Pfad mit Ctrl+V ein, um sofort in den richtigen Ordner zu springen.
+10:22
+Projekt speichern & Backups: Klick auf File -> Save As -> Project. Wichtiges UI-Detail: Im Speichern-Dialog klickt er auf Options.... Dort ändert er "Maximum backups" von 20 (Standard) auf 1.
+12:04
+Worksets (Bearbeitungsbereiche): Klick im Ribbon auf Collaborate -> Worksets. Erstellung neuer Sets ("S-00_Grids and levels"). Revit fragt via Popup, ob das erstellte Workset aktiv werden soll. Er klickt No.
+14:22
+Ebenen (Levels) & Projekteinheiten: Doppelklick im Project Browser auf North. Einheiten-Anpassung: Shortcut UN. Im Format-Dialog ändert er die Einheiten auf "Meters" und "2 decimal places".
+18:11
+IFC und DWG verlinken: Reiter Insert -> Klick Link Revit. UX-Regel: Im Dialogfeld unten bei "Positioning" muss zwingend Origin to Origin ausgewählt werden.
+20:19
+Visibility/Graphics (Sichtbarkeit): Shortcut VV. Wechsel zum Reiter Revit Links -> Display Settings. Wechsel von "By Host View" zu By Linked View. Apply -> OK.
+30:45
+Stützen platzieren: Stütze ausgewählt. Klick auf Edit Type -> Duplicate. Name "20x45" eingeben. Kritischer UX-Schritt: In der Tabelle müssen die Werte "b" und "h" manuell auf 0.20 und 0.45 geändert werden. In der grünen Optionsleiste ändert er das Dropdown von Depth auf Height.
+47:35
+View Range (Ansichtsbereich): Ein generierter Träger ist nicht sichtbar. Klick ins Leere -> Properties Panel -> View Range -> Edit. Er ändert Cut Plane auf "3.92" und Bottom auf "3.8". Klick auf Apply. Der Träger taucht auf.
+52:22
+Split Element (SD): Er tippt SD. Der Cursor wird zu einem kleinen Messer. Er zerschneidet Träger in logische Einzelbauteile.
+
+
+🕒 Stunde 2: Strukturwände, Modifikationen & Erste Decken
+Zeitstempel
+Aktion & UX/UI Beschreibung
+01:00:16
+Copy & Move Tipps: Element markieren, Shortcut CO (Copy) oder MV (Move). Setzen des Hakens bei Multiple in der Optionsleiste, um Befehle am Stück auszuführen, ohne das Tool neu zu starten.
+01:11:11
+Align Tool für Träger: Shortcut AL. Ein extrem wichtiges UI-Paradigma. Zuerst wird das Referenz-Objekt (die Ziel-Linie) angeklickt, dann das Objekt, das dorthin "springen" soll.
+01:16:16
+Structural Walls (Tragende Wände): Reiter Structure -> Wall. Die UI fordert eine Entscheidung in der Optionsleiste: Location Line.
+01:18:35
+Wall Centerline vs. Core Centerline: UX-Logik: "Wall Centerline" nimmt die geometrische Mitte der gesamten Wand inkl. Dämmung. "Core Centerline" nimmt die Mitte des tragenden Kerns (z.B. Beton). Der Nutzer wählt Finish Face: Exterior, um Wände sauber an der DWG-Fassadenlinie auszurichten.
+01:26:18
+Neue Wandtypen erstellen: Im Properties Panel Edit Type -> Duplicate. Unter "Structure" klickt er auf "Edit". Ein neues Tabellen-UI öffnet sich. Hier ändert er die Dicke (Thickness) der Tragschicht auf 0.25m.
+01:39:09
+Offsets & Anpassungen: Mehrere Wände werden markiert. Im Properties Panel wird der Base Offset (Abstand zum Boden) auf z.B. -0.1m gesetzt, damit die Betonwand tiefer als der fertige Fußboden auf der Rohdecke sitzt.
+01:50:36
+Decken (Slabs) ausrichten: Reiter Structure -> Floor. Der türkisene Skizziermodus startet. Nach dem Zeichnen mit "Pick Walls" nutzt er rigoros den Shortcut TR (Trim/Extend), um alle Ecken perfekt zu schließen, da das UI sonst Fehler ausgibt.
+
+
+🕒 Stunde 3: Selektionswerkzeuge, Öffnungen & Deckenstrukturen
+Zeitstempel
+Aktion & UX/UI Beschreibung
+02:00:06
+Auswahl-Werkzeuge (Selection Tool): Auswahl von links nach rechts (durchgezogene Linie) = nur komplett eingeschlossene Elemente. Von rechts nach links (gestrichelte Linie) = alle berührten Elemente.
+02:14:23
+Schnitt-Ansicht (Section) für Öffnungen: Quick Access Toolbar -> Section. Schnittlinie ziehen, Doppelklick auf den blauen Pfeilkopf, um in die 2D-Schnittansicht der Wand zu wechseln.
+02:17:16
+Wall Opening erzeugen: Reiter Architecture -> Wall Opening. Wand anklicken, dann ein Rechteck aufziehen.
+02:19:33
+Formeln in Maßketten: Klick auf temporäre blaue Maßkette. Eingabe von =3.31-2.60. Revit berechnet den Wert und verschiebt die Kantenlinie millimetergenau.
+02:27:16
+Kopieren von Öffnungen: Wandöffnung markieren, Shortcut CO, Haken bei Multiple. Kopieren entlang der Achsen.
+02:43:54
+Tragende Decken skizzieren: Reiter Structure -> Floor. Klick auf Pick Walls in der Draw-Palette. Revit generiert pinke Begrenzungslinien auf der Innenseite der Wände. Offset auf -0.1 setzen.
+02:52:13
+Skizziermodus validieren: Klick auf grünen Haken. Gelbe Warnmeldung: "Highlighted floors overlap". Der Nutzer ignoriert dies zunächst und korrigiert die Geometrie manuell im Grundriss.
+
+
+🕒 Stunde 4: Detaillierung, Planerstellung & Architektur-Start
+Zeitstempel
+Aktion & UX/UI Beschreibung
+03:01:10
+Wall Joins (Wandverbindungen): Reiter Modify -> Wall Joins Icon. Ecke anklicken. In der Optionsleiste auf Next klicken, bis die gewünschte Verschneidungsvariante (Gehrung, Stumpf) erreicht ist.
+03:13:22
+"Don't Attach" Dialog (UX-Kritik): Pop-up fragt: "Would you like walls that go up to this floor's level to attach to its bottom?" Der Nutzer klickt fast immer rigoros auf No, um unvorhersehbare Fehler bei manuellen Offsets zu vermeiden.
+03:28:10
+Starting View festlegen: Klick Manage -> Starting View. Auswahl eines neu erstellten Titel-Plans. Die Datei öffnet sich künftig immer mit diesem repräsentativen Plan.
+03:30:42
+Purge Unused: Klick Manage -> Purge Unused. OK klicken (zwingend 3 Mal wiederholen, um verschachtelte Objekte zu löschen). Dann Collaborate -> Synchronize with Central.
+03:38:50
+Copy/Monitor (Tragwerk überwachen): Architekturmodell gestartet. Reiter Collaborate -> Copy/Monitor -> Select Link. Tragwerk anklicken. Auf Copy klicken (Multiple). Grids markieren, Filter anwenden. Klick auf den kleinen Finish-Button, dann den großen Finish-Haken.
+03:46:57
+Architektur-DWG als Underlay: In der View drückt er VV. Deaktiviert IFCs. Stellt die Architektur-DWG unter "Display Settings" auf Underlay (Pauspapier-Effekt).
+
+
+🕒 Stunde 5: Innenausbau, Filter & Curtain Walls
+Zeitstempel
+Aktion & UX/UI Beschreibung
+04:02:55
+https://github.com/jhoetter
+04:08:34
+Ceiling Plans (Decken): Reiter Architecture -> Ceiling -> Sketch Ceiling. Raumumrisse nachfahren. Fehler-Feedback "Line must be in closed loop" abarbeiten.
+04:28:45
+View Filters (Sichtbarkeitsfilter): Shortcut VV -> Filters -> Edit/New. Filter "Insulation" erstellen. Kategorie "Walls", Regel: Type Name contains ISO. Unter "Cut Pattern" eine Schraffur zuweisen. Wände erhalten vollautomatisch diese Schraffur.
+04:36:49
+Curtain Walls (Fassaden) & Türen: Reiter Architecture -> Wall -> Curtain Wall. Typ auf "Fixed Number" (z.B. 9) stellen. Tür einfügen: Maus über Glaspaneel bewegen, mehrfach TAB drücken, anklicken. Pin-Symbol anklicken (entsperren), dann in Properties gegen Tür tauschen.
+04:53:01
+Familien-Editor starten: File -> New -> Family -> Metric Profile Rail.rft. Weißes UI mit grünen Referenzebenen.
+04:58:07
+Parameter & EQ erzeugen: Maßband nutzen (Aligned Dimension). Über Mittelachse messen, kleines EQ-Symbol klicken (Symmetrie-Zwang). Gesamtbreite messen, im Ribbon auf Create Parameter klicken und "Glass Thickness" nennen.
+
+
+🕒 Stunde 6: Geländer, Räume & Shared Parameters
+Zeitstempel
+Aktion & UX/UI Beschreibung
+05:00:43
+Geländer zusammenbauen: Familien ins Projekt geladen. Geländer markieren -> Edit Type -> Duplicate. Baluster Placement öffnen und eigene Familien (Trennstäbe) mit 2.00m Abstand zuweisen.
+05:13:07
+Worksets massenhaft zuweisen: Auswahlrechteck über Modell ziehen, Filter (nur Walls). Im Properties-Panel den Parameter Workset kollektiv auf "A-10_SOE" setzen.
+05:27:33
+Rooms platzieren (Raumbegrenzung): Reiter Architecture -> Room. UX-Problem: Wände des verlinkten Modells werden nicht erkannt. Strukturmodell markieren -> Properties -> Haken bei Room Bounding setzen.
+05:35:37
+Räume löschen (UX-Falle): Das Löschen des Stempels im Grundriss löscht nur die Repräsentation. Um die Datenbank zu bereinigen, muss ein Room Schedule erstellt und die Zeile via Delete Row gelöscht werden.
+05:42:51
+Shared Parameters: Reiter Manage -> Shared Parameters. Erstellung einer externen .txt-Datei. "Zone Program" als Text-Parameter anlegen. Danach via Project Parameters der Kategorie "Rooms" zuweisen.
+05:57:40
+Raumstempel Familien-Editor: Neuer Metric Room Tag. Um Text perfekt zu zentrieren, nutzt er den Workaround, ein Dummy-"I" zu tippen, Referenzlinien durch die Mitte zu ziehen, zu gruppieren und daran das Label auszurichten.
+
+
+🕒 Stunde 7: Auswertung, Export & Navisworks Clash Detection
+Zeitstempel
+Aktion & UX/UI Beschreibung
+06:13:03
+Schedules formatieren: "Room Schedule" öffnen. Properties -> Sorting/Grouping. Nach "Zone Program" sortieren, Haken bei Header und Blank line setzen.
+06:15:42
+Flächen berechnen: Properties -> Formatting. Feld "Area" markieren und unten rechts im Dropdown von "No calculation" auf Calculate Totals umstellen.
+06:21:03
+Color Fill Legend: Reiter Architecture -> Room & Area -> Color Fill Legend. In Grundriss klicken. Space Type = "Rooms", Scheme = "Zone Program". Grundriss füllt sich automatisch mit Farben.
+06:31:48
+Ansichten (Crop Region): In den Ansichtseigenschaften Haken bei Crop Region Visible und Crop View setzen. Den schwarzen Rahmen eng ans Gebäude ziehen.
+06:44:37
+NWC-Export für Navisworks: 3D-Ansicht öffnen. File -> Export -> NWC. Kritisch: Unter Navisworks Settings den Haken bei "Convert linked files" setzen.
+06:46:16
+Navisworks Append: Navisworks Manage öffnen. Im Home-Reiter auf Append klicken. NWC-Dateien laden exakt übereinander.
+06:54:24
+Find Items & Selection Sets: Objekt anklicken -> Ribbon Select Same -> Select Same Type. Ribbon Save Selection klicken und z.B. als "MEP_Ducts" speichern.
+07:01:20
+Viewpoint-Workaround: App-Menü (blaues N) -> Options -> Interface -> Viewpoints Defaults. Haken bei Save Hide/Required Attributes setzen, sonst speichert das System keine ausgeblendeten Elemente im Viewpoint.
+07:13:02
+Clash Detective: Home-Reiter -> Clash Detective -> Add Test. Links Set "STR_Beams", rechts "MEP_Ducts" wählen. Toleranz einstellen. Klick auf Run Test. Die Kamera zoomt im "Results"-Tab millimetergenau auf die markierten Kollisionen (Rot/Grün).
+
+
+i don't care too much about the project overview page (the very first thing mentioned), but maybe you see some gaps from the rest? can you analyze and compare with our tracker and if we already have the features or if missing?
+
+---
+
+i want to have navisworks-level features already in the product directly, not that i need to back-and-forth export/import. i also want e.g. that for instance later customers can use revit files for imports, but i dont focus too much on files and more on databases for collaboration; i care more about the feature parity for creating the models, sketching, ... thos ekind of things.
+
+i also see usually that the editor can do much more, e.g. in the videos, they are editing directly from the 3d view, can adjust the height of e.g. a wall easily, and so on.
+
+please think about how we can get closer and closer to the modeling capabilities of revit

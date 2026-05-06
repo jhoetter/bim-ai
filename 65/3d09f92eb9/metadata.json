@@ -3,7 +3,7 @@
   "checkpoint_id": "653d09f92eb9",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 1,
+  "checkpoints_count": 3,
   "files_touched": [
     "spec/target-house-seed.md"
   ],
@@ -13,13 +13,19 @@
       "transcript": "/65/3d09f92eb9/0/full.jsonl",
       "content_hash": "/65/3d09f92eb9/0/content_hash.txt",
       "prompt": "/65/3d09f92eb9/0/prompt.txt"
+    },
+    {
+      "metadata": "/65/3d09f92eb9/1/metadata.json",
+      "transcript": "/65/3d09f92eb9/1/full.jsonl",
+      "content_hash": "/65/3d09f92eb9/1/content_hash.txt",
+      "prompt": "/65/3d09f92eb9/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 23,
-    "cache_creation_tokens": 288722,
-    "cache_read_tokens": 2111911,
-    "output_tokens": 5694,
-    "api_call_count": 8
+    "input_tokens": 47,
+    "cache_creation_tokens": 311257,
+    "cache_read_tokens": 6496845,
+    "output_tokens": 24290,
+    "api_call_count": 22
   }
 }
