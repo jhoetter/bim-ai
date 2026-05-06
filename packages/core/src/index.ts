@@ -37,7 +37,8 @@ export type ElemKind =
   | 'validation_rule'
   | 'column'
   | 'beam'
-  | 'ceiling';
+  | 'ceiling'
+  | 'color_fill_legend';
 
 export type XY = { xMm: number; yMm: number };
 
@@ -242,6 +243,7 @@ export type Element =
       functionLabel?: string | null;
       finishSet?: string | null;
       targetAreaM2?: number | null;
+      volumeM3?: number | null;
     }
   | {
       kind: 'grid_line';
@@ -540,6 +542,14 @@ export type Element =
       heightOffsetMm: number;
       thicknessMm: number;
       ceilingTypeId?: string | null;
+    }
+  | {
+      kind: 'color_fill_legend';
+      id: string;
+      name: string;
+      planViewId: string;
+      positionMm: XY;
+      schemeField: string;
     };
 
 export type Violation = {

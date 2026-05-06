@@ -301,6 +301,14 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
                 : Number(raw.targetAreaM2 ?? raw.target_area_m2),
           }
         : {}),
+      ...(raw.volumeM3 !== undefined || raw.volume_m3 !== undefined
+        ? {
+            volumeM3:
+              raw.volumeM3 === null || raw.volume_m3 === null
+                ? null
+                : Number(raw.volumeM3 ?? raw.volume_m3),
+          }
+        : {}),
     };
   }
   if (kind === 'grid_line') {
@@ -998,6 +1006,17 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
         : typeof raw.rule_json === 'object' && raw.rule_json
           ? raw.rule_json
           : {}) as Record<string, unknown>,
+    };
+  }
+
+  if (kind === 'color_fill_legend') {
+    return {
+      kind: 'color_fill_legend',
+      id,
+      name,
+      planViewId: String(raw.planViewId ?? raw.plan_view_id ?? ''),
+      positionMm: coerceXY((raw.positionMm ?? raw.position_mm ?? {}) as Record<string, unknown>),
+      schemeField: String(raw.schemeField ?? raw.scheme_field ?? 'programmeCode'),
     };
   }
 

@@ -251,6 +251,12 @@ export function InspectorPropertiesFor(
           <FieldRow label={f('finishSet')} value={el.finishSet ?? '—'} />
           <FieldRow label={f('level')} value={el.levelId} mono />
           <FieldRow label={f('outlinePoints')} value={String(el.outlineMm.length)} />
+          {el.upperLimitLevelId ? (
+            <FieldRow label={f('upperLimit')} value={el.upperLimitLevelId} mono />
+          ) : null}
+          {el.volumeM3 != null ? (
+            <FieldRow label={f('volume')} value={`${el.volumeM3.toFixed(3)} m³`} />
+          ) : null}
         </div>
       );
     case 'level':
@@ -303,6 +309,13 @@ export function InspectorPropertiesFor(
           {el.planDetailLevel ? (
             <FieldRow label={f('detailLevel')} value={el.planDetailLevel} />
           ) : null}
+        </div>
+      );
+    case 'color_fill_legend':
+      return (
+        <div>
+          <FieldRow label={f('colorFillLegend')} value={el.planViewId} mono />
+          <FieldRow label={f('schemeField')} value={el.schemeField} />
         </div>
       );
     default:

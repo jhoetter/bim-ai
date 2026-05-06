@@ -58,3 +58,16 @@ describe('scheduleTotalsReadoutParts', () => {
     expect(parts.some((p) => p.includes('finish peer 1'))).toBe(true);
   });
 });
+
+describe('scheduleTotalsReadoutParts — volumeM3 (room)', () => {
+  it('includes volumeM3 in room totals when present', () => {
+    const parts = scheduleTotalsReadoutParts({
+      kind: 'room',
+      rowCount: 2,
+      areaM2: 50,
+      perimeterM: 28,
+      volumeM3: 125.5,
+    });
+    expect(parts.some((p) => p.includes('125.500'))).toBe(true);
+  });
+});

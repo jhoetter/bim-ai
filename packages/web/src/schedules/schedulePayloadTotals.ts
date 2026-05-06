@@ -25,6 +25,10 @@ export function scheduleTotalsReadoutParts(totals: Record<string, unknown> | und
   if (kind === 'room') {
     parts.push(`sum area ${Number(totals.areaM2 ?? 0).toFixed(3)} m2`);
     parts.push(`sum perimeter ${Number(totals.perimeterM ?? 0).toFixed(3)} m`);
+    const vol = totals.volumeM3 ?? totals.volume_m3;
+    if (vol != null && vol !== '' && Number.isFinite(Number(vol))) {
+      parts.push(`sum volume ${Number(vol).toFixed(3)} m³`);
+    }
     const tsum = totals.targetAreaM2 ?? totals.target_area_m2;
     if (tsum != null && tsum !== '' && Number.isFinite(Number(tsum))) {
       parts.push(`sum target ${Number(tsum).toFixed(3)} m²`);
