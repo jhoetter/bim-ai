@@ -7,3 +7,7 @@ Directory to see which kind of directories we have and apply it so that when I r
 ---
 
 can you have that it applies the conservative one by default?
+
+---
+
+[Image #2] fantastic that works, but A LOT OF ELEMENTS (e.g. the 3d cube to see front/north etc) are totally off. position-wise etc. please look into that carefully and FIX ALL. i need to be able to apply any kind of design system and the UI works perfectly
