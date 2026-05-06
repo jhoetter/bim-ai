@@ -12,8 +12,8 @@ import { ICON_SIZE, Icons } from '@bim-ai/ui';
 
 import { Viewport } from '../Viewport';
 import { PlanCanvas } from '../plan/PlanCanvas';
-import { bootstrap } from '../lib/api';
-import type { Snapshot } from '@bim-ai/core';
+import { applyCommand, bootstrap } from '../lib/api';
+import type { Snapshot, Violation } from '@bim-ai/core';
 import { useBimStore, toggleTheme, getCurrentTheme, type Theme } from '../state/store';
 import { modeForHotkey } from '../state/modeController';
 import { patternFor } from '../state/uiStates';
@@ -146,6 +146,31 @@ export function RedesignedWorkspace(): JSX.Element {
     if (!partial) return;
     setTabsState((s) => openTab(s, partial));
   }, []);
+
+  /* ── Semantic command dispatch (from PlanCanvas / Viewport) ────────── */
+  const onSemanticCommand = useCallback(
+    async (cmd: Record<string, unknown>): Promise<void> => {
+      const mid = useBimStore.getState().modelId;
+      const uid = useBimStore.getState().userId;
+      if (!mid) return;
+      try {
+        const r = await applyCommand(mid, cmd, { userId: uid });
+        if (r.revision !== undefined) {
+          hydrateFromSnapshot({
+            modelId: mid,
+            revision: r.revision,
+            elements: r.elements ?? {},
+            violations: (r.violations ?? []) as Violation[],
+          });
+        }
+      } catch (err) {
+        // V1: surface the error in seedError-style readout. Full conflict
+        // queue (legacy `Workspace.tsx`) is out of scope here.
+        setSeedError(err instanceof Error ? err.message : 'Apply failed');
+      }
+    },
+    [hydrateFromSnapshot],
+  );
 
   const insertSeedHouse = useCallback(async (): Promise<void> => {
     setSeedLoading(true);
@@ -607,6 +632,7 @@ export function RedesignedWorkspace(): JSX.Element {
                   : activeLevelId ?? ''
               }
               elementsById={elementsById}
+              onSemanticCommand={(cmd) => void onSemanticCommand(cmd)}
             />
           </div>
         }
@@ -723,11 +749,13 @@ function CanvasMount({
   viewerMode,
   activeLevelId,
   elementsById,
+  onSemanticCommand,
 }: {
   mode: WorkspaceMode;
   viewerMode: 'plan_canvas' | 'orbit_3d';
   activeLevelId: string;
   elementsById: Record<string, Element>;
+  onSemanticCommand: (cmd: Record<string, unknown>) => void;
 }): JSX.Element {
   if (mode === 'plan-3d') {
     return (
@@ -738,7 +766,7 @@ function CanvasMount({
           <PlanCanvas
             wsConnected={false}
             activeLevelResolvedId={activeLevelId ?? ''}
-            onSemanticCommand={() => undefined}
+            onSemanticCommand={onSemanticCommand}
           />
         </div>
         <div style={{ position: 'relative' }}>
@@ -753,7 +781,7 @@ function CanvasMount({
       <PlanCanvas
         wsConnected={false}
         activeLevelResolvedId={activeLevelId}
-        onSemanticCommand={() => undefined}
+        onSemanticCommand={onSemanticCommand}
       />
     );
   if (mode === 'section') return <SectionModeShell elementsById={elementsById} />;
@@ -766,7 +794,7 @@ function CanvasMount({
     <PlanCanvas
       wsConnected={false}
       activeLevelResolvedId={activeLevelId}
-      onSemanticCommand={() => undefined}
+      onSemanticCommand={onSemanticCommand}
     />
   );
 }

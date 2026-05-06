@@ -13,16 +13,6 @@ Last updated: 2026-05-06.
 
 ## High-impact (user-visible, blocks daily use)
 
-### T-01 · Wall draw repro on `/`
-**WP target**: WP-UI-C02 · **Source**: §32 V07 · **Status**: open
-
-User reports walls do not actually draw on the redesigned shell. Pointer-event audit found `EmptyStateOverlay` is `pointer-events: none` (correct) but `FloatingPalette` (`RedesignedWorkspace.tsx:477`) sits at `top: 12; left: 50%` with `zIndex: 10` and captures clicks in its band.
-
-**Next moves**:
-1. Add a vitest integration that mounts `<RedesignedWorkspace>` with the seed house and simulates: press `W` → click two points → assert a wall element was added to the store. This pins the failure.
-2. Reduce `FloatingPalette`'s pointer footprint — drop the wrapping `<div>` so only the toolbar's bounds capture pointer events.
-3. Verify with the integration test.
-
 ### T-03 · TopBar Project menu
 **WP target**: WP-UI-A03 · **Source**: §32 V03 + V10 · **Status**: open
 
