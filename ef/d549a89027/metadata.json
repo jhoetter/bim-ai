@@ -3,7 +3,7 @@
   "checkpoint_id": "efd549a89027",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     "CODE_QUALITY.md",
     "packages/web/src/plan/planGeometry.test.ts"
@@ -14,13 +14,19 @@
       "transcript": "/ef/d549a89027/0/full.jsonl",
       "content_hash": "/ef/d549a89027/0/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/ef/d549a89027/1/metadata.json",
+      "transcript": "/ef/d549a89027/1/full.jsonl",
+      "content_hash": "/ef/d549a89027/1/content_hash.txt",
+      "prompt": "/ef/d549a89027/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 0,
-    "cache_creation_tokens": 0,
-    "cache_read_tokens": 0,
-    "output_tokens": 0,
-    "api_call_count": 0
+    "input_tokens": 817,
+    "cache_creation_tokens": 208195,
+    "cache_read_tokens": 14838042,
+    "output_tokens": 91406,
+    "api_call_count": 163
   }
 }
