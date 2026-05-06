@@ -804,7 +804,15 @@ export function rebuildPlanMeshes(
 
     if (level && f.levelId !== level) continue;
 
-    holder.add(horizontalOutlineMesh(f.boundaryMm, PLAN_Y + 0.001, '#22c55e', 0.16, f.id));
+    holder.add(
+      horizontalOutlineMesh(
+        f.boundaryMm,
+        PLAN_Y + 0.001,
+        getPlanPalette().floorOutline,
+        0.16,
+        f.id,
+      ),
+    );
   }
 
   for (const rf of Object.values(elementsById)) {
@@ -813,7 +821,15 @@ export function rebuildPlanMeshes(
 
     if (level && rf.referenceLevelId !== level) continue;
 
-    holder.add(horizontalOutlineMesh(rf.footprintMm, PLAN_Y + 0.004, '#f97316', 0.2, rf.id));
+    holder.add(
+      horizontalOutlineMesh(
+        rf.footprintMm,
+        PLAN_Y + 0.004,
+        getPlanPalette().roofOutline,
+        0.2,
+        rf.id,
+      ),
+    );
   }
 
   for (const wall of walls) holder.add(planWallMesh(wall, opts.selectedId, lineWeightScale));

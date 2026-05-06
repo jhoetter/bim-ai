@@ -5,11 +5,6 @@ import type { Element } from '@bim-ai/core';
 import { useBimStore } from '../state/store';
 import { liveTokenReader } from '../viewport/materials';
 import { collectWallAnchors, snapPlanPoint } from './snapEngine';
-
-function readPlanToken(name: string, fallback: string): string {
-  const v = liveTokenReader().read(name);
-  return v && v.trim().length > 0 ? v : fallback;
-}
 import {
   buildPlanProjectionQuery,
   extractPlanAnnotationHints,
@@ -28,6 +23,11 @@ import {
   resolvePlanViewDisplay,
 } from './planProjection';
 import { rebuildPlanMeshes } from './symbology';
+
+function readPlanToken(name: string, fallback: string): string {
+  const v = liveTokenReader().read(name);
+  return v && v.trim().length > 0 ? v : fallback;
+}
 
 const SLICE_Y = 0.02;
 
