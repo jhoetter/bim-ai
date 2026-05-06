@@ -70,7 +70,7 @@ export function ToolPalette({
       data-testid="tool-palette"
       onKeyDown={handleKey}
       style={paletteStyle}
-      className="flex items-center gap-0.5 rounded-xl border border-border bg-background/95 px-1.5 py-1.5 shadow-elev-2 backdrop-blur-sm"
+      className="flex items-center gap-0.5 rounded-md border border-border bg-background/95 px-1.5 py-1.5 shadow-elev-2 backdrop-blur-sm"
     >
       {tools.map((tool) => {
         const Icon = Icons[tool.icon]!;
@@ -96,7 +96,7 @@ export function ToolPalette({
               else onToolSelect(tool.id);
             }}
             className={[
-              'relative inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors',
+              'relative inline-flex h-8 w-8 items-center justify-center rounded transition-colors',
               isActive
                 ? 'bg-accent text-accent-foreground shadow-sm'
                 : 'text-muted hover:bg-surface hover:text-foreground',

@@ -194,9 +194,9 @@ function TopBarModePills({
             data-active={active ? 'true' : 'false'}
             title={`${m.label} (${m.hotkey})`}
             className={[
-              'relative rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+              'relative rounded px-3 py-1.5 text-sm font-medium transition-colors',
               active
-                ? 'bg-accent/10 text-accent'
+                ? 'text-accent'
                 : 'text-muted hover:bg-surface hover:text-foreground',
             ].join(' ')}
             style={active ? { boxShadow: 'inset 0 -2px 0 0 var(--color-accent)' } : undefined}
@@ -204,11 +204,7 @@ function TopBarModePills({
             {m.label}
             <span
               aria-hidden="true"
-              className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded px-1 text-[10px] font-medium tabular-nums"
-              style={{
-                background: active ? 'var(--color-accent)' : 'var(--color-surface-strong)',
-                color: active ? 'var(--color-accent-foreground)' : 'var(--color-muted)',
-              }}
+              className="ml-1.5 text-[10px] tabular-nums opacity-40"
             >
               {m.hotkey}
             </span>
@@ -264,7 +260,7 @@ function TopBarRight({
       />
       <div
         aria-label="Account"
-        className="flex h-7 w-7 items-center justify-center rounded-full border border-border bg-surface font-medium text-xs text-foreground shadow-sm"
+        className="flex h-7 w-7 items-center justify-center rounded border border-border bg-surface font-medium text-xs text-foreground"
       >
         {(avatarInitials ?? '··').slice(0, 2)}
       </div>

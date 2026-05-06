@@ -163,15 +163,12 @@ export function ViewCube({
       role="group"
       aria-label="ViewCube"
       onKeyDown={handleKey}
-      className={[
-        'flex flex-col items-center gap-1.5 rounded-xl border border-border/60 bg-background/80 p-1.5 shadow-elev-2 backdrop-blur-sm',
-        className ?? '',
-      ].join(' ')}
+      className={['flex flex-col items-center gap-1', className ?? ''].join(' ')}
     >
       {/* Stage: drag here to orbit; click a face/corner to snap. */}
       <div
         data-testid="view-cube-stage"
-        style={stageStyle}
+        style={{ ...stageStyle, filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.18))' }}
         onPointerDown={handlePointerDown}
         onClickCapture={handleClickCapture}
       >
@@ -211,7 +208,7 @@ export function ViewCube({
         ))}
       </div>
 
-      <div className="flex w-full items-center justify-between gap-1">
+      <div className="flex items-center gap-2">
         <Compass currentAzimuth={currentAzimuth} />
         <button
           type="button"
@@ -221,9 +218,9 @@ export function ViewCube({
           }}
           aria-label="Reset to default view"
           title="Drag cube to orbit · click face to align · click ↺ to reset"
-          className="inline-flex h-5 w-5 items-center justify-center rounded text-muted hover:bg-surface hover:text-foreground"
+          className="inline-flex h-4 w-4 items-center justify-center rounded text-muted/70 hover:text-foreground"
         >
-          <Icons.viewCubeReset size={12} aria-hidden="true" />
+          <Icons.viewCubeReset size={11} aria-hidden="true" />
         </button>
       </div>
     </div>
