@@ -1,0 +1,162 @@
+You are working in the monorepo at /Users/jhoetter/repos/bim-ai.
+  Your working directory for most edits is packages/web.
+
+  ## Task: FL-02 — Built-in family catalog
+
+  ### Branch
+  git checkout main && git pull && git checkout -b fl-02-family-catalog
+
+  ### Context
+
+  FL-01 is already merged to main. The data-model scaffolding exists:
+
+  packages/core/src/index.ts defines:
+    - FamilyDiscipline = 'door' | 'window' | 'stair' | 'railing' | 'wall_type' | 'floor_type' | 'roof_type' | 'column' | 'beam' | 'generic'
+    - family_type element: { kind, id, name, familyId, discipline, parameters, isBuiltIn? }
+    - door element has: familyTypeId?, overrideParams?
+    - window element has: familyTypeId?, overrideParams?
+    - stair / railing have: overrideParams?
+
+  packages/web/src/families/types.ts defines:
+    - FamilyParamDef: { key, label, type: 'length_mm'|'angle_deg'|'material_key'|'boolean'|'option', default, options?, min?, max?, instanceOverridable }
+    - FamilyDefinition: { id, name, discipline, thumbnail?, params, defaultTypes: { name, familyId, discipline, parameters, isBuiltIn: true }[] }
+    - resolveParam(key, instanceOverrides, typeParameters, familyDef, inlineFallback): unknown
+
+  The existing door geometry lives in packages/web/src/Viewport.tsx at function makeDoorMesh() (~line 799).
+  It builds: head member, two jambs, panel leaf, threshold — all THREE.BoxGeometry inside a THREE.Group.
+  Key values it currently uses: door.widthMm, wall.heightMm, wall.thicknessMm.
+
+  The existing window geometry lives in the same file at function makeWindowMesh() (~line 853).
+  It builds: head, sill, jambL, jambR, glazing pane, optional mullion — all THREE.BoxGeometry inside a THREE.Group.
+  Key values: win.widthMm, win.heightMm, win.sillHeightMm, wall.thicknessMm.
+
+  ### What to build
+
+  Create these NEW files (do NOT touch Viewport.tsx yet — that is FL-03):
+
+  ─────────────────────────────────────────────
+  FILE 1: packages/web/src/families/geometryFns/doorGeometry.ts
+  ─────────────────────────────────────────────
+  Export a single function:
+
+    import type * as THREE_NS from 'three';
+    import type { Element } from '@bim-ai/core';
+    import type { FamilyDefinition } from '../types';
+
+    export type DoorGeomInput = {
+      door:      Extract<Element, { kind: 'door' }>;
+      wall:      Extract<Element, { kind: 'wall' }>;
+      elevM:     number;
+      paint:     ViewportPaintBundle | null;   // import from '../../viewport/materials'
+      familyDef: FamilyDefinition | undefined;
+    };
+
+    export function buildDoorGeometry(input: DoorGeomInput): THREE_NS.Group
+
+  The function is a clean port of the existing makeDoorMesh logic, but reads dimensions
+  through resolveParam() so family/type/instance params override the inline fallbacks.
+  Parameters to resolve:
+    - 'leafWidthMm'  → fallback: door.widthMm clamped [350, 4000]
+    - 'leafHeightMm' → fallback: wall.heightMm * 0.86 clamped [600, 2500]
+    - 'frameDepthMm' → fallback: wall.thicknessMm clamped [80, 500]
+    - 'frameSectMm'  → fallback: 70
+    - 'panelThickMm' → fallback: 45
+
+  The function must set group.userData.bimPickId = door.id on the returned group
+  and on every child mesh. Use the same addEdges helper pattern (import or accept
+  as a parameter — keep it simple, inline a thin addEdges if needed).
+
+  Material creation: accept a `makeMat(color: string, roughness: number, metalness: number)` factory
+  approach, or inline new THREE.MeshStandardMaterial — your choice, just keep it readable.
+
+  ─────────────────────────────────────────────
+  FILE 2: packages/web/src/families/geometryFns/windowGeometry.ts
+  ─────────────────────────────────────────────
+  Export a single function:
+
+    export function buildWindowGeometry(input: WindowGeomInput): THREE_NS.Group
+
+  Same pattern. Parameters to resolve:
+    - 'widthMm'      → fallback: win.widthMm clamped [140, 4000]
+    - 'heightMm'     → fallback: win.heightMm clamped [50, wall.heightMm - sillMm - 60]
+    - 'sillMm'       → fallback: win.sillHeightMm clamped [60, wall.heightMm - 80]
+    - 'frameDepthMm' → fallback: wall.thicknessMm + 20 clamped [60, 500]
+    - 'frameSectMm'  → fallback: 60
+    - 'glazingAlpha' → fallback: 0.35
+
+  Port the existing makeWindowMesh geometry exactly — head, sill, two jambs,
+  glazing pane (DoubleSide, transparent), optional center mullion when width > 1.2 m.
+  Glazing color reads CSS token '--cat-glazing' with fallback '#c8d8ea'.
+
+  ─────────────────────────────────────────────
+  FILE 3: packages/web/src/families/familyCatalog.ts
+  ─────────────────────────────────────────────
+  Export:
+    export const BUILT_IN_FAMILIES: FamilyDefinition[]
+    export function getFamilyById(id: string): FamilyDefinition | undefined
+    export function getTypeById(id: string): FamilyDefinition['defaultTypes'][number] | undefined
+
+  Include exactly these door families (discipline: 'door'):
+
+    Family "builtin:door:single" — "Single Leaf Door"
+      params: leafWidthMm (length_mm, default 900, min 600, max 2400, instanceOverridable: true)
+              leafHeightMm (length_mm, default 2100, min 1800, max 3000, instanceOverridable: false)
+              frameSectMm (length_mm, default 70, instanceOverridable: false)
+      defaultTypes:
+        - id "builtin:door:single:900x2100"  name "Single 900×2100"  leafWidthMm: 900,  leafHeightMm: 2100
+        - id "builtin:door:single:1000x2100" name "Single 1000×2100" leafWidthMm: 1000, leafHeightMm: 2100
+        - id "builtin:door:single:800x2100"  name "Single 800×2100"  leafWidthMm: 800,  leafHeightMm: 2100
+
+    Family "builtin:door:double" — "Double Leaf Door"
+              leafHeightMm (length_mm, default 2100, min 1800, max 3000, instanceOverridable: false)
+      defaultTypes:
+        - id "builtin:door:double:1800x2100" name "Double 1800×2100" leafWidthMm: 1800, leafHeightMm: 2100
+        - id "builtin:door:double:2100x2100" name "Double 2100×2100" leafWidthMm: 2100, leafHeightMm: 2100
+
+  And these window families (discipline: 'window'):
+
+    Family "builtin:window:casement" — "Casement Window"
+      params: widthMm (length_mm, default 1200, min 400, max 3000, instanceOverridable: true)
+              heightMm (length_mm, default 1500, min 400, max 2400, instanceOverridable: true)
+              sillMm (length_mm, default 900, min 200, max 2000, instanceOverridable: true)
+              glazingAlpha (boolean mapped to 0.35/0.6, default 0.35, instanceOverridable: false)
+      defaultTypes:
+        - id "builtin:window:casement:1200x1500" name "Casement 1200×1500" widthMm: 1200, heightMm: 1500, sillMm: 900
+        - id "builtin:window:casement:600x1200"  name "Casement 600×1200"  widthMm: 600,  heightMm: 1200, sillMm: 900
+        - id "builtin:window:casement:2400x1500" name "Casement 2400×1500" widthMm: 2400, heightMm: 1500, sillMm: 900
+
+    Family "builtin:window:fixed" — "Fixed Glazing"
+      params: widthMm (length_mm, default 1500, min 400, max 6000, instanceOverridable: true)
+              heightMm (length_mm, default 2000, min 400, max 4000, instanceOverridable: true)
+              sillMm (length_mm, default 100, min 0, max 1000, instanceOverridable: true)
+      defaultTypes:
+        - id "builtin:window:fixed:1500x2000" name "Fixed 1500×2000" widthMm: 1500, heightMm: 2000, sillMm: 100
+        - id "builtin:window:fixed:3000x2400" name "Fixed 3000×2400" widthMm: 3000, heightMm: 2400, sillMm: 100
+
+  ### Type imports / paths
+
+    import { resolveParam, type FamilyDefinition, type FamilyParamDef } from './types'
+    import type { Element } from '@bim-ai/core'
+    import * as THREE from 'three'
+    Import ViewportPaintBundle from '../../viewport/materials' (check the actual export name — it may be ViewportPaintBundle or similar)
+
+  ### Acceptance criteria
+
+  1. `pnpm -r typecheck` passes with no new errors.
+  2. `pnpm --filter @bim-ai/web test --run` passes.
+  3. Each geometry file is pure — no React, no hooks, no store access.
+  4. familyCatalog.ts has no Three.js import (it is data-only).
+  5. resolveParam is used in both geometry fns; no direct `door.widthMm` etc. without going through it.
+
+  ### After completing
+
+  Run:
+    pnpm -r typecheck
+    pnpm --filter @bim-ai/web test --run
+
+  Then commit:
+    git add packages/web/src/families/
+    git commit -m "feat(families): FL-02 — built-in door + window family catalog + geometry fns"
+    git push -u origin fl-02-family-catalog
+
+  Do NOT merge to main. The orchestrator will merge after review.

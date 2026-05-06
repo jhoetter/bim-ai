@@ -1,0 +1,57 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "cafcbfceab2b",
+  "session_id": "41fdd7a7-d7d6-41bb-9a9c-39fb271f1f5b",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-06T12:08:47.074917Z",
+  "branch": "fl-02-family-catalog",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/families/familyCatalog.ts",
+    "packages/web/src/families/geometryFns/doorGeometry.ts",
+    "packages/web/src/families/geometryFns/windowGeometry.ts",
+    "packages/web/src/families/types.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "d1703a4caa84",
+  "token_usage": {
+    "input_tokens": 19,
+    "cache_creation_tokens": 43609,
+    "cache_read_tokens": 657682,
+    "output_tokens": 16027,
+    "api_call_count": 17
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-06T12:08:47.064266Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 389,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 389,
+    "total_lines_changed": 389,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 88,
+      "user_lines_removed": 2,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/core/src/index.ts": 14,
+        "packages/web/src/families/types.ts": 43,
+        "packages/web/src/i18n.ts": 4,
+        "packages/web/src/state/store.ts": 9,
+        "packages/web/src/viewport/cameraRig.ts": 18
+      },
+      "user_removed_per_file": {
+        "packages/core/src/index.ts": 1,
+        "packages/web/src/state/store.ts": 1
+      }
+    }
+  ]
+}
