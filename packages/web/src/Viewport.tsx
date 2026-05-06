@@ -11,6 +11,10 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { SSAOPass } from 'three/addons/postprocessing/SSAOPass.js';
 import { Sky } from 'three/addons/objects/Sky.js';
 
+import { buildDoorGeometry } from './families/geometryFns/doorGeometry';
+import { buildWindowGeometry } from './families/geometryFns/windowGeometry';
+import { getFamilyById, getTypeById } from './families/familyCatalog';
+
 import type { Element } from '@bim-ai/core';
 
 import {
@@ -801,52 +805,13 @@ function makeDoorMesh(
   wall: WallElem,
   elevM: number,
   paint: ViewportPaintBundle | null,
-) {
+): THREE.Group {
+  const typeEntry = door.familyTypeId ? getTypeById(door.familyTypeId) : undefined;
+  const familyDef = typeEntry ? getFamilyById(typeEntry.familyId) : undefined;
+  const group = buildDoorGeometry({ door, wall, elevM, paint, familyDef });
   const { px, pz } = hostedXZ(door, wall);
-  const leafWidth  = THREE.MathUtils.clamp(door.widthMm / 1000, 0.35, 4);
-  const leafHeight = THREE.MathUtils.clamp((wall.heightMm / 1000) * 0.86, 0.6, 2.5);
-  const panelThick = 0.045;
-  const depth      = THREE.MathUtils.clamp(wall.thicknessMm / 1000, 0.08, 0.5);
-  const frameSect  = 0.07;
-
-  const frameColor = categoryColorOr(paint, 'door');
-  const frameMat = new THREE.MeshStandardMaterial({
-    color: frameColor,
-    roughness: paint?.categories.door.roughness ?? 0.70,
-    metalness: paint?.categories.door.metalness ?? 0.0,
-  });
-  const panelMat = new THREE.MeshStandardMaterial({
-    color: frameColor,
-    roughness: paint?.categories.door.roughness ?? 0.70,
-  });
-
-  function member(w: number, h: number, d: number, x: number, y: number, mat: THREE.MeshStandardMaterial): THREE.Mesh {
-    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
-    m.position.set(x, y, 0);
-    m.castShadow = m.receiveShadow = true;
-    addEdges(m);
-    return m;
-  }
-
-  const frameGroup = new THREE.Group();
-  // head spans full opening width including jambs
-  frameGroup.add(member(leafWidth + 2 * frameSect, frameSect, depth, 0, leafHeight + frameSect / 2, frameMat));
-  // jamb-L
-  frameGroup.add(member(frameSect, leafHeight, depth, -(leafWidth / 2 + frameSect / 2), leafHeight / 2, frameMat));
-  // jamb-R
-  frameGroup.add(member(frameSect, leafHeight, depth,  (leafWidth / 2 + frameSect / 2), leafHeight / 2, frameMat));
-
-  // panel leaf
-  const panelMesh = member(leafWidth, leafHeight, panelThick, 0, leafHeight / 2, panelMat);
-
-  // threshold sits at floor level (centre of 0.02 m height = 0.01 m above elevM)
-  const threshMesh = member(leafWidth, 0.02, depth, 0, 0.01, frameMat);
-
-  const group = new THREE.Group();
-  group.add(frameGroup, panelMesh, threshMesh);
   group.position.set(px, elevM, pz);
   group.rotation.y = wallYaw(wall);
-  group.userData.bimPickId = door.id;
   return group;
 }
 
@@ -855,87 +820,16 @@ function makeWindowMesh(
   wall: WallElem,
   elevM: number,
   paint: ViewportPaintBundle | null,
-) {
+): THREE.Group {
+  const typeEntry = win.familyTypeId ? getTypeById(win.familyTypeId) : undefined;
+  const familyDef = typeEntry ? getFamilyById(typeEntry.familyId) : undefined;
+  const group = buildWindowGeometry({ win, wall, elevM, paint, familyDef });
   const { px, pz } = hostedXZ(win, wall);
-  const sill = THREE.MathUtils.clamp(win.sillHeightMm / 1000, 0.06, wall.heightMm / 1000 - 0.08);
-  const outerW = THREE.MathUtils.clamp(win.widthMm / 1000, 0.14, 4);
-  const outerH = THREE.MathUtils.clamp(
-    win.heightMm / 1000,
-    0.05,
-    wall.heightMm / 1000 - sill - 0.06,
-  );
-  const frameSect = 0.06;
-  const depth = THREE.MathUtils.clamp(wall.thicknessMm / 1000 + 0.02, 0.06, 0.5);
-  const glazingW = Math.max(outerW - 2 * frameSect, 0.01);
-  const glazingH = Math.max(outerH - 2 * frameSect, 0.01);
-
-  const frameMat = new THREE.MeshStandardMaterial({
-    color: categoryColorOr(paint, 'window'),
-    roughness: paint?.categories.window.roughness ?? 0.60,
-    metalness: paint?.categories.window.metalness ?? 0.05,
-  });
-
-  const group = new THREE.Group();
-  group.userData.bimPickId = win.id;
-
-  const frameGroup = new THREE.Group();
-
-  const head = new THREE.Mesh(new THREE.BoxGeometry(outerW, frameSect, depth), frameMat);
-  head.position.set(0, outerH / 2 - frameSect / 2, 0);
-  head.castShadow = head.receiveShadow = true;
-  head.userData.bimPickId = win.id;
-  addEdges(head);
-  frameGroup.add(head);
-
-  const sillMesh = new THREE.Mesh(new THREE.BoxGeometry(outerW, frameSect, depth), frameMat);
-  sillMesh.position.set(0, -(outerH / 2 - frameSect / 2), 0);
-  sillMesh.castShadow = sillMesh.receiveShadow = true;
-  sillMesh.userData.bimPickId = win.id;
-  addEdges(sillMesh);
-  frameGroup.add(sillMesh);
-
-  const jambL = new THREE.Mesh(new THREE.BoxGeometry(frameSect, outerH, depth), frameMat);
-  jambL.position.set(-(outerW / 2 - frameSect / 2), 0, 0);
-  jambL.castShadow = jambL.receiveShadow = true;
-  jambL.userData.bimPickId = win.id;
-  addEdges(jambL);
-  frameGroup.add(jambL);
-
-  const jambR = new THREE.Mesh(new THREE.BoxGeometry(frameSect, outerH, depth), frameMat);
-  jambR.position.set(outerW / 2 - frameSect / 2, 0, 0);
-  jambR.castShadow = jambR.receiveShadow = true;
-  jambR.userData.bimPickId = win.id;
-  addEdges(jambR);
-  frameGroup.add(jambR);
-
-  group.add(frameGroup);
-
-  const glazingMat = new THREE.MeshStandardMaterial({
-    color: readToken('--cat-glazing', '#c8d8ea'),
-    roughness: 0.05,
-    metalness: 0.0,
-    opacity: 0.35,
-    transparent: true,
-    side: THREE.DoubleSide,
-    envMapIntensity: 1.2,
-  });
-  const glazing = new THREE.Mesh(new THREE.BoxGeometry(glazingW, glazingH, 0.006), glazingMat);
-  glazing.castShadow = false;
-  glazing.userData.bimPickId = win.id;
-  group.add(glazing);
-
-  if (outerW > 1.2) {
-    const mullion = new THREE.Mesh(
-      new THREE.BoxGeometry(frameSect, glazingH, 0.012),
-      frameMat,
-    );
-    mullion.castShadow = mullion.receiveShadow = true;
-    mullion.userData.bimPickId = win.id;
-    addEdges(mullion);
-    group.add(mullion);
-  }
-
-  group.position.set(px, elevM + sill + outerH / 2, pz);
+  const rawSill = Number(win.sillHeightMm);
+  const sillM = Math.max(0.06, Math.min(rawSill / 1000, (wall.heightMm - 80) / 1000));
+  const rawH = Number(win.heightMm);
+  const outerH = Math.max(0.05, Math.min(rawH / 1000, (wall.heightMm - rawSill - 60) / 1000));
+  group.position.set(px, elevM + sillM + outerH / 2, pz);
   group.rotation.y = wallYaw(wall);
   return group;
 }
