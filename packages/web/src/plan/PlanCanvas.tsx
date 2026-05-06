@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import type { Element } from '@bim-ai/core';
 
 import { useBimStore } from '../state/store';
+import { useTheme } from '../state/useTheme';
 import { liveTokenReader } from '../viewport/materials';
 import { collectWallAnchors, snapPlanPoint } from './snapEngine';
 import {
@@ -111,6 +112,7 @@ type Props = {
 
 export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticCommand }: Props) {
   void wsConnected;
+  const theme = useTheme();
   const mountRef = useRef<HTMLDivElement | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -314,7 +316,9 @@ export function PlanCanvas({ wsConnected, activeLevelResolvedId, onSemanticComma
       renderer.dispose();
       mount.removeChild(renderer.domElement);
     };
-  }, [resizeCam]);
+    // `theme` triggers a renderer rebuild on light/dark toggle so paper/grid
+    // tokens are re-read. Spec §32 V11.
+  }, [resizeCam, theme]);
 
   useEffect(() => {
     const grp = rootRef.current;

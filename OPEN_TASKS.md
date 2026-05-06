@@ -23,16 +23,6 @@ User reports walls do not actually draw on the redesigned shell. Pointer-event a
 2. Reduce `FloatingPalette`'s pointer footprint — drop the wrapping `<div>` so only the toolbar's bounds capture pointer events.
 3. Verify with the integration test.
 
-### T-02 · Theme refresh on canvas
-**WP target**: WP-UI-A08 + WP-UI-B07 · **Source**: §32 V11 · **Status**: open
-
-`Viewport.tsx` and `plan/PlanCanvas.tsx` build their Three.js materials once per mount. Toggling theme re-paints the chrome but the canvas keeps the old token colors.
-
-**Next moves**:
-1. Subscribe `Viewport` + `PlanCanvas` to a theme-change selector (`useBimStore((s) => s.theme)` once exposed, or read `data-theme` attribute on `:root` via a `MutationObserver`).
-2. On change: rebuild `paintBundleRef.current = resolveViewportPaintBundle()` and walk the material registry to update `.color.set(...)` in place.
-3. Add a vitest stub that simulates the theme toggle and asserts material colors changed.
-
 ### T-03 · TopBar Project menu
 **WP target**: WP-UI-A03 · **Source**: §32 V03 + V10 · **Status**: open
 

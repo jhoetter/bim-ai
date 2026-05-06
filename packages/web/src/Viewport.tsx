@@ -10,6 +10,7 @@ import {
 } from './OrbitViewpointPersistedHud';
 
 import { useBimStore } from './state/store';
+import { useTheme } from './state/useTheme';
 import {
   CameraRig,
   classifyHotkey,
@@ -467,6 +468,7 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
   const sectionBoxCageRef = useRef<THREE.LineSegments | null>(null);
 
   const elementsById = useBimStore((s) => s.elementsById);
+  const theme = useTheme();
 
   const selectedId = useBimStore((s) => s.selectedId);
 
@@ -784,7 +786,11 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
 
       host.removeChild(renderer.domElement);
     };
-  }, []);
+    // `theme` is included so the renderer rebuilds when the user toggles
+    // light/dark — token-driven materials are resolved at mount time and
+    // need fresh values when the data-theme attribute flips. Spec §32 V11.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [theme]);
 
   useEffect(() => {
     if (!orbitCameraPoseMm) return;
