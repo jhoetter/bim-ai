@@ -16,3 +16,7 @@ Checking formatting...
 Error: Process completed with exit code 1.
 
 my CI/CD for js checks is failing...
+
+---
+
+did you commit + push?
