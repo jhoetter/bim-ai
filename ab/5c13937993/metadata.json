@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "ab5c13937993",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "nightshift/README.md",
+    "nightshift/nightshift-1.md",
+    "nightshift/nightshift-2.md",
+    "nightshift/nightshift-3.md",
+    "nightshift/nightshift-4.md",
+    "nightshift/nightshift-5.md",
+    "nightshift/nightshift-6.md",
+    "nightshift/nightshift-7.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/ab/5c13937993/0/metadata.json",
+      "transcript": "/ab/5c13937993/0/full.jsonl",
+      "content_hash": "/ab/5c13937993/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 0
+  }
+}
