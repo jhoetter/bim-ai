@@ -254,6 +254,12 @@ export function buildPaletteCandidates(
       keywords: 'language lang sprache',
     },
   );
+  items.push({
+    id: 'tool.browse-families',
+    kind: 'tool',
+    label: 'Browse families',
+    keywords: 'family library catalog door window stair railing wall type',
+  });
   items.push({ id: 'agent.review', kind: 'agent', label: 'Run Agent Review' });
   return items;
 }

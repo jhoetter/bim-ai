@@ -14,10 +14,12 @@ export function WorkspaceLeftRail({
   onSemanticCommand,
   openTabFromElement,
   onModeChange,
+  onOpenFamilyLibrary,
 }: {
   onSemanticCommand: (cmd: Record<string, unknown>) => void | Promise<void>;
   openTabFromElement: (el: Element) => void;
   onModeChange: (mode: WorkspaceMode) => void;
+  onOpenFamilyLibrary?: () => void;
 }): JSX.Element {
   const elementsById = useBimStore((s) => s.elementsById);
   const activeLevelId = useBimStore((s) => s.activeLevelId);
@@ -37,6 +39,18 @@ export function WorkspaceLeftRail({
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
+      {onOpenFamilyLibrary ? (
+        <div className="shrink-0 border-b border-border p-2">
+          <button
+            type="button"
+            onClick={onOpenFamilyLibrary}
+            data-testid="left-rail-open-family-library"
+            className="w-full rounded border border-border bg-surface-strong px-2 py-1 text-left text-xs hover:bg-accent-soft"
+          >
+            Families…
+          </button>
+        </div>
+      ) : null}
       <div className="shrink-0 border-b border-border p-2">
         <LevelStack
           levels={(Object.values(elementsById) as Element[])

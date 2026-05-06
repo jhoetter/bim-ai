@@ -65,6 +65,7 @@ import { StatusBar } from './StatusBar';
 import { CheatsheetModal } from '../cmd/CheatsheetModal';
 import { CommandPalette } from '../cmd/CommandPalette';
 import { type CommandCandidate } from '../cmd/commandPaletteSources';
+import { FamilyLibraryPanel, type FamilyLibraryPlaceKind } from '../families/FamilyLibraryPanel';
 import { OnboardingTour } from '../onboarding/OnboardingTour';
 import { readOnboardingProgress, resetOnboarding } from '../onboarding/tour';
 import { canvasContainerStyle, CanvasMount } from './CanvasMount';
@@ -141,6 +142,11 @@ export function Workspace(): JSX.Element {
   const [theme, setTheme] = useState<Theme>(() => (getCurrentTheme() as Theme) ?? 'light');
   const [leftRailCollapsed, setLeftRailCollapsed] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [familyLibraryOpen, setFamilyLibraryOpen] = useState(false);
+  const [_pendingPlacement, setPendingPlacement] = useState<{
+    kind: FamilyLibraryPlaceKind;
+    typeId: string;
+  } | null>(null);
   const [cheatsheetOpen, setCheatsheetOpen] = useState(false);
   const [recentCommandIds, setRecentCommandIds] = useState<string[]>([]);
   const [tourOpen, setTourOpen] = useState<boolean>(() => !readOnboardingProgress().completed);
@@ -620,6 +626,10 @@ export function Workspace(): JSX.Element {
   const handlePalettePick = useCallback(
     (cand: CommandCandidate) => {
       setRecentCommandIds((prev) => [cand.id, ...prev.filter((id) => id !== cand.id)].slice(0, 5));
+      if (cand.id === 'tool.browse-families') {
+        setFamilyLibraryOpen(true);
+        return;
+      }
       if (cand.kind === 'tool') {
         const toolId = cand.id.replace(/^tool\./, '') as ToolId;
         const legacy = toolIdToLegacy(toolId);
@@ -651,6 +661,34 @@ export function Workspace(): JSX.Element {
     [i18n, select, setPlanTool],
   );
 
+  const handlePlaceFamilyType = useCallback(
+    (kind: FamilyLibraryPlaceKind, typeId: string) => {
+      setPendingPlacement({ kind, typeId });
+      switch (kind) {
+        case 'door':
+          setPlanTool('door');
+          break;
+        case 'window':
+          setPlanTool('window');
+          break;
+        case 'wall_type':
+          setPlanTool('wall');
+          break;
+        case 'floor_type':
+          setPlanTool('floor');
+          break;
+        case 'roof_type':
+          // No legacy 'roof' plan tool; the type is staged for the next roof draw.
+          break;
+        case 'stair':
+        case 'railing':
+          // No legacy plan tool for these; the type is staged for the workbench draw.
+          break;
+      }
+    },
+    [setPlanTool],
+  );
+
   /* ── Empty-state per §25 ──────────────────────────────────────────── */
   const emptyHint = patternFor(seedLoading ? 'canvas-loading' : 'canvas-empty');
   const showEmptyState =
@@ -666,6 +704,12 @@ export function Workspace(): JSX.Element {
         candidates={paletteCandidates}
         recentIds={recentCommandIds}
         onPick={handlePalettePick}
+      />
+      <FamilyLibraryPanel
+        open={familyLibraryOpen}
+        onClose={() => setFamilyLibraryOpen(false)}
+        elementsById={elementsById}
+        onPlaceType={handlePlaceFamilyType}
       />
       <OnboardingTour open={tourOpen} onClose={() => setTourOpen(false)} />
       <VVDialog open={vvDialogOpen} onClose={closeVVDialog} />
@@ -759,6 +803,7 @@ export function Workspace(): JSX.Element {
             onSemanticCommand={onSemanticCommand}
             openTabFromElement={openTabFromElement}
             onModeChange={handleModeChange}
+            onOpenFamilyLibrary={() => setFamilyLibraryOpen(true)}
           />
         }
         leftRailCollapsed={<LeftRailCollapsed sections={browserSections} />}
