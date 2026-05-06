@@ -29,7 +29,7 @@ A workpackage is `done` when all of: (a) TypeScript typechecks clean (`pnpm exec
 | [Wave 3](#wave-3--element-depth)           | Element Depth (Structural, Curtain Wall, Ceilings) | `done`      |
 | [Wave 4](#wave-4--data-layer)              | Data Layer (Rooms V2, Parameters, Schedules)       | `done`      |
 | [Wave 5](#wave-5--families--collaboration) | Families + Collaboration                           | `done`      |
-| [Wave 6](#wave-6--coordination--export)    | Coordination + Export                              | **CURRENT** |
+| [Wave 6](#wave-6--coordination--export)    | Coordination + Export                              | `done`      |
 
 _Waves 0–2 fully merged to main. Prompt files deleted._
 
@@ -126,7 +126,7 @@ Batch B (after A merged):
 
 | WP       | Title                                                                                       | State  |
 | -------- | ------------------------------------------------------------------------------------------- | ------ |
-| WP-V2-13 | Coordination + Clash Detection (Selection Sets, Find Items by Rule, Clash Test, Viewpoints) | `open` |
+| WP-V2-13 | Coordination + Clash Detection (Selection Sets, Find Items by Rule, Clash Test, Viewpoints) | `done` |
 
 ### WP-V2-13 — Coordination + Clash Detection
 
