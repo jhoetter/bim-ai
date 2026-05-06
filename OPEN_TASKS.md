@@ -60,20 +60,6 @@ Six specialized authoring panels exist in the codebase but are not mounted in th
 
 ---
 
-### T-14 · Plan view graphics matrix + saved-view overrides
-
-**WP target:** WP-UI-B01 (drafting visuals) · **Source:** `workspace/PlanViewGraphicsMatrix.tsx`, `SavedViewTagGraphicsAuthoring.tsx`, `SavedViewTemplateGraphicsAuthoring.tsx` · **Status:** `open`
-
-Per-category line weight / pattern / color overrides per plan view exist in the old workspace but have no UI in the redesign. Users cannot currently inspect or change how categories render per view.
-
-**Next moves:**
-- Mount `PlanViewGraphicsMatrix.tsx` in the redesign (likely as an Inspector tab or settings panel when a plan view is active)
-- Mount `SavedViewTagGraphicsAuthoring` and `SavedViewTemplateGraphicsAuthoring` for per-view template overrides
-- Wire to `activePlanViewId` + `planPresentationPreset` from store
-- Update §5 + §28 WP-UI-B01 when done
-
----
-
 ## How to add a new task
 
 1. Append a new `### T-NN · Title` heading at the end of the relevant section.

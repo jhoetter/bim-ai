@@ -1,7 +1,9 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
+import type { Element } from '@bim-ai/core';
 import {
   InspectorConstraintsFor,
+  InspectorGraphicsFor,
   InspectorIdentityFor,
   InspectorPropertiesFor,
 } from './InspectorContent';
@@ -81,5 +83,59 @@ describe('InspectorIdentityFor', () => {
     expect(getByText('wall')).toBeTruthy();
     expect(getByText('seed-w-eg-south')).toBeTruthy();
     expect(getByText('EG South')).toBeTruthy();
+  });
+});
+
+describe('InspectorGraphicsFor — T-14 / WP-UI-B01', () => {
+  const planView: Element = {
+    kind: 'plan_view',
+    id: 'seed-plan-eg',
+    name: 'Ground Floor Plan',
+    levelId: 'seed-lvl-ground',
+    planPresentation: 'default',
+  };
+
+  const viewTemplate: Element = {
+    kind: 'view_template',
+    id: 'seed-tmpl-1',
+    name: 'Default Template',
+    scale: 'scale_100',
+  };
+
+  const elementsById: Record<string, Element> = {
+    [planView.id]: planView,
+    [viewTemplate.id]: viewTemplate,
+  };
+
+  it('renders graphics panel for plan_view', () => {
+    const result = InspectorGraphicsFor({
+      el: planView,
+      elementsById,
+      revision: 1,
+      onPersistProperty: vi.fn(),
+    });
+    const { container } = render(result!);
+    expect(container.firstChild).toBeTruthy();
+  });
+
+  it('renders graphics panel for view_template with footnote', () => {
+    const result = InspectorGraphicsFor({
+      el: viewTemplate,
+      elementsById,
+      revision: 1,
+      onPersistProperty: vi.fn(),
+    });
+    const { getByText } = render(result!);
+    expect(getByText(/Template defaults/)).toBeTruthy();
+  });
+
+  it('returns null for non-graphics element kinds', () => {
+    const result = InspectorGraphicsFor({
+      el: wall as Element,
+      elementsById,
+      revision: 1,
+      onPersistProperty: vi.fn(),
+    });
+    expect(result).toBeNull();
   });
 });

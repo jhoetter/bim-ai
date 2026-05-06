@@ -1,6 +1,13 @@
 import { type JSX } from 'react';
 import type { Element } from '@bim-ai/core';
 
+import { planViewGraphicsMatrixRows, viewTemplateGraphicsMatrixRows } from '../plan/planProjection';
+import { PlanViewGraphicsMatrix } from './PlanViewGraphicsMatrix';
+import {
+  SavedViewTagGraphicsAuthoring,
+  SavedViewTemplateGraphicsAuthoring,
+} from './savedViewTagGraphicsAuthoring';
+
 /**
  * Inspector parameter renderers — spec §13.
  *
@@ -174,4 +181,50 @@ export function InspectorIdentityFor(el: Element): JSX.Element {
       <FieldRow label="Comments" value={(el as { comments?: string }).comments ?? '—'} />
     </div>
   );
+}
+
+export function InspectorGraphicsFor({
+  el,
+  elementsById,
+  revision,
+  onPersistProperty,
+}: {
+  el: Element;
+  elementsById: Record<string, Element>;
+  revision: number;
+  onPersistProperty: (key: string, value: string) => void;
+}): JSX.Element | null {
+  if (el.kind === 'plan_view') {
+    const rows = planViewGraphicsMatrixRows(elementsById, el.id);
+    return (
+      <div className="flex flex-col gap-4">
+        <PlanViewGraphicsMatrix rows={rows} />
+        <SavedViewTagGraphicsAuthoring
+          variant="plan_view"
+          selected={el as Extract<Element, { kind: 'plan_view' }>}
+          revision={revision}
+          elementsById={elementsById}
+          onPersistProperty={onPersistProperty}
+        />
+      </div>
+    );
+  }
+  if (el.kind === 'view_template') {
+    const rows = viewTemplateGraphicsMatrixRows(elementsById, el.id);
+    return (
+      <div className="flex flex-col gap-4">
+        <PlanViewGraphicsMatrix
+          rows={rows}
+          footnote="Template defaults — plan_view overrides these when linked."
+        />
+        <SavedViewTemplateGraphicsAuthoring
+          selected={el as Extract<Element, { kind: 'view_template' }>}
+          revision={revision}
+          elementsById={elementsById}
+          onPersistProperty={onPersistProperty}
+        />
+      </div>
+    );
+  }
+  return null;
 }

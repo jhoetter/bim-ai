@@ -36,6 +36,7 @@ import { LeftRail, LeftRailCollapsed, type LeftRailSection } from './LeftRail';
 import { Inspector, type InspectorSelection } from './Inspector';
 import {
   InspectorConstraintsFor,
+  InspectorGraphicsFor,
   InspectorIdentityFor,
   InspectorPropertiesFor,
 } from './InspectorContent';
@@ -943,6 +944,22 @@ export function RedesignedWorkspace(): JSX.Element {
                 ) : (
                   <InspectorEmptyTab message="No element selected." />
                 ),
+                graphics:
+                  el && (el.kind === 'plan_view' || el.kind === 'view_template') ? (
+                    <InspectorGraphicsFor
+                      el={el}
+                      elementsById={elementsById}
+                      revision={revision}
+                      onPersistProperty={(key, value) =>
+                        void onSemanticCommand({
+                          type: 'updateElementProperty',
+                          elementId: el.id,
+                          key,
+                          value,
+                        })
+                      }
+                    />
+                  ) : undefined,
               }}
               emptyStateActions={[
                 {

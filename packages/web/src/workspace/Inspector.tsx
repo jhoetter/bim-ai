@@ -33,7 +33,7 @@ import { Icons, IconLabels, ICON_SIZE, type LucideLikeIcon } from '@bim-ai/ui';
  * tool-mode "quick actions" hint set instead of the tab UI.
  */
 
-export type InspectorTab = 'properties' | 'constraints' | 'identity';
+export type InspectorTab = 'properties' | 'constraints' | 'identity' | 'graphics';
 
 export interface InspectorSelection {
   /** Lucide icon to show in the header next to the type. */
@@ -50,6 +50,8 @@ export interface InspectorProps {
     properties: ReactNode;
     constraints?: ReactNode;
     identity?: ReactNode;
+    /** When provided, a "Graphics" tab appears after Identity. */
+    graphics?: ReactNode;
   };
   /** Quick-action lines for the empty state — typically tool hints
    * sourced from the active mode. `onTrigger` makes them clickable; if
@@ -64,12 +66,6 @@ export interface InspectorProps {
   defaultTab?: InspectorTab;
 }
 
-const TAB_DEFINITIONS: { id: InspectorTab; label: string }[] = [
-  { id: 'properties', label: 'Properties' },
-  { id: 'constraints', label: 'Constraints' },
-  { id: 'identity', label: 'Identity' },
-];
-
 export function Inspector({
   selection,
   tabs,
@@ -83,17 +79,32 @@ export function Inspector({
   const [activeTab, setActiveTab] = useState<InspectorTab>(defaultTab);
   const tablistId = useId();
 
+  const hasGraphics = tabs.graphics !== undefined;
+  const tabDefs = useMemo<{ id: InspectorTab; label: string }[]>(() => {
+    const defs: { id: InspectorTab; label: string }[] = [
+      { id: 'properties', label: 'Properties' },
+      { id: 'constraints', label: 'Constraints' },
+      { id: 'identity', label: 'Identity' },
+    ];
+    if (hasGraphics) defs.push({ id: 'graphics', label: 'Graphics' });
+    return defs;
+  }, [hasGraphics]);
+
+  useEffect(() => {
+    if (activeTab === 'graphics' && !hasGraphics) setActiveTab('properties');
+  }, [activeTab, hasGraphics]);
+
   const handleTabKey = useCallback(
     (event: KeyboardEvent<HTMLDivElement>) => {
       if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
-      const idx = TAB_DEFINITIONS.findIndex((t) => t.id === activeTab);
+      const idx = tabDefs.findIndex((t) => t.id === activeTab);
       if (idx < 0) return;
       const delta = event.key === 'ArrowRight' ? 1 : -1;
-      const next = TAB_DEFINITIONS[(idx + delta + TAB_DEFINITIONS.length) % TAB_DEFINITIONS.length];
+      const next = tabDefs[(idx + delta + tabDefs.length) % tabDefs.length];
       event.preventDefault();
       setActiveTab(next.id);
     },
-    [activeTab],
+    [activeTab, tabDefs],
   );
 
   const tabBody = useMemo(() => {
@@ -105,6 +116,8 @@ export function Inspector({
         return tabs.constraints ?? <EmptyTab message="No constraints for this element." />;
       case 'identity':
         return tabs.identity ?? <EmptyTab message="No identity metadata." />;
+      case 'graphics':
+        return tabs.graphics ?? null;
       default:
         return null;
     }
@@ -126,7 +139,7 @@ export function Inspector({
             onKeyDown={handleTabKey}
             className="flex border-b border-border px-3"
           >
-            {TAB_DEFINITIONS.map((t) => {
+            {tabDefs.map((t) => {
               const active = t.id === activeTab;
               return (
                 <button
