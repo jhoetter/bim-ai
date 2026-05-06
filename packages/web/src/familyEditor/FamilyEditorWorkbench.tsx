@@ -1,6 +1,6 @@
 import { useMemo, useState, type JSX } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { FamilyParamDef } from '../families/types';
+import type { FamilyParamDef, SketchLine, SweepGeometryNode } from '../families/types';
 import { validateFormula } from '../lib/expressionEvaluator';
 
 type Template = 'generic_model' | 'door' | 'window' | 'profile';
@@ -42,6 +42,22 @@ export function resolveFamilyParamValue(
   return param.default;
 }
 
+type SweepDraft = {
+  pathLines: SketchLine[];
+  profile: SketchLine[];
+  profilePlane: 'normal_to_path_start' | 'work_plane';
+  /** which sub-step the user is in: drawing the path, or sketching the
+   *  profile loop. */
+  step: 'path' | 'profile';
+};
+
+const EMPTY_SWEEP_DRAFT: SweepDraft = {
+  pathLines: [],
+  profile: [],
+  profilePlane: 'normal_to_path_start',
+  step: 'path',
+};
+
 export function FamilyEditorWorkbench(): JSX.Element {
   const { t } = useTranslation();
   const [template, setTemplate] = useState<Template>('generic_model');
@@ -49,6 +65,8 @@ export function FamilyEditorWorkbench(): JSX.Element {
   const [params, setParams] = useState<Param[]>([]);
   const [flexMode, setFlexMode] = useState(false);
   const [flexValues, setFlexValues] = useState<Record<string, unknown>>({});
+  const [sweeps, setSweeps] = useState<SweepGeometryNode[]>([]);
+  const [sweepDraft, setSweepDraft] = useState<SweepDraft | null>(null);
 
   function addRefPlane(isVertical: boolean) {
     setRefPlanes((prev) => [
@@ -106,6 +124,44 @@ export function FamilyEditorWorkbench(): JSX.Element {
     setFlexValues({});
   }
 
+  function startSweep() {
+    setSweepDraft({ ...EMPTY_SWEEP_DRAFT });
+  }
+
+  function appendSweepPathLine(line: SketchLine) {
+    setSweepDraft((prev) => (prev ? { ...prev, pathLines: [...prev.pathLines, line] } : prev));
+  }
+
+  function appendSweepProfileLine(line: SketchLine) {
+    setSweepDraft((prev) => (prev ? { ...prev, profile: [...prev.profile, line] } : prev));
+  }
+
+  function advanceSweepToProfile() {
+    setSweepDraft((prev) => (prev ? { ...prev, step: 'profile' } : prev));
+  }
+
+  function finishSweep() {
+    setSweepDraft((prev) => {
+      if (!prev) return prev;
+      if (prev.pathLines.length < 1 || prev.profile.length < 3) {
+        // Refuse to finish degenerate sweeps; user has to add geometry first.
+        return prev;
+      }
+      const node: SweepGeometryNode = {
+        kind: 'sweep',
+        pathLines: prev.pathLines,
+        profile: prev.profile,
+        profilePlane: prev.profilePlane,
+      };
+      setSweeps((s) => [...s, node]);
+      return null;
+    });
+  }
+
+  function cancelSweep() {
+    setSweepDraft(null);
+  }
+
   // Resolved parameter values for the canvas — defaults when flex mode
   // is off, defaults-merged-with-flex-overrides when on.
   const resolved = useMemo(() => {
@@ -141,10 +197,16 @@ export function FamilyEditorWorkbench(): JSX.Element {
           </button>
         ))}
         <button
+          className="px-3 py-1 rounded border ml-auto"
+          onClick={startSweep}
+          disabled={sweepDraft !== null}
+          aria-label={t('familyEditor.sweepToggle')}
+        >
+          {t('familyEditor.sweepToggle')}
+        </button>
+        <button
           className={
-            flexMode
-              ? 'bg-warning text-white px-3 py-1 rounded ml-auto'
-              : 'px-3 py-1 rounded border ml-auto'
+            flexMode ? 'bg-warning text-white px-3 py-1 rounded' : 'px-3 py-1 rounded border'
           }
           onClick={toggleFlexMode}
           aria-pressed={flexMode}
@@ -152,6 +214,60 @@ export function FamilyEditorWorkbench(): JSX.Element {
           {t('familyEditor.flexToggle')}
         </button>
       </div>
+
+      {sweepDraft && (
+        <section
+          className="border rounded p-3 space-y-2"
+          aria-label={t('familyEditor.sweepSketchAriaLabel')}
+          role="dialog"
+        >
+          <div className="flex items-center gap-2">
+            <h2 className="font-semibold">{t('familyEditor.sweepHeading')}</h2>
+            <span className="text-xs text-muted">
+              {t(
+                sweepDraft.step === 'path'
+                  ? 'familyEditor.sweepStepPath'
+                  : 'familyEditor.sweepStepProfile',
+              )}
+            </span>
+            <button onClick={cancelSweep} className="ml-auto text-sm underline">
+              {t('familyEditor.sweepCancel')}
+            </button>
+          </div>
+          {sweepDraft.step === 'path' ? (
+            <SweepPathSketch
+              t={t}
+              lines={sweepDraft.pathLines}
+              onAppendLine={appendSweepPathLine}
+              onAdvance={advanceSweepToProfile}
+            />
+          ) : (
+            <SweepProfileSketch
+              t={t}
+              lines={sweepDraft.profile}
+              onAppendLine={appendSweepProfileLine}
+              onFinish={finishSweep}
+            />
+          )}
+        </section>
+      )}
+
+      {sweeps.length > 0 && (
+        <section>
+          <h2 className="font-semibold mb-2">{t('familyEditor.sweepsHeading')}</h2>
+          <ul className="text-sm">
+            {sweeps.map((s, i) => (
+              <li key={i} data-testid={`sweep-${i}`}>
+                {t('familyEditor.sweepLabel', {
+                  index: i + 1,
+                  pathSegs: s.pathLines.length,
+                  profSegs: s.profile.length,
+                })}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section>
         <h2 className="font-semibold mb-2">{t('familyEditor.referencePlanesHeading')}</h2>
@@ -290,10 +406,144 @@ export function FamilyEditorWorkbench(): JSX.Element {
 
       <button
         onClick={() =>
-          console.warn('load-into-project stub', { template, refPlanes, params, resolved })
+          console.warn('load-into-project stub', { template, refPlanes, params, resolved, sweeps })
         }
       >
         {t('familyEditor.loadIntoProject')}
+      </button>
+    </div>
+  );
+}
+
+interface SweepSketchProps {
+  t: (key: string) => string;
+  lines: SketchLine[];
+  onAppendLine: (line: SketchLine) => void;
+}
+
+interface PathSketchProps extends SweepSketchProps {
+  onAdvance: () => void;
+}
+
+function SweepPathSketch({ t, lines, onAppendLine, onAdvance }: PathSketchProps): JSX.Element {
+  const [draft, setDraft] = useState({ sx: 0, sy: 0, ex: 100, ey: 0 });
+  return (
+    <div className="space-y-2">
+      <div className="text-xs text-muted">{t('familyEditor.sweepPathHint')}</div>
+      <ul className="text-xs space-y-1" data-testid="sweep-path-list">
+        {lines.map((l, i) => (
+          <li key={i}>
+            ({l.startMm.xMm}, {l.startMm.yMm}) → ({l.endMm.xMm}, {l.endMm.yMm})
+          </li>
+        ))}
+      </ul>
+      <div className="flex gap-2 items-center text-xs">
+        <input
+          type="number"
+          aria-label="path-sx"
+          value={draft.sx}
+          onChange={(e) => setDraft({ ...draft, sx: Number(e.target.value) })}
+        />
+        <input
+          type="number"
+          aria-label="path-sy"
+          value={draft.sy}
+          onChange={(e) => setDraft({ ...draft, sy: Number(e.target.value) })}
+        />
+        →
+        <input
+          type="number"
+          aria-label="path-ex"
+          value={draft.ex}
+          onChange={(e) => setDraft({ ...draft, ex: Number(e.target.value) })}
+        />
+        <input
+          type="number"
+          aria-label="path-ey"
+          value={draft.ey}
+          onChange={(e) => setDraft({ ...draft, ey: Number(e.target.value) })}
+        />
+        <button
+          onClick={() =>
+            onAppendLine({
+              startMm: { xMm: draft.sx, yMm: draft.sy },
+              endMm: { xMm: draft.ex, yMm: draft.ey },
+            })
+          }
+        >
+          {t('familyEditor.sweepAddLine')}
+        </button>
+      </div>
+      <button
+        onClick={onAdvance}
+        disabled={lines.length === 0}
+        className="bg-primary text-white px-3 py-1 rounded text-sm disabled:opacity-50"
+      >
+        {t('familyEditor.sweepEditProfile')}
+      </button>
+    </div>
+  );
+}
+
+interface ProfileSketchProps extends SweepSketchProps {
+  onFinish: () => void;
+}
+
+function SweepProfileSketch({ t, lines, onAppendLine, onFinish }: ProfileSketchProps): JSX.Element {
+  const [draft, setDraft] = useState({ sx: 0, sy: 0, ex: 50, ey: 0 });
+  return (
+    <div className="space-y-2">
+      <div className="text-xs text-muted">{t('familyEditor.sweepProfileHint')}</div>
+      <ul className="text-xs space-y-1" data-testid="sweep-profile-list">
+        {lines.map((l, i) => (
+          <li key={i}>
+            ({l.startMm.xMm}, {l.startMm.yMm}) → ({l.endMm.xMm}, {l.endMm.yMm})
+          </li>
+        ))}
+      </ul>
+      <div className="flex gap-2 items-center text-xs">
+        <input
+          type="number"
+          aria-label="profile-sx"
+          value={draft.sx}
+          onChange={(e) => setDraft({ ...draft, sx: Number(e.target.value) })}
+        />
+        <input
+          type="number"
+          aria-label="profile-sy"
+          value={draft.sy}
+          onChange={(e) => setDraft({ ...draft, sy: Number(e.target.value) })}
+        />
+        →
+        <input
+          type="number"
+          aria-label="profile-ex"
+          value={draft.ex}
+          onChange={(e) => setDraft({ ...draft, ex: Number(e.target.value) })}
+        />
+        <input
+          type="number"
+          aria-label="profile-ey"
+          value={draft.ey}
+          onChange={(e) => setDraft({ ...draft, ey: Number(e.target.value) })}
+        />
+        <button
+          onClick={() =>
+            onAppendLine({
+              startMm: { xMm: draft.sx, yMm: draft.sy },
+              endMm: { xMm: draft.ex, yMm: draft.ey },
+            })
+          }
+        >
+          {t('familyEditor.sweepAddLine')}
+        </button>
+      </div>
+      <button
+        onClick={onFinish}
+        disabled={lines.length < 3}
+        className="bg-primary text-white px-3 py-1 rounded text-sm disabled:opacity-50"
+      >
+        {t('familyEditor.sweepFinish')}
       </button>
     </div>
   );

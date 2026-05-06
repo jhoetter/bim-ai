@@ -115,6 +115,52 @@ describe('FAM-09 — flex test mode', () => {
   });
 });
 
+describe('FAM-02 — sweep tool flow', () => {
+  it('opens a sketch session when Sweep is clicked', () => {
+    const { getByText, queryByLabelText } = renderWithI18n(<FamilyEditorWorkbench />);
+    expect(queryByLabelText('Sweep sketch session')).toBeNull();
+    fireEvent.click(getByText('Sweep'));
+    expect(queryByLabelText('Sweep sketch session')).not.toBeNull();
+  });
+
+  it('locks Edit Profile until at least one path segment is added', () => {
+    const { getByText } = renderWithI18n(<FamilyEditorWorkbench />);
+    fireEvent.click(getByText('Sweep'));
+    const advanceBtn = getByText(/Edit Profile/);
+    expect((advanceBtn as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('finishing the flow appends a sweep node to the family', () => {
+    const { getByText, getByLabelText, queryByTestId, getAllByText } = renderWithI18n(
+      <FamilyEditorWorkbench />,
+    );
+    fireEvent.click(getByText('Sweep'));
+
+    // Path: one straight segment (0,0)→(1000,0)
+    fireEvent.change(getByLabelText('path-sx'), { target: { value: '0' } });
+    fireEvent.change(getByLabelText('path-sy'), { target: { value: '0' } });
+    fireEvent.change(getByLabelText('path-ex'), { target: { value: '1000' } });
+    fireEvent.change(getByLabelText('path-ey'), { target: { value: '0' } });
+    fireEvent.click(getAllByText('Add line')[0]);
+    fireEvent.click(getByText(/Edit Profile/));
+
+    // Profile: 3-line triangle
+    const addProfileLine = (sx: string, sy: string, ex: string, ey: string) => {
+      fireEvent.change(getByLabelText('profile-sx'), { target: { value: sx } });
+      fireEvent.change(getByLabelText('profile-sy'), { target: { value: sy } });
+      fireEvent.change(getByLabelText('profile-ex'), { target: { value: ex } });
+      fireEvent.change(getByLabelText('profile-ey'), { target: { value: ey } });
+      fireEvent.click(getByText('Add line'));
+    };
+    addProfileLine('0', '0', '50', '0');
+    addProfileLine('50', '0', '25', '50');
+    addProfileLine('25', '50', '0', '0');
+
+    fireEvent.click(getByText(/Finish/));
+    expect(queryByTestId('sweep-0')).not.toBeNull();
+  });
+});
+
 describe('resolveFamilyParamValue', () => {
   const param = {
     key: 'Width',
