@@ -752,6 +752,10 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
       coRaw && typeof coRaw === 'object' && !Array.isArray(coRaw)
         ? (coRaw as Record<string, unknown>)
         : {};
+    const vfRaw = raw.viewFilters ?? raw.view_filters;
+    const viewFilters = Array.isArray(vfRaw)
+      ? (vfRaw as import('./storeTypes').ViewFilter[])
+      : [];
     return {
       kind: 'plan_view',
       id,
@@ -779,6 +783,7 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
       ...(pot ? { planOpeningTagStyleId: pot } : {}),
       ...(prt ? { planRoomTagStyleId: prt } : {}),
       categoryOverrides,
+      viewFilters,
     };
   }
 
@@ -1473,6 +1478,32 @@ export const useBimStore = create<StoreState>((set, get) => {
           [planViewId]: { ...pv, categoryOverrides: newOverrides },
         },
       });
+    },
+    addViewFilter: (planViewId, filter) => {
+      const { elementsById } = get();
+      const pv = elementsById[planViewId];
+      if (!pv || pv.kind !== 'plan_view') return;
+      const prevFilters = (pv.viewFilters as import('./storeTypes').ViewFilter[] | undefined) ?? [];
+      const updated = [...prevFilters, filter];
+      set({ elementsById: { ...elementsById, [planViewId]: { ...pv, viewFilters: updated } } });
+    },
+    updateViewFilter: (planViewId, filterId, patch) => {
+      const { elementsById } = get();
+      const pv = elementsById[planViewId];
+      if (!pv || pv.kind !== 'plan_view') return;
+      const prevFilters = (pv.viewFilters as import('./storeTypes').ViewFilter[] | undefined) ?? [];
+      const updated = prevFilters.map((f) =>
+        f.id === filterId ? { ...f, ...patch } : f,
+      );
+      set({ elementsById: { ...elementsById, [planViewId]: { ...pv, viewFilters: updated } } });
+    },
+    removeViewFilter: (planViewId, filterId) => {
+      const { elementsById } = get();
+      const pv = elementsById[planViewId];
+      if (!pv || pv.kind !== 'plan_view') return;
+      const prevFilters = (pv.viewFilters as import('./storeTypes').ViewFilter[] | undefined) ?? [];
+      const updated = prevFilters.filter((f) => f.id !== filterId);
+      set({ elementsById: { ...elementsById, [planViewId]: { ...pv, viewFilters: updated } } });
     },
   };
 });

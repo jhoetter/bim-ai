@@ -420,6 +420,7 @@ export type Element =
       planRoomTagStyleId?: string | null;
       planCategoryGraphics?: PlanCategoryGraphicRow[];
       categoryOverrides?: Record<string, unknown>;
+      viewFilters?: unknown[];
     }
   | {
       kind: 'view_template';

@@ -5,6 +5,7 @@ import type {
   PlanLinePatternToken,
   PlanTagTarget,
 } from '@bim-ai/core';
+import type { ViewFilter } from '../state/storeTypes';
 
 import type { PlanAnnotationHintsResolved, PlanGraphicHintsResolved } from './planProjectionWire';
 import type { PlanPresentationPreset } from './symbology';
@@ -1024,4 +1025,52 @@ export function planViewInheritanceSummaryLines(
     `Opening tag style: effective=${formatPlanTagStyleMatrixCell(effOpen)}; plan_view.stored=${pvOpenRef === 'inherit' ? 'inherit' : String(pvOpenRef)}; template.default=${tmpl?.defaultPlanOpeningTagStyleId ?? '—'}`,
     `Room tag style: effective=${formatPlanTagStyleMatrixCell(effRoom)}; plan_view.stored=${pvRoomRef === 'inherit' ? 'inherit' : String(pvRoomRef)}; template.default=${tmpl?.defaultPlanRoomTagStyleId ?? '—'}`,
   ];
+}
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* View filter evaluation                                                   */
+/* ────────────────────────────────────────────────────────────────────── */
+
+export function evaluateViewFilters(
+  element: Element,
+  filters: ViewFilter[],
+): {
+  visible: boolean;
+  lineColor?: string | null;
+  lineWeightFactor?: number;
+  fillColor?: string | null;
+} {
+  let visible = true;
+  let lineColor: string | null | undefined;
+  let lineWeightFactor: number | undefined;
+  let fillColor: string | null | undefined;
+
+  for (const filter of filters) {
+    const matches = filter.rules.every((rule) => {
+      const val = (element as Record<string, unknown>)[rule.field];
+      const strVal = val != null ? String(val) : '';
+      switch (rule.operator) {
+        case 'equals':
+          return strVal === rule.value;
+        case 'not-equals':
+          return strVal !== rule.value;
+        case 'contains':
+          return strVal.includes(rule.value);
+        case 'not-contains':
+          return !strVal.includes(rule.value);
+        default:
+          return false;
+      }
+    });
+    if (matches) {
+      if (filter.override.visible === false) visible = false;
+      if (filter.override.projection?.lineColor !== undefined)
+        lineColor = filter.override.projection.lineColor;
+      if (filter.override.projection?.lineWeightFactor != null)
+        lineWeightFactor = filter.override.projection.lineWeightFactor;
+      if (filter.override.projection?.fillColor !== undefined)
+        fillColor = filter.override.projection.fillColor;
+    }
+  }
+  return { visible, lineColor, lineWeightFactor, fillColor };
 }
