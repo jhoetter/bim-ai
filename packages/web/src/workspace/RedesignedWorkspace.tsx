@@ -86,6 +86,7 @@ import {
   readRecentProjects,
   readSnapshotFile,
 } from './projectSnapshots';
+import { AdvisorPanel } from '../advisor/AdvisorPanel';
 
 /**
  * RedesignedWorkspace — composition route for the §11–§17 chrome.
@@ -185,6 +186,7 @@ export function RedesignedWorkspace(): JSX.Element {
   const setPerspectiveId = useBimStore((s) => s.setPerspectiveId);
   const planPresentationPreset = useBimStore((s) => s.planPresentationPreset);
   const setPlanPresentationPreset = useBimStore((s) => s.setPlanPresentationPreset);
+  const violations = useBimStore((s) => s.violations);
 
   const [mode, setMode] = useState<WorkspaceMode>(() =>
     viewerMode === 'orbit_3d' ? '3d' : 'plan',
@@ -200,6 +202,7 @@ export function RedesignedWorkspace(): JSX.Element {
     useState<CollaborationConflictQueueV1 | null>(null);
   const [projectMenuOpen, setProjectMenuOpen] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
+  const [buildingPreset, setBuildingPreset] = useState('residential');
   const [recentProjects, setRecentProjects] = useState<ProjectMenuItemRecent[]>(() =>
     readRecentProjects().map((r) => ({ id: r.id, label: r.label })),
   );
@@ -1080,6 +1083,17 @@ export function RedesignedWorkspace(): JSX.Element {
                   elementsById={elementsById}
                   activeLevelId={activeLevelId ?? ''}
                   onUpsertSemantic={(cmd) => void onSemanticCommand(cmd)}
+                />
+              </div>
+              <div className="max-h-[40vh] shrink-0 overflow-y-auto border-t border-border p-3">
+                <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted">Advisor</div>
+                <AdvisorPanel
+                  violations={violations}
+                  selectionId={selectedId ?? undefined}
+                  preset={buildingPreset}
+                  onPreset={setBuildingPreset}
+                  onApplyQuickFix={(cmd) => void onSemanticCommand(cmd)}
+                  perspective={perspectiveId}
                 />
               </div>
             </div>
