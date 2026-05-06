@@ -1,0 +1,56 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "94e14b6f4a85",
+  "session_id": "be1b7ff7-9e29-4054-936c-c2f418410ea7",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-06T15:36:41.083041Z",
+  "branch": "feat/wp-v2-01a-options-bar",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "packages/web/src/Viewport.tsx",
+    "spec/target-house-seed.md"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "b6953518ca68",
+  "checkpoint_transcript_start": 270,
+  "transcript_lines_at_start": 270,
+  "token_usage": {
+    "input_tokens": 5,
+    "cache_creation_tokens": 1256,
+    "cache_read_tokens": 411795,
+    "output_tokens": 912,
+    "api_call_count": 3
+  },
+  "session_metrics": {
+    "turn_count": 4
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-06T15:36:41.069359Z",
+    "agent_lines": 67,
+    "agent_removed": 52,
+    "human_added": 127,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 194,
+    "total_lines_changed": 335,
+    "agent_percentage": 35.52238805970149,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 67,
+      "agent_lines_removed": 52
+    }
+  ]
+}

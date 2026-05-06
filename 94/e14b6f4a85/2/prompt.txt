@@ -1,0 +1,1 @@
+ok, so give me an example prompt i can use for the first A1 agent (i now the promtp is there, but the propmt hinting the agent basically)
