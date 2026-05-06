@@ -814,6 +814,8 @@ export function rebuildPlanMeshes(
     planGraphicHints?: PlanGraphicHintsResolved | null;
     planAnnotationHints?: PlanAnnotationHintsResolved | null;
     planTagFontScales?: { opening: number; room: number } | null;
+    /** B01: current plot scale denominator (1:N) so mesh builders can be scale-aware. */
+    plotScale?: number;
   },
 ): void {
   while (holder.children.length) holder.remove(holder.children[0]!);
