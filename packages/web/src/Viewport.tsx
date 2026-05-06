@@ -1231,13 +1231,14 @@ function makeWallMesh(
   mesh.userData.bimPickId = wall.id;
   addEdges(mesh);
   if (wall.materialKey === 'timber_cladding') addCladdingBoards(mesh, len, height, thick);
-  else if (wall.materialKey === 'white_cladding') addCladdingBoards(mesh, len, height, thick, 120, 10, '#f4f4f0');
+  else if (wall.materialKey === 'white_cladding')
+    addCladdingBoards(mesh, len, height, thick, 120, 10, '#f4f4f0');
 
   // Slab edge strip: thin horizontal band at the base of every elevated wall,
   // expressing the floor plate at the level transition (e.g. 1st→2nd floor).
   if (elevM > 0.01) {
-    const edgeH = 0.12;  // 120 mm deep band
-    const edgeP = 0.03;  // 30 mm projection proud of wall face
+    const edgeH = 0.12; // 120 mm deep band
+    const edgeP = 0.03; // 30 mm projection proud of wall face
     const edgeMat = new THREE.MeshStandardMaterial({ color: '#c8c8c4', roughness: 0.6 });
     const edgeMesh = new THREE.Mesh(new THREE.BoxGeometry(len, edgeH, thick + edgeP * 2), edgeMat);
     edgeMesh.position.set(0, -height / 2 + edgeH / 2, 0);
@@ -1341,8 +1342,10 @@ function makeCurtainWallMesh(
         for (let i = 0; i < N; i++) {
           const t0 = i / N;
           const t1 = (i + 1) / N;
-          const x0w = sx + t0 * dx, z0w = sz + t0 * dz;
-          const x1w = sx + t1 * dx, z1w = sz + t1 * dz;
+          const x0w = sx + t0 * dx,
+            z0w = sz + t0 * dz;
+          const x1w = sx + t1 * dx,
+            z1w = sz + t1 * dz;
           const h0 = Math.max(hSamples[i], eaveYw);
           const h1 = Math.max(hSamples[i + 1], eaveYw);
           if (h0 <= eaveYw + 0.001 && h1 <= eaveYw + 0.001) continue;
@@ -1353,7 +1356,10 @@ function makeCurtainWallMesh(
         }
         if (triPositions.length > 0) {
           const triGeom = new THREE.BufferGeometry();
-          triGeom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(triPositions), 3));
+          triGeom.setAttribute(
+            'position',
+            new THREE.BufferAttribute(new Float32Array(triPositions), 3),
+          );
           triGeom.setIndex(triIndices);
           triGeom.computeVertexNormals();
           group.add(new THREE.Mesh(triGeom, glassMat));

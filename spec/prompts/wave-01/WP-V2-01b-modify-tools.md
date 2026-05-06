@@ -13,6 +13,7 @@ BIM AI is a browser-first BIM authoring tool. Stack: React 19 + Vite + TypeScrip
 This workpackage pulls `main` first (which contains the WP-V2-01a Options Bar). It then adds three Revit-standard modify tools and wires crossing-selection direction.
 
 The tool system:
+
 - `packages/web/src/tools/toolRegistry.ts` — `ToolId` type union + `getToolRegistry()` map.
 - `packages/web/src/tools/toolGrammar.ts` — per-tool grammar types + pure reducer functions.
 - `packages/web/src/tools/toolGrammar.test.ts` — existing tests; extend, don't break.
@@ -28,16 +29,16 @@ The tool system:
 Add three entries to the `ToolId` union and the `getToolRegistry` map:
 
 ```ts
-'align' | 'split' | 'trim'
+'align' | 'split' | 'trim';
 ```
 
 For each:
 
-| ToolId | Label | Icon | Hotkey | Modes |
-|---|---|---|---|---|
-| `align` | Align | `align` (lucide) | `AL` (two-key sequence: A then L) | `plan` only |
-| `split` | Split Element | `scissors` | `SD` (two-key: S then D) | `plan` only |
-| `trim` | Trim / Extend | `trim` or `git-merge` | `TR` (two-key: T then R) | `plan` only |
+| ToolId  | Label         | Icon                  | Hotkey                            | Modes       |
+| ------- | ------------- | --------------------- | --------------------------------- | ----------- |
+| `align` | Align         | `align` (lucide)      | `AL` (two-key sequence: A then L) | `plan` only |
+| `split` | Split Element | `scissors`            | `SD` (two-key: S then D)          | `plan` only |
+| `trim`  | Trim / Extend | `trim` or `git-merge` | `TR` (two-key: T then R)          | `plan` only |
 
 Two-key hotkeys: Revit uses two-letter shortcuts (AL, SD, TR). Implement as a sequential key listener: first keypress sets a pending prefix; second keypress within 1500 ms completes the hotkey. If it exists, add the two-key handler to `packages/web/src/state/modeController.ts` or wherever global hotkeys live. If that adds significant complexity, implement as single-key `A` (align), `S` (split), `T` (trim) for now and note the two-key improvement as a follow-up.
 
@@ -69,10 +70,14 @@ export interface AlignEffect {
   stillActive: boolean;
 }
 
-export function reduceAlign(state: AlignState, event: AlignEvent): { state: AlignState; effect: AlignEffect }
+export function reduceAlign(
+  state: AlignState,
+  event: AlignEvent,
+): { state: AlignState; effect: AlignEffect };
 ```
 
 Phase logic:
+
 - `pick-reference` + `click` → store point, transition to `pick-element`.
 - `pick-element` + `click` → emit `commitAlign` effect, return to `pick-reference` (stays active, ready for next pair).
 - Any `cancel` → return to `pick-reference`, clear reference.
@@ -84,7 +89,9 @@ The canvas handles `commitAlign` by finding the nearest element endpoint/edge to
 Revit: click on a wall to split it at the cursor position into two walls.
 
 ```ts
-export interface SplitState { active: boolean }
+export interface SplitState {
+  active: boolean;
+}
 
 export type SplitEvent =
   | { kind: 'activate' }
@@ -97,7 +104,10 @@ export interface SplitEffect {
   stillActive: boolean;
 }
 
-export function reduceSplit(state: SplitState, event: SplitEvent): { state: SplitState; effect: SplitEffect }
+export function reduceSplit(
+  state: SplitState,
+  event: SplitEvent,
+): { state: SplitState; effect: SplitEffect };
 ```
 
 The canvas handles `commitSplit` by finding the wall closest to `pointMm`, computing the parameter `t` along that wall, and firing a `splitWall` command (stub if not yet in the backend). The tool remains active after each click (Revit split stays in Split mode until Esc).
@@ -124,7 +134,10 @@ export interface TrimEffect {
   stillActive: boolean;
 }
 
-export function reduceTrim(state: TrimState, event: TrimEvent): { state: TrimState; effect: TrimEffect }
+export function reduceTrim(
+  state: TrimState,
+  event: TrimEvent,
+): { state: TrimState; effect: TrimEffect };
 ```
 
 The canvas sends `click-reference` on the first click (stores the element ID), and `click-target` on the second click with an `endHint` derived from which endpoint is closer to the cursor. The effect is handled by extending the target wall's endpoint to the intersection with the reference (stub API call if needed).
@@ -134,6 +147,7 @@ The canvas sends `click-reference` on the first click (stores the element ID), a
 #### Dispatch Align / Split / Trim events
 
 In the pointer-down / pointer-up / click handler, add cases for the three new `planTool` values. For each:
+
 - Align: on click, call `reduceAlign` and handle the effect.
 - Split: on click, call `reduceSplit` and handle the effect.
 - Trim: on first click, resolve the hovered element → send `click-reference`; on second click → send `click-target`.

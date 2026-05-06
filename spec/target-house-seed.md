@@ -10,7 +10,7 @@
 
 ## 1. Architectural Description (ground truth)
 
-*Read as architect's field notes. Every measurement is intent, not survey.*
+_Read as architect's field notes. Every measurement is intent, not survey._
 
 ### 1.1 Viewpoint
 
@@ -28,12 +28,12 @@ slice (~15% of south face width) at the left edge.
 
 **Storeys:**
 
-| Zone | Elevation range | Height |
-|---|---|---|
-| Ground floor | ±0 – +3 000 mm | 3 000 mm |
-| Upper floor | +3 000 – +5 800 mm | 2 800 mm |
-| Roof (eave to ridge) | +5 800 – +8 300 mm | ~2 500 mm |
-| Total ground to ridge | | ~8 300 mm |
+| Zone                  | Elevation range    | Height    |
+| --------------------- | ------------------ | --------- |
+| Ground floor          | ±0 – +3 000 mm     | 3 000 mm  |
+| Upper floor           | +3 000 – +5 800 mm | 2 800 mm  |
+| Roof (eave to ridge)  | +5 800 – +8 300 mm | ~2 500 mm |
+| Total ground to ridge |                    | ~8 300 mm |
 
 **Roof:** Gable, ridge running **north–south** (perpendicular to the south
 facade, i.e. the ridge is the long axis). Consequently the south face is the
@@ -104,6 +104,7 @@ No eave overhang. Roof surface: light grey/white.
 Clearly a different finish from the main volume's board-and-batten.
 
 **Openings:**
+
 - South face: plain (no openings visible from sketch angle), or optionally a
   narrow vertical window near the east end.
 - East face: one small **square window** ≈ 700–800 mm × 700–800 mm, sill
@@ -124,17 +125,17 @@ sits visibly lower than the main building east eave. No flashing detail visible.
 
 ### 1.9 Material + Colour Summary
 
-| Surface | Material | Colour |
-|---|---|---|
-| Main volume walls | Vertical board-and-batten | Bright white / off-white |
-| Annex walls | Smooth render | Bright white |
-| South curtain wall glass | Clear glazing | Transparent, slight blue tint |
-| Balcony balustrade | Frameless glass | Transparent |
-| Main gable roof | — | Light grey |
-| Annex flat roof | — | Light grey / white |
-| Doors | Solid panel | Dark / mid-tone |
-| Mullions | Aluminium profile | Dark grey |
-| Floor edge plate | Concrete / steel | Light grey |
+| Surface                  | Material                  | Colour                        |
+| ------------------------ | ------------------------- | ----------------------------- |
+| Main volume walls        | Vertical board-and-batten | Bright white / off-white      |
+| Annex walls              | Smooth render             | Bright white                  |
+| South curtain wall glass | Clear glazing             | Transparent, slight blue tint |
+| Balcony balustrade       | Frameless glass           | Transparent                   |
+| Main gable roof          | —                         | Light grey                    |
+| Annex flat roof          | —                         | Light grey / white            |
+| Doors                    | Solid panel               | Dark / mid-tone               |
+| Mullions                 | Aluminium profile         | Dark grey                     |
+| Floor edge plate         | Concrete / steel          | Light grey                    |
 
 ---
 
@@ -142,27 +143,27 @@ sits visibly lower than the main building east eave. No flashing detail visible.
 
 ### 2.1 What is already modelled
 
-| Feature | Status |
-|---|---|
-| Two-storey main volume, correct plan dimensions (7 000 × 8 000) | ✅ |
-| Gable roof, ridge N–S, gable on south + north | ✅ |
-| Upper south wall as curtain wall (glass grid) | ✅ |
-| Annex single storey, attached east | ✅ |
-| Staircase (open-tread, ground→upper) | ✅ |
-| Ground-floor south door (right-of-centre) | ✅ |
-| Ground-floor south windows (portrait, left zone) | ✅ |
-| Annex east window | ✅ |
-| SE + SW viewpoints saved | ✅ |
-| Rooms, dimensions, section cut | ✅ |
+| Feature                                                         | Status |
+| --------------------------------------------------------------- | ------ |
+| Two-storey main volume, correct plan dimensions (7 000 × 8 000) | ✅     |
+| Gable roof, ridge N–S, gable on south + north                   | ✅     |
+| Upper south wall as curtain wall (glass grid)                   | ✅     |
+| Annex single storey, attached east                              | ✅     |
+| Staircase (open-tread, ground→upper)                            | ✅     |
+| Ground-floor south door (right-of-centre)                       | ✅     |
+| Ground-floor south windows (portrait, left zone)                | ✅     |
+| Annex east window                                               | ✅     |
+| SE + SW viewpoints saved                                        | ✅     |
+| Rooms, dimensions, section cut                                  | ✅     |
 
 ### 2.2 Seed fixes possible today (no new renderer features needed)
 
-| # | Gap | Fix |
-|---|---|---|
-| S1 | **Primary viewpoint is SE; annex appears left** — sketch shows SSW angle with annex to the right | Change `vp-se` camera to SSW: `xMm: -5000, yMm: -14000, zMm: 11000` |
-| S2 | **Main volume walls are orange-brown timber** — sketch needs white vertical board-and-batten | Change `materialKey` to `"white_cladding"` once renderer supports it |
-| S3 | **Annex walls are blue-grey default** — sketch needs smooth white render | Add `materialKey: "white_render"` once renderer supports it |
-| S4 | **Annex south wall is flush with main south** — sketch protrudes ≈ 500 mm south | Move annex south wall to `yMm: -500`; add 500 mm return segment at x=7000 |
+| #   | Gap                                                                                              | Fix                                                                       |
+| --- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
+| S1  | **Primary viewpoint is SE; annex appears left** — sketch shows SSW angle with annex to the right | Change `vp-se` camera to SSW: `xMm: -5000, yMm: -14000, zMm: 11000`       |
+| S2  | **Main volume walls are orange-brown timber** — sketch needs white vertical board-and-batten     | Change `materialKey` to `"white_cladding"` once renderer supports it      |
+| S3  | **Annex walls are blue-grey default** — sketch needs smooth white render                         | Add `materialKey: "white_render"` once renderer supports it               |
+| S4  | **Annex south wall is flush with main south** — sketch protrudes ≈ 500 mm south                  | Move annex south wall to `yMm: -500`; add 500 mm return segment at x=7000 |
 
 ---
 
@@ -171,6 +172,7 @@ sits visibly lower than the main building east eave. No flashing detail visible.
 These require new development work before the seed can model them.
 
 ### GAP-R1 — White board-and-batten cladding (`white_cladding`)
+
 **Description:** `timber_cladding` renders vertical boards in orange-brown
 `#8B6340`. The sketch needs the identical board geometry in **bright white**.
 Need a second materialKey `white_cladding` that reuses `addCladdingBoards()`
@@ -181,6 +183,7 @@ but with colour `#f4f4f0` (off-white) and a matching white base-wall colour.
 ---
 
 ### GAP-R2 — Smooth white render material (`white_render`)
+
 **Description:** Annex walls need a plain smooth white surface with no board
 texture. Currently walls without a materialKey render as blue-grey (wall
 category colour). Need a `white_render` materialKey that overrides the base
@@ -191,6 +194,7 @@ colour to white without adding cladding boards.
 ---
 
 ### GAP-R3 — Gable triangle glazing (curtain wall continuation into gable)
+
 **Description:** The curtain wall renderer (`makeCurtainWallMesh`) creates a
 flat rectangular plane at wall height. The gable triangle above the wall top is
 rendered as solid roof geometry. The sketch shows the glass + mullion grid
@@ -207,6 +211,7 @@ triangular glass mesh + angled mullions above the rectangular section.
 ---
 
 ### GAP-R4 — Balcony slab + glass balustrade at upper-floor level
+
 **Description:** The sketch has a full-width projecting balcony slab (≈ 600 mm
 deep) with a frameless glass balustrade (≈ 1 050 mm tall) at exactly 3 000 mm
 elevation. There is no `balcony` element type and no way to model this today.
@@ -221,6 +226,7 @@ must extrude the slab and place vertical glass panels.
 ---
 
 ### GAP-R5 — Floor slab edge expression
+
 **Description:** The thin horizontal shadow line / projecting plate at the
 upper-floor slab level (3 000 mm) is not rendered. This expresses the concrete
 or steel edge of the floor slab and is an important articulation in the facade.
@@ -235,11 +241,13 @@ wall's reference level elevation > 0.
 ---
 
 ### GAP-R6 — Annex flat roof rendered with wrong colour / slight pitch
+
 **Description:** Annex roof currently uses `slopeDeg: 5` (minimum clamp) and
 renders in the same dark reddish-brown as the main gable roof. The sketch
 requires a **flat** (0° or near-0°) roof in **light grey/white**.
 
 Two sub-issues:
+
 - `slopeDeg: 5` is the minimum accepted; 0° is rejected. Need either a `flat`
   roof mode or allow `slopeDeg: 0`.
 - Roof material is always the roof category colour. Need per-roof colour or a
@@ -251,6 +259,7 @@ geometry; add optional `materialKey` on roofs.
 ---
 
 ### GAP-R7 — Interior not visible (staircase, open plan)
+
 **Description:** The sketch shows a floating staircase and interior visible
 through the curtain wall. The 3D renderer does not render the interior or stair
 as visible-through-glass. The stair element is placed in the model but the
@@ -264,13 +273,13 @@ feature.
 
 ## 4. Modelling Roadmap
 
-| Priority | Item | Gap ref | Effort |
-|---|---|---|---|
-| P0 | White cladding + white render materialKeys | R1, R2 | XS |
-| P0 | Fix viewpoint to SSW | S1 | seed-only |
-| P1 | Flat roof mode / 0° pitch | R6 | S |
-| P1 | Slab edge strip at elevated wall base | R5 | S |
-| P2 | Gable triangle glazing | R3 | M |
-| P2 | Annex protrusion detail | S4 | seed-only |
-| P3 | Balcony + glass balustrade | R4 | L |
-| P4 | Interior visibility | R7 | XL |
+| Priority | Item                                       | Gap ref | Effort    |
+| -------- | ------------------------------------------ | ------- | --------- |
+| P0       | White cladding + white render materialKeys | R1, R2  | XS        |
+| P0       | Fix viewpoint to SSW                       | S1      | seed-only |
+| P1       | Flat roof mode / 0° pitch                  | R6      | S         |
+| P1       | Slab edge strip at elevated wall base      | R5      | S         |
+| P2       | Gable triangle glazing                     | R3      | M         |
+| P2       | Annex protrusion detail                    | S4      | seed-only |
+| P3       | Balcony + glass balustrade                 | R4      | L         |
+| P4       | Interior visibility                        | R7      | XL        |
