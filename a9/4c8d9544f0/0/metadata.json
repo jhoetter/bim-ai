@@ -1,0 +1,57 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "a94c8d9544f0",
+  "session_id": "c28ae718-c141-48a9-a1f8-4d0157b5d315",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-06T20:46:40.120743Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/core/src/index.ts",
+    "packages/web/src/i18n.ts",
+    "packages/web/src/schedules/schedulePayloadTotals.ts",
+    "packages/web/src/schedules/scheduleTotalsReadout.test.ts",
+    "packages/web/src/state/store.ts",
+    "packages/web/src/workspace/InspectorContent.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "093546067e3a",
+  "token_usage": {
+    "input_tokens": 22442,
+    "cache_creation_tokens": 83338,
+    "cache_read_tokens": 646006,
+    "output_tokens": 5348,
+    "api_call_count": 9
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-06T20:46:40.110003Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 67,
+    "human_modified": 1,
+    "human_removed": 0,
+    "total_committed": 67,
+    "total_lines_changed": 68,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 1007,
+      "user_lines_removed": 3,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "spec/prompts/wave-04/README.md": 29,
+        "spec/prompts/wave-04/WP-V2-09-room-v2.md": 412,
+        "spec/prompts/wave-04/WP-V2-10-params.md": 563,
+        "spec/workpackage-master-tracker.md": 3
+      },
+      "user_removed_per_file": {
+        "spec/workpackage-master-tracker.md": 3
+      }
+    }
+  ]
+}
