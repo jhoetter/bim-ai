@@ -1,0 +1,14 @@
+Agent B — R2-02 (door frame)
+  Work in /Users/jhoetter/repos/bim-ai. Read spec/rendering-v2-spec.md
+  section R2-02. Replace makeDoorMesh in packages/web/src/Viewport.tsx
+  with a THREE.Group containing head, jamb-L, jamb-R frame members
+  (70 mm section) + panel leaf (45 mm thick) + threshold. Dimensions
+  from door.widthMm, door.heightMm, wall.thicknessMm. Call addEdges()
+  on each sub-mesh. Set castShadow = receiveShadow = true on all members.
+
+  Only touch makeDoorMesh. Do not touch any other factory functions.
+  Run pnpm --filter web typecheck before committing.
+  Commit: "feat(3d): R2-02 — door frame + panel geometry"
+  Push to origin/main when done.
+
+  Task: R2-02
