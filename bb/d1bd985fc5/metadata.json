@@ -4,20 +4,28 @@
   "strategy": "manual-commit",
   "branch": "wp-l-conservative-token-validation",
   "checkpoints_count": 0,
-  "files_touched": null,
+  "files_touched": [
+    "packages/web/src/design-systems/tokens.test.ts"
+  ],
   "sessions": [
     {
       "metadata": "/bb/d1bd985fc5/0/metadata.json",
       "transcript": "/bb/d1bd985fc5/0/full.jsonl",
       "content_hash": "/bb/d1bd985fc5/0/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/bb/d1bd985fc5/1/metadata.json",
+      "transcript": "/bb/d1bd985fc5/1/full.jsonl",
+      "content_hash": "/bb/d1bd985fc5/1/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
-    "input_tokens": 11,
-    "cache_creation_tokens": 8858,
-    "cache_read_tokens": 1530644,
-    "output_tokens": 3792,
-    "api_call_count": 11
+    "input_tokens": 21,
+    "cache_creation_tokens": 19052,
+    "cache_read_tokens": 2836202,
+    "output_tokens": 9674,
+    "api_call_count": 21
   }
 }
