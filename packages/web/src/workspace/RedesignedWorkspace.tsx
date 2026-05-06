@@ -800,6 +800,42 @@ export function RedesignedWorkspace(): JSX.Element {
         rows: schedules.map((s) => ({ id: s.id, label: s.name })),
       },
       {
+        id: 'types',
+        label: 'Types',
+        rows: [
+          {
+            id: 'wall-types',
+            label: 'Wall Types',
+            children: [
+              ...(Object.values(elementsById) as Element[])
+                .filter((e): e is Extract<Element, { kind: 'wall_type' }> => e.kind === 'wall_type')
+                .map((t) => ({ id: t.id, label: t.name, hint: `${t.layers.length} layers` })),
+              { id: 'new-wall-type', label: '+ New Wall Type' },
+            ],
+          },
+          {
+            id: 'floor-types',
+            label: 'Floor Types',
+            children: [
+              ...(Object.values(elementsById) as Element[])
+                .filter((e): e is Extract<Element, { kind: 'floor_type' }> => e.kind === 'floor_type')
+                .map((t) => ({ id: t.id, label: t.name, hint: `${t.layers.length} layers` })),
+              { id: 'new-floor-type', label: '+ New Floor Type' },
+            ],
+          },
+          {
+            id: 'roof-types',
+            label: 'Roof Types',
+            children: [
+              ...(Object.values(elementsById) as Element[])
+                .filter((e): e is Extract<Element, { kind: 'roof_type' }> => e.kind === 'roof_type')
+                .map((t) => ({ id: t.id, label: t.name, hint: `${t.layers.length} layers` })),
+              { id: 'new-roof-type', label: '+ New Roof Type' },
+            ],
+          },
+        ],
+      },
+      {
         id: 'families',
         label: 'Families',
         rows: (['door', 'window', 'stair', 'railing'] as const)
@@ -1146,6 +1182,35 @@ export function RedesignedWorkspace(): JSX.Element {
               sections={browserSections}
               activeRowId={activeFamilyTypeId ?? activeLevelId}
             onRowActivate={(id) => {
+              // "New type" action rows in the Types browser section.
+              if (id === 'new-wall-type') {
+                void onSemanticCommand({
+                  type: 'upsertWallType',
+                  id: crypto.randomUUID(),
+                  name: 'New Wall Type',
+                  basisLine: 'center',
+                  layers: [{ thicknessMm: 200, function: 'structure', materialKey: '' }],
+                });
+                return;
+              }
+              if (id === 'new-floor-type') {
+                void onSemanticCommand({
+                  type: 'upsertFloorType',
+                  id: crypto.randomUUID(),
+                  name: 'New Floor Type',
+                  layers: [{ thicknessMm: 200, function: 'structure', materialKey: '' }],
+                });
+                return;
+              }
+              if (id === 'new-roof-type') {
+                void onSemanticCommand({
+                  type: 'upsertRoofType',
+                  id: crypto.randomUUID(),
+                  name: 'New Roof Type',
+                  layers: [{ thicknessMm: 200, function: 'structure', materialKey: '' }],
+                });
+                return;
+              }
               // Family type rows — assign to the currently selected compatible element.
               const pickedType = BUILT_IN_FAMILIES.flatMap((f) => f.defaultTypes).find((t) => t.id === id);
               if (pickedType) {

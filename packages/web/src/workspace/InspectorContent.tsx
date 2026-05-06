@@ -86,6 +86,20 @@ export function InspectorPropertiesFor(
               className="accent-primary"
             />
           </div>
+
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">{f('wallType')}</span>
+            <select
+              className="flex-1 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              value={el.wallTypeId ?? ''}
+              onChange={e2 => onPropertyChange?.('wallTypeId', e2.target.value || null)}
+            >
+              <option value="">— None —</option>
+              {Object.values(elementsById)
+                .filter((e): e is Extract<Element, { kind: 'wall_type' }> => e.kind === 'wall_type')
+                .map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+            </select>
+          </div>
         </div>
       );
     }
@@ -108,27 +122,57 @@ export function InspectorPropertiesFor(
           <FieldRow label={f('wall')} value={el.wallId} mono />
         </div>
       );
-    case 'floor':
+    case 'floor': {
+      const { elementsById: floorElementsById = {}, onPropertyChange: floorOnPropertyChange } = options ?? {};
       return (
-        <div>
-          <FieldRow label={f('type')} value={el.floorTypeId ?? 'Generic 220 mm slab'} mono />
+        <div className="flex flex-col gap-2">
           <FieldRow label={f('thickness')} value={fmtMm(el.thicknessMm)} />
           <FieldRow label={f('structureThickness')} value={fmtMm(el.structureThicknessMm)} />
           <FieldRow label={f('finishThickness')} value={fmtMm(el.finishThicknessMm)} />
           <FieldRow label={f('level')} value={el.levelId} mono />
           <FieldRow label={f('boundaryPoints')} value={String(el.boundaryMm.length)} />
+
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">{f('floorType')}</span>
+            <select
+              className="flex-1 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              value={el.floorTypeId ?? ''}
+              onChange={e2 => floorOnPropertyChange?.('floorTypeId', e2.target.value || null)}
+            >
+              <option value="">— None —</option>
+              {Object.values(floorElementsById)
+                .filter((e): e is Extract<Element, { kind: 'floor_type' }> => e.kind === 'floor_type')
+                .map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+            </select>
+          </div>
         </div>
       );
-    case 'roof':
+    }
+    case 'roof': {
+      const { elementsById: roofElementsById = {}, onPropertyChange: roofOnPropertyChange } = options ?? {};
       return (
-        <div>
-          <FieldRow label={f('type')} value={el.roofTypeId ?? 'Generic gable'} mono />
+        <div className="flex flex-col gap-2">
           <FieldRow label={f('slope')} value={`${(el.slopeDeg ?? 0).toFixed(1)}°`} />
           <FieldRow label={f('overhang')} value={fmtMm(el.overhangMm)} />
           <FieldRow label={f('referenceLevel')} value={el.referenceLevelId} mono />
           <FieldRow label={f('footprintPoints')} value={String(el.footprintMm.length)} />
+
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">{f('roofType')}</span>
+            <select
+              className="flex-1 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              value={el.roofTypeId ?? ''}
+              onChange={e2 => roofOnPropertyChange?.('roofTypeId', e2.target.value || null)}
+            >
+              <option value="">— None —</option>
+              {Object.values(roofElementsById)
+                .filter((e): e is Extract<Element, { kind: 'roof_type' }> => e.kind === 'roof_type')
+                .map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+            </select>
+          </div>
         </div>
       );
+    }
     case 'stair':
       return (
         <div>

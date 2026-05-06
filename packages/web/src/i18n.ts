@@ -181,6 +181,9 @@ i18n.init({
             geometryMode: 'Geometry mode',
             roofAttachment: 'Roof Attachment',
             curtainWall: 'Curtain Wall',
+            wallType: 'Wall Type',
+            floorType: 'Floor Type',
+            roofType: 'Roof Type',
           },
           planView: {
             namePlaceholder: 'Name',
@@ -778,6 +781,9 @@ i18n.init({
             geometryMode: 'Geometriemodus',
             roofAttachment: 'Dachanschluss',
             curtainWall: 'Vorhangfassade',
+            wallType: 'Wandtyp',
+            floorType: 'Deckentyp',
+            roofType: 'Dachtyp',
           },
           planView: {
             namePlaceholder: 'Name',

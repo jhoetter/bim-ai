@@ -140,6 +140,7 @@ export function MaterialLayerStackWorkbench({
                 <th className="p-1.5 font-medium">Material</th>
                 <th className="p-1.5 font-medium">Display</th>
                 <th className="p-1.5 font-medium text-right">mm</th>
+                <th className="p-1.5 font-medium" />
               </tr>
             </thead>
             <tbody>
@@ -189,6 +190,19 @@ export function MaterialLayerStackWorkbench({
                       }
                     />
                   </td>
+                  <td className="p-1">
+                    <button
+                      type="button"
+                      className="text-[10px] text-muted hover:text-destructive"
+                      onClick={() =>
+                        setDraftRows((prev) =>
+                          prev.filter((r) => r.index !== row.index).map((r, i) => ({ ...r, index: i })),
+                        )
+                      }
+                    >
+                      ×
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -234,6 +248,18 @@ export function MaterialLayerStackWorkbench({
 
       {typeAuthoring ? (
         <div className="space-y-1">
+          <button
+            type="button"
+            className="rounded border border-border px-2 py-0.5 text-[10px] text-muted hover:text-foreground"
+            onClick={() =>
+              setDraftRows((prev) => [
+                ...prev,
+                { index: prev.length, thicknessMm: 100, function: 'finish', materialKey: '' },
+              ])
+            }
+          >
+            + Add layer
+          </button>
           <button
             type="button"
             className="rounded bg-primary px-2 py-1 text-[10px] font-medium text-primary-foreground hover:opacity-90"
