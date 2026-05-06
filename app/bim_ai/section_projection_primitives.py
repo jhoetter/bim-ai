@@ -14,6 +14,7 @@ from bim_ai.document import Document
 from bim_ai.elements import (
     CalloutElem,
     DoorElem,
+    ElevationViewElem,
     FloorElem,
     GridLineElem,
     LevelElem,
@@ -23,6 +24,7 @@ from bim_ai.elements import (
     SheetElem,
     SlabOpeningElem,
     StairElem,
+    Vec2Mm,
     WallElem,
     WindowElem,
 )
@@ -1264,3 +1266,87 @@ def build_section_projection_primitives(
     }
 
     return primitives, warnings
+
+
+def _model_xy_bounds_mm(doc: Document) -> tuple[float, float, float, float] | None:
+    """Loose bounding box of every wall + floor + roof in plan space (mm)."""
+    xs: list[float] = []
+    ys: list[float] = []
+    for el in doc.elements.values():
+        if isinstance(el, WallElem):
+            xs.extend([float(el.start.x_mm), float(el.end.x_mm)])
+            ys.extend([float(el.start.y_mm), float(el.end.y_mm)])
+        elif isinstance(el, FloorElem):
+            for p in el.boundary_mm:
+                xs.append(float(p.x_mm))
+                ys.append(float(p.y_mm))
+        elif isinstance(el, RoofElem):
+            for p in el.footprint_mm:
+                xs.append(float(p.x_mm))
+                ys.append(float(p.y_mm))
+    if not xs or not ys:
+        return None
+    return (min(xs), min(ys), max(xs), max(ys))
+
+
+def elevation_view_to_section_cut(
+    doc: Document, ev: ElevationViewElem, *, margin_mm: float = 2000.0
+) -> SectionCutElem:
+    """VIE-03 — derive an equivalent SectionCutElem from an ElevationViewElem.
+
+    The line is parallel to the bounding-box edge facing the elevation
+    direction, offset outward by `margin_mm`. The renderer can then drive the
+    same projection pipeline as a regular section. For ``custom`` direction,
+    `customAngleDeg` rotates the section line around the model centroid.
+    """
+
+    bounds = _model_xy_bounds_mm(doc)
+    if bounds is None:
+        # Fallback: a 10m line through the origin pointing in the direction.
+        bounds = (-5000.0, -5000.0, 5000.0, 5000.0)
+    min_x, min_y, max_x, max_y = bounds
+
+    if ev.direction == "north":
+        # North edge (max y) — line runs east→west, looking +y.
+        y = max_y + margin_mm
+        start = Vec2Mm(xMm=min_x - margin_mm, yMm=y)
+        end = Vec2Mm(xMm=max_x + margin_mm, yMm=y)
+    elif ev.direction == "south":
+        y = min_y - margin_mm
+        start = Vec2Mm(xMm=max_x + margin_mm, yMm=y)
+        end = Vec2Mm(xMm=min_x - margin_mm, yMm=y)
+    elif ev.direction == "east":
+        x = max_x + margin_mm
+        start = Vec2Mm(xMm=x, yMm=max_y + margin_mm)
+        end = Vec2Mm(xMm=x, yMm=min_y - margin_mm)
+    elif ev.direction == "west":
+        x = min_x - margin_mm
+        start = Vec2Mm(xMm=x, yMm=min_y - margin_mm)
+        end = Vec2Mm(xMm=x, yMm=max_y + margin_mm)
+    else:  # custom
+        cx = 0.5 * (min_x + max_x)
+        cy = 0.5 * (min_y + max_y)
+        radius = max(max_x - min_x, max_y - min_y) * 0.75 + margin_mm
+        ang = math.radians(ev.custom_angle_deg or 0.0)
+        # The section line passes through the centroid perpendicular to the
+        # elevation viewing direction (which itself points at angle ang).
+        nx, ny = math.cos(ang), math.sin(ang)
+        # Offset centroid outward along view direction so the line clears
+        # the model on the viewer side.
+        ox = cx - nx * radius
+        oy = cy - ny * radius
+        # Tangent perpendicular to (nx, ny).
+        tx, ty = -ny, nx
+        start = Vec2Mm(xMm=ox - tx * radius, yMm=oy - ty * radius)
+        end = Vec2Mm(xMm=ox + tx * radius, yMm=oy + ty * radius)
+
+    crop_depth_mm = max(max_x - min_x, max_y - min_y) + 4 * margin_mm
+
+    return SectionCutElem(
+        kind="section_cut",
+        id=f"_elev::{ev.id}",
+        name=ev.name,
+        line_start_mm=start,
+        line_end_mm=end,
+        crop_depth_mm=crop_depth_mm,
+    )

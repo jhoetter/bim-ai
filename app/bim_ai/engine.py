@@ -20,6 +20,7 @@ from bim_ai.commands import (
     CreateBcfTopicCmd,
     CreateCalloutCmd,
     CreateDimensionCmd,
+    CreateElevationViewCmd,
     CreateFloorCmd,
     CreateGridLineCmd,
     CreateIssueFromViolationCmd,
@@ -99,6 +100,7 @@ from bim_ai.elements import (
     DimensionElem,
     DoorElem,
     Element,
+    ElevationViewElem,
     FamilyTypeElem,
     FloorElem,
     FloorTypeElem,
@@ -1821,6 +1823,24 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 line_start_mm=cmd.line_start_mm,
                 line_end_mm=cmd.line_end_mm,
                 crop_depth_mm=cmd.crop_depth_mm,
+            )
+
+        case CreateElevationViewCmd():
+            evid = cmd.id or new_id()
+            if evid in els:
+                raise ValueError(f"duplicate element id '{evid}'")
+            if cmd.direction == "custom" and cmd.custom_angle_deg is None:
+                raise ValueError("createElevationView.customAngleDeg required when direction=custom")
+            els[evid] = ElevationViewElem(
+                kind="elevation_view",
+                id=evid,
+                name=cmd.name,
+                direction=cmd.direction,
+                custom_angle_deg=cmd.custom_angle_deg,
+                crop_min_mm=cmd.crop_min_mm,
+                crop_max_mm=cmd.crop_max_mm,
+                scale=cmd.scale,
+                plan_detail_level=cmd.plan_detail_level,
             )
 
         case UpsertViewTemplateCmd():

@@ -128,6 +128,11 @@ export function ProjectBrowser(props: {
     .filter((e): e is Extract<Element, { kind: 'section_cut' }> => e.kind === 'section_cut')
     .sort((a, b) => a.name.localeCompare(b.name));
 
+  // VIE-03: dedicated Elevations group, distinct from sections.
+  const elevationViews = Object.values(props.elementsById)
+    .filter((e): e is Extract<Element, { kind: 'elevation_view' }> => e.kind === 'elevation_view')
+    .sort((a, b) => a.name.localeCompare(b.name));
+
   const schedules = Object.values(props.elementsById)
     .filter((e): e is Extract<Element, { kind: 'schedule' }> => e.kind === 'schedule')
     .sort((a, b) => a.name.localeCompare(b.name));
@@ -149,6 +154,7 @@ export function ProjectBrowser(props: {
     viewpoints3d.length > 0 ||
     viewpointsPlan.length > 0 ||
     sectionCuts.length > 0 ||
+    elevationViews.length > 0 ||
     schedules.length > 0 ||
     sheets.length > 0 ||
     viewTemplates.length > 0 ||
@@ -417,6 +423,31 @@ export function ProjectBrowser(props: {
                   data-bim-section-evidence={sc.id}
                 >
                   {sectionCutProjectBrowserEvidenceLine(props.elementsById, sc)}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {elevationViews.length ? (
+        <div className="space-y-1" data-bim-elevations-group="1">
+          <div className="text-[10px] uppercase tracking-wide text-muted">Elevations</div>
+          <ul className="space-y-0.5">
+            {elevationViews.map((ev) => (
+              <li key={ev.id} className="flex flex-col gap-0.5">
+                <button
+                  type="button"
+                  className="w-full px-2 py-0.5 text-left text-[10px] underline decoration-muted underline-offset-2"
+                  onClick={() => useBimStore.getState().select(ev.id)}
+                >
+                  <span className="text-muted">elevation_view ·</span> {ev.name}
+                </button>
+                <div className="pl-2 font-mono text-[9px] leading-tight text-muted">
+                  direction · {ev.direction}
+                  {ev.direction === 'custom' && typeof ev.customAngleDeg === 'number'
+                    ? ` (${ev.customAngleDeg}°)`
+                    : ''}
                 </div>
               </li>
             ))}

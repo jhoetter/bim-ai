@@ -25,6 +25,7 @@ export type ElemKind =
   | 'tag_definition'
   | 'join_geometry'
   | 'section_cut'
+  | 'elevation_view'
   | 'plan_tag_style'
   | 'plan_view'
   | 'view_template'
@@ -536,6 +537,19 @@ export type Element =
       lineEndMm: XY;
       cropDepthMm?: number;
       segmentedPathMm?: XY[];
+      pinned?: boolean;
+    }
+  | {
+      /** VIE-03: first-class N/S/E/W elevation view (sibling to section_cut). */
+      kind: 'elevation_view';
+      id: string;
+      name: string;
+      direction: 'north' | 'south' | 'east' | 'west' | 'custom';
+      customAngleDeg?: number | null;
+      cropMinMm?: XY | null;
+      cropMaxMm?: XY | null;
+      scale?: number;
+      planDetailLevel?: 'coarse' | 'medium' | 'fine' | null;
       pinned?: boolean;
     }
   | {

@@ -175,6 +175,23 @@ class UnpinElementCmd(BaseModel):
     element_id: str = Field(alias="elementId")
 
 
+class CreateElevationViewCmd(BaseModel):
+    """VIE-03 — first-class elevation view (N/S/E/W) sibling to section_cut."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createElevationView"] = "createElevationView"
+    id: str | None = None
+    name: str = "Elevation"
+    direction: Literal["north", "south", "east", "west", "custom"] = "north"
+    custom_angle_deg: float | None = Field(default=None, alias="customAngleDeg")
+    crop_min_mm: Vec2Mm | None = Field(default=None, alias="cropMinMm")
+    crop_max_mm: Vec2Mm | None = Field(default=None, alias="cropMaxMm")
+    scale: float = 100.0
+    plan_detail_level: Literal["coarse", "medium", "fine"] | None = Field(
+        default=None, alias="planDetailLevel"
+    )
+
+
 class RestoreElementCmd(BaseModel):
     """Replays a persisted element snapshot (primarily undo / internal)."""
 
@@ -943,6 +960,7 @@ Command = Annotated[
     | MoveProjectBasePointCmd
     | RotateProjectBasePointCmd
     | CreateSurveyPointCmd
-    | MoveSurveyPointCmd,
+    | MoveSurveyPointCmd
+    | CreateElevationViewCmd,
     Field(discriminator="type"),
 ]

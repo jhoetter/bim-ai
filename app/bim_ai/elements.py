@@ -581,6 +581,31 @@ class SectionCutElem(BaseModel):
     pinned: bool = Field(default=False)
 
 
+ElevationDirection = Literal["north", "south", "east", "west", "custom"]
+
+
+class ElevationViewElem(BaseModel):
+    """VIE-03 — first-class N/S/E/W elevation view, sibling to section_cut.
+
+    Reuses the section_cut projection pipeline via the
+    `elevation_view_to_section_params` helper (see section_projection_primitives).
+    """
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["elevation_view"] = "elevation_view"
+    id: str
+    name: str = "Elevation"
+    direction: ElevationDirection = "north"
+    custom_angle_deg: float | None = Field(default=None, alias="customAngleDeg")
+    crop_min_mm: Vec2Mm | None = Field(default=None, alias="cropMinMm")
+    crop_max_mm: Vec2Mm | None = Field(default=None, alias="cropMaxMm")
+    scale: float = Field(default=100.0)
+    plan_detail_level: Literal["coarse", "medium", "fine"] | None = Field(
+        default=None, alias="planDetailLevel"
+    )
+    pinned: bool = Field(default=False)
+
+
 PlanTagTarget = Literal["opening", "room"]
 PlanTagBadgeStyle = Literal["none", "rounded", "flag"]
 
@@ -902,6 +927,7 @@ Element = Annotated[
     | PlanTagStyleElem
     | JoinGeometryElem
     | SectionCutElem
+    | ElevationViewElem
     | PlanViewElem
     | ViewTemplateElem
     | SheetElem
