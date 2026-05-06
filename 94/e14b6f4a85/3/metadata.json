@@ -1,0 +1,23 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "94e14b6f4a85",
+  "session_id": "e5928574-1de9-4cde-bd03-dc09526eb05c",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-06T15:36:48.131494Z",
+  "branch": "feat/wp-v2-01a-options-bar",
+  "checkpoints_count": 1,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "d634c680393b",
+  "token_usage": {
+    "input_tokens": 469,
+    "cache_creation_tokens": 628701,
+    "cache_read_tokens": 37879007,
+    "output_tokens": 317083,
+    "api_call_count": 399
+  },
+  "session_metrics": {
+    "turn_count": 31
+  }
+}
