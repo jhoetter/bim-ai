@@ -1,14 +1,20 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
+import { I18nextProvider } from 'react-i18next';
 import {
   Viewport3DLayersPanel,
   VIEWER_HIDDEN_KIND_KEYS,
   type Viewport3DLayersPanelProps,
 } from './Viewport3DLayersPanel';
+import i18n from '../i18n';
 
 afterEach(() => {
   cleanup();
 });
+
+function renderWithI18n(ui: React.ReactElement) {
+  return render(<I18nextProvider i18n={i18n}>{ui}</I18nextProvider>);
+}
 
 function makeProps(overrides: Partial<Viewport3DLayersPanelProps> = {}): Viewport3DLayersPanelProps {
   return {
@@ -113,10 +119,10 @@ describe('<Viewport3DLayersPanel />', () => {
   });
 
   it('shows activeViewpointId hint when provided', () => {
-    const { getByText } = render(
+    const { getByText } = renderWithI18n(
       <Viewport3DLayersPanel {...makeProps({ activeViewpointId: 'vp-42' })} />,
     );
-    expect(getByText('vp-42')).toBeTruthy();
+    expect(getByText(/vp-42/)).toBeTruthy();
   });
 
   it('hides viewpoint hint when activeViewpointId is absent', () => {
