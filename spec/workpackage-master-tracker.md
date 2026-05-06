@@ -31,9 +31,194 @@ Each primitive is a multi-WP programme that, once landed, unlocks a large surfac
 
 Reading order if you want to spend an hour with this doc:
 
-1. The "Why it matters" and "What it unlocks" lines for each primitive
-2. The summary table at the top of each primitive section
-3. The detailed WP entries for whichever primitive you intend to sequence next
+1. The **Cross-Epic Dependency Map** below — tells you what can run in parallel and what blocks what
+2. The "Why it matters" and "What it unlocks" lines for each primitive
+3. The summary table at the top of each primitive section
+4. The detailed WP entries for whichever primitive you intend to sequence next
+
+---
+
+## Cross-Epic Dependency Map
+
+Within-epic deps appear in each primitive's summary table. This section captures the **cross-epic** picture so you can sequence sprints without surprises.
+
+### TL;DR
+
+- **Most of the backlog is parallelisable.** Roughly half (~30 WPs) have no dependencies anywhere and can start today.
+- **Four keystone WPs** unlock most of the second half: **FED-01, EDT-01, SKT-01, FAM-01.** Land these in any order (they are independent of each other) and the rest cascades into mass parallel work.
+- **The target-house demo critical path is fully parallelisable today** — KRN-11/12/13/14 + MAT-01 have zero cross-epic deps. Five engineers could ship the target-house in ~1 calendar week each.
+
+### Dependency graph
+
+```mermaid
+graph LR
+  classDef keystone fill:#fff3b0,stroke:#7a5e00,color:#222;
+  classDef ready fill:#d1f0d4,stroke:#2a6a32,color:#222;
+  classDef blocked fill:#fde2e2,stroke:#7a2727,color:#222;
+
+  FED01[FED-01 link_model]:::keystone
+  FED02[FED-02 cross-link clash]:::blocked
+  FED03[FED-03 cross-link copy/monitor]:::blocked
+  FED04[FED-04 IFC/DXF shadow import]:::blocked
+
+  EDT01[EDT-01 grip protocol]:::keystone
+  EDT02[EDT-02 constraint locks]:::blocked
+  EDT03[EDT-03 3D handles]:::blocked
+  EDT04[EDT-04 tool de-stubs]:::blocked
+  EDT06[EDT-06 tool grammar]:::blocked
+
+  SKT01[SKT-01 sketch sessions]:::keystone
+  SKT02[SKT-02 pick walls]:::blocked
+  SKT03[SKT-03 validation feedback]:::blocked
+  SKT04[SKT-04 floor overlap]:::blocked
+
+  FAM01[FAM-01 nested families]:::keystone
+  FAM02[FAM-02 sweep]:::ready
+  FAM03[FAM-03 yes/no visibility]:::blocked
+  FAM04[FAM-04 conditional formulas]:::ready
+  FAM05[FAM-05 array]:::blocked
+  FAM08[FAM-08 component catalog]:::blocked
+
+  VIE02[VIE-02 per-detail visibility]:::blocked
+  VIE03[VIE-03 elevation views]:::ready
+
+  KRN02[KRN-02 L-shape roof]:::ready
+  KRN03[KRN-03 hip roof]:::ready
+  KRN04[KRN-04 wall_opening]:::ready
+  KRN06[KRN-06 project base point]:::ready
+  KRN07[KRN-07 multi-run stairs]:::ready
+  KRN08[KRN-08 area element]:::ready
+  KRN09[KRN-09 curtain wall panels]:::ready
+  KRN10[KRN-10 masking region]:::ready
+  KRN13[KRN-13 non-swing doors]:::ready
+
+  ANN01[ANN-01 detail components]:::ready
+  ANN02[ANN-02 elevation gen tool]:::ready
+  PLN01[PLN-01 dimension/tag automation]:::ready
+  PLN02[PLN-02 crop region UI]:::ready
+
+  FED01 --> FED02
+  FED01 --> FED03
+  FED01 --> FED04
+  KRN06 -.soft.-> FED04
+
+  EDT01 --> EDT02
+  EDT01 --> EDT03
+  EDT01 --> EDT04
+  EDT01 --> EDT06
+  KRN04 --> EDT04
+  EDT01 -.soft.-> PLN02
+  EDT06 -.soft.-> PLN01
+
+  SKT01 --> SKT02
+  SKT01 --> SKT03
+  SKT01 --> SKT04
+  SKT01 -.soft.-> KRN02
+  SKT01 -.soft.-> KRN03
+  SKT01 --> KRN07
+  SKT01 --> KRN08
+  SKT01 --> KRN10
+  SKT01 -.soft.-> ANN01
+
+  FAM01 --> FAM03
+  FAM01 --> FAM05
+  FAM01 --> FAM08
+  FAM04 --> FAM05
+  FAM01 --> VIE02
+  FAM02 -.soft.-> KRN09
+  FAM08 -.soft.-> KRN13
+
+  VIE03 --> ANN02
+```
+
+Legend: yellow = keystone (no deps, unblocks many); green = ready (no cross-epic deps); red = blocked until its prerequisite ships. Solid arrows are hard deps (cannot ship without); dashed arrows are soft deps (can ship a degraded version, full version needs the prereq).
+
+### Cross-epic dependency table
+
+Only the **cross-primitive** edges are listed (within-primitive deps are already in each section's summary table). Soft = can ship a degraded version without; Hard = cannot ship at all without.
+
+| Dependent WP | Depends on (cross-epic)             | Hard / Soft | Reason                                                                          |
+| ------------ | ----------------------------------- | ----------- | ------------------------------------------------------------------------------- |
+| EDT-04       | KRN-04                              | Hard        | Wall-Opening tool commits `CreateWallOpening`; needs the element kind first      |
+| FED-04       | KRN-06                              | Soft        | Proper CAD alignment with `origin_to_origin` benefits from project base point   |
+| KRN-02       | SKT-01                              | Soft        | Authorable today via API; sketch mode makes interactive authoring practical     |
+| KRN-03       | SKT-01                              | Soft        | Same as KRN-02                                                                  |
+| KRN-07       | SKT-01                              | Hard        | Sketch-based stair shape variant requires sketch sessions                       |
+| KRN-08       | SKT-01                              | Hard        | Area boundary is sketch-authored                                                |
+| KRN-09       | FAM-01, FAM-02                      | Soft        | Panel-as-family-instance needs FAM-01; mullion profile rendering needs FAM-02   |
+| KRN-10       | SKT-01                              | Hard        | Masking region boundary is sketch-authored                                      |
+| KRN-13       | FAM-08                              | Soft        | Catalog-driven door variants benefit from FAM-08; can hardcode types otherwise   |
+| VIE-02       | FAM-01                              | Hard        | Per-element / per-family-geometry visibility uses FAM-01's geometry node infra  |
+| ANN-01       | SKT-01                              | Soft        | `detail_region` is sketch-authored; `detail_line` and `text_note` are not       |
+| ANN-02       | VIE-03                              | Hard        | "Generate elevation from wall face" creates a `VIE-03 elevation_view` element   |
+| PLN-01       | EDT-06                              | Soft        | Auto-tag-everything generalises EDT-06's Tag-on-Place modifier                  |
+| PLN-02       | EDT-01                              | Soft        | Crop region drag handles use the EDT-01 grip protocol                           |
+
+**Notable independence:** Federation, In-Place Editing, Sketch Mode, and Family System Depth are mutually independent at the keystone level — FED-01, EDT-01, SKT-01, and FAM-01 share no dependencies and can be sequenced in any order or in parallel. Five engineers could each take one keystone (plus FAM-02, FAM-04, or any of the standalone WPs) and ship in parallel for ~3 calendar weeks before any cross-epic synchronisation is required.
+
+### Parallelisation waves
+
+Group WPs by when they can start.
+
+#### Wave 0 — start today, all parallel (no deps anywhere)
+
+**Federation foundations:** FED-01, FED-05
+**Editing foundations:** EDT-01, EDT-05
+**Sketch foundation:** SKT-01
+**Family foundations:** FAM-01, FAM-02, FAM-04, FAM-06, FAM-07, FAM-09, FAM-10
+**View independent:** VIE-01, VIE-03, VIE-04, VIE-05, VIE-06, VIE-07
+**Kernel independent:** KRN-01, KRN-04, KRN-05, KRN-06, KRN-11, KRN-12, KRN-14
+**Materials:** MAT-01
+**Validation:** VAL-01
+**Exchange:** IFC-01, IFC-02, IFC-03, IFC-04
+**Plan / annotation independent:** ANN-02 (after VIE-03 is in Wave 0, also parallel-safe), ANN-01 (`detail_line` + `text_note` parts)
+**CLI:** CLI-01, CLI-02, AGT-01
+
+**~33 WPs.** Headcount ceiling here is not technical — it's coordination and review capacity.
+
+#### Wave 1 — start once Wave 0 keystone(s) land
+
+After **FED-01:** FED-02, FED-03, FED-04 (3 WPs in parallel)
+After **EDT-01:** EDT-02, EDT-03, EDT-04, EDT-06 (4 WPs in parallel)
+After **SKT-01:** SKT-02, SKT-03, SKT-04, KRN-02, KRN-03, KRN-07, KRN-08, KRN-10, ANN-01 `detail_region` part (9 WPs in parallel)
+After **FAM-01:** FAM-03, FAM-05 (waits for FAM-04 too), FAM-08, VIE-02 (4 WPs)
+
+**~20 WPs**, all in their own dependency cluster.
+
+#### Wave 2 — second-order deps
+
+After **FAM-04 + FAM-01:** FAM-05
+After **FAM-02:** KRN-09 panel-as-family-instance variant
+After **FAM-08:** KRN-13 catalog-driven (or ship inline as Wave 0)
+After **VIE-03:** ANN-02 (already in Wave 0 if VIE-03 is)
+After **EDT-06:** PLN-01 (auto-tag-everything)
+After **EDT-01:** PLN-02 (crop drag handles)
+After **KRN-04:** EDT-04 (tool de-stub for wall opening)
+
+**~7 WPs** that need a single Wave-1 prereq, then ship in parallel.
+
+### Critical paths to user-facing capabilities
+
+What's the smallest WP set required to ship a specific user-visible goal? Useful for sprint scoping when leadership asks "what would it take to demo X next month?"
+
+| Goal                                                  | Required WPs (in order)                                  | Calendar (1 eng) | Calendar (parallel) |
+| ----------------------------------------------------- | -------------------------------------------------------- | ---------------- | ------------------- |
+| **Author the demo target-house from scratch**         | KRN-11 + KRN-12 + KRN-13 + KRN-14 + MAT-01               | ~6 weeks         | ~1.5 weeks (5 eng)  |
+| **Federated coordination (Navisworks-grade clash)**   | FED-01 → FED-02                                          | ~3.5 weeks       | ~3.5 weeks (serial) |
+| **Drag walls in 3D viewport to change height**        | EDT-01 → EDT-03                                          | ~7 weeks         | ~7 weeks (serial)   |
+| **Author L-shaped floors from canvas**                | SKT-01 → SKT-02                                          | ~5 weeks         | ~5 weeks (serial)   |
+| **Parametric chair-array dining-table family**        | FAM-01 → FAM-04 → FAM-05                                 | ~5 weeks         | ~4 weeks (FAM-04 ‖ FAM-01) |
+| **Production plan documentation (Coarse/Med/Fine)**   | VIE-01 + VIE-02 (parallel after FAM-01)                  | ~3 weeks         | ~2 weeks            |
+| **N/S/E/W elevations on a sheet**                     | VIE-03 + ANN-02                                          | ~2 weeks         | ~1.5 weeks          |
+| **IFC import → linked shadow model**                  | FED-01 → FED-04 (KRN-06 soft prereq)                     | ~5.5 weeks       | ~5 weeks (overlap KRN-06) |
+| **Full Revit-style "click and edit" feel for walls**  | EDT-01 → EDT-02 → EDT-03 + EDT-05 + EDT-06               | ~10 weeks        | ~7 weeks            |
+| **Asymmetric-roof seed renders correctly in 3D**      | KRN-11 alone                                             | 1 week           | 1 week              |
+| **Loggia frame on target-house**                      | FAM-02 sweep alone (compose with existing walls)         | 1 week           | 1 week              |
+| **Multi-run stair (dog-leg)**                         | SKT-01 → KRN-07                                          | ~6 weeks         | ~6 weeks (serial)   |
+
+**Shortest demonstrable wins:** KRN-11 (asymmetric roof, 1 wk) and FAM-02 (sweep, 1 wk) each ship a visible product capability in a week with zero cross-epic blockers. Good candidates for a quick first sprint to validate the new tracker.
+
+**Highest leverage single sprint:** SKT-01 unblocks 9 downstream WPs. EDT-01 unblocks 4 + 2 standalone. FED-01 unblocks 3. FAM-01 unblocks 4 + 1 cross-epic. Pick whichever keystone aligns with the most pressing customer feedback.
 
 ---
 
