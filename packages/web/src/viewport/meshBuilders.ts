@@ -1205,7 +1205,10 @@ export function makeCurtainWallMesh(
   const MW = 0.06;
 
   // Vertical mullions at bay divisions
-  const vCount = Math.max(1, Math.round(len / PANEL_W));
+  const vCount =
+    wall.curtainWallVCount != null
+      ? Math.max(1, wall.curtainWallVCount)
+      : Math.max(1, Math.round(len / PANEL_W));
   for (let i = 0; i <= vCount; i++) {
     const t = i / vCount;
     const vm = new THREE.Mesh(new THREE.BoxGeometry(MW, height, thick), mullionMat);
@@ -1216,7 +1219,10 @@ export function makeCurtainWallMesh(
   }
 
   // Horizontal mullions at floor divisions
-  const hCount = Math.max(1, Math.round(height / PANEL_H));
+  const hCount =
+    wall.curtainWallHCount != null
+      ? Math.max(1, wall.curtainWallHCount)
+      : Math.max(1, Math.round(height / PANEL_H));
   for (let i = 0; i <= hCount; i++) {
     const y = elevM + i * (height / hCount);
     const hm = new THREE.Mesh(new THREE.BoxGeometry(len, MW, thick), mullionMat);

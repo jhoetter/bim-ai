@@ -91,6 +91,45 @@ export function InspectorPropertiesFor(
             />
           </div>
 
+          {el.isCurtainWall && (
+            <>
+              <div className="flex items-center gap-2 py-0.5">
+                <span className="text-xs text-muted w-28 shrink-0">{f('cwVCount')}</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={50}
+                  className="w-16 text-xs bg-surface border border-border rounded px-1 py-0.5"
+                  value={el.curtainWallVCount ?? ''}
+                  placeholder="auto"
+                  onChange={(e2) =>
+                    onPropertyChange?.(
+                      'curtainWallVCount',
+                      e2.target.value === '' ? null : Number(e2.target.value),
+                    )
+                  }
+                />
+              </div>
+              <div className="flex items-center gap-2 py-0.5">
+                <span className="text-xs text-muted w-28 shrink-0">{f('cwHCount')}</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={50}
+                  className="w-16 text-xs bg-surface border border-border rounded px-1 py-0.5"
+                  value={el.curtainWallHCount ?? ''}
+                  placeholder="auto"
+                  onChange={(e2) =>
+                    onPropertyChange?.(
+                      'curtainWallHCount',
+                      e2.target.value === '' ? null : Number(e2.target.value),
+                    )
+                  }
+                />
+              </div>
+            </>
+          )}
+
           <div className="flex items-center gap-2 py-0.5">
             <span className="text-xs text-muted w-28 shrink-0">{f('wallType')}</span>
             <select

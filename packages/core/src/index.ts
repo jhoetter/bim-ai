@@ -34,7 +34,9 @@ export type ElemKind =
   | 'bcf'
   | 'agent_assumption'
   | 'agent_deviation'
-  | 'validation_rule';
+  | 'validation_rule'
+  | 'column'
+  | 'beam';
 
 export type XY = { xMm: number; yMm: number };
 
@@ -189,6 +191,8 @@ export type Element =
       roofAttachmentId?: string | null;
       insulationExtensionMm?: number;
       isCurtainWall?: boolean;
+      curtainWallVCount?: number | null;
+      curtainWallHCount?: number | null;
       locationLine?: WallLocationLine;
     }
   | {
@@ -497,7 +501,35 @@ export type Element =
       relatedAssumptionId?: string | null;
       relatedElementIds?: string[];
     }
-  | { kind: 'validation_rule'; id: string; name: string; ruleJson: Record<string, unknown> };
+  | { kind: 'validation_rule'; id: string; name: string; ruleJson: Record<string, unknown> }
+  | {
+      kind: 'column';
+      id: string;
+      name: string;
+      levelId: string;
+      positionMm: XY;
+      bMm: number;
+      hMm: number;
+      heightMm: number;
+      rotationDeg?: number;
+      materialKey?: string | null;
+      baseConstraintOffsetMm?: number;
+      topConstraintLevelId?: string | null;
+      topConstraintOffsetMm?: number;
+    }
+  | {
+      kind: 'beam';
+      id: string;
+      name: string;
+      levelId: string;
+      startMm: XY;
+      endMm: XY;
+      widthMm: number;
+      heightMm: number;
+      materialKey?: string | null;
+      startColumnId?: string | null;
+      endColumnId?: string | null;
+    };
 
 export type Violation = {
   ruleId: string;
