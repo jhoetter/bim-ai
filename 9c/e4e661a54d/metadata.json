@@ -3,7 +3,7 @@
   "checkpoint_id": "9ce4e661a54d",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 5,
+  "checkpoints_count": 6,
   "files_touched": [
     ".DS_Store",
     ".gitignore"
@@ -32,13 +32,19 @@
       "transcript": "/9c/e4e661a54d/3/full.jsonl",
       "content_hash": "/9c/e4e661a54d/3/content_hash.txt",
       "prompt": "/9c/e4e661a54d/3/prompt.txt"
+    },
+    {
+      "metadata": "/9c/e4e661a54d/4/metadata.json",
+      "transcript": "/9c/e4e661a54d/4/full.jsonl",
+      "content_hash": "/9c/e4e661a54d/4/content_hash.txt",
+      "prompt": "/9c/e4e661a54d/4/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 1324,
-    "cache_creation_tokens": 3685770,
-    "cache_read_tokens": 521969791,
-    "output_tokens": 748217,
-    "api_call_count": 1247
+    "input_tokens": 1366,
+    "cache_creation_tokens": 3736033,
+    "cache_read_tokens": 523204718,
+    "output_tokens": 764981,
+    "api_call_count": 1283
   }
 }
