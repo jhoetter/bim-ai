@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "e5359de1246d",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/e2e/evidence-baselines.spec.ts",
+    "packages/web/e2e/golden-bundle-plan.spec.ts",
+    "packages/web/e2e/ui-redesign-baselines.spec.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/e5/359de1246d/0/metadata.json",
+      "transcript": "/e5/359de1246d/0/full.jsonl",
+      "content_hash": "/e5/359de1246d/0/content_hash.txt",
+      "prompt": "/e5/359de1246d/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 4,
+    "cache_creation_tokens": 5866,
+    "cache_read_tokens": 302125,
+    "output_tokens": 386,
+    "api_call_count": 2
+  }
+}
