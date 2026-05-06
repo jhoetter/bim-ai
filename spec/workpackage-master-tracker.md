@@ -1039,7 +1039,7 @@ Profile families (introduced in V2-11) optionally referenced via `profileFamilyI
 | KRN-06 | Project base point + survey point + internal origin           | Today no explicit origin elements. Required for shared coordinates with linked CAD/IFC and for round-trip exchange. | M  | `open` |
 | KRN-07 | Multi-run stairs (dog-leg, L-shape, U-shape, spiral, winders) | Today's `stair` element is single-run. Real stairs are runs + landings, optionally sketch-based for arbitrary shapes. | L | `open` |
 | KRN-08 | `area` element kind (legal / permit area calculations)        | Distinct from `room`. Areas may include exterior porches and exclude interior shafts; rules differ by jurisdiction. | M | `open` |
-| KRN-09 | Curtain wall panel kinds (empty / system / custom-family)     | Today curtain walls have grid + `materialKey`; no panel-by-panel substitution (e.g. replace one panel with door).    | M | `open` |
+| KRN-09 | Curtain wall panel kinds (empty / system / custom-family)     | Today curtain walls have grid + `materialKey`; no panel-by-panel substitution (e.g. replace one panel with door).    | M | `done` (3e14f938 — empty/system/family_instance overrides + setCurtainPanelOverride engine cmd; family_instance renders placeholder pending FAM-01) |
 | KRN-10 | Masking region (2D filled region that blocks underlying linework) | Used in family editor (Hour 4: 2D chair plan symbol blocks floor-tile hatch underneath). View-local 2D element. | S      | `open` |
 | KRN-11 | Asymmetric gable roof (ridge offset, per-side eave heights) | Today's `gable_pitched_rectangle` is symmetric. The target demo house has the ridge significantly east of center with very different east/west wall heights — currently un-authorable. | M | `done` (a03da35f) |
 | KRN-12 | Variable-shape window outline (trapezoidal, arched, gable-end, custom polygon) | Today's window is `widthMm × heightMm` rectangle. Real architecture uses arched, eyebrow, octagonal, and gable-end-trapezoidal windows whose top edge follows the roof slope. | M | `open` |
@@ -1269,7 +1269,7 @@ Use cases: target-house §1.6 east-slope dormer cut-out opening to the flat roof
 
 | ID     | Item                                                  | Note                                                                                                              | Effort | State  |
 | ------ | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------ | ------ |
-| MAT-01 | Material catalog enrichment + standing-seam metal roof | Today's catalog covers a handful of materialKeys (`timber_cladding`, `white_cladding`, `white_render`). Target house needs more breadth + a real visual gap: standing-seam metal roof rendering. | M      | `open` |
+| MAT-01 | Material catalog enrichment + standing-seam metal roof | Today's catalog covers a handful of materialKeys (`timber_cladding`, `white_cladding`, `white_render`). Target house needs more breadth + a real visual gap: standing-seam metal roof rendering. | M      | `done` (9231887b — Part A: PBR registry covering cladding/render/aluminium/brick/stone/concrete/glass + standing-seam variants in `viewport/materials.ts` + `bim_ai/material_catalog.py`. Part B: `addStandingSeamPattern` invoked from `makeRoofMassMesh` for any `metal_standing_seam_*` materialKey on flat & gable roofs) |
 
 **MAT-01 detail.** Two parts:
 
