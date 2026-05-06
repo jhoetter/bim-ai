@@ -1,0 +1,1 @@
+[Image #3] the 3d panel still is dark, while the rest is lighter. fix that, commit and push your work (only your work)
