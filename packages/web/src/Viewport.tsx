@@ -40,6 +40,25 @@ function readToken(name: string, fallback: string): string {
   return v && v.trim().length > 0 ? v : fallback;
 }
 
+/** Resolve a CSS color token to an rgb() string that Three.js can parse.
+ * CSS Color Level 4 hsl() uses spaces (e.g. "hsl(0 0% 100%)") which
+ * Three.js does not support — routing through a DOM element forces the
+ * browser to resolve it to "rgb(r, g, b)". */
+function readColorToken(name: string, fallback: string): string {
+  if (typeof document === 'undefined') return fallback;
+  try {
+    const el = document.createElement('div');
+    el.style.display = 'none';
+    el.style.color = `var(${name}, ${fallback})`;
+    document.body.appendChild(el);
+    const resolved = getComputedStyle(el).color;
+    document.body.removeChild(el);
+    return resolved || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 type Props = {
   wsConnected: boolean;
   onPersistViewpointField?: (payload: OrbitViewpointPersistFieldPayload) => void | Promise<void>;
@@ -501,7 +520,7 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
     renderer.localClippingEnabled = true;
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    renderer.setClearColor(readToken('--color-background', '#0b1220'), 1);
+    renderer.setClearColor(readColorToken('--color-background', '#ffffff'), 1);
     rendererRef.current = renderer;
     host.appendChild(renderer.domElement);
 
