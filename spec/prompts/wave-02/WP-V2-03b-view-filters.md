@@ -1,41 +1,83 @@
-# WP-V2-03b — View Filters + View Range / Underlay UI
+# WP-V2-03b — View Filters + evaluateViewFilters
 
 **Branch:** `feat/wp-v2-03b-view-filters`
-**Wave:** 2, Batch B (parallel with WP-V2-04; start after Batch A is merged)
+**Wave:** 2, Batch B (parallel with WP-V2-04; start after Batch A is merged to main)
 **Tracker:** Update `spec/workpackage-master-tracker.md` WP-V2-03b → `done` when merged.
+
+---
+
+## Branch setup (run first)
+
+```bash
+git checkout main && git pull && git checkout -b feat/wp-v2-03b-view-filters
+git branch --show-current   # must print: feat/wp-v2-03b-view-filters
+```
+
+---
+
+## Pre-existing test failures (ignore — do not investigate)
+
+- `src/workspace/RedesignedWorkspace.semanticCommand.test.tsx` — flaky URL mock issue.
 
 ---
 
 ## Context
 
-BIM AI is a browser-first BIM authoring tool. Stack: React 19 + Vite + TypeScript, Tailwind, Zustand, Three.js. pnpm workspace; web package is `packages/web/`.
+**What's already done (do not re-implement):**
 
-This WP adds two things:
+- `InspectorContent.tsx` already has an editable View Range section (cutPlaneOffsetMm, viewRangeBottomMm, viewRangeTopMm) at line ~538.
+- `plan_view` elements in the store already store `underlayLevelId`, `cropMinMm`, `cropMaxMm`.
+- `CategoryOverride` / `CategoryOverrides` types and `vvDialogOpen` state are already in `storeTypes.ts`.
+- `VVDialog.tsx` (from WP-V2-03a) already has Model + Annotation tabs.
 
-1. **View Filters** — rule-based filters that hide or override display of elements matching a criterion (e.g. all walls with materialKey = 'concrete'). Revit equivalent: Filters tab in the VV dialog.
-2. **View Range / Underlay / Crop UI** — the data for these already exists in `plan_view` element (viewRangeBottomMm, viewRangeTopMm, cutPlaneOffsetMm, underlayLevelId, cropMinMm, cropMaxMm) but there is no editable UI. This WP adds an Inspector panel to edit them.
+**What this WP adds:**
 
-**Depends on WP-V2-03a** (the VVDialog) being merged first, because this WP adds a third tab ("Filters") to VVDialog and extends `planProjection.ts` which WP-V2-03a also touches.
+1. `ViewFilter` / `FilterRule` types in `storeTypes.ts` + `viewFilters` field on `plan_view` in `store.ts`
+2. Zustand actions: `addViewFilter`, `updateViewFilter`, `removeViewFilter`
+3. Pure function `evaluateViewFilters` in `planProjection.ts`
+4. A **Filters tab** in `VVDialog.tsx` (add after the existing Annotation tab)
+5. Tests
 
 ---
 
-## Part A — View Filters
+## Files to touch
 
-### Data model
+| File | Change |
+|---|---|
+| `packages/web/src/state/storeTypes.ts` | Add `ViewFilter`, `FilterRule` types; add actions to `StoreActions` |
+| `packages/web/src/state/store.ts` | Parse `viewFilters` from raw plan_view; add 3 Zustand actions |
+| `packages/web/src/plan/planProjection.ts` | Add `evaluateViewFilters` exported function |
+| `packages/web/src/workspace/VVDialog.tsx` | Add Filters tab |
+| `packages/web/src/plan/planProjection.viewFilters.test.ts` | New test file |
 
-Add to `store.ts` `plan_view` element parsing:
+---
 
+## Changes
+
+Read all 5 files in a single parallel batch before making any edits.
+
+### 1. `packages/web/src/state/storeTypes.ts`
+
+**Add types after `CategoryOverrides`** — current line 94:
 ```ts
+export type CategoryOverrides = Record<string, CategoryOverride>;
+
+export type StoreState = {
+```
+Replace with:
+```ts
+export type CategoryOverrides = Record<string, CategoryOverride>;
+
 export type FilterRule = {
-  field: string;                  // element property key, e.g. 'materialKey', 'categoryKey'
+  field: string;
   operator: 'equals' | 'not-equals' | 'contains' | 'not-contains';
   value: string;
 };
 
 export type ViewFilter = {
-  id: string;                     // UUID
+  id: string;
   name: string;
-  rules: FilterRule[];            // all rules must match (AND logic)
+  rules: FilterRule[];
   override: {
     visible?: boolean;
     projection?: {
@@ -45,178 +87,307 @@ export type ViewFilter = {
     };
   };
 };
+
+export type StoreState = {
 ```
 
-In the `plan_view` branch:
+**Add actions to StoreActions** — the actions interface currently ends with:
 ```ts
-const viewFiltersRaw = raw.viewFilters ?? raw.view_filters;
-const viewFilters: ViewFilter[] = Array.isArray(viewFiltersRaw)
-  ? (viewFiltersRaw as ViewFilter[])
-  : [];
+  setCategoryOverride: (
+    planViewId: string,
+    categoryKey: string,
+    override: CategoryOverride,
+  ) => void;
+
+  setActivity: (e: ActivityEvent[]) => void;
+```
+Replace with:
+```ts
+  setCategoryOverride: (
+    planViewId: string,
+    categoryKey: string,
+    override: CategoryOverride,
+  ) => void;
+  addViewFilter: (planViewId: string, filter: ViewFilter) => void;
+  updateViewFilter: (planViewId: string, filterId: string, patch: Partial<ViewFilter>) => void;
+  removeViewFilter: (planViewId: string, filterId: string) => void;
+
+  setActivity: (e: ActivityEvent[]) => void;
 ```
 
-Add `viewFilters` to the returned element. Export `ViewFilter` and `FilterRule` types.
+### 2. `packages/web/src/state/store.ts`
 
-Add Zustand actions:
-- `addViewFilter(planViewId: string, filter: ViewFilter)` — appends to `elementsById[planViewId].viewFilters` and calls `patchElement`.
-- `updateViewFilter(planViewId: string, filterId: string, patch: Partial<ViewFilter>)` — patches a single filter.
-- `removeViewFilter(planViewId: string, filterId: string)` — removes a filter by id.
+**Parse viewFilters in plan_view** — find the categoryOverrides parsing block (around line 750):
+```ts
+    const coRaw = raw.categoryOverrides ?? raw.category_overrides;
+    const categoryOverrides: Record<string, unknown> =
+      coRaw && typeof coRaw === 'object' && !Array.isArray(coRaw)
+        ? (coRaw as Record<string, unknown>)
+        : {};
+    return {
+```
+Replace with:
+```ts
+    const coRaw = raw.categoryOverrides ?? raw.category_overrides;
+    const categoryOverrides: Record<string, unknown> =
+      coRaw && typeof coRaw === 'object' && !Array.isArray(coRaw)
+        ? (coRaw as Record<string, unknown>)
+        : {};
+    const vfRaw = raw.viewFilters ?? raw.view_filters;
+    const viewFilters = Array.isArray(vfRaw)
+      ? (vfRaw as import('./storeTypes').ViewFilter[])
+      : [];
+    return {
+```
 
-### Filter evaluation in `planProjection.ts`
+**Add viewFilters to the returned object** — find the end of the plan_view return:
+```ts
+      categoryOverrides,
+    };
+  }
+```
+Replace with:
+```ts
+      categoryOverrides,
+      viewFilters,
+    };
+  }
+```
 
-After applying VV category overrides (from WP-V2-03a), apply view filters. Add a function:
+**Add 3 Zustand actions** — find the `setCategoryOverride` action (around line 1463):
+```ts
+    setCategoryOverride: (planViewId, categoryKey, override) => {
+```
+After the closing `},` of `setCategoryOverride`, add:
+```ts
+    addViewFilter: (planViewId, filter) => {
+      const pv = get().elementsById[planViewId];
+      if (!pv || pv.kind !== 'plan_view') return;
+      const updated = [...(pv.viewFilters ?? []), filter];
+      get().patchElement(planViewId, { viewFilters: updated });
+    },
+    updateViewFilter: (planViewId, filterId, patch) => {
+      const pv = get().elementsById[planViewId];
+      if (!pv || pv.kind !== 'plan_view') return;
+      const updated = (pv.viewFilters ?? []).map((f) =>
+        f.id === filterId ? { ...f, ...patch } : f,
+      );
+      get().patchElement(planViewId, { viewFilters: updated });
+    },
+    removeViewFilter: (planViewId, filterId) => {
+      const pv = get().elementsById[planViewId];
+      if (!pv || pv.kind !== 'plan_view') return;
+      const updated = (pv.viewFilters ?? []).filter((f) => f.id !== filterId);
+      get().patchElement(planViewId, { viewFilters: updated });
+    },
+```
+
+### 3. `packages/web/src/plan/planProjection.ts`
+
+Append to the **end of the file**:
 
 ```ts
+/* ────────────────────────────────────────────────────────────────────── */
+/* View filter evaluation                                                   */
+/* ────────────────────────────────────────────────────────────────────── */
+
+import type { ViewFilter } from '../state/storeTypes';
+
 export function evaluateViewFilters(
   element: Element,
   filters: ViewFilter[],
-): { visible: boolean; lineColor?: string | null; lineWeightFactor?: number; fillColor?: string | null } {
+): {
+  visible: boolean;
+  lineColor?: string | null;
+  lineWeightFactor?: number;
+  fillColor?: string | null;
+} {
   let visible = true;
-  let lineColor: string | null = null;
+  let lineColor: string | null | undefined;
   let lineWeightFactor: number | undefined;
-  let fillColor: string | null = null;
+  let fillColor: string | null | undefined;
 
   for (const filter of filters) {
     const matches = filter.rules.every((rule) => {
       const val = (element as Record<string, unknown>)[rule.field];
       const strVal = val != null ? String(val) : '';
       switch (rule.operator) {
-        case 'equals': return strVal === rule.value;
-        case 'not-equals': return strVal !== rule.value;
-        case 'contains': return strVal.includes(rule.value);
-        case 'not-contains': return !strVal.includes(rule.value);
+        case 'equals':
+          return strVal === rule.value;
+        case 'not-equals':
+          return strVal !== rule.value;
+        case 'contains':
+          return strVal.includes(rule.value);
+        case 'not-contains':
+          return !strVal.includes(rule.value);
+        default:
+          return false;
       }
     });
     if (matches) {
       if (filter.override.visible === false) visible = false;
-      if (filter.override.projection?.lineColor) lineColor = filter.override.projection.lineColor;
+      if (filter.override.projection?.lineColor !== undefined)
+        lineColor = filter.override.projection.lineColor;
       if (filter.override.projection?.lineWeightFactor != null)
         lineWeightFactor = filter.override.projection.lineWeightFactor;
-      if (filter.override.projection?.fillColor) fillColor = filter.override.projection.fillColor;
+      if (filter.override.projection?.fillColor !== undefined)
+        fillColor = filter.override.projection.fillColor;
     }
   }
   return { visible, lineColor, lineWeightFactor, fillColor };
 }
 ```
 
-Call this function in `PlanCanvas.tsx` when building plan mesh per element — elements where `visible === false` should be skipped (or have opacity set to 0). This is a PlanCanvas concern, not a planProjection concern — PlanCanvas iterates elements to build meshes and can call `evaluateViewFilters` per element.
+Note: `Element` is already imported at the top of this file (`import type { Element } from '@bim-ai/core'`). Add only the `ViewFilter` import.
 
-### Filters tab in VVDialog
+### 4. `packages/web/src/workspace/VVDialog.tsx`
 
-Add a **Filters** tab (third tab) to `VVDialog.tsx` (from WP-V2-03a).
+The file has two tabs. Find the tab header row — it will contain something like:
 
-```
-┌────────────────────────────────────────────────────────────────────┐
-│  Filters Tab                                                        │
-│                                                                     │
-│  [+ Add Filter]                                                     │
-│                                                                     │
-│  ┌─────────────────────────────────────────────────────────────┐   │
-│  │ Concrete Walls              [Edit] [Remove]                  │   │
-│  │   materialKey equals "concrete"                             │   │
-│  │   → Projection: lineColor=#d48800, hidden=false             │   │
-│  └─────────────────────────────────────────────────────────────┘   │
-│  ┌─────────────────────────────────────────────────────────────┐   │
-│  │ Hidden Windows              [Edit] [Remove]                  │   │
-│  │   categoryKey equals "window"                               │   │
-│  │   → visible=false                                           │   │
-│  └─────────────────────────────────────────────────────────────┘   │
-└────────────────────────────────────────────────────────────────────┘
+```tsx
+          {(['model', 'annotation'] as const).map((tab) => (
 ```
 
-**Add/Edit filter flow:**
-1. A sub-panel slides in with a name field, a rule builder (field dropdown + operator dropdown + value input), and an override builder (visibility checkbox + optional line color swatch).
-2. Multiple rules can be added (AND logic).
-3. Save adds/updates the filter in the draft state; Apply/OK syncs to store.
+or a similar tab-switching pattern. Read the current tab structure and add `'filters'` as a third tab.
 
-**Field dropdown options:** `categoryKey`, `materialKey`, `discipline`, `levelId`, `typeId`.
+For the filters tab body, render a minimal UI:
+- A list of `viewFilters` from the active plan view (read via `useBimStore`)
+- An "Add Filter" button that creates a new filter with a generated UUID (`crypto.randomUUID()`), name "New Filter", one empty rule
+- Each filter row: name (editable input) + rule summary (read-only for now) + Remove button
+- Call `addViewFilter`, `removeViewFilter` from store
+
+Keep this simple — a functional list view with add/remove. Inline rule editing is a future WP.
 
 ---
 
-## Part B — View Range / Underlay / Crop Inspector Panel
-
-### What to add
-
-Create `packages/web/src/workspace/ViewRangePanel.tsx` — a compact Inspector panel that appears when a plan view is selected (or always visible in plan mode in a dedicated section of InspectorContent).
-
-```
-View Range
-─────────────────────────────────
-Top of Range      [+3000 mm] (from level)
-Cut Plane         [-500 mm]
-Bottom of Range   [-300 mm]
-
-Underlay
-─────────────────────────────────
-Level             [Ground Floor ▾]  (dropdown of levels, + None)
-
-Crop Region
-─────────────────────────────────
-Active            [ ] Enable
-```
-
-Fields:
-- `cutPlaneOffsetMm` — number input (mm from level datum, negative = below)
-- `viewRangeTopMm` — number input
-- `viewRangeBottomMm` — number input
-- `underlayLevelId` — `<select>` over levels from `elementsById` (kind = 'level'), + "None" option
-- Crop Region enable/disable — checkbox that sets/clears `cropMinMm`/`cropMaxMm`
-
-On change, call `patchElement(activePlanViewId, { cutPlaneOffsetMm: value })` etc. (look at how other `patchElement` calls are structured in the store).
-
-### Wire into InspectorContent
-
-In `packages/web/src/workspace/InspectorContent.tsx`, when the active plan view is selected (or in plan mode where inspector shows view properties), add a `<ViewRangePanel />` section.
-
-Find the section that already renders `PlanViewGraphicsMatrix` — add `<ViewRangePanel />` just above it.
-
----
-
-## Key file locations
-
-| Path | Role |
-|---|---|
-| `packages/web/src/state/store.ts` | Add `ViewFilter`, `FilterRule` types; `viewFilters` on plan_view |
-| `packages/web/src/plan/planProjection.ts` | `evaluateViewFilters` function |
-| `packages/web/src/workspace/VVDialog.tsx` | Add Filters tab (depends on WP-V2-03a) |
-| `packages/web/src/plan/PlanCanvas.tsx` | Call `evaluateViewFilters` per element when building meshes |
-| New: `packages/web/src/workspace/ViewRangePanel.tsx` | View Range / Underlay / Crop UI |
-| `packages/web/src/workspace/InspectorContent.tsx` | Add `<ViewRangePanel />` |
-
----
-
-## Tests
-
-Add to a new `packages/web/src/plan/planProjection.viewFilters.test.ts`:
+## New file: `packages/web/src/plan/planProjection.viewFilters.test.ts`
 
 ```ts
-describe('evaluateViewFilters', () => {
-  it('returns visible=true when no filters match', ...)
-  it('returns visible=false when a matching filter has visible=false', ...)
-  it('applies lineWeightFactor from matching filter', ...)
-  it('AND logic: all rules must match for filter to apply', ...)
-  it('later filters win over earlier filters (last match wins)', ...)
-})
-```
+import { describe, expect, it } from 'vitest';
+import { evaluateViewFilters } from './planProjection';
+import type { ViewFilter } from '../state/storeTypes';
+import type { Element } from '@bim-ai/core';
 
-Add render tests for `ViewRangePanel`:
-- Renders cutPlaneOffsetMm input with current value.
-- Changing cutPlaneOffsetMm input calls `patchElement` with new value.
+const makeWall = (extra: Record<string, unknown> = {}): Element =>
+  ({
+    kind: 'wall',
+    id: 'w1',
+    name: 'Test',
+    start: { xMm: 0, yMm: 0 },
+    end: { xMm: 1000, yMm: 0 },
+    heightMm: 3000,
+    thicknessMm: 200,
+    levelId: 'l1',
+    ...extra,
+  }) as unknown as Element;
+
+describe('evaluateViewFilters', () => {
+  it('returns visible=true with no filters', () => {
+    expect(evaluateViewFilters(makeWall(), [])).toMatchObject({ visible: true });
+  });
+
+  it('returns visible=false when a matching filter hides the element', () => {
+    const filter: ViewFilter = {
+      id: 'f1',
+      name: 'Hide walls',
+      rules: [{ field: 'kind', operator: 'equals', value: 'wall' }],
+      override: { visible: false },
+    };
+    expect(evaluateViewFilters(makeWall(), [filter])).toMatchObject({ visible: false });
+  });
+
+  it('does not hide when the rule does not match', () => {
+    const filter: ViewFilter = {
+      id: 'f1',
+      name: 'Hide floors',
+      rules: [{ field: 'kind', operator: 'equals', value: 'floor' }],
+      override: { visible: false },
+    };
+    expect(evaluateViewFilters(makeWall(), [filter])).toMatchObject({ visible: true });
+  });
+
+  it('applies lineWeightFactor from matching filter', () => {
+    const filter: ViewFilter = {
+      id: 'f1',
+      name: 'Heavy walls',
+      rules: [{ field: 'kind', operator: 'equals', value: 'wall' }],
+      override: { projection: { lineWeightFactor: 2 } },
+    };
+    expect(evaluateViewFilters(makeWall(), [filter]).lineWeightFactor).toBe(2);
+  });
+
+  it('AND logic: all rules must match', () => {
+    const filter: ViewFilter = {
+      id: 'f1',
+      name: 'Concrete walls',
+      rules: [
+        { field: 'kind', operator: 'equals', value: 'wall' },
+        { field: 'materialKey', operator: 'equals', value: 'concrete' },
+      ],
+      override: { visible: false },
+    };
+    // Wall without materialKey — should NOT be hidden
+    expect(evaluateViewFilters(makeWall(), [filter])).toMatchObject({ visible: true });
+    // Wall with materialKey=concrete — should be hidden
+    expect(evaluateViewFilters(makeWall({ materialKey: 'concrete' }), [filter])).toMatchObject({ visible: false });
+  });
+
+  it('later filters win (last match wins)', () => {
+    const f1: ViewFilter = {
+      id: 'f1', name: 'First', rules: [{ field: 'kind', operator: 'equals', value: 'wall' }],
+      override: { projection: { lineWeightFactor: 2 } },
+    };
+    const f2: ViewFilter = {
+      id: 'f2', name: 'Second', rules: [{ field: 'kind', operator: 'equals', value: 'wall' }],
+      override: { projection: { lineWeightFactor: 3 } },
+    };
+    expect(evaluateViewFilters(makeWall(), [f1, f2]).lineWeightFactor).toBe(3);
+  });
+
+  it('not-equals operator matches correctly', () => {
+    const filter: ViewFilter = {
+      id: 'f1', name: 'Non-walls',
+      rules: [{ field: 'kind', operator: 'not-equals', value: 'floor' }],
+      override: { visible: false },
+    };
+    // wall kind != floor → matches → hidden
+    expect(evaluateViewFilters(makeWall(), [filter])).toMatchObject({ visible: false });
+  });
+});
+```
 
 ---
 
-## Constraints
+## Tests to run
 
-- `evaluateViewFilters` must be a pure function (no side effects, no store reads) — takes element + filters[] as params.
-- Do not change `planProjection.ts` signature of existing exported functions.
-- `make verify` must pass.
+```bash
+pnpm --filter web exec vitest run \
+  src/plan/planProjection.viewFilters.test.ts
+```
+
+All tests must pass.
+
+## Typecheck
+
+```bash
+pnpm --filter web typecheck
+```
 
 ---
 
 ## Commit format
 
-```
-feat(view): WP-V2-03b — View Filters + View Range / Underlay UI
+```bash
+git add packages/web/src/state/storeTypes.ts \
+        packages/web/src/state/store.ts \
+        packages/web/src/plan/planProjection.ts \
+        packages/web/src/workspace/VVDialog.tsx \
+        packages/web/src/plan/planProjection.viewFilters.test.ts
+git commit -m "$(cat <<'EOF'
+feat(view): WP-V2-03b — View Filters + evaluateViewFilters + VVDialog Filters tab
 
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+EOF
+)"
+git push -u origin feat/wp-v2-03b-view-filters
 ```

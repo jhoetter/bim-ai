@@ -161,8 +161,8 @@ Batch B (parallel after Batch A merged — no shared files):
 
 | WP        | Title                                              | Prompt file                          | Branch                          | State  | Depends on    |
 | --------- | -------------------------------------------------- | ------------------------------------ | ------------------------------- | ------ | ------------- |
-| WP-V2-02  | Wall System Depth (location line offset + joins)   | `wave-02/WP-V2-02-wall-depth.md`    | `feat/wp-v2-02-wall-depth`      | `open` | —             |
-| WP-V2-03a | VV Dialog (category overrides)                     | `wave-02/WP-V2-03a-vv-dialog.md`    | `feat/wp-v2-03a-vv-dialog`      | `done` | 03554b5a      |
+| WP-V2-02  | Wall System Depth (location line offset + joins)   | `wave-02/WP-V2-02-wall-depth.md`    | `feat/wp-v2-02-wall-depth`      | `done` | —             |
+| WP-V2-03a | VV Dialog (category overrides)                     | `wave-02/WP-V2-03a-vv-dialog.md`    | `feat/wp-v2-03a-vv-dialog`      | `partial` | —          |
 | WP-V2-04  | Openings (Wall Opening + Shaft tools)              | `wave-02/WP-V2-04-openings.md`      | `feat/wp-v2-04-openings`        | `open` | Batch A merged |
 | WP-V2-03b | View Filters + View Range / Underlay UI            | `wave-02/WP-V2-03b-view-filters.md` | `feat/wp-v2-03b-view-filters`   | `open` | WP-V2-03a merged |
 
