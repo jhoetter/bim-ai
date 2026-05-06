@@ -1,0 +1,66 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "d104e9f7dbf6",
+  "session_id": "e5928574-1de9-4cde-bd03-dc09526eb05c",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-06T16:57:41.623916Z",
+  "branch": "feat/wp-v2-02-wall-depth",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "packages/web/src/plan/planGeometry.test.ts",
+    "packages/web/src/state/store.test.ts",
+    "packages/web/src/workspace/RedesignedWorkspace.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "",
+  "turn_id": "268e1e0d95ac",
+  "checkpoint_transcript_start": 2144,
+  "transcript_lines_at_start": 2144,
+  "token_usage": {
+    "input_tokens": 7,
+    "cache_creation_tokens": 2718,
+    "cache_read_tokens": 407545,
+    "output_tokens": 1998,
+    "api_call_count": 3
+  },
+  "session_metrics": {
+    "turn_count": 7
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-06T16:57:41.48352Z",
+    "agent_lines": 0,
+    "agent_removed": 7,
+    "human_added": 76,
+    "human_modified": 9,
+    "human_removed": 0,
+    "total_committed": 83,
+    "total_lines_changed": 93,
+    "agent_percentage": 7.526881720430108,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 77,
+      "user_lines_removed": 5,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/web/src/ErrorBoundary.tsx": 56,
+        "packages/web/src/plan/planGeometry.test.ts": 5,
+        "packages/web/src/workspace/RedesignedWorkspace.tsx": 16
+      },
+      "user_removed_per_file": {
+        "packages/web/src/plan/planGeometry.test.ts": 2,
+        "packages/web/src/workspace/RedesignedWorkspace.tsx": 3
+      }
+    }
+  ]
+}
