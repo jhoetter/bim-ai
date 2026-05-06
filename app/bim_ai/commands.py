@@ -761,6 +761,32 @@ class CreateText3dCmd(BaseModel):
     material_key: str | None = Field(default=None, alias="materialKey")
 
 
+class MirrorAxis(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    start_mm: Vec2Mm = Field(alias="startMm")
+    end_mm: Vec2Mm = Field(alias="endMm")
+
+
+class MirrorElementsCmd(BaseModel):
+    """FAM-07 — reflect elements across an axis, optionally keeping originals.
+
+    `also_copy=True` keeps the originals and adds mirrored copies (Revit's
+    "Mirror — Pick Axis" with Copy option). `also_copy=False` mirrors in
+    place. `asymmetric_family_type_ids` lets the caller flag families that
+    should produce a `mirror_asymmetric` advisory rather than mirror cleanly
+    — the warnings are returned via :func:`mirror_advisories_for_command`.
+    """
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["mirrorElements"] = "mirrorElements"
+    element_ids: list[str] = Field(alias="elementIds")
+    axis: MirrorAxis
+    also_copy: bool = Field(default=True, alias="alsoCopy")
+    asymmetric_family_type_ids: list[str] = Field(
+        default_factory=list, alias="asymmetricFamilyTypeIds"
+    )
+
+
 Command = Annotated[
     CreateLevelCmd
     | CreateWallCmd
@@ -825,6 +851,7 @@ Command = Annotated[
     | CreateAgentDeviationCmd
     | UpsertValidationRuleCmd
     | UpsertSiteCmd
-    | CreateText3dCmd,
+    | CreateText3dCmd
+    | MirrorElementsCmd,
     Field(discriminator="type"),
 ]

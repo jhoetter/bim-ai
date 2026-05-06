@@ -45,6 +45,11 @@ describe('paletteForMode — spec §16.1', () => {
     const ids = paletteForMode('schedule', tIdentity as never).map((t) => t.id);
     expect(ids).toEqual(['select']);
   });
+
+  it('plan mode includes mirror (FAM-07)', () => {
+    const ids = paletteForMode('plan', tIdentity as never).map((t) => t.id);
+    expect(ids).toContain('mirror');
+  });
 });
 
 describe('<ToolPalette /> — spec §16', () => {

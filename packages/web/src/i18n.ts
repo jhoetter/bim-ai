@@ -49,6 +49,10 @@ i18n.init({
             label: 'Trim / Extend',
             tooltip: 'Click reference line, then segment to trim or extend (TR)',
           },
+          mirror: {
+            label: 'Mirror',
+            tooltip: 'Pick axis line, then elements to reflect (MM)',
+          },
           column: {
             label: 'Column',
             tooltip: 'Click to place a structural column (CO)',
@@ -768,6 +772,10 @@ i18n.init({
           ceiling: {
             label: 'Decke',
             tooltip: 'Deckenumriss skizzieren (CL)',
+          },
+          mirror: {
+            label: 'Spiegeln',
+            tooltip: 'Achse wählen, dann Elemente zum Spiegeln (MM)',
           },
           disabled: {
             drawWallFirst: 'Zuerst eine Wand zeichnen',

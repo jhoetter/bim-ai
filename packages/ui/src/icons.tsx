@@ -11,6 +11,7 @@ import {
   Eye,
   EyeOff,
   FileBadge2,
+  FlipHorizontal2,
   GitMerge,
   Grid3x3,
   Home,
@@ -115,6 +116,7 @@ export const Icons: Record<string, LucideLikeIcon> = {
   'wall-join': GitMerge,
   'wall-opening': SquareDashed,
   shaft: Layers,
+  mirror: FlipHorizontal2,
 
   // Drawing tools — all now BIM-native from @bim-ai/icons
   wall: WallIcon,
@@ -209,6 +211,7 @@ export const IconLabels: Record<keyof typeof Icons, string> = {
   'wall-join': 'Wall Join',
   'wall-opening': 'Wall Opening',
   shaft: 'Shaft',
+  mirror: 'Mirror',
   wall: 'Wall',
   door: 'Door',
   window: 'Window',

@@ -36,6 +36,7 @@ export type ToolId =
   | 'align'
   | 'split'
   | 'trim'
+  | 'mirror'
   | 'wall-join'
   | 'wall-opening'
   | 'shaft'
@@ -44,7 +45,7 @@ export type ToolId =
   | 'ceiling';
 
 /** Modify-group tool IDs — used by ToolPalette to insert a separator. */
-export const MODIFY_TOOL_IDS = new Set<ToolId>(['align', 'split', 'trim', 'wall-join']);
+export const MODIFY_TOOL_IDS = new Set<ToolId>(['align', 'split', 'trim', 'mirror', 'wall-join']);
 
 export type WorkspaceMode = 'plan' | '3d' | 'plan-3d' | 'section' | 'sheet' | 'schedule' | 'agent';
 
@@ -230,6 +231,14 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       modes: ['plan', 'plan-3d'],
       tooltip: t('tools.ceiling.tooltip'),
     },
+    mirror: {
+      id: 'mirror',
+      label: t('tools.mirror.label'),
+      icon: 'mirror',
+      hotkey: 'MM',
+      modes: ['plan', 'plan-3d'],
+      tooltip: t('tools.mirror.tooltip'),
+    },
   };
 }
 
@@ -249,6 +258,7 @@ const PALETTE_ORDER: ToolId[] = [
   'align',
   'split',
   'trim',
+  'mirror',
   'wall-join',
   'wall-opening',
   'shaft',
