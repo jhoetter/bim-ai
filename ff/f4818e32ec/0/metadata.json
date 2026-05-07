@@ -1,0 +1,50 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "fff4818e32ec",
+  "session_id": "6f40a8a5-85e9-4a1f-adf2-bac09cc905a4",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-07T08:35:43.321172Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "CLAUDE.md",
+    "claude-skills/sketch-to-bim/SKILL.md",
+    "spec/workpackage-master-tracker.md"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-opus-4-7",
+  "turn_id": "24dbf18a60ed",
+  "checkpoint_transcript_start": 1473,
+  "transcript_lines_at_start": 1473,
+  "token_usage": {
+    "input_tokens": 21,
+    "cache_creation_tokens": 21293,
+    "cache_read_tokens": 9240367,
+    "output_tokens": 15996,
+    "api_call_count": 16
+  },
+  "session_metrics": {
+    "turn_count": 9
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-07T08:35:43.239426Z",
+    "agent_lines": 0,
+    "agent_removed": 41,
+    "human_added": 257,
+    "human_modified": 42,
+    "human_removed": 0,
+    "total_committed": 294,
+    "total_lines_changed": 340,
+    "agent_percentage": 12.058823529411764,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}

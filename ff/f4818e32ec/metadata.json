@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "fff4818e32ec",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "CLAUDE.md",
+    "claude-skills/sketch-to-bim/SKILL.md",
+    "spec/workpackage-master-tracker.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/ff/f4818e32ec/0/metadata.json",
+      "transcript": "/ff/f4818e32ec/0/full.jsonl",
+      "content_hash": "/ff/f4818e32ec/0/content_hash.txt",
+      "prompt": "/ff/f4818e32ec/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 21,
+    "cache_creation_tokens": 21293,
+    "cache_read_tokens": 9240367,
+    "output_tokens": 15996,
+    "api_call_count": 16
+  }
+}
