@@ -476,3 +476,28 @@ def test_view_template_plan_category_graphics_json() -> None:
     assert len(vt.plan_category_graphics) == 1
     assert vt.plan_category_graphics[0].category_key == "grid_line"
     assert vt.plan_category_graphics[0].line_pattern_token == "dot"
+
+
+def test_plan_view_crop_enabled_and_region_visible_setters() -> None:
+    """PLN-02 — engine setters for cropEnabled / cropRegionVisible flags."""
+    els = {
+        "lv": LevelElem(kind="level", id="lv", name="EG", elevationMm=0),
+        "pv": PlanViewElem(kind="plan_view", id="pv", name="Test", levelId="lv"),
+    }
+    doc = Document(revision=1, elements=els)
+
+    apply_inplace(doc, UpdateElementPropertyCmd(elementId="pv", key="cropEnabled", value="true"))
+    apply_inplace(
+        doc,
+        UpdateElementPropertyCmd(elementId="pv", key="cropRegionVisible", value="false"),
+    )
+    pv = doc.elements["pv"]
+    assert isinstance(pv, PlanViewElem)
+    assert pv.crop_enabled is True
+    assert pv.crop_region_visible is False
+
+    # Empty value clears back to inherit (None).
+    apply_inplace(doc, UpdateElementPropertyCmd(elementId="pv", key="cropEnabled", value=""))
+    pv2 = doc.elements["pv"]
+    assert isinstance(pv2, PlanViewElem)
+    assert pv2.crop_enabled is None

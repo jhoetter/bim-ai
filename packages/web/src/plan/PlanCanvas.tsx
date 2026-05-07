@@ -80,6 +80,16 @@ import {
   resolvePlanViewDisplay,
 } from './planProjection';
 import { rebuildPlanMeshes } from './symbology';
+import { AnnotateRibbon } from './AnnotateRibbon';
+import {
+  applyCropHandleDrag,
+  cropDragCommands,
+  pickCropHandle,
+  pointInsideCrop,
+  type CropBounds,
+  type CropHandleId,
+} from './cropRegionDragHandles';
+import { extractDetailComponentPrimitives } from './detailComponentsRender';
 import { elevationFromWall, sectionCutFromWall } from '../lib/sectionElevationFromWall';
 import { WallContextMenu, type WallContextMenuCommand } from '../workspace/WallContextMenu';
 import { PlanDetailLevelToolbar } from './PlanDetailLevelToolbar';
@@ -209,6 +219,18 @@ export function PlanCanvas({
     half: initialCamera?.halfMm !== undefined ? initialCamera.halfMm / 1000 : 22,
   });
   const draftRef = useRef<Draft | undefined>(undefined);
+  // PLN-02 — active crop-region drag (handle id + pointer/bounds at drag start).
+  const cropDragRef = useRef<
+    | {
+        handle: CropHandleId;
+        planViewId: string;
+        startBounds: CropBounds;
+        startPointerMm: { xMm: number; yMm: number };
+        currentBounds: CropBounds;
+      }
+    | undefined
+  >(undefined);
+  const cropOverlayRef = useRef<THREE.Group | null>(null);
   const alignStateRef = useRef<AlignState>(initialAlignState());
   const splitStateRef = useRef<SplitState>(initialSplitState());
   const trimStateRef = useRef<TrimState>(initialTrimState());
@@ -349,6 +371,32 @@ export function PlanCanvas({
       ),
     [elementsById, activePlanViewId, activeLevelResolvedId, planPresentation],
   );
+
+  // PLN-02 — resolve the active plan view's crop state. The frame is drawn
+  // when bounds exist AND either cropEnabled or cropRegionVisible is true.
+  // When cropEnabled is on, plan rendering also clips elements outside the
+  // bounds (handled in the geometry rebuild effect below).
+  const activeCropState = useMemo((): {
+    planViewId: string;
+    cropMinMm: { xMm: number; yMm: number };
+    cropMaxMm: { xMm: number; yMm: number };
+    cropEnabled: boolean;
+    cropRegionVisible: boolean;
+  } | null => {
+    if (!activePlanViewId) return null;
+    const el = elementsById[activePlanViewId];
+    if (!el || el.kind !== 'plan_view') return null;
+    if (!el.cropMinMm || !el.cropMaxMm) return null;
+    const cropEnabled = !!el.cropEnabled;
+    const cropRegionVisible = el.cropRegionVisible !== false; // default visible when bounds exist
+    return {
+      planViewId: el.id,
+      cropMinMm: el.cropMinMm,
+      cropMaxMm: el.cropMaxMm,
+      cropEnabled,
+      cropRegionVisible,
+    };
+  }, [activePlanViewId, elementsById]);
 
   const mergedGraphicHints = useMemo(() => {
     if (wireGraphicHints) return wireGraphicHints;
@@ -696,6 +744,221 @@ export function PlanCanvas({
     };
     if (showMajor) addDraftGrid(majorStep, readPlanToken('--draft-grid-major', '#223042'), 0.45);
     if (showMinor) addDraftGrid(minorStep, readPlanToken('--draft-grid-minor', '#1a2738'), 0.25);
+
+    // ANN-01 — render detail_line / detail_region / text_note hosted on the
+    // active plan view. These are 2D-only annotations and live above the
+    // wire-driven element meshes.
+    for (let i = grp.children.length - 1; i >= 0; i--) {
+      const ch = grp.children[i]!;
+      if ((ch.userData as { detailComponent?: unknown }).detailComponent) grp.remove(ch);
+    }
+    if (activePlanViewId) {
+      const detailPrims = extractDetailComponentPrimitives(elementsById, activePlanViewId);
+      for (const p of detailPrims) {
+        if (p.kind === 'detail_line') {
+          const pts = p.pointsMm.map(
+            (pt) => new THREE.Vector3(pt.xMm / 1000, SLICE_Y + 0.004, pt.yMm / 1000),
+          );
+          const geom = new THREE.BufferGeometry().setFromPoints(pts);
+          const mat =
+            p.style === 'dashed' || p.style === 'dotted'
+              ? new THREE.LineDashedMaterial({
+                  color: p.colour,
+                  dashSize: p.style === 'dotted' ? 0.05 : 0.2,
+                  gapSize: p.style === 'dotted' ? 0.05 : 0.1,
+                  linewidth: p.strokeMm,
+                })
+              : new THREE.LineBasicMaterial({ color: p.colour, linewidth: p.strokeMm });
+          const line = new THREE.Line(geom, mat);
+          if (p.style !== 'solid') line.computeLineDistances();
+          line.userData.detailComponent = true;
+          line.userData.bimPickId = p.id;
+          grp.add(line);
+        } else if (p.kind === 'detail_region') {
+          const shape = new THREE.Shape();
+          if (p.boundaryMm.length >= 3) {
+            shape.moveTo(p.boundaryMm[0]!.xMm / 1000, p.boundaryMm[0]!.yMm / 1000);
+            for (let i = 1; i < p.boundaryMm.length; i++) {
+              shape.lineTo(p.boundaryMm[i]!.xMm / 1000, p.boundaryMm[i]!.yMm / 1000);
+            }
+            shape.closePath();
+          }
+          const geom = new THREE.ShapeGeometry(shape);
+          // ShapeGeometry produces the polygon in XY plane; rotate it onto
+          // the plan slice (XZ) so it sits flat with the rest of the canvas.
+          geom.rotateX(-Math.PI / 2);
+          geom.translate(0, SLICE_Y + 0.003, 0);
+          const fill = new THREE.Mesh(
+            geom,
+            new THREE.MeshBasicMaterial({
+              color: p.fillColour,
+              transparent: true,
+              opacity: p.fillPattern === 'solid' ? 1.0 : 0.55,
+              side: THREE.DoubleSide,
+            }),
+          );
+          fill.userData.detailComponent = true;
+          fill.userData.bimPickId = p.id;
+          grp.add(fill);
+          // Boundary stroke
+          if (p.strokeMm > 0) {
+            const strokePts = p.boundaryMm.map(
+              (pt) => new THREE.Vector3(pt.xMm / 1000, SLICE_Y + 0.0035, pt.yMm / 1000),
+            );
+            if (strokePts.length > 0) strokePts.push(strokePts[0]!.clone());
+            const sgeom = new THREE.BufferGeometry().setFromPoints(strokePts);
+            const sline = new THREE.Line(
+              sgeom,
+              new THREE.LineBasicMaterial({ color: p.strokeColour, linewidth: p.strokeMm }),
+            );
+            sline.userData.detailComponent = true;
+            grp.add(sline);
+          }
+        } else if (p.kind === 'text_note') {
+          // Render the text via canvas-texture sprite. Using the existing
+          // sprite pattern is heavier than necessary for a small note —
+          // we draw a 1×1 m sprite scaled to the text size.
+          const canvas = document.createElement('canvas');
+          canvas.width = 256;
+          canvas.height = 64;
+          const ctx2 = canvas.getContext('2d');
+          if (ctx2) {
+            ctx2.fillStyle = p.colour;
+            ctx2.font = `${Math.max(12, Math.round(48))}px sans-serif`;
+            ctx2.textBaseline = 'top';
+            ctx2.fillText(p.text, 4, 4);
+          }
+          const tex = new THREE.CanvasTexture(canvas);
+          tex.minFilter = THREE.LinearFilter;
+          const spriteMat = new THREE.SpriteMaterial({ map: tex, transparent: true });
+          const sprite = new THREE.Sprite(spriteMat);
+          // Scale: fontSize in mm → metres → 4×height for legibility.
+          const heightM = (p.fontSizeMm / 1000) * 1.4;
+          sprite.scale.set(heightM * (canvas.width / canvas.height), heightM, 1);
+          sprite.position.set(p.positionMm.xMm / 1000, SLICE_Y + 0.01, p.positionMm.yMm / 1000);
+          sprite.userData.detailComponent = true;
+          sprite.userData.bimPickId = p.id;
+          grp.add(sprite);
+        }
+      }
+    }
+
+    // PLN-02 — render dashed crop frame + 8 drag handles whenever a plan_view
+    // has crop bounds and the frame is visible (cropRegionVisible || cropEnabled).
+    // Removes the previous overlay first so the renderer never accumulates
+    // stale frames during drag.
+    if (cropOverlayRef.current) {
+      grp.remove(cropOverlayRef.current);
+      cropOverlayRef.current.traverse((c) => {
+        if ((c as THREE.Mesh).geometry) (c as THREE.Mesh).geometry.dispose();
+      });
+      cropOverlayRef.current = null;
+    }
+    if (activeCropState && (activeCropState.cropRegionVisible || activeCropState.cropEnabled)) {
+      const live = cropDragRef.current?.currentBounds;
+      const minX = (live?.cropMinMm.xMm ?? activeCropState.cropMinMm.xMm) / 1000;
+      const maxX = (live?.cropMaxMm.xMm ?? activeCropState.cropMaxMm.xMm) / 1000;
+      const minY = (live?.cropMinMm.yMm ?? activeCropState.cropMinMm.yMm) / 1000;
+      const maxY = (live?.cropMaxMm.yMm ?? activeCropState.cropMaxMm.yMm) / 1000;
+      const overlay = new THREE.Group();
+      overlay.userData.cropOverlay = true;
+      const frameColor = readPlanToken('--draft-construction-blue', '#fcd34d');
+      const framePts = [
+        new THREE.Vector3(minX, SLICE_Y + 0.005, minY),
+        new THREE.Vector3(maxX, SLICE_Y + 0.005, minY),
+        new THREE.Vector3(maxX, SLICE_Y + 0.005, maxY),
+        new THREE.Vector3(minX, SLICE_Y + 0.005, maxY),
+        new THREE.Vector3(minX, SLICE_Y + 0.005, minY),
+      ];
+      const frameGeom = new THREE.BufferGeometry().setFromPoints(framePts);
+      const frame = new THREE.Line(
+        frameGeom,
+        new THREE.LineDashedMaterial({
+          color: frameColor,
+          dashSize: 0.25,
+          gapSize: 0.12,
+          linewidth: 2,
+        }),
+      );
+      frame.computeLineDistances();
+      frame.userData.cropFrame = true;
+      overlay.add(frame);
+      // 8 handle dots at corners + edge midpoints (cx,cy in metres).
+      const cxM = (minX + maxX) / 2;
+      const cyM = (minY + maxY) / 2;
+      const handleSizeM = Math.max(camRef.current.half * 0.012, 0.06);
+      const handlePositions: Array<{ id: CropHandleId; x: number; y: number }> = [
+        { id: 'corner-nw', x: minX, y: maxY },
+        { id: 'corner-ne', x: maxX, y: maxY },
+        { id: 'corner-sw', x: minX, y: minY },
+        { id: 'corner-se', x: maxX, y: minY },
+        { id: 'edge-n', x: cxM, y: maxY },
+        { id: 'edge-e', x: maxX, y: cyM },
+        { id: 'edge-s', x: cxM, y: minY },
+        { id: 'edge-w', x: minX, y: cyM },
+      ];
+      for (const h of handlePositions) {
+        const handle = new THREE.Mesh(
+          new THREE.PlaneGeometry(handleSizeM, handleSizeM),
+          new THREE.MeshBasicMaterial({ color: frameColor }),
+        );
+        handle.rotation.x = -Math.PI / 2;
+        handle.position.set(h.x, SLICE_Y + 0.006, h.y);
+        handle.userData.cropHandleId = h.id;
+        overlay.add(handle);
+      }
+      grp.add(overlay);
+      cropOverlayRef.current = overlay;
+    }
+
+    // PLN-02 — when cropEnabled, fade meshes whose source element falls
+    // entirely outside the crop. We hide rather than remove so the rebuild
+    // is incremental; rooms / dimensions are kept visible because they are
+    // the most useful context, but per-element visibility uses the
+    // pickId→element lookup below.
+    if (activeCropState && activeCropState.cropEnabled) {
+      const inside = (xMm: number, yMm: number) =>
+        pointInsideCrop(activeCropState.cropMinMm, activeCropState.cropMaxMm, xMm, yMm);
+      const elementInsideCrop = (el: Element): boolean => {
+        if (el.kind === 'wall') {
+          return inside(el.start.xMm, el.start.yMm) || inside(el.end.xMm, el.end.yMm);
+        }
+        if (el.kind === 'door' || el.kind === 'window') {
+          const w = elementsById[el.wallId];
+          if (w && w.kind === 'wall') {
+            const mx = w.start.xMm + (w.end.xMm - w.start.xMm) * el.alongT;
+            const my = w.start.yMm + (w.end.yMm - w.start.yMm) * el.alongT;
+            return inside(mx, my);
+          }
+          return true;
+        }
+        if (el.kind === 'room' || el.kind === 'plan_region') {
+          const o = el.outlineMm ?? [];
+          if (!o.length) return true;
+          let sx = 0,
+            sy = 0;
+          for (const p of o) {
+            sx += p.xMm;
+            sy += p.yMm;
+          }
+          return inside(sx / o.length, sy / o.length);
+        }
+        if (el.kind === 'grid_line') {
+          return inside(el.start.xMm, el.start.yMm) || inside(el.end.xMm, el.end.yMm);
+        }
+        if (el.kind === 'dimension') {
+          return inside(el.aMm.xMm, el.aMm.yMm) || inside(el.bMm.xMm, el.bMm.yMm);
+        }
+        return true;
+      };
+      grp.traverse((ch) => {
+        const id = (ch.userData as { bimPickId?: string }).bimPickId;
+        if (typeof id !== 'string') return;
+        const target = elementsById[id];
+        if (!target) return;
+        ch.visible = elementInsideCrop(target);
+      });
+    }
   }, [
     mergedGraphicHints,
     mergedAnnotationHints,
@@ -710,6 +973,8 @@ export function PlanCanvas({
     modelId,
     planTool,
     selectedId,
+    activeCropState,
+    activePlanViewId,
   ]);
 
   useEffect(() => {
@@ -848,6 +1113,24 @@ export function PlanCanvas({
       const xy = snapped(ev.clientX, ev.clientY);
       setHudMm(xy);
       useBimStore.getState().setPlanHud(xy);
+      // PLN-02 — live crop frame drag update
+      if (cropDragRef.current) {
+        const ptr = rayToPlanMm(rnd, camNow, ev.clientX, ev.clientY);
+        if (ptr) {
+          const dx = ptr.xMm - cropDragRef.current.startPointerMm.xMm;
+          const dy = ptr.yMm - cropDragRef.current.startPointerMm.yMm;
+          cropDragRef.current.currentBounds = applyCropHandleDrag(
+            cropDragRef.current.handle,
+            cropDragRef.current.startBounds,
+            dx,
+            dy,
+          );
+          // Trigger a re-render of the overlay (cheap — only rebuilds frame).
+          bumpGeom((x) => x + 1);
+          skipClickRef.current = true;
+        }
+        return;
+      }
       if (dragRef.current.dragging) {
         const rr = rayToPlanMm(rnd, camNow, ev.clientX, ev.clientY);
         if (!rr) return;
@@ -1042,6 +1325,81 @@ export function PlanCanvas({
     };
 
     const onDown = (ev: PointerEvent) => {
+      // PLN-02 — first chance: crop frame interaction. Only applies when a
+      // plan_view with crop bounds is active and the frame is visible.
+      if (
+        ev.button === 0 &&
+        !spaceDownRef.current &&
+        activeCropState &&
+        (activeCropState.cropRegionVisible || activeCropState.cropEnabled)
+      ) {
+        const ptr = rayToPlanMm(rnd, camNow, ev.clientX, ev.clientY);
+        if (ptr) {
+          const pixH = rnd.domElement.clientHeight || 1;
+          const handleToleranceMm = (14 / pixH) * 2 * camRef.current.half * 1000;
+          const handleId = pickCropHandle(
+            activeCropState.cropMinMm,
+            activeCropState.cropMaxMm,
+            ptr.xMm,
+            ptr.yMm,
+            handleToleranceMm,
+          );
+          if (handleId) {
+            cropDragRef.current = {
+              handle: handleId,
+              planViewId: activeCropState.planViewId,
+              startBounds: {
+                cropMinMm: activeCropState.cropMinMm,
+                cropMaxMm: activeCropState.cropMaxMm,
+              },
+              startPointerMm: ptr,
+              currentBounds: {
+                cropMinMm: activeCropState.cropMinMm,
+                cropMaxMm: activeCropState.cropMaxMm,
+              },
+            };
+            skipClickRef.current = true;
+            return;
+          }
+          // Body drag: only when select-tool active and no element under cursor.
+          if (
+            planTool === 'select' &&
+            pointInsideCrop(activeCropState.cropMinMm, activeCropState.cropMaxMm, ptr.xMm, ptr.yMm)
+          ) {
+            const rectBox = rnd.domElement.getBoundingClientRect();
+            const ray = new THREE.Raycaster();
+            ray.setFromCamera(
+              new THREE.Vector2(
+                ((ev.clientX - rectBox.left) / rectBox.width) * 2 - 1,
+                -(((ev.clientY - rectBox.top) / rectBox.height) * 2 - 1),
+              ),
+              camNow,
+            );
+            const hits = ray.intersectObjects(grp.children, true);
+            const hasElementHit = hits.some(
+              (x) => typeof (x.object.userData as { bimPickId?: unknown }).bimPickId === 'string',
+            );
+            if (!hasElementHit && ev.shiftKey) {
+              cropDragRef.current = {
+                handle: 'body',
+                planViewId: activeCropState.planViewId,
+                startBounds: {
+                  cropMinMm: activeCropState.cropMinMm,
+                  cropMaxMm: activeCropState.cropMaxMm,
+                },
+                startPointerMm: ptr,
+                currentBounds: {
+                  cropMinMm: activeCropState.cropMinMm,
+                  cropMaxMm: activeCropState.cropMaxMm,
+                },
+              };
+              skipClickRef.current = true;
+              return;
+            }
+          }
+        }
+      }
+
       const intent = classifyPointerStart({
         button: ev.button,
         spacePressed: spaceDownRef.current,
@@ -1132,6 +1490,25 @@ export function PlanCanvas({
       dragRef.current.dragging = false;
       if (snapIndicatorRef.current) snapIndicatorRef.current.visible = false;
       setSnapLabel(null);
+
+      // PLN-02 — commit crop frame drag if one is active.
+      if (cropDragRef.current) {
+        const drag = cropDragRef.current;
+        cropDragRef.current = undefined;
+        const sameMin =
+          drag.currentBounds.cropMinMm.xMm === drag.startBounds.cropMinMm.xMm &&
+          drag.currentBounds.cropMinMm.yMm === drag.startBounds.cropMinMm.yMm;
+        const sameMax =
+          drag.currentBounds.cropMaxMm.xMm === drag.startBounds.cropMaxMm.xMm &&
+          drag.currentBounds.cropMaxMm.yMm === drag.startBounds.cropMaxMm.yMm;
+        if (!(sameMin && sameMax)) {
+          for (const cmd of cropDragCommands(drag.planViewId, drag.currentBounds)) {
+            onSemanticCommand(cmd);
+          }
+        }
+        bumpGeom((x) => x + 1);
+        return;
+      }
 
       if (marqueeRef.current.active && marqueeRef.current.direction) {
         const { sx, sy, ex, ey, direction } = marqueeRef.current;
@@ -1891,6 +2268,7 @@ export function PlanCanvas({
     activatePlanView,
     snapSettings,
     worldToScreen,
+    activeCropState,
   ]);
 
   // EDT-05 — keep the snap-line ref in sync with the active level so
@@ -2022,6 +2400,59 @@ export function PlanCanvas({
       {activePlanViewId ? (
         <div className="pointer-events-auto absolute left-1/2 bottom-3 z-10 -translate-x-1/2">
           <PlanDetailLevelToolbar value={activeDetailLevel} onChange={handleDetailLevelChange} />
+        </div>
+      ) : null}
+      {/* PLN-01 / ANN-01 — Annotate ribbon (auto-dim, auto-tag, detail components). */}
+      {activePlanViewId && lvlId ? (
+        <AnnotateRibbon
+          planViewId={activePlanViewId}
+          levelId={lvlId}
+          elementsById={elementsById}
+          cropMinMm={activeCropState?.cropMinMm}
+          cropMaxMm={activeCropState?.cropMaxMm}
+          onSemanticCommand={onSemanticCommand}
+        />
+      ) : null}
+      {/* PLN-02 — view-properties panel for crop bounds (only shown when the
+          active plan_view actually has cropMinMm/cropMaxMm data). */}
+      {activeCropState ? (
+        <div
+          data-testid="plan-crop-view-properties"
+          className="pointer-events-auto absolute right-3 bottom-3 z-10 rounded border border-border bg-surface/90 px-2 py-2 text-[10px] text-muted backdrop-blur"
+        >
+          <div className="mb-1 font-semibold text-foreground">Crop region</div>
+          <label className="flex cursor-pointer items-center gap-2">
+            <input
+              type="checkbox"
+              data-testid="plan-crop-view-toggle"
+              checked={activeCropState.cropEnabled}
+              onChange={(ev) =>
+                onSemanticCommand({
+                  type: 'updateElementProperty',
+                  elementId: activeCropState.planViewId,
+                  key: 'cropEnabled',
+                  value: ev.target.checked ? 'true' : 'false',
+                })
+              }
+            />
+            <span>Crop View</span>
+          </label>
+          <label className="mt-1 flex cursor-pointer items-center gap-2">
+            <input
+              type="checkbox"
+              data-testid="plan-crop-region-visible-toggle"
+              checked={activeCropState.cropRegionVisible}
+              onChange={(ev) =>
+                onSemanticCommand({
+                  type: 'updateElementProperty',
+                  elementId: activeCropState.planViewId,
+                  key: 'cropRegionVisible',
+                  value: ev.target.checked ? 'true' : 'false',
+                })
+              }
+            />
+            <span>Crop Region Visible</span>
+          </label>
         </div>
       ) : null}
       {/* Zoom control — scale bar + preset menu */}
