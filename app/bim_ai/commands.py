@@ -15,6 +15,8 @@ from bim_ai.elements import (
     PlanTagTarget,
     RoomColorSchemeRow,
     SiteContextObjectRow,
+    StairLanding,
+    StairRun,
     SweepPathPoint,
     SweepProfilePlane,
     SweepProfilePoint,
@@ -496,6 +498,12 @@ class CreateStairCmd(BaseModel):
     width_mm: float = Field(alias="widthMm", default=1000)
     riser_mm: float = Field(alias="riserMm", default=175)
     tread_mm: float = Field(alias="treadMm", default=275)
+    # KRN-07 — multi-run support. Defaults preserve legacy single-run behavior.
+    shape: Literal["straight", "l_shape", "u_shape", "spiral", "sketch"] = Field(
+        default="straight"
+    )
+    runs: list[StairRun] = Field(default_factory=list)
+    landings: list[StairLanding] = Field(default_factory=list)
 
 
 class CreateSlabOpeningCmd(BaseModel):

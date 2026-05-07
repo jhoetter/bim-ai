@@ -67,6 +67,21 @@ export type Text3dFontFamily = 'helvetiker' | 'optimer' | 'gentilis';
 
 export type XY = { xMm: number; yMm: number };
 
+/** KRN-07: a single straight flight in a multi-run stair. */
+export type StairRun = {
+  id: string;
+  startMm: XY;
+  endMm: XY;
+  widthMm: number;
+  riserCount: number;
+};
+
+/** KRN-07: a flat polygon landing between two runs. */
+export type StairLanding = {
+  id: string;
+  boundaryMm: XY[];
+};
+
 export type SiteContextType = 'tree' | 'shrub' | 'neighbor_proxy' | 'entourage';
 
 export type SiteContextObjectRow = {
@@ -507,6 +522,12 @@ export type Element =
       widthMm: number;
       riserMm: number;
       treadMm: number;
+      /** KRN-07: stair shape kind. Defaults to 'straight'; multi-run shapes carry runs+landings. */
+      shape?: 'straight' | 'l_shape' | 'u_shape' | 'spiral' | 'sketch';
+      /** KRN-07: ordered runs for multi-run stairs. Empty = legacy single-run from runStartMm/runEndMm. */
+      runs?: StairRun[];
+      /** KRN-07: landings between runs (one per gap). */
+      landings?: StairLanding[];
       overrideParams?: Record<string, unknown>;
       pinned?: boolean;
     }

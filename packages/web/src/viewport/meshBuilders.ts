@@ -1277,6 +1277,13 @@ export function makeStairVolumeMesh(
   elementsById: Record<string, Element>,
   paint: ViewportPaintBundle | null,
 ): THREE.Group {
+  // KRN-07 — when the stair has explicit multi-run geometry, render each run
+  // as its own inclined flight stacked on the level deltas plus flat polygon
+  // landings between them.
+  if (stair.runs && stair.runs.length > 0) {
+    return _makeMultiRunStairMesh(stair, elementsById, paint);
+  }
+
   const group = new THREE.Group();
 
   const sx = stair.runStartMm.xMm / 1000;
@@ -1344,6 +1351,96 @@ export function makeStairVolumeMesh(
     stringer.userData.bimPickId = stair.id;
     addEdges(stringer);
     group.add(stringer);
+  }
+
+  group.userData.bimPickId = stair.id;
+  return group;
+}
+
+/**
+ * KRN-07 — render a multi-run stair as a series of inclined flights with flat
+ * polygon landings between them. Each run gets its own slice of the total rise
+ * weighted by its riser count; landings sit at the elevation between flights.
+ */
+function _makeMultiRunStairMesh(
+  stair: Extract<Element, { kind: 'stair' }>,
+  elementsById: Record<string, Element>,
+  paint: ViewportPaintBundle | null,
+): THREE.Group {
+  const group = new THREE.Group();
+  const runs = stair.runs ?? [];
+  const landings = stair.landings ?? [];
+
+  const baseLevelElev = elevationMForLevel(stair.baseLevelId, elementsById);
+  const topLevelElev = elevationMForLevel(stair.topLevelId, elementsById);
+  const totalRise = Math.max(Math.abs(topLevelElev - baseLevelElev), 0.1);
+
+  const totalRisers = Math.max(
+    1,
+    runs.reduce((s, r) => s + Math.max(1, r.riserCount), 0),
+  );
+  const riserH = totalRise / totalRisers;
+  const treadThick = 0.04;
+
+  const mat = new THREE.MeshStandardMaterial({
+    color: categoryColorOr(paint, 'stair'),
+    roughness: paint?.categories.stair.roughness ?? 0.85,
+  });
+
+  let risersConsumed = 0;
+  for (const run of runs) {
+    const sx = run.startMm.xMm / 1000;
+    const sz = run.startMm.yMm / 1000;
+    const ex = run.endMm.xMm / 1000;
+    const ez = run.endMm.yMm / 1000;
+    const dx = ex - sx;
+    const dz = ez - sz;
+    const runLen = Math.max(1e-3, Math.hypot(dx, dz));
+    const runWidth = THREE.MathUtils.clamp(run.widthMm / 1000, 0.3, 4);
+    const angle = Math.atan2(dz, dx);
+    const riserCount = Math.max(1, run.riserCount);
+    const treadDepth = runLen / riserCount;
+    const runStartElev = baseLevelElev + risersConsumed * riserH;
+
+    const treadGeom = new THREE.BoxGeometry(treadDepth, treadThick, runWidth);
+    for (let i = 0; i < riserCount; i++) {
+      const treadMesh = new THREE.Mesh(treadGeom, mat);
+      const cx = sx + ((i + 0.5) / riserCount) * dx;
+      const cz = sz + ((i + 0.5) / riserCount) * dz;
+      const cy = runStartElev + (i + 1) * riserH - treadThick / 2;
+      treadMesh.position.set(cx, cy, cz);
+      treadMesh.rotation.y = angle;
+      treadMesh.castShadow = true;
+      treadMesh.receiveShadow = true;
+      treadMesh.userData.bimPickId = stair.id;
+      addEdges(treadMesh);
+      group.add(treadMesh);
+    }
+
+    risersConsumed += riserCount;
+  }
+
+  // Landings: flat polygon extrusions sitting at the elevation reached by all
+  // runs ending at this landing's join. Order: landing[i] sits between runs[i]
+  // and runs[i+1] — same convention used by _materialize_stair_runs_and_landings.
+  let landingRisersConsumed = 0;
+  for (let li = 0; li < landings.length && li + 1 < runs.length; li++) {
+    landingRisersConsumed += runs[li].riserCount;
+    const landing = landings[li];
+    if (landing.boundaryMm.length < 3) continue;
+    const landingY = baseLevelElev + landingRisersConsumed * riserH;
+    const shape = new THREE.Shape(
+      landing.boundaryMm.map((p) => new THREE.Vector2(p.xMm / 1000, p.yMm / 1000)),
+    );
+    const geom = new THREE.ExtrudeGeometry(shape, { depth: treadThick, bevelEnabled: false });
+    geom.rotateX(-Math.PI / 2);
+    geom.translate(0, landingY, 0);
+    const mesh = new THREE.Mesh(geom, mat);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    mesh.userData.bimPickId = stair.id;
+    addEdges(mesh);
+    group.add(mesh);
   }
 
   group.userData.bimPickId = stair.id;

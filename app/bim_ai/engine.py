@@ -167,6 +167,8 @@ from bim_ai.elements import (
     SlabOpeningElem,
     RoofOpeningElem,
     StairElem,
+    StairLanding,
+    StairRun,
     SurveyPointElem,
     SweepElem,
     TagDefinitionElem,
@@ -328,6 +330,60 @@ def _stripped_optional_str(val: str | None) -> str | None:
         return None
     t = val.strip()
     return t or None
+
+
+def _materialize_stair_runs_and_landings(
+    cmd: "CreateStairCmd",
+) -> tuple[list[StairRun], list[StairLanding]]:
+    """KRN-07: derive runs/landings from a CreateStairCmd.
+
+    - Explicit runs[] passed by the caller win.
+    - For shape='straight' with no runs, derive a single run from runStartMm/runEndMm.
+    - For shape='l_shape'/'u_shape' with caller-supplied runs but no landings,
+      auto-derive a rectangular landing per gap from adjacent run endpoints + width.
+    """
+
+    runs = list(cmd.runs)
+    landings = list(cmd.landings)
+
+    if not runs and cmd.shape == "straight":
+        runs = [
+            StairRun(
+                id=f"{cmd.id or 'stair'}-run-1",
+                start_mm=cmd.run_start_mm,
+                end_mm=cmd.run_end_mm,
+                width_mm=cmd.width_mm,
+                riser_count=8,
+            )
+        ]
+
+    if cmd.shape in ("l_shape", "u_shape") and runs and not landings:
+        for i in range(len(runs) - 1):
+            a = runs[i]
+            b = runs[i + 1]
+            landings.append(_auto_landing_for_gap(f"{cmd.id or 'stair'}-landing-{i + 1}", a, b))
+
+    return runs, landings
+
+
+def _auto_landing_for_gap(landing_id: str, a: StairRun, b: StairRun) -> StairLanding:
+    """KRN-07: square landing centered on the join between runs `a` and `b`.
+
+    Uses the larger of the two run widths so the landing always covers both treads.
+    """
+
+    cx = (a.end_mm.x_mm + b.start_mm.x_mm) * 0.5
+    cy = (a.end_mm.y_mm + b.start_mm.y_mm) * 0.5
+    half = max(a.width_mm, b.width_mm) * 0.5
+    return StairLanding(
+        id=landing_id,
+        boundary_mm=[
+            Vec2Mm(xMm=cx - half, yMm=cy - half),
+            Vec2Mm(xMm=cx + half, yMm=cy - half),
+            Vec2Mm(xMm=cx + half, yMm=cy + half),
+            Vec2Mm(xMm=cx - half, yMm=cy + half),
+        ],
+    )
 
 
 def _room_programme_field_updates(
@@ -1686,6 +1742,7 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
             for lid in (cmd.base_level_id, cmd.top_level_id):
                 if lid not in els or not isinstance(els[lid], LevelElem):
                     raise ValueError("createStair base/top level must reference existing Level")
+            stair_runs, stair_landings = _materialize_stair_runs_and_landings(cmd)
             els[sid] = StairElem(
                 kind="stair",
                 id=sid,
@@ -1697,6 +1754,9 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 width_mm=cmd.width_mm,
                 riser_mm=cmd.riser_mm,
                 tread_mm=cmd.tread_mm,
+                shape=cmd.shape,
+                runs=stair_runs,
+                landings=stair_landings,
             )
 
         case CreateSlabOpeningCmd():

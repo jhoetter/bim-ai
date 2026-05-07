@@ -541,6 +541,28 @@ class RoofElem(BaseModel):
     pinned: bool = Field(default=False)
 
 
+StairShape = Literal["straight", "l_shape", "u_shape", "spiral", "sketch"]
+
+
+class StairRun(BaseModel):
+    """KRN-07: one straight flight in a multi-run stair."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    id: str
+    start_mm: Vec2Mm = Field(alias="startMm")
+    end_mm: Vec2Mm = Field(alias="endMm")
+    width_mm: float = Field(alias="widthMm", default=1000)
+    riser_count: int = Field(alias="riserCount", default=8)
+
+
+class StairLanding(BaseModel):
+    """KRN-07: a flat polygon landing between two runs."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    id: str
+    boundary_mm: list[Vec2Mm] = Field(alias="boundaryMm")
+
+
 class StairElem(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True)
     kind: Literal["stair"] = "stair"
@@ -553,6 +575,10 @@ class StairElem(BaseModel):
     width_mm: float = Field(alias="widthMm", default=1000)
     riser_mm: float = Field(alias="riserMm", default=175)
     tread_mm: float = Field(alias="treadMm", default=275)
+    # KRN-07 — multi-run support. Defaults preserve the legacy single-run shape.
+    shape: StairShape = Field(default="straight")
+    runs: list[StairRun] = Field(default_factory=list)
+    landings: list[StairLanding] = Field(default_factory=list)
     pinned: bool = Field(default=False)
 
 
