@@ -1,0 +1,88 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "40e24df1d4f6",
+  "session_id": "6f40a8a5-85e9-4a1f-adf2-bac09cc905a4",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-07T08:07:41.635148Z",
+  "branch": "main",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "nightshift/wave3-4.md",
+    "nightshift/wave3-5.md",
+    "nightshift/wave3-README.md"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-opus-4-7",
+  "turn_id": "baba558d3c49",
+  "checkpoint_transcript_start": 1182,
+  "transcript_lines_at_start": 1182,
+  "token_usage": {
+    "input_tokens": 41,
+    "cache_creation_tokens": 473876,
+    "cache_read_tokens": 4847428,
+    "output_tokens": 7371,
+    "api_call_count": 11
+  },
+  "session_metrics": {
+    "turn_count": 6
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-07T08:07:41.558617Z",
+    "agent_lines": 387,
+    "agent_removed": 0,
+    "human_added": 1564,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 1951,
+    "total_lines_changed": 1951,
+    "agent_percentage": 19.835981547924142,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 433,
+      "user_lines_removed": 0,
+      "agent_lines_added": 67,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "nightshift/wave3-1.md": 152,
+        "nightshift/wave3-2.md": 144,
+        "nightshift/wave3-3.md": 137
+      }
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 433,
+      "user_lines_removed": 0,
+      "agent_lines_added": 214,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "nightshift/wave3-1.md": 152,
+        "nightshift/wave3-2.md": 144,
+        "nightshift/wave3-3.md": 137
+      }
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 698,
+      "user_lines_removed": 0,
+      "agent_lines_added": 387,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "nightshift/wave3-1.md": 152,
+        "nightshift/wave3-2.md": 144,
+        "nightshift/wave3-3.md": 137,
+        "nightshift/wave3-6.md": 143,
+        "nightshift/wave3-7.md": 122
+      }
+    }
+  ]
+}
