@@ -9,6 +9,111 @@
 export type { WallLocationLine } from '@bim-ai/core';
 import type { WallLocationLine } from '@bim-ai/core';
 
+/* ────────────────────────────────────────────────────────────────────── */
+/* EDT-06 — Tool grammar polish (Chain / Multiple / Tag-on-Place /        */
+/*           Numeric input). The canvas wires the per-tool reducers in    */
+/*           this file plus a top-level `ToolGrammarModifiers` block      */
+/*           that feeds the Options Bar.                                  */
+/* ────────────────────────────────────────────────────────────────────── */
+
+/** Modifiers that the canvas Options Bar exposes to the user. */
+export interface ToolGrammarModifiers {
+  /** Place Wall continues from the last endpoint until Esc / different tool. */
+  chainable: boolean;
+  /** Insert Door / Window stays in tool until Esc; otherwise exits after first placement. */
+  multipleable: boolean;
+  /** During wall / door / window placement, auto-place a tag of the configured family. */
+  tagOnPlace: { enabled: boolean; tagFamilyId?: string };
+  /** Numeric input mode: typing a digit while drawing pops a numeric input field. */
+  numericInputActive: boolean;
+}
+
+export function defaultToolGrammarModifiers(): ToolGrammarModifiers {
+  return {
+    chainable: true,
+    multipleable: false,
+    tagOnPlace: { enabled: false },
+    numericInputActive: false,
+  };
+}
+
+/** A tool's static capability set — drives which Options Bar toggles appear. */
+export interface ToolCapabilities {
+  chainable: boolean;
+  multipleable: boolean;
+  tagOnPlace: boolean;
+  /** Whether the tool supports typing a numeric distance while drawing. */
+  numericInput: boolean;
+}
+
+export const TOOL_CAPABILITIES: Record<string, ToolCapabilities> = {
+  wall: { chainable: true, multipleable: false, tagOnPlace: true, numericInput: true },
+  door: { chainable: false, multipleable: true, tagOnPlace: true, numericInput: false },
+  window: { chainable: false, multipleable: true, tagOnPlace: true, numericInput: false },
+  beam: { chainable: false, multipleable: false, tagOnPlace: false, numericInput: true },
+  column: { chainable: false, multipleable: true, tagOnPlace: false, numericInput: false },
+  ceiling: { chainable: false, multipleable: false, tagOnPlace: false, numericInput: false },
+  shaft: { chainable: false, multipleable: false, tagOnPlace: false, numericInput: false },
+  align: { chainable: false, multipleable: false, tagOnPlace: false, numericInput: false },
+  split: { chainable: false, multipleable: true, tagOnPlace: false, numericInput: false },
+  trim: { chainable: false, multipleable: true, tagOnPlace: false, numericInput: false },
+  'wall-join': { chainable: false, multipleable: false, tagOnPlace: false, numericInput: false },
+  'wall-opening': {
+    chainable: false,
+    multipleable: false,
+    tagOnPlace: false,
+    numericInput: false,
+  },
+};
+
+/**
+ * Numeric-input field state — appears at the cursor while a numeric-capable
+ * tool is mid-draw and the user types a digit. `axis` toggles on Tab so a
+ * second number can drive the perpendicular direction.
+ */
+export interface NumericInputState {
+  active: boolean;
+  value: string;
+  axis: 'primary' | 'perpendicular';
+}
+
+export function initialNumericInputState(): NumericInputState {
+  return { active: false, value: '', axis: 'primary' };
+}
+
+export type NumericInputEvent =
+  | { kind: 'start'; firstDigit: string }
+  | { kind: 'append'; digit: string }
+  | { kind: 'backspace' }
+  | { kind: 'tab-axis' }
+  | { kind: 'commit' }
+  | { kind: 'cancel' };
+
+export function reduceNumericInput(
+  state: NumericInputState,
+  event: NumericInputEvent,
+): NumericInputState {
+  switch (event.kind) {
+    case 'start':
+      return { active: true, value: event.firstDigit, axis: 'primary' };
+    case 'append':
+      if (!state.active) return state;
+      return { ...state, value: state.value + event.digit };
+    case 'backspace':
+      if (!state.active) return state;
+      return { ...state, value: state.value.slice(0, -1) };
+    case 'tab-axis':
+      if (!state.active) return state;
+      return {
+        ...state,
+        axis: state.axis === 'primary' ? 'perpendicular' : 'primary',
+      };
+    case 'commit':
+    case 'cancel':
+      return initialNumericInputState();
+  }
+}
+
 export type ToolGrammarKind =
   | 'wall'
   | 'door'
