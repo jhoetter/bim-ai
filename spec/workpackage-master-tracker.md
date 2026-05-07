@@ -904,7 +904,7 @@ Profile families (introduced in V2-11) optionally referenced via `profileFamilyI
 | ------ | --------------------------------------------------------------- | ------ | --------- | ---------- |
 | VIE-01 | Detail levels render binding                                    | M      | `partial` | —          |
 | VIE-02 | Per-element / per-family-geometry visibility per detail level    | M      | `open`    | FAM-01     |
-| VIE-03 | Named elevation views (N/S/E/W) + auto-generation                | M      | `partial` | —          |
+| VIE-03 | Named elevation views (N/S/E/W) + auto-generation                | M      | `done`    | —          |
 | VIE-04 | Temporary isolate / hide category                                | S      | `done`    | —          |
 | VIE-05 | Plan view auto-generation when a level is created                | S      | `done`    | —          |
 | VIE-06 | Project templates (starter models)                               | M      | `done`    | —          |
@@ -964,7 +964,7 @@ Profile families (introduced in V2-11) optionally referenced via `profileFamilyI
 
 **Cross-ref.** Overlaps with ANN-02 (section/elevation generation from a wall face). VIE-03 is the element kind; ANN-02 is the right-click-to-generate tool. Land VIE-03 first; ANN-02 becomes a thin wrapper after.
 
-**Effort.** M — 1.5 weeks. **Partial in commit 4b8bf373** — kernel half: ElevationViewElem kind, CreateElevationView command, `elevation_view_to_section_cut` helper that maps direction → section line for the existing projection pipeline, and an Elevations group in the Project Browser. Plan-canvas marker rendering + double-click-to-open + view-ribbon Elevation tool still pending.
+**Effort.** M — 1.5 weeks. **Done in commits 4b8bf373 + 66584688** — kernel half: ElevationViewElem kind, CreateElevationView command, `elevation_view_to_section_cut` helper that maps direction → section line for the existing projection pipeline, and an Elevations group in the Project Browser. UI half: triangular marker on the plan canvas (`elevationViewPlanThree`), double-click handler that activates the elevation_view, ribbon Elevation tool (EL hotkey) that drops a marker auto-oriented from the nearest exterior wall.
 
 ### VIE-04 — Temporary isolate / hide category
 
