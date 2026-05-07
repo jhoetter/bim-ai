@@ -1138,6 +1138,68 @@ class SetWallRecessZonesCmd(BaseModel):
     recess_zones: list[WallRecessZone] = Field(default_factory=list, alias="recessZones")
 
 
+# --- KRN-08: area element ----------------------------------------------------
+
+AreaRuleSetCmd = Literal["gross", "net", "no_rules"]
+
+
+class CreateAreaCmd(BaseModel):
+    """KRN-08 — author an `area` polygon for legal/permit area calculations."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createArea"] = "createArea"
+    id: str | None = None
+    name: str = "Area"
+    level_id: str = Field(alias="levelId")
+    boundary_mm: list[Vec2Mm] = Field(alias="boundaryMm")
+    rule_set: AreaRuleSetCmd = Field(default="no_rules", alias="ruleSet")
+
+
+class UpdateAreaCmd(BaseModel):
+    """KRN-08 — update an existing area's name, boundary, or ruleset."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["updateArea"] = "updateArea"
+    area_id: str = Field(alias="areaId")
+    name: str | None = None
+    boundary_mm: list[Vec2Mm] | None = Field(default=None, alias="boundaryMm")
+    rule_set: AreaRuleSetCmd | None = Field(default=None, alias="ruleSet")
+
+
+class DeleteAreaCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["deleteArea"] = "deleteArea"
+    area_id: str = Field(alias="areaId")
+
+
+# --- KRN-10: masking region --------------------------------------------------
+
+
+class CreateMaskingRegionCmd(BaseModel):
+    """KRN-10 — author a view-local masking region polygon."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createMaskingRegion"] = "createMaskingRegion"
+    id: str | None = None
+    host_view_id: str = Field(alias="hostViewId")
+    boundary_mm: list[Vec2Mm] = Field(alias="boundaryMm")
+    fill_color: str = Field(default="#ffffff", alias="fillColor")
+
+
+class UpdateMaskingRegionCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["updateMaskingRegion"] = "updateMaskingRegion"
+    masking_region_id: str = Field(alias="maskingRegionId")
+    boundary_mm: list[Vec2Mm] | None = Field(default=None, alias="boundaryMm")
+    fill_color: str | None = Field(default=None, alias="fillColor")
+
+
+class DeleteMaskingRegionCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["deleteMaskingRegion"] = "deleteMaskingRegion"
+    masking_region_id: str = Field(alias="maskingRegionId")
+
+
 Command = Annotated[
     CreateLevelCmd
     | CreateWallCmd
@@ -1230,6 +1292,12 @@ Command = Annotated[
     | DeletePropertyLineCmd
     | CreateSweepCmd
     | CreateDormerCmd
-    | SetWallRecessZonesCmd,
+    | SetWallRecessZonesCmd
+    | CreateAreaCmd
+    | UpdateAreaCmd
+    | DeleteAreaCmd
+    | CreateMaskingRegionCmd
+    | UpdateMaskingRegionCmd
+    | DeleteMaskingRegionCmd,
     Field(discriminator="type"),
 ]

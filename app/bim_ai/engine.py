@@ -77,6 +77,12 @@ from bim_ai.commands import (
     SaveViewpointCmd,
     SetCurtainPanelOverrideCmd,
     SetWallRecessZonesCmd,
+    CreateAreaCmd,
+    UpdateAreaCmd,
+    DeleteAreaCmd,
+    CreateMaskingRegionCmd,
+    UpdateMaskingRegionCmd,
+    DeleteMaskingRegionCmd,
     UnpinElementCmd,
     UpdateElementPropertyCmd,
     UpdateLinkModelCmd,
@@ -113,6 +119,7 @@ from bim_ai.elements import (
     INTERNAL_ORIGIN_ID,
     AgentAssumptionElem,
     AgentDeviationElem,
+    AreaElem,
     BalconyElem,
     BcfElem,
     CalloutElem,
@@ -135,6 +142,7 @@ from bim_ai.elements import (
     JoinGeometryElem,
     LevelElem,
     LinkModelElem,
+    MaskingRegionElem,
     PlanCategoryGraphicRow,
     PlanDetailLevelPlan,
     PlanRegionElem,
@@ -1989,6 +1997,87 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                     raise ValueError("setWallRecessZones: recess zones must not overlap")
             els[cmd.wall_id] = wall.model_copy(update={"recess_zones": zones if zones else None})
 
+        case CreateAreaCmd():
+            aid = cmd.id or new_id()
+            if aid in els:
+                raise ValueError(f"duplicate element id '{aid}'")
+            lvl = els.get(cmd.level_id)
+            if not isinstance(lvl, LevelElem):
+                raise ValueError("createArea.levelId must reference an existing Level")
+            if len(cmd.boundary_mm) < 3:
+                raise ValueError("createArea.boundaryMm must contain at least 3 points")
+            els[aid] = AreaElem(
+                kind="area",
+                id=aid,
+                name=cmd.name,
+                level_id=cmd.level_id,
+                boundary_mm=list(cmd.boundary_mm),
+                rule_set=cmd.rule_set,
+            )
+
+        case UpdateAreaCmd():
+            area = els.get(cmd.area_id)
+            if not isinstance(area, AreaElem):
+                raise ValueError("updateArea.areaId must reference an existing area")
+            updates: dict[str, Any] = {}
+            if cmd.name is not None:
+                updates["name"] = cmd.name
+            if cmd.boundary_mm is not None:
+                if len(cmd.boundary_mm) < 3:
+                    raise ValueError("updateArea.boundaryMm must contain at least 3 points")
+                updates["boundary_mm"] = list(cmd.boundary_mm)
+            if cmd.rule_set is not None:
+                updates["rule_set"] = cmd.rule_set
+            els[cmd.area_id] = area.model_copy(update=updates)
+
+        case DeleteAreaCmd():
+            area = els.get(cmd.area_id)
+            if not isinstance(area, AreaElem):
+                raise ValueError("deleteArea.areaId must reference an existing area")
+            del els[cmd.area_id]
+
+        case CreateMaskingRegionCmd():
+            mid = cmd.id or new_id()
+            if mid in els:
+                raise ValueError(f"duplicate element id '{mid}'")
+            view = els.get(cmd.host_view_id)
+            if view is None or view.kind not in {"plan_view", "section_cut", "elevation_view"}:
+                raise ValueError(
+                    "createMaskingRegion.hostViewId must reference plan_view/section_cut/elevation_view"
+                )
+            if len(cmd.boundary_mm) < 3:
+                raise ValueError("createMaskingRegion.boundaryMm must contain at least 3 points")
+            els[mid] = MaskingRegionElem(
+                kind="masking_region",
+                id=mid,
+                host_view_id=cmd.host_view_id,
+                boundary_mm=list(cmd.boundary_mm),
+                fill_color=cmd.fill_color,
+            )
+
+        case UpdateMaskingRegionCmd():
+            mr = els.get(cmd.masking_region_id)
+            if not isinstance(mr, MaskingRegionElem):
+                raise ValueError(
+                    "updateMaskingRegion.maskingRegionId must reference an existing masking_region"
+                )
+            updates_mr: dict[str, Any] = {}
+            if cmd.boundary_mm is not None:
+                if len(cmd.boundary_mm) < 3:
+                    raise ValueError("updateMaskingRegion.boundaryMm must contain at least 3 points")
+                updates_mr["boundary_mm"] = list(cmd.boundary_mm)
+            if cmd.fill_color is not None:
+                updates_mr["fill_color"] = cmd.fill_color
+            els[cmd.masking_region_id] = mr.model_copy(update=updates_mr)
+
+        case DeleteMaskingRegionCmd():
+            mr = els.get(cmd.masking_region_id)
+            if not isinstance(mr, MaskingRegionElem):
+                raise ValueError(
+                    "deleteMaskingRegion.maskingRegionId must reference an existing masking_region"
+                )
+            del els[cmd.masking_region_id]
+
         case CreateRailingCmd():
             rid = cmd.id or new_id()
             if rid in els:
@@ -2851,6 +2940,13 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
             if not isinstance(link, LinkModelElem):
                 raise ValueError("deleteLinkModel.linkId must reference a link_model element")
             del els[cmd.link_id]
+
+    # KRN-08: areas track a derived computedAreaSqMm. Recompute after every
+    # command apply so create/update/delete of areas (and shafts that affect
+    # `net` rule-set deductions) keep the value current.
+    from bim_ai.area_calculation import recompute_all_areas
+
+    recompute_all_areas(els)
 
 
 def _supports_pin(el: Element) -> bool:

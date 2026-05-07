@@ -59,7 +59,9 @@ export type ElemKind =
   | 'text_note'
   | 'sweep'
   | 'dormer'
-  | 'balcony';
+  | 'balcony'
+  | 'area'
+  | 'masking_region';
 
 export type Text3dFontFamily = 'helvetiker' | 'optimer' | 'gentilis';
 
@@ -983,6 +985,35 @@ export type Element =
       roofMaterialKey?: string | null;
       hasFloorOpening?: boolean;
       pinned?: boolean;
+    }
+  | {
+      /**
+       * KRN-08 — `area` element kind for legal/permit area calculations.
+       *
+       * Distinct from `room`: areas may include exterior porches and exclude
+       * interior shafts based on `ruleSet`. Authored via SKT-01 sketch session.
+       * `computedAreaSqMm` is recomputed by the engine after every command apply.
+       */
+      kind: 'area';
+      id: string;
+      name: string;
+      levelId: string;
+      boundaryMm: XY[];
+      ruleSet: 'gross' | 'net' | 'no_rules';
+      computedAreaSqMm?: number;
+      pinned?: boolean;
+    }
+  | {
+      /**
+       * KRN-10 — view-local 2D filled region that occludes underlying linework.
+       * Renders on plan / section / elevation as an opaque polygon above element
+       * linework but below text/dimension annotations. Not visible in 3D.
+       */
+      kind: 'masking_region';
+      id: string;
+      hostViewId: string;
+      boundaryMm: XY[];
+      fillColor?: string;
     };
 
 export type Violation = {

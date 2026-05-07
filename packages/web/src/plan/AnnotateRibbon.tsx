@@ -91,6 +91,24 @@ export function AnnotateRibbon({
     });
   };
 
+  const placeMaskingRegion = () => {
+    // KRN-10 — drop a square masking region at the view centre. Sketch-based
+    // boundary authoring is propagated by Agent 4; until then the click-polygon
+    // fallback is the load-bearing path.
+    const c = viewCenter(elementsById, cropMinMm, cropMaxMm);
+    onSemanticCommand({
+      type: 'createMaskingRegion',
+      hostViewId: planViewId,
+      boundaryMm: [
+        { xMm: c.xMm - 400, yMm: c.yMm - 400 },
+        { xMm: c.xMm + 400, yMm: c.yMm - 400 },
+        { xMm: c.xMm + 400, yMm: c.yMm + 400 },
+        { xMm: c.xMm - 400, yMm: c.yMm + 400 },
+      ],
+      fillColor: '#ffffff',
+    });
+  };
+
   const placeTextNote = () => {
     const text = window.prompt('Text note', 'Note');
     if (!text) return;
@@ -174,6 +192,15 @@ export function AnnotateRibbon({
         title="Drop an 800×800mm hatched region at the view centre."
       >
         Detail Region (Sketch)
+      </button>
+      <button
+        type="button"
+        data-testid="plan-annotate-masking-region"
+        className="rounded border border-border px-2 py-0.5 text-left hover:bg-accent/20 hover:text-foreground"
+        onClick={placeMaskingRegion}
+        title="Drop an 800×800mm opaque masking region that occludes underlying linework."
+      >
+        Masking Region
       </button>
       <button
         type="button"

@@ -1099,6 +1099,43 @@ class SiteElem(BaseModel):
     )
 
 
+AreaRuleSet = Literal["gross", "net", "no_rules"]
+
+
+class AreaElem(BaseModel):
+    """KRN-08 — `area` element kind for legal/permit area calculations.
+
+    Distinct from `room`: areas may include exterior porches and exclude
+    interior shafts based on `ruleSet`. Authored via SKT-01 sketch session.
+    `computedAreaSqMm` is recomputed by the engine after every command apply.
+    """
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["area"] = "area"
+    id: str
+    name: str = "Area"
+    level_id: str = Field(alias="levelId")
+    boundary_mm: list[Vec2Mm] = Field(alias="boundaryMm")
+    rule_set: AreaRuleSet = Field(default="no_rules", alias="ruleSet")
+    computed_area_sq_mm: float | None = Field(default=None, alias="computedAreaSqMm")
+    pinned: bool = Field(default=False)
+
+
+class MaskingRegionElem(BaseModel):
+    """KRN-10 — view-local 2D filled region that occludes underlying linework.
+
+    Renders on plan / section / elevation as an opaque polygon above element
+    linework but below text/dimension annotations. Not visible in 3D.
+    """
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["masking_region"] = "masking_region"
+    id: str
+    host_view_id: str = Field(alias="hostViewId")
+    boundary_mm: list[Vec2Mm] = Field(alias="boundaryMm")
+    fill_color: str = Field(default="#ffffff", alias="fillColor")
+
+
 ElementKind = Literal[
     "project_settings",
     "room_color_scheme",
@@ -1152,6 +1189,8 @@ ElementKind = Literal[
     "balcony",
     "sweep",
     "dormer",
+    "area",
+    "masking_region",
 ]
 
 
@@ -1208,6 +1247,8 @@ Element = Annotated[
     | ReferencePlaneElem
     | PropertyLineElem
     | SweepElem
-    | DormerElem,
+    | DormerElem
+    | AreaElem
+    | MaskingRegionElem,
     Field(discriminator="kind"),
 ]

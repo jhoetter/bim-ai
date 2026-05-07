@@ -90,6 +90,8 @@ import {
   type CropHandleId,
 } from './cropRegionDragHandles';
 import { extractDetailComponentPrimitives } from './detailComponentsRender';
+import { extractMaskingRegionPrimitives } from './maskingRegionRender';
+import { extractAreaPrimitives } from './areaRender';
 import { elevationFromWall, sectionCutFromWall } from '../lib/sectionElevationFromWall';
 import { WallContextMenu, type WallContextMenuCommand } from '../workspace/WallContextMenu';
 import { PlanDetailLevelToolbar } from './PlanDetailLevelToolbar';
@@ -770,6 +772,96 @@ export function PlanCanvas({
     };
     if (showMajor) addDraftGrid(majorStep, readPlanToken('--draft-grid-major', '#223042'), 0.45);
     if (showMinor) addDraftGrid(minorStep, readPlanToken('--draft-grid-minor', '#1a2738'), 0.25);
+
+    // KRN-10 — render masking regions hosted on the active plan view. These
+    // are opaque 2D polygons that occlude underlying linework but sit *below*
+    // detail components / dimensions / tags so annotations stay visible.
+    for (let i = grp.children.length - 1; i >= 0; i--) {
+      const ch = grp.children[i]!;
+      if ((ch.userData as { maskingRegion?: unknown }).maskingRegion) grp.remove(ch);
+    }
+    if (activePlanViewId) {
+      const maskingPrims = extractMaskingRegionPrimitives(elementsById, activePlanViewId);
+      for (const m of maskingPrims) {
+        if (m.boundaryMm.length < 3) continue;
+        const shape = new THREE.Shape();
+        shape.moveTo(m.boundaryMm[0]!.xMm / 1000, m.boundaryMm[0]!.yMm / 1000);
+        for (let i = 1; i < m.boundaryMm.length; i++) {
+          shape.lineTo(m.boundaryMm[i]!.xMm / 1000, m.boundaryMm[i]!.yMm / 1000);
+        }
+        shape.closePath();
+        const geom = new THREE.ShapeGeometry(shape);
+        geom.rotateX(-Math.PI / 2);
+        // Sit just above element wires (SLICE_Y) but below detail components
+        // (which start at SLICE_Y + 0.003). Opaque — that's the whole point.
+        geom.translate(0, SLICE_Y + 0.0015, 0);
+        const fill = new THREE.Mesh(
+          geom,
+          new THREE.MeshBasicMaterial({
+            color: m.fillColor,
+            transparent: false,
+            opacity: 1.0,
+            side: THREE.DoubleSide,
+          }),
+        );
+        fill.userData.maskingRegion = true;
+        fill.userData.bimPickId = m.id;
+        grp.add(fill);
+      }
+    }
+
+    // KRN-08 — render area boundaries (thick dashed red) + centroid tag for
+    // every area element on the active level.
+    for (let i = grp.children.length - 1; i >= 0; i--) {
+      const ch = grp.children[i]!;
+      if ((ch.userData as { areaElement?: unknown }).areaElement) grp.remove(ch);
+    }
+    const areaLevelId = displayLevelId || activeLevelResolvedId;
+    if (areaLevelId) {
+      const areaPrims = extractAreaPrimitives(elementsById, areaLevelId);
+      for (const a of areaPrims) {
+        if (a.boundaryMm.length >= 3) {
+          const strokePts = a.boundaryMm.map(
+            (pt) => new THREE.Vector3(pt.xMm / 1000, SLICE_Y + 0.0028, pt.yMm / 1000),
+          );
+          strokePts.push(strokePts[0]!.clone());
+          const sgeom = new THREE.BufferGeometry().setFromPoints(strokePts);
+          const sline = new THREE.Line(
+            sgeom,
+            new THREE.LineDashedMaterial({
+              color: '#d2363b',
+              dashSize: 0.18,
+              gapSize: 0.08,
+              linewidth: 2,
+            }),
+          );
+          sline.computeLineDistances();
+          sline.userData.areaElement = true;
+          sline.userData.bimPickId = a.id;
+          grp.add(sline);
+        }
+        // Centroid tag — canvas-texture sprite with "name · X.XX m²".
+        const canvas = document.createElement('canvas');
+        canvas.width = 256;
+        canvas.height = 64;
+        const ctx2 = canvas.getContext('2d');
+        if (ctx2) {
+          ctx2.fillStyle = '#d2363b';
+          ctx2.font = '28px sans-serif';
+          ctx2.textBaseline = 'middle';
+          ctx2.textAlign = 'center';
+          ctx2.fillText(a.tagLabel, 128, 32);
+        }
+        const tex = new THREE.CanvasTexture(canvas);
+        tex.minFilter = THREE.LinearFilter;
+        const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true }));
+        sprite.scale.set(2.4, 0.6, 1);
+        sprite.position.set(a.centroidMm.xMm / 1000, SLICE_Y + 0.012, a.centroidMm.yMm / 1000);
+        sprite.userData.areaElement = true;
+        sprite.userData.bimPickId = a.id;
+        grp.add(sprite);
+      }
+    }
 
     // ANN-01 — render detail_line / detail_region / text_note hosted on the
     // active plan view. These are 2D-only annotations and live above the
