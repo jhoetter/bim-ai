@@ -554,6 +554,24 @@ class SlabOpeningElem(BaseModel):
     pinned: bool = Field(default=False)
 
 
+class RoofOpeningElem(BaseModel):
+    """IFC-03: opening hosted on a roof (skylight / roof penetration).
+
+    The opening's footprint is given in plan coordinates (x, y). The
+    roof renderer CSG-subtracts a vertical extrusion of this footprint
+    spanning the roof body. Validation: footprint must lie within the
+    host roof's plan footprint.
+    """
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["roof_opening"] = "roof_opening"
+    id: str
+    name: str = "Roof opening"
+    host_roof_id: str = Field(alias="hostRoofId")
+    boundary_mm: list[Vec2Mm] = Field(alias="boundaryMm")
+    pinned: bool = Field(default=False)
+
+
 class RailingElem(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True)
     kind: Literal["railing"] = "railing"
@@ -1088,6 +1106,7 @@ ElementKind = Literal[
     "roof",
     "stair",
     "slab_opening",
+    "roof_opening",
     "railing",
     "family_type",
     "room_separation",
@@ -1143,6 +1162,7 @@ Element = Annotated[
     | RoofElem
     | StairElem
     | SlabOpeningElem
+    | RoofOpeningElem
     | RailingElem
     | BalconyElem
     | FamilyTypeElem

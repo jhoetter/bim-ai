@@ -42,6 +42,7 @@ from bim_ai.commands import (
     CreateRoomPolyCmd,
     CreateRoomRectangleCmd,
     CreateRoomSeparationCmd,
+    CreateRoofOpeningCmd,
     CreateSectionCutCmd,
     CreateSlabOpeningCmd,
     CreateStairCmd,
@@ -156,6 +157,7 @@ from bim_ai.elements import (
     SiteContextObjectRow,
     SiteElem,
     SlabOpeningElem,
+    RoofOpeningElem,
     StairElem,
     SurveyPointElem,
     SweepElem,
@@ -196,6 +198,7 @@ _AUTHORITATIVE_REPLAY_V0_TYPES: frozenset[str] = frozenset(
         "insertDoorOnWall",
         "insertWindowOnWall",
         "createSlabOpening",
+        "createRoofOpening",
     }
 )
 
@@ -1696,6 +1699,23 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 is_shaft=cmd.is_shaft,
             )
 
+        case CreateRoofOpeningCmd():
+            oid = cmd.id or new_id()
+            if oid in els:
+                raise ValueError(f"duplicate element id '{oid}'")
+            host = els.get(cmd.host_roof_id)
+            if not isinstance(host, RoofElem):
+                raise ValueError("createRoofOpening.hostRoofId must reference a roof")
+            if len(cmd.boundary_mm) < 3:
+                raise ValueError("createRoofOpening.boundaryMm requires ≥3 vertices")
+            els[oid] = RoofOpeningElem(
+                kind="roof_opening",
+                id=oid,
+                name=cmd.name,
+                host_roof_id=cmd.host_roof_id,
+                boundary_mm=cmd.boundary_mm,
+            )
+
         case CreateText3dCmd():
             tid = cmd.id or new_id()
             if tid in els:
@@ -3162,6 +3182,7 @@ def authoritative_replay_v0_preflight_detail(
     known_levels: set[str] = {eid for eid, el in doc.elements.items() if isinstance(el, LevelElem)}
     known_floors: set[str] = {eid for eid, el in doc.elements.items() if isinstance(el, FloorElem)}
     known_walls: set[str] = {eid for eid, el in doc.elements.items() if isinstance(el, WallElem)}
+    known_roofs: set[str] = {eid for eid, el in doc.elements.items() if isinstance(el, RoofElem)}
 
     for i, cmd in enumerate(cmds_raw):
         t = cmd.get("type")
@@ -3339,6 +3360,50 @@ def authoritative_replay_v0_preflight_detail(
                             [{"stepIndex": i, "referenceKey": "roofTypeId", "referenceId": rts}]
                         ),
                     )
+            eid = _authoritative_replay_v0_declared_id(cmd)
+            if eid is not None:
+                if eid in doc.elements:
+                    return AuthoritativePreflightFailure(
+                        i,
+                        "merge_id_collision",
+                        (eid,),
+                        (eid,),
+                        (),
+                    )
+                if eid in declared:
+                    return AuthoritativePreflightFailure(
+                        i,
+                        "merge_id_collision",
+                        (eid,),
+                        (),
+                        (),
+                    )
+                declared.add(eid)
+                known_roofs.add(eid)
+
+        elif t == "createRoofOpening":
+            hid = cmd.get("hostRoofId")
+            if not isinstance(hid, str) or not hid.strip():
+                return AuthoritativePreflightFailure(
+                    i,
+                    "merge_reference_unresolved",
+                    (),
+                    (),
+                    _sorted_missing_reference_hints(
+                        [{"stepIndex": i, "referenceKey": "hostRoofId", "referenceId": ""}]
+                    ),
+                )
+            hs = hid.strip()
+            if hs not in known_roofs:
+                return AuthoritativePreflightFailure(
+                    i,
+                    "merge_reference_unresolved",
+                    (),
+                    (),
+                    _sorted_missing_reference_hints(
+                        [{"stepIndex": i, "referenceKey": "hostRoofId", "referenceId": hs}]
+                    ),
+                )
             eid = _authoritative_replay_v0_declared_id(cmd)
             if eid is not None:
                 if eid in doc.elements:

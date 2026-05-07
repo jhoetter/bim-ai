@@ -18,6 +18,7 @@ export type ElemKind =
   | 'roof'
   | 'stair'
   | 'slab_opening'
+  | 'roof_opening'
   | 'railing'
   | 'family_type'
   | 'room_separation'
@@ -500,6 +501,15 @@ export type Element =
       hostFloorId: string;
       boundaryMm: XY[];
       isShaft?: boolean;
+      pinned?: boolean;
+    }
+  | {
+      /** IFC-03: opening hosted on a roof (skylight / roof penetration). */
+      kind: 'roof_opening';
+      id: string;
+      name: string;
+      hostRoofId: string;
+      boundaryMm: XY[];
       pinned?: boolean;
     }
   | {

@@ -12,6 +12,7 @@ from bim_ai.commands import (
     CreateFloorCmd,
     CreateLevelCmd,
     CreateRoofCmd,
+    CreateRoofOpeningCmd,
     CreateRoomOutlineCmd,
     CreateSlabOpeningCmd,
     CreateStairCmd,
@@ -23,6 +24,7 @@ from bim_ai.elements import (
     FloorElem,
     LevelElem,
     RoofElem,
+    RoofOpeningElem,
     RoomElem,
     SiteElem,
     SlabOpeningElem,
@@ -300,6 +302,18 @@ def kernel_expected_ifc_emit_counts(doc: Document) -> dict[str, int]:
         and e.host_floor_id in floors_with_slab
         and len(getattr(e, "boundary_mm", ()) or ()) >= 3
     )
+    roofs_with_body = {
+        eid
+        for eid, e in doc.elements.items()
+        if isinstance(e, RoofElem) and len(getattr(e, "footprint_mm", ()) or ()) >= 3
+    }
+    roof_open_emit = sum(
+        1
+        for e in doc.elements.values()
+        if isinstance(e, RoofOpeningElem)
+        and e.host_roof_id in roofs_with_body
+        and len(getattr(e, "boundary_mm", ()) or ()) >= 3
+    )
 
     kinds: dict[str, int] = {}
     if storey_n:
@@ -320,6 +334,8 @@ def kernel_expected_ifc_emit_counts(doc: Document) -> dict[str, int]:
         kinds["stair"] = stair_emit
     if slab_open_emit:
         kinds["slab_opening"] = slab_open_emit
+    if roof_open_emit:
+        kinds["roof_opening"] = roof_open_emit
     site_emit = sum(1 for e in doc.elements.values() if isinstance(e, SiteElem))
     if site_emit:
         kinds["site"] = site_emit
@@ -699,6 +715,28 @@ def inspect_kernel_ifc_semantics(
 
     qto_names = sorted({str(q.Name) for q in qtys if getattr(q, "Name", None)})
 
+    # IFC-03: count openings by host kind (Roof / Slab / Wall / unknown).
+    roof_hosted_opening_count = 0
+    slab_hosted_opening_count = 0
+    wall_hosted_opening_count = 0
+    other_hosted_opening_count = 0
+    for op_iter in openings:
+        try:
+            _rel_iter, host_iter = _void_rel_and_host_for_opening(op_iter, model)
+        except Exception:
+            host_iter = None
+        if host_iter is None:
+            other_hosted_opening_count += 1
+            continue
+        if _ifc_try_product_is_a(host_iter, "IfcRoof"):
+            roof_hosted_opening_count += 1
+        elif _ifc_try_product_is_a(host_iter, "IfcSlab"):
+            slab_hosted_opening_count += 1
+        elif _ifc_try_product_is_a(host_iter, "IfcWall"):
+            wall_hosted_opening_count += 1
+        else:
+            other_hosted_opening_count += 1
+
     out: dict[str, Any] = {
         "matrixVersion": matrix_version,
         "available": True,
@@ -715,6 +753,12 @@ def inspect_kernel_ifc_semantics(
             "IfcDoor": len(doors),
             "IfcWindow": len(windows),
             "IfcSpace": len(spaces),
+        },
+        "openingsByHostKind": {
+            "roof": roof_hosted_opening_count,
+            "slab": slab_hosted_opening_count,
+            "wall": wall_hosted_opening_count,
+            "other": other_hosted_opening_count,
         },
         "identityPsets": {
             "wallWithPsetWallCommonReference": _count_pset_ref(list(walls), "Pset_WallCommon"),
@@ -1511,6 +1555,10 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
     roof_cmds: list[dict[str, Any]] = []
     ids_roof_rows: list[dict[str, Any]] = []
     roofs_skipped_no_reference = 0
+    # IFC-03: maps IfcRoof GlobalId → kernel ref so the roof-hosted
+    # opening replay loop below can resolve the kernel host id without
+    # walking pset dictionaries a second time.
+    roof_global_id_to_kernel_ref: dict[str, str] = {}
 
     for rfl in sorted(
         model.by_type("IfcRoof") or [], key=lambda r: str(getattr(r, "GlobalId", None) or "")
@@ -1644,6 +1692,8 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
             ).model_dump(mode="json", by_alias=True)
         )
         ids_roof_rows.append({"ifcGlobalId": rf_gid, "identityReference": ref_s})
+        if rf_gid:
+            roof_global_id_to_kernel_ref[rf_gid] = ref_s
 
     roof_cmds.sort(key=lambda c: str(c.get("id") or ""))
     ids_roof_rows.sort(key=lambda r: (r["identityReference"], r["ifcGlobalId"]))
@@ -1753,6 +1803,7 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
     )
 
     slab_opening_cmds: list[dict[str, Any]] = []
+    roof_opening_cmds: list[dict[str, Any]] = []
     skip_detail_rows: list[dict[str, Any]] = []
     wall_host_opening_skipped_v0 = 0
 
@@ -1783,13 +1834,50 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
             wall_host_opening_skipped_v0 += 1
             continue
         if _ifc_try_product_is_a(host, "IfcRoof"):
-            skip_detail_rows.append(
-                {
-                    "openingGlobalId": op_gid,
-                    "hostGlobalId": host_gid,
-                    "hostClass": host_cls,
-                    "reason": "roof_host_not_supported_v0",
-                }
+            # IFC-03: replay roof-hosted voids as createRoofOpening
+            # commands instead of dropping them. Mirrors the slab path.
+            roof_ref = roof_global_id_to_kernel_ref.get(host_gid)
+            if not roof_ref:
+                skip_detail_rows.append(
+                    {
+                        "openingGlobalId": op_gid,
+                        "hostGlobalId": host_gid,
+                        "hostClass": "IfcRoof",
+                        "reason": "roof_host_missing_kernel_reference_v0",
+                    }
+                )
+                continue
+            geo_op_rf = _kernel_horizontal_extrusion_footprint_mm_and_thickness(op)
+            if geo_op_rf is None:
+                skip_detail_rows.append(
+                    {
+                        "openingGlobalId": op_gid,
+                        "hostGlobalId": host_gid,
+                        "hostClass": "IfcRoof",
+                        "reason": "roof_opening_body_extrusion_unreadable_v0",
+                    }
+                )
+                continue
+            outline_op_rf, _dep_op_rf = geo_op_rf
+            if len(outline_op_rf) < 3:
+                skip_detail_rows.append(
+                    {
+                        "openingGlobalId": op_gid,
+                        "hostGlobalId": host_gid,
+                        "hostClass": "IfcRoof",
+                        "reason": "roof_opening_outline_degenerate_v0",
+                    }
+                )
+                continue
+            elem_id_rf = _kernel_slab_opening_replay_element_id(op)
+            oname_rf = str(getattr(op, "Name", None) or "").strip() or elem_id_rf
+            roof_opening_cmds.append(
+                CreateRoofOpeningCmd(
+                    id=elem_id_rf,
+                    name=oname_rf,
+                    host_roof_id=roof_ref,
+                    boundary_mm=[Vec2Mm(x_mm=px, y_mm=py) for px, py in outline_op_rf],
+                ).model_dump(mode="json", by_alias=True)
             )
             continue
         if not _ifc_try_product_is_a(host, "IfcSlab"):
@@ -1850,6 +1938,7 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
         )
 
     slab_opening_cmds.sort(key=lambda c: str(c.get("id") or ""))
+    roof_opening_cmds.sort(key=lambda c: str(c.get("id") or ""))
 
     skip_ctr: Counter[str] = Counter()
     skip_ctr["IfcWall:wall_host_opening_handled_by_door_window_path_v0"] = (
@@ -1953,6 +2042,7 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
         + door_cmds
         + win_cmds
         + slab_opening_cmds
+        + roof_opening_cmds
         + room_cmds
     )
 
@@ -2087,6 +2177,7 @@ def summarize_kernel_ifc_semantic_roundtrip(doc: Document) -> dict[str, Any]:
         kinds_expected.get("door", 0)
         + kinds_expected.get("window", 0)
         + kinds_expected.get("slab_opening", 0)
+        + kinds_expected.get("roof_opening", 0)
     )
 
     product_counts = {
@@ -2099,6 +2190,12 @@ def summarize_kernel_ifc_semantic_roundtrip(doc: Document) -> dict[str, Any]:
         "window": _tri(kinds_expected.get("window", 0), int(products.get("IfcWindow", 0))),
         "room": _tri(kinds_expected.get("room", 0), int(products.get("IfcSpace", 0))),
         "openingElements": _tri(exp_open, int(products.get("IfcOpeningElement", 0))),
+        # IFC-03: roof-hosted void round-trip — kernel-side roof_opening
+        # count vs IfcOpeningElement instances hosted on IfcRoof.
+        "roofHostedOpenings": _tri(
+            kinds_expected.get("roof_opening", 0),
+            int(((inspection.get("openingsByHostKind") or {}).get("roof", 0))),
+        ),
     }
 
     id_ps = inspection.get("identityPsets") or {}
@@ -2637,6 +2734,12 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
     slab_products: dict[str, Any] = {}
     slab_type_entities: dict[str, Any] = {}
     material_by_key_cache: dict[str, Any] = {}
+    # IFC-03: track roof entities by kernel id so we can attach
+    # IfcOpeningElement features when the kernel has roof openings.
+    roof_products: dict[str, Any] = {}
+    # IFC-03: per-roof rough z-center used to position opening features.
+    roof_z_center_by_id: dict[str, float] = {}
+    roof_extrusion_depth_by_id: dict[str, float] = {}
 
     def attach_kernel_identity_pset(
         product: Any, pset_name: str, reference: str, **props: Any
@@ -3195,6 +3298,11 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
             roof_ent = ifcopenshell.api.root.create_entity(
                 f, ifc_class="IfcRoof", name=rf.name or rid
             )
+            roof_products[rid] = roof_ent
+            # IFC-03: gable extrusion depth equals along_ridge_m; opening
+            # features hang on the roof at the gable's mid-height.
+            roof_z_center_by_id[rid] = float(base_z_m + (ridge_z_m - base_z_m) / 2.0)
+            roof_extrusion_depth_by_id[rid] = float(along_ridge_m)
 
             # Build the object placement so that:
             #   ridge_along_x → local X→world Y, local Y→world Z, local Z→world X
@@ -3242,6 +3350,9 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
             roof_ent = ifcopenshell.api.root.create_entity(
                 f, ifc_class="IfcRoof", name=rf.name or rid
             )
+            roof_products[rid] = roof_ent
+            roof_z_center_by_id[rid] = float(roof_z_center)
+            roof_extrusion_depth_by_id[rid] = float(rise)
             rep_rf = add_slab_representation(f, body_ctx, depth=rise, polyline=r_profile)
 
             rmat = np.eye(4, dtype=float)
@@ -3291,6 +3402,51 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
                 layer_set_display_name=f"kernel_roof:{rid}",
                 material_by_key_cache=material_by_key_cache,
             )
+
+    # IFC-03: emit roof-hosted IfcOpeningElement features. The opening
+    # extrusion is centred on the roof's z-mid and given a depth large
+    # enough to fully cut through the roof body when the receiving
+    # parser CSG-subtracts it. Footprint is plan-coordinates only — for
+    # the load-bearing slice we don't model slope-aware projection.
+    for oid in sorted(eid for eid, e in doc.elements.items() if isinstance(e, RoofOpeningElem)):
+        rop = doc.elements[oid]
+        assert isinstance(rop, RoofOpeningElem)
+        host_roof_ent = roof_products.get(rop.host_roof_id)
+        host_rf = doc.elements.get(rop.host_roof_id)
+        if host_roof_ent is None or not isinstance(host_rf, RoofElem):
+            continue
+        op_pts_mm = [(p.x_mm, p.y_mm) for p in rop.boundary_mm]
+        if len(op_pts_mm) < 3:
+            continue
+        cx_mm, cz_mm, _, _ = _xz_bounds_mm(op_pts_mm)
+        cx_m = cx_mm / 1000.0
+        cy_m = cz_mm / 1000.0
+        z_center = roof_z_center_by_id.get(rop.host_roof_id, 0.0)
+        depth_host = roof_extrusion_depth_by_id.get(rop.host_roof_id, 0.6)
+        # Stretch the opening prism well past the roof body so the
+        # parser's CSG subtraction is unambiguous regardless of slope.
+        open_depth = float(max(depth_host * 2.5, 0.4))
+
+        op_profile: list[tuple[float, float]] = []
+        for px, py in op_pts_mm:
+            op_profile.append((px / 1000.0 - cx_m, py / 1000.0 - cy_m))
+        op_profile.append(op_profile[0])
+
+        op_el = ifcopenshell.api.root.create_entity(
+            f, ifc_class="IfcOpeningElement", name=f"op:{oid}"
+        )
+        rep_op = add_slab_representation(f, body_ctx, depth=open_depth, polyline=op_profile)
+        assign_representation(f, op_el, rep_op)
+
+        omat = np.eye(4, dtype=float)
+        omat[0, 3] = cx_m
+        omat[1, 3] = cy_m
+        omat[2, 3] = float(z_center) - open_depth / 2.0
+
+        edit_object_placement(f, product=op_el, matrix=omat)
+        ifc_feature.add_feature(f, feature=op_el, element=host_roof_ent)
+        attach_kernel_identity_pset(op_el, "Pset_OpeningElementCommon", oid)
+        geo_products += 1
 
     for sid in sorted(eid for eid, e in doc.elements.items() if isinstance(e, StairElem)):
         st = doc.elements[sid]

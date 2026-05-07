@@ -508,6 +508,17 @@ class CreateSlabOpeningCmd(BaseModel):
     is_shaft: bool = Field(default=False, alias="isShaft")
 
 
+class CreateRoofOpeningCmd(BaseModel):
+    """IFC-03: open a hole through a host roof element."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createRoofOpening"] = "createRoofOpening"
+    id: str | None = None
+    name: str = "Roof opening"
+    host_roof_id: str = Field(alias="hostRoofId")
+    boundary_mm: list[Vec2Mm] = Field(alias="boundaryMm")
+
+
 class CreateWallOpeningCmd(BaseModel):
     """KRN-04: frameless rectangular wall opening (CSG cut, no family)."""
 
@@ -1161,6 +1172,7 @@ Command = Annotated[
     | AttachWallTopToRoofCmd
     | CreateStairCmd
     | CreateSlabOpeningCmd
+    | CreateRoofOpeningCmd
     | CreateWallOpeningCmd
     | UpdateWallOpeningCmd
     | CreateRailingCmd
