@@ -1,0 +1,190 @@
+# Follow-up shift — KRN-12 frame, FAM-01 keystone, KRN-09 family_instance integration
+
+  You are picking up three follow-up WPs that became possible after the overnight nightshift run. Their tracker entries are in `spec/workpackage-master-tracker.md` (~1370 lines — read
+  end-to-end first; the entries are detailed).
+
+  ## Repo
+
+  `/Users/jhoetter/repos/bim-ai`. Branch off latest `main`. Branch name: `dayshift-fam-keystone`.
+
+  ## Branch + merge protocol per WP
+
+  ```bash
+  git add -A
+  git commit -m "feat(<scope>): <WP-ID> — <one-line summary>
+
+  Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
+  git push origin dayshift-fam-keystone
+  git fetch origin
+  git rebase origin/main
+  git push origin dayshift-fam-keystone --force-with-lease
+  git push origin dayshift-fam-keystone:main   # direct push works around locked-main-worktree issue
+  ```
+
+  If `git checkout main` fails because a worktree has it locked, the direct `git push origin <branch>:main` is the working pattern (multiple agents converged on this last night).
+
+  ## Quality gates (every commit must pass)
+
+  1. `pnpm exec tsc --noEmit`
+  2. `pnpm vitest run` (in package(s) you touched)
+  3. `cd app && .venv/bin/pytest -q --no-cov tests/<files-you-touched>`
+  4. `make verify` before merging to main
+
+  Never `--no-verify`, never delete failing tests, never bypass hooks. Fix root causes.
+
+  ## Tracker update protocol
+
+  After each WP lands on main: change row's `State` → `done` (or `partial` for FAM-01 if you ship the load-bearing slice but defer polish — see below). Add `done in <commit-hash>` or
+  `partial in <commit-hash> — <what's deferred>`. Commit separately as `chore(tracker): mark <WP-ID> done`. Push, rebase, push to main.
+
+  ## Anti-laziness directive
+
+  Done means: code written, tests added, all four gates pass, branch merged to main, tracker updated, commit visible on `origin/main`. Anything less is **not done**. Do not stop after
+  the first WP. No celebration paragraphs. No mid-shift summaries. Just continue.
+
+  ---
+
+  ## Your three WPs in order
+
+  ### WP 1 — KRN-12 frame geometry for non-rectangular windows (now unblocked)
+
+  **Tracker entry:** `spec/workpackage-master-tracker.md` → "Kernel + element kinds" → KRN-12 + the **KRN-12 detail** block.
+
+  **Status today.** KRN-12 is marked `done` (commit `99f4c8ef`) but the original WP carried a forward dep: *"Frame geometry sweeps along the polygon perimeter (after FAM-02 lands; before
+   that, frame is omitted for non-rectangular outlines)"*. FAM-02 (sweep tool) shipped overnight in commit `034e38f7`. You can now wire the frame sweep.
+
+  **What you need to add:**
+
+  1. In `packages/web/src/families/geometryFns/windowGeometry.ts`, find the comment `// frame omitted for non-rectangular outlines until FAM-02 lands`. Replace the omission with a sweep:
+     - Path = the resolved window outline polygon (from `resolveWindowOutline`)
+     - Profile = a small rectangular cross-section matching today's frame thickness (typically 60–80mm × 30–40mm — match the rectangle path's frame dimensions)
+     - Use the new `meshFromSweep` helper from `packages/web/src/families/sweepGeometry.ts` (created by FAM-02)
+
+  2. Tests: extend `windowGeometry.test.ts` (or add `windowFrameSweep.test.ts`):
+     - Rectangular outline still produces today's frame geometry (regression check)
+     - `outlineKind: 'gable_trapezoid'` produces a frame mesh whose bounding box follows the trapezoidal shape
+     - `outlineKind: 'circle'` produces a circular frame
+     - `outlineKind: 'arched_top'` produces a frame that follows the arch
+
+  **Acceptance.** A window with `outlineKind: 'gable_trapezoid'` and `attachedRoofId` set renders both glazing AND a frame whose perimeter follows the trapezoidal outline. The seed demo
+  (`app/scripts/seed.py`) can use a trapezoidal window without a missing-frame visual artefact (don't change the seed in this WP).
+
+  **Files:** `packages/web/src/families/geometryFns/windowGeometry.ts`, `packages/web/src/families/sweepGeometry.ts` (read-only — already shipped), plus tests.
+
+  **Effort:** 3-4 hours.
+
+  ---
+
+  ### WP 2 — FAM-01: Nested families (load-bearing slice)
+
+  **Tracker entry:** `spec/workpackage-master-tracker.md` → "Strategic Primitive 4" → FAM-01 + the **FAM-01 detail** block.
+
+  **Reality check.** The full FAM-01 spec is L (2-3 weeks of engineering). You will **not** finish all of it in one shift. Your job is to ship the **load-bearing slice** that lets KRN-09
+   (WP 3 below) consume nested families. Concretely:
+
+  **MUST ship (load-bearing — mark `done`):**
+  1. **Data model.** Add `family_instance_ref` family-geometry node:
+     ```ts
+     {
+       kind: 'family_instance_ref';
+       familyId: string;
+       positionMm: { xMm: number; yMm: number; zMm: number };
+       rotationDeg: number;
+       parameterBindings: Record<string, ParameterBinding>;
+       visibilityBinding?: { paramName: string; whenTrue: boolean };
+     }
+     type ParameterBinding =
+       | { kind: 'literal'; value: number | string | boolean }
+       | { kind: 'host_param'; paramName: string }
+       | { kind: 'formula'; expression: string };
+     ```
+     In `packages/web/src/families/types.ts` (or wherever family geometry types live — grep for the existing union). Mirror in Python if there's an equivalent.
+
+  2. **Resolver.** A function `resolveNestedFamilyInstance(instanceRef, hostParams, familyCatalog)` that:
+     - Looks up the nested family by `familyId`
+     - Computes effective parameter values for the nested family by applying `parameterBindings` (literal / host_param resolution / formula via FAM-04's `evaluateFormula`)
+     - Recursively resolves the nested family's geometry with those parameters
+     - Returns the geometry tree (BufferGeometry or similar — match what other family geometry nodes return)
+
+  3. **Cycle detection.** At family-save time and at resolution time, detect cycles in the nested-family graph (BFS up to a depth of 10). Reject saves that would introduce a cycle; throw
+   a clear error at resolution time (defensive).
+
+  4. **Engine + family-catalog hookup.** When the family resolver encounters a `family_instance_ref` node, it walks into the nested family's geometry. Wire this so existing
+  geometry-rendering callers (door, window, etc.) continue to work transparently.
+
+  5. **Tests:**
+     - vitest: build a 2-level nested family (door containing a swing arc), assert the swing arc is rendered with the correctly-bound radius
+     - vitest: build a cyclic nested-family graph, assert resolver throws / rejects
+     - vitest: `parameterBindings` propagation (literal / host_param / formula via FAM-04)
+
+  **MAY defer (mark these in the tracker note as "deferred to follow-up"):**
+
+  - **Family editor UI for placing nested instances.** The "Loaded Families" sidebar + drag-drop from FL-06 into the editing canvas — defer. KRN-09 doesn't need a UI; it consumes nested
+  families programmatically through the engine.
+  - **Per-instance parameter binding editor in the inspector.** Defer. Bindings can be authored in JSON for now.
+  - **Visibility-binding integration with FAM-03.** FAM-03 isn't shipped yet anyway; the data model field is in place for when it lands.
+  - **Thumbnail generation for nested family compositions** in the FL-06 panel — defer.
+
+  After this WP, mark FAM-01 in the tracker as `partial` with a note: `partial in <hash> — data model + resolver + cycle detection shipped; family-editor UI for placing nested instances
+  + per-instance parameter editor deferred to follow-up`.
+
+  **Acceptance.** A test fixture authoring a "DoorWithSwing" family that contains a nested 2D-swing-arc family resolves correctly: changing the door's `Rough Width` updates the swing
+  arc's radius via the formula binding `Rough Width - 2 * Frame Width`. The nested family's geometry is included in the host family's resolved geometry tree.
+
+  **Files:** `packages/web/src/families/types.ts`, `packages/web/src/families/familyResolver.ts` (likely new), `packages/web/src/lib/expressionEvaluator.ts` (FAM-04, read-only), tests in
+   `packages/web/src/families/`.
+
+  **Effort:** 6-10 hours for the load-bearing slice. Stop expanding scope when the tests pass and KRN-09 (WP 3) can consume your work.
+
+  ---
+
+  ### WP 3 — KRN-09: family_instance panel rendering (replace placeholder)
+
+  **Tracker entry:** `spec/workpackage-master-tracker.md` → "Kernel + element kinds" → KRN-09 + the **KRN-09 detail** block.
+
+  **Status today.** KRN-09 is marked `done` (commit `e9b9d1b5`) but `family_instance` panel overrides currently render a magenta placeholder material. Agent 3's status note flagged this:
+   *"Once FAM-01 (nested families) lands, swap the placeholder branch in `resolveCurtainPanelMaterial` for actual `instantiateFamily(familyTypeId)`. Userdata on the placeholder pane
+  already carries `curtainPanelFamilyTypeId` for that future hop."*
+
+  **What you need to add:**
+
+  1. In `packages/web/src/viewport/meshBuilders.ts` (or wherever `makeCurtainWallMesh` and `resolveCurtainPanelMaterial` live), find the placeholder branch for `kind: 'family_instance'`.
+   Replace the magenta placeholder with a call to your FAM-01 resolver:
+     - Look up the family by `familyTypeId` from the family catalog
+     - Resolve the family geometry at the curtain panel's grid-cell bounding box (treat the cell as the bounding box for the family instance)
+     - Insert the resolved mesh into the curtain wall group
+
+  2. Edge cases:
+     - Family not found → fall back to the magenta placeholder + console.warn (don't crash)
+     - Family resolution throws (e.g. cycle, missing param) → fall back to placeholder + console.warn
+
+  3. Tests: extend `meshBuilders.curtainPanels.test.ts` with a case authoring a `family_instance` override pointing at a small test family (e.g. a unit cube family); assert the curtain
+  wall group contains the resolved family geometry, not the placeholder.
+
+  **Acceptance.** Authoring a curtain wall with `curtainPanelOverrides: { v0h0: { kind: 'family_instance', familyTypeId: 'builtin:door:single' } }` produces a curtain wall where cell
+  `v0h0` contains the resolved door family geometry, not magenta.
+
+  **Files:** `packages/web/src/viewport/meshBuilders.ts`, plus tests.
+
+  **Effort:** 2 hours.
+
+  ---
+
+  ## Sequencing
+
+  Do them in order: **WP 1 (KRN-12 frame) → WP 2 (FAM-01 keystone) → WP 3 (KRN-09 family_instance)**. WP 3 hard-depends on WP 2; WP 1 is independent and shipped first to build velocity.
+
+  ## Total expected runtime
+
+  11-16 hours of focused work. The bulk is FAM-01 — bias toward shipping the load-bearing slice and explicitly listing the deferred polish in the tracker note rather than trying to do
+  everything.
+
+  ## When done
+
+  Append a brief status to `nightshift/dayshift-fam-keystone-status.md` listing:
+  - Commits shipped (with hashes)
+  - KRN-12 + KRN-09 status (should both be `done`)
+  - FAM-01 status (almost certainly `partial` — list exactly what's deferred so the next agent can pick up)
+  - Any incidental observations (test regressions, conflicts, follow-ups)
+
+  Then stop.
