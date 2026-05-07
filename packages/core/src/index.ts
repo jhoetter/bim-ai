@@ -1003,10 +1003,20 @@ export type Element =
       /** Rotation around Z applied at the source origin (degrees). */
       rotationDeg: number;
       /**
-       * Only `'origin_to_origin'` is implemented in the load-bearing slice;
-       * `'project_origin'` and `'shared_coords'` are deferred.
+       * `origin_to_origin`: source coordinates are translated by `positionMm`.
+       * `project_origin`: source's project base point is aligned to host's PBP
+       *   (KRN-06), then `positionMm` adds an extra offset; rotation gets the
+       *   trueNorth delta added.
+       * `shared_coords`: source's survey point is aligned to host's survey
+       *   point, with `sharedElevationMm` reconciled on Z.
        */
-      originAlignmentMode: 'origin_to_origin';
+      originAlignmentMode: 'origin_to_origin' | 'project_origin' | 'shared_coords';
+      /**
+       * `host_view`: linked elements obey the host's view filters / VV.
+       * `linked_view`: linked elements use the source model's stored view
+       *   definitions (rendered via the source's own VV / categories).
+       */
+      visibilityMode?: 'host_view' | 'linked_view';
       hidden?: boolean;
       pinned?: boolean;
     }
@@ -1109,6 +1119,13 @@ export type Snapshot = {
   elements: Record<string, unknown>;
 
   violations: Violation[];
+
+  /**
+   * FED-01 polish: per-source-uuid current revision for every `link_model`
+   * row, used by the UI to render drift badges on pinned links. Omitted when
+   * the host has no links.
+   */
+  linkSourceRevisions?: Record<string, number>;
 };
 
 /** Server delta payload (camelCase aliases). */

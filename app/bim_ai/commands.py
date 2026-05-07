@@ -1030,8 +1030,11 @@ class CreateLinkModelCmd(BaseModel):
     source_model_revision: int | None = Field(default=None, alias="sourceModelRevision")
     position_mm: Vec3Mm = Field(alias="positionMm")
     rotation_deg: float = Field(default=0.0, alias="rotationDeg")
-    origin_alignment_mode: Literal["origin_to_origin"] = Field(
-        default="origin_to_origin", alias="originAlignmentMode"
+    origin_alignment_mode: Literal[
+        "origin_to_origin", "project_origin", "shared_coords"
+    ] = Field(default="origin_to_origin", alias="originAlignmentMode")
+    visibility_mode: Literal["host_view", "linked_view"] = Field(
+        default="host_view", alias="visibilityMode"
     )
     hidden: bool = Field(default=False)
     pinned: bool = Field(default=False)
@@ -1049,6 +1052,12 @@ class UpdateLinkModelCmd(BaseModel):
     hidden: bool | None = None
     pinned: bool | None = None
     source_model_revision: int | None = Field(default=None, alias="sourceModelRevision")
+    origin_alignment_mode: Literal[
+        "origin_to_origin", "project_origin", "shared_coords"
+    ] | None = Field(default=None, alias="originAlignmentMode")
+    visibility_mode: Literal["host_view", "linked_view"] | None = Field(
+        default=None, alias="visibilityMode"
+    )
 
 
 class DeleteLinkModelCmd(BaseModel):

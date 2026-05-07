@@ -105,6 +105,97 @@ async function snapshot(modelId) {
   console.log(JSON.stringify(json, null, 2));
 }
 
+// FED-01 polish: federation subcommands.
+
+function parseAlignMode(s, fallback = 'origin_to_origin') {
+  if (s === 'origin_to_origin' || s === 'project_origin' || s === 'shared_coords') return s;
+  if (s == null) return fallback;
+  console.error(
+    `Unknown --align value: '${s}'. Use origin_to_origin | project_origin | shared_coords.`,
+  );
+  process.exit(1);
+}
+
+function parsePosTriple(s) {
+  if (!s) {
+    console.error('--pos x,y,z required');
+    process.exit(1);
+  }
+  const parts = String(s)
+    .split(',')
+    .map((t) => Number(t.trim()));
+  if (parts.length !== 3 || parts.some((n) => !Number.isFinite(n))) {
+    console.error(`Invalid --pos value: '${s}'. Expected three comma-separated numbers (mm).`);
+    process.exit(1);
+  }
+  return { xMm: parts[0], yMm: parts[1], zMm: parts[2] };
+}
+
+async function cmdLinkCreate(modelId, userId, sourceUuid, posTriple, alignMode, name, vis) {
+  if (!sourceUuid) {
+    console.error('link requires --source <uuid>');
+    process.exit(1);
+  }
+  const command = {
+    type: 'createLinkModel',
+    sourceModelId: sourceUuid,
+    positionMm: posTriple,
+    rotationDeg: 0,
+    originAlignmentMode: alignMode,
+    visibilityMode: vis,
+  };
+  if (name) command.name = name;
+  await postCommand(modelId, userId, command);
+}
+
+async function cmdUnlink(modelId, userId, linkId) {
+  if (!linkId) {
+    console.error('unlink requires <link_id>');
+    process.exit(1);
+  }
+  await postCommand(modelId, userId, { type: 'deleteLinkModel', linkId });
+}
+
+async function cmdLinksList(modelId) {
+  const snap = await fetchJson(
+    'GET',
+    `${base}/api/models/${encodeURIComponent(modelId)}/snapshot`,
+  );
+  const els = snap.elements && typeof snap.elements === 'object' ? snap.elements : {};
+  const sourceRevisions =
+    snap.linkSourceRevisions && typeof snap.linkSourceRevisions === 'object'
+      ? snap.linkSourceRevisions
+      : {};
+  const rows = [];
+  for (const id of Object.keys(els)) {
+    const row = els[id];
+    if (row && typeof row === 'object' && row.kind === 'link_model') {
+      const pinnedRev =
+        typeof row.sourceModelRevision === 'number' ? row.sourceModelRevision : null;
+      const currentRev =
+        typeof sourceRevisions[row.sourceModelId] === 'number'
+          ? sourceRevisions[row.sourceModelId]
+          : null;
+      const drift =
+        pinnedRev != null && currentRev != null ? Math.max(0, currentRev - pinnedRev) : 0;
+      rows.push({
+        linkId: id,
+        name: row.name ?? null,
+        sourceModelId: row.sourceModelId ?? null,
+        positionMm: row.positionMm ?? null,
+        originAlignmentMode: row.originAlignmentMode ?? 'origin_to_origin',
+        visibilityMode: row.visibilityMode ?? 'host_view',
+        hidden: !!row.hidden,
+        pinned: pinnedRev != null,
+        pinnedRevision: pinnedRev,
+        currentSourceRevision: currentRev,
+        driftCount: drift,
+      });
+    }
+  }
+  console.log(JSON.stringify({ modelId, links: rows }, null, 2));
+}
+
 async function postCommand(modelId, userId, command) {
   const json = await fetchJson(
     'POST',
@@ -686,6 +777,12 @@ Commands:
                                        dry-run + apply → re-evaluate → rollback on regression. Backend
                                        defaults to BIM_AI_AGENT_BACKEND (test|claude). Per-iter dump
                                        under <evidence-out>/iter-NN/.
+  link --source <uuid> --pos x,y,z [--align <mode>] [--name <s>] [--visibility <mode>]
+                                       FED-01: insert a link_model into BIM_AI_MODEL_ID. align ∈
+                                       origin_to_origin|project_origin|shared_coords (default origin_to_origin).
+                                       visibility ∈ host_view|linked_view (default host_view).
+  unlink <link_id>                    FED-01: delete the link_model with id <link_id>.
+  links                               FED-01: list every link_model in BIM_AI_MODEL_ID with pin/drift status.
   watch                               WebSocket watcher (continuous live commits — no Synchronize step required)
 
 Collaboration model:
@@ -914,6 +1011,43 @@ async function main() {
       }
       const cmds = commandsFromBundleJson(JSON.parse(raw));
       await dryRunBundle(modelId, userId, cmds);
+      return;
+    }
+
+    if (cmd === 'link') {
+      if (!modelId) usage();
+      const rest = argv.slice(1);
+      let sourceUuid;
+      let posArg;
+      let alignArg = 'origin_to_origin';
+      let nameArg;
+      let visArg = 'host_view';
+      for (let i = 0; i < rest.length; i++) {
+        const a = rest[i];
+        if (a === '--source' && rest[i + 1]) sourceUuid = rest[++i];
+        else if (a === '--pos' && rest[i + 1]) posArg = rest[++i];
+        else if (a === '--align' && rest[i + 1]) alignArg = rest[++i];
+        else if (a === '--name' && rest[i + 1]) nameArg = rest[++i];
+        else if (a === '--visibility' && rest[i + 1]) visArg = rest[++i];
+      }
+      const align = parseAlignMode(alignArg);
+      const pos = parsePosTriple(posArg ?? '0,0,0');
+      const vis =
+        visArg === 'linked_view' ? 'linked_view' : visArg === 'host_view' ? 'host_view' : 'host_view';
+      await cmdLinkCreate(modelId, userId, sourceUuid, pos, align, nameArg, vis);
+      return;
+    }
+
+    if (cmd === 'unlink') {
+      if (!modelId) usage();
+      const linkId = argv[1];
+      await cmdUnlink(modelId, userId, linkId);
+      return;
+    }
+
+    if (cmd === 'links') {
+      if (!modelId) usage();
+      await cmdLinksList(modelId);
       return;
     }
 

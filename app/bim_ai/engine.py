@@ -3247,6 +3247,7 @@ def apply_inplace(
                 position_mm=cmd.position_mm,
                 rotation_deg=cmd.rotation_deg,
                 origin_alignment_mode=cmd.origin_alignment_mode,
+                visibility_mode=cmd.visibility_mode,
                 hidden=cmd.hidden,
                 pinned=cmd.pinned,
             )
@@ -3266,6 +3267,10 @@ def apply_inplace(
                 updates["hidden"] = bool(cmd.hidden)
             if cmd.pinned is not None:
                 updates["pinned"] = bool(cmd.pinned)
+            if cmd.origin_alignment_mode is not None:
+                updates["origin_alignment_mode"] = cmd.origin_alignment_mode
+            if cmd.visibility_mode is not None:
+                updates["visibility_mode"] = cmd.visibility_mode
             if "source_model_revision" in cmd.model_fields_set:
                 # Pydantic tracks fields the caller actually sent vs. omitted;
                 # we use that to distinguish "unpin (explicit null)" from

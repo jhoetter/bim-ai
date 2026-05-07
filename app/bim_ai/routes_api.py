@@ -257,12 +257,47 @@ async def snapshot(
         # so renderers can ghost them. Default snapshot omits these to keep the
         # payload small.
         elements_wire = await _expand_host_links(session, doc, elements_wire)
-    return {
+    link_source_revisions = await _resolve_link_source_revisions(session, doc)
+    out: dict[str, Any] = {
         "modelId": str(row.id),
         "revision": doc.revision,
         "elements": elements_wire,
         "violations": violations_wire(doc.elements),
     }
+    if link_source_revisions:
+        # FED-01 polish: per-source current revisions so the UI can render
+        # drift badges on pinned links without an extra round-trip.
+        out["linkSourceRevisions"] = link_source_revisions
+    return out
+
+
+async def _resolve_link_source_revisions(
+    session: AsyncSession, host_doc: Document
+) -> dict[str, int]:
+    """Look up the current revision of every distinct source UUID referenced
+    by a ``link_model`` element in ``host_doc``. Missing sources are omitted
+    from the result. Used by the FED-01 drift-badge UI."""
+
+    out: dict[str, int] = {}
+    for elem in host_doc.elements.values():
+        if not isinstance(elem, LinkModelElem):
+            continue
+        src_uuid_str = elem.source_model_id
+        if src_uuid_str in out:
+            continue
+        try:
+            src_uuid = UUID(src_uuid_str)
+        except ValueError:
+            continue
+        src_row = await load_model_row(session, src_uuid)
+        if src_row is None:
+            continue
+        try:
+            src_doc = Document.model_validate(src_row.document)
+        except Exception:
+            continue
+        out[src_uuid_str] = int(src_doc.revision)
+    return out
 
 
 async def _expand_host_links(

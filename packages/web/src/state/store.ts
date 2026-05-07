@@ -1249,6 +1249,12 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
     const sourceModelId = String(raw.sourceModelId ?? raw.source_model_id ?? '');
     if (!sourceModelId) return null;
     const rev = raw.sourceModelRevision ?? raw.source_model_revision;
+    const alignRaw = String(raw.originAlignmentMode ?? raw.origin_alignment_mode ?? '');
+    const align: 'origin_to_origin' | 'project_origin' | 'shared_coords' =
+      alignRaw === 'project_origin' || alignRaw === 'shared_coords' ? alignRaw : 'origin_to_origin';
+    const visRaw = String(raw.visibilityMode ?? raw.visibility_mode ?? '');
+    const visibilityMode: 'host_view' | 'linked_view' =
+      visRaw === 'linked_view' ? 'linked_view' : 'host_view';
     return {
       kind: 'link_model',
       id,
@@ -1257,7 +1263,8 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
       ...(rev == null ? {} : { sourceModelRevision: Number(rev) }),
       positionMm: pos,
       rotationDeg: Number(raw.rotationDeg ?? raw.rotation_deg ?? 0),
-      originAlignmentMode: 'origin_to_origin',
+      originAlignmentMode: align,
+      visibilityMode,
       ...(raw.hidden != null ? { hidden: Boolean(raw.hidden) } : {}),
       ...(raw.pinned != null ? { pinned: Boolean(raw.pinned) } : {}),
     };
@@ -1489,6 +1496,8 @@ export const useBimStore = create<StoreState>((set, get) => {
 
     lastLevelElevationPropagationEvidence: null,
 
+    linkSourceRevisions: {},
+
     hydrateFromSnapshot: (snap) => {
       const elements: Record<string, Element> = {};
 
@@ -1519,6 +1528,11 @@ export const useBimStore = create<StoreState>((set, get) => {
         scheduleBudgetHydration: null,
 
         lastLevelElevationPropagationEvidence: null,
+
+        linkSourceRevisions:
+          snap.linkSourceRevisions && typeof snap.linkSourceRevisions === 'object'
+            ? { ...snap.linkSourceRevisions }
+            : {},
 
         activePlanViewId: prevPv && elements[prevPv]?.kind === 'plan_view' ? prevPv : undefined,
         activeViewpointId: prevVp && elements[prevVp]?.kind === 'viewpoint' ? prevVp : undefined,

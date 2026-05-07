@@ -1,8 +1,10 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { JSX } from 'react';
+import type { Element } from '@bim-ai/core';
 import { useBimStore } from '../state/store';
 import type { CategoryOverride, CategoryOverrides } from '../state/store';
 import type { ViewFilter } from '../state/storeTypes';
+import { applyCommand } from '../lib/api';
 
 const MODEL_CATEGORIES = [
   'wall',
@@ -59,7 +61,7 @@ const LINE_WEIGHTS = ['By Category', '1', '2', '3', '4', '5'] as const;
 
 const LINE_PATTERNS = ['Solid', 'Dashed', 'Dotted', 'Center'] as const;
 
-type Tab = 'model' | 'annotation' | 'filters';
+type Tab = 'model' | 'annotation' | 'filters' | 'links';
 
 function ColorSwatch({
   color,
@@ -401,15 +403,19 @@ function FiltersTabBody({
 export function VVDialog({
   open,
   onClose,
+  applyCommandImpl,
 }: {
   open: boolean;
   onClose: () => void;
+  /** Tests inject a mock to capture commands without hitting the network. */
+  applyCommandImpl?: typeof applyCommand;
 }): JSX.Element | null {
   const activePlanViewId = useBimStore((s) => s.activePlanViewId);
   const elementsById = useBimStore((s) => s.elementsById);
   const setCategoryOverride = useBimStore((s) => s.setCategoryOverride);
   const addViewFilter = useBimStore((s) => s.addViewFilter);
   const removeViewFilter = useBimStore((s) => s.removeViewFilter);
+  const modelId = useBimStore((s) => s.modelId);
 
   const [tab, setTab] = useState<Tab>('model');
   const [draft, setDraft] = useState<CategoryOverrides>({});
@@ -525,11 +531,12 @@ export function VVDialog({
             padding: '0 14px',
           }}
         >
-          {(['model', 'annotation', 'filters'] as const).map((t) => (
+          {(['model', 'annotation', 'filters', 'links'] as const).map((t) => (
             <button
               key={t}
               type="button"
               onClick={() => setTab(t)}
+              data-testid={`vv-tab-${t}`}
               style={{
                 padding: '6px 14px',
                 fontSize: 12,
@@ -545,14 +552,22 @@ export function VVDialog({
                 ? 'Model Categories'
                 : t === 'annotation'
                   ? 'Annotation Categories'
-                  : 'Filters'}
+                  : t === 'filters'
+                    ? 'Filters'
+                    : 'Revit Links'}
             </button>
           ))}
         </div>
 
-        {/* Table / Filters */}
+        {/* Table / Filters / Links */}
         <div style={{ overflowY: 'auto', flex: 1 }}>
-          {tab === 'filters' ? (
+          {tab === 'links' ? (
+            <LinksTabBody
+              elementsById={elementsById}
+              modelId={modelId}
+              applyCommandImpl={applyCommandImpl}
+            />
+          ) : tab === 'filters' ? (
             <FiltersTabBody
               planViewId={activePlanViewId}
               elementsById={elementsById}
@@ -696,5 +711,99 @@ export function VVDialog({
         </div>
       </div>
     </div>
+  );
+}
+
+type LinkRow = Extract<Element, { kind: 'link_model' }>;
+
+function LinksTabBody({
+  elementsById,
+  modelId,
+  applyCommandImpl,
+}: {
+  elementsById: Record<string, Element>;
+  modelId?: string;
+  applyCommandImpl?: typeof applyCommand;
+}): JSX.Element {
+  const links: LinkRow[] = (Object.values(elementsById) as Element[])
+    .filter((e): e is LinkRow => e.kind === 'link_model')
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const [pending, setPending] = useState<string | null>(null);
+  const apply = applyCommandImpl ?? applyCommand;
+
+  if (links.length === 0) {
+    return (
+      <div
+        data-testid="vv-links-empty"
+        style={{ padding: 14, fontSize: 12, color: 'var(--color-muted)' }}
+      >
+        No linked models in this host.
+      </div>
+    );
+  }
+
+  const toggle = async (l: LinkRow): Promise<void> => {
+    if (!modelId) return;
+    setPending(l.id);
+    try {
+      await apply(modelId, {
+        type: 'updateLinkModel',
+        linkId: l.id,
+        hidden: !l.hidden,
+      });
+    } finally {
+      setPending(null);
+    }
+  };
+
+  return (
+    <table
+      data-testid="vv-links-table"
+      style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}
+    >
+      <thead>
+        <tr style={{ background: 'var(--color-background)' }}>
+          <th style={{ padding: '6px 8px', textAlign: 'left', fontSize: 11, fontWeight: 600 }}>
+            Link
+          </th>
+          <th style={{ padding: '6px 8px', textAlign: 'left', fontSize: 11, fontWeight: 600 }}>
+            Visibility mode
+          </th>
+          <th style={{ padding: '6px 8px', textAlign: 'center', fontSize: 11, fontWeight: 600 }}>
+            Visible
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {links.map((l) => (
+          <tr key={l.id} data-testid={`vv-links-row-${l.id}`}>
+            <td style={{ padding: '6px 8px' }}>
+              <div style={{ fontSize: 12 }}>{l.name}</div>
+              <div
+                style={{
+                  fontFamily: 'var(--font-mono, monospace)',
+                  fontSize: 10,
+                  color: 'var(--color-muted)',
+                }}
+              >
+                {l.sourceModelId}
+              </div>
+            </td>
+            <td style={{ padding: '6px 8px', fontSize: 11 }}>
+              {l.visibilityMode === 'linked_view' ? 'Linked view' : 'Host view'}
+            </td>
+            <td style={{ padding: '6px 8px', textAlign: 'center' }}>
+              <input
+                type="checkbox"
+                checked={!l.hidden}
+                disabled={pending === l.id}
+                data-testid={`vv-links-visible-${l.id}`}
+                onChange={() => void toggle(l)}
+              />
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }

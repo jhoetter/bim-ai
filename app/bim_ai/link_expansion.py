@@ -17,11 +17,16 @@ from collections.abc import Callable
 from typing import Any
 
 from bim_ai.document import Document
-from bim_ai.elements import LinkModelElem
+from bim_ai.elements import (
+    LinkModelElem,
+    ProjectBasePointElem,
+    SurveyPointElem,
+)
 
 LINKED_FROM_LINK_ID_KEY = "_linkedFromLinkId"
 LINKED_FROM_ELEMENT_ID_KEY = "_linkedFromElementId"
 LINKED_FROM_MODEL_ID_KEY = "_linkedFromModelId"
+LINKED_VISIBILITY_MODE_KEY = "_linkedVisibilityMode"
 
 # Field names whose value is a {xMm, yMm} (2D) point. Walls' start/end use the
 # semantic names ``start``/``end``; outlines and similar use the suffix
@@ -120,6 +125,70 @@ def _rewire_element_id_refs(elem: dict[str, Any], link_id: str) -> dict[str, Any
     return walk(elem)  # type: ignore[no-any-return]
 
 
+def _find_pbp(doc: Document) -> ProjectBasePointElem | None:
+    for elem in doc.elements.values():
+        if isinstance(elem, ProjectBasePointElem):
+            return elem
+    return None
+
+
+def _find_survey_point(doc: Document) -> SurveyPointElem | None:
+    for elem in doc.elements.values():
+        if isinstance(elem, SurveyPointElem):
+            return elem
+    return None
+
+
+def _resolve_alignment_offset(
+    link: LinkModelElem,
+    host_doc: Document,
+    src_doc: Document,
+) -> tuple[float, float, float, float]:
+    """Resolve (dx, dy, dz, rotation_deg) for a link's transform.
+
+    For ``project_origin``: align source PBP to host PBP, then offset by the
+    link's `positionMm`; rotation = link.rotation + (host.trueNorth -
+    source.trueNorth). For ``shared_coords``: align source survey point to
+    host survey point, including ``sharedElevationMm`` reconciliation. Falls
+    back to ``origin_to_origin`` semantics if the required anchor is missing.
+    """
+
+    base_dx = link.position_mm.x_mm
+    base_dy = link.position_mm.y_mm
+    base_dz = link.position_mm.z_mm
+    rot = float(link.rotation_deg)
+
+    mode = link.origin_alignment_mode
+    if mode == "origin_to_origin":
+        return base_dx, base_dy, base_dz, rot
+
+    if mode == "project_origin":
+        host_pbp = _find_pbp(host_doc)
+        src_pbp = _find_pbp(src_doc)
+        if host_pbp is None or src_pbp is None:
+            return base_dx, base_dy, base_dz, rot
+        ax = host_pbp.position_mm.x_mm - src_pbp.position_mm.x_mm
+        ay = host_pbp.position_mm.y_mm - src_pbp.position_mm.y_mm
+        az = host_pbp.position_mm.z_mm - src_pbp.position_mm.z_mm
+        rot_delta = host_pbp.angle_to_true_north_deg - src_pbp.angle_to_true_north_deg
+        return base_dx + ax, base_dy + ay, base_dz + az, rot + rot_delta
+
+    if mode == "shared_coords":
+        host_sp = _find_survey_point(host_doc)
+        src_sp = _find_survey_point(src_doc)
+        if host_sp is None or src_sp is None:
+            return base_dx, base_dy, base_dz, rot
+        ax = host_sp.position_mm.x_mm - src_sp.position_mm.x_mm
+        ay = host_sp.position_mm.y_mm - src_sp.position_mm.y_mm
+        az = host_sp.position_mm.z_mm - src_sp.position_mm.z_mm
+        # Reconcile shared elevation: if both define a sharedElevationMm,
+        # add the delta to z so source elevations register at host's datum.
+        az += host_sp.shared_elevation_mm - src_sp.shared_elevation_mm
+        return base_dx + ax, base_dy + ay, base_dz + az, rot
+
+    return base_dx, base_dy, base_dz, rot
+
+
 def expand_links(
     host_doc: Document,
     host_elements_wire: dict[str, dict[str, Any]],
@@ -150,12 +219,10 @@ def expand_links(
         if src_doc is None:
             continue
 
-        rad = math.radians(elem.rotation_deg)
+        dx, dy, dz, rot_deg = _resolve_alignment_offset(elem, host_doc, src_doc)
+        rad = math.radians(rot_deg)
         sin_a = math.sin(rad)
         cos_a = math.cos(rad)
-        dx = elem.position_mm.x_mm
-        dy = elem.position_mm.y_mm
-        dz = elem.position_mm.z_mm
 
         for src_id, src_elem in src_doc.elements.items():
             # Don't inline another link's row recursively (avoids transitive
@@ -169,6 +236,7 @@ def expand_links(
             wire[LINKED_FROM_LINK_ID_KEY] = elem.id
             wire[LINKED_FROM_ELEMENT_ID_KEY] = src_id
             wire[LINKED_FROM_MODEL_ID_KEY] = elem.source_model_id
+            wire[LINKED_VISIBILITY_MODE_KEY] = elem.visibility_mode
             expanded[wire["id"]] = wire
 
     return expanded

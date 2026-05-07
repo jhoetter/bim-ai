@@ -266,7 +266,7 @@ What's the smallest WP set required to ship a specific user-visible goal? Useful
 
 | ID     | Item                                              | Effort | State                        | Depends on |
 | ------ | ------------------------------------------------- | ------ | ---------------------------- | ---------- |
-| FED-01 | `link_model` element kind + read-only enforcement | L      | `partial` ([b05fc082](../#)) | —          |
+| FED-01 | `link_model` element kind + read-only enforcement | L      | `done` (wave3-8 — full federation primitive including per-link `visibilityMode`, all alignment modes, revision pinning UI, drift badges, CLI subcommands, VV integration, project-browser group) | —          |
 | FED-02 | Cross-link clash detection (extends WP-V2-13)     | M      | `done` ([cf3552d5](../#))    | FED-01     |
 | FED-03 | Cross-link Copy/Monitor (extends WP-V2-12)        | M      | `partial` ([0fe4cfc2](../#)) | FED-01     |
 | FED-04 | IFC / DXF → shadow-model link import              | L      | `partial` ([6c2ee24f](../#)) | FED-01     |
@@ -274,19 +274,37 @@ What's the smallest WP set required to ship a specific user-visible goal? Useful
 
 ### FED-01 — `link_model` element kind + read-only enforcement
 
-**Status (2026-05-07).** `partial` in `b05fc082` — load-bearing slice shipped:
-data model + 3 commands (`createLinkModel` / `updateLinkModel` /
-`deleteLinkModel`) + read-only enforcement on `<linkId>::<sourceElemId>` ids
+**Status (2026-05-07).** `done` — load-bearing slice shipped in `b05fc082`
+(data model + 3 commands + read-only enforcement on `<linkId>::<sourceElemId>`
+ids + snapshot expansion + ghosted Three.js rendering + minimal Manage Links
+dialog). FED-01 polish landed on branch `wave3-8`:
 
-- snapshot expansion (`?expandLinks=true`) with position + Z-rotation
-  transform and provenance markers + ghosted Three.js rendering + minimal
-  Manage Links dialog (Insert → Link Model… in ProjectMenu). DB-level
-  validation rejects self-reference, missing source, and circular link graphs.
-  **Deferred to follow-up:** per-link `visibilityMode` (`host_view` /
-  `linked_view`), revision-pinning UI + drift badge, `originAlignmentMode`
-  values beyond `origin_to_origin`, VV dialog Revit Links tab, CLI
-  `link/unlink/links/expand-links` subcommands, `worksetId` on `link_model`,
-  Project Browser Links group with expand/collapse.
+- per-link `visibilityMode` (`host_view` / `linked_view`) on the
+  `link_model` schema and inlined-element provenance marker
+  (`_linkedVisibilityMode`).
+- `originAlignmentMode` extended with `project_origin` (aligns source
+  PBP → host PBP, plus link `positionMm` offset; rotation gets the trueNorth
+  delta) and `shared_coords` (aligns source survey point → host survey point,
+  including `sharedElevationMm` reconciliation on Z). Falls back to
+  `origin_to_origin` semantics when the required anchor is missing on
+  either side.
+- Revision pinning UI in `ManageLinksDialog`: per-row "Pin to revision N" /
+  "Follow latest" toggle. Snapshot now includes `linkSourceRevisions` (per
+  source-uuid current revision) so the dialog renders a yellow drift badge
+  ("+N revisions") when a pinned link's source has advanced; clicking
+  "Update" bumps the pinned revision.
+- VV dialog gains a "Revit Links" tab listing every `link_model` row with
+  per-link visibility checkbox.
+- Project Browser left rail "Links" group is collapsible, lists every
+  link_model with eye toggle and drift badge.
+- CLI subcommands: `bim-ai link --source <uuid> --pos x,y,z --align <mode>`,
+  `bim-ai unlink <link_id>`, `bim-ai links` (lists with pin/drift status).
+- Tests: `app/tests/test_link_model_visibility_mode.py`,
+  `app/tests/test_link_model_alignment_modes.py`,
+  `app/tests/test_link_model_revision_pinning.py`,
+  `packages/web/src/workspace/ManageLinksDialog.driftBadge.test.tsx`,
+  `packages/web/src/workspace/VVDialog.linksTab.test.tsx`,
+  `packages/cli/cli.linkSubcommands.test.mjs`.
 
 **Scope.** First-class linked-model element. Host model references another bim-ai model in the same DB; host treats the link's elements as read-only renderable context. Selection works, snap-to works, clash queries work, but edits are blocked at the engine level.
 

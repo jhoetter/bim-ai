@@ -796,8 +796,11 @@ class LinkModelElem(BaseModel):
     source_model_revision: int | None = Field(default=None, alias="sourceModelRevision")
     position_mm: Vec3Mm = Field(alias="positionMm")
     rotation_deg: float = Field(default=0.0, alias="rotationDeg")
-    origin_alignment_mode: Literal["origin_to_origin"] = Field(
-        default="origin_to_origin", alias="originAlignmentMode"
+    origin_alignment_mode: Literal[
+        "origin_to_origin", "project_origin", "shared_coords"
+    ] = Field(default="origin_to_origin", alias="originAlignmentMode")
+    visibility_mode: Literal["host_view", "linked_view"] = Field(
+        default="host_view", alias="visibilityMode"
     )
     hidden: bool = Field(default=False)
     pinned: bool = Field(default=False)

@@ -5,12 +5,13 @@ import { applyCommand, ApiHttpError } from '../lib/api';
 import { useBimStore } from '../state/store';
 
 /**
- * FED-01 — minimal Manage Links dialog.
+ * FED-01 — Manage Links dialog (full polish).
  *
- * Lists every `link_model` row in the host model and lets the user add or
- * delete a link via the standard command API. The reload / pin-revision /
- * source-replace controls are deferred to a follow-up WP — the load-bearing
- * slice ships create + delete only.
+ * Lists every `link_model` row in the host model with per-row controls for
+ * delete, alignment mode, visibility mode, and revision pinning. Pinned links
+ * surface a yellow drift badge when the source has advanced past the pinned
+ * revision; clicking "Update" bumps the pinned revision to the current source
+ * revision.
  */
 
 export interface ManageLinksDialogProps {
@@ -25,6 +26,20 @@ export interface ManageLinksDialogProps {
 
 type LinkRow = Extract<Element, { kind: 'link_model' }>;
 
+type AlignMode = 'origin_to_origin' | 'project_origin' | 'shared_coords';
+type VisibilityMode = 'host_view' | 'linked_view';
+
+const ALIGN_LABELS: Record<AlignMode, string> = {
+  origin_to_origin: 'Origin → Origin',
+  project_origin: 'Project Base Point',
+  shared_coords: 'Shared Coords',
+};
+
+const VIS_LABELS: Record<VisibilityMode, string> = {
+  host_view: 'Host view',
+  linked_view: 'Linked view',
+};
+
 export function ManageLinksDialog({
   open,
   onClose,
@@ -32,6 +47,7 @@ export function ManageLinksDialog({
 }: ManageLinksDialogProps): JSX.Element | null {
   const elementsById = useBimStore((s) => s.elementsById);
   const modelId = useBimStore((s) => s.modelId);
+  const linkSourceRevisions = useBimStore((s) => s.linkSourceRevisions);
 
   const links: LinkRow[] = useMemo(
     () =>
@@ -46,6 +62,8 @@ export function ManageLinksDialog({
   const [posXMm, setPosXMm] = useState('0');
   const [posYMm, setPosYMm] = useState('0');
   const [posZMm, setPosZMm] = useState('0');
+  const [addAlign, setAddAlign] = useState<AlignMode>('origin_to_origin');
+  const [addVis, setAddVis] = useState<VisibilityMode>('host_view');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -76,13 +94,16 @@ export function ManageLinksDialog({
           zMm: Number(posZMm) || 0,
         },
         rotationDeg: 0,
-        originAlignmentMode: 'origin_to_origin',
+        originAlignmentMode: addAlign,
+        visibilityMode: addVis,
       });
       setSourceModelId('');
       setName('Linked structure');
       setPosXMm('0');
       setPosYMm('0');
       setPosZMm('0');
+      setAddAlign('origin_to_origin');
+      setAddVis('host_view');
     } catch (err) {
       const msg =
         err instanceof ApiHttpError
@@ -112,6 +133,20 @@ export function ManageLinksDialog({
     }
   };
 
+  const submitUpdate = async (linkId: string, patch: Record<string, unknown>): Promise<void> => {
+    setError(null);
+    if (!modelId) return;
+    setPending(true);
+    try {
+      await apply(modelId, { type: 'updateLinkModel', linkId, ...patch });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to update link';
+      setError(msg);
+    } finally {
+      setPending(false);
+    }
+  };
+
   return (
     <div
       role="dialog"
@@ -132,7 +167,7 @@ export function ManageLinksDialog({
     >
       <div
         className="rounded-md border border-border bg-surface text-foreground shadow-elev-3"
-        style={{ minWidth: 480, maxWidth: 640, padding: 16 }}
+        style={{ minWidth: 540, maxWidth: 720, padding: 16 }}
       >
         <div className="mb-2 flex items-center justify-between">
           <h2 className="text-sm font-medium">Manage Links</h2>
@@ -156,27 +191,158 @@ export function ManageLinksDialog({
             </div>
           ) : (
             <ul className="flex flex-col gap-1" data-testid="manage-links-list">
-              {links.map((l) => (
-                <li
-                  key={l.id}
-                  data-testid={`manage-links-row-${l.id}`}
-                  className="flex items-center justify-between rounded border border-border px-2 py-1"
-                >
-                  <div className="flex flex-col">
-                    <span className="text-xs">{l.name}</span>
-                    <span className="font-mono text-[10px] text-muted">{l.sourceModelId}</span>
-                  </div>
-                  <button
-                    type="button"
-                    disabled={pending}
-                    onClick={() => void submitDelete(l.id)}
-                    data-testid={`manage-links-delete-${l.id}`}
-                    className="rounded border border-border px-2 py-0.5 text-xs hover:bg-surface-strong disabled:opacity-50"
+              {links.map((l) => {
+                const currentSrcRev = linkSourceRevisions[l.sourceModelId];
+                const pinnedRev = l.sourceModelRevision ?? null;
+                const isPinned = pinnedRev != null;
+                const driftCount =
+                  isPinned && typeof currentSrcRev === 'number'
+                    ? Math.max(0, currentSrcRev - (pinnedRev as number))
+                    : 0;
+                const align: AlignMode = l.originAlignmentMode;
+                const vis: VisibilityMode = l.visibilityMode ?? 'host_view';
+                return (
+                  <li
+                    key={l.id}
+                    data-testid={`manage-links-row-${l.id}`}
+                    className="flex flex-col gap-1 rounded border border-border px-2 py-1"
                   >
-                    Delete
-                  </button>
-                </li>
-              ))}
+                    <div className="flex items-center justify-between">
+                      <div className="flex flex-col">
+                        <span className="text-xs">{l.name}</span>
+                        <span className="font-mono text-[10px] text-muted">{l.sourceModelId}</span>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={pending}
+                        onClick={() => void submitDelete(l.id)}
+                        data-testid={`manage-links-delete-${l.id}`}
+                        className="rounded border border-border px-2 py-0.5 text-xs hover:bg-surface-strong disabled:opacity-50"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                      <label className="flex items-center gap-1">
+                        Align
+                        <select
+                          value={align}
+                          disabled={pending}
+                          data-testid={`manage-links-align-${l.id}`}
+                          onChange={(e) =>
+                            void submitUpdate(l.id, {
+                              originAlignmentMode: e.target.value as AlignMode,
+                            })
+                          }
+                          className="rounded border border-border bg-surface-strong px-1 py-0.5 text-[11px]"
+                        >
+                          {(Object.keys(ALIGN_LABELS) as AlignMode[]).map((m) => (
+                            <option key={m} value={m}>
+                              {ALIGN_LABELS[m]}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="flex items-center gap-1">
+                        Visibility
+                        <select
+                          value={vis}
+                          disabled={pending}
+                          data-testid={`manage-links-visibility-${l.id}`}
+                          onChange={(e) =>
+                            void submitUpdate(l.id, {
+                              visibilityMode: e.target.value as VisibilityMode,
+                            })
+                          }
+                          className="rounded border border-border bg-surface-strong px-1 py-0.5 text-[11px]"
+                        >
+                          {(Object.keys(VIS_LABELS) as VisibilityMode[]).map((m) => (
+                            <option key={m} value={m}>
+                              {VIS_LABELS[m]}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      {isPinned ? (
+                        <span
+                          data-testid={`manage-links-pin-state-${l.id}`}
+                          className="font-mono text-[10px] text-muted"
+                        >
+                          pinned @ rev {pinnedRev}
+                        </span>
+                      ) : (
+                        <span
+                          data-testid={`manage-links-pin-state-${l.id}`}
+                          className="font-mono text-[10px] text-muted"
+                        >
+                          following latest
+                        </span>
+                      )}
+                      {isPinned ? (
+                        <button
+                          type="button"
+                          disabled={pending}
+                          data-testid={`manage-links-unpin-${l.id}`}
+                          onClick={() => void submitUpdate(l.id, { sourceModelRevision: null })}
+                          className="rounded border border-border px-2 py-0.5 text-[11px] hover:bg-surface-strong disabled:opacity-50"
+                        >
+                          Follow latest
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={pending || typeof currentSrcRev !== 'number'}
+                          data-testid={`manage-links-pin-${l.id}`}
+                          onClick={() =>
+                            void submitUpdate(l.id, {
+                              sourceModelRevision: currentSrcRev ?? 0,
+                            })
+                          }
+                          className="rounded border border-border px-2 py-0.5 text-[11px] hover:bg-surface-strong disabled:opacity-50"
+                          title={
+                            typeof currentSrcRev === 'number'
+                              ? `Pin to current source revision ${currentSrcRev}`
+                              : 'Source revision unknown'
+                          }
+                        >
+                          Pin to revision
+                        </button>
+                      )}
+                      {driftCount > 0 ? (
+                        <>
+                          <span
+                            data-testid={`manage-links-drift-${l.id}`}
+                            title={`Source advanced by ${driftCount} commit${driftCount === 1 ? '' : 's'}`}
+                            style={{
+                              background: '#facc15',
+                              color: '#1f2937',
+                              padding: '0 4px',
+                              borderRadius: 3,
+                              fontSize: 10,
+                              fontWeight: 600,
+                            }}
+                          >
+                            +{driftCount} revision{driftCount === 1 ? '' : 's'}
+                          </span>
+                          <button
+                            type="button"
+                            disabled={pending}
+                            data-testid={`manage-links-update-${l.id}`}
+                            onClick={() =>
+                              void submitUpdate(l.id, {
+                                sourceModelRevision: currentSrcRev,
+                              })
+                            }
+                            className="rounded border border-border px-2 py-0.5 text-[11px] hover:bg-surface-strong disabled:opacity-50"
+                          >
+                            Update
+                          </button>
+                        </>
+                      ) : null}
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </section>
@@ -224,6 +390,38 @@ export function ManageLinksDialog({
                   />
                 </label>
               ))}
+            </div>
+            <div className="flex gap-2">
+              <label className="flex flex-1 flex-col text-xs">
+                Alignment
+                <select
+                  value={addAlign}
+                  onChange={(e) => setAddAlign(e.target.value as AlignMode)}
+                  data-testid="manage-links-add-align"
+                  className="rounded border border-border bg-surface-strong px-2 py-1 text-xs"
+                >
+                  {(Object.keys(ALIGN_LABELS) as AlignMode[]).map((m) => (
+                    <option key={m} value={m}>
+                      {ALIGN_LABELS[m]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex flex-1 flex-col text-xs">
+                Visibility
+                <select
+                  value={addVis}
+                  onChange={(e) => setAddVis(e.target.value as VisibilityMode)}
+                  data-testid="manage-links-add-visibility"
+                  className="rounded border border-border bg-surface-strong px-2 py-1 text-xs"
+                >
+                  {(Object.keys(VIS_LABELS) as VisibilityMode[]).map((m) => (
+                    <option key={m} value={m}>
+                      {VIS_LABELS[m]}
+                    </option>
+                  ))}
+                </select>
+              </label>
             </div>
             <div className="flex items-center gap-2">
               <button

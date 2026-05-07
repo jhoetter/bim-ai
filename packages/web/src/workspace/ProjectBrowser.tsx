@@ -1,7 +1,10 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import type { JSX } from 'react';
 import type { Element } from '@bim-ai/core';
 
 import { Btn } from '@bim-ai/ui';
+
+import { applyCommand } from '../lib/api';
 
 import {
   planViewBrowserHierarchyState,
@@ -149,6 +152,11 @@ export function ProjectBrowser(props: {
     .filter((e): e is Extract<Element, { kind: 'site' }> => e.kind === 'site')
     .sort((a, b) => a.name.localeCompare(b.name));
 
+  // FED-01 polish: collapsible "Links" group lists every link_model row.
+  const linkModels = Object.values(props.elementsById)
+    .filter((e): e is Extract<Element, { kind: 'link_model' }> => e.kind === 'link_model')
+    .sort((a, b) => a.name.localeCompare(b.name));
+
   const hasAnyDoc =
     planViewsSorted.length > 0 ||
     viewpoints3d.length > 0 ||
@@ -158,7 +166,8 @@ export function ProjectBrowser(props: {
     schedules.length > 0 ||
     sheets.length > 0 ||
     viewTemplates.length > 0 ||
-    sites.length > 0;
+    sites.length > 0 ||
+    linkModels.length > 0;
 
   if (!hasAnyDoc) {
     return <div className="text-[10px] text-muted">No documented views yet.</div>;
@@ -532,6 +541,99 @@ export function ProjectBrowser(props: {
           </ul>
         </div>
       ) : null}
+
+      {linkModels.length ? <ProjectBrowserLinksGroup links={linkModels} /> : null}
+    </div>
+  );
+}
+
+function ProjectBrowserLinksGroup({
+  links,
+}: {
+  links: Extract<Element, { kind: 'link_model' }>[];
+}): JSX.Element {
+  const [collapsed, setCollapsed] = useState(false);
+  const modelId = useBimStore((s) => s.modelId);
+  const linkSourceRevisions = useBimStore((s) => s.linkSourceRevisions);
+  const [pending, setPending] = useState<string | null>(null);
+
+  const toggleHidden = async (l: Extract<Element, { kind: 'link_model' }>): Promise<void> => {
+    if (!modelId) return;
+    setPending(l.id);
+    try {
+      await applyCommand(modelId, {
+        type: 'updateLinkModel',
+        linkId: l.id,
+        hidden: !l.hidden,
+      });
+    } finally {
+      setPending(null);
+    }
+  };
+
+  return (
+    <div className="space-y-1" data-testid="project-browser-links-group">
+      <button
+        type="button"
+        onClick={() => setCollapsed((v) => !v)}
+        data-testid="project-browser-links-toggle"
+        className="flex w-full items-center gap-1 text-[10px] uppercase tracking-wide text-muted hover:text-foreground"
+      >
+        <span>{collapsed ? '▸' : '▾'}</span>
+        Links ({links.length})
+      </button>
+      {collapsed ? null : (
+        <ul className="space-y-0.5">
+          {links.map((l) => {
+            const cur = linkSourceRevisions[l.sourceModelId];
+            const pinned = l.sourceModelRevision ?? null;
+            const drift = pinned != null && typeof cur === 'number' ? Math.max(0, cur - pinned) : 0;
+            const hidden = !!l.hidden;
+            return (
+              <li
+                key={l.id}
+                data-testid={`project-browser-links-row-${l.id}`}
+                className="flex items-center gap-2 px-2 py-0.5 text-[10px]"
+              >
+                <button
+                  type="button"
+                  disabled={pending === l.id}
+                  data-testid={`project-browser-links-eye-${l.id}`}
+                  onClick={() => void toggleHidden(l)}
+                  title={hidden ? 'Show link in viewport' : 'Hide link in viewport'}
+                  className="rounded border border-border px-1 text-[10px] hover:bg-surface-strong disabled:opacity-50"
+                >
+                  {hidden ? '◌' : '●'}
+                </button>
+                <button
+                  type="button"
+                  className="flex-1 text-left"
+                  onClick={() => useBimStore.getState().select(l.id)}
+                  title={`Select link_model ${l.name}`}
+                >
+                  <span className="text-muted">link_model ·</span> {l.name}
+                </button>
+                {drift > 0 ? (
+                  <span
+                    data-testid={`project-browser-links-drift-${l.id}`}
+                    title={`Source advanced by ${drift} commit${drift === 1 ? '' : 's'}`}
+                    style={{
+                      background: '#facc15',
+                      color: '#1f2937',
+                      padding: '0 4px',
+                      borderRadius: 3,
+                      fontSize: 9,
+                      fontWeight: 600,
+                    }}
+                  >
+                    +{drift}
+                  </span>
+                ) : null}
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 }

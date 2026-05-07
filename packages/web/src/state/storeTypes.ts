@@ -152,6 +152,8 @@ export type StoreState = {
   scheduleBudgetHydration: { tab: string; rowCount: number } | null;
   /** Latest server `levelElevationPropagationEvidence_v0` after apply (Prompt-1). */
   lastLevelElevationPropagationEvidence: LevelElevationPropagationEvidenceV0 | null;
+  /** FED-01 polish: per-source-uuid current revision, used for drift badges. */
+  linkSourceRevisions: Record<string, number>;
   viewerClipElevMm: number | null;
   /** Optional lower bound — clips geometry *below* this world Y (mm) for a reproducible slab cut. */
   viewerClipFloorElevMm: number | null;
