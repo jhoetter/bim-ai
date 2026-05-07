@@ -16,6 +16,8 @@ import { buildWindowGeometry } from './geometryFns/windowGeometry';
 import { buildStairGeometry } from './geometryFns/stairGeometry';
 import { buildRailingGeometry } from './geometryFns/railingGeometry';
 import { getFamilyById, getTypeById } from './familyCatalog';
+import { resolveFamilyGeometry, type FamilyCatalogLookup } from './familyResolver';
+import type { FamilyDefinition } from './types';
 
 const SIZE = 128;
 const PLACEHOLDER_DATA_URL =
@@ -227,6 +229,78 @@ export async function getThumbnail(typeId: string): Promise<string> {
       return url;
     });
   inFlight.set(typeId, promise);
+  return promise;
+}
+
+/**
+ * FAM-01 — render the composed geometry of an authored family (which
+ * may contain nested `family_instance_ref` placements) for FL-06's
+ * library thumbnail. Walks the catalog through `resolveFamilyGeometry`
+ * so nested-family expansion + cycle detection is centralised in the
+ * resolver. Falls back to the static placeholder when WebGL is not
+ * available (jsdom under tests).
+ */
+async function renderFamilyComposedThumbnail(
+  familyId: string,
+  catalog: FamilyCatalogLookup,
+): Promise<string> {
+  const r = ensureRenderer();
+  const def: FamilyDefinition | undefined = catalog[familyId];
+  if (!r || !def) return PLACEHOLDER_DATA_URL;
+
+  let group: THREE.Group;
+  try {
+    const params: Record<string, number | boolean | string> = {};
+    for (const p of def.params) {
+      const dv = p.default;
+      if (typeof dv === 'number' || typeof dv === 'boolean' || typeof dv === 'string') {
+        params[p.key] = dv;
+      }
+    }
+    group = resolveFamilyGeometry(familyId, params, catalog);
+  } catch {
+    return PLACEHOLDER_DATA_URL;
+  }
+  if (group.children.length === 0) return PLACEHOLDER_DATA_URL;
+
+  const scene = new THREE.Scene();
+  scene.add(group);
+  const camera = frameGroup(group, scene);
+  try {
+    r.render(scene, camera);
+    return await blobUrlFromCanvas(r.domElement);
+  } catch {
+    return PLACEHOLDER_DATA_URL;
+  } finally {
+    scene.traverse((obj) => {
+      if (obj instanceof THREE.Mesh) {
+        obj.geometry?.dispose?.();
+        const mat = obj.material;
+        if (Array.isArray(mat)) mat.forEach((m) => m.dispose?.());
+        else mat?.dispose?.();
+      }
+    });
+  }
+}
+
+export async function getFamilyComposedThumbnail(
+  familyId: string,
+  catalog: FamilyCatalogLookup,
+): Promise<string> {
+  const cacheKey = `family:${familyId}`;
+  const cached = cache.get(cacheKey);
+  if (cached) return cached;
+  const pending = inFlight.get(cacheKey);
+  if (pending) return pending;
+
+  const promise = renderFamilyComposedThumbnail(familyId, catalog)
+    .catch(() => PLACEHOLDER_DATA_URL)
+    .then((url) => {
+      cache.set(cacheKey, url);
+      inFlight.delete(cacheKey);
+      return url;
+    });
+  inFlight.set(cacheKey, promise);
   return promise;
 }
 

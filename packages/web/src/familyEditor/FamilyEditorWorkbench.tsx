@@ -1,7 +1,9 @@
-import { useMemo, useState, type JSX } from 'react';
+import { useMemo, useState, type DragEvent, type JSX } from 'react';
 import { useTranslation } from 'react-i18next';
 import type {
   ArrayGeometryNode,
+  FamilyDefinition,
+  FamilyInstanceRefNode,
   FamilyParamDef,
   SketchLine,
   SweepGeometryNode,
@@ -9,6 +11,9 @@ import type {
   VisibilityByDetailLevel,
 } from '../families/types';
 import { validateFormula } from '../lib/expressionEvaluator';
+import { BUILT_IN_FAMILIES } from '../families/familyCatalog';
+import { LoadedFamiliesSidebar, NESTED_FAMILY_DRAG_TYPE } from './LoadedFamiliesSidebar';
+import { NestedInstanceInspector, type HostParamRef } from './NestedInstanceInspector';
 
 /** VIE-02 — plan detail levels usable for per-node visibility binding. */
 type DetailLevelKey = 'coarse' | 'medium' | 'fine';
@@ -113,6 +118,17 @@ function arrayDraftToNode(draft: ArrayDraft): ArrayGeometryNode {
   };
 }
 
+/**
+ * FAM-01 — placement payload yielded by the Loaded Families sidebar's
+ * drag-drop / click-to-add affordance. Pure-data shape so tests can
+ * assert against `addNestedFamilyInstance` without driving the DOM.
+ */
+export interface AddNestedFamilyInstanceAction {
+  type: 'addNestedFamilyInstance';
+  familyId: string;
+  positionMm: { xMm: number; yMm: number; zMm: number };
+}
+
 export function FamilyEditorWorkbench(): JSX.Element {
   const { t } = useTranslation();
   const [template, setTemplate] = useState<Template>('generic_model');
@@ -125,6 +141,11 @@ export function FamilyEditorWorkbench(): JSX.Element {
   const [selectedSweepIndex, setSelectedSweepIndex] = useState<number | null>(null);
   const [arrays, setArrays] = useState<ArrayGeometryNode[]>([]);
   const [arrayDraft, setArrayDraft] = useState<ArrayDraft | null>(null);
+  const [nestedInstances, setNestedInstances] = useState<FamilyInstanceRefNode[]>([]);
+  const [selectedNestedIndex, setSelectedNestedIndex] = useState<number | null>(null);
+  const [lastNestedAction, setLastNestedAction] = useState<AddNestedFamilyInstanceAction | null>(
+    null,
+  );
 
   function addRefPlane(isVertical: boolean) {
     setRefPlanes((prev) => [
@@ -273,6 +294,68 @@ export function FamilyEditorWorkbench(): JSX.Element {
     setArrayDraft(null);
   }
 
+  /* ─── FAM-01 — nested family instance authoring ──────────────────── */
+
+  function addNestedFamilyInstance(familyId: string, dropPointMm?: { xMm: number; yMm: number }) {
+    const positionMm = {
+      xMm: dropPointMm?.xMm ?? 0,
+      yMm: dropPointMm?.yMm ?? 0,
+      zMm: 0,
+    };
+    const node: FamilyInstanceRefNode = {
+      kind: 'family_instance_ref',
+      familyId,
+      positionMm,
+      rotationDeg: 0,
+      parameterBindings: {},
+    };
+    setNestedInstances((prev) => {
+      const next = [...prev, node];
+      setSelectedNestedIndex(next.length - 1);
+      return next;
+    });
+    setLastNestedAction({ type: 'addNestedFamilyInstance', familyId, positionMm });
+  }
+
+  function updateNestedInstance(index: number, patch: Partial<FamilyInstanceRefNode>) {
+    setNestedInstances((prev) =>
+      prev.map((n, i) => {
+        if (i !== index) return n;
+        const merged: FamilyInstanceRefNode = { ...n, ...patch };
+        // Strip undefined visibilityBinding so the node doesn't carry the field.
+        if ('visibilityBinding' in patch && patch.visibilityBinding === undefined) {
+          const { visibilityBinding: _omit, ...rest } = merged;
+          return rest as FamilyInstanceRefNode;
+        }
+        return merged;
+      }),
+    );
+  }
+
+  function onCanvasDrop(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    const familyId =
+      event.dataTransfer.getData(NESTED_FAMILY_DRAG_TYPE) ||
+      event.dataTransfer.getData('text/plain');
+    if (!familyId) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const rawX = event.clientX - rect.left - rect.width / 2;
+    const rawY = rect.height / 2 - (event.clientY - rect.top);
+    const xMm = Number.isFinite(rawX) ? rawX : 0;
+    const yMm = Number.isFinite(rawY) ? rawY : 0;
+    addNestedFamilyInstance(familyId, { xMm, yMm });
+  }
+
+  function onCanvasDragOver(event: DragEvent<HTMLDivElement>) {
+    if (
+      event.dataTransfer.types.includes(NESTED_FAMILY_DRAG_TYPE) ||
+      event.dataTransfer.types.includes('text/plain')
+    ) {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'copy';
+    }
+  }
+
   // Resolved parameter values for the canvas — defaults when flex mode
   // is off, defaults-merged-with-flex-overrides when on.
   const resolved = useMemo(() => {
@@ -283,6 +366,42 @@ export function FamilyEditorWorkbench(): JSX.Element {
     }
     return map;
   }, [params, flexMode, flexValues]);
+
+  /* ─── FAM-01 — Loaded Families filtering + usage counts ─────────── */
+
+  const loadedFamilies: FamilyDefinition[] = useMemo(() => {
+    // Filter the catalog to families compatible with the host's
+    // category. `generic_model` and `profile` host any discipline;
+    // `door` / `window` hosts pull in same-discipline plus generic
+    // helpers (e.g. swing-arc). Keep the rule simple: same-template
+    // → same-discipline; generic templates → all families.
+    if (template === 'generic_model' || template === 'profile') return BUILT_IN_FAMILIES;
+    return BUILT_IN_FAMILIES.filter((f) => f.discipline === template || f.discipline === 'generic');
+  }, [template]);
+
+  const usageCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const inst of nestedInstances) {
+      counts[inst.familyId] = (counts[inst.familyId] ?? 0) + 1;
+    }
+    return counts;
+  }, [nestedInstances]);
+
+  const hostParamRefs: HostParamRef[] = useMemo(
+    () =>
+      params.map((p) => ({
+        key: p.key,
+        label: p.label,
+        type: p.type,
+      })),
+    [params],
+  );
+
+  const selectedNested = selectedNestedIndex !== null ? nestedInstances[selectedNestedIndex] : null;
+  const selectedNestedFamily = selectedNested
+    ? (loadedFamilies.find((f) => f.id === selectedNested.familyId) ??
+      BUILT_IN_FAMILIES.find((f) => f.id === selectedNested.familyId))
+    : undefined;
 
   const templates: { value: Template; label: string }[] = [
     { value: 'generic_model', label: t('familyEditor.templateGenericModel') },
@@ -342,6 +461,63 @@ export function FamilyEditorWorkbench(): JSX.Element {
           onUpdate={updateArrayDraft}
           onFinish={finishArray}
           onCancel={cancelArray}
+        />
+      )}
+
+      <div className="grid gap-4 md:grid-cols-[260px_1fr]">
+        <LoadedFamiliesSidebar
+          families={loadedFamilies}
+          usageCounts={usageCounts}
+          onAddInstance={(familyId) => addNestedFamilyInstance(familyId)}
+        />
+        <section
+          className="border rounded p-3 min-h-[180px] flex flex-col gap-2"
+          role="region"
+          aria-label={t('familyEditor.editingCanvasAriaLabel')}
+          data-testid="family-editing-canvas"
+          onDrop={onCanvasDrop}
+          onDragOver={onCanvasDragOver}
+        >
+          <header className="flex items-center gap-2">
+            <h2 className="font-semibold">{t('familyEditor.editingCanvasHeading')}</h2>
+            <span className="text-xs text-muted">
+              {t('familyEditor.editingCanvasHint', { count: nestedInstances.length })}
+            </span>
+          </header>
+          {nestedInstances.length === 0 ? (
+            <p className="text-xs text-muted">{t('familyEditor.editingCanvasEmpty')}</p>
+          ) : (
+            <ul className="space-y-1 text-sm" data-testid="nested-instances-list">
+              {nestedInstances.map((inst, i) => (
+                <li key={i}>
+                  <button
+                    onClick={() => setSelectedNestedIndex(i)}
+                    className={
+                      selectedNestedIndex === i ? 'underline font-semibold' : 'underline text-left'
+                    }
+                    aria-label={`select-nested-instance-${i}`}
+                    data-testid={`nested-instance-${i}`}
+                  >
+                    {t('familyEditor.nestedInstanceListLabel', {
+                      index: i + 1,
+                      familyId: inst.familyId,
+                      x: Math.round(inst.positionMm.xMm),
+                      y: Math.round(inst.positionMm.yMm),
+                    })}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </div>
+
+      {selectedNested && selectedNestedIndex !== null && (
+        <NestedInstanceInspector
+          instance={selectedNested}
+          nestedFamily={selectedNestedFamily}
+          hostParams={hostParamRefs}
+          onUpdate={(patch) => updateNestedInstance(selectedNestedIndex, patch)}
         />
       )}
 
@@ -587,6 +763,17 @@ export function FamilyEditorWorkbench(): JSX.Element {
       >
         {t('familyEditor.loadIntoProject')}
       </button>
+      {lastNestedAction && (
+        <span
+          data-testid="last-nested-action"
+          data-family-id={lastNestedAction.familyId}
+          data-x={lastNestedAction.positionMm.xMm}
+          data-y={lastNestedAction.positionMm.yMm}
+          className="sr-only"
+        >
+          {lastNestedAction.type}:{lastNestedAction.familyId}
+        </span>
+      )}
     </div>
   );
 }
