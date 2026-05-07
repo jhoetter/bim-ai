@@ -36,7 +36,33 @@ export interface SweepGeometryNode {
   materialKey?: string;
 }
 
-export type FamilyGeometryNode = SweepGeometryNode;
+/* ─── FAM-01: Nested-family parameter bindings ─────────────────────────── */
+
+/** How a nested family's parameter takes its effective value. */
+export type ParameterBinding =
+  | { kind: 'literal'; value: number | string | boolean }
+  | { kind: 'host_param'; paramName: string }
+  | { kind: 'formula'; expression: string };
+
+/**
+ * FAM-01 — reference to a nested family instance.
+ *
+ * Acts like a placement of `familyId` inside the host family's geometry
+ * tree. Parameter values for the nested family are computed at
+ * resolution time from `parameterBindings`. Optional `visibilityBinding`
+ * (used together with FAM-03 yes/no params) hides the whole subtree
+ * when the bound host param's truthiness mismatches `whenTrue`.
+ */
+export interface FamilyInstanceRefNode {
+  kind: 'family_instance_ref';
+  familyId: string;
+  positionMm: { xMm: number; yMm: number; zMm: number };
+  rotationDeg: number;
+  parameterBindings: Record<string, ParameterBinding>;
+  visibilityBinding?: { paramName: string; whenTrue: boolean };
+}
+
+export type FamilyGeometryNode = SweepGeometryNode | FamilyInstanceRefNode;
 
 export interface FamilyDefinition {
   id: string;
@@ -52,6 +78,13 @@ export interface FamilyDefinition {
     parameters: Record<string, unknown>;
     isBuiltIn: true;
   }[];
+  /**
+   * FAM-01: optional family-authored geometry tree (sweep nodes +
+   * nested-family instance refs). Built-in element kinds keep their
+   * bespoke `geometryFns/*.ts` builders; this field carries
+   * authored/loadable family geometry that the FAM-01 resolver walks.
+   */
+  geometry?: FamilyGeometryNode[];
 }
 
 // Parameter resolution: instance override > type params > family default > inline fallback

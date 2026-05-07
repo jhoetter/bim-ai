@@ -1,0 +1,230 @@
+/**
+ * FAM-01 — nested family resolver.
+ *
+ * Given a family-authored geometry tree (sweep nodes + nested
+ * `family_instance_ref` placements) plus a host parameter map and
+ * a family catalog, walks the tree and produces a Three.js Group
+ * containing the resolved geometry. Nested-family parameter bindings
+ * pull their effective values from host params, literals, or
+ * FAM-04 formulas.
+ *
+ * Geometry is emitted in millimetre space — the same convention as
+ * `meshFromSweep` (FAM-02). Callers scale to scene units.
+ *
+ * Cycle detection: BFS up to depth 10. `detectFamilyCycle` is
+ * intended for save-time validation; the resolver itself also
+ * throws if it walks past the depth limit, defensively guarding
+ * against in-memory graphs that bypassed save validation.
+ */
+
+import * as THREE from 'three';
+import { evaluateFormulaOrThrow } from '../lib/expressionEvaluator';
+import { meshFromSweep } from './sweepGeometry';
+import type {
+  FamilyDefinition,
+  FamilyGeometryNode,
+  FamilyInstanceRefNode,
+  ParameterBinding,
+  SweepGeometryNode,
+} from './types';
+
+/** Max recursion depth for nested-family expansion. */
+export const MAX_NESTED_FAMILY_DEPTH = 10;
+
+export type HostParams = Record<string, number | boolean | string>;
+
+export type FamilyCatalogLookup = Record<string, FamilyDefinition>;
+
+/**
+ * Compute the effective value of a single binding against the host
+ * parameter map. Throws on missing host param or formula error.
+ */
+export function resolveParameterBinding(
+  binding: ParameterBinding,
+  hostParams: HostParams,
+): number | boolean | string {
+  if (binding.kind === 'literal') return binding.value;
+  if (binding.kind === 'host_param') {
+    if (!Object.prototype.hasOwnProperty.call(hostParams, binding.paramName)) {
+      throw new Error(`host_param '${binding.paramName}' not present on host`);
+    }
+    return hostParams[binding.paramName];
+  }
+  // formula
+  const numericParams: Record<string, number | boolean> = {};
+  for (const [k, v] of Object.entries(hostParams)) {
+    if (typeof v === 'number' || typeof v === 'boolean') numericParams[k] = v;
+  }
+  return evaluateFormulaOrThrow(binding.expression, numericParams);
+}
+
+/**
+ * Build the parameter map a nested family will be resolved against:
+ * start from the family's declared defaults, then layer the
+ * `parameterBindings` resolved against the host's params.
+ */
+function buildNestedParamMap(
+  def: FamilyDefinition,
+  bindings: Record<string, ParameterBinding>,
+  hostParams: HostParams,
+): HostParams {
+  const out: HostParams = {};
+  for (const p of def.params) {
+    const dv = p.default;
+    if (typeof dv === 'number' || typeof dv === 'boolean' || typeof dv === 'string') {
+      out[p.key] = dv;
+    }
+  }
+  for (const [paramName, binding] of Object.entries(bindings)) {
+    out[paramName] = resolveParameterBinding(binding, hostParams);
+  }
+  return out;
+}
+
+/**
+ * Resolve a single geometry node to an Object3D.
+ *
+ * Sweep nodes go through FAM-02's `meshFromSweep`. Nested-family
+ * refs recurse into `resolveNestedFamilyInstance`. Returns null
+ * for nodes hidden by their `visibilityBinding`.
+ */
+function resolveGeometryNode(
+  node: FamilyGeometryNode,
+  hostParams: HostParams,
+  catalog: FamilyCatalogLookup,
+  depth: number,
+): THREE.Object3D | null {
+  if (node.kind === 'sweep') {
+    return resolveSweepNode(node);
+  }
+  if (node.kind === 'family_instance_ref') {
+    return resolveNestedFamilyInstance(node, hostParams, catalog, depth);
+  }
+  return null;
+}
+
+function resolveSweepNode(node: SweepGeometryNode): THREE.Mesh {
+  const geom = meshFromSweep(node);
+  return new THREE.Mesh(geom);
+}
+
+/**
+ * FAM-01 entry point. Walks `node.familyId`'s geometry tree using
+ * effective parameter values derived from `node.parameterBindings`
+ * + `hostParams`. Returns a Group positioned/rotated per `node`'s
+ * placement. Hidden subtrees (per `visibilityBinding`) return an
+ * empty Group rather than null so callers can still attach them.
+ */
+export function resolveNestedFamilyInstance(
+  node: FamilyInstanceRefNode,
+  hostParams: HostParams,
+  catalog: FamilyCatalogLookup,
+  depth: number = 0,
+): THREE.Group {
+  if (depth > MAX_NESTED_FAMILY_DEPTH) {
+    throw new Error(
+      `FAM-01: nested family depth ${depth} exceeds MAX_NESTED_FAMILY_DEPTH (${MAX_NESTED_FAMILY_DEPTH}); cycle in family graph?`,
+    );
+  }
+  const def = catalog[node.familyId];
+  if (!def) {
+    throw new Error(`FAM-01: family '${node.familyId}' not found in catalog`);
+  }
+  const group = new THREE.Group();
+  group.userData.familyId = node.familyId;
+
+  // Visibility short-circuit before we recurse.
+  if (node.visibilityBinding) {
+    const v = hostParams[node.visibilityBinding.paramName];
+    const truthy = Boolean(v);
+    if (truthy !== node.visibilityBinding.whenTrue) {
+      group.position.set(node.positionMm.xMm, node.positionMm.yMm, node.positionMm.zMm);
+      group.rotation.y = (node.rotationDeg * Math.PI) / 180;
+      return group;
+    }
+  }
+
+  const nestedParams = buildNestedParamMap(def, node.parameterBindings, hostParams);
+  const geometry = def.geometry ?? [];
+  for (const geomNode of geometry) {
+    const child = resolveGeometryNode(geomNode, nestedParams, catalog, depth + 1);
+    if (child) group.add(child);
+  }
+
+  group.position.set(node.positionMm.xMm, node.positionMm.yMm, node.positionMm.zMm);
+  group.rotation.y = (node.rotationDeg * Math.PI) / 180;
+  return group;
+}
+
+/**
+ * Resolve a top-level family's geometry given a parameter map.
+ *
+ * Useful for both family-thumbnail rendering and KRN-09's
+ * `family_instance` curtain panel resolution where the host (the
+ * curtain wall) doesn't itself live in a family-instance ref.
+ */
+export function resolveFamilyGeometry(
+  familyId: string,
+  params: HostParams,
+  catalog: FamilyCatalogLookup,
+): THREE.Group {
+  const def = catalog[familyId];
+  if (!def) throw new Error(`FAM-01: family '${familyId}' not found in catalog`);
+  // Detect cycles defensively before we walk.
+  const cycle = detectFamilyCycle(familyId, catalog);
+  if (cycle) {
+    throw new Error(`FAM-01: cycle detected in family graph: ${cycle.join(' → ')}`);
+  }
+  const group = new THREE.Group();
+  group.userData.familyId = familyId;
+  const merged: HostParams = {};
+  for (const p of def.params) {
+    const dv = p.default;
+    if (typeof dv === 'number' || typeof dv === 'boolean' || typeof dv === 'string') {
+      merged[p.key] = dv;
+    }
+  }
+  Object.assign(merged, params);
+  for (const geomNode of def.geometry ?? []) {
+    const child = resolveGeometryNode(geomNode, merged, catalog, 1);
+    if (child) group.add(child);
+  }
+  return group;
+}
+
+/**
+ * BFS the family-instance-ref graph starting at `rootFamilyId`.
+ * Returns the cyclic path (`[a, b, c, a]`) if a cycle is found, or
+ * `null` otherwise. Throws if the BFS frontier exceeds
+ * MAX_NESTED_FAMILY_DEPTH (which is itself an upper bound on the
+ * graph diameter we permit, regardless of cycles).
+ *
+ * Intended for save-time validation. Catalog edits that would
+ * introduce a cycle should be rejected by calling this with the
+ * proposed catalog state.
+ */
+export function detectFamilyCycle(
+  rootFamilyId: string,
+  catalog: FamilyCatalogLookup,
+): string[] | null {
+  type Step = { id: string; path: string[] };
+  const queue: Step[] = [{ id: rootFamilyId, path: [rootFamilyId] }];
+  while (queue.length > 0) {
+    const { id, path } = queue.shift()!;
+    if (path.length > MAX_NESTED_FAMILY_DEPTH) {
+      throw new Error(
+        `FAM-01: family graph depth exceeds ${MAX_NESTED_FAMILY_DEPTH} for root '${rootFamilyId}'`,
+      );
+    }
+    const def = catalog[id];
+    if (!def?.geometry) continue;
+    for (const node of def.geometry) {
+      if (node.kind !== 'family_instance_ref') continue;
+      if (path.includes(node.familyId)) {
+        return [...path, node.familyId];
+      }
+      queue.push({ id: node.familyId, path: [...path, node.familyId] });
+    }
+  }
+  return null;
+}
