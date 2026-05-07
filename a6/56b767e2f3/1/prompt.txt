@@ -1,0 +1,2 @@
+Your task for this sprint is in nightshift/seed-fidelity.md. Read it end-to-end and execute. Do not stop until every WP is done and the rendered screenshot matches
+  ▎ spec/target-house-vis-colored.png.
