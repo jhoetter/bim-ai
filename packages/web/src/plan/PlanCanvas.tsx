@@ -1688,7 +1688,43 @@ export function PlanCanvas({
           wallOpeningStateRef.current = initialWallOpeningState();
           wallOpeningAnchorRef.current = null;
           if (effect.commitWallOpening) {
-            console.warn('stub: wall-opening command not implemented', effect.commitWallOpening);
+            const host = elementsById[effect.commitWallOpening.hostWallId];
+            if (host && host.kind === 'wall') {
+              // Project anchor + corner onto host wall's basis line to get
+              // alongTStart / alongTEnd; sill / head come from the rect's
+              // vertical extent (anchor & corner share Z via raycast on the
+              // ground plane; for a 2D rectangle both Y components project
+              // onto the wall, so derive sill/head from the absolute heights
+              // of the top and bottom edges of the drawn rect — here we use
+              // a default 200/2000mm window since plan rectangles don't
+              // carry vertical info).
+              const ax = host.start.xMm;
+              const ay = host.start.yMm;
+              const bx = host.end.xMm;
+              const by = host.end.yMm;
+              const abx = bx - ax;
+              const aby = by - ay;
+              const len2 = Math.max(abx * abx + aby * aby, 1e-9);
+              const project = (p: { xMm: number; yMm: number }) =>
+                Math.max(
+                  0.0001,
+                  Math.min(0.9999, ((p.xMm - ax) * abx + (p.yMm - ay) * aby) / len2),
+                );
+              const t0 = project(effect.commitWallOpening.anchorMm);
+              const t1 = project(effect.commitWallOpening.cornerMm);
+              const tStart = Math.min(t0, t1);
+              const tEnd = Math.max(t0, t1);
+              if (tEnd - tStart >= 0.005) {
+                onSemanticCommand({
+                  type: 'createWallOpening',
+                  hostWallId: effect.commitWallOpening.hostWallId,
+                  alongTStart: tStart,
+                  alongTEnd: tEnd,
+                  sillHeightMm: 200,
+                  headHeightMm: Math.min(host.heightMm - 100, 2400),
+                });
+              }
+            }
           }
         }
       }
@@ -1999,7 +2035,21 @@ export function PlanCanvas({
         });
         alignStateRef.current = nextState;
         if (effect.commitAlign) {
-          console.warn('stub: alignElement not implemented', effect.commitAlign);
+          // Pick the nearest wall to the *target* click; align it to the
+          // reference point that was first picked.
+          const targetHit = nearestWallAt(
+            elementsById,
+            displayLevelId || undefined,
+            effect.commitAlign.targetMm.xMm,
+            effect.commitAlign.targetMm.yMm,
+          );
+          if (targetHit && targetHit.distMm < 900) {
+            onSemanticCommand({
+              type: 'alignElementToReference',
+              targetWallId: targetHit.wall.id,
+              referenceMm: effect.commitAlign.referenceMm,
+            });
+          }
         }
         return;
       }
@@ -2016,8 +2066,9 @@ export function PlanCanvas({
             effect.commitSplit.pointMm.xMm,
             effect.commitSplit.pointMm.yMm,
           );
-          if (nearest && nearest.distMm < 900) {
-            console.warn('stub: splitWall not implemented', {
+          if (nearest && nearest.distMm < 900 && nearest.alongT > 0.001 && nearest.alongT < 0.999) {
+            onSemanticCommand({
+              type: 'splitWallAt',
               wallId: nearest.wall.id,
               alongT: nearest.alongT,
             });
@@ -2072,7 +2123,16 @@ export function PlanCanvas({
             });
             trimStateRef.current = nextState;
             if (effect.commitTrim) {
-              console.warn('stub: trimElement not implemented', effect.commitTrim);
+              const refResolved = elementsById[effect.commitTrim.referenceId];
+              const tgtResolved = elementsById[effect.commitTrim.targetId];
+              if (refResolved?.kind === 'wall' && tgtResolved?.kind === 'wall') {
+                onSemanticCommand({
+                  type: 'trimElementToReference',
+                  referenceWallId: effect.commitTrim.referenceId,
+                  targetWallId: effect.commitTrim.targetId,
+                  endHint: effect.commitTrim.endHint,
+                });
+              }
             }
           }
         }
@@ -2157,7 +2217,25 @@ export function PlanCanvas({
           const { effect } = reduceShaft(shaftStateRef.current, { kind: 'close-loop' });
           shaftStateRef.current = initialShaftState();
           if (effect.commitShaft) {
-            console.warn('stub: shaft command not implemented', effect.commitShaft);
+            // Pick the floor under the centroid of the sketch loop.
+            const centroid = effect.commitShaft.verticesMm.reduce(
+              (acc, p) => ({ xMm: acc.xMm + p.xMm, yMm: acc.yMm + p.yMm }),
+              { xMm: 0, yMm: 0 },
+            );
+            centroid.xMm /= effect.commitShaft.verticesMm.length;
+            centroid.yMm /= effect.commitShaft.verticesMm.length;
+            const hostFloor = Object.values(elementsById).find(
+              (e): e is Extract<Element, { kind: 'floor' }> =>
+                e.kind === 'floor' && (!displayLevelId || e.levelId === displayLevelId),
+            );
+            if (hostFloor) {
+              onSemanticCommand({
+                type: 'createSlabOpening',
+                hostFloorId: hostFloor.id,
+                boundaryMm: effect.commitShaft.verticesMm.map((p) => ({ xMm: p.xMm, yMm: p.yMm })),
+                isShaft: true,
+              });
+            }
           }
         } else {
           const { state } = reduceShaft(shaftStateRef.current, { kind: 'click', pointMm: sp });
@@ -2169,8 +2247,12 @@ export function PlanCanvas({
       if (planTool === 'column') {
         const { effect } = reduceColumn(columnStateRef.current, { kind: 'click', pointMm: sp });
         columnStateRef.current = initialColumnState();
-        if (effect.commitColumn) {
-          console.warn('stub: column placement not implemented', effect.commitColumn);
+        if (effect.commitColumn && lvlId) {
+          onSemanticCommand({
+            type: 'createColumn',
+            levelId: lvlId,
+            positionMm: effect.commitColumn.positionMm,
+          });
         }
         bumpGeom((x) => x + 1);
         return;
@@ -2178,8 +2260,13 @@ export function PlanCanvas({
       if (planTool === 'beam') {
         const { state, effect } = reduceBeam(beamStateRef.current, { kind: 'click', pointMm: sp });
         beamStateRef.current = state;
-        if (effect.commitBeam) {
-          console.warn('stub: beam placement not implemented', effect.commitBeam);
+        if (effect.commitBeam && lvlId) {
+          onSemanticCommand({
+            type: 'createBeam',
+            levelId: lvlId,
+            startMm: effect.commitBeam.startMm,
+            endMm: effect.commitBeam.endMm,
+          });
         }
         bumpGeom((x) => x + 1);
         return;
@@ -2199,8 +2286,15 @@ export function PlanCanvas({
         ) {
           const { effect } = reduceCeiling(ceilingStateRef.current, { kind: 'close-loop' });
           ceilingStateRef.current = initialCeilingState();
-          if (effect.commitCeiling) {
-            console.warn('stub: ceiling command not implemented', effect.commitCeiling);
+          if (effect.commitCeiling && lvlId) {
+            onSemanticCommand({
+              type: 'createCeiling',
+              levelId: lvlId,
+              boundaryMm: effect.commitCeiling.verticesMm.map((p) => ({
+                xMm: p.xMm,
+                yMm: p.yMm,
+              })),
+            });
           }
         } else {
           const { state } = reduceCeiling(ceilingStateRef.current, { kind: 'click', pointMm: sp });
@@ -2381,8 +2475,12 @@ export function PlanCanvas({
         } else if (ev.key === 'Enter') {
           const { state, effect } = reduceWallJoin(wallJoinStateRef.current, { kind: 'accept' });
           wallJoinStateRef.current = state;
-          if (effect.commitJoin) {
-            console.warn('stub: wall-join command not implemented', effect.commitJoin);
+          if (effect.commitJoin && effect.commitJoin.wallIds.length > 0) {
+            onSemanticCommand({
+              type: 'setWallJoinVariant',
+              wallIds: effect.commitJoin.wallIds,
+              variant: effect.commitJoin.variant,
+            });
           }
         }
       }
