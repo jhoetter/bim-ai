@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "9dfcfbf4806d",
+  "session_id": "bb3cf0bb-f384-4179-9af8-a917a5f6df45",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-07T06:16:50.449416Z",
+  "branch": "dayshift-fam-keystone",
+  "checkpoints_count": 1,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "10ec23be83f0",
+  "token_usage": {
+    "input_tokens": 443,
+    "cache_creation_tokens": 1066990,
+    "cache_read_tokens": 75943957,
+    "output_tokens": 327021,
+    "api_call_count": 303
+  },
+  "session_metrics": {
+    "turn_count": 27
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 20,
+      "agent_lines_removed": 0
+    }
+  ]
+}

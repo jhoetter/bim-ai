@@ -1,0 +1,23 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "9dfcfbf4806d",
+  "strategy": "manual-commit",
+  "branch": "dayshift-fam-keystone",
+  "checkpoints_count": 1,
+  "files_touched": null,
+  "sessions": [
+    {
+      "metadata": "/9d/fcfbf4806d/0/metadata.json",
+      "transcript": "/9d/fcfbf4806d/0/full.jsonl",
+      "content_hash": "/9d/fcfbf4806d/0/content_hash.txt",
+      "prompt": "/9d/fcfbf4806d/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 443,
+    "cache_creation_tokens": 1066990,
+    "cache_read_tokens": 75943957,
+    "output_tokens": 327021,
+    "api_call_count": 303
+  }
+}
