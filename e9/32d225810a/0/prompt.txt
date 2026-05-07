@@ -1,0 +1,152 @@
+please implement @nightshift/nightshift-5.md  read it end-to-end and execute. Do not stop until every WP is done.
+
+---
+
+# Day-shift continuation — complete the three Agent-5 partial WPs
+
+  You are picking up where last night's parallel-agent run left off. Six of seven agents fully shipped their queues; Agent 5 had the heaviest queue and shipped the kernel/helper half of
+  three WPs but skipped the renderer/UI glue. Your job is to land that glue.
+
+  ## Repo
+
+  `/Users/jhoetter/repos/bim-ai`. Branch off latest `main`. Source of truth: `spec/workpackage-master-tracker.md` (~1370 lines — read it end-to-end first).
+
+  ## Branch + merge protocol
+
+  Work on a fresh branch `dayshift-vie-glue`. After each WP:
+
+  ```bash
+  git add -A
+  git commit -m "feat(<scope>): <WP-ID> — <one-line summary>
+
+  Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
+  git push origin dayshift-vie-glue
+  git fetch origin
+  git rebase origin/main
+  git push origin dayshift-vie-glue --force-with-lease
+  git push origin dayshift-vie-glue:main   # direct push works around locked-main-worktree issue
+  ```
+
+  If `main` is locked locally by a worktree, the direct `git push origin <branch>:main` is the working pattern (multiple nightshift agents proved this last night).
+
+  ## Quality gates (every commit must pass)
+
+  1. `pnpm exec tsc --noEmit`
+  2. `pnpm vitest run` (in package(s) you touched)
+  3. `cd app && .venv/bin/pytest -q --no-cov tests/<files-you-touched>`
+  4. `make verify` before merging to main
+
+  Never `--no-verify`, never delete failing tests. Fix root causes.
+
+  ## Tracker update
+
+  After each WP lands on main: change row's `State` from `partial` → `done`, add `done in <commit-hash>`. Commit separately as `chore(tracker): mark <WP-ID> done`. Push, rebase, push to
+  main.
+
+  ## Anti-laziness directive
+
+  Done means code written, tests added, all four gates pass, branch merged to main, tracker updated, commit visible on `origin/main`. Anything less is not done. Do not stop after the
+  first WP. Do not write a celebration paragraph. Just continue to the next.
+
+  ---
+
+  ## Your three WPs
+
+  These three rows in the tracker are currently `partial`. The data model + engine + helper-function half landed last night; the rendering / UI / interaction layer is what's missing.
+
+  ### WP 1 — VIE-03: Named elevation views (renderer + tool wiring)
+
+  **Tracker entry:** `spec/workpackage-master-tracker.md` → "Strategic Primitive 5" → VIE-03.
+
+  **What's already done** (in commit `7c7efda5`):
+  - `elevation_view` element kind in `packages/core/src/index.ts` and `app/bim_ai/elements.py`
+  - `CreateElevationViewCmd` engine command wired through `app/bim_ai/commands.py` + `app/bim_ai/engine.py`
+  - `elevation_view_to_section_cut` projection helper that maps direction → section line
+  - "Elevations" group in the Project Browser tree
+
+  **What you need to add:**
+
+  1. **Plan-canvas marker rendering.** When an `elevation_view` exists at a level, render its marker as a triangular bubble pointing in the `direction` (north / south / east / west /
+  custom). Place at the corresponding edge of the level's bounding box; user can drag to reposition (commits `UpdateElementProperty` on `cropMinMm` / `cropMaxMm` or a dedicated
+  `MoveElevationMarker` command). Match the visual convention (filled triangle pointing in the cardinal direction, offset from the building edge with a callout line).
+  2. **Double-click marker to enter the elevation view.** Wire into the existing view-activation hook (search for `setActiveViewpointId` or `activatePlanView` for the pattern).
+  3. **Ribbon / toolbar Elevation tool.** Add an "Elevation" entry under View ribbon (`packages/web/src/tools/toolRegistry.ts` plus the ribbon UI). Tool flow: click tool → click position
+   on canvas → tool prompts for direction (or auto-orients to nearest exterior wall) → commits `CreateElevationView`.
+  4. **Tests:** vitest for marker rendering presence + position; vitest for double-click activation; vitest for the create flow.
+
+  **Files:** `packages/web/src/plan/planProjection.ts`, `packages/web/src/plan/PlanCanvas.tsx`, `packages/web/src/plan/planElementMeshBuilders.ts` (or wherever marker meshes are
+  emitted), `packages/web/src/tools/toolRegistry.ts`, possibly the ribbon component, plus tests.
+
+  **Acceptance.** Right-click on a plan canvas → "Add Elevation: North" creates an `elevation_view` oriented north; the marker appears in plan; double-clicking the marker opens the
+  elevation view in the central canvas. The Elevation tool in the ribbon also works for click-to-place.
+
+  **Effort:** 3-4 hours.
+
+  ---
+
+  ### WP 2 — ANN-02: Section / elevation generation from a wall face (right-click menu hookup)
+
+  **Tracker entry:** `spec/workpackage-master-tracker.md` → "Annotation / 2D linework" → ANN-02.
+
+  **What's already done** (in commit `b3c0e20b`):
+  - `sectionCutFromWall(wall)` helper computes `lineStartMm` / `lineEndMm` / `cropDepthMm` perpendicular to a wall midpoint with sensible margin
+  - `elevationFromWall(wall)` helper computes `direction` + `cropMinMm/MaxMm` for a wall-facing elevation, with 5° cardinal-snap and custom-angle fallback
+
+  **What you need to add:**
+
+  1. **Right-click context menu** on a wall in the 3D viewport (`Viewport.tsx`) and the plan canvas (`PlanCanvas.tsx`):
+     - "Generate Section Cut" — calls `sectionCutFromWall`, fires `CreateSectionCut` command, then auto-creates a `plan_view` with the section as its scope and switches the active view
+  to it.
+     - "Generate Elevation" — calls `elevationFromWall`, fires `CreateElevationView` (depends on VIE-03 being fully done — sequence after WP 1 above), auto-creates a plan view, switches
+  to it.
+  2. **Tests:** vitest for the right-click menu emitting the correct commands; vitest verifying the new plan view is opened.
+
+  **Files:** `packages/web/src/plan/PlanCanvas.tsx`, `packages/web/src/Viewport.tsx`, the existing context-menu component (grep for `contextmenu` or `ContextMenu`), plus tests.
+
+  **Acceptance.** Right-click a wall in 3D → "Generate Elevation" → an `elevation_view` is created perpendicular to the wall; elevation marker appears in plan; the new plan view opens in
+   the central canvas displaying the elevation.
+
+  **Effort:** 2 hours (after WP 1).
+
+  ---
+
+  ### WP 3 — VIE-01: Detail levels render binding (wire helpers into projection)
+
+  **Tracker entry:** `spec/workpackage-master-tracker.md` → "Strategic Primitive 5" → VIE-01.
+
+  **What's already done** (in commit `a0883092`):
+  - `wallPlanLinesForDetailLevel(wall, level, wallType)` helper returns 1 / 2 / 4 lines depending on `'coarse' | 'medium' | 'fine'`
+  - Door / window / stair feature gates in the same helper module
+  - Curtain-grid + mullion gating helpers
+  - Presentational `PlanDetailLevelToolbar` component (Coarse/Med/Fine selector)
+
+  **What you need to add:**
+
+  1. **Wire `wallPlanLinesForDetailLevel` into `planProjection.ts`** — replace the current single-line wall projection with a call to the helper, passing `view.planDetailLevel`.
+  2. **Wire feature gates for doors / windows / stairs / curtain walls** in `planElementMeshBuilders.ts` (or wherever those plan symbols are emitted) — gate them by detail level.
+  3. **Wire `PlanDetailLevelToolbar`** into the plan canvas chrome (`PlanCanvas.tsx`). The toolbar should sit at the bottom of the plan canvas (matches Revit's "View Control Bar"
+  position). When the user clicks Coarse/Medium/Fine, commit an `UpdateElementProperty` on the active `plan_view`'s `planDetailLevel` field, and the rendering should update reactively.
+  4. **Tests:** update `planProjection.test.ts` to assert different line counts at different detail levels; vitest for the toolbar firing the correct command.
+
+  **Files:** `packages/web/src/plan/planProjection.ts`, `packages/web/src/plan/planProjectionWire.ts`, `packages/web/src/plan/planElementMeshBuilders.ts`,
+  `packages/web/src/plan/PlanCanvas.tsx`, plus tests.
+
+  **Acceptance.** Switching the demo plan view from Fine → Coarse via the toolbar visibly simplifies rendering (single-line walls, no curtain-wall mullion grid, no door swing arc
+  detail). Switching back restores layer detail.
+
+  **Effort:** 3-4 hours.
+
+  ---
+
+  ## Sequencing
+
+  Do them in order: WP 1 (VIE-03) → WP 2 (ANN-02) → WP 3 (VIE-01). WP 2 depends on WP 1 because the right-click "Generate Elevation" path relies on the marker rendering + view-activation
+   that WP 1 ships.
+
+  ## Total expected runtime
+
+  8-10 hours of focused work. Each WP is glue, not new design — the load-bearing kernel work shipped overnight. Don't overthink it.
+
+  ## When done
+
+  Append a brief status to `nightshift/dayshift-vie-glue-status.md` listing the three commits + any incidental observations. Then stop.
