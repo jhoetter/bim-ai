@@ -62,6 +62,7 @@ from bim_ai.commands import (
     DeleteElementsCmd,
     DeleteLinkModelCmd,
     ExtendFloorInsulationCmd,
+    RunClashTestCmd,
     InsertDoorOnWallCmd,
     InsertWindowOnWallCmd,
     MirrorElementsCmd,
@@ -101,6 +102,8 @@ from bim_ai.commands import (
     UpsertRoomVolumeCmd,
     UpsertScheduleCmd,
     UpsertScheduleFiltersCmd,
+    UpsertClashTestCmd,
+    UpsertSelectionSetCmd,
     UpsertSheetCmd,
     UpsertSheetViewportsCmd,
     UpsertSiteCmd,
@@ -109,7 +112,9 @@ from bim_ai.commands import (
     UpsertViewTemplateCmd,
     UpsertWallTypeCmd,
 )
+from bim_ai.clash_engine import run_clash_test
 from bim_ai.constraints import Violation, evaluate
+from bim_ai.link_expansion import SourceDocProvider
 from bim_ai.datum_levels import (
     expected_level_elevation_from_parent,
     propagate_dependent_level_elevations,
@@ -123,6 +128,8 @@ from bim_ai.elements import (
     BalconyElem,
     BcfElem,
     CalloutElem,
+    ClashResultSpec,
+    ClashTestElem,
     DetailLineElem,
     DetailRegionElem,
     DimensionElem,
@@ -161,6 +168,8 @@ from bim_ai.elements import (
     RoomSeparationElem,
     ScheduleElem,
     SectionCutElem,
+    SelectionSetElem,
+    SelectionSetRuleSpec,
     SheetElem,
     SiteContextObjectRow,
     SiteElem,
@@ -692,7 +701,27 @@ def _enforce_pin_block(els: dict[str, Element], cmd: Command) -> None:
         )
 
 
-def apply_inplace(doc: Document, cmd: Command) -> None:
+def _no_source_provider(_uuid: str, _rev: int | None) -> None:
+    """FED-02: default source provider used when no DB-backed resolver was
+    threaded through (unit tests, intra-host operations). Returns ``None`` so
+    cross-link operations gracefully fall back to host-only behaviour.
+    """
+    return None
+
+
+def apply_inplace(
+    doc: Document,
+    cmd: Command,
+    *,
+    source_provider: SourceDocProvider | None = None,
+) -> None:
+    """Apply ``cmd`` to ``doc`` in place.
+
+    ``source_provider`` is optional: only ``RunClashTestCmd`` (FED-02) consults
+    it to walk linked source documents for cross-link clash detection. All
+    other commands ignore it. The route layer threads a real DB-backed
+    provider; tests and intra-host paths can omit it.
+    """
     els = doc.elements
     _enforce_linked_readonly(cmd)
     _enforce_pin_block(els, cmd)
@@ -3001,6 +3030,58 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 raise ValueError("deleteLinkModel.linkId must reference a link_model element")
             del els[cmd.link_id]
 
+        case UpsertSelectionSetCmd():
+            sid = cmd.id or new_id()
+            existing = els.get(sid)
+            if existing is not None and not isinstance(existing, SelectionSetElem):
+                raise ValueError(
+                    f"upsertSelectionSet.id '{sid}' refers to a non-selection_set element"
+                )
+            rules: list[SelectionSetRuleSpec] = []
+            for r in cmd.filter_rules:
+                rules.append(
+                    SelectionSetRuleSpec(
+                        field=r.field,
+                        operator=r.operator,
+                        value=r.value,
+                        link_scope=r.link_scope,
+                    )
+                )
+            els[sid] = SelectionSetElem(
+                kind="selection_set",
+                id=sid,
+                name=cmd.name,
+                filter_rules=rules,
+            )
+
+        case UpsertClashTestCmd():
+            cid = cmd.id or new_id()
+            existing = els.get(cid)
+            if existing is not None and not isinstance(existing, ClashTestElem):
+                raise ValueError(
+                    f"upsertClashTest.id '{cid}' refers to a non-clash_test element"
+                )
+            prior_results = existing.results if isinstance(existing, ClashTestElem) else None
+            els[cid] = ClashTestElem(
+                kind="clash_test",
+                id=cid,
+                name=cmd.name,
+                set_a_ids=list(cmd.set_a_ids),
+                set_b_ids=list(cmd.set_b_ids),
+                tolerance_mm=float(cmd.tolerance_mm),
+                results=prior_results,
+            )
+
+        case RunClashTestCmd():
+            target = els.get(cmd.clash_test_id)
+            if not isinstance(target, ClashTestElem):
+                raise ValueError(
+                    "runClashTest.clashTestId must reference a clash_test element"
+                )
+            provider = source_provider or _no_source_provider
+            results: list[ClashResultSpec] = run_clash_test(doc, target, provider)
+            els[cmd.clash_test_id] = target.model_copy(update={"results": results})
+
     # KRN-08: areas track a derived computedAreaSqMm. Recompute after every
     # command apply so create/update/delete of areas (and shafts that affect
     # `net` rule-set deductions) keep the value current.
@@ -4017,6 +4098,8 @@ def try_apply_kernel_ifc_authoritative_replay_v0(
 def try_commit_bundle(
     doc: Document,
     cmds_raw: list[dict[str, Any]],
+    *,
+    source_provider: SourceDocProvider | None = None,
 ) -> tuple[bool, Document | None, list[Command], list[Violation], str]:
     cmds: list[Command] = [coerce_command(c) for c in cmds_raw]
     cand = clone_document(doc)
@@ -4024,7 +4107,7 @@ def try_commit_bundle(
     # has it (matches `try_commit`'s behaviour for the single-command path).
     ensure_internal_origin(cand)
     for cmd in cmds:
-        apply_inplace(cand, cmd)
+        apply_inplace(cand, cmd, source_provider=source_provider)
 
     violations = evaluate(cand.elements)
 
@@ -4038,13 +4121,16 @@ def try_commit_bundle(
 
 
 def try_commit(
-    doc: Document, cmd_raw: dict[str, Any]
+    doc: Document,
+    cmd_raw: dict[str, Any],
+    *,
+    source_provider: SourceDocProvider | None = None,
 ) -> tuple[bool, Document | None, Command, list[Violation], str]:
     cmds = coerce_command(cmd_raw)
     cand = clone_document(doc)
     # KRN-06: backfill the singleton on every commit so persisted state always has it.
     ensure_internal_origin(cand)
-    apply_inplace(cand, cmds)
+    apply_inplace(cand, cmds, source_provider=source_provider)
 
     violations = evaluate(cand.elements)
 

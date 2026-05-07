@@ -230,12 +230,28 @@ export type SelectionSetRule = {
   field: 'category' | 'level' | 'typeName';
   operator: 'equals' | 'contains';
   value: string;
+  /**
+   * FED-02: which models the rule resolves against. `'host'` (default) only
+   * matches host elements; `'all_links'` walks every `link_model` element and
+   * matches inside source models too; `{ specificLinkId }` restricts to one
+   * link. Linked element AABBs are transformed by the link's positionMm +
+   * rotationDeg before clash-checking.
+   */
+  linkScope?: 'host' | 'all_links' | { specificLinkId: string };
 };
 
 export type ClashResult = {
   elementIdA: string;
   elementIdB: string;
   distanceMm: number;
+  /**
+   * FED-02: provenance chain for cross-link clashes. Empty array for host
+   * elements; otherwise a single-element array `[linkId]` identifying the
+   * `link_model` row whose source contains the element. (Multi-hop transitive
+   * links are deferred — the FED-01 expander is single-hop only.)
+   */
+  linkChainA?: string[];
+  linkChainB?: string[];
 };
 
 export type Element =

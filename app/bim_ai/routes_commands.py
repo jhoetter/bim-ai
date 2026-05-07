@@ -30,6 +30,7 @@ from bim_ai.engine import (
     try_commit,
     try_commit_bundle,
 )
+from bim_ai.link_expansion import SourceDocProvider
 from bim_ai.evidence_manifest import (
     agent_evidence_closure_hints,
     export_link_map,
@@ -49,6 +50,52 @@ from bim_ai.schedule_derivation import list_schedule_ids
 from bim_ai.tables import ModelRecord, RedoStackRecord, UndoStackRecord
 
 commands_router = APIRouter()
+
+
+async def _build_link_source_provider(
+    session: AsyncSession, host_doc: Document
+) -> SourceDocProvider:
+    """FED-02: pre-load every linked source document referenced by ``host_doc``
+    and return a sync provider callable for the engine.
+
+    The engine's ``RunClashTestCmd`` apply path needs to walk linked sources to
+    transform their AABBs. This helper resolves them up-front so the
+    synchronous engine apply path can call back into a plain dict lookup.
+    Pinned revisions are resolved through the same undo-replay path that
+    ``_expand_host_links`` uses; here we keep it simple and only resolve at
+    each link's current pinned revision (or latest) — replay-to-revision is
+    deferred for clash-test purposes.
+    """
+
+    cache: dict[tuple[str, int | None], Document | None] = {}
+    for elem in host_doc.elements.values():
+        if not isinstance(elem, LinkModelElem):
+            continue
+        if elem.hidden:
+            continue
+        key = (elem.source_model_id, elem.source_model_revision)
+        if key in cache:
+            continue
+        try:
+            source_uuid = UUID(elem.source_model_id)
+        except ValueError:
+            cache[key] = None
+            continue
+        src_row = await load_model_row(session, source_uuid)
+        if src_row is None:
+            cache[key] = None
+            continue
+        cache[key] = Document.model_validate(src_row.document)
+
+    def _provider(source_uuid_str: str, source_rev: int | None) -> Document | None:
+        return cache.get((source_uuid_str, source_rev))
+
+    return _provider
+
+
+def _command_needs_link_sources(command: dict[str, Any]) -> bool:
+    """FED-02: only the clash-test runner currently consults linked sources."""
+    return isinstance(command, dict) and command.get("type") == "runClashTest"
 
 
 async def _validate_link_model_command_against_db(
@@ -228,8 +275,14 @@ async def apply_command(
     baseline_doc = Document.model_validate(row.document)
     doc_before = clone_document(baseline_doc)
 
+    src_provider: SourceDocProvider | None = None
+    if _command_needs_link_sources(body.command):
+        src_provider = await _build_link_source_provider(session, baseline_doc)
+
     try:
-        ok, new_doc, _cmd_obj, violations, code = try_commit(baseline_doc, body.command)
+        ok, new_doc, _cmd_obj, violations, code = try_commit(
+            baseline_doc, body.command, source_provider=src_provider
+        )
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"Invalid command: {exc}") from exc
 
@@ -347,8 +400,14 @@ async def apply_command_bundle(
     baseline_doc = Document.model_validate(row.document)
     doc_before = clone_document(baseline_doc)
 
+    src_provider: SourceDocProvider | None = None
+    if any(_command_needs_link_sources(c) for c in body.commands):
+        src_provider = await _build_link_source_provider(session, baseline_doc)
+
     try:
-        ok, new_doc, _cmds, violations, code = try_commit_bundle(baseline_doc, body.commands)
+        ok, new_doc, _cmds, violations, code = try_commit_bundle(
+            baseline_doc, body.commands, source_provider=src_provider
+        )
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"Invalid bundle: {exc}") from exc
 

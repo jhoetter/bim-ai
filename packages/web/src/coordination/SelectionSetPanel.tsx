@@ -19,6 +19,20 @@ function matchesRule(e: Element, rule: SelectionSetRule): boolean {
   return false;
 }
 
+type ScopeChoice = 'host' | 'all_links' | string;
+
+function ruleScopeKey(rule: SelectionSetRule): ScopeChoice {
+  if (!rule.linkScope || rule.linkScope === 'host') return 'host';
+  if (rule.linkScope === 'all_links') return 'all_links';
+  return rule.linkScope.specificLinkId;
+}
+
+function scopeChoiceToValue(choice: ScopeChoice): SelectionSetRule['linkScope'] {
+  if (choice === 'host') return 'host';
+  if (choice === 'all_links') return 'all_links';
+  return { specificLinkId: choice };
+}
+
 export function SelectionSetPanel({
   el,
   elements,
@@ -77,6 +91,24 @@ export function SelectionSetPanel({
             value={rule.value}
             onChange={(e) => updateRule(i, { value: e.target.value })}
           />
+          <select
+            aria-label={t('coordination.ruleScope')}
+            className="rounded border border-border bg-background px-1 py-0.5 text-[11px]"
+            value={ruleScopeKey(rule)}
+            onChange={(e) =>
+              updateRule(i, { linkScope: scopeChoiceToValue(e.target.value as ScopeChoice) })
+            }
+          >
+            <option value="host">{t('coordination.scopeHost')}</option>
+            <option value="all_links">{t('coordination.scopeAllLinks')}</option>
+            {Object.values(elements)
+              .filter((x): x is Extract<Element, { kind: 'link_model' }> => x.kind === 'link_model')
+              .map((link) => (
+                <option key={link.id} value={link.id}>
+                  {link.name || link.id}
+                </option>
+              ))}
+          </select>
           <button
             type="button"
             aria-label="remove-rule"

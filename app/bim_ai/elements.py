@@ -1162,6 +1162,74 @@ class MaskingRegionElem(BaseModel):
     fill_color: str = Field(default="#ffffff", alias="fillColor")
 
 
+class SelectionSetRuleSpec(BaseModel):
+    """FED-02: a single rule in a selection set's filter list.
+
+    ``link_scope`` controls which models the rule resolves against:
+
+    * ``'host'`` (default) — only host elements match.
+    * ``'all_links'`` — every ``link_model`` element is walked; matching source
+      elements are included with their AABBs transformed by the link's
+      ``positionMm`` + ``rotationDeg``.
+    * ``{ 'specificLinkId': '<link-id>' }`` — restrict matches to a single
+      link.
+    """
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    field: Literal["category", "level", "typeName"]
+    operator: Literal["equals", "contains"]
+    value: str
+    link_scope: str | dict[str, str] | None = Field(default=None, alias="linkScope")
+
+
+class SelectionSetElem(BaseModel):
+    """FED-02: a named filter that resolves to a list of element ids.
+
+    Stored in the model so it can be referenced by clash tests and (later)
+    schedules. The element itself is non-graphical.
+    """
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["selection_set"] = "selection_set"
+    id: str
+    name: str = "Selection Set"
+    filter_rules: list[SelectionSetRuleSpec] = Field(default_factory=list, alias="filterRules")
+
+
+class ClashResultSpec(BaseModel):
+    """FED-02: a single pair-wise clash between two resolved elements.
+
+    ``link_chain_a`` / ``link_chain_b`` are empty arrays for host elements
+    and ``[link_id]`` for elements pulled from a linked model. Multi-hop
+    transitive links are deferred (FED-01's expander is single-hop only).
+    """
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    element_id_a: str = Field(alias="elementIdA")
+    element_id_b: str = Field(alias="elementIdB")
+    distance_mm: float = Field(alias="distanceMm")
+    link_chain_a: list[str] = Field(default_factory=list, alias="linkChainA")
+    link_chain_b: list[str] = Field(default_factory=list, alias="linkChainB")
+
+
+class ClashTestElem(BaseModel):
+    """FED-02: a pair of selection sets that the engine clash-tests on demand.
+
+    ``set_a_ids`` / ``set_b_ids`` are lists of ``selection_set`` element ids
+    (multiple sets are unioned). Clash detection is run by the
+    ``RunClashTest`` command which writes its findings into ``results``.
+    """
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["clash_test"] = "clash_test"
+    id: str
+    name: str = "Clash Test"
+    set_a_ids: list[str] = Field(default_factory=list, alias="setAIds")
+    set_b_ids: list[str] = Field(default_factory=list, alias="setBIds")
+    tolerance_mm: float = Field(default=0.0, alias="toleranceMm")
+    results: list[ClashResultSpec] | None = None
+
+
 ElementKind = Literal[
     "project_settings",
     "room_color_scheme",
@@ -1206,6 +1274,8 @@ ElementKind = Literal[
     "survey_point",
     "internal_origin",
     "link_model",
+    "selection_set",
+    "clash_test",
     "placed_tag",
     "detail_line",
     "detail_region",
@@ -1266,6 +1336,8 @@ Element = Annotated[
     | SurveyPointElem
     | InternalOriginElem
     | LinkModelElem
+    | SelectionSetElem
+    | ClashTestElem
     | PlacedTagElem
     | DetailLineElem
     | DetailRegionElem
