@@ -1,0 +1,51 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "7fde56b795e7",
+  "session_id": "a44f189f-de7b-4ddb-8581-039cc99d2ff7",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-07T05:58:51.726392Z",
+  "branch": "dayshift-fam-keystone",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/families/geometryFns/windowGeometry.test.ts",
+    "packages/web/src/families/geometryFns/windowGeometry.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "",
+  "turn_id": "ff448f19b81d",
+  "token_usage": {
+    "input_tokens": 1148,
+    "cache_creation_tokens": 779952,
+    "cache_read_tokens": 118915518,
+    "output_tokens": 171775,
+    "api_call_count": 519
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-07T05:58:51.689307Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 324,
+    "human_modified": 4,
+    "human_removed": 0,
+    "total_committed": 324,
+    "total_lines_changed": 328,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 20,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        ".githooks/commit-msg": 4,
+        ".githooks/post-commit": 4,
+        ".githooks/post-rewrite": 4,
+        ".githooks/pre-push": 5,
+        ".githooks/prepare-commit-msg": 3
+      }
+    }
+  ]
+}
