@@ -1,4 +1,12 @@
-"""WP-A01: one-family CLI bundle replays through Python engine (docs spine coverage)."""
+"""WP-A01: one-family CLI bundle replays through Python engine.
+
+The house bundle has been cleared back to the bare scaffolding; this test
+verifies the canonical builder still produces a commitable bundle (project
+base point + the two demo levels) so the seeding pipeline stays wired.
+The richer documentation-spine assertions (rooms / sheet / schedules /
+section projection) will return when the house geometry is re-authored
+from scratch against `spec/target-house-seed.md`.
+"""
 
 from __future__ import annotations
 
@@ -9,10 +17,8 @@ from pathlib import Path
 import pytest
 
 from bim_ai.document import Document
-from bim_ai.elements import RoomElem, ScheduleElem, SheetElem
+from bim_ai.elements import LevelElem, ProjectBasePointElem
 from bim_ai.engine import apply_inplace, command_adapter
-from bim_ai.plan_projection_wire import section_cut_projection_wire
-from bim_ai.schedule_derivation import derive_schedule_table
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 
@@ -46,99 +52,19 @@ def _apply_all(doc: Document, raw_cmds: list[dict]) -> None:
         apply_inplace(doc, cmd)
 
 
-def test_one_family_bundle_covers_documentation_spine() -> None:
+def test_one_family_bundle_commits_minimal_scaffolding() -> None:
+    """The cleared bundle should still author the project base point + 2 levels."""
     cmds = _load_cli_bundle_commands()
     doc = Document(revision=1, elements={})  # type: ignore[arg-type]
     _apply_all(doc, cmds)
 
-    kinds = {e.kind for e in doc.elements.values()}
-    for k in (
-        "level",
-        "wall",
-        "door",
-        "window",
-        "floor",
-        "slab_opening",
-        "room",
-        "roof",
-        "stair",
-        "plan_view",
-        "section_cut",
-        "sheet",
-        "schedule",
-        "view_template",
-        "viewpoint",
-        "dimension",
-        "family_type",
-    ):
-        assert k in kinds, f"missing kind {k}"
+    pbp = doc.elements.get("hf-pbp")
+    assert isinstance(pbp, ProjectBasePointElem)
 
-    # Asymmetric demo house has an open-plan ground floor — the
-    # kitchen-bearing room is `hf-room-living-kitchen` (not the old
-    # symmetric house's `hf-room-kitchen`). Programme code is preserved
-    # so downstream KIT-BUNDLE evidence keeps wiring up.
-    living_kitchen = doc.elements.get("hf-room-living-kitchen")
-    assert isinstance(living_kitchen, RoomElem)
-    assert living_kitchen.programme_code == "KIT-BUNDLE"
+    ground = doc.elements.get("hf-lvl-ground")
+    assert isinstance(ground, LevelElem)
+    assert ground.elevation_mm == 0
 
-    sh = doc.elements.get("hf-sheet-ga01")
-    assert isinstance(sh, SheetElem)
-    assert sh.titleblock_parameters.get("projectName") == "One‑family golden"
-    assert sh.paper_width_mm == 42_000
-
-    vps = sh.viewports_mm
-    assert len(vps) == 3
-    assert vps[0] == {
-        "viewportId": "vp-plan-eg",
-        "label": "GF plan",
-        "viewRef": "plan:hf-plan-eg-openings",
-        "xMm": 1200,
-        "yMm": 1800,
-        "widthMm": 9000,
-        "heightMm": 9000,
-    }
-    assert vps[1] == {
-        "viewportId": "vp-sec-demo",
-        "label": "Section scaffold",
-        "viewRef": "section:hf-sec-longitudinal",
-        "xMm": 10800,
-        "yMm": 1800,
-        "widthMm": 4200,
-        "heightMm": 9000,
-    }
-    assert vps[2] == {
-        "viewportId": "vp-sch-windows",
-        "label": "Window schedule",
-        "viewRef": "schedule:hf-sch-window",
-        "xMm": 1200,
-        "yMm": 11200,
-        "widthMm": 13800,
-        "heightMm": 3200,
-    }
-
-    sec = section_cut_projection_wire(doc, "hf-sec-longitudinal")
-    assert not sec.get("errors")
-    prim = sec.get("primitives") or {}
-    assert prim.get("format") == "sectionProjectionPrimitives_v1"
-    wall_count = int((sec.get("countsByVisibleKind") or {}).get("wall", 0))
-    assert wall_count >= 1
-
-    sch_room = doc.elements.get("hf-sch-room")
-    assert isinstance(sch_room, ScheduleElem)
-    assert sch_room.grouping.get("sortBy") == "areaM2"
-    assert sch_room.grouping.get("sortDescending") is True
-
-    for sid in (
-        "hf-sch-room",
-        "hf-sch-window",
-        "hf-sch-door",
-        "hf-sch-floor",
-        "hf-sch-roof",
-        "hf-sch-stair",
-        "hf-sch-sheet",
-        "hf-sch-plan-view",
-        "hf-sch-section",
-    ):
-        tbl = derive_schedule_table(doc, sid)
-        assert tbl["scheduleId"] == sid
-        assert int(tbl.get("totalRows") or 0) >= 1, sid
+    upper = doc.elements.get("hf-lvl-upper")
+    assert isinstance(upper, LevelElem)
+    assert upper.elevation_mm == 3000
