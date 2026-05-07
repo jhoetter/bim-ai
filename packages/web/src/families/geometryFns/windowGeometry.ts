@@ -1,7 +1,8 @@
 import * as THREE from 'three';
-import type { Element } from '@bim-ai/core';
+import type { Element, XY } from '@bim-ai/core';
 import type { ViewportPaintBundle } from '../../viewport/materials';
-import { resolveParam, type FamilyDefinition } from '../types';
+import { meshFromSweep } from '../sweepGeometry';
+import { resolveParam, type FamilyDefinition, type SketchLine } from '../types';
 import { resolveWindowOutline, resolveWindowOutlineKind } from './windowOutline';
 
 export type WindowGeomInput = {
@@ -96,8 +97,6 @@ export function buildWindowGeometry(input: WindowGeomInput): THREE.Group {
   if (outlinePoly && outlinePoly.length >= 3) {
     // KRN-12: variable-shape outline. Glass pane = polygon-shaped extruded
     // sliver (a thin extrusion through wall thickness gives the glass body).
-    // Frame omitted for non-rectangular outlines until FAM-02 lands — sweep
-    // along the polygon perimeter is a separate workpackage.
     // outline coords are in mm with origin at sill-centre; group origin sits
     // at sill-centre (caller positions accordingly).
     const shape = new THREE.Shape();
@@ -115,6 +114,11 @@ export function buildWindowGeometry(input: WindowGeomInput): THREE.Group {
     glazing.castShadow = false;
     glazing.userData.bimPickId = win.id;
     group.add(glazing);
+
+    // KRN-12 + FAM-02: sweep a small rectangular cross-section profile around
+    // the polygon perimeter so the frame follows the outline shape.
+    const frameMesh = buildPerimeterFrame(outlinePoly, frameSect, depth, frameMat, win.id);
+    if (frameMesh) group.add(frameMesh);
     return group;
   }
 
@@ -158,4 +162,80 @@ export function buildWindowGeometry(input: WindowGeomInput): THREE.Group {
   }
 
   return group;
+}
+
+/**
+ * Sweep a small rectangular cross-section (frame profile) around the
+ * window outline polygon. The profile spans `depthM` along the wall
+ * thickness (Z) and `frameSectM` radially in the wall-face plane,
+ * giving the visual effect of a frame that wraps the perimeter.
+ *
+ * Outline coords are in mm with origin at sill-centre and CCW order.
+ * Returns null when the polygon is degenerate.
+ */
+function buildPerimeterFrame(
+  outlinePolyMm: XY[],
+  frameSectM: number,
+  depthM: number,
+  frameMat: THREE.Material,
+  bimPickId: string,
+): THREE.Mesh | null {
+  if (outlinePolyMm.length < 3) return null;
+
+  // Closed perimeter path in metres. The closing segment loops back to
+  // the start so the frame meets at the seam.
+  const pathLines: SketchLine[] = [];
+  const N = outlinePolyMm.length;
+  for (let i = 0; i < N; i++) {
+    const a = outlinePolyMm[i];
+    const b = outlinePolyMm[(i + 1) % N];
+    const startM = { xMm: a.xMm / 1000, yMm: a.yMm / 1000 };
+    const endM = { xMm: b.xMm / 1000, yMm: b.yMm / 1000 };
+    if (startM.xMm === endM.xMm && startM.yMm === endM.yMm) continue;
+    pathLines.push({ startMm: startM, endMm: endM });
+  }
+  if (pathLines.length < 2) return null;
+
+  // Profile rectangle centred on path. Three's ExtrudeGeometry with
+  // extrudePath places shape-X along the curve binormal (≈ ±Z for a
+  // planar curve in the X/Y plane) and shape-Y along the in-plane
+  // normal — so width=depth maps to wall-thickness, height=frameSect
+  // maps to radial frame thickness.
+  const halfDepth = depthM / 2;
+  const halfSect = frameSectM / 2;
+  const profile: SketchLine[] = [
+    {
+      startMm: { xMm: -halfDepth, yMm: -halfSect },
+      endMm: { xMm: halfDepth, yMm: -halfSect },
+    },
+    {
+      startMm: { xMm: halfDepth, yMm: -halfSect },
+      endMm: { xMm: halfDepth, yMm: halfSect },
+    },
+    {
+      startMm: { xMm: halfDepth, yMm: halfSect },
+      endMm: { xMm: -halfDepth, yMm: halfSect },
+    },
+    {
+      startMm: { xMm: -halfDepth, yMm: halfSect },
+      endMm: { xMm: -halfDepth, yMm: -halfSect },
+    },
+  ];
+
+  let geom: THREE.BufferGeometry;
+  try {
+    geom = meshFromSweep({
+      kind: 'sweep',
+      pathLines,
+      profile,
+      profilePlane: 'normal_to_path_start',
+    });
+  } catch {
+    return null;
+  }
+  const mesh = new THREE.Mesh(geom, frameMat);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  mesh.userData.bimPickId = bimPickId;
+  return mesh;
 }
