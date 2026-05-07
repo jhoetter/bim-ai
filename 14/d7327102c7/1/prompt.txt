@@ -1,0 +1,29 @@
+wave 2 agent 8 is also done, can you check everything is on main? and updated in the tracker?
+this is the summary agent 8 gave:
+  Summary
+
+  Three WPs shipped on wave2-8 (rebased on top of origin/main):
+
+  VIE-02 — Per-detail-level visibility on family geometry (ae5dd03e, done)
+  - visibilityByDetailLevel field on sweep / family_instance_ref / array nodes
+  - Resolver + 3D viewport panel resolver thread detailLevel
+  - Family editor properties panel — 3-checkbox row per selected sweep
+  - 11 new tests (7 resolver + 4 UI), 145 family/family-editor tests still pass
+
+  IFC-03 — Roof-hosted void replay (0bbc3dbd, done)
+  - New RoofOpeningElem + CreateRoofOpeningCmd parallel to slab opening
+  - Engine handler + authoritative-replay preflight + known_roofs tracking
+  - Export emits IfcOpeningElement on IfcRoof; re-parser turns it into createRoofOpening (replacing the roof_host_not_supported_v0 skip)
+  - Round-trip: inspect_kernel_ifc_semantics.openingsByHostKind + roofHostedOpenings summary check
+  - 9 new tests; all 36 existing IFC tests still pass
+
+  IFC-04 — Materials + composites + broader QTO + classifications (e545733c, partial)
+  - Pset_MaterialCommon (Reference / BaseColor / Roughness / Metalness / DisplayName / Category) on every layered IfcMaterial
+  - New try_attach_kernel_ifc_single_material for non-layered walls/roofs/doors/windows
+  - Wall QTO adds GrossSideArea + NetSideArea; roofs get Qto_SlabBaseQuantities; doors/windows add Area
+  - Optional ifcClassificationCode on wall/floor/roof/door/window/room → IfcClassificationReference via shared cache
+  - 8 new tests; full python suite (1315 passed) green
+
+  nightshift/wave2-8-status.md and tracker updated; branch is rebased clean and not pushed (waiting on user to merge).
+
+tell me if all is good and i can start wave 3
