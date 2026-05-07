@@ -268,7 +268,7 @@ What's the smallest WP set required to ship a specific user-visible goal? Useful
 | ------ | ------------------------------------------------- | ------ | ---------------------------- | ---------- |
 | FED-01 | `link_model` element kind + read-only enforcement | L      | `partial` ([b05fc082](../#)) | —          |
 | FED-02 | Cross-link clash detection (extends WP-V2-13)     | M      | `done` ([cf3552d5](../#))    | FED-01     |
-| FED-03 | Cross-link Copy/Monitor (extends WP-V2-12)        | M      | `open`                       | FED-01     |
+| FED-03 | Cross-link Copy/Monitor (extends WP-V2-12)        | M      | `partial` ([0fe4cfc2](../#)) | FED-01     |
 | FED-04 | IFC / DXF → shadow-model link import              | L      | `open`                       | FED-01     |
 | FED-05 | "Worksharing-via-DB" positioning + docs           | XS     | `done`                       | —          |
 
@@ -370,6 +370,8 @@ export type SelectionSetRule = {
 **Effort.** M — 1 week (depends on FED-01).
 
 ### FED-03 — Cross-link Copy/Monitor
+
+**Status (2026-05-07).** `partial` in `0fe4cfc2` — load-bearing slice shipped: `monitorSource` structured pointer (`linkId? | elementId | sourceRevisionAtCopy + drifted/driftedFields`) on `level` + `grid_line` (legacy `monitorSourceId` still read by inspector + store). Three commands: `bumpMonitoredRevisions` (walks every monitored element, recomputes drift via the same link-source provider FED-02 uses), `reconcileMonitoredElement` with `mode: 'accept_source' | 'keep_host'`. Drift surfaces as `monitored_source_drift` advisory (warning, coordination). Inspector renders link name + source id + revision-at-copy; drift banner with Accept source / Keep host buttons fires `onMonitorReconcile` callback. 10 pytest cases (intra-host + cross-link drift, accept-source field copy, keep-host bump, error paths) + 4 vitest cases. **Deferred:** canvas badge (yellow triangle on element when drifted) — the inspector banner covers the workflow today; follow-up adds the on-canvas overlay.
 
 **Scope.** Extend `monitorSourceId` (Wave-5 Copy/Monitor) to point at an element in a _linked_ model, not just intra-model. Drift detection runs across link revisions.
 
