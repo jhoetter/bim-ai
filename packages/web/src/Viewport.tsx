@@ -72,10 +72,13 @@ import {
   makeProjectBasePointMarker,
   makeSurveyPointMarker,
 } from './viewport/originMarkers';
+import { WallContextMenu, type WallContextMenuCommand } from './workspace/WallContextMenu';
 
 type Props = {
   wsConnected: boolean;
   onPersistViewpointField?: (payload: OrbitViewpointPersistFieldPayload) => void | Promise<void>;
+  /** ANN-02: optional dispatcher for the right-click "Generate Section / Elevation" menu. */
+  onSemanticCommand?: (cmd: Record<string, unknown>) => void;
 };
 
 type DoorElem = Extract<Element, { kind: 'door' }>;
@@ -98,7 +101,7 @@ function Sep() {
   return <span className="opacity-30">·</span>;
 }
 
-export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
+export function Viewport({ wsConnected, onPersistViewpointField, onSemanticCommand }: Props) {
   void wsConnected;
   const { t } = useTranslation();
 
@@ -150,6 +153,11 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
   const [walkActive, setWalkActive] = useState(false);
   const [sectionBoxActive, setSectionBoxActive] = useState(false);
   const [text3dRebuildTick, setText3dRebuildTick] = useState(0);
+  // ANN-02: state for the right-click "Generate Section / Elevation" menu in 3D.
+  const [wallContextMenu, setWallContextMenu] = useState<{
+    wall: Extract<Element, { kind: 'wall' }>;
+    position: { x: number; y: number };
+  } | null>(null);
   const text3dPendingRef = useRef<Set<string>>(new Set());
   const walkControllerRef = useRef<WalkController | null>(null);
   const sectionBoxRef = useRef<SectionBox | null>(null);
@@ -157,6 +165,10 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
   const clipCapsRef = useRef<THREE.Mesh[]>([]);
 
   const elementsById = useBimStore((s) => s.elementsById);
+  // ANN-02: ref-copy so the 3D contextmenu listener (registered once in the
+  // mount effect) sees up-to-date elements without rerunning that effect.
+  const elementsByIdRef = useRef(elementsById);
+  elementsByIdRef.current = elementsById;
   const theme = useTheme();
 
   const walkLevels = useMemo(
@@ -172,6 +184,21 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
 
   const selectedId = useBimStore((s) => s.selectedId);
   selectedIdRef.current = selectedId;
+  // ANN-02: store actions for the wall context menu's command flow.
+  const activateElevationView = useBimStore((s) => s.activateElevationView);
+  const selectStoreEl = useBimStore((s) => s.select);
+
+  const handleWallContextMenuCommand = useCallback(
+    (next: WallContextMenuCommand) => {
+      onSemanticCommand?.(next.cmd);
+      if (next.kind === 'elevation_view') {
+        activateElevationView(next.elevationViewId);
+      } else {
+        selectStoreEl(next.sectionCutId);
+      }
+    },
+    [activateElevationView, onSemanticCommand, selectStoreEl],
+  );
 
   const viewerCategoryHidden = useBimStore((s) => s.viewerCategoryHidden);
 
@@ -627,7 +654,34 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
     }
 
     renderer.domElement.addEventListener('pointerdown', onDown);
-    const onContextMenu = (ev: Event): void => ev.preventDefault();
+    const onContextMenu = (ev: Event): void => {
+      ev.preventDefault();
+      // ANN-02: open the wall context menu when the right-click lands on a wall.
+      const me = ev as MouseEvent;
+      const rect = renderer.domElement.getBoundingClientRect();
+      ndc.x = ((me.clientX - rect.left) / rect.width) * 2 - 1;
+      ndc.y = -(((me.clientY - rect.top) / rect.height) * 2 - 1);
+      raycaster.setFromCamera(ndc, camera);
+      const hits = raycaster.intersectObjects(root.children, true);
+      const first = hits.find((h) => typeof h.object.userData.bimPickId === 'string');
+      const id =
+        typeof first?.object.userData.bimPickId === 'string'
+          ? (first.object.userData.bimPickId as string)
+          : null;
+      if (!id) {
+        setWallContextMenu(null);
+        return;
+      }
+      const el = elementsByIdRef.current[id];
+      if (!el || el.kind !== 'wall') {
+        setWallContextMenu(null);
+        return;
+      }
+      setWallContextMenu({
+        wall: el,
+        position: { x: me.clientX, y: me.clientY },
+      });
+    };
     renderer.domElement.addEventListener('contextmenu', onContextMenu);
     renderer.domElement.addEventListener('pointerup', onUp);
     renderer.domElement.addEventListener('pointermove', onMove);
@@ -1408,6 +1462,14 @@ export function Viewport({ wsConnected, onPersistViewpointField }: Props) {
       data-testid="orbit-3d-viewport"
       className="relative h-full w-full overflow-hidden bg-background"
     >
+      {wallContextMenu && (
+        <WallContextMenu
+          wall={wallContextMenu.wall}
+          position={wallContextMenu.position}
+          onCommand={handleWallContextMenuCommand}
+          onClose={() => setWallContextMenu(null)}
+        />
+      )}
       {activeViewpointId ? (
         <OrbitViewpointPersistedHud
           activeViewpointId={activeViewpointId}

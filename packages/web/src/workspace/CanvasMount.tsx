@@ -63,7 +63,11 @@ export function CanvasMount({
           />
         </div>
         <div style={{ position: 'relative' }}>
-          <Viewport wsConnected={wsOn ?? false} onPersistViewpointField={onPersistViewpointField} />
+          <Viewport
+            wsConnected={wsOn ?? false}
+            onPersistViewpointField={onPersistViewpointField}
+            onSemanticCommand={onSemanticCommand}
+          />
         </div>
       </div>
     );

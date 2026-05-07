@@ -61,6 +61,7 @@ import {
 } from './planProjection';
 import { rebuildPlanMeshes } from './symbology';
 import { elevationFromWall, sectionCutFromWall } from '../lib/sectionElevationFromWall';
+import { WallContextMenu, type WallContextMenuCommand } from '../workspace/WallContextMenu';
 
 function readPlanToken(name: string, fallback: string): string {
   const v = liveTokenReader().read(name);
@@ -213,6 +214,11 @@ export function PlanCanvas({
   const [hudMm, setHudMm] = useState<{ xMm: number; yMm: number }>();
   const [halfUi, setHalfUi] = useState(22);
   const [showZoomMenu, setShowZoomMenu] = useState(false);
+  // ANN-02: state for the right-click "Generate Section / Elevation" menu.
+  const [wallContextMenu, setWallContextMenu] = useState<{
+    wall: Extract<Element, { kind: 'wall' }>;
+    position: { x: number; y: number };
+  } | null>(null);
   const [geomEpoch, bumpGeom] = useState(0);
   const [roomColorLegend, setRoomColorLegend] = useState<
     Array<{
@@ -1498,6 +1504,36 @@ export function PlanCanvas({
       }
     };
 
+    // ANN-02: right-click on a wall opens a context menu with
+    // "Generate Section Cut" / "Generate Elevation".
+    const onContextMenu = (ev: MouseEvent) => {
+      const rectBox = rnd.domElement.getBoundingClientRect();
+      const ray = new THREE.Raycaster();
+      ray.setFromCamera(
+        new THREE.Vector2(
+          ((ev.clientX - rectBox.left) / rectBox.width) * 2 - 1,
+          -(((ev.clientY - rectBox.top) / rectBox.height) * 2 - 1),
+        ),
+        camNow,
+      );
+      const hits = ray.intersectObjects(grp.children, true);
+      const h = hits.find(
+        (x) => typeof (x.object.userData as { bimPickId?: unknown }).bimPickId === 'string',
+      );
+      if (!h) {
+        setWallContextMenu(null);
+        return;
+      }
+      const id = (h.object.userData as { bimPickId: string }).bimPickId;
+      const el = elementsById[id];
+      if (!el || el.kind !== 'wall') {
+        setWallContextMenu(null);
+        return;
+      }
+      ev.preventDefault();
+      setWallContextMenu({ wall: el, position: { x: ev.clientX, y: ev.clientY } });
+    };
+
     // VIE-03: double-click an elevation marker (or plan_view marker) to open
     // the corresponding view. Looks up bimPickId via raycast, then routes to
     // the right activation action based on element kind.
@@ -1531,6 +1567,7 @@ export function PlanCanvas({
     window.addEventListener('pointerup', onUpWindow);
     canvas.addEventListener('click', onClick);
     canvas.addEventListener('dblclick', onDblClick);
+    canvas.addEventListener('contextmenu', onContextMenu);
     canvas.addEventListener('wheel', onWheel, { passive: false });
     window.addEventListener('keydown', onKey);
     window.addEventListener('keyup', onKeyUp);
@@ -1540,6 +1577,7 @@ export function PlanCanvas({
       window.removeEventListener('pointerup', onUpWindow);
       canvas.removeEventListener('click', onClick);
       canvas.removeEventListener('dblclick', onDblClick);
+      canvas.removeEventListener('contextmenu', onContextMenu);
       canvas.removeEventListener('wheel', onWheel);
       window.removeEventListener('keydown', onKey);
       window.removeEventListener('keyup', onKeyUp);
@@ -1574,8 +1612,31 @@ export function PlanCanvas({
     { label: 'Building 25 m', half: 25 },
     { label: 'Site     80 m', half: 80 },
   ] as const;
+  const handleWallContextMenuCommand = useCallback(
+    (next: WallContextMenuCommand) => {
+      onSemanticCommand(next.cmd);
+      if (next.kind === 'elevation_view') {
+        // Activate the new elevation marker so the user lands on its view.
+        activateElevationView(next.elevationViewId);
+      } else {
+        // Section cuts surface in the project browser; selecting puts focus on
+        // the new element so the user can immediately tweak it.
+        selectEl(next.sectionCutId);
+      }
+    },
+    [activateElevationView, onSemanticCommand, selectEl],
+  );
+
   return (
     <div data-testid="plan-canvas" className="relative h-full w-full overflow-hidden bg-background">
+      {wallContextMenu && (
+        <WallContextMenu
+          wall={wallContextMenu.wall}
+          position={wallContextMenu.position}
+          onCommand={handleWallContextMenuCommand}
+          onClose={() => setWallContextMenu(null)}
+        />
+      )}
       <div className="pointer-events-none absolute right-3 bottom-14 z-10 rounded border border-border bg-surface/80 px-2 py-1 font-mono text-[10px] text-muted backdrop-blur">
         {hudMm
           ? `X ${(hudMm.xMm / 1000).toFixed(2)} m · Y ${(hudMm.yMm / 1000).toFixed(2)} m`
