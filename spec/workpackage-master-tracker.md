@@ -1045,6 +1045,8 @@ Profile families (introduced in V2-11) optionally referenced via `profileFamilyI
 | KRN-12 | Variable-shape window outline (trapezoidal, arched, gable-end, custom polygon) | Today's window is `widthMm × heightMm` rectangle. Real architecture uses arched, eyebrow, octagonal, and gable-end-trapezoidal windows whose top edge follows the roof slope. | M | `done` (99f4c8ef + 1d77d4f4 — frame sweep along polygon perimeter via FAM-02 meshFromSweep) |
 | KRN-13 | Non-swing door operation types (sliding, pocket, bi-fold, pivot, automatic) | Today all doors swing. Target house's loggia uses a floor-to-ceiling sliding glass door; dormer access is glass doors (sliding or bi-fold). | S | `done` (2dc556dd) |
 | KRN-14 | Dormer element kind (cuts host roof, adds own walls + roof)                  | Target house has a "massive rectangular dormer cut-out" on the east roof slope opening onto the flat roof deck. Common attic-conversion primitive in residential. | L | `open` |
+| KRN-15 | `createSweep` engine command (lift FAM-02 into project authoring)            | FAM-02 sweep today is family-internal only; cannot author swept solids in a project bundle. Needed for the target-house's "thick white picture-frame outline" along the asymmetric gable polygon. | M | `open` |
+| KRN-16 | Wall recess / setback geometry (loggias, bay windows, deep entry porches)    | The "two parallel walls + wall_opening cut" trick the seed-rebuild agent invented does not produce a believable architectural recess from a distance. Need a real geometric setback: either a `wall_recess` element kind or a `recessZones[]` field on `wall` that steps the wall plane back over a defined alongT range. | M | `open` |
 
 **KRN-04 detail.** Element shape:
 
@@ -1250,6 +1252,47 @@ Engine: validation that dormer footprint fits inside host roof; CSG cut produces
 Rendering: cut the host roof mesh (CSG); add four dormer walls (front + two cheeks + back-against-roof) plus a dormer roof on top.
 
 Use cases: target-house §1.6 east-slope dormer cut-out opening to the flat roof deck; heritage attic conversions; modern shed dormers.
+
+**KRN-15 detail.** New project-level command `createSweep` that produces a swept-solid `sweep` element. Borrows the `meshFromSweep` helper FAM-02 already shipped at `packages/web/src/families/sweepGeometry.ts`. Element shape:
+
+```ts
+{
+  kind: 'sweep';
+  id: string;
+  name?: string;
+  levelId: string;
+  pathMm: { xMm: number; yMm: number; zMm?: number }[];   // open or closed polyline
+  profileMm: { uMm: number; vMm: number }[];               // closed loop in profile-local 2D
+  profilePlane: 'normal_to_path_start' | 'work_plane';
+  materialKey?: string | null;
+  worksetId?: string | null;
+}
+```
+
+Engine: validation that path has ≥2 points, profile is a closed loop ≥3 points, materialKey resolves. Renderer: reuses `meshFromSweep`. Used heavily for fascia, gutters, mullion bodies, picture-frame outlines around recessed loggias, and any other linear architectural feature with a constant cross-section.
+
+**KRN-16 detail.** Wall recess as a wall-local property (no new element kind):
+
+```ts
+// addition to the wall shape
+{
+  // existing fields preserved
+  recessZones?: {
+    alongTStart: number;
+    alongTEnd: number;
+    setbackMm: number;            // how far the wall plane steps back (interior direction)
+    sillHeightMm?: number;        // optional: bottom of recess (default 0 = full-height)
+    headHeightMm?: number;        // optional: top of recess (default = wall height = full-height)
+    floorContinues?: boolean;     // when true, the wall's floor slab extends into the recess (loggia / balcony floor)
+  }[];
+}
+```
+
+Renderer: instead of producing a single rectangular wall extrusion, builds a polygon footprint that follows the wall centerline outward and the recess setback inward over the alongT range. Hosted openings (doors / windows) within a recess zone are repositioned along the recessed surface. The "floor continues" flag means a floor slab extends through the recess to support a balcony / loggia.
+
+Engine: validation that recess zones don't overlap, setback ≤ wall thickness × 8 (sanity), alongT bounds in [0,1]. Constraint advisory `recess_orphan_opening` if a hosted opening straddles the recess boundary.
+
+Use cases: target-house §1.4 loggia (the south face of the upper volume recessed 1500 mm to create a covered balcony); bay windows; deep entry porches; any wall feature where the plane steps back / forward.
 
 ### Plan views
 
