@@ -1,0 +1,166 @@
+{
+  "catalogId": "bathroom-fixtures",
+  "name": "Bathroom Fixtures",
+  "version": "1.0.0",
+  "description": "Toilet, washbasin, shower tray, bathtub — typical EU residential bathroom plumbing fixtures.",
+  "thumbnailsBaseUrl": null,
+  "families": [
+    {
+      "id": "catalog:bathroom:toilet",
+      "name": "Toilet",
+      "discipline": "generic",
+      "params": [
+        {
+          "key": "widthMm",
+          "label": "Width",
+          "type": "length_mm",
+          "default": 380,
+          "min": 350,
+          "max": 450,
+          "instanceOverridable": false
+        },
+        {
+          "key": "depthMm",
+          "label": "Depth",
+          "type": "length_mm",
+          "default": 670,
+          "min": 600,
+          "max": 750,
+          "instanceOverridable": false
+        }
+      ],
+      "defaultTypes": [
+        {
+          "id": "catalog:bathroom:toilet:wall-hung-380x540",
+          "name": "Wall-hung Toilet 380×540",
+          "familyId": "catalog:bathroom:toilet",
+          "discipline": "generic",
+          "parameters": { "widthMm": 380, "depthMm": 540 }
+        },
+        {
+          "id": "catalog:bathroom:toilet:floor-380x670",
+          "name": "Floor Toilet 380×670",
+          "familyId": "catalog:bathroom:toilet",
+          "discipline": "generic",
+          "parameters": { "widthMm": 380, "depthMm": 670 }
+        }
+      ]
+    },
+    {
+      "id": "catalog:bathroom:washbasin",
+      "name": "Washbasin",
+      "discipline": "generic",
+      "params": [
+        {
+          "key": "widthMm",
+          "label": "Width",
+          "type": "length_mm",
+          "default": 600,
+          "min": 400,
+          "max": 1200,
+          "instanceOverridable": true
+        },
+        {
+          "key": "depthMm",
+          "label": "Depth",
+          "type": "length_mm",
+          "default": 460,
+          "min": 350,
+          "max": 600,
+          "instanceOverridable": false
+        }
+      ],
+      "defaultTypes": [
+        {
+          "id": "catalog:bathroom:washbasin:single-600x460",
+          "name": "Single Basin 600×460",
+          "familyId": "catalog:bathroom:washbasin",
+          "discipline": "generic",
+          "parameters": { "widthMm": 600, "depthMm": 460 }
+        },
+        {
+          "id": "catalog:bathroom:washbasin:double-1200x500",
+          "name": "Double Basin 1200×500",
+          "familyId": "catalog:bathroom:washbasin",
+          "discipline": "generic",
+          "parameters": { "widthMm": 1200, "depthMm": 500 }
+        }
+      ]
+    },
+    {
+      "id": "catalog:bathroom:shower",
+      "name": "Shower Tray",
+      "discipline": "generic",
+      "params": [
+        {
+          "key": "widthMm",
+          "label": "Width",
+          "type": "length_mm",
+          "default": 900,
+          "min": 700,
+          "max": 1600,
+          "instanceOverridable": true
+        },
+        {
+          "key": "depthMm",
+          "label": "Depth",
+          "type": "length_mm",
+          "default": 900,
+          "min": 700,
+          "max": 1200,
+          "instanceOverridable": true
+        }
+      ],
+      "defaultTypes": [
+        {
+          "id": "catalog:bathroom:shower:square-900",
+          "name": "Square Shower 900×900",
+          "familyId": "catalog:bathroom:shower",
+          "discipline": "generic",
+          "parameters": { "widthMm": 900, "depthMm": 900 }
+        },
+        {
+          "id": "catalog:bathroom:shower:rect-1200x900",
+          "name": "Rectangular Shower 1200×900",
+          "familyId": "catalog:bathroom:shower",
+          "discipline": "generic",
+          "parameters": { "widthMm": 1200, "depthMm": 900 }
+        }
+      ]
+    },
+    {
+      "id": "catalog:bathroom:bathtub",
+      "name": "Bathtub",
+      "discipline": "generic",
+      "params": [
+        {
+          "key": "lengthMm",
+          "label": "Length",
+          "type": "length_mm",
+          "default": 1700,
+          "min": 1400,
+          "max": 2000,
+          "instanceOverridable": true
+        },
+        {
+          "key": "widthMm",
+          "label": "Width",
+          "type": "length_mm",
+          "default": 750,
+          "min": 700,
+          "max": 900,
+          "instanceOverridable": false
+        }
+      ],
+      "defaultTypes": [
+        {
+          "id": "catalog:bathroom:bathtub:standard-1700x750",
+          "name": "Standard Bathtub 1700×750",
+          "familyId": "catalog:bathroom:bathtub",
+          "discipline": "generic",
+          "parameters": { "lengthMm": 1700, "widthMm": 750 }
+        }
+      ]
+    }
+  ]
+}

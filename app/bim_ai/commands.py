@@ -478,12 +478,24 @@ class CreateRailingCmd(BaseModel):
     path_mm: list[Vec2Mm] = Field(alias="pathMm")
 
 
+class FamilyCatalogSourceCmd(BaseModel):
+    """FAM-08 — provenance triple stored on a family_type loaded from a catalog."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    catalog_id: str = Field(alias="catalogId")
+    family_id: str = Field(alias="familyId")
+    version: str
+
+
 class UpsertFamilyTypeCmd(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     type: Literal["upsertFamilyType"] = "upsertFamilyType"
     id: str | None = None
     discipline: Literal["door", "window", "generic"] = "generic"
     parameters: dict[str, Any] = Field(default_factory=dict)
+    catalog_source: FamilyCatalogSourceCmd | None = Field(
+        default=None, alias="catalogSource"
+    )
 
 
 class AssignOpeningFamilyCmd(BaseModel):

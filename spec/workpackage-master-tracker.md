@@ -77,7 +77,7 @@ graph LR
   FAM03[FAM-03 yes/no visibility]:::blocked
   FAM04[FAM-04 conditional formulas]:::ready
   FAM05[FAM-05 array]:::blocked
-  FAM08[FAM-08 component catalog]:::blocked
+  FAM08[FAM-08 component catalog]:::done
 
   VIE02[VIE-02 per-detail visibility]:::blocked
   VIE03[VIE-03 elevation views]:::ready
@@ -702,7 +702,7 @@ class SketchSession:
 | FAM-05 | Array tool (linear + radial, parameter-driven count)          | L      | `open` | FAM-04, FAM-01 |
 | FAM-06 | 3D text element kind                                          | S      | `done` | —          |
 | FAM-07 | Mirror tool (axis reflection in family editor + project)      | S      | `done` | done in 9b1658bf |
-| FAM-08 | Component tool + external family catalog (Autodesk-style)     | M      | `open` | FAM-01     |
+| FAM-08 | Component tool + external family catalog (Autodesk-style)     | M      | `done` | FAM-01     |
 | FAM-09 | "Flex the family" parameter test mode                         | S      | `done` | done in 21d8f228 |
 | FAM-10 | Cross-project family / element copy-paste                     | M      | `open` | —          |
 
@@ -859,6 +859,8 @@ Profile families (introduced in V2-11) optionally referenced via `profileFamilyI
 **Effort.** S — 4 days.
 
 ### FAM-08 — Component tool + external family catalog
+
+**Status.** `done` — wave-2-7. Catalog format module (`family_catalog_format.py`), three bundled v1 catalogs (living-room-furniture, bathroom-fixtures, kitchen-fixtures), GET `/api/family-catalogs[/:id]` endpoints, `family_type.catalogSource` provenance field (Python + TS core + state store), `upsertFamilyType.catalogSource` command field threaded through the engine, and the FL-06 panel's new "External Catalogs" tab. Place from the External Catalogs tab issues `upsertFamilyType` with `catalogSource` and stages a placement; the In Project tab now shows a catalog provenance badge for catalog-loaded family_types.
 
 **Scope.** A "Component" tool that places a family from an external catalog (without authoring it). Plus a way to load Autodesk-style family libraries into a project. Today's FL-06 panel lists in-project + built-in families; this WP extends it to external catalogs.
 
@@ -1368,7 +1370,7 @@ Use cases: target-house §1.4 loggia (the south face of the upper volume recesse
 | ------ | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------ | ------ |
 | CLI-01 | `bim-ai export json`                                  | Stub at `packages/cli/cli.mjs:404`; ifc / gltf / glb already shipped. Should emit canonical command-bundle JSON for agents. | XS     | `done` (in 674836de) |
 | CLI-02 | `bim-ai diff --from <rev> --to <rev>`                 | Stub at `packages/cli/cli.mjs:372`. Element-level diff between two revisions of the same model.                          | M      | `done` (in 9965a414) |
-| AGT-01 | Closed iterative-correction agent loop                 | `evidence-package` + `apply-bundle --dry-run` ship; the loop wiring (read evidence → generate patch → apply → re-evaluate) is manual. | L      | `open` |
+| AGT-01 | Closed iterative-correction agent loop                 | `evidence-package` + `apply-bundle --dry-run` ship; the loop wiring (read evidence → generate patch → apply → re-evaluate) is manual. | L      | `done` (wave-2-7) |
 
 ---
 

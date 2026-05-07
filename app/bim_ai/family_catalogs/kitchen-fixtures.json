@@ -1,0 +1,184 @@
+{
+  "catalogId": "kitchen-fixtures",
+  "name": "Kitchen Fixtures",
+  "version": "1.0.0",
+  "description": "Counter, sink, oven, fridge — typical EU residential kitchen appliances and casework primitives.",
+  "thumbnailsBaseUrl": null,
+  "families": [
+    {
+      "id": "catalog:kitchen:counter",
+      "name": "Counter",
+      "discipline": "generic",
+      "params": [
+        {
+          "key": "lengthMm",
+          "label": "Length",
+          "type": "length_mm",
+          "default": 2400,
+          "min": 600,
+          "max": 4000,
+          "instanceOverridable": true
+        },
+        {
+          "key": "depthMm",
+          "label": "Depth",
+          "type": "length_mm",
+          "default": 600,
+          "min": 500,
+          "max": 900,
+          "instanceOverridable": true
+        },
+        {
+          "key": "heightMm",
+          "label": "Height",
+          "type": "length_mm",
+          "default": 900,
+          "min": 850,
+          "max": 950,
+          "instanceOverridable": false
+        }
+      ],
+      "defaultTypes": [
+        {
+          "id": "catalog:kitchen:counter:base-2400x600",
+          "name": "Base Counter 2400×600",
+          "familyId": "catalog:kitchen:counter",
+          "discipline": "generic",
+          "parameters": { "lengthMm": 2400, "depthMm": 600, "heightMm": 900 }
+        },
+        {
+          "id": "catalog:kitchen:counter:island-1800x900",
+          "name": "Island Counter 1800×900",
+          "familyId": "catalog:kitchen:counter",
+          "discipline": "generic",
+          "parameters": { "lengthMm": 1800, "depthMm": 900, "heightMm": 900 }
+        }
+      ]
+    },
+    {
+      "id": "catalog:kitchen:sink",
+      "name": "Sink",
+      "discipline": "generic",
+      "params": [
+        {
+          "key": "widthMm",
+          "label": "Width",
+          "type": "length_mm",
+          "default": 600,
+          "min": 400,
+          "max": 1200,
+          "instanceOverridable": true
+        },
+        {
+          "key": "depthMm",
+          "label": "Depth",
+          "type": "length_mm",
+          "default": 480,
+          "min": 380,
+          "max": 600,
+          "instanceOverridable": false
+        }
+      ],
+      "defaultTypes": [
+        {
+          "id": "catalog:kitchen:sink:single-bowl-600",
+          "name": "Single Bowl Sink 600",
+          "familyId": "catalog:kitchen:sink",
+          "discipline": "generic",
+          "parameters": { "widthMm": 600, "depthMm": 480 }
+        },
+        {
+          "id": "catalog:kitchen:sink:double-bowl-900",
+          "name": "Double Bowl Sink 900",
+          "familyId": "catalog:kitchen:sink",
+          "discipline": "generic",
+          "parameters": { "widthMm": 900, "depthMm": 500 }
+        }
+      ]
+    },
+    {
+      "id": "catalog:kitchen:oven",
+      "name": "Oven",
+      "discipline": "generic",
+      "params": [
+        {
+          "key": "widthMm",
+          "label": "Width",
+          "type": "length_mm",
+          "default": 600,
+          "min": 450,
+          "max": 900,
+          "instanceOverridable": true
+        },
+        {
+          "key": "heightMm",
+          "label": "Height",
+          "type": "length_mm",
+          "default": 600,
+          "min": 450,
+          "max": 900,
+          "instanceOverridable": false
+        }
+      ],
+      "defaultTypes": [
+        {
+          "id": "catalog:kitchen:oven:built-in-600",
+          "name": "Built-in Oven 600",
+          "familyId": "catalog:kitchen:oven",
+          "discipline": "generic",
+          "parameters": { "widthMm": 600, "heightMm": 600 }
+        }
+      ]
+    },
+    {
+      "id": "catalog:kitchen:fridge",
+      "name": "Fridge",
+      "discipline": "generic",
+      "params": [
+        {
+          "key": "widthMm",
+          "label": "Width",
+          "type": "length_mm",
+          "default": 600,
+          "min": 500,
+          "max": 1000,
+          "instanceOverridable": true
+        },
+        {
+          "key": "depthMm",
+          "label": "Depth",
+          "type": "length_mm",
+          "default": 650,
+          "min": 550,
+          "max": 750,
+          "instanceOverridable": false
+        },
+        {
+          "key": "heightMm",
+          "label": "Height",
+          "type": "length_mm",
+          "default": 1850,
+          "min": 1500,
+          "max": 2200,
+          "instanceOverridable": false
+        }
+      ],
+      "defaultTypes": [
+        {
+          "id": "catalog:kitchen:fridge:tall-600x650x1850",
+          "name": "Tall Fridge 600×650×1850",
+          "familyId": "catalog:kitchen:fridge",
+          "discipline": "generic",
+          "parameters": { "widthMm": 600, "depthMm": 650, "heightMm": 1850 }
+        },
+        {
+          "id": "catalog:kitchen:fridge:american-900x720x1850",
+          "name": "American Fridge 900×720×1850",
+          "familyId": "catalog:kitchen:fridge",
+          "discipline": "generic",
+          "parameters": { "widthMm": 900, "depthMm": 720, "heightMm": 1850 }
+        }
+      ]
+    }
+  ]
+}

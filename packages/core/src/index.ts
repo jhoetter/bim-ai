@@ -493,6 +493,8 @@ export type Element =
       discipline: FamilyDiscipline;
       parameters: Record<string, unknown>;
       isBuiltIn?: boolean;
+      /** FAM-08 — provenance when the type was loaded from an external catalog. */
+      catalogSource?: { catalogId: string; familyId: string; version: string };
     }
   | {
       kind: 'balcony';

@@ -541,12 +541,24 @@ class LinkModelElem(BaseModel):
     pinned: bool = Field(default=False)
 
 
+class FamilyCatalogSource(BaseModel):
+    """FAM-08 — provenance for a family_type loaded from an external catalog."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    catalog_id: str = Field(alias="catalogId")
+    family_id: str = Field(alias="familyId")
+    version: str
+
+
 class FamilyTypeElem(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True)
     kind: Literal["family_type"] = "family_type"
     id: str
     discipline: Literal["door", "window", "generic"] = "generic"
     parameters: dict[str, Any] = Field(default_factory=dict)
+    catalog_source: FamilyCatalogSource | None = Field(
+        default=None, alias="catalogSource"
+    )
 
 
 class RoomSeparationElem(BaseModel):

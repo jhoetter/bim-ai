@@ -1,0 +1,211 @@
+{
+  "catalogId": "living-room-furniture",
+  "name": "Living Room Furniture",
+  "version": "1.0.0",
+  "description": "Sofa, armchair, coffee table, side table, floor lamp, rug — typical living-room furniture for residential layouts.",
+  "thumbnailsBaseUrl": null,
+  "families": [
+    {
+      "id": "catalog:living-room:sofa-3-seat",
+      "name": "3-Seat Sofa",
+      "discipline": "generic",
+      "params": [
+        {
+          "key": "widthMm",
+          "label": "Width",
+          "type": "length_mm",
+          "default": 2200,
+          "min": 1600,
+          "max": 3000,
+          "instanceOverridable": true
+        },
+        {
+          "key": "depthMm",
+          "label": "Depth",
+          "type": "length_mm",
+          "default": 950,
+          "min": 800,
+          "max": 1100,
+          "instanceOverridable": false
+        },
+        {
+          "key": "seatHeightMm",
+          "label": "Seat Height",
+          "type": "length_mm",
+          "default": 450,
+          "min": 380,
+          "max": 520,
+          "instanceOverridable": false
+        }
+      ],
+      "defaultTypes": [
+        {
+          "id": "catalog:living-room:sofa-3-seat:standard",
+          "name": "Standard 3-Seat 2200×950",
+          "familyId": "catalog:living-room:sofa-3-seat",
+          "discipline": "generic",
+          "parameters": { "widthMm": 2200, "depthMm": 950, "seatHeightMm": 450 }
+        },
+        {
+          "id": "catalog:living-room:sofa-3-seat:wide",
+          "name": "Wide 3-Seat 2600×950",
+          "familyId": "catalog:living-room:sofa-3-seat",
+          "discipline": "generic",
+          "parameters": { "widthMm": 2600, "depthMm": 950, "seatHeightMm": 450 }
+        }
+      ]
+    },
+    {
+      "id": "catalog:living-room:armchair",
+      "name": "Armchair",
+      "discipline": "generic",
+      "params": [
+        {
+          "key": "widthMm",
+          "label": "Width",
+          "type": "length_mm",
+          "default": 850,
+          "min": 700,
+          "max": 1100,
+          "instanceOverridable": true
+        },
+        {
+          "key": "depthMm",
+          "label": "Depth",
+          "type": "length_mm",
+          "default": 900,
+          "min": 750,
+          "max": 1050,
+          "instanceOverridable": false
+        }
+      ],
+      "defaultTypes": [
+        {
+          "id": "catalog:living-room:armchair:lounge-850",
+          "name": "Lounge Armchair 850",
+          "familyId": "catalog:living-room:armchair",
+          "discipline": "generic",
+          "parameters": { "widthMm": 850, "depthMm": 900 }
+        }
+      ]
+    },
+    {
+      "id": "catalog:living-room:coffee-table",
+      "name": "Coffee Table",
+      "discipline": "generic",
+      "params": [
+        {
+          "key": "widthMm",
+          "label": "Width",
+          "type": "length_mm",
+          "default": 1200,
+          "min": 800,
+          "max": 1800,
+          "instanceOverridable": true
+        },
+        {
+          "key": "depthMm",
+          "label": "Depth",
+          "type": "length_mm",
+          "default": 600,
+          "min": 400,
+          "max": 900,
+          "instanceOverridable": true
+        }
+      ],
+      "defaultTypes": [
+        {
+          "id": "catalog:living-room:coffee-table:rectangular-1200x600",
+          "name": "Rectangular 1200×600",
+          "familyId": "catalog:living-room:coffee-table",
+          "discipline": "generic",
+          "parameters": { "widthMm": 1200, "depthMm": 600 }
+        }
+      ]
+    },
+    {
+      "id": "catalog:living-room:side-table",
+      "name": "Side Table",
+      "discipline": "generic",
+      "params": [
+        {
+          "key": "diameterMm",
+          "label": "Diameter",
+          "type": "length_mm",
+          "default": 450,
+          "min": 350,
+          "max": 700,
+          "instanceOverridable": true
+        }
+      ],
+      "defaultTypes": [
+        {
+          "id": "catalog:living-room:side-table:round-450",
+          "name": "Round Side Table 450",
+          "familyId": "catalog:living-room:side-table",
+          "discipline": "generic",
+          "parameters": { "diameterMm": 450 }
+        }
+      ]
+    },
+    {
+      "id": "catalog:living-room:floor-lamp",
+      "name": "Floor Lamp",
+      "discipline": "generic",
+      "params": [
+        {
+          "key": "heightMm",
+          "label": "Height",
+          "type": "length_mm",
+          "default": 1700,
+          "min": 1200,
+          "max": 2100,
+          "instanceOverridable": true
+        }
+      ],
+      "defaultTypes": [
+        {
+          "id": "catalog:living-room:floor-lamp:standard-1700",
+          "name": "Standard Floor Lamp 1700",
+          "familyId": "catalog:living-room:floor-lamp",
+          "discipline": "generic",
+          "parameters": { "heightMm": 1700 }
+        }
+      ]
+    },
+    {
+      "id": "catalog:living-room:area-rug",
+      "name": "Area Rug",
+      "discipline": "generic",
+      "params": [
+        {
+          "key": "widthMm",
+          "label": "Width",
+          "type": "length_mm",
+          "default": 2400,
+          "min": 1500,
+          "max": 4000,
+          "instanceOverridable": true
+        },
+        {
+          "key": "depthMm",
+          "label": "Depth",
+          "type": "length_mm",
+          "default": 1700,
+          "min": 1000,
+          "max": 3000,
+          "instanceOverridable": true
+        }
+      ],
+      "defaultTypes": [
+        {
+          "id": "catalog:living-room:area-rug:standard-2400x1700",
+          "name": "Standard Rug 2400×1700",
+          "familyId": "catalog:living-room:area-rug",
+          "discipline": "generic",
+          "parameters": { "widthMm": 2400, "depthMm": 1700 }
+        }
+      ]
+    }
+  ]
+}

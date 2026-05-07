@@ -105,6 +105,7 @@ from bim_ai.elements import (
     DoorElem,
     Element,
     ElevationViewElem,
+    FamilyCatalogSource,
     FamilyTypeElem,
     FloorElem,
     FloorTypeElem,
@@ -1833,12 +1834,19 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
 
         case UpsertFamilyTypeCmd():
             fid = cmd.id or new_id()
-            els[fid] = FamilyTypeElem(
-                kind="family_type",
-                id=fid,
-                discipline=cmd.discipline,
-                parameters=dict(cmd.parameters),
-            )
+            kwargs: dict[str, Any] = {
+                "kind": "family_type",
+                "id": fid,
+                "discipline": cmd.discipline,
+                "parameters": dict(cmd.parameters),
+            }
+            if cmd.catalog_source is not None:
+                kwargs["catalog_source"] = FamilyCatalogSource(
+                    catalogId=cmd.catalog_source.catalog_id,
+                    familyId=cmd.catalog_source.family_id,
+                    version=cmd.catalog_source.version,
+                )
+            els[fid] = FamilyTypeElem(**kwargs)
 
         case AssignOpeningFamilyCmd():
             op = els.get(cmd.opening_id)

@@ -27,6 +27,16 @@ from bim_ai.diff_engine import compute_element_diff
 from bim_ai.document import Document
 from bim_ai.elements import Element, LevelElem, LinkModelElem, PlanViewElem
 from bim_ai.engine import clone_document, ensure_internal_origin, try_commit_bundle
+from bim_ai.agent_loop import (
+    AGENT_BACKEND_ENV_VAR,
+    AgentIterateRequest,
+    AgentIterateResponse,
+    generate_patch,
+)
+from bim_ai.family_catalog_format import (
+    load_catalog_by_id,
+    load_catalog_index,
+)
 from bim_ai.evidence_manifest import (
     MINIMAL_PROBE_PNG_BYTES_V1,
     MINIMAL_PROBE_PNG_CANONICAL_SHA256_V1,
@@ -775,6 +785,51 @@ async def schedule_derived_table(
         if wanted:
             out = schedule_payload_with_column_subset(payload, wanted)
     return out
+
+
+# ---------------------------------------------------------------------------
+# FAM-08 — Family catalog endpoints
+# ---------------------------------------------------------------------------
+
+
+@api_router.get("/family-catalogs")
+async def list_family_catalogs() -> dict[str, Any]:
+    """Return the index of bundled external family catalogs."""
+    entries = load_catalog_index()
+    return {"catalogs": [e.model_dump(by_alias=True) for e in entries]}
+
+
+@api_router.get("/family-catalogs/{catalog_id}")
+async def get_family_catalog(catalog_id: str) -> dict[str, Any]:
+    """Return the full payload of one external family catalog."""
+    payload = load_catalog_by_id(catalog_id)
+    if payload is None:
+        raise HTTPException(status_code=404, detail="Catalog not found")
+    return payload.model_dump(by_alias=True)
+
+
+# ---------------------------------------------------------------------------
+# AGT-01 — Agent iterate endpoint
+# ---------------------------------------------------------------------------
+
+
+@api_router.post("/models/{model_id}/agent-iterate")
+async def agent_iterate(
+    model_id: UUID,
+    body: AgentIterateRequest,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """Generate one patch toward ``goal`` given the current snapshot + advisories.
+
+    Backend selection is controlled by the ``BIM_AI_AGENT_BACKEND`` env var
+    (default: shell out to ``claude`` CLI; ``test`` reads code blocks from
+    the goal markdown for deterministic CI).
+    """
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    response: AgentIterateResponse = generate_patch(body)
+    return response.model_dump(by_alias=True)
 
 
 # ---------------------------------------------------------------------------

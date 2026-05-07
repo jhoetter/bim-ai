@@ -66,7 +66,12 @@ import { StatusBar } from './StatusBar';
 import { CheatsheetModal } from '../cmd/CheatsheetModal';
 import { CommandPalette } from '../cmd/CommandPalette';
 import { type CommandCandidate } from '../cmd/commandPaletteSources';
-import { FamilyLibraryPanel, type FamilyLibraryPlaceKind } from '../families/FamilyLibraryPanel';
+import {
+  FamilyLibraryPanel,
+  type ExternalCatalogPlacement,
+  type FamilyLibraryPlaceKind,
+} from '../families/FamilyLibraryPanel';
+import { applyCommandBundle } from '../lib/api';
 import { OnboardingTour } from '../onboarding/OnboardingTour';
 import { readOnboardingProgress, resetOnboarding } from '../onboarding/tour';
 import { canvasContainerStyle, CanvasMount } from './CanvasMount';
@@ -691,6 +696,45 @@ export function Workspace(): JSX.Element {
     [setPlanTool],
   );
 
+  const handlePlaceCatalogFamily = useCallback(
+    async (placement: ExternalCatalogPlacement) => {
+      if (!modelId) return;
+      const safeFamId = placement.family.id.replace(/[^A-Za-z0-9_-]/g, '_');
+      const newTypeId = `ft-${safeFamId}-${Date.now().toString(36)}`;
+      const kind: FamilyLibraryPlaceKind =
+        placement.family.discipline === 'door' || placement.family.discipline === 'window'
+          ? (placement.family.discipline as FamilyLibraryPlaceKind)
+          : 'wall_type';
+      const discipline =
+        placement.family.discipline === 'door' || placement.family.discipline === 'window'
+          ? placement.family.discipline
+          : 'generic';
+      const cmd = {
+        type: 'upsertFamilyType',
+        id: newTypeId,
+        discipline,
+        parameters: {
+          name: placement.defaultType.name,
+          familyId: placement.family.id,
+          ...placement.defaultType.parameters,
+        },
+        catalogSource: {
+          catalogId: placement.catalogId,
+          familyId: placement.family.id,
+          version: placement.catalogVersion,
+        },
+      };
+      try {
+        await applyCommandBundle(modelId, [cmd], { userId: 'component-tool' });
+      } catch (err) {
+        log.error('component-tool', 'applyCommandBundle failed', err);
+        return;
+      }
+      setPendingPlacement({ kind, typeId: newTypeId });
+    },
+    [modelId, setPendingPlacement],
+  );
+
   /* ── Empty-state per §25 ──────────────────────────────────────────── */
   const emptyHint = patternFor(seedLoading ? 'canvas-loading' : 'canvas-empty');
   const showEmptyState =
@@ -712,6 +756,7 @@ export function Workspace(): JSX.Element {
         onClose={() => setFamilyLibraryOpen(false)}
         elementsById={elementsById}
         onPlaceType={handlePlaceFamilyType}
+        onPlaceCatalogFamily={handlePlaceCatalogFamily}
       />
       <OnboardingTour open={tourOpen} onClose={() => setTourOpen(false)} />
       <VVDialog open={vvDialogOpen} onClose={closeVVDialog} />

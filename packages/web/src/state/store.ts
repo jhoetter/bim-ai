@@ -667,6 +667,23 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
     const discipline = validDisciplines.includes(d as never)
       ? (d as (typeof validDisciplines)[number])
       : 'generic';
+    const csRaw = (raw.catalogSource ?? raw.catalog_source) as
+      | {
+          catalogId?: unknown;
+          familyId?: unknown;
+          version?: unknown;
+          catalog_id?: unknown;
+          family_id?: unknown;
+        }
+      | undefined;
+    const catalogSource =
+      csRaw && typeof csRaw === 'object'
+        ? {
+            catalogId: String(csRaw.catalogId ?? csRaw.catalog_id ?? ''),
+            familyId: String(csRaw.familyId ?? csRaw.family_id ?? ''),
+            version: String(csRaw.version ?? ''),
+          }
+        : undefined;
     return {
       kind: 'family_type',
       id,
@@ -683,6 +700,7 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
           ? (raw.parameters as Record<string, unknown>)
           : {},
       ...(raw.isBuiltIn != null ? { isBuiltIn: Boolean(raw.isBuiltIn) } : {}),
+      ...(catalogSource && catalogSource.catalogId ? { catalogSource } : {}),
     };
   }
 

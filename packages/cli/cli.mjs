@@ -471,6 +471,184 @@ async function cmdDiff(modelId, fromRev, toRev, outPath, asText, summaryOnly) {
   }
 }
 
+// ─── AGT-01 — closed iterative-correction agent loop ─────────────────────────
+
+async function readGoalText(goalArg) {
+  if (!goalArg) return '';
+  if (goalArg === '-') return slurpStdin();
+  return fs.readFile(goalArg, 'utf8');
+}
+
+function summariseValidate(val) {
+  const violations = Array.isArray(val?.violations) ? val.violations : [];
+  let blocking = 0;
+  for (const v of violations) {
+    const sev = String(v?.severity ?? v?.level ?? '').toLowerCase();
+    if (['blocking', 'block', 'error', 'critical', 'high'].includes(sev)) blocking++;
+  }
+  return { violationCount: violations.length, blockingCount: blocking };
+}
+
+function progressScore(goalText, snap, val) {
+  const summary = summariseValidate(val);
+  const elementsBlob = JSON.stringify(snap?.elements ?? {}).toLowerCase();
+  const keywords = new Set(
+    (goalText.match(/[A-Za-z_][A-Za-z0-9_]{3,}/g) ?? [])
+      .filter((w) => !/^\d+$/.test(w))
+      .map((w) => w.toLowerCase()),
+  );
+  let overlap = 0;
+  for (const kw of keywords) if (elementsBlob.includes(kw)) overlap++;
+  return -summary.blockingCount * 100 + overlap;
+}
+
+async function agentIterate(modelId, goalText, snap, val, evidence, iteration, backendOverride) {
+  const url = `${base}/api/models/${encodeURIComponent(modelId)}/agent-iterate`;
+  const body = {
+    goal: goalText,
+    currentSnapshot: snap,
+    currentValidate: val,
+    evidence,
+    iteration,
+  };
+  if (backendOverride) body.backendOverride = backendOverride;
+  return fetchJson('POST', url, body);
+}
+
+async function cmdAgentLoop(modelId, goalPath, maxIter, evidenceOut, backendOverride) {
+  if (!modelId) {
+    console.error('agent-loop requires BIM_AI_MODEL_ID');
+    process.exit(1);
+  }
+  if (!goalPath) {
+    console.error('agent-loop requires --goal <path>');
+    process.exit(1);
+  }
+  const goalText = await readGoalText(goalPath);
+  await fs.mkdir(evidenceOut, { recursive: true });
+
+  let lastScore = -Infinity;
+  for (let iter = 1; iter <= maxIter; iter++) {
+    const iterDir = path.join(evidenceOut, `iter-${String(iter).padStart(2, '0')}`);
+    await fs.mkdir(iterDir, { recursive: true });
+
+    const snap = await fetchJson('GET', `${base}/api/models/${encodeURIComponent(modelId)}/snapshot`);
+    const val = await fetchJson('GET', `${base}/api/models/${encodeURIComponent(modelId)}/validate`);
+    const evidence = {
+      revision: snap.revision ?? null,
+      elementCount: snap.elements ? Object.keys(snap.elements).length : 0,
+      validate: summariseValidate(val),
+    };
+    await fs.writeFile(path.join(iterDir, 'snapshot.json'), JSON.stringify(snap, null, 2));
+    await fs.writeFile(path.join(iterDir, 'validate.json'), JSON.stringify(val, null, 2));
+    await fs.writeFile(path.join(iterDir, 'evidence.json'), JSON.stringify(evidence, null, 2));
+
+    const baselineScore = progressScore(goalText, snap, val);
+
+    const patchResp = await agentIterate(modelId, goalText, snap, val, evidence, iter, backendOverride);
+    await fs.writeFile(path.join(iterDir, 'patch.json'), JSON.stringify(patchResp, null, 2));
+
+    const commands = Array.isArray(patchResp.patch) ? patchResp.patch : [];
+    if (!commands.length) {
+      const status = {
+        status: 'no-patch',
+        iteration: iter,
+        rationale: patchResp.rationale ?? '',
+        confidence: patchResp.confidence ?? 0,
+      };
+      await fs.writeFile(path.join(iterDir, 'status.json'), JSON.stringify(status, null, 2));
+      console.log(JSON.stringify({ ok: true, iteration: iter, status: 'no-patch' }, null, 2));
+      return;
+    }
+
+    const dryUrl = `${base}/api/models/${encodeURIComponent(modelId)}/commands/bundle/dry-run`;
+    const dryResp = await fetch(dryUrl, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ commands, userId: 'agent-loop' }),
+    });
+    const dryText = await dryResp.text();
+    let dryJson;
+    try {
+      dryJson = JSON.parse(dryText);
+    } catch {
+      dryJson = { raw: dryText };
+    }
+    await fs.writeFile(path.join(iterDir, 'dry-run.json'), JSON.stringify(dryJson, null, 2));
+    if (!dryResp.ok) {
+      const status = { status: 'dry-run-failed', iteration: iter, body: dryJson };
+      await fs.writeFile(path.join(iterDir, 'status.json'), JSON.stringify(status, null, 2));
+      console.log(JSON.stringify({ ok: false, iteration: iter, status: 'dry-run-failed' }, null, 2));
+      return;
+    }
+
+    const applyResp = await fetchJson(
+      'POST',
+      `${base}/api/models/${encodeURIComponent(modelId)}/commands/bundle`,
+      { commands, userId: 'agent-loop' },
+    );
+    await fs.writeFile(path.join(iterDir, 'apply.json'), JSON.stringify(applyResp, null, 2));
+
+    const snap2 = await fetchJson(
+      'GET',
+      `${base}/api/models/${encodeURIComponent(modelId)}/snapshot`,
+    );
+    const val2 = await fetchJson(
+      'GET',
+      `${base}/api/models/${encodeURIComponent(modelId)}/validate`,
+    );
+    await fs.writeFile(path.join(iterDir, 'snapshot.after.json'), JSON.stringify(snap2, null, 2));
+    await fs.writeFile(path.join(iterDir, 'validate.after.json'), JSON.stringify(val2, null, 2));
+
+    const newScore = progressScore(goalText, snap2, val2);
+    const progressed = newScore > Math.max(baselineScore, lastScore);
+    const regressed = newScore < baselineScore;
+
+    const status = {
+      status: progressed ? 'progress' : regressed ? 'regression-rolled-back' : 'no-progress',
+      iteration: iter,
+      baselineScore,
+      newScore,
+      rationale: patchResp.rationale ?? '',
+      confidence: patchResp.confidence ?? 0,
+      patchSize: commands.length,
+    };
+    await fs.writeFile(path.join(iterDir, 'status.json'), JSON.stringify(status, null, 2));
+
+    if (regressed) {
+      try {
+        const undoResp = await fetchJson(
+          'POST',
+          `${base}/api/models/${encodeURIComponent(modelId)}/undo`,
+          { userId: 'agent-loop' },
+        );
+        await fs.writeFile(path.join(iterDir, 'undo.json'), JSON.stringify(undoResp, null, 2));
+      } catch (e) {
+        await fs.writeFile(
+          path.join(iterDir, 'undo.error'),
+          e instanceof Error ? e.message : String(e),
+        );
+      }
+      console.log(JSON.stringify({ ok: false, iteration: iter, status: status.status }, null, 2));
+      return;
+    }
+
+    if (!progressed) {
+      console.log(JSON.stringify({ ok: false, iteration: iter, status: status.status }, null, 2));
+      return;
+    }
+
+    lastScore = newScore;
+    if (status.status === 'progress' && newScore >= 0 && commands.length === 0) {
+      // unreachable but kept for clarity
+      break;
+    }
+  }
+  console.log(
+    JSON.stringify({ ok: true, iteration: maxIter, status: 'max-iter-reached' }, null, 2),
+  );
+}
+
 function usage() {
   console.error(
     `bim-ai <command> [args]
@@ -503,6 +681,11 @@ Commands:
                                        validate brief JSON → write starter command bundle (one-family preset)
   diff --from <rev> --to <rev> [--out <path>] [--text] [--summary-only]
                                        element-level diff between two revisions of the model
+  agent-loop --goal <path|-> --max-iter <n> --evidence-out <dir> [--backend <name>]
+                                       AGT-01: read goal markdown → call /api/models/:id/agent-iterate →
+                                       dry-run + apply → re-evaluate → rollback on regression. Backend
+                                       defaults to BIM_AI_AGENT_BACKEND (test|claude). Per-iter dump
+                                       under <evidence-out>/iter-NN/.
   watch                               WebSocket watcher (continuous live commits — no Synchronize step required)
 
 Collaboration model:
@@ -658,6 +841,28 @@ async function main() {
         else if (a === '--summary-only') summaryOnly = true;
       }
       await cmdDiff(modelId, fromRev, toRev, outArg, asText, summaryOnly);
+      return;
+    }
+    if (cmd === 'agent-loop') {
+      const rest = argv.slice(1);
+      let goalArg;
+      let maxIter = 5;
+      let evidenceOut;
+      let backendOverride;
+      for (let i = 0; i < rest.length; i++) {
+        const a = rest[i];
+        if (a === '--goal' && rest[i + 1]) goalArg = rest[++i];
+        else if (a === '--max-iter' && rest[i + 1]) maxIter = Number(rest[++i]);
+        else if (a === '--evidence-out' && rest[i + 1]) evidenceOut = rest[++i];
+        else if (a === '--backend' && rest[i + 1]) backendOverride = rest[++i];
+      }
+      if (!goalArg || !evidenceOut || !Number.isFinite(maxIter) || maxIter < 1) {
+        console.error(
+          'agent-loop requires --goal <path|-> --max-iter <n> --evidence-out <dir>',
+        );
+        process.exit(1);
+      }
+      await cmdAgentLoop(modelId, goalArg, maxIter, evidenceOut, backendOverride);
       return;
     }
 
