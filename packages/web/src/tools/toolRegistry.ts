@@ -36,6 +36,8 @@ export type ToolId =
   | 'elevation'
   | 'reference-plane'
   | 'property-line'
+  | 'area-boundary'
+  | 'masking-region'
   | 'tag'
   | 'align'
   | 'split'
@@ -187,6 +189,22 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       modes: ['plan', 'plan-3d'],
       tooltip: t('tools.propertyLine.tooltip'),
     },
+    'area-boundary': {
+      id: 'area-boundary',
+      label: t('tools.areaBoundary.label'),
+      icon: 'detailLine',
+      hotkey: 'AR',
+      modes: ['plan', 'plan-3d'],
+      tooltip: t('tools.areaBoundary.tooltip'),
+    },
+    'masking-region': {
+      id: 'masking-region',
+      label: t('tools.maskingRegion.label'),
+      icon: 'detailLine',
+      hotkey: 'MR',
+      modes: ['plan', 'plan-3d'],
+      tooltip: t('tools.maskingRegion.tooltip'),
+    },
     tag: {
       id: 'tag',
       label: t('tools.tag.label'),
@@ -294,6 +312,8 @@ const PALETTE_ORDER: ToolId[] = [
   'elevation',
   'reference-plane',
   'property-line',
+  'area-boundary',
+  'masking-region',
   'tag',
   'align',
   'split',

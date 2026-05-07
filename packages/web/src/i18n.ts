@@ -45,6 +45,14 @@ i18n.init({
             label: 'Property Line',
             tooltip: 'Two-click site / zoning property boundary (PL)',
           },
+          areaBoundary: {
+            label: 'Area Boundary',
+            tooltip: 'Sketch a legal/permit area polygon on the active level (AR)',
+          },
+          maskingRegion: {
+            label: 'Masking Region',
+            tooltip: 'Sketch a 2D opaque region that hides underlying linework (MR)',
+          },
           tag: {
             label: 'Tag',
             tooltip: 'Tag dropdown (Door / Window / Wall / Room / By category)',
@@ -850,6 +858,14 @@ i18n.init({
           propertyLine: {
             label: 'Grundstücksgrenze',
             tooltip: 'Zwei Klicks für eine Grundstücks-/Bauzonenlinie (PL)',
+          },
+          areaBoundary: {
+            label: 'Flächenumgrenzung',
+            tooltip: 'Skizziere ein Flächen-/Berechnungspolygon auf der aktiven Ebene (AR)',
+          },
+          maskingRegion: {
+            label: 'Maskierungsbereich',
+            tooltip: 'Skizziere eine deckende 2D-Fläche, die darunterliegende Linien verdeckt (MR)',
           },
           tag: {
             label: 'Beschriftung',

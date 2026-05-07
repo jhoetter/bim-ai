@@ -7,6 +7,7 @@ from typing import Any
 
 from bim_ai.document import Document
 from bim_ai.elements import (
+    AreaElem,
     DoorElem,
     FloorElem,
     FloorTypeElem,
@@ -853,6 +854,32 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                         row_r["layerPropagationStatus"] = audit_row["propagationStatus"]
                     rows.append(row_r)
                     offset_mm += th_mm
+
+    elif cat == "area":
+        # KRN-08 — area schedule. Lists name + level + perimeter + computed
+        # area + ruleSet for each `area` element.
+        for e in doc.elements.values():
+            if isinstance(e, AreaElem):
+                pts = [{"xMm": float(p.x_mm), "yMm": float(p.y_mm)} for p in e.boundary_mm]
+                _area_unused, perimeter = _room_polygon_area_perimeter_sqm(pts)
+                computed = (
+                    float(e.computed_area_sq_mm) / 1_000_000.0
+                    if e.computed_area_sq_mm is not None
+                    else 0.0
+                )
+                lev = lvl_lab.get(e.level_id, e.level_id)
+                rows.append(
+                    {
+                        "elementId": e.id,
+                        "name": e.name,
+                        "levelId": e.level_id,
+                        "level": lev,
+                        "perimeterM": round(perimeter, 3),
+                        "computedAreaM2": round(computed, 3),
+                        "ruleSet": e.rule_set,
+                        "familyTypeId": "",
+                    }
+                )
 
     else:
         rows = []

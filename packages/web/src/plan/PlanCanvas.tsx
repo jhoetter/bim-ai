@@ -144,7 +144,9 @@ type Draft =
   | { kind: 'dim'; ax: number; ay: number }
   | { kind: 'room_rect'; sx: number; sy: number }
   | { kind: 'reference-plane'; sx: number; sy: number }
-  | { kind: 'property-line'; sx: number; sy: number };
+  | { kind: 'property-line'; sx: number; sy: number }
+  | { kind: 'area-boundary'; sx: number; sy: number }
+  | { kind: 'masking-region'; sx: number; sy: number };
 
 function nearestWallAt(
   elementsById: Record<string, Element>,
@@ -1908,6 +1910,78 @@ export function PlanCanvas({
           type: 'createPropertyLine',
           startMm: { xMm: d.sx, yMm: d.sy },
           endMm: { xMm: sp.xMm, yMm: sp.yMm },
+        });
+        draftRef.current = undefined;
+        bumpGeom((x) => x + 1);
+        return;
+      }
+      if (planTool === 'area-boundary') {
+        // KRN-08: two-click rectangular area-boundary fallback while
+        // SKT-01 sketch sessions extend to the `area` element kind.
+        const d = draftRef.current;
+        if (!d || d.kind !== 'area-boundary') {
+          draftRef.current = { kind: 'area-boundary', sx: sp.xMm, sy: sp.yMm };
+          bumpGeom((x) => x + 1);
+          return;
+        }
+        if (Math.hypot(sp.xMm - d.sx, sp.yMm - d.sy) < 1) {
+          draftRef.current = undefined;
+          bumpGeom((x) => x + 1);
+          return;
+        }
+        const x0 = Math.min(d.sx, sp.xMm);
+        const x1 = Math.max(d.sx, sp.xMm);
+        const y0 = Math.min(d.sy, sp.yMm);
+        const y1 = Math.max(d.sy, sp.yMm);
+        onSemanticCommand({
+          type: 'createArea',
+          name: 'Area',
+          levelId: lvlId,
+          boundaryMm: [
+            { xMm: x0, yMm: y0 },
+            { xMm: x1, yMm: y0 },
+            { xMm: x1, yMm: y1 },
+            { xMm: x0, yMm: y1 },
+          ],
+          ruleSet: 'gross',
+        });
+        draftRef.current = undefined;
+        bumpGeom((x) => x + 1);
+        return;
+      }
+      if (planTool === 'masking-region') {
+        // KRN-10: two-click rectangular masking-region fallback while
+        // SKT-01 sketch sessions extend to the `masking_region` kind.
+        const d = draftRef.current;
+        if (!d || d.kind !== 'masking-region') {
+          draftRef.current = { kind: 'masking-region', sx: sp.xMm, sy: sp.yMm };
+          bumpGeom((x) => x + 1);
+          return;
+        }
+        if (Math.hypot(sp.xMm - d.sx, sp.yMm - d.sy) < 1) {
+          draftRef.current = undefined;
+          bumpGeom((x) => x + 1);
+          return;
+        }
+        if (!activePlanViewId) {
+          draftRef.current = undefined;
+          bumpGeom((x) => x + 1);
+          return;
+        }
+        const x0 = Math.min(d.sx, sp.xMm);
+        const x1 = Math.max(d.sx, sp.xMm);
+        const y0 = Math.min(d.sy, sp.yMm);
+        const y1 = Math.max(d.sy, sp.yMm);
+        onSemanticCommand({
+          type: 'createMaskingRegion',
+          hostViewId: activePlanViewId,
+          boundaryMm: [
+            { xMm: x0, yMm: y0 },
+            { xMm: x1, yMm: y0 },
+            { xMm: x1, yMm: y1 },
+            { xMm: x0, yMm: y1 },
+          ],
+          fillColor: '#ffffff',
         });
         draftRef.current = undefined;
         bumpGeom((x) => x + 1);

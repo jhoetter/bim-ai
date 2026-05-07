@@ -56,6 +56,8 @@ export type LegacyPlanTool =
   | 'elevation'
   | 'reference-plane'
   | 'property-line'
+  | 'area-boundary'
+  | 'masking-region'
   | 'align'
   | 'split'
   | 'trim'

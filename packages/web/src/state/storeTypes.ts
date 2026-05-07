@@ -41,6 +41,8 @@ export type PlanTool =
   | 'elevation'
   | 'reference-plane'
   | 'property-line'
+  | 'area-boundary'
+  | 'masking-region'
   | 'align'
   | 'split'
   | 'trim'
