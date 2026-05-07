@@ -1,0 +1,51 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "39e28dd02f0c",
+  "session_id": "808d676e-03e4-426d-a54f-883d25853077",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-07T08:14:17.232137Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "app/tests/test_one_family_bundle_roundtrip.py",
+    "app/tests/test_seed_house_v2_bundle.py",
+    "packages/cli/lib/one-family-home-commands.mjs",
+    "packages/cli/lib/seed-house-v2-commands.mjs",
+    "packages/web/e2e/__fixtures__/seed-house-snapshot.json",
+    "packages/web/e2e/seed-house-fidelity.spec.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-opus-4-7",
+  "turn_id": "bfdca4cdf80b",
+  "token_usage": {
+    "input_tokens": 898,
+    "cache_creation_tokens": 200401,
+    "cache_read_tokens": 18142335,
+    "output_tokens": 83020,
+    "api_call_count": 143
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-07T08:14:17.216245Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 28,
+    "human_removed": 4348,
+    "total_committed": 0,
+    "total_lines_changed": 4376,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 167,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "spec/code-quality-tracker.md": 167
+      }
+    }
+  ]
+}
