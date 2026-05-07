@@ -186,6 +186,18 @@ def parse_curtain_grid_cell_id(cell_id: str) -> tuple[int, int]:
     return int(m.group(1)), int(m.group(2))
 
 
+class WallRecessZone(BaseModel):
+    """KRN-16 — wall recess / setback zone along the wall's alongT axis."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    along_t_start: float = Field(alias="alongTStart", ge=0, le=1)
+    along_t_end: float = Field(alias="alongTEnd", ge=0, le=1)
+    setback_mm: float = Field(alias="setbackMm", gt=0)
+    sill_height_mm: float | None = Field(default=None, alias="sillHeightMm", ge=0)
+    head_height_mm: float | None = Field(default=None, alias="headHeightMm", ge=0)
+    floor_continues: bool = Field(default=False, alias="floorContinues")
+
+
 class WallElem(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True)
     kind: Literal["wall"] = "wall"
@@ -211,6 +223,7 @@ class WallElem(BaseModel):
     curtain_panel_overrides: dict[str, CurtainPanelOverride] | None = Field(
         default=None, alias="curtainPanelOverrides"
     )
+    recess_zones: list[WallRecessZone] | None = Field(default=None, alias="recessZones")
 
 
 DoorOperationType = Literal[
@@ -549,6 +562,70 @@ class RailingElem(BaseModel):
     hosted_stair_id: str | None = Field(default=None, alias="hostedStairId")
     path_mm: list[Vec2Mm] = Field(alias="pathMm")
     guard_height_mm: float = Field(alias="guardHeightMm", default=1040)
+    pinned: bool = Field(default=False)
+
+
+class SweepPathPoint(BaseModel):
+    """KRN-15 — single vertex in a sweep's path polyline (xMm, yMm, optional zMm)."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    x_mm: float = Field(alias="xMm")
+    y_mm: float = Field(alias="yMm")
+    z_mm: float | None = Field(default=None, alias="zMm")
+
+
+class SweepProfilePoint(BaseModel):
+    """KRN-15 — single vertex in a sweep's 2D profile cross-section."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    u_mm: float = Field(alias="uMm")
+    v_mm: float = Field(alias="vMm")
+
+
+SweepProfilePlane = Literal["normal_to_path_start", "work_plane"]
+
+
+class SweepElem(BaseModel):
+    """KRN-15 — project-level swept solid (closed profile along a polyline path)."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["sweep"] = "sweep"
+    id: str
+    name: str = "Sweep"
+    level_id: str = Field(alias="levelId")
+    path_mm: list[SweepPathPoint] = Field(alias="pathMm")
+    profile_mm: list[SweepProfilePoint] = Field(alias="profileMm")
+    profile_plane: SweepProfilePlane = Field(default="work_plane", alias="profilePlane")
+    material_key: str | None = Field(default=None, alias="materialKey")
+    pinned: bool = Field(default=False)
+
+
+DormerRoofKind = Literal["flat", "shed", "gable", "hipped"]
+
+
+class DormerPositionOnRoof(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    along_ridge_mm: float = Field(alias="alongRidgeMm")
+    across_ridge_mm: float = Field(alias="acrossRidgeMm")
+
+
+class DormerElem(BaseModel):
+    """KRN-14 — dormer cut through host roof + dormer walls + roof."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["dormer"] = "dormer"
+    id: str
+    name: str = "Dormer"
+    host_roof_id: str = Field(alias="hostRoofId")
+    position_on_roof: DormerPositionOnRoof = Field(alias="positionOnRoof")
+    width_mm: float = Field(alias="widthMm", gt=0)
+    wall_height_mm: float = Field(alias="wallHeightMm", gt=0)
+    depth_mm: float = Field(alias="depthMm", gt=0)
+    dormer_roof_kind: DormerRoofKind = Field(default="flat", alias="dormerRoofKind")
+    dormer_roof_pitch_deg: float | None = Field(default=None, alias="dormerRoofPitchDeg")
+    wall_material_key: str | None = Field(default=None, alias="wallMaterialKey")
+    roof_material_key: str | None = Field(default=None, alias="roofMaterialKey")
+    has_floor_opening: bool = Field(default=False, alias="hasFloorOpening")
     pinned: bool = Field(default=False)
 
 
@@ -1040,6 +1117,9 @@ ElementKind = Literal[
     "text_note",
     "reference_plane",
     "property_line",
+    "balcony",
+    "sweep",
+    "dormer",
 ]
 
 
@@ -1093,6 +1173,8 @@ Element = Annotated[
     | DetailRegionElem
     | TextNoteElem
     | ReferencePlaneElem
-    | PropertyLineElem,
+    | PropertyLineElem
+    | SweepElem
+    | DormerElem,
     Field(discriminator="kind"),
 ]

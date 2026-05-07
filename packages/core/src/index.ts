@@ -55,7 +55,10 @@ export type ElemKind =
   | 'placed_tag'
   | 'detail_line'
   | 'detail_region'
-  | 'text_note';
+  | 'text_note'
+  | 'sweep'
+  | 'dormer'
+  | 'balcony';
 
 export type Text3dFontFamily = 'helvetiker' | 'optimer' | 'gentilis';
 
@@ -301,6 +304,23 @@ export type Element =
        * elevated walls. When unset / null, the strip is emitted on any
        * single-thickness wall at level elevation > 0. */
       floorEdgeStripDisabled?: boolean | null;
+      /**
+       * KRN-16 — wall recess / setback zones along the wall's alongT axis.
+       *
+       * When set, the wall plane steps back by `setbackMm` (toward its
+       * interior normal) over the alongT range `[alongTStart, alongTEnd]`.
+       * Hosted openings whose alongT falls inside the zone are repositioned
+       * onto the recessed surface. Use cases: loggias, deep entry porches,
+       * bay windows.
+       */
+      recessZones?: {
+        alongTStart: number;
+        alongTEnd: number;
+        setbackMm: number;
+        sillHeightMm?: number;
+        headHeightMm?: number;
+        floorContinues?: boolean;
+      }[];
       pinned?: boolean;
     }
   | {
@@ -894,6 +914,50 @@ export type Element =
        */
       originAlignmentMode: 'origin_to_origin';
       hidden?: boolean;
+      pinned?: boolean;
+    }
+  | {
+      /**
+       * KRN-15 — project-level swept solid.
+       *
+       * Extrudes a closed 2D `profileMm` along an open or closed
+       * `pathMm` polyline. Used for fascia, gutters, mullion bodies,
+       * picture-frame outlines around recessed loggias, and any
+       * linear architectural feature with a constant cross-section.
+       */
+      kind: 'sweep';
+      id: string;
+      name?: string;
+      levelId: string;
+      pathMm: { xMm: number; yMm: number; zMm?: number }[];
+      profileMm: { uMm: number; vMm: number }[];
+      profilePlane: 'normal_to_path_start' | 'work_plane';
+      materialKey?: string | null;
+      worksetId?: string | null;
+      pinned?: boolean;
+    }
+  | {
+      /**
+       * KRN-14 — dormer load-bearing slice.
+       *
+       * Cuts the host roof and adds dormer walls + roof at the
+       * `positionOnRoof` (local roof coords; alongRidgeMm is along
+       * the ridge axis, acrossRidgeMm is the perpendicular distance
+       * from ridge midpoint).
+       */
+      kind: 'dormer';
+      id: string;
+      name?: string;
+      hostRoofId: string;
+      positionOnRoof: { alongRidgeMm: number; acrossRidgeMm: number };
+      widthMm: number;
+      wallHeightMm: number;
+      depthMm: number;
+      dormerRoofKind: 'flat' | 'shed' | 'gable' | 'hipped';
+      dormerRoofPitchDeg?: number;
+      wallMaterialKey?: string | null;
+      roofMaterialKey?: string | null;
+      hasFloorOpening?: boolean;
       pinned?: boolean;
     };
 

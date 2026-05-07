@@ -7,15 +7,21 @@ from pydantic import BaseModel, ConfigDict, Field
 from bim_ai.elements import (
     CameraMm,
     CurtainPanelOverride,
+    DormerPositionOnRoof,
+    DormerRoofKind,
     EvidenceRef,
     PlanCategoryGraphicRow,
     PlanTagBadgeStyle,
     PlanTagTarget,
     RoomColorSchemeRow,
     SiteContextObjectRow,
+    SweepPathPoint,
+    SweepProfilePlane,
+    SweepProfilePoint,
     Text3dFontFamily,
     Vec2Mm,
     Vec3Mm,
+    WallRecessZone,
     WallTypeLayer,
 )
 from bim_ai.roof_geometry import RoofGeometryMode
@@ -1079,6 +1085,48 @@ class DeletePropertyLineCmd(BaseModel):
     property_line_id: str = Field(alias="propertyLineId")
 
 
+class CreateSweepCmd(BaseModel):
+    """KRN-15 — author a project-level swept solid."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createSweep"] = "createSweep"
+    id: str | None = None
+    name: str = "Sweep"
+    level_id: str = Field(alias="levelId")
+    path_mm: list[SweepPathPoint] = Field(alias="pathMm")
+    profile_mm: list[SweepProfilePoint] = Field(alias="profileMm")
+    profile_plane: SweepProfilePlane = Field(default="work_plane", alias="profilePlane")
+    material_key: str | None = Field(default=None, alias="materialKey")
+
+
+class CreateDormerCmd(BaseModel):
+    """KRN-14 — author a dormer that cuts the host roof."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createDormer"] = "createDormer"
+    id: str | None = None
+    name: str = "Dormer"
+    host_roof_id: str = Field(alias="hostRoofId")
+    position_on_roof: DormerPositionOnRoof = Field(alias="positionOnRoof")
+    width_mm: float = Field(alias="widthMm", gt=0)
+    wall_height_mm: float = Field(alias="wallHeightMm", gt=0)
+    depth_mm: float = Field(alias="depthMm", gt=0)
+    dormer_roof_kind: DormerRoofKind = Field(default="flat", alias="dormerRoofKind")
+    dormer_roof_pitch_deg: float | None = Field(default=None, alias="dormerRoofPitchDeg")
+    wall_material_key: str | None = Field(default=None, alias="wallMaterialKey")
+    roof_material_key: str | None = Field(default=None, alias="roofMaterialKey")
+    has_floor_opening: bool = Field(default=False, alias="hasFloorOpening")
+
+
+class SetWallRecessZonesCmd(BaseModel):
+    """KRN-16 — replace the recess-zone list on an existing wall."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["setWallRecessZones"] = "setWallRecessZones"
+    wall_id: str = Field(alias="wallId")
+    recess_zones: list[WallRecessZone] = Field(default_factory=list, alias="recessZones")
+
+
 Command = Annotated[
     CreateLevelCmd
     | CreateWallCmd
@@ -1167,6 +1215,9 @@ Command = Annotated[
     | DeleteReferencePlaneCmd
     | CreatePropertyLineCmd
     | UpdatePropertyLineCmd
-    | DeletePropertyLineCmd,
+    | DeletePropertyLineCmd
+    | CreateSweepCmd
+    | CreateDormerCmd
+    | SetWallRecessZonesCmd,
     Field(discriminator="type"),
 ]

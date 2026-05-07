@@ -74,7 +74,14 @@ import {
   makeSurveyPointMarker,
 } from './viewport/originMarkers';
 import { makeReferencePlaneMarker } from './viewport/referencePlaneMarker';
+import { makeSweepMesh } from './viewport/sweepMesh';
+import { makeDormerMesh } from './viewport/dormerMesh';
+import { applyDormerCutsToRoofGeom } from './viewport/dormerRoofCut';
+import { registerDormerCutFn } from './viewport/meshBuilders';
 import { WallContextMenu, type WallContextMenuCommand } from './workspace/WallContextMenu';
+
+// KRN-14 — wire the CSG cut into meshBuilders. Side-effect at module load.
+registerDormerCutFn(applyDormerCutsToRoofGeom);
 
 type Props = {
   wsConnected: boolean;
@@ -960,6 +967,10 @@ export function Viewport({ wsConnected, onPersistViewpointField, onSemanticComma
         case 'stair':
           for (const rid of railingsByStair.get(id) ?? []) extraDirty.add(rid);
           break;
+        case 'dormer':
+          // KRN-14: dormer change → host roof needs to re-CSG.
+          extraDirty.add((e as Extract<Element, { kind: 'dormer' }>).hostRoofId);
+          break;
       }
     };
 
@@ -976,6 +987,13 @@ export function Viewport({ wsConnected, onPersistViewpointField, onSemanticComma
       if (e?.kind === 'door') extraDirty.add((e as DoorElem).wallId);
       if (e?.kind === 'window') extraDirty.add((e as WindowElem).wallId);
       if (e?.kind === 'wall_opening') extraDirty.add((e as WallOpeningElem).hostWallId);
+      if (e?.kind === 'dormer')
+        extraDirty.add((e as Extract<Element, { kind: 'dormer' }>).hostRoofId);
+    }
+    for (const id of addedIds) {
+      const e = curr[id];
+      if (e?.kind === 'dormer')
+        extraDirty.add((e as Extract<Element, { kind: 'dormer' }>).hostRoofId);
     }
     for (const id of extraDirty) {
       if (!addedIds.has(id) && !removedIds.has(id)) changedIds.add(id);
@@ -1178,6 +1196,12 @@ export function Viewport({ wsConnected, onPersistViewpointField, onSemanticComma
           text3dPendingRef.current.delete(id);
           break;
         }
+        case 'sweep':
+          obj = makeSweepMesh(e, curr, paint);
+          break;
+        case 'dormer':
+          obj = makeDormerMesh(e, curr, paint);
+          break;
         case 'internal_origin':
           obj = makeInternalOriginMarker(e);
           break;

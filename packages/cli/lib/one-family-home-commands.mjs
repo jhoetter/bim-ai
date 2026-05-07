@@ -4,8 +4,14 @@
  * Canonical seed: an asymmetric two-volume single-family demo house.
  *
  * See spec/target-house-seed.md for the architectural ground truth, and
- * spec/target-house-vis-colored.png for the colour study. The model
- * is the "core essence" that the BIM AI demo screenshots target.
+ * spec/target-house-vis-colored.png for the colour study. This seed is
+ * authored against KRN-14 + KRN-15 + KRN-16 (no more workarounds):
+ *
+ *   - asymmetric gable roof (KRN-11) with bumped ridge offset
+ *   - loggia recess on the upper south wall via KRN-16 recessZones[]
+ *   - "thick white picture-frame" outline along the gable polygon via
+ *     KRN-15 createSweep
+ *   - east-slope dormer cut-out via KRN-14 createDormer
  *
  * Plan layout (mm; +X east, +Y north, +Z up; origin at SW corner):
  *
@@ -13,30 +19,21 @@
  *            │   upper-vol roof above   │
  *            │   (asymmetric gable)     │
  *            │     0..5000 × 0..8000    │
- *     y=1500 ┤  ╭──── back wall ────╮   │
- *            │  │ loggia recess     │   │  east strip is single-storey
- *            │  │ 0..5000 × 0..1500 │   │  flat-roof deck w/ parapet
- *     y=0    ├──┴──── front frame ─┴──  │  (5000..7000 × 0..8000)
- *            └──────────────────────────┘  (south face)
+ *            │                          │
+ *            │   loggia recess on the   │  east strip is single-storey
+ *            │   south wall, alongT     │  flat-roof deck w/ parapet
+ *            │   0.1..0.9, 1500mm deep  │  (5000..7000 × 0..8000)
+ *     y=0    └──────────────────────────┘  (south face)
  *           x=0           5000          7000
  *
  * Massing essence (KRN-11 asymmetric_gable):
  *   - upper volume sits west-aligned over the ground floor
- *   - ridge sits 1500mm east of upper-volume centre (so at x=4000)
- *   - west-side eave low (1500mm above lvl-upper → absolute 4500mm)
- *   - east-side eave high (4000mm above lvl-upper → absolute 7000mm)
+ *   - ridge sits 1800mm east of upper-volume centre (so at x≈4300)
+ *   - west-side eave low (1200mm above lvl-upper → absolute 4200mm)
+ *   - east-side eave high (4500mm above lvl-upper → absolute 7500mm)
  *   - long west pitch + short steep east pitch
  *
  * Materials follow MAT-01 catalog keys (see app/bim_ai/material_catalog.py).
- *
- * Capability gaps approximated:
- *   - KRN-14 dormer not shipped: the east-roof dormer is approximated as
- *     sliding doors on the upper volume's east wall opening to the deck.
- *     See TODO(KRN-14) markers below.
- *   - FAM-02 sweep not exposed via createSweep command: the loggia "frame"
- *     is approximated by a thick white wall on the south face whose top
- *     follows the asymmetric roof (roofAttachmentId), with a single large
- *     wall_opening cut for the loggia view.
  */
 
 const UPPER_FOOTPRINT_MM = [
@@ -139,7 +136,7 @@ export function buildOneFamilyHomeCommands() {
       start: { xMm: 0, yMm: 0 },
       end: { xMm: 0, yMm: 8000 },
       thicknessMm: 200,
-      heightMm: 1500,
+      heightMm: 1200,
       materialKey: 'white_render',
     },
     {
@@ -150,12 +147,12 @@ export function buildOneFamilyHomeCommands() {
       start: { xMm: 0, yMm: 8000 },
       end: { xMm: 5000, yMm: 8000 },
       thicknessMm: 200,
-      heightMm: 4000,
+      heightMm: 4500,
       materialKey: 'white_render',
     },
     // Upper east wall — separates upper interior from the east roof deck.
-    // High enough to meet the asymmetric roof's east eave (~4000mm).
-    // Sliding glass doors on the SOUTH end approximate the KRN-14 dormer.
+    // The east-slope dormer cut-out (KRN-14) opens onto this wall, so
+    // the sliding glass doors host directly here.
     {
       type: 'createWall',
       id: 'hf-w-uf-east',
@@ -164,37 +161,38 @@ export function buildOneFamilyHomeCommands() {
       start: { xMm: 5000, yMm: 0 },
       end: { xMm: 5000, yMm: 8000 },
       thicknessMm: 200,
-      heightMm: 4000,
+      heightMm: 4500,
       materialKey: 'white_render',
     },
 
-    // ── South façade — loggia front frame (thick white wall) ───────────
-    // FAM-02 sweep would be ideal here; until createSweep ships, use a
-    // thick wall whose top follows the asymmetric roof, with a single
-    // large wall_opening that exposes the recessed back wall.
+    // ── South façade — single wall with KRN-16 loggia recess ─────────
+    // The wall's recessZones step the wall plane back 1500 mm interior
+    // over alongT 0.1..0.9, exposing the warm-wood "back wall" of the
+    // loggia. The non-recessed end caps inherit white_render (set
+    // separately) — but for the recessed surface that's visible from
+    // the south, the wall's primary materialKey is cladding_warm_wood.
     {
       type: 'createWall',
-      id: 'hf-w-uf-loggia-front',
-      name: 'Upper south frame (loggia)',
+      id: 'hf-w-uf-south',
+      name: 'Upper south wall (loggia recess)',
       levelId: 'hf-lvl-upper',
       start: { xMm: 0, yMm: 0 },
       end: { xMm: 5000, yMm: 0 },
-      thicknessMm: 250,
-      heightMm: 4000,
-      materialKey: 'white_render',
-    },
-
-    // Recessed back wall, 1500mm north of the south face.
-    {
-      type: 'createWall',
-      id: 'hf-w-uf-loggia-back',
-      name: 'Loggia back wall (warm wood)',
-      levelId: 'hf-lvl-upper',
-      start: { xMm: 0, yMm: 1500 },
-      end: { xMm: 5000, yMm: 1500 },
       thicknessMm: 200,
-      heightMm: 2700,
+      heightMm: 4200,
       materialKey: 'cladding_warm_wood',
+    },
+    {
+      type: 'setWallRecessZones',
+      wallId: 'hf-w-uf-south',
+      recessZones: [
+        {
+          alongTStart: 0.1,
+          alongTEnd: 0.9,
+          setbackMm: 1500,
+          floorContinues: true,
+        },
+      ],
     },
 
     // ── Floors / slabs ────────────────────────────────────────────────
@@ -233,6 +231,10 @@ export function buildOneFamilyHomeCommands() {
     },
 
     // ── Asymmetric gable roof (KRN-11) ────────────────────────────────
+    // Bumped from the seed-rebuild values to read more dramatically:
+    //   ridge offset 1500 → 1800 mm east of centre
+    //   west eave 1500 → 1200 mm (lower, longer west pitch)
+    //   east eave 4000 → 4500 mm (higher, shorter steep east pitch)
     {
       type: 'createRoof',
       id: 'hf-roof-main',
@@ -242,14 +244,19 @@ export function buildOneFamilyHomeCommands() {
       overhangMm: 250,
       slopeDeg: null,
       roofGeometryMode: 'asymmetric_gable',
-      ridgeOffsetTransverseMm: 1500,
-      eaveHeightLeftMm: 1500,
-      eaveHeightRightMm: 4000,
+      ridgeOffsetTransverseMm: 1800,
+      eaveHeightLeftMm: 1200,
+      eaveHeightRightMm: 4500,
       materialKey: 'metal_standing_seam_dark_grey',
     },
 
     // Attach upper-volume gable walls to the roof so their tops follow
     // the slope (low west eave, high east eave, gable triangle on N/S).
+    // The south wall stays detached from the roof — its top is a flat
+    // 4200 mm and the roof / picture-frame outline composes the gable
+    // shape above it. Otherwise the recessZones polygon footprint would
+    // need to compose with attachWallTopToRoof, which the load-bearing
+    // slice does not yet support.
     {
       type: 'attachWallTopToRoof',
       wallId: 'hf-w-uf-west',
@@ -265,24 +272,33 @@ export function buildOneFamilyHomeCommands() {
       wallId: 'hf-w-uf-east',
       roofId: 'hf-roof-main',
     },
-    {
-      type: 'attachWallTopToRoof',
-      wallId: 'hf-w-uf-loggia-front',
-      roofId: 'hf-roof-main',
-    },
 
-    // Large opening cut in the loggia front frame so the recessed back
-    // wall + balcony are visible through it. Spans almost the full width
-    // and from the floor slab up to ~2400mm.
+    // ── KRN-15 picture-frame outline along the gable polygon ───────────
+    // The 200×100 mm white-render sweep traces the south face's gable
+    // outline. Profile: uMm 200 along the wall direction (the visible
+    // "thickness" of the frame seen from outside), vMm 100 out of facade
+    // (toward the south observer). Path is closed and lives in planY=0.
     {
-      type: 'createWallOpening',
-      id: 'hf-wo-loggia-frame',
-      name: 'Loggia frame opening',
-      hostWallId: 'hf-w-uf-loggia-front',
-      alongTStart: 0.06,
-      alongTEnd: 0.94,
-      sillHeightMm: 100,
-      headHeightMm: 2500,
+      type: 'createSweep',
+      id: 'hf-sw-frame',
+      name: 'Loggia picture-frame outline',
+      levelId: 'hf-lvl-ground',
+      pathMm: [
+        { xMm: 0, yMm: 0, zMm: 3000 },
+        { xMm: 5000, yMm: 0, zMm: 3000 },
+        { xMm: 5000, yMm: 0, zMm: 7500 },
+        { xMm: 4300, yMm: 0, zMm: 4576 },
+        { xMm: 0, yMm: 0, zMm: 4200 },
+        { xMm: 0, yMm: 0, zMm: 3000 },
+      ],
+      profileMm: [
+        { uMm: -50, vMm: -100 },
+        { uMm: 50, vMm: -100 },
+        { uMm: 50, vMm: 100 },
+        { uMm: -50, vMm: 100 },
+      ],
+      profilePlane: 'work_plane',
+      materialKey: 'white_render',
     },
 
     // ── East roof deck parapet (white render, h=1000) ─────────────────
@@ -363,14 +379,15 @@ export function buildOneFamilyHomeCommands() {
       heightMm: 1000,
     },
 
-    // ── Loggia openings (on the recessed back wall) ───────────────────
-    // Sliding glass door — right side (spec §1.4: "large floor-to-ceiling
-    // rectangular window/sliding door on the right").
+    // ── Loggia openings (hosted on the south wall in the recess zone) ─
+    // The KRN-16 recessZones step the wall plane back 1500 mm interior
+    // over alongT 0.1..0.9, so these openings render against the
+    // recessed (warm-wood) surface, not the original wall plane.
     {
       type: 'insertDoorOnWall',
       id: 'hf-door-loggia',
       name: 'Loggia sliding door',
-      wallId: 'hf-w-uf-loggia-back',
+      wallId: 'hf-w-uf-south',
       alongT: 0.7,
       widthMm: 1800,
     },
@@ -381,7 +398,7 @@ export function buildOneFamilyHomeCommands() {
       type: 'insertWindowOnWall',
       id: 'hf-win-loggia-trap',
       name: 'Loggia trapezoidal window',
-      wallId: 'hf-w-uf-loggia-back',
+      wallId: 'hf-w-uf-south',
       alongT: 0.2,
       widthMm: 1200,
       sillHeightMm: 100,
@@ -447,41 +464,51 @@ export function buildOneFamilyHomeCommands() {
       value: 'cladding_warm_wood',
     },
 
-    // ── Balcony slab + glass balustrade in front of loggia back wall ──
-    // Hosted on the back wall, projects 1600mm south so the balustrade
-    // lands just south of the front frame. createBalcony's balustrade is
-    // implicit frameless glass per spec §1.4.
+    // ── Balcony slab + glass balustrade in front of loggia recess ────
+    // Hosted on the south wall, projects south so the balustrade lands
+    // just outside the picture-frame outline. createBalcony's
+    // balustrade is implicit frameless glass per spec §1.4.
     {
       type: 'createBalcony',
       id: 'hf-balcony-loggia',
       name: 'Loggia balcony',
-      wallId: 'hf-w-uf-loggia-back',
+      wallId: 'hf-w-uf-south',
       elevationMm: 3000,
-      projectionMm: 1600,
+      projectionMm: 200,
       slabThicknessMm: 150,
       balustradeHeightMm: 1050,
     },
 
-    // ── Dormer-area sliding doors (KRN-14 workaround) ─────────────────
-    // TODO(KRN-14): When the dormer element kind ships, replace these
-    // sliding doors + the upper east wall section with a single dormer
-    // element cut into the asymmetric gable roof. See KRN-14 in
-    // spec/workpackage-master-tracker.md.
+    // ── KRN-14 dormer cut-out on the east slope ───────────────────────
+    // Cuts a rectangular hole through the east slope of the asymmetric
+    // gable roof, exposing the upper-volume east wall + the deck below.
+    // Dormer "front" face opens toward +X (the east deck); cheek walls
+    // and back wall in white render match the upper-volume cladding.
+    {
+      type: 'createDormer',
+      id: 'hf-dormer-east',
+      name: 'East-slope dormer cut-out',
+      hostRoofId: 'hf-roof-main',
+      positionOnRoof: { alongRidgeMm: -2000, acrossRidgeMm: 1500 },
+      widthMm: 2400,
+      wallHeightMm: 2400,
+      depthMm: 2000,
+      dormerRoofKind: 'flat',
+      wallMaterialKey: 'white_render',
+      hasFloorOpening: false,
+    },
+
+    // Sliding glass doors on the upper east wall, hosted within the
+    // dormer-cut footprint so they read through the cut-out from the
+    // SSW viewpoint. alongT values target plan-Y range 800..3200 mm,
+    // matching the dormer's south-half placement.
     {
       type: 'insertDoorOnWall',
       id: 'hf-door-dormer-s',
-      name: 'Dormer door (south)',
+      name: 'Dormer sliding doors',
       wallId: 'hf-w-uf-east',
-      alongT: 0.18,
-      widthMm: 1500,
-    },
-    {
-      type: 'insertDoorOnWall',
-      id: 'hf-door-dormer-n',
-      name: 'Dormer door (north)',
-      wallId: 'hf-w-uf-east',
-      alongT: 0.42,
-      widthMm: 1500,
+      alongT: 0.25,
+      widthMm: 2400,
     },
     {
       type: 'updateElementProperty',
@@ -492,18 +519,6 @@ export function buildOneFamilyHomeCommands() {
     {
       type: 'updateElementProperty',
       elementId: 'hf-door-dormer-s',
-      key: 'materialKey',
-      value: 'glass_clear',
-    },
-    {
-      type: 'updateElementProperty',
-      elementId: 'hf-door-dormer-n',
-      key: 'operationType',
-      value: 'sliding_double',
-    },
-    {
-      type: 'updateElementProperty',
-      elementId: 'hf-door-dormer-n',
       key: 'materialKey',
       value: 'glass_clear',
     },

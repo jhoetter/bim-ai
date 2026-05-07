@@ -23,6 +23,8 @@ from bim_ai.commands import (
     CreateAgentDeviationCmd,
     CreateBalconyCmd,
     CreateBcfTopicCmd,
+    CreateDormerCmd,
+    CreateSweepCmd,
     CreateCalloutCmd,
     CreateDimensionCmd,
     CreateElevationViewCmd,
@@ -73,6 +75,7 @@ from bim_ai.commands import (
     RotateProjectBasePointCmd,
     SaveViewpointCmd,
     SetCurtainPanelOverrideCmd,
+    SetWallRecessZonesCmd,
     UnpinElementCmd,
     UpdateElementPropertyCmd,
     UpdateLinkModelCmd,
@@ -118,6 +121,7 @@ from bim_ai.elements import (
     PlacedTagElem,
     TextNoteElem,
     DoorElem,
+    DormerElem,
     Element,
     ElevationViewElem,
     FamilyCatalogSource,
@@ -154,6 +158,7 @@ from bim_ai.elements import (
     SlabOpeningElem,
     StairElem,
     SurveyPointElem,
+    SweepElem,
     TagDefinitionElem,
     Text3dElem,
     ValidationRuleElem,
@@ -170,6 +175,7 @@ from bim_ai.export_ifc import (
     AUTHORITATIVE_REPLAY_KIND_V0,
     KERNEL_IFC_AUTHORITATIVE_REPLAY_SCHEMA_VERSION,
 )
+from bim_ai.material_catalog import resolve_material
 from bim_ai.plan_category_graphics import (
     normalize_plan_category_graphics_rows,
     parse_plan_category_graphics_property_json,
@@ -1846,6 +1852,112 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 slab_thickness_mm=cmd.slab_thickness_mm,
                 balustrade_height_mm=cmd.balustrade_height_mm,
             )
+
+        case CreateSweepCmd():
+            sid = cmd.id or new_id()
+            if sid in els:
+                raise ValueError(f"duplicate element id '{sid}'")
+            if cmd.level_id not in els or not isinstance(els[cmd.level_id], LevelElem):
+                raise ValueError("createSweep.levelId must reference an existing Level")
+            if len(cmd.path_mm) < 2:
+                raise ValueError("createSweep.pathMm requires ≥2 points")
+            if len(cmd.profile_mm) < 3:
+                raise ValueError("createSweep.profileMm requires ≥3 points (closed loop)")
+            if cmd.profile_plane not in ("normal_to_path_start", "work_plane"):
+                raise ValueError(
+                    "createSweep.profilePlane must be 'normal_to_path_start' or 'work_plane'"
+                )
+            if cmd.material_key is not None and resolve_material(cmd.material_key) is None:
+                raise ValueError(
+                    f"createSweep.materialKey '{cmd.material_key}' is not in the material catalog"
+                )
+            els[sid] = SweepElem(
+                kind="sweep",
+                id=sid,
+                name=cmd.name,
+                level_id=cmd.level_id,
+                path_mm=list(cmd.path_mm),
+                profile_mm=list(cmd.profile_mm),
+                profile_plane=cmd.profile_plane,
+                material_key=cmd.material_key,
+            )
+
+        case CreateDormerCmd():
+            did = cmd.id or new_id()
+            if did in els:
+                raise ValueError(f"duplicate element id '{did}'")
+            host = els.get(cmd.host_roof_id)
+            if not isinstance(host, RoofElem):
+                raise ValueError("createDormer.hostRoofId must reference an existing roof")
+            if cmd.width_mm <= 0 or cmd.depth_mm <= 0 or cmd.wall_height_mm <= 0:
+                raise ValueError("createDormer width/depth/wallHeight must all be > 0")
+            if cmd.dormer_roof_kind not in ("flat", "shed", "gable", "hipped"):
+                raise ValueError("createDormer.dormerRoofKind invalid")
+            for key, label in (
+                (cmd.wall_material_key, "wallMaterialKey"),
+                (cmd.roof_material_key, "roofMaterialKey"),
+            ):
+                if key is not None and resolve_material(key) is None:
+                    raise ValueError(
+                        f"createDormer.{label} '{key}' is not in the material catalog"
+                    )
+            # Footprint-fit sanity check. Ridge axis follows the renderer's
+            # heuristic: the longer plan dimension is the ridge axis.
+            host_xs = [p.x_mm for p in host.footprint_mm]
+            host_ys = [p.y_mm for p in host.footprint_mm]
+            span_x = max(host_xs) - min(host_xs)
+            span_y = max(host_ys) - min(host_ys)
+            ridge_along_x = span_x >= span_y
+            half_along = (span_x if ridge_along_x else span_y) / 2
+            half_across = (span_y if ridge_along_x else span_x) / 2
+            if abs(cmd.position_on_roof.along_ridge_mm) + cmd.width_mm / 2 > half_along + 1e-3:
+                raise ValueError("createDormer footprint exceeds host roof along-ridge extent")
+            if abs(cmd.position_on_roof.across_ridge_mm) + cmd.depth_mm / 2 > half_across + 1e-3:
+                raise ValueError("createDormer footprint exceeds host roof across-ridge extent")
+            els[did] = DormerElem(
+                kind="dormer",
+                id=did,
+                name=cmd.name,
+                host_roof_id=cmd.host_roof_id,
+                position_on_roof=cmd.position_on_roof,
+                width_mm=cmd.width_mm,
+                wall_height_mm=cmd.wall_height_mm,
+                depth_mm=cmd.depth_mm,
+                dormer_roof_kind=cmd.dormer_roof_kind,
+                dormer_roof_pitch_deg=cmd.dormer_roof_pitch_deg,
+                wall_material_key=cmd.wall_material_key,
+                roof_material_key=cmd.roof_material_key,
+                has_floor_opening=cmd.has_floor_opening,
+            )
+
+        case SetWallRecessZonesCmd():
+            wall = els.get(cmd.wall_id)
+            if not isinstance(wall, WallElem):
+                raise ValueError("setWallRecessZones.wallId must reference an existing wall")
+            zones = list(cmd.recess_zones)
+            # Validate per-zone bounds
+            for z in zones:
+                if not (0.0 <= z.along_t_start < z.along_t_end <= 1.0):
+                    raise ValueError(
+                        "setWallRecessZones: alongTStart < alongTEnd, both in [0,1]"
+                    )
+                if z.setback_mm <= 0:
+                    raise ValueError("setWallRecessZones.setbackMm must be > 0")
+                if z.setback_mm >= wall.thickness_mm * 8:
+                    raise ValueError(
+                        "setWallRecessZones.setbackMm sanity bound: must be < thicknessMm × 8"
+                    )
+                if z.sill_height_mm is not None and z.head_height_mm is not None:
+                    if z.head_height_mm <= z.sill_height_mm:
+                        raise ValueError(
+                            "setWallRecessZones: headHeightMm must be > sillHeightMm"
+                        )
+            # Non-overlap: sort by start, ensure each end ≤ next start
+            sorted_zones = sorted(zones, key=lambda z: z.along_t_start)
+            for i in range(1, len(sorted_zones)):
+                if sorted_zones[i].along_t_start < sorted_zones[i - 1].along_t_end:
+                    raise ValueError("setWallRecessZones: recess zones must not overlap")
+            els[cmd.wall_id] = wall.model_copy(update={"recess_zones": zones if zones else None})
 
         case CreateRailingCmd():
             rid = cmd.id or new_id()

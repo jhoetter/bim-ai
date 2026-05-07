@@ -1137,6 +1137,18 @@ export function makeRoofMassMesh(
     }
   }
 
+  // KRN-14 — apply CSG cuts for any dormer that hosts on this roof. The
+  // cut helper is registered (or not) by the bootstrap module; tests that
+  // don't exercise the dormer path leave it null so three-bvh-csg never
+  // gets imported in jsdom.
+  const dormersForRoof = Object.values(elementsById).filter(
+    (e): e is Extract<Element, { kind: 'dormer' }> =>
+      e.kind === 'dormer' && (e as Extract<Element, { kind: 'dormer' }>).hostRoofId === roof.id,
+  );
+  if (dormersForRoof.length > 0 && _dormerCutFn) {
+    geom = _dormerCutFn(geom, roof, elementsById, refElev);
+  }
+
   const roofMatSpec = resolveMaterial(roof.materialKey);
   const roofColor =
     roofMatSpec?.baseColor ??
@@ -1164,6 +1176,28 @@ export function makeRoofMassMesh(
     addStandingSeamPattern(mesh, roof, b, eaveY);
   }
   return mesh;
+}
+
+/**
+ * KRN-14 — registration slot for the dormer-cut helper.
+ *
+ * meshBuilders.ts can't import three-bvh-csg at module top-level — that
+ * package crashes under jsdom (its three-mesh-bvh dep has a circular-
+ * dependency init issue). The viewport bootstrap calls
+ * `registerDormerCutFn` in browser context only; tests leave it null and
+ * the dormer cut is silently skipped.
+ */
+type DormerCutFn = (
+  geom: THREE.BufferGeometry,
+  roof: Extract<Element, { kind: 'roof' }>,
+  elementsById: Record<string, Element>,
+  refElev: number,
+) => THREE.BufferGeometry;
+
+let _dormerCutFn: DormerCutFn | null = null;
+
+export function registerDormerCutFn(fn: DormerCutFn | null): void {
+  _dormerCutFn = fn;
 }
 
 export function makeStairVolumeMesh(
@@ -1601,6 +1635,120 @@ export function makeSlopedWallMesh(
   return mesh;
 }
 
+/**
+ * KRN-16 — extrude a wall whose plane steps back along recess zones.
+ *
+ * Builds a closed polygon footprint in plan that traces the exterior
+ * face along non-recessed segments and steps inward (toward the wall's
+ * interior normal) by `setbackMm` along recessed segments. The interior
+ * face mirrors the exterior step so the wall thickness stays constant.
+ * The result, extruded vertically by the wall height, reads as a deep
+ * architectural recess (loggia / bay window) with end-cap "flanges".
+ *
+ * Limitation: door / window CSG cuts are skipped for recessed walls.
+ * Hosted openings render against the recessed surface (see makeDoorMesh
+ * / makeWindowMesh — they offset by setbackMm when alongT falls inside
+ * a recess zone).
+ */
+export function makeRecessedWallMesh(
+  wall: WallElem,
+  elevM: number,
+  paint: ViewportPaintBundle | null,
+): THREE.Group {
+  const halfThickM = THREE.MathUtils.clamp(wall.thicknessMm / 1000, 0.05, 2) / 2;
+
+  // Sort recess zones by alongTStart so we walk them in order.
+  const zones = [...(wall.recessZones ?? [])].sort((a, b) => a.alongTStart - b.alongTStart);
+
+  // Build exterior path (plan space, mm). Starts at start exterior, walks
+  // Build a multi-box group: full-thickness end caps for each non-recessed
+  // span, plus a back-wall box for each recess zone. This avoids the
+  // self-intersecting polygon problem of trying to extrude a single
+  // closed contour with cheek-wall + back-wall arches.
+  const baseOff = (wall.baseConstraintOffsetMm ?? 0) / 1000;
+  const yBase = elevM + baseOff;
+  const height = THREE.MathUtils.clamp(wall.heightMm / 1000, 0.25, 40);
+
+  const wallMatSpec = resolveMaterial(wall.materialKey);
+  const isWhite = wall.materialKey === 'white_cladding' || wall.materialKey === 'white_render';
+  const wallBaseColor =
+    wallMatSpec?.baseColor ?? (isWhite ? '#f4f4f0' : categoryColorOr(paint, 'wall'));
+  const mat = new THREE.MeshStandardMaterial({
+    color: wallBaseColor,
+    roughness:
+      wallMatSpec?.roughness ?? (isWhite ? 0.92 : (paint?.categories.wall.roughness ?? 0.85)),
+    metalness: wallMatSpec?.metalness ?? paint?.categories.wall.metalness ?? 0.0,
+  });
+
+  // White-render variant for end caps when the wall's primary materialKey
+  // is the recess back finish (cladding_warm_wood). Approximates the
+  // architectural "white frame around a wood-clad recess" pattern.
+  const capMat =
+    wall.materialKey === 'cladding_warm_wood'
+      ? new THREE.MeshStandardMaterial({
+          color: '#f4f4f0',
+          roughness: 0.92,
+          metalness: 0,
+        })
+      : mat;
+
+  const group = new THREE.Group();
+  group.userData.bimPickId = wall.id;
+
+  // Compute non-recessed spans (full-thickness wall segments) and recessed
+  // spans (where the wall plane has stepped back). Each becomes its own
+  // axis-aligned box at the wall's yaw rotation.
+  const yaw = Math.atan2(wall.end.yMm - wall.start.yMm, wall.end.xMm - wall.start.xMm);
+  const wallLenM = Math.hypot(wall.end.xMm - wall.start.xMm, wall.end.yMm - wall.start.yMm) / 1000;
+  const wallCx = (wall.start.xMm + wall.end.xMm) / 2 / 1000;
+  const wallCz = (wall.start.yMm + wall.end.yMm) / 2 / 1000;
+
+  function addBoxAt(t0: number, t1: number, perpMmOffset: number, material: THREE.Material) {
+    const segLen = (t1 - t0) * wallLenM;
+    if (segLen < 1e-4) return;
+    const segMid = (t0 + t1) / 2;
+    // Centre offset along wall direction:
+    //   centre_along = (segMid - 0.5) * len
+    // Then rotate by yaw to get world XZ contribution.
+    const along = (segMid - 0.5) * wallLenM;
+    // Perpendicular offset in plan-space (interior normal direction) → world
+    // XZ. Plan-Y maps directly to world-Z under the viewport convention.
+    const perpOffsetM = perpMmOffset / 1000;
+    const cosY = Math.cos(yaw);
+    const sinY = Math.sin(yaw);
+    // Local: x = along, z = perpOffset. World: rotate around Y by yaw.
+    const dxWorld = cosY * along - sinY * perpOffsetM;
+    const dzWorld = sinY * along + cosY * perpOffsetM;
+    const cx = wallCx + dxWorld;
+    const cz = wallCz + dzWorld;
+    const box = new THREE.Mesh(new THREE.BoxGeometry(segLen, height, halfThickM * 2), material);
+    box.position.set(cx, yBase + height / 2, cz);
+    box.rotation.y = yaw;
+    box.userData.bimPickId = wall.id;
+    addEdges(box);
+    group.add(box);
+  }
+
+  // End caps (full-thickness wall, on the original plane).
+  let cursor = 0;
+  for (const z of zones) {
+    if (z.alongTStart > cursor) {
+      addBoxAt(cursor, z.alongTStart, 0, capMat);
+    }
+    cursor = Math.max(cursor, z.alongTEnd);
+  }
+  if (cursor < 1) {
+    addBoxAt(cursor, 1, 0, capMat);
+  }
+
+  // Recess back walls (full-thickness wall, stepped back by setbackMm).
+  for (const z of zones) {
+    addBoxAt(z.alongTStart, z.alongTEnd, z.setbackMm, mat);
+  }
+
+  return group;
+}
+
 export function makeWallMesh(
   wall: WallElem,
   elevM: number,
@@ -1624,6 +1772,9 @@ export function makeWallMesh(
     if (assembly) {
       return makeLayeredWallMesh(wall, assembly, elevM, paint, elementsById);
     }
+  }
+  if (wall.recessZones && wall.recessZones.length > 0) {
+    return makeRecessedWallMesh(wall, elevM, paint);
   }
   const sx = wall.start.xMm / 1000;
   const sz = wall.start.yMm / 1000;
@@ -1905,6 +2056,36 @@ export function makeCurtainWallMesh(
   return group;
 }
 
+/**
+ * KRN-16 — for a hosted opening on a recessed wall, return the world-space
+ * offset that places it on the recessed surface. Returns (0,0) when the
+ * wall has no matching recess zone.
+ */
+export function recessOffsetForOpening(wall: WallElem, alongT: number): { dx: number; dz: number } {
+  if (!wall.recessZones || wall.recessZones.length === 0) return { dx: 0, dz: 0 };
+  const zone = wall.recessZones.find((z) => alongT >= z.alongTStart && alongT <= z.alongTEnd);
+  if (!zone) return { dx: 0, dz: 0 };
+  const sx = wall.start.xMm / 1000;
+  const sz = wall.start.yMm / 1000;
+  const ex = wall.end.xMm / 1000;
+  const ez = wall.end.yMm / 1000;
+  const dx = ex - sx;
+  const dz = ez - sz;
+  const len = Math.max(0.001, Math.hypot(dx, dz));
+  // Convention. dx/dz are plan-space deltas (the variable named "sz"
+  // actually holds plan-Y/1000). Plan interior normal = left of the
+  // walking direction: plan tangent (Ux, Uy) → plan normal (-Uy, +Ux).
+  // The viewport convention maps plan-Y directly onto world-Z (see
+  // makeFloorSlabMesh's shape construction + rotate-X(-π/2) chain), so:
+  //   worldN = (-planUy, 0, +planUx)
+  const planUx = dx / len;
+  const planUy = dz / len;
+  const nxWorld = -planUy;
+  const nzWorld = +planUx;
+  const setM = zone.setbackMm / 1000;
+  return { dx: nxWorld * setM, dz: nzWorld * setM };
+}
+
 export function makeDoorMesh(
   door: Extract<Element, { kind: 'door' }>,
   wall: WallElem,
@@ -1915,7 +2096,8 @@ export function makeDoorMesh(
   const familyDef = typeEntry ? getFamilyById(typeEntry.familyId) : undefined;
   const group = buildDoorGeometry({ door, wall, elevM, paint, familyDef });
   const { px, pz } = hostedXZ(door, wall);
-  group.position.set(px, elevM, pz);
+  const off = recessOffsetForOpening(wall, door.alongT);
+  group.position.set(px + off.dx, elevM, pz + off.dz);
   group.rotation.y = wallYaw(wall);
   return group;
 }
@@ -1937,12 +2119,13 @@ export function makeWindowMesh(
   // Non-rectangular outlines anchor at sill — group origin sits at sill level
   // (matches outline-space origin). Rectangular path keeps the original
   // centred-on-rect behaviour for backwards compatibility.
+  const off = recessOffsetForOpening(wall, win.alongT);
   if (outlineKind !== 'rectangle') {
-    group.position.set(px, elevM + sillM, pz);
+    group.position.set(px + off.dx, elevM + sillM, pz + off.dz);
   } else {
     const rawH = Number(win.heightMm);
     const outerH = Math.max(0.05, Math.min(rawH / 1000, (wall.heightMm - rawSill - 60) / 1000));
-    group.position.set(px, elevM + sillM + outerH / 2, pz);
+    group.position.set(px + off.dx, elevM + sillM + outerH / 2, pz + off.dz);
   }
   group.rotation.y = wallYaw(wall);
   return group;
