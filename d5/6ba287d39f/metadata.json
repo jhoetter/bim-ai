@@ -4,7 +4,9 @@
   "strategy": "manual-commit",
   "branch": "dayshift-fam-keystone",
   "checkpoints_count": 2,
-  "files_touched": null,
+  "files_touched": [
+    "spec/workpackage-master-tracker.md"
+  ],
   "sessions": [
     {
       "metadata": "/d5/6ba287d39f/0/metadata.json",
@@ -17,13 +19,19 @@
       "transcript": "/d5/6ba287d39f/1/full.jsonl",
       "content_hash": "/d5/6ba287d39f/1/content_hash.txt",
       "prompt": "/d5/6ba287d39f/1/prompt.txt"
+    },
+    {
+      "metadata": "/d5/6ba287d39f/2/metadata.json",
+      "transcript": "/d5/6ba287d39f/2/full.jsonl",
+      "content_hash": "/d5/6ba287d39f/2/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
-    "input_tokens": 1582,
-    "cache_creation_tokens": 1842419,
-    "cache_read_tokens": 194305711,
-    "output_tokens": 494632,
-    "api_call_count": 823
+    "input_tokens": 1592,
+    "cache_creation_tokens": 1847016,
+    "cache_read_tokens": 195346738,
+    "output_tokens": 496391,
+    "api_call_count": 833
   }
 }
