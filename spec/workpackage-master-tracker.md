@@ -45,8 +45,8 @@ Within-epic deps appear in each primitive's summary table. This section captures
 ### TL;DR
 
 - **Most of the backlog is parallelisable.** Roughly half (~30 WPs) have no dependencies anywhere and can start today.
-- **Four keystone WPs** unlock most of the second half: **FED-01, EDT-01, SKT-01, FAM-01.** Land these in any order (they are independent of each other) and the rest cascades into mass parallel work.
-- **The target-house demo critical path is fully parallelisable today** — KRN-11/12/13/14 + MAT-01 have zero cross-epic deps. Five engineers could ship the target-house in ~1 calendar week each.
+- **Five keystone WPs** unlock most of the second half: **FED-01, EDT-01, SKT-01, FAM-01, SKB-03.** Land these in any order (they are independent of each other) and the rest cascades into mass parallel work. SKB-03 (visual-checkpoint render-+-delta CLI) is the keystone for the sketch-to-BIM agent workflow — without it the agent has no rendered output to look at, so SKB-10 / SKB-15 / SKB-18 all stall.
+- **The target-house demo critical path is fully parallelisable today** — KRN-11/12/13/14 + MAT-01 have zero cross-epic deps. Five engineers could ship the target-house in ~1 calendar week each. The 2026-05-07 attempt landed the kernel work but the silhouette didn't read; the SKB priority bundle (SKB-03 + SKB-21 + SKB-15 + SKB-04 + SKB-05 + SKB-11 + SKB-10, with SKB-12 already done) is the methodology + tooling that lets the next attempt succeed.
 
 ### Dependency graph
 
@@ -97,6 +97,19 @@ graph LR
   PLN01[PLN-01 dimension/tag automation]:::ready
   PLN02[PLN-02 crop region UI]:::ready
 
+  SKB03[SKB-03 visual checkpoint]:::keystone
+  SKB12[SKB-12 cookbook skill]:::done
+  SKB01[SKB-01 phase tags]:::ready
+  SKB02[SKB-02 mass primitive]:::ready
+  SKB04[SKB-04 calibrator]:::ready
+  SKB05[SKB-05 soundness pack]:::ready
+  SKB09[SKB-09 archetypes]:::blocked
+  SKB10[SKB-10 visual gate]:::blocked
+  SKB11[SKB-11 roof-wall align]:::ready
+  SKB15[SKB-15 refine loop]:::blocked
+  SKB18[SKB-18 phase-by-phase tests]:::blocked
+  SKB21[SKB-21 brief format]:::ready
+
   FED01 --> FED02
   FED01 --> FED03
   FED01 --> FED04
@@ -129,30 +142,46 @@ graph LR
   FAM08 -.soft.-> KRN13
 
   VIE03 --> ANN02
+
+  SKB03 --> SKB10
+  SKB03 --> SKB15
+  SKB03 -.soft.-> SKB18
+  SKB01 --> SKB18
+  SKB01 -.soft.-> SKB10
+  SKB02 -.soft.-> SKB09
+  SKB05 -.soft.-> SKB11
+
+  classDef done fill:#e0e0e0,stroke:#555,color:#444;
 ```
 
-Legend: yellow = keystone (no deps, unblocks many); green = ready (no cross-epic deps); red = blocked until its prerequisite ships. Solid arrows are hard deps (cannot ship without); dashed arrows are soft deps (can ship a degraded version, full version needs the prereq).
+Legend: yellow = keystone (no deps, unblocks many); green = ready (no cross-epic deps); red = blocked until its prerequisite ships; grey = already shipped. Solid arrows are hard deps (cannot ship without); dashed arrows are soft deps (can ship a degraded version, full version needs the prereq).
 
 ### Cross-epic dependency table
 
 Only the **cross-primitive** edges are listed (within-primitive deps are already in each section's summary table). Soft = can ship a degraded version without; Hard = cannot ship at all without.
 
-| Dependent WP | Depends on (cross-epic) | Hard / Soft | Reason                                                                         |
-| ------------ | ----------------------- | ----------- | ------------------------------------------------------------------------------ |
-| EDT-04       | KRN-04                  | Hard        | Wall-Opening tool commits `CreateWallOpening`; needs the element kind first    |
-| FED-04       | KRN-06                  | Soft        | Proper CAD alignment with `origin_to_origin` benefits from project base point  |
-| KRN-02       | SKT-01                  | Soft        | Authorable today via API; sketch mode makes interactive authoring practical    |
-| KRN-03       | SKT-01                  | Soft        | Same as KRN-02                                                                 |
-| KRN-07       | SKT-01                  | Hard        | Sketch-based stair shape variant requires sketch sessions                      |
-| KRN-08       | SKT-01                  | Hard        | Area boundary is sketch-authored                                               |
-| KRN-09       | FAM-01, FAM-02          | Soft        | Panel-as-family-instance needs FAM-01; mullion profile rendering needs FAM-02  |
-| KRN-10       | SKT-01                  | Hard        | Masking region boundary is sketch-authored                                     |
-| KRN-13       | FAM-08                  | Soft        | Catalog-driven door variants benefit from FAM-08; can hardcode types otherwise |
-| VIE-02       | FAM-01                  | Hard        | Per-element / per-family-geometry visibility uses FAM-01's geometry node infra |
-| ANN-01       | SKT-01                  | Soft        | `detail_region` is sketch-authored; `detail_line` and `text_note` are not      |
-| ANN-02       | VIE-03                  | Hard        | "Generate elevation from wall face" creates a `VIE-03 elevation_view` element  |
-| PLN-01       | EDT-06                  | Soft        | Auto-tag-everything generalises EDT-06's Tag-on-Place modifier                 |
-| PLN-02       | EDT-01                  | Soft        | Crop region drag handles use the EDT-01 grip protocol                          |
+| Dependent WP | Depends on (cross-epic) | Hard / Soft | Reason                                                                                                                                                                                    |
+| ------------ | ----------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| EDT-04       | KRN-04                  | Hard        | Wall-Opening tool commits `CreateWallOpening`; needs the element kind first                                                                                                               |
+| FED-04       | KRN-06                  | Soft        | Proper CAD alignment with `origin_to_origin` benefits from project base point                                                                                                             |
+| KRN-02       | SKT-01                  | Soft        | Authorable today via API; sketch mode makes interactive authoring practical                                                                                                               |
+| KRN-03       | SKT-01                  | Soft        | Same as KRN-02                                                                                                                                                                            |
+| KRN-07       | SKT-01                  | Hard        | Sketch-based stair shape variant requires sketch sessions                                                                                                                                 |
+| KRN-08       | SKT-01                  | Hard        | Area boundary is sketch-authored                                                                                                                                                          |
+| KRN-09       | FAM-01, FAM-02          | Soft        | Panel-as-family-instance needs FAM-01; mullion profile rendering needs FAM-02                                                                                                             |
+| KRN-10       | SKT-01                  | Hard        | Masking region boundary is sketch-authored                                                                                                                                                |
+| KRN-13       | FAM-08                  | Soft        | Catalog-driven door variants benefit from FAM-08; can hardcode types otherwise                                                                                                            |
+| VIE-02       | FAM-01                  | Hard        | Per-element / per-family-geometry visibility uses FAM-01's geometry node infra                                                                                                            |
+| ANN-01       | SKT-01                  | Soft        | `detail_region` is sketch-authored; `detail_line` and `text_note` are not                                                                                                                 |
+| ANN-02       | VIE-03                  | Hard        | "Generate elevation from wall face" creates a `VIE-03 elevation_view` element                                                                                                             |
+| PLN-01       | EDT-06                  | Soft        | Auto-tag-everything generalises EDT-06's Tag-on-Place modifier                                                                                                                            |
+| PLN-02       | EDT-01                  | Soft        | Crop region drag handles use the EDT-01 grip protocol                                                                                                                                     |
+| SKB-09       | KRN-11..16, MAT-01      | Soft        | Archetype starter bundles compose the kernel primitives + materials; degraded archetypes can ship using only KRN-11 + MAT-01, full target-house archetype needs KRN-14/15/16 (now landed) |
+| SKB-10       | SKB-03                  | Hard        | Per-phase visual gate is a wiring of SKB-03 into `try_commit_bundle`                                                                                                                      |
+| SKB-11       | KRN-11                  | Soft        | Roof-wall alignment validator is most useful on asymmetric_gable; trivially extends to flat / hip / gable roofs that already exist                                                        |
+| SKB-15       | SKB-03                  | Hard        | Refine loop's "look at the rendered PNG" step requires the checkpoint tool                                                                                                                |
+| SKB-18       | SKB-01                  | Hard        | Phase-by-phase test fixtures need the phase-tag primitive to know which commands belong to which phase                                                                                    |
+| SKB-22       | KRN-04                  | Soft        | Auto-emit `join_geometry` between coincident wall endpoints; works without KRN-04 but composes cleanly with wall-opening corners                                                          |
 
 **Notable independence:** Federation, In-Place Editing, Sketch Mode, and Family System Depth are mutually independent at the keystone level — FED-01, EDT-01, SKT-01, and FAM-01 share no dependencies and can be sequenced in any order or in parallel. Five engineers could each take one keystone (plus FAM-02, FAM-04, or any of the standalone WPs) and ship in parallel for ~3 calendar weeks before any cross-epic synchronisation is required.
 
@@ -173,8 +202,9 @@ Group WPs by when they can start.
 **Exchange:** IFC-01, IFC-02, IFC-03, IFC-04
 **Plan / annotation independent:** ANN-02 (after VIE-03 is in Wave 0, also parallel-safe), ANN-01 (`detail_line` + `text_note` parts)
 **CLI:** CLI-01, CLI-02, AGT-01
+**Sketch-to-BIM:** SKB-01, SKB-02, SKB-03 (keystone), SKB-04, SKB-05, SKB-06, SKB-11, SKB-13, SKB-16, SKB-19, SKB-20, SKB-21, SKB-22
 
-**~33 WPs.** Headcount ceiling here is not technical — it's coordination and review capacity.
+**~46 WPs.** Headcount ceiling here is not technical — it's coordination and review capacity.
 
 #### Wave 1 — start once Wave 0 keystone(s) land
 
@@ -182,8 +212,11 @@ After **FED-01:** FED-02, FED-03, FED-04 (3 WPs in parallel)
 After **EDT-01:** EDT-02, EDT-03, EDT-04, EDT-06 (4 WPs in parallel)
 After **SKT-01:** SKT-02, SKT-03, SKT-04, KRN-02, KRN-03, KRN-07, KRN-08, KRN-10, ANN-01 `detail_region` part (9 WPs in parallel)
 After **FAM-01:** FAM-03, FAM-05 (waits for FAM-04 too), FAM-08, VIE-02 (4 WPs)
+After **SKB-03:** SKB-10, SKB-15 (2 WPs in parallel)
+After **SKB-01:** SKB-08, SKB-18, SKB-23 (3 WPs in parallel)
+After **SKB-02:** SKB-09 archetype library (uses mass primitive in archetype templates)
 
-**~20 WPs**, all in their own dependency cluster.
+**~26 WPs**, all in their own dependency cluster.
 
 #### Wave 2 — second-order deps
 
@@ -201,24 +234,25 @@ After **KRN-04:** EDT-04 (tool de-stub for wall opening)
 
 What's the smallest WP set required to ship a specific user-visible goal? Useful for sprint scoping when leadership asks "what would it take to demo X next month?"
 
-| Goal                                                 | Required WPs (in order)                          | Calendar (1 eng) | Calendar (parallel)        |
-| ---------------------------------------------------- | ------------------------------------------------ | ---------------- | -------------------------- |
-| **Author the demo target-house from scratch**        | KRN-11 + KRN-12 + KRN-13 + KRN-14 + MAT-01       | ~6 weeks         | ~1.5 weeks (5 eng)         |
-| **Federated coordination (Navisworks-grade clash)**  | FED-01 → FED-02                                  | ~3.5 weeks       | ~3.5 weeks (serial)        |
-| **Drag walls in 3D viewport to change height**       | EDT-01 → EDT-03                                  | ~7 weeks         | ~7 weeks (serial)          |
-| **Author L-shaped floors from canvas**               | SKT-01 → SKT-02                                  | ~5 weeks         | ~5 weeks (serial)          |
-| **Parametric chair-array dining-table family**       | FAM-01 → FAM-04 → FAM-05                         | ~5 weeks         | ~4 weeks (FAM-04 ‖ FAM-01) |
-| **Production plan documentation (Coarse/Med/Fine)**  | VIE-01 + VIE-02 (parallel after FAM-01)          | ~3 weeks         | ~2 weeks                   |
-| **N/S/E/W elevations on a sheet**                    | VIE-03 + ANN-02                                  | ~2 weeks         | ~1.5 weeks                 |
-| **IFC import → linked shadow model**                 | FED-01 → FED-04 (KRN-06 soft prereq)             | ~5.5 weeks       | ~5 weeks (overlap KRN-06)  |
-| **Full Revit-style "click and edit" feel for walls** | EDT-01 → EDT-02 → EDT-03 + EDT-05 + EDT-06       | ~10 weeks        | ~7 weeks                   |
-| **Asymmetric-roof seed renders correctly in 3D**     | KRN-11 alone                                     | 1 week           | 1 week                     |
-| **Loggia frame on target-house**                     | FAM-02 sweep alone (compose with existing walls) | 1 week           | 1 week                     |
-| **Multi-run stair (dog-leg)**                        | SKT-01 → KRN-07                                  | ~6 weeks         | ~6 weeks (serial)          |
+| Goal                                                 | Required WPs (in order)                                                      | Calendar (1 eng) | Calendar (parallel)                                      |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------- | ---------------- | -------------------------------------------------------- |
+| **Author the demo target-house from scratch**        | KRN-11 + KRN-12 + KRN-13 + KRN-14 + MAT-01                                   | ~6 weeks         | ~1.5 weeks (5 eng)                                       |
+| **Federated coordination (Navisworks-grade clash)**  | FED-01 → FED-02                                                              | ~3.5 weeks       | ~3.5 weeks (serial)                                      |
+| **Drag walls in 3D viewport to change height**       | EDT-01 → EDT-03                                                              | ~7 weeks         | ~7 weeks (serial)                                        |
+| **Author L-shaped floors from canvas**               | SKT-01 → SKT-02                                                              | ~5 weeks         | ~5 weeks (serial)                                        |
+| **Parametric chair-array dining-table family**       | FAM-01 → FAM-04 → FAM-05                                                     | ~5 weeks         | ~4 weeks (FAM-04 ‖ FAM-01)                               |
+| **Production plan documentation (Coarse/Med/Fine)**  | VIE-01 + VIE-02 (parallel after FAM-01)                                      | ~3 weeks         | ~2 weeks                                                 |
+| **N/S/E/W elevations on a sheet**                    | VIE-03 + ANN-02                                                              | ~2 weeks         | ~1.5 weeks                                               |
+| **IFC import → linked shadow model**                 | FED-01 → FED-04 (KRN-06 soft prereq)                                         | ~5.5 weeks       | ~5 weeks (overlap KRN-06)                                |
+| **Full Revit-style "click and edit" feel for walls** | EDT-01 → EDT-02 → EDT-03 + EDT-05 + EDT-06                                   | ~10 weeks        | ~7 weeks                                                 |
+| **Asymmetric-roof seed renders correctly in 3D**     | KRN-11 alone                                                                 | 1 week           | 1 week                                                   |
+| **Loggia frame on target-house**                     | FAM-02 sweep alone (compose with existing walls)                             | 1 week           | 1 week                                                   |
+| **Multi-run stair (dog-leg)**                        | SKT-01 → KRN-07                                                              | ~6 weeks         | ~6 weeks (serial)                                        |
+| **AI agent authors a sound BIM model from a sketch** | SKB-12 (done) + SKB-03 + SKB-21 + SKB-04 + SKB-05 + SKB-11 + SKB-15 + SKB-10 | ~5 weeks         | ~2 weeks (3 eng, SKB-03 first then the rest in parallel) |
 
 **Shortest demonstrable wins:** KRN-11 (asymmetric roof, 1 wk) and FAM-02 (sweep, 1 wk) each ship a visible product capability in a week with zero cross-epic blockers. Good candidates for a quick first sprint to validate the new tracker.
 
-**Highest leverage single sprint:** SKT-01 unblocks 9 downstream WPs. EDT-01 unblocks 4 + 2 standalone. FED-01 unblocks 3. FAM-01 unblocks 4 + 1 cross-epic. Pick whichever keystone aligns with the most pressing customer feedback.
+**Highest leverage single sprint:** SKT-01 unblocks 9 downstream WPs. EDT-01 unblocks 4 + 2 standalone. FED-01 unblocks 3. FAM-01 unblocks 4 + 1 cross-epic. **SKB-03** unblocks 2 directly (SKB-10, SKB-15) and is the load-bearing prerequisite for the entire sketch-to-BIM POC critical path — pick it if customer demand for "give us a BIM model from this sketch" is the most pressing signal.
 
 ---
 
@@ -1441,13 +1475,14 @@ Use cases: target-house §1.4 loggia (the south face of the upper volume recesse
 
 These answers to PRD §17 govern implementation defaults. Revisit quarterly or when IFC scope expands.
 
-| Topic                    | Decision                                                                                                                                                                                                                                       |
-| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Regional building code   | **EU residential proxy** — mm dimensions; staircase comfort `tread ≥ 260 mm × riser ≤ 190 mm` as advisory only; egress not enforced in v1.                                                                                                     |
-| Residential vs cleanroom | **Residential reference house first**; cleanroom class / pressure / interlock metadata supported in schema; **IDS fixtures** phased after IFC subset.                                                                                          |
-| Titleblock / sheet sizes | First-class layout: **A1 landscape metaphor** (`594×841` mm portrait stored as ×1000 coords in existing `sheet`/`viewportsMm` convention — keep mm paper space); titleblock strings: project name, sheet number, revision, drawn/checked/date. |
-| AI vision automation     | **Assumptions-first** — agent MUST log assumptions JSON before apply; automated screenshot comparison is CI opt-in (`compare` PNG diff tolerances), not silent vision-from-screenshot in core product.                                         |
-| File-based interop       | **Database-native first.** External-file imports (IFC / DXF / RVT) land into shadow bim-ai models in the same DB and link in via FED-04, not into the host model directly. Preserves the in-DB collaboration story.                            |
+| Topic                     | Decision                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Regional building code    | **EU residential proxy** — mm dimensions; staircase comfort `tread ≥ 260 mm × riser ≤ 190 mm` as advisory only; egress not enforced in v1.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Residential vs cleanroom  | **Residential reference house first**; cleanroom class / pressure / interlock metadata supported in schema; **IDS fixtures** phased after IFC subset.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| Titleblock / sheet sizes  | First-class layout: **A1 landscape metaphor** (`594×841` mm portrait stored as ×1000 coords in existing `sheet`/`viewportsMm` convention — keep mm paper space); titleblock strings: project name, sheet number, revision, drawn/checked/date.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| AI vision automation      | **Assumptions-first** — agent MUST log assumptions JSON before apply; automated screenshot comparison is CI opt-in (`compare` PNG diff tolerances), not silent vision-from-screenshot in core product.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| Agent / software boundary | **Software stays deterministic; intelligence lives in the agent.** No LLM, no vision model, no other ML inference is embedded in any binary that runs as part of the BIM AI product. Every interpretive step (read sketch, judge silhouette, pick materials, decide dimensions, write corrective commands) happens in an external AI agent (Claude via Claude Code today; substitutable). The agent reaches the deterministic toolkit through CLI commands, file I/O, and reading rendered PNGs / structured JSON itself — using its own multimodal capabilities. The "AI architect" is the agent loaded with `claude-skills/<name>/SKILL.md`, _not_ a model baked into the software. Visual / similarity scoring (SKB-03) uses classical CV (SSIM / MSE / pixel diff). This decoupling keeps the product portable across AI substrates, the test surface deterministic, and inference cost out of the runtime path. |
+| File-based interop        | **Database-native first.** External-file imports (IFC / DXF / RVT) land into shadow bim-ai models in the same DB and link in via FED-04, not into the host model directly. Preserves the in-DB collaboration story.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 
 ## OpenBIM Stance
 
