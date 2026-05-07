@@ -11,6 +11,7 @@ const ALL_TOOLS: readonly PlanTool[] = [
   'room_rectangle',
   'grid',
   'dimension',
+  'floor-sketch',
 ];
 
 /** Narrow plan toolbar by discipline perspective */

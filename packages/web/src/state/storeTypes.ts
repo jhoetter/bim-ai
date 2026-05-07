@@ -29,6 +29,7 @@ export type PlanTool =
   | 'select'
   | 'wall'
   | 'floor'
+  | 'floor-sketch'
   | 'door'
   | 'window'
   | 'room'

@@ -39,12 +39,14 @@ export const KNOWN_PLAN_TOOLS = new Set<ToolId>([
   'window',
   'room',
   'dimension',
+  'floor-sketch',
 ]);
 
 export type LegacyPlanTool =
   | 'select'
   | 'wall'
   | 'floor'
+  | 'floor-sketch'
   | 'door'
   | 'window'
   | 'room'

@@ -88,6 +88,7 @@ from bim_ai.routes_deps import (
     violations_wire,
 )
 from bim_ai.routes_exports import exports_router
+from bim_ai.routes_sketch import sketch_router
 from bim_ai.schedule_csv import schedule_payload_to_csv, schedule_payload_with_column_subset
 from bim_ai.schedule_derivation import derive_schedule_table, list_schedule_ids
 from bim_ai.sheet_preview_svg import SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2
@@ -105,6 +106,7 @@ api_router = APIRouter(prefix="/api")
 api_router.include_router(exports_router)
 api_router.include_router(commands_router)
 api_router.include_router(activity_router)
+api_router.include_router(sketch_router)
 
 
 # ---------------------------------------------------------------------------

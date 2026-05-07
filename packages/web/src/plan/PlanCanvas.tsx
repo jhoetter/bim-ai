@@ -94,6 +94,7 @@ import { elevationFromWall, sectionCutFromWall } from '../lib/sectionElevationFr
 import { WallContextMenu, type WallContextMenuCommand } from '../workspace/WallContextMenu';
 import { PlanDetailLevelToolbar } from './PlanDetailLevelToolbar';
 import type { PlanDetailLevel } from './planDetailLevelLines';
+import { SketchCanvas, type MmToScreen, type PointerToMm } from './SketchCanvas';
 
 function readPlanToken(name: string, fallback: string): string {
   const v = liveTokenReader().read(name);
@@ -256,6 +257,12 @@ export function PlanCanvas({
   const lastPlotScaleRef = useRef<number>(0);
   const snapEngineRef = useRef(new SnapEngine());
   const snapIndicatorRef = useRef<THREE.Mesh | null>(null);
+  // SKT-01: callback refs the SketchCanvas overlay reads to map pointer → mm
+  // and mm → screen pixels using the live orthographic camera. They stay
+  // attached to refs (not state) so panning / zooming updates the overlay
+  // without re-rendering this component.
+  const sketchPointerToMmRef = useRef<PointerToMm | null>(null);
+  const sketchMmToScreenRef = useRef<MmToScreen | null>(null);
   const [snapLabel, setSnapLabel] = useState<string | null>(null);
   // EDT-05 — snap glyph layer state
   const [snapSettings, setSnapSettings] = useState<SnapSettings>(() => loadSnapSettings());
@@ -362,6 +369,7 @@ export function PlanCanvas({
   const setActiveLevelId = useBimStore((s) => s.setActiveLevelId);
   const activateElevationView = useBimStore((s) => s.activateElevationView);
   const activatePlanView = useBimStore((s) => s.activatePlanView);
+  const setPlanTool = useBimStore((s) => s.setPlanTool);
 
   const display = useMemo(
     () =>
@@ -665,6 +673,17 @@ export function PlanCanvas({
     const oc = new THREE.OrthographicCamera(-10, 10, 10, -10, 0.03, 5000);
     oc.up.set(0, 1, 0);
     cameraRef.current = oc;
+    // SKT-01: install coordinate-mapping callbacks for the SketchCanvas overlay.
+    sketchPointerToMmRef.current = (cx, cy) => rayToPlanMm(renderer, oc, cx, cy);
+    sketchMmToScreenRef.current = (pt) => {
+      const v = new THREE.Vector3(pt.xMm / 1000, 0, pt.yMm / 1000);
+      v.project(oc);
+      const rect = renderer.domElement.getBoundingClientRect();
+      return {
+        x: (v.x * 0.5 + 0.5) * rect.width,
+        y: (-v.y * 0.5 + 0.5) * rect.height,
+      };
+    };
     const ro = new ResizeObserver(() => resizeCam());
     ro.observe(mount);
     resizeCam();
@@ -677,6 +696,8 @@ export function PlanCanvas({
     return () => {
       cancelAnimationFrame(raf);
       ro.disconnect();
+      sketchPointerToMmRef.current = null;
+      sketchMmToScreenRef.current = null;
       renderer.dispose();
       mount.removeChild(renderer.domElement);
     };
@@ -2603,6 +2624,22 @@ export function PlanCanvas({
         <SnapSettingsToolbar value={snapSettings} onChange={setSnapSettings} />
       </div>
       <div ref={mountRef} className="size-full cursor-crosshair" />
+      {/* SKT-01 — Floor sketch authoring overlay. Active when the
+          'floor-sketch' tool is selected; commits a single CreateFloor on
+          Finish and otherwise leaves the document untouched. */}
+      {planTool === 'floor-sketch' && modelId && lvlId ? (
+        <SketchCanvas
+          modelId={modelId}
+          levelId={lvlId}
+          pointerToMmRef={sketchPointerToMmRef}
+          mmToScreenRef={sketchMmToScreenRef}
+          onFinished={(floorId) => {
+            setPlanTool('select');
+            if (floorId) selectEl(floorId);
+          }}
+          onCancelled={() => setPlanTool('select')}
+        />
+      ) : null}
     </div>
   );
 }

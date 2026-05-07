@@ -595,10 +595,10 @@ interface ElementGripProvider<E extends Element> {
 
 | ID     | Item                                                  | Effort | State  | Depends on |
 | ------ | ----------------------------------------------------- | ------ | ------ | ---------- |
-| SKT-01 | `SketchSession` state machine + canvas mode           | XL     | `open` | —          |
+| SKT-01 | `SketchSession` state machine + canvas mode           | XL     | `partial` in wave2-3 — session state machine + floor authoring + validation (closed loop, self-intersect, planarity-by-construction) + SketchCanvas overlay (turquoise lines, Line + Rectangle tools, Finish/Cancel) shipped; ceiling / roof / room_separation / in_place_mass / void_cut / detail_region deferred (each ~1d of follow-up using the same protocol) | —          |
 | SKT-02 | Pick Walls sub-tool inside sketch sessions            | S      | `open` | SKT-01     |
 | SKT-03 | Sketch validation feedback (Revit-style messages)     | S      | `open` | SKT-01     |
-| SKT-04 | Floor / slab overlap warning (formerly VAL-02)        | XS     | `open` | SKT-01     |
+| SKT-04 | Floor / slab overlap warning (formerly VAL-02)        | XS     | `done` in wave2-3 — pairwise polygon-overlap (ear-clipping triangulation + Sutherland-Hodgman clip) emits `floor_overlap` advisory (severity warning, not blocking) when same-level floor footprints intersect by > 1 mm² | SKT-01     |
 
 ### SKT-01 — `SketchSession` state machine + canvas mode
 

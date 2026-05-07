@@ -26,6 +26,7 @@ export type ToolId =
   | 'door'
   | 'window'
   | 'floor'
+  | 'floor-sketch'
   | 'roof'
   | 'stair'
   | 'railing'
@@ -105,6 +106,14 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       hotkey: 'F',
       modes: ['plan', 'plan-3d'],
       tooltip: t('tools.floor.tooltip'),
+    },
+    'floor-sketch': {
+      id: 'floor-sketch',
+      label: 'Floor (Sketch)',
+      icon: 'floor',
+      hotkey: 'Shift+F',
+      modes: ['plan', 'plan-3d'],
+      tooltip: 'Author a floor by drawing its boundary loop (Revit-style sketch mode).',
     },
     roof: {
       id: 'roof',
@@ -275,6 +284,7 @@ const PALETTE_ORDER: ToolId[] = [
   'door',
   'window',
   'floor',
+  'floor-sketch',
   'roof',
   'stair',
   'railing',
@@ -316,6 +326,9 @@ export function isToolDisabled(
   switch (toolId) {
     case 'floor':
       if (!ctx.hasAnyWall) return { disabled: true, reason: t('tools.disabled.drawWallFirst') };
+      return { disabled: false };
+    case 'floor-sketch':
+      // Sketch mode authors a floor from a boundary loop; it does not depend on walls.
       return { disabled: false };
     case 'roof':
       if (!ctx.hasAnyWall) return { disabled: true, reason: t('tools.disabled.drawWallFirst') };
