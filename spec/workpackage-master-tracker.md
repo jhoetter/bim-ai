@@ -916,15 +916,15 @@ Profile families (introduced in V2-11) optionally referenced via `profileFamilyI
 
 **What it unlocks.** Coarse-mode plan that shows simplified 2D symbols in place of 3D family geometry; clean N/S/E/W elevations; one-click "Isolate Walls" debugging; "New Level → New Plan View" automatic flow; starter templates for residential / cleanroom / industrial.
 
-| ID     | Item                                                          | Effort | State  | Depends on |
-| ------ | ------------------------------------------------------------- | ------ | ------ | ---------- |
-| VIE-01 | Detail levels render binding                                  | M      | `done` | —          |
-| VIE-02 | Per-element / per-family-geometry visibility per detail level | M      | `open` | FAM-01     |
-| VIE-03 | Named elevation views (N/S/E/W) + auto-generation             | M      | `done` | —          |
-| VIE-04 | Temporary isolate / hide category                             | S      | `done` | —          |
-| VIE-05 | Plan view auto-generation when a level is created             | S      | `done` | —          |
-| VIE-06 | Project templates (starter models)                            | M      | `done` | —          |
-| VIE-07 | Pin element / unpin (UP shortcut, prevents accidental edit)   | S      | `done` | —          |
+| ID     | Item                                                            | Effort | State     | Depends on |
+| ------ | --------------------------------------------------------------- | ------ | --------- | ---------- |
+| VIE-01 | Detail levels render binding                                    | M      | `done`    | —          |
+| VIE-02 | Per-element / per-family-geometry visibility per detail level   | M      | `done` (c1a2504e — `visibilityByDetailLevel` on sweep / family_instance_ref / array nodes; resolver + 3D viewport panel resolver thread `detailLevel`; family editor properties panel adds 3-checkbox row) | FAM-01     |
+| VIE-03 | Named elevation views (N/S/E/W) + auto-generation               | M      | `done`    | —          |
+| VIE-04 | Temporary isolate / hide category                               | S      | `done`    | —          |
+| VIE-05 | Plan view auto-generation when a level is created               | S      | `done`    | —          |
+| VIE-06 | Project templates (starter models)                              | M      | `done`    | —          |
+| VIE-07 | Pin element / unpin (UP shortcut, prevents accidental edit)     | S      | `done`    | —          |
 
 ### VIE-01 — Detail levels render binding
 
@@ -1383,8 +1383,8 @@ Use cases: target-house §1.4 loggia (the south face of the upper volume recesse
 | ------ | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- | ------ | ----------------- |
 | IFC-01 | `roofTypeId` round-trip through IFC                    | Kernel has the field; `app/bim_ai/export_ifc.py` doesn't write it.                                      | S      | `done` (7619ac17) |
 | IFC-02 | Distinguish `gable_pitched_rectangle` in IFC body      | Currently always emits prism mass.                                                                      | M      | `done` (a1210886) |
-| IFC-03 | Roof-hosted void replay                                | Today rolled up as `slabRoofHostedVoidReplaySkipped_v0` only.                                           | M      | `open`            |
-| IFC-04 | Broader QTO + materials + classifications + composites | Narrow QTO slice shipped; full takeoff pending. Layered composites become more relevant after FL-08.    | L      | `open`            |
+| IFC-03 | Roof-hosted void replay                                | Today rolled up as `slabRoofHostedVoidReplaySkipped_v0` only.                                           | M      | `done` (0a1ff1df — `RoofOpeningElem` + `CreateRoofOpeningCmd` parallel to slab opening; engine handler + authoritative-replay preflight; IFC export emits `IfcOpeningElement` on `IfcRoof`; re-parser turns roof voids into `createRoofOpening`; `inspect_kernel_ifc_semantics.openingsByHostKind` + round-trip summary `roofHostedOpenings` check) |
+| IFC-04 | Broader QTO + materials + classifications + composites | Narrow QTO slice shipped; full takeoff pending. Layered composites become more relevant after FL-08.    | L      | `partial` (93e1e46e — material+layered composites: `Pset_MaterialCommon` w/ MAT-01 BaseColor/Roughness/Metalness on every layered IfcMaterial + new `try_attach_kernel_ifc_single_material` for non-layered walls/roofs/doors/windows. Broader QTO: walls add `GrossSideArea`+`NetSideArea`; roofs add `Qto_SlabBaseQuantities` (GrossArea/NetArea/Perimeter); doors+windows add `Area`. Classifications: optional `ifcClassificationCode` on wall/floor/roof/door/window/room emits `IfcClassificationReference` via shared cache. Deferred: full Pset_*Common coverage for non-architectural categories; element-occurrence classifications via `IfcRelAssociatesClassification` on stairs/columns/beams; material category mapping to IFC-standard categories) |
 | GLT-01 | Draco / mesh compression on glTF export                | Tracked previously under WP-X02. Lower priority given file-export is no longer critical for federation. | S      | `deferred`        |
 
 ### CLI / agent loop
