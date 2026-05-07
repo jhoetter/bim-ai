@@ -5,10 +5,19 @@ from __future__ import annotations
 import math
 from typing import Literal
 
-RoofGeometryMode = Literal["mass_box", "gable_pitched_rectangle", "asymmetric_gable", "flat"]
+RoofGeometryMode = Literal[
+    "mass_box",
+    "gable_pitched_rectangle",
+    "asymmetric_gable",
+    "gable_pitched_l_shape",
+    "hip",
+    "flat",
+]
 
 RoofGeometrySupportTokenV0 = Literal[
     "gable_pitched_rectangle_supported",
+    "gable_pitched_l_shape_supported",
+    "hip_supported",
     "hip_candidate_deferred",
     "valley_candidate_deferred",
     "non_rectangular_footprint_deferred",
@@ -159,6 +168,10 @@ def roof_geometry_support_token_v0(
         return "non_rectangular_footprint_deferred"
 
     if plan_simple_polygon_is_concave_mm(footprint_mm):
+        if roof_geometry_mode == "gable_pitched_l_shape" and footprint_is_valid_l_shape_mm(
+            footprint_mm
+        ):
+            return "gable_pitched_l_shape_supported"
         return "valley_candidate_deferred"
 
     if roof_geometry_mode in (
@@ -169,6 +182,8 @@ def roof_geometry_support_token_v0(
 
     is_convex = plan_simple_polygon_is_convex_mm(footprint_mm)
     is_rect = footprint_is_valid_axis_aligned_rectangle_mm(footprint_mm)
+    if roof_geometry_mode == "hip" and is_convex and len(footprint_mm) >= 4:
+        return "hip_supported"
     if is_convex and len(footprint_mm) >= 4 and not is_rect:
         return "hip_candidate_deferred"
 
@@ -248,3 +263,52 @@ def assert_valid_gable_pitched_rectangle_footprint_mm(
         raise ValueError(
             "gable_pitched_rectangle footprintMm must be an axis-aligned rectangle (corners only)"
         )
+
+
+def footprint_is_valid_l_shape_mm(footprint_mm: list[tuple[float, float]]) -> bool:
+    """KRN-02: True for axis-aligned L-shape — six vertices, exactly one reflex corner."""
+
+    if len(footprint_mm) != 6:
+        return False
+    area = plan_polygon_signed_area_mm2(footprint_mm)
+    if plan_polygon_winding_token(area) == "degenerate":
+        return False
+    n = len(footprint_mm)
+    wsign = 1 if area > 0 else -1
+    reflex_count = 0
+    for i in range(n):
+        a = footprint_mm[(i - 1) % n]
+        b = footprint_mm[i]
+        c = footprint_mm[(i + 1) % n]
+        cross = (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0])
+        if cross * wsign < -1e-6:
+            reflex_count += 1
+    if reflex_count != 1:
+        return False
+    # All edges must be axis-aligned for the L-shape gable to render correctly.
+    tol = 1.0
+    for i in range(n):
+        a = footprint_mm[i]
+        b = footprint_mm[(i + 1) % n]
+        if abs(a[0] - b[0]) > tol and abs(a[1] - b[1]) > tol:
+            return False
+    return True
+
+
+def assert_valid_l_shape_footprint_mm(footprint_mm: list[tuple[float, float]]) -> None:
+    """KRN-02: gable_pitched_l_shape requires axis-aligned 6-vertex L footprint."""
+
+    if not footprint_is_valid_l_shape_mm(footprint_mm):
+        raise ValueError(
+            "gable_pitched_l_shape footprintMm must be an axis-aligned 6-vertex L-shape"
+            " with exactly one reflex corner"
+        )
+
+
+def assert_valid_hip_footprint_mm(footprint_mm: list[tuple[float, float]]) -> None:
+    """KRN-03: hip mode requires a convex polygon with ≥ 4 vertices."""
+
+    if len(footprint_mm) < 4:
+        raise ValueError("hip footprintMm requires at least 4 vertices (convex polygon)")
+    if not plan_simple_polygon_is_convex_mm(footprint_mm):
+        raise ValueError("hip footprintMm must be a convex polygon")

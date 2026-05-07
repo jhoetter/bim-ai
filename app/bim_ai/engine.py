@@ -185,6 +185,8 @@ from bim_ai.plan_category_graphics import (
 from bim_ai.roof_geometry import (
     RoofGeometryMode,
     assert_valid_gable_pitched_rectangle_footprint_mm,
+    assert_valid_hip_footprint_mm,
+    assert_valid_l_shape_footprint_mm,
 )
 
 _AUTHORITATIVE_REPLAY_V0_TYPES: frozenset[str] = frozenset(
@@ -1626,6 +1628,14 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                         )
             if cmd.roof_geometry_mode in ("gable_pitched_rectangle", "asymmetric_gable"):
                 assert_valid_gable_pitched_rectangle_footprint_mm(
+                    [(p.x_mm, p.y_mm) for p in cmd.footprint_mm]
+                )
+            elif cmd.roof_geometry_mode == "gable_pitched_l_shape":
+                assert_valid_l_shape_footprint_mm(
+                    [(p.x_mm, p.y_mm) for p in cmd.footprint_mm]
+                )
+            elif cmd.roof_geometry_mode == "hip":
+                assert_valid_hip_footprint_mm(
                     [(p.x_mm, p.y_mm) for p in cmd.footprint_mm]
                 )
             els[rid] = RoofElem(

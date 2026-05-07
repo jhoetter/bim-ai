@@ -929,6 +929,67 @@ function _buildHipGeometry(
 }
 
 /**
+ * KRN-03 — pavilion hip mesh for arbitrary convex polygon footprints (≥ 5 vertices).
+ *
+ * Each polygon edge becomes a sloped triangular face whose apex is the polygon
+ * centroid lifted by `inradius * tan(slope)`. All edges share the same pitch,
+ * so for regular polygons the apex is a single point; for irregular convex
+ * polygons the result is a pyramidal hip with all edges sloping inward.
+ */
+function _buildHipPolygonGeometry(
+  pts: XYPt[],
+  eaveY: number,
+  slopeRad: number,
+): THREE.BufferGeometry {
+  const n = pts.length;
+  let cx = 0;
+  let cz = 0;
+  for (const p of pts) {
+    cx += p.xMm;
+    cz += p.yMm;
+  }
+  cx /= n;
+  cz /= n;
+
+  // Inradius proxy: minimum perpendicular distance from centroid to each edge.
+  let minDist = Infinity;
+  for (let i = 0; i < n; i++) {
+    const a = pts[i];
+    const b = pts[(i + 1) % n];
+    const dx = b.xMm - a.xMm;
+    const dz = b.yMm - a.yMm;
+    const len = Math.hypot(dx, dz) || 1;
+    const dist = Math.abs((cx - a.xMm) * dz - (cz - a.yMm) * dx) / len;
+    if (dist < minDist) minDist = dist;
+  }
+  const apexY = eaveY + (minDist / 1000) * Math.tan(slopeRad);
+  const apexXm = cx / 1000;
+  const apexZm = cz / 1000;
+
+  const positions: number[] = [];
+  for (let i = 0; i < n; i++) {
+    const a = pts[i];
+    const b = pts[(i + 1) % n];
+    positions.push(
+      a.xMm / 1000,
+      eaveY,
+      a.yMm / 1000,
+      b.xMm / 1000,
+      eaveY,
+      b.yMm / 1000,
+      apexXm,
+      apexY,
+      apexZm,
+    );
+  }
+
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  g.computeVertexNormals();
+  return g;
+}
+
+/**
  * Split an L-shaped footprint into two overlapping rectangles, build a gable
  * geometry for each, and merge them. Adds a triangular valley face at the
  * internal junction.
@@ -1110,13 +1171,22 @@ export function makeRoofMassMesh(
     else if (roof.ridgeAxis === 'z') ridgeAlongX = false;
     else ridgeAlongX = spanXm >= spanZm;
 
-    // L-shape detection: polygon area / convex hull area < 0.85
-    const isLShape = rawPts.length >= 6 && _compactnessRatio(rawPts) < 0.85;
+    // L-shape detection: explicit mode wins; otherwise infer from compactness ratio.
+    const isExplicitLShape = roof.roofGeometryMode === 'gable_pitched_l_shape';
+    const isImpliedLShape =
+      roof.roofGeometryMode !== 'hip' && rawPts.length >= 6 && _compactnessRatio(rawPts) < 0.85;
+    const isLShape = isExplicitLShape || isImpliedLShape;
 
     if (isLShape) {
       geom = _buildLShapeGeometry(rawPts, ovMm, eaveY, slopeRad);
     } else if (roof.roofGeometryMode === 'hip') {
-      geom = _buildHipGeometry(ox0, ox1, oz0, oz1, eaveY, slopeRad, ridgeAlongX);
+      // KRN-03: arbitrary convex polygons (≥5 vertices) get a pavilion hip mesh.
+      // 4-vertex axis-aligned rectangles fall through to the AABB hip helper.
+      if (offsetPts.length >= 5) {
+        geom = _buildHipPolygonGeometry(offsetPts, eaveY, slopeRad);
+      } else {
+        geom = _buildHipGeometry(ox0, ox1, oz0, oz1, eaveY, slopeRad, ridgeAlongX);
+      }
     } else if (roof.roofGeometryMode === 'asymmetric_gable') {
       const ridgeOffsetM = (roof.ridgeOffsetTransverseMm ?? 0) / 1000;
       const eaveLeftY =

@@ -482,6 +482,7 @@ export type Element =
         | 'mass_box'
         | 'gable_pitched_rectangle'
         | 'asymmetric_gable'
+        | 'gable_pitched_l_shape'
         | 'hip'
         | 'flat';
       ridgeOffsetTransverseMm?: number;

@@ -640,6 +640,98 @@ def test_gable_roof_typed_layers_surface_evidence_manifest_plan_section_agree() 
     assert scw_m["layerReadouts"] == prism["layerReadouts"]
 
 
+def test_l_shape_mode_clears_valley_skip_code() -> None:
+    """KRN-02: gable_pitched_l_shape mode + valid L footprint emits the supported token."""
+
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=2200),
+            "r-L": RoofElem(
+                kind="roof",
+                id="r-L",
+                name="L-roof",
+                reference_level_id="lvl",
+                footprint_mm=list(_L_SHAPED_FP),
+                slope_deg=28.0,
+                roof_geometry_mode="gable_pitched_l_shape",
+            ),
+        },
+    )
+    row = document_to_gltf(doc)["extensions"]["BIM_AI_exportManifest_v0"][
+        "roofGeometryEvidence_v1"
+    ]["roofs"][0]
+    assert row["roofGeometrySupportToken"] == "gable_pitched_l_shape_supported"
+
+
+def test_hip_mode_clears_hip_skip_code_for_convex_hex() -> None:
+    """KRN-03: hip mode + convex hexagon emits the supported token."""
+
+    cx_m, cz_m, r_mm = 5000.0, 5000.0, 2500.0
+    hex_fp: list[dict[str, float]] = []
+    for i in range(6):
+        ang = (math.pi / 3.0) * float(i) - math.pi / 6.0
+        hex_fp.append(
+            {
+                "xMm": round(cx_m + r_mm * math.cos(ang), 6),
+                "yMm": round(cz_m + r_mm * math.sin(ang), 6),
+            }
+        )
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=2400),
+            "r-hex": RoofElem(
+                kind="roof",
+                id="r-hex",
+                name="Hip",
+                reference_level_id="lvl",
+                footprint_mm=hex_fp,
+                slope_deg=30.0,
+                roof_geometry_mode="hip",
+            ),
+        },
+    )
+    row = document_to_gltf(doc)["extensions"]["BIM_AI_exportManifest_v0"][
+        "roofGeometryEvidence_v1"
+    ]["roofs"][0]
+    assert row["roofGeometrySupportToken"] == "hip_supported"
+
+
+def test_create_l_shape_roof_rejects_non_l_footprint() -> None:
+    """KRN-02: gable_pitched_l_shape rejects rectangular (non-L) footprints."""
+
+    doc = Document(revision=1, elements={})
+    apply_inplace(doc, CreateLevelCmd(id="lvl", name="G", elevationMm=0))
+    with pytest.raises(ValueError, match="L-shape"):
+        apply_inplace(
+            doc,
+            CreateRoofCmd(
+                reference_level_id="lvl",
+                footprint_mm=[dict(xMm=p["xMm"], yMm=p["yMm"]) for p in _RECT_FP],
+                slope_deg=30.0,
+                roof_geometry_mode="gable_pitched_l_shape",
+            ),
+        )
+
+
+def test_create_hip_roof_rejects_concave_footprint() -> None:
+    """KRN-03: hip mode rejects concave footprints (caller should use gable_pitched_l_shape)."""
+
+    doc = Document(revision=1, elements={})
+    apply_inplace(doc, CreateLevelCmd(id="lvl", name="G", elevationMm=0))
+    with pytest.raises(ValueError, match="convex"):
+        apply_inplace(
+            doc,
+            CreateRoofCmd(
+                reference_level_id="lvl",
+                footprint_mm=[dict(xMm=p["xMm"], yMm=p["yMm"]) for p in _L_SHAPED_FP],
+                slope_deg=30.0,
+                roof_geometry_mode="hip",
+            ),
+        )
+
+
 def test_replay_create_asymmetric_gable_persists_offset_and_eaves() -> None:
     """KRN-11: asymmetric_gable mode round-trips ridge offset + per-side eaves."""
 
