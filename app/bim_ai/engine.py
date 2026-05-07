@@ -3252,6 +3252,9 @@ def try_commit_bundle(
 ) -> tuple[bool, Document | None, list[Command], list[Violation], str]:
     cmds: list[Command] = [coerce_command(c) for c in cmds_raw]
     cand = clone_document(doc)
+    # KRN-06: backfill the singleton on every commit so persisted state always
+    # has it (matches `try_commit`'s behaviour for the single-command path).
+    ensure_internal_origin(cand)
     for cmd in cmds:
         apply_inplace(cand, cmd)
 
