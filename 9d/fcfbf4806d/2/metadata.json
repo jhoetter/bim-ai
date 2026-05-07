@@ -1,0 +1,22 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "9dfcfbf4806d",
+  "session_id": "fc0927c9-e98a-4c8f-8722-edd1a063ac2b",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-07T06:16:54.007989Z",
+  "branch": "dayshift-fam-keystone",
+  "checkpoints_count": 0,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-opus-4-7",
+  "turn_id": "3fceaf7b9f7d",
+  "checkpoint_transcript_start": 419,
+  "transcript_lines_at_start": 419,
+  "token_usage": {
+    "input_tokens": 4,
+    "cache_creation_tokens": 2473,
+    "cache_read_tokens": 743647,
+    "output_tokens": 1080,
+    "api_call_count": 4
+  }
+}
