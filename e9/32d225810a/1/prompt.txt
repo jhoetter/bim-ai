@@ -19,3 +19,7 @@ is our overall tracker updated from the work of the night-shift? (excluding stil
 ---
 
 you seem like you stopped?
+
+---
+
+how much of the tracker is now roughly done, how much progress was added?
