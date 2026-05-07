@@ -3097,10 +3097,10 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         # roofGeometryMode is gable_pitched_rectangle or asymmetric_gable AND
         # the footprint is a valid axis-aligned rectangle. Falls back to the
         # original flat slab prism for mass_box / flat / hip / l_shape modes.
-        use_gable_body = (
-            rf.roof_geometry_mode in ("gable_pitched_rectangle", "asymmetric_gable")
-            and footprint_is_valid_axis_aligned_rectangle_mm(rp_mm)
-        )
+        use_gable_body = rf.roof_geometry_mode in (
+            "gable_pitched_rectangle",
+            "asymmetric_gable",
+        ) and footprint_is_valid_axis_aligned_rectangle_mm(rp_mm)
 
         if use_gable_body:
             # Eave plate elevation: walls on the reference level give the eave Y.
@@ -3116,9 +3116,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
             eave_z_m = elev + wall_top_m
 
             # Determine ridge axis using the same predicate as the kernel.
-            _half_run_mm, ridge_axis_token = gable_half_run_mm_and_ridge_axis(
-                span_x_mm, span_z_mm
-            )
+            _half_run_mm, ridge_axis_token = gable_half_run_mm_and_ridge_axis(span_x_mm, span_z_mm)
             ridge_along_x = ridge_axis_token == "alongX"
             # The cross-axis is perpendicular to the ridge.
             perp_span_mm = span_z_mm if ridge_along_x else span_x_mm
@@ -3180,16 +3178,10 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
                         "IfcCartesianPoint",
                         Coordinates=(0.0, 0.0, 0.0),
                     ),
-                    Axis=f.create_entity(
-                        "IfcDirection", DirectionRatios=(0.0, 0.0, 1.0)
-                    ),
-                    RefDirection=f.create_entity(
-                        "IfcDirection", DirectionRatios=(1.0, 0.0, 0.0)
-                    ),
+                    Axis=f.create_entity("IfcDirection", DirectionRatios=(0.0, 0.0, 1.0)),
+                    RefDirection=f.create_entity("IfcDirection", DirectionRatios=(1.0, 0.0, 0.0)),
                 ),
-                ExtrudedDirection=f.create_entity(
-                    "IfcDirection", DirectionRatios=(0.0, 0.0, 1.0)
-                ),
+                ExtrudedDirection=f.create_entity("IfcDirection", DirectionRatios=(0.0, 0.0, 1.0)),
                 Depth=along_ridge_m,
             )
             rep_rf = f.create_entity(

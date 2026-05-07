@@ -83,11 +83,7 @@ def test_grid_spacing_4000mm_in_residential_eu():
     doc = load_template_snapshot("residential-eu")
     grids = [e for e in doc.elements.values() if isinstance(e, GridLineElem)]
 
-    vertical_x = sorted(
-        g.start.x_mm for g in grids if g.label in {"1", "2", "3"}
-    )
-    horizontal_y = sorted(
-        g.start.y_mm for g in grids if g.label in {"A", "B", "C"}
-    )
+    vertical_x = sorted(g.start.x_mm for g in grids if g.label in {"1", "2", "3"})
+    horizontal_y = sorted(g.start.y_mm for g in grids if g.label in {"A", "B", "C"})
     assert vertical_x == [0.0, 4000.0, 8000.0]
     assert horizontal_y == [0.0, 4000.0, 8000.0]

@@ -85,9 +85,7 @@ def test_mirror_wall_in_place_swaps_endpoints():
     cmd = MirrorElementsCmd(
         type="mirrorElements",
         elementIds=["w1"],
-        axis=MirrorAxis(
-            startMm=Vec2Mm(xMm=500, yMm=0), endMm=Vec2Mm(xMm=500, yMm=1000)
-        ),
+        axis=MirrorAxis(startMm=Vec2Mm(xMm=500, yMm=0), endMm=Vec2Mm(xMm=500, yMm=1000)),
         alsoCopy=False,
     )
     apply_inplace(doc, cmd)
@@ -107,9 +105,7 @@ def test_mirror_in_place_keeps_alongt_but_door_physically_mirrors_via_wall():
     cmd = MirrorElementsCmd(
         type="mirrorElements",
         elementIds=["w1"],
-        axis=MirrorAxis(
-            startMm=Vec2Mm(xMm=500, yMm=0), endMm=Vec2Mm(xMm=500, yMm=1000)
-        ),
+        axis=MirrorAxis(startMm=Vec2Mm(xMm=500, yMm=0), endMm=Vec2Mm(xMm=500, yMm=1000)),
         alsoCopy=False,
     )
     apply_inplace(doc, cmd)
@@ -130,9 +126,7 @@ def test_mirror_with_also_copy_keeps_originals_and_adds_mirrored_pair():
     cmd = MirrorElementsCmd(
         type="mirrorElements",
         elementIds=["w1"],
-        axis=MirrorAxis(
-            startMm=Vec2Mm(xMm=500, yMm=0), endMm=Vec2Mm(xMm=500, yMm=1000)
-        ),
+        axis=MirrorAxis(startMm=Vec2Mm(xMm=500, yMm=0), endMm=Vec2Mm(xMm=500, yMm=1000)),
         alsoCopy=True,
     )
     apply_inplace(doc, cmd)
@@ -157,9 +151,7 @@ def test_mirror_with_also_copy_keeps_originals_and_adds_mirrored_pair():
     # alongT preserved on the copy; the new wall's reversed direction
     # places the door at the mirror of the original physical x=250.
     assert _approx(new_door.along_t, 0.25)
-    physical_x = (
-        new_wall.start.x_mm + new_door.along_t * (new_wall.end.x_mm - new_wall.start.x_mm)
-    )
+    physical_x = new_wall.start.x_mm + new_door.along_t * (new_wall.end.x_mm - new_wall.start.x_mm)
     assert _approx(physical_x, 750)
 
 
@@ -181,9 +173,7 @@ def test_mirror_room_polygon_reverses_winding():
     cmd = MirrorElementsCmd(
         type="mirrorElements",
         elementIds=["r1"],
-        axis=MirrorAxis(
-            startMm=Vec2Mm(xMm=0, yMm=0), endMm=Vec2Mm(xMm=1000, yMm=0)
-        ),
+        axis=MirrorAxis(startMm=Vec2Mm(xMm=0, yMm=0), endMm=Vec2Mm(xMm=1000, yMm=0)),
         alsoCopy=False,
     )
     apply_inplace(doc, cmd)
@@ -213,9 +203,7 @@ def test_mirror_floor_polygon_reverses_winding():
     cmd = MirrorElementsCmd(
         type="mirrorElements",
         elementIds=["f1"],
-        axis=MirrorAxis(
-            startMm=Vec2Mm(xMm=0, yMm=0), endMm=Vec2Mm(xMm=1000, yMm=0)
-        ),
+        axis=MirrorAxis(startMm=Vec2Mm(xMm=0, yMm=0), endMm=Vec2Mm(xMm=1000, yMm=0)),
         alsoCopy=False,
     )
     apply_inplace(doc, cmd)
@@ -244,9 +232,7 @@ def test_mirror_roof_polygon_reverses_winding():
     cmd = MirrorElementsCmd(
         type="mirrorElements",
         elementIds=["rf1"],
-        axis=MirrorAxis(
-            startMm=Vec2Mm(xMm=500, yMm=0), endMm=Vec2Mm(xMm=500, yMm=1000)
-        ),
+        axis=MirrorAxis(startMm=Vec2Mm(xMm=500, yMm=0), endMm=Vec2Mm(xMm=500, yMm=1000)),
         alsoCopy=False,
     )
     apply_inplace(doc, cmd)
@@ -292,9 +278,7 @@ def test_mirror_advisories_for_asymmetric_family_type():
     cmd = MirrorElementsCmd(
         type="mirrorElements",
         elementIds=["d_handle", "d_plain"],
-        axis=MirrorAxis(
-            startMm=Vec2Mm(xMm=500, yMm=0), endMm=Vec2Mm(xMm=500, yMm=1000)
-        ),
+        axis=MirrorAxis(startMm=Vec2Mm(xMm=500, yMm=0), endMm=Vec2Mm(xMm=500, yMm=1000)),
         asymmetricFamilyTypeIds=["ft_door_with_handle"],
     )
     advisories = mirror_advisories_for_command(doc, cmd)

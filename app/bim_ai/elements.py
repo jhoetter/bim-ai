@@ -242,9 +242,7 @@ class DoorElem(BaseModel):
     interlock_grade: str | None = Field(default=None, alias="interlockGrade")
     lod_plan: Literal["simple", "detailed"] | None = Field(default=None, alias="lodPlan")
     operation_type: DoorOperationType | None = Field(default=None, alias="operationType")
-    sliding_track_side: DoorSlidingTrackSide | None = Field(
-        default=None, alias="slidingTrackSide"
-    )
+    sliding_track_side: DoorSlidingTrackSide | None = Field(default=None, alias="slidingTrackSide")
     pinned: bool = Field(default=False)
 
 

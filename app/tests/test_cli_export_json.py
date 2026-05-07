@@ -66,7 +66,9 @@ def mock_server():
         server.server_close()
 
 
-def _run_cli(args: list[str], base_url: str, extra_env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
+def _run_cli(
+    args: list[str], base_url: str, extra_env: dict[str, str] | None = None
+) -> subprocess.CompletedProcess[str]:
     import os
 
     env = os.environ.copy()

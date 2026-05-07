@@ -1126,14 +1126,10 @@ def build_section_projection_primitives(
                 clamped = max(-half_span + 1.0, min(half_span - 1.0, ridge_offset_mm))
                 left_run_mm = half_span + clamped
                 eave_left_abs_mm = (
-                    zb + float(e.eave_height_left_mm)
-                    if e.eave_height_left_mm is not None
-                    else zb
+                    zb + float(e.eave_height_left_mm) if e.eave_height_left_mm is not None else zb
                 )
                 eave_right_abs_mm = (
-                    zb + float(e.eave_height_right_mm)
-                    if e.eave_height_right_mm is not None
-                    else zb
+                    zb + float(e.eave_height_right_mm) if e.eave_height_right_mm is not None else zb
                 )
                 rise_mm = left_run_mm * math.tan(math.radians(slope))
                 ridge_z = eave_left_abs_mm + rise_mm

@@ -97,9 +97,7 @@ def test_custom_direction_requires_angle():
 
 def test_elevation_to_section_cut_north_lies_above_box():
     doc = _seed_with_box()
-    ev = ElevationViewElem(
-        kind="elevation_view", id="elev-N", name="North", direction="north"
-    )
+    ev = ElevationViewElem(kind="elevation_view", id="elev-N", name="North", direction="north")
     sec = elevation_view_to_section_cut(doc, ev, margin_mm=2000.0)
     # The bounding box top is y=10000; the section line should sit above it.
     assert sec.line_start_mm.y_mm == sec.line_end_mm.y_mm
@@ -112,9 +110,7 @@ def test_elevation_to_section_cut_north_lies_above_box():
 
 def test_elevation_to_section_cut_east_runs_north_south():
     doc = _seed_with_box()
-    ev = ElevationViewElem(
-        kind="elevation_view", id="elev-E", name="East", direction="east"
-    )
+    ev = ElevationViewElem(kind="elevation_view", id="elev-E", name="East", direction="east")
     sec = elevation_view_to_section_cut(doc, ev, margin_mm=1500.0)
     assert sec.line_start_mm.x_mm == sec.line_end_mm.x_mm
     assert sec.line_start_mm.x_mm > 8000
@@ -122,9 +118,7 @@ def test_elevation_to_section_cut_east_runs_north_south():
 
 def test_elevation_to_section_cut_falls_back_with_empty_doc():
     empty = Document(revision=1, elements={})
-    ev = ElevationViewElem(
-        kind="elevation_view", id="ev", name="Empty", direction="north"
-    )
+    ev = ElevationViewElem(kind="elevation_view", id="ev", name="Empty", direction="north")
     sec = elevation_view_to_section_cut(empty, ev)
     # No crash, sensible defaults.
     assert sec.line_start_mm.y_mm == sec.line_end_mm.y_mm

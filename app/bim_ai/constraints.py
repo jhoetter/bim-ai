@@ -2152,9 +2152,9 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
     # room-separation lines on the same level. Distinct from room_no_door
     # (centroid heuristic): catches rooms whose boundary has true gaps.
     if rooms:
-        walls_by_lvl: dict[
-            str, list[tuple[tuple[float, float], tuple[float, float], float]]
-        ] = defaultdict(list)
+        walls_by_lvl: dict[str, list[tuple[tuple[float, float], tuple[float, float], float]]] = (
+            defaultdict(list)
+        )
         for w in walls:
             walls_by_lvl[w.level_id].append(
                 (
@@ -2163,8 +2163,8 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
                     max(50.0, float(w.thickness_mm)),
                 )
             )
-        seps_by_lvl: dict[str, list[tuple[tuple[float, float], tuple[float, float]]]] = (
-            defaultdict(list)
+        seps_by_lvl: dict[str, list[tuple[tuple[float, float], tuple[float, float]]]] = defaultdict(
+            list
         )
         for sep in room_separations:
             seps_by_lvl[sep.level_id].append(

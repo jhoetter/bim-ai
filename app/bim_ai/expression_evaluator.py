@@ -305,9 +305,7 @@ class _Parser:
         raise ExpressionError(f"unexpected token {t!r}")
 
 
-def evaluate_formula(
-    raw: str, params: Mapping[str, float | bool] | None = None
-) -> float | None:
+def evaluate_formula(raw: str, params: Mapping[str, float | bool] | None = None) -> float | None:
     """Evaluate a family-formula expression. Returns ``None`` on failure."""
     trimmed = raw.strip()
     if not trimmed:
@@ -321,9 +319,7 @@ def evaluate_formula(
         return None
 
 
-def evaluate_formula_or_throw(
-    raw: str, params: Mapping[str, float | bool] | None = None
-) -> float:
+def evaluate_formula_or_throw(raw: str, params: Mapping[str, float | bool] | None = None) -> float:
     """Same as :func:`evaluate_formula` but raises ``ExpressionError``."""
     trimmed = raw.strip()
     if not trimmed:

@@ -161,10 +161,10 @@ def roof_geometry_support_token_v0(
     if plan_simple_polygon_is_concave_mm(footprint_mm):
         return "valley_candidate_deferred"
 
-    if (
-        roof_geometry_mode in ("gable_pitched_rectangle", "asymmetric_gable")
-        and footprint_is_valid_axis_aligned_rectangle_mm(footprint_mm)
-    ):
+    if roof_geometry_mode in (
+        "gable_pitched_rectangle",
+        "asymmetric_gable",
+    ) and footprint_is_valid_axis_aligned_rectangle_mm(footprint_mm):
         return "gable_pitched_rectangle_supported"
 
     is_convex = plan_simple_polygon_is_convex_mm(footprint_mm)

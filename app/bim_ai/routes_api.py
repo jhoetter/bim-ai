@@ -164,9 +164,7 @@ async def create_empty_model(
 
     if body.template_id:
         if not template_exists(body.template_id):
-            raise HTTPException(
-                status_code=404, detail=f"Template '{body.template_id}' not found"
-            )
+            raise HTTPException(status_code=404, detail=f"Template '{body.template_id}' not found")
         try:
             seed_doc = load_template_snapshot(body.template_id)
         except (FileNotFoundError, LookupError) as exc:

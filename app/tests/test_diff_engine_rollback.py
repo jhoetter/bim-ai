@@ -40,15 +40,15 @@ def _replay_to_revision(
             continue
         if entry["revision_after"] > current.revision:
             continue
-        ok, new_doc, _cmds, _viols, _code = try_commit_bundle(
-            rolling, list(entry["undo_commands"])
-        )
+        ok, new_doc, _cmds, _viols, _code = try_commit_bundle(rolling, list(entry["undo_commands"]))
         assert ok and new_doc is not None, "undo replay failed"
         rolling = new_doc
     return rolling
 
 
-def _commit_bundle(doc: Document, cmds: list[dict[str, Any]]) -> tuple[Document, list[dict[str, Any]]]:
+def _commit_bundle(
+    doc: Document, cmds: list[dict[str, Any]]
+) -> tuple[Document, list[dict[str, Any]]]:
     baseline = clone_document(doc)
     ok, new_doc, _cmds, _viols, _code = try_commit_bundle(doc, cmds)
     assert ok and new_doc is not None

@@ -637,9 +637,7 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 existing.pop(cmd.grid_cell_id, None)
             else:
                 existing[cmd.grid_cell_id] = cmd.override
-            els[cmd.wall_id] = wall.model_copy(
-                update={"curtain_panel_overrides": existing or None}
-            )
+            els[cmd.wall_id] = wall.model_copy(update={"curtain_panel_overrides": existing or None})
 
         case InsertDoorOnWallCmd():
             did = cmd.id or new_id()
@@ -1567,9 +1565,7 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
             if cmd.head_height_mm <= cmd.sill_height_mm:
                 raise ValueError("createWallOpening.headHeightMm must be > sillHeightMm")
             if cmd.head_height_mm > host.height_mm:
-                raise ValueError(
-                    "createWallOpening.headHeightMm must not exceed host wall height"
-                )
+                raise ValueError("createWallOpening.headHeightMm must not exceed host wall height")
             els[oid] = WallOpeningElem(
                 kind="wall_opening",
                 id=oid,
@@ -1599,9 +1595,7 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
             if new_head <= new_sill:
                 raise ValueError("updateWallOpening headHeightMm must be > sillHeightMm")
             if new_head > host_wall.height_mm:
-                raise ValueError(
-                    "updateWallOpening headHeightMm must not exceed host wall height"
-                )
+                raise ValueError("updateWallOpening headHeightMm must not exceed host wall height")
             els[cmd.opening_id] = wo.model_copy(
                 update={
                     "along_t_start": new_along_start,
@@ -1656,9 +1650,7 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
 
         case CreateSurveyPointCmd():
             if any(isinstance(e, SurveyPointElem) for e in els.values()):
-                raise ValueError(
-                    "createSurveyPoint: a survey_point already exists (singleton)"
-                )
+                raise ValueError("createSurveyPoint: a survey_point already exists (singleton)")
             sid = cmd.id or new_id()
             if sid in els:
                 raise ValueError(f"duplicate element id '{sid}'")
@@ -1675,9 +1667,7 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 None,
             )
             if target_id is None:
-                raise ValueError(
-                    "moveSurveyPoint: no survey_point exists (create one first)"
-                )
+                raise ValueError("moveSurveyPoint: no survey_point exists (create one first)")
             existing = els[target_id]
             assert isinstance(existing, SurveyPointElem)
             update: dict[str, Any] = {"position_mm": cmd.position_mm}
@@ -1830,7 +1820,9 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
             if evid in els:
                 raise ValueError(f"duplicate element id '{evid}'")
             if cmd.direction == "custom" and cmd.custom_angle_deg is None:
-                raise ValueError("createElevationView.customAngleDeg required when direction=custom")
+                raise ValueError(
+                    "createElevationView.customAngleDeg required when direction=custom"
+                )
             els[evid] = ElevationViewElem(
                 kind="elevation_view",
                 id=evid,
@@ -2328,9 +2320,7 @@ def _mirror_wall(w: WallElem, axis: Any) -> WallElem:
     return w.model_copy(update={"start": new_start, "end": new_end})
 
 
-def _mirror_polygon(
-    pts: list[Vec2Mm], axis_start: Vec2Mm, axis_end: Vec2Mm
-) -> list[Vec2Mm]:
+def _mirror_polygon(pts: list[Vec2Mm], axis_start: Vec2Mm, axis_end: Vec2Mm) -> list[Vec2Mm]:
     """Reflect each vertex and reverse winding so an outer-CCW polygon
     stays outer-CCW after the orientation flip."""
     reflected = [_reflect_vec2_mm(p, axis_start, axis_end) for p in pts]
@@ -2415,9 +2405,7 @@ def _mirror_one(el: Element, cmd: MirrorElementsCmd) -> Element | None:
     return None
 
 
-def mirror_advisories_for_command(
-    doc: Document, cmd: MirrorElementsCmd
-) -> list[dict[str, Any]]:
+def mirror_advisories_for_command(doc: Document, cmd: MirrorElementsCmd) -> list[dict[str, Any]]:
     """Compute non-blocking advisories for a mirror command.
 
     Returned shape: ``{"code": "mirror_asymmetric", "elementId": <id>}`` for
