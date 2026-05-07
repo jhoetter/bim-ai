@@ -322,6 +322,9 @@ export type Element =
         headHeightMm?: number;
         floorContinues?: boolean;
       }[];
+      /** IFC-04: optional OmniClass / Uniclass / NSCC code emitted as
+       *  IfcClassificationReference on the IFC product. */
+      ifcClassificationCode?: string | null;
       pinned?: boolean;
     }
   | {
@@ -340,6 +343,8 @@ export type Element =
       operationType?: DoorOperationType;
       slidingTrackSide?: 'wall_face' | 'in_pocket';
       overrideParams?: Record<string, unknown>;
+      /** IFC-04: optional classification code; emitted as IfcClassificationReference. */
+      ifcClassificationCode?: string | null;
       pinned?: boolean;
     }
   | {
@@ -362,6 +367,8 @@ export type Element =
       outlineMm?: XY[];
       attachedRoofId?: string | null;
       overrideParams?: Record<string, unknown>;
+      /** IFC-04: optional classification code; emitted as IfcClassificationReference. */
+      ifcClassificationCode?: string | null;
       pinned?: boolean;
     }
   | {
@@ -388,6 +395,8 @@ export type Element =
       finishSet?: string | null;
       targetAreaM2?: number | null;
       volumeM3?: number | null;
+      /** IFC-04: optional classification code; emitted as IfcClassificationReference. */
+      ifcClassificationCode?: string | null;
       pinned?: boolean;
     }
   | {
@@ -455,6 +464,8 @@ export type Element =
       insulationExtensionMm?: number;
       roomBounded?: boolean;
       worksetId?: string | null;
+      /** IFC-04: optional classification code; emitted as IfcClassificationReference. */
+      ifcClassificationCode?: string | null;
       pinned?: boolean;
     }
   | {
@@ -478,6 +489,8 @@ export type Element =
       eaveHeightRightMm?: number;
       roofTypeId?: string | null;
       materialKey?: string | null;
+      /** IFC-04: optional classification code; emitted as IfcClassificationReference. */
+      ifcClassificationCode?: string | null;
       pinned?: boolean;
     }
   | {

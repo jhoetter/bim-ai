@@ -36,6 +36,7 @@ from bim_ai.elements import (
 from bim_ai.ifc_material_layer_exchange_v0 import (
     kernel_ifc_material_layer_set_readback_v0,
     try_attach_kernel_ifc_material_layer_set,
+    try_attach_kernel_ifc_single_material,
 )
 from bim_ai.ifc_property_set_coverage_evidence_v0 import (
     build_ifc_property_set_coverage_expansion_v1,
@@ -2596,6 +2597,75 @@ def _try_attach_qto(f: Any, product: Any, qto_name: str, properties: dict[str, f
         return
 
 
+def _try_attach_classification_reference(
+    f: Any,
+    product: Any,
+    *,
+    classification_code: str | None,
+    classification_cache: dict[str, Any],
+    classification_ref_cache: dict[str, Any],
+) -> None:
+    """IFC-04: attach an IfcClassificationReference for a given OmniClass /
+    Uniclass / NSCC code via IfcRelAssociatesClassification. Reuses the
+    ``code → IfcClassificationReference`` cache so multiple products with
+    the same code share a single reference.
+
+    Best-effort — silently returns when ifcopenshell or its classification
+    use-case is unavailable, so tests on minimal builds keep passing.
+    """
+
+    if not classification_code:
+        return
+    code = str(classification_code).strip()
+    if not code:
+        return
+    try:
+        import ifcopenshell.api.classification  # noqa: PLC0415
+    except ImportError:
+        return
+    try:
+        # System name is the code's prefix up to ":" or "_" — stable across
+        # OmniClass-22, Uniclass-Pr, NSCC. Defaults to "BimAi" so the
+        # classification entity is always identifiable in the IFC.
+        sys_name = code.split(":", 1)[0].split("_", 1)[0] or "BimAi"
+        cls_ent = classification_cache.get(sys_name)
+        if cls_ent is None:
+            cls_ent = ifcopenshell.api.classification.add_classification(
+                f, classification=str(sys_name)[:64]
+            )
+            classification_cache[sys_name] = cls_ent
+        ref_ent = classification_ref_cache.get(code)
+        if ref_ent is None:
+            ref_ent = ifcopenshell.api.classification.add_reference(
+                f,
+                products=[product],
+                classification=cls_ent,
+                identification=str(code)[:128],
+                name=str(code)[:128],
+            )
+            classification_ref_cache[code] = ref_ent
+        else:
+            try:
+                ifcopenshell.api.classification.add_reference(
+                    f,
+                    products=[product],
+                    reference=ref_ent,
+                )
+            except Exception:
+                # Older ifcopenshell builds don't support `reference=`; fall
+                # back to creating a fresh per-product reference so the
+                # classification still surfaces, just without sharing.
+                ifcopenshell.api.classification.add_reference(
+                    f,
+                    products=[product],
+                    classification=cls_ent,
+                    identification=str(code)[:128],
+                    name=str(code)[:128],
+                )
+    except Exception:
+        return
+
+
 def _elev_m(doc: Document, level_id: str) -> float:
     el = doc.elements.get(level_id)
     return el.elevation_mm / 1000.0 if isinstance(el, LevelElem) else 0.0
@@ -2734,6 +2804,10 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
     slab_products: dict[str, Any] = {}
     slab_type_entities: dict[str, Any] = {}
     material_by_key_cache: dict[str, Any] = {}
+    # IFC-04: dedupe IfcClassification + IfcClassificationReference entities
+    # so multiple products with the same code share one reference.
+    classification_cache: dict[str, Any] = {}
+    classification_ref_cache: dict[str, Any] = {}
     # IFC-03: track roof entities by kernel id so we can attach
     # IfcOpeningElement features when the kernel has roof openings.
     roof_products: dict[str, Any] = {}
@@ -2792,11 +2866,32 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         geo_products += 1
         attach_kernel_identity_pset(wal, "Pset_WallCommon", wid)
         _wmat_unused, length_m = wall_local_to_world_m(w, ez)
+        # IFC-04: gross side area of the wall + net side area (gross less the
+        # area of every door/window hosted on this wall). Falls back to gross
+        # when the host wall has no openings.
+        gross_side_area_m2 = float(length_m) * float(height_m)
+        opening_area_m2 = 0.0
+        for _e in doc.elements.values():
+            if isinstance(_e, DoorElem) and _e.wall_id == wid:
+                wo = _clamp(float(_e.width_mm) / 1000.0, 0.05, 12.0)
+                ho = _clamp(height_m * 0.86, 0.6, max(0.5, height_m - 0.05))
+                opening_area_m2 += wo * float(ho)
+            elif isinstance(_e, WindowElem) and _e.wall_id == wid:
+                wo = _clamp(float(_e.width_mm) / 1000.0, 0.05, 12.0)
+                hwin = _clamp(float(_e.height_mm) / 1000.0, 0.15, max(0.2, height_m - 0.2))
+                opening_area_m2 += wo * float(hwin)
+        net_side_area_m2 = max(0.0, gross_side_area_m2 - opening_area_m2)
         _try_attach_qto(
             f,
             wal,
             "Qto_WallBaseQuantities",
-            {"Length": float(length_m), "Height": float(height_m), "Width": float(thick_m)},
+            {
+                "Length": float(length_m),
+                "Height": float(height_m),
+                "Width": float(thick_m),
+                "GrossSideArea": gross_side_area_m2,
+                "NetSideArea": net_side_area_m2,
+            },
         )
         w_layers = resolved_layers_for_wall(doc, w)
         if w_layers:
@@ -2808,6 +2903,23 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
                 layer_set_display_name=f"kernel_wall:{wid}",
                 material_by_key_cache=material_by_key_cache,
             )
+        else:
+            # IFC-04: fallback for walls without an authored wall_type — bind
+            # the single materialKey via IfcRelAssociatesMaterial so QTO+
+            # materials line up with the door / window path.
+            try_attach_kernel_ifc_single_material(
+                f,
+                product=wal,
+                material_key=getattr(w, "material_key", None),
+                material_by_key_cache=material_by_key_cache,
+            )
+        _try_attach_classification_reference(
+            f,
+            wal,
+            classification_code=getattr(w, "ifc_classification_code", None),
+            classification_cache=classification_cache,
+            classification_ref_cache=classification_ref_cache,
+        )
 
     for fid in sorted(eid for eid, e in doc.elements.items() if isinstance(e, FloorElem)):
         fl = doc.elements[fid]
@@ -2883,6 +2995,13 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
                 "Width": float(thick_m),
             },
         )
+        _try_attach_classification_reference(
+            f,
+            slab,
+            classification_code=getattr(fl, "ifc_classification_code", None),
+            classification_cache=classification_cache,
+            classification_ref_cache=classification_ref_cache,
+        )
         fl_layers = resolved_layers_for_floor(doc, fl)
         if fl_layers:
             try_attach_kernel_ifc_material_layer_set(
@@ -2931,6 +3050,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         open_height_m: float,
         sill_offset_m: float,
         material_finish_key: str | None = None,
+        classification_code: str | None = None,
     ) -> None:
         nonlocal geo_products
 
@@ -3014,15 +3134,45 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
                 f,
                 filler,
                 "Qto_DoorBaseQuantities",
-                {"Width": float(width_open), "Height": float(ih)},
+                {
+                    "Width": float(width_open),
+                    "Height": float(ih),
+                    # IFC-04: leaf area in m².
+                    "Area": float(width_open) * float(ih),
+                },
             )
         else:
             _try_attach_qto(
                 f,
                 filler,
                 "Qto_WindowBaseQuantities",
-                {"Width": float(width_open), "Height": float(ih)},
+                {
+                    "Width": float(width_open),
+                    "Height": float(ih),
+                    # IFC-04: opening area in m².
+                    "Area": float(width_open) * float(ih),
+                },
             )
+
+        # IFC-04: attach single IfcMaterial when the door / window carries
+        # a kernel materialKey (frame finish on doors, glass on windows).
+        if material_finish_key:
+            try_attach_kernel_ifc_single_material(
+                f,
+                product=filler,
+                material_key=material_finish_key,
+                material_by_key_cache=material_by_key_cache,
+            )
+
+        # IFC-04: attach IfcClassificationReference when set on the door /
+        # window kernel element.
+        _try_attach_classification_reference(
+            f,
+            filler,
+            classification_code=classification_code,
+            classification_cache=classification_cache,
+            classification_ref_cache=classification_ref_cache,
+        )
 
         geo_products += 2
 
@@ -3047,6 +3197,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
             open_height_m=dh,
             sill_offset_m=0.0,
             material_finish_key=d.material_key,
+            classification_code=getattr(d, "ifc_classification_code", None),
         )
 
     for elem_id in sorted(eid for eid, e in doc.elements.items() if isinstance(e, WindowElem)):
@@ -3077,6 +3228,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
             open_height_m=wh_m,
             sill_offset_m=sill_z,
             material_finish_key=zwin.material_key,
+            classification_code=getattr(zwin, "ifc_classification_code", None),
         )
 
     for rid in sorted(eid for eid, e in doc.elements.items() if isinstance(e, RoomElem)):
@@ -3138,6 +3290,13 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
                 "NetVolume": net_volume,
                 "NetPerimeter": net_perimeter,
             },
+        )
+        _try_attach_classification_reference(
+            f,
+            sp,
+            classification_code=getattr(rm, "ifc_classification_code", None),
+            classification_cache=classification_cache,
+            classification_ref_cache=classification_ref_cache,
         )
 
     for oid in sorted(eid for eid, e in doc.elements.items() if isinstance(e, SlabOpeningElem)):
@@ -3402,6 +3561,37 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
                 layer_set_display_name=f"kernel_roof:{rid}",
                 material_by_key_cache=material_by_key_cache,
             )
+        else:
+            # IFC-04: roofs without a roof_type get a single material via
+            # IfcRelAssociatesMaterial so MAT-01 metadata still ships.
+            try_attach_kernel_ifc_single_material(
+                f,
+                product=roof_ent,
+                material_key=getattr(rf, "material_key", None),
+                material_by_key_cache=material_by_key_cache,
+            )
+        # IFC-04: roof QTO via Qto_SlabBaseQuantities (IfcRoof shares the
+        # slab geometry surface). GrossArea is the plan footprint area;
+        # Perimeter is the closed-loop perimeter.
+        roof_area_m2 = _polygon_area_m2_xy_mm(rp_mm)
+        roof_perim_m = _polygon_perimeter_m_xy_mm([*rp_mm, rp_mm[0]] if rp_mm else rp_mm)
+        _try_attach_qto(
+            f,
+            roof_ent,
+            "Qto_SlabBaseQuantities",
+            {
+                "GrossArea": float(roof_area_m2),
+                "NetArea": float(roof_area_m2),
+                "Perimeter": float(roof_perim_m),
+            },
+        )
+        _try_attach_classification_reference(
+            f,
+            roof_ent,
+            classification_code=getattr(rf, "ifc_classification_code", None),
+            classification_cache=classification_cache,
+            classification_ref_cache=classification_ref_cache,
+        )
 
     # IFC-03: emit roof-hosted IfcOpeningElement features. The opening
     # extrusion is centred on the roof's z-mid and given a depth large

@@ -216,6 +216,9 @@ class WallElem(BaseModel):
     roof_attachment_id: str | None = Field(default=None, alias="roofAttachmentId")
     insulation_extension_mm: float = Field(default=0, alias="insulationExtensionMm")
     material_key: str | None = Field(default=None, alias="materialKey")
+    # IFC-04: optional OmniClass / Uniclass / NSCC code; emitted via
+    # IfcClassificationReference when set.
+    ifc_classification_code: str | None = Field(default=None, alias="ifcClassificationCode")
     is_curtain_wall: bool = Field(default=False, alias="isCurtainWall")
     pinned: bool = Field(default=False)
     curtain_wall_v_count: int | None = Field(default=None, alias="curtainWallVCount")
@@ -256,6 +259,8 @@ class DoorElem(BaseModel):
     lod_plan: Literal["simple", "detailed"] | None = Field(default=None, alias="lodPlan")
     operation_type: DoorOperationType | None = Field(default=None, alias="operationType")
     sliding_track_side: DoorSlidingTrackSide | None = Field(default=None, alias="slidingTrackSide")
+    # IFC-04: optional classification code emitted as IfcClassificationReference.
+    ifc_classification_code: str | None = Field(default=None, alias="ifcClassificationCode")
     pinned: bool = Field(default=False)
 
 
@@ -289,6 +294,8 @@ class WindowElem(BaseModel):
     outline_kind: WindowOutlineKind | None = Field(default=None, alias="outlineKind")
     outline_mm: list[Vec2Mm] | None = Field(default=None, alias="outlineMm")
     attached_roof_id: str | None = Field(default=None, alias="attachedRoofId")
+    # IFC-04: optional classification code emitted as IfcClassificationReference.
+    ifc_classification_code: str | None = Field(default=None, alias="ifcClassificationCode")
     pinned: bool = Field(default=False)
 
 
@@ -330,6 +337,8 @@ class RoomElem(BaseModel):
     function_label: str | None = Field(default=None, alias="functionLabel")
     finish_set: str | None = Field(default=None, alias="finishSet")
     target_area_m2: float | None = Field(default=None, alias="targetAreaM2")
+    # IFC-04: optional classification code emitted as IfcClassificationReference.
+    ifc_classification_code: str | None = Field(default=None, alias="ifcClassificationCode")
     pinned: bool = Field(default=False)
 
 
@@ -506,6 +515,8 @@ class FloorElem(BaseModel):
     floor_type_id: str | None = Field(default=None, alias="floorTypeId")
     insulation_extension_mm: float = Field(default=0, alias="insulationExtensionMm")
     room_bounded: bool = Field(default=False, alias="roomBounded")
+    # IFC-04: optional classification code emitted as IfcClassificationReference.
+    ifc_classification_code: str | None = Field(default=None, alias="ifcClassificationCode")
     pinned: bool = Field(default=False)
 
 
@@ -525,6 +536,8 @@ class RoofElem(BaseModel):
     eave_height_right_mm: float | None = Field(default=None, alias="eaveHeightRightMm")
     roof_type_id: str | None = Field(default=None, alias="roofTypeId")
     material_key: str | None = Field(default=None, alias="materialKey")
+    # IFC-04: optional classification code emitted as IfcClassificationReference.
+    ifc_classification_code: str | None = Field(default=None, alias="ifcClassificationCode")
     pinned: bool = Field(default=False)
 
 

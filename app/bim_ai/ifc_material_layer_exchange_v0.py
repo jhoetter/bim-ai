@@ -11,7 +11,77 @@ from bim_ai.material_assembly_resolve import (
     resolved_layers_for_roof,
     resolved_layers_for_wall,
 )
+from bim_ai.material_catalog import resolve_material
 from bim_ai.type_material_registry import material_display_label
+
+
+def _try_attach_material_pset(f: Any, ifc_material: Any, material_key: str) -> None:
+    """IFC-04: stamp Pset_MaterialCommon (Reference / BaseColor / Roughness / Metalness)
+    onto an IfcMaterial so MAT-01 catalog metadata round-trips with the IFC."""
+
+    try:
+        from ifcopenshell.api.pset.add_pset import add_pset  # noqa: PLC0415
+        from ifcopenshell.api.pset.edit_pset import edit_pset  # noqa: PLC0415
+    except ImportError:
+        return
+    spec = resolve_material(material_key)
+    if spec is None:
+        try:
+            ps = add_pset(f, product=ifc_material, name="Pset_MaterialCommon")
+            edit_pset(f, pset=ps, properties={"Reference": str(material_key)})
+        except Exception:
+            return
+        return
+    props: dict[str, Any] = {
+        "Reference": str(material_key),
+        "BaseColor": str(spec.base_color),
+        "Roughness": float(spec.roughness),
+        "Metalness": float(spec.metalness),
+        "DisplayName": str(spec.display_name),
+        "Category": str(spec.category),
+    }
+    try:
+        ps = add_pset(f, product=ifc_material, name="Pset_MaterialCommon")
+        edit_pset(f, pset=ps, properties=props)
+    except Exception:
+        return
+
+
+def try_attach_kernel_ifc_single_material(
+    f: Any,
+    *,
+    product: Any,
+    material_key: str | None,
+    material_by_key_cache: dict[str, Any],
+) -> None:
+    """IFC-04: associate a single IfcMaterial with a product (door / window /
+    plain wall) via IfcRelAssociatesMaterial. Best-effort; returns silently
+    when ifcopenshell is unavailable or `material_key` is empty."""
+
+    if not material_key:
+        return
+    key = str(material_key).strip()
+    if not key:
+        return
+    try:
+        import ifcopenshell.api.material  # noqa: PLC0415
+    except ImportError:
+        return
+    try:
+        mat_ent = material_by_key_cache.get(key)
+        if mat_ent is None:
+            spec = resolve_material(key)
+            cat = str((spec.category if spec else "material"))[:64]
+            mat_ent = ifcopenshell.api.material.add_material(
+                f, name=str(key)[:126], category=cat
+            )
+            _try_attach_material_pset(f, mat_ent, key)
+            material_by_key_cache[key] = mat_ent
+        ifcopenshell.api.material.assign_material(
+            f, products=[product], type="IfcMaterial", material=mat_ent
+        )
+    except Exception:
+        return
 
 try:
     import ifcopenshell.util.element as _ifc_elem_util
@@ -67,6 +137,10 @@ def try_attach_kernel_ifc_material_layer_set(
                     name=str(mtok)[:126],
                     category=str(cat)[:64],
                 )
+                # IFC-04: attach Pset_MaterialCommon with MAT-01 metadata
+                # so each layered material round-trips with its catalog
+                # attributes, not just its name.
+                _try_attach_material_pset(f, mat_ent, mtok)
                 material_by_key_cache[cache_key] = mat_ent
             layer_ent = ifcopenshell.api.material.add_layer(
                 f, layer_set=material_set, material=mat_ent
