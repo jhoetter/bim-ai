@@ -3,7 +3,7 @@
   "checkpoint_id": "7fde56b795e7",
   "strategy": "manual-commit",
   "branch": "dayshift-fam-keystone",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     "packages/web/src/families/geometryFns/windowGeometry.test.ts",
     "packages/web/src/families/geometryFns/windowGeometry.ts"
@@ -20,13 +20,19 @@
       "transcript": "/7f/de56b795e7/1/full.jsonl",
       "content_hash": "/7f/de56b795e7/1/content_hash.txt",
       "prompt": "/7f/de56b795e7/1/prompt.txt"
+    },
+    {
+      "metadata": "/7f/de56b795e7/2/metadata.json",
+      "transcript": "/7f/de56b795e7/2/full.jsonl",
+      "content_hash": "/7f/de56b795e7/2/content_hash.txt",
+      "prompt": "/7f/de56b795e7/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 1148,
-    "cache_creation_tokens": 779952,
-    "cache_read_tokens": 118915518,
-    "output_tokens": 171775,
-    "api_call_count": 519
+    "input_tokens": 1574,
+    "cache_creation_tokens": 1838295,
+    "cache_read_tokens": 190934236,
+    "output_tokens": 491812,
+    "api_call_count": 815
   }
 }
