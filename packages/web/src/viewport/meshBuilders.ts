@@ -9,6 +9,12 @@ import {
 import { buildDoorGeometry } from '../families/geometryFns/doorGeometry';
 import { buildWindowGeometry } from '../families/geometryFns/windowGeometry';
 import { getFamilyById, getTypeById } from '../families/familyCatalog';
+import {
+  resolveFamilyGeometry,
+  type FamilyCatalogLookup,
+  type HostParams,
+} from '../families/familyResolver';
+import type { FamilyDefinition } from '../families/types';
 import { getBuiltInWallType, type WallTypeAssembly } from '../families/wallTypeCatalog';
 import { isStandingSeamMetalKey, resolveMaterial, type ViewportPaintBundle } from './materials';
 import { categoryColorOr, addEdges, readToken } from './sceneHelpers';
@@ -40,6 +46,70 @@ export function resolveWallTypeAssembly(
 }
 
 export type WallElem = Extract<Element, { kind: 'wall' }>;
+
+/**
+ * KRN-09 + FAM-01 — best-effort resolve a `family_instance` curtain-cell
+ * override into a Three.Group containing the family's authored geometry.
+ *
+ * Returns null when the family type is unknown, the family has no
+ * authored geometry, or resolution throws (cycle, missing param) — the
+ * caller falls back to the magenta placeholder pane.
+ *
+ * The resolved Group is positioned at the cell centre, rotated to the
+ * wall yaw, and scaled mm → metres so the FAM-01 mm-space geometry
+ * lines up with the rest of the viewport.
+ */
+function tryResolveFamilyInstancePanel(
+  familyTypeId: string | undefined | null,
+  cellPosition: THREE.Vector3,
+  yaw: number,
+  bimPickId: string,
+  cellId: string,
+): THREE.Group | null {
+  if (!familyTypeId) return null;
+  const typeEntry = getTypeById(familyTypeId);
+  const familyDef = typeEntry ? getFamilyById(typeEntry.familyId) : undefined;
+  if (!familyDef?.geometry?.length) {
+    return null;
+  }
+  try {
+    const catalog: FamilyCatalogLookup = { [familyDef.id]: familyDef };
+    // Eagerly hydrate any directly-nested families so the resolver's
+    // BFS sees the full subgraph from the built-in catalog. Deeper deps
+    // are picked up recursively as the walk descends.
+    const seen = new Set<string>([familyDef.id]);
+    const stack: FamilyDefinition[] = [familyDef];
+    while (stack.length > 0) {
+      const def = stack.pop()!;
+      for (const node of def.geometry ?? []) {
+        if (node.kind !== 'family_instance_ref') continue;
+        if (seen.has(node.familyId)) continue;
+        const dep = getFamilyById(node.familyId);
+        if (!dep) continue;
+        catalog[node.familyId] = dep;
+        seen.add(node.familyId);
+        stack.push(dep);
+      }
+    }
+    const params = (typeEntry?.parameters ?? {}) as HostParams;
+    const resolved = resolveFamilyGeometry(familyDef.id, params, catalog);
+    resolved.scale.set(0.001, 0.001, 0.001);
+    resolved.position.copy(cellPosition);
+    resolved.rotation.y = yaw;
+    resolved.userData.bimPickId = bimPickId;
+    resolved.userData.curtainCellId = cellId;
+    resolved.userData.curtainPanelKind = 'family_instance';
+    resolved.userData.curtainPanelFamilyTypeId = familyTypeId;
+    return resolved;
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      `[KRN-09] family_instance resolution failed for type '${familyTypeId}'; falling back to placeholder`,
+      err,
+    );
+    return null;
+  }
+}
 
 /**
  * KRN-09 — resolve the material for a single curtain-wall grid cell.
@@ -1693,22 +1763,42 @@ export function makeCurtainWallMesh(
   const overrides = wall.curtainPanelOverrides ?? null;
 
   // Per-cell pane: one PlaneGeometry sized to the cell, with per-cell material
-  // resolution (default glass / empty / system solid / family-instance placeholder).
+  // resolution (default glass / empty / system solid / family-instance via
+  // FAM-01 resolver, magenta placeholder on lookup miss).
   for (let v = 0; v < vCount; v++) {
     for (let h = 0; h < hCount; h++) {
       const cellId = curtainGridCellId(v, h);
       const override = overrides ? (overrides[cellId] ?? null) : null;
+      const tCenter = (v + 0.5) / vCount;
+      const cellPos = new THREE.Vector3(
+        sx + tCenter * dx,
+        elevM + (h + 0.5) * cellH,
+        sz + tCenter * dz,
+      );
+
+      if (override?.kind === 'family_instance') {
+        const resolved = tryResolveFamilyInstancePanel(
+          override.familyTypeId,
+          cellPos,
+          yaw,
+          wall.id,
+          cellId,
+        );
+        if (resolved) {
+          group.add(resolved);
+          continue;
+        }
+        // Fall through to placeholder pane below.
+      }
+
       const cellMat = resolveCurtainPanelMaterial(override, glassMat);
       if (cellMat === null) continue; // 'empty' override — leave the bay open
       const pane = new THREE.Mesh(new THREE.PlaneGeometry(cellW, cellH), cellMat);
-      const tCenter = (v + 0.5) / vCount;
-      pane.position.set(sx + tCenter * dx, elevM + (h + 0.5) * cellH, sz + tCenter * dz);
+      pane.position.copy(cellPos);
       pane.rotation.y = yaw;
       pane.userData.bimPickId = wall.id;
       pane.userData.curtainCellId = cellId;
       if (override?.kind === 'family_instance') {
-        // TODO(FAM-01): instantiate family ${familyTypeId} — until nested
-        // families ship, render this cell as a magenta placeholder.
         pane.userData.curtainPanelKind = 'family_instance';
         pane.userData.curtainPanelFamilyTypeId = override.familyTypeId ?? null;
       } else if (override?.kind === 'system') {

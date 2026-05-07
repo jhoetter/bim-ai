@@ -5,11 +5,13 @@
  * deterministic gridCellId, and that mullions stay regardless of override.
  */
 import * as THREE from 'three';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { curtainGridCellId, type Element } from '@bim-ai/core';
 
 import { makeCurtainWallMesh } from './meshBuilders';
+import * as familyCatalogModule from '../families/familyCatalog';
+import type { FamilyDefinition, SketchLine } from '../families/types';
 
 type WallElem = Extract<Element, { kind: 'wall' }>;
 
@@ -144,7 +146,7 @@ describe('KRN-09 — kind: system', () => {
 });
 
 describe('KRN-09 — kind: family_instance', () => {
-  it('renders a placeholder panel and tags the cell with FAM-01 metadata', () => {
+  it('renders a placeholder panel and tags the cell with FAM-01 metadata when family unknown', () => {
     const wall: WallElem = {
       ...baseCurtainWall,
       curtainPanelOverrides: {
@@ -160,6 +162,105 @@ describe('KRN-09 — kind: family_instance', () => {
     expect(mat).toBeInstanceOf(THREE.MeshStandardMaterial);
     // placeholder_unloaded = #ff66cc
     expect(`#${mat.color.getHexString()}`).toBe('#ff66cc');
+  });
+
+  it('renders the resolved FAM-01 family geometry when the family has authored geometry', () => {
+    // Stub the catalog with a unit-cube test family that has a single
+    // sweep node — proving that a `family_instance` override now hits
+    // the FAM-01 resolver path instead of the magenta placeholder.
+    const profile: SketchLine[] = (() => {
+      const halfMm = 100; // 100mm × 100mm cross section
+      return [
+        {
+          startMm: { xMm: -halfMm, yMm: halfMm },
+          endMm: { xMm: halfMm, yMm: halfMm },
+        },
+        {
+          startMm: { xMm: halfMm, yMm: halfMm },
+          endMm: { xMm: halfMm, yMm: -halfMm },
+        },
+        {
+          startMm: { xMm: halfMm, yMm: -halfMm },
+          endMm: { xMm: -halfMm, yMm: -halfMm },
+        },
+        {
+          startMm: { xMm: -halfMm, yMm: -halfMm },
+          endMm: { xMm: -halfMm, yMm: halfMm },
+        },
+      ];
+    })();
+    const path: SketchLine[] = [{ startMm: { xMm: 0, yMm: 0 }, endMm: { xMm: 200, yMm: 0 } }];
+    const TEST_FAMILY: FamilyDefinition = {
+      id: 'test:unit-cube-family',
+      name: 'Unit Cube',
+      discipline: 'door',
+      params: [],
+      defaultTypes: [
+        {
+          id: 'test:unit-cube-type',
+          name: 'Unit Cube',
+          familyId: 'test:unit-cube-family',
+          discipline: 'door',
+          parameters: {},
+          isBuiltIn: true,
+        },
+      ],
+      geometry: [
+        {
+          kind: 'sweep',
+          pathLines: path,
+          profile,
+          profilePlane: 'normal_to_path_start',
+        },
+      ],
+    };
+    const getTypeSpy = vi.spyOn(familyCatalogModule, 'getTypeById').mockImplementation((id) => {
+      if (id === 'test:unit-cube-type') return TEST_FAMILY.defaultTypes[0];
+      return undefined;
+    });
+    const getFamilySpy = vi.spyOn(familyCatalogModule, 'getFamilyById').mockImplementation((id) => {
+      if (id === 'test:unit-cube-family') return TEST_FAMILY;
+      return undefined;
+    });
+    try {
+      const wall: WallElem = {
+        ...baseCurtainWall,
+        curtainPanelOverrides: {
+          v0h0: { kind: 'family_instance', familyTypeId: 'test:unit-cube-type' },
+        },
+      };
+      const group = makeCurtainWallMesh(wall, 0, null);
+      // The placeholder pane (PlaneGeometry) for v0h0 should NOT be present —
+      // the resolver replaced it with a real Group of meshes.
+      expect(paneById(group, 'v0h0')).toBeNull();
+      // Find the resolved family group: it carries our FAM-01 metadata.
+      let resolvedGroup: THREE.Group | null = null;
+      group.traverse((node) => {
+        if (
+          node instanceof THREE.Group &&
+          node.userData.curtainCellId === 'v0h0' &&
+          node.userData.curtainPanelKind === 'family_instance'
+        ) {
+          resolvedGroup = node;
+        }
+      });
+      expect(resolvedGroup).not.toBeNull();
+      // ExtrudeGeometry meshes inside the resolved group prove the
+      // sweep was actually instantiated.
+      let foundExtrude = false;
+      resolvedGroup!.traverse((node) => {
+        if (node instanceof THREE.Mesh && node.geometry instanceof THREE.ExtrudeGeometry) {
+          foundExtrude = true;
+        }
+      });
+      expect(foundExtrude).toBe(true);
+      expect((resolvedGroup as unknown as THREE.Group).userData.curtainPanelFamilyTypeId).toBe(
+        'test:unit-cube-type',
+      );
+    } finally {
+      getTypeSpy.mockRestore();
+      getFamilySpy.mockRestore();
+    }
   });
 });
 
