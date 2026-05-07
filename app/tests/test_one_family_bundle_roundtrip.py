@@ -73,9 +73,13 @@ def test_one_family_bundle_covers_documentation_spine() -> None:
     ):
         assert k in kinds, f"missing kind {k}"
 
-    kitchen = doc.elements.get("hf-room-kitchen")
-    assert isinstance(kitchen, RoomElem)
-    assert kitchen.programme_code == "KIT-BUNDLE"
+    # Asymmetric demo house has an open-plan ground floor — the
+    # kitchen-bearing room is `hf-room-living-kitchen` (not the old
+    # symmetric house's `hf-room-kitchen`). Programme code is preserved
+    # so downstream KIT-BUNDLE evidence keeps wiring up.
+    living_kitchen = doc.elements.get("hf-room-living-kitchen")
+    assert isinstance(living_kitchen, RoomElem)
+    assert living_kitchen.programme_code == "KIT-BUNDLE"
 
     sh = doc.elements.get("hf-sheet-ga01")
     assert isinstance(sh, SheetElem)
@@ -86,7 +90,7 @@ def test_one_family_bundle_covers_documentation_spine() -> None:
     assert len(vps) == 3
     assert vps[0] == {
         "viewportId": "vp-plan-eg",
-        "label": "EG plan (named view)",
+        "label": "GF plan",
         "viewRef": "plan:hf-plan-eg-openings",
         "xMm": 1200,
         "yMm": 1800,

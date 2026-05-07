@@ -1,9 +1,21 @@
 #!/usr/bin/env python3
+"""Seed the demo `demo/main` model from the canonical command bundle.
+
+The bundle source-of-truth lives in
+`packages/cli/lib/one-family-home-commands.mjs` (also consumed by the JS
+`scripts/apply-one-family-home.mjs` and the CLI `bim-ai plan-house`).
+This script spawns Node to materialize the bundle, then commits it
+through the same engine path as user-driven authoring.
+"""
+
 from __future__ import annotations
 
 import asyncio
+import json
+import subprocess
 import uuid
 from datetime import UTC, datetime
+from pathlib import Path
 
 from bim_ai.db import SessionMaker, init_db_schema
 from bim_ai.document import Document
@@ -14,507 +26,27 @@ PROJECT_ID = uuid.uuid5(uuid.NAMESPACE_URL, "bim-ai:project:demo")
 MODEL_ID = uuid.uuid5(uuid.NAMESPACE_URL, "bim-ai:model:demo-main")
 COMMENT_ID = uuid.uuid5(uuid.NAMESPACE_URL, "bim-ai:comment:demo-1")
 
-# ── Sketch house layout ──────────────────────────────────────────────────────
-#
-#  Two-volume composition viewed from the south-east:
-#
-#  Main volume (W=7000, D=8000):  two-storey, gable roof (ridge N–S, gable
-#  faces south + north), upper-floor south wall is full curtain-wall glazing,
-#  timber-cladding on all exterior walls.
-#
-#  Annex (W=4000, D=6000, attached east):  single-storey, near-flat roof,
-#  timber-clad south + east face, entrance door on south face.
-#
-#  Coordinate system (plan):
-#    X  →  east           (0 = west edge of main volume)
-#    Y  →  north          (0 = south face)
-#    elevation (3D Y) in mm above ground
-#
-#  Roof logic:
-#    spanX=7000 < spanZ=8000  →  ridgeAlongX=false  →  gable ends on south+north ✓
-
-# ── Footprint helpers ────────────────────────────────────────────────────────
-_MAIN_FOOTPRINT = [
-    {"xMm": 0, "yMm": 0},
-    {"xMm": 7000, "yMm": 0},
-    {"xMm": 7000, "yMm": 8000},
-    {"xMm": 0, "yMm": 8000},
-]
-
-_ANNEX_FOOTPRINT = [
-    {"xMm": 7000, "yMm": -500},
-    {"xMm": 11000, "yMm": -500},
-    {"xMm": 11000, "yMm": 6000},
-    {"xMm": 7000, "yMm": 6000},
-]
-
-# Slab: main vol rectangular + annex tab that protrudes 500 mm south of y=0
-_GF_SLAB_FOOTPRINT = [
-    {"xMm": 0, "yMm": 0},
-    {"xMm": 7000, "yMm": 0},
-    {"xMm": 7000, "yMm": -500},
-    {"xMm": 11000, "yMm": -500},
-    {"xMm": 11000, "yMm": 6000},
-    {"xMm": 7000, "yMm": 6000},
-    {"xMm": 7000, "yMm": 8000},
-    {"xMm": 0, "yMm": 8000},
-]
+REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 
 
-def _house_commands() -> list[dict]:
-    """Return the full command bundle that builds the sketch house.
-
-    Main volume: 7 m wide (E–W) × 8 m deep (S–N), two storeys.
-      Ground floor (lvl-1, ±0):   h = 3000 mm, timber cladding.
-      Upper floor  (lvl-2, +3000): h = 2800 mm, south wall = curtain wall.
-      Gable roof   (30°, ridge N–S, gable on south + north faces).
-
-    Annex: 4 m wide × 6 m deep, single storey 3200 mm, near-flat roof.
-    """
-    cmds: list[dict] = []
-
-    # ── Levels ──────────────────────────────────────────────────────────────
-    cmds += [
-        {"type": "createLevel", "id": "lvl-1", "name": "Ground", "elevationMm": 0},
-        {"type": "createLevel", "id": "lvl-2", "name": "Upper", "elevationMm": 3000},
-        {"type": "createLevel", "id": "lvl-ann", "name": "Annex roof", "elevationMm": 3200},
-    ]
-
-    # ── Ground-floor exterior walls — main volume (h = 3000) ────────────────
-    cmds += [
-        {
-            "type": "createWall",
-            "id": "w-s-main",
-            "name": "South facade (main)",
-            "levelId": "lvl-1",
-            "start": {"xMm": 0, "yMm": 0},
-            "end": {"xMm": 7000, "yMm": 0},
-            "thicknessMm": 200,
-            "heightMm": 3000,
-            "materialKey": "white_cladding",
-        },
-        {
-            "type": "createWall",
-            "id": "w-west",
-            "name": "West facade",
-            "levelId": "lvl-1",
-            "start": {"xMm": 0, "yMm": 0},
-            "end": {"xMm": 0, "yMm": 8000},
-            "thicknessMm": 200,
-            "heightMm": 3000,
-            "materialKey": "white_cladding",
-        },
-        {
-            "type": "createWall",
-            "id": "w-n-main",
-            "name": "North facade (main)",
-            "levelId": "lvl-1",
-            "start": {"xMm": 0, "yMm": 8000},
-            "end": {"xMm": 7000, "yMm": 8000},
-            "thicknessMm": 200,
-            "heightMm": 3000,
-            "materialKey": "white_cladding",
-        },
-    ]
-
-    # ── Ground-floor exterior walls — annex (h = 3200) ──────────────────────
-    # Annex protrudes 500 mm south of the main volume south face (y=0).
-    cmds += [
-        {
-            "type": "createWall",
-            "id": "w-s-ann",
-            "name": "South facade (annex)",
-            "levelId": "lvl-1",
-            "start": {"xMm": 7000, "yMm": -500},
-            "end": {"xMm": 11000, "yMm": -500},
-            "thicknessMm": 200,
-            "heightMm": 3200,
-            "materialKey": "white_render",
-        },
-        {
-            # Short return at the junction: connects main south face to annex south face.
-            "type": "createWall",
-            "id": "w-ann-jct",
-            "name": "Annex junction return",
-            "levelId": "lvl-1",
-            "start": {"xMm": 7000, "yMm": 0},
-            "end": {"xMm": 7000, "yMm": -500},
-            "thicknessMm": 200,
-            "heightMm": 3200,
-            "materialKey": "white_render",
-        },
-        {
-            "type": "createWall",
-            "id": "w-east",
-            "name": "East facade (annex)",
-            "levelId": "lvl-1",
-            "start": {"xMm": 11000, "yMm": -500},
-            "end": {"xMm": 11000, "yMm": 6000},
-            "thicknessMm": 200,
-            "heightMm": 3200,
-            "materialKey": "white_render",
-        },
-        {
-            "type": "createWall",
-            "id": "w-n-ann",
-            "name": "North facade (annex)",
-            "levelId": "lvl-1",
-            "start": {"xMm": 11000, "yMm": 6000},
-            "end": {"xMm": 7000, "yMm": 6000},
-            "thicknessMm": 200,
-            "heightMm": 3200,
-            "materialKey": "white_render",
-        },
-    ]
-
-    # ── Upper-floor exterior walls — main volume only (h = 2800) ────────────
-    cmds += [
-        {
-            # South gable face: full curtain-wall glazing + gable triangle glazing
-            # roofAttachmentId signals the renderer to extend glass into the gable
-            # triangle above the rectangular wall zone (eave → ridge).
-            "type": "createWall",
-            "id": "wu-south",
-            "name": "Upper south (curtain wall)",
-            "levelId": "lvl-2",
-            "start": {"xMm": 0, "yMm": 0},
-            "end": {"xMm": 7000, "yMm": 0},
-            "thicknessMm": 200,
-            "heightMm": 2800,
-            "isCurtainWall": True,
-            "roofAttachmentId": "roof-main",
-        },
-        {
-            "type": "createWall",
-            "id": "wu-west",
-            "name": "Upper west facade",
-            "levelId": "lvl-2",
-            "start": {"xMm": 0, "yMm": 0},
-            "end": {"xMm": 0, "yMm": 8000},
-            "thicknessMm": 200,
-            "heightMm": 2800,
-            "materialKey": "white_cladding",
-        },
-        {
-            "type": "createWall",
-            "id": "wu-north",
-            "name": "Upper north facade",
-            "levelId": "lvl-2",
-            "start": {"xMm": 0, "yMm": 8000},
-            "end": {"xMm": 7000, "yMm": 8000},
-            "thicknessMm": 200,
-            "heightMm": 2800,
-            "materialKey": "white_cladding",
-        },
-        {
-            # East gable end wall — faces annex flat roof
-            "type": "createWall",
-            "id": "wu-east",
-            "name": "Upper east gable",
-            "levelId": "lvl-2",
-            "start": {"xMm": 7000, "yMm": 0},
-            "end": {"xMm": 7000, "yMm": 8000},
-            "thicknessMm": 200,
-            "heightMm": 2800,
-            "materialKey": "white_cladding",
-        },
-    ]
-
-    # ── Floors ───────────────────────────────────────────────────────────────
-    cmds += [
-        {
-            "type": "createFloor",
-            "id": "fl-gf",
-            "name": "Ground slab",
-            "levelId": "lvl-1",
-            "boundaryMm": _GF_SLAB_FOOTPRINT,
-            "thicknessMm": 200,
-            "structureThicknessMm": 150,
-            "finishThicknessMm": 50,
-        },
-        {
-            "type": "createFloor",
-            "id": "fl-upper",
-            "name": "Upper slab",
-            "levelId": "lvl-2",
-            "boundaryMm": _MAIN_FOOTPRINT,
-            "thicknessMm": 220,
-            "structureThicknessMm": 160,
-            "finishThicknessMm": 60,
-        },
-    ]
-
-    # ── Roofs ────────────────────────────────────────────────────────────────
-    cmds += [
-        {
-            # Main gable: spanX=7000 < spanZ=8000 → ridge along Z (N–S) automatically
-            # Gable triangles appear on south (y=0) and north (y=8000) faces.
-            "type": "createRoof",
-            "id": "roof-main",
-            "name": "Main gable roof",
-            "referenceLevelId": "lvl-2",
-            "footprintMm": _MAIN_FOOTPRINT,
-            "overhangMm": 300,
-            "slopeDeg": 30,
-            "roofGeometryMode": "gable_pitched_rectangle",
-            "materialKey": "#e2e2de",
-        },
-        {
-            # Annex flat roof: mode=flat → 150mm slab at eaveY=3200mm, light grey.
-            "type": "createRoof",
-            "id": "roof-ann",
-            "name": "Annex flat roof",
-            "referenceLevelId": "lvl-ann",
-            "footprintMm": _ANNEX_FOOTPRINT,
-            "overhangMm": 0,
-            "roofGeometryMode": "flat",
-        },
-    ]
-
-    # ── Stair (east portion of main volume, runs east–west) ──────────────────
-    cmds.append(
-        {
-            "type": "createStair",
-            "id": "stair-main",
-            "name": "Main stair",
-            "baseLevelId": "lvl-1",
-            "topLevelId": "lvl-2",
-            "runStartMm": {"xMm": 1500, "yMm": 1500},
-            "runEndMm": {"xMm": 5500, "yMm": 1500},
-            "widthMm": 1000,
-            "riserMm": 175,
-            "treadMm": 257,
-        }
+def _load_canonical_commands() -> list[dict]:
+    """Materialize commands from the JS canonical builder via Node."""
+    proc = subprocess.run(
+        [
+            "node",
+            "--input-type=module",
+            "-e",
+            "import { buildOneFamilyHomeCommands } from "
+            "'./packages/cli/lib/one-family-home-commands.mjs'; "
+            "process.stdout.write(JSON.stringify(buildOneFamilyHomeCommands()));",
+        ],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        timeout=60,
+        check=True,
     )
-
-    # ── Doors ─────────────────────────────────────────────────────────────────
-    cmds += [
-        {
-            # Main entrance on south facade, right-of-centre (near annex junction)
-            "type": "insertDoorOnWall",
-            "id": "d-main",
-            "name": "Main entrance",
-            "wallId": "w-s-main",
-            "alongT": 0.78,
-            "widthMm": 980,
-        },
-        {
-            # Annex entrance on south annex facade, right side (visible in reference)
-            "type": "insertDoorOnWall",
-            "id": "d-ann",
-            "name": "Annex entrance",
-            "wallId": "w-s-ann",
-            "alongT": 0.78,
-            "widthMm": 900,
-        },
-    ]
-
-    # ── Windows — ground floor ────────────────────────────────────────────────
-    cmds += [
-        {
-            # Two tall narrow windows on south facade (portrait, near left)
-            "type": "insertWindowOnWall",
-            "id": "win-s1",
-            "name": "South window 1",
-            "wallId": "w-s-main",
-            "alongT": 0.14,
-            "widthMm": 850,
-            "heightMm": 2100,
-            "sillHeightMm": 100,
-        },
-        {
-            "type": "insertWindowOnWall",
-            "id": "win-s2",
-            "name": "South window 2",
-            "wallId": "w-s-main",
-            "alongT": 0.36,
-            "widthMm": 850,
-            "heightMm": 2100,
-            "sillHeightMm": 100,
-        },
-        {
-            # Square window on east (annex) facade — spec: ≈750 mm sq, sill ≈1400 mm.
-            "type": "insertWindowOnWall",
-            "id": "win-ann-e",
-            "name": "Annex east window",
-            "wallId": "w-east",
-            "alongT": 0.42,
-            "widthMm": 750,
-            "heightMm": 750,
-            "sillHeightMm": 1400,
-        },
-    ]
-
-    # ── Windows — upper floor ─────────────────────────────────────────────────
-    cmds += [
-        {
-            # Small window on upper east gable wall (looks out over annex roof)
-            # Spec: ≈1100 mm wide × 1000 mm tall, sill 900 mm, ≈2000 mm from south end.
-            # wu-east runs y=0→8000; alongT=0.25 → 2000 mm from south.
-            "type": "insertWindowOnWall",
-            "id": "win-ue",
-            "name": "Upper east window",
-            "wallId": "wu-east",
-            "alongT": 0.25,
-            "widthMm": 1100,
-            "heightMm": 1000,
-            "sillHeightMm": 900,
-        },
-    ]
-
-    # ── Balcony ───────────────────────────────────────────────────────────────
-    # Full-width slab + glass balustrade at the upper-floor junction on the south
-    # curtain-wall face, projecting 650 mm southward.
-    cmds.append(
-        {
-            "type": "createBalcony",
-            "id": "balcony-south",
-            "name": "South balcony",
-            "wallId": "wu-south",
-            "elevationMm": 3000,
-            "projectionMm": 650,
-            "slabThicknessMm": 150,
-            "balustradeHeightMm": 1050,
-        }
-    )
-
-    # ── Stair railing ─────────────────────────────────────────────────────────
-    cmds.append(
-        {
-            "type": "createRailing",
-            "id": "railing-stair",
-            "name": "Stair railing",
-            "hostedStairId": "stair-main",
-            "pathMm": [{"xMm": 1500, "yMm": 600}, {"xMm": 5500, "yMm": 600}],
-            "guardHeightMm": 1000,
-        }
-    )
-
-    # ── Rooms ─────────────────────────────────────────────────────────────────
-    cmds += [
-        {
-            "type": "createRoomOutline",
-            "id": "room-living",
-            "name": "Living / dining",
-            "levelId": "lvl-1",
-            "outlineMm": [
-                {"xMm": 200, "yMm": 200},
-                {"xMm": 6800, "yMm": 200},
-                {"xMm": 6800, "yMm": 7800},
-                {"xMm": 200, "yMm": 7800},
-            ],
-        },
-        {
-            "type": "createRoomOutline",
-            "id": "room-annex",
-            "name": "Annex — utility / garage",
-            "levelId": "lvl-1",
-            "outlineMm": [
-                {"xMm": 7200, "yMm": 200},
-                {"xMm": 10800, "yMm": 200},
-                {"xMm": 10800, "yMm": 5800},
-                {"xMm": 7200, "yMm": 5800},
-            ],
-        },
-        {
-            "type": "createRoomOutline",
-            "id": "room-upper",
-            "name": "Open upper floor",
-            "levelId": "lvl-2",
-            "outlineMm": [
-                {"xMm": 200, "yMm": 200},
-                {"xMm": 6800, "yMm": 200},
-                {"xMm": 6800, "yMm": 7800},
-                {"xMm": 200, "yMm": 7800},
-            ],
-        },
-    ]
-
-    # ── Site pad ──────────────────────────────────────────────────────────────
-    cmds.append(
-        {
-            "type": "upsertSite",
-            "id": "site-main",
-            "name": "Site",
-            "referenceLevelId": "lvl-1",
-            "boundaryMm": [
-                {"xMm": -3000, "yMm": -3000},
-                {"xMm": 14000, "yMm": -3000},
-                {"xMm": 14000, "yMm": 11000},
-                {"xMm": -3000, "yMm": 11000},
-            ],
-            "padThicknessMm": 300,
-            "baseOffsetMm": 0,
-        }
-    )
-
-    # ── Section cut (E–W through main volume) ─────────────────────────────────
-    cmds.append(
-        {
-            "type": "createSectionCut",
-            "id": "sec-ew",
-            "name": "Section A–A",
-            "lineStartMm": {"xMm": 3500, "yMm": -1000},
-            "lineEndMm": {"xMm": 3500, "yMm": 9000},
-            "cropDepthMm": 5000,
-        }
-    )
-
-    # ── Dimensions ────────────────────────────────────────────────────────────
-    cmds += [
-        {
-            "type": "createDimension",
-            "id": "dim-width",
-            "name": "Main width",
-            "levelId": "lvl-1",
-            "aMm": {"xMm": 0, "yMm": -1200},
-            "bMm": {"xMm": 7000, "yMm": -1200},
-            "offsetMm": {"xMm": 0, "yMm": 600},
-        },
-        {
-            "type": "createDimension",
-            "id": "dim-total",
-            "name": "Total width",
-            "levelId": "lvl-1",
-            "aMm": {"xMm": 0, "yMm": -2000},
-            "bMm": {"xMm": 11000, "yMm": -2000},
-            "offsetMm": {"xMm": 0, "yMm": 600},
-        },
-    ]
-
-    # ── Viewpoints ────────────────────────────────────────────────────────────
-    # Coordinate convention in viewpoint camera: xMm=plan-X, yMm=plan-Y, zMm=elevation.
-    # (Three.js maps: X→x, Z→y-plan, Y→elevation)
-    cmds += [
-        {
-            # Primary sketch view — SSW, ~25° west of due south, elevation ~30°.
-            # From this angle: south gable face dominates, annex (east) appears
-            # to the right, west face visible as thin left edge — matches sketch.
-            "type": "saveViewpoint",
-            "id": "vp-ssw",
-            "name": "SSW iso (sketch view)",
-            "mode": "orbit_3d",
-            "camera": {
-                "position": {"xMm": -5000, "yMm": -14000, "zMm": 11000},
-                "target": {"xMm": 4000, "yMm": 4000, "zMm": 3500},
-                "up": {"xMm": 0, "yMm": 0, "zMm": 1},
-            },
-        },
-        {
-            # Secondary — south-east iso (annex on left, useful for east-side views)
-            "type": "saveViewpoint",
-            "id": "vp-se",
-            "name": "SE iso",
-            "mode": "orbit_3d",
-            "camera": {
-                "position": {"xMm": 18000, "yMm": -8000, "zMm": 13000},
-                "target": {"xMm": 5000, "yMm": 4000, "zMm": 4000},
-                "up": {"xMm": 0, "yMm": 0, "zMm": 1},
-            },
-        },
-    ]
-
-    return cmds
+    return json.loads(proc.stdout)
 
 
 def document_wire(doc: Document) -> dict:
@@ -527,9 +59,10 @@ def document_wire(doc: Document) -> dict:
 async def seed_async() -> None:
     await init_db_schema()
 
+    commands = _load_canonical_commands()
     empty_doc = Document(revision=0, elements={})
-    ok, house_doc, _cmds, violations, code = try_commit_bundle(empty_doc, _house_commands())
-    if not ok:
+    ok, house_doc, _cmds, violations, code = try_commit_bundle(empty_doc, commands)
+    if not ok or house_doc is None:
         blocking = [v for v in violations if getattr(v, "blocking", False)]
         raise RuntimeError(f"Seed house bundle failed ({code}): {blocking}")
 
@@ -564,9 +97,14 @@ async def seed_async() -> None:
                     id=COMMENT_ID,
                     model_id=MODEL_ID,
                     user_display="Seed bot",
-                    body="Sketch house loaded — white board-and-batten main volume, curtain wall south gable, smooth-render annex. SSW viewpoint matches the reference sketch angle.",
+                    body=(
+                        "Asymmetric two-volume demo house — west-aligned upper volume with "
+                        "off-centre ridge, recessed loggia behind a white frame, east-side "
+                        "single-storey extension with flat roof deck. SSW viewpoint matches "
+                        "spec/target-house-vis-colored.png."
+                    ),
                     element_id=None,
-                    level_id="lvl-1",
+                    level_id="hf-lvl-ground",
                     anchor_x_mm=3500,
                     anchor_y_mm=4000,
                     resolved=False,
