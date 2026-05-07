@@ -752,6 +752,165 @@ function rebuildPlanMeshesFromWire(
   }
 }
 
+/**
+ * VIE-03: model bounds (walls + floors + roofs) used to anchor an elevation
+ * marker on the corresponding bounding-box edge.
+ */
+export function modelXyBoundsMm(
+  elementsById: Record<string, Element>,
+): { minXmm: number; minYmm: number; maxXmm: number; maxYmm: number } | null {
+  const xs: number[] = [];
+  const ys: number[] = [];
+  for (const el of Object.values(elementsById)) {
+    if (el.kind === 'wall') {
+      xs.push(el.start.xMm, el.end.xMm);
+      ys.push(el.start.yMm, el.end.yMm);
+    } else if (el.kind === 'floor') {
+      for (const p of el.boundaryMm) {
+        xs.push(p.xMm);
+        ys.push(p.yMm);
+      }
+    } else if (el.kind === 'roof') {
+      for (const p of el.footprintMm) {
+        xs.push(p.xMm);
+        ys.push(p.yMm);
+      }
+    }
+  }
+  if (xs.length === 0 || ys.length === 0) return null;
+  return {
+    minXmm: Math.min(...xs),
+    minYmm: Math.min(...ys),
+    maxXmm: Math.max(...xs),
+    maxYmm: Math.max(...ys),
+  };
+}
+
+/**
+ * VIE-03: anchor point + view direction for an elevation_view marker, in mm.
+ * `anchor` sits on the bounding-box edge facing the viewer; `viewX/viewY` is
+ * the unit vector from the viewer toward the model (also the triangle's tip
+ * direction).
+ */
+export function elevationMarkerAnchorMm(
+  ev: Extract<Element, { kind: 'elevation_view' }>,
+  bounds: { minXmm: number; minYmm: number; maxXmm: number; maxYmm: number },
+  marginMm = 1500,
+): { anchorXmm: number; anchorYmm: number; viewX: number; viewY: number } {
+  const cx = 0.5 * (bounds.minXmm + bounds.maxXmm);
+  const cy = 0.5 * (bounds.minYmm + bounds.maxYmm);
+  switch (ev.direction) {
+    case 'north':
+      return { anchorXmm: cx, anchorYmm: bounds.maxYmm + marginMm, viewX: 0, viewY: -1 };
+    case 'south':
+      return { anchorXmm: cx, anchorYmm: bounds.minYmm - marginMm, viewX: 0, viewY: 1 };
+    case 'east':
+      return { anchorXmm: bounds.maxXmm + marginMm, anchorYmm: cy, viewX: -1, viewY: 0 };
+    case 'west':
+      return { anchorXmm: bounds.minXmm - marginMm, anchorYmm: cy, viewX: 1, viewY: 0 };
+    case 'custom': {
+      const ang = ((ev.customAngleDeg ?? 0) * Math.PI) / 180;
+      const radius =
+        Math.max(bounds.maxXmm - bounds.minXmm, bounds.maxYmm - bounds.minYmm) / 2 + marginMm;
+      // Viewer stands along +ang from centroid; view direction points back at centroid.
+      return {
+        anchorXmm: cx + Math.cos(ang) * radius,
+        anchorYmm: cy + Math.sin(ang) * radius,
+        viewX: -Math.cos(ang),
+        viewY: -Math.sin(ang),
+      };
+    }
+  }
+}
+
+function elevationViewPlanThree(
+  ev: Extract<Element, { kind: 'elevation_view' }>,
+  elementsById: Record<string, Element>,
+): THREE.Group {
+  const group = new THREE.Group();
+  group.userData.bimPickId = ev.id;
+  group.userData.bimElevationViewId = ev.id;
+
+  const bounds = modelXyBoundsMm(elementsById) ?? {
+    minXmm: -5000,
+    minYmm: -5000,
+    maxXmm: 5000,
+    maxYmm: 5000,
+  };
+  const { anchorXmm, anchorYmm, viewX, viewY } = elevationMarkerAnchorMm(ev, bounds);
+
+  const ax = ux(anchorXmm);
+  const az = uz(anchorYmm);
+  const Y = PLAN_Y + 0.008;
+  const color = readToken('--cat-section', '#ef4444');
+
+  // Triangle pointing in the view direction (toward the model).
+  const TRI_LEN = 0.6;
+  const TRI_HALF = 0.35;
+  // Tangent perpendicular to view direction in plan (right-hand).
+  const tx = -viewY;
+  const ty = viewX;
+  const tipX = ax + viewX * TRI_LEN;
+  const tipZ = az + viewY * TRI_LEN;
+  const baseLx = ax + tx * TRI_HALF;
+  const baseLz = az + ty * TRI_HALF;
+  const baseRx = ax - tx * TRI_HALF;
+  const baseRz = az - ty * TRI_HALF;
+
+  const triPts = [
+    new THREE.Vector3(baseLx, Y, baseLz),
+    new THREE.Vector3(tipX, Y, tipZ),
+    new THREE.Vector3(baseRx, Y, baseRz),
+    new THREE.Vector3(baseLx, Y, baseLz),
+  ];
+  group.add(
+    new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(triPts),
+      new THREE.LineBasicMaterial({ color }),
+    ),
+  );
+
+  // Filled triangle so the cardinal direction reads at a glance.
+  const fillGeom = new THREE.BufferGeometry();
+  const fillVerts = new Float32Array([
+    baseLx,
+    Y - 0.0005,
+    baseLz,
+    tipX,
+    Y - 0.0005,
+    tipZ,
+    baseRx,
+    Y - 0.0005,
+    baseRz,
+  ]);
+  fillGeom.setAttribute('position', new THREE.BufferAttribute(fillVerts, 3));
+  fillGeom.setIndex([0, 1, 2]);
+  fillGeom.computeVertexNormals();
+  const fillMat = new THREE.MeshBasicMaterial({
+    color,
+    transparent: true,
+    opacity: 0.35,
+    side: THREE.DoubleSide,
+  });
+  const fill = new THREE.Mesh(fillGeom, fillMat);
+  fill.userData.bimPickId = ev.id;
+  fill.userData.bimElevationViewId = ev.id;
+  group.add(fill);
+
+  // Callout line from the anchor toward the bounding-box centroid so the
+  // marker visually "looks at" the model.
+  const cx = ux(0.5 * (bounds.minXmm + bounds.maxXmm));
+  const cz = uz(0.5 * (bounds.minYmm + bounds.maxYmm));
+  const calloutPts = [new THREE.Vector3(tipX, Y, tipZ), new THREE.Vector3(cx, Y, cz)];
+  const calloutGeom = new THREE.BufferGeometry().setFromPoints(calloutPts);
+  const calloutMat = new THREE.LineDashedMaterial({ color, dashSize: 0.18, gapSize: 0.12 });
+  const callout = new THREE.Line(calloutGeom, calloutMat);
+  callout.computeLineDistances();
+  group.add(callout);
+
+  return group;
+}
+
 function sectionCutPlanThree(sc: Extract<Element, { kind: 'section_cut' }>): THREE.Group {
   const group = new THREE.Group();
   group.userData.bimPickId = sc.id;
@@ -982,6 +1141,13 @@ export function rebuildPlanMeshes(
     if (sc.kind !== 'section_cut') continue;
     if (kindHidden('section_cut')) continue;
     holder.add(sectionCutPlanThree(sc));
+  }
+
+  // VIE-03: triangular markers for first-class elevation views.
+  for (const ev of Object.values(elementsById)) {
+    if (ev.kind !== 'elevation_view') continue;
+    if (kindHidden('elevation_view')) continue;
+    holder.add(elevationViewPlanThree(ev, elementsById));
   }
 }
 

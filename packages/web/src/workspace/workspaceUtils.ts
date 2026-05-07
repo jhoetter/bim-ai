@@ -51,6 +51,7 @@ export type LegacyPlanTool =
   | 'room_rectangle'
   | 'grid'
   | 'dimension'
+  | 'elevation'
   | 'align'
   | 'split'
   | 'trim'

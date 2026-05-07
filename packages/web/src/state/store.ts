@@ -1545,6 +1545,26 @@ export const useBimStore = create<StoreState>((set, get) => {
       set({ activeViewpointId: viewpointElementId, temporaryVisibility: nextTemp });
     },
 
+    // VIE-03: activate an elevation_view as the central canvas's view scope.
+    activateElevationView: (elevationViewElementId) => {
+      if (!elevationViewElementId) {
+        set({ activeElevationViewId: undefined, temporaryVisibility: null });
+        return;
+      }
+      const el = get().elementsById[elevationViewElementId];
+      if (!el || el.kind !== 'elevation_view') return;
+      const prior = get().temporaryVisibility;
+      // VIE-04: keep the override only when re-entering the same view.
+      const nextTemp = prior && prior.viewId === elevationViewElementId ? prior : null;
+      set({
+        activeElevationViewId: elevationViewElementId,
+        activePlanViewId: undefined,
+        activeViewpointId: undefined,
+        viewerMode: 'plan_canvas',
+        temporaryVisibility: nextTemp,
+      });
+    },
+
     setViewerClipElevMm: (viewerClipElevMm) => set({ viewerClipElevMm }),
 
     setViewerClipFloorElevMm: (viewerClipFloorElevMm) => set({ viewerClipFloorElevMm }),

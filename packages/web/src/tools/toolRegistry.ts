@@ -32,6 +32,7 @@ export type ToolId =
   | 'room'
   | 'dimension'
   | 'section'
+  | 'elevation'
   | 'tag'
   | 'align'
   | 'split'
@@ -151,6 +152,14 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       modes: ['plan', 'plan-3d', 'section'],
       tooltip: t('tools.section.tooltip'),
     },
+    elevation: {
+      id: 'elevation',
+      label: t('tools.elevation.label'),
+      icon: 'section',
+      hotkey: 'EL',
+      modes: ['plan', 'plan-3d'],
+      tooltip: t('tools.elevation.tooltip'),
+    },
     tag: {
       id: 'tag',
       label: t('tools.tag.label'),
@@ -254,6 +263,7 @@ const PALETTE_ORDER: ToolId[] = [
   'room',
   'dimension',
   'section',
+  'elevation',
   'tag',
   'align',
   'split',

@@ -35,6 +35,7 @@ export type PlanTool =
   | 'room_rectangle'
   | 'grid'
   | 'dimension'
+  | 'elevation'
   | 'align'
   | 'split'
   | 'trim'
@@ -131,6 +132,9 @@ export type StoreState = {
   activePlanViewId?: string;
   /** Saved 3D viewpoint whose clip/layer tweaks should persist via `updateElementProperty`. */
   activeViewpointId?: string;
+  /** VIE-03: active `elevation_view` element when the user double-clicks an
+   *  elevation marker. Mutually exclusive with `activePlanViewId`. */
+  activeElevationViewId?: string;
   /** When set, plan canvas prefers server `planProjectionWire_v1.primitives` (WP-C02/C03). */
   planProjectionPrimitives: PlanProjectionPrimitivesV1Wire | null;
   /** Last plan wire legend + programme digest readout for workbench panels (Prompt-3 room scheme). */
@@ -187,6 +191,8 @@ export type StoreState = {
 
   activatePlanView: (planViewElementId: string | undefined) => void;
   setActiveViewpointId: (viewpointElementId?: string) => void;
+  /** VIE-03: open / close an elevation_view as the central canvas's scope. */
+  activateElevationView: (elevationViewElementId: string | undefined) => void;
   setViewerClipElevMm: (mm: number | null) => void;
   setViewerClipFloorElevMm: (mm: number | null) => void;
   setPlanProjectionPrimitives: (p: PlanProjectionPrimitivesV1Wire | null) => void;

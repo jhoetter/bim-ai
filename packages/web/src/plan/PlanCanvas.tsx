@@ -60,6 +60,7 @@ import {
   resolvePlanViewDisplay,
 } from './planProjection';
 import { rebuildPlanMeshes } from './symbology';
+import { elevationFromWall, sectionCutFromWall } from '../lib/sectionElevationFromWall';
 
 function readPlanToken(name: string, fallback: string): string {
   const v = liveTokenReader().read(name);
@@ -273,6 +274,8 @@ export function PlanCanvas({
   const orthoSnapHold = useBimStore((s) => s.orthoSnapHold);
   const selectEl = useBimStore((s) => s.select);
   const setActiveLevelId = useBimStore((s) => s.setActiveLevelId);
+  const activateElevationView = useBimStore((s) => s.activateElevationView);
+  const activatePlanView = useBimStore((s) => s.activatePlanView);
 
   const display = useMemo(
     () =>
@@ -1103,6 +1106,34 @@ export function PlanCanvas({
         bumpGeom((x) => x + 1);
         return;
       }
+      if (planTool === 'elevation') {
+        // VIE-03: drop an elevation marker. Auto-orient toward the nearest
+        // exterior wall when one is reasonably close; otherwise default to
+        // 'north'.
+        const n = nearestWallAt(elementsById, displayLevelId || undefined, sp.xMm, sp.yMm);
+        const params =
+          n && n.distMm < 5000
+            ? elevationFromWall(n.wall)
+            : {
+                direction: 'north' as const,
+                customAngleDeg: null as number | null,
+                cropMinMm: { xMm: sp.xMm - 4000, yMm: sp.yMm - 4000 },
+                cropMaxMm: { xMm: sp.xMm + 4000, yMm: sp.yMm + 4000 },
+                name: 'North Elevation',
+              };
+        const cmd: Record<string, unknown> = {
+          type: 'createElevationView',
+          name: params.name,
+          direction: params.direction,
+          cropMinMm: params.cropMinMm,
+          cropMaxMm: params.cropMaxMm,
+        };
+        if (params.direction === 'custom' && params.customAngleDeg !== null) {
+          cmd.customAngleDeg = params.customAngleDeg;
+        }
+        onSemanticCommand(cmd);
+        return;
+      }
       if (planTool === 'align') {
         const { state: nextState, effect } = reduceAlign(alignStateRef.current, {
           kind: 'click',
@@ -1467,10 +1498,39 @@ export function PlanCanvas({
       }
     };
 
+    // VIE-03: double-click an elevation marker (or plan_view marker) to open
+    // the corresponding view. Looks up bimPickId via raycast, then routes to
+    // the right activation action based on element kind.
+    const onDblClick = (ev: MouseEvent) => {
+      const rectBox = rnd.domElement.getBoundingClientRect();
+      const ray = new THREE.Raycaster();
+      ray.setFromCamera(
+        new THREE.Vector2(
+          ((ev.clientX - rectBox.left) / rectBox.width) * 2 - 1,
+          -(((ev.clientY - rectBox.top) / rectBox.height) * 2 - 1),
+        ),
+        camNow,
+      );
+      const hits = ray.intersectObjects(grp.children, true);
+      const h = hits.find(
+        (x) => typeof (x.object.userData as { bimPickId?: unknown }).bimPickId === 'string',
+      );
+      if (!h) return;
+      const id = (h.object.userData as { bimPickId: string }).bimPickId;
+      const el = elementsById[id];
+      if (!el) return;
+      if (el.kind === 'elevation_view') {
+        activateElevationView(id);
+      } else if (el.kind === 'plan_view') {
+        activatePlanView(id);
+      }
+    };
+
     canvas.addEventListener('pointermove', onMove);
     canvas.addEventListener('pointerdown', onDown);
     window.addEventListener('pointerup', onUpWindow);
     canvas.addEventListener('click', onClick);
+    canvas.addEventListener('dblclick', onDblClick);
     canvas.addEventListener('wheel', onWheel, { passive: false });
     window.addEventListener('keydown', onKey);
     window.addEventListener('keyup', onKeyUp);
@@ -1479,6 +1539,7 @@ export function PlanCanvas({
       canvas.removeEventListener('pointerdown', onDown);
       window.removeEventListener('pointerup', onUpWindow);
       canvas.removeEventListener('click', onClick);
+      canvas.removeEventListener('dblclick', onDblClick);
       canvas.removeEventListener('wheel', onWheel);
       window.removeEventListener('keydown', onKey);
       window.removeEventListener('keyup', onKeyUp);
@@ -1501,6 +1562,8 @@ export function PlanCanvas({
     resizeCam,
     selectEl,
     setActiveLevelId,
+    activateElevationView,
+    activatePlanView,
   ]);
 
   const sb = THREE.MathUtils.clamp(halfUi * 0.25, 0.2, 6);

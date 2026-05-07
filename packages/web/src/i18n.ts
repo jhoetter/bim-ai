@@ -33,6 +33,10 @@ i18n.init({
             label: 'Section',
             tooltip: 'Two-click section line + depth direction',
           },
+          elevation: {
+            label: 'Elevation',
+            tooltip: 'Click on plan to drop a N/S/E/W elevation marker (EL)',
+          },
           tag: {
             label: 'Tag',
             tooltip: 'Tag dropdown (Door / Window / Wall / Room / By category)',
@@ -769,6 +773,10 @@ i18n.init({
           section: {
             label: 'Schnitt',
             tooltip: 'Zwei Klicks für Schnittlinie + Tiefenrichtung',
+          },
+          elevation: {
+            label: 'Ansicht',
+            tooltip: 'Klicken zum Platzieren einer N/S/O/W-Ansichtsmarkierung (EL)',
           },
           tag: {
             label: 'Beschriftung',
