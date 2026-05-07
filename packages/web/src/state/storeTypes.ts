@@ -159,6 +159,16 @@ export type StoreState = {
   viewerClipFloorElevMm: number | null;
   /** When true for a semantic kind (`wall`, `roof`, …), that category is hidden in 3D. */
   viewerCategoryHidden: Record<string, boolean>;
+  /**
+   * SKB-23 — per-phase preview filter. When set, only elements whose
+   * `phaseId` is in `viewerPhaseFilter.phases` (or whose `phaseId` is
+   * unset, when `includeUntagged` is true) are rendered. Cleared
+   * automatically when leaving the active view; not persisted.
+   */
+  viewerPhaseFilter: {
+    phases: string[];
+    includeUntagged: boolean;
+  } | null;
   wallLocationLine: WallLocationLine;
   floorBoundaryOffsetMm: number;
   orthoSnapHold: boolean;
@@ -249,6 +259,9 @@ export type StoreState = {
   temporaryVisibility: TemporaryVisibility | null;
   setTemporaryVisibility: (next: TemporaryVisibility | null) => void;
   clearTemporaryVisibility: () => void;
+  /** SKB-23 — set/clear the per-phase preview filter. */
+  setViewerPhaseFilter: (next: { phases: string[]; includeUntagged: boolean } | null) => void;
+  clearViewerPhaseFilter: () => void;
 
   setActivity: (e: ActivityEvent[]) => void;
   setIdentity: (userId: string, display: string, peerId: string) => void;

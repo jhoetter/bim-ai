@@ -1480,6 +1480,9 @@ export const useBimStore = create<StoreState>((set, get) => {
     // KRN-06: site/origin markers hidden by default; user toggles via VV.
     viewerCategoryHidden: { site_origin: true },
 
+    // SKB-23: no phase filter active by default — every element renders.
+    viewerPhaseFilter: null,
+
     orbitCameraNonce: 0,
 
     orbitCameraPoseMm: null,
@@ -1851,6 +1854,9 @@ export const useBimStore = create<StoreState>((set, get) => {
     temporaryVisibility: null,
     setTemporaryVisibility: (next) => set({ temporaryVisibility: next }),
     clearTemporaryVisibility: () => set({ temporaryVisibility: null }),
+    // SKB-23: per-phase preview filter actions.
+    setViewerPhaseFilter: (next) => set({ viewerPhaseFilter: next }),
+    clearViewerPhaseFilter: () => set({ viewerPhaseFilter: null }),
   };
 });
 
