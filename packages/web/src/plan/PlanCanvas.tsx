@@ -2841,18 +2841,40 @@ export function PlanCanvas({
         <SnapSettingsToolbar value={snapSettings} onChange={setSnapSettings} />
       </div>
       <div ref={mountRef} className="size-full cursor-crosshair" />
-      {/* SKT-01 — Floor sketch authoring overlay. Active when the
-          'floor-sketch' tool is selected; commits a single CreateFloor on
+      {/* SKT-01 / SKT-02 / SKT-03 — Sketch authoring overlay. Active when one
+          of the *-sketch tools is selected. Commits a Create<Kind> command on
           Finish and otherwise leaves the document untouched. */}
-      {planTool === 'floor-sketch' && modelId && lvlId ? (
+      {(planTool === 'floor-sketch' ||
+        planTool === 'roof-sketch' ||
+        planTool === 'room-separation-sketch') &&
+      modelId &&
+      lvlId ? (
         <SketchCanvas
           modelId={modelId}
           levelId={lvlId}
+          elementKind={
+            planTool === 'roof-sketch'
+              ? 'roof'
+              : planTool === 'room-separation-sketch'
+                ? 'room_separation'
+                : 'floor'
+          }
           pointerToMmRef={sketchPointerToMmRef}
           mmToScreenRef={sketchMmToScreenRef}
-          onFinished={(floorId) => {
+          wallsForPicking={Object.values(elementsById)
+            .filter(
+              (el): el is Extract<Element, { kind: 'wall' }> =>
+                el.kind === 'wall' && (!lvlId || el.levelId === lvlId),
+            )
+            .map((w) => ({
+              id: w.id,
+              startMm: { xMm: w.start.xMm, yMm: w.start.yMm },
+              endMm: { xMm: w.end.xMm, yMm: w.end.yMm },
+              thicknessMm: w.thicknessMm,
+            }))}
+          onFinished={(createdId) => {
             setPlanTool('select');
-            if (floorId) selectEl(floorId);
+            if (createdId) selectEl(createdId);
           }}
           onCancelled={() => setPlanTool('select')}
         />

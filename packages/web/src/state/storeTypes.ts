@@ -32,6 +32,8 @@ export type PlanTool =
   | 'wall'
   | 'floor'
   | 'floor-sketch'
+  | 'roof-sketch'
+  | 'room-separation-sketch'
   | 'door'
   | 'window'
   | 'room'

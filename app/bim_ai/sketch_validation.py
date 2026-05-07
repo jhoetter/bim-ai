@@ -168,7 +168,28 @@ def validate_session(lines: list[SketchLine]) -> SketchValidationState:
     return SketchValidationState(valid=not issues, issues=issues)
 
 
+def validate_room_separation_session(lines: list[SketchLine]) -> SketchValidationState:
+    """Room-separation sketches commit one line per segment — no loop required.
+
+    Rejects only zero-length lines; an empty sketch is also invalid because
+    Finish would commit nothing.
+    """
+
+    issues: list[SketchValidationIssue] = []
+    if not lines:
+        issues.append(
+            SketchValidationIssue(
+                code="empty_sketch",
+                message="Sketch is empty — draw at least one line.",
+            )
+        )
+    issues.extend(check_zero_length(lines))
+    return SketchValidationState(valid=not issues, issues=issues)
+
+
 def validate_sketch_session(session: SketchSession) -> SketchValidationState:
+    if session.element_kind == "room_separation":
+        return validate_room_separation_session(list(session.lines))
     return validate_session(list(session.lines))
 
 

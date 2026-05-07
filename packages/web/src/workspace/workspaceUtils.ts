@@ -40,6 +40,8 @@ export const KNOWN_PLAN_TOOLS = new Set<ToolId>([
   'room',
   'dimension',
   'floor-sketch',
+  'roof-sketch',
+  'room-separation-sketch',
 ]);
 
 export type LegacyPlanTool =
@@ -47,6 +49,8 @@ export type LegacyPlanTool =
   | 'wall'
   | 'floor'
   | 'floor-sketch'
+  | 'roof-sketch'
+  | 'room-separation-sketch'
   | 'door'
   | 'window'
   | 'room'

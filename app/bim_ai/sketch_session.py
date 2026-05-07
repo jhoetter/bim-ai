@@ -1,13 +1,15 @@
-"""SKT-01 — `SketchSession` transient state machine (floor-only slice).
+"""SKT-01 — `SketchSession` transient state machine.
 
 Sessions are server-side scratchpads for sketch-mode authoring: lines, vertices,
 and validation state are tracked in-memory until `Finish` translates the closed
 loop into a single persisted command (e.g. `CreateFloor`). Sessions never enter
 the `Document` snapshot — they have no element id, no undo entry, no IFC trace.
 
-This module is the load-bearing slice for `floor` only. `ceiling`, `roof`,
-`room_separation`, `in_place_mass`, `void_cut`, and `detail_region` are deferred
-follow-ups that reuse the same protocol (mark `partial` in the tracker).
+Element kinds supported (wave3-4 propagation): `floor`, `roof`,
+`room_separation`. `ceiling`, `in_place_mass`, `void_cut`, and `detail_region`
+remain deferred follow-ups (each reuses the same protocol). `ceiling`
+specifically is gated on a CeilingElem + createCeiling command landing as
+its own kernel WP.
 """
 
 from __future__ import annotations
@@ -20,8 +22,11 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from bim_ai.elements import Vec2Mm
 
-SketchElementKind = Literal["floor"]
+SketchElementKind = Literal["floor", "roof", "room_separation"]
 SketchSessionStatus = Literal["open", "finished", "cancelled"]
+# SKT-02: sub-tool config — does Pick Walls insert wall centerlines or
+# offset-by-half-thickness lines along the wall's interior face?
+PickWallsOffsetMode = Literal["centerline", "interior_face"]
 
 
 class SketchLine(BaseModel):
@@ -46,6 +51,19 @@ class SketchValidationState(BaseModel):
     issues: list[SketchValidationIssue] = Field(default_factory=list)
 
 
+class PickedWall(BaseModel):
+    """SKT-02 — bookkeeping for a wall referenced via the Pick Walls sub-tool.
+
+    Tracks the wall id so re-clicking the same wall toggles it off, and the
+    `line_index` so we know which sketch line to remove on toggle-off and which
+    to re-derive when the offset mode flips.
+    """
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    wall_id: str = Field(alias="wallId")
+    line_index: int = Field(alias="lineIndex")
+
+
 class SketchSession(BaseModel):
     """Transient sketch authoring state.
 
@@ -61,6 +79,10 @@ class SketchSession(BaseModel):
     level_id: str = Field(alias="levelId")
     lines: list[SketchLine] = Field(default_factory=list)
     status: SketchSessionStatus = "open"
+    pick_walls_offset_mode: PickWallsOffsetMode = Field(
+        default="interior_face", alias="pickWallsOffsetMode"
+    )
+    picked_walls: list[PickedWall] = Field(default_factory=list, alias="pickedWalls")
 
 
 class SketchSessionRegistry:
@@ -80,6 +102,7 @@ class SketchSessionRegistry:
         model_id: str,
         element_kind: SketchElementKind,
         level_id: str,
+        pick_walls_offset_mode: PickWallsOffsetMode = "interior_face",
     ) -> SketchSession:
         with self._lock:
             session_id = str(uuid.uuid4())
@@ -90,6 +113,8 @@ class SketchSessionRegistry:
                 level_id=level_id,
                 lines=[],
                 status="open",
+                pick_walls_offset_mode=pick_walls_offset_mode,
+                picked_walls=[],
             )
             self._sessions[session_id] = session
             return session

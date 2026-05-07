@@ -12,6 +12,8 @@ const ALL_TOOLS: readonly PlanTool[] = [
   'grid',
   'dimension',
   'floor-sketch',
+  'roof-sketch',
+  'room-separation-sketch',
 ];
 
 /** Narrow plan toolbar by discipline perspective */

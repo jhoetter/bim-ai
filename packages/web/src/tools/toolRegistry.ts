@@ -28,6 +28,8 @@ export type ToolId =
   | 'floor'
   | 'floor-sketch'
   | 'roof'
+  | 'roof-sketch'
+  | 'room-separation-sketch'
   | 'stair'
   | 'railing'
   | 'room'
@@ -116,6 +118,22 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       hotkey: 'Shift+F',
       modes: ['plan', 'plan-3d'],
       tooltip: 'Author a floor by drawing its boundary loop (Revit-style sketch mode).',
+    },
+    'roof-sketch': {
+      id: 'roof-sketch',
+      label: 'Roof (Sketch)',
+      icon: 'roof',
+      hotkey: 'Shift+O',
+      modes: ['plan', 'plan-3d'],
+      tooltip: 'Author a roof by drawing its footprint loop (Revit-style sketch mode).',
+    },
+    'room-separation-sketch': {
+      id: 'room-separation-sketch',
+      label: 'Room Separation (Sketch)',
+      icon: 'gridLine',
+      hotkey: 'RS',
+      modes: ['plan', 'plan-3d'],
+      tooltip: 'Draw room separation lines via the sketch session.',
     },
     roof: {
       id: 'roof',
@@ -304,9 +322,11 @@ const PALETTE_ORDER: ToolId[] = [
   'floor',
   'floor-sketch',
   'roof',
+  'roof-sketch',
   'stair',
   'railing',
   'room',
+  'room-separation-sketch',
   'dimension',
   'section',
   'elevation',
@@ -349,6 +369,10 @@ export function isToolDisabled(
       return { disabled: false };
     case 'floor-sketch':
       // Sketch mode authors a floor from a boundary loop; it does not depend on walls.
+      return { disabled: false };
+    case 'roof-sketch':
+    case 'room-separation-sketch':
+      // Sketch mode draws into a free space; no element preconditions.
       return { disabled: false };
     case 'roof':
       if (!ctx.hasAnyWall) return { disabled: true, reason: t('tools.disabled.drawWallFirst') };

@@ -1,10 +1,18 @@
 /**
- * SKT-01 — Sketch authoring overlay (floor-only load-bearing slice).
+ * SKT-01 / SKT-02 / SKT-03 — Sketch authoring overlay.
  *
  * Mounts as an absolute overlay above `PlanCanvas` while a sketch session is
  * open. Renders the in-progress sketch as turquoise lines (Revit convention),
- * shows the validation status, and exposes Line / Rectangle drawing modes plus
- * Finish ✓ / Cancel ✗ controls. Esc cancels.
+ * shows the validation status, and exposes Line / Rectangle / Pick Walls
+ * drawing modes plus Finish ✓ / Cancel ✗ controls. Esc cancels.
+ *
+ * SKT-02 (Pick Walls) — clicking a wall in pick mode toggles it in/out of the
+ * session's `picked_walls`; the server re-derives the sketch lines using the
+ * configured offset mode and auto-trims corners.
+ *
+ * SKT-03 (validation feedback) — open vertices and self-intersections are
+ * highlighted in red; a status panel lists all issues; Tab cycles between
+ * issues; an "Auto-close" one-click fix joins a single open gap.
  *
  * Coordinate mapping is delegated to two callback refs supplied by the parent
  * canvas — that way we don't reimplement the orthographic camera math and stay
@@ -17,41 +25,54 @@ import {
   type RefObject,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
 
+import { hitTestWallAtMm, OffsetModeChip, type WallForPicking } from './SketchCanvasPickWalls';
 import {
-  type SketchSessionWire,
-  type SketchValidationState,
   addSketchLine,
   cancelSketchSession,
   finishSketchSession,
   getSketchSession,
   openSketchSession,
+  pickWall,
+  setPickWallsOffsetMode,
+  type PickWallsOffsetMode,
+  type SketchElementKind,
+  type SketchSessionWire,
+  type SketchValidationIssue,
+  type SketchValidationState,
 } from './sketchApi';
 
 const TURQUOISE = '#3fc5d3';
 const TURQUOISE_FAINT = 'rgba(63, 197, 211, 0.45)';
 const VERTEX_FILL = '#0e8b9c';
+const ERROR_RED = '#ef4444';
+const ERROR_GLOW = 'rgba(239, 68, 68, 0.35)';
 
 export type Point2D = { xMm: number; yMm: number };
 
 export type PointerToMm = (clientX: number, clientY: number) => Point2D | null;
 export type MmToScreen = (pt: Point2D) => { x: number; y: number } | null;
 
-export type SketchTool = 'line' | 'rectangle';
+export type SketchTool = 'line' | 'rectangle' | 'pick';
 
 export interface SketchCanvasProps {
   modelId: string;
   levelId: string;
+  /** Element kind to author (default: floor). */
+  elementKind?: SketchElementKind;
   /** Optional pre-existing session id; when present we hydrate it instead of opening fresh. */
   sessionId?: string;
   /** Read-only refs that read live camera state from the parent canvas. */
   pointerToMmRef: RefObject<PointerToMm | null>;
   mmToScreenRef: RefObject<MmToScreen | null>;
-  /** Called when the user finishes the session and a CreateFloor commits. */
-  onFinished: (floorId: string | null) => void;
+  /** SKT-02: walls available for Pick Walls. Pass an empty array to hide the tool. */
+  wallsForPicking?: WallForPicking[];
+  /** Called when the user finishes the session and the element commits. */
+  onFinished: (createdId: string | null) => void;
   /** Called on cancel (Esc, ✗ button, or session error). */
   onCancelled: () => void;
 }
@@ -63,20 +84,45 @@ function snapMm(p: Point2D, snapMmGrid: number): Point2D {
   };
 }
 
-function statusMessage(validation: SketchValidationState | null): string {
-  if (!validation) return 'Sketching…';
-  if (validation.valid) return 'Ready to Finish';
-  const issue = validation.issues[0];
-  if (!issue) return 'Sketching…';
-  return issue.message;
+function _vertexKey(p: Point2D, eps = 0.5): string {
+  return `${Math.round(p.xMm / eps)}|${Math.round(p.yMm / eps)}`;
+}
+
+/** Vertices that have ≠ 2 incident edges → highlighted red in the canvas. */
+function openVerticesForLines(lines: { fromMm: Point2D; toMm: Point2D }[]): Point2D[] {
+  const incidence = new Map<string, { pt: Point2D; count: number }>();
+  for (const ln of lines) {
+    for (const pt of [ln.fromMm, ln.toMm]) {
+      const k = _vertexKey(pt);
+      const cur = incidence.get(k);
+      if (cur) cur.count += 1;
+      else incidence.set(k, { pt, count: 1 });
+    }
+  }
+  return [...incidence.values()].filter((v) => v.count !== 2).map((v) => v.pt);
+}
+
+/**
+ * SKT-03: detect a single missing closing segment between two unique open
+ * endpoints. When exactly two open vertices exist, "Auto-close" can connect
+ * them with one extra sketch line.
+ */
+function autoCloseCandidate(
+  lines: { fromMm: Point2D; toMm: Point2D }[],
+): [Point2D, Point2D] | null {
+  const opens = openVerticesForLines(lines);
+  if (opens.length !== 2) return null;
+  return [opens[0]!, opens[1]!];
 }
 
 export function SketchCanvas(props: SketchCanvasProps): JSX.Element {
   const {
     modelId,
     levelId,
+    elementKind = 'floor',
     pointerToMmRef,
     mmToScreenRef,
+    wallsForPicking,
     onFinished,
     onCancelled,
     sessionId: initialSessionId,
@@ -86,8 +132,10 @@ export function SketchCanvas(props: SketchCanvasProps): JSX.Element {
   const [tool, setTool] = useState<SketchTool>('line');
   const [pendingStart, setPendingStart] = useState<Point2D | null>(null);
   const [hover, setHover] = useState<Point2D | null>(null);
+  const [hoverWallId, setHoverWallId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeIssueIndex, setActiveIssueIndex] = useState(0);
   const overlayRef = useRef<HTMLDivElement | null>(null);
   // Tick to force re-render on pointer move so SVG vertices reflect pan / zoom.
   const [, setTick] = useState(0);
@@ -99,7 +147,7 @@ export function SketchCanvas(props: SketchCanvasProps): JSX.Element {
       try {
         const resp = initialSessionId
           ? await getSketchSession(initialSessionId)
-          : await openSketchSession(modelId, levelId);
+          : await openSketchSession(modelId, levelId, { elementKind });
         if (cancelled) return;
         setSession(resp.session);
         setValidation(resp.validation);
@@ -113,7 +161,7 @@ export function SketchCanvas(props: SketchCanvasProps): JSX.Element {
     return () => {
       cancelled = true;
     };
-  }, [modelId, levelId, initialSessionId, onCancelled]);
+  }, [modelId, levelId, elementKind, initialSessionId, onCancelled]);
 
   const handleCancel = useCallback(async () => {
     if (!session) {
@@ -131,31 +179,71 @@ export function SketchCanvas(props: SketchCanvasProps): JSX.Element {
     }
   }, [session, onCancelled]);
 
-  // Esc cancels; L / R switch tools.
+  const issues: SketchValidationIssue[] = validation?.issues ?? [];
+
+  // SKT-03: Tab cycles through issues, zooming the canvas to the first
+  // affected line. We expose only the index here; the parent canvas does the
+  // actual camera move via the `onIssueFocused` handler if it ever wires one.
+  // For the load-bearing slice we just visually flag the active issue.
+  const focusNextIssue = useCallback(() => {
+    if (issues.length === 0) return;
+    setActiveIssueIndex((i) => (i + 1) % issues.length);
+  }, [issues.length]);
+
+  // Esc cancels; L / R / P switch tools; Tab cycles validation issues.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault();
         void handleCancel();
-      } else if (e.key.toLowerCase() === 'l' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        return;
+      }
+      if (e.key === 'Tab' && issues.length > 0) {
+        e.preventDefault();
+        focusNextIssue();
+        return;
+      }
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const k = e.key.toLowerCase();
+      if (k === 'l') {
         setTool('line');
         setPendingStart(null);
-      } else if (e.key.toLowerCase() === 'r' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      } else if (k === 'r') {
         setTool('rectangle');
+        setPendingStart(null);
+      } else if (k === 'p' && wallsForPicking && wallsForPicking.length > 0) {
+        setTool('pick');
         setPendingStart(null);
       }
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [handleCancel]);
+  }, [handleCancel, focusNextIssue, issues.length, wallsForPicking]);
 
   const handlePointerDown = useCallback(
     async (e: React.PointerEvent<HTMLDivElement>) => {
       if (!session || session.status !== 'open' || busy) return;
       const ptMm = pointerToMmRef.current?.(e.clientX, e.clientY);
       if (!ptMm) return;
-      const snapped = snapMm(ptMm, 100);
 
+      if (tool === 'pick') {
+        const walls = wallsForPicking ?? [];
+        const wallId = hitTestWallAtMm(walls, ptMm);
+        if (!wallId) return;
+        try {
+          setBusy(true);
+          const resp = await pickWall(session.sessionId, wallId);
+          setSession(resp.session);
+          setValidation(resp.validation);
+        } catch (err) {
+          setError(err instanceof Error ? err.message : String(err));
+        } finally {
+          setBusy(false);
+        }
+        return;
+      }
+
+      const snapped = snapMm(ptMm, 100);
       if (tool === 'line') {
         if (pendingStart === null) {
           setPendingStart(snapped);
@@ -202,7 +290,7 @@ export function SketchCanvas(props: SketchCanvasProps): JSX.Element {
         }
       }
     },
-    [session, busy, pointerToMmRef, tool, pendingStart],
+    [session, busy, pointerToMmRef, tool, pendingStart, wallsForPicking],
   );
 
   const handlePointerMove = useCallback(
@@ -211,8 +299,13 @@ export function SketchCanvas(props: SketchCanvasProps): JSX.Element {
       if (!ptMm) return;
       setHover(snapMm(ptMm, 100));
       setTick((t) => (t + 1) % 1_000_000);
+      if (tool === 'pick') {
+        setHoverWallId(hitTestWallAtMm(wallsForPicking ?? [], ptMm));
+      } else if (hoverWallId !== null) {
+        setHoverWallId(null);
+      }
     },
-    [pointerToMmRef],
+    [pointerToMmRef, tool, wallsForPicking, hoverWallId],
   );
 
   const handleFinish = useCallback(async () => {
@@ -220,7 +313,11 @@ export function SketchCanvas(props: SketchCanvasProps): JSX.Element {
     try {
       setBusy(true);
       const resp = await finishSketchSession(session.sessionId);
-      onFinished(resp.floorId);
+      // Pick the kind-specific id from the response, with floorId as the
+      // back-compat fallback.
+      const createdId =
+        resp.roofId ?? resp.roomSeparationId ?? resp.floorId ?? resp.createdElementIds?.[0] ?? null;
+      onFinished(createdId);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -228,9 +325,58 @@ export function SketchCanvas(props: SketchCanvasProps): JSX.Element {
     }
   }, [session, busy, onFinished]);
 
+  const handleAutoClose = useCallback(async () => {
+    if (!session || busy) return;
+    const candidate = autoCloseCandidate(session.lines);
+    if (!candidate) return;
+    try {
+      setBusy(true);
+      const resp = await addSketchLine(session.sessionId, candidate[0], candidate[1]);
+      setSession(resp.session);
+      setValidation(resp.validation);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  }, [session, busy]);
+
+  const handleOffsetModeChange = useCallback(
+    async (mode: PickWallsOffsetMode) => {
+      if (!session || busy) return;
+      try {
+        setBusy(true);
+        const resp = await setPickWallsOffsetMode(session.sessionId, mode);
+        setSession(resp.session);
+        setValidation(resp.validation);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err));
+      } finally {
+        setBusy(false);
+      }
+    },
+    [session, busy],
+  );
+
+  const errorLineSet = useMemo(() => {
+    const s = new Set<number>();
+    for (const issue of issues) {
+      if (typeof issue.lineIndex === 'number') s.add(issue.lineIndex);
+      if (issue.lineIndices) for (const i of issue.lineIndices) s.add(i);
+    }
+    return s;
+  }, [issues]);
+
+  const openVertices = useMemo(() => {
+    if (!session) return [];
+    return openVerticesForLines(session.lines);
+  }, [session]);
+
   // Compute SVG primitives for current session lines + preview.
   const linesSvg: JSX.Element[] = [];
   const verticesSvg: JSX.Element[] = [];
+  const errorVerticesSvg: JSX.Element[] = [];
+  const pickHighlightSvg: JSX.Element[] = [];
   const mmToScreen = mmToScreenRef.current;
   if (mmToScreen && session) {
     for (let i = 0; i < session.lines.length; i++) {
@@ -238,22 +384,67 @@ export function SketchCanvas(props: SketchCanvasProps): JSX.Element {
       const a = mmToScreen(ln.fromMm);
       const b = mmToScreen(ln.toMm);
       if (!a || !b) continue;
+      const isError = errorLineSet.has(i);
       linesSvg.push(
         <line
           key={`l-${i}`}
+          data-testid={isError ? `sketch-line-error-${i}` : `sketch-line-${i}`}
           x1={a.x}
           y1={a.y}
           x2={b.x}
           y2={b.y}
-          stroke={TURQUOISE}
-          strokeWidth={2}
+          stroke={isError ? ERROR_RED : TURQUOISE}
+          strokeWidth={isError ? 3 : 2}
           strokeLinecap="round"
         />,
       );
       verticesSvg.push(<circle key={`v-${i}-a`} cx={a.x} cy={a.y} r={3} fill={VERTEX_FILL} />);
       verticesSvg.push(<circle key={`v-${i}-b`} cx={b.x} cy={b.y} r={3} fill={VERTEX_FILL} />);
     }
-    if (pendingStart && hover) {
+
+    for (let oi = 0; oi < openVertices.length; oi++) {
+      const v = openVertices[oi]!;
+      const s = mmToScreen(v);
+      if (!s) continue;
+      errorVerticesSvg.push(
+        <circle
+          key={`open-${oi}`}
+          data-testid={`sketch-open-vertex-${oi}`}
+          cx={s.x}
+          cy={s.y}
+          r={6}
+          fill={ERROR_RED}
+          stroke={ERROR_GLOW}
+          strokeWidth={4}
+        />,
+      );
+    }
+
+    if (tool === 'pick' && hoverWallId && wallsForPicking) {
+      const w = wallsForPicking.find((x) => x.id === hoverWallId);
+      if (w) {
+        const a = mmToScreen(w.startMm);
+        const b = mmToScreen(w.endMm);
+        if (a && b) {
+          pickHighlightSvg.push(
+            <line
+              key="pick-hover"
+              data-testid="sketch-pick-hover"
+              x1={a.x}
+              y1={a.y}
+              x2={b.x}
+              y2={b.y}
+              stroke="#5cf564"
+              strokeWidth={6}
+              strokeOpacity={0.55}
+              strokeLinecap="round"
+            />,
+          );
+        }
+      }
+    }
+
+    if (pendingStart && hover && tool !== 'pick') {
       const a = mmToScreen(pendingStart);
       const b = mmToScreen(hover);
       if (a && b) {
@@ -298,8 +489,16 @@ export function SketchCanvas(props: SketchCanvasProps): JSX.Element {
     inset: 0,
     zIndex: 20,
     pointerEvents: 'auto',
-    cursor: busy ? 'progress' : 'crosshair',
+    cursor: busy ? 'progress' : tool === 'pick' ? 'pointer' : 'crosshair',
   };
+
+  const errorCount = issues.length;
+  const finishDisabled = !validation?.valid || busy;
+  const canPickWalls = !!wallsForPicking && wallsForPicking.length > 0;
+  const canAutoClose = useMemo(() => {
+    if (!session) return false;
+    return autoCloseCandidate(session.lines) !== null;
+  }, [session]);
 
   return (
     <div
@@ -308,7 +507,10 @@ export function SketchCanvas(props: SketchCanvasProps): JSX.Element {
       style={overlayStyle}
       onPointerDown={(e) => void handlePointerDown(e)}
       onPointerMove={handlePointerMove}
-      onPointerLeave={() => setHover(null)}
+      onPointerLeave={() => {
+        setHover(null);
+        setHoverWallId(null);
+      }}
     >
       <svg
         width="100%"
@@ -316,11 +518,13 @@ export function SketchCanvas(props: SketchCanvasProps): JSX.Element {
         style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
         aria-hidden="true"
       >
+        {pickHighlightSvg}
         {linesSvg}
         {verticesSvg}
+        {errorVerticesSvg}
       </svg>
 
-      {/* Top status bar — validation message in turquoise */}
+      {/* SKT-03: top status panel — title row + per-issue list */}
       <div
         data-testid="sketch-status"
         style={{
@@ -328,29 +532,71 @@ export function SketchCanvas(props: SketchCanvasProps): JSX.Element {
           top: 8,
           left: '50%',
           transform: 'translateX(-50%)',
+          minWidth: 320,
+          maxWidth: 520,
           display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          padding: '4px 10px',
+          flexDirection: 'column',
+          gap: 4,
+          padding: '6px 12px',
           borderRadius: 6,
-          backgroundColor: 'rgba(15, 22, 28, 0.85)',
+          backgroundColor: 'rgba(15, 22, 28, 0.92)',
           color: validation?.valid ? TURQUOISE : '#fab86c',
           fontSize: 12,
           fontFamily: 'system-ui, sans-serif',
-          pointerEvents: 'none',
         }}
       >
-        <span
-          aria-hidden="true"
-          style={{
-            width: 8,
-            height: 8,
-            borderRadius: '50%',
-            backgroundColor: validation?.valid ? TURQUOISE : '#fab86c',
-            display: 'inline-block',
-          }}
-        />
-        <span>{error ?? statusMessage(validation)}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span
+            aria-hidden="true"
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: '50%',
+              backgroundColor: validation?.valid ? TURQUOISE : '#fab86c',
+              display: 'inline-block',
+            }}
+          />
+          <span style={{ fontWeight: 600 }}>
+            {error
+              ? error
+              : validation?.valid
+                ? 'Ready to Finish'
+                : `${errorCount} sketch issue${errorCount === 1 ? '' : 's'}`}
+          </span>
+          {issues.length > 0 ? (
+            <span style={{ marginLeft: 'auto', fontSize: 10, opacity: 0.6 }}>
+              Tab to cycle ({activeIssueIndex + 1}/{issues.length})
+            </span>
+          ) : null}
+        </div>
+        {issues.length > 0 ? (
+          <ul
+            data-testid="sketch-issue-list"
+            style={{
+              margin: 0,
+              padding: 0,
+              listStyle: 'none',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2,
+            }}
+          >
+            {issues.map((issue, idx) => (
+              <li
+                key={`${issue.code}-${idx}`}
+                data-testid={`sketch-issue-${idx}`}
+                data-active={idx === activeIssueIndex ? 'true' : 'false'}
+                style={{
+                  fontSize: 11,
+                  opacity: idx === activeIssueIndex ? 1 : 0.7,
+                  fontWeight: idx === activeIssueIndex ? 600 : 400,
+                }}
+              >
+                • {issue.message}
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </div>
 
       {/* Bottom-centre toolbar */}
@@ -388,12 +634,58 @@ export function SketchCanvas(props: SketchCanvasProps): JSX.Element {
             setPendingStart(null);
           }}
         />
+        {canPickWalls ? (
+          <>
+            <SketchToolButton
+              label="Pick Walls"
+              shortcut="P"
+              active={tool === 'pick'}
+              onClick={() => {
+                setTool('pick');
+                setPendingStart(null);
+              }}
+              testId="sketch-tool-pick"
+            />
+            {tool === 'pick' && session ? (
+              <OffsetModeChip
+                mode={session.pickWallsOffsetMode}
+                onChange={(m) => void handleOffsetModeChange(m)}
+                disabled={busy}
+              />
+            ) : null}
+          </>
+        ) : null}
         <div style={{ width: 1, height: 20, backgroundColor: '#33424d', margin: '0 4px' }} />
+        {canAutoClose ? (
+          <button
+            type="button"
+            data-testid="sketch-auto-close"
+            disabled={busy}
+            onClick={() => void handleAutoClose()}
+            style={{
+              padding: '4px 10px',
+              borderRadius: 6,
+              border: '1px solid #fab86c',
+              backgroundColor: 'transparent',
+              color: '#fab86c',
+              fontSize: 11,
+              cursor: busy ? 'not-allowed' : 'pointer',
+            }}
+            title="Connect the two open endpoints with a single line"
+          >
+            Auto-close
+          </button>
+        ) : null}
         <button
           type="button"
           data-testid="sketch-finish"
-          disabled={!validation?.valid || busy}
+          disabled={finishDisabled}
           onClick={() => void handleFinish()}
+          title={
+            finishDisabled && errorCount > 0
+              ? `${errorCount} issue${errorCount === 1 ? '' : 's'}`
+              : ''
+          }
           style={{
             padding: '4px 12px',
             borderRadius: 6,
@@ -433,6 +725,7 @@ interface SketchToolButtonProps {
   shortcut: string;
   active: boolean;
   onClick: () => void;
+  testId?: string;
 }
 
 function SketchToolButton({
@@ -440,10 +733,12 @@ function SketchToolButton({
   shortcut,
   active,
   onClick,
+  testId,
 }: SketchToolButtonProps): JSX.Element {
   return (
     <button
       type="button"
+      data-testid={testId}
       onClick={onClick}
       style={{
         padding: '4px 10px',

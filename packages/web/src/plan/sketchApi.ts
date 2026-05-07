@@ -22,13 +22,23 @@ export type SketchValidationState = {
   issues: SketchValidationIssue[];
 };
 
+export type SketchElementKind = 'floor' | 'roof' | 'room_separation';
+export type PickWallsOffsetMode = 'centerline' | 'interior_face';
+
+export type PickedWallWire = {
+  wallId: string;
+  lineIndex: number;
+};
+
 export type SketchSessionWire = {
   sessionId: string;
   modelId: string;
-  elementKind: 'floor';
+  elementKind: SketchElementKind;
   levelId: string;
   lines: SketchLineWire[];
   status: 'open' | 'finished' | 'cancelled';
+  pickWallsOffsetMode: PickWallsOffsetMode;
+  pickedWalls: PickedWallWire[];
 };
 
 export type SketchSessionResponse = {
@@ -52,11 +62,16 @@ async function postJson<T>(url: string, body: unknown): Promise<T> {
 export async function openSketchSession(
   modelId: string,
   levelId: string,
+  opts: {
+    elementKind?: SketchElementKind;
+    pickWallsOffsetMode?: PickWallsOffsetMode;
+  } = {},
 ): Promise<SketchSessionResponse> {
   return postJson<SketchSessionResponse>('/api/sketch-sessions', {
     modelId,
-    elementKind: 'floor',
+    elementKind: opts.elementKind ?? 'floor',
     levelId,
+    pickWallsOffsetMode: opts.pickWallsOffsetMode ?? 'interior_face',
   });
 }
 
@@ -103,11 +118,32 @@ export type FinishSketchResponse = {
   sessionId: string;
   status: 'finished';
   floorId: string | null;
+  roofId?: string | null;
+  roomSeparationId?: string | null;
+  createdElementIds?: string[];
   modelId: string;
   revision: number;
   elements: Record<string, unknown>;
   appliedCommand: Record<string, unknown>;
+  appliedCommands?: Record<string, unknown>[];
 };
+
+export async function pickWall(sessionId: string, wallId: string): Promise<SketchSessionResponse> {
+  return postJson<SketchSessionResponse>(
+    `/api/sketch-sessions/${encodeURIComponent(sessionId)}/pick-wall`,
+    { wallId },
+  );
+}
+
+export async function setPickWallsOffsetMode(
+  sessionId: string,
+  mode: PickWallsOffsetMode,
+): Promise<SketchSessionResponse> {
+  return postJson<SketchSessionResponse>(
+    `/api/sketch-sessions/${encodeURIComponent(sessionId)}/pick-walls-offset-mode`,
+    { mode },
+  );
+}
 
 export async function finishSketchSession(
   sessionId: string,
@@ -116,7 +152,7 @@ export async function finishSketchSession(
   return postJson<FinishSketchResponse>(
     `/api/sketch-sessions/${encodeURIComponent(sessionId)}/finish`,
     {
-      name: opts.name ?? 'Floor',
+      name: opts.name,
       userId: opts.userId ?? 'local-dev',
       clientOpId: opts.clientOpId,
     },
