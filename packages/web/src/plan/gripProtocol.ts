@@ -51,6 +51,9 @@ export interface PlanContext {
   /** Currently-active level — drives whether off-level neighbours are
    *  considered for the grip-set. */
   activeLevelId?: string;
+  /** Element lookup so kinds that depend on a host (e.g. a door's wall)
+   *  can resolve it without the canvas wiring extra props. */
+  elementsById?: Record<string, Element>;
 }
 
 export interface ElementGripProvider<E extends Element> {
@@ -242,7 +245,10 @@ export const wallGripProvider: ElementGripProvider<Wall> = {
 };
 
 /** Convenience — single entry point used by PlanCanvas to look up the
- *  provider for a given element kind. */
+ *  provider for a given element kind. Walls are wired here; other
+ *  kinds are dispatched via `grip-providers/index.ts:gripsFor` so the
+ *  per-kind providers can live in their own files without forcing this
+ *  module to import every one. */
 export function gripsFor(element: Element, context: PlanContext = {}): GripDescriptor[] {
   if (element.kind === 'wall') return wallGripProvider.grips(element, context);
   return [];

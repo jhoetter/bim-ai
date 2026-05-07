@@ -82,6 +82,24 @@ class MoveWallEndpointsCmd(BaseModel):
     force_pin_override: bool = Field(default=False, alias="forcePinOverride")
 
 
+class MoveBeamEndpointsCmd(BaseModel):
+    """EDT-01 propagation — beam endpoints move command.
+
+    Beams are not yet seeded into the Python store (see `elements.py` —
+    no `BeamElem` defined), so the engine handler today rejects with a
+    clear "not implemented" message. The command schema lives here so
+    the TS grip provider can emit a stable shape that the engine slice
+    can adopt without a TS rebuild.
+    """
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["moveBeamEndpoints"] = "moveBeamEndpoints"
+    beam_id: str = Field(alias="beamId")
+    start_mm: Vec2Mm = Field(alias="startMm")
+    end_mm: Vec2Mm = Field(alias="endMm")
+    force_pin_override: bool = Field(default=False, alias="forcePinOverride")
+
+
 class InsertDoorOnWallCmd(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     type: Literal["insertDoorOnWall"] = "insertDoorOnWall"
@@ -1268,6 +1286,7 @@ Command = Annotated[
     | CreateWallCmd
     | MoveWallDeltaCmd
     | MoveWallEndpointsCmd
+    | MoveBeamEndpointsCmd
     | InsertDoorOnWallCmd
     | InsertWindowOnWallCmd
     | CreateWallChainCmd

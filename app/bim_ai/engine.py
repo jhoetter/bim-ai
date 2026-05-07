@@ -71,6 +71,7 @@ from bim_ai.commands import (
     MoveProjectBasePointCmd,
     MoveSurveyPointCmd,
     MoveWallDeltaCmd,
+    MoveBeamEndpointsCmd,
     MoveWallEndpointsCmd,
     PinElementCmd,
     RestoreElementCmd,
@@ -808,6 +809,17 @@ def apply_inplace(
             if not isinstance(w, WallElem):
                 raise ValueError("move_wall_endpoints.wallId must reference a Wall")
             els[cmd.wall_id] = w.model_copy(update={"start": cmd.start, "end": cmd.end})
+
+        case MoveBeamEndpointsCmd():
+            # EDT-01 propagation — beams aren't yet stored in the
+            # Python engine (no `BeamElem` in elements.py). The grip
+            # provider emits this command shape so the kernel slice
+            # can land later without a TS rebuild. Reject explicitly so
+            # bad replays surface, rather than silently no-op.
+            raise ValueError(
+                "moveBeamEndpoints: beam elements are not yet seeded in the engine; "
+                "TS grips emit this command for forward compatibility (EDT-01 propagation)"
+            )
 
         case SetCurtainPanelOverrideCmd():
             wall = els.get(cmd.wall_id)

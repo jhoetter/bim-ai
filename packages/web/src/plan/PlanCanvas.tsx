@@ -59,7 +59,8 @@ import {
   syncSnapTabCycle,
   type SnapTabCycleState,
 } from './snapTabCycle';
-import { gripsFor, type DraftMutation, type GripDescriptor } from './gripProtocol';
+import { type DraftMutation, type GripDescriptor } from './gripProtocol';
+import { gripsFor } from './grip-providers';
 import { tempDimensionsFor, type TempDimTarget } from './tempDimensions';
 import { GripLayer, TempDimLayer } from './GripLayer';
 import {
@@ -92,7 +93,7 @@ import {
 import { extractDetailComponentPrimitives } from './detailComponentsRender';
 import { extractMaskingRegionPrimitives } from './maskingRegionRender';
 import { extractAreaPrimitives } from './areaRender';
-import { elevationFromWall, sectionCutFromWall } from '../lib/sectionElevationFromWall';
+import { elevationFromWall } from '../lib/sectionElevationFromWall';
 import { WallContextMenu, type WallContextMenuCommand } from '../workspace/WallContextMenu';
 import { PlanDetailLevelToolbar } from './PlanDetailLevelToolbar';
 import type { PlanDetailLevel } from './planDetailLevelLines';
@@ -479,9 +480,13 @@ export function PlanCanvas({
     const el = elementsById[selectedId];
     return el && el.kind === 'wall' ? el : undefined;
   }, [selectedId, elementsById]);
+  const selectedElement = useMemo(
+    () => (selectedId ? elementsById[selectedId] : undefined),
+    [selectedId, elementsById],
+  );
   const gripDescriptors = useMemo<GripDescriptor[]>(
-    () => (selectedWall ? gripsFor(selectedWall) : []),
-    [selectedWall],
+    () => (selectedElement ? gripsFor(selectedElement, { elementsById }) : []),
+    [selectedElement, elementsById],
   );
   const tempDimTargets = useMemo<TempDimTarget[]>(
     () => (selectedWall ? tempDimensionsFor(selectedWall, elementsById) : []),
