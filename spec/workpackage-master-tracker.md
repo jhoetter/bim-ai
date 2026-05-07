@@ -232,13 +232,27 @@ What's the smallest WP set required to ship a specific user-visible goal? Useful
 
 | ID     | Item                                                  | Effort | State  | Depends on |
 | ------ | ----------------------------------------------------- | ------ | ------ | ---------- |
-| FED-01 | `link_model` element kind + read-only enforcement     | L      | `partial` | —          |
+| FED-01 | `link_model` element kind + read-only enforcement     | L      | `partial` ([b05fc082](../#)) | —          |
 | FED-02 | Cross-link clash detection (extends WP-V2-13)         | M      | `open` | FED-01     |
 | FED-03 | Cross-link Copy/Monitor (extends WP-V2-12)            | M      | `open` | FED-01     |
 | FED-04 | IFC / DXF → shadow-model link import                  | L      | `open` | FED-01     |
 | FED-05 | "Worksharing-via-DB" positioning + docs               | XS     | `done` | —          |
 
 ### FED-01 — `link_model` element kind + read-only enforcement
+
+**Status (2026-05-07).** `partial` in `b05fc082` — load-bearing slice shipped:
+data model + 3 commands (`createLinkModel` / `updateLinkModel` /
+`deleteLinkModel`) + read-only enforcement on `<linkId>::<sourceElemId>` ids
++ snapshot expansion (`?expandLinks=true`) with position + Z-rotation
+transform and provenance markers + ghosted Three.js rendering + minimal
+Manage Links dialog (Insert → Link Model… in ProjectMenu). DB-level
+validation rejects self-reference, missing source, and circular link graphs.
+**Deferred to follow-up:** per-link `visibilityMode` (`host_view` /
+`linked_view`), revision-pinning UI + drift badge, `originAlignmentMode`
+values beyond `origin_to_origin`, VV dialog Revit Links tab, CLI
+`link/unlink/links/expand-links` subcommands, `worksetId` on `link_model`,
+Project Browser Links group with expand/collapse.
+
 
 **Scope.** First-class linked-model element. Host model references another bim-ai model in the same DB; host treats the link's elements as read-only renderable context. Selection works, snap-to works, clash queries work, but edits are blocked at the engine level.
 
