@@ -1,1 +1,5 @@
 just woke up, are all night shift tasks complete?
+
+---
+
+yes fix the regressions please. then tell me a prompt i can give to another AI agent that will complete the partials.
