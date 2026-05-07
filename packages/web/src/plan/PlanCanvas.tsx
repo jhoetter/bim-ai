@@ -34,7 +34,15 @@ import type { Element } from '@bim-ai/core';
 import { useBimStore } from '../state/store';
 import { useTheme } from '../state/useTheme';
 import { liveTokenReader } from '../viewport/materials';
-import { collectWallAnchors, snapPlanPoint } from './snapEngine';
+import {
+  collectSnapLines,
+  collectWallAnchors,
+  snapPlanCandidates,
+  snapPlanPoint,
+  type SegmentLine,
+  type SnapHit,
+  type SnapKind,
+} from './snapEngine';
 import {
   classifyPointerStart,
   draftingPaintFor,
@@ -42,6 +50,18 @@ import {
   SnapEngine,
   type SnapCandidate,
 } from './planCanvasState';
+import { SnapGlyphLayer } from './SnapGlyphLayer';
+import { SnapSettingsToolbar } from './SnapSettingsToolbar';
+import { applySnapSettings, loadSnapSettings, type SnapSettings } from './snapSettings';
+import {
+  bumpSnapTabCycle,
+  initialSnapTabCycle,
+  syncSnapTabCycle,
+  type SnapTabCycleState,
+} from './snapTabCycle';
+import { gripsFor, type DraftMutation, type GripDescriptor } from './gripProtocol';
+import { tempDimensionsFor, type TempDimTarget } from './tempDimensions';
+import { GripLayer, TempDimLayer } from './GripLayer';
 import {
   buildPlanProjectionQuery,
   extractPlanAnnotationHints,
@@ -213,6 +233,40 @@ export function PlanCanvas({
   const snapEngineRef = useRef(new SnapEngine());
   const snapIndicatorRef = useRef<THREE.Mesh | null>(null);
   const [snapLabel, setSnapLabel] = useState<string | null>(null);
+  // EDT-05 — snap glyph layer state
+  const [snapSettings, setSnapSettings] = useState<SnapSettings>(() => loadSnapSettings());
+  const snapTabCycleRef = useRef<SnapTabCycleState>(initialSnapTabCycle());
+  const [snapGlyphState, setSnapGlyphState] = useState<{
+    candidates: Array<{
+      kind: SnapKind;
+      pxX: number;
+      pxY: number;
+      extensionFromPxX?: number;
+      extensionFromPxY?: number;
+    }>;
+    activeIndex: number;
+  }>({ candidates: [], activeIndex: 0 });
+  const lastSnapHitsRef = useRef<SnapHit[]>([]);
+  const lastSnapLinesRef = useRef<SegmentLine[]>([]);
+  // EDT-01 — grip + temp-dim layer state
+  const gripDragRef = useRef<{
+    grip: GripDescriptor;
+    startWorldMm: { xMm: number; yMm: number };
+    lastDeltaMm: { xMm: number; yMm: number };
+  } | null>(null);
+  const [draftMutation, setDraftMutation] = useState<DraftMutation | null>(null);
+  const [activeGripId, setActiveGripId] = useState<string | null>(null);
+  const [numericInput, setNumericInput] = useState<{
+    value: string;
+    pxX: number;
+    pxY: number;
+  } | null>(null);
+  const numericInputRef = useRef<{
+    value: string;
+    pxX: number;
+    pxY: number;
+  } | null>(null);
+  numericInputRef.current = numericInput;
   const [hudMm, setHudMm] = useState<{ xMm: number; yMm: number }>();
   const [halfUi, setHalfUi] = useState(22);
   const [showZoomMenu, setShowZoomMenu] = useState(false);
@@ -348,7 +402,41 @@ export function PlanCanvas({
     () => collectWallAnchors(elementsById, displayLevelId || undefined),
     [elementsById, displayLevelId],
   );
+  const snapLines = useMemo(
+    () => collectSnapLines(elementsById, displayLevelId || undefined),
+    [elementsById, displayLevelId],
+  );
   const lvlId = displayLevelId || activeLevelResolvedId;
+
+  // EDT-01 — selected wall + grip / temp-dim derivation
+  const selectedWall = useMemo(() => {
+    if (!selectedId) return undefined;
+    const el = elementsById[selectedId];
+    return el && el.kind === 'wall' ? el : undefined;
+  }, [selectedId, elementsById]);
+  const gripDescriptors = useMemo<GripDescriptor[]>(
+    () => (selectedWall ? gripsFor(selectedWall) : []),
+    [selectedWall],
+  );
+  const tempDimTargets = useMemo<TempDimTarget[]>(
+    () => (selectedWall ? tempDimensionsFor(selectedWall, elementsById) : []),
+    [selectedWall, elementsById],
+  );
+
+  // EDT-01 + EDT-05 — world-mm → screen-px mapping. Cheap to recompute
+  // every render because the function closes over the live refs.
+  const worldToScreen = useCallback((xy: { xMm: number; yMm: number }) => {
+    const cam = cameraRef.current;
+    const renderer = rendererRef.current;
+    if (!cam || !renderer) return { pxX: 0, pxY: 0 };
+    const v = new THREE.Vector3(xy.xMm / 1000, SLICE_Y, xy.yMm / 1000);
+    v.project(cam);
+    const rect = renderer.domElement.getBoundingClientRect();
+    return {
+      pxX: ((v.x + 1) / 2) * rect.width,
+      pxY: ((1 - v.y) / 2) * rect.height,
+    };
+  }, []);
 
   // B03 — empty-state detection: true when the active level has no elements on it
   const levelIsEmpty = useMemo(() => {
@@ -738,6 +826,25 @@ export function PlanCanvas({
     };
 
     const onMove = (ev: PointerEvent) => {
+      // EDT-01 — grip drag takes priority over every other interaction.
+      if (gripDragRef.current) {
+        const rwGrip = rayToPlanMm(rnd, camNow, ev.clientX, ev.clientY);
+        if (rwGrip) {
+          const startMm = gripDragRef.current.startWorldMm;
+          const delta = {
+            xMm: rwGrip.xMm - startMm.xMm,
+            yMm: rwGrip.yMm - startMm.yMm,
+          };
+          gripDragRef.current.lastDeltaMm = delta;
+          setDraftMutation(gripDragRef.current.grip.onDrag(delta));
+          if (numericInputRef.current) {
+            setNumericInput((prev) =>
+              prev ? { ...prev, pxX: ev.clientX, pxY: ev.clientY } : prev,
+            );
+          }
+        }
+        return;
+      }
       const xy = snapped(ev.clientX, ev.clientY);
       setHudMm(xy);
       useBimStore.getState().setPlanHud(xy);
@@ -834,9 +941,78 @@ export function PlanCanvas({
           if (snapIndicatorRef.current) snapIndicatorRef.current.visible = false;
           setSnapLabel(null);
         }
+        // EDT-05 — parallel pipeline that produces glyph candidates
+        // (intersection / perpendicular / extension) plus the existing
+        // endpoint snap, filtered by the user's per-kind toggles.
+        const linesScoped = lastSnapLinesRef.current;
+        const allHits = snapPlanCandidates({
+          cursor: v,
+          anchors,
+          gridStepMm: orthoExtents(camRef.current.half).stepMm,
+          chainAnchor:
+            draftRef.current?.kind === 'wall'
+              ? { xMm: draftRef.current.sx, yMm: draftRef.current.sy }
+              : undefined,
+          snapMm: orthoExtents(camRef.current.half).snapMm,
+          orthoHold: orthoSnapHold,
+          lines: linesScoped,
+        });
+        const filtered = applySnapSettings(
+          allHits.filter((h) => h.kind !== 'raw'),
+          snapSettings,
+        );
+        // Resync tab cycle when the candidate-set changes; keep the
+        // index stable for a stationary cursor.
+        snapTabCycleRef.current = syncSnapTabCycle(snapTabCycleRef.current, filtered);
+        lastSnapHitsRef.current = filtered;
+        const glyphCandidates = filtered.map((h) => {
+          const screen = worldToScreen(h.point);
+          const out: {
+            kind: SnapKind;
+            pxX: number;
+            pxY: number;
+            extensionFromPxX?: number;
+            extensionFromPxY?: number;
+          } = {
+            kind: h.kind,
+            pxX: screen.pxX,
+            pxY: screen.pxY,
+          };
+          if (h.kind === 'extension' && linesScoped.length > 0) {
+            // Pick the closer endpoint of any segment that this point
+            // lies on the infinite extension of, just for the dashed
+            // hint back to source.
+            let best: { line: SegmentLine; endpoint: { xMm: number; yMm: number } } | undefined;
+            let bestD = Infinity;
+            for (const line of linesScoped) {
+              for (const endpt of [line.start, line.end]) {
+                const d = (endpt.xMm - h.point.xMm) ** 2 + (endpt.yMm - h.point.yMm) ** 2;
+                if (d < bestD) {
+                  bestD = d;
+                  best = { line, endpoint: endpt };
+                }
+              }
+            }
+            if (best) {
+              const fromPx = worldToScreen(best.endpoint);
+              out.extensionFromPxX = fromPx.pxX;
+              out.extensionFromPxY = fromPx.pxY;
+            }
+          }
+          return out;
+        });
+        setSnapGlyphState({
+          candidates: glyphCandidates,
+          activeIndex: snapTabCycleRef.current.activeIndex,
+        });
       } else {
         if (snapIndicatorRef.current) snapIndicatorRef.current.visible = false;
         setSnapLabel(null);
+        if (lastSnapHitsRef.current.length > 0) {
+          lastSnapHitsRef.current = [];
+          snapTabCycleRef.current = initialSnapTabCycle();
+          setSnapGlyphState({ candidates: [], activeIndex: 0 });
+        }
       }
 
       const p = new THREE.Vector3(v.xMm / 1000, SLICE_Y, v.yMm / 1000);
@@ -924,6 +1100,35 @@ export function PlanCanvas({
     };
 
     const onUpWindow = (ev: PointerEvent) => {
+      // EDT-01 — release a grip drag: numeric override commits if the
+      // user typed a value, otherwise commit via the live delta.
+      if (gripDragRef.current) {
+        const grip = gripDragRef.current.grip;
+        const numeric = numericInputRef.current?.value;
+        if (numeric != null && numeric !== '') {
+          const parsed = parseFloat(numeric);
+          if (Number.isFinite(parsed)) {
+            void onSemanticCommand(grip.onNumericOverride(parsed));
+          }
+        } else {
+          const rwUp = rayToPlanMm(rnd, camNow, ev.clientX, ev.clientY);
+          if (rwUp) {
+            const start = gripDragRef.current.startWorldMm;
+            const delta = { xMm: rwUp.xMm - start.xMm, yMm: rwUp.yMm - start.yMm };
+            // Only commit if the drag actually moved — a click on a
+            // grip without movement should not fire an empty command.
+            if (Math.hypot(delta.xMm, delta.yMm) > 1) {
+              void onSemanticCommand(grip.onCommit(delta));
+            }
+          }
+        }
+        gripDragRef.current = null;
+        setActiveGripId(null);
+        setDraftMutation(null);
+        setNumericInput(null);
+        skipClickRef.current = true;
+        return;
+      }
       dragRef.current.dragging = false;
       if (snapIndicatorRef.current) snapIndicatorRef.current.visible = false;
       setSnapLabel(null);
@@ -1456,6 +1661,65 @@ export function PlanCanvas({
     };
 
     const onKey = (ev: KeyboardEvent) => {
+      // EDT-01 — grip drag handles its own keys: Esc cancels, digits
+      // pop a numeric override input, Backspace edits it, Enter
+      // commits via onNumericOverride.
+      if (gripDragRef.current) {
+        if (ev.key === 'Escape') {
+          ev.preventDefault();
+          gripDragRef.current = null;
+          setActiveGripId(null);
+          setDraftMutation(null);
+          setNumericInput(null);
+          return;
+        }
+        if (/^[0-9]$/.test(ev.key) || ev.key === '.') {
+          ev.preventDefault();
+          setNumericInput((prev) => {
+            const value = (prev?.value ?? '') + ev.key;
+            const pxX = prev?.pxX ?? 0;
+            const pxY = prev?.pxY ?? 0;
+            return { value, pxX, pxY };
+          });
+          return;
+        }
+        if (ev.key === 'Backspace' && numericInputRef.current) {
+          ev.preventDefault();
+          setNumericInput((prev) => (prev ? { ...prev, value: prev.value.slice(0, -1) } : prev));
+          return;
+        }
+        if (ev.key === 'Enter' && numericInputRef.current) {
+          ev.preventDefault();
+          const num = parseFloat(numericInputRef.current.value);
+          const grip = gripDragRef.current.grip;
+          if (Number.isFinite(num)) {
+            void onSemanticCommand(grip.onNumericOverride(num));
+          }
+          gripDragRef.current = null;
+          setActiveGripId(null);
+          setDraftMutation(null);
+          setNumericInput(null);
+          return;
+        }
+      }
+      // EDT-05 — Tab cycles snap candidates while a draw tool is active.
+      if (
+        ev.key === 'Tab' &&
+        planTool != null &&
+        planTool !== 'select' &&
+        lastSnapHitsRef.current.length > 1
+      ) {
+        ev.preventDefault();
+        snapTabCycleRef.current = bumpSnapTabCycle(
+          snapTabCycleRef.current,
+          lastSnapHitsRef.current,
+        );
+        setSnapGlyphState((prev) => ({
+          candidates: prev.candidates,
+          activeIndex: snapTabCycleRef.current.activeIndex,
+        }));
+        return;
+      }
       if (ev.key === 'Escape') {
         draftRef.current = undefined;
         if (planTool === 'align') {
@@ -1625,7 +1889,48 @@ export function PlanCanvas({
     setActiveLevelId,
     activateElevationView,
     activatePlanView,
+    snapSettings,
+    worldToScreen,
   ]);
+
+  // EDT-05 — keep the snap-line ref in sync with the active level so
+  // the per-pointer-move handler can read it without a closure rebuild.
+  useEffect(() => {
+    lastSnapLinesRef.current = snapLines;
+  }, [snapLines]);
+
+  // EDT-01 — grip pointer-down: capture starting world position so
+  // onMove can compute a stable delta.
+  const handleGripPointerDown = useCallback(
+    (grip: GripDescriptor, ev: { clientX: number; clientY: number }) => {
+      const renderer = rendererRef.current;
+      const cam = cameraRef.current;
+      if (!renderer || !cam) return;
+      const rw = rayToPlanMm(renderer, cam, ev.clientX, ev.clientY);
+      if (!rw) return;
+      gripDragRef.current = {
+        grip,
+        startWorldMm: rw,
+        lastDeltaMm: { xMm: 0, yMm: 0 },
+      };
+      setActiveGripId(grip.id);
+      setDraftMutation(grip.onDrag({ xMm: 0, yMm: 0 }));
+    },
+    [],
+  );
+
+  const handleTempDimClick = useCallback(
+    (target: TempDimTarget) => {
+      void onSemanticCommand(target.onClick());
+    },
+    [onSemanticCommand],
+  );
+
+  const handleTempDimLockClick = useCallback((_target: TempDimTarget) => {
+    // EDT-02 territory — render a hint tooltip via title attribute,
+    // emit no command.
+    void _target;
+  }, []);
 
   const sb = THREE.MathUtils.clamp(halfUi * 0.25, 0.2, 6);
   const zoomPresets = [
@@ -1755,6 +2060,64 @@ export function PlanCanvas({
         >
           ━━━ {`${(sb * 100).toFixed(0)} cm`}
         </button>
+      </div>
+      {/* EDT-01 — temp-dimension layer: shown when exactly one wall is selected. */}
+      {selectedWall && tempDimTargets.length > 0 && (
+        <TempDimLayer
+          targets={tempDimTargets}
+          worldToScreen={worldToScreen}
+          onTargetClick={handleTempDimClick}
+          onLockClick={handleTempDimLockClick}
+        />
+      )}
+      {/* EDT-01 — grip layer (raycast above element pick so grips win
+          on hover). Renders the live draft preview during drag. */}
+      {selectedWall && (
+        <GripLayer
+          grips={gripDescriptors}
+          worldToScreen={worldToScreen}
+          onGripPointerDown={handleGripPointerDown}
+          activeGripId={activeGripId}
+          draftWall={
+            draftMutation && draftMutation.kind === 'wall'
+              ? { start: draftMutation.start, end: draftMutation.end }
+              : null
+          }
+        />
+      )}
+      {/* EDT-01 — numeric override input rendered at the cursor. */}
+      {numericInput && gripDragRef.current && (
+        <div
+          data-testid="grip-numeric-input"
+          style={{
+            position: 'absolute',
+            left: numericInput.pxX + 12,
+            top: numericInput.pxY + 12,
+            zIndex: 20,
+            pointerEvents: 'none',
+            background: 'rgba(20,28,42,0.92)',
+            border: '1px solid #fcd34d',
+            borderRadius: 3,
+            color: '#fcd34d',
+            fontFamily:
+              'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace',
+            fontSize: 11,
+            padding: '2px 6px',
+            minWidth: 60,
+          }}
+        >
+          {numericInput.value || '0'}
+          <span style={{ opacity: 0.6 }}> mm · Enter</span>
+        </div>
+      )}
+      {/* EDT-05 — snap glyph layer (×, ⊥, dot+dash) above the canvas. */}
+      <SnapGlyphLayer
+        candidates={snapGlyphState.candidates}
+        activeIndex={snapGlyphState.activeIndex}
+      />
+      {/* EDT-05 — per-snap-type toggle UI, lower-right corner. */}
+      <div className="pointer-events-auto absolute right-3 bottom-3 z-10">
+        <SnapSettingsToolbar value={snapSettings} onChange={setSnapSettings} />
       </div>
       <div ref={mountRef} className="size-full cursor-crosshair" />
     </div>

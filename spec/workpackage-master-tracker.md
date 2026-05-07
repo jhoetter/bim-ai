@@ -399,11 +399,11 @@ export type SelectionSetRule = {
 
 | ID     | Item                                                            | Effort | State  | Depends on |
 | ------ | --------------------------------------------------------------- | ------ | ------ | ---------- |
-| EDT-01 | Universal grip + temp-dimension protocol on plan canvas         | XL     | `open` | —          |
+| EDT-01 | Universal grip + temp-dimension protocol on plan canvas         | XL     | `partial` (wave2-2 — protocol + walls-only + temp-dimensions w/o locks shipped; door/window/floor/column/beam/section grips deferred, each ~0.5d follow-up using the protocol) | —          |
 | EDT-02 | Constraint locks via padlock UI                                 | M      | `open` | EDT-01     |
 | EDT-03 | 3D direct-manipulation handles                                  | L      | `open` | EDT-01     |
 | EDT-04 | De-stub the 9 plan-canvas tools                                 | M      | `open` | EDT-01     |
-| EDT-05 | Snap-engine upgrade (intersection / perp / tangent / extension) | M      | `open` | —          |
+| EDT-05 | Snap-engine upgrade (intersection / perp / tangent / extension) | M      | `partial` (wave2-2 — intersection / perpendicular / extension producers, glyph layer, Tab-cycle, per-kind toggles in localStorage; tangent reserved for curved geometry; parallel + workplane snap kinds deferred) | —          |
 | EDT-06 | Tool grammar polish (Chain / Multiple / Tag-on-Place / Numeric) | M      | `open` | EDT-01     |
 
 ### EDT-01 — Universal grip + temp-dimension protocol on plan canvas
