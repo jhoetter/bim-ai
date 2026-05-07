@@ -240,6 +240,28 @@ export type SelectionSetRule = {
   linkScope?: 'host' | 'all_links' | { specificLinkId: string };
 };
 
+/**
+ * FED-03: structured monitor-source pointer used by Copy/Monitor.
+ *
+ * `linkId` (when set) names a `link_model` element in the host whose source
+ * model contains the monitored element; intra-host monitors omit it.
+ * `elementId` is the **source-side** id (not the `<linkId>::<sourceElemId>`
+ * prefixed form). `sourceRevisionAtCopy` is the source model's revision
+ * counter at the moment of the copy; the BumpMonitoredRevisions command
+ * compares it against the latest revision and flags drift.
+ *
+ * `drifted` and `driftedFields` are computed by BumpMonitoredRevisions; they
+ * persist on the host element so the constraint evaluator can emit a
+ * `monitored_source_drift` advisory without needing live source access.
+ */
+export type MonitorSource = {
+  linkId?: string | null;
+  elementId: string;
+  sourceRevisionAtCopy: number;
+  drifted?: boolean;
+  driftedFields?: string[];
+};
+
 export type ClashResult = {
   elementIdA: string;
   elementIdB: string;
@@ -299,7 +321,14 @@ export type Element =
       parentLevelId?: string | null;
       offsetFromParentMm?: number;
       worksetId?: string | null;
+      /**
+       * FED-03 legacy: pre-FED-03 copies of levels stored a bare source id.
+       * Readers MUST treat a non-null `monitorSourceId` as
+       * `{ elementId: monitorSourceId, sourceRevisionAtCopy: 0 }` if no
+       * `monitorSource` is present. New writes should use `monitorSource`.
+       */
       monitorSourceId?: string | null;
+      monitorSource?: MonitorSource | null;
       pinned?: boolean;
     }
   | {
@@ -441,7 +470,9 @@ export type Element =
       label: string;
       levelId?: string | null;
       worksetId?: string | null;
+      /** FED-03 legacy — see comment on `level.monitorSourceId`. */
       monitorSourceId?: string | null;
+      monitorSource?: MonitorSource | null;
       pinned?: boolean;
     }
   | {

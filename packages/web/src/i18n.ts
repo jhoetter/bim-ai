@@ -174,6 +174,9 @@ i18n.init({
           noConstraints: 'No constraints surface for `{{kind}}` yet.',
           noConstraintsMeta: 'No constraints for this element.',
           noIdentityMeta: 'No identity metadata.',
+          monitorDriftBanner: 'Monitored source drifted ({{fields}}). Reconcile to resolve.',
+          acceptSource: 'Accept source',
+          keepHost: 'Keep host',
           footer: {
             apply: 'Apply (⏎)',
             reset: 'Reset (Esc)',
@@ -975,6 +978,9 @@ i18n.init({
           noConstraints: 'Keine Einschränkungen für `{{kind}}` vorhanden.',
           noConstraintsMeta: 'Keine Einschränkungen für dieses Element.',
           noIdentityMeta: 'Keine Identitätsmetadaten.',
+          monitorDriftBanner: 'Überwachte Quelle hat sich geändert ({{fields}}). Bitte abgleichen.',
+          acceptSource: 'Quelle übernehmen',
+          keepHost: 'Host beibehalten',
           footer: {
             apply: 'Anwenden (⏎)',
             reset: 'Zurücksetzen (Esc)',

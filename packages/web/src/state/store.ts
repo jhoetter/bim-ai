@@ -78,6 +78,30 @@ function coerceXYZ(raw: Record<string, unknown>): { xMm: number; yMm: number; zM
   };
 }
 
+function coerceMonitorSource(raw: Record<string, unknown>): {
+  linkId?: string | null;
+  elementId: string;
+  sourceRevisionAtCopy: number;
+  drifted?: boolean;
+  driftedFields?: string[];
+} {
+  const linkId = (raw.linkId ?? raw.link_id) as string | null | undefined;
+  const elementId = String(raw.elementId ?? raw.element_id ?? '');
+  const sourceRevisionAtCopy = Number(raw.sourceRevisionAtCopy ?? raw.source_revision_at_copy ?? 0);
+  const drifted = Boolean(raw.drifted);
+  const driftedFieldsRaw = raw.driftedFields ?? raw.drifted_fields;
+  const driftedFields = Array.isArray(driftedFieldsRaw)
+    ? driftedFieldsRaw.map((s) => String(s))
+    : [];
+  return {
+    ...(linkId ? { linkId: String(linkId) } : {}),
+    elementId,
+    sourceRevisionAtCopy,
+    ...(drifted ? { drifted: true } : {}),
+    ...(driftedFields.length ? { driftedFields } : {}),
+  };
+}
+
 const _EVIDENCE_REF_KINDS = new Set<EvidenceRefKind>([
   'sheet',
   'viewpoint',
@@ -172,6 +196,13 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
         : {}),
       ...((raw.monitorSourceId ?? raw.monitor_source_id)
         ? { monitorSourceId: String(raw.monitorSourceId ?? raw.monitor_source_id) }
+        : {}),
+      ...((raw.monitorSource ?? raw.monitor_source)
+        ? {
+            monitorSource: coerceMonitorSource(
+              (raw.monitorSource ?? raw.monitor_source) as Record<string, unknown>,
+            ),
+          }
         : {}),
     };
   }
@@ -342,6 +373,13 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
         : {}),
       ...((raw.monitorSourceId ?? raw.monitor_source_id)
         ? { monitorSourceId: String(raw.monitorSourceId ?? raw.monitor_source_id) }
+        : {}),
+      ...((raw.monitorSource ?? raw.monitor_source)
+        ? {
+            monitorSource: coerceMonitorSource(
+              (raw.monitorSource ?? raw.monitor_source) as Record<string, unknown>,
+            ),
+          }
         : {}),
     };
   }

@@ -93,9 +93,20 @@ async def _build_link_source_provider(
     return _provider
 
 
+_COMMANDS_NEEDING_LINK_SOURCES: frozenset[str] = frozenset(
+    {
+        # FED-02: clash-test resolves selection sets across linked models.
+        "runClashTest",
+        # FED-03: drift detection + reconcile read from linked source models.
+        "bumpMonitoredRevisions",
+        "reconcileMonitoredElement",
+    }
+)
+
+
 def _command_needs_link_sources(command: dict[str, Any]) -> bool:
-    """FED-02: only the clash-test runner currently consults linked sources."""
-    return isinstance(command, dict) and command.get("type") == "runClashTest"
+    """FED-02 / FED-03: which command types consult linked source documents."""
+    return isinstance(command, dict) and command.get("type") in _COMMANDS_NEEDING_LINK_SOURCES
 
 
 async def _validate_link_model_command_against_db(

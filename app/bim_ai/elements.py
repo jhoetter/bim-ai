@@ -136,6 +136,30 @@ class RoofTypeElem(BaseModel):
     layers: list[WallTypeLayer] = Field(default_factory=list)
 
 
+class MonitorSourceSpec(BaseModel):
+    """FED-03 — structured Copy/Monitor source pointer.
+
+    See ``packages/core/src/index.ts:MonitorSource`` for the wire shape.
+
+    * ``link_id`` is the host's ``link_model`` element id when the source
+      lives in another model; ``None`` for intra-host monitors.
+    * ``element_id`` is the **source-side** element id (not the prefixed
+      ``<linkId>::<sourceElemId>`` form).
+    * ``source_revision_at_copy`` snapshots the source's revision counter at
+      the moment the copy was made; ``BumpMonitoredRevisions`` re-evaluates
+      drift against the source's current revision.
+    * ``drifted`` / ``drifted_fields`` are written by the bump command and
+      surface as a ``monitored_source_drift`` advisory.
+    """
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    link_id: str | None = Field(default=None, alias="linkId")
+    element_id: str = Field(alias="elementId")
+    source_revision_at_copy: int = Field(default=0, alias="sourceRevisionAtCopy")
+    drifted: bool = Field(default=False)
+    drifted_fields: list[str] = Field(default_factory=list, alias="driftedFields")
+
+
 class LevelElem(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True)
     kind: Literal["level"] = "level"
@@ -145,6 +169,7 @@ class LevelElem(BaseModel):
     datum_kind: str | None = Field(default=None, alias="datumKind")
     parent_level_id: str | None = Field(default=None, alias="parentLevelId")
     offset_from_parent_mm: float = Field(default=0, alias="offsetFromParentMm")
+    monitor_source: MonitorSourceSpec | None = Field(default=None, alias="monitorSource")
     pinned: bool = Field(default=False)
 
 
@@ -352,6 +377,7 @@ class GridLineElem(BaseModel):
     end: Vec2Mm
     label: str = ""
     level_id: str | None = Field(default=None, alias="levelId")
+    monitor_source: MonitorSourceSpec | None = Field(default=None, alias="monitorSource")
 
 
 PropertyLineClassification = Literal["street", "rear", "side", "other"]

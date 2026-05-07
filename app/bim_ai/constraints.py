@@ -245,6 +245,8 @@ _RULE_DISCIPLINE: dict[str, str] = {
     "schedule_not_placed_on_sheet": "coordination",
     "sheet_viewport_schedule_stale": "coordination",
     "schedule_field_registry_gap": "coordination",
+    # FED-03: Cross-link Copy/Monitor drift advisory.
+    "monitored_source_drift": "coordination",
 }
 
 _RULE_BLOCKING_CLASS: dict[str, str] = {
@@ -3150,6 +3152,7 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
     viols.extend(_room_color_scheme_advisory_violations(elements))
     viols.extend(_section_on_sheet_advisory_violations(elements))
     viols.extend(_room_boundary_open_violations(elements))
+    viols.extend(_monitored_source_drift_advisory_violations(elements))
     viols.sort(key=lambda v: (v.rule_id, tuple(sorted(v.element_ids)), v.severity))
     annotated = annotate_violation_disciplines(viols)
     return annotate_violation_blocking_classes(annotated)
@@ -3459,6 +3462,38 @@ def _room_boundary_open_violations(elements: dict[str, Element]) -> list[Violati
                     "it is not fully enclosed by axis-aligned walls or room separations."
                 ),
                 element_ids=[rid],
+            )
+        )
+    return out
+
+
+def _monitored_source_drift_advisory_violations(
+    elements: dict[str, Element],
+) -> list[Violation]:
+    """FED-03: surface elements whose ``monitor_source.drifted`` flag is set.
+
+    The drift state is computed lazily by the ``BumpMonitoredRevisions``
+    command (which has access to a source provider); this rule just reads
+    what the bump command wrote so it can run inside the synchronous
+    constraint evaluator.
+    """
+    from bim_ai.monitored import monitored_source_drift_violations
+
+    out: list[Violation] = []
+    for elem_id, drifted_fields in monitored_source_drift_violations(elements):
+        host_el = elements.get(elem_id)
+        host_name = getattr(host_el, "name", elem_id)
+        fields_str = ", ".join(drifted_fields) if drifted_fields else "<unknown>"
+        out.append(
+            Violation(
+                rule_id="monitored_source_drift",
+                severity="warning",
+                message=(
+                    f"Monitored element '{host_name}' ({elem_id}) has drifted from its "
+                    f"source — fields differ: {fields_str}. Reconcile via Inspector "
+                    "(Accept source or Keep host)."
+                ),
+                element_ids=[elem_id],
             )
         )
     return out

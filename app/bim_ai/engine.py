@@ -60,8 +60,10 @@ from bim_ai.commands import (
     CreateWallTypeCmd,
     DeleteElementCmd,
     DeleteElementsCmd,
+    BumpMonitoredRevisionsCmd,
     DeleteLinkModelCmd,
     ExtendFloorInsulationCmd,
+    ReconcileMonitoredElementCmd,
     RunClashTestCmd,
     InsertDoorOnWallCmd,
     InsertWindowOnWallCmd,
@@ -123,6 +125,10 @@ from bim_ai.commands import (
 from bim_ai.clash_engine import run_clash_test
 from bim_ai.constraints import Violation, evaluate
 from bim_ai.link_expansion import SourceDocProvider
+from bim_ai.monitored import (
+    bump_monitored_revisions,
+    reconcile_monitored_element,
+)
 from bim_ai.datum_levels import (
     expected_level_elevation_from_parent,
     propagate_dependent_level_elevations,
@@ -3324,6 +3330,17 @@ def apply_inplace(
             provider = source_provider or _no_source_provider
             results: list[ClashResultSpec] = run_clash_test(doc, target, provider)
             els[cmd.clash_test_id] = target.model_copy(update={"results": results})
+
+        case BumpMonitoredRevisionsCmd():
+            bump_monitored_revisions(doc, source_provider or _no_source_provider)
+
+        case ReconcileMonitoredElementCmd():
+            reconcile_monitored_element(
+                doc,
+                cmd.element_id,
+                cmd.mode,
+                source_provider or _no_source_provider,
+            )
 
     # KRN-08: areas track a derived computedAreaSqMm. Recompute after every
     # command apply so create/update/delete of areas (and shafts that affect
