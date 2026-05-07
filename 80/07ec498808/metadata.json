@@ -3,7 +3,7 @@
   "checkpoint_id": "8007ec498808",
   "strategy": "manual-commit",
   "branch": "dayshift-fam-keystone",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "packages/web/src/families/familyResolver.test.ts",
     "packages/web/src/families/familyResolver.ts"
@@ -20,13 +20,19 @@
       "transcript": "/80/07ec498808/1/full.jsonl",
       "content_hash": "/80/07ec498808/1/content_hash.txt",
       "prompt": "/80/07ec498808/1/prompt.txt"
+    },
+    {
+      "metadata": "/80/07ec498808/2/metadata.json",
+      "transcript": "/80/07ec498808/2/full.jsonl",
+      "content_hash": "/80/07ec498808/2/content_hash.txt",
+      "prompt": "/80/07ec498808/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 1227,
-    "cache_creation_tokens": 821823,
-    "cache_read_tokens": 147201702,
-    "output_tokens": 193969,
-    "api_call_count": 583
+    "input_tokens": 1653,
+    "cache_creation_tokens": 1880166,
+    "cache_read_tokens": 219220420,
+    "output_tokens": 514006,
+    "api_call_count": 879
   }
 }
