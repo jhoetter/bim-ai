@@ -744,6 +744,10 @@ i18n.init({
           arrayCancel: 'Cancel',
           arraysHeading: 'Arrays',
           arrayLabel: 'Array {{index}} — {{mode}}, count={{countParam}}',
+          visibilityByDetailHeading: 'Visibility by detail level',
+          visibilityDetailCoarse: 'Coarse',
+          visibilityDetailMedium: 'Medium',
+          visibilityDetailFine: 'Fine',
         },
         coordination: {
           selectionSets: 'Selection Sets',
@@ -1509,6 +1513,10 @@ i18n.init({
           arrayCancel: 'Abbrechen',
           arraysHeading: 'Arrays',
           arrayLabel: 'Array {{index}} — {{mode}}, Anzahl={{countParam}}',
+          visibilityByDetailHeading: 'Sichtbarkeit nach Detailstufe',
+          visibilityDetailCoarse: 'Grob',
+          visibilityDetailMedium: 'Mittel',
+          visibilityDetailFine: 'Fein',
         },
         coordination: {
           selectionSets: 'Auswahl-Sets',

@@ -6,8 +6,12 @@ import type {
   SketchLine,
   SweepGeometryNode,
   VisibilityBinding,
+  VisibilityByDetailLevel,
 } from '../families/types';
 import { validateFormula } from '../lib/expressionEvaluator';
+
+/** VIE-02 — plan detail levels usable for per-node visibility binding. */
+type DetailLevelKey = 'coarse' | 'medium' | 'fine';
 
 type Template = 'generic_model' | 'door' | 'window' | 'profile';
 
@@ -230,6 +234,21 @@ export function FamilyEditorWorkbench(): JSX.Element {
     );
   }
 
+  function updateSweepDetailLevelVisibility(
+    index: number,
+    level: DetailLevelKey,
+    visible: boolean,
+  ) {
+    setSweeps((prev) =>
+      prev.map((s, i) => {
+        if (i !== index) return s;
+        const next: VisibilityByDetailLevel = { ...(s.visibilityByDetailLevel ?? {}) };
+        next[level] = visible;
+        return { ...s, visibilityByDetailLevel: next };
+      }),
+    );
+  }
+
   function startArray() {
     setArrayDraft({ ...EMPTY_ARRAY_DRAFT });
   }
@@ -418,6 +437,9 @@ export function FamilyEditorWorkbench(): JSX.Element {
               sweep={sweeps[selectedSweepIndex]}
               params={params}
               onUpdate={(binding) => updateSweepVisibility(selectedSweepIndex, binding)}
+              onUpdateDetailLevel={(level, visible) =>
+                updateSweepDetailLevelVisibility(selectedSweepIndex, level, visible)
+              }
             />
           )}
         </section>
@@ -574,26 +596,32 @@ interface SweepPropertiesPanelProps {
   sweep: SweepGeometryNode;
   params: Param[];
   onUpdate: (binding: VisibilityBinding | undefined) => void;
+  onUpdateDetailLevel: (level: DetailLevelKey, visible: boolean) => void;
 }
 
 const VISIBLE_ALWAYS = '__always__';
 
 /**
- * FAM-03 — properties panel for a selected geometry node.
+ * FAM-03 + VIE-02 — properties panel for a selected geometry node.
  *
  * Lists boolean params + an "always visible" sentinel. Selecting a
- * boolean param exposes a Show-when-true / Show-when-false toggle.
+ * boolean param exposes a Show-when-true / Show-when-false toggle
+ * (FAM-03). VIE-02 adds an independent 3-checkbox row for plan detail
+ * levels (Coarse / Medium / Fine).
  */
 function SweepPropertiesPanel({
   t,
   sweep,
   params,
   onUpdate,
+  onUpdateDetailLevel,
 }: SweepPropertiesPanelProps): JSX.Element {
   const booleanParams = params.filter((p) => p.type === 'boolean');
   const binding = sweep.visibilityBinding;
   const selected = binding ? binding.paramName : VISIBLE_ALWAYS;
   const whenTrue = binding ? binding.whenTrue : true;
+  const detailVis = sweep.visibilityByDetailLevel;
+  const detailVisible = (level: DetailLevelKey): boolean => detailVis?.[level] !== false;
 
   function onParamChange(value: string) {
     if (value === VISIBLE_ALWAYS) {
@@ -654,6 +682,25 @@ function SweepPropertiesPanel({
           </label>
         </div>
       )}
+      <div role="group" aria-label={t('familyEditor.visibilityByDetailHeading')}>
+        <div className="text-sm font-medium">{t('familyEditor.visibilityByDetailHeading')}</div>
+        <div className="flex gap-4 text-sm mt-1">
+          {(['coarse', 'medium', 'fine'] as const).map((level) => {
+            const labelKey = `familyEditor.visibilityDetail${level.charAt(0).toUpperCase() + level.slice(1)}`;
+            return (
+              <label key={level} className="inline-flex items-center gap-1">
+                <input
+                  type="checkbox"
+                  aria-label={`visibility-${level}`}
+                  checked={detailVisible(level)}
+                  onChange={(e) => onUpdateDetailLevel(level, e.target.checked)}
+                />
+                {t(labelKey)}
+              </label>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }

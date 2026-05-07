@@ -28,7 +28,29 @@ import type {
   ParameterBinding,
   SweepGeometryNode,
   VisibilityBinding,
+  VisibilityByDetailLevel,
 } from './types';
+
+/**
+ * VIE-02 — plan detail levels at which the resolver may be asked to run.
+ * Mirrors `PlanDetailLevel` in `plan/planDetailLevelLines.ts`; duplicated
+ * here so `families/familyResolver.ts` doesn't import the plan package.
+ */
+export type ResolverDetailLevel = 'coarse' | 'medium' | 'fine';
+
+/**
+ * VIE-02 — true if a node is hidden at `detailLevel`. Unset levels
+ * default to visible. Returns false (i.e. "render") when no
+ * `detailLevel` is supplied — back-compat for non-plan callers like
+ * the 3D viewport that don't yet differentiate by detail.
+ */
+function isHiddenByDetailLevel(
+  vis: VisibilityByDetailLevel | undefined,
+  detailLevel: ResolverDetailLevel | undefined,
+): boolean {
+  if (!detailLevel || !vis) return false;
+  return vis[detailLevel] === false;
+}
 
 /** Max recursion depth for nested-family expansion. */
 export const MAX_NESTED_FAMILY_DEPTH = 10;
@@ -104,24 +126,28 @@ export function isVisibleByBinding(
  * Sweep nodes go through FAM-02's `meshFromSweep`. Nested-family
  * refs recurse into `resolveNestedFamilyInstance`. Array nodes
  * expand into N nested-family copies (FAM-05). Returns null for
- * nodes hidden by their `visibilityBinding` (FAM-03).
+ * nodes hidden by their `visibilityBinding` (FAM-03) or their
+ * VIE-02 `visibilityByDetailLevel` at the active `detailLevel`.
  */
 function resolveGeometryNode(
   node: FamilyGeometryNode,
   hostParams: HostParams,
   catalog: FamilyCatalogLookup,
   depth: number,
+  detailLevel?: ResolverDetailLevel,
 ): THREE.Object3D | null {
+  // VIE-02: per-detail-level visibility short-circuit.
+  if (isHiddenByDetailLevel(node.visibilityByDetailLevel, detailLevel)) return null;
   // FAM-03: visibility binding short-circuit applies to every node kind.
   if (!isVisibleByBinding(node.visibilityBinding, hostParams)) return null;
   if (node.kind === 'sweep') {
     return resolveSweepNode(node);
   }
   if (node.kind === 'family_instance_ref') {
-    return resolveNestedFamilyInstance(node, hostParams, catalog, depth);
+    return resolveNestedFamilyInstance(node, hostParams, catalog, depth, detailLevel);
   }
   if (node.kind === 'array') {
-    return resolveArrayNode(node, hostParams, catalog, depth);
+    return resolveArrayNode(node, hostParams, catalog, depth, detailLevel);
   }
   return null;
 }
@@ -145,6 +171,7 @@ export function resolveArrayNode(
   hostParams: HostParams,
   catalog: FamilyCatalogLookup,
   depth: number = 0,
+  detailLevel?: ResolverDetailLevel,
 ): THREE.Group {
   if (depth > MAX_NESTED_FAMILY_DEPTH) {
     throw new Error(
@@ -180,7 +207,13 @@ export function resolveArrayNode(
     }
     for (let i = 0; i < count; i++) {
       const offset = axisDir.clone().multiplyScalar(i * stepMm);
-      const child = resolveNestedFamilyInstance(node.target, hostParams, catalog, depth + 1);
+      const child = resolveNestedFamilyInstance(
+        node.target,
+        hostParams,
+        catalog,
+        depth + 1,
+        detailLevel,
+      );
       child.position.add(offset);
       group.add(child);
     }
@@ -190,7 +223,13 @@ export function resolveArrayNode(
     const stepDeg = 360 / count;
     for (let i = 0; i < count; i++) {
       const angleRad = (i * stepDeg * Math.PI) / 180;
-      const child = resolveNestedFamilyInstance(node.target, hostParams, catalog, depth + 1);
+      const child = resolveNestedFamilyInstance(
+        node.target,
+        hostParams,
+        catalog,
+        depth + 1,
+        detailLevel,
+      );
       // Rotate the child's position around the axis through `center`.
       const rel = new THREE.Vector3().subVectors(child.position, center);
       rel.applyAxisAngle(axis, angleRad);
@@ -211,7 +250,13 @@ export function resolveArrayNode(
     node.centerVisibilityBinding &&
     isVisibleByBinding(node.centerVisibilityBinding, hostParams)
   ) {
-    const centerCopy = resolveNestedFamilyInstance(node.target, hostParams, catalog, depth + 1);
+    const centerCopy = resolveNestedFamilyInstance(
+      node.target,
+      hostParams,
+      catalog,
+      depth + 1,
+      detailLevel,
+    );
     centerCopy.position.set(center.x, center.y, center.z);
     centerCopy.userData.arrayCenter = true;
     group.add(centerCopy);
@@ -232,6 +277,7 @@ export function resolveNestedFamilyInstance(
   hostParams: HostParams,
   catalog: FamilyCatalogLookup,
   depth: number = 0,
+  detailLevel?: ResolverDetailLevel,
 ): THREE.Group {
   if (depth > MAX_NESTED_FAMILY_DEPTH) {
     throw new Error(
@@ -259,7 +305,7 @@ export function resolveNestedFamilyInstance(
   const nestedParams = buildNestedParamMap(def, node.parameterBindings, hostParams);
   const geometry = def.geometry ?? [];
   for (const geomNode of geometry) {
-    const child = resolveGeometryNode(geomNode, nestedParams, catalog, depth + 1);
+    const child = resolveGeometryNode(geomNode, nestedParams, catalog, depth + 1, detailLevel);
     if (child) group.add(child);
   }
 
@@ -279,6 +325,7 @@ export function resolveFamilyGeometry(
   familyId: string,
   params: HostParams,
   catalog: FamilyCatalogLookup,
+  detailLevel?: ResolverDetailLevel,
 ): THREE.Group {
   const def = catalog[familyId];
   if (!def) throw new Error(`FAM-01: family '${familyId}' not found in catalog`);
@@ -298,7 +345,7 @@ export function resolveFamilyGeometry(
   }
   Object.assign(merged, params);
   for (const geomNode of def.geometry ?? []) {
-    const child = resolveGeometryNode(geomNode, merged, catalog, 1);
+    const child = resolveGeometryNode(geomNode, merged, catalog, 1, detailLevel);
     if (child) group.add(child);
   }
   return group;

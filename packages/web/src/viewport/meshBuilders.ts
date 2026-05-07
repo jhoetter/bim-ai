@@ -13,6 +13,7 @@ import {
   resolveFamilyGeometry,
   type FamilyCatalogLookup,
   type HostParams,
+  type ResolverDetailLevel,
 } from '../families/familyResolver';
 import type { FamilyDefinition } from '../families/types';
 import { getBuiltInWallType, type WallTypeAssembly } from '../families/wallTypeCatalog';
@@ -65,6 +66,7 @@ function tryResolveFamilyInstancePanel(
   yaw: number,
   bimPickId: string,
   cellId: string,
+  detailLevel?: ResolverDetailLevel,
 ): THREE.Group | null {
   if (!familyTypeId) return null;
   const typeEntry = getTypeById(familyTypeId);
@@ -92,7 +94,7 @@ function tryResolveFamilyInstancePanel(
       }
     }
     const params = (typeEntry?.parameters ?? {}) as HostParams;
-    const resolved = resolveFamilyGeometry(familyDef.id, params, catalog);
+    const resolved = resolveFamilyGeometry(familyDef.id, params, catalog, detailLevel);
     resolved.scale.set(0.001, 0.001, 0.001);
     resolved.position.copy(cellPosition);
     resolved.rotation.y = yaw;

@@ -32,6 +32,19 @@ export interface VisibilityBinding {
   whenTrue: boolean;
 }
 
+/**
+ * VIE-02 — per-detail-level visibility for a single family geometry node.
+ *
+ * Defaults: every level visible (i.e. an unset key reads as `true`). Set
+ * a key to `false` to hide the node when the resolver runs at the
+ * matching plan detail level.
+ */
+export interface VisibilityByDetailLevel {
+  coarse?: boolean;
+  medium?: boolean;
+  fine?: boolean;
+}
+
 /** Sweep node — extrude a 2D profile along a 2D path. */
 export interface SweepGeometryNode {
   kind: 'sweep';
@@ -48,6 +61,9 @@ export interface SweepGeometryNode {
   materialKey?: string;
   /** FAM-03: bind visibility to a host boolean param. */
   visibilityBinding?: VisibilityBinding;
+  /** VIE-02: hide this sweep when the resolver runs at a matching plan
+   *  detail level. Unset keys default to visible. */
+  visibilityByDetailLevel?: VisibilityByDetailLevel;
 }
 
 /* ─── FAM-01: Nested-family parameter bindings ─────────────────────────── */
@@ -74,6 +90,9 @@ export interface FamilyInstanceRefNode {
   rotationDeg: number;
   parameterBindings: Record<string, ParameterBinding>;
   visibilityBinding?: VisibilityBinding;
+  /** VIE-02: hide this nested instance when the resolver runs at a
+   *  matching plan detail level. Unset keys default to visible. */
+  visibilityByDetailLevel?: VisibilityByDetailLevel;
 }
 
 /* ─── FAM-05: Array node (linear + radial, parameter-driven count) ─────── */
@@ -109,6 +128,9 @@ export interface ArrayGeometryNode {
   centerVisibilityBinding?: VisibilityBinding;
   /** FAM-03: bind whole-array visibility to a host boolean param. */
   visibilityBinding?: VisibilityBinding;
+  /** VIE-02: hide this whole array when the resolver runs at a matching
+   *  plan detail level. Unset keys default to visible. */
+  visibilityByDetailLevel?: VisibilityByDetailLevel;
 }
 
 export type FamilyGeometryNode = SweepGeometryNode | FamilyInstanceRefNode | ArrayGeometryNode;
