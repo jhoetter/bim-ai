@@ -2,11 +2,12 @@
   "cli_version": "0.6.0",
   "checkpoint_id": "8007ec498808",
   "strategy": "manual-commit",
-  "branch": "dayshift-fam-keystone",
+  "branch": "seed-rebuild",
   "checkpoints_count": 2,
   "files_touched": [
     "packages/web/src/families/familyResolver.test.ts",
-    "packages/web/src/families/familyResolver.ts"
+    "packages/web/src/families/familyResolver.ts",
+    "packages/web/src/families/types.ts"
   ],
   "sessions": [
     {
@@ -47,10 +48,10 @@
     }
   ],
   "token_usage": {
-    "input_tokens": 1666,
-    "cache_creation_tokens": 1892323,
-    "cache_read_tokens": 223611969,
-    "output_tokens": 520778,
-    "api_call_count": 892
+    "input_tokens": 1673,
+    "cache_creation_tokens": 1896791,
+    "cache_read_tokens": 224648906,
+    "output_tokens": 522359,
+    "api_call_count": 899
   }
 }
