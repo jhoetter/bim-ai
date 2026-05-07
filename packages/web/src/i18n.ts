@@ -37,6 +37,14 @@ i18n.init({
             label: 'Elevation',
             tooltip: 'Click on plan to drop a N/S/E/W elevation marker (EL)',
           },
+          referencePlane: {
+            label: 'Reference Plane',
+            tooltip: 'Two-click reference / work plane on the active level (RP)',
+          },
+          propertyLine: {
+            label: 'Property Line',
+            tooltip: 'Two-click site / zoning property boundary (PL)',
+          },
           tag: {
             label: 'Tag',
             tooltip: 'Tag dropdown (Door / Window / Wall / Room / By category)',
@@ -777,6 +785,14 @@ i18n.init({
           elevation: {
             label: 'Ansicht',
             tooltip: 'Klicken zum Platzieren einer N/S/O/W-Ansichtsmarkierung (EL)',
+          },
+          referencePlane: {
+            label: 'Referenzebene',
+            tooltip: 'Zwei Klicks für eine Referenz-/Arbeitsebene auf der aktiven Ebene (RP)',
+          },
+          propertyLine: {
+            label: 'Grundstücksgrenze',
+            tooltip: 'Zwei Klicks für eine Grundstücks-/Bauzonenlinie (PL)',
           },
           tag: {
             label: 'Beschriftung',

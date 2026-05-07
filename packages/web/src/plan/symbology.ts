@@ -20,6 +20,8 @@ import {
   planAnnotationLabelSprite,
   gridLineThree,
   dimensionsThree,
+  referencePlanePlanThree,
+  propertyLinePlanThree,
 } from './planElementMeshBuilders';
 
 /** Plan slice elevation in world units (walls still render with real height elsewhere). */
@@ -1035,6 +1037,23 @@ export function rebuildPlanMeshes(
     if (g.levelId && level && g.levelId !== level) continue;
 
     holder.add(gridLineThree(g));
+  }
+
+  // KRN-05: project-scope reference planes (dashed grey line + label).
+  let rpAutoIdx = 0;
+  for (const rp of Object.values(elementsById)) {
+    if (rp.kind !== 'reference_plane') continue;
+    // Skip the family-editor variant (no levelId).
+    if (!('levelId' in rp) || typeof rp.levelId !== 'string') continue;
+    if (level && rp.levelId !== level) continue;
+    rpAutoIdx += 1;
+    holder.add(referencePlanePlanThree(rp, `RP-${rpAutoIdx}`));
+  }
+
+  // KRN-01: property lines render in plan regardless of active level (site-wide).
+  for (const pl of Object.values(elementsById)) {
+    if (pl.kind !== 'property_line') continue;
+    holder.add(propertyLinePlanThree(pl));
   }
 
   for (const r of Object.values(elementsById)) {

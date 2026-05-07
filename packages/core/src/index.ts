@@ -44,6 +44,7 @@ export type ElemKind =
   | 'shared_param_file'
   | 'project_param'
   | 'reference_plane'
+  | 'property_line'
   | 'selection_set'
   | 'clash_test'
   | 'text_3d'
@@ -794,6 +795,35 @@ export type Element =
       isVertical: boolean;
       offsetMm: number;
       isSymmetryRef?: boolean;
+    }
+  | {
+      /**
+       * KRN-05 project-scope reference plane: a level-anchored sketch / work-plane
+       * primitive distinct from the family-editor variant above. Discriminated by
+       * presence of `levelId` (and absence of `familyEditorId`).
+       */
+      kind: 'reference_plane';
+      id: string;
+      name?: string;
+      levelId: string;
+      startMm: XY;
+      endMm: XY;
+      isWorkPlane?: boolean;
+      pinned?: boolean;
+    }
+  | {
+      /**
+       * KRN-01: site / zoning property boundary line. Optional `setbackMm`
+       * authors a parallel offset toward the property interior.
+       */
+      kind: 'property_line';
+      id: string;
+      name?: string;
+      startMm: XY;
+      endMm: XY;
+      setbackMm?: number;
+      classification?: 'street' | 'rear' | 'side' | 'other';
+      pinned?: boolean;
     }
   | {
       kind: 'selection_set';

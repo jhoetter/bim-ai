@@ -52,6 +52,8 @@ export type LegacyPlanTool =
   | 'grid'
   | 'dimension'
   | 'elevation'
+  | 'reference-plane'
+  | 'property-line'
   | 'align'
   | 'split'
   | 'trim'

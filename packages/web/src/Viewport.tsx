@@ -73,6 +73,7 @@ import {
   makeProjectBasePointMarker,
   makeSurveyPointMarker,
 } from './viewport/originMarkers';
+import { makeReferencePlaneMarker } from './viewport/referencePlaneMarker';
 import { WallContextMenu, type WallContextMenuCommand } from './workspace/WallContextMenu';
 
 type Props = {
@@ -1185,6 +1186,9 @@ export function Viewport({ wsConnected, onPersistViewpointField, onSemanticComma
           break;
         case 'survey_point':
           obj = makeSurveyPointMarker(e);
+          break;
+        case 'reference_plane':
+          obj = makeReferencePlaneMarker(e, curr);
           break;
         default:
           break;

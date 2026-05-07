@@ -43,8 +43,14 @@ from bim_ai.commands import (
     CreateSectionCutCmd,
     CreateSlabOpeningCmd,
     CreateStairCmd,
+    CreatePropertyLineCmd,
+    CreateReferencePlaneCmd,
     CreateSurveyPointCmd,
     CreateText3dCmd,
+    DeletePropertyLineCmd,
+    DeleteReferencePlaneCmd,
+    UpdatePropertyLineCmd,
+    UpdateReferencePlaneCmd,
     CreateWallChainCmd,
     CreateWallCmd,
     CreateWallOpeningCmd,
@@ -131,7 +137,9 @@ from bim_ai.elements import (
     PlanViewElem,
     ProjectBasePointElem,
     ProjectSettingsElem,
+    PropertyLineElem,
     RailingElem,
+    ReferencePlaneElem,
     RoofElem,
     RoofTypeElem,
     RoomColorSchemeElem,
@@ -2095,6 +2103,119 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 rotation_deg=cmd.rotation_deg,
                 colour=cmd.colour,
             )
+
+        case CreateReferencePlaneCmd():
+            rpid = cmd.id or new_id()
+            if rpid in els:
+                raise ValueError(f"duplicate element id '{rpid}'")
+            lvl = els.get(cmd.level_id)
+            if not isinstance(lvl, LevelElem):
+                raise ValueError(
+                    "createReferencePlane.levelId must reference an existing Level"
+                )
+            if (
+                cmd.start_mm.x_mm == cmd.end_mm.x_mm
+                and cmd.start_mm.y_mm == cmd.end_mm.y_mm
+            ):
+                raise ValueError("createReferencePlane.startMm and endMm must differ")
+            if cmd.is_work_plane:
+                # Only one ref plane per level may be the active work plane.
+                for other_id, other in list(els.items()):
+                    if (
+                        isinstance(other, ReferencePlaneElem)
+                        and other.level_id == cmd.level_id
+                        and other.is_work_plane
+                    ):
+                        els[other_id] = other.model_copy(update={"is_work_plane": False})
+            els[rpid] = ReferencePlaneElem(
+                kind="reference_plane",
+                id=rpid,
+                name=cmd.name,
+                level_id=cmd.level_id,
+                start_mm=cmd.start_mm,
+                end_mm=cmd.end_mm,
+                is_work_plane=cmd.is_work_plane,
+            )
+
+        case UpdateReferencePlaneCmd():
+            rp = els.get(cmd.reference_plane_id)
+            if not isinstance(rp, ReferencePlaneElem):
+                raise ValueError(
+                    "updateReferencePlane.referencePlaneId must reference a reference_plane"
+                )
+            new_start = cmd.start_mm if cmd.start_mm is not None else rp.start_mm
+            new_end = cmd.end_mm if cmd.end_mm is not None else rp.end_mm
+            if new_start.x_mm == new_end.x_mm and new_start.y_mm == new_end.y_mm:
+                raise ValueError("updateReferencePlane: startMm and endMm must differ")
+            updates: dict[str, Any] = {"start_mm": new_start, "end_mm": new_end}
+            if cmd.name is not None:
+                updates["name"] = cmd.name
+            if cmd.is_work_plane is not None:
+                updates["is_work_plane"] = cmd.is_work_plane
+                if cmd.is_work_plane:
+                    for other_id, other in list(els.items()):
+                        if (
+                            other_id != cmd.reference_plane_id
+                            and isinstance(other, ReferencePlaneElem)
+                            and other.level_id == rp.level_id
+                            and other.is_work_plane
+                        ):
+                            els[other_id] = other.model_copy(update={"is_work_plane": False})
+            els[cmd.reference_plane_id] = rp.model_copy(update=updates)
+
+        case DeleteReferencePlaneCmd():
+            rp = els.get(cmd.reference_plane_id)
+            if not isinstance(rp, ReferencePlaneElem):
+                raise ValueError(
+                    "deleteReferencePlane.referencePlaneId must reference a reference_plane"
+                )
+            del els[cmd.reference_plane_id]
+
+        case CreatePropertyLineCmd():
+            plid = cmd.id or new_id()
+            if plid in els:
+                raise ValueError(f"duplicate element id '{plid}'")
+            if (
+                cmd.start_mm.x_mm == cmd.end_mm.x_mm
+                and cmd.start_mm.y_mm == cmd.end_mm.y_mm
+            ):
+                raise ValueError("createPropertyLine.startMm and endMm must differ")
+            els[plid] = PropertyLineElem(
+                kind="property_line",
+                id=plid,
+                name=cmd.name,
+                start_mm=cmd.start_mm,
+                end_mm=cmd.end_mm,
+                setback_mm=cmd.setback_mm,
+                classification=cmd.classification,
+            )
+
+        case UpdatePropertyLineCmd():
+            pl = els.get(cmd.property_line_id)
+            if not isinstance(pl, PropertyLineElem):
+                raise ValueError(
+                    "updatePropertyLine.propertyLineId must reference a property_line"
+                )
+            new_start = cmd.start_mm if cmd.start_mm is not None else pl.start_mm
+            new_end = cmd.end_mm if cmd.end_mm is not None else pl.end_mm
+            if new_start.x_mm == new_end.x_mm and new_start.y_mm == new_end.y_mm:
+                raise ValueError("updatePropertyLine: startMm and endMm must differ")
+            updates: dict[str, Any] = {"start_mm": new_start, "end_mm": new_end}
+            if cmd.name is not None:
+                updates["name"] = cmd.name
+            if "setback_mm" in cmd.model_fields_set:
+                updates["setback_mm"] = cmd.setback_mm
+            if "classification" in cmd.model_fields_set:
+                updates["classification"] = cmd.classification
+            els[cmd.property_line_id] = pl.model_copy(update=updates)
+
+        case DeletePropertyLineCmd():
+            pl = els.get(cmd.property_line_id)
+            if not isinstance(pl, PropertyLineElem):
+                raise ValueError(
+                    "deletePropertyLine.propertyLineId must reference a property_line"
+                )
+            del els[cmd.property_line_id]
 
         case UpsertViewTemplateCmd():
             vt = cmd.id or new_id()

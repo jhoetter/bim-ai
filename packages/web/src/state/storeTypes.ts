@@ -36,6 +36,8 @@ export type PlanTool =
   | 'grid'
   | 'dimension'
   | 'elevation'
+  | 'reference-plane'
+  | 'property-line'
   | 'align'
   | 'split'
   | 'trim'

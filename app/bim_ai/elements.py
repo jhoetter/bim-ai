@@ -332,6 +332,42 @@ class GridLineElem(BaseModel):
     level_id: str | None = Field(default=None, alias="levelId")
 
 
+PropertyLineClassification = Literal["street", "rear", "side", "other"]
+
+
+class ReferencePlaneElem(BaseModel):
+    """KRN-05: project-scope reference / work plane.
+
+    Distinct from the family-editor variant (which lives only in family bundles).
+    Anchored to a level; renders as a dashed grey line in plan and a translucent
+    green vertical plane in 3D.
+    """
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["reference_plane"] = "reference_plane"
+    id: str
+    name: str = ""
+    level_id: str = Field(alias="levelId")
+    start_mm: Vec2Mm = Field(alias="startMm")
+    end_mm: Vec2Mm = Field(alias="endMm")
+    is_work_plane: bool = Field(default=False, alias="isWorkPlane")
+    pinned: bool = Field(default=False)
+
+
+class PropertyLineElem(BaseModel):
+    """KRN-01: site / zoning property boundary line."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["property_line"] = "property_line"
+    id: str
+    name: str = ""
+    start_mm: Vec2Mm = Field(alias="startMm")
+    end_mm: Vec2Mm = Field(alias="endMm")
+    setback_mm: float | None = Field(default=None, alias="setbackMm", ge=0)
+    classification: PropertyLineClassification | None = None
+    pinned: bool = Field(default=False)
+
+
 class DimensionElem(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True)
     kind: Literal["dimension"] = "dimension"
@@ -1002,6 +1038,8 @@ ElementKind = Literal[
     "detail_line",
     "detail_region",
     "text_note",
+    "reference_plane",
+    "property_line",
 ]
 
 
@@ -1053,6 +1091,8 @@ Element = Annotated[
     | PlacedTagElem
     | DetailLineElem
     | DetailRegionElem
-    | TextNoteElem,
+    | TextNoteElem
+    | ReferencePlaneElem
+    | PropertyLineElem,
     Field(discriminator="kind"),
 ]

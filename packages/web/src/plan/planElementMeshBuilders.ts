@@ -1170,3 +1170,169 @@ export function dimensionsThree(d: Extract<Element, { kind: 'dimension' }>): THR
 
   return ls;
 }
+
+const REFERENCE_PLANE_PLAN_COLOR = 0x9ca3af;
+const REFERENCE_PLANE_PLAN_DASH = 0.18;
+const REFERENCE_PLANE_PLAN_GAP = 0.12;
+const PROPERTY_LINE_PLAN_COLOR = 0x2a3f5a;
+const PROPERTY_LINE_SETBACK_DASH = 0.14;
+const PROPERTY_LINE_SETBACK_GAP = 0.1;
+
+/**
+ * KRN-05: project-scope reference plane in plan view — thin dashed grey line
+ * with a small label sprite at the start endpoint.
+ */
+export function referencePlanePlanThree(
+  rp: Extract<Element, { kind: 'reference_plane' }> & {
+    levelId?: string;
+    startMm?: { xMm: number; yMm: number };
+    endMm?: { xMm: number; yMm: number };
+    isWorkPlane?: boolean;
+  },
+  fallbackLabel?: string,
+): THREE.Group {
+  const grp = new THREE.Group();
+  const start = rp.startMm;
+  const end = rp.endMm;
+  if (!start || !end) return grp;
+
+  const a = new THREE.Vector3(ux(start.xMm), PLAN_Y + 0.0015, uz(start.yMm));
+  const b = new THREE.Vector3(ux(end.xMm), PLAN_Y + 0.0015, uz(end.yMm));
+  const mat = new THREE.LineDashedMaterial({
+    color: rp.isWorkPlane ? 0x10b981 : REFERENCE_PLANE_PLAN_COLOR,
+    dashSize: REFERENCE_PLANE_PLAN_DASH,
+    gapSize: REFERENCE_PLANE_PLAN_GAP,
+    depthTest: true,
+  });
+  const ln = new THREE.Line(new THREE.BufferGeometry().setFromPoints([a, b]), mat);
+  ln.computeLineDistances();
+  ln.userData.bimPickId = rp.id;
+  ln.userData.referencePlaneId = rp.id;
+  grp.add(ln);
+
+  // Tiny label sprite at the start end (the "name" or fallback like "RP-1").
+  const labelText = (rp.name && rp.name.trim()) || fallbackLabel || 'RP';
+  const sprite = makeReferencePlaneLabelSprite(labelText, a.x, a.z, rp.id);
+  if (sprite) grp.add(sprite);
+
+  grp.userData.bimPickId = rp.id;
+  grp.userData.referencePlaneLabel = labelText;
+  return grp;
+}
+
+function makeReferencePlaneLabelSprite(
+  text: string,
+  cxM: number,
+  czM: number,
+  pickId: string,
+): THREE.Sprite | null {
+  const doc = (globalThis as { document?: Document }).document;
+  if (!doc || typeof doc.createElement !== 'function') return null;
+  const viteMode =
+    typeof process !== 'undefined' &&
+    (process as { env?: Record<string, string> }).env?.NODE_ENV === 'test'
+      ? 'test'
+      : '';
+  const canvas = doc.createElement('canvas');
+  canvas.width = 96;
+  canvas.height = 32;
+  let ctx: CanvasRenderingContext2D | null = null;
+  try {
+    ctx = canvas.getContext('2d');
+  } catch {
+    ctx = null;
+  }
+  if (!ctx || viteMode === 'test') {
+    const tex = new THREE.CanvasTexture(canvas);
+    const m = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+    const s = new THREE.Sprite(m);
+    s.position.set(cxM, PLAN_Y + 0.004, czM);
+    s.scale.set(0.18, 0.06, 1);
+    s.userData.bimPickId = pickId;
+    s.userData.referencePlaneLabelSprite = true;
+    return s;
+  }
+  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.font = '600 18px system-ui,sans-serif';
+  ctx.fillStyle = '#374151';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.needsUpdate = true;
+  const mat = new THREE.SpriteMaterial({
+    map: texture,
+    transparent: true,
+    depthTest: false,
+    depthWrite: false,
+  });
+  const sprite = new THREE.Sprite(mat);
+  sprite.position.set(cxM, PLAN_Y + 0.004, czM);
+  sprite.scale.set(0.22, 0.075, 1);
+  sprite.renderOrder = 12;
+  sprite.userData.bimPickId = pickId;
+  sprite.userData.referencePlaneLabelSprite = true;
+  return sprite;
+}
+
+/**
+ * KRN-01: property line in plan view — solid thick dark-slate line, plus an
+ * optional parallel dashed setback line offset toward the property interior.
+ *
+ * Setback offset direction: by convention the +90° rotation of the line's
+ * direction vector points to the "interior" side. Callers that need the
+ * other side can negate `setbackMm`.
+ */
+export function propertyLinePlanThree(
+  pl: Extract<Element, { kind: 'property_line' }>,
+): THREE.Group {
+  const grp = new THREE.Group();
+  const ax = ux(pl.startMm.xMm);
+  const az = uz(pl.startMm.yMm);
+  const bx = ux(pl.endMm.xMm);
+  const bz = uz(pl.endMm.yMm);
+  const a = new THREE.Vector3(ax, PLAN_Y + 0.002, az);
+  const b = new THREE.Vector3(bx, PLAN_Y + 0.002, bz);
+
+  // Solid main line — thicker than walls (linewidth has no effect in WebGL but
+  // the color/depth still matter for visual weight; renderOrder lifts it).
+  const mainMat = new THREE.LineBasicMaterial({
+    color: PROPERTY_LINE_PLAN_COLOR,
+    depthTest: true,
+  });
+  const mainLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints([a, b]), mainMat);
+  mainLine.userData.bimPickId = pl.id;
+  mainLine.renderOrder = 6;
+  grp.add(mainLine);
+
+  // Setback parallel offset (dashed) when authored.
+  if (typeof pl.setbackMm === 'number' && pl.setbackMm > 0) {
+    const dx = bx - ax;
+    const dz = bz - az;
+    const len = Math.hypot(dx, dz) || 1;
+    const offsetM = pl.setbackMm / 1000;
+    // +90° rotation of (dx,dz) → interior side per spec convention.
+    const nx = -dz / len;
+    const nz = dx / len;
+    const oa = new THREE.Vector3(ax + nx * offsetM, PLAN_Y + 0.002, az + nz * offsetM);
+    const ob = new THREE.Vector3(bx + nx * offsetM, PLAN_Y + 0.002, bz + nz * offsetM);
+    const setMat = new THREE.LineDashedMaterial({
+      color: PROPERTY_LINE_PLAN_COLOR,
+      dashSize: PROPERTY_LINE_SETBACK_DASH,
+      gapSize: PROPERTY_LINE_SETBACK_GAP,
+      depthTest: true,
+      opacity: 0.85,
+      transparent: true,
+    });
+    const setLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints([oa, ob]), setMat);
+    setLine.computeLineDistances();
+    setLine.userData.bimPickId = pl.id;
+    setLine.userData.propertyLineSetback = true;
+    grp.add(setLine);
+  }
+
+  grp.userData.bimPickId = pl.id;
+  if (pl.classification) grp.userData.propertyLineClassification = pl.classification;
+  return grp;
+}

@@ -136,7 +136,9 @@ type Draft =
   | { kind: 'room'; verts: Array<{ xMm: number; yMm: number }> }
   | { kind: 'grid'; sx: number; sy: number }
   | { kind: 'dim'; ax: number; ay: number }
-  | { kind: 'room_rect'; sx: number; sy: number };
+  | { kind: 'room_rect'; sx: number; sy: number }
+  | { kind: 'reference-plane'; sx: number; sy: number }
+  | { kind: 'property-line'; sx: number; sy: number };
 
 function nearestWallAt(
   elementsById: Record<string, Element>,
@@ -1743,6 +1745,56 @@ export function PlanCanvas({
           cmd.customAngleDeg = params.customAngleDeg;
         }
         onSemanticCommand(cmd);
+        return;
+      }
+      if (planTool === 'reference-plane') {
+        // KRN-05: two-click reference plane on the active level.
+        const d = draftRef.current;
+        if (!d || d.kind !== 'reference-plane') {
+          draftRef.current = { kind: 'reference-plane', sx: sp.xMm, sy: sp.yMm };
+          bumpGeom((x) => x + 1);
+          return;
+        }
+        if (!lvlId) {
+          draftRef.current = undefined;
+          bumpGeom((x) => x + 1);
+          return;
+        }
+        if (Math.hypot(sp.xMm - d.sx, sp.yMm - d.sy) < 1) {
+          draftRef.current = undefined;
+          bumpGeom((x) => x + 1);
+          return;
+        }
+        onSemanticCommand({
+          type: 'createReferencePlane',
+          levelId: lvlId,
+          startMm: { xMm: d.sx, yMm: d.sy },
+          endMm: { xMm: sp.xMm, yMm: sp.yMm },
+        });
+        draftRef.current = undefined;
+        bumpGeom((x) => x + 1);
+        return;
+      }
+      if (planTool === 'property-line') {
+        // KRN-01: two-click property boundary line.
+        const d = draftRef.current;
+        if (!d || d.kind !== 'property-line') {
+          draftRef.current = { kind: 'property-line', sx: sp.xMm, sy: sp.yMm };
+          bumpGeom((x) => x + 1);
+          return;
+        }
+        if (Math.hypot(sp.xMm - d.sx, sp.yMm - d.sy) < 1) {
+          draftRef.current = undefined;
+          bumpGeom((x) => x + 1);
+          return;
+        }
+        onSemanticCommand({
+          type: 'createPropertyLine',
+          startMm: { xMm: d.sx, yMm: d.sy },
+          endMm: { xMm: sp.xMm, yMm: sp.yMm },
+        });
+        draftRef.current = undefined;
+        bumpGeom((x) => x + 1);
         return;
       }
       if (planTool === 'align') {
