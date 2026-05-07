@@ -137,22 +137,22 @@ Legend: yellow = keystone (no deps, unblocks many); green = ready (no cross-epic
 
 Only the **cross-primitive** edges are listed (within-primitive deps are already in each section's summary table). Soft = can ship a degraded version without; Hard = cannot ship at all without.
 
-| Dependent WP | Depends on (cross-epic)             | Hard / Soft | Reason                                                                          |
-| ------------ | ----------------------------------- | ----------- | ------------------------------------------------------------------------------- |
-| EDT-04       | KRN-04                              | Hard        | Wall-Opening tool commits `CreateWallOpening`; needs the element kind first      |
-| FED-04       | KRN-06                              | Soft        | Proper CAD alignment with `origin_to_origin` benefits from project base point   |
-| KRN-02       | SKT-01                              | Soft        | Authorable today via API; sketch mode makes interactive authoring practical     |
-| KRN-03       | SKT-01                              | Soft        | Same as KRN-02                                                                  |
-| KRN-07       | SKT-01                              | Hard        | Sketch-based stair shape variant requires sketch sessions                       |
-| KRN-08       | SKT-01                              | Hard        | Area boundary is sketch-authored                                                |
-| KRN-09       | FAM-01, FAM-02                      | Soft        | Panel-as-family-instance needs FAM-01; mullion profile rendering needs FAM-02   |
-| KRN-10       | SKT-01                              | Hard        | Masking region boundary is sketch-authored                                      |
-| KRN-13       | FAM-08                              | Soft        | Catalog-driven door variants benefit from FAM-08; can hardcode types otherwise   |
-| VIE-02       | FAM-01                              | Hard        | Per-element / per-family-geometry visibility uses FAM-01's geometry node infra  |
-| ANN-01       | SKT-01                              | Soft        | `detail_region` is sketch-authored; `detail_line` and `text_note` are not       |
-| ANN-02       | VIE-03                              | Hard        | "Generate elevation from wall face" creates a `VIE-03 elevation_view` element   |
-| PLN-01       | EDT-06                              | Soft        | Auto-tag-everything generalises EDT-06's Tag-on-Place modifier                  |
-| PLN-02       | EDT-01                              | Soft        | Crop region drag handles use the EDT-01 grip protocol                           |
+| Dependent WP | Depends on (cross-epic) | Hard / Soft | Reason                                                                         |
+| ------------ | ----------------------- | ----------- | ------------------------------------------------------------------------------ |
+| EDT-04       | KRN-04                  | Hard        | Wall-Opening tool commits `CreateWallOpening`; needs the element kind first    |
+| FED-04       | KRN-06                  | Soft        | Proper CAD alignment with `origin_to_origin` benefits from project base point  |
+| KRN-02       | SKT-01                  | Soft        | Authorable today via API; sketch mode makes interactive authoring practical    |
+| KRN-03       | SKT-01                  | Soft        | Same as KRN-02                                                                 |
+| KRN-07       | SKT-01                  | Hard        | Sketch-based stair shape variant requires sketch sessions                      |
+| KRN-08       | SKT-01                  | Hard        | Area boundary is sketch-authored                                               |
+| KRN-09       | FAM-01, FAM-02          | Soft        | Panel-as-family-instance needs FAM-01; mullion profile rendering needs FAM-02  |
+| KRN-10       | SKT-01                  | Hard        | Masking region boundary is sketch-authored                                     |
+| KRN-13       | FAM-08                  | Soft        | Catalog-driven door variants benefit from FAM-08; can hardcode types otherwise |
+| VIE-02       | FAM-01                  | Hard        | Per-element / per-family-geometry visibility uses FAM-01's geometry node infra |
+| ANN-01       | SKT-01                  | Soft        | `detail_region` is sketch-authored; `detail_line` and `text_note` are not      |
+| ANN-02       | VIE-03                  | Hard        | "Generate elevation from wall face" creates a `VIE-03 elevation_view` element  |
+| PLN-01       | EDT-06                  | Soft        | Auto-tag-everything generalises EDT-06's Tag-on-Place modifier                 |
+| PLN-02       | EDT-01                  | Soft        | Crop region drag handles use the EDT-01 grip protocol                          |
 
 **Notable independence:** Federation, In-Place Editing, Sketch Mode, and Family System Depth are mutually independent at the keystone level — FED-01, EDT-01, SKT-01, and FAM-01 share no dependencies and can be sequenced in any order or in parallel. Five engineers could each take one keystone (plus FAM-02, FAM-04, or any of the standalone WPs) and ship in parallel for ~3 calendar weeks before any cross-epic synchronisation is required.
 
@@ -201,20 +201,20 @@ After **KRN-04:** EDT-04 (tool de-stub for wall opening)
 
 What's the smallest WP set required to ship a specific user-visible goal? Useful for sprint scoping when leadership asks "what would it take to demo X next month?"
 
-| Goal                                                  | Required WPs (in order)                                  | Calendar (1 eng) | Calendar (parallel) |
-| ----------------------------------------------------- | -------------------------------------------------------- | ---------------- | ------------------- |
-| **Author the demo target-house from scratch**         | KRN-11 + KRN-12 + KRN-13 + KRN-14 + MAT-01               | ~6 weeks         | ~1.5 weeks (5 eng)  |
-| **Federated coordination (Navisworks-grade clash)**   | FED-01 → FED-02                                          | ~3.5 weeks       | ~3.5 weeks (serial) |
-| **Drag walls in 3D viewport to change height**        | EDT-01 → EDT-03                                          | ~7 weeks         | ~7 weeks (serial)   |
-| **Author L-shaped floors from canvas**                | SKT-01 → SKT-02                                          | ~5 weeks         | ~5 weeks (serial)   |
-| **Parametric chair-array dining-table family**        | FAM-01 → FAM-04 → FAM-05                                 | ~5 weeks         | ~4 weeks (FAM-04 ‖ FAM-01) |
-| **Production plan documentation (Coarse/Med/Fine)**   | VIE-01 + VIE-02 (parallel after FAM-01)                  | ~3 weeks         | ~2 weeks            |
-| **N/S/E/W elevations on a sheet**                     | VIE-03 + ANN-02                                          | ~2 weeks         | ~1.5 weeks          |
-| **IFC import → linked shadow model**                  | FED-01 → FED-04 (KRN-06 soft prereq)                     | ~5.5 weeks       | ~5 weeks (overlap KRN-06) |
-| **Full Revit-style "click and edit" feel for walls**  | EDT-01 → EDT-02 → EDT-03 + EDT-05 + EDT-06               | ~10 weeks        | ~7 weeks            |
-| **Asymmetric-roof seed renders correctly in 3D**      | KRN-11 alone                                             | 1 week           | 1 week              |
-| **Loggia frame on target-house**                      | FAM-02 sweep alone (compose with existing walls)         | 1 week           | 1 week              |
-| **Multi-run stair (dog-leg)**                         | SKT-01 → KRN-07                                          | ~6 weeks         | ~6 weeks (serial)   |
+| Goal                                                 | Required WPs (in order)                          | Calendar (1 eng) | Calendar (parallel)        |
+| ---------------------------------------------------- | ------------------------------------------------ | ---------------- | -------------------------- |
+| **Author the demo target-house from scratch**        | KRN-11 + KRN-12 + KRN-13 + KRN-14 + MAT-01       | ~6 weeks         | ~1.5 weeks (5 eng)         |
+| **Federated coordination (Navisworks-grade clash)**  | FED-01 → FED-02                                  | ~3.5 weeks       | ~3.5 weeks (serial)        |
+| **Drag walls in 3D viewport to change height**       | EDT-01 → EDT-03                                  | ~7 weeks         | ~7 weeks (serial)          |
+| **Author L-shaped floors from canvas**               | SKT-01 → SKT-02                                  | ~5 weeks         | ~5 weeks (serial)          |
+| **Parametric chair-array dining-table family**       | FAM-01 → FAM-04 → FAM-05                         | ~5 weeks         | ~4 weeks (FAM-04 ‖ FAM-01) |
+| **Production plan documentation (Coarse/Med/Fine)**  | VIE-01 + VIE-02 (parallel after FAM-01)          | ~3 weeks         | ~2 weeks                   |
+| **N/S/E/W elevations on a sheet**                    | VIE-03 + ANN-02                                  | ~2 weeks         | ~1.5 weeks                 |
+| **IFC import → linked shadow model**                 | FED-01 → FED-04 (KRN-06 soft prereq)             | ~5.5 weeks       | ~5 weeks (overlap KRN-06)  |
+| **Full Revit-style "click and edit" feel for walls** | EDT-01 → EDT-02 → EDT-03 + EDT-05 + EDT-06       | ~10 weeks        | ~7 weeks                   |
+| **Asymmetric-roof seed renders correctly in 3D**     | KRN-11 alone                                     | 1 week           | 1 week                     |
+| **Loggia frame on target-house**                     | FAM-02 sweep alone (compose with existing walls) | 1 week           | 1 week                     |
+| **Multi-run stair (dog-leg)**                        | SKT-01 → KRN-07                                  | ~6 weeks         | ~6 weeks (serial)          |
 
 **Shortest demonstrable wins:** KRN-11 (asymmetric roof, 1 wk) and FAM-02 (sweep, 1 wk) each ship a visible product capability in a week with zero cross-epic blockers. Good candidates for a quick first sprint to validate the new tracker.
 
@@ -224,35 +224,35 @@ What's the smallest WP set required to ship a specific user-visible goal? Useful
 
 ## Strategic Primitive 1 — Federation (linked models, in-DB coordination)
 
-**Why it matters.** Today bim-ai is a single-model authoring environment. Revit projects in real practice are *federations*: an Architecture model links a Structure model, links MEP, links Site. Coordination (clash, copy/monitor, constructibility review) happens across the federation. Without federation, bim-ai cannot reach Navisworks-grade coordination; with it, the database-native version is **strictly stronger** than Revit's file-based linking because element IDs are stable across reload (no NWC round-trip needed).
+**Why it matters.** Today bim-ai is a single-model authoring environment. Revit projects in real practice are _federations_: an Architecture model links a Structure model, links MEP, links Site. Coordination (clash, copy/monitor, constructibility review) happens across the federation. Without federation, bim-ai cannot reach Navisworks-grade coordination; with it, the database-native version is **strictly stronger** than Revit's file-based linking because element IDs are stable across reload (no NWC round-trip needed).
 
 **What it unlocks.** Cross-discipline clash detection, cross-discipline Copy/Monitor, IFC/DXF import (via shadow models), multi-discipline workspaces, future Revit `.rvt` import (via the same shadow-model pattern through whatever conversion route lands), and obsolescence of "Synchronize with Central" (already true continuously in our architecture, just unmarketed).
 
 **Sequence:** FED-01 first; FED-02 / FED-03 / FED-04 are independent of each other but all depend on FED-01.
 
-| ID     | Item                                                  | Effort | State  | Depends on |
-| ------ | ----------------------------------------------------- | ------ | ------ | ---------- |
-| FED-01 | `link_model` element kind + read-only enforcement     | L      | `partial` ([b05fc082](../#)) | —          |
-| FED-02 | Cross-link clash detection (extends WP-V2-13)         | M      | `open` | FED-01     |
-| FED-03 | Cross-link Copy/Monitor (extends WP-V2-12)            | M      | `open` | FED-01     |
-| FED-04 | IFC / DXF → shadow-model link import                  | L      | `open` | FED-01     |
-| FED-05 | "Worksharing-via-DB" positioning + docs               | XS     | `done` | —          |
+| ID     | Item                                              | Effort | State                        | Depends on |
+| ------ | ------------------------------------------------- | ------ | ---------------------------- | ---------- |
+| FED-01 | `link_model` element kind + read-only enforcement | L      | `partial` ([b05fc082](../#)) | —          |
+| FED-02 | Cross-link clash detection (extends WP-V2-13)     | M      | `open`                       | FED-01     |
+| FED-03 | Cross-link Copy/Monitor (extends WP-V2-12)        | M      | `open`                       | FED-01     |
+| FED-04 | IFC / DXF → shadow-model link import              | L      | `open`                       | FED-01     |
+| FED-05 | "Worksharing-via-DB" positioning + docs           | XS     | `done`                       | —          |
 
 ### FED-01 — `link_model` element kind + read-only enforcement
 
 **Status (2026-05-07).** `partial` in `b05fc082` — load-bearing slice shipped:
 data model + 3 commands (`createLinkModel` / `updateLinkModel` /
 `deleteLinkModel`) + read-only enforcement on `<linkId>::<sourceElemId>` ids
-+ snapshot expansion (`?expandLinks=true`) with position + Z-rotation
-transform and provenance markers + ghosted Three.js rendering + minimal
-Manage Links dialog (Insert → Link Model… in ProjectMenu). DB-level
-validation rejects self-reference, missing source, and circular link graphs.
-**Deferred to follow-up:** per-link `visibilityMode` (`host_view` /
-`linked_view`), revision-pinning UI + drift badge, `originAlignmentMode`
-values beyond `origin_to_origin`, VV dialog Revit Links tab, CLI
-`link/unlink/links/expand-links` subcommands, `worksetId` on `link_model`,
-Project Browser Links group with expand/collapse.
 
+- snapshot expansion (`?expandLinks=true`) with position + Z-rotation
+  transform and provenance markers + ghosted Three.js rendering + minimal
+  Manage Links dialog (Insert → Link Model… in ProjectMenu). DB-level
+  validation rejects self-reference, missing source, and circular link graphs.
+  **Deferred to follow-up:** per-link `visibilityMode` (`host_view` /
+  `linked_view`), revision-pinning UI + drift badge, `originAlignmentMode`
+  values beyond `origin_to_origin`, VV dialog Revit Links tab, CLI
+  `link/unlink/links/expand-links` subcommands, `worksetId` on `link_model`,
+  Project Browser Links group with expand/collapse.
 
 **Scope.** First-class linked-model element. Host model references another bim-ai model in the same DB; host treats the link's elements as read-only renderable context. Selection works, snap-to works, clash queries work, but edits are blocked at the engine level.
 
@@ -321,7 +321,7 @@ export type SelectionSetRule = {
   field: 'category' | 'level' | 'typeName';
   operator: 'equals' | 'contains';
   value: string;
-  linkScope?: 'host' | 'all_links' | { specificLinkId: string };  // default 'host'
+  linkScope?: 'host' | 'all_links' | { specificLinkId: string }; // default 'host'
 };
 ```
 
@@ -335,7 +335,7 @@ export type SelectionSetRule = {
 
 ### FED-03 — Cross-link Copy/Monitor
 
-**Scope.** Extend `monitorSourceId` (Wave-5 Copy/Monitor) to point at an element in a *linked* model, not just intra-model. Drift detection runs across link revisions.
+**Scope.** Extend `monitorSourceId` (Wave-5 Copy/Monitor) to point at an element in a _linked_ model, not just intra-model. Drift detection runs across link revisions.
 
 **Data model.** Existing `monitorSourceId: string` becomes `monitorSource: { linkId?: string; elementId: string; sourceRevisionAtCopy: number }` (with a migration path that reads the legacy string as `{ elementId: string }`).
 
@@ -383,7 +383,7 @@ export type SelectionSetRule = {
 
 - A `docs/collaboration-model.md` (or section in the README) explaining the continuous-commit model and why "Synchronize with Central" is unnecessary
 - Updated CLI / API `--help` text for collaboration-related commands to reference this
-- A short marketing line: *"BIM AI is the first BIM authoring environment with continuous server-authoritative collaboration; there is no central file to synchronize."*
+- A short marketing line: _"BIM AI is the first BIM authoring environment with continuous server-authoritative collaboration; there is no central file to synchronize."_
 
 **Effort.** XS — half a day.
 
@@ -391,20 +391,20 @@ export type SelectionSetRule = {
 
 ## Strategic Primitive 2 — In-Place Editing (canvas grips + 3D handles)
 
-**Why it matters.** Today the Inspector panel is the primary editing surface; in Revit it's the secondary one — primary editing in Revit is on-canvas grips with live temporary dimensions and 3D direct-manipulation handles. This is what users mean when they say *"the editor can do much more"*. The data model already supports everything the Revit grips do (constraint-driven heights via `topConstraintLevelId` etc., location-line offsets, host relationships); the UX just doesn't expose it.
+**Why it matters.** Today the Inspector panel is the primary editing surface; in Revit it's the secondary one — primary editing in Revit is on-canvas grips with live temporary dimensions and 3D direct-manipulation handles. This is what users mean when they say _"the editor can do much more"_. The data model already supports everything the Revit grips do (constraint-driven heights via `topConstraintLevelId` etc., location-line offsets, host relationships); the UX just doesn't expose it.
 
 **What it unlocks.** All 9 currently-stubbed plan-canvas tools (`splitWall`, `alignElement`, `trimElement`, `wall-opening`, `wall-join`, `column placement`, `beam placement`, `ceiling`, `shaft`); 3D direct manipulation; on-canvas dimensions; constraint locks; the full Revit "draw and tweak fast" feel.
 
 **Sequence:** EDT-01 is foundational and must come first. EDT-02 / EDT-03 / EDT-04 / EDT-05 / EDT-06 are then largely parallelisable once the protocol exists.
 
-| ID     | Item                                                            | Effort | State  | Depends on |
-| ------ | --------------------------------------------------------------- | ------ | ------ | ---------- |
-| EDT-01 | Universal grip + temp-dimension protocol on plan canvas         | XL     | `partial` (wave2-2 — protocol + walls-only + temp-dimensions w/o locks shipped; door/window/floor/column/beam/section grips deferred, each ~0.5d follow-up using the protocol) | —          |
-| EDT-02 | Constraint locks via padlock UI                                 | M      | `open` | EDT-01     |
-| EDT-03 | 3D direct-manipulation handles                                  | L      | `open` | EDT-01     |
-| EDT-04 | De-stub the 9 plan-canvas tools                                 | M      | `open` | EDT-01     |
+| ID     | Item                                                            | Effort | State                                                                                                                                                                                                              | Depends on |
+| ------ | --------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------- |
+| EDT-01 | Universal grip + temp-dimension protocol on plan canvas         | XL     | `partial` (wave2-2 — protocol + walls-only + temp-dimensions w/o locks shipped; door/window/floor/column/beam/section grips deferred, each ~0.5d follow-up using the protocol)                                     | —          |
+| EDT-02 | Constraint locks via padlock UI                                 | M      | `open`                                                                                                                                                                                                             | EDT-01     |
+| EDT-03 | 3D direct-manipulation handles                                  | L      | `open`                                                                                                                                                                                                             | EDT-01     |
+| EDT-04 | De-stub the 9 plan-canvas tools                                 | M      | `open`                                                                                                                                                                                                             | EDT-01     |
 | EDT-05 | Snap-engine upgrade (intersection / perp / tangent / extension) | M      | `partial` (wave2-2 — intersection / perpendicular / extension producers, glyph layer, Tab-cycle, per-kind toggles in localStorage; tangent reserved for curved geometry; parallel + workplane snap kinds deferred) | —          |
-| EDT-06 | Tool grammar polish (Chain / Multiple / Tag-on-Place / Numeric) | M      | `open` | EDT-01     |
+| EDT-06 | Tool grammar polish (Chain / Multiple / Tag-on-Place / Numeric) | M      | `open`                                                                                                                                                                                                             | EDT-01     |
 
 ### EDT-01 — Universal grip + temp-dimension protocol on plan canvas
 
@@ -419,8 +419,8 @@ type GripDescriptor = {
   shape: 'square' | 'circle' | 'arrow';
   axis: 'x' | 'y' | 'free' | 'normal_to_element';
   hint?: string;
-  onDrag: (deltaMm: XY) => DraftMutation;       // returns a draft element for live preview
-  onCommit: (deltaMm: XY) => Command;            // returns the command to commit on release
+  onDrag: (deltaMm: XY) => DraftMutation; // returns a draft element for live preview
+  onCommit: (deltaMm: XY) => Command; // returns the command to commit on release
   onNumericOverride: (absoluteMm: number) => Command;
 };
 
@@ -429,8 +429,8 @@ type TempDimTarget = {
   fromMm: XY;
   toMm: XY;
   direction: 'x' | 'y';
-  onClick: () => Command;                        // converts to persistent dimension
-  onLockToggle: () => Command;                   // adds a constraint
+  onClick: () => Command; // converts to persistent dimension
+  onLockToggle: () => Command; // adds a constraint
 };
 
 interface ElementGripProvider<E extends Element> {
@@ -520,17 +520,17 @@ interface ElementGripProvider<E extends Element> {
 
 **Scope.** Once EDT-01 lands, finish off the 9 tool stubs in `packages/web/src/plan/PlanCanvas.tsx`:
 
-| Stub                       | Line  | Tool name (UI / shortcut)             | Engine command on commit              |
-| -------------------------- | ----- | -------------------------------------- | ------------------------------------- |
-| `splitWall`                | 1103  | Split Element (SD)                    | `SplitWallAt`                         |
-| `alignElement`             | 1085  | Align (AL)                            | `AlignElementToReference`             |
-| `trimElement`              | 1158  | Trim/Extend (TR)                      | `TrimElementToReference`              |
-| `wall-opening`             | 924   | Wall Opening                          | `CreateWallOpening` (see KRN-04)      |
-| `wall-join`                | 1409  | Wall Joins (interactive variant)      | `SetWallJoinVariant`                  |
-| `column placement`         | 1256  | Place Column                          | `CreateColumn`                        |
-| `beam placement`           | 1265  | Place Beam                            | `CreateBeam`                          |
-| `ceiling`                  | 1286  | Ceiling                               | `CreateCeiling` (sketch via SKT-01)   |
-| `shaft`                    | 1243  | Shaft (slab opening)                  | `CreateSlabOpeningShaft`              |
+| Stub               | Line | Tool name (UI / shortcut)        | Engine command on commit            |
+| ------------------ | ---- | -------------------------------- | ----------------------------------- |
+| `splitWall`        | 1103 | Split Element (SD)               | `SplitWallAt`                       |
+| `alignElement`     | 1085 | Align (AL)                       | `AlignElementToReference`           |
+| `trimElement`      | 1158 | Trim/Extend (TR)                 | `TrimElementToReference`            |
+| `wall-opening`     | 924  | Wall Opening                     | `CreateWallOpening` (see KRN-04)    |
+| `wall-join`        | 1409 | Wall Joins (interactive variant) | `SetWallJoinVariant`                |
+| `column placement` | 1256 | Place Column                     | `CreateColumn`                      |
+| `beam placement`   | 1265 | Place Beam                       | `CreateBeam`                        |
+| `ceiling`          | 1286 | Ceiling                          | `CreateCeiling` (sketch via SKT-01) |
+| `shaft`            | 1243 | Shaft (slab opening)             | `CreateSlabOpeningShaft`            |
 
 **Note.** The element-create commands (`CreateColumn`, `CreateBeam`, `CreateCeiling`) already exist in the API; this WP just wires the canvas tool flows. `CreateWallOpening` requires KRN-04 first.
 
@@ -587,18 +587,18 @@ interface ElementGripProvider<E extends Element> {
 
 ## Strategic Primitive 3 — Sketch Mode (closed-loop authoring sessions)
 
-**Why it matters.** Roughly half of Revit's authoring tools (floor, ceiling, roof, room separation, in-place mass, void cut, sweep path, detail region) work by entering a **modal sketch session**: enter sketch mode, draw a closed loop with constraints, validate, then Finish or Cancel. Today bim-ai supports the *output* of sketch sessions (floors with `boundaryMm`, ceilings, openings) but not the *session itself* on canvas. Without sketch mode, irregular geometry can be authored only via the API/CLI/agent — a human can't draw an L-shaped floor on canvas.
+**Why it matters.** Roughly half of Revit's authoring tools (floor, ceiling, roof, room separation, in-place mass, void cut, sweep path, detail region) work by entering a **modal sketch session**: enter sketch mode, draw a closed loop with constraints, validate, then Finish or Cancel. Today bim-ai supports the _output_ of sketch sessions (floors with `boundaryMm`, ceilings, openings) but not the _session itself_ on canvas. Without sketch mode, irregular geometry can be authored only via the API/CLI/agent — a human can't draw an L-shaped floor on canvas.
 
 **What it unlocks.** Floor / ceiling / roof Pick-Walls authoring, hip / L-shaped roof footprints (KRN-02 / KRN-03 become much smaller after sketch lands), wall opening tool (when combined with KRN-04), in-place generic mass, room separation lines as a first-class authoring flow, detail regions, and the validation feedback patterns from Revit ("Line must be in closed loop", "Highlighted floors overlap").
 
 **Sequence:** SKT-01 first; SKT-02 / SKT-03 / SKT-04 build on it.
 
-| ID     | Item                                                  | Effort | State  | Depends on |
-| ------ | ----------------------------------------------------- | ------ | ------ | ---------- |
-| SKT-01 | `SketchSession` state machine + canvas mode           | XL     | `partial` in wave2-3 — session state machine + floor authoring + validation (closed loop, self-intersect, planarity-by-construction) + SketchCanvas overlay (turquoise lines, Line + Rectangle tools, Finish/Cancel) shipped; ceiling / roof / room_separation / in_place_mass / void_cut / detail_region deferred (each ~1d of follow-up using the same protocol) | —          |
-| SKT-02 | Pick Walls sub-tool inside sketch sessions            | S      | `open` | SKT-01     |
-| SKT-03 | Sketch validation feedback (Revit-style messages)     | S      | `open` | SKT-01     |
-| SKT-04 | Floor / slab overlap warning (formerly VAL-02)        | XS     | `done` in wave2-3 — pairwise polygon-overlap (ear-clipping triangulation + Sutherland-Hodgman clip) emits `floor_overlap` advisory (severity warning, not blocking) when same-level floor footprints intersect by > 1 mm² | SKT-01     |
+| ID     | Item                                              | Effort | State                                                                                                                                                                                                                                                                                                                                                              | Depends on |
+| ------ | ------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------- |
+| SKT-01 | `SketchSession` state machine + canvas mode       | XL     | `partial` in wave2-3 — session state machine + floor authoring + validation (closed loop, self-intersect, planarity-by-construction) + SketchCanvas overlay (turquoise lines, Line + Rectangle tools, Finish/Cancel) shipped; ceiling / roof / room_separation / in_place_mass / void_cut / detail_region deferred (each ~1d of follow-up using the same protocol) | —          |
+| SKT-02 | Pick Walls sub-tool inside sketch sessions        | S      | `open`                                                                                                                                                                                                                                                                                                                                                             | SKT-01     |
+| SKT-03 | Sketch validation feedback (Revit-style messages) | S      | `open`                                                                                                                                                                                                                                                                                                                                                             | SKT-01     |
+| SKT-04 | Floor / slab overlap warning (formerly VAL-02)    | XS     | `done` in wave2-3 — pairwise polygon-overlap (ear-clipping triangulation + Sutherland-Hodgman clip) emits `floor_overlap` advisory (severity warning, not blocking) when same-level floor footprints intersect by > 1 mm²                                                                                                                                          | SKT-01     |
 
 ### SKT-01 — `SketchSession` state machine + canvas mode
 
@@ -662,10 +662,10 @@ class SketchSession:
 
 **Scope.** When the sketch is invalid, Finish is disabled and a status panel shows the specific issue with element-level highlighting on canvas:
 
-- *"Line must be in closed loop"* — open vertices marked red
-- *"Lines must not intersect"* — crossing pairs highlighted
-- *"Lines must be on the same plane"* — outliers highlighted
-- *"Selected walls do not form a contiguous chain"* — broken segments dimmed (Pick Walls only)
+- _"Line must be in closed loop"_ — open vertices marked red
+- _"Lines must not intersect"_ — crossing pairs highlighted
+- _"Lines must be on the same plane"_ — outliers highlighted
+- _"Selected walls do not form a contiguous chain"_ — broken segments dimmed (Pick Walls only)
 
 **Behaviour.** Tab cycles to the next issue, zooming the camera to it. Status panel offers a one-click "auto-close" suggestion when there's an obvious gap (single missing segment between two endpoints).
 
@@ -687,24 +687,24 @@ class SketchSession:
 
 ## Strategic Primitive 4 — Family System Depth (nested, sweep, conditional, arrays)
 
-**Why it matters.** Revit's family system is the foundation of reusable, parametric, multi-discipline modeling. We have basic family editor (V2-11) and a family library panel (FL-06). But the *deep* parametric features that make families actually flex — nested families, sweeps, conditional visibility, yes/no parameters, formula-driven arrays — are missing. Without this depth, families are static 3D meshes with a few exposed parameters, not the building blocks Revit users assemble buildings out of. Watching the 6-hour Revit course, **almost every authored family relies on at least one of these features**: door swing arcs are nested 2D families, window shutters are nested generic models, mullions are profile families swept along grid lines, dining tables array chairs by formula.
+**Why it matters.** Revit's family system is the foundation of reusable, parametric, multi-discipline modeling. We have basic family editor (V2-11) and a family library panel (FL-06). But the _deep_ parametric features that make families actually flex — nested families, sweeps, conditional visibility, yes/no parameters, formula-driven arrays — are missing. Without this depth, families are static 3D meshes with a few exposed parameters, not the building blocks Revit users assemble buildings out of. Watching the 6-hour Revit course, **almost every authored family relies on at least one of these features**: door swing arcs are nested 2D families, window shutters are nested generic models, mullions are profile families swept along grid lines, dining tables array chairs by formula.
 
 **What it unlocks.** Door swing symbols, mullion profiles, window shutters, parametric furniture (chair / table arrays), curtain wall panel variations, framed/frameless toggles, Autodesk-style content libraries.
 
 **Sequence.** FAM-01 (nested families) is the keystone — it unblocks ~70% of the remaining WPs. After FAM-01, the rest can run in parallel.
 
-| ID     | Item                                                          | Effort | State  | Depends on |
-| ------ | ------------------------------------------------------------- | ------ | ------ | ---------- |
-| FAM-01 | Nested families (loadable family-in-family)                   | L      | `partial` in 583e726c — data model (`family_instance_ref` + `ParameterBinding`), resolver (`resolveNestedFamilyInstance` + `resolveFamilyGeometry`), and cycle detection shipped; family-editor UI for placing nested instances + per-instance parameter binding editor + thumbnail composition for FL-06 deferred to follow-up | —          |
-| FAM-02 | Sweep tool (path + profile → swept solid)                     | M      | `done` | done in 034e38f7 |
-| FAM-03 | Yes/No parameters with geometry visibility binding            | M      | `done` (wave2-6 — `VisibilityBinding` extended to all geometry node kinds in `families/types.ts`; resolver short-circuits per-node via `isVisibleByBinding`; family-editor "Visible When" dropdown + Show-when-true/false toggle on selected sweeps) | FAM-01     |
-| FAM-04 | Conditional formula support (`if()`, `rounddown()`, `mod()`)   | M      | `done` | done in e2e4c575 |
-| FAM-05 | Array tool (linear + radial, parameter-driven count)          | L      | `done` (wave2-6 — `ArrayGeometryNode` added to `families/types.ts`; `resolveArrayNode` handles both modes with `count = max(1, floor(host_param(countParam)))`, `fixed_mm` and `fit_total` spacing; family-editor Array tool authors a node with target/mode/count param/spacing/axis) | FAM-04, FAM-01 |
-| FAM-06 | 3D text element kind                                          | S      | `done` | —          |
-| FAM-07 | Mirror tool (axis reflection in family editor + project)      | S      | `done` | done in 9b1658bf |
-| FAM-08 | Component tool + external family catalog (Autodesk-style)     | M      | `done` | FAM-01     |
-| FAM-09 | "Flex the family" parameter test mode                         | S      | `done` | done in 21d8f228 |
-| FAM-10 | Cross-project family / element copy-paste                     | M      | `done` (wave2-6 — `bim-ai-clipboard-v1` payload format in `clipboard/payload.ts`; `localStorage` + `navigator.clipboard` round-trip via `clipboardStore.ts`; three-strategy collision resolver (`use_source` / `keep_local` / `rename`) in `familyCollisionResolution.ts`; `copyElementsToClipboard` + `pasteElementsFromClipboard` orchestrators; PlanCanvas wires Cmd+C/V; `RecentClipboardTray` component) | —          |
+| ID     | Item                                                         | Effort | State                                                                                                                                                                                                                                                                                                                                                                                                         | Depends on       |
+| ------ | ------------------------------------------------------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| FAM-01 | Nested families (loadable family-in-family)                  | L      | `partial` in 583e726c — data model (`family_instance_ref` + `ParameterBinding`), resolver (`resolveNestedFamilyInstance` + `resolveFamilyGeometry`), and cycle detection shipped; family-editor UI for placing nested instances + per-instance parameter binding editor + thumbnail composition for FL-06 deferred to follow-up                                                                               | —                |
+| FAM-02 | Sweep tool (path + profile → swept solid)                    | M      | `done`                                                                                                                                                                                                                                                                                                                                                                                                        | done in 034e38f7 |
+| FAM-03 | Yes/No parameters with geometry visibility binding           | M      | `done` (wave2-6 — `VisibilityBinding` extended to all geometry node kinds in `families/types.ts`; resolver short-circuits per-node via `isVisibleByBinding`; family-editor "Visible When" dropdown + Show-when-true/false toggle on selected sweeps)                                                                                                                                                          | FAM-01           |
+| FAM-04 | Conditional formula support (`if()`, `rounddown()`, `mod()`) | M      | `done`                                                                                                                                                                                                                                                                                                                                                                                                        | done in e2e4c575 |
+| FAM-05 | Array tool (linear + radial, parameter-driven count)         | L      | `done` (wave2-6 — `ArrayGeometryNode` added to `families/types.ts`; `resolveArrayNode` handles both modes with `count = max(1, floor(host_param(countParam)))`, `fixed_mm` and `fit_total` spacing; family-editor Array tool authors a node with target/mode/count param/spacing/axis)                                                                                                                        | FAM-04, FAM-01   |
+| FAM-06 | 3D text element kind                                         | S      | `done`                                                                                                                                                                                                                                                                                                                                                                                                        | —                |
+| FAM-07 | Mirror tool (axis reflection in family editor + project)     | S      | `done`                                                                                                                                                                                                                                                                                                                                                                                                        | done in 9b1658bf |
+| FAM-08 | Component tool + external family catalog (Autodesk-style)    | M      | `done`                                                                                                                                                                                                                                                                                                                                                                                                        | FAM-01           |
+| FAM-09 | "Flex the family" parameter test mode                        | S      | `done`                                                                                                                                                                                                                                                                                                                                                                                                        | done in 21d8f228 |
+| FAM-10 | Cross-project family / element copy-paste                    | M      | `done` (wave2-6 — `bim-ai-clipboard-v1` payload format in `clipboard/payload.ts`; `localStorage` + `navigator.clipboard` round-trip via `clipboardStore.ts`; three-strategy collision resolver (`use_source` / `keep_local` / `rename`) in `familyCollisionResolution.ts`; `copyElementsToClipboard` + `pasteElementsFromClipboard` orchestrators; PlanCanvas wires Cmd+C/V; `RecentClipboardTray` component) | —                |
 
 ### FAM-01 — Nested families
 
@@ -886,7 +886,7 @@ Profile families (introduced in V2-11) optionally referenced via `profileFamilyI
 
 ### FAM-09 — Family flex test mode
 
-**Scope.** A family-editor mode that lets the author type test parameter values and see the family update *without committing the values to types*. Critical for verifying parametric behaviour during authoring — every parametric family in the Revit course is "flexed" before save.
+**Scope.** A family-editor mode that lets the author type test parameter values and see the family update _without committing the values to types_. Critical for verifying parametric behaviour during authoring — every parametric family in the Revit course is "flexed" before save.
 
 **Engine.** Family editor tracks `flexValues: Record<paramName, value>` separate from `defaultValues`. Resolution at render time uses flex values when flex mode is on. Flex values are not persisted on save; only defaults are.
 
@@ -916,15 +916,15 @@ Profile families (introduced in V2-11) optionally referenced via `profileFamilyI
 
 **What it unlocks.** Coarse-mode plan that shows simplified 2D symbols in place of 3D family geometry; clean N/S/E/W elevations; one-click "Isolate Walls" debugging; "New Level → New Plan View" automatic flow; starter templates for residential / cleanroom / industrial.
 
-| ID     | Item                                                            | Effort | State     | Depends on |
-| ------ | --------------------------------------------------------------- | ------ | --------- | ---------- |
-| VIE-01 | Detail levels render binding                                    | M      | `done`    | —          |
-| VIE-02 | Per-element / per-family-geometry visibility per detail level    | M      | `open`    | FAM-01     |
-| VIE-03 | Named elevation views (N/S/E/W) + auto-generation                | M      | `done`    | —          |
-| VIE-04 | Temporary isolate / hide category                                | S      | `done`    | —          |
-| VIE-05 | Plan view auto-generation when a level is created                | S      | `done`    | —          |
-| VIE-06 | Project templates (starter models)                               | M      | `done`    | —          |
-| VIE-07 | Pin element / unpin (UP shortcut, prevents accidental edit)      | S      | `done`    | —          |
+| ID     | Item                                                          | Effort | State  | Depends on |
+| ------ | ------------------------------------------------------------- | ------ | ------ | ---------- |
+| VIE-01 | Detail levels render binding                                  | M      | `done` | —          |
+| VIE-02 | Per-element / per-family-geometry visibility per detail level | M      | `open` | FAM-01     |
+| VIE-03 | Named elevation views (N/S/E/W) + auto-generation             | M      | `done` | —          |
+| VIE-04 | Temporary isolate / hide category                             | S      | `done` | —          |
+| VIE-05 | Plan view auto-generation when a level is created             | S      | `done` | —          |
+| VIE-06 | Project templates (starter models)                            | M      | `done` | —          |
+| VIE-07 | Pin element / unpin (UP shortcut, prevents accidental edit)   | S      | `done` | —          |
 
 ### VIE-01 — Detail levels render binding
 
@@ -933,6 +933,7 @@ Profile families (introduced in V2-11) optionally referenced via `profileFamilyI
 **Status.** `partial` — data model + tests + Inspector field exist; rendering doesn't yet differentiate visibly across the three levels.
 
 **Renderer.** Plan projection layer reads `planDetailLevel` and gates which lines are emitted:
+
 - Coarse: outer wall outline only (single line)
 - Medium: outer + core boundaries (two lines per wall)
 - Fine: full layer stack (all layer boundaries from FL-08 catalog)
@@ -1002,7 +1003,7 @@ Profile families (introduced in V2-11) optionally referenced via `profileFamilyI
 
 **UI.** Create-Level dialog gains a checkbox "Also create plan view" (default on). The Project Browser refreshes to include the new plan view automatically.
 
-**Acceptance.** Creating a level "Roof Deck" results in both the level *and* a "Roof Deck — Plan" plan view appearing in the project browser without further user action.
+**Acceptance.** Creating a level "Roof Deck" results in both the level _and_ a "Roof Deck — Plan" plan view appearing in the project browser without further user action.
 
 **Effort.** S — 2 days. **Done in commit 85aae161** (engine emits the companion `plan_view` directly in `apply_inplace(CreateLevelCmd)`; pytest covers default-on, explicit id, and `alsoCreatePlanView: false`).
 
@@ -1037,7 +1038,7 @@ Profile families (introduced in V2-11) optionally referenced via `profileFamilyI
 
 **Acceptance.** Place a grid; pin it; try to drag the grid line endpoint — drag is blocked with a "pinned" tooltip. Unpin → drag works.
 
-**Effort.** S — 3 days. **Done in commit 8e5fad05** (pinned field added to 16 element kinds incl. wall/door/window/level/grid/room/floor/roof/stair/etc; PinElement/UnpinElement commands; engine refuses move*, updateElementProperty, deleteElement on pinned targets without `forcePinOverride`; InspectorPinToggle component covered by vitest).
+**Effort.** S — 3 days. **Done in commit 8e5fad05** (pinned field added to 16 element kinds incl. wall/door/window/level/grid/room/floor/roof/stair/etc; PinElement/UnpinElement commands; engine refuses move\*, updateElementProperty, deleteElement on pinned targets without `forcePinOverride`; InspectorPinToggle component covered by vitest).
 
 ---
 
@@ -1045,24 +1046,24 @@ Profile families (introduced in V2-11) optionally referenced via `profileFamilyI
 
 ### Kernel + element kinds
 
-| ID     | Item                                                         | Note                                                                                                            | Effort | State  |
-| ------ | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- | ------ | ------ |
-| KRN-01 | `property_line` element kind                                 | `SiteElem.uniform_setback_mm` exists; no line element yet. Used for site setbacks and zoning visualisation.     | M      | `done` (wave2-4 — element kind + create/update/delete cmds + plan rendering with parallel dashed setback line + Property Line tool, hotkey PL) |
-| KRN-02 | Concave / L-shaped roof footprint 3D mesh                    | Today: `valley_candidate_deferred` placeholder; section view OK. Substantially smaller after SKT-01 lands.      | M      | `open` |
-| KRN-03 | Hip roof (convex polygon >4 corners) 3D mesh                 | Today: `hip_candidate_deferred` placeholder; section view OK. Substantially smaller after SKT-01 lands.         | M      | `open` |
-| KRN-04 | `wall_opening` element kind (rectangular, no host family)    | Distinct from doors / windows. Used for shafts, MEP penetrations, basement ducts. Renders as CSG cut, no frame. | S      | `done` (3661b112) |
-| KRN-05 | Reference work planes in projects (not just family editor)   | Project-level `reference_plane` element. Sketch sessions and family placements anchor to active ref plane.      | M      | `done` (wave2-4 — project-scope variant added beside the existing family-editor `reference_plane`; create/update/delete cmds enforce work-plane-uniqueness per level; dashed grey plan line + label sprite; translucent green vertical 3D plane via `makeReferencePlaneMarker`; Reference Plane authoring tool, hotkey RP) |
-| KRN-06 | Project base point + survey point + internal origin           | Today no explicit origin elements. Required for shared coordinates with linked CAD/IFC and for round-trip exchange. | M  | `done` |
-| KRN-07 | Multi-run stairs (dog-leg, L-shape, U-shape, spiral, winders) | Today's `stair` element is single-run. Real stairs are runs + landings, optionally sketch-based for arbitrary shapes. | L | `open` |
-| KRN-08 | `area` element kind (legal / permit area calculations)        | Distinct from `room`. Areas may include exterior porches and exclude interior shafts; rules differ by jurisdiction. | M | `open` |
-| KRN-09 | Curtain wall panel kinds (empty / system / custom-family)     | Today curtain walls have grid + `materialKey`; no panel-by-panel substitution (e.g. replace one panel with door).    | M | `done` (3e14f938 + 99d35b35 — empty/system/family_instance overrides + setCurtainPanelOverride engine cmd; family_instance now resolves real FAM-01 geometry, magenta placeholder only when type unknown / resolver throws) |
-| KRN-10 | Masking region (2D filled region that blocks underlying linework) | Used in family editor (Hour 4: 2D chair plan symbol blocks floor-tile hatch underneath). View-local 2D element. | S      | `open` |
-| KRN-11 | Asymmetric gable roof (ridge offset, per-side eave heights) | Today's `gable_pitched_rectangle` is symmetric. The target demo house has the ridge significantly east of center with very different east/west wall heights — currently un-authorable. | M | `done` (a03da35f) |
-| KRN-12 | Variable-shape window outline (trapezoidal, arched, gable-end, custom polygon) | Today's window is `widthMm × heightMm` rectangle. Real architecture uses arched, eyebrow, octagonal, and gable-end-trapezoidal windows whose top edge follows the roof slope. | M | `done` (99f4c8ef + 1d77d4f4 — frame sweep along polygon perimeter via FAM-02 meshFromSweep) |
-| KRN-13 | Non-swing door operation types (sliding, pocket, bi-fold, pivot, automatic) | Today all doors swing. Target house's loggia uses a floor-to-ceiling sliding glass door; dormer access is glass doors (sliding or bi-fold). | S | `done` (2dc556dd) |
-| KRN-14 | Dormer element kind (cuts host roof, adds own walls + roof)                  | Target house has a "massive rectangular dormer cut-out" on the east roof slope opening onto the flat roof deck. Common attic-conversion primitive in residential. | L | `partial` (seed-fidelity sprint — element kind + `createDormer` cmd + 3-walls + flat-roof renderer + three-bvh-csg subtraction of the host roof footprint shipped; gable / hipped dormer roof kinds, `hasFloorOpening: true` floor cut, plan-symbology, and dormer-overflow advisory deferred) |
-| KRN-15 | `createSweep` engine command (lift FAM-02 into project authoring)            | FAM-02 sweep today is family-internal only; cannot author swept solids in a project bundle. Needed for the target-house's "thick white picture-frame outline" along the asymmetric gable polygon. | M | `done` (seed-fidelity sprint — `sweep` element kind + `createSweep` cmd + parallel-transport-frame renderer in `viewport/sweepMesh.ts` + tests) |
-| KRN-16 | Wall recess / setback geometry (loggias, bay windows, deep entry porches)    | The "two parallel walls + wall_opening cut" trick the seed-rebuild agent invented does not produce a believable architectural recess from a distance. Need a real geometric setback: either a `wall_recess` element kind or a `recessZones[]` field on `wall` that steps the wall plane back over a defined alongT range. | M | `done` (seed-fidelity sprint — `recessZones[]` field on `wall` + `setWallRecessZones` cmd + multi-box renderer in `makeRecessedWallMesh` (end caps + recess back walls) + hosted-opening repositioning via `recessOffsetForOpening` + tests) |
+| ID     | Item                                                                           | Note                                                                                                                                                                                                                                                                                                                      | Effort | State                                                                                                                                                                                                                                                                                                                      |
+| ------ | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| KRN-01 | `property_line` element kind                                                   | `SiteElem.uniform_setback_mm` exists; no line element yet. Used for site setbacks and zoning visualisation.                                                                                                                                                                                                               | M      | `done` (wave2-4 — element kind + create/update/delete cmds + plan rendering with parallel dashed setback line + Property Line tool, hotkey PL)                                                                                                                                                                             |
+| KRN-02 | Concave / L-shaped roof footprint 3D mesh                                      | Today: `valley_candidate_deferred` placeholder; section view OK. Substantially smaller after SKT-01 lands.                                                                                                                                                                                                                | M      | `open`                                                                                                                                                                                                                                                                                                                     |
+| KRN-03 | Hip roof (convex polygon >4 corners) 3D mesh                                   | Today: `hip_candidate_deferred` placeholder; section view OK. Substantially smaller after SKT-01 lands.                                                                                                                                                                                                                   | M      | `open`                                                                                                                                                                                                                                                                                                                     |
+| KRN-04 | `wall_opening` element kind (rectangular, no host family)                      | Distinct from doors / windows. Used for shafts, MEP penetrations, basement ducts. Renders as CSG cut, no frame.                                                                                                                                                                                                           | S      | `done` (3661b112)                                                                                                                                                                                                                                                                                                          |
+| KRN-05 | Reference work planes in projects (not just family editor)                     | Project-level `reference_plane` element. Sketch sessions and family placements anchor to active ref plane.                                                                                                                                                                                                                | M      | `done` (wave2-4 — project-scope variant added beside the existing family-editor `reference_plane`; create/update/delete cmds enforce work-plane-uniqueness per level; dashed grey plan line + label sprite; translucent green vertical 3D plane via `makeReferencePlaneMarker`; Reference Plane authoring tool, hotkey RP) |
+| KRN-06 | Project base point + survey point + internal origin                            | Today no explicit origin elements. Required for shared coordinates with linked CAD/IFC and for round-trip exchange.                                                                                                                                                                                                       | M      | `done`                                                                                                                                                                                                                                                                                                                     |
+| KRN-07 | Multi-run stairs (dog-leg, L-shape, U-shape, spiral, winders)                  | Today's `stair` element is single-run. Real stairs are runs + landings, optionally sketch-based for arbitrary shapes.                                                                                                                                                                                                     | L      | `open`                                                                                                                                                                                                                                                                                                                     |
+| KRN-08 | `area` element kind (legal / permit area calculations)                         | Distinct from `room`. Areas may include exterior porches and exclude interior shafts; rules differ by jurisdiction.                                                                                                                                                                                                       | M      | `open`                                                                                                                                                                                                                                                                                                                     |
+| KRN-09 | Curtain wall panel kinds (empty / system / custom-family)                      | Today curtain walls have grid + `materialKey`; no panel-by-panel substitution (e.g. replace one panel with door).                                                                                                                                                                                                         | M      | `done` (3e14f938 + 99d35b35 — empty/system/family_instance overrides + setCurtainPanelOverride engine cmd; family_instance now resolves real FAM-01 geometry, magenta placeholder only when type unknown / resolver throws)                                                                                                |
+| KRN-10 | Masking region (2D filled region that blocks underlying linework)              | Used in family editor (Hour 4: 2D chair plan symbol blocks floor-tile hatch underneath). View-local 2D element.                                                                                                                                                                                                           | S      | `open`                                                                                                                                                                                                                                                                                                                     |
+| KRN-11 | Asymmetric gable roof (ridge offset, per-side eave heights)                    | Today's `gable_pitched_rectangle` is symmetric. The target demo house has the ridge significantly east of center with very different east/west wall heights — currently un-authorable.                                                                                                                                    | M      | `done` (a03da35f)                                                                                                                                                                                                                                                                                                          |
+| KRN-12 | Variable-shape window outline (trapezoidal, arched, gable-end, custom polygon) | Today's window is `widthMm × heightMm` rectangle. Real architecture uses arched, eyebrow, octagonal, and gable-end-trapezoidal windows whose top edge follows the roof slope.                                                                                                                                             | M      | `done` (99f4c8ef + 1d77d4f4 — frame sweep along polygon perimeter via FAM-02 meshFromSweep)                                                                                                                                                                                                                                |
+| KRN-13 | Non-swing door operation types (sliding, pocket, bi-fold, pivot, automatic)    | Today all doors swing. Target house's loggia uses a floor-to-ceiling sliding glass door; dormer access is glass doors (sliding or bi-fold).                                                                                                                                                                               | S      | `done` (2dc556dd)                                                                                                                                                                                                                                                                                                          |
+| KRN-14 | Dormer element kind (cuts host roof, adds own walls + roof)                    | Target house has a "massive rectangular dormer cut-out" on the east roof slope opening onto the flat roof deck. Common attic-conversion primitive in residential.                                                                                                                                                         | L      | `partial` (seed-fidelity sprint — element kind + `createDormer` cmd + 3-walls + flat-roof renderer + three-bvh-csg subtraction of the host roof footprint shipped; gable / hipped dormer roof kinds, `hasFloorOpening: true` floor cut, plan-symbology, and dormer-overflow advisory deferred)                             |
+| KRN-15 | `createSweep` engine command (lift FAM-02 into project authoring)              | FAM-02 sweep today is family-internal only; cannot author swept solids in a project bundle. Needed for the target-house's "thick white picture-frame outline" along the asymmetric gable polygon.                                                                                                                         | M      | `done` (seed-fidelity sprint — `sweep` element kind + `createSweep` cmd + parallel-transport-frame renderer in `viewport/sweepMesh.ts` + tests)                                                                                                                                                                            |
+| KRN-16 | Wall recess / setback geometry (loggias, bay windows, deep entry porches)      | The "two parallel walls + wall_opening cut" trick the seed-rebuild agent invented does not produce a believable architectural recess from a distance. Need a real geometric setback: either a `wall_recess` element kind or a `recessZones[]` field on `wall` that steps the wall plane back over a defined alongT range. | M      | `done` (seed-fidelity sprint — `recessZones[]` field on `wall` + `setWallRecessZones` cmd + multi-box renderer in `makeRecessedWallMesh` (end caps + recess back walls) + hosted-opening repositioning via `recessOffsetForOpening` + tests)                                                                               |
 
 **KRN-04 detail.** Element shape:
 
@@ -1101,9 +1102,30 @@ UI: Architecture tab → Reference Plane tool. Drawing creates the plane on the 
 **KRN-06 detail.** Three element kinds:
 
 ```ts
-{ kind: 'project_base_point'; id: string; positionMm: { xMm; yMm; zMm }; angleToTrueNorthDeg: number }
-{ kind: 'survey_point'; id: string; positionMm: { xMm; yMm; zMm }; sharedElevationMm: number }
-{ kind: 'internal_origin'; id: string }   // singleton, never moves
+{
+  kind: 'project_base_point';
+  id: string;
+  positionMm: {
+    xMm;
+    yMm;
+    zMm;
+  }
+  angleToTrueNorthDeg: number;
+}
+{
+  kind: 'survey_point';
+  id: string;
+  positionMm: {
+    xMm;
+    yMm;
+    zMm;
+  }
+  sharedElevationMm: number;
+}
+{
+  kind: 'internal_origin';
+  id: string;
+} // singleton, never moves
 ```
 
 A model has at most one of each. The internal origin is the modelling space origin (matches Three.js `(0,0,0)`). Project base point and survey point can be moved (translates rendering / shared coordinates) without moving model geometry. VV adds a "Site / Origin" toggle so users can see them. Critical for FED-04 import — a linked CAD's project base point determines where it lands inside the host.
@@ -1198,7 +1220,7 @@ Renders on plan canvas as an opaque region that occludes underlying linework / h
 
 Rendering: extend `makeRoofMassMesh` in `meshBuilders.ts`. Vertex generation walks the rectangle perimeter, lifting the ridge edge to a position offset transversely from center (or computes the offset from per-side eave heights). The resulting mesh has different left and right pitch slopes meeting at an off-center ridge. Section view uses the same projection logic with the offset ridge as input.
 
-Bound to GAP-R-asymmetric (target-house seed §1.2) — the off-center ridge is the *core essence* of the demo house and can't be authored today.
+Bound to GAP-R-asymmetric (target-house seed §1.2) — the off-center ridge is the _core essence_ of the demo house and can't be authored today.
 
 **KRN-12 detail.** Extend the `window` shape:
 
@@ -1234,6 +1256,7 @@ Use cases: gable-end windows (target-house §1.4 trapezoidal upper-floor window)
 ```
 
 Rendering: 3D geometry varies by operation type. Plan symbol differs:
+
 - Swing: arc (today's symbol)
 - Sliding: parallel arrows + track line
 - Bi-fold: zigzag panel symbol
@@ -1312,22 +1335,22 @@ Use cases: target-house §1.4 loggia (the south face of the upper volume recesse
 
 ### Plan views
 
-| ID     | Item                                       | Note                                                                                                              | Effort | State  |
-| ------ | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- | ------ | ------ |
-| PLN-01 | Dimension / tag automation                 | Auto-dimension chains and auto-tag-everything shipped on wave2-5: `autoDimension.ts`/`autoTags.ts` pure helpers, `placed_tag` element kind + `placeTag`/`clearAutoGeneratedAnnotations` commands (with `autoGenerated:true` on emitted dimensions/tags so re-runs clear+regenerate), Annotate ribbon hosting Auto Dim X/Y + Auto Tag — Rooms/Doors/Windows. | M      | `done` |
-| PLN-02 | Crop region UI toggle on plan canvas        | wave2-5: dashed crop frame + 8 drag handles rendered on the plan canvas via `cropRegionDragHandles.ts`; new `cropEnabled`/`cropRegionVisible` plan_view fields + engine setters; view-properties panel toggles each; `cropEnabled` clips elements outside the bounds via per-mesh visibility. | S      | `done` |
+| ID     | Item                                 | Note                                                                                                                                                                                                                                                                                                                                                        | Effort | State  |
+| ------ | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ------ |
+| PLN-01 | Dimension / tag automation           | Auto-dimension chains and auto-tag-everything shipped on wave2-5: `autoDimension.ts`/`autoTags.ts` pure helpers, `placed_tag` element kind + `placeTag`/`clearAutoGeneratedAnnotations` commands (with `autoGenerated:true` on emitted dimensions/tags so re-runs clear+regenerate), Annotate ribbon hosting Auto Dim X/Y + Auto Tag — Rooms/Doors/Windows. | M      | `done` |
+| PLN-02 | Crop region UI toggle on plan canvas | wave2-5: dashed crop frame + 8 drag handles rendered on the plan canvas via `cropRegionDragHandles.ts`; new `cropEnabled`/`cropRegionVisible` plan_view fields + engine setters; view-properties panel toggles each; `cropEnabled` clips elements outside the bounds via per-mesh visibility.                                                               | S      | `done` |
 
 ### Annotation / 2D linework
 
-| ID     | Item                                                  | Note                                                                                            | Effort | State  |
-| ------ | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ------ | ------ |
+| ID     | Item                                                            | Note                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Effort | State  |
+| ------ | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ------ |
 | ANN-01 | Detail components (`detail_line`, `detail_region`, `text_note`) | wave2-5: three new view-local element kinds in core + python with `createDetailLine` / `createDetailRegion` / `createTextNote` commands; `detailComponentsRender.ts` pure primitive extractor + SVG anchor / hatch-pattern helpers; plan-canvas three.js rendering paints lines, ShapeGeometry-backed regions (with hatch overlay opacity), and CanvasTexture sprites for text notes; ribbon authoring buttons emit centred placeholders. Drawing-mode UX (click-to-author polyline / region) deferred — covered by SKT-01 once that ships. | M      | `done` |
-| ANN-02 | Section / elevation generation from a wall face        | Right-click wall face → "Generate Section Cut" / "Generate Elevation". Done in commits b3c0e20b + 41d93b19 — params helper + WallContextMenu wired into PlanCanvas + Viewport contextmenu, dispatching the right command and activating the new elevation_view (or selecting the new section_cut). | S      | `done` |
+| ANN-02 | Section / elevation generation from a wall face                 | Right-click wall face → "Generate Section Cut" / "Generate Elevation". Done in commits b3c0e20b + 41d93b19 — params helper + WallContextMenu wired into PlanCanvas + Viewport contextmenu, dispatching the right command and activating the new elevation_view (or selecting the new section_cut).                                                                                                                                                                                                                                          | S      | `done` |
 
 ### Materials & visual rendering
 
-| ID     | Item                                                  | Note                                                                                                              | Effort | State  |
-| ------ | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------ | ------ |
+| ID     | Item                                                   | Note                                                                                                                                                                                             | Effort | State                                                                                                                                                                                                                                                                                                                         |
+| ------ | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | MAT-01 | Material catalog enrichment + standing-seam metal roof | Today's catalog covers a handful of materialKeys (`timber_cladding`, `white_cladding`, `white_render`). Target house needs more breadth + a real visual gap: standing-seam metal roof rendering. | M      | `done` (9231887b — Part A: PBR registry covering cladding/render/aluminium/brick/stone/concrete/glass + standing-seam variants in `viewport/materials.ts` + `bim_ai/material_catalog.py`. Part B: `addStandingSeamPattern` invoked from `makeRoofMassMesh` for any `metal_standing_seam_*` materialKey on flat & gable roofs) |
 
 **MAT-01 detail.** Two parts:
@@ -1350,27 +1373,63 @@ Use cases: target-house §1.4 loggia (the south face of the upper volume recesse
 
 ### Validation
 
-| ID     | Item                                                  | Note                                                                          | Effort | State  |
-| ------ | ----------------------------------------------------- | ----------------------------------------------------------------------------- | ------ | ------ |
-| VAL-01 | Topological room enclosure (wall-graph closure)        | Replaces the `room_no_door` centroid heuristic. Detects truly-unbounded rooms. | M      | `done` (in 3f7e4a28) |
+| ID     | Item                                            | Note                                                                           | Effort | State                |
+| ------ | ----------------------------------------------- | ------------------------------------------------------------------------------ | ------ | -------------------- |
+| VAL-01 | Topological room enclosure (wall-graph closure) | Replaces the `room_no_door` centroid heuristic. Detects truly-unbounded rooms. | M      | `done` (in 3f7e4a28) |
 
 ### Exchange formats
 
-| ID     | Item                                                       | Note                                                                                              | Effort | State  |
-| ------ | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ------ | ------ |
-| IFC-01 | `roofTypeId` round-trip through IFC                        | Kernel has the field; `app/bim_ai/export_ifc.py` doesn't write it.                                | S      | `done` (7619ac17) |
-| IFC-02 | Distinguish `gable_pitched_rectangle` in IFC body          | Currently always emits prism mass.                                                                | M      | `done` (a1210886) |
-| IFC-03 | Roof-hosted void replay                                    | Today rolled up as `slabRoofHostedVoidReplaySkipped_v0` only.                                     | M      | `open` |
-| IFC-04 | Broader QTO + materials + classifications + composites     | Narrow QTO slice shipped; full takeoff pending. Layered composites become more relevant after FL-08. | L      | `open` |
-| GLT-01 | Draco / mesh compression on glTF export                    | Tracked previously under WP-X02. Lower priority given file-export is no longer critical for federation. | S      | `deferred` |
+| ID     | Item                                                   | Note                                                                                                    | Effort | State             |
+| ------ | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- | ------ | ----------------- |
+| IFC-01 | `roofTypeId` round-trip through IFC                    | Kernel has the field; `app/bim_ai/export_ifc.py` doesn't write it.                                      | S      | `done` (7619ac17) |
+| IFC-02 | Distinguish `gable_pitched_rectangle` in IFC body      | Currently always emits prism mass.                                                                      | M      | `done` (a1210886) |
+| IFC-03 | Roof-hosted void replay                                | Today rolled up as `slabRoofHostedVoidReplaySkipped_v0` only.                                           | M      | `open`            |
+| IFC-04 | Broader QTO + materials + classifications + composites | Narrow QTO slice shipped; full takeoff pending. Layered composites become more relevant after FL-08.    | L      | `open`            |
+| GLT-01 | Draco / mesh compression on glTF export                | Tracked previously under WP-X02. Lower priority given file-export is no longer critical for federation. | S      | `deferred`        |
 
 ### CLI / agent loop
 
-| ID     | Item                                                  | Note                                                                                                                    | Effort | State  |
-| ------ | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------ | ------ |
-| CLI-01 | `bim-ai export json`                                  | Stub at `packages/cli/cli.mjs:404`; ifc / gltf / glb already shipped. Should emit canonical command-bundle JSON for agents. | XS     | `done` (in 674836de) |
-| CLI-02 | `bim-ai diff --from <rev> --to <rev>`                 | Stub at `packages/cli/cli.mjs:372`. Element-level diff between two revisions of the same model.                          | M      | `done` (in 9965a414) |
-| AGT-01 | Closed iterative-correction agent loop                 | `evidence-package` + `apply-bundle --dry-run` ship; the loop wiring (read evidence → generate patch → apply → re-evaluate) is manual. | L      | `done` (wave-2-7) |
+| ID     | Item                                   | Note                                                                                                                                  | Effort | State                |
+| ------ | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------ | -------------------- |
+| CLI-01 | `bim-ai export json`                   | Stub at `packages/cli/cli.mjs:404`; ifc / gltf / glb already shipped. Should emit canonical command-bundle JSON for agents.           | XS     | `done` (in 674836de) |
+| CLI-02 | `bim-ai diff --from <rev> --to <rev>`  | Stub at `packages/cli/cli.mjs:372`. Element-level diff between two revisions of the same model.                                       | M      | `done` (in 9965a414) |
+| AGT-01 | Closed iterative-correction agent loop | `evidence-package` + `apply-bundle --dry-run` ship; the loop wiring (read evidence → generate patch → apply → re-evaluate) is manual. | L      | `done` (wave-2-7)    |
+
+### Sketch-to-BIM agent methodology (SKB)
+
+**Why this category exists.** The seed-fidelity sprint (KRN-15/16/14) shipped the kernel primitives an agent needs to author the target house, but the rendered output read nothing like `spec/target-house-vis-colored.png` — flat featureless box instead of dramatic asymmetric gable + picture frame + recessed loggia + dormer cut. Post-mortem in `nightshift/seed-fidelity-status.md`: the agent (Claude Opus) treated house authoring as one atomic 87-command bundle, never visually verified, had no proportional-reasoning helpers, never iterated. A real architect's workflow is the opposite: converge through 5-7 phased passes, each one visually validated before adding detail. **SKB is the toolkit and methodology that lets an AI agent build a sound BIM model from a customer's sketch by working like a world-class architect would.**
+
+**Strategic intent.** SKB is the load-bearing capability for the broader product vision: customer hands the agent a sketch + verbal brief; agent produces a sound, correctly-proportioned, code-compliant BIM model that _looks like the sketch_. The target house is the first proof-of-concept, not a one-off.
+
+| ID     | Item                                                                 | Note                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | Effort | State  |
+| ------ | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ------ |
+| SKB-01 | Phased build workflow + `phase` tag on commits                       | Agent-side workflow primitive: every command in a bundle carries a `phase` tag (`massing` / `skeleton` / `envelope` / `openings` / `interior` / `detail` / `documentation`). The CLI / engine accept phase tags as metadata; per-phase dry-run lets an agent commit one phase at a time and abort the next phase if validation fails. Replaces today's all-or-nothing 87-command bundle with 5-7 small phase bundles each runnable through `try_commit_bundle` independently.                                                                     | M      | `open` |
+| SKB-02 | `mass` element kind (volumetric massing primitive)                   | New element: an axis-aligned (or rotated) volumetric box representing a building mass before walls are authored. Has `footprintMm`, `heightMm`, `levelId`, `materialKey?`. Renderer emits a translucent volume in 3D. After massing phase passes visual checkpoint, a `materializeMassToWalls` engine command auto-extracts walls + floor + roof-stub from each `mass` so the agent never starts from a blank canvas at the wall phase.                                                                                                           | L      | `open` |
+| SKB-03 | Visual checkpoint tool (deterministic screenshot + delta vs. target) | The single highest-leverage missing capability: **an agent has no eyes today**. New CLI command `bim-ai checkpoint --viewpoint <id> --target <png> --out <delta.json>` boots a headless renderer (Playwright, reusing the e2e harness), screenshots the named viewpoint, computes a structural-similarity score + per-region masks against the target image. Returns JSON with `(overallSimilarity: 0..1, regionDeltas[], suggestedFixes[])` so the agent can react. Runs after every phase commit. **Without this, no agent can self-correct.**  | L      | `open` |
+| SKB-04 | Sketch-to-dimensions calibrator                                      | Sketches give 2-3 dimension call-outs (e.g. "house width 7000 mm", "floor height 3000 mm") and the rest is proportional. New CLI tool `bim-ai calibrate --sketch <png> --anchors <json>` takes the sketch + agent-provided anchor measurements, returns a pixel-to-mm scale factor + a query API the agent uses (`heightOfRidgeFromFloor() → 5800 mm`). Cuts the "agent eyeballs values" failure mode.                                                                                                                                            | M      | `open` |
+| SKB-05 | Architectural soundness validator pack                               | New constraint pack `architectural_soundness_v1` that runs in `try_commit_bundle` and adds: (a) wall-corner-meets-wall (no gap, no overlap > 1 mm at corners); (b) floor-boundary-matches-wall-enclosure (floor outline tracks the closed wall ring within 200 mm); (c) levels-form-monotonic-stack (no level interleaving); (d) every roof's `referenceLevelId` walls are bounded by its footprint. Severity = warning by default; promotion to blocking via per-project flag. Extends today's VAL-01 (`room_no_door`-style closure) and VAL-04. | M      | `open` |
+| SKB-06 | Proportion / scale linter                                            | New advisory pack `architectural_proportions_v1`: room aspect ratio outside [0.4, 3.0] → advisory; wall height outside [2200, 4500] mm → advisory; door width outside [700, 2000] → advisory; window sill outside [80, 1500] → advisory; roof slope outside [5°, 70°] → advisory; ridge-height-to-eave-height ratio outside [1.05, 2.5] → advisory. Emits informational violations the agent can react to without blocking the commit.                                                                                                            | S      | `open` |
+| SKB-07 | Material extraction from sketch                                      | New CLI tool `bim-ai sketch-materials --sketch <png> --regions <regions.json> --out <materials.json>`. Given regions of interest (rough polygon overlays the agent or a pre-pass extracts), classify each region against the MAT-01 catalog with a confidence score. Replaces the current "agent guesses `cladding_warm_wood`" failure mode. Ships with a tiny vision model or a heuristic colour-histogram fallback so it works offline.                                                                                                         | M      | `open` |
+| SKB-08 | Phase-checkpoint assumption log                                      | Extends `agent_assumption` with mandatory `phaseId` + `sketchAnchorMm?` fields. Every judgment-call the agent makes (sketch ambiguous about overhang depth, ridge height not called out) gets logged with the phase + the sketch coordinate that triggered the inference. Lets a human reviewer audit the agent's chain of reasoning per phase.                                                                                                                                                                                                   | S      | `open` |
+| SKB-09 | Architectural archetype library (starter bundles)                    | A library of 6-10 starter bundles (`modernist_gable_two_story`, `l_shape_bungalow`, `townhouse_row`, `cabin_a_frame`, `mid_century_ranch`, `urban_courtyard_house`) at `packages/cli/lib/archetypes/*.mjs`. Agent picks the closest archetype as a baseline, then modifies. Cuts cold-start guesswork. Each archetype is a legal command bundle that commits with 0 blocking violations and produces a credible 3D render at vp-ssw.                                                                                                              | L      | `open` |
+| SKB-10 | Per-phase visual-verification gate (mandatory)                       | Wires SKB-03 into `try_commit_bundle`: when a bundle carries phase metadata + `expectedSilhouettePngBasename`, the engine runs the visual checkpoint after commit and rejects (or downgrades to advisory) if the similarity score drops below a threshold. Forces the agent to see every phase before the next.                                                                                                                                                                                                                                   | M      | `open` |
+| SKB-11 | Roof-wall alignment validator                                        | A specific case of SKB-05's pack: the roof's plan footprint (with overhang) must contain every upper-floor wall's centerline. Today the seed-rebuild seed hits this — the asymmetric gable's footprint fits the upper volume but isn't checked. Catches "the roof floats above only part of the building" or "walls poke out of the roof".                                                                                                                                                                                                        | S      | `open` |
+| SKB-12 | Architect cookbook (sketch-to-BIM methodology doc)                   | A canonical workflow doc at `nightshift/methodology/sketch-to-bim.md` that every agent doing sketch-to-BIM is instructed to read. Defines the 7 phases, the validation gate at each phase, the visual-checkpoint cadence, the assumptions-first protocol. Pairs with SKB-21 (brief format) — the brief tells the agent _what_ to build, the cookbook tells it _how_.                                                                                                                                                                              | S      | `open` |
+| SKB-13 | Element-count priors per archetype                                   | Empirical priors: "single-family two-story home, 150-200 m² → expect 12-18 walls, 4-7 windows, 1-2 doors, 1 roof, 1 stair". Surfaced as advisories when the agent's bundle is wildly outside the prior (e.g. 3 walls or 60 walls). Cheap protection against the "agent forgot half the building" failure mode.                                                                                                                                                                                                                                    | XS     | `open` |
+| SKB-14 | Visual silhouette extraction from sketch                             | New CLI tool `bim-ai sketch-silhouette --sketch <png> --view <main_perspective\|front\|side\|rear> --out <polygons.json>`. Auto-extracts 2D silhouette polygons for major massing elements (upper volume, lower volume, roof outline) from line drawings. Cuts the agent's massing-phase guesswork. Ships with a tiny canny-edge + polygon-fit fallback so it works without an LLM call.                                                                                                                                                          | L      | `open` |
+| SKB-15 | Recursive refine loop (formal agent workflow)                        | A documented + tooled iteration loop the agent runs at the end of every phase: (1) commit phase bundle → (2) `bim-ai checkpoint` (SKB-03) → (3) if delta > threshold, identify largest visible region → (4) emit 1-2 corrective `updateElementProperty` / `moveWall*` commands → (5) re-checkpoint. Caps at 5 iterations per phase before escalating to assumption-log.                                                                                                                                                                           | M      | `open` |
+| SKB-16 | Camera presets matched to sketch perspectives                        | If the sketch is a "main perspective from SSW" + "front elevation" + "side elevation" + "rear axonometric", the seed should ship 4 named viewpoints (`vp-main-iso`, `vp-front-elev`, `vp-side-elev`, `vp-rear-axo`) configured to match those exact angles. Then SKB-03 visual-checkpoints have a deterministic anchor for each sketch panel.                                                                                                                                                                                                     | XS     | `open` |
+| SKB-17 | LLM-assisted sketch parser                                           | An optional CLI `bim-ai sketch-parse --sketch <png> --brief <md> --out <parse.json>` that calls a vision LLM (Claude vision API) to extract: (a) overall building type, (b) approximate dimensions, (c) primary materials, (d) special features (loggia / dormer / balcony). Output is consumed by SKB-04 (calibrator) + SKB-07 (materials) + SKB-09 (archetype-pick). Opt-in only; offline path stays via SKB-14 + heuristics.                                                                                                                   | L      | `open` |
+| SKB-18 | Phase-by-phase test fixtures                                         | For each phase the seed authoring goes through, a regression test that takes the post-phase snapshot and asserts: validators pass, expected element counts hit, silhouette PNG matches a baseline. Today only the final-state snapshot is tested. Catches "phase 3 was fine, phase 4 broke it" regressions.                                                                                                                                                                                                                                       | M      | `open` |
+| SKB-19 | Wall-graph closure validator (stronger VAL-01)                       | VAL-01 already detects unbounded rooms; SKB-19 extends to detect: (a) walls that don't form any closed polygon (orphan walls), (b) shared edges where walls meet at not-quite-90°-but-not-tagged angles, (c) walls that cross each other inside the floor plate (T-intersections without join_geometry markers). Catches "the agent forgot the north wall and only authored 3 sides".                                                                                                                                                             | S      | `open` |
+| SKB-20 | Architectural style bias vectors                                     | A small lookup `style → defaults`: `modernist` → flat / shed / asymmetric-gable roof bias, white render + warm wood + dark metal palette, large glazing ratio. `traditional` → symmetric gable, brick + render + dark frames, smaller glazing ratio. The agent reads the brief's style hint, applies the bias when authoring. Avoids eclectic mishmash. Pairs with SKB-09 archetypes.                                                                                                                                                             | S      | `open` |
+| SKB-21 | Sketch-to-BIM brief format (canonical input)                         | A canonical Markdown + JSON format every customer brief lands in before authoring: `style`, `program` (rooms + areas), `siteOrientation`, `keyDimensions[]`, `materialIntent[]`, `specialFeatures[]`, `referenceImages[]`. The agent's first task is to fill out this brief from the sketch + verbal description, log it as evidence, _then_ start authoring. Pairs with SKB-12 (cookbook).                                                                                                                                                       | S      | `open` |
+| SKB-22 | Wall-corner join markers + auto-join                                 | Today walls authored as separate elements at a shared endpoint visually meet but aren't joined. Engine should auto-emit `join_geometry` between any two walls whose endpoints coincide within 10 mm; the renderer can then mitre / butt the corners cleanly. Eliminates the "tiny visible seam at every wall corner" failure mode that hurts SSW-iso fidelity.                                                                                                                                                                                    | M      | `open` |
+| SKB-23 | Per-phase preview rendering mode                                     | A 3D viewer mode that shows only elements tagged with phase ≤ N (`viewerPhaseFilter`). Lets the human reviewer see what the model looked like at the end of every phase, and lets the agent's checkpoint render filter to per-phase silhouettes (a massing-only render + an envelope-only render + a complete render).                                                                                                                                                                                                                            | S      | `open` |
+
+**SKB priority bundle for the next sketch-to-BIM POC.** The minimum-viable subset to give an AI agent a real chance at converging on the target house: **SKB-03 (eyes) + SKB-12 (cookbook) + SKB-21 (brief format) + SKB-15 (refine loop) + SKB-04 (calibrator) + SKB-05 (soundness) + SKB-11 (roof-wall) + SKB-10 (gate)**. Without these the agent is flying blind. SKB-02 (mass primitive) and SKB-09 (archetypes) are the next tier — they cut the cold-start cost dramatically. SKB-07 / SKB-14 / SKB-17 are vision-tooling that reduces guesswork further.
+
+**Sequencing recommendation.** Land SKB-03 first (largest leverage; everything else feeds into it). Then SKB-12 + SKB-21 in parallel (methodology). Then SKB-04 + SKB-05 + SKB-11. Then re-attempt the seed-fidelity sprint with these in place — the workflow becomes: "agent reads cookbook → fills out brief → calibrates from sketch → commits massing phase → checkpoints → corrects → commits skeleton phase → checkpoints → …". Each phase passes through validation + visual gate before the next starts. With these in place, _neither_ an Opus 4.7 agent nor a future agent should ship the kind of failure I shipped this sprint — the visual gate would have rejected the very first phase.
 
 ---
 
@@ -1384,7 +1443,7 @@ These answers to PRD §17 govern implementation defaults. Revisit quarterly or w
 | Residential vs cleanroom | **Residential reference house first**; cleanroom class / pressure / interlock metadata supported in schema; **IDS fixtures** phased after IFC subset.                                                                                          |
 | Titleblock / sheet sizes | First-class layout: **A1 landscape metaphor** (`594×841` mm portrait stored as ×1000 coords in existing `sheet`/`viewportsMm` convention — keep mm paper space); titleblock strings: project name, sheet number, revision, drawn/checked/date. |
 | AI vision automation     | **Assumptions-first** — agent MUST log assumptions JSON before apply; automated screenshot comparison is CI opt-in (`compare` PNG diff tolerances), not silent vision-from-screenshot in core product.                                         |
-| File-based interop       | **Database-native first.** External-file imports (IFC / DXF / RVT) land into shadow bim-ai models in the same DB and link in via FED-04, not into the host model directly. Preserves the in-DB collaboration story.                              |
+| File-based interop       | **Database-native first.** External-file imports (IFC / DXF / RVT) land into shadow bim-ai models in the same DB and link in via FED-04, not into the host model directly. Preserves the in-DB collaboration story.                            |
 
 ## OpenBIM Stance
 
@@ -1395,6 +1454,7 @@ Integration ladder (priority order): (1) JSON command bundles + snapshots → (2
 **"Synchronize with Central" is obsolete** in our architecture. Every command is server-authoritative on commit, broadcast via websocket, with per-user undo stacks. This is strictly stronger than Revit's central-file model and worth marketing explicitly (see FED-05).
 
 Engineering invariants:
+
 - (a) Web + CLI must stay symmetric — anything the UI edits must be reproducible via API commands logged in undo stacks
 - (b) Authoring-side IDS checks live in `constraints.evaluate`; exported IFC semantics summarised by `inspect_kernel_ifc_semantics()` / `summarize_kernel_ifc_semantic_roundtrip()` in `app/bim_ai/export_ifc.py`
 - (c) Linked elements are read-only at the engine level; never accept edits routed through a link
@@ -1419,12 +1479,12 @@ The actual product behaviour is the source of truth for everything else: code (`
 
 ## Effort Key
 
-| Symbol | Meaning                                                       |
-| ------ | ------------------------------------------------------------- |
-| XS     | < 1 day                                                       |
-| S      | 2-5 days                                                      |
-| M      | 1-2 weeks                                                     |
-| L      | 2-3 weeks                                                     |
-| XL     | 4 weeks or more                                               |
+| Symbol | Meaning         |
+| ------ | --------------- |
+| XS     | < 1 day         |
+| S      | 2-5 days        |
+| M      | 1-2 weeks       |
+| L      | 2-3 weeks       |
+| XL     | 4 weeks or more |
 
 These estimates are for one engineer at the experience level needed for the WP. They assume the engineer is familiar with the relevant subsystem.
