@@ -232,7 +232,7 @@ What's the smallest WP set required to ship a specific user-visible goal? Useful
 
 | ID     | Item                                                  | Effort | State  | Depends on |
 | ------ | ----------------------------------------------------- | ------ | ------ | ---------- |
-| FED-01 | `link_model` element kind + read-only enforcement     | L      | `open` | —          |
+| FED-01 | `link_model` element kind + read-only enforcement     | L      | `partial` | —          |
 | FED-02 | Cross-link clash detection (extends WP-V2-13)         | M      | `open` | FED-01     |
 | FED-03 | Cross-link Copy/Monitor (extends WP-V2-12)            | M      | `open` | FED-01     |
 | FED-04 | IFC / DXF → shadow-model link import                  | L      | `open` | FED-01     |

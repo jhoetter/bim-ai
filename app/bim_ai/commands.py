@@ -887,6 +887,54 @@ class MoveSurveyPointCmd(BaseModel):
     shared_elevation_mm: float | None = Field(default=None, alias="sharedElevationMm")
 
 
+# --- FED-01: link_model commands ---------------------------------------------------
+
+
+class CreateLinkModelCmd(BaseModel):
+    """FED-01: insert a ``link_model`` element pointing at another bim-ai model.
+
+    Engine-level validation rejects empty ``sourceModelId`` and self-reference
+    (``sourceModelId`` matching this link's own id). Existence in DB and
+    circular-link BFS are validated by the route handler that has DB access.
+    """
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createLinkModel"] = "createLinkModel"
+    id: str | None = None
+    name: str = "Linked model"
+    source_model_id: str = Field(alias="sourceModelId")
+    source_model_revision: int | None = Field(default=None, alias="sourceModelRevision")
+    position_mm: Vec3Mm = Field(alias="positionMm")
+    rotation_deg: float = Field(default=0.0, alias="rotationDeg")
+    origin_alignment_mode: Literal["origin_to_origin"] = Field(
+        default="origin_to_origin", alias="originAlignmentMode"
+    )
+    hidden: bool = Field(default=False)
+    pinned: bool = Field(default=False)
+
+
+class UpdateLinkModelCmd(BaseModel):
+    """FED-01: update position / rotation / hidden / pinned on a ``link_model``."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["updateLinkModel"] = "updateLinkModel"
+    link_id: str = Field(alias="linkId")
+    name: str | None = None
+    position_mm: Vec3Mm | None = Field(default=None, alias="positionMm")
+    rotation_deg: float | None = Field(default=None, alias="rotationDeg")
+    hidden: bool | None = None
+    pinned: bool | None = None
+    source_model_revision: int | None = Field(default=None, alias="sourceModelRevision")
+
+
+class DeleteLinkModelCmd(BaseModel):
+    """FED-01: remove a ``link_model``. The source model is untouched."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["deleteLinkModel"] = "deleteLinkModel"
+    link_id: str = Field(alias="linkId")
+
+
 Command = Annotated[
     CreateLevelCmd
     | CreateWallCmd
@@ -961,6 +1009,9 @@ Command = Annotated[
     | RotateProjectBasePointCmd
     | CreateSurveyPointCmd
     | MoveSurveyPointCmd
-    | CreateElevationViewCmd,
+    | CreateElevationViewCmd
+    | CreateLinkModelCmd
+    | UpdateLinkModelCmd
+    | DeleteLinkModelCmd,
     Field(discriminator="type"),
 ]

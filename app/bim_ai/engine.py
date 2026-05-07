@@ -26,6 +26,7 @@ from bim_ai.commands import (
     CreateIssueFromViolationCmd,
     CreateJoinGeometryCmd,
     CreateLevelCmd,
+    CreateLinkModelCmd,
     CreatePlanRegionCmd,
     CreateProjectBasePointCmd,
     CreateRailingCmd,
@@ -45,6 +46,7 @@ from bim_ai.commands import (
     CreateWallTypeCmd,
     DeleteElementCmd,
     DeleteElementsCmd,
+    DeleteLinkModelCmd,
     ExtendFloorInsulationCmd,
     InsertDoorOnWallCmd,
     InsertWindowOnWallCmd,
@@ -62,6 +64,7 @@ from bim_ai.commands import (
     SetCurtainPanelOverrideCmd,
     UnpinElementCmd,
     UpdateElementPropertyCmd,
+    UpdateLinkModelCmd,
     UpdateOpeningCleanroomCmd,
     UpdatePlanViewCropCmd,
     UpdatePlanViewRangeCmd,
@@ -110,6 +113,7 @@ from bim_ai.elements import (
     IssueElem,
     JoinGeometryElem,
     LevelElem,
+    LinkModelElem,
     PlanCategoryGraphicRow,
     PlanDetailLevelPlan,
     PlanRegionElem,
@@ -511,6 +515,67 @@ _PIN_BLOCKED_TARGETS: dict[type, str] = {
 }
 
 
+LINKED_ID_SEPARATOR = "::"
+
+
+def _is_linked_id(value: Any) -> bool:
+    return isinstance(value, str) and LINKED_ID_SEPARATOR in value
+
+
+# Commands that mutate an existing element are blocked when their target id is
+# a linked-element id (one carrying the ``<link_id>::<source_element_id>``
+# prefix). FED-01 commands (createLinkModel etc.) are exempt — they target the
+# host's link rows, not the source's elements. The list mirrors
+# ``_PIN_BLOCKED_TARGETS`` plus a few more direct-id commands so renamed walls
+# inside a link can't be moved either.
+_LINKED_READONLY_SCALAR_FIELDS: dict[type, tuple[str, ...]] = {
+    MoveWallDeltaCmd: ("wall_id",),
+    MoveWallEndpointsCmd: ("wall_id",),
+    MoveGridLineEndpointsCmd: ("grid_line_id",),
+    MoveLevelElevationCmd: ("level_id",),
+    UpdateElementPropertyCmd: ("element_id",),
+    DeleteElementCmd: ("element_id",),
+    PinElementCmd: ("element_id",),
+    UnpinElementCmd: ("element_id",),
+    SetCurtainPanelOverrideCmd: ("wall_id",),
+    UpdateLinkModelCmd: (),
+    DeleteLinkModelCmd: (),
+}
+_LINKED_READONLY_LIST_FIELDS: dict[type, tuple[str, ...]] = {
+    DeleteElementsCmd: ("element_ids",),
+    MirrorElementsCmd: ("element_ids",),
+}
+
+
+def _enforce_linked_readonly(cmd: Command) -> None:
+    """FED-01: refuse mutating commands whose target id is a linked-element id.
+
+    Linked element ids carry the ``<link_id>::<source_element_id>`` prefix; the
+    source's elements live in a different model row and are read-only from the
+    host's perspective.
+    """
+
+    scalars = _LINKED_READONLY_SCALAR_FIELDS.get(type(cmd), ())
+    for attr in scalars:
+        val = getattr(cmd, attr, None)
+        if _is_linked_id(val):
+            raise ValueError(
+                f"linked_element_readonly: '{val}' is owned by a linked model and "
+                "cannot be edited from the host — open the source model to edit"
+            )
+    lists = _LINKED_READONLY_LIST_FIELDS.get(type(cmd), ())
+    for attr in lists:
+        seq = getattr(cmd, attr, None)
+        if not isinstance(seq, list):
+            continue
+        for v in seq:
+            if _is_linked_id(v):
+                raise ValueError(
+                    f"linked_element_readonly: '{v}' is owned by a linked model and "
+                    "cannot be edited from the host — open the source model to edit"
+                )
+
+
 def _enforce_pin_block(els: dict[str, Element], cmd: Command) -> None:
     """VIE-07: refuse mutating commands targeting a pinned element.
 
@@ -536,6 +601,7 @@ def _enforce_pin_block(els: dict[str, Element], cmd: Command) -> None:
 
 def apply_inplace(doc: Document, cmd: Command) -> None:
     els = doc.elements
+    _enforce_linked_readonly(cmd)
     _enforce_pin_block(els, cmd)
     match cmd:
         case CreateLevelCmd():
@@ -2325,6 +2391,65 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                 # Unpinning a non-pinnable element is a no-op rather than an error.
                 return
             els[cmd.element_id] = target.model_copy(update={"pinned": False})
+
+        case CreateLinkModelCmd():
+            lid = cmd.id or new_id()
+            if lid in els:
+                raise ValueError(f"duplicate element id '{lid}'")
+            src = (cmd.source_model_id or "").strip()
+            if not src:
+                raise ValueError("createLinkModel.sourceModelId must be a non-empty UUID")
+            if LINKED_ID_SEPARATOR in lid:
+                raise ValueError(
+                    f"createLinkModel.id '{lid}' must not contain '{LINKED_ID_SEPARATOR}' "
+                    "(reserved for linked-element prefixes)"
+                )
+            # Self-reference at the link-id level: the link's own id must not
+            # match any source id we'd resolve to. The route handler enforces
+            # the harder check (sourceModelId != host model UUID + circular
+            # BFS) since the engine has no DB access.
+            if src == lid:
+                raise ValueError("createLinkModel.sourceModelId cannot reference this link itself")
+            els[lid] = LinkModelElem(
+                kind="link_model",
+                id=lid,
+                name=cmd.name,
+                source_model_id=src,
+                source_model_revision=cmd.source_model_revision,
+                position_mm=cmd.position_mm,
+                rotation_deg=cmd.rotation_deg,
+                origin_alignment_mode=cmd.origin_alignment_mode,
+                hidden=cmd.hidden,
+                pinned=cmd.pinned,
+            )
+
+        case UpdateLinkModelCmd():
+            link = els.get(cmd.link_id)
+            if not isinstance(link, LinkModelElem):
+                raise ValueError("updateLinkModel.linkId must reference a link_model element")
+            updates: dict[str, Any] = {}
+            if cmd.name is not None:
+                updates["name"] = cmd.name
+            if cmd.position_mm is not None:
+                updates["position_mm"] = cmd.position_mm
+            if cmd.rotation_deg is not None:
+                updates["rotation_deg"] = float(cmd.rotation_deg)
+            if cmd.hidden is not None:
+                updates["hidden"] = bool(cmd.hidden)
+            if cmd.pinned is not None:
+                updates["pinned"] = bool(cmd.pinned)
+            if "source_model_revision" in cmd.model_fields_set:
+                # Pydantic tracks fields the caller actually sent vs. omitted;
+                # we use that to distinguish "unpin (explicit null)" from
+                # "leave revision pinning untouched".
+                updates["source_model_revision"] = cmd.source_model_revision
+            els[cmd.link_id] = link.model_copy(update=updates)
+
+        case DeleteLinkModelCmd():
+            link = els.get(cmd.link_id)
+            if not isinstance(link, LinkModelElem):
+                raise ValueError("deleteLinkModel.linkId must reference a link_model element")
+            del els[cmd.link_id]
 
 
 def _supports_pin(el: Element) -> bool:

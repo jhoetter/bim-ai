@@ -33,6 +33,8 @@ export interface ProjectMenuProps {
   onNewClear?: () => void;
   /** Replay the onboarding tour from the beginning (spec §24). */
   onReplayTour?: () => void;
+  /** FED-01: open the Manage Links dialog (Insert → Link Model). */
+  onManageLinks?: () => void;
 }
 
 export function ProjectMenu({
@@ -46,6 +48,7 @@ export function ProjectMenu({
   onRestoreSnapshot,
   onNewClear,
   onReplayTour,
+  onManageLinks,
 }: ProjectMenuProps): JSX.Element | null {
   const popoverRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -165,6 +168,20 @@ export function ProjectMenu({
             e.target.value = '';
           }}
         />
+        {onManageLinks ? (
+          <>
+            <div className="my-1 border-t border-border" />
+            <MenuItem
+              label="Insert → Link Model…"
+              icon="externalLink"
+              testId="project-menu-manage-links"
+              onClick={() => {
+                onOpenChange(false);
+                onManageLinks();
+              }}
+            />
+          </>
+        ) : null}
         <div className="my-1 border-t border-border" />
         <MenuItem
           label="New (clear)"

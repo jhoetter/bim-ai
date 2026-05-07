@@ -49,7 +49,8 @@ export type ElemKind =
   | 'text_3d'
   | 'project_base_point'
   | 'survey_point'
-  | 'internal_origin';
+  | 'internal_origin'
+  | 'link_model';
 
 export type Text3dFontFamily = 'helvetiker' | 'optimer' | 'gentilis';
 
@@ -776,6 +777,35 @@ export type Element =
   | {
       kind: 'internal_origin';
       id: string;
+    }
+  | {
+      /**
+       * FED-01: a link to another bim-ai model in the same DB. The host treats
+       * the source's elements as read-only renderable context. Snapshot
+       * expansion (`?expandLinks=true`) inlines the source's elements with
+       * provenance markers so renderers can ghost them.
+       */
+      kind: 'link_model';
+      id: string;
+      name: string;
+      /** UUID of another bim-ai model in the same DB. */
+      sourceModelId: string;
+      /**
+       * `null` (or omitted) follows the source's latest revision; an integer
+       * pins the snapshot to that revision. Pin/unpin UI is deferred to a
+       * follow-up WP.
+       */
+      sourceModelRevision?: number | null;
+      positionMm: XYZ;
+      /** Rotation around Z applied at the source origin (degrees). */
+      rotationDeg: number;
+      /**
+       * Only `'origin_to_origin'` is implemented in the load-bearing slice;
+       * `'project_origin'` and `'shared_coords'` are deferred.
+       */
+      originAlignmentMode: 'origin_to_origin';
+      hidden?: boolean;
+      pinned?: boolean;
     };
 
 export type Violation = {

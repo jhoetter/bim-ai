@@ -20,6 +20,7 @@ from bim_ai.agent_review_readout_consistency_closure import (
 )
 from bim_ai.db import get_session
 from bim_ai.document import Document
+from bim_ai.elements import LinkModelElem
 from bim_ai.engine import (
     bundle_replay_diagnostics,
     clone_document,
@@ -48,6 +49,77 @@ from bim_ai.schedule_derivation import list_schedule_ids
 from bim_ai.tables import ModelRecord, RedoStackRecord, UndoStackRecord
 
 commands_router = APIRouter()
+
+
+async def _validate_link_model_command_against_db(
+    session: AsyncSession,
+    host_model_id: UUID,
+    command: dict[str, Any],
+) -> None:
+    """FED-01: pre-validate ``createLinkModel`` against DB.
+
+    Engine-level apply only sees one document at a time, so the cross-model
+    invariants — source exists, host ≠ source, link graph is acyclic — live
+    here. Raises ``HTTPException(400)`` on violation; silently returns
+    otherwise.
+    """
+
+    if str(command.get("type") or "") != "createLinkModel":
+        return
+    raw_source = command.get("sourceModelId") or command.get("source_model_id")
+    if not isinstance(raw_source, str) or not raw_source.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="createLinkModel.sourceModelId must be a non-empty UUID",
+        )
+    try:
+        source_uuid = UUID(raw_source.strip())
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=f"createLinkModel.sourceModelId is not a valid UUID: {raw_source}",
+        ) from exc
+    if source_uuid == host_model_id:
+        raise HTTPException(
+            status_code=400,
+            detail="createLinkModel: a model cannot link to itself",
+        )
+    src_row = await load_model_row(session, source_uuid)
+    if src_row is None:
+        raise HTTPException(
+            status_code=400,
+            detail=f"createLinkModel.sourceModelId '{source_uuid}' not found",
+        )
+    # BFS the link graph from the proposed source: if any descendant link
+    # points back at the host, accepting this link would close a cycle.
+    visited: set[UUID] = set()
+    queue: list[UUID] = [source_uuid]
+    while queue:
+        current = queue.pop(0)
+        if current in visited:
+            continue
+        visited.add(current)
+        if current == host_model_id:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"createLinkModel: link graph cycle — source '{source_uuid}' "
+                    f"already links (transitively) back to host '{host_model_id}'"
+                ),
+            )
+        row = await load_model_row(session, current)
+        if row is None:
+            continue
+        try:
+            doc = Document.model_validate(row.document)
+        except Exception:
+            continue
+        for el in doc.elements.values():
+            if isinstance(el, LinkModelElem):
+                try:
+                    queue.append(UUID(el.source_model_id))
+                except ValueError:
+                    continue
 
 
 class CommandEnvelope(BaseModel):
@@ -150,6 +222,8 @@ async def apply_command(
         raise HTTPException(status_code=404, detail="Model not found")
 
     uid = body.user_id or "local-dev"
+
+    await _validate_link_model_command_against_db(session, model_id, body.command)
 
     baseline_doc = Document.model_validate(row.document)
     doc_before = clone_document(baseline_doc)

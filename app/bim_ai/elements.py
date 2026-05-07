@@ -517,6 +517,30 @@ class InternalOriginElem(BaseModel):
     id: str = INTERNAL_ORIGIN_ID
 
 
+class LinkModelElem(BaseModel):
+    """FED-01: link to another bim-ai model in the same DB.
+
+    The source's elements are treated as read-only renderable context. Snapshot
+    expansion (``?expandLinks=true``) inlines them with provenance markers so
+    renderers can ghost them. The load-bearing slice supports only
+    ``origin_to_origin`` alignment; other modes are deferred to follow-up WPs.
+    """
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["link_model"] = "link_model"
+    id: str
+    name: str = "Linked model"
+    source_model_id: str = Field(alias="sourceModelId")
+    source_model_revision: int | None = Field(default=None, alias="sourceModelRevision")
+    position_mm: Vec3Mm = Field(alias="positionMm")
+    rotation_deg: float = Field(default=0.0, alias="rotationDeg")
+    origin_alignment_mode: Literal["origin_to_origin"] = Field(
+        default="origin_to_origin", alias="originAlignmentMode"
+    )
+    hidden: bool = Field(default=False)
+    pinned: bool = Field(default=False)
+
+
 class FamilyTypeElem(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True)
     kind: Literal["family_type"] = "family_type"
@@ -893,6 +917,7 @@ ElementKind = Literal[
     "project_base_point",
     "survey_point",
     "internal_origin",
+    "link_model",
 ]
 
 
@@ -939,6 +964,7 @@ Element = Annotated[
     | Text3dElem
     | ProjectBasePointElem
     | SurveyPointElem
-    | InternalOriginElem,
+    | InternalOriginElem
+    | LinkModelElem,
     Field(discriminator="kind"),
 ]

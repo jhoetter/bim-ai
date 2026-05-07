@@ -25,7 +25,7 @@ from bim_ai.commands import Command
 from bim_ai.db import SessionMaker, get_session
 from bim_ai.diff_engine import compute_element_diff
 from bim_ai.document import Document
-from bim_ai.elements import Element, LevelElem, PlanViewElem
+from bim_ai.elements import Element, LevelElem, LinkModelElem, PlanViewElem
 from bim_ai.engine import clone_document, ensure_internal_origin, try_commit_bundle
 from bim_ai.evidence_manifest import (
     MINIMAL_PROBE_PNG_BYTES_V1,
@@ -52,6 +52,7 @@ from bim_ai.evidence_manifest import (
     sheetProductionEvidenceBaseline_v1,
 )
 from bim_ai.hub import Hub
+from bim_ai.link_expansion import expand_links
 from bim_ai.model_summary import compute_model_summary
 from bim_ai.plan_projection_wire import (
     plan_projection_wire_from_request,
@@ -225,7 +226,11 @@ async def list_template_catalog() -> dict[str, Any]:
 
 
 @api_router.get("/models/{model_id}/snapshot")
-async def snapshot(model_id: UUID, session: AsyncSession = Depends(get_session)) -> dict[str, Any]:
+async def snapshot(
+    model_id: UUID,
+    expandLinks: bool = False,  # noqa: N803 — wire-format alias
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:
         raise HTTPException(status_code=404, detail="Model not found")
@@ -233,12 +238,72 @@ async def snapshot(model_id: UUID, session: AsyncSession = Depends(get_session))
     # KRN-06: backfill internal_origin for legacy models that pre-date this WP.
     # Read-only — we don't persist; the next command commit will pick it up.
     ensure_internal_origin(doc)
+    elements_wire = {k: v.model_dump(by_alias=True) for k, v in doc.elements.items()}
+    if expandLinks:
+        # FED-01: inline every linked source's elements with provenance markers
+        # so renderers can ghost them. Default snapshot omits these to keep the
+        # payload small.
+        elements_wire = await _expand_host_links(session, doc, elements_wire)
     return {
         "modelId": str(row.id),
         "revision": doc.revision,
-        "elements": {k: v.model_dump(by_alias=True) for k, v in doc.elements.items()},
+        "elements": elements_wire,
         "violations": violations_wire(doc.elements),
     }
+
+
+async def _expand_host_links(
+    session: AsyncSession,
+    host_doc: Document,
+    host_elements_wire: dict[str, Any],
+) -> dict[str, Any]:
+    """FED-01: resolve every ``link_model`` row's source document from DB and
+    pass it through ``expand_links`` to inline transformed source elements.
+
+    Sources are loaded at their pinned revision when set (replayed via the
+    undo stack), or at their current revision otherwise. Missing sources are
+    skipped silently — the host is still authoritative.
+    """
+
+    cache: dict[tuple[str, int | None], Document | None] = {}
+
+    async def _load_source(source_uuid_str: str, source_rev: int | None) -> Document | None:
+        cache_key = (source_uuid_str, source_rev)
+        if cache_key in cache:
+            return cache[cache_key]
+        try:
+            source_uuid = UUID(source_uuid_str)
+        except ValueError:
+            cache[cache_key] = None
+            return None
+        src_row = await load_model_row(session, source_uuid)
+        if src_row is None:
+            cache[cache_key] = None
+            return None
+        current = Document.model_validate(src_row.document)
+        if source_rev is None or source_rev == current.revision:
+            cache[cache_key] = current
+            return current
+        # Replay backwards through the undo stack to land at the requested
+        # revision (mirrors the diff endpoint's logic).
+        try:
+            doc_at = await _document_at_revision(session, source_uuid, current, source_rev)
+        except HTTPException:
+            cache[cache_key] = None
+            return None
+        cache[cache_key] = doc_at
+        return doc_at
+
+    # Pre-load every link's source synchronously (the providers callable in
+    # ``expand_links`` is sync; we resolve up-front).
+    for elem in host_doc.elements.values():
+        if isinstance(elem, LinkModelElem):
+            await _load_source(elem.source_model_id, elem.source_model_revision)
+
+    def _provider(source_uuid_str: str, source_rev: int | None) -> Document | None:
+        return cache.get((source_uuid_str, source_rev))
+
+    return expand_links(host_doc, host_elements_wire, _provider)
 
 
 async def _document_at_revision(

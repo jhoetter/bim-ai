@@ -27,6 +27,7 @@ import {
 } from './viewport/cameraRig';
 import { resolveViewportPaintBundle, type ViewportPaintBundle } from './viewport/materials';
 import { ViewCube } from './viewport/ViewCube';
+import { applyLinkedGhosting } from './viewport/linkedGhosting';
 import { type ViewCubePick } from './viewport/viewCubeAlignment';
 import { SectionBox } from './viewport/sectionBox';
 import { WalkController, classifyKey as classifyWalkKey } from './viewport/walkMode';
@@ -1193,6 +1194,13 @@ export function Viewport({ wsConnected, onPersistViewpointField, onSemanticComma
 
       if (!obj.userData.bimPickId) obj.userData.bimPickId = id;
       obj.visible = !skipCat(e);
+
+      // FED-01: ghost any element resolved through a `link_model` link.
+      // Linked element ids are prefixed `<linkId>::<sourceElemId>` by the
+      // snapshot expansion path; that's the load-bearing signal.
+      if (id.includes('::')) {
+        applyLinkedGhosting(obj);
+      }
 
       // Shadow: site meshes are receivers only.
       const isSite = e.kind === 'site';

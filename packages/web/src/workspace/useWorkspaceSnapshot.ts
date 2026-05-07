@@ -48,7 +48,9 @@ export function useWorkspaceSnapshot(): {
       const m0 = pj?.[0]?.models as Array<{ id?: unknown }> | undefined;
       const mid = m0?.[0]?.id;
       if (typeof mid !== 'string') throw new Error('No models — run make seed');
-      const snapRes = await fetch(`/api/models/${encodeURIComponent(mid)}/snapshot`);
+      const snapRes = await fetch(
+        `/api/models/${encodeURIComponent(mid)}/snapshot?expandLinks=true`,
+      );
       if (!snapRes.ok) throw new Error(`snapshot ${snapRes.status}`);
       const snap = (await snapRes.json()) as Snapshot;
       hydrateFromSnapshot(snap);

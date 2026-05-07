@@ -60,6 +60,7 @@ import {
   formatBrowserRenderingBudgetLines,
 } from './browserRenderingBudgetReadout';
 import { VVDialog } from './VVDialog';
+import { ManageLinksDialog } from './ManageLinksDialog';
 import { CommentsPanel } from './CommentsPanel';
 import { StatusBar } from './StatusBar';
 import { CheatsheetModal } from '../cmd/CheatsheetModal';
@@ -155,6 +156,7 @@ export function Workspace(): JSX.Element {
   const [_collaborationConflictQueue, setCollaborationConflictQueue] =
     useState<CollaborationConflictQueueV1 | null>(null);
   const [projectMenuOpen, setProjectMenuOpen] = useState(false);
+  const [manageLinksOpen, setManageLinksOpen] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [undoDepth, setUndoDepth] = useState(0);
   const [recentProjects, setRecentProjects] = useState<ProjectMenuItemRecent[]>(() =>
@@ -741,7 +743,9 @@ export function Workspace(): JSX.Element {
           resetOnboarding();
           setTourOpen(true);
         }}
+        onManageLinks={() => setManageLinksOpen(true)}
       />
+      <ManageLinksDialog open={manageLinksOpen} onClose={() => setManageLinksOpen(false)} />
       <AppShell
         leftCollapsed={leftRailCollapsed}
         onLeftCollapsedChange={setLeftRailCollapsed}

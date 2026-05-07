@@ -1134,6 +1134,25 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
     return { kind: 'selection_set', id, name, filterRules };
   }
 
+  if (kind === 'link_model') {
+    const pos = coerceXYZ((raw.positionMm ?? raw.position_mm) as Record<string, unknown>);
+    const sourceModelId = String(raw.sourceModelId ?? raw.source_model_id ?? '');
+    if (!sourceModelId) return null;
+    const rev = raw.sourceModelRevision ?? raw.source_model_revision;
+    return {
+      kind: 'link_model',
+      id,
+      name,
+      sourceModelId,
+      ...(rev == null ? {} : { sourceModelRevision: Number(rev) }),
+      positionMm: pos,
+      rotationDeg: Number(raw.rotationDeg ?? raw.rotation_deg ?? 0),
+      originAlignmentMode: 'origin_to_origin',
+      ...(raw.hidden != null ? { hidden: Boolean(raw.hidden) } : {}),
+      ...(raw.pinned != null ? { pinned: Boolean(raw.pinned) } : {}),
+    };
+  }
+
   if (kind === 'clash_test') {
     const coerceIds = (v: unknown): string[] =>
       Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
