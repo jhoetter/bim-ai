@@ -697,14 +697,14 @@ class SketchSession:
 | ------ | ------------------------------------------------------------- | ------ | ------ | ---------- |
 | FAM-01 | Nested families (loadable family-in-family)                   | L      | `partial` in 583e726c — data model (`family_instance_ref` + `ParameterBinding`), resolver (`resolveNestedFamilyInstance` + `resolveFamilyGeometry`), and cycle detection shipped; family-editor UI for placing nested instances + per-instance parameter binding editor + thumbnail composition for FL-06 deferred to follow-up | —          |
 | FAM-02 | Sweep tool (path + profile → swept solid)                     | M      | `done` | done in 034e38f7 |
-| FAM-03 | Yes/No parameters with geometry visibility binding            | M      | `open` | FAM-01     |
+| FAM-03 | Yes/No parameters with geometry visibility binding            | M      | `done` (wave2-6 — `VisibilityBinding` extended to all geometry node kinds in `families/types.ts`; resolver short-circuits per-node via `isVisibleByBinding`; family-editor "Visible When" dropdown + Show-when-true/false toggle on selected sweeps) | FAM-01     |
 | FAM-04 | Conditional formula support (`if()`, `rounddown()`, `mod()`)   | M      | `done` | done in e2e4c575 |
-| FAM-05 | Array tool (linear + radial, parameter-driven count)          | L      | `open` | FAM-04, FAM-01 |
+| FAM-05 | Array tool (linear + radial, parameter-driven count)          | L      | `done` (wave2-6 — `ArrayGeometryNode` added to `families/types.ts`; `resolveArrayNode` handles both modes with `count = max(1, floor(host_param(countParam)))`, `fixed_mm` and `fit_total` spacing; family-editor Array tool authors a node with target/mode/count param/spacing/axis) | FAM-04, FAM-01 |
 | FAM-06 | 3D text element kind                                          | S      | `done` | —          |
 | FAM-07 | Mirror tool (axis reflection in family editor + project)      | S      | `done` | done in 9b1658bf |
 | FAM-08 | Component tool + external family catalog (Autodesk-style)     | M      | `done` | FAM-01     |
 | FAM-09 | "Flex the family" parameter test mode                         | S      | `done` | done in 21d8f228 |
-| FAM-10 | Cross-project family / element copy-paste                     | M      | `open` | —          |
+| FAM-10 | Cross-project family / element copy-paste                     | M      | `done` (wave2-6 — `bim-ai-clipboard-v1` payload format in `clipboard/payload.ts`; `localStorage` + `navigator.clipboard` round-trip via `clipboardStore.ts`; three-strategy collision resolver (`use_source` / `keep_local` / `rename`) in `familyCollisionResolution.ts`; `copyElementsToClipboard` + `pasteElementsFromClipboard` orchestrators; PlanCanvas wires Cmd+C/V; `RecentClipboardTray` component) | —          |
 
 ### FAM-01 — Nested families
 
