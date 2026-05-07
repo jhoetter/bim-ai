@@ -7,6 +7,8 @@ import type {
   WorkspaceLayoutPreset,
 } from '@bim-ai/core';
 
+import type { FamilyDefinition } from '../families/types';
+
 import type { WallLocationLine } from '../tools/toolGrammar';
 import type { PlanPresentationPreset } from '../plan/symbology';
 import type {
@@ -177,6 +179,12 @@ export type StoreState = {
   hydrateFromSnapshot: (snap: Snapshot) => void;
   applyDelta: (d: ModelDelta) => void;
   select: (id?: string) => void;
+  /** FAM-10: paste-side merge — append elements without deleting any. */
+  mergeElements: (elements: Element[]) => void;
+  /** FAM-10: paste-side family imports. */
+  importFamilyDefinitions: (defs: FamilyDefinition[]) => void;
+  /** FAM-10: registry of imported user families (cross-project paste). */
+  userFamilies?: Record<string, FamilyDefinition>;
   setViewerMode: (m: ViewerMode) => void;
   setPlanTool: (t: PlanTool) => void;
   setActiveLevelId: (id: string | undefined) => void;

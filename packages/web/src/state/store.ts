@@ -1532,6 +1532,26 @@ export const useBimStore = create<StoreState>((set, get) => {
 
     select: (id) => set({ selectedId: id }),
 
+    /** FAM-10: paste-side merge — append elements without deleting any. */
+    mergeElements: (elements) =>
+      set((s) => {
+        const next = { ...s.elementsById };
+        for (const el of elements) {
+          if (el && typeof (el as { id?: unknown }).id === 'string') {
+            next[(el as { id: string }).id] = el as Element;
+          }
+        }
+        return { elementsById: next };
+      }),
+
+    /** FAM-10: paste-side family imports — register user families. */
+    importFamilyDefinitions: (defs) =>
+      set((s) => {
+        const next = { ...(s.userFamilies ?? {}) };
+        for (const def of defs) next[def.id] = def;
+        return { userFamilies: next };
+      }),
+
     setViewerMode: (m) => set({ viewerMode: m }),
 
     setPlanTool: (t) => set({ planTool: t }),

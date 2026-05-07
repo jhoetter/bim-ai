@@ -95,6 +95,9 @@ import { WallContextMenu, type WallContextMenuCommand } from '../workspace/WallC
 import { PlanDetailLevelToolbar } from './PlanDetailLevelToolbar';
 import type { PlanDetailLevel } from './planDetailLevelLines';
 import { SketchCanvas, type MmToScreen, type PointerToMm } from './SketchCanvas';
+import { getFamilyById as getBuiltInFamilyById } from '../families/familyCatalog';
+import type { FamilyDefinition } from '../families/types';
+import { copyElementsToClipboard, pasteFromOSClipboard } from '../clipboard/copyPaste';
 
 function readPlanToken(name: string, fallback: string): string {
   const v = liveTokenReader().read(name);
@@ -2232,6 +2235,54 @@ export function PlanCanvas({
       if (ev.code === 'Space') {
         ev.preventDefault();
         spaceDownRef.current = true;
+      }
+      // FAM-10 — Cmd/Ctrl + C/V copy-paste handlers.
+      if ((ev.metaKey || ev.ctrlKey) && (ev.key === 'c' || ev.key === 'C')) {
+        const st = useBimStore.getState();
+        const sel = st.selectedId;
+        if (!sel) return;
+        const el = st.elementsById[sel];
+        if (!el) return;
+        const localUserFamilies = st.userFamilies ?? {};
+        const resolveFamilyById = (id: string): FamilyDefinition | undefined =>
+          localUserFamilies[id] ?? getBuiltInFamilyById(id);
+        const payload = copyElementsToClipboard({
+          sourceProjectId: st.modelId ?? 'unknown-project',
+          sourceModelId: st.modelId ?? 'unknown-model',
+          elements: [el],
+          resolveFamilyById,
+        });
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('bim-ai:clipboard-copy', { detail: payload }));
+        }
+      }
+      if ((ev.metaKey || ev.ctrlKey) && (ev.key === 'v' || ev.key === 'V')) {
+        const st = useBimStore.getState();
+        const localUserFamilies = Object.values(st.userFamilies ?? {});
+        const localBuiltins: FamilyDefinition[] = [];
+        for (const id of Object.keys(st.elementsById)) {
+          const el = st.elementsById[id] as unknown as { familyId?: string };
+          if (typeof el.familyId === 'string') {
+            const def = getBuiltInFamilyById(el.familyId);
+            if (def && !localBuiltins.some((b) => b.id === def.id)) localBuiltins.push(def);
+          }
+        }
+        void pasteFromOSClipboard({
+          targetProjectId: st.modelId ?? 'unknown-project',
+          localFamilies: [...localUserFamilies, ...localBuiltins],
+          cursorMm: st.planHudMm,
+        }).then((result) => {
+          if (!result) return;
+          if (result.familiesToImport.length > 0) {
+            st.importFamilyDefinitions(result.familiesToImport);
+          }
+          if (result.elements.length > 0) {
+            st.mergeElements(result.elements);
+          }
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('bim-ai:clipboard-paste', { detail: result }));
+          }
+        });
       }
     };
     const onKeyUp = (ev: KeyboardEvent) => {

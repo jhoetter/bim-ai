@@ -1,6 +1,12 @@
 import { useMemo, useState, type JSX } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { FamilyParamDef, SketchLine, SweepGeometryNode } from '../families/types';
+import type {
+  ArrayGeometryNode,
+  FamilyParamDef,
+  SketchLine,
+  SweepGeometryNode,
+  VisibilityBinding,
+} from '../families/types';
 import { validateFormula } from '../lib/expressionEvaluator';
 
 type Template = 'generic_model' | 'door' | 'window' | 'profile';
@@ -58,6 +64,51 @@ const EMPTY_SWEEP_DRAFT: SweepDraft = {
   step: 'path',
 };
 
+/* ─── FAM-05: Array authoring draft ─────────────────────────────────────── */
+
+type ArrayDraft = {
+  targetFamilyId: string;
+  mode: 'linear' | 'radial';
+  countParam: string;
+  spacingMode: 'fixed_mm' | 'fit_total';
+  fixedMm: number;
+  totalLengthParam: string;
+  axisStart: { xMm: number; yMm: number; zMm: number };
+  axisEnd: { xMm: number; yMm: number; zMm: number };
+};
+
+const EMPTY_ARRAY_DRAFT: ArrayDraft = {
+  targetFamilyId: '',
+  mode: 'linear',
+  countParam: '',
+  spacingMode: 'fixed_mm',
+  fixedMm: 400,
+  totalLengthParam: '',
+  axisStart: { xMm: 0, yMm: 0, zMm: 0 },
+  axisEnd: { xMm: 1000, yMm: 0, zMm: 0 },
+};
+
+function arrayDraftToNode(draft: ArrayDraft): ArrayGeometryNode {
+  return {
+    kind: 'array',
+    target: {
+      kind: 'family_instance_ref',
+      familyId: draft.targetFamilyId,
+      positionMm: { xMm: 0, yMm: 0, zMm: 0 },
+      rotationDeg: 0,
+      parameterBindings: {},
+    },
+    mode: draft.mode,
+    countParam: draft.countParam,
+    spacing:
+      draft.spacingMode === 'fixed_mm'
+        ? { kind: 'fixed_mm', mm: draft.fixedMm }
+        : { kind: 'fit_total', totalLengthParam: draft.totalLengthParam },
+    axisStart: draft.axisStart,
+    axisEnd: draft.axisEnd,
+  };
+}
+
 export function FamilyEditorWorkbench(): JSX.Element {
   const { t } = useTranslation();
   const [template, setTemplate] = useState<Template>('generic_model');
@@ -67,6 +118,9 @@ export function FamilyEditorWorkbench(): JSX.Element {
   const [flexValues, setFlexValues] = useState<Record<string, unknown>>({});
   const [sweeps, setSweeps] = useState<SweepGeometryNode[]>([]);
   const [sweepDraft, setSweepDraft] = useState<SweepDraft | null>(null);
+  const [selectedSweepIndex, setSelectedSweepIndex] = useState<number | null>(null);
+  const [arrays, setArrays] = useState<ArrayGeometryNode[]>([]);
+  const [arrayDraft, setArrayDraft] = useState<ArrayDraft | null>(null);
 
   function addRefPlane(isVertical: boolean) {
     setRefPlanes((prev) => [
@@ -162,6 +216,44 @@ export function FamilyEditorWorkbench(): JSX.Element {
     setSweepDraft(null);
   }
 
+  function updateSweepVisibility(index: number, binding: VisibilityBinding | undefined) {
+    setSweeps((prev) =>
+      prev.map((s, i) => {
+        if (i !== index) return s;
+        if (binding === undefined) {
+          // Strip the field rather than carrying `undefined` on the node.
+          const { visibilityBinding: _omit, ...rest } = s;
+          return rest as SweepGeometryNode;
+        }
+        return { ...s, visibilityBinding: binding };
+      }),
+    );
+  }
+
+  function startArray() {
+    setArrayDraft({ ...EMPTY_ARRAY_DRAFT });
+  }
+
+  function updateArrayDraft(patch: Partial<ArrayDraft>) {
+    setArrayDraft((prev) => (prev ? { ...prev, ...patch } : prev));
+  }
+
+  function finishArray() {
+    setArrayDraft((prev) => {
+      if (!prev) return prev;
+      // Refuse degenerate arrays — must have a target + a count parameter.
+      if (!prev.targetFamilyId || !prev.countParam) return prev;
+      if (prev.spacingMode === 'fit_total' && !prev.totalLengthParam) return prev;
+      const node = arrayDraftToNode(prev);
+      setArrays((s) => [...s, node]);
+      return null;
+    });
+  }
+
+  function cancelArray() {
+    setArrayDraft(null);
+  }
+
   // Resolved parameter values for the canvas — defaults when flex mode
   // is off, defaults-merged-with-flex-overrides when on.
   const resolved = useMemo(() => {
@@ -205,6 +297,14 @@ export function FamilyEditorWorkbench(): JSX.Element {
           {t('familyEditor.sweepToggle')}
         </button>
         <button
+          className="px-3 py-1 rounded border"
+          onClick={startArray}
+          disabled={arrayDraft !== null}
+          aria-label={t('familyEditor.arrayToggle')}
+        >
+          {t('familyEditor.arrayToggle')}
+        </button>
+        <button
           className={
             flexMode ? 'bg-warning text-white px-3 py-1 rounded' : 'px-3 py-1 rounded border'
           }
@@ -214,6 +314,34 @@ export function FamilyEditorWorkbench(): JSX.Element {
           {t('familyEditor.flexToggle')}
         </button>
       </div>
+
+      {arrayDraft && (
+        <ArrayDraftPanel
+          t={t}
+          draft={arrayDraft}
+          params={params}
+          onUpdate={updateArrayDraft}
+          onFinish={finishArray}
+          onCancel={cancelArray}
+        />
+      )}
+
+      {arrays.length > 0 && (
+        <section>
+          <h2 className="font-semibold mb-2">{t('familyEditor.arraysHeading')}</h2>
+          <ul className="text-sm">
+            {arrays.map((a, i) => (
+              <li key={i} data-testid={`array-${i}`}>
+                {t('familyEditor.arrayLabel', {
+                  index: i + 1,
+                  mode: a.mode,
+                  countParam: a.countParam,
+                })}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {sweepDraft && (
         <section
@@ -258,14 +386,40 @@ export function FamilyEditorWorkbench(): JSX.Element {
           <ul className="text-sm">
             {sweeps.map((s, i) => (
               <li key={i} data-testid={`sweep-${i}`}>
-                {t('familyEditor.sweepLabel', {
-                  index: i + 1,
-                  pathSegs: s.pathLines.length,
-                  profSegs: s.profile.length,
-                })}
+                <button
+                  className={
+                    selectedSweepIndex === i ? 'underline font-semibold' : 'underline text-left'
+                  }
+                  onClick={() => setSelectedSweepIndex(i)}
+                  aria-label={`select-sweep-${i}`}
+                >
+                  {t('familyEditor.sweepLabel', {
+                    index: i + 1,
+                    pathSegs: s.pathLines.length,
+                    profSegs: s.profile.length,
+                  })}
+                </button>
+                {s.visibilityBinding && (
+                  <span className="ml-2 text-xs text-muted">
+                    {t('familyEditor.visibleWhenSummary', {
+                      paramName: s.visibilityBinding.paramName,
+                      state: s.visibilityBinding.whenTrue
+                        ? t('familyEditor.showWhenTrue')
+                        : t('familyEditor.showWhenFalse'),
+                    })}
+                  </span>
+                )}
               </li>
             ))}
           </ul>
+          {selectedSweepIndex !== null && sweeps[selectedSweepIndex] && (
+            <SweepPropertiesPanel
+              t={t}
+              sweep={sweeps[selectedSweepIndex]}
+              params={params}
+              onUpdate={(binding) => updateSweepVisibility(selectedSweepIndex, binding)}
+            />
+          )}
         </section>
       )}
 
@@ -412,6 +566,268 @@ export function FamilyEditorWorkbench(): JSX.Element {
         {t('familyEditor.loadIntoProject')}
       </button>
     </div>
+  );
+}
+
+interface SweepPropertiesPanelProps {
+  t: (key: string, opts?: Record<string, unknown>) => string;
+  sweep: SweepGeometryNode;
+  params: Param[];
+  onUpdate: (binding: VisibilityBinding | undefined) => void;
+}
+
+const VISIBLE_ALWAYS = '__always__';
+
+/**
+ * FAM-03 — properties panel for a selected geometry node.
+ *
+ * Lists boolean params + an "always visible" sentinel. Selecting a
+ * boolean param exposes a Show-when-true / Show-when-false toggle.
+ */
+function SweepPropertiesPanel({
+  t,
+  sweep,
+  params,
+  onUpdate,
+}: SweepPropertiesPanelProps): JSX.Element {
+  const booleanParams = params.filter((p) => p.type === 'boolean');
+  const binding = sweep.visibilityBinding;
+  const selected = binding ? binding.paramName : VISIBLE_ALWAYS;
+  const whenTrue = binding ? binding.whenTrue : true;
+
+  function onParamChange(value: string) {
+    if (value === VISIBLE_ALWAYS) {
+      onUpdate(undefined);
+    } else {
+      onUpdate({ paramName: value, whenTrue });
+    }
+  }
+
+  function onWhenChange(next: boolean) {
+    if (!binding) return;
+    onUpdate({ paramName: binding.paramName, whenTrue: next });
+  }
+
+  return (
+    <div
+      className="border rounded p-3 space-y-2 mt-2"
+      role="region"
+      aria-label={t('familyEditor.geometryPropertiesAriaLabel')}
+    >
+      <h3 className="font-semibold text-sm">{t('familyEditor.geometryPropertiesHeading')}</h3>
+      <label className="flex items-center gap-2 text-sm">
+        <span className="w-32">{t('familyEditor.visibleWhenLabel')}</span>
+        <select
+          aria-label={t('familyEditor.visibleWhenLabel')}
+          value={selected}
+          onChange={(e) => onParamChange(e.target.value)}
+        >
+          <option value={VISIBLE_ALWAYS}>{t('familyEditor.visibleAlways')}</option>
+          {booleanParams.map((p) => (
+            <option key={p.key} value={p.key}>
+              {p.label || p.key}
+            </option>
+          ))}
+        </select>
+      </label>
+      {binding && (
+        <div className="flex gap-3 text-sm">
+          <label className="flex items-center gap-1">
+            <input
+              type="radio"
+              name="visibilityWhen"
+              checked={whenTrue}
+              onChange={() => onWhenChange(true)}
+              aria-label={t('familyEditor.showWhenTrue')}
+            />
+            {t('familyEditor.showWhenTrue')}
+          </label>
+          <label className="flex items-center gap-1">
+            <input
+              type="radio"
+              name="visibilityWhen"
+              checked={!whenTrue}
+              onChange={() => onWhenChange(false)}
+              aria-label={t('familyEditor.showWhenFalse')}
+            />
+            {t('familyEditor.showWhenFalse')}
+          </label>
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface ArrayDraftPanelProps {
+  t: (key: string, opts?: Record<string, unknown>) => string;
+  draft: ArrayDraft;
+  params: Param[];
+  onUpdate: (patch: Partial<ArrayDraft>) => void;
+  onFinish: () => void;
+  onCancel: () => void;
+}
+
+/**
+ * FAM-05 — Array authoring panel.
+ *
+ * Click target → define axis (start/end mm) → set count param + spacing.
+ * The Finish button is locked until both target and count param are
+ * non-empty, plus a `totalLengthParam` when spacing is `fit_total`.
+ */
+function ArrayDraftPanel({
+  t,
+  draft,
+  params,
+  onUpdate,
+  onFinish,
+  onCancel,
+}: ArrayDraftPanelProps): JSX.Element {
+  const numericParams = params.filter((p) => p.type === 'length_mm' || p.type === 'angle_deg');
+  const finishDisabled =
+    !draft.targetFamilyId ||
+    !draft.countParam ||
+    (draft.spacingMode === 'fit_total' && !draft.totalLengthParam);
+
+  return (
+    <section
+      className="border rounded p-3 space-y-2"
+      aria-label={t('familyEditor.arraySketchAriaLabel')}
+      role="dialog"
+    >
+      <div className="flex items-center gap-2">
+        <h2 className="font-semibold">{t('familyEditor.arrayHeading')}</h2>
+        <button onClick={onCancel} className="ml-auto text-sm underline">
+          {t('familyEditor.arrayCancel')}
+        </button>
+      </div>
+      <label className="flex items-center gap-2 text-sm">
+        <span className="w-32">{t('familyEditor.arrayTargetLabel')}</span>
+        <input
+          aria-label={t('familyEditor.arrayTargetLabel')}
+          value={draft.targetFamilyId}
+          onChange={(e) => onUpdate({ targetFamilyId: e.target.value })}
+        />
+      </label>
+      <label className="flex items-center gap-2 text-sm">
+        <span className="w-32">{t('familyEditor.arrayModeLabel')}</span>
+        <select
+          aria-label={t('familyEditor.arrayModeLabel')}
+          value={draft.mode}
+          onChange={(e) => onUpdate({ mode: e.target.value as 'linear' | 'radial' })}
+        >
+          <option value="linear">{t('familyEditor.arrayModeLinear')}</option>
+          <option value="radial">{t('familyEditor.arrayModeRadial')}</option>
+        </select>
+      </label>
+      <label className="flex items-center gap-2 text-sm">
+        <span className="w-32">{t('familyEditor.arrayCountParamLabel')}</span>
+        <select
+          aria-label={t('familyEditor.arrayCountParamLabel')}
+          value={draft.countParam}
+          onChange={(e) => onUpdate({ countParam: e.target.value })}
+        >
+          <option value="">—</option>
+          {numericParams.map((p) => (
+            <option key={p.key} value={p.key}>
+              {p.label || p.key}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="flex items-center gap-2 text-sm">
+        <span className="w-32">{t('familyEditor.arraySpacingLabel')}</span>
+        <select
+          aria-label={t('familyEditor.arraySpacingLabel')}
+          value={draft.spacingMode}
+          onChange={(e) => onUpdate({ spacingMode: e.target.value as 'fixed_mm' | 'fit_total' })}
+        >
+          <option value="fixed_mm">{t('familyEditor.arraySpacingFixed')}</option>
+          <option value="fit_total">{t('familyEditor.arraySpacingFitTotal')}</option>
+        </select>
+      </label>
+      {draft.spacingMode === 'fixed_mm' ? (
+        <label className="flex items-center gap-2 text-sm">
+          <span className="w-32">{t('familyEditor.arraySpacingFixed')}</span>
+          <input
+            type="number"
+            aria-label={t('familyEditor.arraySpacingFixed')}
+            value={draft.fixedMm}
+            onChange={(e) => onUpdate({ fixedMm: Number(e.target.value) })}
+          />
+        </label>
+      ) : (
+        <label className="flex items-center gap-2 text-sm">
+          <span className="w-32">{t('familyEditor.arraySpacingFitTotal')}</span>
+          <select
+            aria-label={t('familyEditor.arraySpacingFitTotal')}
+            value={draft.totalLengthParam}
+            onChange={(e) => onUpdate({ totalLengthParam: e.target.value })}
+          >
+            <option value="">—</option>
+            {numericParams.map((p) => (
+              <option key={p.key} value={p.key}>
+                {p.label || p.key}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+      <fieldset className="text-sm">
+        <legend>{t('familyEditor.arrayAxisStartLabel')}</legend>
+        <input
+          type="number"
+          aria-label="array-axis-start-x"
+          value={draft.axisStart.xMm}
+          onChange={(e) =>
+            onUpdate({ axisStart: { ...draft.axisStart, xMm: Number(e.target.value) } })
+          }
+        />
+        <input
+          type="number"
+          aria-label="array-axis-start-y"
+          value={draft.axisStart.yMm}
+          onChange={(e) =>
+            onUpdate({ axisStart: { ...draft.axisStart, yMm: Number(e.target.value) } })
+          }
+        />
+        <input
+          type="number"
+          aria-label="array-axis-start-z"
+          value={draft.axisStart.zMm}
+          onChange={(e) =>
+            onUpdate({ axisStart: { ...draft.axisStart, zMm: Number(e.target.value) } })
+          }
+        />
+      </fieldset>
+      <fieldset className="text-sm">
+        <legend>{t('familyEditor.arrayAxisEndLabel')}</legend>
+        <input
+          type="number"
+          aria-label="array-axis-end-x"
+          value={draft.axisEnd.xMm}
+          onChange={(e) => onUpdate({ axisEnd: { ...draft.axisEnd, xMm: Number(e.target.value) } })}
+        />
+        <input
+          type="number"
+          aria-label="array-axis-end-y"
+          value={draft.axisEnd.yMm}
+          onChange={(e) => onUpdate({ axisEnd: { ...draft.axisEnd, yMm: Number(e.target.value) } })}
+        />
+        <input
+          type="number"
+          aria-label="array-axis-end-z"
+          value={draft.axisEnd.zMm}
+          onChange={(e) => onUpdate({ axisEnd: { ...draft.axisEnd, zMm: Number(e.target.value) } })}
+        />
+      </fieldset>
+      <button
+        onClick={onFinish}
+        disabled={finishDisabled}
+        className="bg-primary text-white px-3 py-1 rounded text-sm disabled:opacity-50"
+      >
+        {t('familyEditor.arrayFinish')}
+      </button>
+    </section>
   );
 }
 

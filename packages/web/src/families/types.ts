@@ -20,6 +20,18 @@ export interface SketchLine {
   endMm: { xMm: number; yMm: number };
 }
 
+/**
+ * FAM-03 — bind a geometry node's visibility to a host boolean param.
+ *
+ * The node is rendered iff `Boolean(hostParams[paramName]) === whenTrue`.
+ * Default semantics (when the field is absent): always visible.
+ */
+export interface VisibilityBinding {
+  paramName: string;
+  /** Show the node when the bound param's truthiness equals this. */
+  whenTrue: boolean;
+}
+
 /** Sweep node — extrude a 2D profile along a 2D path. */
 export interface SweepGeometryNode {
   kind: 'sweep';
@@ -34,6 +46,8 @@ export interface SweepGeometryNode {
   /** Optional: load profile from a profile family (FAM-08). */
   profileFamilyId?: string;
   materialKey?: string;
+  /** FAM-03: bind visibility to a host boolean param. */
+  visibilityBinding?: VisibilityBinding;
 }
 
 /* ─── FAM-01: Nested-family parameter bindings ─────────────────────────── */
@@ -59,10 +73,45 @@ export interface FamilyInstanceRefNode {
   positionMm: { xMm: number; yMm: number; zMm: number };
   rotationDeg: number;
   parameterBindings: Record<string, ParameterBinding>;
-  visibilityBinding?: { paramName: string; whenTrue: boolean };
+  visibilityBinding?: VisibilityBinding;
 }
 
-export type FamilyGeometryNode = SweepGeometryNode | FamilyInstanceRefNode;
+/* ─── FAM-05: Array node (linear + radial, parameter-driven count) ─────── */
+
+/**
+ * FAM-05 — array of nested family instances.
+ *
+ * `mode: 'linear'` lays `count` copies of `target` along the segment from
+ * `axisStart` to `axisEnd`. With `spacing.kind === 'fixed_mm'` the step
+ * is fixed and copies extend past `axisEnd` if `count` is large; with
+ * `spacing.kind === 'fit_total'` the segment is divided into
+ * `count - 1` equal gaps so the end copy lands on `axisEnd`.
+ *
+ * `mode: 'radial'` rotates the target around the axis defined by the
+ * midpoint of `(axisStart, axisEnd)` and the (axisEnd - axisStart)
+ * direction by `360/count` degrees per instance, with a per-instance
+ * radius equal to the target's offset from the rotation axis.
+ *
+ * `count` is read from the host param named `countParam` (clamped to
+ * `>= 1`, floored to integer). `centerVisibilityBinding` toggles the
+ * "head of table" / center copy independently — typically used by
+ * radial arrays.
+ */
+export interface ArrayGeometryNode {
+  kind: 'array';
+  target: FamilyInstanceRefNode;
+  mode: 'linear' | 'radial';
+  countParam: string;
+  spacing: { kind: 'fixed_mm'; mm: number } | { kind: 'fit_total'; totalLengthParam: string };
+  axisStart: { xMm: number; yMm: number; zMm: number };
+  axisEnd: { xMm: number; yMm: number; zMm: number };
+  /** Toggle a "center" copy (e.g. head-of-table) via a boolean param. */
+  centerVisibilityBinding?: VisibilityBinding;
+  /** FAM-03: bind whole-array visibility to a host boolean param. */
+  visibilityBinding?: VisibilityBinding;
+}
+
+export type FamilyGeometryNode = SweepGeometryNode | FamilyInstanceRefNode | ArrayGeometryNode;
 
 export interface FamilyDefinition {
   id: string;

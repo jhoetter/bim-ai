@@ -21,11 +21,13 @@ import * as THREE from 'three';
 import { evaluateFormulaOrThrow } from '../lib/expressionEvaluator';
 import { meshFromSweep } from './sweepGeometry';
 import type {
+  ArrayGeometryNode,
   FamilyDefinition,
   FamilyGeometryNode,
   FamilyInstanceRefNode,
   ParameterBinding,
   SweepGeometryNode,
+  VisibilityBinding,
 } from './types';
 
 /** Max recursion depth for nested-family expansion. */
@@ -82,11 +84,27 @@ function buildNestedParamMap(
 }
 
 /**
+ * FAM-03 — evaluate a visibility binding against the host params.
+ *
+ * Returns true if the bound node should render. Missing param is
+ * treated as falsy (consistent with `Boolean(undefined) === false`).
+ */
+export function isVisibleByBinding(
+  binding: VisibilityBinding | undefined,
+  hostParams: HostParams,
+): boolean {
+  if (!binding) return true;
+  const v = hostParams[binding.paramName];
+  return Boolean(v) === binding.whenTrue;
+}
+
+/**
  * Resolve a single geometry node to an Object3D.
  *
  * Sweep nodes go through FAM-02's `meshFromSweep`. Nested-family
- * refs recurse into `resolveNestedFamilyInstance`. Returns null
- * for nodes hidden by their `visibilityBinding`.
+ * refs recurse into `resolveNestedFamilyInstance`. Array nodes
+ * expand into N nested-family copies (FAM-05). Returns null for
+ * nodes hidden by their `visibilityBinding` (FAM-03).
  */
 function resolveGeometryNode(
   node: FamilyGeometryNode,
@@ -94,11 +112,16 @@ function resolveGeometryNode(
   catalog: FamilyCatalogLookup,
   depth: number,
 ): THREE.Object3D | null {
+  // FAM-03: visibility binding short-circuit applies to every node kind.
+  if (!isVisibleByBinding(node.visibilityBinding, hostParams)) return null;
   if (node.kind === 'sweep') {
     return resolveSweepNode(node);
   }
   if (node.kind === 'family_instance_ref') {
     return resolveNestedFamilyInstance(node, hostParams, catalog, depth);
+  }
+  if (node.kind === 'array') {
+    return resolveArrayNode(node, hostParams, catalog, depth);
   }
   return null;
 }
@@ -106,6 +129,95 @@ function resolveGeometryNode(
 function resolveSweepNode(node: SweepGeometryNode): THREE.Mesh {
   const geom = meshFromSweep(node);
   return new THREE.Mesh(geom);
+}
+
+/**
+ * FAM-05 — expand an array node into `count` placements of `target`.
+ *
+ * `count = max(1, floor(host_param_value(countParam)))`. Linear mode
+ * spaces along (axisStart → axisEnd). Radial mode rotates around the
+ * mid-point of the segment. The center copy (only emitted if a
+ * `centerVisibilityBinding` is bound and currently truthy) is placed
+ * at the midpoint with no rotation, regardless of mode.
+ */
+export function resolveArrayNode(
+  node: ArrayGeometryNode,
+  hostParams: HostParams,
+  catalog: FamilyCatalogLookup,
+  depth: number = 0,
+): THREE.Group {
+  if (depth > MAX_NESTED_FAMILY_DEPTH) {
+    throw new Error(
+      `FAM-05: array node depth ${depth} exceeds MAX_NESTED_FAMILY_DEPTH (${MAX_NESTED_FAMILY_DEPTH}); cycle in family graph?`,
+    );
+  }
+  const group = new THREE.Group();
+  group.userData.arrayMode = node.mode;
+  group.userData.countParam = node.countParam;
+
+  const rawCount = hostParams[node.countParam];
+  const numericCount = typeof rawCount === 'number' ? rawCount : Number(rawCount ?? 1);
+  const count = Math.max(1, Math.floor(Number.isFinite(numericCount) ? numericCount : 1));
+  group.userData.resolvedCount = count;
+
+  const start = new THREE.Vector3(node.axisStart.xMm, node.axisStart.yMm, node.axisStart.zMm);
+  const end = new THREE.Vector3(node.axisEnd.xMm, node.axisEnd.yMm, node.axisEnd.zMm);
+  const axisVec = new THREE.Vector3().subVectors(end, start);
+  const axisLen = axisVec.length();
+  const axisDir = axisLen > 0 ? axisVec.clone().normalize() : new THREE.Vector3(1, 0, 0);
+  const center = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
+
+  if (node.mode === 'linear') {
+    let stepMm: number;
+    if (node.spacing.kind === 'fixed_mm') {
+      stepMm = node.spacing.mm;
+    } else {
+      const total =
+        typeof hostParams[node.spacing.totalLengthParam] === 'number'
+          ? (hostParams[node.spacing.totalLengthParam] as number)
+          : axisLen;
+      stepMm = count > 1 ? total / (count - 1) : 0;
+    }
+    for (let i = 0; i < count; i++) {
+      const offset = axisDir.clone().multiplyScalar(i * stepMm);
+      const child = resolveNestedFamilyInstance(node.target, hostParams, catalog, depth + 1);
+      child.position.add(offset);
+      group.add(child);
+    }
+  } else {
+    // radial — distribute around an axis from start→end through `center`.
+    const axis = axisLen > 0 ? axisDir.clone() : new THREE.Vector3(0, 0, 1);
+    const stepDeg = 360 / count;
+    for (let i = 0; i < count; i++) {
+      const angleRad = (i * stepDeg * Math.PI) / 180;
+      const child = resolveNestedFamilyInstance(node.target, hostParams, catalog, depth + 1);
+      // Rotate the child's position around the axis through `center`.
+      const rel = new THREE.Vector3().subVectors(child.position, center);
+      rel.applyAxisAngle(axis, angleRad);
+      child.position.copy(center).add(rel);
+      // Stack the angular rotation onto the target's existing yaw if axis ≈ +Y.
+      if (Math.abs(axis.y) > Math.abs(axis.x) && Math.abs(axis.y) > Math.abs(axis.z)) {
+        child.rotation.y += angleRad;
+      } else {
+        // For non-Y axes, apply the rotation as a quaternion on top of the child.
+        const q = new THREE.Quaternion().setFromAxisAngle(axis, angleRad);
+        child.quaternion.premultiply(q);
+      }
+      group.add(child);
+    }
+  }
+
+  if (
+    node.centerVisibilityBinding &&
+    isVisibleByBinding(node.centerVisibilityBinding, hostParams)
+  ) {
+    const centerCopy = resolveNestedFamilyInstance(node.target, hostParams, catalog, depth + 1);
+    centerCopy.position.set(center.x, center.y, center.z);
+    centerCopy.userData.arrayCenter = true;
+    group.add(centerCopy);
+  }
+
+  return group;
 }
 
 /**
@@ -219,11 +331,14 @@ export function detectFamilyCycle(
     const def = catalog[id];
     if (!def?.geometry) continue;
     for (const node of def.geometry) {
-      if (node.kind !== 'family_instance_ref') continue;
-      if (path.includes(node.familyId)) {
-        return [...path, node.familyId];
+      let nestedId: string | null = null;
+      if (node.kind === 'family_instance_ref') nestedId = node.familyId;
+      else if (node.kind === 'array') nestedId = node.target.familyId;
+      if (!nestedId) continue;
+      if (path.includes(nestedId)) {
+        return [...path, nestedId];
       }
-      queue.push({ id: node.familyId, path: [...path, node.familyId] });
+      queue.push({ id: nestedId, path: [...path, nestedId] });
     }
   }
   return null;
