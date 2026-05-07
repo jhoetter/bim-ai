@@ -1,0 +1,29 @@
+just woke up, are all night shift tasks complete?
+
+---
+
+yes fix the regressions please. then tell me a prompt i can give to another AI agent that will complete the partials.
+
+---
+
+give me another prompt for the KRN-12 and KRN-09 (and the prev dependency for FAM-01)
+
+---
+
+in the meantime, i will try to from scratch generate our seed house. this means that the current house we seed must be completely overwritten, i.e. deleted and then the agent will try to generate the house from the @spec/target-house-seed.md description. give me the full prompt for that as well
+
+---
+
+is our overall tracker updated from the work of the night-shift? (excluding still running updates of the things we need to get from partial to done of course)
+
+---
+
+you seem like you stopped?
+
+---
+
+how much of the tracker is now roughly done, how much progress was added?
+
+---
+
+how close OVERALL would you say we are to revit nowadays?
