@@ -482,6 +482,7 @@ function rebuildPlanMeshesFromWire(
     roomFillOpacityScale?: number;
     planAnnotationHints?: PlanAnnotationHintsResolved | null;
     planTagFontScales?: { opening: number; room: number } | null;
+    detailLevel?: 'coarse' | 'medium' | 'fine';
   },
 ): void {
   while (holder.children.length) holder.remove(holder.children[0]!);
@@ -605,7 +606,9 @@ function rebuildPlanMeshesFromWire(
     holder.add(grp);
   }
 
-  for (const w of wallsByWireId.values()) holder.add(planWallMesh(w, selectedId));
+  const wireDetail = opts.detailLevel ?? 'medium';
+  for (const w of wallsByWireId.values())
+    holder.add(planWallMesh(w, selectedId, 1, elementsById, wireDetail));
 
   const sepsRaw = Array.isArray(prim.roomSeparations)
     ? (prim.roomSeparations as Record<string, unknown>[])
@@ -993,6 +996,10 @@ export function rebuildPlanMeshes(
   const gh = opts.planGraphicHints;
   const roomFillOpacityScale = gh?.roomFillOpacityScale ?? 1;
   const lineWeightScale = gh?.lineWeightScale ?? 1;
+  // VIE-01: route the active plan view's detail level into the per-kind mesh
+  // builders so coarse / medium / fine actually differ on screen.
+  const detailLevel: 'coarse' | 'medium' | 'fine' =
+    gh?.detailLevel === 'coarse' || gh?.detailLevel === 'fine' ? gh.detailLevel : 'medium';
 
   if (opts.wirePrimitives && isPlanProjectionPrimitivesV1(opts.wirePrimitives)) {
     rebuildPlanMeshesFromWire(holder, elementsById, {
@@ -1002,6 +1009,7 @@ export function rebuildPlanMeshes(
       roomFillOpacityScale,
       planAnnotationHints: opts.planAnnotationHints ?? null,
       planTagFontScales: opts.planTagFontScales ?? null,
+      detailLevel,
     });
     return;
   }
@@ -1088,7 +1096,7 @@ export function rebuildPlanMeshes(
   }
 
   for (const wall of walls)
-    holder.add(planWallMesh(wall, opts.selectedId, lineWeightScale, elementsById));
+    holder.add(planWallMesh(wall, opts.selectedId, lineWeightScale, elementsById, detailLevel));
 
   for (const rs of Object.values(elementsById)) {
     if (rs.kind !== 'room_separation') continue;

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 
 import { curtainGridCellId, type Element, type WallLocationLine } from '@bim-ai/core';
 import { materialBaseColor } from '../viewport/materials';
+import type { PlanDetailLevel } from './planDetailLevelLines';
 
 import { deterministicSchemeColorHex } from './roomSchemeColor';
 import {
@@ -40,6 +41,7 @@ export function planWallMesh(
   selectedId?: string,
   lineWeightScale = 1,
   elementsById?: Record<string, Element>,
+  detailLevel: PlanDetailLevel = 'medium',
 ): THREE.Object3D {
   const { lenM: len, nx, nz } = segmentDir(wall);
 
@@ -76,9 +78,12 @@ export function planWallMesh(
 
   mesh.userData.bimPickId = wall.id;
 
-  // FL-08: when the wall has a wall_type, overlay layer boundary lines.
-  if (wall.wallTypeId) {
-    const lines = buildPlanWallLayerLines(wall, len, sx, sz, nx, nz, elementsById);
+  // FL-08 + VIE-01: when the wall has a wall_type, overlay layer boundary
+  // lines — but gate by detail level (coarse drops them entirely so the wall
+  // reads as a single solid bar; medium shows just the core boundaries; fine
+  // shows the full layer stack).
+  if (wall.wallTypeId && detailLevel !== 'coarse') {
+    const lines = buildPlanWallLayerLines(wall, len, sx, sz, nx, nz, elementsById, detailLevel);
     if (lines) {
       const group = new THREE.Group();
       group.userData.bimPickId = wall.id;
@@ -173,7 +178,7 @@ function resolvePlanWallAssembly(
   elementsById?: Record<string, Element>,
 ): {
   basisLine: 'center' | 'face_interior' | 'face_exterior';
-  layers: { thicknessMm: number; materialKey: string }[];
+  layers: { thicknessMm: number; materialKey: string; function?: string }[];
 } | null {
   const builtIn = getBuiltInWallType(wallTypeId);
   if (builtIn) {
@@ -182,6 +187,7 @@ function resolvePlanWallAssembly(
       layers: builtIn.layers.map((l) => ({
         thicknessMm: l.thicknessMm,
         materialKey: l.materialKey,
+        function: l.function,
       })),
     };
   }
@@ -193,6 +199,10 @@ function resolvePlanWallAssembly(
     layers: el.layers.map((l) => ({
       thicknessMm: Number(l.thicknessMm),
       materialKey: String(l.materialKey ?? ''),
+      function:
+        typeof (l as { function?: unknown }).function === 'string'
+          ? String((l as { function: string }).function)
+          : undefined,
     })),
   };
 }
@@ -205,8 +215,10 @@ function buildPlanWallLayerLines(
   nx: number,
   nz: number,
   elementsById?: Record<string, Element>,
+  detailLevel: PlanDetailLevel = 'fine',
 ): THREE.LineSegments | null {
   if (!wall.wallTypeId) return null;
+  if (detailLevel === 'coarse') return null;
   const assembly = resolvePlanWallAssembly(wall.wallTypeId, elementsById);
   if (!assembly || assembly.layers.length === 0) return null;
 
@@ -238,35 +250,58 @@ function buildPlanWallLayerLines(
   const cxM = sx + (nx * lenM) / 2;
   const czM = sz + (nz * lenM) / 2;
 
+  // VIE-01: at 'medium', emit only the boundaries that delimit the core
+  // (transitions between structure and non-structure layers). At 'fine', emit
+  // every boundary for the full layer stack.
+  const includeBoundaryAtIndex = (i: number, prevFn: string | null): boolean => {
+    if (detailLevel === 'fine') return true;
+    if (detailLevel !== 'medium') return false;
+    if (i === 0 || i === assembly.layers.length) {
+      // Outer faces always render at medium so the wall reads as 2 lines for a
+      // typical structure-only assembly.
+      return true;
+    }
+    const layer = assembly.layers[i];
+    const isStructure = (fn: string | undefined | null) => fn === 'structure';
+    return isStructure(prevFn) !== isStructure(layer?.function ?? null);
+  };
+
   // Boundary at the start of the stack:
   let prevCursorMm = cursorMm;
+  let prevFn: string | null = null;
   for (let i = 0; i < assembly.layers.length; i++) {
     const layer = assembly.layers[i]!;
-    const boundaryMm = prevCursorMm; // line at the top edge of this layer (interior side)
-    const offM = boundaryMm / 1000;
+    if (includeBoundaryAtIndex(i, prevFn)) {
+      const boundaryMm = prevCursorMm;
+      const offM = boundaryMm / 1000;
+      const ax = cxM + perpX * offM - nx * halfLenM;
+      const az = czM + perpZ * offM - nz * halfLenM;
+      const bx = cxM + perpX * offM + nx * halfLenM;
+      const bz = czM + perpZ * offM + nz * halfLenM;
+      const baseHex = materialHexFor(layer.materialKey);
+      const lineHex = darkenHex(baseHex, 0.3);
+      const color = new THREE.Color(lineHex);
+      positions.push(ax, PLAN_Y + 0.005, az, bx, PLAN_Y + 0.005, bz);
+      colors.push(color.r, color.g, color.b, color.r, color.g, color.b);
+    }
+    prevFn = layer.function ?? null;
+    prevCursorMm += layer.thicknessMm;
+  }
+  // Final boundary at the exterior face — always emitted (at any detail level
+  // ≥ medium it forms the outer wall outline).
+  if (includeBoundaryAtIndex(assembly.layers.length, prevFn)) {
+    const offM = prevCursorMm / 1000;
     const ax = cxM + perpX * offM - nx * halfLenM;
     const az = czM + perpZ * offM - nz * halfLenM;
     const bx = cxM + perpX * offM + nx * halfLenM;
     const bz = czM + perpZ * offM + nz * halfLenM;
-    // Use this layer's colour darkened 30% for the inner boundary line.
-    const baseHex = materialHexFor(layer.materialKey);
-    const lineHex = darkenHex(baseHex, 0.3);
+    const lastLayer = assembly.layers[assembly.layers.length - 1]!;
+    const lineHex = darkenHex(materialHexFor(lastLayer.materialKey), 0.3);
     const color = new THREE.Color(lineHex);
     positions.push(ax, PLAN_Y + 0.005, az, bx, PLAN_Y + 0.005, bz);
     colors.push(color.r, color.g, color.b, color.r, color.g, color.b);
-    prevCursorMm += layer.thicknessMm;
   }
-  // Final boundary at the exterior face:
-  const offM = prevCursorMm / 1000;
-  const ax = cxM + perpX * offM - nx * halfLenM;
-  const az = czM + perpZ * offM - nz * halfLenM;
-  const bx = cxM + perpX * offM + nx * halfLenM;
-  const bz = czM + perpZ * offM + nz * halfLenM;
-  const lastLayer = assembly.layers[assembly.layers.length - 1]!;
-  const lineHex = darkenHex(materialHexFor(lastLayer.materialKey), 0.3);
-  const color = new THREE.Color(lineHex);
-  positions.push(ax, PLAN_Y + 0.005, az, bx, PLAN_Y + 0.005, bz);
-  colors.push(color.r, color.g, color.b, color.r, color.g, color.b);
+  if (positions.length === 0) return null;
 
   const geom = new THREE.BufferGeometry();
   geom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3));

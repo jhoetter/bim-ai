@@ -62,6 +62,8 @@ import {
 import { rebuildPlanMeshes } from './symbology';
 import { elevationFromWall, sectionCutFromWall } from '../lib/sectionElevationFromWall';
 import { WallContextMenu, type WallContextMenuCommand } from '../workspace/WallContextMenu';
+import { PlanDetailLevelToolbar } from './PlanDetailLevelToolbar';
+import type { PlanDetailLevel } from './planDetailLevelLines';
 
 function readPlanToken(name: string, fallback: string): string {
   const v = liveTokenReader().read(name);
@@ -298,6 +300,27 @@ export function PlanCanvas({
     if (wireGraphicHints) return wireGraphicHints;
     return resolvePlanGraphicHints(elementsById, activePlanViewId);
   }, [wireGraphicHints, elementsById, activePlanViewId]);
+
+  // VIE-01: derive the active plan view's detail level + a setter that commits
+  // updateElementProperty so the toolbar drives the same field the renderer
+  // reads via mergedGraphicHints.
+  const activeDetailLevel: PlanDetailLevel = (() => {
+    const raw = mergedGraphicHints?.detailLevel;
+    return raw === 'coarse' || raw === 'fine' ? raw : 'medium';
+  })();
+
+  const handleDetailLevelChange = useCallback(
+    (next: PlanDetailLevel) => {
+      if (!activePlanViewId) return;
+      onSemanticCommand({
+        type: 'updateElementProperty',
+        elementId: activePlanViewId,
+        key: 'planDetailLevel',
+        value: next,
+      });
+    },
+    [activePlanViewId, onSemanticCommand],
+  );
 
   const mergedAnnotationHints = useMemo(() => {
     if (wireAnnotationHints !== null) return wireAnnotationHints;
@@ -1688,6 +1711,14 @@ export function PlanCanvas({
           <p className="text-muted text-[10px] mt-1">Use PageUp / PageDown to switch levels.</p>
         </div>
       )}
+      {/* VIE-01 — Coarse / Medium / Fine selector (matches Revit's View
+          Control Bar position at the bottom of the plan canvas). Hidden when
+          no plan_view is active so the toolbar doesn't dispatch dead commands. */}
+      {activePlanViewId ? (
+        <div className="pointer-events-auto absolute left-1/2 bottom-3 z-10 -translate-x-1/2">
+          <PlanDetailLevelToolbar value={activeDetailLevel} onChange={handleDetailLevelChange} />
+        </div>
+      ) : null}
       {/* Zoom control — scale bar + preset menu */}
       <div className="pointer-events-auto absolute left-3 bottom-3 z-10">
         {showZoomMenu && (
