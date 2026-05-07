@@ -902,7 +902,7 @@ Profile families (introduced in V2-11) optionally referenced via `profileFamilyI
 
 | ID     | Item                                                            | Effort | State     | Depends on |
 | ------ | --------------------------------------------------------------- | ------ | --------- | ---------- |
-| VIE-01 | Detail levels render binding                                    | M      | `partial` | —          |
+| VIE-01 | Detail levels render binding                                    | M      | `done`    | —          |
 | VIE-02 | Per-element / per-family-geometry visibility per detail level    | M      | `open`    | FAM-01     |
 | VIE-03 | Named elevation views (N/S/E/W) + auto-generation                | M      | `done`    | —          |
 | VIE-04 | Temporary isolate / hide category                                | S      | `done`    | —          |
@@ -923,7 +923,7 @@ Profile families (introduced in V2-11) optionally referenced via `profileFamilyI
 
 **Acceptance.** Switching the demo plan view from Fine → Coarse visibly simplifies rendering; switching back restores layer detail.
 
-**Effort.** M — 1 week. **Helpers landed in commit a0883092** — `wallPlanLinesForDetailLevel`, `doorPlanFeatureCount`, `windowPlanFeatureCount`, `stairPlanFeatureCount`, plus curtain gating and a presentational `PlanDetailLevelToolbar`. Hooking the helpers into `planProjection.ts` / `planElementMeshBuilders.ts` so the rule reaches the on-screen pixels still pending — but the canonical line counts + feature gates are now isolated and unit-testable.
+**Effort.** M — 1 week. **Done in commits a0883092 + ee846851** — pure helpers (`wallPlanLinesForDetailLevel`, `doorPlanFeatureCount`, `windowPlanFeatureCount`, `stairPlanFeatureCount`, curtain gating, presentational `PlanDetailLevelToolbar`) plus the projection wiring: `planWallMesh` accepts a `detailLevel` argument that drops the layer overlay at coarse, restricts to core boundaries at medium, and keeps the full layer stack at fine. `rebuildPlanMeshes` reads `mergedGraphicHints.detailLevel` and forwards it to the legacy + wire paths. `PlanCanvas` mounts the `PlanDetailLevelToolbar` at bottom-center and dispatches `updateElementProperty(planDetailLevel)` against the active plan view, closing the round-trip with the existing engine handler.
 
 ### VIE-02 — Per-element / per-family-geometry visibility per detail level
 
