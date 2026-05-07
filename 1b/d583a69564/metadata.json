@@ -3,7 +3,7 @@
   "checkpoint_id": "1bd583a69564",
   "strategy": "manual-commit",
   "branch": "dayshift-fam-keystone",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     "nightshift/dayshift-fam-keystone-status.md"
   ],
@@ -25,13 +25,19 @@
       "transcript": "/1b/d583a69564/2/full.jsonl",
       "content_hash": "/1b/d583a69564/2/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/1b/d583a69564/3/metadata.json",
+      "transcript": "/1b/d583a69564/3/full.jsonl",
+      "content_hash": "/1b/d583a69564/3/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
-    "input_tokens": 41,
-    "cache_creation_tokens": 44778,
-    "cache_read_tokens": 8439965,
-    "output_tokens": 29092,
-    "api_call_count": 41
+    "input_tokens": 253,
+    "cache_creation_tokens": 308693,
+    "cache_read_tokens": 37054766,
+    "output_tokens": 121319,
+    "api_call_count": 233
   }
 }
