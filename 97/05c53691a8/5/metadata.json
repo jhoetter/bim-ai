@@ -1,0 +1,36 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "9705c53691a8",
+  "session_id": "fc0927c9-e98a-4c8f-8722-edd1a063ac2b",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-07T06:06:44.9827Z",
+  "branch": "dayshift-fam-keystone",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "app/tests/test_update_element_property_door_window_extras.py"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-opus-4-7",
+  "turn_id": "3fceaf7b9f7d",
+  "checkpoint_transcript_start": 171,
+  "transcript_lines_at_start": 171,
+  "token_usage": {
+    "input_tokens": 31,
+    "cache_creation_tokens": 38534,
+    "cache_read_tokens": 3953002,
+    "output_tokens": 23686,
+    "api_call_count": 31
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-07T06:06:44.973356Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 207,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 207,
+    "total_lines_changed": 207,
+    "agent_percentage": 0,
+    "metric_version": 2
+  }
+}
