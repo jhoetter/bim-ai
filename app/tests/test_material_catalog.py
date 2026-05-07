@@ -12,7 +12,6 @@ from bim_ai.material_catalog import (
     resolve_material,
 )
 
-
 REQUIRED_KEYS = (
     # Cladding
     "timber_cladding",

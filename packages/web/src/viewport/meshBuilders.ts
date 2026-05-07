@@ -102,7 +102,6 @@ function tryResolveFamilyInstancePanel(
     resolved.userData.curtainPanelFamilyTypeId = familyTypeId;
     return resolved;
   } catch (err) {
-    // eslint-disable-next-line no-console
     console.warn(
       `[KRN-09] family_instance resolution failed for type '${familyTypeId}'; falling back to placeholder`,
       err,

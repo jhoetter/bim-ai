@@ -40,7 +40,7 @@ def test_load_residential_eu_snapshot():
     # Three levels at the prescribed elevations.
     levels = [e for e in els.values() if isinstance(e, LevelElem)]
     assert len(levels) == 3
-    by_name = {l.name: l for l in levels}
+    by_name = {lvl.name: lvl for lvl in levels}
     assert by_name["Ground Floor"].elevation_mm == 0
     assert by_name["First Floor"].elevation_mm == 3000
     assert by_name["Roof"].elevation_mm == 6000

@@ -111,7 +111,7 @@ def test_create_text_3d_supports_all_three_font_families():
 
 
 def test_create_text_3d_rejects_unknown_font_family():
-    with pytest.raises(Exception):
+    with pytest.raises((ValueError, RuntimeError, KeyError)):
         try_commit(
             _empty_doc(),
             {

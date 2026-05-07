@@ -5,7 +5,7 @@
  * deterministic gridCellId, and that mullions stay regardless of override.
  */
 import * as THREE from 'three';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { curtainGridCellId, type Element } from '@bim-ai/core';
 

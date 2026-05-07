@@ -159,7 +159,7 @@ class Parser {
   }
 
   private parseComparison(): number {
-    let left = this.parseAdd();
+    const left = this.parseAdd();
     const t = this.peek();
     if (t.kind === 'op' && ['<', '<=', '>', '>=', '=', '<>'].includes(t.value)) {
       const op = t.value;

@@ -208,7 +208,7 @@ class WallElem(BaseModel):
     pinned: bool = Field(default=False)
     curtain_wall_v_count: int | None = Field(default=None, alias="curtainWallVCount")
     curtain_wall_h_count: int | None = Field(default=None, alias="curtainWallHCount")
-    curtain_panel_overrides: dict[str, "CurtainPanelOverride"] | None = Field(
+    curtain_panel_overrides: dict[str, CurtainPanelOverride] | None = Field(
         default=None, alias="curtainPanelOverrides"
     )
 

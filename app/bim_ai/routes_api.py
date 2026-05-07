@@ -27,11 +27,6 @@ from bim_ai.diff_engine import compute_element_diff
 from bim_ai.document import Document
 from bim_ai.elements import Element, LevelElem, PlanViewElem
 from bim_ai.engine import clone_document, ensure_internal_origin, try_commit_bundle
-from bim_ai.template_loader import (
-    list_templates,
-    load_template_snapshot,
-    template_exists,
-)
 from bim_ai.evidence_manifest import (
     MINIMAL_PROBE_PNG_BYTES_V1,
     MINIMAL_PROBE_PNG_CANONICAL_SHA256_V1,
@@ -86,6 +81,11 @@ from bim_ai.schedule_csv import schedule_payload_to_csv, schedule_payload_with_c
 from bim_ai.schedule_derivation import derive_schedule_table, list_schedule_ids
 from bim_ai.sheet_preview_svg import SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2
 from bim_ai.tables import ModelRecord, ProjectRecord, UndoStackRecord
+from bim_ai.template_loader import (
+    list_templates,
+    load_template_snapshot,
+    template_exists,
+)
 from bim_ai.type_material_registry import merged_registry_payload
 from bim_ai.v1_acceptance_proof_matrix import build_v1_acceptance_proof_matrix_v1
 from bim_ai.v1_closeout_readiness_manifest import build_v1_closeout_readiness_manifest_v1

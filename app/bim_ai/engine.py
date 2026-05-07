@@ -27,13 +27,13 @@ from bim_ai.commands import (
     CreateJoinGeometryCmd,
     CreateLevelCmd,
     CreatePlanRegionCmd,
+    CreateProjectBasePointCmd,
     CreateRailingCmd,
     CreateRoofCmd,
     CreateRoomOutlineCmd,
     CreateRoomPolyCmd,
     CreateRoomRectangleCmd,
     CreateRoomSeparationCmd,
-    CreateProjectBasePointCmd,
     CreateSectionCutCmd,
     CreateSlabOpeningCmd,
     CreateStairCmd,
@@ -56,11 +56,11 @@ from bim_ai.commands import (
     MoveWallDeltaCmd,
     MoveWallEndpointsCmd,
     PinElementCmd,
-    UnpinElementCmd,
     RestoreElementCmd,
     RotateProjectBasePointCmd,
     SaveViewpointCmd,
     SetCurtainPanelOverrideCmd,
+    UnpinElementCmd,
     UpdateElementPropertyCmd,
     UpdateOpeningCleanroomCmd,
     UpdatePlanViewCropCmd,
@@ -92,6 +92,7 @@ from bim_ai.datum_levels import (
 )
 from bim_ai.document import Document
 from bim_ai.elements import (
+    INTERNAL_ORIGIN_ID,
     AgentAssumptionElem,
     AgentDeviationElem,
     BalconyElem,
@@ -105,6 +106,7 @@ from bim_ai.elements import (
     FloorElem,
     FloorTypeElem,
     GridLineElem,
+    InternalOriginElem,
     IssueElem,
     JoinGeometryElem,
     LevelElem,
@@ -113,6 +115,7 @@ from bim_ai.elements import (
     PlanRegionElem,
     PlanTagStyleElem,
     PlanViewElem,
+    ProjectBasePointElem,
     ProjectSettingsElem,
     RailingElem,
     RoofElem,
@@ -126,14 +129,11 @@ from bim_ai.elements import (
     SheetElem,
     SiteContextObjectRow,
     SiteElem,
-    INTERNAL_ORIGIN_ID,
-    InternalOriginElem,
-    ProjectBasePointElem,
     SlabOpeningElem,
     StairElem,
     SurveyPointElem,
-    Text3dElem,
     TagDefinitionElem,
+    Text3dElem,
     ValidationRuleElem,
     Vec2Mm,
     ViewpointElem,
@@ -1205,8 +1205,65 @@ def apply_inplace(doc: Document, cmd: Command) -> None:
                     els[cmd.element_id] = el.model_copy(update={"family_type_id": raw_v or None})
                 elif cmd.key == "materialKey":
                     els[cmd.element_id] = el.model_copy(update={"material_key": raw_v or None})
+                elif cmd.key == "operationType" and isinstance(el, DoorElem):
+                    if not raw_v:
+                        els[cmd.element_id] = el.model_copy(update={"operation_type": None})
+                    elif raw_v in (
+                        "swing_single",
+                        "swing_double",
+                        "sliding_single",
+                        "sliding_double",
+                        "bi_fold",
+                        "pocket",
+                        "pivot",
+                        "automatic_double",
+                    ):
+                        els[cmd.element_id] = el.model_copy(update={"operation_type": raw_v})
+                    else:
+                        raise ValueError(
+                            "operationType must be one of swing_single | swing_double | sliding_single | sliding_double | bi_fold | pocket | pivot | automatic_double"
+                        )
+                elif cmd.key == "slidingTrackSide" and isinstance(el, DoorElem):
+                    if not raw_v:
+                        els[cmd.element_id] = el.model_copy(update={"sliding_track_side": None})
+                    elif raw_v in ("wall_face", "in_pocket"):
+                        els[cmd.element_id] = el.model_copy(update={"sliding_track_side": raw_v})
+                    else:
+                        raise ValueError("slidingTrackSide must be wall_face | in_pocket")
+                elif cmd.key == "outlineKind" and isinstance(el, WindowElem):
+                    if not raw_v:
+                        els[cmd.element_id] = el.model_copy(update={"outline_kind": None})
+                    elif raw_v in (
+                        "rectangle",
+                        "arched_top",
+                        "gable_trapezoid",
+                        "circle",
+                        "octagon",
+                        "custom",
+                    ):
+                        els[cmd.element_id] = el.model_copy(update={"outline_kind": raw_v})
+                    else:
+                        raise ValueError(
+                            "outlineKind must be one of rectangle | arched_top | gable_trapezoid | circle | octagon | custom"
+                        )
+                elif cmd.key == "attachedRoofId" and isinstance(el, WindowElem):
+                    if not raw_v:
+                        els[cmd.element_id] = el.model_copy(update={"attached_roof_id": None})
+                    else:
+                        target = els.get(raw_v)
+                        if target is None:
+                            raise ValueError("attachedRoofId must reference an existing element")
+                        if not isinstance(target, RoofElem):
+                            raise ValueError("attachedRoofId must reference a roof element")
+                        els[cmd.element_id] = el.model_copy(update={"attached_roof_id": raw_v})
+                elif isinstance(el, DoorElem):
+                    raise ValueError(
+                        "door updates: key=familyTypeId | materialKey | operationType | slidingTrackSide | name"
+                    )
                 else:
-                    raise ValueError("door/window updates: key=familyTypeId | materialKey | name")
+                    raise ValueError(
+                        "window updates: key=familyTypeId | materialKey | outlineKind | attachedRoofId | name"
+                    )
             elif isinstance(el, ScheduleElem):
                 raw_s = cmd.value.strip()
                 if cmd.key == "sheetId":
@@ -2332,10 +2389,6 @@ def _apply_mirror_elements(els: dict[str, Element], cmd: MirrorElementsCmd) -> N
     target_ids: set[str] = set(cmd.element_ids)
     if not target_ids:
         return
-
-    walls_being_mirrored: set[str] = {
-        tid for tid in target_ids if isinstance(els.get(tid), WallElem)
-    }
 
     if cmd.also_copy:
         # Build the mirrored copies, then atomically attach them. Hosted
