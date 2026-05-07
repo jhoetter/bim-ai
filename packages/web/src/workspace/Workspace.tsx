@@ -789,6 +789,14 @@ export function Workspace(): JSX.Element {
           setTourOpen(true);
         }}
         onManageLinks={() => setManageLinksOpen(true)}
+        onLinkIfc={(file) => {
+          // FED-04: the workspace doesn't know its host model id at this
+          // layer; surface a console message and open the ManageLinksDialog
+          // so the user can finish the import there. Wired upstream by the
+          // model-aware shell.
+          console.warn('link-ifc selected', { name: file.name, size: file.size });
+          setManageLinksOpen(true);
+        }}
       />
       <ManageLinksDialog open={manageLinksOpen} onClose={() => setManageLinksOpen(false)} />
       <AppShell

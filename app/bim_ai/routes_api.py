@@ -6,7 +6,7 @@ from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect
 from fastapi.responses import PlainTextResponse
-from pydantic import BaseModel, Field, TypeAdapter
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 from sqlalchemy import desc, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -84,6 +84,7 @@ from bim_ai.routes_deps import (
     PERSPECTIVE_IDS,
     WORKSPACE_LAYOUT_PRESET_IDS,
     document_to_wire,
+    get_hub,
     load_model_row,
     violations_wire,
 )
@@ -808,6 +809,182 @@ async def get_family_catalog(catalog_id: str) -> dict[str, Any]:
     if payload is None:
         raise HTTPException(status_code=404, detail="Catalog not found")
     return payload.model_dump(by_alias=True)
+
+
+# ---------------------------------------------------------------------------
+# FED-04 — IFC → shadow-model link import
+# ---------------------------------------------------------------------------
+
+
+class ImportIfcBody(BaseModel):
+    """FED-04: payload for ``POST /api/models/{host_id}/import-ifc``.
+
+    Either ``file_text`` (inline IFC STEP) or ``file_path`` (server-side path
+    readable by the FastAPI process) must be supplied. ``slug`` names the new
+    shadow-model row; ``link_name`` is the host-side display name for the
+    auto-created ``link_model`` element. Both have sensible defaults so a
+    minimal request just sends the IFC bytes.
+    """
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    file_text: str | None = Field(default=None, alias="fileText")
+    file_path: str | None = Field(default=None, alias="filePath")
+    slug: str = Field(default="ifc-import", min_length=1, max_length=128)
+    link_name: str = Field(default="Linked IFC", alias="linkName")
+
+
+@api_router.post("/models/{host_id}/import-ifc")
+async def import_ifc_to_shadow_link(
+    host_id: UUID,
+    body: ImportIfcBody,
+    session: AsyncSession = Depends(get_session),
+    hub: Hub = Depends(get_hub),
+) -> dict[str, Any]:
+    """FED-04: import an IFC file as a brand-new shadow bim-ai model + auto-
+    create a ``link_model`` row in the host pointing at it.
+
+    Round-trip: parse IFC → ``authoritativeReplay_v0`` command bundle →
+    apply to a fresh ``ModelRecord`` in the same project → run
+    ``createLinkModel`` against the host. The shadow model is independent
+    from then on (host edits never reach back into it; the host treats its
+    elements as read-only renderable context per FED-01).
+    """
+
+    from bim_ai.export_ifc import build_kernel_ifc_authoritative_replay_sketch_v0
+    from bim_ai.engine import (
+        try_apply_kernel_ifc_authoritative_replay_v0,
+        try_commit,
+    )
+
+    # Resolve host first so we can mirror its project_id onto the shadow.
+    host_row = await load_model_row(session, host_id)
+    if host_row is None:
+        raise HTTPException(status_code=404, detail="Host model not found")
+
+    # Read the IFC text. The endpoint accepts either inline text or a path.
+    if body.file_text is not None:
+        step_text = body.file_text
+    elif body.file_path is not None:
+        try:
+            with open(body.file_path, encoding="utf-8") as fh:
+                step_text = fh.read()
+        except OSError as exc:
+            raise HTTPException(
+                status_code=400, detail=f"Cannot read IFC file: {exc}"
+            ) from exc
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail="import-ifc requires either fileText or filePath in the request body",
+        )
+
+    sketch = build_kernel_ifc_authoritative_replay_sketch_v0(step_text)
+    if sketch.get("available") is not True:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "reason": "ifc_replay_unavailable",
+                "ifcReason": sketch.get("reason"),
+            },
+        )
+
+    # 1. Create the shadow model row in the host's project.
+    shadow_id = uuid4()
+    shadow_doc: Document = Document(revision=1, elements={})  # type: ignore[arg-type]
+    ensure_internal_origin(shadow_doc)
+
+    # 2. Apply the replay bundle in-memory.
+    ok, replayed_doc, applied_cmds, _viols, code = try_apply_kernel_ifc_authoritative_replay_v0(
+        shadow_doc, sketch
+    )
+    if not ok or replayed_doc is None:
+        raise HTTPException(
+            status_code=400,
+            detail={"reason": "ifc_replay_failed", "code": code},
+        )
+
+    # 3. Persist the shadow model.
+    shadow_row = ModelRecord(
+        id=shadow_id,
+        project_id=host_row.project_id,
+        slug=body.slug,
+        revision=replayed_doc.revision,
+        document=document_to_wire(replayed_doc),
+    )
+    session.add(shadow_row)
+    try:
+        await session.flush()
+    except IntegrityError:
+        await session.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail="Shadow model slug already exists for this project — pass a unique 'slug'",
+        ) from None
+
+    # 4. Build a createLinkModel command and apply it to the host.
+    suggested_position = {"xMm": 0.0, "yMm": 0.0, "zMm": 0.0}
+    host_doc = Document.model_validate(host_row.document)
+    create_link = {
+        "type": "createLinkModel",
+        "name": body.link_name,
+        "sourceModelId": str(shadow_id),
+        "positionMm": suggested_position,
+        "rotationDeg": 0.0,
+        "originAlignmentMode": "origin_to_origin",
+    }
+    try:
+        host_ok, new_host_doc, _cmd, host_viols, host_code = try_commit(host_doc, create_link)
+    except Exception as exc:
+        await session.rollback()
+        raise HTTPException(
+            status_code=400, detail=f"createLinkModel failed: {exc}"
+        ) from exc
+    if not host_ok or new_host_doc is None:
+        await session.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "reason": host_code,
+                "violations": [v.model_dump(by_alias=True) for v in host_viols],
+            },
+        )
+
+    # The new link_model element id is the only one missing from doc_before.
+    new_link_ids = set(new_host_doc.elements.keys()) - set(host_doc.elements.keys())
+    if len(new_link_ids) != 1:
+        await session.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail="Internal: createLinkModel did not produce exactly one new element",
+        )
+    link_element_id = next(iter(new_link_ids))
+
+    # Persist the host. Keep the undo-stack record so the import is undoable.
+    host_row.document = document_to_wire(new_host_doc)  # type: ignore[assignment]
+    host_row.revision = new_host_doc.revision
+    await session.commit()
+
+    # Broadcast the host's delta so connected clients pick up the link.
+    try:
+        await hub.broadcast_json(
+            host_id,
+            {
+                "type": "delta",
+                "modelId": str(host_id),
+                "revision": new_host_doc.revision,
+            },
+        )
+    except Exception:
+        # Hub failures must not roll back the import.
+        pass
+
+    return {
+        "linkedModelId": str(shadow_id),
+        "linkElementId": link_element_id,
+        "suggestedLinkPosition": suggested_position,
+        "appliedReplayCommandCount": len(applied_cmds),
+        "shadowModelSlug": body.slug,
+    }
 
 
 # ---------------------------------------------------------------------------

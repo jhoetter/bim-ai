@@ -35,6 +35,8 @@ export interface ProjectMenuProps {
   onReplayTour?: () => void;
   /** FED-01: open the Manage Links dialog (Insert → Link Model). */
   onManageLinks?: () => void;
+  /** FED-04: import an IFC file as a shadow-model link. */
+  onLinkIfc?: (file: File) => void;
 }
 
 export function ProjectMenu({
@@ -49,9 +51,11 @@ export function ProjectMenu({
   onNewClear,
   onReplayTour,
   onManageLinks,
+  onLinkIfc,
 }: ProjectMenuProps): JSX.Element | null {
   const popoverRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const ifcInputRef = useRef<HTMLInputElement | null>(null);
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
 
   // Position the popover under the anchor.
@@ -182,6 +186,51 @@ export function ProjectMenu({
             />
           </>
         ) : null}
+        {onLinkIfc ? (
+          <>
+            <MenuItem
+              label="Insert → Link IFC…"
+              icon="externalLink"
+              testId="project-menu-link-ifc"
+              onClick={() => {
+                ifcInputRef.current?.click();
+              }}
+            />
+            <input
+              ref={ifcInputRef}
+              type="file"
+              accept=".ifc,application/x-step,application/octet-stream"
+              style={{ display: 'none' }}
+              data-testid="project-menu-ifc-input"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) onLinkIfc(f);
+                onOpenChange(false);
+                e.target.value = '';
+              }}
+            />
+            <MenuItem
+              label="Insert → Link DXF (deferred)"
+              icon="externalLink"
+              testId="project-menu-link-dxf"
+              disabled
+              tooltip="DXF underlay import is on the roadmap. Today, link a bim-ai shadow model directly via Insert → Link Model… instead."
+              onClick={() => {
+                /* disabled */
+              }}
+            />
+            <MenuItem
+              label="Insert → Link Revit (deferred)"
+              icon="externalLink"
+              testId="project-menu-link-revit"
+              disabled
+              tooltip="Revit (.rvt) is out of scope until OpenBIM/Forge stabilises. Customers can pre-convert to IFC and use Insert → Link IFC."
+              onClick={() => {
+                /* disabled */
+              }}
+            />
+          </>
+        ) : null}
         <div className="my-1 border-t border-border" />
         <MenuItem
           label="New (clear)"
@@ -216,11 +265,15 @@ function MenuItem({
   icon,
   testId,
   onClick,
+  disabled,
+  tooltip,
 }: {
   label: string;
   icon: keyof typeof Icons;
   testId: string;
   onClick: () => void;
+  disabled?: boolean;
+  tooltip?: string;
 }): JSX.Element {
   const Icon = Icons[icon];
   return (
@@ -230,7 +283,14 @@ function MenuItem({
         role="menuitem"
         onClick={onClick}
         data-testid={testId}
-        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs text-foreground hover:bg-surface-strong"
+        disabled={disabled}
+        title={tooltip}
+        className={[
+          'flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs',
+          disabled
+            ? 'text-muted opacity-60 cursor-not-allowed'
+            : 'text-foreground hover:bg-surface-strong',
+        ].join(' ')}
       >
         {Icon ? <Icon size={ICON_SIZE.chrome} aria-hidden="true" /> : null}
         <span>{label}</span>
