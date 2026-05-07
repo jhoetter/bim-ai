@@ -1,0 +1,13 @@
+all except for w2-8 seem done, can you check / validate? are they on main branch? if not, can you check them and merge?
+
+---
+
+so all except for wave 2-8 is done and on main? wave 2-8 is already running in the background in the meantime
+
+---
+
+is everything correctly tracked in the @spec/workpackage-master-tracker.md ?
+
+---
+
+what would the next nightshift work look like? give me a quick rundown of the current workpackage tracker status and what makes sense for the next nightshift
