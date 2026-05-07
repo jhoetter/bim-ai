@@ -1342,6 +1342,7 @@ ElementKind = Literal[
     "area",
     "masking_region",
     "mass",
+    "constraint",
 ]
 
 
@@ -1409,6 +1410,43 @@ class CeilingElem(BaseModel):
     height_offset_mm: float = Field(default=2700, alias="heightOffsetMm")
     thickness_mm: float = Field(default=20, alias="thicknessMm", gt=0)
     ceiling_type_id: str | None = Field(default=None, alias="ceilingTypeId")
+    pinned: bool = Field(default=False)
+
+
+ConstraintRule = Literal[
+    "equal_distance",
+    "equal_length",
+    "parallel",
+    "perpendicular",
+    "collinear",
+]
+ConstraintAnchor = Literal["start", "end", "mid", "center"]
+
+
+class ConstraintRefRow(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    element_id: str = Field(alias="elementId")
+    anchor: ConstraintAnchor = "center"
+
+
+class ConstraintElem(BaseModel):
+    """EDT-02 — geometric constraint between element groups.
+
+    Engine evaluates constraints after each command apply and rejects
+    commands that would violate any `error`-severity constraint. Locked
+    distances (`equal_distance` with `lockedValueMm`) are the most common
+    case, set via the padlock UI on a temporary dimension.
+    """
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["constraint"] = "constraint"
+    id: str
+    name: str = ""
+    rule: ConstraintRule
+    refs_a: list[ConstraintRefRow] = Field(alias="refsA")
+    refs_b: list[ConstraintRefRow] = Field(alias="refsB")
+    locked_value_mm: float | None = Field(default=None, alias="lockedValueMm")
+    severity: Literal["warning", "error"] = "error"
     pinned: bool = Field(default=False)
 
 
@@ -1508,6 +1546,7 @@ Element = Annotated[
     | ColumnElem
     | BeamElem
     | CeilingElem
-    | MassElem,
+    | MassElem
+    | ConstraintElem,
     Field(discriminator="kind"),
 ]
