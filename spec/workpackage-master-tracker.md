@@ -267,7 +267,7 @@ What's the smallest WP set required to ship a specific user-visible goal? Useful
 | ID     | Item                                              | Effort | State                        | Depends on |
 | ------ | ------------------------------------------------- | ------ | ---------------------------- | ---------- |
 | FED-01 | `link_model` element kind + read-only enforcement | L      | `partial` ([b05fc082](../#)) | —          |
-| FED-02 | Cross-link clash detection (extends WP-V2-13)     | M      | `open`                       | FED-01     |
+| FED-02 | Cross-link clash detection (extends WP-V2-13)     | M      | `done` ([cf3552d5](../#))    | FED-01     |
 | FED-03 | Cross-link Copy/Monitor (extends WP-V2-12)        | M      | `open`                       | FED-01     |
 | FED-04 | IFC / DXF → shadow-model link import              | L      | `open`                       | FED-01     |
 | FED-05 | "Worksharing-via-DB" positioning + docs           | XS     | `done`                       | —          |
@@ -345,6 +345,8 @@ data model + 3 commands (`createLinkModel` / `updateLinkModel` /
 **Effort.** L — 2-3 weeks for one engineer.
 
 ### FED-02 — Cross-link clash detection
+
+**Status (2026-05-07).** `done` in `cf3552d5` — full WP shipped. SelectionSetRule gains optional `linkScope: 'host' | 'all_links' | { specificLinkId }`; ClashResult gains `linkChainA` / `linkChainB`. Python side adds `selection_set` + `clash_test` element kinds plus three commands (`upsertSelectionSet`, `upsertClashTest`, `runClashTest`); `clash_engine.py` resolves rules across links, transforms AABBs by each link's positionMm + rotationDeg, and computes pair-wise distance. UI: SelectionSetPanel adds a Scope dropdown (Host / All links / each link by name); ClashTestPanel renders linked elements as `from <linkName> — <sourceId>` and exposes `onRun` / `onFlyTo` callbacks for live wiring. 11 pytest cases + 6 vitest cases.
 
 **Scope.** Extend the Wave-6 clash detection (`clash_test` + `selection_set`) to operate across linked models. Today both sets must come from the host model; this WP makes them resolve through the link graph.
 
