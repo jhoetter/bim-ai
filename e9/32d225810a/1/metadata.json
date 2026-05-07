@@ -1,0 +1,47 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "e932d225810a",
+  "session_id": "bb3cf0bb-f384-4179-9af8-a917a5f6df45",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-07T06:14:02.994418Z",
+  "branch": "dayshift-fam-keystone",
+  "checkpoints_count": 2,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "ed39a614250f",
+  "token_usage": {
+    "input_tokens": 442,
+    "cache_creation_tokens": 1065328,
+    "cache_read_tokens": 75379316,
+    "output_tokens": 325381,
+    "api_call_count": 302
+  },
+  "session_metrics": {
+    "turn_count": 26
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 20,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 198,
+      "user_lines_removed": 7,
+      "agent_lines_added": 20,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/web/src/viewport/meshBuilders.curtainPanels.test.ts": 103,
+        "packages/web/src/viewport/meshBuilders.ts": 95
+      },
+      "user_removed_per_file": {
+        "packages/web/src/viewport/meshBuilders.curtainPanels.test.ts": 2,
+        "packages/web/src/viewport/meshBuilders.ts": 5
+      }
+    }
+  ]
+}
