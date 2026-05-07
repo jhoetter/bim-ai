@@ -3,20 +3,20 @@
   "checkpoint_id": "8007ec498808",
   "session_id": "c64adab5-25fd-4f1d-ac78-0016ffeb63de",
   "strategy": "manual-commit",
-  "created_at": "2026-05-07T06:07:04.648571Z",
+  "created_at": "2026-05-07T06:08:02.014649Z",
   "branch": "dayshift-fam-keystone",
   "checkpoints_count": 0,
   "files_touched": [],
   "agent": "Claude Code",
   "model": "claude-opus-4-7",
   "turn_id": "224236bf158a",
-  "checkpoint_transcript_start": 211,
-  "transcript_lines_at_start": 211,
+  "checkpoint_transcript_start": 215,
+  "transcript_lines_at_start": 215,
   "token_usage": {
-    "input_tokens": 1,
-    "cache_creation_tokens": 567,
-    "cache_read_tokens": 128152,
-    "output_tokens": 341,
-    "api_call_count": 1
+    "input_tokens": 4,
+    "cache_creation_tokens": 3775,
+    "cache_read_tokens": 519252,
+    "output_tokens": 3407,
+    "api_call_count": 4
   }
 }
