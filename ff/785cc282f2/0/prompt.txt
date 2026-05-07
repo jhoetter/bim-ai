@@ -1,0 +1,1 @@
+please implement @nightshift/nightshift-6.md  read it end-to-end and execute. Do not stop until every WP is done.
