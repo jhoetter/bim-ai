@@ -681,7 +681,7 @@ class SketchSession:
 
 | ID     | Item                                                          | Effort | State  | Depends on |
 | ------ | ------------------------------------------------------------- | ------ | ------ | ---------- |
-| FAM-01 | Nested families (loadable family-in-family)                   | L      | `open` | —          |
+| FAM-01 | Nested families (loadable family-in-family)                   | L      | `partial` in 583e726c — data model (`family_instance_ref` + `ParameterBinding`), resolver (`resolveNestedFamilyInstance` + `resolveFamilyGeometry`), and cycle detection shipped; family-editor UI for placing nested instances + per-instance parameter binding editor + thumbnail composition for FL-06 deferred to follow-up | —          |
 | FAM-02 | Sweep tool (path + profile → swept solid)                     | M      | `done` | done in 034e38f7 |
 | FAM-03 | Yes/No parameters with geometry visibility binding            | M      | `open` | FAM-01     |
 | FAM-04 | Conditional formula support (`if()`, `rounddown()`, `mod()`)   | M      | `done` | done in e2e4c575 |
