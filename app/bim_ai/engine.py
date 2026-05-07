@@ -85,6 +85,13 @@ from bim_ai.commands import (
     CreateMaskingRegionCmd,
     UpdateMaskingRegionCmd,
     DeleteMaskingRegionCmd,
+    SetWallJoinVariantCmd,
+    SplitWallAtCmd,
+    AlignElementToReferenceCmd,
+    TrimElementToReferenceCmd,
+    CreateColumnCmd,
+    CreateBeamCmd,
+    CreateCeilingCmd,
     UnpinElementCmd,
     UpdateElementPropertyCmd,
     UpdateLinkModelCmd,
@@ -128,9 +135,12 @@ from bim_ai.elements import (
     AreaElem,
     BalconyElem,
     BcfElem,
+    BeamElem,
     CalloutElem,
+    CeilingElem,
     ClashResultSpec,
     ClashTestElem,
+    ColumnElem,
     DetailLineElem,
     DetailRegionElem,
     DimensionElem,
@@ -2193,6 +2203,227 @@ def apply_inplace(
                 name=cmd.name,
                 hosted_stair_id=cmd.hosted_stair_id,
                 path_mm=cmd.path_mm,
+            )
+
+        case SplitWallAtCmd():
+            wall = els.get(cmd.wall_id)
+            if not isinstance(wall, WallElem):
+                raise ValueError("splitWallAt.wallId must reference an existing wall")
+            t = cmd.along_t
+            split_xy = Vec2Mm(
+                xMm=wall.start.x_mm + t * (wall.end.x_mm - wall.start.x_mm),
+                yMm=wall.start.y_mm + t * (wall.end.y_mm - wall.start.y_mm),
+            )
+            left_id = new_id()
+            right_id = new_id()
+            base = wall.model_dump(by_alias=False)
+            base.pop("id", None)
+            base.pop("kind", None)
+            base.pop("start", None)
+            base.pop("end", None)
+            els[left_id] = WallElem(
+                kind="wall",
+                id=left_id,
+                start=wall.start,
+                end=split_xy,
+                **base,
+            )
+            els[right_id] = WallElem(
+                kind="wall",
+                id=right_id,
+                start=split_xy,
+                end=wall.end,
+                **base,
+            )
+            # Migrate hosted openings (doors / windows / wall_openings) to whichever
+            # half they fall on, re-normalising along_t against the new host span.
+            migrations: list[tuple[str, Element]] = []
+            for eid, e in els.items():
+                if isinstance(e, (DoorElem, WindowElem)):
+                    if e.wall_id != cmd.wall_id:
+                        continue
+                    if e.along_t <= t:
+                        new_t = e.along_t / t if t > 0 else 0.0
+                        migrations.append((eid, e.model_copy(update={
+                            "wall_id": left_id,
+                            "along_t": max(0.0, min(1.0, new_t)),
+                        })))
+                    else:
+                        new_t = (e.along_t - t) / (1 - t) if t < 1 else 1.0
+                        migrations.append((eid, e.model_copy(update={
+                            "wall_id": right_id,
+                            "along_t": max(0.0, min(1.0, new_t)),
+                        })))
+                elif isinstance(e, WallOpeningElem) and e.host_wall_id == cmd.wall_id:
+                    s, eend = e.along_t_start, e.along_t_end
+                    mid = (s + eend) / 2
+                    if mid <= t:
+                        new_s = s / t if t > 0 else 0.0
+                        new_e = eend / t if t > 0 else 0.0
+                        migrations.append((eid, e.model_copy(update={
+                            "host_wall_id": left_id,
+                            "along_t_start": max(0.0, min(1.0, new_s)),
+                            "along_t_end": max(0.0, min(1.0, min(new_e, 1.0))),
+                        })))
+                    else:
+                        new_s = (s - t) / (1 - t) if t < 1 else 0.0
+                        new_e = (eend - t) / (1 - t) if t < 1 else 1.0
+                        migrations.append((eid, e.model_copy(update={
+                            "host_wall_id": right_id,
+                            "along_t_start": max(0.0, min(1.0, new_s)),
+                            "along_t_end": max(0.0, min(1.0, new_e)),
+                        })))
+            for eid, new_e in migrations:
+                els[eid] = new_e
+            del els[cmd.wall_id]
+
+        case AlignElementToReferenceCmd():
+            target = els.get(cmd.target_wall_id)
+            if not isinstance(target, WallElem):
+                raise ValueError("alignElementToReference.targetWallId must reference a wall")
+            ref = cmd.reference_mm
+            d_start = (target.start.x_mm - ref.x_mm) ** 2 + (target.start.y_mm - ref.y_mm) ** 2
+            d_end = (target.end.x_mm - ref.x_mm) ** 2 + (target.end.y_mm - ref.y_mm) ** 2
+            wall_dx = abs(target.end.x_mm - target.start.x_mm)
+            wall_dy = abs(target.end.y_mm - target.start.y_mm)
+            axis: Literal["x", "y"] = "y" if wall_dx >= wall_dy else "x"
+            if d_start <= d_end:
+                # Move start endpoint onto reference along the chosen axis;
+                # the other endpoint follows by the same delta.
+                if axis == "x":
+                    dx = ref.x_mm - target.start.x_mm
+                    new_start = Vec2Mm(xMm=ref.x_mm, yMm=target.start.y_mm)
+                    new_end = Vec2Mm(xMm=target.end.x_mm + dx, yMm=target.end.y_mm)
+                else:
+                    dy = ref.y_mm - target.start.y_mm
+                    new_start = Vec2Mm(xMm=target.start.x_mm, yMm=ref.y_mm)
+                    new_end = Vec2Mm(xMm=target.end.x_mm, yMm=target.end.y_mm + dy)
+            else:
+                if axis == "x":
+                    dx = ref.x_mm - target.end.x_mm
+                    new_start = Vec2Mm(xMm=target.start.x_mm + dx, yMm=target.start.y_mm)
+                    new_end = Vec2Mm(xMm=ref.x_mm, yMm=target.end.y_mm)
+                else:
+                    dy = ref.y_mm - target.end.y_mm
+                    new_start = Vec2Mm(xMm=target.start.x_mm, yMm=target.start.y_mm + dy)
+                    new_end = Vec2Mm(xMm=target.end.x_mm, yMm=ref.y_mm)
+            els[cmd.target_wall_id] = target.model_copy(update={"start": new_start, "end": new_end})
+
+        case TrimElementToReferenceCmd():
+            ref = els.get(cmd.reference_wall_id)
+            tgt = els.get(cmd.target_wall_id)
+            if not isinstance(ref, WallElem):
+                raise ValueError("trimElementToReference.referenceWallId must reference a wall")
+            if not isinstance(tgt, WallElem):
+                raise ValueError("trimElementToReference.targetWallId must reference a wall")
+            # Project the trimmed endpoint onto the infinite line of the reference wall.
+            rx0, ry0 = ref.start.x_mm, ref.start.y_mm
+            rx1, ry1 = ref.end.x_mm, ref.end.y_mm
+            # Direction of the *target* wall — the endpoint moves along this.
+            tx0, ty0 = tgt.start.x_mm, tgt.start.y_mm
+            tx1, ty1 = tgt.end.x_mm, tgt.end.y_mm
+            tdx, tdy = (tx1 - tx0), (ty1 - ty0)
+            rdx, rdy = (rx1 - rx0), (ry1 - ry0)
+            denom = tdx * rdy - tdy * rdx
+            if abs(denom) < 1e-9:
+                raise ValueError("trimElementToReference: walls are parallel; no intersection")
+            # Parameter along target where it meets the reference line.
+            anchor_x, anchor_y = (tx0, ty0) if cmd.end_hint == "end" else (tx1, ty1)
+            # Solve for u so that (anchor + u*dir_target) lies on reference line.
+            # dir_target points from anchor toward the moving endpoint.
+            adx = (tx1 - tx0) if cmd.end_hint == "end" else (tx0 - tx1)
+            ady = (ty1 - ty0) if cmd.end_hint == "end" else (ty0 - ty1)
+            denom2 = adx * rdy - ady * rdx
+            if abs(denom2) < 1e-9:
+                raise ValueError("trimElementToReference: walls are parallel; no intersection")
+            u = ((rx0 - anchor_x) * rdy - (ry0 - anchor_y) * rdx) / denom2
+            new_x = anchor_x + u * adx
+            new_y = anchor_y + u * ady
+            new_endpoint = Vec2Mm(xMm=new_x, yMm=new_y)
+            if cmd.end_hint == "start":
+                els[cmd.target_wall_id] = tgt.model_copy(update={"start": new_endpoint})
+            else:
+                els[cmd.target_wall_id] = tgt.model_copy(update={"end": new_endpoint})
+
+        case SetWallJoinVariantCmd():
+            if not cmd.wall_ids:
+                raise ValueError("setWallJoinVariant.wallIds must not be empty")
+            for wid in cmd.wall_ids:
+                w = els.get(wid)
+                if not isinstance(w, WallElem):
+                    raise ValueError(
+                        f"setWallJoinVariant.wallIds[{wid}] must reference an existing wall"
+                    )
+            # v1 records the variant choice but does not yet rebuild geometry — the
+            # mesh layer joins walls implicitly. The recorded variant is persisted as
+            # a join_geometry element so downstream tools can read it.
+            jid = new_id()
+            els[jid] = JoinGeometryElem(
+                kind="join_geometry",
+                id=jid,
+                joined_element_ids=list(cmd.wall_ids),
+                notes=f"variant={cmd.variant}",
+            )
+
+        case CreateColumnCmd():
+            cid = cmd.id or new_id()
+            if cid in els:
+                raise ValueError(f"duplicate element id '{cid}'")
+            if cmd.level_id not in els or not isinstance(els[cmd.level_id], LevelElem):
+                raise ValueError("createColumn.levelId must reference an existing Level")
+            els[cid] = ColumnElem(
+                kind="column",
+                id=cid,
+                name=cmd.name,
+                level_id=cmd.level_id,
+                position_mm=cmd.position_mm,
+                b_mm=cmd.b_mm,
+                h_mm=cmd.h_mm,
+                height_mm=cmd.height_mm,
+                rotation_deg=cmd.rotation_deg,
+                material_key=cmd.material_key,
+            )
+
+        case CreateBeamCmd():
+            bid = cmd.id or new_id()
+            if bid in els:
+                raise ValueError(f"duplicate element id '{bid}'")
+            if cmd.level_id not in els or not isinstance(els[cmd.level_id], LevelElem):
+                raise ValueError("createBeam.levelId must reference an existing Level")
+            if (
+                cmd.start_mm.x_mm == cmd.end_mm.x_mm
+                and cmd.start_mm.y_mm == cmd.end_mm.y_mm
+            ):
+                raise ValueError("createBeam.startMm and endMm must differ")
+            els[bid] = BeamElem(
+                kind="beam",
+                id=bid,
+                name=cmd.name,
+                level_id=cmd.level_id,
+                start_mm=cmd.start_mm,
+                end_mm=cmd.end_mm,
+                width_mm=cmd.width_mm,
+                height_mm=cmd.height_mm,
+                material_key=cmd.material_key,
+            )
+
+        case CreateCeilingCmd():
+            cid = cmd.id or new_id()
+            if cid in els:
+                raise ValueError(f"duplicate element id '{cid}'")
+            if cmd.level_id not in els or not isinstance(els[cmd.level_id], LevelElem):
+                raise ValueError("createCeiling.levelId must reference an existing Level")
+            if len(cmd.boundary_mm) < 3:
+                raise ValueError("createCeiling.boundaryMm requires ≥3 vertices")
+            els[cid] = CeilingElem(
+                kind="ceiling",
+                id=cid,
+                name=cmd.name,
+                level_id=cmd.level_id,
+                boundary_mm=cmd.boundary_mm,
+                height_offset_mm=cmd.height_offset_mm,
+                thickness_mm=cmd.thickness_mm,
+                ceiling_type_id=cmd.ceiling_type_id,
             )
 
         case UpsertFamilyTypeCmd():

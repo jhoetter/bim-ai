@@ -1290,6 +1290,73 @@ ElementKind = Literal[
 ]
 
 
+class ColumnElem(BaseModel):
+    """EDT-04 — vertical structural column placed at a single point on a level.
+
+    Cross-section is a rectangle (bMm × hMm) with optional rotation about
+    the vertical axis. Spans from the host level upward by ``heightMm``;
+    optional top constraint mirrors the wall datum-constraint pattern.
+    """
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["column"] = "column"
+    id: str
+    name: str = "Column"
+    level_id: str = Field(alias="levelId")
+    position_mm: Vec2Mm = Field(alias="positionMm")
+    b_mm: float = Field(alias="bMm", default=300, gt=0)
+    h_mm: float = Field(alias="hMm", default=300, gt=0)
+    height_mm: float = Field(alias="heightMm", default=2800, gt=0)
+    rotation_deg: float = Field(default=0.0, alias="rotationDeg")
+    material_key: str | None = Field(default=None, alias="materialKey")
+    base_constraint_offset_mm: float = Field(default=0, alias="baseConstraintOffsetMm")
+    top_constraint_level_id: str | None = Field(default=None, alias="topConstraintLevelId")
+    top_constraint_offset_mm: float = Field(default=0, alias="topConstraintOffsetMm")
+    pinned: bool = Field(default=False)
+
+
+class BeamElem(BaseModel):
+    """EDT-04 — horizontal structural beam between two points on a level.
+
+    Optional ``startColumnId`` / ``endColumnId`` link the beam to the
+    columns it bears on, which lets the geometry layer trim the ends.
+    """
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["beam"] = "beam"
+    id: str
+    name: str = "Beam"
+    level_id: str = Field(alias="levelId")
+    start_mm: Vec2Mm = Field(alias="startMm")
+    end_mm: Vec2Mm = Field(alias="endMm")
+    width_mm: float = Field(alias="widthMm", default=200, gt=0)
+    height_mm: float = Field(alias="heightMm", default=400, gt=0)
+    material_key: str | None = Field(default=None, alias="materialKey")
+    start_column_id: str | None = Field(default=None, alias="startColumnId")
+    end_column_id: str | None = Field(default=None, alias="endColumnId")
+    pinned: bool = Field(default=False)
+
+
+class CeilingElem(BaseModel):
+    """EDT-04 — flat ceiling slab bounded by a closed polygon at a level.
+
+    ``heightOffsetMm`` is measured from the host level elevation; positive
+    values raise the ceiling above the level. Distinct from ``floor``
+    because ceilings hang from above and host downward-facing finishes.
+    """
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["ceiling"] = "ceiling"
+    id: str
+    name: str = "Ceiling"
+    level_id: str = Field(alias="levelId")
+    boundary_mm: list[Vec2Mm] = Field(alias="boundaryMm")
+    height_offset_mm: float = Field(default=2700, alias="heightOffsetMm")
+    thickness_mm: float = Field(default=20, alias="thicknessMm", gt=0)
+    ceiling_type_id: str | None = Field(default=None, alias="ceilingTypeId")
+    pinned: bool = Field(default=False)
+
+
 Element = Annotated[
     ProjectSettingsElem
     | RoomColorSchemeElem
@@ -1347,6 +1414,9 @@ Element = Annotated[
     | SweepElem
     | DormerElem
     | AreaElem
-    | MaskingRegionElem,
+    | MaskingRegionElem
+    | ColumnElem
+    | BeamElem
+    | CeilingElem,
     Field(discriminator="kind"),
 ]

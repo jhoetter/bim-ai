@@ -1281,6 +1281,106 @@ class DeleteMaskingRegionCmd(BaseModel):
     masking_region_id: str = Field(alias="maskingRegionId")
 
 
+# ---- EDT-04: Plan-canvas Modify tools (Split / Align / Trim / Wall-Join) ----
+
+
+class SplitWallAtCmd(BaseModel):
+    """EDT-04 — split a wall at a normalised position alongT into two walls.
+
+    The original wall is replaced by two new walls that share the split
+    point. Hosted openings are *not* migrated by this command (the canvas
+    side of the SD tool stays out of opening reassignment for v1); the
+    along-T parameter and any door/window remain anchored to whichever
+    of the two resulting walls now hosts the opening.
+    """
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["splitWallAt"] = "splitWallAt"
+    wall_id: str = Field(alias="wallId")
+    along_t: float = Field(alias="alongT", gt=0, lt=1)
+
+
+class AlignElementToReferenceCmd(BaseModel):
+    """EDT-04 — translate a target wall so its near endpoint snaps to the
+    reference point along the closer principal axis."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["alignElementToReference"] = "alignElementToReference"
+    target_wall_id: str = Field(alias="targetWallId")
+    reference_mm: Vec2Mm = Field(alias="referenceMm")
+
+
+class TrimElementToReferenceCmd(BaseModel):
+    """EDT-04 — extend or trim ``targetWallId`` so its ``endHint`` endpoint
+    lies on the infinite line of ``referenceWallId``."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["trimElementToReference"] = "trimElementToReference"
+    reference_wall_id: str = Field(alias="referenceWallId")
+    target_wall_id: str = Field(alias="targetWallId")
+    end_hint: Literal["start", "end"] = Field(alias="endHint")
+
+
+WallJoinVariant = Literal["miter", "butt", "square"]
+
+
+class SetWallJoinVariantCmd(BaseModel):
+    """EDT-04 — record the join variant for the walls meeting at a corner."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["setWallJoinVariant"] = "setWallJoinVariant"
+    wall_ids: list[str] = Field(alias="wallIds")
+    variant: WallJoinVariant
+
+
+# ---- EDT-04: Single-/two-click placement create commands ----
+
+
+class CreateColumnCmd(BaseModel):
+    """EDT-04 — single-click structural-column placement."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createColumn"] = "createColumn"
+    id: str | None = None
+    name: str = "Column"
+    level_id: str = Field(alias="levelId")
+    position_mm: Vec2Mm = Field(alias="positionMm")
+    b_mm: float = Field(alias="bMm", default=300, gt=0)
+    h_mm: float = Field(alias="hMm", default=300, gt=0)
+    height_mm: float = Field(alias="heightMm", default=2800, gt=0)
+    rotation_deg: float = Field(default=0.0, alias="rotationDeg")
+    material_key: str | None = Field(default=None, alias="materialKey")
+
+
+class CreateBeamCmd(BaseModel):
+    """EDT-04 — two-click structural-beam placement."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createBeam"] = "createBeam"
+    id: str | None = None
+    name: str = "Beam"
+    level_id: str = Field(alias="levelId")
+    start_mm: Vec2Mm = Field(alias="startMm")
+    end_mm: Vec2Mm = Field(alias="endMm")
+    width_mm: float = Field(alias="widthMm", default=200, gt=0)
+    height_mm: float = Field(alias="heightMm", default=400, gt=0)
+    material_key: str | None = Field(default=None, alias="materialKey")
+
+
+class CreateCeilingCmd(BaseModel):
+    """EDT-04 — sketch-polygon ceiling placement on a level."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createCeiling"] = "createCeiling"
+    id: str | None = None
+    name: str = "Ceiling"
+    level_id: str = Field(alias="levelId")
+    boundary_mm: list[Vec2Mm] = Field(alias="boundaryMm")
+    height_offset_mm: float = Field(alias="heightOffsetMm", default=2700)
+    thickness_mm: float = Field(alias="thicknessMm", default=20, gt=0)
+    ceiling_type_id: str | None = Field(default=None, alias="ceilingTypeId")
+
+
 Command = Annotated[
     CreateLevelCmd
     | CreateWallCmd
@@ -1383,6 +1483,13 @@ Command = Annotated[
     | DeleteAreaCmd
     | CreateMaskingRegionCmd
     | UpdateMaskingRegionCmd
-    | DeleteMaskingRegionCmd,
+    | DeleteMaskingRegionCmd
+    | SplitWallAtCmd
+    | AlignElementToReferenceCmd
+    | TrimElementToReferenceCmd
+    | SetWallJoinVariantCmd
+    | CreateColumnCmd
+    | CreateBeamCmd
+    | CreateCeilingCmd,
     Field(discriminator="type"),
 ]
