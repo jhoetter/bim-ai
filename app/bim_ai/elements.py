@@ -1341,6 +1341,7 @@ ElementKind = Literal[
     "dormer",
     "area",
     "masking_region",
+    "mass",
 ]
 
 
@@ -1411,6 +1412,41 @@ class CeilingElem(BaseModel):
     pinned: bool = Field(default=False)
 
 
+class MassElem(BaseModel):
+    """SKB-02 — volumetric massing primitive.
+
+    An axis-aligned (or rotated) box representing a building mass before
+    walls are authored. Used during the SKB-12 cookbook's massing phase
+    so the agent can iterate on volumes before committing to walls.
+
+    A subsequent `materializeMassToWalls` engine command (deferred)
+    auto-extracts walls + floor + roof-stub from each mass so the agent
+    never starts the wall phase from a blank canvas.
+    """
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["mass"] = "mass"
+    id: str
+    name: str = "Mass"
+    level_id: str = Field(alias="levelId")
+    footprint_mm: list[Vec2Mm] = Field(
+        alias="footprintMm",
+        description=(
+            "Closed polygon of the mass's plan footprint (≥3 vertices). "
+            "Axis-aligned rectangles use 4 corners; arbitrary polygons OK."
+        ),
+    )
+    height_mm: float = Field(default=3000, alias="heightMm", gt=0)
+    rotation_deg: float = Field(default=0, alias="rotationDeg")
+    material_key: str | None = Field(default=None, alias="materialKey")
+    phase_id: str | None = Field(
+        default="massing",
+        alias="phaseId",
+        description="SKB-08 phase tag; defaults to 'massing'.",
+    )
+    pinned: bool = Field(default=False)
+
+
 Element = Annotated[
     ProjectSettingsElem
     | RoomColorSchemeElem
@@ -1471,6 +1507,7 @@ Element = Annotated[
     | MaskingRegionElem
     | ColumnElem
     | BeamElem
-    | CeilingElem,
+    | CeilingElem
+    | MassElem,
     Field(discriminator="kind"),
 ]
