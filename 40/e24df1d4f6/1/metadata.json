@@ -1,0 +1,47 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "40e24df1d4f6",
+  "session_id": "bb3cf0bb-f384-4179-9af8-a917a5f6df45",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-07T08:07:52.145823Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "nightshift/wave3-1.md",
+    "nightshift/wave3-2.md",
+    "nightshift/wave3-3.md",
+    "nightshift/wave3-4.md",
+    "nightshift/wave3-5.md",
+    "nightshift/wave3-6.md",
+    "nightshift/wave3-7.md",
+    "nightshift/wave3-8.md",
+    "nightshift/wave3-README.md"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "0e3010845293",
+  "checkpoint_transcript_start": 1577,
+  "transcript_lines_at_start": 1577,
+  "token_usage": {
+    "input_tokens": 14,
+    "cache_creation_tokens": 34210,
+    "cache_read_tokens": 10940377,
+    "output_tokens": 31014,
+    "api_call_count": 14
+  },
+  "session_metrics": {
+    "turn_count": 37
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-07T08:07:52.067143Z",
+    "agent_lines": 387,
+    "agent_removed": 0,
+    "human_added": 844,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 1231,
+    "total_lines_changed": 1231,
+    "agent_percentage": 31.437855402112103,
+    "metric_version": 2
+  }
+}

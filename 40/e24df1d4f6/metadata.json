@@ -5,8 +5,14 @@
   "branch": "main",
   "checkpoints_count": 3,
   "files_touched": [
+    "nightshift/wave3-1.md",
+    "nightshift/wave3-2.md",
+    "nightshift/wave3-3.md",
     "nightshift/wave3-4.md",
     "nightshift/wave3-5.md",
+    "nightshift/wave3-6.md",
+    "nightshift/wave3-7.md",
+    "nightshift/wave3-8.md",
     "nightshift/wave3-README.md"
   ],
   "sessions": [
@@ -15,13 +21,19 @@
       "transcript": "/40/e24df1d4f6/0/full.jsonl",
       "content_hash": "/40/e24df1d4f6/0/content_hash.txt",
       "prompt": "/40/e24df1d4f6/0/prompt.txt"
+    },
+    {
+      "metadata": "/40/e24df1d4f6/1/metadata.json",
+      "transcript": "/40/e24df1d4f6/1/full.jsonl",
+      "content_hash": "/40/e24df1d4f6/1/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
-    "input_tokens": 41,
-    "cache_creation_tokens": 473876,
-    "cache_read_tokens": 4847428,
-    "output_tokens": 7371,
-    "api_call_count": 11
+    "input_tokens": 55,
+    "cache_creation_tokens": 508086,
+    "cache_read_tokens": 15787805,
+    "output_tokens": 38385,
+    "api_call_count": 25
   }
 }
