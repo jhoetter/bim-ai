@@ -1069,6 +1069,16 @@ class BcfElem(BaseModel):
 
 AgentAssumptionSource = Literal["manual", "bundle_dry_run", "evidence_summary"]
 AgentAssumptionClosureStatus = Literal["open", "resolved", "accepted", "deferred"]
+# SKB-08: phaseId values match the SKB-12 cookbook's seven phase tags.
+SkbPhaseId = Literal[
+    "massing",
+    "skeleton",
+    "envelope",
+    "openings",
+    "interior",
+    "detail",
+    "documentation",
+]
 
 
 class AgentAssumptionElem(BaseModel):
@@ -1084,6 +1094,21 @@ class AgentAssumptionElem(BaseModel):
     )
     related_element_ids: list[str] = Field(default_factory=list, alias="relatedElementIds")
     related_topic_id: str | None = Field(default=None, alias="relatedTopicId")
+    # SKB-08: phase + sketch anchor for sketch-to-BIM auditability.
+    phase_id: SkbPhaseId | None = Field(
+        default=None,
+        alias="phaseId",
+        description="SKB-08: the SKB-12 phase the assumption was made in.",
+    )
+    sketch_anchor_mm: dict | None = Field(
+        default=None,
+        alias="sketchAnchorMm",
+        description=(
+            "SKB-08: optional sketch-coordinate anchor for the inference. "
+            "Free-form dict so authors can carry pixel coords, polygon refs, "
+            "or panel labels without a forced schema."
+        ),
+    )
 
 
 AgentDeviationSeverity = Literal["info", "warning", "error"]
