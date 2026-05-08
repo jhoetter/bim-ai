@@ -1,0 +1,20 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "f02d02611ee4",
+  "session_id": "81b85087-a65b-45c5-aefc-87a635f02d05",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T13:34:02.676064Z",
+  "branch": "feat/v3-cq-02-python-lockfile",
+  "checkpoints_count": 1,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "2ac52779dca0",
+  "token_usage": {
+    "input_tokens": 385,
+    "cache_creation_tokens": 99827,
+    "cache_read_tokens": 1810294,
+    "output_tokens": 15768,
+    "api_call_count": 22
+  }
+}
