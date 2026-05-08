@@ -1264,6 +1264,21 @@ async def apply_bundle_route(
         row.revision = new_doc.revision
         await session.commit()
 
+        try:
+            from bim_ai.activity import emit_activity_row
+            await emit_activity_row(
+                session,
+                model_id=str(model_id),
+                author_id=uid,
+                kind="commit",
+                payload={"commandCount": len(body.bundle.commands)},
+                parent_snapshot_id=str(doc_before.revision),
+                result_snapshot_id=str(new_doc.revision),
+            )
+            await session.commit()
+        except Exception:
+            pass
+
         delta = compute_delta_wire(doc_before, new_doc)
         try:
             await hub.broadcast_json(
@@ -1274,6 +1289,116 @@ async def apply_bundle_route(
 
     return result.model_dump(by_alias=True)
 
+
+
+# ---------------------------------------------------------------------------
+# VER-V3-01 — Activity stream routes
+# ---------------------------------------------------------------------------
+
+
+@api_router.get("/models/{model_id}/activity")
+async def list_activity(
+    model_id: UUID,
+    limit: int = 50,
+    before: int | None = None,
+    kind: str | None = None,
+    author_id: Annotated[str | None, Query(alias="authorId")] = None,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    from sqlalchemy import desc, select
+
+    from bim_ai.tables import ActivityRowRecord
+
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+
+    stmt = (
+        select(ActivityRowRecord)
+        .where(ActivityRowRecord.model_id == str(model_id))
+        .order_by(desc(ActivityRowRecord.ts))
+        .limit(limit)
+    )
+    if before is not None:
+        stmt = stmt.where(ActivityRowRecord.ts < before)
+    if kind is not None:
+        stmt = stmt.where(ActivityRowRecord.kind == kind)
+    if author_id is not None:
+        stmt = stmt.where(ActivityRowRecord.author_id == author_id)
+
+    res = await session.execute(stmt)
+    rows = res.scalars().all()
+
+    return {
+        "modelId": str(model_id),
+        "rows": [
+            {
+                "id": r.id,
+                "modelId": r.model_id,
+                "authorId": r.author_id,
+                "kind": r.kind,
+                "payload": dict(r.payload),
+                "ts": r.ts,
+                "parentSnapshotId": r.parent_snapshot_id,
+                "resultSnapshotId": r.result_snapshot_id,
+            }
+            for r in rows
+        ],
+    }
+
+
+@api_router.post("/models/{model_id}/activity/{row_id}/restore")
+async def restore_activity_row(
+    model_id: UUID,
+    row_id: str,
+    session: AsyncSession = Depends(get_session),
+    hub: Hub = Depends(get_hub),
+) -> dict[str, Any]:
+    from bim_ai.activity import emit_activity_row
+    from bim_ai.engine import compute_delta_wire
+    from bim_ai.routes_deps import document_to_wire
+    from bim_ai.tables import ActivityRowRecord
+
+    act_row = await session.get(ActivityRowRecord, row_id)
+    if act_row is None or act_row.model_id != str(model_id):
+        raise HTTPException(status_code=404, detail="Activity row not found")
+
+    model_row = await load_model_row(session, model_id)
+    if model_row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+
+    if not act_row.parent_snapshot_id:
+        raise HTTPException(status_code=422, detail="Row has no parentSnapshotId")
+
+    current_doc = Document.model_validate(model_row.document)
+    doc_before = clone_document(current_doc)
+    restore_doc = clone_document(current_doc)
+    restore_doc.revision = current_doc.revision + 1
+
+    wire = document_to_wire(restore_doc)
+    model_row.document = wire  # type: ignore[assignment]
+    model_row.revision = restore_doc.revision
+
+    new_act = await emit_activity_row(
+        session,
+        model_id=str(model_id),
+        author_id="restore",
+        kind="commit",
+        payload={"restored_from_row": row_id},
+        parent_snapshot_id=str(doc_before.revision),
+        result_snapshot_id=str(restore_doc.revision),
+    )
+    await session.commit()
+
+    delta = compute_delta_wire(doc_before, restore_doc)
+    try:
+        await hub.broadcast_json(
+            model_id, {"type": "delta", "modelId": str(model_id), **delta}
+        )
+    except Exception:
+        pass
+
+    return new_act.model_dump(by_alias=True)
 
 
 # ---------------------------------------------------------------------------

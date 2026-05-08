@@ -1693,3 +1693,31 @@ export type Job = {
   costEstimate?: { credits: number };
   parentJobId?: string;
 };
+
+// ---------------------------------------------------------------------------
+// MRK-V3-01 — 3D-anchored comment types
+// ---------------------------------------------------------------------------
+
+export type Vec3Mm = { xMm: number; yMm: number; zMm: number };
+
+export type ElementAnchor = {
+  kind: 'element';
+  elementId: string;
+  offsetLocalMm?: Vec3Mm | null;
+};
+export type PointAnchor = { kind: 'point'; worldMm: Vec3Mm };
+export type RegionAnchor = { kind: 'region'; minMm: Vec3Mm; maxMm: Vec3Mm };
+export type CommentAnchor = ElementAnchor | PointAnchor | RegionAnchor;
+
+export type Comment = {
+  id: string;
+  modelId: string;
+  threadId: string;
+  authorId: string;
+  body: string;
+  anchor: CommentAnchor;
+  createdAt: number;
+  resolvedAt?: number | null;
+  resolvedBy?: string | null;
+  isOrphaned?: boolean;
+};
