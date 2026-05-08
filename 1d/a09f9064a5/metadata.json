@@ -1,0 +1,23 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "1da09f9064a5",
+  "strategy": "manual-commit",
+  "branch": "feat/v3-edt-v3-01-constraint-rules",
+  "checkpoints_count": 1,
+  "files_touched": null,
+  "sessions": [
+    {
+      "metadata": "/1d/a09f9064a5/0/metadata.json",
+      "transcript": "/1d/a09f9064a5/0/full.jsonl",
+      "content_hash": "/1d/a09f9064a5/0/content_hash.txt",
+      "prompt": "/1d/a09f9064a5/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 248,
+    "cache_creation_tokens": 140344,
+    "cache_read_tokens": 13288401,
+    "output_tokens": 63209,
+    "api_call_count": 152
+  }
+}
