@@ -17,6 +17,12 @@
       "transcript": "/07/9244ac6576/1/full.jsonl",
       "content_hash": "/07/9244ac6576/1/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/07/9244ac6576/2/metadata.json",
+      "transcript": "/07/9244ac6576/2/full.jsonl",
+      "content_hash": "/07/9244ac6576/2/content_hash.txt",
+      "prompt": "/07/9244ac6576/2/prompt.txt"
     }
   ],
   "token_usage": {
