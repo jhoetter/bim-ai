@@ -2,8 +2,8 @@
   "cli_version": "0.6.0",
   "checkpoint_id": "7f3d5d0d54c4",
   "strategy": "manual-commit",
-  "branch": "feat/v3-chr-v3-02-workspace-switcher",
-  "checkpoints_count": 2,
+  "branch": "feat/v3-cq-01-ws-robustness",
+  "checkpoints_count": 3,
   "files_touched": null,
   "sessions": [
     {
@@ -17,13 +17,19 @@
       "transcript": "/7f/3d5d0d54c4/1/full.jsonl",
       "content_hash": "/7f/3d5d0d54c4/1/content_hash.txt",
       "prompt": "/7f/3d5d0d54c4/1/prompt.txt"
+    },
+    {
+      "metadata": "/7f/3d5d0d54c4/2/metadata.json",
+      "transcript": "/7f/3d5d0d54c4/2/full.jsonl",
+      "content_hash": "/7f/3d5d0d54c4/2/content_hash.txt",
+      "prompt": "/7f/3d5d0d54c4/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 318,
-    "cache_creation_tokens": 250762,
-    "cache_read_tokens": 18167214,
-    "output_tokens": 99685,
-    "api_call_count": 216
+    "input_tokens": 1652,
+    "cache_creation_tokens": 351975,
+    "cache_read_tokens": 21815790,
+    "output_tokens": 132026,
+    "api_call_count": 260
   }
 }
