@@ -3,7 +3,7 @@
   "checkpoint_id": "091fa35e0418",
   "strategy": "manual-commit",
   "branch": "feat/v3-job-v3-01-jobs-panel",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "spec/workpackage-tracker-v3.md"
   ],
@@ -25,13 +25,19 @@
       "transcript": "/09/1fa35e0418/2/full.jsonl",
       "content_hash": "/09/1fa35e0418/2/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/09/1fa35e0418/3/metadata.json",
+      "transcript": "/09/1fa35e0418/3/full.jsonl",
+      "content_hash": "/09/1fa35e0418/3/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
-    "input_tokens": 258,
-    "cache_creation_tokens": 150118,
-    "cache_read_tokens": 13686766,
-    "output_tokens": 66051,
-    "api_call_count": 162
+    "input_tokens": 381,
+    "cache_creation_tokens": 305027,
+    "cache_read_tokens": 28456168,
+    "output_tokens": 109705,
+    "api_call_count": 281
   }
 }
