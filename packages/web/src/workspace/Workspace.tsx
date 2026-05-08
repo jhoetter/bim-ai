@@ -65,7 +65,8 @@ import { ManageLinksDialog } from './ManageLinksDialog';
 import { CommentsPanel } from './CommentsPanel';
 import { StatusBar } from './StatusBar';
 import { CheatsheetModal } from '../cmd/CheatsheetModal';
-import { CommandPalette } from '../cmd/CommandPalette';
+import { CommandPalette } from '../cmdPalette/CommandPalette';
+import '../cmdPalette/defaultCommands';
 import { type CommandCandidate } from '../cmd/commandPaletteSources';
 import {
   FamilyLibraryPanel,
@@ -748,11 +749,12 @@ export function Workspace(): JSX.Element {
     <>
       <CheatsheetModal open={cheatsheetOpen} onClose={() => setCheatsheetOpen(false)} />
       <CommandPalette
-        open={paletteOpen}
-        onOpenChange={setPaletteOpen}
-        candidates={paletteCandidates}
-        recentIds={recentCommandIds}
-        onPick={handlePalettePick}
+        isOpen={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+        context={{
+          selectedElementIds: selectedId ? [selectedId] : [],
+          activeViewId: null,
+        }}
       />
       <FamilyLibraryPanel
         open={familyLibraryOpen}
