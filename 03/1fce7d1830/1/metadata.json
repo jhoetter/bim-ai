@@ -1,0 +1,43 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "031fce7d1830",
+  "session_id": "378bbd53-734b-4a2b-a692-140cbf4d973b",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T15:44:58.37859Z",
+  "branch": "feat/v3-cq-01-ws-robustness",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "app/bim_ai/commands.py",
+    "app/bim_ai/elements.py",
+    "app/bim_ai/engine.py",
+    "app/bim_ai/roof_geometry.py",
+    "app/tests/test_edge_profile_run.py",
+    "app/tests/test_roof_join.py",
+    "app/tests/test_soffit.py",
+    "packages/core/src/index.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "2629eeb8f632",
+  "checkpoint_transcript_start": 282,
+  "transcript_lines_at_start": 282,
+  "token_usage": {
+    "input_tokens": 27,
+    "cache_creation_tokens": 28401,
+    "cache_read_tokens": 3375298,
+    "output_tokens": 23283,
+    "api_call_count": 27
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-08T15:44:58.366107Z",
+    "agent_lines": 928,
+    "agent_removed": 1,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 928,
+    "total_lines_changed": 929,
+    "agent_percentage": 100,
+    "metric_version": 2
+  }
+}
