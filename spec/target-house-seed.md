@@ -31,15 +31,28 @@ slice at the left edge.
 The upper floor is narrower, aligned entirely to the west (left) edge, leaving
 the eastern portion of the ground floor exposed as a flat roof deck.
 
-**Roof & Wall Heights (The Core Essence):** The upper volume is defined by a highly **asymmetrical gable roof** with
-distinctly different wall heights on the east and west.
+**Roof & Wall Heights (The Core Essence):** The upper volume is defined by a
+**near-symmetric gable roof** that reads as a clean, squat, wider-than-tall
+pentagon when viewed from the south. The asymmetry is subtle, not dramatic —
+the apex sits SLIGHTLY east of the upper-volume centerline, with both pitches
+descending at similar moderate angles to comparable eave heights.
 
-- The **roof ridge** is significantly off-center, shifted far to the east (right).
-- The **west (left) wall** of the upper floor is very low. Consequently, the
-  left-side roof pitch is long and descends to a low eave.
-- The **east (right) wall** of the main upper volume is much higher before the
-  roof begins, resulting in a short, steep roof pitch on the right side.
+- The **roof apex** is a clean ridge running north-south, positioned a short
+  distance east of the volume centerline (roughly 60% of the upper-volume
+  width from the west edge).
+- Both the **west and east walls** of the upper floor sit at modest heights
+  above the upper-floor slab — the east wall slightly higher than the west.
+  The visual effect is a balanced gable with a subtle east-leaning apex,
+  not a dramatic shed-vs-gable asymmetry.
+- Both pitches are moderate (≈ 25–35°). The roof reads as one clean
+  uninterrupted plane on each side, no notches or dormer cuts.
 - Roof surface: **dark grey standing-seam metal**.
+
+The earlier draft of this spec emphasised dramatic asymmetry ("very low
+west wall, much higher east wall, short steep east pitch"); the
+visual reference (`target-house-seed-vis.png`) is the ground truth and
+shows a much more balanced gable. The textual description has been
+updated to match the visual.
 
 ---
 
@@ -80,10 +93,13 @@ distinctly different wall heights on the east and west.
 - **Ground Floor Extension:** The wide ground floor extends to the right (east),
   clad entirely in the **light beige/grey vertical siding**. The top forms a flat
   roof deck surrounded by a low parapet. Features one small vertical window.
-- **Upper Dormer / Cut-out:** The eastern slope of the asymmetrical metal roof
-  is interrupted by a massive rectangular dormer cut-out. This dormer opens
-  directly onto the flat roof deck with large floor-to-ceiling glass doors. The
-  cheeks/walls of this dormer match the smooth white render.
+- **Upper-volume / Deck Connection:** The east wall of the upper volume
+  (which forms the west boundary of the deck) carries large floor-to-ceiling
+  sliding glass doors that open from the upper-floor interior onto the east
+  deck. The main gable roof is **NOT** cut or interrupted — it remains a
+  clean uninterrupted plane on each pitch. The earlier "massive rectangular
+  dormer cut-out" description has been retired; the visual reference shows
+  no such cut.
 
 ---
 
