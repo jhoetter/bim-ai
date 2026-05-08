@@ -131,7 +131,8 @@ export type ElemKind =
   | 'fixture'
   | 'material'
   | 'decal'
-  | 'hatch_pattern_def';
+  | 'hatch_pattern_def'
+  | 'property_definition';
 
 export type PhaseFilter = 'all' | 'existing' | 'demolition' | 'new';
 
@@ -698,6 +699,8 @@ export type Element =
       optionId?: string | null;
       /** DSC-V3-01: discipline tag. */
       discipline?: DisciplineTag | null;
+      /** SCH-V3-01: custom property values. */
+      props?: Record<string, unknown>;
     }
   | {
       kind: 'door';
@@ -727,6 +730,8 @@ export type Element =
       optionId?: string | null;
       /** DSC-V3-01: discipline tag. */
       discipline?: DisciplineTag | null;
+      /** SCH-V3-01: custom property values. */
+      props?: Record<string, unknown>;
     }
   | {
       kind: 'window';
@@ -760,6 +765,8 @@ export type Element =
       optionId?: string | null;
       /** DSC-V3-01: discipline tag. */
       discipline?: DisciplineTag | null;
+      /** SCH-V3-01: custom property values. */
+      props?: Record<string, unknown>;
     }
   | {
       kind: 'wall_opening';
@@ -792,6 +799,8 @@ export type Element =
       pinned?: boolean;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
+      /** SCH-V3-01: custom property values. */
+      props?: Record<string, unknown>;
     }
   | {
       kind: 'grid_line';
@@ -876,6 +885,8 @@ export type Element =
       optionId?: string | null;
       /** DSC-V3-01: discipline tag. */
       discipline?: DisciplineTag | null;
+      /** SCH-V3-01: custom property values. */
+      props?: Record<string, unknown>;
     }
   | {
       kind: 'roof';
@@ -913,6 +924,8 @@ export type Element =
       optionId?: string | null;
       /** DSC-V3-01: discipline tag. */
       discipline?: DisciplineTag | null;
+      /** SCH-V3-01: custom property values. */
+      props?: Record<string, unknown>;
     }
   | {
       kind: 'stair';
@@ -1169,6 +1182,16 @@ export type Element =
       sheetId?: string | null;
       filters?: Record<string, unknown>;
       grouping?: Record<string, unknown>;
+      /** SCH-V3-01: ElemKind value for filtering rows. */
+      category?: string | null;
+      /** SCH-V3-01: column definitions for the schedule view. */
+      columns?: Array<{ fieldKey: string; label: string; width?: number }>;
+      /** SCH-V3-01: default filter expression. */
+      filterExpr?: string | null;
+      /** SCH-V3-01: default sort field key. */
+      sortKey?: string | null;
+      /** SCH-V3-01: default sort direction. */
+      sortDir?: 'asc' | 'desc' | null;
     }
   | {
       kind: 'site';
@@ -1288,6 +1311,8 @@ export type Element =
       phaseDemolished?: string | null;
       /** DSC-V3-01: discipline tag. */
       discipline?: DisciplineTag | null;
+      /** SCH-V3-01: custom property values. */
+      props?: Record<string, unknown>;
     }
   | {
       kind: 'beam';
@@ -1307,6 +1332,8 @@ export type Element =
       phaseDemolished?: string | null;
       /** DSC-V3-01: discipline tag. */
       discipline?: DisciplineTag | null;
+      /** SCH-V3-01: custom property values. */
+      props?: Record<string, unknown>;
     }
   | {
       kind: 'ceiling';
@@ -1321,6 +1348,8 @@ export type Element =
       phaseDemolished?: string | null;
       /** DSC-V3-01: discipline tag. */
       discipline?: DisciplineTag | null;
+      /** SCH-V3-01: custom property values. */
+      props?: Record<string, unknown>;
     }
   | {
       kind: 'color_fill_legend';
@@ -1692,7 +1721,8 @@ export type Element =
   | ToposolidElem
   | AssetLibraryEntryElem
   | PlacedAssetElem
-  | HatchPatternDef;
+  | HatchPatternDef
+  | PropertyDefinitionElem;
 
 export type Violation = {
   ruleId: string;
@@ -2206,6 +2236,35 @@ export type PlacedAssetElem = {
   rotationDeg?: number;
   paramValues?: Record<string, unknown>;
   hostElementId?: string;
+};
+
+// ---------------------------------------------------------------------------
+// SCH-V3-01 — Custom property definition
+// ---------------------------------------------------------------------------
+
+/** SCH-V3-01 — project-scoped custom property definition. */
+export type PropertyDefinitionElem = {
+  kind: 'property_definition';
+  id: string;
+  key: string;
+  label: string;
+  propKind: 'mm' | 'm2' | 'currency' | 'enum' | 'string' | 'bool' | 'date';
+  enumValues?: string[];
+  defaultValue?: unknown;
+  appliesTo: string[];
+  showInSchedule: boolean;
+};
+
+/** SCH-V3-01 — V3 schedule-view element (extends the existing schedule kind). */
+export type ScheduleViewElem = {
+  kind: 'schedule';
+  id: string;
+  name: string;
+  category: string;
+  columns: Array<{ fieldKey: string; label: string; width?: number }>;
+  filterExpr?: string | null;
+  sortKey?: string | null;
+  sortDir?: 'asc' | 'desc' | null;
 };
 
 // ---------------------------------------------------------------------------

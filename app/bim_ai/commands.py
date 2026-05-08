@@ -2139,6 +2139,51 @@ class SetToolPrefCmd(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# EDT-V3-06 — Helper dimension update commands (minimal patch commands)
+# ---------------------------------------------------------------------------
+
+
+class UpdateWallCmd(BaseModel):
+    """EDT-V3-06 — patch a wall's length or thickness from a helper dim chip."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["updateWall"] = "updateWall"
+    id: str
+    length_mm: float | None = Field(default=None, alias="lengthMm", gt=0)
+    thickness_mm: float | None = Field(default=None, alias="thicknessMm", gt=0)
+
+
+class UpdateDoorCmd(BaseModel):
+    """EDT-V3-06 — patch a door's width from a helper dim chip."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["updateDoor"] = "updateDoor"
+    id: str
+    width_mm: float | None = Field(default=None, alias="widthMm", gt=0)
+
+
+class UpdateWindowCmd(BaseModel):
+    """EDT-V3-06 — patch a window's dimensions from a helper dim chip."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["updateWindow"] = "updateWindow"
+    id: str
+    width_mm: float | None = Field(default=None, alias="widthMm", gt=0)
+    sill_height_mm: float | None = Field(default=None, alias="sillHeightMm", ge=0)
+    height_mm: float | None = Field(default=None, alias="heightMm", gt=0)
+
+
+class UpdateColumnCmd(BaseModel):
+    """EDT-V3-06 — patch a column's cross-section from a helper dim chip."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["updateColumn"] = "updateColumn"
+    id: str
+    b_mm: float | None = Field(default=None, alias="bMm", gt=0)
+    h_mm: float | None = Field(default=None, alias="hMm", gt=0)
+
+
+# ---------------------------------------------------------------------------
 # IMG-V3-01 — Image trace command
 # ---------------------------------------------------------------------------
 
@@ -2324,6 +2369,10 @@ Command = Annotated[
     | IndexAssetCmd
     | PlaceAssetCmd
     | SetToolPrefCmd
-    | TraceImageCmd,
+    | TraceImageCmd
+    | UpdateWallCmd
+    | UpdateDoorCmd
+    | UpdateWindowCmd
+    | UpdateColumnCmd,
     Field(discriminator="type"),
 ]

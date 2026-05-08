@@ -188,6 +188,10 @@ from bim_ai.commands import (
     PlaceAssetCmd,
     SetToolPrefCmd,
     TraceImageCmd,
+    UpdateWallCmd,
+    UpdateDoorCmd,
+    UpdateWindowCmd,
+    UpdateColumnCmd,
 )
 from bim_ai.constraints import Violation, evaluate
 from bim_ai.datum_levels import (
@@ -5074,6 +5078,61 @@ def apply_inplace(
                 "TraceImageCmd cannot be applied in a bundle; "
                 "use POST /api/v3/trace or engine.handle_trace_image_cmd() instead"
             )
+
+        case UpdateWallCmd():
+            import math
+
+            wall = els.get(cmd.id)
+            if not isinstance(wall, WallElem):
+                raise ValueError(f"updateWall: element {cmd.id!r} is not a wall")
+            updates: dict = {}
+            if cmd.length_mm is not None:
+                dx = wall.end.x_mm - wall.start.x_mm
+                dy = wall.end.y_mm - wall.start.y_mm
+                current_len = math.sqrt(dx * dx + dy * dy)
+                if current_len < 1e-6:
+                    raise ValueError("updateWall: cannot set length on a zero-length wall")
+                scale = cmd.length_mm / current_len
+                updates["end"] = Vec2Mm(
+                    x_mm=wall.start.x_mm + dx * scale,
+                    y_mm=wall.start.y_mm + dy * scale,
+                )
+            if cmd.thickness_mm is not None:
+                updates["thickness_mm"] = cmd.thickness_mm
+            els[cmd.id] = wall.model_copy(update=updates)
+
+        case UpdateDoorCmd():
+            door = els.get(cmd.id)
+            if not isinstance(door, DoorElem):
+                raise ValueError(f"updateDoor: element {cmd.id!r} is not a door")
+            updates = {}
+            if cmd.width_mm is not None:
+                updates["width_mm"] = cmd.width_mm
+            els[cmd.id] = door.model_copy(update=updates)
+
+        case UpdateWindowCmd():
+            win = els.get(cmd.id)
+            if not isinstance(win, WindowElem):
+                raise ValueError(f"updateWindow: element {cmd.id!r} is not a window")
+            updates = {}
+            if cmd.width_mm is not None:
+                updates["width_mm"] = cmd.width_mm
+            if cmd.sill_height_mm is not None:
+                updates["sill_height_mm"] = cmd.sill_height_mm
+            if cmd.height_mm is not None:
+                updates["height_mm"] = cmd.height_mm
+            els[cmd.id] = win.model_copy(update=updates)
+
+        case UpdateColumnCmd():
+            col = els.get(cmd.id)
+            if not isinstance(col, ColumnElem):
+                raise ValueError(f"updateColumn: element {cmd.id!r} is not a column")
+            updates = {}
+            if cmd.b_mm is not None:
+                updates["b_mm"] = cmd.b_mm
+            if cmd.h_mm is not None:
+                updates["h_mm"] = cmd.h_mm
+            els[cmd.id] = col.model_copy(update=updates)
 
     # KRN-08: areas track a derived computedAreaSqMm. Recompute after every
     # command apply so create/update/delete of areas (and shafts that affect
