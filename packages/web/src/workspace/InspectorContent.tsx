@@ -1190,3 +1190,52 @@ export function InspectorViewTemplateEditor({
     </div>
   );
 }
+
+export function InspectorPlanRegionEditor({
+  el,
+  elementsById,
+  revision,
+  onPersistProperty,
+}: {
+  el: Extract<Element, { kind: 'plan_region' }>;
+  elementsById: Record<string, Element>;
+  revision: number;
+  onPersistProperty: (key: string, value: string) => void;
+}): JSX.Element {
+  const { t } = useTranslation();
+  const level = elementsById[el.levelId];
+  const levelName = level && 'name' in level ? String(level.name) : el.levelId;
+  return (
+    <div className="space-y-2 text-[11px]">
+      <p className="text-[10px] font-semibold text-muted">Plan Region</p>
+      <label className={LABEL_CLS}>
+        {t('inspector.fields.name')}
+        <input
+          className={INPUT_CLS}
+          defaultValue={el.name}
+          key={`pr-name-${el.id}-${el.name}-${revision}`}
+          onBlur={(e) => {
+            const v = e.target.value.trim();
+            if (!v || v === el.name) return;
+            onPersistProperty('name', v);
+          }}
+        />
+      </label>
+      <label className={LABEL_CLS}>
+        Cut-plane height (mm)
+        <input
+          className={INPUT_CLS}
+          type="number"
+          defaultValue={el.cutPlaneOffsetMm ?? -500}
+          key={`pr-cut-${el.id}-${el.cutPlaneOffsetMm}-${revision}`}
+          onBlur={(e) => {
+            const v = e.target.value.trim();
+            if (!v) return;
+            onPersistProperty('cutPlaneOffsetMm', v);
+          }}
+        />
+      </label>
+      <FieldRow label="Parent level" value={levelName} />
+    </div>
+  );
+}

@@ -78,6 +78,7 @@ import {
 } from './planProjectionWire';
 import {
   resolvePlanAnnotationHints,
+  extractPlanRegionOverlays,
   resolvePlanGraphicHints,
   resolvePlanTagStyleLane,
   resolvePlanViewDisplay,
@@ -160,7 +161,8 @@ type Draft =
   | { kind: 'reference-plane'; sx: number; sy: number }
   | { kind: 'property-line'; sx: number; sy: number }
   | { kind: 'area-boundary'; sx: number; sy: number }
-  | { kind: 'masking-region'; sx: number; sy: number };
+  | { kind: 'masking-region'; sx: number; sy: number }
+  | { kind: 'plan-region'; sx: number; sy: number };
 
 function nearestWallAt(
   elementsById: Record<string, Element>,
@@ -904,6 +906,38 @@ export function PlanCanvas({
         fill.userData.maskingRegion = true;
         fill.userData.bimPickId = m.id;
         grp.add(fill);
+      }
+    }
+
+    // KRN-V3-06 — render plan region boundaries as thin dashed witness lines.
+    for (let i = grp.children.length - 1; i >= 0; i--) {
+      const ch = grp.children[i]!;
+      if ((ch.userData as { planRegion?: unknown }).planRegion) grp.remove(ch);
+    }
+    const planRegionLevelId = displayLevelId || activeLevelResolvedId;
+    if (planRegionLevelId) {
+      const witnessColor = readPlanToken('--draft-witness', '#64748b');
+      const regionOverlays = extractPlanRegionOverlays(elementsById, planRegionLevelId);
+      for (const r of regionOverlays) {
+        if (r.outlineMm.length < 3) continue;
+        const rPts = r.outlineMm.map(
+          (pt) => new THREE.Vector3(pt.xMm / 1000, SLICE_Y + 0.003, pt.yMm / 1000),
+        );
+        rPts.push(rPts[0]!.clone());
+        const rGeom = new THREE.BufferGeometry().setFromPoints(rPts);
+        const rLine = new THREE.Line(
+          rGeom,
+          new THREE.LineDashedMaterial({
+            color: witnessColor,
+            dashSize: 0.12,
+            gapSize: 0.06,
+            linewidth: 1,
+          }),
+        );
+        rLine.computeLineDistances();
+        rLine.userData.planRegion = true;
+        rLine.userData.bimPickId = r.id;
+        grp.add(rLine);
       }
     }
 
@@ -2140,6 +2174,46 @@ export function PlanCanvas({
             { xMm: x0, yMm: y1 },
           ],
           fillColor: '#ffffff',
+        });
+        draftRef.current = undefined;
+        bumpGeom((x) => x + 1);
+        return;
+      }
+      if (planTool === 'plan-region') {
+        // KRN-V3-06: two-click rectangular plan-region.
+        const d = draftRef.current;
+        if (!d || d.kind !== 'plan-region') {
+          draftRef.current = { kind: 'plan-region', sx: sp.xMm, sy: sp.yMm };
+          bumpGeom((x) => x + 1);
+          return;
+        }
+        if (Math.hypot(sp.xMm - d.sx, sp.yMm - d.sy) < 1) {
+          draftRef.current = undefined;
+          bumpGeom((x) => x + 1);
+          return;
+        }
+        if (!lvlId) {
+          draftRef.current = undefined;
+          bumpGeom((x) => x + 1);
+          return;
+        }
+        const x0 = Math.min(d.sx, sp.xMm);
+        const x1 = Math.max(d.sx, sp.xMm);
+        const y0 = Math.min(d.sy, sp.yMm);
+        const y1 = Math.max(d.sy, sp.yMm);
+        const cutPlaneOffsetMm = Number(
+          window.prompt('Cut-plane override height (mm above level, e.g. 900)', '900'),
+        );
+        onSemanticCommand({
+          type: 'createPlanRegion',
+          levelId: lvlId,
+          outlineMm: [
+            { xMm: x0, yMm: y0 },
+            { xMm: x1, yMm: y0 },
+            { xMm: x1, yMm: y1 },
+            { xMm: x0, yMm: y1 },
+          ],
+          cutPlaneOffsetMm: Number.isFinite(cutPlaneOffsetMm) ? cutPlaneOffsetMm : 900,
         });
         draftRef.current = undefined;
         bumpGeom((x) => x + 1);

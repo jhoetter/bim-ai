@@ -685,6 +685,20 @@ class CreatePlanRegionCmd(BaseModel):
     outline_mm: list[Vec2Mm] = Field(alias="outlineMm")
     cut_plane_offset_mm: float = Field(alias="cutPlaneOffsetMm", default=-500)
 
+class UpdatePlanRegionCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["updatePlanRegion"] = "updatePlanRegion"
+    id: str
+    name: str | None = None
+    outline_mm: list[Vec2Mm] | None = Field(default=None, alias="outlineMm")
+    cut_plane_offset_mm: float | None = Field(default=None, alias="cutPlaneOffsetMm")
+
+
+class DeletePlanRegionCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["deletePlanRegion"] = "deletePlanRegion"
+    id: str
+
 
 class UpsertTagDefinitionCmd(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
@@ -1706,6 +1720,8 @@ Command = Annotated[
     | UpdateOpeningCleanroomCmd
     | CreateRoomSeparationCmd
     | CreatePlanRegionCmd
+    | UpdatePlanRegionCmd
+    | DeletePlanRegionCmd
     | UpsertTagDefinitionCmd
     | CreateJoinGeometryCmd
     | CreateSectionCutCmd

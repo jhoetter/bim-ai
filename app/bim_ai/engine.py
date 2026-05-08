@@ -43,6 +43,8 @@ from bim_ai.commands import (
     CreateMaskingRegionCmd,
     CreateMassCmd,
     CreatePlanRegionCmd,
+    DeletePlanRegionCmd,
+    UpdatePlanRegionCmd,
     CreateProjectBasePointCmd,
     CreatePropertyLineCmd,
     CreateRailingCmd,
@@ -2929,6 +2931,27 @@ def apply_inplace(
                 outline_mm=cmd.outline_mm,
                 cut_plane_offset_mm=cmd.cut_plane_offset_mm,
             )
+
+        case UpdatePlanRegionCmd():
+            pr = els.get(cmd.id)
+            if not isinstance(pr, PlanRegionElem):
+                raise ValueError("updatePlanRegion.id must reference an existing plan_region")
+            updates_pr: dict[str, Any] = {}
+            if cmd.name is not None:
+                updates_pr["name"] = cmd.name
+            if cmd.outline_mm is not None:
+                if len(cmd.outline_mm) < 3:
+                    raise ValueError("updatePlanRegion.outlineMm requires ≥3 vertices")
+                updates_pr["outline_mm"] = list(cmd.outline_mm)
+            if cmd.cut_plane_offset_mm is not None:
+                updates_pr["cut_plane_offset_mm"] = cmd.cut_plane_offset_mm
+            els[cmd.id] = pr.model_copy(update=updates_pr)
+
+        case DeletePlanRegionCmd():
+            pr = els.get(cmd.id)
+            if not isinstance(pr, PlanRegionElem):
+                raise ValueError("deletePlanRegion.id must reference an existing plan_region")
+            del els[cmd.id]
 
         case UpsertTagDefinitionCmd():
             tid_cmd = cmd.id or new_id()

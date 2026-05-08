@@ -1074,3 +1074,50 @@ export function evaluateViewFilters(
   }
   return { visible, lineColor, lineWeightFactor, fillColor };
 }
+
+export type PlanRegionOverlay = {
+  id: string;
+  name: string;
+  levelId: string;
+  outlineMm: { xMm: number; yMm: number }[];
+  cutPlaneOffsetMm: number;
+};
+
+export function extractPlanRegionOverlays(
+  elementsById: Record<string, Element>,
+  activeLevelId: string | undefined,
+): PlanRegionOverlay[] {
+  if (!activeLevelId) return [];
+  const out: PlanRegionOverlay[] = [];
+  for (const el of Object.values(elementsById)) {
+    if (el.kind === 'plan_region' && el.levelId === activeLevelId) {
+      out.push({
+        id: el.id,
+        name: el.name,
+        levelId: el.levelId,
+        outlineMm: el.outlineMm,
+        cutPlaneOffsetMm: el.cutPlaneOffsetMm ?? -500,
+      });
+    }
+  }
+  return out;
+}
+
+export function pointInPolygonMm(
+  polygon: { xMm: number; yMm: number }[],
+  xMm: number,
+  yMm: number,
+): boolean {
+  let inside = false;
+  const n = polygon.length;
+  for (let i = 0, j = n - 1; i < n; j = i++) {
+    const xi = polygon[i]!.xMm;
+    const yi = polygon[i]!.yMm;
+    const xj = polygon[j]!.xMm;
+    const yj = polygon[j]!.yMm;
+    if (yi > yMm !== yj > yMm && xMm < ((xj - xi) * (yMm - yi)) / (yj - yi) + xi) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}

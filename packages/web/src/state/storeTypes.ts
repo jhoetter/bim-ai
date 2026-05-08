@@ -45,6 +45,7 @@ export type PlanTool =
   | 'property-line'
   | 'area-boundary'
   | 'masking-region'
+  | 'plan-region'
   | 'align'
   | 'split'
   | 'trim'

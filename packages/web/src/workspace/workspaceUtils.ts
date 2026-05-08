@@ -42,6 +42,7 @@ export const KNOWN_PLAN_TOOLS = new Set<ToolId>([
   'floor-sketch',
   'roof-sketch',
   'room-separation-sketch',
+  'plan-region',
 ]);
 
 export type LegacyPlanTool =
@@ -62,6 +63,7 @@ export type LegacyPlanTool =
   | 'property-line'
   | 'area-boundary'
   | 'masking-region'
+  | 'plan-region'
   | 'align'
   | 'split'
   | 'trim'

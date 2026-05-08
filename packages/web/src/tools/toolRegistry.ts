@@ -40,6 +40,7 @@ export type ToolId =
   | 'property-line'
   | 'area-boundary'
   | 'masking-region'
+  | 'plan-region'
   | 'tag'
   | 'align'
   | 'split'
@@ -222,6 +223,14 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       hotkey: 'MR',
       modes: ['plan', 'plan-3d'],
       tooltip: t('tools.maskingRegion.tooltip'),
+    },
+    'plan-region': {
+      id: 'plan-region',
+      label: 'Plan Region',
+      icon: 'detailLine',
+      hotkey: 'PR',
+      modes: ['plan', 'plan-3d'],
+      tooltip: 'Draw a cut-plane override region',
     },
     tag: {
       id: 'tag',

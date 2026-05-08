@@ -822,6 +822,11 @@ Commands:
   tokens encode                       TKN-V3-01: encode current kernel state → TokenSequence (stdout JSON)
   tokens decode [file|-]              TKN-V3-01: decode TokenSequence → commands (reads JSON from file or stdin)
   tokens diff --a <path> --b <path>   TKN-V3-01: structural diff between two TokenSequence JSON files
+  plan-region create --level <id> --cut <mm> [--name <n>] x0 y0 x1 y1
+                                      KRN-V3-06: create a cut-plane override region (rectangle, mm).
+  plan-region update <id> [--cut <mm>] [--name <n>]
+                                      KRN-V3-06: update cut-plane or name of an existing plan region.
+  plan-region delete <id>             KRN-V3-06: delete a plan region.
   watch                               WebSocket watcher (continuous live commits — no Synchronize step required)
   api list-tools [--output json]      API-V3-01: list all registered tool descriptors
   api inspect <name> [--output json]  API-V3-01: print one ToolDescriptor
@@ -1180,6 +1185,62 @@ async function main() {
         return;
       }
       console.error(`Unknown tokens subcommand: ${sub ?? '(none)'}. Use encode, decode, or diff.`);
+      process.exit(1);
+    }
+
+    if (cmd === 'plan-region') {
+      const sub = argv[0];
+      if (sub === 'create') {
+        if (!modelId) usage();
+        let levelId, cutPlaneOffsetMm, name, coords;
+        const rest = argv.slice(1);
+        for (let i = 0; i < rest.length; i++) {
+          if (rest[i] === '--level') levelId = rest[++i];
+          else if (rest[i] === '--cut') cutPlaneOffsetMm = Number(rest[++i]);
+          else if (rest[i] === '--name') name = rest[++i];
+          else coords = rest.slice(i);
+        }
+        if (!levelId || !coords || coords.length < 4) {
+          console.error('plan-region create: --level <id> x0 y0 x1 y1 required');
+          process.exit(1);
+        }
+        const [x0, y0, x1, y1] = coords.map(Number);
+        const cmd = {
+          type: 'createPlanRegion',
+          levelId,
+          outlineMm: [
+            { xMm: x0, yMm: y0 },
+            { xMm: x1, yMm: y0 },
+            { xMm: x1, yMm: y1 },
+            { xMm: x0, yMm: y1 },
+          ],
+          ...(cutPlaneOffsetMm !== undefined ? { cutPlaneOffsetMm } : {}),
+          ...(name !== undefined ? { name } : {}),
+        };
+        await commit(modelId, cmd);
+        return;
+      }
+      if (sub === 'update') {
+        if (!modelId) usage();
+        const id = argv[1];
+        if (!id) { console.error('plan-region update: <id> required'); process.exit(1); }
+        const rest = argv.slice(2);
+        const updates = { type: 'updatePlanRegion', id };
+        for (let i = 0; i < rest.length; i++) {
+          if (rest[i] === '--cut') updates.cutPlaneOffsetMm = Number(rest[++i]);
+          else if (rest[i] === '--name') updates.name = rest[++i];
+        }
+        await commit(modelId, updates);
+        return;
+      }
+      if (sub === 'delete') {
+        if (!modelId) usage();
+        const id = argv[1];
+        if (!id) { console.error('plan-region delete: <id> required'); process.exit(1); }
+        await commit(modelId, { type: 'deletePlanRegion', id });
+        return;
+      }
+      console.error(`Unknown plan-region subcommand: ${sub ?? '(none)'}. Use create, update, or delete.`);
       process.exit(1);
     }
 
