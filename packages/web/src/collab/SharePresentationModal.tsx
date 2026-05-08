@@ -133,7 +133,7 @@ export function SharePresentationModal({ modelId, open, onClose, pages = [] }: P
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'rgba(0,0,0,0.4)',
+        background: 'var(--color-overlay)',
         zIndex: 1000,
       }}
       onClick={(e) => {
@@ -149,7 +149,7 @@ export function SharePresentationModal({ modelId, open, onClose, pages = [] }: P
           maxHeight: '85vh',
           overflowY: 'auto',
           padding: '24px',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.24)',
+          boxShadow: '0 8px 32px var(--shadow-modal)',
           border: '1px solid var(--color-border)',
         }}
       >

@@ -26,6 +26,8 @@ def _build_test_app() -> tuple[FastAPI, dict[str, Any]]:
     }
     _presentations: dict[str, dict[str, Any]] = {}
     _token_index: dict[str, str] = {}
+    # token -> set of active WS connections (mirrors production _presentation_ws_sessions)
+    _ws_sessions: dict[str, set] = {}
 
     app = FastAPI()
 
@@ -75,6 +77,17 @@ def _build_test_app() -> tuple[FastAPI, dict[str, Any]]:
 
         now_ms = int(time.time() * 1000)
         _presentations[link_id]["isRevoked"] = True
+
+        # Push {type: "revoked"} to all active WS sessions for this token, then close them
+        token = _presentations[link_id]["token"]
+        active_sockets = _ws_sessions.pop(token, set())
+        for ws in list(active_sockets):
+            try:
+                await ws.send_json({"type": "revoked"})
+                await ws.close(code=4403)
+            except Exception:
+                pass
+
         return {"revokedAt": now_ms}
 
     @app.get("/api/p/{token}")
@@ -102,6 +115,9 @@ def _build_test_app() -> tuple[FastAPI, dict[str, Any]]:
             "elements": model["elements"],
             "violations": model["violations"],
             "wsUrl": f"/api/p/{token}/ws",
+            "allowMeasurement": record["allowMeasurement"],
+            "allowComment": record["allowComment"],
+            "pageScopeIds": record["pageScopeIds"],
             "presentation": {
                 "id": record["id"],
                 "displayName": record["displayName"],
@@ -118,11 +134,18 @@ def _build_test_app() -> tuple[FastAPI, dict[str, Any]]:
             await websocket.close(code=4403)
             return
         await websocket.accept()
+        _ws_sessions.setdefault(token, set()).add(websocket)
         try:
             while True:
                 await websocket.receive_text()
         except WebSocketDisconnect:
             pass
+        finally:
+            sessions = _ws_sessions.get(token)
+            if sessions:
+                sessions.discard(websocket)
+                if not sessions:
+                    _ws_sessions.pop(token, None)
 
     return app, _presentations
 
@@ -272,3 +295,34 @@ class TestPresentationWebSocket:
         with client.websocket_connect(f"/api/p/{token}/ws") as ws:
             msg = ws.receive_json()
             assert msg["type"] == "revoked"
+
+class TestRevokeWsPush:
+    def test_revoke_pushes_to_active_ws_session(self, client: TestClient) -> None:
+        """Acceptance: incognito viewer shows 'presentation revoked' in <1 s.
+
+        Steps:
+        1. Create presentation link
+        2. Connect WS client to /api/p/{token}/ws (simulates active viewer)
+        3. Revoke the link via POST /api/models/.../presentations/{id}/revoke
+        4. Assert WS client received {"type": "revoked"}
+        5. (Connection close is handled by the server after sending the message)
+        """
+        # 1. Create a presentation link
+        create = client.post(f"/api/models/{MODEL_ID}/presentations", json={})
+        assert create.status_code == 200
+        body = create.json()
+        link_id = body["id"]
+        token = body["token"]
+
+        # 2. Connect WS client (simulates an active viewer tab)
+        with client.websocket_connect(f"/api/p/{token}/ws") as ws:
+            # 3. Revoke while WS is connected — server must push "revoked" message
+            revoke = client.post(
+                f"/api/models/{MODEL_ID}/presentations/{link_id}/revoke"
+            )
+            assert revoke.status_code == 200
+            assert "revokedAt" in revoke.json()
+
+            # 4. Assert WS client received the revoked message
+            msg = ws.receive_json()
+            assert msg == {"type": "revoked"}

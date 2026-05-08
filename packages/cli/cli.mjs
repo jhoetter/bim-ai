@@ -835,6 +835,12 @@ Commands:
   api list-tools [--output json]      API-V3-01: list all registered tool descriptors
   api inspect <name> [--output json]  API-V3-01: print one ToolDescriptor
   api version                         API-V3-01: print { schemaVersion, buildRef }
+  publish --link --model <id> [--display-name <str>] [--allow-measurement] [--allow-comment] [--expires-at <ms>]
+                                      OUT-V3-01: create a live presentation link (prints full URL)
+  publish --revoke <link-id> --model <id>
+                                      OUT-V3-01: revoke a presentation link
+  publish --list --model <id>         OUT-V3-01: list active presentation links for a model
+
   jobs submit <kind> --model <id> [--inputs <json>]
                                       JOB-V3-01: enqueue a long-running job
   jobs list --model <id> [--wait]     JOB-V3-01: list jobs for model (--wait polls until all active done)
@@ -1050,7 +1056,7 @@ async function main() {
       process.exit(1);
     }
 
-    if (!modelId && cmd !== 'schema' && cmd !== 'presets' && cmd !== 'plan-house' && cmd !== 'bootstrap' && cmd !== 'init-model')
+    if (!modelId && cmd !== 'schema' && cmd !== 'presets' && cmd !== 'plan-house' && cmd !== 'bootstrap' && cmd !== 'init-model' && cmd !== 'publish')
       usage();
 
     if (cmd === 'snapshot') {
@@ -1427,6 +1433,49 @@ async function main() {
       if (!viewId || !phaseFilter) { console.error('view-set-phase-filter requires --view-id <id> --phase-filter <filter>'); process.exit(1); }
       await postCommand(modelId, userId, { type: 'setViewPhaseFilter', viewId, phaseFilter });
       return;
+    }
+
+    if (cmd === 'publish') {
+      // OUT-V3-01: live presentation URL management
+      if (argv.includes('--link')) {
+        const modelArg = argv[argv.indexOf('--model') + 1] ?? modelId;
+        if (!modelArg) { console.error('publish --link requires --model <id> or BIM_AI_MODEL_ID'); process.exit(1); }
+        const body = {};
+        const dnIdx = argv.indexOf('--display-name');
+        if (dnIdx !== -1) body.displayName = argv[dnIdx + 1];
+        if (argv.includes('--allow-measurement')) body.allowMeasurement = true;
+        if (argv.includes('--allow-comment')) body.allowComment = true;
+        const eaIdx = argv.indexOf('--expires-at');
+        if (eaIdx !== -1) body.expiresAt = parseInt(argv[eaIdx + 1], 10);
+        const psIdx = argv.indexOf('--page-scope-ids');
+        if (psIdx !== -1) body.pageScopeIds = JSON.parse(argv[psIdx + 1]);
+        const result = await fetchJson('POST', `${base}/api/models/${encodeURIComponent(modelArg)}/presentations`, body);
+        console.log(result.url ? `URL: ${base}${result.url}` : JSON.stringify(result, null, 2));
+        return;
+      }
+      const revokeIdx = argv.indexOf('--revoke');
+      if (revokeIdx !== -1) {
+        const linkId = argv[revokeIdx + 1];
+        if (!linkId) { console.error('publish --revoke requires <link-id>'); process.exit(1); }
+        const modelArg = argv[argv.indexOf('--model') + 1] ?? modelId;
+        if (!modelArg) { console.error('publish --revoke requires --model <id> or BIM_AI_MODEL_ID'); process.exit(1); }
+        const result = await fetchJson('POST', `${base}/api/models/${encodeURIComponent(modelArg)}/presentations/${encodeURIComponent(linkId)}/revoke`);
+        console.log(JSON.stringify(result, null, 2));
+        return;
+      }
+      if (argv.includes('--list')) {
+        const modelArg = argv[argv.indexOf('--model') + 1] ?? modelId;
+        if (!modelArg) { console.error('publish --list requires --model <id> or BIM_AI_MODEL_ID'); process.exit(1); }
+        const result = await fetchJson('GET', `${base}/api/models/${encodeURIComponent(modelArg)}/presentations`);
+        const items = result.presentations ?? [];
+        if (items.length === 0) { console.log('No active presentations.'); return; }
+        for (const p of items) {
+          console.log(`${p.id}  ${p.isRevoked ? '[revoked]' : '[active]'}  ${base}/p/${p.token}`);
+        }
+        return;
+      }
+      console.error('publish requires --link, --revoke <link-id>, or --list');
+      process.exit(1);
     }
 
     if (cmd === 'jobs') {

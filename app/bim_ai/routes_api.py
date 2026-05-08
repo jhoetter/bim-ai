@@ -2271,7 +2271,6 @@ async def tokens_diff(
 # OUT-V3-01 — Live presentation URL
 # ---------------------------------------------------------------------------
 
-_presentation_data: dict[str, dict] = {}
 _presentation_ws_sessions: dict[str, set[WebSocket]] = {}
 
 
@@ -2300,6 +2299,8 @@ async def create_presentation(
     link_id = secrets.token_urlsafe(16)
     token = generate_link_token()
 
+    import json as _json
+
     link_record = PublicLinkRecord(
         id=link_id,
         model_id=str(model_id),
@@ -2310,15 +2311,12 @@ async def create_presentation(
         is_revoked=False,
         display_name="presentation",
         open_count=0,
+        allow_measurement=body.allowMeasurement,
+        allow_comment=body.allowComment,
+        page_scope_ids=_json.dumps(body.pageScopeIds),
     )
     session.add(link_record)
     await session.commit()
-
-    _presentation_data[link_id] = {
-        "pageScopeIds": body.pageScopeIds,
-        "allowMeasurement": body.allowMeasurement,
-        "allowComment": body.allowComment,
-    }
 
     return {
         "id": link_id,
@@ -2349,10 +2347,11 @@ async def list_presentations(
             PublicLinkRecord.display_name == "presentation",
         )
     )
+    import json as _json
+
     records = res.scalars().all()
     presentations = []
     for r in records:
-        extra = _presentation_data.get(r.id, {})
         presentations.append(
             {
                 "id": r.id,
@@ -2363,9 +2362,9 @@ async def list_presentations(
                 "expiresAt": r.expires_at,
                 "isRevoked": r.is_revoked,
                 "openCount": r.open_count,
-                "pageScopeIds": extra.get("pageScopeIds", []),
-                "allowMeasurement": extra.get("allowMeasurement", False),
-                "allowComment": extra.get("allowComment", False),
+                "pageScopeIds": _json.loads(r.page_scope_ids) if r.page_scope_ids else [],
+                "allowMeasurement": r.allow_measurement,
+                "allowComment": r.allow_comment,
             }
         )
     return {"presentations": presentations}
@@ -2442,6 +2441,8 @@ async def resolve_presentation_token(
     if row is None:
         raise HTTPException(status_code=404, detail="Model not found")
 
+    import json as _json
+
     doc = Document.model_validate(row.document)
     elements_wire = {k: v.model_dump(by_alias=True) for k, v in doc.elements.items()}
     return {
@@ -2450,6 +2451,9 @@ async def resolve_presentation_token(
         "revision": doc.revision,
         "elements": elements_wire,
         "wsUrl": f"/api/p/{token}/ws",
+        "allowMeasurement": link_record.allow_measurement,
+        "allowComment": link_record.allow_comment,
+        "pageScopeIds": _json.loads(link_record.page_scope_ids) if link_record.page_scope_ids else [],
         "presentation": {
             "id": link_record.id,
             "displayName": link_record.display_name,

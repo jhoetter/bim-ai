@@ -152,3 +152,8 @@ class PublicLinkRecord(Base):
     is_revoked: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     display_name: Mapped[str | None] = mapped_column(String, nullable=True)
     open_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+    # OUT-V3-01: durable flags (replaces in-memory _presentation_data dict)
+    allow_measurement: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    allow_comment: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    page_scope_ids: Mapped[str | None] = mapped_column(String, nullable=True)  # JSON-encoded list
