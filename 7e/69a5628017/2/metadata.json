@@ -1,0 +1,37 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "7e69a5628017",
+  "session_id": "9fa7079c-4339-45a3-8e2c-c85d91d5fff4",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T13:41:22.239689Z",
+  "branch": "feat/v3-sprint0-b4-tokens",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/design-tokens/package.json",
+    "packages/web/vite.config.ts",
+    "eslint.config.js",
+    "package.json"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "92e717ea0e5c",
+  "token_usage": {
+    "input_tokens": 190,
+    "cache_creation_tokens": 77212,
+    "cache_read_tokens": 4025084,
+    "output_tokens": 31697,
+    "api_call_count": 68
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-08T13:41:22.230705Z",
+    "agent_lines": 16,
+    "agent_removed": 3,
+    "human_added": 531,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 547,
+    "total_lines_changed": 551,
+    "agent_percentage": 3.4482758620689653,
+    "metric_version": 2
+  }
+}
