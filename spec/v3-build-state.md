@@ -1,7 +1,7 @@
 # v3 Build State
 
-Last updated: 2026-05-08 (wave-7: 8 WPs dispatched; ~47/63 WPs done, ~55/63 targeted after wave-7)
-Active heavy workers: 8 / 8
+Last updated: 2026-05-09 (wave-7: all 8 WPs merged ✅; ~55/63 WPs done)
+Active heavy workers: 0 / 8 (wave-7 complete)
 
 ## Merged so far
 
@@ -79,20 +79,20 @@ All 8 WPs fixed (subagents) and conflict-resolved into main by orchestrator.
 | WP-046 | MRK-V3-03 sheet review | 2026-05-08 | 858724a2 |
 | WP-047 | CHR-V3-08 ToolModifierBar | 2026-05-08 | f324c076 |
 
-## Wave-7 dispatched 🚀
+## Wave-7 merged ✅
 
-8 agents in flight. Orchestrator merges in order below (note: WP-050 merges after WP-049).
+All 8 WPs conflict-resolved and merged into main by orchestrator (2026-05-09).
 
-| WP-ID | WP | Branch | Prompt |
-| ----- | -- | ------ | ------ |
-| WP-048 | ANN-V3-01 detail-region authoring | feat/v3-ann-v3-01-detail-region | wp-048.md |
-| WP-049 | DSC-V3-02 view discipline tags | feat/v3-dsc-v3-02-view-discipline-tags | wp-049.md |
-| WP-050 | LNS-V3-01 lens dropdown (merge after WP-049) | feat/v3-lns-v3-01-lens-dropdown | wp-050.md |
-| WP-051 | CAN-V3-02 hatch patterns | feat/v3-can-v3-02-hatch-patterns | wp-051.md |
-| WP-052 | EDT-V3-04 shortcut chips | feat/v3-edt-v3-04-shortcut-chips | wp-052.md |
-| WP-053 | EDT-V3-06 helper dims on selection | feat/v3-edt-v3-06-helper-dims | wp-053.md |
-| WP-054 | MAT-V3-01 PBR material + decals | feat/v3-mat-v3-01-pbr-material | wp-054.md |
-| WP-055 | SCH-V3-01 custom-props + schedule view | feat/v3-sch-v3-01-schedule-view | wp-055.md |
+| WP-ID | WP | Merged at | Commit |
+| ----- | -- | --------- | ------ |
+| WP-048 | ANN-V3-01 detail-region authoring | 2026-05-09 | 9f3f5af9 |
+| WP-049 | DSC-V3-02 view discipline tags | 2026-05-09 | 4b614e7c |
+| WP-050 | LNS-V3-01 lens dropdown | 2026-05-09 | (pre-merged) |
+| WP-051 | CAN-V3-02 hatch patterns | 2026-05-09 | 29dd4af5 |
+| WP-052 | EDT-V3-04 shortcut chips | 2026-05-09 | 783dac0b |
+| WP-053 | EDT-V3-06 helper dims on selection | 2026-05-09 | c5a99c37 |
+| WP-054 | MAT-V3-01 PBR material + decals | 2026-05-09 | f2620a98 |
+| WP-055 | SCH-V3-01 custom-props + schedule view | 2026-05-09 | (merged via SCH branch) |
 
 ## Orphan commits — resolved ✅
 
@@ -127,7 +127,7 @@ All seed/viewport orphans cherry-picked to main (2026-05-08):
 - API-V3-01 (WP-003) contract: every new kernel verb must add CLI + REST + JSON schema.
 - CQ-01 (WP-013) merged — COL-V3-01 + JOB-V3-01 shipped; T3 and T9 long-running ops are stable.
 - All B3 now-state WPs are done: COL-V3-01..03, MRK-V3-01..02, VER-V3-01..02 all merged.
-- B1 critical path: all 6 kernel WPs done; ANN-V3-01 and EDT-V3-09 remain for full B1 felt-outcome.
+- B1 critical path: all 6 kernel WPs done; ANN-V3-01 now merged (wave-7 ✅); EDT-V3-09 remains for full B1 felt-outcome.
 - Concurrency cap: 8 heavy workers in flight at any time.
 - DSC-V3-01 (WP-040) + TOP-V3-01 (WP-041) both touch engine.py but in disjoint regions (discipline metadata vs. toposolid geometry); overlap risk is low but workers should coordinate on imports.
 - WP-043 IMG-V3-01 was branched from feat/v3-top-v3-01-toposolid — fix worker must rebase onto main after WP-041 merges.
