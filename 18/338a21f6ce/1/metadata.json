@@ -1,0 +1,48 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "18338a21f6ce",
+  "session_id": "a183cd34-7c08-4f61-841f-8fa2f89bab07",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T07:33:08.854782Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "spec/prompts/wave-05/README.md",
+    "spec/prompts/wave-05/WP-FED-03-canvas-badge.md",
+    "spec/prompts/wave-05/WP-FED-04-dxf-underlay.md",
+    "spec/prompts/wave-05/WP-IFC-04-broader-coverage.md",
+    "spec/prompts/wave-05/WP-KRN-07-stairs-spiral-sketch.md",
+    "spec/prompts/wave-05/WP-KRN-14-dormer-completeness.md"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-opus-4-7",
+  "turn_id": "8e79d6334229",
+  "token_usage": {
+    "input_tokens": 225,
+    "cache_creation_tokens": 213930,
+    "cache_read_tokens": 24631736,
+    "output_tokens": 76152,
+    "api_call_count": 195
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-08T07:33:08.836381Z",
+    "agent_lines": 580,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 580,
+    "total_lines_changed": 580,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}
