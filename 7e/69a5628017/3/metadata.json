@@ -1,9 +1,11 @@
 {
   "cli_version": "0.6.0",
   "checkpoint_id": "7e69a5628017",
+  "session_id": "ad8cbe45-3671-4c7b-9e5a-4424117b1d75",
   "strategy": "manual-commit",
+  "created_at": "2026-05-08T13:41:28.512749Z",
   "branch": "feat/v3-tkn-v3-01-tokenisation",
-  "checkpoints_count": 3,
+  "checkpoints_count": 0,
   "files_touched": [
     "eslint.config.js",
     "package.json",
@@ -35,37 +37,50 @@
     "packages/web/vite.config.ts",
     "pnpm-lock.yaml"
   ],
-  "sessions": [
-    {
-      "metadata": "/7e/69a5628017/0/metadata.json",
-      "transcript": "/7e/69a5628017/0/full.jsonl",
-      "content_hash": "/7e/69a5628017/0/content_hash.txt",
-      "prompt": "/7e/69a5628017/0/prompt.txt"
-    },
-    {
-      "metadata": "/7e/69a5628017/1/metadata.json",
-      "transcript": "/7e/69a5628017/1/full.jsonl",
-      "content_hash": "/7e/69a5628017/1/content_hash.txt",
-      "prompt": "/7e/69a5628017/1/prompt.txt"
-    },
-    {
-      "metadata": "/7e/69a5628017/2/metadata.json",
-      "transcript": "/7e/69a5628017/2/full.jsonl",
-      "content_hash": "/7e/69a5628017/2/content_hash.txt",
-      "prompt": "/7e/69a5628017/2/prompt.txt"
-    },
-    {
-      "metadata": "/7e/69a5628017/3/metadata.json",
-      "transcript": "/7e/69a5628017/3/full.jsonl",
-      "content_hash": "/7e/69a5628017/3/content_hash.txt",
-      "prompt": "/7e/69a5628017/3/prompt.txt"
-    }
-  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "e720c66eb3ab",
   "token_usage": {
-    "input_tokens": 935,
-    "cache_creation_tokens": 449829,
-    "cache_read_tokens": 29109763,
-    "output_tokens": 146460,
-    "api_call_count": 370
-  }
+    "input_tokens": 140,
+    "cache_creation_tokens": 118432,
+    "cache_read_tokens": 10802058,
+    "output_tokens": 35636,
+    "api_call_count": 138
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-08T13:41:28.499642Z",
+    "agent_lines": 15,
+    "agent_removed": 3,
+    "human_added": 533,
+    "human_modified": 1,
+    "human_removed": 0,
+    "total_committed": 549,
+    "total_lines_changed": 552,
+    "agent_percentage": 3.260869565217391,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 1483,
+      "user_lines_removed": 6,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "claude-skills/watch-yt/watch_yt.py": 25,
+        "spec/v3-build-state.md": 56,
+        "spec/v3-prompts/wp-001.md": 182,
+        "spec/v3-prompts/wp-002.md": 151,
+        "spec/v3-prompts/wp-003.md": 159,
+        "spec/v3-prompts/wp-004.md": 152,
+        "spec/v3-prompts/wp-005.md": 156,
+        "spec/v3-prompts/wp-006.md": 176,
+        "spec/v3-prompts/wp-007.md": 203,
+        "spec/v3-prompts/wp-008.md": 223
+      },
+      "user_removed_per_file": {
+        "claude-skills/watch-yt/watch_yt.py": 6
+      }
+    }
+  ]
 }
