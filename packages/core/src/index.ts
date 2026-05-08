@@ -1721,3 +1721,27 @@ export type Comment = {
   resolvedBy?: string | null;
   isOrphaned?: boolean;
 };
+
+// ---------------------------------------------------------------------------
+// VER-V3-01 — Activity stream types
+// ---------------------------------------------------------------------------
+
+export type ActivityRow = {
+  id: string;
+  modelId: string;
+  authorId: string;
+  kind:
+    | 'commit'
+    | 'comment_created'
+    | 'comment_resolved'
+    | 'markup_created'
+    | 'markup_resolved'
+    | 'milestone_created'
+    | 'option_set_lifecycle'
+    | 'collab_join'
+    | 'collab_leave';
+  payload: Record<string, unknown>;
+  ts: number;
+  parentSnapshotId?: string;
+  resultSnapshotId?: string;
+};
