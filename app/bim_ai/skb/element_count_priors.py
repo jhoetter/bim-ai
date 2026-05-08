@@ -28,7 +28,9 @@ class CountRange:
 # Archetype id → kind → expected range.
 #
 # Counts are for the architectural envelope (no furniture, no annotations).
-# Add archetypes as SKB-09 ships its starter bundles.
+# The ``partition`` key tracks interior room-separation walls — callers
+# count those separately from perimeter walls (SKB-09 archetypes use the
+# ``ptn-`` id prefix to distinguish them in their emitted bundles).
 ARCHETYPE_PRIORS: dict[str, dict[str, CountRange]] = {
     "single_family_two_story_modest": {
         "level": CountRange(2, 4),
@@ -39,6 +41,7 @@ ARCHETYPE_PRIORS: dict[str, dict[str, CountRange]] = {
         "roof": CountRange(1, 3),
         "stair": CountRange(1, 2),
         "room": CountRange(4, 12),
+        "partition": CountRange(4, 12),
     },
     "single_family_one_story_compact": {
         "level": CountRange(1, 2),
@@ -49,16 +52,18 @@ ARCHETYPE_PRIORS: dict[str, dict[str, CountRange]] = {
         "roof": CountRange(1, 2),
         "stair": CountRange(0, 1),
         "room": CountRange(3, 8),
+        "partition": CountRange(2, 8),
     },
     "townhouse_three_story": {
         "level": CountRange(3, 5),
         "wall": CountRange(18, 36),
-        "door": CountRange(2, 6),
+        "door": CountRange(1, 6),
         "window": CountRange(6, 16),
         "floor": CountRange(3, 5),
         "roof": CountRange(1, 2),
         "stair": CountRange(2, 4),
         "room": CountRange(6, 16),
+        "partition": CountRange(6, 14),
     },
     "cabin_a_frame": {
         "level": CountRange(1, 3),
@@ -69,6 +74,7 @@ ARCHETYPE_PRIORS: dict[str, dict[str, CountRange]] = {
         "roof": CountRange(1, 1),
         "stair": CountRange(0, 1),
         "room": CountRange(1, 4),
+        "partition": CountRange(1, 5),
     },
     "l_shape_bungalow": {
         "level": CountRange(1, 2),
@@ -79,6 +85,7 @@ ARCHETYPE_PRIORS: dict[str, dict[str, CountRange]] = {
         "roof": CountRange(1, 2),
         "stair": CountRange(0, 1),
         "room": CountRange(4, 10),
+        "partition": CountRange(3, 10),
     },
     "modernist_gable_two_story": {
         "level": CountRange(2, 4),
@@ -89,6 +96,7 @@ ARCHETYPE_PRIORS: dict[str, dict[str, CountRange]] = {
         "roof": CountRange(1, 3),
         "stair": CountRange(1, 2),
         "room": CountRange(3, 10),
+        "partition": CountRange(3, 10),
     },
 }
 
