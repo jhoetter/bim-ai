@@ -13,6 +13,12 @@ import { log } from '../logger';
 import { useBimStore } from '../state/store';
 import { mapComments } from './workspaceUtils';
 
+const DISABLE_WS =
+  typeof import.meta.env.VITE_E2E_DISABLE_WS === 'string' &&
+  ['1', 'true', 'yes'].includes(import.meta.env.VITE_E2E_DISABLE_WS.trim().toLowerCase());
+
+const MAX_RECONNECT_ATTEMPTS = 10;
+
 export function useWorkspaceSnapshot(): {
   insertSeedHouse: () => Promise<void>;
   seedLoading: boolean;
@@ -39,6 +45,107 @@ export function useWorkspaceSnapshot(): {
     'office',
   ]);
   const wsRef = useRef<WebSocket | null>(null);
+  const lastSeqRef = useRef<number | null>(null);
+  const reconnectAttemptsRef = useRef(0);
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mountedRef = useRef(true);
+
+  const connectWs = useCallback(
+    (mid: string, lastSeq: number | null): WebSocket => {
+      const p = window.location.protocol === 'https:' ? 'wss' : 'ws';
+      const resumeParam = lastSeq !== null ? `?resumeFrom=${lastSeq}` : '';
+      const ws = new WebSocket(
+        `${p}://${window.location.host}/ws/${encodeURIComponent(mid)}${resumeParam}`,
+      );
+
+      ws.onopen = () => {
+        reconnectAttemptsRef.current = 0;
+        setWsOn(true);
+      };
+
+      ws.onclose = () => {
+        setWsOn(false);
+        if (DISABLE_WS || !mountedRef.current) return;
+
+        const attempt = reconnectAttemptsRef.current + 1;
+        reconnectAttemptsRef.current = attempt;
+
+        if (attempt > MAX_RECONNECT_ATTEMPTS) {
+          console.warn('[bim-ai/ws] offline: max reconnect attempts reached');
+          return;
+        }
+
+        const baseDelay = Math.min(250 * 2 ** (attempt - 1), 8000);
+        const jitter = baseDelay * 0.2 * (Math.random() * 2 - 1);
+        const delay = Math.max(0, Math.round(baseDelay + jitter));
+
+        const doReconnect = () => {
+          if (!mountedRef.current) return;
+          wsRef.current?.close();
+          wsRef.current = connectWs(mid, lastSeqRef.current);
+        };
+
+        if (document.visibilityState === 'hidden') {
+          const onVisible = () => {
+            if (document.visibilityState !== 'hidden') {
+              document.removeEventListener('visibilitychange', onVisible);
+              doReconnect();
+            }
+          };
+          document.addEventListener('visibilitychange', onVisible);
+        } else {
+          reconnectTimerRef.current = setTimeout(doReconnect, delay);
+        }
+      };
+
+      ws.onmessage = (evt) => {
+        const payload = JSON.parse(String(evt.data)) as Record<string, unknown>;
+        const t = payload.type;
+
+        const seq = payload.seq;
+        if (typeof seq === 'number') {
+          lastSeqRef.current = seq;
+        }
+
+        if (t === 'snapshot') {
+          const s = payload as unknown as Snapshot;
+          if (s.modelId) hydrateFromSnapshot(s);
+        } else if (t === 'delta') {
+          const dd = coerceDelta(payload);
+          if (dd) applyDelta(dd);
+        } else if (t === 'presence_state') {
+          const pl = payload.payload as Record<string, unknown> | undefined;
+          const px = ((pl?.peers as Record<string, unknown>) ?? {}) as Parameters<
+            typeof setPresencePeers
+          >[0];
+          setPresencePeers(px);
+        } else if (t === 'comment_event') {
+          const w = payload.payload as Record<string, unknown> | undefined;
+          if (!w) return;
+          mergeComment(mapComments([w])[0]!);
+        } else if (t === 'RESYNC') {
+          void (async () => {
+            try {
+              const snapRes = await fetch(
+                `/api/models/${encodeURIComponent(mid)}/snapshot?expandLinks=true`,
+              );
+              if (!snapRes.ok) throw new Error(`snapshot ${snapRes.status}`);
+              const snap = (await snapRes.json()) as Snapshot;
+              hydrateFromSnapshot(snap);
+              lastSeqRef.current = null;
+            } catch (err) {
+              log.error('ws', 'RESYNC snapshot fetch failed', err);
+            }
+          })();
+        } else if (t === 'replay_done') {
+          log.info('ws', 'replay_done received');
+        }
+      };
+
+      return ws;
+    },
+    [hydrateFromSnapshot, applyDelta, setPresencePeers, mergeComment],
+  );
 
   const insertSeedHouse = useCallback(async (): Promise<void> => {
     setSeedLoading(true);
@@ -57,43 +164,15 @@ export function useWorkspaceSnapshot(): {
       hydrateFromSnapshot(snap);
       // activityEvents/comments are populated by the modelId effect below — they
       // are model-scoped server state and must invalidate together with modelId.
-      const disableWs =
-        typeof import.meta.env.VITE_E2E_DISABLE_WS === 'string' &&
-        ['1', 'true', 'yes'].includes(import.meta.env.VITE_E2E_DISABLE_WS.trim().toLowerCase());
-      if (!disableWs) {
-        const p = window.location.protocol === 'https:' ? 'wss' : 'ws';
-        const ws = new WebSocket(`${p}://${window.location.host}/ws/${encodeURIComponent(mid)}`);
-        wsRef.current = ws;
-        ws.onopen = () => setWsOn(true);
-        ws.onclose = () => setWsOn(false);
-        ws.onmessage = (evt) => {
-          const payload = JSON.parse(String(evt.data)) as Record<string, unknown>;
-          const t = payload.type;
-          if (t === 'snapshot') {
-            const s = payload as unknown as Snapshot;
-            if (s.modelId) hydrateFromSnapshot(s);
-          } else if (t === 'delta') {
-            const dd = coerceDelta(payload);
-            if (dd) applyDelta(dd);
-          } else if (t === 'presence_state') {
-            const pl = payload.payload as Record<string, unknown> | undefined;
-            const px = ((pl?.peers as Record<string, unknown>) ?? {}) as Parameters<
-              typeof setPresencePeers
-            >[0];
-            setPresencePeers(px);
-          } else if (t === 'comment_event') {
-            const w = payload.payload as Record<string, unknown> | undefined;
-            if (!w) return;
-            mergeComment(mapComments([w])[0]!);
-          }
-        };
+      if (!DISABLE_WS) {
+        wsRef.current = connectWs(mid, null);
       }
     } catch (err) {
       setSeedError(err instanceof Error ? err.message : 'Failed to load seed');
     } finally {
       setSeedLoading(false);
     }
-  }, [hydrateFromSnapshot, applyDelta, setPresencePeers, mergeComment]);
+  }, [hydrateFromSnapshot, connectWs]);
 
   // modelId is the cache key for server-fetched, model-scoped state. Whenever
   // it changes, prior activity/comments must be cleared (so the previous
@@ -141,6 +220,9 @@ export function useWorkspaceSnapshot(): {
     if (!isEmpty) return;
     void insertSeedHouse();
     return () => {
+      mountedRef.current = false;
+      reconnectAttemptsRef.current = Infinity;
+      if (reconnectTimerRef.current !== null) clearTimeout(reconnectTimerRef.current);
       wsRef.current?.close();
       wsRef.current = null;
     };

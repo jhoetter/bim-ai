@@ -26,6 +26,8 @@ from bim_ai.db import SessionMaker, get_session
 from bim_ai.diff_engine import compute_element_diff
 from bim_ai.document import Document
 from bim_ai.elements import Element, LevelElem, LinkModelElem, PlanViewElem
+from bim_ai.cmd.apply_bundle import apply_bundle as _apply_bundle
+from bim_ai.cmd.types import CommandBundle, BundleResult
 from bim_ai.engine import clone_document, ensure_internal_origin, ensure_sun_settings, try_commit_bundle
 from bim_ai.agent_loop import (
     AGENT_BACKEND_ENV_VAR,
@@ -1005,7 +1007,7 @@ async def import_ifc_to_shadow_link(
 
     # Broadcast the host's delta so connected clients pick up the link.
     try:
-        await hub.broadcast_json(
+        await hub.publish(
             host_id,
             {
                 "type": "delta",
@@ -1133,7 +1135,7 @@ async def import_dxf(
     await session.commit()
 
     try:
-        await hub.broadcast_json(
+        await hub.publish(
             host_id,
             {
                 "type": "delta",
@@ -1175,11 +1177,113 @@ async def agent_iterate(
 
 
 # ---------------------------------------------------------------------------
+# CMD-V3-01 — Command-bundle apply API
+# ---------------------------------------------------------------------------
+
+
+class CommandBundleRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    bundle: CommandBundle
+    mode: str = Field(default="dry_run")
+    user_id: str | None = Field(default="local-dev", alias="userId")
+
+
+@api_router.post("/models/{model_id}/bundles")
+async def apply_bundle_route(
+    model_id: UUID,
+    body: CommandBundleRequest,
+    session: AsyncSession = Depends(get_session),
+    hub: Hub = Depends(get_hub),
+) -> dict[str, Any]:
+    """CMD-V3-01: submit a CommandBundle; returns BundleResult.
+
+    mode='dry_run' (default) — validates without mutating.
+    mode='commit'            — commits if no blocking advisories fire.
+    HTTP 409 on revision_conflict or assumption_log_required / malformed.
+    """
+    from datetime import UTC, datetime
+
+    from bim_ai.engine import compute_delta_wire, diff_undo_cmds
+    from bim_ai.routes_deps import delete_redos, document_to_wire
+    from bim_ai.tables import UndoStackRecord
+
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+
+    doc = Document.model_validate(row.document)
+    mode = body.mode if body.mode in ("dry_run", "commit") else "dry_run"
+
+    result = _apply_bundle(doc, body.bundle, mode)  # type: ignore[arg-type]
+
+    # Surface blocking advisory classes as HTTP 409
+    _BLOCKING_ADVISORY_CLASSES = {
+        "revision_conflict",
+        "assumption_log_required",
+        "assumption_log_malformed",
+        "assumption_log_duplicate_key",
+        "direct_main_commit_forbidden",
+        "option_routing_not_yet_implemented",
+    }
+    if not result.applied and result.violations:
+        blocking_classes = {v.get("advisoryClass") for v in result.violations}
+        if blocking_classes & _BLOCKING_ADVISORY_CLASSES:
+            raise HTTPException(
+                status_code=409,
+                detail={
+                    "result": result.model_dump(by_alias=True),
+                    "violations": result.violations,
+                },
+            )
+
+    if result.applied and result.new_revision is not None:
+        # Re-run engine to get new_doc for persisting (deterministic — same result)
+        ok, new_doc, _cmds, _viols, _code = try_commit_bundle(doc, body.bundle.commands)
+        if ok and new_doc is not None:
+            uid = body.user_id or "local-dev"
+            doc_before = clone_document(doc)
+            undo_cmds = diff_undo_cmds(doc_before, new_doc)
+            await delete_redos(session, model_id, uid)
+
+            session.add(
+                UndoStackRecord(
+                    model_id=model_id,
+                    user_id=uid,
+                    revision_after=new_doc.revision,
+                    forward_commands=body.bundle.commands,
+                    undo_commands=undo_cmds,
+                    created_at=datetime.now(UTC),
+                )
+            )
+
+            wire_doc = document_to_wire(new_doc)
+            row.document = wire_doc  # type: ignore[assignment]
+            row.revision = new_doc.revision
+            await session.commit()
+
+            delta = compute_delta_wire(doc_before, new_doc)
+            try:
+                await hub.broadcast_json(
+                    model_id, {"type": "delta", "modelId": str(model_id), **delta}
+                )
+            except Exception:
+                pass
+
+    return result.model_dump(by_alias=True)
+
+
+# ---------------------------------------------------------------------------
 # WebSocket
 # ---------------------------------------------------------------------------
 
 
-async def websocket_loop(websocket: WebSocket, model_id: UUID, hub: Hub) -> None:
+async def websocket_loop(
+    websocket: WebSocket,
+    model_id: UUID,
+    hub: Hub,
+    resume_from: int | None = None,
+) -> None:
 
     sid = str(model_id)
 
@@ -1193,19 +1297,35 @@ async def websocket_loop(websocket: WebSocket, model_id: UUID, hub: Hub) -> None
 
         return
 
-    doc = Document.model_validate(row.document)
-
     hub.subscribe(sid, websocket)
 
-    await websocket.send_json(
-        {
-            "type": "snapshot",
-            "modelId": sid,
-            "revision": doc.revision,
-            "elements": {k: el.model_dump(by_alias=True) for k, el in doc.elements.items()},
-            "violations": violations_wire(doc.elements),
-        },
-    )
+    if resume_from is None:
+        doc = Document.model_validate(row.document)
+        await websocket.send_json(
+            {
+                "type": "snapshot",
+                "modelId": sid,
+                "revision": doc.revision,
+                "elements": {
+                    k: el.model_dump(by_alias=True) for k, el in doc.elements.items()
+                },
+                "violations": violations_wire(doc.elements),
+            },
+        )
+    else:
+        replayed = hub.resume(sid, resume_from)
+        if replayed is None:
+            await websocket.send_json({"type": "RESYNC", "modelId": sid})
+        else:
+            for payload in replayed:
+                await websocket.send_json(payload)
+            await websocket.send_json(
+                {
+                    "type": "replay_done",
+                    "modelId": sid,
+                    "resumedFrom": resume_from,
+                }
+            )
 
     try:
         while True:
