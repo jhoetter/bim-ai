@@ -1394,3 +1394,46 @@ export type EvidenceClosureReviewV1 = {
 };
 
 export type { PerspectiveId, WorkspaceLayoutPreset } from './workbench';
+
+// ---------------------------------------------------------------------------
+// TKN-V3-01 — tokenised kernel representation
+// ---------------------------------------------------------------------------
+
+export type TknScale = { x: number; y: number; z: number };
+
+export type EntityToken = {
+  elementId: string;
+  hostId: string;
+  hostKind: 'wall' | 'floor' | 'roof' | 'level' | 'room';
+  tAlongHost: number;
+  offsetNormalMm: number;
+  scale: TknScale;
+  rotationRad: number;
+  classKey: string;
+  catalogKey?: string | null;
+};
+
+export type EnvelopeToken = {
+  roomId: string;
+  roomTypeKey: string;
+  layoutAttrs: Record<string, number | string>;
+  hostWallIds: string[];
+  hostFloorId: string | null;
+  doorIds: string[];
+  windowIds: string[];
+};
+
+export type TokenSequence = {
+  schemaVersion: 'tkn-v3.0';
+  envelopes: EnvelopeToken[];
+  entities: EntityToken[];
+};
+
+export type TokenSequenceDelta = {
+  addedEnvelopes: { envelope: EnvelopeToken }[];
+  removedEnvelopes: { roomId: string }[];
+  modifiedEnvelopes: { before: EnvelopeToken; after: EnvelopeToken }[];
+  addedEntities: { entity: EntityToken }[];
+  removedEntities: { elementId: string }[];
+  modifiedEntities: { before: EntityToken; after: EntityToken }[];
+};

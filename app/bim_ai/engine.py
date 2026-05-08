@@ -78,6 +78,7 @@ from bim_ai.commands import (
     MaterializeMassToWallsCmd,
     MirrorElementsCmd,
     MoveBeamEndpointsCmd,
+    MoveElementCmd,
     MoveGridLineEndpointsCmd,
     MoveLevelElevationCmd,
     MoveProjectBasePointCmd,
@@ -3921,6 +3922,16 @@ def apply_inplace(
                 update={"phase_filter": cast(PhaseFilter, cmd.phase_filter)}
             )
 
+        case MoveElementCmd():
+            el = els.get(cmd.element_id)
+            if isinstance(el, DoorElem):
+                els[cmd.element_id] = el.model_copy(update={"along_t": cmd.t_along_host})
+            elif isinstance(el, WindowElem):
+                els[cmd.element_id] = el.model_copy(update={"along_t": cmd.t_along_host})
+            else:
+                raise ValueError(
+                    f"moveElement: elementId {cmd.element_id!r} must reference a door or window"
+                )
 
     # KRN-08: areas track a derived computedAreaSqMm. Recompute after every
     # command apply so create/update/delete of areas (and shafts that affect
@@ -4999,7 +5010,24 @@ def try_commit_bundle(
 
     cand.revision = doc.revision + 1
 
+    _assert_tkn_round_trip(cand)
+
     return True, cand, cmds, violations, "ok"
+
+
+def _assert_tkn_round_trip(doc: Document) -> None:
+    """Verify TKN encode→decode→encode produces the same sequence (determinism gate)."""
+    from bim_ai.tkn import decode, encode
+
+    seq_a = encode(doc.elements)
+    replay_cmds = decode(seq_a, doc.elements)
+    if replay_cmds:
+        raise RuntimeError(
+            f"TKN round-trip failure: decode produced {len(replay_cmds)} unexpected commands"
+        )
+    seq_b = encode(doc.elements)
+    if seq_a != seq_b:
+        raise RuntimeError("TKN round-trip failure: encode is not deterministic")
 
 
 def try_commit(

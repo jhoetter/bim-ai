@@ -1652,6 +1652,15 @@ class SetViewPhaseFilterCmd(BaseModel):
     phase_filter: PhaseFilter = Field(alias="phaseFilter")
 
 
+class MoveElementCmd(BaseModel):
+    """TKN-V3-01 — move a wall-hosted element (door/window) to a new tAlongHost position."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["moveElement"] = "moveElement"
+    element_id: str = Field(alias="elementId")
+    t_along_host: float = Field(alias="tAlongHost", ge=0.0, le=1.0)
+
+
 Command = Annotated[
     CreateLevelCmd
     | CreateWallCmd
@@ -1777,6 +1786,7 @@ Command = Annotated[
     | SetViewPhaseCmd
     | SetViewPhaseFilterCmd
     | CreateSunSettingsCmd
-    | UpdateSunSettingsCmd,
+    | UpdateSunSettingsCmd
+    | MoveElementCmd,
     Field(discriminator="type"),
 ]

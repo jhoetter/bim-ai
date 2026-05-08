@@ -819,6 +819,9 @@ Commands:
                                        visibility ∈ host_view|linked_view (default host_view).
   unlink <link_id>                    FED-01: delete the link_model with id <link_id>.
   links                               FED-01: list every link_model in BIM_AI_MODEL_ID with pin/drift status.
+  tokens encode                       TKN-V3-01: encode current kernel state → TokenSequence (stdout JSON)
+  tokens decode [file|-]              TKN-V3-01: decode TokenSequence → commands (reads JSON from file or stdin)
+  tokens diff --a <path> --b <path>   TKN-V3-01: structural diff between two TokenSequence JSON files
   watch                               WebSocket watcher (continuous live commits — no Synchronize step required)
   api list-tools [--output json]      API-V3-01: list all registered tool descriptors
   api inspect <name> [--output json]  API-V3-01: print one ToolDescriptor
@@ -1122,6 +1125,62 @@ async function main() {
       if (!modelId) usage();
       await cmdLinksList(modelId);
       return;
+    }
+
+    if (cmd === 'tokens') {
+      const sub = argv[0];
+      if (sub === 'encode') {
+        if (!modelId) usage();
+        const res = await fetch(`${baseUrl}/models/${modelId}/tokens/encode`, {
+          headers: { 'Content-Type': 'application/json' },
+        });
+        if (!res.ok) throw new Error(`tokens encode: ${res.status} ${await res.text()}`);
+        console.log(JSON.stringify(await res.json(), null, 2));
+        return;
+      }
+      if (sub === 'decode') {
+        if (!modelId) usage();
+        const filePath = argv[1];
+        let seqJson;
+        if (!filePath || filePath === '-') {
+          const chunks = [];
+          for await (const chunk of process.stdin) chunks.push(chunk);
+          seqJson = JSON.parse(Buffer.concat(chunks).toString());
+        } else {
+          const { readFileSync } = await import('fs');
+          seqJson = JSON.parse(readFileSync(filePath, 'utf8'));
+        }
+        const res = await fetch(`${baseUrl}/models/${modelId}/tokens/decode`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sequence: seqJson }),
+        });
+        if (!res.ok) throw new Error(`tokens decode: ${res.status} ${await res.text()}`);
+        console.log(JSON.stringify(await res.json(), null, 2));
+        return;
+      }
+      if (sub === 'diff') {
+        if (!modelId) usage();
+        const aPath = argv.find((_, i) => argv[i - 1] === '--a');
+        const bPath = argv.find((_, i) => argv[i - 1] === '--b');
+        if (!aPath || !bPath) {
+          console.error('Usage: tokens diff --a <path> --b <path>');
+          process.exit(1);
+        }
+        const { readFileSync } = await import('fs');
+        const seqA = JSON.parse(readFileSync(aPath, 'utf8'));
+        const seqB = JSON.parse(readFileSync(bPath, 'utf8'));
+        const res = await fetch(`${baseUrl}/models/${modelId}/tokens/diff`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sequenceA: seqA, sequenceB: seqB }),
+        });
+        if (!res.ok) throw new Error(`tokens diff: ${res.status} ${await res.text()}`);
+        console.log(JSON.stringify(await res.json(), null, 2));
+        return;
+      }
+      console.error(`Unknown tokens subcommand: ${sub ?? '(none)'}. Use encode, decode, or diff.`);
+      process.exit(1);
     }
 
     if (cmd === 'watch') {

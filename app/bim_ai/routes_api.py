@@ -1279,3 +1279,73 @@ async def v3_api_version() -> dict[str, str]:
     except Exception:
         build_ref = "unknown"
     return {"schemaVersion": "api-v3.0", "buildRef": build_ref}
+
+
+# ---------------------------------------------------------------------------
+# TKN-V3-01 — token encode / decode / diff endpoints
+# ---------------------------------------------------------------------------
+
+
+@api_router.get("/models/{model_id}/tokens/encode")
+async def tokens_encode(
+    model_id: UUID,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """Encode the current kernel state into a TokenSequence."""
+    from bim_ai.tkn import encode
+
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    doc = Document.model_validate(row.document)
+    seq = encode(doc.elements)
+    return seq.model_dump(by_alias=True)
+
+
+class TknDecodeRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    sequence: dict[str, Any]
+
+
+@api_router.post("/models/{model_id}/tokens/decode")
+async def tokens_decode(
+    model_id: UUID,
+    body: TknDecodeRequest,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """Decode a TokenSequence into commands relative to the current kernel state."""
+    from bim_ai.tkn import decode
+    from bim_ai.tkn.types import TokenSequence
+
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    doc = Document.model_validate(row.document)
+    seq = TokenSequence.model_validate(body.sequence)
+    cmds = decode(seq, doc.elements)
+    return {"commands": cmds}
+
+
+class TknDiffRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    sequence_a: dict[str, Any] = Field(alias="sequenceA")
+    sequence_b: dict[str, Any] = Field(alias="sequenceB")
+
+
+@api_router.post("/models/{model_id}/tokens/diff")
+async def tokens_diff(
+    model_id: UUID,
+    body: TknDiffRequest,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """Return the structural diff between two TokenSequences."""
+    from bim_ai.tkn import diff
+    from bim_ai.tkn.types import TokenSequence
+
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    seq_a = TokenSequence.model_validate(body.sequence_a)
+    seq_b = TokenSequence.model_validate(body.sequence_b)
+    delta = diff(seq_a, seq_b)
+    return delta.model_dump(by_alias=True)
