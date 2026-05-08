@@ -713,6 +713,63 @@ register(
 )
 
 # ---------------------------------------------------------------------------
+# DSC-V3-02 — set-view-lens
+# ---------------------------------------------------------------------------
+
+register(
+    ToolDescriptor(
+        name="set-view-lens",
+        category="mutation",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "SetViewLensInput",
+            "type": "object",
+            "required": ["model_id", "view_id", "lens"],
+            "properties": {
+                "model_id": {"type": "string"},
+                "view_id": {"type": "string"},
+                "lens": {
+                    "type": "string",
+                    "enum": ["show_arch", "show_struct", "show_mep", "show_all"],
+                },
+            },
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "BundleResult",
+            "type": "object",
+            "required": ["schemaVersion", "applied", "violations"],
+            "properties": {
+                "schemaVersion": {"type": "string"},
+                "applied": {"type": "boolean"},
+                "newRevision": {"type": "integer"},
+                "violations": {"type": "array", "items": {"type": "object"}},
+            },
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Discipline lens set on the target view"),
+            "not_found": ExitCode(code=1, meaning="viewId not found in model"),
+            "error": ExitCode(code=1, meaning="Unexpected error"),
+        },
+        cliExample=(
+            "# Set a plan view to show only structural elements foreground\n"
+            "bim-ai view-set-lens --model-id <id> --view-id <viewId> --lens show_struct\n"
+            "# Reset to show all disciplines at full opacity\n"
+            "bim-ai view-set-lens --model-id <id> --view-id <viewId> --lens show_all"
+        ),
+        restEndpoint=RestEndpoint(method="POST", path="/api/models/{model_id}/bundles"),
+        sideEffects="mutates-kernel",
+        agentSafetyNotes=(
+            "Wrap in a CommandBundle via apply-bundle. "
+            "lens must be one of: show_arch, show_struct, show_mep, show_all. "
+            "show_all renders all elements at full opacity (default). "
+            "Does not mutate element discipline fields — view-only modifier."
+        ),
+    )
+)
+
+# ---------------------------------------------------------------------------
 # OUT-V3-01 — Live presentation URL tools
 # ---------------------------------------------------------------------------
 
@@ -920,5 +977,122 @@ register(
             "'opencv_unavailable', 'tesseract_unavailable'. "
             "Exit code 1 (no_walls_detected) means the image is likely not a floor plan."
         ),
+    )
+)
+
+# ---------------------------------------------------------------------------
+# SCH-V3-01 — Custom-properties + schedule view
+# ---------------------------------------------------------------------------
+
+register(
+    ToolDescriptor(
+        name="create-schedule-view",
+        category="mutation",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "CreateScheduleViewInput",
+            "type": "object",
+            "required": ["id", "name", "category"],
+            "properties": {
+                "id": {"type": "string"},
+                "name": {"type": "string"},
+                "category": {
+                    "type": "string",
+                    "description": "ElemKind value to filter rows by (e.g. 'wall')",
+                },
+                "columns": {"type": "array", "items": {"type": "object"}},
+                "filterExpr": {"type": "string"},
+                "sortKey": {"type": "string"},
+                "sortDir": {"type": "string", "enum": ["asc", "desc"]},
+            },
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "CreateScheduleViewOutput",
+            "type": "object",
+            "properties": {
+                "scheduleId": {"type": "string"},
+            },
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Schedule view created"),
+            "error": ExitCode(code=1, meaning="Unexpected error"),
+        },
+        cliExample="bim-ai create-schedule-view --id sv-1 --name 'Wall Schedule' --category wall",
+        restEndpoint=RestEndpoint(method="POST", path="/api/v3/models/{modelId}/bundles"),
+        sideEffects="mutates-kernel",
+    )
+)
+
+register(
+    ToolDescriptor(
+        name="set-element-prop",
+        category="mutation",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "SetElementPropInput",
+            "type": "object",
+            "required": ["elementId", "key", "value"],
+            "properties": {
+                "elementId": {"type": "string"},
+                "key": {"type": "string"},
+                "value": {},
+            },
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "SetElementPropOutput",
+            "type": "object",
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Property set"),
+            "not_found": ExitCode(code=1, meaning="Element not found"),
+            "error": ExitCode(code=1, meaning="Unexpected error"),
+        },
+        cliExample="bim-ai set-element-prop --elementId wall-1 --key cost_per_m2 --value 85.0",
+        restEndpoint=RestEndpoint(method="POST", path="/api/v3/models/{modelId}/bundles"),
+        sideEffects="mutates-kernel",
+    )
+)
+
+# ---------------------------------------------------------------------------
+# MAT-V3-01 — Material PBR map slots
+# ---------------------------------------------------------------------------
+
+register(
+    ToolDescriptor(
+        name="update-material-pbr",
+        category="mutation",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "model_id": {"type": "string"},
+                "id": {"type": "string", "description": "Material element id"},
+                "albedoMapId": {"type": ["string", "null"]},
+                "normalMapId": {"type": ["string", "null"]},
+                "roughnessMapId": {"type": ["string", "null"]},
+                "metallicMapId": {"type": ["string", "null"]},
+                "heightMapId": {"type": ["string", "null"]},
+                "uvScaleMm": {
+                    "type": "object",
+                    "properties": {
+                        "uMm": {"type": "number"},
+                        "vMm": {"type": "number"},
+                    },
+                },
+            },
+            "required": ["model_id", "id"],
+        },
+        outputSchema={"type": "object"},
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Material PBR slots updated"),
+            "not_found": ExitCode(code=1, meaning="Material element not found"),
+        },
+        cliExample="bim-ai update-material-pbr --model <id> --id mat-1 --albedoMapId img-1",
+        restEndpoint=RestEndpoint(method="POST", path="/api/models/{model_id}/bundles"),
+        sideEffects="mutates-kernel",
+        agentSafetyNotes="Safe to call; only patches map slot references on the named material.",
     )
 )

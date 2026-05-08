@@ -29,6 +29,18 @@ export type ToposolidElem = {
   discipline?: string;
 };
 
+/** CAN-V3-02 — built-in hatch pattern definition; scales with paper-mm at plot scale. */
+export type HatchPatternDef = {
+  kind: 'hatch_pattern_def';
+  id: string;
+  name: string;
+  paperMmRepeat: number;
+  rotationDeg: number;
+  strokeWidthMm: number;
+  patternKind: 'lines' | 'crosshatch' | 'dots' | 'curve' | 'svg';
+  svgSource?: string | null;
+};
+
 export type ElemKind =
   | 'toposolid'
   | 'project_settings'
@@ -112,7 +124,11 @@ export type ElemKind =
   | 'foundation'
   | 'duct'
   | 'pipe'
-  | 'fixture';
+  | 'fixture'
+  | 'material'
+  | 'decal'
+  | 'hatch_pattern_def'
+  | 'property_definition';
 
 export type PhaseFilter = 'all' | 'existing' | 'demolition' | 'new';
 
@@ -176,6 +192,8 @@ export type View = {
   breaks?: ViewBreak[];
   scale?: number;
   detailLevel?: 'coarse' | 'medium' | 'fine';
+  /** DSC-V3-02: per-view discipline lens; 'show_all' = foreground for all elements. */
+  defaultLens?: 'show_arch' | 'show_struct' | 'show_mep' | 'show_all';
 };
 
 /** FED-04: 2D linework primitive parsed from a DXF underlay. */
@@ -1112,6 +1130,8 @@ export type Element =
       elementOverrides?: Array<{ categoryOrId: string; alternateRender: string }>;
       /** KRN-V3-04: per-set option lock; key = optionSetId, value = optionId. */
       optionLocks?: Record<string, string>;
+      /** DSC-V3-02: per-view discipline lens; 'show_all' = foreground for all elements. */
+      defaultLens?: ViewLensMode;
     }
   | {
       kind: 'view_template';
@@ -1659,7 +1679,11 @@ export type Element =
   | View
   | ToposolidElem
   | AssetLibraryEntryElem
-  | PlacedAssetElem;
+  | PlacedAssetElem
+  | PropertyDefinitionElem
+  | MaterialElem
+  | DecalElem
+  | HatchPatternDef;
 
 export type Violation = {
   ruleId: string;
@@ -1951,8 +1975,14 @@ export type AssumptionEntry = {
   evidence?: string | null;
 };
 
-/** CHR-V3-03 / DSC-V3-02 — lens mode for the status-bar discipline filter. */
+/** CHR-V3-03 — workspace-level status-bar discipline filter (LNS-V3-01 UI). */
 export type LensMode = 'all' | 'architecture' | 'structure' | 'mep' | 'energy' | 'coordination';
+
+/** DSC-V3-02 — per-view discipline lens stored on view elements. */
+export type ViewLensMode = 'show_arch' | 'show_struct' | 'show_mep' | 'show_all';
+
+/** DSC-V3-02 — set the discipline lens on a view; non-matching elements ghost at 25% opacity. */
+export type SetViewLensCmd = { type: 'set_view_lens'; viewId: string; lens: ViewLensMode };
 
 // ---------------------------------------------------------------------------
 // JOB-V3-01 — long-running-operations job types
@@ -2168,6 +2198,64 @@ export type PlacedAssetElem = {
   rotationDeg?: number;
   paramValues?: Record<string, unknown>;
   hostElementId?: string;
+};
+
+// ---------------------------------------------------------------------------
+// MAT-V3-01 — Material PBR map slots + Decals
+// ---------------------------------------------------------------------------
+
+export type MaterialElem = {
+  kind: 'material';
+  id: string;
+  name: string;
+  albedoColor?: string;
+  albedoMapId?: string;
+  normalMapId?: string;
+  roughnessMapId?: string;
+  metallicMapId?: string;
+  heightMapId?: string;
+  uvScaleMm?: { uMm: number; vMm: number };
+  uvRotationDeg?: number;
+  hatchPatternId?: string;
+};
+
+export type DecalElem = {
+  kind: 'decal';
+  id: string;
+  parentElementId: string;
+  parentSurface: 'front' | 'back' | 'top' | 'left' | 'right' | 'bottom';
+  imageAssetId: string;
+  uvRect: { u0: number; v0: number; u1: number; v1: number };
+  opacity?: number;
+};
+
+// ---------------------------------------------------------------------------
+// SCH-V3-01 — Custom property definition
+// ---------------------------------------------------------------------------
+
+/** SCH-V3-01 — project-scoped custom property definition. */
+export type PropertyDefinitionElem = {
+  kind: 'property_definition';
+  id: string;
+  key: string;
+  label: string;
+  propKind: 'mm' | 'm2' | 'currency' | 'enum' | 'string' | 'bool' | 'date';
+  enumValues?: string[];
+  defaultValue?: unknown;
+  appliesTo: string[];
+  showInSchedule: boolean;
+};
+
+/** SCH-V3-01 — V3 schedule-view element (extends the existing schedule kind). */
+export type ScheduleViewElem = {
+  kind: 'schedule';
+  id: string;
+  name: string;
+  category: string;
+  columns: Array<{ fieldKey: string; label: string; width?: number }>;
+  filterExpr?: string | null;
+  sortKey?: string | null;
+  sortDir?: 'asc' | 'desc' | null;
 };
 
 // ---------------------------------------------------------------------------

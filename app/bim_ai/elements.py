@@ -47,6 +47,7 @@ class EvidenceRef(BaseModel):
 
 
 DisciplineTag = Literal["arch", "struct", "mep"]
+LensMode = Literal["show_arch", "show_struct", "show_mep", "show_all"]
 DEFAULT_DISCIPLINE_BY_KIND: dict[str, DisciplineTag] = {
     "beam": "struct",
     "column": "struct",
@@ -1423,6 +1424,8 @@ class PlanViewElem(BaseModel):
     template_id: str | None = Field(default=None, alias="templateId")
     scale: int | None = Field(default=None)
     element_overrides: list[dict] = Field(default_factory=list, alias="elementOverrides")
+    # DSC-V3-02: per-view discipline lens; does not mutate element discipline
+    default_lens: LensMode = Field(default="show_all", alias="defaultLens")
 
 
 class ViewTemplateElem(BaseModel):
@@ -1825,6 +1828,8 @@ class ViewElem(BaseModel):
     breaks: list[ViewBreakSpec] = Field(default_factory=list)
     scale: float = Field(default=100.0, gt=0)
     detail_level: Literal["coarse", "medium", "fine"] = Field(default="medium", alias="detailLevel")
+    # DSC-V3-02: per-view discipline lens; does not mutate element discipline
+    default_lens: LensMode = Field(default="show_all", alias="defaultLens")
 
 
 ElementKind = Literal[
@@ -2251,6 +2256,87 @@ class PlacedAssetElem(BaseModel):
     discipline: DisciplineTag | None = Field(default=None)
 
 
+# ---------------------------------------------------------------------------
+# CAN-V3-02 — Hatch pattern definitions
+# ---------------------------------------------------------------------------
+
+HatchPatternKind = Literal["lines", "crosshatch", "dots", "curve", "svg"]
+
+
+class HatchPatternDefElem(BaseModel):
+    """CAN-V3-02 — built-in hatch pattern definition. Scales with paper-mm at plot scale."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    kind: Literal["hatch_pattern_def"] = "hatch_pattern_def"
+    id: str
+    name: str
+    paper_mm_repeat: float = Field(alias="paperMmRepeat")
+    rotation_deg: float = Field(default=0.0, alias="rotationDeg")
+    stroke_width_mm: float = Field(default=0.18, alias="strokeWidthMm")
+    pattern_kind: HatchPatternKind = Field(alias="patternKind")
+    svg_source: str | None = Field(default=None, alias="svgSource")
+
+
+# ---------------------------------------------------------------------------
+# MAT-V3-01 — Material PBR map slots + Decals
+# ---------------------------------------------------------------------------
+
+
+class MaterialElem(BaseModel):
+    """MAT-V3-01 — first-class material element with optional PBR map slots."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    kind: Literal["material"] = "material"
+    id: str
+    name: str
+    albedo_color: str | None = Field(default=None, alias="albedoColor")
+    albedo_map_id: str | None = Field(default=None, alias="albedoMapId")
+    normal_map_id: str | None = Field(default=None, alias="normalMapId")
+    roughness_map_id: str | None = Field(default=None, alias="roughnessMapId")
+    metallic_map_id: str | None = Field(default=None, alias="metallicMapId")
+    height_map_id: str | None = Field(default=None, alias="heightMapId")
+    uv_scale_mm: dict | None = Field(default=None, alias="uvScaleMm")
+    uv_rotation_deg: float | None = Field(default=None, alias="uvRotationDeg")
+    hatch_pattern_id: str | None = Field(default=None, alias="hatchPatternId")
+
+
+class DecalElem(BaseModel):
+    """MAT-V3-01 — 2D image decal hosted on a parent surface."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    kind: Literal["decal"] = "decal"
+    id: str
+    parent_element_id: str = Field(alias="parentElementId")
+    parent_surface: Literal["front", "back", "top", "left", "right", "bottom"] = Field(
+        alias="parentSurface"
+    )
+    image_asset_id: str = Field(alias="imageAssetId")
+    uv_rect: dict = Field(alias="uvRect")
+    opacity: float = 1.0
+
+
+# ---------------------------------------------------------------------------
+# SCH-V3-01 — Custom property definition element
+# ---------------------------------------------------------------------------
+
+
+class PropertyDefinitionElem(BaseModel):
+    """SCH-V3-01 — project-scoped custom property definition."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    kind: Literal["property_definition"] = "property_definition"
+    id: str
+    key: str
+    label: str
+    prop_kind: Literal["mm", "m2", "currency", "enum", "string", "bool", "date"] = Field(
+        alias="propKind"
+    )
+    enum_values: list[str] | None = Field(default=None, alias="enumValues")
+    default_value: Any | None = Field(default=None, alias="defaultValue")
+    applies_to: list[str] = Field(alias="appliesTo")
+    show_in_schedule: bool = Field(default=True, alias="showInSchedule")
+
+
 Element = Annotated[
     ProjectSettingsElem
     | RoomColorSchemeElem
@@ -2327,6 +2413,10 @@ Element = Annotated[
     | ViewElem
     | ToposolidElem
     | AssetLibraryEntryElem
-    | PlacedAssetElem,
+    | PlacedAssetElem
+    | HatchPatternDefElem
+    | MaterialElem
+    | DecalElem,
     Field(discriminator="kind"),
 ]
+

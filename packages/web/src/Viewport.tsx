@@ -29,6 +29,8 @@ import {
 import { resolveViewportPaintBundle, type ViewportPaintBundle } from './viewport/materials';
 import { ViewCube } from './viewport/ViewCube';
 import { applyLinkedGhosting } from './viewport/linkedGhosting';
+import { applyLensGhosting } from './viewport/applyLensGhosting';
+import { resolveLensFilter } from './viewport/useLensFilter';
 import {
   buildDriftBadgeCanvas,
   driftBadgeTooltip,
@@ -1355,6 +1357,13 @@ export function Viewport({
     };
     const planes = clippingPlanesRef.current;
 
+    // DSC-V3-02 — resolve lens filter from the first 3D view found in the snapshot.
+    const active3dView = Object.values(curr).find(
+      (el) => el.kind === 'view' && (el as { subKind?: string }).subKind === '3d',
+    ) as { defaultLens?: import('@bim-ai/core').ViewLensMode } | undefined;
+    const lensFilter = resolveLensFilter(active3dView ?? null);
+    const witnessHex = readToken('--draft-witness', '#64748b');
+
     for (const id of toRebuild) {
       const e = curr[id];
       if (!e) continue;
@@ -1554,6 +1563,9 @@ export function Viewport({
       if (planes.length) {
         applyClippingPlanesToMeshes(obj, planes);
       }
+
+      // DSC-V3-02 — lens ghost pass (opacity only; element stays in scene).
+      applyLensGhosting(obj, lensFilter(e), witnessHex);
 
       cache.set(id, obj);
       root.add(obj);

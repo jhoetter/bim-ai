@@ -765,6 +765,45 @@ export function PlanCanvas({
       }
     }
 
+    // DSC-V3-02 — discipline lens ghost pass: 25% opacity for non-matching elements.
+    {
+      const planView = activePlanViewId ? elementsById[activePlanViewId] : null;
+      const lens =
+        planView && 'defaultLens' in planView ? (planView.defaultLens as string) : 'show_all';
+      if (lens !== 'show_all') {
+        const LENS_TO_DISC: Record<string, string> = {
+          show_arch: 'arch',
+          show_struct: 'struct',
+          show_mep: 'mep',
+        };
+        const expected = LENS_TO_DISC[lens];
+        const witnessColor = readPlanToken('--draft-witness', '#64748b');
+        const witnessThree = new THREE.Color(witnessColor);
+        grp.traverse((ch) => {
+          const pickId = (ch.userData as { bimPickId?: string }).bimPickId;
+          if (typeof pickId !== 'string') return;
+          const el = elementsById[pickId];
+          if (!el) return;
+          const disc =
+            ('discipline' in el ? (el.discipline as string | null | undefined) : null) ?? 'arch';
+          const isGhost = disc !== expected;
+          if (ch instanceof THREE.Mesh) {
+            const mat = ch.material as THREE.Material | THREE.Material[];
+            const applyOpacity = (m: THREE.Material) => {
+              m.transparent = true;
+              m.opacity = isGhost ? 0.25 : 1.0;
+              const anyMat = m as THREE.Material & { color?: THREE.Color };
+              if (isGhost && anyMat.color instanceof THREE.Color) {
+                anyMat.color.copy(witnessThree);
+              }
+            };
+            if (Array.isArray(mat)) mat.forEach(applyOpacity);
+            else applyOpacity(mat);
+          }
+        });
+      }
+    }
+
     for (let i = grp.children.length - 1; i >= 0; i--) {
       const ch = grp.children[i]!;
       if ((ch.userData as { draftingGrid?: unknown }).draftingGrid) grp.remove(ch);
