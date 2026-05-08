@@ -100,7 +100,9 @@ export type ElemKind =
   | 'constraint'
   | 'mass'
   | 'phase'
+  | 'soffit'
   | 'sun_settings'
+  | 'toposolid'
   | 'view'
   | 'soffit'
   | 'edge_profile_run'
@@ -149,6 +151,23 @@ export type ElementOverride = {
 export type ViewBreak = {
   axisMM: number;
   widthMM: number;
+};
+
+/** TOP-V3-01 — terrain solid (toposolid) primitive. */
+export type BoundaryPoint = { xMm: number; yMm: number };
+export type HeightSample = { xMm: number; yMm: number; zMm: number };
+export type HeightmapGrid = { stepMm: number; rows: number; cols: number; values: number[] };
+export type Toposolid = {
+  kind: 'toposolid';
+  id: string;
+  name?: string;
+  boundaryMm: BoundaryPoint[];
+  heightSamples?: HeightSample[];
+  heightmapGridMm?: HeightmapGrid;
+  thicknessMm: number;
+  baseElevationMm?: number;
+  defaultMaterialKey?: string;
+  pinned?: boolean;
 };
 
 /** VIE-V3-02 — Unified view element for drafting views, callouts, and 2D detailing. */
@@ -1644,7 +1663,7 @@ export type Element =
       daylightSavingStrategy: 'auto' | 'on' | 'off';
     }
   | View
-  | ToposolidElem;
+  | Toposolid
   | AssetLibraryEntryElem
   | PlacedAssetElem;
 
@@ -2146,4 +2165,56 @@ export type PlacedAssetElem = {
   rotationDeg?: number;
   paramValues?: Record<string, unknown>;
   hostElementId?: string;
+// ---------------------------------------------------------------------------
+// IMG-V3-01 — StructuredLayout wire types
+// ---------------------------------------------------------------------------
+
+export type Advisory = { code: string; message?: string };
+
+export type PointMm = { x: number; y: number };
+
+export type BboxMm = { x: number; y: number; w: number; h: number };
+
+export type RoomRegion = {
+  id: string;
+  polygonMm: PointMm[];
+  detectedTypeKey?: string;
+  detectedAreaMm2?: number;
+};
+
+export type WallSegment = {
+  id: string;
+  aMm: PointMm;
+  bMm: PointMm;
+  thicknessMm?: number;
+};
+
+export type OpeningHint = {
+  id: string;
+  hostWallId: string;
+  tAlongWall: number;
+  widthMm?: number;
+  kindHint?: 'door' | 'window';
+};
+
+export type OcrLabel = {
+  text: string;
+  bboxMm: BboxMm;
+  confidence: number;
+};
+
+export type ImageMetadata = {
+  widthPx: number;
+  heightPx: number;
+  calibrationMmPerPx?: number;
+};
+
+export type StructuredLayout = {
+  schemaVersion: 'img-v3.0';
+  imageMetadata: ImageMetadata;
+  rooms: RoomRegion[];
+  walls: WallSegment[];
+  openings: OpeningHint[];
+  ocrLabels: OcrLabel[];
+  advisories: Advisory[];
 };

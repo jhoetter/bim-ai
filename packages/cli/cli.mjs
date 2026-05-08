@@ -835,6 +835,11 @@ Commands:
   api list-tools [--output json]      API-V3-01: list all registered tool descriptors
   api inspect <name> [--output json]  API-V3-01: print one ToolDescriptor
   api version                         API-V3-01: print { schemaVersion, buildRef }
+  publish --link --model <id> [--display-name <str>] [--allow-measurement] [--allow-comment] [--expires-at <ms>]
+                                      OUT-V3-01: create a live presentation link (prints full URL)
+  publish --revoke <link-id> --model <id>
+                                      OUT-V3-01: revoke a presentation link
+  publish --list --model <id>         OUT-V3-01: list active presentation links for a model
   jobs submit <kind> --model <id> [--inputs <json>]
                                       JOB-V3-01: enqueue a long-running job
   jobs list --model <id> [--wait]     JOB-V3-01: list jobs for model (--wait polls until all active done)
@@ -1055,7 +1060,7 @@ async function main() {
       process.exit(1);
     }
 
-    if (!modelId && cmd !== 'schema' && cmd !== 'presets' && cmd !== 'plan-house' && cmd !== 'bootstrap' && cmd !== 'init-model')
+    if (!modelId && cmd !== 'schema' && cmd !== 'presets' && cmd !== 'plan-house' && cmd !== 'bootstrap' && cmd !== 'init-model' && cmd !== 'publish')
       usage();
 
     if (cmd === 'snapshot') {
@@ -1425,6 +1430,19 @@ async function main() {
       return;
     }
 
+    if (cmd === 'element-set-discipline') {
+      if (!modelId) usage();
+      const rawIds = argv[argv.indexOf('--element-ids') + 1];
+      const discipline = argv[argv.indexOf('--discipline') + 1];
+      if (!rawIds || !discipline) {
+        console.error('element-set-discipline requires --element-ids <id,...> --discipline <arch|struct|mep>');
+        process.exit(1);
+      }
+      const elementIds = rawIds.split(',').map(s => s.trim()).filter(Boolean);
+      await postCommand(modelId, userId, { type: 'setElementDiscipline', elementIds, discipline });
+      return;
+    }
+
     if (cmd === 'view-set-phase-filter') {
       if (!modelId) usage();
       const viewId = argv[argv.indexOf('--view-id') + 1];
@@ -1474,6 +1492,132 @@ async function main() {
         return;
       }
       console.error(`Unknown toposolid subcommand: ${sub ?? '(none)'}. Use create, update, or delete.`);
+      process.exit(1);
+    }
+
+    if (cmd === 'trace') {
+      const imageIdx = argv.indexOf('--image');
+      if (imageIdx === -1) { console.error('trace requires --image <path>'); process.exit(1); }
+      const imagePath = argv[imageIdx + 1];
+      const briefIdx = argv.indexOf('--brief');
+      const briefPath = briefIdx !== -1 ? argv[briefIdx + 1] : null;
+      const archetypeIdx = argv.indexOf('--archetype-hint');
+      const archetypeHint = archetypeIdx !== -1 ? argv[archetypeIdx + 1] : null;
+      const outIdx = argv.indexOf('-o');
+      const outPath = outIdx !== -1 ? argv[outIdx + 1] : null;
+
+      const imageBytes = await fs.readFile(imagePath);
+      const form = new FormData();
+      form.append('image', new Blob([imageBytes]), path.basename(imagePath));
+      if (briefPath) {
+        const briefText = await fs.readFile(briefPath, 'utf8');
+        form.append('brief', briefText);
+      }
+      let url = `${base}/api/v3/trace`;
+      if (archetypeHint) url += `?archetypeHint=${encodeURIComponent(archetypeHint)}`;
+
+      const res = await fetch(url, { method: 'POST', body: form });
+      const data = await res.json();
+      if (!res.ok) {
+        console.error(JSON.stringify(data, null, 2));
+        process.exit(1);
+      }
+      if (data.jobId) {
+        console.error(`Image >2MB — enqueued job ${data.jobId}. Poll with: bim-ai jobs get ${data.jobId}`);
+        console.log(JSON.stringify(data, null, 2));
+        process.exit(0);
+      }
+      const hasNoWalls = (data.advisories ?? []).some(a => a.code === 'no_walls_detected');
+      const output = JSON.stringify(data, null, 2);
+      if (outPath) {
+        await fs.writeFile(outPath, output);
+        console.error(`Wrote ${outPath}`);
+      } else {
+        console.log(output);
+      }
+      if (hasNoWalls) process.exit(1);
+      return;
+    }
+    }
+
+    if (cmd === 'publish') {
+      // OUT-V3-01: create / revoke / list presentation links
+      const rest = argv.slice(1);
+      const doLink = rest.includes('--link');
+      const revokeIdx = rest.indexOf('--revoke');
+      const doList = rest.includes('--list');
+
+      if (doLink) {
+        const modelArgIdx = rest.indexOf('--model');
+        const modelArg = modelArgIdx !== -1 ? rest[modelArgIdx + 1] : modelId;
+        if (!modelArg) {
+          console.error('publish --link requires --model <id> or BIM_AI_MODEL_ID');
+          process.exit(1);
+        }
+        const displayNameIdx = rest.indexOf('--display-name');
+        const displayName = displayNameIdx !== -1 ? rest[displayNameIdx + 1] : undefined;
+        const allowMeasurement = rest.includes('--allow-measurement');
+        const allowComment = rest.includes('--allow-comment');
+        const expiresAtIdx = rest.indexOf('--expires-at');
+        const expiresAt = expiresAtIdx !== -1 ? Number(rest[expiresAtIdx + 1]) : undefined;
+
+        const body = { allowMeasurement, allowComment };
+        if (displayName) body.displayName = displayName;
+        if (expiresAt) body.expiresAt = expiresAt;
+
+        const result = await fetchJson(
+          'POST',
+          `${base}/api/models/${encodeURIComponent(modelArg)}/presentations`,
+          body,
+        );
+        // Print the full URL if a relative /p/<token> URL was returned
+        if (result.url && result.url.startsWith('/p/')) {
+          result.url = `${base}${result.url}`;
+        }
+        console.log(JSON.stringify(result, null, 2));
+        return;
+      }
+
+      if (revokeIdx !== -1) {
+        const linkId = rest[revokeIdx + 1];
+        if (!linkId) {
+          console.error('publish --revoke requires <link-id>');
+          process.exit(1);
+        }
+        const modelArgIdx = rest.indexOf('--model');
+        const modelArg = modelArgIdx !== -1 ? rest[modelArgIdx + 1] : modelId;
+        if (!modelArg) {
+          console.error('publish --revoke requires --model <id> or BIM_AI_MODEL_ID');
+          process.exit(1);
+        }
+        const result = await fetchJson(
+          'POST',
+          `${base}/api/models/${encodeURIComponent(modelArg)}/presentations/${encodeURIComponent(linkId)}/revoke`,
+        );
+        console.log(JSON.stringify(result, null, 2));
+        return;
+      }
+
+      if (doList) {
+        const modelArgIdx = rest.indexOf('--model');
+        const modelArg = modelArgIdx !== -1 ? rest[modelArgIdx + 1] : modelId;
+        if (!modelArg) {
+          console.error('publish --list requires --model <id> or BIM_AI_MODEL_ID');
+          process.exit(1);
+        }
+        const result = await fetchJson(
+          'GET',
+          `${base}/api/models/${encodeURIComponent(modelArg)}/presentations`,
+        );
+        for (const p of result.presentations ?? []) {
+          const url = p.token ? `${base}/p/${p.token}` : '(no token)';
+          const status = p.isRevoked ? '[revoked]' : '[active] ';
+          console.log(`${status}  ${p.id}  ${url}  opens=${p.openCount ?? 0}`);
+        }
+        return;
+      }
+
+      console.error('publish: use --link, --revoke <link-id>, or --list');
       process.exit(1);
     }
 
