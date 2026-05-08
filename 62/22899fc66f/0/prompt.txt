@@ -1,0 +1,9 @@
+[Image #1] i have an empty project but there are apparently still past activities? a bit confused by this
+
+---
+
+what is better / good long-term and good pattern?
+
+---
+
+yep, and then commit and push to main
