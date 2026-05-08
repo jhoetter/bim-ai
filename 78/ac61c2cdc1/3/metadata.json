@@ -1,0 +1,20 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "78ac61c2cdc1",
+  "session_id": "4cf23ef9-498d-4e3e-9e2e-acf4561895c7",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T17:43:59.232154Z",
+  "branch": "feat/v3-edt-v3-11-phase-filter-lens",
+  "checkpoints_count": 1,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "c6e3f80f7d4f",
+  "token_usage": {
+    "input_tokens": 191,
+    "cache_creation_tokens": 231637,
+    "cache_read_tokens": 17441755,
+    "output_tokens": 94423,
+    "api_call_count": 187
+  }
+}
