@@ -169,3 +169,101 @@ def sample_and_match(
     cat = catalog if catalog is not None else MAT01_COLOUR_CATALOG
     rgb = sample_region_mean_rgb(image_path, region_xyxy)
     return nearest_matches(rgb, cat, top_k=top_k)
+
+
+# ---------------------------------------------------------------------------
+# SKB-07 polygon sampler — used by the IMG-V3-01 pipeline
+# ---------------------------------------------------------------------------
+
+
+def sample(
+    image: "Any",  # type: ignore[name-defined]
+    polygon_pts: list[tuple[int, int]],
+) -> str | None:
+    """Return a room-type key by sampling the average hue inside a polygon.
+
+    ``image`` may be:
+    - A NumPy ndarray in BGR (cv2 format) or RGB.
+    - A file path (str / Path) — loaded with cv2.
+
+    ``polygon_pts`` is a list of ``(x, y)`` pixel coordinates (screen origin
+    top-left). The polygon defines the interior of a detected room region.
+
+    Hue-to-type mapping (approximate HSV wheel, degrees 0–360):
+      0–30  or 330–360  → warm/red tones → "living"
+      31–90             → yellow/green tones → "kitchen"
+      91–200            → blue/teal → "bathroom"
+      201–329           → purple/violet → "bedroom"
+
+    Returns ``None`` if the polygon is empty or image cannot be loaded.
+    """
+    if not polygon_pts:
+        return None
+
+    try:
+        import numpy as np  # type: ignore[import-not-found]
+
+        # --- resolve to BGR ndarray ---
+        if isinstance(image, np.ndarray):
+            img_bgr = image if image.ndim == 3 else np.stack([image] * 3, axis=-1)
+        else:
+            try:
+                import cv2  # type: ignore[import-not-found]
+
+                img_bgr = cv2.imread(str(image))
+                if img_bgr is None:
+                    return None
+            except ImportError:
+                from PIL import Image as _Image  # type: ignore[import-not-found]
+
+                pil_img = _Image.open(str(image)).convert("RGB")
+                img_bgr = np.asarray(pil_img, dtype=np.uint8)[..., ::-1].copy()
+
+        h, w = img_bgr.shape[:2]
+
+        # --- cv2 path: mask + mean hue ---
+        try:
+            import cv2  # type: ignore[import-not-found]
+
+            pts_arr = np.array(polygon_pts, dtype=np.int32).reshape((-1, 1, 2))
+            mask = np.zeros((h, w), dtype=np.uint8)
+            cv2.fillPoly(mask, [pts_arr], 255)
+            hsv = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
+            mean_vals = cv2.mean(hsv, mask=mask)
+            hue_cv = mean_vals[0]  # cv2 hue: 0–179
+            hue_deg = hue_cv * 2.0  # convert to 0–360
+        except ImportError:
+            # numpy fallback: bounding-box crop, mean RGB → approximate hue
+            xs = [p[0] for p in polygon_pts]
+            ys = [p[1] for p in polygon_pts]
+            x0, x1 = max(0, min(xs)), min(w - 1, max(xs))
+            y0, y1 = max(0, min(ys)), min(h - 1, max(ys))
+            if x1 <= x0 or y1 <= y0:
+                return None
+            crop = img_bgr[y0:y1, x0:x1]
+            mean_bgr = crop.reshape(-1, 3).mean(axis=0)
+            r, g, b = float(mean_bgr[2]), float(mean_bgr[1]), float(mean_bgr[0])
+            max_c = max(r, g, b)
+            min_c = min(r, g, b)
+            delta = max_c - min_c
+            if delta < 1e-6:
+                hue_deg = 0.0
+            elif max_c == r:
+                hue_deg = 60.0 * (((g - b) / delta) % 6)
+            elif max_c == g:
+                hue_deg = 60.0 * ((b - r) / delta + 2)
+            else:
+                hue_deg = 60.0 * ((r - g) / delta + 4)
+
+        # --- hue → room type ---
+        if hue_deg <= 30 or hue_deg >= 330:
+            return "living"
+        elif hue_deg <= 90:
+            return "kitchen"
+        elif hue_deg <= 200:
+            return "bathroom"
+        else:
+            return "bedroom"
+
+    except Exception:
+        return None

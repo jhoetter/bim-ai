@@ -584,6 +584,9 @@ register(
         agentSafetyNotes=(
             "Emits a warning advisory (not an error) if floor elements reference "
             "this toposolid as their host before deletion."
+        ),
+    )
+)
 register(
     ToolDescriptor(
         name="img-trace",

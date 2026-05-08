@@ -1430,19 +1430,6 @@ async function main() {
       return;
     }
 
-    if (cmd === 'element-set-discipline') {
-      if (!modelId) usage();
-      const rawIds = argv[argv.indexOf('--element-ids') + 1];
-      const discipline = argv[argv.indexOf('--discipline') + 1];
-      if (!rawIds || !discipline) {
-        console.error('element-set-discipline requires --element-ids <id,...> --discipline <arch|struct|mep>');
-        process.exit(1);
-      }
-      const elementIds = rawIds.split(',').map(s => s.trim()).filter(Boolean);
-      await postCommand(modelId, userId, { type: 'setElementDiscipline', elementIds, discipline });
-      return;
-    }
-
     if (cmd === 'view-set-phase-filter') {
       if (!modelId) usage();
       const viewId = argv[argv.indexOf('--view-id') + 1];
@@ -1537,7 +1524,6 @@ async function main() {
       }
       if (hasNoWalls) process.exit(1);
       return;
-    }
     }
 
     if (cmd === 'publish') {

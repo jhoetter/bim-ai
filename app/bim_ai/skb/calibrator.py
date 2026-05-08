@@ -126,3 +126,98 @@ def make_calibrated_sketch(
     anchor_list = list(anchors)
     cal = calibrate(anchor_list)
     return CalibratedSketch(image_path=image_path, calibration=cal, anchors=anchor_list)
+
+
+# ---------------------------------------------------------------------------
+# SKB-04 extension — auto-calibrate from an edge-detection output image.
+# ---------------------------------------------------------------------------
+
+_ASSUMED_ROOM_WIDTH_MM: float = 4000.0
+"""Heuristic assumption: the largest detected rectangular room is ~4 m wide.
+This gives a reasonable mm/px estimate for typical architectural floor plans.
+"""
+
+
+def calibrate_from_edges(edges_image: "Any") -> float:  # type: ignore[name-defined]
+    """Estimate mm-per-pixel scale from an edge-detection output.
+
+    Strategy: find the widest rectangular region in the edge image (assumed to
+    be the largest room), then set scale = _ASSUMED_ROOM_WIDTH_MM / width_px.
+
+    ``edges_image`` may be:
+    - A NumPy ndarray (uint8 greyscale or BGR) — used directly.
+    - A file path (str / Path) — loaded with cv2 or PIL.
+
+    Falls back to 1.0 if no usable contour is found.
+    """
+    import os
+
+    arr = None
+
+    # Resolve to numpy array.
+    try:
+        import numpy as np  # type: ignore[import-not-found]
+
+        if isinstance(edges_image, np.ndarray):
+            arr = edges_image
+        else:
+            # Treat as file path.
+            path_str = str(edges_image)
+            try:
+                import cv2  # type: ignore[import-not-found]
+
+                arr = cv2.imread(path_str, cv2.IMREAD_GRAYSCALE)
+            except ImportError:
+                try:
+                    from PIL import Image as _Image  # type: ignore[import-not-found]
+
+                    import numpy as np
+
+                    arr = np.asarray(_Image.open(path_str).convert("L"), dtype=np.uint8)
+                except Exception:
+                    arr = None
+    except ImportError:
+        arr = None
+
+    if arr is None:
+        return 1.0
+
+    # Convert to greyscale if BGR.
+    try:
+        import numpy as np  # type: ignore[import-not-found]
+
+        if arr.ndim == 3:
+            import cv2  # type: ignore[import-not-found]
+
+            arr = cv2.cvtColor(arr, cv2.COLOR_BGR2GRAY)
+    except Exception:
+        pass
+
+    # Try cv2 contour approach first.
+    try:
+        import cv2  # type: ignore[import-not-found]
+
+        contours, _ = cv2.findContours(arr, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        if contours:
+            largest = max(contours, key=cv2.contourArea)
+            _x, _y, w, _h = cv2.boundingRect(largest)
+            if w > 0:
+                return _ASSUMED_ROOM_WIDTH_MM / float(w)
+    except Exception:
+        pass
+
+    # Fallback: bounding box of all non-zero pixels via numpy.
+    try:
+        import numpy as np  # type: ignore[import-not-found]
+
+        rows = np.any(arr > 0, axis=1)
+        cols = np.any(arr > 0, axis=0)
+        if cols.any():
+            col_indices = np.where(cols)[0]
+            width_px = int(col_indices[-1] - col_indices[0] + 1)
+            if width_px > 0:
+                return _ASSUMED_ROOM_WIDTH_MM / float(width_px)
+    except Exception:
+        pass
+
+    return 1.0

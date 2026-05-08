@@ -213,3 +213,109 @@ class TestTraceImageCmd:
         cmd = TraceImageCmd(imageB64=self._make_image_b64())
         with pytest.raises(ValueError, match="TraceImageCmd"):
             apply_inplace(doc, cmd)  # type: ignore[arg-type]
+
+
+# ── HTTP-layer tests ──────────────────────────────────────────────────────────
+
+
+def _build_trace_app():
+    """Minimal FastAPI app exposing only the v3/trace route for HTTP testing."""
+    from fastapi import FastAPI
+
+    from bim_ai.routes_api import api_router
+
+    app = FastAPI()
+    app.include_router(api_router)
+    return app
+
+
+class TestHttpTrace:
+    """HTTP-layer tests for POST /api/v3/trace (IMG-V3-01)."""
+
+    @staticmethod
+    def _small_png() -> bytes:
+        """Return a valid small PNG (well under 2 MB) — floor-plan-like white square."""
+        return _make_png(64, 64, (240, 240, 240))
+
+    @staticmethod
+    def _large_png() -> bytes:
+        """Return a byte stream > 2 MB that looks like a PNG (valid header + padding)."""
+        base = _make_png(4, 4, (200, 200, 200))
+        # Pad with null bytes to exceed 2 MB — still > 2 MB even if padding is ignored
+        padding = b"\x00" * (2 * 1024 * 1024 + 1024)
+        return base + padding
+
+    @staticmethod
+    def _no_walls_png() -> bytes:
+        """Solid uniform grey PNG — produces no detectable walls."""
+        return _make_png(32, 32, (128, 128, 128))
+
+    def test_trace_image_small_file(self) -> None:
+        """POST a <2 MB PNG → HTTP 200 with rooms and walls arrays."""
+        from fastapi.testclient import TestClient
+
+        client = TestClient(_build_trace_app(), raise_server_exceptions=False)
+        resp = client.post(
+            "/api/v3/trace",
+            files={"image": ("test.png", self._small_png(), "image/png")},
+        )
+        # Accept 200 (success) or 422 (no_walls_detected advisory is valid)
+        assert resp.status_code in (200, 422), f"unexpected status {resp.status_code}: {resp.text[:200]}"
+        body = resp.json()
+        if resp.status_code == 200:
+            assert "rooms" in body, "response missing 'rooms' key"
+            assert "walls" in body, "response missing 'walls' key"
+        else:
+            # 422 means no walls found — body is the StructuredLayout with advisory
+            detail = body.get("detail", {})
+            advisories = detail.get("advisories", []) if isinstance(detail, dict) else []
+            codes = {a.get("code") for a in advisories}
+            no_walls_codes = {"no_walls_detected", "low_contrast_image"}
+            assert codes & no_walls_codes, (
+                f"unexpected 422 with advisory codes {codes}: {body}"
+            )
+
+    def test_trace_image_large_file(self) -> None:
+        """POST a >2 MB image → HTTP 202 with a jobId UUID."""
+        import re
+
+        from fastapi.testclient import TestClient
+
+        client = TestClient(_build_trace_app(), raise_server_exceptions=False)
+        resp = client.post(
+            "/api/v3/trace",
+            files={"image": ("big.png", self._large_png(), "image/png")},
+        )
+        assert resp.status_code == 202, f"expected 202, got {resp.status_code}: {resp.text[:200]}"
+        body = resp.json()
+        assert "jobId" in body, f"missing jobId in response: {body}"
+        uuid_pattern = re.compile(
+            r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            re.IGNORECASE,
+        )
+        assert uuid_pattern.match(body["jobId"]), f"jobId is not a UUID: {body['jobId']!r}"
+
+    def test_no_walls_advisory(self) -> None:
+        """POST an image that yields no walls → HTTP 422 with a no-walls advisory.
+
+        A flat solid-grey PNG cannot produce usable wall geometry.  The pipeline
+        emits either ``no_walls_detected`` (enough edge density, but Hough finds
+        nothing) or ``low_contrast_image`` (edge density too low to trace).  Both
+        mean "no walls extracted" and the route returns HTTP 422.
+        """
+        from fastapi.testclient import TestClient
+
+        client = TestClient(_build_trace_app(), raise_server_exceptions=False)
+        resp = client.post(
+            "/api/v3/trace",
+            files={"image": ("flat.png", self._no_walls_png(), "image/png")},
+        )
+        assert resp.status_code == 422, f"expected 422, got {resp.status_code}: {resp.text[:200]}"
+        body = resp.json()
+        detail = body.get("detail", {})
+        advisories = detail.get("advisories", []) if isinstance(detail, dict) else []
+        codes = {a.get("code") for a in advisories}
+        no_walls_codes = {"no_walls_detected", "low_contrast_image"}
+        assert codes & no_walls_codes, (
+            f"expected one of {no_walls_codes} in advisories, got {codes}"
+        )

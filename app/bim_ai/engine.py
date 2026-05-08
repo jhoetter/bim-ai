@@ -185,6 +185,7 @@ from bim_ai.commands import (
     DeleteToposolidCmd,
     IndexAssetCmd,
     PlaceAssetCmd,
+    SetToolPrefCmd,
     TraceImageCmd,
 )
 from bim_ai.constraints import Violation, evaluate
@@ -5074,7 +5075,12 @@ def apply_inplace(
                 positionMm=cmd.position_mm,
                 rotationDeg=cmd.rotation_deg,
                 paramValues=cmd.param_values,
-                hostElementId=cmd.host_element_id,        case TraceImageCmd():
+                hostElementId=cmd.host_element_id,
+            )
+        case SetToolPrefCmd():
+            # CHR-V3-08: store sticky modifier preference on the document.
+            doc.tool_prefs.setdefault(cmd.tool, {})[cmd.pref_key] = cmd.pref_value
+        case TraceImageCmd():
             raise ValueError(
                 "TraceImageCmd cannot be applied in a bundle; "
                 "use POST /api/v3/trace or engine.handle_trace_image_cmd() instead"
