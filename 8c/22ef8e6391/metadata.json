@@ -4,7 +4,9 @@
   "strategy": "manual-commit",
   "branch": "feat/v3-job-v3-01-jobs-panel",
   "checkpoints_count": 1,
-  "files_touched": null,
+  "files_touched": [
+    "packages/web/src/Viewport.tsx"
+  ],
   "sessions": [
     {
       "metadata": "/8c/22ef8e6391/0/metadata.json",
@@ -17,13 +19,19 @@
       "transcript": "/8c/22ef8e6391/1/full.jsonl",
       "content_hash": "/8c/22ef8e6391/1/content_hash.txt",
       "prompt": "/8c/22ef8e6391/1/prompt.txt"
+    },
+    {
+      "metadata": "/8c/22ef8e6391/2/metadata.json",
+      "transcript": "/8c/22ef8e6391/2/full.jsonl",
+      "content_hash": "/8c/22ef8e6391/2/content_hash.txt",
+      "prompt": "/8c/22ef8e6391/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 249,
-    "cache_creation_tokens": 141208,
-    "cache_read_tokens": 13413337,
-    "output_tokens": 63260,
-    "api_call_count": 153
+    "input_tokens": 254,
+    "cache_creation_tokens": 144853,
+    "cache_read_tokens": 14217542,
+    "output_tokens": 65653,
+    "api_call_count": 158
   }
 }
