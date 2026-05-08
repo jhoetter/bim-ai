@@ -2,7 +2,7 @@
   "cli_version": "0.6.0",
   "checkpoint_id": "061d7096131e",
   "strategy": "manual-commit",
-  "branch": "feat/v3-chr-v3-03-status-bar",
+  "branch": "feat/v3-job-v3-01-jobs-panel",
   "checkpoints_count": 2,
   "files_touched": [
     "packages/core/src/index.ts",
