@@ -306,6 +306,7 @@ from bim_ai.elements import (
     AssetLibraryEntryElem,
     AssetParamEntry,
     PlacedAssetElem,
+    HatchPatternDefElem,
 )
 from bim_ai.export_ifc import (
     AUTHORITATIVE_REPLAY_KIND_V0,
@@ -946,6 +947,28 @@ def ensure_sun_settings(doc: Document) -> Document:
     if any(isinstance(e, SunSettingsElem) for e in doc.elements.values()):
         return doc
     doc.elements[SUN_SETTINGS_ID] = SunSettingsElem(kind="sun_settings", id=SUN_SETTINGS_ID)
+    return doc
+
+
+_SEED_HATCHES: list[dict] = [
+    {"id": "brick_45", "name": "Brick", "paperMmRepeat": 73, "rotationDeg": 45, "strokeWidthMm": 0.18, "patternKind": "lines"},
+    {"id": "concrete_dot", "name": "Concrete", "paperMmRepeat": 5, "rotationDeg": 0, "strokeWidthMm": 0.13, "patternKind": "dots"},
+    {"id": "insulation", "name": "Insulation", "paperMmRepeat": 100, "rotationDeg": 0, "strokeWidthMm": 0.25, "patternKind": "curve"},
+    {"id": "plaster", "name": "Plaster", "paperMmRepeat": 8, "rotationDeg": 45, "strokeWidthMm": 0.13, "patternKind": "crosshatch"},
+    {"id": "timber_grain", "name": "Timber", "paperMmRepeat": 12, "rotationDeg": 0, "strokeWidthMm": 0.18, "patternKind": "lines"},
+    {"id": "gypsum", "name": "Gypsum", "paperMmRepeat": 4, "rotationDeg": 45, "strokeWidthMm": 0.10, "patternKind": "dots"},
+    {"id": "stone", "name": "Stone", "paperMmRepeat": 60, "rotationDeg": 0, "strokeWidthMm": 0.18, "patternKind": "lines"},
+]
+
+
+def ensure_seed_hatches(doc: Document) -> Document:
+    """CAN-V3-02: ensure the 7 canonical hatch patterns exist in the document.
+    Idempotent — already-present hatches are skipped. Read-only built-ins.
+    """
+    existing_ids = {e.id for e in doc.elements.values() if isinstance(e, HatchPatternDefElem)}
+    for row in _SEED_HATCHES:
+        if row["id"] not in existing_ids:
+            doc.elements[row["id"]] = HatchPatternDefElem.model_validate(row)
     return doc
 
 

@@ -29,6 +29,18 @@ export type ToposolidElem = {
   discipline?: string;
 };
 
+/** CAN-V3-02 — built-in hatch pattern definition; scales with paper-mm at plot scale. */
+export type HatchPatternDef = {
+  kind: 'hatch_pattern_def';
+  id: string;
+  name: string;
+  paperMmRepeat: number;
+  rotationDeg: number;
+  strokeWidthMm: number;
+  patternKind: 'lines' | 'crosshatch' | 'dots' | 'curve' | 'svg';
+  svgSource?: string | null;
+};
+
 export type ElemKind =
   | 'toposolid'
   | 'project_settings'
@@ -114,7 +126,9 @@ export type ElemKind =
   | 'pipe'
   | 'fixture'
   | 'material'
-  | 'decal';
+  | 'decal'
+  | 'hatch_pattern_def'
+  | 'property_definition';
 
 export type PhaseFilter = 'all' | 'existing' | 'demolition' | 'new';
 
@@ -1661,7 +1675,8 @@ export type Element =
   | View
   | ToposolidElem
   | AssetLibraryEntryElem
-  | PlacedAssetElem;
+  | PlacedAssetElem
+  | HatchPatternDef;
 
 export type Violation = {
   ruleId: string;
@@ -2202,6 +2217,23 @@ export type DecalElem = {
   imageAssetId: string;
   uvRect: { u0: number; v0: number; u1: number; v1: number };
   opacity?: number;
+};
+
+// ---------------------------------------------------------------------------
+// SCH-V3-01 — Custom property definition
+// ---------------------------------------------------------------------------
+
+/** SCH-V3-01 — project-scoped custom property definition. */
+export type PropertyDefinitionElem = {
+  kind: 'property_definition';
+  id: string;
+  key: string;
+  label: string;
+  propKind: 'mm' | 'm2' | 'currency' | 'enum' | 'string' | 'bool' | 'date';
+  enumValues?: string[] | null;
+  defaultValue?: unknown;
+  appliesTo: string[];
+  showInSchedule?: boolean;
 };
 
 // ---------------------------------------------------------------------------
