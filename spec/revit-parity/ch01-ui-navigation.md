@@ -2,27 +2,8 @@
 
 Source segment: `00:00:00 – 00:32:00`
 
----
-
-## F-001 · Revit Home Screen
-
-**What it does:** Dedicated start page with "Recent", "Models", and "Families" panels. Recent files can be sorted by date/name/type and viewed as list or grid. Clicking the Revit logo at top-left returns here from any open project.
-
-**Screenshot:**
-![Home Screen](file:///Users/jhoetter/Desktop/Revit%20Specs/0108_00-09-20.png)
-
-**bim-ai status:** ❌ Not available — bim-ai has no standalone home/start screen.
-
----
-
-## F-002 · New Project Dialog (template selection)
-
-**What it does:** Dialog lets users choose a template (Architectural, Imperial Multi-discipline, Metric Multi-discipline, etc.) before opening a new blank project.
-
-**Screenshot:**
-![New Project Dialog](file:///Users/jhoetter/Desktop/Revit%20Specs/0120_00-11-56.png)
-
-**bim-ai status:** ❌ Not available.
+> **Intentional paradigm difference — not tracked as parity gaps:**
+> Revit's "Home Screen" (F-001) and "New Project Dialog" (F-002) are **intentionally excluded** from this tracker. bim-ai's file management will follow a **Google Drive-like model**: a dedicated file browser where users create/open `.bim` models the same way they create a new Google Doc — template selection happens in that browser context, not inside the editor. Likewise, Revit's File → Save is replaced by **continuous versioning with named milestones** (T3 COL-V3-01/02 time machine), consistent with the "activity stream is the time machine" stance in `spec/workpackage-tracker-v3.md`.
 
 ---
 

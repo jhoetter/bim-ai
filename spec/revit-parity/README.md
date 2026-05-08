@@ -44,10 +44,10 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 
 ## Full Feature Status Table
 
+> **Paradigm note — F-001 & F-002 excluded intentionally.** Revit's Home Screen and New Project Dialog are not parity targets. bim-ai uses a **Drive-like file browser** (create/open models like Google Docs) and **continuous versioning with milestones** instead of File → Save (T3 COL-V3-01/02). See `ch01-ui-navigation.md` for the full rationale.
+
 | ID | Feature | Chapter | bim-ai Status | Notes |
 |----|---------|---------|---------------|-------|
-| F-001 | Revit Home Screen (Recent / Models / Families) | UI & Nav | ❌ | Completely different paradigm |
-| F-002 | New Project Dialog (template selection) | UI & Nav | ❌ | |
 | F-003 | Project Browser | UI & Nav | ❌ | No hierarchical view/sheet browser |
 | F-004 | Properties Palette (context-sensitive) | UI & Nav | 🟡 | Basic inspector exists; no full param model |
 | F-005 | Ribbon Interface (tabbed toolbar) | UI & Nav | ❌ | Different UI paradigm |
@@ -177,8 +177,8 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 |--------|-------|-----------|
 | ✅ Fully available | 0 | 0% |
 | 🟡 Partially available | 23 | 19% |
-| ❌ Not available | 99 | 81% |
-| **Total** | **122** | **100%** |
+| ❌ Not available | 97 | 81% |
+| **Total** | **120** | **100%** |
 
 ---
 
