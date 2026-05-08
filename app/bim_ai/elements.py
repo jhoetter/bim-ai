@@ -607,6 +607,8 @@ class FloorElem(BaseModel):
     agent_trace: AgentTrace | None = Field(default=None, alias="agentTrace")
     option_set_id: str | None = Field(default=None, alias="optionSetId")
     option_id: str | None = Field(default=None, alias="optionId")
+    # TOP-V3-01: elevation inherited from a toposolid heightmap at floor centroid (mm).
+    toposolid_elevation_mm: float | None = Field(default=None, alias="toposolidElevationMm")
 
 
 class RoofElem(BaseModel):
@@ -1859,6 +1861,7 @@ ElementKind = Literal[
     "edge_profile_run",
     "soffit",
     "view",
+    "toposolid",
 ]
 
 
@@ -2085,6 +2088,54 @@ class WindowLegendViewElem(BaseModel):
     parent_sheet_id: str | None = Field(default=None, alias="parentSheetId")
 
 
+# ---------------------------------------------------------------------------
+# TOP-V3-01 — Toposolid primitive
+# ---------------------------------------------------------------------------
+
+
+class HeightSample(BaseModel):
+    """A single surveyed elevation sample (sparse parametrisation)."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    x_mm: float = Field(alias="xMm")
+    y_mm: float = Field(alias="yMm")
+    z_mm: float = Field(alias="zMm")
+
+
+class HeightmapGrid(BaseModel):
+    """Regular-grid DEM raster (dense parametrisation)."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    step_mm: float = Field(alias="stepMm")
+    rows: int
+    cols: int
+    values: list[float]  # row-major, len == rows * cols
+
+
+class ToposolidElem(BaseModel):
+    """TOP-V3-01 — terrain solid with closed XY boundary and height data.
+
+    Either ``height_samples`` (sparse surveyor points) or ``heightmap_grid_mm``
+    (regular DEM raster) drives the surface.  Both empty / None means a flat
+    starter at ``base_elevation_mm``.
+    """
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    kind: Literal["toposolid"] = "toposolid"
+    id: str
+    name: str | None = None
+    boundary_mm: list[Vec2Mm] = Field(alias="boundaryMm")
+    height_samples: list[HeightSample] = Field(default_factory=list, alias="heightSamples")
+    heightmap_grid_mm: HeightmapGrid | None = Field(default=None, alias="heightmapGridMm")
+    thickness_mm: float = Field(default=1500.0, alias="thicknessMm")
+    base_elevation_mm: float | None = Field(default=None, alias="baseElevationMm")
+    default_material_key: str | None = Field(default=None, alias="defaultMaterialKey")
+    pinned: bool = False
+    phase_created: str | None = Field(default=None, alias="phaseCreated")
+    phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
+    discipline: str | None = None
+
+
 Element = Annotated[
     ProjectSettingsElem
     | RoomColorSchemeElem
@@ -2157,6 +2208,7 @@ Element = Annotated[
     | SoffitElem
     | TitleblockTypeElem
     | WindowLegendViewElem
-    | ViewElem,
+    | ViewElem
+    | ToposolidElem,
     Field(discriminator="kind"),
 ]

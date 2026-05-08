@@ -180,6 +180,9 @@ from bim_ai.commands import (
     ApplyViewTemplateCmd,
     UnbindViewTemplateCmd,
     DeleteViewTemplateCmd,
+    CreateToposolidCmd,
+    UpdateToposolidCmd,
+    DeleteToposolidCmd,
 )
 from bim_ai.constraints import Violation, evaluate
 from bim_ai.datum_levels import (
@@ -280,6 +283,7 @@ from bim_ai.elements import (
     ViewElem,
     ViewpointElem,
     ViewTemplateElem,
+    ToposolidElem,
     VoidCutElem,
     WallBasisLine,
     WallEdgeFixed,
@@ -859,6 +863,47 @@ def _point_in_polygon_xy(px: float, py: float, poly: list[tuple[float, float]]) 
             inside = not inside
         j = i
     return inside
+
+
+def _toposolid_elevation_at_centroid_mm(
+    els: dict[str, Any], boundary: list[Any]
+) -> float | None:
+    """TOP-V3-01: return toposolid surface elevation (mm) at the centroid of
+    ``boundary`` if any toposolid's footprint contains that centroid, else None.
+
+    Uses a simple average-of-samples interpolation for the flat/sparse case.
+    """
+    if not boundary:
+        return None
+    cx = sum(p.x_mm for p in boundary) / len(boundary)
+    cy = sum(p.y_mm for p in boundary) / len(boundary)
+    for el in els.values():
+        if not isinstance(el, ToposolidElem):
+            continue
+        poly = [(p.x_mm, p.y_mm) for p in el.boundary_mm]
+        if not _point_in_polygon_xy(cx, cy, poly):
+            continue
+        # Interpolate elevation: use weighted average of samples if available.
+        from bim_ai.site.toposolid import samples_from_toposolid
+
+        pts = samples_from_toposolid(el)
+        if not pts:
+            # Flat starter — use base_elevation_mm or 0.
+            return el.base_elevation_mm or 0.0
+        if len(pts) == 1:
+            return pts[0][2]
+        # Inverse-distance weighting (IDW) for sparse samples.
+        total_weight = 0.0
+        weighted_z = 0.0
+        for sx, sy, sz in pts:
+            d = math.hypot(cx - sx, cy - sy)
+            if d < 1e-6:
+                return sz
+            w = 1.0 / d
+            total_weight += w
+            weighted_z += w * sz
+        return weighted_z / total_weight if total_weight > 0 else 0.0
+    return None
 
 
 def _dump_elements(elements: dict[str, Element]) -> dict[str, Any]:
@@ -2265,6 +2310,8 @@ def apply_inplace(
                     cmd.structure_thickness_mm,
                     cmd.finish_thickness_mm,
                 )
+            # TOP-V3-01: check if any toposolid covers the floor centroid.
+            topo_elev = _toposolid_elevation_at_centroid_mm(els, cmd.boundary_mm)
             els[fid] = FloorElem(
                 kind="floor",
                 id=fid,
@@ -2276,6 +2323,7 @@ def apply_inplace(
                 finish_thickness_mm=f_mm,
                 floor_type_id=cmd.floor_type_id,
                 room_bounded=cmd.room_bounded,
+                toposolid_elevation_mm=topo_elev,
             )
 
         case CreateRoofCmd():
@@ -4866,6 +4914,86 @@ def apply_inplace(
             for elem in list(els.values()):
                 if isinstance(elem, PlanViewElem) and elem.template_id == cmd.template_id:
                     els[elem.id] = elem.model_copy(update={"template_id": None})
+
+        # ------------------------------------------------------------------
+        # TOP-V3-01 — Toposolid handlers
+        # ------------------------------------------------------------------
+
+        case CreateToposolidCmd():
+            tid = cmd.toposolid_id
+            if tid in els:
+                raise ValueError(f"createToposolid: element '{tid}' already exists")
+            if len(cmd.boundary_mm) < 3:
+                raise ValueError(
+                    "createToposolid.boundaryMm requires at least 3 boundary points"
+                )
+            if cmd.height_samples and cmd.heightmap_grid_mm is not None:
+                raise ValueError(
+                    "createToposolid: supply heightSamples or heightmapGridMm, not both"
+                )
+            from bim_ai.elements import HeightSample, HeightmapGrid, Vec2Mm as _Vec2Mm
+
+            boundary = [_Vec2Mm(**pt) for pt in cmd.boundary_mm]
+            samples = [HeightSample(**s) for s in cmd.height_samples]
+            grid = HeightmapGrid(**cmd.heightmap_grid_mm) if cmd.heightmap_grid_mm else None
+            els[tid] = ToposolidElem(
+                kind="toposolid",
+                id=tid,
+                name=cmd.name,
+                boundaryMm=boundary,
+                heightSamples=samples,
+                heightmapGridMm=grid,
+                thicknessMm=cmd.thickness_mm,
+                baseElevationMm=cmd.base_elevation_mm,
+                defaultMaterialKey=cmd.default_material_key,
+            )
+
+        case UpdateToposolidCmd():
+            existing = els.get(cmd.toposolid_id)
+            if not isinstance(existing, ToposolidElem):
+                raise ValueError(
+                    f"updateToposolid: no toposolid element with id '{cmd.toposolid_id}'"
+                )
+            patch: dict[str, object] = {}
+            if cmd.name is not None:
+                patch["name"] = cmd.name
+            if cmd.thickness_mm is not None:
+                patch["thickness_mm"] = cmd.thickness_mm
+            if cmd.base_elevation_mm is not None:
+                patch["base_elevation_mm"] = cmd.base_elevation_mm
+            if cmd.default_material_key is not None:
+                patch["default_material_key"] = cmd.default_material_key
+            if cmd.pinned is not None:
+                patch["pinned"] = cmd.pinned
+            els[cmd.toposolid_id] = existing.model_copy(update=patch)
+
+        case DeleteToposolidCmd():
+            existing = els.get(cmd.toposolid_id)
+            if not isinstance(existing, ToposolidElem):
+                raise ValueError(
+                    f"deleteToposolid: no toposolid element with id '{cmd.toposolid_id}'"
+                )
+            # Warn if any floor element's host_id points to this toposolid
+            hosted_floors = [
+                eid
+                for eid, el in els.items()
+                if isinstance(el, FloorElem)
+                and getattr(el, "host_id", None) == cmd.toposolid_id
+            ]
+            if hosted_floors:
+                dev_id = new_id()
+                els[dev_id] = AgentDeviationElem(
+                    kind="agent_deviation",
+                    id=dev_id,
+                    statement=(
+                        f"Toposolid '{cmd.toposolid_id}' deleted while "
+                        f"{len(hosted_floors)} floor(s) reference it as host "
+                        f"({', '.join(hosted_floors)}). Floors may lose elevation reference."
+                    ),
+                    severity="warning",
+                    related_element_ids=[cmd.toposolid_id, *hosted_floors],
+                )
+            del els[cmd.toposolid_id]
 
     # KRN-08: areas track a derived computedAreaSqMm. Recompute after every
     # command apply so create/update/delete of areas (and shafts that affect

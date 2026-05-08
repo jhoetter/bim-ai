@@ -1429,6 +1429,49 @@ async function main() {
       return;
     }
 
+    if (cmd === 'toposolid') {
+      const sub = argv[0];
+      if (sub === 'create') {
+        if (!modelId) usage();
+        let boundary, thickness, name;
+        const rest = argv.slice(1);
+        for (let i = 0; i < rest.length; i++) {
+          if (rest[i] === '--boundary') boundary = rest[++i];
+          else if (rest[i] === '--thickness') thickness = Number(rest[++i]);
+          else if (rest[i] === '--name') name = rest[++i];
+        }
+        if (!boundary) { console.error('toposolid create: --boundary <json> required'); process.exit(1); }
+        const boundaryMm = JSON.parse(boundary);
+        const payload = { type: 'CreateToposolid', toposolidId: `topo-${Date.now()}`, boundaryMm, thicknessMm: thickness ?? 1500 };
+        if (name !== undefined) payload.name = name;
+        await commit(modelId, payload);
+        return;
+      }
+      if (sub === 'update') {
+        if (!modelId) usage();
+        const id = argv[1];
+        if (!id) { console.error('toposolid update: <id> required'); process.exit(1); }
+        const rest = argv.slice(2);
+        const payload = { type: 'UpdateToposolid', toposolidId: id };
+        for (let i = 0; i < rest.length; i++) {
+          if (rest[i] === '--boundary') payload.boundaryMm = JSON.parse(rest[++i]);
+          else if (rest[i] === '--thickness') payload.thicknessMm = Number(rest[++i]);
+          else if (rest[i] === '--name') payload.name = rest[++i];
+        }
+        await commit(modelId, payload);
+        return;
+      }
+      if (sub === 'delete') {
+        if (!modelId) usage();
+        const id = argv[1];
+        if (!id) { console.error('toposolid delete: <id> required'); process.exit(1); }
+        await commit(modelId, { type: 'DeleteToposolid', toposolidId: id });
+        return;
+      }
+      console.error(`Unknown toposolid subcommand: ${sub ?? '(none)'}. Use create, update, or delete.`);
+      process.exit(1);
+    }
+
     if (cmd === 'jobs') {
       const sub = argv[1];
       if (sub === 'submit') {

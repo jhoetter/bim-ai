@@ -1,4 +1,36 @@
+// ---------------------------------------------------------------------------
+// TOP-V3-01 — Toposolid primitive types
+// ---------------------------------------------------------------------------
+
+export type BoundaryPoint = { xMm: number; yMm: number };
+
+export type HeightSample = { xMm: number; yMm: number; zMm: number };
+
+export type HeightmapGrid = {
+  stepMm: number;
+  rows: number;
+  cols: number;
+  values: number[];
+};
+
+export type ToposolidElem = {
+  kind: 'toposolid';
+  id: string;
+  name?: string;
+  boundaryMm: BoundaryPoint[];
+  heightSamples?: HeightSample[];
+  heightmapGridMm?: HeightmapGrid;
+  thicknessMm: number;
+  baseElevationMm?: number;
+  defaultMaterialKey?: string;
+  pinned?: boolean;
+  phaseCreated?: string;
+  phaseDemolished?: string;
+  discipline?: string;
+};
+
 export type ElemKind =
+  | 'toposolid'
   | 'project_settings'
   | 'room_color_scheme'
   | 'wall_type'
@@ -1553,7 +1585,8 @@ export type Element =
       animationRange?: { startIso: string; endIso: string; intervalMinutes: number } | null;
       daylightSavingStrategy: 'auto' | 'on' | 'off';
     }
-  | View;
+  | View
+  | ToposolidElem;
 
 export type Violation = {
   ruleId: string;

@@ -2018,6 +2018,47 @@ class RemoveViewBreakCmd(BaseModel):
     axis_mm: float = Field(alias="axisMM")
 
 
+# ---------------------------------------------------------------------------
+# TOP-V3-01 — Toposolid commands
+# ---------------------------------------------------------------------------
+
+
+class CreateToposolidCmd(BaseModel):
+    """TOP-V3-01 — create a terrain solid from a closed boundary and height data."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["CreateToposolid"] = "CreateToposolid"
+    toposolid_id: str = Field(alias="toposolidId")
+    name: str | None = None
+    boundary_mm: list[dict] = Field(alias="boundaryMm")
+    height_samples: list[dict] = Field(default_factory=list, alias="heightSamples")
+    heightmap_grid_mm: dict | None = Field(default=None, alias="heightmapGridMm")
+    thickness_mm: float = Field(default=1500.0, alias="thicknessMm")
+    base_elevation_mm: float | None = Field(default=None, alias="baseElevationMm")
+    default_material_key: str | None = Field(default=None, alias="defaultMaterialKey")
+
+
+class UpdateToposolidCmd(BaseModel):
+    """TOP-V3-01 — patch fields on an existing toposolid."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["UpdateToposolid"] = "UpdateToposolid"
+    toposolid_id: str = Field(alias="toposolidId")
+    name: str | None = None
+    thickness_mm: float | None = Field(default=None, alias="thicknessMm")
+    base_elevation_mm: float | None = Field(default=None, alias="baseElevationMm")
+    default_material_key: str | None = Field(default=None, alias="defaultMaterialKey")
+    pinned: bool | None = None
+
+
+class DeleteToposolidCmd(BaseModel):
+    """TOP-V3-01 — delete a toposolid; emits a warning if floors are hosted on it."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["DeleteToposolid"] = "DeleteToposolid"
+    toposolid_id: str = Field(alias="toposolidId")
+
+
 Command = Annotated[
     CreateLevelCmd
     | CreateWallCmd
@@ -2178,6 +2219,9 @@ Command = Annotated[
     | UpdateViewTemplateCmd
     | ApplyViewTemplateCmd
     | UnbindViewTemplateCmd
-    | DeleteViewTemplateCmd,
+    | DeleteViewTemplateCmd
+    | CreateToposolidCmd
+    | UpdateToposolidCmd
+    | DeleteToposolidCmd,
     Field(discriminator="type"),
 ]

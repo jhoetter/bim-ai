@@ -34,6 +34,7 @@ from bim_ai.elements import (
     SlabOpeningElem,
     StairElem,
     Vec2Mm,
+    ToposolidElem,
     WallElem,
     WindowElem,
 )
@@ -3135,6 +3136,36 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
                 layer_set_display_name=f"kernel_slab:{fid}",
                 material_by_key_cache=material_by_key_cache,
             )
+
+    for tid in sorted(eid for eid, e in doc.elements.items() if isinstance(e, ToposolidElem)):
+        topo = doc.elements[tid]
+        assert isinstance(topo, ToposolidElem)
+        pts_xy = [(p.x_mm / 1000.0, p.y_mm / 1000.0) for p in topo.boundary_mm]
+        if len(pts_xy) < 3:
+            continue
+        base_z_m = (topo.base_elevation_mm or 0.0) / 1000.0
+        thick_m = topo.thickness_mm / 1000.0
+        cx_m = sum(p[0] for p in pts_xy) / len(pts_xy)
+        cy_m = sum(p[1] for p in pts_xy) / len(pts_xy)
+        profile = [(x - cx_m, y - cy_m) for x, y in pts_xy]
+        profile.append(profile[0])
+        geo_ent = ifcopenshell.api.root.create_entity(
+            f, ifc_class="IfcGeographicElement", name=getattr(topo, "name", None) or tid
+        )
+        if hasattr(geo_ent, "PredefinedType"):
+            geo_ent.PredefinedType = "TERRAIN"
+        rep = add_slab_representation(f, body_ctx, depth=thick_m, polyline=profile)
+        mat = np.eye(4, dtype=float)
+        mat[0, 3] = cx_m
+        mat[1, 3] = cy_m
+        mat[2, 3] = base_z_m - thick_m / 2.0
+        edit_object_placement(f, product=geo_ent, matrix=mat)
+        assign_representation(f, geo_ent, rep)
+        ifcopenshell.api.spatial.assign_container(
+            f, products=[geo_ent], relating_structure=default_storey_tag
+        )
+        geo_products += 1
+
 
     panel_thickness = 0.06
 
