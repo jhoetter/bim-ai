@@ -1,0 +1,25 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "494e2fb0747f",
+  "strategy": "manual-commit",
+  "branch": "feat/v3-vie-v3-02-drafting-callout",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/web/src/collab/ShareModal.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/49/4e2fb0747f/0/metadata.json",
+      "transcript": "/49/4e2fb0747f/0/full.jsonl",
+      "content_hash": "/49/4e2fb0747f/0/content_hash.txt",
+      "prompt": "/49/4e2fb0747f/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 4032,
+    "cache_creation_tokens": 138953,
+    "cache_read_tokens": 7316115,
+    "output_tokens": 47694,
+    "api_call_count": 64
+  }
+}
