@@ -2,22 +2,32 @@
   "cli_version": "0.6.0",
   "checkpoint_id": "24671c1362de",
   "strategy": "manual-commit",
-  "branch": "feat/v3-top-v3-01-toposolid",
-  "checkpoints_count": 1,
-  "files_touched": null,
+  "branch": "feat/v3-img-v3-01-image-to-layout",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "app/bim_ai/constraints.py",
+    "app/bim_ai/export_ifc.py",
+    "app/bim_ai/site/toposolid.py"
+  ],
   "sessions": [
     {
       "metadata": "/24/671c1362de/0/metadata.json",
       "transcript": "/24/671c1362de/0/full.jsonl",
       "content_hash": "/24/671c1362de/0/content_hash.txt",
       "prompt": "/24/671c1362de/0/prompt.txt"
+    },
+    {
+      "metadata": "/24/671c1362de/1/metadata.json",
+      "transcript": "/24/671c1362de/1/full.jsonl",
+      "content_hash": "/24/671c1362de/1/content_hash.txt",
+      "prompt": "/24/671c1362de/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 248,
-    "cache_creation_tokens": 140344,
-    "cache_read_tokens": 13288401,
-    "output_tokens": 63209,
-    "api_call_count": 152
+    "input_tokens": 592,
+    "cache_creation_tokens": 383714,
+    "cache_read_tokens": 38916831,
+    "output_tokens": 141504,
+    "api_call_count": 438
   }
 }

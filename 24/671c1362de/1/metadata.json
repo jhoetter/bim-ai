@@ -1,0 +1,36 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "24671c1362de",
+  "session_id": "bd193bad-cebf-4836-9316-a50e56e29b41",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T19:38:45.796572Z",
+  "branch": "feat/v3-img-v3-01-image-to-layout",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "app/bim_ai/constraints.py",
+    "app/bim_ai/site/toposolid.py",
+    "app/bim_ai/export_ifc.py"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "52fa7d148e15",
+  "token_usage": {
+    "input_tokens": 344,
+    "cache_creation_tokens": 243370,
+    "cache_read_tokens": 25628430,
+    "output_tokens": 78295,
+    "api_call_count": 286
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-08T19:38:45.762473Z",
+    "agent_lines": 123,
+    "agent_removed": 0,
+    "human_added": 393,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 516,
+    "total_lines_changed": 516,
+    "agent_percentage": 23.837209302325583,
+    "metric_version": 2
+  }
+}
