@@ -103,22 +103,15 @@ export type ElemKind =
   | 'soffit'
   | 'sun_settings'
   | 'view'
-  | 'soffit'
   | 'edge_profile_run'
   | 'roof_join'
   | 'asset_library_entry'
-  | 'placed_asset';
-
-export type PhaseFilter = 'all' | 'existing' | 'demolition' | 'new';
-
-// DSC-V3-01 — discipline tag
-  | 'toposolid'
+  | 'placed_asset'
   | 'brace'
   | 'foundation'
   | 'duct'
   | 'pipe'
-  | 'fixture'
-  | 'view';
+  | 'fixture';
 
 export type PhaseFilter = 'all' | 'existing' | 'demolition' | 'new';
 
@@ -143,8 +136,6 @@ export const DEFAULT_DISCIPLINE_BY_KIND: Readonly<Partial<Record<ElemKind, Disci
   beam: 'struct',
   soffit: 'arch',
   toposolid: 'arch',
-  column: 'struct',
-  beam: 'struct',
   brace: 'struct',
   foundation: 'struct',
   duct: 'mep',
@@ -171,28 +162,6 @@ export type ViewBreak = {
   axisMM: number;
   widthMM: number;
 };
-
-/** TOP-V3-01 — terrain solid (toposolid) primitive.
- * NOTE: Toposolid type added here as placeholder; TOP-V3-01 full impl will be added when that WP merges.
- */
-export type BoundaryPoint = { xMm: number; yMm: number };
-export type HeightSample = { xMm: number; yMm: number; zMm: number };
-export type HeightmapGrid = { stepMm: number; rows: number; cols: number; values: number[] };
-export type Toposolid = {
-  kind: 'toposolid';
-  id: string;
-  name?: string;
-  boundaryMm: BoundaryPoint[];
-  heightSamples?: HeightSample[];
-  heightmapGridMm?: HeightmapGrid;
-  thicknessMm: number;
-  baseElevationMm?: number;
-  defaultMaterialKey?: string;
-  pinned?: boolean;
-  /** DSC-V3-01: discipline tag. */
-  discipline?: DisciplineTag | null;
-};
-
 
 /** VIE-V3-02 — Unified view element for drafting views, callouts, and 2D detailing. */
 export type View = {
@@ -1703,7 +1672,7 @@ export type Element =
       daylightSavingStrategy: 'auto' | 'on' | 'off';
     }
   | View
-  | ToposolidElem;
+  | ToposolidElem
   | AssetLibraryEntryElem
   | PlacedAssetElem;
 
