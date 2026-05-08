@@ -11,7 +11,7 @@ from bim_ai.material_assembly_resolve import (
     resolved_layers_for_roof,
     resolved_layers_for_wall,
 )
-from bim_ai.material_catalog import resolve_material
+from bim_ai.material_catalog import ifc_standard_material_category, resolve_material
 from bim_ai.type_material_registry import material_display_label
 
 
@@ -70,11 +70,22 @@ def try_attach_kernel_ifc_single_material(
     try:
         mat_ent = material_by_key_cache.get(key)
         if mat_ent is None:
+            ifc_cat = ifc_standard_material_category(key)
             spec = resolve_material(key)
-            cat = str((spec.category if spec else "material"))[:64]
-            mat_ent = ifcopenshell.api.material.add_material(
-                f, name=str(key)[:126], category=cat
+            # IFC-04: prefer the IFC4-standard category ("Wood", "Concrete",
+            # "Glass" …); fall back to the raw MAT-01 token only when the
+            # mapping is unknown so legacy clients still see *something*.
+            cat = (
+                str(ifc_cat)[:64]
+                if ifc_cat is not None
+                else str(spec.category)[:64]
+                if spec is not None
+                else None
             )
+            kwargs: dict[str, Any] = {"name": str(key)[:126]}
+            if cat is not None:
+                kwargs["category"] = cat
+            mat_ent = ifcopenshell.api.material.add_material(f, **kwargs)
             _try_attach_material_pset(f, mat_ent, key)
             material_by_key_cache[key] = mat_ent
         ifcopenshell.api.material.assign_material(
@@ -129,7 +140,13 @@ def try_attach_kernel_ifc_material_layer_set(
             mtok = _kernel_ifc_material_name_for_layer_export(lyr)
             idx += 1
             cache_key = mtok if mtok else f"__bim_ai_idx_{idx}"
-            cat = str(lyr.get("function") or "layer").strip() or "layer"
+            # IFC-04: when the layer's `materialKey` resolves to a MAT-01
+            # spec we map its category to the IFC4-standard string for
+            # IfcMaterial.Category; fall back to the layer function only
+            # when the material is unknown so legacy categories still ship.
+            mat_key_raw = str(lyr.get("materialKey") or "").strip()
+            ifc_cat = ifc_standard_material_category(mat_key_raw) if mat_key_raw else None
+            cat = ifc_cat or (str(lyr.get("function") or "layer").strip() or "layer")
             mat_ent = material_by_key_cache.get(cache_key)
             if mat_ent is None:
                 mat_ent = ifcopenshell.api.material.add_material(

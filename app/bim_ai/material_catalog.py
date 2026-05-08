@@ -377,6 +377,42 @@ def list_materials() -> tuple[MaterialPbrSpec, ...]:
     return _MATERIALS
 
 
+# IFC-04: MAT-01 `category` → IFC4 standard `IfcMaterial.Category` string.
+# IFC4 schema material categories per buildingSMART are informally defined
+# (e.g. "Concrete", "Steel", "Wood", "Glass", "Masonry", "Stone", "Metal",
+# "Gypsum"); this table maps the bim-ai MAT-01 taxonomy onto them so the
+# exported IfcMaterial.Category survives third-party round-trips.
+_MATERIAL_CATEGORY_TO_IFC: dict[MaterialCategoryKind, str] = {
+    "timber": "Wood",
+    "concrete": "Concrete",
+    "metal": "Metal",
+    "metal_roof": "Metal",
+    "glass": "Glass",
+    "brick": "Masonry",
+    "stone": "Stone",
+    "plaster": "Gypsum",
+    "render": "Render",
+    "cladding": "Cladding",
+    "membrane": "Membrane",
+    # `placeholder` and `air` intentionally have no IFC-standard mapping —
+    # they're authoring placeholders, not buildable materials.
+}
+
+
+def ifc_standard_material_category(material_key: str | None) -> str | None:
+    """IFC-04: map a MAT-01 `material_key` to its IFC4-standard
+    `IfcMaterial.Category` string (e.g. ``"Wood"``, ``"Concrete"``,
+    ``"Glass"``, ``"Masonry"``). Returns ``None`` when the key is
+    unknown or maps to a non-buildable MAT-01 category
+    (``placeholder`` / ``air``).
+    """
+
+    spec = resolve_material(material_key)
+    if spec is None:
+        return None
+    return _MATERIAL_CATEGORY_TO_IFC.get(spec.category)
+
+
 def material_base_color(material_key: str | None) -> str:
     """Cheap base-colour lookup; falls back to neutral grey."""
 
