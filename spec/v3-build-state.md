@@ -1,6 +1,6 @@
 # v3 Build State
 
-Last updated: 2026-05-08 (wave-3 complete: 8 WPs merged; ~22/63 done)
+Last updated: 2026-05-08 (wave-4 complete: 8 WPs merged; ~30/63 done)
 Active heavy workers: 0 / 8
 
 ## Merged so far
@@ -45,18 +45,32 @@ Active heavy workers: 0 / 8
 - **CQ-04 god-file split** — high merge-conflict risk; schedule for quiet window.
 - **CQ-03 workspace reorg** — riskiest CQ item; dedicated quiet week.
 
-## Wave-4 (prompt files written — ready to dispatch)
+## Wave-4 merged
 
-| WP-ID | Prompt | WP | Theme | Effort | Dep |
-| ----- | ------ | -- | ----- | ------ | --- |
-| WP-024 | spec/v3-prompts/wp-024.md | KRN-V3-04 Design Options | T1 kernel | L | KRN-V3-01 ✓ |
-| WP-025 | spec/v3-prompts/wp-025.md | KRN-V3-08 Wall sweeps & reveals | T1 kernel | M | KRN-V3-03 ✓ |
-| WP-026 | spec/v3-prompts/wp-026.md | MRK-V3-01 3D-anchored comments | T3 collab | L | COL-V3-01 ✓ |
-| WP-027 | spec/v3-prompts/wp-027.md | VER-V3-01 Activity stream | T3 collab | L | COL-V3-01 ✓ |
-| WP-028 | spec/v3-prompts/wp-028.md | CHR-V3-04+EDT-V3-03 Cmd+K palette | Chrome/T2 | M | none |
-| WP-029 | spec/v3-prompts/wp-029.md | VIE-V3-01 Detail-level rendering | T4 docs | M | none |
-| WP-030 | spec/v3-prompts/wp-030.md | COL-V3-02 Permission tiers | T3 collab | M | COL-V3-01 ✓ |
-| WP-031 | spec/v3-prompts/wp-031.md | EDT-V3-11 Phase-filter as lens | T2 UX | M | KRN-V3-01 ✓ |
+| WP-ID | WP | Merged at | Commit |
+| ----- | -- | --------- | ------ |
+| WP-024 | KRN-V3-04 Design Options | 2026-05-08 | a752a0dd |
+| WP-025 | KRN-V3-08 Wall sweeps & reveals (tests) | 2026-05-08 | 9513cd0b |
+| WP-026 | MRK-V3-01 3D-anchored comments | 2026-05-08 | a77639cd |
+| WP-027 | VER-V3-01 Activity stream | 2026-05-08 | 33f8a072 |
+| WP-028 | CHR-V3-04+EDT-V3-03 Cmd+K palette | 2026-05-08 | 68d147d8 |
+| WP-030 | COL-V3-02 Permission tiers | 2026-05-08 | 56933e37 |
+| WP-031 | EDT-V3-11 Phase-filter as lens | 2026-05-08 | 45eff78b |
+
+Note: WP-029 (VIE-V3-01 detail-level rendering) worker did not push a branch — prompt file exists at spec/v3-prompts/wp-029.md; reschedule next wave.
+
+## Next wave (8 slots free)
+
+Wave-5 candidates:
+
+1. **VIE-V3-01** detail-level rendering completion (prompt ready — WP-029)
+2. **VER-V3-02** named milestones (Cmd+S snapshot) — dep VER-V3-01 ✓
+3. **MRK-V3-02** plan + 3D markups — dep MRK-V3-01 ✓
+4. **COL-V3-03** shareable public link — dep COL-V3-02 ✓
+5. **OPT-V3-01** design options agent scratch — dep KRN-V3-04 ✓ CMD-V3-01 ✓
+6. **KRN-V3-04 follow-on** — KRN-V3-12 cut profile (no deps, S)
+7. **CHR-V3-05** activity-stream drawer — dep VER-V3-01 ✓
+8. **VIE-V3-02** drafting view + callout bundle
 
 ## Notes
 
