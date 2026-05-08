@@ -2,7 +2,7 @@
   "cli_version": "0.6.0",
   "checkpoint_id": "78ead08c6cc0",
   "strategy": "manual-commit",
-  "branch": "feat/v3-krn-v3-03-multi-roof",
+  "branch": "feat/v3-chr-v3-02-workspace-switcher",
   "checkpoints_count": 1,
   "files_touched": [
     "app/bim_ai/commands.py",
@@ -60,13 +60,19 @@
       "transcript": "/78/ead08c6cc0/6/full.jsonl",
       "content_hash": "/78/ead08c6cc0/6/content_hash.txt",
       "prompt": "/78/ead08c6cc0/6/prompt.txt"
+    },
+    {
+      "metadata": "/78/ead08c6cc0/7/metadata.json",
+      "transcript": "/78/ead08c6cc0/7/full.jsonl",
+      "content_hash": "/78/ead08c6cc0/7/content_hash.txt",
+      "prompt": "/78/ead08c6cc0/7/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 1784,
-    "cache_creation_tokens": 560728,
-    "cache_read_tokens": 29641083,
-    "output_tokens": 192585,
-    "api_call_count": 384
+    "input_tokens": 1835,
+    "cache_creation_tokens": 667995,
+    "cache_read_tokens": 33202946,
+    "output_tokens": 227209,
+    "api_call_count": 431
   }
 }
