@@ -3,7 +3,7 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 from uuid import UUID
 
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI, Query, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 
 from bim_ai.config import get_settings
@@ -35,6 +35,10 @@ app.include_router(api_router)
 
 
 @app.websocket("/ws/{model_id}")
-async def websocket_endpoint(websocket: WebSocket, model_id: UUID):
+async def websocket_endpoint(
+    websocket: WebSocket,
+    model_id: UUID,
+    resumeFrom: int | None = Query(default=None),
+):
     hub: Hub = websocket.app.state.hub
-    await websocket_loop(websocket, model_id, hub)
+    await websocket_loop(websocket, model_id, hub, resume_from=resumeFrom)
