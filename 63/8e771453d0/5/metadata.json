@@ -1,0 +1,36 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "638e771453d0",
+  "session_id": "ad8cbe45-3671-4c7b-9e5a-4424117b1d75",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T14:29:52.538737Z",
+  "branch": "feat/v3-krn-v3-01-phasing",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "claude-skills/watch-yt/watch_yt.py"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "e720c66eb3ab",
+  "checkpoint_transcript_start": 1370,
+  "transcript_lines_at_start": 1370,
+  "token_usage": {
+    "input_tokens": 3,
+    "cache_creation_tokens": 883,
+    "cache_read_tokens": 419020,
+    "output_tokens": 543,
+    "api_call_count": 3
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-08T14:29:52.513192Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 44,
+    "human_modified": 47,
+    "human_removed": 0,
+    "total_committed": 44,
+    "total_lines_changed": 91,
+    "agent_percentage": 0,
+    "metric_version": 2
+  }
+}
