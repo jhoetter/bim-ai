@@ -1,0 +1,7 @@
+i want that you add a claude skill that uses a tiny python script which is used to describe by timestamps what is shown in a YT video. you can use google gemini for this, as an env variable i got REDACTED for the GEMINI KEY (put that into an .env and also add to @.env.example that this is precisly for a small skill addition for claude, such that it can also watch videos; i am aware that putting secret keys in here isnt good practice, but it is a sample, dont worry. test out if it works e.g. with this one: https://www.youtube.com/watch?v=fvR4KB_XIdk.
+
+in the future, i want that i can tell you (claude) to watch a video and you will then use that skill to call the mini yt-skill where gemini watched the video for you and tells you by timestamp what is going on in a granular level
+
+---
+
+perfect, can you commit + push and merge into main?
