@@ -1,0 +1,52 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "c8031277aab0",
+  "session_id": "7a396982-982c-4067-9376-aabaec1874b7",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T06:15:23.739969Z",
+  "branch": "feat/wave-04-edt-05-snap-extra",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/plan/SnapGlyphLayer.tsx",
+    "packages/web/src/plan/SnapSettingsToolbar.tsx",
+    "packages/web/src/plan/snapEngine.test.ts",
+    "packages/web/src/plan/snapEngine.ts",
+    "packages/web/src/plan/snapSettings.test.ts",
+    "packages/web/src/plan/snapSettings.ts",
+    "packages/web/src/plan/snapTabCycle.test.ts",
+    "packages/web/src/plan/snapTabCycle.ts",
+    "packages/web/src/viewport/grip3d.test.ts",
+    "spec/workpackage-master-tracker.md"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-opus-4-7",
+  "turn_id": "65c850ce3ed1",
+  "token_usage": {
+    "input_tokens": 128,
+    "cache_creation_tokens": 210038,
+    "cache_read_tokens": 13081426,
+    "output_tokens": 66543,
+    "api_call_count": 118
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-08T06:15:23.724013Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 608,
+    "human_modified": 34,
+    "human_removed": 0,
+    "total_committed": 608,
+    "total_lines_changed": 642,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}
