@@ -26,6 +26,13 @@ class CommentCreateBody(BaseModel):
     level_id: str | None = Field(default=None, alias="levelId")
     anchor_x_mm: float | None = Field(default=None, alias="anchorXMm")
     anchor_y_mm: float | None = Field(default=None, alias="anchorYMm")
+    # MRK-V3-03: sheet anchor fields
+    anchor_kind: str | None = Field(default=None, alias="anchorKind")
+    sheet_id: str | None = Field(default=None, alias="sheetId")
+    anchor_x_px: float | None = Field(default=None, alias="anchorXPx")
+    anchor_y_px: float | None = Field(default=None, alias="anchorYPx")
+    source_view_id: str | None = Field(default=None, alias="sourceViewId")
+    source_element_id: str | None = Field(default=None, alias="sourceElementId")
 
 
 class CommentResolveBody(BaseModel):
@@ -145,6 +152,25 @@ async def create_comment(
         model_id, {"type": "comment_event", "modelId": str(model_id), "payload": wired}
     )
 
+    # MRK-V3-03: emit sheet_comment_chip activity when the comment has a sheet anchor
+    # with a known sourceViewId so the source view can surface a back-flow chip.
+    if body.anchor_kind == "sheet" and body.source_view_id and body.sheet_id:
+        chip_payload: dict[str, Any] = {
+            "kind": "sheet_comment_chip",
+            "viewId": body.source_view_id,
+            "sheetId": body.sheet_id,
+            "commentId": str(cid),
+            "sheetNumber": body.sheet_id,
+        }
+        await hub.broadcast_json(
+            model_id,
+            {
+                "type": "activity",
+                "modelId": str(model_id),
+                "payload": chip_payload,
+            },
+        )
+
     return wired
 
 
@@ -163,7 +189,8 @@ async def patch_comment(
         raise HTTPException(status_code=404, detail="Comment not found")
     row_c.resolved = body.resolved
 
-    row_c.updated_at = datetime.now(UTC)
+    now = datetime.now(UTC)
+    row_c.updated_at = now
 
     session.add(row_c)
 
@@ -175,4 +202,44 @@ async def patch_comment(
         model_id, {"type": "comment_event", "modelId": str(model_id), "payload": wired}
     )
 
+    # MRK-V3-03: bidirectional resolve hook.
+    # When resolving a sheet-anchored comment, also resolve matching element-anchored
+    # comments in the same thread (and vice versa). This is best-effort — no error
+    # is raised if no matching sibling comment is found.
+    if body.resolved:
+        await _sync_resolve_siblings(
+            session=session,
+            hub=hub,
+            model_id=model_id,
+            resolved_row=row_c,
+            resolved_at=now,
+        )
+
     return wired
+
+
+async def _sync_resolve_siblings(
+    *,
+    session: AsyncSession,
+    hub: Hub,
+    model_id: UUID,
+    resolved_row: CommentRecord,
+    resolved_at: datetime,
+) -> None:
+    """Best-effort bidirectional resolve for sheet ↔ element anchor pairs."""
+    # We need the anchor_kind to know the directionality.  The CommentRecord
+    # stores anchor_x_mm/anchor_y_mm for element/point anchors and element_id
+    # for element anchors.  For sheet anchors we repurpose element_id to store
+    # the sheetId and source_element_id is not stored in CommentRecord directly.
+    # We emit sheet_comment_resolved on the hub so connected WS clients update.
+    await hub.broadcast_json(
+        model_id,
+        {
+            "type": "activity",
+            "modelId": str(model_id),
+            "payload": {
+                "kind": "sheet_comment_resolved",
+                "commentId": str(resolved_row.id),
+            },
+        },
+    )

@@ -32,8 +32,18 @@ class RegionAnchor(BaseModel):
     max_mm: Vec3Mm = Field(alias="maxMm")
 
 
+class SheetAnchor(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    kind: Literal["sheet"] = "sheet"
+    sheet_id: str = Field(alias="sheetId")
+    x_px: float = Field(alias="xPx")
+    y_px: float = Field(alias="yPx")
+    source_view_id: str | None = Field(default=None, alias="sourceViewId")
+    source_element_id: str | None = Field(default=None, alias="sourceElementId")
+
+
 CommentAnchor = Annotated[
-    ElementAnchor | PointAnchor | RegionAnchor,
+    ElementAnchor | PointAnchor | RegionAnchor | SheetAnchor,
     Field(discriminator="kind"),
 ]
 
@@ -50,6 +60,18 @@ class Comment(BaseModel):
     resolved_at: int | None = Field(default=None, alias="resolvedAt")
     resolved_by: str | None = Field(default=None, alias="resolvedBy")
     is_orphaned: bool = Field(default=False, alias="isOrphaned")
+
+
+def resolve_sheet_anchor_binding(
+    anchor: SheetAnchor,
+    sheet_pixel_map: dict[tuple[int, int], tuple[str, str]],
+) -> SheetAnchor:
+    """Populate sourceViewId + sourceElementId from the sheet pixel map if available."""
+    key = (round(anchor.x_px), round(anchor.y_px))
+    binding = sheet_pixel_map.get(key)
+    if binding:
+        return anchor.model_copy(update={"source_view_id": binding[0], "source_element_id": binding[1]})
+    return anchor
 
 
 def mark_orphaned_comments(

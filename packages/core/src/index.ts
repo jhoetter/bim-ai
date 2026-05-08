@@ -2031,7 +2031,15 @@ export type ElementAnchor = {
 };
 export type PointAnchor = { kind: 'point'; worldMm: Vec3Mm };
 export type RegionAnchor = { kind: 'region'; minMm: Vec3Mm; maxMm: Vec3Mm };
-export type CommentAnchor = ElementAnchor | PointAnchor | RegionAnchor;
+export type SheetAnchor = {
+  kind: 'sheet';
+  sheetId: string;
+  xPx: number;
+  yPx: number;
+  sourceViewId?: string;
+  sourceElementId?: string;
+};
+export type CommentAnchor = ElementAnchor | PointAnchor | RegionAnchor | SheetAnchor;
 
 export type Comment = {
   id: string;
@@ -2113,7 +2121,8 @@ export type ActivityRow = {
     | 'milestone_created'
     | 'option_set_lifecycle'
     | 'collab_join'
-    | 'collab_leave';
+    | 'collab_leave'
+    | 'sheet_comment_chip';
   payload: Record<string, unknown>;
   ts: number;
   parentSnapshotId?: string;
