@@ -3,8 +3,10 @@
   "checkpoint_id": "7f3d5d0d54c4",
   "strategy": "manual-commit",
   "branch": "feat/v3-cq-01-ws-robustness",
-  "checkpoints_count": 3,
-  "files_touched": null,
+  "checkpoints_count": 4,
+  "files_touched": [
+    "packages/web/src/workspace/TopBar.test.tsx"
+  ],
   "sessions": [
     {
       "metadata": "/7f/3d5d0d54c4/0/metadata.json",
@@ -23,13 +25,19 @@
       "transcript": "/7f/3d5d0d54c4/2/full.jsonl",
       "content_hash": "/7f/3d5d0d54c4/2/content_hash.txt",
       "prompt": "/7f/3d5d0d54c4/2/prompt.txt"
+    },
+    {
+      "metadata": "/7f/3d5d0d54c4/3/metadata.json",
+      "transcript": "/7f/3d5d0d54c4/3/full.jsonl",
+      "content_hash": "/7f/3d5d0d54c4/3/content_hash.txt",
+      "prompt": "/7f/3d5d0d54c4/3/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 1652,
-    "cache_creation_tokens": 351975,
-    "cache_read_tokens": 21815790,
-    "output_tokens": 132026,
-    "api_call_count": 260
+    "input_tokens": 1677,
+    "cache_creation_tokens": 401637,
+    "cache_read_tokens": 22787527,
+    "output_tokens": 149718,
+    "api_call_count": 281
   }
 }
