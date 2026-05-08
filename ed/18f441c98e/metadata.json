@@ -3,7 +3,7 @@
   "checkpoint_id": "ed18f441c98e",
   "strategy": "manual-commit",
   "branch": "feat/v3-edt-v3-06-helper-dims",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": null,
   "sessions": [
     {
@@ -17,13 +17,19 @@
       "transcript": "/ed/18f441c98e/1/full.jsonl",
       "content_hash": "/ed/18f441c98e/1/content_hash.txt",
       "prompt": "/ed/18f441c98e/1/prompt.txt"
+    },
+    {
+      "metadata": "/ed/18f441c98e/2/metadata.json",
+      "transcript": "/ed/18f441c98e/2/full.jsonl",
+      "content_hash": "/ed/18f441c98e/2/content_hash.txt",
+      "prompt": "/ed/18f441c98e/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 135,
-    "cache_creation_tokens": 126498,
-    "cache_read_tokens": 13066858,
-    "output_tokens": 39221,
-    "api_call_count": 127
+    "input_tokens": 553,
+    "cache_creation_tokens": 909958,
+    "cache_read_tokens": 47767049,
+    "output_tokens": 261335,
+    "api_call_count": 481
   }
 }
