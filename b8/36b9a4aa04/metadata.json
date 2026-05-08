@@ -3,21 +3,29 @@
   "checkpoint_id": "b836b9a4aa04",
   "strategy": "manual-commit",
   "branch": "feat/v3-job-v3-01-jobs-panel",
-  "checkpoints_count": 1,
-  "files_touched": null,
+  "checkpoints_count": 2,
+  "files_touched": [
+    "packages/core/src/index.ts"
+  ],
   "sessions": [
     {
       "metadata": "/b8/36b9a4aa04/0/metadata.json",
       "transcript": "/b8/36b9a4aa04/0/full.jsonl",
       "content_hash": "/b8/36b9a4aa04/0/content_hash.txt",
       "prompt": "/b8/36b9a4aa04/0/prompt.txt"
+    },
+    {
+      "metadata": "/b8/36b9a4aa04/1/metadata.json",
+      "transcript": "/b8/36b9a4aa04/1/full.jsonl",
+      "content_hash": "/b8/36b9a4aa04/1/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
-    "input_tokens": 248,
-    "cache_creation_tokens": 140344,
-    "cache_read_tokens": 13288401,
-    "output_tokens": 63209,
-    "api_call_count": 152
+    "input_tokens": 439,
+    "cache_creation_tokens": 346109,
+    "cache_read_tokens": 29647799,
+    "output_tokens": 129124,
+    "api_call_count": 304
   }
 }
