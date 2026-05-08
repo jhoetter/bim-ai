@@ -297,18 +297,20 @@ export function buildOneFamilyHomeCommands() {
         { xMm: 0, yMm: D },
       ],
       roofGeometryMode: 'asymmetric_gable',
-      // Asymmetric proportions per spec/target-house-seed-vis.png: apex
-      // at 90% east, very low west eave, moderate east eave, shallow long
-      // west pitch + short steep east pitch. Tuned for a more horizontal
-      // upper-volume mass (UF 5000 wide × ~3950 tall to ridge — ratio
-      // 1.27:1 wider-than-tall, matching the sketch's profile).
-      // Slope sanity: ridge = 800 + 4500·tan(35°) = 800 + 3150 = 3950mm
-      // above level → 950mm above east eave (3000mm), so the east pitch
-      // doesn't degenerate. East pitch angle ≈ atan(950/500) = 62°.
-      ridgeOffsetTransverseMm: 2000,
-      eaveHeightLeftMm: 800,
-      eaveHeightRightMm: 3000,
-      slopeDeg: 35,
+      // Near-symmetric gable per spec/target-house-seed-vis.png — the
+      // line sketch shows a clean balanced pentagon, not the dramatic
+      // shed-vs-gable asymmetry the earlier text emphasised. Apex sits
+      // slightly east of centre (offset 500 of halfSpan 2500 = 60% east),
+      // both eaves at modest heights, both pitches at similar ~30°
+      // angles. UF 5000 wide × ~3231 tall to ridge → 1.55:1
+      // wider-than-tall (squat, sketch-like).
+      // Slope sanity: ridge = 1500 + 3000·tan(30°) = 1500 + 1731 = 3231
+      // above level → 931mm above east eave (2300), east pitch ≈
+      // atan(931/2000) = 25° (similar to west pitch 30°).
+      ridgeOffsetTransverseMm: 500,
+      eaveHeightLeftMm: 1500,
+      eaveHeightRightMm: 2300,
+      slopeDeg: 30,
       overhangMm: 0,
       materialKey: 'metal_standing_seam_dark_grey',
     },
@@ -422,11 +424,11 @@ export function buildOneFamilyHomeCommands() {
     },
 
     // Picture-frame outline (KRN-15 sweep) along the south-face gable
-    // pentagon — the signature design element from the line sketch.
-    // Path follows the new tuned proportions:
-    //   SW (0, 3000) → SE (5000, 3000) → E-eave (5000, 6000) →
-    //   ridge (4500, 6950) → W-eave (0, 3800) → SW (close).
-    // Profile 350×500 mm (uMm: ±175, vMm: ±250) reads as a chunky band.
+    // pentagon — signature design element from the line sketch.
+    // Path matches the new near-symmetric proportions:
+    //   SW (0, 3000) → SE (5000, 3000) → E-eave (5000, 5300) →
+    //   ridge (3000, 6231) → W-eave (0, 4500) → SW (close).
+    // Profile 350×600 mm (uMm: ±175, vMm: ±300) reads as a chunky band.
     {
       type: 'createSweep',
       id: 'hf-sw-frame',
@@ -435,9 +437,9 @@ export function buildOneFamilyHomeCommands() {
       pathMm: [
         { xMm: 0, yMm: 0, zMm: 3000 },
         { xMm: 5000, yMm: 0, zMm: 3000 },
-        { xMm: 5000, yMm: 0, zMm: 6000 },
-        { xMm: 4500, yMm: 0, zMm: 6950 },
-        { xMm: 0, yMm: 0, zMm: 3800 },
+        { xMm: 5000, yMm: 0, zMm: 5300 },
+        { xMm: 3000, yMm: 0, zMm: 6231 },
+        { xMm: 0, yMm: 0, zMm: 4500 },
         { xMm: 0, yMm: 0, zMm: 3000 },
       ],
       // Profile 350×600 mm: chunky enough to read as a substantial
@@ -722,34 +724,17 @@ export function buildOneFamilyHomeCommands() {
       balustradeHeightMm: 1100,
     },
 
-    // East-slope dormer (KRN-14). Cuts a rectangular notch in the
-    // asymmetric_gable's east slope. With ridge now at x=4500 the east
-    // slope has 500mm of plan extent — too narrow for a meaningful
-    // dormer footprint, so the dormer SPANS the ridge (centre at
-    // acrossRidge=1000 → x=3500), depth 2000 (so footprint x=2500..4500,
-    // entirely WEST of east edge). The CSG cut on the host roof creates
-    // a flat-topped notch reaching from mid-west-pitch to the ridge.
-    // Dormer floor sits at upper-floor level (z=3000), walls 2400mm.
-    {
-      type: 'createDormer',
-      id: 'hf-dormer-east',
-      name: 'East-slope dormer',
-      hostRoofId: 'hf-roof-main',
-      positionOnRoof: { alongRidgeMm: -1500, acrossRidgeMm: 1000 },
-      widthMm: 2400,
-      depthMm: 2000,
-      wallHeightMm: 2400,
-      dormerRoofKind: 'flat',
-      wallMaterialKey: 'white_render',
-    },
+    // No dormer cut. The earlier KRN-14 createDormer call carved a
+    // visible CSG hole through the main gable roof that the line
+    // sketch does NOT show — spec/target-house-seed.md was updated
+    // to retire the "massive rectangular dormer cut-out" wording.
+    // The deck connection is provided by sliding glass doors hosted
+    // on the upper-east wall (`hf-door-dormer` below); no roof
+    // modification is needed.
 
-    // Sliding glass doors hosted on the upper-east wall in the dormer
-    // cut footprint (Y centre 2500, width 2400 → alongT 0.16..0.46 of
-    // the 8000mm-tall east wall). These open onto the east roof
-    // terrace. Per dormerMesh: the dormer's "open face" is +X (toward
-    // deck) and the upper-volume's east wall serves as the dormer's
-    // back wall — so doors hosted on hf-w-uf-e in this Y range render
-    // through the dormer cavity onto the deck.
+    // Sliding glass doors hosted on the upper-east wall (alongT 0.31,
+    // width 2400) that open from the upper-floor interior onto the
+    // east roof terrace.
     {
       type: 'insertDoorOnWall',
       id: 'hf-door-dormer',
