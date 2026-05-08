@@ -1292,7 +1292,13 @@ export function makeRoofMassMesh(
     }),
   );
   mesh.userData.bimPickId = roof.id;
-  addEdges(mesh);
+  // Roof meshes are built from many triangles per pitch (asymmetric_gable
+  // alone produces 8+ tris). The default 15° edge threshold drew a line
+  // along every internal triangle boundary even when adjacent triangles
+  // were coplanar — making the roof look polygonal/faceted instead of
+  // smooth. Bump to 30° so only the genuine creases (ridge, eaves,
+  // gable-end vertices) get edge lines.
+  addEdges(mesh, 30);
 
   if (isStandingSeamMetalKey(roof.materialKey)) {
     addStandingSeamPattern(mesh, roof, b, eaveY);
@@ -1998,7 +2004,7 @@ export function makeRecessedWallMesh(
     const isRecessBack = perpMmOffset > 0;
     const boardMatSpec = isRecessBack ? wallMatSpec : null;
     if (boardMatSpec?.category === 'cladding') {
-      addCladdingBoards(box, segLen, height, halfThickM * 2, 150, 8, boardMatSpec.baseColor);
+      addCladdingBoards(box, segLen, height, halfThickM * 2, 250, 12, boardMatSpec.baseColor);
     }
     group.add(box);
   }
@@ -2108,7 +2114,10 @@ export function makeWallMesh(
   else if (wall.materialKey === 'white_cladding')
     addCladdingBoards(mesh, len, height, thick, 120, 10, '#f4f4f0');
   else if (wallMatSpec?.category === 'cladding')
-    addCladdingBoards(mesh, len, height, thick, 150, 8, wallMatSpec.baseColor);
+    // Pitch bumped 150 -> 250 mm so vertical board seams are visible
+    // from iso-zoom — at 150 they were too tight to read at far camera
+    // distance, leaving cladding walls looking like flat panels.
+    addCladdingBoards(mesh, len, height, thick, 250, 12, wallMatSpec.baseColor);
 
   // GAP-R5 — slab-edge expression strip: thin horizontal band straddling
   // the slab line at the base of every elevated single-thickness wall, so
