@@ -1,0 +1,5 @@
+please commit and push
+
+---
+
+please remove the home screen/new project thingy from the revit parity; i don't that right now, it will be that i will connect this to something "drive-like" where this is a bit like a google drive where i can create a new word file and then if i open a word file it uses that browser approach. same with saving, we rather have versioning, compare with @spec/workpackage-tracker-v3.md
