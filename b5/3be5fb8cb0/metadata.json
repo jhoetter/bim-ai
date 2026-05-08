@@ -2,7 +2,7 @@
   "cli_version": "0.6.0",
   "checkpoint_id": "b53be5fb8cb0",
   "strategy": "manual-commit",
-  "branch": "feat/v3-krn-v3-10-stair-subkinds",
+  "branch": "feat/v3-job-v3-01-jobs-panel",
   "checkpoints_count": 6,
   "files_touched": [
     "app/bim_ai/commands.py",
