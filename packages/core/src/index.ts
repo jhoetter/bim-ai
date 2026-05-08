@@ -164,23 +164,6 @@ export type ViewBreak = {
   widthMM: number;
 };
 
-/** TOP-V3-01 — terrain solid (toposolid) primitive. */
-export type BoundaryPoint = { xMm: number; yMm: number };
-export type HeightSample = { xMm: number; yMm: number; zMm: number };
-export type HeightmapGrid = { stepMm: number; rows: number; cols: number; values: number[] };
-export type Toposolid = {
-  kind: 'toposolid';
-  id: string;
-  name?: string;
-  boundaryMm: BoundaryPoint[];
-  heightSamples?: HeightSample[];
-  heightmapGridMm?: HeightmapGrid;
-  thicknessMm: number;
-  baseElevationMm?: number;
-  defaultMaterialKey?: string;
-  pinned?: boolean;
-};
-
 /** VIE-V3-02 — Unified view element for drafting views, callouts, and 2D detailing. */
 export type View = {
   kind: 'view';
@@ -693,7 +676,6 @@ export type Element =
       optionSetId?: string | null;
       optionId?: string | null;
       /** DSC-V3-01: discipline tag. */
-      discipline?: 'arch' | 'struct' | 'mep' | null;
       discipline?: DisciplineTag | null;
     }
   | {
@@ -723,7 +705,6 @@ export type Element =
       optionSetId?: string | null;
       optionId?: string | null;
       /** DSC-V3-01: discipline tag. */
-      discipline?: 'arch' | 'struct' | 'mep' | null;
       discipline?: DisciplineTag | null;
     }
   | {
@@ -757,7 +738,6 @@ export type Element =
       optionSetId?: string | null;
       optionId?: string | null;
       /** DSC-V3-01: discipline tag. */
-      discipline?: 'arch' | 'struct' | 'mep' | null;
       discipline?: DisciplineTag | null;
     }
   | {
@@ -770,7 +750,6 @@ export type Element =
       sillHeightMm: number;
       headHeightMm: number;
       /** DSC-V3-01: discipline tag. */
-      discipline?: 'arch' | 'struct' | 'mep' | null;
       discipline?: DisciplineTag | null;
     }
   | {
@@ -875,7 +854,6 @@ export type Element =
       optionSetId?: string | null;
       optionId?: string | null;
       /** DSC-V3-01: discipline tag. */
-      discipline?: 'arch' | 'struct' | 'mep' | null;
       discipline?: DisciplineTag | null;
     }
   | {
@@ -913,7 +891,6 @@ export type Element =
       optionSetId?: string | null;
       optionId?: string | null;
       /** DSC-V3-01: discipline tag. */
-      discipline?: 'arch' | 'struct' | 'mep' | null;
       discipline?: DisciplineTag | null;
     }
   | {
@@ -971,7 +948,6 @@ export type Element =
       optionSetId?: string | null;
       optionId?: string | null;
       /** DSC-V3-01: discipline tag. */
-      discipline?: 'arch' | 'struct' | 'mep' | null;
       discipline?: DisciplineTag | null;
     }
   | {
@@ -1010,7 +986,6 @@ export type Element =
       /** CMD-V3-02: provenance trace linking this element to its originating bundle. */
       agentTrace?: AgentTrace;
       /** DSC-V3-01: discipline tag. */
-      discipline?: 'arch' | 'struct' | 'mep' | null;
       discipline?: DisciplineTag | null;
     }
   | {
@@ -1037,7 +1012,6 @@ export type Element =
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
       /** DSC-V3-01: discipline tag. */
-      discipline?: 'arch' | 'struct' | 'mep' | null;
       discipline?: DisciplineTag | null;
     }
   | {
@@ -1281,7 +1255,6 @@ export type Element =
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
       /** DSC-V3-01: discipline tag. */
-      discipline?: 'arch' | 'struct' | 'mep' | null;
       discipline?: DisciplineTag | null;
     }
   | {
@@ -1301,7 +1274,6 @@ export type Element =
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
       /** DSC-V3-01: discipline tag. */
-      discipline?: 'arch' | 'struct' | 'mep' | null;
       discipline?: DisciplineTag | null;
     }
   | {
@@ -1316,7 +1288,6 @@ export type Element =
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
       /** DSC-V3-01: discipline tag. */
-      discipline?: 'arch' | 'struct' | 'mep' | null;
       discipline?: DisciplineTag | null;
     }
   | {
@@ -1502,7 +1473,6 @@ export type Element =
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
       /** DSC-V3-01: discipline tag. */
-      discipline?: 'arch' | 'struct' | 'mep' | null;
       discipline?: DisciplineTag | null;
     }
   | {
@@ -1532,7 +1502,6 @@ export type Element =
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
       /** DSC-V3-01: discipline tag. */
-      discipline?: 'arch' | 'struct' | 'mep' | null;
       discipline?: DisciplineTag | null;
     }
   | {
@@ -1604,7 +1573,6 @@ export type Element =
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
       /** DSC-V3-01: discipline tag. */
-      discipline?: 'arch' | 'struct' | 'mep' | null;
       discipline?: DisciplineTag | null;
     }
   | {
@@ -1675,7 +1643,6 @@ export type Element =
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
       /** DSC-V3-01: discipline tag. */
-      discipline?: 'arch' | 'struct' | 'mep' | null;
       discipline?: DisciplineTag | null;
     }
   | {
@@ -2201,6 +2168,8 @@ export type PlacedAssetElem = {
   rotationDeg?: number;
   paramValues?: Record<string, unknown>;
   hostElementId?: string;
+};
+
 // ---------------------------------------------------------------------------
 // IMG-V3-01 — StructuredLayout wire types
 // ---------------------------------------------------------------------------
