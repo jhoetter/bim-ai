@@ -48,6 +48,13 @@ class EvidenceRef(BaseModel):
 WallLayerFunction = Literal["structure", "insulation", "finish"]
 WallBasisLine = Literal["center", "face_interior", "face_exterior"]
 PlanDetailLevelPlan = Literal["coarse", "medium", "fine"]
+PhaseFilter = Literal[
+    "show_all",
+    "show_new_plus_existing",
+    "show_demolition_only",
+    "show_existing_only",
+    "show_new_only",
+]
 
 _SCHEME_HEX_PATTERN = re.compile(r"^#[0-9A-Fa-f]{6}$")
 
@@ -251,6 +258,8 @@ class WallElem(BaseModel):
         alias="phaseId",
         description="SKB-08 phase tag carried forward when materialised from a mass.",
     )
+    phase_created: str | None = Field(default=None, alias="phaseCreated")
+    phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
     curtain_wall_v_count: int | None = Field(default=None, alias="curtainWallVCount")
     curtain_wall_h_count: int | None = Field(default=None, alias="curtainWallHCount")
     curtain_panel_overrides: dict[str, CurtainPanelOverride] | None = Field(
@@ -292,6 +301,8 @@ class DoorElem(BaseModel):
     # IFC-04: optional classification code emitted as IfcClassificationReference.
     ifc_classification_code: str | None = Field(default=None, alias="ifcClassificationCode")
     pinned: bool = Field(default=False)
+    phase_created: str | None = Field(default=None, alias="phaseCreated")
+    phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
 
 
 WindowOutlineKind = Literal[
@@ -327,6 +338,8 @@ class WindowElem(BaseModel):
     # IFC-04: optional classification code emitted as IfcClassificationReference.
     ifc_classification_code: str | None = Field(default=None, alias="ifcClassificationCode")
     pinned: bool = Field(default=False)
+    phase_created: str | None = Field(default=None, alias="phaseCreated")
+    phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
 
 
 class WallOpeningElem(BaseModel):
@@ -370,6 +383,8 @@ class RoomElem(BaseModel):
     # IFC-04: optional classification code emitted as IfcClassificationReference.
     ifc_classification_code: str | None = Field(default=None, alias="ifcClassificationCode")
     pinned: bool = Field(default=False)
+    phase_created: str | None = Field(default=None, alias="phaseCreated")
+    phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
 
 
 class GridLineElem(BaseModel):
@@ -554,6 +569,8 @@ class FloorElem(BaseModel):
         alias="phaseId",
         description="SKB-08 phase tag carried forward when materialised from a mass.",
     )
+    phase_created: str | None = Field(default=None, alias="phaseCreated")
+    phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
 
 
 class RoofElem(BaseModel):
@@ -580,6 +597,8 @@ class RoofElem(BaseModel):
         alias="phaseId",
         description="SKB-08 phase tag carried forward when materialised from a mass.",
     )
+    phase_created: str | None = Field(default=None, alias="phaseCreated")
+    phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
 
 
 StairShape = Literal["straight", "l_shape", "u_shape", "spiral", "sketch"]
@@ -635,6 +654,8 @@ class StairElem(BaseModel):
     total_rotation_deg: float | None = Field(default=None, alias="totalRotationDeg")
     sketch_path_mm: list[Vec2Mm] | None = Field(default=None, alias="sketchPathMm")
     pinned: bool = Field(default=False)
+    phase_created: str | None = Field(default=None, alias="phaseCreated")
+    phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
 
     @model_validator(mode="after")
     def _validate_shape_specific_fields(self) -> StairElem:
@@ -703,6 +724,8 @@ class RailingElem(BaseModel):
     path_mm: list[Vec2Mm] = Field(alias="pathMm")
     guard_height_mm: float = Field(alias="guardHeightMm", default=1040)
     pinned: bool = Field(default=False)
+    phase_created: str | None = Field(default=None, alias="phaseCreated")
+    phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
 
 
 class SweepPathPoint(BaseModel):
@@ -738,6 +761,8 @@ class SweepElem(BaseModel):
     profile_plane: SweepProfilePlane = Field(default="work_plane", alias="profilePlane")
     material_key: str | None = Field(default=None, alias="materialKey")
     pinned: bool = Field(default=False)
+    phase_created: str | None = Field(default=None, alias="phaseCreated")
+    phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
 
 
 DormerRoofKind = Literal["flat", "shed", "gable", "hipped"]
@@ -779,6 +804,9 @@ class DormerElem(BaseModel):
                 )
         return self
 
+    phase_created: str | None = Field(default=None, alias="phaseCreated")
+    phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
+
 
 class BalconyElem(BaseModel):
     """Slab + glass balustrade projecting from a host wall at a fixed elevation."""
@@ -793,6 +821,8 @@ class BalconyElem(BaseModel):
     slab_thickness_mm: float = Field(default=150, alias="slabThicknessMm")
     balustrade_height_mm: float = Field(default=1050, alias="balustradeHeightMm")
     pinned: bool = Field(default=False)
+    phase_created: str | None = Field(default=None, alias="phaseCreated")
+    phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
 
 
 Text3dFontFamily = Literal["helvetiker", "optimer", "gentilis"]
@@ -827,6 +857,8 @@ class ProjectBasePointElem(BaseModel):
     id: str
     position_mm: Vec3Mm = Field(alias="positionMm")
     angle_to_true_north_deg: float = Field(default=0.0, alias="angleToTrueNorthDeg")
+    latitude_deg: float = Field(default=0.0, alias="latitudeDeg")
+    longitude_deg: float = Field(default=0.0, alias="longitudeDeg")
 
 
 class SurveyPointElem(BaseModel):
@@ -845,6 +877,46 @@ class InternalOriginElem(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True)
     kind: Literal["internal_origin"] = "internal_origin"
     id: str = INTERNAL_ORIGIN_ID
+
+
+# --- SUN-V3-01: sun settings singleton -----------------------------------------
+
+
+SUN_SETTINGS_ID = "sun_settings"
+
+
+class SunSettingsTimeOfDay(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    hours: int = 12
+    minutes: int = 0
+
+
+class SunSettingsAnimationRange(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    start_iso: str = Field(alias="startIso")
+    end_iso: str = Field(alias="endIso")
+    interval_minutes: int = Field(default=60, alias="intervalMinutes")
+
+
+class SunSettingsElem(BaseModel):
+    """SUN-V3-01: project-level sun position singleton."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["sun_settings"] = "sun_settings"
+    id: str = SUN_SETTINGS_ID
+    latitude_deg: float = Field(default=48.13, alias="latitudeDeg")
+    longitude_deg: float = Field(default=11.58, alias="longitudeDeg")
+    date_iso: str = Field(default="2026-06-21", alias="dateIso")
+    time_of_day: SunSettingsTimeOfDay = Field(
+        default_factory=lambda: SunSettingsTimeOfDay(hours=14, minutes=30),
+        alias="timeOfDay",
+    )
+    animation_range: SunSettingsAnimationRange | None = Field(
+        default=None, alias="animationRange"
+    )
+    daylight_saving_strategy: Literal["auto", "on", "off"] = Field(
+        default="auto", alias="daylightSavingStrategy"
+    )
 
 
 class LinkModelElem(BaseModel):
@@ -1098,6 +1170,7 @@ class PlanViewElem(BaseModel):
     underlay_level_id: str | None = Field(default=None, alias="underlayLevelId")
     discipline: str = Field(default="architecture", alias="discipline")
     phase_id: str | None = Field(default=None, alias="phaseId")
+    phase_filter: PhaseFilter | None = Field(default=None, alias="phaseFilter")
     crop_min_mm: Vec2Mm | None = Field(default=None, alias="cropMinMm")
     crop_max_mm: Vec2Mm | None = Field(default=None, alias="cropMaxMm")
     crop_enabled: bool | None = Field(default=None, alias="cropEnabled")
@@ -1329,6 +1402,8 @@ class AreaElem(BaseModel):
     rule_set: AreaRuleSet = Field(default="no_rules", alias="ruleSet")
     computed_area_sq_mm: float | None = Field(default=None, alias="computedAreaSqMm")
     pinned: bool = Field(default=False)
+    phase_created: str | None = Field(default=None, alias="phaseCreated")
+    phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
 
 
 class MaskingRegionElem(BaseModel):
@@ -1457,6 +1532,7 @@ ElementKind = Literal[
     "project_base_point",
     "survey_point",
     "internal_origin",
+    "sun_settings",
     "link_model",
     "link_dxf",
     "selection_set",
@@ -1502,6 +1578,8 @@ class ColumnElem(BaseModel):
     # IFC-04: optional classification code emitted as IfcClassificationReference.
     ifc_classification_code: str | None = Field(default=None, alias="ifcClassificationCode")
     pinned: bool = Field(default=False)
+    phase_created: str | None = Field(default=None, alias="phaseCreated")
+    phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
 
 
 class BeamElem(BaseModel):
@@ -1526,6 +1604,8 @@ class BeamElem(BaseModel):
     # IFC-04: optional classification code emitted as IfcClassificationReference.
     ifc_classification_code: str | None = Field(default=None, alias="ifcClassificationCode")
     pinned: bool = Field(default=False)
+    phase_created: str | None = Field(default=None, alias="phaseCreated")
+    phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
 
 
 class CeilingElem(BaseModel):
@@ -1546,6 +1626,8 @@ class CeilingElem(BaseModel):
     thickness_mm: float = Field(default=20, alias="thicknessMm", gt=0)
     ceiling_type_id: str | None = Field(default=None, alias="ceilingTypeId")
     pinned: bool = Field(default=False)
+    phase_created: str | None = Field(default=None, alias="phaseCreated")
+    phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
 
 
 ConstraintRule = Literal[
@@ -1618,6 +1700,8 @@ class MassElem(BaseModel):
         description="SKB-08 phase tag; defaults to 'massing'.",
     )
     pinned: bool = Field(default=False)
+    phase_created: str | None = Field(default=None, alias="phaseCreated")
+    phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
 
 
 class VoidCutElem(BaseModel):
@@ -1634,6 +1718,21 @@ class VoidCutElem(BaseModel):
     host_element_id: str = Field(alias="hostElementId")
     profile_mm: list[Vec2Mm] = Field(alias="profileMm")
     depth_mm: float = Field(alias="depthMm", gt=0)
+
+
+class PhaseElem(BaseModel):
+    """KRN-V3-01 — project-level phasing primitive.
+
+    Default chain: Existing (ord=0) → Demolition (ord=1) → New (ord=2).
+    ``ord`` governs display order and element classification: phase_created.ord ==
+    view.phase.ord → new; < view.phase.ord → existing or demolition.
+    """
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["phase"] = "phase"
+    id: str
+    name: str
+    ord: int = 0
 
 
 Element = Annotated[
@@ -1681,6 +1780,7 @@ Element = Annotated[
     | ProjectBasePointElem
     | SurveyPointElem
     | InternalOriginElem
+    | SunSettingsElem
     | LinkModelElem
     | LinkDxfElem
     | SelectionSetElem
@@ -1700,6 +1800,7 @@ Element = Annotated[
     | CeilingElem
     | MassElem
     | VoidCutElem
-    | ConstraintElem,
+    | ConstraintElem
+    | PhaseElem,
     Field(discriminator="kind"),
 ]

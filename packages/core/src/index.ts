@@ -64,7 +64,15 @@ export type ElemKind =
   | 'area'
   | 'masking_region'
   | 'constraint'
-  | 'mass';
+  | 'mass'
+  | 'phase';
+
+export type PhaseFilter =
+  | 'show_all'
+  | 'show_new_plus_existing'
+  | 'show_demolition_only'
+  | 'show_existing_only'
+  | 'show_new_only';
 
 export type Text3dFontFamily = 'helvetiker' | 'optimer' | 'gentilis';
 
@@ -453,6 +461,8 @@ export type Element =
       pinned?: boolean;
       /** SKB-08 phase tag — carried forward when materialised from a mass. */
       phaseId?: string | null;
+      phaseCreated?: string | null;
+      phaseDemolished?: string | null;
     }
   | {
       kind: 'door';
@@ -473,6 +483,8 @@ export type Element =
       /** IFC-04: optional classification code; emitted as IfcClassificationReference. */
       ifcClassificationCode?: string | null;
       pinned?: boolean;
+      phaseCreated?: string | null;
+      phaseDemolished?: string | null;
     }
   | {
       kind: 'window';
@@ -497,6 +509,8 @@ export type Element =
       /** IFC-04: optional classification code; emitted as IfcClassificationReference. */
       ifcClassificationCode?: string | null;
       pinned?: boolean;
+      phaseCreated?: string | null;
+      phaseDemolished?: string | null;
     }
   | {
       kind: 'wall_opening';
@@ -525,6 +539,8 @@ export type Element =
       /** IFC-04: optional classification code; emitted as IfcClassificationReference. */
       ifcClassificationCode?: string | null;
       pinned?: boolean;
+      phaseCreated?: string | null;
+      phaseDemolished?: string | null;
     }
   | {
       kind: 'grid_line';
@@ -598,6 +614,8 @@ export type Element =
       pinned?: boolean;
       /** SKB-08 phase tag — carried forward when materialised from a mass. */
       phaseId?: string | null;
+      phaseCreated?: string | null;
+      phaseDemolished?: string | null;
     }
   | {
       kind: 'roof';
@@ -626,6 +644,8 @@ export type Element =
       pinned?: boolean;
       /** SKB-08 phase tag — carried forward when materialised from a mass. */
       phaseId?: string | null;
+      phaseCreated?: string | null;
+      phaseDemolished?: string | null;
     }
   | {
       kind: 'stair';
@@ -658,6 +678,8 @@ export type Element =
       sketchPathMm?: XY[];
       overrideParams?: Record<string, unknown>;
       pinned?: boolean;
+      phaseCreated?: string | null;
+      phaseDemolished?: string | null;
     }
   | {
       kind: 'slab_opening';
@@ -686,6 +708,8 @@ export type Element =
       guardHeightMm?: number;
       overrideParams?: Record<string, unknown>;
       pinned?: boolean;
+      phaseCreated?: string | null;
+      phaseDemolished?: string | null;
     }
   | {
       kind: 'family_type';
@@ -708,6 +732,8 @@ export type Element =
       slabThicknessMm?: number;
       balustradeHeightMm?: number;
       pinned?: boolean;
+      phaseCreated?: string | null;
+      phaseDemolished?: string | null;
     }
   | {
       kind: 'room_separation';
@@ -779,6 +805,7 @@ export type Element =
       underlayLevelId?: string | null;
       discipline?: string;
       phaseId?: string | null;
+      phaseFilter?: PhaseFilter | null;
       cropMinMm?: XY | null;
       cropMaxMm?: XY | null;
       /** PLN-02 — when true, plan rendering clips elements outside crop bounds. */
@@ -938,6 +965,8 @@ export type Element =
       topConstraintOffsetMm?: number;
       /** IFC-04: optional OmniClass / Uniclass / NSCC code emitted as IfcClassificationReference. */
       ifcClassificationCode?: string | null;
+      phaseCreated?: string | null;
+      phaseDemolished?: string | null;
     }
   | {
       kind: 'beam';
@@ -953,6 +982,8 @@ export type Element =
       endColumnId?: string | null;
       /** IFC-04: optional OmniClass / Uniclass / NSCC code emitted as IfcClassificationReference. */
       ifcClassificationCode?: string | null;
+      phaseCreated?: string | null;
+      phaseDemolished?: string | null;
     }
   | {
       kind: 'ceiling';
@@ -963,6 +994,8 @@ export type Element =
       heightOffsetMm: number;
       thicknessMm: number;
       ceilingTypeId?: string | null;
+      phaseCreated?: string | null;
+      phaseDemolished?: string | null;
     }
   | {
       kind: 'color_fill_legend';
@@ -1144,6 +1177,8 @@ export type Element =
       materialKey?: string | null;
       worksetId?: string | null;
       pinned?: boolean;
+      phaseCreated?: string | null;
+      phaseDemolished?: string | null;
     }
   | {
       /**
@@ -1169,6 +1204,8 @@ export type Element =
       roofMaterialKey?: string | null;
       hasFloorOpening?: boolean;
       pinned?: boolean;
+      phaseCreated?: string | null;
+      phaseDemolished?: string | null;
     }
   | {
       /**
@@ -1186,6 +1223,8 @@ export type Element =
       ruleSet: 'gross' | 'net' | 'no_rules';
       computedAreaSqMm?: number;
       pinned?: boolean;
+      phaseCreated?: string | null;
+      phaseDemolished?: string | null;
     }
   | {
       /**
@@ -1234,6 +1273,15 @@ export type Element =
       materialKey?: string | null;
       phaseId?: string | null;
       pinned?: boolean;
+      phaseCreated?: string | null;
+      phaseDemolished?: string | null;
+    }
+  | {
+      /** KRN-V3-01 — project-level phasing primitive. Default chain: Existing → Demolition → New. */
+      kind: 'phase';
+      id: string;
+      name: string;
+      ord: number;
     };
 
 export type Violation = {

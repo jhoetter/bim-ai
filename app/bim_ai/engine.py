@@ -124,9 +124,18 @@ from bim_ai.commands import (
     UpsertSheetViewportsCmd,
     UpsertSiteCmd,
     UpsertTagDefinitionCmd,
+    CreatePhaseCmd,
+    DeletePhaseCmd,
+    RenamePhaseCmd,
+    ReorderPhaseCmd,
+    SetElementPhaseCmd,
+    SetViewPhaseCmd,
+    SetViewPhaseFilterCmd,
     UpsertValidationRuleCmd,
     UpsertViewTemplateCmd,
     UpsertWallTypeCmd,
+    CreateSunSettingsCmd,
+    UpdateSunSettingsCmd,
 )
 from bim_ai.constraints import Violation, evaluate
 from bim_ai.datum_levels import (
@@ -136,6 +145,9 @@ from bim_ai.datum_levels import (
 from bim_ai.document import Document
 from bim_ai.elements import (
     INTERNAL_ORIGIN_ID,
+    SUN_SETTINGS_ID,
+    SunSettingsElem,
+    SunSettingsTimeOfDay,
     AgentAssumptionElem,
     AgentDeviationElem,
     AreaElem,
@@ -213,6 +225,8 @@ from bim_ai.elements import (
     WallOpeningElem,
     WallTypeElem,
     WindowElem,
+    PhaseElem,
+    PhaseFilter,
 )
 from bim_ai.export_ifc import (
     AUTHORITATIVE_REPLAY_KIND_V0,
@@ -614,6 +628,14 @@ def ensure_internal_origin(doc: Document) -> Document:
     doc.elements[INTERNAL_ORIGIN_ID] = InternalOriginElem(
         kind="internal_origin", id=INTERNAL_ORIGIN_ID
     )
+    return doc
+
+
+def ensure_sun_settings(doc: Document) -> Document:
+    """SUN-V3-01: ensure the singleton `sun_settings` element exists."""
+    if any(isinstance(e, SunSettingsElem) for e in doc.elements.values()):
+        return doc
+    doc.elements[SUN_SETTINGS_ID] = SunSettingsElem(kind="sun_settings", id=SUN_SETTINGS_ID)
     return doc
 
 
@@ -2152,6 +2174,54 @@ def apply_inplace(
             if cmd.shared_elevation_mm is not None:
                 update["shared_elevation_mm"] = cmd.shared_elevation_mm
             els[target_id] = existing.model_copy(update=update)
+
+        case CreateSunSettingsCmd():
+            if any(isinstance(e, SunSettingsElem) for e in els.values()):
+                raise ValueError(
+                    "createSunSettings: a sun_settings already exists (use updateSunSettings)"
+                )
+            sid = cmd.id or SUN_SETTINGS_ID
+            if sid in els:
+                raise ValueError(f"duplicate element id '{sid}'")
+            tod = cmd.time_of_day or {"hours": 14, "minutes": 30}
+            els[sid] = SunSettingsElem(
+                kind="sun_settings",
+                id=sid,
+                latitude_deg=cmd.latitude_deg,
+                longitude_deg=cmd.longitude_deg,
+                date_iso=cmd.date_iso,
+                time_of_day=SunSettingsTimeOfDay(
+                    hours=tod.get("hours", 14), minutes=tod.get("minutes", 30)
+                ),
+                daylight_saving_strategy=cmd.daylight_saving_strategy,
+            )
+
+        case UpdateSunSettingsCmd():
+            target_sun_id = next(
+                (eid for eid, e in els.items() if isinstance(e, SunSettingsElem)), None
+            )
+            if target_sun_id is None:
+                raise ValueError(
+                    "updateSunSettings: no sun_settings exists (createSunSettings first)"
+                )
+            existing_sun = els[target_sun_id]
+            assert isinstance(existing_sun, SunSettingsElem)
+            sun_update: dict[str, Any] = {}
+            if cmd.latitude_deg is not None:
+                sun_update["latitude_deg"] = cmd.latitude_deg
+            if cmd.longitude_deg is not None:
+                sun_update["longitude_deg"] = cmd.longitude_deg
+            if cmd.date_iso is not None:
+                sun_update["date_iso"] = cmd.date_iso
+            if cmd.time_of_day is not None:
+                tod2 = cmd.time_of_day
+                sun_update["time_of_day"] = SunSettingsTimeOfDay(
+                    hours=tod2.get("hours", existing_sun.time_of_day.hours),
+                    minutes=tod2.get("minutes", existing_sun.time_of_day.minutes),
+                )
+            if cmd.daylight_saving_strategy is not None:
+                sun_update["daylight_saving_strategy"] = cmd.daylight_saving_strategy
+            els[target_sun_id] = existing_sun.model_copy(update=sun_update)
 
         case CreateBalconyCmd():
             bid = cmd.id or new_id()
@@ -3720,6 +3790,138 @@ def apply_inplace(
                 source_provider or _no_source_provider,
             )
 
+        # KRN-V3-01: phasing primitive commands
+
+        case CreatePhaseCmd():
+            pid = cmd.id or new_id()
+            if pid in els:
+                raise ValueError(f"createPhase: duplicate element id {pid!r}")
+            for el in els.values():
+                if isinstance(el, PhaseElem) and el.ord == cmd.ord:
+                    raise ValueError(
+                        f"createPhase: ord {cmd.ord} already used by phase {el.id!r}"
+                    )
+            els[pid] = PhaseElem(kind="phase", id=pid, name=cmd.name, ord=cmd.ord)
+
+        case RenamePhaseCmd():
+            ph = els.get(cmd.phase_id)
+            if not isinstance(ph, PhaseElem):
+                raise ValueError(
+                    f"renamePhase: phaseId {cmd.phase_id!r} must reference a Phase element"
+                )
+            els[cmd.phase_id] = ph.model_copy(update={"name": cmd.name})
+
+        case ReorderPhaseCmd():
+            ph = els.get(cmd.phase_id)
+            if not isinstance(ph, PhaseElem):
+                raise ValueError(
+                    f"reorderPhase: phaseId {cmd.phase_id!r} must reference a Phase element"
+                )
+            for el in els.values():
+                if isinstance(el, PhaseElem) and el.id != cmd.phase_id and el.ord == cmd.ord:
+                    raise ValueError(
+                        f"reorderPhase: ord {cmd.ord} already used by phase {el.id!r}"
+                    )
+            els[cmd.phase_id] = ph.model_copy(update={"ord": cmd.ord})
+
+        case DeletePhaseCmd():
+            ph = els.get(cmd.phase_id)
+            if not isinstance(ph, PhaseElem):
+                raise ValueError(
+                    f"deletePhase: phaseId {cmd.phase_id!r} must reference a Phase element"
+                )
+            affected = [
+                eid
+                for eid, el in els.items()
+                if getattr(el, "phase_created", None) == cmd.phase_id
+                or getattr(el, "phase_demolished", None) == cmd.phase_id
+            ]
+            if affected and cmd.retarget_to_phase_id is None:
+                raise ValueError(
+                    f"deletePhase: {len(affected)} element(s) reference this phase; "
+                    "supply retargetToPhaseId to retarget them"
+                )
+            if cmd.retarget_to_phase_id is not None:
+                retarget = els.get(cmd.retarget_to_phase_id)
+                if not isinstance(retarget, PhaseElem):
+                    raise ValueError(
+                        f"deletePhase: retargetToPhaseId {cmd.retarget_to_phase_id!r} "
+                        "must reference a Phase element"
+                    )
+                for eid in affected:
+                    el = els[eid]
+                    updates: dict[str, object] = {}
+                    if getattr(el, "phase_created", None) == cmd.phase_id:
+                        updates["phase_created"] = cmd.retarget_to_phase_id
+                    if getattr(el, "phase_demolished", None) == cmd.phase_id:
+                        updates["phase_demolished"] = cmd.retarget_to_phase_id
+                    els[eid] = el.model_copy(update=updates)
+            del els[cmd.phase_id]
+
+        case SetElementPhaseCmd():
+            el = els.get(cmd.element_id)
+            if el is None:
+                raise ValueError(
+                    f"setElementPhase: elementId {cmd.element_id!r} not found"
+                )
+            if not hasattr(el, "phase_created"):
+                raise ValueError(
+                    f"setElementPhase: elementId {cmd.element_id!r} ({el.kind!r}) "
+                    "does not support phasing fields"
+                )
+            updates_ep: dict[str, object] = {}
+            if cmd.phase_created_id is not None:
+                pc = els.get(cmd.phase_created_id)
+                if not isinstance(pc, PhaseElem):
+                    raise ValueError(
+                        f"setElementPhase: phaseCreatedId {cmd.phase_created_id!r} "
+                        "must reference a Phase element"
+                    )
+                updates_ep["phase_created"] = cmd.phase_created_id
+            if cmd.clear_demolished:
+                updates_ep["phase_demolished"] = None
+            elif cmd.phase_demolished_id is not None:
+                pd = els.get(cmd.phase_demolished_id)
+                if not isinstance(pd, PhaseElem):
+                    raise ValueError(
+                        f"setElementPhase: phaseDemolishedId {cmd.phase_demolished_id!r} "
+                        "must reference a Phase element"
+                    )
+                created_id = updates_ep.get("phase_created") or getattr(el, "phase_created", None)
+                if created_id is not None:
+                    pc_el = els.get(cast(str, created_id))
+                    if isinstance(pc_el, PhaseElem) and pd.ord < pc_el.ord:
+                        raise ValueError(
+                            "setElementPhase: phaseDemolished.ord must be >= phaseCreated.ord"
+                        )
+                updates_ep["phase_demolished"] = cmd.phase_demolished_id
+            if updates_ep:
+                els[cmd.element_id] = el.model_copy(update=updates_ep)
+
+        case SetViewPhaseCmd():
+            view = els.get(cmd.view_id)
+            if not isinstance(view, PlanViewElem):
+                raise ValueError(
+                    f"setViewPhase: viewId {cmd.view_id!r} must reference a plan_view"
+                )
+            ph = els.get(cmd.phase_id)
+            if not isinstance(ph, PhaseElem):
+                raise ValueError(
+                    f"setViewPhase: phaseId {cmd.phase_id!r} must reference a Phase element"
+                )
+            els[cmd.view_id] = view.model_copy(update={"phase_id": cmd.phase_id})
+
+        case SetViewPhaseFilterCmd():
+            view = els.get(cmd.view_id)
+            if not isinstance(view, PlanViewElem):
+                raise ValueError(
+                    f"setViewPhaseFilter: viewId {cmd.view_id!r} must reference a plan_view"
+                )
+            els[cmd.view_id] = view.model_copy(
+                update={"phase_filter": cast(PhaseFilter, cmd.phase_filter)}
+            )
+
+
     # KRN-08: areas track a derived computedAreaSqMm. Recompute after every
     # command apply so create/update/delete of areas (and shafts that affect
     # `net` rule-set deductions) keep the value current.
@@ -4768,14 +4970,21 @@ def try_commit_bundle(
     *,
     source_provider: SourceDocProvider | None = None,
 ) -> tuple[bool, Document | None, list[Command], list[Violation], str]:
-    cmds: list[Command] = [coerce_command(c) for c in cmds_raw]
+    try:
+        cmds: list[Command] = [coerce_command(c) for c in cmds_raw]
+    except Exception as exc:
+        return False, None, [], [], str(exc)
     cand = clone_document(doc)
     # KRN-06: backfill the singleton on every commit so persisted state always
     # has it (matches `try_commit`'s behaviour for the single-command path).
     ensure_internal_origin(cand)
-    for cmd in cmds:
-        apply_inplace(cand, cmd, source_provider=source_provider)
+    try:
+        for cmd in cmds:
+            apply_inplace(cand, cmd, source_provider=source_provider)
+    except (ValueError, KeyError) as exc:
+        return False, None, cmds, [], str(exc)
 
+    ensure_sun_settings(cand)
     violations = evaluate(cand.elements)
 
     # EDT-02 — reject bundles that break an error-severity locked constraint.
@@ -4804,6 +5013,7 @@ def try_commit(
     # KRN-06: backfill the singleton on every commit so persisted state always has it.
     ensure_internal_origin(cand)
     apply_inplace(cand, cmds, source_provider=source_provider)
+    ensure_sun_settings(cand)
 
     violations = evaluate(cand.elements)
 

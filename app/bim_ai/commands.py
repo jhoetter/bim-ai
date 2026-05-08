@@ -13,6 +13,7 @@ from bim_ai.elements import (
     DormerRoofKind,
     DxfLineworkPrim,
     EvidenceRef,
+    PhaseFilter,
     PlanCategoryGraphicRow,
     PlanTagBadgeStyle,
     PlanTagTarget,
@@ -1048,6 +1049,46 @@ class MoveSurveyPointCmd(BaseModel):
     shared_elevation_mm: float | None = Field(default=None, alias="sharedElevationMm")
 
 
+# --- SUN-V3-01: sun_settings commands -------------------------------------------
+
+
+class CreateSunSettingsCmd(BaseModel):
+    """SUN-V3-01: create the project-level sun settings singleton.
+
+    Rejects if one already exists (use UpdateSunSettings to modify).
+    """
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createSunSettings"] = "createSunSettings"
+    id: str | None = None
+    latitude_deg: float = Field(default=48.13, alias="latitudeDeg")
+    longitude_deg: float = Field(default=11.58, alias="longitudeDeg")
+    date_iso: str = Field(default="2026-06-21", alias="dateIso")
+    time_of_day: dict = Field(
+        default_factory=lambda: {"hours": 14, "minutes": 30}, alias="timeOfDay"
+    )
+    daylight_saving_strategy: Literal["auto", "on", "off"] = Field(
+        default="auto", alias="daylightSavingStrategy"
+    )
+
+
+class UpdateSunSettingsCmd(BaseModel):
+    """SUN-V3-01: update the project-level sun settings singleton.
+
+    Partial update — only provided fields are changed.
+    """
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["updateSunSettings"] = "updateSunSettings"
+    latitude_deg: float | None = Field(default=None, alias="latitudeDeg")
+    longitude_deg: float | None = Field(default=None, alias="longitudeDeg")
+    date_iso: str | None = Field(default=None, alias="dateIso")
+    time_of_day: dict | None = Field(default=None, alias="timeOfDay")
+    daylight_saving_strategy: Literal["auto", "on", "off"] | None = Field(
+        default=None, alias="daylightSavingStrategy"
+    )
+
+
 # --- FED-01: link_model commands ---------------------------------------------------
 
 
@@ -1545,6 +1586,72 @@ class CreateConstraintCmd(BaseModel):
     severity: Literal["warning", "error"] = "error"
 
 
+class CreatePhaseCmd(BaseModel):
+    """KRN-V3-01 — create a new project-level phase."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createPhase"] = "createPhase"
+    id: str | None = None
+    name: str
+    ord: int
+
+
+class RenamePhaseCmd(BaseModel):
+    """KRN-V3-01 — rename an existing phase."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["renamePhase"] = "renamePhase"
+    phase_id: str = Field(alias="phaseId")
+    name: str
+
+
+class ReorderPhaseCmd(BaseModel):
+    """KRN-V3-01 — change a phase's ordinal position."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["reorderPhase"] = "reorderPhase"
+    phase_id: str = Field(alias="phaseId")
+    ord: int
+
+
+class DeletePhaseCmd(BaseModel):
+    """KRN-V3-01 — delete a phase, optionally retargeting its elements."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["deletePhase"] = "deletePhase"
+    phase_id: str = Field(alias="phaseId")
+    retarget_to_phase_id: str | None = Field(default=None, alias="retargetToPhaseId")
+
+
+class SetElementPhaseCmd(BaseModel):
+    """KRN-V3-01 — set phase_created / phase_demolished on any phaseable element."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["setElementPhase"] = "setElementPhase"
+    element_id: str = Field(alias="elementId")
+    phase_created_id: str | None = Field(default=None, alias="phaseCreatedId")
+    phase_demolished_id: str | None = Field(default=None, alias="phaseDemolishedId")
+    clear_demolished: bool = Field(default=False, alias="clearDemolished")
+
+
+class SetViewPhaseCmd(BaseModel):
+    """KRN-V3-01 — set the as-of phase for a plan view."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["setViewPhase"] = "setViewPhase"
+    view_id: str = Field(alias="viewId")
+    phase_id: str = Field(alias="phaseId")
+
+
+class SetViewPhaseFilterCmd(BaseModel):
+    """KRN-V3-01 — set the phase filter on a plan view."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["setViewPhaseFilter"] = "setViewPhaseFilter"
+    view_id: str = Field(alias="viewId")
+    phase_filter: PhaseFilter = Field(alias="phaseFilter")
+
+
 Command = Annotated[
     CreateLevelCmd
     | CreateWallCmd
@@ -1661,6 +1768,15 @@ Command = Annotated[
     | CreateMassCmd
     | MaterializeMassToWallsCmd
     | CreateVoidCutCmd
-    | CreateConstraintCmd,
+    | CreateConstraintCmd
+    | CreatePhaseCmd
+    | RenamePhaseCmd
+    | ReorderPhaseCmd
+    | DeletePhaseCmd
+    | SetElementPhaseCmd
+    | SetViewPhaseCmd
+    | SetViewPhaseFilterCmd
+    | CreateSunSettingsCmd
+    | UpdateSunSettingsCmd,
     Field(discriminator="type"),
 ]

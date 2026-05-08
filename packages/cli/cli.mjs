@@ -824,6 +824,16 @@ Commands:
   api inspect <name> [--output json]  API-V3-01: print one ToolDescriptor
   api version                         API-V3-01: print { schemaVersion, buildRef }
 
+  phase-create --name <name> --ord <n>        KRN-V3-01: create a new phase (ord = ordinal position)
+  phase-rename --phase-id <id> --name <name>   KRN-V3-01: rename an existing phase
+  phase-reorder --phase-id <id> --ord <n>      KRN-V3-01: change a phase ordinal
+  phase-delete --phase-id <id> [--retarget-to <id>] KRN-V3-01: delete a phase (retarget elements if needed)
+  element-set-phase --element-id <id> [--phase-created-id <id>] [--phase-demolished-id <id>] [--clear-demolished]
+                                                KRN-V3-01: set phase lifecycle on an element
+  view-set-phase --view-id <id> --phase-id <id> KRN-V3-01: set the as-of phase for a plan view
+  view-set-phase-filter --view-id <id> --phase-filter <filter>
+                                                KRN-V3-01: set phase filter (show_all|show_new_plus_existing|show_demolition_only|show_existing_only|show_new_only)
+
 Collaboration model:
   Every command is server-authoritative on commit and broadcast over websocket;
   there is no central file to Synchronize. See docs/collaboration-model.md.
@@ -1135,6 +1145,77 @@ async function main() {
       });
       return;
     }
+
+    if (cmd === 'phase-create') {
+      if (!modelId) usage();
+      const name = argv[argv.indexOf('--name') + 1];
+      const ordStr = argv[argv.indexOf('--ord') + 1];
+      if (!name || !ordStr) { console.error('phase-create requires --name <name> --ord <n>'); process.exit(1); }
+      await postCommand(modelId, userId, { type: 'createPhase', name, ord: Number(ordStr) });
+      return;
+    }
+
+    if (cmd === 'phase-rename') {
+      if (!modelId) usage();
+      const phaseId = argv[argv.indexOf('--phase-id') + 1];
+      const name = argv[argv.indexOf('--name') + 1];
+      if (!phaseId || !name) { console.error('phase-rename requires --phase-id <id> --name <name>'); process.exit(1); }
+      await postCommand(modelId, userId, { type: 'renamePhase', phaseId, name });
+      return;
+    }
+
+    if (cmd === 'phase-reorder') {
+      if (!modelId) usage();
+      const phaseId = argv[argv.indexOf('--phase-id') + 1];
+      const ordStr = argv[argv.indexOf('--ord') + 1];
+      if (!phaseId || !ordStr) { console.error('phase-reorder requires --phase-id <id> --ord <n>'); process.exit(1); }
+      await postCommand(modelId, userId, { type: 'reorderPhase', phaseId, ord: Number(ordStr) });
+      return;
+    }
+
+    if (cmd === 'phase-delete') {
+      if (!modelId) usage();
+      const phaseId = argv[argv.indexOf('--phase-id') + 1];
+      if (!phaseId) { console.error('phase-delete requires --phase-id <id>'); process.exit(1); }
+      const payload = { type: 'deletePhase', phaseId };
+      const retargetIdx = argv.indexOf('--retarget-to');
+      if (retargetIdx !== -1) payload.retargetToPhaseId = argv[retargetIdx + 1];
+      await postCommand(modelId, userId, payload);
+      return;
+    }
+
+    if (cmd === 'element-set-phase') {
+      if (!modelId) usage();
+      const elementId = argv[argv.indexOf('--element-id') + 1];
+      if (!elementId) { console.error('element-set-phase requires --element-id <id>'); process.exit(1); }
+      const payload = { type: 'setElementPhase', elementId };
+      const pcIdx = argv.indexOf('--phase-created-id');
+      if (pcIdx !== -1) payload.phaseCreatedId = argv[pcIdx + 1];
+      const pdIdx = argv.indexOf('--phase-demolished-id');
+      if (pdIdx !== -1) payload.phaseDemolishedId = argv[pdIdx + 1];
+      if (argv.includes('--clear-demolished')) payload.clearDemolished = true;
+      await postCommand(modelId, userId, payload);
+      return;
+    }
+
+    if (cmd === 'view-set-phase') {
+      if (!modelId) usage();
+      const viewId = argv[argv.indexOf('--view-id') + 1];
+      const phaseId = argv[argv.indexOf('--phase-id') + 1];
+      if (!viewId || !phaseId) { console.error('view-set-phase requires --view-id <id> --phase-id <id>'); process.exit(1); }
+      await postCommand(modelId, userId, { type: 'setViewPhase', viewId, phaseId });
+      return;
+    }
+
+    if (cmd === 'view-set-phase-filter') {
+      if (!modelId) usage();
+      const viewId = argv[argv.indexOf('--view-id') + 1];
+      const phaseFilter = argv[argv.indexOf('--phase-filter') + 1];
+      if (!viewId || !phaseFilter) { console.error('view-set-phase-filter requires --view-id <id> --phase-filter <filter>'); process.exit(1); }
+      await postCommand(modelId, userId, { type: 'setViewPhaseFilter', viewId, phaseFilter });
+      return;
+    }
+
 
     usage();
   } catch (e) {
