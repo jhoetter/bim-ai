@@ -7,7 +7,6 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from bim_ai.elements import (
     BalusterPattern,
     CameraMm,
-    DisciplineTag,
     ClipRect,
     ConstraintRefRow,
     ConstraintRule,
@@ -1787,16 +1786,6 @@ class SetElementPhaseCmd(BaseModel):
     phase_demolished_id: str | None = Field(default=None, alias="phaseDemolishedId")
     clear_demolished: bool = Field(default=False, alias="clearDemolished")
 
-class SetElementDisciplineCmd(BaseModel):
-    """DSC-V3-01 — set discipline tag on one or more elements; undo + activity."""
-
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    type: Literal["setElementDiscipline"] = "setElementDiscipline"
-    element_ids: list[str] = Field(alias="elementIds")
-    discipline: Literal["arch", "struct", "mep"] = "arch"
-
-
-
 class SetViewPhaseCmd(BaseModel):
     """KRN-V3-01 — set the as-of phase for a plan view."""
 
@@ -2075,62 +2064,6 @@ class PlaceAssetCmd(BaseModel):
     host_element_id: str | None = Field(default=None, alias="hostElementId")
 
 
-# ---------------------------------------------------------------------------
-# IMG-V3-01 — Image trace command
-# ---------------------------------------------------------------------------
-
-
-class TraceImageCmd(BaseModel):
-    """IMG-V3-01 — read-only CV trace; does not mutate the kernel.
-
-    Dispatched via engine.handle_trace_image_cmd(), not apply_inplace().
-    """
-
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    type: Literal["TraceImage"] = "TraceImage"
-    image_b64: str = Field(alias="imageB64")
-    archetype_hint: str | None = Field(default=None, alias="archetypeHint")
-    brief_text: str | None = Field(default=None, alias="briefText")
-    assumptions: list = Field(default_factory=list)
-
-
-
-
-# ---------------------------------------------------------------------------
-# TOP-V3-01 — Toposolid primitive commands
-# ---------------------------------------------------------------------------
-
-
-class CreateToposolidCmd(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    type: Literal["CreateToposolid"] = "CreateToposolid"
-    toposolid_id: str = Field(alias="toposolidId")
-    name: str | None = None
-    boundary_mm: list[dict] = Field(alias="boundaryMm")
-    height_samples: list[dict] = Field(default_factory=list, alias="heightSamples")
-    heightmap_grid_mm: dict | None = Field(default=None, alias="heightmapGridMm")
-    thickness_mm: float = Field(default=1500.0, alias="thicknessMm")
-    base_elevation_mm: float | None = Field(default=None, alias="baseElevationMm")
-    default_material_key: str | None = Field(default=None, alias="defaultMaterialKey")
-
-
-class UpdateToposolidCmd(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    type: Literal["UpdateToposolid"] = "UpdateToposolid"
-    toposolid_id: str = Field(alias="toposolidId")
-    name: str | None = None
-    thickness_mm: float | None = Field(default=None, alias="thicknessMm")
-    base_elevation_mm: float | None = Field(default=None, alias="baseElevationMm")
-    default_material_key: str | None = Field(default=None, alias="defaultMaterialKey")
-    pinned: bool | None = None
-
-
-class DeleteToposolidCmd(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    type: Literal["DeleteToposolid"] = "DeleteToposolid"
-    toposolid_id: str = Field(alias="toposolidId")
-
-
 Command = Annotated[
     CreateLevelCmd
     | CreateWallCmd
@@ -2260,7 +2193,6 @@ Command = Annotated[
     | ReorderPhaseCmd
     | DeletePhaseCmd
     | SetElementPhaseCmd
-    | SetElementDisciplineCmd
     | SetViewPhaseCmd
     | SetViewPhaseFilterCmd
     | CreateSunSettingsCmd
@@ -2294,10 +2226,6 @@ Command = Annotated[
     | UnbindViewTemplateCmd
     | DeleteViewTemplateCmd
     | IndexAssetCmd
-    | PlaceAssetCmd
-    | CreateToposolidCmd
-    | UpdateToposolidCmd
-    | DeleteToposolidCmd
-    | TraceImageCmd,
+    | PlaceAssetCmd,
     Field(discriminator="type"),
 ]

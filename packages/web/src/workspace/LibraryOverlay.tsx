@@ -223,6 +223,33 @@ export function LibraryOverlay({
               {label}
             </button>
           ))}
+
+          {/* Libraries heading + Built-in entry (AST-V3-02 subscription backend is wave-7) */}
+          <div
+            style={{
+              fontSize: 'var(--text-xs)',
+              color: 'var(--text-secondary)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              padding: '16px 12px 8px',
+            }}
+          >
+            Libraries
+          </div>
+          <ul
+            data-testid="library-subscriptions-list"
+            style={{ listStyle: 'none', margin: 0, padding: 0 }}
+          >
+            <li
+              style={{
+                padding: '5px 12px',
+                fontSize: 'var(--text-xs)',
+                color: 'var(--text-primary)',
+              }}
+            >
+              Built-in
+            </li>
+          </ul>
         </div>
 
         {/* Centre — search + card grid */}

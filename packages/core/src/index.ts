@@ -69,7 +69,12 @@ export type ElemKind =
   | 'mass'
   | 'phase'
   | 'sun_settings'
-  | 'view';
+  | 'view'
+  | 'soffit'
+  | 'edge_profile_run'
+  | 'roof_join'
+  | 'asset_library_entry'
+  | 'placed_asset';
 
 export type PhaseFilter = 'all' | 'existing' | 'demolition' | 'new';
 
@@ -90,8 +95,6 @@ export const DEFAULT_DISCIPLINE_BY_KIND: Readonly<Partial<Record<ElemKind, Disci
   balcony: 'arch',
   sweep: 'arch',
   dormer: 'arch',
-  soffit: 'arch',
-  toposolid: 'arch',
   column: 'struct',
   beam: 'struct',
 } as const;
@@ -1608,7 +1611,9 @@ export type Element =
       animationRange?: { startIso: string; endIso: string; intervalMinutes: number } | null;
       daylightSavingStrategy: 'auto' | 'on' | 'off';
     }
-  | View;
+  | View
+  | AssetLibraryEntryElem
+  | PlacedAssetElem;
 
 export type Violation = {
   ruleId: string;
@@ -2034,4 +2039,78 @@ export type ActivityRow = {
   ts: number;
   parentSnapshotId?: string;
   resultSnapshotId?: string;
+};
+
+// ---------------------------------------------------------------------------
+// AST-V3-01 — Searchable asset library types
+// ---------------------------------------------------------------------------
+
+/** Kind discriminant for an asset library entry. */
+export type AssetKind = 'family_instance' | 'block_2d' | 'kit' | 'decal' | 'profile';
+
+/** Category facet for the left-rail filter. */
+export type AssetCategory =
+  | 'furniture'
+  | 'kitchen'
+  | 'bathroom'
+  | 'door'
+  | 'window'
+  | 'decal'
+  | 'profile'
+  | 'casework';
+
+/** Discipline filter tag that feeds LIB-V3-01 cross-theme. */
+export type AssetDisciplineTag = 'arch' | 'struct' | 'mep';
+
+/** One parameter definition in an asset's parametric schema. */
+export type ParamSchemaEntry = {
+  key: string;
+  kind: 'mm' | 'enum' | 'material' | 'bool';
+  default: unknown;
+  constraints?: unknown;
+};
+
+/** AST-V3-01 — searchable asset library entry with schematic-2D thumbnail. */
+export type AssetLibraryEntry = {
+  id: string;
+  assetKind?: AssetKind;
+  name: string;
+  tags: string[];
+  category: AssetCategory;
+  disciplineTags?: AssetDisciplineTag[];
+  thumbnailKind: 'schematic_plan' | 'rendered_3d';
+  thumbnailMm?: { widthMm: number; heightMm: number };
+  paramSchema?: ParamSchemaEntry[];
+  publishedFromOrgId?: string;
+  description?: string;
+};
+
+/** AST-V3-01 — element shape for an AssetLibraryEntry in the document store. */
+export type AssetLibraryEntryElem = {
+  kind: 'asset_library_entry';
+  id: string;
+  assetKind: AssetKind;
+  name: string;
+  tags: string[];
+  category: AssetCategory;
+  disciplineTags?: AssetDisciplineTag[];
+  thumbnailKind: 'schematic_plan' | 'rendered_3d';
+  thumbnailWidthMm?: number;
+  thumbnailHeightMm?: number;
+  paramSchema?: ParamSchemaEntry[];
+  publishedFromOrgId?: string;
+  description?: string;
+};
+
+/** AST-V3-01 — a placed asset instance on the plan canvas. */
+export type PlacedAssetElem = {
+  kind: 'placed_asset';
+  id: string;
+  name: string;
+  assetId: string;
+  levelId: string;
+  positionMm: XY;
+  rotationDeg?: number;
+  paramValues?: Record<string, unknown>;
+  hostElementId?: string;
 };

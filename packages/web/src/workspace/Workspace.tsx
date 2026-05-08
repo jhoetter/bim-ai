@@ -391,6 +391,42 @@ export function Workspace(): JSX.Element {
     [hydrateFromSnapshot, setSeedError],
   );
 
+  /* ── AST-V3-01 — library place callback ─────────────────────────────── */
+  const handleLibraryPlace = useCallback(
+    async (
+      entry: import('@bim-ai/core').AssetLibraryEntry,
+      paramValues: Record<string, unknown>,
+    ): Promise<void> => {
+      const mid = useBimStore.getState().modelId;
+      const uid = useBimStore.getState().userId;
+      const lvlId = useBimStore.getState().activeLevelId;
+      if (!mid || !lvlId) return;
+      // Place at canvas centre (0, 0) — the user can move it after placement.
+      const command = {
+        type: 'PlaceAsset',
+        assetId: entry.id,
+        levelId: lvlId,
+        positionMm: { xMm: 0, yMm: 0 },
+        paramValues,
+      };
+      try {
+        const r = await applyCommand(mid, command, { userId: uid });
+        if (r.revision !== undefined) {
+          hydrateFromSnapshot({
+            modelId: mid,
+            revision: r.revision,
+            elements: r.elements ?? {},
+            violations: (r.violations ?? []) as Violation[],
+          });
+          setUndoDepth((d) => d + 1);
+        }
+      } catch {
+        // Placement failure is non-blocking — the overlay stays open
+      }
+    },
+    [hydrateFromSnapshot],
+  );
+
   /* ── Undo / Redo ────────────────────────────────────────────────────── */
   const handleUndoRedo = useCallback(
     async (isUndo: boolean): Promise<void> => {
@@ -1026,7 +1062,6 @@ export function Workspace(): JSX.Element {
           .map((e) => {
             const a = e as unknown as Record<string, unknown>;
             return {
-              kind: 'asset_library_entry' as const,
               id: String(a['id']),
               assetKind: (a['assetKind'] ?? 'block_2d') as import('@bim-ai/core').AssetKind,
               name: String(a['name']),
@@ -1048,9 +1083,7 @@ export function Workspace(): JSX.Element {
               description: a['description'] as string | undefined,
             };
           })}
-        onPlace={(_entry, _paramValues) => {
-          // Canvas placement mode (U5 N-clicks) — full integration in canvas layer
-        }}
+        onPlace={(entry, paramValues) => void handleLibraryPlace(entry, paramValues)}
       />
     </>
   );

@@ -104,7 +104,6 @@ from bim_ai.commands import (
     SaveViewpointCmd,
     SetCurtainPanelOverrideCmd,
     SetEdgeProfileRunModeCmd,
-    SetElementDisciplineCmd,
     SetElementPhaseCmd,
     SetRailingBalusterPatternCmd,
     SetRailingHandrailSupportsCmd,
@@ -183,10 +182,6 @@ from bim_ai.commands import (
     DeleteViewTemplateCmd,
     IndexAssetCmd,
     PlaceAssetCmd,
-    TraceImageCmd,
-    CreateToposolidCmd,
-    UpdateToposolidCmd,
-    DeleteToposolidCmd,
 )
 from bim_ai.constraints import Violation, evaluate
 from bim_ai.datum_levels import (
@@ -196,7 +191,6 @@ from bim_ai.datum_levels import (
 from bim_ai.document import Document
 from bim_ai.elements import (
     DEFAULT_DISCIPLINE_BY_KIND,
-    DisciplineTag,
     INTERNAL_ORIGIN_ID,
     SUN_SETTINGS_ID,
     AgentAssumptionElem,
@@ -303,10 +297,6 @@ from bim_ai.elements import (
     AssetLibraryEntryElem,
     AssetParamEntry,
     PlacedAssetElem,
-    HeightSample,
-    HeightmapGrid,
-    ToposolidElem,
-    Vec2Mm as _Vec2Mm,
 )
 from bim_ai.export_ifc import (
     AUTHORITATIVE_REPLAY_KIND_V0,
@@ -4517,26 +4507,6 @@ def apply_inplace(
             if updates_ep:
                 els[cmd.element_id] = el.model_copy(update=updates_ep)
 
-        case SetElementDisciplineCmd():
-            valid = {"arch", "struct", "mep"}
-            if cmd.discipline not in valid:
-                raise ValueError(
-                    f"setElementDiscipline: discipline must be arch|struct|mep, "
-                    f"got {cmd.discipline!r}"
-                )
-            for eid in cmd.element_ids:
-                el = els.get(eid)
-                if el is None:
-                    raise ValueError(
-                        f"setElementDiscipline: elementId {eid!r} not found"
-                    )
-                if not hasattr(el, "discipline"):
-                    raise ValueError(
-                        f"setElementDiscipline: elementId {eid!r} ({el.kind!r}) "
-                        "does not support the discipline field"
-                    )
-                els[eid] = el.model_copy(update={"discipline": cmd.discipline})
-
         case SetViewPhaseCmd():
             view = els.get(cmd.view_id)
             if not isinstance(view, PlanViewElem):
@@ -4956,12 +4926,6 @@ def apply_inplace(
                 description=cmd.description,
             )
 
-        case TraceImageCmd():
-            raise ValueError(
-                "TraceImageCmd cannot be applied in a bundle; "
-                "use POST /api/v3/trace or engine.handle_trace_image_cmd() instead"
-            )
-
         case PlaceAssetCmd():
             eid = cmd.id or new_id()
             if eid in els:
@@ -4988,56 +4952,6 @@ def apply_inplace(
     # KRN-08: areas track a derived computedAreaSqMm. Recompute after every
     # command apply so create/update/delete of areas (and shafts that affect
     # `net` rule-set deductions) keep the value current.
-
-        case CreateToposolidCmd():
-            tid = cmd.toposolid_id
-            if tid in els:
-                raise ValueError(f"CreateToposolid: element id '{tid}' already exists")
-            if len(cmd.boundary_mm) < 3:
-                raise ValueError("CreateToposolid.boundaryMm requires at least 3 points")
-            has_samples = bool(cmd.height_samples)
-            has_grid = cmd.heightmap_grid_mm is not None
-            if has_samples and has_grid:
-                raise ValueError("CreateToposolid: provide either heightSamples or heightmapGridMm, not both")
-            height_samples = [HeightSample(**s) for s in cmd.height_samples]
-            heightmap_grid = HeightmapGrid(**cmd.heightmap_grid_mm) if cmd.heightmap_grid_mm else None
-            boundary = [_Vec2Mm(xMm=pt["xMm"], yMm=pt["yMm"]) for pt in cmd.boundary_mm]
-            els[tid] = ToposolidElem(
-                kind="toposolid",
-                id=tid,
-                name=cmd.name,
-                boundaryMm=boundary,
-                heightSamples=height_samples,
-                heightmapGridMm=heightmap_grid,
-                thicknessMm=cmd.thickness_mm,
-                baseElevationMm=cmd.base_elevation_mm,
-                defaultMaterialKey=cmd.default_material_key,
-            )
-
-        case UpdateToposolidCmd():
-            tid = cmd.toposolid_id
-            if tid not in els or not isinstance(els[tid], ToposolidElem):
-                raise ValueError(f"UpdateToposolid: no toposolid element with id '{tid}'")
-            existing = els[tid]
-            patch: dict[str, Any] = {}
-            if cmd.name is not None:
-                patch["name"] = cmd.name
-            if cmd.thickness_mm is not None:
-                patch["thickness_mm"] = cmd.thickness_mm
-            if cmd.base_elevation_mm is not None:
-                patch["base_elevation_mm"] = cmd.base_elevation_mm
-            if cmd.default_material_key is not None:
-                patch["default_material_key"] = cmd.default_material_key
-            if cmd.pinned is not None:
-                patch["pinned"] = cmd.pinned
-            els[tid] = existing.model_copy(update=patch)
-
-        case DeleteToposolidCmd():
-            tid = cmd.toposolid_id
-            if tid not in els:
-                raise ValueError(f"DeleteToposolid: no element with id '{tid}'")
-            del els[tid]
-
     from bim_ai.area_calculation import recompute_all_areas
 
     recompute_all_areas(els)
@@ -6501,30 +6415,3 @@ def planFamilyInstanceMesh(instance: ColumnElem, detail_level: str) -> list[Line
         return _family_coarse(instance)
     else:
         return _family_full(instance)
-
-
-# ---------------------------------------------------------------------------
-# IMG-V3-01 — handle_trace_image_cmd
-# ---------------------------------------------------------------------------
-
-
-def handle_trace_image_cmd(cmd: TraceImageCmd) -> dict:
-    """Run the deterministic CV pipeline on the base64-encoded image in cmd."""
-    import base64
-    import os
-    import tempfile
-
-    from bim_ai.img.pipeline import trace
-
-    image_bytes = base64.b64decode(cmd.image_b64)
-    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as fh:
-        fh.write(image_bytes)
-        tmp_path = fh.name
-    try:
-        layout = trace(tmp_path, archetype_hint=cmd.archetype_hint)
-    finally:
-        try:
-            os.unlink(tmp_path)
-        except OSError:
-            pass
-    return layout.model_dump(by_alias=True)

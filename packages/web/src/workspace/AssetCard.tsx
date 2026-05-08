@@ -121,6 +121,7 @@ export function AssetCard({ entry, selected, onSelect, onPlace }: AssetCardProps
     <div
       role="button"
       tabIndex={0}
+      draggable
       data-testid="asset-card"
       aria-label={entry.name}
       aria-selected={selected}
@@ -131,7 +132,7 @@ export function AssetCard({ entry, selected, onSelect, onPlace }: AssetCardProps
         gap: 4,
         padding: 8,
         borderRadius: 4,
-        cursor: 'pointer',
+        cursor: 'grab',
         background: selected ? 'var(--surface-active)' : 'var(--surface-panel)',
         border: selected ? '1px solid var(--color-accent)' : '1px solid var(--border-subtle)',
         fontSize: 'var(--text-xs)',
@@ -140,6 +141,14 @@ export function AssetCard({ entry, selected, onSelect, onPlace }: AssetCardProps
       }}
       onClick={() => onSelect(entry)}
       onDoubleClick={() => onPlace(entry)}
+      onDragStart={(e) => {
+        e.dataTransfer.setData('application/bim-asset-id', entry.id);
+        e.dataTransfer.effectAllowed = 'copy';
+      }}
+      onDragEnd={() => {
+        // Placement is initiated via onPlace when drag ends on canvas
+        onPlace(entry);
+      }}
       onKeyDown={(e) => {
         if (e.key === 'Enter') onPlace(entry);
         if (e.key === ' ') {

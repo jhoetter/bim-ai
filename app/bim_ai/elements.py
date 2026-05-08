@@ -2034,23 +2034,6 @@ class MassElem(BaseModel):
     discipline: DisciplineTag | None = Field(default=None)
 
 
-class PresentationLinkElem(BaseModel):
-    """OUT-V3-01 — live presentation URL token persisted as a document element."""
-
-    model_config = ConfigDict(extra="ignore", populate_by_name=True)
-    kind: Literal["presentation_link"] = "presentation_link"
-    id: str
-    model_id: str = Field(alias="modelId")
-    page_scope_ids: list[str] = Field(default_factory=list, alias="pageScopeIds")
-    token: str
-    permission: Literal["viewer"] = "viewer"
-    allow_measurement: bool = Field(default=False, alias="allowMeasurement")
-    allow_comment: bool = Field(default=False, alias="allowComment")
-    expires_at: int | None = Field(default=None, alias="expiresAt")
-    created_at: int = Field(alias="createdAt")
-    revoked_at: int | None = Field(default=None, alias="revokedAt")
-
-
 class VoidCutElem(BaseModel):
     """SKT-01 — subtractive-boolean marker against a host element.
 
@@ -2180,38 +2163,6 @@ class PlacedAssetElem(BaseModel):
     host_element_id: str | None = Field(default=None, alias="hostElementId")
 
 
-
-class HeightSample(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    x_mm: float = Field(alias="xMm")
-    y_mm: float = Field(alias="yMm")
-    z_mm: float = Field(alias="zMm")
-
-
-class HeightmapGrid(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    step_mm: float = Field(alias="stepMm")
-    rows: int
-    cols: int
-    values: list[float]
-
-
-class ToposolidElem(BaseModel):
-    """TOP-V3-01 terrain solid primitive."""
-
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    kind: Literal["toposolid"] = "toposolid"
-    id: str
-    name: str | None = None
-    boundary_mm: list[Vec2Mm] = Field(alias="boundaryMm")
-    height_samples: list[HeightSample] = Field(default_factory=list, alias="heightSamples")
-    heightmap_grid_mm: HeightmapGrid | None = Field(default=None, alias="heightmapGridMm")
-    thickness_mm: float = Field(default=1500.0, alias="thicknessMm")
-    base_elevation_mm: float | None = Field(default=None, alias="baseElevationMm")
-    default_material_key: str | None = Field(default=None, alias="defaultMaterialKey")
-    pinned: bool = False
-
-
 Element = Annotated[
     ProjectSettingsElem
     | RoomColorSchemeElem
@@ -2285,9 +2236,7 @@ Element = Annotated[
     | TitleblockTypeElem
     | WindowLegendViewElem
     | ViewElem
-    | PresentationLinkElem
     | AssetLibraryEntryElem
-    | PlacedAssetElem
-    | ToposolidElem,
+    | PlacedAssetElem,
     Field(discriminator="kind"),
 ]
