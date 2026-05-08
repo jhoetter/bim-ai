@@ -1,0 +1,43 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "534469f08ff9",
+  "session_id": "854d92ef-60e6-4640-97c9-0bfb5fd2a3b7",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T21:47:58.654259Z",
+  "branch": "feat/v3-can-v3-02-hatch-patterns",
+  "checkpoints_count": 0,
+  "files_touched": [
+    ".github/workflows/ci.yml"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "f7a64040a0e6",
+  "token_usage": {
+    "input_tokens": 24,
+    "cache_creation_tokens": 66983,
+    "cache_read_tokens": 1394080,
+    "output_tokens": 7233,
+    "api_call_count": 22
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-08T21:47:58.643182Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 1,
+    "human_removed": 0,
+    "total_committed": 0,
+    "total_lines_changed": 1,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}
