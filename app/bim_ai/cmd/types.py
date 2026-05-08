@@ -45,3 +45,13 @@ class BundleResult(BaseModel):
     option_id: str | None = Field(default=None, alias="optionId")
     violations: list[dict[str, Any]] = Field(default_factory=list)
     checkpoint_snapshot_id: str | None = Field(default=None, alias="checkpointSnapshotId")
+
+
+class AgentTrace(BaseModel):
+    """Provenance trace from the agent bundle that authored an element."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
+
+    bundle_id: str | None = Field(default=None, alias="bundleId")
+    revision: int | None = None
+    phase: str | None = None

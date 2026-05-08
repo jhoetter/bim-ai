@@ -1549,3 +1549,24 @@ export type TokenSequenceDelta = {
   removedEntities: { elementId: string }[];
   modifiedEntities: { before: EntityToken; after: EntityToken }[];
 };
+
+// ---------------------------------------------------------------------------
+// CMD-V3-02 — AgentTrace + AssumptionEntry
+// ---------------------------------------------------------------------------
+
+/** CMD-V3-02: provenance trace stamped on every element created/modified by a bundle. */
+export type AgentTrace = {
+  bundleId: string;
+  assumptionKeys: string[];
+  appliedAt: string;
+};
+
+/** CMD-V3-02: one assumption entry in a CommandBundle's assumptions array. */
+export type AssumptionEntry = {
+  key: string;
+  value: string | number | boolean;
+  confidence: number;
+  source: string;
+  contestable?: boolean;
+  evidence?: string | null;
+};

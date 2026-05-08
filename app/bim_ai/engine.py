@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import uuid
 from collections import Counter
 from typing import Any, Literal, NamedTuple, cast
@@ -142,7 +143,10 @@ from bim_ai.commands import (
     UpsertWallTypeCmd,
     CreateSunSettingsCmd,
     UpdateSunSettingsCmd,
+    SetRailingBalusterPatternCmd,
+    SetRailingHandrailSupportsCmd,
     SetWallStackCmd,
+    SetWallLeanTaperCmd,
     WallStackComponentCmd,
 )
 from bim_ai.constraints import Violation, evaluate
@@ -160,6 +164,8 @@ from bim_ai.elements import (
     AgentDeviationElem,
     AreaElem,
     BalconyElem,
+    BalusterPattern,
+    HandrailSupport,
     BcfElem,
     BeamElem,
     CalloutElem,
@@ -795,6 +801,26 @@ def _validate_wall_stack(components: list, wall_height_mm: float) -> None:
         )
 
 
+def _validate_wall_lean_taper(
+    lean_mm: Vec2Mm | None,
+    taper_ratio: float | None,
+    wall_height_mm: float,
+) -> None:
+    if lean_mm is not None:
+        magnitude = math.sqrt(lean_mm.x_mm**2 + lean_mm.y_mm**2)
+        max_lean = wall_height_mm * math.tan(math.radians(60))
+        if magnitude > max_lean:
+            raise ValueError(
+                f"leanMm magnitude ({magnitude:.1f} mm) exceeds "
+                f"wall height × tan(60°) ({max_lean:.1f} mm)"
+            )
+    if taper_ratio is not None:
+        if not (0.1 < taper_ratio < 10.0):
+            raise ValueError(
+                f"taperRatio ({taper_ratio}) must be in open interval (0.1, 10)"
+            )
+
+
 def _floor_dims_from_type(
     els: dict[str, Element], floor_type_id: str | None
 ) -> tuple[float, float, float] | None:
@@ -1006,6 +1032,49 @@ def _enforce_pin_block(els: dict[str, Element], cmd: Command) -> None:
         )
 
 
+def _validate_baluster_pattern(pattern: BalusterPattern) -> None:
+    if pattern.rule == "regular" and (
+        pattern.spacing_mm is None or pattern.spacing_mm <= 0
+    ):
+        raise ValueError("balusterPattern.rule='regular' requires spacingMm > 0")
+
+
+def _validate_handrail_supports(
+    supports: list[HandrailSupport],
+    els: dict,
+) -> None:
+    for i, support in enumerate(supports):
+        if not support.bracket_family_id:
+            raise ValueError(
+                f"handrailSupports[{i}].bracketFamilyId must be non-empty"
+            )
+        host = els.get(support.host_wall_id)
+        if not isinstance(host, WallElem):
+            raise ValueError(
+                f"handrailSupports[{i}].hostWallId '{support.host_wall_id}' "
+                "must reference a Wall"
+            )
+
+
+def compute_baluster_positions(
+    path_length_mm: float,
+    spacing_mm: float,
+) -> list[float]:
+    """Return t-values (offsets in mm from path start) for a 'regular' baluster pattern.
+
+    First baluster at spacing_mm / 2; last at path_length_mm - spacing_mm / 2.
+    Returns empty list if path_length_mm < spacing_mm or spacing_mm <= 0.
+    """
+    if path_length_mm < spacing_mm or spacing_mm <= 0:
+        return []
+    positions = []
+    t = spacing_mm / 2.0
+    while t <= path_length_mm - spacing_mm / 2.0:
+        positions.append(t)
+        t += spacing_mm
+    return positions
+
+
 def _no_source_provider(_uuid: str, _rev: int | None) -> None:
     """FED-02: default source provider used when no DB-backed resolver was
     threaded through (unit tests, intra-host operations). Returns ``None`` so
@@ -1086,6 +1155,8 @@ def apply_inplace(
                         for c in cmd.stack_components
                     ]
                 )
+            if cmd.lean_mm is not None or cmd.taper_ratio is not None:
+                _validate_wall_lean_taper(cmd.lean_mm, cmd.taper_ratio, h_mm)
             els[eid] = WallElem(
                 kind="wall",
                 id=eid,
@@ -1104,6 +1175,8 @@ def apply_inplace(
                 material_key=cmd.material_key,
                 is_curtain_wall=cmd.is_curtain_wall,
                 stack=wall_stack,
+                lean_mm=cmd.lean_mm,
+                taper_ratio=cmd.taper_ratio,
             )
 
         case MoveWallDeltaCmd():
@@ -2692,14 +2765,41 @@ def apply_inplace(
                 raise ValueError("createRailing.hostedStairId unknown")
             if len(cmd.path_mm) < 2:
                 raise ValueError("createRailing.pathMm requires ≥2 points")
+            if cmd.baluster_pattern is not None:
+                _validate_baluster_pattern(cmd.baluster_pattern)
+            if cmd.handrail_supports:
+                _validate_handrail_supports(cmd.handrail_supports, els)
             els[rid] = RailingElem(
                 kind="railing",
                 id=rid,
                 name=cmd.name,
                 hosted_stair_id=cmd.hosted_stair_id,
                 path_mm=cmd.path_mm,
+                baluster_pattern=cmd.baluster_pattern,
+                handrail_supports=cmd.handrail_supports or None,
             )
 
+        case SetRailingBalusterPatternCmd():
+            railing = els.get(cmd.railing_id)
+            if not isinstance(railing, RailingElem):
+                raise ValueError("setRailingBalusterPattern.railingId must reference a Railing")
+            if cmd.baluster_pattern is not None:
+                _validate_baluster_pattern(cmd.baluster_pattern)
+            els[cmd.railing_id] = railing.model_copy(
+                update={"baluster_pattern": cmd.baluster_pattern}
+            )
+
+        case SetRailingHandrailSupportsCmd():
+            railing = els.get(cmd.railing_id)
+            if not isinstance(railing, RailingElem):
+                raise ValueError(
+                    "setRailingHandrailSupports.railingId must reference a Railing"
+                )
+            if cmd.handrail_supports:
+                _validate_handrail_supports(cmd.handrail_supports, els)
+            els[cmd.railing_id] = railing.model_copy(
+                update={"handrail_supports": cmd.handrail_supports or None}
+            )
         case SplitWallAtCmd():
             wall = els.get(cmd.wall_id)
             if not isinstance(wall, WallElem):
@@ -4198,6 +4298,18 @@ def apply_inplace(
                 )
                 els[cmd.wall_id] = wall.model_copy(update={"stack": new_stack})
 
+        case SetWallLeanTaperCmd():
+            wall = els.get(cmd.wall_id)
+            if not isinstance(wall, WallElem):
+                raise ValueError("setWallLeanTaper.wallId must reference a Wall")
+            _validate_wall_lean_taper(cmd.lean_mm, cmd.taper_ratio, wall.height_mm)
+            els[cmd.wall_id] = wall.model_copy(
+                update={
+                    "lean_mm": cmd.lean_mm,
+                    "taper_ratio": cmd.taper_ratio,
+                }
+            )
+
     # KRN-08: areas track a derived computedAreaSqMm. Recompute after every
     # command apply so create/update/delete of areas (and shafts that affect
     # `net` rule-set deductions) keep the value current.
@@ -5373,3 +5485,21 @@ def schedule_stacked_components(wall: WallElem) -> list[dict]:
         )
         accumulated += comp.height_mm
     return rows
+
+
+def resolve_wall_face_offset_at_cut(
+    wall: WallElem,
+    cut_plane_offset_mm: float,
+) -> tuple[float, float]:
+    """Return the (x_offset_mm, y_offset_mm) of the wall face at the given cut height.
+
+    For a prismatic wall, returns (0.0, 0.0).
+    For a leaning wall, returns lean_mm * (cut_plane_offset_mm / wall.height_mm).
+    """
+    if wall.lean_mm is None or wall.height_mm == 0:
+        return (0.0, 0.0)
+    fraction = cut_plane_offset_mm / wall.height_mm
+    return (
+        wall.lean_mm.x_mm * fraction,
+        wall.lean_mm.y_mm * fraction,
+    )
