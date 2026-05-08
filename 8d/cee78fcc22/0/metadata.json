@@ -1,0 +1,38 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "8dcee78fcc22",
+  "session_id": "19657983-8560-4613-bbed-40e29ecc1399",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T07:09:49.441276Z",
+  "branch": "feat/wave-04-skb-02-mass-renderer",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/core/src/index.ts",
+    "packages/web/src/Viewport.tsx",
+    "app/bim_ai/commands.py",
+    "app/bim_ai/elements.py",
+    "app/bim_ai/engine.py"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-opus-4-7",
+  "turn_id": "43540e0f8399",
+  "token_usage": {
+    "input_tokens": 199,
+    "cache_creation_tokens": 177927,
+    "cache_read_tokens": 19663131,
+    "output_tokens": 57933,
+    "api_call_count": 184
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-08T07:09:49.426814Z",
+    "agent_lines": 171,
+    "agent_removed": 2,
+    "human_added": 429,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 600,
+    "total_lines_changed": 602,
+    "agent_percentage": 28.737541528239202,
+    "metric_version": 2
+  }
+}
