@@ -20,8 +20,8 @@ export const DRIFT_BADGE_SIZE_PX = 16;
  * command flips both atomically, so testing both keeps spurious badges
  * from showing during partial state.
  */
-export function elementHasDrift(elem: { monitorSource?: MonitorSource | null }): boolean {
-  const ms = elem.monitorSource ?? null;
+export function elementHasDrift(elem: object): boolean {
+  const ms = (elem as { monitorSource?: MonitorSource | null }).monitorSource ?? null;
   if (!ms) return false;
   if (!ms.drifted) return false;
   const fields = ms.driftedFields ?? [];
@@ -32,8 +32,10 @@ export function elementHasDrift(elem: { monitorSource?: MonitorSource | null }):
  * FED-03 — count how many fields drifted. Used by the tooltip
  * "Monitored source has drifted — N field(s) differ".
  */
-export function driftedFieldCount(elem: { monitorSource?: MonitorSource | null }): number {
-  return elem.monitorSource?.driftedFields?.length ?? 0;
+export function driftedFieldCount(elem: object): number {
+  return (
+    (elem as { monitorSource?: MonitorSource | null }).monitorSource?.driftedFields?.length ?? 0
+  );
 }
 
 /**
@@ -151,7 +153,7 @@ export function pickDriftBadgeAt(
  * Build the tooltip string the badge shows on hover. Kept here so the
  * plan canvas + 3D viewport agree on the wording.
  */
-export function driftBadgeTooltip(elem: { monitorSource?: MonitorSource | null }): string {
+export function driftBadgeTooltip(elem: object): string {
   const n = driftedFieldCount(elem);
   return `Monitored source has drifted — ${n} field(s) differ`;
 }
