@@ -1,0 +1,48 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "78cd407a81ae",
+  "session_id": "4cf23ef9-498d-4e3e-9e2e-acf4561895c7",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T17:17:31.457825Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/plan/SnapSettingsToolbar.test.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "c6e3f80f7d4f",
+  "token_usage": {
+    "input_tokens": 8,
+    "cache_creation_tokens": 23654,
+    "cache_read_tokens": 165919,
+    "output_tokens": 3374,
+    "api_call_count": 6
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-08T17:17:31.438065Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 1,
+    "human_removed": 0,
+    "total_committed": 0,
+    "total_lines_changed": 1,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 808,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "spec/v3-prompts/wp-024.md": 324,
+        "spec/v3-prompts/wp-025.md": 221,
+        "spec/v3-prompts/wp-026.md": 263
+      }
+    }
+  ]
+}
