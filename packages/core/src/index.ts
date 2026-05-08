@@ -1722,7 +1722,9 @@ export type Element =
   | AssetLibraryEntryElem
   | PlacedAssetElem
   | HatchPatternDef
-  | PropertyDefinitionElem;
+  | PropertyDefinitionElem
+  | MaterialElem
+  | DecalElem;
 
 export type Violation = {
   ruleId: string;

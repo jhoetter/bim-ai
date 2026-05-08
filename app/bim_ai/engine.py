@@ -111,6 +111,7 @@ from bim_ai.commands import (
     SetStairSubKindCmd,
     SetViewPhaseCmd,
     SetViewPhaseFilterCmd,
+    SetViewLensCmd,
     SetWallJoinVariantCmd,
     SetWallLeanTaperCmd,
     SetWallRecessZonesCmd,
@@ -187,11 +188,16 @@ from bim_ai.commands import (
     IndexAssetCmd,
     PlaceAssetCmd,
     SetToolPrefCmd,
+    UpdateMaterialPbrCmd,
+    CreateDecalCmd,
     TraceImageCmd,
     UpdateWallCmd,
     UpdateDoorCmd,
     UpdateWindowCmd,
     UpdateColumnCmd,
+    CreatePropertyDefinitionCmd,
+    SetElementPropCmd,
+    CreateScheduleViewCmd,
 )
 from bim_ai.constraints import Violation, evaluate
 from bim_ai.datum_levels import (
@@ -222,6 +228,7 @@ from bim_ai.elements import (
     DEFAULT_DISCIPLINE_BY_KIND,
     DimensionElem,
     DisciplineTag,
+    LensMode,
     DoorElem,
     DormerElem,
     EdgeProfileRunElem,
@@ -233,6 +240,7 @@ from bim_ai.elements import (
     FloorTypeElem,
     GridLineElem,
     HandrailSupport,
+    HatchPatternDefElem,
     InternalOriginElem,
     IssueElem,
     JoinGeometryElem,
@@ -310,6 +318,9 @@ from bim_ai.elements import (
     AssetLibraryEntryElem,
     AssetParamEntry,
     PlacedAssetElem,
+    MaterialElem,
+    DecalElem,
+    PropertyDefinitionElem,
 )
 from bim_ai.export_ifc import (
     AUTHORITATIVE_REPLAY_KIND_V0,
@@ -951,6 +962,30 @@ def ensure_sun_settings(doc: Document) -> Document:
         return doc
     doc.elements[SUN_SETTINGS_ID] = SunSettingsElem(kind="sun_settings", id=SUN_SETTINGS_ID)
     return doc
+
+
+_SEED_HATCHES: list[dict] = [
+    {"id": "brick_45", "name": "Brick", "paperMmRepeat": 73, "rotationDeg": 45, "strokeWidthMm": 0.18, "patternKind": "lines"},
+    {"id": "concrete_dot", "name": "Concrete", "paperMmRepeat": 5, "rotationDeg": 0, "strokeWidthMm": 0.13, "patternKind": "dots"},
+    {"id": "insulation", "name": "Insulation", "paperMmRepeat": 100, "rotationDeg": 0, "strokeWidthMm": 0.25, "patternKind": "curve"},
+    {"id": "plaster", "name": "Plaster", "paperMmRepeat": 8, "rotationDeg": 45, "strokeWidthMm": 0.13, "patternKind": "crosshatch"},
+    {"id": "timber_grain", "name": "Timber", "paperMmRepeat": 12, "rotationDeg": 0, "strokeWidthMm": 0.18, "patternKind": "lines"},
+    {"id": "gypsum", "name": "Gypsum", "paperMmRepeat": 4, "rotationDeg": 45, "strokeWidthMm": 0.10, "patternKind": "dots"},
+    {"id": "stone", "name": "Stone", "paperMmRepeat": 60, "rotationDeg": 0, "strokeWidthMm": 0.18, "patternKind": "lines"},
+]
+
+
+def ensure_seed_hatches(doc: Document) -> Document:
+    """CAN-V3-02: ensure the 7 canonical hatch patterns exist in the document.
+
+    Idempotent — already-present hatches are skipped. Read-only built-ins.
+    """
+    existing_ids = {e.id for e in doc.elements.values() if isinstance(e, HatchPatternDefElem)}
+    for row in _SEED_HATCHES:
+        if row["id"] not in existing_ids:
+            doc.elements[row["id"]] = HatchPatternDefElem.model_validate(row)
+    return doc
+
 
 
 def _wall_elevation_mm(els: dict[str, Element], level_id: str) -> float:
@@ -4047,6 +4082,40 @@ def apply_inplace(
                 gnext.update(cmd.grouping)
             els[cmd.schedule_id] = sc_el.model_copy(update={"filters": merged, "grouping": gnext})
 
+        case CreatePropertyDefinitionCmd():
+            els[cmd.id] = PropertyDefinitionElem(
+                kind="property_definition",
+                id=cmd.id,
+                key=cmd.key,
+                label=cmd.label,
+                propKind=cmd.prop_kind,
+                enumValues=cmd.enum_values,
+                defaultValue=cmd.default_value,
+                appliesTo=cmd.applies_to,
+                showInSchedule=cmd.show_in_schedule,
+            )
+
+        case SetElementPropCmd():
+            target = els.get(cmd.element_id)
+            if target is None:
+                raise ValueError(f"set_element_prop: element '{cmd.element_id}' not found")
+            existing_props = getattr(target, "props", None) or {}
+            updated_props = {**existing_props, cmd.key: cmd.value}
+            els[cmd.element_id] = target.model_copy(update={"props": updated_props})
+
+        case CreateScheduleViewCmd():
+            eid = cmd.id
+            els[eid] = ScheduleElem(
+                kind="schedule",
+                id=eid,
+                name=cmd.name,
+                category=cmd.category,
+                columns=cmd.columns,
+                filterExpr=cmd.filter_expr,
+                sortKey=cmd.sort_key,
+                sortDir=cmd.sort_dir,
+            )
+
         case UpsertRoomVolumeCmd():
             r = els.get(cmd.room_id)
             if not isinstance(r, RoomElem):
@@ -4578,6 +4647,12 @@ def apply_inplace(
                 update={"phase_filter": cast(PhaseFilter, cmd.phase_filter)}
             )
 
+        case SetViewLensCmd():
+            view = els.get(cmd.view_id)
+            if view is None:
+                raise ValueError(f"setViewLens: viewId {cmd.view_id!r} not found")
+            els[cmd.view_id] = view.model_copy(update={"default_lens": cmd.lens})
+
         case MoveElementCmd():
             el = els.get(cmd.element_id)
             if isinstance(el, DoorElem):
@@ -5070,6 +5145,51 @@ def apply_inplace(
                 paramValues=cmd.param_values,
                 hostElementId=cmd.host_element_id,
             )
+        case UpdateMaterialPbrCmd():
+            mat = els.get(cmd.id)
+            if mat is None:
+                raise ValueError(f"UpdateMaterialPbr: material '{cmd.id}' not found")
+            if not isinstance(mat, MaterialElem):
+                raise ValueError(f"UpdateMaterialPbr: element '{cmd.id}' is not a material")
+            if cmd.name is not None:
+                mat.name = cmd.name
+            if cmd.albedo_color is not None:
+                mat.albedo_color = cmd.albedo_color
+            if cmd.albedo_map_id is not None:
+                mat.albedo_map_id = cmd.albedo_map_id
+            if cmd.normal_map_id is not None:
+                mat.normal_map_id = cmd.normal_map_id
+            if cmd.roughness_map_id is not None:
+                mat.roughness_map_id = cmd.roughness_map_id
+            if cmd.metallic_map_id is not None:
+                mat.metallic_map_id = cmd.metallic_map_id
+            if cmd.height_map_id is not None:
+                mat.height_map_id = cmd.height_map_id
+            if cmd.uv_scale_mm is not None:
+                mat.uv_scale_mm = cmd.uv_scale_mm
+            if cmd.uv_rotation_deg is not None:
+                mat.uv_rotation_deg = cmd.uv_rotation_deg
+            if cmd.hatch_pattern_id is not None:
+                mat.hatch_pattern_id = cmd.hatch_pattern_id
+
+        case CreateDecalCmd():
+            eid = cmd.id or new_id()
+            if eid in els:
+                raise ValueError(f"CreateDecal: duplicate element id '{eid}'")
+            if cmd.parent_element_id not in els:
+                raise ValueError(
+                    f"CreateDecal: parentElementId '{cmd.parent_element_id}' not found"
+                )
+            els[eid] = DecalElem(
+                kind="decal",
+                id=eid,
+                parentElementId=cmd.parent_element_id,
+                parentSurface=cmd.parent_surface,
+                imageAssetId=cmd.image_asset_id,
+                uvRect=cmd.uv_rect,
+                opacity=cmd.opacity,
+            )
+
         case SetToolPrefCmd():
             # CHR-V3-08: store sticky modifier preference on the document.
             doc.tool_prefs.setdefault(cmd.tool, {})[cmd.pref_key] = cmd.pref_value
@@ -5140,6 +5260,30 @@ def apply_inplace(
     from bim_ai.area_calculation import recompute_all_areas
 
     recompute_all_areas(els)
+
+
+# ---------------------------------------------------------------------------
+# DSC-V3-02 — discipline lens helper used by rendering layers.
+# ---------------------------------------------------------------------------
+
+_LENS_TO_DISCIPLINE: dict[str, str] = {
+    "show_arch": "arch",
+    "show_struct": "struct",
+    "show_mep": "mep",
+}
+
+
+def element_passes_lens(elem_discipline: str | None, lens: str) -> bool:
+    """Return True if the element should be foreground under the given lens.
+
+    Elements with no discipline are treated as 'arch'.
+    show_all always returns True.
+    """
+    if lens == "show_all":
+        return True
+    expected = _LENS_TO_DISCIPLINE.get(lens)
+    resolved = elem_discipline if elem_discipline is not None else "arch"
+    return resolved == expected
 
 
 def resolve_visible_elements(doc: "Document", option_locks: dict[str, str]) -> list[str]:

@@ -1438,8 +1438,52 @@ async function main() {
       if (!modelId) usage();
       const viewId = argv[argv.indexOf('--view-id') + 1];
       const phaseFilter = argv[argv.indexOf('--phase-filter') + 1];
-      if (!viewId || !phaseFilter) { console.error('view-set-phase-filter requires --view-id <id> --phase-filter <filter>'); process.exit(1); }
+      if (!viewId || !phaseFilter) {
+        console.error('view-set-phase-filter requires --view-id <id> --phase-filter <filter>');
+        process.exit(1);
+      }
       await postCommand(modelId, userId, { type: 'setViewPhaseFilter', viewId, phaseFilter });
+      return;
+    }
+
+    if (cmd === 'view-set-lens') {
+      // DSC-V3-02: set discipline lens on a view
+      if (!modelId) usage();
+      const viewId = argv[argv.indexOf('--view-id') + 1];
+      const lens = argv[argv.indexOf('--lens') + 1];
+      if (!viewId || !lens) {
+        console.error(
+          'view-set-lens requires --view-id <id> --lens <show_arch|show_struct|show_mep|show_all>',
+        );
+        process.exit(1);
+      }
+      await postCommand(modelId, userId, { type: 'set_view_lens', viewId, lens });
+      return;
+    }
+
+    if (cmd === 'detail-region') {
+      // ANN-V3-01: draw a detail region polyline or closed hatch region on a view
+      const [modelId, viewId, ...rest] = args;
+      const vertices = JSON.parse(rest[0] || '[]');
+      const closed = rest.includes('--closed');
+      const hatchArg = rest.find((a) => a.startsWith('--hatch='));
+      const hatchId = hatchArg ? hatchArg.split('=')[1] : null;
+      const data = await apiFetch(`/api/v3/models/${modelId}/apply`, {
+        method: 'POST',
+        body: JSON.stringify({
+          commands: [
+            {
+              type: 'create_detail_region',
+              id: crypto.randomUUID(),
+              viewId,
+              vertices,
+              closed,
+              hatchId,
+            },
+          ],
+        }),
+      });
+      console.log(JSON.stringify(data, null, 2));
       return;
     }
 

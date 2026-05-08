@@ -12,6 +12,7 @@ from bim_ai.elements import (
     ConstraintRule,
     CurtainPanelOverride,
     DisciplineTag,
+    LensMode,
     DormerPositionOnRoof,
     DormerRoofKind,
     DxfLineworkPrim,
@@ -1808,6 +1809,19 @@ class SetViewPhaseFilterCmd(BaseModel):
     phase_filter: PhaseFilter = Field(alias="phaseFilter")
 
 
+class SetViewLensCmd(BaseModel):
+    """DSC-V3-02 — set the discipline lens on a view.
+
+    Elements not matching the lens render at 25% opacity (ghost).
+    Does not mutate element discipline fields.
+    """
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["set_view_lens"] = "set_view_lens"
+    view_id: str = Field(alias="viewId")
+    lens: LensMode
+
+
 class MoveElementCmd(BaseModel):
     """TKN-V3-01 — move a wall-hosted element (door/window) to a new tAlongHost position."""
 
@@ -2184,6 +2198,44 @@ class UpdateColumnCmd(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# MAT-V3-01 — Material PBR map slots + Decals
+# ---------------------------------------------------------------------------
+
+
+class UpdateMaterialPbrCmd(BaseModel):
+    """MAT-V3-01 — set PBR map slots on a material element."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["update_material_pbr"] = "update_material_pbr"
+    id: str
+    name: str | None = None
+    albedo_color: str | None = Field(default=None, alias="albedoColor")
+    albedo_map_id: str | None = Field(default=None, alias="albedoMapId")
+    normal_map_id: str | None = Field(default=None, alias="normalMapId")
+    roughness_map_id: str | None = Field(default=None, alias="roughnessMapId")
+    metallic_map_id: str | None = Field(default=None, alias="metallicMapId")
+    height_map_id: str | None = Field(default=None, alias="heightMapId")
+    uv_scale_mm: dict | None = Field(default=None, alias="uvScaleMm")
+    uv_rotation_deg: float | None = Field(default=None, alias="uvRotationDeg")
+    hatch_pattern_id: str | None = Field(default=None, alias="hatchPatternId")
+
+
+class CreateDecalCmd(BaseModel):
+    """MAT-V3-01 — create a decal element hosted on a parent surface."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["create_decal"] = "create_decal"
+    id: str | None = None
+    parent_element_id: str = Field(alias="parentElementId")
+    parent_surface: Literal["front", "back", "top", "left", "right", "bottom"] = Field(
+        alias="parentSurface"
+    )
+    image_asset_id: str = Field(alias="imageAssetId")
+    uv_rect: dict = Field(alias="uvRect")
+    opacity: float = 1.0
+
+
+# ---------------------------------------------------------------------------
 # IMG-V3-01 — Image trace command
 # ---------------------------------------------------------------------------
 
@@ -2200,6 +2252,51 @@ class TraceImageCmd(BaseModel):
     archetype_hint: str | None = Field(default=None, alias="archetypeHint")
     brief_text: str | None = Field(default=None, alias="briefText")
     assumptions: list = Field(default_factory=list)
+
+
+# ---------------------------------------------------------------------------
+# SCH-V3-01 — Custom-properties + schedule view commands
+# ---------------------------------------------------------------------------
+
+
+class CreatePropertyDefinitionCmd(BaseModel):
+    """SCH-V3-01 — define a custom property schema entry."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["create_property_definition"] = "create_property_definition"
+    id: str
+    key: str
+    label: str
+    prop_kind: str = Field(alias="propKind")
+    enum_values: list[str] | None = Field(default=None, alias="enumValues")
+    default_value: Any | None = Field(default=None, alias="defaultValue")
+    applies_to: list[str] = Field(alias="appliesTo")
+    show_in_schedule: bool = Field(default=True, alias="showInSchedule")
+
+
+class SetElementPropCmd(BaseModel):
+    """SCH-V3-01 — set a custom property value on any element that carries props."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["set_element_prop"] = "set_element_prop"
+    element_id: str = Field(alias="elementId")
+    key: str
+    value: Any
+
+
+class CreateScheduleViewCmd(BaseModel):
+    """SCH-V3-01 — create a filterable schedule view element."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["create_schedule_view"] = "create_schedule_view"
+    id: str
+    name: str
+    category: str
+    columns: list[dict] = Field(default_factory=list)
+    filter_expr: str | None = Field(default=None, alias="filterExpr")
+    sort_key: str | None = Field(default=None, alias="sortKey")
+    sort_dir: Literal["asc", "desc"] | None = Field(default=None, alias="sortDir")
+
 
 Command = Annotated[
     CreateLevelCmd
@@ -2333,6 +2430,7 @@ Command = Annotated[
     | SetElementDisciplineCmd
     | SetViewPhaseCmd
     | SetViewPhaseFilterCmd
+    | SetViewLensCmd
     | CreateSunSettingsCmd
     | UpdateSunSettingsCmd
     | MoveElementCmd
@@ -2373,6 +2471,11 @@ Command = Annotated[
     | UpdateWallCmd
     | UpdateDoorCmd
     | UpdateWindowCmd
-    | UpdateColumnCmd,
+    | UpdateColumnCmd
+    | UpdateMaterialPbrCmd
+    | CreateDecalCmd
+    | CreatePropertyDefinitionCmd
+    | SetElementPropCmd
+    | CreateScheduleViewCmd,
     Field(discriminator="type"),
 ]
