@@ -25,6 +25,7 @@ from bim_ai.engine import (
     bundle_replay_diagnostics,
     clone_document,
     compute_delta_wire,
+    compute_view_template_propagation,
     diff_undo_cmds,
     replay_bundle_diagnostics_for_outcome,
     try_commit,
@@ -349,6 +350,9 @@ async def apply_command(
                 applied_commands=[body.command],
             )
         )
+    vt_prop = compute_view_template_propagation(doc_before, new_doc, _cmd_obj)
+    if vt_prop is not None:
+        payload["viewTemplatePropagation"] = vt_prop
     return payload
 
 
@@ -493,6 +497,17 @@ async def apply_command_bundle(
                 applied_commands=body.commands,
             )
         )
+    for raw_cmd in body.commands:
+        try:
+            from bim_ai.commands import Command  # noqa: PLC0415
+
+            cmd_obj = Command.model_validate(raw_cmd)
+            vt_prop = compute_view_template_propagation(doc_before, new_doc, cmd_obj)
+            if vt_prop is not None:
+                payload["viewTemplatePropagation"] = vt_prop
+                break
+        except Exception:
+            pass
     return payload
 
 

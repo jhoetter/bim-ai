@@ -1,11 +1,14 @@
 /* eslint-disable bim-ai/no-hex-in-chrome -- pre-v3 hex literals; remove when this file is migrated in B4 Phase 2 */
 import { useMemo, useState } from 'react';
 import type { JSX } from 'react';
-import type { Element } from '@bim-ai/core';
+import type { Element, ViewTemplate } from '@bim-ai/core';
 
 import { Btn } from '@bim-ai/ui';
 
 import { applyCommand } from '../lib/api';
+import { useViewTemplateStore } from '../collab/viewTemplateStore';
+import { PropagationToast } from './PropagationToast';
+import { ViewTemplateEditPanel } from './ViewTemplateEditPanel';
 
 import {
   planViewBrowserHierarchyState,
@@ -91,6 +94,15 @@ export function ProjectBrowser(props: {
   const setViewerMode = useBimStore((s) => s.setViewerMode);
   const applyOrbitViewpointPreset = useBimStore((s) => s.applyOrbitViewpointPreset);
   const setOrbitCameraFromViewpointMm = useBimStore((s) => s.setOrbitCameraFromViewpointMm);
+  const modelId = useBimStore((s) => s.modelId);
+  const lastPropagation = useViewTemplateStore((s) => s.lastPropagation);
+  const dismissPropagation = useViewTemplateStore((s) => s.dismissPropagation);
+  const vtStore = useViewTemplateStore();
+  const [vtCollapsed, setVtCollapsed] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<Extract<
+    Element,
+    { kind: 'view_template' }
+  > | null>(null);
 
   const { planViewsSorted, planViewBuckets, bucketKeys } = useMemo(() => {
     const sorted = Object.values(props.elementsById)
@@ -343,26 +355,123 @@ export function ProjectBrowser(props: {
 
       {viewTemplates.length ? (
         <div className="space-y-1">
-          <div className="text-[10px] uppercase tracking-wide text-muted">View templates</div>
-          <ul className="space-y-0.5">
-            {viewTemplates.map((vt) => (
-              <li key={vt.id}>
-                <button
-                  type="button"
-                  className="w-full px-2 py-0.5 text-left text-[10px]"
-                  title={`view_template · ${vt.name} · ${viewTemplateEvidenceLine(props.elementsById, vt)}`}
-                  onClick={() => useBimStore.getState().select(vt.id)}
-                >
-                  <span className="text-muted">view_template ·</span> {vt.name}
-                </button>
-                <div className="pl-2 font-mono text-[9px] leading-tight text-muted">
-                  {viewTemplateEvidenceLine(props.elementsById, vt)}
-                </div>
-              </li>
-            ))}
-          </ul>
+          <button
+            type="button"
+            className="flex w-full items-center gap-1 text-[10px] uppercase tracking-wide text-muted hover:text-foreground"
+            onClick={() => setVtCollapsed((v) => !v)}
+          >
+            <span>{vtCollapsed ? '▸' : '▾'}</span>
+            View Templates ({viewTemplates.length})
+          </button>
+          {!vtCollapsed && (
+            <ul className="space-y-0.5">
+              {viewTemplates.map((vt) => {
+                const planViews = Object.values(props.elementsById).filter(
+                  (e): e is Extract<Element, { kind: 'plan_view' }> => e.kind === 'plan_view',
+                );
+                return (
+                  <li key={vt.id} className="flex flex-col gap-0.5">
+                    <div className="flex items-center gap-1 px-1">
+                      <button
+                        type="button"
+                        className="flex-1 truncate text-left text-[10px]"
+                        title={`view_template · ${vt.name} · ${viewTemplateEvidenceLine(props.elementsById, vt)}`}
+                        onClick={() => useBimStore.getState().select(vt.id)}
+                      >
+                        <span className="text-muted">⬡</span> {vt.name}
+                      </button>
+                      <details className="relative">
+                        <summary className="cursor-pointer list-none text-[9px] text-muted hover:text-foreground">
+                          Apply ▾
+                        </summary>
+                        <ul className="absolute right-0 z-50 min-w-[140px] rounded border bg-[var(--color-surface-1)] py-1 shadow-md">
+                          {planViews.map((pv) => (
+                            <li key={pv.id}>
+                              <button
+                                type="button"
+                                className="w-full px-3 py-1 text-left text-[10px] hover:bg-[var(--color-surface-2)]"
+                                onClick={async () => {
+                                  if (!modelId) return;
+                                  await vtStore.applyTemplate(modelId, pv.id, vt.id);
+                                }}
+                              >
+                                {pv.name}
+                              </button>
+                            </li>
+                          ))}
+                          {planViews.length === 0 && (
+                            <li className="px-3 py-1 text-[10px] text-muted">No plan views</li>
+                          )}
+                        </ul>
+                      </details>
+                      <button
+                        type="button"
+                        className="text-[9px] text-muted hover:text-foreground"
+                        title="Edit template"
+                        onClick={() => setEditingTemplate(vt)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        className="text-[9px] text-muted hover:text-foreground"
+                        title="Duplicate template"
+                        onClick={async () => {
+                          if (!modelId) return;
+                          const newId = `${vt.id}-copy-${Date.now().toString(36)}`;
+                          await vtStore.createTemplate(modelId, newId, `${vt.name} (copy)`, {
+                            scale: typeof vt.scale === 'number' ? vt.scale : undefined,
+                            detailLevel: vt.detailLevel ?? undefined,
+                            phase: vt.phase ?? undefined,
+                            phaseFilter: vt.phaseFilter ?? undefined,
+                          });
+                        }}
+                      >
+                        Dup
+                      </button>
+                      <button
+                        type="button"
+                        className="text-[9px] text-muted hover:text-foreground"
+                        title="Delete template"
+                        onClick={async () => {
+                          if (!modelId) return;
+                          await vtStore.deleteTemplate(modelId, vt.id);
+                        }}
+                      >
+                        Del
+                      </button>
+                    </div>
+                    <div className="pl-2 font-mono text-[9px] leading-tight text-muted">
+                      {viewTemplateEvidenceLine(props.elementsById, vt)}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </div>
       ) : null}
+
+      {editingTemplate && modelId && (
+        <ViewTemplateEditPanel
+          template={editingTemplate}
+          elementsById={props.elementsById}
+          modelId={modelId}
+          onSave={(patch) => vtStore.updateTemplate(modelId, editingTemplate.id, patch)}
+          onClose={() => setEditingTemplate(null)}
+        />
+      )}
+
+      {lastPropagation && (
+        <PropagationToast
+          propagation={lastPropagation}
+          onDismiss={dismissPropagation}
+          onViewList={() => {
+            const first = lastPropagation.affected[0];
+            if (first) useBimStore.getState().select(first);
+          }}
+        />
+      )}
 
       <ProjectBrowserSheetsGroup sheets={sheets} />
 

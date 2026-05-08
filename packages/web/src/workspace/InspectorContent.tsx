@@ -393,7 +393,7 @@ export function InspectorPropertiesFor(
     case 'view_template':
       return (
         <div>
-          <FieldRow label={f('scale')} value={el.scale} mono />
+          <FieldRow label={f('scale')} value={el.scale != null ? String(el.scale) : ''} mono />
           {el.planDetailLevel ? (
             <FieldRow label={f('detailLevel')} value={el.planDetailLevel} />
           ) : null}
@@ -1186,7 +1186,11 @@ export function InspectorViewTemplateEditor({
           }}
         />
       </label>
-      <FieldRow label={t('inspector.fields.scale')} value={el.scale} mono />
+      <FieldRow
+        label={t('inspector.fields.scale')}
+        value={el.scale != null ? String(el.scale) : ''}
+        mono
+      />
     </div>
   );
 }
