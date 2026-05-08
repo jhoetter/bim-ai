@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
-import { dormerFootprintMm, makeDormerMesh } from './dormerMesh';
+import {
+  buildGableDormerRoof,
+  buildHippedDormerRoof,
+  dormerFootprintMm,
+  makeDormerMesh,
+} from './dormerMesh';
 import type { Element } from '@bim-ai/core';
 
 type DormerElem = Extract<Element, { kind: 'dormer' }>;
@@ -75,5 +80,77 @@ describe('makeDormerMesh', () => {
     });
     expect(meshes.length).toBeGreaterThanOrEqual(4);
     expect(group.userData.bimPickId).toBe('d1');
+  });
+
+  it('renders a gable dormer with a ridged roof', () => {
+    const dormer: DormerElem = {
+      kind: 'dormer',
+      id: 'd1',
+      hostRoofId: 'r1',
+      positionOnRoof: { alongRidgeMm: -2000, acrossRidgeMm: 1000 },
+      widthMm: 2400,
+      wallHeightMm: 2400,
+      depthMm: 2000,
+      dormerRoofKind: 'gable',
+      ridgeHeightMm: 1200,
+    };
+    const elementsById: Record<string, Element> = {
+      'lvl-1': { kind: 'level', id: 'lvl-1', name: 'L1', elevationMm: 3000 },
+      r1: ROOF,
+    };
+    const group = makeDormerMesh(dormer, elementsById, null);
+    const meshes: THREE.Mesh[] = [];
+    group.traverse((o) => {
+      if ((o as THREE.Mesh).isMesh) meshes.push(o as THREE.Mesh);
+    });
+    expect(meshes.length).toBeGreaterThanOrEqual(4);
+  });
+
+  it('renders a hipped dormer with a ridged roof', () => {
+    const dormer: DormerElem = {
+      kind: 'dormer',
+      id: 'd1',
+      hostRoofId: 'r1',
+      positionOnRoof: { alongRidgeMm: -2000, acrossRidgeMm: 1000 },
+      widthMm: 2400,
+      wallHeightMm: 2400,
+      depthMm: 2000,
+      dormerRoofKind: 'hipped',
+      ridgeHeightMm: 1500,
+    };
+    const elementsById: Record<string, Element> = {
+      'lvl-1': { kind: 'level', id: 'lvl-1', name: 'L1', elevationMm: 3000 },
+      r1: ROOF,
+    };
+    const group = makeDormerMesh(dormer, elementsById, null);
+    const meshes: THREE.Mesh[] = [];
+    group.traverse((o) => {
+      if ((o as THREE.Mesh).isMesh) meshes.push(o as THREE.Mesh);
+    });
+    expect(meshes.length).toBeGreaterThanOrEqual(4);
+  });
+});
+
+describe('buildGableDormerRoof', () => {
+  it('produces two sloped faces meeting at a centred ridge', () => {
+    const mat = new THREE.MeshBasicMaterial();
+    const mesh = buildGableDormerRoof(2.4, 2.0, 0.12, 1.2, false, mat);
+    const pos = mesh.geometry.getAttribute('position') as THREE.BufferAttribute;
+    expect(pos.count).toBe(6);
+    const idx = mesh.geometry.getIndex();
+    expect(idx).not.toBeNull();
+    expect(idx!.count / 3).toBe(6);
+  });
+});
+
+describe('buildHippedDormerRoof', () => {
+  it('produces four sloped faces (two trapezoids + two triangles)', () => {
+    const mat = new THREE.MeshBasicMaterial();
+    const mesh = buildHippedDormerRoof(2.4, 2.0, 0.12, 1.5, false, mat);
+    const pos = mesh.geometry.getAttribute('position') as THREE.BufferAttribute;
+    expect(pos.count).toBe(6);
+    const idx = mesh.geometry.getIndex();
+    expect(idx).not.toBeNull();
+    expect(idx!.count / 3).toBe(6);
   });
 });

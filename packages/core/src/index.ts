@@ -1108,6 +1108,7 @@ export type Element =
       depthMm: number;
       dormerRoofKind: 'flat' | 'shed' | 'gable' | 'hipped';
       dormerRoofPitchDeg?: number;
+      ridgeHeightMm?: number;
       wallMaterialKey?: string | null;
       roofMaterialKey?: string | null;
       hasFloorOpening?: boolean;

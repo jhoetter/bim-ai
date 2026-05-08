@@ -20,6 +20,7 @@ from bim_ai.elements import (
     BcfElem,
     DimensionElem,
     DoorElem,
+    DormerElem,
     Element,
     FamilyTypeElem,
     FloorElem,
@@ -27,6 +28,7 @@ from bim_ai.elements import (
     LevelElem,
     PlanTagStyleElem,
     PlanViewElem,
+    RoofElem,
     RoomColorSchemeElem,
     RoomElem,
     RoomSeparationElem,
@@ -247,6 +249,8 @@ _RULE_DISCIPLINE: dict[str, str] = {
     "schedule_field_registry_gap": "coordination",
     # FED-03: Cross-link Copy/Monitor drift advisory.
     "monitored_source_drift": "coordination",
+    # KRN-14: Dormer footprint vertex outside host roof polygon.
+    "dormer_overflow_v1": "architecture",
 }
 
 _RULE_BLOCKING_CLASS: dict[str, str] = {
@@ -271,6 +275,7 @@ _RULE_BLOCKING_CLASS: dict[str, str] = {
     "stair_missing_levels": "geometry",
     "stair_comfort_eu_proxy": "geometry",
     "room_boundary_open": "geometry",
+    "dormer_overflow_v1": "geometry",
     # documentation
     "level_duplicate_elevation": "documentation",
     "level_datum_parent_cycle": "documentation",
@@ -3153,6 +3158,7 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
     viols.extend(_section_on_sheet_advisory_violations(elements))
     viols.extend(_room_boundary_open_violations(elements))
     viols.extend(_monitored_source_drift_advisory_violations(elements))
+    viols.extend(_dormer_overflow_advisory_violations(elements))
     viols.sort(key=lambda v: (v.rule_id, tuple(sorted(v.element_ids)), v.severity))
     annotated = annotate_violation_disciplines(viols)
     return annotate_violation_blocking_classes(annotated)
@@ -3444,6 +3450,88 @@ def fix_sheet_viewport_refresh(doc: Document) -> dict[str, Any]:
         "skipped": not ok,
         "reason": f"refreshed_{stale_count}_viewport(s)" if ok else f"commit_failed:{code}",
     }
+
+
+def _dormer_overflow_advisory_violations(
+    elements: dict[str, Element],
+) -> list[Violation]:
+    """KRN-14: warn when a dormer footprint vertex falls outside the host
+    roof's footprint polygon.
+
+    The engine's createDormer command rejects bbox overflow up-front; this
+    rule catches the polygon-precision case where a vertex sits inside the
+    host roof's bounding box but outside the actual (non-rectangular)
+    footprint polygon.
+    """
+    out: list[Violation] = []
+    for el in elements.values():
+        if not isinstance(el, DormerElem):
+            continue
+        host = elements.get(el.host_roof_id)
+        if not isinstance(host, RoofElem):
+            continue
+        verts = _dormer_overflow_footprint_vertices(el, host)
+        host_poly = [(p.x_mm, p.y_mm) for p in host.footprint_mm]
+        if any(not _dormer_overflow_point_in_polygon(vx, vy, host_poly) for vx, vy in verts):
+            out.append(
+                Violation(
+                    rule_id="dormer_overflow_v1",
+                    severity="warning",
+                    message=(
+                        f"Dormer '{el.name}' ({el.id}) extends past the host roof "
+                        f"'{host.name}' ({host.id}) footprint polygon."
+                    ),
+                    element_ids=sorted({el.id, host.id}),
+                )
+            )
+    return out
+
+
+def _dormer_overflow_footprint_vertices(
+    dormer: DormerElem,
+    host: RoofElem,
+) -> list[tuple[float, float]]:
+    xs = [p.x_mm for p in host.footprint_mm]
+    ys = [p.y_mm for p in host.footprint_mm]
+    cx = (min(xs) + max(xs)) / 2
+    cy = (min(ys) + max(ys)) / 2
+    span_x = max(xs) - min(xs)
+    span_y = max(ys) - min(ys)
+    ridge_along_x = span_x >= span_y
+    if ridge_along_x:
+        centre_x = cx + dormer.position_on_roof.along_ridge_mm
+        centre_y = cy + dormer.position_on_roof.across_ridge_mm
+        half_w = dormer.width_mm / 2
+        half_d = dormer.depth_mm / 2
+        min_x, max_x = centre_x - half_w, centre_x + half_w
+        min_y, max_y = centre_y - half_d, centre_y + half_d
+    else:
+        centre_x = cx + dormer.position_on_roof.across_ridge_mm
+        centre_y = cy + dormer.position_on_roof.along_ridge_mm
+        half_w = dormer.width_mm / 2
+        half_d = dormer.depth_mm / 2
+        min_x, max_x = centre_x - half_d, centre_x + half_d
+        min_y, max_y = centre_y - half_w, centre_y + half_w
+    return [(min_x, min_y), (max_x, min_y), (max_x, max_y), (min_x, max_y)]
+
+
+def _dormer_overflow_point_in_polygon(
+    px: float, py: float, poly: list[tuple[float, float]]
+) -> bool:
+    n = len(poly)
+    if n < 3:
+        return False
+    inside = False
+    j = n - 1
+    for i in range(n):
+        xi, yi = poly[i]
+        xj, yj = poly[j]
+        if ((yi > py) != (yj > py)) and (
+            px < (xj - xi) * (py - yi) / (yj - yi + 1e-12) + xi
+        ):
+            inside = not inside
+        j = i
+    return inside
 
 
 def _room_boundary_open_violations(elements: dict[str, Element]) -> list[Violation]:

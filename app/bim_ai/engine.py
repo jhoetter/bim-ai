@@ -444,6 +444,81 @@ def coerce_command(data: dict[str, Any]) -> Command:
     return command_adapter.validate_python(data)
 
 
+def _dormer_footprint_polygon_mm(
+    host: RoofElem,
+    position: Any,
+    width_mm: float,
+    depth_mm: float,
+) -> list[tuple[float, float]]:
+    """KRN-14: four-corner CCW polygon of the dormer footprint in plan mm."""
+
+    xs = [p.x_mm for p in host.footprint_mm]
+    ys = [p.y_mm for p in host.footprint_mm]
+    cx = (min(xs) + max(xs)) / 2
+    cy = (min(ys) + max(ys)) / 2
+    span_x = max(xs) - min(xs)
+    span_y = max(ys) - min(ys)
+    ridge_along_x = span_x >= span_y
+    half_w = width_mm / 2
+    half_d = depth_mm / 2
+    if ridge_along_x:
+        centre_x = cx + position.along_ridge_mm
+        centre_y = cy + position.across_ridge_mm
+        min_x, max_x = centre_x - half_w, centre_x + half_w
+        min_y, max_y = centre_y - half_d, centre_y + half_d
+    else:
+        centre_x = cx + position.across_ridge_mm
+        centre_y = cy + position.along_ridge_mm
+        min_x, max_x = centre_x - half_d, centre_x + half_d
+        min_y, max_y = centre_y - half_w, centre_y + half_w
+    return [
+        (min_x, min_y),
+        (max_x, min_y),
+        (max_x, max_y),
+        (min_x, max_y),
+    ]
+
+
+def _resolve_dormer_host_floor(
+    els: dict[str, Element],
+    host: RoofElem,
+    fp_vertices: list[tuple[float, float]],
+) -> FloorElem | None:
+    """KRN-14: pick the floor on the host roof's reference level."""
+
+    candidates = [
+        f
+        for f in els.values()
+        if isinstance(f, FloorElem) and f.level_id == host.reference_level_id
+    ]
+    if not candidates:
+        return None
+    centre_x = sum(v[0] for v in fp_vertices) / len(fp_vertices)
+    centre_y = sum(v[1] for v in fp_vertices) / len(fp_vertices)
+    for fl in candidates:
+        poly = [(p.x_mm, p.y_mm) for p in fl.boundary_mm]
+        if _point_in_polygon_xy(centre_x, centre_y, poly):
+            return fl
+    return candidates[0]
+
+
+def _point_in_polygon_xy(px: float, py: float, poly: list[tuple[float, float]]) -> bool:
+    n = len(poly)
+    if n < 3:
+        return False
+    inside = False
+    j = n - 1
+    for i in range(n):
+        xi, yi = poly[i]
+        xj, yj = poly[j]
+        if ((yi > py) != (yj > py)) and (
+            px < (xj - xi) * (py - yi) / (yj - yi + 1e-12) + xi
+        ):
+            inside = not inside
+        j = i
+    return inside
+
+
 def _dump_elements(elements: dict[str, Element]) -> dict[str, Any]:
     return {k: v.model_dump(by_alias=True) for k, v in elements.items()}
 
@@ -2056,6 +2131,12 @@ def apply_inplace(
                 raise ValueError("createDormer width/depth/wallHeight must all be > 0")
             if cmd.dormer_roof_kind not in ("flat", "shed", "gable", "hipped"):
                 raise ValueError("createDormer.dormerRoofKind invalid")
+            if cmd.dormer_roof_kind in ("gable", "hipped"):
+                if cmd.ridge_height_mm is None or cmd.ridge_height_mm <= 0:
+                    raise ValueError(
+                        "createDormer.ridgeHeightMm must be > 0 when dormerRoofKind is "
+                        "'gable' or 'hipped'"
+                    )
             for key, label in (
                 (cmd.wall_material_key, "wallMaterialKey"),
                 (cmd.roof_material_key, "roofMaterialKey"),
@@ -2088,10 +2169,32 @@ def apply_inplace(
                 depth_mm=cmd.depth_mm,
                 dormer_roof_kind=cmd.dormer_roof_kind,
                 dormer_roof_pitch_deg=cmd.dormer_roof_pitch_deg,
+                ridge_height_mm=cmd.ridge_height_mm,
                 wall_material_key=cmd.wall_material_key,
                 roof_material_key=cmd.roof_material_key,
                 has_floor_opening=cmd.has_floor_opening,
             )
+            if cmd.has_floor_opening:
+                fp_vertices = _dormer_footprint_polygon_mm(
+                    host, cmd.position_on_roof, cmd.width_mm, cmd.depth_mm
+                )
+                target_floor = _resolve_dormer_host_floor(els, host, fp_vertices)
+                if target_floor is None:
+                    raise ValueError(
+                        "createDormer.hasFloorOpening: no floor element on host roof's "
+                        "reference level matches the dormer footprint"
+                    )
+                opening_id = f"{did}_floor_opening"
+                if opening_id in els:
+                    raise ValueError(f"duplicate element id '{opening_id}'")
+                els[opening_id] = SlabOpeningElem(
+                    kind="slab_opening",
+                    id=opening_id,
+                    name=f"{cmd.name} floor opening",
+                    host_floor_id=target_floor.id,
+                    boundary_mm=[Vec2Mm(xMm=x, yMm=y) for (x, y) in fp_vertices],
+                    is_shaft=False,
+                )
 
         case SetWallRecessZonesCmd():
             wall = els.get(cmd.wall_id)

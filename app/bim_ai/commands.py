@@ -1248,6 +1248,7 @@ class CreateDormerCmd(BaseModel):
     depth_mm: float = Field(alias="depthMm", gt=0)
     dormer_roof_kind: DormerRoofKind = Field(default="flat", alias="dormerRoofKind")
     dormer_roof_pitch_deg: float | None = Field(default=None, alias="dormerRoofPitchDeg")
+    ridge_height_mm: float | None = Field(default=None, alias="ridgeHeightMm")
     wall_material_key: str | None = Field(default=None, alias="wallMaterialKey")
     roof_material_key: str | None = Field(default=None, alias="roofMaterialKey")
     has_floor_opening: bool = Field(default=False, alias="hasFloorOpening")
