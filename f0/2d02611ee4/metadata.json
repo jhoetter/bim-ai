@@ -2,9 +2,13 @@
   "cli_version": "0.6.0",
   "checkpoint_id": "f02d02611ee4",
   "strategy": "manual-commit",
-  "branch": "feat/v3-cq-02-python-lockfile",
-  "checkpoints_count": 4,
-  "files_touched": null,
+  "branch": "feat/v3-api-v3-01-tool-cli-surface",
+  "checkpoints_count": 5,
+  "files_touched": [
+    ".github/workflows/ci.yml",
+    "Makefile",
+    "app/pyproject.toml"
+  ],
   "sessions": [
     {
       "metadata": "/f0/2d02611ee4/0/metadata.json",
@@ -29,13 +33,19 @@
       "transcript": "/f0/2d02611ee4/3/full.jsonl",
       "content_hash": "/f0/2d02611ee4/3/content_hash.txt",
       "prompt": "/f0/2d02611ee4/3/prompt.txt"
+    },
+    {
+      "metadata": "/f0/2d02611ee4/4/metadata.json",
+      "transcript": "/f0/2d02611ee4/4/full.jsonl",
+      "content_hash": "/f0/2d02611ee4/4/content_hash.txt",
+      "prompt": "/f0/2d02611ee4/4/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 794,
-    "cache_creation_tokens": 438430,
-    "cache_read_tokens": 13551772,
-    "output_tokens": 100038,
-    "api_call_count": 196
+    "input_tokens": 835,
+    "cache_creation_tokens": 484410,
+    "cache_read_tokens": 15061950,
+    "output_tokens": 112086,
+    "api_call_count": 235
   }
 }

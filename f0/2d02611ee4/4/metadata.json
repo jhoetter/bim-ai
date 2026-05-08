@@ -1,0 +1,36 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "f02d02611ee4",
+  "session_id": "bd7c7ef7-ae2d-49b4-9843-ef6eab510d83",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T13:34:15.79053Z",
+  "branch": "feat/v3-api-v3-01-tool-cli-surface",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "app/pyproject.toml",
+    "Makefile",
+    ".github/workflows/ci.yml"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "f8ff09904dda",
+  "token_usage": {
+    "input_tokens": 41,
+    "cache_creation_tokens": 45980,
+    "cache_read_tokens": 1510178,
+    "output_tokens": 12048,
+    "api_call_count": 39
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-08T13:34:15.784975Z",
+    "agent_lines": 32,
+    "agent_removed": 18,
+    "human_added": 1332,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 1364,
+    "total_lines_changed": 1383,
+    "agent_percentage": 3.6153289949385394,
+    "metric_version": 2
+  }
+}
