@@ -1,0 +1,86 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "7e69a5628017",
+  "session_id": "cb6ca208-ed59-44a4-b9ed-956e4e340642",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T13:41:42.218144Z",
+  "branch": "feat/v3-tkn-v3-01-tokenisation",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "eslint.config.js",
+    "package.json",
+    "packages/design-tokens/package.json",
+    "packages/design-tokens/src/brand-layer.css",
+    "packages/design-tokens/src/tokens-v3.css",
+    "packages/eslint-plugin-bim-ai/package.json",
+    "packages/eslint-plugin-bim-ai/src/index.js",
+    "packages/eslint-plugin-bim-ai/src/rules/no-hex-in-chrome.js",
+    "packages/web/src/Viewport.tsx",
+    "packages/web/src/design-systems/brandSwap.test.ts",
+    "packages/web/src/design-systems/v3.css",
+    "packages/web/src/plan/AnnotateRibbon.tsx",
+    "packages/web/src/plan/GripLayer.tsx",
+    "packages/web/src/plan/PlanCanvas.tsx",
+    "packages/web/src/plan/SketchCanvas.test.tsx",
+    "packages/web/src/plan/SketchCanvas.tsx",
+    "packages/web/src/plan/SketchCanvasPickWalls.tsx",
+    "packages/web/src/plan/SnapGlyphLayer.tsx",
+    "packages/web/src/viewport/wallFaceRadialMenu.tsx",
+    "packages/web/src/workspace/ManageLinksDialog.tsx",
+    "packages/web/src/workspace/ProjectBrowser.tsx",
+    "packages/web/src/workspace/RoomColorSchemePanel.tsx",
+    "packages/web/src/workspace/SheetCanvas.tsx",
+    "packages/web/src/workspace/SheetDocumentationManifest.tsx",
+    "packages/web/src/workspace/TopBar.test.tsx",
+    "packages/web/src/workspace/VVDialog.tsx",
+    "packages/web/src/workspace/sectionViewportSvg.tsx",
+    "packages/web/vite.config.ts",
+    "pnpm-lock.yaml"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "1d62ef6f0d28",
+  "token_usage": {
+    "input_tokens": 16358,
+    "cache_creation_tokens": 139580,
+    "cache_read_tokens": 9477409,
+    "output_tokens": 33133,
+    "api_call_count": 87
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-08T13:41:42.199444Z",
+    "agent_lines": 15,
+    "agent_removed": 3,
+    "human_added": 533,
+    "human_modified": 1,
+    "human_removed": 0,
+    "total_committed": 549,
+    "total_lines_changed": 552,
+    "agent_percentage": 3.260869565217391,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 1483,
+      "user_lines_removed": 6,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "claude-skills/watch-yt/watch_yt.py": 25,
+        "spec/v3-build-state.md": 56,
+        "spec/v3-prompts/wp-001.md": 182,
+        "spec/v3-prompts/wp-002.md": 151,
+        "spec/v3-prompts/wp-003.md": 159,
+        "spec/v3-prompts/wp-004.md": 152,
+        "spec/v3-prompts/wp-005.md": 156,
+        "spec/v3-prompts/wp-006.md": 176,
+        "spec/v3-prompts/wp-007.md": 203,
+        "spec/v3-prompts/wp-008.md": 223
+      },
+      "user_removed_per_file": {
+        "claude-skills/watch-yt/watch_yt.py": 6
+      }
+    }
+  ]
+}
