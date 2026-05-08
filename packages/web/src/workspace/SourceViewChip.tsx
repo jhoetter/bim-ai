@@ -1,4 +1,4 @@
-import { useEffect, useState, type JSX } from 'react';
+import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
 
 type SheetChipEntry = {
   kind: 'sheet_comment_chip';
@@ -21,25 +21,67 @@ export function SourceViewChip({
 }: SourceViewChipProps): JSX.Element | null {
   const [chips, setChips] = useState<SheetChipEntry[]>([]);
   const [panelOpen, setPanelOpen] = useState(false);
+  const wsRef = useRef<WebSocket | null>(null);
+
+  const addChip = useCallback(
+    (chip: SheetChipEntry) => {
+      if (chip.viewId !== viewId) return;
+      setChips((prev) => {
+        // Deduplicate by commentId
+        if (prev.some((c) => c.commentId === chip.commentId)) return prev;
+        return [...prev, chip];
+      });
+    },
+    [viewId],
+  );
 
   useEffect(() => {
-    let cancelled = false;
-    void (async () => {
+    // Connect to the model's activity WebSocket stream and filter for
+    // sheet_comment_chip events that target this viewId.
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/api/models/${encodeURIComponent(modelId)}/ws`;
+    const ws = new WebSocket(wsUrl);
+    wsRef.current = ws;
+
+    ws.onmessage = (event: MessageEvent) => {
       try {
-        const res = await fetch(
-          `/api/v3/models/${encodeURIComponent(modelId)}/activity/sheet-chips?viewId=${encodeURIComponent(viewId)}`,
-        );
-        if (!res.ok || cancelled) return;
-        const data = (await res.json()) as { chips?: SheetChipEntry[] };
-        setChips(data.chips ?? []);
+        const msg = JSON.parse(event.data as string) as Record<string, unknown>;
+        const type = msg['type'];
+        if (type === 'activity') {
+          const payload = msg['payload'] as Record<string, unknown> | undefined;
+          if (
+            payload &&
+            payload['kind'] === 'sheet_comment_chip' &&
+            typeof payload['viewId'] === 'string' &&
+            typeof payload['sheetId'] === 'string' &&
+            typeof payload['commentId'] === 'string'
+          ) {
+            addChip({
+              kind: 'sheet_comment_chip',
+              viewId: payload['viewId'] as string,
+              sheetId: payload['sheetId'] as string,
+              commentId: payload['commentId'] as string,
+              sheetNumber:
+                typeof payload['sheetNumber'] === 'string'
+                  ? (payload['sheetNumber'] as string)
+                  : (payload['sheetId'] as string),
+            });
+          }
+        }
       } catch {
-        // non-fatal
+        // non-fatal parse error
       }
-    })();
-    return () => {
-      cancelled = true;
     };
-  }, [modelId, viewId]);
+
+    ws.onerror = () => {
+      // non-fatal — chip just won't update until reconnect
+    };
+
+    return () => {
+      wsRef.current = null;
+      ws.close();
+    };
+  }, [modelId, addChip]);
 
   if (chips.length === 0) return null;
 

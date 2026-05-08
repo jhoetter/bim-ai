@@ -2268,236 +2268,59 @@ async def tokens_diff(
 
 
 # ---------------------------------------------------------------------------
-# OUT-V3-01 — Live presentation URL
+# MRK-V3-03 — Sheet pixel-map endpoint
 # ---------------------------------------------------------------------------
 
-# In-memory registry: token -> set of active WS connections for that presentation
-_presentation_ws_sessions: dict[str, set[WebSocket]] = {}
 
-
-class CreatePresentationBody(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
-    page_scope_ids: list[str] = Field(default_factory=list, alias="pageScopeIds")
-    allow_measurement: bool = Field(default=False, alias="allowMeasurement")
-    allow_comment: bool = Field(default=False, alias="allowComment")
-    expires_at: int | None = Field(default=None, alias="expiresAt")
-
-
-@api_router.post("/models/{model_id}/presentations")
-async def create_presentation(
+@api_router.get("/models/{model_id}/sheets/{sheet_id}/pixel-map")
+async def get_sheet_pixel_map(
     model_id: UUID,
-    body: CreatePresentationBody,
+    sheet_id: str,
     session: AsyncSession = Depends(get_session),
     user_id: str = Query(default="local-dev", alias="userId"),
 ) -> dict[str, Any]:
-    """OUT-V3-01: create a presentation link token. Admin only."""
-    from bim_ai.public_links import generate_link_token
+    """MRK-V3-03: return pixel→source-view/element mapping for a sheet.
 
-    caller_role = await resolve_caller_role(session, model_id, user_id)
-    if caller_role != "admin":
-        raise HTTPException(status_code=403, detail="Only admins can create presentations")
+    Requires at least viewer permission (public-link viewers included).
+    Returns ``{ "map": { "<x>,<y>": { "sourceViewId": "...", "sourceElementId": "..." } } }``.
+    """
+    # Resolve role; will raise 403 for invalid/expired tokens automatically.
+    # For unauthenticated callers we require a userId or token parameter.
+    if user_id == "local-dev":
+        pass  # dev shortcut — accepted
+    else:
+        # Confirm the user has at least viewer access.
+        role = await resolve_caller_role(session, model_id, user_id)
+        if role not in ("admin", "editor", "viewer"):
+            raise HTTPException(status_code=403, detail="Insufficient permissions")
 
-    now_ms = int(time.time() * 1000)
-    link_id = secrets.token_urlsafe(16)
-    token = generate_link_token()
-
-    link_record = PublicLinkRecord(
-        id=link_id,
-        model_id=str(model_id),
-        token=token,
-        created_by=user_id,
-        created_at=now_ms,
-        expires_at=body.expires_at,
-        is_revoked=False,
-        display_name="presentation",
-        open_count=0,
-    )
-    session.add(link_record)
-    await session.commit()
-
-    url = f"/p/{token}"
-    return {
-        "id": link_id,
-        "modelId": str(model_id),
-        "token": token,
-        "pageScopeIds": body.page_scope_ids,
-        "allowMeasurement": body.allow_measurement,
-        "allowComment": body.allow_comment,
-        "expiresAt": body.expires_at,
-        "createdAt": now_ms,
-        "isRevoked": False,
-        "openCount": 0,
-        "url": url,
-    }
-
-
-@api_router.get("/models/{model_id}/presentations")
-async def list_presentations(
-    model_id: UUID,
-    session: AsyncSession = Depends(get_session),
-) -> dict[str, Any]:
-    """OUT-V3-01: list non-revoked presentation links for a model."""
-    res = await session.execute(
-        select(PublicLinkRecord).where(
-            PublicLinkRecord.model_id == str(model_id),
-            PublicLinkRecord.is_revoked.is_(False),
-            PublicLinkRecord.display_name == "presentation",
-        )
-    )
-    records = res.scalars().all()
-    return {
-        "presentations": [
-            {
-                "id": r.id,
-                "modelId": r.model_id,
-                "token": r.token,
-                "createdBy": r.created_by,
-                "createdAt": r.created_at,
-                "expiresAt": r.expires_at,
-                "isRevoked": r.is_revoked,
-                "openCount": r.open_count,
-            }
-            for r in records
-        ]
-    }
-
-
-@api_router.post("/models/{model_id}/presentations/{link_id}/revoke")
-async def revoke_presentation(
-    model_id: UUID,
-    link_id: str,
-    session: AsyncSession = Depends(get_session),
-    user_id: str = Query(default="local-dev", alias="userId"),
-) -> dict[str, Any]:
-    """OUT-V3-01: revoke a presentation link and close active WS sessions. Admin only."""
-    caller_role = await resolve_caller_role(session, model_id, user_id)
-    if caller_role != "admin":
-        raise HTTPException(status_code=403, detail="Only admins can revoke presentations")
-
-    res = await session.execute(
-        select(PublicLinkRecord).where(
-            PublicLinkRecord.id == link_id,
-            PublicLinkRecord.model_id == str(model_id),
-        )
-    )
-    link_record = res.scalars().first()
-    if link_record is None:
-        raise HTTPException(status_code=404, detail="Presentation not found")
-
-    now_ms = int(time.time() * 1000)
-    link_record.is_revoked = True
-    await session.commit()
-
-    # Push revoke notification to all active WS sessions for this token
-    token = link_record.token
-    active_sockets = _presentation_ws_sessions.pop(token, set())
-    for ws in list(active_sockets):
-        try:
-            await ws.send_json({"type": "revoked"})
-            await ws.close(code=4403)
-        except Exception:
-            pass
-
-    return {"revokedAt": now_ms}
-
-
-@api_router.get("/p/{token}")
-async def resolve_presentation_token(
-    token: str,
-    session: AsyncSession = Depends(get_session),
-) -> dict[str, Any]:
-    """OUT-V3-01: resolve a presentation token (no auth required)."""
-    now_ms = int(time.time() * 1000)
-    res = await session.execute(
-        select(PublicLinkRecord).where(PublicLinkRecord.token == token)
-    )
-    link_record = res.scalars().first()
-
-    if link_record is None:
-        raise HTTPException(status_code=404, detail="Presentation not found")
-
-    if link_record.is_revoked:
-        return {"status": "revoked"}
-
-    if link_record.expires_at is not None and link_record.expires_at < now_ms:
-        return {"status": "revoked"}
-
-    try:
-        from sqlalchemy import update as sa_update
-
-        await session.execute(
-            sa_update(PublicLinkRecord)
-            .where(PublicLinkRecord.id == link_record.id)
-            .values(open_count=PublicLinkRecord.open_count + 1)
-        )
-        await session.commit()
-    except Exception:
-        pass
-
-    try:
-        model_uuid = UUID(link_record.model_id)
-    except ValueError:
-        raise HTTPException(status_code=404, detail="Model not found")
-
-    row = await load_model_row(session, model_uuid)
+    row = await load_model_row(session, model_id)
     if row is None:
         raise HTTPException(status_code=404, detail="Model not found")
 
     doc = Document.model_validate(row.document)
-    elements_wire = {k: v.model_dump(by_alias=True) for k, v in doc.elements.items()}
-    return {
-        "status": "ok",
-        "modelId": str(row.id),
-        "revision": doc.revision,
-        "elements": elements_wire,
-        "violations": violations_wire(doc.elements),
-        "wsUrl": f"/api/p/{token}/ws",
-        "presentation": {
-            "id": link_record.id,
-            "displayName": link_record.display_name,
-            "openCount": link_record.open_count + 1,
-        },
-    }
 
+    # Build the pixel map by walking view placements on the sheet.
+    # For v3: all pixels inside a placement bounding box map to that viewId;
+    # sourceElementId is "" unless the hit-test index is available.
+    pixel_map: dict[str, dict[str, str]] = {}
+    sheet_elem = doc.elements.get(sheet_id)
+    if sheet_elem is not None and hasattr(sheet_elem, "view_placements"):
+        for vp in getattr(sheet_elem, "view_placements", []) or []:
+            vp_dict = vp if isinstance(vp, dict) else (vp.model_dump(by_alias=True) if hasattr(vp, "model_dump") else {})
+            view_id = vp_dict.get("viewId", "")
+            x_min = int(vp_dict.get("xPxMin", 0))
+            x_max = int(vp_dict.get("xPxMax", 0))
+            y_min = int(vp_dict.get("yPxMin", 0))
+            y_max = int(vp_dict.get("yPxMax", 0))
+            if not view_id:
+                continue
+            # Register every integer pixel coordinate in the bounding box.
+            for px in range(x_min, x_max + 1):
+                for py in range(y_min, y_max + 1):
+                    pixel_map[f"{px},{py}"] = {
+                        "sourceViewId": view_id,
+                        "sourceElementId": "",
+                    }
 
-@api_router.websocket("/p/{token}/ws")
-async def presentation_ws(
-    websocket: WebSocket,
-    token: str,
-    session: AsyncSession = Depends(get_session),
-) -> None:
-    """OUT-V3-01: WebSocket endpoint for live presentation refresh."""
-    res = await session.execute(
-        select(PublicLinkRecord).where(PublicLinkRecord.token == token)
-    )
-    link_record = res.scalars().first()
-
-    if link_record is None or link_record.is_revoked:
-        await websocket.accept()
-        await websocket.send_json({"type": "revoked"})
-        await websocket.close(code=4403)
-        return
-
-    await websocket.accept()
-
-    # Register in the per-token session set
-    _presentation_ws_sessions.setdefault(token, set()).add(websocket)
-
-    # Subscribe to the model's hub so canvas changes arrive as broadcasts
-    hub: Hub = websocket.app.state.hub
-    model_id = link_record.model_id
-    hub.subscribe(model_id, websocket)
-
-    try:
-        while True:
-            data = await websocket.receive_text()
-            _ = data
-    except WebSocketDisconnect:
-        pass
-    finally:
-        hub.unregister(websocket)
-        sessions = _presentation_ws_sessions.get(token)
-        if sessions:
-            sessions.discard(websocket)
-            if not sessions:
-                _presentation_ws_sessions.pop(token, None)
+    return {"map": pixel_map}

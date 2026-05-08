@@ -10,6 +10,7 @@ import {
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icons, IconLabels, ICON_SIZE, type LucideLikeIcon } from '@bim-ai/ui';
+import { SourceViewChip } from './SourceViewChip';
 
 /**
  * TopBar — spec §11.
@@ -71,6 +72,12 @@ export interface TopBarProps {
   hasPages?: boolean;
   /** OUT-V3-01: callback to open the SharePresentationModal. */
   onSharePresentation?: () => void;
+  /** MRK-V3-03: modelId used to construct the SourceViewChip WS connection. */
+  modelId?: string;
+  /** MRK-V3-03: active view id forwarded to SourceViewChip for sheet-comment back-flow. */
+  activeViewId?: string;
+  /** MRK-V3-03: callback from SourceViewChip to navigate to a sheet comment. */
+  onNavigateToSheet?: (sheetId: string, commentId: string) => void;
 }
 
 export function TopBar({
@@ -96,8 +103,13 @@ export function TopBar({
   onPlanStyleChange,
   hasPages,
   onSharePresentation,
+  modelId,
+  activeViewId,
+  onNavigateToSheet,
 }: TopBarProps): JSX.Element {
   const tablistId = useId();
+  // SourceViewChip is only relevant when in a sheet-type view and both IDs are known.
+  const showSourceViewChip = mode === 'sheet' && !!modelId && !!activeViewId;
   return (
     <div
       data-testid="topbar"
@@ -129,6 +141,15 @@ export function TopBar({
         onPlanStyleChange={onPlanStyleChange}
         hasPages={hasPages}
         onSharePresentation={onSharePresentation}
+        sourceViewChip={
+          showSourceViewChip ? (
+            <SourceViewChip
+              viewId={activeViewId!}
+              modelId={modelId!}
+              onNavigateToSheet={onNavigateToSheet}
+            />
+          ) : null
+        }
       />
     </div>
   );
@@ -268,6 +289,7 @@ function TopBarRight({
   onPlanStyleChange,
   hasPages,
   onSharePresentation,
+  sourceViewChip,
 }: {
   theme: 'light' | 'dark';
   onThemeToggle?: () => void;
@@ -285,6 +307,8 @@ function TopBarRight({
   onPlanStyleChange?: (id: string) => void;
   hasPages?: boolean;
   onSharePresentation?: () => void;
+  /** MRK-V3-03: pre-rendered SourceViewChip node (null when not in sheet view). */
+  sourceViewChip?: JSX.Element | null;
 }): JSX.Element {
   const { t } = useTranslation();
   const showSelects =
@@ -330,6 +354,7 @@ function TopBarRight({
       >
         <span style={{ fontSize: 'var(--text-sm)' }}>Share live presentation</span>
       </button>
+      {sourceViewChip ?? null}
       <button
         type="button"
         onClick={onCommandPalette}
