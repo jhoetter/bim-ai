@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import { I18nextProvider } from 'react-i18next';
 import { TopBar, WORKSPACE_MODES } from './TopBar';
+import { TopBarV3 } from './chrome/TopBar';
 import i18n from '../i18n';
 
 function renderWithI18n(ui: React.ReactElement) {
@@ -151,5 +152,117 @@ describe('TopBar — spec §11', () => {
       <TopBar {...baseProps} mode="plan" onModeChange={() => undefined} avatarInitials="JH" />,
     );
     expect(getByLabelText('Account').textContent).toBe('JH');
+  });
+});
+
+describe('TopBar v3 — CHR-V3-01', () => {
+  const baseV3Props = {
+    projectName: 'Seed house V3',
+    currentProjectId: 'proj-001',
+    activeWorkspaceId: 'arch' as const,
+    userPreferredWorkspace: 'arch' as const,
+    theme: 'light' as const,
+  };
+
+  it('renders with data-testid="topbar-v3" and applies the height token', () => {
+    const { getByTestId } = render(<TopBarV3 {...baseV3Props} />);
+    const bar = getByTestId('topbar-v3');
+    expect(bar).toBeTruthy();
+    expect(bar.style.height).toBe('var(--shell-topbar-height)');
+    expect(bar.style.minHeight).toBe('var(--shell-topbar-height)');
+  });
+
+  it('renders 4 presence avatars for a 4-user presence list', () => {
+    const presence = [
+      { userId: 'u1', name: 'Alice' },
+      { userId: 'u2', name: 'Bob' },
+      { userId: 'u3', name: 'Carol' },
+      { userId: 'u4', name: 'Dan' },
+    ];
+    const { getByTestId } = render(<TopBarV3 {...baseV3Props} presence={presence} />);
+    const container = getByTestId('topbar-v3-presence');
+    expect(container.children).toHaveLength(4);
+  });
+
+  it('renders 4 avatars and "+4" overflow chip for 8-user presence list', () => {
+    const presence = Array.from({ length: 8 }, (_, i) => ({ userId: `u${i}`, name: `User ${i}` }));
+    const { getByTestId } = render(<TopBarV3 {...baseV3Props} presence={presence} />);
+    const container = getByTestId('topbar-v3-presence');
+    // 4 avatars + 1 overflow chip
+    expect(container.children).toHaveLength(5);
+    expect(container.children[4]!.textContent).toBe('+4');
+  });
+
+  it('omits data-testid="topbar-v3-presence" from DOM when presence is empty', () => {
+    const { queryByTestId } = render(<TopBarV3 {...baseV3Props} presence={[]} />);
+    expect(queryByTestId('topbar-v3-presence')).toBeNull();
+  });
+
+  it('omits data-testid="topbar-v3-presence" from DOM when presence is undefined', () => {
+    const { queryByTestId } = render(<TopBarV3 {...baseV3Props} />);
+    expect(queryByTestId('topbar-v3-presence')).toBeNull();
+  });
+
+  it('fires onCommandPalette when the Cmd+K button is clicked', () => {
+    const onCommandPalette = vi.fn();
+    const { getByTestId } = render(
+      <TopBarV3 {...baseV3Props} onCommandPalette={onCommandPalette} />,
+    );
+    fireEvent.click(getByTestId('topbar-v3-cmdpalette'));
+    expect(onCommandPalette).toHaveBeenCalledOnce();
+  });
+
+  it('fires onActivityStream when the activity button is clicked', () => {
+    const onActivityStream = vi.fn();
+    const { getByTestId } = render(
+      <TopBarV3 {...baseV3Props} onActivityStream={onActivityStream} />,
+    );
+    fireEvent.click(getByTestId('topbar-v3-activity'));
+    expect(onActivityStream).toHaveBeenCalledOnce();
+  });
+
+  it('fires onActivityStream on Cmd+H keydown on document', () => {
+    const onActivityStream = vi.fn();
+    render(<TopBarV3 {...baseV3Props} onActivityStream={onActivityStream} />);
+    fireEvent.keyDown(document, { key: 'h', metaKey: true });
+    expect(onActivityStream).toHaveBeenCalledOnce();
+  });
+
+  it('project name button has a title attribute matching projectName', () => {
+    const { getByTestId } = render(
+      <TopBarV3 {...baseV3Props} projectName="A very long project name that should truncate" />,
+    );
+    const btn = getByTestId('topbar-v3-project-name');
+    expect(btn.getAttribute('title')).toBe('A very long project name that should truncate');
+    const span = btn.querySelector('span');
+    expect(span).toBeTruthy();
+    expect(span!.style.maxWidth).toBe('180px');
+  });
+
+  it('workspace chip carries data-disc matching activeWorkspaceId', () => {
+    const { getByTestId } = render(<TopBarV3 {...baseV3Props} activeWorkspaceId="arch" />);
+    expect(getByTestId('workspace-switcher-chip').getAttribute('data-disc')).toBe('arch');
+  });
+
+  it('workspace chip data-disc updates for struct and mep', () => {
+    const { getByTestId, rerender } = render(
+      <TopBarV3 {...baseV3Props} activeWorkspaceId="struct" userPreferredWorkspace="struct" />,
+    );
+    expect(getByTestId('workspace-switcher-chip').getAttribute('data-disc')).toBe('struct');
+    rerender(<TopBarV3 {...baseV3Props} activeWorkspaceId="mep" userPreferredWorkspace="mep" />);
+    expect(getByTestId('workspace-switcher-chip').getAttribute('data-disc')).toBe('mep');
+  });
+
+  it('has no bare hex literals in inline style attributes', () => {
+    const presence = [{ userId: 'u1', name: 'Alice' }];
+    const { getByTestId } = render(<TopBarV3 {...baseV3Props} presence={presence} />);
+    const bar = getByTestId('topbar-v3');
+    const allStyles = bar.querySelectorAll('[style]');
+    const hexPattern = /#[0-9a-fA-F]{3,8}(?![^(]*\))/;
+    allStyles.forEach((el) => {
+      const styleAttr = el.getAttribute('style') ?? '';
+      expect(hexPattern.test(styleAttr)).toBe(false);
+    });
+    expect(hexPattern.test(bar.getAttribute('style') ?? '')).toBe(false);
   });
 });
