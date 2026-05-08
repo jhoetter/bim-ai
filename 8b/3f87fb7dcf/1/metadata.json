@@ -1,0 +1,43 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "8b3f87fb7dcf",
+  "session_id": "484b3fc4-cdb5-4d63-973e-ff931c99ea77",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T21:07:21.00214Z",
+  "branch": "img-clean",
+  "checkpoints_count": 0,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "1d8f7f9161b7",
+  "checkpoint_transcript_start": 554,
+  "transcript_lines_at_start": 554,
+  "token_usage": {
+    "input_tokens": 95,
+    "cache_creation_tokens": 130749,
+    "cache_read_tokens": 5929887,
+    "output_tokens": 30763,
+    "api_call_count": 79
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 1042,
+      "user_lines_removed": 268,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "app/bim_ai/img/pipeline.py": 225,
+        "app/bim_ai/routes_api.py": 89,
+        "app/bim_ai/skb/calibrator.py": 95,
+        "app/bim_ai/skb/colour_sampler.py": 98,
+        "app/tests/test_img_v3_01.py": 311,
+        "packages/cli/cli.mjs": 224
+      },
+      "user_removed_per_file": {
+        "app/bim_ai/routes_api.py": 237,
+        "packages/cli/cli.mjs": 31
+      }
+    }
+  ]
+}
