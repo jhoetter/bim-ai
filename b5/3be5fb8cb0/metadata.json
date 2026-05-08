@@ -3,9 +3,10 @@
   "checkpoint_id": "b53be5fb8cb0",
   "strategy": "manual-commit",
   "branch": "feat/v3-krn-v3-10-stair-subkinds",
-  "checkpoints_count": 5,
+  "checkpoints_count": 6,
   "files_touched": [
-    "app/bim_ai/commands.py"
+    "app/bim_ai/commands.py",
+    "packages/core/src/index.ts"
   ],
   "sessions": [
     {
@@ -43,13 +44,19 @@
       "transcript": "/b5/3be5fb8cb0/5/full.jsonl",
       "content_hash": "/b5/3be5fb8cb0/5/content_hash.txt",
       "prompt": "/b5/3be5fb8cb0/5/prompt.txt"
+    },
+    {
+      "metadata": "/b5/3be5fb8cb0/6/metadata.json",
+      "transcript": "/b5/3be5fb8cb0/6/full.jsonl",
+      "content_hash": "/b5/3be5fb8cb0/6/content_hash.txt",
+      "prompt": "/b5/3be5fb8cb0/6/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 1350,
-    "cache_creation_tokens": 603428,
-    "cache_read_tokens": 37192477,
-    "output_tokens": 153643,
-    "api_call_count": 395
+    "input_tokens": 1644,
+    "cache_creation_tokens": 1126809,
+    "cache_read_tokens": 59182537,
+    "output_tokens": 272454,
+    "api_call_count": 622
   }
 }
