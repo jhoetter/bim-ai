@@ -228,23 +228,73 @@ register(
         category="mutation",
         inputSchema={
             "$schema": "http://json-schema.org/draft-07/schema#",
-            "title": "ApplyBundleInput",
+            "title": "CommandBundleRequest",
             "type": "object",
-            "required": ["commands"],
+            "required": ["bundle"],
             "properties": {
-                "commands": {
-                    "type": "array",
-                    "items": {"type": "object"},
-                    "description": "Array of kernel commands to apply atomically.",
+                "bundle": {
+                    "type": "object",
+                    "required": ["schemaVersion", "commands", "assumptions", "parentRevision"],
+                    "properties": {
+                        "schemaVersion": {
+                            "type": "string",
+                            "enum": ["cmd-v3.0"],
+                            "description": "Must be 'cmd-v3.0'.",
+                        },
+                        "commands": {
+                            "type": "array",
+                            "items": {"type": "object"},
+                            "description": "Array of kernel commands to apply atomically.",
+                        },
+                        "assumptions": {
+                            "type": "array",
+                            "minItems": 1,
+                            "items": {
+                                "type": "object",
+                                "required": ["key", "value", "confidence", "source"],
+                                "properties": {
+                                    "key": {"type": "string", "minLength": 1},
+                                    "value": {},
+                                    "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+                                    "source": {"type": "string"},
+                                    "contestable": {"type": "boolean", "default": True},
+                                    "evidence": {"type": "string"},
+                                },
+                            },
+                            "description": "CMD-V3-02 contract — non-empty assumption log.",
+                        },
+                        "parentRevision": {
+                            "type": "integer",
+                            "description": "Optimistic-concurrency lock: must match current model revision.",
+                        },
+                        "targetOptionId": {
+                            "type": "string",
+                            "description": "OPT-V3-01: design option target. Absent = current model state.",
+                        },
+                        "tolerances": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "required": ["advisoryClass", "reason"],
+                                "properties": {
+                                    "advisoryClass": {"type": "string"},
+                                    "reason": {"type": "string"},
+                                },
+                            },
+                            "description": "Explicit overrides; recorded in audit log (T3 activity stream).",
+                        },
+                    },
+                    "additionalProperties": False,
                 },
-                "baseRevision": {
-                    "type": "integer",
-                    "description": "Parent revision this bundle was authored against.",
+                "mode": {
+                    "type": "string",
+                    "enum": ["dry_run", "commit"],
+                    "default": "dry_run",
+                    "description": "dry_run: validate only; commit: apply if no blocking advisories.",
                 },
-                "dryRun": {
-                    "type": "boolean",
-                    "default": False,
-                    "description": "Validate only; do not commit.",
+                "userId": {
+                    "type": "string",
+                    "description": "User identity for undo-stack attribution.",
                 },
             },
             "additionalProperties": False,
@@ -253,25 +303,38 @@ register(
             "$schema": "http://json-schema.org/draft-07/schema#",
             "title": "BundleResult",
             "type": "object",
-            "required": ["ok", "revision"],
+            "required": ["schemaVersion", "applied", "violations"],
             "properties": {
-                "ok": {"type": "boolean"},
-                "revision": {"type": "integer"},
+                "schemaVersion": {"type": "string"},
+                "applied": {"type": "boolean"},
+                "newRevision": {"type": "integer"},
+                "optionId": {"type": "string"},
                 "violations": {"type": "array", "items": {"type": "object"}},
-                "dryRun": {"type": "boolean"},
+                "checkpointSnapshotId": {
+                    "type": "string",
+                    "description": "SHA-256 of post-bundle element state; hand-off to VG-V3-01.",
+                },
             },
         },
         exitCodes={
-            "ok": ExitCode(code=0, meaning="Bundle applied or dry-run passed"),
-            "conflict": ExitCode(code=2, meaning="Base revision conflict"),
-            "validation_error": ExitCode(code=3, meaning="Command validation failed"),
+            "ok": ExitCode(code=0, meaning="Bundle applied (commit) or validated (dry-run)"),
+            "revision_conflict": ExitCode(code=2, meaning="parentRevision does not match current revision"),
+            "assumption_log_required": ExitCode(code=3, meaning="assumptions field missing or malformed"),
+            "error": ExitCode(code=1, meaning="Unexpected error"),
         },
-        cliExample="bim-ai apply-bundle bundle.json --base 42",
-        restEndpoint=RestEndpoint(method="POST", path="/api/models/{model_id}/commands/bundle"),
+        cliExample=(
+            "bim-ai apply-bundle bundle.json --base 1 --dry-run\n"
+            "bim-ai apply-bundle bundle.json --base 1 --commit\n"
+            "bim-ai apply-bundle bundle.json --base 1 --commit --tolerate constraint_error"
+        ),
+        restEndpoint=RestEndpoint(method="POST", path="/api/models/{model_id}/bundles"),
         sideEffects="mutates-kernel",
         agentSafetyNotes=(
-            "Use --dry-run first to validate.  "
-            "baseRevision must match current model revision or the call is rejected."
+            "Default mode is --dry-run; always validate first. "
+            "parentRevision must equal current model revision or the call is rejected with revision_conflict (HTTP 409). "
+            "assumptions is required and non-empty (CMD-V3-02 contract). "
+            "targetOptionId 'main' is permanently forbidden. "
+            "Same bundle + same parentRevision -> same BundleResult (deterministic)."
         ),
     )
 )

@@ -801,8 +801,12 @@ Commands:
   validate                            GET violations + summary + counts
   command-log [limit]                  GET undo/command history with full commands JSON
   apply [file|-]                       POST single command (server-authoritative; commits + broadcasts)
-  apply-bundle [file|-]                POST bundle (atomic, server-ordered; see docs/collaboration-model.md)
-  apply-bundle --dry-run [file|-]      POST bundle dry-run (no commit)
+  apply-bundle [file|-] --base <rev> [--dry-run | --commit]
+                                       CMD-V3-01: submit a cmd-v3.0 CommandBundle.
+                                       Default: --dry-run (agent safety — force explicit --commit).
+                                       [--tolerate <advisory-class>]... explicit override(s)
+                                       [--assumptions <file>] load assumptions from JSON file
+                                       Exit: 0 ok, 2 revision_conflict, 3 assumption_log_*
   dry-run [file|-]                     POST single command dry-run
   plan-house --brief <path> --out <path> [--model-hint id]
                                        validate brief JSON → write starter command bundle (one-family preset)
@@ -862,10 +866,7 @@ async function main() {
   if (!argv.length) usage();
   let cmd = argv[0];
 
-  if (argv[0] === 'apply-bundle' && argv[1] === '--dry-run') {
-    cmd = '__apply-bundle-dry';
-    argv = argv.slice(2);
-  }
+  // CMD-V3-01: --dry-run is now parsed inside the apply-bundle handler.
 
   try {
     if (cmd === 'bootstrap') {
@@ -1073,17 +1074,104 @@ async function main() {
     }
 
     if (cmd === 'apply-bundle') {
-      const raw = (await readPayloadOrStdin(pathArgFirst)).trim();
+      // CMD-V3-01: full apply-bundle handler (replaces stub)
+      const rest = argv.slice(1);
+      let baseRevision;
+      let mode = 'dry_run'; // default: dry-run (agent safety — force explicit --commit)
+      const tolerances = [];
+      let assumptionsFile;
+      let fileArg;
+
+      for (let i = 0; i < rest.length; i++) {
+        const a = rest[i];
+        if (a === '--base' && rest[i + 1]) {
+          baseRevision = Number(rest[++i]);
+        } else if (a === '--dry-run') {
+          mode = 'dry_run';
+        } else if (a === '--commit') {
+          mode = 'commit';
+        } else if (a === '--tolerate' && rest[i + 1]) {
+          tolerances.push({ advisoryClass: rest[++i], reason: 'cli-tolerate' });
+        } else if (a === '--assumptions' && rest[i + 1]) {
+          assumptionsFile = rest[++i];
+        } else if (!a.startsWith('-')) {
+          fileArg = a;
+        }
+      }
+
+      if (baseRevision === undefined || !Number.isFinite(baseRevision)) {
+        console.error('apply-bundle requires --base <revision>');
+        process.exit(1);
+      }
+
+      const raw = (await readPayloadOrStdin(fileArg)).trim();
       if (!raw) {
         console.error('Empty JSON for apply-bundle');
         process.exit(1);
       }
-      const cmds = commandsFromBundleJson(JSON.parse(raw));
-      await postBundle(modelId, userId, cmds);
+      const blob = JSON.parse(raw);
+
+      // Build a cmd-v3.0 CommandBundle
+      let bundle;
+      if (blob && typeof blob === 'object' && blob.schemaVersion === 'cmd-v3.0') {
+        bundle = blob;
+      } else {
+        // Legacy: bare array or { commands: [] } — auto-inject synthetic assumption
+        const legacyCmds = commandsFromBundleJson(blob);
+        console.error(
+          '[warn] Legacy bundle input (no schemaVersion). ' +
+            'Injecting synthetic assumption with confidence:0, source:"cli-legacy". ' +
+            'Migrate to cmd-v3.0 bundle format.',
+        );
+        bundle = {
+          schemaVersion: 'cmd-v3.0',
+          commands: legacyCmds,
+          assumptions: [{ key: 'cli-legacy', value: true, confidence: 0, source: 'cli-legacy' }],
+          parentRevision: baseRevision,
+        };
+      }
+
+      // CLI flags win over bundle fields
+      bundle.parentRevision = baseRevision;
+      if (tolerances.length) bundle.tolerances = tolerances;
+      if (assumptionsFile) {
+        const aRaw = await fs.readFile(assumptionsFile, 'utf8');
+        bundle.assumptions = JSON.parse(aRaw);
+      }
+
+      const url = `${base}/api/models/${encodeURIComponent(modelId)}/bundles`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ bundle, mode, userId }),
+      });
+      const text = await res.text();
+      let json;
+      try {
+        json = JSON.parse(text);
+      } catch {
+        json = { raw: text };
+      }
+      console.log(JSON.stringify(json, null, 2));
+
+      if (res.status === 409) {
+        const violations = json?.violations ?? json?.result?.violations ?? [];
+        const classes = violations.map((v) => v?.advisoryClass);
+        if (classes.includes('revision_conflict')) process.exit(2);
+        if (
+          classes.includes('assumption_log_required') ||
+          classes.includes('assumption_log_malformed') ||
+          classes.includes('assumption_log_duplicate_key')
+        )
+          process.exit(3);
+        process.exit(1);
+      }
+      if (!res.ok) process.exit(1);
       return;
     }
 
     if (cmd === '__apply-bundle-dry') {
+      // Legacy dry-run path kept for backwards compat
       const pathArg = argv[0];
       const raw = (await readPayloadOrStdin(pathArg)).trim();
       if (!raw) {
