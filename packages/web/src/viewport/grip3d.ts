@@ -21,7 +21,10 @@
  * (any kind can opt-in by calling `register3dGripProvider`).
  */
 
-export type Grip3dAxis = 'x' | 'y' | 'z';
+export type Grip3dAxis = 'x' | 'y' | 'z' | 'xy' | 'xyz';
+
+/** Where the grip is meant to render. Defaults to 'all' if unset. */
+export type Grip3dVisibility = 'orbit' | 'elevation' | 'all';
 
 export type Grip3dDescriptor = {
   /** Identifier unique within the parent element. */
@@ -37,6 +40,8 @@ export type Grip3dDescriptor = {
   axis: Grip3dAxis;
   /** Inclusive drag range in millimetres relative to start position. */
   rangeMm: { minMm: number; maxMm: number };
+  /** Optional render-context filter; renderers default to 'all'. */
+  visibleIn?: Grip3dVisibility;
   /**
    * Pure mapping: live drag-distance → property delta payload that the
    * Viewport overlay uses to render the live preview.
