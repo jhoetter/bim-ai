@@ -4,7 +4,14 @@
   "strategy": "manual-commit",
   "branch": "feat/v3-vie-v3-02-drafting-callout",
   "checkpoints_count": 1,
-  "files_touched": null,
+  "files_touched": [
+    "app/bim_ai/routes_commands.py",
+    "packages/web/src/collab/viewTemplateStore.ts",
+    "packages/web/src/workspace/InspectorContent.tsx",
+    "packages/web/src/workspace/ProjectBrowser.tsx",
+    "packages/web/src/workspace/PropagationToast.tsx",
+    "packages/web/src/workspace/ViewTemplateEditPanel.tsx"
+  ],
   "sessions": [
     {
       "metadata": "/18/20dc24bcef/0/metadata.json",
@@ -23,13 +30,19 @@
       "transcript": "/18/20dc24bcef/2/full.jsonl",
       "content_hash": "/18/20dc24bcef/2/content_hash.txt",
       "prompt": "/18/20dc24bcef/2/prompt.txt"
+    },
+    {
+      "metadata": "/18/20dc24bcef/3/metadata.json",
+      "transcript": "/18/20dc24bcef/3/full.jsonl",
+      "content_hash": "/18/20dc24bcef/3/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
-    "input_tokens": 4034,
-    "cache_creation_tokens": 142497,
-    "cache_read_tokens": 7604005,
-    "output_tokens": 48860,
-    "api_call_count": 66
+    "input_tokens": 4138,
+    "cache_creation_tokens": 219088,
+    "cache_read_tokens": 16272245,
+    "output_tokens": 81506,
+    "api_call_count": 166
   }
 }

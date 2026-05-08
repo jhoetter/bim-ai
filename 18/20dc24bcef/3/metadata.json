@@ -1,0 +1,41 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "1820dc24bcef",
+  "session_id": "ae51c655-e9db-4b09-beab-dc9a29729713",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T18:45:45.76694Z",
+  "branch": "feat/v3-vie-v3-02-drafting-callout",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/collab/viewTemplateStore.ts",
+    "packages/web/src/workspace/PropagationToast.tsx",
+    "packages/web/src/workspace/ViewTemplateEditPanel.tsx",
+    "packages/web/src/workspace/ProjectBrowser.tsx",
+    "app/bim_ai/routes_commands.py",
+    "packages/web/src/workspace/InspectorContent.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "81a16dbfe45a",
+  "checkpoint_transcript_start": 419,
+  "transcript_lines_at_start": 419,
+  "token_usage": {
+    "input_tokens": 104,
+    "cache_creation_tokens": 76591,
+    "cache_read_tokens": 8668240,
+    "output_tokens": 32646,
+    "api_call_count": 100
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-08T18:45:45.742622Z",
+    "agent_lines": 507,
+    "agent_removed": 21,
+    "human_added": 255,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 762,
+    "total_lines_changed": 783,
+    "agent_percentage": 67.43295019157088,
+    "metric_version": 2
+  }
+}
