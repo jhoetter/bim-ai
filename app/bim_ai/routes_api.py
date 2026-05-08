@@ -102,7 +102,8 @@ from bim_ai.schedule_csv import schedule_payload_to_csv, schedule_payload_with_c
 from bim_ai.schedule_derivation import derive_schedule_table, list_schedule_ids
 from bim_ai.sheet_preview_svg import SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2
 from bim_ai.permissions import authorize_command
-from bim_ai.tables import ModelRecord, ProjectRecord, RoleAssignmentRecord, UndoStackRecord
+from bim_ai.milestones import CreateMilestoneBody
+from bim_ai.tables import MilestoneRecord, ModelRecord, ProjectRecord, PublicLinkRecord, RoleAssignmentRecord, UndoStackRecord
 from bim_ai.template_loader import (
     list_templates,
     load_template_snapshot,
@@ -1234,6 +1235,7 @@ class CommandBundleRequest(BaseModel):
     bundle: CommandBundle
     mode: str = Field(default="dry_run")
     user_id: str | None = Field(default="local-dev", alias="userId")
+    submitter: str = Field(default="human")
 
 
 @api_router.post("/models/{model_id}/bundles")
@@ -1277,7 +1279,7 @@ async def apply_bundle_route(
     doc = Document.model_validate(row.document)
     mode = body.mode if body.mode in ("dry_run", "commit") else "dry_run"
 
-    result, new_doc_from_bundle = _apply_bundle(doc, body.bundle, mode, model_id=str(model_id))  # type: ignore[arg-type]
+    result, new_doc_from_bundle = _apply_bundle(doc, body.bundle, mode, model_id=str(model_id), submitter=body.submitter)  # type: ignore[arg-type]
 
     # Surface blocking advisory classes as HTTP 409
     _BLOCKING_ADVISORY_CLASSES = {
@@ -1286,7 +1288,7 @@ async def apply_bundle_route(
         "assumption_log_malformed",
         "assumption_log_duplicate_key",
         "direct_main_commit_forbidden",
-        "option_routing_not_yet_implemented",
+        "option_not_found",
     }
     if not result.applied and result.violations:
         blocking_classes = {v.get("advisoryClass") for v in result.violations}
@@ -1483,6 +1485,226 @@ async def create_public_link(
     await session.commit()
     url = f"/api/models/{model_id}/snapshot?token={token}"
     return {"token": token, "url": url, "assignmentId": assignment_id}
+
+
+# ---------------------------------------------------------------------------
+# COL-V3-03 — Shareable public link
+# ---------------------------------------------------------------------------
+
+
+class CreatePublicLinkBodyV3(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    display_name: str | None = Field(default=None, alias="displayName")
+    expires_at: int | None = Field(default=None, alias="expiresAt")
+    password: str | None = Field(default=None)
+
+
+class VerifyPasswordBody(BaseModel):
+    password: str
+
+
+@api_router.post("/models/{model_id}/public-links")
+async def create_public_link_v3(
+    model_id: UUID,
+    body: CreatePublicLinkBodyV3,
+    session: AsyncSession = Depends(get_session),
+    user_id: str = Query(default="local-dev", alias="userId"),
+) -> dict[str, Any]:
+    """COL-V3-03: create a public link with optional expiry and password. Admin only."""
+    from bim_ai.public_links import generate_link_token, hash_link_password
+
+    caller_role = await resolve_caller_role(session, model_id, user_id)
+    if caller_role != "admin":
+        raise HTTPException(status_code=403, detail="Only admins can create public links")
+
+    now_ms = int(time.time() * 1000)
+    link_id = secrets.token_urlsafe(16)
+    token = generate_link_token()
+    password_hash = hash_link_password(body.password) if body.password else None
+
+    link_record = PublicLinkRecord(
+        id=link_id,
+        model_id=str(model_id),
+        token=token,
+        created_by=user_id,
+        created_at=now_ms,
+        expires_at=body.expires_at,
+        password_hash=password_hash,
+        is_revoked=False,
+        display_name=body.display_name,
+        open_count=0,
+    )
+    session.add(link_record)
+
+    assignment_id = secrets.token_urlsafe(16)
+    role_record = RoleAssignmentRecord(
+        id=assignment_id,
+        model_id=str(model_id),
+        subject_kind="public-link",
+        subject_id=token,
+        role="public-link-viewer",
+        granted_by=user_id,
+        granted_at=now_ms,
+        expires_at=body.expires_at,
+    )
+    session.add(role_record)
+    await session.commit()
+
+    return {
+        "id": link_id,
+        "modelId": str(model_id),
+        "token": token,
+        "createdBy": user_id,
+        "createdAt": now_ms,
+        "expiresAt": body.expires_at,
+        "isRevoked": False,
+        "displayName": body.display_name,
+        "openCount": 0,
+    }
+
+
+@api_router.get("/models/{model_id}/public-links")
+async def list_public_links(
+    model_id: UUID,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """COL-V3-03: list non-revoked public links for a model."""
+    res = await session.execute(
+        select(PublicLinkRecord).where(
+            PublicLinkRecord.model_id == str(model_id),
+            PublicLinkRecord.is_revoked.is_(False),
+        )
+    )
+    records = res.scalars().all()
+    return {
+        "links": [
+            {
+                "id": r.id,
+                "modelId": r.model_id,
+                "token": r.token,
+                "createdBy": r.created_by,
+                "createdAt": r.created_at,
+                "expiresAt": r.expires_at,
+                "isRevoked": r.is_revoked,
+                "displayName": r.display_name,
+                "openCount": r.open_count,
+            }
+            for r in records
+        ]
+    }
+
+
+@api_router.post("/models/{model_id}/public-links/{link_id}/revoke")
+async def revoke_public_link(
+    model_id: UUID,
+    link_id: str,
+    session: AsyncSession = Depends(get_session),
+    user_id: str = Query(default="local-dev", alias="userId"),
+) -> dict[str, Any]:
+    """COL-V3-03: revoke a public link and delete its RoleAssignment. Admin only."""
+    caller_role = await resolve_caller_role(session, model_id, user_id)
+    if caller_role != "admin":
+        raise HTTPException(status_code=403, detail="Only admins can revoke public links")
+
+    res = await session.execute(
+        select(PublicLinkRecord).where(
+            PublicLinkRecord.id == link_id,
+            PublicLinkRecord.model_id == str(model_id),
+        )
+    )
+    link_record = res.scalars().first()
+    if link_record is None:
+        raise HTTPException(status_code=404, detail="Public link not found")
+
+    link_record.is_revoked = True
+
+    role_res = await session.execute(
+        select(RoleAssignmentRecord).where(
+            RoleAssignmentRecord.model_id == str(model_id),
+            RoleAssignmentRecord.subject_kind == "public-link",
+            RoleAssignmentRecord.subject_id == link_record.token,
+        )
+    )
+    role_record = role_res.scalars().first()
+    if role_record is not None:
+        await session.delete(role_record)
+
+    await session.commit()
+    return {"revoked": link_id}
+
+
+@api_router.get("/shared/{token}")
+async def resolve_shared_token(
+    token: str,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """COL-V3-03: resolve a public link token and return the model document."""
+    now_ms = int(time.time() * 1000)
+    res = await session.execute(
+        select(PublicLinkRecord).where(PublicLinkRecord.token == token)
+    )
+    link_record = res.scalars().first()
+    if link_record is None or link_record.is_revoked:
+        raise HTTPException(status_code=410, detail="Link not found or revoked")
+    if link_record.expires_at is not None and link_record.expires_at < now_ms:
+        raise HTTPException(status_code=410, detail="Link has expired")
+
+    try:
+        from sqlalchemy import update as sa_update
+
+        await session.execute(
+            sa_update(PublicLinkRecord)
+            .where(PublicLinkRecord.id == link_record.id)
+            .values(open_count=PublicLinkRecord.open_count + 1)
+        )
+        await session.commit()
+    except Exception:
+        pass
+
+    try:
+        model_uuid = UUID(link_record.model_id)
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Model not found")
+
+    row = await load_model_row(session, model_uuid)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+
+    doc = Document.model_validate(row.document)
+    elements_wire = {k: v.model_dump(by_alias=True) for k, v in doc.elements.items()}
+    return {
+        "modelId": str(row.id),
+        "revision": doc.revision,
+        "elements": elements_wire,
+        "violations": violations_wire(doc.elements),
+        "publicLink": {
+            "id": link_record.id,
+            "displayName": link_record.display_name,
+            "openCount": link_record.open_count,
+        },
+    }
+
+
+@api_router.post("/shared/{token}/verify-password")
+async def verify_public_link_password(
+    token: str,
+    body: VerifyPasswordBody,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """COL-V3-03: verify the password for a public link."""
+    res = await session.execute(
+        select(PublicLinkRecord).where(PublicLinkRecord.token == token)
+    )
+    link_record = res.scalars().first()
+    if link_record is None:
+        raise HTTPException(status_code=404, detail="Public link not found")
+
+    if link_record.password_hash is None:
+        return {"ok": True}
+
+    from bim_ai.public_links import verify_link_password
+
+    return {"ok": verify_link_password(body.password, link_record.password_hash)}
 
 
 # ---------------------------------------------------------------------------
@@ -1776,6 +1998,96 @@ async def v3_api_version() -> dict[str, str]:
 
 
 # ---------------------------------------------------------------------------
+# MRK-V3-02 — Markup CRUD routes
+# ---------------------------------------------------------------------------
+
+# Module-level in-memory store keyed by model_id (simplest pattern; no
+# DB migration required for this WP).
+_markups_store: dict[str, list[dict]] = {}
+
+
+def _get_markups(model_id: str) -> list[dict]:
+    return _markups_store.setdefault(model_id, [])
+
+
+class MarkupCreateBody(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    view_id: str | None = Field(default=None, alias="viewId")
+    anchor: dict = Field(...)
+    shape: dict = Field(...)
+    author_id: str = Field(alias="authorId")
+
+
+@api_router.post("/models/{model_id}/markups")
+async def create_markup(model_id: UUID, body: MarkupCreateBody) -> dict[str, Any]:
+    import time as _time
+
+    from bim_ai.markups import Markup, Vec2Px, _rdp_simplify, sanitize_color
+
+    mid = str(uuid4())
+    shape = dict(body.shape)
+    if shape.get("kind") == "freehand":
+        path = shape.get("pathPx", [])
+        simplified = _rdp_simplify([Vec2Px.model_validate(p) for p in path])
+        shape["pathPx"] = [p.model_dump(by_alias=True) for p in simplified]
+        shape["color"] = sanitize_color(shape.get("color", "var(--cat-edit)"))
+    elif shape.get("kind") == "arrow":
+        shape["color"] = sanitize_color(shape.get("color", "var(--cat-edit)"))
+
+    raw: dict[str, Any] = {
+        "id": mid,
+        "modelId": str(model_id),
+        "viewId": body.view_id,
+        "anchor": body.anchor,
+        "shape": shape,
+        "authorId": body.author_id,
+        "createdAt": int(_time.time() * 1000),
+        "resolvedAt": None,
+    }
+    markup = Markup.model_validate(raw)
+    _get_markups(str(model_id)).append(markup.model_dump(by_alias=True))
+    return markup.model_dump(by_alias=True)
+
+
+@api_router.get("/models/{model_id}/markups")
+async def list_markups(
+    model_id: UUID,
+    view_id: Annotated[str | None, Query(alias="viewId")] = None,
+    resolved: Annotated[str | None, Query(alias="resolved")] = None,
+) -> dict[str, Any]:
+    markups = list(_get_markups(str(model_id)))
+    if view_id is not None:
+        markups = [m for m in markups if m.get("viewId") == view_id]
+    if resolved is not None and resolved.lower() == "false":
+        markups = [m for m in markups if m.get("resolvedAt") is None]
+    return {"markups": markups}
+
+
+@api_router.patch("/models/{model_id}/markups/{markup_id}/resolve")
+async def resolve_markup(model_id: UUID, markup_id: str) -> dict[str, Any]:
+    import time as _time
+
+    markups = _get_markups(str(model_id))
+    for i, m in enumerate(markups):
+        if m.get("id") == markup_id:
+            m = dict(m)
+            m["resolvedAt"] = int(_time.time() * 1000)
+            markups[i] = m
+            return m
+    raise HTTPException(status_code=404, detail="Markup not found")
+
+
+@api_router.delete("/models/{model_id}/markups/{markup_id}")
+async def delete_markup(model_id: UUID, markup_id: str) -> dict[str, Any]:
+    markups = _get_markups(str(model_id))
+    for i, m in enumerate(markups):
+        if m.get("id") == markup_id:
+            markups.pop(i)
+            return {"deleted": True, "id": markup_id}
+    raise HTTPException(status_code=404, detail="Markup not found")
+
+
+# ---------------------------------------------------------------------------
 # TKN-V3-01 — token encode / decode / diff endpoints
 # ---------------------------------------------------------------------------
 
@@ -1824,6 +2136,116 @@ class TknDiffRequest(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     sequence_a: dict[str, Any] = Field(alias="sequenceA")
     sequence_b: dict[str, Any] = Field(alias="sequenceB")
+
+
+# ---------------------------------------------------------------------------
+# VER-V3-02 — Named milestone routes
+# ---------------------------------------------------------------------------
+
+
+@api_router.post("/models/{model_id}/milestones")
+async def create_milestone(
+    model_id: UUID,
+    body: CreateMilestoneBody,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """VER-V3-02: create a named milestone pinned to a snapshot id."""
+    import time as _time
+    from uuid import uuid4 as _uuid4
+
+    from bim_ai.activity import emit_activity_row
+
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+
+    milestone_id = str(_uuid4())
+    now_ms = int(_time.time() * 1000)
+    record = MilestoneRecord(
+        id=milestone_id,
+        model_id=str(model_id),
+        name=body.name,
+        description=body.description,
+        snapshot_id=body.snapshot_id,
+        author_id=body.author_id,
+        created_at=now_ms,
+    )
+    session.add(record)
+    await session.flush()
+
+    await emit_activity_row(
+        session,
+        model_id=str(model_id),
+        author_id=body.author_id,
+        kind="milestone_created",
+        payload={"name": body.name, "milestoneId": milestone_id},
+    )
+    await session.commit()
+
+    return {
+        "id": milestone_id,
+        "modelId": str(model_id),
+        "name": body.name,
+        "description": body.description,
+        "snapshotId": body.snapshot_id,
+        "authorId": body.author_id,
+        "createdAt": now_ms,
+    }
+
+
+@api_router.get("/models/{model_id}/milestones")
+async def list_milestones(
+    model_id: UUID,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """VER-V3-02: list all milestones for a model, descending createdAt."""
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+
+    res = await session.execute(
+        select(MilestoneRecord)
+        .where(MilestoneRecord.model_id == str(model_id))
+        .order_by(desc(MilestoneRecord.created_at))
+    )
+    milestones = res.scalars().all()
+
+    return {
+        "modelId": str(model_id),
+        "milestones": [
+            {
+                "id": m.id,
+                "modelId": m.model_id,
+                "name": m.name,
+                "description": m.description,
+                "snapshotId": m.snapshot_id,
+                "authorId": m.author_id,
+                "createdAt": m.created_at,
+            }
+            for m in milestones
+        ],
+    }
+
+
+@api_router.delete("/models/{model_id}/milestones/{milestone_id}")
+async def delete_milestone(
+    model_id: UUID,
+    milestone_id: str,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """VER-V3-02: delete a milestone by id."""
+    res = await session.execute(
+        select(MilestoneRecord).where(
+            MilestoneRecord.id == milestone_id,
+            MilestoneRecord.model_id == str(model_id),
+        )
+    )
+    record = res.scalars().first()
+    if record is None:
+        raise HTTPException(status_code=404, detail="Milestone not found")
+    await session.delete(record)
+    await session.commit()
+    return {"deleted": milestone_id}
 
 
 @api_router.post("/models/{model_id}/tokens/diff")

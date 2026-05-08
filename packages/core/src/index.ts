@@ -31,6 +31,8 @@ export type ElemKind =
   | 'plan_view'
   | 'view_template'
   | 'sheet'
+  | 'titleblock_type'
+  | 'window_legend_view'
   | 'schedule'
   | 'site'
   | 'callout'
@@ -938,16 +940,9 @@ export type Element =
       defaultPlanRoomTagStyleId?: string | null;
       planCategoryGraphics?: PlanCategoryGraphicRow[];
     }
-  | {
-      kind: 'sheet';
-      id: string;
-      name: string;
-      titleBlock?: string | null;
-      viewportsMm?: unknown[];
-      paperWidthMm?: number;
-      paperHeightMm?: number;
-      titleblockParameters?: Record<string, string>;
-    }
+  | Sheet
+  | TitleblockType
+  | WindowLegendView
   | {
       kind: 'schedule';
       id: string;
@@ -1469,16 +1464,32 @@ export type Violation = {
   discipline?: string | null;
 };
 
+export type DesignOptionProvenance = {
+  submitter: 'agent' | 'human' | 'ci';
+  bundleId: string;
+  createdAt: number;
+};
+
 export type DesignOption = {
   id: string;
   name: string;
   isPrimary?: boolean;
+  provenance?: DesignOptionProvenance;
 };
 
 export type DesignOptionSet = {
   id: string;
   name: string;
   options: DesignOption[];
+};
+
+export type CommandBundle = {
+  schemaVersion: 'cmd-v3.0';
+  commands: Command[];
+  assumptions: AssumptionEntry[];
+  parentRevision: number;
+  targetOptionId?: string;
+  tolerances?: { advisoryClass: string; reason: string }[] | null;
 };
 
 export type Snapshot = {
@@ -1608,6 +1619,18 @@ export type RoleAssignment = {
   expiresAt?: number;
 };
 
+export type PublicLink = {
+  id: string;
+  modelId: string;
+  token: string;
+  createdBy: string;
+  createdAt: number;
+  expiresAt?: number;
+  isRevoked: boolean;
+  displayName?: string;
+  openCount: number;
+};
+
 // ---------------------------------------------------------------------------
 // TKN-V3-01 — tokenised kernel representation
 // ---------------------------------------------------------------------------
@@ -1735,8 +1758,58 @@ export type Comment = {
 };
 
 // ---------------------------------------------------------------------------
+// MRK-V3-02 — Markup types
+// ---------------------------------------------------------------------------
+
+export type MarkupAnchor =
+  | { kind: 'element'; elementId: string }
+  | { kind: 'world'; worldMm: { xMm: number; yMm: number; zMm: number } }
+  | { kind: 'screen'; viewId: string; xPx: number; yPx: number };
+
+export type MarkupShape =
+  | {
+      kind: 'freehand';
+      pathPx: Array<{ xPx: number; yPx: number }>;
+      color: string;
+      strokeWidthPx: number;
+    }
+  | {
+      kind: 'arrow';
+      fromMm: { xMm: number; yMm: number };
+      toMm: { xMm: number; yMm: number };
+      color: string;
+    }
+  | { kind: 'cloud'; pointsMm: Array<{ xMm: number; yMm: number }> }
+  | { kind: 'text'; bodyMd: string; positionMm: { xMm: number; yMm: number } };
+
+export type Markup = {
+  id: string;
+  modelId: string;
+  viewId?: string;
+  anchor: MarkupAnchor;
+  shape: MarkupShape;
+  authorId: string;
+  createdAt: number;
+  resolvedAt?: number;
+};
+
+// ---------------------------------------------------------------------------
 // VER-V3-01 — Activity stream types
 // ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// VER-V3-02 — Named milestone types
+// ---------------------------------------------------------------------------
+
+export type Milestone = {
+  id: string;
+  modelId: string;
+  name: string;
+  description?: string;
+  snapshotId: string;
+  authorId: string;
+  createdAt: number;
+};
 
 export type ActivityRow = {
   id: string;
