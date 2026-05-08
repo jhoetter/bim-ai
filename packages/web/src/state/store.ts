@@ -716,6 +716,122 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
     };
   }
 
+  if (kind === 'balcony') {
+    return {
+      kind: 'balcony',
+      id,
+      name,
+      wallId: String(raw.wallId ?? raw.wall_id ?? ''),
+      elevationMm: Number(raw.elevationMm ?? raw.elevation_mm ?? 0),
+      ...(raw.projectionMm != null || raw.projection_mm != null
+        ? { projectionMm: Number(raw.projectionMm ?? raw.projection_mm) }
+        : {}),
+      ...(raw.slabThicknessMm != null || raw.slab_thickness_mm != null
+        ? { slabThicknessMm: Number(raw.slabThicknessMm ?? raw.slab_thickness_mm) }
+        : {}),
+      ...(raw.balustradeHeightMm != null || raw.balustrade_height_mm != null
+        ? { balustradeHeightMm: Number(raw.balustradeHeightMm ?? raw.balustrade_height_mm) }
+        : {}),
+    };
+  }
+
+  if (kind === 'sweep') {
+    const rawPath = (raw.pathMm ?? raw.path_mm) as Record<string, unknown>[] | undefined;
+    const rawProfile = (raw.profileMm ?? raw.profile_mm) as Record<string, unknown>[] | undefined;
+    if (!Array.isArray(rawPath) || !Array.isArray(rawProfile)) return null;
+    const planeRaw = String(raw.profilePlane ?? raw.profile_plane ?? 'work_plane');
+    const profilePlane: 'normal_to_path_start' | 'work_plane' =
+      planeRaw === 'normal_to_path_start' ? 'normal_to_path_start' : 'work_plane';
+    return {
+      kind: 'sweep',
+      id,
+      name,
+      levelId: String(raw.levelId ?? raw.level_id ?? ''),
+      pathMm: rawPath
+        .map((p) => {
+          const xMm = Number(p.xMm ?? p.x_mm);
+          const yMm = Number(p.yMm ?? p.y_mm);
+          if (!Number.isFinite(xMm) || !Number.isFinite(yMm)) return null;
+          const zRaw = p.zMm ?? p.z_mm;
+          const out: { xMm: number; yMm: number; zMm?: number } = { xMm, yMm };
+          if (zRaw != null && Number.isFinite(Number(zRaw))) out.zMm = Number(zRaw);
+          return out;
+        })
+        .filter((p): p is NonNullable<typeof p> => p !== null),
+      profileMm: rawProfile
+        .map((p) => {
+          const uMm = Number(p.uMm ?? p.u_mm);
+          const vMm = Number(p.vMm ?? p.v_mm);
+          if (!Number.isFinite(uMm) || !Number.isFinite(vMm)) return null;
+          return { uMm, vMm };
+        })
+        .filter((p): p is NonNullable<typeof p> => p !== null),
+      profilePlane,
+      ...(typeof raw.materialKey === 'string' || typeof raw.material_key === 'string'
+        ? { materialKey: String(raw.materialKey ?? raw.material_key) }
+        : {}),
+    };
+  }
+
+  if (kind === 'dormer') {
+    const posRaw = (raw.positionOnRoof ?? raw.position_on_roof) as
+      | Record<string, unknown>
+      | undefined;
+    if (!posRaw) return null;
+    const dormerRoofKindRaw = String(raw.dormerRoofKind ?? raw.dormer_roof_kind ?? 'flat');
+    const dormerRoofKind: 'flat' | 'shed' | 'gable' | 'hipped' = (
+      ['flat', 'shed', 'gable', 'hipped'] as const
+    ).includes(dormerRoofKindRaw as never)
+      ? (dormerRoofKindRaw as 'flat' | 'shed' | 'gable' | 'hipped')
+      : 'flat';
+    return {
+      kind: 'dormer',
+      id,
+      name,
+      hostRoofId: String(raw.hostRoofId ?? raw.host_roof_id ?? ''),
+      positionOnRoof: {
+        alongRidgeMm: Number(posRaw.alongRidgeMm ?? posRaw.along_ridge_mm ?? 0),
+        acrossRidgeMm: Number(posRaw.acrossRidgeMm ?? posRaw.across_ridge_mm ?? 0),
+      },
+      widthMm: Number(raw.widthMm ?? raw.width_mm ?? 1000),
+      wallHeightMm: Number(raw.wallHeightMm ?? raw.wall_height_mm ?? 2400),
+      depthMm: Number(raw.depthMm ?? raw.depth_mm ?? 1000),
+      dormerRoofKind,
+      ...(raw.dormerRoofPitchDeg != null || raw.dormer_roof_pitch_deg != null
+        ? { dormerRoofPitchDeg: Number(raw.dormerRoofPitchDeg ?? raw.dormer_roof_pitch_deg) }
+        : {}),
+      ...(raw.ridgeHeightMm != null || raw.ridge_height_mm != null
+        ? { ridgeHeightMm: Number(raw.ridgeHeightMm ?? raw.ridge_height_mm) }
+        : {}),
+      ...(typeof raw.wallMaterialKey === 'string' || typeof raw.wall_material_key === 'string'
+        ? { wallMaterialKey: String(raw.wallMaterialKey ?? raw.wall_material_key) }
+        : {}),
+      ...(typeof raw.roofMaterialKey === 'string' || typeof raw.roof_material_key === 'string'
+        ? { roofMaterialKey: String(raw.roofMaterialKey ?? raw.roof_material_key) }
+        : {}),
+      ...(raw.hasFloorOpening != null || raw.has_floor_opening != null
+        ? { hasFloorOpening: Boolean(raw.hasFloorOpening ?? raw.has_floor_opening) }
+        : {}),
+    };
+  }
+
+  if (kind === 'mass') {
+    return {
+      kind: 'mass',
+      id,
+      name,
+      levelId: String(raw.levelId ?? raw.level_id ?? ''),
+      footprintMm: coerceLoop('footprintMm', 'footprint_mm'),
+      heightMm: Number(raw.heightMm ?? raw.height_mm ?? 3000),
+      ...(raw.rotationDeg != null || raw.rotation_deg != null
+        ? { rotationDeg: Number(raw.rotationDeg ?? raw.rotation_deg) }
+        : {}),
+      ...(typeof raw.materialKey === 'string' || typeof raw.material_key === 'string'
+        ? { materialKey: String(raw.materialKey ?? raw.material_key) }
+        : {}),
+    };
+  }
+
   if (kind === 'family_type') {
     const validDisciplines = [
       'door',
