@@ -1,0 +1,44 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "eee108bbab7e",
+  "session_id": "4f65589c-f5bc-46fe-bee6-b09371b9f50c",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T17:20:43.698353Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "spec/v3-build-state.md",
+    "spec/v3-prompts/wp-024.md",
+    "spec/v3-prompts/wp-025.md",
+    "spec/v3-prompts/wp-026.md",
+    "spec/v3-prompts/wp-027.md",
+    "spec/v3-prompts/wp-028.md",
+    "spec/v3-prompts/wp-029.md",
+    "spec/v3-prompts/wp-030.md",
+    "spec/v3-prompts/wp-031.md"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "2b162f5279fa",
+  "checkpoint_transcript_start": 32,
+  "transcript_lines_at_start": 32,
+  "token_usage": {
+    "input_tokens": 2,
+    "cache_creation_tokens": 481,
+    "cache_read_tokens": 86586,
+    "output_tokens": 137,
+    "api_call_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-08T17:20:43.69582Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 2042,
+    "human_modified": 7,
+    "human_removed": 0,
+    "total_committed": 2042,
+    "total_lines_changed": 2049,
+    "agent_percentage": 0,
+    "metric_version": 2
+  }
+}
