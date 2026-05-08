@@ -856,6 +856,9 @@ Commands:
   view-set-phase-filter --view-id <id> --phase-filter <filter>
                                                 KRN-V3-01: set phase filter (show_all|show_new_plus_existing|show_demolition_only|show_existing_only|show_new_only)
 
+  tool-pref set --tool <tool> --pref <key> --value <value>
+                                                CHR-V3-08: store a sticky tool-modifier preference (e.g. wall alignment).
+
 Collaboration model:
   Every command is server-authoritative on commit and broadcast over websocket;
   there is no central file to Synchronize. See docs/collaboration-model.md.
@@ -1583,6 +1586,30 @@ async function main() {
         return;
       }
       console.error(`Unknown asset subcommand: ${sub ?? '(none)'}. Use index | place.`);
+    if (cmd === 'tool-pref') {
+      if (!modelId) usage();
+      const sub = argv[1];
+      if (sub === 'set') {
+        const rest = argv.slice(2);
+        let tool, prefKey, prefValue;
+        for (let i = 0; i < rest.length; i++) {
+          if (rest[i] === '--tool' && rest[i + 1]) tool = rest[++i];
+          else if (rest[i] === '--pref' && rest[i + 1]) prefKey = rest[++i];
+          else if (rest[i] === '--value' && rest[i + 1]) prefValue = rest[++i];
+        }
+        if (!tool || !prefKey || prefValue === undefined) {
+          console.error('tool-pref set requires --tool <tool> --pref <key> --value <value>');
+          process.exit(1);
+        }
+        await postCommand(modelId, userId, {
+          type: 'setToolPref',
+          tool,
+          prefKey,
+          prefValue,
+        });
+        return;
+      }
+      console.error(`Unknown tool-pref subcommand: ${sub ?? '(none)'}. Use set.`);
       process.exit(1);
     }
 

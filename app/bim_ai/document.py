@@ -35,6 +35,9 @@ class Document(BaseModel):
     design_option_sets: list[DesignOptionSet] = Field(
         default_factory=list, alias="designOptionSets"
     )
+    tool_prefs: dict[str, dict[str, str]] = Field(
+        default_factory=dict, alias="toolPrefs"
+    )
 
 
 from bim_ai.cmd.types import AgentTrace  # noqa: E402, F401 — needed for model_rebuild

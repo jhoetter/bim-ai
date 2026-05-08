@@ -2103,6 +2103,19 @@ class PlaceAssetCmd(BaseModel):
     rotation_deg: float = Field(default=0.0, alias="rotationDeg")
     param_values: dict[str, Any] = Field(default_factory=dict, alias="paramValues")
     host_element_id: str | None = Field(default=None, alias="hostElementId")
+class SetToolPrefCmd(BaseModel):
+    """CHR-V3-08: Store a sticky tool-modifier preference for the session.
+
+    ``tool`` is the authoring tool name (e.g. "wall", "door", "window").
+    ``pref_key`` is the modifier name (e.g. "alignment", "swingSide", "multipleMode").
+    ``pref_value`` is the serialised value (always a string; booleans as "true"/"false").
+    """
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["setToolPref"] = "setToolPref"
+    tool: str
+    pref_key: str = Field(alias="prefKey")
+    pref_value: str = Field(alias="prefValue")
 
 
 Command = Annotated[
@@ -2271,6 +2284,7 @@ Command = Annotated[
     | UpdateToposolidCmd
     | DeleteToposolidCmd
     | IndexAssetCmd
-    | PlaceAssetCmd,
+    | PlaceAssetCmd
+    | SetToolPrefCmd,
     Field(discriminator="type"),
 ]

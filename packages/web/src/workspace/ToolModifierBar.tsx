@@ -1,0 +1,64 @@
+/**
+ * CHR-V3-08 — workspace-wired ToolModifierBar.
+ *
+ * Reads the active plan tool from the bim store, resolves the per-tool
+ * descriptor list, and wires toggle / cycle state via the toolPrefs slice.
+ */
+
+import type { JSX } from 'react';
+
+import { ToolModifierBar as ToolModifierBarPure } from '../tools/ToolModifierBar';
+import { getToolModifierDescriptors } from '../tools/modifierBar';
+import type { CycleModifierDescriptor, ToggleModifierDescriptor } from '../tools/modifierBar';
+import { useToolPrefs } from '../tools/toolPrefsStore';
+import { useBimStore } from '../state/store';
+import type { ToolId } from '../tools/toolRegistry';
+
+export function ToolModifierBar(): JSX.Element | null {
+  const planTool = useBimStore((s) => s.planTool) as ToolId | null;
+  const descriptors = getToolModifierDescriptors(planTool);
+
+  const getToggle = useToolPrefs((s) => s.getToggle);
+  const setToggle = useToolPrefs((s) => s.setToggle);
+  const getCycle = useToolPrefs((s) => s.getCycle);
+  const advanceCycle = useToolPrefs((s) => s.advanceCycle);
+
+  if (!planTool || descriptors.length === 0) return null;
+
+  function handleGetToggle(modifierId: string): boolean {
+    const desc = descriptors.find((d) => d.id === modifierId) as
+      | ToggleModifierDescriptor
+      | undefined;
+    return getToggle(planTool!, modifierId, desc?.defaultOn ?? false);
+  }
+
+  function handleToggle(modifierId: string, value: boolean): void {
+    setToggle(planTool!, modifierId, value);
+  }
+
+  function handleGetCycle(modifierId: string): string {
+    const desc = descriptors.find((d) => d.id === modifierId) as
+      | CycleModifierDescriptor
+      | undefined;
+    return getCycle(planTool!, modifierId, desc?.defaultValue ?? '');
+  }
+
+  function handleCycleAdvance(modifierId: string): void {
+    const desc = descriptors.find((d) => d.id === modifierId) as
+      | CycleModifierDescriptor
+      | undefined;
+    if (!desc) return;
+    advanceCycle(planTool!, modifierId, desc.values, desc.defaultValue);
+  }
+
+  return (
+    <ToolModifierBarPure
+      activeTool={planTool}
+      descriptors={descriptors}
+      getToggle={handleGetToggle}
+      onToggle={handleToggle}
+      getCycle={handleGetCycle}
+      onCycleAdvance={handleCycleAdvance}
+    />
+  );
+}

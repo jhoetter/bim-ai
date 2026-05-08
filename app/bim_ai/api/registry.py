@@ -399,6 +399,57 @@ register(
 
 register(
     ToolDescriptor(
+        name="set-tool-pref",
+        category="mutation",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "SetToolPrefInput",
+            "type": "object",
+            "required": ["tool", "pref_key", "pref_value"],
+            "properties": {
+                "tool": {
+                    "type": "string",
+                    "description": "Authoring tool name (e.g. 'wall', 'door', 'window').",
+                },
+                "pref_key": {
+                    "type": "string",
+                    "description": "Modifier key (e.g. 'alignment', 'swingSide', 'multipleMode').",
+                },
+                "pref_value": {
+                    "type": "string",
+                    "description": "Serialised value (booleans as 'true'/'false').",
+                },
+            },
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "SetToolPrefOutput",
+            "type": "object",
+            "required": ["ok", "revision"],
+            "properties": {
+                "ok": {"type": "boolean"},
+                "revision": {"type": "integer"},
+            },
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Pref stored; revision incremented"),
+            "not_found": ExitCode(code=1, meaning="Model not found"),
+            "error": ExitCode(code=1, meaning="Unexpected error"),
+        },
+        cliExample="bim-ai tool-pref set --tool wall --pref alignment --value center",
+        restEndpoint=RestEndpoint(method="POST", path="/api/models/{model_id}/commands"),
+        sideEffects="mutates-kernel",
+        agentSafetyNotes=(
+            "CHR-V3-08: stores a sticky modifier preference on the document. "
+            "The command type discriminator is 'setToolPref'. "
+            "pref_value must be a string; booleans serialised as 'true'/'false'."
+        ),
+    )
+)
+
+register(
+    ToolDescriptor(
         name="model-show",
         category="query",
         inputSchema={
