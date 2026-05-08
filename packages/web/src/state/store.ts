@@ -311,6 +311,28 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
         raw.revealInteriorMm !== undefined ? Number(raw.revealInteriorMm) : undefined,
       interlockGrade: typeof raw.interlockGrade === 'string' ? raw.interlockGrade : undefined,
       lodPlan: raw.lodPlan === 'simple' || raw.lodPlan === 'detailed' ? raw.lodPlan : undefined,
+      // KRN-13 — operationType allows sliding_double / bi_fold / pivot etc.
+      // Previously stripped by coerceElement.
+      ...(typeof raw.operationType === 'string' || typeof raw.operation_type === 'string'
+        ? {
+            operationType: String(raw.operationType ?? raw.operation_type) as
+              | 'swing_single'
+              | 'swing_double'
+              | 'sliding_single'
+              | 'sliding_double'
+              | 'bi_fold'
+              | 'pocket'
+              | 'pivot'
+              | 'automatic_double',
+          }
+        : {}),
+      ...(typeof raw.slidingTrackSide === 'string' || typeof raw.sliding_track_side === 'string'
+        ? {
+            slidingTrackSide: String(raw.slidingTrackSide ?? raw.sliding_track_side) as
+              | 'wall_face'
+              | 'in_pocket',
+          }
+        : {}),
     };
   }
 
@@ -336,6 +358,23 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
       interlockGrade: typeof raw.interlockGrade === 'string' ? raw.interlockGrade : undefined,
       sealRebateMm: raw.sealRebateMm !== undefined ? Number(raw.sealRebateMm) : undefined,
       lodPlan: raw.lodPlan === 'simple' || raw.lodPlan === 'detailed' ? raw.lodPlan : undefined,
+      // KRN-12 — outlineKind allows gable_trapezoid / arched_top / etc.
+      // Was previously stripped by coerceElement so the seed-target-house
+      // trapezoidal slope-following window rendered as a rectangle.
+      ...(typeof raw.outlineKind === 'string' || typeof raw.outline_kind === 'string'
+        ? {
+            outlineKind: String(raw.outlineKind ?? raw.outline_kind) as
+              | 'rectangle'
+              | 'arched_top'
+              | 'gable_trapezoid'
+              | 'circle'
+              | 'octagon'
+              | 'custom',
+          }
+        : {}),
+      ...(typeof raw.attachedRoofId === 'string' || typeof raw.attached_roof_id === 'string'
+        ? { attachedRoofId: String(raw.attachedRoofId ?? raw.attached_roof_id) }
+        : {}),
     };
   }
 
