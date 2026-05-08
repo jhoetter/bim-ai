@@ -3,7 +3,7 @@
   "checkpoint_id": "84f829565ec2",
   "strategy": "manual-commit",
   "branch": "feat/v3-can-v3-02-hatch-patterns",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": null,
   "sessions": [
     {
@@ -11,13 +11,19 @@
       "transcript": "/84/f829565ec2/0/full.jsonl",
       "content_hash": "/84/f829565ec2/0/content_hash.txt",
       "prompt": "/84/f829565ec2/0/prompt.txt"
+    },
+    {
+      "metadata": "/84/f829565ec2/1/metadata.json",
+      "transcript": "/84/f829565ec2/1/full.jsonl",
+      "content_hash": "/84/f829565ec2/1/content_hash.txt",
+      "prompt": "/84/f829565ec2/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 248,
-    "cache_creation_tokens": 140344,
-    "cache_read_tokens": 13288401,
-    "output_tokens": 63209,
-    "api_call_count": 152
+    "input_tokens": 630,
+    "cache_creation_tokens": 896781,
+    "cache_read_tokens": 43644104,
+    "output_tokens": 274319,
+    "api_call_count": 476
   }
 }
