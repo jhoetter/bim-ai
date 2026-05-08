@@ -3,7 +3,7 @@
   "checkpoint_id": "2023d498c1df",
   "strategy": "manual-commit",
   "branch": "feat/v3-img-v3-01-image-to-layout",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "app/bim_ai/commands.py"
   ],
@@ -19,13 +19,19 @@
       "transcript": "/20/23d498c1df/1/full.jsonl",
       "content_hash": "/20/23d498c1df/1/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/20/23d498c1df/2/metadata.json",
+      "transcript": "/20/23d498c1df/2/full.jsonl",
+      "content_hash": "/20/23d498c1df/2/content_hash.txt",
+      "prompt": "/20/23d498c1df/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 326,
-    "cache_creation_tokens": 182570,
-    "cache_read_tokens": 22485330,
-    "output_tokens": 86342,
-    "api_call_count": 230
+    "input_tokens": 507,
+    "cache_creation_tokens": 426140,
+    "cache_read_tokens": 39532284,
+    "output_tokens": 179865,
+    "api_call_count": 405
   }
 }
