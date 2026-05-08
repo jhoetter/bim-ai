@@ -46,6 +46,11 @@ class EvidenceRef(BaseModel):
     png_basename: str | None = Field(default=None, alias="pngBasename")
 
 
+DisciplineTag = Literal["arch", "struct", "mep"]
+DEFAULT_DISCIPLINE_BY_KIND: dict[str, DisciplineTag] = {
+    "beam": "struct",
+    "column": "struct",
+}
 WallLayerFunction = Literal["structure", "insulation", "finish"]
 WallBasisLine = Literal["center", "face_interior", "face_exterior"]
 PlanDetailLevelPlan = Literal["coarse", "medium", "fine"]
@@ -278,6 +283,7 @@ class WallElem(BaseModel):
     agent_trace: AgentTrace | None = Field(default=None, alias="agentTrace")
     option_set_id: str | None = Field(default=None, alias="optionSetId")
     option_id: str | None = Field(default=None, alias="optionId")
+    discipline: DisciplineTag | None = Field(default=None)
 
     @model_validator(mode="after")
     def _validate_lean_taper(self) -> WallElem:
@@ -332,6 +338,7 @@ class DoorElem(BaseModel):
     agent_trace: AgentTrace | None = Field(default=None, alias="agentTrace")
     option_set_id: str | None = Field(default=None, alias="optionSetId")
     option_id: str | None = Field(default=None, alias="optionId")
+    discipline: DisciplineTag | None = Field(default=None)
 
 
 WindowOutlineKind = Literal[
@@ -372,6 +379,7 @@ class WindowElem(BaseModel):
     agent_trace: AgentTrace | None = Field(default=None, alias="agentTrace")
     option_set_id: str | None = Field(default=None, alias="optionSetId")
     option_id: str | None = Field(default=None, alias="optionId")
+    discipline: DisciplineTag | None = Field(default=None)
 
 
 class WallOpeningElem(BaseModel):
@@ -387,6 +395,7 @@ class WallOpeningElem(BaseModel):
     sill_height_mm: float = Field(alias="sillHeightMm", ge=0)
     head_height_mm: float = Field(alias="headHeightMm", ge=0)
     pinned: bool = Field(default=False)
+    discipline: DisciplineTag | None = Field(default=None)
 
     @model_validator(mode="after")
     def _check_bounds(self) -> WallOpeningElem:
@@ -609,6 +618,7 @@ class FloorElem(BaseModel):
     option_id: str | None = Field(default=None, alias="optionId")
     # TOP-V3-01: elevation inherited from a toposolid heightmap at floor centroid (mm).
     toposolid_elevation_mm: float | None = Field(default=None, alias="toposolidElevationMm")
+    discipline: DisciplineTag | None = Field(default=None)
 
 
 class RoofElem(BaseModel):
@@ -640,6 +650,7 @@ class RoofElem(BaseModel):
     agent_trace: AgentTrace | None = Field(default=None, alias="agentTrace")
     option_set_id: str | None = Field(default=None, alias="optionSetId")
     option_id: str | None = Field(default=None, alias="optionId")
+    discipline: DisciplineTag | None = Field(default=None)
 
 
 StairShape = Literal["straight", "l_shape", "u_shape", "spiral", "sketch"]
@@ -723,6 +734,7 @@ class StairElem(BaseModel):
     agent_trace: AgentTrace | None = Field(default=None, alias="agentTrace")
     option_set_id: str | None = Field(default=None, alias="optionSetId")
     option_id: str | None = Field(default=None, alias="optionId")
+    discipline: DisciplineTag | None = Field(default=None)
 
     @model_validator(mode="after")
     def _validate_shape_specific_fields(self) -> StairElem:
@@ -832,6 +844,7 @@ class RailingElem(BaseModel):
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
     agent_trace: AgentTrace | None = Field(default=None, alias="agentTrace")
+    discipline: DisciplineTag | None = Field(default=None)
 
 
 class SweepPathPoint(BaseModel):
@@ -869,6 +882,7 @@ class SweepElem(BaseModel):
     pinned: bool = Field(default=False)
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
+    discipline: DisciplineTag | None = Field(default=None)
 
 
 DormerRoofKind = Literal["flat", "shed", "gable", "hipped"]
@@ -912,6 +926,7 @@ class DormerElem(BaseModel):
 
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
+    discipline: DisciplineTag | None = Field(default=None)
 
 
 class WallEdgeFixed(BaseModel):
@@ -994,6 +1009,7 @@ class SoffitElem(BaseModel):
     pinned: bool = Field(default=False)
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
+    discipline: DisciplineTag | None = Field(default=None)
 
     @model_validator(mode="after")
     def _validate_boundary(self) -> SoffitElem:
@@ -1017,6 +1033,7 @@ class BalconyElem(BaseModel):
     pinned: bool = Field(default=False)
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
+    discipline: DisciplineTag | None = Field(default=None)
 
 
 Text3dFontFamily = Literal["helvetiker", "optimer", "gentilis"]
@@ -1892,6 +1909,7 @@ class ColumnElem(BaseModel):
     pinned: bool = Field(default=False)
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
+    discipline: DisciplineTag | None = Field(default=None)
 
 
 class BeamElem(BaseModel):
@@ -1918,6 +1936,7 @@ class BeamElem(BaseModel):
     pinned: bool = Field(default=False)
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
+    discipline: DisciplineTag | None = Field(default=None)
 
 
 class CeilingElem(BaseModel):
@@ -1940,6 +1959,7 @@ class CeilingElem(BaseModel):
     pinned: bool = Field(default=False)
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
+    discipline: DisciplineTag | None = Field(default=None)
 
 
 ConstraintRule = Literal[
@@ -2014,6 +2034,7 @@ class MassElem(BaseModel):
     pinned: bool = Field(default=False)
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
+    discipline: DisciplineTag | None = Field(default=None)
 
 
 class VoidCutElem(BaseModel):
@@ -2134,6 +2155,60 @@ class ToposolidElem(BaseModel):
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
     discipline: str | None = None
+# AST-V3-01 — Asset library entry + placed asset instance
+# ---------------------------------------------------------------------------
+
+
+class AssetParamEntry(BaseModel):
+    """One parameter definition in an asset's parametric schema."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    key: str
+    kind: Literal["mm", "enum", "material", "bool"]
+    default: Any
+    constraints: Any = None
+
+
+class AssetLibraryEntryElem(BaseModel):
+    """AST-V3-01 — searchable asset library entry with schematic-2D thumbnail."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    kind: Literal["asset_library_entry"] = "asset_library_entry"
+    id: str
+    asset_kind: Literal["family_instance", "block_2d", "kit", "decal", "profile"] = Field(
+        alias="assetKind", default="block_2d"
+    )
+    name: str
+    tags: list[str] = Field(default_factory=list)
+    category: Literal[
+        "furniture", "kitchen", "bathroom", "door", "window", "decal", "profile", "casework"
+    ]
+    discipline_tags: list[Literal["arch", "struct", "mep"]] = Field(
+        default_factory=list, alias="disciplineTags"
+    )
+    thumbnail_kind: Literal["schematic_plan", "rendered_3d"] = Field(
+        default="schematic_plan", alias="thumbnailKind"
+    )
+    thumbnail_width_mm: float | None = Field(default=None, alias="thumbnailWidthMm")
+    thumbnail_height_mm: float | None = Field(default=None, alias="thumbnailHeightMm")
+    param_schema: list[AssetParamEntry] | None = Field(default=None, alias="paramSchema")
+    published_from_org_id: str | None = Field(default=None, alias="publishedFromOrgId")
+    description: str | None = None
+
+
+class PlacedAssetElem(BaseModel):
+    """AST-V3-01 — a placed asset instance positioned on the canvas."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    kind: Literal["placed_asset"] = "placed_asset"
+    id: str
+    name: str
+    asset_id: str = Field(alias="assetId")
+    level_id: str = Field(alias="levelId")
+    position_mm: Vec2Mm = Field(alias="positionMm")
+    rotation_deg: float = Field(default=0.0, alias="rotationDeg")
+    param_values: dict[str, Any] = Field(default_factory=dict, alias="paramValues")
+    host_element_id: str | None = Field(default=None, alias="hostElementId")
 
 
 Element = Annotated[
@@ -2209,6 +2284,8 @@ Element = Annotated[
     | TitleblockTypeElem
     | WindowLegendViewElem
     | ViewElem
-    | ToposolidElem,
+    | ToposolidElem
+    | AssetLibraryEntryElem
+    | PlacedAssetElem,
     Field(discriminator="kind"),
 ]

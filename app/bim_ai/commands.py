@@ -1786,7 +1786,6 @@ class SetElementPhaseCmd(BaseModel):
     phase_demolished_id: str | None = Field(default=None, alias="phaseDemolishedId")
     clear_demolished: bool = Field(default=False, alias="clearDemolished")
 
-
 class SetViewPhaseCmd(BaseModel):
     """KRN-V3-01 — set the as-of phase for a plan view."""
 
@@ -2057,6 +2056,50 @@ class DeleteToposolidCmd(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     type: Literal["DeleteToposolid"] = "DeleteToposolid"
     toposolid_id: str = Field(alias="toposolidId")
+# AST-V3-01 — Asset library commands
+# ---------------------------------------------------------------------------
+
+
+class IndexAssetCmd(BaseModel):
+    """Index a new asset into the project's searchable library."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["IndexAsset"] = "IndexAsset"
+    id: str | None = None
+    asset_kind: Literal["family_instance", "block_2d", "kit", "decal", "profile"] = Field(
+        alias="assetKind", default="block_2d"
+    )
+    name: str
+    tags: list[str] = Field(default_factory=list)
+    category: Literal[
+        "furniture", "kitchen", "bathroom", "door", "window", "decal", "profile", "casework"
+    ]
+    discipline_tags: list[Literal["arch", "struct", "mep"]] = Field(
+        default_factory=list, alias="disciplineTags"
+    )
+    thumbnail_kind: Literal["schematic_plan", "rendered_3d"] = Field(
+        default="schematic_plan", alias="thumbnailKind"
+    )
+    thumbnail_width_mm: float | None = Field(default=None, alias="thumbnailWidthMm")
+    thumbnail_height_mm: float | None = Field(default=None, alias="thumbnailHeightMm")
+    param_schema: list[dict[str, Any]] | None = Field(default=None, alias="paramSchema")
+    published_from_org_id: str | None = Field(default=None, alias="publishedFromOrgId")
+    description: str | None = None
+
+
+class PlaceAssetCmd(BaseModel):
+    """Place an asset instance at a position on the canvas."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["PlaceAsset"] = "PlaceAsset"
+    id: str | None = None
+    name: str | None = None
+    asset_id: str = Field(alias="assetId")
+    level_id: str = Field(alias="levelId")
+    position_mm: Vec2Mm = Field(alias="positionMm")
+    rotation_deg: float = Field(default=0.0, alias="rotationDeg")
+    param_values: dict[str, Any] = Field(default_factory=dict, alias="paramValues")
+    host_element_id: str | None = Field(default=None, alias="hostElementId")
 
 
 Command = Annotated[
@@ -2222,6 +2265,8 @@ Command = Annotated[
     | DeleteViewTemplateCmd
     | CreateToposolidCmd
     | UpdateToposolidCmd
-    | DeleteToposolidCmd,
+    | DeleteToposolidCmd
+    | IndexAssetCmd
+    | PlaceAssetCmd,
     Field(discriminator="type"),
 ]

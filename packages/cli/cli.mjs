@@ -841,6 +841,11 @@ Commands:
   jobs cancel <job-id>                JOB-V3-01: cancel a queued/running job
   jobs status <job-id>                JOB-V3-01: get current job status
 
+  asset index --name <name> --category <category> [--kind <kind>] [--tags a,b] [--description <s>]
+                                      AST-V3-01: index a new asset into the project library (sends IndexAssetCmd)
+  asset place --asset <asset-id> --level <level-id> (--pos x,y,z | --x <n> --y <n>)
+                                      AST-V3-01: place an asset instance on the canvas (sends PlaceAssetCmd)
+
   phase-create --name <name> --ord <n>        KRN-V3-01: create a new phase (ord = ordinal position)
   phase-rename --phase-id <id> --name <name>   KRN-V3-01: rename an existing phase
   phase-reorder --phase-id <id> --ord <n>      KRN-V3-01: change a phase ordinal
@@ -1515,6 +1520,69 @@ async function main() {
         return;
       }
       console.error(`Unknown jobs subcommand: ${sub ?? '(none)'}. Use submit | list | cancel | status.`);
+      process.exit(1);
+    }
+
+    // AST-V3-01 — asset library subcommands
+    if (cmd === 'asset') {
+      const sub = argv[1];
+      if (sub === 'index') {
+        if (!modelId) usage();
+        const rest = argv.slice(2);
+        let name, category, assetKind, tagsArg, description;
+        for (let i = 0; i < rest.length; i++) {
+          const a = rest[i];
+          if (a === '--name' && rest[i + 1]) name = rest[++i];
+          else if (a === '--category' && rest[i + 1]) category = rest[++i];
+          else if (a === '--kind' && rest[i + 1]) assetKind = rest[++i];
+          else if (a === '--tags' && rest[i + 1]) tagsArg = rest[++i];
+          else if (a === '--description' && rest[i + 1]) description = rest[++i];
+        }
+        if (!name || !category) {
+          console.error('asset index requires --name <name> --category <category>');
+          process.exit(1);
+        }
+        const command = {
+          type: 'IndexAsset',
+          name,
+          category,
+          ...(assetKind ? { assetKind } : {}),
+          ...(tagsArg ? { tags: tagsArg.split(',').map((t) => t.trim()).filter(Boolean) } : {}),
+          ...(description ? { description } : {}),
+        };
+        await postCommand(modelId, userId, command);
+        return;
+      }
+      if (sub === 'place') {
+        if (!modelId) usage();
+        const rest = argv.slice(2);
+        const assetId = rest.find((_, i) => rest[i - 1] === '--asset');
+        const levelId = rest.find((_, i) => rest[i - 1] === '--level');
+        const posArg = rest.find((_, i) => rest[i - 1] === '--pos');
+        const xArg = rest.find((_, i) => rest[i - 1] === '--x');
+        const yArg = rest.find((_, i) => rest[i - 1] === '--y');
+        const zArg = rest.find((_, i) => rest[i - 1] === '--z');
+        if (!assetId) { console.error('asset place requires --asset <asset-id>'); process.exit(1); }
+        if (!levelId) { console.error('asset place requires --level <level-id>'); process.exit(1); }
+        let positionMm;
+        if (posArg) {
+          positionMm = parsePosTriple(posArg);
+        } else if (xArg !== undefined && yArg !== undefined) {
+          positionMm = { xMm: Number(xArg), yMm: Number(yArg), zMm: Number(zArg ?? 0) };
+        } else {
+          console.error('asset place requires --pos x,y,z or --x <n> --y <n>');
+          process.exit(1);
+        }
+        const command = {
+          type: 'PlaceAsset',
+          assetId,
+          levelId,
+          positionMm: { xMm: positionMm.xMm, yMm: positionMm.yMm },
+        };
+        await postCommand(modelId, userId, command);
+        return;
+      }
+      console.error(`Unknown asset subcommand: ${sub ?? '(none)'}. Use index | place.`);
       process.exit(1);
     }
 

@@ -65,6 +65,7 @@ import { ManageLinksDialog } from './ManageLinksDialog';
 import { CommentsPanel } from './CommentsPanel';
 import { ActivityDrawer } from '../collab/ActivityDrawer';
 import { useActivityDrawerStore } from '../collab/activityDrawerStore';
+import { LibraryOverlay } from './LibraryOverlay';
 import { useActivityStore } from '../collab/activityStore';
 import { StatusBar } from './StatusBar';
 import { CheatsheetModal } from '../cmd/CheatsheetModal';
@@ -149,6 +150,9 @@ export function Workspace(): JSX.Element {
   const closeVVDialog = useBimStore((s) => s.closeVVDialog);
   const setOrthoSnapHold = useBimStore((s) => s.setOrthoSnapHold);
   const userId = useBimStore((s) => s.userId);
+
+  // AST-V3-01 — library overlay (Alt+2)
+  const [libraryOpen, setLibraryOpen] = useState(false);
 
   // CHR-V3-05 activity drawer state
   const activityIsOpen = useActivityDrawerStore((s) => s.isOpen);
@@ -387,6 +391,42 @@ export function Workspace(): JSX.Element {
     [hydrateFromSnapshot, setSeedError],
   );
 
+  /* ── AST-V3-01 — library place callback ─────────────────────────────── */
+  const handleLibraryPlace = useCallback(
+    async (
+      entry: import('@bim-ai/core').AssetLibraryEntry,
+      paramValues: Record<string, unknown>,
+    ): Promise<void> => {
+      const mid = useBimStore.getState().modelId;
+      const uid = useBimStore.getState().userId;
+      const lvlId = useBimStore.getState().activeLevelId;
+      if (!mid || !lvlId) return;
+      // Place at canvas centre (0, 0) — the user can move it after placement.
+      const command = {
+        type: 'PlaceAsset',
+        assetId: entry.id,
+        levelId: lvlId,
+        positionMm: { xMm: 0, yMm: 0 },
+        paramValues,
+      };
+      try {
+        const r = await applyCommand(mid, command, { userId: uid });
+        if (r.revision !== undefined) {
+          hydrateFromSnapshot({
+            modelId: mid,
+            revision: r.revision,
+            elements: r.elements ?? {},
+            violations: (r.violations ?? []) as Violation[],
+          });
+          setUndoDepth((d) => d + 1);
+        }
+      } catch {
+        // Placement failure is non-blocking — the overlay stays open
+      }
+    },
+    [hydrateFromSnapshot],
+  );
+
   /* ── Undo / Redo ────────────────────────────────────────────────────── */
   const handleUndoRedo = useCallback(
     async (isUndo: boolean): Promise<void> => {
@@ -512,6 +552,12 @@ export function Workspace(): JSX.Element {
         setPaletteOpen((v) => !v);
         return;
       }
+      // Alt+2 — asset library overlay (AST-V3-01, Rayon shortcut).
+      if (event.key === '2' && event.altKey && !event.metaKey && !event.ctrlKey) {
+        event.preventDefault();
+        setLibraryOpen((v) => !v);
+        return;
+      }
       // Cmd+H — activity-stream drawer (CHR-V3-05).
       if ((event.key === 'h' || event.key === 'H') && (event.metaKey || event.ctrlKey)) {
         event.preventDefault();
@@ -577,6 +623,7 @@ export function Workspace(): JSX.Element {
     openVVDialog,
     toolRegistry,
     toggleActivityDrawer,
+    setLibraryOpen,
   ]);
 
   const browserSections = useMemo(() => buildBrowserSections(elementsById), [elementsById]);
@@ -1006,6 +1053,37 @@ export function Workspace(): JSX.Element {
         onClose={closeActivityDrawer}
         modelId={modelId ?? null}
         selfId={userId ?? null}
+      />
+      <LibraryOverlay
+        isOpen={libraryOpen}
+        onClose={() => setLibraryOpen(false)}
+        entries={Object.values(elementsById)
+          .filter((e) => (e as { kind: string }).kind === 'asset_library_entry')
+          .map((e) => {
+            const a = e as unknown as Record<string, unknown>;
+            return {
+              id: String(a['id']),
+              assetKind: (a['assetKind'] ?? 'block_2d') as import('@bim-ai/core').AssetKind,
+              name: String(a['name']),
+              tags: (a['tags'] as string[]) ?? [],
+              category: a['category'] as import('@bim-ai/core').AssetCategory,
+              disciplineTags: a['disciplineTags'] as
+                | import('@bim-ai/core').AssetDisciplineTag[]
+                | undefined,
+              thumbnailKind: ((a['thumbnailKind'] as string) ?? 'schematic_plan') as
+                | 'schematic_plan'
+                | 'rendered_3d',
+              thumbnailMm:
+                a['thumbnailWidthMm'] != null
+                  ? {
+                      widthMm: a['thumbnailWidthMm'] as number,
+                      heightMm: (a['thumbnailHeightMm'] as number) ?? 60,
+                    }
+                  : undefined,
+              description: a['description'] as string | undefined,
+            };
+          })}
+        onPlace={(entry, paramValues) => void handleLibraryPlace(entry, paramValues)}
       />
     </>
   );

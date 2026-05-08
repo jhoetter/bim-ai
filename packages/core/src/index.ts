@@ -101,9 +101,35 @@ export type ElemKind =
   | 'mass'
   | 'phase'
   | 'sun_settings'
-  | 'view';
+  | 'view'
+  | 'soffit'
+  | 'edge_profile_run'
+  | 'roof_join'
+  | 'asset_library_entry'
+  | 'placed_asset';
 
 export type PhaseFilter = 'all' | 'existing' | 'demolition' | 'new';
+
+// DSC-V3-01 — discipline tag
+export type DisciplineTag = 'arch' | 'struct' | 'mep';
+
+export const DEFAULT_DISCIPLINE_BY_KIND: Readonly<Partial<Record<ElemKind, DisciplineTag>>> = {
+  wall: 'arch',
+  door: 'arch',
+  window: 'arch',
+  wall_opening: 'arch',
+  floor: 'arch',
+  roof: 'arch',
+  stair: 'arch',
+  railing: 'arch',
+  ceiling: 'arch',
+  mass: 'arch',
+  balcony: 'arch',
+  sweep: 'arch',
+  dormer: 'arch',
+  column: 'struct',
+  beam: 'struct',
+} as const;
 
 export type Text3dFontFamily = 'helvetiker' | 'optimer' | 'gentilis';
 
@@ -636,6 +662,8 @@ export type Element =
       /** KRN-V3-04: design option membership. */
       optionSetId?: string | null;
       optionId?: string | null;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: 'arch' | 'struct' | 'mep' | null;
     }
   | {
       kind: 'door';
@@ -663,6 +691,8 @@ export type Element =
       /** KRN-V3-04: design option membership. */
       optionSetId?: string | null;
       optionId?: string | null;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: 'arch' | 'struct' | 'mep' | null;
     }
   | {
       kind: 'window';
@@ -694,6 +724,8 @@ export type Element =
       /** KRN-V3-04: design option membership. */
       optionSetId?: string | null;
       optionId?: string | null;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: 'arch' | 'struct' | 'mep' | null;
     }
   | {
       kind: 'wall_opening';
@@ -704,6 +736,8 @@ export type Element =
       alongTEnd: number;
       sillHeightMm: number;
       headHeightMm: number;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: 'arch' | 'struct' | 'mep' | null;
     }
   | {
       kind: 'room';
@@ -806,6 +840,8 @@ export type Element =
       /** KRN-V3-04: design option membership. */
       optionSetId?: string | null;
       optionId?: string | null;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: 'arch' | 'struct' | 'mep' | null;
     }
   | {
       kind: 'roof';
@@ -841,6 +877,8 @@ export type Element =
       /** KRN-V3-04: design option membership. */
       optionSetId?: string | null;
       optionId?: string | null;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: 'arch' | 'struct' | 'mep' | null;
     }
   | {
       kind: 'stair';
@@ -896,6 +934,8 @@ export type Element =
       /** KRN-V3-04: design option membership. */
       optionSetId?: string | null;
       optionId?: string | null;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: 'arch' | 'struct' | 'mep' | null;
     }
   | {
       kind: 'slab_opening';
@@ -932,6 +972,8 @@ export type Element =
       phaseDemolished?: string | null;
       /** CMD-V3-02: provenance trace linking this element to its originating bundle. */
       agentTrace?: AgentTrace;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: 'arch' | 'struct' | 'mep' | null;
     }
   | {
       kind: 'family_type';
@@ -956,6 +998,8 @@ export type Element =
       pinned?: boolean;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: 'arch' | 'struct' | 'mep' | null;
     }
   | {
       kind: 'room_separation';
@@ -1197,6 +1241,8 @@ export type Element =
       ifcClassificationCode?: string | null;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: 'arch' | 'struct' | 'mep' | null;
     }
   | {
       kind: 'beam';
@@ -1214,6 +1260,8 @@ export type Element =
       ifcClassificationCode?: string | null;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: 'arch' | 'struct' | 'mep' | null;
     }
   | {
       kind: 'ceiling';
@@ -1226,6 +1274,8 @@ export type Element =
       ceilingTypeId?: string | null;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: 'arch' | 'struct' | 'mep' | null;
     }
   | {
       kind: 'color_fill_legend';
@@ -1409,6 +1459,8 @@ export type Element =
       pinned?: boolean;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: 'arch' | 'struct' | 'mep' | null;
     }
   | {
       /**
@@ -1436,6 +1488,8 @@ export type Element =
       pinned?: boolean;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: 'arch' | 'struct' | 'mep' | null;
     }
   | {
       /**
@@ -1505,6 +1559,8 @@ export type Element =
       pinned?: boolean;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: 'arch' | 'struct' | 'mep' | null;
     }
   | {
       /** KRN-V3-01 — project-level phasing primitive. Default chain: Existing → Demolition → New. */
@@ -1573,6 +1629,8 @@ export type Element =
       pinned?: boolean;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: 'arch' | 'struct' | 'mep' | null;
     }
   | {
       /** SUN-V3-01 — project-level sun & shadow study singleton. */
@@ -1587,6 +1645,8 @@ export type Element =
     }
   | View
   | ToposolidElem;
+  | AssetLibraryEntryElem
+  | PlacedAssetElem;
 
 export type Violation = {
   ruleId: string;
@@ -1797,6 +1857,24 @@ export type PublicLink = {
 };
 
 // ---------------------------------------------------------------------------
+// OUT-V3-01 — Live presentation link
+// ---------------------------------------------------------------------------
+
+export type PresentationLink = {
+  kind: 'presentation_link';
+  id: string;
+  modelId: string;
+  pageScopeIds: string[];
+  token: string;
+  permission: 'viewer';
+  allowMeasurement: boolean;
+  allowComment: boolean;
+  expiresAt?: number;
+  createdAt: number;
+  revokedAt?: number;
+};
+
+// ---------------------------------------------------------------------------
 // TKN-V3-01 — tokenised kernel representation
 // ---------------------------------------------------------------------------
 
@@ -1994,4 +2072,78 @@ export type ActivityRow = {
   ts: number;
   parentSnapshotId?: string;
   resultSnapshotId?: string;
+};
+
+// ---------------------------------------------------------------------------
+// AST-V3-01 — Searchable asset library types
+// ---------------------------------------------------------------------------
+
+/** Kind discriminant for an asset library entry. */
+export type AssetKind = 'family_instance' | 'block_2d' | 'kit' | 'decal' | 'profile';
+
+/** Category facet for the left-rail filter. */
+export type AssetCategory =
+  | 'furniture'
+  | 'kitchen'
+  | 'bathroom'
+  | 'door'
+  | 'window'
+  | 'decal'
+  | 'profile'
+  | 'casework';
+
+/** Discipline filter tag that feeds LIB-V3-01 cross-theme. */
+export type AssetDisciplineTag = 'arch' | 'struct' | 'mep';
+
+/** One parameter definition in an asset's parametric schema. */
+export type ParamSchemaEntry = {
+  key: string;
+  kind: 'mm' | 'enum' | 'material' | 'bool';
+  default: unknown;
+  constraints?: unknown;
+};
+
+/** AST-V3-01 — searchable asset library entry with schematic-2D thumbnail. */
+export type AssetLibraryEntry = {
+  id: string;
+  assetKind?: AssetKind;
+  name: string;
+  tags: string[];
+  category: AssetCategory;
+  disciplineTags?: AssetDisciplineTag[];
+  thumbnailKind: 'schematic_plan' | 'rendered_3d';
+  thumbnailMm?: { widthMm: number; heightMm: number };
+  paramSchema?: ParamSchemaEntry[];
+  publishedFromOrgId?: string;
+  description?: string;
+};
+
+/** AST-V3-01 — element shape for an AssetLibraryEntry in the document store. */
+export type AssetLibraryEntryElem = {
+  kind: 'asset_library_entry';
+  id: string;
+  assetKind: AssetKind;
+  name: string;
+  tags: string[];
+  category: AssetCategory;
+  disciplineTags?: AssetDisciplineTag[];
+  thumbnailKind: 'schematic_plan' | 'rendered_3d';
+  thumbnailWidthMm?: number;
+  thumbnailHeightMm?: number;
+  paramSchema?: ParamSchemaEntry[];
+  publishedFromOrgId?: string;
+  description?: string;
+};
+
+/** AST-V3-01 — a placed asset instance on the plan canvas. */
+export type PlacedAssetElem = {
+  kind: 'placed_asset';
+  id: string;
+  name: string;
+  assetId: string;
+  levelId: string;
+  positionMm: XY;
+  rotationDeg?: number;
+  paramValues?: Record<string, unknown>;
+  hostElementId?: string;
 };

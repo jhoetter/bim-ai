@@ -183,6 +183,8 @@ from bim_ai.commands import (
     CreateToposolidCmd,
     UpdateToposolidCmd,
     DeleteToposolidCmd,
+    IndexAssetCmd,
+    PlaceAssetCmd,
 )
 from bim_ai.constraints import Violation, evaluate
 from bim_ai.datum_levels import (
@@ -191,6 +193,7 @@ from bim_ai.datum_levels import (
 )
 from bim_ai.document import Document
 from bim_ai.elements import (
+    DEFAULT_DISCIPLINE_BY_KIND,
     INTERNAL_ORIGIN_ID,
     SUN_SETTINGS_ID,
     AgentAssumptionElem,
@@ -295,6 +298,9 @@ from bim_ai.elements import (
     WallStackComponent,
     WallTypeElem,
     WindowElem,
+    AssetLibraryEntryElem,
+    AssetParamEntry,
+    PlacedAssetElem,
 )
 from bim_ai.export_ifc import (
     AUTHORITATIVE_REPLAY_KIND_V0,
@@ -1401,6 +1407,7 @@ def apply_inplace(
                 stack=wall_stack,
                 lean_mm=cmd.lean_mm,
                 taper_ratio=cmd.taper_ratio,
+                discipline=DEFAULT_DISCIPLINE_BY_KIND.get("wall", "arch"),
             )
 
         case MoveWallDeltaCmd():
@@ -1465,6 +1472,7 @@ def apply_inplace(
                 along_t=cmd.along_t,
                 width_mm=cmd.width_mm,
                 family_type_id=cmd.family_type_id,
+                discipline=DEFAULT_DISCIPLINE_BY_KIND.get("door", "arch"),
             )
 
         case InsertWindowOnWallCmd():
@@ -1484,6 +1492,7 @@ def apply_inplace(
                 sill_height_mm=cmd.sill_height_mm,
                 height_mm=cmd.height_mm,
                 family_type_id=cmd.family_type_id,
+                discipline=DEFAULT_DISCIPLINE_BY_KIND.get("window", "arch"),
             )
 
         case CreateWallChainCmd():
@@ -2155,6 +2164,13 @@ def apply_inplace(
                     els[cmd.element_id] = el.model_copy(update={"roof_geometry_mode": mode})
                 else:
                     raise ValueError("roof updates: key=roofTypeId | roofGeometryMode | name")
+            elif cmd.key == "discipline" and hasattr(el, "discipline"):
+                d = cmd.value.strip() if isinstance(cmd.value, str) else ""
+                if d not in {"arch", "struct", "mep", ""}:
+                    raise ValueError("discipline must be arch|struct|mep or empty")
+                els[cmd.element_id] = el.model_copy(
+                    update={"discipline": d if d else None}
+                )
             else:
                 raise ValueError(
                     "Only updateElementProperty key=name | label(grid) | title(issue) | "
@@ -2324,6 +2340,7 @@ def apply_inplace(
                 floor_type_id=cmd.floor_type_id,
                 room_bounded=cmd.room_bounded,
                 toposolid_elevation_mm=topo_elev,
+                discipline=DEFAULT_DISCIPLINE_BY_KIND.get("floor", "arch"),
             )
 
         case CreateRoofCmd():
@@ -2371,6 +2388,7 @@ def apply_inplace(
                 eave_height_right_mm=cmd.eave_height_right_mm,
                 roof_type_id=rtid,
                 material_key=cmd.material_key,
+                discipline=DEFAULT_DISCIPLINE_BY_KIND.get("roof", "arch"),
             )
 
         case ExtendFloorInsulationCmd():
@@ -2441,6 +2459,7 @@ def apply_inplace(
                 monolithic_material=cmd.monolithic_material,
                 floating_tread_depth_mm=cmd.floating_tread_depth_mm,
                 floating_host_wall_id=cmd.floating_host_wall_id,
+                discipline=DEFAULT_DISCIPLINE_BY_KIND.get("stair", "arch"),
             )
 
         case SetStairSubKindCmd():
@@ -2613,6 +2632,7 @@ def apply_inplace(
                 host_roof_id=cmd.host_roof_id,
                 thickness_mm=cmd.thickness_mm,
                 z_mm=z_mm,
+                discipline=DEFAULT_DISCIPLINE_BY_KIND.get("soffit", "arch"),
             )
 
         case CreateText3dCmd():
@@ -2655,6 +2675,7 @@ def apply_inplace(
                 along_t_end=cmd.along_t_end,
                 sill_height_mm=cmd.sill_height_mm,
                 head_height_mm=cmd.head_height_mm,
+                discipline=DEFAULT_DISCIPLINE_BY_KIND.get("wall_opening", "arch"),
             )
 
         case UpdateWallOpeningCmd():
@@ -2818,6 +2839,7 @@ def apply_inplace(
                 projection_mm=cmd.projection_mm,
                 slab_thickness_mm=cmd.slab_thickness_mm,
                 balustrade_height_mm=cmd.balustrade_height_mm,
+                discipline=DEFAULT_DISCIPLINE_BY_KIND.get("balcony", "arch"),
             )
 
         case CreateSweepCmd():
@@ -2847,6 +2869,7 @@ def apply_inplace(
                 profile_mm=list(cmd.profile_mm),
                 profile_plane=cmd.profile_plane,
                 material_key=cmd.material_key,
+                discipline=DEFAULT_DISCIPLINE_BY_KIND.get("sweep", "arch"),
             )
 
         case CreateDormerCmd():
@@ -2902,6 +2925,7 @@ def apply_inplace(
                 wall_material_key=cmd.wall_material_key,
                 roof_material_key=cmd.roof_material_key,
                 has_floor_opening=cmd.has_floor_opening,
+                discipline=DEFAULT_DISCIPLINE_BY_KIND.get("dormer", "arch"),
             )
             if cmd.has_floor_opening:
                 fp_vertices = _dormer_footprint_polygon_mm(
@@ -3055,6 +3079,7 @@ def apply_inplace(
                 path_mm=cmd.path_mm,
                 baluster_pattern=cmd.baluster_pattern,
                 handrail_supports=cmd.handrail_supports or None,
+                discipline=DEFAULT_DISCIPLINE_BY_KIND.get("railing", "arch"),
             )
 
         case SetRailingBalusterPatternCmd():
@@ -3255,6 +3280,7 @@ def apply_inplace(
                 height_mm=cmd.height_mm,
                 rotation_deg=cmd.rotation_deg,
                 material_key=cmd.material_key,
+                discipline=DEFAULT_DISCIPLINE_BY_KIND.get("column", "arch"),
             )
 
         case CreateBeamCmd():
@@ -3278,6 +3304,7 @@ def apply_inplace(
                 width_mm=cmd.width_mm,
                 height_mm=cmd.height_mm,
                 material_key=cmd.material_key,
+                discipline=DEFAULT_DISCIPLINE_BY_KIND.get("beam", "arch"),
             )
 
         case CreateCeilingCmd():
@@ -3297,6 +3324,7 @@ def apply_inplace(
                 height_offset_mm=cmd.height_offset_mm,
                 thickness_mm=cmd.thickness_mm,
                 ceiling_type_id=cmd.ceiling_type_id,
+                discipline=DEFAULT_DISCIPLINE_BY_KIND.get("ceiling", "arch"),
             )
 
         case CreateMassCmd():
@@ -3317,6 +3345,7 @@ def apply_inplace(
                 rotation_deg=cmd.rotation_deg,
                 material_key=cmd.material_key,
                 phase_id="massing",
+                discipline=DEFAULT_DISCIPLINE_BY_KIND.get("mass", "arch"),
             )
 
         case MaterializeMassToWallsCmd():
@@ -4994,6 +5023,58 @@ def apply_inplace(
                     related_element_ids=[cmd.toposolid_id, *hosted_floors],
                 )
             del els[cmd.toposolid_id]
+        # -----------------------------------------------------------------
+        # AST-V3-01 — Asset library commands
+        # -----------------------------------------------------------------
+
+        case IndexAssetCmd():
+            eid = cmd.id or new_id()
+            if eid in els:
+                raise ValueError(f"IndexAsset: duplicate element id '{eid}'")
+            param_schema = None
+            if cmd.param_schema:
+                param_schema = [
+                    AssetParamEntry.model_validate(p) if isinstance(p, dict) else p
+                    for p in cmd.param_schema
+                ]
+            els[eid] = AssetLibraryEntryElem(
+                kind="asset_library_entry",
+                id=eid,
+                assetKind=cmd.asset_kind,
+                name=cmd.name,
+                tags=cmd.tags,
+                category=cmd.category,
+                disciplineTags=cmd.discipline_tags,
+                thumbnailKind=cmd.thumbnail_kind,
+                thumbnailWidthMm=cmd.thumbnail_width_mm,
+                thumbnailHeightMm=cmd.thumbnail_height_mm,
+                paramSchema=param_schema,
+                publishedFromOrgId=cmd.published_from_org_id,
+                description=cmd.description,
+            )
+
+        case PlaceAssetCmd():
+            eid = cmd.id or new_id()
+            if eid in els:
+                raise ValueError(f"PlaceAsset: duplicate element id '{eid}'")
+            asset = els.get(cmd.asset_id)
+            if not isinstance(asset, AssetLibraryEntryElem):
+                raise ValueError(
+                    f"PlaceAsset: assetId '{cmd.asset_id}' is not an AssetLibraryEntry"
+                )
+            if cmd.level_id not in els or not isinstance(els[cmd.level_id], LevelElem):
+                raise ValueError("PlaceAsset: levelId must reference an existing Level")
+            els[eid] = PlacedAssetElem(
+                kind="placed_asset",
+                id=eid,
+                name=cmd.name or asset.name,
+                assetId=cmd.asset_id,
+                levelId=cmd.level_id,
+                positionMm=cmd.position_mm,
+                rotationDeg=cmd.rotation_deg,
+                paramValues=cmd.param_values,
+                hostElementId=cmd.host_element_id,
+            )
 
     # KRN-08: areas track a derived computedAreaSqMm. Recompute after every
     # command apply so create/update/delete of areas (and shafts that affect
