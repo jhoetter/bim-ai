@@ -1,0 +1,25 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "c262c7716375",
+  "strategy": "manual-commit",
+  "branch": "feat/v3-krn-v3-08-wall-sweeps-reveals",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/core/src/index.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/c2/62c7716375/0/metadata.json",
+      "transcript": "/c2/62c7716375/0/full.jsonl",
+      "content_hash": "/c2/62c7716375/0/content_hash.txt",
+      "prompt": "/c2/62c7716375/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 126,
+    "cache_creation_tokens": 264010,
+    "cache_read_tokens": 13390204,
+    "output_tokens": 50719,
+    "api_call_count": 124
+  }
+}
