@@ -20,8 +20,9 @@ agent's chain of reasoning.
 
 from __future__ import annotations
 
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
-from typing import Any, Callable, Iterable
+from typing import Any
 
 from bim_ai.elements import SkbPhaseId
 

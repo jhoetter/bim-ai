@@ -4,9 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from bim_ai.elements import DoorElem, WindowElem
 from bim_ai.tkn.encode import encode
-from bim_ai.tkn.types import EntityToken, EnvelopeToken, TokenSequence
+from bim_ai.tkn.types import EntityToken, TokenSequence
 
 _FLOAT_EPSILON = 1e-6
 

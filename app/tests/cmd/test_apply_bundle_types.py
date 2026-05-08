@@ -5,8 +5,7 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from bim_ai.cmd.types import AssumptionEntry, BundleResult, CommandBundle, ToleranceEntry
-
+from bim_ai.cmd.types import AssumptionEntry, BundleResult, CommandBundle
 
 _VALID_ASSUMPTION = {
     "key": "site_width_m",

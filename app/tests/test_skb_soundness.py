@@ -13,7 +13,6 @@ from bim_ai.skb.soundness import (
 )
 from bim_ai.skb.wall_graph import WallSeg
 
-
 RECT = [
     WallSeg("w-s", (0.0, 0.0), (5000.0, 0.0)),
     WallSeg("w-e", (5000.0, 0.0), (5000.0, 5000.0)),

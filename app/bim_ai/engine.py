@@ -619,7 +619,6 @@ def _materialize_stair_runs_and_landings(
         ]
 
     if cmd.authoring_mode == "by_sketch" and cmd.tread_lines:
-        balanced = _balance_tread_risers(cmd.tread_lines, cmd.total_rise_mm or 0.0)
         stair_id = cmd.id or "stair"
         runs = []
         for i in range(len(cmd.tread_lines) - 1):
@@ -1231,25 +1230,6 @@ def _validate_handrail_supports(
                 f"handrailSupports[{i}].hostWallId '{support.host_wall_id}' "
                 "must reference a Wall"
             )
-
-
-def compute_baluster_positions(
-    path_length_mm: float,
-    spacing_mm: float,
-) -> list[float]:
-    """Return t-values (offsets in mm from path start) for a 'regular' baluster pattern.
-
-    First baluster at spacing_mm / 2; last at path_length_mm - spacing_mm / 2.
-    Returns empty list if path_length_mm < spacing_mm or spacing_mm <= 0.
-    """
-    if path_length_mm < spacing_mm or spacing_mm <= 0:
-        return []
-    positions = []
-    t = spacing_mm / 2.0
-    while t <= path_length_mm - spacing_mm / 2.0:
-        positions.append(t)
-        t += spacing_mm
-    return positions
 
 
 def apply_inplace(
@@ -2354,7 +2334,7 @@ def apply_inplace(
                 balanced = _balance_tread_risers(cmd.tread_lines, cmd.total_rise_mm)
                 balanced_tread_lines = [
                     tl.model_copy(update={"riser_height_mm": r})
-                    for tl, r in zip(cmd.tread_lines, balanced)
+                    for tl, r in zip(cmd.tread_lines, balanced, strict=False)
                 ]
             els[sid] = StairElem(
                 kind="stair",

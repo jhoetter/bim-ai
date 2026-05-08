@@ -15,8 +15,9 @@ fails its own test rather than rolling forward into the final snapshot.
 from __future__ import annotations
 
 from collections import Counter
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Any, Sequence
+from typing import Any
 
 from bim_ai.elements import SkbPhaseId
 from bim_ai.skb.element_count_priors import CountRange

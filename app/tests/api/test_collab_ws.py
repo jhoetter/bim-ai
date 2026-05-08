@@ -8,12 +8,10 @@ from __future__ import annotations
 
 import uuid
 
-import pytest
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.testclient import TestClient
 
-from bim_ai.collab.orchestrator import CollabOrchestrator, get_orchestrator
-
+from bim_ai.collab.orchestrator import CollabOrchestrator
 
 MODEL_ID = str(uuid.uuid4())
 
@@ -70,7 +68,6 @@ def test_collab_ws_relays_bytes() -> None:
 
 def test_collab_ws_does_not_echo_back_to_sender() -> None:
     """Sender should not receive its own message (broadcast excludes sender)."""
-    import threading
 
     app, _ = _build_test_app()
     client = TestClient(app)

@@ -11,7 +11,6 @@ from bim_ai.skb.wall_corner_auto_join import (
     joins_missing_from_existing,
 )
 
-
 RECT = [
     WallSeg("w-s", (0.0, 0.0), (5000.0, 0.0)),
     WallSeg("w-e", (5000.0, 0.0), (5000.0, 5000.0)),

@@ -7,10 +7,7 @@ Tolerance: ±3° to account for NOAA spreadsheet vs. precise ephemeris.
 
 from __future__ import annotations
 
-import pytest
-
 from bim_ai.site.sun_position import compute_sun_position
-
 
 MUNICH_LAT = 48.13
 MUNICH_LON = 11.58

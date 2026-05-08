@@ -3,19 +3,19 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
 from bim_ai.jobs.queue import JobQueue
-from bim_ai.jobs.types import Job, JobOutputs
+from bim_ai.jobs.types import Job
 
 
 def _make_job(model_id: str = "model-a", kind: str = "csg_solve") -> Job:
     return Job(
         model_id=model_id,
         kind=kind,
-        created_at=datetime.now(timezone.utc).isoformat(),
+        created_at=datetime.now(UTC).isoformat(),
     )
 
 
@@ -89,7 +89,7 @@ class TestRetry:
             kind=parent.kind,
             inputs=parent.inputs,
             parent_job_id=parent.id,
-            created_at=datetime.now(timezone.utc).isoformat(),
+            created_at=datetime.now(UTC).isoformat(),
         )
         asyncio.run(queue.submit(child))
 

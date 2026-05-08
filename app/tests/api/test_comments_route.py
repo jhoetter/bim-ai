@@ -34,6 +34,11 @@ _REGION_ANCHOR: dict[str, Any] = {
 MODEL_ID = str(uuid.uuid4())
 
 
+# ---------------------------------------------------------------------------
+# Stub app
+# ---------------------------------------------------------------------------
+
+
 def _build_test_app() -> FastAPI:
     from bim_ai.comments import Comment
 
@@ -95,6 +100,11 @@ def _build_test_app() -> FastAPI:
 @pytest.fixture()
 def client() -> TestClient:
     return TestClient(_build_test_app())
+
+
+# ---------------------------------------------------------------------------
+# Tests
+# ---------------------------------------------------------------------------
 
 
 class TestCreateComment:
@@ -210,8 +220,12 @@ class TestMarkOrphanedComments:
 
         c = Comment.model_validate(
             {
-                "id": "c1", "modelId": "m1", "threadId": "c1", "authorId": "u1",
-                "body": "test", "anchor": {"kind": "element", "elementId": "wall-del"},
+                "id": "c1",
+                "modelId": "m1",
+                "threadId": "c1",
+                "authorId": "u1",
+                "body": "test",
+                "anchor": {"kind": "element", "elementId": "wall-del"},
                 "createdAt": 0,
             }
         )
@@ -223,7 +237,10 @@ class TestMarkOrphanedComments:
 
         c = Comment.model_validate(
             {
-                "id": "c2", "modelId": "m1", "threadId": "c2", "authorId": "u1",
+                "id": "c2",
+                "modelId": "m1",
+                "threadId": "c2",
+                "authorId": "u1",
                 "body": "test",
                 "anchor": {"kind": "point", "worldMm": {"xMm": 0, "yMm": 0, "zMm": 0}},
                 "createdAt": 0,
@@ -237,10 +254,14 @@ class TestMarkOrphanedComments:
 
         c = Comment.model_validate(
             {
-                "id": "c3", "modelId": "m1", "threadId": "c3", "authorId": "u1",
+                "id": "c3",
+                "modelId": "m1",
+                "threadId": "c3",
+                "authorId": "u1",
                 "body": "test",
                 "anchor": {"kind": "element", "elementId": "wall-gone"},
-                "createdAt": 0, "isOrphaned": True,
+                "createdAt": 0,
+                "isOrphaned": True,
             }
         )
         result = mark_orphaned_comments([c], {"wall-gone"})

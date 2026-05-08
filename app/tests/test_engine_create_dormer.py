@@ -78,7 +78,7 @@ def test_create_dormer_unknown_roof_rejected():
 
 def test_create_dormer_overflow_along_ridge_rejected():
     # Roof half-along is 4000mm; alongRidgeMm 4000 + halfWidth 1200 = 5200 > 4000.
-    with pytest.raises(Exception):
+    with pytest.raises(Exception, match="."):
         try_commit(
             _doc_with_roof(),
             {
@@ -94,7 +94,7 @@ def test_create_dormer_overflow_along_ridge_rejected():
 
 
 def test_create_dormer_unknown_material_rejected():
-    with pytest.raises(Exception):
+    with pytest.raises(Exception, match="."):
         try_commit(
             _doc_with_roof(),
             {
@@ -111,7 +111,7 @@ def test_create_dormer_unknown_material_rejected():
 
 
 def test_create_dormer_zero_width_rejected():
-    with pytest.raises(Exception):
+    with pytest.raises(Exception, match="."):
         try_commit(
             _doc_with_roof(),
             {

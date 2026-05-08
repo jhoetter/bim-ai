@@ -6,7 +6,6 @@ import pytest
 
 from bim_ai.collab.orchestrator import CollabOrchestrator, CollabRoom, get_orchestrator
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

@@ -23,7 +23,6 @@ from bim_ai.family_catalog_format import (
     load_catalog_index,
 )
 
-
 REQUIRED_CATALOG_IDS = {
     "living-room-furniture",
     "bathroom-fixtures",

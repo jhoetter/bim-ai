@@ -12,9 +12,9 @@ ruler that maps "what colour is this facade in the colour study?" to
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Sequence
 
 
 @dataclass(frozen=True)
@@ -65,7 +65,7 @@ def _xyz_to_lab(xyz: tuple[float, float, float]) -> tuple[float, float, float]:
     # D65 reference white
     xn, yn, zn = 0.95047, 1.0, 1.08883
     x, y, z = xyz
-    fx, fy, fz = (_pivot(v / ref) for v, ref in zip((x, y, z), (xn, yn, zn)))
+    fx, fy, fz = (_pivot(v / ref) for v, ref in zip((x, y, z), (xn, yn, zn), strict=False))
     L = 116 * fy - 16
     a = 500 * (fx - fy)
     b = 200 * (fy - fz)
@@ -92,8 +92,8 @@ def sample_region_mean_rgb(
 
     Uses Pillow + numpy. Returns ints in [0, 255].
     """
-    from PIL import Image
     import numpy as np
+    from PIL import Image
 
     img = Image.open(image_path).convert("RGB")
     x0, y0, x1, y1 = region_xyxy

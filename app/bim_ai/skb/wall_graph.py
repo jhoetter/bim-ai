@@ -18,9 +18,8 @@ All advisories are `warning` severity by default; emit-only, never blocking.
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
-from typing import Iterable, Sequence
-
 
 XY = tuple[float, float]
 

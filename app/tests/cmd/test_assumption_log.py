@@ -3,15 +3,11 @@
 from __future__ import annotations
 
 import json
-import os
-
-import pytest
 
 from bim_ai.cmd.apply_bundle import apply_bundle
 from bim_ai.cmd.types import AgentTrace, AssumptionEntry, CommandBundle
 from bim_ai.document import Document
 from bim_ai.engine import ensure_internal_origin
-
 
 _VALID_ASSUMPTION = {
     "key": "ground_level_mm",

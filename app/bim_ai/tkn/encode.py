@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import math
 from typing import Any
 
 from bim_ai.elements import (
@@ -10,7 +9,6 @@ from bim_ai.elements import (
     DoorElem,
     DormerElem,
     FloorElem,
-    RoofElem,
     RoofOpeningElem,
     RoomElem,
     SlabOpeningElem,

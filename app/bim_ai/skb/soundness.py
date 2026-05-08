@@ -19,12 +19,11 @@ to blocking is the engine's call (left to caller).
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Sequence
 
-from bim_ai.skb.roof_wall_alignment import _point_in_polygon, _distance_outside_polygon
+from bim_ai.skb.roof_wall_alignment import _distance_outside_polygon, _point_in_polygon
 from bim_ai.skb.wall_graph import WallSeg
-
 
 XY = tuple[float, float]
 

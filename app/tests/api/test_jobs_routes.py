@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import UTC
+
 import pytest
 from fastapi import Depends, FastAPI, Query
 from fastapi.testclient import TestClient
@@ -12,7 +14,7 @@ from bim_ai.jobs.types import CreateJobRequest, Job
 
 def _build_test_app() -> FastAPI:
     """Stub app with an isolated JobQueue — no DB required."""
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     from fastapi import HTTPException
 
@@ -29,7 +31,7 @@ def _build_test_app() -> FastAPI:
             model_id=body.model_id,
             kind=body.kind,
             inputs=body.inputs,
-            created_at=datetime.now(timezone.utc).isoformat(),
+            created_at=datetime.now(UTC).isoformat(),
         )
         submitted = await q.submit(job)
         return submitted.model_dump(by_alias=True)
@@ -67,7 +69,7 @@ def _build_test_app() -> FastAPI:
             kind=job.kind,
             inputs=job.inputs,
             parent_job_id=job.id,
-            created_at=datetime.now(timezone.utc).isoformat(),
+            created_at=datetime.now(UTC).isoformat(),
         )
         submitted = await q.submit(retry)
         return submitted.model_dump(by_alias=True)

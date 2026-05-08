@@ -10,7 +10,6 @@ from bim_ai.document import Document
 from bim_ai.elements import LevelElem, Vec2Mm, WallElem
 from bim_ai.engine import resolve_wall_face_offset_at_cut, try_commit_bundle
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------

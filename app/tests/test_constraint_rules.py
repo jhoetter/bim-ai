@@ -10,19 +10,14 @@ Each rule has:
 
 from __future__ import annotations
 
-import pytest
-
 from bim_ai.document import Document
-from bim_ai.elements import ConstraintElem, LevelElem, Vec2Mm, WallElem
-from bim_ai.engine import try_commit, try_commit_bundle
 from bim_ai.edt.constraints import (
     EPSILON_MM,
-    ConstraintViolation,
     errors_only,
     evaluate_all,
-    evaluate_constraint,
 )
-
+from bim_ai.elements import ConstraintElem, LevelElem, Vec2Mm, WallElem
+from bim_ai.engine import try_commit_bundle
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -143,7 +138,6 @@ class TestParallel:
 
     def test_parallel_violation_45deg(self) -> None:
         """Wall at 45° to a horizontal wall violates parallel."""
-        import math
 
         walls = [
             _wall_dict("w1", 0, 0, 5000, 0),          # horizontal
@@ -240,7 +234,6 @@ class TestPerpendicular:
 
     def test_perpendicular_epsilon_inclusive_pass(self) -> None:
         """A wall very slightly off perpendicular within EPSILON_MM passes."""
-        import math
 
         # Rotate second wall by a tiny angle so dot ≈ sin(ε_angle) < EPSILON_MM
         # sin(x) ≈ x for small x; EPSILON_MM = 0.5 → angle ≈ 0.5 rad (too big).

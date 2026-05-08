@@ -15,12 +15,12 @@ without the engine.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable, Literal
+from typing import Literal
 
 from bim_ai.elements import SkbPhaseId
 from bim_ai.skb.visual_checkpoint import CheckpointReport
-
 
 GateOutcomeKind = Literal["pass", "advisory", "reject"]
 

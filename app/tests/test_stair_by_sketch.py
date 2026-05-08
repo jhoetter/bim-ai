@@ -9,14 +9,13 @@ from bim_ai.document import Document
 from bim_ai.elements import StairElem, StairTreadLine, Vec2Mm
 from bim_ai.engine import (
     _balance_tread_risers,
-    _validate_stair_boundary,
     _materialize_stair_runs_and_landings,
+    _validate_stair_boundary,
     apply_inplace,
     try_commit,
 )
-from bim_ai.sketch_session import SketchLine, SketchSession, finish_session
+from bim_ai.sketch_session import SketchSession, finish_session
 from bim_ai.sketch_validation import SketchInvalidError
-
 
 # ─────────────────────────── helpers ────────────────────────────────────────
 
@@ -256,7 +255,6 @@ def test_winder_drag_rebalance() -> None:
 
 def test_stair_runs_materialised_from_tread_lines() -> None:
     """_materialize_stair_runs_and_landings with tread lines creates one run per tread cell."""
-    lines = [_tl(0, 3000, float(i * 250)) for i in range(5)]
     cmd = CreateStairCmd(
         id="mat1",
         base_level_id="lvl-0",

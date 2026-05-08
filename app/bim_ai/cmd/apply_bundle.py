@@ -8,7 +8,7 @@ from __future__ import annotations
 import hashlib
 import json
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any, Literal
 
 from bim_ai.cmd.types import AgentTrace, AssumptionEntry, BundleResult, CommandBundle
@@ -72,7 +72,7 @@ def _attach_agent_traces(
     bundle_id: str,
 ) -> None:
     """Stamp every element that is new or modified by this bundle with an AgentTrace."""
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = datetime.now(UTC).isoformat()
     assumption_keys = [entry.key for entry in bundle.assumptions]
     trace = AgentTrace(
         bundle_id=bundle_id,
@@ -204,7 +204,7 @@ def apply_bundle(
         bundle_id = str(uuid.uuid4())
         _attach_agent_traces(new_doc.elements, doc.elements, bundle, bundle_id)
 
-        applied_at = datetime.now(timezone.utc).isoformat()
+        applied_at = datetime.now(UTC).isoformat()
         if model_id is not None:
             try:
                 _write_assumption_audit(model_id, bundle_id, bundle.assumptions, applied_at)

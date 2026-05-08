@@ -20,7 +20,6 @@ from bim_ai.engine import (
     compute_baluster_positions,
 )
 
-
 # ─────────────────────────── helpers ────────────────────────────────────────
 
 
@@ -92,7 +91,7 @@ def test_create_railing_glass_panel_no_spacing():
 
 def test_create_railing_regular_missing_spacing_rejected():
     doc, *_ = _base_doc()
-    with pytest.raises(Exception):
+    with pytest.raises(Exception, match="."):
         apply_inplace(doc, _railing_cmd(balusterPattern={"rule": "regular"}))
 
 
@@ -172,7 +171,7 @@ def test_create_railing_with_handrail_supports():
 
 def test_create_railing_invalid_host_wall_rejected():
     doc, *_ = _base_doc()
-    with pytest.raises(Exception):
+    with pytest.raises(Exception, match="."):
         apply_inplace(
             doc,
             _railing_cmd(

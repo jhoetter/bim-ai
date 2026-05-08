@@ -13,7 +13,6 @@ from bim_ai.skb.phase_test_fixtures import (
     kind_counts_from_elements,
 )
 
-
 SAMPLE_ELEMENTS = {
     "L1": {"kind": "level", "id": "L1"},
     "L2": {"kind": "level", "id": "L2"},

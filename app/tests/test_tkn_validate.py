@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from bim_ai.elements import (
     DoorElem,
     LevelElem,

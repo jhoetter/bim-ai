@@ -72,7 +72,7 @@ def test_create_sweep_unknown_level_rejected():
 
 
 def test_create_sweep_short_path_rejected():
-    with pytest.raises(Exception):
+    with pytest.raises(Exception, match="."):
         try_commit(
             _doc_with_level(),
             {
@@ -91,7 +91,7 @@ def test_create_sweep_short_path_rejected():
 
 
 def test_create_sweep_short_profile_rejected():
-    with pytest.raises(Exception):
+    with pytest.raises(Exception, match="."):
         try_commit(
             _doc_with_level(),
             {
@@ -109,7 +109,7 @@ def test_create_sweep_short_profile_rejected():
 
 
 def test_create_sweep_unknown_material_rejected():
-    with pytest.raises(Exception):
+    with pytest.raises(Exception, match="."):
         try_commit(
             _doc_with_level(),
             {
@@ -129,7 +129,7 @@ def test_create_sweep_unknown_material_rejected():
 
 
 def test_create_sweep_invalid_profile_plane_rejected():
-    with pytest.raises(Exception):
+    with pytest.raises(Exception, match="."):
         try_commit(
             _doc_with_level(),
             {

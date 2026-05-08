@@ -17,20 +17,16 @@ Adding a new kind is one entry in ``_MONITORED_FIELDS_BY_KIND``.
 
 from __future__ import annotations
 
-import math
 from dataclasses import dataclass
 from typing import Any
 
 from bim_ai.document import Document
 from bim_ai.elements import (
     Element,
-    GridLineElem,
-    LevelElem,
     LinkModelElem,
     MonitorSourceSpec,
 )
 from bim_ai.link_expansion import SourceDocProvider
-
 
 _FIELD_EQUAL_TOLERANCE_MM = 1e-3
 

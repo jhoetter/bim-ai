@@ -11,8 +11,6 @@ from __future__ import annotations
 import asyncio
 from typing import Any
 
-import pytest
-
 from bim_ai.hub import Hub
 
 

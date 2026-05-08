@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from bim_ai.elements import (
     DoorElem,
     LevelElem,
@@ -12,7 +10,6 @@ from bim_ai.elements import (
     WindowElem,
 )
 from bim_ai.tkn import diff, encode
-from bim_ai.tkn.types import TokenSequence
 
 
 def _elements_with_door(along_t: float = 0.3) -> dict:

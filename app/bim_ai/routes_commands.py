@@ -30,13 +30,13 @@ from bim_ai.engine import (
     try_commit,
     try_commit_bundle,
 )
-from bim_ai.link_expansion import SourceDocProvider
 from bim_ai.evidence_manifest import (
     agent_evidence_closure_hints,
     export_link_map,
 )
 from bim_ai.hub import Hub
 from bim_ai.level_datum_propagation_evidence import build_level_elevation_propagation_evidence_v0
+from bim_ai.link_expansion import SourceDocProvider
 from bim_ai.model_summary import compute_model_summary
 from bim_ai.routes_deps import (
     _commands_include_move_level_elevation,

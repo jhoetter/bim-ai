@@ -66,6 +66,7 @@ def test_mass_can_be_validated_via_pydantic_discriminated_union() -> None:
     """Round-trip via TypeAdapter to confirm `mass` is in the discriminated
     union so snapshot deserialisation will accept it."""
     from pydantic import TypeAdapter
+
     from bim_ai.elements import Element
 
     adapter = TypeAdapter(Element)

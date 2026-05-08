@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import asyncio
 from collections import defaultdict
-from datetime import datetime, timezone
-from typing import Awaitable, Callable
+from collections.abc import Awaitable, Callable
+from datetime import UTC, datetime
 
 from .types import Job, JobOutputs, JobStatus
 
@@ -38,7 +38,7 @@ class JobQueue:
     ) -> Job:
         async with self._lock:
             job = self._jobs[job_id]
-            now = datetime.now(timezone.utc).isoformat()
+            now = datetime.now(UTC).isoformat()
             updates: dict = {"status": status}
             if status == "running":
                 updates["started_at"] = now

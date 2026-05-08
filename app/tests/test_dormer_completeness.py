@@ -55,7 +55,7 @@ def _doc_with_roof_and_floor() -> Document:
 
 def test_gable_dormer_validates_ridge_height_required():
     """Pydantic enforces ridgeHeightMm when dormerRoofKind is gable / hipped."""
-    with pytest.raises(Exception):
+    with pytest.raises(Exception, match="."):
         try_commit(
             _doc_with_roof_and_floor(),
             {

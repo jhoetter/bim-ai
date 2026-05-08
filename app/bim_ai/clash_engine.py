@@ -32,7 +32,6 @@ from bim_ai.elements import (
 )
 from bim_ai.link_expansion import SourceDocProvider
 
-
 # --- AABB primitive ---------------------------------------------------------
 
 

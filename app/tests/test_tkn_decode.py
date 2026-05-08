@@ -2,17 +2,13 @@
 
 from __future__ import annotations
 
-import pytest
-
 from bim_ai.elements import (
     DoorElem,
     LevelElem,
     Vec2Mm,
     WallElem,
-    WindowElem,
 )
 from bim_ai.tkn import decode, encode
-from bim_ai.tkn.types import TokenSequence
 
 
 def _doc_with_door(along_t: float = 0.3) -> dict:

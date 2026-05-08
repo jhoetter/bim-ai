@@ -9,7 +9,6 @@ from bim_ai.document import Document
 from bim_ai.elements import StairElem, Vec2Mm
 from bim_ai.engine import apply_inplace, try_commit
 
-
 # ─────────────────────────── helpers ────────────────────────────────────────
 
 

@@ -19,9 +19,8 @@ Pure geometry. No dependency on the engine or Pydantic models.
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
-from typing import Iterable, Sequence
-
 
 XY = tuple[float, float]
 

@@ -16,11 +16,11 @@ This module owns:
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
-from typing import Any, Iterable, Sequence
+from typing import Any
 
 from bim_ai.elements import SkbPhaseId
-
 
 # Canonical phase ordering — agents and validators check this constant.
 SKB_PHASES: tuple[SkbPhaseId, ...] = (

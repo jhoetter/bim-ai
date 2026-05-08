@@ -27,7 +27,6 @@ from bim_ai.agent_loop import (
     resolve_backend_name,
 )
 
-
 GOAL_WITH_JSON = """\
 # Goal — seed one level
 

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from bim_ai.skb.roof_wall_alignment import check_alignment, check_alignments
 
-
 SQUARE = [(0.0, 0.0), (5000.0, 0.0), (5000.0, 5000.0), (0.0, 5000.0)]
 
 

@@ -74,7 +74,7 @@ def test_update_link_model_can_flip_visibility_mode():
 
 
 def test_create_link_model_rejects_unknown_visibility_mode():
-    with pytest.raises(Exception):
+    with pytest.raises(Exception, match="."):
         try_commit(
             _empty_doc(),
             {

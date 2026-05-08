@@ -10,7 +10,6 @@ from bim_ai.skb.wall_graph import (
     find_t_intersections_without_join,
 )
 
-
 # A clean rectangle: 4 walls, every endpoint shared at corners.
 RECT = [
     WallSeg("w-s", (0.0, 0.0), (5000.0, 0.0)),     # south

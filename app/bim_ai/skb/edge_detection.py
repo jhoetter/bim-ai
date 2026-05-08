@@ -49,7 +49,6 @@ def detect_edges(
 
     try:
         import cv2  # type: ignore[import-not-found]
-        import numpy as np
 
         img = cv2.imread(str(in_path), cv2.IMREAD_GRAYSCALE)
         if img is None:
@@ -72,8 +71,7 @@ def detect_edges(
         )
     except ImportError:
         # scikit-image fallback
-        from skimage import io, feature, filters, img_as_ubyte
-        import numpy as np
+        from skimage import feature, filters, img_as_ubyte, io
 
         img = io.imread(str(in_path), as_gray=True)
         if blur_sigma > 0:

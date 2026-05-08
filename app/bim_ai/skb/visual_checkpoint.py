@@ -20,9 +20,9 @@ when it's enabled; this module only does the math + I/O.
 
 from __future__ import annotations
 
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable, Sequence
 
 
 @dataclass(frozen=True)
@@ -84,8 +84,8 @@ class CheckpointReport:
 
 def _load_rgb(path: str | Path):
     """Load PNG as a (H, W, 3) numpy uint8 array, RGB."""
-    from PIL import Image
     import numpy as np
+    from PIL import Image
     img = Image.open(path).convert("RGB")
     return np.asarray(img, dtype=np.uint8)
 

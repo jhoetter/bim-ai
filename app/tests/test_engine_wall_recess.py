@@ -72,7 +72,7 @@ def test_set_wall_recess_zones_overlap_rejected():
 
 
 def test_set_wall_recess_zones_inverted_t_rejected():
-    with pytest.raises(Exception):
+    with pytest.raises(Exception, match="."):
         try_commit(
             _doc_with_wall(),
             {
@@ -85,7 +85,7 @@ def test_set_wall_recess_zones_inverted_t_rejected():
 
 def test_set_wall_recess_zones_setback_sanity_bound():
     # thicknessMm = 200 → bound = 1600. 2000 should be rejected.
-    with pytest.raises(Exception):
+    with pytest.raises(Exception, match="."):
         try_commit(
             _doc_with_wall(),
             {

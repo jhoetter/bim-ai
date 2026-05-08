@@ -18,7 +18,6 @@ import pytest
 from bim_ai.document import Document
 from bim_ai.elements import LevelElem, LinkModelElem, WallElem
 from bim_ai.engine import (
-    apply_inplace,
     clone_document,
     ensure_internal_origin,
     try_apply_kernel_ifc_authoritative_replay_v0,
@@ -30,7 +29,6 @@ from bim_ai.export_ifc import (
     build_kernel_ifc_authoritative_replay_sketch_v0,
     export_ifc_model_step,
 )
-
 
 pytestmark = pytest.mark.skipif(
     not IFC_AVAILABLE, reason="ifcopenshell not installed (pip install '.[ifc]')"

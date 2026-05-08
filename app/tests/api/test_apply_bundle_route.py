@@ -18,7 +18,6 @@ from bim_ai.cmd.types import CommandBundle
 from bim_ai.document import Document
 from bim_ai.engine import ensure_internal_origin
 
-
 _VALID_ASSUMPTION = {
     "key": "ground_level_mm",
     "value": 0,
