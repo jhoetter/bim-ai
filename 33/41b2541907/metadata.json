@@ -1,0 +1,23 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "3341b2541907",
+  "strategy": "manual-commit",
+  "branch": "feat/v3-mrk-v3-01-3d-comments",
+  "checkpoints_count": 1,
+  "files_touched": null,
+  "sessions": [
+    {
+      "metadata": "/33/41b2541907/0/metadata.json",
+      "transcript": "/33/41b2541907/0/full.jsonl",
+      "content_hash": "/33/41b2541907/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 3053,
+    "cache_creation_tokens": 239373,
+    "cache_read_tokens": 12480081,
+    "output_tokens": 105604,
+    "api_call_count": 138
+  }
+}
