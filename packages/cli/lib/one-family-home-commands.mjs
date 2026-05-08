@@ -498,17 +498,20 @@ export function buildOneFamilyHomeCommands() {
       sillHeightMm: 1000,
     },
 
-    // Loggia recess on the upper-floor south wall (KRN-16). The wall's
-    // primary materialKey (cladding_warm_wood — set in Phase 3) renders
-    // on the recess back surface; non-recessed end caps auto-render as
-    // white via makeRecessedWallMesh's capMat override.
+    // Loggia recess on the upper-floor south wall (KRN-16). The recess
+    // covers the FULL wall width (alongT 0..1) so the wood-clad back
+    // wall fills the entire pentagon interior, matching the line
+    // sketch's design (no white end-cap strips inside the pentagon —
+    // the chunky picture frame is the only white element). The wall's
+    // primary materialKey (cladding_warm_wood — set in Phase 3)
+    // renders on the recess back surface.
     {
       type: 'setWallRecessZones',
       wallId: 'hf-w-uf-s',
       recessZones: [
         {
-          alongTStart: 0.1,
-          alongTEnd: 0.9,
+          alongTStart: 0.0,
+          alongTEnd: 1.0,
           setbackMm: 1500,
           floorContinues: true,
         },
