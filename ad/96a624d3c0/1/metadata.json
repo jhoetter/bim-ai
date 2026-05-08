@@ -1,0 +1,65 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "ad96a624d3c0",
+  "session_id": "6c05e293-11a7-4803-814c-7fc9c45009df",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T14:06:54.988454Z",
+  "branch": "feat/v3-tkn-v3-01-tokenisation",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "app/bim_ai/commands.py",
+    "app/bim_ai/engine.py",
+    "app/bim_ai/routes_api.py",
+    "app/tests/test_tkn_decode.py",
+    "app/tests/test_tkn_diff.py",
+    "app/tests/test_tkn_validate.py",
+    "packages/cli/cli.mjs",
+    "packages/core/src/index.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "b9c5b50f32ab",
+  "token_usage": {
+    "input_tokens": 62,
+    "cache_creation_tokens": 88493,
+    "cache_read_tokens": 3073140,
+    "output_tokens": 28884,
+    "api_call_count": 58
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-08T14:06:54.978853Z",
+    "agent_lines": 491,
+    "agent_removed": 1,
+    "human_added": 731,
+    "human_modified": 85,
+    "human_removed": 0,
+    "total_committed": 1307,
+    "total_lines_changed": 1308,
+    "agent_percentage": 37.61467889908257,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 1483,
+      "user_lines_removed": 6,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "claude-skills/watch-yt/watch_yt.py": 25,
+        "spec/v3-build-state.md": 56,
+        "spec/v3-prompts/wp-001.md": 182,
+        "spec/v3-prompts/wp-002.md": 151,
+        "spec/v3-prompts/wp-003.md": 159,
+        "spec/v3-prompts/wp-004.md": 152,
+        "spec/v3-prompts/wp-005.md": 156,
+        "spec/v3-prompts/wp-006.md": 176,
+        "spec/v3-prompts/wp-007.md": 203,
+        "spec/v3-prompts/wp-008.md": 223
+      },
+      "user_removed_per_file": {
+        "claude-skills/watch-yt/watch_yt.py": 6
+      }
+    }
+  ]
+}

@@ -4,20 +4,35 @@
   "strategy": "manual-commit",
   "branch": "feat/v3-tkn-v3-01-tokenisation",
   "checkpoints_count": 1,
-  "files_touched": null,
+  "files_touched": [
+    "app/bim_ai/commands.py",
+    "app/bim_ai/engine.py",
+    "app/bim_ai/routes_api.py",
+    "app/tests/test_tkn_decode.py",
+    "app/tests/test_tkn_diff.py",
+    "app/tests/test_tkn_validate.py",
+    "packages/cli/cli.mjs",
+    "packages/core/src/index.ts"
+  ],
   "sessions": [
     {
       "metadata": "/ad/96a624d3c0/0/metadata.json",
       "transcript": "/ad/96a624d3c0/0/full.jsonl",
       "content_hash": "/ad/96a624d3c0/0/content_hash.txt",
       "prompt": "/ad/96a624d3c0/0/prompt.txt"
+    },
+    {
+      "metadata": "/ad/96a624d3c0/1/metadata.json",
+      "transcript": "/ad/96a624d3c0/1/full.jsonl",
+      "content_hash": "/ad/96a624d3c0/1/content_hash.txt",
+      "prompt": "/ad/96a624d3c0/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 191,
-    "cache_creation_tokens": 115893,
-    "cache_read_tokens": 8446997,
-    "output_tokens": 48082,
-    "api_call_count": 113
+    "input_tokens": 253,
+    "cache_creation_tokens": 204386,
+    "cache_read_tokens": 11520137,
+    "output_tokens": 76966,
+    "api_call_count": 171
   }
 }
