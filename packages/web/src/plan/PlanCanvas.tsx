@@ -94,6 +94,11 @@ import {
 import { extractDetailComponentPrimitives } from './detailComponentsRender';
 import { extractMaskingRegionPrimitives } from './maskingRegionRender';
 import { extractAreaPrimitives } from './areaRender';
+import {
+  DXF_UNDERLAY_OPACITY,
+  DXF_UNDERLAY_STROKE,
+  selectDxfUnderlaysForLevel,
+} from './dxfUnderlay';
 import { elevationFromWall } from '../lib/sectionElevationFromWall';
 import { WallContextMenu, type WallContextMenuCommand } from '../workspace/WallContextMenu';
 import { PlanDetailLevelToolbar } from './PlanDetailLevelToolbar';
@@ -780,6 +785,83 @@ export function PlanCanvas({
     };
     if (showMajor) addDraftGrid(majorStep, readPlanToken('--draft-grid-major', '#223042'), 0.45);
     if (showMinor) addDraftGrid(minorStep, readPlanToken('--draft-grid-minor', '#1a2738'), 0.25);
+
+    // FED-04 — render imported DXF linework as a desaturated grey underlay
+    // BEFORE the element-render loop so authored geometry sits on top.
+    for (let i = grp.children.length - 1; i >= 0; i--) {
+      const ch = grp.children[i]!;
+      if ((ch.userData as { dxfUnderlay?: unknown }).dxfUnderlay) grp.remove(ch);
+    }
+    const dxfLevelId = displayLevelId || activeLevelResolvedId;
+    const dxfUnderlays = selectDxfUnderlaysForLevel(elementsById, dxfLevelId || undefined);
+    for (const link of dxfUnderlays) {
+      if (!link.linework || link.linework.length === 0) continue;
+      const ox = link.originMm.xMm;
+      const oy = link.originMm.yMm;
+      const sc = link.scaleFactor ?? 1;
+      const rot = ((link.rotationDeg ?? 0) * Math.PI) / 180;
+      const cosR = Math.cos(rot);
+      const sinR = Math.sin(rot);
+      const project = (xMm: number, yMm: number): THREE.Vector3 => {
+        const sx = xMm * sc;
+        const sy = yMm * sc;
+        const rx = sx * cosR - sy * sinR;
+        const ry = sx * sinR + sy * cosR;
+        return new THREE.Vector3((rx + ox) / 1000, SLICE_Y - 0.001, (ry + oy) / 1000);
+      };
+      const mat = new THREE.LineBasicMaterial({
+        color: DXF_UNDERLAY_STROKE,
+        transparent: true,
+        opacity: DXF_UNDERLAY_OPACITY,
+        linewidth: 1,
+      });
+      const segments: THREE.Vector3[] = [];
+      for (const prim of link.linework) {
+        if (prim.kind === 'line') {
+          segments.push(project(prim.start.xMm, prim.start.yMm));
+          segments.push(project(prim.end.xMm, prim.end.yMm));
+        } else if (prim.kind === 'polyline') {
+          if (prim.points.length < 2) continue;
+          for (let i = 0; i < prim.points.length - 1; i++) {
+            segments.push(project(prim.points[i]!.xMm, prim.points[i]!.yMm));
+            segments.push(project(prim.points[i + 1]!.xMm, prim.points[i + 1]!.yMm));
+          }
+          if (prim.closed) {
+            const lastIdx = prim.points.length - 1;
+            segments.push(project(prim.points[lastIdx]!.xMm, prim.points[lastIdx]!.yMm));
+            segments.push(project(prim.points[0]!.xMm, prim.points[0]!.yMm));
+          }
+        } else if (prim.kind === 'arc') {
+          const start = prim.startDeg;
+          let end = prim.endDeg;
+          if (end < start) end += 360;
+          const sweep = Math.max(0.0001, end - start);
+          const steps = Math.max(2, Math.ceil(sweep / 3));
+          for (let i = 0; i < steps; i++) {
+            const t0 = ((start + (sweep * i) / steps) * Math.PI) / 180;
+            const t1 = ((start + (sweep * (i + 1)) / steps) * Math.PI) / 180;
+            segments.push(
+              project(
+                prim.center.xMm + prim.radiusMm * Math.cos(t0),
+                prim.center.yMm + prim.radiusMm * Math.sin(t0),
+              ),
+            );
+            segments.push(
+              project(
+                prim.center.xMm + prim.radiusMm * Math.cos(t1),
+                prim.center.yMm + prim.radiusMm * Math.sin(t1),
+              ),
+            );
+          }
+        }
+      }
+      if (segments.length === 0) continue;
+      const geom = new THREE.BufferGeometry().setFromPoints(segments);
+      const lineSeg = new THREE.LineSegments(geom, mat);
+      lineSeg.userData.dxfUnderlay = true;
+      lineSeg.userData.bimPickId = link.id;
+      grp.add(lineSeg);
+    }
 
     // KRN-10 — render masking regions hosted on the active plan view. These
     // are opaque 2D polygons that occlude underlying linework but sit *below*

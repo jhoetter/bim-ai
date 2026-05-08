@@ -53,6 +53,7 @@ export type ElemKind =
   | 'survey_point'
   | 'internal_origin'
   | 'link_model'
+  | 'link_dxf'
   | 'placed_tag'
   | 'detail_line'
   | 'detail_region'
@@ -68,6 +69,31 @@ export type ElemKind =
 export type Text3dFontFamily = 'helvetiker' | 'optimer' | 'gentilis';
 
 export type XY = { xMm: number; yMm: number };
+
+/** FED-04: 2D linework primitive parsed from a DXF underlay. */
+export type DxfLineworkPrim =
+  | { kind: 'line'; start: XY; end: XY }
+  | { kind: 'polyline'; points: XY[]; closed?: boolean }
+  | {
+      kind: 'arc';
+      center: XY;
+      radiusMm: number;
+      startDeg: number;
+      endDeg: number;
+    };
+
+/** FED-04: engine command emitted by the DXF import flow. */
+export type CreateLinkDxfCmd = {
+  type: 'createLinkDxf';
+  id?: string;
+  name?: string;
+  levelId: string;
+  originMm: XY;
+  rotationDeg?: number;
+  scaleFactor?: number;
+  linework: DxfLineworkPrim[];
+  pinned?: boolean;
+};
 
 /** KRN-07: a single straight flight in a multi-run stair. */
 export type StairRun = {
@@ -1065,6 +1091,26 @@ export type Element =
     }
   | {
       /**
+       * FED-04 — DXF underlay parsed from a customer's 2D site plan.
+       *
+       * The host materialises this element after `parse_dxf_to_linework`
+       * runs server-side; the plan canvas renders `linework[]` as
+       * desaturated grey strokes beneath authored geometry on `levelId`.
+       * `scaleFactor` carries the unit conversion the parser inferred from
+       * the DXF `$INSUNITS` header.
+       */
+      kind: 'link_dxf';
+      id: string;
+      name?: string;
+      levelId: string;
+      originMm: XY;
+      rotationDeg?: number;
+      scaleFactor?: number;
+      linework: DxfLineworkPrim[];
+      pinned?: boolean;
+    }
+  | {
+      /**
        * KRN-15 — project-level swept solid.
        *
        * Extrudes a closed 2D `profileMm` along an open or closed
@@ -1102,6 +1148,7 @@ export type Element =
       depthMm: number;
       dormerRoofKind: 'flat' | 'shed' | 'gable' | 'hipped';
       dormerRoofPitchDeg?: number;
+      ridgeHeightMm?: number;
       wallMaterialKey?: string | null;
       roofMaterialKey?: string | null;
       hasFloorOpening?: boolean;

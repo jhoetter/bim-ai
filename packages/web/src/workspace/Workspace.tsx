@@ -797,6 +797,15 @@ export function Workspace(): JSX.Element {
           console.warn('link-ifc selected', { name: file.name, size: file.size });
           setManageLinksOpen(true);
         }}
+        onLinkDxf={(file) => {
+          // FED-04: same shell-level placement as onLinkIfc — the workspace
+          // doesn't know the host model id, so we surface the selection and
+          // route the actual POST through the model-aware caller (which
+          // hands the file to /api/models/<hostId>/import-dxf and then
+          // refreshes the active level so the underlay paints).
+          console.warn('link-dxf selected', { name: file.name, size: file.size });
+          setManageLinksOpen(true);
+        }}
       />
       <ManageLinksDialog open={manageLinksOpen} onClose={() => setManageLinksOpen(false)} />
       <AppShell
