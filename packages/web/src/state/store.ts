@@ -261,6 +261,34 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
             ),
           }
         : {}),
+      ...(Array.isArray(raw.recessZones) || Array.isArray(raw.recess_zones)
+        ? {
+            recessZones: ((raw.recessZones ?? raw.recess_zones) as Record<string, unknown>[])
+              .map((z) => {
+                const start = Number(z.alongTStart ?? z.along_t_start);
+                const end = Number(z.alongTEnd ?? z.along_t_end);
+                const setback = Number(z.setbackMm ?? z.setback_mm);
+                if (!Number.isFinite(start) || !Number.isFinite(end) || !Number.isFinite(setback)) {
+                  return null;
+                }
+                return {
+                  alongTStart: start,
+                  alongTEnd: end,
+                  setbackMm: setback,
+                  ...(z.sillHeightMm != null || z.sill_height_mm != null
+                    ? { sillHeightMm: Number(z.sillHeightMm ?? z.sill_height_mm) }
+                    : {}),
+                  ...(z.headHeightMm != null || z.head_height_mm != null
+                    ? { headHeightMm: Number(z.headHeightMm ?? z.head_height_mm) }
+                    : {}),
+                  ...(z.floorContinues != null || z.floor_continues != null
+                    ? { floorContinues: Boolean(z.floorContinues ?? z.floor_continues) }
+                    : {}),
+                };
+              })
+              .filter((z): z is NonNullable<typeof z> => z !== null),
+          }
+        : {}),
     };
   }
 

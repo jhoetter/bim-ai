@@ -1767,6 +1767,71 @@ export function makeSlopedWallMesh(
 }
 
 /**
+ * Local helper: build a sub-divided sloped-top prism geometry.
+ * Local frame: x along segment (-halfL..+halfL), y up (0..h_at_step),
+ * z perpendicular to segment (-halfT..+halfT). The mesh is sized in m;
+ * the caller positions + rotates it into world space.
+ *
+ * `topHeightsRelM` is the sloped-top profile, sampled at each of N+1
+ * uniform steps along the segment. Heights are RELATIVE to the prism's
+ * y-base (i.e., wall-top height minus yBase). The bottom face is flat;
+ * the top, front, back faces follow the per-step heights so a wall
+ * crossing an asymmetric_gable ridge resolves a clean kink at the
+ * ridge crossing instead of a single straight slope.
+ */
+function buildSlopedSegmentGeometry(
+  segLenM: number,
+  thickM: number,
+  topHeightsRelM: number[],
+): THREE.BufferGeometry {
+  const N = topHeightsRelM.length - 1;
+  const halfL = segLenM / 2;
+  const halfT = thickM / 2;
+
+  // 4 vertices per step: (front-base, back-base, front-top, back-top).
+  const positions: number[] = [];
+  for (let i = 0; i <= N; i++) {
+    const x = -halfL + (i / N) * segLenM;
+    const h = Math.max(0.001, topHeightsRelM[i]);
+    positions.push(x, 0, +halfT); // 4i+0 front-base
+    positions.push(x, 0, -halfT); // 4i+1 back-base
+    positions.push(x, h, +halfT); // 4i+2 front-top
+    positions.push(x, h, -halfT); // 4i+3 back-top
+  }
+
+  const indices: number[] = [];
+  for (let i = 0; i < N; i++) {
+    const a = i * 4;
+    const b = (i + 1) * 4;
+    // front face (z = +halfT): outward normal +Z
+    indices.push(a + 0, b + 0, b + 2);
+    indices.push(a + 0, b + 2, a + 2);
+    // back face (z = -halfT): outward normal -Z (reverse winding)
+    indices.push(a + 1, a + 3, b + 3);
+    indices.push(a + 1, b + 3, b + 1);
+    // top face (sloped): outward normal +Y
+    indices.push(a + 2, b + 2, b + 3);
+    indices.push(a + 2, b + 3, a + 3);
+    // bottom face (flat at y=0): outward normal -Y (reverse winding)
+    indices.push(a + 0, a + 1, b + 1);
+    indices.push(a + 0, b + 1, b + 0);
+  }
+  // Start cap (-X normal): front-base, top-front, top-back, back-base
+  indices.push(0, 2, 3);
+  indices.push(0, 3, 1);
+  // End cap (+X normal): at i=N
+  const e = N * 4;
+  indices.push(e + 0, e + 1, e + 3);
+  indices.push(e + 0, e + 3, e + 2);
+
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geom.setIndex(indices);
+  geom.computeVertexNormals();
+  return geom;
+}
+
+/**
  * KRN-16 — extrude a wall whose plane steps back along recess zones.
  *
  * Builds a closed polygon footprint in plan that traces the exterior
@@ -1775,6 +1840,13 @@ export function makeSlopedWallMesh(
  * face mirrors the exterior step so the wall thickness stays constant.
  * The result, extruded vertically by the wall height, reads as a deep
  * architectural recess (loggia / bay window) with end-cap "flanges".
+ *
+ * Optional roof + element-registry args turn each emitted box into a
+ * sloped-top prism whose top follows the host roof — so a wall that has
+ * BOTH `roofAttachmentId` and `recessZones` (e.g. a recessed loggia
+ * under an asymmetric gable) renders as a sloped-top recess instead of
+ * one or the other. The slope is sampled at 25 steps along each segment,
+ * which resolves the ridge-crossing kink cleanly.
  *
  * Limitation: door / window CSG cuts are skipped for recessed walls.
  * Hosted openings render against the recessed surface (see makeDoorMesh
@@ -1785,6 +1857,8 @@ export function makeRecessedWallMesh(
   wall: WallElem,
   elevM: number,
   paint: ViewportPaintBundle | null,
+  roofForSlope?: Extract<Element, { kind: 'roof' }> | null,
+  elementsById?: Record<string, Element>,
 ): THREE.Group {
   const halfThickM = THREE.MathUtils.clamp(wall.thicknessMm / 1000, 0.05, 2) / 2;
 
@@ -1834,6 +1908,13 @@ export function makeRecessedWallMesh(
   const wallCx = (wall.start.xMm + wall.end.xMm) / 2 / 1000;
   const wallCz = (wall.start.yMm + wall.end.yMm) / 2 / 1000;
 
+  // Plan unit vectors for sampling roof at recessed positions. Direction
+  // is start→end; interior normal is rotated 90° CCW from direction.
+  const planDirX = wallLenM > 0 ? (wall.end.xMm - wall.start.xMm) / (wallLenM * 1000) : 1;
+  const planDirY = wallLenM > 0 ? (wall.end.yMm - wall.start.yMm) / (wallLenM * 1000) : 0;
+  const planNormX = -planDirY;
+  const planNormY = planDirX;
+
   function addBoxAt(t0: number, t1: number, perpMmOffset: number, material: THREE.Material) {
     const segLen = (t1 - t0) * wallLenM;
     if (segLen < 1e-4) return;
@@ -1852,7 +1933,35 @@ export function makeRecessedWallMesh(
     const dzWorld = sinY * along + cosY * perpOffsetM;
     const cx = wallCx + dxWorld;
     const cz = wallCz + dzWorld;
-    const box = new THREE.Mesh(new THREE.BoxGeometry(segLen, height, halfThickM * 2), material);
+
+    let geom: THREE.BufferGeometry;
+    if (roofForSlope && elementsById) {
+      // Sample roof height along the segment at 25 steps. Plan position at
+      // step i = wall.start + t * (wall.end - wall.start) + perpOffset * normal.
+      const N = 24;
+      const heights: number[] = [];
+      for (let i = 0; i <= N; i++) {
+        const t = t0 + (i / N) * (t1 - t0);
+        const planXMm =
+          wall.start.xMm + t * (wall.end.xMm - wall.start.xMm) + perpMmOffset * planNormX;
+        const planYMm =
+          wall.start.yMm + t * (wall.end.yMm - wall.start.yMm) + perpMmOffset * planNormY;
+        const hWorldM = roofHeightAtPoint(roofForSlope, elementsById, planXMm, planYMm);
+        // Relative to box base (yBase).
+        heights.push(Math.max(0.25, hWorldM - yBase));
+      }
+      geom = buildSlopedSegmentGeometry(segLen, halfThickM * 2, heights);
+      // Position at (cx, yBase, cz) — vertices already at y=0..h relative to base.
+      const mesh = new THREE.Mesh(geom, material);
+      mesh.position.set(cx, yBase, cz);
+      mesh.rotation.y = yaw;
+      mesh.userData.bimPickId = wall.id;
+      addEdges(mesh);
+      group.add(mesh);
+      return;
+    }
+    geom = new THREE.BoxGeometry(segLen, height, halfThickM * 2);
+    const box = new THREE.Mesh(geom, material);
     box.position.set(cx, yBase + height / 2, cz);
     box.rotation.y = yaw;
     box.userData.bimPickId = wall.id;
@@ -1889,13 +1998,17 @@ export function makeWallMesh(
   if (wall.roofAttachmentId && elementsById) {
     const roof = elementsById[wall.roofAttachmentId];
     if (roof?.kind === 'roof') {
-      return makeSlopedWallMesh(
-        wall,
-        roof as Extract<Element, { kind: 'roof' }>,
-        elevM,
-        paint,
-        elementsById,
-      );
+      const typedRoof = roof as Extract<Element, { kind: 'roof' }>;
+      // KRN-16 + KRN-11 composition: a wall with BOTH a roof attachment
+      // AND recess zones (e.g. a recessed loggia under an asymmetric
+      // gable) renders as a sloped-top recess. The recess builder samples
+      // the host roof at every emitted segment so the gable peak +
+      // ridge crossing land cleanly on each end-cap and on the recess
+      // back wall.
+      if (wall.recessZones && wall.recessZones.length > 0) {
+        return makeRecessedWallMesh(wall, elevM, paint, typedRoof, elementsById);
+      }
+      return makeSlopedWallMesh(wall, typedRoof, elevM, paint, elementsById);
     }
   }
   if (wall.wallTypeId) {
