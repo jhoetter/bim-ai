@@ -1,3 +1,5 @@
+import type { ReactElement } from 'react';
+
 import type { PhaseFilter } from '@bim-ai/core';
 
 export type PhaseDropdownProps = {
@@ -12,7 +14,7 @@ const OPTIONS: { value: PhaseFilter; label: string; glyph: string }[] = [
   { value: 'new', label: 'New Construction', glyph: '◼' },
 ];
 
-export function PhaseDropdown({ value, onChange }: PhaseDropdownProps): JSX.Element {
+export function PhaseDropdown({ value, onChange }: PhaseDropdownProps): ReactElement {
   const active = OPTIONS.find((o) => o.value === value) ?? OPTIONS[0];
 
   return (
