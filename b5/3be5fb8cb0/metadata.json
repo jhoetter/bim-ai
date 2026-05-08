@@ -7,8 +7,7 @@
   "files_touched": [
     "app/bim_ai/commands.py",
     "app/bim_ai/elements.py",
-    "app/bim_ai/engine.py",
-    "packages/core/src/index.ts"
+    "app/bim_ai/engine.py"
   ],
   "sessions": [
     {
@@ -67,11 +66,11 @@
     }
   ],
   "token_usage": {
-    "input_tokens": 1671,
-    "cache_creation_tokens": 1158435,
-    "cache_read_tokens": 66472737,
-    "output_tokens": 284334,
-    "api_call_count": 678
+    "input_tokens": 1668,
+    "cache_creation_tokens": 1156471,
+    "cache_read_tokens": 66089450,
+    "output_tokens": 283422,
+    "api_call_count": 675
   },
   "combined_attribution": {
     "calculated_at": "2026-05-08T16:42:41.02289Z",
