@@ -4,7 +4,9 @@
   "strategy": "manual-commit",
   "branch": "feat/v3-edt-v3-11-phase-filter-lens",
   "checkpoints_count": 3,
-  "files_touched": null,
+  "files_touched": [
+    "spec/workpackage-tracker-v3.md"
+  ],
   "sessions": [
     {
       "metadata": "/e0/87be23cfac/0/metadata.json",
@@ -28,6 +30,12 @@
       "metadata": "/e0/87be23cfac/3/metadata.json",
       "transcript": "/e0/87be23cfac/3/full.jsonl",
       "content_hash": "/e0/87be23cfac/3/content_hash.txt",
+      "prompt": ""
+    },
+    {
+      "metadata": "/e0/87be23cfac/4/metadata.json",
+      "transcript": "/e0/87be23cfac/4/full.jsonl",
+      "content_hash": "/e0/87be23cfac/4/content_hash.txt",
       "prompt": ""
     }
   ],
