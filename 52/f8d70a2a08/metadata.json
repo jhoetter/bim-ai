@@ -3,7 +3,7 @@
   "checkpoint_id": "52f8d70a2a08",
   "strategy": "manual-commit",
   "branch": "feat/v3-edt-v3-11-phase-filter-lens",
-  "checkpoints_count": 4,
+  "checkpoints_count": 5,
   "files_touched": [
     "app/bim_ai/routes_activity.py",
     "app/bim_ai/routes_api.py",
@@ -40,13 +40,19 @@
       "transcript": "/52/f8d70a2a08/4/full.jsonl",
       "content_hash": "/52/f8d70a2a08/4/content_hash.txt",
       "prompt": "/52/f8d70a2a08/4/prompt.txt"
+    },
+    {
+      "metadata": "/52/f8d70a2a08/5/metadata.json",
+      "transcript": "/52/f8d70a2a08/5/full.jsonl",
+      "content_hash": "/52/f8d70a2a08/5/content_hash.txt",
+      "prompt": "/52/f8d70a2a08/5/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 3265,
-    "cache_creation_tokens": 611341,
-    "cache_read_tokens": 32589227,
-    "output_tokens": 171823,
-    "api_call_count": 348
+    "input_tokens": 3336,
+    "cache_creation_tokens": 741543,
+    "cache_read_tokens": 39703926,
+    "output_tokens": 214783,
+    "api_call_count": 415
   }
 }

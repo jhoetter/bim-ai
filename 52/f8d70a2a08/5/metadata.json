@@ -1,0 +1,36 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "52f8d70a2a08",
+  "session_id": "8e873d8e-1c13-4a5d-9bdb-66365d85138f",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T17:32:24.601048Z",
+  "branch": "feat/v3-edt-v3-11-phase-filter-lens",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "app/bim_ai/tables.py",
+    "app/bim_ai/routes_api.py",
+    "packages/core/src/index.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "c47f0d752727",
+  "token_usage": {
+    "input_tokens": 71,
+    "cache_creation_tokens": 130202,
+    "cache_read_tokens": 7114699,
+    "output_tokens": 42960,
+    "api_call_count": 67
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-08T17:32:24.57795Z",
+    "agent_lines": 151,
+    "agent_removed": 18,
+    "human_added": 1072,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 1223,
+    "total_lines_changed": 1300,
+    "agent_percentage": 13,
+    "metric_version": 2
+  }
+}
