@@ -1,0 +1,45 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "9b47f095d8ad",
+  "session_id": "2225b079-b0ed-423a-88f3-a7b56c72e747",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T18:28:32.496766Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "app/bim_ai/markups.py",
+    "app/tests/api/test_markups_route.py",
+    "packages/web/src/collab/ActivityDrawer.test.tsx",
+    "packages/web/src/collab/ActivityDrawer.tsx",
+    "packages/web/src/collab/MarkupCanvas.tsx",
+    "packages/web/src/collab/activityDrawerStore.ts",
+    "packages/web/src/collab/markupStore.ts",
+    "packages/web/src/plan/MarkupToolbar.tsx",
+    "packages/web/src/workspace/StatusBar.tsx",
+    "packages/web/src/workspace/Workspace.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "bb1f48bba17b",
+  "checkpoint_transcript_start": 101,
+  "transcript_lines_at_start": 101,
+  "token_usage": {
+    "input_tokens": 15,
+    "cache_creation_tokens": 18053,
+    "cache_read_tokens": 1201198,
+    "output_tokens": 16330,
+    "api_call_count": 13
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-08T18:28:32.484087Z",
+    "agent_lines": 45,
+    "agent_removed": 0,
+    "human_added": 1361,
+    "human_modified": 8,
+    "human_removed": 0,
+    "total_committed": 1414,
+    "total_lines_changed": 1414,
+    "agent_percentage": 3.182461103253183,
+    "metric_version": 2
+  }
+}
