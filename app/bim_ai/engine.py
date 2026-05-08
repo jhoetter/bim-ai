@@ -185,6 +185,7 @@ from bim_ai.commands import (
     DeleteToposolidCmd,
     IndexAssetCmd,
     PlaceAssetCmd,
+    TraceImageCmd,
 )
 from bim_ai.constraints import Violation, evaluate
 from bim_ai.datum_levels import (
@@ -5073,7 +5074,10 @@ def apply_inplace(
                 positionMm=cmd.position_mm,
                 rotationDeg=cmd.rotation_deg,
                 paramValues=cmd.param_values,
-                hostElementId=cmd.host_element_id,
+                hostElementId=cmd.host_element_id,        case TraceImageCmd():
+            raise ValueError(
+                "TraceImageCmd cannot be applied in a bundle; "
+                "use POST /api/v3/trace or engine.handle_trace_image_cmd() instead"
             )
 
     # KRN-08: areas track a derived computedAreaSqMm. Recompute after every
