@@ -3,7 +3,7 @@
   "checkpoint_id": "2f2adc3a4961",
   "strategy": "manual-commit",
   "branch": "feat/v3-mrk-v3-01-3d-comments",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": null,
   "sessions": [
     {
@@ -23,13 +23,19 @@
       "transcript": "/2f/2adc3a4961/2/full.jsonl",
       "content_hash": "/2f/2adc3a4961/2/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/2f/2adc3a4961/3/metadata.json",
+      "transcript": "/2f/2adc3a4961/3/full.jsonl",
+      "content_hash": "/2f/2adc3a4961/3/content_hash.txt",
+      "prompt": "/2f/2adc3a4961/3/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 209,
-    "cache_creation_tokens": 379493,
-    "cache_read_tokens": 19321575,
-    "output_tokens": 99248,
-    "api_call_count": 205
+    "input_tokens": 343,
+    "cache_creation_tokens": 505290,
+    "cache_read_tokens": 32861022,
+    "output_tokens": 143003,
+    "api_call_count": 337
   }
 }
