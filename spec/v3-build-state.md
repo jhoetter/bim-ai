@@ -1,7 +1,7 @@
 # v3 Build State
 
-Last updated: 2026-05-08 (wave-6: all 8 reviews FAIL — fix prompts written, fix workers needed; ~39/63 WPs done)
-Active heavy workers: 0 / 8
+Last updated: 2026-05-08 (wave-6: all 8 WPs fixed and merged to main; ~47/63 WPs done)
+Active heavy workers: 0 / 0
 
 ## Merged so far
 
@@ -64,33 +64,20 @@ Active heavy workers: 0 / 8
 | WP-038 | VIE-V3-03 view templates + propagation toast | 2026-05-08 | 239b6c76 |
 | WP-039 | SHT-V3-01 sheet + titleblock + window legend | 2026-05-08 | 873d7cd0 |
 
-## Wave-6 fix-up needed (all 8 reviewed → FAIL; fix prompts at spec/v3-prompts/wp-NNN-fix.md)
+## Wave-6 merged ✅
 
-CROSS-CUTTING ISSUE: Workers branched from each other instead of from main, creating a
-chain: AST → TOP → IMG → DSC. Fix workers must rebase onto main (instructions in fix prompts).
-Multiple branches contain OUT-V3-01 presentation routes as scope creep; workers must remove them.
+All 8 WPs fixed (subagents) and conflict-resolved into main by orchestrator.
 
-| WP-ID | WP | Branch | Status | Fix prompt | Key failures |
-| ----- | -- | ------ | ------ | ---------- | ------------ |
-| WP-040 | DSC-V3-01 element discipline tags | feat/v3-dsc-v3-01-discipline-tags | FAIL — fix needed | wp-040-fix.md | scope creep (IMG code), missing ToolDescriptor, no "default" radio, no API tests |
-| WP-041 | TOP-V3-01 toposolid primitive | feat/v3-top-v3-01-toposolid | FAIL — fix needed | wp-041-fix.md | scope creep (AST code on branch), missing TS types, no CLI, no floor inheritance |
-| WP-042 | AST-V3-01 searchable asset library | feat/v3-ast-v3-01-asset-library | FAIL — fix needed | wp-042-fix.md | TS exports missing (build-breaking), no CLI, onPlace stub, scope creep |
-| WP-043 | IMG-V3-01 image → layout JSON | feat/v3-img-v3-01-image-to-layout | FAIL — fix needed | wp-043-fix.md | calibrator/sampler not wired, JOB queue stub, OUT scope creep; rebase onto main after WP-041 merges |
-| WP-044 | CAN-V3-01 line-weight hierarchy | feat/v3-can-v3-01-line-weight-hierarchy | FAIL — fix needed | wp-044-fix.md | wrong step values (continuous vs discrete), weights not applied to draw calls, brand-swap test missing |
-| WP-045 | OUT-V3-01 live presentation URL | feat/v3-out-v3-01-live-web-link | FAIL — fix needed | wp-045-fix.md | CLI publish missing, in-memory storage not durable, allowMeasurement/Comment not returned, WS revoke test missing |
-| WP-046 | MRK-V3-03 sheet review | feat/v3-mrk-v3-03-sheet-review | FAIL — fix needed (active worker has uncommitted changes) | wp-046-fix.md | push uncommitted work first; OUT scope creep; production routes not wired; chip uses polling not WS |
-| WP-047 | CHR-V3-08 ToolModifierBar | feat/v3-chr-v3-08-tool-modifier-bar | FAIL — fix needed | wp-047-fix.md | frontend only — missing SetToolPrefCmd + CLI + agent-callable tests (API-V3-01 violation) |
-
-## Merge order when fix workers pass review
-
-1. WP-041 (TOP) — rebase onto main, drop AST commit, add TS types + CLI + floor inheritance
-2. WP-042 (AST) — add TS types + CLI, fix canvas placement, remove non-AST scope creep
-3. WP-040 (DSC) — rebase onto main, drop IMG commit, add ToolDescriptor + radio + tests
-4. WP-044 (CAN) — independent; fix step values + draw calls + brand-swap test
-5. WP-045 (OUT) — independent; add CLI + durability + fields + WS revoke test
-6. WP-047 (CHR) — independent; add backend command layer + tests
-7. WP-043 (IMG) — rebase onto main after TOP merges; fix calibrator + JOB + remove OUT routes
-8. WP-046 (MRK) — push local work; remove OUT routes; wire production routes; fix chip
+| WP-ID | WP | Merged at | Commit |
+| ----- | -- | --------- | ------ |
+| WP-040 | DSC-V3-01 element discipline tags | 2026-05-08 | c386fa27 |
+| WP-041 | TOP-V3-01 toposolid primitive | 2026-05-08 | aff804ef |
+| WP-042 | AST-V3-01 searchable asset library | 2026-05-08 | 200759b9 |
+| WP-043 | IMG-V3-01 image → layout JSON | 2026-05-08 | 8b41aca4 |
+| WP-044 | CAN-V3-01 line-weight hierarchy | 2026-05-08 | 76dfda49 |
+| WP-045 | OUT-V3-01 live presentation URL | 2026-05-08 | 54ab5875 |
+| WP-046 | MRK-V3-03 sheet review | 2026-05-08 | 858724a2 |
+| WP-047 | CHR-V3-08 ToolModifierBar | 2026-05-08 | f324c076 |
 
 ## Orphan commits (flagged for user decision — do NOT cherry-pick without confirmation)
 
