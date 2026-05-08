@@ -1,0 +1,36 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "e26865055e70",
+  "session_id": "63a94884-bb93-4926-ace7-312aece29b31",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T22:04:10.490302Z",
+  "branch": "feat/v3-mat-v3-01-pbr-material",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "app/bim_ai/elements.py"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "2fc9c5868a3a",
+  "checkpoint_transcript_start": 513,
+  "transcript_lines_at_start": 513,
+  "token_usage": {
+    "input_tokens": 76,
+    "cache_creation_tokens": 35664,
+    "cache_read_tokens": 11003370,
+    "output_tokens": 18040,
+    "api_call_count": 76
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-08T22:04:10.47474Z",
+    "agent_lines": 91,
+    "agent_removed": 1,
+    "human_added": 772,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 863,
+    "total_lines_changed": 865,
+    "agent_percentage": 10.635838150289018,
+    "metric_version": 2
+  }
+}
