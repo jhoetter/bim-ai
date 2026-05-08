@@ -2156,6 +2156,77 @@ class TraceImageCmd(BaseModel):
     brief_text: str | None = Field(default=None, alias="briefText")
     assumptions: list = Field(default_factory=list)
 
+
+# ---------------------------------------------------------------------------
+# SCH-V3-01 — Custom-properties + schedule view
+# ---------------------------------------------------------------------------
+
+
+class CreatePropertyDefinitionCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["create_property_definition"] = "create_property_definition"
+    id: str
+    key: str
+    label: str
+    prop_kind: str = Field(alias="propKind")
+    enum_values: list[str] | None = Field(default=None, alias="enumValues")
+    default_value: Any | None = Field(default=None, alias="defaultValue")
+    applies_to: list[str] = Field(alias="appliesTo")
+    show_in_schedule: bool = Field(default=True, alias="showInSchedule")
+
+
+class SetElementPropCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["set_element_prop"] = "set_element_prop"
+    element_id: str = Field(alias="elementId")
+    key: str
+    value: Any
+
+
+class CreateScheduleViewCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["create_schedule_view"] = "create_schedule_view"
+    id: str
+    name: str
+    category: str
+    columns: list[dict] = Field(default_factory=list)
+    filter_expr: str | None = Field(default=None, alias="filterExpr")
+    sort_key: str | None = Field(default=None, alias="sortKey")
+    sort_dir: Literal["asc", "desc"] | None = Field(default=None, alias="sortDir")
+
+
+# ---------------------------------------------------------------------------
+# ANN-V3-01 — Detail-region drawing-mode authoring
+# ---------------------------------------------------------------------------
+
+
+class DrawDetailRegionCmd(BaseModel):
+    """ANN-V3-01 — draw a polyline or closed hatch region on a view."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["create_detail_region"] = "create_detail_region"
+    id: str
+    view_id: str = Field(alias="viewId")
+    vertices: list[dict]
+    closed: bool = False
+    hatch_id: str | None = Field(default=None, alias="hatchId")
+    lineweight_override: float | None = Field(default=None, alias="lineweightOverride")
+    phase_created: str | None = Field(default=None, alias="phaseCreated")
+
+
+class UpdateDetailRegionCmd(BaseModel):
+    """ANN-V3-01 — patch vertices, closed flag, or hatch on a detail_region."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["update_detail_region"] = "update_detail_region"
+    id: str
+    vertices: list[dict] | None = None
+    closed: bool | None = None
+    hatch_id: str | None = Field(default=None, alias="hatchId")
+    lineweight_override: float | None = Field(default=None, alias="lineweightOverride")
+    phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
+
+
 Command = Annotated[
     CreateLevelCmd
     | CreateWallCmd
@@ -2324,6 +2395,11 @@ Command = Annotated[
     | IndexAssetCmd
     | PlaceAssetCmd
     | SetToolPrefCmd
-    | TraceImageCmd,
+    | TraceImageCmd
+    | CreatePropertyDefinitionCmd
+    | SetElementPropCmd
+    | CreateScheduleViewCmd
+    | DrawDetailRegionCmd
+    | UpdateDetailRegionCmd,
     Field(discriminator="type"),
 ]

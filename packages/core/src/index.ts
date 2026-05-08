@@ -91,6 +91,7 @@ export type ElemKind =
   | 'placed_tag'
   | 'detail_line'
   | 'detail_region'
+  | 'draft_detail_region'
   | 'text_note'
   | 'sweep'
   | 'dormer'
@@ -112,7 +113,8 @@ export type ElemKind =
   | 'foundation'
   | 'duct'
   | 'pipe'
-  | 'fixture';
+  | 'fixture'
+  | 'property_definition';
 
 export type PhaseFilter = 'all' | 'existing' | 'demolition' | 'new';
 
@@ -677,6 +679,7 @@ export type Element =
       optionId?: string | null;
       /** DSC-V3-01: discipline tag. */
       discipline?: DisciplineTag | null;
+      props?: Record<string, unknown> | null;
     }
   | {
       kind: 'door';
@@ -706,6 +709,7 @@ export type Element =
       optionId?: string | null;
       /** DSC-V3-01: discipline tag. */
       discipline?: DisciplineTag | null;
+      props?: Record<string, unknown> | null;
     }
   | {
       kind: 'window';
@@ -739,6 +743,7 @@ export type Element =
       optionId?: string | null;
       /** DSC-V3-01: discipline tag. */
       discipline?: DisciplineTag | null;
+      props?: Record<string, unknown> | null;
     }
   | {
       kind: 'wall_opening';
@@ -771,6 +776,7 @@ export type Element =
       pinned?: boolean;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
+      props?: Record<string, unknown> | null;
     }
   | {
       kind: 'grid_line';
@@ -855,6 +861,7 @@ export type Element =
       optionId?: string | null;
       /** DSC-V3-01: discipline tag. */
       discipline?: DisciplineTag | null;
+      props?: Record<string, unknown> | null;
     }
   | {
       kind: 'roof';
@@ -892,6 +899,7 @@ export type Element =
       optionId?: string | null;
       /** DSC-V3-01: discipline tag. */
       discipline?: DisciplineTag | null;
+      props?: Record<string, unknown> | null;
     }
   | {
       kind: 'stair';
@@ -1146,6 +1154,11 @@ export type Element =
       sheetId?: string | null;
       filters?: Record<string, unknown>;
       grouping?: Record<string, unknown>;
+      category?: string | null;
+      columns?: Array<{ fieldKey: string; label: string; width?: number }>;
+      filterExpr?: string | null;
+      sortKey?: string | null;
+      sortDir?: 'asc' | 'desc' | null;
     }
   | {
       kind: 'site';
@@ -1214,15 +1227,24 @@ export type Element =
       style?: 'solid' | 'dashed' | 'dotted';
     }
   | {
-      /** ANN-01 — view-local 2D filled region (annotation only). */
+      /** ANN-01 / ANN-V3-01 — view-local 2D filled region (annotation only). */
       kind: 'detail_region';
       id: string;
-      hostViewId: string;
-      boundaryMm: XY[];
+      // v2 fields (ANN-01)
+      hostViewId?: string;
+      boundaryMm?: XY[];
       fillColour?: string;
       fillPattern?: 'solid' | 'hatch_45' | 'hatch_90' | 'crosshatch' | 'dots';
       strokeMm?: number;
       strokeColour?: string;
+      // v3 fields (ANN-V3-01)
+      viewId?: string | null;
+      vertices?: Array<{ x: number; y: number }> | null;
+      closed?: boolean | null;
+      hatchId?: string | null;
+      lineweightOverride?: number | null;
+      phaseCreated?: string | null;
+      phaseDemolished?: string | null;
     }
   | {
       /** ANN-01 — view-local text note (annotation only). */
@@ -1256,6 +1278,7 @@ export type Element =
       phaseDemolished?: string | null;
       /** DSC-V3-01: discipline tag. */
       discipline?: DisciplineTag | null;
+      props?: Record<string, unknown> | null;
     }
   | {
       kind: 'beam';
@@ -1275,6 +1298,7 @@ export type Element =
       phaseDemolished?: string | null;
       /** DSC-V3-01: discipline tag. */
       discipline?: DisciplineTag | null;
+      props?: Record<string, unknown> | null;
     }
   | {
       kind: 'ceiling';
@@ -1289,6 +1313,7 @@ export type Element =
       phaseDemolished?: string | null;
       /** DSC-V3-01: discipline tag. */
       discipline?: DisciplineTag | null;
+      props?: Record<string, unknown> | null;
     }
   | {
       kind: 'color_fill_legend';
@@ -1659,7 +1684,8 @@ export type Element =
   | View
   | ToposolidElem
   | AssetLibraryEntryElem
-  | PlacedAssetElem;
+  | PlacedAssetElem
+  | PropertyDefinitionElem;
 
 export type Violation = {
   ruleId: string;
@@ -2222,4 +2248,19 @@ export type StructuredLayout = {
   openings: OpeningHint[];
   ocrLabels: OcrLabel[];
   advisories: Advisory[];
+};
+
+// ---------------------------------------------------------------------------
+// ANN-V3-01 — Detail-region drawing-mode authoring
+// ---------------------------------------------------------------------------
+
+export type DetailRegionElem = Extract<BimElem, { kind: 'detail_region' }>;
+
+/** Transient: live-preview vertices before commit. Never persisted. */
+export type DraftDetailRegionElem = {
+  kind: 'draft_detail_region';
+  viewId: string;
+  vertices: Array<{ x: number; y: number }>;
+  closed: boolean;
+  hatchId?: string | null;
 };

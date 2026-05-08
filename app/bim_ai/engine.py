@@ -188,6 +188,11 @@ from bim_ai.commands import (
     PlaceAssetCmd,
     SetToolPrefCmd,
     TraceImageCmd,
+    CreatePropertyDefinitionCmd,
+    SetElementPropCmd,
+    CreateScheduleViewCmd,
+    DrawDetailRegionCmd,
+    UpdateDetailRegionCmd,
 )
 from bim_ai.constraints import Violation, evaluate
 from bim_ai.datum_levels import (
@@ -306,6 +311,7 @@ from bim_ai.elements import (
     AssetLibraryEntryElem,
     AssetParamEntry,
     PlacedAssetElem,
+    PropertyDefinitionElem,
 )
 from bim_ai.export_ifc import (
     AUTHORITATIVE_REPLAY_KIND_V0,
@@ -4043,6 +4049,38 @@ def apply_inplace(
                 gnext.update(cmd.grouping)
             els[cmd.schedule_id] = sc_el.model_copy(update={"filters": merged, "grouping": gnext})
 
+        case CreatePropertyDefinitionCmd():
+            els[cmd.id] = PropertyDefinitionElem(
+                id=cmd.id,
+                key=cmd.key,
+                label=cmd.label,
+                propKind=cmd.prop_kind,
+                enumValues=cmd.enum_values,
+                defaultValue=cmd.default_value,
+                appliesTo=cmd.applies_to,
+                showInSchedule=cmd.show_in_schedule,
+            )
+
+        case SetElementPropCmd():
+            target = els.get(cmd.element_id)
+            if target is None:
+                raise ValueError(f"set_element_prop: element '{cmd.element_id}' not found")
+            existing_props = getattr(target, "props", None) or {}
+            updated_props = {**existing_props, cmd.key: cmd.value}
+            els[cmd.element_id] = target.model_copy(update={"props": updated_props})
+
+        case CreateScheduleViewCmd():
+            eid = cmd.id
+            els[eid] = ScheduleElem(
+                id=eid,
+                name=cmd.name,
+                category=cmd.category,
+                columns=cmd.columns,
+                filterExpr=cmd.filter_expr,
+                sortKey=cmd.sort_key,
+                sortDir=cmd.sort_dir,
+            )
+
         case UpsertRoomVolumeCmd():
             r = els.get(cmd.room_id)
             if not isinstance(r, RoomElem):
@@ -5074,6 +5112,44 @@ def apply_inplace(
                 "TraceImageCmd cannot be applied in a bundle; "
                 "use POST /api/v3/trace or engine.handle_trace_image_cmd() instead"
             )
+
+        case DrawDetailRegionCmd():
+            if cmd.id in els:
+                raise ValueError(f"duplicate element id '{cmd.id}'")
+            view = els.get(cmd.view_id)
+            valid_view_kinds = {"plan_view", "section_cut", "elevation_view", "view", "callout"}
+            if view is None or view.kind not in valid_view_kinds:
+                raise ValueError(
+                    "create_detail_region.viewId must reference a plan/section/elevation/drafting/callout view"
+                )
+            if len(cmd.vertices) < 2:
+                raise ValueError("create_detail_region.vertices must contain at least 2 points")
+            els[cmd.id] = DetailRegionElem(
+                id=cmd.id,
+                viewId=cmd.view_id,
+                vertices=cmd.vertices,
+                closed=cmd.closed,
+                hatchId=cmd.hatch_id,
+                lineweightOverride=cmd.lineweight_override,
+                phaseCreated=cmd.phase_created,
+            )
+
+        case UpdateDetailRegionCmd():
+            existing = els.get(cmd.id)
+            if existing is None or existing.kind != "detail_region":
+                raise ValueError(f"No detail_region element with id '{cmd.id}'")
+            patch: dict = {}
+            if cmd.vertices is not None:
+                patch["vertices"] = cmd.vertices
+            if cmd.closed is not None:
+                patch["closed"] = cmd.closed
+            if cmd.hatch_id is not None:
+                patch["hatch_id"] = cmd.hatch_id
+            if cmd.lineweight_override is not None:
+                patch["lineweight_override"] = cmd.lineweight_override
+            if cmd.phase_demolished is not None:
+                patch["phase_demolished"] = cmd.phase_demolished
+            els[cmd.id] = existing.model_copy(update=patch)
 
     # KRN-08: areas track a derived computedAreaSqMm. Recompute after every
     # command apply so create/update/delete of areas (and shafts that affect

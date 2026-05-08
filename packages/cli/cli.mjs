@@ -1443,6 +1443,32 @@ async function main() {
       return;
     }
 
+    if (cmd === 'detail-region') {
+      // ANN-V3-01: draw a detail region polyline or closed hatch region on a view
+      const [modelId, viewId, ...rest] = args;
+      const vertices = JSON.parse(rest[0] || '[]');
+      const closed = rest.includes('--closed');
+      const hatchArg = rest.find((a) => a.startsWith('--hatch='));
+      const hatchId = hatchArg ? hatchArg.split('=')[1] : null;
+      const data = await apiFetch(`/api/v3/models/${modelId}/apply`, {
+        method: 'POST',
+        body: JSON.stringify({
+          commands: [
+            {
+              type: 'create_detail_region',
+              id: crypto.randomUUID(),
+              viewId,
+              vertices,
+              closed,
+              hatchId,
+            },
+          ],
+        }),
+      });
+      console.log(JSON.stringify(data, null, 2));
+      return;
+    }
+
     if (cmd === 'toposolid') {
       const sub = argv[0];
       if (sub === 'create') {

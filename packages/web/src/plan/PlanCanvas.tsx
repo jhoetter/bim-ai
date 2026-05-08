@@ -162,7 +162,13 @@ type Draft =
   | { kind: 'property-line'; sx: number; sy: number }
   | { kind: 'area-boundary'; sx: number; sy: number }
   | { kind: 'masking-region'; sx: number; sy: number }
-  | { kind: 'plan-region'; sx: number; sy: number };
+  | { kind: 'plan-region'; sx: number; sy: number }
+  | {
+      kind: 'detail-region';
+      verts: Array<{ xMm: number; yMm: number }>;
+      closed: boolean;
+      hatchId: string | null;
+    };
 
 function nearestWallAt(
   elementsById: Record<string, Element>,
@@ -2524,6 +2530,40 @@ export function PlanCanvas({
         rm.verts.push({ xMm: sp.xMm, yMm: sp.yMm });
         bumpGeom((x) => x + 1);
       }
+      if (planTool === 'detail-region') {
+        let dr = draftRef.current;
+        if (!dr || dr.kind !== 'detail-region') {
+          draftRef.current = {
+            kind: 'detail-region',
+            verts: [{ xMm: sp.xMm, yMm: sp.yMm }],
+            closed: false,
+            hatchId: null,
+          };
+          bumpGeom((x) => x + 1);
+          return;
+        }
+        const fst = dr.verts[0];
+        if (fst && dr.verts.length >= 3 && Math.hypot(sp.xMm - fst.xMm, sp.yMm - fst.yMm) < 520) {
+          onSemanticCommand({
+            type: 'create_detail_region',
+            id: crypto.randomUUID(),
+            viewId: activePlanViewId,
+            vertices: dr.verts.map((v) => ({ x: v.xMm, y: v.yMm })),
+            closed: true,
+            hatchId: dr.hatchId,
+          });
+          draftRef.current = undefined;
+          bumpGeom((x) => x + 1);
+          if (previewRef.current) {
+            grp.remove(previewRef.current);
+            previewRef.current.geometry.dispose();
+            previewRef.current = null;
+          }
+          return;
+        }
+        dr.verts.push({ xMm: sp.xMm, yMm: sp.yMm });
+        bumpGeom((x) => x + 1);
+      }
     };
 
     const onWheel = (ev: WheelEvent) => {
@@ -2675,6 +2715,32 @@ export function PlanCanvas({
               wallIds: effect.commitJoin.wallIds,
               variant: effect.commitJoin.variant,
             });
+          }
+        }
+      }
+      if (planTool === 'detail-region') {
+        const dr = draftRef.current;
+        if (dr && dr.kind === 'detail-region') {
+          if (ev.key === 'Enter') {
+            ev.preventDefault();
+            if (dr.verts.length >= 2) {
+              onSemanticCommand({
+                type: 'create_detail_region',
+                id: crypto.randomUUID(),
+                viewId: activePlanViewId,
+                vertices: dr.verts.map((v) => ({ x: v.xMm, y: v.yMm })),
+                closed: dr.closed,
+                hatchId: dr.hatchId,
+              });
+            }
+            draftRef.current = undefined;
+            bumpGeom((x) => x + 1);
+            return;
+          }
+          if (ev.key === 'r' || ev.key === 'R') {
+            dr.closed = !dr.closed;
+            bumpGeom((x) => x + 1);
+            return;
           }
         }
       }
