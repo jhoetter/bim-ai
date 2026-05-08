@@ -1,0 +1,45 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "ef3c1fa21df9",
+  "session_id": "23fbe6ce-4e5a-44d3-93ed-2d6efb47eea9",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T14:27:10.795252Z",
+  "branch": "feat/v3-krn-v3-01-phasing",
+  "checkpoints_count": 1,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "dacd8d5c9878",
+  "token_usage": {
+    "input_tokens": 239,
+    "cache_creation_tokens": 132257,
+    "cache_read_tokens": 12340326,
+    "output_tokens": 59111,
+    "api_call_count": 145
+  },
+  "session_metrics": {
+    "turn_count": 11
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 938,
+      "user_lines_removed": 1,
+      "agent_lines_added": 28,
+      "agent_lines_removed": 1,
+      "user_added_per_file": {
+        "app/api/schemas/sun_settings.json": 67,
+        "app/bim_ai/site/sun_position.py": 197,
+        "app/tests/test_sun_position.py": 90,
+        "app/tests/test_sun_settings.py": 113,
+        "packages/core/src/index.ts": 13,
+        "packages/web/src/Viewport.tsx": 55,
+        "packages/web/src/viewport/SunOverlay.tsx": 265,
+        "packages/web/src/viewport/sunPositionNoaa.ts": 138
+      },
+      "user_removed_per_file": {
+        "packages/core/src/index.ts": 1
+      }
+    }
+  ]
+}
