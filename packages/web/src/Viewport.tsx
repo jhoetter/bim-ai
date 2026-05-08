@@ -79,6 +79,20 @@ import { makeDormerMesh } from './viewport/dormerMesh';
 import { applyDormerCutsToRoofGeom } from './viewport/dormerRoofCut';
 import { registerDormerCutFn } from './viewport/meshBuilders';
 import { WallContextMenu, type WallContextMenuCommand } from './workspace/WallContextMenu';
+import { gripsFor, type Grip3dDescriptor } from './viewport/grip3d';
+import {
+  buildAxisIndicator,
+  buildGripMeshes,
+  type AxisIndicatorHandle,
+  type GripMeshHandle,
+} from './viewport/grip3dRenderer';
+// Side-effect import: registers floor/roof/column/beam/door/window 3D grip providers.
+import './viewport/grip3dProviders';
+import {
+  WallFaceRadialMenu,
+  type WallFaceRadialMenuOpen,
+  type WallFaceRadialCommand,
+} from './viewport/wallFaceRadialMenu';
 
 // KRN-14 — wire the CSG cut into meshBuilders. Side-effect at module load.
 registerDormerCutFn(applyDormerCutsToRoofGeom);
@@ -167,6 +181,11 @@ export function Viewport({ wsConnected, onPersistViewpointField, onSemanticComma
     wall: Extract<Element, { kind: 'wall' }>;
     position: { x: number; y: number };
   } | null>(null);
+  // EDT-03: state for the wall-face radial menu (Insert Door / Window / Opening).
+  const [wallFaceRadialMenu, setWallFaceRadialMenu] = useState<WallFaceRadialMenuOpen | null>(null);
+  /** Pickable grip meshes for the current selection — populated by the grip-rebuild effect. */
+  const gripPickablesRef = useRef<THREE.Object3D[]>([]);
+  const gripHandleRef = useRef<GripMeshHandle | null>(null);
   const text3dPendingRef = useRef<Set<string>>(new Set());
   const walkControllerRef = useRef<WalkController | null>(null);
   const sectionBoxRef = useRef<SectionBox | null>(null);
@@ -207,6 +226,53 @@ export function Viewport({ wsConnected, onPersistViewpointField, onSemanticComma
       }
     },
     [activateElevationView, onSemanticCommand, selectStoreEl],
+  );
+
+  // EDT-03: dispatch slice grip commands as engine commands. Slice
+  // payloads use `{ elementId, property, valueMm | value, ... }`; the
+  // engine's UpdateElementPropertyCmd uses `{ elementId, key, value }`.
+  // Translate here so providers stay decoupled from the engine schema.
+  const handleGripCommand = useCallback(
+    (cmd: { type: string; payload: Record<string, unknown> }) => {
+      if (!onSemanticCommand) return;
+      if (cmd.type === 'updateElementProperty') {
+        const p = cmd.payload;
+        const key = String(p.property ?? '');
+        const value = p.value !== undefined ? p.value : p.valueMm;
+        onSemanticCommand({
+          type: 'updateElementProperty',
+          elementId: p.elementId,
+          key,
+          value,
+        });
+        return;
+      }
+      if (cmd.type === 'moveBeamEndpoints') {
+        const p = cmd.payload;
+        onSemanticCommand({
+          type: 'moveBeamEndpoints',
+          beamId: p.beamId,
+          startMm: p.startMm,
+          endMm: p.endMm,
+        });
+        return;
+      }
+      // Forward unknown slice types verbatim — the engine will reject
+      // with a clear error rather than silently dropping.
+      onSemanticCommand({ type: cmd.type, ...cmd.payload });
+    },
+    [onSemanticCommand],
+  );
+  // Keep a ref-copy so the mount-effect closure (registered once) reads
+  // the latest dispatcher.
+  const handleGripCommandRef = useRef(handleGripCommand);
+  handleGripCommandRef.current = handleGripCommand;
+
+  const handleWallFaceRadialCommand = useCallback(
+    (next: WallFaceRadialCommand) => {
+      onSemanticCommand?.(next.cmd as unknown as Record<string, unknown>);
+    },
+    [onSemanticCommand],
   );
 
   const viewerCategoryHidden = useBimStore((s) => s.viewerCategoryHidden);
@@ -438,7 +504,7 @@ export function Viewport({ wsConnected, onPersistViewpointField, onSemanticComma
       maxRadius: 80,
     });
     cameraRigRef.current = rig;
-    let dragging: 'orbit' | 'pan' | null = null;
+    let dragging: 'orbit' | 'pan' | 'grip' | null = null;
     let dragMoved = false;
     let cumulativeDragPx = 0;
     let inertiaVx = 0;
@@ -449,6 +515,13 @@ export function Viewport({ wsConnected, onPersistViewpointField, onSemanticComma
     let lastY = 0;
     const raycaster = new THREE.Raycaster();
     const ndc = new THREE.Vector2();
+    /** EDT-03 — active grip drag state, set on grip-pointer-down and cleared on up. */
+    let activeGrip: {
+      descriptor: Grip3dDescriptor;
+      anchorScene: THREE.Vector3;
+      indicator: AxisIndicatorHandle | null;
+      lastDeltaMm: number;
+    } | null = null;
 
     function placeCamera(): void {
       const snap = rig.snapshot();
@@ -502,6 +575,81 @@ export function Viewport({ wsConnected, onPersistViewpointField, onSemanticComma
       useBimStore.getState().select(first?.object.userData.bimPickId as string | undefined);
     }
 
+    /** EDT-03 — raycast against the current selection's grip pickables. */
+    function gripPreRaycast(
+      cx: number,
+      cy: number,
+    ): {
+      hit: boolean;
+      descriptor?: Grip3dDescriptor;
+      mesh?: THREE.Object3D;
+    } {
+      const pickables = gripPickablesRef.current;
+      if (!pickables || pickables.length === 0) return { hit: false };
+      const rect = renderer.domElement.getBoundingClientRect();
+      ndc.x = ((cx - rect.left) / rect.width) * 2 - 1;
+      ndc.y = -(((cy - rect.top) / rect.height) * 2 - 1);
+      raycaster.setFromCamera(ndc, camera);
+      const hits = raycaster.intersectObjects(pickables, false);
+      const first = hits[0];
+      if (!first) return { hit: false };
+      const desc = first.object.userData.grip3dDescriptor as Grip3dDescriptor | undefined;
+      if (!desc) return { hit: false };
+      return { hit: true, descriptor: desc, mesh: first.object };
+    }
+
+    /**
+     * Project the cursor ray onto the grip's drag axis through the
+     * descriptor's anchor; return the world-space delta in millimetres
+     * along that axis. For free-axis grips ('xy' / 'xyz') we project
+     * onto the horizontal plane through the anchor and return the
+     * planar magnitude (signed by X movement direction).
+     */
+    function projectGripDelta(
+      descriptor: Grip3dDescriptor,
+      cx: number,
+      cy: number,
+      anchorScene: THREE.Vector3,
+    ): number {
+      const rect = renderer.domElement.getBoundingClientRect();
+      ndc.x = ((cx - rect.left) / rect.width) * 2 - 1;
+      ndc.y = -(((cy - rect.top) / rect.height) * 2 - 1);
+      raycaster.setFromCamera(ndc, camera);
+      const ray = raycaster.ray;
+      const axisDir = new THREE.Vector3();
+      switch (descriptor.axis) {
+        case 'x':
+          axisDir.set(1, 0, 0);
+          break;
+        case 'y':
+          axisDir.set(0, 0, 1); // semantic-Y → scene-Z
+          break;
+        case 'z':
+          axisDir.set(0, 1, 0); // semantic-Z (elev) → scene-Y
+          break;
+        default: {
+          // 'xy' / 'xyz' — project onto horizontal plane through anchor.
+          const planeY = anchorScene.y;
+          const t = (planeY - ray.origin.y) / (ray.direction.y || 1e-9);
+          const hit = ray.origin.clone().add(ray.direction.clone().multiplyScalar(t));
+          const dx = hit.x - anchorScene.x;
+          const dz = hit.z - anchorScene.z;
+          const planar = Math.hypot(dx, dz) * Math.sign(dx === 0 ? dz : dx);
+          return planar * 1000;
+        }
+      }
+      // Closest point on line { anchor + s * axisDir } to ray { origin + t * dir }.
+      const w = anchorScene.clone().sub(ray.origin);
+      const a = axisDir.dot(axisDir);
+      const b = axisDir.dot(ray.direction);
+      const c = ray.direction.dot(ray.direction);
+      const d = axisDir.dot(w);
+      const e = ray.direction.dot(w);
+      const denom = a * c - b * b;
+      const s = denom === 0 ? 0 : (b * e - c * d) / denom;
+      return s * 1000;
+    }
+
     function onResize() {
       const w = host.clientWidth || 1;
       const h = host.clientHeight || 1;
@@ -532,6 +680,32 @@ export function Viewport({ wsConnected, onPersistViewpointField, onSemanticComma
         host.requestPointerLock();
         return;
       }
+      // EDT-03 — grip pre-pass. If the pointer is over a grip pickable,
+      // start a grip drag instead of an orbit/pan.
+      if (ev.button === 0) {
+        const pre = gripPreRaycast(ev.clientX, ev.clientY);
+        if (pre.hit && pre.descriptor) {
+          const desc = pre.descriptor;
+          // Scene convention: semantic-Y → scene-Z; semantic-Z → scene-Y.
+          const anchorScene = new THREE.Vector3(
+            desc.position.xMm / 1000,
+            desc.position.zMm / 1000,
+            desc.position.yMm / 1000,
+          );
+          const indicator =
+            desc.axis === 'x' || desc.axis === 'y' || desc.axis === 'z'
+              ? buildAxisIndicator(scene, desc.position, desc.axis, 1500)
+              : null;
+          activeGrip = { descriptor: desc, anchorScene, indicator, lastDeltaMm: 0 };
+          dragging = 'grip';
+          dragMoved = false;
+          cumulativeDragPx = 0;
+          lastX = ev.clientX;
+          lastY = ev.clientY;
+          (ev.target as HTMLElement).setPointerCapture(ev.pointerId);
+          return;
+        }
+      }
       const intent = classifyPointer({
         button: ev.button,
         altKey: ev.altKey,
@@ -559,6 +733,17 @@ export function Viewport({ wsConnected, onPersistViewpointField, onSemanticComma
       } catch {
         /* noop */
       }
+      if (wasDragging === 'grip' && activeGrip) {
+        // EDT-03 — commit the grip drag through the engine bus.
+        const spec = activeGrip.descriptor.onCommit(activeGrip.lastDeltaMm);
+        if (spec) {
+          const dispatch = handleGripCommandRef.current;
+          if (dispatch) dispatch(spec);
+        }
+        activeGrip.indicator?.dispose();
+        activeGrip = null;
+        return;
+      }
       if (!dragMoved && wasDragging === 'orbit') pick(ev.clientX, ev.clientY);
     }
 
@@ -571,6 +756,20 @@ export function Viewport({ wsConnected, onPersistViewpointField, onSemanticComma
       cumulativeDragPx += Math.hypot(dx, dy);
       if (cumulativeDragPx > DRAG_THRESHOLD_PX) dragMoved = true;
       if (!dragMoved) return;
+      if (dragging === 'grip' && activeGrip) {
+        const deltaMm = projectGripDelta(
+          activeGrip.descriptor,
+          ev.clientX,
+          ev.clientY,
+          activeGrip.anchorScene,
+        );
+        activeGrip.lastDeltaMm = deltaMm;
+        // Emit live preview via onDrag so listeners (e.g. property HUD)
+        // can show the in-progress value without writing to the store.
+        activeGrip.descriptor.onDrag(deltaMm);
+        activeGrip.indicator?.update(deltaMm);
+        return;
+      }
       if (dragging === 'orbit') {
         rig.orbit(dx, dy);
         inertiaVx = dx;
@@ -666,6 +865,9 @@ export function Viewport({ wsConnected, onPersistViewpointField, onSemanticComma
     const onContextMenu = (ev: Event): void => {
       ev.preventDefault();
       // ANN-02: open the wall context menu when the right-click lands on a wall.
+      // EDT-03: also open the wall-face radial menu (Insert Door / Window /
+      // Opening) anchored to the same hit, with the world-space hit point so
+      // the radial menu can resolve `alongT`.
       const me = ev as MouseEvent;
       const rect = renderer.domElement.getBoundingClientRect();
       ndc.x = ((me.clientX - rect.left) / rect.width) * 2 - 1;
@@ -679,16 +881,31 @@ export function Viewport({ wsConnected, onPersistViewpointField, onSemanticComma
           : null;
       if (!id) {
         setWallContextMenu(null);
+        setWallFaceRadialMenu(null);
         return;
       }
       const el = elementsByIdRef.current[id];
       if (!el || el.kind !== 'wall') {
         setWallContextMenu(null);
+        setWallFaceRadialMenu(null);
         return;
       }
       setWallContextMenu({
         wall: el,
         position: { x: me.clientX, y: me.clientY },
+      });
+      // Convert raycast hit point from scene metres back to semantic mm.
+      const hitPointScene = first?.point ?? new THREE.Vector3(0, 0, 0);
+      setWallFaceRadialMenu({
+        wallId: el.id,
+        hitPoint: {
+          xMm: hitPointScene.x * 1000,
+          yMm: hitPointScene.z * 1000,
+          zMm: hitPointScene.y * 1000,
+        },
+        wallStartMm: el.start,
+        wallEndMm: el.end,
+        screen: { x: me.clientX + 240, y: me.clientY },
       });
     };
     renderer.domElement.addEventListener('contextmenu', onContextMenu);
@@ -1415,6 +1632,35 @@ export function Viewport({ wsConnected, onPersistViewpointField, onSemanticComma
     op.selectedObjects = sel ? [sel] : [];
   }, [selectedId]);
 
+  // EDT-03 — rebuild 3D grip meshes when the selection (or its element
+  // shape) changes. The pointer handlers raycast against
+  // `gripPickablesRef.current` first so grips take precedence over
+  // element picks.
+  useEffect(() => {
+    const scene = sceneRef.current;
+    if (!scene) return;
+    gripHandleRef.current?.dispose();
+    gripHandleRef.current = null;
+    gripPickablesRef.current = [];
+    if (!selectedId) return;
+    const el = elementsById[selectedId];
+    if (!el) return;
+    const grips = gripsFor(el as { kind?: string });
+    // Filter out elevation-only grips while in 3D orbit view.
+    const visible = grips.filter((g) => g.visibleIn !== 'elevation');
+    if (visible.length === 0) return;
+    const handle = buildGripMeshes(scene, visible);
+    gripHandleRef.current = handle;
+    gripPickablesRef.current = handle.pickables;
+    return () => {
+      handle.dispose();
+      if (gripHandleRef.current === handle) {
+        gripHandleRef.current = null;
+        gripPickablesRef.current = [];
+      }
+    };
+  }, [selectedId, elementsById]);
+
   // Sync the section-box controller's `active` flag with React state.
   useEffect(() => {
     sectionBoxRef.current?.setActive(sectionBoxActive);
@@ -1506,6 +1752,11 @@ export function Viewport({ wsConnected, onPersistViewpointField, onSemanticComma
           onClose={() => setWallContextMenu(null)}
         />
       )}
+      <WallFaceRadialMenu
+        open={wallFaceRadialMenu}
+        onSelect={handleWallFaceRadialCommand}
+        onDismiss={() => setWallFaceRadialMenu(null)}
+      />
       {activeViewpointId ? (
         <OrbitViewpointPersistedHud
           activeViewpointId={activeViewpointId}
