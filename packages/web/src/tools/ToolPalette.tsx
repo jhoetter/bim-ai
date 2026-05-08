@@ -16,6 +16,7 @@ import {
   type ToolId,
   type WorkspaceMode,
 } from './toolRegistry';
+import { ShortcutChip } from '../ui/ShortcutChip';
 
 /**
  * ToolPalette — spec §16.
@@ -102,7 +103,13 @@ export function ToolPalette({
               aria-disabled={enablement.disabled}
               tabIndex={isActive ? 0 : -1}
               disabled={enablement.disabled}
-              title={enablement.disabled ? enablement.reason : tool.tooltip}
+              title={
+                enablement.disabled
+                  ? enablement.reason
+                  : tool.shortcut
+                    ? `${tool.label} (${tool.shortcut})`
+                    : tool.label
+              }
               data-tool={tool.id}
               data-active={isActive ? 'true' : 'false'}
               onClick={() => {
@@ -119,12 +126,7 @@ export function ToolPalette({
               ].join(' ')}
             >
               <Icon size={16} aria-hidden="true" />
-              <span
-                aria-hidden="true"
-                className="pointer-events-none absolute bottom-0.5 right-0.5 text-[8px] font-medium opacity-60 tabular-nums"
-              >
-                {tool.hotkey.replace('Shift+', '⇧')}
-              </span>
+              <ShortcutChip label={tool.shortcut ?? tool.hotkey.replace('Shift+', '⇧')} />
             </button>
           </Fragment>
         );

@@ -29,7 +29,12 @@ import { patternFor } from '../state/uiStates';
 import { AppShell } from './AppShell';
 import { TopBar, type WorkspaceMode } from './TopBar';
 import { LeftRailCollapsed } from './LeftRail';
-import { getToolRegistry, type ToolDisabledContext, type ToolId } from '../tools/toolRegistry';
+import {
+  getToolRegistry,
+  type ToolDefinition,
+  type ToolDisabledContext,
+  type ToolId,
+} from '../tools/toolRegistry';
 import { TabBar } from './TabBar';
 import {
   EMPTY_TABS,
@@ -195,6 +200,8 @@ export function Workspace(): JSX.Element {
   const projectNameRef = useRef<HTMLButtonElement | null>(null);
   const planCameraHandleRef = useRef<PlanCameraHandle | null>(null);
   const budgetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingChordRef = useRef<string | null>(null);
+  const pendingChordTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [tabsState, setTabsState] = useState<TabsState>(() => readPersistedTabs() ?? EMPTY_TABS);
 
   /** Persist tabs on every change (T-06). */
@@ -592,18 +599,63 @@ export function Workspace(): JSX.Element {
       }
       // Ortho snap hold on Shift
       if (event.shiftKey) setOrthoSnapHold(true);
-      // Tool hotkeys — match the spec'd letters from TOOL_REGISTRY.
+      // Tool activation — hotkeys + two-char shortcut chords (400 ms window).
       const upper = event.key.length === 1 ? event.key.toUpperCase() : event.key;
       const hotkeyLabel = event.shiftKey ? `Shift+${upper}` : upper;
-      const tool = (Object.values(toolRegistry) as { id: ToolId; hotkey: string }[]).find(
-        (tool) => tool.hotkey === hotkeyLabel,
-      );
-      if (tool) {
-        const legacy = toolIdToLegacy(tool.id);
+      const tools = Object.values(toolRegistry) as ToolDefinition[];
+
+      // Complete a pending chord if one is in flight
+      if (pendingChordRef.current !== null && !event.shiftKey) {
+        const chord = pendingChordRef.current + upper;
+        clearTimeout(pendingChordTimerRef.current ?? undefined);
+        pendingChordRef.current = null;
+        pendingChordTimerRef.current = null;
+        const chordTool = tools.find((t) => t.shortcut === chord);
+        if (chordTool) {
+          const legacy = toolIdToLegacy(chordTool.id);
+          if (legacy) {
+            event.preventDefault();
+            setPlanTool(legacy);
+          }
+        }
+        return;
+      }
+
+      const hotkeyTool = tools.find((t) => t.hotkey === hotkeyLabel);
+      // Whether pressing this key could start a two-char shortcut chord
+      const isChordStart =
+        !event.shiftKey && tools.some((t) => t.shortcut?.length === 2 && t.shortcut[0] === upper);
+
+      if (hotkeyTool && isChordStart) {
+        // Key matches a hotkey AND starts a chord — defer 400 ms to see if chord completes
+        event.preventDefault();
+        pendingChordRef.current = upper;
+        pendingChordTimerRef.current = setTimeout(() => {
+          pendingChordRef.current = null;
+          pendingChordTimerRef.current = null;
+          const legacy = toolIdToLegacy(hotkeyTool.id);
+          if (legacy) setPlanTool(legacy);
+        }, 400);
+        return;
+      }
+
+      if (hotkeyTool) {
+        const legacy = toolIdToLegacy(hotkeyTool.id);
         if (legacy) {
           event.preventDefault();
           setPlanTool(legacy);
         }
+        return;
+      }
+
+      // No hotkey match — key may still be the start of a chord-only shortcut
+      if (isChordStart) {
+        event.preventDefault();
+        pendingChordRef.current = upper;
+        pendingChordTimerRef.current = setTimeout(() => {
+          pendingChordRef.current = null;
+          pendingChordTimerRef.current = null;
+        }, 400);
       }
     };
     const onKeyUp = (event: globalThis.KeyboardEvent): void => {
@@ -614,6 +666,11 @@ export function Workspace(): JSX.Element {
     return () => {
       document.removeEventListener('keydown', onKey);
       document.removeEventListener('keyup', onKeyUp);
+      if (pendingChordTimerRef.current !== null) {
+        clearTimeout(pendingChordTimerRef.current);
+        pendingChordRef.current = null;
+        pendingChordTimerRef.current = null;
+      }
     };
   }, [
     handleModeChange,

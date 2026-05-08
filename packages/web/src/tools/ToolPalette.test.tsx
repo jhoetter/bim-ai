@@ -2,7 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import { I18nextProvider } from 'react-i18next';
 import { ToolPalette } from './ToolPalette';
-import { paletteForMode } from './toolRegistry';
+import { getToolRegistry, paletteForMode } from './toolRegistry';
+import { ShortcutChip } from '../ui/ShortcutChip';
 import i18n from '../i18n';
 
 const tIdentity = (key: string) => key;
@@ -146,5 +147,74 @@ describe('<ToolPalette /> — spec §16', () => {
     fireEvent.click(getByLabelText('Tag (T)'));
     expect(onTag).toHaveBeenCalled();
     expect(onSelect).not.toHaveBeenCalled();
+  });
+});
+
+describe('ShortcutChip — EDT-V3-04', () => {
+  afterEach(() => cleanup());
+
+  it('renders with the provided label', () => {
+    const { container } = render(<ShortcutChip label="WI" />);
+    expect(container.textContent).toBe('WI');
+  });
+
+  it('is aria-hidden so screen readers skip it', () => {
+    const { container } = render(<ShortcutChip label="W" />);
+    const span = container.querySelector('span');
+    expect(span?.getAttribute('aria-hidden')).toBe('true');
+  });
+});
+
+describe('Tool shortcut field — EDT-V3-04', () => {
+  const registry = getToolRegistry(tIdentity as never);
+
+  it('wall has shortcut W', () => {
+    expect(registry.wall.shortcut).toBe('W');
+  });
+
+  it('door has shortcut D', () => {
+    expect(registry.door.shortcut).toBe('D');
+  });
+
+  it('window has shortcut WI', () => {
+    expect(registry.window.shortcut).toBe('WI');
+  });
+
+  it('dimension has shortcut DI', () => {
+    expect(registry.dimension.shortcut).toBe('DI');
+  });
+
+  it('column has shortcut C', () => {
+    expect(registry.column.shortcut).toBe('C');
+  });
+});
+
+describe('ToolPalette tooltip format — EDT-V3-04', () => {
+  afterEach(() => cleanup());
+
+  it('Wall button title reads "Wall (W)"', () => {
+    const { getByLabelText } = renderWithI18n(
+      <ToolPalette
+        mode="plan"
+        activeTool="select"
+        onToolSelect={() => undefined}
+        disabledContext={ENABLED_CTX}
+      />,
+    );
+    const wall = getByLabelText('Wall (W)') as HTMLButtonElement;
+    expect(wall.title).toBe('Wall (W)');
+  });
+
+  it('Window button title reads "Window (WI)"', () => {
+    const { getByLabelText } = renderWithI18n(
+      <ToolPalette
+        mode="plan"
+        activeTool="select"
+        onToolSelect={() => undefined}
+        disabledContext={ENABLED_CTX}
+      />,
+    );
+    const win = getByLabelText('Window (Shift+W)') as HTMLButtonElement;
+    expect(win.title).toBe('Window (WI)');
   });
 });
