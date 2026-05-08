@@ -440,11 +440,14 @@ export function buildOneFamilyHomeCommands() {
         { xMm: 0, yMm: 0, zMm: 3800 },
         { xMm: 0, yMm: 0, zMm: 3000 },
       ],
+      // Profile 350×600 mm: chunky enough to read as a substantial
+      // architectural frame element (matching the line sketch's visual
+      // weight) without overwhelming the wood interior.
       profileMm: [
-        { uMm: -175, vMm: -250 },
-        { uMm: 175, vMm: -250 },
-        { uMm: 175, vMm: 250 },
-        { uMm: -175, vMm: 250 },
+        { uMm: -175, vMm: -300 },
+        { uMm: 175, vMm: -300 },
+        { uMm: 175, vMm: 300 },
+        { uMm: -175, vMm: 300 },
       ],
       profilePlane: 'work_plane',
       materialKey: 'white_render',
