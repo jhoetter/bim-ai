@@ -1,0 +1,36 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "78ead08c6cc0",
+  "strategy": "manual-commit",
+  "branch": "feat/v3-krn-v3-03-multi-roof",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "app/bim_ai/commands.py",
+    "app/bim_ai/elements.py",
+    "app/bim_ai/engine.py",
+    "app/bim_ai/hub.py",
+    "app/bim_ai/main.py",
+    "app/bim_ai/roof_geometry.py",
+    "app/bim_ai/routes_api.py",
+    "app/tests/test_edge_profile_run.py",
+    "app/tests/test_roof_join.py",
+    "app/tests/test_soffit.py",
+    "packages/core/src/index.ts",
+    "packages/web/src/workspace/useWorkspaceSnapshot.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/78/ead08c6cc0/0/metadata.json",
+      "transcript": "/78/ead08c6cc0/0/full.jsonl",
+      "content_hash": "/78/ead08c6cc0/0/content_hash.txt",
+      "prompt": "/78/ead08c6cc0/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 44,
+    "cache_creation_tokens": 63236,
+    "cache_read_tokens": 1962522,
+    "output_tokens": 17749,
+    "api_call_count": 42
+  }
+}
