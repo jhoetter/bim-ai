@@ -433,3 +433,78 @@ register(
         agentSafetyNotes="Safe to call freely; read-only snapshot.",
     )
 )
+
+# ---------------------------------------------------------------------------
+# DSC-V3-01 — set-element-discipline
+# ---------------------------------------------------------------------------
+
+register(
+    ToolDescriptor(
+        name="set-element-discipline",
+        category="mutation",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "SetElementDisciplineInput",
+            "type": "object",
+            "required": ["elementIds", "discipline"],
+            "properties": {
+                "elementIds": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "minItems": 1,
+                    "description": "IDs of elements whose discipline tag should be set.",
+                },
+                "discipline": {
+                    "type": ["string", "null"],
+                    "enum": ["arch", "struct", "mep", "site", "gen", None],
+                    "description": (
+                        "Discipline tag to assign. null resets the element to its "
+                        "DEFAULT_DISCIPLINE_BY_KIND value."
+                    ),
+                },
+            },
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "BundleResult",
+            "type": "object",
+            "required": ["schemaVersion", "applied", "violations"],
+            "properties": {
+                "schemaVersion": {"type": "string"},
+                "applied": {"type": "boolean"},
+                "newRevision": {"type": "integer"},
+                "violations": {"type": "array", "items": {"type": "object"}},
+            },
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Discipline tag updated on all specified elements"),
+            "not_found": ExitCode(code=1, meaning="One or more elementIds not found in model"),
+            "unsupported_kind": ExitCode(
+                code=2,
+                meaning="Element kind does not support the discipline field",
+            ),
+            "invalid_discipline": ExitCode(
+                code=3, meaning="discipline value is not a recognised tag"
+            ),
+            "error": ExitCode(code=1, meaning="Unexpected error"),
+        },
+        cliExample=(
+            "# Set a wall to structural discipline\n"
+            'bim-ai apply-bundle \'{"commands":[{"type":"setElementDiscipline",'
+            '"elementIds":["wall-id"],"discipline":"struct"}],...}\'\n'
+            "# Reset to kind default\n"
+            'bim-ai apply-bundle \'{"commands":[{"type":"setElementDiscipline",'
+            '"elementIds":["col-id"],"discipline":null}],...}\''
+        ),
+        restEndpoint=RestEndpoint(method="POST", path="/api/models/{model_id}/bundles"),
+        sideEffects="mutates-kernel",
+        agentSafetyNotes=(
+            "Wrap in a CommandBundle via apply-bundle (POST /api/models/{model_id}/bundles). "
+            "discipline=null resets the element to DEFAULT_DISCIPLINE_BY_KIND for its kind. "
+            "Structural kinds (column, beam, brace, foundation) default to 'struct'; "
+            "MEP kinds (duct, pipe, fixture) default to 'mep'; all others default to 'arch'. "
+            "Command is undoable via bundle replay at an earlier parentRevision."
+        ),
+    )
+)

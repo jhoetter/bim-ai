@@ -46,6 +46,33 @@ class EvidenceRef(BaseModel):
     png_basename: str | None = Field(default=None, alias="pngBasename")
 
 
+DisciplineTag = Literal["arch", "struct", "mep"]
+
+DEFAULT_DISCIPLINE_BY_KIND: dict[str, DisciplineTag] = {
+    "wall": "arch",
+    "door": "arch",
+    "window": "arch",
+    "wall_opening": "arch",
+    "floor": "arch",
+    "roof": "arch",
+    "stair": "arch",
+    "railing": "arch",
+    "ceiling": "arch",
+    "mass": "arch",
+    "balcony": "arch",
+    "sweep": "arch",
+    "dormer": "arch",
+    "soffit": "arch",
+    "toposolid": "arch",
+    "column": "struct",
+    "beam": "struct",
+    "brace": "struct",
+    "foundation": "struct",
+    "duct": "mep",
+    "pipe": "mep",
+    "fixture": "mep",
+}
+
 WallLayerFunction = Literal["structure", "insulation", "finish"]
 WallBasisLine = Literal["center", "face_interior", "face_exterior"]
 PlanDetailLevelPlan = Literal["coarse", "medium", "fine"]
@@ -278,6 +305,7 @@ class WallElem(BaseModel):
     agent_trace: AgentTrace | None = Field(default=None, alias="agentTrace")
     option_set_id: str | None = Field(default=None, alias="optionSetId")
     option_id: str | None = Field(default=None, alias="optionId")
+    discipline: DisciplineTag | None = Field(default=None)
 
     @model_validator(mode="after")
     def _validate_lean_taper(self) -> WallElem:
@@ -332,6 +360,7 @@ class DoorElem(BaseModel):
     agent_trace: AgentTrace | None = Field(default=None, alias="agentTrace")
     option_set_id: str | None = Field(default=None, alias="optionSetId")
     option_id: str | None = Field(default=None, alias="optionId")
+    discipline: DisciplineTag | None = Field(default=None)
 
 
 WindowOutlineKind = Literal[
@@ -372,6 +401,7 @@ class WindowElem(BaseModel):
     agent_trace: AgentTrace | None = Field(default=None, alias="agentTrace")
     option_set_id: str | None = Field(default=None, alias="optionSetId")
     option_id: str | None = Field(default=None, alias="optionId")
+    discipline: DisciplineTag | None = Field(default=None)
 
 
 class WallOpeningElem(BaseModel):
@@ -387,6 +417,7 @@ class WallOpeningElem(BaseModel):
     sill_height_mm: float = Field(alias="sillHeightMm", ge=0)
     head_height_mm: float = Field(alias="headHeightMm", ge=0)
     pinned: bool = Field(default=False)
+    discipline: DisciplineTag | None = Field(default=None)
 
     @model_validator(mode="after")
     def _check_bounds(self) -> WallOpeningElem:
@@ -607,6 +638,7 @@ class FloorElem(BaseModel):
     agent_trace: AgentTrace | None = Field(default=None, alias="agentTrace")
     option_set_id: str | None = Field(default=None, alias="optionSetId")
     option_id: str | None = Field(default=None, alias="optionId")
+    discipline: DisciplineTag | None = Field(default=None)
 
 
 class RoofElem(BaseModel):
@@ -638,6 +670,7 @@ class RoofElem(BaseModel):
     agent_trace: AgentTrace | None = Field(default=None, alias="agentTrace")
     option_set_id: str | None = Field(default=None, alias="optionSetId")
     option_id: str | None = Field(default=None, alias="optionId")
+    discipline: DisciplineTag | None = Field(default=None)
 
 
 StairShape = Literal["straight", "l_shape", "u_shape", "spiral", "sketch"]
@@ -711,9 +744,7 @@ class StairElem(BaseModel):
         default="standard", alias="subKind"
     )
     monolithic_material: str | None = Field(default=None, alias="monolithicMaterial")
-    floating_tread_depth_mm: float | None = Field(
-        default=None, alias="floatingTreadDepthMm", gt=0
-    )
+    floating_tread_depth_mm: float | None = Field(default=None, alias="floatingTreadDepthMm", gt=0)
     floating_host_wall_id: str | None = Field(default=None, alias="floatingHostWallId")
     pinned: bool = Field(default=False)
     phase_created: str | None = Field(default=None, alias="phaseCreated")
@@ -721,6 +752,7 @@ class StairElem(BaseModel):
     agent_trace: AgentTrace | None = Field(default=None, alias="agentTrace")
     option_set_id: str | None = Field(default=None, alias="optionSetId")
     option_id: str | None = Field(default=None, alias="optionId")
+    discipline: DisciplineTag | None = Field(default=None)
 
     @model_validator(mode="after")
     def _validate_shape_specific_fields(self) -> StairElem:
@@ -823,13 +855,12 @@ class RailingElem(BaseModel):
     path_mm: list[Vec2Mm] = Field(alias="pathMm")
     guard_height_mm: float = Field(alias="guardHeightMm", default=1040)
     baluster_pattern: BalusterPattern | None = Field(default=None, alias="balusterPattern")
-    handrail_supports: list[HandrailSupport] | None = Field(
-        default=None, alias="handrailSupports"
-    )
+    handrail_supports: list[HandrailSupport] | None = Field(default=None, alias="handrailSupports")
     pinned: bool = Field(default=False)
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
     agent_trace: AgentTrace | None = Field(default=None, alias="agentTrace")
+    discipline: DisciplineTag | None = Field(default=None)
 
 
 class SweepPathPoint(BaseModel):
@@ -867,6 +898,7 @@ class SweepElem(BaseModel):
     pinned: bool = Field(default=False)
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
+    discipline: DisciplineTag | None = Field(default=None)
 
 
 DormerRoofKind = Literal["flat", "shed", "gable", "hipped"]
@@ -910,6 +942,7 @@ class DormerElem(BaseModel):
 
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
+    discipline: DisciplineTag | None = Field(default=None)
 
 
 class WallEdgeFixed(BaseModel):
@@ -943,9 +976,7 @@ class RoofJoinElem(BaseModel):
     name: str = "Roof Join"
     primary_roof_id: str = Field(alias="primaryRoofId")
     secondary_roof_id: str = Field(alias="secondaryRoofId")
-    seam_mode: Literal["clip_secondary_into_primary", "merge_at_ridge"] = Field(
-        alias="seamMode"
-    )
+    seam_mode: Literal["clip_secondary_into_primary", "merge_at_ridge"] = Field(alias="seamMode")
     pinned: bool = Field(default=False)
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
@@ -992,6 +1023,7 @@ class SoffitElem(BaseModel):
     pinned: bool = Field(default=False)
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
+    discipline: DisciplineTag | None = Field(default=None)
 
     @model_validator(mode="after")
     def _validate_boundary(self) -> SoffitElem:
@@ -1015,6 +1047,7 @@ class BalconyElem(BaseModel):
     pinned: bool = Field(default=False)
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
+    discipline: DisciplineTag | None = Field(default=None)
 
 
 Text3dFontFamily = Literal["helvetiker", "optimer", "gentilis"]
@@ -1103,9 +1136,7 @@ class SunSettingsElem(BaseModel):
         default_factory=lambda: SunSettingsTimeOfDay(hours=14, minutes=30),
         alias="timeOfDay",
     )
-    animation_range: SunSettingsAnimationRange | None = Field(
-        default=None, alias="animationRange"
-    )
+    animation_range: SunSettingsAnimationRange | None = Field(default=None, alias="animationRange")
     daylight_saving_strategy: Literal["auto", "on", "off"] = Field(
         default="auto", alias="daylightSavingStrategy"
     )
@@ -1128,9 +1159,9 @@ class LinkModelElem(BaseModel):
     source_model_revision: int | None = Field(default=None, alias="sourceModelRevision")
     position_mm: Vec3Mm = Field(alias="positionMm")
     rotation_deg: float = Field(default=0.0, alias="rotationDeg")
-    origin_alignment_mode: Literal[
-        "origin_to_origin", "project_origin", "shared_coords"
-    ] = Field(default="origin_to_origin", alias="originAlignmentMode")
+    origin_alignment_mode: Literal["origin_to_origin", "project_origin", "shared_coords"] = Field(
+        default="origin_to_origin", alias="originAlignmentMode"
+    )
     visibility_mode: Literal["host_view", "linked_view"] = Field(
         default="host_view", alias="visibilityMode"
     )
@@ -1215,9 +1246,7 @@ class FamilyTypeElem(BaseModel):
     id: str
     discipline: Literal["door", "window", "generic"] = "generic"
     parameters: dict[str, Any] = Field(default_factory=dict)
-    catalog_source: FamilyCatalogSource | None = Field(
-        default=None, alias="catalogSource"
-    )
+    catalog_source: FamilyCatalogSource | None = Field(default=None, alias="catalogSource")
 
 
 class RoomSeparationElem(BaseModel):
@@ -1789,9 +1818,7 @@ class ViewElem(BaseModel):
     )
     breaks: list[ViewBreakSpec] = Field(default_factory=list)
     scale: float = Field(default=100.0, gt=0)
-    detail_level: Literal["coarse", "medium", "fine"] = Field(
-        default="medium", alias="detailLevel"
-    )
+    detail_level: Literal["coarse", "medium", "fine"] = Field(default="medium", alias="detailLevel")
 
 
 ElementKind = Literal[
@@ -1889,6 +1916,7 @@ class ColumnElem(BaseModel):
     pinned: bool = Field(default=False)
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
+    discipline: DisciplineTag | None = Field(default=None)
 
 
 class BeamElem(BaseModel):
@@ -1915,6 +1943,7 @@ class BeamElem(BaseModel):
     pinned: bool = Field(default=False)
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
+    discipline: DisciplineTag | None = Field(default=None)
 
 
 class CeilingElem(BaseModel):
@@ -1937,6 +1966,7 @@ class CeilingElem(BaseModel):
     pinned: bool = Field(default=False)
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
+    discipline: DisciplineTag | None = Field(default=None)
 
 
 ConstraintRule = Literal[
@@ -2011,6 +2041,7 @@ class MassElem(BaseModel):
     pinned: bool = Field(default=False)
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
+    discipline: DisciplineTag | None = Field(default=None)
 
 
 class VoidCutElem(BaseModel):
@@ -2085,6 +2116,42 @@ class WindowLegendViewElem(BaseModel):
     parent_sheet_id: str | None = Field(default=None, alias="parentSheetId")
 
 
+class HeightSample(BaseModel):
+    """TOP-V3-01 — single (x, y, z) terrain sample point."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    x_mm: float = Field(alias="xMm")
+    y_mm: float = Field(alias="yMm")
+    z_mm: float = Field(alias="zMm")
+
+
+class HeightmapGrid(BaseModel):
+    """TOP-V3-01 — regular-grid heightmap representation."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    step_mm: float = Field(alias="stepMm")
+    rows: int
+    cols: int
+    values: list[float]
+
+
+class ToposolidElem(BaseModel):
+    """TOP-V3-01 terrain solid primitive."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    kind: Literal["toposolid"] = "toposolid"
+    id: str
+    name: str | None = None
+    boundary_mm: list[Vec2Mm] = Field(alias="boundaryMm")
+    height_samples: list[HeightSample] = Field(default_factory=list, alias="heightSamples")
+    heightmap_grid_mm: HeightmapGrid | None = Field(default=None, alias="heightmapGridMm")
+    thickness_mm: float = Field(default=1500.0, alias="thicknessMm")
+    base_elevation_mm: float | None = Field(default=None, alias="baseElevationMm")
+    default_material_key: str | None = Field(default=None, alias="defaultMaterialKey")
+    pinned: bool = False
+    discipline: DisciplineTag | None = Field(default=None)
+
+
 Element = Annotated[
     ProjectSettingsElem
     | RoomColorSchemeElem
@@ -2157,6 +2224,7 @@ Element = Annotated[
     | SoffitElem
     | TitleblockTypeElem
     | WindowLegendViewElem
-    | ViewElem,
+    | ViewElem
+    | ToposolidElem,
     Field(discriminator="kind"),
 ]

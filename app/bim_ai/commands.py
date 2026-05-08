@@ -11,6 +11,7 @@ from bim_ai.elements import (
     ConstraintRefRow,
     ConstraintRule,
     CurtainPanelOverride,
+    DisciplineTag,
     DormerPositionOnRoof,
     DormerRoofKind,
     DxfLineworkPrim,
@@ -551,9 +552,7 @@ class CreateStairCmd(BaseModel):
     riser_mm: float = Field(alias="riserMm", default=175)
     tread_mm: float = Field(alias="treadMm", default=275)
     # KRN-07 — multi-run support. Defaults preserve legacy single-run behavior.
-    shape: Literal["straight", "l_shape", "u_shape", "spiral", "sketch"] = Field(
-        default="straight"
-    )
+    shape: Literal["straight", "l_shape", "u_shape", "spiral", "sketch"] = Field(default="straight")
     runs: list[StairRun] = Field(default_factory=list)
     landings: list[StairLanding] = Field(default_factory=list)
     # KRN-07 closeout — spiral + sketch shape inputs.
@@ -575,9 +574,7 @@ class CreateStairCmd(BaseModel):
         default="standard", alias="subKind"
     )
     monolithic_material: str | None = Field(default=None, alias="monolithicMaterial")
-    floating_tread_depth_mm: float | None = Field(
-        default=None, alias="floatingTreadDepthMm"
-    )
+    floating_tread_depth_mm: float | None = Field(default=None, alias="floatingTreadDepthMm")
     floating_host_wall_id: str | None = Field(default=None, alias="floatingHostWallId")
 
     @model_validator(mode="after")
@@ -624,9 +621,7 @@ class SetStairSubKindCmd(BaseModel):
     stair_id: str = Field(alias="stairId")
     sub_kind: Literal["standard", "monolithic", "floating"] = Field(alias="subKind")
     monolithic_material: str | None = Field(default=None, alias="monolithicMaterial")
-    floating_tread_depth_mm: float | None = Field(
-        default=None, alias="floatingTreadDepthMm"
-    )
+    floating_tread_depth_mm: float | None = Field(default=None, alias="floatingTreadDepthMm")
     floating_host_wall_id: str | None = Field(default=None, alias="floatingHostWallId")
 
 
@@ -695,9 +690,7 @@ class CreateRailingCmd(BaseModel):
     hosted_stair_id: str | None = Field(default=None, alias="hostedStairId")
     path_mm: list[Vec2Mm] = Field(alias="pathMm")
     baluster_pattern: BalusterPattern | None = Field(default=None, alias="balusterPattern")
-    handrail_supports: list[HandrailSupport] | None = Field(
-        default=None, alias="handrailSupports"
-    )
+    handrail_supports: list[HandrailSupport] | None = Field(default=None, alias="handrailSupports")
 
 
 class SetRailingBalusterPatternCmd(BaseModel):
@@ -711,9 +704,7 @@ class SetRailingHandrailSupportsCmd(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     type: Literal["setRailingHandrailSupports"] = "setRailingHandrailSupports"
     railing_id: str = Field(alias="railingId")
-    handrail_supports: list[HandrailSupport] = Field(
-        default_factory=list, alias="handrailSupports"
-    )
+    handrail_supports: list[HandrailSupport] = Field(default_factory=list, alias="handrailSupports")
 
 
 class FamilyCatalogSourceCmd(BaseModel):
@@ -731,9 +722,7 @@ class UpsertFamilyTypeCmd(BaseModel):
     id: str | None = None
     discipline: Literal["door", "window", "generic"] = "generic"
     parameters: dict[str, Any] = Field(default_factory=dict)
-    catalog_source: FamilyCatalogSourceCmd | None = Field(
-        default=None, alias="catalogSource"
-    )
+    catalog_source: FamilyCatalogSourceCmd | None = Field(default=None, alias="catalogSource")
 
 
 class AssignOpeningFamilyCmd(BaseModel):
@@ -772,6 +761,7 @@ class CreatePlanRegionCmd(BaseModel):
     level_id: str = Field(alias="levelId")
     outline_mm: list[Vec2Mm] = Field(alias="outlineMm")
     cut_plane_offset_mm: float = Field(alias="cutPlaneOffsetMm", default=-500)
+
 
 class UpdatePlanRegionCmd(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
@@ -1210,9 +1200,9 @@ class CreateLinkModelCmd(BaseModel):
     source_model_revision: int | None = Field(default=None, alias="sourceModelRevision")
     position_mm: Vec3Mm = Field(alias="positionMm")
     rotation_deg: float = Field(default=0.0, alias="rotationDeg")
-    origin_alignment_mode: Literal[
-        "origin_to_origin", "project_origin", "shared_coords"
-    ] = Field(default="origin_to_origin", alias="originAlignmentMode")
+    origin_alignment_mode: Literal["origin_to_origin", "project_origin", "shared_coords"] = Field(
+        default="origin_to_origin", alias="originAlignmentMode"
+    )
     visibility_mode: Literal["host_view", "linked_view"] = Field(
         default="host_view", alias="visibilityMode"
     )
@@ -1232,9 +1222,9 @@ class UpdateLinkModelCmd(BaseModel):
     hidden: bool | None = None
     pinned: bool | None = None
     source_model_revision: int | None = Field(default=None, alias="sourceModelRevision")
-    origin_alignment_mode: Literal[
-        "origin_to_origin", "project_origin", "shared_coords"
-    ] | None = Field(default=None, alias="originAlignmentMode")
+    origin_alignment_mode: Literal["origin_to_origin", "project_origin", "shared_coords"] | None = (
+        Field(default=None, alias="originAlignmentMode")
+    )
     visibility_mode: Literal["host_view", "linked_view"] | None = Field(
         default=None, alias="visibilityMode"
     )
@@ -1787,6 +1777,19 @@ class SetElementPhaseCmd(BaseModel):
     clear_demolished: bool = Field(default=False, alias="clearDemolished")
 
 
+class SetElementDisciplineCmd(BaseModel):
+    """DSC-V3-01 — set discipline tag on one or more elements; undo + activity.
+
+    Pass discipline=None (or null in JSON) to reset the element to its kind's
+    DEFAULT_DISCIPLINE_BY_KIND value.
+    """
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["setElementDiscipline"] = "setElementDiscipline"
+    element_ids: list[str] = Field(alias="elementIds")
+    discipline: Literal["arch", "struct", "mep"] | None = "arch"
+
+
 class SetViewPhaseCmd(BaseModel):
     """KRN-V3-01 — set the as-of phase for a plan view."""
 
@@ -1812,7 +1815,6 @@ class MoveElementCmd(BaseModel):
     type: Literal["moveElement"] = "moveElement"
     element_id: str = Field(alias="elementId")
     t_along_host: float = Field(alias="tAlongHost", ge=0.0, le=1.0)
-
 
 
 class CreateOptionSetCmd(BaseModel):
@@ -2147,6 +2149,7 @@ Command = Annotated[
     | ReorderPhaseCmd
     | DeletePhaseCmd
     | SetElementPhaseCmd
+    | SetElementDisciplineCmd
     | SetViewPhaseCmd
     | SetViewPhaseFilterCmd
     | CreateSunSettingsCmd

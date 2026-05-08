@@ -68,10 +68,45 @@ export type ElemKind =
   | 'constraint'
   | 'mass'
   | 'phase'
+  | 'soffit'
   | 'sun_settings'
+  | 'toposolid'
+  | 'brace'
+  | 'foundation'
+  | 'duct'
+  | 'pipe'
+  | 'fixture'
   | 'view';
 
 export type PhaseFilter = 'all' | 'existing' | 'demolition' | 'new';
+
+/** DSC-V3-01: per-element discipline tag. */
+export type DisciplineTag = 'arch' | 'struct' | 'mep';
+
+export const DEFAULT_DISCIPLINE_BY_KIND: Readonly<Partial<Record<ElemKind, DisciplineTag>>> = {
+  wall: 'arch',
+  door: 'arch',
+  window: 'arch',
+  wall_opening: 'arch',
+  floor: 'arch',
+  roof: 'arch',
+  stair: 'arch',
+  railing: 'arch',
+  ceiling: 'arch',
+  mass: 'arch',
+  balcony: 'arch',
+  sweep: 'arch',
+  dormer: 'arch',
+  soffit: 'arch',
+  toposolid: 'arch',
+  column: 'struct',
+  beam: 'struct',
+  brace: 'struct',
+  foundation: 'struct',
+  duct: 'mep',
+  pipe: 'mep',
+  fixture: 'mep',
+} as const;
 
 export type Text3dFontFamily = 'helvetiker' | 'optimer' | 'gentilis';
 
@@ -92,6 +127,28 @@ export type ViewBreak = {
   axisMM: number;
   widthMM: number;
 };
+
+/** TOP-V3-01 — terrain solid (toposolid) primitive.
+ * NOTE: Toposolid type added here as placeholder; TOP-V3-01 full impl will be added when that WP merges.
+ */
+export type BoundaryPoint = { xMm: number; yMm: number };
+export type HeightSample = { xMm: number; yMm: number; zMm: number };
+export type HeightmapGrid = { stepMm: number; rows: number; cols: number; values: number[] };
+export type Toposolid = {
+  kind: 'toposolid';
+  id: string;
+  name?: string;
+  boundaryMm: BoundaryPoint[];
+  heightSamples?: HeightSample[];
+  heightmapGridMm?: HeightmapGrid;
+  thicknessMm: number;
+  baseElevationMm?: number;
+  defaultMaterialKey?: string;
+  pinned?: boolean;
+  /** DSC-V3-01: discipline tag. */
+  discipline?: DisciplineTag | null;
+};
+
 
 /** VIE-V3-02 — Unified view element for drafting views, callouts, and 2D detailing. */
 export type View = {
@@ -604,6 +661,8 @@ export type Element =
       /** KRN-V3-04: design option membership. */
       optionSetId?: string | null;
       optionId?: string | null;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: DisciplineTag | null;
     }
   | {
       kind: 'door';
@@ -631,6 +690,8 @@ export type Element =
       /** KRN-V3-04: design option membership. */
       optionSetId?: string | null;
       optionId?: string | null;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: DisciplineTag | null;
     }
   | {
       kind: 'window';
@@ -662,6 +723,8 @@ export type Element =
       /** KRN-V3-04: design option membership. */
       optionSetId?: string | null;
       optionId?: string | null;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: DisciplineTag | null;
     }
   | {
       kind: 'wall_opening';
@@ -672,6 +735,8 @@ export type Element =
       alongTEnd: number;
       sillHeightMm: number;
       headHeightMm: number;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: DisciplineTag | null;
     }
   | {
       kind: 'room';
@@ -774,6 +839,8 @@ export type Element =
       /** KRN-V3-04: design option membership. */
       optionSetId?: string | null;
       optionId?: string | null;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: DisciplineTag | null;
     }
   | {
       kind: 'roof';
@@ -809,6 +876,8 @@ export type Element =
       /** KRN-V3-04: design option membership. */
       optionSetId?: string | null;
       optionId?: string | null;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: DisciplineTag | null;
     }
   | {
       kind: 'stair';
@@ -864,6 +933,8 @@ export type Element =
       /** KRN-V3-04: design option membership. */
       optionSetId?: string | null;
       optionId?: string | null;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: DisciplineTag | null;
     }
   | {
       kind: 'slab_opening';
@@ -900,6 +971,8 @@ export type Element =
       phaseDemolished?: string | null;
       /** CMD-V3-02: provenance trace linking this element to its originating bundle. */
       agentTrace?: AgentTrace;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: DisciplineTag | null;
     }
   | {
       kind: 'family_type';
@@ -924,6 +997,8 @@ export type Element =
       pinned?: boolean;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: DisciplineTag | null;
     }
   | {
       kind: 'room_separation';
@@ -1165,6 +1240,8 @@ export type Element =
       ifcClassificationCode?: string | null;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: DisciplineTag | null;
     }
   | {
       kind: 'beam';
@@ -1182,6 +1259,8 @@ export type Element =
       ifcClassificationCode?: string | null;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: DisciplineTag | null;
     }
   | {
       kind: 'ceiling';
@@ -1194,6 +1273,8 @@ export type Element =
       ceilingTypeId?: string | null;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: DisciplineTag | null;
     }
   | {
       kind: 'color_fill_legend';
@@ -1377,6 +1458,8 @@ export type Element =
       pinned?: boolean;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: DisciplineTag | null;
     }
   | {
       /**
@@ -1404,6 +1487,8 @@ export type Element =
       pinned?: boolean;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: DisciplineTag | null;
     }
   | {
       /**
@@ -1473,6 +1558,8 @@ export type Element =
       pinned?: boolean;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: DisciplineTag | null;
     }
   | {
       /** KRN-V3-01 — project-level phasing primitive. Default chain: Existing → Demolition → New. */
@@ -1541,6 +1628,8 @@ export type Element =
       pinned?: boolean;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: DisciplineTag | null;
     }
   | {
       /** SUN-V3-01 — project-level sun & shadow study singleton. */

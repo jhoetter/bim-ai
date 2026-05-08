@@ -20,6 +20,7 @@ import {
   InspectorViewTemplateEditor,
   InspectorWindowEditor,
 } from './InspectorContent';
+import type { DisciplineTag } from '@bim-ai/core';
 import { AuthoringWorkbenchesPanel } from './AuthoringWorkbenchesPanel';
 import { Viewport3DLayersPanel } from './Viewport3DLayersPanel';
 import type { WorkspaceMode } from './TopBar';
@@ -58,6 +59,15 @@ export function WorkspaceRightRail({
 
   const el = selectedId ? (elementsById[selectedId] as Element | undefined) : undefined;
   const show3dLayers = mode === '3d' || mode === 'plan-3d';
+
+  function handleDisciplineChange(discipline: DisciplineTag | null): void {
+    if (!el) return;
+    void onSemanticCommand({
+      type: 'setElementDiscipline',
+      elementIds: [el.id],
+      discipline,
+    });
+  }
 
   const inspectorSelection = useMemo<InspectorSelection | null>(() => {
     if (!selectedId) return null;
@@ -171,6 +181,7 @@ export function WorkspaceRightRail({
                       parameters: params,
                     })
                   }
+                  onDisciplineChange={handleDisciplineChange}
                 />
               ) : el.kind === 'window' ? (
                 <InspectorWindowEditor
@@ -192,6 +203,7 @@ export function WorkspaceRightRail({
                       parameters: params,
                     })
                   }
+                  onDisciplineChange={handleDisciplineChange}
                 />
               ) : (
                 InspectorPropertiesFor(el, t, {
@@ -203,6 +215,7 @@ export function WorkspaceRightRail({
                       key: property,
                       value,
                     }),
+                  onDisciplineChange: handleDisciplineChange,
                 })
               )
             ) : (
