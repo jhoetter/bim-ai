@@ -73,6 +73,29 @@ export type ElemKind =
 
 export type PhaseFilter = 'all' | 'existing' | 'demolition' | 'new';
 
+// DSC-V3-01 — discipline tag
+export type DisciplineTag = 'arch' | 'struct' | 'mep';
+
+export const DEFAULT_DISCIPLINE_BY_KIND: Readonly<Partial<Record<ElemKind, DisciplineTag>>> = {
+  wall: 'arch',
+  door: 'arch',
+  window: 'arch',
+  wall_opening: 'arch',
+  floor: 'arch',
+  roof: 'arch',
+  stair: 'arch',
+  railing: 'arch',
+  ceiling: 'arch',
+  mass: 'arch',
+  balcony: 'arch',
+  sweep: 'arch',
+  dormer: 'arch',
+  soffit: 'arch',
+  toposolid: 'arch',
+  column: 'struct',
+  beam: 'struct',
+} as const;
+
 export type Text3dFontFamily = 'helvetiker' | 'optimer' | 'gentilis';
 
 export type XY = { xMm: number; yMm: number };
@@ -604,6 +627,8 @@ export type Element =
       /** KRN-V3-04: design option membership. */
       optionSetId?: string | null;
       optionId?: string | null;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: 'arch' | 'struct' | 'mep' | null;
     }
   | {
       kind: 'door';
@@ -631,6 +656,8 @@ export type Element =
       /** KRN-V3-04: design option membership. */
       optionSetId?: string | null;
       optionId?: string | null;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: 'arch' | 'struct' | 'mep' | null;
     }
   | {
       kind: 'window';
@@ -662,6 +689,8 @@ export type Element =
       /** KRN-V3-04: design option membership. */
       optionSetId?: string | null;
       optionId?: string | null;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: 'arch' | 'struct' | 'mep' | null;
     }
   | {
       kind: 'wall_opening';
@@ -672,6 +701,8 @@ export type Element =
       alongTEnd: number;
       sillHeightMm: number;
       headHeightMm: number;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: 'arch' | 'struct' | 'mep' | null;
     }
   | {
       kind: 'room';
@@ -774,6 +805,8 @@ export type Element =
       /** KRN-V3-04: design option membership. */
       optionSetId?: string | null;
       optionId?: string | null;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: 'arch' | 'struct' | 'mep' | null;
     }
   | {
       kind: 'roof';
@@ -809,6 +842,8 @@ export type Element =
       /** KRN-V3-04: design option membership. */
       optionSetId?: string | null;
       optionId?: string | null;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: 'arch' | 'struct' | 'mep' | null;
     }
   | {
       kind: 'stair';
@@ -864,6 +899,8 @@ export type Element =
       /** KRN-V3-04: design option membership. */
       optionSetId?: string | null;
       optionId?: string | null;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: 'arch' | 'struct' | 'mep' | null;
     }
   | {
       kind: 'slab_opening';
@@ -900,6 +937,8 @@ export type Element =
       phaseDemolished?: string | null;
       /** CMD-V3-02: provenance trace linking this element to its originating bundle. */
       agentTrace?: AgentTrace;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: 'arch' | 'struct' | 'mep' | null;
     }
   | {
       kind: 'family_type';
@@ -924,6 +963,8 @@ export type Element =
       pinned?: boolean;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: 'arch' | 'struct' | 'mep' | null;
     }
   | {
       kind: 'room_separation';
@@ -1165,6 +1206,8 @@ export type Element =
       ifcClassificationCode?: string | null;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: 'arch' | 'struct' | 'mep' | null;
     }
   | {
       kind: 'beam';
@@ -1182,6 +1225,8 @@ export type Element =
       ifcClassificationCode?: string | null;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: 'arch' | 'struct' | 'mep' | null;
     }
   | {
       kind: 'ceiling';
@@ -1194,6 +1239,8 @@ export type Element =
       ceilingTypeId?: string | null;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: 'arch' | 'struct' | 'mep' | null;
     }
   | {
       kind: 'color_fill_legend';
@@ -1377,6 +1424,8 @@ export type Element =
       pinned?: boolean;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: 'arch' | 'struct' | 'mep' | null;
     }
   | {
       /**
@@ -1404,6 +1453,8 @@ export type Element =
       pinned?: boolean;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: 'arch' | 'struct' | 'mep' | null;
     }
   | {
       /**
@@ -1473,6 +1524,8 @@ export type Element =
       pinned?: boolean;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: 'arch' | 'struct' | 'mep' | null;
     }
   | {
       /** KRN-V3-01 — project-level phasing primitive. Default chain: Existing → Demolition → New. */
@@ -1541,6 +1594,8 @@ export type Element =
       pinned?: boolean;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
+      /** DSC-V3-01: discipline tag. */
+      discipline?: 'arch' | 'struct' | 'mep' | null;
     }
   | {
       /** SUN-V3-01 — project-level sun & shadow study singleton. */
@@ -1761,6 +1816,24 @@ export type PublicLink = {
   isRevoked: boolean;
   displayName?: string;
   openCount: number;
+};
+
+// ---------------------------------------------------------------------------
+// OUT-V3-01 — Live presentation link
+// ---------------------------------------------------------------------------
+
+export type PresentationLink = {
+  kind: 'presentation_link';
+  id: string;
+  modelId: string;
+  pageScopeIds: string[];
+  token: string;
+  permission: 'viewer';
+  allowMeasurement: boolean;
+  allowComment: boolean;
+  expiresAt?: number;
+  createdAt: number;
+  revokedAt?: number;
 };
 
 // ---------------------------------------------------------------------------

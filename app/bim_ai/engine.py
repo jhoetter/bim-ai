@@ -104,6 +104,7 @@ from bim_ai.commands import (
     SaveViewpointCmd,
     SetCurtainPanelOverrideCmd,
     SetEdgeProfileRunModeCmd,
+    SetElementDisciplineCmd,
     SetElementPhaseCmd,
     SetRailingBalusterPatternCmd,
     SetRailingHandrailSupportsCmd,
@@ -180,6 +181,12 @@ from bim_ai.commands import (
     ApplyViewTemplateCmd,
     UnbindViewTemplateCmd,
     DeleteViewTemplateCmd,
+    IndexAssetCmd,
+    PlaceAssetCmd,
+    TraceImageCmd,
+    CreateToposolidCmd,
+    UpdateToposolidCmd,
+    DeleteToposolidCmd,
 )
 from bim_ai.constraints import Violation, evaluate
 from bim_ai.datum_levels import (
@@ -188,6 +195,8 @@ from bim_ai.datum_levels import (
 )
 from bim_ai.document import Document
 from bim_ai.elements import (
+    DEFAULT_DISCIPLINE_BY_KIND,
+    DisciplineTag,
     INTERNAL_ORIGIN_ID,
     SUN_SETTINGS_ID,
     AgentAssumptionElem,
@@ -291,6 +300,13 @@ from bim_ai.elements import (
     WallStackComponent,
     WallTypeElem,
     WindowElem,
+    AssetLibraryEntryElem,
+    AssetParamEntry,
+    PlacedAssetElem,
+    HeightSample,
+    HeightmapGrid,
+    ToposolidElem,
+    Vec2Mm as _Vec2Mm,
 )
 from bim_ai.export_ifc import (
     AUTHORITATIVE_REPLAY_KIND_V0,
@@ -1356,6 +1372,7 @@ def apply_inplace(
                 stack=wall_stack,
                 lean_mm=cmd.lean_mm,
                 taper_ratio=cmd.taper_ratio,
+                discipline=DEFAULT_DISCIPLINE_BY_KIND.get("wall", "arch"),
             )
 
         case MoveWallDeltaCmd():
@@ -1420,6 +1437,7 @@ def apply_inplace(
                 along_t=cmd.along_t,
                 width_mm=cmd.width_mm,
                 family_type_id=cmd.family_type_id,
+                discipline=DEFAULT_DISCIPLINE_BY_KIND.get("door", "arch"),
             )
 
         case InsertWindowOnWallCmd():
@@ -1439,6 +1457,7 @@ def apply_inplace(
                 sill_height_mm=cmd.sill_height_mm,
                 height_mm=cmd.height_mm,
                 family_type_id=cmd.family_type_id,
+                discipline=DEFAULT_DISCIPLINE_BY_KIND.get("window", "arch"),
             )
 
         case CreateWallChainCmd():
@@ -2110,6 +2129,13 @@ def apply_inplace(
                     els[cmd.element_id] = el.model_copy(update={"roof_geometry_mode": mode})
                 else:
                     raise ValueError("roof updates: key=roofTypeId | roofGeometryMode | name")
+            elif cmd.key == "discipline" and hasattr(el, "discipline"):
+                d = cmd.value.strip() if isinstance(cmd.value, str) else ""
+                if d not in {"arch", "struct", "mep", ""}:
+                    raise ValueError("discipline must be arch|struct|mep or empty")
+                els[cmd.element_id] = el.model_copy(
+                    update={"discipline": d if d else None}
+                )
             else:
                 raise ValueError(
                     "Only updateElementProperty key=name | label(grid) | title(issue) | "
@@ -2276,6 +2302,7 @@ def apply_inplace(
                 finish_thickness_mm=f_mm,
                 floor_type_id=cmd.floor_type_id,
                 room_bounded=cmd.room_bounded,
+                discipline=DEFAULT_DISCIPLINE_BY_KIND.get("floor", "arch"),
             )
 
         case CreateRoofCmd():
@@ -2323,6 +2350,7 @@ def apply_inplace(
                 eave_height_right_mm=cmd.eave_height_right_mm,
                 roof_type_id=rtid,
                 material_key=cmd.material_key,
+                discipline=DEFAULT_DISCIPLINE_BY_KIND.get("roof", "arch"),
             )
 
         case ExtendFloorInsulationCmd():
@@ -2393,6 +2421,7 @@ def apply_inplace(
                 monolithic_material=cmd.monolithic_material,
                 floating_tread_depth_mm=cmd.floating_tread_depth_mm,
                 floating_host_wall_id=cmd.floating_host_wall_id,
+                discipline=DEFAULT_DISCIPLINE_BY_KIND.get("stair", "arch"),
             )
 
         case SetStairSubKindCmd():
@@ -2565,6 +2594,7 @@ def apply_inplace(
                 host_roof_id=cmd.host_roof_id,
                 thickness_mm=cmd.thickness_mm,
                 z_mm=z_mm,
+                discipline=DEFAULT_DISCIPLINE_BY_KIND.get("soffit", "arch"),
             )
 
         case CreateText3dCmd():
@@ -2607,6 +2637,7 @@ def apply_inplace(
                 along_t_end=cmd.along_t_end,
                 sill_height_mm=cmd.sill_height_mm,
                 head_height_mm=cmd.head_height_mm,
+                discipline=DEFAULT_DISCIPLINE_BY_KIND.get("wall_opening", "arch"),
             )
 
         case UpdateWallOpeningCmd():
@@ -2770,6 +2801,7 @@ def apply_inplace(
                 projection_mm=cmd.projection_mm,
                 slab_thickness_mm=cmd.slab_thickness_mm,
                 balustrade_height_mm=cmd.balustrade_height_mm,
+                discipline=DEFAULT_DISCIPLINE_BY_KIND.get("balcony", "arch"),
             )
 
         case CreateSweepCmd():
@@ -2799,6 +2831,7 @@ def apply_inplace(
                 profile_mm=list(cmd.profile_mm),
                 profile_plane=cmd.profile_plane,
                 material_key=cmd.material_key,
+                discipline=DEFAULT_DISCIPLINE_BY_KIND.get("sweep", "arch"),
             )
 
         case CreateDormerCmd():
@@ -2854,6 +2887,7 @@ def apply_inplace(
                 wall_material_key=cmd.wall_material_key,
                 roof_material_key=cmd.roof_material_key,
                 has_floor_opening=cmd.has_floor_opening,
+                discipline=DEFAULT_DISCIPLINE_BY_KIND.get("dormer", "arch"),
             )
             if cmd.has_floor_opening:
                 fp_vertices = _dormer_footprint_polygon_mm(
@@ -3007,6 +3041,7 @@ def apply_inplace(
                 path_mm=cmd.path_mm,
                 baluster_pattern=cmd.baluster_pattern,
                 handrail_supports=cmd.handrail_supports or None,
+                discipline=DEFAULT_DISCIPLINE_BY_KIND.get("railing", "arch"),
             )
 
         case SetRailingBalusterPatternCmd():
@@ -3207,6 +3242,7 @@ def apply_inplace(
                 height_mm=cmd.height_mm,
                 rotation_deg=cmd.rotation_deg,
                 material_key=cmd.material_key,
+                discipline=DEFAULT_DISCIPLINE_BY_KIND.get("column", "arch"),
             )
 
         case CreateBeamCmd():
@@ -3230,6 +3266,7 @@ def apply_inplace(
                 width_mm=cmd.width_mm,
                 height_mm=cmd.height_mm,
                 material_key=cmd.material_key,
+                discipline=DEFAULT_DISCIPLINE_BY_KIND.get("beam", "arch"),
             )
 
         case CreateCeilingCmd():
@@ -3249,6 +3286,7 @@ def apply_inplace(
                 height_offset_mm=cmd.height_offset_mm,
                 thickness_mm=cmd.thickness_mm,
                 ceiling_type_id=cmd.ceiling_type_id,
+                discipline=DEFAULT_DISCIPLINE_BY_KIND.get("ceiling", "arch"),
             )
 
         case CreateMassCmd():
@@ -3269,6 +3307,7 @@ def apply_inplace(
                 rotation_deg=cmd.rotation_deg,
                 material_key=cmd.material_key,
                 phase_id="massing",
+                discipline=DEFAULT_DISCIPLINE_BY_KIND.get("mass", "arch"),
             )
 
         case MaterializeMassToWallsCmd():
@@ -4478,6 +4517,26 @@ def apply_inplace(
             if updates_ep:
                 els[cmd.element_id] = el.model_copy(update=updates_ep)
 
+        case SetElementDisciplineCmd():
+            valid = {"arch", "struct", "mep"}
+            if cmd.discipline not in valid:
+                raise ValueError(
+                    f"setElementDiscipline: discipline must be arch|struct|mep, "
+                    f"got {cmd.discipline!r}"
+                )
+            for eid in cmd.element_ids:
+                el = els.get(eid)
+                if el is None:
+                    raise ValueError(
+                        f"setElementDiscipline: elementId {eid!r} not found"
+                    )
+                if not hasattr(el, "discipline"):
+                    raise ValueError(
+                        f"setElementDiscipline: elementId {eid!r} ({el.kind!r}) "
+                        "does not support the discipline field"
+                    )
+                els[eid] = el.model_copy(update={"discipline": cmd.discipline})
+
         case SetViewPhaseCmd():
             view = els.get(cmd.view_id)
             if not isinstance(view, PlanViewElem):
@@ -4867,9 +4926,118 @@ def apply_inplace(
                 if isinstance(elem, PlanViewElem) and elem.template_id == cmd.template_id:
                     els[elem.id] = elem.model_copy(update={"template_id": None})
 
+        # -----------------------------------------------------------------
+        # AST-V3-01 — Asset library commands
+        # -----------------------------------------------------------------
+
+        case IndexAssetCmd():
+            eid = cmd.id or new_id()
+            if eid in els:
+                raise ValueError(f"IndexAsset: duplicate element id '{eid}'")
+            param_schema = None
+            if cmd.param_schema:
+                param_schema = [
+                    AssetParamEntry.model_validate(p) if isinstance(p, dict) else p
+                    for p in cmd.param_schema
+                ]
+            els[eid] = AssetLibraryEntryElem(
+                kind="asset_library_entry",
+                id=eid,
+                assetKind=cmd.asset_kind,
+                name=cmd.name,
+                tags=cmd.tags,
+                category=cmd.category,
+                disciplineTags=cmd.discipline_tags,
+                thumbnailKind=cmd.thumbnail_kind,
+                thumbnailWidthMm=cmd.thumbnail_width_mm,
+                thumbnailHeightMm=cmd.thumbnail_height_mm,
+                paramSchema=param_schema,
+                publishedFromOrgId=cmd.published_from_org_id,
+                description=cmd.description,
+            )
+
+        case TraceImageCmd():
+            raise ValueError(
+                "TraceImageCmd cannot be applied in a bundle; "
+                "use POST /api/v3/trace or engine.handle_trace_image_cmd() instead"
+            )
+
+        case PlaceAssetCmd():
+            eid = cmd.id or new_id()
+            if eid in els:
+                raise ValueError(f"PlaceAsset: duplicate element id '{eid}'")
+            asset = els.get(cmd.asset_id)
+            if not isinstance(asset, AssetLibraryEntryElem):
+                raise ValueError(
+                    f"PlaceAsset: assetId '{cmd.asset_id}' is not an AssetLibraryEntry"
+                )
+            if cmd.level_id not in els or not isinstance(els[cmd.level_id], LevelElem):
+                raise ValueError("PlaceAsset: levelId must reference an existing Level")
+            els[eid] = PlacedAssetElem(
+                kind="placed_asset",
+                id=eid,
+                name=cmd.name or asset.name,
+                assetId=cmd.asset_id,
+                levelId=cmd.level_id,
+                positionMm=cmd.position_mm,
+                rotationDeg=cmd.rotation_deg,
+                paramValues=cmd.param_values,
+                hostElementId=cmd.host_element_id,
+            )
+
     # KRN-08: areas track a derived computedAreaSqMm. Recompute after every
     # command apply so create/update/delete of areas (and shafts that affect
     # `net` rule-set deductions) keep the value current.
+
+        case CreateToposolidCmd():
+            tid = cmd.toposolid_id
+            if tid in els:
+                raise ValueError(f"CreateToposolid: element id '{tid}' already exists")
+            if len(cmd.boundary_mm) < 3:
+                raise ValueError("CreateToposolid.boundaryMm requires at least 3 points")
+            has_samples = bool(cmd.height_samples)
+            has_grid = cmd.heightmap_grid_mm is not None
+            if has_samples and has_grid:
+                raise ValueError("CreateToposolid: provide either heightSamples or heightmapGridMm, not both")
+            height_samples = [HeightSample(**s) for s in cmd.height_samples]
+            heightmap_grid = HeightmapGrid(**cmd.heightmap_grid_mm) if cmd.heightmap_grid_mm else None
+            boundary = [_Vec2Mm(xMm=pt["xMm"], yMm=pt["yMm"]) for pt in cmd.boundary_mm]
+            els[tid] = ToposolidElem(
+                kind="toposolid",
+                id=tid,
+                name=cmd.name,
+                boundaryMm=boundary,
+                heightSamples=height_samples,
+                heightmapGridMm=heightmap_grid,
+                thicknessMm=cmd.thickness_mm,
+                baseElevationMm=cmd.base_elevation_mm,
+                defaultMaterialKey=cmd.default_material_key,
+            )
+
+        case UpdateToposolidCmd():
+            tid = cmd.toposolid_id
+            if tid not in els or not isinstance(els[tid], ToposolidElem):
+                raise ValueError(f"UpdateToposolid: no toposolid element with id '{tid}'")
+            existing = els[tid]
+            patch: dict[str, Any] = {}
+            if cmd.name is not None:
+                patch["name"] = cmd.name
+            if cmd.thickness_mm is not None:
+                patch["thickness_mm"] = cmd.thickness_mm
+            if cmd.base_elevation_mm is not None:
+                patch["base_elevation_mm"] = cmd.base_elevation_mm
+            if cmd.default_material_key is not None:
+                patch["default_material_key"] = cmd.default_material_key
+            if cmd.pinned is not None:
+                patch["pinned"] = cmd.pinned
+            els[tid] = existing.model_copy(update=patch)
+
+        case DeleteToposolidCmd():
+            tid = cmd.toposolid_id
+            if tid not in els:
+                raise ValueError(f"DeleteToposolid: no element with id '{tid}'")
+            del els[tid]
+
     from bim_ai.area_calculation import recompute_all_areas
 
     recompute_all_areas(els)
@@ -6333,3 +6501,30 @@ def planFamilyInstanceMesh(instance: ColumnElem, detail_level: str) -> list[Line
         return _family_coarse(instance)
     else:
         return _family_full(instance)
+
+
+# ---------------------------------------------------------------------------
+# IMG-V3-01 — handle_trace_image_cmd
+# ---------------------------------------------------------------------------
+
+
+def handle_trace_image_cmd(cmd: TraceImageCmd) -> dict:
+    """Run the deterministic CV pipeline on the base64-encoded image in cmd."""
+    import base64
+    import os
+    import tempfile
+
+    from bim_ai.img.pipeline import trace
+
+    image_bytes = base64.b64decode(cmd.image_b64)
+    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as fh:
+        fh.write(image_bytes)
+        tmp_path = fh.name
+    try:
+        layout = trace(tmp_path, archetype_hint=cmd.archetype_hint)
+    finally:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+    return layout.model_dump(by_alias=True)

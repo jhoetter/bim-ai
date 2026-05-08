@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from bim_ai.elements import (
     BalusterPattern,
     CameraMm,
+    DisciplineTag,
     ClipRect,
     ConstraintRefRow,
     ConstraintRule,
@@ -1786,6 +1787,15 @@ class SetElementPhaseCmd(BaseModel):
     phase_demolished_id: str | None = Field(default=None, alias="phaseDemolishedId")
     clear_demolished: bool = Field(default=False, alias="clearDemolished")
 
+class SetElementDisciplineCmd(BaseModel):
+    """DSC-V3-01 — set discipline tag on one or more elements; undo + activity."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["setElementDiscipline"] = "setElementDiscipline"
+    element_ids: list[str] = Field(alias="elementIds")
+    discipline: Literal["arch", "struct", "mep"] = "arch"
+
+
 
 class SetViewPhaseCmd(BaseModel):
     """KRN-V3-01 — set the as-of phase for a plan view."""
@@ -2018,6 +2028,109 @@ class RemoveViewBreakCmd(BaseModel):
     axis_mm: float = Field(alias="axisMM")
 
 
+# ---------------------------------------------------------------------------
+# AST-V3-01 — Asset library commands
+# ---------------------------------------------------------------------------
+
+
+class IndexAssetCmd(BaseModel):
+    """Index a new asset into the project's searchable library."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["IndexAsset"] = "IndexAsset"
+    id: str | None = None
+    asset_kind: Literal["family_instance", "block_2d", "kit", "decal", "profile"] = Field(
+        alias="assetKind", default="block_2d"
+    )
+    name: str
+    tags: list[str] = Field(default_factory=list)
+    category: Literal[
+        "furniture", "kitchen", "bathroom", "door", "window", "decal", "profile", "casework"
+    ]
+    discipline_tags: list[Literal["arch", "struct", "mep"]] = Field(
+        default_factory=list, alias="disciplineTags"
+    )
+    thumbnail_kind: Literal["schematic_plan", "rendered_3d"] = Field(
+        default="schematic_plan", alias="thumbnailKind"
+    )
+    thumbnail_width_mm: float | None = Field(default=None, alias="thumbnailWidthMm")
+    thumbnail_height_mm: float | None = Field(default=None, alias="thumbnailHeightMm")
+    param_schema: list[dict[str, Any]] | None = Field(default=None, alias="paramSchema")
+    published_from_org_id: str | None = Field(default=None, alias="publishedFromOrgId")
+    description: str | None = None
+
+
+class PlaceAssetCmd(BaseModel):
+    """Place an asset instance at a position on the canvas."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["PlaceAsset"] = "PlaceAsset"
+    id: str | None = None
+    name: str | None = None
+    asset_id: str = Field(alias="assetId")
+    level_id: str = Field(alias="levelId")
+    position_mm: Vec2Mm = Field(alias="positionMm")
+    rotation_deg: float = Field(default=0.0, alias="rotationDeg")
+    param_values: dict[str, Any] = Field(default_factory=dict, alias="paramValues")
+    host_element_id: str | None = Field(default=None, alias="hostElementId")
+
+
+# ---------------------------------------------------------------------------
+# IMG-V3-01 — Image trace command
+# ---------------------------------------------------------------------------
+
+
+class TraceImageCmd(BaseModel):
+    """IMG-V3-01 — read-only CV trace; does not mutate the kernel.
+
+    Dispatched via engine.handle_trace_image_cmd(), not apply_inplace().
+    """
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["TraceImage"] = "TraceImage"
+    image_b64: str = Field(alias="imageB64")
+    archetype_hint: str | None = Field(default=None, alias="archetypeHint")
+    brief_text: str | None = Field(default=None, alias="briefText")
+    assumptions: list = Field(default_factory=list)
+
+
+
+
+# ---------------------------------------------------------------------------
+# TOP-V3-01 — Toposolid primitive commands
+# ---------------------------------------------------------------------------
+
+
+class CreateToposolidCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["CreateToposolid"] = "CreateToposolid"
+    toposolid_id: str = Field(alias="toposolidId")
+    name: str | None = None
+    boundary_mm: list[dict] = Field(alias="boundaryMm")
+    height_samples: list[dict] = Field(default_factory=list, alias="heightSamples")
+    heightmap_grid_mm: dict | None = Field(default=None, alias="heightmapGridMm")
+    thickness_mm: float = Field(default=1500.0, alias="thicknessMm")
+    base_elevation_mm: float | None = Field(default=None, alias="baseElevationMm")
+    default_material_key: str | None = Field(default=None, alias="defaultMaterialKey")
+
+
+class UpdateToposolidCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["UpdateToposolid"] = "UpdateToposolid"
+    toposolid_id: str = Field(alias="toposolidId")
+    name: str | None = None
+    thickness_mm: float | None = Field(default=None, alias="thicknessMm")
+    base_elevation_mm: float | None = Field(default=None, alias="baseElevationMm")
+    default_material_key: str | None = Field(default=None, alias="defaultMaterialKey")
+    pinned: bool | None = None
+
+
+class DeleteToposolidCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["DeleteToposolid"] = "DeleteToposolid"
+    toposolid_id: str = Field(alias="toposolidId")
+
+
 Command = Annotated[
     CreateLevelCmd
     | CreateWallCmd
@@ -2147,6 +2260,7 @@ Command = Annotated[
     | ReorderPhaseCmd
     | DeletePhaseCmd
     | SetElementPhaseCmd
+    | SetElementDisciplineCmd
     | SetViewPhaseCmd
     | SetViewPhaseFilterCmd
     | CreateSunSettingsCmd
@@ -2178,6 +2292,12 @@ Command = Annotated[
     | UpdateViewTemplateCmd
     | ApplyViewTemplateCmd
     | UnbindViewTemplateCmd
-    | DeleteViewTemplateCmd,
+    | DeleteViewTemplateCmd
+    | IndexAssetCmd
+    | PlaceAssetCmd
+    | CreateToposolidCmd
+    | UpdateToposolidCmd
+    | DeleteToposolidCmd
+    | TraceImageCmd,
     Field(discriminator="type"),
 ]
