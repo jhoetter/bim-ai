@@ -3,10 +3,13 @@
   "checkpoint_id": "fae35fbb5294",
   "strategy": "manual-commit",
   "branch": "feat/v3-out-v3-01-live-web-link",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
+    "app/bim_ai/activity.py",
+    "app/bim_ai/comments.py",
     "app/bim_ai/routes_api.py",
-    "packages/core/src/index.ts"
+    "packages/core/src/index.ts",
+    "packages/web/src/plan/SheetReviewSurface.tsx"
   ],
   "sessions": [
     {
@@ -20,13 +23,19 @@
       "transcript": "/fa/e35fbb5294/1/full.jsonl",
       "content_hash": "/fa/e35fbb5294/1/content_hash.txt",
       "prompt": "/fa/e35fbb5294/1/prompt.txt"
+    },
+    {
+      "metadata": "/fa/e35fbb5294/2/metadata.json",
+      "transcript": "/fa/e35fbb5294/2/full.jsonl",
+      "content_hash": "/fa/e35fbb5294/2/content_hash.txt",
+      "prompt": "/fa/e35fbb5294/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 912,
-    "cache_creation_tokens": 148597,
-    "cache_read_tokens": 15411902,
-    "output_tokens": 54493,
-    "api_call_count": 137
+    "input_tokens": 7176,
+    "cache_creation_tokens": 343709,
+    "cache_read_tokens": 25117578,
+    "output_tokens": 105193,
+    "api_call_count": 234
   }
 }
