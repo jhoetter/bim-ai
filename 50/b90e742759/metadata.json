@@ -3,7 +3,7 @@
   "checkpoint_id": "50b90e742759",
   "strategy": "manual-commit",
   "branch": "feat/v3-mrk-v3-02-markups",
-  "checkpoints_count": 5,
+  "checkpoints_count": 6,
   "files_touched": [
     "app/bim_ai/routes_api.py",
     "packages/core/src/index.ts"
@@ -56,13 +56,19 @@
       "transcript": "/50/b90e742759/7/full.jsonl",
       "content_hash": "/50/b90e742759/7/content_hash.txt",
       "prompt": "/50/b90e742759/7/prompt.txt"
+    },
+    {
+      "metadata": "/50/b90e742759/8/metadata.json",
+      "transcript": "/50/b90e742759/8/full.jsonl",
+      "content_hash": "/50/b90e742759/8/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
-    "input_tokens": 29528,
-    "cache_creation_tokens": 573247,
-    "cache_read_tokens": 24758497,
-    "output_tokens": 171168,
-    "api_call_count": 252
+    "input_tokens": 29605,
+    "cache_creation_tokens": 692584,
+    "cache_read_tokens": 32114190,
+    "output_tokens": 207257,
+    "api_call_count": 327
   }
 }
