@@ -1,0 +1,22 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "d31ddfb7ebaa",
+  "session_id": "fbff974d-170a-479a-8a65-f7ffbe2d25cf",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T21:51:13.290487Z",
+  "branch": "feat/v3-edt-v3-04-shortcut-chips",
+  "checkpoints_count": 0,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "43e3838b7f2d",
+  "checkpoint_transcript_start": 160,
+  "transcript_lines_at_start": 160,
+  "token_usage": {
+    "input_tokens": 8,
+    "cache_creation_tokens": 6137,
+    "cache_read_tokens": 467576,
+    "output_tokens": 4032,
+    "api_call_count": 8
+  }
+}
