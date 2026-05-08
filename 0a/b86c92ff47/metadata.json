@@ -3,7 +3,7 @@
   "checkpoint_id": "0ab86c92ff47",
   "strategy": "manual-commit",
   "branch": "feat/v3-chr-v3-02-workspace-switcher",
-  "checkpoints_count": 3,
+  "checkpoints_count": 4,
   "files_touched": null,
   "sessions": [
     {
@@ -23,13 +23,19 @@
       "transcript": "/0a/b86c92ff47/2/full.jsonl",
       "content_hash": "/0a/b86c92ff47/2/content_hash.txt",
       "prompt": "/0a/b86c92ff47/2/prompt.txt"
+    },
+    {
+      "metadata": "/0a/b86c92ff47/3/metadata.json",
+      "transcript": "/0a/b86c92ff47/3/full.jsonl",
+      "content_hash": "/0a/b86c92ff47/3/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
-    "input_tokens": 1670,
-    "cache_creation_tokens": 369578,
-    "cache_read_tokens": 24030626,
-    "output_tokens": 138310,
-    "api_call_count": 278
+    "input_tokens": 1695,
+    "cache_creation_tokens": 419240,
+    "cache_read_tokens": 25002363,
+    "output_tokens": 156002,
+    "api_call_count": 299
   }
 }
