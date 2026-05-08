@@ -1,10 +1,17 @@
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from bim_ai.elements import Element
+
+
+class DesignOptionProvenance(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    submitter: Literal["agent", "human", "ci"] = "human"
+    bundle_id: str = Field(alias="bundleId")
+    created_at: int = Field(alias="createdAt")
 
 
 class DesignOption(BaseModel):
@@ -12,6 +19,7 @@ class DesignOption(BaseModel):
     id: str
     name: str
     is_primary: bool = Field(default=False, alias="isPrimary")
+    provenance: DesignOptionProvenance | None = Field(default=None)
 
 
 class DesignOptionSet(BaseModel):

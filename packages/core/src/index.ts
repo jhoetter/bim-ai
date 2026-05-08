@@ -68,13 +68,44 @@ export type ElemKind =
   | 'constraint'
   | 'mass'
   | 'phase'
-  | 'sun_settings';
+  | 'sun_settings'
+  | 'view';
 
 export type PhaseFilter = 'all' | 'existing' | 'demolition' | 'new';
 
 export type Text3dFontFamily = 'helvetiker' | 'optimer' | 'gentilis';
 
 export type XY = { xMm: number; yMm: number };
+
+// ---------------------------------------------------------------------------
+// VIE-V3-02 — Drafting view + callout + cut-profile + view-break types
+// ---------------------------------------------------------------------------
+
+/** Per-view per-category cut-profile override. */
+export type ElementOverride = {
+  categoryOrId: string;
+  alternateRender: 'singleLine' | 'outline' | string;
+};
+
+/** A single view-break gap hiding a section of a long elevation. */
+export type ViewBreak = {
+  axisMM: number;
+  widthMM: number;
+};
+
+/** VIE-V3-02 — Unified view element for drafting views, callouts, and 2D detailing. */
+export type View = {
+  kind: 'view';
+  id: string;
+  name: string;
+  subKind?: 'plan' | 'section' | 'elevation' | 'drafting' | 'callout' | '3d';
+  parentViewId?: string;
+  clipRectInParent?: { minXY: { x: number; y: number }; maxXY: { x: number; y: number } };
+  elementOverrides?: ElementOverride[];
+  breaks?: ViewBreak[];
+  scale?: number;
+  detailLevel?: 'coarse' | 'medium' | 'fine';
+};
 
 /** FED-04: 2D linework primitive parsed from a DXF underlay. */
 export type DxfLineworkPrim =
@@ -381,6 +412,69 @@ export type HandrailSupport = {
   intervalMm: number;
   bracketFamilyId: string;
   hostWallId: string;
+};
+
+// ---------------------------------------------------------------------------
+// SHT-V3-01 — Sheet, TitleblockType, WindowLegendView
+// ---------------------------------------------------------------------------
+
+export type ViewPlacement = {
+  viewId: string;
+  minXY: { x: number; y: number };
+  size: { x: number; y: number };
+  scale?: number;
+};
+
+export type SheetMetadata = {
+  projectName?: string;
+  drawnBy?: string;
+  checkedBy?: string;
+  date?: string;
+  revision?: string;
+};
+
+export type Sheet = {
+  kind: 'sheet';
+  id: string;
+  name: string;
+  number?: string;
+  size?: 'A0' | 'A1' | 'A2' | 'A3';
+  orientation?: 'landscape' | 'portrait';
+  titleblockTypeId?: string;
+  revisionId?: string;
+  viewPlacements?: ViewPlacement[];
+  metadata?: SheetMetadata;
+  brandTemplateId?: string;
+  // Legacy v2 fields preserved for backwards compatibility
+  titleBlock?: string | null;
+  viewportsMm?: unknown[];
+  paperWidthMm?: number;
+  paperHeightMm?: number;
+  titleblockParameters?: Record<string, string>;
+};
+
+export type TokenSlot = {
+  name: string;
+  xMm: number;
+  yMm: number;
+  fontSizeMm?: number;
+};
+
+export type TitleblockType = {
+  kind: 'titleblock_type';
+  id: string;
+  name: string;
+  svgTemplate: string;
+  tokenSlots: TokenSlot[];
+};
+
+export type WindowLegendView = {
+  kind: 'window_legend_view';
+  id: string;
+  name: string;
+  scope: 'all' | 'sheet' | 'project';
+  sortBy: 'type' | 'width' | 'count';
+  parentSheetId?: string;
 };
 
 export type Element =
@@ -897,6 +991,10 @@ export type Element =
       name: string;
       levelId: string;
       viewTemplateId?: string | null;
+      /** VIE-V3-03: new-style view template binding (distinct from viewTemplateId). */
+      templateId?: string | null;
+      /** VIE-V3-03: numeric drawing scale propagated from the bound view template. */
+      scale?: number | null;
       planPresentation?: 'default' | 'opening_focus' | 'room_scheme';
       underlayLevelId?: string | null;
       discipline?: string;
@@ -922,6 +1020,7 @@ export type Element =
       planCategoryGraphics?: PlanCategoryGraphicRow[];
       categoryOverrides?: Record<string, unknown>;
       viewFilters?: unknown[];
+      elementOverrides?: Array<{ categoryOrId: string; alternateRender: string }>;
       /** KRN-V3-04: per-set option lock; key = optionSetId, value = optionId. */
       optionLocks?: Record<string, string>;
     }
@@ -929,7 +1028,8 @@ export type Element =
       kind: 'view_template';
       id: string;
       name: string;
-      scale: 'scale_50' | 'scale_100' | 'scale_200';
+      /** Legacy string-enum scale (old view templates). */
+      scale?: 'scale_50' | 'scale_100' | 'scale_200' | number | null;
       disciplinesVisible?: string[];
       hiddenCategories?: string[];
       planDetailLevel?: PlanDetailLevelPlan | null;
@@ -939,6 +1039,13 @@ export type Element =
       defaultPlanOpeningTagStyleId?: string | null;
       defaultPlanRoomTagStyleId?: string | null;
       planCategoryGraphics?: PlanCategoryGraphicRow[];
+      /** VIE-V3-03 fields */
+      detailLevel?: 'coarse' | 'medium' | 'fine' | null;
+      cropDefault?: Record<string, unknown> | null;
+      visibilityFilters?: unknown[];
+      elementOverrides?: Array<{ categoryOrId: string; alternateRender: string }>;
+      phase?: string | null;
+      phaseFilter?: string | null;
     }
   | Sheet
   | TitleblockType
@@ -1445,7 +1552,8 @@ export type Element =
       timeOfDay: { hours: number; minutes: number };
       animationRange?: { startIso: string; endIso: string; intervalMinutes: number } | null;
       daylightSavingStrategy: 'auto' | 'on' | 'off';
-    };
+    }
+  | View;
 
 export type Violation = {
   ruleId: string;

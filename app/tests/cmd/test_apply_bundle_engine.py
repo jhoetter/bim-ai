@@ -114,20 +114,26 @@ class TestRevisionGuard:
 
 
 class TestTargetOptionId:
-    def test_main_always_rejected(self):
+    def test_main_rejected_for_agent_submitter(self):
         doc = _seed_doc()
         bundle = _bundle(targetOptionId="main")
-        result, _ = apply_bundle(doc, bundle, "commit")
+        result, _ = apply_bundle(doc, bundle, "commit", submitter="agent")
         classes = {v.get("advisoryClass") for v in result.violations}
         assert "direct_main_commit_forbidden" in classes
         assert result.applied is False
 
-    def test_non_main_option_id_rejected_with_not_implemented(self):
+    def test_main_accepted_for_human_submitter(self):
+        doc = _seed_doc()
+        bundle = _bundle(targetOptionId="main")
+        result, _ = apply_bundle(doc, bundle, "commit", submitter="human")
+        assert result.applied is True
+
+    def test_nonexistent_option_id_returns_option_not_found(self):
         doc = _seed_doc()
         bundle = _bundle(targetOptionId="opt-123")
         result, _ = apply_bundle(doc, bundle, "commit")
         classes = {v.get("advisoryClass") for v in result.violations}
-        assert "option_routing_not_yet_implemented" in classes
+        assert "option_not_found" in classes
         assert result.applied is False
 
 
