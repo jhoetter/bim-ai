@@ -3,7 +3,7 @@
   "checkpoint_id": "427c624c99fa",
   "strategy": "manual-commit",
   "branch": "feat/v3-edt-v3-06-helper-dims",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "packages/core/src/index.ts"
   ],
@@ -19,13 +19,19 @@
       "transcript": "/42/7c624c99fa/1/full.jsonl",
       "content_hash": "/42/7c624c99fa/1/content_hash.txt",
       "prompt": "/42/7c624c99fa/1/prompt.txt"
+    },
+    {
+      "metadata": "/42/7c624c99fa/2/metadata.json",
+      "transcript": "/42/7c624c99fa/2/full.jsonl",
+      "content_hash": "/42/7c624c99fa/2/content_hash.txt",
+      "prompt": "/42/7c624c99fa/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 112,
-    "cache_creation_tokens": 115851,
-    "cache_read_tokens": 10013829,
-    "output_tokens": 33002,
-    "api_call_count": 104
+    "input_tokens": 519,
+    "cache_creation_tokens": 885560,
+    "cache_read_tokens": 43337009,
+    "output_tokens": 250838,
+    "api_call_count": 449
   }
 }
