@@ -3,7 +3,7 @@
   "checkpoint_id": "f3803e5bbcc5",
   "strategy": "manual-commit",
   "branch": "feat/v3-mrk-v3-02-markups",
-  "checkpoints_count": 3,
+  "checkpoints_count": 4,
   "files_touched": [
     "app/bim_ai/cmd/apply_bundle.py",
     "app/bim_ai/document.py",
@@ -33,13 +33,19 @@
       "transcript": "/f3/803e5bbcc5/3/full.jsonl",
       "content_hash": "/f3/803e5bbcc5/3/content_hash.txt",
       "prompt": "/f3/803e5bbcc5/3/prompt.txt"
+    },
+    {
+      "metadata": "/f3/803e5bbcc5/4/metadata.json",
+      "transcript": "/f3/803e5bbcc5/4/full.jsonl",
+      "content_hash": "/f3/803e5bbcc5/4/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
-    "input_tokens": 29060,
-    "cache_creation_tokens": 327871,
-    "cache_read_tokens": 13132713,
-    "output_tokens": 95548,
-    "api_call_count": 139
+    "input_tokens": 29488,
+    "cache_creation_tokens": 476552,
+    "cache_read_tokens": 22305052,
+    "output_tokens": 142710,
+    "api_call_count": 216
   }
 }
