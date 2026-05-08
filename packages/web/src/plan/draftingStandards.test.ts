@@ -113,40 +113,53 @@ describe('LINE_WEIGHT_PX_AT_1_50', () => {
   });
 });
 
-describe('lineWeightsForScale — CAN-V3-01', () => {
-  it('1:50 returns spec values', () => {
+describe('lineWeightsForScale — CAN-V3-01 step table', () => {
+  it('1:50 returns step-table canonical values', () => {
     const w = lineWeightsForScale(50);
-    expect(w.cutMajor).toBe(2);
-    expect(w.cutMinor).toBe(1.4);
-    expect(w.projMajor).toBeCloseTo(1.0, 6);
-    expect(w.projMinor).toBeCloseTo(0.7, 6);
+    expect(w.cutMajor).toBeCloseTo(0.5, 6);
+    expect(w.cutMinor).toBeCloseTo(0.25, 6);
+    expect(w.projMajor).toBeCloseTo(0.25, 6);
+    expect(w.projMinor).toBeCloseTo(0.18, 6);
     expect(w.witness).toBe(0.5);
   });
 
-  it('1:100 weights are ~70 % of 1:50', () => {
-    const w50 = lineWeightsForScale(50);
-    const w100 = lineWeightsForScale(100);
-    expect(w100.cutMajor!).toBeCloseTo(w50.cutMajor * 0.5, 5);
-    // continuous formula: 50/100 = 0.5 — "~70 %" in the WP refers to the
-    // step-table canonical; the continuous formula is the engine truth.
+  it('1:100 returns step-table canonical values', () => {
+    const w = lineWeightsForScale(100);
+    expect(w.cutMajor).toBeCloseTo(0.35, 6);
+    expect(w.cutMinor).toBeCloseTo(0.18, 6);
+    expect(w.projMajor).toBeCloseTo(0.18, 6);
+    expect(w.projMinor).toBeCloseTo(0.12, 6);
+    expect(w.witness).toBe(0.5);
   });
 
-  it('1:200 cuts are 50 % of 1:50', () => {
+  it('1:200 returns step-table canonical values', () => {
     const w = lineWeightsForScale(200);
-    expect(w.cutMajor).toBeCloseTo(0.5, 5);
+    expect(w.cutMajor).toBeCloseTo(0.25, 6);
+    expect(w.cutMinor).toBeCloseTo(0.12, 6);
+    expect(w.projMajor).toBeCloseTo(0.12, 6);
+    expect(w.projMinor).toBeCloseTo(0.09, 6);
     expect(w.projMajor).not.toBeNull();
   });
 
-  it('1:500 suppresses projection (null)', () => {
+  it('1:500 returns step-table canonical values and suppresses projection', () => {
     const w = lineWeightsForScale(500);
+    expect(w.cutMajor).toBeCloseTo(0.4, 6);
+    expect(w.cutMinor).toBeCloseTo(0.2, 6);
     expect(w.projMajor).toBeNull();
     expect(w.projMinor).toBeNull();
-    expect(w.cutMajor).toBeCloseTo(0.2, 5);
   });
 
-  it('witness stays at hairline at all scales', () => {
+  it('interpolates between 1:100 and 1:200 at midpoint (1:150)', () => {
+    const w = lineWeightsForScale(150);
+    // midpoint between 0.35 and 0.25 = 0.30
+    expect(w.cutMajor).toBeCloseTo(0.3, 5);
+    // projMajor: midpoint between 0.18 and 0.12 = 0.15
+    expect(w.projMajor).toBeCloseTo(0.15, 5);
+  });
+
+  it('witness is always 0.5 px (hairline) at all scales', () => {
     for (const s of [50, 100, 200, 500]) {
-      expect(lineWeightsForScale(s).witness).toBeGreaterThan(0);
+      expect(lineWeightsForScale(s).witness).toBe(0.5);
     }
   });
 

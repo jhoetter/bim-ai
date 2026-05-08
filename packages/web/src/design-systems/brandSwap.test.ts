@@ -38,9 +38,11 @@ function referencedBrandTokens(value: string): string[] {
 
 const tokensV3 = readCss('tokens-v3.css');
 const brandLayer = readCss('brand-layer.css');
+const tokensDrafting = readCss('tokens-drafting.css');
 
 const v3Decls = extractDeclarations(tokensV3);
 const brandDecls = extractDeclarations(brandLayer);
+const draftingDecls = extractDeclarations(tokensDrafting);
 
 /** Layer-A token names we explicitly guarantee are stable. */
 const LAYER_A_REQUIRED = [
@@ -55,6 +57,15 @@ const LAYER_A_REQUIRED = [
   '--text-2xs-line',
   '--ease-paper',
   '--radius-canvas',
+];
+
+/** CAN-V3-01 — drafting line-weight tokens that must be brand-swap-invariant (Layer A). */
+const LINE_WEIGHT_LAYER_A = [
+  '--draft-lw-cut-major',
+  '--draft-lw-cut-minor',
+  '--draft-lw-projection-major',
+  '--draft-lw-projection-minor',
+  '--draft-lw-witness',
 ];
 
 /** Layer-C token names that ARE allowed to vary on brand swap. */
@@ -121,6 +132,41 @@ describe('brand-swap invariant — Layer-A tokens never reference --brand-*', ()
     expect(
       contaminated,
       `Layer-A token values must not contain the canary brand hex ${CANARY}`,
+    ).toHaveLength(0);
+  });
+});
+
+describe('CAN-V3-01 brand-swap invariant — line-weight tokens are byte-identical across brand swaps', () => {
+  it.each(LINE_WEIGHT_LAYER_A)(
+    'line-weight token %s is declared in tokens-drafting.css',
+    (name) => {
+      expect(draftingDecls.has(name), `${name} missing from tokens-drafting.css`).toBe(true);
+    },
+  );
+
+  it.each(LINE_WEIGHT_LAYER_A)(
+    'line-weight token %s does not reference any --brand-* variable',
+    (name) => {
+      const value = draftingDecls.get(name) ?? '';
+      const brandRefs = referencedBrandTokens(value);
+      expect(
+        brandRefs,
+        `${name} references brand tokens ${brandRefs.join(', ')} — line weights must be brand-swap-invariant`,
+      ).toHaveLength(0);
+    },
+  );
+
+  it('changing --brand-accent does not affect any line-weight px value (canary probe)', () => {
+    const CANARY = '#f0e130';
+    // None of the line-weight token values should contain a hex that could
+    // be injected via --brand-accent. Static proof: values are literal px values, not var() references.
+    const contaminated = LINE_WEIGHT_LAYER_A.filter((name) => {
+      const value = draftingDecls.get(name) ?? '';
+      return value.includes(CANARY) || referencedBrandTokens(value).length > 0;
+    });
+    expect(
+      contaminated,
+      `Line-weight tokens must not be contaminated by brand overrides: ${contaminated.join(', ')}`,
     ).toHaveLength(0);
   });
 });

@@ -1090,38 +1090,43 @@ export function rebuildPlanMeshes(
     holder.add(roomMesh(r, presentation, { roomFillOpacityScale }));
   }
 
-  for (const f of Object.values(elementsById)) {
-    if (f.kind !== 'floor') continue;
-    if (kindHidden('floor')) continue;
+  // CAN-V3-01: floor/roof outlines are projection geometry — suppress when projMajor is null (1:500+).
+  const suppressProjectionFallback = opts.lineWeights != null && opts.lineWeights.projMajor == null;
 
-    if (level && f.levelId !== level) continue;
+  if (!suppressProjectionFallback) {
+    for (const f of Object.values(elementsById)) {
+      if (f.kind !== 'floor') continue;
+      if (kindHidden('floor')) continue;
 
-    holder.add(
-      horizontalOutlineMesh(
-        f.boundaryMm,
-        PLAN_Y + 0.001,
-        getPlanPalette().floorOutline,
-        0.16,
-        f.id,
-      ),
-    );
-  }
+      if (level && f.levelId !== level) continue;
 
-  for (const rf of Object.values(elementsById)) {
-    if (rf.kind !== 'roof') continue;
-    if (kindHidden('roof')) continue;
+      holder.add(
+        horizontalOutlineMesh(
+          f.boundaryMm,
+          PLAN_Y + 0.001,
+          getPlanPalette().floorOutline,
+          0.16,
+          f.id,
+        ),
+      );
+    }
 
-    if (level && rf.referenceLevelId !== level) continue;
+    for (const rf of Object.values(elementsById)) {
+      if (rf.kind !== 'roof') continue;
+      if (kindHidden('roof')) continue;
 
-    holder.add(
-      horizontalOutlineMesh(
-        rf.footprintMm,
-        PLAN_Y + 0.004,
-        getPlanPalette().roofOutline,
-        0.2,
-        rf.id,
-      ),
-    );
+      if (level && rf.referenceLevelId !== level) continue;
+
+      holder.add(
+        horizontalOutlineMesh(
+          rf.footprintMm,
+          PLAN_Y + 0.004,
+          getPlanPalette().roofOutline,
+          0.2,
+          rf.id,
+        ),
+      );
+    }
   }
 
   for (const cl of Object.values(elementsById)) {
