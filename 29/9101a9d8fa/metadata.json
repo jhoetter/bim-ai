@@ -2,7 +2,7 @@
   "cli_version": "0.6.0",
   "checkpoint_id": "299101a9d8fa",
   "strategy": "manual-commit",
-  "branch": "feat/v3-tkn-v3-01-tokenisation",
+  "branch": "feat/v3-cq-02-python-lockfile",
   "checkpoints_count": 3,
   "files_touched": [
     "app/bim_ai/api/__init__.py",
@@ -26,13 +26,19 @@
       "transcript": "/29/9101a9d8fa/1/full.jsonl",
       "content_hash": "/29/9101a9d8fa/1/content_hash.txt",
       "prompt": "/29/9101a9d8fa/1/prompt.txt"
+    },
+    {
+      "metadata": "/29/9101a9d8fa/2/metadata.json",
+      "transcript": "/29/9101a9d8fa/2/full.jsonl",
+      "content_hash": "/29/9101a9d8fa/2/content_hash.txt",
+      "prompt": "/29/9101a9d8fa/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 217,
-    "cache_creation_tokens": 180172,
-    "cache_read_tokens": 9918221,
-    "output_tokens": 60299,
-    "api_call_count": 143
+    "input_tokens": 600,
+    "cache_creation_tokens": 274587,
+    "cache_read_tokens": 11514322,
+    "output_tokens": 71497,
+    "api_call_count": 163
   }
 }
