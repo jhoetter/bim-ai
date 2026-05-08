@@ -29,6 +29,22 @@ export type ToposolidElem = {
   discipline?: string;
 };
 
+// ---------------------------------------------------------------------------
+// CAN-V3-02 — Hatch pattern definition
+// ---------------------------------------------------------------------------
+
+/** CAN-V3-02 — built-in hatch pattern; scales with paper-mm at plot scale. */
+export type HatchPatternDef = {
+  kind: 'hatch_pattern_def';
+  id: string;
+  name: string;
+  paperMmRepeat: number;
+  rotationDeg: number;
+  strokeWidthMm: number;
+  patternKind: 'lines' | 'crosshatch' | 'dots' | 'curve' | 'svg';
+  svgSource?: string | null;
+};
+
 export type ElemKind =
   | 'toposolid'
   | 'project_settings'
@@ -91,6 +107,7 @@ export type ElemKind =
   | 'placed_tag'
   | 'detail_line'
   | 'detail_region'
+  | 'draft_detail_region'
   | 'text_note'
   | 'sweep'
   | 'dormer'
@@ -102,7 +119,6 @@ export type ElemKind =
   | 'phase'
   | 'soffit'
   | 'sun_settings'
-  | 'toposolid'
   | 'view'
   | 'edge_profile_run'
   | 'roof_join'
@@ -112,7 +128,10 @@ export type ElemKind =
   | 'foundation'
   | 'duct'
   | 'pipe'
-  | 'fixture';
+  | 'fixture'
+  | 'material'
+  | 'decal'
+  | 'hatch_pattern_def';
 
 export type PhaseFilter = 'all' | 'existing' | 'demolition' | 'new';
 
@@ -176,6 +195,8 @@ export type View = {
   breaks?: ViewBreak[];
   scale?: number;
   detailLevel?: 'coarse' | 'medium' | 'fine';
+  /** DSC-V3-02: per-view discipline lens; 'show_all' = foreground for all elements. */
+  defaultLens?: ViewLensMode;
 };
 
 /** FED-04: 2D linework primitive parsed from a DXF underlay. */
@@ -1112,6 +1133,8 @@ export type Element =
       elementOverrides?: Array<{ categoryOrId: string; alternateRender: string }>;
       /** KRN-V3-04: per-set option lock; key = optionSetId, value = optionId. */
       optionLocks?: Record<string, string>;
+      /** DSC-V3-02: per-view discipline lens; 'show_all' = foreground for all elements. */
+      defaultLens?: ViewLensMode;
     }
   | {
       kind: 'view_template';
@@ -1214,15 +1237,24 @@ export type Element =
       style?: 'solid' | 'dashed' | 'dotted';
     }
   | {
-      /** ANN-01 — view-local 2D filled region (annotation only). */
+      /** ANN-01 / ANN-V3-01 — view-local 2D filled region (annotation only). */
       kind: 'detail_region';
       id: string;
-      hostViewId: string;
-      boundaryMm: XY[];
+      // v2 fields (ANN-01)
+      hostViewId?: string;
+      boundaryMm?: XY[];
       fillColour?: string;
       fillPattern?: 'solid' | 'hatch_45' | 'hatch_90' | 'crosshatch' | 'dots';
       strokeMm?: number;
       strokeColour?: string;
+      // v3 fields (ANN-V3-01)
+      viewId?: string | null;
+      vertices?: Array<{ x: number; y: number }> | null;
+      closed?: boolean | null;
+      hatchId?: string | null;
+      lineweightOverride?: number | null;
+      phaseCreated?: string | null;
+      phaseDemolished?: string | null;
     }
   | {
       /** ANN-01 — view-local text note (annotation only). */
@@ -1659,7 +1691,8 @@ export type Element =
   | View
   | ToposolidElem
   | AssetLibraryEntryElem
-  | PlacedAssetElem;
+  | PlacedAssetElem
+  | HatchPatternDef;
 
 export type Violation = {
   ruleId: string;
@@ -1951,9 +1984,14 @@ export type AssumptionEntry = {
   evidence?: string | null;
 };
 
-/** CHR-V3-03 / DSC-V3-02 — lens mode for the status-bar discipline filter. */
+/** CHR-V3-03 — workspace-level status-bar discipline filter (LNS-V3-01 UI). */
 export type LensMode = 'all' | 'architecture' | 'structure' | 'mep' | 'energy' | 'coordination';
 
+/** DSC-V3-02 — per-view discipline lens stored on view elements. */
+export type ViewLensMode = 'show_arch' | 'show_struct' | 'show_mep' | 'show_all';
+
+/** DSC-V3-02 — set the discipline lens on a view; non-matching elements ghost at 25% opacity. */
+export type SetViewLensCmd = { type: 'set_view_lens'; viewId: string; lens: ViewLensMode };
 // ---------------------------------------------------------------------------
 // JOB-V3-01 — long-running-operations job types
 // ---------------------------------------------------------------------------
@@ -2222,4 +2260,46 @@ export type StructuredLayout = {
   openings: OpeningHint[];
   ocrLabels: OcrLabel[];
   advisories: Advisory[];
+};
+
+// ---------------------------------------------------------------------------
+// ANN-V3-01 — Detail-region drawing-mode authoring
+// ---------------------------------------------------------------------------
+
+export type DetailRegionElem = {
+  kind: 'detail_region';
+  id: string;
+  viewId: string;
+  vertices: Array<{ x: number; y: number }>;
+  closed: boolean;
+  hatchId?: string | null;
+  lineweightOverride?: number | null;
+  phaseCreated?: string | null;
+  phaseDemolished?: string | null;
+};
+
+/** Transient: live-preview vertices before commit. Never persisted. */
+export type DraftDetailRegionElem = {
+  kind: 'draft_detail_region';
+  viewId: string;
+  vertices: Array<{ x: number; y: number }>;
+  closed: boolean;
+  hatchId?: string | null;
+};
+
+// ---------------------------------------------------------------------------
+// EDT-V3-06 — Helper dimension descriptor
+// ---------------------------------------------------------------------------
+
+export type HelperDimensionDescriptor = {
+  id: string;
+  label: string;
+  valueMm: number;
+  /** Start and end points in plan mm coordinates, for drawing the dimension line. */
+  fromPoint: XY;
+  toPoint: XY;
+  /** Called when user commits a new value; returns the command to dispatch. */
+  onCommit: (newValueMm: number) => Record<string, unknown>;
+  /** When true the chip is display-only and clicking it does nothing. */
+  readOnly?: boolean;
 };
