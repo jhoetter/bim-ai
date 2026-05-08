@@ -1,0 +1,1 @@
+Read spec/v3-prompts/wp-026.md end-to-end, then implement MRK-V3-01 3D-anchored comments on branch feat/v3-mrk-v3-01-3d-comments

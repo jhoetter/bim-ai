@@ -3,7 +3,7 @@
   "checkpoint_id": "c262c7716375",
   "strategy": "manual-commit",
   "branch": "feat/v3-krn-v3-08-wall-sweeps-reveals",
-  "checkpoints_count": 3,
+  "checkpoints_count": 4,
   "files_touched": [
     "packages/core/src/index.ts"
   ],
@@ -49,13 +49,19 @@
       "transcript": "/c2/62c7716375/6/full.jsonl",
       "content_hash": "/c2/62c7716375/6/content_hash.txt",
       "prompt": "/c2/62c7716375/6/prompt.txt"
+    },
+    {
+      "metadata": "/c2/62c7716375/7/metadata.json",
+      "transcript": "/c2/62c7716375/7/full.jsonl",
+      "content_hash": "/c2/62c7716375/7/content_hash.txt",
+      "prompt": "/c2/62c7716375/7/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 407,
-    "cache_creation_tokens": 593720,
-    "cache_read_tokens": 44944798,
-    "output_tokens": 172087,
-    "api_call_count": 395
+    "input_tokens": 1047,
+    "cache_creation_tokens": 727751,
+    "cache_read_tokens": 54941920,
+    "output_tokens": 228583,
+    "api_call_count": 485
   }
 }

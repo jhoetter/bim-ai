@@ -1,0 +1,34 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "c262c7716375",
+  "session_id": "e88b5e16-d753-4d8c-a6e5-4b4709bc6f62",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T17:37:07.476927Z",
+  "branch": "feat/v3-krn-v3-08-wall-sweeps-reveals",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/core/src/index.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "a833caa5fc91",
+  "token_usage": {
+    "input_tokens": 640,
+    "cache_creation_tokens": 134031,
+    "cache_read_tokens": 9997122,
+    "output_tokens": 56496,
+    "api_call_count": 90
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-08T17:37:07.461015Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 1060,
+    "human_modified": 10,
+    "human_removed": 0,
+    "total_committed": 1063,
+    "total_lines_changed": 1130,
+    "agent_percentage": 0,
+    "metric_version": 2
+  }
+}
