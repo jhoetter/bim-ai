@@ -3,21 +3,34 @@
   "checkpoint_id": "b7e9b7ec08b7",
   "strategy": "manual-commit",
   "branch": "feat/v3-top-v3-01-toposolid",
-  "checkpoints_count": 1,
-  "files_touched": null,
+  "checkpoints_count": 2,
+  "files_touched": [
+    "app/bim_ai/api/registry.py",
+    "app/bim_ai/img/__init__.py",
+    "app/bim_ai/img/ocr.py",
+    "app/bim_ai/img/pipeline.py",
+    "app/bim_ai/img/polygon.py",
+    "app/bim_ai/img/types.py"
+  ],
   "sessions": [
     {
       "metadata": "/b7/e9b7ec08b7/0/metadata.json",
       "transcript": "/b7/e9b7ec08b7/0/full.jsonl",
       "content_hash": "/b7/e9b7ec08b7/0/content_hash.txt",
       "prompt": "/b7/e9b7ec08b7/0/prompt.txt"
+    },
+    {
+      "metadata": "/b7/e9b7ec08b7/1/metadata.json",
+      "transcript": "/b7/e9b7ec08b7/1/full.jsonl",
+      "content_hash": "/b7/e9b7ec08b7/1/content_hash.txt",
+      "prompt": "/b7/e9b7ec08b7/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 248,
-    "cache_creation_tokens": 140344,
-    "cache_read_tokens": 13288401,
-    "output_tokens": 63209,
-    "api_call_count": 152
+    "input_tokens": 429,
+    "cache_creation_tokens": 374758,
+    "cache_read_tokens": 28302734,
+    "output_tokens": 144837,
+    "api_call_count": 327
   }
 }
