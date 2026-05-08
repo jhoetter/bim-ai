@@ -1,0 +1,31 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "8ba8e320c437",
+  "strategy": "manual-commit",
+  "branch": "feat/wave-05-krn-14-dormer-completeness",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "app/bim_ai/constraints.py",
+    "app/tests/test_dormer_completeness.py",
+    "packages/web/src/plan/dormerPlanSymbol.test.ts",
+    "packages/web/src/plan/dormerPlanSymbol.ts",
+    "packages/web/src/plan/symbology.ts",
+    "packages/web/src/viewport/dormerMesh.test.ts",
+    "packages/web/src/viewport/dormerMesh.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/8b/a8e320c437/0/metadata.json",
+      "transcript": "/8b/a8e320c437/0/full.jsonl",
+      "content_hash": "/8b/a8e320c437/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 4,
+    "cache_creation_tokens": 2297,
+    "cache_read_tokens": 1236115,
+    "output_tokens": 2138,
+    "api_call_count": 4
+  }
+}
