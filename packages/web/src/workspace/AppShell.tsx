@@ -8,7 +8,7 @@ import {
   useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import { OptionsBar } from './OptionsBar';
+import { ToolModifierBar } from './ToolModifierBar';
 
 /**
  * AppShell — the canonical layout grid for the BIM AI workspace.
@@ -133,7 +133,7 @@ export function AppShell({
         {topBar}
       </div>
       <div style={{ gridArea: 'optionsbar' }}>
-        <OptionsBar />
+        <ToolModifierBar />
       </div>
       <aside
         aria-label={t('workspace.projectBrowser')}
