@@ -1,0 +1,36 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "a8b6cffdcdd3",
+  "session_id": "d5782e59-d3cc-4392-a843-ee4f7b1a3617",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T22:16:19.395116Z",
+  "branch": "feat/v3-mat-v3-01-pbr-material",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/viewport/meshBuilders.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "0f2dc69af071",
+  "checkpoint_transcript_start": 818,
+  "transcript_lines_at_start": 818,
+  "token_usage": {
+    "input_tokens": 35,
+    "cache_creation_tokens": 26299,
+    "cache_read_tokens": 3002271,
+    "output_tokens": 17560,
+    "api_call_count": 35
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-08T22:16:19.372236Z",
+    "agent_lines": 93,
+    "agent_removed": 0,
+    "human_added": 300,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 393,
+    "total_lines_changed": 393,
+    "agent_percentage": 23.66412213740458,
+    "metric_version": 2
+  }
+}
