@@ -1422,6 +1422,36 @@ class CreateCeilingCmd(BaseModel):
     ceiling_type_id: str | None = Field(default=None, alias="ceilingTypeId")
 
 
+class CreateMassCmd(BaseModel):
+    """SKT-01 — in-place generic mass authored from a sketch session."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createMass"] = "createMass"
+    id: str | None = None
+    name: str = "Mass"
+    level_id: str = Field(alias="levelId")
+    footprint_mm: list[Vec2Mm] = Field(alias="footprintMm")
+    height_mm: float = Field(default=3000, alias="heightMm", gt=0)
+    rotation_deg: float = Field(default=0.0, alias="rotationDeg")
+    material_key: str | None = Field(default=None, alias="materialKey")
+
+
+class CreateVoidCutCmd(BaseModel):
+    """SKT-01 — subtractive boolean marker against a host element.
+
+    The element is a marker only (`VoidCutElem`); the actual CSG geometry is
+    handled at render time. An `AgentDeviationElem` is co-authored by the
+    engine handler so the deviation against the host is traceable.
+    """
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createVoidCut"] = "createVoidCut"
+    id: str | None = None
+    host_element_id: str = Field(alias="hostElementId")
+    profile_mm: list[Vec2Mm] = Field(alias="profileMm")
+    depth_mm: float = Field(alias="depthMm", gt=0)
+
+
 Command = Annotated[
     CreateLevelCmd
     | CreateWallCmd
@@ -1533,6 +1563,8 @@ Command = Annotated[
     | SetWallJoinVariantCmd
     | CreateColumnCmd
     | CreateBeamCmd
-    | CreateCeilingCmd,
+    | CreateCeilingCmd
+    | CreateMassCmd
+    | CreateVoidCutCmd,
     Field(discriminator="type"),
 ]

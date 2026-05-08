@@ -5,24 +5,36 @@ and validation state are tracked in-memory until `Finish` translates the closed
 loop into a single persisted command (e.g. `CreateFloor`). Sessions never enter
 the `Document` snapshot — they have no element id, no undo entry, no IFC trace.
 
-Element kinds supported (wave3-4 propagation): `floor`, `roof`,
-`room_separation`. `ceiling`, `in_place_mass`, `void_cut`, and `detail_region`
-remain deferred follow-ups (each reuses the same protocol). `ceiling`
-specifically is gated on a CeilingElem + createCeiling command landing as
-its own kernel WP.
+Element kinds supported: `floor`, `roof`, `room_separation`, `ceiling`,
+`in_place_mass`, `void_cut`, `detail_region`. The first three came in the
+wave2-3/wave3-4 slices; the latter four landed in wave-04 (this file).
+
+Each sub-mode is registered in :data:`SUBMODES` with a validator and a
+Finish-emitter; :func:`finish_session` is the single dispatch entry point that
+the HTTP route calls.
 """
 
 from __future__ import annotations
 
 import uuid
+from collections.abc import Callable
+from dataclasses import dataclass
 from threading import RLock
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from bim_ai.elements import Vec2Mm
 
-SketchElementKind = Literal["floor", "roof", "room_separation"]
+SketchElementKind = Literal[
+    "floor",
+    "roof",
+    "room_separation",
+    "ceiling",
+    "in_place_mass",
+    "void_cut",
+    "detail_region",
+]
 SketchSessionStatus = Literal["open", "finished", "cancelled"]
 # SKT-02: sub-tool config — does Pick Walls insert wall centerlines or
 # offset-by-half-thickness lines along the wall's interior face?
@@ -83,6 +95,16 @@ class SketchSession(BaseModel):
         default="interior_face", alias="pickWallsOffsetMode"
     )
     picked_walls: list[PickedWall] = Field(default_factory=list, alias="pickedWalls")
+    options: dict[str, Any] = Field(
+        default_factory=dict,
+        description=(
+            "Sub-mode-specific options threaded through to the Finish-emitter. "
+            "void_cut requires `hostElementId` and `depthMm`; in_place_mass uses "
+            "`heightMm` / `rotationDeg` / `materialKey`; detail_region uses "
+            "`hostViewId`. Stored on the session so a tool that locks an option "
+            "(e.g. picked host) does not need to re-pass it on Finish."
+        ),
+    )
 
 
 class SketchSessionRegistry:
@@ -103,6 +125,7 @@ class SketchSessionRegistry:
         element_kind: SketchElementKind,
         level_id: str,
         pick_walls_offset_mode: PickWallsOffsetMode = "interior_face",
+        options: dict[str, Any] | None = None,
     ) -> SketchSession:
         with self._lock:
             session_id = str(uuid.uuid4())
@@ -115,6 +138,7 @@ class SketchSessionRegistry:
                 status="open",
                 pick_walls_offset_mode=pick_walls_offset_mode,
                 picked_walls=[],
+                options=dict(options or {}),
             )
             self._sessions[session_id] = session
             return session
@@ -147,3 +171,255 @@ _REGISTRY = SketchSessionRegistry()
 
 def get_sketch_registry() -> SketchSessionRegistry:
     return _REGISTRY
+
+
+# ---- Sub-mode dispatch ---------------------------------------------------------------
+#
+# Every supported `element_kind` has:
+#   - a `validator`: ensures the session's lines are well-formed for the kind.
+#     Polygon-style kinds use `assert_closed_loop` over the derived polygon;
+#     line-set kinds use `assert_line_set` over the raw segments.
+#   - an `emitter`: translates the (validated) session + sub-mode options into
+#     a list of authoring commands (typically one) that the engine commits
+#     through `try_commit`.
+#
+# The HTTP route in `routes_sketch.py` wraps `finish_session` so the same code
+# path is exercised by tests (which call `finish_session` directly) and by
+# real authoring (which goes through the route).
+
+
+# A Finish-emitter receives the validated session plus a merged options dict
+# (the per-kind defaults overlaid with whatever the request body supplies)
+# and returns a list of engine commands as plain dicts.
+FinishEmitter = Callable[["SketchSession", dict[str, Any]], list[dict[str, Any]]]
+# A Validator receives the session and raises `SketchInvalidError` if the
+# sketch is unfit for Finish; otherwise returns silently.
+SketchValidator = Callable[["SketchSession"], None]
+
+
+@dataclass(frozen=True)
+class SubmodeSpec:
+    """Validator + Finish-emitter for one element kind."""
+
+    validator: SketchValidator
+    emitter: FinishEmitter
+
+
+def _validate_polygon_session(session: SketchSession) -> None:
+    """Validate a polygon-style sub-mode (floor / roof / ceiling / mass / void).
+
+    Two layers, both required:
+
+    1. :func:`validate_session` does the structural check (vertex incidence,
+       zero-length lines, self-intersection) on the original ``SketchLine``
+       list. This catches the most common authoring mistakes ("I forgot the
+       last segment").
+    2. :func:`assert_closed_loop` is the lightweight guard on the derived
+       polygon — degenerate consecutive vertices land here.
+
+    Imports happen inside the function to avoid a circular import between
+    `sketch_session` and `sketch_validation` (the latter imports from this
+    module at top level).
+    """
+
+    from bim_ai.sketch_validation import (
+        SketchInvalidError,
+        assert_closed_loop,
+        derive_closed_loop_polygon,
+        validate_session,
+    )
+
+    state = validate_session(list(session.lines))
+    if not state.valid and state.issues:
+        first = state.issues[0]
+        raise SketchInvalidError(first.code, first.message)
+
+    polygon_xy = derive_closed_loop_polygon(list(session.lines))
+    polygon = [Vec2Mm(xMm=x, yMm=y) for (x, y) in polygon_xy]
+    assert_closed_loop(polygon)
+
+
+def _validate_line_set_session(session: SketchSession) -> None:
+    """Validate a line-set sub-mode (room_separation / detail_region)."""
+
+    from bim_ai.sketch_validation import assert_line_set
+
+    segments = [(ln.from_mm, ln.to_mm) for ln in session.lines]
+    assert_line_set(segments)
+
+
+def _polygon_payload(session: SketchSession) -> list[dict[str, float]]:
+    from bim_ai.sketch_validation import derive_closed_loop_polygon
+
+    polygon = derive_closed_loop_polygon(list(session.lines))
+    return [{"xMm": x, "yMm": y} for (x, y) in polygon]
+
+
+def _emit_floor(session: SketchSession, opts: dict[str, Any]) -> list[dict[str, Any]]:
+    cmd: dict[str, Any] = {
+        "type": "createFloor",
+        "name": opts.get("name", "Floor"),
+        "levelId": session.level_id,
+        "boundaryMm": _polygon_payload(session),
+    }
+    if "floorTypeId" in opts and opts["floorTypeId"] is not None:
+        cmd["floorTypeId"] = opts["floorTypeId"]
+    if "thicknessMm" in opts and opts["thicknessMm"] is not None:
+        cmd["thicknessMm"] = opts["thicknessMm"]
+    return [cmd]
+
+
+def _emit_roof(session: SketchSession, opts: dict[str, Any]) -> list[dict[str, Any]]:
+    return [
+        {
+            "type": "createRoof",
+            "name": opts.get("name", "Roof"),
+            "referenceLevelId": session.level_id,
+            "footprintMm": _polygon_payload(session),
+            "roofGeometryMode": opts.get("roofGeometryMode", "mass_box"),
+        }
+    ]
+
+
+def _emit_room_separation(
+    session: SketchSession, opts: dict[str, Any]
+) -> list[dict[str, Any]]:
+    name = opts.get("name", "Separation")
+    return [
+        {
+            "type": "createRoomSeparation",
+            "name": name,
+            "levelId": session.level_id,
+            "start": {"xMm": ln.from_mm.x_mm, "yMm": ln.from_mm.y_mm},
+            "end": {"xMm": ln.to_mm.x_mm, "yMm": ln.to_mm.y_mm},
+        }
+        for ln in session.lines
+    ]
+
+
+def _emit_ceiling(session: SketchSession, opts: dict[str, Any]) -> list[dict[str, Any]]:
+    cmd: dict[str, Any] = {
+        "type": "createCeiling",
+        "name": opts.get("name", "Ceiling"),
+        "levelId": session.level_id,
+        "boundaryMm": _polygon_payload(session),
+    }
+    if "heightOffsetMm" in opts and opts["heightOffsetMm"] is not None:
+        cmd["heightOffsetMm"] = opts["heightOffsetMm"]
+    if "thicknessMm" in opts and opts["thicknessMm"] is not None:
+        cmd["thicknessMm"] = opts["thicknessMm"]
+    if "ceilingTypeId" in opts and opts["ceilingTypeId"] is not None:
+        cmd["ceilingTypeId"] = opts["ceilingTypeId"]
+    return [cmd]
+
+
+def _emit_in_place_mass(
+    session: SketchSession, opts: dict[str, Any]
+) -> list[dict[str, Any]]:
+    cmd: dict[str, Any] = {
+        "type": "createMass",
+        "name": opts.get("name", "Mass"),
+        "levelId": session.level_id,
+        "footprintMm": _polygon_payload(session),
+    }
+    if "heightMm" in opts and opts["heightMm"] is not None:
+        cmd["heightMm"] = opts["heightMm"]
+    if "rotationDeg" in opts and opts["rotationDeg"] is not None:
+        cmd["rotationDeg"] = opts["rotationDeg"]
+    if "materialKey" in opts and opts["materialKey"] is not None:
+        cmd["materialKey"] = opts["materialKey"]
+    return [cmd]
+
+
+def _emit_void_cut(session: SketchSession, opts: dict[str, Any]) -> list[dict[str, Any]]:
+    from bim_ai.sketch_validation import SketchInvalidError
+
+    host_id = opts.get("hostElementId")
+    if not host_id:
+        raise SketchInvalidError(
+            "missing_host",
+            "void_cut Finish requires `hostElementId` in options.",
+        )
+    depth = opts.get("depthMm")
+    if depth is None or float(depth) <= 0:
+        raise SketchInvalidError(
+            "invalid_depth",
+            "void_cut Finish requires positive `depthMm` in options.",
+        )
+    return [
+        {
+            "type": "createVoidCut",
+            "hostElementId": host_id,
+            "profileMm": _polygon_payload(session),
+            "depthMm": float(depth),
+        }
+    ]
+
+
+def _emit_detail_region(
+    session: SketchSession, opts: dict[str, Any]
+) -> list[dict[str, Any]]:
+    from bim_ai.sketch_validation import SketchInvalidError
+
+    host_view_id = opts.get("hostViewId")
+    if not host_view_id:
+        raise SketchInvalidError(
+            "missing_host_view",
+            "detail_region Finish requires `hostViewId` in options.",
+        )
+    # Detail region commits as one filled polygon. The session lines describe
+    # an open or closed line-set; we reuse them as the boundary in order, plus
+    # we close the loop by appending the start vertex if needed. The engine's
+    # createDetailRegion validator only requires ≥3 boundary points.
+    boundary: list[dict[str, float]] = []
+    for ln in session.lines:
+        boundary.append({"xMm": ln.from_mm.x_mm, "yMm": ln.from_mm.y_mm})
+    if session.lines:
+        last = session.lines[-1]
+        boundary.append({"xMm": last.to_mm.x_mm, "yMm": last.to_mm.y_mm})
+    cmd: dict[str, Any] = {
+        "type": "createDetailRegion",
+        "hostViewId": host_view_id,
+        "boundaryMm": boundary,
+    }
+    for k in ("fillColour", "fillPattern", "strokeMm", "strokeColour"):
+        if k in opts and opts[k] is not None:
+            cmd[k] = opts[k]
+    return [cmd]
+
+
+SUBMODES: dict[str, SubmodeSpec] = {
+    "floor": SubmodeSpec(_validate_polygon_session, _emit_floor),
+    "roof": SubmodeSpec(_validate_polygon_session, _emit_roof),
+    "room_separation": SubmodeSpec(_validate_line_set_session, _emit_room_separation),
+    "ceiling": SubmodeSpec(_validate_polygon_session, _emit_ceiling),
+    "in_place_mass": SubmodeSpec(_validate_polygon_session, _emit_in_place_mass),
+    "void_cut": SubmodeSpec(_validate_polygon_session, _emit_void_cut),
+    "detail_region": SubmodeSpec(_validate_line_set_session, _emit_detail_region),
+}
+
+
+def finish_session(
+    session: SketchSession,
+    options: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    """Validate the session for its sub-mode, then return the Finish commands.
+
+    Raises :class:`SketchInvalidError` on validation failure (open loop /
+    empty line set / missing required option). Caller is responsible for
+    feeding the returned commands through `try_commit` and persisting the
+    document.
+    """
+
+    spec = SUBMODES.get(session.element_kind)
+    if spec is None:
+        raise ValueError(f"unsupported element_kind: {session.element_kind!r}")
+
+    spec.validator(session)
+
+    merged: dict[str, Any] = {}
+    merged.update(session.options or {})
+    if options:
+        merged.update(options)
+
+    return spec.emitter(session, merged)

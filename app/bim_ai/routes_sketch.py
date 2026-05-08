@@ -38,15 +38,17 @@ from bim_ai.sketch_pick_walls import (
     rebuild_picked_walls_lines,
 )
 from bim_ai.sketch_session import (
+    SUBMODES,
     PickedWall,
     PickWallsOffsetMode,
     SketchLine,
     SketchSession,
     SketchValidationState,
+    finish_session,
     get_sketch_registry,
 )
 from bim_ai.sketch_validation import (
-    derive_closed_loop_polygon,
+    SketchInvalidError,
     validate_sketch_session,
 )
 from bim_ai.tables import UndoStackRecord
@@ -72,6 +74,7 @@ class OpenSketchSessionRequest(BaseModel):
     pick_walls_offset_mode: PickWallsOffsetMode = Field(
         default="interior_face", alias="pickWallsOffsetMode"
     )
+    options: dict[str, Any] = Field(default_factory=dict)
 
 
 class AddSketchLineRequest(BaseModel):
@@ -123,14 +126,19 @@ class FinishSketchSessionRequest(BaseModel):
     thickness_mm: float | None = Field(default=None, alias="thicknessMm")
     user_id: str | None = Field(default="local-dev", alias="userId")
     client_op_id: str | None = Field(default=None, alias="clientOpId")
+    # Generic sub-mode options bag — overlaid on top of `session.options` and
+    # forwarded to the per-kind Finish-emitter. Lets one Finish endpoint
+    # serve every supported `element_kind` without per-kind request models.
+    options: dict[str, Any] = Field(default_factory=dict)
 
 
 # --- Endpoints ------------------------------------------------------------------------
 
 
-# `ceiling` is reserved by the SKT-01 schema but waits on a CeilingElem +
-# createCeiling command (own WP). Ship floor / roof / room_separation now.
-_SUPPORTED_ELEMENT_KINDS = {"floor", "roof", "room_separation"}
+# Wave-04 SKT-01 closeout: every `SketchElementKind` is now wired through a
+# SubmodeSpec (validator + Finish-emitter). The route accepts whatever the
+# session-side registry advertises so adding a new sub-mode is a one-place edit.
+_SUPPORTED_ELEMENT_KINDS = set(SUBMODES.keys())
 
 
 @sketch_router.post("/sketch-sessions")
@@ -164,6 +172,7 @@ async def open_sketch_session(
         element_kind=body.element_kind,  # type: ignore[arg-type]
         level_id=body.level_id,
         pick_walls_offset_mode=body.pick_walls_offset_mode,
+        options=body.options,
     )
     return _session_payload(sk, validate_sketch_session(sk))
 
@@ -329,74 +338,46 @@ def _build_finish_commands(
     sk: SketchSession,
     body: FinishSketchSessionRequest,
 ) -> list[dict[str, Any]]:
-    """Translate the sketch's lines into one or more authoring commands.
+    """Thin adapter around :func:`finish_session`.
 
-    - floor / ceiling / roof: one closed-loop polygon → single Create*Cmd
-    - room_separation: one line per sketch segment → one CreateRoomSeparation
-      command per line (matches Revit behaviour where each separator is
-      independently authored)
+    Pulls per-kind option overrides off the request body (back-compat for the
+    explicit `name` / `floorTypeId` / `thicknessMm` fields), merges them onto
+    the generic `options` dict, and lets the sub-mode dispatch produce the
+    commands. Validation errors raised by the validator or emitter are
+    re-shaped into 409 HTTPException for the route caller.
     """
 
-    if sk.element_kind == "room_separation":
-        return [
-            {
-                "type": "createRoomSeparation",
-                "name": body.name or "Separation",
-                "levelId": sk.level_id,
-                "start": {"xMm": ln.from_mm.x_mm, "yMm": ln.from_mm.y_mm},
-                "end": {"xMm": ln.to_mm.x_mm, "yMm": ln.to_mm.y_mm},
-            }
-            for ln in sk.lines
-        ]
+    overrides: dict[str, Any] = dict(body.options or {})
+    if body.name and "name" not in overrides:
+        overrides["name"] = body.name
+    if body.floor_type_id is not None and "floorTypeId" not in overrides:
+        overrides["floorTypeId"] = body.floor_type_id
+    if body.thickness_mm is not None and "thicknessMm" not in overrides:
+        overrides["thicknessMm"] = body.thickness_mm
 
-    polygon = derive_closed_loop_polygon(list(sk.lines))
-    if len(polygon) < 3:
+    try:
+        return finish_session(sk, overrides)
+    except SketchInvalidError as exc:
         raise HTTPException(
             status_code=409,
             detail={
                 "reason": "sketch_invalid",
                 "validation": {
                     "valid": False,
-                    "issues": [{"code": "open_loop", "message": "no closed loop derivable"}],
+                    "issues": [{"code": exc.code, "message": exc.message}],
                 },
             },
-        )
-    boundary_payload = [{"xMm": x, "yMm": y} for (x, y) in polygon]
-
-    if sk.element_kind == "floor":
-        cmd: dict[str, Any] = {
-            "type": "createFloor",
-            "name": body.name or "Floor",
-            "levelId": sk.level_id,
-            "boundaryMm": boundary_payload,
-        }
-        if body.floor_type_id is not None:
-            cmd["floorTypeId"] = body.floor_type_id
-        if body.thickness_mm is not None:
-            cmd["thicknessMm"] = body.thickness_mm
-        return [cmd]
-
-    if sk.element_kind == "roof":
-        return [
-            {
-                "type": "createRoof",
-                "name": body.name or "Roof",
-                "referenceLevelId": sk.level_id,
-                "footprintMm": boundary_payload,
-                "roofGeometryMode": "mass_box",
-            }
-        ]
-
-    raise HTTPException(
-        status_code=400,
-        detail=f"unsupported_element_kind: '{sk.element_kind}'",
-    )
+        ) from exc
 
 
 _KIND_TO_NEW_ID_FIELD: dict[str, tuple[str, str]] = {
     "floor": ("floor", "floorId"),
     "roof": ("roof", "roofId"),
     "room_separation": ("room_separation", "roomSeparationId"),
+    "ceiling": ("ceiling", "ceilingId"),
+    "in_place_mass": ("mass", "massId"),
+    "void_cut": ("void_cut", "voidCutId"),
+    "detail_region": ("detail_region", "detailRegionId"),
 }
 
 
