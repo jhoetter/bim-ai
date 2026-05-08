@@ -1990,6 +1990,16 @@ export function makeRecessedWallMesh(
     box.rotation.y = yaw;
     box.userData.bimPickId = wall.id;
     addEdges(box);
+    // Vertical cladding board strips for cladding / wood walls — the line
+    // sketch's recessed back wall reads as visible vertical wood siding,
+    // not a flat panel. Pick the relevant material (recess back uses the
+    // wall's primary materialKey; end caps use the white capMat which
+    // doesn't get boards).
+    const isRecessBack = perpMmOffset > 0;
+    const boardMatSpec = isRecessBack ? wallMatSpec : null;
+    if (boardMatSpec?.category === 'cladding') {
+      addCladdingBoards(box, segLen, height, halfThickM * 2, 150, 8, boardMatSpec.baseColor);
+    }
     group.add(box);
   }
 
