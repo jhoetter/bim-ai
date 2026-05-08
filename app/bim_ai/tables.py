@@ -98,7 +98,7 @@ class ActivityRowRecord(Base):
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
     model_id: Mapped[str] = mapped_column(
-        String, ForeignKey("bim_models.id", ondelete="CASCADE"), index=True
+        PGUUID(as_uuid=False), ForeignKey("bim_models.id", ondelete="CASCADE"), index=True
     )
     author_id: Mapped[str] = mapped_column(String, nullable=False)
     kind: Mapped[str] = mapped_column(String, nullable=False)
@@ -108,12 +108,26 @@ class ActivityRowRecord(Base):
     result_snapshot_id: Mapped[str | None] = mapped_column(String, nullable=True)
 
 
+class MilestoneRecord(Base):
+    __tablename__ = "milestones"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    model_id: Mapped[str] = mapped_column(
+        PGUUID(as_uuid=False), ForeignKey("bim_models.id", ondelete="CASCADE"), index=True
+    )
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    description: Mapped[str | None] = mapped_column(String, nullable=True)
+    snapshot_id: Mapped[str] = mapped_column(String, nullable=False)
+    author_id: Mapped[str] = mapped_column(String, nullable=False)
+    created_at: Mapped[int] = mapped_column(BigInteger, nullable=False)
+
+
 class RoleAssignmentRecord(Base):
     __tablename__ = "role_assignments"
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
     model_id: Mapped[str] = mapped_column(
-        String, ForeignKey("bim_models.id", ondelete="CASCADE"), index=True
+        PGUUID(as_uuid=False), ForeignKey("bim_models.id", ondelete="CASCADE"), index=True
     )
     subject_kind: Mapped[str] = mapped_column(String, nullable=False)
     subject_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
@@ -121,3 +135,20 @@ class RoleAssignmentRecord(Base):
     granted_by: Mapped[str] = mapped_column(String, nullable=False)
     granted_at: Mapped[int] = mapped_column(BigInteger, nullable=False)
     expires_at: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+
+
+class PublicLinkRecord(Base):
+    __tablename__ = "public_links"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    model_id: Mapped[str] = mapped_column(
+        PGUUID(as_uuid=False), ForeignKey("bim_models.id", ondelete="CASCADE"), index=True
+    )
+    token: Mapped[str] = mapped_column(String, unique=True, index=True, nullable=False)
+    created_by: Mapped[str] = mapped_column(String, nullable=False)
+    created_at: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    expires_at: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    password_hash: Mapped[str | None] = mapped_column(String, nullable=True)
+    is_revoked: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    display_name: Mapped[str | None] = mapped_column(String, nullable=True)
+    open_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
