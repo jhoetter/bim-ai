@@ -180,6 +180,7 @@ from bim_ai.commands import (
     ApplyViewTemplateCmd,
     UnbindViewTemplateCmd,
     DeleteViewTemplateCmd,
+    SetToolPrefCmd,
 )
 from bim_ai.constraints import Violation, evaluate
 from bim_ai.datum_levels import (
@@ -870,6 +871,8 @@ def clone_document(doc: Document) -> Document:
         "revision": doc.revision,
         "elements": _dump_elements(doc.elements),
         "designOptionSets": [s.model_dump(by_alias=True) for s in doc.design_option_sets],
+        # CHR-V3-08: carry sticky tool prefs forward on every clone.
+        "toolPrefs": {tool: dict(prefs) for tool, prefs in doc.tool_prefs.items()},
     }
     return Document.model_validate(payload)
 
@@ -4866,6 +4869,10 @@ def apply_inplace(
             for elem in list(els.values()):
                 if isinstance(elem, PlanViewElem) and elem.template_id == cmd.template_id:
                     els[elem.id] = elem.model_copy(update={"template_id": None})
+
+        case SetToolPrefCmd():
+            # CHR-V3-08: store sticky modifier preference on the document.
+            doc.tool_prefs.setdefault(cmd.tool, {})[cmd.pref_key] = cmd.pref_value
 
     # KRN-08: areas track a derived computedAreaSqMm. Recompute after every
     # command apply so create/update/delete of areas (and shafts that affect

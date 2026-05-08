@@ -19,6 +19,7 @@ ActivityKind = Literal[
     "option_set_lifecycle",
     "collab_join",
     "collab_leave",
+    "tool_pref_changed",
 ]
 
 
