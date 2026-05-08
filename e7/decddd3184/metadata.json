@@ -1,0 +1,23 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "e7decddd3184",
+  "strategy": "manual-commit",
+  "branch": "feat/v3-img-v3-01-image-to-layout",
+  "checkpoints_count": 1,
+  "files_touched": null,
+  "sessions": [
+    {
+      "metadata": "/e7/decddd3184/0/metadata.json",
+      "transcript": "/e7/decddd3184/0/full.jsonl",
+      "content_hash": "/e7/decddd3184/0/content_hash.txt",
+      "prompt": "/e7/decddd3184/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 248,
+    "cache_creation_tokens": 140344,
+    "cache_read_tokens": 13288401,
+    "output_tokens": 63209,
+    "api_call_count": 152
+  }
+}
