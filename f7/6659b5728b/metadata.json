@@ -3,7 +3,7 @@
   "checkpoint_id": "f76659b5728b",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 0,
+  "checkpoints_count": 2,
   "files_touched": [
     "spec/prompts/wave-05/README.md",
     "spec/prompts/wave-05/WP-FED-03-canvas-badge.md",
@@ -21,13 +21,19 @@
       "transcript": "/f7/6659b5728b/1/full.jsonl",
       "content_hash": "/f7/6659b5728b/1/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/f7/6659b5728b/2/metadata.json",
+      "transcript": "/f7/6659b5728b/2/full.jsonl",
+      "content_hash": "/f7/6659b5728b/2/content_hash.txt",
+      "prompt": "/f7/6659b5728b/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 0,
-    "cache_creation_tokens": 0,
-    "cache_read_tokens": 0,
-    "output_tokens": 0,
-    "api_call_count": 0
+    "input_tokens": 1058,
+    "cache_creation_tokens": 2605834,
+    "cache_read_tokens": 353893263,
+    "output_tokens": 753889,
+    "api_call_count": 743
   }
 }
