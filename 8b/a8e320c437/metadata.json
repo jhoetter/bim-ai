@@ -3,7 +3,7 @@
   "checkpoint_id": "8ba8e320c437",
   "strategy": "manual-commit",
   "branch": "feat/wave-05-krn-14-dormer-completeness",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "app/bim_ai/constraints.py",
     "app/tests/test_dormer_completeness.py",
@@ -19,13 +19,19 @@
       "transcript": "/8b/a8e320c437/0/full.jsonl",
       "content_hash": "/8b/a8e320c437/0/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/8b/a8e320c437/1/metadata.json",
+      "transcript": "/8b/a8e320c437/1/full.jsonl",
+      "content_hash": "/8b/a8e320c437/1/content_hash.txt",
+      "prompt": "/8b/a8e320c437/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 4,
-    "cache_creation_tokens": 2297,
-    "cache_read_tokens": 1236115,
-    "output_tokens": 2138,
-    "api_call_count": 4
+    "input_tokens": 246,
+    "cache_creation_tokens": 255298,
+    "cache_read_tokens": 30758349,
+    "output_tokens": 122918,
+    "api_call_count": 206
   }
 }

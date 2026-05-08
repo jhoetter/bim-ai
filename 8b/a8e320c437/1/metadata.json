@@ -1,0 +1,43 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "8ba8e320c437",
+  "session_id": "d0121128-cda6-40d8-8b37-2f2286d77cf8",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T09:19:31.993698Z",
+  "branch": "feat/wave-05-krn-14-dormer-completeness",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "app/bim_ai/constraints.py",
+    "app/tests/test_dormer_completeness.py",
+    "packages/web/src/plan/dormerPlanSymbol.test.ts",
+    "packages/web/src/plan/dormerPlanSymbol.ts",
+    "packages/web/src/plan/symbology.ts",
+    "packages/web/src/viewport/dormerMesh.test.ts",
+    "packages/web/src/viewport/dormerMesh.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-opus-4-7",
+  "turn_id": "a566c6839731",
+  "token_usage": {
+    "input_tokens": 242,
+    "cache_creation_tokens": 253001,
+    "cache_read_tokens": 29522234,
+    "output_tokens": 120780,
+    "api_call_count": 202
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-08T09:19:31.974462Z",
+    "agent_lines": 767,
+    "agent_removed": 6,
+    "human_added": 21,
+    "human_modified": 123,
+    "human_removed": 0,
+    "total_committed": 911,
+    "total_lines_changed": 917,
+    "agent_percentage": 84.29661941112323,
+    "metric_version": 2
+  }
+}
