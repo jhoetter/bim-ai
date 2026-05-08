@@ -65,7 +65,8 @@ export type ElemKind =
   | 'masking_region'
   | 'constraint'
   | 'mass'
-  | 'phase';
+  | 'phase'
+  | 'sun_settings';
 
 export type PhaseFilter =
   | 'show_all'
@@ -1282,6 +1283,17 @@ export type Element =
       id: string;
       name: string;
       ord: number;
+    }
+  | {
+      /** SUN-V3-01 — project-level sun & shadow study singleton. */
+      kind: 'sun_settings';
+      id: string;
+      latitudeDeg: number;
+      longitudeDeg: number;
+      dateIso: string;
+      timeOfDay: { hours: number; minutes: number };
+      animationRange?: { startIso: string; endIso: string; intervalMinutes: number } | null;
+      daylightSavingStrategy: 'auto' | 'on' | 'off';
     };
 
 export type Violation = {

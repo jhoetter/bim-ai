@@ -89,6 +89,8 @@ import { applyDormerCutsToRoofGeom } from './viewport/dormerRoofCut';
 import { registerDormerCutFn } from './viewport/meshBuilders';
 import { WallContextMenu, type WallContextMenuCommand } from './workspace/WallContextMenu';
 import { gripsFor, type Grip3dDescriptor } from './viewport/grip3d';
+import { SunOverlay, type SunOverlayValues } from './viewport/SunOverlay';
+import { computeSunPositionNoaa } from './viewport/sunPositionNoaa';
 import {
   buildAxisIndicator,
   buildGripMeshes,
@@ -192,6 +194,17 @@ export function Viewport({ wsConnected, onPersistViewpointField, onSemanticComma
   } | null>(null);
   // EDT-03: state for the wall-face radial menu (Insert Door / Window / Opening).
   const [wallFaceRadialMenu, setWallFaceRadialMenu] = useState<WallFaceRadialMenuOpen | null>(null);
+  // SUN-V3-01: Sun overlay state
+  const [sunOverlayValues, setSunOverlayValues] = useState<SunOverlayValues>({
+    latitudeDeg: 48.13,
+    longitudeDeg: 11.58,
+    dateIso: '2026-06-21',
+    hours: 14,
+    minutes: 30,
+    daylightSavingStrategy: 'auto',
+  });
+  const [sunAzimuth, setSunAzimuth] = useState(145);
+  const [sunElevation, setSunElevation] = useState(35);
   /** Pickable grip meshes for the current selection — populated by the grip-rebuild effect. */
   const gripPickablesRef = useRef<THREE.Object3D[]>([]);
   const gripHandleRef = useRef<GripMeshHandle | null>(null);
@@ -280,6 +293,61 @@ export function Viewport({ wsConnected, onPersistViewpointField, onSemanticComma
   const handleWallFaceRadialCommand = useCallback(
     (next: WallFaceRadialCommand) => {
       onSemanticCommand?.(next.cmd as unknown as Record<string, unknown>);
+    },
+    [onSemanticCommand],
+  );
+
+  // SUN-V3-01: sync sun_settings element → overlay state
+  useEffect(() => {
+    const el = elementsById['sun_settings'];
+    if (!el || el.kind !== 'sun_settings') return;
+    const s = el as Extract<Element, { kind: 'sun_settings' }>;
+    setSunOverlayValues({
+      latitudeDeg: s.latitudeDeg,
+      longitudeDeg: s.longitudeDeg,
+      dateIso: s.dateIso,
+      hours: s.timeOfDay.hours,
+      minutes: s.timeOfDay.minutes,
+      daylightSavingStrategy: s.daylightSavingStrategy,
+    });
+  }, [elementsById]);
+
+  // SUN-V3-01: recompute sun position when overlay values change
+  useEffect(() => {
+    const { azimuthDeg, elevationDeg } = computeSunPositionNoaa(
+      sunOverlayValues.latitudeDeg,
+      sunOverlayValues.longitudeDeg,
+      sunOverlayValues.dateIso,
+      sunOverlayValues.hours,
+      sunOverlayValues.minutes,
+      sunOverlayValues.daylightSavingStrategy,
+    );
+    setSunAzimuth(azimuthDeg);
+    setSunElevation(elevationDeg);
+    const sun = sunRef.current;
+    if (sun) {
+      sun.position.copy(sunPositionFromAzEl(azimuthDeg, elevationDeg));
+    }
+  }, [sunOverlayValues]);
+
+  const handleSunChange = useCallback((patch: Partial<SunOverlayValues>) => {
+    setSunOverlayValues((prev) => ({ ...prev, ...patch }));
+  }, []);
+
+  const handleSunCommit = useCallback(
+    (patch: Partial<SunOverlayValues>) => {
+      setSunOverlayValues((prev) => {
+        const next = { ...prev, ...patch };
+        onSemanticCommand?.({
+          type: 'updateSunSettings',
+          latitudeDeg: next.latitudeDeg,
+          longitudeDeg: next.longitudeDeg,
+          dateIso: next.dateIso,
+          timeOfDay: { hours: next.hours, minutes: next.minutes },
+          daylightSavingStrategy: next.daylightSavingStrategy,
+        });
+        return next;
+      });
     },
     [onSemanticCommand],
   );
@@ -1843,6 +1911,17 @@ export function Viewport({ wsConnected, onPersistViewpointField, onSemanticComma
           currentElevation={currentElevation}
           onPick={handleViewCubePick}
           onDrag={handleViewCubeDrag}
+        />
+      </div>
+
+      {/* SUN-V3-01: Sun & Shadow study overlay — collapsible panel below ViewCube */}
+      <div className="pointer-events-none absolute right-6 top-28 z-20">
+        <SunOverlay
+          values={sunOverlayValues}
+          azimuthDeg={sunAzimuth}
+          elevationDeg={sunElevation}
+          onChange={handleSunChange}
+          onCommit={handleSunCommit}
         />
       </div>
 
