@@ -1,7 +1,7 @@
 # v3 Build State
 
-Last updated: 2026-05-08 (wave-6: all 8 WPs fixed and merged to main; ~47/63 WPs done)
-Active heavy workers: 0 / 0
+Last updated: 2026-05-08 (wave-7: 8 WPs dispatched; ~47/63 WPs done, ~55/63 targeted after wave-7)
+Active heavy workers: 8 / 8
 
 ## Merged so far
 
@@ -79,39 +79,48 @@ All 8 WPs fixed (subagents) and conflict-resolved into main by orchestrator.
 | WP-046 | MRK-V3-03 sheet review | 2026-05-08 | 858724a2 |
 | WP-047 | CHR-V3-08 ToolModifierBar | 2026-05-08 | f324c076 |
 
-## Orphan commits (flagged for user decision — do NOT cherry-pick without confirmation)
+## Wave-7 dispatched 🚀
 
-All 6 are on origin/feat/v3-edt-v3-01-constraint-rules (wave-1 branch already merged):
-- 615fad24 feat(seed+viewport): six visual gap fixes
-- c7ddc1bf feat(viewport): add cladding boards to recessed wall back
-- 7e44a3c0 fix(store): coerce window outlineKind/attachedRoofId + door operationType (equivalent fix already in WP-045 branch as 3b580a98 — likely safe to drop)
-- 06840cef feat(seed): tame asymmetry + drop dormer cut
-- 8dc5ee7a feat(seed): full-width recess
-- 12ec01dd feat(seed): bump picture-frame profile
+8 agents in flight. Orchestrator merges in order below (note: WP-050 merges after WP-049).
+
+| WP-ID | WP | Branch | Prompt |
+| ----- | -- | ------ | ------ |
+| WP-048 | ANN-V3-01 detail-region authoring | feat/v3-ann-v3-01-detail-region | wp-048.md |
+| WP-049 | DSC-V3-02 view discipline tags | feat/v3-dsc-v3-02-view-discipline-tags | wp-049.md |
+| WP-050 | LNS-V3-01 lens dropdown (merge after WP-049) | feat/v3-lns-v3-01-lens-dropdown | wp-050.md |
+| WP-051 | CAN-V3-02 hatch patterns | feat/v3-can-v3-02-hatch-patterns | wp-051.md |
+| WP-052 | EDT-V3-04 shortcut chips | feat/v3-edt-v3-04-shortcut-chips | wp-052.md |
+| WP-053 | EDT-V3-06 helper dims on selection | feat/v3-edt-v3-06-helper-dims | wp-053.md |
+| WP-054 | MAT-V3-01 PBR material + decals | feat/v3-mat-v3-01-pbr-material | wp-054.md |
+| WP-055 | SCH-V3-01 custom-props + schedule view | feat/v3-sch-v3-01-schedule-view | wp-055.md |
+
+## Orphan commits — resolved ✅
+
+All seed/viewport orphans cherry-picked to main (2026-05-08):
+- b04c2f76 feat(seed+viewport): six visual gap fixes
+- d81b3603 feat(seed): full-width recess
+- 3cc4f0c2 feat(seed): tame asymmetry + drop dormer cut
+- 0aeca4fb feat(viewport): add cladding boards to recessed wall back
+- 8b8b77ce feat(seed): bump picture-frame profile
 
 ## Held back (pending deps or timing)
 
 - CQ-04 god-file split — high merge-conflict risk; schedule for quiet window between waves.
 - CQ-03 workspace reorg — riskiest CQ item; dedicated quiet week.
-- DSC-V3-02 view discipline tags — depends on DSC-V3-01 (WP-040, wave-6); hold until WP-040 merges.
-- LNS-V3-01 lens dropdown — depends on DSC-V3-01 (WP-040); hold.
-- TOP-V3-02..04, OSM-V3-01 — depends on TOP-V3-01 (WP-041); hold.
-- AST-V3-04 kitchen kit — depends on AST-V3-01 (WP-042); hold.
-- CON-V3-02 seed handoff — depends on IMG-V3-01 (WP-043); hold.
-- CAN-V3-02 hatch patterns — depends on CAN-V3-01 (WP-044); hold.
-- OUT-V3-02, OUT-V3-03 PPTX/PDF export — depends on OUT-V3-01 (WP-045); hold.
+- TOP-V3-02..04, OSM-V3-01 — depends on TOP-V3-01 (WP-041 ✓); schedule wave-8.
+- AST-V3-04 kitchen kit — depends on AST-V3-01 (WP-042 ✓); schedule wave-8.
+- CON-V3-02 seed handoff — depends on IMG-V3-01 (WP-043 ✓); schedule wave-8.
+- OUT-V3-02, OUT-V3-03 PPTX/PDF export — depends on OUT-V3-01 (WP-045 ✓); schedule wave-8.
+- EDT-V3-05 loop-mode modifier — depends on EDT-V3-04 (WP-052, wave-7); schedule wave-8.
 - COL-V3-04 presence avatars — v3.1 stretch per spec; hold.
 - COL-V3-06 offline-tolerant authoring — next state; hold.
-- VG-V3-01 render-and-compare — deps met (TKN, API done); schedule wave-7.
-- CTL-V3-01 catalog query API — deps met (API done); schedule wave-7.
-- ANN-V3-01 detail-region authoring — deps met (soft dep on EDT-01); schedule wave-7.
-- IMP-V3-01 image-as-underlay — Wave 0, no deps; schedule wave-7.
-- MAT-V3-01, MAT-V3-02 material tokens — Wave 0, no deps; schedule wave-7.
-- SCH-V3-01 custom-properties + schedule view — Wave 0, no deps; schedule wave-7.
-- CHR-V3-06, CHR-V3-07, CHR-V3-10 chrome WPs — Wave 0, no deps; schedule wave-7.
-- EDT-V3-04, EDT-V3-05, EDT-V3-06 UX WPs — Wave 0, no deps; schedule wave-7.
-- TST-V3-01 refinement-reliability CI test — deps met (CMD-V3-01/02 + JOB-V3-01 done); schedule wave-7.
-- EXP-V3-01 render-pipeline export — deps met (CMD-V3-01/02 + JOB-V3-01 done); schedule wave-7.
+- VG-V3-01 render-and-compare — deps met; schedule wave-8.
+- CTL-V3-01 catalog query API — deps met; schedule wave-8.
+- IMP-V3-01 image-as-underlay — Wave 0, no deps; schedule wave-8.
+- MAT-V3-02 material tokens — Wave 0, no deps; schedule wave-8.
+- CHR-V3-06, CHR-V3-07, CHR-V3-10 chrome WPs — Wave 0, no deps; schedule wave-8.
+- TST-V3-01 refinement-reliability CI test — deps met; schedule wave-8.
+- EXP-V3-01 render-pipeline export — deps met; schedule wave-8.
 
 ## Notes
 

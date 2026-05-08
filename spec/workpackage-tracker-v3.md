@@ -495,12 +495,12 @@ Theme contents below are filled in by parallel chapter authors (Phase 2 dispatch
 
 | ID | Item | Effort | State | Depends on |
 | -- | ---- | ------ | ----- | ---------- |
-| KRN-V3-01 | Phasing primitive (B1 keystone) | L | now | — |
-| KRN-V3-02 | Stacked walls | M | now | — |
-| KRN-V3-03 | Multi-roof composition + fascia/gutter + soffit (G11+G12+G13 bundled) | XL | now | — |
-| KRN-V3-04 | Design Options | L | now | KRN-V3-01 (phasing pattern) |
-| KRN-V3-05 | Stair by sketch | L | now | — |
-| KRN-V3-06 | Plan region | M | now | — |
+| KRN-V3-01 | Phasing primitive (B1 keystone) | L | done | — |
+| KRN-V3-02 | Stacked walls | M | done | — |
+| KRN-V3-03 | Multi-roof composition + fascia/gutter + soffit (G11+G12+G13 bundled) | XL | done | — |
+| KRN-V3-04 | Design Options | L | done | KRN-V3-01 (phasing pattern) |
+| KRN-V3-05 | Stair by sketch | L | done | — |
+| KRN-V3-06 | Plan region | M | done | — |
 | KRN-V3-07 | Slanted & tapered walls | M | done | KRN-V3-02 |
 | KRN-V3-08 | Wall sweeps & reveals | M | done | KRN-V3-03 (edge-profile-run pattern) |
 | KRN-V3-09 | Curved curtain walls | M | next | — |
@@ -509,8 +509,8 @@ Theme contents below are filled in by parallel chapter authors (Phase 2 dispatch
 | KRN-V3-12 | Cut profile (per-view per-category override) | S | next | — |
 | KRN-V3-13 | Massing & divided-surface façades | L | vision | — |
 | KRN-V3-14 | Adaptive components | L | vision | KRN-V3-13 |
-| EDT-V3-01 | Sketch-element grips (EDT-01 follow-up) | S | now | — |
-| EDT-V3-02 | Constraint rules (parallel / perpendicular / collinear) | M | now | EDT-02 (v2 shipped) |
+| EDT-V3-01 | Sketch-element grips (EDT-01 follow-up) | S | done | — |
+| EDT-V3-02 | Constraint rules (parallel / perpendicular / collinear) | M | done | EDT-02 (v2 shipped) |
 
 **Per-WP entries** (one per WP).
 
@@ -919,9 +919,9 @@ _"Editing in bim-ai feels like the model is meeting you halfway — the cursor n
 
 | ID         | Item                                                                  | Effort | State    | Depends on                   |
 | ---------- | --------------------------------------------------------------------- | ------ | -------- | ---------------------------- |
-| EDT-V3-01  | Constraint rules (parallel / perpendicular / collinear / equal_length) | L      | now      | v2 EDT-02 (padlock baseline) |
-| EDT-V3-02  | Padlock-snap cursor glyph + named snap markers + drag arrow           | M      | now      | EDT-V3-01                    |
-| EDT-V3-03  | `Ctrl+K` universal command palette                                    | M      | now      | —                            |
+| EDT-V3-01  | Constraint rules (parallel / perpendicular / collinear / equal_length) | L      | done | v2 EDT-02 (padlock baseline) |
+| EDT-V3-02  | Padlock-snap cursor glyph + named snap markers + drag arrow           | M      | done | EDT-V3-01                    |
+| EDT-V3-03  | `Ctrl+K` universal command palette                                    | M      | done | —                            |
 | EDT-V3-04  | Single-letter shortcuts surfaced in toolbar tooltips                  | S      | now      | —                            |
 | EDT-V3-05  | Loop-mode mid-command modifier (`L`)                                  | S      | now      | EDT-V3-04                    |
 | EDT-V3-06  | Helper dimensions on selection (drag-the-number)                      | M      | now      | v2 EDT-01                    |
@@ -929,7 +929,7 @@ _"Editing in bim-ai feels like the model is meeting you halfway — the cursor n
 | EDT-V3-08  | EDT-03 free-axis projection refinement                                | S      | next     | v2 EDT-03                    |
 | EDT-V3-09  | Stair-sketch tread auto-balance (R-D U2)                              | M      | next     | T1 G8 (sketch stair)         |
 | EDT-V3-10  | Roof-join CSG preview before commit (R-D U3)                          | M      | next     | T1 G11 (multi-roof)          |
-| EDT-V3-11  | Phase-filter as view-as-lens (R-D U7)                                 | M      | now      | T1 G4 (phasing primitive)    |
+| EDT-V3-11  | Phase-filter as view-as-lens (R-D U7)                                 | M      | done | T1 G4 (phasing primitive)    |
 | EDT-V3-12  | Numeric-override-during-draw polish (R-D U8)                          | S      | next     | EDT-V3-04                    |
 | EDT-V3-13  | EDT-01 sketch-element grips                                           | S      | next     | v2 EDT-01                    |
 | EDT-V3-14  | EDT-02 3D-viewport padlock                                            | M      | vision   | EDT-V3-01                    |
@@ -1250,13 +1250,13 @@ The cursor-language + command-grammar + associative-dimensions trio is what make
 
 | ID | Item | Effort | State | Depends on |
 | -- | ---- | ------ | ----- | ---------- |
-| COL-V3-01 | Multi-user editing infra (yjs / CRDT) | XL | now | CQ-01 (hard) |
-| MRK-V3-01 | 3D-anchored comments + threading + @mention | L | now | COL-V3-01 |
-| MRK-V3-02 | Plan + 3D + sheet markups (freehand + comment) | M | now | MRK-V3-01 |
-| VER-V3-01 | Activity stream as time-machine | L | now | COL-V3-01 |
-| VER-V3-02 | Named milestones (Cmd+S snapshot dialog) | M | now | VER-V3-01 |
-| COL-V3-02 | Permission tiers (admin / editor / viewer / public-link viewer) | M | now | COL-V3-01 |
-| COL-V3-03 | Shareable public link | M | now | COL-V3-02 |
+| COL-V3-01 | Multi-user editing infra (yjs / CRDT) | XL | done | CQ-01 (hard) |
+| MRK-V3-01 | 3D-anchored comments + threading + @mention | L | done | COL-V3-01 |
+| MRK-V3-02 | Plan + 3D + sheet markups (freehand + comment) | M | done | MRK-V3-01 |
+| VER-V3-01 | Activity stream as time-machine | L | done | COL-V3-01 |
+| VER-V3-02 | Named milestones (Cmd+S snapshot dialog) | M | done | VER-V3-01 |
+| COL-V3-02 | Permission tiers (admin / editor / viewer / public-link viewer) | M | done | COL-V3-01 |
+| COL-V3-03 | Shareable public link | M | done | COL-V3-02 |
 | COL-V3-05 | Designer's Bill of Rights customer-facing artifact | XS | now | — |
 | COL-V3-04 | Presence avatars + live cursors (v3.1 stretch) | S | next | COL-V3-01 |
 | MRK-V3-03 | Sheet review surface with comment-anchoring | L | next | MRK-V3-02 + T4 sheets |
@@ -1589,16 +1589,16 @@ T4 is bim-ai's deliverables surface and the home of the documentation half of **
 
 | ID        | Item                                                                  | Effort | State  | Depends on                  |
 | --------- | --------------------------------------------------------------------- | ------ | ------ | --------------------------- |
-| VIE-V3-01 | Detail-level rendering completion (VIE-01 carry-forward)              | M      | now    | v2 VIE-01, FL-08            |
+| VIE-V3-01 | Detail-level rendering completion (VIE-01 carry-forward)              | M      | done | v2 VIE-01, FL-08            |
 | ANN-V3-01 | Detail-region drawing-mode authoring (ANN-01 carry-forward)            | M      | now    | v2 ANN-01, EDT-01           |
 | ANN-V3-02 | Detail-component library (regular + repeating + batting)              | L      | now    | ANN-V3-01, G14              |
-| VIE-V3-02 | Drafting-view + callout + cut-profile + view-break (G18 bundle)        | XL     | now    | VIE-V3-01                    |
-| VIE-V3-03 | View templates + apply + edit + propagation toast (G22)                | L      | now    | VIE-V3-02                    |
-| CAN-V3-01 | Plan canvas line-weight hierarchy at multiple plot scales (§2.4.2)     | L      | now    | VIE-V3-01                    |
+| VIE-V3-02 | Drafting-view + callout + cut-profile + view-break (G18 bundle)        | XL     | done | VIE-V3-01                    |
+| VIE-V3-03 | View templates + apply + edit + propagation toast (G22)                | L      | done | VIE-V3-02                    |
+| CAN-V3-01 | Plan canvas line-weight hierarchy at multiple plot scales (§2.4.2)     | L      | done | VIE-V3-01                    |
 | CAN-V3-02 | Hatch patterns scaling with paper-mm at the active plot scale          | M      | now    | CAN-V3-01                    |
 | CAN-V3-03 | Dimension typography — tabular nums + 2xs step + padlock glyph         | S      | now    | tokens-v3, snapEngine        |
 | CAN-V3-04 | 3D viewport sun + line + AO retuning (§2.4.1)                          | M      | now    | tokens-v3                    |
-| SHT-V3-01 | Sheet + titleblock + cartouche + window-legend (G20 bundle)            | L      | now    | v2 sheets-partial            |
+| SHT-V3-01 | Sheet + titleblock + cartouche + window-legend (G20 bundle)            | L      | done | v2 sheets-partial            |
 | OUT-V3-01 | Live presentation URL — refreshable + revocable + public-link          | L      | next   | T3 link-share infra, CQ-01   |
 | OUT-V3-02 | Frames + Views as canvas state, exportable to PPTX                     | L      | next   | SHT-V3-01, OUT-V3-01         |
 | OUT-V3-03 | Branded PDF / PPTX export with brand-layer-aware templates             | M      | next   | SHT-V3-01, brand-layer.css   |
@@ -1953,7 +1953,7 @@ T4 is where bim-ai's documentation surface beats Revit's by default rather than 
 
 | ID | Item | Effort | State | Depends on |
 | -- | ---- | ------ | ----- | ---------- |
-| AST-V3-01 | Searchable asset library + schematic-2D thumbnails | M-L | now | — |
+| AST-V3-01 | Searchable asset library + schematic-2D thumbnails | M-L | done | — |
 | MAT-V3-01 | Material PBR map slots + decals | M | now | — |
 | MAT-V3-02 | `--mat-*` token family (wallTypeCatalog migration) | S | now | — |
 | AST-V3-04 | Parametric kitchen kit | L | now | AST-V3-01 |
@@ -2540,11 +2540,11 @@ T7 supports two Strategic Bets: **B1 Renovation-First** (renovation work lives i
 
 | ID         | Item                                                            | Effort | State    | Depends on                                  |
 | ---------- | --------------------------------------------------------------- | ------ | -------- | ------------------------------------------- |
-| TOP-V3-01  | Toposolid primitive (terrain solid + heightmap + thickness)      | L      | now      | KRN-06 (shared coords carryover)             |
+| TOP-V3-01  | Toposolid primitive (terrain solid + heightmap + thickness)      | L      | done | KRN-06 (shared coords carryover)             |
 | TOP-V3-02  | Toposolid subdivisions for paving / lawn / road / planting      | M      | now      | TOP-V3-01                                    |
 | TOP-V3-03  | Subdivide-with-paint UX (cross-ref T2 U10)                       | M      | now      | TOP-V3-02; T2 in-place UX                    |
 | TOP-V3-04  | Site walls + graded regions snapping to toposolid                | M      | now      | TOP-V3-01                                    |
-| SUN-V3-01  | Sun & shadow study (SunSettings + date-time slider in 3D)        | M      | now      | KRN-06                                       |
+| SUN-V3-01  | Sun & shadow study (SunSettings + date-time slider in 3D)        | M      | done | KRN-06                                       |
 | OSM-V3-01  | OSM-import for neighborhood massing                              | M      | now      | TOP-V3-01; KRN-06                            |
 | OSM-V3-02  | Neighborhood massing render style (desaturated grey)             | S      | now      | OSM-V3-01                                    |
 | LOT-V3-01  | Property-line by bearing-table (cross-ref T2 U4)                 | S      | next     | KRN-01 (v2 element); T2 numeric override     |
@@ -2856,7 +2856,7 @@ T7 makes the model live in a real place. **Toposolid is the gating primitive** �
 | ID | Item | Effort | State | Depends on |
 | -- | ---- | ------ | ----- | ---------- |
 | WSP-V3-01 | Discipline-aware Workspace concept (Architekt / Statiker / TGA) | L | now | CQ-03 (soft) |
-| DSC-V3-01 | Discipline tags on elements (`element.discipline`) | M | now | T1 (kernel kinds) |
+| DSC-V3-01 | Discipline tags on elements (`element.discipline`) | M | done | T1 (kernel kinds) |
 | DSC-V3-02 | Discipline tags on views (default lens) | M | now | DSC-V3-01 |
 | LNS-V3-01 | Lens dropdown in status bar | S | now | DSC-V3-01, DSC-V3-02 |
 | LNS-V3-02 | Discipline tints on chrome (`--disc-*` tokens) | S | now | Pillars (R-G §2.2.2) |
@@ -3037,13 +3037,13 @@ _The agent-callable tool surface that makes bim-ai 100 %-usable by external AI a
 
 | ID         | Item                                                            | Effort | State  | Depends on                      |
 | ---------- | --------------------------------------------------------------- | ------ | ------ | ------------------------------- |
-| API-V3-01  | Tool / CLI surface contract (the keystone)                      | XL     | now    | — (cross-cuts every theme)      |
-| TKN-V3-01  | Tokenised kernel representation (deterministic primitive)       | XL     | now    | API-V3-01                       |
-| CMD-V3-01  | Command-bundle apply API                                        | XL     | now    | API-V3-01, TKN-V3-01            |
-| CMD-V3-02  | Assumption log primitive                                        | S      | now    | CMD-V3-01                       |
-| OPT-V3-01  | Design Options as agent scratch surface (non-destruction)       | M      | now    | T1 KRN-V3-04, CMD-V3-01         |
-| JOB-V3-01  | Long-running-operations Jobs UX                                 | M      | now    | CQ-01                           |
-| IMG-V3-01  | Image-input → structured-layout tool (deterministic CV)         | L      | now    | API-V3-01                       |
+| API-V3-01  | Tool / CLI surface contract (the keystone)                      | XL     | done | — (cross-cuts every theme)      |
+| TKN-V3-01  | Tokenised kernel representation (deterministic primitive)       | XL     | done | API-V3-01                       |
+| CMD-V3-01  | Command-bundle apply API                                        | XL     | done | API-V3-01, TKN-V3-01            |
+| CMD-V3-02  | Assumption log primitive                                        | S      | done | CMD-V3-01                       |
+| OPT-V3-01  | Design Options as agent scratch surface (non-destruction)       | M      | done | T1 KRN-V3-04, CMD-V3-01         |
+| JOB-V3-01  | Long-running-operations Jobs UX                                 | M      | done | CQ-01                           |
+| IMG-V3-01  | Image-input → structured-layout tool (deterministic CV)         | L      | done | API-V3-01                       |
 | VG-V3-01   | Render-and-compare CLI tool                                     | M      | now    | API-V3-01, T4 (canvas render)   |
 | AGT-V3-06  | No-training-on-customer-data clause                             | S      | now    | —                               |
 | CTL-V3-01  | Catalog query API                                               | M      | now    | API-V3-01, T5                   |
