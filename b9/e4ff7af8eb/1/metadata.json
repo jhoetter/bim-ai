@@ -1,0 +1,48 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "b9e4ff7af8eb",
+  "session_id": "984a80a6-9fdb-49d6-b9b2-ed6008aa71fd",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T18:15:46.092933Z",
+  "branch": "feat/v3-vie-v3-01-detail-level",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "app/bim_ai/engine.py",
+    "app/tests/test_detail_level_rendering.py",
+    "packages/web/src/plan/planElementMeshBuilders.ts",
+    "packages/web/src/plan/symbology.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "ee42d2bb390a",
+  "checkpoint_transcript_start": 279,
+  "transcript_lines_at_start": 279,
+  "token_usage": {
+    "input_tokens": 87,
+    "cache_creation_tokens": 234290,
+    "cache_read_tokens": 7510373,
+    "output_tokens": 30167,
+    "api_call_count": 81
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-08T18:15:46.0737Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 364,
+    "human_modified": 159,
+    "human_removed": 0,
+    "total_committed": 364,
+    "total_lines_changed": 523,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}
