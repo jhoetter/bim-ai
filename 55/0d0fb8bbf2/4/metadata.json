@@ -1,0 +1,47 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "550d0fb8bbf2",
+  "session_id": "8a379970-6c1c-40ee-82c1-4bb3f6f3650a",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T16:49:32.221159Z",
+  "branch": "feat/v3-job-v3-01-jobs-panel",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "app/bim_ai/api/registry.py",
+    "app/bim_ai/jobs/__init__.py",
+    "app/bim_ai/jobs/queue.py",
+    "app/bim_ai/jobs/types.py",
+    "app/bim_ai/main.py",
+    "app/bim_ai/routes_api.py",
+    "app/tests/api/test_jobs_routes.py",
+    "app/tests/jobs/__init__.py",
+    "app/tests/jobs/test_job_queue.py",
+    "packages/cli/cli.mjs",
+    "packages/core/src/index.ts",
+    "packages/web/src/jobs/JobsPanel.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "de6127512db9",
+  "checkpoint_transcript_start": 326,
+  "transcript_lines_at_start": 326,
+  "token_usage": {
+    "input_tokens": 59,
+    "cache_creation_tokens": 35479,
+    "cache_read_tokens": 8731787,
+    "output_tokens": 21061,
+    "api_call_count": 59
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-08T16:49:32.202948Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 787,
+    "human_modified": 75,
+    "human_removed": 0,
+    "total_committed": 797,
+    "total_lines_changed": 862,
+    "agent_percentage": 0,
+    "metric_version": 2
+  }
+}
