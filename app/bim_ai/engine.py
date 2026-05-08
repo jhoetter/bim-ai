@@ -38,6 +38,7 @@ from bim_ai.commands import (
     CreateIssueFromViolationCmd,
     CreateJoinGeometryCmd,
     CreateLevelCmd,
+    CreateLinkDxfCmd,
     CreateLinkModelCmd,
     CreateMaskingRegionCmd,
     CreateMassCmd,
@@ -164,6 +165,7 @@ from bim_ai.elements import (
     IssueElem,
     JoinGeometryElem,
     LevelElem,
+    LinkDxfElem,
     LinkModelElem,
     MaskingRegionElem,
     MassElem,
@@ -515,7 +517,11 @@ def _dormer_footprint_polygon_mm(
     width_mm: float,
     depth_mm: float,
 ) -> list[tuple[float, float]]:
-    """KRN-14: four-corner CCW polygon of the dormer footprint in plan mm."""
+    """KRN-14: four-corner CCW polygon of the dormer footprint in plan mm.
+
+    Mirrors the renderer convention: width runs along the host roof's ridge
+    axis (longer plan span), depth runs across.
+    """
 
     xs = [p.x_mm for p in host.footprint_mm]
     ys = [p.y_mm for p in host.footprint_mm]
@@ -549,7 +555,10 @@ def _resolve_dormer_host_floor(
     host: RoofElem,
     fp_vertices: list[tuple[float, float]],
 ) -> FloorElem | None:
-    """KRN-14: pick the floor on the host roof's reference level."""
+    """KRN-14: pick the floor on the host roof's reference level whose
+    boundary contains the dormer footprint centre. Returns None when the
+    reference level has no floor; falls back to the first candidate when
+    the centre check is inconclusive."""
 
     candidates = [
         f
@@ -3629,6 +3638,24 @@ def apply_inplace(
             if not isinstance(link, LinkModelElem):
                 raise ValueError("deleteLinkModel.linkId must reference a link_model element")
             del els[cmd.link_id]
+
+        case CreateLinkDxfCmd():
+            lid = cmd.id or new_id()
+            if lid in els:
+                raise ValueError(f"duplicate element id '{lid}'")
+            if cmd.level_id not in els or not isinstance(els[cmd.level_id], LevelElem):
+                raise ValueError("createLinkDxf.levelId must reference an existing Level")
+            els[lid] = LinkDxfElem(
+                kind="link_dxf",
+                id=lid,
+                name=cmd.name,
+                level_id=cmd.level_id,
+                origin_mm=cmd.origin_mm,
+                rotation_deg=float(cmd.rotation_deg),
+                scale_factor=float(cmd.scale_factor),
+                linework=list(cmd.linework),
+                pinned=bool(cmd.pinned),
+            )
 
         case UpsertSelectionSetCmd():
             sid = cmd.id or new_id()

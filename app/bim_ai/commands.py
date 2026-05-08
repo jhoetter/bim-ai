@@ -11,6 +11,7 @@ from bim_ai.elements import (
     CurtainPanelOverride,
     DormerPositionOnRoof,
     DormerRoofKind,
+    DxfLineworkPrim,
     EvidenceRef,
     PlanCategoryGraphicRow,
     PlanTagBadgeStyle,
@@ -1104,6 +1105,27 @@ class DeleteLinkModelCmd(BaseModel):
     link_id: str = Field(alias="linkId")
 
 
+class CreateLinkDxfCmd(BaseModel):
+    """FED-04: create a ``link_dxf`` element from parsed DXF linework.
+
+    Mirrors :class:`bim_ai.elements.LinkDxfElem` minus ``kind`` plus an
+    optional ``id`` (the engine assigns one when omitted). The route
+    handler runs ``parse_dxf_to_linework`` then dispatches this command
+    through ``try_commit_bundle`` so the import is undoable.
+    """
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createLinkDxf"] = "createLinkDxf"
+    id: str | None = None
+    name: str = "DXF Underlay"
+    level_id: str = Field(alias="levelId")
+    origin_mm: Vec2Mm = Field(alias="originMm")
+    rotation_deg: float = Field(default=0.0, alias="rotationDeg")
+    scale_factor: float = Field(default=1.0, alias="scaleFactor", gt=0)
+    linework: list[DxfLineworkPrim] = Field(default_factory=list)
+    pinned: bool = Field(default=False)
+
+
 # --- FED-02: selection_set + clash_test commands ----------------------------------
 
 
@@ -1603,6 +1625,7 @@ Command = Annotated[
     | CreateLinkModelCmd
     | UpdateLinkModelCmd
     | DeleteLinkModelCmd
+    | CreateLinkDxfCmd
     | UpsertSelectionSetCmd
     | UpsertClashTestCmd
     | RunClashTestCmd

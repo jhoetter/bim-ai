@@ -1,0 +1,153 @@
+"""FED-04 — DXF parser unit tests.
+
+Each test builds a minimal in-memory DXF via ``ezdxf`` (so we don't ship
+binary fixtures), writes it to a temp path, and asserts the parser's
+output. No backend round-trip — that lives in
+``test_create_link_dxf_command.py``.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+import pytest
+
+ezdxf = pytest.importorskip("ezdxf")
+
+
+def _new_dxf():
+    return ezdxf.new("R2018", setup=True)
+
+
+def test_parse_dxf_lines(tmp_path: Path) -> None:
+    """Two LINE entities round-trip into two ``line`` primitives at the
+    expected mm coordinates (default ``$INSUNITS=0`` is treated as mm)."""
+
+    from bim_ai.dxf_import import parse_dxf_to_linework
+
+    doc = _new_dxf()
+    doc.header["$INSUNITS"] = 0
+    msp = doc.modelspace()
+    msp.add_line((0.0, 0.0), (1000.0, 0.0))
+    msp.add_line((1000.0, 0.0), (1000.0, 1000.0))
+    path = tmp_path / "lines.dxf"
+    doc.saveas(str(path))
+
+    linework = parse_dxf_to_linework(path)
+    assert len(linework) == 2
+    assert linework[0]["kind"] == "line"
+    assert linework[0]["start"] == {"xMm": 0.0, "yMm": 0.0}
+    assert linework[0]["end"] == {"xMm": 1000.0, "yMm": 0.0}
+    assert linework[1]["start"] == {"xMm": 1000.0, "yMm": 0.0}
+    assert linework[1]["end"] == {"xMm": 1000.0, "yMm": 1000.0}
+
+
+def test_parse_dxf_polylines(tmp_path: Path) -> None:
+    """An LWPOLYLINE round-trips into a single closed ``polyline`` primitive."""
+
+    from bim_ai.dxf_import import parse_dxf_to_linework
+
+    doc = _new_dxf()
+    doc.header["$INSUNITS"] = 0
+    msp = doc.modelspace()
+    msp.add_lwpolyline(
+        [(0.0, 0.0), (1000.0, 0.0), (1000.0, 500.0), (0.0, 500.0)],
+        close=True,
+    )
+    path = tmp_path / "polyline.dxf"
+    doc.saveas(str(path))
+
+    linework = parse_dxf_to_linework(path)
+    assert len(linework) == 1
+    assert linework[0]["kind"] == "polyline"
+    assert linework[0]["closed"] is True
+    pts = linework[0]["points"]
+    assert len(pts) == 4
+    assert pts[0] == {"xMm": 0.0, "yMm": 0.0}
+    assert pts[2] == {"xMm": 1000.0, "yMm": 500.0}
+
+
+def test_parse_dxf_skips_3d_entities(tmp_path: Path) -> None:
+    """3DFACE entities are ignored; LINE entities still come through."""
+
+    from bim_ai.dxf_import import parse_dxf_to_linework
+
+    doc = _new_dxf()
+    doc.header["$INSUNITS"] = 0
+    msp = doc.modelspace()
+    msp.add_3dface(
+        [(0.0, 0.0, 0.0), (100.0, 0.0, 0.0), (100.0, 100.0, 50.0), (0.0, 100.0, 50.0)],
+    )
+    msp.add_line((0.0, 0.0), (250.0, 250.0))
+    path = tmp_path / "mixed.dxf"
+    doc.saveas(str(path))
+
+    linework = parse_dxf_to_linework(path)
+    assert len(linework) == 1
+    assert linework[0]["kind"] == "line"
+
+
+def test_parse_dxf_units_scaling(tmp_path: Path) -> None:
+    """``$INSUNITS=1`` (inches) converts coordinates to millimetres."""
+
+    from bim_ai.dxf_import import parse_dxf_to_linework
+
+    doc = _new_dxf()
+    doc.header["$INSUNITS"] = 1  # inches
+    msp = doc.modelspace()
+    msp.add_line((0.0, 0.0), (10.0, 0.0))
+    path = tmp_path / "inches.dxf"
+    doc.saveas(str(path))
+
+    linework = parse_dxf_to_linework(path)
+    assert len(linework) == 1
+    line = linework[0]
+    assert line["kind"] == "line"
+    assert line["start"] == {"xMm": 0.0, "yMm": 0.0}
+    assert line["end"]["xMm"] == pytest.approx(254.0, rel=1e-9)
+    assert line["end"]["yMm"] == 0.0
+
+
+def test_parse_dxf_arcs_and_circles(tmp_path: Path) -> None:
+    """ARC / CIRCLE entities round-trip into ``arc`` primitives."""
+
+    from bim_ai.dxf_import import parse_dxf_to_linework
+
+    doc = _new_dxf()
+    doc.header["$INSUNITS"] = 0
+    msp = doc.modelspace()
+    msp.add_arc(center=(500.0, 500.0), radius=200.0, start_angle=0.0, end_angle=90.0)
+    msp.add_circle(center=(0.0, 0.0), radius=50.0)
+    path = tmp_path / "arcs.dxf"
+    doc.saveas(str(path))
+
+    linework = parse_dxf_to_linework(path)
+    assert len(linework) == 2
+    arc = next(p for p in linework if p["startDeg"] == 0.0 and p["endDeg"] == 90.0)
+    assert arc["kind"] == "arc"
+    assert arc["center"] == {"xMm": 500.0, "yMm": 500.0}
+    assert arc["radiusMm"] == 200.0
+    circle = next(p for p in linework if p["endDeg"] == 360.0)
+    assert circle["kind"] == "arc"
+    assert circle["radiusMm"] == 50.0
+
+
+def test_build_link_dxf_payload_default_origin(tmp_path: Path) -> None:
+    """``build_link_dxf_payload`` returns the wire-shape engine command."""
+
+    from bim_ai.dxf_import import build_link_dxf_payload
+
+    doc = _new_dxf()
+    doc.header["$INSUNITS"] = 0
+    doc.modelspace().add_line((0.0, 0.0), (100.0, 0.0))
+    path = tmp_path / "payload.dxf"
+    doc.saveas(str(path))
+
+    payload = build_link_dxf_payload(path, level_id="lvl-1")
+    assert payload["type"] == "createLinkDxf"
+    assert payload["levelId"] == "lvl-1"
+    assert payload["originMm"] == {"xMm": 0.0, "yMm": 0.0}
+    assert payload["rotationDeg"] == 0.0
+    assert payload["scaleFactor"] == 1.0
+    assert len(payload["linework"]) == 1
+    assert payload["linework"][0]["kind"] == "line"

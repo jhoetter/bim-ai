@@ -37,6 +37,8 @@ export interface ProjectMenuProps {
   onManageLinks?: () => void;
   /** FED-04: import an IFC file as a shadow-model link. */
   onLinkIfc?: (file: File) => void;
+  /** FED-04: import a DXF site plan as a `link_dxf` underlay element. */
+  onLinkDxf?: (file: File) => void;
 }
 
 export function ProjectMenu({
@@ -52,10 +54,12 @@ export function ProjectMenu({
   onReplayTour,
   onManageLinks,
   onLinkIfc,
+  onLinkDxf,
 }: ProjectMenuProps): JSX.Element | null {
   const popoverRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const ifcInputRef = useRef<HTMLInputElement | null>(null);
+  const dxfInputRef = useRef<HTMLInputElement | null>(null);
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
 
   // Position the popover under the anchor.
@@ -209,16 +213,42 @@ export function ProjectMenu({
                 e.target.value = '';
               }}
             />
-            <MenuItem
-              label="Insert → Link DXF (deferred)"
-              icon="externalLink"
-              testId="project-menu-link-dxf"
-              disabled
-              tooltip="DXF underlay import is on the roadmap. Today, link a bim-ai shadow model directly via Insert → Link Model… instead."
-              onClick={() => {
-                /* disabled */
-              }}
-            />
+            {onLinkDxf ? (
+              <>
+                <MenuItem
+                  label="Insert → Link DXF…"
+                  icon="externalLink"
+                  testId="project-menu-link-dxf"
+                  onClick={() => {
+                    dxfInputRef.current?.click();
+                  }}
+                />
+                <input
+                  ref={dxfInputRef}
+                  type="file"
+                  accept=".dxf,application/dxf,application/octet-stream"
+                  style={{ display: 'none' }}
+                  data-testid="project-menu-dxf-input"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) onLinkDxf(f);
+                    onOpenChange(false);
+                    e.target.value = '';
+                  }}
+                />
+              </>
+            ) : (
+              <MenuItem
+                label="Insert → Link DXF (deferred)"
+                icon="externalLink"
+                testId="project-menu-link-dxf"
+                disabled
+                tooltip="DXF underlay import is on the roadmap. Today, link a bim-ai shadow model directly via Insert → Link Model… instead."
+                onClick={() => {
+                  /* disabled */
+                }}
+              />
+            )}
             <MenuItem
               label="Insert → Link Revit (deferred)"
               icon="externalLink"

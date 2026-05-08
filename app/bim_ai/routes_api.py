@@ -1023,6 +1023,130 @@ async def import_ifc_to_shadow_link(
 
 
 # ---------------------------------------------------------------------------
+# FED-04 — DXF underlay import
+# ---------------------------------------------------------------------------
+
+
+class ImportDxfBody(BaseModel):
+    """FED-04: payload for ``POST /api/models/{host_id}/import-dxf``.
+
+    Either ``file_path`` (server-side path readable by the FastAPI process)
+    must be supplied. ``level_id`` names the host level the underlay is
+    attached to. ``origin_mm`` / ``rotation_deg`` / ``scale_factor`` let the
+    caller place the linework; defaults centre on the project origin with
+    no rotation.
+    """
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    file_path: str = Field(alias="filePath")
+    level_id: str = Field(alias="levelId")
+    name: str = Field(default="DXF Underlay")
+    origin_mm: dict[str, float] | None = Field(default=None, alias="originMm")
+    rotation_deg: float = Field(default=0.0, alias="rotationDeg")
+    scale_factor: float = Field(default=1.0, alias="scaleFactor", gt=0)
+
+
+@api_router.post("/models/{host_id}/import-dxf")
+async def import_dxf(
+    host_id: UUID,
+    body: ImportDxfBody,
+    session: AsyncSession = Depends(get_session),
+    hub: Hub = Depends(get_hub),
+) -> dict[str, Any]:
+    """FED-04: parse a DXF file and materialise a ``link_dxf`` element.
+
+    The route reads the file at ``body.file_path``, runs the ``ezdxf``
+    parser, then dispatches a single ``createLinkDxf`` engine command on
+    the host. Returns the new ``link_dxf`` element id so the frontend can
+    open ManageLinksDialog with the new entry highlighted.
+    """
+
+    from pathlib import Path as _Path
+
+    from bim_ai.dxf_import import parse_dxf_to_linework
+
+    host_row = await load_model_row(session, host_id)
+    if host_row is None:
+        raise HTTPException(status_code=404, detail="Host model not found")
+
+    dxf_path = _Path(body.file_path)
+    if not dxf_path.is_file():
+        raise HTTPException(
+            status_code=400, detail=f"DXF file not found at filePath: {body.file_path}"
+        )
+
+    try:
+        linework = parse_dxf_to_linework(dxf_path)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=400, detail=f"DXF parse failed: {exc}"
+        ) from exc
+
+    host_doc = Document.model_validate(host_row.document)
+    if body.level_id not in host_doc.elements or not isinstance(
+        host_doc.elements[body.level_id], LevelElem
+    ):
+        raise HTTPException(
+            status_code=400, detail="levelId must reference an existing Level on the host model"
+        )
+
+    create_cmd = {
+        "type": "createLinkDxf",
+        "name": body.name,
+        "levelId": body.level_id,
+        "originMm": body.origin_mm or {"xMm": 0.0, "yMm": 0.0},
+        "rotationDeg": float(body.rotation_deg),
+        "scaleFactor": float(body.scale_factor),
+        "linework": linework,
+    }
+    try:
+        ok, new_doc, _cmds, viols, code = try_commit_bundle(host_doc, [create_cmd])
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"createLinkDxf failed: {exc}") from exc
+    if not ok or new_doc is None:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "reason": code,
+                "violations": [v.model_dump(by_alias=True) for v in viols],
+            },
+        )
+
+    new_link_dxf_ids = [
+        eid
+        for eid in set(new_doc.elements.keys()) - set(host_doc.elements.keys())
+        if getattr(new_doc.elements[eid], "kind", None) == "link_dxf"
+    ]
+    if len(new_link_dxf_ids) != 1:
+        raise HTTPException(
+            status_code=500,
+            detail="Internal: createLinkDxf did not produce exactly one new link_dxf element",
+        )
+    link_element_id = new_link_dxf_ids[0]
+
+    host_row.document = document_to_wire(new_doc)  # type: ignore[assignment]
+    host_row.revision = new_doc.revision
+    await session.commit()
+
+    try:
+        await hub.broadcast_json(
+            host_id,
+            {
+                "type": "delta",
+                "modelId": str(host_id),
+                "revision": new_doc.revision,
+            },
+        )
+    except Exception:
+        pass
+
+    return {
+        "linkedElementId": link_element_id,
+        "lineworkCount": len(linework),
+    }
+
+
+# ---------------------------------------------------------------------------
 # AGT-01 — Agent iterate endpoint
 # ---------------------------------------------------------------------------
 

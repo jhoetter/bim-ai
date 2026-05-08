@@ -874,6 +874,68 @@ class LinkModelElem(BaseModel):
     pinned: bool = Field(default=False)
 
 
+class DxfLineworkLine(BaseModel):
+    """FED-04 — single straight line primitive in a DXF underlay."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["line"] = "line"
+    start: Vec2Mm
+    end: Vec2Mm
+
+
+class DxfLineworkPolyline(BaseModel):
+    """FED-04 — open or closed polyline primitive in a DXF underlay."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["polyline"] = "polyline"
+    points: list[Vec2Mm]
+    closed: bool = False
+
+
+class DxfLineworkArc(BaseModel):
+    """FED-04 — circular-arc primitive (centre + radius + sweep) in a DXF underlay.
+
+    ``start_deg`` / ``end_deg`` follow the DXF convention (CCW from +X axis).
+    For full circles the parser emits ``start_deg=0`` / ``end_deg=360``.
+    """
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["arc"] = "arc"
+    center: Vec2Mm
+    radius_mm: float = Field(alias="radiusMm", gt=0)
+    start_deg: float = Field(alias="startDeg")
+    end_deg: float = Field(alias="endDeg")
+
+
+DxfLineworkPrim = Annotated[
+    DxfLineworkLine | DxfLineworkPolyline | DxfLineworkArc,
+    Field(discriminator="kind"),
+]
+
+
+class LinkDxfElem(BaseModel):
+    """FED-04 — DXF site-plan underlay attached to a host model level.
+
+    The element holds a parsed list of 2D linework primitives (lines,
+    polylines, arcs); the plan canvas renders them as a desaturated grey
+    underlay on the active level so authoring snaps to the imported drawing
+    without round-tripping through a shadow model. ``scale_factor`` carries
+    the unit conversion the parser inferred from the DXF ``$INSUNITS``
+    header so coordinates land in millimetres on import.
+    """
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["link_dxf"] = "link_dxf"
+    id: str
+    name: str = "DXF Underlay"
+    level_id: str = Field(alias="levelId")
+    origin_mm: Vec2Mm = Field(alias="originMm")
+    rotation_deg: float = Field(default=0.0, alias="rotationDeg")
+    scale_factor: float = Field(default=1.0, alias="scaleFactor", gt=0)
+    linework: list[DxfLineworkPrim] = Field(default_factory=list)
+    pinned: bool = Field(default=False)
+
+
 class FamilyCatalogSource(BaseModel):
     """FAM-08 — provenance for a family_type loaded from an external catalog."""
 
@@ -1396,6 +1458,7 @@ ElementKind = Literal[
     "survey_point",
     "internal_origin",
     "link_model",
+    "link_dxf",
     "selection_set",
     "clash_test",
     "placed_tag",
@@ -1619,6 +1682,7 @@ Element = Annotated[
     | SurveyPointElem
     | InternalOriginElem
     | LinkModelElem
+    | LinkDxfElem
     | SelectionSetElem
     | ClashTestElem
     | PlacedTagElem
