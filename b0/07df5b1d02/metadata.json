@@ -3,7 +3,7 @@
   "checkpoint_id": "b007df5b1d02",
   "strategy": "manual-commit",
   "branch": "feat/v3-tkn-v3-01-tokenisation",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": null,
   "sessions": [
     {
@@ -11,13 +11,19 @@
       "transcript": "/b0/07df5b1d02/0/full.jsonl",
       "content_hash": "/b0/07df5b1d02/0/content_hash.txt",
       "prompt": "/b0/07df5b1d02/0/prompt.txt"
+    },
+    {
+      "metadata": "/b0/07df5b1d02/1/metadata.json",
+      "transcript": "/b0/07df5b1d02/1/full.jsonl",
+      "content_hash": "/b0/07df5b1d02/1/content_hash.txt",
+      "prompt": "/b0/07df5b1d02/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 181,
-    "cache_creation_tokens": 112242,
-    "cache_read_tokens": 7988204,
-    "output_tokens": 47740,
-    "api_call_count": 109
+    "input_tokens": 605,
+    "cache_creation_tokens": 254185,
+    "cache_read_tokens": 14282621,
+    "output_tokens": 79127,
+    "api_call_count": 164
   }
 }
