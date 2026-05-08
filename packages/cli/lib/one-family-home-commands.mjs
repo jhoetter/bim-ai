@@ -442,14 +442,16 @@ export function buildOneFamilyHomeCommands() {
         { xMm: 0, yMm: 0, zMm: 4500 },
         { xMm: 0, yMm: 0, zMm: 3000 },
       ],
-      // Profile 350×600 mm: chunky enough to read as a substantial
-      // architectural frame element (matching the line sketch's visual
-      // weight) without overwhelming the wood interior.
+      // Profile 350×200 mm — keeps the frame readable as a band but
+      // narrows the inner-pentagon offset so its slope edges don't
+      // visibly slice through the wood interior. The line sketch's
+      // frame reads as a chunky line, not a wide band — 200mm matches
+      // that visual weight.
       profileMm: [
-        { uMm: -175, vMm: -300 },
-        { uMm: 175, vMm: -300 },
-        { uMm: 175, vMm: 300 },
-        { uMm: -175, vMm: 300 },
+        { uMm: -175, vMm: -100 },
+        { uMm: 175, vMm: -100 },
+        { uMm: 175, vMm: 100 },
+        { uMm: -175, vMm: 100 },
       ],
       profilePlane: 'work_plane',
       materialKey: 'white_render',
@@ -550,9 +552,13 @@ export function buildOneFamilyHomeCommands() {
       id: 'hf-win-loggia-trap',
       name: 'Loggia trapezoidal window',
       wallId: 'hf-w-uf-s',
-      alongT: 0.2,
-      widthMm: 1500,
-      heightMm: 1800,
+      // alongT 0.22 + width 1800 keeps the window inside the wall
+      // (right edge at alongT=0.40 of 5000 = x=2000 < 5000 ✓; left
+      // edge at alongT=0.04 ≥ 0 ✓). Width 1800 + height 2200 makes
+      // the trapezoidal slope-following top read clearly at iso-zoom.
+      alongT: 0.22,
+      widthMm: 1800,
+      heightMm: 2200,
       sillHeightMm: 200,
     },
     {
@@ -722,9 +728,9 @@ export function buildOneFamilyHomeCommands() {
       name: 'Loggia balcony',
       wallId: 'hf-w-uf-s',
       elevationMm: F2F,
-      projectionMm: 400,
+      projectionMm: 700,
       slabThicknessMm: 150,
-      balustradeHeightMm: 1100,
+      balustradeHeightMm: 1200,
     },
 
     // No dormer cut. The earlier KRN-14 createDormer call carved a
