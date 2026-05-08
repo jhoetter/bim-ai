@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  closestPointOnPolyline,
   extensionPoint,
   infiniteLineIntersection,
   perpendicularFoot,
+  produceParallelSnaps,
+  produceTangentSnaps,
+  produceWorkplaneSnaps,
   snapPlanCandidates,
   snapPlanPoint,
   type SegmentLine,
@@ -151,5 +155,217 @@ describe('EDT-05 — snapPlanCandidates kinds', () => {
       lines: [HORIZONTAL, VERTICAL],
     });
     expect(hits[0]?.kind).toBe('endpoint');
+  });
+});
+
+/* ─── EDT-05 closeout — tangent / parallel / workplane ───────────────── */
+
+describe('EDT-05 closeout — closestPointOnPolyline', () => {
+  it('returns the foot when projection lands inside a segment', () => {
+    const path = [
+      { xMm: 0, yMm: 0 },
+      { xMm: 1000, yMm: 0 },
+      { xMm: 1000, yMm: 1000 },
+    ];
+    const pt = closestPointOnPolyline({ xMm: 500, yMm: 200 }, path);
+    expect(pt).toEqual({ xMm: 500, yMm: 0 });
+  });
+
+  it('clamps to the nearest endpoint when projection falls outside', () => {
+    const path = [
+      { xMm: 0, yMm: 0 },
+      { xMm: 1000, yMm: 0 },
+    ];
+    const pt = closestPointOnPolyline({ xMm: -500, yMm: 50 }, path);
+    expect(pt).toEqual({ xMm: 0, yMm: 0 });
+  });
+
+  it('returns null for a single-point degenerate path', () => {
+    expect(closestPointOnPolyline({ xMm: 0, yMm: 0 }, [{ xMm: 50, yMm: 50 }])).toBeNull();
+  });
+});
+
+describe('EDT-05 closeout — produceTangentSnaps', () => {
+  it('test_tangent_snap_on_curved_segment — emits a tangent at the closest curve point', () => {
+    // Polyline that approximates a curved sweep path. Cursor sits just
+    // off the curve; tangent point is the perpendicular foot on the
+    // local segment (which is the polyline's tangent direction).
+    const curve = {
+      pathMm: [
+        { xMm: 0, yMm: 0 },
+        { xMm: 500, yMm: 0 },
+        { xMm: 1000, yMm: 200 },
+      ],
+    };
+    const hits = produceTangentSnaps({
+      cursor: { xMm: 250, yMm: 30 },
+      curves: [curve],
+      draftAnchor: { xMm: -500, yMm: -500 },
+      snapMm: 100,
+    });
+    expect(hits).toHaveLength(1);
+    expect(hits[0]!.kind).toBe('tangent');
+    expect(hits[0]!.point).toEqual({ xMm: 250, yMm: 0 });
+  });
+
+  it('produces no tangent without an active draft anchor', () => {
+    const curve = {
+      pathMm: [
+        { xMm: 0, yMm: 0 },
+        { xMm: 1000, yMm: 0 },
+      ],
+    };
+    const hits = produceTangentSnaps({
+      cursor: { xMm: 500, yMm: 5 },
+      curves: [curve],
+      draftAnchor: undefined,
+      snapMm: 100,
+    });
+    expect(hits).toHaveLength(0);
+  });
+
+  it('skips curves outside snap tolerance', () => {
+    const curve = {
+      pathMm: [
+        { xMm: 0, yMm: 0 },
+        { xMm: 1000, yMm: 0 },
+      ],
+    };
+    const hits = produceTangentSnaps({
+      cursor: { xMm: 500, yMm: 5000 },
+      curves: [curve],
+      draftAnchor: { xMm: 0, yMm: 0 },
+      snapMm: 100,
+    });
+    expect(hits).toHaveLength(0);
+  });
+});
+
+describe('EDT-05 closeout — produceParallelSnaps', () => {
+  it('test_parallel_snap_aligns_to_hovered_wall_direction — projects cursor onto draft direction parallel to wall', () => {
+    // Hovered wall points along +x. Draft anchor at (0, 500). The
+    // parallel direction line is horizontal through (0, 500); the
+    // cursor's projection lands at (350, 500).
+    const wall: SegmentLine = {
+      start: { xMm: 0, yMm: 0 },
+      end: { xMm: 1000, yMm: 0 },
+    };
+    const hits = produceParallelSnaps({
+      cursor: { xMm: 350, yMm: 60 },
+      lines: [wall],
+      draftAnchor: { xMm: 0, yMm: 500 },
+      snapMm: 100,
+    });
+    expect(hits).toHaveLength(1);
+    expect(hits[0]!.kind).toBe('parallel');
+    expect(hits[0]!.point.xMm).toBeCloseTo(350, 6);
+    expect(hits[0]!.point.yMm).toBeCloseTo(500, 6);
+  });
+
+  it('produces no parallel snap when cursor is not near a wall', () => {
+    const wall: SegmentLine = {
+      start: { xMm: 0, yMm: 0 },
+      end: { xMm: 1000, yMm: 0 },
+    };
+    const hits = produceParallelSnaps({
+      cursor: { xMm: 350, yMm: 5000 },
+      lines: [wall],
+      draftAnchor: { xMm: 0, yMm: 500 },
+      snapMm: 100,
+    });
+    expect(hits).toHaveLength(0);
+  });
+
+  it('produces no parallel snap without an active draft anchor', () => {
+    const wall: SegmentLine = {
+      start: { xMm: 0, yMm: 0 },
+      end: { xMm: 1000, yMm: 0 },
+    };
+    const hits = produceParallelSnaps({
+      cursor: { xMm: 350, yMm: 60 },
+      lines: [wall],
+      draftAnchor: undefined,
+      snapMm: 100,
+    });
+    expect(hits).toHaveLength(0);
+  });
+});
+
+describe('EDT-05 closeout — produceWorkplaneSnaps', () => {
+  it('test_workplane_snap_projects_pointer_onto_active_plane — perpendicular foot on plan-trace', () => {
+    // Active workplane is a vertical plane whose plan trace is the
+    // horizontal segment y=0. Cursor at (400, 250) projects onto (400,
+    // 0). Tolerance must include the offset.
+    const hits = produceWorkplaneSnaps({
+      cursor: { xMm: 400, yMm: 250 },
+      workplane: {
+        start: { xMm: 0, yMm: 0 },
+        end: { xMm: 1000, yMm: 0 },
+      },
+      snapMm: 500,
+    });
+    expect(hits).toHaveLength(1);
+    expect(hits[0]!.kind).toBe('workplane');
+    expect(hits[0]!.point).toEqual({ xMm: 400, yMm: 0 });
+  });
+
+  it('returns no candidate when no workplane is active', () => {
+    const hits = produceWorkplaneSnaps({
+      cursor: { xMm: 400, yMm: 250 },
+      workplane: undefined,
+      snapMm: 500,
+    });
+    expect(hits).toHaveLength(0);
+  });
+
+  it('skips when cursor is outside snap tolerance', () => {
+    const hits = produceWorkplaneSnaps({
+      cursor: { xMm: 400, yMm: 5000 },
+      workplane: {
+        start: { xMm: 0, yMm: 0 },
+        end: { xMm: 1000, yMm: 0 },
+      },
+      snapMm: 500,
+    });
+    expect(hits).toHaveLength(0);
+  });
+});
+
+describe('EDT-05 closeout — snapPlanCandidates wiring', () => {
+  it('rank order: parallel > tangent > workplane > grid', () => {
+    const wall: SegmentLine = {
+      start: { xMm: 0, yMm: 0 },
+      end: { xMm: 2000, yMm: 0 },
+    };
+    const curve = {
+      pathMm: [
+        { xMm: 1500, yMm: 50 },
+        { xMm: 1500, yMm: 300 },
+      ],
+    };
+    const hits = snapPlanCandidates({
+      cursor: { xMm: 1500, yMm: 60 },
+      anchors: [],
+      gridStepMm: 1000,
+      snapMm: 200,
+      orthoHold: false,
+      lines: [wall],
+      curves: [curve],
+      workplane: { start: { xMm: 0, yMm: 50 }, end: { xMm: 2000, yMm: 50 } },
+      draftAnchor: { xMm: 0, yMm: 500 },
+    });
+    const order = hits.map((h) => h.kind);
+    // Parallel must come before tangent / workplane / grid.
+    const par = order.indexOf('parallel');
+    const tan = order.indexOf('tangent');
+    const wp = order.indexOf('workplane');
+    const grid = order.indexOf('grid');
+    expect(par).toBeGreaterThanOrEqual(0);
+    expect(tan).toBeGreaterThanOrEqual(0);
+    expect(wp).toBeGreaterThanOrEqual(0);
+    expect(grid).toBeGreaterThanOrEqual(0);
+    expect(par).toBeLessThan(tan);
+    expect(tan).toBeLessThan(wp);
+    expect(wp).toBeLessThan(grid);
   });
 });

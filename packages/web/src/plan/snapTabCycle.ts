@@ -7,9 +7,30 @@
  * changes (or its key signature changes) so the cycle starts over at
  * index 0 — otherwise a Tab press from a previous frame would silently
  * select a now-different snap.
+ *
+ * EDT-05 closeout — the cycle order matches the `snapEngine` ranker:
+ * endpoint > intersection > perpendicular > extension > parallel >
+ * tangent > workplane > grid > raw. The cycle module itself is
+ * order-agnostic — Tab simply walks the input hit list — so the rank
+ * lives in `snapPlanCandidates` and new kinds slot in there.
  */
 
-import type { SnapHit } from './snapEngine';
+import type { SnapHit, SnapKind } from './snapEngine';
+
+/** EDT-05 closeout — canonical Tab-cycle order; mirrors the
+ *  `snapPlanCandidates` ranker. Exposed so callers / tests can assert
+ *  ordering without re-deriving it from internal kind comparisons. */
+export const SNAP_TAB_CYCLE_ORDER: SnapKind[] = [
+  'endpoint',
+  'intersection',
+  'perpendicular',
+  'extension',
+  'parallel',
+  'tangent',
+  'workplane',
+  'grid',
+  'raw',
+];
 
 export interface SnapTabCycleState {
   activeIndex: number;

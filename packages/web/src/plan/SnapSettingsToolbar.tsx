@@ -19,6 +19,9 @@ const ROWS: Array<{ key: ToggleableSnapKind; label: string }> = [
   { key: 'intersection', label: 'Intersection' },
   { key: 'perpendicular', label: 'Perpendicular' },
   { key: 'extension', label: 'Extension' },
+  { key: 'parallel', label: 'Parallel' },
+  { key: 'tangent', label: 'Tangent' },
+  { key: 'workplane', label: 'Workplane' },
   { key: 'grid', label: 'Grid' },
 ];
 

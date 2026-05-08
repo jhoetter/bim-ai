@@ -10,17 +10,36 @@ export type SnapKind =
   | 'perpendicular'
   /** EDT-05 — closest point on a line's infinite extension. */
   | 'extension'
-  /** EDT-05 — tangent from cursor to a circular element. Reserved
-   *  for when arc / circle geometry lands; today's snap engine
-   *  produces no `tangent` candidates because no curved elements
-   *  exist. The kind is exposed so downstream callers can render
-   *  / hotkey-cycle past it without a future schema bump. */
-  | 'tangent';
+  /** EDT-05 closeout — tangent point on a curved element (sweep path /
+   *  dormer / curtain panel arc) closest to the cursor. Fires only
+   *  when an active draft anchor is being placed. */
+  | 'tangent'
+  /** EDT-05 closeout — projection onto a direction parallel to a
+   *  hovered wall, anchored at the active draft start. */
+  | 'parallel'
+  /** EDT-05 closeout — perpendicular foot of the cursor onto the active
+   *  workplane (3D reference plane flagged `isWorkPlane`). */
+  | 'workplane';
 
 export type SnapHit = { point: XY; kind: SnapKind };
 
 /** Two-point line segment used by the EDT-05 snap kinds. */
 export interface SegmentLine {
+  start: XY;
+  end: XY;
+}
+
+/** EDT-05 closeout — polyline approximation of a curved element used by
+ *  the tangent producer. Sweeps' `pathMm`, dormer curved segments, and
+ *  curtain-panel arcs are all flattened to a polyline before being fed
+ *  in so the producer stays geometry-shape agnostic. */
+export interface CurveSegment {
+  pathMm: XY[];
+}
+
+/** EDT-05 closeout — active workplane in plan-trace form (the vertical
+ *  plane projects to a line in the plan view). */
+export interface ActiveWorkplane {
   start: XY;
   end: XY;
 }
@@ -149,6 +168,116 @@ export function extensionPoint(p: XY, line: SegmentLine): XY | null {
   return foot;
 }
 
+/** EDT-05 closeout — closest point on a polyline curve to the cursor.
+ *  Returns the segment-local foot when the projection lies inside a
+ *  segment, otherwise the nearest endpoint. */
+export function closestPointOnPolyline(p: XY, path: XY[]): XY | null {
+  if (path.length < 2) return null;
+  let best: XY | null = null;
+  let bestD = Infinity;
+  for (let i = 0; i + 1 < path.length; i++) {
+    const a = path[i]!;
+    const b = path[i + 1]!;
+    const dx = b.xMm - a.xMm;
+    const dy = b.yMm - a.yMm;
+    const denom = dx * dx + dy * dy;
+    let candidate: XY;
+    if (denom === 0) {
+      candidate = a;
+    } else {
+      const t = ((p.xMm - a.xMm) * dx + (p.yMm - a.yMm) * dy) / denom;
+      const tc = Math.max(0, Math.min(1, t));
+      candidate = { xMm: a.xMm + tc * dx, yMm: a.yMm + tc * dy };
+    }
+    const d = dist2(p.xMm, p.yMm, candidate.xMm, candidate.yMm);
+    if (d < bestD) {
+      bestD = d;
+      best = candidate;
+    }
+  }
+  return best;
+}
+
+/** EDT-05 closeout — Tangent producer.
+ *
+ *  Fires only when a draft anchor is active and the cursor is near a
+ *  curved element. Returns the closest tangent-fit point on each curve
+ *  inside `snapMm`. (For polyline curves the closest point is the
+ *  tangent point — the local segment direction is the curve tangent.) */
+export function produceTangentSnaps(opts: {
+  cursor: XY;
+  curves: CurveSegment[];
+  draftAnchor?: XY;
+  snapMm: number;
+}): SnapHit[] {
+  if (!opts.draftAnchor) return [];
+  const tol2 = opts.snapMm * opts.snapMm;
+  const out: SnapHit[] = [];
+  for (const curve of opts.curves) {
+    const pt = closestPointOnPolyline(opts.cursor, curve.pathMm);
+    if (!pt) continue;
+    if (dist2(opts.cursor.xMm, opts.cursor.yMm, pt.xMm, pt.yMm) <= tol2) {
+      out.push({ point: pt, kind: 'tangent' });
+    }
+  }
+  return out;
+}
+
+/** EDT-05 closeout — Parallel producer.
+ *
+ *  Fires when the cursor is near a wall and an active draft anchor
+ *  exists. Snaps the draft direction to be parallel to the hovered
+ *  wall; the snap point projects the cursor onto that direction line
+ *  through the anchor. */
+export function produceParallelSnaps(opts: {
+  cursor: XY;
+  lines: SegmentLine[];
+  draftAnchor?: XY;
+  snapMm: number;
+}): SnapHit[] {
+  if (!opts.draftAnchor) return [];
+  const tol2 = opts.snapMm * opts.snapMm;
+  const out: SnapHit[] = [];
+  for (const line of opts.lines) {
+    // Hover gate: cursor must be within snap tolerance of the wall.
+    const hoverFoot = perpendicularFoot(opts.cursor, line);
+    if (!hoverFoot) continue;
+    if (dist2(opts.cursor.xMm, opts.cursor.yMm, hoverFoot.xMm, hoverFoot.yMm) > tol2) continue;
+    // Direction line: parallel to the wall, passing through the anchor.
+    const dirLine: SegmentLine = {
+      start: opts.draftAnchor,
+      end: {
+        xMm: opts.draftAnchor.xMm + (line.end.xMm - line.start.xMm),
+        yMm: opts.draftAnchor.yMm + (line.end.yMm - line.start.yMm),
+      },
+    };
+    const projected = perpendicularFoot(opts.cursor, dirLine);
+    if (!projected) continue;
+    out.push({ point: projected, kind: 'parallel' });
+  }
+  return out;
+}
+
+/** EDT-05 closeout — Workplane producer.
+ *
+ *  3D-only conceptually: given the active reference plane, project the
+ *  cursor onto the plane. Plan-canvas trace of a vertical plane is a
+ *  line, so we fall back to the perpendicular foot of cursor onto the
+ *  plane's plan line. The 3D viewport supplies an active workplane
+ *  derived from the reference plane element flagged `isWorkPlane`. */
+export function produceWorkplaneSnaps(opts: {
+  cursor: XY;
+  workplane?: ActiveWorkplane;
+  snapMm: number;
+}): SnapHit[] {
+  if (!opts.workplane) return [];
+  const tol2 = opts.snapMm * opts.snapMm;
+  const foot = perpendicularFoot(opts.cursor, opts.workplane);
+  if (!foot) return [];
+  if (dist2(opts.cursor.xMm, opts.cursor.yMm, foot.xMm, foot.yMm) > tol2) return [];
+  return [{ point: foot, kind: 'workplane' }];
+}
+
 /** Multiple snap targets within radius — first is default; Tab-cycle can iterate. */
 
 export function snapPlanCandidates(opts: {
@@ -162,8 +291,18 @@ export function snapPlanCandidates(opts: {
   orthoHold: boolean;
 
   /** EDT-05 — line segments to compute intersection / perpendicular /
-   *  extension snaps against. Optional for backward compatibility. */
+   *  extension / parallel snaps against. Optional for backward compat. */
   lines?: SegmentLine[];
+  /** EDT-05 closeout — polyline curves used by the tangent producer. */
+  curves?: CurveSegment[];
+  /** EDT-05 closeout — active workplane (plan trace) for the workplane
+   *  producer. Optional; populated only when a reference plane is the
+   *  active workplane. */
+  workplane?: ActiveWorkplane;
+  /** EDT-05 closeout — draft start anchor used by the tangent and
+   *  parallel producers; both no-op without it. Distinct from
+   *  `chainAnchor` (which carries ortho-hold semantics). */
+  draftAnchor?: XY;
 }): SnapHit[] {
   const p = opts.orthoHold ? orthoFromAnchor(opts.cursor, opts.chainAnchor) : opts.cursor;
 
@@ -221,6 +360,37 @@ export function snapPlanCandidates(opts: {
     }
   }
 
+  // EDT-05 closeout: parallel / tangent / workplane producers.
+  if (opts.lines && opts.lines.length > 0 && opts.draftAnchor) {
+    for (const h of produceParallelSnaps({
+      cursor: p,
+      lines: opts.lines,
+      draftAnchor: opts.draftAnchor,
+      snapMm: opts.snapMm,
+    })) {
+      hits.push(h);
+    }
+  }
+  if (opts.curves && opts.curves.length > 0 && opts.draftAnchor) {
+    for (const h of produceTangentSnaps({
+      cursor: p,
+      curves: opts.curves,
+      draftAnchor: opts.draftAnchor,
+      snapMm: opts.snapMm,
+    })) {
+      hits.push(h);
+    }
+  }
+  if (opts.workplane) {
+    for (const h of produceWorkplaneSnaps({
+      cursor: p,
+      workplane: opts.workplane,
+      snapMm: opts.snapMm,
+    })) {
+      hits.push(h);
+    }
+  }
+
   const seen = new Set<string>();
 
   const out: SnapHit[] = [];
@@ -236,9 +406,11 @@ export function snapPlanCandidates(opts: {
   }
 
   out.sort((a, b) => {
-    // Endpoint > intersection > perpendicular > extension > grid > raw.
-    // This matches Revit's "stronger" snap winning by kind, then
-    // proximity inside the same kind.
+    // Endpoint > intersection > perpendicular > extension > parallel >
+    // tangent > workplane > grid > raw. Matches Revit's "stronger" snap
+    // by kind, then proximity inside the same kind. EDT-05 closeout
+    // inserts parallel / tangent / workplane between extension and
+    // grid per the wave-04 prompt's precedence table.
     const rank = (k: SnapKind) =>
       k === 'endpoint'
         ? 0
@@ -248,11 +420,15 @@ export function snapPlanCandidates(opts: {
             ? 2
             : k === 'extension'
               ? 3
-              : k === 'tangent'
+              : k === 'parallel'
                 ? 4
-                : k === 'grid'
+                : k === 'tangent'
                   ? 5
-                  : 6;
+                  : k === 'workplane'
+                    ? 6
+                    : k === 'grid'
+                      ? 7
+                      : 8;
     const ra = rank(a.kind);
     const rb = rank(b.kind);
     if (ra !== rb) return ra - rb;

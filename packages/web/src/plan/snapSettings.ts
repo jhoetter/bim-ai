@@ -3,9 +3,9 @@
  *
  * Reads / writes a JSON blob in localStorage so user-toggled snap
  * preferences survive a page reload. Keys mirror `SnapKind` from
- * `snapEngine.ts`. Tangent is reserved for when curved geometry lands
- * but is exposed here so the toolbar checkbox does not need a future
- * schema bump.
+ * `snapEngine.ts`. EDT-05 closeout adds parallel / tangent / workplane
+ * — tangent defaults OFF because the curved-geometry scan is the most
+ * expensive producer.
  */
 import type { SnapKind } from './snapEngine';
 
@@ -15,6 +15,9 @@ export type ToggleableSnapKind =
   | 'intersection'
   | 'perpendicular'
   | 'extension'
+  | 'parallel'
+  | 'tangent'
+  | 'workplane'
   | 'grid';
 
 export type SnapSettings = Record<ToggleableSnapKind, boolean>;
@@ -25,8 +28,26 @@ export const DEFAULT_SNAP_SETTINGS: SnapSettings = {
   intersection: true,
   perpendicular: true,
   extension: true,
+  parallel: true,
+  tangent: false,
+  workplane: true,
   grid: true,
 };
+
+/** EDT-05 closeout — kinds shipped in the wave-04 closeout. Exported so
+ *  callers can iterate the canonical set without depending on the
+ *  literal string union. */
+export const SNAP_KINDS: ToggleableSnapKind[] = [
+  'endpoint',
+  'midpoint',
+  'intersection',
+  'perpendicular',
+  'extension',
+  'parallel',
+  'tangent',
+  'workplane',
+  'grid',
+];
 
 const STORAGE_KEY = 'bim-ai.plan.snapSettings.v1';
 
@@ -73,9 +94,14 @@ export function applySnapSettings<T extends { kind: SnapKind }>(
         return settings.perpendicular;
       case 'extension':
         return settings.extension;
+      case 'parallel':
+        return settings.parallel;
+      case 'tangent':
+        return settings.tangent;
+      case 'workplane':
+        return settings.workplane;
       case 'grid':
         return settings.grid;
-      case 'tangent':
       case 'raw':
         return true;
     }
