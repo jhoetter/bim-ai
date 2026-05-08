@@ -4,20 +4,32 @@
   "strategy": "manual-commit",
   "branch": "feat/v3-job-v3-01-jobs-panel",
   "checkpoints_count": 1,
-  "files_touched": null,
+  "files_touched": [
+    "app/bim_ai/cmd/apply_bundle.py",
+    "app/bim_ai/cmd/types.py",
+    "app/tests/cmd/test_apply_bundle_engine.py",
+    "app/tests/cmd/test_assumption_log.py",
+    "packages/web/src/inspector/AssumptionLogSection.tsx"
+  ],
   "sessions": [
     {
       "metadata": "/d5/c85f8dc548/0/metadata.json",
       "transcript": "/d5/c85f8dc548/0/full.jsonl",
       "content_hash": "/d5/c85f8dc548/0/content_hash.txt",
       "prompt": "/d5/c85f8dc548/0/prompt.txt"
+    },
+    {
+      "metadata": "/d5/c85f8dc548/1/metadata.json",
+      "transcript": "/d5/c85f8dc548/1/full.jsonl",
+      "content_hash": "/d5/c85f8dc548/1/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
-    "input_tokens": 248,
-    "cache_creation_tokens": 140344,
-    "cache_read_tokens": 13288401,
-    "output_tokens": 63209,
-    "api_call_count": 152
+    "input_tokens": 249,
+    "cache_creation_tokens": 140552,
+    "cache_read_tokens": 13375420,
+    "output_tokens": 63487,
+    "api_call_count": 153
   }
 }
