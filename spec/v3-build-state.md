@@ -1,6 +1,6 @@
 # v3 Build State
 
-Last updated: 2026-05-08 (wave-2 complete: 6/7 + WP-010/012 merged by orchestrator; 8 slots free)
+Last updated: 2026-05-08 (wave-3 complete: 8 WPs merged; ~22/63 done)
 Active heavy workers: 0 / 8
 
 ## Merged so far
@@ -26,31 +26,33 @@ Active heavy workers: 0 / 8
 | CHR-V3-01 + CHR-V3-02 TopBar + switcher (WP-014+015) | feat/v3-chr-v3-02-workspace-switcher | 2026-05-08 | 07f84d64 |
 | KRN-V3-02 stacked walls (WP-010) + KRN-V3-05 stair by sketch (WP-012) | main (orchestrator) | 2026-05-08 | 53536e47 |
 
-## Held back (deps now unlocked)
+## Wave-3 merged
 
-- **KRN-V3-07 slanted/tapered walls** — KRN-V3-02 merged; ready to dispatch.
-- **KRN-V3-08 wall sweeps & reveals** — KRN-V3-03 merged; ready to dispatch.
-- **KRN-V3-10 monolithic/floating stair sub-kinds** — KRN-V3-05 merged; ready to dispatch.
-- **KRN-V3-11 railing/baluster** — KRN-V3-05 merged; ready to dispatch.
-- **CMD-V3-02 assumption log** — CMD-V3-01 merged; ready to dispatch.
-- **COL-V3-01 multi-user** — CQ-01 merged; ready to dispatch.
-- **JOB-V3-01 Jobs panel** — CQ-01 merged; ready to dispatch.
+| WP-ID | Branch | Merged at | Commit |
+| ----- | ------ | --------- | ------ |
+| KRN-V3-07 slanted/tapered walls (WP-016) | feat/v3-job-v3-01-jobs-panel | 2026-05-08 | 8606047a |
+| KRN-V3-11 railing baluster (WP-017) | feat/v3-job-v3-01-jobs-panel | 2026-05-08 | 06cbff58 |
+| CMD-V3-02 assumption log (WP-018) | feat/v3-job-v3-01-jobs-panel | 2026-05-08 | b6cea202 |
+| COL-V3-01 multi-user collab (WP-019+021) | feat/v3-job-v3-01-jobs-panel | 2026-05-08 | f221fff0 |
+| JOB-V3-01 Jobs panel (WP-022) | feat/v3-job-v3-01-jobs-panel | 2026-05-08 | a15c2a4a |
+| KRN-V3-10 stair sub-kinds (WP-020) | feat/v3-job-v3-01-jobs-panel | 2026-05-08 | 0879e972 |
+| CHR-V3-03 status bar (WP-023) | feat/v3-job-v3-01-jobs-panel | 2026-05-08 | bcd5bf32 |
+
+## Held back (pending deps)
+
+- **KRN-V3-08 wall sweeps & reveals** — KRN-V3-03 merged; prompt written (WP spec ready).
 - **OPT-V3-01 design options** — depends on KRN-V3-04 (not yet merged); hold.
 - **CQ-04 god-file split** — high merge-conflict risk; schedule for quiet window.
 - **CQ-03 workspace reorg** — riskiest CQ item; dedicated quiet week.
 
-## Next wave (8 slots free — all deps satisfied)
+## Next wave (8 slots free)
 
-All 8 slots are free. Candidates in priority order:
+Wave-4 candidates (all deps satisfied):
 
-1. **KRN-V3-07** slanted/tapered walls — dep KRN-V3-02 now merged
-2. **KRN-V3-08** wall sweeps & reveals — dep KRN-V3-03 now merged
-3. **KRN-V3-10** monolithic/floating stair sub-kinds — dep KRN-V3-05 now merged
-4. **KRN-V3-11** railing/baluster — dep KRN-V3-05 now merged
-5. **CMD-V3-02** assumption log — dep CMD-V3-01 now merged
-6. **COL-V3-01** multi-user collab — dep CQ-01 now merged
-7. **JOB-V3-01** Jobs panel — dep CQ-01 now merged
-8. **CHR-V3-03** status bar OR **CHR-V3-04** Cmd+K palette (chrome; no kernel deps)
+1. **KRN-V3-08** wall sweeps & reveals
+2. **CHR-V3-04** Cmd+K palette
+3. **OPT-V3-01** design options (once KRN-V3-04 lands)
+4. Remaining kernel WPs from tracker
 
 ## Notes
 
