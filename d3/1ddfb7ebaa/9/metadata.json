@@ -1,0 +1,38 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "d31ddfb7ebaa",
+  "session_id": "a6dca7ad-53ff-46d7-b695-b83715e000d2",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T21:50:57.38655Z",
+  "branch": "feat/v3-edt-v3-04-shortcut-chips",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/cmdPalette/CommandPalette.tsx",
+    "packages/web/src/collab/MarkupCanvas.tsx",
+    "packages/web/src/collab/ShareModal.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "df093989027f",
+  "checkpoint_transcript_start": 61,
+  "transcript_lines_at_start": 61,
+  "token_usage": {
+    "input_tokens": 9,
+    "cache_creation_tokens": 23717,
+    "cache_read_tokens": 575998,
+    "output_tokens": 17153,
+    "api_call_count": 9
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-08T21:50:57.379625Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 2,
+    "human_modified": 8,
+    "human_removed": 0,
+    "total_committed": 2,
+    "total_lines_changed": 10,
+    "agent_percentage": 0,
+    "metric_version": 2
+  }
+}
