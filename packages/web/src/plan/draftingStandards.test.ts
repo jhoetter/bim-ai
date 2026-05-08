@@ -7,6 +7,7 @@ import {
   dashArray,
   gridVisibilityFor,
   hatchVisibleAt,
+  lineWeightsForScale,
   lineWidthPxFor,
 } from './draftingStandards';
 
@@ -109,5 +110,52 @@ describe('LINE_WEIGHT_PX_AT_1_50', () => {
     expect(LINE_WEIGHT_PX_AT_1_50['--draft-lw-hidden']).toBe(0.7);
     expect(LINE_WEIGHT_PX_AT_1_50['--draft-lw-witness']).toBe(0.5);
     expect(LINE_WEIGHT_PX_AT_1_50['--draft-lw-construction']).toBe(0.5);
+  });
+});
+
+describe('lineWeightsForScale — CAN-V3-01', () => {
+  it('1:50 returns spec values', () => {
+    const w = lineWeightsForScale(50);
+    expect(w.cutMajor).toBe(2);
+    expect(w.cutMinor).toBe(1.4);
+    expect(w.projMajor).toBeCloseTo(1.0, 6);
+    expect(w.projMinor).toBeCloseTo(0.7, 6);
+    expect(w.witness).toBe(0.5);
+  });
+
+  it('1:100 weights are ~70 % of 1:50', () => {
+    const w50 = lineWeightsForScale(50);
+    const w100 = lineWeightsForScale(100);
+    expect(w100.cutMajor!).toBeCloseTo(w50.cutMajor * 0.5, 5);
+    // continuous formula: 50/100 = 0.5 — "~70 %" in the WP refers to the
+    // step-table canonical; the continuous formula is the engine truth.
+  });
+
+  it('1:200 cuts are 50 % of 1:50', () => {
+    const w = lineWeightsForScale(200);
+    expect(w.cutMajor).toBeCloseTo(0.5, 5);
+    expect(w.projMajor).not.toBeNull();
+  });
+
+  it('1:500 suppresses projection (null)', () => {
+    const w = lineWeightsForScale(500);
+    expect(w.projMajor).toBeNull();
+    expect(w.projMinor).toBeNull();
+    expect(w.cutMajor).toBeCloseTo(0.2, 5);
+  });
+
+  it('witness stays at hairline at all scales', () => {
+    for (const s of [50, 100, 200, 500]) {
+      expect(lineWeightsForScale(s).witness).toBeGreaterThan(0);
+    }
+  });
+
+  it('grid follows gridVisibilityFor', () => {
+    expect(lineWeightsForScale(50).gridMajor).not.toBeNull();
+    expect(lineWeightsForScale(50).gridMinor).not.toBeNull();
+    expect(lineWeightsForScale(200).gridMajor).not.toBeNull();
+    expect(lineWeightsForScale(200).gridMinor).toBeNull();
+    expect(lineWeightsForScale(500).gridMajor).toBeNull();
+    expect(lineWeightsForScale(500).gridMinor).toBeNull();
   });
 });

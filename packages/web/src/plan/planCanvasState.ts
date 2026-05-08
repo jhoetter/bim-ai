@@ -14,8 +14,10 @@ import {
   gridVisibilityFor,
   HATCH_SPECS,
   hatchVisibleAt,
+  lineWeightsForScale,
   lineWidthPxFor,
   type HatchSpec,
+  type LineWeights,
 } from './draftingStandards';
 
 /* ────────────────────────────────────────────────────────────────────── */
@@ -27,16 +29,22 @@ export interface DraftingPaint {
   grid: { showMajor: boolean; showMinor: boolean };
   lineWidthPx: (token: keyof typeof CATEGORY_LINE_RULES) => number;
   visibleHatches: HatchSpec[];
+  /** CAN-V3-01 — structured line-weight set; renderer skips draw calls when null. */
+  lineWeights: LineWeights;
 }
+
+export type { LineWeights };
 
 /** Resolve the §14.2 drafting paint set for a given plot scale. */
 export function draftingPaintFor(plotScale: number): DraftingPaint {
   const grid = gridVisibilityFor(plotScale);
   const visibleHatches = Object.values(HATCH_SPECS).filter((h) => hatchVisibleAt(plotScale, h));
+  const lineWeights = lineWeightsForScale(plotScale);
   return {
     paperToken: '--draft-paper',
     grid,
     visibleHatches,
+    lineWeights,
     lineWidthPx(role) {
       const rule = CATEGORY_LINE_RULES[role as string];
       if (!rule) return 1;

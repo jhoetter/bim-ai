@@ -213,3 +213,39 @@ export function gridVisibilityFor(plotScale: number): GridVisibility {
   if (plotScale <= 200) return { showMajor: true, showMinor: false };
   return { showMajor: false, showMinor: false };
 }
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* CAN-V3-01 — structured line-weight set per plot scale                   */
+/* ────────────────────────────────────────────────────────────────────── */
+
+export interface LineWeights {
+  cutMajor: number;
+  cutMinor: number;
+  /** null = suppressed at 1:500+ (omit the draw call entirely). */
+  projMajor: number | null;
+  projMinor: number | null;
+  witness: number;
+  /** null = grid pass suppressed per gridVisibilityFor. */
+  gridMajor: number | null;
+  gridMinor: number | null;
+}
+
+/**
+ * Returns calibrated line-weight px values for the given plot scale
+ * denominator (50 | 100 | 200 | 500 or any interpolated value).
+ * At 1:500 projection lines return null (suppress entirely).
+ * Grid nullability follows gridVisibilityFor.
+ */
+export function lineWeightsForScale(scaleDenominator: number): LineWeights {
+  const grid = gridVisibilityFor(scaleDenominator);
+  const suppress = scaleDenominator >= 500;
+  return {
+    cutMajor: lineWidthPxFor('--draft-lw-cut-major', scaleDenominator),
+    cutMinor: lineWidthPxFor('--draft-lw-cut-minor', scaleDenominator),
+    projMajor: suppress ? null : lineWidthPxFor('--draft-lw-projection-major', scaleDenominator),
+    projMinor: suppress ? null : lineWidthPxFor('--draft-lw-projection-minor', scaleDenominator),
+    witness: lineWidthPxFor('--draft-lw-witness', scaleDenominator),
+    gridMajor: grid.showMajor ? 1 : null,
+    gridMinor: grid.showMinor ? 0.5 : null,
+  };
+}
