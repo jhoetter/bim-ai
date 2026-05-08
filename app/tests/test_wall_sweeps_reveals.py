@@ -9,10 +9,11 @@ from bim_ai.commands import (
     CreateLevelCmd,
     CreateRoofCmd,
     CreateWallCmd,
+    DeleteElementCmd,
     SetEdgeProfileRunModeCmd,
 )
 from bim_ai.document import Document
-from bim_ai.elements import EdgeProfileRunElem, WallEdgeFixed, WallEdgeSpan
+from bim_ai.elements import EdgeProfileRunElem, WallEdgeFixed, WallEdgeSpan, WallElem
 from bim_ai.engine import apply_inplace, compute_wall_corner_mitre_angle
 
 _OFFSET = {"xMm": 0, "yMm": 0}
@@ -309,3 +310,56 @@ def test_wall_edge_span_model() -> None:
     edge = WallEdgeSpan(startMm=100, endMm=500)
     assert edge.start_mm == 100
     assert edge.end_mm == 500
+
+
+# ---------------------------------------------------------------------------
+# Delete sweep — wall remains intact
+# ---------------------------------------------------------------------------
+
+
+def test_delete_sweep_leaves_wall_intact() -> None:
+    doc = _base_doc()
+    apply_inplace(
+        doc,
+        CreateEdgeProfileRunCmd(
+            id="epr-del",
+            hostElementId="w-1",
+            hostEdge={"kind": "top"},
+            profileFamilyId="cornice",
+            offsetMm=_OFFSET,
+            mode="sweep",
+        ),
+    )
+    assert "epr-del" in doc.elements
+    apply_inplace(doc, DeleteElementCmd(elementId="epr-del"))
+    assert "epr-del" not in doc.elements
+    assert "w-1" in doc.elements
+    assert isinstance(doc.elements["w-1"], WallElem)
+
+
+# ---------------------------------------------------------------------------
+# Round-trip serialisation
+# ---------------------------------------------------------------------------
+
+
+def test_wall_with_sweep_round_trips() -> None:
+    doc = _base_doc()
+    apply_inplace(
+        doc,
+        CreateEdgeProfileRunCmd(
+            id="epr-rt",
+            hostElementId="w-1",
+            hostEdge={"kind": "top"},
+            profileFamilyId="cornice",
+            offsetMm=_OFFSET,
+            mode="sweep",
+        ),
+    )
+    wire = doc.model_dump(by_alias=True)
+    doc2 = Document.model_validate(wire)
+    elem = doc2.elements["epr-rt"]
+    assert isinstance(elem, EdgeProfileRunElem)
+    assert elem.mode == "sweep"
+    assert elem.host_element_id == "w-1"
+    # host_edge is typed Any so round-trips as its serialised dict form
+    assert elem.host_edge == {"kind": "top"}

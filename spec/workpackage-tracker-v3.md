@@ -502,7 +502,7 @@ Theme contents below are filled in by parallel chapter authors (Phase 2 dispatch
 | KRN-V3-05 | Stair by sketch | L | now | — |
 | KRN-V3-06 | Plan region | M | now | — |
 | KRN-V3-07 | Slanted & tapered walls | M | done | KRN-V3-02 |
-| KRN-V3-08 | Wall sweeps & reveals | M | next | KRN-V3-03 (edge-profile-run pattern) |
+| KRN-V3-08 | Wall sweeps & reveals | M | done | KRN-V3-03 (edge-profile-run pattern) |
 | KRN-V3-09 | Curved curtain walls | M | next | — |
 | KRN-V3-10 | Monolithic / floating stair sub-kinds | M | next | KRN-V3-05 |
 | KRN-V3-11 | Railing baluster pattern + handrail supports | M | done | KRN-V3-05 |
@@ -716,7 +716,7 @@ _Source: R-D §3 G3. Severity Medium → High residential. Lofts, attics, retain
 
 _Source: R-D §3 G2. Severity Medium. Cornice, water-table, plinth — first-class wall children in Revit._
 
-**Status.** `next`.
+**Status.** `done`.
 **Scope.** Horizontal profile run along a wall (sweep — additive, e.g. cornice / water-table / plinth) or inverse cut (reveal). Reuses the `EdgeProfileRun` infra shipped in KRN-V3-03 — wall sweeps are just edge-profile-runs hosted to a wall edge instead of a roof edge. Auto-mitred at corners.
 **Data model.** Reuses `EdgeProfileRun` (KRN-V3-03 shape) with `hostElementId` pointing at a wall and `hostEdge: 'top' | 'bottom' | { startMm; endMm }`. Adds an inverse-cut variant via `mode: 'sweep' | 'reveal'`.
 **Engine.** Sweep: solid added to wall via boolean union. Reveal: solid subtracted from wall via boolean difference. Auto-mitering at wall-wall corners. Profile families ship: cornice, water-table, plinth, baseboard, chair-rail, picture-rail.
