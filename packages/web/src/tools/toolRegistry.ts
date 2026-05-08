@@ -64,6 +64,8 @@ export interface ToolDefinition {
   icon: IconName;
   /** Hotkey label (the actual key handler is wired by WP-UI-D03). */
   hotkey: string;
+  /** Chip label shown on the toolbar button and in the tooltip (e.g. 'W', 'WI'). */
+  shortcut?: string;
   /** Workspace modes where this tool button shows. */
   modes: WorkspaceMode[];
   /** Optional helper text shown in the tooltip. */
@@ -77,6 +79,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       label: t('tools.select.label'),
       icon: 'select',
       hotkey: 'V',
+      shortcut: 'V',
       modes: ['plan', '3d', 'plan-3d', 'section', 'sheet', 'schedule', 'agent'],
       tooltip: t('tools.select.tooltip'),
     },
@@ -85,6 +88,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       label: t('tools.wall.label'),
       icon: 'wall',
       hotkey: 'W',
+      shortcut: 'W',
       modes: ['plan', 'plan-3d'],
       tooltip: t('tools.wall.tooltip'),
     },
@@ -93,6 +97,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       label: t('tools.door.label'),
       icon: 'door',
       hotkey: 'D',
+      shortcut: 'D',
       modes: ['plan', 'plan-3d'],
       tooltip: t('tools.door.tooltip'),
     },
@@ -101,6 +106,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       label: t('tools.window.label'),
       icon: 'window',
       hotkey: 'Shift+W',
+      shortcut: 'WI',
       modes: ['plan', 'plan-3d'],
       tooltip: t('tools.window.tooltip'),
     },
@@ -109,6 +115,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       label: t('tools.floor.label'),
       icon: 'floor',
       hotkey: 'F',
+      shortcut: 'F',
       modes: ['plan', 'plan-3d'],
       tooltip: t('tools.floor.tooltip'),
     },
@@ -141,6 +148,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       label: t('tools.roof.label'),
       icon: 'roof',
       hotkey: 'R',
+      shortcut: 'R',
       modes: ['plan', 'plan-3d'],
       tooltip: t('tools.roof.tooltip'),
     },
@@ -149,6 +157,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       label: t('tools.stair.label'),
       icon: 'stair',
       hotkey: 'S',
+      shortcut: 'S',
       modes: ['plan', 'plan-3d'],
       tooltip: t('tools.stair.tooltip'),
     },
@@ -165,6 +174,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       label: t('tools.room.label'),
       icon: 'room',
       hotkey: 'M',
+      shortcut: 'M',
       modes: ['plan', 'plan-3d'],
       tooltip: t('tools.room.tooltip'),
     },
@@ -173,6 +183,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       label: t('tools.dimension.label'),
       icon: 'dimension',
       hotkey: 'Shift+D',
+      shortcut: 'DI',
       modes: ['plan', 'plan-3d', 'section'],
       tooltip: t('tools.dimension.tooltip'),
     },
@@ -237,6 +248,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       label: t('tools.tag.label'),
       icon: 'tag',
       hotkey: 'T',
+      shortcut: 'T',
       modes: ['plan', 'plan-3d'],
       tooltip: t('tools.tag.tooltip'),
     },
@@ -293,6 +305,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       label: t('tools.column.label'),
       icon: 'column',
       hotkey: 'CO',
+      shortcut: 'C',
       modes: ['plan', 'plan-3d'],
       tooltip: t('tools.column.tooltip'),
     },
