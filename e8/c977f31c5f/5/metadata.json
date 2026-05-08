@@ -1,0 +1,41 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "e8c977f31c5f",
+  "session_id": "d7d300d4-cabf-4111-918d-d067e6f55f3c",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T19:20:49.299639Z",
+  "branch": "feat/v3-out-v3-01-live-web-link",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/web/src/tools/modifierBar.ts",
+    "packages/web/src/tools/toolPrefsStore.ts",
+    "packages/web/src/tools/ToolModifierBar.tsx",
+    "packages/web/src/workspace/ToolModifierBar.tsx",
+    "packages/web/src/workspace/AppShell.tsx",
+    "packages/web/src/tools/modifierBar.test.ts",
+    "packages/web/src/tools/ToolModifierBar.test.tsx",
+    "packages/web/src/tools/toolPrefsStore.test.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "bd14db23f2d7",
+  "token_usage": {
+    "input_tokens": 163,
+    "cache_creation_tokens": 85973,
+    "cache_read_tokens": 3082487,
+    "output_tokens": 23971,
+    "api_call_count": 44
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-08T19:20:49.290039Z",
+    "agent_lines": 1026,
+    "agent_removed": 2,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 1026,
+    "total_lines_changed": 1028,
+    "agent_percentage": 100,
+    "metric_version": 2
+  }
+}
