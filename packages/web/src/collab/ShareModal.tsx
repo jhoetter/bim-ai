@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 
-import type { Role, RoleAssignment } from '@bim-ai/core';
+import type { PublicLink, Role, RoleAssignment } from '@bim-ai/core';
 
 type Tab = 'members' | 'invite' | 'public-link';
 
@@ -22,8 +22,9 @@ export function ShareModal({ modelId, open, onClose }: Props) {
   const [assignments, setAssignments] = useState<RoleAssignment[]>([]);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<Role>('viewer');
-  const [publicToken, setPublicToken] = useState<string | null>(null);
+  const [publicLinks, setPublicLinks] = useState<PublicLink[]>([]);
   const [publicExpiry, setPublicExpiry] = useState('');
+  const [publicPassword, setPublicPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,12 +39,29 @@ export function ShareModal({ modelId, open, onClose }: Props) {
     }
   }, [modelId]);
 
+  const fetchPublicLinks = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/models/${modelId}/public-links`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setPublicLinks(data.links ?? []);
+    } catch {
+      // silently ignore network failure during fetch
+    }
+  }, [modelId]);
+
   useEffect(() => {
     if (open) {
       fetchAssignments();
       setError(null);
     }
   }, [open, fetchAssignments]);
+
+  useEffect(() => {
+    if (open && tab === 'public-link') {
+      fetchPublicLinks();
+    }
+  }, [open, tab, fetchPublicLinks]);
 
   const handleRevokeRole = useCallback(
     async (assignmentId: string) => {
@@ -84,11 +102,10 @@ export function ShareModal({ modelId, open, onClose }: Props) {
     setLoading(true);
     setError(null);
     try {
-      const bodyPayload: { expiresAt?: number } = {};
-      if (publicExpiry) {
-        bodyPayload.expiresAt = new Date(publicExpiry).getTime();
-      }
-      const res = await fetch(`/api/models/${modelId}/public-link`, {
+      const bodyPayload: { expiresAt?: number; password?: string } = {};
+      if (publicExpiry) bodyPayload.expiresAt = new Date(publicExpiry).getTime();
+      if (publicPassword) bodyPayload.password = publicPassword;
+      const res = await fetch(`/api/models/${modelId}/public-links`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(bodyPayload),
@@ -97,19 +114,29 @@ export function ShareModal({ modelId, open, onClose }: Props) {
         const data = await res.json().catch(() => ({}));
         setError((data as { detail?: string }).detail ?? 'Failed to create link');
       } else {
-        const data = await res.json();
-        setPublicToken((data as { token: string }).token);
+        setPublicPassword('');
+        await fetchPublicLinks();
       }
     } finally {
       setLoading(false);
     }
-  }, [modelId, publicExpiry]);
+  }, [modelId, publicExpiry, publicPassword, fetchPublicLinks]);
+
+  const handleRevokePublicLink = useCallback(
+    async (linkId: string) => {
+      setLoading(true);
+      setError(null);
+      try {
+        await fetch(`/api/models/${modelId}/public-links/${linkId}/revoke`, { method: 'POST' });
+        await fetchPublicLinks();
+      } finally {
+        setLoading(false);
+      }
+    },
+    [modelId, fetchPublicLinks],
+  );
 
   if (!open) return null;
-
-  const publicLinkUrl = publicToken
-    ? `${window.location.origin}/api/models/${modelId}/snapshot?token=${publicToken}`
-    : null;
 
   const members = assignments.filter((a) => a.subjectKind === 'user');
 
@@ -273,45 +300,97 @@ export function ShareModal({ modelId, open, onClose }: Props) {
 
         {tab === 'public-link' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {publicLinkUrl ? (
-              <>
-                <p style={{ fontSize: 13, color: 'var(--text-muted, #6b7280)' }}>
-                  Anyone with this link can comment on the model (read-only).
-                </p>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <input
-                    readOnly
-                    value={publicLinkUrl}
-                    style={{
-                      flex: 1,
-                      padding: '8px 10px',
-                      borderRadius: 4,
-                      border: '1px solid var(--border-default, #ccc)',
-                      fontSize: 12,
-                    }}
-                  />
-                  <button
-                    onClick={() => navigator.clipboard.writeText(publicLinkUrl)}
-                    style={{
-                      padding: '8px 12px',
-                      borderRadius: 4,
-                      border: '1px solid var(--border-default, #ccc)',
-                      cursor: 'pointer',
-                      fontSize: 12,
-                    }}
-                  >
-                    Copy
-                  </button>
-                </div>
-              </>
+            {publicLinks.length > 0 ? (
+              publicLinks.map((link) => {
+                const url = `${window.location.origin}/shared/${link.token}`;
+                return (
+                  <div key={link.id} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <p style={{ fontSize: 13, color: 'var(--text-muted, #6b7280)', margin: 0 }}>
+                      Public link is active. Anyone with the link can view this model (read-only).
+                    </p>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <input
+                        readOnly
+                        value={url}
+                        style={{
+                          flex: 1,
+                          padding: '8px 10px',
+                          borderRadius: 4,
+                          border: '1px solid var(--border-default, #ccc)',
+                          fontSize: 12,
+                        }}
+                      />
+                      <button
+                        onClick={() => navigator.clipboard.writeText(url)}
+                        style={{
+                          padding: '8px 12px',
+                          borderRadius: 4,
+                          border: '1px solid var(--border-default, #ccc)',
+                          cursor: 'pointer',
+                          fontSize: 12,
+                        }}
+                      >
+                        Copy
+                      </button>
+                    </div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <span style={{ fontSize: 12, color: 'var(--text-muted, #6b7280)' }}>
+                        {link.displayName ? `Shared by ${link.displayName} · ` : ''}
+                        Opened {link.openCount} time{link.openCount !== 1 ? 's' : ''}
+                      </span>
+                      <button
+                        onClick={() => handleRevokePublicLink(link.id)}
+                        disabled={loading}
+                        style={{
+                          fontSize: 12,
+                          color: 'var(--error, #dc2626)',
+                          border: 'none',
+                          background: 'none',
+                          cursor: 'pointer',
+                          padding: '4px 8px',
+                        }}
+                      >
+                        Revoke
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
             ) : (
               <>
+                <p style={{ fontSize: 13, color: 'var(--text-muted, #6b7280)', margin: 0 }}>
+                  Create a public link to share this model as read-only.
+                </p>
                 <label style={{ fontSize: 13 }}>
                   Expiry (optional)
                   <input
                     type="datetime-local"
                     value={publicExpiry}
                     onChange={(e) => setPublicExpiry(e.target.value)}
+                    style={{
+                      display: 'block',
+                      marginTop: 4,
+                      padding: '8px 10px',
+                      borderRadius: 4,
+                      border: '1px solid var(--border-default, #ccc)',
+                      fontSize: 13,
+                      width: '100%',
+                    }}
+                  />
+                </label>
+                <label style={{ fontSize: 13 }}>
+                  Password (optional)
+                  <input
+                    type="password"
+                    value={publicPassword}
+                    onChange={(e) => setPublicPassword(e.target.value)}
+                    placeholder="Leave blank for no password"
                     style={{
                       display: 'block',
                       marginTop: 4,
