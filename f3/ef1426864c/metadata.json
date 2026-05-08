@@ -4,7 +4,10 @@
   "strategy": "manual-commit",
   "branch": "feat/v3-cq-01-ws-robustness",
   "checkpoints_count": 1,
-  "files_touched": null,
+  "files_touched": [
+    "app/bim_ai/api/registry.py",
+    "packages/cli/cli.mjs"
+  ],
   "sessions": [
     {
       "metadata": "/f3/ef1426864c/0/metadata.json",
@@ -17,13 +20,19 @@
       "transcript": "/f3/ef1426864c/1/full.jsonl",
       "content_hash": "/f3/ef1426864c/1/content_hash.txt",
       "prompt": "/f3/ef1426864c/1/prompt.txt"
+    },
+    {
+      "metadata": "/f3/ef1426864c/2/metadata.json",
+      "transcript": "/f3/ef1426864c/2/full.jsonl",
+      "content_hash": "/f3/ef1426864c/2/content_hash.txt",
+      "prompt": "/f3/ef1426864c/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 282,
-    "cache_creation_tokens": 174803,
-    "cache_read_tokens": 18330113,
-    "output_tokens": 80989,
-    "api_call_count": 186
+    "input_tokens": 341,
+    "cache_creation_tokens": 204869,
+    "cache_read_tokens": 26323504,
+    "output_tokens": 99289,
+    "api_call_count": 245
   }
 }
