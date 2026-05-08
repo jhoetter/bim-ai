@@ -1,0 +1,41 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "63dea3d45b46",
+  "session_id": "854d92ef-60e6-4640-97c9-0bfb5fd2a3b7",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T22:51:48.562866Z",
+  "branch": "feat/v3-sch-v3-01-schedule-view",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "app/bim_ai/api/registry.py",
+    "app/bim_ai/commands.py",
+    "app/bim_ai/elements.py",
+    "app/bim_ai/engine.py",
+    "app/bim_ai/routes_api.py",
+    "app/tests/api/test_sch_v3_01.py",
+    "packages/core/src/index.ts",
+    "packages/web/src/workspace/ScheduleView.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "f7a64040a0e6",
+  "token_usage": {
+    "input_tokens": 429,
+    "cache_creation_tokens": 241737,
+    "cache_read_tokens": 23357993,
+    "output_tokens": 106432,
+    "api_call_count": 254
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-08T22:51:48.537622Z",
+    "agent_lines": 424,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 55,
+    "human_removed": 153,
+    "total_committed": 479,
+    "total_lines_changed": 632,
+    "agent_percentage": 67.08860759493672,
+    "metric_version": 2
+  }
+}

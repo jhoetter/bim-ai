@@ -3,8 +3,17 @@
   "checkpoint_id": "63dea3d45b46",
   "strategy": "manual-commit",
   "branch": "feat/v3-sch-v3-01-schedule-view",
-  "checkpoints_count": 1,
-  "files_touched": null,
+  "checkpoints_count": 2,
+  "files_touched": [
+    "app/bim_ai/api/registry.py",
+    "app/bim_ai/commands.py",
+    "app/bim_ai/elements.py",
+    "app/bim_ai/engine.py",
+    "app/bim_ai/routes_api.py",
+    "app/tests/api/test_sch_v3_01.py",
+    "packages/core/src/index.ts",
+    "packages/web/src/workspace/ScheduleView.tsx"
+  ],
   "sessions": [
     {
       "metadata": "/63/dea3d45b46/0/metadata.json",
@@ -17,13 +26,19 @@
       "transcript": "/63/dea3d45b46/1/full.jsonl",
       "content_hash": "/63/dea3d45b46/1/content_hash.txt",
       "prompt": "/63/dea3d45b46/1/prompt.txt"
+    },
+    {
+      "metadata": "/63/dea3d45b46/2/metadata.json",
+      "transcript": "/63/dea3d45b46/2/full.jsonl",
+      "content_hash": "/63/dea3d45b46/2/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
-    "input_tokens": 340,
-    "cache_creation_tokens": 219343,
-    "cache_read_tokens": 21415135,
-    "output_tokens": 100847,
-    "api_call_count": 240
+    "input_tokens": 769,
+    "cache_creation_tokens": 461080,
+    "cache_read_tokens": 44773128,
+    "output_tokens": 207279,
+    "api_call_count": 494
   }
 }
