@@ -2,8 +2,8 @@
   "cli_version": "0.6.0",
   "checkpoint_id": "a96b64c7535b",
   "strategy": "manual-commit",
-  "branch": "feat/v3-ver-v3-01-activity-stream",
-  "checkpoints_count": 1,
+  "branch": "main",
+  "checkpoints_count": 2,
   "files_touched": [
     "app/bim_ai/tables.py",
     "packages/web/src/collab/ActivityPanel.tsx",
@@ -36,11 +36,11 @@
     }
   ],
   "token_usage": {
-    "input_tokens": 3066,
-    "cache_creation_tokens": 258919,
-    "cache_read_tokens": 13859203,
-    "output_tokens": 119645,
-    "api_call_count": 151
+    "input_tokens": 3314,
+    "cache_creation_tokens": 399263,
+    "cache_read_tokens": 27147604,
+    "output_tokens": 182854,
+    "api_call_count": 303
   },
   "combined_attribution": {
     "calculated_at": "2026-05-08T17:54:32.204785Z",
