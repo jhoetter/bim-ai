@@ -2,7 +2,7 @@
   "cli_version": "0.6.0",
   "checkpoint_id": "2ae6ab0a2e5a",
   "strategy": "manual-commit",
-  "branch": "feat/v3-img-v3-01-image-to-layout",
+  "branch": "img-clean",
   "checkpoints_count": 2,
   "files_touched": [
     "app/bim_ai/engine.py"
