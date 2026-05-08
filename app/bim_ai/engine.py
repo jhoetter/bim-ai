@@ -321,6 +321,7 @@ from bim_ai.elements import (
     MaterialElem,
     DecalElem,
     PropertyDefinitionElem,
+    HatchPatternDefElem,
 )
 from bim_ai.export_ifc import (
     AUTHORITATIVE_REPLAY_KIND_V0,

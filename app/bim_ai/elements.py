@@ -311,6 +311,7 @@ class WallElem(BaseModel):
     option_set_id: str | None = Field(default=None, alias="optionSetId")
     option_id: str | None = Field(default=None, alias="optionId")
     discipline: DisciplineTag | None = Field(default=None)
+    props: dict[str, Any] | None = Field(default=None)
 
     @model_validator(mode="after")
     def _validate_lean_taper(self) -> WallElem:
@@ -366,6 +367,7 @@ class DoorElem(BaseModel):
     option_set_id: str | None = Field(default=None, alias="optionSetId")
     option_id: str | None = Field(default=None, alias="optionId")
     discipline: DisciplineTag | None = Field(default=None)
+    props: dict[str, Any] | None = Field(default=None)
 
 
 WindowOutlineKind = Literal[
@@ -407,6 +409,7 @@ class WindowElem(BaseModel):
     option_set_id: str | None = Field(default=None, alias="optionSetId")
     option_id: str | None = Field(default=None, alias="optionId")
     discipline: DisciplineTag | None = Field(default=None)
+    props: dict[str, Any] | None = Field(default=None)
 
 
 class WallOpeningElem(BaseModel):
@@ -453,6 +456,7 @@ class RoomElem(BaseModel):
     pinned: bool = Field(default=False)
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
+    props: dict[str, Any] | None = Field(default=None)
 
 
 class GridLineElem(BaseModel):
@@ -646,6 +650,7 @@ class FloorElem(BaseModel):
     # TOP-V3-01: elevation inherited from a toposolid heightmap at floor centroid (mm).
     toposolid_elevation_mm: float | None = Field(default=None, alias="toposolidElevationMm")
     discipline: DisciplineTag | None = Field(default=None)
+    props: dict[str, Any] | None = Field(default=None)
 
 
 class RoofElem(BaseModel):
@@ -678,6 +683,7 @@ class RoofElem(BaseModel):
     option_set_id: str | None = Field(default=None, alias="optionSetId")
     option_id: str | None = Field(default=None, alias="optionId")
     discipline: DisciplineTag | None = Field(default=None)
+    props: dict[str, Any] | None = Field(default=None)
 
 
 StairShape = Literal["straight", "l_shape", "u_shape", "spiral", "sketch"]
@@ -1524,6 +1530,12 @@ class ScheduleElem(BaseModel):
     sheet_id: str | None = Field(default=None, alias="sheetId")
     filters: dict[str, Any] = Field(default_factory=dict)
     grouping: dict[str, Any] = Field(default_factory=dict)
+    # SCH-V3-01: custom schedule-view fields
+    category: str | None = Field(default=None)
+    columns: list[dict] = Field(default_factory=list)
+    filter_expr: str | None = Field(default=None, alias="filterExpr")
+    sort_key: str | None = Field(default=None, alias="sortKey")
+    sort_dir: Literal["asc", "desc"] | None = Field(default=None, alias="sortDir")
 
 
 class CalloutElem(BaseModel):
@@ -1898,6 +1910,7 @@ ElementKind = Literal[
     "soffit",
     "view",
     "toposolid",
+    "property_definition",
 ]
 
 
@@ -1929,6 +1942,7 @@ class ColumnElem(BaseModel):
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
     discipline: DisciplineTag | None = Field(default=None)
+    props: dict[str, Any] | None = Field(default=None)
 
 
 class BeamElem(BaseModel):
@@ -1956,6 +1970,7 @@ class BeamElem(BaseModel):
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
     discipline: DisciplineTag | None = Field(default=None)
+    props: dict[str, Any] | None = Field(default=None)
 
 
 class CeilingElem(BaseModel):
@@ -1979,6 +1994,7 @@ class CeilingElem(BaseModel):
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
     discipline: DisciplineTag | None = Field(default=None)
+    props: dict[str, Any] | None = Field(default=None)
 
 
 ConstraintRule = Literal[
@@ -2416,7 +2432,8 @@ Element = Annotated[
     | PlacedAssetElem
     | HatchPatternDefElem
     | MaterialElem
-    | DecalElem,
+    | DecalElem
+    | PropertyDefinitionElem,
     Field(discriminator="kind"),
 ]
 

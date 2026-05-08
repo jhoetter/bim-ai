@@ -33,7 +33,7 @@ from bim_ai.document import Document
 from bim_ai.elements import Element, LevelElem, LinkModelElem, PlanViewElem
 from bim_ai.cmd.apply_bundle import apply_bundle as _apply_bundle
 from bim_ai.cmd.types import CommandBundle, BundleResult
-from bim_ai.engine import clone_document, ensure_internal_origin, ensure_sun_settings, try_commit_bundle
+from bim_ai.engine import clone_document, ensure_internal_origin, ensure_seed_hatches, ensure_sun_settings, try_commit_bundle
 from bim_ai.agent_loop import (
     AGENT_BACKEND_ENV_VAR,
     AgentIterateRequest,
@@ -242,6 +242,7 @@ async def create_empty_model(
     # KRN-06: every new model has the singleton internal_origin from inception.
     ensure_internal_origin(seed_doc)
     ensure_sun_settings(seed_doc)
+    ensure_seed_hatches(seed_doc)
     wire = document_to_wire(seed_doc)
     row = ModelRecord(
         id=mid,
@@ -304,6 +305,7 @@ async def snapshot(
     # Read-only — we don't persist; the next command commit will pick it up.
     ensure_internal_origin(doc)
     ensure_sun_settings(doc)
+    ensure_seed_hatches(doc)
     elements_wire = {k: v.model_dump(by_alias=True) for k, v in doc.elements.items()}
     if expandLinks:
         # FED-01: inline every linked source's elements with provenance markers
@@ -981,6 +983,7 @@ async def import_ifc_to_shadow_link(
     shadow_doc: Document = Document(revision=1, elements={})  # type: ignore[arg-type]
     ensure_internal_origin(shadow_doc)
     ensure_sun_settings(shadow_doc)
+    ensure_seed_hatches(shadow_doc)
 
     # 2. Apply the replay bundle in-memory.
     ok, replayed_doc, applied_cmds, _viols, code = try_apply_kernel_ifc_authoritative_replay_v0(

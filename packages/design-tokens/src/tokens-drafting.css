@@ -8,6 +8,18 @@
  * symbology (`packages/web/src/plan/symbology/*`) and 3D viewport materials.
  */
 
+/* CAN-V3-02 — hatch pattern scale tokens (paper-mm, theme-independent). */
+:root {
+  --hatch-brick-repeat: 73; /* paper-mm */
+  --hatch-concrete-repeat: 5;
+  --hatch-insulation-repeat: 100;
+  --hatch-plaster-repeat: 8;
+  --hatch-timber-repeat: 12;
+  --hatch-gypsum-repeat: 4;
+  --hatch-stone-repeat: 60;
+  --hatch-stroke-default: 0.18; /* mm */
+}
+
 :root,
 :root[data-theme='light'] {
   /* §9.2 Color — drafting (canvas only), light. Hex literals (not modern
