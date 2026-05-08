@@ -26,6 +26,12 @@
       "transcript": "/fd/2cb89f40d2/2/full.jsonl",
       "content_hash": "/fd/2cb89f40d2/2/content_hash.txt",
       "prompt": "/fd/2cb89f40d2/2/prompt.txt"
+    },
+    {
+      "metadata": "/fd/2cb89f40d2/3/metadata.json",
+      "transcript": "/fd/2cb89f40d2/3/full.jsonl",
+      "content_hash": "/fd/2cb89f40d2/3/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
