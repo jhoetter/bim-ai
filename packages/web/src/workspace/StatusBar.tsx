@@ -59,6 +59,9 @@ export interface StatusBarProps {
   /** CHR-V3-03 slot 6 — federation drift count; hidden when 0. */
   driftCount?: number;
   onDriftClick?: () => void;
+  /** CHR-V3-05 slot 7 — activity-stream entry. */
+  activityUnreadCount?: number;
+  onActivityClick?: () => void;
 }
 
 export function StatusBar({
@@ -82,6 +85,8 @@ export function StatusBar({
   onLensChange,
   driftCount = 0,
   onDriftClick,
+  activityUnreadCount = 0,
+  onActivityClick,
 }: StatusBarProps): JSX.Element {
   return (
     <div
@@ -121,6 +126,9 @@ export function StatusBar({
             <DriftBadge driftCount={driftCount} onClick={onDriftClick ?? (() => {})} />
           </>
         ) : null}
+        {/* Slot 7 — CHR-V3-05 activity-stream entry */}
+        <Divider />
+        <ActivityEntry count={activityUnreadCount} onClick={onActivityClick} />
       </div>
     </div>
   );
@@ -466,6 +474,45 @@ function SaveCluster({ state }: { state: StatusSaveState }): JSX.Element {
     >
       {label}
     </div>
+  );
+}
+
+function ActivityEntry({ count, onClick }: { count: number; onClick?: () => void }): JSX.Element {
+  return (
+    <button
+      type="button"
+      data-testid="status-bar-activity-entry"
+      aria-label="Activity stream"
+      title="Cmd+H"
+      onClick={onClick}
+      className="status-bar__slot status-bar__activity-entry relative flex items-center gap-1 rounded-sm px-1.5 py-0.5 hover:bg-surface-strong"
+    >
+      <Icons.collaborators size={ICON_SIZE.chrome} aria-hidden="true" />
+      {count > 0 && (
+        <span
+          data-testid="status-bar-activity-badge"
+          style={{
+            position: 'absolute',
+            top: 0,
+            right: 0,
+            minWidth: 14,
+            height: 14,
+            borderRadius: 7,
+            background: 'var(--color-accent)',
+            color: 'var(--color-surface)',
+            fontSize: 'var(--text-3xs)',
+            fontWeight: 700,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '0 3px',
+            lineHeight: 1,
+          }}
+        >
+          {count}
+        </span>
+      )}
+    </button>
   );
 }
 

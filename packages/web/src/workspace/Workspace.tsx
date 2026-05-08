@@ -63,6 +63,9 @@ import {
 import { VVDialog } from './VVDialog';
 import { ManageLinksDialog } from './ManageLinksDialog';
 import { CommentsPanel } from './CommentsPanel';
+import { ActivityDrawer } from '../collab/ActivityDrawer';
+import { useActivityDrawerStore } from '../collab/activityDrawerStore';
+import { useActivityStore } from '../collab/activityStore';
 import { StatusBar } from './StatusBar';
 import { CheatsheetModal } from '../cmd/CheatsheetModal';
 import { CommandPalette } from '../cmdPalette/CommandPalette';
@@ -78,6 +81,7 @@ import { OnboardingTour } from '../onboarding/OnboardingTour';
 import { readOnboardingProgress, resetOnboarding } from '../onboarding/tour';
 import { canvasContainerStyle, CanvasMount } from './CanvasMount';
 import { defaultTabFallbackForKind, EmptyStateOverlay, FloatingPalette } from './WorkspaceHelpers';
+import { MilestoneDialog } from '../collab/MilestoneDialog';
 import { WorkspaceLeftRail } from './WorkspaceLeftRail';
 import { WorkspaceRightRail } from './WorkspaceRightRail';
 import { useWorkspaceSnapshot } from './useWorkspaceSnapshot';
@@ -132,6 +136,7 @@ export function Workspace(): JSX.Element {
   const presencePeers = useBimStore((s) => s.presencePeers);
   const userDisplayName = useBimStore((s) => s.userDisplayName);
   const modelId = useBimStore((s) => s.modelId);
+  const revision = useBimStore((s) => s.revision);
   const comments = useBimStore((s) => s.comments);
   const setComments = useBimStore((s) => s.setComments);
   const perspectiveId = useBimStore((s) => s.perspectiveId);
@@ -143,6 +148,18 @@ export function Workspace(): JSX.Element {
   const openVVDialog = useBimStore((s) => s.openVVDialog);
   const closeVVDialog = useBimStore((s) => s.closeVVDialog);
   const setOrthoSnapHold = useBimStore((s) => s.setOrthoSnapHold);
+  const userId = useBimStore((s) => s.userId);
+
+  // CHR-V3-05 activity drawer state
+  const activityIsOpen = useActivityDrawerStore((s) => s.isOpen);
+  const activityLastSeenAt = useActivityDrawerStore((s) => s.lastSeenAt);
+  const toggleActivityDrawer = useActivityDrawerStore((s) => s.toggle);
+  const closeActivityDrawer = useActivityDrawerStore((s) => s.close);
+  const activityRows = useActivityStore((s) => s.rows);
+  const activityUnreadCount = useMemo(
+    () => activityRows.filter((r) => r.ts > activityLastSeenAt).length,
+    [activityRows, activityLastSeenAt],
+  );
 
   const [mode, setMode] = useState<WorkspaceMode>(() =>
     viewerMode === 'orbit_3d' ? '3d' : 'plan',
@@ -166,6 +183,7 @@ export function Workspace(): JSX.Element {
   const [manageLinksOpen, setManageLinksOpen] = useState(false);
   const [lensMode, setLensMode] = useState<LensMode>('all');
   const [commentsOpen, setCommentsOpen] = useState(false);
+  const [milestoneDialogOpen, setMilestoneDialogOpen] = useState(false);
   const [undoDepth, setUndoDepth] = useState(0);
   const [recentProjects, setRecentProjects] = useState<ProjectMenuItemRecent[]>(() =>
     readRecentProjects().map((r) => ({ id: r.id, label: r.label })),
@@ -494,6 +512,12 @@ export function Workspace(): JSX.Element {
         setPaletteOpen((v) => !v);
         return;
       }
+      // Cmd+H — activity-stream drawer (CHR-V3-05).
+      if ((event.key === 'h' || event.key === 'H') && (event.metaKey || event.ctrlKey)) {
+        event.preventDefault();
+        toggleActivityDrawer();
+        return;
+      }
       // Tab cycling — Ctrl/⌘+Tab forward, Ctrl/⌘+Shift+Tab back.
       if (event.key === 'Tab' && (event.metaKey || event.ctrlKey)) {
         event.preventDefault();
@@ -545,7 +569,15 @@ export function Workspace(): JSX.Element {
       document.removeEventListener('keydown', onKey);
       document.removeEventListener('keyup', onKeyUp);
     };
-  }, [handleModeChange, handleUndoRedo, setPlanTool, setOrthoSnapHold, openVVDialog, toolRegistry]);
+  }, [
+    handleModeChange,
+    handleUndoRedo,
+    setPlanTool,
+    setOrthoSnapHold,
+    openVVDialog,
+    toolRegistry,
+    toggleActivityDrawer,
+  ]);
 
   const browserSections = useMemo(() => buildBrowserSections(elementsById), [elementsById]);
 
@@ -623,6 +655,19 @@ export function Workspace(): JSX.Element {
   useEffect(() => {
     if (!visibleLegacyTools.includes(planTool)) setPlanTool('select');
   }, [planTool, setPlanTool, visibleLegacyTools]);
+
+  const openMilestoneDialog = useCallback(() => setMilestoneDialogOpen(true), []);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        openMilestoneDialog();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [openMilestoneDialog]);
 
   const handleThemeToggle = useCallback(() => {
     const next = toggleTheme() === 'dark' ? 'dark' : 'light';
@@ -813,6 +858,15 @@ export function Workspace(): JSX.Element {
         }}
       />
       <ManageLinksDialog open={manageLinksOpen} onClose={() => setManageLinksOpen(false)} />
+      {modelId && (
+        <MilestoneDialog
+          open={milestoneDialogOpen}
+          modelId={modelId}
+          snapshotId={String(revision)}
+          authorId={userDisplayName || 'local-dev'}
+          onClose={() => setMilestoneDialogOpen(false)}
+        />
+      )}
       <AppShell
         leftCollapsed={leftRailCollapsed}
         onLeftCollapsedChange={setLeftRailCollapsed}
@@ -942,8 +996,16 @@ export function Workspace(): JSX.Element {
             onLensChange={setLensMode}
             driftCount={driftCount}
             onDriftClick={() => setManageLinksOpen(true)}
+            activityUnreadCount={activityUnreadCount}
+            onActivityClick={toggleActivityDrawer}
           />
         }
+      />
+      <ActivityDrawer
+        isOpen={activityIsOpen}
+        onClose={closeActivityDrawer}
+        modelId={modelId ?? null}
+        selfId={userId ?? null}
       />
     </>
   );
