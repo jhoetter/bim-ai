@@ -28,6 +28,7 @@ export function useWorkspaceSnapshot(): {
   const mergeComment = useBimStore((s) => s.mergeComment);
   const setComments = useBimStore((s) => s.setComments);
   const elementsById = useBimStore((s) => s.elementsById);
+  const modelId = useBimStore((s) => s.modelId);
 
   const [seedLoading, setSeedLoading] = useState(false);
   const [seedError, setSeedError] = useState<string | null>(null);
@@ -54,23 +55,8 @@ export function useWorkspaceSnapshot(): {
       if (!snapRes.ok) throw new Error(`snapshot ${snapRes.status}`);
       const snap = (await snapRes.json()) as Snapshot;
       hydrateFromSnapshot(snap);
-      fetchActivity(mid)
-        .then((a) => {
-          const evs = ((a.events ?? []) as Record<string, unknown>[]).map((ev) => ({
-            id: Number(ev.id),
-            userId: String(ev.userId ?? ev.user_id ?? ''),
-            revisionAfter: Number(ev.revisionAfter ?? ev.revision_after ?? 0),
-            createdAt: String(ev.createdAt ?? ev.created_at ?? ''),
-            commandTypes: Array.isArray(ev.commandTypes) ? ev.commandTypes.map(String) : [],
-          }));
-          setActivity(evs);
-        })
-        .catch((err) => log.error('insertSeedHouse', 'fetchActivity failed', err));
-      fetchComments(mid)
-        .then((c) => {
-          setComments(mapComments((c.comments ?? []) as Record<string, unknown>[]));
-        })
-        .catch((err) => log.error('insertSeedHouse', 'fetchComments failed', err));
+      // activityEvents/comments are populated by the modelId effect below — they
+      // are model-scoped server state and must invalidate together with modelId.
       const disableWs =
         typeof import.meta.env.VITE_E2E_DISABLE_WS === 'string' &&
         ['1', 'true', 'yes'].includes(import.meta.env.VITE_E2E_DISABLE_WS.trim().toLowerCase());
@@ -107,7 +93,40 @@ export function useWorkspaceSnapshot(): {
     } finally {
       setSeedLoading(false);
     }
-  }, [hydrateFromSnapshot, setActivity, applyDelta, setPresencePeers, mergeComment, setComments]);
+  }, [hydrateFromSnapshot, applyDelta, setPresencePeers, mergeComment]);
+
+  // modelId is the cache key for server-fetched, model-scoped state. Whenever
+  // it changes, prior activity/comments must be cleared (so the previous
+  // model's history doesn't bleed into the new one) and refetched. Empty/unset
+  // modelIds clear without fetching.
+  useEffect(() => {
+    setActivity([]);
+    setComments([]);
+    if (!modelId || modelId === 'empty') return;
+    let cancelled = false;
+    void fetchActivity(modelId)
+      .then((a) => {
+        if (cancelled) return;
+        const evs = ((a.events ?? []) as Record<string, unknown>[]).map((ev) => ({
+          id: Number(ev.id),
+          userId: String(ev.userId ?? ev.user_id ?? ''),
+          revisionAfter: Number(ev.revisionAfter ?? ev.revision_after ?? 0),
+          createdAt: String(ev.createdAt ?? ev.created_at ?? ''),
+          commandTypes: Array.isArray(ev.commandTypes) ? ev.commandTypes.map(String) : [],
+        }));
+        setActivity(evs);
+      })
+      .catch((err) => log.error('modelId', 'fetchActivity failed', err));
+    void fetchComments(modelId)
+      .then((c) => {
+        if (cancelled) return;
+        setComments(mapComments((c.comments ?? []) as Record<string, unknown>[]));
+      })
+      .catch((err) => log.error('modelId', 'fetchComments failed', err));
+    return () => {
+      cancelled = true;
+    };
+  }, [modelId, setActivity, setComments]);
 
   useEffect(() => {
     void fetchBuildingPresets()
