@@ -3,7 +3,7 @@
   "checkpoint_id": "770fc423a472",
   "strategy": "manual-commit",
   "branch": "feat/v3-krn-v3-03-multi-roof",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "app/tests/test_ws_robustness.py"
   ],
@@ -19,13 +19,19 @@
       "transcript": "/77/0fc423a472/1/full.jsonl",
       "content_hash": "/77/0fc423a472/1/content_hash.txt",
       "prompt": "/77/0fc423a472/1/prompt.txt"
+    },
+    {
+      "metadata": "/77/0fc423a472/2/metadata.json",
+      "transcript": "/77/0fc423a472/2/full.jsonl",
+      "content_hash": "/77/0fc423a472/2/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
-    "input_tokens": 248,
-    "cache_creation_tokens": 140344,
-    "cache_read_tokens": 13288401,
-    "output_tokens": 63209,
-    "api_call_count": 152
+    "input_tokens": 354,
+    "cache_creation_tokens": 278190,
+    "cache_read_tokens": 23463601,
+    "output_tokens": 120672,
+    "api_call_count": 254
   }
 }
