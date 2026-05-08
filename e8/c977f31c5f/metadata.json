@@ -3,7 +3,7 @@
   "checkpoint_id": "e8c977f31c5f",
   "strategy": "manual-commit",
   "branch": "feat/v3-can-v3-01-line-weight-hierarchy",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": null,
   "sessions": [
     {
@@ -17,13 +17,19 @@
       "transcript": "/e8/c977f31c5f/1/full.jsonl",
       "content_hash": "/e8/c977f31c5f/1/content_hash.txt",
       "prompt": "/e8/c977f31c5f/1/prompt.txt"
+    },
+    {
+      "metadata": "/e8/c977f31c5f/2/metadata.json",
+      "transcript": "/e8/c977f31c5f/2/full.jsonl",
+      "content_hash": "/e8/c977f31c5f/2/content_hash.txt",
+      "prompt": "/e8/c977f31c5f/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 842,
-    "cache_creation_tokens": 103579,
-    "cache_read_tokens": 6009706,
-    "output_tokens": 34210,
-    "api_call_count": 71
+    "input_tokens": 7052,
+    "cache_creation_tokens": 221348,
+    "cache_read_tokens": 10434733,
+    "output_tokens": 63388,
+    "api_call_count": 116
   }
 }

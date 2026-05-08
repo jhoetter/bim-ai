@@ -1,0 +1,20 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "e8c977f31c5f",
+  "session_id": "63b2859d-5846-432f-8d32-d43a27fc210d",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T19:20:39.254348Z",
+  "branch": "feat/v3-can-v3-01-line-weight-hierarchy",
+  "checkpoints_count": 1,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "30206686890a",
+  "token_usage": {
+    "input_tokens": 6210,
+    "cache_creation_tokens": 117769,
+    "cache_read_tokens": 4425027,
+    "output_tokens": 29178,
+    "api_call_count": 45
+  }
+}
