@@ -441,5 +441,115 @@ export function buildOneFamilyHomeCommands() {
       profilePlane: 'work_plane',
       materialKey: 'white_render',
     },
+
+    // === PHASE 4: OPENINGS ===
+    // Ground-floor south facade: 2 portrait windows on the western
+    // (cladding_beige_grey) half + 1 front door right-of-center + 1
+    // small vertical window on the east extension.
+    {
+      type: 'insertWindowOnWall',
+      id: 'hf-win-gf-s-1',
+      name: 'GF south window (left)',
+      wallId: 'hf-w-gf-s',
+      alongT: 0.1,
+      widthMm: 700,
+      heightMm: 1800,
+      sillHeightMm: 200,
+    },
+    {
+      type: 'insertWindowOnWall',
+      id: 'hf-win-gf-s-2',
+      name: 'GF south window (centre-left)',
+      wallId: 'hf-w-gf-s',
+      alongT: 0.22,
+      widthMm: 700,
+      heightMm: 1800,
+      sillHeightMm: 200,
+    },
+    {
+      type: 'insertDoorOnWall',
+      id: 'hf-door-front',
+      name: 'Front door',
+      wallId: 'hf-w-gf-s',
+      alongT: 0.55,
+      widthMm: 900,
+    },
+    {
+      type: 'insertWindowOnWall',
+      id: 'hf-win-gf-s-3',
+      name: 'GF south window (east extension)',
+      wallId: 'hf-w-gf-s',
+      alongT: 0.85,
+      widthMm: 600,
+      heightMm: 1200,
+      sillHeightMm: 1000,
+    },
+
+    // Loggia recess on the upper-floor south wall (KRN-16). The wall's
+    // primary materialKey (cladding_warm_wood — set in Phase 3) renders
+    // on the recess back surface; non-recessed end caps auto-render as
+    // white via makeRecessedWallMesh's capMat override.
+    {
+      type: 'setWallRecessZones',
+      wallId: 'hf-w-uf-s',
+      recessZones: [
+        {
+          alongTStart: 0.1,
+          alongTEnd: 0.9,
+          setbackMm: 1500,
+          floorContinues: true,
+        },
+      ],
+    },
+
+    // Loggia openings — hosted on the south wall in the recess range.
+    // The renderer (recessOffsetForOpening) places them against the
+    // recessed (cladding_warm_wood) back surface.
+    //
+    // Right side: large floor-to-ceiling sliding door (spec §1.4
+    // "large rectangular window/sliding door on the right").
+    {
+      type: 'insertDoorOnWall',
+      id: 'hf-door-loggia',
+      name: 'Loggia sliding door',
+      wallId: 'hf-w-uf-s',
+      alongT: 0.7,
+      widthMm: 1800,
+    },
+    {
+      type: 'updateElementProperty',
+      elementId: 'hf-door-loggia',
+      key: 'operationType',
+      value: 'sliding_double',
+    },
+
+    // Left side: trapezoidal window whose top edge follows the long,
+    // low west pitch of the asymmetric_gable (spec §1.4 "smaller
+    // trapezoidal window on the left whose top edge slopes to follow
+    // the long, low angle of the roof pitch"). KRN-12 outlineKind +
+    // attachedRoofId pair lets the renderer compute the slope-following
+    // top edge from the host roof's geometry.
+    {
+      type: 'insertWindowOnWall',
+      id: 'hf-win-loggia-trap',
+      name: 'Loggia trapezoidal window',
+      wallId: 'hf-w-uf-s',
+      alongT: 0.2,
+      widthMm: 1500,
+      heightMm: 1800,
+      sillHeightMm: 200,
+    },
+    {
+      type: 'updateElementProperty',
+      elementId: 'hf-win-loggia-trap',
+      key: 'outlineKind',
+      value: 'gable_trapezoid',
+    },
+    {
+      type: 'updateElementProperty',
+      elementId: 'hf-win-loggia-trap',
+      key: 'attachedRoofId',
+      value: 'hf-roof-main',
+    },
   ];
 }
