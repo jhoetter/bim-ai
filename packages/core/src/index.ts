@@ -372,6 +372,20 @@ export type CreateConstraintCmd = {
   name?: string;
 };
 
+/** KRN-V3-11 — baluster spacing rule for a railing. */
+export type BalusterPattern = {
+  rule: 'regular' | 'glass_panel' | 'cable';
+  spacingMm?: number;
+  profileFamilyId?: string;
+};
+
+/** KRN-V3-11 — wall-bracket support along a railing. */
+export type HandrailSupport = {
+  intervalMm: number;
+  bracketFamilyId: string;
+  hostWallId: string;
+};
+
 export type Element =
   | {
       kind: 'project_settings';
@@ -725,6 +739,14 @@ export type Element =
       treadLines?: StairTreadLine[];
       /** KRN-V3-05: total rise in mm for by_sketch mode. */
       totalRiseMm?: number;
+      /** KRN-V3-10: sub-kind — 'standard' (default), 'monolithic', or 'floating'. */
+      subKind?: 'standard' | 'monolithic' | 'floating';
+      /** KRN-V3-10: material id for monolithic concrete stairs. */
+      monolithicMaterial?: string;
+      /** KRN-V3-10: tread depth override for floating stairs (mm). */
+      floatingTreadDepthMm?: number;
+      /** KRN-V3-10: wall element id that hosts cantilever treads for floating stairs. */
+      floatingHostWallId?: string;
       overrideParams?: Record<string, unknown>;
       pinned?: boolean;
       phaseCreated?: string | null;
@@ -757,6 +779,10 @@ export type Element =
       hostedStairId?: string | null;
       pathMm: XY[];
       guardHeightMm?: number;
+      /** KRN-V3-11: parametric baluster spacing pattern. */
+      balusterPattern?: BalusterPattern;
+      /** KRN-V3-11: wall-mounted handrail support brackets. */
+      handrailSupports?: HandrailSupport[];
       overrideParams?: Record<string, unknown>;
       pinned?: boolean;
       phaseCreated?: string | null;
@@ -1595,4 +1621,38 @@ export type AssumptionEntry = {
   source: string;
   contestable?: boolean;
   evidence?: string | null;
+};
+
+/** CHR-V3-03 / DSC-V3-02 — lens mode for the status-bar discipline filter. */
+export type LensMode = 'all' | 'architecture' | 'structure' | 'mep' | 'energy' | 'coordination';
+
+// ---------------------------------------------------------------------------
+// JOB-V3-01 — long-running-operations job types
+// ---------------------------------------------------------------------------
+
+export type JobKind =
+  | 'csg_solve'
+  | 'ifc_export'
+  | 'dxf_import'
+  | 'gltf_export'
+  | 'sketch_trace'
+  | 'render_still'
+  | 'render_video'
+  | 'agent_call';
+
+export type JobStatus = 'queued' | 'running' | 'done' | 'errored' | 'cancelled';
+
+export type Job = {
+  id: string;
+  modelId: string;
+  kind: JobKind;
+  status: JobStatus;
+  inputs: Record<string, unknown>;
+  outputs?: { primaryAssetId?: string; secondaryAssetIds?: string[] };
+  createdAt: string;
+  startedAt?: string;
+  completedAt?: string;
+  errorMessage?: string;
+  costEstimate?: { credits: number };
+  parentJobId?: string;
 };

@@ -20,9 +20,10 @@ import {
   buildCollaborationConflictQueueV1,
   type CollaborationConflictQueueV1,
 } from '../lib/collaborationConflictQueue';
-import type { Snapshot, Violation } from '@bim-ai/core';
+import type { LensMode, Snapshot, Violation } from '@bim-ai/core';
 import { useBimStore, toggleTheme, getCurrentTheme, type Theme } from '../state/store';
 import type { PerspectiveId } from '@bim-ai/core';
+import { selectDriftedElements } from '../plan/monitorDriftBadge';
 import { modeForHotkey } from '../state/modeController';
 import { patternFor } from '../state/uiStates';
 import { AppShell } from './AppShell';
@@ -162,6 +163,7 @@ export function Workspace(): JSX.Element {
     useState<CollaborationConflictQueueV1 | null>(null);
   const [projectMenuOpen, setProjectMenuOpen] = useState(false);
   const [manageLinksOpen, setManageLinksOpen] = useState(false);
+  const [lensMode, setLensMode] = useState<LensMode>('all');
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [undoDepth, setUndoDepth] = useState(0);
   const [recentProjects, setRecentProjects] = useState<ProjectMenuItemRecent[]>(() =>
@@ -595,6 +597,7 @@ export function Workspace(): JSX.Element {
   const activeLevel = levels.find((l) => l.id === activeLevelId) ??
     levels[0] ?? { id: '', label: '—' };
   const cursorMm = planHudMm ? { xMm: planHudMm.xMm, yMm: planHudMm.yMm } : null;
+  const driftCount = useMemo(() => selectDriftedElements(elementsById).length, [elementsById]);
 
   const toolDisabledContext = useMemo<ToolDisabledContext>(() => {
     const has = (kind: string): boolean =>
@@ -933,6 +936,10 @@ export function Workspace(): JSX.Element {
             onRedo={() => void handleUndoRedo(false)}
             wsState={wsOn ? 'connected' : 'offline'}
             saveState="saved"
+            lensMode={lensMode}
+            onLensChange={setLensMode}
+            driftCount={driftCount}
+            onDriftClick={() => setManageLinksOpen(true)}
           />
         }
       />
