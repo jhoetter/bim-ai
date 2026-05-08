@@ -1698,6 +1698,30 @@ export type EvidenceClosureReviewV1 = {
 export type { PerspectiveId, WorkspaceLayoutPreset } from './workbench';
 
 // ---------------------------------------------------------------------------
+// VIE-V3-03 — View template v3 named types
+// ---------------------------------------------------------------------------
+
+export type ViewTemplate = {
+  kind: 'view_template';
+  id: string;
+  name: string;
+  scale?: number;
+  detailLevel?: 'coarse' | 'medium' | 'fine';
+  cropDefault?: Record<string, unknown>;
+  visibilityFilters?: unknown[];
+  elementOverrides?: Array<{ categoryOrId: string; alternateRender: string }>;
+  phase?: string;
+  phaseFilter?: string;
+};
+
+export type ViewTemplatePropagation = {
+  event: 'ViewTemplatePropagation';
+  templateId: string;
+  affected: string[];
+  unbound: string[];
+};
+
+// ---------------------------------------------------------------------------
 // COL-V3-01 — collab session types
 // ---------------------------------------------------------------------------
 

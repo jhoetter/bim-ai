@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from bim_ai.elements import (
     BalusterPattern,
     CameraMm,
+    ClipRect,
     ConstraintRefRow,
     ConstraintRule,
     CurtainPanelOverride,
@@ -1860,6 +1861,163 @@ class SetViewOptionLockCmd(BaseModel):
     option_id: str | None = Field(default=None, alias="optionId")
 
 
+# --- VIE-V3-03: view template v3 commands ------------------------------------
+
+
+class CreateViewTemplateCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["CreateViewTemplate"] = "CreateViewTemplate"
+    template_id: str = Field(alias="templateId")
+    name: str
+    scale: int | None = Field(default=None)
+    detail_level: Literal["coarse", "medium", "fine"] | None = Field(
+        default=None, alias="detailLevel"
+    )
+    element_overrides: list[dict] = Field(default_factory=list, alias="elementOverrides")
+    phase: str | None = Field(default=None)
+    phase_filter: str | None = Field(default=None, alias="phaseFilter")
+
+
+class UpdateViewTemplateCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["UpdateViewTemplate"] = "UpdateViewTemplate"
+    template_id: str = Field(alias="templateId")
+    name: str | None = Field(default=None)
+    scale: int | None = Field(default=None)
+    detail_level: Literal["coarse", "medium", "fine"] | None = Field(
+        default=None, alias="detailLevel"
+    )
+    element_overrides: list[dict] | None = Field(default=None, alias="elementOverrides")
+    phase: str | None = Field(default=None)
+    phase_filter: str | None = Field(default=None, alias="phaseFilter")
+
+
+class ApplyViewTemplateCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["ApplyViewTemplate"] = "ApplyViewTemplate"
+    view_id: str = Field(alias="viewId")
+    template_id: str = Field(alias="templateId")
+
+
+class UnbindViewTemplateCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["UnbindViewTemplate"] = "UnbindViewTemplate"
+    view_id: str = Field(alias="viewId")
+
+
+class DeleteViewTemplateCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["DeleteViewTemplate"] = "DeleteViewTemplate"
+    template_id: str = Field(alias="templateId")
+
+
+class CreateSheetCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["CreateSheet"] = "CreateSheet"
+    sheet_id: str = Field(alias="sheetId")
+    name: str
+    number: str
+    size: Literal["A0", "A1", "A2", "A3"] = "A1"
+    orientation: Literal["landscape", "portrait"] = "landscape"
+    titleblock_type_id: str = Field(default="default-a1-titleblock", alias="titleblockTypeId")
+    metadata: dict = Field(default_factory=dict)
+
+
+class PlaceViewOnSheetCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["PlaceViewOnSheet"] = "PlaceViewOnSheet"
+    sheet_id: str = Field(alias="sheetId")
+    view_id: str = Field(alias="viewId")
+    min_xy: dict = Field(alias="minXY")
+    size: dict
+    scale: int | None = Field(default=None)
+
+
+class MoveViewOnSheetCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["MoveViewOnSheet"] = "MoveViewOnSheet"
+    sheet_id: str = Field(alias="sheetId")
+    view_id: str = Field(alias="viewId")
+    min_xy: dict = Field(alias="minXY")
+
+
+class RemoveViewFromSheetCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["RemoveViewFromSheet"] = "RemoveViewFromSheet"
+    sheet_id: str = Field(alias="sheetId")
+    view_id: str = Field(alias="viewId")
+
+
+class SetSheetTitleblockCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["SetSheetTitleblock"] = "SetSheetTitleblock"
+    sheet_id: str = Field(alias="sheetId")
+    titleblock_type_id: str = Field(alias="titleblockTypeId")
+
+
+class UpdateSheetMetadataCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["UpdateSheetMetadata"] = "UpdateSheetMetadata"
+    sheet_id: str = Field(alias="sheetId")
+    metadata: dict
+
+
+class CreateWindowLegendViewCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["CreateWindowLegendView"] = "CreateWindowLegendView"
+    legend_id: str = Field(alias="legendId")
+    name: str
+    scope: Literal["all", "sheet", "project"] = "project"
+    sort_by: Literal["type", "width", "count"] = Field(default="type", alias="sortBy")
+    parent_sheet_id: str | None = Field(default=None, alias="parentSheetId")
+
+
+# ---------------------------------------------------------------------------
+# VIE-V3-02 — Drafting view + callout + cut-profile + view-break commands
+# ---------------------------------------------------------------------------
+
+
+class CreateDraftingViewCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["CreateDraftingView"] = "CreateDraftingView"
+    view_id: str = Field(alias="viewId")
+    name: str
+    scale: int = 50
+
+
+class CreateViewCalloutCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["CreateCallout"] = "CreateCallout"
+    callout_view_id: str = Field(alias="calloutViewId")
+    parent_view_id: str = Field(alias="parentViewId")
+    clip_rect: ClipRect = Field(alias="clipRect")
+    name: str
+    scale: int = 5
+
+
+class SetElementOverrideCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["SetElementOverride"] = "SetElementOverride"
+    view_id: str = Field(alias="viewId")
+    category_or_id: str = Field(alias="categoryOrId")
+    alternate_render: str = Field(alias="alternateRender")
+
+
+class AddViewBreakCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["AddViewBreak"] = "AddViewBreak"
+    view_id: str = Field(alias="viewId")
+    axis_mm: float = Field(alias="axisMM")
+    width_mm: float = Field(alias="widthMM")
+
+
+class RemoveViewBreakCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["RemoveViewBreak"] = "RemoveViewBreak"
+    view_id: str = Field(alias="viewId")
+    axis_mm: float = Field(alias="axisMM")
+
+
 Command = Annotated[
     CreateLevelCmd
     | CreateWallCmd
@@ -2003,6 +2161,23 @@ Command = Annotated[
     | RemoveOptionCmd
     | SetPrimaryOptionCmd
     | AssignElementToOptionCmd
-    | SetViewOptionLockCmd,
+    | SetViewOptionLockCmd
+    | CreateSheetCmd
+    | PlaceViewOnSheetCmd
+    | MoveViewOnSheetCmd
+    | RemoveViewFromSheetCmd
+    | SetSheetTitleblockCmd
+    | UpdateSheetMetadataCmd
+    | CreateWindowLegendViewCmd
+    | CreateDraftingViewCmd
+    | CreateViewCalloutCmd
+    | SetElementOverrideCmd
+    | AddViewBreakCmd
+    | RemoveViewBreakCmd
+    | CreateViewTemplateCmd
+    | UpdateViewTemplateCmd
+    | ApplyViewTemplateCmd
+    | UnbindViewTemplateCmd
+    | DeleteViewTemplateCmd,
     Field(discriminator="type"),
 ]

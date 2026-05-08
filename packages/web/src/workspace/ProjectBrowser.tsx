@@ -12,6 +12,7 @@ import {
   planViewProjectBrowserEvidenceLine,
   viewpointOrbit3dEvidenceLine,
 } from '../plan/planProjection';
+import { NewSheetDialog } from '../plan/NewSheetDialog';
 import {
   planLevelEvidenceToken,
   scheduleProjectBrowserEvidenceLine,
@@ -165,13 +166,18 @@ export function ProjectBrowser(props: {
     sectionCuts.length > 0 ||
     elevationViews.length > 0 ||
     schedules.length > 0 ||
-    sheets.length > 0 ||
     viewTemplates.length > 0 ||
     sites.length > 0 ||
     linkModels.length > 0;
 
-  if (!hasAnyDoc) {
-    return <div className="text-[10px] text-muted">No documented views yet.</div>;
+  if (!hasAnyDoc && sheets.length === 0) {
+    return (
+      <div className="space-y-2 text-[11px]">
+        <div className="font-semibold text-muted">Project browser</div>
+        <ProjectBrowserSheetsGroup sheets={sheets} />
+        <div className="text-[10px] text-muted">No documented views yet.</div>
+      </div>
+    );
   }
 
   const dupPlanView = (pv: Extract<Element, { kind: 'plan_view' }>) => {
@@ -358,32 +364,7 @@ export function ProjectBrowser(props: {
         </div>
       ) : null}
 
-      {sheets.length ? (
-        <div className="space-y-1">
-          <div className="text-[10px] uppercase tracking-wide text-muted">Sheets</div>
-          <ul className="space-y-0.5">
-            {sheets.map((sh) => (
-              <li key={sh.id} className="flex flex-col gap-0.5">
-                <Btn
-                  type="button"
-                  variant="quiet"
-                  className="w-full px-2 py-0.5 text-left text-[10px]"
-                  title={`Select sheet (${sh.name}) in explorer / inspector`}
-                  onClick={() => useBimStore.getState().select(sh.id)}
-                >
-                  <span className="text-muted">sheet ·</span> {sh.name}
-                </Btn>
-                <div
-                  className="pl-2 font-mono text-[9px] leading-tight text-muted"
-                  data-bim-sheet-evidence={sh.id}
-                >
-                  {sheetProjectBrowserEvidenceLine(sh)}
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
+      <ProjectBrowserSheetsGroup sheets={sheets} />
 
       {schedules.length ? (
         <div className="space-y-1">
@@ -544,6 +525,81 @@ export function ProjectBrowser(props: {
       ) : null}
 
       {linkModels.length ? <ProjectBrowserLinksGroup links={linkModels} /> : null}
+    </div>
+  );
+}
+
+function ProjectBrowserSheetsGroup({
+  sheets,
+}: {
+  sheets: Extract<Element, { kind: 'sheet' }>[];
+}): JSX.Element {
+  const [collapsed, setCollapsed] = useState(false);
+  const [showNewSheet, setShowNewSheet] = useState(false);
+  const modelId = useBimStore((s) => s.modelId);
+
+  const handleCreateSheet = async (cmd: Record<string, unknown>): Promise<void> => {
+    if (!modelId) return;
+    await applyCommand(modelId, cmd);
+  };
+
+  return (
+    <div className="space-y-1" data-testid="project-browser-sheets-group">
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          onClick={() => setCollapsed((v) => !v)}
+          data-testid="project-browser-sheets-toggle"
+          className="flex flex-1 items-center gap-1 text-[10px] uppercase tracking-wide text-muted hover:text-foreground"
+        >
+          <span>{collapsed ? '▸' : '▾'}</span>
+          Sheets {sheets.length > 0 ? `(${sheets.length})` : ''}
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowNewSheet(true)}
+          data-testid="project-browser-sheets-new"
+          className="rounded px-1 text-[9px] text-muted hover:text-foreground"
+          title="New sheet"
+        >
+          +
+        </button>
+      </div>
+      {!collapsed && sheets.length > 0 && (
+        <ul className="space-y-0.5">
+          {sheets.map((sh) => {
+            const number = (sh as { number?: string }).number;
+            const label = number ? `${number} · ${sh.name}` : sh.name;
+            return (
+              <li key={sh.id} className="flex flex-col gap-0.5">
+                <Btn
+                  type="button"
+                  variant="quiet"
+                  className="w-full px-2 py-0.5 text-left text-[10px]"
+                  title={`Open sheet ${sh.name}`}
+                  onClick={() => useBimStore.getState().select(sh.id)}
+                >
+                  <span className="text-muted">sheet ·</span> {label}
+                </Btn>
+                <div
+                  className="pl-2 font-mono text-[9px] leading-tight text-muted"
+                  data-bim-sheet-evidence={sh.id}
+                >
+                  {sheetProjectBrowserEvidenceLine(sh)}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      {showNewSheet && (
+        <NewSheetDialog
+          onClose={() => setShowNewSheet(false)}
+          onSubmit={(cmd) => {
+            void handleCreateSheet(cmd);
+          }}
+        />
+      )}
     </div>
   );
 }

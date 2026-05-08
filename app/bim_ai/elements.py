@@ -1384,6 +1384,10 @@ class PlanViewElem(BaseModel):
         alias="planCategoryGraphics",
     )
     option_locks: dict[str, str] = Field(default_factory=dict, alias="optionLocks")
+    # VIE-V3-03: new-style template binding (distinct from view_template_id / viewTemplateId)
+    template_id: str | None = Field(default=None, alias="templateId")
+    scale: int | None = Field(default=None)
+    element_overrides: list[dict] = Field(default_factory=list, alias="elementOverrides")
 
 
 class ViewTemplateElem(BaseModel):
@@ -1391,7 +1395,7 @@ class ViewTemplateElem(BaseModel):
     kind: Literal["view_template"] = "view_template"
     id: str
     name: str = "View template"
-    scale: Literal["scale_50", "scale_100", "scale_200"] = Field(default="scale_100", alias="scale")
+    scale: str | int | None = Field(default=None, alias="scale")
     disciplines_visible: list[str] = Field(default_factory=list, alias="disciplinesVisible")
     hidden_categories: list[str] = Field(default_factory=list, alias="hiddenCategories")
     plan_detail_level: PlanDetailLevelPlan | None = Field(default=None, alias="planDetailLevel")
@@ -1415,6 +1419,40 @@ class ViewTemplateElem(BaseModel):
     )
     view_range_bottom_mm: float | None = Field(default=None, alias="viewRangeBottomMm")
     view_range_top_mm: float | None = Field(default=None, alias="viewRangeTopMm")
+    # VIE-V3-03: view template v3 fields
+    detail_level: Literal["coarse", "medium", "fine"] | None = Field(
+        default=None, alias="detailLevel"
+    )
+    crop_default: dict | None = Field(default=None, alias="cropDefault")
+    visibility_filters: list[dict] = Field(default_factory=list, alias="visibilityFilters")
+    element_overrides: list[dict] = Field(default_factory=list, alias="elementOverrides")
+    phase: str | None = Field(default=None)
+    phase_filter: str | None = Field(default=None, alias="phaseFilter")
+
+
+class SheetXY(BaseModel):
+    """Sheet-space 2D coordinate (mm from sheet origin)."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    x: float
+    y: float
+
+
+class ViewPlacement(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    view_id: str = Field(alias="viewId")
+    min_xy: SheetXY = Field(alias="minXY")
+    size: SheetXY
+    scale: int | None = Field(default=None)
+
+
+class SheetMetadata(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    project_name: str = Field(default="", alias="projectName")
+    drawn_by: str = Field(default="", alias="drawnBy")
+    checked_by: str = Field(default="", alias="checkedBy")
+    date: str = Field(default="")
+    revision: str = Field(default="")
 
 
 class SheetElem(BaseModel):
@@ -1422,6 +1460,15 @@ class SheetElem(BaseModel):
     kind: Literal["sheet"] = "sheet"
     id: str
     name: str = "Sheet"
+    number: str = Field(default="")
+    size: Literal["A0", "A1", "A2", "A3"] = Field(default="A1")
+    orientation: Literal["landscape", "portrait"] = Field(default="landscape")
+    titleblock_type_id: str = Field(default="default-a1-titleblock", alias="titleblockTypeId")
+    revision_id: str | None = Field(default=None, alias="revisionId")
+    view_placements: list[ViewPlacement] = Field(default_factory=list, alias="viewPlacements")
+    metadata: SheetMetadata = Field(default_factory=SheetMetadata)
+    brand_template_id: str | None = Field(default=None, alias="brandTemplateId")
+    # Legacy v2 fields — preserved so old documents round-trip unchanged
     title_block: str | None = Field(default=None, alias="titleBlock")
     viewports_mm: list[dict[str, Any]] = Field(default_factory=list, alias="viewportsMm")
     paper_width_mm: float = Field(default=42_000, alias="paperWidthMm")
@@ -1682,6 +1729,71 @@ class ClashTestElem(BaseModel):
     results: list[ClashResultSpec] | None = None
 
 
+# ---------------------------------------------------------------------------
+# VIE-V3-02 — Drafting view + callout + cut-profile + view-break models
+# ---------------------------------------------------------------------------
+
+
+class XY(BaseModel):
+    """Plain 2D coordinate (no mm suffix) — used for clip rect corners and break axes."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    x: float
+    y: float
+
+
+class ClipRect(BaseModel):
+    """Clip rectangle for callout sub-views (model coordinates)."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    min_xy: XY = Field(alias="minXY")
+    max_xy: XY = Field(alias="maxXY")
+
+
+class ElementOverrideSpec(BaseModel):
+    """Per-view per-category cut-profile override (singleLine | outline | css-var)."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    category_or_id: str = Field(alias="categoryOrId")
+    alternate_render: str = Field(alias="alternateRender")
+
+
+class ViewBreakSpec(BaseModel):
+    """A single view-break gap in a long elevation."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    axis_mm: float = Field(alias="axisMM")
+    width_mm: float = Field(alias="widthMM", gt=0)
+
+
+class ViewElem(BaseModel):
+    """VIE-V3-02 — unified view element for drafting views, callouts, and 2D detailing.
+
+    Drafting views (subKind='drafting') bypass the projection pipeline entirely;
+    they contain only annotation, detail components, and filled regions.
+    Callout views (subKind='callout') inherit the parent's projection matrix but
+    clip to `clipRectInParent`.
+    """
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["view"] = "view"
+    id: str
+    name: str = "View"
+    sub_kind: Literal["plan", "section", "elevation", "drafting", "callout", "3d"] = Field(
+        default="plan", alias="subKind"
+    )
+    parent_view_id: str | None = Field(default=None, alias="parentViewId")
+    clip_rect_in_parent: ClipRect | None = Field(default=None, alias="clipRectInParent")
+    element_overrides: list[ElementOverrideSpec] = Field(
+        default_factory=list, alias="elementOverrides"
+    )
+    breaks: list[ViewBreakSpec] = Field(default_factory=list)
+    scale: float = Field(default=100.0, gt=0)
+    detail_level: Literal["coarse", "medium", "fine"] = Field(
+        default="medium", alias="detailLevel"
+    )
+
+
 ElementKind = Literal[
     "project_settings",
     "room_color_scheme",
@@ -1746,6 +1858,7 @@ ElementKind = Literal[
     "roof_join",
     "edge_profile_run",
     "soffit",
+    "view",
 ]
 
 
@@ -1931,6 +2044,47 @@ class PhaseElem(BaseModel):
     ord: int = 0
 
 
+class TokenSlot(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    name: str
+    x_mm: float = Field(alias="xMm")
+    y_mm: float = Field(alias="yMm")
+    font_size_mm: float = Field(default=3.5, alias="fontSizeMm")
+
+
+class TitleblockTypeElem(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    kind: Literal["titleblock_type"] = "titleblock_type"
+    id: str
+    name: str
+    svg_template: str = Field(default="", alias="svgTemplate")
+    token_slots: list[TokenSlot] = Field(default_factory=list, alias="tokenSlots")
+
+
+DEFAULT_TITLEBLOCK_TYPE = TitleblockTypeElem(
+    id="default-a1-titleblock",
+    name="A1 Landscape Standard",
+    svgTemplate="",
+    tokenSlots=[
+        {"name": "projectName", "xMm": 180.0, "yMm": 15.0, "fontSizeMm": 5.0},
+        {"name": "drawnBy", "xMm": 180.0, "yMm": 10.0, "fontSizeMm": 3.5},
+        {"name": "checkedBy", "xMm": 220.0, "yMm": 10.0, "fontSizeMm": 3.5},
+        {"name": "date", "xMm": 260.0, "yMm": 10.0, "fontSizeMm": 3.5},
+        {"name": "number", "xMm": 260.0, "yMm": 15.0, "fontSizeMm": 5.0},
+    ],
+)
+
+
+class WindowLegendViewElem(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    kind: Literal["window_legend_view"] = "window_legend_view"
+    id: str
+    name: str
+    scope: Literal["all", "sheet", "project"] = "project"
+    sort_by: Literal["type", "width", "count"] = Field(default="type", alias="sortBy")
+    parent_sheet_id: str | None = Field(default=None, alias="parentSheetId")
+
+
 Element = Annotated[
     ProjectSettingsElem
     | RoomColorSchemeElem
@@ -2000,6 +2154,9 @@ Element = Annotated[
     | PhaseElem
     | RoofJoinElem
     | EdgeProfileRunElem
-    | SoffitElem,
+    | SoffitElem
+    | TitleblockTypeElem
+    | WindowLegendViewElem
+    | ViewElem,
     Field(discriminator="kind"),
 ]
