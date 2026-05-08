@@ -54,7 +54,8 @@ export type PlanTool =
   | 'shaft'
   | 'column'
   | 'beam'
-  | 'ceiling';
+  | 'ceiling'
+  | 'detail-region';
 
 export type PresencePeers = Record<
   string,

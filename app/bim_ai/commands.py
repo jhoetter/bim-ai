@@ -2298,6 +2298,38 @@ class CreateScheduleViewCmd(BaseModel):
     sort_dir: Literal["asc", "desc"] | None = Field(default=None, alias="sortDir")
 
 
+# ---------------------------------------------------------------------------
+# ANN-V3-01 — Detail-region drawing-mode authoring
+# ---------------------------------------------------------------------------
+
+
+class DrawDetailRegionCmd(BaseModel):
+    """ANN-V3-01 — draw a polyline or closed hatch region on a view."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["create_detail_region"] = "create_detail_region"
+    id: str
+    view_id: str = Field(alias="viewId")
+    vertices: list[dict]
+    closed: bool = False
+    hatch_id: str | None = Field(default=None, alias="hatchId")
+    lineweight_override: float | None = Field(default=None, alias="lineweightOverride")
+    phase_created: str | None = Field(default=None, alias="phaseCreated")
+
+
+class UpdateDetailRegionCmd(BaseModel):
+    """ANN-V3-01 — patch vertices, closed flag, or hatch on a detail_region."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["update_detail_region"] = "update_detail_region"
+    id: str
+    vertices: list[dict] | None = None
+    closed: bool | None = None
+    hatch_id: str | None = Field(default=None, alias="hatchId")
+    lineweight_override: float | None = Field(default=None, alias="lineweightOverride")
+    phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
+
+
 Command = Annotated[
     CreateLevelCmd
     | CreateWallCmd
@@ -2476,6 +2508,8 @@ Command = Annotated[
     | CreateDecalCmd
     | CreatePropertyDefinitionCmd
     | SetElementPropCmd
-    | CreateScheduleViewCmd,
+    | CreateScheduleViewCmd
+    | DrawDetailRegionCmd
+    | UpdateDetailRegionCmd,
     Field(discriminator="type"),
 ]

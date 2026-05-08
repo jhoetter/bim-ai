@@ -2394,3 +2394,6 @@ export type HelperDimensionDescriptor = {
   /** When true the chip is display-only and clicking it does nothing. */
   readOnly?: boolean;
 };
+
+/** Convenience alias — the full BimElem union (same as Element). */
+export type BimElem = Element;

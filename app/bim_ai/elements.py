@@ -558,17 +558,26 @@ DetailRegionFillPattern = Literal["solid", "hatch_45", "hatch_90", "crosshatch",
 
 
 class DetailRegionElem(BaseModel):
-    """ANN-01 — view-local 2D filled region annotation."""
+    """ANN-01 / ANN-V3-01 — view-local 2D filled region annotation."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True)
     kind: Literal["detail_region"] = "detail_region"
     id: str
-    host_view_id: str = Field(alias="hostViewId")
-    boundary_mm: list[Vec2Mm] = Field(alias="boundaryMm")
+    # v2 fields (ANN-01) — kept for backward compat
+    host_view_id: str = Field(default="", alias="hostViewId")
+    boundary_mm: list[Vec2Mm] = Field(default_factory=list, alias="boundaryMm")
     fill_colour: str = Field(default="#cccccc", alias="fillColour")
     fill_pattern: DetailRegionFillPattern = Field(default="solid", alias="fillPattern")
     stroke_mm: float = Field(default=0.5, alias="strokeMm", ge=0)
     stroke_colour: str = Field(default="#202020", alias="strokeColour")
+    # v3 fields (ANN-V3-01)
+    view_id: str | None = Field(default=None, alias="viewId")
+    vertices: list[dict] | None = None
+    closed: bool | None = None
+    hatch_id: str | None = Field(default=None, alias="hatchId")
+    lineweight_override: float | None = Field(default=None, alias="lineweightOverride")
+    phase_created: str | None = Field(default=None, alias="phaseCreated")
+    phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
 
 
 TextNoteAnchor = Literal["tl", "tc", "tr", "cl", "c", "cr", "bl", "bc", "br"]
@@ -1912,6 +1921,19 @@ ElementKind = Literal[
     "toposolid",
     "property_definition",
 ]
+
+
+class PropertyDefinitionElem(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    kind: Literal["property_definition"] = "property_definition"
+    id: str
+    key: str
+    label: str
+    prop_kind: Literal["mm", "m2", "currency", "enum", "string", "bool", "date"] = Field(alias="propKind")
+    enum_values: list[str] | None = Field(default=None, alias="enumValues")
+    default_value: Any | None = Field(default=None, alias="defaultValue")
+    applies_to: list[str] = Field(alias="appliesTo")
+    show_in_schedule: bool = Field(default=True, alias="showInSchedule")
 
 
 class ColumnElem(BaseModel):

@@ -1058,6 +1058,53 @@ register(
 )
 
 # ---------------------------------------------------------------------------
+# ANN-V3-01 — Detail-region drawing-mode authoring
+# ---------------------------------------------------------------------------
+
+register(
+    ToolDescriptor(
+        name="draw-detail-region",
+        category="mutation",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "DrawDetailRegionInput",
+            "type": "object",
+            "required": ["model_id", "view_id", "vertices"],
+            "properties": {
+                "model_id": {"type": "string"},
+                "view_id": {"type": "string", "description": "Id of the target plan/section/drafting/callout view"},
+                "vertices": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {"x": {"type": "number"}, "y": {"type": "number"}},
+                        "required": ["x", "y"],
+                    },
+                    "description": "Vertex list in mm relative to plan origin",
+                    "minItems": 2,
+                },
+                "closed": {"type": "boolean", "default": False},
+                "hatch_id": {"type": "string", "description": "Hatch pattern id; only used when closed=true"},
+                "lineweight_override": {"type": "number"},
+            },
+            "additionalProperties": False,
+        },
+        outputSchema={"type": "object", "properties": {"id": {"type": "string"}}, "required": ["id"]},
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Detail region created"),
+            "invalid_view": ExitCode(code=1, meaning="viewId does not reference a valid view element"),
+            "too_few_vertices": ExitCode(code=2, meaning="vertices must contain at least 2 points"),
+            "error": ExitCode(code=1, meaning="Unexpected error"),
+        },
+        cliExample='bim-ai detail-region <model-id> <view-id> \'[{"x":0,"y":0},{"x":1000,"y":0}]\' --closed --hatch=brick_45',
+        restEndpoint=RestEndpoint(method="POST", path="/api/models/{model_id}/bundles"),
+        sideEffects="mutates-kernel",
+        agentSafetyNotes="Creates a detail_region on the named view. closed=true renders as hatch-filled polygon. Phase-aware.",
+    )
+)
+
+
+# ---------------------------------------------------------------------------
 # MAT-V3-01 — Material PBR map slots
 # ---------------------------------------------------------------------------
 
