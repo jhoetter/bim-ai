@@ -4,20 +4,33 @@
   "strategy": "manual-commit",
   "branch": "feat/v3-chr-v3-03-status-bar",
   "checkpoints_count": 1,
-  "files_touched": null,
+  "files_touched": [
+    "packages/core/src/index.ts",
+    "packages/web/src/workspace/DriftBadge.tsx",
+    "packages/web/src/workspace/LensDropdown.tsx",
+    "packages/web/src/workspace/StatusBar.test.tsx",
+    "packages/web/src/workspace/StatusBar.tsx",
+    "packages/web/src/workspace/Workspace.tsx"
+  ],
   "sessions": [
     {
       "metadata": "/06/1d7096131e/0/metadata.json",
       "transcript": "/06/1d7096131e/0/full.jsonl",
       "content_hash": "/06/1d7096131e/0/content_hash.txt",
       "prompt": "/06/1d7096131e/0/prompt.txt"
+    },
+    {
+      "metadata": "/06/1d7096131e/1/metadata.json",
+      "transcript": "/06/1d7096131e/1/full.jsonl",
+      "content_hash": "/06/1d7096131e/1/content_hash.txt",
+      "prompt": "/06/1d7096131e/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 248,
-    "cache_creation_tokens": 140344,
-    "cache_read_tokens": 13288401,
-    "output_tokens": 63209,
-    "api_call_count": 152
+    "input_tokens": 313,
+    "cache_creation_tokens": 236674,
+    "cache_read_tokens": 15937096,
+    "output_tokens": 79726,
+    "api_call_count": 182
   }
 }
