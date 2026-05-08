@@ -1,0 +1,34 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "c8031277aab0",
+  "strategy": "manual-commit",
+  "branch": "feat/wave-04-edt-05-snap-extra",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/plan/SnapGlyphLayer.tsx",
+    "packages/web/src/plan/SnapSettingsToolbar.tsx",
+    "packages/web/src/plan/snapEngine.test.ts",
+    "packages/web/src/plan/snapEngine.ts",
+    "packages/web/src/plan/snapSettings.test.ts",
+    "packages/web/src/plan/snapSettings.ts",
+    "packages/web/src/plan/snapTabCycle.test.ts",
+    "packages/web/src/plan/snapTabCycle.ts",
+    "packages/web/src/viewport/grip3d.test.ts",
+    "spec/workpackage-master-tracker.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/c8/031277aab0/0/metadata.json",
+      "transcript": "/c8/031277aab0/0/full.jsonl",
+      "content_hash": "/c8/031277aab0/0/content_hash.txt",
+      "prompt": "/c8/031277aab0/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 136,
+    "cache_creation_tokens": 155211,
+    "cache_read_tokens": 11792845,
+    "output_tokens": 57247,
+    "api_call_count": 121
+  }
+}
