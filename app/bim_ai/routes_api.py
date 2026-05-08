@@ -1219,7 +1219,7 @@ async def apply_bundle_route(
     doc = Document.model_validate(row.document)
     mode = body.mode if body.mode in ("dry_run", "commit") else "dry_run"
 
-    result = _apply_bundle(doc, body.bundle, mode)  # type: ignore[arg-type]
+    result, new_doc_from_bundle = _apply_bundle(doc, body.bundle, mode, model_id=str(model_id))  # type: ignore[arg-type]
 
     # Surface blocking advisory classes as HTTP 409
     _BLOCKING_ADVISORY_CLASSES = {
@@ -1241,38 +1241,36 @@ async def apply_bundle_route(
                 },
             )
 
-    if result.applied and result.new_revision is not None:
-        # Re-run engine to get new_doc for persisting (deterministic — same result)
-        ok, new_doc, _cmds, _viols, _code = try_commit_bundle(doc, body.bundle.commands)
-        if ok and new_doc is not None:
-            uid = body.user_id or "local-dev"
-            doc_before = clone_document(doc)
-            undo_cmds = diff_undo_cmds(doc_before, new_doc)
-            await delete_redos(session, model_id, uid)
+    if result.applied and result.new_revision is not None and new_doc_from_bundle is not None:
+        new_doc = new_doc_from_bundle
+        uid = body.user_id or "local-dev"
+        doc_before = clone_document(doc)
+        undo_cmds = diff_undo_cmds(doc_before, new_doc)
+        await delete_redos(session, model_id, uid)
 
-            session.add(
-                UndoStackRecord(
-                    model_id=model_id,
-                    user_id=uid,
-                    revision_after=new_doc.revision,
-                    forward_commands=body.bundle.commands,
-                    undo_commands=undo_cmds,
-                    created_at=datetime.now(UTC),
-                )
+        session.add(
+            UndoStackRecord(
+                model_id=model_id,
+                user_id=uid,
+                revision_after=new_doc.revision,
+                forward_commands=body.bundle.commands,
+                undo_commands=undo_cmds,
+                created_at=datetime.now(UTC),
             )
+        )
 
-            wire_doc = document_to_wire(new_doc)
-            row.document = wire_doc  # type: ignore[assignment]
-            row.revision = new_doc.revision
-            await session.commit()
+        wire_doc = document_to_wire(new_doc)
+        row.document = wire_doc  # type: ignore[assignment]
+        row.revision = new_doc.revision
+        await session.commit()
 
-            delta = compute_delta_wire(doc_before, new_doc)
-            try:
-                await hub.broadcast_json(
-                    model_id, {"type": "delta", "modelId": str(model_id), **delta}
-                )
-            except Exception:
-                pass
+        delta = compute_delta_wire(doc_before, new_doc)
+        try:
+            await hub.broadcast_json(
+                model_id, {"type": "delta", "modelId": str(model_id), **delta}
+            )
+        except Exception:
+            pass
 
     return result.model_dump(by_alias=True)
 
