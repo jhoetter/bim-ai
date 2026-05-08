@@ -1,0 +1,1 @@
+Read spec/v3-prompts/wp-028.md end-to-end, then implement CHR-V3-04+EDT-V3-03 Cmd+K palette on branch feat/v3-chr-v3-04-cmd-palette
