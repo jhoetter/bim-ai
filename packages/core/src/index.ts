@@ -1764,6 +1764,25 @@ export type PublicLink = {
 };
 
 // ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// OUT-V3-01 — Live presentation link
+// ---------------------------------------------------------------------------
+
+export type PresentationLink = {
+  kind: 'presentation_link';
+  id: string;
+  modelId: string;
+  pageScopeIds: string[];
+  token: string;
+  permission: 'viewer';
+  allowMeasurement: boolean;
+  allowComment: boolean;
+  expiresAt?: number;
+  createdAt: number;
+  revokedAt?: number;
+};
+
 // TKN-V3-01 — tokenised kernel representation
 // ---------------------------------------------------------------------------
 

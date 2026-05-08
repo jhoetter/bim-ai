@@ -2013,6 +2013,23 @@ class MassElem(BaseModel):
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
 
 
+
+class PresentationLinkElem(BaseModel):
+    """OUT-V3-01 — live presentation URL token persisted as a document element."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["presentation_link"] = "presentation_link"
+    id: str
+    model_id: str = Field(alias="modelId")
+    page_scope_ids: list[str] = Field(default_factory=list, alias="pageScopeIds")
+    token: str
+    permission: Literal["viewer"] = "viewer"
+    allow_measurement: bool = Field(default=False, alias="allowMeasurement")
+    allow_comment: bool = Field(default=False, alias="allowComment")
+    expires_at: int | None = Field(default=None, alias="expiresAt")
+    created_at: int = Field(alias="createdAt")
+    revoked_at: int | None = Field(default=None, alias="revokedAt")
+
 class VoidCutElem(BaseModel):
     """SKT-01 — subtractive-boolean marker against a host element.
 
@@ -2149,6 +2166,7 @@ Element = Annotated[
     | BeamElem
     | CeilingElem
     | MassElem
+    | PresentationLinkElem
     | VoidCutElem
     | ConstraintElem
     | PhaseElem
