@@ -1,0 +1,1 @@
+Read spec/v3-prompts/wp-027.md end-to-end, then implement VER-V3-01 activity stream on branch feat/v3-ver-v3-01-activity-stream
