@@ -740,6 +740,42 @@ async function cmdAgentLoop(modelId, goalPath, maxIter, evidenceOut, backendOver
   );
 }
 
+// ─── API-V3-01 — introspection subcommands ───────────────────────────────────
+
+async function cmdApiListTools(outputFormat) {
+  const json = await fetchJson('GET', `${base}/api/v3/tools`);
+  if (outputFormat === 'json') {
+    console.log(JSON.stringify(json, null, 2));
+  } else {
+    for (const t of json.tools ?? []) {
+      console.log(`${t.name}  [${t.category}]  ${t.restEndpoint?.method} ${t.restEndpoint?.path}`);
+    }
+  }
+}
+
+async function cmdApiInspect(name, outputFormat) {
+  if (!name) {
+    console.error('api inspect requires <name>');
+    process.exit(1);
+  }
+  const json = await fetchJson('GET', `${base}/api/v3/tools/${encodeURIComponent(name)}`);
+  if (outputFormat === 'json') {
+    console.log(JSON.stringify(json, null, 2));
+  } else {
+    console.log(`name:       ${json.name}`);
+    console.log(`category:   ${json.category}`);
+    console.log(`sideEffects: ${json.sideEffects}`);
+    console.log(`endpoint:   ${json.restEndpoint?.method} ${json.restEndpoint?.path}`);
+    console.log(`example:    ${json.cliExample}`);
+    if (json.agentSafetyNotes) console.log(`notes:      ${json.agentSafetyNotes}`);
+  }
+}
+
+async function cmdApiVersion() {
+  const json = await fetchJson('GET', `${base}/api/v3/version`);
+  console.log(JSON.stringify(json, null, 2));
+}
+
 function usage() {
   console.error(
     `bim-ai <command> [args]
@@ -784,6 +820,9 @@ Commands:
   unlink <link_id>                    FED-01: delete the link_model with id <link_id>.
   links                               FED-01: list every link_model in BIM_AI_MODEL_ID with pin/drift status.
   watch                               WebSocket watcher (continuous live commits — no Synchronize step required)
+  api list-tools [--output json]      API-V3-01: list all registered tool descriptors
+  api inspect <name> [--output json]  API-V3-01: print one ToolDescriptor
+  api version                         API-V3-01: print { schemaVersion, buildRef }
 
 Collaboration model:
   Every command is server-authoritative on commit and broadcast over websocket;
@@ -961,6 +1000,30 @@ async function main() {
       }
       await cmdAgentLoop(modelId, goalArg, maxIter, evidenceOut, backendOverride);
       return;
+    }
+
+    if (cmd === 'api') {
+      const sub = argv[1];
+      const rest = argv.slice(2);
+      let outputFormat = 'json';
+      for (let i = 0; i < rest.length; i++) {
+        if (rest[i] === '--output' && rest[i + 1]) outputFormat = rest[++i];
+      }
+      if (sub === 'list-tools') {
+        await cmdApiListTools(outputFormat);
+        return;
+      }
+      if (sub === 'inspect') {
+        const name = rest.find((a) => !a.startsWith('-'));
+        await cmdApiInspect(name, outputFormat);
+        return;
+      }
+      if (sub === 'version') {
+        await cmdApiVersion();
+        return;
+      }
+      console.error(`Unknown api subcommand: ${sub ?? '(none)'}. Use list-tools | inspect | version.`);
+      process.exit(1);
     }
 
     if (!modelId && cmd !== 'schema' && cmd !== 'presets' && cmd !== 'plan-house' && cmd !== 'bootstrap' && cmd !== 'init-model')

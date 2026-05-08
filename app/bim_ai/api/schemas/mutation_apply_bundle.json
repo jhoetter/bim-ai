@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ApplyBundleInput",
+  "description": "Input schema for the apply-bundle mutation command.",
+  "type": "object",
+  "required": ["commands"],
+  "properties": {
+    "commands": {
+      "type": "array",
+      "items": { "type": "object" },
+      "description": "Array of kernel commands to apply atomically."
+    },
+    "baseRevision": {
+      "type": "integer",
+      "description": "Parent revision this bundle was authored against."
+    },
+    "dryRun": {
+      "type": "boolean",
+      "default": false,
+      "description": "Validate only; do not commit."
+    }
+  },
+  "additionalProperties": false
+}

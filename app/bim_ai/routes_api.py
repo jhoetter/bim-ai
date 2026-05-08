@@ -102,6 +102,7 @@ from bim_ai.template_loader import (
 from bim_ai.type_material_registry import merged_registry_payload
 from bim_ai.v1_acceptance_proof_matrix import build_v1_acceptance_proof_matrix_v1
 from bim_ai.v1_closeout_readiness_manifest import build_v1_closeout_readiness_manifest_v1
+from bim_ai.api.registry import get_catalog, get_descriptor
 
 api_router = APIRouter(prefix="/api")
 api_router.include_router(exports_router)
@@ -1237,3 +1238,44 @@ async def websocket_loop(websocket: WebSocket, model_id: UUID, hub: Hub) -> None
 
     finally:
         hub.unregister(websocket)
+
+
+# ---------------------------------------------------------------------------
+# API-V3-01 — Tool registry REST surface
+# ---------------------------------------------------------------------------
+
+
+def _descriptor_to_dict(d: Any) -> dict[str, Any]:
+    from dataclasses import asdict
+
+    return asdict(d)
+
+
+@api_router.get("/v3/tools")
+async def v3_list_tools() -> dict[str, Any]:
+    catalog = get_catalog()
+    return {
+        "schemaVersion": catalog.schemaVersion,
+        "tools": [_descriptor_to_dict(t) for t in catalog.tools],
+    }
+
+
+@api_router.get("/v3/tools/{name}")
+async def v3_inspect_tool(name: str) -> dict[str, Any]:
+    descriptor = get_descriptor(name)
+    if descriptor is None:
+        raise HTTPException(status_code=404, detail=f"Tool '{name}' not found in registry.")
+    return _descriptor_to_dict(descriptor)
+
+
+@api_router.get("/v3/version")
+async def v3_api_version() -> dict[str, str]:
+    import subprocess
+
+    try:
+        build_ref = subprocess.check_output(
+            ["git", "rev-parse", "--short", "HEAD"], stderr=subprocess.DEVNULL, text=True
+        ).strip()
+    except Exception:
+        build_ref = "unknown"
+    return {"schemaVersion": "api-v3.0", "buildRef": build_ref}
