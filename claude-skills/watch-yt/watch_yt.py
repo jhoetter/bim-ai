@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Watch a YouTube video and return granular timestamped descriptions via Gemini.
 
-Optional --screenshots flag downloads the video via yt-dlp, extracts a frame
-at each relevant timestamp with ffmpeg, and writes PNGs next to the text log.
+Optional --screenshots flag resolves the direct stream URL via yt-dlp and lets
+ffmpeg seek to each timestamp in the stream — no full download required.
 """
 
 from __future__ import annotations
@@ -13,7 +13,7 @@ import os
 import re
 import subprocess
 import sys
-import tempfile
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -91,60 +91,84 @@ def watch(youtube_url: str, api_key: str, model: str = "gemini-2.5-flash") -> st
     return _call_gemini(youtube_url, api_key, model, _TEXT_PROMPT)
 
 
+def _get_stream_url(youtube_url: str) -> str:
+    """Return the direct video stream URL without downloading anything."""
+    result = subprocess.run(
+        [
+            "yt-dlp",
+            "--quiet",
+            "-f", "bestvideo[ext=mp4]/bestvideo",
+            "--get-url",
+            youtube_url,
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout.strip().splitlines()[0]
+
+
 def watch_with_screenshots(
     youtube_url: str,
     api_key: str,
     out_dir: Path,
     model: str = "gemini-2.5-flash",
 ) -> str:
-    """Run Gemini analysis, download video, extract frames, write everything to out_dir."""
+    """Run Gemini analysis, then extract frames by seeking in the stream — no full download."""
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # 1. Ask Gemini for structured JSON
-    print("Asking Gemini to analyse the video …", file=sys.stderr)
-    raw = _call_gemini(youtube_url, api_key, model, _JSON_PROMPT)
+    # 1. Ask Gemini for structured JSON (retry once on parse failure)
+    entries: list[dict] = []
+    for attempt in range(2):
+        if attempt:
+            print("JSON parse failed, retrying Gemini …", file=sys.stderr)
+        else:
+            print("Asking Gemini to analyse the video …", file=sys.stderr)
+        raw = _call_gemini(youtube_url, api_key, model, _JSON_PROMPT)
+        raw = re.sub(r"^```[^\n]*\n?", "", raw.strip())
+        raw = re.sub(r"\n?```$", "", raw.strip())
+        try:
+            entries = json.loads(raw)
+            break
+        except json.JSONDecodeError:
+            if attempt == 1:
+                raise
 
-    # Strip accidental markdown fences
-    raw = re.sub(r"^```[^\n]*\n?", "", raw.strip())
-    raw = re.sub(r"\n?```$", "", raw.strip())
+    # 2. Resolve the direct stream URL (fast — no download)
+    print("Resolving stream URL …", file=sys.stderr)
+    stream_url = _get_stream_url(youtube_url)
 
-    entries: list[dict] = json.loads(raw)
+    # 3. Extract frames in parallel — each ffmpeg only fetches the nearby stream segment
+    print(f"Extracting {len(entries)} screenshots in parallel …", file=sys.stderr)
 
-    # 2. Download video with yt-dlp into a temp file
-    print("Downloading video with yt-dlp …", file=sys.stderr)
-    with tempfile.TemporaryDirectory() as tmp:
-        video_path = Path(tmp) / "video.%(ext)s"
+    def _extract_frame(args: tuple) -> tuple[int, str]:
+        i, entry = args
+        secs = _ts_to_seconds(entry["ts"])
+        safe_ts = entry["ts"].replace(":", "-")
+        out_png = out_dir / f"{i+1:03d}_{safe_ts}.png"
         subprocess.run(
             [
-                "yt-dlp",
-                "--quiet",
-                "-f", "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
-                "-o", str(video_path),
-                youtube_url,
+                "ffmpeg", "-loglevel", "error",
+                "-ss", str(secs),
+                "-i", stream_url,
+                "-frames:v", "1",
+                "-q:v", "2",
+                str(out_png),
             ],
             check=True,
         )
-        # find the downloaded file (extension may vary)
-        downloaded = next(Path(tmp).glob("video.*"))
+        return i, out_png.name
 
-        # 3. Extract one frame per entry with ffmpeg
-        print(f"Extracting {len(entries)} screenshots with ffmpeg …", file=sys.stderr)
-        for i, entry in enumerate(entries):
-            secs = _ts_to_seconds(entry["ts"])
-            safe_ts = entry["ts"].replace(":", "-")
-            out_png = out_dir / f"{i+1:03d}_{safe_ts}.png"
-            subprocess.run(
-                [
-                    "ffmpeg", "-loglevel", "error",
-                    "-ss", str(secs),
-                    "-i", str(downloaded),
-                    "-frames:v", "1",
-                    "-q:v", "2",
-                    str(out_png),
-                ],
-                check=True,
-            )
-            entry["screenshot"] = out_png.name
+    results: dict[int, str] = {}
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        futures = {pool.submit(_extract_frame, (i, e)): i for i, e in enumerate(entries)}
+        for fut in as_completed(futures):
+            i, name = fut.result()
+            results[i] = name
+            print(f"  [{entries[i]['ts']}] → {name}", file=sys.stderr)
+
+    for i, entry in enumerate(entries):
+        entry["screenshot"] = results[i]
 
     # 4. Write text log
     lines = []
