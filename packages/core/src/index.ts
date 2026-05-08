@@ -112,7 +112,8 @@ export type ElemKind =
   | 'foundation'
   | 'duct'
   | 'pipe'
-  | 'fixture';
+  | 'fixture'
+  | 'property_definition';
 
 export type PhaseFilter = 'all' | 'existing' | 'demolition' | 'new';
 
@@ -677,6 +678,8 @@ export type Element =
       optionId?: string | null;
       /** DSC-V3-01: discipline tag. */
       discipline?: DisciplineTag | null;
+      /** SCH-V3-01: custom properties. */
+      props?: Record<string, unknown> | null;
     }
   | {
       kind: 'door';
@@ -706,6 +709,8 @@ export type Element =
       optionId?: string | null;
       /** DSC-V3-01: discipline tag. */
       discipline?: DisciplineTag | null;
+      /** SCH-V3-01: custom properties. */
+      props?: Record<string, unknown> | null;
     }
   | {
       kind: 'window';
@@ -739,6 +744,8 @@ export type Element =
       optionId?: string | null;
       /** DSC-V3-01: discipline tag. */
       discipline?: DisciplineTag | null;
+      /** SCH-V3-01: custom properties. */
+      props?: Record<string, unknown> | null;
     }
   | {
       kind: 'wall_opening';
@@ -771,6 +778,8 @@ export type Element =
       pinned?: boolean;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
+      /** SCH-V3-01: custom properties. */
+      props?: Record<string, unknown> | null;
     }
   | {
       kind: 'grid_line';
@@ -855,6 +864,8 @@ export type Element =
       optionId?: string | null;
       /** DSC-V3-01: discipline tag. */
       discipline?: DisciplineTag | null;
+      /** SCH-V3-01: custom properties. */
+      props?: Record<string, unknown> | null;
     }
   | {
       kind: 'roof';
@@ -892,6 +903,8 @@ export type Element =
       optionId?: string | null;
       /** DSC-V3-01: discipline tag. */
       discipline?: DisciplineTag | null;
+      /** SCH-V3-01: custom properties. */
+      props?: Record<string, unknown> | null;
     }
   | {
       kind: 'stair';
@@ -1146,6 +1159,12 @@ export type Element =
       sheetId?: string | null;
       filters?: Record<string, unknown>;
       grouping?: Record<string, unknown>;
+      /** SCH-V3-01: filterable schedule view fields */
+      category?: string | null;
+      columns?: Array<{ fieldKey: string; label: string; width?: number }>;
+      filterExpr?: string | null;
+      sortKey?: string | null;
+      sortDir?: 'asc' | 'desc' | null;
     }
   | {
       kind: 'site';
@@ -1256,6 +1275,8 @@ export type Element =
       phaseDemolished?: string | null;
       /** DSC-V3-01: discipline tag. */
       discipline?: DisciplineTag | null;
+      /** SCH-V3-01: custom properties. */
+      props?: Record<string, unknown> | null;
     }
   | {
       kind: 'beam';
@@ -1275,6 +1296,8 @@ export type Element =
       phaseDemolished?: string | null;
       /** DSC-V3-01: discipline tag. */
       discipline?: DisciplineTag | null;
+      /** SCH-V3-01: custom properties. */
+      props?: Record<string, unknown> | null;
     }
   | {
       kind: 'ceiling';
@@ -1289,6 +1312,8 @@ export type Element =
       phaseDemolished?: string | null;
       /** DSC-V3-01: discipline tag. */
       discipline?: DisciplineTag | null;
+      /** SCH-V3-01: custom properties. */
+      props?: Record<string, unknown> | null;
     }
   | {
       kind: 'color_fill_legend';
@@ -1659,7 +1684,8 @@ export type Element =
   | View
   | ToposolidElem
   | AssetLibraryEntryElem
-  | PlacedAssetElem;
+  | PlacedAssetElem
+  | PropertyDefinitionElem;
 
 export type Violation = {
   ruleId: string;
@@ -2222,4 +2248,31 @@ export type StructuredLayout = {
   openings: OpeningHint[];
   ocrLabels: OcrLabel[];
   advisories: Advisory[];
+};
+
+// ---------------------------------------------------------------------------
+// SCH-V3-01 — Custom-properties + schedule view types
+// ---------------------------------------------------------------------------
+
+export type PropertyDefinitionElem = {
+  kind: 'property_definition';
+  id: string;
+  key: string;
+  label: string;
+  propKind: 'mm' | 'm2' | 'currency' | 'enum' | 'string' | 'bool' | 'date';
+  enumValues?: string[];
+  defaultValue?: unknown;
+  appliesTo: string[];
+  showInSchedule: boolean;
+};
+
+export type ScheduleViewElem = {
+  kind: 'schedule';
+  id: string;
+  name: string;
+  category: string;
+  columns: Array<{ fieldKey: string; label: string; width?: number }>;
+  filterExpr?: string | null;
+  sortKey?: string | null;
+  sortDir?: 'asc' | 'desc' | null;
 };
