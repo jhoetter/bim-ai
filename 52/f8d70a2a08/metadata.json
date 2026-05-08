@@ -5,10 +5,18 @@
   "branch": "feat/v3-edt-v3-11-phase-filter-lens",
   "checkpoints_count": 5,
   "files_touched": [
+    "app/bim_ai/activity.py",
+    "app/bim_ai/comments.py",
     "app/bim_ai/routes_activity.py",
     "app/bim_ai/routes_api.py",
     "app/bim_ai/tables.py",
-    "packages/core/src/index.ts"
+    "app/tests/api/test_comments_route.py",
+    "packages/core/src/index.ts",
+    "packages/web/src/collab/ActivityPanel.tsx",
+    "packages/web/src/collab/CommentPin.tsx",
+    "packages/web/src/collab/CommentThread.tsx",
+    "packages/web/src/collab/activityStore.ts",
+    "packages/web/src/collab/commentStore.ts"
   ],
   "sessions": [
     {
@@ -58,13 +66,19 @@
       "transcript": "/52/f8d70a2a08/7/full.jsonl",
       "content_hash": "/52/f8d70a2a08/7/content_hash.txt",
       "prompt": "/52/f8d70a2a08/7/prompt.txt"
+    },
+    {
+      "metadata": "/52/f8d70a2a08/8/metadata.json",
+      "transcript": "/52/f8d70a2a08/8/full.jsonl",
+      "content_hash": "/52/f8d70a2a08/8/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
-    "input_tokens": 3353,
-    "cache_creation_tokens": 758605,
-    "cache_read_tokens": 41245880,
-    "output_tokens": 221037,
-    "api_call_count": 428
+    "input_tokens": 3368,
+    "cache_creation_tokens": 768633,
+    "cache_read_tokens": 42688586,
+    "output_tokens": 228271,
+    "api_call_count": 443
   }
 }

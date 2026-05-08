@@ -1,0 +1,47 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "52f8d70a2a08",
+  "session_id": "c274bb40-80ea-4264-b798-129b31a13327",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T17:32:35.63109Z",
+  "branch": "feat/v3-edt-v3-11-phase-filter-lens",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "app/bim_ai/activity.py",
+    "app/bim_ai/comments.py",
+    "app/bim_ai/routes_activity.py",
+    "app/bim_ai/routes_api.py",
+    "app/bim_ai/tables.py",
+    "app/tests/api/test_comments_route.py",
+    "packages/core/src/index.ts",
+    "packages/web/src/collab/ActivityPanel.tsx",
+    "packages/web/src/collab/CommentPin.tsx",
+    "packages/web/src/collab/CommentThread.tsx",
+    "packages/web/src/collab/activityStore.ts",
+    "packages/web/src/collab/commentStore.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "48a7175b06da",
+  "checkpoint_transcript_start": 341,
+  "transcript_lines_at_start": 341,
+  "token_usage": {
+    "input_tokens": 15,
+    "cache_creation_tokens": 10028,
+    "cache_read_tokens": 1442706,
+    "output_tokens": 7234,
+    "api_call_count": 15
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-08T17:32:35.620107Z",
+    "agent_lines": 318,
+    "agent_removed": 77,
+    "human_added": 905,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 1223,
+    "total_lines_changed": 1300,
+    "agent_percentage": 30.384615384615383,
+    "metric_version": 2
+  }
+}
