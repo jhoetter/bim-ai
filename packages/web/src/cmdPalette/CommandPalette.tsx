@@ -33,14 +33,18 @@ export function CommandPalette({
   const recordInvocation = usePaletteRecencyStore((s) => s.recordInvocation);
   const getRecencyScore = usePaletteRecencyStore((s) => s.getRecencyScore);
 
+  const nowRef = useRef(Date.now());
+  useEffect(() => {
+    nowRef.current = Date.now();
+  }, [invocations]);
+
   const recencyMap = useMemo<Record<string, number>>(() => {
-    const now = Date.now();
+    const now = nowRef.current;
     const map: Record<string, number> = {};
     for (const id of Object.keys(invocations)) {
       map[id] = getRecencyScore(id, now);
     }
     return map;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [invocations, getRecencyScore]);
 
   const results = useMemo(
