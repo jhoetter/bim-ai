@@ -3,7 +3,7 @@
   "checkpoint_id": "b53be5fb8cb0",
   "strategy": "manual-commit",
   "branch": "feat/v3-job-v3-01-jobs-panel",
-  "checkpoints_count": 6,
+  "checkpoints_count": 5,
   "files_touched": [
     "app/bim_ai/commands.py",
     "app/bim_ai/elements.py",
@@ -66,11 +66,11 @@
     }
   ],
   "token_usage": {
-    "input_tokens": 1668,
-    "cache_creation_tokens": 1156471,
-    "cache_read_tokens": 66089450,
-    "output_tokens": 283422,
-    "api_call_count": 675
+    "input_tokens": 1416,
+    "cache_creation_tokens": 665963,
+    "cache_read_tokens": 49791859,
+    "output_tokens": 183862,
+    "api_call_count": 488
   },
   "combined_attribution": {
     "calculated_at": "2026-05-08T16:43:30.050248Z",
