@@ -1,0 +1,48 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "061d7096131e",
+  "session_id": "e66b31e8-784e-47d9-ac38-2d4a7b6c841a",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T16:41:22.317769Z",
+  "branch": "feat/v3-chr-v3-03-status-bar",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/core/src/index.ts",
+    "packages/web/src/workspace/DriftBadge.tsx",
+    "packages/web/src/workspace/LensDropdown.tsx",
+    "packages/web/src/workspace/StatusBar.test.tsx",
+    "packages/web/src/workspace/StatusBar.tsx",
+    "packages/web/src/workspace/Workspace.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "0864004f305b",
+  "token_usage": {
+    "input_tokens": 53,
+    "cache_creation_tokens": 105189,
+    "cache_read_tokens": 4339340,
+    "output_tokens": 17894,
+    "api_call_count": 49
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-08T16:41:22.303701Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 276,
+    "human_modified": 1,
+    "human_removed": 0,
+    "total_committed": 276,
+    "total_lines_changed": 277,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}
