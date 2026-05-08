@@ -1,0 +1,84 @@
+my CI/CD for js is failing: Run pnpm verify
+
+> bim-ai@0.1.0 verify /home/runner/work/bim-ai/bim-ai
+> pnpm format:check && pnpm lint:root && pnpm architecture && pnpm typecheck && pnpm test && pnpm build
+
+
+> bim-ai@0.1.0 format:check /home/runner/work/bim-ai/bim-ai
+> prettier --check "**/*.{ts,tsx,js,jsx,json,yml,yaml}"
+
+Checking formatting...
+All matched files use Prettier code style!
+
+> bim-ai@0.1.0 lint:root /home/runner/work/bim-ai/bim-ai
+> eslint "packages/**/*.{ts,tsx}"
+
+
+/home/runner/work/bim-ai/bim-ai/packages/web/src/cmdPalette/CommandPalette.tsx
+  37:17  error    Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/home/runner/work/bim-ai/bim-ai/packages/web/src/cmdPalette/CommandPalette.tsx:37:17
+  35 |
+  36 |   const recencyMap = useMemo<Record<string, number>>(() => {
+> 37 |     const now = Date.now();
+     |                 ^^^^^^^^^^ Cannot call impure function
+  38 |     const map: Record<string, number> = {};
+  39 |     for (const id of Object.keys(invocations)) {
+  40 |       map[id] = getRecencyScore(id, now);  react-hooks/purity
+  43:5   warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/exhaustive-deps')
+
+/home/runner/work/bim-ai/bim-ai/packages/web/src/collab/MarkupCanvas.tsx
+Warning:   42:11  warning  'dx' is assigned a value but never used. Allowed unused vars must match /^_/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                @typescript-eslint/no-unused-vars
+Warning:   43:11  warning  'dy' is assigned a value but never used. Allowed unused vars must match /^_/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                @typescript-eslint/no-unused-vars
+  44:25  error    Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/home/runner/work/bim-ai/bim-ai/packages/web/src/collab/MarkupCanvas.tsx:44:25
+  42 |     const dx = shape.toMm.xMm - shape.fromMm.xMm;
+  43 |     const dy = shape.toMm.yMm - shape.fromMm.yMm;
+> 44 |     const id = `arrow-${Math.random().toString(36).slice(2)}`;
+     |                         ^^^^^^^^^^^^^ Cannot call impure function
+  45 |     return (
+  46 |       <>
+  47 |         <defs>  react-hooks/purity
+
+/home/runner/work/bim-ai/bim-ai/packages/web/src/collab/ShareModal.tsx
+Error:   192:36  error  Hex literal "#fff" found in chrome TSX. Use a design token (--color-*, --disc-*, --draft-*, etc.) instead. See spec/workpackage-tracker-v3.md §3  bim-ai/no-hex-in-chrome
+Error:   290:24  error  Hex literal "#fff" found in chrome TSX. Use a design token (--color-*, --disc-*, --draft-*, etc.) instead. See spec/workpackage-tracker-v3.md §3  bim-ai/no-hex-in-chrome
+Error:   412:28  error  Hex literal "#fff" found in chrome TSX. Use a design token (--color-*, --disc-*, --draft-*, etc.) instead. See spec/workpackage-tracker-v3.md §3  bim-ai/no-hex-in-chrome
+
+/home/runner/work/bim-ai/bim-ai/packages/web/src/families/geometryFns/doorGeometry.ts
+Warning:   125:11  warning  'frameMat' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/runner/work/bim-ai/bim-ai/packages/web/src/plan/ImageTraceDropZone.tsx
+Warning:   109:3  warning  The 'startPolling' function makes the dependencies of useCallback Hook (at line 106) change on every render. Move it inside the useCallback callback. Alternatively, wrap the definition of 'startPolling' in its own useCallback() Hook  react-hooks/exhaustive-deps
+
+/home/runner/work/bim-ai/bim-ai/packages/web/src/plan/PlanCanvas.tsx
+Warning:   1241:6  warning  React Hook useEffect has a missing dependency: 'activeLevelResolvedId'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+Warning:   2841:6  warning  React Hook useEffect has a missing dependency: 'activePlanViewId'. Either include it or remove the dependency array       react-hooks/exhaustive-deps
+
+/home/runner/work/bim-ai/bim-ai/packages/web/src/plan/SheetCanvas.tsx
+Warning:   6:7  warning  'A1_W_MM' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+Warning:   7:7  warning  'A1_H_MM' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/runner/work/bim-ai/bim-ai/packages/web/src/plan/SketchCanvas.tsx
+Warning:   183:9  warning  The 'issues' logical expression could make the dependencies of useMemo Hook (at line 369) change on every render. To fix this, wrap the initialization of 'issues' in its own useMemo() Hook  react-hooks/exhaustive-deps
+
+/home/runner/work/bim-ai/bim-ai/packages/web/src/workspace/ProjectBrowser.tsx
+Warning:   4:39  warning  'ViewTemplate' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/runner/work/bim-ai/bim-ai/packages/web/src/workspace/Workspace.tsx
+Warning:   180:10  warning  'recentCommandIds' is assigned a value but never used. Allowed unused vars must match /^_/u   @typescript-eslint/no-unused-vars
+Warning:   724:9   warning  'paletteCandidates' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+Warning:   729:9   warning  'handlePalettePick' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+✖ 19 problems (5 errors, 14 warnings)
+  0 errors and 1 warning potentially fixable with the `--fix` option.
+
+ ELIFECYCLE  Command failed with exit code 1.
+ ELIFECYCLE  Command failed with exit code 1.
+Error: Process completed with exit code 1.
+can you please look to fix and commit and push and merge with main?
