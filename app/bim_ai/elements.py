@@ -246,6 +246,11 @@ class WallElem(BaseModel):
     ifc_classification_code: str | None = Field(default=None, alias="ifcClassificationCode")
     is_curtain_wall: bool = Field(default=False, alias="isCurtainWall")
     pinned: bool = Field(default=False)
+    phase_id: str | None = Field(
+        default=None,
+        alias="phaseId",
+        description="SKB-08 phase tag carried forward when materialised from a mass.",
+    )
     curtain_wall_v_count: int | None = Field(default=None, alias="curtainWallVCount")
     curtain_wall_h_count: int | None = Field(default=None, alias="curtainWallHCount")
     curtain_panel_overrides: dict[str, CurtainPanelOverride] | None = Field(
@@ -544,6 +549,11 @@ class FloorElem(BaseModel):
     # IFC-04: optional classification code emitted as IfcClassificationReference.
     ifc_classification_code: str | None = Field(default=None, alias="ifcClassificationCode")
     pinned: bool = Field(default=False)
+    phase_id: str | None = Field(
+        default=None,
+        alias="phaseId",
+        description="SKB-08 phase tag carried forward when materialised from a mass.",
+    )
 
 
 class RoofElem(BaseModel):
@@ -565,6 +575,11 @@ class RoofElem(BaseModel):
     # IFC-04: optional classification code emitted as IfcClassificationReference.
     ifc_classification_code: str | None = Field(default=None, alias="ifcClassificationCode")
     pinned: bool = Field(default=False)
+    phase_id: str | None = Field(
+        default=None,
+        alias="phaseId",
+        description="SKB-08 phase tag carried forward when materialised from a mass.",
+    )
 
 
 StairShape = Literal["straight", "l_shape", "u_shape", "spiral", "sketch"]

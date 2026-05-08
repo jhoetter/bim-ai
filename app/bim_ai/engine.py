@@ -74,6 +74,7 @@ from bim_ai.commands import (
     ExtendFloorInsulationCmd,
     InsertDoorOnWallCmd,
     InsertWindowOnWallCmd,
+    MaterializeMassToWallsCmd,
     MirrorElementsCmd,
     MoveBeamEndpointsCmd,
     MoveGridLineEndpointsCmd,
@@ -2458,6 +2459,96 @@ def apply_inplace(
                 material_key=cmd.material_key,
                 phase_id="massing",
             )
+
+        case MaterializeMassToWallsCmd():
+            mass = els.get(cmd.mass_id)
+            if not isinstance(mass, MassElem):
+                raise ValueError(
+                    f"materializeMassToWalls.massId '{cmd.mass_id}' "
+                    "must reference an existing mass element"
+                )
+            level = els.get(mass.level_id)
+            if not isinstance(level, LevelElem):
+                raise ValueError(
+                    "materializeMassToWalls: mass.levelId must reference an existing Level"
+                )
+            footprint = list(mass.footprint_mm)
+            n = len(footprint)
+            if n < 3:
+                raise ValueError(
+                    "materializeMassToWalls: mass.footprintMm requires ≥3 vertices"
+                )
+
+            emitted_ids: list[str] = []
+            for i in range(n):
+                a = footprint[i]
+                b = footprint[(i + 1) % n]
+                wid = f"{mass.id}-w{i}"
+                if wid in els:
+                    raise ValueError(
+                        f"materializeMassToWalls: target wall id '{wid}' already exists"
+                    )
+                els[wid] = WallElem(
+                    kind="wall",
+                    id=wid,
+                    name=f"{mass.name} wall {i}",
+                    level_id=mass.level_id,
+                    start=a,
+                    end=b,
+                    height_mm=mass.height_mm,
+                    material_key=mass.material_key,
+                    phase_id="skeleton",
+                )
+                emitted_ids.append(wid)
+
+            fid = f"{mass.id}-f"
+            if fid in els:
+                raise ValueError(
+                    f"materializeMassToWalls: target floor id '{fid}' already exists"
+                )
+            els[fid] = FloorElem(
+                kind="floor",
+                id=fid,
+                name=f"{mass.name} floor",
+                level_id=mass.level_id,
+                boundary_mm=footprint,
+                phase_id="skeleton",
+            )
+            emitted_ids.append(fid)
+
+            rid = f"{mass.id}-r"
+            if rid in els:
+                raise ValueError(
+                    f"materializeMassToWalls: target roof id '{rid}' already exists"
+                )
+            els[rid] = RoofElem(
+                kind="roof",
+                id=rid,
+                name=f"{mass.name} roof",
+                reference_level_id=mass.level_id,
+                footprint_mm=footprint,
+                slope_deg=0.0,
+                roof_geometry_mode="flat",
+                eave_height_left_mm=mass.height_mm,
+                eave_height_right_mm=mass.height_mm,
+                material_key=mass.material_key,
+                phase_id="skeleton",
+            )
+            emitted_ids.append(rid)
+
+            dev_id = new_id()
+            els[dev_id] = AgentDeviationElem(
+                kind="agent_deviation",
+                id=dev_id,
+                statement=(
+                    f"Mass {mass.id} materialised to {n} wall(s), 1 floor, 1 roof "
+                    f"(phase 'massing' → 'skeleton')."
+                ),
+                severity="warning",
+                related_element_ids=[mass.id, *emitted_ids],
+            )
+
+            del els[mass.id]
 
         case CreateVoidCutCmd():
             vid = cmd.id or new_id()
