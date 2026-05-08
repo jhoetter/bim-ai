@@ -65,7 +65,7 @@ export function buildOneFamilyHomeCommands() {
         { xMm: 0, yMm: D },
       ],
       heightMm: UPPER_WALL_H,
-      materialKey: 'render_white',
+      materialKey: 'white_render',
     },
     {
       type: 'createMass',
@@ -270,6 +270,176 @@ export function buildOneFamilyHomeCommands() {
       eaveHeightLeftMm: UPPER_WALL_H,
       eaveHeightRightMm: UPPER_WALL_H,
       overhangMm: 0,
+    },
+
+    // === PHASE 3: ENVELOPE ===
+    // Promote the placeholder flat upper-volume roof to the dramatic
+    // asymmetric_gable per brief: ridge 1800mm east of UF center, west
+    // eave 1200mm above UF level, east eave 4500mm above UF level,
+    // slope 45° (ridge lands 5500mm above UF = z=8500 absolute, well
+    // above the east eave at z=7500 — avoids the seed-fidelity flat-
+    // roof failure where ridge sat below the east eave).
+    //
+    // The engine's updateElementProperty for roofs only supports a
+    // narrow key subset (roofTypeId | roofGeometryMode | name) and
+    // roofGeometryMode is restricted to mass_box | gable_pitched_rectangle,
+    // so we delete + recreate rather than mutate in place.
+    { type: 'deleteElement', elementId: 'hf-roof-main' },
+    {
+      type: 'createRoof',
+      id: 'hf-roof-main',
+      name: 'Upper-volume asymmetric gable',
+      referenceLevelId: 'hf-lvl-upper',
+      footprintMm: [
+        { xMm: 0, yMm: 0 },
+        { xMm: UF_W, yMm: 0 },
+        { xMm: UF_W, yMm: D },
+        { xMm: 0, yMm: D },
+      ],
+      roofGeometryMode: 'asymmetric_gable',
+      ridgeOffsetTransverseMm: 1800,
+      eaveHeightLeftMm: 1200,
+      eaveHeightRightMm: 4500,
+      slopeDeg: 45,
+      overhangMm: 0,
+      materialKey: 'metal_standing_seam_dark_grey',
+    },
+
+    // Bump UF wall heights so the south + north gable-end walls cover
+    // the ridge peak (5500 mm above UF level). With heightMm=4500 the
+    // walls would have a 1000mm gap at the peak; 6000 leaves margin.
+    {
+      type: 'updateElementProperty',
+      elementId: 'hf-w-uf-s',
+      key: 'heightMm',
+      value: 6000,
+    },
+    {
+      type: 'updateElementProperty',
+      elementId: 'hf-w-uf-n',
+      key: 'heightMm',
+      value: 6000,
+    },
+    {
+      type: 'updateElementProperty',
+      elementId: 'hf-w-uf-e',
+      key: 'heightMm',
+      value: 6000,
+    },
+    {
+      type: 'updateElementProperty',
+      elementId: 'hf-w-uf-w',
+      key: 'heightMm',
+      value: 6000,
+    },
+
+    // Attach all 4 UF walls to the asymmetric gable so their tops
+    // crop along the slope (KRN-11 attachWallTopToRoof).
+    { type: 'attachWallTopToRoof', wallId: 'hf-w-uf-s', roofId: 'hf-roof-main' },
+    { type: 'attachWallTopToRoof', wallId: 'hf-w-uf-e', roofId: 'hf-roof-main' },
+    { type: 'attachWallTopToRoof', wallId: 'hf-w-uf-n', roofId: 'hf-roof-main' },
+    { type: 'attachWallTopToRoof', wallId: 'hf-w-uf-w', roofId: 'hf-roof-main' },
+
+    // Apply primary materials. The UF south wall takes `cladding_warm_wood`
+    // because Phase 4 adds a recess zone whose back wall renders with the
+    // wall's primary materialKey; the surrounding non-recessed end caps
+    // auto-render as white_render via the makeRecessedWallMesh capMat
+    // override (architectural pattern: white frame around a wood-clad
+    // recess).
+    {
+      type: 'updateElementProperty',
+      elementId: 'hf-w-gf-s',
+      key: 'materialKey',
+      value: 'cladding_beige_grey',
+    },
+    {
+      type: 'updateElementProperty',
+      elementId: 'hf-w-gf-e',
+      key: 'materialKey',
+      value: 'cladding_beige_grey',
+    },
+    {
+      type: 'updateElementProperty',
+      elementId: 'hf-w-gf-n',
+      key: 'materialKey',
+      value: 'cladding_beige_grey',
+    },
+    {
+      type: 'updateElementProperty',
+      elementId: 'hf-w-gf-w',
+      key: 'materialKey',
+      value: 'cladding_beige_grey',
+    },
+    {
+      type: 'updateElementProperty',
+      elementId: 'hf-w-uf-s',
+      key: 'materialKey',
+      value: 'cladding_warm_wood',
+    },
+    {
+      type: 'updateElementProperty',
+      elementId: 'hf-w-uf-e',
+      key: 'materialKey',
+      value: 'white_render',
+    },
+    {
+      type: 'updateElementProperty',
+      elementId: 'hf-w-uf-n',
+      key: 'materialKey',
+      value: 'white_render',
+    },
+    {
+      type: 'updateElementProperty',
+      elementId: 'hf-w-uf-w',
+      key: 'materialKey',
+      value: 'white_render',
+    },
+    {
+      type: 'updateElementProperty',
+      elementId: 'hf-w-pa-s',
+      key: 'materialKey',
+      value: 'cladding_beige_grey',
+    },
+    {
+      type: 'updateElementProperty',
+      elementId: 'hf-w-pa-e',
+      key: 'materialKey',
+      value: 'cladding_beige_grey',
+    },
+    {
+      type: 'updateElementProperty',
+      elementId: 'hf-w-pa-n',
+      key: 'materialKey',
+      value: 'cladding_beige_grey',
+    },
+
+    // Picture-frame outline (KRN-15 sweep) along the south-face gable
+    // pentagon. Path is 5 vertices + closure (CW from south view):
+    //   SW → SE → E-eave → ridge → W-eave → SW.
+    // Profile is 100×200 mm centered (uMm: ±50, vMm: ±100): u-axis is
+    // proud direction (cross of tangent + world-up at start), v-axis
+    // is perpendicular within the facade plane.
+    {
+      type: 'createSweep',
+      id: 'hf-sw-frame',
+      name: 'Picture-frame outline',
+      levelId: 'hf-lvl-ground',
+      pathMm: [
+        { xMm: 0, yMm: 0, zMm: 3000 },
+        { xMm: 5000, yMm: 0, zMm: 3000 },
+        { xMm: 5000, yMm: 0, zMm: 7500 },
+        { xMm: 4300, yMm: 0, zMm: 8500 },
+        { xMm: 0, yMm: 0, zMm: 4200 },
+        { xMm: 0, yMm: 0, zMm: 3000 },
+      ],
+      profileMm: [
+        { uMm: -50, vMm: -100 },
+        { uMm: 50, vMm: -100 },
+        { uMm: 50, vMm: 100 },
+        { uMm: -50, vMm: 100 },
+      ],
+      profilePlane: 'work_plane',
+      materialKey: 'white_render',
     },
   ];
 }
