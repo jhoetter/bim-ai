@@ -4,20 +4,28 @@
   "strategy": "manual-commit",
   "branch": "feat/v3-job-v3-01-jobs-panel",
   "checkpoints_count": 1,
-  "files_touched": null,
+  "files_touched": [
+    "app/tests/api/test_apply_bundle_route.py"
+  ],
   "sessions": [
     {
       "metadata": "/83/089ff55f91/0/metadata.json",
       "transcript": "/83/089ff55f91/0/full.jsonl",
       "content_hash": "/83/089ff55f91/0/content_hash.txt",
       "prompt": "/83/089ff55f91/0/prompt.txt"
+    },
+    {
+      "metadata": "/83/089ff55f91/1/metadata.json",
+      "transcript": "/83/089ff55f91/1/full.jsonl",
+      "content_hash": "/83/089ff55f91/1/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
-    "input_tokens": 248,
-    "cache_creation_tokens": 140344,
-    "cache_read_tokens": 13288401,
-    "output_tokens": 63209,
-    "api_call_count": 152
+    "input_tokens": 249,
+    "cache_creation_tokens": 140747,
+    "cache_read_tokens": 13375628,
+    "output_tokens": 63561,
+    "api_call_count": 153
   }
 }
