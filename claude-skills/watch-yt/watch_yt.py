@@ -100,9 +100,26 @@ def _seconds_to_ts(secs: float) -> str:
 def _parse_json_entries(raw: str) -> list[dict]:
     raw = re.sub(r"^```[^\n]*\n?", "", raw.strip())
     raw = re.sub(r"\n?```$",       "", raw.strip())
-    return json.loads(raw)
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        # Regex fallback: salvage entries even when surrounding array is malformed.
+        matches = re.findall(
+            r'\{\s*"ts"\s*:\s*"([^"]+)"\s*,\s*"desc"\s*:\s*"((?:[^"\\]|\\.)*)"\s*\}', raw
+        )
+        if matches:
+            return [{"ts": ts, "desc": desc} for ts, desc in matches]
+        raise
 
 # ── yt-dlp helpers ────────────────────────────────────────────────────────────
+
+def _clean_url(youtube_url: str) -> str:
+    """Strip playlist/index params — keep only the bare video URL."""
+    import urllib.parse as _up
+    p  = _up.urlparse(youtube_url)
+    qs = {k: v for k, v in _up.parse_qs(p.query).items() if k == "v"}
+    return _up.urlunparse(p._replace(query=_up.urlencode(qs, doseq=True)))
+
 
 def _get_duration(youtube_url: str) -> float:
     result = subprocess.run(
@@ -203,14 +220,18 @@ def _gemini_file(file_path: Path, api_key: str, model: str, prompt: str) -> str:
 
 
 def _parse_with_retry(fetch_fn, label: str = "") -> list[dict]:
-    for attempt in range(2):
+    for attempt in range(3):
         if attempt:
-            print(f"  JSON parse failed{' for ' + label if label else ''}, retrying …", file=sys.stderr)
+            print(
+                f"  JSON parse failed{' for ' + label if label else ''} "
+                f"(attempt {attempt+1}/3), retrying …",
+                file=sys.stderr,
+            )
         raw = fetch_fn()
         try:
             return _parse_json_entries(raw)
         except json.JSONDecodeError:
-            if attempt == 1:
+            if attempt == 2:
                 raise
 
 # ── chunk caching ─────────────────────────────────────────────────────────────
@@ -432,10 +453,11 @@ def main() -> None:
         print("ERROR: GEMINI_API_KEY not set", file=sys.stderr)
         sys.exit(1)
 
+    url = _clean_url(args.url)
     if args.screenshots:
-        result = watch_with_screenshots(args.url, api_key, Path(args.screenshots), model=args.model)
+        result = watch_with_screenshots(url, api_key, Path(args.screenshots), model=args.model)
     else:
-        result = watch(args.url, api_key, model=args.model)
+        result = watch(url, api_key, model=args.model)
 
     print(result)
 
