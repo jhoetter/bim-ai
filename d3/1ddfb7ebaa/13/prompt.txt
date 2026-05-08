@@ -1,0 +1,1 @@
+i am not happy with the seeding we currently have; can you completely rebuild from scratch using the @claude-skills/sketch-to-bim/ our seed house to look like in @spec/target-house-seed.md ? please take your time and ensure you get it done correctly
