@@ -1,0 +1,37 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "56b9b4bcc54e",
+  "session_id": "f18f1fa8-bb9e-451b-a564-871974ae945a",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T18:36:05.304897Z",
+  "branch": "feat/v3-mrk-v3-02-markups",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "app/bim_ai/elements.py",
+    "app/bim_ai/commands.py"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "2dcaec58552f",
+  "checkpoint_transcript_start": 402,
+  "transcript_lines_at_start": 402,
+  "token_usage": {
+    "input_tokens": 3,
+    "cache_creation_tokens": 2418,
+    "cache_read_tokens": 462130,
+    "output_tokens": 944,
+    "api_call_count": 3
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-08T18:36:05.290434Z",
+    "agent_lines": 335,
+    "agent_removed": 3,
+    "human_added": 859,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 1194,
+    "total_lines_changed": 1226,
+    "agent_percentage": 27.569331158238175,
+    "metric_version": 2
+  }
+}
