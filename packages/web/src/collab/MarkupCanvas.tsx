@@ -39,9 +39,7 @@ function MarkupShapeEl({ shape, resolved }: { shape: MarkupShape; resolved: bool
   }
 
   if (shape.kind === 'arrow') {
-    const dx = shape.toMm.xMm - shape.fromMm.xMm;
-    const dy = shape.toMm.yMm - shape.fromMm.yMm;
-    const id = `arrow-${Math.random().toString(36).slice(2)}`;
+    const id = `arrow-${shape.fromMm.xMm}-${shape.fromMm.yMm}-${shape.toMm.xMm}-${shape.toMm.yMm}`;
     return (
       <>
         <defs>
