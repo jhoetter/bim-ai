@@ -15,11 +15,20 @@ every commit boundary.
 
 from __future__ import annotations
 
+import json
 import logging
-from collections import defaultdict
 from typing import Any
 
 logger = logging.getLogger(__name__)
+
+
+async def _send_error(conn: Any, code: str) -> None:
+    """Send a JSON error frame over the WebSocket as bytes."""
+    try:
+        payload = json.dumps({"type": "error", "code": code}).encode()
+        await conn.send_bytes(payload)
+    except Exception:
+        pass
 
 
 class CollabRoom:
@@ -29,9 +38,25 @@ class CollabRoom:
         self.model_id = model_id
         self.connections: set[Any] = set()
         self.awareness_states: dict[str, dict] = {}
+        self._connection_roles: dict[Any, str] = {}
 
-    async def broadcast(self, message: bytes, exclude: Any = None) -> None:
-        """Broadcast a yjs sync message to all connections except sender."""
+    async def broadcast(
+        self,
+        message: bytes,
+        exclude: Any = None,
+        origin_role: str | None = None,
+        subspace: str | None = None,
+    ) -> None:
+        """Broadcast a yjs sync message to all connections except sender.
+
+        COL-V3-02: viewer and public-link-viewer origins are blocked from
+        mutating the kernel subspace.
+        """
+        if origin_role in ("viewer", "public-link-viewer") and subspace == "kernel":
+            if exclude is not None:
+                await _send_error(exclude, "viewer_mode_kernel_edit_rejected")
+            return
+
         dead: set[Any] = set()
         for conn in self.connections:
             if conn is exclude:
@@ -42,11 +67,16 @@ class CollabRoom:
                 dead.add(conn)
         self.connections -= dead
 
-    def join(self, conn: Any) -> None:
+    def join(self, conn: Any, role: str = "admin") -> None:
         self.connections.add(conn)
+        self._connection_roles[conn] = role
 
     def leave(self, conn: Any) -> None:
         self.connections.discard(conn)
+        self._connection_roles.pop(conn, None)
+
+    def get_role(self, conn: Any) -> str:
+        return self._connection_roles.get(conn, "admin")
 
 
 class CollabOrchestrator:

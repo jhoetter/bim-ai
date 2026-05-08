@@ -1597,6 +1597,23 @@ export type {
 export { PARTICIPANT_COLOR_TOKENS, participantColorToken } from './collab';
 
 // ---------------------------------------------------------------------------
+// COL-V3-02 — permission tiers
+// ---------------------------------------------------------------------------
+
+export type Role = 'admin' | 'editor' | 'viewer' | 'public-link-viewer';
+
+export type RoleAssignment = {
+  id: string;
+  modelId: string;
+  subjectKind: 'user' | 'public-link';
+  subjectId: string;
+  role: Role;
+  grantedBy: string;
+  grantedAt: number;
+  expiresAt?: number;
+};
+
+// ---------------------------------------------------------------------------
 // TKN-V3-01 — tokenised kernel representation
 // ---------------------------------------------------------------------------
 

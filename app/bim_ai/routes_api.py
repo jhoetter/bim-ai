@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import logging
+import secrets
+import time
 from datetime import UTC, datetime
 from typing import Annotated, Any
 from uuid import UUID, uuid4
@@ -99,7 +101,8 @@ from bim_ai.routes_sketch import sketch_router
 from bim_ai.schedule_csv import schedule_payload_to_csv, schedule_payload_with_column_subset
 from bim_ai.schedule_derivation import derive_schedule_table, list_schedule_ids
 from bim_ai.sheet_preview_svg import SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2
-from bim_ai.tables import ModelRecord, ProjectRecord, UndoStackRecord
+from bim_ai.permissions import authorize_command
+from bim_ai.tables import ModelRecord, ProjectRecord, RoleAssignmentRecord, UndoStackRecord
 from bim_ai.template_loader import (
     list_templates,
     load_template_snapshot,
@@ -115,6 +118,46 @@ api_router.include_router(exports_router)
 api_router.include_router(commands_router)
 api_router.include_router(activity_router)
 api_router.include_router(sketch_router)
+
+
+# ---------------------------------------------------------------------------
+# COL-V3-02 — permission helpers
+# ---------------------------------------------------------------------------
+
+
+async def resolve_caller_role(
+    session: AsyncSession, model_id: str | UUID, user_id: str
+) -> str:
+    """Return the caller's role for model_id. Defaults to 'admin' when no record exists."""
+    res = await session.execute(
+        select(RoleAssignmentRecord).where(
+            RoleAssignmentRecord.model_id == str(model_id),
+            RoleAssignmentRecord.subject_kind == "user",
+            RoleAssignmentRecord.subject_id == user_id,
+        )
+    )
+    record = res.scalars().first()
+    return record.role if record is not None else "admin"
+
+
+async def _resolve_token_role(
+    session: AsyncSession, model_id_str: str, token: str
+) -> str:
+    """Resolve a public-link token to a role; raises 403 if invalid or expired."""
+    now_ms = int(time.time() * 1000)
+    res = await session.execute(
+        select(RoleAssignmentRecord).where(
+            RoleAssignmentRecord.model_id == model_id_str,
+            RoleAssignmentRecord.subject_kind == "public-link",
+            RoleAssignmentRecord.subject_id == token,
+        )
+    )
+    record = res.scalars().first()
+    if record is None:
+        raise HTTPException(status_code=403, detail="Invalid public-link token")
+    if record.expires_at is not None and record.expires_at < now_ms:
+        raise HTTPException(status_code=403, detail="Public-link token has expired")
+    return record.role
 
 
 # ---------------------------------------------------------------------------
@@ -1199,12 +1242,14 @@ async def apply_bundle_route(
     body: CommandBundleRequest,
     session: AsyncSession = Depends(get_session),
     hub: Hub = Depends(get_hub),
+    token: str | None = Query(default=None),
 ) -> dict[str, Any]:
     """CMD-V3-01: submit a CommandBundle; returns BundleResult.
 
     mode='dry_run' (default) — validates without mutating.
     mode='commit'            — commits if no blocking advisories fire.
     HTTP 409 on revision_conflict or assumption_log_required / malformed.
+    HTTP 403 when the caller's role forbids the command verb (COL-V3-02).
     """
     from datetime import UTC, datetime
 
@@ -1215,6 +1260,19 @@ async def apply_bundle_route(
     row = await load_model_row(session, model_id)
     if row is None:
         raise HTTPException(status_code=404, detail="Model not found")
+
+    # COL-V3-02: resolve caller role and gate commands.
+    if token:
+        caller_role = await _resolve_token_role(session, str(model_id), token)
+    else:
+        caller_role = await resolve_caller_role(session, model_id, body.user_id or "local-dev")
+    for cmd in body.bundle.commands:
+        cmd_type = cmd.get("type", "") if isinstance(cmd, dict) else getattr(cmd, "type", "")
+        if not authorize_command(caller_role, str(cmd_type)):  # type: ignore[arg-type]
+            raise HTTPException(
+                status_code=403,
+                detail=f"Role '{caller_role}' is not permitted to execute '{cmd_type}'",
+            )
 
     doc = Document.model_validate(row.document)
     mode = body.mode if body.mode in ("dry_run", "commit") else "dry_run"
@@ -1289,6 +1347,142 @@ async def apply_bundle_route(
 
     return result.model_dump(by_alias=True)
 
+
+# ---------------------------------------------------------------------------
+# COL-V3-02 — role management + public-link share routes
+# ---------------------------------------------------------------------------
+
+
+class GrantRoleBody(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    subject_kind: str = Field(alias="subjectKind")
+    subject_id: str = Field(alias="subjectId")
+    role: str
+    expires_at: int | None = Field(default=None, alias="expiresAt")
+
+
+class CreatePublicLinkBody(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    expires_at: int | None = Field(default=None, alias="expiresAt")
+
+
+@api_router.get("/models/{model_id}/roles")
+async def list_roles(
+    model_id: UUID,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """COL-V3-02: list all role assignments for a model."""
+    res = await session.execute(
+        select(RoleAssignmentRecord).where(RoleAssignmentRecord.model_id == str(model_id))
+    )
+    rows = res.scalars().all()
+    return {
+        "roles": [
+            {
+                "id": r.id,
+                "modelId": r.model_id,
+                "subjectKind": r.subject_kind,
+                "subjectId": r.subject_id,
+                "role": r.role,
+                "grantedBy": r.granted_by,
+                "grantedAt": r.granted_at,
+                "expiresAt": r.expires_at,
+            }
+            for r in rows
+        ]
+    }
+
+
+@api_router.post("/models/{model_id}/roles")
+async def grant_role(
+    model_id: UUID,
+    body: GrantRoleBody,
+    session: AsyncSession = Depends(get_session),
+    user_id: str = Query(default="local-dev", alias="userId"),
+) -> dict[str, Any]:
+    """COL-V3-02: grant a role to a subject. Admin only."""
+    caller_role = await resolve_caller_role(session, model_id, user_id)
+    if caller_role != "admin":
+        raise HTTPException(status_code=403, detail="Only admins can grant roles")
+    now_ms = int(time.time() * 1000)
+    assignment_id = secrets.token_urlsafe(16)
+    record = RoleAssignmentRecord(
+        id=assignment_id,
+        model_id=str(model_id),
+        subject_kind=body.subject_kind,
+        subject_id=body.subject_id,
+        role=body.role,
+        granted_by=user_id,
+        granted_at=now_ms,
+        expires_at=body.expires_at,
+    )
+    session.add(record)
+    await session.commit()
+    return {
+        "id": assignment_id,
+        "modelId": str(model_id),
+        "subjectKind": body.subject_kind,
+        "subjectId": body.subject_id,
+        "role": body.role,
+        "grantedBy": user_id,
+        "grantedAt": now_ms,
+        "expiresAt": body.expires_at,
+    }
+
+
+@api_router.delete("/models/{model_id}/roles/{assignment_id}")
+async def revoke_role(
+    model_id: UUID,
+    assignment_id: str,
+    session: AsyncSession = Depends(get_session),
+    user_id: str = Query(default="local-dev", alias="userId"),
+) -> dict[str, Any]:
+    """COL-V3-02: revoke a role assignment. Admin only."""
+    caller_role = await resolve_caller_role(session, model_id, user_id)
+    if caller_role != "admin":
+        raise HTTPException(status_code=403, detail="Only admins can revoke roles")
+    res = await session.execute(
+        select(RoleAssignmentRecord).where(
+            RoleAssignmentRecord.id == assignment_id,
+            RoleAssignmentRecord.model_id == str(model_id),
+        )
+    )
+    record = res.scalars().first()
+    if record is None:
+        raise HTTPException(status_code=404, detail="Role assignment not found")
+    await session.delete(record)
+    await session.commit()
+    return {"deleted": assignment_id}
+
+
+@api_router.post("/models/{model_id}/public-link")
+async def create_public_link(
+    model_id: UUID,
+    body: CreatePublicLinkBody,
+    session: AsyncSession = Depends(get_session),
+    user_id: str = Query(default="local-dev", alias="userId"),
+) -> dict[str, Any]:
+    """COL-V3-02: create a public-link token for viewer access. Admin only."""
+    caller_role = await resolve_caller_role(session, model_id, user_id)
+    if caller_role != "admin":
+        raise HTTPException(status_code=403, detail="Only admins can create public links")
+    token = secrets.token_urlsafe(32)
+    now_ms = int(time.time() * 1000)
+    assignment_id = secrets.token_urlsafe(16)
+    record = RoleAssignmentRecord(
+        id=assignment_id,
+        model_id=str(model_id),
+        subject_kind="public-link",
+        subject_id=token,
+        role="public-link-viewer",
+        granted_by=user_id,
+        granted_at=now_ms,
+        expires_at=body.expires_at,
+    )
+    session.add(record)
+    await session.commit()
+    url = f"/api/models/{model_id}/snapshot?token={token}"
+    return {"token": token, "url": url, "assignmentId": assignment_id}
 
 
 # ---------------------------------------------------------------------------
@@ -1500,21 +1694,40 @@ async def websocket_loop(
 async def collab_ws(
     websocket: WebSocket,
     model_id: UUID,
+    subspace: str = Query(default="kernel"),
+    token: str | None = Query(default=None),
+    user_id: str = Query(default="local-dev", alias="userId"),
 ) -> None:
-    """COL-V3-01: yjs Y-WebSocket endpoint for real-time collab on a model.
+    """COL-V3-01/COL-V3-02: yjs Y-WebSocket endpoint for real-time collab on a model.
 
     Relays raw yjs sync + awareness bytes between browser clients multiplexed
     by modelId. Does not interpret CRDT contents — yjs algorithms handle merge
     deterministically on each client.
+
+    COL-V3-02: viewer and public-link-viewer origins are blocked from mutating
+    the kernel subspace.
     """
     orchestrator = get_orchestrator()
     await websocket.accept()
+
+    async with SessionMaker() as session:
+        if token:
+            try:
+                caller_role = await _resolve_token_role(session, str(model_id), token)
+            except HTTPException:
+                await websocket.close(code=4403)
+                return
+        else:
+            caller_role = await resolve_caller_role(session, model_id, user_id)
+
     room = orchestrator.get_room(str(model_id))
-    room.join(websocket)
+    room.join(websocket, role=caller_role)
     try:
         while True:
             data = await websocket.receive_bytes()
-            await room.broadcast(data, exclude=websocket)
+            await room.broadcast(
+                data, exclude=websocket, origin_role=caller_role, subspace=subspace
+            )
     except WebSocketDisconnect:
         room.leave(websocket)
         orchestrator.remove_empty_rooms()

@@ -106,3 +106,18 @@ class ActivityRowRecord(Base):
     ts: Mapped[int] = mapped_column(BigInteger, nullable=False, index=True)
     parent_snapshot_id: Mapped[str | None] = mapped_column(String, nullable=True)
     result_snapshot_id: Mapped[str | None] = mapped_column(String, nullable=True)
+
+
+class RoleAssignmentRecord(Base):
+    __tablename__ = "role_assignments"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    model_id: Mapped[str] = mapped_column(
+        String, ForeignKey("bim_models.id", ondelete="CASCADE"), index=True
+    )
+    subject_kind: Mapped[str] = mapped_column(String, nullable=False)
+    subject_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    role: Mapped[str] = mapped_column(String, nullable=False)
+    granted_by: Mapped[str] = mapped_column(String, nullable=False)
+    granted_at: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    expires_at: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
