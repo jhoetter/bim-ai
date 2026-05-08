@@ -1,0 +1,39 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "7626b435ad48",
+  "session_id": "f18f1fa8-bb9e-451b-a564-871974ae945a",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T18:48:05.499453Z",
+  "branch": "feat/v3-col-v3-03-public-link",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "app/bim_ai/milestones.py",
+    "app/tests/api/test_milestones_route.py",
+    "packages/web/src/collab/MilestoneDialog.tsx",
+    "packages/web/src/collab/milestoneStore.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "29309ce2451f",
+  "checkpoint_transcript_start": 543,
+  "transcript_lines_at_start": 543,
+  "token_usage": {
+    "input_tokens": 2,
+    "cache_creation_tokens": 1416,
+    "cache_read_tokens": 71624,
+    "output_tokens": 2661,
+    "api_call_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-08T18:48:05.482904Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 480,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 480,
+    "total_lines_changed": 480,
+    "agent_percentage": 0,
+    "metric_version": 2
+  }
+}
