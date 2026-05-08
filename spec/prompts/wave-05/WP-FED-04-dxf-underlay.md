@@ -108,9 +108,32 @@ cd packages/web && pnpm exec vitest run src/plan/dxfUnderlay.test.ts
 
 Flip FED-04 row from `partial` → `done`. Replace deferred-scope text with: "Revit `.rvt` import remains out of scope (OpenBIM stance — Forge/Speckle path); long-import progress polish is a separate UX WP."
 
-## Dependency for FED-03
+## Phase 2 — Chain into FED-03 (canvas drift badge)
 
-After this lands on main, FED-03's canvas-badge agent rebases onto the new main; the badge layer renders **above** the DXF underlay (which is below authored geometry).
+Once Phase 1 (everything above) is complete and `feat/wave-05-fed-04-dxf-underlay` is pushed, **continue working** in the same agent session and do FED-03 next. Reasoning: FED-03 adds a canvas overlay layer in the same `PlanCanvas.tsx` region this WP just touched. Doing it in the same agent — branched off the FED-04 tip rather than off main — avoids the trivial append conflict and lets the user kick off all five wave-5 prompts in parallel.
+
+Steps:
+
+1. **Branch off the FED-04 tip you just pushed** (NOT off `main`):
+   ```bash
+   git checkout -b feat/wave-05-fed-03-canvas-badge feat/wave-05-fed-04-dxf-underlay
+   ```
+2. Open `spec/prompts/wave-05/WP-FED-03-canvas-badge.md` and execute it end to end. Treat that file's Done rule as authoritative for Phase 2; ignore its "Sequencing" section header — the chaining handles ordering.
+3. Run that prompt's Validation block; all checks must pass.
+4. Update `spec/workpackage-master-tracker.md` to flip the FED-03 row from `partial` → `done` (separately from the FED-04 flip you already committed).
+5. Commit on the FED-03 branch with a `feat(fed): FED-03 closeout — ...` message and `Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>`.
+6. `git push origin feat/wave-05-fed-03-canvas-badge`.
+
+### Final report (covers both phases)
+
+When you finish, report **both** branches in one summary:
+
+- `feat/wave-05-fed-04-dxf-underlay` — what shipped, validation results, branch SHA.
+- `feat/wave-05-fed-03-canvas-badge` — what shipped, validation results, branch SHA.
+
+### Merge order for the user
+
+The user merges FED-04 first, then FED-03. The FED-03 branch is a descendant of FED-04, so its merge is a fast-forward (or trivial three-way merge) once FED-04 is on main.
 
 ## Non-goals
 

@@ -6,17 +6,25 @@ Flip the five remaining `partial` rows in `spec/workpackage-master-tracker.md` t
 
 ## Parallel execution analysis
 
-**Batch A (4 in parallel):** FED-04, KRN-07, KRN-14, IFC-04. Zero file overlap between them — FED-04 is plan-canvas + new Python parser, KRN-07 is stair element + sketch-session, KRN-14 is dormer + roof CSG, IFC-04 is purely `app/bim_ai/export_ifc.py` + IFC psets. They can fire simultaneously.
+**Fire all 4 prompts in parallel.** FED-03's canvas-badge work is chained inside the FED-04 agent's flow as a Phase 2 (it branches off FED-04's tip and pushes a separate `feat/wave-05-fed-03-canvas-badge` branch when done), so the user never manages a Batch B handoff.
 
-**Batch B (1 agent, after FED-04 lands):** FED-03 canvas badge. Touches `PlanCanvas.tsx` to add a small overlay-layer; FED-04 also adds an underlay layer in the same file. Sequential avoids a trivial append conflict.
-
-| Batch | WP | Branch | Effort |
+| Agent | Prompt to read | Branches it pushes | Effort |
 | --- | --- | --- | --- |
-| A | FED-04 | `feat/wave-05-fed-04-dxf-underlay` | M (DXF half only) |
-| A | KRN-07 | `feat/wave-05-krn-07-stairs-spiral-sketch` | M |
-| A | KRN-14 | `feat/wave-05-krn-14-dormer-completeness` | M |
-| A | IFC-04 | `feat/wave-05-ifc-04-broader-coverage` | M |
-| B | FED-03 | `feat/wave-05-fed-03-canvas-badge` | XS |
+| 1 | `WP-FED-04-dxf-underlay.md` | `feat/wave-05-fed-04-dxf-underlay` then `feat/wave-05-fed-03-canvas-badge` (chained) | M + XS |
+| 2 | `WP-KRN-07-stairs-spiral-sketch.md` | `feat/wave-05-krn-07-stairs-spiral-sketch` | M |
+| 3 | `WP-KRN-14-dormer-completeness.md` | `feat/wave-05-krn-14-dormer-completeness` | M |
+| 4 | `WP-IFC-04-broader-coverage.md` | `feat/wave-05-ifc-04-broader-coverage` | M |
+
+The four agent prompts touch disjoint surfaces:
+
+- FED-04 / FED-03 — plan canvas + new Python DXF parser + state badge
+- KRN-07 — stair element + sketch-session + stair mesh
+- KRN-14 — dormer element + dormer/roof CSG + advisor + plan symbology
+- IFC-04 — `app/bim_ai/export_ifc.py` only (pure backend)
+
+## Merge order
+
+When all branches are pushed, the user merges in any order **except** that `feat/wave-05-fed-03-canvas-badge` must merge **after** `feat/wave-05-fed-04-dxf-underlay` (FED-03 is a descendant of FED-04, so the merge after FED-04 lands is fast-forward / trivial).
 
 ## Done rule
 

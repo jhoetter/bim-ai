@@ -6,7 +6,9 @@
 
 ## Sequencing
 
-**Run after FED-04 has merged to main.** FED-04 adds a DXF underlay layer in `PlanCanvas.tsx`; this WP adds an overlay layer in the same file. Sequential avoids a trivial append-style conflict.
+**This prompt is executed as Phase 2 of the FED-04 agent**, not as a standalone agent. The FED-04 prompt's "Phase 2 — Chain into FED-03" section instructs that agent to branch off their pushed FED-04 tip and execute this file end to end. If you are reading this as a standalone kickoff, stop and run `WP-FED-04-dxf-underlay.md` instead — it will pick this up automatically.
+
+(The reason: FED-04 adds a DXF render layer in `PlanCanvas.tsx`; this WP adds an overlay layer in the same file. Doing them in the same agent on a child branch avoids a trivial append-style conflict.)
 
 ## Goal
 
