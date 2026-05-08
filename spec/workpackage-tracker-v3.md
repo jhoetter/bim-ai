@@ -58,9 +58,15 @@ Each bet bundles WPs across multiple themes. v3 ships when all four bets land. B
 **Themes:** Design Pillars + T4 canvas + cross-cutting.
 **One sentence:** The first time a customer's CI is overlaid on top, only the brand layer changes — the line weights, hatches, shadow language, motion, all stay ours, because that's what makes it feel like architecture.
 **Why this bet.** The user's emphasis was unambiguous — _"Software soll wirklich nach Architektur wirken."_ R-G's audit shows the system has 85 % of the structural ingredients already; v3's job is the 15 % token + canvas refinement + the ESLint discipline that prevents regression. R-D's anti-pattern catalog (A1–A10) is the negative reference.
-**WPs bundled.** Replace cobalt accent with warm ochre (R-G §2.2.1) → introduce discipline tints sage / taupe / slate-blue (R-G §2.2.2) → first-class drift token (R-G §2.2.3) → 2xs type step + tabular nums for dimensions (R-G §2.2.4) → ease-paper motion curve for commit/settle moments → codified `--radius-canvas: 0` rule (R-G §2.2.7) → 3-layer brand separation with brand-swap CI invariant test (R-G §2.3) → **plan canvas line-weight hierarchy at multiple plot scales** (R-G §2.4.2 — _the single biggest design-quality lever_) → 3D viewport sun + line + AO retuning (R-G §2.4.1) → ESLint rule banning hex literals in chrome (R-G §2.5 phase 3) → Designer's Bill of Rights + monthly essay program (R-B brand layer).
+**WPs bundled in three phases:**
+- **Phase 1 — Sprint 0 pre-flight (1 PR, ~1 week, lands BEFORE any other v3 WP).** `tokens-v3.css` (warm ochre accent, discipline tints, drift token, `--text-2xs`, `--ease-paper`, `--radius-canvas: 0`); `brand-layer.css` (Layer C); Vite alias `VITE_DESIGN_SYSTEM=v3`; ESLint `no-hex-in-chrome`; brand-swap CI invariant test (R-G §2.3). _This is the keystone — every subsequent v3 WP inherits the tokens._
+- **Phase 2 — per-folder migration (parallel with theme work).** Workspace, plan, viewport, families, tools — folder-by-folder PRs migrating v2-era hex literals to v3 tokens. Allowlist shrinks per PR.
+- **Phase 3 — canvas-rendering quality (T4 cousin).** Plan-canvas line-weight hierarchy at multiple plot scales (CAN-V3-01 — _the single biggest design-quality lever_); 3D viewport sun + line + AO retuning (CAN-V3-04); hatches scaling with paper-mm; dimension typography tabular-nums + `--text-2xs`. Bundled with VIE-V3-01 (T4 detail-level rendering completion) — they ship together.
+
+Plus cross-cutting: Designer's Bill of Rights + monthly essay program (R-B brand layer); chrome discipline tinting (LNS-V3-02 + CHR-V3-09).
+
 **Felt outcome.** Open a plan at 1:50, the cut walls are visibly heavier than projection lines, brick hatches are at 45° at the right paper-mm density, dimension labels are tabular-aligned at 10 px, the chrome accent is ochre not cobalt, the empty-state screen has a serif Söhne-class display headline that reads like a magazine.
-**Critical path estimate.** 6 calendar weeks — runs throughout v3 as a parallel track, not sequenced.
+**Critical path estimate.** Phase 1 ships in **week 1** (Sprint 0 pre-flight). Phases 2 + 3 run in parallel throughout v3 (~7 calendar weeks aggregated). **Sequencing matters:** Phase 1 must land first or every theme WP accumulates token debt; the front-loading is what makes B4 free for the rest of v3.
 
 ---
 
@@ -157,12 +163,12 @@ The bet is that **good chrome is invisible**. Where Revit asks "what dialog do I
 ├────────┬───────────────────────────────────────────────────┬──────────────┤
 │        │                                                   │              │
 │  LEFT  │              CENTER — CANVAS                      │   RIGHT      │
-│  RAIL  │   ┌───────┬───────┬───────┐                       │   RAIL       │
-│        │   │ Plan  │  3D   │ Sheet │   tabs · 1·2·3 keys   │  (Inspector, │
-│ Project│   └───────┴───────┴───────┘                       │   only on    │
-│ Browser│                                                   │   selection) │
-│  ≈240  │            (active view fills frame)              │     ≈300     │
-│  px    │                                                   │     px       │
+│  RAIL  │  ┌──────────────┬───────┬─────────┬─────────┬──┐  │   RAIL       │
+│        │  │Floor: Level 1│ {3D} ⊗│Section 1│Sheet A101│ +│  │  (Inspector, │
+│ Project│  └──────────────┴───────┴─────────┴─────────┴──┘  │   only on    │
+│ Browser│        view-tab strip · Ctrl+Tab · Cmd+W close    │   selection) │
+│  ≈240  │                                                   │     ≈300     │
+│  px    │            (active view fills frame)              │     px       │
 │        │                                                   │              │
 ├────────┴───────────────────────────────────────────────────┴──────────────┤
 │  STATUS BAR  (≈28 px, fixed, --radius-canvas:0)                            │
@@ -176,7 +182,36 @@ The bet is that **good chrome is invisible**. Where Revit asks "what dialog do I
   • Activity drawer (slide-in from right, top-bar entry)
 ```
 
-Six surfaces, each with one job. **No floating toolbox, no docked tab strip, no ribbon.** All four edges are square (`--radius-canvas: 0`, R-G §1.5) — sidebars are sidebars, not cards. The canvas is figure; everything else is ground.
+Six surfaces, each with one job. **No floating toolbox, no ribbon, no fixed Plan / 3D / Sheet trichotomy.** All four edges are square (`--radius-canvas: 0`, R-G §1.5) — sidebars are sidebars, not cards. The canvas is figure; everything else is ground.
+
+### View-tab strip — Revit-aligned
+
+The view-tab strip at the top of the canvas is **Revit-equivalent by design** (not a made-up trichotomy). Every view the user opens — from the Project Browser, from a Cmd+K command, from a sheet's view-tile, from a callout's parent — becomes a **tab** at the top of the canvas. **Tabs are not predetermined view _kinds_** like Plan / 3D / Sheet; they are _openings_ of any view kind the project supports.
+
+**Tab behaviour (mirrors Revit conventions):**
+- Tabs are **closeable** (× glyph on hover or `Cmd+W` / `Ctrl+W`); closing a tab does **not** delete the view — it only closes the tab. The view stays in the Project Browser; double-clicking the entry reopens it.
+- **Reorderable** by drag (Revit allows tab drag).
+- `Ctrl+Tab` cycles forward, `Ctrl+Shift+Tab` backward.
+- Active tab indicator: 2 px ochre underline (`--color-accent`).
+- Tab label format: `<KindGlyph> <ViewName>`. E.g. `▦ Floor Plan: Level 1`, `▣ Ceiling: Level 2`, `◇ {3D}`, `⌖ Section 1`, `⊟ Sheet A-101`, `▤ Schedule: Doors`. Glyphs match the Project Browser hierarchy.
+- Overflow → `+N` chip on the far right; click drops a list to switch tabs that scrolled off.
+- **No simultaneous side-by-side primary metaphor.** `Window → Tile` (Revit-style) is a secondary multi-window arrangement only — invoked deliberately, not the default canvas. **The default is one active view per workspace tab.**
+
+**View kinds the strip supports** (matches Revit's view taxonomy verbatim — see T4 + v2 carry-forwards):
+
+| Group | View kinds (each a possible tab) |
+| ----- | --------------------------------- |
+| **Plans** | Floor Plan · Ceiling Plan · Structural Plan · Site Plan · Area Plan |
+| **3D** | Default 3D ({3D}) · Camera (perspective) · Walkthrough animation _(vision)_ |
+| **Elevations** | Interior · Exterior · Building · Framing |
+| **Sections** | Longitudinal · Cross · Callout-bound |
+| **Detail / annotation** | Callout · Drafting View · Detail Callout · Cut-Profile Override (T1 KRN-V3-12) |
+| **Legend** | Legend View · Window Legend (T4 SHT-V3-01) |
+| **Schedule** | Schedule/Quantities · Material Takeoff · Graphical Column Schedule · Sheet List · Note Block · View List |
+| **Sheet** | Sheet (with tiled view-frames + titleblock) |
+| **v3-only additions** | Concept Board (T6 CON-V3-01) · Site Plan v3 (T7 LOT-V3-02 — toposolid + neighborhood massing variant of the Plans family) |
+
+Each kind has its own **header strip** below the tab — phase dropdown (T1 KRN-V3-01), design-option dropdown (T1 KRN-V3-04), detail-level toggle (T4 VIE-V3-01: Coarse / Medium / Fine), scale chip, view-template badge (T4 VIE-V3-02). Per-view chrome lives in the header; per-discipline chrome lives in the status bar (T8 lens). The split is deliberate.
 
 ### Workspace switcher (top-bar pattern)
 
@@ -3626,7 +3661,23 @@ Cross-theme edges only (within-theme deps live in each chapter's WP summary tabl
 
 WPs grouped by when they can start.
 
-#### Wave 0 — start today, all parallel (no v3-internal deps)
+#### Sprint 0 — design-system pre-flight (1 week, single PR)
+
+**Land BEFORE any chrome / new-component WPs to avoid retroactive token migration.** Sequencing rationale: every WP authored after Sprint 0 inherits the v3 tokens by default; without it, ~40 chrome + theme WPs would need post-hoc migration when B4 lands later. **B4 phase 2 (existing-component migration)** still runs in parallel with themes — that's unavoidable archaeology — but Sprint 0 prevents _new_ components from accumulating debt.
+
+**Single PR:**
+- `packages/design-tokens/src/tokens-v3.css` — full v3 palette (warm ochre accent, discipline tints, drift token, `--text-2xs`, `--ease-paper`, `--radius-canvas: 0` rule). Coexists with v1 tokens; nothing yet migrates.
+- `packages/design-tokens/src/brand-layer.css` — Layer C (`--brand-accent`, `--brand-accent-fg`, `--brand-typeface`, `--brand-logo-mark`).
+- `Vite alias VITE_DESIGN_SYSTEM=v3` — boots the workspace with v3 chrome; existing components render correctly because semantic token names (`--color-background`, `--color-accent`, …) are stable.
+- `eslint-plugin-bim-ai/no-hex-in-chrome` — fails any new `#rrggbb` literal in `packages/web/src/**/*.tsx` outside the documented allowlist (`viewport/materials.ts`, `families/wallTypeCatalog.ts` transitional).
+- `packages/web/src/design-systems/brandSwap.test.ts` — CI-invariant test asserting only Layer-C tokens change when `--brand-accent` is overridden (R-G §2.3).
+
+**Effort.** S — 4–5 days for one engineer.
+**Acceptance.** `pnpm dev VITE_DESIGN_SYSTEM=v3` boots; existing components render correctly; ESLint blocks any new hex literal added to chrome; brand-swap CI test passes.
+
+**Once Sprint 0 is green, Wave 0 dispatches** — every Wave-0 WP uses v3 tokens by default, no migration debt accumulates.
+
+#### Wave 0 — start after Sprint 0, all parallel (no v3-internal deps)
 
 **T1 (kernel):** KRN-V3-01 (phasing), KRN-V3-02 (stacked walls), KRN-V3-03 (multi-roof + fascia + soffit), KRN-V3-05 (stair-by-sketch), KRN-V3-06 (plan region), KRN-V3-09 (slanted/tapered walls), KRN-V3-12 (cut profile).
 **T2 (in-place UX):** EDT-V3-01 (constraint rules — _highest carry-forward priority from R-E_), EDT-V3-03 (Cmd/Ctrl+K command palette spec), EDT-V3-04 (single-letter shortcuts in tooltips), EDT-V3-05 (loop-mode mid-modifier), EDT-V3-06 (helper dimensions on selection).
