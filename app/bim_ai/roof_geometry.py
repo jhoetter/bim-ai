@@ -312,3 +312,82 @@ def assert_valid_hip_footprint_mm(footprint_mm: list[tuple[float, float]]) -> No
         raise ValueError("hip footprintMm requires at least 4 vertices (convex polygon)")
     if not plan_simple_polygon_is_convex_mm(footprint_mm):
         raise ValueError("hip footprintMm must be a convex polygon")
+
+
+def _bisector_trim_length(
+    in_dir: tuple[float, float],
+    out_dir: tuple[float, float],
+    profile_reach_mm: float = 0.0,
+) -> float:
+    """Miter trim length at an interior corner from the bisector angle."""
+    cos_half = (
+        in_dir[0] * out_dir[0] + in_dir[1] * out_dir[1]
+    ) / max(
+        math.hypot(*in_dir) * math.hypot(*out_dir), 1e-9
+    )
+    cos_half = max(-1.0, min(1.0, cos_half))
+    half_angle = math.acos(cos_half) / 2.0
+    if half_angle < 1e-6:
+        return 0.0
+    return profile_reach_mm * math.tan(half_angle)
+
+
+def edge_profile_run_path_mm(
+    footprint_mm: list[tuple[float, float]],
+    host_edge: str,
+    *,
+    level_elevation_mm: float = 0.0,
+    overhang_mm: float = 0.0,
+    slope_deg: float | None = None,
+) -> list[tuple[float, float, float]]:
+    """KRN-V3-03 G12 — 3D waypoints for an EdgeProfileRun on a rectangular gable roof.
+
+    Pure: no element dict lookups. Caller passes the resolved roof fields.
+    """
+    if len(footprint_mm) < 3:
+        raise ValueError("edge_profile_run_path_mm: footprint must have ≥ 3 vertices")
+
+    x0, x1, z0, z1 = outer_rect_extent(footprint_mm)
+    span_x = x1 - x0
+    span_z = z1 - z0
+    _, ridge_axis = gable_half_run_mm_and_ridge_axis(span_x, span_z)
+
+    slope = float(slope_deg) if slope_deg is not None else 0.0
+    eave_z = level_elevation_mm
+
+    if host_edge == "eave":
+        if ridge_axis == "alongX":
+            return [
+                (x0 - overhang_mm, z0, eave_z),
+                (x1 + overhang_mm, z0, eave_z),
+                (x1 + overhang_mm, z1, eave_z),
+                (x0 - overhang_mm, z1, eave_z),
+            ]
+        else:
+            return [
+                (x0, z0 - overhang_mm, eave_z),
+                (x1, z0 - overhang_mm, eave_z),
+                (x1, z1 + overhang_mm, eave_z),
+                (x0, z1 + overhang_mm, eave_z),
+            ]
+    elif host_edge == "rake":
+        half_run, _ = gable_half_run_mm_and_ridge_axis(span_x, span_z)
+        rise_mm = half_run * math.tan(math.radians(slope)) if slope else 0.0
+        xm = (x0 + x1) / 2.0
+        zm = (z0 + z1) / 2.0
+        if ridge_axis == "alongX":
+            return [
+                (x0 - overhang_mm, zm, eave_z),
+                (x0 - overhang_mm, zm, eave_z + rise_mm),
+                (x1 + overhang_mm, zm, eave_z + rise_mm),
+                (x1 + overhang_mm, zm, eave_z),
+            ]
+        else:
+            return [
+                (xm, z0 - overhang_mm, eave_z),
+                (xm, z0 - overhang_mm, eave_z + rise_mm),
+                (xm, z1 + overhang_mm, eave_z + rise_mm),
+                (xm, z1 + overhang_mm, eave_z),
+            ]
+    else:
+        raise ValueError(f"edge_profile_run_path_mm: unsupported host_edge '{host_edge}'")

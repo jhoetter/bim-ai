@@ -21,6 +21,7 @@ from bim_ai.elements import (
     SiteContextObjectRow,
     StairLanding,
     StairRun,
+    StairTreadLine,
     SweepPathPoint,
     SweepProfilePlane,
     SweepProfilePoint,
@@ -533,9 +534,24 @@ class CreateStairCmd(BaseModel):
     total_rotation_deg: float | None = Field(default=None, alias="totalRotationDeg")
     riser_count: int | None = Field(default=None, alias="riserCount")
     sketch_path_mm: list[Vec2Mm] | None = Field(default=None, alias="sketchPathMm")
+    # KRN-V3-05 — by_sketch authoring mode fields.
+    authoring_mode: Literal["by_component", "by_sketch"] = Field(
+        default="by_component", alias="authoringMode"
+    )
+    boundary_mm: list[Vec2Mm] | None = Field(default=None, alias="boundaryMm")
+    tread_lines: list[StairTreadLine] | None = Field(default=None, alias="treadLines")
+    total_rise_mm: float | None = Field(default=None, alias="totalRiseMm")
 
     @model_validator(mode="after")
     def _validate_shape_specific_fields(self) -> CreateStairCmd:
+        if self.authoring_mode == "by_sketch":
+            if self.boundary_mm is None or len(self.boundary_mm) < 3:
+                raise ValueError("by_sketch stair requires boundaryMm with ≥ 3 points")
+            if self.tread_lines is None or len(self.tread_lines) < 1:
+                raise ValueError("by_sketch stair requires treadLines with ≥ 1 entry")
+            if self.total_rise_mm is None or self.total_rise_mm <= 0:
+                raise ValueError("by_sketch stair requires totalRiseMm > 0")
+            return self
         if self.shape == "spiral":
             missing: list[str] = []
             if self.center_mm is None:
@@ -1365,6 +1381,47 @@ class CreateDormerCmd(BaseModel):
     has_floor_opening: bool = Field(default=False, alias="hasFloorOpening")
 
 
+class CreateRoofJoinCmd(BaseModel):
+    """KRN-V3-03 G11 — join two overlapping roofs into a watertight composite."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createRoofJoin"] = "createRoofJoin"
+    id: str | None = None
+    name: str = "Roof Join"
+    primary_roof_id: str = Field(alias="primaryRoofId")
+    secondary_roof_id: str = Field(alias="secondaryRoofId")
+    seam_mode: Literal["clip_secondary_into_primary", "merge_at_ridge"] = Field(
+        default="clip_secondary_into_primary", alias="seamMode"
+    )
+
+
+class CreateEdgeProfileRunCmd(BaseModel):
+    """KRN-V3-03 G12 — attach a swept profile along a host element edge."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createEdgeProfileRun"] = "createEdgeProfileRun"
+    id: str | None = None
+    name: str = "Edge Profile Run"
+    host_element_id: str = Field(alias="hostElementId")
+    host_edge: Any = Field(alias="hostEdge")
+    profile_family_id: str = Field(alias="profileFamilyId")
+    offset_mm: Vec2Mm = Field(alias="offsetMm")
+    miter_mode: Literal["auto", "manual"] = Field(default="auto", alias="miterMode")
+
+
+class CreateSoffitCmd(BaseModel):
+    """KRN-V3-03 G13 — sketch a horizontal soffit panel under a roof eave."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createSoffit"] = "createSoffit"
+    id: str | None = None
+    name: str = "Soffit"
+    boundary_mm: list[Vec2Mm] = Field(alias="boundaryMm")
+    host_roof_id: str | None = Field(default=None, alias="hostRoofId")
+    thickness_mm: float = Field(alias="thicknessMm")
+    z_mm: float | None = Field(default=None, alias="zMm")
+
+
 class SetWallRecessZonesCmd(BaseModel):
     """KRN-16 — replace the recess-zone list on an existing wall."""
 
@@ -1776,6 +1833,9 @@ Command = Annotated[
     | DeletePropertyLineCmd
     | CreateSweepCmd
     | CreateDormerCmd
+    | CreateRoofJoinCmd
+    | CreateEdgeProfileRunCmd
+    | CreateSoffitCmd
     | SetWallRecessZonesCmd
     | CreateAreaCmd
     | UpdateAreaCmd

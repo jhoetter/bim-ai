@@ -50,7 +50,10 @@ from bim_ai.commands import (
     CreateRailingCmd,
     CreateReferencePlaneCmd,
     CreateRoofCmd,
+    CreateRoofJoinCmd,
     CreateRoofOpeningCmd,
+    CreateEdgeProfileRunCmd,
+    CreateSoffitCmd,
     CreateRoomOutlineCmd,
     CreateRoomPolyCmd,
     CreateRoomRectangleCmd,
@@ -196,8 +199,11 @@ from bim_ai.elements import (
     RailingElem,
     ReferencePlaneElem,
     RoofElem,
+    RoofJoinElem,
     RoofOpeningElem,
     RoofTypeElem,
+    EdgeProfileRunElem,
+    SoffitElem,
     RoomColorSchemeElem,
     RoomColorSchemeRow,
     RoomElem,
@@ -213,6 +219,7 @@ from bim_ai.elements import (
     StairElem,
     StairLanding,
     StairRun,
+    StairTreadLine,
     SurveyPointElem,
     SweepElem,
     TagDefinitionElem,
@@ -250,6 +257,8 @@ from bim_ai.roof_geometry import (
     assert_valid_gable_pitched_rectangle_footprint_mm,
     assert_valid_hip_footprint_mm,
     assert_valid_l_shape_footprint_mm,
+    edge_profile_run_path_mm,
+    outer_rect_extent,
 )
 
 _AUTHORITATIVE_REPLAY_V0_TYPES: frozenset[str] = frozenset(
@@ -383,6 +392,61 @@ def _stripped_optional_str(val: str | None) -> str | None:
         return None
     t = val.strip()
     return t or None
+
+
+def _balance_tread_risers(
+    tread_lines: list[StairTreadLine],
+    total_rise_mm: float,
+) -> list[float]:
+    """Return a riser height per tread. Lines with riserHeightMm set are
+    pinned; nulls receive an equal share of the remaining rise."""
+    pinned_sum = sum(tl.riser_height_mm for tl in tread_lines if tl.riser_height_mm is not None)
+    null_count = sum(1 for tl in tread_lines if tl.riser_height_mm is None)
+    if pinned_sum > total_rise_mm + 1e-6:
+        raise ValueError(
+            f"pinned riser heights sum ({pinned_sum:.1f} mm) exceeds totalRiseMm ({total_rise_mm:.1f} mm)"
+        )
+    remaining = total_rise_mm - pinned_sum
+    null_share = remaining / null_count if null_count > 0 else 0.0
+    return [
+        tl.riser_height_mm if tl.riser_height_mm is not None else null_share
+        for tl in tread_lines
+    ]
+
+
+def _validate_stair_boundary(points: list[Vec2Mm]) -> None:
+    """Raise ValueError for invalid stair boundary polygons."""
+    if len(points) < 3:
+        raise ValueError("stair boundary must have ≥ 3 points")
+    n = len(points)
+    area2 = 0.0
+    for i in range(n):
+        a = points[i]
+        b = points[(i + 1) % n]
+        area2 += a.x_mm * b.y_mm - b.x_mm * a.y_mm
+    if abs(area2) < 1.0:
+        raise ValueError("stair boundary has zero area")
+    for i in range(n):
+        ax, ay = points[i].x_mm, points[i].y_mm
+        bx, by = points[(i + 1) % n].x_mm, points[(i + 1) % n].y_mm
+        for j in range(i + 2, n):
+            if i == 0 and j == n - 1:
+                continue
+            cx, cy = points[j].x_mm, points[j].y_mm
+            dx, dy = points[(j + 1) % n].x_mm, points[(j + 1) % n].y_mm
+            rx, ry = bx - ax, by - ay
+            sx, sy = dx - cx, dy - cy
+            denom = rx * sy - ry * sx
+            if abs(denom) < 1e-7:
+                continue
+            qpx, qpy = cx - ax, cy - ay
+            t = (qpx * sy - qpy * sx) / denom
+            u = (qpx * ry - qpy * rx) / denom
+            eps = 1e-6
+            if (eps < t < 1.0 - eps) and (eps < u < 1.0 - eps):
+                raise ValueError(
+                    f"stair boundary is self-intersecting (edge {i} crosses edge {j})"
+                )
 
 
 def _materialize_stair_runs_and_landings(
@@ -2036,6 +2100,102 @@ def apply_inplace(
                 name=cmd.name,
                 host_roof_id=cmd.host_roof_id,
                 boundary_mm=cmd.boundary_mm,
+            )
+
+        # TODO API-V3-01
+        case CreateRoofJoinCmd():
+            jid = cmd.id or new_id()
+            if jid in els:
+                raise ValueError(f"duplicate element id '{jid}'")
+            primary = els.get(cmd.primary_roof_id)
+            secondary = els.get(cmd.secondary_roof_id)
+            if not isinstance(primary, RoofElem):
+                raise ValueError("createRoofJoin.primaryRoofId must reference a roof")
+            if not isinstance(secondary, RoofElem):
+                raise ValueError("createRoofJoin.secondaryRoofId must reference a roof")
+            if cmd.primary_roof_id == cmd.secondary_roof_id:
+                raise ValueError("createRoofJoin: primaryRoofId and secondaryRoofId must differ")
+            pts_a = [(p.x_mm, p.y_mm) for p in primary.footprint_mm]
+            pts_b = [(p.x_mm, p.y_mm) for p in secondary.footprint_mm]
+            ax0, ax1, az0, az1 = outer_rect_extent(pts_a)
+            bx0, bx1, bz0, bz1 = outer_rect_extent(pts_b)
+            if ax1 < bx0 or bx1 < ax0 or az1 < bz0 or bz1 < az0:
+                raise ValueError("createRoofJoin: roof footprints do not intersect")
+            els[jid] = RoofJoinElem(
+                kind="roof_join",
+                id=jid,
+                name=cmd.name,
+                primary_roof_id=cmd.primary_roof_id,
+                secondary_roof_id=cmd.secondary_roof_id,
+                seam_mode=cmd.seam_mode,
+            )
+
+        # TODO API-V3-01
+        case CreateEdgeProfileRunCmd():
+            eid = cmd.id or new_id()
+            if eid in els:
+                raise ValueError(f"duplicate element id '{eid}'")
+            host_el = els.get(cmd.host_element_id)
+            if host_el is None:
+                raise ValueError(
+                    f"createEdgeProfileRun.hostElementId '{cmd.host_element_id}' not found"
+                )
+            if not cmd.profile_family_id:
+                raise ValueError("createEdgeProfileRun.profileFamilyId must be a non-empty string")
+            if cmd.miter_mode not in ("auto", "manual"):
+                raise ValueError("createEdgeProfileRun.miterMode must be 'auto' or 'manual'")
+            if isinstance(host_el, RoofElem) and isinstance(cmd.host_edge, str):
+                pts = [(p.x_mm, p.y_mm) for p in host_el.footprint_mm]
+                if len(pts) >= 3:
+                    edge_profile_run_path_mm(
+                        pts,
+                        cmd.host_edge,
+                        overhang_mm=host_el.overhang_mm,
+                        slope_deg=host_el.slope_deg,
+                    )
+            els[eid] = EdgeProfileRunElem(
+                kind="edge_profile_run",
+                id=eid,
+                name=cmd.name,
+                host_element_id=cmd.host_element_id,
+                host_edge=cmd.host_edge,
+                profile_family_id=cmd.profile_family_id,
+                offset_mm=cmd.offset_mm,
+                miter_mode=cmd.miter_mode,
+            )
+
+        # TODO API-V3-01
+        case CreateSoffitCmd():
+            sid = cmd.id or new_id()
+            if sid in els:
+                raise ValueError(f"duplicate element id '{sid}'")
+            if len(cmd.boundary_mm) < 3:
+                raise ValueError("createSoffit.boundaryMm requires ≥3 vertices")
+            if cmd.thickness_mm <= 0:
+                raise ValueError("createSoffit.thicknessMm must be > 0")
+            host_roof: RoofElem | None = None
+            if cmd.host_roof_id is not None:
+                hr = els.get(cmd.host_roof_id)
+                if not isinstance(hr, RoofElem):
+                    raise ValueError(
+                        f"createSoffit.hostRoofId '{cmd.host_roof_id}' must reference a roof"
+                    )
+                host_roof = hr
+            z_mm = cmd.z_mm
+            if z_mm is None:
+                if host_roof is not None:
+                    level = els.get(host_roof.reference_level_id)
+                    z_mm = float(getattr(level, "elevation_mm", 0))
+                else:
+                    z_mm = 0.0
+            els[sid] = SoffitElem(
+                kind="soffit",
+                id=sid,
+                name=cmd.name,
+                boundary_mm=cmd.boundary_mm,
+                host_roof_id=cmd.host_roof_id,
+                thickness_mm=cmd.thickness_mm,
+                z_mm=z_mm,
             )
 
         case CreateText3dCmd():

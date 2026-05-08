@@ -604,6 +604,13 @@ class RoofElem(BaseModel):
 StairShape = Literal["straight", "l_shape", "u_shape", "spiral", "sketch"]
 
 
+class StairTreadLine(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    from_mm: Vec2Mm = Field(alias="fromMm")
+    to_mm: Vec2Mm = Field(alias="toMm")
+    riser_height_mm: float | None = Field(default=None, alias="riserHeightMm")
+
+
 class StairRun(BaseModel):
     """KRN-07: one flight in a multi-run stair.
 
@@ -653,12 +660,27 @@ class StairElem(BaseModel):
     outer_radius_mm: float | None = Field(default=None, alias="outerRadiusMm")
     total_rotation_deg: float | None = Field(default=None, alias="totalRotationDeg")
     sketch_path_mm: list[Vec2Mm] | None = Field(default=None, alias="sketchPathMm")
+    # KRN-V3-05 — by_sketch authoring mode fields.
+    authoring_mode: Literal["by_component", "by_sketch"] = Field(
+        default="by_component", alias="authoringMode"
+    )
+    boundary_mm: list[Vec2Mm] | None = Field(default=None, alias="boundaryMm")
+    tread_lines: list[StairTreadLine] | None = Field(default=None, alias="treadLines")
+    total_rise_mm: float | None = Field(default=None, alias="totalRiseMm")
     pinned: bool = Field(default=False)
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
 
     @model_validator(mode="after")
     def _validate_shape_specific_fields(self) -> StairElem:
+        if self.authoring_mode == "by_sketch":
+            if self.boundary_mm is None or len(self.boundary_mm) < 3:
+                raise ValueError("by_sketch stair requires boundaryMm with ≥ 3 points")
+            if self.tread_lines is None or len(self.tread_lines) < 1:
+                raise ValueError("by_sketch stair requires treadLines with ≥ 1 entry")
+            if self.total_rise_mm is None or self.total_rise_mm <= 0:
+                raise ValueError("by_sketch stair requires totalRiseMm > 0")
+            return self
         if self.shape == "spiral":
             missing = [
                 name
@@ -806,6 +828,75 @@ class DormerElem(BaseModel):
 
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
+
+
+class RoofJoinElem(BaseModel):
+    """KRN-V3-03 G11 — derived overlay that joins two roof solids along a seam.
+
+    Does not mutate the source RoofElem records. The renderer computes the seam
+    polyline on the fly from the two RoofElem footprints.
+    """
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["roof_join"] = "roof_join"
+    id: str
+    name: str = "Roof Join"
+    primary_roof_id: str = Field(alias="primaryRoofId")
+    secondary_roof_id: str = Field(alias="secondaryRoofId")
+    seam_mode: Literal["clip_secondary_into_primary", "merge_at_ridge"] = Field(
+        alias="seamMode"
+    )
+    pinned: bool = Field(default=False)
+    phase_created: str | None = Field(default=None, alias="phaseCreated")
+    phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
+
+
+class EdgeProfileRunElem(BaseModel):
+    """KRN-V3-03 G12 — swept profile along a host element edge (fascia/gutter/cornice/plinth).
+
+    ``hostEdge`` is one of the named edge tokens or a custom ``{startMm, endMm}`` dict.
+    The renderer computes the swept solid; plan view shows a thin line on the edge.
+    """
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["edge_profile_run"] = "edge_profile_run"
+    id: str
+    name: str = "Edge Profile Run"
+    host_element_id: str = Field(alias="hostElementId")
+    host_edge: Any = Field(alias="hostEdge")
+    profile_family_id: str = Field(alias="profileFamilyId")
+    offset_mm: Vec2Mm = Field(alias="offsetMm")
+    miter_mode: Literal["auto", "manual"] = Field(default="auto", alias="miterMode")
+    pinned: bool = Field(default=False)
+    phase_created: str | None = Field(default=None, alias="phaseCreated")
+    phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
+
+
+class SoffitElem(BaseModel):
+    """KRN-V3-03 G13 — horizontal soffit panel under a roof eave.
+
+    ``boundaryMm`` is a closed plan polygon (≥ 3 vertices). ``zMm`` is the
+    underside elevation; the engine fills it from the host roof eave when the
+    command omits it.
+    """
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["soffit"] = "soffit"
+    id: str
+    name: str = "Soffit"
+    boundary_mm: list[Vec2Mm] = Field(alias="boundaryMm")
+    host_roof_id: str | None = Field(default=None, alias="hostRoofId")
+    thickness_mm: float = Field(alias="thicknessMm")
+    z_mm: float = Field(alias="zMm")
+    pinned: bool = Field(default=False)
+    phase_created: str | None = Field(default=None, alias="phaseCreated")
+    phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
+
+    @model_validator(mode="after")
+    def _validate_boundary(self) -> SoffitElem:
+        if len(self.boundary_mm) < 3:
+            raise ValueError("SoffitElem.boundaryMm must have ≥ 3 vertices")
+        return self
 
 
 class BalconyElem(BaseModel):
@@ -1550,6 +1641,9 @@ ElementKind = Literal[
     "masking_region",
     "mass",
     "constraint",
+    "roof_join",
+    "edge_profile_run",
+    "soffit",
 ]
 
 
@@ -1801,6 +1895,9 @@ Element = Annotated[
     | MassElem
     | VoidCutElem
     | ConstraintElem
-    | PhaseElem,
+    | PhaseElem
+    | RoofJoinElem
+    | EdgeProfileRunElem
+    | SoffitElem,
     Field(discriminator="kind"),
 ]

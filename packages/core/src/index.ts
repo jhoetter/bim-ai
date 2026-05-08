@@ -1285,6 +1285,65 @@ export type Element =
       ord: number;
     }
   | {
+      /**
+       * KRN-V3-03 G11 — derived overlay joining two roof solids along a seam.
+       *
+       * Does NOT mutate the source `roof` records. The renderer computes the seam
+       * polyline on the fly from the two roof footprints.
+       * Pre-commit (PENDING state): seam renders in `var(--draft-warning)` colour.
+       * Post-commit: seam renders as a thin ridge line using the primary roof's materialKey.
+       */
+      kind: 'roof_join';
+      id: string;
+      name?: string;
+      primaryRoofId: string;
+      secondaryRoofId: string;
+      seamMode: 'clip_secondary_into_primary' | 'merge_at_ridge';
+      pinned?: boolean;
+      phaseCreated?: string | null;
+      phaseDemolished?: string | null;
+    }
+  | {
+      /**
+       * KRN-V3-03 G12 — swept profile run along a host element edge.
+       *
+       * Resolves to a swept solid (2D profile × edge polyline) at render time.
+       * Profile families: fascia, gutter, downpipe, plinth, cornice, water-table.
+       * `hostEdge` is one of the named tokens or a custom `{ startMm, endMm }` range.
+       * Colour must use material tokens from T5, not inline hex literals.
+       */
+      kind: 'edge_profile_run';
+      id: string;
+      name?: string;
+      hostElementId: string;
+      hostEdge: 'eave' | 'rake' | 'ridge' | 'top' | 'bottom' | { startMm: number; endMm: number };
+      profileFamilyId: string;
+      offsetMm: { xMm: number; yMm: number };
+      miterMode: 'auto' | 'manual';
+      pinned?: boolean;
+      phaseCreated?: string | null;
+      phaseDemolished?: string | null;
+    }
+  | {
+      /**
+       * KRN-V3-03 G13 — horizontal soffit panel under a roof eave.
+       *
+       * `boundaryMm` is a closed plan polygon (≥ 3 vertices).
+       * `zMm` is the underside elevation (filled by the engine from the host
+       * roof's eave elevation when the command omits it).
+       */
+      kind: 'soffit';
+      id: string;
+      name?: string;
+      boundaryMm: XY[];
+      hostRoofId?: string | null;
+      thicknessMm: number;
+      zMm: number;
+      pinned?: boolean;
+      phaseCreated?: string | null;
+      phaseDemolished?: string | null;
+    }
+  | {
       /** SUN-V3-01 — project-level sun & shadow study singleton. */
       kind: 'sun_settings';
       id: string;
