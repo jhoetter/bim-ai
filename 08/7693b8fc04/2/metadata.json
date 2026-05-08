@@ -1,0 +1,70 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "087693b8fc04",
+  "session_id": "6a5ef04f-82e8-47af-bbcb-34f52195966e",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T22:35:26.001319Z",
+  "branch": "feat/v3-ann-v3-01-detail-region",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "app/bim_ai/api/registry.py",
+    "app/bim_ai/commands.py",
+    "app/bim_ai/elements.py",
+    "app/bim_ai/engine.py",
+    "packages/cli/cli.mjs",
+    "packages/core/src/index.ts",
+    "packages/web/src/plan/DetailRegionRenderer.tsx",
+    "packages/web/src/plan/DetailRegionTool.tsx",
+    "packages/web/src/plan/PlanCanvas.tsx",
+    "packages/web/src/state/storeTypes.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "f8392160647a",
+  "checkpoint_transcript_start": 389,
+  "transcript_lines_at_start": 389,
+  "token_usage": {
+    "input_tokens": 34,
+    "cache_creation_tokens": 132150,
+    "cache_read_tokens": 3819217,
+    "output_tokens": 32296,
+    "api_call_count": 32
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-08T22:35:25.988942Z",
+    "agent_lines": 76,
+    "agent_removed": 149,
+    "human_added": 0,
+    "human_modified": 226,
+    "human_removed": 127,
+    "total_committed": 300,
+    "total_lines_changed": 578,
+    "agent_percentage": 38.92733564013841,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 918,
+      "user_lines_removed": 354,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "app/bim_ai/commands.py": 3,
+        "app/bim_ai/elements.py": 30,
+        "app/bim_ai/routes_api.py": 80,
+        "app/tests/api/test_sch_v3_01.py": 412,
+        "packages/cli/lib/one-family-home-commands.mjs": 19,
+        "packages/core/src/index.ts": 7,
+        "packages/web/src/workspace/ScheduleView.tsx": 367
+      },
+      "user_removed_per_file": {
+        "app/bim_ai/commands.py": 64,
+        "app/bim_ai/elements.py": 90,
+        "app/bim_ai/engine.py": 108,
+        "packages/cli/lib/one-family-home-commands.mjs": 3,
+        "packages/core/src/index.ts": 89
+      }
+    }
+  ]
+}
