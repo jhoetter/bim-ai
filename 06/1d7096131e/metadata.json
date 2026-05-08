@@ -3,7 +3,7 @@
   "checkpoint_id": "061d7096131e",
   "strategy": "manual-commit",
   "branch": "feat/v3-chr-v3-03-status-bar",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "packages/core/src/index.ts",
     "packages/web/src/workspace/DriftBadge.tsx",
@@ -54,13 +54,19 @@
       "transcript": "/06/1d7096131e/6/full.jsonl",
       "content_hash": "/06/1d7096131e/6/content_hash.txt",
       "prompt": "/06/1d7096131e/6/prompt.txt"
+    },
+    {
+      "metadata": "/06/1d7096131e/7/metadata.json",
+      "transcript": "/06/1d7096131e/7/full.jsonl",
+      "content_hash": "/06/1d7096131e/7/content_hash.txt",
+      "prompt": "/06/1d7096131e/7/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 1373,
-    "cache_creation_tokens": 713966,
-    "cache_read_tokens": 35713143,
-    "output_tokens": 166687,
-    "api_call_count": 408
+    "input_tokens": 1667,
+    "cache_creation_tokens": 1237347,
+    "cache_read_tokens": 57703203,
+    "output_tokens": 285498,
+    "api_call_count": 635
   }
 }
