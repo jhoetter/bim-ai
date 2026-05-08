@@ -1,6 +1,6 @@
 # v3 Build State
 
-Last updated: 2026-05-08 (wave-4 complete: 8 WPs merged; ~30/63 done)
+Last updated: 2026-05-08 (wave-4 complete: 8 WPs merged; ~30/63 done; wave-5 prompts written)
 Active heavy workers: 0 / 8
 
 ## Merged so far
@@ -59,18 +59,19 @@ Active heavy workers: 0 / 8
 
 Note: WP-029 (VIE-V3-01 detail-level rendering) worker did not push a branch — prompt file exists at spec/v3-prompts/wp-029.md; reschedule next wave.
 
-## Next wave (8 slots free)
+## Wave-5 prompts written (ready to dispatch)
 
-Wave-5 candidates:
-
-1. **VIE-V3-01** detail-level rendering completion (prompt ready — WP-029)
-2. **VER-V3-02** named milestones (Cmd+S snapshot) — dep VER-V3-01 ✓
-3. **MRK-V3-02** plan + 3D markups — dep MRK-V3-01 ✓
-4. **COL-V3-03** shareable public link — dep COL-V3-02 ✓
-5. **OPT-V3-01** design options agent scratch — dep KRN-V3-04 ✓ CMD-V3-01 ✓
-6. **KRN-V3-04 follow-on** — KRN-V3-12 cut profile (no deps, S)
-7. **CHR-V3-05** activity-stream drawer — dep VER-V3-01 ✓
-8. **VIE-V3-02** drafting view + callout bundle
+| WP | Feature | Prompt |
+| -- | ------- | ------ |
+| WP-029 | VIE-V3-01 detail-level rendering (reschedule) | spec/v3-prompts/wp-029.md |
+| WP-032 | VER-V3-02 named milestones (Cmd+S) | spec/v3-prompts/wp-032.md |
+| WP-033 | MRK-V3-02 plan+3D markups | spec/v3-prompts/wp-033.md |
+| WP-034 | COL-V3-03 shareable public link | spec/v3-prompts/wp-034.md |
+| WP-035 | OPT-V3-01 design options agent scratch | spec/v3-prompts/wp-035.md |
+| WP-036 | CHR-V3-05 activity-stream drawer | spec/v3-prompts/wp-036.md |
+| WP-037 | VIE-V3-02 drafting view + callout bundle (XL) | spec/v3-prompts/wp-037.md |
+| WP-038 | VIE-V3-03 view templates + propagation toast | spec/v3-prompts/wp-038.md |
+| WP-039 | SHT-V3-01 sheet + titleblock + window legend | spec/v3-prompts/wp-039.md |
 
 ## Notes
 
