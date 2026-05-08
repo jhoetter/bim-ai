@@ -1,0 +1,51 @@
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render } from '@testing-library/react';
+import { LensDropdown } from './LensDropdown';
+
+afterEach(() => {
+  cleanup();
+});
+
+describe('LensDropdown — LNS-V3-01', () => {
+  it('renders "Show: All ▾" initially', () => {
+    const { getByTestId } = render(<LensDropdown currentLens="all" onLensChange={() => {}} />);
+    expect(getByTestId('lens-dropdown-trigger').textContent).toContain('All');
+    expect(getByTestId('lens-dropdown-trigger').textContent).toContain('▾');
+  });
+
+  it('click opens the 4-item menu', () => {
+    const { getByTestId, queryByTestId } = render(
+      <LensDropdown currentLens="all" onLensChange={() => {}} />,
+    );
+    expect(queryByTestId('lens-menu')).toBeNull();
+    fireEvent.click(getByTestId('lens-dropdown-trigger'));
+    const menu = queryByTestId('lens-menu');
+    expect(menu).toBeTruthy();
+    expect(menu!.querySelectorAll('[role="menuitem"]').length).toBe(4);
+  });
+
+  it('click "Structure" calls onLensChange("structure")', () => {
+    const onLensChange = vi.fn();
+    const { getByTestId } = render(<LensDropdown currentLens="all" onLensChange={onLensChange} />);
+    fireEvent.click(getByTestId('lens-dropdown-trigger'));
+    fireEvent.click(getByTestId('lens-option-structure'));
+    expect(onLensChange).toHaveBeenCalledWith('structure');
+  });
+
+  it('L key cycles forward through the 4 modes', () => {
+    const onLensChange = vi.fn();
+    render(<LensDropdown currentLens="all" onLensChange={onLensChange} />);
+    fireEvent.keyDown(window, { key: 'L' });
+    expect(onLensChange).toHaveBeenCalledWith('architecture');
+
+    onLensChange.mockClear();
+    render(<LensDropdown currentLens="architecture" onLensChange={onLensChange} />);
+    fireEvent.keyDown(window, { key: 'L' });
+    expect(onLensChange).toHaveBeenCalledWith('structure');
+
+    onLensChange.mockClear();
+    render(<LensDropdown currentLens="mep" onLensChange={onLensChange} />);
+    fireEvent.keyDown(window, { key: 'L' });
+    expect(onLensChange).toHaveBeenCalledWith('all');
+  });
+});

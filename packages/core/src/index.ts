@@ -112,7 +112,9 @@ export type ElemKind =
   | 'foundation'
   | 'duct'
   | 'pipe'
-  | 'fixture';
+  | 'fixture'
+  | 'material'
+  | 'decal';
 
 export type PhaseFilter = 'all' | 'existing' | 'demolition' | 'new';
 
@@ -1954,6 +1956,9 @@ export type AssumptionEntry = {
 /** CHR-V3-03 / DSC-V3-02 — lens mode for the status-bar discipline filter. */
 export type LensMode = 'all' | 'architecture' | 'structure' | 'mep' | 'energy' | 'coordination';
 
+/** LNS-V3-01 — undoable command dispatched by the lens dropdown. */
+export type SetViewLensCmd = { type: 'set_view_lens'; viewId: string; lens: LensMode };
+
 // ---------------------------------------------------------------------------
 // JOB-V3-01 — long-running-operations job types
 // ---------------------------------------------------------------------------
@@ -2168,6 +2173,35 @@ export type PlacedAssetElem = {
   rotationDeg?: number;
   paramValues?: Record<string, unknown>;
   hostElementId?: string;
+};
+
+// ---------------------------------------------------------------------------
+// MAT-V3-01 — Material PBR map slots + Decals
+// ---------------------------------------------------------------------------
+
+export type MaterialElem = {
+  kind: 'material';
+  id: string;
+  name: string;
+  albedoColor?: string;
+  albedoMapId?: string;
+  normalMapId?: string;
+  roughnessMapId?: string;
+  metallicMapId?: string;
+  heightMapId?: string;
+  uvScaleMm?: { uMm: number; vMm: number };
+  uvRotationDeg?: number;
+  hatchPatternId?: string;
+};
+
+export type DecalElem = {
+  kind: 'decal';
+  id: string;
+  parentElementId: string;
+  parentSurface: 'front' | 'back' | 'top' | 'left' | 'right' | 'bottom';
+  imageAssetId: string;
+  uvRect: { u0: number; v0: number; u1: number; v1: number };
+  opacity?: number;
 };
 
 // ---------------------------------------------------------------------------

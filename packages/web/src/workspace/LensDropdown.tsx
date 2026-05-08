@@ -1,18 +1,26 @@
-import { type JSX, type KeyboardEvent, useCallback, useId, useState } from 'react';
+import { type JSX, useCallback, useEffect, useId, useRef, useState } from 'react';
 import type { LensMode } from '@bim-ai/core';
 
-const LENS_OPTIONS: { value: LensMode; label: string }[] = [
-  { value: 'all', label: 'All' },
-  { value: 'architecture', label: 'Architecture' },
-  { value: 'structure', label: 'Structure' },
-  { value: 'mep', label: 'MEP' },
-  { value: 'energy', label: 'Energy' },
-  { value: 'coordination', label: 'Coordination' },
-];
+const LENS_CYCLE = [
+  'architecture',
+  'structure',
+  'mep',
+  'all',
+] as const satisfies readonly LensMode[];
+type LensCycleMode = (typeof LENS_CYCLE)[number];
 
-function lensLabel(lens: LensMode): string {
-  return LENS_OPTIONS.find((o) => o.value === lens)?.label ?? lens;
-}
+const LENS_LABELS: Record<LensCycleMode, string> = {
+  architecture: 'Architecture',
+  structure: 'Structure',
+  mep: 'MEP',
+  all: 'All',
+};
+
+const DISC_SOFT: Partial<Record<LensMode, string>> = {
+  architecture: 'var(--disc-arch-soft)',
+  structure: 'var(--disc-struct-soft)',
+  mep: 'var(--disc-mep-soft)',
+};
 
 export interface LensDropdownProps {
   currentLens: LensMode;
@@ -22,23 +30,41 @@ export interface LensDropdownProps {
 export function LensDropdown({ currentLens, onLensChange }: LensDropdownProps): JSX.Element {
   const [open, setOpen] = useState(false);
   const menuId = useId();
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const handleKeyDown = useCallback(
-    (event: KeyboardEvent<HTMLDivElement>) => {
-      if (event.key === 'Tab' && open) {
-        event.preventDefault();
-        const idx = LENS_OPTIONS.findIndex((o) => o.value === currentLens);
-        const next = LENS_OPTIONS[(idx + 1) % LENS_OPTIONS.length];
-        if (next) onLensChange(next.value);
-      } else if (event.key === 'Escape') {
-        setOpen(false);
-      }
-    },
-    [open, currentLens, onLensChange],
-  );
+  const close = useCallback(() => setOpen(false), []);
+
+  const activeLensInCycle = LENS_CYCLE.includes(currentLens as (typeof LENS_CYCLE)[number])
+    ? (currentLens as (typeof LENS_CYCLE)[number])
+    : 'all';
+
+  // Global L key cycles forward through the 4 lens modes.
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'l' && e.key !== 'L') return;
+      const tag = (document.activeElement as HTMLElement | null)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      const idx = LENS_CYCLE.indexOf(activeLensInCycle);
+      onLensChange(LENS_CYCLE[(idx + 1) % LENS_CYCLE.length]);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeLensInCycle, onLensChange]);
+
+  // Close on outside click.
+  useEffect(() => {
+    if (!open) return;
+    const handlePointerDown = (e: PointerEvent) => {
+      if (!containerRef.current?.contains(e.target as Node)) close();
+    };
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => document.removeEventListener('pointerdown', handlePointerDown);
+  }, [open, close]);
+
+  const softColor = DISC_SOFT[currentLens];
 
   return (
-    <div onKeyDown={handleKeyDown} className="relative flex items-center">
+    <div ref={containerRef} className="relative flex items-center">
       <button
         type="button"
         aria-expanded={open}
@@ -46,12 +72,24 @@ export function LensDropdown({ currentLens, onLensChange }: LensDropdownProps): 
         aria-haspopup="menu"
         data-testid="lens-dropdown-trigger"
         onClick={() => setOpen((v) => !v)}
+        style={
+          softColor
+            ? {
+                borderLeft: `3px solid ${softColor}`,
+                paddingLeft: '0.375rem',
+              }
+            : undefined
+        }
         className="rounded-sm px-1.5 py-0.5 hover:bg-surface-strong"
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') close();
+        }}
       >
         Show:{' '}
         <span className="font-medium" style={{ color: 'var(--color-foreground)' }}>
-          {lensLabel(currentLens)}
+          {LENS_LABELS[activeLensInCycle]}
         </span>
+        {' ▾'}
       </button>
       {open ? (
         <div
@@ -62,25 +100,37 @@ export function LensDropdown({ currentLens, onLensChange }: LensDropdownProps): 
           className="absolute bottom-full left-0 z-50 mb-1 w-44 rounded-md border border-border bg-surface shadow-elev-2"
           style={{ fontSize: 'var(--text-sm)' }}
         >
-          {LENS_OPTIONS.map((opt) => (
+          {LENS_CYCLE.map((lens) => (
             <button
-              key={opt.value}
+              key={lens}
               type="button"
               role="menuitem"
-              data-testid={`lens-option-${opt.value}`}
+              data-testid={`lens-option-${lens}`}
               onClick={() => {
-                // TODO(T8/renderer): apply lens ghost opacity (25% for non-active discipline, 240ms --ease-paper)
-                onLensChange(opt.value);
-                setOpen(false);
+                onLensChange(lens);
+                close();
               }}
               className={[
-                'flex w-full items-center px-3 py-1.5 text-left',
-                opt.value === currentLens
-                  ? 'bg-accent-soft font-medium'
-                  : 'hover:bg-surface-strong',
+                'flex w-full items-center justify-between px-3 py-1.5 text-left',
+                lens === currentLens ? 'bg-accent-soft font-medium' : 'hover:bg-surface-strong',
               ].join(' ')}
             >
-              {opt.label}
+              {LENS_LABELS[lens]}
+              {lens === currentLens ? (
+                <svg
+                  aria-hidden="true"
+                  width="12"
+                  height="12"
+                  viewBox="0 0 12 12"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="2,6 5,9 10,3" />
+                </svg>
+              ) : null}
             </button>
           ))}
         </div>
