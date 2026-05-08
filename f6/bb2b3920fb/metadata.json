@@ -4,20 +4,36 @@
   "strategy": "manual-commit",
   "branch": "feat/v3-dsc-v3-01-discipline-tags",
   "checkpoints_count": 1,
-  "files_touched": null,
+  "files_touched": [
+    "app/bim_ai/commands.py",
+    "app/bim_ai/elements.py",
+    "app/bim_ai/engine.py",
+    "app/bim_ai/schedule_derivation.py",
+    "app/tests/test_discipline_primitive.py",
+    "packages/core/src/index.ts",
+    "packages/web/src/workspace/InspectorContent.tsx",
+    "packages/web/src/workspace/ProjectBrowser.tsx",
+    "packages/web/src/workspace/WorkspaceRightRail.tsx"
+  ],
   "sessions": [
     {
       "metadata": "/f6/bb2b3920fb/0/metadata.json",
       "transcript": "/f6/bb2b3920fb/0/full.jsonl",
       "content_hash": "/f6/bb2b3920fb/0/content_hash.txt",
       "prompt": "/f6/bb2b3920fb/0/prompt.txt"
+    },
+    {
+      "metadata": "/f6/bb2b3920fb/1/metadata.json",
+      "transcript": "/f6/bb2b3920fb/1/full.jsonl",
+      "content_hash": "/f6/bb2b3920fb/1/content_hash.txt",
+      "prompt": "/f6/bb2b3920fb/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 248,
-    "cache_creation_tokens": 140344,
-    "cache_read_tokens": 13288401,
-    "output_tokens": 63209,
-    "api_call_count": 152
+    "input_tokens": 1161,
+    "cache_creation_tokens": 244972,
+    "cache_read_tokens": 19946281,
+    "output_tokens": 90841,
+    "api_call_count": 242
   }
 }
