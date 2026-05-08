@@ -3,21 +3,19 @@
   "checkpoint_id": "95ad0c6d8171",
   "session_id": "23fbe6ce-4e5a-44d3-93ed-2d6efb47eea9",
   "strategy": "manual-commit",
-  "created_at": "2026-05-08T17:45:16.309209Z",
-  "branch": "feat/v3-edt-v3-11-phase-filter-lens",
-  "checkpoints_count": 0,
+  "created_at": "2026-05-08T18:02:16.207235Z",
+  "branch": "main",
+  "checkpoints_count": 1,
   "files_touched": [],
   "agent": "Claude Code",
   "model": "claude-sonnet-4-6",
   "turn_id": "dcaf3c0f9c74",
-  "checkpoint_transcript_start": 771,
-  "transcript_lines_at_start": 771,
   "token_usage": {
-    "input_tokens": 0,
-    "cache_creation_tokens": 0,
-    "cache_read_tokens": 0,
-    "output_tokens": 0,
-    "api_call_count": 0
+    "input_tokens": 248,
+    "cache_creation_tokens": 140344,
+    "cache_read_tokens": 13288401,
+    "output_tokens": 63209,
+    "api_call_count": 152
   },
   "session_metrics": {
     "turn_count": 11

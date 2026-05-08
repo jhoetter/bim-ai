@@ -2,8 +2,8 @@
   "cli_version": "0.6.0",
   "checkpoint_id": "95ad0c6d8171",
   "strategy": "manual-commit",
-  "branch": "feat/v3-edt-v3-11-phase-filter-lens",
-  "checkpoints_count": 5,
+  "branch": "main",
+  "checkpoints_count": 6,
   "files_touched": [
     "app/bim_ai/activity.py",
     "app/bim_ai/collab/orchestrator.py",
@@ -70,11 +70,11 @@
     }
   ],
   "token_usage": {
-    "input_tokens": 4216,
-    "cache_creation_tokens": 1152434,
-    "cache_read_tokens": 70916387,
-    "output_tokens": 406354,
-    "api_call_count": 735
+    "input_tokens": 4464,
+    "cache_creation_tokens": 1292778,
+    "cache_read_tokens": 84204788,
+    "output_tokens": 469563,
+    "api_call_count": 887
   },
   "combined_attribution": {
     "calculated_at": "2026-05-08T17:45:26.313713Z",
