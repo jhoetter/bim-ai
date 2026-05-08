@@ -48,10 +48,10 @@ class BundleResult(BaseModel):
 
 
 class AgentTrace(BaseModel):
-    """Provenance trace from the agent bundle that authored an element."""
+    """CMD-V3-02 provenance trace linking an element to its originating bundle."""
 
-    model_config = ConfigDict(populate_by_name=True, extra="allow")
+    model_config = ConfigDict(populate_by_name=True)
 
-    bundle_id: str | None = Field(default=None, alias="bundleId")
-    revision: int | None = None
-    phase: str | None = None
+    bundle_id: str = Field(alias="bundleId")
+    assumption_keys: list[str] = Field(default_factory=list, alias="assumptionKeys")
+    applied_at: str = Field(alias="appliedAt")

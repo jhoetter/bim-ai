@@ -38,7 +38,7 @@ def _bundle(**kwargs) -> CommandBundle:
 class TestDryRun:
     def test_dry_run_returns_checkpoint_and_no_new_revision(self):
         doc = _seed_doc()
-        result = apply_bundle(doc, _bundle(), "dry_run")
+        result, _ = apply_bundle(doc, _bundle(), "dry_run")
         assert result.applied is False
         assert result.checkpoint_snapshot_id is not None
         assert len(result.checkpoint_snapshot_id) == 64  # SHA-256 hex
@@ -53,7 +53,7 @@ class TestDryRun:
 
     def test_dry_run_no_violations_for_valid_bundle(self):
         doc = _seed_doc()
-        result = apply_bundle(doc, _bundle(), "dry_run")
+        result, _ = apply_bundle(doc, _bundle(), "dry_run")
         blocking = [v for v in result.violations if v.get("blocking")]
         assert not blocking
 
@@ -61,7 +61,7 @@ class TestDryRun:
 class TestCommit:
     def test_commit_applied_true_and_revision_incremented(self):
         doc = _seed_doc()
-        result = apply_bundle(doc, _bundle(), "commit")
+        result, _ = apply_bundle(doc, _bundle(), "commit")
         assert result.applied is True
         assert result.new_revision == 2
         assert result.checkpoint_snapshot_id is not None
@@ -83,7 +83,7 @@ class TestMissingAssumptions:
         })
         # Force empty by bypassing validation
         object.__setattr__(bundle, "assumptions", [])
-        result = apply_bundle(doc, bundle, "dry_run")
+        result, _ = apply_bundle(doc, bundle, "dry_run")
         classes = {v.get("advisoryClass") for v in result.violations}
         assert "assumption_log_required" in classes
         assert result.applied is False
@@ -92,7 +92,7 @@ class TestMissingAssumptions:
         doc = _seed_doc()
         dup = [_VALID_ASSUMPTION, {**_VALID_ASSUMPTION}]
         bundle = _bundle(assumptions=dup)
-        result = apply_bundle(doc, bundle, "dry_run")
+        result, _ = apply_bundle(doc, bundle, "dry_run")
         classes = {v.get("advisoryClass") for v in result.violations}
         assert "assumption_log_duplicate_key" in classes
         assert result.applied is False
@@ -102,7 +102,7 @@ class TestRevisionGuard:
     def test_stale_revision_rejected(self):
         doc = _seed_doc(revision=5)
         bundle = _bundle(parentRevision=3)
-        result = apply_bundle(doc, bundle, "dry_run")
+        result, _ = apply_bundle(doc, bundle, "dry_run")
         classes = {v.get("advisoryClass") for v in result.violations}
         assert "revision_conflict" in classes
         assert result.applied is False
@@ -110,7 +110,7 @@ class TestRevisionGuard:
     def test_matching_revision_accepted(self):
         doc = _seed_doc(revision=5)
         bundle = _bundle(parentRevision=5)
-        result = apply_bundle(doc, bundle, "commit")
+        result, _ = apply_bundle(doc, bundle, "commit")
         assert result.applied is True
 
 
@@ -118,7 +118,7 @@ class TestTargetOptionId:
     def test_main_always_rejected(self):
         doc = _seed_doc()
         bundle = _bundle(targetOptionId="main")
-        result = apply_bundle(doc, bundle, "commit")
+        result, _ = apply_bundle(doc, bundle, "commit")
         classes = {v.get("advisoryClass") for v in result.violations}
         assert "direct_main_commit_forbidden" in classes
         assert result.applied is False
@@ -126,7 +126,7 @@ class TestTargetOptionId:
     def test_non_main_option_id_rejected_with_not_implemented(self):
         doc = _seed_doc()
         bundle = _bundle(targetOptionId="opt-123")
-        result = apply_bundle(doc, bundle, "commit")
+        result, _ = apply_bundle(doc, bundle, "commit")
         classes = {v.get("advisoryClass") for v in result.violations}
         assert "option_routing_not_yet_implemented" in classes
         assert result.applied is False
@@ -136,7 +136,7 @@ class TestTolerateMode:
     def test_tolerances_field_accepted_and_commit_proceeds(self):
         doc = _seed_doc()
         bundle = _bundle(tolerances=[{"advisoryClass": "info_advisory", "reason": "accepted"}])
-        result = apply_bundle(doc, bundle, "commit")
+        result, _ = apply_bundle(doc, bundle, "commit")
         assert result.applied is True
         assert result.new_revision == 2
 
@@ -146,11 +146,11 @@ class TestIdempotentReplay:
         """After applying once, replaying the same bundle hits revision_conflict."""
         doc = _seed_doc()
         bundle = _bundle()
-        first = apply_bundle(doc, bundle, "commit")
+        first, _ = apply_bundle(doc, bundle, "commit")
         assert first.applied is True
         # doc is pure / unchanged — simulate the world where revision advanced
         new_doc = Document(revision=first.new_revision, elements=doc.elements)  # type: ignore[arg-type]
-        second = apply_bundle(new_doc, bundle, "commit")
+        second, _ = apply_bundle(new_doc, bundle, "commit")
         # parentRevision=1 but new_doc.revision=2 → conflict
         classes = {v.get("advisoryClass") for v in second.violations}
         assert "revision_conflict" in classes
@@ -160,7 +160,7 @@ class TestIdempotentReplay:
 class TestCheckpointDeterminism:
     def test_checkpoint_present_on_dry_run(self):
         doc = _seed_doc()
-        result = apply_bundle(doc, _bundle(), "dry_run")
+        result, _ = apply_bundle(doc, _bundle(), "dry_run")
         assert result.checkpoint_snapshot_id is not None
         assert len(result.checkpoint_snapshot_id) == 64
 
@@ -168,6 +168,6 @@ class TestCheckpointDeterminism:
         """On assumption failure the checkpoint is hash(doc.elements) — always repeatable."""
         doc = _seed_doc()
         stale_bundle = _bundle(parentRevision=99)
-        r_a = apply_bundle(doc, stale_bundle, "dry_run")
-        r_b = apply_bundle(doc, stale_bundle, "dry_run")
+        r_a, _ = apply_bundle(doc, stale_bundle, "dry_run")
+        r_b, _ = apply_bundle(doc, stale_bundle, "dry_run")
         assert r_a.checkpoint_snapshot_id == r_b.checkpoint_snapshot_id
