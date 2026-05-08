@@ -49,6 +49,12 @@ class CreateLevelCmd(BaseModel):
     plan_view_id: str | None = Field(default=None, alias="planViewId")
 
 
+class WallStackComponentCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    wall_type_id: str = Field(alias="wallTypeId")
+    height_mm: float = Field(alias="heightMm", gt=0)
+
+
 class CreateWallCmd(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     type: Literal["createWall"] = "createWall"
@@ -67,6 +73,16 @@ class CreateWallCmd(BaseModel):
     insulation_extension_mm: float = Field(default=0, alias="insulationExtensionMm")
     material_key: str | None = Field(default=None, alias="materialKey")
     is_curtain_wall: bool = Field(default=False, alias="isCurtainWall")
+    stack_components: list[WallStackComponentCmd] = Field(
+        default_factory=list, alias="stackComponents"
+    )
+
+
+class SetWallStackCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["setWallStack"] = "setWallStack"
+    wall_id: str = Field(alias="wallId")
+    components: list[WallStackComponentCmd] = Field(default_factory=list)
 
 
 class MoveWallDeltaCmd(BaseModel):
@@ -1863,6 +1879,7 @@ Command = Annotated[
     | SetViewPhaseFilterCmd
     | CreateSunSettingsCmd
     | UpdateSunSettingsCmd
-    | MoveElementCmd,
+    | MoveElementCmd
+    | SetWallStackCmd,
     Field(discriminator="type"),
 ]

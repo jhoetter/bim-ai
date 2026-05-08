@@ -22,7 +22,21 @@ export type SketchValidationState = {
   issues: SketchValidationIssue[];
 };
 
-export type SketchElementKind = 'floor' | 'roof' | 'room_separation';
+export type SketchElementKind = 'floor' | 'roof' | 'room_separation' | 'stair_by_sketch';
+
+export type StairSketchFinishOpts = {
+  topLevelId: string;
+  baseLevelId?: string;
+  authoringMode: 'by_sketch';
+  boundaryMm: { xMm: number; yMm: number }[];
+  treadLines: {
+    fromMm: { xMm: number; yMm: number };
+    toMm: { xMm: number; yMm: number };
+    riserHeightMm?: number;
+  }[];
+  totalRiseMm: number;
+  name?: string;
+};
 export type PickWallsOffsetMode = 'centerline' | 'interior_face';
 
 export type PickedWallWire = {
@@ -147,7 +161,12 @@ export async function setPickWallsOffsetMode(
 
 export async function finishSketchSession(
   sessionId: string,
-  opts: { name?: string; userId?: string; clientOpId?: string } = {},
+  opts: {
+    name?: string;
+    userId?: string;
+    clientOpId?: string;
+    options?: Record<string, unknown>;
+  } = {},
 ): Promise<FinishSketchResponse> {
   return postJson<FinishSketchResponse>(
     `/api/sketch-sessions/${encodeURIComponent(sessionId)}/finish`,
@@ -155,6 +174,7 @@ export async function finishSketchSession(
       name: opts.name,
       userId: opts.userId ?? 'local-dev',
       clientOpId: opts.clientOpId,
+      ...(opts.options ? { options: opts.options } : {}),
     },
   );
 }

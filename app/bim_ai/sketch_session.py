@@ -35,6 +35,7 @@ SketchElementKind = Literal[
     "void_cut",
     "detail_region",
     "stair",
+    "stair_by_sketch",
 ]
 SketchSessionStatus = Literal["open", "finished", "cancelled"]
 # SKT-02: sub-tool config — does Pick Walls insert wall centerlines or
@@ -433,6 +434,55 @@ def _emit_stair(session: SketchSession, opts: dict[str, Any]) -> list[dict[str, 
     return [cmd]
 
 
+def _emit_stair_by_sketch(session: SketchSession, opts: dict[str, Any]) -> list[dict[str, Any]]:
+    """KRN-V3-05 — emit a CreateStair with authoringMode='by_sketch' from opts."""
+
+    from bim_ai.sketch_validation import SketchInvalidError
+
+    base_level_id = opts.get("baseLevelId") or session.level_id
+    top_level_id = opts.get("topLevelId")
+    if not top_level_id:
+        raise SketchInvalidError(
+            "missing_top_level",
+            "stair_by_sketch Finish requires `topLevelId` in options.",
+        )
+
+    boundary_mm = opts.get("boundaryMm")
+    if not boundary_mm or len(boundary_mm) < 3:
+        raise SketchInvalidError(
+            "missing_boundary",
+            "stair_by_sketch Finish requires `boundaryMm` with ≥ 3 points.",
+        )
+
+    tread_lines = opts.get("treadLines")
+    if not tread_lines or len(tread_lines) < 1:
+        raise SketchInvalidError(
+            "missing_tread_lines",
+            "stair_by_sketch Finish requires `treadLines` with ≥ 1 entry.",
+        )
+
+    total_rise_mm = opts.get("totalRiseMm")
+    if not total_rise_mm or total_rise_mm <= 0:
+        raise SketchInvalidError(
+            "missing_total_rise",
+            "stair_by_sketch Finish requires `totalRiseMm` > 0.",
+        )
+
+    cmd: dict[str, Any] = {
+        "type": "createStair",
+        "name": opts.get("name", "Stair"),
+        "baseLevelId": base_level_id,
+        "topLevelId": top_level_id,
+        "runStartMm": boundary_mm[0],
+        "runEndMm": boundary_mm[-1],
+        "authoringMode": "by_sketch",
+        "boundaryMm": boundary_mm,
+        "treadLines": tread_lines,
+        "totalRiseMm": total_rise_mm,
+    }
+    return [cmd]
+
+
 SUBMODES: dict[str, SubmodeSpec] = {
     "floor": SubmodeSpec(_validate_polygon_session, _emit_floor),
     "roof": SubmodeSpec(_validate_polygon_session, _emit_roof),
@@ -442,6 +492,7 @@ SUBMODES: dict[str, SubmodeSpec] = {
     "void_cut": SubmodeSpec(_validate_polygon_session, _emit_void_cut),
     "detail_region": SubmodeSpec(_validate_line_set_session, _emit_detail_region),
     "stair": SubmodeSpec(_validate_line_set_session, _emit_stair),
+    "stair_by_sketch": SubmodeSpec(lambda _session: None, _emit_stair_by_sketch),
 }
 
 

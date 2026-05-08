@@ -230,6 +230,17 @@ class WallRecessZone(BaseModel):
     floor_continues: bool = Field(default=False, alias="floorContinues")
 
 
+class WallStackComponent(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    wall_type_id: str = Field(alias="wallTypeId")
+    height_mm: float = Field(alias="heightMm", gt=0)
+
+
+class WallStack(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    components: list[WallStackComponent] = Field(default_factory=list)
+
+
 class WallElem(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True)
     kind: Literal["wall"] = "wall"
@@ -266,6 +277,7 @@ class WallElem(BaseModel):
         default=None, alias="curtainPanelOverrides"
     )
     recess_zones: list[WallRecessZone] | None = Field(default=None, alias="recessZones")
+    stack: WallStack | None = Field(default=None)
 
 
 DoorOperationType = Literal[

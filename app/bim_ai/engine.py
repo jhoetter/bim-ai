@@ -142,6 +142,8 @@ from bim_ai.commands import (
     UpsertWallTypeCmd,
     CreateSunSettingsCmd,
     UpdateSunSettingsCmd,
+    SetWallStackCmd,
+    WallStackComponentCmd,
 )
 from bim_ai.constraints import Violation, evaluate
 from bim_ai.datum_levels import (
@@ -233,6 +235,8 @@ from bim_ai.elements import (
     WallBasisLine,
     WallElem,
     WallOpeningElem,
+    WallStack,
+    WallStackComponent,
     WallTypeElem,
     WindowElem,
     PhaseElem,
@@ -419,13 +423,7 @@ def _validate_stair_boundary(points: list[Vec2Mm]) -> None:
     if len(points) < 3:
         raise ValueError("stair boundary must have ≥ 3 points")
     n = len(points)
-    area2 = 0.0
-    for i in range(n):
-        a = points[i]
-        b = points[(i + 1) % n]
-        area2 += a.x_mm * b.y_mm - b.x_mm * a.y_mm
-    if abs(area2) < 1.0:
-        raise ValueError("stair boundary has zero area")
+    # Self-intersection check runs before area so bowtie shapes get the right error.
     for i in range(n):
         ax, ay = points[i].x_mm, points[i].y_mm
         bx, by = points[(i + 1) % n].x_mm, points[(i + 1) % n].y_mm
@@ -447,6 +445,13 @@ def _validate_stair_boundary(points: list[Vec2Mm]) -> None:
                 raise ValueError(
                     f"stair boundary is self-intersecting (edge {i} crosses edge {j})"
                 )
+    area2 = 0.0
+    for i in range(n):
+        a = points[i]
+        b = points[(i + 1) % n]
+        area2 += a.x_mm * b.y_mm - b.x_mm * a.y_mm
+    if abs(area2) < 1.0:
+        raise ValueError("stair boundary has zero area")
 
 
 def _materialize_stair_runs_and_landings(
@@ -518,6 +523,31 @@ def _materialize_stair_runs_and_landings(
                 polyline_mm=polyline,
             )
         ]
+
+    if cmd.authoring_mode == "by_sketch" and cmd.tread_lines:
+        balanced = _balance_tread_risers(cmd.tread_lines, cmd.total_rise_mm or 0.0)
+        stair_id = cmd.id or "stair"
+        runs = []
+        for i in range(len(cmd.tread_lines) - 1):
+            tl_a = cmd.tread_lines[i]
+            tl_b = cmd.tread_lines[i + 1]
+            mid_a = Vec2Mm(
+                xMm=(tl_a.from_mm.x_mm + tl_a.to_mm.x_mm) / 2,
+                yMm=(tl_a.from_mm.y_mm + tl_a.to_mm.y_mm) / 2,
+            )
+            mid_b = Vec2Mm(
+                xMm=(tl_b.from_mm.x_mm + tl_b.to_mm.x_mm) / 2,
+                yMm=(tl_b.from_mm.y_mm + tl_b.to_mm.y_mm) / 2,
+            )
+            runs.append(
+                StairRun(
+                    id=f"{stair_id}-run-{i + 1}",
+                    start_mm=mid_a,
+                    end_mm=mid_b,
+                    width_mm=cmd.width_mm,
+                    riser_count=1,
+                )
+            )
 
     return runs, landings
 
@@ -751,6 +781,18 @@ def _wall_thickness_from_type(
     if not isinstance(wt, WallTypeElem) or not wt.layers:
         return fallback
     return float(sum(lyr.thickness_mm for lyr in wt.layers)) or fallback
+
+
+def _validate_wall_stack(components: list, wall_height_mm: float) -> None:
+    """Validate stacked-wall components: prefix Σ heightMm must be < wall heightMm."""
+    if not components:
+        raise ValueError("wall stack must have at least one component")
+    prefix_sum = sum(c.height_mm for c in components[:-1])
+    if prefix_sum >= wall_height_mm:
+        raise ValueError(
+            f"wall stack prefix Σ heightMm ({prefix_sum} mm) must be < "
+            f"wall heightMm ({wall_height_mm} mm)"
+        )
 
 
 def _floor_dims_from_type(
@@ -1035,6 +1077,15 @@ def apply_inplace(
                 raise ValueError("createWall.levelId must reference an existing Level")
             h_mm = _resolve_wall_height_mm(cmd, els)
             thick = _wall_thickness_from_type(els, cmd.wall_type_id, cmd.thickness_mm)
+            wall_stack = None
+            if cmd.stack_components:
+                _validate_wall_stack(cmd.stack_components, h_mm)
+                wall_stack = WallStack(
+                    components=[
+                        WallStackComponent(wall_type_id=c.wall_type_id, height_mm=c.height_mm)
+                        for c in cmd.stack_components
+                    ]
+                )
             els[eid] = WallElem(
                 kind="wall",
                 id=eid,
@@ -1052,6 +1103,7 @@ def apply_inplace(
                 insulation_extension_mm=cmd.insulation_extension_mm,
                 material_key=cmd.material_key,
                 is_curtain_wall=cmd.is_curtain_wall,
+                stack=wall_stack,
             )
 
         case MoveWallDeltaCmd():
@@ -2045,7 +2097,17 @@ def apply_inplace(
             for lid in (cmd.base_level_id, cmd.top_level_id):
                 if lid not in els or not isinstance(els[lid], LevelElem):
                     raise ValueError("createStair base/top level must reference existing Level")
+            if cmd.authoring_mode == "by_sketch" and cmd.tread_lines and cmd.boundary_mm:
+                _validate_stair_boundary(cmd.boundary_mm)
             stair_runs, stair_landings = _materialize_stair_runs_and_landings(cmd)
+            # Balance tread risers for by_sketch mode (fill in null riserHeightMm values).
+            balanced_tread_lines = cmd.tread_lines
+            if cmd.authoring_mode == "by_sketch" and cmd.tread_lines and cmd.total_rise_mm:
+                balanced = _balance_tread_risers(cmd.tread_lines, cmd.total_rise_mm)
+                balanced_tread_lines = [
+                    tl.model_copy(update={"riser_height_mm": r})
+                    for tl, r in zip(cmd.tread_lines, balanced)
+                ]
             els[sid] = StairElem(
                 kind="stair",
                 id=sid,
@@ -2065,6 +2127,10 @@ def apply_inplace(
                 outer_radius_mm=cmd.outer_radius_mm,
                 total_rotation_deg=cmd.total_rotation_deg,
                 sketch_path_mm=cmd.sketch_path_mm,
+                authoring_mode=cmd.authoring_mode,
+                boundary_mm=cmd.boundary_mm,
+                tread_lines=balanced_tread_lines,
+                total_rise_mm=cmd.total_rise_mm,
             )
 
         case CreateSlabOpeningCmd():
@@ -4116,6 +4182,22 @@ def apply_inplace(
                     f"moveElement: elementId {cmd.element_id!r} must reference a door or window"
                 )
 
+        case SetWallStackCmd():
+            wall = els.get(cmd.wall_id)
+            if not isinstance(wall, WallElem):
+                raise ValueError("setWallStack.wallId must reference a Wall")
+            if not cmd.components:
+                els[cmd.wall_id] = wall.model_copy(update={"stack": None})
+            else:
+                _validate_wall_stack(cmd.components, wall.height_mm)
+                new_stack = WallStack(
+                    components=[
+                        WallStackComponent(wall_type_id=c.wall_type_id, height_mm=c.height_mm)
+                        for c in cmd.components
+                    ]
+                )
+                els[cmd.wall_id] = wall.model_copy(update={"stack": new_stack})
+
     # KRN-08: areas track a derived computedAreaSqMm. Recompute after every
     # command apply so create/update/delete of areas (and shafts that affect
     # `net` rule-set deductions) keep the value current.
@@ -5235,3 +5317,59 @@ def try_commit(
     cand.revision = doc.revision + 1
 
     return True, cand, cmds, violations, "ok"
+
+
+# ---------------------------------------------------------------------------
+# KRN-V3-02: Stacked wall helpers (pure functions)
+# ---------------------------------------------------------------------------
+
+
+def resolve_stack_wall_type_at_cut(wall: WallElem, cut_plane_offset_mm: float) -> str | None:
+    """Return the wallTypeId of the component containing the cut-plane height.
+
+    Falls back to wall.wall_type_id for non-stacked walls.
+    ``cut_plane_offset_mm`` is measured from the wall's base (level elevation).
+    """
+    if wall.stack is None or not wall.stack.components:
+        return wall.wall_type_id
+    accumulated = 0.0
+    for i, component in enumerate(wall.stack.components):
+        is_last = i == len(wall.stack.components) - 1
+        top = wall.height_mm if is_last else accumulated + component.height_mm
+        if accumulated <= cut_plane_offset_mm < top:
+            return component.wall_type_id
+        accumulated += component.height_mm
+    return wall.stack.components[-1].wall_type_id
+
+
+def schedule_stacked_components(wall: WallElem) -> list[dict]:
+    """Enumerate stack components as schedule rows.
+
+    Returns one row per component (or one row for a non-stacked wall).
+    Keys: wallId, wallTypeId, heightMm, componentIndex.
+    The last component's heightMm is the remainder (wall.height_mm - prefix sum).
+    """
+    if wall.stack is None or not wall.stack.components:
+        return [
+            {
+                "wallId": wall.id,
+                "wallTypeId": wall.wall_type_id,
+                "heightMm": wall.height_mm,
+                "componentIndex": 0,
+            }
+        ]
+    rows = []
+    accumulated = 0.0
+    for i, comp in enumerate(wall.stack.components):
+        is_last = i == len(wall.stack.components) - 1
+        effective_height = (wall.height_mm - accumulated) if is_last else comp.height_mm
+        rows.append(
+            {
+                "wallId": wall.id,
+                "wallTypeId": comp.wall_type_id,
+                "heightMm": effective_height,
+                "componentIndex": i,
+            }
+        )
+        accumulated += comp.height_mm
+    return rows

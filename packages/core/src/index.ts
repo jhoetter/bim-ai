@@ -104,6 +104,24 @@ export type CreateLinkDxfCmd = {
   pinned?: boolean;
 };
 
+/** KRN-V3-05: a single tread line in a by_sketch stair. */
+export type StairTreadLine = {
+  fromMm: XY;
+  toMm: XY;
+  riserHeightMm?: number | null;
+};
+
+/** KRN-V3-02: one component in a stacked wall. */
+export type WallStackComponent = {
+  wallTypeId: string;
+  heightMm: number;
+};
+
+/** KRN-V3-02: stacked wall definition (multiple wall types stacked vertically). */
+export type WallStack = {
+  components: WallStackComponent[];
+};
+
 /** KRN-07: a single straight flight in a multi-run stair. */
 export type StairRun = {
   id: string;
@@ -464,6 +482,8 @@ export type Element =
       phaseId?: string | null;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
+      /** KRN-V3-02: stacked wall definition. When set, components are stacked base-up. */
+      stack?: WallStack;
     }
   | {
       kind: 'door';
@@ -677,6 +697,14 @@ export type Element =
       totalRotationDeg?: number;
       /** KRN-07 closeout: arbitrary closed/open polyline for shape='sketch' stairs. */
       sketchPathMm?: XY[];
+      /** KRN-V3-05: authoring mode — 'by_component' (default) or 'by_sketch'. */
+      authoringMode?: 'by_component' | 'by_sketch';
+      /** KRN-V3-05: stair footprint polygon for by_sketch mode. */
+      boundaryMm?: XY[];
+      /** KRN-V3-05: tread lines for by_sketch mode. */
+      treadLines?: StairTreadLine[];
+      /** KRN-V3-05: total rise in mm for by_sketch mode. */
+      totalRiseMm?: number;
       overrideParams?: Record<string, unknown>;
       pinned?: boolean;
       phaseCreated?: string | null;
