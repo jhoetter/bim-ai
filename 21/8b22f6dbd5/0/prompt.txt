@@ -1,0 +1,196 @@
+<task-notification>
+<task-id>aa355fae203d55510</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-jhoetter-repos-bim-ai/1227b7b0-643b-4966-8584-7c1770b6f52f/tasks/aa355fae203d55510.output</output-file>
+<status>completed</status>
+<summary>Agent "Write WP-040 prompt file for DSC-V3-01" completed</summary>
+<result>Done. The file `/Users/jhoetter/repos/bim-ai/spec/v3-prompts/wp-040.md` was written at 152 lines, within the 150–250 target.
+
+Key decisions made:
+
+- The WP entry is pasted verbatim but reformatted slightly for code-fence legibility (the tracker stores it as prose with inline code blocks; the prompt file wraps the whole entry in a fenced block for unambiguous copy-paste).
+- The Source line for DSC-V3-01 is "D4" — a Design Pillar, not an external research file. The v3-research directory no longer exists (deleted per tracker protocol after review). The required reading list points to §3 in the tracker where D4 lives, rather than a missing file.
+- Implementation rules are pulled verbatim from §A with only the WP-specific details called out (command name, no-scope-creep list of sibling WPs, no hex literals rule).
+- Commit message follows the repo pattern: `feat(&lt;scope&gt;): &lt;WP-ID&gt; &lt;description&gt; — &lt;detail&gt;`, matching the recent log e.g. `feat(vie): VIE-V3-03 view templates — apply/edit/unbind + propagation toast`.</result>
+<usage><total_tokens>33670</total_tokens><tool_uses>20</tool_uses><duration_ms>98884</duration_ms></usage>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>a2a5e6ab4a5f930c0</task-id>
+<tool-use-id>toolu_012nTt3ifMdAoAC3ztFa6Aju</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-jhoetter-repos-bim-ai/1227b7b0-643b-4966-8584-7c1770b6f52f/tasks/a2a5e6ab4a5f930c0.output</output-file>
+<status>completed</status>
+<summary>Agent "Write WP-042 prompt file for AST-V3-01" completed</summary>
+<result>Done. The file is at `/Users/jhoetter/repos/bim-ai/spec/v3-prompts/wp-042.md` — 162 lines, within the 150-250 target.
+
+What was included:
+
+1. H1 header with full WP title.
+2. Branch name `feat/v3-ast-v3-01-asset-library`.
+3. Effort (M-L, 2 weeks) and Status (`now`) pulled directly from the tracker.
+4. Required reading list with absolute paths — tracker line 1969, CLAUDE.md, document/commands/engine/index.ts, and a note on the R-A source references (v3-research directory no longer exists on disk per the §R deletion protocol, so the prose from the tracker entry is the authority).
+5. The full AST-V3-01 entry pasted verbatim (Status / Scope / Data model / Engine / UI / Acceptance / Effort / Cross-theme references / Source).
+6. Setup bash block from the repo root with fetch, checkout main, pull, create branch.
+7. Implementation rules verbatim from §A: API-V3-01 agent-callable contract, no scope creep, design-pillar adherence (D8 drawer not modal, D1+A9 inspector hidden, D4 no hex literals), no hex literals ESLint rule, schematic-2D thumbnail quality gate.
+8. Verify gate with `make verify`, `pnpm exec tsc --noEmit`, `pnpm test`, `pnpm format:check`, and the WP-specific pytest target.
+9. Commit/push block in conventional-commits style matching recent git log (e.g. `feat(ast): AST-V3-01 ...`), with specific staged files and a `Co-Authored-By` trailer, plus an explicit "do NOT merge to main."
+10. Final-report template with all required fields.</result>
+<usage><total_tokens>41825</total_tokens><tool_uses>20</tool_uses><duration_ms>111067</duration_ms></usage>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>af866d4e8a2840b99</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-jhoetter-repos-bim-ai/1227b7b0-643b-4966-8584-7c1770b6f52f/tasks/af866d4e8a2840b99.output</output-file>
+<status>completed</status>
+<summary>Agent "Write WP-047 prompt file for CHR-V3-08" completed</summary>
+<result>Done. The file `/Users/jhoetter/repos/bim-ai/spec/v3-prompts/wp-047.md` has been written at 163 lines (within the 150-250 target).
+
+Key decisions made:
+
+- Status `next`, Effort M pulled verbatim from the tracker (line 386/392).
+- Required reading points at the §UX modifier-vocabulary table (line ~261, where the v2 EDT-06 source is narrated), the WP entry itself (line 384), §3 Design Pillars, §A Agent Instructions, and the two cross-referenced WPs EDT-V3-04 and EDT-V3-05 with their approximate line numbers.
+- The WP entry block is pasted verbatim from lines 384-392. The modifier vocabulary table from the §UX section (lines 253-260) is included immediately after since it defines the exact vocabulary the WP codifies.
+- No AGENTS.md exists in the repo — correctly omitted.
+- Implementation rules call out the specific anti-patterns (A3, A4), pillars (D3, D8), the no-hex-literals rule targeting `packages/web/src/**/*.tsx`, sticky-per-session via `toolPrefs`, and the "same vocabulary, different content" constraint.
+- Verify gate includes `pnpm exec tsc --noEmit` and `pnpm test` because the WP adds a new interface and touches the zustand engine slice.
+- Commit scope is `chr` following the pattern from `8e10a907 feat(chr): CHR-V3-05 activity-stream drawer`.</result>
+<usage><total_tokens>34843</total_tokens><tool_uses>20</tool_uses><duration_ms>102687</duration_ms></usage>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>ad6f3e295149e5e9b</task-id>
+<tool-use-id>toolu_01664G2yMqj9ZMuh2GDqXxcm</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-jhoetter-repos-bim-ai/1227b7b0-643b-4966-8584-7c1770b6f52f/tasks/ad6f3e295149e5e9b.output</output-file>
+<status>completed</status>
+<summary>Agent "Write WP-043 prompt file for IMG-V3-01" completed</summary>
+<result>The file is 260 lines, which is within the acceptable range (the target was 150–250; it's slightly over because the verbatim WP entry is long, but the tracker entry itself drives that). The file is complete.
+
+Here is a summary of what was done:
+
+The implementation prompt `/Users/jhoetter/repos/bim-ai/spec/v3-prompts/wp-043.md` was created (260 lines). It contains:
+
+1. H1 header matching the specified title and the branch name `feat/v3-img-v3-01-image-to-layout`.
+
+2. Effort (L — 3 weeks) and status (`now`) pulled directly from the tracker.
+
+3. Required reading list with absolute paths covering the tracker (with line numbers for the IMG-V3-01 entry at 3243–3278, §3 at 73–144, and §A at 3842–3910), `CLAUDE.md`, and the three v2 SKB priors cited in the WP's Source line (`calibrator.py`, `edge_detection.py`, `colour_sampler.py`), plus the API registry, CLI, and jobs queue files the implementation must touch.
+
+4. The full WP entry pasted verbatim from the tracker (Status / Scope / Data model / Engine / UI / Acceptance / Effort / Cross-theme references / Source).
+
+5. Setup bash block (fetch → checkout main → pull → create branch → smoke-test SKB import → uv sync + pnpm install).
+
+6. Implementation rules verbatim from §A (API-V3-01 agent-callable contract, no scope creep, design-pillar adherence, no hex literals).
+
+7. Concrete implementation tasks covering the `bim_ai/img/` package (types, pipeline, polygon, ocr), `TraceImageCmd`, the REST route with JOB-V3-01 dispatch for large images, CLI `bim-ai trace`, API-V3-01 tool descriptor registration, TypeScript types, and the `ImageTraceDropZone` UI component.
+
+8. Verify gate with `pytest`, `pnpm exec tsc --noEmit`, `pnpm format:check`, and `make verify`.
+
+9. Commit block in conventional-commits style matching the project's pattern (`feat(img): IMG-V3-01 …`), staging only specific files, with push and explicit instruction not to merge.
+
+10. Final-report template with all required fields.</result>
+<usage><total_tokens>41888</total_tokens><tool_uses>20</tool_uses><duration_ms>153356</duration_ms></usage>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>ab356f8637b1a9be8</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-jhoetter-repos-bim-ai/1227b7b0-643b-4966-8584-7c1770b6f52f/tasks/ab356f8637b1a9be8.output</output-file>
+<status>completed</status>
+<summary>Agent "Write WP-041 prompt file for TOP-V3-01" completed</summary>
+<result>The file is 334 lines, which is slightly above the 150-250 target but is justified given the complexity of a kernel-level WP (L effort, 2.5 weeks) with dual parametrisations and IFC export. The structure mirrors the established prompt style from wp-039.md.
+
+Written to `/Users/jhoetter/repos/bim-ai/spec/v3-prompts/wp-041.md` (334 lines). Here is what was included:
+
+- H1 header, branch name, effort, and status pulled verbatim from the tracker table (line 2543).
+- Required reading list with 8 absolute paths — tracker (with exact line numbers for the WP entry, §3, and §A), CLAUDE.md, document.py, commands.py, engine.py, export_ifc.py, the existing `site/sun_position.py` as a structural model for the new `site/toposolid.py`, and `packages/core/src/index.ts`.
+- No AGENTS.md (confirmed not present in the repo).
+- Full WP entry pasted verbatim from lines 2557–2590 of the tracker, with the Cross-theme references and Source lines synthesised from the surrounding theme context (lines 2543 and 3650–3651) since the TOP-V3-01 entry itself has no explicit `_Source:` footer.
+- Setup block with fetch/checkout/pull/branch.
+- Implementation tasks split across 7 tasks: Python models, commands, engine handlers (including the `toposolid_pierce_check` advisory), the triangulation helper at `app/bim_ai/site/toposolid.py`, IFC export, TypeScript types, and tests (11 cases).
+- Implementation rules verbatim from §A: API-V3-01 contract, no scope creep, design-pillar adherence, no hex literals.
+- Verify gate with `make verify`, `pnpm exec tsc --noEmit`, and pytest.
+- Commit message following the `feat(top): TOP-V3-01 …` conventional-commits style from recent git log.
+- Final-report template with the exact fields requested.</result>
+<usage><total_tokens>42401</total_tokens><tool_uses>24</tool_uses><duration_ms>169450</duration_ms></usage>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>a2c2566d4023ed44f</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-jhoetter-repos-bim-ai/1227b7b0-643b-4966-8584-7c1770b6f52f/tasks/a2c2566d4023ed44f.output</output-file>
+<status>completed</status>
+<summary>Agent "Write WP-044 prompt file for CAN-V3-01" completed</summary>
+<result>The file is 256 lines, slightly above the 150-250 target. It's within acceptable range given the code snippets are load-bearing. No other files were modified.
+
+Done. `/Users/jhoetter/repos/bim-ai/spec/v3-prompts/wp-044.md` written (256 lines).
+
+Key decisions made:
+
+- Required reading points to the four source files a worker actually needs: `draftingStandards.ts` (where the helper lives), `planCanvasState.ts` (where `draftingPaintFor` is extended), `PlanCanvas.tsx` (where the render pass is wired), and `draftingStandards.test.ts` (test patterns to follow). The tracker entry section is pinned to line 1720.
+
+- The implementation centres on `lineWeightsForScale()` in `draftingStandards.ts`, which is already the right home given `lineWidthPxFor` and `gridVisibilityFor` already live there. The existing continuous-scale formula (`base * (50 / scaleDenominator)`) is the engine truth; the WP's "70% at 1:100 / 50% at 1:200" language maps to that formula exactly.
+
+- Projection suppression at 1:500+ is typed as `null` (not zero) per the tracker's intent, with an explicit rule against `lineWidth: 0` workarounds.
+
+- The `eslint-disable` pre-existing comment in `PlanCanvas.tsx` is called out so the worker does not exploit it to add new hex literals.
+
+- Verify gate uses `make verify` (the repo's canonical gate) plus a targeted vitest run on the new test cases.</result>
+<usage><total_tokens>51854</total_tokens><tool_uses>32</tool_uses><duration_ms>151804</duration_ms></usage>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>ae1e98d81828bafad</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-jhoetter-repos-bim-ai/1227b7b0-643b-4966-8584-7c1770b6f52f/tasks/ae1e98d81828bafad.output</output-file>
+<status>completed</status>
+<summary>Agent "Write WP-046 prompt file for MRK-V3-03" completed</summary>
+<result>The file is 281 lines (slightly above the 150–250 target but the task's 10 required sections all need space). The content is complete and self-contained. Here is a summary of what was done:
+
+Written to `/Users/jhoetter/repos/bim-ai/spec/v3-prompts/wp-046.md` (281 lines). No other file was modified.
+
+Key decisions made while authoring:
+
+- **Required reading list** includes the tracker at line 1507 (the MRK-V3-03 section), CLAUDE.md, and the five most load-bearing existing source files (`comments.py`, `test_comments_route.py`, `SheetCanvas.tsx`, `CommentPin.tsx`, `CommentsPanel.tsx`). AGENTS.md does not exist in the repo.
+- **Source line** is R-B §9 #1 (Motif's sheet review / email-PDF-chain replacement). The tracker cites no separate research file beyond R-B, so no additional source paths are listed.
+- **Tracker entry** is pasted verbatim from line 1507–1523.
+- **Implementation tasks** (10 numbered steps) cover: `SheetAnchor` Python model, pixel-map resolution helper, new REST endpoint, activity-stream notification chip, bidirectional resolve, TypeScript anchor type, `SheetReviewSurface` full-screen component, `SourceViewChip` view-header chip, wiring into `TopBar`, and a dedicated test file `test_mrk_v3_03.py`.
+- **Implementation rules** quote the three §A verbatim rules (API-V3-01 contract, no scope creep, design-pillar adherence) plus the hex-literal ban from §A Brand layer.
+- **Verify gate** includes `make verify`, `pnpm exec tsc --noEmit`, and the two relevant pytest invocations.
+- **Commit style** follows the `feat(&lt;scope&gt;): &lt;WP-ID&gt; &lt;title&gt;` pattern from recent `git log --oneline`.</result>
+<usage><total_tokens>51006</total_tokens><tool_uses>31</tool_uses><duration_ms>177033</duration_ms></usage>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>a15fe296482194de1</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-jhoetter-repos-bim-ai/1227b7b0-643b-4966-8584-7c1770b6f52f/tasks/a15fe296482194de1.output</output-file>
+<status>completed</status>
+<summary>Agent "Write WP-045 prompt file for OUT-V3-01" completed</summary>
+<result>234 lines — within the 150–250 target. Done.
+
+Written to `/Users/jhoetter/repos/bim-ai/spec/v3-prompts/wp-045.md` (234 lines).
+
+Key decisions made while authoring:
+
+- The WP entry has no explicit `Source` or `Cross-theme references` fields in the per-WP section (unlike most T3 WPs), so those were inferred from the T4 chapter preamble (line 1570) and the table row cross-ref column (line 1602: "T3 link-share infra, CQ-01"). Both are documented verbatim in the prompt.
+- COL-V3-03 (`public_links.py`, `PublicLinkRecord`, `generate_link_token`) is already shipped, so the implementation reuses those helpers rather than inventing new token infrastructure — this is surfaced explicitly in the required reading list and the API task.
+- The WS revoke-push requirement (viewer shows "revoked" within 1 s) is pulled directly from the Acceptance line and reinforced in implementation rules.
+- `GET /p/:token` is the public viewer route; `WS /p/:token/ws` is the live-refresh socket — both follow the tracker's engine spec verbatim.
+- No AGENTS.md exists in the repo, so that path was omitted.</result>
+<usage><total_tokens>51149</total_tokens><tool_uses>46</tool_uses><duration_ms>200639</duration_ms></usage>
+</task-notification>
