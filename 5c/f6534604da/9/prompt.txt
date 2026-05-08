@@ -1,0 +1,1 @@
+Read /Users/jhoetter/repos/bim-ai/spec/v3-prompts/wp-037.md end-to-end, then implement everything it describes.
