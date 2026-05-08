@@ -1,13 +1,7 @@
 # v3 Build State
 
-Last updated: 2026-05-08 (8/8 merged; next wave prompts wp-009..wp-015 ready)
+Last updated: 2026-05-08 (wave-2 complete: 6/7 + WP-010/012 merged by orchestrator; 8 slots free)
 Active heavy workers: 0 / 8
-
-## Live workers
-
-_(none — all 8 slots free)_
-
-Statuses: `dispatched-pending-prompt` (writer subagent in flight), `dispatched` (prompt file written, awaiting user to start worker), `working` (worker started, no report yet), `pushed` (branch pushed, awaiting review-subagent), `reviewed-pass` / `reviewed-fail`, `merged`, `failed`.
 
 ## Merged so far
 
@@ -22,46 +16,47 @@ Statuses: `dispatched-pending-prompt` (writer subagent in flight), `dispatched` 
 | KRN-V3-06 plan region (WP-006) | feat/v3-krn-v3-06-plan-region | 2026-05-08 | 5cdcf1db |
 | SUN-V3-01 sun & shadow (WP-007) | feat/v3-sun-v3-01-sun-shadow | 2026-05-08 | c3cfd58f |
 
-## Next wave — prompts ready, awaiting workers
+## Wave-2 merged
 
-| NNN | WP-ID | Prompt | Branch | Status |
-| --- | ----- | ------ | ------ | ------ |
-| 009 | CMD-V3-01 command-bundle apply API | wp-009.md | feat/v3-cmd-v3-01-bundle-apply | dispatched |
-| 010 | KRN-V3-02 stacked walls | wp-010.md | feat/v3-krn-v3-02-stacked-walls | dispatched |
-| 011 | KRN-V3-03 multi-roof + fascia/gutter + soffit | wp-011.md | feat/v3-krn-v3-03-multi-roof | dispatched |
-| 012 | KRN-V3-05 stair by sketch | wp-012.md | feat/v3-krn-v3-05-stair-by-sketch | dispatched |
-| 013 | CQ-01 WebSocket robustness | wp-013.md | feat/v3-cq-01-ws-robustness | dispatched |
-| 014 | CHR-V3-01 top-bar component | wp-014.md | feat/v3-chr-v3-01-topbar | dispatched |
-| 015 | CHR-V3-02 workspace switcher | wp-015.md | feat/v3-chr-v3-02-workspace-switcher | dispatched |
+| WP-ID | Branch | Merged at | Commit |
+| ----- | ------ | --------- | ------ |
+| CQ-01 WebSocket robustness (WP-013) | feat/v3-cq-01-ws-robustness | 2026-05-08 | 8635755a |
+| CMD-V3-01 apply-bundle (WP-009) | feat/v3-cmd-v3-01-bundle-apply | 2026-05-08 | cc5d6fae |
+| KRN-V3-03 multi-roof + soffit (WP-011) | feat/v3-krn-v3-03-multi-roof | 2026-05-08 | 81be0542 |
+| CHR-V3-01 + CHR-V3-02 TopBar + switcher (WP-014+015) | feat/v3-chr-v3-02-workspace-switcher | 2026-05-08 | 07f84d64 |
+| KRN-V3-02 stacked walls (WP-010) + KRN-V3-05 stair by sketch (WP-012) | main (orchestrator) | 2026-05-08 | 53536e47 |
 
-## Held back (deps not ready)
+## Held back (deps now unlocked)
 
-- **CMD-V3-02 assumption log** — depends on CMD-V3-01 (WP-009); dispatch after WP-009 merges.
-- **OPT-V3-01 design options** — depends on KRN-V3-04 + CMD-V3-01 (WP-009); dispatch after both merge.
-- **KRN-V3-07 slanted/tapered walls** — depends on KRN-V3-02 (WP-010); dispatch after WP-010 merges.
-- **KRN-V3-08 wall sweeps & reveals** — depends on KRN-V3-03 (WP-011); dispatch after WP-011 merges.
-- **KRN-V3-10 monolithic/floating stair sub-kinds** — depends on KRN-V3-05 (WP-012).
-- **KRN-V3-11 railing/baluster** — depends on KRN-V3-05 (WP-012).
-- **CHR-V3-02** — hard dep on CHR-V3-01 (WP-014) already noted in wp-015.md.
-- **COL-V3-01 multi-user** — hard dep: CQ-01 (WP-013) must land first.
-- **JOB-V3-01 Jobs panel** — depends on CQ-01 (WP-013).
+- **KRN-V3-07 slanted/tapered walls** — KRN-V3-02 merged; ready to dispatch.
+- **KRN-V3-08 wall sweeps & reveals** — KRN-V3-03 merged; ready to dispatch.
+- **KRN-V3-10 monolithic/floating stair sub-kinds** — KRN-V3-05 merged; ready to dispatch.
+- **KRN-V3-11 railing/baluster** — KRN-V3-05 merged; ready to dispatch.
+- **CMD-V3-02 assumption log** — CMD-V3-01 merged; ready to dispatch.
+- **COL-V3-01 multi-user** — CQ-01 merged; ready to dispatch.
+- **JOB-V3-01 Jobs panel** — CQ-01 merged; ready to dispatch.
+- **OPT-V3-01 design options** — depends on KRN-V3-04 (not yet merged); hold.
 - **CQ-04 god-file split** — high merge-conflict risk; schedule for quiet window.
 - **CQ-03 workspace reorg** — riskiest CQ item; dedicated quiet week.
 
-## File-overlap notes
+## Next wave (8 slots free — all deps satisfied)
 
-- WP-009 (CMD-V3-01) touches engine.py + routes_api.py + cli.mjs — same areas as WP-004/005/006 but those are merged; rebase cleanly from main.
-- WP-010 (KRN-V3-02) touches elements.py + engine.py — phasing fields from WP-004 are in place; no conflict expected.
-- WP-011 (KRN-V3-03) touches engine.py + roof_geometry.py — phasing from WP-004 merged; rebase cleanly.
-- WP-012 (KRN-V3-05) touches engine.py + sketch session — rebase from main.
-- WP-013 (CQ-01) touches hub.py + routes_api.py (WS handler) + frontend WS client — disjoint from kernel WPs.
-- WP-014 (CHR-V3-01) purely frontend chrome — no Python overlap.
-- WP-015 (CHR-V3-02) purely frontend chrome — no Python overlap; needs WP-014 first.
+All 8 slots are free. Candidates in priority order:
+
+1. **KRN-V3-07** slanted/tapered walls — dep KRN-V3-02 now merged
+2. **KRN-V3-08** wall sweeps & reveals — dep KRN-V3-03 now merged
+3. **KRN-V3-10** monolithic/floating stair sub-kinds — dep KRN-V3-05 now merged
+4. **KRN-V3-11** railing/baluster — dep KRN-V3-05 now merged
+5. **CMD-V3-02** assumption log — dep CMD-V3-01 now merged
+6. **COL-V3-01** multi-user collab — dep CQ-01 now merged
+7. **JOB-V3-01** Jobs panel — dep CQ-01 now merged
+8. **CHR-V3-03** status bar OR **CHR-V3-04** Cmd+K palette (chrome; no kernel deps)
 
 ## Notes
 
-- All 8 slots are free — start all 7 workers now (WP-015 can wait for WP-014 to land or run in parallel; the prompt notes the dependency).
-- API-V3-01 (WP-003) is merged — every new kernel verb in WP-010/011/012 must add CLI + REST + JSON schema per the API-V3-01 contract.
-- CMD-V3-01 (WP-009) is the T9 unlock — CMD-V3-02, OPT-V3-01, IMG-V3-01 depend on it.
-- CQ-01 (WP-013) is the T3 unlock — COL-V3-01, JOB-V3-01, OUT-V3-01 all depend on it.
+- API-V3-01 (WP-003) contract: every new kernel verb must add CLI + REST + JSON schema.
+- CMD-V3-01 (WP-009) is the T9 unlock — CMD-V3-02, OPT-V3-01 still pending KRN-V3-04.
+- CQ-01 (WP-013) is the T3 unlock — COL-V3-01, JOB-V3-01 now unblocked.
+- KRN-V3-02 (WP-010) merged — KRN-V3-07 now unblocked.
+- KRN-V3-05 (WP-012) merged — KRN-V3-10, KRN-V3-11 now unblocked.
 - Concurrency cap: 8 heavy workers in flight at any time.
