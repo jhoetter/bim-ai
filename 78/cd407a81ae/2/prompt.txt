@@ -1,0 +1,697 @@
+my CI CD for js is failing:
+Run pnpm verify
+  pnpm verify
+  shell: /usr/bin/bash -e {0}
+  env:
+    PNPM_HOME: /home/runner/setup-pnpm/node_modules/.bin
+
+> bim-ai@0.1.0 verify /home/runner/work/bim-ai/bim-ai
+> pnpm format:check && pnpm lint:root && pnpm architecture && pnpm typecheck && pnpm test && pnpm build
+
+
+> bim-ai@0.1.0 format:check /home/runner/work/bim-ai/bim-ai
+> prettier --check "**/*.{ts,tsx,js,jsx,json,yml,yaml}"
+
+Checking formatting...
+All matched files use Prettier code style!
+
+> bim-ai@0.1.0 lint:root /home/runner/work/bim-ai/bim-ai
+> eslint "packages/**/*.{ts,tsx}"
+
+
+/home/runner/work/bim-ai/bim-ai/packages/web/src/families/geometryFns/doorGeometry.ts
+Warning:   125:11  warning  'frameMat' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/runner/work/bim-ai/bim-ai/packages/web/src/plan/PlanCanvas.tsx
+Warning:   1203:6  warning  React Hook useEffect has a missing dependency: 'activeLevelResolvedId'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+Warning:   2763:6  warning  React Hook useEffect has a missing dependency: 'activePlanViewId'. Either include it or remove the dependency array       react-hooks/exhaustive-deps
+
+/home/runner/work/bim-ai/bim-ai/packages/web/src/plan/SketchCanvas.tsx
+Warning:   182:9  warning  The 'issues' logical expression could make the dependencies of useMemo Hook (at line 368) change on every render. To fix this, wrap the initialization of 'issues' in its own useMemo() Hook  react-hooks/exhaustive-deps
+
+✖ 4 problems (0 errors, 4 warnings)
+
+
+> bim-ai@0.1.0 architecture /home/runner/work/bim-ai/bim-ai
+> node scripts/check-architecture.mjs
+
+Architecture check OK
+
+> bim-ai@0.1.0 typecheck /home/runner/work/bim-ai/bim-ai
+> turbo typecheck
+
+
+Attention:
+Turborepo now collects completely anonymous telemetry regarding usage.
+This information is used to shape the Turborepo roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://turborepo.dev/docs/telemetry
+
+
+   • Packages in scope: @bim-ai/cli, @bim-ai/core, @bim-ai/design-tokens, @bim-ai/hofos-ui, @bim-ai/icons, @bim-ai/ui, @bim-ai/web
+   • Running typecheck in 7 packages
+   • Remote caching disabled
+
+@bim-ai/cli:typecheck
+@bim-ai/design-tokens:build
+@bim-ai/design-tokens:typecheck
+@bim-ai/core:typecheck
+@bim-ai/core:build
+@bim-ai/icons:build
+@bim-ai/icons:typecheck
+@bim-ai/ui:build
+@bim-ai/ui:typecheck
+@bim-ai/hofos-ui:typecheck
+@bim-ai/web:typecheck
+
+ Tasks:    11 successful, 11 total
+Cached:    0 cached, 11 total
+  Time:    19.278s 
+
+ WARNING  no output files found for task @bim-ai/core#build. Please check your `outputs` key in `turbo.json`
+ WARNING  no output files found for task @bim-ai/design-tokens#build. Please check your `outputs` key in `turbo.json`
+ WARNING  no output files found for task @bim-ai/icons#build. Please check your `outputs` key in `turbo.json`
+ WARNING  no output files found for task @bim-ai/ui#build. Please check your `outputs` key in `turbo.json`
+
+> bim-ai@0.1.0 test /home/runner/work/bim-ai/bim-ai
+> turbo test
+
+
+   • Packages in scope: @bim-ai/cli, @bim-ai/core, @bim-ai/design-tokens, @bim-ai/hofos-ui, @bim-ai/icons, @bim-ai/ui, @bim-ai/web
+   • Running test in 7 packages
+   • Remote caching disabled
+
+@bim-ai/icons:build
+@bim-ai/design-tokens:build
+@bim-ai/core:build
+@bim-ai/ui:build
+@bim-ai/hofos-ui:test
+@bim-ai/icons:test
+@bim-ai/design-tokens:test
+@bim-ai/ui:test
+@bim-ai/core:test
+@bim-ai/cli:test
+@bim-ai/web:test
+cache miss, executing d503f796709bfb28
+
+> @bim-ai/web@0.0.1 test /home/runner/work/bim-ai/bim-ai/packages/web
+> vitest run src
+
+
+ RUN  v2.1.9 /home/runner/work/bim-ai/bim-ai/packages/web
+
+ ✓ src/tools/toolGrammar.test.ts (57 tests) 25ms
+ ✓ src/workspace/review/evidenceArtifactParser.test.ts (69 tests) 29ms
+ ✓ src/workspace/browserRenderingBudgetReadout.test.ts (47 tests) 234ms
+ ✓ src/plan/planProjection.test.ts (22 tests) 17ms
+ ✓ src/families/familyResolver.test.ts (15 tests) 23ms
+ ✓ src/workspace/browserRenderingBudgetReadout.render.test.tsx (17 tests) 182ms
+ ✓ src/state/store.test.ts (30 tests) 23ms
+ ✓ src/workspace/gltfExportManifestClosureReadout.test.ts (29 tests) 30ms
+ ✓ src/plan/symbology.wirePrimitives.test.ts (7 tests) 208ms
+ ✓ src/plan/snapEngine.test.ts (26 tests) 16ms
+ ✓ src/plan/planTagMatrixReadout.test.ts (20 tests) 16ms
+ ✓ src/plan/grip-providers/gripProviders.test.tsx (24 tests) 17ms
+ ✓ src/workspace/agentReviewReadoutConsistencyClosure.test.ts (24 tests) 13ms
+Error: @bim-ai/web#test: command (/home/runner/work/bim-ai/bim-ai/packages/web) /home/runner/setup-pnpm/node_modules/.bin/pnpm run test exited (1)
+ ERROR  @bim-ai/web#test: command (/home/runner/work/bim-ai/bim-ai/packages/web) /home/runner/setup-pnpm/node_modules/.bin/pnpm run test exited (1)
+ ✓ src/workspace/sheetDocumentationManifest.test.ts (26 tests) 30ms
+ ✓ src/workspace/materialLayerCatalogWorkbench.test.ts (11 tests) 14ms
+ ✓ src/viewport/meshBuilders.curtainPanels.test.ts (10 tests) 121ms
+ ✓ src/plan/planGeometry.test.ts (31 tests) 13ms
+ ✓ src/families/familyResolver.detailLevel.test.ts (7 tests) 26ms
+ ✓ src/workspace/agent-review-evidence-freshness.render.test.tsx (10 tests) 77ms
+ ✓ src/plan/planCanvasState.test.ts (34 tests) 15ms
+ ✓ src/viewport/materials.test.ts (43 tests) 24ms
+ ✓ src/families/FamilyLibraryPanel.externalCatalogs.test.tsx (6 tests) 303ms
+ ✓ src/schedules/scheduleUtils.test.ts (50 tests) 21ms
+ ✓ src/workspace/tabsModel.test.ts (16 tests) 14ms
+ ✓ src/workspace/StatusBar.test.tsx (14 tests) 364ms
+ ✓ src/familyEditor/FamilyEditorWorkbench.test.tsx (15 tests) 864ms
+ ✓ src/workspace/sheetViewportAuthoring.test.ts (17 tests) 16ms
+ ✓ src/families/geometryFns/windowGeometry.test.ts (6 tests) 146ms
+ ✓ src/viewport/grip3dProviders.test.ts (19 tests) 15ms
+ ✓ src/families/familyResolver.array.test.ts (6 tests) 32ms
+ ✓ src/clipboard/copyPaste.test.ts (8 tests) 14ms
+ ✓ src/plan/SketchCanvas.pickWalls.test.tsx (5 tests) 189ms
+ ✓ src/viewport/meshBuilders.asymmetricRoof.test.ts (7 tests) 64ms
+ ✓ src/workspace/prdCloseoutCrossCorrelationReadout.test.ts (15 tests) 10ms
+ ✓ src/viewport/meshBuilders.standingSeam.test.ts (9 tests) 79ms
+ ✓ src/lib/collaborationConflictQueue.test.ts (11 tests) 23ms
+ ✓ src/plan/SketchCanvas.test.tsx (3 tests) 141ms
+ ✓ src/plan/GripLayer.test.tsx (10 tests) 108ms
+ ✓ src/workspace/Inspector.test.tsx (12 tests) 227ms
+ ✓ src/workspace/projectBrowserEvidence.test.ts (11 tests) 18ms
+ ✓ src/families/geometryFns/doorGeometry.test.ts (18 tests) 45ms
+ ✓ src/workspace/artifactUploadManifestReadout.test.ts (6 tests) 7ms
+ ✓ src/plan/monitorDriftBadge.test.ts (14 tests) 9ms
+ ✓ src/viewport/walkMode.test.ts (17 tests) 11ms
+ ✓ src/families/geometryFns/windowOutline.test.ts (10 tests) 6ms
+ ✓ src/tools/toolGrammar.modifiers.test.ts (10 tests) 9ms
+ ✓ src/plan/gripProtocol.test.ts (13 tests) 9ms
+ ✓ src/plan/SketchCanvas.validation.test.tsx (3 tests) 228ms
+ ✓ src/familyEditor/NestedInstanceInspector.test.tsx (7 tests) 139ms
+ ✓ src/workspace/ModeShells.test.tsx (9 tests) 203ms
+ ✓ src/workspace/modeSurfaces.test.ts (17 tests) 9ms
+ ✓ src/viewport/meshBuilders.multiRunStair.test.ts (8 tests) 155ms
+ ✓ src/schedules/scheduleSheetExportParityReadout.test.ts (8 tests) 13ms
+ ✓ src/families/sweepGeometry.test.ts (11 tests) 21ms
+ ✓ src/workspace/TopBar.test.tsx (11 tests) 321ms
+ ✓ src/design-systems/tokens.test.ts (126 tests) 31ms
+ ✓ src/familyEditor/FamilyEditorWorkbench.detailLevelVisibility.test.tsx (4 tests) 736ms
+ ✓ src/familyEditor/FamilyEditorWorkbench.visibilityBinding.test.tsx (4 tests) 1127ms
+   ✓ FAM-03 — Visible When UI > lists boolean params + an Always sentinel after selecting a sweep 423ms
+   ✓ FAM-03 — Visible When UI > binding to a boolean param flips the sweep summary text + reveals the when-true/when-false toggle 305ms
+ ✓ src/viewport/grip3d.test.ts (17 tests) 11ms
+ ✓ src/coordination/ClashTestPanel.linkScope.test.tsx (6 tests) 189ms
+ ✓ src/workspace/ifcExchangeManifestClosureReadout.test.ts (13 tests) 8ms
+ ✓ src/workspace/SectionPlaceholderPane.test.tsx (6 tests) 124ms
+ ✓ src/plan/dxfUnderlay.test.ts (7 tests) 9ms
+ ✓ src/workspace/sectionViewportSvg.test.ts (15 tests) 13ms
+ ✓ src/viewport/dormerMesh.test.ts (6 tests) 64ms
+ ✓ src/workspace/CommentsPanel.test.tsx (9 tests) 161ms
+ ✓ src/schedules/scheduleTableRenderer.test.ts (9 tests) 21ms
+ ✓ src/lib/expressionEvaluator.test.ts (24 tests) 15ms
+ ✓ src/workspace/ManageLinksDialog.driftBadge.test.tsx (4 tests) 120ms
+ ✓ src/viewport/cameraRig.test.ts (25 tests) 10ms
+ ✓ src/workspace/evidencePackageDigestInvariantsReadout.test.tsx (12 tests) 83ms
+ ✓ src/plan/snapTabCycle.test.ts (10 tests) 9ms
+ ✓ src/workspace/siteAuthoringPayload.test.ts (9 tests) 8ms
+stderr | src/workspace/Viewport3DLayersPanel.test.tsx > <Viewport3DLayersPanel /> > renders the panel with all category toggles
+react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next { code: 'NO_I18NEXT_INSTANCE' }
+
+ ✓ src/workspace/Viewport3DLayersPanel.test.tsx (12 tests) 170ms
+ ✓ src/workspace/datumLevelStackReadout.test.ts (7 tests) 16ms
+ ✓ src/plan/planDoorSymbol.test.ts (18 tests) 118ms
+ ✓ src/plan/tempDimensions.test.ts (10 tests) 8ms
+ ✓ src/plan/autoTags.test.ts (9 tests) 8ms
+ ✓ src/tools/ToolPalette.test.tsx (9 tests) 366ms
+ ✓ src/schedules/schedulePanelRegistryChrome.test.ts (14 tests) 10ms
+ ✓ src/families/familyResolver.visibilityBinding.test.ts (9 tests) 15ms
+ ✓ src/clipboard/familyCollisionResolution.test.ts (6 tests) 8ms
+ ✓ src/schedules/scheduleFilterRules.test.ts (10 tests) 8ms
+ ✓ src/schedules/scheduleDefinitionPresets.test.ts (10 tests) 14ms
+ ✓ src/OrbitViewpointPersistedHud.test.tsx (5 tests) 79ms
+stderr | src/workspace/AppShell.test.tsx > AppShell — spec §8 > renders all five named slots
+react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next { code: 'NO_I18NEXT_INSTANCE' }
+
+ ✓ src/workspace/AppShell.test.tsx (7 tests) 89ms
+ ✓ src/plan/autoDimension.test.ts (6 tests) 6ms
+ ✓ src/plan/detailComponentsRender.test.ts (11 tests) 9ms
+stderr | src/workspace/Workspace.semanticCommand.test.tsx > <Workspace /> — semantic command wiring (T-01) > passes a real callback (not the no-op) to PlanCanvas
+react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next { code: 'NO_I18NEXT_INSTANCE' }
+[bim:modelId] fetchActivity failed TypeError: Failed to parse URL from /api/models/test-model/activity
+    at node:internal/deps/undici/undici:14976:13
+    at processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at fetchJson (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:43:15) {
+  [cause]: TypeError: Invalid URL: /api/models/test-model/activity
+      at new URLImpl (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/whatwg-url@14.2.0/node_modules/whatwg-url/lib/URL-impl.js:20:13)
+      at Object.exports.setup (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/whatwg-url@14.2.0/node_modules/whatwg-url/lib/URL.js:54:12)
+      at new URL (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/whatwg-url@14.2.0/node_modules/whatwg-url/lib/URL.js:115:22)
+      at new Request (node:internal/deps/undici/undici:9804:25)
+      at fetch (node:internal/deps/undici/undici:10533:25)
+      at fetch (node:internal/deps/undici/undici:14974:10)
+      at fetch (node:internal/bootstrap/web/exposed-window-or-worker:72:12)
+      at fetchJson (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:43:21)
+      at Proxy.fetchActivity (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:105:10)
+      at /home/runner/work/bim-ai/bim-ai/packages/web/src/workspace/useWorkspaceSnapshot.ts:107:10
+}
+[bim:modelId] fetchComments failed TypeError: Failed to parse URL from /api/models/test-model/comments
+    at node:internal/deps/undici/undici:14976:13
+    at processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at fetchJson (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:43:15) {
+  [cause]: TypeError: Invalid URL: /api/models/test-model/comments
+      at new URLImpl (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/whatwg-url@14.2.0/node_modules/whatwg-url/lib/URL-impl.js:20:13)
+      at Object.exports.setup (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/whatwg-url@14.2.0/node_modules/whatwg-url/lib/URL.js:54:12)
+      at new URL (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/whatwg-url@14.2.0/node_modules/whatwg-url/lib/URL.js:115:22)
+      at new Request (node:internal/deps/undici/undici:9804:25)
+      at fetch (node:internal/deps/undici/undici:10533:25)
+      at fetch (node:internal/deps/undici/undici:14974:10)
+      at fetch (node:internal/bootstrap/web/exposed-window-or-worker:72:12)
+      at fetchJson (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:43:21)
+      at Proxy.fetchComments (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:111:10)
+      at /home/runner/work/bim-ai/bim-ai/packages/web/src/workspace/useWorkspaceSnapshot.ts:120:10
+}
+[bim:bootstrap] fetchBuildingPresets failed TypeError: Failed to parse URL from /api/building-presets
+    at node:internal/deps/undici/undici:14976:13
+    at processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at fetchJson (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:43:15)
+    at Proxy.fetchBuildingPresets (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:266:13) {
+  [cause]: TypeError: Invalid URL: /api/building-presets
+      at new URLImpl (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/whatwg-url@14.2.0/node_modules/whatwg-url/lib/URL-impl.js:20:13)
+      at Object.exports.setup (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/whatwg-url@14.2.0/node_modules/whatwg-url/lib/URL.js:54:12)
+      at new URL (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/whatwg-url@14.2.0/node_modules/whatwg-url/lib/URL.js:115:22)
+      at new Request (node:internal/deps/undici/undici:9804:25)
+      at fetch (node:internal/deps/undici/undici:10533:25)
+      at fetch (node:internal/deps/undici/undici:14974:10)
+      at fetch (node:internal/bootstrap/web/exposed-window-or-worker:72:12)
+      at fetchJson (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:43:21)
+      at Proxy.fetchBuildingPresets (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:266:19)
+      at /home/runner/work/bim-ai/bim-ai/packages/web/src/workspace/useWorkspaceSnapshot.ts:132:10
+}
+
+stderr | src/workspace/Workspace.semanticCommand.test.tsx > <Workspace /> — semantic command wiring (T-01) > forwards the command shape and the modelId from the store
+[bim:modelId] fetchActivity failed TypeError: Failed to parse URL from /api/models/test-model/activity
+    at node:internal/deps/undici/undici:14976:13
+    at fetchJson (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:43:15) {
+  [cause]: TypeError: Invalid URL: /api/models/test-model/activity
+      at new URLImpl (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/whatwg-url@14.2.0/node_modules/whatwg-url/lib/URL-impl.js:20:13)
+      at Object.exports.setup (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/whatwg-url@14.2.0/node_modules/whatwg-url/lib/URL.js:54:12)
+      at new URL (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/whatwg-url@14.2.0/node_modules/whatwg-url/lib/URL.js:115:22)
+      at new Request (node:internal/deps/undici/undici:9804:25)
+      at fetch (node:internal/deps/undici/undici:10533:25)
+      at fetch (node:internal/deps/undici/undici:14974:10)
+      at fetch (node:internal/bootstrap/web/exposed-window-or-worker:72:12)
+      at fetchJson (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:43:21)
+      at Proxy.fetchActivity (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:105:10)
+      at /home/runner/work/bim-ai/bim-ai/packages/web/src/workspace/useWorkspaceSnapshot.ts:107:10
+}
+[bim:modelId] fetchComments failed TypeError: Failed to parse URL from /api/models/test-model/comments
+    at node:internal/deps/undici/undici:14976:13
+    at fetchJson (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:43:15) {
+  [cause]: TypeError: Invalid URL: /api/models/test-model/comments
+      at new URLImpl (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/whatwg-url@14.2.0/node_modules/whatwg-url/lib/URL-impl.js:20:13)
+      at Object.exports.setup (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/whatwg-url@14.2.0/node_modules/whatwg-url/lib/URL.js:54:12)
+      at new URL (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/whatwg-url@14.2.0/node_modules/whatwg-url/lib/URL.js:115:22)
+      at new Request (node:internal/deps/undici/undici:9804:25)
+      at fetch (node:internal/deps/undici/undici:10533:25)
+      at fetch (node:internal/deps/undici/undici:14974:10)
+      at fetch (node:internal/bootstrap/web/exposed-window-or-worker:72:12)
+      at fetchJson (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:43:21)
+      at Proxy.fetchComments (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:111:10)
+      at /home/runner/work/bim-ai/bim-ai/packages/web/src/workspace/useWorkspaceSnapshot.ts:120:10
+}
+[bim:bootstrap] fetchBuildingPresets failed TypeError: Failed to parse URL from /api/building-presets
+    at node:internal/deps/undici/undici:14976:13
+    at fetchJson (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:43:15)
+    at Proxy.fetchBuildingPresets (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:266:13) {
+  [cause]: TypeError: Invalid URL: /api/building-presets
+      at new URLImpl (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/whatwg-url@14.2.0/node_modules/whatwg-url/lib/URL-impl.js:20:13)
+      at Object.exports.setup (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/whatwg-url@14.2.0/node_modules/whatwg-url/lib/URL.js:54:12)
+      at new URL (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/whatwg-url@14.2.0/node_modules/whatwg-url/lib/URL.js:115:22)
+      at new Request (node:internal/deps/undici/undici:9804:25)
+      at fetch (node:internal/deps/undici/undici:10533:25)
+      at fetch (node:internal/deps/undici/undici:14974:10)
+      at fetch (node:internal/bootstrap/web/exposed-window-or-worker:72:12)
+      at fetchJson (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:43:21)
+      at Proxy.fetchBuildingPresets (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:266:19)
+      at /home/runner/work/bim-ai/bim-ai/packages/web/src/workspace/useWorkspaceSnapshot.ts:132:10
+}
+
+ ✓ src/viewport/meshBuilders.mass.test.ts (5 tests) 77ms
+stderr | src/workspace/Workspace.semanticCommand.test.tsx > <Workspace /> — semantic command wiring (T-01) > hydrates the store from the apply response on success
+[bim:modelId] fetchActivity failed TypeError: Failed to parse URL from /api/models/test-model/activity
+    at node:internal/deps/undici/undici:14976:13
+    at fetchJson (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:43:15) {
+  [cause]: TypeError: Invalid URL: /api/models/test-model/activity
+      at new URLImpl (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/whatwg-url@14.2.0/node_modules/whatwg-url/lib/URL-impl.js:20:13)
+      at Object.exports.setup (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/whatwg-url@14.2.0/node_modules/whatwg-url/lib/URL.js:54:12)
+      at new URL (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/whatwg-url@14.2.0/node_modules/whatwg-url/lib/URL.js:115:22)
+      at new Request (node:internal/deps/undici/undici:9804:25)
+      at fetch (node:internal/deps/undici/undici:10533:25)
+      at fetch (node:internal/deps/undici/undici:14974:10)
+      at fetch (node:internal/bootstrap/web/exposed-window-or-worker:72:12)
+      at fetchJson (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:43:21)
+      at Proxy.fetchActivity (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:105:10)
+      at /home/runner/work/bim-ai/bim-ai/packages/web/src/workspace/useWorkspaceSnapshot.ts:107:10
+}
+[bim:modelId] fetchComments failed TypeError: Failed to parse URL from /api/models/test-model/comments
+    at node:internal/deps/undici/undici:14976:13
+    at fetchJson (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:43:15) {
+  [cause]: TypeError: Invalid URL: /api/models/test-model/comments
+      at new URLImpl (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/whatwg-url@14.2.0/node_modules/whatwg-url/lib/URL-impl.js:20:13)
+      at Object.exports.setup (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/whatwg-url@14.2.0/node_modules/whatwg-url/lib/URL.js:54:12)
+      at new URL (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/whatwg-url@14.2.0/node_modules/whatwg-url/lib/URL.js:115:22)
+      at new Request (node:internal/deps/undici/undici:9804:25)
+      at fetch (node:internal/deps/undici/undici:10533:25)
+      at fetch (node:internal/deps/undici/undici:14974:10)
+      at fetch (node:internal/bootstrap/web/exposed-window-or-worker:72:12)
+      at fetchJson (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:43:21)
+      at Proxy.fetchComments (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:111:10)
+      at /home/runner/work/bim-ai/bim-ai/packages/web/src/workspace/useWorkspaceSnapshot.ts:120:10
+}
+[bim:bootstrap] fetchBuildingPresets failed TypeError: Failed to parse URL from /api/building-presets
+    at node:internal/deps/undici/undici:14976:13
+    at fetchJson (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:43:15)
+    at Proxy.fetchBuildingPresets (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:266:13) {
+  [cause]: TypeError: Invalid URL: /api/building-presets
+      at new URLImpl (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/whatwg-url@14.2.0/node_modules/whatwg-url/lib/URL-impl.js:20:13)
+      at Object.exports.setup (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/whatwg-url@14.2.0/node_modules/whatwg-url/lib/URL.js:54:12)
+      at new URL (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/whatwg-url@14.2.0/node_modules/whatwg-url/lib/URL.js:115:22)
+      at new Request (node:internal/deps/undici/undici:9804:25)
+      at fetch (node:internal/deps/undici/undici:10533:25)
+      at fetch (node:internal/deps/undici/undici:14974:10)
+      at fetch (node:internal/bootstrap/web/exposed-window-or-worker:72:12)
+      at fetchJson (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:43:21)
+      at Proxy.fetchBuildingPresets (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:266:19)
+      at /home/runner/work/bim-ai/bim-ai/packages/web/src/workspace/useWorkspaceSnapshot.ts:132:10
+}
+
+ ✓ src/workspace/Workspace.semanticCommand.test.tsx (3 tests) 811ms
+   ✓ <Workspace /> — semantic command wiring (T-01) > passes a real callback (not the no-op) to PlanCanvas 406ms
+ ✓ src/workspace/agentBriefAcceptanceReadout.test.tsx (5 tests) 51ms
+ ✓ src/plan/cropRegionDrag.test.tsx (11 tests) 10ms
+stderr | src/plan/referencePlanePlanRendering.test.ts > KRN-05 — referencePlanePlanThree > emits a dashed Line for the plane segment with the reference plane id pickable
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/jsdom@25.0.1/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/jsdom@25.0.1/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/jsdom@25.0.1/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at makeReferencePlaneLabelSprite (/home/runner/work/bim-ai/bim-ai/packages/web/src/plan/planElementMeshBuilders.ts:1248:18)
+    at Module.referencePlanePlanThree (/home/runner/work/bim-ai/bim-ai/packages/web/src/plan/planElementMeshBuilders.ts:1222:18)
+    at /home/runner/work/bim-ai/bim-ai/packages/web/src/plan/referencePlanePlanRendering.test.ts:27:17
+    at file:///home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:146:14
+    at file:///home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:11
+    at runWithTimeout (file:///home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:39:7)
+    at runTest (file:///home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:17) undefined
+
+stderr | src/plan/referencePlanePlanRendering.test.ts > KRN-05 — referencePlanePlanThree > uses the work-plane accent color when isWorkPlane is true
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/jsdom@25.0.1/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/jsdom@25.0.1/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/jsdom@25.0.1/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at makeReferencePlaneLabelSprite (/home/runner/work/bim-ai/bim-ai/packages/web/src/plan/planElementMeshBuilders.ts:1248:18)
+    at Module.referencePlanePlanThree (/home/runner/work/bim-ai/bim-ai/packages/web/src/plan/planElementMeshBuilders.ts:1222:18)
+    at /home/runner/work/bim-ai/bim-ai/packages/web/src/plan/referencePlanePlanRendering.test.ts:40:25
+    at file:///home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:146:14
+    at file:///home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:11
+    at runWithTimeout (file:///home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:39:7)
+    at runTest (file:///home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:17) undefined
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/jsdom@25.0.1/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/jsdom@25.0.1/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/jsdom@25.0.1/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at makeReferencePlaneLabelSprite (/home/runner/work/bim-ai/bim-ai/packages/web/src/plan/planElementMeshBuilders.ts:1248:18)
+    at Module.referencePlanePlanThree (/home/runner/work/bim-ai/bim-ai/packages/web/src/plan/planElementMeshBuilders.ts:1222:18)
+    at /home/runner/work/bim-ai/bim-ai/packages/web/src/plan/referencePlanePlanRendering.test.ts:41:23
+    at file:///home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:146:14
+    at file:///home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:11
+    at runWithTimeout (file:///home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:39:7)
+    at runTest (file:///home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:17) undefined
+
+stderr | src/plan/referencePlanePlanRendering.test.ts > KRN-05 — referencePlanePlanThree > emits a label sprite carrying the plane name (or fallback)
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/jsdom@25.0.1/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/jsdom@25.0.1/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/jsdom@25.0.1/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at makeReferencePlaneLabelSprite (/home/runner/work/bim-ai/bim-ai/packages/web/src/plan/planElementMeshBuilders.ts:1248:18)
+    at Module.referencePlanePlanThree (/home/runner/work/bim-ai/bim-ai/packages/web/src/plan/planElementMeshBuilders.ts:1222:18)
+    at /home/runner/work/bim-ai/bim-ai/packages/web/src/plan/referencePlanePlanRendering.test.ts:51:17
+    at file:///home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:146:14
+    at file:///home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:11
+    at runWithTimeout (file:///home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:39:7)
+    at runTest (file:///home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:17) undefined
+
+stderr | src/plan/referencePlanePlanRendering.test.ts > KRN-05 — referencePlanePlanThree > falls back to the auto-numbered label when name is empty
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/jsdom@25.0.1/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/jsdom@25.0.1/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/jsdom@25.0.1/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at makeReferencePlaneLabelSprite (/home/runner/work/bim-ai/bim-ai/packages/web/src/plan/planElementMeshBuilders.ts:1248:18)
+    at Module.referencePlanePlanThree (/home/runner/work/bim-ai/bim-ai/packages/web/src/plan/planElementMeshBuilders.ts:1222:18)
+    at /home/runner/work/bim-ai/bim-ai/packages/web/src/plan/referencePlanePlanRendering.test.ts:63:17
+    at file:///home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:146:14
+    at file:///home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:11
+    at runWithTimeout (file:///home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:39:7)
+    at runTest (file:///home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:17) undefined
+
+stderr | src/plan/referencePlanePlanRendering.test.ts > KRN-05 — rebuildPlanMeshes integration > renders project ref planes for the active level only
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/jsdom@25.0.1/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/jsdom@25.0.1/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/jsdom@25.0.1/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at makeReferencePlaneLabelSprite (/home/runner/work/bim-ai/bim-ai/packages/web/src/plan/planElementMeshBuilders.ts:1248:18)
+    at Module.referencePlanePlanThree (/home/runner/work/bim-ai/bim-ai/packages/web/src/plan/planElementMeshBuilders.ts:1222:18)
+    at Module.rebuildPlanMeshes (/home/runner/work/bim-ai/bim-ai/packages/web/src/plan/symbology.ts:1051:16)
+    at /home/runner/work/bim-ai/bim-ai/packages/web/src/plan/referencePlanePlanRendering.test.ts:87:5
+    at file:///home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:146:14
+    at file:///home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:11
+    at runWithTimeout (file:///home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:39:7) undefined
+
+ ✓ src/plan/referencePlanePlanRendering.test.ts (6 tests) 32ms
+ ✓ src/plan/snapSettings.test.ts (9 tests) 9ms
+ ✓ src/familyEditor/ArrayTool.test.tsx (4 tests) 737ms
+ ✓ src/families/FamilyLibraryPanel.test.tsx (8 tests) 388ms
+ ✓ src/workspace/sheetViewRef.test.ts (7 tests) 11ms
+ ✓ src/familyEditor/LoadedFamiliesSidebar.test.tsx (5 tests) 134ms
+ ✓ src/state/theme.test.ts (12 tests) 31ms
+ ✓ src/design-systems/contrast.test.ts (17 tests) 10ms
+ ✓ src/workspace/LeftRail.test.tsx (7 tests) 232ms
+stderr | src/workspace/LeftRail.test.tsx > LeftRail — spec §12 > renders sections with uppercase eyebrow labels and rows
+react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next { code: 'NO_I18NEXT_INSTANCE' }
+
+ ✓ src/viewport/grip3dRenderer.test.ts (7 tests) 12ms
+ ✓ src/plan/draftingStandards.test.ts (16 tests) 11ms
+ ✓ src/workspace/evidenceBaselineLifecycleReadout.test.tsx (7 tests) 118ms
+ ✓ src/lib/collaborationConflictStatus.test.ts (9 tests) 7ms
+ ✓ src/plan/SnapGlyphLayer.test.tsx (11 tests) 100ms
+ ✓ src/tools/OptionsBar.test.tsx (7 tests) 91ms
+ ✓ src/workspace/ManageLinksDialog.test.tsx (6 tests) 157ms
+ ✓ src/lib/api.test.ts (4 tests) 9ms
+ ✓ src/workspace/InspectorContent.test.tsx (9 tests) 146ms
+ ✓ src/viewport/text3dGeometry.test.ts (7 tests) 182ms
+stderr | src/workspace/AuthoringWorkbenchesPanel.test.tsx > AuthoringWorkbenchesPanel — T-13 smoke > mounts with no selection and renders panel root
+react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next { code: 'NO_I18NEXT_INSTANCE' }
+
+ ✓ src/workspace/AuthoringWorkbenchesPanel.test.tsx (7 tests) 316ms
+ ✓ src/cmd/CommandPalette.test.tsx (5 tests) 191ms
+ ✓ src/lib/sectionElevationFromWall.test.ts (7 tests) 5ms
+ ✓ src/workspace/TabBar.test.tsx (6 tests) 153ms
+ ✓ src/viewport/csgWorker.wallOpening.test.ts (7 tests) 4ms
+ ✓ src/viewport/ViewCube.test.tsx (5 tests) 114ms
+ ✓ src/workspace/roomColorSchemeLegendPlacementReadout.test.ts (9 tests) 8ms
+stderr | src/plan/dormerPlanSymbol.test.ts > dormerPlanGroup > returns a group with outline when level matches
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/jsdom@25.0.1/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/jsdom@25.0.1/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/jsdom@25.0.1/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at Module.dormerPlanGroup (/home/runner/work/bim-ai/bim-ai/packages/web/src/plan/dormerPlanSymbol.ts:140:29)
+    at /home/runner/work/bim-ai/bim-ai/packages/web/src/plan/dormerPlanSymbol.test.ts:106:15
+    at file:///home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:146:14
+    at file:///home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:11
+    at runWithTimeout (file:///home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:39:7)
+    at runTest (file:///home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:17)
+    at processTicksAndRejections (node:internal/process/task_queues:95:5) undefined
+
+ ✓ src/plan/dormerPlanSymbol.test.ts (5 tests) 76ms
+ ✓ src/viewport/sweepMesh.test.ts (4 tests) 59ms
+ ✓ src/viewport/wallFaceRadialMenu.test.tsx (8 tests) 86ms
+ ✓ src/plan/PlanCanvas.padlock.test.tsx (4 tests) 87ms
+ ✓ src/state/store.temporary-visibility.test.ts (7 tests) 8ms
+ ✓ src/workspace/bcfIssuePackageExportFormat.test.ts (3 tests) 18ms
+ ✓ src/plan/stairPlanSymbol.test.ts (7 tests) 68ms
+ ✓ src/workspace/VVDialog.test.tsx (6 tests) 1058ms
+   ✓ VVDialog > renders with 12 model category rows when open 372ms
+ ✓ src/plan/planProjection.viewFilters.test.ts (7 tests) 7ms
+ ✓ src/workspace/InspectorContent.monitorSource.test.tsx (4 tests) 139ms
+ ✓ src/workspace/WallContextMenu.test.tsx (5 tests) 68ms
+ ✓ src/workspace/ProjectMenu.test.tsx (7 tests) 114ms
+ ✓ src/schedules/roomColorSchemeLegendReadout.test.ts (9 tests) 8ms
+ ✓ src/state/store.viewpoint-visibility.test.ts (4 tests) 9ms
+ ✓ src/viewport/meshBuilders.locationLine.test.ts (8 tests) 67ms
+ ✓ src/families/familyCatalog.test.ts (15 tests) 9ms
+ ✓ src/tools/numericInput.test.tsx (2 tests) 4ms
+ ✓ src/viewport/meshBuilders.layeredWall.test.ts (6 tests) 103ms
+ ✓ src/viewport/originMarkers.test.ts (5 tests) 10ms
+ ✓ src/viewport/meshBuilders.hipRoof.test.ts (3 tests) 42ms
+ ✓ src/viewport/meshBuilders.wallRecess.test.ts (3 tests) 47ms
+ ✓ src/workspace/roomSeparationWorkbenchReadout.test.ts (4 tests) 3ms
+ ✓ src/plan/propertyLinePlanRendering.test.ts (4 tests) 7ms
+ ✓ src/plan/planCategoryGraphicHints.test.ts (3 tests) 5ms
+ ✓ src/workspace/agentBriefCommandProtocol.test.ts (5 tests) 19ms
+ ✓ src/plan/planDetailLevelLines.test.ts (9 tests) 7ms
+ ✓ src/state/modeController.test.ts (9 tests) 11ms
+ ✓ src/viewport/viewCubeAlignment.test.ts (13 tests) 7ms
+ ✓ src/cmd/commandPaletteSources.test.ts (11 tests) 21ms
+stderr | src/workspace/VVDialog.linksTab.test.tsx > <VVDialog /> Revit Links tab > shows empty state when host has no link_model rows
+Updating a style property during rerender (borderBottom) when a conflicting property is set (border) can lead to styling bugs. To avoid this, don't mix shorthand and non-shorthand properties for the same value; instead, replace the shorthand with separate values.
+Updating a style property during rerender (borderBottom) when a conflicting property is set (border) can lead to styling bugs. To avoid this, don't mix shorthand and non-shorthand properties for the same value; instead, replace the shorthand with separate values.
+
+stderr | src/workspace/VVDialog.linksTab.test.tsx > <VVDialog /> Revit Links tab > lists every link_model with a per-link visibility checkbox
+Updating a style property during rerender (borderBottom) when a conflicting property is set (border) can lead to styling bugs. To avoid this, don't mix shorthand and non-shorthand properties for the same value; instead, replace the shorthand with separate values.
+Updating a style property during rerender (borderBottom) when a conflicting property is set (border) can lead to styling bugs. To avoid this, don't mix shorthand and non-shorthand properties for the same value; instead, replace the shorthand with separate values.
+
+stderr | src/workspace/VVDialog.linksTab.test.tsx > <VVDialog /> Revit Links tab > toggling the per-link checkbox issues an updateLinkModel command flipping hidden
+Updating a style property during rerender (borderBottom) when a conflicting property is set (border) can lead to styling bugs. To avoid this, don't mix shorthand and non-shorthand properties for the same value; instead, replace the shorthand with separate values.
+Updating a style property during rerender (borderBottom) when a conflicting property is set (border) can lead to styling bugs. To avoid this, don't mix shorthand and non-shorthand properties for the same value; instead, replace the shorthand with separate values.
+
+ ✓ src/workspace/VVDialog.linksTab.test.tsx (4 tests) 636ms
+ ✓ src/viewport/phaseFilter.test.ts (7 tests) 7ms
+ ✓ src/state/store.elevation-view.test.ts (5 tests) 7ms
+ ✓ src/plan/planProjectionWire.legend.test.ts (4 tests) 5ms
+ ✓ src/viewport/linkedGhosting.test.ts (4 tests) 10ms
+ ✓ src/workspace/tabsPersistence.test.ts (7 tests) 8ms
+ ✓ src/workspace/ProjectMenu.linkIfc.test.tsx (4 tests) 84ms
+ ✓ src/coordination/SelectionSetPanel.test.tsx (4 tests) 160ms
+ ✓ src/viewport/meshBuilders.lShapeRoof.test.ts (3 tests) 60ms
+ ✓ src/plan/elevationMarker.test.ts (5 tests) 4ms
+ ✓ src/workspace/SheetDocumentationManifest.viewportMeta.test.tsx (1 test) 52ms
+ ✓ src/workspace/roomColorSchemeCanon.test.ts (6 tests) 8ms
+ ✓ src/plan/planWallMesh.detailLevel.test.ts (4 tests) 76ms
+ ✓ src/viewport/roofHeightSampler.test.ts (4 tests) 4ms
+ ✓ src/cmd/CheatsheetModal.test.tsx (6 tests) 293ms
+ ✓ src/schedules/scheduleTotalsReadout.test.ts (7 tests) 6ms
+ ✓ src/coordination/ClashTestPanel.test.tsx (3 tests) 136ms
+ ✓ src/plan/PlanCanvas.toolDestubs.test.ts (13 tests) 6ms
+ ✓ src/advisor/perspectiveFilter.test.ts (5 tests) 10ms
+stderr | src/workspace/Workspace.test.tsx > <Workspace /> — smoke > renders the AppShell, TopBar, LeftRail, Inspector, StatusBar slots
+[bim:bootstrap] fetchBuildingPresets failed TypeError: Failed to parse URL from /api/building-presets
+    at node:internal/deps/undici/undici:14976:13
+    at processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at fetchJson (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:43:15)
+    at Module.fetchBuildingPresets (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:266:13) {
+  [cause]: TypeError: Invalid URL: /api/building-presets
+      at new URLImpl (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/whatwg-url@14.2.0/node_modules/whatwg-url/lib/URL-impl.js:20:13)
+      at Object.exports.setup (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/whatwg-url@14.2.0/node_modules/whatwg-url/lib/URL.js:54:12)
+      at new URL (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/whatwg-url@14.2.0/node_modules/whatwg-url/lib/URL.js:115:22)
+      at new Request (node:internal/deps/undici/undici:9804:25)
+      at fetch (node:internal/deps/undici/undici:10533:25)
+      at fetch (node:internal/deps/undici/undici:14974:10)
+      at fetch (node:internal/bootstrap/web/exposed-window-or-worker:72:12)
+      at fetchJson (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:43:21)
+      at Module.fetchBuildingPresets (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:266:19)
+      at /home/runner/work/bim-ai/bim-ai/packages/web/src/workspace/useWorkspaceSnapshot.ts:132:10
+}
+
+stderr | src/workspace/Workspace.test.tsx > <Workspace /> — smoke > mounts the redesign canvas root
+[bim:bootstrap] fetchBuildingPresets failed TypeError: Failed to parse URL from /api/building-presets
+    at node:internal/deps/undici/undici:14976:13
+    at processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at fetchJson (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:43:15)
+    at Module.fetchBuildingPresets (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:266:13) {
+  [cause]: TypeError: Invalid URL: /api/building-presets
+      at new URLImpl (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/whatwg-url@14.2.0/node_modules/whatwg-url/lib/URL-impl.js:20:13)
+      at Object.exports.setup (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/whatwg-url@14.2.0/node_modules/whatwg-url/lib/URL.js:54:12)
+      at new URL (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/whatwg-url@14.2.0/node_modules/whatwg-url/lib/URL.js:115:22)
+      at new Request (node:internal/deps/undici/undici:9804:25)
+      at fetch (node:internal/deps/undici/undici:10533:25)
+      at fetch (node:internal/deps/undici/undici:14974:10)
+      at fetch (node:internal/bootstrap/web/exposed-window-or-worker:72:12)
+      at fetchJson (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:43:21)
+      at Module.fetchBuildingPresets (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:266:19)
+      at /home/runner/work/bim-ai/bim-ai/packages/web/src/workspace/useWorkspaceSnapshot.ts:132:10
+}
+
+stderr | src/workspace/Workspace.test.tsx > <Workspace /> — smoke > shows the empty-state overlay when no walls exist
+[bim:bootstrap] fetchBuildingPresets failed TypeError: Failed to parse URL from /api/building-presets
+    at node:internal/deps/undici/undici:14976:13
+    at processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at fetchJson (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:43:15)
+    at Module.fetchBuildingPresets (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:266:13) {
+  [cause]: TypeError: Invalid URL: /api/building-presets
+      at new URLImpl (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/whatwg-url@14.2.0/node_modules/whatwg-url/lib/URL-impl.js:20:13)
+      at Object.exports.setup (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/whatwg-url@14.2.0/node_modules/whatwg-url/lib/URL.js:54:12)
+      at new URL (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/whatwg-url@14.2.0/node_modules/whatwg-url/lib/URL.js:115:22)
+      at new Request (node:internal/deps/undici/undici:9804:25)
+      at fetch (node:internal/deps/undici/undici:10533:25)
+      at fetch (node:internal/deps/undici/undici:14974:10)
+      at fetch (node:internal/bootstrap/web/exposed-window-or-worker:72:12)
+      at fetchJson (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:43:21)
+      at Module.fetchBuildingPresets (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:266:19)
+      at /home/runner/work/bim-ai/bim-ai/packages/web/src/workspace/useWorkspaceSnapshot.ts:132:10
+}
+
+stderr | src/workspace/Workspace.test.tsx > <Workspace /> — smoke > renders the floating tool palette
+[bim:bootstrap] fetchBuildingPresets failed TypeError: Failed to parse URL from /api/building-presets
+    at node:internal/deps/undici/undici:14976:13
+    at processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at fetchJson (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:43:15)
+    at Module.fetchBuildingPresets (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:266:13) {
+  [cause]: TypeError: Invalid URL: /api/building-presets
+      at new URLImpl (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/whatwg-url@14.2.0/node_modules/whatwg-url/lib/URL-impl.js:20:13)
+      at Object.exports.setup (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/whatwg-url@14.2.0/node_modules/whatwg-url/lib/URL.js:54:12)
+      at new URL (/home/runner/work/bim-ai/bim-ai/node_modules/.pnpm/whatwg-url@14.2.0/node_modules/whatwg-url/lib/URL.js:115:22)
+      at new Request (node:internal/deps/undici/undici:9804:25)
+      at fetch (node:internal/deps/undici/undici:10533:25)
+      at fetch (node:internal/deps/undici/undici:14974:10)
+      at fetch (node:internal/bootstrap/web/exposed-window-or-worker:72:12)
+      at fetchJson (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:43:21)
+      at Module.fetchBuildingPresets (/home/runner/work/bim-ai/bim-ai/packages/web/src/lib/api.ts:266:19)
+      at /home/runner/work/bim-ai/bim-ai/packages/web/src/workspace/useWorkspaceSnapshot.ts:132:10
+}
+
+ ✓ src/workspace/Workspace.test.tsx (4 tests) 784ms
+   ✓ <Workspace /> — smoke > renders the AppShell, TopBar, LeftRail, Inspector, StatusBar slots 339ms
+ ✓ src/workspace/projectSnapshots.test.ts (5 tests) 12ms
+ ✓ src/viewport/sectionBox.test.ts (9 tests) 8ms
+ ✓ src/schedules/scheduleOpeningAdvisoriesReadout.test.ts (3 tests) 18ms
+ ✓ src/cmd/cheatsheetData.test.ts (9 tests) 17ms
+ ✓ src/advisor/advisorViolationContext.test.ts (5 tests) 4ms
+ ✓ src/plan/planProjection.area.test.ts (6 tests) 7ms
+ ✓ src/onboarding/OnboardingTour.test.tsx (6 tests) 119ms
+ ❯ src/plan/SnapSettingsToolbar.test.tsx (4 tests | 1 failed) 87ms
+   × EDT-05 — SnapSettingsToolbar > summarises enabled count in the button label 11ms
+     → expected 'Snaps · 6/9' to contain '4/6'
+ ✓ src/design-systems/a11y.test.ts (10 tests) 8ms
+ ✓ src/plan/planProjection.maskingRegion.test.ts (4 tests) 6ms
+ ✓ src/design-systems/motion.test.ts (10 tests) 6ms
+ ✓ src/design-systems/icons.test.tsx (108 tests) 107ms
+ ✓ src/plan/tempDimensionLockState.test.ts (5 tests) 3ms
+ ✓ src/workspace/agentGeneratedBundleQaChecklist.test.ts (3 tests) 14ms
+ ✓ src/clipboard/RecentClipboardTray.test.tsx (4 tests) 51ms
+ ✓ src/state/useTheme.test.tsx (3 tests) 35ms
+ ✓ src/viewport/meshBuilders.slabEdge.test.ts (4 tests) 64ms
+ ✓ src/viewport/csgWindowOutlineCutter.test.ts (3 tests) 5ms
+ ✓ src/workspace/InspectorContent.pin.test.tsx (3 tests) 83ms
+ ✓ src/workspace/InspectorContent.workset.test.tsx (4 tests) 74ms
+ ✓ src/workspace/bcfRoundtripEvidenceSummaryFormat.test.ts (4 tests) 13ms
+ ✓ src/viewport/glassMaterial.test.ts (2 tests) 58ms
+ ✓ src/workspace/OptionsBar.test.tsx (4 tests) 98ms
+ ✓ src/workspace/agentReviewActionDetails.test.ts (5 tests) 7ms
+ ✓ src/collaboration/PurgeUnusedPanel.test.tsx (4 tests) 157ms
+ ✓ src/workspace/sheetDetailCalloutReadout.test.ts (4 tests) 4ms
+ ✓ src/workspace/roofAuthoringReadout.test.ts (3 tests) 4ms
+ ✓ src/state/uiStates.test.ts (6 tests) 6ms
+ ✓ src/onboarding/tour.test.ts (5 tests) 5ms
+ ✓ src/families/wallTypeCatalog.test.ts (7 tests) 6ms
+ ✓ src/workspace/TemporaryVisibilityChip.test.tsx (3 tests) 40ms
+ ✓ src/plan/symbology.docs.test.ts (4 tests) 5ms
+ ✓ src/workspace/sheetTitleblockAuthoring.test.ts (2 tests) 4ms
+ ✓ src/schedules/schedulePanelPlansSheetsUi.test.ts (3 tests) 4ms
+ ✓ src/tools/elevationTool.test.ts (3 tests) 4ms
+ ✓ src/workspace/agentReviewActions.test.ts (2 tests) 4ms
+ ✓ src/schedules/schedulePanelSortKeys.test.ts (2 tests) 4ms
+ ✓ src/design-systems/visualRegressionBaselines.test.ts (4 tests) 6ms
+ ✓ src/plan/PlanDetailLevelToolbar.test.tsx (2 tests) 49ms
+ ✓ src/schedules/roomFinishScheduleEvidenceReadout.test.ts (2 tests) 5ms
+ ✓ src/plan/planAnnotationHints.test.ts (2 tests) 4ms
+ ✓ src/cmd/parser.test.ts (2 tests) 4ms
+ ✓ src/workspace/levelDatumPropagationReadout.test.ts (1 test) 2ms
+ ✓ src/workspace/formatStagedArtifactResolutionMode.test.ts (3 tests) 3ms
+ ✓ src/schedules/stairScheduleEvidenceReadout.test.ts (2 tests) 4ms
+ ✓ src/plan/roomSchemeColor.test.ts (2 tests) 4ms
+ ✓ src/schedules/scheduleLevelDatumEvidenceReadout.test.ts (1 test) 3ms
+ ✓ src/workspace/sectionDatumElevationReadout.test.ts (1 test) 2ms
+ ✓ src/sanity.test.ts (1 test) 2ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/plan/SnapSettingsToolbar.test.tsx > EDT-05 — SnapSettingsToolbar > summarises enabled count in the button label
+AssertionError: expected 'Snaps · 6/9' to contain '4/6'
+
+Expected: "4/6"
+Received: "Snaps · 6/9"
+
+ ❯ src/plan/SnapSettingsToolbar.test.tsx:51:61
+     49|     };
+     50|     const { getByTestId } = render(<SnapSettingsToolbar value={value} …
+     51|     expect(getByTestId('snap-settings-button').textContent).toContain(…
+       |                                                             ^
+     52|   });
+     53| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+ Test Files  1 failed | 215 passed (216)
+      Tests  1 failed | 2211 passed (2212)
+   Start at  13:02:36
+   Duration  64.84s (transform 4.28s, setup 0ms, collect 22.99s, tests 18.57s, environment 107.02s, prepare 16.40s)
+
+
+Error: AssertionError: expected 'Snaps · 6/9' to contain '4/6'
+
+Expected: "4/6"
+Received: "Snaps · 6/9"
+
+
+
+can you please fix + commit + push to main?
