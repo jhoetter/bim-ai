@@ -721,10 +721,21 @@ class DormerElem(BaseModel):
     depth_mm: float = Field(alias="depthMm", gt=0)
     dormer_roof_kind: DormerRoofKind = Field(default="flat", alias="dormerRoofKind")
     dormer_roof_pitch_deg: float | None = Field(default=None, alias="dormerRoofPitchDeg")
+    ridge_height_mm: float | None = Field(default=None, alias="ridgeHeightMm")
     wall_material_key: str | None = Field(default=None, alias="wallMaterialKey")
     roof_material_key: str | None = Field(default=None, alias="roofMaterialKey")
     has_floor_opening: bool = Field(default=False, alias="hasFloorOpening")
     pinned: bool = Field(default=False)
+
+    @model_validator(mode="after")
+    def _ridge_height_required_for_pitched(self) -> DormerElem:
+        if self.dormer_roof_kind in ("gable", "hipped"):
+            if self.ridge_height_mm is None or self.ridge_height_mm <= 0:
+                raise ValueError(
+                    "DormerElem.ridgeHeightMm must be > 0 when dormerRoofKind is "
+                    "'gable' or 'hipped'"
+                )
+        return self
 
 
 class BalconyElem(BaseModel):

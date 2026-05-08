@@ -179,12 +179,137 @@ export function makeDormerMesh(
     group.add(backWall);
   }
 
-  // Flat dormer roof slab at top of cheek walls.
-  const roofSlab = new THREE.Mesh(new THREE.BoxGeometry(widthM, roofThickM, depthM), roofMat);
-  roofSlab.position.set((xMin + xMax) / 2, topY + roofThickM / 2, (zMin + zMax) / 2);
-  addEdges(roofSlab);
-  group.add(roofSlab);
+  const roofKind = dormer.dormerRoofKind ?? 'flat';
+  const ridgeHeightM =
+    dormer.ridgeHeightMm != null ? Math.max(0.1, dormer.ridgeHeightMm / 1000) : 1.2;
+  const eaveCenterX = (xMin + xMax) / 2;
+  const eaveCenterZ = (zMin + zMax) / 2;
+
+  if (roofKind === 'gable') {
+    const roof = buildGableDormerRoof(
+      widthM,
+      depthM,
+      roofThickM,
+      ridgeHeightM,
+      fp.ridgeAlongX,
+      roofMat,
+    );
+    roof.position.set(eaveCenterX, topY, eaveCenterZ);
+    addEdges(roof);
+    group.add(roof);
+  } else if (roofKind === 'hipped') {
+    const roof = buildHippedDormerRoof(
+      widthM,
+      depthM,
+      roofThickM,
+      ridgeHeightM,
+      fp.ridgeAlongX,
+      roofMat,
+    );
+    roof.position.set(eaveCenterX, topY, eaveCenterZ);
+    addEdges(roof);
+    group.add(roof);
+  } else {
+    const roofSlab = new THREE.Mesh(new THREE.BoxGeometry(widthM, roofThickM, depthM), roofMat);
+    roofSlab.position.set(eaveCenterX, topY + roofThickM / 2, eaveCenterZ);
+    addEdges(roofSlab);
+    group.add(roofSlab);
+  }
 
   void paint;
   return group;
+}
+
+/** KRN-14 — gable roof for a dormer. */
+export function buildGableDormerRoof(
+  widthM: number,
+  depthM: number,
+  roofThickM: number,
+  ridgeHeightM: number,
+  ridgeAlongX: boolean,
+  material: THREE.Material,
+): THREE.Mesh {
+  const longAlongWorldX = ridgeAlongX ? widthM >= depthM : depthM >= widthM;
+  const hxWorld = ridgeAlongX ? widthM / 2 : depthM / 2;
+  const hzWorld = ridgeAlongX ? depthM / 2 : widthM / 2;
+  const eaveY = roofThickM;
+  const ridgeY = eaveY + ridgeHeightM;
+  const positions: number[] = [];
+  const indices: number[] = [];
+  if (longAlongWorldX) {
+    positions.push(-hxWorld, eaveY, -hzWorld);
+    positions.push(hxWorld, eaveY, -hzWorld);
+    positions.push(hxWorld, eaveY, hzWorld);
+    positions.push(-hxWorld, eaveY, hzWorld);
+    positions.push(-hxWorld, ridgeY, 0);
+    positions.push(hxWorld, ridgeY, 0);
+    indices.push(0, 1, 5, 0, 5, 4);
+    indices.push(2, 3, 4, 2, 4, 5);
+    indices.push(0, 4, 3);
+    indices.push(1, 2, 5);
+  } else {
+    positions.push(-hxWorld, eaveY, -hzWorld);
+    positions.push(hxWorld, eaveY, -hzWorld);
+    positions.push(hxWorld, eaveY, hzWorld);
+    positions.push(-hxWorld, eaveY, hzWorld);
+    positions.push(0, ridgeY, -hzWorld);
+    positions.push(0, ridgeY, hzWorld);
+    indices.push(1, 2, 5, 1, 5, 4);
+    indices.push(3, 0, 4, 3, 4, 5);
+    indices.push(0, 1, 4);
+    indices.push(2, 3, 5);
+  }
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geom.setIndex(indices);
+  geom.computeVertexNormals();
+  return new THREE.Mesh(geom, material);
+}
+
+/** KRN-14 — hipped roof for a dormer (ridge shorter than the eave). */
+export function buildHippedDormerRoof(
+  widthM: number,
+  depthM: number,
+  roofThickM: number,
+  ridgeHeightM: number,
+  ridgeAlongX: boolean,
+  material: THREE.Material,
+): THREE.Mesh {
+  const longAlongWorldX = ridgeAlongX ? widthM >= depthM : depthM >= widthM;
+  const hxWorld = ridgeAlongX ? widthM / 2 : depthM / 2;
+  const hzWorld = ridgeAlongX ? depthM / 2 : widthM / 2;
+  const eaveY = roofThickM;
+  const ridgeY = eaveY + ridgeHeightM;
+  const longHalf = longAlongWorldX ? hxWorld : hzWorld;
+  const ridgeHalf = Math.max(0.05, longHalf * 0.5);
+  const positions: number[] = [];
+  const indices: number[] = [];
+  if (longAlongWorldX) {
+    positions.push(-hxWorld, eaveY, -hzWorld);
+    positions.push(hxWorld, eaveY, -hzWorld);
+    positions.push(hxWorld, eaveY, hzWorld);
+    positions.push(-hxWorld, eaveY, hzWorld);
+    positions.push(-ridgeHalf, ridgeY, 0);
+    positions.push(ridgeHalf, ridgeY, 0);
+    indices.push(0, 1, 5, 0, 5, 4);
+    indices.push(2, 3, 4, 2, 4, 5);
+    indices.push(3, 0, 4);
+    indices.push(1, 2, 5);
+  } else {
+    positions.push(-hxWorld, eaveY, -hzWorld);
+    positions.push(hxWorld, eaveY, -hzWorld);
+    positions.push(hxWorld, eaveY, hzWorld);
+    positions.push(-hxWorld, eaveY, hzWorld);
+    positions.push(0, ridgeY, -ridgeHalf);
+    positions.push(0, ridgeY, ridgeHalf);
+    indices.push(1, 2, 5, 1, 5, 4);
+    indices.push(3, 0, 4, 3, 4, 5);
+    indices.push(0, 1, 4);
+    indices.push(2, 3, 5);
+  }
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geom.setIndex(indices);
+  geom.computeVertexNormals();
+  return new THREE.Mesh(geom, material);
 }

@@ -23,6 +23,7 @@ import {
   referencePlanePlanThree,
   propertyLinePlanThree,
 } from './planElementMeshBuilders';
+import { dormerPlanGroup } from './dormerPlanSymbol';
 
 /** Plan slice elevation in world units (walls still render with real height elsewhere). */
 
@@ -1152,6 +1153,15 @@ export function rebuildPlanMeshes(
     if (level && st.baseLevelId !== level) continue;
     const g = stairPlanThree(st, elementsById);
 
+    if (g) holder.add(g);
+  }
+
+  // KRN-14: dormer plan symbols (dashed outline + "DR" label) on the host
+  // roof's reference-level plan view only.
+  for (const dm of Object.values(elementsById)) {
+    if (dm.kind !== 'dormer') continue;
+    if (kindHidden('dormer' as never)) continue;
+    const g = dormerPlanGroup(dm, elementsById, level ?? null);
     if (g) holder.add(g);
   }
 
