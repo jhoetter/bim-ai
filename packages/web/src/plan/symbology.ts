@@ -634,7 +634,13 @@ function rebuildPlanMeshesFromWire(
     const host = resolveWallForWire(wallId, elementsById, wallsByWireId);
     const doorEl = elementsById[id];
     if (!host || doorEl?.kind !== 'door') continue;
-    const doorGrp = doorGroupThree(doorEl, host, selectedId, presentation === 'opening_focus');
+    const doorGrp = doorGroupThree(
+      doorEl,
+      host,
+      selectedId,
+      presentation === 'opening_focus',
+      opts.detailLevel,
+    );
     holder.add(doorGrp);
     if (ann?.openingTagsVisible === true) {
       const labelRaw = typeof d.planTagLabel === 'string' ? d.planTagLabel.trim() : '';
@@ -654,7 +660,13 @@ function rebuildPlanMeshesFromWire(
     const host = resolveWallForWire(wallId, elementsById, wallsByWireId);
     const winEl = elementsById[id];
     if (!host || winEl?.kind !== 'window') continue;
-    const winGrp = planWindowMesh(winEl, host, selectedId, presentation === 'opening_focus');
+    const winGrp = planWindowMesh(
+      winEl,
+      host,
+      selectedId,
+      presentation === 'opening_focus',
+      opts.detailLevel,
+    );
     holder.add(winGrp);
     if (ann?.openingTagsVisible === true) {
       const labelRaw = typeof w.planTagLabel === 'string' ? w.planTagLabel.trim() : '';
@@ -734,7 +746,7 @@ function rebuildPlanMeshesFromWire(
               : undefined,
         }
       : undefined;
-    const g = stairPlanThree(stairEl, elementsById, wireDoc);
+    const g = stairPlanThree(stairEl, elementsById, wireDoc, opts.detailLevel);
     if (g) holder.add(g);
   }
 
@@ -1133,7 +1145,9 @@ export function rebuildPlanMeshes(
 
     if (!host) continue;
 
-    holder.add(doorGroupThree(d, host, opts.selectedId, presentation === 'opening_focus'));
+    holder.add(
+      doorGroupThree(d, host, opts.selectedId, presentation === 'opening_focus', detailLevel),
+    );
   }
 
   for (const win of Object.values(elementsById)) {
@@ -1144,14 +1158,16 @@ export function rebuildPlanMeshes(
 
     if (!host) continue;
 
-    holder.add(planWindowMesh(win, host, opts.selectedId, presentation === 'opening_focus'));
+    holder.add(
+      planWindowMesh(win, host, opts.selectedId, presentation === 'opening_focus', detailLevel),
+    );
   }
 
   for (const st of Object.values(elementsById)) {
     if (st.kind !== 'stair') continue;
     if (kindHidden('stair')) continue;
     if (level && st.baseLevelId !== level) continue;
-    const g = stairPlanThree(st, elementsById);
+    const g = stairPlanThree(st, elementsById, undefined, detailLevel);
 
     if (g) holder.add(g);
   }

@@ -493,12 +493,10 @@ export function planDoorSymbolPrimitives(
 
 export function doorGroupThree(
   door: Extract<Element, { kind: 'door' }>,
-
   wall: Extract<Element, { kind: 'wall' }>,
-
   selectedId?: string,
-
   openingFocus?: boolean,
+  detailLevel: PlanDetailLevel = 'medium',
 ): THREE.Group {
   const g = new THREE.Group();
 
@@ -537,15 +535,16 @@ export function doorGroupThree(
 
   g.add(opening);
 
-  // Per-operationType symbol primitives, emitted in door-local coords and then
-  // moved/rotated to align with the wall axis.
-  const symbolGroup = new THREE.Group();
-  symbolGroup.position.set(px, 0, pz);
-  symbolGroup.rotation.y = Math.atan2(seg.nz, seg.nx);
-  for (const primitive of planDoorSymbolPrimitives(door, width, openingFocus)) {
-    symbolGroup.add(primitive);
+  // VIE-V3-01: coarse = opening box only; medium/fine = full symbol (swing arc etc.)
+  if (detailLevel !== 'coarse') {
+    const symbolGroup = new THREE.Group();
+    symbolGroup.position.set(px, 0, pz);
+    symbolGroup.rotation.y = Math.atan2(seg.nz, seg.nx);
+    for (const primitive of planDoorSymbolPrimitives(door, width, openingFocus)) {
+      symbolGroup.add(primitive);
+    }
+    g.add(symbolGroup);
   }
-  g.add(symbolGroup);
 
   g.userData.bimPickId = door.id;
 
@@ -554,12 +553,10 @@ export function doorGroupThree(
 
 export function planWindowMesh(
   win: Extract<Element, { kind: 'window' }>,
-
   wall: Extract<Element, { kind: 'wall' }>,
-
   selectedId?: string,
-
   openingFocus?: boolean,
+  detailLevel: PlanDetailLevel = 'medium',
 ): THREE.Group {
   const grp = new THREE.Group();
 
@@ -611,30 +608,33 @@ export function planWindowMesh(
 
   grp.add(mesh);
 
-  const sillPts = [
-    new THREE.Vector3(-width / 2, sill + 0.004, depth * 0.51),
+  // VIE-V3-01: coarse = box only; medium/fine = add sill (glass) line.
+  if (detailLevel !== 'coarse') {
+    const sillPts = [
+      new THREE.Vector3(-width / 2, sill + 0.004, depth * 0.51),
 
-    new THREE.Vector3(width / 2, sill + 0.004, depth * 0.51),
-  ];
+      new THREE.Vector3(width / 2, sill + 0.004, depth * 0.51),
+    ];
 
-  const sillGeom = new THREE.BufferGeometry().setFromPoints(sillPts);
+    const sillGeom = new THREE.BufferGeometry().setFromPoints(sillPts);
 
-  const sillLn = new THREE.Line(
-    sillGeom,
+    const sillLn = new THREE.Line(
+      sillGeom,
 
-    new THREE.LineBasicMaterial({
-      color: (() => {
-        const p = getPlanPalette();
-        return openingFocus ? p.windowGlassFocus : p.windowGlass;
-      })(),
+      new THREE.LineBasicMaterial({
+        color: (() => {
+          const p = getPlanPalette();
+          return openingFocus ? p.windowGlassFocus : p.windowGlass;
+        })(),
 
-      linewidth: PLAN_WINDOW_SILL_LINE_WIDTH,
-    }),
-  );
+        linewidth: PLAN_WINDOW_SILL_LINE_WIDTH,
+      }),
+    );
 
-  sillLn.renderOrder = 2;
+    sillLn.renderOrder = 2;
 
-  grp.add(sillLn);
+    grp.add(sillLn);
+  }
 
   grp.userData.bimPickId = win.id;
 
@@ -745,6 +745,7 @@ export function stairPlanThree(
   stair: Extract<Element, { kind: 'stair' }>,
   elementsById?: Record<string, Element>,
   wireDoc?: StairPlanWireDocOverlays | null,
+  detailLevel: PlanDetailLevel = 'medium',
 ): THREE.Group | null {
   if (stair.shape === 'spiral') {
     return spiralStairPlanGroup(stair);
@@ -790,56 +791,59 @@ export function stairPlanThree(
     ),
   );
 
-  const nSteps = computeStairPlanRiserCount(stair, elementsById);
-  const stepLen = len / nSteps;
+  // VIE-V3-01: coarse = outline only; medium/fine = individual tread lines.
+  if (detailLevel !== 'coarse') {
+    const nSteps = computeStairPlanRiserCount(stair, elementsById);
+    const stepLen = len / nSteps;
 
-  const runOffX = uxDir * stepLen;
+    const runOffX = uxDir * stepLen;
 
-  const runOffZ = uzDir * stepLen;
+    const runOffZ = uzDir * stepLen;
 
-  for (let i = 0; i <= nSteps; i++) {
-    const t = sx + uxDir * stepLen * i;
+    for (let i = 0; i <= nSteps; i++) {
+      const t = sx + uxDir * stepLen * i;
 
-    const w = sz + uzDir * stepLen * i;
+      const w = sz + uzDir * stepLen * i;
 
-    const p1 = new THREE.Vector3(t + px, PLAN_Y + 0.018, w + pz);
+      const p1 = new THREE.Vector3(t + px, PLAN_Y + 0.018, w + pz);
 
-    const p2 = new THREE.Vector3(t - px, PLAN_Y + 0.018, w - pz);
-
-    g.add(
-      new THREE.Line(
-        new THREE.BufferGeometry().setFromPoints([p1, p2]),
-        new THREE.LineBasicMaterial({
-          color: getPlanPalette().hairline,
-          transparent: true,
-          opacity: 0.55,
-        }),
-      ),
-    );
-
-    if (i < nSteps) {
-      const c1 = new THREE.Vector3(
-        t + runOffX + px * 0.15,
-        PLAN_Y + 0.018,
-        w + runOffZ + pz * 0.15,
-      );
-
-      const c2 = new THREE.Vector3(
-        t + runOffX - px * 0.15,
-        PLAN_Y + 0.018,
-        w + runOffZ - pz * 0.15,
-      );
+      const p2 = new THREE.Vector3(t - px, PLAN_Y + 0.018, w - pz);
 
       g.add(
         new THREE.Line(
-          new THREE.BufferGeometry().setFromPoints([c1, c2]),
+          new THREE.BufferGeometry().setFromPoints([p1, p2]),
           new THREE.LineBasicMaterial({
-            color: getPlanPalette().hairlineStrong,
+            color: getPlanPalette().hairline,
             transparent: true,
-            opacity: 0.45,
+            opacity: 0.55,
           }),
         ),
       );
+
+      if (i < nSteps) {
+        const c1 = new THREE.Vector3(
+          t + runOffX + px * 0.15,
+          PLAN_Y + 0.018,
+          w + runOffZ + pz * 0.15,
+        );
+
+        const c2 = new THREE.Vector3(
+          t + runOffX - px * 0.15,
+          PLAN_Y + 0.018,
+          w + runOffZ - pz * 0.15,
+        );
+
+        g.add(
+          new THREE.Line(
+            new THREE.BufferGeometry().setFromPoints([c1, c2]),
+            new THREE.LineBasicMaterial({
+              color: getPlanPalette().hairlineStrong,
+              transparent: true,
+              opacity: 0.45,
+            }),
+          ),
+        );
+      }
     }
   }
 
