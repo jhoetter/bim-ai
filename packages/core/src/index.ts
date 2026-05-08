@@ -1495,6 +1495,19 @@ export type EvidenceClosureReviewV1 = {
 export type { PerspectiveId, WorkspaceLayoutPreset } from './workbench';
 
 // ---------------------------------------------------------------------------
+// COL-V3-01 — collab session types
+// ---------------------------------------------------------------------------
+
+export type {
+  ParticipantRole,
+  Participant,
+  CollabSession,
+  InFlightCommand,
+  CollabAwarenessState,
+} from './collab';
+export { PARTICIPANT_COLOR_TOKENS, participantColorToken } from './collab';
+
+// ---------------------------------------------------------------------------
 // TKN-V3-01 — tokenised kernel representation
 // ---------------------------------------------------------------------------
 
