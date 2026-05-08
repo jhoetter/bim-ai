@@ -505,7 +505,7 @@ Theme contents below are filled in by parallel chapter authors (Phase 2 dispatch
 | KRN-V3-08 | Wall sweeps & reveals | M | next | KRN-V3-03 (edge-profile-run pattern) |
 | KRN-V3-09 | Curved curtain walls | M | next | — |
 | KRN-V3-10 | Monolithic / floating stair sub-kinds | M | next | KRN-V3-05 |
-| KRN-V3-11 | Railing baluster pattern + handrail supports | M | next | KRN-V3-05 |
+| KRN-V3-11 | Railing baluster pattern + handrail supports | M | done | KRN-V3-05 |
 | KRN-V3-12 | Cut profile (per-view per-category override) | S | next | — |
 | KRN-V3-13 | Massing & divided-surface façades | L | vision | — |
 | KRN-V3-14 | Adaptive components | L | vision | KRN-V3-13 |
