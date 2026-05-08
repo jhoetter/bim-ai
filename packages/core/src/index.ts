@@ -620,6 +620,16 @@ export type Element =
       landings?: StairLanding[];
       /** IFC-04: optional OmniClass / Uniclass / NSCC code emitted as IfcClassificationReference. */
       ifcClassificationCode?: string | null;
+      /** KRN-07 closeout: spiral pivot (in plan mm). Required when shape='spiral'. */
+      centerMm?: XY;
+      /** KRN-07 closeout: spiral inner radius. Required when shape='spiral'. */
+      innerRadiusMm?: number;
+      /** KRN-07 closeout: spiral outer radius. Required when shape='spiral'. */
+      outerRadiusMm?: number;
+      /** KRN-07 closeout: total spiral arc in degrees (signed). Required when shape='spiral'. */
+      totalRotationDeg?: number;
+      /** KRN-07 closeout: arbitrary closed/open polyline for shape='sketch' stairs. */
+      sketchPathMm?: XY[];
       overrideParams?: Record<string, unknown>;
       pinned?: boolean;
     }

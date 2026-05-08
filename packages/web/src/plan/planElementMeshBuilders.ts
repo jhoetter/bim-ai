@@ -22,6 +22,7 @@ import {
 import type { PlanPresentationPreset, StairPlanWireDocOverlays } from './symbology';
 import { getBuiltInWallType, materialHexFor } from '../families/wallTypeCatalog';
 import { darkenHex } from '../viewport/meshBuilders.layeredWall';
+import { spiralStairPlanGroup, sketchStairPlanGroup } from './stairPlanSymbol';
 
 function planLocationLineOffsetFrac(loc: WallLocationLine): number {
   switch (loc) {
@@ -745,6 +746,12 @@ export function stairPlanThree(
   elementsById?: Record<string, Element>,
   wireDoc?: StairPlanWireDocOverlays | null,
 ): THREE.Group | null {
+  if (stair.shape === 'spiral') {
+    return spiralStairPlanGroup(stair);
+  }
+  if (stair.shape === 'sketch') {
+    return sketchStairPlanGroup(stair);
+  }
   const sx = stair.runStartMm.xMm / 1000;
   const sz = stair.runStartMm.yMm / 1000;
   const ex = stair.runEndMm.xMm / 1000;

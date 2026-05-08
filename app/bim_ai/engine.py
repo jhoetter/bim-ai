@@ -397,7 +397,72 @@ def _materialize_stair_runs_and_landings(
             b = runs[i + 1]
             landings.append(_auto_landing_for_gap(f"{cmd.id or 'stair'}-landing-{i + 1}", a, b))
 
+    if cmd.shape == "spiral" and not runs:
+        assert cmd.center_mm is not None
+        assert cmd.inner_radius_mm is not None
+        assert cmd.outer_radius_mm is not None
+        assert cmd.total_rotation_deg is not None
+        assert cmd.riser_count is not None and cmd.riser_count >= 1
+        polyline = _spiral_polyline(
+            cmd.center_mm,
+            cmd.inner_radius_mm,
+            cmd.outer_radius_mm,
+            cmd.total_rotation_deg,
+            cmd.riser_count,
+        )
+        runs = [
+            StairRun(
+                id=f"{cmd.id or 'stair'}-run-1",
+                start_mm=polyline[0],
+                end_mm=polyline[-1],
+                width_mm=cmd.outer_radius_mm - cmd.inner_radius_mm,
+                riser_count=cmd.riser_count,
+                polyline_mm=polyline,
+            )
+        ]
+
+    if cmd.shape == "sketch" and not runs:
+        assert cmd.sketch_path_mm is not None and len(cmd.sketch_path_mm) >= 2
+        polyline = list(cmd.sketch_path_mm)
+        riser_count = cmd.riser_count if cmd.riser_count else max(len(polyline) - 1, 1)
+        runs = [
+            StairRun(
+                id=f"{cmd.id or 'stair'}-run-1",
+                start_mm=polyline[0],
+                end_mm=polyline[-1],
+                width_mm=cmd.width_mm,
+                riser_count=riser_count,
+                polyline_mm=polyline,
+            )
+        ]
+
     return runs, landings
+
+
+def _spiral_polyline(
+    center: Vec2Mm,
+    inner_r: float,
+    outer_r: float,
+    total_rot_deg: float,
+    riser_count: int,
+) -> list[Vec2Mm]:
+    """Sample the spiral midline (between inner and outer radius) at riser_count+1 points."""
+
+    import math
+
+    midline_r = (inner_r + outer_r) * 0.5
+    total_rot_rad = math.radians(total_rot_deg)
+    out: list[Vec2Mm] = []
+    for i in range(riser_count + 1):
+        t = i / riser_count
+        theta = total_rot_rad * t
+        out.append(
+            Vec2Mm(
+                xMm=center.x_mm + midline_r * math.cos(theta),
+                yMm=center.y_mm + midline_r * math.sin(theta),
+            )
+        )
+    return out
 
 
 def _auto_landing_for_gap(landing_id: str, a: StairRun, b: StairRun) -> StairLanding:
@@ -1897,6 +1962,11 @@ def apply_inplace(
                 shape=cmd.shape,
                 runs=stair_runs,
                 landings=stair_landings,
+                center_mm=cmd.center_mm,
+                inner_radius_mm=cmd.inner_radius_mm,
+                outer_radius_mm=cmd.outer_radius_mm,
+                total_rotation_deg=cmd.total_rotation_deg,
+                sketch_path_mm=cmd.sketch_path_mm,
             )
 
         case CreateSlabOpeningCmd():

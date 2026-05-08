@@ -586,7 +586,12 @@ StairShape = Literal["straight", "l_shape", "u_shape", "spiral", "sketch"]
 
 
 class StairRun(BaseModel):
-    """KRN-07: one straight flight in a multi-run stair."""
+    """KRN-07: one flight in a multi-run stair.
+
+    Straight runs use start_mm/end_mm. Curved runs (spiral, sketch) populate
+    polyline_mm with ≥2 plan-coordinate points; renderers read polyline_mm when
+    present and fall back to start/end otherwise.
+    """
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True)
     id: str
@@ -594,6 +599,7 @@ class StairRun(BaseModel):
     end_mm: Vec2Mm = Field(alias="endMm")
     width_mm: float = Field(alias="widthMm", default=1000)
     riser_count: int = Field(alias="riserCount", default=8)
+    polyline_mm: list[Vec2Mm] | None = Field(default=None, alias="polylineMm")
 
 
 class StairLanding(BaseModel):
@@ -622,7 +628,41 @@ class StairElem(BaseModel):
     landings: list[StairLanding] = Field(default_factory=list)
     # IFC-04: optional classification code emitted as IfcClassificationReference.
     ifc_classification_code: str | None = Field(default=None, alias="ifcClassificationCode")
+    # KRN-07 closeout — spiral + sketch shape inputs.
+    center_mm: Vec2Mm | None = Field(default=None, alias="centerMm")
+    inner_radius_mm: float | None = Field(default=None, alias="innerRadiusMm")
+    outer_radius_mm: float | None = Field(default=None, alias="outerRadiusMm")
+    total_rotation_deg: float | None = Field(default=None, alias="totalRotationDeg")
+    sketch_path_mm: list[Vec2Mm] | None = Field(default=None, alias="sketchPathMm")
     pinned: bool = Field(default=False)
+
+    @model_validator(mode="after")
+    def _validate_shape_specific_fields(self) -> StairElem:
+        if self.shape == "spiral":
+            missing = [
+                name
+                for name, value in (
+                    ("centerMm", self.center_mm),
+                    ("innerRadiusMm", self.inner_radius_mm),
+                    ("outerRadiusMm", self.outer_radius_mm),
+                    ("totalRotationDeg", self.total_rotation_deg),
+                )
+                if value is None
+            ]
+            if missing:
+                raise ValueError(
+                    f"spiral stair requires {', '.join(missing)}",
+                )
+            if (
+                self.inner_radius_mm is not None
+                and self.outer_radius_mm is not None
+                and self.outer_radius_mm <= self.inner_radius_mm
+            ):
+                raise ValueError("spiral stair outerRadiusMm must exceed innerRadiusMm")
+        elif self.shape == "sketch":
+            if self.sketch_path_mm is None or len(self.sketch_path_mm) < 2:
+                raise ValueError("sketch stair requires sketchPathMm with at least two points")
+        return self
 
 
 class SlabOpeningElem(BaseModel):

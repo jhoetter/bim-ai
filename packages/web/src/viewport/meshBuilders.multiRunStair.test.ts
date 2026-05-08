@@ -101,3 +101,88 @@ describe('makeStairVolumeMesh — multi-run (KRN-07)', () => {
     expect(group.children.length).toBe(16 + 2);
   });
 });
+
+describe('makeStairVolumeMesh — spiral (KRN-07 closeout)', () => {
+  const spiralStair: StairElem = {
+    kind: 'stair',
+    id: 'stair-spiral',
+    name: 'Spiral',
+    baseLevelId: 'lvl-0',
+    topLevelId: 'lvl-1',
+    runStartMm: { xMm: 0, yMm: 0 },
+    runEndMm: { xMm: 0, yMm: 0 },
+    widthMm: 1000,
+    riserMm: 175,
+    treadMm: 275,
+    shape: 'spiral',
+    centerMm: { xMm: 0, yMm: 0 },
+    innerRadiusMm: 200,
+    outerRadiusMm: 1200,
+    totalRotationDeg: 270,
+    runs: [
+      {
+        id: 'run-1',
+        startMm: { xMm: 1200, yMm: 0 },
+        endMm: { xMm: 0, yMm: -1200 },
+        widthMm: 1000,
+        riserCount: 12,
+      },
+    ],
+    landings: [],
+  };
+
+  it('renders one annular tread per riser (and no landings)', () => {
+    const group = makeStairVolumeMesh(spiralStair, elementsById, null);
+    expect(group.children.length).toBe(12);
+  });
+
+  it('top of the highest tread reaches the upper level elevation', () => {
+    const group = makeStairVolumeMesh(spiralStair, elementsById, null);
+    group.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(group);
+    expect(box.max.y).toBeCloseTo(2.8, 2);
+  });
+});
+
+describe('makeStairVolumeMesh — sketch (KRN-07 closeout)', () => {
+  const sketchStair: StairElem = {
+    kind: 'stair',
+    id: 'stair-sketch',
+    name: 'Sketch',
+    baseLevelId: 'lvl-0',
+    topLevelId: 'lvl-1',
+    runStartMm: { xMm: 0, yMm: 0 },
+    runEndMm: { xMm: 4000, yMm: 1500 },
+    widthMm: 1000,
+    riserMm: 175,
+    treadMm: 275,
+    shape: 'sketch',
+    sketchPathMm: [
+      { xMm: 0, yMm: 0 },
+      { xMm: 2000, yMm: 0 },
+      { xMm: 4000, yMm: 1500 },
+    ],
+    runs: [
+      {
+        id: 'run-1',
+        startMm: { xMm: 0, yMm: 0 },
+        endMm: { xMm: 4000, yMm: 1500 },
+        widthMm: 1000,
+        riserCount: 10,
+      },
+    ],
+    landings: [],
+  };
+
+  it('renders one tread per riser stepped along the polyline', () => {
+    const group = makeStairVolumeMesh(sketchStair, elementsById, null);
+    expect(group.children.length).toBe(10);
+  });
+
+  it('top tread reaches the upper level elevation', () => {
+    const group = makeStairVolumeMesh(sketchStair, elementsById, null);
+    group.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(group);
+    expect(box.max.y).toBeCloseTo(2.8, 2);
+  });
+});
