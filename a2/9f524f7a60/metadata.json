@@ -3,7 +3,7 @@
   "checkpoint_id": "a29f524f7a60",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     "packages/web/src/plan/PhaseDropdown.tsx"
   ],
@@ -19,13 +19,19 @@
       "transcript": "/a2/9f524f7a60/1/full.jsonl",
       "content_hash": "/a2/9f524f7a60/1/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/a2/9f524f7a60/2/metadata.json",
+      "transcript": "/a2/9f524f7a60/2/full.jsonl",
+      "content_hash": "/a2/9f524f7a60/2/content_hash.txt",
+      "prompt": "/a2/9f524f7a60/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 2,
-    "cache_creation_tokens": 643,
-    "cache_read_tokens": 242817,
-    "output_tokens": 435,
-    "api_call_count": 2
+    "input_tokens": 250,
+    "cache_creation_tokens": 140987,
+    "cache_read_tokens": 13531218,
+    "output_tokens": 63644,
+    "api_call_count": 154
   }
 }
