@@ -112,3 +112,7 @@ and all committed + pushed?
 ---
 
 what is left to do in the @spec/workpackage-master-tracker.md
+
+---
+
+can you write the prompts then for wave 5? in how many parallel agents make sense; if all should be sequential, then also good
