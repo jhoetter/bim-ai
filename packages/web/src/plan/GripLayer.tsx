@@ -137,6 +137,24 @@ function DraftWallPreview({ start, end }: { start: ScreenPoint; end: ScreenPoint
 
 /* ─── Temp-dimension layer ────────────────────────────────────────── */
 
+/** EDT-V3-01 — rules that display a padlock overlay on a grip or dimension target. */
+const PADLOCK_RULES = new Set([
+  'equal_distance',
+  'parallel',
+  'perpendicular',
+  'collinear',
+  'equal_length',
+]);
+
+/** Tooltip labels for each constraint rule shown in the padlock overlay. */
+const RULE_LABEL: Record<string, string> = {
+  equal_distance: 'Locked distance',
+  parallel: 'Parallel',
+  perpendicular: 'Perpendicular',
+  collinear: 'Collinear',
+  equal_length: 'Equal length',
+};
+
 export interface TempDimLayerProps {
   targets: TempDimTarget[];
   worldToScreen: (xy: { xMm: number; yMm: number }) => ScreenPoint;
@@ -146,6 +164,9 @@ export interface TempDimLayerProps {
    *  matching `ConstraintElem` in the world. Drives the open- vs
    *  filled-padlock glyph swap. */
   isLocked?: (target: TempDimTarget) => boolean;
+  /** EDT-V3-01 — returns the active constraint rule for a target when one
+   *  exists, so the padlock tooltip can show the rule label. */
+  constraintRule?: (target: TempDimTarget) => string | undefined;
 }
 
 function formatMm(mm: number): string {
@@ -159,6 +180,7 @@ export function TempDimLayer({
   onTargetClick,
   onLockClick,
   isLocked,
+  constraintRule,
 }: TempDimLayerProps) {
   if (targets.length === 0) return null;
   return (
@@ -231,11 +253,20 @@ export function TempDimLayer({
             </button>
             {(() => {
               const locked = isLocked ? isLocked(t) : false;
+              const rule = constraintRule ? constraintRule(t) : undefined;
+              const showPadlock = locked && rule != null && PADLOCK_RULES.has(rule);
+              const ruleLabel = rule != null ? (RULE_LABEL[rule] ?? rule) : undefined;
+              const lockedTitle = showPadlock
+                ? `${ruleLabel} constraint active — click again is a no-op`
+                : locked
+                  ? 'Locked distance — click again is a no-op'
+                  : 'Lock this distance';
               return (
                 <button
                   type="button"
                   data-testid={`temp-dim-lock-${t.id}`}
                   data-locked={locked ? 'true' : 'false'}
+                  data-constraint-rule={rule ?? undefined}
                   onClick={() => onLockClick(t)}
                   style={{
                     position: 'absolute',
@@ -255,8 +286,8 @@ export function TempDimLayer({
                     lineHeight: '15px',
                     padding: 0,
                   }}
-                  title={locked ? 'Locked distance — click again is a no-op' : 'Lock this distance'}
-                  aria-label={locked ? 'Locked dimension' : 'Lock dimension'}
+                  title={lockedTitle}
+                  aria-label={locked ? `${ruleLabel ?? 'Locked'} constraint` : 'Lock dimension'}
                 >
                   {locked ? '🔒' : '🔓'}
                 </button>

@@ -12,13 +12,12 @@ padlock on a temporary dimension between two walls captures the
 current distance as ``locked_value_mm`` on a fresh ``equal_distance``
 constraint between those walls.
 
-The slice supports the most common rule (``equal_distance`` between
-two walls' centres) — enough to make the engine behaviour testable
-end-to-end. Other rules (parallel / perpendicular / collinear /
-equal_length) are stubbed with pass-through evaluators that return
-``ok`` so the engine never blocks on a rule it does not yet fully
-implement; future work can fill those in without changing the
-calling protocol.
+Supported rules:
+- ``equal_distance`` — locked centre-to-centre distance between two walls.
+- ``parallel`` — direction vectors of two walls/grid-lines are parallel.
+- ``perpendicular`` — direction vectors are perpendicular (90°).
+- ``collinear`` — two walls lie on the same infinite line.
+- ``equal_length`` — two walls/beams have the same length.
 """
 
 from __future__ import annotations
@@ -89,6 +88,91 @@ def _resolve_anchor(
     return cx, cy
 
 
+def _direction_vector(elem: dict[str, Any]) -> tuple[float, float] | None:
+    """Return the normalised direction vector (dx, dy) for a wall or grid_line.
+
+    Returns None when the element kind is unsupported or has zero length (the
+    caller should treat zero-length as vacuously satisfying orientation rules).
+    """
+    kind = elem.get("kind")
+    if kind not in ("wall", "grid_line"):
+        return None
+
+    if kind == "wall":
+        s = elem.get("start") or {}
+        e = elem.get("end") or {}
+        sx = float(s.get("xMm", 0))
+        sy = float(s.get("yMm", 0))
+        ex = float(e.get("xMm", 0))
+        ey = float(e.get("yMm", 0))
+    else:
+        # grid_line uses the same start/end keys
+        s = elem.get("start") or {}
+        e = elem.get("end") or {}
+        sx = float(s.get("xMm", 0))
+        sy = float(s.get("yMm", 0))
+        ex = float(e.get("xMm", 0))
+        ey = float(e.get("yMm", 0))
+
+    length = hypot(ex - sx, ey - sy)
+    if length < EPSILON_MM:
+        return None  # zero-length — vacuous
+    return (ex - sx) / length, (ey - sy) / length
+
+
+def _element_length(elem: dict[str, Any]) -> float | None:
+    """Return the length of a wall, grid_line, or beam element (in mm)."""
+    kind = elem.get("kind")
+    if kind in ("wall", "grid_line"):
+        s = elem.get("start") or {}
+        e = elem.get("end") or {}
+        sx = float(s.get("xMm", 0))
+        sy = float(s.get("yMm", 0))
+        ex = float(e.get("xMm", 0))
+        ey = float(e.get("yMm", 0))
+        return hypot(ex - sx, ey - sy)
+    if kind == "beam":
+        s = elem.get("startMm") or elem.get("start_mm") or {}
+        e = elem.get("endMm") or elem.get("end_mm") or {}
+        sx = float(s.get("xMm", 0))
+        sy = float(s.get("yMm", 0))
+        ex = float(e.get("xMm", 0))
+        ey = float(e.get("yMm", 0))
+        return hypot(ex - sx, ey - sy)
+    return None
+
+
+def _resolve_first_element(
+    elements_by_id: dict[str, dict[str, Any]],
+    refs: list[dict[str, Any]],
+) -> dict[str, Any] | None:
+    """Return the first referenced element, or None if unavailable."""
+    for ref in refs:
+        eid = ref.get("elementId")
+        if eid and eid in elements_by_id:
+            return elements_by_id[eid]
+    return None
+
+
+def _violation(
+    cid: str,
+    rule: str,
+    severity: str,
+    residual: float,
+    message: str,
+) -> ConstraintViolation | None:
+    """Return a ConstraintViolation when residual > EPSILON_MM, else None."""
+    if residual > EPSILON_MM:
+        return ConstraintViolation(
+            constraint_id=cid,
+            rule=rule,
+            severity=severity,
+            residual_mm=residual,
+            message=message,
+        )
+    return None
+
+
 def evaluate_constraint(
     constraint: dict[str, Any],
     elements_by_id: dict[str, dict[str, Any]],
@@ -127,6 +211,95 @@ def evaluate_constraint(
                 ),
             )
         return None
+
+    if rule == "parallel":
+        elem_a = _resolve_first_element(elements_by_id, refs_a)
+        elem_b = _resolve_first_element(elements_by_id, refs_b)
+        if elem_a is None or elem_b is None:
+            return None
+        da = _direction_vector(elem_a)
+        db = _direction_vector(elem_b)
+        # Zero-length wall satisfies any orientation constraint vacuously.
+        if da is None or db is None:
+            return None
+        # Cross-product magnitude of two unit vectors: |da × db| = |sin θ|
+        cross_mag = abs(da[0] * db[1] - da[1] * db[0])
+        return _violation(
+            cid,
+            rule,
+            severity,
+            cross_mag,
+            f"walls are not parallel: cross-product magnitude {cross_mag:.6f}",
+        )
+
+    if rule == "perpendicular":
+        elem_a = _resolve_first_element(elements_by_id, refs_a)
+        elem_b = _resolve_first_element(elements_by_id, refs_b)
+        if elem_a is None or elem_b is None:
+            return None
+        da = _direction_vector(elem_a)
+        db = _direction_vector(elem_b)
+        if da is None or db is None:
+            return None
+        # Dot product of two unit vectors: |da · db| = |cos θ|; perpendicular → 0
+        dot = abs(da[0] * db[0] + da[1] * db[1])
+        return _violation(
+            cid,
+            rule,
+            severity,
+            dot,
+            f"walls are not perpendicular: |dot product| {dot:.6f}",
+        )
+
+    if rule == "collinear":
+        elem_a = _resolve_first_element(elements_by_id, refs_a)
+        elem_b = _resolve_first_element(elements_by_id, refs_b)
+        if elem_a is None or elem_b is None:
+            return None
+        da = _direction_vector(elem_a)
+        db = _direction_vector(elem_b)
+        if da is None or db is None:
+            return None
+        # Direction check: cross-product magnitude (angle residual).
+        angle_residual = abs(da[0] * db[1] - da[1] * db[0])
+        # Offset check: project vector between start points onto the shared normal.
+        # Normal to direction da is (-da[1], da[0]).
+        def _start_xy(e: dict[str, Any]) -> tuple[float, float]:
+            s = e.get("start") or e.get("startMm") or e.get("start_mm") or {}
+            return float(s.get("xMm", 0)), float(s.get("yMm", 0))
+
+        ax, ay = _start_xy(elem_a)
+        bx, by = _start_xy(elem_b)
+        dx, dy = bx - ax, by - ay
+        # Project onto the normal to da: scalar = dx*(-da[1]) + dy*(da[0])
+        offset_mm = abs(dx * (-da[1]) + dy * da[0])
+        residual = max(angle_residual, offset_mm)
+        return _violation(
+            cid,
+            rule,
+            severity,
+            residual,
+            f"walls are not collinear: angle residual {angle_residual:.6f}, "
+            f"offset {offset_mm:.2f}mm",
+        )
+
+    if rule == "equal_length":
+        elem_a = _resolve_first_element(elements_by_id, refs_a)
+        elem_b = _resolve_first_element(elements_by_id, refs_b)
+        if elem_a is None or elem_b is None:
+            return None
+        len_a = _element_length(elem_a)
+        len_b = _element_length(elem_b)
+        if len_a is None or len_b is None:
+            return None
+        residual = abs(len_a - len_b)
+        return _violation(
+            cid,
+            rule,
+            severity,
+            residual,
+            f"lengths differ: {len_a:.1f}mm vs {len_b:.1f}mm (residual {residual:.1f}mm)",
+        )
 
     return None
 
