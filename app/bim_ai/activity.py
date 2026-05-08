@@ -19,7 +19,17 @@ ActivityKind = Literal[
     "option_set_lifecycle",
     "collab_join",
     "collab_leave",
+    "sheet_comment_chip",
 ]
+
+
+class SheetCommentChipEntry(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    kind: Literal["sheet_comment_chip"] = "sheet_comment_chip"
+    view_id: str = Field(alias="viewId")
+    sheet_id: str = Field(alias="sheetId")
+    comment_id: str = Field(alias="commentId")
+    sheet_number: str = Field(default="", alias="sheetNumber")
 
 
 class ActivityRow(BaseModel):

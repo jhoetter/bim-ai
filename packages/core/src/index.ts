@@ -69,7 +69,9 @@ export type ElemKind =
   | 'mass'
   | 'phase'
   | 'sun_settings'
-  | 'view';
+  | 'view'
+  | 'asset_library_entry'
+  | 'placed_asset';
 
 export type PhaseFilter = 'all' | 'existing' | 'demolition' | 'new';
 
@@ -1874,7 +1876,15 @@ export type ElementAnchor = {
 };
 export type PointAnchor = { kind: 'point'; worldMm: Vec3Mm };
 export type RegionAnchor = { kind: 'region'; minMm: Vec3Mm; maxMm: Vec3Mm };
-export type CommentAnchor = ElementAnchor | PointAnchor | RegionAnchor;
+export type SheetAnchor = {
+  kind: 'sheet';
+  sheetId: string;
+  xPx: number;
+  yPx: number;
+  sourceViewId?: string;
+  sourceElementId?: string;
+};
+export type CommentAnchor = ElementAnchor | PointAnchor | RegionAnchor | SheetAnchor;
 
 export type Comment = {
   id: string;
@@ -1956,9 +1966,66 @@ export type ActivityRow = {
     | 'milestone_created'
     | 'option_set_lifecycle'
     | 'collab_join'
-    | 'collab_leave';
+    | 'collab_leave'
+    | 'sheet_comment_chip';
   payload: Record<string, unknown>;
   ts: number;
   parentSnapshotId?: string;
   resultSnapshotId?: string;
+};
+
+// ---------------------------------------------------------------------------
+// AST-V3-01 — Searchable asset library + schematic-2D thumbnails
+// ---------------------------------------------------------------------------
+
+export type AssetKind = 'family_instance' | 'block_2d' | 'kit' | 'decal' | 'profile';
+
+export type AssetCategory =
+  | 'furniture'
+  | 'kitchen'
+  | 'bathroom'
+  | 'door'
+  | 'window'
+  | 'decal'
+  | 'profile'
+  | 'casework';
+
+export type AssetDisciplineTag = 'arch' | 'struct' | 'mep';
+
+export type ParamSchemaEntry = {
+  key: string;
+  kind: 'mm' | 'enum' | 'material' | 'bool';
+  default: unknown;
+  constraints?: unknown;
+};
+
+export type ParamSchema = ParamSchemaEntry[];
+
+/** AST-V3-01 — searchable asset library entry with schematic-2D thumbnail. */
+export type AssetLibraryEntry = {
+  kind: 'asset_library_entry';
+  id: string;
+  assetKind: AssetKind;
+  name: string;
+  tags: string[];
+  category: AssetCategory;
+  disciplineTags?: AssetDisciplineTag[];
+  thumbnailKind: 'schematic_plan' | 'rendered_3d';
+  thumbnailMm?: { widthMm: number; heightMm: number };
+  paramSchema?: ParamSchema;
+  publishedFromOrgId?: string;
+  description?: string;
+};
+
+/** AST-V3-01 — a placed asset instance on the canvas. */
+export type PlacedAsset = {
+  kind: 'placed_asset';
+  id: string;
+  name: string;
+  assetId: string;
+  levelId: string;
+  positionMm: XY;
+  rotationDeg?: number;
+  paramValues?: Record<string, unknown>;
+  hostElementId?: string;
 };
