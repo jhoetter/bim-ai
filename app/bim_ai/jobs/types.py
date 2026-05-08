@@ -11,6 +11,7 @@ JobKind = Literal[
     "dxf_import",
     "gltf_export",
     "sketch_trace",
+    "image_trace",
     "render_still",
     "render_video",
     "agent_call",

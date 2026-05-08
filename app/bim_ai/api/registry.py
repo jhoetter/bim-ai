@@ -839,3 +839,86 @@ register(
         agentSafetyNotes="Safe to call freely; lists non-revoked presentation links only.",
     )
 )
+# ---------------------------------------------------------------------------
+# IMG-V3-01 — Image-to-layout trace
+# ---------------------------------------------------------------------------
+
+register(
+    ToolDescriptor(
+        name="img-trace",
+        category="transform",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ImgTraceInput",
+            "type": "object",
+            "required": ["image"],
+            "properties": {
+                "image": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Image file (multipart/form-data field 'image'). JPEG or PNG.",
+                },
+                "archetypeHint": {
+                    "type": "string",
+                    "description": "Optional layout archetype hint (e.g. 'residential_apartment').",
+                },
+                "brief": {
+                    "type": "string",
+                    "description": "Optional free-text design brief (multipart field 'brief').",
+                },
+            },
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "StructuredLayout",
+            "type": "object",
+            "required": ["schemaVersion", "imageMetadata", "rooms", "walls", "openings", "ocrLabels", "advisories"],
+            "properties": {
+                "schemaVersion": {"type": "string", "enum": ["img-v3.0"]},
+                "imageMetadata": {
+                    "type": "object",
+                    "required": ["widthPx", "heightPx"],
+                    "properties": {
+                        "widthPx": {"type": "integer"},
+                        "heightPx": {"type": "integer"},
+                        "calibrationMmPerPx": {"type": "number"},
+                    },
+                },
+                "rooms": {"type": "array", "items": {"type": "object"}},
+                "walls": {"type": "array", "items": {"type": "object"}},
+                "openings": {"type": "array", "items": {"type": "object"}},
+                "ocrLabels": {"type": "array", "items": {"type": "object"}},
+                "advisories": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": ["code"],
+                        "properties": {
+                            "code": {"type": "string"},
+                            "message": {"type": "string"},
+                        },
+                    },
+                },
+                "jobId": {
+                    "type": "string",
+                    "description": "Present instead of layout fields when image >2MB was enqueued.",
+                },
+            },
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Layout extracted successfully"),
+            "no_walls_detected": ExitCode(code=1, meaning="No wall segments found; image may not be a floor plan"),
+        },
+        cliExample="bim-ai trace --image plan.png --archetype-hint residential_apartment -o layout.json",
+        restEndpoint=RestEndpoint(method="POST", path="/api/v3/trace"),
+        sideEffects="none",
+        agentSafetyNotes=(
+            "Deterministic: same image bytes → byte-identical StructuredLayout JSON. "
+            "Images >2MB are enqueued as image_trace jobs; response contains {jobId}. "
+            "Check advisories[].code for 'no_walls_detected', 'low_contrast_image', "
+            "'opencv_unavailable', 'tesseract_unavailable'. "
+            "Exit code 1 (no_walls_detected) means the image is likely not a floor plan."
+        ),
+    )
+)

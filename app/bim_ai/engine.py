@@ -187,6 +187,7 @@ from bim_ai.commands import (
     IndexAssetCmd,
     PlaceAssetCmd,
     SetToolPrefCmd,
+    TraceImageCmd,
 )
 from bim_ai.constraints import Violation, evaluate
 from bim_ai.datum_levels import (
@@ -5068,6 +5069,11 @@ def apply_inplace(
         case SetToolPrefCmd():
             # CHR-V3-08: store sticky modifier preference on the document.
             doc.tool_prefs.setdefault(cmd.tool, {})[cmd.pref_key] = cmd.pref_value
+        case TraceImageCmd():
+            raise ValueError(
+                "TraceImageCmd cannot be applied in a bundle; "
+                "use POST /api/v3/trace or engine.handle_trace_image_cmd() instead"
+            )
 
     # KRN-08: areas track a derived computedAreaSqMm. Recompute after every
     # command apply so create/update/delete of areas (and shafts that affect
@@ -6532,3 +6538,29 @@ def planFamilyInstanceMesh(instance: ColumnElem, detail_level: str) -> list[Line
         return _family_coarse(instance)
     else:
         return _family_full(instance)
+
+# ---------------------------------------------------------------------------
+# IMG-V3-01 — handle_trace_image_cmd
+# ---------------------------------------------------------------------------
+
+
+def handle_trace_image_cmd(cmd: TraceImageCmd) -> dict:
+    """Run the deterministic CV pipeline on the base64-encoded image in cmd."""
+    import base64
+    import os
+    import tempfile
+
+    from bim_ai.img.pipeline import trace
+
+    image_bytes = base64.b64decode(cmd.image_b64)
+    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as fh:
+        fh.write(image_bytes)
+        tmp_path = fh.name
+    try:
+        layout = trace(tmp_path, archetype_hint=cmd.archetype_hint)
+    finally:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+    return layout.model_dump(by_alias=True)

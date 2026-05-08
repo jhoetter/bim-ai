@@ -9,7 +9,7 @@ from uuid import UUID, uuid4
 
 logger = logging.getLogger(__name__)
 
-from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 from sqlalchemy import desc, select
@@ -1965,6 +1965,96 @@ def _descriptor_to_dict(d: Any) -> dict[str, Any]:
     from dataclasses import asdict
 
     return asdict(d)
+
+
+@api_router.post("/v3/trace")
+async def v3_trace_image(
+    request: Request,
+    archetypeHint: str | None = Query(default=None),
+) -> dict[str, Any]:
+    """IMG-V3-01 — deterministic CV image → StructuredLayout.
+
+    Accepts multipart/form-data with:
+      - image: binary (JPEG or PNG)
+      - brief: optional text string
+
+    Images > 2 MB are enqueued as image_trace jobs → returns {jobId}.
+    Images ≤ 2 MB are processed inline → returns StructuredLayout.
+    """
+    import base64
+    import io as _io
+    import os
+    import tempfile
+
+    from bim_ai.img.pipeline import trace
+
+    form = await request.form()
+    image_field = form.get("image")
+    if image_field is None:
+        raise HTTPException(status_code=422, detail="Missing required form field: image")
+
+    image_bytes: bytes
+    if hasattr(image_field, "read"):
+        image_bytes = await image_field.read()  # type: ignore[union-attr]
+    else:
+        image_bytes = image_field.encode() if isinstance(image_field, str) else bytes(image_field)  # type: ignore[arg-type]
+
+    brief_text: str | None = None
+    brief_field = form.get("brief")
+    if brief_field is not None:
+        brief_text = str(brief_field)
+
+    _SIZE_LIMIT = 2 * 1024 * 1024  # 2 MB
+    if len(image_bytes) > _SIZE_LIMIT:
+        from bim_ai.jobs.queue import get_queue
+        from bim_ai.jobs.types import Job
+
+        now = datetime.now(UTC).isoformat()
+        model_id_hint = str(form.get("modelId") or "unassigned")
+        job = Job(
+            modelId=model_id_hint,
+            kind="image_trace",
+            status="queued",
+            inputs={"archetypeHint": archetypeHint},
+            createdAt=now,
+        )
+        job = await get_queue().submit(job)
+        from fastapi.responses import JSONResponse
+
+        return JSONResponse(status_code=202, content={"jobId": job.id})
+
+    suffix = ".jpg" if image_bytes[:2] == b"\xff\xd8" else ".png"
+    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as fh:
+        fh.write(image_bytes)
+        tmp_path = fh.name
+    brief_path: str | None = None
+    try:
+        if brief_text:
+            brief_fh = tempfile.NamedTemporaryFile(
+                suffix=".txt", delete=False, mode="w", encoding="utf-8"
+            )
+            brief_fh.write(brief_text)
+            brief_fh.close()
+            brief_path = brief_fh.name
+        layout = trace(tmp_path, archetype_hint=archetypeHint, brief_path=brief_path)
+    finally:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+        if brief_path:
+            try:
+                os.unlink(brief_path)
+            except OSError:
+                pass
+
+    result = layout.model_dump(by_alias=True)
+    codes = {a.get("code") for a in result.get("advisories", [])}
+    # 422 if no usable walls could be extracted — either because the image has
+    # no detectable walls (no_walls_detected) or is too low-contrast to process.
+    if codes & {"no_walls_detected", "low_contrast_image"}:
+        raise HTTPException(status_code=422, detail=result)
+    return result
 
 
 @api_router.get("/v3/tools")

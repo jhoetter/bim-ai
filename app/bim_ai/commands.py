@@ -2118,6 +2118,44 @@ class SetToolPrefCmd(BaseModel):
     pref_value: str = Field(alias="prefValue")
 
 
+# ---------------------------------------------------------------------------
+# CHR-V3-08 — Tool modifier preference
+# ---------------------------------------------------------------------------
+
+
+class SetToolPrefCmd(BaseModel):
+    """CHR-V3-08: Store a sticky tool-modifier preference for the session.
+
+    ``tool`` is the authoring tool name (e.g. "wall", "door", "window").
+    ``pref_key`` is the modifier name (e.g. "alignment", "swingSide", "multipleMode").
+    ``pref_value`` is the serialised value (always a string; booleans as "true"/"false").
+    """
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["setToolPref"] = "setToolPref"
+    tool: str
+    pref_key: str = Field(alias="prefKey")
+    pref_value: str = Field(alias="prefValue")
+
+
+# ---------------------------------------------------------------------------
+# IMG-V3-01 — Image trace command
+# ---------------------------------------------------------------------------
+
+
+class TraceImageCmd(BaseModel):
+    """IMG-V3-01 — read-only CV trace; does not mutate the kernel.
+
+    Dispatched via engine.handle_trace_image_cmd(), not apply_inplace().
+    """
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["TraceImage"] = "TraceImage"
+    image_b64: str = Field(alias="imageB64")
+    archetype_hint: str | None = Field(default=None, alias="archetypeHint")
+    brief_text: str | None = Field(default=None, alias="briefText")
+    assumptions: list = Field(default_factory=list)
+
 Command = Annotated[
     CreateLevelCmd
     | CreateWallCmd
@@ -2285,6 +2323,7 @@ Command = Annotated[
     | DeleteToposolidCmd
     | IndexAssetCmd
     | PlaceAssetCmd
-    | SetToolPrefCmd,
+    | SetToolPrefCmd
+    | TraceImageCmd,
     Field(discriminator="type"),
 ]

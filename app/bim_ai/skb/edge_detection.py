@@ -70,12 +70,11 @@ def detect_edges(
             image_size=(int(w), int(h)),
         )
     except ImportError:
-        # scikit-image fallback
-        from skimage import feature, filters, img_as_ubyte, io
+        # scikit-image fallback — Canny applies blur internally via sigma;
+        # do NOT pre-blur or the double smoothing kills all edge gradients.
+        from skimage import feature, img_as_ubyte, io
 
         img = io.imread(str(in_path), as_gray=True)
-        if blur_sigma > 0:
-            img = filters.gaussian(img, sigma=blur_sigma)
         edges = feature.canny(
             img,
             sigma=blur_sigma if blur_sigma > 0 else 1.0,
