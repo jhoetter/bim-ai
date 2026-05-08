@@ -1,0 +1,1 @@
+Read spec/v3-prompts/wp-025.md end-to-end, then implement KRN-V3-08 wall sweeps & reveals on branch feat/v3-krn-v3-08-wall-sweeps-reveals
