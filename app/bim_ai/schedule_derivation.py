@@ -520,6 +520,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                         "roughOpeningHeightMm": round(host_h, 3),
                         "roughOpeningAreaM2": round(rough_w_mm * host_h / 1_000_000.0, 6),
                         "familyTypeId": getattr(e, "family_type_id", "") or "",
+                        "discipline": getattr(e, "discipline", None) or "arch",
                         "materialKey": (getattr(e, "material_key", None) or "").strip(),
                         "materialDisplay": material_display_label(
                             doc,
@@ -565,6 +566,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                         "aspectRatio": ar,
                         "headHeightMm": round(sill + hmm, 3),
                         "familyTypeId": getattr(e, "family_type_id", "") or "",
+                        "discipline": getattr(e, "discipline", None) or "arch",
                         "materialKey": (getattr(e, "material_key", None) or "").strip(),
                         "materialDisplay": material_display_label(
                             doc,
@@ -603,6 +605,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                         "areaM2": round(area, 3),
                         "perimeterM": round(perimeter, 3),
                         "familyTypeId": "",
+                        "discipline": getattr(e, "discipline", None) or "arch",
                     }
                 )
 
@@ -637,6 +640,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                     "footprintAreaM2": round(area, 3),
                     "footprintPerimeterM": round(perimeter, 3),
                     "familyTypeId": "",
+                    "discipline": getattr(e, "discipline", None) or "arch",
                 }
                 if total_asm_thk is not None:
                     row_root["assemblyTotalThicknessMm"] = total_asm_thk
@@ -667,6 +671,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                     "runMm": round(float(run_mm), 3),
                     "widthMm": round(float(e.width_mm), 3),
                     "familyTypeId": "",
+                    "discipline": getattr(e, "discipline", None) or "arch",
                 }
                 row_st.update(stair_schedule_row_extensions_v1(doc, e))
                 rows.append(row_st)
@@ -758,6 +763,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                         "levelId": lid,
                         "level": lev,
                         "familyTypeId": "",
+                        "discipline": getattr(e, "discipline", None) or "arch",
                     }
                     if audit_row:
                         row_w["catalogAuditStatus"] = audit_row["catalogStatus"]
@@ -800,6 +806,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                         "levelId": e.level_id,
                         "level": lev,
                         "familyTypeId": "",
+                        "discipline": getattr(e, "discipline", None) or "arch",
                     }
                     if audit_row:
                         row_f["catalogAuditStatus"] = audit_row["catalogStatus"]
@@ -845,6 +852,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                         "levelId": lid,
                         "level": lev,
                         "familyTypeId": "",
+                        "discipline": getattr(e, "discipline", None) or "arch",
                     }
                     if audit_row:
                         row_r["catalogAuditStatus"] = audit_row["catalogStatus"]

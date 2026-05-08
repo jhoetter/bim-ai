@@ -1,7 +1,7 @@
 import { useState, type JSX } from 'react';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
-import type { Element } from '@bim-ai/core';
+import type { DisciplineTag, Element } from '@bim-ai/core';
 
 import { BUILT_IN_FAMILIES, getFamilyById, getTypeById } from '../families/familyCatalog';
 
@@ -120,6 +120,46 @@ function MonitorSourceRows({
   );
 }
 
+/**
+ * DSC-V3-01 — reusable discipline tag picker row.
+ *
+ * Renders a labelled `<select>` with arch / struct / mep options plus a
+ * "Default for kind" sentinel (value=""). Fires `onChange` with the new
+ * value on every change (null when "Default for kind" is selected); the
+ * caller is responsible for forwarding the value to the engine command
+ * `setElementDiscipline`. A null discipline in the engine resolves to
+ * DEFAULT_DISCIPLINE_BY_KIND[element.kind].
+ */
+export function InspectorDisciplineDropdown({
+  value,
+  onChange,
+}: {
+  value: DisciplineTag | null | undefined;
+  onChange: (discipline: DisciplineTag | null) => void;
+}): JSX.Element {
+  const { t } = useTranslation();
+  return (
+    <div className="flex items-center gap-2 py-0.5">
+      <span className="text-xs text-muted w-28 shrink-0">
+        {t('inspector.fields.discipline', 'Discipline')}
+      </span>
+      <select
+        className="flex-1 text-xs bg-surface border border-border rounded px-1 py-0.5"
+        value={value ?? ''}
+        onChange={(e) => {
+          const v = e.target.value;
+          onChange(v === '' ? null : (v as DisciplineTag));
+        }}
+      >
+        <option value="">{t('discipline.default', 'Default for kind')}</option>
+        <option value="arch">{t('discipline.arch', 'Architecture')}</option>
+        <option value="struct">{t('discipline.struct', 'Structure')}</option>
+        <option value="mep">{t('discipline.mep', 'MEP')}</option>
+      </select>
+    </div>
+  );
+}
+
 export function InspectorPropertiesFor(
   el: Element,
   t: TFunction,
@@ -127,10 +167,12 @@ export function InspectorPropertiesFor(
     elementsById?: Record<string, Element>;
     onPropertyChange?: (property: string, value: unknown) => void;
     onMonitorReconcile?: (elementId: string, mode: 'accept_source' | 'keep_host') => void;
+    onDisciplineChange?: (discipline: DisciplineTag | null) => void;
   },
 ): JSX.Element {
   const elementsById = options?.elementsById ?? {};
   const onMonitorReconcile = options?.onMonitorReconcile;
+  const onDisciplineChange = options?.onDisciplineChange;
   const f = (key: string) => t(`inspector.fields.${key}`);
   switch (el.kind) {
     case 'wall': {
@@ -227,6 +269,9 @@ export function InspectorPropertiesFor(
             </select>
           </div>
           <FieldRow label={f('workset')} value={el.worksetId ?? '—'} mono />
+          {onDisciplineChange ? (
+            <InspectorDisciplineDropdown value={el.discipline} onChange={onDisciplineChange} />
+          ) : null}
         </div>
       );
     }
@@ -280,6 +325,9 @@ export function InspectorPropertiesFor(
             </select>
           </div>
           <FieldRow label={f('workset')} value={el.worksetId ?? '—'} mono />
+          {onDisciplineChange ? (
+            <InspectorDisciplineDropdown value={el.discipline} onChange={onDisciplineChange} />
+          ) : null}
         </div>
       );
     }
@@ -310,6 +358,9 @@ export function InspectorPropertiesFor(
                 ))}
             </select>
           </div>
+          {onDisciplineChange ? (
+            <InspectorDisciplineDropdown value={el.discipline} onChange={onDisciplineChange} />
+          ) : null}
         </div>
       );
     }
@@ -321,6 +372,9 @@ export function InspectorPropertiesFor(
           <FieldRow label={f('tread')} value={fmtMm(el.treadMm)} />
           <FieldRow label={f('baseLevel')} value={el.baseLevelId} mono />
           <FieldRow label={f('topLevel')} value={el.topLevelId} mono />
+          {onDisciplineChange ? (
+            <InspectorDisciplineDropdown value={el.discipline} onChange={onDisciplineChange} />
+          ) : null}
         </div>
       );
     case 'room':
@@ -998,12 +1052,14 @@ export function InspectorDoorEditor({
   elementsById = {},
   onPersistProperty,
   onCreateType,
+  onDisciplineChange,
 }: {
   el: Extract<Element, { kind: 'door' }>;
   revision: number;
   elementsById?: Record<string, Element>;
   onPersistProperty: (key: string, value: string) => void;
   onCreateType?: (baseFamilyId: string, name: string, params: Record<string, unknown>) => void;
+  onDisciplineChange?: (discipline: DisciplineTag | null) => void;
 }): JSX.Element {
   const { t } = useTranslation();
   const f = (key: string) => t(`inspector.fields.${key}`);
@@ -1075,6 +1131,9 @@ export function InspectorDoorEditor({
       <FieldRow label={f('width')} value={fmtMm(el.widthMm)} />
       <FieldRow label={f('wall')} value={el.wallId} mono />
       <FieldRow label={f('alongT')} value={el.alongT.toFixed(3)} mono />
+      {onDisciplineChange ? (
+        <InspectorDisciplineDropdown value={el.discipline} onChange={onDisciplineChange} />
+      ) : null}
     </div>
   );
 }
@@ -1086,12 +1145,14 @@ export function InspectorWindowEditor({
   elementsById = {},
   onPersistProperty,
   onCreateType,
+  onDisciplineChange,
 }: {
   el: Extract<Element, { kind: 'window' }>;
   revision: number;
   elementsById?: Record<string, Element>;
   onPersistProperty: (key: string, value: string) => void;
   onCreateType?: (baseFamilyId: string, name: string, params: Record<string, unknown>) => void;
+  onDisciplineChange?: (discipline: DisciplineTag | null) => void;
 }): JSX.Element {
   const { t } = useTranslation();
   const f = (key: string) => t(`inspector.fields.${key}`);
@@ -1155,6 +1216,9 @@ export function InspectorWindowEditor({
       <FieldRow label={f('height')} value={fmtMm(el.heightMm)} />
       <FieldRow label={f('sillHeight')} value={fmtMm(el.sillHeightMm)} />
       <FieldRow label={f('wall')} value={el.wallId} mono />
+      {onDisciplineChange ? (
+        <InspectorDisciplineDropdown value={el.discipline} onChange={onDisciplineChange} />
+      ) : null}
     </div>
   );
 }

@@ -51,6 +51,32 @@ DEFAULT_DISCIPLINE_BY_KIND: dict[str, DisciplineTag] = {
     "beam": "struct",
     "column": "struct",
 }
+
+DEFAULT_DISCIPLINE_BY_KIND: dict[str, DisciplineTag] = {
+    "wall": "arch",
+    "door": "arch",
+    "window": "arch",
+    "wall_opening": "arch",
+    "floor": "arch",
+    "roof": "arch",
+    "stair": "arch",
+    "railing": "arch",
+    "ceiling": "arch",
+    "mass": "arch",
+    "balcony": "arch",
+    "sweep": "arch",
+    "dormer": "arch",
+    "soffit": "arch",
+    "toposolid": "arch",
+    "column": "struct",
+    "beam": "struct",
+    "brace": "struct",
+    "foundation": "struct",
+    "duct": "mep",
+    "pipe": "mep",
+    "fixture": "mep",
+}
+
 WallLayerFunction = Literal["structure", "insulation", "finish"]
 WallBasisLine = Literal["center", "face_interior", "face_exterior"]
 PlanDetailLevelPlan = Literal["coarse", "medium", "fine"]
@@ -724,9 +750,7 @@ class StairElem(BaseModel):
         default="standard", alias="subKind"
     )
     monolithic_material: str | None = Field(default=None, alias="monolithicMaterial")
-    floating_tread_depth_mm: float | None = Field(
-        default=None, alias="floatingTreadDepthMm", gt=0
-    )
+    floating_tread_depth_mm: float | None = Field(default=None, alias="floatingTreadDepthMm", gt=0)
     floating_host_wall_id: str | None = Field(default=None, alias="floatingHostWallId")
     pinned: bool = Field(default=False)
     phase_created: str | None = Field(default=None, alias="phaseCreated")
@@ -837,9 +861,7 @@ class RailingElem(BaseModel):
     path_mm: list[Vec2Mm] = Field(alias="pathMm")
     guard_height_mm: float = Field(alias="guardHeightMm", default=1040)
     baluster_pattern: BalusterPattern | None = Field(default=None, alias="balusterPattern")
-    handrail_supports: list[HandrailSupport] | None = Field(
-        default=None, alias="handrailSupports"
-    )
+    handrail_supports: list[HandrailSupport] | None = Field(default=None, alias="handrailSupports")
     pinned: bool = Field(default=False)
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
@@ -960,9 +982,7 @@ class RoofJoinElem(BaseModel):
     name: str = "Roof Join"
     primary_roof_id: str = Field(alias="primaryRoofId")
     secondary_roof_id: str = Field(alias="secondaryRoofId")
-    seam_mode: Literal["clip_secondary_into_primary", "merge_at_ridge"] = Field(
-        alias="seamMode"
-    )
+    seam_mode: Literal["clip_secondary_into_primary", "merge_at_ridge"] = Field(alias="seamMode")
     pinned: bool = Field(default=False)
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
@@ -1122,9 +1142,7 @@ class SunSettingsElem(BaseModel):
         default_factory=lambda: SunSettingsTimeOfDay(hours=14, minutes=30),
         alias="timeOfDay",
     )
-    animation_range: SunSettingsAnimationRange | None = Field(
-        default=None, alias="animationRange"
-    )
+    animation_range: SunSettingsAnimationRange | None = Field(default=None, alias="animationRange")
     daylight_saving_strategy: Literal["auto", "on", "off"] = Field(
         default="auto", alias="daylightSavingStrategy"
     )
@@ -1147,9 +1165,9 @@ class LinkModelElem(BaseModel):
     source_model_revision: int | None = Field(default=None, alias="sourceModelRevision")
     position_mm: Vec3Mm = Field(alias="positionMm")
     rotation_deg: float = Field(default=0.0, alias="rotationDeg")
-    origin_alignment_mode: Literal[
-        "origin_to_origin", "project_origin", "shared_coords"
-    ] = Field(default="origin_to_origin", alias="originAlignmentMode")
+    origin_alignment_mode: Literal["origin_to_origin", "project_origin", "shared_coords"] = Field(
+        default="origin_to_origin", alias="originAlignmentMode"
+    )
     visibility_mode: Literal["host_view", "linked_view"] = Field(
         default="host_view", alias="visibilityMode"
     )
@@ -1234,9 +1252,7 @@ class FamilyTypeElem(BaseModel):
     id: str
     discipline: Literal["door", "window", "generic"] = "generic"
     parameters: dict[str, Any] = Field(default_factory=dict)
-    catalog_source: FamilyCatalogSource | None = Field(
-        default=None, alias="catalogSource"
-    )
+    catalog_source: FamilyCatalogSource | None = Field(default=None, alias="catalogSource")
 
 
 class RoomSeparationElem(BaseModel):
@@ -1808,9 +1824,7 @@ class ViewElem(BaseModel):
     )
     breaks: list[ViewBreakSpec] = Field(default_factory=list)
     scale: float = Field(default=100.0, gt=0)
-    detail_level: Literal["coarse", "medium", "fine"] = Field(
-        default="medium", alias="detailLevel"
-    )
+    detail_level: Literal["coarse", "medium", "fine"] = Field(default="medium", alias="detailLevel")
 
 
 ElementKind = Literal[
@@ -2116,6 +2130,8 @@ class WindowLegendViewElem(BaseModel):
 
 class HeightSample(BaseModel):
     """A single surveyed elevation sample (sparse parametrisation)."""
+class HeightSample(BaseModel):
+    """TOP-V3-01 — single (x, y, z) terrain sample point."""
 
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     x_mm: float = Field(alias="xMm")
@@ -2125,6 +2141,7 @@ class HeightSample(BaseModel):
 
 class HeightmapGrid(BaseModel):
     """Regular-grid DEM raster (dense parametrisation)."""
+    """TOP-V3-01 — regular-grid heightmap representation."""
 
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     step_mm: float = Field(alias="stepMm")
@@ -2140,6 +2157,11 @@ class ToposolidElem(BaseModel):
     (regular DEM raster) drives the surface.  Both empty / None means a flat
     starter at ``base_elevation_mm``.
     """
+    values: list[float]
+
+
+class ToposolidElem(BaseModel):
+    """TOP-V3-01 terrain solid primitive."""
 
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     kind: Literal["toposolid"] = "toposolid"
@@ -2209,6 +2231,7 @@ class PlacedAssetElem(BaseModel):
     rotation_deg: float = Field(default=0.0, alias="rotationDeg")
     param_values: dict[str, Any] = Field(default_factory=dict, alias="paramValues")
     host_element_id: str | None = Field(default=None, alias="hostElementId")
+    discipline: DisciplineTag | None = Field(default=None)
 
 
 Element = Annotated[

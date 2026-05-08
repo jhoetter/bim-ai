@@ -104,6 +104,7 @@ from bim_ai.commands import (
     SaveViewpointCmd,
     SetCurtainPanelOverrideCmd,
     SetEdgeProfileRunModeCmd,
+    SetElementDisciplineCmd,
     SetElementPhaseCmd,
     SetRailingBalusterPatternCmd,
     SetRailingHandrailSupportsCmd,
@@ -212,7 +213,9 @@ from bim_ai.elements import (
     ConstraintRefRow,
     DetailLineElem,
     DetailRegionElem,
+    DEFAULT_DISCIPLINE_BY_KIND,
     DimensionElem,
+    DisciplineTag,
     DoorElem,
     DormerElem,
     EdgeProfileRunElem,
@@ -362,6 +365,7 @@ def _plan_detail_default_medium(raw: str | None) -> PlanDetailLevelPlan:
     if raw == "medium":
         return "medium"
     return "medium"
+
 
 def element_passes_phase_filter(elem: Any, phase_filter: str) -> bool:
     """Return True if the element should be visible under the given phase filter.
@@ -519,9 +523,7 @@ def _validate_stair_sub_kind(
             raise ValueError("'floating' stair requires floatingHostWallId")
         host = els.get(floating_host_wall_id)
         if not isinstance(host, WallElem):
-            raise ValueError(
-                f"floatingHostWallId '{floating_host_wall_id}' must reference a Wall"
-            )
+            raise ValueError(f"floatingHostWallId '{floating_host_wall_id}' must reference a Wall")
         if floating_tread_depth_mm is not None and floating_tread_depth_mm <= 0:
             raise ValueError("floatingTreadDepthMm must be > 0")
     if sub_kind == "monolithic" and floating_host_wall_id is not None:
@@ -543,8 +545,7 @@ def _balance_tread_risers(
     remaining = total_rise_mm - pinned_sum
     null_share = remaining / null_count if null_count > 0 else 0.0
     return [
-        tl.riser_height_mm if tl.riser_height_mm is not None else null_share
-        for tl in tread_lines
+        tl.riser_height_mm if tl.riser_height_mm is not None else null_share for tl in tread_lines
     ]
 
 
@@ -572,9 +573,7 @@ def _validate_stair_boundary(points: list[Vec2Mm]) -> None:
             u = (qpx * ry - qpy * rx) / denom
             eps = 1e-6
             if (eps < t < 1.0 - eps) and (eps < u < 1.0 - eps):
-                raise ValueError(
-                    f"stair boundary is self-intersecting (edge {i} crosses edge {j})"
-                )
+                raise ValueError(f"stair boundary is self-intersecting (edge {i} crosses edge {j})")
     area2 = 0.0
     for i in range(n):
         a = points[i]
@@ -863,9 +862,7 @@ def _point_in_polygon_xy(px: float, py: float, poly: list[tuple[float, float]]) 
     for i in range(n):
         xi, yi = poly[i]
         xj, yj = poly[j]
-        if ((yi > py) != (yj > py)) and (
-            px < (xj - xi) * (py - yi) / (yj - yi + 1e-12) + xi
-        ):
+        if ((yi > py) != (yj > py)) and (px < (xj - xi) * (py - yi) / (yj - yi + 1e-12) + xi):
             inside = not inside
         j = i
     return inside
@@ -1022,9 +1019,7 @@ def _validate_wall_lean_taper(
             )
     if taper_ratio is not None:
         if not (0.1 < taper_ratio < 10.0):
-            raise ValueError(
-                f"taperRatio ({taper_ratio}) must be in open interval (0.1, 10)"
-            )
+            raise ValueError(f"taperRatio ({taper_ratio}) must be in open interval (0.1, 10)")
 
 
 def _floor_dims_from_type(
@@ -1239,9 +1234,7 @@ def _enforce_pin_block(els: dict[str, Element], cmd: Command) -> None:
 
 
 def _validate_baluster_pattern(pattern: BalusterPattern) -> None:
-    if pattern.rule == "regular" and (
-        pattern.spacing_mm is None or pattern.spacing_mm <= 0
-    ):
+    if pattern.rule == "regular" and (pattern.spacing_mm is None or pattern.spacing_mm <= 0):
         raise ValueError("balusterPattern.rule='regular' requires spacingMm > 0")
 
 
@@ -1251,14 +1244,11 @@ def _validate_handrail_supports(
 ) -> None:
     for i, support in enumerate(supports):
         if not support.bracket_family_id:
-            raise ValueError(
-                f"handrailSupports[{i}].bracketFamilyId must be non-empty"
-            )
+            raise ValueError(f"handrailSupports[{i}].bracketFamilyId must be non-empty")
         host = els.get(support.host_wall_id)
         if not isinstance(host, WallElem):
             raise ValueError(
-                f"handrailSupports[{i}].hostWallId '{support.host_wall_id}' "
-                "must reference a Wall"
+                f"handrailSupports[{i}].hostWallId '{support.host_wall_id}' must reference a Wall"
             )
 
 
@@ -1290,9 +1280,7 @@ def _no_source_provider(_uuid: str, _rev: int | None) -> None:
 
 
 def _validate_baluster_pattern(pattern: BalusterPattern) -> None:
-    if pattern.rule == "regular" and (
-        pattern.spacing_mm is None or pattern.spacing_mm <= 0
-    ):
+    if pattern.rule == "regular" and (pattern.spacing_mm is None or pattern.spacing_mm <= 0):
         raise ValueError("balusterPattern.rule='regular' requires spacingMm > 0")
 
 
@@ -1302,14 +1290,11 @@ def _validate_handrail_supports(
 ) -> None:
     for i, support in enumerate(supports):
         if not support.bracket_family_id:
-            raise ValueError(
-                f"handrailSupports[{i}].bracketFamilyId must be non-empty"
-            )
+            raise ValueError(f"handrailSupports[{i}].bracketFamilyId must be non-empty")
         host = els.get(support.host_wall_id)
         if not isinstance(host, WallElem):
             raise ValueError(
-                f"handrailSupports[{i}].hostWallId '{support.host_wall_id}' "
-                "must reference a Wall"
+                f"handrailSupports[{i}].hostWallId '{support.host_wall_id}' must reference a Wall"
             )
 
 
@@ -1514,6 +1499,7 @@ def apply_inplace(
                     end=seg.end,
                     thickness_mm=seg.thickness_mm,
                     height_mm=seg.height_mm,
+                    discipline=DEFAULT_DISCIPLINE_BY_KIND.get("wall", "arch"),
                 )
 
         case CreateGridLineCmd():
@@ -2171,6 +2157,7 @@ def apply_inplace(
                 els[cmd.element_id] = el.model_copy(
                     update={"discipline": d if d else None}
                 )
+                els[cmd.element_id] = el.model_copy(update={"discipline": d if d else None})
             else:
                 raise ValueError(
                     "Only updateElementProperty key=name | label(grid) | title(issue) | "
@@ -2367,13 +2354,9 @@ def apply_inplace(
                     [(p.x_mm, p.y_mm) for p in cmd.footprint_mm]
                 )
             elif cmd.roof_geometry_mode == "gable_pitched_l_shape":
-                assert_valid_l_shape_footprint_mm(
-                    [(p.x_mm, p.y_mm) for p in cmd.footprint_mm]
-                )
+                assert_valid_l_shape_footprint_mm([(p.x_mm, p.y_mm) for p in cmd.footprint_mm])
             elif cmd.roof_geometry_mode == "hip":
-                assert_valid_hip_footprint_mm(
-                    [(p.x_mm, p.y_mm) for p in cmd.footprint_mm]
-                )
+                assert_valid_hip_footprint_mm([(p.x_mm, p.y_mm) for p in cmd.footprint_mm])
             els[rid] = RoofElem(
                 kind="roof",
                 id=rid,
@@ -2472,12 +2455,14 @@ def apply_inplace(
                 cmd.floating_tread_depth_mm,
                 els,
             )
-            els[cmd.stair_id] = stair.model_copy(update={
-                "sub_kind": cmd.sub_kind,
-                "monolithic_material": cmd.monolithic_material,
-                "floating_tread_depth_mm": cmd.floating_tread_depth_mm,
-                "floating_host_wall_id": cmd.floating_host_wall_id,
-            })
+            els[cmd.stair_id] = stair.model_copy(
+                update={
+                    "sub_kind": cmd.sub_kind,
+                    "monolithic_material": cmd.monolithic_material,
+                    "floating_tread_depth_mm": cmd.floating_tread_depth_mm,
+                    "floating_host_wall_id": cmd.floating_host_wall_id,
+                }
+            )
 
         case CreateSlabOpeningCmd():
             oid = cmd.id or new_id()
@@ -2894,9 +2879,7 @@ def apply_inplace(
                 (cmd.roof_material_key, "roofMaterialKey"),
             ):
                 if key is not None and resolve_material(key) is None:
-                    raise ValueError(
-                        f"createDormer.{label} '{key}' is not in the material catalog"
-                    )
+                    raise ValueError(f"createDormer.{label} '{key}' is not in the material catalog")
             # Footprint-fit sanity check. Ridge axis follows the renderer's
             # heuristic: the longer plan dimension is the ridge axis.
             host_xs = [p.x_mm for p in host.footprint_mm]
@@ -2957,9 +2940,7 @@ def apply_inplace(
             # Validate per-zone bounds
             for z in zones:
                 if not (0.0 <= z.along_t_start < z.along_t_end <= 1.0):
-                    raise ValueError(
-                        "setWallRecessZones: alongTStart < alongTEnd, both in [0,1]"
-                    )
+                    raise ValueError("setWallRecessZones: alongTStart < alongTEnd, both in [0,1]")
                 if z.setback_mm <= 0:
                     raise ValueError("setWallRecessZones.setbackMm must be > 0")
                 if z.setback_mm >= wall.thickness_mm * 8:
@@ -2968,9 +2949,7 @@ def apply_inplace(
                     )
                 if z.sill_height_mm is not None and z.head_height_mm is not None:
                     if z.head_height_mm <= z.sill_height_mm:
-                        raise ValueError(
-                            "setWallRecessZones: headHeightMm must be > sillHeightMm"
-                        )
+                        raise ValueError("setWallRecessZones: headHeightMm must be > sillHeightMm")
             # Non-overlap: sort by start, ensure each end ≤ next start
             sorted_zones = sorted(zones, key=lambda z: z.along_t_start)
             for i in range(1, len(sorted_zones)):
@@ -3045,7 +3024,9 @@ def apply_inplace(
             updates_mr: dict[str, Any] = {}
             if cmd.boundary_mm is not None:
                 if len(cmd.boundary_mm) < 3:
-                    raise ValueError("updateMaskingRegion.boundaryMm must contain at least 3 points")
+                    raise ValueError(
+                        "updateMaskingRegion.boundaryMm must contain at least 3 points"
+                    )
                 updates_mr["boundary_mm"] = list(cmd.boundary_mm)
             if cmd.fill_color is not None:
                 updates_mr["fill_color"] = cmd.fill_color
@@ -3095,9 +3076,7 @@ def apply_inplace(
         case SetRailingHandrailSupportsCmd():
             railing = els.get(cmd.railing_id)
             if not isinstance(railing, RailingElem):
-                raise ValueError(
-                    "setRailingHandrailSupports.railingId must reference a Railing"
-                )
+                raise ValueError("setRailingHandrailSupports.railingId must reference a Railing")
             if cmd.handrail_supports:
                 _validate_handrail_supports(cmd.handrail_supports, els)
             els[cmd.railing_id] = railing.model_copy(
@@ -3142,35 +3121,63 @@ def apply_inplace(
                         continue
                     if e.along_t <= t:
                         new_t = e.along_t / t if t > 0 else 0.0
-                        migrations.append((eid, e.model_copy(update={
-                            "wall_id": left_id,
-                            "along_t": max(0.0, min(1.0, new_t)),
-                        })))
+                        migrations.append(
+                            (
+                                eid,
+                                e.model_copy(
+                                    update={
+                                        "wall_id": left_id,
+                                        "along_t": max(0.0, min(1.0, new_t)),
+                                    }
+                                ),
+                            )
+                        )
                     else:
                         new_t = (e.along_t - t) / (1 - t) if t < 1 else 1.0
-                        migrations.append((eid, e.model_copy(update={
-                            "wall_id": right_id,
-                            "along_t": max(0.0, min(1.0, new_t)),
-                        })))
+                        migrations.append(
+                            (
+                                eid,
+                                e.model_copy(
+                                    update={
+                                        "wall_id": right_id,
+                                        "along_t": max(0.0, min(1.0, new_t)),
+                                    }
+                                ),
+                            )
+                        )
                 elif isinstance(e, WallOpeningElem) and e.host_wall_id == cmd.wall_id:
                     s, eend = e.along_t_start, e.along_t_end
                     mid = (s + eend) / 2
                     if mid <= t:
                         new_s = s / t if t > 0 else 0.0
                         new_e = eend / t if t > 0 else 0.0
-                        migrations.append((eid, e.model_copy(update={
-                            "host_wall_id": left_id,
-                            "along_t_start": max(0.0, min(1.0, new_s)),
-                            "along_t_end": max(0.0, min(1.0, min(new_e, 1.0))),
-                        })))
+                        migrations.append(
+                            (
+                                eid,
+                                e.model_copy(
+                                    update={
+                                        "host_wall_id": left_id,
+                                        "along_t_start": max(0.0, min(1.0, new_s)),
+                                        "along_t_end": max(0.0, min(1.0, min(new_e, 1.0))),
+                                    }
+                                ),
+                            )
+                        )
                     else:
                         new_s = (s - t) / (1 - t) if t < 1 else 0.0
                         new_e = (eend - t) / (1 - t) if t < 1 else 1.0
-                        migrations.append((eid, e.model_copy(update={
-                            "host_wall_id": right_id,
-                            "along_t_start": max(0.0, min(1.0, new_s)),
-                            "along_t_end": max(0.0, min(1.0, new_e)),
-                        })))
+                        migrations.append(
+                            (
+                                eid,
+                                e.model_copy(
+                                    update={
+                                        "host_wall_id": right_id,
+                                        "along_t_start": max(0.0, min(1.0, new_s)),
+                                        "along_t_end": max(0.0, min(1.0, new_e)),
+                                    }
+                                ),
+                            )
+                        )
             for eid, new_e in migrations:
                 els[eid] = new_e
             del els[cmd.wall_id]
@@ -3289,10 +3296,7 @@ def apply_inplace(
                 raise ValueError(f"duplicate element id '{bid}'")
             if cmd.level_id not in els or not isinstance(els[cmd.level_id], LevelElem):
                 raise ValueError("createBeam.levelId must reference an existing Level")
-            if (
-                cmd.start_mm.x_mm == cmd.end_mm.x_mm
-                and cmd.start_mm.y_mm == cmd.end_mm.y_mm
-            ):
+            if cmd.start_mm.x_mm == cmd.end_mm.x_mm and cmd.start_mm.y_mm == cmd.end_mm.y_mm:
                 raise ValueError("createBeam.startMm and endMm must differ")
             els[bid] = BeamElem(
                 kind="beam",
@@ -3363,9 +3367,7 @@ def apply_inplace(
             footprint = list(mass.footprint_mm)
             n = len(footprint)
             if n < 3:
-                raise ValueError(
-                    "materializeMassToWalls: mass.footprintMm requires ≥3 vertices"
-                )
+                raise ValueError("materializeMassToWalls: mass.footprintMm requires ≥3 vertices")
 
             emitted_ids: list[str] = []
             for i in range(n):
@@ -3391,9 +3393,7 @@ def apply_inplace(
 
             fid = f"{mass.id}-f"
             if fid in els:
-                raise ValueError(
-                    f"materializeMassToWalls: target floor id '{fid}' already exists"
-                )
+                raise ValueError(f"materializeMassToWalls: target floor id '{fid}' already exists")
             els[fid] = FloorElem(
                 kind="floor",
                 id=fid,
@@ -3406,9 +3406,7 @@ def apply_inplace(
 
             rid = f"{mass.id}-r"
             if rid in els:
-                raise ValueError(
-                    f"materializeMassToWalls: target roof id '{rid}' already exists"
-                )
+                raise ValueError(f"materializeMassToWalls: target roof id '{rid}' already exists")
             els[rid] = RoofElem(
                 kind="roof",
                 id=rid,
@@ -3444,9 +3442,7 @@ def apply_inplace(
                 raise ValueError(f"duplicate element id '{vid}'")
             host = els.get(cmd.host_element_id)
             if host is None:
-                raise ValueError(
-                    "createVoidCut.hostElementId must reference an existing element"
-                )
+                raise ValueError("createVoidCut.hostElementId must reference an existing element")
             if len(cmd.profile_mm) < 3:
                 raise ValueError("createVoidCut.profileMm requires ≥3 vertices")
             els[vid] = VoidCutElem(
@@ -3473,21 +3469,17 @@ def apply_inplace(
             if kid in els:
                 raise ValueError(f"duplicate element id '{kid}'")
             if not cmd.refs_a or not cmd.refs_b:
-                raise ValueError(
-                    "createConstraint.refsA and refsB each require at least one ref"
-                )
+                raise ValueError("createConstraint.refsA and refsB each require at least one ref")
             els[kid] = ConstraintElem(
                 kind="constraint",
                 id=kid,
                 name=cmd.name or "",
                 rule=cmd.rule,
                 refs_a=[
-                    ConstraintRefRow(elementId=r.element_id, anchor=r.anchor)
-                    for r in cmd.refs_a
+                    ConstraintRefRow(elementId=r.element_id, anchor=r.anchor) for r in cmd.refs_a
                 ],
                 refs_b=[
-                    ConstraintRefRow(elementId=r.element_id, anchor=r.anchor)
-                    for r in cmd.refs_b
+                    ConstraintRefRow(elementId=r.element_id, anchor=r.anchor) for r in cmd.refs_b
                 ],
                 locked_value_mm=cmd.locked_value_mm,
                 severity=cmd.severity,
@@ -3761,13 +3753,8 @@ def apply_inplace(
                 raise ValueError(f"duplicate element id '{rpid}'")
             lvl = els.get(cmd.level_id)
             if not isinstance(lvl, LevelElem):
-                raise ValueError(
-                    "createReferencePlane.levelId must reference an existing Level"
-                )
-            if (
-                cmd.start_mm.x_mm == cmd.end_mm.x_mm
-                and cmd.start_mm.y_mm == cmd.end_mm.y_mm
-            ):
+                raise ValueError("createReferencePlane.levelId must reference an existing Level")
+            if cmd.start_mm.x_mm == cmd.end_mm.x_mm and cmd.start_mm.y_mm == cmd.end_mm.y_mm:
                 raise ValueError("createReferencePlane.startMm and endMm must differ")
             if cmd.is_work_plane:
                 # Only one ref plane per level may be the active work plane.
@@ -3826,10 +3813,7 @@ def apply_inplace(
             plid = cmd.id or new_id()
             if plid in els:
                 raise ValueError(f"duplicate element id '{plid}'")
-            if (
-                cmd.start_mm.x_mm == cmd.end_mm.x_mm
-                and cmd.start_mm.y_mm == cmd.end_mm.y_mm
-            ):
+            if cmd.start_mm.x_mm == cmd.end_mm.x_mm and cmd.start_mm.y_mm == cmd.end_mm.y_mm:
                 raise ValueError("createPropertyLine.startMm and endMm must differ")
             els[plid] = PropertyLineElem(
                 kind="property_line",
@@ -3844,9 +3828,7 @@ def apply_inplace(
         case UpdatePropertyLineCmd():
             pl = els.get(cmd.property_line_id)
             if not isinstance(pl, PropertyLineElem):
-                raise ValueError(
-                    "updatePropertyLine.propertyLineId must reference a property_line"
-                )
+                raise ValueError("updatePropertyLine.propertyLineId must reference a property_line")
             new_start = cmd.start_mm if cmd.start_mm is not None else pl.start_mm
             new_end = cmd.end_mm if cmd.end_mm is not None else pl.end_mm
             if new_start.x_mm == new_end.x_mm and new_start.y_mm == new_end.y_mm:
@@ -3863,9 +3845,7 @@ def apply_inplace(
         case DeletePropertyLineCmd():
             pl = els.get(cmd.property_line_id)
             if not isinstance(pl, PropertyLineElem):
-                raise ValueError(
-                    "deletePropertyLine.propertyLineId must reference a property_line"
-                )
+                raise ValueError("deletePropertyLine.propertyLineId must reference a property_line")
             del els[cmd.property_line_id]
 
         case UpsertViewTemplateCmd():
@@ -4412,9 +4392,7 @@ def apply_inplace(
             cid = cmd.id or new_id()
             existing = els.get(cid)
             if existing is not None and not isinstance(existing, ClashTestElem):
-                raise ValueError(
-                    f"upsertClashTest.id '{cid}' refers to a non-clash_test element"
-                )
+                raise ValueError(f"upsertClashTest.id '{cid}' refers to a non-clash_test element")
             prior_results = existing.results if isinstance(existing, ClashTestElem) else None
             els[cid] = ClashTestElem(
                 kind="clash_test",
@@ -4429,9 +4407,7 @@ def apply_inplace(
         case RunClashTestCmd():
             target = els.get(cmd.clash_test_id)
             if not isinstance(target, ClashTestElem):
-                raise ValueError(
-                    "runClashTest.clashTestId must reference a clash_test element"
-                )
+                raise ValueError("runClashTest.clashTestId must reference a clash_test element")
             provider = source_provider or _no_source_provider
             results: list[ClashResultSpec] = run_clash_test(doc, target, provider)
             els[cmd.clash_test_id] = target.model_copy(update={"results": results})
@@ -4455,9 +4431,7 @@ def apply_inplace(
                 raise ValueError(f"createPhase: duplicate element id {pid!r}")
             for el in els.values():
                 if isinstance(el, PhaseElem) and el.ord == cmd.ord:
-                    raise ValueError(
-                        f"createPhase: ord {cmd.ord} already used by phase {el.id!r}"
-                    )
+                    raise ValueError(f"createPhase: ord {cmd.ord} already used by phase {el.id!r}")
             els[pid] = PhaseElem(kind="phase", id=pid, name=cmd.name, ord=cmd.ord)
 
         case RenamePhaseCmd():
@@ -4476,9 +4450,7 @@ def apply_inplace(
                 )
             for el in els.values():
                 if isinstance(el, PhaseElem) and el.id != cmd.phase_id and el.ord == cmd.ord:
-                    raise ValueError(
-                        f"reorderPhase: ord {cmd.ord} already used by phase {el.id!r}"
-                    )
+                    raise ValueError(f"reorderPhase: ord {cmd.ord} already used by phase {el.id!r}")
             els[cmd.phase_id] = ph.model_copy(update={"ord": cmd.ord})
 
         case DeletePhaseCmd():
@@ -4518,9 +4490,7 @@ def apply_inplace(
         case SetElementPhaseCmd():
             el = els.get(cmd.element_id)
             if el is None:
-                raise ValueError(
-                    f"setElementPhase: elementId {cmd.element_id!r} not found"
-                )
+                raise ValueError(f"setElementPhase: elementId {cmd.element_id!r} not found")
             if not hasattr(el, "phase_created"):
                 raise ValueError(
                     f"setElementPhase: elementId {cmd.element_id!r} ({el.kind!r}) "
@@ -4555,12 +4525,34 @@ def apply_inplace(
             if updates_ep:
                 els[cmd.element_id] = el.model_copy(update=updates_ep)
 
+        case SetElementDisciplineCmd():
+            valid = {"arch", "struct", "mep"}
+            if cmd.discipline is not None and cmd.discipline not in valid:
+                raise ValueError(
+                    f"setElementDiscipline: discipline must be arch|struct|mep|null, "
+                    f"got {cmd.discipline!r}"
+                )
+            for eid in cmd.element_ids:
+                el = els.get(eid)
+                if el is None:
+                    raise ValueError(f"setElementDiscipline: elementId {eid!r} not found")
+                if not hasattr(el, "discipline"):
+                    raise ValueError(
+                        f"setElementDiscipline: elementId {eid!r} ({el.kind!r}) "
+                        "does not support the discipline field"
+                    )
+                # discipline=None means "reset to kind default"
+                resolved = (
+                    DEFAULT_DISCIPLINE_BY_KIND.get(el.kind, "arch")
+                    if cmd.discipline is None
+                    else cmd.discipline
+                )
+                els[eid] = el.model_copy(update={"discipline": resolved})
+
         case SetViewPhaseCmd():
             view = els.get(cmd.view_id)
             if not isinstance(view, PlanViewElem):
-                raise ValueError(
-                    f"setViewPhase: viewId {cmd.view_id!r} must reference a plan_view"
-                )
+                raise ValueError(f"setViewPhase: viewId {cmd.view_id!r} must reference a plan_view")
             ph = els.get(cmd.phase_id)
             if not isinstance(ph, PhaseElem):
                 raise ValueError(
@@ -4621,6 +4613,7 @@ def apply_inplace(
             if any(s.id == cmd.id for s in doc.design_option_sets):
                 raise ValueError(f"duplicate option set id: {cmd.id!r}")
             from bim_ai.document import DesignOptionSet
+
             doc.design_option_sets.append(DesignOptionSet(id=cmd.id, name=cmd.name))
 
         case AddOptionCmd():
@@ -4630,10 +4623,13 @@ def apply_inplace(
             if any(o.id == cmd.option_id for o in the_set.options):
                 raise ValueError(f"duplicate option id: {cmd.option_id!r}")
             from bim_ai.document import DesignOption
+
             if cmd.is_primary:
                 for o in the_set.options:
                     o.is_primary = False
-            the_set.options.append(DesignOption(id=cmd.option_id, name=cmd.name, is_primary=cmd.is_primary))
+            the_set.options.append(
+                DesignOption(id=cmd.option_id, name=cmd.name, is_primary=cmd.is_primary)
+            )
 
         case RemoveOptionCmd():
             the_set = next((s for s in doc.design_option_sets if s.id == cmd.option_set_id), None)
@@ -4643,7 +4639,10 @@ def apply_inplace(
                 raise ValueError("cannot remove the only option in a set")
             the_set.options = [o for o in the_set.options if o.id != cmd.option_id]
             for eid, elem in list(els.items()):
-                if getattr(elem, "option_set_id", None) == cmd.option_set_id and getattr(elem, "option_id", None) == cmd.option_id:
+                if (
+                    getattr(elem, "option_set_id", None) == cmd.option_set_id
+                    and getattr(elem, "option_id", None) == cmd.option_id
+                ):
                     els[eid] = elem.model_copy(update={"option_set_id": None, "option_id": None})
 
         case SetPrimaryOptionCmd():
@@ -4662,7 +4661,9 @@ def apply_inplace(
             elem = els.get(cmd.element_id)
             if elem is None:
                 raise ValueError(f"element not found: {cmd.element_id!r}")
-            els[cmd.element_id] = elem.model_copy(update={"option_set_id": cmd.option_set_id, "option_id": cmd.option_id})
+            els[cmd.element_id] = elem.model_copy(
+                update={"option_set_id": cmd.option_set_id, "option_id": cmd.option_id}
+            )
 
         case SetViewOptionLockCmd():
             view = els.get(cmd.view_id)
@@ -4743,9 +4744,7 @@ def apply_inplace(
             sh = els.get(cmd.sheet_id)
             if not isinstance(sh, SheetElem):
                 raise ValueError(f"SetSheetTitleblock: sheetId '{cmd.sheet_id}' not found")
-            els[cmd.sheet_id] = sh.model_copy(
-                update={"titleblock_type_id": cmd.titleblock_type_id}
-            )
+            els[cmd.sheet_id] = sh.model_copy(update={"titleblock_type_id": cmd.titleblock_type_id})
 
         case UpdateSheetMetadataCmd():
             sh = els.get(cmd.sheet_id)
@@ -4798,9 +4797,7 @@ def apply_inplace(
                 raise ValueError(f"duplicate element id '{cmd.callout_view_id}'")
             parent = els.get(cmd.parent_view_id)
             if parent is None:
-                raise ValueError(
-                    f"CreateCallout.parentViewId '{cmd.parent_view_id}' not found"
-                )
+                raise ValueError(f"CreateCallout.parentViewId '{cmd.parent_view_id}' not found")
             els[cmd.callout_view_id] = ViewElem(
                 kind="view",
                 id=cmd.callout_view_id,
@@ -4814,12 +4811,8 @@ def apply_inplace(
         case SetElementOverrideCmd():
             view = els.get(cmd.view_id)
             if not isinstance(view, ViewElem):
-                raise ValueError(
-                    "SetElementOverride.viewId must reference a 'view' element"
-                )
-            existing = [
-                o for o in view.element_overrides if o.category_or_id != cmd.category_or_id
-            ]
+                raise ValueError("SetElementOverride.viewId must reference a 'view' element")
+            existing = [o for o in view.element_overrides if o.category_or_id != cmd.category_or_id]
             existing.append(
                 ElementOverrideSpec(
                     categoryOrId=cmd.category_or_id,
@@ -4869,9 +4862,7 @@ def apply_inplace(
         case UpdateViewTemplateCmd():
             tpl = els.get(cmd.template_id)
             if not isinstance(tpl, ViewTemplateElem):
-                raise ValueError(
-                    "UpdateViewTemplate.templateId must reference a view_template"
-                )
+                raise ValueError("UpdateViewTemplate.templateId must reference a view_template")
             patch: dict[str, Any] = {}
             if cmd.name is not None:
                 patch["name"] = cmd.name
@@ -4931,13 +4922,9 @@ def apply_inplace(
 
         case DeleteViewTemplateCmd():
             if cmd.template_id not in els:
-                raise ValueError(
-                    f"DeleteViewTemplate.templateId '{cmd.template_id}' not found"
-                )
+                raise ValueError(f"DeleteViewTemplate.templateId '{cmd.template_id}' not found")
             if not isinstance(els[cmd.template_id], ViewTemplateElem):
-                raise ValueError(
-                    "DeleteViewTemplate.templateId must reference a view_template"
-                )
+                raise ValueError("DeleteViewTemplate.templateId must reference a view_template")
             del els[cmd.template_id]
             # Implicitly unbind all views that reference this template
             for elem in list(els.values()):
@@ -5082,7 +5069,6 @@ def apply_inplace(
     from bim_ai.area_calculation import recompute_all_areas
 
     recompute_all_areas(els)
-
 
 
 def resolve_visible_elements(doc: "Document", option_locks: dict[str, str]) -> list[str]:
@@ -6169,11 +6155,7 @@ def compute_view_template_propagation(
     if isinstance(cmd, UnbindViewTemplateCmd):
         view_id = cmd.view_id
         view_before = doc_before.elements.get(view_id)
-        template_id = (
-            view_before.template_id
-            if isinstance(view_before, PlanViewElem)
-            else None
-        )
+        template_id = view_before.template_id if isinstance(view_before, PlanViewElem) else None
         return {
             "event": "ViewTemplatePropagation",
             "templateId": template_id or "",
@@ -6486,7 +6468,9 @@ def _stair_fine(stair: StairElem) -> list[LineSegment]:
         cx = sx + tx * t
         cy = sy + ty * t
         segs.append(
-            LineSegment(cx - nx * half_w, cy - ny * half_w, cx + nx * half_w, cy + ny * half_w, False, style)
+            LineSegment(
+                cx - nx * half_w, cy - ny * half_w, cx + nx * half_w, cy + ny * half_w, False, style
+            )
         )
     segs.append(LineSegment(sx, sy, ex, ey, False, style))
     return segs

@@ -1,7 +1,8 @@
 /* eslint-disable bim-ai/no-hex-in-chrome -- pre-v3 hex literals; remove when this file is migrated in B4 Phase 2 */
 import { useMemo, useState } from 'react';
 import type { JSX } from 'react';
-import type { Element, ViewTemplate } from '@bim-ai/core';
+import type { DisciplineTag, Element, ViewTemplate } from '@bim-ai/core';
+import { DEFAULT_DISCIPLINE_BY_KIND } from '@bim-ai/core';
 
 import { Btn } from '@bim-ai/ui';
 
@@ -118,6 +119,31 @@ export function ProjectBrowser(props: {
     const keys = [...buckets.keys()].sort();
     return { planViewsSorted: sorted, planViewBuckets: buckets, bucketKeys: keys };
   }, [props.elementsById]);
+
+  /** DSC-V3-01: group physical elements into arch / struct / mep buckets. */
+  const disciplineBuckets = useMemo(() => {
+    const buckets: Record<DisciplineTag, { id: string; kind: string; name: string }[]> = {
+      arch: [],
+      struct: [],
+      mep: [],
+    };
+    for (const el of Object.values(props.elementsById)) {
+      if (!('discipline' in el)) continue;
+      const elWithKind = el as { kind: string; id: string; discipline?: DisciplineTag | null };
+      const defaultDisc =
+        DEFAULT_DISCIPLINE_BY_KIND[elWithKind.kind as keyof typeof DEFAULT_DISCIPLINE_BY_KIND];
+      if (!defaultDisc) continue; // not a physical element with discipline support
+      const disc: DisciplineTag = elWithKind.discipline ?? defaultDisc;
+      const nameVal = (el as { name?: string }).name;
+      buckets[disc].push({ id: el.id, kind: elWithKind.kind, name: nameVal ?? el.id });
+    }
+    return buckets;
+  }, [props.elementsById]);
+
+  const hasDisciplineElements =
+    disciplineBuckets.arch.length > 0 ||
+    disciplineBuckets.struct.length > 0 ||
+    disciplineBuckets.mep.length > 0;
 
   const showPlanTemplateBuckets = bucketKeys.length >= 2;
 
@@ -634,6 +660,39 @@ export function ProjectBrowser(props: {
       ) : null}
 
       {linkModels.length ? <ProjectBrowserLinksGroup links={linkModels} /> : null}
+
+      {hasDisciplineElements ? (
+        <div className="space-y-1" data-testid="project-browser-disciplines-group">
+          <div className="text-[10px] uppercase tracking-wide text-muted">Categories</div>
+          {(['arch', 'struct', 'mep'] as const).map((disc) => {
+            const rows = disciplineBuckets[disc];
+            if (rows.length === 0) return null;
+            const label =
+              disc === 'arch' ? 'Architecture' : disc === 'struct' ? 'Structure' : 'MEP';
+            return (
+              <div key={disc} className="space-y-0.5">
+                <div className="pl-1 text-[9px] font-semibold uppercase tracking-wide text-muted">
+                  {label} ({rows.length})
+                </div>
+                <ul className="space-y-0">
+                  {rows.map((row) => (
+                    <li key={row.id}>
+                      <button
+                        type="button"
+                        className="w-full px-2 py-0.5 text-left text-[10px] hover:bg-surface-strong"
+                        onClick={() => useBimStore.getState().select(row.id)}
+                        title={`${row.kind} · ${row.id}`}
+                      >
+                        <span className="text-muted">{row.kind} ·</span> {row.name}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
     </div>
   );
 }
