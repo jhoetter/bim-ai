@@ -3,7 +3,7 @@
   "checkpoint_id": "f02d02611ee4",
   "strategy": "manual-commit",
   "branch": "feat/v3-cq-02-python-lockfile",
-  "checkpoints_count": 3,
+  "checkpoints_count": 4,
   "files_touched": null,
   "sessions": [
     {
@@ -23,13 +23,19 @@
       "transcript": "/f0/2d02611ee4/2/full.jsonl",
       "content_hash": "/f0/2d02611ee4/2/content_hash.txt",
       "prompt": "/f0/2d02611ee4/2/prompt.txt"
+    },
+    {
+      "metadata": "/f0/2d02611ee4/3/metadata.json",
+      "transcript": "/f0/2d02611ee4/3/full.jsonl",
+      "content_hash": "/f0/2d02611ee4/3/content_hash.txt",
+      "prompt": "/f0/2d02611ee4/3/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 726,
-    "cache_creation_tokens": 266960,
-    "cache_read_tokens": 11521418,
-    "output_tokens": 81714,
-    "api_call_count": 169
+    "input_tokens": 794,
+    "cache_creation_tokens": 438430,
+    "cache_read_tokens": 13551772,
+    "output_tokens": 100038,
+    "api_call_count": 196
   }
 }
