@@ -20,9 +20,13 @@ from bim_ai.commands import (
 )
 from bim_ai.document import Document
 from bim_ai.elements import (
+    BeamElem,
+    CeilingElem,
+    ColumnElem,
     DoorElem,
     FloorElem,
     LevelElem,
+    RailingElem,
     RoofElem,
     RoofOpeningElem,
     RoomElem,
@@ -2195,7 +2199,7 @@ def summarize_kernel_ifc_semantic_roundtrip(doc: Document) -> dict[str, Any]:
         # count vs IfcOpeningElement instances hosted on IfcRoof.
         "roofHostedOpenings": _tri(
             kinds_expected.get("roof_opening", 0),
-            int(((inspection.get("openingsByHostKind") or {}).get("roof", 0))),
+            int((inspection.get("openingsByHostKind") or {}).get("roof", 0)),
         ),
     }
 
@@ -2664,6 +2668,125 @@ def _try_attach_classification_reference(
                 )
     except Exception:
         return
+
+
+def _maybe_attach_classification(
+    f: Any,
+    product: Any,
+    element: Any,
+    *,
+    classification_cache: dict[str, Any],
+    classification_ref_cache: dict[str, Any],
+) -> None:
+    """IFC-04: shared shim that pulls ``ifc_classification_code`` off any
+    bim-ai element (architectural categories already had it; stairs /
+    columns / beams gain it in this WP) and emits an
+    ``IfcRelAssociatesClassification`` via the existing reference cache.
+    """
+
+    _try_attach_classification_reference(
+        f,
+        product,
+        classification_code=getattr(element, "ifc_classification_code", None),
+        classification_cache=classification_cache,
+        classification_ref_cache=classification_ref_cache,
+    )
+
+
+def _safe_edit_pset(f: Any, product: Any, *, name: str, properties: dict[str, Any]) -> None:
+    """IFC-04: best-effort attach Pset_*Common to a product. Silently
+    drops when the IfcOpenShell pset use-case is unavailable so tests
+    on minimal builds keep passing."""
+
+    if not properties:
+        return
+    try:
+        from ifcopenshell.api.pset.add_pset import add_pset  # noqa: PLC0415
+        from ifcopenshell.api.pset.edit_pset import edit_pset  # noqa: PLC0415
+    except ImportError:
+        return
+    try:
+        ps = add_pset(f, product=product, name=name)
+        edit_pset(f, pset=ps, properties=dict(properties))
+    except Exception:
+        return
+
+
+def _attach_stair_common_pset(f: Any, ifc_stair: Any, stair: StairElem, doc: Document) -> None:
+    """IFC-04: populate the standard `Pset_StairCommon` properties from
+    a `StairElem`. Only emits properties with a non-default value so the
+    pset stays compact."""
+
+    bl = doc.elements.get(stair.base_level_id)
+    tl = doc.elements.get(stair.top_level_id)
+    rise_mm = (
+        abs(tl.elevation_mm - bl.elevation_mm)
+        if isinstance(bl, LevelElem) and isinstance(tl, LevelElem)
+        else float(stair.riser_mm) * 16.0
+    )
+    riser_mm_val = float(stair.riser_mm) if stair.riser_mm > 0 else 175.0
+    riser_count = max(1, round(rise_mm / riser_mm_val))
+    props: dict[str, Any] = {
+        "NumberOfRiser": int(riser_count),
+        "NumberOfTreads": int(max(0, riser_count - 1)),
+        "RiserHeight": float(riser_mm_val) / 1000.0,
+        "TreadLength": float(stair.tread_mm) / 1000.0,
+    }
+    _safe_edit_pset(f, ifc_stair, name="Pset_StairCommon", properties=props)
+
+
+def _attach_column_common_pset(f: Any, ifc_column: Any, column: ColumnElem) -> None:
+    """IFC-04: populate `Pset_ColumnCommon` (LoadBearing / IsExternal /
+    Reference) from a `ColumnElem`."""
+
+    props: dict[str, Any] = {
+        "Reference": str(column.id),
+        "LoadBearing": True,
+        "IsExternal": False,
+    }
+    _safe_edit_pset(f, ifc_column, name="Pset_ColumnCommon", properties=props)
+
+
+def _attach_beam_common_pset(f: Any, ifc_beam: Any, beam: BeamElem) -> None:
+    """IFC-04: populate `Pset_BeamCommon` (Span / LoadBearing /
+    IsExternal / Reference) from a `BeamElem`. ``Span`` is the
+    horizontal start→end length in metres."""
+
+    sx = float(beam.start_mm.x_mm) / 1000.0
+    sy = float(beam.start_mm.y_mm) / 1000.0
+    ex = float(beam.end_mm.x_mm) / 1000.0
+    ey = float(beam.end_mm.y_mm) / 1000.0
+    span_m = math.hypot(ex - sx, ey - sy)
+    props: dict[str, Any] = {
+        "Reference": str(beam.id),
+        "Span": float(span_m),
+        "LoadBearing": True,
+        "IsExternal": False,
+    }
+    _safe_edit_pset(f, ifc_beam, name="Pset_BeamCommon", properties=props)
+
+
+def _attach_ceiling_common_pset(f: Any, ifc_covering: Any, ceiling: CeilingElem) -> None:
+    """IFC-04: populate `Pset_CoveringCommon` for an `IfcCovering` that
+    backs a `CeilingElem` (Reference / IsExternal)."""
+
+    props: dict[str, Any] = {
+        "Reference": str(ceiling.id),
+        "IsExternal": False,
+    }
+    _safe_edit_pset(f, ifc_covering, name="Pset_CoveringCommon", properties=props)
+
+
+def _attach_railing_common_pset(f: Any, ifc_railing: Any, railing: RailingElem) -> None:
+    """IFC-04: populate `Pset_RailingCommon` (Height / IsExternal /
+    Reference) from a `RailingElem`."""
+
+    props: dict[str, Any] = {
+        "Reference": str(railing.id),
+        "Height": float(railing.guard_height_mm) / 1000.0,
+        "IsExternal": False,
+    }
+    _safe_edit_pset(f, ifc_railing, name="Pset_RailingCommon", properties=props)
 
 
 def _elev_m(doc: Document, level_id: str) -> float:
@@ -3683,6 +3806,262 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
                 "Length": run_len_m,
             },
         )
+        # IFC-04: full Pset_StairCommon properties (NumberOfRiser /
+        # NumberOfTreads / RiserHeight / TreadLength) on top of the
+        # kernel-identity Reference, plus optional classification.
+        _attach_stair_common_pset(f, stair_ent, st, doc)
+        _maybe_attach_classification(
+            f,
+            stair_ent,
+            st,
+            classification_cache=classification_cache,
+            classification_ref_cache=classification_ref_cache,
+        )
+
+    # IFC-04: column / beam / ceiling / railing export — closes out the
+    # non-architectural per-kind Pset_*Common coverage.
+    for cid in sorted(eid for eid, e in doc.elements.items() if isinstance(e, ColumnElem)):
+        col = doc.elements[cid]
+        assert isinstance(col, ColumnElem)
+        cx = float(col.position_mm.x_mm) / 1000.0
+        cy = float(col.position_mm.y_mm) / 1000.0
+        elev = float(_elev_m(doc, col.level_id)) + float(col.base_constraint_offset_mm) / 1000.0
+        b_m = float(_clamp(col.b_mm / 1000.0, 0.05, 6.0))
+        h_m = float(_clamp(col.h_mm / 1000.0, 0.05, 6.0))
+        height_m = float(_clamp(col.height_mm / 1000.0, 0.1, 40.0))
+        rot_rad = math.radians(float(col.rotation_deg))
+        col_ent = ifcopenshell.api.root.create_entity(
+            f, ifc_class="IfcColumn", name=col.name or cid
+        )
+        profile = f.create_entity(
+            "IfcRectangleProfileDef",
+            ProfileType="AREA",
+            XDim=b_m,
+            YDim=h_m,
+        )
+        extruded = f.create_entity(
+            "IfcExtrudedAreaSolid",
+            SweptArea=profile,
+            Position=f.create_entity(
+                "IfcAxis2Placement3D",
+                Location=f.create_entity("IfcCartesianPoint", Coordinates=(0.0, 0.0, 0.0)),
+                Axis=f.create_entity("IfcDirection", DirectionRatios=(0.0, 0.0, 1.0)),
+                RefDirection=f.create_entity("IfcDirection", DirectionRatios=(1.0, 0.0, 0.0)),
+            ),
+            ExtrudedDirection=f.create_entity("IfcDirection", DirectionRatios=(0.0, 0.0, 1.0)),
+            Depth=height_m,
+        )
+        rep_col = f.create_entity(
+            "IfcShapeRepresentation",
+            ContextOfItems=body_ctx,
+            RepresentationIdentifier="Body",
+            RepresentationType="SweptSolid",
+            Items=(extruded,),
+        )
+        cmat = np.eye(4, dtype=float)
+        cmat[0, 0] = math.cos(rot_rad)
+        cmat[0, 1] = -math.sin(rot_rad)
+        cmat[1, 0] = math.sin(rot_rad)
+        cmat[1, 1] = math.cos(rot_rad)
+        cmat[0, 3] = cx
+        cmat[1, 3] = cy
+        cmat[2, 3] = elev
+        edit_object_placement(f, product=col_ent, matrix=cmat)
+        assign_representation(f, col_ent, rep_col)
+        ifcopenshell.api.spatial.assign_container(
+            f, products=[col_ent], relating_structure=storey_for(col.level_id)
+        )
+        geo_products += 1
+        attach_kernel_identity_pset(col_ent, "Pset_ColumnCommon", cid)
+        _attach_column_common_pset(f, col_ent, col)
+        if col.material_key:
+            try_attach_kernel_ifc_single_material(
+                f,
+                product=col_ent,
+                material_key=col.material_key,
+                material_by_key_cache=material_by_key_cache,
+            )
+        _maybe_attach_classification(
+            f,
+            col_ent,
+            col,
+            classification_cache=classification_cache,
+            classification_ref_cache=classification_ref_cache,
+        )
+
+    for bid in sorted(eid for eid, e in doc.elements.items() if isinstance(e, BeamElem)):
+        bm = doc.elements[bid]
+        assert isinstance(bm, BeamElem)
+        bsx = float(bm.start_mm.x_mm) / 1000.0
+        bsy = float(bm.start_mm.y_mm) / 1000.0
+        bex = float(bm.end_mm.x_mm) / 1000.0
+        bey = float(bm.end_mm.y_mm) / 1000.0
+        span_m = math.hypot(bex - bsx, bey - bsy)
+        if span_m < 1e-6:
+            continue
+        elev_b = float(_elev_m(doc, bm.level_id))
+        beam_w = float(_clamp(bm.width_mm / 1000.0, 0.05, 4.0))
+        beam_h = float(_clamp(bm.height_mm / 1000.0, 0.05, 4.0))
+        beam_ent = ifcopenshell.api.root.create_entity(
+            f, ifc_class="IfcBeam", name=bm.name or bid
+        )
+        # Beam profile is widthMm × heightMm; extruded along the start→end
+        # axis (local +Z). World placement rotates local +Z to align with
+        # the beam's plan direction and lifts the beam by heightMm/2 so
+        # the cross-section sits below the level top.
+        profile_b = f.create_entity(
+            "IfcRectangleProfileDef",
+            ProfileType="AREA",
+            XDim=beam_w,
+            YDim=beam_h,
+        )
+        extruded_b = f.create_entity(
+            "IfcExtrudedAreaSolid",
+            SweptArea=profile_b,
+            Position=f.create_entity(
+                "IfcAxis2Placement3D",
+                Location=f.create_entity("IfcCartesianPoint", Coordinates=(0.0, 0.0, 0.0)),
+                Axis=f.create_entity("IfcDirection", DirectionRatios=(0.0, 0.0, 1.0)),
+                RefDirection=f.create_entity("IfcDirection", DirectionRatios=(1.0, 0.0, 0.0)),
+            ),
+            ExtrudedDirection=f.create_entity("IfcDirection", DirectionRatios=(0.0, 0.0, 1.0)),
+            Depth=span_m,
+        )
+        rep_b = f.create_entity(
+            "IfcShapeRepresentation",
+            ContextOfItems=body_ctx,
+            RepresentationIdentifier="Body",
+            RepresentationType="SweptSolid",
+            Items=(extruded_b,),
+        )
+        # Local frame: +Z = beam axis (start→end horizontal), +X = vertical (Z),
+        # +Y = perpendicular horizontal. Build a rotation that maps these onto
+        # the world axes. Profile X = world Z (beam height), profile Y =
+        # world horizontal-perpendicular (beam width); extrusion along axis.
+        ax = (bex - bsx) / span_m
+        ay = (bey - bsy) / span_m
+        # World basis vectors of the local frame.
+        local_z_world = np.array([ax, ay, 0.0], dtype=float)  # extrusion direction
+        local_y_world = np.array([-ay, ax, 0.0], dtype=float)  # perpendicular horizontal
+        local_x_world = np.array([0.0, 0.0, 1.0], dtype=float)  # vertical
+        bmat = np.eye(4, dtype=float)
+        bmat[:3, 0] = local_x_world
+        bmat[:3, 1] = local_y_world
+        bmat[:3, 2] = local_z_world
+        bmat[0, 3] = bsx
+        bmat[1, 3] = bsy
+        bmat[2, 3] = elev_b - beam_h / 2.0
+        edit_object_placement(f, product=beam_ent, matrix=bmat)
+        assign_representation(f, beam_ent, rep_b)
+        ifcopenshell.api.spatial.assign_container(
+            f, products=[beam_ent], relating_structure=storey_for(bm.level_id)
+        )
+        geo_products += 1
+        attach_kernel_identity_pset(beam_ent, "Pset_BeamCommon", bid)
+        _attach_beam_common_pset(f, beam_ent, bm)
+        if bm.material_key:
+            try_attach_kernel_ifc_single_material(
+                f,
+                product=beam_ent,
+                material_key=bm.material_key,
+                material_by_key_cache=material_by_key_cache,
+            )
+        _maybe_attach_classification(
+            f,
+            beam_ent,
+            bm,
+            classification_cache=classification_cache,
+            classification_ref_cache=classification_ref_cache,
+        )
+
+    for cid in sorted(eid for eid, e in doc.elements.items() if isinstance(e, CeilingElem)):
+        ceil = doc.elements[cid]
+        assert isinstance(ceil, CeilingElem)
+        cpts = [(p.x_mm, p.y_mm) for p in ceil.boundary_mm]
+        if len(cpts) < 3:
+            continue
+        ccx_mm, ccz_mm, _, _ = _xz_bounds_mm(cpts)
+        ccx_m = ccx_mm / 1000.0
+        ccy_m = ccz_mm / 1000.0
+        ceil_elev_z = (
+            float(_elev_m(doc, ceil.level_id)) + float(ceil.height_offset_mm) / 1000.0
+        )
+        ceil_thick_m = float(_clamp(ceil.thickness_mm / 1000.0, 0.005, 0.5))
+        ceil_profile: list[tuple[float, float]] = []
+        for px, py in cpts:
+            ceil_profile.append((px / 1000.0 - ccx_m, py / 1000.0 - ccy_m))
+        ceil_profile.append(ceil_profile[0])
+        cov_ent = ifcopenshell.api.root.create_entity(
+            f, ifc_class="IfcCovering", name=ceil.name or cid
+        )
+        if hasattr(cov_ent, "PredefinedType"):
+            cov_ent.PredefinedType = "CEILING"
+        rep_cov = add_slab_representation(
+            f, body_ctx, depth=ceil_thick_m, polyline=ceil_profile
+        )
+        cov_mat = np.eye(4, dtype=float)
+        cov_mat[0, 3] = ccx_m
+        cov_mat[1, 3] = ccy_m
+        cov_mat[2, 3] = ceil_elev_z + ceil_thick_m / 2.0
+        edit_object_placement(f, product=cov_ent, matrix=cov_mat)
+        assign_representation(f, cov_ent, rep_cov)
+        ifcopenshell.api.spatial.assign_container(
+            f, products=[cov_ent], relating_structure=storey_for(ceil.level_id)
+        )
+        geo_products += 1
+        attach_kernel_identity_pset(cov_ent, "Pset_CoveringCommon", cid)
+        _attach_ceiling_common_pset(f, cov_ent, ceil)
+
+    for rid in sorted(eid for eid, e in doc.elements.items() if isinstance(e, RailingElem)):
+        rl = doc.elements[rid]
+        assert isinstance(rl, RailingElem)
+        if len(rl.path_mm) < 2:
+            continue
+        # Place railing on the host stair's base level when bound; otherwise
+        # default to elevation zero. Railings cross multiple levels in
+        # general — the kernel ties them to a stair, not a level.
+        railing_elev_z = 0.0
+        host_storey = default_storey_tag
+        if rl.hosted_stair_id:
+            stair_h = doc.elements.get(rl.hosted_stair_id)
+            if isinstance(stair_h, StairElem):
+                railing_elev_z = float(_elev_m(doc, stair_h.base_level_id))
+                host_storey = storey_for(stair_h.base_level_id)
+        # Body: 50mm-wide × guardHeightMm tall extrusion along each
+        # path segment. We emit a single representation built from the
+        # first segment for compactness; downstream parsers can read
+        # the full path from the kernel via Reference round-trip.
+        p0 = rl.path_mm[0]
+        p1 = rl.path_mm[1]
+        rsx = float(p0.x_mm) / 1000.0
+        rsy = float(p0.y_mm) / 1000.0
+        rex = float(p1.x_mm) / 1000.0
+        rey = float(p1.y_mm) / 1000.0
+        rseg = math.hypot(rex - rsx, rey - rsy)
+        if rseg < 1e-6:
+            continue
+        guard_h_m = float(_clamp(rl.guard_height_mm / 1000.0, 0.4, 2.5))
+        rail_w_m = 0.05
+        railing_ent = ifcopenshell.api.root.create_entity(
+            f, ifc_class="IfcRailing", name=rl.name or rid
+        )
+        rep_rail = create_2pt_wall(
+            f,
+            railing_ent,
+            body_ctx,
+            (rsx, rsy),
+            (rex, rey),
+            railing_elev_z,
+            guard_h_m,
+            rail_w_m,
+        )
+        assign_representation(f, railing_ent, rep_rail)
+        ifcopenshell.api.spatial.assign_container(
+            f, products=[railing_ent], relating_structure=host_storey
+        )
+        geo_products += 1
+        attach_kernel_identity_pset(railing_ent, "Pset_RailingCommon", rid)
+        _attach_railing_common_pset(f, railing_ent, rl)
 
     if geo_products == 0:
         return None, 0

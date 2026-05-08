@@ -618,6 +618,8 @@ export type Element =
       runs?: StairRun[];
       /** KRN-07: landings between runs (one per gap). */
       landings?: StairLanding[];
+      /** IFC-04: optional OmniClass / Uniclass / NSCC code emitted as IfcClassificationReference. */
+      ifcClassificationCode?: string | null;
       overrideParams?: Record<string, unknown>;
       pinned?: boolean;
     }
@@ -898,6 +900,8 @@ export type Element =
       baseConstraintOffsetMm?: number;
       topConstraintLevelId?: string | null;
       topConstraintOffsetMm?: number;
+      /** IFC-04: optional OmniClass / Uniclass / NSCC code emitted as IfcClassificationReference. */
+      ifcClassificationCode?: string | null;
     }
   | {
       kind: 'beam';
@@ -911,6 +915,8 @@ export type Element =
       materialKey?: string | null;
       startColumnId?: string | null;
       endColumnId?: string | null;
+      /** IFC-04: optional OmniClass / Uniclass / NSCC code emitted as IfcClassificationReference. */
+      ifcClassificationCode?: string | null;
     }
   | {
       kind: 'ceiling';

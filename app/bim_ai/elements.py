@@ -620,6 +620,8 @@ class StairElem(BaseModel):
     shape: StairShape = Field(default="straight")
     runs: list[StairRun] = Field(default_factory=list)
     landings: list[StairLanding] = Field(default_factory=list)
+    # IFC-04: optional classification code emitted as IfcClassificationReference.
+    ifc_classification_code: str | None = Field(default=None, alias="ifcClassificationCode")
     pinned: bool = Field(default=False)
 
 
@@ -1383,6 +1385,8 @@ class ColumnElem(BaseModel):
     base_constraint_offset_mm: float = Field(default=0, alias="baseConstraintOffsetMm")
     top_constraint_level_id: str | None = Field(default=None, alias="topConstraintLevelId")
     top_constraint_offset_mm: float = Field(default=0, alias="topConstraintOffsetMm")
+    # IFC-04: optional classification code emitted as IfcClassificationReference.
+    ifc_classification_code: str | None = Field(default=None, alias="ifcClassificationCode")
     pinned: bool = Field(default=False)
 
 
@@ -1405,6 +1409,8 @@ class BeamElem(BaseModel):
     material_key: str | None = Field(default=None, alias="materialKey")
     start_column_id: str | None = Field(default=None, alias="startColumnId")
     end_column_id: str | None = Field(default=None, alias="endColumnId")
+    # IFC-04: optional classification code emitted as IfcClassificationReference.
+    ifc_classification_code: str | None = Field(default=None, alias="ifcClassificationCode")
     pinned: bool = Field(default=False)
 
 
