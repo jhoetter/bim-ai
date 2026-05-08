@@ -1,0 +1,77 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "e26865055e70",
+  "session_id": "484b3fc4-cdb5-4d63-973e-ff931c99ea77",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T22:04:07.206642Z",
+  "branch": "feat/v3-mat-v3-01-pbr-material",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "app/bim_ai/elements.py"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "ab8b94e8df30",
+  "checkpoint_transcript_start": 1506,
+  "transcript_lines_at_start": 1506,
+  "token_usage": {
+    "input_tokens": 22,
+    "cache_creation_tokens": 190142,
+    "cache_read_tokens": 959563,
+    "output_tokens": 8727,
+    "api_call_count": 18
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-08T22:04:07.143046Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 203,
+    "human_modified": 62,
+    "human_removed": 0,
+    "total_committed": 203,
+    "total_lines_changed": 266,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 2351,
+      "user_lines_removed": 210,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "app/bim_ai/api/registry.py": 77,
+        "app/bim_ai/commands.py": 43,
+        "app/bim_ai/elements.py": 89,
+        "app/bim_ai/engine.py": 106,
+        "app/bim_ai/routes_api.py": 90,
+        "app/tests/api/test_can_v3_02.py": 159,
+        "app/tests/api/test_dsc_v3_02.py": 281,
+        "app/tests/api/test_mat_v3_01.py": 300,
+        "app/tests/api/test_sch_v3_01.py": 308,
+        "packages/cli/cli.mjs": 45,
+        "packages/core/src/index.ts": 5,
+        "packages/design-tokens/src/tokens-drafting.css": 12,
+        "packages/web/src/Viewport.tsx": 12,
+        "packages/web/src/plan/DetailRegionRenderer.tsx": 72,
+        "packages/web/src/plan/DetailRegionTool.tsx": 178,
+        "packages/web/src/plan/HatchPicker.tsx": 115,
+        "packages/web/src/plan/HatchRenderer.ts": 162,
+        "packages/web/src/state/storeTypes.ts": 2,
+        "packages/web/src/viewport/applyLensGhosting.ts": 55,
+        "packages/web/src/viewport/useLensFilter.ts": 34,
+        "packages/web/src/workspace/ScheduleView.tsx": 206
+      },
+      "user_removed_per_file": {
+        "app/bim_ai/commands.py": 37,
+        "app/bim_ai/elements.py": 1,
+        "app/bim_ai/engine.py": 59,
+        "app/bim_ai/routes_api.py": 1,
+        "packages/cli/cli.mjs": 1,
+        "packages/core/src/index.ts": 110,
+        "packages/web/src/state/storeTypes.ts": 1
+      }
+    }
+  ]
+}
