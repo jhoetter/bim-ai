@@ -129,4 +129,60 @@ describe('makeRoofMassMesh — asymmetric_gable', () => {
     expect(box.min.y).toBeCloseTo(3.0, 2);
     expect(box.max.y).toBeCloseTo(7.5, 2);
   });
+
+  it('is watertight — every triangle edge is shared with exactly one neighbour', () => {
+    // Watertightness gates the dormer CSG SUBTRACTION; without it the cut
+    // silently no-ops on the open underside.
+    const mesh = makeRoofMassMesh(asymmetricRoof, elementsById, null);
+    const positions = mesh.geometry.getAttribute('position');
+    const triCount = positions.count / 3;
+    expect(triCount).toBeGreaterThanOrEqual(8); // 4 surfaces + 2 gable caps + 2 bottom
+
+    const edgeUseCount = new Map<string, number>();
+    const keyOf = (a: number[], b: number[]): string => {
+      const ka = a.map((n) => n.toFixed(3)).join(',');
+      const kb = b.map((n) => n.toFixed(3)).join(',');
+      return ka < kb ? `${ka}|${kb}` : `${kb}|${ka}`;
+    };
+    for (let t = 0; t < triCount; t++) {
+      const v: number[][] = [];
+      for (let i = 0; i < 3; i++) {
+        const idx = t * 3 + i;
+        v.push([positions.getX(idx), positions.getY(idx), positions.getZ(idx)]);
+      }
+      for (const [a, b] of [
+        [v[0]!, v[1]!],
+        [v[1]!, v[2]!],
+        [v[2]!, v[0]!],
+      ]) {
+        const k = keyOf(a, b);
+        edgeUseCount.set(k, (edgeUseCount.get(k) ?? 0) + 1);
+      }
+    }
+    const boundary: string[] = [];
+    for (const [k, n] of edgeUseCount) {
+      if (n !== 2) boundary.push(`${k} (used ${n}×)`);
+    }
+    expect(boundary).toEqual([]); // every edge shared exactly once
+  });
+
+  it('non-planar bottom face spans the split eave heights', () => {
+    const splitEaveRoof: RoofElem = {
+      ...asymmetricRoof,
+      ridgeOffsetTransverseMm: 0,
+      eaveHeightLeftMm: 2000,
+      eaveHeightRightMm: 4000,
+    };
+    const mesh = makeRoofMassMesh(splitEaveRoof, elementsById, null);
+    const positions = mesh.geometry.getAttribute('position');
+    let sawLeftEaveBottom = false;
+    let sawRightEaveBottom = false;
+    for (let i = 0; i < positions.count; i++) {
+      const y = positions.getY(i);
+      if (Math.abs(y - 2.0) < 1e-3) sawLeftEaveBottom = true;
+      if (Math.abs(y - 4.0) < 1e-3) sawRightEaveBottom = true;
+    }
+    expect(sawLeftEaveBottom).toBe(true);
+    expect(sawRightEaveBottom).toBe(true);
+  });
 });

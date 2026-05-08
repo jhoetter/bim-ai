@@ -6,9 +6,11 @@ import type { Element } from '@bim-ai/core';
  * KRN-14 — subtract a tall axis-aligned cut box for each hosted dormer
  * from the host roof geometry.
  *
- * Best-effort: three-bvh-csg can produce visible artefacts on the
- * non-watertight asymmetric-gable slope panels, but the cut hole is
- * still legible from the SSW viewpoint, which is what the seed needs.
+ * The roof geometry is now closed (asymmetric-gable bottom face landed
+ * alongside this fix), so three-bvh-csg's SUBTRACTION produces a clean
+ * hole instead of silently no-op'ing. We also validate that the dormer
+ * footprint actually intersects the host roof bbox before attempting
+ * CSG, and surface failures via console.warn rather than swallowing.
  */
 export function applyDormerCutsToRoofGeom(
   geom: THREE.BufferGeometry,
@@ -21,18 +23,32 @@ export function applyDormerCutsToRoofGeom(
       e.kind === 'dormer' && (e as Extract<Element, { kind: 'dormer' }>).hostRoofId === roof.id,
   );
   if (dormers.length === 0) return geom;
+  const roofBbox = computeRoofBboxMm(roof);
   try {
     const evaluator = new Evaluator();
     let brush = new Brush(geom);
     brush.updateMatrixWorld();
+    let cutsApplied = 0;
     for (const d of dormers) {
       const fp = computeDormerFootprintMm(d, roof);
+      if (!bboxesOverlap(fp, roofBbox)) {
+        console.warn(
+          `[dormerRoofCut] dormer ${d.id} footprint does not intersect host roof ${roof.id} bbox; skipping CSG cut.`,
+        );
+        continue;
+      }
       const xMin = fp.minX / 1000;
       const xMax = fp.maxX / 1000;
       const zMin = -fp.maxY / 1000;
       const zMax = -fp.minY / 1000;
       const widthM = xMax - xMin;
       const depthM = zMax - zMin;
+      if (widthM <= 0 || depthM <= 0) {
+        console.warn(
+          `[dormerRoofCut] dormer ${d.id} has non-positive footprint (${widthM}m × ${depthM}m); skipping CSG cut.`,
+        );
+        continue;
+      }
       const cutHeightM = 30;
       const baseY = refElev;
       const cutter = new Brush(new THREE.BoxGeometry(widthM, cutHeightM, depthM));
@@ -40,13 +56,42 @@ export function applyDormerCutsToRoofGeom(
       cutter.updateMatrixWorld();
       brush = evaluator.evaluate(brush, cutter, SUBTRACTION);
       brush.updateMatrixWorld();
+      cutsApplied += 1;
     }
+    if (cutsApplied === 0) return geom;
     const cutGeom = brush.geometry;
     cutGeom.computeVertexNormals();
     return cutGeom;
-  } catch {
+  } catch (err) {
+    console.warn(
+      `[dormerRoofCut] CSG SUBTRACTION failed on roof ${roof.id} (${dormers.length} dormer(s)); rendering uncut.`,
+      err,
+    );
     return geom;
   }
+}
+
+function computeRoofBboxMm(roof: Extract<Element, { kind: 'roof' }>): {
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+} {
+  const xs = roof.footprintMm.map((p) => p.xMm);
+  const ys = roof.footprintMm.map((p) => p.yMm);
+  return {
+    minX: Math.min(...xs),
+    maxX: Math.max(...xs),
+    minY: Math.min(...ys),
+    maxY: Math.max(...ys),
+  };
+}
+
+function bboxesOverlap(
+  a: { minX: number; maxX: number; minY: number; maxY: number },
+  b: { minX: number; maxX: number; minY: number; maxY: number },
+): boolean {
+  return a.maxX > b.minX && a.minX < b.maxX && a.maxY > b.minY && a.minY < b.maxY;
 }
 
 function computeDormerFootprintMm(

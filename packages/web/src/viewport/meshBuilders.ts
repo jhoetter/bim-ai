@@ -548,6 +548,10 @@ function _buildGableGeometry(
 // the LEFT slope: `ridgeY = eaveLeftY + (halfSpan + offset) * tan(slopeRad)`.
 // The right slope angle is implicit (steeper or shallower depending on offset
 // sign and per-side eave heights).
+//
+// Watertightness: the geometry is closed by a 2-triangle non-planar bottom
+// quad spanning the (potentially split) eave levels. Without this closure
+// three-bvh-csg silently fails when the dormer cutter is subtracted.
 function _buildAsymmetricGableGeometry(
   ox0: number,
   ox1: number,
@@ -622,6 +626,27 @@ function _buildAsymmetricGableGeometry(
       ox1,
       ridgeY,
       rz,
+      // Bottom closure (2 triangles, faces -Y). Non-planar quad spanning the
+      // possibly-split eave heights. Without this the geometry is open from
+      // below and three-bvh-csg's SUBTRACTION silently no-ops.
+      ox0,
+      eaveLeftY,
+      oz0,
+      ox0,
+      eaveRightY,
+      oz1,
+      ox1,
+      eaveRightY,
+      oz1,
+      ox0,
+      eaveLeftY,
+      oz0,
+      ox1,
+      eaveRightY,
+      oz1,
+      ox1,
+      eaveLeftY,
+      oz0,
     ];
   } else {
     const halfSpan = (ox1 - ox0) / 2;
@@ -684,6 +709,27 @@ function _buildAsymmetricGableGeometry(
       oz1,
       rx,
       ridgeY,
+      oz1,
+      // Bottom closure (2 triangles, faces -Y). Eaves run along the Z axis at
+      // x=ox0 (left) and x=ox1 (right), so the bottom quad is non-planar
+      // when eaveLeftY ≠ eaveRightY.
+      ox0,
+      eaveLeftY,
+      oz0,
+      ox1,
+      eaveRightY,
+      oz0,
+      ox1,
+      eaveRightY,
+      oz1,
+      ox0,
+      eaveLeftY,
+      oz0,
+      ox1,
+      eaveRightY,
+      oz1,
+      ox0,
+      eaveLeftY,
       oz1,
     ];
   }
