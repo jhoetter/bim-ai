@@ -213,3 +213,94 @@ export function gridVisibilityFor(plotScale: number): GridVisibility {
   if (plotScale <= 200) return { showMajor: true, showMinor: false };
   return { showMajor: false, showMinor: false };
 }
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* CAN-V3-01 — structured line-weight set per plot scale                   */
+/* ────────────────────────────────────────────────────────────────────── */
+
+export interface LineWeights {
+  cutMajor: number;
+  cutMinor: number;
+  /** null = suppressed at 1:500+ (omit the draw call entirely). */
+  projMajor: number | null;
+  projMinor: number | null;
+  witness: number;
+  /** null = grid pass suppressed per gridVisibilityFor. */
+  gridMajor: number | null;
+  gridMinor: number | null;
+}
+
+/** Canonical step-table entries for CAN-V3-01 line-weight hierarchy.
+ * Projection fields are null at 1:500 (suppress draw call entirely). */
+interface StepEntry {
+  cutMajor: number;
+  cutMinor: number;
+  projMajor: number | null;
+  projMinor: number | null;
+  witness: number;
+}
+
+const SCALE_STEPS: Record<number, StepEntry> = {
+  50: { cutMajor: 0.5, cutMinor: 0.25, projMajor: 0.25, projMinor: 0.18, witness: 0.5 },
+  100: { cutMajor: 0.35, cutMinor: 0.18, projMajor: 0.18, projMinor: 0.12, witness: 0.5 },
+  200: { cutMajor: 0.25, cutMinor: 0.12, projMajor: 0.12, projMinor: 0.09, witness: 0.5 },
+  500: { cutMajor: 0.4, cutMinor: 0.2, projMajor: null, projMinor: null, witness: 0.5 },
+};
+
+const SCALE_STEP_KEYS = [50, 100, 200, 500] as const;
+
+function lerp(a: number, b: number, t: number): number {
+  return a + (b - a) * t;
+}
+
+/**
+ * Returns calibrated line-weight px values for the given plot scale
+ * denominator (50 | 100 | 200 | 500 or any interpolated value).
+ * At 1:500+ projection lines return null (suppress entirely).
+ * Grid nullability follows gridVisibilityFor.
+ *
+ * Uses a discrete step table (CAN-V3-01) instead of a continuous formula.
+ * For scales between defined steps, values are linearly interpolated.
+ * witness is always 0.5 px (hairline) at every scale.
+ */
+export function lineWeightsForScale(scaleDenominator: number): LineWeights {
+  const grid = gridVisibilityFor(scaleDenominator);
+  const suppress = scaleDenominator >= 500;
+
+  // Fast path for exact step hits
+  const exact = SCALE_STEPS[scaleDenominator];
+  if (exact) {
+    return {
+      cutMajor: exact.cutMajor,
+      cutMinor: exact.cutMinor,
+      projMajor: suppress ? null : exact.projMajor,
+      projMinor: suppress ? null : exact.projMinor,
+      witness: 0.5,
+      gridMajor: grid.showMajor ? 1 : null,
+      gridMinor: grid.showMinor ? 0.5 : null,
+    };
+  }
+
+  // Interpolate between nearest bracketing steps
+  const loKey = [...SCALE_STEP_KEYS].filter((k) => k <= scaleDenominator).at(-1) ?? 50;
+  const hiKey = SCALE_STEP_KEYS.find((k) => k > scaleDenominator) ?? 500;
+  const t = (scaleDenominator - loKey) / (hiKey - loKey);
+  const lo = SCALE_STEPS[loKey]!;
+  const hi = SCALE_STEPS[hiKey]!;
+
+  return {
+    cutMajor: lerp(lo.cutMajor, hi.cutMajor, t),
+    cutMinor: lerp(lo.cutMinor, hi.cutMinor, t),
+    projMajor:
+      !suppress && lo.projMajor != null && hi.projMajor != null
+        ? lerp(lo.projMajor, hi.projMajor, t)
+        : null,
+    projMinor:
+      !suppress && lo.projMinor != null && hi.projMinor != null
+        ? lerp(lo.projMinor, hi.projMinor, t)
+        : null,
+    witness: 0.5,
+    gridMajor: grid.showMajor ? 1 : null,
+    gridMinor: grid.showMinor ? 0.5 : null,
+  };
+}

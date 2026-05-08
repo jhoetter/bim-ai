@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import type { Element, PlanLinePatternToken } from '@bim-ai/core';
 
 import { liveTokenReader } from '../viewport/materials';
+import type { LineWeights } from './draftingStandards';
 import {
   coerceVec2Mm,
   isPlanProjectionPrimitivesV1,
@@ -486,6 +487,8 @@ function rebuildPlanMeshesFromWire(
     planAnnotationHints?: PlanAnnotationHintsResolved | null;
     planTagFontScales?: { opening: number; room: number } | null;
     detailLevel?: 'coarse' | 'medium' | 'fine';
+    /** CAN-V3-01: when projMinor is null, floor/roof outlines are suppressed entirely. */
+    lineWeights?: LineWeights | null;
   },
 ): void {
   while (holder.children.length) holder.remove(holder.children[0]!);
@@ -574,39 +577,45 @@ function rebuildPlanMeshesFromWire(
     }
   }
 
+  const suppressProjection = opts.lineWeights?.projMinor === null;
+
   const floors = Array.isArray(prim.floors) ? (prim.floors as Record<string, unknown>[]) : [];
-  for (const f of floors) {
-    const outline = outlineMmFromWire(f.outlineMm);
-    if (outline.length < 2) continue;
-    const lwh = Number(f.lineWeightHint ?? f.line_weight_hint ?? 1);
-    const patRaw = f.linePatternToken ?? f.line_pattern_token;
-    holder.add(
-      planFloorRoofOutlineWireGroup(outline, {
-        kind: 'floor',
-        pickId: String(f.id ?? ''),
-        lineWeightHint: lwh,
-        linePatternToken: typeof patRaw === 'string' ? patRaw : undefined,
-      }),
-    );
+  if (!suppressProjection) {
+    for (const f of floors) {
+      const outline = outlineMmFromWire(f.outlineMm);
+      if (outline.length < 2) continue;
+      const lwh = Number(f.lineWeightHint ?? f.line_weight_hint ?? 1);
+      const patRaw = f.linePatternToken ?? f.line_pattern_token;
+      holder.add(
+        planFloorRoofOutlineWireGroup(outline, {
+          kind: 'floor',
+          pickId: String(f.id ?? ''),
+          lineWeightHint: lwh,
+          linePatternToken: typeof patRaw === 'string' ? patRaw : undefined,
+        }),
+      );
+    }
   }
 
   const roofs = Array.isArray(prim.roofs) ? (prim.roofs as Record<string, unknown>[]) : [];
-  for (const rf of roofs) {
-    const outline = outlineMmFromWire(rf.footprintMm);
-    if (outline.length < 2) continue;
-    const lwh = Number(rf.lineWeightHint ?? rf.line_weight_hint ?? 1);
-    const patRaw = rf.linePatternToken ?? rf.line_pattern_token;
-    const supportTokRaw = rf.roofGeometrySupportToken;
-    const supportTok =
-      typeof supportTokRaw === 'string' && supportTokRaw.trim() ? supportTokRaw.trim() : null;
-    const grp = planFloorRoofOutlineWireGroup(outline, {
-      kind: 'roof',
-      pickId: String(rf.id ?? ''),
-      lineWeightHint: lwh,
-      linePatternToken: typeof patRaw === 'string' ? patRaw : undefined,
-      roofGeometrySupportToken: supportTok,
-    });
-    holder.add(grp);
+  if (!suppressProjection) {
+    for (const rf of roofs) {
+      const outline = outlineMmFromWire(rf.footprintMm);
+      if (outline.length < 2) continue;
+      const lwh = Number(rf.lineWeightHint ?? rf.line_weight_hint ?? 1);
+      const patRaw = rf.linePatternToken ?? rf.line_pattern_token;
+      const supportTokRaw = rf.roofGeometrySupportToken;
+      const supportTok =
+        typeof supportTokRaw === 'string' && supportTokRaw.trim() ? supportTokRaw.trim() : null;
+      const grp = planFloorRoofOutlineWireGroup(outline, {
+        kind: 'roof',
+        pickId: String(rf.id ?? ''),
+        lineWeightHint: lwh,
+        linePatternToken: typeof patRaw === 'string' ? patRaw : undefined,
+        roofGeometrySupportToken: supportTok,
+      });
+      holder.add(grp);
+    }
   }
 
   const wireDetail = opts.detailLevel ?? 'medium';
@@ -1004,6 +1013,8 @@ export function rebuildPlanMeshes(
     planTagFontScales?: { opening: number; room: number } | null;
     /** B01: current plot scale denominator (1:N) so mesh builders can be scale-aware. */
     plotScale?: number;
+    /** CAN-V3-01: structured line-weight set; null projMinor suppresses floor/roof draw calls. */
+    lineWeights?: LineWeights | null;
   },
 ): void {
   while (holder.children.length) holder.remove(holder.children[0]!);
@@ -1025,6 +1036,7 @@ export function rebuildPlanMeshes(
       planAnnotationHints: opts.planAnnotationHints ?? null,
       planTagFontScales: opts.planTagFontScales ?? null,
       detailLevel,
+      lineWeights: opts.lineWeights,
     });
     return;
   }
@@ -1078,38 +1090,43 @@ export function rebuildPlanMeshes(
     holder.add(roomMesh(r, presentation, { roomFillOpacityScale }));
   }
 
-  for (const f of Object.values(elementsById)) {
-    if (f.kind !== 'floor') continue;
-    if (kindHidden('floor')) continue;
+  // CAN-V3-01: floor/roof outlines are projection geometry — suppress when projMajor is null (1:500+).
+  const suppressProjectionFallback = opts.lineWeights != null && opts.lineWeights.projMajor == null;
 
-    if (level && f.levelId !== level) continue;
+  if (!suppressProjectionFallback) {
+    for (const f of Object.values(elementsById)) {
+      if (f.kind !== 'floor') continue;
+      if (kindHidden('floor')) continue;
 
-    holder.add(
-      horizontalOutlineMesh(
-        f.boundaryMm,
-        PLAN_Y + 0.001,
-        getPlanPalette().floorOutline,
-        0.16,
-        f.id,
-      ),
-    );
-  }
+      if (level && f.levelId !== level) continue;
 
-  for (const rf of Object.values(elementsById)) {
-    if (rf.kind !== 'roof') continue;
-    if (kindHidden('roof')) continue;
+      holder.add(
+        horizontalOutlineMesh(
+          f.boundaryMm,
+          PLAN_Y + 0.001,
+          getPlanPalette().floorOutline,
+          0.16,
+          f.id,
+        ),
+      );
+    }
 
-    if (level && rf.referenceLevelId !== level) continue;
+    for (const rf of Object.values(elementsById)) {
+      if (rf.kind !== 'roof') continue;
+      if (kindHidden('roof')) continue;
 
-    holder.add(
-      horizontalOutlineMesh(
-        rf.footprintMm,
-        PLAN_Y + 0.004,
-        getPlanPalette().roofOutline,
-        0.2,
-        rf.id,
-      ),
-    );
+      if (level && rf.referenceLevelId !== level) continue;
+
+      holder.add(
+        horizontalOutlineMesh(
+          rf.footprintMm,
+          PLAN_Y + 0.004,
+          getPlanPalette().roofOutline,
+          0.2,
+          rf.id,
+        ),
+      );
+    }
   }
 
   for (const cl of Object.values(elementsById)) {

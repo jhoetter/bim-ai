@@ -753,6 +753,7 @@ export function PlanCanvas({
       planAnnotationHints: mergedAnnotationHints,
       planTagFontScales,
       plotScale,
+      lineWeights: draftingRef.current.lineWeights,
     });
 
     // B01 — apply hatch visibility per scale (no-op until hatch meshes are added)
@@ -768,10 +769,10 @@ export function PlanCanvas({
       const ch = grp.children[i]!;
       if ((ch.userData as { draftingGrid?: unknown }).draftingGrid) grp.remove(ch);
     }
-    // B01 — major/minor grid driven by draftingPaintFor visibility flags (spec §14.5).
-    const { showMajor, showMinor } = draftingRef.current?.grid ?? {
-      showMajor: true,
-      showMinor: false,
+    // B01 / CAN-V3-01 — grid passes driven by lineWeights; null = suppress entirely (spec §14.5).
+    const { gridMajor, gridMinor } = draftingRef.current?.lineWeights ?? {
+      gridMajor: 1,
+      gridMinor: null,
     };
     const span = camRef.current.half * 3.8;
     const minorStep = orthoExtents(camRef.current.half).stepMm / 1000;
@@ -792,8 +793,10 @@ export function PlanCanvas({
       g.userData.draftingGrid = true;
       grp.add(g);
     };
-    if (showMajor) addDraftGrid(majorStep, readPlanToken('--draft-grid-major', '#223042'), 0.45);
-    if (showMinor) addDraftGrid(minorStep, readPlanToken('--draft-grid-minor', '#1a2738'), 0.25);
+    if (gridMajor !== null)
+      addDraftGrid(majorStep, readPlanToken('--draft-grid-major', '#223042'), 0.45);
+    if (gridMinor !== null)
+      addDraftGrid(minorStep, readPlanToken('--draft-grid-minor', '#1a2738'), 0.25);
 
     // FED-04 — render imported DXF linework as a desaturated grey underlay
     // BEFORE the element-render loop so authored geometry sits on top.
