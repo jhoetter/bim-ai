@@ -881,6 +881,86 @@ async def schedule_derived_table(
 
 
 # ---------------------------------------------------------------------------
+# SCH-V3-01 — Schedule view rows endpoint
+# ---------------------------------------------------------------------------
+
+
+@api_router.get("/v3/models/{model_id}/schedules/{schedule_id}/rows")
+async def schedule_view_rows(
+    model_id: UUID,
+    schedule_id: str,
+    session: AsyncSession = Depends(get_session),
+    filter_expr: Annotated[str | None, Query(alias="filterExpr")] = None,
+    sort_key: Annotated[str | None, Query(alias="sortKey")] = None,
+    sort_dir: Annotated[str | None, Query(alias="sortDir")] = None,
+) -> list[dict[str, Any]]:
+    import math as _math
+
+    from bim_ai.elements import ScheduleElem as _ScheduleElem
+
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    doc = Document.model_validate(row.document)
+    sv = doc.elements.get(schedule_id)
+    if not isinstance(sv, _ScheduleElem) or not sv.category:
+        raise HTTPException(status_code=404, detail="Schedule view not found or has no category")
+
+    category = sv.category
+    effective_filter = filter_expr if filter_expr is not None else sv.filter_expr
+    effective_sort_key = sort_key if sort_key is not None else sv.sort_key
+    effective_sort_dir = sort_dir if sort_dir is not None else sv.sort_dir
+
+    rows: list[dict[str, Any]] = []
+    for elem_id, elem in doc.elements.items():
+        if getattr(elem, "kind", None) != category:
+            continue
+        fields: dict[str, Any] = {"id": elem_id}
+        name = getattr(elem, "name", None)
+        if name is not None:
+            fields["name"] = name
+        if category == "wall":
+            start = getattr(elem, "start", None)
+            end = getattr(elem, "end", None)
+            if start and end:
+                dx = end.x_mm - start.x_mm
+                dy = end.y_mm - start.y_mm
+                fields["lengthMm"] = round(_math.sqrt(dx * dx + dy * dy), 1)
+            t = getattr(elem, "thickness_mm", None)
+            if t is not None:
+                fields["thicknessMm"] = t
+            h = getattr(elem, "height_mm", None)
+            if h is not None:
+                fields["heightMm"] = h
+        elif category == "door":
+            w = getattr(elem, "width_mm", None)
+            if w is not None:
+                fields["widthMm"] = w
+        elif category == "window":
+            for attr, key in (("width_mm", "widthMm"), ("height_mm", "heightMm"), ("sill_height_mm", "sillHeightMm")):
+                v = getattr(elem, attr, None)
+                if v is not None:
+                    fields[key] = v
+        props = getattr(elem, "props", None)
+        if props:
+            fields.update(props)
+        if effective_filter:
+            fl = effective_filter.lower()
+            if not any(fl in str(v).lower() for v in fields.values()):
+                continue
+        rows.append({"elementId": elem_id, "fields": fields})
+
+    if effective_sort_key:
+        reverse = effective_sort_dir == "desc"
+        rows.sort(
+            key=lambda r: (r["fields"].get(effective_sort_key) is None, r["fields"].get(effective_sort_key, "")),
+            reverse=reverse,
+        )
+
+    return rows
+
+
+# ---------------------------------------------------------------------------
 # FAM-08 — Family catalog endpoints
 # ---------------------------------------------------------------------------
 

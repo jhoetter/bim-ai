@@ -2361,14 +2361,6 @@ class DecalElem(BaseModel):
 class PropertyDefinitionElem(BaseModel):
     """SCH-V3-01 — project-scoped custom property definition."""
 
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
-    kind: Literal["property_definition"] = "property_definition"
-    id: str
-    key: str
-    label: str
-    prop_kind: Literal["mm", "m2", "currency", "enum", "string", "bool", "date"] = Field(
-        alias="propKind"
-    )
     enum_values: list[str] | None = Field(default=None, alias="enumValues")
     default_value: Any | None = Field(default=None, alias="defaultValue")
     applies_to: list[str] = Field(alias="appliesTo")

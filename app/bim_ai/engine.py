@@ -4088,28 +4088,6 @@ def apply_inplace(
         case CreatePropertyDefinitionCmd():
             els[cmd.id] = PropertyDefinitionElem(
                 kind="property_definition",
-                id=cmd.id,
-                key=cmd.key,
-                label=cmd.label,
-                propKind=cmd.prop_kind,
-                enumValues=cmd.enum_values,
-                defaultValue=cmd.default_value,
-                appliesTo=cmd.applies_to,
-                showInSchedule=cmd.show_in_schedule,
-            )
-
-        case SetElementPropCmd():
-            target = els.get(cmd.element_id)
-            if target is None:
-                raise ValueError(f"set_element_prop: element '{cmd.element_id}' not found")
-            existing_props = getattr(target, "props", None) or {}
-            updated_props = {**existing_props, cmd.key: cmd.value}
-            els[cmd.element_id] = target.model_copy(update={"props": updated_props})
-
-        case CreateScheduleViewCmd():
-            eid = cmd.id
-            els[eid] = ScheduleElem(
-                kind="schedule",
                 id=eid,
                 name=cmd.name,
                 category=cmd.category,
