@@ -49,3 +49,7 @@ Statuses: `dispatched-pending-prompt` (writer subagent in flight), `dispatched` 
 - TKN-V3-01 (WP-005) merged — CMD-V3-01, OPT-V3-01, IMG-V3-01 are unblocked (dispatch after CMD-V3-01 prompt is written).
 - Concurrency cap: 8 heavy workers in flight at any time.
 - WP-002 re-dispatch is highest priority to clear the failed slot.
+
+## References
+
+- **Revit parity tracker** — `spec/revit-parity/README.md`: 120 features audited from a 6-hour Revit 2026 course (2026-05-08). Current status: 0 ✅ / 23 🟡 / 97 ❌. Priority gaps with **no WP yet**: wall type/assembly editing + Location Line (F-036–F-037), Rooms front-end placement (F-091–092), Levels UX / level heads (F-025–026), Temporary Hide/Isolate (F-047, F-101–102). Partially addressed by existing WPs: wall editing mechanics → `EDT-V3-01/02/04/05/06/12`; Project Browser → `CHR-V3-07`; Floor Edit Boundary → `EDT-V3-13`.

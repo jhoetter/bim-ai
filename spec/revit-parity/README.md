@@ -184,13 +184,13 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 
 ## Priority areas for parity investment
 
-Based on the frequency and centrality of features in the course:
+Based on the frequency and centrality of features in the course. WP cross-refs point to `spec/workpackage-tracker-v3.md`.
 
-1. **Wall tooling** (F-034–F-047) — walls are the most-touched feature across the entire course. Location line, join behavior, chain mode, and type editing are used in virtually every video.
-2. **Visibility / Graphic Overrides** (F-012, F-020, F-093) — used constantly for visual management of linked files and model categories.
-3. **Project Browser + view management** (F-003, F-027–F-033) — every workflow step involves switching views; without this, navigation overhead is enormous.
-4. **Rooms** (F-091–F-092) — backend logic exists; front-end interactive placement is the missing piece.
-5. **Levels UX** (F-025–F-026) — data model exists; needs level head display and interactive rename.
-6. **Temporary Hide/Isolate** (F-047, F-101–F-102) — used in almost every chapter for selective display.
-7. **Family Editor** (F-048–F-062) — this is a major architectural feature gap; long-term investment needed.
-8. **Floor Edit Boundary** (F-107) — common daily operation; sketch-mode edit of slab outlines.
+1. **Wall tooling** (F-034–F-047) — walls are the most-touched feature across the entire course. Location line, join behavior, chain mode, and type editing are used in virtually every video. _Editing mechanics partially addressed by `EDT-V3-01` (constraint rules), `EDT-V3-02` (snap cursor), `EDT-V3-04/05` (shortcuts + loop mode), `EDT-V3-06` (drag-the-number), `EDT-V3-12` (numeric override). Wall type/assembly editing and Location Line have **no WP yet**._
+2. **Visibility / Graphic Overrides** (F-012, F-020, F-093) — used constantly for visual management of linked files and model categories. _v3 deliberately does not clone the 120-toggle VG matrix (anti-pattern A8 → D8). The replacement is the status-bar discipline lens + view templates + right-click category override. No direct parity WP; by design._
+3. **Project Browser + view management** (F-003, F-027–F-033) — every workflow step involves switching views; without this, navigation overhead is enormous. _`CHR-V3-07` (Project Browser refresh, status: `next`) directly addresses this._
+4. **Rooms** (F-091–F-092) — backend logic exists (`room_derivation.py`); front-end interactive placement is the missing piece. _**No WP yet.**_
+5. **Levels UX** (F-025–F-026) — data model exists (`datum_levels.py`); needs level head display in elevation views and interactive rename. _**No WP yet.**_
+6. **Temporary Hide/Isolate** (F-047, F-101–F-102) — used in almost every chapter for selective display. _**No WP yet.**_
+7. **Family Editor** (F-048–F-062) — major architectural feature gap. v3's approach is a catalog model (`family_catalog_format.py`) rather than an in-app parametric editor. _Out of scope for v3; long-term vision item._
+8. **Floor Edit Boundary** (F-107) — common daily operation; sketch-mode edit of slab outlines. _`EDT-V3-13` (sketch-element grips, status: `next`) is the closest WP; full boundary re-sketch is a follow-on._
