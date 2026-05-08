@@ -3,7 +3,7 @@
   "checkpoint_id": "494e2fb0747f",
   "strategy": "manual-commit",
   "branch": "feat/v3-vie-v3-02-drafting-callout",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "packages/web/src/collab/ShareModal.tsx"
   ],
@@ -19,13 +19,19 @@
       "transcript": "/49/4e2fb0747f/1/full.jsonl",
       "content_hash": "/49/4e2fb0747f/1/content_hash.txt",
       "prompt": "/49/4e2fb0747f/1/prompt.txt"
+    },
+    {
+      "metadata": "/49/4e2fb0747f/2/metadata.json",
+      "transcript": "/49/4e2fb0747f/2/full.jsonl",
+      "content_hash": "/49/4e2fb0747f/2/content_hash.txt",
+      "prompt": "/49/4e2fb0747f/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 4032,
-    "cache_creation_tokens": 138953,
-    "cache_read_tokens": 7316115,
-    "output_tokens": 47694,
-    "api_call_count": 64
+    "input_tokens": 7011,
+    "cache_creation_tokens": 368469,
+    "cache_read_tokens": 12552583,
+    "output_tokens": 81038,
+    "api_call_count": 116
   }
 }

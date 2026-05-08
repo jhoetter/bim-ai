@@ -1,0 +1,49 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "494e2fb0747f",
+  "session_id": "5dfffc30-d636-4976-9bf4-c2b91e73d767",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T18:45:20.470979Z",
+  "branch": "feat/v3-vie-v3-02-drafting-callout",
+  "checkpoints_count": 1,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "197bfd5ef739",
+  "token_usage": {
+    "input_tokens": 2979,
+    "cache_creation_tokens": 229516,
+    "cache_read_tokens": 5236468,
+    "output_tokens": 33344,
+    "api_call_count": 52
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 1720,
+      "user_lines_removed": 2,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "app/bim_ai/milestones.py": 24,
+        "app/bim_ai/public_links.py": 34,
+        "app/tests/api/test_public_links_route.py": 334,
+        "app/tests/test_vie_v3_02.py": 255,
+        "app/tests/test_vie_v3_03.py": 255,
+        "packages/web/src/collab/MilestoneDialog.tsx": 191,
+        "packages/web/src/collab/PublicLinkBanner.tsx": 39,
+        "packages/web/src/collab/milestoneStore.ts": 66,
+        "packages/web/src/collab/viewTemplateStore.ts": 134,
+        "packages/web/src/plan/CalloutMarker.tsx": 74,
+        "packages/web/src/plan/ViewBreakCompositor.tsx": 74,
+        "packages/web/src/plan/useCutProfile.ts": 10,
+        "packages/web/src/workspace/InspectorContent.tsx": 6,
+        "packages/web/src/workspace/PropagationToast.tsx": 66,
+        "packages/web/src/workspace/ViewTemplateEditPanel.tsx": 158
+      },
+      "user_removed_per_file": {
+        "packages/web/src/workspace/InspectorContent.tsx": 2
+      }
+    }
+  ]
+}
