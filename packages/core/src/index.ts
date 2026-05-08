@@ -29,6 +29,22 @@ export type ToposolidElem = {
   discipline?: string;
 };
 
+// ---------------------------------------------------------------------------
+// CAN-V3-02 — Hatch pattern definition
+// ---------------------------------------------------------------------------
+
+/** CAN-V3-02 — built-in hatch pattern; scales with paper-mm at plot scale. */
+export type HatchPatternDef = {
+  kind: 'hatch_pattern_def';
+  id: string;
+  name: string;
+  paperMmRepeat: number;
+  rotationDeg: number;
+  strokeWidthMm: number;
+  patternKind: 'lines' | 'crosshatch' | 'dots' | 'curve' | 'svg';
+  svgSource?: string | null;
+};
+
 export type ElemKind =
   | 'toposolid'
   | 'project_settings'
@@ -91,6 +107,7 @@ export type ElemKind =
   | 'placed_tag'
   | 'detail_line'
   | 'detail_region'
+  | 'draft_detail_region'
   | 'text_note'
   | 'sweep'
   | 'dormer'
@@ -102,7 +119,6 @@ export type ElemKind =
   | 'phase'
   | 'soffit'
   | 'sun_settings'
-  | 'toposolid'
   | 'view'
   | 'edge_profile_run'
   | 'roof_join'
@@ -114,7 +130,9 @@ export type ElemKind =
   | 'pipe'
   | 'fixture'
   | 'material'
-  | 'decal';
+  | 'decal'
+  | 'hatch_pattern_def'
+  | 'property_definition';
 
 export type PhaseFilter = 'all' | 'existing' | 'demolition' | 'new';
 
@@ -178,6 +196,8 @@ export type View = {
   breaks?: ViewBreak[];
   scale?: number;
   detailLevel?: 'coarse' | 'medium' | 'fine';
+  /** DSC-V3-02: per-view discipline lens; 'show_all' = foreground for all elements. */
+  defaultLens?: ViewLensMode;
 };
 
 /** FED-04: 2D linework primitive parsed from a DXF underlay. */
@@ -679,6 +699,8 @@ export type Element =
       optionId?: string | null;
       /** DSC-V3-01: discipline tag. */
       discipline?: DisciplineTag | null;
+      /** SCH-V3-01: custom property values. */
+      props?: Record<string, unknown>;
     }
   | {
       kind: 'door';
@@ -708,6 +730,8 @@ export type Element =
       optionId?: string | null;
       /** DSC-V3-01: discipline tag. */
       discipline?: DisciplineTag | null;
+      /** SCH-V3-01: custom property values. */
+      props?: Record<string, unknown>;
     }
   | {
       kind: 'window';
@@ -741,6 +765,8 @@ export type Element =
       optionId?: string | null;
       /** DSC-V3-01: discipline tag. */
       discipline?: DisciplineTag | null;
+      /** SCH-V3-01: custom property values. */
+      props?: Record<string, unknown>;
     }
   | {
       kind: 'wall_opening';
@@ -773,6 +799,8 @@ export type Element =
       pinned?: boolean;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
+      /** SCH-V3-01: custom property values. */
+      props?: Record<string, unknown>;
     }
   | {
       kind: 'grid_line';
@@ -857,6 +885,8 @@ export type Element =
       optionId?: string | null;
       /** DSC-V3-01: discipline tag. */
       discipline?: DisciplineTag | null;
+      /** SCH-V3-01: custom property values. */
+      props?: Record<string, unknown>;
     }
   | {
       kind: 'roof';
@@ -894,6 +924,8 @@ export type Element =
       optionId?: string | null;
       /** DSC-V3-01: discipline tag. */
       discipline?: DisciplineTag | null;
+      /** SCH-V3-01: custom property values. */
+      props?: Record<string, unknown>;
     }
   | {
       kind: 'stair';
@@ -1114,6 +1146,8 @@ export type Element =
       elementOverrides?: Array<{ categoryOrId: string; alternateRender: string }>;
       /** KRN-V3-04: per-set option lock; key = optionSetId, value = optionId. */
       optionLocks?: Record<string, string>;
+      /** DSC-V3-02: per-view discipline lens; 'show_all' = foreground for all elements. */
+      defaultLens?: ViewLensMode;
     }
   | {
       kind: 'view_template';
@@ -1148,6 +1182,16 @@ export type Element =
       sheetId?: string | null;
       filters?: Record<string, unknown>;
       grouping?: Record<string, unknown>;
+      /** SCH-V3-01: ElemKind value for filtering rows. */
+      category?: string | null;
+      /** SCH-V3-01: column definitions for the schedule view. */
+      columns?: Array<{ fieldKey: string; label: string; width?: number }>;
+      /** SCH-V3-01: default filter expression. */
+      filterExpr?: string | null;
+      /** SCH-V3-01: default sort field key. */
+      sortKey?: string | null;
+      /** SCH-V3-01: default sort direction. */
+      sortDir?: 'asc' | 'desc' | null;
     }
   | {
       kind: 'site';
@@ -1216,15 +1260,24 @@ export type Element =
       style?: 'solid' | 'dashed' | 'dotted';
     }
   | {
-      /** ANN-01 — view-local 2D filled region (annotation only). */
+      /** ANN-01 / ANN-V3-01 — view-local 2D filled region (annotation only). */
       kind: 'detail_region';
       id: string;
-      hostViewId: string;
-      boundaryMm: XY[];
+      // v2 fields (ANN-01)
+      hostViewId?: string;
+      boundaryMm?: XY[];
       fillColour?: string;
       fillPattern?: 'solid' | 'hatch_45' | 'hatch_90' | 'crosshatch' | 'dots';
       strokeMm?: number;
       strokeColour?: string;
+      // v3 fields (ANN-V3-01)
+      viewId?: string | null;
+      vertices?: Array<{ x: number; y: number }> | null;
+      closed?: boolean | null;
+      hatchId?: string | null;
+      lineweightOverride?: number | null;
+      phaseCreated?: string | null;
+      phaseDemolished?: string | null;
     }
   | {
       /** ANN-01 — view-local text note (annotation only). */
@@ -1258,6 +1311,8 @@ export type Element =
       phaseDemolished?: string | null;
       /** DSC-V3-01: discipline tag. */
       discipline?: DisciplineTag | null;
+      /** SCH-V3-01: custom property values. */
+      props?: Record<string, unknown>;
     }
   | {
       kind: 'beam';
@@ -1277,6 +1332,8 @@ export type Element =
       phaseDemolished?: string | null;
       /** DSC-V3-01: discipline tag. */
       discipline?: DisciplineTag | null;
+      /** SCH-V3-01: custom property values. */
+      props?: Record<string, unknown>;
     }
   | {
       kind: 'ceiling';
@@ -1291,6 +1348,8 @@ export type Element =
       phaseDemolished?: string | null;
       /** DSC-V3-01: discipline tag. */
       discipline?: DisciplineTag | null;
+      /** SCH-V3-01: custom property values. */
+      props?: Record<string, unknown>;
     }
   | {
       kind: 'color_fill_legend';
@@ -1661,7 +1720,9 @@ export type Element =
   | View
   | ToposolidElem
   | AssetLibraryEntryElem
-  | PlacedAssetElem;
+  | PlacedAssetElem
+  | HatchPatternDef
+  | PropertyDefinitionElem;
 
 export type Violation = {
   ruleId: string;
@@ -1953,11 +2014,14 @@ export type AssumptionEntry = {
   evidence?: string | null;
 };
 
-/** CHR-V3-03 / DSC-V3-02 — lens mode for the status-bar discipline filter. */
+/** CHR-V3-03 — workspace-level status-bar discipline filter (LNS-V3-01 UI). */
 export type LensMode = 'all' | 'architecture' | 'structure' | 'mep' | 'energy' | 'coordination';
 
-/** LNS-V3-01 — undoable command dispatched by the lens dropdown. */
-export type SetViewLensCmd = { type: 'set_view_lens'; viewId: string; lens: LensMode };
+/** DSC-V3-02 — per-view discipline lens stored on view elements. */
+export type ViewLensMode = 'show_arch' | 'show_struct' | 'show_mep' | 'show_all';
+
+/** LNS-V3-01/DSC-V3-02 — undoable command dispatched by the lens dropdown. */
+export type SetViewLensCmd = { type: 'set_view_lens'; viewId: string; lens: ViewLensMode };
 
 // ---------------------------------------------------------------------------
 // JOB-V3-01 — long-running-operations job types
@@ -2205,6 +2269,35 @@ export type DecalElem = {
 };
 
 // ---------------------------------------------------------------------------
+// SCH-V3-01 — Custom property definition
+// ---------------------------------------------------------------------------
+
+/** SCH-V3-01 — project-scoped custom property definition. */
+export type PropertyDefinitionElem = {
+  kind: 'property_definition';
+  id: string;
+  key: string;
+  label: string;
+  propKind: 'mm' | 'm2' | 'currency' | 'enum' | 'string' | 'bool' | 'date';
+  enumValues?: string[];
+  defaultValue?: unknown;
+  appliesTo: string[];
+  showInSchedule: boolean;
+};
+
+/** SCH-V3-01 — V3 schedule-view element (extends the existing schedule kind). */
+export type ScheduleViewElem = {
+  kind: 'schedule';
+  id: string;
+  name: string;
+  category: string;
+  columns: Array<{ fieldKey: string; label: string; width?: number }>;
+  filterExpr?: string | null;
+  sortKey?: string | null;
+  sortDir?: 'asc' | 'desc' | null;
+};
+
+// ---------------------------------------------------------------------------
 // IMG-V3-01 — StructuredLayout wire types
 // ---------------------------------------------------------------------------
 
@@ -2256,4 +2349,46 @@ export type StructuredLayout = {
   openings: OpeningHint[];
   ocrLabels: OcrLabel[];
   advisories: Advisory[];
+};
+
+// ---------------------------------------------------------------------------
+// ANN-V3-01 — Detail-region drawing-mode authoring
+// ---------------------------------------------------------------------------
+
+export type DetailRegionElem = {
+  kind: 'detail_region';
+  id: string;
+  viewId: string;
+  vertices: Array<{ x: number; y: number }>;
+  closed: boolean;
+  hatchId?: string | null;
+  lineweightOverride?: number | null;
+  phaseCreated?: string | null;
+  phaseDemolished?: string | null;
+};
+
+/** Transient: live-preview vertices before commit. Never persisted. */
+export type DraftDetailRegionElem = {
+  kind: 'draft_detail_region';
+  viewId: string;
+  vertices: Array<{ x: number; y: number }>;
+  closed: boolean;
+  hatchId?: string | null;
+};
+
+// ---------------------------------------------------------------------------
+// EDT-V3-06 — Helper dimension descriptor
+// ---------------------------------------------------------------------------
+
+export type HelperDimensionDescriptor = {
+  id: string;
+  label: string;
+  valueMm: number;
+  /** Start and end points in plan mm coordinates, for drawing the dimension line. */
+  fromPoint: XY;
+  toPoint: XY;
+  /** Called when user commits a new value; returns the command to dispatch. */
+  onCommit: (newValueMm: number) => Record<string, unknown>;
+  /** When true the chip is display-only and clicking it does nothing. */
+  readOnly?: boolean;
 };

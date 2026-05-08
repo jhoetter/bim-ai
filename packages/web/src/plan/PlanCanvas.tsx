@@ -65,6 +65,7 @@ import { gripsFor } from './grip-providers';
 import { tempDimensionsFor, type TempDimTarget } from './tempDimensions';
 import { findLockedConstraintFor } from './tempDimensionLockState';
 import { GripLayer, TempDimLayer } from './GripLayer';
+import { HelperDimsLayer } from './HelperDimsLayer';
 import {
   buildPlanProjectionQuery,
   extractPlanAnnotationHints,
@@ -162,7 +163,13 @@ type Draft =
   | { kind: 'property-line'; sx: number; sy: number }
   | { kind: 'area-boundary'; sx: number; sy: number }
   | { kind: 'masking-region'; sx: number; sy: number }
-  | { kind: 'plan-region'; sx: number; sy: number };
+  | { kind: 'plan-region'; sx: number; sy: number }
+  | {
+      kind: 'detail-region';
+      verts: Array<{ xMm: number; yMm: number }>;
+      closed: boolean;
+      hatchId: string | null;
+    };
 
 function nearestWallAt(
   elementsById: Record<string, Element>,
@@ -762,6 +769,45 @@ export function PlanCanvas({
         ch.visible = draftingRef.current.visibleHatches.some(
           (h) => h.kind === (ch.userData as { hatchKind: string }).hatchKind,
         );
+      }
+    }
+
+    // DSC-V3-02 — discipline lens ghost pass: 25% opacity for non-matching elements.
+    {
+      const planView = activePlanViewId ? elementsById[activePlanViewId] : null;
+      const lens =
+        planView && 'defaultLens' in planView ? (planView.defaultLens as string) : 'show_all';
+      if (lens !== 'show_all') {
+        const LENS_TO_DISC: Record<string, string> = {
+          show_arch: 'arch',
+          show_struct: 'struct',
+          show_mep: 'mep',
+        };
+        const expected = LENS_TO_DISC[lens];
+        const witnessColor = readPlanToken('--draft-witness', '#64748b');
+        const witnessThree = new THREE.Color(witnessColor);
+        grp.traverse((ch) => {
+          const pickId = (ch.userData as { bimPickId?: string }).bimPickId;
+          if (typeof pickId !== 'string') return;
+          const el = elementsById[pickId];
+          if (!el) return;
+          const disc =
+            ('discipline' in el ? (el.discipline as string | null | undefined) : null) ?? 'arch';
+          const isGhost = disc !== expected;
+          if (ch instanceof THREE.Mesh) {
+            const mat = ch.material as THREE.Material | THREE.Material[];
+            const applyGhost = (m: THREE.Material) => {
+              m.transparent = true;
+              m.opacity = isGhost ? 0.25 : 1.0;
+              const anyMat = m as THREE.Material & { color?: THREE.Color };
+              if (isGhost && anyMat.color instanceof THREE.Color) {
+                anyMat.color.copy(witnessThree);
+              }
+            };
+            if (Array.isArray(mat)) mat.forEach(applyGhost);
+            else applyGhost(mat);
+          }
+        });
       }
     }
 
@@ -2524,6 +2570,40 @@ export function PlanCanvas({
         rm.verts.push({ xMm: sp.xMm, yMm: sp.yMm });
         bumpGeom((x) => x + 1);
       }
+      if (planTool === 'detail-region') {
+        let dr = draftRef.current;
+        if (!dr || dr.kind !== 'detail-region') {
+          draftRef.current = {
+            kind: 'detail-region',
+            verts: [{ xMm: sp.xMm, yMm: sp.yMm }],
+            closed: false,
+            hatchId: null,
+          };
+          bumpGeom((x) => x + 1);
+          return;
+        }
+        const fst = dr.verts[0];
+        if (fst && dr.verts.length >= 3 && Math.hypot(sp.xMm - fst.xMm, sp.yMm - fst.yMm) < 520) {
+          onSemanticCommand({
+            type: 'create_detail_region',
+            id: crypto.randomUUID(),
+            viewId: activePlanViewId,
+            vertices: dr.verts.map((v) => ({ x: v.xMm, y: v.yMm })),
+            closed: true,
+            hatchId: dr.hatchId,
+          });
+          draftRef.current = undefined;
+          bumpGeom((x) => x + 1);
+          if (previewRef.current) {
+            grp.remove(previewRef.current);
+            previewRef.current.geometry.dispose();
+            previewRef.current = null;
+          }
+          return;
+        }
+        dr.verts.push({ xMm: sp.xMm, yMm: sp.yMm });
+        bumpGeom((x) => x + 1);
+      }
     };
 
     const onWheel = (ev: WheelEvent) => {
@@ -2675,6 +2755,32 @@ export function PlanCanvas({
               wallIds: effect.commitJoin.wallIds,
               variant: effect.commitJoin.variant,
             });
+          }
+        }
+      }
+      if (planTool === 'detail-region') {
+        const dr = draftRef.current;
+        if (dr && dr.kind === 'detail-region') {
+          if (ev.key === 'Enter') {
+            ev.preventDefault();
+            if (dr.verts.length >= 2) {
+              onSemanticCommand({
+                type: 'create_detail_region',
+                id: crypto.randomUUID(),
+                viewId: activePlanViewId,
+                vertices: dr.verts.map((v) => ({ x: v.xMm, y: v.yMm })),
+                closed: dr.closed,
+                hatchId: dr.hatchId,
+              });
+            }
+            draftRef.current = undefined;
+            bumpGeom((x) => x + 1);
+            return;
+          }
+          if (ev.key === 'r' || ev.key === 'R') {
+            dr.closed = !dr.closed;
+            bumpGeom((x) => x + 1);
+            return;
           }
         }
       }
@@ -3120,6 +3226,13 @@ export function PlanCanvas({
           }
         />
       )}
+      {/* EDT-V3-06 — helper dimension chips on single-element selection. */}
+      <HelperDimsLayer
+        selectedElemId={selectedId ?? null}
+        elementsById={elementsById}
+        planToScreen={worldToScreen}
+        onDispatch={onSemanticCommand}
+      />
       {/* EDT-01 — numeric override input rendered at the cursor. */}
       {numericInput && gripDragRef.current && (
         <div
