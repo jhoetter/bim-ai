@@ -3,9 +3,11 @@
   "checkpoint_id": "1666256b7af0",
   "strategy": "manual-commit",
   "branch": "feat/v3-out-v3-01-live-web-link",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": [
-    "packages/cli/cli.mjs"
+    "app/tests/test_out_v3_01.py",
+    "packages/cli/cli.mjs",
+    "packages/web/src/collab/SharePresentationModal.tsx"
   ],
   "sessions": [
     {
@@ -19,13 +21,19 @@
       "transcript": "/16/66256b7af0/1/full.jsonl",
       "content_hash": "/16/66256b7af0/1/content_hash.txt",
       "prompt": "/16/66256b7af0/1/prompt.txt"
+    },
+    {
+      "metadata": "/16/66256b7af0/2/metadata.json",
+      "transcript": "/16/66256b7af0/2/full.jsonl",
+      "content_hash": "/16/66256b7af0/2/content_hash.txt",
+      "prompt": "/16/66256b7af0/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 379,
-    "cache_creation_tokens": 320533,
-    "cache_read_tokens": 24485233,
-    "output_tokens": 159970,
-    "api_call_count": 263
+    "input_tokens": 560,
+    "cache_creation_tokens": 564103,
+    "cache_read_tokens": 41532187,
+    "output_tokens": 253493,
+    "api_call_count": 438
   }
 }
