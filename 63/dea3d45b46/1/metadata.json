@@ -1,0 +1,39 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "63dea3d45b46",
+  "session_id": "484b3fc4-cdb5-4d63-973e-ff931c99ea77",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T22:51:44.840351Z",
+  "branch": "feat/v3-sch-v3-01-schedule-view",
+  "checkpoints_count": 0,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "99af9d6f9944",
+  "checkpoint_transcript_start": 2037,
+  "transcript_lines_at_start": 2037,
+  "token_usage": {
+    "input_tokens": 92,
+    "cache_creation_tokens": 78999,
+    "cache_read_tokens": 8126734,
+    "output_tokens": 37638,
+    "api_call_count": 88
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 126,
+      "user_lines_removed": 5,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "app/bim_ai/routes_api.py": 80,
+        "packages/cli/lib/one-family-home-commands.mjs": 19,
+        "packages/core/src/index.ts": 27
+      },
+      "user_removed_per_file": {
+        "packages/cli/lib/one-family-home-commands.mjs": 5
+      }
+    }
+  ]
+}
