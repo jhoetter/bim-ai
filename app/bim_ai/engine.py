@@ -54,6 +54,7 @@ from bim_ai.commands import (
     CreateRoofJoinCmd,
     CreateRoofOpeningCmd,
     CreateEdgeProfileRunCmd,
+    SetEdgeProfileRunModeCmd,
     CreateSoffitCmd,
     CreateRoomOutlineCmd,
     CreateRoomPolyCmd,
@@ -239,6 +240,9 @@ from bim_ai.elements import (
     ViewTemplateElem,
     VoidCutElem,
     WallBasisLine,
+    WallEdgeFixed,
+    WallEdgeSpan,
+    WallEdgeSpec,
     WallElem,
     WallOpeningElem,
     WallStack,
@@ -626,6 +630,38 @@ def _room_programme_field_updates(
 
 def coerce_command(data: dict[str, Any]) -> Command:
     return command_adapter.validate_python(data)
+
+
+def _parse_wall_edge_spec(host_edge: Any) -> WallEdgeSpec | None:
+    if isinstance(host_edge, (WallEdgeFixed, WallEdgeSpan)):
+        return host_edge
+    if isinstance(host_edge, dict):
+        if "kind" in host_edge and host_edge["kind"] in ("top", "bottom"):
+            return WallEdgeFixed(kind=host_edge["kind"])
+        if "startMm" in host_edge and "endMm" in host_edge and "kind" not in host_edge:
+            return WallEdgeSpan(startMm=host_edge["startMm"], endMm=host_edge["endMm"])
+    return None
+
+
+def _validate_wall_edge_profile_run(host_wall: "WallElem", host_edge: WallEdgeSpec) -> None:
+    if isinstance(host_edge, WallEdgeSpan):
+        if host_edge.start_mm < 0:
+            raise ValueError("createEdgeProfileRun.hostEdge.startMm must be >= 0")
+        if host_edge.start_mm >= host_edge.end_mm:
+            raise ValueError("createEdgeProfileRun.hostEdge.startMm must be < endMm")
+        if host_edge.end_mm > host_wall.height_mm:
+            raise ValueError(
+                f"createEdgeProfileRun.hostEdge.endMm ({host_edge.end_mm}) exceeds wall height ({host_wall.height_mm})"
+            )
+
+
+def compute_wall_corner_mitre_angle(
+    wall_a_direction_deg: float, wall_b_direction_deg: float
+) -> float:
+    interior = abs(wall_b_direction_deg - wall_a_direction_deg) % 360
+    if interior > 180:
+        interior = 360 - interior
+    return interior / 2.0
 
 
 def _dormer_footprint_polygon_mm(
@@ -2283,25 +2319,49 @@ def apply_inplace(
                 raise ValueError("createEdgeProfileRun.profileFamilyId must be a non-empty string")
             if cmd.miter_mode not in ("auto", "manual"):
                 raise ValueError("createEdgeProfileRun.miterMode must be 'auto' or 'manual'")
-            if isinstance(host_el, RoofElem) and isinstance(cmd.host_edge, str):
-                pts = [(p.x_mm, p.y_mm) for p in host_el.footprint_mm]
-                if len(pts) >= 3:
-                    edge_profile_run_path_mm(
-                        pts,
-                        cmd.host_edge,
-                        overhang_mm=host_el.overhang_mm,
-                        slope_deg=host_el.slope_deg,
+            if isinstance(host_el, WallElem):
+                wall_edge = _parse_wall_edge_spec(cmd.host_edge)
+                if wall_edge is None:
+                    raise ValueError(
+                        "createEdgeProfileRun.hostEdge must be a WallEdgeFixed {'kind': 'top'|'bottom'} "
+                        "or WallEdgeSpan {'startMm': ..., 'endMm': ...} when hostElementId is a wall"
                     )
+                _validate_wall_edge_profile_run(host_el, wall_edge)
+                resolved_host_edge: Any = wall_edge
+            elif isinstance(host_el, RoofElem):
+                if isinstance(cmd.host_edge, str):
+                    pts = [(p.x_mm, p.y_mm) for p in host_el.footprint_mm]
+                    if len(pts) >= 3:
+                        edge_profile_run_path_mm(
+                            pts,
+                            cmd.host_edge,
+                            overhang_mm=host_el.overhang_mm,
+                            slope_deg=host_el.slope_deg,
+                        )
+                resolved_host_edge = cmd.host_edge
+            else:
+                raise ValueError(
+                    f"createEdgeProfileRun.hostElementId '{cmd.host_element_id}' must reference a Wall or Roof"
+                )
             els[eid] = EdgeProfileRunElem(
                 kind="edge_profile_run",
                 id=eid,
                 name=cmd.name,
                 host_element_id=cmd.host_element_id,
-                host_edge=cmd.host_edge,
+                host_edge=resolved_host_edge,
                 profile_family_id=cmd.profile_family_id,
                 offset_mm=cmd.offset_mm,
                 miter_mode=cmd.miter_mode,
+                mode=cmd.mode,
             )
+
+        case SetEdgeProfileRunModeCmd():
+            run = els.get(cmd.run_id)
+            if not isinstance(run, EdgeProfileRunElem):
+                raise ValueError(
+                    f"setEdgeProfileRunMode.runId '{cmd.run_id}' must reference an EdgeProfileRun"
+                )
+            els[cmd.run_id] = run.model_copy(update={"mode": cmd.mode})
 
         # TODO API-V3-01
         case CreateSoffitCmd():

@@ -484,6 +484,12 @@ export type Element =
       phaseDemolished?: string | null;
       /** KRN-V3-02: stacked wall definition. When set, components are stacked base-up. */
       stack?: WallStack;
+      /** KRN-V3-07: top-vs-base XY offset for leaning walls (mm). */
+      leanMm?: { xMm: number; yMm: number } | null;
+      /** KRN-V3-07: top thickness / base thickness ratio; 1 = prismatic, must be in (0.1, 10). */
+      taperRatio?: number | null;
+      /** CMD-V3-02: provenance trace linking this element to its originating bundle. */
+      agentTrace?: AgentTrace;
     }
   | {
       kind: 'door';
@@ -506,6 +512,8 @@ export type Element =
       pinned?: boolean;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
+      /** CMD-V3-02: provenance trace linking this element to its originating bundle. */
+      agentTrace?: AgentTrace;
     }
   | {
       kind: 'window';
@@ -532,6 +540,8 @@ export type Element =
       pinned?: boolean;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
+      /** CMD-V3-02: provenance trace linking this element to its originating bundle. */
+      agentTrace?: AgentTrace;
     }
   | {
       kind: 'wall_opening';
@@ -637,6 +647,8 @@ export type Element =
       phaseId?: string | null;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
+      /** CMD-V3-02: provenance trace linking this element to its originating bundle. */
+      agentTrace?: AgentTrace;
     }
   | {
       kind: 'roof';
@@ -667,6 +679,8 @@ export type Element =
       phaseId?: string | null;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
+      /** CMD-V3-02: provenance trace linking this element to its originating bundle. */
+      agentTrace?: AgentTrace;
     }
   | {
       kind: 'stair';
@@ -709,6 +723,8 @@ export type Element =
       pinned?: boolean;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
+      /** CMD-V3-02: provenance trace linking this element to its originating bundle. */
+      agentTrace?: AgentTrace;
     }
   | {
       kind: 'slab_opening';
@@ -739,6 +755,8 @@ export type Element =
       pinned?: boolean;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
+      /** CMD-V3-02: provenance trace linking this element to its originating bundle. */
+      agentTrace?: AgentTrace;
     }
   | {
       kind: 'family_type';
