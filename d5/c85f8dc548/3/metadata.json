@@ -1,0 +1,40 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "d5c85f8dc548",
+  "session_id": "665eb74d-57eb-44dc-91bb-3fdd25d3107f",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T16:58:47.220566Z",
+  "branch": "feat/v3-job-v3-01-jobs-panel",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "app/bim_ai/cmd/apply_bundle.py",
+    "app/bim_ai/cmd/types.py",
+    "app/tests/cmd/test_apply_bundle_engine.py",
+    "app/tests/cmd/test_assumption_log.py",
+    "packages/web/src/inspector/AssumptionLogSection.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "1e95fc3292b9",
+  "checkpoint_transcript_start": 559,
+  "transcript_lines_at_start": 559,
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 0
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-08T16:58:47.201463Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 376,
+    "human_modified": 69,
+    "human_removed": 0,
+    "total_committed": 376,
+    "total_lines_changed": 445,
+    "agent_percentage": 0,
+    "metric_version": 2
+  }
+}
