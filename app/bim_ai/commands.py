@@ -6,6 +6,8 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from bim_ai.elements import (
     CameraMm,
+    ConstraintRefRow,
+    ConstraintRule,
     CurtainPanelOverride,
     DormerPositionOnRoof,
     DormerRoofKind,
@@ -1422,6 +1424,25 @@ class CreateCeilingCmd(BaseModel):
     ceiling_type_id: str | None = Field(default=None, alias="ceilingTypeId")
 
 
+class CreateConstraintCmd(BaseModel):
+    """EDT-02 — author a geometric constraint between element groups.
+
+    The padlock UI on a temp-dimension authors `equal_distance` between
+    two walls; other rules are accepted shapes for forward compatibility
+    but currently pass-through in the evaluator.
+    """
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createConstraint"] = "createConstraint"
+    id: str | None = None
+    name: str = ""
+    rule: ConstraintRule
+    refs_a: list[ConstraintRefRow] = Field(alias="refsA")
+    refs_b: list[ConstraintRefRow] = Field(alias="refsB")
+    locked_value_mm: float | None = Field(default=None, alias="lockedValueMm")
+    severity: Literal["warning", "error"] = "error"
+
+
 Command = Annotated[
     CreateLevelCmd
     | CreateWallCmd
@@ -1533,6 +1554,7 @@ Command = Annotated[
     | SetWallJoinVariantCmd
     | CreateColumnCmd
     | CreateBeamCmd
-    | CreateCeilingCmd,
+    | CreateCeilingCmd
+    | CreateConstraintCmd,
     Field(discriminator="type"),
 ]

@@ -62,6 +62,7 @@ import {
 import { type DraftMutation, type GripDescriptor } from './gripProtocol';
 import { gripsFor } from './grip-providers';
 import { tempDimensionsFor, type TempDimTarget } from './tempDimensions';
+import { findLockedConstraintFor } from './tempDimensionLockState';
 import { GripLayer, TempDimLayer } from './GripLayer';
 import {
   buildPlanProjectionQuery,
@@ -2697,11 +2698,27 @@ export function PlanCanvas({
     [onSemanticCommand],
   );
 
-  const handleTempDimLockClick = useCallback((_target: TempDimTarget) => {
-    // EDT-02 territory — render a hint tooltip via title attribute,
-    // emit no command.
-    void _target;
-  }, []);
+  const handleTempDimLockClick = useCallback(
+    (target: TempDimTarget) => {
+      // EDT-02 — author a `createConstraint` capturing the current
+      // measured distance between the two walls. The engine rejects any
+      // subsequent move that breaks the lock (error severity).
+      const elementsList = Object.values(elementsById);
+      const existing = findLockedConstraintFor(target.aId, target.bId, elementsList);
+      if (existing) return; // already locked — no-op
+      const cid = `cstr-${crypto.randomUUID().slice(0, 10)}`;
+      void onSemanticCommand({
+        type: 'createConstraint',
+        id: cid,
+        rule: 'equal_distance',
+        refsA: [{ elementId: target.aId, anchor: 'center' }],
+        refsB: [{ elementId: target.bId, anchor: 'center' }],
+        lockedValueMm: target.distanceMm,
+        severity: 'error',
+      });
+    },
+    [elementsById, onSemanticCommand],
+  );
 
   const sb = THREE.MathUtils.clamp(halfUi * 0.25, 0.2, 6);
   const zoomPresets = [
@@ -2892,6 +2909,7 @@ export function PlanCanvas({
           worldToScreen={worldToScreen}
           onTargetClick={handleTempDimClick}
           onLockClick={handleTempDimLockClick}
+          isLocked={(t) => !!findLockedConstraintFor(t.aId, t.bId, Object.values(elementsById))}
         />
       )}
       {/* EDT-01 — grip layer (raycast above element pick so grips win

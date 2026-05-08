@@ -141,6 +141,10 @@ export interface TempDimLayerProps {
   worldToScreen: (xy: { xMm: number; yMm: number }) => ScreenPoint;
   onTargetClick: (target: TempDimTarget) => void;
   onLockClick: (target: TempDimTarget) => void;
+  /** EDT-02 — predicate returning whether the target already has a
+   *  matching `ConstraintElem` in the world. Drives the open- vs
+   *  filled-padlock glyph swap. */
+  isLocked?: (target: TempDimTarget) => boolean;
 }
 
 function formatMm(mm: number): string {
@@ -153,6 +157,7 @@ export function TempDimLayer({
   worldToScreen,
   onTargetClick,
   onLockClick,
+  isLocked,
 }: TempDimLayerProps) {
   if (targets.length === 0) return null;
   return (
@@ -223,31 +228,39 @@ export function TempDimLayer({
             >
               {formatMm(t.distanceMm)}
             </button>
-            <button
-              type="button"
-              data-testid={`temp-dim-lock-${t.id}`}
-              onClick={() => onLockClick(t)}
-              style={{
-                position: 'absolute',
-                left: cx + 32,
-                top: cy - 10,
-                width: 18,
-                height: 18,
-                pointerEvents: 'auto',
-                cursor: 'pointer',
-                background: 'rgba(20,28,42,0.75)',
-                color: '#7dd3fc',
-                fontSize: 11,
-                border: '1px solid rgba(125,211,252,0.4)',
-                borderRadius: 3,
-                lineHeight: '15px',
-                padding: 0,
-              }}
-              title="Constraint locks land in EDT-02"
-              aria-label="Toggle dimension lock (EDT-02)"
-            >
-              🔓
-            </button>
+            {(() => {
+              const locked = isLocked ? isLocked(t) : false;
+              return (
+                <button
+                  type="button"
+                  data-testid={`temp-dim-lock-${t.id}`}
+                  data-locked={locked ? 'true' : 'false'}
+                  onClick={() => onLockClick(t)}
+                  style={{
+                    position: 'absolute',
+                    left: cx + 32,
+                    top: cy - 10,
+                    width: 18,
+                    height: 18,
+                    pointerEvents: 'auto',
+                    cursor: 'pointer',
+                    background: locked ? 'rgba(252,211,77,0.85)' : 'rgba(20,28,42,0.75)',
+                    color: locked ? '#0b1220' : '#7dd3fc',
+                    fontSize: 11,
+                    border: locked
+                      ? '1px solid rgba(252,211,77,0.9)'
+                      : '1px solid rgba(125,211,252,0.4)',
+                    borderRadius: 3,
+                    lineHeight: '15px',
+                    padding: 0,
+                  }}
+                  title={locked ? 'Locked distance — click again is a no-op' : 'Lock this distance'}
+                  aria-label={locked ? 'Locked dimension' : 'Lock dimension'}
+                >
+                  {locked ? '🔒' : '🔓'}
+                </button>
+              );
+            })()}
           </div>
         );
       })}

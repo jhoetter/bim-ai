@@ -61,7 +61,8 @@ export type ElemKind =
   | 'dormer'
   | 'balcony'
   | 'area'
-  | 'masking_region';
+  | 'masking_region'
+  | 'constraint';
 
 export type Text3dFontFamily = 'helvetiker' | 'optimer' | 'gentilis';
 
@@ -274,6 +275,41 @@ export type ClashResult = {
    */
   linkChainA?: string[];
   linkChainB?: string[];
+};
+
+/** EDT-02 — supported geometric constraint rules. Only `equal_distance`
+ *  is currently evaluated by the engine; the others are accepted shapes
+ *  for forward compatibility. */
+export type ConstraintRule =
+  | 'equal_distance'
+  | 'equal_length'
+  | 'parallel'
+  | 'perpendicular'
+  | 'collinear';
+
+/** EDT-02 — anchor point on a referenced element used by the evaluator. */
+export type ConstraintAnchor = 'start' | 'end' | 'mid' | 'center';
+
+export type ConstraintSeverity = 'warning' | 'error';
+
+export type ConstraintRefRow = {
+  elementId: string;
+  anchor?: ConstraintAnchor;
+};
+
+/** EDT-02 — engine command authored by the padlock UI on a temp-dim.
+ *  Captures the current measured distance between two element groups
+ *  as a locked constraint; subsequent moves that break the lock are
+ *  rejected by the engine. */
+export type CreateConstraintCmd = {
+  type: 'createConstraint';
+  id: string;
+  rule: ConstraintRule;
+  refsA: ConstraintRefRow[];
+  refsB: ConstraintRefRow[];
+  lockedValueMm?: number;
+  severity?: ConstraintSeverity;
+  name?: string;
 };
 
 export type Element =
@@ -1092,6 +1128,24 @@ export type Element =
       hostViewId: string;
       boundaryMm: XY[];
       fillColor?: string;
+    }
+  | {
+      /**
+       * EDT-02 — geometric constraint between element groups. The engine
+       * evaluates constraints after each command apply and rejects the
+       * bundle when any `error`-severity constraint is violated. The most
+       * common case is `equal_distance` with a `lockedValueMm` captured
+       * from the padlock UI on a temp-dimension.
+       */
+      kind: 'constraint';
+      id: string;
+      name?: string;
+      rule: ConstraintRule;
+      refsA: ConstraintRefRow[];
+      refsB: ConstraintRefRow[];
+      lockedValueMm?: number | null;
+      severity?: ConstraintSeverity;
+      pinned?: boolean;
     };
 
 export type Violation = {
