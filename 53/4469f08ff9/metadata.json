@@ -3,7 +3,7 @@
   "checkpoint_id": "534469f08ff9",
   "strategy": "manual-commit",
   "branch": "feat/v3-can-v3-02-hatch-patterns",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     ".github/workflows/ci.yml"
   ],
@@ -25,13 +25,19 @@
       "transcript": "/53/4469f08ff9/2/full.jsonl",
       "content_hash": "/53/4469f08ff9/2/content_hash.txt",
       "prompt": "/53/4469f08ff9/2/prompt.txt"
+    },
+    {
+      "metadata": "/53/4469f08ff9/3/metadata.json",
+      "transcript": "/53/4469f08ff9/3/full.jsonl",
+      "content_hash": "/53/4469f08ff9/3/content_hash.txt",
+      "prompt": "/53/4469f08ff9/3/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 46,
-    "cache_creation_tokens": 86816,
-    "cache_read_tokens": 2570958,
-    "output_tokens": 12937,
-    "api_call_count": 40
+    "input_tokens": 294,
+    "cache_creation_tokens": 227160,
+    "cache_read_tokens": 15859359,
+    "output_tokens": 76146,
+    "api_call_count": 192
   }
 }
