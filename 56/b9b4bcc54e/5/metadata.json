@@ -1,0 +1,64 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "56b9b4bcc54e",
+  "session_id": "aff6462c-5f6a-48fd-8e44-f7297e3332f0",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T18:36:01.606193Z",
+  "branch": "feat/v3-mrk-v3-02-markups",
+  "checkpoints_count": 0,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "450588772c72",
+  "checkpoint_transcript_start": 1912,
+  "transcript_lines_at_start": 1912,
+  "token_usage": {
+    "input_tokens": 11,
+    "cache_creation_tokens": 6601,
+    "cache_read_tokens": 859556,
+    "output_tokens": 3274,
+    "api_call_count": 9
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 2739,
+      "user_lines_removed": 75,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "app/bim_ai/commands.py": 176,
+        "app/bim_ai/elements.py": 159,
+        "app/bim_ai/milestones.py": 24,
+        "app/bim_ai/public_links.py": 34,
+        "app/bim_ai/sheets.py": 36,
+        "app/pyproject.toml": 1,
+        "app/tests/api/test_public_links_route.py": 334,
+        "app/tests/test_sht_v3_01.py": 343,
+        "app/tests/test_vie_v3_02.py": 255,
+        "app/tests/test_vie_v3_03.py": 255,
+        "packages/core/src/index.ts": 24,
+        "packages/web/src/collab/ActivityPanel.tsx": 42,
+        "packages/web/src/collab/MilestoneDialog.tsx": 191,
+        "packages/web/src/collab/PublicLinkBanner.tsx": 39,
+        "packages/web/src/collab/ShareModal.tsx": 121,
+        "packages/web/src/collab/milestoneStore.ts": 66,
+        "packages/web/src/plan/CalloutMarker.tsx": 74,
+        "packages/web/src/plan/NewSheetDialog.tsx": 165,
+        "packages/web/src/plan/SheetCanvas.tsx": 159,
+        "packages/web/src/plan/ViewBreakCompositor.tsx": 74,
+        "packages/web/src/plan/WindowLegendRow.tsx": 71,
+        "packages/web/src/plan/useCutProfile.ts": 10,
+        "packages/web/src/workspace/InspectorContent.tsx": 1,
+        "packages/web/src/workspace/ProjectBrowser.tsx": 85
+      },
+      "user_removed_per_file": {
+        "app/bim_ai/commands.py": 1,
+        "app/bim_ai/elements.py": 2,
+        "packages/web/src/collab/ShareModal.tsx": 42,
+        "packages/web/src/workspace/InspectorContent.tsx": 1,
+        "packages/web/src/workspace/ProjectBrowser.tsx": 29
+      }
+    }
+  ]
+}
