@@ -2,8 +2,8 @@
   "cli_version": "0.6.0",
   "checkpoint_id": "9b47f095d8ad",
   "strategy": "manual-commit",
-  "branch": "main",
-  "checkpoints_count": 1,
+  "branch": "feat/v3-mrk-v3-02-markups",
+  "checkpoints_count": 2,
   "files_touched": [
     "app/bim_ai/markups.py",
     "app/tests/api/test_markups_route.py",
@@ -40,13 +40,19 @@
       "transcript": "/9b/47f095d8ad/3/full.jsonl",
       "content_hash": "/9b/47f095d8ad/3/content_hash.txt",
       "prompt": "/9b/47f095d8ad/3/prompt.txt"
+    },
+    {
+      "metadata": "/9b/47f095d8ad/4/metadata.json",
+      "transcript": "/9b/47f095d8ad/4/full.jsonl",
+      "content_hash": "/9b/47f095d8ad/4/content_hash.txt",
+      "prompt": "/9b/47f095d8ad/4/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 4039,
-    "cache_creation_tokens": 146304,
-    "cache_read_tokens": 7491989,
-    "output_tokens": 54769,
-    "api_call_count": 71
+    "input_tokens": 6996,
+    "cache_creation_tokens": 244984,
+    "cache_read_tokens": 10209901,
+    "output_tokens": 70601,
+    "api_call_count": 103
   }
 }
