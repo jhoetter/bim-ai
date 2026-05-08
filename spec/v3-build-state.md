@@ -45,14 +45,18 @@ Active heavy workers: 0 / 8
 - **CQ-04 god-file split** — high merge-conflict risk; schedule for quiet window.
 - **CQ-03 workspace reorg** — riskiest CQ item; dedicated quiet week.
 
-## Next wave (8 slots free)
+## Wave-4 (prompt files written — ready to dispatch)
 
-Wave-4 candidates (all deps satisfied):
-
-1. **KRN-V3-08** wall sweeps & reveals
-2. **CHR-V3-04** Cmd+K palette
-3. **OPT-V3-01** design options (once KRN-V3-04 lands)
-4. Remaining kernel WPs from tracker
+| WP-ID | Prompt | WP | Theme | Effort | Dep |
+| ----- | ------ | -- | ----- | ------ | --- |
+| WP-024 | spec/v3-prompts/wp-024.md | KRN-V3-04 Design Options | T1 kernel | L | KRN-V3-01 ✓ |
+| WP-025 | spec/v3-prompts/wp-025.md | KRN-V3-08 Wall sweeps & reveals | T1 kernel | M | KRN-V3-03 ✓ |
+| WP-026 | spec/v3-prompts/wp-026.md | MRK-V3-01 3D-anchored comments | T3 collab | L | COL-V3-01 ✓ |
+| WP-027 | spec/v3-prompts/wp-027.md | VER-V3-01 Activity stream | T3 collab | L | COL-V3-01 ✓ |
+| WP-028 | spec/v3-prompts/wp-028.md | CHR-V3-04+EDT-V3-03 Cmd+K palette | Chrome/T2 | M | none |
+| WP-029 | spec/v3-prompts/wp-029.md | VIE-V3-01 Detail-level rendering | T4 docs | M | none |
+| WP-030 | spec/v3-prompts/wp-030.md | COL-V3-02 Permission tiers | T3 collab | M | COL-V3-01 ✓ |
+| WP-031 | spec/v3-prompts/wp-031.md | EDT-V3-11 Phase-filter as lens | T2 UX | M | KRN-V3-01 ✓ |
 
 ## Notes
 
