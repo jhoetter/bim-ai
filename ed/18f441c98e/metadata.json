@@ -1,0 +1,23 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "ed18f441c98e",
+  "strategy": "manual-commit",
+  "branch": "feat/v3-edt-v3-06-helper-dims",
+  "checkpoints_count": 1,
+  "files_touched": null,
+  "sessions": [
+    {
+      "metadata": "/ed/18f441c98e/0/metadata.json",
+      "transcript": "/ed/18f441c98e/0/full.jsonl",
+      "content_hash": "/ed/18f441c98e/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 135,
+    "cache_creation_tokens": 126498,
+    "cache_read_tokens": 13066858,
+    "output_tokens": 39221,
+    "api_call_count": 127
+  }
+}
