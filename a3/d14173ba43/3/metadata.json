@@ -1,0 +1,38 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "a3d14173ba43",
+  "session_id": "ad8cbe45-3671-4c7b-9e5a-4424117b1d75",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T14:11:44.269176Z",
+  "branch": "feat/v3-krn-v3-06-plan-region",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/state/storeTypes.ts",
+    "packages/web/src/plan/planProjection.ts",
+    "packages/web/src/workspace/InspectorContent.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "e720c66eb3ab",
+  "checkpoint_transcript_start": 1260,
+  "transcript_lines_at_start": 1260,
+  "token_usage": {
+    "input_tokens": 37,
+    "cache_creation_tokens": 19175,
+    "cache_read_tokens": 4839271,
+    "output_tokens": 12478,
+    "api_call_count": 37
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-08T14:11:44.241763Z",
+    "agent_lines": 97,
+    "agent_removed": 0,
+    "human_added": 296,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 393,
+    "total_lines_changed": 394,
+    "agent_percentage": 24.61928934010152,
+    "metric_version": 2
+  }
+}

@@ -7,8 +7,10 @@
   "files_touched": [
     "app/tests/test_plan_region_commands.py",
     "packages/web/src/plan/planProjection.planRegion.test.ts",
+    "packages/web/src/plan/planProjection.ts",
     "packages/web/src/state/storeTypes.ts",
     "packages/web/src/tools/toolRegistry.ts",
+    "packages/web/src/workspace/InspectorContent.tsx",
     "packages/web/src/workspace/workspaceUtils.ts"
   ],
   "sessions": [
@@ -29,13 +31,19 @@
       "transcript": "/a3/d14173ba43/2/full.jsonl",
       "content_hash": "/a3/d14173ba43/2/content_hash.txt",
       "prompt": "/a3/d14173ba43/2/prompt.txt"
+    },
+    {
+      "metadata": "/a3/d14173ba43/3/metadata.json",
+      "transcript": "/a3/d14173ba43/3/full.jsonl",
+      "content_hash": "/a3/d14173ba43/3/content_hash.txt",
+      "prompt": "/a3/d14173ba43/3/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 243,
-    "cache_creation_tokens": 150008,
-    "cache_read_tokens": 14110586,
-    "output_tokens": 58758,
-    "api_call_count": 161
+    "input_tokens": 280,
+    "cache_creation_tokens": 169183,
+    "cache_read_tokens": 18949857,
+    "output_tokens": 71236,
+    "api_call_count": 198
   }
 }
