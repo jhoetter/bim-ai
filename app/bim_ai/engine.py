@@ -33,6 +33,7 @@ from bim_ai.commands import (
     CreateDetailRegionCmd,
     CreateDimensionCmd,
     CreateDormerCmd,
+    CreateEdgeProfileRunCmd,
     CreateElevationViewCmd,
     CreateFloorCmd,
     CreateGridLineCmd,
@@ -43,9 +44,8 @@ from bim_ai.commands import (
     CreateLinkModelCmd,
     CreateMaskingRegionCmd,
     CreateMassCmd,
+    CreatePhaseCmd,
     CreatePlanRegionCmd,
-    DeletePlanRegionCmd,
-    UpdatePlanRegionCmd,
     CreateProjectBasePointCmd,
     CreatePropertyLineCmd,
     CreateRailingCmd,
@@ -53,16 +53,15 @@ from bim_ai.commands import (
     CreateRoofCmd,
     CreateRoofJoinCmd,
     CreateRoofOpeningCmd,
-    CreateEdgeProfileRunCmd,
-    SetEdgeProfileRunModeCmd,
-    CreateSoffitCmd,
     CreateRoomOutlineCmd,
     CreateRoomPolyCmd,
     CreateRoomRectangleCmd,
     CreateRoomSeparationCmd,
     CreateSectionCutCmd,
     CreateSlabOpeningCmd,
+    CreateSoffitCmd,
     CreateStairCmd,
+    CreateSunSettingsCmd,
     CreateSurveyPointCmd,
     CreateSweepCmd,
     CreateText3dCmd,
@@ -77,6 +76,8 @@ from bim_ai.commands import (
     DeleteElementsCmd,
     DeleteLinkModelCmd,
     DeleteMaskingRegionCmd,
+    DeletePhaseCmd,
+    DeletePlanRegionCmd,
     DeletePropertyLineCmd,
     DeleteReferencePlaneCmd,
     ExtendFloorInsulationCmd,
@@ -95,13 +96,24 @@ from bim_ai.commands import (
     PinElementCmd,
     PlaceTagCmd,
     ReconcileMonitoredElementCmd,
+    RenamePhaseCmd,
+    ReorderPhaseCmd,
     RestoreElementCmd,
     RotateProjectBasePointCmd,
     RunClashTestCmd,
     SaveViewpointCmd,
     SetCurtainPanelOverrideCmd,
+    SetEdgeProfileRunModeCmd,
+    SetElementPhaseCmd,
+    SetRailingBalusterPatternCmd,
+    SetRailingHandrailSupportsCmd,
+    SetStairSubKindCmd,
+    SetViewPhaseCmd,
+    SetViewPhaseFilterCmd,
     SetWallJoinVariantCmd,
+    SetWallLeanTaperCmd,
     SetWallRecessZonesCmd,
+    SetWallStackCmd,
     SplitWallAtCmd,
     TrimElementToReferenceCmd,
     UnpinElementCmd,
@@ -110,10 +122,12 @@ from bim_ai.commands import (
     UpdateLinkModelCmd,
     UpdateMaskingRegionCmd,
     UpdateOpeningCleanroomCmd,
+    UpdatePlanRegionCmd,
     UpdatePlanViewCropCmd,
     UpdatePlanViewRangeCmd,
     UpdatePropertyLineCmd,
     UpdateReferencePlaneCmd,
+    UpdateSunSettingsCmd,
     UpdateWallOpeningCmd,
     UpsertClashTestCmd,
     UpsertFamilyTypeCmd,
@@ -132,13 +146,6 @@ from bim_ai.commands import (
     UpsertSheetViewportsCmd,
     UpsertSiteCmd,
     UpsertTagDefinitionCmd,
-    CreatePhaseCmd,
-    DeletePhaseCmd,
-    RenamePhaseCmd,
-    ReorderPhaseCmd,
-    SetElementPhaseCmd,
-    SetViewPhaseCmd,
-    SetViewPhaseFilterCmd,
     UpsertValidationRuleCmd,
     UpsertViewTemplateCmd,
     UpsertWallTypeCmd,
@@ -166,14 +173,11 @@ from bim_ai.document import Document
 from bim_ai.elements import (
     INTERNAL_ORIGIN_ID,
     SUN_SETTINGS_ID,
-    SunSettingsElem,
-    SunSettingsTimeOfDay,
     AgentAssumptionElem,
     AgentDeviationElem,
     AreaElem,
     BalconyElem,
     BalusterPattern,
-    HandrailSupport,
     BcfElem,
     BeamElem,
     CalloutElem,
@@ -188,6 +192,7 @@ from bim_ai.elements import (
     DimensionElem,
     DoorElem,
     DormerElem,
+    EdgeProfileRunElem,
     Element,
     ElevationViewElem,
     FamilyCatalogSource,
@@ -195,6 +200,7 @@ from bim_ai.elements import (
     FloorElem,
     FloorTypeElem,
     GridLineElem,
+    HandrailSupport,
     InternalOriginElem,
     IssueElem,
     JoinGeometryElem,
@@ -203,6 +209,8 @@ from bim_ai.elements import (
     LinkModelElem,
     MaskingRegionElem,
     MassElem,
+    PhaseElem,
+    PhaseFilter,
     PlacedTagElem,
     PlanCategoryGraphicRow,
     PlanDetailLevelPlan,
@@ -218,8 +226,6 @@ from bim_ai.elements import (
     RoofJoinElem,
     RoofOpeningElem,
     RoofTypeElem,
-    EdgeProfileRunElem,
-    SoffitElem,
     RoomColorSchemeElem,
     RoomColorSchemeRow,
     RoomElem,
@@ -232,10 +238,13 @@ from bim_ai.elements import (
     SiteContextObjectRow,
     SiteElem,
     SlabOpeningElem,
+    SoffitElem,
     StairElem,
     StairLanding,
     StairRun,
     StairTreadLine,
+    SunSettingsElem,
+    SunSettingsTimeOfDay,
     SurveyPointElem,
     SweepElem,
     TagDefinitionElem,
@@ -256,8 +265,6 @@ from bim_ai.elements import (
     WallStackComponent,
     WallTypeElem,
     WindowElem,
-    PhaseElem,
-    PhaseFilter,
 )
 from bim_ai.export_ifc import (
     AUTHORITATIVE_REPLAY_KIND_V0,
@@ -319,6 +326,55 @@ def _plan_detail_default_medium(raw: str | None) -> PlanDetailLevelPlan:
     if raw == "medium":
         return "medium"
     return "medium"
+
+def element_passes_phase_filter(elem: Any, phase_filter: str) -> bool:
+    """Return True if the element should be visible under the given phase filter.
+
+    Rules (using element.phase_created / element.phase_demolished):
+    - 'all':        always visible.
+    - 'existing':   phase_created == 'existing' and phase_demolished is None
+    - 'demolition': phase_demolished == 'demolition'
+    - 'new':        phase_created == 'new'
+    """
+    if phase_filter == "all":
+        return True
+    phase_created = getattr(elem, "phase_created", "existing")
+    phase_demolished = getattr(elem, "phase_demolished", None)
+    if phase_filter == "existing":
+        return phase_created == "existing" and (phase_demolished is None)
+    if phase_filter == "demolition":
+        return phase_demolished == "demolition"
+    if phase_filter == "new":
+        return phase_created == "new"
+    return True
+
+
+def phase_render_style(elem: Any, phase_filter: str) -> dict[str, str]:
+    """Return CSS token names for the element's phase render style.
+
+    Returns a dict with keys 'stroke', 'strokeDashArray', 'strokeWidth'.
+    """
+    phase_created = getattr(elem, "phase_created", "existing")
+    phase_demolished = getattr(elem, "phase_demolished", None)
+
+    if phase_demolished == "demolition":
+        return {
+            "stroke": "var(--phase-demolition)",
+            "strokeDashArray": "4 4",
+            "strokeWidth": "var(--draft-lw-projection)",
+        }
+    if phase_created == "new":
+        return {
+            "stroke": "var(--phase-new)",
+            "strokeDashArray": "none",
+            "strokeWidth": "var(--draft-lw-cut)",
+        }
+    # existing
+    return {
+        "stroke": "var(--phase-existing)",
+        "strokeDashArray": "none",
+        "strokeWidth": "var(--draft-lw-projection)",
+    }
 
 
 def _optional_plan_detail_override(raw: str | None) -> PlanDetailLevelPlan | None:
@@ -661,8 +717,8 @@ def coerce_command(data: dict[str, Any]) -> Command:
 
 
 def _validate_wall_edge_profile_run(
-    host_wall: "WallElem",
-    host_edge: "WallEdgeSpec",
+    host_wall: WallElem,
+    host_edge: WallEdgeSpec,
     mode: str,
 ) -> None:
     if isinstance(host_edge, WallEdgeSpan):

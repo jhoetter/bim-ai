@@ -46,6 +46,13 @@
   --draft-lw-hidden: 0.7px;
   --draft-lw-witness: 0.5px;
   --draft-lw-construction: 0.5px;
+  /* EDT-V3-11 — simplified phase line-weight aliases */
+  --draft-lw-cut: var(--draft-lw-cut-major);
+  --draft-lw-projection: var(--draft-lw-projection-major);
+  /* EDT-V3-11 — phase render colours (hex so Three.js Color.set() parses correctly) */
+  --phase-existing: #999999;
+  --phase-demolition: #8c8c8c;
+  --phase-new: #1a1a1a;
 }
 
 :root[data-theme='dark'],
@@ -76,4 +83,11 @@
   --cat-site: #353d2e;
   --cat-section: #f15252;
   --cat-sheet: #4a4d52;
+  /* EDT-V3-11 — simplified phase line-weight aliases */
+  --draft-lw-cut: var(--draft-lw-cut-major);
+  --draft-lw-projection: var(--draft-lw-projection-major);
+  /* EDT-V3-11 — phase render colours */
+  --phase-existing: #888888;
+  --phase-demolition: #7a7a7a;
+  --phase-new: #e6e6e6;
 }

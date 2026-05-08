@@ -302,10 +302,10 @@ def test_set_view_phase_filter() -> None:
     pv = next(el for el in nd.elements.values() if isinstance(el, PlanViewElem))
     ok2, nd2, *_ = try_commit_bundle(
         nd,
-        [{"type": "setViewPhaseFilter", "viewId": pv.id, "phaseFilter": "show_new_plus_existing"}],
+        [{"type": "setViewPhaseFilter", "viewId": pv.id, "phaseFilter": "existing"}],
     )
     assert ok2
-    assert nd2.elements[pv.id].phase_filter == "show_new_plus_existing"
+    assert nd2.elements[pv.id].phase_filter == "existing"
 
 
 def test_set_view_phase_filter_bad_filter_rejected() -> None:
@@ -323,6 +323,6 @@ def test_set_view_phase_filter_bad_filter_rejected() -> None:
 def test_set_view_phase_filter_bad_view_rejected() -> None:
     ok, *_ = try_commit_bundle(
         _seed(),
-        [{"type": "setViewPhaseFilter", "viewId": "nonexistent", "phaseFilter": "show_all"}],
+        [{"type": "setViewPhaseFilter", "viewId": "nonexistent", "phaseFilter": "all"}],
     )
     assert not ok

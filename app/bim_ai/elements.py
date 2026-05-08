@@ -49,13 +49,7 @@ class EvidenceRef(BaseModel):
 WallLayerFunction = Literal["structure", "insulation", "finish"]
 WallBasisLine = Literal["center", "face_interior", "face_exterior"]
 PlanDetailLevelPlan = Literal["coarse", "medium", "fine"]
-PhaseFilter = Literal[
-    "show_all",
-    "show_new_plus_existing",
-    "show_demolition_only",
-    "show_existing_only",
-    "show_new_only",
-]
+PhaseFilter = Literal["all", "existing", "demolition", "new"]
 
 _SCHEME_HEX_PATTERN = re.compile(r"^#[0-9A-Fa-f]{6}$")
 
@@ -807,7 +801,7 @@ class BalusterPattern(BaseModel):
     profile_family_id: str | None = Field(default=None, alias="profileFamilyId")
 
     @model_validator(mode="after")
-    def _validate_regular_requires_spacing(self) -> "BalusterPattern":
+    def _validate_regular_requires_spacing(self) -> BalusterPattern:
         if self.rule == "regular" and (self.spacing_mm is None or self.spacing_mm <= 0):
             raise ValueError("balusterPattern.rule='regular' requires spacingMm > 0")
         return self
@@ -1368,7 +1362,7 @@ class PlanViewElem(BaseModel):
     underlay_level_id: str | None = Field(default=None, alias="underlayLevelId")
     discipline: str = Field(default="architecture", alias="discipline")
     phase_id: str | None = Field(default=None, alias="phaseId")
-    phase_filter: PhaseFilter | None = Field(default=None, alias="phaseFilter")
+    phase_filter: PhaseFilter = Field(default="all", alias="phaseFilter")
     crop_min_mm: Vec2Mm | None = Field(default=None, alias="cropMinMm")
     crop_max_mm: Vec2Mm | None = Field(default=None, alias="cropMaxMm")
     crop_enabled: bool | None = Field(default=None, alias="cropEnabled")

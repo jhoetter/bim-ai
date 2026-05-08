@@ -68,12 +68,7 @@ export type ElemKind =
   | 'phase'
   | 'sun_settings';
 
-export type PhaseFilter =
-  | 'show_all'
-  | 'show_new_plus_existing'
-  | 'show_demolition_only'
-  | 'show_existing_only'
-  | 'show_new_only';
+export type PhaseFilter = 'all' | 'existing' | 'demolition' | 'new';
 
 export type Text3dFontFamily = 'helvetiker' | 'optimer' | 'gentilis';
 
@@ -904,7 +899,7 @@ export type Element =
       underlayLevelId?: string | null;
       discipline?: string;
       phaseId?: string | null;
-      phaseFilter?: PhaseFilter | null;
+      phaseFilter?: PhaseFilter;
       cropMinMm?: XY | null;
       cropMaxMm?: XY | null;
       /** PLN-02 — when true, plan rendering clips elements outside crop bounds. */
