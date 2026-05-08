@@ -1485,6 +1485,22 @@ class MassElem(BaseModel):
     pinned: bool = Field(default=False)
 
 
+class VoidCutElem(BaseModel):
+    """SKT-01 — subtractive-boolean marker against a host element.
+
+    The geometry is a closed profile + extrusion depth; the renderer is
+    responsible for performing the actual CSG. The element exists in the
+    document so it survives undo / redo and IFC export.
+    """
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["void_cut"] = "void_cut"
+    id: str
+    host_element_id: str = Field(alias="hostElementId")
+    profile_mm: list[Vec2Mm] = Field(alias="profileMm")
+    depth_mm: float = Field(alias="depthMm", gt=0)
+
+
 Element = Annotated[
     ProjectSettingsElem
     | RoomColorSchemeElem
@@ -1547,6 +1563,7 @@ Element = Annotated[
     | BeamElem
     | CeilingElem
     | MassElem
+    | VoidCutElem
     | ConstraintElem,
     Field(discriminator="kind"),
 ]

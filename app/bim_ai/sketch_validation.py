@@ -11,12 +11,28 @@ from __future__ import annotations
 
 from collections import defaultdict
 
+from bim_ai.elements import Vec2Mm
 from bim_ai.sketch_session import (
     SketchLine,
     SketchSession,
     SketchValidationIssue,
     SketchValidationState,
 )
+
+
+class SketchInvalidError(ValueError):
+    """Raised by :func:`assert_closed_loop` / :func:`assert_line_set` on failure.
+
+    Carries the same `code` strings as :class:`SketchValidationIssue` so
+    callers that handle live validation and Finish-time validation can share
+    error vocabulary.
+    """
+
+    def __init__(self, code: str, message: str) -> None:
+        super().__init__(message)
+        self.code = code
+        self.message = message
+
 
 # Vertex coincidence tolerance — sub-millimetre; matches typical Revit snap.
 _VERTEX_EPS_MM = 0.5
@@ -187,10 +203,68 @@ def validate_room_separation_session(lines: list[SketchLine]) -> SketchValidatio
     return SketchValidationState(valid=not issues, issues=issues)
 
 
+# Sub-modes whose validation is "non-empty list of non-zero-length segments".
+# Polygon-style sub-modes (floor / roof / ceiling / in_place_mass / void_cut)
+# all use the closed-loop check inside :func:`validate_session`.
+_LINE_SET_KINDS = frozenset({"room_separation", "detail_region"})
+
+
 def validate_sketch_session(session: SketchSession) -> SketchValidationState:
-    if session.element_kind == "room_separation":
+    if session.element_kind in _LINE_SET_KINDS:
         return validate_room_separation_session(list(session.lines))
     return validate_session(list(session.lines))
+
+
+def assert_closed_loop(points: list[Vec2Mm], *, tol_mm: float = 1.0) -> None:
+    """Raise :class:`SketchInvalidError` unless `points` form a valid polygon.
+
+    The polygon is treated as implicitly closed: the edge from ``points[-1]``
+    back to ``points[0]`` is the closing segment. The check requires
+    ≥3 vertices and rejects any consecutive pair that coincides within
+    ``tol_mm`` (which would be a degenerate edge).
+
+    Callers that need to validate the *line-level* topology (incidence
+    counts, self-intersection) should run :func:`validate_session` first;
+    this helper is the lightweight Finish-time guard against degenerate
+    polygons that slip past the structural check.
+    """
+
+    if len(points) < 3:
+        raise SketchInvalidError(
+            "open_loop",
+            f"closed-loop polygon requires ≥3 points (got {len(points)}).",
+        )
+    n = len(points)
+    for i in range(n):
+        a = points[i]
+        b = points[(i + 1) % n]
+        if abs(a.x_mm - b.x_mm) <= tol_mm and abs(a.y_mm - b.y_mm) <= tol_mm:
+            raise SketchInvalidError(
+                "zero_length",
+                f"polygon edge {i}→{(i + 1) % n} is degenerate (coincident vertices).",
+            )
+
+
+def assert_line_set(segments: list[tuple[Vec2Mm, Vec2Mm]]) -> None:
+    """Raise :class:`SketchInvalidError` unless `segments` is a non-empty list
+    of non-zero-length segments.
+
+    Used by Finish-emitters for sub-modes that commit one element per segment
+    (room_separation, detail_region) rather than collapsing the sketch into a
+    single polygon.
+    """
+
+    if not segments:
+        raise SketchInvalidError(
+            "empty_sketch",
+            "sketch is empty — draw at least one line.",
+        )
+    for i, (a, b) in enumerate(segments):
+        if abs(a.x_mm - b.x_mm) <= 0.5 and abs(a.y_mm - b.y_mm) <= 0.5:
+            raise SketchInvalidError(
+                "zero_length",
+                f"segment {i} is zero-length.",
+            )
 
 
 def derive_closed_loop_polygon(
