@@ -694,5 +694,63 @@ export function buildOneFamilyHomeCommands() {
       programmeCode: 'terrace',
       targetAreaM2: 16,
     },
+
+    // === PHASE 6: DETAIL ===
+    // Loggia balcony — slight projection from the original south facade
+    // plane with a frameless glass balustrade. Spec §1.4: "projects very
+    // slightly forward. Features a wood floor deck and a frameless
+    // transparent glass balustrade. No solid posts visible."
+    {
+      type: 'createBalcony',
+      id: 'hf-balcony-loggia',
+      name: 'Loggia balcony',
+      wallId: 'hf-w-uf-s',
+      elevationMm: F2F,
+      projectionMm: 400,
+      slabThicknessMm: 150,
+      balustradeHeightMm: 1100,
+    },
+
+    // East-slope dormer (KRN-14). Cuts a rectangular notch in the
+    // asymmetric_gable's east slope, with a flat dormer roof. Footprint:
+    // centre (xMm=4000, yMm=2500), depth 2000 (across ridge), width 2400
+    // (along ridge). Dormer floor sits at upper-floor level (z=3000),
+    // walls rise 2400mm. The cut spans the ridge by ~300mm (the east
+    // slope plan extent is only 700mm — accepted trade-off; the visual
+    // notch is what matters).
+    {
+      type: 'createDormer',
+      id: 'hf-dormer-east',
+      name: 'East-slope dormer',
+      hostRoofId: 'hf-roof-main',
+      positionOnRoof: { alongRidgeMm: -1500, acrossRidgeMm: 1500 },
+      widthMm: 2400,
+      depthMm: 2000,
+      wallHeightMm: 2400,
+      dormerRoofKind: 'flat',
+      wallMaterialKey: 'white_render',
+    },
+
+    // Sliding glass doors hosted on the upper-east wall in the dormer
+    // cut footprint (Y centre 2500, width 2400 → alongT 0.16..0.46 of
+    // the 8000mm-tall east wall). These open onto the east roof
+    // terrace. Per dormerMesh: the dormer's "open face" is +X (toward
+    // deck) and the upper-volume's east wall serves as the dormer's
+    // back wall — so doors hosted on hf-w-uf-e in this Y range render
+    // through the dormer cavity onto the deck.
+    {
+      type: 'insertDoorOnWall',
+      id: 'hf-door-dormer',
+      name: 'Dormer-deck sliding doors',
+      wallId: 'hf-w-uf-e',
+      alongT: 0.31,
+      widthMm: 2400,
+    },
+    {
+      type: 'updateElementProperty',
+      elementId: 'hf-door-dormer',
+      key: 'operationType',
+      value: 'sliding_double',
+    },
   ];
 }
