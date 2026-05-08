@@ -2,7 +2,7 @@
   "cli_version": "0.6.0",
   "checkpoint_id": "22d2e96ec87e",
   "strategy": "manual-commit",
-  "branch": "feat/v3-edt-v3-06-helper-dims",
+  "branch": "feat/v3-edt-v3-04-shortcut-chips",
   "checkpoints_count": 1,
   "files_touched": [
     "app/bim_ai/commands.py",
@@ -15,6 +15,12 @@
       "transcript": "/22/d2e96ec87e/0/full.jsonl",
       "content_hash": "/22/d2e96ec87e/0/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/22/d2e96ec87e/1/metadata.json",
+      "transcript": "/22/d2e96ec87e/1/full.jsonl",
+      "content_hash": "/22/d2e96ec87e/1/content_hash.txt",
+      "prompt": "/22/d2e96ec87e/1/prompt.txt"
     }
   ],
   "token_usage": {
