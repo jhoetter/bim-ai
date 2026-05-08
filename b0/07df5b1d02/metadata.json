@@ -3,7 +3,7 @@
   "checkpoint_id": "b007df5b1d02",
   "strategy": "manual-commit",
   "branch": "feat/v3-tkn-v3-01-tokenisation",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": [
     "eslint.config.js",
     "package.json",
@@ -53,13 +53,19 @@
       "transcript": "/b0/07df5b1d02/2/full.jsonl",
       "content_hash": "/b0/07df5b1d02/2/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/b0/07df5b1d02/3/metadata.json",
+      "transcript": "/b0/07df5b1d02/3/full.jsonl",
+      "content_hash": "/b0/07df5b1d02/3/content_hash.txt",
+      "prompt": "/b0/07df5b1d02/3/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 643,
-    "cache_creation_tokens": 278136,
-    "cache_read_tokens": 18178960,
-    "output_tokens": 94478,
-    "api_call_count": 202
+    "input_tokens": 830,
+    "cache_creation_tokens": 427123,
+    "cache_read_tokens": 35516513,
+    "output_tokens": 146081,
+    "api_call_count": 385
   }
 }
