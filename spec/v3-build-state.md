@@ -1,7 +1,7 @@
 # v3 Build State
 
-Last updated: 2026-05-08 (wave-6: all 8 branches pushed, reviews in progress; ~39/63 WPs done)
-Active heavy workers: 8 / 8
+Last updated: 2026-05-08 (wave-6: all 8 reviews FAIL — fix prompts written, fix workers needed; ~39/63 WPs done)
+Active heavy workers: 0 / 8
 
 ## Merged so far
 
@@ -64,18 +64,33 @@ Active heavy workers: 8 / 8
 | WP-038 | VIE-V3-03 view templates + propagation toast | 2026-05-08 | 239b6c76 |
 | WP-039 | SHT-V3-01 sheet + titleblock + window legend | 2026-05-08 | 873d7cd0 |
 
-## Wave-6 pushed (all branches ready, reviews in progress)
+## Wave-6 fix-up needed (all 8 reviewed → FAIL; fix prompts at spec/v3-prompts/wp-NNN-fix.md)
 
-| WP-ID | WP | Branch | Top commit | Status |
-| ----- | -- | ------ | ---------- | ------ |
-| WP-040 | DSC-V3-01 element discipline tags | feat/v3-dsc-v3-01-discipline-tags | ba80cbbc | reviewing |
-| WP-041 | TOP-V3-01 toposolid primitive | feat/v3-top-v3-01-toposolid | c57633c9 | reviewing |
-| WP-042 | AST-V3-01 searchable asset library + schematic-2D thumbnails | feat/v3-ast-v3-01-asset-library | 394e4588 | reviewing |
-| WP-043 | IMG-V3-01 image → layout JSON | feat/v3-img-v3-01-image-to-layout | 7a8c6724 | reviewing (DEPENDS on WP-041 merging first — branched from feat/v3-top-v3-01-toposolid) |
-| WP-044 | CAN-V3-01 plan-canvas line-weight hierarchy | feat/v3-can-v3-01-line-weight-hierarchy | b1c48833 | reviewing |
-| WP-045 | OUT-V3-01 live presentation URL | feat/v3-out-v3-01-live-web-link | c460a24c | reviewing |
-| WP-046 | MRK-V3-03 sheet review surface with comment-anchoring | feat/v3-mrk-v3-03-sheet-review | 3bd276d7 | reviewing (main worktree has uncommitted additions on this branch) |
-| WP-047 | CHR-V3-08 secondary contextual bar (ToolModifierBar) | feat/v3-chr-v3-08-tool-modifier-bar | 1e5ef865 | reviewing |
+CROSS-CUTTING ISSUE: Workers branched from each other instead of from main, creating a
+chain: AST → TOP → IMG → DSC. Fix workers must rebase onto main (instructions in fix prompts).
+Multiple branches contain OUT-V3-01 presentation routes as scope creep; workers must remove them.
+
+| WP-ID | WP | Branch | Status | Fix prompt | Key failures |
+| ----- | -- | ------ | ------ | ---------- | ------------ |
+| WP-040 | DSC-V3-01 element discipline tags | feat/v3-dsc-v3-01-discipline-tags | FAIL — fix needed | wp-040-fix.md | scope creep (IMG code), missing ToolDescriptor, no "default" radio, no API tests |
+| WP-041 | TOP-V3-01 toposolid primitive | feat/v3-top-v3-01-toposolid | FAIL — fix needed | wp-041-fix.md | scope creep (AST code on branch), missing TS types, no CLI, no floor inheritance |
+| WP-042 | AST-V3-01 searchable asset library | feat/v3-ast-v3-01-asset-library | FAIL — fix needed | wp-042-fix.md | TS exports missing (build-breaking), no CLI, onPlace stub, scope creep |
+| WP-043 | IMG-V3-01 image → layout JSON | feat/v3-img-v3-01-image-to-layout | FAIL — fix needed | wp-043-fix.md | calibrator/sampler not wired, JOB queue stub, OUT scope creep; rebase onto main after WP-041 merges |
+| WP-044 | CAN-V3-01 line-weight hierarchy | feat/v3-can-v3-01-line-weight-hierarchy | FAIL — fix needed | wp-044-fix.md | wrong step values (continuous vs discrete), weights not applied to draw calls, brand-swap test missing |
+| WP-045 | OUT-V3-01 live presentation URL | feat/v3-out-v3-01-live-web-link | FAIL — fix needed | wp-045-fix.md | CLI publish missing, in-memory storage not durable, allowMeasurement/Comment not returned, WS revoke test missing |
+| WP-046 | MRK-V3-03 sheet review | feat/v3-mrk-v3-03-sheet-review | FAIL — fix needed (active worker has uncommitted changes) | wp-046-fix.md | push uncommitted work first; OUT scope creep; production routes not wired; chip uses polling not WS |
+| WP-047 | CHR-V3-08 ToolModifierBar | feat/v3-chr-v3-08-tool-modifier-bar | FAIL — fix needed | wp-047-fix.md | frontend only — missing SetToolPrefCmd + CLI + agent-callable tests (API-V3-01 violation) |
+
+## Merge order when fix workers pass review
+
+1. WP-041 (TOP) — rebase onto main, drop AST commit, add TS types + CLI + floor inheritance
+2. WP-042 (AST) — add TS types + CLI, fix canvas placement, remove non-AST scope creep
+3. WP-040 (DSC) — rebase onto main, drop IMG commit, add ToolDescriptor + radio + tests
+4. WP-044 (CAN) — independent; fix step values + draw calls + brand-swap test
+5. WP-045 (OUT) — independent; add CLI + durability + fields + WS revoke test
+6. WP-047 (CHR) — independent; add backend command layer + tests
+7. WP-043 (IMG) — rebase onto main after TOP merges; fix calibrator + JOB + remove OUT routes
+8. WP-046 (MRK) — push local work; remove OUT routes; wire production routes; fix chip
 
 ## Orphan commits (flagged for user decision — do NOT cherry-pick without confirmation)
 
@@ -119,4 +134,7 @@ All 6 are on origin/feat/v3-edt-v3-01-constraint-rules (wave-1 branch already me
 - B1 critical path: all 6 kernel WPs done; ANN-V3-01 and EDT-V3-09 remain for full B1 felt-outcome.
 - Concurrency cap: 8 heavy workers in flight at any time.
 - DSC-V3-01 (WP-040) + TOP-V3-01 (WP-041) both touch engine.py but in disjoint regions (discipline metadata vs. toposolid geometry); overlap risk is low but workers should coordinate on imports.
-- WP-043 IMG-V3-01 was branched from feat/v3-top-v3-01-toposolid — merge WP-041 before WP-043 to keep git history clean.
+- WP-043 IMG-V3-01 was branched from feat/v3-top-v3-01-toposolid — fix worker must rebase onto main after WP-041 merges.
+- WP-040 DSC-V3-01 was branched from feat/v3-img-v3-01-image-to-layout — fix worker must rebase onto main (drop IMG commit).
+- Orphan store-coerce fix: 7e44a3c0 (on old edt branch) is equivalent to 3b580a98 (on OUT-V3-01 branch); when OUT merges the fix lands. Drop 7e44a3c0.
+- Seed/viewport orphans (615fad24, c7ddc1bf, 06840cef, 8dc5ee7a, 12ec01dd) are visual fixes on old branches; user must decide whether to cherry-pick.
