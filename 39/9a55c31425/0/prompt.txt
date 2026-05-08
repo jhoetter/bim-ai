@@ -1,0 +1,20 @@
+You are working on the bim-ai project at /Users/jhoetter/repos/bim-ai. Read spec/prompts/wave-05/README.md first for batch sequencing, then read and execute the wave-5 prompt file
+  named at the bottom of this message end to end.
+
+  Ground rules:
+
+  - Create the branch named in the prompt (feat/wave-05-...) off the latest main before any edits.
+  - Implement every File-N section in the prompt; honor the Done rule literally.
+  - Run the validation commands listed in the prompt; all must pass before commit.
+  - Update spec/workpackage-master-tracker.md to flip the listed row from partial → done, with a one-paragraph note on what shipped.
+  - Commit with a Conventional Commit message (feat(fed), feat(krn), feat(ifc), etc.) and Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com> footer.
+  - git push origin <your-branch>. Do not open a PR; do not merge to main yourself.
+  - If the prompt has a Phase 2 chained section, execute it after Phase 1 pushes — branch as that section instructs (off your Phase 1 tip, not off main).
+  - If you hit an unexpected obstacle (missing helper, surface that doesn't match the prompt's anchors), investigate the root cause and fix it; do not silently scope-cut. Note any
+  deviations in the commit body.
+
+  When done, report: branch name(s), what shipped, what (if anything) is still deferred, and whether the validation commands all passed.
+
+  Prompt file:
+
+ @spec/prompts/wave-05/WP-FED-04-dxf-underlay.md
