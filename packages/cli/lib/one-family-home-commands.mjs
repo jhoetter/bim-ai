@@ -297,16 +297,18 @@ export function buildOneFamilyHomeCommands() {
         { xMm: 0, yMm: D },
       ],
       roofGeometryMode: 'asymmetric_gable',
-      // Dramatic asymmetry per spec/target-house-seed-vis.png: apex at 90%
-      // east (offset 2000 of halfSpan 2500), very low west eave (800mm),
-      // moderately high east eave (4125mm) — produces a long shallow west
-      // pitch (~46°) + short steep east pitch (~70°). Slope sanity:
-      // ridge = 800 + (2500+2000)·tan(46°) = 800 + 4500·1.04 ≈ 5470mm
-      // above level (well above east eave 4125mm). Ridge sits at z≈8470.
+      // Asymmetric proportions per spec/target-house-seed-vis.png: apex
+      // at 90% east, very low west eave, moderate east eave, shallow long
+      // west pitch + short steep east pitch. Tuned for a more horizontal
+      // upper-volume mass (UF 5000 wide × ~3950 tall to ridge — ratio
+      // 1.27:1 wider-than-tall, matching the sketch's profile).
+      // Slope sanity: ridge = 800 + 4500·tan(35°) = 800 + 3150 = 3950mm
+      // above level → 950mm above east eave (3000mm), so the east pitch
+      // doesn't degenerate. East pitch angle ≈ atan(950/500) = 62°.
       ridgeOffsetTransverseMm: 2000,
       eaveHeightLeftMm: 800,
-      eaveHeightRightMm: 4125,
-      slopeDeg: 46,
+      eaveHeightRightMm: 3000,
+      slopeDeg: 35,
       overhangMm: 0,
       materialKey: 'metal_standing_seam_dark_grey',
     },
@@ -421,11 +423,10 @@ export function buildOneFamilyHomeCommands() {
 
     // Picture-frame outline (KRN-15 sweep) along the south-face gable
     // pentagon — the signature design element from the line sketch.
-    // Path matches the new dramatic-asymmetric proportions:
-    //   SW (0, 3000) → SE (5000, 3000) → E-eave (5000, 7125) →
-    //   ridge (4500, 8470) → W-eave (0, 3800) → SW (close).
-    // Profile bumped 100×200 → 350×500 mm (uMm: ±175, vMm: ±250) so
-    // the frame reads as a chunky band, not a wireframe edge.
+    // Path follows the new tuned proportions:
+    //   SW (0, 3000) → SE (5000, 3000) → E-eave (5000, 6000) →
+    //   ridge (4500, 6950) → W-eave (0, 3800) → SW (close).
+    // Profile 350×500 mm (uMm: ±175, vMm: ±250) reads as a chunky band.
     {
       type: 'createSweep',
       id: 'hf-sw-frame',
@@ -434,8 +435,8 @@ export function buildOneFamilyHomeCommands() {
       pathMm: [
         { xMm: 0, yMm: 0, zMm: 3000 },
         { xMm: 5000, yMm: 0, zMm: 3000 },
-        { xMm: 5000, yMm: 0, zMm: 7125 },
-        { xMm: 4500, yMm: 0, zMm: 8470 },
+        { xMm: 5000, yMm: 0, zMm: 6000 },
+        { xMm: 4500, yMm: 0, zMm: 6950 },
         { xMm: 0, yMm: 0, zMm: 3800 },
         { xMm: 0, yMm: 0, zMm: 3000 },
       ],

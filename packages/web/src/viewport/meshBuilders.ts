@@ -286,6 +286,9 @@ export function makeFloorSlabMesh(
     new THREE.MeshStandardMaterial({
       color: categoryColorOr(paint, 'floor'),
       roughness: paint?.categories.floor.roughness ?? 0.9,
+      // Floor slabs are diffuse; sky env-map reflections wash the catalog
+      // colour pale-blue. Drop to 0.15 so the warm-tone floors read true.
+      envMapIntensity: 0.15,
       transparent: true,
       opacity: 0.92,
     }),
@@ -1755,10 +1758,24 @@ export function makeSlopedWallMesh(
   geom.setIndex(new THREE.BufferAttribute(indices, 1));
   geom.computeVertexNormals();
 
+  // Sloped walls didn't honour the wall's materialKey — used the neutral
+  // category default. Resolve catalog material first; drop env-map for
+  // cladding / render so the color reads true.
+  const slopedMatSpec = resolveMaterial(wall.materialKey);
+  const slopedIsWhite =
+    wall.materialKey === 'white_cladding' || wall.materialKey === 'white_render';
+  const slopedColor =
+    slopedMatSpec?.baseColor ?? (slopedIsWhite ? '#f4f4f0' : categoryColorOr(paint, 'wall'));
   const mat = new THREE.MeshStandardMaterial({
-    color: categoryColorOr(paint, 'wall'),
-    roughness: paint?.categories.wall.roughness ?? 0.85,
-    metalness: paint?.categories.wall.metalness ?? 0.0,
+    color: slopedColor,
+    roughness: slopedMatSpec?.roughness ?? paint?.categories.wall.roughness ?? 0.85,
+    metalness: slopedMatSpec?.metalness ?? paint?.categories.wall.metalness ?? 0.0,
+    envMapIntensity:
+      slopedIsWhite ||
+      slopedMatSpec?.category === 'render' ||
+      slopedMatSpec?.category === 'cladding'
+        ? 0.15
+        : 1.0,
   });
   const mesh = new THREE.Mesh(geom, mat);
   mesh.userData.bimPickId = wall.id;
@@ -2595,7 +2612,13 @@ export function makeBalconyMesh(
   const slabCy = elevM - slabH / 2;
   const slabCx = sx + dx / 2 + (nx * projM) / 2;
   const slabCz = sz + dz / 2 + (nz * projM) / 2;
-  const slabMat = new THREE.MeshStandardMaterial({ color: '#c8c8c4', roughness: 0.6 });
+  // Wood deck floor + low-reflection so the balcony reads as a warm
+  // wood balcony per the line sketch, not a generic grey slab.
+  const slabMat = new THREE.MeshStandardMaterial({
+    color: '#a87a44',
+    roughness: 0.85,
+    envMapIntensity: 0.15,
+  });
   const slab = new THREE.Mesh(new THREE.BoxGeometry(len, slabH, projM), slabMat);
   slab.position.set(slabCx, slabCy, slabCz);
   slab.rotation.y = yaw;
@@ -2604,15 +2627,20 @@ export function makeBalconyMesh(
 
   // Glass balustrade: frameless glass panel at outer edge, standing on slab top.
   if (balH > 0.01) {
+    // Frameless glass balustrade — slightly more opaque than 0.28 so it
+    // reads as a visible glass panel against light backgrounds, not as
+    // near-invisible water. Edge outline (addEdges) gives it a frame
+    // outline that mimics the line sketch's hand-drawn pane.
     const glassMat = new THREE.MeshStandardMaterial({
-      color: 0x88ccee,
+      color: 0xb0d8e8,
       transparent: true,
-      opacity: 0.28,
+      opacity: 0.42,
       roughness: 0.05,
-      metalness: 0.1,
+      metalness: 0.05,
+      envMapIntensity: 0.5,
       side: THREE.DoubleSide,
     });
-    const balThick = 0.018;
+    const balThick = 0.025;
     const outerCx = sx + dx / 2 + nx * projM;
     const outerCz = sz + dz / 2 + nz * projM;
     const balGlass = new THREE.Mesh(new THREE.BoxGeometry(len, balH, balThick), glassMat);
