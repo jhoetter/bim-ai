@@ -3,7 +3,7 @@
   "checkpoint_id": "90470494cd03",
   "strategy": "manual-commit",
   "branch": "feat/v3-can-v3-01-line-weight-hierarchy",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     "packages/web/src/plan/PlanCanvas.tsx",
     "packages/web/src/plan/draftingStandards.test.ts",
@@ -23,13 +23,19 @@
       "transcript": "/90/470494cd03/1/full.jsonl",
       "content_hash": "/90/470494cd03/1/content_hash.txt",
       "prompt": "/90/470494cd03/1/prompt.txt"
+    },
+    {
+      "metadata": "/90/470494cd03/2/metadata.json",
+      "transcript": "/90/470494cd03/2/full.jsonl",
+      "content_hash": "/90/470494cd03/2/content_hash.txt",
+      "prompt": "/90/470494cd03/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 873,
-    "cache_creation_tokens": 158983,
-    "cache_read_tokens": 7147593,
-    "output_tokens": 49486,
-    "api_call_count": 100
+    "input_tokens": 1121,
+    "cache_creation_tokens": 299327,
+    "cache_read_tokens": 20435994,
+    "output_tokens": 112695,
+    "api_call_count": 252
   }
 }
