@@ -1,0 +1,20 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "0ab86c92ff47",
+  "session_id": "7885deb9-19e9-4bf1-a7b0-8b6abfdf0ae6",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T15:36:52.719256Z",
+  "branch": "feat/v3-chr-v3-02-workspace-switcher",
+  "checkpoints_count": 1,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "4061ec783cf3",
+  "token_usage": {
+    "input_tokens": 82,
+    "cache_creation_tokens": 121791,
+    "cache_read_tokens": 6398060,
+    "output_tokens": 40639,
+    "api_call_count": 76
+  }
+}
