@@ -1883,6 +1883,12 @@ export function makeRecessedWallMesh(
     roughness:
       wallMatSpec?.roughness ?? (isWhite ? 0.92 : (paint?.categories.wall.roughness ?? 0.85)),
     metalness: wallMatSpec?.metalness ?? paint?.categories.wall.metalness ?? 0.0,
+    // Cladding / render walls drop sky-reflection so the catalog colour
+    // reads true (warm wood as warm wood, not pale-blue from sky env map).
+    envMapIntensity:
+      isWhite || wallMatSpec?.category === 'render' || wallMatSpec?.category === 'cladding'
+        ? 0.15
+        : 1.0,
   });
 
   // White-render variant for end caps when the wall's primary materialKey
@@ -1894,6 +1900,7 @@ export function makeRecessedWallMesh(
           color: '#f4f4f0',
           roughness: 0.92,
           metalness: 0,
+          envMapIntensity: 0.15,
         })
       : mat;
 
@@ -2056,7 +2063,14 @@ export function makeWallMesh(
       roughness:
         wallMatSpec?.roughness ?? (isWhite ? 0.92 : (paint?.categories.wall.roughness ?? 0.85)),
       metalness: wallMatSpec?.metalness ?? paint?.categories.wall.metalness ?? 0.0,
-      envMapIntensity: isWhite || wallMatSpec?.category === 'render' ? 0.08 : 1.0,
+      // Render + cladding categories drop sky reflection so the catalog
+      // base color reads true (cladding_beige_grey as warm beige, not
+      // washed-blue under default env map). Other materials keep full
+      // env-map for metal/glass realism.
+      envMapIntensity:
+        isWhite || wallMatSpec?.category === 'render' || wallMatSpec?.category === 'cladding'
+          ? 0.15
+          : 1.0,
     }),
   );
   mesh.position.set(sx + dx / 2 + perpX, yBase + height / 2, sz + dz / 2 + perpZ);
