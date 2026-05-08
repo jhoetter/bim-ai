@@ -36,6 +36,7 @@ def test_known_archetype_in_range_returns_no_violations() -> None:
         "roof": 1,
         "stair": 1,
         "room": 6,
+        "partition": 6,
     }
     out = out_of_range_kinds("single_family_two_story_modest", counts)
     assert out == []
