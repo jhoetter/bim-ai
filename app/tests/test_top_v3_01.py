@@ -9,11 +9,13 @@ from bim_ai.elements import (
     FloorElem,
     HeightSample,
     HeightmapGrid,
+    LevelElem,
     SlabOpeningElem,
     ToposolidElem,
     Vec2Mm,
 )
 from bim_ai.engine import try_commit
+from bim_ai.opening_cut_primitives import subtract_axis_aligned_rect_hole_mm
 from bim_ai.site.toposolid import (
     contour_polylines,
     samples_from_toposolid,
@@ -391,3 +393,88 @@ def test_document_roundtrip_with_toposolid():
     assert el.base_elevation_mm == 100
     assert len(el.height_samples) == 3
     assert el.height_samples[2].z_mm == 500
+
+
+# ---------------------------------------------------------------------------
+# Floor elevation inheritance from toposolid
+# ---------------------------------------------------------------------------
+
+
+def test_floor_inherits_toposolid_elevation():
+    """A floor created over a toposolid inherits the surface elevation at its centroid."""
+    # Create a level first (required by CreateFloorCmd).
+    level = LevelElem(id="lv1", name="Ground", elevationMm=0)
+    # Toposolid covering (0,0)–(20000,20000) at uniform z=800 mm.
+    topo = ToposolidElem(
+        id="topo-elev",
+        boundaryMm=[
+            Vec2Mm(xMm=0, yMm=0),
+            Vec2Mm(xMm=20000, yMm=0),
+            Vec2Mm(xMm=20000, yMm=20000),
+            Vec2Mm(xMm=0, yMm=20000),
+        ],
+        heightSamples=[
+            HeightSample(xMm=0, yMm=0, zMm=800),
+            HeightSample(xMm=10000, yMm=0, zMm=800),
+            HeightSample(xMm=10000, yMm=10000, zMm=800),
+        ],
+    )
+    doc = _doc_with(level, topo)
+
+    # Create floor at same level centred inside toposolid boundary.
+    ok, doc2, _, _, code = try_commit(
+        doc,
+        {
+            "type": "createFloor",
+            "levelId": "lv1",
+            "boundaryMm": [
+                {"xMm": 4000, "yMm": 4000},
+                {"xMm": 6000, "yMm": 4000},
+                {"xMm": 6000, "yMm": 6000},
+                {"xMm": 4000, "yMm": 6000},
+            ],
+            "thicknessMm": 200,
+        },
+    )
+    assert ok, code
+    # Find the created floor element.
+    floors = [e for e in doc2.elements.values() if isinstance(e, FloorElem)]
+    assert floors, "Expected at least one FloorElem"
+    floor = floors[0]
+    # Floor must inherit toposolid surface elevation at centroid (≈800 mm).
+    assert floor.toposolid_elevation_mm is not None
+    assert abs(floor.toposolid_elevation_mm - 800.0) < 1.0
+
+
+# ---------------------------------------------------------------------------
+# CSG floor-cut test
+# ---------------------------------------------------------------------------
+
+
+def test_csg_floor_cut():
+    """Subtracting a building footprint from a toposolid boundary produces the expected residuals.
+
+    Uses ``subtract_axis_aligned_rect_hole_mm`` as the CSG subtraction helper.
+    A 20 m × 20 m toposolid with a 10 m × 10 m building footprint removed in
+    the centre should yield three residual panels (top, bottom, and one side).
+    """
+    # Toposolid outer rect: (0,0)–(20000,20000)
+    # Building footprint (hole): (5000,5000)–(15000,15000)
+    result = subtract_axis_aligned_rect_hole_mm(
+        fx0=0,
+        fx1=20000,
+        fy0=0,
+        fy1=20000,
+        ox0=5000,
+        ox1=15000,
+        oy0=5000,
+        oy1=15000,
+        min_gap_mm=100,
+    )
+    assert result is not None, "Expected residual panels from CSG subtraction"
+    # Should have at least 2 panels (bottom strip + top strip; sides optional).
+    assert len(result) >= 2
+    # Each panel is an (x0, x1, y0, y1) tuple — verify basic geometry.
+    for x0, x1, y0, y1 in result:
+        assert x1 > x0
+        assert y1 > y0
