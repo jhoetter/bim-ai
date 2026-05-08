@@ -752,5 +752,112 @@ export function buildOneFamilyHomeCommands() {
       key: 'operationType',
       value: 'sliding_double',
     },
+
+    // === PHASE 7: DOCUMENTATION ===
+    // Camera presets matching the colour-study panels (SKB-16 ids).
+    // Hand-computed positions (the SKB archetype builder's
+    // azimuth-formula maps to a convention that doesn't match our
+    // brief's south-facade-at-y=0 layout).
+    //
+    // Building bbox: x ∈ [0, 7000], y ∈ [0, 8000], z ∈ [0, ~8500].
+    {
+      type: 'saveViewpoint',
+      id: 'vp-main-iso',
+      name: 'Main isometric (SSW)',
+      mode: 'orbit_3d',
+      camera: {
+        position: { xMm: -1500, yMm: -7500, zMm: 11000 },
+        target: { xMm: 3500, yMm: 4000, zMm: 4250 },
+        up: { xMm: 0, yMm: 0, zMm: 1 },
+      },
+    },
+    {
+      type: 'saveViewpoint',
+      id: 'vp-front-elev',
+      name: 'Front elevation (south)',
+      mode: 'orbit_3d',
+      camera: {
+        position: { xMm: 3500, yMm: -12000, zMm: 4250 },
+        target: { xMm: 3500, yMm: 4000, zMm: 4250 },
+        up: { xMm: 0, yMm: 0, zMm: 1 },
+      },
+    },
+    {
+      type: 'saveViewpoint',
+      id: 'vp-side-elev-east',
+      name: 'Side elevation (east)',
+      mode: 'orbit_3d',
+      camera: {
+        position: { xMm: 18000, yMm: 4000, zMm: 4250 },
+        target: { xMm: 3500, yMm: 4000, zMm: 4250 },
+        up: { xMm: 0, yMm: 0, zMm: 1 },
+      },
+    },
+    {
+      type: 'saveViewpoint',
+      id: 'vp-rear-axo',
+      name: 'Rear axonometric (NE)',
+      mode: 'orbit_3d',
+      camera: {
+        position: { xMm: 12000, yMm: 14000, zMm: 11000 },
+        target: { xMm: 3500, yMm: 4000, zMm: 4250 },
+        up: { xMm: 0, yMm: 0, zMm: 1 },
+      },
+    },
+
+    // Plan views for both levels.
+    {
+      type: 'upsertPlanView',
+      id: 'hf-pv-ground',
+      name: 'GF plan',
+      levelId: 'hf-lvl-ground',
+    },
+    {
+      type: 'upsertPlanView',
+      id: 'hf-pv-upper',
+      name: 'First-floor plan',
+      levelId: 'hf-lvl-upper',
+    },
+
+    // Section cut through the upper-volume at y=2000 (just inside the
+    // loggia recess back wall) — exposes the asymmetric_gable + recess
+    // + balcony in section. Cut line is the visible section line on
+    // plan; viewing direction follows the line's normal.
+    {
+      type: 'createSectionCut',
+      id: 'hf-sec-loggia',
+      name: 'South-facade section through loggia',
+      lineStartMm: { xMm: 0, yMm: 2000 },
+      lineEndMm: { xMm: GF_W, yMm: 2000 },
+      cropDepthMm: 8500,
+    },
+
+    // Sheet + schedules for documentation completeness.
+    {
+      type: 'upsertSheet',
+      id: 'hf-sheet-ga01',
+      name: 'GA-01 General arrangement',
+      titleBlock: 'A2-bim-ai-default',
+      paperWidthMm: 594,
+      paperHeightMm: 420,
+    },
+    {
+      type: 'upsertSchedule',
+      id: 'hf-sch-rooms',
+      name: 'Room schedule',
+      sheetId: 'hf-sheet-ga01',
+    },
+    {
+      type: 'upsertSchedule',
+      id: 'hf-sch-windows',
+      name: 'Window schedule',
+      sheetId: 'hf-sheet-ga01',
+    },
+    {
+      type: 'upsertSchedule',
+      id: 'hf-sch-doors',
+      name: 'Door schedule',
+      sheetId: 'hf-sheet-ga01',
+    },
   ];
 }

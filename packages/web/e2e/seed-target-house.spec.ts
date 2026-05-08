@@ -91,29 +91,58 @@ async function hydrateStore(page: Page, snapshot: SnapshotShape) {
 
 type ViewpointId = 'fit' | 'vp-main-iso' | 'vp-front-elev' | 'vp-side-elev-east' | 'vp-rear-axo';
 
-async function activateViewpoint(page: Page, vp: ViewpointId, snapshot: SnapshotShape) {
-  if (vp === 'fit') return;
-  const exists = Object.values(snapshot.elements).some(
+async function activateViewpoint(
+  page: Page,
+  vp: ViewpointId,
+  snapshot: SnapshotShape,
+): Promise<boolean> {
+  if (vp === 'fit') return false;
+  const vpEl = Object.values(snapshot.elements).find(
     (el) => el?.kind === 'viewpoint' && el?.id === vp,
+  ) as undefined | { camera?: { position: Vec3; target: Vec3; up: Vec3 } };
+  if (!vpEl) return false;
+  type Vec3 = { xMm: number; yMm: number; zMm: number };
+  const camera = vpEl.camera;
+  if (!camera) return false;
+  await page.evaluate(
+    ([vpId, cam]) => {
+      type StoreActions = {
+        setActiveViewpointId?: (id: string) => void;
+        setOrbitCameraFromViewpointMm?: (pose: {
+          position: { xMm: number; yMm: number; zMm: number };
+          target: { xMm: number; yMm: number; zMm: number };
+          up: { xMm: number; yMm: number; zMm: number };
+        }) => void;
+      };
+      const win = window as unknown as { __bimStore?: { getState: () => StoreActions } };
+      const state = win.__bimStore?.getState();
+      state?.setActiveViewpointId?.(vpId as string);
+      state?.setOrbitCameraFromViewpointMm?.(
+        cam as {
+          position: { xMm: number; yMm: number; zMm: number };
+          target: { xMm: number; yMm: number; zMm: number };
+          up: { xMm: number; yMm: number; zMm: number };
+        },
+      );
+    },
+    [vp, camera] as const,
   );
-  if (!exists) return;
-  await page.evaluate((vpId) => {
-    type StoreShape = {
-      getState: () => { setActiveViewpointId?: (id: string) => void };
-    };
-    const win = window as unknown as { __bimStore?: StoreShape };
-    win.__bimStore?.getState()?.setActiveViewpointId?.(vpId);
-  }, vp);
-  await page.waitForTimeout(800);
+  await page.waitForTimeout(1_500);
+  return true;
 }
 
-async function captureViewpoint(page: Page, label: string) {
+async function captureViewpoint(page: Page, label: string, useFit: boolean) {
   const viewport = page.locator('[data-testid="orbit-3d-viewport"]');
   await expect(viewport).toBeVisible({ timeout: 30_000 });
-  // Force a fit-to-screen so even un-viewpointed phases frame the model.
-  await viewport.click({ position: { x: 100, y: 100 } });
-  await page.keyboard.press('f');
-  await page.waitForTimeout(2_500);
+  if (useFit) {
+    // No authored viewpoint — frame the model with F-key fit-to-screen.
+    await viewport.click({ position: { x: 100, y: 100 } });
+    await page.keyboard.press('f');
+    await page.waitForTimeout(2_500);
+  } else {
+    // Authored viewpoint — let the saved camera settle.
+    await page.waitForTimeout(2_000);
+  }
   const outPath = `test-results/seed-target-house-${label}-actual.png`;
   await viewport.screenshot({ path: outPath });
   return outPath;
@@ -129,29 +158,29 @@ test.describe('seed-target-house', () => {
 
   test('main iso', async ({ page }) => {
     const snapshot = loadSnapshot();
-    await activateViewpoint(page, 'vp-main-iso', snapshot);
-    const out = await captureViewpoint(page, 'main-iso');
+    const activated = await activateViewpoint(page, 'vp-main-iso', snapshot);
+    const out = await captureViewpoint(page, 'main-iso', !activated);
     expect(fs.existsSync(out)).toBe(true);
   });
 
   test('front elevation', async ({ page }) => {
     const snapshot = loadSnapshot();
-    await activateViewpoint(page, 'vp-front-elev', snapshot);
-    const out = await captureViewpoint(page, 'front-elev');
+    const activated = await activateViewpoint(page, 'vp-front-elev', snapshot);
+    const out = await captureViewpoint(page, 'front-elev', !activated);
     expect(fs.existsSync(out)).toBe(true);
   });
 
   test('east side elevation', async ({ page }) => {
     const snapshot = loadSnapshot();
-    await activateViewpoint(page, 'vp-side-elev-east', snapshot);
-    const out = await captureViewpoint(page, 'side-elev-east');
+    const activated = await activateViewpoint(page, 'vp-side-elev-east', snapshot);
+    const out = await captureViewpoint(page, 'side-elev-east', !activated);
     expect(fs.existsSync(out)).toBe(true);
   });
 
   test('rear axonometric', async ({ page }) => {
     const snapshot = loadSnapshot();
-    await activateViewpoint(page, 'vp-rear-axo', snapshot);
-    const out = await captureViewpoint(page, 'rear-axo');
+    const activated = await activateViewpoint(page, 'vp-rear-axo', snapshot);
+    const out = await captureViewpoint(page, 'rear-axo', !activated);
     expect(fs.existsSync(out)).toBe(true);
   });
 });
