@@ -1,0 +1,28 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "884aa76c37fb",
+  "strategy": "manual-commit",
+  "branch": "feat/v3-ast-v3-01-asset-library",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "app/bim_ai/assets.py",
+    "app/bim_ai/commands.py",
+    "app/bim_ai/elements.py",
+    "app/bim_ai/engine.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/88/4aa76c37fb/0/metadata.json",
+      "transcript": "/88/4aa76c37fb/0/full.jsonl",
+      "content_hash": "/88/4aa76c37fb/0/content_hash.txt",
+      "prompt": "/88/4aa76c37fb/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 949,
+    "cache_creation_tokens": 189299,
+    "cache_read_tokens": 18801745,
+    "output_tokens": 68213,
+    "api_call_count": 172
+  }
+}
