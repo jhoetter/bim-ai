@@ -3,7 +3,9 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import {
   curtainGridCellId,
   type CurtainPanelOverride,
+  type DecalElem,
   type Element,
+  type MaterialElem,
   type WallLocationLine,
 } from '@bim-ai/core';
 import { buildDoorGeometry } from '../families/geometryFns/doorGeometry';
@@ -2761,5 +2763,96 @@ export function makeCeilingMesh(
   mesh.position.set(0, elev + heightOff, 0);
   mesh.userData.bimPickId = ceiling.id;
   addEdges(mesh, 20);
+  return mesh;
+}
+
+/**
+ * Apply PBR map slots from a MaterialElem onto an existing MeshStandardMaterial.
+ * imageAssetsById maps imageAsset id → data URL or blob URL.
+ */
+export function applyPbrMaps(
+  mat: THREE.MeshStandardMaterial,
+  materialElem: MaterialElem,
+  imageAssetsById: Record<string, string>,
+): void {
+  const loader = new THREE.TextureLoader();
+  const DEFAULT_REPEAT_M = 1;
+  const uRepeat = materialElem.uvScaleMm ? materialElem.uvScaleMm.uMm / 1000 : DEFAULT_REPEAT_M;
+  const vRepeat = materialElem.uvScaleMm ? materialElem.uvScaleMm.vMm / 1000 : DEFAULT_REPEAT_M;
+
+  function loadSlot(id: string | undefined): THREE.Texture | null {
+    if (!id) return null;
+    const url = imageAssetsById[id];
+    if (!url) return null;
+    const tex = loader.load(url);
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(uRepeat, vRepeat);
+    if (materialElem.uvRotationDeg) tex.rotation = (materialElem.uvRotationDeg * Math.PI) / 180;
+    return tex;
+  }
+
+  const albedo = loadSlot(materialElem.albedoMapId);
+  if (albedo) mat.map = albedo;
+
+  const normal = loadSlot(materialElem.normalMapId);
+  if (normal) mat.normalMap = normal;
+
+  const roughness = loadSlot(materialElem.roughnessMapId);
+  if (roughness) mat.roughnessMap = roughness;
+
+  const metallic = loadSlot(materialElem.metallicMapId);
+  if (metallic) mat.metalnessMap = metallic;
+
+  mat.needsUpdate = true;
+}
+
+/**
+ * Build a flat plane mesh representing a decal projected onto a parent surface.
+ * The plane is positioned at the uvRect centre on the parentMesh's bounding box face.
+ */
+export function buildDecalMesh(
+  decal: DecalElem,
+  parentMesh: THREE.Mesh,
+  imageAssetsById: Record<string, string>,
+): THREE.Mesh | null {
+  const url = imageAssetsById[decal.imageAssetId];
+  if (!url) return null;
+
+  const { u0, v0, u1, v1 } = decal.uvRect as {
+    u0: number;
+    v0: number;
+    u1: number;
+    v1: number;
+  };
+  const uSize = u1 - u0;
+  const vSize = v1 - v0;
+
+  parentMesh.geometry.computeBoundingBox();
+  const bb = parentMesh.geometry.boundingBox ?? new THREE.Box3();
+  const sizeX = bb.max.x - bb.min.x;
+  const sizeY = bb.max.y - bb.min.y;
+  const sizeZ = bb.max.z - bb.min.z;
+
+  const geo = new THREE.PlaneGeometry(uSize * sizeX, vSize * sizeY);
+
+  const tex = new THREE.TextureLoader().load(url);
+  const mat = new THREE.MeshBasicMaterial({
+    map: tex,
+    transparent: true,
+    opacity: decal.opacity ?? 1,
+    depthWrite: false,
+  });
+
+  const mesh = new THREE.Mesh(geo, mat);
+
+  const cx = bb.min.x + (u0 + uSize / 2) * sizeX;
+  const cy = bb.min.y + (v0 + vSize / 2) * sizeY;
+  const faceZ = decal.parentSurface === 'back' ? bb.min.z - 0.001 : bb.max.z + 0.001;
+  mesh.position.set(cx, cy, faceZ);
+  if (decal.parentSurface === 'back') mesh.rotation.y = Math.PI;
+
+  mesh.renderOrder = 1;
+  void sizeZ;
   return mesh;
 }
