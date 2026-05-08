@@ -551,5 +551,148 @@ export function buildOneFamilyHomeCommands() {
       key: 'attachedRoofId',
       value: 'hf-roof-main',
     },
+
+    // === PHASE 5: INTERIOR ===
+    // Open-plan ground floor (1 living/kitchen room). Upper floor is
+    // partitioned into 3 rooms (2 bedrooms + bath) plus the loggia
+    // (recess) and east deck (terrace).
+    //
+    // Partitions on UF — 1 mid-depth E-W partition + 1 N-S partition
+    // in the north half divide the upper into the 3 rooms above.
+    {
+      type: 'createWall',
+      id: 'hf-w-uf-ptn-mid',
+      name: 'UF mid partition (E-W)',
+      levelId: 'hf-lvl-upper',
+      start: { xMm: 0, yMm: 4000 },
+      end: { xMm: UF_W, yMm: 4000 },
+      thicknessMm: 120,
+      heightMm: 2700,
+    },
+    {
+      type: 'createWall',
+      id: 'hf-w-uf-ptn-back',
+      name: 'UF back partition (N-S, north half)',
+      levelId: 'hf-lvl-upper',
+      start: { xMm: 2500, yMm: 4000 },
+      end: { xMm: 2500, yMm: D },
+      thicknessMm: 120,
+      heightMm: 2700,
+    },
+
+    // Stair: straight, ground → upper. Run 3500 mm (y=3000..6500) wide
+    // 1000 mm at x=4000. Riser 175 mm × 17 = 2975 mm rise (close to
+    // the 3000 mm F2F).
+    {
+      type: 'createStair',
+      id: 'hf-stair-main',
+      name: 'Main stair',
+      baseLevelId: 'hf-lvl-ground',
+      topLevelId: 'hf-lvl-upper',
+      runStartMm: { xMm: 4000, yMm: 3000 },
+      runEndMm: { xMm: 4000, yMm: 6500 },
+      widthMm: 1000,
+      riserMm: 175,
+      treadMm: 220,
+    },
+
+    // Slab opening on the upper-floor floor for the stair shaft.
+    {
+      type: 'createSlabOpening',
+      id: 'hf-slab-stair',
+      name: 'Stair shaft opening',
+      hostFloorId: 'hf-flr-upper',
+      boundaryMm: [
+        { xMm: 3500, yMm: 3000 },
+        { xMm: 4500, yMm: 3000 },
+        { xMm: 4500, yMm: 6500 },
+        { xMm: 3500, yMm: 6500 },
+      ],
+      isShaft: true,
+    },
+
+    // Stair railing along the open (west) side of the stair.
+    {
+      type: 'createRailing',
+      id: 'hf-rail-stair',
+      name: 'Stair railing',
+      hostedStairId: 'hf-stair-main',
+      pathMm: [
+        { xMm: 3500, yMm: 3000 },
+        { xMm: 3500, yMm: 6500 },
+      ],
+    },
+
+    // Rooms.
+    {
+      type: 'createRoomOutline',
+      id: 'hf-room-living',
+      name: 'Open-plan kitchen + living',
+      levelId: 'hf-lvl-ground',
+      outlineMm: [
+        { xMm: 200, yMm: 200 },
+        { xMm: 6800, yMm: 200 },
+        { xMm: 6800, yMm: 7800 },
+        { xMm: 200, yMm: 7800 },
+      ],
+      programmeCode: 'living',
+      targetAreaM2: 56,
+    },
+    {
+      type: 'createRoomOutline',
+      id: 'hf-room-bed-1',
+      name: 'Bedroom 1 (master)',
+      levelId: 'hf-lvl-upper',
+      outlineMm: [
+        { xMm: 200, yMm: 200 },
+        { xMm: 4800, yMm: 200 },
+        { xMm: 4800, yMm: 3900 },
+        { xMm: 200, yMm: 3900 },
+      ],
+      programmeCode: 'bedroom',
+      targetAreaM2: 18,
+    },
+    {
+      type: 'createRoomOutline',
+      id: 'hf-room-bed-2',
+      name: 'Bedroom 2',
+      levelId: 'hf-lvl-upper',
+      outlineMm: [
+        { xMm: 200, yMm: 4100 },
+        { xMm: 2400, yMm: 4100 },
+        { xMm: 2400, yMm: 7800 },
+        { xMm: 200, yMm: 7800 },
+      ],
+      programmeCode: 'bedroom',
+      targetAreaM2: 12,
+    },
+    {
+      type: 'createRoomOutline',
+      id: 'hf-room-bath',
+      name: 'Bathroom',
+      levelId: 'hf-lvl-upper',
+      outlineMm: [
+        { xMm: 2600, yMm: 4100 },
+        { xMm: 4800, yMm: 4100 },
+        { xMm: 4800, yMm: 7800 },
+        { xMm: 2600, yMm: 7800 },
+      ],
+      programmeCode: 'bathroom',
+      targetAreaM2: 6,
+    },
+    {
+      type: 'createRoomOutline',
+      id: 'hf-room-deck',
+      name: 'East roof terrace',
+      levelId: 'hf-lvl-upper',
+      outlineMm: [
+        { xMm: UF_W + 200, yMm: 200 },
+        { xMm: GF_W - 200, yMm: 200 },
+        { xMm: GF_W - 200, yMm: D - 200 },
+        { xMm: UF_W + 200, yMm: D - 200 },
+      ],
+      programmeCode: 'terrace',
+      targetAreaM2: 16,
+    },
   ];
 }
