@@ -1,0 +1,25 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "638e771453d0",
+  "strategy": "manual-commit",
+  "branch": "feat/v3-krn-v3-01-phasing",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "claude-skills/watch-yt/watch_yt.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/63/8e771453d0/0/metadata.json",
+      "transcript": "/63/8e771453d0/0/full.jsonl",
+      "content_hash": "/63/8e771453d0/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 13,
+    "cache_creation_tokens": 7745,
+    "cache_read_tokens": 1081280,
+    "output_tokens": 3847,
+    "api_call_count": 13
+  }
+}
