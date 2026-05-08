@@ -3,7 +3,7 @@
   "checkpoint_id": "05b52d3a4b48",
   "strategy": "manual-commit",
   "branch": "feat/wave-04-skb-02-mass-renderer",
-  "checkpoints_count": 0,
+  "checkpoints_count": 3,
   "files_touched": [
     "app/bim_ai/skb/archetypes.py",
     "app/bim_ai/skb/element_count_priors.py",
@@ -23,13 +23,19 @@
       "transcript": "/05/b52d3a4b48/1/full.jsonl",
       "content_hash": "/05/b52d3a4b48/1/content_hash.txt",
       "prompt": "/05/b52d3a4b48/1/prompt.txt"
+    },
+    {
+      "metadata": "/05/b52d3a4b48/2/metadata.json",
+      "transcript": "/05/b52d3a4b48/2/full.jsonl",
+      "content_hash": "/05/b52d3a4b48/2/content_hash.txt",
+      "prompt": "/05/b52d3a4b48/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 285,
-    "cache_creation_tokens": 351657,
-    "cache_read_tokens": 26954261,
-    "output_tokens": 122347,
-    "api_call_count": 260
+    "input_tokens": 1264,
+    "cache_creation_tokens": 2888524,
+    "cache_read_tokens": 372154442,
+    "output_tokens": 827476,
+    "api_call_count": 959
   }
 }
