@@ -34,6 +34,7 @@ SketchElementKind = Literal[
     "in_place_mass",
     "void_cut",
     "detail_region",
+    "stair",
 ]
 SketchSessionStatus = Literal["open", "finished", "cancelled"]
 # SKT-02: sub-tool config — does Pick Walls insert wall centerlines or
@@ -388,6 +389,50 @@ def _emit_detail_region(
     return [cmd]
 
 
+def _emit_stair(session: SketchSession, opts: dict[str, Any]) -> list[dict[str, Any]]:
+    """KRN-07 closeout — emit a CreateStair with shape='sketch' from the session
+    line set. The polyline runs through every line's `from_mm` plus the last
+    line's `to_mm` (preserving authoring order).
+    """
+
+    from bim_ai.sketch_validation import SketchInvalidError
+
+    base_level_id = opts.get("baseLevelId") or session.level_id
+    top_level_id = opts.get("topLevelId")
+    if not top_level_id:
+        raise SketchInvalidError(
+            "missing_top_level",
+            "stair Finish requires `topLevelId` in options.",
+        )
+
+    if not session.lines:
+        raise SketchInvalidError(
+            "empty_sketch",
+            "stair Finish requires at least one sketch line.",
+        )
+
+    path: list[dict[str, float]] = []
+    for ln in session.lines:
+        path.append({"xMm": ln.from_mm.x_mm, "yMm": ln.from_mm.y_mm})
+    last = session.lines[-1]
+    path.append({"xMm": last.to_mm.x_mm, "yMm": last.to_mm.y_mm})
+
+    cmd: dict[str, Any] = {
+        "type": "createStair",
+        "name": opts.get("name", "Stair"),
+        "baseLevelId": base_level_id,
+        "topLevelId": top_level_id,
+        "runStartMm": path[0],
+        "runEndMm": path[-1],
+        "shape": "sketch",
+        "sketchPathMm": path,
+    }
+    for k in ("widthMm", "riserMm", "treadMm", "riserCount"):
+        if k in opts and opts[k] is not None:
+            cmd[k] = opts[k]
+    return [cmd]
+
+
 SUBMODES: dict[str, SubmodeSpec] = {
     "floor": SubmodeSpec(_validate_polygon_session, _emit_floor),
     "roof": SubmodeSpec(_validate_polygon_session, _emit_roof),
@@ -396,6 +441,7 @@ SUBMODES: dict[str, SubmodeSpec] = {
     "in_place_mass": SubmodeSpec(_validate_polygon_session, _emit_in_place_mass),
     "void_cut": SubmodeSpec(_validate_polygon_session, _emit_void_cut),
     "detail_region": SubmodeSpec(_validate_line_set_session, _emit_detail_region),
+    "stair": SubmodeSpec(_validate_line_set_session, _emit_stair),
 }
 
 

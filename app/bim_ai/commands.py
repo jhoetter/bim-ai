@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from bim_ai.elements import (
     CameraMm,
@@ -524,6 +524,40 @@ class CreateStairCmd(BaseModel):
     )
     runs: list[StairRun] = Field(default_factory=list)
     landings: list[StairLanding] = Field(default_factory=list)
+    # KRN-07 closeout — spiral + sketch shape inputs.
+    center_mm: Vec2Mm | None = Field(default=None, alias="centerMm")
+    inner_radius_mm: float | None = Field(default=None, alias="innerRadiusMm")
+    outer_radius_mm: float | None = Field(default=None, alias="outerRadiusMm")
+    total_rotation_deg: float | None = Field(default=None, alias="totalRotationDeg")
+    riser_count: int | None = Field(default=None, alias="riserCount")
+    sketch_path_mm: list[Vec2Mm] | None = Field(default=None, alias="sketchPathMm")
+
+    @model_validator(mode="after")
+    def _validate_shape_specific_fields(self) -> CreateStairCmd:
+        if self.shape == "spiral":
+            missing: list[str] = []
+            if self.center_mm is None:
+                missing.append("centerMm")
+            if self.inner_radius_mm is None:
+                missing.append("innerRadiusMm")
+            if self.outer_radius_mm is None:
+                missing.append("outerRadiusMm")
+            if self.total_rotation_deg is None:
+                missing.append("totalRotationDeg")
+            if self.riser_count is None or self.riser_count < 1:
+                missing.append("riserCount")
+            if missing:
+                raise ValueError(f"spiral stair requires {', '.join(missing)}")
+            if (
+                self.inner_radius_mm is not None
+                and self.outer_radius_mm is not None
+                and self.outer_radius_mm <= self.inner_radius_mm
+            ):
+                raise ValueError("spiral stair outerRadiusMm must exceed innerRadiusMm")
+        elif self.shape == "sketch":
+            if self.sketch_path_mm is None or len(self.sketch_path_mm) < 2:
+                raise ValueError("sketch stair requires sketchPathMm with at least two points")
+        return self
 
 
 class CreateSlabOpeningCmd(BaseModel):
