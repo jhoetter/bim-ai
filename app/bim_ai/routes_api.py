@@ -2265,3 +2265,239 @@ async def tokens_diff(
     seq_b = TokenSequence.model_validate(body.sequence_b)
     delta = diff(seq_a, seq_b)
     return delta.model_dump(by_alias=True)
+
+
+# ---------------------------------------------------------------------------
+# OUT-V3-01 — Live presentation URL
+# ---------------------------------------------------------------------------
+
+_presentation_ws_sessions: dict[str, set[WebSocket]] = {}
+
+
+class CreatePresentationBody(BaseModel):
+    pageScopeIds: list[str] = Field(default_factory=list)
+    allowMeasurement: bool = False
+    allowComment: bool = False
+    expiresAt: int | None = None
+
+
+@api_router.post("/models/{model_id}/presentations")
+async def create_presentation(
+    model_id: UUID,
+    body: CreatePresentationBody,
+    session: AsyncSession = Depends(get_session),
+    user_id: str = Query(default="local-dev", alias="userId"),
+) -> dict[str, Any]:
+    """OUT-V3-01: create a live presentation link for a model."""
+    from bim_ai.public_links import generate_link_token
+
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+
+    now_ms = int(time.time() * 1000)
+    link_id = secrets.token_urlsafe(16)
+    token = generate_link_token()
+
+    import json as _json
+
+    link_record = PublicLinkRecord(
+        id=link_id,
+        model_id=str(model_id),
+        token=token,
+        created_by=user_id,
+        created_at=now_ms,
+        expires_at=body.expiresAt,
+        is_revoked=False,
+        display_name="presentation",
+        open_count=0,
+        allow_measurement=body.allowMeasurement,
+        allow_comment=body.allowComment,
+        page_scope_ids=_json.dumps(body.pageScopeIds),
+    )
+    session.add(link_record)
+    await session.commit()
+
+    return {
+        "id": link_id,
+        "modelId": str(model_id),
+        "token": token,
+        "pageScopeIds": body.pageScopeIds,
+        "allowMeasurement": body.allowMeasurement,
+        "allowComment": body.allowComment,
+        "expiresAt": body.expiresAt,
+        "createdAt": now_ms,
+        "isRevoked": False,
+        "openCount": 0,
+        "displayName": "presentation",
+        "url": f"/p/{token}",
+    }
+
+
+@api_router.get("/models/{model_id}/presentations")
+async def list_presentations(
+    model_id: UUID,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """OUT-V3-01: list non-revoked presentation links for a model."""
+    res = await session.execute(
+        select(PublicLinkRecord).where(
+            PublicLinkRecord.model_id == str(model_id),
+            PublicLinkRecord.is_revoked.is_(False),
+            PublicLinkRecord.display_name == "presentation",
+        )
+    )
+    import json as _json
+
+    records = res.scalars().all()
+    presentations = []
+    for r in records:
+        presentations.append(
+            {
+                "id": r.id,
+                "modelId": r.model_id,
+                "token": r.token,
+                "createdBy": r.created_by,
+                "createdAt": r.created_at,
+                "expiresAt": r.expires_at,
+                "isRevoked": r.is_revoked,
+                "openCount": r.open_count,
+                "pageScopeIds": _json.loads(r.page_scope_ids) if r.page_scope_ids else [],
+                "allowMeasurement": r.allow_measurement,
+                "allowComment": r.allow_comment,
+            }
+        )
+    return {"presentations": presentations}
+
+
+@api_router.post("/models/{model_id}/presentations/{link_id}/revoke")
+async def revoke_presentation(
+    model_id: UUID,
+    link_id: str,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """OUT-V3-01: revoke a presentation link and notify active WS sessions."""
+    res = await session.execute(
+        select(PublicLinkRecord).where(
+            PublicLinkRecord.id == link_id,
+            PublicLinkRecord.model_id == str(model_id),
+            PublicLinkRecord.display_name == "presentation",
+        )
+    )
+    link_record = res.scalars().first()
+    if link_record is None:
+        raise HTTPException(status_code=404, detail="Presentation not found")
+
+    now_ms = int(time.time() * 1000)
+    link_record.is_revoked = True
+    await session.commit()
+
+    token = link_record.token
+    if token in _presentation_ws_sessions:
+        for ws in list(_presentation_ws_sessions[token]):
+            try:
+                await ws.send_json({"type": "revoked"})
+                await ws.close(code=4403)
+            except Exception:
+                pass
+        _presentation_ws_sessions.pop(token, None)
+
+    return {"revokedAt": now_ms}
+
+
+@api_router.get("/p/{token}")
+async def resolve_presentation_token(
+    token: str,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """OUT-V3-01: public viewer route — resolves a presentation token."""
+    from sqlalchemy import update as sa_update
+
+    now_ms = int(time.time() * 1000)
+    res = await session.execute(
+        select(PublicLinkRecord).where(
+            PublicLinkRecord.token == token,
+            PublicLinkRecord.display_name == "presentation",
+        )
+    )
+    link_record = res.scalars().first()
+    if link_record is None:
+        raise HTTPException(status_code=404, detail="Presentation not found")
+
+    if link_record.is_revoked:
+        return {"status": "revoked"}
+    if link_record.expires_at is not None and link_record.expires_at < now_ms:
+        return {"status": "revoked"}
+
+    await session.execute(
+        sa_update(PublicLinkRecord)
+        .where(PublicLinkRecord.id == link_record.id)
+        .values(open_count=PublicLinkRecord.open_count + 1)
+    )
+    await session.commit()
+
+    model_uuid = UUID(link_record.model_id)
+    row = await load_model_row(session, model_uuid)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+
+    import json as _json
+
+    doc = Document.model_validate(row.document)
+    elements_wire = {k: v.model_dump(by_alias=True) for k, v in doc.elements.items()}
+    return {
+        "status": "ok",
+        "modelId": str(row.id),
+        "revision": doc.revision,
+        "elements": elements_wire,
+        "wsUrl": f"/api/p/{token}/ws",
+        "allowMeasurement": link_record.allow_measurement,
+        "allowComment": link_record.allow_comment,
+        "pageScopeIds": _json.loads(link_record.page_scope_ids) if link_record.page_scope_ids else [],
+        "presentation": {
+            "id": link_record.id,
+            "displayName": link_record.display_name,
+            "openCount": link_record.open_count + 1,
+        },
+    }
+
+
+@api_router.websocket("/p/{token}/ws")
+async def presentation_ws(
+    websocket: WebSocket,
+    token: str,
+    hub: Hub = Depends(get_hub),
+    session: AsyncSession = Depends(get_session),
+) -> None:
+    """OUT-V3-01: WebSocket for live presentation updates."""
+    res = await session.execute(
+        select(PublicLinkRecord).where(
+            PublicLinkRecord.token == token,
+            PublicLinkRecord.display_name == "presentation",
+        )
+    )
+    link_record = res.scalars().first()
+
+    await websocket.accept()
+
+    if link_record is None or link_record.is_revoked:
+        await websocket.send_json({"type": "revoked"})
+        await websocket.close(code=4403)
+        return
+
+    if token not in _presentation_ws_sessions:
+        _presentation_ws_sessions[token] = set()
+    _presentation_ws_sessions[token].add(websocket)
+
+    sid = str(link_record.model_id)
+    hub.subscribe(sid, websocket)
+
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        pass
+    finally:
+        hub.unregister(websocket)
+        if token in _presentation_ws_sessions:
+            _presentation_ws_sessions[token].discard(websocket)

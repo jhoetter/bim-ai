@@ -67,6 +67,10 @@ export interface TopBarProps {
   planStyleOptions?: TopBarSelectOption[];
   planStyleValue?: string;
   onPlanStyleChange?: (id: string) => void;
+  /** OUT-V3-01: true when at least one Page exists in the model. */
+  hasPages?: boolean;
+  /** OUT-V3-01: callback to open the SharePresentationModal. */
+  onSharePresentation?: () => void;
 }
 
 export function TopBar({
@@ -90,6 +94,8 @@ export function TopBar({
   planStyleOptions,
   planStyleValue,
   onPlanStyleChange,
+  hasPages,
+  onSharePresentation,
 }: TopBarProps): JSX.Element {
   const tablistId = useId();
   return (
@@ -121,6 +127,8 @@ export function TopBar({
         planStyleOptions={planStyleOptions}
         planStyleValue={planStyleValue}
         onPlanStyleChange={onPlanStyleChange}
+        hasPages={hasPages}
+        onSharePresentation={onSharePresentation}
       />
     </div>
   );
@@ -258,6 +266,8 @@ function TopBarRight({
   planStyleOptions,
   planStyleValue,
   onPlanStyleChange,
+  hasPages,
+  onSharePresentation,
 }: {
   theme: 'light' | 'dark';
   onThemeToggle?: () => void;
@@ -273,6 +283,8 @@ function TopBarRight({
   planStyleOptions?: TopBarSelectOption[];
   planStyleValue?: string;
   onPlanStyleChange?: (id: string) => void;
+  hasPages?: boolean;
+  onSharePresentation?: () => void;
 }): JSX.Element {
   const { t } = useTranslation();
   const showSelects =
@@ -307,6 +319,17 @@ function TopBarRight({
           <div className="mx-1 h-4 w-px bg-border" aria-hidden="true" />
         </>
       ) : null}
+      <button
+        type="button"
+        onClick={hasPages ? onSharePresentation : undefined}
+        disabled={!hasPages}
+        aria-label="Share live presentation"
+        title={hasPages ? 'Share live presentation' : 'Add a Page first'}
+        style={{ background: 'var(--color-surface-2)' }}
+        className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-muted shadow-sm hover:bg-surface-strong hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        <span style={{ fontSize: 'var(--text-sm)' }}>Share live presentation</span>
+      </button>
       <button
         type="button"
         onClick={onCommandPalette}

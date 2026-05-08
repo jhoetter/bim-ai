@@ -38,6 +38,10 @@
 
   /* Canvas radius — sidebars, rails, status bar, canvases never get radius */
   --radius-canvas: 0;
+
+  /* Overlay + modal shadow — used by SharePresentationModal and other dialogs */
+  --color-overlay: rgba(0, 0, 0, 0.4);
+  --shadow-modal: rgba(0, 0, 0, 0.24);
 }
 
 :root[data-theme='dark'],
