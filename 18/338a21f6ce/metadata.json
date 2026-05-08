@@ -1,0 +1,30 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "18338a21f6ce",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "spec/prompts/wave-05/README.md",
+    "spec/prompts/wave-05/WP-FED-03-canvas-badge.md",
+    "spec/prompts/wave-05/WP-FED-04-dxf-underlay.md",
+    "spec/prompts/wave-05/WP-IFC-04-broader-coverage.md",
+    "spec/prompts/wave-05/WP-KRN-07-stairs-spiral-sketch.md",
+    "spec/prompts/wave-05/WP-KRN-14-dormer-completeness.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/18/338a21f6ce/0/metadata.json",
+      "transcript": "/18/338a21f6ce/0/full.jsonl",
+      "content_hash": "/18/338a21f6ce/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 55,
+    "cache_creation_tokens": 55014,
+    "cache_read_tokens": 17975543,
+    "output_tokens": 28757,
+    "api_call_count": 55
+  }
+}
