@@ -510,6 +510,9 @@ export type Element =
       taperRatio?: number | null;
       /** CMD-V3-02: provenance trace linking this element to its originating bundle. */
       agentTrace?: AgentTrace;
+      /** KRN-V3-04: design option membership. */
+      optionSetId?: string | null;
+      optionId?: string | null;
     }
   | {
       kind: 'door';
@@ -534,6 +537,9 @@ export type Element =
       phaseDemolished?: string | null;
       /** CMD-V3-02: provenance trace linking this element to its originating bundle. */
       agentTrace?: AgentTrace;
+      /** KRN-V3-04: design option membership. */
+      optionSetId?: string | null;
+      optionId?: string | null;
     }
   | {
       kind: 'window';
@@ -562,6 +568,9 @@ export type Element =
       phaseDemolished?: string | null;
       /** CMD-V3-02: provenance trace linking this element to its originating bundle. */
       agentTrace?: AgentTrace;
+      /** KRN-V3-04: design option membership. */
+      optionSetId?: string | null;
+      optionId?: string | null;
     }
   | {
       kind: 'wall_opening';
@@ -637,6 +646,8 @@ export type Element =
       sectionBoxMaxMm?: { xMm: number; yMm: number; zMm: number } | null;
       hiddenElementIds?: string[];
       isolatedElementIds?: string[];
+      /** KRN-V3-04: per-set option lock; key = optionSetId, value = optionId. */
+      optionLocks?: Record<string, string>;
     }
   | {
       kind: 'issue';
@@ -669,6 +680,9 @@ export type Element =
       phaseDemolished?: string | null;
       /** CMD-V3-02: provenance trace linking this element to its originating bundle. */
       agentTrace?: AgentTrace;
+      /** KRN-V3-04: design option membership. */
+      optionSetId?: string | null;
+      optionId?: string | null;
     }
   | {
       kind: 'roof';
@@ -701,6 +715,9 @@ export type Element =
       phaseDemolished?: string | null;
       /** CMD-V3-02: provenance trace linking this element to its originating bundle. */
       agentTrace?: AgentTrace;
+      /** KRN-V3-04: design option membership. */
+      optionSetId?: string | null;
+      optionId?: string | null;
     }
   | {
       kind: 'stair';
@@ -753,6 +770,9 @@ export type Element =
       phaseDemolished?: string | null;
       /** CMD-V3-02: provenance trace linking this element to its originating bundle. */
       agentTrace?: AgentTrace;
+      /** KRN-V3-04: design option membership. */
+      optionSetId?: string | null;
+      optionId?: string | null;
     }
   | {
       kind: 'slab_opening';
@@ -905,6 +925,8 @@ export type Element =
       planCategoryGraphics?: PlanCategoryGraphicRow[];
       categoryOverrides?: Record<string, unknown>;
       viewFilters?: unknown[];
+      /** KRN-V3-04: per-set option lock; key = optionSetId, value = optionId. */
+      optionLocks?: Record<string, string>;
     }
   | {
       kind: 'view_template';
@@ -1452,6 +1474,18 @@ export type Violation = {
   discipline?: string | null;
 };
 
+export type DesignOption = {
+  id: string;
+  name: string;
+  isPrimary?: boolean;
+};
+
+export type DesignOptionSet = {
+  id: string;
+  name: string;
+  options: DesignOption[];
+};
+
 export type Snapshot = {
   modelId: string;
 
@@ -1467,6 +1501,9 @@ export type Snapshot = {
    * the host has no links.
    */
   linkSourceRevisions?: Record<string, number>;
+
+  /** KRN-V3-04: design option sets for this document. */
+  designOptionSets?: DesignOptionSet[];
 };
 
 /** Server delta payload (camelCase aliases). */

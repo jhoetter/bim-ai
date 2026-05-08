@@ -150,6 +150,12 @@ from bim_ai.commands import (
     SetWallStackCmd,
     SetWallLeanTaperCmd,
     WallStackComponentCmd,
+    CreateOptionSetCmd,
+    AddOptionCmd,
+    RemoveOptionCmd,
+    SetPrimaryOptionCmd,
+    AssignElementToOptionCmd,
+    SetViewOptionLockCmd,
 )
 from bim_ai.constraints import Violation, evaluate
 from bim_ai.datum_levels import (
@@ -4468,12 +4474,92 @@ def apply_inplace(
                 }
             )
 
+        case CreateOptionSetCmd():
+            if any(s.id == cmd.id for s in doc.design_option_sets):
+                raise ValueError(f"duplicate option set id: {cmd.id!r}")
+            from bim_ai.document import DesignOptionSet
+            doc.design_option_sets.append(DesignOptionSet(id=cmd.id, name=cmd.name))
+
+        case AddOptionCmd():
+            the_set = next((s for s in doc.design_option_sets if s.id == cmd.option_set_id), None)
+            if the_set is None:
+                raise ValueError(f"option set not found: {cmd.option_set_id!r}")
+            if any(o.id == cmd.option_id for o in the_set.options):
+                raise ValueError(f"duplicate option id: {cmd.option_id!r}")
+            from bim_ai.document import DesignOption
+            if cmd.is_primary:
+                for o in the_set.options:
+                    o.is_primary = False
+            the_set.options.append(DesignOption(id=cmd.option_id, name=cmd.name, is_primary=cmd.is_primary))
+
+        case RemoveOptionCmd():
+            the_set = next((s for s in doc.design_option_sets if s.id == cmd.option_set_id), None)
+            if the_set is None:
+                raise ValueError(f"option set not found: {cmd.option_set_id!r}")
+            if len(the_set.options) <= 1:
+                raise ValueError("cannot remove the only option in a set")
+            the_set.options = [o for o in the_set.options if o.id != cmd.option_id]
+            for eid, elem in list(els.items()):
+                if getattr(elem, "option_set_id", None) == cmd.option_set_id and getattr(elem, "option_id", None) == cmd.option_id:
+                    els[eid] = elem.model_copy(update={"option_set_id": None, "option_id": None})
+
+        case SetPrimaryOptionCmd():
+            the_set = next((s for s in doc.design_option_sets if s.id == cmd.option_set_id), None)
+            if the_set is None:
+                raise ValueError(f"option set not found: {cmd.option_set_id!r}")
+            target = next((o for o in the_set.options if o.id == cmd.option_id), None)
+            if target is None:
+                raise ValueError(f"option not found: {cmd.option_id!r}")
+            for o in the_set.options:
+                o.is_primary = o.id == cmd.option_id
+
+        case AssignElementToOptionCmd():
+            if (cmd.option_set_id is None) != (cmd.option_id is None):
+                raise ValueError("optionSetId and optionId must both be null or both non-null")
+            elem = els.get(cmd.element_id)
+            if elem is None:
+                raise ValueError(f"element not found: {cmd.element_id!r}")
+            els[cmd.element_id] = elem.model_copy(update={"option_set_id": cmd.option_set_id, "option_id": cmd.option_id})
+
+        case SetViewOptionLockCmd():
+            view = els.get(cmd.view_id)
+            if view is None or not hasattr(view, "option_locks"):
+                raise ValueError(f"viewId must reference a plan_view or viewpoint element")
+            locks = dict(getattr(view, "option_locks") or {})
+            if cmd.option_id is None:
+                locks.pop(cmd.option_set_id, None)
+            else:
+                locks[cmd.option_set_id] = cmd.option_id
+            els[cmd.view_id] = view.model_copy(update={"option_locks": locks})
+
     # KRN-08: areas track a derived computedAreaSqMm. Recompute after every
     # command apply so create/update/delete of areas (and shafts that affect
     # `net` rule-set deductions) keep the value current.
     from bim_ai.area_calculation import recompute_all_areas
 
     recompute_all_areas(els)
+
+
+
+def resolve_visible_elements(doc: "Document", option_locks: dict[str, str]) -> list[str]:
+    visible = []
+    for eid, elem in doc.elements.items():
+        set_id = getattr(elem, "option_set_id", None)
+        opt_id = getattr(elem, "option_id", None)
+        if set_id is None:
+            visible.append(eid)
+            continue
+        locked = option_locks.get(set_id)
+        if locked is not None:
+            if opt_id == locked:
+                visible.append(eid)
+        else:
+            the_set = next((s for s in doc.design_option_sets if s.id == set_id), None)
+            if the_set is not None:
+                primary = next((o for o in the_set.options if o.is_primary), None)
+                if primary is not None and opt_id == primary.id:
+                    visible.append(eid)
+    return visible
 
 
 def _supports_pin(el: Element) -> bool:

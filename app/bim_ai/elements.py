@@ -282,6 +282,8 @@ class WallElem(BaseModel):
     lean_mm: Vec2Mm | None = Field(default=None, alias="leanMm")
     taper_ratio: float | None = Field(default=None, alias="taperRatio")
     agent_trace: AgentTrace | None = Field(default=None, alias="agentTrace")
+    option_set_id: str | None = Field(default=None, alias="optionSetId")
+    option_id: str | None = Field(default=None, alias="optionId")
 
     @model_validator(mode="after")
     def _validate_lean_taper(self) -> WallElem:
@@ -334,6 +336,8 @@ class DoorElem(BaseModel):
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
     agent_trace: AgentTrace | None = Field(default=None, alias="agentTrace")
+    option_set_id: str | None = Field(default=None, alias="optionSetId")
+    option_id: str | None = Field(default=None, alias="optionId")
 
 
 WindowOutlineKind = Literal[
@@ -372,6 +376,8 @@ class WindowElem(BaseModel):
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
     agent_trace: AgentTrace | None = Field(default=None, alias="agentTrace")
+    option_set_id: str | None = Field(default=None, alias="optionSetId")
+    option_id: str | None = Field(default=None, alias="optionId")
 
 
 class WallOpeningElem(BaseModel):
@@ -566,6 +572,7 @@ class ViewpointElem(BaseModel):
     section_box_enabled: bool | None = Field(default=None, alias="sectionBoxEnabled")
     section_box_min_mm: Vec3Mm | None = Field(default=None, alias="sectionBoxMinMm")
     section_box_max_mm: Vec3Mm | None = Field(default=None, alias="sectionBoxMaxMm")
+    option_locks: dict[str, str] = Field(default_factory=dict, alias="optionLocks")
 
 
 class IssueElem(BaseModel):
@@ -604,6 +611,8 @@ class FloorElem(BaseModel):
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
     agent_trace: AgentTrace | None = Field(default=None, alias="agentTrace")
+    option_set_id: str | None = Field(default=None, alias="optionSetId")
+    option_id: str | None = Field(default=None, alias="optionId")
 
 
 class RoofElem(BaseModel):
@@ -633,6 +642,8 @@ class RoofElem(BaseModel):
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
     agent_trace: AgentTrace | None = Field(default=None, alias="agentTrace")
+    option_set_id: str | None = Field(default=None, alias="optionSetId")
+    option_id: str | None = Field(default=None, alias="optionId")
 
 
 StairShape = Literal["straight", "l_shape", "u_shape", "spiral", "sketch"]
@@ -714,6 +725,8 @@ class StairElem(BaseModel):
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
     agent_trace: AgentTrace | None = Field(default=None, alias="agentTrace")
+    option_set_id: str | None = Field(default=None, alias="optionSetId")
+    option_id: str | None = Field(default=None, alias="optionId")
 
     @model_validator(mode="after")
     def _validate_shape_specific_fields(self) -> StairElem:
@@ -1376,6 +1389,7 @@ class PlanViewElem(BaseModel):
         default_factory=list,
         alias="planCategoryGraphics",
     )
+    option_locks: dict[str, str] = Field(default_factory=dict, alias="optionLocks")
 
 
 class ViewTemplateElem(BaseModel):

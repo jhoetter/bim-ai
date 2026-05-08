@@ -1813,6 +1813,53 @@ class MoveElementCmd(BaseModel):
     t_along_host: float = Field(alias="tAlongHost", ge=0.0, le=1.0)
 
 
+
+class CreateOptionSetCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createOptionSet"] = "createOptionSet"
+    id: str
+    name: str
+
+
+class AddOptionCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["addOption"] = "addOption"
+    option_set_id: str = Field(alias="optionSetId")
+    option_id: str = Field(alias="optionId")
+    name: str
+    is_primary: bool = Field(default=False, alias="isPrimary")
+
+
+class RemoveOptionCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["removeOption"] = "removeOption"
+    option_set_id: str = Field(alias="optionSetId")
+    option_id: str = Field(alias="optionId")
+
+
+class SetPrimaryOptionCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["setPrimaryOption"] = "setPrimaryOption"
+    option_set_id: str = Field(alias="optionSetId")
+    option_id: str = Field(alias="optionId")
+
+
+class AssignElementToOptionCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["assignElementToOption"] = "assignElementToOption"
+    element_id: str = Field(alias="elementId")
+    option_set_id: str | None = Field(default=None, alias="optionSetId")
+    option_id: str | None = Field(default=None, alias="optionId")
+
+
+class SetViewOptionLockCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["setViewOptionLock"] = "setViewOptionLock"
+    view_id: str = Field(alias="viewId")
+    option_set_id: str = Field(alias="optionSetId")
+    option_id: str | None = Field(default=None, alias="optionId")
+
+
 Command = Annotated[
     CreateLevelCmd
     | CreateWallCmd
@@ -1950,6 +1997,12 @@ Command = Annotated[
     | SetWallStackCmd
     | SetWallLeanTaperCmd
     | SetRailingBalusterPatternCmd
-    | SetRailingHandrailSupportsCmd,
+    | SetRailingHandrailSupportsCmd
+    | CreateOptionSetCmd
+    | AddOptionCmd
+    | RemoveOptionCmd
+    | SetPrimaryOptionCmd
+    | AssignElementToOptionCmd
+    | SetViewOptionLockCmd,
     Field(discriminator="type"),
 ]
