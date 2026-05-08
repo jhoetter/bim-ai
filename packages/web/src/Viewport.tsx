@@ -28,6 +28,12 @@ import {
 import { resolveViewportPaintBundle, type ViewportPaintBundle } from './viewport/materials';
 import { ViewCube } from './viewport/ViewCube';
 import { applyLinkedGhosting } from './viewport/linkedGhosting';
+import {
+  buildDriftBadgeCanvas,
+  driftBadgeTooltip,
+  elementBadgeAnchorMm,
+  selectDriftedElements,
+} from './plan/monitorDriftBadge';
 import { type ViewCubePick } from './viewport/viewCubeAlignment';
 import { SectionBox } from './viewport/sectionBox';
 import { WalkController, classifyKey as classifyWalkKey } from './viewport/walkMode';
@@ -1671,6 +1677,40 @@ export function Viewport({ wsConnected, onPersistViewpointField, onSemanticComma
       }
     };
   }, [selectedId, elementsById]);
+
+  // FED-03 — render drift badges as billboarded sprites at the centroid
+  // of every element with a drifted `monitorSource`. The 2D plan canvas
+  // also paints a yellow-triangle badge; using the same Canvas-rendered
+  // texture here keeps the cue visually identical across views.
+  useEffect(() => {
+    const scene = sceneRef.current;
+    if (!scene) return;
+    const sprites: THREE.Sprite[] = [];
+    const drifted = selectDriftedElements(elementsById);
+    if (drifted.length === 0) return;
+    const tex = new THREE.CanvasTexture(buildDriftBadgeCanvas(64));
+    tex.minFilter = THREE.LinearFilter;
+    for (const elem of drifted) {
+      const anchor = elementBadgeAnchorMm(elem);
+      if (!anchor) continue;
+      const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+      const sprite = new THREE.Sprite(mat);
+      sprite.scale.set(0.35, 0.35, 1);
+      sprite.position.set(anchor.xMm / 1000, 2.5, anchor.yMm / 1000);
+      sprite.userData.driftBadge = true;
+      sprite.userData.bimPickId = elem.id;
+      sprite.userData.driftTooltip = driftBadgeTooltip(elem);
+      scene.add(sprite);
+      sprites.push(sprite);
+    }
+    return () => {
+      for (const s of sprites) {
+        scene.remove(s);
+        s.material.dispose();
+      }
+      tex.dispose();
+    };
+  }, [elementsById]);
 
   // Sync the section-box controller's `active` flag with React state.
   useEffect(() => {

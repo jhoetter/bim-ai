@@ -99,6 +99,12 @@ import {
   DXF_UNDERLAY_STROKE,
   selectDxfUnderlaysForLevel,
 } from './dxfUnderlay';
+import {
+  buildDriftBadgeCanvas,
+  driftBadgeTooltip,
+  elementBadgeAnchorMm,
+  selectDriftedElements,
+} from './monitorDriftBadge';
 import { elevationFromWall } from '../lib/sectionElevationFromWall';
 import { WallContextMenu, type WallContextMenuCommand } from '../workspace/WallContextMenu';
 import { PlanDetailLevelToolbar } from './PlanDetailLevelToolbar';
@@ -951,6 +957,33 @@ export function PlanCanvas({
         sprite.userData.bimPickId = a.id;
         grp.add(sprite);
       }
+    }
+
+    // FED-03 — render drift badges (yellow triangles) for elements whose
+    // `monitorSource` has flipped to drifted. Sit above the wire-driven
+    // meshes so the badge sticks to its anchor when the user pans/zooms.
+    for (let i = grp.children.length - 1; i >= 0; i--) {
+      const ch = grp.children[i]!;
+      if ((ch.userData as { driftBadge?: unknown }).driftBadge) grp.remove(ch);
+    }
+    const driftedElems = selectDriftedElements(elementsById);
+    for (const elem of driftedElems) {
+      // Skip drifted elements whose plan-position can't be derived (e.g.
+      // a `level` row — the inspector banner remains the entry point).
+      const anchor = elementBadgeAnchorMm(elem);
+      if (!anchor) continue;
+      const badgeTexture = new THREE.CanvasTexture(buildDriftBadgeCanvas(64));
+      badgeTexture.minFilter = THREE.LinearFilter;
+      const sprite = new THREE.Sprite(
+        new THREE.SpriteMaterial({ map: badgeTexture, transparent: true, depthTest: false }),
+      );
+      // 0.32m on plan ≈ 16px at the canonical zoom level.
+      sprite.scale.set(0.32, 0.32, 1);
+      sprite.position.set(anchor.xMm / 1000, SLICE_Y + 0.02, anchor.yMm / 1000);
+      sprite.userData.driftBadge = true;
+      sprite.userData.bimPickId = elem.id;
+      sprite.userData.driftTooltip = driftBadgeTooltip(elem);
+      grp.add(sprite);
     }
 
     // ANN-01 — render detail_line / detail_region / text_note hosted on the
