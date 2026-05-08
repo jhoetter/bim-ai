@@ -48,6 +48,6 @@ describe('EDT-05 — SnapSettingsToolbar', () => {
       extension: false,
     };
     const { getByTestId } = render(<SnapSettingsToolbar value={value} onChange={vi.fn()} />);
-    expect(getByTestId('snap-settings-button').textContent).toContain('4/6');
+    expect(getByTestId('snap-settings-button').textContent).toContain('6/9');
   });
 });
