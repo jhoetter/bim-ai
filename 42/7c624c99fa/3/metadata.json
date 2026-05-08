@@ -1,0 +1,20 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "427c624c99fa",
+  "session_id": "63a94884-bb93-4926-ace7-312aece29b31",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T21:54:03.225112Z",
+  "branch": "feat/v3-edt-v3-06-helper-dims",
+  "checkpoints_count": 1,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "2fc9c5868a3a",
+  "token_usage": {
+    "input_tokens": 111,
+    "cache_creation_tokens": 93696,
+    "cache_read_tokens": 7384294,
+    "output_tokens": 34328,
+    "api_call_count": 107
+  }
+}
