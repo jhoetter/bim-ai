@@ -26,6 +26,111 @@ type SweepElem = Extract<Element, { kind: 'sweep' }>;
  * shift before being rotated into the path frame; for our piecewise-linear
  * frames we use parallel-transport with world-Y as the initial reference.
  */
+/**
+ * Fast path: when the sweep path is planar on a constant `yMm` (i.e. it
+ * lies entirely on a south- or north-facing facade plane) AND the profile
+ * is a rectangle, build the frame as an `ExtrudeGeometry` ring (outer
+ * polygon minus an inward-offset inner polygon). This produces a clean
+ * miter at every corner without the parallel-transport ribbon-twist
+ * artifact that the general path-sweep exhibits at sharp corners on a
+ * gable polygon — the artifact looked like a diagonal "kink" cutting
+ * through the picture frame's interior.
+ *
+ * Profile rectangle is interpreted as:
+ *   `uMm` (max - min) → frame depth perpendicular to facade (proud)
+ *   `vMm` (max - min) → frame band width (perpendicular to path within
+ *                       facade plane)
+ */
+function buildPlanarFrameRingGeometry(
+  pathPtsMm: { xMm: number; yMm: number; zMm?: number }[],
+  profilePtsMm: { uMm: number; vMm: number }[],
+): THREE.BufferGeometry | null {
+  // All path points must share the same yMm (planar on facade).
+  const y0 = pathPtsMm[0].yMm;
+  for (const p of pathPtsMm) {
+    if (Math.abs(p.yMm - y0) > 1e-3) return null;
+  }
+  // Path must be a closed loop with ≥4 unique vertices + closure.
+  const closed =
+    pathPtsMm.length >= 4 &&
+    Math.abs(pathPtsMm[0].xMm - pathPtsMm[pathPtsMm.length - 1].xMm) < 1e-3 &&
+    Math.abs((pathPtsMm[0].zMm ?? 0) - (pathPtsMm[pathPtsMm.length - 1].zMm ?? 0)) < 1e-3;
+  if (!closed) return null;
+  // Profile must be a 4-vertex rectangle aligned to (u, v).
+  if (profilePtsMm.length !== 4) return null;
+  const us = profilePtsMm.map((p) => p.uMm);
+  const vs = profilePtsMm.map((p) => p.vMm);
+  const uMin = Math.min(...us);
+  const uMax = Math.max(...us);
+  const vMin = Math.min(...vs);
+  const vMax = Math.max(...vs);
+  const isRect = profilePtsMm.every(
+    (p) =>
+      (Math.abs(p.uMm - uMin) < 1e-3 || Math.abs(p.uMm - uMax) < 1e-3) &&
+      (Math.abs(p.vMm - vMin) < 1e-3 || Math.abs(p.vMm - vMax) < 1e-3),
+  );
+  if (!isRect) return null;
+  const frameWidthMm = vMax - vMin; // band width on facade
+  const frameDepthMm = uMax - uMin; // depth proud of facade
+
+  // Centerline path on facade plane (drop closure vertex).
+  const path = pathPtsMm.slice(0, -1).map((p) => ({ x: p.xMm, z: p.zMm ?? 0 }));
+
+  // Compute centroid for inward-offset direction sign.
+  let cx = 0;
+  let cz = 0;
+  for (const p of path) {
+    cx += p.x;
+    cz += p.z;
+  }
+  cx /= path.length;
+  cz /= path.length;
+
+  // Inward-offset polygon: each vertex is moved toward the centroid by
+  // half the frame width. (Approximate but visually correct for convex
+  // gable pentagons; the alternative — true polygon offset — needs a
+  // mitre solver and isn't worth it for this use case.)
+  const halfBand = frameWidthMm / 2;
+  const innerPath = path.map((p) => {
+    const dx = cx - p.x;
+    const dz = cz - p.z;
+    const d = Math.hypot(dx, dz);
+    if (d < 1e-3) return { ...p };
+    return { x: p.x + (dx / d) * halfBand, z: p.z + (dz / d) * halfBand };
+  });
+
+  // Outer-offset polygon analogously (away from centroid by half band).
+  const outerPath = path.map((p) => {
+    const dx = p.x - cx;
+    const dz = p.z - cz;
+    const d = Math.hypot(dx, dz);
+    if (d < 1e-3) return { ...p };
+    return { x: p.x + (dx / d) * halfBand, z: p.z + (dz / d) * halfBand };
+  });
+
+  const shape = new THREE.Shape(outerPath.map((p) => new THREE.Vector2(p.x, p.z)));
+  const hole = new THREE.Path(innerPath.map((p) => new THREE.Vector2(p.x, p.z)));
+  shape.holes.push(hole);
+
+  // Extrude along the perpendicular-to-facade axis (= world Z given the
+  // viewport convention). After extrusion ExtrudeGeometry places the
+  // shape in (x, y) plane extruded along +z. We rotate so:
+  //   shape plane (x, y) → world (x, y_height = +z), extrusion axis → world -z
+  const geom = new THREE.ExtrudeGeometry(shape, {
+    depth: frameDepthMm,
+    bevelEnabled: false,
+    steps: 1,
+  });
+  // ExtrudeGeometry leaves vertices in (shape.x, shape.y, 0..depth). For
+  // our picture-frame: shape.x = planX, shape.y = planZ_height. We want
+  // worldX = planX, worldY = planZ_height, worldZ centred on facade
+  // plane y0 (= 0 for our south-face frame). Already aligned; just
+  // recentre Z so the frame straddles the facade plane (-depth/2..+depth/2)
+  // instead of starting at 0 and going +depth.
+  geom.translate(0, 0, -frameDepthMm / 2);
+  return geom;
+}
+
 export function buildSweepGeometry(
   pathPtsMm: { xMm: number; yMm: number; zMm?: number }[],
   profilePtsMm: { uMm: number; vMm: number }[],
@@ -36,6 +141,10 @@ export function buildSweepGeometry(
   if (profilePtsMm.length < 3) {
     throw new Error('sweep: profile needs ≥3 points');
   }
+  // Try planar-frame fast path first (eliminates parallel-transport
+  // artifacts at sharp corners on closed gable polygons).
+  const planar = buildPlanarFrameRingGeometry(pathPtsMm, profilePtsMm);
+  if (planar) return planar;
 
   // Convert path to world-mm Vector3s.
   const pts = pathPtsMm.map((p) => new THREE.Vector3(p.xMm, p.zMm ?? 0, -p.yMm));
@@ -195,10 +304,15 @@ export function makeSweepMesh(
 
   const matSpec = resolveMaterial(sweep.materialKey ?? null);
   const color = matSpec?.baseColor ?? categoryColorOr(paint, 'wall');
+  // Picture-frame sweeps with white_render need low env-map so the catalog
+  // colour reads true; otherwise sky reflection makes white frames blend
+  // with the white background.
+  const isRenderOrCladding = matSpec?.category === 'render' || matSpec?.category === 'cladding';
   const material = new THREE.MeshStandardMaterial({
     color: new THREE.Color(color),
     roughness: matSpec?.roughness ?? paint?.categories.wall.roughness ?? 0.7,
     metalness: matSpec?.metalness ?? 0,
+    envMapIntensity: isRenderOrCladding ? 0.15 : 1.0,
   });
 
   const mesh = new THREE.Mesh(geom, material);

@@ -120,10 +120,12 @@ export function makeDormerMesh(
 
   const wallSpec = resolveMaterial(dormer.wallMaterialKey ?? null);
   const wallColor = wallSpec?.baseColor ?? '#f4f4f0';
+  const wallIsRender = wallSpec?.category === 'render' || wallSpec?.category === 'cladding';
   const wallMat = new THREE.MeshStandardMaterial({
     color: new THREE.Color(wallColor),
     roughness: wallSpec?.roughness ?? 0.92,
     metalness: wallSpec?.metalness ?? 0,
+    envMapIntensity: wallIsRender ? 0.15 : 1.0,
   });
 
   const roofSpec = resolveMaterial(dormer.roofMaterialKey ?? null);
@@ -132,6 +134,7 @@ export function makeDormerMesh(
     color: new THREE.Color(roofColor),
     roughness: roofSpec?.roughness ?? 0.85,
     metalness: roofSpec?.metalness ?? 0,
+    envMapIntensity: roofSpec?.category === 'metal_roof' ? 0.4 : 0.15,
   });
   void categoryColorOr;
 
