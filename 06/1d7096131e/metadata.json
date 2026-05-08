@@ -3,7 +3,7 @@
   "checkpoint_id": "061d7096131e",
   "strategy": "manual-commit",
   "branch": "feat/v3-job-v3-01-jobs-panel",
-  "checkpoints_count": 2,
+  "checkpoints_count": 1,
   "files_touched": [
     "packages/core/src/index.ts",
     "packages/web/src/workspace/DriftBadge.tsx",
@@ -75,11 +75,11 @@
     }
   ],
   "token_usage": {
-    "input_tokens": 1797,
-    "cache_creation_tokens": 1460978,
-    "cache_read_tokens": 65386947,
-    "output_tokens": 322814,
-    "api_call_count": 720
+    "input_tokens": 1515,
+    "cache_creation_tokens": 943646,
+    "cache_read_tokens": 45011377,
+    "output_tokens": 207661,
+    "api_call_count": 503
   },
   "combined_attribution": {
     "calculated_at": "2026-05-08T16:41:29.035223Z",

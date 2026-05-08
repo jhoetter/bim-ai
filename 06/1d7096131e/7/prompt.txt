@@ -454,3 +454,11 @@ all seem to be done, can you check? and potentially merge?
 ---
 
 ok, what are the one sentence instructions?
+
+---
+
+how far are we already in the v3 tracker? percentage wise?
+
+---
+
+all seem done, can you check and merge to main all?
