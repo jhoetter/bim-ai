@@ -19,6 +19,10 @@ export type TempDimDirection = 'x' | 'y';
 
 export interface TempDimTarget {
   id: string;
+  /** EDT-02 — the two wall ids this temp-dim measures between. The
+   *  padlock handler authors a `createConstraint` between these. */
+  aId: string;
+  bId: string;
   fromMm: XY;
   toMm: XY;
   direction: TempDimDirection;
@@ -109,11 +113,19 @@ export function wallTempDimensions(
   const lvlId = source.levelId;
   const targets: TempDimTarget[] = [];
 
-  const push = (direction: TempDimDirection, suffix: string, other: XY, distanceMm: number) => {
+  const push = (
+    direction: TempDimDirection,
+    suffix: string,
+    other: XY,
+    distanceMm: number,
+    bId: string,
+  ) => {
     const fromMm = { xMm: ref.xMm, yMm: ref.yMm };
     const toMm = { xMm: other.xMm, yMm: other.yMm };
     targets.push({
       id: `${source.id}:tempdim:${suffix}`,
+      aId: source.id,
+      bId,
       fromMm,
       toMm,
       direction,
@@ -139,19 +151,19 @@ export function wallTempDimensions(
 
   if (neighbours.left) {
     const m = midpoint(neighbours.left.wall.start, neighbours.left.wall.end);
-    push('x', 'left', m, neighbours.left.distanceMm);
+    push('x', 'left', m, neighbours.left.distanceMm, neighbours.left.wall.id);
   }
   if (neighbours.right) {
     const m = midpoint(neighbours.right.wall.start, neighbours.right.wall.end);
-    push('x', 'right', m, neighbours.right.distanceMm);
+    push('x', 'right', m, neighbours.right.distanceMm, neighbours.right.wall.id);
   }
   if (neighbours.above) {
     const m = midpoint(neighbours.above.wall.start, neighbours.above.wall.end);
-    push('y', 'above', m, neighbours.above.distanceMm);
+    push('y', 'above', m, neighbours.above.distanceMm, neighbours.above.wall.id);
   }
   if (neighbours.below) {
     const m = midpoint(neighbours.below.wall.start, neighbours.below.wall.end);
-    push('y', 'below', m, neighbours.below.distanceMm);
+    push('y', 'below', m, neighbours.below.distanceMm, neighbours.below.wall.id);
   }
 
   return targets;

@@ -27,6 +27,7 @@ from bim_ai.commands import (
     CreateCalloutCmd,
     CreateCeilingCmd,
     CreateColumnCmd,
+    CreateConstraintCmd,
     CreateDetailLineCmd,
     CreateDetailRegionCmd,
     CreateDimensionCmd,
@@ -144,6 +145,8 @@ from bim_ai.elements import (
     ClashResultSpec,
     ClashTestElem,
     ColumnElem,
+    ConstraintElem,
+    ConstraintRefRow,
     DetailLineElem,
     DetailRegionElem,
     DimensionElem,
@@ -2486,6 +2489,31 @@ def apply_inplace(
                 related_element_ids=[vid, cmd.host_element_id],
             )
 
+        case CreateConstraintCmd():
+            kid = cmd.id or new_id()
+            if kid in els:
+                raise ValueError(f"duplicate element id '{kid}'")
+            if not cmd.refs_a or not cmd.refs_b:
+                raise ValueError(
+                    "createConstraint.refsA and refsB each require at least one ref"
+                )
+            els[kid] = ConstraintElem(
+                kind="constraint",
+                id=kid,
+                name=cmd.name or "",
+                rule=cmd.rule,
+                refs_a=[
+                    ConstraintRefRow(elementId=r.element_id, anchor=r.anchor)
+                    for r in cmd.refs_a
+                ],
+                refs_b=[
+                    ConstraintRefRow(elementId=r.element_id, anchor=r.anchor)
+                    for r in cmd.refs_b
+                ],
+                locked_value_mm=cmd.locked_value_mm,
+                severity=cmd.severity,
+            )
+
         case UpsertFamilyTypeCmd():
             fid = cmd.id or new_id()
             kwargs: dict[str, Any] = {
@@ -4414,6 +4442,35 @@ def try_apply_kernel_ifc_authoritative_replay_v0(
     return True, new_doc, cmds_raw, violations, code
 
 
+def _evaluate_edt_constraint_violations(els: dict[str, Element]) -> list[Violation]:
+    """EDT-02 — evaluate constraint elements against the post-apply world.
+
+    Returns engine ``Violation`` rows for every error-severity break so
+    the bundle caller can roll back. The message includes the violating
+    constraint id, rule, and residual_mm so the rejection is deterministic
+    without re-running the evaluator.
+    """
+    from bim_ai.edt.constraints import errors_only, evaluate_all
+
+    elem_dicts = [el.model_dump(by_alias=True) for el in els.values()]
+    violations = errors_only(evaluate_all(elem_dicts))
+    out: list[Violation] = []
+    for v in violations:
+        out.append(
+            Violation(
+                ruleId="edt_constraint_violated",
+                severity="error",
+                message=(
+                    f"constraint {v.constraint_id} ({v.rule}) violated: "
+                    f"residual {v.residual_mm:.1f}mm — {v.message}"
+                ),
+                elementIds=[v.constraint_id],
+                blocking=True,
+            )
+        )
+    return out
+
+
 def try_commit_bundle(
     doc: Document,
     cmds_raw: list[dict[str, Any]],
@@ -4429,6 +4486,12 @@ def try_commit_bundle(
         apply_inplace(cand, cmd, source_provider=source_provider)
 
     violations = evaluate(cand.elements)
+
+    # EDT-02 — reject bundles that break an error-severity locked constraint.
+    # Runs after every command apply; the clone rollback is implicit because
+    # we never return ``cand`` on failure.
+    edt_violations = _evaluate_edt_constraint_violations(cand.elements)
+    violations = violations + edt_violations
 
     blocking = [v for v in violations if v.blocking or v.severity == "error"]
     if blocking:
