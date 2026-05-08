@@ -3,18 +3,34 @@
   "checkpoint_id": "b53be5fb8cb0",
   "session_id": "35ded718-92a7-4c1d-bb31-a71da05ac443",
   "strategy": "manual-commit",
-  "created_at": "2026-05-08T16:42:15.707976Z",
+  "created_at": "2026-05-08T16:43:04.855712Z",
   "branch": "feat/v3-krn-v3-10-stair-subkinds",
-  "checkpoints_count": 1,
-  "files_touched": [],
+  "checkpoints_count": 0,
+  "files_touched": [
+    "app/bim_ai/elements.py"
+  ],
   "agent": "Claude Code",
   "model": "claude-sonnet-4-6",
   "turn_id": "7b0918cc12b6",
+  "checkpoint_transcript_start": 211,
+  "transcript_lines_at_start": 211,
   "token_usage": {
-    "input_tokens": 79,
-    "cache_creation_tokens": 107045,
-    "cache_read_tokens": 4238302,
-    "output_tokens": 21967,
-    "api_call_count": 44
+    "input_tokens": 7,
+    "cache_creation_tokens": 6016,
+    "cache_read_tokens": 853919,
+    "output_tokens": 2690,
+    "api_call_count": 7
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-08T16:43:04.840812Z",
+    "agent_lines": 78,
+    "agent_removed": 0,
+    "human_added": 497,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 575,
+    "total_lines_changed": 583,
+    "agent_percentage": 13.379073756432247,
+    "metric_version": 2
   }
 }
