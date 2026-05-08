@@ -3,7 +3,7 @@
   "checkpoint_id": "399a55c31425",
   "strategy": "manual-commit",
   "branch": "feat/wave-05-fed-04-dxf-underlay",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "app/bim_ai/commands.py",
     "app/bim_ai/dxf_import.py",
@@ -39,13 +39,19 @@
       "transcript": "/39/9a55c31425/2/full.jsonl",
       "content_hash": "/39/9a55c31425/2/content_hash.txt",
       "prompt": "/39/9a55c31425/2/prompt.txt"
+    },
+    {
+      "metadata": "/39/9a55c31425/3/metadata.json",
+      "transcript": "/39/9a55c31425/3/full.jsonl",
+      "content_hash": "/39/9a55c31425/3/content_hash.txt",
+      "prompt": "/39/9a55c31425/3/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 779,
-    "cache_creation_tokens": 813813,
-    "cache_read_tokens": 110308749,
-    "output_tokens": 352881,
-    "api_call_count": 694
+    "input_tokens": 942,
+    "cache_creation_tokens": 1019031,
+    "cache_read_tokens": 129956951,
+    "output_tokens": 429004,
+    "api_call_count": 842
   }
 }

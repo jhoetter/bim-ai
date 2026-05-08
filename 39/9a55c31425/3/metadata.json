@@ -1,0 +1,58 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "399a55c31425",
+  "session_id": "f96cb5ab-9230-449c-b3f0-d25e2a7b3e43",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T08:10:15.366407Z",
+  "branch": "feat/wave-05-fed-04-dxf-underlay",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "app/bim_ai/commands.py",
+    "app/bim_ai/dxf_import.py",
+    "app/bim_ai/elements.py",
+    "app/bim_ai/engine.py",
+    "app/bim_ai/routes_api.py",
+    "app/pyproject.toml",
+    "app/tests/test_create_link_dxf_command.py",
+    "app/tests/test_dxf_import.py",
+    "packages/web/src/plan/PlanCanvas.tsx",
+    "packages/web/src/plan/dxfUnderlay.test.ts",
+    "packages/web/src/plan/dxfUnderlay.ts",
+    "packages/web/src/workspace/ProjectMenu.tsx",
+    "packages/web/src/workspace/Workspace.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-opus-4-7",
+  "turn_id": "33e3abe0a183",
+  "token_usage": {
+    "input_tokens": 163,
+    "cache_creation_tokens": 205218,
+    "cache_read_tokens": 19648202,
+    "output_tokens": 76123,
+    "api_call_count": 148
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-08T08:10:15.351652Z",
+    "agent_lines": 1242,
+    "agent_removed": 10,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 1242,
+    "total_lines_changed": 1252,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}
