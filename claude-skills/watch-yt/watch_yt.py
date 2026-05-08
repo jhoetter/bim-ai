@@ -33,11 +33,21 @@ load_dotenv()
 
 # Keep each chunk safely under Gemini 2.5 Flash's 1M-token context limit
 # (~258 tokens/sec → 1M tokens ≈ 64 min; use 55 min to leave headroom).
-_CHUNK_SECS     = 55 * 60
-_UPLOAD_WORKERS = 4   # parallel Gemini chunk upload+analyse jobs
-_FRAME_WORKERS  = 8   # parallel ffmpeg screenshot extractions
-_MAX_RETRIES    = 5
-_BASE_BACKOFF   = 60  # seconds — for rate-limit exponential backoff
+_CHUNK_SECS        = 55 * 60
+_DOWNLOAD_WORKERS  = 4   # parallel chunk downloads
+_UPLOAD_WORKERS    = 4   # parallel Gemini upload+analyse jobs
+_FRAME_WORKERS     = 8   # parallel ffmpeg screenshot extractions
+_MAX_RETRIES       = 5
+_BASE_BACKOFF      = 60  # seconds — for rate-limit exponential backoff
+
+# Gemini only needs to understand content, not view HD frames.
+# 480p is ~5-8x smaller than 1080p/4K — dramatically faster chunk downloads.
+_ANALYSIS_FORMAT = (
+    "bestvideo[height<=480][ext=mp4]+bestaudio[ext=m4a]"
+    "/bestvideo[height<=480]+bestaudio"
+    "/best[height<=480]"
+    "/best"
+)
 
 _TEXT_PROMPT = """\
 Watch this video carefully and produce a granular, timestamped breakdown
@@ -249,48 +259,62 @@ def _analyse_short(youtube_url: str, api_key: str, model: str, want_json: bool) 
 
 # ── long-video path (> 60 min) ────────────────────────────────────────────────
 
-def _download_chunk(youtube_url: str, start: float, end: float, dest: Path) -> Path:
-    out_tmpl = str(dest / "chunk.%(ext)s")
-    section  = f"*{_seconds_to_ts(start)}-{_seconds_to_ts(end)}"
-    subprocess.run(
-        [
-            "yt-dlp", "--quiet",
-            "-f", "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
-            "--download-sections", section,
-            # No --force-keyframes-at-cuts: avoids slow re-encoding at boundaries;
-            # a few seconds of slop is irrelevant for Gemini analysis.
-            "-o", out_tmpl,
-            youtube_url,
-        ],
-        check=True,
-    )
-    return next(dest.glob("chunk.*"))
+# ── stage 1: download ─────────────────────────────────────────────────────────
 
-
-def _analyse_chunk(
+def _download_chunk(
     youtube_url: str,
-    api_key: str,
-    model: str,
     chunk_idx: int,
     start_secs: float,
     end_secs: float,
     tmp_root: Path,
     out_dir: Path | None,
-) -> list[dict]:
-    # Resume: return cached result if available
+) -> tuple[int, Path | None, float]:
+    """Download one chunk at 480p. Returns (chunk_idx, path, start_secs).
+    Returns path=None when the chunk is already cached."""
     if out_dir is not None:
         cache = _chunk_cache_path(out_dir, chunk_idx)
         if cache.exists():
             print(f"  chunk {chunk_idx+1}: resuming from cache", file=sys.stderr)
-            return json.loads(cache.read_text())
+            return chunk_idx, None, start_secs
 
     chunk_dir = tmp_root / f"chunk_{chunk_idx:03d}"
-    chunk_dir.mkdir()
+    chunk_dir.mkdir(exist_ok=True)
     print(
-        f"  chunk {chunk_idx+1}: downloading {_seconds_to_ts(start_secs)}–{_seconds_to_ts(end_secs)} …",
+        f"  chunk {chunk_idx+1}: downloading {_seconds_to_ts(start_secs)}–"
+        f"{_seconds_to_ts(end_secs)} (480p) …",
         file=sys.stderr,
     )
-    chunk_path = _download_chunk(youtube_url, start_secs, end_secs, chunk_dir)
+    section = f"*{_seconds_to_ts(start_secs)}-{_seconds_to_ts(end_secs)}"
+    subprocess.run(
+        [
+            "yt-dlp", "--quiet",
+            "-f", _ANALYSIS_FORMAT,
+            "--download-sections", section,
+            "-o", str(chunk_dir / "chunk.%(ext)s"),
+            youtube_url,
+        ],
+        check=True,
+    )
+    return chunk_idx, next(chunk_dir.glob("chunk.*")), start_secs
+
+
+# ── stage 2: upload + analyse ─────────────────────────────────────────────────
+
+def _analyse_downloaded_chunk(
+    chunk_idx: int,
+    chunk_path: Path | None,
+    start_secs: float,
+    api_key: str,
+    model: str,
+    out_dir: Path | None,
+    n_total: int,
+) -> list[dict]:
+    """Upload and analyse one downloaded chunk. Handles cache hits (path=None)."""
+    if chunk_path is None:
+        # Cache hit — load from disk
+        entries = json.loads(_chunk_cache_path(out_dir, chunk_idx).read_text())
+        print(f"  chunk {chunk_idx+1}/{n_total} done ({len(entries)} entries, cached)", file=sys.stderr)
+        return entries
 
     entries = _parse_with_retry(
         lambda: _gemini_file(chunk_path, api_key, model, _JSON_PROMPT),
@@ -302,14 +326,17 @@ def _analyse_chunk(
         abs_secs = _ts_to_seconds(e["ts"]) + start_secs
         e["ts"]  = _seconds_to_ts(abs_secs)
 
-    # Persist so a restart can skip this chunk
+    # Persist for resume
     if out_dir is not None:
         cache = _chunk_cache_path(out_dir, chunk_idx)
         cache.parent.mkdir(parents=True, exist_ok=True)
         cache.write_text(json.dumps(entries))
 
+    print(f"  chunk {chunk_idx+1}/{n_total} done ({len(entries)} entries)", file=sys.stderr)
     return entries
 
+
+# ── orchestrator ──────────────────────────────────────────────────────────────
 
 def _analyse_long(
     youtube_url: str,
@@ -326,24 +353,41 @@ def _analyse_long(
         file=sys.stderr,
     )
 
+    chunk_results: dict[int, list[dict]] = {}
+
     with tempfile.TemporaryDirectory() as tmp:
         tmp_root = Path(tmp)
 
-        with ThreadPoolExecutor(max_workers=_UPLOAD_WORKERS) as pool:
-            futures = {
-                pool.submit(
-                    _analyse_chunk,
-                    youtube_url, api_key, model,
-                    i, start, min(start + _CHUNK_SECS, duration),
-                    tmp_root, out_dir,
-                ): i
-                for i, start in enumerate(starts)
-            }
-            chunk_results: dict[int, list[dict]] = {}
-            for fut in as_completed(futures):
-                i = futures[fut]
-                chunk_results[i] = fut.result()
-                print(f"  chunk {i+1}/{n} done ({len(chunk_results[i])} entries)", file=sys.stderr)
+        # Two separate pools so downloads and analyses run concurrently.
+        # As each download finishes it immediately feeds into the analysis pool —
+        # chunk N+1 downloads while chunk N is being uploaded/analysed.
+        with ThreadPoolExecutor(max_workers=_UPLOAD_WORKERS) as ul_pool:
+            analysis_futures: dict = {}
+
+            with ThreadPoolExecutor(max_workers=_DOWNLOAD_WORKERS) as dl_pool:
+                dl_futures = {
+                    dl_pool.submit(
+                        _download_chunk,
+                        youtube_url, i,
+                        start, min(start + _CHUNK_SECS, duration),
+                        tmp_root, out_dir,
+                    ): i
+                    for i, start in enumerate(starts)
+                }
+                # Submit each chunk for analysis as soon as its download lands
+                for dl_fut in as_completed(dl_futures):
+                    chunk_idx, chunk_path, start_secs = dl_fut.result()
+                    af = ul_pool.submit(
+                        _analyse_downloaded_chunk,
+                        chunk_idx, chunk_path, start_secs,
+                        api_key, model, out_dir, n,
+                    )
+                    analysis_futures[af] = chunk_idx
+
+            # dl_pool is shut down; all analysis tasks are submitted
+            for af in as_completed(analysis_futures):
+                i = analysis_futures[af]
+                chunk_results[i] = af.result()
 
     all_entries: list[dict] = []
     for i in range(n):
