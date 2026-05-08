@@ -146,6 +146,7 @@ from bim_ai.commands import (
     UpdateSunSettingsCmd,
     SetRailingBalusterPatternCmd,
     SetRailingHandrailSupportsCmd,
+    SetStairSubKindCmd,
     SetWallStackCmd,
     SetWallLeanTaperCmd,
     WallStackComponentCmd,
@@ -408,6 +409,27 @@ def _stripped_optional_str(val: str | None) -> str | None:
     return t or None
 
 
+def _validate_stair_sub_kind(
+    sub_kind: str,
+    floating_host_wall_id: str | None,
+    floating_tread_depth_mm: float | None,
+    els: dict,
+) -> None:
+    """Validate stair sub-kind fields against the element store."""
+    if sub_kind == "floating":
+        if not floating_host_wall_id:
+            raise ValueError("'floating' stair requires floatingHostWallId")
+        host = els.get(floating_host_wall_id)
+        if not isinstance(host, WallElem):
+            raise ValueError(
+                f"floatingHostWallId '{floating_host_wall_id}' must reference a Wall"
+            )
+        if floating_tread_depth_mm is not None and floating_tread_depth_mm <= 0:
+            raise ValueError("floatingTreadDepthMm must be > 0")
+    if sub_kind == "monolithic" and floating_host_wall_id is not None:
+        raise ValueError("'monolithic' stair must not set floatingHostWallId")
+
+
 def _balance_tread_risers(
     tread_lines: list[StairTreadLine],
     total_rise_mm: float,
@@ -632,6 +654,33 @@ def coerce_command(data: dict[str, Any]) -> Command:
     return command_adapter.validate_python(data)
 
 
+def _validate_wall_edge_profile_run(
+    host_wall: "WallElem",
+    host_edge: "WallEdgeSpec",
+    mode: str,
+) -> None:
+    if isinstance(host_edge, WallEdgeSpan):
+        if host_edge.start_mm < 0:
+            raise ValueError("WallEdgeSpan.startMm must be >= 0")
+        if host_edge.start_mm >= host_edge.end_mm:
+            raise ValueError("WallEdgeSpan.startMm must be < endMm")
+        if host_edge.end_mm > host_wall.height_mm:
+            raise ValueError(
+                f"WallEdgeSpan.endMm ({host_edge.end_mm}) exceeds "
+                f"wall height ({host_wall.height_mm})"
+            )
+
+
+def compute_wall_corner_mitre_angle(
+    wall_a_direction_deg: float,
+    wall_b_direction_deg: float,
+) -> float:
+    interior = abs(wall_b_direction_deg - wall_a_direction_deg) % 360
+    if interior > 180:
+        interior = 360 - interior
+    return interior / 2.0
+
+
 def _parse_wall_edge_spec(host_edge: Any) -> WallEdgeSpec | None:
     if isinstance(host_edge, (WallEdgeFixed, WallEdgeSpan)):
         return host_edge
@@ -641,27 +690,6 @@ def _parse_wall_edge_spec(host_edge: Any) -> WallEdgeSpec | None:
         if "startMm" in host_edge and "endMm" in host_edge and "kind" not in host_edge:
             return WallEdgeSpan(startMm=host_edge["startMm"], endMm=host_edge["endMm"])
     return None
-
-
-def _validate_wall_edge_profile_run(host_wall: "WallElem", host_edge: WallEdgeSpec) -> None:
-    if isinstance(host_edge, WallEdgeSpan):
-        if host_edge.start_mm < 0:
-            raise ValueError("createEdgeProfileRun.hostEdge.startMm must be >= 0")
-        if host_edge.start_mm >= host_edge.end_mm:
-            raise ValueError("createEdgeProfileRun.hostEdge.startMm must be < endMm")
-        if host_edge.end_mm > host_wall.height_mm:
-            raise ValueError(
-                f"createEdgeProfileRun.hostEdge.endMm ({host_edge.end_mm}) exceeds wall height ({host_wall.height_mm})"
-            )
-
-
-def compute_wall_corner_mitre_angle(
-    wall_a_direction_deg: float, wall_b_direction_deg: float
-) -> float:
-    interior = abs(wall_b_direction_deg - wall_a_direction_deg) % 360
-    if interior > 180:
-        interior = 360 - interior
-    return interior / 2.0
 
 
 def _dormer_footprint_polygon_mm(
@@ -1117,6 +1145,49 @@ def _no_source_provider(_uuid: str, _rev: int | None) -> None:
     cross-link operations gracefully fall back to host-only behaviour.
     """
     return None
+
+
+def _validate_baluster_pattern(pattern: BalusterPattern) -> None:
+    if pattern.rule == "regular" and (
+        pattern.spacing_mm is None or pattern.spacing_mm <= 0
+    ):
+        raise ValueError("balusterPattern.rule='regular' requires spacingMm > 0")
+
+
+def _validate_handrail_supports(
+    supports: list[HandrailSupport],
+    els: dict,
+) -> None:
+    for i, support in enumerate(supports):
+        if not support.bracket_family_id:
+            raise ValueError(
+                f"handrailSupports[{i}].bracketFamilyId must be non-empty"
+            )
+        host = els.get(support.host_wall_id)
+        if not isinstance(host, WallElem):
+            raise ValueError(
+                f"handrailSupports[{i}].hostWallId '{support.host_wall_id}' "
+                "must reference a Wall"
+            )
+
+
+def compute_baluster_positions(
+    path_length_mm: float,
+    spacing_mm: float,
+) -> list[float]:
+    """Return t-values (offsets in mm from path start) for a 'regular' baluster pattern.
+
+    First baluster at spacing_mm / 2; last at path_length_mm - spacing_mm / 2.
+    Returns empty list if path_length_mm < spacing_mm or spacing_mm <= 0.
+    """
+    if path_length_mm < spacing_mm or spacing_mm <= 0:
+        return []
+    positions = []
+    t = spacing_mm / 2.0
+    while t <= path_length_mm - spacing_mm / 2.0:
+        positions.append(t)
+        t += spacing_mm
+    return positions
 
 
 def apply_inplace(
@@ -2208,6 +2279,12 @@ def apply_inplace(
                     raise ValueError("createStair base/top level must reference existing Level")
             if cmd.authoring_mode == "by_sketch" and cmd.tread_lines and cmd.boundary_mm:
                 _validate_stair_boundary(cmd.boundary_mm)
+            _validate_stair_sub_kind(
+                cmd.sub_kind,
+                cmd.floating_host_wall_id,
+                cmd.floating_tread_depth_mm,
+                els,
+            )
             stair_runs, stair_landings = _materialize_stair_runs_and_landings(cmd)
             # Balance tread risers for by_sketch mode (fill in null riserHeightMm values).
             balanced_tread_lines = cmd.tread_lines
@@ -2240,7 +2317,28 @@ def apply_inplace(
                 boundary_mm=cmd.boundary_mm,
                 tread_lines=balanced_tread_lines,
                 total_rise_mm=cmd.total_rise_mm,
+                sub_kind=cmd.sub_kind,
+                monolithic_material=cmd.monolithic_material,
+                floating_tread_depth_mm=cmd.floating_tread_depth_mm,
+                floating_host_wall_id=cmd.floating_host_wall_id,
             )
+
+        case SetStairSubKindCmd():
+            stair = els.get(cmd.stair_id)
+            if not isinstance(stair, StairElem):
+                raise ValueError("setStairSubKind.stairId must reference a Stair")
+            _validate_stair_sub_kind(
+                cmd.sub_kind,
+                cmd.floating_host_wall_id,
+                cmd.floating_tread_depth_mm,
+                els,
+            )
+            els[cmd.stair_id] = stair.model_copy(update={
+                "sub_kind": cmd.sub_kind,
+                "monolithic_material": cmd.monolithic_material,
+                "floating_tread_depth_mm": cmd.floating_tread_depth_mm,
+                "floating_host_wall_id": cmd.floating_host_wall_id,
+            })
 
         case CreateSlabOpeningCmd():
             oid = cmd.id or new_id()
@@ -2326,7 +2424,7 @@ def apply_inplace(
                         "createEdgeProfileRun.hostEdge must be a WallEdgeFixed {'kind': 'top'|'bottom'} "
                         "or WallEdgeSpan {'startMm': ..., 'endMm': ...} when hostElementId is a wall"
                     )
-                _validate_wall_edge_profile_run(host_el, wall_edge)
+                _validate_wall_edge_profile_run(host_el, wall_edge, cmd.mode)
                 resolved_host_edge: Any = wall_edge
             elif isinstance(host_el, RoofElem):
                 if isinstance(cmd.host_edge, str):

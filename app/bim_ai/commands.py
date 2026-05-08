@@ -569,6 +569,15 @@ class CreateStairCmd(BaseModel):
     boundary_mm: list[Vec2Mm] | None = Field(default=None, alias="boundaryMm")
     tread_lines: list[StairTreadLine] | None = Field(default=None, alias="treadLines")
     total_rise_mm: float | None = Field(default=None, alias="totalRiseMm")
+    # KRN-V3-10 — monolithic / floating stair sub-kinds.
+    sub_kind: Literal["standard", "monolithic", "floating"] = Field(
+        default="standard", alias="subKind"
+    )
+    monolithic_material: str | None = Field(default=None, alias="monolithicMaterial")
+    floating_tread_depth_mm: float | None = Field(
+        default=None, alias="floatingTreadDepthMm"
+    )
+    floating_host_wall_id: str | None = Field(default=None, alias="floatingHostWallId")
 
     @model_validator(mode="after")
     def _validate_shape_specific_fields(self) -> CreateStairCmd:
@@ -604,6 +613,20 @@ class CreateStairCmd(BaseModel):
             if self.sketch_path_mm is None or len(self.sketch_path_mm) < 2:
                 raise ValueError("sketch stair requires sketchPathMm with at least two points")
         return self
+
+
+class SetStairSubKindCmd(BaseModel):
+    """KRN-V3-10 — change the sub-kind on an existing stair."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["setStairSubKind"] = "setStairSubKind"
+    stair_id: str = Field(alias="stairId")
+    sub_kind: Literal["standard", "monolithic", "floating"] = Field(alias="subKind")
+    monolithic_material: str | None = Field(default=None, alias="monolithicMaterial")
+    floating_tread_depth_mm: float | None = Field(
+        default=None, alias="floatingTreadDepthMm"
+    )
+    floating_host_wall_id: str | None = Field(default=None, alias="floatingHostWallId")
 
 
 class CreateSlabOpeningCmd(BaseModel):
@@ -1824,6 +1847,7 @@ Command = Annotated[
     | ExtendFloorInsulationCmd
     | AttachWallTopToRoofCmd
     | CreateStairCmd
+    | SetStairSubKindCmd
     | CreateSlabOpeningCmd
     | CreateRoofOpeningCmd
     | CreateWallOpeningCmd

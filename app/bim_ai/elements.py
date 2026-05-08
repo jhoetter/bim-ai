@@ -701,6 +701,15 @@ class StairElem(BaseModel):
     boundary_mm: list[Vec2Mm] | None = Field(default=None, alias="boundaryMm")
     tread_lines: list[StairTreadLine] | None = Field(default=None, alias="treadLines")
     total_rise_mm: float | None = Field(default=None, alias="totalRiseMm")
+    # KRN-V3-10 — monolithic / floating stair sub-kinds.
+    sub_kind: Literal["standard", "monolithic", "floating"] = Field(
+        default="standard", alias="subKind"
+    )
+    monolithic_material: str | None = Field(default=None, alias="monolithicMaterial")
+    floating_tread_depth_mm: float | None = Field(
+        default=None, alias="floatingTreadDepthMm", gt=0
+    )
+    floating_host_wall_id: str | None = Field(default=None, alias="floatingHostWallId")
     pinned: bool = Field(default=False)
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
@@ -715,6 +724,12 @@ class StairElem(BaseModel):
                 raise ValueError("by_sketch stair requires treadLines with ≥ 1 entry")
             if self.total_rise_mm is None or self.total_rise_mm <= 0:
                 raise ValueError("by_sketch stair requires totalRiseMm > 0")
+        if self.sub_kind == "floating":
+            if not self.floating_host_wall_id:
+                raise ValueError("'floating' stair requires floatingHostWallId")
+        if self.sub_kind == "monolithic" and self.floating_host_wall_id is not None:
+            raise ValueError("'monolithic' stair must not set floatingHostWallId")
+        if self.authoring_mode == "by_sketch":
             return self
         if self.shape == "spiral":
             missing = [

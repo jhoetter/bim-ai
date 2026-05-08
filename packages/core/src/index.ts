@@ -122,6 +122,12 @@ export type WallStack = {
   components: WallStackComponent[];
 };
 
+/**
+ * KRN-V3-08 — wall edge spec for sweep/reveal hosting.
+ * `{ kind: 'top' | 'bottom' }` names a fixed edge; `{ startMm, endMm }` specifies a span.
+ */
+export type WallEdgeSpec = { kind: 'top' | 'bottom' } | { startMm: number; endMm: number };
+
 /** KRN-07: a single straight flight in a multi-run stair. */
 export type StairRun = {
   id: string;
@@ -1351,21 +1357,23 @@ export type Element =
     }
   | {
       /**
-       * KRN-V3-03 G12 — swept profile run along a host element edge.
+       * KRN-V3-03 G12 / KRN-V3-08 — swept profile run along a host element edge.
        *
        * Resolves to a swept solid (2D profile × edge polyline) at render time.
        * Profile families: fascia, gutter, downpipe, plinth, cornice, water-table.
-       * `hostEdge` is one of the named tokens or a custom `{ startMm, endMm }` range.
+       * `hostEdge` accepts roof edge tokens ('eave', 'rake', 'ridge') or a WallEdgeSpec.
+       * `mode` defaults to 'sweep' (additive); 'reveal' subtracts from the host.
        * Colour must use material tokens from T5, not inline hex literals.
        */
       kind: 'edge_profile_run';
       id: string;
       name?: string;
       hostElementId: string;
-      hostEdge: 'eave' | 'rake' | 'ridge' | 'top' | 'bottom' | { startMm: number; endMm: number };
+      hostEdge: 'eave' | 'rake' | 'ridge' | WallEdgeSpec;
       profileFamilyId: string;
       offsetMm: { xMm: number; yMm: number };
       miterMode: 'auto' | 'manual';
+      mode?: 'sweep' | 'reveal';
       pinned?: boolean;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
