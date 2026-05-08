@@ -297,10 +297,16 @@ export function buildOneFamilyHomeCommands() {
         { xMm: 0, yMm: D },
       ],
       roofGeometryMode: 'asymmetric_gable',
-      ridgeOffsetTransverseMm: 1800,
-      eaveHeightLeftMm: 1200,
-      eaveHeightRightMm: 4500,
-      slopeDeg: 45,
+      // Dramatic asymmetry per spec/target-house-seed-vis.png: apex at 90%
+      // east (offset 2000 of halfSpan 2500), very low west eave (800mm),
+      // moderately high east eave (4125mm) — produces a long shallow west
+      // pitch (~46°) + short steep east pitch (~70°). Slope sanity:
+      // ridge = 800 + (2500+2000)·tan(46°) = 800 + 4500·1.04 ≈ 5470mm
+      // above level (well above east eave 4125mm). Ridge sits at z≈8470.
+      ridgeOffsetTransverseMm: 2000,
+      eaveHeightLeftMm: 800,
+      eaveHeightRightMm: 4125,
+      slopeDeg: 46,
       overhangMm: 0,
       materialKey: 'metal_standing_seam_dark_grey',
     },
@@ -414,11 +420,12 @@ export function buildOneFamilyHomeCommands() {
     },
 
     // Picture-frame outline (KRN-15 sweep) along the south-face gable
-    // pentagon. Path is 5 vertices + closure (CW from south view):
-    //   SW → SE → E-eave → ridge → W-eave → SW.
-    // Profile is 100×200 mm centered (uMm: ±50, vMm: ±100): u-axis is
-    // proud direction (cross of tangent + world-up at start), v-axis
-    // is perpendicular within the facade plane.
+    // pentagon — the signature design element from the line sketch.
+    // Path matches the new dramatic-asymmetric proportions:
+    //   SW (0, 3000) → SE (5000, 3000) → E-eave (5000, 7125) →
+    //   ridge (4500, 8470) → W-eave (0, 3800) → SW (close).
+    // Profile bumped 100×200 → 350×500 mm (uMm: ±175, vMm: ±250) so
+    // the frame reads as a chunky band, not a wireframe edge.
     {
       type: 'createSweep',
       id: 'hf-sw-frame',
@@ -427,16 +434,16 @@ export function buildOneFamilyHomeCommands() {
       pathMm: [
         { xMm: 0, yMm: 0, zMm: 3000 },
         { xMm: 5000, yMm: 0, zMm: 3000 },
-        { xMm: 5000, yMm: 0, zMm: 7500 },
-        { xMm: 4300, yMm: 0, zMm: 8500 },
-        { xMm: 0, yMm: 0, zMm: 4200 },
+        { xMm: 5000, yMm: 0, zMm: 7125 },
+        { xMm: 4500, yMm: 0, zMm: 8470 },
+        { xMm: 0, yMm: 0, zMm: 3800 },
         { xMm: 0, yMm: 0, zMm: 3000 },
       ],
       profileMm: [
-        { uMm: -50, vMm: -100 },
-        { uMm: 50, vMm: -100 },
-        { uMm: 50, vMm: 100 },
-        { uMm: -50, vMm: 100 },
+        { uMm: -175, vMm: -250 },
+        { uMm: 175, vMm: -250 },
+        { uMm: 175, vMm: 250 },
+        { uMm: -175, vMm: 250 },
       ],
       profilePlane: 'work_plane',
       materialKey: 'white_render',
@@ -712,18 +719,19 @@ export function buildOneFamilyHomeCommands() {
     },
 
     // East-slope dormer (KRN-14). Cuts a rectangular notch in the
-    // asymmetric_gable's east slope, with a flat dormer roof. Footprint:
-    // centre (xMm=4000, yMm=2500), depth 2000 (across ridge), width 2400
-    // (along ridge). Dormer floor sits at upper-floor level (z=3000),
-    // walls rise 2400mm. The cut spans the ridge by ~300mm (the east
-    // slope plan extent is only 700mm — accepted trade-off; the visual
-    // notch is what matters).
+    // asymmetric_gable's east slope. With ridge now at x=4500 the east
+    // slope has 500mm of plan extent — too narrow for a meaningful
+    // dormer footprint, so the dormer SPANS the ridge (centre at
+    // acrossRidge=1000 → x=3500), depth 2000 (so footprint x=2500..4500,
+    // entirely WEST of east edge). The CSG cut on the host roof creates
+    // a flat-topped notch reaching from mid-west-pitch to the ridge.
+    // Dormer floor sits at upper-floor level (z=3000), walls 2400mm.
     {
       type: 'createDormer',
       id: 'hf-dormer-east',
       name: 'East-slope dormer',
       hostRoofId: 'hf-roof-main',
-      positionOnRoof: { alongRidgeMm: -1500, acrossRidgeMm: 1500 },
+      positionOnRoof: { alongRidgeMm: -1500, acrossRidgeMm: 1000 },
       widthMm: 2400,
       depthMm: 2000,
       wallHeightMm: 2400,
