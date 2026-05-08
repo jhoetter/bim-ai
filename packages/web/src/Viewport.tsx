@@ -76,6 +76,8 @@ import {
 import { makeReferencePlaneMarker } from './viewport/referencePlaneMarker';
 import { makeSweepMesh } from './viewport/sweepMesh';
 import { makeDormerMesh } from './viewport/dormerMesh';
+import { buildMassMesh } from './viewport/meshBuilders.mass';
+import { isElementVisibleUnderPhaseFilter } from './viewport/phaseFilter';
 import { applyDormerCutsToRoofGeom } from './viewport/dormerRoofCut';
 import { registerDormerCutFn } from './viewport/meshBuilders';
 import { WallContextMenu, type WallContextMenuCommand } from './workspace/WallContextMenu';
@@ -276,6 +278,7 @@ export function Viewport({ wsConnected, onPersistViewpointField, onSemanticComma
   );
 
   const viewerCategoryHidden = useBimStore((s) => s.viewerCategoryHidden);
+  const viewerPhaseFilter = useBimStore((s) => s.viewerPhaseFilter);
 
   const viewerClipElevMm = useBimStore((s) => s.viewerClipElevMm);
   const viewerClipFloorElevMm = useBimStore((s) => s.viewerClipFloorElevMm);
@@ -1419,6 +1422,14 @@ export function Viewport({ wsConnected, onPersistViewpointField, onSemanticComma
         case 'dormer':
           obj = makeDormerMesh(e, curr, paint);
           break;
+        case 'mass': {
+          if (!isElementVisibleUnderPhaseFilter(viewerPhaseFilter, e)) break;
+          const lvl = curr[e.levelId];
+          if (!lvl || lvl.kind !== 'level') break;
+          const { mesh } = buildMassMesh(e, lvl);
+          obj = mesh;
+          break;
+        }
         case 'internal_origin':
           obj = makeInternalOriginMarker(e);
           break;
@@ -1520,7 +1531,7 @@ export function Viewport({ wsConnected, onPersistViewpointField, onSemanticComma
     }
 
     prevElementsByIdRef.current = curr;
-  }, [elementsById, viewerCategoryHidden, theme, text3dRebuildTick]);
+  }, [elementsById, viewerCategoryHidden, viewerPhaseFilter, theme, text3dRebuildTick]);
 
   // ── Clipping planes + section-box cage ───────────────────────────────────
   // Runs only when clip elevation or section box changes — not on every element edit.

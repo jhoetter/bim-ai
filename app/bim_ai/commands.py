@@ -1438,6 +1438,21 @@ class CreateMassCmd(BaseModel):
     material_key: str | None = Field(default=None, alias="materialKey")
 
 
+class MaterializeMassToWallsCmd(BaseModel):
+    """SKB-02 — auto-extract walls + floor + roof-stub from a `mass` element.
+
+    The engine emits one wall per footprint segment, one floor matching the
+    footprint at level base, and one flat roof at level base + heightMm,
+    promotes phase to ``'skeleton'`` on emitted elements, and deletes the
+    source mass. Each emitted element carries an ``AgentDeviationElem`` back
+    to the source mass id so the materialise step is auditable.
+    """
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["materializeMassToWalls"] = "materializeMassToWalls"
+    mass_id: str = Field(alias="massId")
+
+
 class CreateVoidCutCmd(BaseModel):
     """SKT-01 — subtractive boolean marker against a host element.
 
@@ -1586,6 +1601,7 @@ Command = Annotated[
     | CreateBeamCmd
     | CreateCeilingCmd
     | CreateMassCmd
+    | MaterializeMassToWallsCmd
     | CreateVoidCutCmd
     | CreateConstraintCmd,
     Field(discriminator="type"),

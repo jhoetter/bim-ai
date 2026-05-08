@@ -62,7 +62,8 @@ export type ElemKind =
   | 'balcony'
   | 'area'
   | 'masking_region'
-  | 'constraint';
+  | 'constraint'
+  | 'mass';
 
 export type Text3dFontFamily = 'helvetiker' | 'optimer' | 'gentilis';
 
@@ -424,6 +425,8 @@ export type Element =
        *  IfcClassificationReference on the IFC product. */
       ifcClassificationCode?: string | null;
       pinned?: boolean;
+      /** SKB-08 phase tag — carried forward when materialised from a mass. */
+      phaseId?: string | null;
     }
   | {
       kind: 'door';
@@ -567,6 +570,8 @@ export type Element =
       /** IFC-04: optional classification code; emitted as IfcClassificationReference. */
       ifcClassificationCode?: string | null;
       pinned?: boolean;
+      /** SKB-08 phase tag — carried forward when materialised from a mass. */
+      phaseId?: string | null;
     }
   | {
       kind: 'roof';
@@ -593,6 +598,8 @@ export type Element =
       /** IFC-04: optional classification code; emitted as IfcClassificationReference. */
       ifcClassificationCode?: string | null;
       pinned?: boolean;
+      /** SKB-08 phase tag — carried forward when materialised from a mass. */
+      phaseId?: string | null;
     }
   | {
       kind: 'stair';
@@ -1146,6 +1153,24 @@ export type Element =
       lockedValueMm?: number | null;
       severity?: ConstraintSeverity;
       pinned?: boolean;
+    }
+  | {
+      /**
+       * SKB-02 — volumetric massing primitive used during the SKB-12
+       * cookbook's massing phase. A `materializeMassToWalls` engine
+       * command auto-extracts walls + floor + roof-stub from each mass
+       * once the agent commits the volume.
+       */
+      kind: 'mass';
+      id: string;
+      name?: string;
+      levelId: string;
+      footprintMm: XY[];
+      heightMm: number;
+      rotationDeg?: number;
+      materialKey?: string | null;
+      phaseId?: string | null;
+      pinned?: boolean;
     };
 
 export type Violation = {
@@ -1197,6 +1222,17 @@ export type ModelDelta = {
 
 export type Command = Record<string, unknown> & {
   type: string;
+};
+
+/**
+ * SKB-02 — auto-extract walls + floor + roof-stub from a `mass` element.
+ * The engine emits one wall per footprint segment, one floor matching
+ * the footprint at level base, and one flat roof at level base + heightMm,
+ * promotes phase to `'skeleton'` on emitted elements, and deletes the mass.
+ */
+export type MaterializeMassToWallsCmd = {
+  type: 'materializeMassToWalls';
+  massId: string;
 };
 
 /** Evidence-package subtree: deterministic PNG inventory + digest hygiene (WP-F02/F03). */
