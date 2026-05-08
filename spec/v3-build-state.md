@@ -1,6 +1,6 @@
 # v3 Build State
 
-Last updated: 2026-05-08 (wave-5 complete: 9 WPs merged; ~39/63 done; wave-6 prompts dispatched)
+Last updated: 2026-05-08 (wave-6: all 8 branches pushed, reviews in progress; ~39/63 WPs done)
 Active heavy workers: 8 / 8
 
 ## Merged so far
@@ -64,18 +64,28 @@ Active heavy workers: 8 / 8
 | WP-038 | VIE-V3-03 view templates + propagation toast | 2026-05-08 | 239b6c76 |
 | WP-039 | SHT-V3-01 sheet + titleblock + window legend | 2026-05-08 | 873d7cd0 |
 
-## Wave-6 dispatched (prompt files written, workers not yet started)
+## Wave-6 pushed (all branches ready, reviews in progress)
 
-| WP-ID | WP | Prompt | Status |
-| ----- | -- | ------ | ------ |
-| WP-040 | DSC-V3-01 element discipline tags (keystone, gates 5 WPs) | spec/v3-prompts/wp-040.md | dispatched |
-| WP-041 | TOP-V3-01 toposolid primitive (keystone, gates all T7) | spec/v3-prompts/wp-041.md | dispatched |
-| WP-042 | AST-V3-01 searchable asset library + schematic-2D thumbnails (keystone, gates T5) | spec/v3-prompts/wp-042.md | dispatched |
-| WP-043 | IMG-V3-01 image → layout JSON (B2 critical path) | spec/v3-prompts/wp-043.md | dispatched |
-| WP-044 | CAN-V3-01 plan-canvas line-weight hierarchy (single biggest design-quality lever) | spec/v3-prompts/wp-044.md | dispatched |
-| WP-045 | OUT-V3-01 live presentation URL (B2 + B3 output keystone) | spec/v3-prompts/wp-045.md | dispatched |
-| WP-046 | MRK-V3-03 sheet review surface with comment-anchoring | spec/v3-prompts/wp-046.md | dispatched |
-| WP-047 | CHR-V3-08 secondary contextual bar (ToolModifierBar) | spec/v3-prompts/wp-047.md | dispatched |
+| WP-ID | WP | Branch | Top commit | Status |
+| ----- | -- | ------ | ---------- | ------ |
+| WP-040 | DSC-V3-01 element discipline tags | feat/v3-dsc-v3-01-discipline-tags | ba80cbbc | reviewing |
+| WP-041 | TOP-V3-01 toposolid primitive | feat/v3-top-v3-01-toposolid | c57633c9 | reviewing |
+| WP-042 | AST-V3-01 searchable asset library + schematic-2D thumbnails | feat/v3-ast-v3-01-asset-library | 394e4588 | reviewing |
+| WP-043 | IMG-V3-01 image → layout JSON | feat/v3-img-v3-01-image-to-layout | 7a8c6724 | reviewing (DEPENDS on WP-041 merging first — branched from feat/v3-top-v3-01-toposolid) |
+| WP-044 | CAN-V3-01 plan-canvas line-weight hierarchy | feat/v3-can-v3-01-line-weight-hierarchy | b1c48833 | reviewing |
+| WP-045 | OUT-V3-01 live presentation URL | feat/v3-out-v3-01-live-web-link | c460a24c | reviewing |
+| WP-046 | MRK-V3-03 sheet review surface with comment-anchoring | feat/v3-mrk-v3-03-sheet-review | 3bd276d7 | reviewing (main worktree has uncommitted additions on this branch) |
+| WP-047 | CHR-V3-08 secondary contextual bar (ToolModifierBar) | feat/v3-chr-v3-08-tool-modifier-bar | 1e5ef865 | reviewing |
+
+## Orphan commits (flagged for user decision — do NOT cherry-pick without confirmation)
+
+All 6 are on origin/feat/v3-edt-v3-01-constraint-rules (wave-1 branch already merged):
+- 615fad24 feat(seed+viewport): six visual gap fixes
+- c7ddc1bf feat(viewport): add cladding boards to recessed wall back
+- 7e44a3c0 fix(store): coerce window outlineKind/attachedRoofId + door operationType (equivalent fix already in WP-045 branch as 3b580a98 — likely safe to drop)
+- 06840cef feat(seed): tame asymmetry + drop dormer cut
+- 8dc5ee7a feat(seed): full-width recess
+- 12ec01dd feat(seed): bump picture-frame profile
 
 ## Held back (pending deps or timing)
 
@@ -109,3 +119,4 @@ Active heavy workers: 8 / 8
 - B1 critical path: all 6 kernel WPs done; ANN-V3-01 and EDT-V3-09 remain for full B1 felt-outcome.
 - Concurrency cap: 8 heavy workers in flight at any time.
 - DSC-V3-01 (WP-040) + TOP-V3-01 (WP-041) both touch engine.py but in disjoint regions (discipline metadata vs. toposolid geometry); overlap risk is low but workers should coordinate on imports.
+- WP-043 IMG-V3-01 was branched from feat/v3-top-v3-01-toposolid — merge WP-041 before WP-043 to keep git history clean.
