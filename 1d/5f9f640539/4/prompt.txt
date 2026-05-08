@@ -1,0 +1,85 @@
+Run pnpm verify
+
+> bim-ai@0.1.0 verify /home/runner/work/bim-ai/bim-ai
+> pnpm format:check && pnpm lint:root && pnpm architecture && pnpm typecheck && pnpm test && pnpm build
+
+
+> bim-ai@0.1.0 format:check /home/runner/work/bim-ai/bim-ai
+> prettier --check "**/*.{ts,tsx,js,jsx,json,yml,yaml}"
+
+Checking formatting...
+All matched files use Prettier code style!
+
+> bim-ai@0.1.0 lint:root /home/runner/work/bim-ai/bim-ai
+> eslint "packages/**/*.{ts,tsx}"
+
+
+/home/runner/work/bim-ai/bim-ai/packages/web/src/families/geometryFns/doorGeometry.ts
+Warning:   125:11  warning  'frameMat' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/runner/work/bim-ai/bim-ai/packages/web/src/plan/PlanCanvas.tsx
+Warning:   1238:6  warning  React Hook useEffect has a missing dependency: 'activeLevelResolvedId'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+Warning:   2838:6  warning  React Hook useEffect has a missing dependency: 'activePlanViewId'. Either include it or remove the dependency array       react-hooks/exhaustive-deps
+
+/home/runner/work/bim-ai/bim-ai/packages/web/src/plan/SketchCanvas.tsx
+Warning:   183:9  warning  The 'issues' logical expression could make the dependencies of useMemo Hook (at line 369) change on every render. To fix this, wrap the initialization of 'issues' in its own useMemo() Hook  react-hooks/exhaustive-deps
+
+✖ 4 problems (0 errors, 4 warnings)
+
+
+> bim-ai@0.1.0 architecture /home/runner/work/bim-ai/bim-ai
+> node scripts/check-architecture.mjs
+
+Architecture check OK
+
+> bim-ai@0.1.0 typecheck /home/runner/work/bim-ai/bim-ai
+> turbo typecheck
+
+
+Attention:
+Turborepo now collects completely anonymous telemetry regarding usage.
+This information is used to shape the Turborepo roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://turborepo.dev/docs/telemetry
+
+
+   • Packages in scope: @bim-ai/cli, @bim-ai/core, @bim-ai/design-tokens, @bim-ai/hofos-ui, @bim-ai/icons, @bim-ai/ui, @bim-ai/web, eslint-plugin-bim-ai
+   • Running typecheck in 8 packages
+   • Remote caching disabled
+
+eslint-plugin-bim-ai:typecheck
+@bim-ai/cli:typecheck
+@bim-ai/design-tokens:build
+@bim-ai/core:build
+@bim-ai/core:typecheck
+@bim-ai/design-tokens:typecheck
+@bim-ai/icons:build
+@bim-ai/icons:typecheck
+@bim-ai/ui:typecheck
+@bim-ai/ui:build
+@bim-ai/hofos-ui:typecheck
+@bim-ai/web:typecheck
+cache miss, executing b66309c517160667
+
+> @bim-ai/web@0.0.1 typecheck /home/runner/work/bim-ai/bim-ai/packages/web
+> tsc -p tsconfig.json --noEmit
+
+Error: @bim-ai/web#typecheck: command (/home/runner/work/bim-ai/bim-ai/packages/web) /home/runner/setup-pnpm/node_modules/.bin/pnpm run typecheck exited (2)
+ ERROR  @bim-ai/web#typecheck: command (/home/runner/work/bim-ai/bim-ai/packages/web) /home/runner/setup-pnpm/node_modules/.bin/pnpm run typecheck exited (2)
+Error: src/collab/CollabProvider.tsx(3,20): error TS2307: Cannot find module 'yjs' or its corresponding type declarations.
+Error: src/collab/CollabProvider.tsx(4,35): error TS2307: Cannot find module 'y-websocket' or its corresponding type declarations.
+ ELIFECYCLE  Command failed with exit code 2.
+
+ Tasks:    11 successful, 12 total
+Cached:    0 cached, 12 total
+  Time:    17.468s 
+Failed:    @bim-ai/web#typecheck
+
+ WARNING  no output files found for task @bim-ai/core#build. Please check your `outputs` key in `turbo.json`
+ WARNING  no output files found for task @bim-ai/design-tokens#build. Please check your `outputs` key in `turbo.json`
+ WARNING  no output files found for task @bim-ai/icons#build. Please check your `outputs` key in `turbo.json`
+ WARNING  no output files found for task @bim-ai/ui#build. Please check your `outputs` key in `turbo.json`
+ ERROR  run failed: command  exited (2)
+ ELIFECYCLE  Command failed with exit code 2.
+ ELIFECYCLE  Command failed with exit code 2.
+Error: Process completed with exit code 2.
