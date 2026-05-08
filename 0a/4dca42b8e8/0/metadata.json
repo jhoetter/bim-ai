@@ -1,0 +1,56 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "0a4dca42b8e8",
+  "session_id": "23fbe6ce-4e5a-44d3-93ed-2d6efb47eea9",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-08T14:20:40.605869Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "c10a68f414d4",
+  "token_usage": {
+    "input_tokens": 223,
+    "cache_creation_tokens": 124748,
+    "cache_read_tokens": 11320816,
+    "output_tokens": 53932,
+    "api_call_count": 137
+  },
+  "session_metrics": {
+    "turn_count": 11
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 1703,
+      "user_lines_removed": 105,
+      "agent_lines_added": 101,
+      "agent_lines_removed": 1,
+      "user_added_per_file": {
+        "app/api/schemas/sun_settings.json": 67,
+        "app/bim_ai/commands.py": 115,
+        "app/bim_ai/elements.py": 102,
+        "app/bim_ai/engine.py": 141,
+        "app/bim_ai/routes_api.py": 4,
+        "app/bim_ai/site/sun_position.py": 197,
+        "app/tests/test_phasing_primitive.py": 328,
+        "app/tests/test_sun_position.py": 90,
+        "app/tests/test_sun_settings.py": 113,
+        "packages/cli/cli.mjs": 81,
+        "packages/core/src/index.ts": 51,
+        "packages/web/src/Viewport.tsx": 11,
+        "packages/web/src/viewport/SunOverlay.tsx": 265,
+        "packages/web/src/viewport/sunPositionNoaa.ts": 138
+      },
+      "user_removed_per_file": {
+        "app/bim_ai/commands.py": 17,
+        "app/bim_ai/elements.py": 1,
+        "app/bim_ai/engine.py": 23,
+        "app/bim_ai/routes_api.py": 1,
+        "packages/cli/cli.mjs": 61,
+        "packages/core/src/index.ts": 2
+      }
+    }
+  ]
+}
