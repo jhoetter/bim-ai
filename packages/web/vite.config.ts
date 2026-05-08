@@ -5,7 +5,7 @@ import { defineConfig, loadEnv } from 'vite';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const DESIGN_SYSTEM_IDS = ['default', 'playful', 'conservative'] as const;
+const DESIGN_SYSTEM_IDS = ['default', 'playful', 'conservative', 'v3'] as const;
 type DesignSystemId = (typeof DESIGN_SYSTEM_IDS)[number];
 
 function resolveDesignSystemId(env: Record<string, string>): DesignSystemId {
@@ -31,7 +31,9 @@ export default defineConfig(({ mode }) => {
   const cssPath =
     ds === 'conservative'
       ? path.resolve(__dirname, `src/design-systems/conservative.css`)
-      : path.resolve(__dirname, `src/design-systems/default.css`);
+      : ds === 'v3'
+        ? path.resolve(__dirname, `src/design-systems/v3.css`)
+        : path.resolve(__dirname, `src/design-systems/default.css`);
 
   const apiPort = env.API_PORT ?? process.env.API_PORT ?? '8500';
   const apiTarget = `http://127.0.0.1:${apiPort}`;

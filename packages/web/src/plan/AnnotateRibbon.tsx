@@ -1,3 +1,4 @@
+/* eslint-disable bim-ai/no-hex-in-chrome -- pre-v3 hex literals; remove when this file is migrated in B4 Phase 2 */
 import type { Element, XY } from '@bim-ai/core';
 import type { JSX } from 'react';
 

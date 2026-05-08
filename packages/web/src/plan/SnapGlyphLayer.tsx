@@ -1,3 +1,4 @@
+/* eslint-disable bim-ai/no-hex-in-chrome -- pre-v3 hex literals; remove when this file is migrated in B4 Phase 2 */
 /**
  * EDT-05 — Snap glyph layer.
  *

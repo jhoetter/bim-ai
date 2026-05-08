@@ -1,0 +1,30 @@
+/* BIM AI design tokens — Layer C (brand swap surface).
+ *
+ * These are the ONLY tokens a customer CI file should ever override.
+ * Structural (Layer A) and semantic-shell (Layer B) tokens MUST NOT
+ * appear here — the brand-swap CI invariant test asserts this.
+ *
+ * Usage: a customer drops in one CSS file that reassigns these four
+ * custom properties. Everything else — drafting palette, line weights,
+ * motion, discipline tints — stays ours.
+ *
+ * R-G §2.3: overriding --brand-accent must not change any Layer-A
+ * resolved value. The brandSwap.test.ts CI test enforces this.
+ */
+
+:root {
+  /* Primary interaction colour — the single biggest "feels engineering"
+   * tell. Defaults to the v3 warm ochre; override to match customer CI. */
+  --brand-accent: var(--color-accent);
+
+  /* Foreground on --brand-accent backgrounds (must pass WCAG AA 4.5:1) */
+  --brand-accent-fg: var(--color-accent-foreground);
+
+  /* UI typeface — override to customer brand font.
+   * Structural font sizes (--text-*, --text-2xs) are Layer A and must not
+   * be touched here. */
+  --brand-typeface: var(--font-sans);
+
+  /* Logo mark URL or SVG data URI — used by the top-bar logo slot only. */
+  --brand-logo-mark: none;
+}

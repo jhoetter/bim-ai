@@ -23,6 +23,9 @@ importers:
       eslint:
         specifier: ^9.39.4
         version: 9.39.4(jiti@1.21.7)
+      eslint-plugin-bim-ai:
+        specifier: workspace:*
+        version: link:packages/eslint-plugin-bim-ai
       eslint-plugin-import:
         specifier: ^2.32.0
         version: 2.32.0(@typescript-eslint/parser@8.59.1(eslint@9.39.4(jiti@1.21.7))(typescript@5.9.3))(eslint@9.39.4(jiti@1.21.7))
@@ -54,6 +57,12 @@ importers:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
+
+  packages/eslint-plugin-bim-ai:
+    dependencies:
+      eslint:
+        specifier: '>=9.0.0'
+        version: 9.39.4(jiti@1.21.7)
 
   packages/hofos-ui:
     dependencies:

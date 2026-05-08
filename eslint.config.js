@@ -3,6 +3,7 @@ import eslintJs from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import reactHooks from 'eslint-plugin-react-hooks';
 import importPlugin from 'eslint-plugin-import';
+import bimAi from 'eslint-plugin-bim-ai';
 
 export default [
   eslintJs.configs.recommended,
@@ -25,6 +26,13 @@ export default [
         'warn',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
       ],
+    },
+  },
+  {
+    files: ['packages/web/src/**/*.tsx'],
+    plugins: { 'bim-ai': bimAi },
+    rules: {
+      'bim-ai/no-hex-in-chrome': 'error',
     },
   },
   {

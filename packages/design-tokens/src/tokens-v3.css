@@ -1,0 +1,57 @@
+/* BIM AI design tokens — v3 palette (B4 Phase 1 Sprint 0).
+ *
+ * Coexists with tokens-default.css / tokens-dark.css — no component
+ * changes in this file. Every v3 WP inherits these tokens.
+ *
+ * Layer A — Structural (always ours):
+ *   --disc-*, --color-drift, --text-2xs, --ease-paper, --radius-canvas
+ *
+ * Activation: imported by packages/web/src/design-systems/v3.css, which
+ * is resolved when VITE_DESIGN_SYSTEM=v3.
+ */
+
+:root,
+:root[data-theme='light'] {
+  /* Chrome accent — warm ochre replaces cobalt (anti-pattern A10) */
+  --color-accent: hsl(30 60% 47%);
+  --color-accent-foreground: hsl(0 0% 100%);
+  --color-accent-soft: color-mix(in srgb, hsl(30 60% 47%) 12%, hsl(0 0% 100%));
+  --color-ring: color-mix(in srgb, hsl(30 60% 47%) 38%, transparent);
+
+  /* Discipline tints (Layer A — never themed) */
+  --disc-arch: #6e8a72;
+  --disc-arch-soft: color-mix(in srgb, #6e8a72 20%, transparent);
+  --disc-struct: #8b6f57;
+  --disc-struct-soft: color-mix(in srgb, #8b6f57 20%, transparent);
+  --disc-mep: #5b7a8c;
+  --disc-mep-soft: color-mix(in srgb, #5b7a8c 20%, transparent);
+
+  /* Drift severity — first-class, separate from --color-warning */
+  --color-drift: #9b6f1b;
+
+  /* Canvas overlay typography — legitimises the 10 px label regime */
+  --text-2xs: 10px;
+  --text-2xs-line: 14px;
+
+  /* Slow-finish easing — commit/settle moments ("ink hitting paper") */
+  --ease-paper: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* Canvas radius — sidebars, rails, status bar, canvases never get radius */
+  --radius-canvas: 0;
+}
+
+:root[data-theme='dark'],
+:root.dark {
+  /* Chrome accent — warm ochre dark variant */
+  --color-accent: #d9924a;
+  --color-accent-foreground: hsl(220 18% 10%);
+  --color-accent-soft: color-mix(in srgb, #d9924a 18%, hsl(220 14% 10%));
+  --color-ring: color-mix(in srgb, #d9924a 38%, transparent);
+
+  /* Drift severity — dark variant */
+  --color-drift: #d2a256;
+
+  /* Discipline tints are Layer A — same in light and dark.
+   * The -soft variants use color-mix(transparent) so they adapt to surface
+   * backgrounds automatically; no dark override needed. */
+}

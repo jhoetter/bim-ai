@@ -1,3 +1,4 @@
+/* eslint-disable bim-ai/no-hex-in-chrome -- pre-v3 hex literals; remove when this file is migrated in B4 Phase 2 */
 /**
  * SKT-01 / SKT-02 / SKT-03 — Sketch authoring overlay.
  *

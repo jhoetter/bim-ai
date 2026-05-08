@@ -1,0 +1,50 @@
+/* Web entrypoint for the BIM AI v3 design system (B4 Phase 1).
+ *
+ * Import order:
+ *   1. tokens-default  — structural base (shell dims, spacing, v1 radius, motion, elevation)
+ *   2. tokens-dark     — dark overrides
+ *   3. tokens-drafting — canvas-only drafting palette (unchanged in v3)
+ *   4. tokens-v3       — v3 overrides: warm ochre accent, discipline tints, drift,
+ *                        --text-2xs, --ease-paper, --radius-canvas
+ *   5. brand-layer     — Layer C brand-swap surface (--brand-accent etc.)
+ *
+ * Activate with: VITE_DESIGN_SYSTEM=v3 pnpm dev
+ */
+
+@import '@bim-ai/design-tokens/tokens-default.css';
+@import '@bim-ai/design-tokens/tokens-dark.css';
+@import '@bim-ai/design-tokens/tokens-drafting.css';
+@import '@bim-ai/design-tokens/tokens-v3.css';
+@import '@bim-ai/design-tokens/brand-layer.css';
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--text-base-line);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+}

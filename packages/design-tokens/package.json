@@ -11,7 +11,9 @@
     "./tokens-dark.css": "./src/tokens-dark.css",
     "./tokens-drafting.css": "./src/tokens-drafting.css",
     "./conservative.css": "./src/conservative/conservative.css",
-    "./tokens-conservative.css": "./src/conservative/tokens-conservative.css"
+    "./tokens-conservative.css": "./src/conservative/tokens-conservative.css",
+    "./tokens-v3.css": "./src/tokens-v3.css",
+    "./brand-layer.css": "./src/brand-layer.css"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json --noEmit",
