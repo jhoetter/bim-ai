@@ -21,7 +21,7 @@ design ?= default
 .PHONY: help install dev dev-api dev-web kill-ports seed \
 	db-up db-down db-reset db-logs \
 	test test-py test-js format format-check python-format-check lint architecture \
-	typecheck verify build clean
+	typecheck verify build clean lockfile-check
 
 help:
 	@echo "bim-ai Makefile"
@@ -31,7 +31,10 @@ help:
 
 install:
 	$(PNPM) install
-	cd $(APP_DIR) && $(PYTHON) -m venv .venv && .venv/bin/pip install --upgrade pip && .venv/bin/pip install -e ".[dev]"
+	cd $(APP_DIR) && uv venv .venv && uv sync --frozen
+
+lockfile-check:
+	cd $(APP_DIR) && uv lock --check
 
 db-up:
 	docker compose -f infra/docker-compose.yml up -d
@@ -120,7 +123,7 @@ typecheck:
 build:
 	$(PNPM) -w turbo build
 
-verify: format-check python-format-check lint architecture typecheck test build
+verify: format-check python-format-check lint architecture typecheck test build lockfile-check
 	@echo "verify: PASS"
 
 clean:
