@@ -20,6 +20,12 @@
       "transcript": "/95/ad0c6d8171/1/full.jsonl",
       "content_hash": "/95/ad0c6d8171/1/content_hash.txt",
       "prompt": "/95/ad0c6d8171/1/prompt.txt"
+    },
+    {
+      "metadata": "/95/ad0c6d8171/2/metadata.json",
+      "transcript": "/95/ad0c6d8171/2/full.jsonl",
+      "content_hash": "/95/ad0c6d8171/2/content_hash.txt",
+      "prompt": "/95/ad0c6d8171/2/prompt.txt"
     }
   ],
   "token_usage": {
