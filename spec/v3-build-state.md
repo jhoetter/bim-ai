@@ -1,7 +1,7 @@
 # v3 Build State
 
-Last updated: 2026-05-08 (wave-4 complete: 8 WPs merged; ~30/63 done; wave-5 prompts written)
-Active heavy workers: 0 / 8
+Last updated: 2026-05-08 (wave-5 complete: 9 WPs merged; ~39/63 done; wave-6 prompts dispatched)
+Active heavy workers: 8 / 8
 
 ## Merged so far
 
@@ -28,8 +28,8 @@ Active heavy workers: 0 / 8
 
 ## Wave-3 merged
 
-| WP-ID | Branch | Merged at | Commit |
-| ----- | ------ | --------- | ------ |
+| WP-ID | WP | Merged at | Commit |
+| ----- | -- | --------- | ------ |
 | KRN-V3-07 slanted/tapered walls (WP-016) | feat/v3-job-v3-01-jobs-panel | 2026-05-08 | 8606047a |
 | KRN-V3-11 railing baluster (WP-017) | feat/v3-job-v3-01-jobs-panel | 2026-05-08 | 06cbff58 |
 | CMD-V3-02 assumption log (WP-018) | feat/v3-job-v3-01-jobs-panel | 2026-05-08 | b6cea202 |
@@ -37,13 +37,6 @@ Active heavy workers: 0 / 8
 | JOB-V3-01 Jobs panel (WP-022) | feat/v3-job-v3-01-jobs-panel | 2026-05-08 | a15c2a4a |
 | KRN-V3-10 stair sub-kinds (WP-020) | feat/v3-job-v3-01-jobs-panel | 2026-05-08 | 0879e972 |
 | CHR-V3-03 status bar (WP-023) | feat/v3-job-v3-01-jobs-panel | 2026-05-08 | bcd5bf32 |
-
-## Held back (pending deps)
-
-- **KRN-V3-08 wall sweeps & reveals** — KRN-V3-03 merged; prompt written (WP spec ready).
-- **OPT-V3-01 design options** — depends on KRN-V3-04 (not yet merged); hold.
-- **CQ-04 god-file split** — high merge-conflict risk; schedule for quiet window.
-- **CQ-03 workspace reorg** — riskiest CQ item; dedicated quiet week.
 
 ## Wave-4 merged
 
@@ -57,27 +50,62 @@ Active heavy workers: 0 / 8
 | WP-030 | COL-V3-02 Permission tiers | 2026-05-08 | 56933e37 |
 | WP-031 | EDT-V3-11 Phase-filter as lens | 2026-05-08 | 45eff78b |
 
-Note: WP-029 (VIE-V3-01 detail-level rendering) worker did not push a branch — prompt file exists at spec/v3-prompts/wp-029.md; reschedule next wave.
+## Wave-5 merged
 
-## Wave-5 prompts written (ready to dispatch)
+| WP-ID | WP | Merged at | Commit |
+| ----- | -- | --------- | ------ |
+| WP-029 | VIE-V3-01 detail-level rendering | 2026-05-08 | 04e5ad8c |
+| WP-032 | VER-V3-02 named milestones (Cmd+S) | 2026-05-08 | 138645d2 |
+| WP-033 | MRK-V3-02 plan+3D markups | 2026-05-08 | e89088c9 |
+| WP-034 | COL-V3-03 shareable public link | 2026-05-08 | 890d5693 |
+| WP-035 | OPT-V3-01 design-options agent scratch | 2026-05-08 | b7813496 |
+| WP-036 | CHR-V3-05 activity-stream drawer | 2026-05-08 | 8e10a907 |
+| WP-037 | VIE-V3-02 drafting view + callout bundle | 2026-05-08 | 66981deb |
+| WP-038 | VIE-V3-03 view templates + propagation toast | 2026-05-08 | 239b6c76 |
+| WP-039 | SHT-V3-01 sheet + titleblock + window legend | 2026-05-08 | 873d7cd0 |
 
-| WP | Feature | Prompt |
-| -- | ------- | ------ |
-| WP-029 | VIE-V3-01 detail-level rendering (reschedule) | spec/v3-prompts/wp-029.md |
-| WP-032 | VER-V3-02 named milestones (Cmd+S) | spec/v3-prompts/wp-032.md |
-| WP-033 | MRK-V3-02 plan+3D markups | spec/v3-prompts/wp-033.md |
-| WP-034 | COL-V3-03 shareable public link | spec/v3-prompts/wp-034.md |
-| WP-035 | OPT-V3-01 design options agent scratch | spec/v3-prompts/wp-035.md |
-| WP-036 | CHR-V3-05 activity-stream drawer | spec/v3-prompts/wp-036.md |
-| WP-037 | VIE-V3-02 drafting view + callout bundle (XL) | spec/v3-prompts/wp-037.md |
-| WP-038 | VIE-V3-03 view templates + propagation toast | spec/v3-prompts/wp-038.md |
-| WP-039 | SHT-V3-01 sheet + titleblock + window legend | spec/v3-prompts/wp-039.md |
+## Wave-6 dispatched (prompt files written, workers not yet started)
+
+| WP-ID | WP | Prompt | Status |
+| ----- | -- | ------ | ------ |
+| WP-040 | DSC-V3-01 element discipline tags (keystone, gates 5 WPs) | spec/v3-prompts/wp-040.md | dispatched |
+| WP-041 | TOP-V3-01 toposolid primitive (keystone, gates all T7) | spec/v3-prompts/wp-041.md | dispatched |
+| WP-042 | AST-V3-01 searchable asset library + schematic-2D thumbnails (keystone, gates T5) | spec/v3-prompts/wp-042.md | dispatched |
+| WP-043 | IMG-V3-01 image → layout JSON (B2 critical path) | spec/v3-prompts/wp-043.md | dispatched |
+| WP-044 | CAN-V3-01 plan-canvas line-weight hierarchy (single biggest design-quality lever) | spec/v3-prompts/wp-044.md | dispatched |
+| WP-045 | OUT-V3-01 live presentation URL (B2 + B3 output keystone) | spec/v3-prompts/wp-045.md | dispatched |
+| WP-046 | MRK-V3-03 sheet review surface with comment-anchoring | spec/v3-prompts/wp-046.md | dispatched |
+| WP-047 | CHR-V3-08 secondary contextual bar (ToolModifierBar) | spec/v3-prompts/wp-047.md | dispatched |
+
+## Held back (pending deps or timing)
+
+- CQ-04 god-file split — high merge-conflict risk; schedule for quiet window between waves.
+- CQ-03 workspace reorg — riskiest CQ item; dedicated quiet week.
+- DSC-V3-02 view discipline tags — depends on DSC-V3-01 (WP-040, wave-6); hold until WP-040 merges.
+- LNS-V3-01 lens dropdown — depends on DSC-V3-01 (WP-040); hold.
+- TOP-V3-02..04, OSM-V3-01 — depends on TOP-V3-01 (WP-041); hold.
+- AST-V3-04 kitchen kit — depends on AST-V3-01 (WP-042); hold.
+- CON-V3-02 seed handoff — depends on IMG-V3-01 (WP-043); hold.
+- CAN-V3-02 hatch patterns — depends on CAN-V3-01 (WP-044); hold.
+- OUT-V3-02, OUT-V3-03 PPTX/PDF export — depends on OUT-V3-01 (WP-045); hold.
+- COL-V3-04 presence avatars — v3.1 stretch per spec; hold.
+- COL-V3-06 offline-tolerant authoring — next state; hold.
+- VG-V3-01 render-and-compare — deps met (TKN, API done); schedule wave-7.
+- CTL-V3-01 catalog query API — deps met (API done); schedule wave-7.
+- ANN-V3-01 detail-region authoring — deps met (soft dep on EDT-01); schedule wave-7.
+- IMP-V3-01 image-as-underlay — Wave 0, no deps; schedule wave-7.
+- MAT-V3-01, MAT-V3-02 material tokens — Wave 0, no deps; schedule wave-7.
+- SCH-V3-01 custom-properties + schedule view — Wave 0, no deps; schedule wave-7.
+- CHR-V3-06, CHR-V3-07, CHR-V3-10 chrome WPs — Wave 0, no deps; schedule wave-7.
+- EDT-V3-04, EDT-V3-05, EDT-V3-06 UX WPs — Wave 0, no deps; schedule wave-7.
+- TST-V3-01 refinement-reliability CI test — deps met (CMD-V3-01/02 + JOB-V3-01 done); schedule wave-7.
+- EXP-V3-01 render-pipeline export — deps met (CMD-V3-01/02 + JOB-V3-01 done); schedule wave-7.
 
 ## Notes
 
 - API-V3-01 (WP-003) contract: every new kernel verb must add CLI + REST + JSON schema.
-- CMD-V3-01 (WP-009) is the T9 unlock — CMD-V3-02, OPT-V3-01 still pending KRN-V3-04.
-- CQ-01 (WP-013) is the T3 unlock — COL-V3-01, JOB-V3-01 now unblocked.
-- KRN-V3-02 (WP-010) merged — KRN-V3-07 now unblocked.
-- KRN-V3-05 (WP-012) merged — KRN-V3-10, KRN-V3-11 now unblocked.
+- CQ-01 (WP-013) merged — COL-V3-01 + JOB-V3-01 shipped; T3 and T9 long-running ops are stable.
+- All B3 now-state WPs are done: COL-V3-01..03, MRK-V3-01..02, VER-V3-01..02 all merged.
+- B1 critical path: all 6 kernel WPs done; ANN-V3-01 and EDT-V3-09 remain for full B1 felt-outcome.
 - Concurrency cap: 8 heavy workers in flight at any time.
+- DSC-V3-01 (WP-040) + TOP-V3-01 (WP-041) both touch engine.py but in disjoint regions (discipline metadata vs. toposolid geometry); overlap risk is low but workers should coordinate on imports.
