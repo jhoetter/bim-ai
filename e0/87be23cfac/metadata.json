@@ -3,7 +3,7 @@
   "checkpoint_id": "e087be23cfac",
   "strategy": "manual-commit",
   "branch": "feat/v3-edt-v3-11-phase-filter-lens",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": null,
   "sessions": [
     {
@@ -23,13 +23,19 @@
       "transcript": "/e0/87be23cfac/2/full.jsonl",
       "content_hash": "/e0/87be23cfac/2/content_hash.txt",
       "prompt": "/e0/87be23cfac/2/prompt.txt"
+    },
+    {
+      "metadata": "/e0/87be23cfac/3/metadata.json",
+      "transcript": "/e0/87be23cfac/3/full.jsonl",
+      "content_hash": "/e0/87be23cfac/3/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
-    "input_tokens": 3216,
-    "cache_creation_tokens": 528754,
-    "cache_read_tokens": 28648457,
-    "output_tokens": 153292,
-    "api_call_count": 297
+    "input_tokens": 3416,
+    "cache_creation_tokens": 763953,
+    "cache_read_tokens": 46917625,
+    "output_tokens": 250292,
+    "api_call_count": 493
   }
 }
