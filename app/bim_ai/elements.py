@@ -5,6 +5,7 @@ from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from bim_ai.cmd.types import AgentTrace
 from bim_ai.roof_geometry import RoofGeometryMode
 
 # --- Geometry primitives ------------------------------------------------------------
@@ -278,6 +279,23 @@ class WallElem(BaseModel):
     )
     recess_zones: list[WallRecessZone] | None = Field(default=None, alias="recessZones")
     stack: WallStack | None = Field(default=None)
+    lean_mm: Vec2Mm | None = Field(default=None, alias="leanMm")
+    taper_ratio: float | None = Field(default=None, alias="taperRatio")
+    agent_trace: AgentTrace | None = Field(default=None, alias="agentTrace")
+
+    @model_validator(mode="after")
+    def _validate_lean_taper(self) -> WallElem:
+        import math
+
+        if self.lean_mm is not None:
+            magnitude = math.sqrt(self.lean_mm.x_mm**2 + self.lean_mm.y_mm**2)
+            max_lean = self.height_mm * math.tan(math.radians(60))
+            if magnitude > max_lean:
+                raise ValueError("leanMm magnitude exceeds wall height × tan(60°)")
+        if self.taper_ratio is not None:
+            if not (0.1 < self.taper_ratio < 10.0):
+                raise ValueError("taperRatio must be in (0.1, 10)")
+        return self
 
 
 DoorOperationType = Literal[
@@ -315,6 +333,7 @@ class DoorElem(BaseModel):
     pinned: bool = Field(default=False)
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
+    agent_trace: AgentTrace | None = Field(default=None, alias="agentTrace")
 
 
 WindowOutlineKind = Literal[
@@ -352,6 +371,7 @@ class WindowElem(BaseModel):
     pinned: bool = Field(default=False)
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
+    agent_trace: AgentTrace | None = Field(default=None, alias="agentTrace")
 
 
 class WallOpeningElem(BaseModel):
@@ -583,6 +603,7 @@ class FloorElem(BaseModel):
     )
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
+    agent_trace: AgentTrace | None = Field(default=None, alias="agentTrace")
 
 
 class RoofElem(BaseModel):
@@ -611,6 +632,7 @@ class RoofElem(BaseModel):
     )
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
+    agent_trace: AgentTrace | None = Field(default=None, alias="agentTrace")
 
 
 StairShape = Literal["straight", "l_shape", "u_shape", "spiral", "sketch"]
@@ -679,9 +701,19 @@ class StairElem(BaseModel):
     boundary_mm: list[Vec2Mm] | None = Field(default=None, alias="boundaryMm")
     tread_lines: list[StairTreadLine] | None = Field(default=None, alias="treadLines")
     total_rise_mm: float | None = Field(default=None, alias="totalRiseMm")
+    # KRN-V3-10 — monolithic / floating stair sub-kinds.
+    sub_kind: Literal["standard", "monolithic", "floating"] = Field(
+        default="standard", alias="subKind"
+    )
+    monolithic_material: str | None = Field(default=None, alias="monolithicMaterial")
+    floating_tread_depth_mm: float | None = Field(
+        default=None, alias="floatingTreadDepthMm", gt=0
+    )
+    floating_host_wall_id: str | None = Field(default=None, alias="floatingHostWallId")
     pinned: bool = Field(default=False)
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
+    agent_trace: AgentTrace | None = Field(default=None, alias="agentTrace")
 
     @model_validator(mode="after")
     def _validate_shape_specific_fields(self) -> StairElem:
@@ -692,6 +724,12 @@ class StairElem(BaseModel):
                 raise ValueError("by_sketch stair requires treadLines with ≥ 1 entry")
             if self.total_rise_mm is None or self.total_rise_mm <= 0:
                 raise ValueError("by_sketch stair requires totalRiseMm > 0")
+        if self.sub_kind == "floating":
+            if not self.floating_host_wall_id:
+                raise ValueError("'floating' stair requires floatingHostWallId")
+        if self.sub_kind == "monolithic" and self.floating_host_wall_id is not None:
+            raise ValueError("'monolithic' stair must not set floatingHostWallId")
+        if self.authoring_mode == "by_sketch":
             return self
         if self.shape == "spiral":
             missing = [
@@ -749,6 +787,26 @@ class RoofOpeningElem(BaseModel):
     pinned: bool = Field(default=False)
 
 
+class BalusterPattern(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    rule: Literal["regular", "glass_panel", "cable"]
+    spacing_mm: float | None = Field(default=None, alias="spacingMm", gt=0)
+    profile_family_id: str | None = Field(default=None, alias="profileFamilyId")
+
+    @model_validator(mode="after")
+    def _validate_regular_requires_spacing(self) -> "BalusterPattern":
+        if self.rule == "regular" and (self.spacing_mm is None or self.spacing_mm <= 0):
+            raise ValueError("balusterPattern.rule='regular' requires spacingMm > 0")
+        return self
+
+
+class HandrailSupport(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    interval_mm: float = Field(alias="intervalMm", gt=0)
+    bracket_family_id: str = Field(alias="bracketFamilyId")
+    host_wall_id: str = Field(alias="hostWallId")
+
+
 class RailingElem(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True)
     kind: Literal["railing"] = "railing"
@@ -757,9 +815,14 @@ class RailingElem(BaseModel):
     hosted_stair_id: str | None = Field(default=None, alias="hostedStairId")
     path_mm: list[Vec2Mm] = Field(alias="pathMm")
     guard_height_mm: float = Field(alias="guardHeightMm", default=1040)
+    baluster_pattern: BalusterPattern | None = Field(default=None, alias="balusterPattern")
+    handrail_supports: list[HandrailSupport] | None = Field(
+        default=None, alias="handrailSupports"
+    )
     pinned: bool = Field(default=False)
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
+    agent_trace: AgentTrace | None = Field(default=None, alias="agentTrace")
 
 
 class SweepPathPoint(BaseModel):
@@ -842,6 +905,24 @@ class DormerElem(BaseModel):
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
 
 
+class WallEdgeFixed(BaseModel):
+    """KRN-V3-08 — named top/bottom edge of a wall for sweep/reveal hosting."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    kind: Literal["top", "bottom"]
+
+
+class WallEdgeSpan(BaseModel):
+    """KRN-V3-08 — custom vertical span along a wall for sweep/reveal hosting."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    start_mm: float = Field(alias="startMm")
+    end_mm: float = Field(alias="endMm")
+
+
+WallEdgeSpec = WallEdgeFixed | WallEdgeSpan
+
+
 class RoofJoinElem(BaseModel):
     """KRN-V3-03 G11 — derived overlay that joins two roof solids along a seam.
 
@@ -879,6 +960,7 @@ class EdgeProfileRunElem(BaseModel):
     profile_family_id: str = Field(alias="profileFamilyId")
     offset_mm: Vec2Mm = Field(alias="offsetMm")
     miter_mode: Literal["auto", "manual"] = Field(default="auto", alias="miterMode")
+    mode: Literal["sweep", "reveal"] = Field(default="sweep")
     pinned: bool = Field(default=False)
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")

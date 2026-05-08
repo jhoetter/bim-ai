@@ -147,6 +147,61 @@ describe('StatusBar — spec §17', () => {
   });
 });
 
+describe('StatusBar — CHR-V3-03 lens dropdown + drift badge', () => {
+  it('shows "Show: All" by default', () => {
+    const { getByTestId } = renderWithI18n(
+      <StatusBar level={{ id: 'lvl-ground', label: 'Ground' }} />,
+    );
+    expect(getByTestId('lens-dropdown-trigger').textContent).toContain('Show:');
+    expect(getByTestId('lens-dropdown-trigger').textContent).toContain('All');
+  });
+
+  it('opens the lens menu on click', () => {
+    const { getByTestId } = renderWithI18n(
+      <StatusBar level={{ id: 'lvl-ground', label: 'Ground' }} />,
+    );
+    fireEvent.click(getByTestId('lens-dropdown-trigger'));
+    expect(getByTestId('lens-menu')).toBeTruthy();
+  });
+
+  it('calls onLensChange with "structure" when Structure is selected', () => {
+    const onLensChange = vi.fn();
+    const { getByTestId } = renderWithI18n(
+      <StatusBar level={{ id: 'lvl-ground', label: 'Ground' }} onLensChange={onLensChange} />,
+    );
+    fireEvent.click(getByTestId('lens-dropdown-trigger'));
+    fireEvent.click(getByTestId('lens-option-structure'));
+    expect(onLensChange).toHaveBeenCalledWith('structure');
+  });
+
+  it('hides DriftBadge when driftCount is 0', () => {
+    const { queryByTestId } = renderWithI18n(
+      <StatusBar level={{ id: 'lvl-ground', label: 'Ground' }} driftCount={0} />,
+    );
+    expect(queryByTestId('drift-badge')).toBeNull();
+  });
+
+  it('shows DriftBadge with count when driftCount is 3', () => {
+    const { getByTestId } = renderWithI18n(
+      <StatusBar level={{ id: 'lvl-ground', label: 'Ground' }} driftCount={3} />,
+    );
+    expect(getByTestId('drift-badge').textContent).toContain('3 drifts');
+  });
+
+  it('calls onDriftClick when DriftBadge is clicked', () => {
+    const onDriftClick = vi.fn();
+    const { getByTestId } = renderWithI18n(
+      <StatusBar
+        level={{ id: 'lvl-ground', label: 'Ground' }}
+        driftCount={1}
+        onDriftClick={onDriftClick}
+      />,
+    );
+    fireEvent.click(getByTestId('drift-badge'));
+    expect(onDriftClick).toHaveBeenCalled();
+  });
+});
+
 describe('StatusBar — conflict slot (T-10)', () => {
   const baseConflict = {
     format: 'collaborationConflictQueue_v1' as const,

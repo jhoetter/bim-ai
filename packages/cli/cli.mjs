@@ -835,6 +835,11 @@ Commands:
   api list-tools [--output json]      API-V3-01: list all registered tool descriptors
   api inspect <name> [--output json]  API-V3-01: print one ToolDescriptor
   api version                         API-V3-01: print { schemaVersion, buildRef }
+  jobs submit <kind> --model <id> [--inputs <json>]
+                                      JOB-V3-01: enqueue a long-running job
+  jobs list --model <id> [--wait]     JOB-V3-01: list jobs for model (--wait polls until all active done)
+  jobs cancel <job-id>                JOB-V3-01: cancel a queued/running job
+  jobs status <job-id>                JOB-V3-01: get current job status
 
   phase-create --name <name> --ord <n>        KRN-V3-01: create a new phase (ord = ordinal position)
   phase-rename --phase-id <id> --name <name>   KRN-V3-01: rename an existing phase
@@ -1424,6 +1429,51 @@ async function main() {
       return;
     }
 
+    if (cmd === 'jobs') {
+      const sub = argv[1];
+      if (sub === 'submit') {
+        const kind = argv[2];
+        if (!kind) { console.error('jobs submit requires <kind>'); process.exit(1); }
+        const modelArg = argv[argv.indexOf('--model') + 1] ?? modelId;
+        if (!modelArg) { console.error('jobs submit requires --model <id> or BIM_AI_MODEL_ID'); process.exit(1); }
+        const inputsIdx = argv.indexOf('--inputs');
+        const inputs = inputsIdx !== -1 ? JSON.parse(argv[inputsIdx + 1]) : {};
+        const result = await fetchJson('POST', `${base}/api/jobs`, { kind, modelId: modelArg, inputs });
+        console.log(JSON.stringify(result, null, 2));
+        return;
+      }
+      if (sub === 'list') {
+        const modelArg = argv[argv.indexOf('--model') + 1] ?? modelId;
+        if (!modelArg) { console.error('jobs list requires --model <id> or BIM_AI_MODEL_ID'); process.exit(1); }
+        const doWait = argv.includes('--wait');
+        let jobs = await fetchJson('GET', `${base}/api/jobs?modelId=${encodeURIComponent(modelArg)}`);
+        if (doWait) {
+          const active = (j) => j.status === 'queued' || j.status === 'running';
+          while (jobs.some(active)) {
+            await new Promise((r) => setTimeout(r, 2000));
+            jobs = await fetchJson('GET', `${base}/api/jobs?modelId=${encodeURIComponent(modelArg)}`);
+          }
+        }
+        console.log(JSON.stringify(jobs, null, 2));
+        return;
+      }
+      if (sub === 'cancel') {
+        const jobId = argv[2];
+        if (!jobId) { console.error('jobs cancel requires <job-id>'); process.exit(1); }
+        const result = await fetchJson('POST', `${base}/api/jobs/${encodeURIComponent(jobId)}/cancel`);
+        console.log(JSON.stringify(result, null, 2));
+        return;
+      }
+      if (sub === 'status') {
+        const jobId = argv[2];
+        if (!jobId) { console.error('jobs status requires <job-id>'); process.exit(1); }
+        const result = await fetchJson('GET', `${base}/api/jobs/${encodeURIComponent(jobId)}`);
+        console.log(JSON.stringify(result, null, 2));
+        return;
+      }
+      console.error(`Unknown jobs subcommand: ${sub ?? '(none)'}. Use submit | list | cancel | status.`);
+      process.exit(1);
+    }
 
     usage();
   } catch (e) {

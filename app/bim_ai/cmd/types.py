@@ -45,3 +45,13 @@ class BundleResult(BaseModel):
     option_id: str | None = Field(default=None, alias="optionId")
     violations: list[dict[str, Any]] = Field(default_factory=list)
     checkpoint_snapshot_id: str | None = Field(default=None, alias="checkpointSnapshotId")
+
+
+class AgentTrace(BaseModel):
+    """CMD-V3-02 provenance trace linking an element to its originating bundle."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    bundle_id: str = Field(alias="bundleId")
+    assumption_keys: list[str] = Field(default_factory=list, alias="assumptionKeys")
+    applied_at: str = Field(alias="appliedAt")

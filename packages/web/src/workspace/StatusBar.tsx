@@ -9,7 +9,10 @@ import {
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icons, ICON_SIZE } from '@bim-ai/ui';
+import type { LensMode } from '@bim-ai/core';
 import type { CollaborationConflictQueueV1 } from '../lib/collaborationConflictQueue';
+import { LensDropdown } from './LensDropdown';
+import { DriftBadge } from './DriftBadge';
 
 /**
  * StatusBar — spec §17.
@@ -50,6 +53,12 @@ export interface StatusBarProps {
   saveState?: StatusSaveState;
   conflictQueue?: CollaborationConflictQueueV1 | null;
   onClearConflict?: () => void;
+  /** CHR-V3-03 slot 5 — lens discipline filter. */
+  lensMode?: LensMode;
+  onLensChange?: (lens: LensMode) => void;
+  /** CHR-V3-03 slot 6 — federation drift count; hidden when 0. */
+  driftCount?: number;
+  onDriftClick?: () => void;
 }
 
 export function StatusBar({
@@ -69,6 +78,10 @@ export function StatusBar({
   saveState = 'saved',
   conflictQueue,
   onClearConflict,
+  lensMode = 'all',
+  onLensChange,
+  driftCount = 0,
+  onDriftClick,
 }: StatusBarProps): JSX.Element {
   return (
     <div
@@ -98,6 +111,16 @@ export function StatusBar({
         <WsCluster state={wsState} />
         <Divider />
         <SaveCluster state={saveState} />
+        <Divider />
+        {/* Slot 5 — lens dropdown (CHR-V3-03 keystone, A8 antidote) */}
+        <LensDropdown currentLens={lensMode} onLensChange={onLensChange ?? (() => {})} />
+        {/* Slot 6 — drift badge; hidden when driftCount = 0 */}
+        {driftCount > 0 ? (
+          <>
+            <Divider />
+            <DriftBadge driftCount={driftCount} onClick={onDriftClick ?? (() => {})} />
+          </>
+        ) : null}
       </div>
     </div>
   );

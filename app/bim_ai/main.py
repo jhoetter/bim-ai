@@ -9,6 +9,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from bim_ai.config import get_settings
 from bim_ai.db import init_db_schema
 from bim_ai.hub import Hub
+from bim_ai.jobs.queue import get_queue
+from bim_ai.jobs.types import Job
 from bim_ai.routes_api import api_router, websocket_loop
 
 
@@ -16,6 +18,14 @@ from bim_ai.routes_api import api_router, websocket_loop
 async def lifespan(app: FastAPI):
     await init_db_schema()
     app.state.hub = Hub()
+
+    async def _broadcast_job_update(job: Job) -> None:
+        await app.state.hub.broadcast_json(
+            job.model_id,
+            {"type": "job_update", "job": job.model_dump(by_alias=True)},
+        )
+
+    get_queue().subscribe(_broadcast_job_update)
     yield
 
 

@@ -78,7 +78,7 @@ def _build_test_app() -> FastAPI:
         mode = mode_raw if mode_raw in ("dry_run", "commit") else "dry_run"
 
         doc = _models[model_id]["doc"]
-        result = _apply_bundle(doc, bundle, mode)  # type: ignore[arg-type]
+        result, new_doc_from_bundle = _apply_bundle(doc, bundle, mode)  # type: ignore[arg-type]
 
         if not result.applied and result.violations:
             blocking_classes = {v.get("advisoryClass") for v in result.violations}
@@ -91,11 +91,8 @@ def _build_test_app() -> FastAPI:
                     },
                 )
 
-        if result.applied and result.new_revision is not None:
-            from bim_ai.engine import try_commit_bundle
-            ok, new_doc, _c, _v, _code = try_commit_bundle(doc, bundle.commands)
-            if ok and new_doc is not None:
-                _models[model_id] = {"revision": new_doc.revision, "doc": new_doc}
+        if result.applied and result.new_revision is not None and new_doc_from_bundle is not None:
+            _models[model_id] = {"revision": new_doc_from_bundle.revision, "doc": new_doc_from_bundle}
 
         return result.model_dump(by_alias=True)
 

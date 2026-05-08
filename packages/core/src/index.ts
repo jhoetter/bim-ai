@@ -122,6 +122,12 @@ export type WallStack = {
   components: WallStackComponent[];
 };
 
+/**
+ * KRN-V3-08 — wall edge spec for sweep/reveal hosting.
+ * `{ kind: 'top' | 'bottom' }` names a fixed edge; `{ startMm, endMm }` specifies a span.
+ */
+export type WallEdgeSpec = { kind: 'top' | 'bottom' } | { startMm: number; endMm: number };
+
 /** KRN-07: a single straight flight in a multi-run stair. */
 export type StairRun = {
   id: string;
@@ -366,6 +372,20 @@ export type CreateConstraintCmd = {
   name?: string;
 };
 
+/** KRN-V3-11 — baluster spacing rule for a railing. */
+export type BalusterPattern = {
+  rule: 'regular' | 'glass_panel' | 'cable';
+  spacingMm?: number;
+  profileFamilyId?: string;
+};
+
+/** KRN-V3-11 — wall-bracket support along a railing. */
+export type HandrailSupport = {
+  intervalMm: number;
+  bracketFamilyId: string;
+  hostWallId: string;
+};
+
 export type Element =
   | {
       kind: 'project_settings';
@@ -484,6 +504,12 @@ export type Element =
       phaseDemolished?: string | null;
       /** KRN-V3-02: stacked wall definition. When set, components are stacked base-up. */
       stack?: WallStack;
+      /** KRN-V3-07: top-vs-base XY offset for leaning walls (mm). */
+      leanMm?: { xMm: number; yMm: number } | null;
+      /** KRN-V3-07: top thickness / base thickness ratio; 1 = prismatic, must be in (0.1, 10). */
+      taperRatio?: number | null;
+      /** CMD-V3-02: provenance trace linking this element to its originating bundle. */
+      agentTrace?: AgentTrace;
     }
   | {
       kind: 'door';
@@ -506,6 +532,8 @@ export type Element =
       pinned?: boolean;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
+      /** CMD-V3-02: provenance trace linking this element to its originating bundle. */
+      agentTrace?: AgentTrace;
     }
   | {
       kind: 'window';
@@ -532,6 +560,8 @@ export type Element =
       pinned?: boolean;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
+      /** CMD-V3-02: provenance trace linking this element to its originating bundle. */
+      agentTrace?: AgentTrace;
     }
   | {
       kind: 'wall_opening';
@@ -637,6 +667,8 @@ export type Element =
       phaseId?: string | null;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
+      /** CMD-V3-02: provenance trace linking this element to its originating bundle. */
+      agentTrace?: AgentTrace;
     }
   | {
       kind: 'roof';
@@ -667,6 +699,8 @@ export type Element =
       phaseId?: string | null;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
+      /** CMD-V3-02: provenance trace linking this element to its originating bundle. */
+      agentTrace?: AgentTrace;
     }
   | {
       kind: 'stair';
@@ -705,10 +739,20 @@ export type Element =
       treadLines?: StairTreadLine[];
       /** KRN-V3-05: total rise in mm for by_sketch mode. */
       totalRiseMm?: number;
+      /** KRN-V3-10: sub-kind — 'standard' (default), 'monolithic', or 'floating'. */
+      subKind?: 'standard' | 'monolithic' | 'floating';
+      /** KRN-V3-10: material id for monolithic concrete stairs. */
+      monolithicMaterial?: string;
+      /** KRN-V3-10: tread depth override for floating stairs (mm). */
+      floatingTreadDepthMm?: number;
+      /** KRN-V3-10: wall element id that hosts cantilever treads for floating stairs. */
+      floatingHostWallId?: string;
       overrideParams?: Record<string, unknown>;
       pinned?: boolean;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
+      /** CMD-V3-02: provenance trace linking this element to its originating bundle. */
+      agentTrace?: AgentTrace;
     }
   | {
       kind: 'slab_opening';
@@ -735,10 +779,16 @@ export type Element =
       hostedStairId?: string | null;
       pathMm: XY[];
       guardHeightMm?: number;
+      /** KRN-V3-11: parametric baluster spacing pattern. */
+      balusterPattern?: BalusterPattern;
+      /** KRN-V3-11: wall-mounted handrail support brackets. */
+      handrailSupports?: HandrailSupport[];
       overrideParams?: Record<string, unknown>;
       pinned?: boolean;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
+      /** CMD-V3-02: provenance trace linking this element to its originating bundle. */
+      agentTrace?: AgentTrace;
     }
   | {
       kind: 'family_type';
@@ -1333,21 +1383,23 @@ export type Element =
     }
   | {
       /**
-       * KRN-V3-03 G12 — swept profile run along a host element edge.
+       * KRN-V3-03 G12 / KRN-V3-08 — swept profile run along a host element edge.
        *
        * Resolves to a swept solid (2D profile × edge polyline) at render time.
        * Profile families: fascia, gutter, downpipe, plinth, cornice, water-table.
-       * `hostEdge` is one of the named tokens or a custom `{ startMm, endMm }` range.
+       * `hostEdge` accepts roof edge tokens ('eave', 'rake', 'ridge') or a WallEdgeSpec.
+       * `mode` defaults to 'sweep' (additive); 'reveal' subtracts from the host.
        * Colour must use material tokens from T5, not inline hex literals.
        */
       kind: 'edge_profile_run';
       id: string;
       name?: string;
       hostElementId: string;
-      hostEdge: 'eave' | 'rake' | 'ridge' | 'top' | 'bottom' | { startMm: number; endMm: number };
+      hostEdge: 'eave' | 'rake' | 'ridge' | WallEdgeSpec;
       profileFamilyId: string;
       offsetMm: { xMm: number; yMm: number };
       miterMode: 'auto' | 'manual';
+      mode?: 'sweep' | 'reveal';
       pinned?: boolean;
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
@@ -1495,6 +1547,19 @@ export type EvidenceClosureReviewV1 = {
 export type { PerspectiveId, WorkspaceLayoutPreset } from './workbench';
 
 // ---------------------------------------------------------------------------
+// COL-V3-01 — collab session types
+// ---------------------------------------------------------------------------
+
+export type {
+  ParticipantRole,
+  Participant,
+  CollabSession,
+  InFlightCommand,
+  CollabAwarenessState,
+} from './collab';
+export { PARTICIPANT_COLOR_TOKENS, participantColorToken } from './collab';
+
+// ---------------------------------------------------------------------------
 // TKN-V3-01 — tokenised kernel representation
 // ---------------------------------------------------------------------------
 
@@ -1535,4 +1600,59 @@ export type TokenSequenceDelta = {
   addedEntities: { entity: EntityToken }[];
   removedEntities: { elementId: string }[];
   modifiedEntities: { before: EntityToken; after: EntityToken }[];
+};
+
+// ---------------------------------------------------------------------------
+// CMD-V3-02 — AgentTrace + AssumptionEntry
+// ---------------------------------------------------------------------------
+
+/** CMD-V3-02: provenance trace stamped on every element created/modified by a bundle. */
+export type AgentTrace = {
+  bundleId: string;
+  assumptionKeys: string[];
+  appliedAt: string;
+};
+
+/** CMD-V3-02: one assumption entry in a CommandBundle's assumptions array. */
+export type AssumptionEntry = {
+  key: string;
+  value: string | number | boolean;
+  confidence: number;
+  source: string;
+  contestable?: boolean;
+  evidence?: string | null;
+};
+
+/** CHR-V3-03 / DSC-V3-02 — lens mode for the status-bar discipline filter. */
+export type LensMode = 'all' | 'architecture' | 'structure' | 'mep' | 'energy' | 'coordination';
+
+// ---------------------------------------------------------------------------
+// JOB-V3-01 — long-running-operations job types
+// ---------------------------------------------------------------------------
+
+export type JobKind =
+  | 'csg_solve'
+  | 'ifc_export'
+  | 'dxf_import'
+  | 'gltf_export'
+  | 'sketch_trace'
+  | 'render_still'
+  | 'render_video'
+  | 'agent_call';
+
+export type JobStatus = 'queued' | 'running' | 'done' | 'errored' | 'cancelled';
+
+export type Job = {
+  id: string;
+  modelId: string;
+  kind: JobKind;
+  status: JobStatus;
+  inputs: Record<string, unknown>;
+  outputs?: { primaryAssetId?: string; secondaryAssetIds?: string[] };
+  createdAt: string;
+  startedAt?: string;
+  completedAt?: string;
+  errorMessage?: string;
+  costEstimate?: { credits: number };
+  parentJobId?: string;
 };

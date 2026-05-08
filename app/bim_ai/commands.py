@@ -5,6 +5,7 @@ from typing import Annotated, Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from bim_ai.elements import (
+    BalusterPattern,
     CameraMm,
     ConstraintRefRow,
     ConstraintRule,
@@ -13,6 +14,7 @@ from bim_ai.elements import (
     DormerRoofKind,
     DxfLineworkPrim,
     EvidenceRef,
+    HandrailSupport,
     PhaseFilter,
     PlanCategoryGraphicRow,
     PlanTagBadgeStyle,
@@ -76,6 +78,8 @@ class CreateWallCmd(BaseModel):
     stack_components: list[WallStackComponentCmd] = Field(
         default_factory=list, alias="stackComponents"
     )
+    lean_mm: Vec2Mm | None = Field(default=None, alias="leanMm")
+    taper_ratio: float | None = Field(default=None, alias="taperRatio")
 
 
 class SetWallStackCmd(BaseModel):
@@ -83,6 +87,14 @@ class SetWallStackCmd(BaseModel):
     type: Literal["setWallStack"] = "setWallStack"
     wall_id: str = Field(alias="wallId")
     components: list[WallStackComponentCmd] = Field(default_factory=list)
+
+
+class SetWallLeanTaperCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["setWallLeanTaper"] = "setWallLeanTaper"
+    wall_id: str = Field(alias="wallId")
+    lean_mm: Vec2Mm | None = Field(default=None, alias="leanMm")
+    taper_ratio: float | None = Field(default=None, alias="taperRatio")
 
 
 class MoveWallDeltaCmd(BaseModel):
@@ -557,6 +569,15 @@ class CreateStairCmd(BaseModel):
     boundary_mm: list[Vec2Mm] | None = Field(default=None, alias="boundaryMm")
     tread_lines: list[StairTreadLine] | None = Field(default=None, alias="treadLines")
     total_rise_mm: float | None = Field(default=None, alias="totalRiseMm")
+    # KRN-V3-10 — monolithic / floating stair sub-kinds.
+    sub_kind: Literal["standard", "monolithic", "floating"] = Field(
+        default="standard", alias="subKind"
+    )
+    monolithic_material: str | None = Field(default=None, alias="monolithicMaterial")
+    floating_tread_depth_mm: float | None = Field(
+        default=None, alias="floatingTreadDepthMm"
+    )
+    floating_host_wall_id: str | None = Field(default=None, alias="floatingHostWallId")
 
     @model_validator(mode="after")
     def _validate_shape_specific_fields(self) -> CreateStairCmd:
@@ -592,6 +613,20 @@ class CreateStairCmd(BaseModel):
             if self.sketch_path_mm is None or len(self.sketch_path_mm) < 2:
                 raise ValueError("sketch stair requires sketchPathMm with at least two points")
         return self
+
+
+class SetStairSubKindCmd(BaseModel):
+    """KRN-V3-10 — change the sub-kind on an existing stair."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["setStairSubKind"] = "setStairSubKind"
+    stair_id: str = Field(alias="stairId")
+    sub_kind: Literal["standard", "monolithic", "floating"] = Field(alias="subKind")
+    monolithic_material: str | None = Field(default=None, alias="monolithicMaterial")
+    floating_tread_depth_mm: float | None = Field(
+        default=None, alias="floatingTreadDepthMm"
+    )
+    floating_host_wall_id: str | None = Field(default=None, alias="floatingHostWallId")
 
 
 class CreateSlabOpeningCmd(BaseModel):
@@ -658,6 +693,26 @@ class CreateRailingCmd(BaseModel):
     name: str = "Railing"
     hosted_stair_id: str | None = Field(default=None, alias="hostedStairId")
     path_mm: list[Vec2Mm] = Field(alias="pathMm")
+    baluster_pattern: BalusterPattern | None = Field(default=None, alias="balusterPattern")
+    handrail_supports: list[HandrailSupport] | None = Field(
+        default=None, alias="handrailSupports"
+    )
+
+
+class SetRailingBalusterPatternCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["setRailingBalusterPattern"] = "setRailingBalusterPattern"
+    railing_id: str = Field(alias="railingId")
+    baluster_pattern: BalusterPattern | None = Field(default=None, alias="balusterPattern")
+
+
+class SetRailingHandrailSupportsCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["setRailingHandrailSupports"] = "setRailingHandrailSupports"
+    railing_id: str = Field(alias="railingId")
+    handrail_supports: list[HandrailSupport] = Field(
+        default_factory=list, alias="handrailSupports"
+    )
 
 
 class FamilyCatalogSourceCmd(BaseModel):
@@ -1423,6 +1478,16 @@ class CreateEdgeProfileRunCmd(BaseModel):
     profile_family_id: str = Field(alias="profileFamilyId")
     offset_mm: Vec2Mm = Field(alias="offsetMm")
     miter_mode: Literal["auto", "manual"] = Field(default="auto", alias="miterMode")
+    mode: Literal["sweep", "reveal"] = Field(default="sweep")
+
+
+class SetEdgeProfileRunModeCmd(BaseModel):
+    """KRN-V3-08 — toggle sweep / reveal mode on an existing edge profile run."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["setEdgeProfileRunMode"] = "setEdgeProfileRunMode"
+    run_id: str = Field(alias="runId")
+    mode: Literal["sweep", "reveal"]
 
 
 class CreateSoffitCmd(BaseModel):
@@ -1782,6 +1847,7 @@ Command = Annotated[
     | ExtendFloorInsulationCmd
     | AttachWallTopToRoofCmd
     | CreateStairCmd
+    | SetStairSubKindCmd
     | CreateSlabOpeningCmd
     | CreateRoofOpeningCmd
     | CreateWallOpeningCmd
@@ -1851,6 +1917,7 @@ Command = Annotated[
     | CreateDormerCmd
     | CreateRoofJoinCmd
     | CreateEdgeProfileRunCmd
+    | SetEdgeProfileRunModeCmd
     | CreateSoffitCmd
     | SetWallRecessZonesCmd
     | CreateAreaCmd
@@ -1880,6 +1947,9 @@ Command = Annotated[
     | CreateSunSettingsCmd
     | UpdateSunSettingsCmd
     | MoveElementCmd
-    | SetWallStackCmd,
+    | SetWallStackCmd
+    | SetWallLeanTaperCmd
+    | SetRailingBalusterPatternCmd
+    | SetRailingHandrailSupportsCmd,
     Field(discriminator="type"),
 ]

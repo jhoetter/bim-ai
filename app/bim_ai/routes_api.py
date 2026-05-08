@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import logging
 from datetime import UTC, datetime
 from typing import Annotated, Any
 from uuid import UUID, uuid4
+
+logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect
 from fastapi.responses import PlainTextResponse
@@ -63,6 +66,7 @@ from bim_ai.evidence_manifest import (
     plan_view_wire_index,
     sheetProductionEvidenceBaseline_v1,
 )
+from bim_ai.collab.orchestrator import get_orchestrator
 from bim_ai.hub import Hub
 from bim_ai.link_expansion import expand_links
 from bim_ai.model_summary import compute_model_summary
@@ -1215,7 +1219,7 @@ async def apply_bundle_route(
     doc = Document.model_validate(row.document)
     mode = body.mode if body.mode in ("dry_run", "commit") else "dry_run"
 
-    result = _apply_bundle(doc, body.bundle, mode)  # type: ignore[arg-type]
+    result, new_doc_from_bundle = _apply_bundle(doc, body.bundle, mode, model_id=str(model_id))  # type: ignore[arg-type]
 
     # Surface blocking advisory classes as HTTP 409
     _BLOCKING_ADVISORY_CLASSES = {
@@ -1237,40 +1241,39 @@ async def apply_bundle_route(
                 },
             )
 
-    if result.applied and result.new_revision is not None:
-        # Re-run engine to get new_doc for persisting (deterministic — same result)
-        ok, new_doc, _cmds, _viols, _code = try_commit_bundle(doc, body.bundle.commands)
-        if ok and new_doc is not None:
-            uid = body.user_id or "local-dev"
-            doc_before = clone_document(doc)
-            undo_cmds = diff_undo_cmds(doc_before, new_doc)
-            await delete_redos(session, model_id, uid)
+    if result.applied and result.new_revision is not None and new_doc_from_bundle is not None:
+        new_doc = new_doc_from_bundle
+        uid = body.user_id or "local-dev"
+        doc_before = clone_document(doc)
+        undo_cmds = diff_undo_cmds(doc_before, new_doc)
+        await delete_redos(session, model_id, uid)
 
-            session.add(
-                UndoStackRecord(
-                    model_id=model_id,
-                    user_id=uid,
-                    revision_after=new_doc.revision,
-                    forward_commands=body.bundle.commands,
-                    undo_commands=undo_cmds,
-                    created_at=datetime.now(UTC),
-                )
+        session.add(
+            UndoStackRecord(
+                model_id=model_id,
+                user_id=uid,
+                revision_after=new_doc.revision,
+                forward_commands=body.bundle.commands,
+                undo_commands=undo_cmds,
+                created_at=datetime.now(UTC),
             )
+        )
 
-            wire_doc = document_to_wire(new_doc)
-            row.document = wire_doc  # type: ignore[assignment]
-            row.revision = new_doc.revision
-            await session.commit()
+        wire_doc = document_to_wire(new_doc)
+        row.document = wire_doc  # type: ignore[assignment]
+        row.revision = new_doc.revision
+        await session.commit()
 
-            delta = compute_delta_wire(doc_before, new_doc)
-            try:
-                await hub.broadcast_json(
-                    model_id, {"type": "delta", "modelId": str(model_id), **delta}
-                )
-            except Exception:
-                pass
+        delta = compute_delta_wire(doc_before, new_doc)
+        try:
+            await hub.broadcast_json(
+                model_id, {"type": "delta", "modelId": str(model_id), **delta}
+            )
+        except Exception:
+            pass
 
     return result.model_dump(by_alias=True)
+
 
 
 # ---------------------------------------------------------------------------
@@ -1361,6 +1364,36 @@ async def websocket_loop(
 
     finally:
         hub.unregister(websocket)
+
+
+# ---------------------------------------------------------------------------
+# COL-V3-01 — yjs Y-WebSocket collab endpoint
+# ---------------------------------------------------------------------------
+
+
+@api_router.websocket("/models/{model_id}/collab")
+async def collab_ws(
+    websocket: WebSocket,
+    model_id: UUID,
+) -> None:
+    """COL-V3-01: yjs Y-WebSocket endpoint for real-time collab on a model.
+
+    Relays raw yjs sync + awareness bytes between browser clients multiplexed
+    by modelId. Does not interpret CRDT contents — yjs algorithms handle merge
+    deterministically on each client.
+    """
+    orchestrator = get_orchestrator()
+    await websocket.accept()
+    room = orchestrator.get_room(str(model_id))
+    room.join(websocket)
+    try:
+        while True:
+            data = await websocket.receive_bytes()
+            await room.broadcast(data, exclude=websocket)
+    except WebSocketDisconnect:
+        room.leave(websocket)
+        orchestrator.remove_empty_rooms()
+        logger.info("collab ws disconnect model=%s", model_id)
 
 
 # ---------------------------------------------------------------------------

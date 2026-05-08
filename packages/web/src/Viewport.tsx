@@ -113,6 +113,8 @@ type Props = {
   onPersistViewpointField?: (payload: OrbitViewpointPersistFieldPayload) => void | Promise<void>;
   /** ANN-02: optional dispatcher for the right-click "Generate Section / Elevation" menu. */
   onSemanticCommand?: (cmd: Record<string, unknown>) => void;
+  /** COL-V3-01: remote participant selections to render as colored halos. */
+  remoteSelections?: Array<{ elementId: string; color: string }>;
 };
 
 type DoorElem = Extract<Element, { kind: 'door' }>;
@@ -135,7 +137,12 @@ function Sep() {
   return <span className="opacity-30">·</span>;
 }
 
-export function Viewport({ wsConnected, onPersistViewpointField, onSemanticCommand }: Props) {
+export function Viewport({
+  wsConnected,
+  onPersistViewpointField,
+  onSemanticCommand,
+  remoteSelections,
+}: Props) {
   void wsConnected;
   const { t } = useTranslation();
 
@@ -152,6 +159,8 @@ export function Viewport({ wsConnected, onPersistViewpointField, onSemanticComma
   const renderPassRef = useRef<RenderPass | null>(null);
   const ssaoPassRef = useRef<SSAOPass | null>(null);
   const outlinePassRef = useRef<OutlinePass | null>(null);
+  /** COL-V3-01: per-remote-user outline passes keyed by CSS color string. */
+  const remoteOutlinePassesRef = useRef<Map<string, OutlinePass>>(new Map());
   const bimPickMapRef = useRef<Map<string, THREE.Object3D>>(new Map());
   /** Snapshot of elementsById from the previous render — used to diff for incremental updates. */
   const prevElementsByIdRef = useRef<Record<string, Element>>({});
@@ -1737,6 +1746,56 @@ export function Viewport({ wsConnected, onPersistViewpointField, onSemanticComma
     const sel = selectedId ? bimPickMapRef.current.get(selectedId) : undefined;
     op.selectedObjects = sel ? [sel] : [];
   }, [selectedId]);
+
+  // COL-V3-01 — render colored outline halos for remote participant selections.
+  // One OutlinePass per unique color is inserted before the OutputPass so each
+  // remote user's halo uses their assigned --cat-* palette color.
+  useEffect(() => {
+    const composer = composerRef.current;
+    const scene = sceneRef.current;
+    const camera = cameraRef.current;
+    if (!composer || !scene || !camera) return;
+
+    const pickMap = bimPickMapRef.current;
+    const remotePasses = remoteOutlinePassesRef.current;
+
+    // Group remote selections by color so we can share one pass per color.
+    const byColor = new Map<string, THREE.Object3D[]>();
+    for (const { elementId, color } of remoteSelections ?? []) {
+      const obj = pickMap.get(elementId);
+      if (!obj) continue;
+      if (!byColor.has(color)) byColor.set(color, []);
+      byColor.get(color)!.push(obj);
+    }
+
+    // Remove passes for colors that are no longer present.
+    for (const [color, pass] of remotePasses) {
+      if (!byColor.has(color)) {
+        // Splice out from composer.passes (OutputPass is always last).
+        const idx = composer.passes.indexOf(pass);
+        if (idx !== -1) composer.passes.splice(idx, 1);
+        remotePasses.delete(color);
+      }
+    }
+
+    // Add or update passes for current colors.
+    const outputPassIdx = composer.passes.length - 1; // OutputPass is last
+    for (const [color, objs] of byColor) {
+      let pass = remotePasses.get(color);
+      if (!pass) {
+        const size = new THREE.Vector2(1, 1);
+        pass = new OutlinePass(size, scene, camera);
+        pass.edgeStrength = 2.5;
+        pass.edgeGlow = 0.0;
+        pass.edgeThickness = 1.5;
+        pass.visibleEdgeColor.set(color);
+        pass.hiddenEdgeColor.set(color);
+        composer.passes.splice(outputPassIdx, 0, pass);
+        remotePasses.set(color, pass);
+      }
+      pass.selectedObjects = objs;
+    }
+  }, [remoteSelections]);
 
   // EDT-03 — rebuild 3D grip meshes when the selection (or its element
   // shape) changes. The pointer handlers raycast against

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import uuid
 from collections import Counter
 from typing import Any, Literal, NamedTuple, cast
@@ -53,6 +54,7 @@ from bim_ai.commands import (
     CreateRoofJoinCmd,
     CreateRoofOpeningCmd,
     CreateEdgeProfileRunCmd,
+    SetEdgeProfileRunModeCmd,
     CreateSoffitCmd,
     CreateRoomOutlineCmd,
     CreateRoomPolyCmd,
@@ -142,7 +144,11 @@ from bim_ai.commands import (
     UpsertWallTypeCmd,
     CreateSunSettingsCmd,
     UpdateSunSettingsCmd,
+    SetRailingBalusterPatternCmd,
+    SetRailingHandrailSupportsCmd,
+    SetStairSubKindCmd,
     SetWallStackCmd,
+    SetWallLeanTaperCmd,
     WallStackComponentCmd,
 )
 from bim_ai.constraints import Violation, evaluate
@@ -160,6 +166,8 @@ from bim_ai.elements import (
     AgentDeviationElem,
     AreaElem,
     BalconyElem,
+    BalusterPattern,
+    HandrailSupport,
     BcfElem,
     BeamElem,
     CalloutElem,
@@ -233,6 +241,9 @@ from bim_ai.elements import (
     ViewTemplateElem,
     VoidCutElem,
     WallBasisLine,
+    WallEdgeFixed,
+    WallEdgeSpan,
+    WallEdgeSpec,
     WallElem,
     WallOpeningElem,
     WallStack,
@@ -396,6 +407,27 @@ def _stripped_optional_str(val: str | None) -> str | None:
         return None
     t = val.strip()
     return t or None
+
+
+def _validate_stair_sub_kind(
+    sub_kind: str,
+    floating_host_wall_id: str | None,
+    floating_tread_depth_mm: float | None,
+    els: dict,
+) -> None:
+    """Validate stair sub-kind fields against the element store."""
+    if sub_kind == "floating":
+        if not floating_host_wall_id:
+            raise ValueError("'floating' stair requires floatingHostWallId")
+        host = els.get(floating_host_wall_id)
+        if not isinstance(host, WallElem):
+            raise ValueError(
+                f"floatingHostWallId '{floating_host_wall_id}' must reference a Wall"
+            )
+        if floating_tread_depth_mm is not None and floating_tread_depth_mm <= 0:
+            raise ValueError("floatingTreadDepthMm must be > 0")
+    if sub_kind == "monolithic" and floating_host_wall_id is not None:
+        raise ValueError("'monolithic' stair must not set floatingHostWallId")
 
 
 def _balance_tread_risers(
@@ -622,6 +654,44 @@ def coerce_command(data: dict[str, Any]) -> Command:
     return command_adapter.validate_python(data)
 
 
+def _validate_wall_edge_profile_run(
+    host_wall: "WallElem",
+    host_edge: "WallEdgeSpec",
+    mode: str,
+) -> None:
+    if isinstance(host_edge, WallEdgeSpan):
+        if host_edge.start_mm < 0:
+            raise ValueError("WallEdgeSpan.startMm must be >= 0")
+        if host_edge.start_mm >= host_edge.end_mm:
+            raise ValueError("WallEdgeSpan.startMm must be < endMm")
+        if host_edge.end_mm > host_wall.height_mm:
+            raise ValueError(
+                f"WallEdgeSpan.endMm ({host_edge.end_mm}) exceeds "
+                f"wall height ({host_wall.height_mm})"
+            )
+
+
+def compute_wall_corner_mitre_angle(
+    wall_a_direction_deg: float,
+    wall_b_direction_deg: float,
+) -> float:
+    interior = abs(wall_b_direction_deg - wall_a_direction_deg) % 360
+    if interior > 180:
+        interior = 360 - interior
+    return interior / 2.0
+
+
+def _parse_wall_edge_spec(host_edge: Any) -> WallEdgeSpec | None:
+    if isinstance(host_edge, (WallEdgeFixed, WallEdgeSpan)):
+        return host_edge
+    if isinstance(host_edge, dict):
+        if "kind" in host_edge and host_edge["kind"] in ("top", "bottom"):
+            return WallEdgeFixed(kind=host_edge["kind"])
+        if "startMm" in host_edge and "endMm" in host_edge and "kind" not in host_edge:
+            return WallEdgeSpan(startMm=host_edge["startMm"], endMm=host_edge["endMm"])
+    return None
+
+
 def _dormer_footprint_polygon_mm(
     host: RoofElem,
     position: Any,
@@ -793,6 +863,26 @@ def _validate_wall_stack(components: list, wall_height_mm: float) -> None:
             f"wall stack prefix Σ heightMm ({prefix_sum} mm) must be < "
             f"wall heightMm ({wall_height_mm} mm)"
         )
+
+
+def _validate_wall_lean_taper(
+    lean_mm: Vec2Mm | None,
+    taper_ratio: float | None,
+    wall_height_mm: float,
+) -> None:
+    if lean_mm is not None:
+        magnitude = math.sqrt(lean_mm.x_mm**2 + lean_mm.y_mm**2)
+        max_lean = wall_height_mm * math.tan(math.radians(60))
+        if magnitude > max_lean:
+            raise ValueError(
+                f"leanMm magnitude ({magnitude:.1f} mm) exceeds "
+                f"wall height × tan(60°) ({max_lean:.1f} mm)"
+            )
+    if taper_ratio is not None:
+        if not (0.1 < taper_ratio < 10.0):
+            raise ValueError(
+                f"taperRatio ({taper_ratio}) must be in open interval (0.1, 10)"
+            )
 
 
 def _floor_dims_from_type(
@@ -1006,12 +1096,98 @@ def _enforce_pin_block(els: dict[str, Element], cmd: Command) -> None:
         )
 
 
+def _validate_baluster_pattern(pattern: BalusterPattern) -> None:
+    if pattern.rule == "regular" and (
+        pattern.spacing_mm is None or pattern.spacing_mm <= 0
+    ):
+        raise ValueError("balusterPattern.rule='regular' requires spacingMm > 0")
+
+
+def _validate_handrail_supports(
+    supports: list[HandrailSupport],
+    els: dict,
+) -> None:
+    for i, support in enumerate(supports):
+        if not support.bracket_family_id:
+            raise ValueError(
+                f"handrailSupports[{i}].bracketFamilyId must be non-empty"
+            )
+        host = els.get(support.host_wall_id)
+        if not isinstance(host, WallElem):
+            raise ValueError(
+                f"handrailSupports[{i}].hostWallId '{support.host_wall_id}' "
+                "must reference a Wall"
+            )
+
+
+def compute_baluster_positions(
+    path_length_mm: float,
+    spacing_mm: float,
+) -> list[float]:
+    """Return t-values (offsets in mm from path start) for a 'regular' baluster pattern.
+
+    First baluster at spacing_mm / 2; last at path_length_mm - spacing_mm / 2.
+    Returns empty list if path_length_mm < spacing_mm or spacing_mm <= 0.
+    """
+    if path_length_mm < spacing_mm or spacing_mm <= 0:
+        return []
+    positions = []
+    t = spacing_mm / 2.0
+    while t <= path_length_mm - spacing_mm / 2.0:
+        positions.append(t)
+        t += spacing_mm
+    return positions
+
+
 def _no_source_provider(_uuid: str, _rev: int | None) -> None:
     """FED-02: default source provider used when no DB-backed resolver was
     threaded through (unit tests, intra-host operations). Returns ``None`` so
     cross-link operations gracefully fall back to host-only behaviour.
     """
     return None
+
+
+def _validate_baluster_pattern(pattern: BalusterPattern) -> None:
+    if pattern.rule == "regular" and (
+        pattern.spacing_mm is None or pattern.spacing_mm <= 0
+    ):
+        raise ValueError("balusterPattern.rule='regular' requires spacingMm > 0")
+
+
+def _validate_handrail_supports(
+    supports: list[HandrailSupport],
+    els: dict,
+) -> None:
+    for i, support in enumerate(supports):
+        if not support.bracket_family_id:
+            raise ValueError(
+                f"handrailSupports[{i}].bracketFamilyId must be non-empty"
+            )
+        host = els.get(support.host_wall_id)
+        if not isinstance(host, WallElem):
+            raise ValueError(
+                f"handrailSupports[{i}].hostWallId '{support.host_wall_id}' "
+                "must reference a Wall"
+            )
+
+
+def compute_baluster_positions(
+    path_length_mm: float,
+    spacing_mm: float,
+) -> list[float]:
+    """Return t-values (offsets in mm from path start) for a 'regular' baluster pattern.
+
+    First baluster at spacing_mm / 2; last at path_length_mm - spacing_mm / 2.
+    Returns empty list if path_length_mm < spacing_mm or spacing_mm <= 0.
+    """
+    if path_length_mm < spacing_mm or spacing_mm <= 0:
+        return []
+    positions = []
+    t = spacing_mm / 2.0
+    while t <= path_length_mm - spacing_mm / 2.0:
+        positions.append(t)
+        t += spacing_mm
+    return positions
 
 
 def apply_inplace(
@@ -1086,6 +1262,8 @@ def apply_inplace(
                         for c in cmd.stack_components
                     ]
                 )
+            if cmd.lean_mm is not None or cmd.taper_ratio is not None:
+                _validate_wall_lean_taper(cmd.lean_mm, cmd.taper_ratio, h_mm)
             els[eid] = WallElem(
                 kind="wall",
                 id=eid,
@@ -1104,6 +1282,8 @@ def apply_inplace(
                 material_key=cmd.material_key,
                 is_curtain_wall=cmd.is_curtain_wall,
                 stack=wall_stack,
+                lean_mm=cmd.lean_mm,
+                taper_ratio=cmd.taper_ratio,
             )
 
         case MoveWallDeltaCmd():
@@ -2099,6 +2279,12 @@ def apply_inplace(
                     raise ValueError("createStair base/top level must reference existing Level")
             if cmd.authoring_mode == "by_sketch" and cmd.tread_lines and cmd.boundary_mm:
                 _validate_stair_boundary(cmd.boundary_mm)
+            _validate_stair_sub_kind(
+                cmd.sub_kind,
+                cmd.floating_host_wall_id,
+                cmd.floating_tread_depth_mm,
+                els,
+            )
             stair_runs, stair_landings = _materialize_stair_runs_and_landings(cmd)
             # Balance tread risers for by_sketch mode (fill in null riserHeightMm values).
             balanced_tread_lines = cmd.tread_lines
@@ -2131,7 +2317,28 @@ def apply_inplace(
                 boundary_mm=cmd.boundary_mm,
                 tread_lines=balanced_tread_lines,
                 total_rise_mm=cmd.total_rise_mm,
+                sub_kind=cmd.sub_kind,
+                monolithic_material=cmd.monolithic_material,
+                floating_tread_depth_mm=cmd.floating_tread_depth_mm,
+                floating_host_wall_id=cmd.floating_host_wall_id,
             )
+
+        case SetStairSubKindCmd():
+            stair = els.get(cmd.stair_id)
+            if not isinstance(stair, StairElem):
+                raise ValueError("setStairSubKind.stairId must reference a Stair")
+            _validate_stair_sub_kind(
+                cmd.sub_kind,
+                cmd.floating_host_wall_id,
+                cmd.floating_tread_depth_mm,
+                els,
+            )
+            els[cmd.stair_id] = stair.model_copy(update={
+                "sub_kind": cmd.sub_kind,
+                "monolithic_material": cmd.monolithic_material,
+                "floating_tread_depth_mm": cmd.floating_tread_depth_mm,
+                "floating_host_wall_id": cmd.floating_host_wall_id,
+            })
 
         case CreateSlabOpeningCmd():
             oid = cmd.id or new_id()
@@ -2210,25 +2417,49 @@ def apply_inplace(
                 raise ValueError("createEdgeProfileRun.profileFamilyId must be a non-empty string")
             if cmd.miter_mode not in ("auto", "manual"):
                 raise ValueError("createEdgeProfileRun.miterMode must be 'auto' or 'manual'")
-            if isinstance(host_el, RoofElem) and isinstance(cmd.host_edge, str):
-                pts = [(p.x_mm, p.y_mm) for p in host_el.footprint_mm]
-                if len(pts) >= 3:
-                    edge_profile_run_path_mm(
-                        pts,
-                        cmd.host_edge,
-                        overhang_mm=host_el.overhang_mm,
-                        slope_deg=host_el.slope_deg,
+            if isinstance(host_el, WallElem):
+                wall_edge = _parse_wall_edge_spec(cmd.host_edge)
+                if wall_edge is None:
+                    raise ValueError(
+                        "createEdgeProfileRun.hostEdge must be a WallEdgeFixed {'kind': 'top'|'bottom'} "
+                        "or WallEdgeSpan {'startMm': ..., 'endMm': ...} when hostElementId is a wall"
                     )
+                _validate_wall_edge_profile_run(host_el, wall_edge, cmd.mode)
+                resolved_host_edge: Any = wall_edge
+            elif isinstance(host_el, RoofElem):
+                if isinstance(cmd.host_edge, str):
+                    pts = [(p.x_mm, p.y_mm) for p in host_el.footprint_mm]
+                    if len(pts) >= 3:
+                        edge_profile_run_path_mm(
+                            pts,
+                            cmd.host_edge,
+                            overhang_mm=host_el.overhang_mm,
+                            slope_deg=host_el.slope_deg,
+                        )
+                resolved_host_edge = cmd.host_edge
+            else:
+                raise ValueError(
+                    f"createEdgeProfileRun.hostElementId '{cmd.host_element_id}' must reference a Wall or Roof"
+                )
             els[eid] = EdgeProfileRunElem(
                 kind="edge_profile_run",
                 id=eid,
                 name=cmd.name,
                 host_element_id=cmd.host_element_id,
-                host_edge=cmd.host_edge,
+                host_edge=resolved_host_edge,
                 profile_family_id=cmd.profile_family_id,
                 offset_mm=cmd.offset_mm,
                 miter_mode=cmd.miter_mode,
+                mode=cmd.mode,
             )
+
+        case SetEdgeProfileRunModeCmd():
+            run = els.get(cmd.run_id)
+            if not isinstance(run, EdgeProfileRunElem):
+                raise ValueError(
+                    f"setEdgeProfileRunMode.runId '{cmd.run_id}' must reference an EdgeProfileRun"
+                )
+            els[cmd.run_id] = run.model_copy(update={"mode": cmd.mode})
 
         # TODO API-V3-01
         case CreateSoffitCmd():
@@ -2692,14 +2923,41 @@ def apply_inplace(
                 raise ValueError("createRailing.hostedStairId unknown")
             if len(cmd.path_mm) < 2:
                 raise ValueError("createRailing.pathMm requires ≥2 points")
+            if cmd.baluster_pattern is not None:
+                _validate_baluster_pattern(cmd.baluster_pattern)
+            if cmd.handrail_supports:
+                _validate_handrail_supports(cmd.handrail_supports, els)
             els[rid] = RailingElem(
                 kind="railing",
                 id=rid,
                 name=cmd.name,
                 hosted_stair_id=cmd.hosted_stair_id,
                 path_mm=cmd.path_mm,
+                baluster_pattern=cmd.baluster_pattern,
+                handrail_supports=cmd.handrail_supports or None,
             )
 
+        case SetRailingBalusterPatternCmd():
+            railing = els.get(cmd.railing_id)
+            if not isinstance(railing, RailingElem):
+                raise ValueError("setRailingBalusterPattern.railingId must reference a Railing")
+            if cmd.baluster_pattern is not None:
+                _validate_baluster_pattern(cmd.baluster_pattern)
+            els[cmd.railing_id] = railing.model_copy(
+                update={"baluster_pattern": cmd.baluster_pattern}
+            )
+
+        case SetRailingHandrailSupportsCmd():
+            railing = els.get(cmd.railing_id)
+            if not isinstance(railing, RailingElem):
+                raise ValueError(
+                    "setRailingHandrailSupports.railingId must reference a Railing"
+                )
+            if cmd.handrail_supports:
+                _validate_handrail_supports(cmd.handrail_supports, els)
+            els[cmd.railing_id] = railing.model_copy(
+                update={"handrail_supports": cmd.handrail_supports or None}
+            )
         case SplitWallAtCmd():
             wall = els.get(cmd.wall_id)
             if not isinstance(wall, WallElem):
@@ -4198,6 +4456,18 @@ def apply_inplace(
                 )
                 els[cmd.wall_id] = wall.model_copy(update={"stack": new_stack})
 
+        case SetWallLeanTaperCmd():
+            wall = els.get(cmd.wall_id)
+            if not isinstance(wall, WallElem):
+                raise ValueError("setWallLeanTaper.wallId must reference a Wall")
+            _validate_wall_lean_taper(cmd.lean_mm, cmd.taper_ratio, wall.height_mm)
+            els[cmd.wall_id] = wall.model_copy(
+                update={
+                    "lean_mm": cmd.lean_mm,
+                    "taper_ratio": cmd.taper_ratio,
+                }
+            )
+
     # KRN-08: areas track a derived computedAreaSqMm. Recompute after every
     # command apply so create/update/delete of areas (and shafts that affect
     # `net` rule-set deductions) keep the value current.
@@ -5373,3 +5643,21 @@ def schedule_stacked_components(wall: WallElem) -> list[dict]:
         )
         accumulated += comp.height_mm
     return rows
+
+
+def resolve_wall_face_offset_at_cut(
+    wall: WallElem,
+    cut_plane_offset_mm: float,
+) -> tuple[float, float]:
+    """Return the (x_offset_mm, y_offset_mm) of the wall face at the given cut height.
+
+    For a prismatic wall, returns (0.0, 0.0).
+    For a leaning wall, returns lean_mm * (cut_plane_offset_mm / wall.height_mm).
+    """
+    if wall.lean_mm is None or wall.height_mm == 0:
+        return (0.0, 0.0)
+    fraction = cut_plane_offset_mm / wall.height_mm
+    return (
+        wall.lean_mm.x_mm * fraction,
+        wall.lean_mm.y_mm * fraction,
+    )

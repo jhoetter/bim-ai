@@ -314,12 +314,35 @@ register(
                     "type": "string",
                     "description": "SHA-256 of post-bundle element state; hand-off to VG-V3-01.",
                 },
+                "elements": {
+                    "type": "object",
+                    "description": "Post-commit element map. Each element may carry agentTrace when CMD-V3-02 is active.",
+                    "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                            "agentTrace": {
+                                "type": "object",
+                                "description": "CMD-V3-02: provenance trace linking element to its originating bundle.",
+                                "properties": {
+                                    "bundleId": {"type": "string"},
+                                    "assumptionKeys": {
+                                        "type": "array",
+                                        "items": {"type": "string"},
+                                    },
+                                    "appliedAt": {"type": "string", "format": "date-time"},
+                                },
+                                "required": ["bundleId", "assumptionKeys", "appliedAt"],
+                            }
+                        },
+                    },
+                },
             },
         },
         exitCodes={
             "ok": ExitCode(code=0, meaning="Bundle applied (commit) or validated (dry-run)"),
             "revision_conflict": ExitCode(code=2, meaning="parentRevision does not match current revision"),
             "assumption_log_required": ExitCode(code=3, meaning="assumptions field missing or malformed"),
+            "assumption_log_malformed": ExitCode(code=4, meaning="assumption entry is missing required field or has invalid value"),
             "error": ExitCode(code=1, meaning="Unexpected error"),
         },
         cliExample=(
@@ -335,6 +358,41 @@ register(
             "assumptions is required and non-empty (CMD-V3-02 contract). "
             "targetOptionId 'main' is permanently forbidden. "
             "Same bundle + same parentRevision -> same BundleResult (deterministic)."
+        ),
+    )
+)
+
+register(
+    ToolDescriptor(
+        name="collab-ws",
+        category="query",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "CollabWsInput",
+            "type": "object",
+            "required": ["modelId"],
+            "properties": {
+                "modelId": {"type": "string", "format": "uuid"},
+            },
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "CollabWsOutput",
+            "description": "WebSocket endpoint — no HTTP response body. Speaks the yjs Y-WebSocket protocol.",
+            "type": "object",
+            "properties": {},
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Connection accepted; yjs sync + awareness relay active"),
+            "not_found": ExitCode(code=1, meaning="Model not found"),
+        },
+        cliExample="# connect via any yjs WebsocketProvider: ws://<host>/api/models/<id>/collab",
+        restEndpoint=RestEndpoint(method="GET", path="/api/models/{model_id}/collab"),
+        sideEffects="none",
+        agentSafetyNotes=(
+            "WebSocket endpoint only. Relays raw yjs bytes; does not mutate kernel state. "
+            "Commits still go through POST /api/models/{model_id}/bundles (CMD-V3-01)."
         ),
     )
 )
