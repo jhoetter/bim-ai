@@ -19,24 +19,41 @@ Trigger phrases:
 ## How to run
 
 ```bash
+# Text log only (fast)
 python3 claude-skills/watch-yt/watch_yt.py "<YOUTUBE_URL>"
+
+# Text log + frame screenshots extracted at every timestamp
+python3 claude-skills/watch-yt/watch_yt.py "<YOUTUBE_URL>" --screenshots /tmp/my-video
 ```
 
-Run this from the repo root (`/Users/jhoetter/repos/bim-ai`). The script reads
-`GEMINI_API_KEY` from the `.env` file automatically.
+Run from the repo root (`/Users/jhoetter/repos/bim-ai`). The script reads
+`GEMINI_API_KEY` from `.env` automatically.
 
-Optional: pass `--model gemini-2.5-flash-lite` for faster/cheaper output on
-long videos, or `--model gemini-2.5-pro` for maximum quality.
+Optional flags:
+- `--model gemini-2.5-pro` — higher quality analysis on complex videos
+- `--screenshots <dir>` — also download the video (via yt-dlp) and extract a
+  PNG frame at every timestamp with ffmpeg; writes `log.txt` + numbered PNGs
 
 ## What you get back
 
-A plain-text, timestamped log:
+**Text mode** — a plain-text timestamped log:
 
 ```
 [00:00] Intro screen — title card "Building a BIM Model from Scratch"
 [00:12] Speaker introduces themselves, explains the agenda for the session
 [01:05] Opens the bim-ai dev environment; shows the empty canvas
 ...
+```
+
+**Screenshot mode** — the same log plus a directory of numbered PNGs:
+
+```
+/tmp/my-video/
+  001_00-00.png
+  002_00-12.png
+  003_01-05.png
+  ...
+  log.txt
 ```
 
 ## What to do with it
