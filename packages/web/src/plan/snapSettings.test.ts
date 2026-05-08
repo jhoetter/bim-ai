@@ -88,3 +88,45 @@ describe('EDT-05 — applySnapSettings', () => {
     expect(filtered.length).toBe(HITS.length);
   });
 });
+
+/* ─── EDT-05 closeout — parallel / tangent / workplane toggles ─────── */
+
+describe('EDT-05 closeout — new toggleable kinds', () => {
+  it('default has parallel + workplane on, tangent off', () => {
+    expect(DEFAULT_SNAP_SETTINGS.parallel).toBe(true);
+    expect(DEFAULT_SNAP_SETTINGS.tangent).toBe(false);
+    expect(DEFAULT_SNAP_SETTINGS.workplane).toBe(true);
+  });
+
+  it('persists the new toggles via the existing storage key', () => {
+    const storage: Storage = memoryStorage();
+    const next: SnapSettings = {
+      ...DEFAULT_SNAP_SETTINGS,
+      parallel: false,
+      tangent: true,
+      workplane: false,
+    };
+    saveSnapSettings(next, storage);
+    expect(loadSnapSettings(storage)).toEqual(next);
+  });
+
+  it('applySnapSettings filters parallel / tangent / workplane', () => {
+    const HITS: SnapHit[] = [
+      { kind: 'parallel', point: { xMm: 0, yMm: 0 } },
+      { kind: 'tangent', point: { xMm: 1, yMm: 1 } },
+      { kind: 'workplane', point: { xMm: 2, yMm: 2 } },
+    ];
+    // Default settings: tangent OFF — drops it; parallel + workplane stay.
+    const defaults = applySnapSettings(HITS, DEFAULT_SNAP_SETTINGS);
+    expect(defaults.map((h) => h.kind)).toEqual(['parallel', 'workplane']);
+
+    // All three off — filter strips them all.
+    const allOff = applySnapSettings(HITS, {
+      ...DEFAULT_SNAP_SETTINGS,
+      parallel: false,
+      tangent: false,
+      workplane: false,
+    });
+    expect(allOff).toHaveLength(0);
+  });
+});

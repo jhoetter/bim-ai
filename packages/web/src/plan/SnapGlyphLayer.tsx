@@ -37,6 +37,10 @@ export function snapKindLabel(kind: SnapKind): string {
       return 'extension';
     case 'tangent':
       return 'tangent';
+    case 'parallel':
+      return 'parallel';
+    case 'workplane':
+      return 'workplane';
     case 'grid':
       return 'grid';
     case 'raw':
@@ -150,18 +154,65 @@ export function SnapGlyph(props: SnapGlyphProps) {
       break;
     }
     case 'tangent':
-      // Reserved — no curved geometry yet. Render the dot so a future
-      // arc engine has a valid glyph hookup without an extra commit.
+      // EDT-05 closeout — circle-tangent symbol: a small circle with a
+      // horizontal tangent line that grazes the bottom.
       glyph = (
-        <circle
-          data-testid="snap-glyph-tangent"
-          cx={pxX}
-          cy={pxY}
-          r={3}
-          fill="none"
-          stroke={stroke}
-          strokeWidth={1.5}
-        />
+        <g data-testid="snap-glyph-tangent">
+          <circle
+            cx={pxX}
+            cy={pxY - 1}
+            r={half - 3}
+            fill="none"
+            stroke={stroke}
+            strokeWidth={1.5}
+          />
+          <line
+            x1={pxX - half}
+            y1={pxY + half - 4}
+            x2={pxX + half}
+            y2={pxY + half - 4}
+            stroke={stroke}
+            strokeWidth={1.5}
+          />
+        </g>
+      );
+      break;
+    case 'parallel':
+      // EDT-05 closeout — `‖` symbol rendered as two short vertical
+      // strokes flanking the snap point.
+      glyph = (
+        <g data-testid="snap-glyph-parallel">
+          <line
+            x1={pxX - 3}
+            y1={pxY - half}
+            x2={pxX - 3}
+            y2={pxY + half}
+            stroke={stroke}
+            strokeWidth={1.5}
+          />
+          <line
+            x1={pxX + 3}
+            y1={pxY - half}
+            x2={pxX + 3}
+            y2={pxY + half}
+            stroke={stroke}
+            strokeWidth={1.5}
+          />
+        </g>
+      );
+      break;
+    case 'workplane':
+      // EDT-05 closeout — small wireframe square skewed to suggest a
+      // plane viewed in perspective.
+      glyph = (
+        <g data-testid="snap-glyph-workplane">
+          <polygon
+            points={`${pxX - half},${pxY - 2} ${pxX + 2},${pxY - half} ${pxX + half},${pxY + 2} ${pxX - 2},${pxY + half}`}
+            fill="none"
+            stroke={stroke}
+            strokeWidth={1.5}
+          />
+        </g>
       );
       break;
     case 'grid':

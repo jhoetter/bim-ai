@@ -170,10 +170,7 @@ describe('grip provider registry', () => {
 
   test('default wall registration survives clear+re-register cycle', () => {
     register3dGripProvider('wall', wallGripProvider as never);
-    const grips = gripsFor({
-      kind: 'wall',
-      ...baseWall,
-    } as Record<string, unknown>);
+    const grips = gripsFor({ ...baseWall } as Record<string, unknown>);
     expect(grips).toHaveLength(2);
   });
 });
