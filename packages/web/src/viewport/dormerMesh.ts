@@ -105,11 +105,14 @@ export function makeDormerMesh(
   const topY = baseY + wallHeightM;
   void wallTopM;
 
-  // World coords: plan-X → world-X, plan-Y → -world-Z. mm → m at construction.
+  // World coords: plan-X → world-X, plan-Y → world-Z (no negation,
+  // matching the wall + roof builders elsewhere in viewport/meshBuilders.ts).
+  // The earlier negated convention placed dormer geometry ~plan-depth metres
+  // away from the host building in world Z, rendering it invisible.
   const xMin = fp.minX / 1000;
   const xMax = fp.maxX / 1000;
-  const zMin = -fp.maxY / 1000;
-  const zMax = -fp.minY / 1000;
+  const zMin = fp.minY / 1000;
+  const zMax = fp.maxY / 1000;
   const widthM = xMax - xMin;
   const depthM = zMax - zMin;
   const cheekThickM = 0.18;

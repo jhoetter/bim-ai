@@ -1506,12 +1506,32 @@ export function Viewport({ wsConnected, onPersistViewpointField, onSemanticComma
         const rig = cameraRigRef.current;
         const cam = cameraRef.current;
         if (box && rig && cam) {
-          rig.frame(box);
-          rig.setHome();
-          const snap = rig.snapshot();
-          cam.position.set(snap.position.x, snap.position.y, snap.position.z);
-          cam.up.set(snap.up.x, snap.up.y, snap.up.z).normalize();
-          cam.lookAt(snap.target.x, snap.target.y, snap.target.z);
+          // Prefer a saved orbit_3d viewpoint named 'vp-main-iso' (the
+          // model's authored "main isometric" SSW preset, per SKB-16).
+          // Falls back to bounding-box fit if no such viewpoint exists.
+          const mainIso = curr['vp-main-iso'];
+          const rigApi = orbitRigApiRef.current;
+          if (
+            mainIso &&
+            mainIso.kind === 'viewpoint' &&
+            mainIso.mode === 'orbit_3d' &&
+            mainIso.camera &&
+            rigApi
+          ) {
+            rigApi.applyViewpointMm({
+              position: mainIso.camera.position,
+              target: mainIso.camera.target,
+              up: mainIso.camera.up,
+            });
+            rig.setHome();
+          } else {
+            rig.frame(box);
+            rig.setHome();
+            const snap = rig.snapshot();
+            cam.position.set(snap.position.x, snap.position.y, snap.position.z);
+            cam.up.set(snap.up.x, snap.up.y, snap.up.z).normalize();
+            cam.lookAt(snap.target.x, snap.target.y, snap.target.z);
+          }
           hasAutoFittedRef.current = true;
         }
       }

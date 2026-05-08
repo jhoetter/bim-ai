@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { Brush, Evaluator, SUBTRACTION } from 'three-bvh-csg';
 import type { Element } from '@bim-ai/core';
 
@@ -25,8 +26,26 @@ export function applyDormerCutsToRoofGeom(
   if (dormers.length === 0) return geom;
   const roofBbox = computeRoofBboxMm(roof);
   try {
+    // three-bvh-csg requires both inputs to share the same attribute
+    // set, indexed, with normals. Strip everything except position then
+    // re-add normal + index via the helpers — keeps both sides aligned.
+    function normaliseForCsg(input: THREE.BufferGeometry): THREE.BufferGeometry {
+      const g = new THREE.BufferGeometry();
+      const pos = input.getAttribute('position');
+      g.setAttribute('position', pos);
+      if (input.index) g.setIndex(input.index);
+      const indexed = g.index ? g : mergeVertices(g);
+      indexed.computeVertexNormals();
+      return indexed;
+    }
+    const csgInput = normaliseForCsg(geom);
     const evaluator = new Evaluator();
-    let brush = new Brush(geom);
+    // The roof builders emit position + normal but no uv; restrict the
+    // evaluator's relevant-attribute set to match. (The lib defaults to
+    // ['position', 'uv', 'normal'] and crashes on missing uv with
+    // "Cannot read properties of undefined (reading 'array')".)
+    evaluator.attributes = ['position', 'normal'];
+    let brush = new Brush(csgInput);
     brush.updateMatrixWorld();
     let cutsApplied = 0;
     for (const d of dormers) {
@@ -37,10 +56,15 @@ export function applyDormerCutsToRoofGeom(
         );
         continue;
       }
+      // World coords: plan-X → world-X, plan-Y → world-Z (no negation),
+      // matching makeRoofMassMesh + wall builders. The earlier negated
+      // convention put the cutter on the opposite side of world-origin from
+      // the host roof, so SUBTRACTION ran but did nothing inside the
+      // visible roof volume.
       const xMin = fp.minX / 1000;
       const xMax = fp.maxX / 1000;
-      const zMin = -fp.maxY / 1000;
-      const zMax = -fp.minY / 1000;
+      const zMin = fp.minY / 1000;
+      const zMax = fp.maxY / 1000;
       const widthM = xMax - xMin;
       const depthM = zMax - zMin;
       if (widthM <= 0 || depthM <= 0) {
@@ -51,7 +75,8 @@ export function applyDormerCutsToRoofGeom(
       }
       const cutHeightM = 30;
       const baseY = refElev;
-      const cutter = new Brush(new THREE.BoxGeometry(widthM, cutHeightM, depthM));
+      const boxRaw = new THREE.BoxGeometry(widthM, cutHeightM, depthM);
+      const cutter = new Brush(normaliseForCsg(boxRaw));
       cutter.position.set((xMin + xMax) / 2, baseY + cutHeightM / 2, (zMin + zMax) / 2);
       cutter.updateMatrixWorld();
       brush = evaluator.evaluate(brush, cutter, SUBTRACTION);
