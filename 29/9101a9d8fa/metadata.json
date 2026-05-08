@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "299101a9d8fa",
+  "strategy": "manual-commit",
+  "branch": "feat/v3-tkn-v3-01-tokenisation",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "app/bim_ai/api/__init__.py",
+    "app/bim_ai/api/registry.py",
+    "app/bim_ai/api/schemas/introspection_api_list_tools.json",
+    "app/bim_ai/api/schemas/mutation_apply_bundle.json",
+    "app/bim_ai/api/schemas/query_model_show.json",
+    "app/bim_ai/routes_api.py",
+    "app/tests/test_api_v3_registry.py",
+    "packages/cli/cli.mjs"
+  ],
+  "sessions": [
+    {
+      "metadata": "/29/9101a9d8fa/0/metadata.json",
+      "transcript": "/29/9101a9d8fa/0/full.jsonl",
+      "content_hash": "/29/9101a9d8fa/0/content_hash.txt",
+      "prompt": "/29/9101a9d8fa/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 36,
+    "cache_creation_tokens": 67930,
+    "cache_read_tokens": 1930017,
+    "output_tokens": 12559,
+    "api_call_count": 34
+  }
+}
