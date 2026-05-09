@@ -1636,6 +1636,15 @@ class TrimElementToReferenceCmd(BaseModel):
     end_hint: Literal["start", "end"] = Field(alias="endHint")
 
 
+class TrimExtendToCornerCmd(BaseModel):
+    """Trim or extend two walls so their centerlines meet at a corner."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["trimExtendToCorner"] = "trimExtendToCorner"
+    wall_id_a: str = Field(alias="wallIdA")
+    wall_id_b: str = Field(alias="wallIdB")
+
+
 WallJoinVariant = Literal["miter", "butt", "square"]
 
 
@@ -2919,6 +2928,7 @@ Command = Annotated[
     | SplitWallAtCmd
     | AlignElementToReferenceCmd
     | TrimElementToReferenceCmd
+    | TrimExtendToCornerCmd
     | SetWallJoinVariantCmd
     | SetWallJoinDisallowCmd
     | CreateColumnCmd

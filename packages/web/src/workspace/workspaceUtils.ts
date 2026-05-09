@@ -80,6 +80,7 @@ export type LegacyPlanTool =
   | 'align'
   | 'split'
   | 'trim'
+  | 'trim-extend'
   | 'wall-join'
   | 'wall-opening'
   | 'shaft'

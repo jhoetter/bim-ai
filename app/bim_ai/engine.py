@@ -121,6 +121,7 @@ from bim_ai.commands import (
     SetWallStackCmd,
     SplitWallAtCmd,
     TrimElementToReferenceCmd,
+    TrimExtendToCornerCmd,
     UnpinElementCmd,
     UpdateAreaCmd,
     UpdateElementPropertyCmd,
@@ -3415,6 +3416,54 @@ def apply_inplace(
                 els[cmd.target_wall_id] = tgt.model_copy(update={"start": new_endpoint})
             else:
                 els[cmd.target_wall_id] = tgt.model_copy(update={"end": new_endpoint})
+
+        case TrimExtendToCornerCmd():
+            import math as _math
+            wa = els.get(cmd.wall_id_a)
+            wb = els.get(cmd.wall_id_b)
+            if not isinstance(wa, WallElem) or not isinstance(wb, WallElem):
+                raise ValueError("trimExtendToCorner: both IDs must reference walls")
+
+            # Compute the intersection of the two wall centerlines.
+            ax0, ay0 = wa.start.x_mm, wa.start.y_mm
+            ax1, ay1 = wa.end.x_mm, wa.end.y_mm
+            bx0, by0 = wb.start.x_mm, wb.start.y_mm
+            bx1, by1 = wb.end.x_mm, wb.end.y_mm
+
+            dax, day = ax1 - ax0, ay1 - ay0
+            dbx, dby = bx1 - bx0, by1 - by0
+
+            # Solve: ax0 + t*dax = bx0 + s*dbx, ay0 + t*day = by0 + s*dby
+            det = dax * (-dby) - (-dbx) * day
+            if abs(det) < 1e-6:
+                raise ValueError("trimExtendToCorner: walls are parallel, no intersection")
+
+            dx = bx0 - ax0
+            dy = by0 - ay0
+            t = (dx * (-dby) - (-dbx) * dy) / det
+
+            # Intersection point
+            ix = ax0 + t * dax
+            iy = ay0 + t * day
+
+            # Extend/trim wall A: move the endpoint that is closer to the intersection
+            dist_a_start = _math.hypot(ax0 - ix, ay0 - iy)
+            dist_a_end = _math.hypot(ax1 - ix, ay1 - iy)
+            if dist_a_end < dist_a_start:
+                new_wa = wa.model_copy(update={"end": Vec2Mm(xMm=ix, yMm=iy)})
+            else:
+                new_wa = wa.model_copy(update={"start": Vec2Mm(xMm=ix, yMm=iy)})
+
+            # Extend/trim wall B: same logic
+            dist_b_start = _math.hypot(bx0 - ix, by0 - iy)
+            dist_b_end = _math.hypot(bx1 - ix, by1 - iy)
+            if dist_b_end < dist_b_start:
+                new_wb = wb.model_copy(update={"end": Vec2Mm(xMm=ix, yMm=iy)})
+            else:
+                new_wb = wb.model_copy(update={"start": Vec2Mm(xMm=ix, yMm=iy)})
+
+            els[cmd.wall_id_a] = new_wa
+            els[cmd.wall_id_b] = new_wb
 
         case SetWallJoinVariantCmd():
             if not cmd.wall_ids:

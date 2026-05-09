@@ -46,6 +46,7 @@ export type ToolId =
   | 'align'
   | 'split'
   | 'trim'
+  | 'trim-extend'
   | 'mirror'
   | 'wall-join'
   | 'wall-opening'
@@ -65,6 +66,7 @@ export const MODIFY_TOOL_IDS = new Set<ToolId>([
   'align',
   'split',
   'trim',
+  'trim-extend',
   'mirror',
   'copy',
   'move',
@@ -318,6 +320,14 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       modes: ['plan'],
       tooltip: t('tools.trim.tooltip'),
     },
+    'trim-extend': {
+      id: 'trim-extend',
+      label: 'Trim/Extend',
+      icon: 'trim',
+      hotkey: 'TR',
+      modes: ['plan'],
+      tooltip: 'Trim or extend two walls so their centerlines meet at a corner (two-click)',
+    },
     'wall-join': {
       id: 'wall-join',
       label: t('tools.wallJoin.label'),
@@ -441,6 +451,7 @@ const PALETTE_ORDER: ToolId[] = [
   'align',
   'split',
   'trim',
+  'trim-extend',
   'mirror',
   'copy',
   'move',

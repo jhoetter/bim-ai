@@ -310,6 +310,8 @@ export function PlanCanvas({
   const [rotateAnchorSet, setRotateAnchorSet] = useState(false);
   const splitStateRef = useRef<SplitState>(initialSplitState());
   const trimStateRef = useRef<TrimState>(initialTrimState());
+  const trimExtendFirstWallRef = useRef<string | null>(null);
+  const [trimExtendFirstWallSet, setTrimExtendFirstWallSet] = useState(false);
   const wallJoinStateRef = useRef<WallJoinState>(initialWallJoinState());
   const wallOpeningStateRef = useRef<WallOpeningState>(initialWallOpeningState());
   const wallOpeningAnchorRef = useRef<{ xMm: number; yMm: number } | null>(null);
@@ -781,6 +783,8 @@ export function PlanCanvas({
     setRotateAnchorSet(false);
     splitStateRef.current = initialSplitState();
     trimStateRef.current = initialTrimState();
+    trimExtendFirstWallRef.current = null;
+    setTrimExtendFirstWallSet(false);
     wallJoinStateRef.current = initialWallJoinState();
     if (planTool === 'align') {
       const { state } = reduceAlign(alignStateRef.current, { kind: 'activate' });
@@ -2896,6 +2900,26 @@ export function PlanCanvas({
         }
         return;
       }
+      if (planTool === 'trim-extend') {
+        const nearestWall = nearestWallAt(elementsById, displayLevelId || undefined, sp.xMm, sp.yMm);
+        if (!nearestWall || nearestWall.distMm > 900) return;
+        if (!trimExtendFirstWallRef.current) {
+          // First click: pick wall A
+          trimExtendFirstWallRef.current = nearestWall.wall.id;
+          setTrimExtendFirstWallSet(true);
+          selectEl(nearestWall.wall.id);
+        } else if (trimExtendFirstWallRef.current !== nearestWall.wall.id) {
+          // Second click: trim/extend both walls to their intersection
+          onSemanticCommand({
+            type: 'trimExtendToCorner',
+            wallIdA: trimExtendFirstWallRef.current,
+            wallIdB: nearestWall.wall.id,
+          });
+          trimExtendFirstWallRef.current = null;
+          setTrimExtendFirstWallSet(false);
+        }
+        return;
+      }
       if (planTool === 'wall-join') {
         const rect = rnd.domElement.getBoundingClientRect();
         const worldPerPxMm = (2 * camRef.current.half * 1000) / Math.max(1, rect.width);
@@ -3398,6 +3422,9 @@ export function PlanCanvas({
         } else if (planTool === 'trim') {
           const { state } = reduceTrim(trimStateRef.current, { kind: 'cancel' });
           trimStateRef.current = state;
+        } else if (planTool === 'trim-extend') {
+          trimExtendFirstWallRef.current = null;
+          setTrimExtendFirstWallSet(false);
         } else if (planTool === 'wall-join') {
           const { state } = reduceWallJoin(wallJoinStateRef.current, { kind: 'cancel' });
           wallJoinStateRef.current = state;
@@ -4634,6 +4661,28 @@ export function PlanCanvas({
             );
           })()
         : null}
+      {/* Trim-extend tool status chip */}
+      {planTool === 'trim-extend' ? (
+        <div
+          data-testid="trim-extend-tool-chip"
+          aria-live="polite"
+          style={{
+            position: 'absolute',
+            bottom: 48,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            pointerEvents: 'none',
+            zIndex: 20,
+          }}
+          className="flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-xs shadow"
+        >
+          <span>
+            {trimExtendFirstWallSet
+              ? 'Click second wall to extend to corner'
+              : 'Click a wall to trim/extend'}
+          </span>
+        </div>
+      ) : null}
       {/* Zoom control — scale bar + preset menu */}
       <div className="pointer-events-auto absolute left-3 bottom-3 z-10">
         {showZoomMenu && (
