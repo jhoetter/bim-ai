@@ -372,6 +372,7 @@ function Row({
         }}
         data-testid={`left-rail-row-${row.id}`}
         data-active={isActive ? 'true' : 'false'}
+        title={row.hint ? `${row.label} — ${row.hint}` : row.label}
         style={indentStyle}
         className={[
           'flex h-7 w-full items-center gap-1.5 pr-3 text-[13px] transition-colors',

@@ -79,7 +79,11 @@ export function ScheduleRegistryTable({ model }: { model: ScheduleTableModelV1 }
                 return (
                   <tr className="border-t border-border/60">
                     {cols.map((cKey) => (
-                      <td key={cKey} className="max-w-[140px] truncate px-1 text-[10px]">
+                      <td
+                        key={cKey}
+                        className="max-w-[140px] truncate px-1 text-[10px]"
+                        title={String(row.record[cKey] ?? '')}
+                      >
                         {formatScheduleCell(row.record[cKey])}
                       </td>
                     ))}

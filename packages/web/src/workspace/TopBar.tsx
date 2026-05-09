@@ -211,7 +211,7 @@ function TopBarLeft({
         aria-haspopup="menu"
         data-testid="topbar-project-name"
       >
-        <span className="truncate" style={{ maxWidth: 160 }}>
+        <span className="truncate" style={{ maxWidth: 160 }} title={projectName}>
           {projectName}
         </span>
         <Icons.disclosureOpen size={14} className="text-muted" aria-hidden="true" />

@@ -173,7 +173,10 @@ export function MaterialLayerStackWorkbench({
                       spellCheck={false}
                     />
                   </td>
-                  <td className="max-w-[10rem] truncate text-muted">
+                  <td
+                    className="max-w-[10rem] truncate text-muted"
+                    title={resolveMaterialDisplayLabel(row.materialKey) || undefined}
+                  >
                     {resolveMaterialDisplayLabel(row.materialKey) || '—'}
                   </td>
                   <td className="p-1.5 text-right">
