@@ -142,6 +142,7 @@ export function ViewTemplateEditPanel({
         <button
           type="button"
           disabled={saving}
+          aria-busy={saving}
           className="flex-1 rounded bg-accent px-3 py-1.5 text-sm text-accent-foreground disabled:opacity-50 hover:opacity-90"
           onClick={handleSave}
         >

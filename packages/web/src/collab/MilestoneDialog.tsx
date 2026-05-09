@@ -180,6 +180,7 @@ export function MilestoneDialog({
             type="button"
             onClick={() => void handleSubmit()}
             disabled={!name.trim() || submitting}
+            aria-busy={submitting}
             style={{
               padding: '6px 14px',
               borderRadius: 4,

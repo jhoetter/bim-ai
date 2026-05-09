@@ -69,6 +69,7 @@ export function CommentsPanel({
           type="button"
           data-testid="comment-post-btn"
           disabled={posting || !text.trim()}
+          aria-busy={posting}
           onClick={() => void handlePost()}
           className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-accent-foreground hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-60"
         >
