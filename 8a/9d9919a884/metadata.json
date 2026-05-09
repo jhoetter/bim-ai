@@ -3,8 +3,10 @@
   "checkpoint_id": "8a9d9919a884",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 1,
-  "files_touched": null,
+  "checkpoints_count": 2,
+  "files_touched": [
+    "packages/cli/lib/one-family-home-commands.mjs"
+  ],
   "sessions": [
     {
       "metadata": "/8a/9d9919a884/0/metadata.json",
@@ -17,13 +19,19 @@
       "transcript": "/8a/9d9919a884/1/full.jsonl",
       "content_hash": "/8a/9d9919a884/1/content_hash.txt",
       "prompt": "/8a/9d9919a884/1/prompt.txt"
+    },
+    {
+      "metadata": "/8a/9d9919a884/2/metadata.json",
+      "transcript": "/8a/9d9919a884/2/full.jsonl",
+      "content_hash": "/8a/9d9919a884/2/content_hash.txt",
+      "prompt": "/8a/9d9919a884/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 261,
-    "cache_creation_tokens": 145067,
-    "cache_read_tokens": 14592118,
-    "output_tokens": 65167,
-    "api_call_count": 163
+    "input_tokens": 408,
+    "cache_creation_tokens": 365811,
+    "cache_read_tokens": 25053601,
+    "output_tokens": 135389,
+    "api_call_count": 300
   }
 }

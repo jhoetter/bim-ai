@@ -1,0 +1,34 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "8a9d9919a884",
+  "session_id": "6a5ef04f-82e8-47af-bbcb-34f52195966e",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-09T12:20:27.458842Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/cli/lib/one-family-home-commands.mjs"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "f8392160647a",
+  "token_usage": {
+    "input_tokens": 147,
+    "cache_creation_tokens": 220744,
+    "cache_read_tokens": 10461483,
+    "output_tokens": 70222,
+    "api_call_count": 137
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-09T12:20:27.446865Z",
+    "agent_lines": 17,
+    "agent_removed": 5,
+    "human_added": 0,
+    "human_modified": 2,
+    "human_removed": 0,
+    "total_committed": 19,
+    "total_lines_changed": 24,
+    "agent_percentage": 91.66666666666666,
+    "metric_version": 2
+  }
+}
