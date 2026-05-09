@@ -142,6 +142,8 @@ export type StoreState = {
   elementsById: Record<string, Element>;
   violations: Violation[];
   selectedId?: string;
+  /** F-100: additional IDs in the multi-select set (Ctrl+Click). Does not replace `selectedId`. */
+  selectedIds: string[];
   viewerMode: ViewerMode;
   planTool: PlanTool;
   activeLevelId?: string;
@@ -216,6 +218,10 @@ export type StoreState = {
   hydrateFromSnapshot: (snap: Snapshot) => void;
   applyDelta: (d: ModelDelta) => void;
   select: (id?: string) => void;
+  /** F-100: toggle `id` in the multi-select set without changing `selectedId`. */
+  toggleSelectedId: (id: string) => void;
+  /** F-100: clear the multi-select set. */
+  clearSelectedIds: () => void;
   /** FAM-10: paste-side merge — append elements without deleting any. */
   mergeElements: (elements: Element[]) => void;
   /** FAM-10: paste-side family imports. */

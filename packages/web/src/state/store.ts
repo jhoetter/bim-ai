@@ -1569,6 +1569,8 @@ export const useBimStore = create<StoreState>((set, get) => {
 
     violations: [],
 
+    selectedIds: [],
+
     viewerMode: 'orbit_3d',
 
     planTool: 'select',
@@ -1796,7 +1798,16 @@ export const useBimStore = create<StoreState>((set, get) => {
       });
     },
 
-    select: (id) => set({ selectedId: id }),
+    select: (id) => set({ selectedId: id, selectedIds: [] }),
+
+    toggleSelectedId: (id) =>
+      set((s) => ({
+        selectedIds: s.selectedIds.includes(id)
+          ? s.selectedIds.filter((x) => x !== id)
+          : [...s.selectedIds, id],
+      })),
+
+    clearSelectedIds: () => set({ selectedIds: [] }),
 
     /** FAM-10: paste-side merge — append elements without deleting any. */
     mergeElements: (elements) =>

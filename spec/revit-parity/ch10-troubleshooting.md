@@ -11,7 +11,7 @@ Source segment: `05:30:54 – 05:33:32`
 **Screenshot:**
 ![Filter tool](file:///Users/jhoetter/Desktop/Revit%20Specs/0777_05-31-45.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — Ctrl+Click multi-select now builds an additional selection set (`selectedIds` in the store). The count is shown as a chip at the bottom of the plan canvas. Clicking "Filter" opens a popover listing the categories in the selection with checkboxes; unchecking a category removes those element IDs from the selection. Missing: box-select (drag to select multiple elements), Tab to add connected elements to multi-select, and copy/delete/mirror operations acting on the full multi-select set.
 
 ---
 
