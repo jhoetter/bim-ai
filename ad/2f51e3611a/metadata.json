@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "ad2f51e3611a",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/web/src/collab/SharePresentationModal.tsx",
+    "packages/web/src/families/FamilyLibraryPanel.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/ad/2f51e3611a/0/metadata.json",
+      "transcript": "/ad/2f51e3611a/0/full.jsonl",
+      "content_hash": "/ad/2f51e3611a/0/content_hash.txt",
+      "prompt": "/ad/2f51e3611a/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 7688,
+    "cache_creation_tokens": 4362066,
+    "cache_read_tokens": 272882626,
+    "output_tokens": 1284912,
+    "api_call_count": 2773
+  }
+}
