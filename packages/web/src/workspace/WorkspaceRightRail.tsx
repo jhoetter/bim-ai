@@ -199,7 +199,8 @@ export function WorkspaceRightRail({
           onApplyScopeChange={handleApplyScopeChange}
           tabs={{
             properties: el ? (
-              el.kind === 'plan_view' ? (
+              <>
+              {el.kind === 'plan_view' ? (
                 <>
                   {planGridDatumLine ? (
                     <p className="mb-2 break-all font-mono text-[10px] leading-snug text-muted">
@@ -389,7 +390,23 @@ export function WorkspaceRightRail({
                     }),
                   onDisciplineChange: handleDisciplineChange,
                 })
-              )
+              )}
+              {activePlanViewId && (
+                <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: 6, marginTop: 8 }}>
+                  <button
+                    data-testid="inspector-hide-category"
+                    type="button"
+                    onClick={() => {
+                      useBimStore.getState().setCategoryOverride(activePlanViewId, el.kind, { visible: false });
+                    }}
+                    style={{ fontSize: 11, padding: '2px 8px', cursor: 'pointer', color: 'var(--color-muted)' }}
+                    title={`Hide all ${el.kind} elements in this view`}
+                  >
+                    Hide Category in View
+                  </button>
+                </div>
+              )}
+              </>
             ) : (
               <InspectorEmptyTab message="No element selected." />
             ),
