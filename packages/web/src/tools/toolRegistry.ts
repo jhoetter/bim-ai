@@ -36,6 +36,7 @@ export type ToolId =
   | 'dimension'
   | 'section'
   | 'elevation'
+  | 'grid'
   | 'reference-plane'
   | 'property-line'
   | 'area-boundary'
@@ -213,6 +214,15 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       modes: ['plan', 'plan-3d'],
       tooltip: t('tools.elevation.tooltip'),
     },
+    grid: {
+      id: 'grid',
+      label: 'Grid Line',
+      icon: 'gridLine',
+      hotkey: 'GR',
+      shortcut: 'GR',
+      modes: ['plan', 'plan-3d'],
+      tooltip: 'Place a grid line (two-click start → end)',
+    },
     'reference-plane': {
       id: 'reference-plane',
       label: t('tools.referencePlane.label'),
@@ -372,6 +382,7 @@ const PALETTE_ORDER: ToolId[] = [
   'measure',
   'section',
   'elevation',
+  'grid',
   'reference-plane',
   'property-line',
   'area-boundary',

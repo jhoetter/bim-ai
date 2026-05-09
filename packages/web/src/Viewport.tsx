@@ -2143,7 +2143,7 @@ export function Viewport({
                   className="rounded border border-border bg-surface px-1 py-0.5 text-foreground"
                 >
                   <option value="white">White</option>
-                  <option value="light_grey">Light Grey</option>
+                  <option value="light_grey">Sky</option>
                   <option value="dark">Dark</option>
                 </select>
               </label>

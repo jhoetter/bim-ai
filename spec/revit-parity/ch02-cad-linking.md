@@ -103,7 +103,7 @@ Source segment: `00:27:59 – 00:55:00`
 **Screenshot:**
 ![Work Plane assignment](file:///Users/jhoetter/Desktop/Revit%20Specs/0801_05-33-52.png)
 
-**bim-ai status:** 🟡 Partial — The `link_dxf` element's `levelId` field controls which level (work plane) the DXF underlay is associated with. The right-rail inspector exposes the current level for selected DXF underlays (`case 'link_dxf':` inspector block). The level can be changed via `ManageLinksDialog`'s DXF Links section. Missing: a level-dropdown directly in the inspector (currently read-only display); the Revit-style "Set Work Plane" dialog.
+**bim-ai status:** 🟡 Partial — The `link_dxf` element's `levelId` field controls which level the DXF underlay is associated with (its "work plane"). The right-rail inspector now shows "Level" for selected DXF underlay elements in the `case 'link_dxf':` inspector block, exposing the current work plane. The level can be changed in `ManageLinksDialog` via the DXF Links section. Missing: a full level-dropdown editor directly in the inspector (currently read-only), and the Revit-style "Set Work Plane" dialog that allows selecting a named reference plane as the work plane instead of a level.
 
 ---
 

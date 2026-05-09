@@ -76,6 +76,10 @@
   --cat-site: #cbd1bd;
   --cat-section: #d93d3d;
   --cat-sheet: #c9cbcf;
+  /* Markup + review annotation colours (MRK wave) */
+  --cat-review: #f59e0b;         /* amber — review cloud outline */
+  --cat-edit: #e53e3e;           /* red — freehand / live stroke */
+  --draft-comment-pin: #3b82f6;  /* blue — comment pin bubble */
 
   /* §9.10 Drafting line weights at 1:50 plot scale (in px) */
   --draft-lw-cut-major: 2px;
@@ -201,6 +205,10 @@
   --cat-site: #353d2e;
   --cat-section: #f15252;
   --cat-sheet: #4a4d52;
+  /* Markup + review annotation colours (MRK wave) — dark */
+  --cat-review: #f3b03d;         /* warm amber on dark paper */
+  --cat-edit: #fc6868;           /* lighter red on dark paper */
+  --draft-comment-pin: #60a5fa;  /* lighter blue on dark paper */
   /* EDT-V3-11 — simplified phase line-weight aliases */
   --draft-lw-cut: var(--draft-lw-cut-major);
   --draft-lw-projection: var(--draft-lw-projection-major);

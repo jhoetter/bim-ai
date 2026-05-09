@@ -629,8 +629,7 @@ export function InspectorPropertiesFor(
     }
     case 'masking_region': {
       const hostView = elementsById[el.hostViewId];
-      const viewName =
-        hostView && 'name' in hostView ? String(hostView.name) : el.hostViewId;
+      const viewName = hostView && 'name' in hostView ? String(hostView.name) : el.hostViewId;
       return (
         <div className="space-y-1 text-[11px]">
           <FieldRow label="Host View" value={viewName} />
