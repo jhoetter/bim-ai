@@ -1664,12 +1664,13 @@ export function Viewport({
   useEffect(() => {
     const rnd = rendererRef.current;
     if (!rnd) return;
-    const colorMap: Record<typeof viewerBackground, number> = {
-      white: 0xffffff,
-      light_grey: 0xf0f0f0,
-      dark: 0x1a1a2e,
-    };
-    rnd.setClearColor(colorMap[viewerBackground], 1);
+    if (viewerBackground === 'light_grey') {
+      // Let the CSS sky gradient show through.
+      rnd.setClearColor(0x000000, 0);
+    } else {
+      const colorMap: Record<'white' | 'dark', number> = { white: 0xffffff, dark: 0x1a1a2e };
+      rnd.setClearColor(colorMap[viewerBackground], 1);
+    }
   }, [viewerBackground]);
 
   // ── Clipping planes + section-box cage ───────────────────────────────────
