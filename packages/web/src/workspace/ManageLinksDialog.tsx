@@ -371,6 +371,91 @@ export function ManageLinksDialog({
           )}
         </section>
 
+        <section className="mb-4">
+          <h3 className="mb-1 text-[10px] uppercase text-muted" style={{ letterSpacing: '0.06em' }}>
+            DXF underlays
+          </h3>
+          {dxfLinks.length === 0 ? (
+            <div className="text-xs text-muted" data-testid="manage-dxf-links-empty">
+              No DXF underlays.
+            </div>
+          ) : (
+            <ul className="flex flex-col gap-1" data-testid="manage-dxf-links-list">
+              {dxfLinks.map((l) => {
+                const colorMode = l.colorMode ?? 'black_white';
+                const customColor = l.customColor ?? '#7f7f7f';
+                const opacityPct = Math.round((l.overlayOpacity ?? 0.5) * 100);
+                return (
+                  <li
+                    key={l.id}
+                    data-testid={`manage-dxf-links-row-${l.id}`}
+                    className="flex flex-col gap-1 rounded border border-border px-2 py-1"
+                  >
+                    <span className="text-xs">{l.name ?? 'DXF Underlay'}</span>
+                    <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                      <label className="flex items-center gap-1">
+                        Opacity
+                        <input
+                          type="range"
+                          min={0}
+                          max={100}
+                          step={1}
+                          value={opacityPct}
+                          disabled={pending}
+                          data-testid={`manage-dxf-links-opacity-${l.id}`}
+                          onChange={(e) =>
+                            void submitUpdateDxf(l.id, {
+                              overlayOpacity: Number(e.target.value) / 100,
+                            })
+                          }
+                          className="w-24"
+                        />
+                        <span className="w-8 text-right font-mono text-[10px] text-muted">
+                          {opacityPct}%
+                        </span>
+                      </label>
+                      <label className="flex items-center gap-1">
+                        Color
+                        <select
+                          value={colorMode}
+                          disabled={pending}
+                          data-testid={`manage-dxf-links-colormode-${l.id}`}
+                          onChange={(e) =>
+                            void submitUpdateDxf(l.id, {
+                              colorMode: e.target.value,
+                            })
+                          }
+                          className="rounded border border-border bg-surface-strong px-1 py-0.5 text-[11px]"
+                        >
+                          <option value="black_white">Black &amp; white</option>
+                          <option value="custom">Custom</option>
+                        </select>
+                      </label>
+                      {colorMode === 'custom' ? (
+                        <label className="flex items-center gap-1">
+                          <input
+                            type="color"
+                            value={customColor}
+                            disabled={pending}
+                            data-testid={`manage-dxf-links-color-${l.id}`}
+                            onChange={(e) =>
+                              void submitUpdateDxf(l.id, {
+                                customColor: e.target.value,
+                              })
+                            }
+                            className="h-5 w-8 cursor-pointer rounded border border-border"
+                          />
+                          <span className="font-mono text-[10px] text-muted">{customColor}</span>
+                        </label>
+                      ) : null}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
+
         <section>
           <h3 className="mb-1 text-[10px] uppercase text-muted" style={{ letterSpacing: '0.06em' }}>
             Add Link

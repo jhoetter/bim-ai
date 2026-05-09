@@ -37,7 +37,7 @@ Source segment: `00:27:59 – 00:55:00`
 **Screenshot:**
 ![CAD Link Options](file:///Users/jhoetter/Desktop/Revit%20Specs/0209_00-30-10.png)
 
-**bim-ai status:** ❌ Not available — DXF import has no layer/color/positioning filter UI.
+**bim-ai status:** 🟡 Partial — `ManageLinksDialog.tsx` now shows a DXF Underlays section listing all `link_dxf` elements with per-link opacity slider (0–100%) and color mode toggle (black/white vs. custom hex color). These settings persist via `updateLinkDxf` command. `dxfUnderlay.ts` reads `overlayOpacity` and `colorMode`/`customColor` at render time. Missing: layer visibility filtering (DXF layer metadata is not preserved in linework primitives), "Preserve original colors" mode (requires layer-level color data from import), and unit override control at import time.
 
 ---
 
@@ -70,7 +70,7 @@ Source segment: `00:27:59 – 00:55:00`
 **Screenshot:**
 ![Halftone Override](file:///Users/jhoetter/Desktop/Revit%20Specs/0340_01-09-17.png)
 
-**bim-ai status:** 🟡 Partial — `packages/web/src/plan/dxfUnderlay.ts` hardcodes `DXF_UNDERLAY_OPACITY = 0.5` and applies it via `ctx.globalAlpha` when rendering every `link_dxf` element. All DXF underlays are automatically rendered at 50 % opacity (halftone-equivalent), matching Revit's visual intent. However, the value is a compile-time constant — there is no per-link or per-view opacity slider in VG / ManageLinksDialog, and no full-opacity mode.
+**bim-ai status:** 🟡 Partial — `dxfUnderlay.ts` renders every `link_dxf` element at configurable opacity via `ctx.globalAlpha`. The default of 50% (halftone-equivalent) matches Revit's visual intent, and `ManageLinksDialog.tsx` now exposes a per-link opacity slider (0–100%) that persists via `updateLinkDxf`. Missing: no per-view opacity override in VG / VVDialog; no full-opacity toggle shortcut.
 
 ---
 
