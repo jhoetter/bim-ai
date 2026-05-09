@@ -34,6 +34,9 @@ export interface TabBarProps {
   /** Called when the user drags a tab to a new position. The host
    * should run the `reorderTab` reducer with the same indices. */
   onReorder?: (fromIdx: number, toIdx: number) => void;
+  /** Called when the user clicks "Close Inactive Views" — closes all
+   * tabs except the currently active one. */
+  onCloseInactive?: () => void;
 }
 
 const ADDABLE_KINDS: TabKind[] = ['plan', '3d', 'plan-3d', 'section', 'sheet', 'schedule', 'agent'];
@@ -45,6 +48,7 @@ export function TabBar({
   onClose,
   onAdd,
   onReorder,
+  onCloseInactive,
 }: TabBarProps): JSX.Element {
   const { t } = useTranslation();
   const [popoverOpen, setPopoverOpen] = useState(false);
@@ -234,6 +238,19 @@ export function TabBar({
           </div>
         ) : null}
       </div>
+      {onCloseInactive && tabs.length > 1 ? (
+        <button
+          type="button"
+          data-testid="close-inactive-tabs"
+          title="Close Inactive Views"
+          onClick={onCloseInactive}
+          className="mb-1.5 ml-1 flex items-center gap-1 rounded px-1.5 py-0.5 text-muted hover:bg-surface-strong hover:text-foreground"
+          style={{ fontSize: 11, whiteSpace: 'nowrap' }}
+        >
+          <Icons.close size={10} aria-hidden="true" />
+          <span>Close Inactive</span>
+        </button>
+      ) : null}
     </div>
   );
 }

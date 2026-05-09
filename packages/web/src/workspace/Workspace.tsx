@@ -40,6 +40,7 @@ import {
   EMPTY_TABS,
   activateOrOpenKind,
   activateTab,
+  closeInactiveTabs,
   closeTab,
   cycleActive,
   openTab,
@@ -1160,6 +1161,7 @@ export function Workspace(): JSX.Element {
                 }
               }}
               onClose={handleTabClose}
+              onCloseInactive={() => setTabsState((s) => closeInactiveTabs(s))}
               onReorder={(from, to) => setTabsState((s) => reorderTab(s, from, to))}
               onAdd={(kind) => {
                 const fallback = defaultTabFallbackForKind(kind, elementsById, activeLevelId);

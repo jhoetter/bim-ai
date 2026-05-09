@@ -83,6 +83,14 @@ export function closeTab(state: TabsState, id: string): TabsState {
   return { tabs: next, activeId: nextActive };
 }
 
+/** Keep only the active tab; close all others. */
+export function closeInactiveTabs(state: TabsState): TabsState {
+  if (!state.activeId) return state;
+  const active = state.tabs.find((t) => t.id === state.activeId);
+  if (!active) return state;
+  return { tabs: [active], activeId: state.activeId };
+}
+
 /** Activate a tab by id. No-op if the id is unknown. */
 export function activateTab(state: TabsState, id: string): TabsState {
   if (!state.tabs.some((t) => t.id === id)) return state;

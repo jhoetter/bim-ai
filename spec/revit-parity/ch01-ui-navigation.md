@@ -58,7 +58,7 @@ Source segment: `00:00:00 – 00:32:00`
 **Screenshot:**
 ![Multi-tab workspace](file:///Users/jhoetter/Desktop/Revit%20Specs/0131_00-14-26.png)
 
-**bim-ai status:** 🟡 Partial — `workspace/tabsModel.ts` (spec §11.3) implements a full multi-tab system with tab kinds: `plan`, `3d`, `plan-3d`, `section`, `sheet`, `schedule`, and `agent`. `TabBar.tsx` renders the tab strip; tabs are opened from `ProjectBrowser.tsx` (double-click a view), closed individually, and their viewport state (camera pose / orbit) is cached and restored on reactivation. Tab order is drag-reorderable and state persists via `tabsPersistence.ts`. Missing: a "Close Inactive Views" button equivalent; no tile/cascade window arrangement.
+**bim-ai status:** ✅ Available — `workspace/tabsModel.ts` (spec §11.3) implements a full multi-tab system with tab kinds: `plan`, `3d`, `plan-3d`, `section`, `sheet`, `schedule`, and `agent`. `TabBar.tsx` renders the tab strip; tabs are opened from `ProjectBrowser.tsx` (double-click a view), closed individually, and their viewport state (camera pose / orbit) is cached and restored on reactivation. Tab order is drag-reorderable and state persists via `tabsPersistence.ts`. A "Close Inactive Views" button (`data-testid="close-inactive-tabs"`) appears in the trailing area of the tab bar (visible when ≥ 2 tabs are open) and calls the `closeInactiveTabs` reducer to keep only the active tab. Note: tile/cascade window arrangement is not applicable in a SaaS single-canvas model.
 
 ---
 
