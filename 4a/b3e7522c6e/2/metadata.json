@@ -1,0 +1,81 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "4ab3e7522c6e",
+  "session_id": "570fe6bc-c8f6-4837-bf17-66d08325a0f7",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-09T20:21:11.52262Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/icons/src/hifi-annotation-ext-a.tsx",
+    "packages/icons/src/hifi-annotation-ext-b.tsx",
+    "packages/icons/src/hifi-mep-ext-a.tsx",
+    "packages/icons/src/hifi-mep-ext-b.tsx",
+    "packages/icons/src/hifi-structural-ext.tsx",
+    "packages/icons/src/hifi-views-ext.tsx",
+    "packages/icons/src/index.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "231124b48e1d",
+  "checkpoint_transcript_start": 163,
+  "transcript_lines_at_start": 163,
+  "token_usage": {
+    "input_tokens": 6,
+    "cache_creation_tokens": 2424,
+    "cache_read_tokens": 212962,
+    "output_tokens": 461,
+    "api_call_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-09T20:21:11.496741Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 292,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 292,
+    "total_lines_changed": 292,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 15696,
+      "user_lines_removed": 2,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/icons/src/hifi-annotation-ext-a.tsx": 744,
+        "packages/icons/src/hifi-annotation-ext-b.tsx": 729,
+        "packages/icons/src/hifi-arch-ext-a.tsx": 669,
+        "packages/icons/src/hifi-arch-ext-b.tsx": 785,
+        "packages/icons/src/hifi-architectural.tsx": 483,
+        "packages/icons/src/hifi-collaboration.tsx": 903,
+        "packages/icons/src/hifi-edit-basic.tsx": 1044,
+        "packages/icons/src/hifi-edit-ops.tsx": 739,
+        "packages/icons/src/hifi-mep-ext-a.tsx": 922,
+        "packages/icons/src/hifi-mep-ext-b.tsx": 1097,
+        "packages/icons/src/hifi-mep.tsx": 492,
+        "packages/icons/src/hifi-misc-a.tsx": 565,
+        "packages/icons/src/hifi-misc-b.tsx": 646,
+        "packages/icons/src/hifi-misc-c.tsx": 559,
+        "packages/icons/src/hifi-organization.tsx": 731,
+        "packages/icons/src/hifi-site-annotation.tsx": 471,
+        "packages/icons/src/hifi-structural-ext.tsx": 960,
+        "packages/icons/src/hifi-structural.tsx": 497,
+        "packages/icons/src/hifi-views-ext.tsx": 929,
+        "packages/icons/src/hifi-views.tsx": 591,
+        "packages/icons/src/hifi-workflow.tsx": 1092,
+        "packages/web/src/collab/ShareModal.tsx": 5,
+        "packages/web/src/useFocusTrap.ts": 42,
+        "packages/web/src/workspace/ManageLinksDialog.tsx": 1
+      },
+      "user_removed_per_file": {
+        "packages/web/src/collab/ShareModal.tsx": 1,
+        "packages/web/src/workspace/ManageLinksDialog.tsx": 1
+      }
+    }
+  ]
+}
