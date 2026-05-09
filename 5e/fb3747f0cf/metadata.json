@@ -3,7 +3,7 @@
   "checkpoint_id": "5efb3747f0cf",
   "strategy": "manual-commit",
   "branch": "feat/parity-readme-sync",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     "packages/design-tokens/src/tokens-dark.css",
     "packages/design-tokens/src/tokens-default.css"
@@ -20,13 +20,19 @@
       "transcript": "/5e/fb3747f0cf/1/full.jsonl",
       "content_hash": "/5e/fb3747f0cf/1/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/5e/fb3747f0cf/2/metadata.json",
+      "transcript": "/5e/fb3747f0cf/2/full.jsonl",
+      "content_hash": "/5e/fb3747f0cf/2/content_hash.txt",
+      "prompt": "/5e/fb3747f0cf/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 0,
-    "cache_creation_tokens": 0,
-    "cache_read_tokens": 0,
-    "output_tokens": 0,
-    "api_call_count": 0
+    "input_tokens": 6755,
+    "cache_creation_tokens": 3770573,
+    "cache_read_tokens": 195387300,
+    "output_tokens": 1074117,
+    "api_call_count": 2033
   }
 }
