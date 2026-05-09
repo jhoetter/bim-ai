@@ -23,7 +23,7 @@ Source segment: `05:34:19 – 06:41:32` (+ `08:35:57 – 09:57:57` for final 3D 
 **Screenshot:**
 ![Floor type](file:///Users/jhoetter/Desktop/Revit%20Specs/0780_05-31-55.png)
 
-**bim-ai status:** 🟡 Partial — floor type data exists in the engine but no UI type-selector for floors.
+**bim-ai status:** ✅ Available — Two surfaces: (1) `workspace/OptionsBar.tsx` renders a "Type:" `<select>` when the floor tool is active, listing all `floor_type` elements; the selection is stored in `useBimStore.activeFloorTypeId` and passed via `SketchCanvas.floorTypeId` → `finishSketchSession opts.options.floorTypeId` → the Python emitter (which already handles `floorTypeId` in opts at line 267 of `sketch_session.py`). (2) The wall inspector already had a floor type selector when a floor element is selected (in `InspectorContent.tsx` `case 'floor':`).
 
 ---
 
@@ -47,7 +47,7 @@ Source segment: `05:34:19 – 06:41:32` (+ `08:35:57 – 09:57:57` for final 3D 
 ![Wall Top Offset](file:///Users/jhoetter/Desktop/Revit%20Specs/0314_01-04-37.png)
 *(Wall Properties palette showing height constraints; Top Offset-specific frame is beyond 0841)*
 
-**bim-ai status:** ❌ Not available — bim-ai has no top/bottom offset controls.
+**bim-ai status:** ✅ Available — `InspectorContent.tsx` (wall `case`) now has editable "Base Offset (mm)" and "Top Offset (mm)" fields supporting negative values (step 50). Negative base offset (e.g. −200) moves the wall base below the level datum, enabling the sub-slab placement pattern shown in Revit.
 
 ---
 

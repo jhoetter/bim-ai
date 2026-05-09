@@ -3268,12 +3268,14 @@ export function PlanCanvas({
   );
 
   const sb = THREE.MathUtils.clamp(halfUi * 0.25, 0.2, 6);
+  const plotScaleN = Math.round(halfUi * 2);
   const zoomPresets = [
-    { label: 'Close-up  2 m', half: 2 },
-    { label: 'Room      5 m', half: 5 },
-    { label: 'Floor    12 m', half: 12 },
-    { label: 'Building 25 m', half: 25 },
-    { label: 'Site     80 m', half: 80 },
+    { label: '1:25   — detail', half: 12.5 },
+    { label: '1:50   — room', half: 25 },
+    { label: '1:100  — floor', half: 50 },
+    { label: '1:200  — building', half: 100 },
+    { label: '1:500  — site', half: 250 },
+    { label: '1:1000 — master', half: 500 },
   ] as const;
   const handleWallContextMenuCommand = useCallback(
     (next: WallContextMenuCommand) => {
@@ -3457,6 +3459,7 @@ export function PlanCanvas({
             </span>
             <span>{`${(sb * 100).toFixed(0)} cm`}</span>
           </span>
+          <span className="ml-1 text-foreground/70">1:{plotScaleN}</span>
         </button>
       </div>
       {/* North point — architectural drawing convention, always aligned to grid north (up). */}

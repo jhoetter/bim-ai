@@ -22,7 +22,7 @@ Source segment: `01:02:00 – 01:13:55`
 **Screenshot:**
 ![Wall Type Selector](file:///Users/jhoetter/Desktop/Revit%20Specs/0308_01-03-28.png)
 
-**bim-ai status:** 🟡 Partial — bim-ai has wall type data structures but no rich type-selector UI with a library of pre-built types.
+**bim-ai status:** ✅ Available — `workspace/OptionsBar.tsx` now renders a "Type:" `<select>` dropdown when the wall tool is active, listing all `wall_type` elements from `elementsById`. The selected wall type ID is stored in `useBimStore.activeWallTypeId` and passed as `wallTypeId` to `createWall` in `PlanCanvas.tsx`. Missing from Revit: a rich type dialog with visual preview and built-in types library.
 
 ---
 
@@ -75,7 +75,7 @@ For layered walls this distinction matters significantly — the core can sit 50
 ![Top Offset](file:///Users/jhoetter/Desktop/Revit%20Specs/0314_01-04-37.png)
 *(Wall Properties palette showing height parameters — Top Offset-specific frame starts beyond 0841)*
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** ✅ Available — `InspectorContent.tsx` (wall `case`) now shows editable "Base Offset (mm)" and "Top Offset (mm)" number inputs (step 50, `defaultValue` keyed by element ID). On blur they fire `onPropertyChange?.('baseConstraintOffsetMm', val)` and `onPropertyChange?.('topConstraintOffsetMm', val)`, which triggers `updateElementProperty` in `WorkspaceRightRail`. The backend `CreateWallCmd` and element model already carry these fields.
 
 ---
 
