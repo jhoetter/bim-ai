@@ -15,6 +15,7 @@ import {
   InspectorGraphicsFor,
   InspectorIdentityFor,
   InspectorPlanViewEditor,
+  InspectorProjectSettingsEditor,
   InspectorPropertiesFor,
   InspectorRoomEditor,
   InspectorViewpointEditor,
@@ -311,6 +312,18 @@ export function WorkspaceRightRail({
                   }
                   onDisciplineChange={handleDisciplineChange}
                 />
+              ) : el.kind === 'project_settings' ? (
+                <InspectorProjectSettingsEditor
+                  el={el}
+                  onPersistProperty={(key, value) =>
+                    void onSemanticCommand({
+                      type: 'updateElementProperty',
+                      elementId: el.id,
+                      key,
+                      value,
+                    })
+                  }
+                />
               ) : el.kind === 'wall' ? (
                 <>
                   {InspectorPropertiesFor(el, t, {
@@ -478,7 +491,10 @@ function WallMoveSection({
   const dyRef = useRef<HTMLInputElement | null>(null);
   return (
     <div className="mt-3 border-t border-border pt-2 space-y-1">
-      <div className="text-[10px] font-semibold uppercase text-muted" style={{ letterSpacing: '0.08em', opacity: 0.7 }}>
+      <div
+        className="text-[10px] font-semibold uppercase text-muted"
+        style={{ letterSpacing: '0.08em', opacity: 0.7 }}
+      >
         Move (mm)
       </div>
       <div className="flex items-center gap-2">

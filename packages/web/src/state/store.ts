@@ -586,6 +586,12 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
       ...((raw.startingViewId ?? raw.starting_view_id)
         ? { startingViewId: String(raw.startingViewId ?? raw.starting_view_id) }
         : {}),
+      volumeComputedAt: (raw.volumeComputedAt ?? 'finish_faces') as 'finish_faces' | 'core_faces',
+      roomAreaComputationBasis: (raw.roomAreaComputationBasis ?? 'wall_finish') as
+        | 'wall_finish'
+        | 'wall_centerline'
+        | 'wall_core_layer'
+        | 'wall_core_center',
     };
   }
 

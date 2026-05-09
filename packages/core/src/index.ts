@@ -744,6 +744,12 @@ export type Element =
       name?: string;
       worksetId?: string | null;
       startingViewId?: string | null;
+      volumeComputedAt?: 'finish_faces' | 'core_faces';
+      roomAreaComputationBasis?:
+        | 'wall_finish'
+        | 'wall_centerline'
+        | 'wall_core_layer'
+        | 'wall_core_center';
     }
   | {
       kind: 'room_color_scheme';

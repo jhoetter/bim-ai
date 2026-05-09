@@ -70,7 +70,7 @@ This determines where area boundary lines snap relative to wall layers, affectin
 **Screenshot:**
 ![Area and Volume Computations](file:///Users/jhoetter/Desktop/Revit%20Specs/0829_05-37-09.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — Area and Volume Computations settings are exposed as project-level fields on the `project_settings` element: "Volume Computed At" (Finish Faces / Core Faces) and "Room Area Computation Basis" (At Wall Finish / At Wall Centerline / At Wall Core Layer / At Wall Core Center) are editable in the right-rail inspector when the project settings element is selected. Missing: a dedicated modal dialog (Revit uses a standalone dialog opened from Architecture → Room & Area); the backend derivation engine does not yet consume these settings to adjust area/volume calculations.
 
 ---
 
