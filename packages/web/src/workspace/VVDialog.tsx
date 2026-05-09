@@ -33,6 +33,7 @@ const ANNOTATION_CATEGORIES = [
   'window_tag',
   'section_mark',
   'room_separation',
+  'area_boundary',
 ] as const;
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -57,6 +58,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   window_tag: 'Window Tags',
   section_mark: 'Section Marks',
   room_separation: 'Room Separation Lines',
+  area_boundary: 'Area Boundary Lines',
 };
 
 const PRESET_COLORS = ['#000000', '#808080', '#0000ff', '#ff0000', '#008000', 'custom'] as const;
