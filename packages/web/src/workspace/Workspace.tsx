@@ -584,6 +584,22 @@ export function Workspace(): JSX.Element {
     [setViewerMode, elementsById, activeLevelId],
   );
 
+  /**
+   * Sets the mode + viewerMode WITHOUT touching tab state.
+   * Used by WorkspaceLeftRail after `openTabFromElement` has already
+   * activated the correct tab — calling `handleModeChange` afterwards
+   * would override that activation by finding the first tab of that kind.
+   */
+  const handleSetModeOnly = useCallback(
+    (next: WorkspaceMode) => {
+      setMode(next);
+      if (next === 'plan') setViewerMode('plan_canvas');
+      else if (next === '3d') setViewerMode('orbit_3d');
+      // no setTabsState — tab was already activated by openTabFromElement
+    },
+    [setViewerMode],
+  );
+
   /* ── Global hotkeys: 1–7 modes, ?, V/W/D/M/S/etc tools ─────────────── */
   useEffect(() => {
     const onKey = (event: globalThis.KeyboardEvent): void => {
@@ -1160,6 +1176,7 @@ export function Workspace(): JSX.Element {
             onSemanticCommand={onSemanticCommand}
             openTabFromElement={openTabFromElement}
             onModeChange={handleModeChange}
+            onSetModeOnly={handleSetModeOnly}
             onOpenFamilyLibrary={() => setFamilyLibraryOpen(true)}
           />
         }
