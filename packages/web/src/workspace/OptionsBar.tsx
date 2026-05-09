@@ -19,6 +19,8 @@ export function OptionsBar(): JSX.Element | null {
   const setWallLocationLine = useBimStore((s) => s.setWallLocationLine);
   const floorBoundaryOffsetMm = useBimStore((s) => s.floorBoundaryOffsetMm);
   const setFloorBoundaryOffsetMm = useBimStore((s) => s.setFloorBoundaryOffsetMm);
+  const wallDrawHeightMm = useBimStore((s) => s.wallDrawHeightMm);
+  const setWallDrawHeightMm = useBimStore((s) => s.setWallDrawHeightMm);
 
   if (planTool === 'wall') {
     return (
@@ -37,6 +39,20 @@ export function OptionsBar(): JSX.Element | null {
           ))}
         </select>
         <span className="text-muted opacity-60">Tab to cycle</span>
+        <label className="flex items-center gap-2">
+          <span className="text-muted">Height:</span>
+          <input
+            type="number"
+            value={wallDrawHeightMm}
+            step={100}
+            min={100}
+            onChange={(e) => setWallDrawHeightMm(Number(e.target.value))}
+            className="w-20 rounded border border-border bg-surface px-1.5 py-0.5 text-xs text-foreground"
+            aria-label="Wall height in mm"
+            data-testid="options-bar-wall-height"
+          />
+          <span className="text-muted opacity-60">mm</span>
+        </label>
       </div>
     );
   }

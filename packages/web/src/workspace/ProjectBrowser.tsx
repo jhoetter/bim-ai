@@ -416,6 +416,23 @@ export function ProjectBrowser(props: {
                           Duplicate…
                         </button>
                       ) : null}
+                      <button
+                        type="button"
+                        data-testid={`plan-view-delete-${pv.id}`}
+                        title="Delete this plan view"
+                        className="pl-2 text-left text-[9px] text-muted underline hover:text-red-700"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm(`Delete view "${pv.name}"?`)) {
+                            void applyCommand(modelId!, {
+                              type: 'deleteElement',
+                              elementId: pv.id,
+                            });
+                          }
+                        }}
+                      >
+                        Delete…
+                      </button>
                     </li>
                   ))}
                 </ul>
@@ -572,14 +589,40 @@ export function ProjectBrowser(props: {
           <ul className="space-y-0.5">
             {sectionCuts.map((sc) => (
               <li key={sc.id} className="flex flex-col gap-0.5">
-                <button
-                  type="button"
-                  className="w-full px-2 py-0.5 text-left text-[10px] underline decoration-muted underline-offset-2"
-                  title={sectionCutBrowserTooltipTitle(props.elementsById, sc)}
-                  onClick={() => useBimStore.getState().select(sc.id)}
-                >
-                  <span className="text-muted">section_cut ·</span> {sc.name}
-                </button>
+                {renamingId === sc.id ? (
+                  <input
+                    autoFocus
+                    type="text"
+                    data-testid={`section-cut-rename-input-${sc.id}`}
+                    value={renameDraft}
+                    className="rounded border border-border bg-background px-1 py-0.5 text-xs"
+                    onChange={(e) => setRenameDraft(e.currentTarget.value)}
+                    onBlur={() => void commitRename(sc.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        void commitRename(sc.id);
+                      }
+                      if (e.key === 'Escape') {
+                        e.preventDefault();
+                        cancelRename();
+                      }
+                    }}
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    className="w-full px-2 py-0.5 text-left text-[10px] underline decoration-muted underline-offset-2"
+                    title={sectionCutBrowserTooltipTitle(props.elementsById, sc)}
+                    onClick={() => useBimStore.getState().select(sc.id)}
+                    onDoubleClick={() => {
+                      setRenamingId(sc.id);
+                      setRenameDraft(sc.name);
+                    }}
+                  >
+                    <span className="text-muted">section_cut ·</span> {sc.name}
+                  </button>
+                )}
                 <div
                   className="pl-2 font-mono text-[9px] leading-tight text-muted"
                   data-bim-section-evidence={sc.id}
@@ -598,13 +641,39 @@ export function ProjectBrowser(props: {
           <ul className="space-y-0.5">
             {elevationViews.map((ev) => (
               <li key={ev.id} className="flex flex-col gap-0.5">
-                <button
-                  type="button"
-                  className="w-full px-2 py-0.5 text-left text-[10px] underline decoration-muted underline-offset-2"
-                  onClick={() => useBimStore.getState().select(ev.id)}
-                >
-                  <span className="text-muted">elevation_view ·</span> {ev.name}
-                </button>
+                {renamingId === ev.id ? (
+                  <input
+                    autoFocus
+                    type="text"
+                    data-testid={`elevation-view-rename-input-${ev.id}`}
+                    value={renameDraft}
+                    className="rounded border border-border bg-background px-1 py-0.5 text-xs"
+                    onChange={(e) => setRenameDraft(e.currentTarget.value)}
+                    onBlur={() => void commitRename(ev.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        void commitRename(ev.id);
+                      }
+                      if (e.key === 'Escape') {
+                        e.preventDefault();
+                        cancelRename();
+                      }
+                    }}
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    className="w-full px-2 py-0.5 text-left text-[10px] underline decoration-muted underline-offset-2"
+                    onClick={() => useBimStore.getState().select(ev.id)}
+                    onDoubleClick={() => {
+                      setRenamingId(ev.id);
+                      setRenameDraft(ev.name);
+                    }}
+                  >
+                    <span className="text-muted">elevation_view ·</span> {ev.name}
+                  </button>
+                )}
                 <div className="pl-2 font-mono text-[9px] leading-tight text-muted">
                   direction · {ev.direction}
                   {ev.direction === 'custom' && typeof ev.customAngleDeg === 'number'

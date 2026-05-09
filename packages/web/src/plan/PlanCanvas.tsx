@@ -2100,12 +2100,32 @@ export function PlanCanvas({
         const wallLocationLine = useToolPrefs
           .getState()
           .getCycle('wall', 'location-line', 'wall-centerline') as WallLocationLine;
+        const wallDrawHeightMm = useBimStore.getState().wallDrawHeightMm;
+        const wallDrawOffsetMm = useBimStore.getState().wallDrawOffsetMm;
+        let startX = d.sx;
+        let startY = d.sy;
+        let endX = sp.xMm;
+        let endY = sp.yMm;
+        if (wallDrawOffsetMm !== 0) {
+          const dx = endX - startX;
+          const dy = endY - startY;
+          const len = Math.sqrt(dx * dx + dy * dy);
+          if (len > 0) {
+            const px = (-dy / len) * wallDrawOffsetMm;
+            const py = (dx / len) * wallDrawOffsetMm;
+            startX += px;
+            startY += py;
+            endX += px;
+            endY += py;
+          }
+        }
         onSemanticCommand({
           type: 'createWall',
           levelId: lvlId,
-          start: { xMm: d.sx, yMm: d.sy },
-          end: { xMm: sp.xMm, yMm: sp.yMm },
+          start: { xMm: startX, yMm: startY },
+          end: { xMm: endX, yMm: endY },
           locationLine: wallLocationLine,
+          heightMm: wallDrawHeightMm,
         });
         // EDT-V3-05: re-arm from endpoint when loop mode is on.
         draftRef.current = useToolPrefs.getState().loopMode
