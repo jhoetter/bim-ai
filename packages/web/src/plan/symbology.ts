@@ -1138,7 +1138,7 @@ export function rebuildPlanMeshes(
         cl.boundaryMm,
         PLAN_Y + 0.003,
         getPlanPalette().floorOutline,
-        0.14,
+        PLAN_FLOOR_FILL_OPACITY_BASE * 0.7,
         cl.id,
       ),
     );

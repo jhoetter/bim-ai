@@ -82,13 +82,13 @@ const CATEGORY_TOKEN: Record<ElementCategoryToken, string> = {
 };
 
 const FALLBACK_CATEGORY_COLOR: Record<ElementCategoryToken, string> = {
-  wall: 'hsl(220 6% 60%)',
-  floor: 'hsl(36 18% 70%)',
+  wall: '#ddd8d0',
+  floor: '#cfc9be',
   roof: 'hsl(0 18% 40%)',
-  door: 'hsl(28 30% 45%)',
+  door: '#b8a898',
   window: 'hsl(213 60% 70%)',
-  stair: 'hsl(220 6% 35%)',
-  railing: 'hsl(220 6% 28%)',
+  stair: '#c4bdb4',
+  railing: '#a89e96',
   room: 'hsl(150 24% 86%)',
   site: 'hsl(80 20% 80%)',
   section: 'hsl(0 70% 50%)',
