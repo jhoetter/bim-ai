@@ -305,6 +305,7 @@ export function ShareModal({ modelId, open, onClose }: Props) {
               type="button"
               onClick={handleInvite}
               disabled={loading || !inviteEmail.trim()}
+              aria-busy={loading}
               style={{
                 padding: '8px 16px',
                 borderRadius: 4,
@@ -440,6 +441,7 @@ export function ShareModal({ modelId, open, onClose }: Props) {
                   type="button"
                   onClick={handleCreatePublicLink}
                   disabled={loading}
+                  aria-busy={loading}
                   style={{
                     padding: '8px 16px',
                     borderRadius: 4,

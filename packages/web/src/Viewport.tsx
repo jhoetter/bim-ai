@@ -2150,7 +2150,8 @@ export function Viewport({
           <button
             type="button"
             onClick={() => setGdoOpen((o) => !o)}
-            aria-pressed={gdoOpen}
+            aria-expanded={gdoOpen}
+            aria-haspopup="dialog"
             data-active={gdoOpen ? 'true' : 'false'}
             data-testid="viewport-gdo-toggle"
             className={[
@@ -2163,8 +2164,13 @@ export function Viewport({
           </button>
           {gdoOpen && (
             <div
+              role="dialog"
+              aria-label="Graphic Display Options"
               className="absolute bottom-full right-0 mb-1 w-48 rounded border border-border bg-surface p-3 shadow-elev-2 text-[11px] space-y-2"
               data-testid="gdo-panel"
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') setGdoOpen(false);
+              }}
             >
               <div className="font-semibold text-foreground">Graphic Display</div>
 
