@@ -1,0 +1,205 @@
+/**
+ * CHR-V3-07 — ProjectBrowserV3 tests.
+ *
+ * Covers: Views group, Schedules group, search filter, right-click context
+ * menu, collapsed state, zero hex literals in output, drag-to-reorder.
+ */
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render } from '@testing-library/react';
+import type { Element } from '@bim-ai/core';
+import { ProjectBrowserV3 } from './ProjectBrowser';
+
+afterEach(() => {
+  cleanup();
+});
+
+// ---------------------------------------------------------------------------
+// Fixtures
+// ---------------------------------------------------------------------------
+
+const viewpointEl: Element = {
+  kind: 'viewpoint',
+  id: 'vp-01',
+  name: '3D Overview',
+  camera: {
+    position: { x: 0, y: 0, z: 10000 },
+    target: { x: 0, y: 0, z: 0 },
+    up: { x: 0, y: 1, z: 0 },
+  },
+  mode: 'orbit_3d',
+};
+
+const savedViewEl: Element = {
+  kind: 'saved_view',
+  id: 'sv-01',
+  baseViewId: 'vp-01',
+  name: 'Kitchen Detail',
+};
+
+const scheduleEl: Element = {
+  kind: 'schedule',
+  id: 'sch-01',
+  name: 'Door Schedule',
+  category: 'door',
+  columns: [{ fieldKey: 'name', label: 'Name' }],
+};
+
+const imageUnderlayEl: Element = {
+  kind: 'image_underlay',
+  id: 'img-01',
+  name: 'Site Survey.png',
+  dataUri: 'data:image/png;base64,AA==',
+  xMm: 0,
+  yMm: 0,
+  widthMm: 1000,
+  heightMm: 1000,
+  rotation: 0,
+  opacity: 1,
+};
+
+function makeDefaultProps(elements: Element[] = [viewpointEl, savedViewEl, scheduleEl]) {
+  return {
+    elements,
+    activeViewId: null as string | null,
+    onActivateView: vi.fn(),
+    onRenameView: vi.fn(),
+    onDeleteView: vi.fn(),
+    onDuplicateView: vi.fn(),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+describe('ProjectBrowserV3 — CHR-V3-07', () => {
+  it('renders Views group header with viewpoint elements', () => {
+    const { getByTestId, getByText } = render(
+      <ProjectBrowserV3 {...makeDefaultProps()} />,
+    );
+    expect(getByTestId('pb-group-Views')).toBeTruthy();
+    expect(getByText('3D Overview')).toBeTruthy();
+  });
+
+  it('renders saved_view rows inside the Views group', () => {
+    const { getByText } = render(
+      <ProjectBrowserV3 {...makeDefaultProps()} />,
+    );
+    expect(getByText('Kitchen Detail')).toBeTruthy();
+  });
+
+  it('renders Schedules group with schedule elements', () => {
+    const { getByTestId, getByText } = render(
+      <ProjectBrowserV3 {...makeDefaultProps()} />,
+    );
+    expect(getByTestId('pb-group-Schedules')).toBeTruthy();
+    expect(getByText('Door Schedule')).toBeTruthy();
+  });
+
+  it('search filter shows only matching rows', () => {
+    const { getByLabelText, queryByText } = render(
+      <ProjectBrowserV3 {...makeDefaultProps()} />,
+    );
+    const input = getByLabelText('Search project browser') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: 'overview' } });
+    expect(queryByText('3D Overview')).not.toBeNull();
+    expect(queryByText('Kitchen Detail')).toBeNull();
+    expect(queryByText('Door Schedule')).toBeNull();
+  });
+
+  it('clearing search restores all rows', () => {
+    const { getByLabelText, queryByText } = render(
+      <ProjectBrowserV3 {...makeDefaultProps()} />,
+    );
+    const input = getByLabelText('Search project browser') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: 'overview' } });
+    fireEvent.change(input, { target: { value: '' } });
+    expect(queryByText('3D Overview')).not.toBeNull();
+    expect(queryByText('Kitchen Detail')).not.toBeNull();
+    expect(queryByText('Door Schedule')).not.toBeNull();
+  });
+
+  it('right-click on view row opens context menu', () => {
+    const { getByTestId, queryByTestId } = render(
+      <ProjectBrowserV3 {...makeDefaultProps()} />,
+    );
+    expect(queryByTestId('pb-context-menu')).toBeNull();
+    const row = getByTestId('pb-view-row-vp-01').querySelector('button') as HTMLElement;
+    fireEvent.contextMenu(row, { clientX: 100, clientY: 200 });
+    expect(queryByTestId('pb-context-menu')).not.toBeNull();
+  });
+
+  it('context menu Delete calls onDeleteView with correct id', () => {
+    const props = makeDefaultProps();
+    const { getByTestId } = render(<ProjectBrowserV3 {...props} />);
+    const row = getByTestId('pb-view-row-vp-01').querySelector('button') as HTMLElement;
+    fireEvent.contextMenu(row, { clientX: 0, clientY: 0 });
+    fireEvent.click(getByTestId('pb-ctx-delete'));
+    expect(props.onDeleteView).toHaveBeenCalledWith('vp-01');
+  });
+
+  it('context menu Rename calls onRenameView with correct id', () => {
+    const props = makeDefaultProps();
+    const { getByTestId } = render(<ProjectBrowserV3 {...props} />);
+    const row = getByTestId('pb-view-row-vp-01').querySelector('button') as HTMLElement;
+    fireEvent.contextMenu(row, { clientX: 0, clientY: 0 });
+    // Opens inline rename field; commit triggers onRenameView.
+    fireEvent.click(getByTestId('pb-ctx-rename'));
+    // Find the rename input and confirm.
+    const input = getByTestId('pb-view-row-vp-01').querySelector('input') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: 'New Name' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(props.onRenameView).toHaveBeenCalledWith('vp-01', 'New Name');
+  });
+
+  it('collapsed state sets data-collapsed attribute and narrow width', () => {
+    const props = { ...makeDefaultProps(), collapsed: true };
+    const { container } = render(<ProjectBrowserV3 {...props} />);
+    const rail = container.firstChild as HTMLElement;
+    expect(rail.getAttribute('data-collapsed')).toBe('true');
+    expect(rail.style.width).toBe('var(--rail-width-collapsed, 36px)');
+  });
+
+  it('expanded state uses rail-width-expanded CSS var — no hex literals in inline styles', () => {
+    const { container } = render(<ProjectBrowserV3 {...makeDefaultProps()} />);
+    const html = container.innerHTML;
+    // Check for hex color literals (#rrggbb or #rgb pattern) not inside CSS var names.
+    const hexLiteralPattern = /:\s*#[0-9a-fA-F]{3,8}\b/;
+    expect(hexLiteralPattern.test(html)).toBe(false);
+  });
+
+  it('drag-to-reorder: dropping changes the visual order of rows', () => {
+    const el1: Element = {
+      kind: 'viewpoint',
+      id: 'vp-a',
+      name: 'Alpha',
+      camera: { position: { x: 0, y: 0, z: 0 }, target: { x: 0, y: 0, z: 0 }, up: { x: 0, y: 1, z: 0 } },
+      mode: 'orbit_3d',
+    };
+    const el2: Element = {
+      kind: 'viewpoint',
+      id: 'vp-b',
+      name: 'Beta',
+      camera: { position: { x: 0, y: 0, z: 0 }, target: { x: 0, y: 0, z: 0 }, up: { x: 0, y: 1, z: 0 } },
+      mode: 'orbit_3d',
+    };
+    const props = makeDefaultProps([el1, el2]);
+    const { getByTestId, container } = render(<ProjectBrowserV3 {...props} />);
+
+    const rowA = getByTestId('pb-view-row-vp-a');
+    const rowB = getByTestId('pb-view-row-vp-b');
+
+    // Drag Alpha onto Beta → Beta should now come before Alpha.
+    fireEvent.dragStart(rowA);
+    fireEvent.dragOver(rowB);
+    fireEvent.drop(rowB);
+
+    // After drop, query the rendered order.
+    const listItems = container.querySelectorAll('[data-testid^="pb-view-row-"]');
+    const ids = Array.from(listItems).map((el) =>
+      el.getAttribute('data-testid')?.replace('pb-view-row-', ''),
+    );
+    // vp-b should precede vp-a after the drop.
+    expect(ids.indexOf('vp-b')).toBeLessThan(ids.indexOf('vp-a'));
+  });
+});

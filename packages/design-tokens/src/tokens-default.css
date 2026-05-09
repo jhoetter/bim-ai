@@ -97,6 +97,10 @@
   --shell-bp-md: 1280px;
   --shell-bp-lg: 1600px;
 
+  /* CHR-V3-07 — project browser rail widths */
+  --rail-width-expanded: 240px;
+  --rail-width-collapsed: 36px;
+
   /* Backwards-compatible legacy aliases (pre-v1 components still read these). */
   --background: var(--color-background);
   --foreground: var(--color-foreground);

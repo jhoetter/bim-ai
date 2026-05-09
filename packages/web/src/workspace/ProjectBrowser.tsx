@@ -1,6 +1,6 @@
 /* eslint-disable bim-ai/no-hex-in-chrome -- pre-v3 hex literals; remove when this file is migrated in B4 Phase 2 */
-import { useMemo, useState } from 'react';
-import type { JSX } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
+import type { JSX, DragEvent } from 'react';
 import type { DisciplineTag, Element, ViewTemplate } from '@bim-ai/core';
 import { DEFAULT_DISCIPLINE_BY_KIND } from '@bim-ai/core';
 
@@ -859,6 +859,528 @@ function ProjectBrowserLinksGroup({
           })}
         </ul>
       )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// CHR-V3-07 — ProjectBrowserV3: refreshed left-rail project browser
+// ---------------------------------------------------------------------------
+
+export type ProjectBrowserProps = {
+  elements: Element[];
+  activeViewId: string | null;
+  onActivateView: (viewId: string) => void;
+  onRenameView: (viewId: string, newName: string) => void;
+  onDeleteView: (viewId: string) => void;
+  onDuplicateView: (viewId: string) => void;
+  collapsed?: boolean;
+};
+
+type CtxMenu = { viewId: string; x: number; y: number } | null;
+
+/** Derive a discipline label from element tags when present. */
+function disciplineLabel(el: Element): string | null {
+  if ('discipline' in el && typeof (el as { discipline?: string }).discipline === 'string') {
+    const d = (el as { discipline?: string }).discipline;
+    if (d === 'arch') return 'Architecture';
+    if (d === 'struct') return 'Structure';
+    if (d === 'mep') return 'MEP';
+    return d ?? null;
+  }
+  return null;
+}
+
+/** Group rows by discipline label (or single unlabelled group if none present). */
+function groupByDiscipline<T extends Element>(
+  rows: T[],
+): { label: string | null; rows: T[] }[] {
+  const hasAnyDisc = rows.some((r) => disciplineLabel(r) !== null);
+  if (!hasAnyDisc) return [{ label: null, rows }];
+  const map = new Map<string, T[]>();
+  for (const r of rows) {
+    const k = disciplineLabel(r) ?? 'Other';
+    const bucket = map.get(k) ?? [];
+    bucket.push(r);
+    map.set(k, bucket);
+  }
+  return [...map.entries()].map(([label, rowList]) => ({ label, rows: rowList }));
+}
+
+/**
+ * CHR-V3-07 refreshed project browser.
+ *
+ * Width: `var(--rail-width-expanded, 240px)` / `var(--rail-width-collapsed, 36px)`.
+ * Groups: Views · Schedules · Links / Imports · Phases.
+ * Features: real-time search, right-click context menu, HTML5 drag-to-reorder.
+ */
+export function ProjectBrowserV3({
+  elements,
+  activeViewId,
+  onActivateView,
+  onRenameView,
+  onDeleteView,
+  onDuplicateView,
+  collapsed = false,
+}: ProjectBrowserProps): JSX.Element {
+  const [search, setSearch] = useState('');
+  const [ctxMenu, setCtxMenu] = useState<CtxMenu>(null);
+  const [renameId, setRenameId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+  // Local order state for drag-reorder (maps viewId → order index override).
+  const [localOrder, setLocalOrder] = useState<Record<string, number>>({});
+  const dragSrc = useRef<string | null>(null);
+
+  // Derive groups from elements.
+  const { viewRows, scheduleRows, linkRows, phaseRows } = useMemo(() => {
+    const lower = search.toLowerCase();
+    const matches = (name: string) => !lower || name.toLowerCase().includes(lower);
+
+    const views = elements.filter(
+      (e): e is Extract<Element, { kind: 'viewpoint' | 'saved_view' }> =>
+        (e.kind === 'viewpoint' || e.kind === 'saved_view') && matches((e as { name?: string }).name ?? e.id),
+    );
+
+    const schedules = elements.filter(
+      (e): e is Extract<Element, { kind: 'schedule' }> =>
+        e.kind === 'schedule' && matches(e.name),
+    );
+
+    const links = elements.filter(
+      (e) =>
+        (e.kind === 'image_underlay' || e.kind === 'link_model') &&
+        matches((e as { name?: string }).name ?? e.id),
+    );
+
+    const phases = elements.filter(
+      (e): e is Extract<Element, { kind: 'phase' }> =>
+        e.kind === 'phase' && matches((e as { name?: string }).name ?? e.id),
+    );
+
+    // Apply local drag order overrides then sort.
+    const sortedViews = [...views].sort((a, b) => {
+      const oa = localOrder[a.id] ?? 0;
+      const ob = localOrder[b.id] ?? 0;
+      if (oa !== ob) return oa - ob;
+      return ((a as { name?: string }).name ?? a.id).localeCompare(
+        (b as { name?: string }).name ?? b.id,
+      );
+    });
+
+    return {
+      viewRows: sortedViews,
+      scheduleRows: schedules,
+      linkRows: links,
+      phaseRows: phases,
+    };
+  }, [elements, search, localOrder]);
+
+  const closeCtx = useCallback(() => setCtxMenu(null), []);
+
+  const handleRowRightClick = (viewId: string, x: number, y: number) => {
+    setCtxMenu({ viewId, x, y });
+  };
+
+  const startRename = (viewId: string, currentName: string) => {
+    setRenameId(viewId);
+    setRenameValue(currentName);
+    setCtxMenu(null);
+  };
+
+  const commitRename = (viewId: string) => {
+    if (renameValue.trim()) onRenameView(viewId, renameValue.trim());
+    setRenameId(null);
+  };
+
+  // HTML5 drag-to-reorder helpers.
+  const onDragStart = (viewId: string) => {
+    dragSrc.current = viewId;
+  };
+
+  const onDragOver = (e: DragEvent<HTMLLIElement>) => {
+    e.preventDefault();
+  };
+
+  const onDrop = (targetId: string) => {
+    const srcId = dragSrc.current;
+    if (!srcId || srcId === targetId) return;
+    const ids = viewRows.map((v) => v.id);
+    const srcIdx = ids.indexOf(srcId);
+    const tgtIdx = ids.indexOf(targetId);
+    const reordered = [...ids];
+    reordered.splice(srcIdx, 1);
+    reordered.splice(tgtIdx, 0, srcId);
+    const next: Record<string, number> = {};
+    reordered.forEach((id, i) => {
+      next[id] = i;
+    });
+    setLocalOrder(next);
+    dragSrc.current = null;
+  };
+
+  const railStyle: React.CSSProperties = {
+    width: collapsed
+      ? 'var(--rail-width-collapsed, 36px)'
+      : 'var(--rail-width-expanded, 240px)',
+    overflow: 'hidden',
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100%',
+  };
+
+  if (collapsed) {
+    return (
+      <div
+        style={railStyle}
+        data-collapsed="true"
+        aria-label="Project browser (collapsed)"
+      />
+    );
+  }
+
+  const viewGroups = groupByDiscipline(viewRows);
+
+  return (
+    <div style={railStyle} aria-label="Project browser">
+      {/* Search */}
+      <div style={{ padding: 'var(--space-2) var(--space-3)', borderBottom: 'var(--border-px, 1px) solid var(--color-border)' }}>
+        <input
+          type="search"
+          placeholder="Search project…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          aria-label="Search project browser"
+          style={{
+            width: '100%',
+            background: 'var(--color-background)',
+            border: 'var(--border-px, 1px) solid var(--color-border)',
+            borderRadius: 'var(--radius-sm, 4px)',
+            color: 'var(--color-foreground)',
+            fontSize: 'var(--text-sm, 12.5px)',
+            padding: 'var(--space-1) var(--space-2)',
+          }}
+        />
+      </div>
+
+      <div style={{ flex: 1, overflowY: 'auto', padding: 'var(--space-1) 0' }} onClick={closeCtx}>
+        {/* Views group */}
+        {viewRows.length > 0 ? (
+          <PbGroup label="Views">
+            {viewGroups.map((grp) => (
+              <div key={grp.label ?? '__all__'}>
+                {grp.label ? (
+                  <div
+                    style={{
+                      paddingLeft: 'var(--space-3)',
+                      paddingTop: 'var(--space-1)',
+                      fontSize: 'var(--text-sm, 12.5px)',
+                      color: 'var(--color-muted-foreground)',
+                      fontWeight: 600,
+                      letterSpacing: 'var(--text-eyebrow-tracking, 0.04em)',
+                      textTransform: 'uppercase',
+                    }}
+                    data-discipline-group={grp.label}
+                  >
+                    {grp.label}
+                  </div>
+                ) : null}
+                <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                  {grp.rows.map((view) => {
+                    const name = (view as { name?: string }).name ?? view.id;
+                    const isActive = view.id === activeViewId;
+                    return (
+                      <li
+                        key={view.id}
+                        draggable
+                        onDragStart={() => onDragStart(view.id)}
+                        onDragOver={onDragOver}
+                        onDrop={() => onDrop(view.id)}
+                        data-testid={`pb-view-row-${view.id}`}
+                      >
+                        {renameId === view.id ? (
+                          <input
+                            autoFocus
+                            type="text"
+                            value={renameValue}
+                            onChange={(e) => setRenameValue(e.target.value)}
+                            onBlur={() => commitRename(view.id)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') commitRename(view.id);
+                              if (e.key === 'Escape') setRenameId(null);
+                            }}
+                            style={{
+                              width: '100%',
+                              padding: 'var(--space-0-5) var(--space-2)',
+                              fontSize: 'var(--text-sm, 12.5px)',
+                              background: 'var(--color-background)',
+                              color: 'var(--color-foreground)',
+                              border: 'var(--border-px, 1px) solid var(--color-accent)',
+                            }}
+                          />
+                        ) : (
+                          <button
+                            type="button"
+                            data-active={isActive ? 'true' : 'false'}
+                            style={{
+                              width: '100%',
+                              textAlign: 'left',
+                              padding: 'var(--space-0-5) var(--space-3)',
+                              fontSize: 'var(--text-sm, 12.5px)',
+                              color: 'var(--color-foreground)',
+                              background: isActive
+                                ? 'var(--color-accent-soft)'
+                                : 'transparent',
+                              border: 'none',
+                              cursor: 'pointer',
+                            }}
+                            onClick={() => onActivateView(view.id)}
+                            onContextMenu={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleRowRightClick(view.id, e.clientX, e.clientY);
+                            }}
+                          >
+                            {name}
+                          </button>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
+          </PbGroup>
+        ) : null}
+
+        {/* Schedules group */}
+        {scheduleRows.length > 0 ? (
+          <PbGroup label="Schedules">
+            <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+              {scheduleRows.map((s) => (
+                <li key={s.id} data-testid={`pb-schedule-row-${s.id}`}>
+                  <button
+                    type="button"
+                    style={{
+                      width: '100%',
+                      textAlign: 'left',
+                      padding: 'var(--space-0-5) var(--space-3)',
+                      fontSize: 'var(--text-sm, 12.5px)',
+                      color: 'var(--color-foreground)',
+                      background: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                    }}
+                    onClick={() => onActivateView(s.id)}
+                  >
+                    {s.name}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </PbGroup>
+        ) : null}
+
+        {/* Links / Imports group */}
+        {linkRows.length > 0 ? (
+          <PbGroup label="Links / Imports">
+            <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+              {linkRows.map((l) => {
+                const name = (l as { name?: string }).name ?? l.id;
+                return (
+                  <li key={l.id} data-testid={`pb-link-row-${l.id}`}>
+                    <button
+                      type="button"
+                      style={{
+                        width: '100%',
+                        textAlign: 'left',
+                        padding: 'var(--space-0-5) var(--space-3)',
+                        fontSize: 'var(--text-sm, 12.5px)',
+                        color: 'var(--color-foreground)',
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                      }}
+                      onClick={() => onActivateView(l.id)}
+                    >
+                      {name}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </PbGroup>
+        ) : null}
+
+        {/* Phases group */}
+        {phaseRows.length > 0 ? (
+          <PbGroup label="Phases">
+            <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+              {phaseRows.map((p) => {
+                const name = (p as { name?: string }).name ?? p.id;
+                return (
+                  <li key={p.id} data-testid={`pb-phase-row-${p.id}`}>
+                    <div
+                      style={{
+                        padding: 'var(--space-0-5) var(--space-3)',
+                        fontSize: 'var(--text-sm, 12.5px)',
+                        color: 'var(--color-foreground)',
+                      }}
+                    >
+                      {name}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </PbGroup>
+        ) : null}
+
+        {viewRows.length === 0 && scheduleRows.length === 0 && linkRows.length === 0 && phaseRows.length === 0 ? (
+          <div
+            style={{
+              padding: 'var(--space-3)',
+              fontSize: 'var(--text-sm, 12.5px)',
+              color: 'var(--color-muted-foreground)',
+            }}
+          >
+            {search ? 'No matches.' : 'No views yet.'}
+          </div>
+        ) : null}
+      </div>
+
+      {/* Right-click context menu */}
+      {ctxMenu ? (
+        <PbContextMenu
+          x={ctxMenu.x}
+          y={ctxMenu.y}
+          onClose={closeCtx}
+          onRename={() => {
+            const el = elements.find((e) => e.id === ctxMenu.viewId);
+            startRename(ctxMenu.viewId, (el as { name?: string })?.name ?? '');
+          }}
+          onDuplicate={() => {
+            onDuplicateView(ctxMenu.viewId);
+            closeCtx();
+          }}
+          onDelete={() => {
+            onDeleteView(ctxMenu.viewId);
+            closeCtx();
+          }}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function PbGroup({ label, children }: { label: string; children: React.ReactNode }): JSX.Element {
+  return (
+    <div style={{ marginBottom: 'var(--space-2)' }} data-pb-group={label}>
+      <div
+        style={{
+          padding: 'var(--space-1) var(--space-3)',
+          fontSize: 'var(--text-sm, 12.5px)',
+          color: 'var(--color-muted-foreground)',
+          letterSpacing: 'var(--text-eyebrow-tracking, 0.04em)',
+          textTransform: 'uppercase',
+        }}
+        data-testid={`pb-group-${label}`}
+      >
+        {label}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function PbContextMenu({
+  x,
+  y,
+  onClose,
+  onRename,
+  onDuplicate,
+  onDelete,
+}: {
+  x: number;
+  y: number;
+  onClose: () => void;
+  onRename: () => void;
+  onDuplicate: () => void;
+  onDelete: () => void;
+}): JSX.Element {
+  return (
+    <div
+      data-testid="pb-context-menu"
+      style={{
+        position: 'fixed',
+        top: y,
+        left: x,
+        zIndex: 9999,
+        minWidth: 140,
+        background: 'var(--color-surface)',
+        border: 'var(--border-px, 1px) solid var(--color-border)',
+        borderRadius: 'var(--radius-sm, 4px)',
+        boxShadow: 'var(--shadow-modal, 0 4px 16px rgba(0,0,0,0.24))',
+        padding: 'var(--space-1) 0',
+      }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <button
+        type="button"
+        data-testid="pb-ctx-rename"
+        style={{
+          display: 'block',
+          width: '100%',
+          textAlign: 'left',
+          padding: 'var(--space-1) var(--space-3)',
+          fontSize: 'var(--text-sm, 12.5px)',
+          color: 'var(--color-foreground)',
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+        }}
+        onClick={() => {
+          onRename();
+          onClose();
+        }}
+      >
+        Rename
+      </button>
+      <button
+        type="button"
+        data-testid="pb-ctx-duplicate"
+        style={{
+          display: 'block',
+          width: '100%',
+          textAlign: 'left',
+          padding: 'var(--space-1) var(--space-3)',
+          fontSize: 'var(--text-sm, 12.5px)',
+          color: 'var(--color-foreground)',
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+        }}
+        onClick={onDuplicate}
+      >
+        Duplicate
+      </button>
+      <button
+        type="button"
+        data-testid="pb-ctx-delete"
+        style={{
+          display: 'block',
+          width: '100%',
+          textAlign: 'left',
+          padding: 'var(--space-1) var(--space-3)',
+          fontSize: 'var(--text-sm, 12.5px)',
+          color: 'var(--color-foreground)',
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+        }}
+        onClick={onDelete}
+      >
+        Delete
+      </button>
     </div>
   );
 }

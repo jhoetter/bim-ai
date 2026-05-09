@@ -232,6 +232,7 @@ from bim_ai.commands import (
     CreateBrandTemplateCmd,
     UpdateBrandTemplateCmd,
     DeleteBrandTemplateCmd,
+    ReorderViewCmd,
 )
 from bim_ai.constraints import Violation, evaluate
 from bim_ai.datum_levels import (
@@ -5883,6 +5884,12 @@ def apply_inplace(
             if existing is None or existing.kind != "brand_template":
                 raise ValueError(f"No brand_template element with id '{cmd.id}'")
             del els[cmd.id]
+
+        case ReorderViewCmd():
+            if cmd.view_id in els:
+                els[cmd.view_id] = els[cmd.view_id].model_copy(
+                    update={"sort_order": cmd.new_sort_order}
+                )
 
     # KRN-08: areas track a derived computedAreaSqMm. Recompute after every
     # command apply so create/update/delete of areas (and shafts that affect
