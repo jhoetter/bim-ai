@@ -1,0 +1,37 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "4de87bc2b47b",
+  "session_id": "50a3d153-f462-4f27-b73c-9ec39b274eb6",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-09T19:11:59.8717Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/plan/PlanCanvas.tsx",
+    "spec/revit-parity/ch12-furniture-placement.md"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "af6ddb0886a6",
+  "checkpoint_transcript_start": 4473,
+  "transcript_lines_at_start": 4473,
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 0
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-09T19:11:59.765319Z",
+    "agent_lines": 65,
+    "agent_removed": 0,
+    "human_added": 84,
+    "human_modified": 1,
+    "human_removed": 0,
+    "total_committed": 150,
+    "total_lines_changed": 150,
+    "agent_percentage": 43.333333333333336,
+    "metric_version": 2
+  }
+}

@@ -4,13 +4,22 @@
   "strategy": "manual-commit",
   "branch": "main",
   "checkpoints_count": 1,
-  "files_touched": null,
+  "files_touched": [
+    "packages/web/src/plan/PlanCanvas.tsx",
+    "spec/revit-parity/ch12-furniture-placement.md"
+  ],
   "sessions": [
     {
       "metadata": "/4d/e87bc2b47b/0/metadata.json",
       "transcript": "/4d/e87bc2b47b/0/full.jsonl",
       "content_hash": "/4d/e87bc2b47b/0/content_hash.txt",
       "prompt": "/4d/e87bc2b47b/0/prompt.txt"
+    },
+    {
+      "metadata": "/4d/e87bc2b47b/1/metadata.json",
+      "transcript": "/4d/e87bc2b47b/1/full.jsonl",
+      "content_hash": "/4d/e87bc2b47b/1/content_hash.txt",
+      "prompt": "/4d/e87bc2b47b/1/prompt.txt"
     }
   ],
   "token_usage": {
