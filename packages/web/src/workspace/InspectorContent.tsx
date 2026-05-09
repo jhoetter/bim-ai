@@ -476,6 +476,25 @@ export function InspectorPropertiesFor(
           />
         </div>
       );
+    case 'area':
+      return (
+        <div className="flex flex-col gap-2">
+          <FieldRow label={f('name')} value={el.name} />
+          <FieldRow label={f('level')} value={el.levelId} mono />
+          <FieldRow
+            label="Rule Set"
+            value={el.ruleSet === 'gross' ? 'Gross' : el.ruleSet === 'net' ? 'Net' : 'No Rules'}
+          />
+          {el.computedAreaSqMm !== undefined ? (
+            <FieldRow
+              label="Area"
+              value={`${(el.computedAreaSqMm / 1_000_000).toFixed(2)} m²`}
+              mono
+            />
+          ) : null}
+          <FieldRow label="Boundary Vertices" value={String(el.boundaryMm.length)} mono />
+        </div>
+      );
     case 'section_cut':
       return (
         <div>
