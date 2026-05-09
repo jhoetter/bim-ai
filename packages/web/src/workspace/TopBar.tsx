@@ -10,6 +10,7 @@ import {
   useRef,
   useState,
 } from 'react';
+
 import { useTranslation } from 'react-i18next';
 import { Icons, IconLabels, ICON_SIZE, type LucideLikeIcon } from '@bim-ai/ui';
 import { SourceViewChip } from './SourceViewChip';
@@ -62,14 +63,6 @@ export interface TopBarProps {
   avatarInitials?: string;
   /** Presence peers to render as avatar chips (up to 6). */
   peers?: Array<{ name?: string; color?: string }>;
-  /** Discipline/perspective filter selector. */
-  perspectiveOptions?: TopBarSelectOption[];
-  perspectiveValue?: string;
-  onPerspectiveChange?: (id: string) => void;
-  /** Plan presentation style selector. */
-  planStyleOptions?: TopBarSelectOption[];
-  planStyleValue?: string;
-  onPlanStyleChange?: (id: string) => void;
   /** OUT-V3-01: true when at least one Page exists in the model. */
   hasPages?: boolean;
   /** OUT-V3-01: callback to open the SharePresentationModal. */
@@ -80,8 +73,6 @@ export interface TopBarProps {
   activeViewId?: string;
   /** MRK-V3-03: callback from SourceViewChip to navigate to a sheet comment. */
   onNavigateToSheet?: (sheetId: string, commentId: string) => void;
-  /** F-112: opens a new 3D view tab directly, equivalent to the QAT "3D View" button. */
-  onOpen3dView?: () => void;
   /** F-006: QAT Undo button. */
   onUndo?: () => void;
   /** F-006: QAT Redo button. */
@@ -113,18 +104,11 @@ export function TopBar({
   onCollaboratorsClick,
   avatarInitials,
   peers,
-  perspectiveOptions,
-  perspectiveValue,
-  onPerspectiveChange,
-  planStyleOptions,
-  planStyleValue,
-  onPlanStyleChange,
   hasPages,
   onSharePresentation,
   modelId,
   activeViewId,
   onNavigateToSheet,
-  onOpen3dView,
   onUndo,
   onRedo,
   canUndo,
@@ -177,15 +161,8 @@ export function TopBar({
         onCollaboratorsClick={onCollaboratorsClick}
         avatarInitials={avatarInitials}
         peers={peers}
-        perspectiveOptions={perspectiveOptions}
-        perspectiveValue={perspectiveValue}
-        onPerspectiveChange={onPerspectiveChange}
-        planStyleOptions={planStyleOptions}
-        planStyleValue={planStyleValue}
-        onPlanStyleChange={onPlanStyleChange}
         hasPages={hasPages}
         onSharePresentation={onSharePresentation}
-        onOpen3dView={onOpen3dView}
         sourceViewChip={
           showSourceViewChip ? (
             <SourceViewChip
@@ -408,12 +385,22 @@ function TopBarTabs({
     return () => document.removeEventListener('mousedown', onDoc);
   }, [popoverOpen]);
 
+  function handleTabListKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    const tabEls = Array.from(e.currentTarget.querySelectorAll<HTMLElement>('[role="tab"]'));
+    const idx = tabEls.indexOf(document.activeElement as HTMLElement);
+    const next = tabEls[(idx + (e.key === 'ArrowRight' ? 1 : -1) + tabEls.length) % tabEls.length];
+    next?.focus();
+    e.preventDefault();
+  }
+
   return (
     <div
       ref={scrollRef}
       role="tablist"
       aria-label={t('workspace.openViews')}
       data-testid="view-tabs"
+      onKeyDown={handleTabListKeyDown}
       className="flex flex-1 items-center gap-0.5 overflow-x-auto px-2"
     >
       {tabs.length === 0 ? (
@@ -429,6 +416,7 @@ function TopBarTabs({
             key={tab.id}
             role="tab"
             aria-selected={isActive}
+            tabIndex={isActive ? 0 : -1}
             data-tab-id={tab.id}
             data-active={isActive ? 'true' : 'false'}
             draggable={Boolean(onReorder)}
@@ -584,15 +572,8 @@ function TopBarRight({
   onCollaboratorsClick,
   avatarInitials,
   peers,
-  perspectiveOptions,
-  perspectiveValue,
-  onPerspectiveChange,
-  planStyleOptions,
-  planStyleValue,
-  onPlanStyleChange,
   hasPages,
   onSharePresentation,
-  onOpen3dView,
   sourceViewChip,
 }: {
   theme: 'light' | 'dark';
@@ -603,73 +584,53 @@ function TopBarRight({
   onCollaboratorsClick?: () => void;
   avatarInitials?: string;
   peers?: Array<{ name?: string; color?: string }>;
-  perspectiveOptions?: TopBarSelectOption[];
-  perspectiveValue?: string;
-  onPerspectiveChange?: (id: string) => void;
-  planStyleOptions?: TopBarSelectOption[];
-  planStyleValue?: string;
-  onPlanStyleChange?: (id: string) => void;
   hasPages?: boolean;
   onSharePresentation?: () => void;
-  /** F-112: opens a new 3D view tab directly. */
-  onOpen3dView?: () => void;
   /** MRK-V3-03: pre-rendered SourceViewChip node (null when not in sheet view). */
   sourceViewChip?: JSX.Element | null;
 }): JSX.Element {
   const { t, i18n } = useTranslation();
-  const showSelects =
-    (perspectiveOptions && perspectiveOptions.length > 0) ||
-    (planStyleOptions && planStyleOptions.length > 0);
+  const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
+  const avatarMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close avatar menu on outside click
+  useEffect(() => {
+    if (!avatarMenuOpen) return;
+    const onDoc = (e: globalThis.MouseEvent): void => {
+      if (avatarMenuRef.current && !avatarMenuRef.current.contains(e.target as Node)) {
+        setAvatarMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, [avatarMenuOpen]);
+
   return (
     <div className="flex items-center gap-1.5">
-      {showSelects ? (
-        <>
-          {perspectiveOptions &&
-          perspectiveOptions.length > 0 &&
-          perspectiveValue !== undefined &&
-          onPerspectiveChange ? (
-            <TopBarSelect
-              value={perspectiveValue}
-              onChange={onPerspectiveChange}
-              options={perspectiveOptions}
-              label={t('topbar.perspective')}
-            />
-          ) : null}
-          {planStyleOptions &&
-          planStyleOptions.length > 0 &&
-          planStyleValue !== undefined &&
-          onPlanStyleChange ? (
-            <TopBarSelect
-              value={planStyleValue}
-              onChange={onPlanStyleChange}
-              options={planStyleOptions}
-              label={t('topbar.planStyle')}
-            />
-          ) : null}
-          <div className="mx-1 h-4 w-px bg-border" aria-hidden="true" />
-        </>
-      ) : null}
       <button
         type="button"
         onClick={hasPages ? onSharePresentation : undefined}
         disabled={!hasPages}
-        aria-label="Share live presentation"
+        aria-label="Share"
         title={hasPages ? 'Share live presentation' : 'Add a Page first'}
         style={{ background: 'var(--color-surface-strong)' }}
         className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-muted shadow-sm hover:bg-surface-strong hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
       >
-        <span style={{ fontSize: 'var(--text-sm)' }}>Share live presentation</span>
+        <span style={{ fontSize: 'var(--text-sm)' }}>Share</span>
       </button>
       {sourceViewChip ?? null}
       <button
         type="button"
         onClick={onCommandPalette}
-        aria-label={IconLabels.commandPalette}
+        aria-label="Search or open command palette"
         aria-keyshortcuts="Meta+K Control+K"
-        className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-2.5 py-1 text-xs font-medium text-muted shadow-sm hover:bg-surface-strong hover:text-foreground"
+        data-testid="topbar-cmdpalette"
+        className="flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-1.5 text-xs text-muted shadow-sm hover:bg-surface-strong hover:text-foreground"
+        style={{ minWidth: 160 }}
       >
         <Icons.commandPalette size={13} aria-hidden="true" />
-        <span className="tabular-nums">⌘K</span>
+        <span className="flex-1 text-left">Search or press</span>
+        <kbd className="rounded bg-surface-strong px-1 py-0.5 font-mono text-[10px]">⌘K</kbd>
       </button>
       {peers && peers.length > 0 ? (
         <>
@@ -698,45 +659,80 @@ function TopBarRight({
         onClick={onCollaboratorsClick}
         badge={collaboratorsCount}
       />
-      <IconButton Icon={Icons.settings} label={IconLabels.settings} onClick={onSettings} />
-      {onOpen3dView && (
+      {/* Avatar / settings dropdown */}
+      <div className="relative" ref={avatarMenuRef}>
         <button
           type="button"
-          data-testid="topbar-3d-view"
-          title="Open 3D View"
-          onClick={onOpen3dView}
-          className="relative inline-flex h-8 items-center justify-center rounded-md px-2 text-xs font-semibold text-muted transition-colors hover:bg-surface hover:text-foreground"
+          aria-label={t('topbar.account')}
+          aria-haspopup="menu"
+          aria-expanded={avatarMenuOpen}
+          title={avatarInitials ?? ''}
+          data-testid="topbar-avatar-menu-trigger"
+          onClick={() => setAvatarMenuOpen((v) => !v)}
+          className="flex h-7 w-7 items-center justify-center rounded-full border border-border bg-accent/15 text-[11px] font-semibold text-accent hover:bg-accent/25"
         >
-          3D
+          {(avatarInitials ?? '··').slice(0, 2).toUpperCase()}
         </button>
-      )}
-      <button
-        type="button"
-        data-testid="topbar-language-toggle"
-        title={`Switch language (current: ${i18n.language.toUpperCase()})`}
-        onClick={() => {
-          const next = i18n.language === 'de' ? 'en' : 'de';
-          void i18n.changeLanguage(next);
-          localStorage.setItem('bim-ai:lang', next);
-        }}
-        className="relative inline-flex h-8 w-8 items-center justify-center rounded-md text-xs font-semibold text-muted transition-colors hover:bg-surface hover:text-foreground"
-      >
-        {i18n.language.toUpperCase()}
-      </button>
-      <IconButton
-        Icon={theme === 'dark' ? Icons.themeLight : Icons.themeDark}
-        label={theme === 'dark' ? IconLabels.themeLight : IconLabels.themeDark}
-        onClick={onThemeToggle}
-        data-testid="topbar-theme-toggle"
-        data-current-theme={theme}
-      />
-      <div className="mx-0.5 h-4 w-px bg-border" aria-hidden="true" />
-      <div
-        aria-label={t('topbar.account')}
-        title={avatarInitials ?? ''}
-        className="flex h-7 w-7 items-center justify-center rounded-full border border-border bg-accent/15 text-[11px] font-semibold text-accent"
-      >
-        {(avatarInitials ?? '··').slice(0, 2).toUpperCase()}
+        {avatarMenuOpen ? (
+          <div
+            role="menu"
+            data-testid="topbar-avatar-menu"
+            className="absolute right-0 top-full z-30 mt-1 min-w-[160px] rounded-md border border-border bg-surface shadow-elev-2"
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                e.preventDefault();
+                setAvatarMenuOpen(false);
+              }
+            }}
+          >
+            <button
+              type="button"
+              role="menuitem"
+              data-testid="topbar-avatar-menu-settings"
+              onClick={() => {
+                setAvatarMenuOpen(false);
+                onSettings?.();
+              }}
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-foreground hover:bg-surface-strong"
+            >
+              <Icons.settings size={13} aria-hidden="true" />
+              Settings
+            </button>
+            <div className="my-1 h-px bg-border" aria-hidden="true" />
+            <button
+              type="button"
+              role="menuitem"
+              data-testid="topbar-theme-toggle"
+              data-current-theme={theme}
+              onClick={() => {
+                setAvatarMenuOpen(false);
+                onThemeToggle?.();
+              }}
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-foreground hover:bg-surface-strong"
+            >
+              {theme === 'dark' ? (
+                <Icons.themeLight size={13} aria-hidden="true" />
+              ) : (
+                <Icons.themeDark size={13} aria-hidden="true" />
+              )}
+              {theme === 'dark' ? IconLabels.themeLight : IconLabels.themeDark}
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              data-testid="topbar-language-toggle"
+              onClick={() => {
+                setAvatarMenuOpen(false);
+                const next = i18n.language === 'de' ? 'en' : 'de';
+                void i18n.changeLanguage(next);
+                localStorage.setItem('bim-ai:lang', next);
+              }}
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-foreground hover:bg-surface-strong"
+            >
+              Language: {i18n.language.toUpperCase()}
+            </button>
+          </div>
+        ) : null}
       </div>
     </div>
   );

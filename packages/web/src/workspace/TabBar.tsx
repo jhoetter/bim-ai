@@ -92,12 +92,22 @@ export function TabBar({
     }
   }, [activeId]);
 
+  function handleTabListKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    const tabEls = Array.from(e.currentTarget.querySelectorAll<HTMLElement>('[role="tab"]'));
+    const idx = tabEls.indexOf(document.activeElement as HTMLElement);
+    const next = tabEls[(idx + (e.key === 'ArrowRight' ? 1 : -1) + tabEls.length) % tabEls.length];
+    next?.focus();
+    e.preventDefault();
+  }
+
   return (
     <div
       ref={tabBarRef}
       role="tablist"
       aria-label={t('workspace.openViews')}
       data-testid="view-tabs"
+      onKeyDown={handleTabListKeyDown}
       className="flex items-end gap-0.5 overflow-x-auto border-b border-border bg-surface pt-1.5"
       style={{ height: 38 }}
     >
@@ -114,6 +124,7 @@ export function TabBar({
             key={tab.id}
             role="tab"
             aria-selected={isActive}
+            tabIndex={isActive ? 0 : -1}
             data-tab-id={tab.id}
             data-tab-index={idx}
             data-active={isActive ? 'true' : 'false'}
