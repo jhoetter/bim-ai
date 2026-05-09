@@ -5,6 +5,7 @@ import {
   type ReactNode,
   useCallback,
   useId,
+  useRef,
   useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -306,6 +307,7 @@ function LevelCluster({
   const [open, setOpen] = useState(false);
   const popoverId = useId();
   const close = useCallback(() => setOpen(false), []);
+  const menuRef = useRef<HTMLDivElement | null>(null);
   const handleKey = useCallback(
     (event: KeyboardEvent<HTMLDivElement>) => {
       if (event.key === 'PageDown' || event.key === 'PageUp') {
@@ -316,11 +318,20 @@ function LevelCluster({
         const next = levels[(idx + delta + levels.length) % levels.length];
         event.preventDefault();
         onLevelChange?.(next.id);
+      } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        if (!open) return;
+        event.preventDefault();
+        const items = Array.from(
+          menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [],
+        );
+        const idx = items.indexOf(document.activeElement as HTMLElement);
+        const delta = event.key === 'ArrowDown' ? 1 : -1;
+        items[(idx + delta + items.length) % items.length]?.focus();
       } else if (event.key === 'Escape') {
         close();
       }
     },
-    [close, level.id, levels, onLevelChange],
+    [close, level.id, levels, onLevelChange, open],
   );
 
   return (
@@ -355,12 +366,19 @@ function LevelCluster({
           role="menu"
           aria-label={t('statusbar.levels')}
           className="absolute bottom-full left-0 z-50 mb-1 w-48 rounded-md border border-border bg-surface text-sm shadow-elev-2"
+          ref={(el) => {
+            menuRef.current = el;
+            const active = el?.querySelector<HTMLElement>('[aria-current="true"]');
+            const first = el?.querySelector<HTMLElement>('[role="menuitem"]');
+            (active ?? first)?.focus();
+          }}
         >
           {levels.map((l) => (
             <button
               key={l.id}
               type="button"
               role="menuitem"
+              aria-current={l.id === level.id ? 'true' : undefined}
               onClick={() => {
                 onLevelChange?.(l.id);
                 close();
