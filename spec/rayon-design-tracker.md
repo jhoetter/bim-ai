@@ -61,10 +61,10 @@ From the videos:
 | Dim line quality | Clean thin lines, red text | ✅ dimLine color fixed; witness → --draft-witness | DONE |
 | Hatch density | Dense, visible at 1:100 | ✅ paperMmRepeat 8→5, strokeWidth 0.12→0.18 | DONE |
 | Floor hatch opacity | 50-70% | ✅ 42% (up from 16%) | DONE |
-| Wall hatch inside cut | Brick/concrete hatching inside wall body | Not implemented | BACKLOG |
+| Wall hatch inside cut | Brick/concrete hatching inside wall body | ✅ 45° diagonal hatch, paper-color at 22% opacity, via buildWallCutHatch() in planElementMeshBuilders.ts | DONE |
 | North point | Standard block always shown | Not implemented | BACKLOG |
 | Scale bar | Standard block always shown | Not implemented | BACKLOG |
-| Zone area labels | Auto-calculated m² per room | Partial (room labels in `planAnnotationLabelSprite`) | BACKLOG |
+| Zone area labels | Auto-calculated m² per room | ✅ Area appended to planTagLabel pill: "name · X.X m²" in symbology.ts | DONE |
 | Grid visibility | Near-invisible, just guides | ✅ #e4e6e8 / #f0f1f2 (near-invisible) | DONE |
 
 ### Chrome / UI Quality
@@ -75,7 +75,7 @@ From the videos:
 | Right properties | Fill, stroke, thickness inline | Right-rail inspector | DONE |
 | Bottom toolbar | Primary tools in strip | Present (Tool modifier bar) | DONE |
 | Theme toggle | Visible bottom-left | Hidden behind presence strip | FIXED |
-| Active tool highlight | Red accent on active tool | Needs review | MEDIUM |
+| Active tool highlight | Red accent on active tool | ✅ bg-accent (warm amber) — confirmed correct in ToolPalette.tsx:130 | DONE |
 | Presence avatars | Subtle named cursors | Fixed to 1 in dev | DONE |
 | Share button | Top-right, prominent | Present (share presentation) | DONE |
 | Keyboard shortcuts | W=wall shown in tooltip | Present via Cmd+K | DONE |

@@ -553,9 +553,12 @@ function rebuildPlanMeshesFromWire(
     });
     holder.add(mesh);
     if (ann?.roomLabelsVisible === true && typeof mesh.userData.roomLabel === 'object') {
-      const labelRaw = typeof r.planTagLabel === 'string' ? r.planTagLabel.trim() : '';
+      const rl = mesh.userData.roomLabel as { cx?: number; cz?: number; areaMm2?: number };
+      const base = typeof r.planTagLabel === 'string' ? r.planTagLabel.trim() : '';
+      const areaMm2 = typeof rl?.areaMm2 === 'number' ? rl.areaMm2 : 0;
+      const areaText = areaMm2 > 0 ? `${(areaMm2 / 1_000_000).toFixed(1)} m²` : '';
+      const labelRaw = base && areaText ? `${base} · ${areaText}` : base || areaText;
       if (labelRaw) {
-        const rl = mesh.userData.roomLabel as { cx?: number; cz?: number };
         if (
           rl &&
           typeof rl.cx === 'number' &&
