@@ -86,7 +86,7 @@ For layered walls this distinction matters significantly — the core can sit 50
 **Screenshot:**
 ![Wall Join Status](file:///Users/jhoetter/Desktop/Revit%20Specs/0354_01-11-28.png)
 
-**bim-ai status:** 🟡 Partial — the `wall-join` plan tool in `PlanCanvas.tsx` allows clicking on a wall corner then pressing Enter to cycle through join variants (miter / butt / square) via `setWallJoinVariant { wallIds, variant }`. Missing: explicit per-endpoint Allow/Disallow toggle equivalent to Revit's right-click → "Allow Join" / "Disallow Join" on individual wall ends.
+**bim-ai status:** 🟡 Partial (better) — the `wall-join` plan tool in `PlanCanvas.tsx` allows clicking on a wall corner then pressing Enter to cycle through join variants (miter / butt / square) via `setWallJoinVariant { wallIds, variant }`. Per-endpoint Allow/Disallow join is now also available: (1) wall inspector in `WorkspaceRightRail.tsx` shows "Disallow Join at Start" / "Disallow Join at End" checkboxes for any selected wall; (2) right-clicking within 20 mm of a wall endpoint on the canvas shows an "Allow Join / Disallow Join (start|end)" context menu. Both fire `setWallJoinDisallow { wallId, endpoint, disallow }` which persists the flag in `WallElem.join_disallow_start` / `join_disallow_end`. Geometry enforcement (preventing mesh-layer join cleanup when disallowed) is not yet implemented.
 
 ---
 

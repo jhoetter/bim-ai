@@ -370,6 +370,13 @@ export function PlanCanvas({
     elementKind: string;
     position: { x: number; y: number };
   } | null>(null);
+  // F-040: state for the right-click "Allow/Disallow Join" menu on a wall endpoint.
+  const [wallJoinCtxMenu, setWallJoinCtxMenu] = useState<{
+    wallId: string;
+    endpoint: 'start' | 'end';
+    position: { x: number; y: number };
+    currentlyDisallowed: boolean;
+  } | null>(null);
   const [geomEpoch, bumpGeom] = useState(0);
   const [measureReadout, setMeasureReadout] = useState<{ distMm: number } | null>(null);
   const [roomColorLegend, setRoomColorLegend] = useState<
@@ -3220,6 +3227,7 @@ export function PlanCanvas({
       if (!h) {
         setWallContextMenu(null);
         setUnhideContextMenu(null);
+        setWallJoinCtxMenu(null);
         return;
       }
       const id = (h.object.userData as { bimPickId: string }).bimPickId;
@@ -3227,6 +3235,7 @@ export function PlanCanvas({
       if (!el) {
         setWallContextMenu(null);
         setUnhideContextMenu(null);
+        setWallJoinCtxMenu(null);
         return;
       }
 
@@ -3235,16 +3244,59 @@ export function PlanCanvas({
         ev.preventDefault();
         setUnhideContextMenu({ elementKind: el.kind, position: { x: ev.clientX, y: ev.clientY } });
         setWallContextMenu(null);
+        setWallJoinCtxMenu(null);
         return;
       }
 
       if (el.kind !== 'wall') {
         setWallContextMenu(null);
         setUnhideContextMenu(null);
+        setWallJoinCtxMenu(null);
         return;
       }
+
+      // F-040: if the right-click lands within 20mm of a wall endpoint, show
+      // the Allow/Disallow Join context menu for that endpoint instead of the
+      // generic wall context menu.
+      const clickMm = rayToPlanMm(rnd, camNow, ev.clientX, ev.clientY);
+      if (clickMm) {
+        const ENDPOINT_SNAP_MM = 20;
+        const wall = el;
+        const distStart = Math.hypot(
+          clickMm.xMm - wall.start.xMm,
+          clickMm.yMm - wall.start.yMm,
+        );
+        const distEnd = Math.hypot(
+          clickMm.xMm - wall.end.xMm,
+          clickMm.yMm - wall.end.yMm,
+        );
+        const nearestEndpoint =
+          distStart <= ENDPOINT_SNAP_MM && distStart <= distEnd
+            ? 'start'
+            : distEnd <= ENDPOINT_SNAP_MM
+              ? 'end'
+              : null;
+        if (nearestEndpoint !== null) {
+          ev.preventDefault();
+          const currentlyDisallowed =
+            nearestEndpoint === 'start'
+              ? (wall.joinDisallowStart ?? false)
+              : (wall.joinDisallowEnd ?? false);
+          setWallJoinCtxMenu({
+            wallId: wall.id,
+            endpoint: nearestEndpoint,
+            position: { x: ev.clientX, y: ev.clientY },
+            currentlyDisallowed,
+          });
+          setWallContextMenu(null);
+          setUnhideContextMenu(null);
+          return;
+        }
+      }
+
       ev.preventDefault();
       setWallContextMenu({ wall: el, position: { x: ev.clientX, y: ev.clientY } });
+      setWallJoinCtxMenu(null);
     };
 
     // VIE-03: double-click an elevation marker (or plan_view marker) to open
@@ -3394,6 +3446,14 @@ export function PlanCanvas({
     return () => window.removeEventListener('mousedown', close);
   }, [unhideContextMenu]);
 
+  // F-040 — close the wall-join Allow/Disallow context menu on any outside mousedown.
+  useEffect(() => {
+    if (!wallJoinCtxMenu) return;
+    const close = () => setWallJoinCtxMenu(null);
+    window.addEventListener('mousedown', close);
+    return () => window.removeEventListener('mousedown', close);
+  }, [wallJoinCtxMenu]);
+
   // EDT-01 — grip pointer-down: capture starting world position so
   // onMove can compute a stable delta.
   const handleGripPointerDown = useCallback(
@@ -3502,6 +3562,32 @@ export function PlanCanvas({
             }}
           >
             Unhide in View: {unhideContextMenu.elementKind}
+          </button>
+        </div>
+      )}
+      {/* F-040: Allow/Disallow Join context menu shown when right-clicking near a wall endpoint */}
+      {wallJoinCtxMenu && (
+        <div
+          data-testid="wall-join-ctx-menu"
+          className="pointer-events-auto absolute z-50 flex flex-col overflow-hidden rounded border border-border bg-surface shadow-md"
+          style={{ left: wallJoinCtxMenu.position.x, top: wallJoinCtxMenu.position.y }}
+        >
+          <button
+            type="button"
+            className="px-3 py-1.5 text-left text-xs hover:bg-surface-strong"
+            data-testid="wall-join-ctx-toggle"
+            onClick={() => {
+              void onSemanticCommand({
+                type: 'setWallJoinDisallow',
+                wallId: wallJoinCtxMenu.wallId,
+                endpoint: wallJoinCtxMenu.endpoint,
+                disallow: !wallJoinCtxMenu.currentlyDisallowed,
+              });
+              setWallJoinCtxMenu(null);
+            }}
+          >
+            {wallJoinCtxMenu.currentlyDisallowed ? 'Allow Join' : 'Disallow Join'} (
+            {wallJoinCtxMenu.endpoint})
           </button>
         </div>
       )}

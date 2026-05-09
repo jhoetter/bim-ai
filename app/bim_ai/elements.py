@@ -314,6 +314,9 @@ class WallElem(BaseModel):
     props: dict[str, Any] | None = Field(default=None)
     # TOP-V3-04: site wall binding — when set, base elevation per-segment follows the toposolid surface.
     site_host_id: str | None = Field(default=None, alias="siteHostId")
+    # F-040: per-endpoint Allow/Disallow join flag (mirrors Revit right-click → Allow/Disallow Join).
+    join_disallow_start: bool = Field(default=False, alias="joinDisallowStart")
+    join_disallow_end: bool = Field(default=False, alias="joinDisallowEnd")
 
     @model_validator(mode="after")
     def _validate_lean_taper(self) -> WallElem:

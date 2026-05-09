@@ -873,6 +873,10 @@ export type Element =
       props?: Record<string, unknown>;
       /** TOP-V3-04: site wall binding — base elevation per-segment follows the toposolid surface. */
       siteHostId?: string | null;
+      /** F-040: per-endpoint Allow/Disallow Join flag (mirrors Revit right-click → Allow/Disallow Join). */
+      joinDisallowStart?: boolean;
+      /** F-040: per-endpoint Allow/Disallow Join flag (mirrors Revit right-click → Allow/Disallow Join). */
+      joinDisallowEnd?: boolean;
     }
   | {
       kind: 'door';
