@@ -1,0 +1,151 @@
+we had a task running to fix the CI/CD for js, but my macbook crashed; can you continue? i currently get:
+Run pnpm verify
+  pnpm verify
+  shell: /usr/bin/bash -e {0}
+  env:
+    PNPM_HOME: /home/runner/setup-pnpm/node_modules/.bin
+
+> bim-ai@0.1.0 verify /home/runner/work/bim-ai/bim-ai
+> pnpm format:check && pnpm lint:root && pnpm architecture && pnpm typecheck && pnpm test && pnpm build
+
+
+> bim-ai@0.1.0 format:check /home/runner/work/bim-ai/bim-ai
+> prettier --check "**/*.{ts,tsx,js,jsx,json,yml,yaml}"
+
+Checking formatting...
+All matched files use Prettier code style!
+
+> bim-ai@0.1.0 lint:root /home/runner/work/bim-ai/bim-ai
+> eslint "packages/**/*.{ts,tsx}"
+
+
+/home/runner/work/bim-ai/bim-ai/packages/web/src/Viewport.tsx
+Warning:   336:9  warning  'handleSunCommit' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/runner/work/bim-ai/bim-ai/packages/web/src/design-systems/IconGallery.tsx
+  491:1  warning  Unused eslint-disable directive (no problems were reported from '@typescript-eslint/no-explicit-any')
+
+/home/runner/work/bim-ai/bim-ai/packages/web/src/families/geometryFns/doorGeometry.ts
+Warning:   125:11  warning  'frameMat' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/runner/work/bim-ai/bim-ai/packages/web/src/plan/ImageTraceDropZone.tsx
+Warning:   109:3  warning  The 'startPolling' function makes the dependencies of useCallback Hook (at line 106) change on every render. Move it inside the useCallback callback. Alternatively, wrap the definition of 'startPolling' in its own useCallback() Hook  react-hooks/exhaustive-deps
+
+/home/runner/work/bim-ai/bim-ai/packages/web/src/plan/PlanCanvas.tsx
+Warning:   1554:6   warning  React Hook useEffect has missing dependencies: 'activeLevelResolvedId', 'display.hiddenElementIds', and 'revealHiddenMode'. Either include them or remove the dependency array                                                                        react-hooks/exhaustive-deps
+Warning:   3876:17  warning  'draft' is assigned a value but never used. Allowed unused vars must match /^_/u                                                                                                                                                                      @typescript-eslint/no-unused-vars
+Warning:   3932:6   warning  React Hook useEffect has missing dependencies: 'activePlanViewId', 'display.hiddenElementIds', 'display.hiddenSemanticKinds', 'revealHiddenMode', 'selectedId', 'selectedIds', and 'setPlanTool'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+/home/runner/work/bim-ai/bim-ai/packages/web/src/plan/SheetCanvas.tsx
+Warning:   6:7  warning  'A1_W_MM' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+Warning:   7:7  warning  'A1_H_MM' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/runner/work/bim-ai/bim-ai/packages/web/src/plan/SheetReviewSurface.tsx
+Warning:   220:5  warning  React Hook useCallback has a missing dependency: 'userId'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/home/runner/work/bim-ai/bim-ai/packages/web/src/plan/SketchCanvas.tsx
+Warning:   189:9  warning  The 'issues' logical expression could make the dependencies of useMemo Hook (at line 380) change on every render. To fix this, wrap the initialization of 'issues' in its own useMemo() Hook  react-hooks/exhaustive-deps
+Warning:   338:6  warning  React Hook useCallback has a missing dependency: 'extraOptions'. Either include it or remove the dependency array                                                                             react-hooks/exhaustive-deps
+
+/home/runner/work/bim-ai/bim-ai/packages/web/src/workspace/ProjectBrowser.test.tsx
+Warning:   47:7  warning  'imageUnderlayEl' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/runner/work/bim-ai/bim-ai/packages/web/src/workspace/ProjectBrowser.tsx
+  1:1  warning  Unused eslint-disable directive (no problems were reported from 'bim-ai/no-hex-in-chrome')
+
+/home/runner/work/bim-ai/bim-ai/packages/web/src/workspace/TopBar.tsx
+Warning:   788:10  warning  'TopBarSelect' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/runner/work/bim-ai/bim-ai/packages/web/src/workspace/Workspace.tsx
+Warning:   236:10  warning  'recentCommandIds' is assigned a value but never used. Allowed unused vars must match /^_/u   @typescript-eslint/no-unused-vars
+Warning:   864:9   warning  'paletteCandidates' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+Warning:   894:9   warning  'handlePalettePick' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/runner/work/bim-ai/bim-ai/packages/web/src/workspace/WorkspaceRightRail.tsx
+Warning:   946:3  warning  'wallId' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+✖ 19 problems (0 errors, 19 warnings)
+  0 errors and 2 warnings potentially fixable with the `--fix` option.
+
+
+> bim-ai@0.1.0 architecture /home/runner/work/bim-ai/bim-ai
+> node scripts/check-architecture.mjs
+
+Architecture check OK
+
+> bim-ai@0.1.0 typecheck /home/runner/work/bim-ai/bim-ai
+> turbo typecheck
+
+
+Attention:
+Turborepo now collects completely anonymous telemetry regarding usage.
+This information is used to shape the Turborepo roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://turborepo.dev/docs/telemetry
+
+
+   • Packages in scope: @bim-ai/cli, @bim-ai/core, @bim-ai/design-tokens, @bim-ai/hofos-ui, @bim-ai/icons, @bim-ai/ui, @bim-ai/web, eslint-plugin-bim-ai
+   • Running typecheck in 8 packages
+   • Remote caching disabled
+
+@bim-ai/cli:typecheck
+eslint-plugin-bim-ai:typecheck
+@bim-ai/design-tokens:typecheck
+@bim-ai/design-tokens:build
+@bim-ai/core:typecheck
+@bim-ai/core:build
+@bim-ai/icons:typecheck
+@bim-ai/icons:build
+@bim-ai/ui:typecheck
+@bim-ai/ui:build
+@bim-ai/hofos-ui:typecheck
+@bim-ai/web:typecheck
+cache miss, executing 4f62e5bdd58fa27f
+
+> @bim-ai/web@0.0.1 typecheck /home/runner/work/bim-ai/bim-ai/packages/web
+> tsc -p tsconfig.json --noEmit
+
+Error: src/__tests__/offlineQueue.test.ts(145,55): error TS2345: Argument of type '([id]: [string]) => string' is not assignable to parameter of type '(value: any[], index: number, array: any[][]) => string'.
+  Types of parameters '__0' and 'value' are incompatible.
+    Type 'any[]' is not assignable to type '[string]'.
+      Target requires 1 element(s) but source may have fewer.
+Error: src/plan/ImageTraceDropZone.tsx(37,30): error TS2503: Cannot find namespace 'JSX'.
+Error: src/plan/ImageTraceDropZone.tsx(221,65): error TS2503: Cannot find namespace 'JSX'.
+Error: src/plan/PlanCanvas.tsx(2874,11): error TS2367: This comparison appears to be unintentional because the types '"toposolid_subdivision" | "room" | "floor" | "column" | "beam" | "ceiling" | "shaft" | "split" | "trim" | "wall-join" | "wall-opening" | "floor-sketch" | "roof-sketch" | "room-separation-sketch" | "trim-extend" | "detail-region" | "component"' and '"move"' have no overlap.
+Error: src/plan/PlanCanvas.tsx(2900,11): error TS2367: This comparison appears to be unintentional because the types '"toposolid_subdivision" | "room" | "floor" | "column" | "beam" | "ceiling" | "shaft" | "split" | "trim" | "wall-join" | "wall-opening" | "floor-sketch" | "roof-sketch" | "room-separation-sketch" | "trim-extend" | "detail-region" | "component"' and '"rotate"' have no overlap.
+Error: src/plan/PlanCanvas.tsx(3524,20): error TS2367: This comparison appears to be unintentional because the types '"toposolid_subdivision" | "wall" | "door" | "window" | "room" | "dimension" | "floor" | "column" | "beam" | "ceiling" | "elevation" | "shaft" | "split" | "trim" | "wall-join" | ... 15 more ... | "component"' and '"move"' have no overlap.
+Error: src/plan/PlanCanvas.tsx(3533,20): error TS2367: This comparison appears to be unintentional because the types '"toposolid_subdivision" | "wall" | "door" | "window" | "room" | "dimension" | "floor" | "column" | "beam" | "ceiling" | "elevation" | "shaft" | "split" | "trim" | "wall-join" | ... 15 more ... | "component"' and '"rotate"' have no overlap.
+Error: src/plan/PlanCanvas.tsx(3771,63): error TS2345: Argument of type '"toposolid" | "toposolid_subdivision" | "graded_region" | "hatch_pattern_def" | "neighborhood_mass" | "neighborhood_import_session" | "concept_seed" | "project_settings" | ... 83 more ... | "brand_template"' is not assignable to parameter of type 'PlanSemanticKind'.
+  Type '"toposolid"' is not assignable to type 'PlanSemanticKind'.
+Error: src/plan/PlanCanvas.tsx(4579,8): error TS2367: This comparison appears to be unintentional because the types 'PlanTool' and '"move"' have no overlap.
+Error: src/plan/PlanCanvas.tsx(4639,8): error TS2367: This comparison appears to be unintentional because the types 'PlanTool' and '"move"' have no overlap.
+Error: src/plan/PlanCanvas.tsx(4656,8): error TS2367: This comparison appears to be unintentional because the types 'PlanTool' and '"rotate"' have no overlap.
+Error: src/workspace/OptionsBar.tsx(302,7): error TS2367: This comparison appears to be unintentional because the types '"toposolid_subdivision" | "door" | "window" | "room" | "dimension" | "column" | "beam" | "ceiling" | "elevation" | "shaft" | "align" | "split" | "trim" | "wall-join" | "wall-opening" | ... 13 more ... | "component"' and '"move"' have no overlap.
+Error: src/workspace/ProjectBrowser.test.tsx(25,17): error TS2353: Object literal may only specify known properties, and 'x' does not exist in type 'XYZ'.
+Error: src/workspace/ProjectBrowser.test.tsx(26,15): error TS2353: Object literal may only specify known properties, and 'x' does not exist in type 'XYZ'.
+Error: src/workspace/ProjectBrowser.test.tsx(27,11): error TS2353: Object literal may only specify known properties, and 'x' does not exist in type 'XYZ'.
+Error: src/workspace/ProjectBrowser.test.tsx(50,3): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ImageUnderlayElem'.
+Error: src/workspace/ProjectBrowser.test.tsx(165,21): error TS2353: Object literal may only specify known properties, and 'x' does not exist in type 'XYZ'.
+Error: src/workspace/ProjectBrowser.test.tsx(166,19): error TS2353: Object literal may only specify known properties, and 'x' does not exist in type 'XYZ'.
+Error: src/workspace/ProjectBrowser.test.tsx(167,15): error TS2353: Object literal may only specify known properties, and 'x' does not exist in type 'XYZ'.
+Error: src/workspace/ProjectBrowser.test.tsx(176,21): error TS2353: Object literal may only specify known properties, and 'x' does not exist in type 'XYZ'.
+Error: src/workspace/ProjectBrowser.test.tsx(177,19): error TS2353: Object literal may only specify known properties, and 'x' does not exist in type 'XYZ'.
+Error: src/workspace/ProjectBrowser.test.tsx(178,15): error TS2353: Object literal may only specify known properties, and 'x' does not exist in type 'XYZ'.
+Error: src/workspace/TopBar.tsx(275,81): error TS2345: Argument of type '"section"' is not assignable to parameter of type 'PlanTool'.
+ ELIFECYCLE  Command failed with exit code 2.
+Error: @bim-ai/web#typecheck: command (/home/runner/work/bim-ai/bim-ai/packages/web) /home/runner/setup-pnpm/node_modules/.bin/pnpm run typecheck exited (2)
+ ERROR  @bim-ai/web#typecheck: command (/home/runner/work/bim-ai/bim-ai/packages/web) /home/runner/setup-pnpm/node_modules/.bin/pnpm run typecheck exited (2)
+ WARNING  no output files found for task @bim-ai/core#build. Please check your `outputs` key in `turbo.json`
+ WARNING  no output files found for task @bim-ai/design-tokens#build. Please check your `outputs` key in `turbo.json`
+ WARNING  no output files found for task @bim-ai/icons#build. Please check your `outputs` key in `turbo.json`
+ WARNING  no output files found for task @bim-ai/ui#build. Please check your `outputs` key in `turbo.json`
+ ERROR  run failed: command  exited (2)
+
+ Tasks:    11 successful, 12 total
+Cached:    0 cached, 12 total
+  Time:    31.165s 
+Failed:    @bim-ai/web#typecheck
+
+ ELIFECYCLE  Command failed with exit code 2.
+ ELIFECYCLE  Command failed with exit code 2.
+Error: Process completed with exit code 2.
