@@ -26,6 +26,8 @@ export function WorkspaceLeftRail({
   const setActiveLevelId = useBimStore((s) => s.setActiveLevelId);
   const selectedId = useBimStore((s) => s.selectedId);
   const select = useBimStore((s) => s.select);
+  const setOrbitCameraFromViewpointMm = useBimStore((s) => s.setOrbitCameraFromViewpointMm);
+  const setActiveViewpointId = useBimStore((s) => s.setActiveViewpointId);
 
   const browserSections = useMemo(() => buildBrowserSections(elementsById), [elementsById]);
 
@@ -138,6 +140,14 @@ export function WorkspaceLeftRail({
               openTabFromElement(el);
               onModeChange('3d');
               select(id);
+              if (el.mode === 'orbit_3d' && el.camera) {
+                setOrbitCameraFromViewpointMm({
+                  position: el.camera.position,
+                  target: el.camera.target,
+                  up: el.camera.up,
+                });
+                setActiveViewpointId(el.id);
+              }
               return;
             }
             if (el.kind === 'section_cut') {
