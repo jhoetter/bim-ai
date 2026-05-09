@@ -21,7 +21,7 @@ design ?= default
 .PHONY: help install dev dev-api dev-web kill-ports seed \
 	db-up db-down db-reset db-logs \
 	test test-py test-js format format-check python-format-check lint architecture \
-	typecheck verify build clean lockfile-check
+	typecheck verify build clean lockfile-check verify-refinement-reliability
 
 help:
 	@echo "bim-ai Makefile"
@@ -125,6 +125,9 @@ build:
 
 verify: format-check python-format-check lint architecture typecheck test build lockfile-check
 	@echo "verify: PASS"
+
+verify-refinement-reliability:
+	cd app && .venv/bin/python -m pytest tests/agent/refinement_reliability/ -v --no-cov -m "not integration"
 
 clean:
 	$(PNPM) -w turbo clean || true
