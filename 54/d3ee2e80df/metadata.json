@@ -3,21 +3,30 @@
   "checkpoint_id": "54d3ee2e80df",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 1,
-  "files_touched": null,
+  "checkpoints_count": 2,
+  "files_touched": [
+    "packages/web/src/i18n.ts",
+    "packages/web/src/workspace/Inspector.tsx"
+  ],
   "sessions": [
     {
       "metadata": "/54/d3ee2e80df/0/metadata.json",
       "transcript": "/54/d3ee2e80df/0/full.jsonl",
       "content_hash": "/54/d3ee2e80df/0/content_hash.txt",
       "prompt": "/54/d3ee2e80df/0/prompt.txt"
+    },
+    {
+      "metadata": "/54/d3ee2e80df/1/metadata.json",
+      "transcript": "/54/d3ee2e80df/1/full.jsonl",
+      "content_hash": "/54/d3ee2e80df/1/content_hash.txt",
+      "prompt": "/54/d3ee2e80df/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 8160,
-    "cache_creation_tokens": 4680674,
-    "cache_read_tokens": 320580346,
-    "output_tokens": 1399947,
-    "api_call_count": 3233
+    "input_tokens": 11652,
+    "cache_creation_tokens": 6138073,
+    "cache_read_tokens": 416066703,
+    "output_tokens": 1950371,
+    "api_call_count": 4240
   }
 }
