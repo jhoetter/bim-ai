@@ -2,13 +2,14 @@
 
 Source: "The Complete Revit 2026 Course for Architectural Design" — 6-hour recorded session analyzed at timestamp level.
 Screenshots: `/Users/jhoetter/Desktop/Revit Specs/` (local only, not committed to git).
-Last updated: 2026-05-08.
+Last updated: 2026-05-09.
 
 ---
 
 ## How to use this tracker
 
 Each chapter file documents a set of Revit features as observed in the video. For each feature:
+
 - **What it does** — plain-language description of the UX and behaviour
 - **Screenshot** — link to the local desktop screenshot from the video
 - **bim-ai status** — current parity level (see legend below)
@@ -16,17 +17,17 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 ### Status legend
 
 | Symbol | Meaning |
-|--------|---------|
-| ✅ | Fully available in bim-ai with equivalent UX |
-| 🟡 | Partially available — backend logic exists but UX / completeness is limited |
-| ❌ | Not available — no equivalent in bim-ai |
+| ------ | ------- |
+| ✅     | Fully available in bim-ai with equivalent UX |
+| 🟡     | Partially available — backend logic exists but UX / completeness is limited |
+| ❌     | Not available — no equivalent in bim-ai |
 
 ---
 
 ## Table of Contents
 
 | Chapter | Topic | Features |
-|---------|-------|----------|
+| ------- | ----- | -------- |
 | [Ch 01](ch01-ui-navigation.md) | UI & Navigation | F-001 – F-014 |
 | [Ch 02](ch02-cad-linking.md) | CAD Linking & Import | F-015 – F-024 |
 | [Ch 03](ch03-levels-views.md) | Levels & Plan Views | F-025 – F-033 |
@@ -46,128 +47,128 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 
 > **Paradigm note — F-001 & F-002 excluded intentionally.** Revit's Home Screen and New Project Dialog are not parity targets. bim-ai uses a **Drive-like file browser** (create/open models like Google Docs) and **continuous versioning with milestones** instead of File → Save (T3 COL-V3-01/02). See `ch01-ui-navigation.md` for the full rationale.
 
-| ID | Feature | Chapter | bim-ai Status | Notes |
-|----|---------|---------|---------------|-------|
-| F-003 | Project Browser | UI & Nav | 🟡 | Plan views, 3D/section/elevation/sheet/schedule groups exist; no families/groups/legends subtree, no per-view rename/delete |
-| F-004 | Properties Palette (context-sensitive) | UI & Nav | 🟡 | Basic inspector exists; no full param model |
-| F-005 | Ribbon Interface (tabbed toolbar) | UI & Nav | ❌ | Different UI paradigm |
-| F-006 | Quick Access Toolbar | UI & Nav | ❌ | |
-| F-007 | Multi-tab view workspace | UI & Nav | 🟡 | TabBar + tabsModel (plan/3d/section/sheet/schedule/agent); missing Close Inactive Views |
-| F-008 | Dark Mode | UI & Nav | ✅ | Full toggle with URL hash + localStorage + prefers-color-scheme cascade |
-| F-009 | Language settings | UI & Nav | 🟡 | EN/DE toggle via command palette (localStorage); no settings dialog or language indicator |
-| F-010 | View Scale selector | UI & Nav | ❌ | No annotation-driven scales |
-| F-011 | Visual Style selector (Wireframe/Shaded/etc.) | UI & Nav | 🟡 | Some render modes exist; not per-view-type |
-| F-012 | Visibility / Graphic Overrides (VV) | UI & Nav | 🟡 | VVDialog has model/annotation/filters/links tabs; 13 model + 7 annotation categories; missing full 120-category Revit set |
-| F-013 | Autodesk Account & License UI | UI & Nav | ❌ | N/A (different SaaS model) |
-| F-014 | Reveal Hidden Elements mode | UI & Nav | ❌ | |
-| F-015 | Link CAD (DWG/DXF) — live reference | CAD | 🟡 | DXF import only, no live link/reload |
-| F-016 | Import CAD (embedded) | CAD | 🟡 | One-time DXF import exists |
-| F-017 | CAD Link Options (Colors/Layers/Units/Positioning) | CAD | ❌ | No filter UI |
-| F-018 | Pin / Unpin linked files | CAD | ❌ | |
-| F-019 | Query tool for DWG layer visibility | CAD | ❌ | |
-| F-020 | Halftone / transparency for imported files (VG) | CAD | ❌ | |
-| F-021 | Align CAD with Project Base Point | CAD | ❌ | |
-| F-022 | Project Base Point & Survey Point | CAD | ❌ | |
-| F-023 | Work Plane assignment for linked elements | CAD | ❌ | |
-| F-024 | Manage Links dialog | CAD | 🟡 | ManageLinksDialog lists link_model rows with delete/alignment/visibility/pin controls; missing IFC/PDF/image types |
-| F-025 | Levels (datum planes) | Levels & Views | 🟡 | Data model exists; level head/symbol UX missing |
-| F-026 | Rename Levels | Levels & Views | ❌ | No interactive rename UI |
-| F-027 | Create Floor Plan Views from levels | Levels & Views | ❌ | |
-| F-028 | Floor Plan View Types (Arch/Lighting/Power/etc.) | Levels & Views | ❌ | |
-| F-029 | View Templates | Levels & Views | ❌ | |
-| F-030 | Rename Views | Levels & Views | ❌ | |
-| F-031 | Delete Views | Levels & Views | ❌ | |
-| F-032 | Project Browser view organization by Discipline | Levels & Views | ❌ | |
-| F-033 | Auto-generated elevation markers (N/S/E/W) | Levels & Views | 🟡 | elevation tool registered; ProjectBrowser has Elevations group; auto-generation of 4 cardinal markers missing |
-| F-034 | Wall Tool (draw by click) | Walls | 🟡 | Backend supports walls; interactive draw UX limited |
-| F-035 | Wall Types / Type Selector | Walls | 🟡 | Type data exists; no rich type-selector UI library |
-| F-036 | Edit Wall Assembly (layer structure) | Walls | 🟡 | MaterialLayerStackWorkbench supports multi-layer wall/floor/roof types; missing layer wrapping behavior UI |
-| F-037 | Wall Location Line (Centerline/Core/Finish Face) | Walls | ✅ | OptionsBar has all 6 location-line options for the wall tool |
-| F-038 | Wall Height / Top Constraint (level-linked) | Walls | 🟡 | Height data exists; no Options Bar control |
-| F-039 | Wall Top Offset / Bottom Offset | Walls | ❌ | |
-| F-040 | Wall Join Status (Allow/Disallow) | Walls | 🟡 | Join logic in engine; no user-facing toggle |
-| F-041 | Chain drawing mode | Walls | ✅ | TOOL_CAPABILITIES.wall.chainable=true; OptionsBar Chain checkbox; PlanCanvas chainAnchor logic |
-| F-042 | Offset drawing mode | Walls | ❌ | |
-| F-043 | Radius (curved corner) drawing mode | Walls | ❌ | |
-| F-044 | Spacebar flip wall orientation | Walls | ❌ | |
-| F-045 | Measure Between Two References | Walls | ❌ | |
-| F-046 | Wall Type renaming | Walls | ❌ | |
-| F-047 | Temporary Hide / Isolate (sunglasses) | Walls | ✅ | TemporaryVisibilityChip with isolate/hide modes and reset; store-backed |
-| F-048 | Family Editor workspace | Family Editor | ❌ | No in-app parametric family editor |
-| F-049 | Family templates (.rft files) | Family Editor | ❌ | |
-| F-050 | Reference Planes | Family Editor | ❌ | |
-| F-051 | Extrusion tool | Family Editor | ❌ | |
-| F-052 | Pick Lines with Lock (sketch mode) | Family Editor | ❌ | |
-| F-053 | Trim / Extend to Corner (TR) | Family Editor | 🟡 | trim tool registered as MODIFY_TOOL_IDS; full canvas interaction not confirmed |
-| F-054 | Aligned Dimension (DI) + Create Parameter | Family Editor | ❌ | |
-| F-055 | Type vs. Instance Parameters | Family Editor | ❌ | |
-| F-056 | Family Types dialog | Family Editor | ❌ | |
-| F-057 | Material Browser | Family Editor | ❌ | No visual material browser |
-| F-058 | Asset Browser (Autodesk material library) | Family Editor | ❌ | |
-| F-059 | Family Element Visibility Settings | Family Editor | ❌ | |
-| F-060 | Load Family Into Project | Family Editor | ❌ | |
-| F-061 | Wall-hosted family placement (door/window) | Family Editor | ❌ | No automatic opening cuts |
-| F-062 | Type Properties – Duplicate | Family Editor | ❌ | |
-| F-063 | Nested Families | Nested Fam. | ❌ | |
-| F-064 | Overwrite options when reloading families | Nested Fam. | ❌ | |
-| F-065 | Family Category and Parameters dialog | Nested Fam. | ❌ | |
-| F-066 | View Range in Family Editor | Nested Fam. | ❌ | |
-| F-067 | Detail Component (2D annotation component) | Nested Fam. | ❌ | |
-| F-068 | Align Tool (AL) + Lock | Nested Fam. | 🟡 | align tool registered as MODIFY_TOOL_IDS; full canvas interaction not confirmed |
-| F-069 | Associate Family Parameter (Visible) | Nested Fam. | ❌ | |
-| F-070 | Mirror – Draw Axis (DM) | Nested Fam. | 🟡 | mirror tool registered as MODIFY_TOOL_IDS; full canvas interaction not confirmed |
-| F-071 | Symbolic Lines | Nested Fam. | ❌ | |
-| F-072 | Opening (Projection) / Hidden Lines (Cut) subcategories | Nested Fam. | ❌ | |
-| F-073 | Preview Visibility toggle (Family Editor) | Nested Fam. | ❌ | |
-| F-074 | Instance parameters for per-placement overrides | Nested Fam. | ❌ | |
-| F-075 | Family from furniture template (Metric Furniture.rft) | Param. Furn. | ❌ | |
-| F-076 | EQ (Equal) constraint on dimensions | Param. Furn. | ❌ | |
-| F-077 | Masking Region | Param. Furn. | ❌ | |
-| F-078 | Yes/No parameter for conditional visibility | Param. Furn. | ❌ | |
-| F-079 | Symbolic Lines for 2D furniture | Param. Furn. | ❌ | |
-| F-080 | Snap Intersection (SI) shortcut | Param. Furn. | ❌ | |
-| F-081 | Multiple Types per family (New Type button) | Param. Furn. | ❌ | |
-| F-082 | Extrusion from elevation (height parameters) | Param. Furn. | ❌ | |
-| F-083 | Leg geometry: circle extrusion + Leg_Radius parameter | Param. Furn. | ❌ | |
-| F-084 | Leg_Offset parameter | Param. Furn. | ❌ | |
-| F-085 | Detail Level control (Coarse=2D / Medium+Fine=3D) | Param. Furn. | ❌ | |
-| F-086 | Backrest Depth parameter | Param. Furn. | ❌ | |
-| F-087 | Project Furniture Library (warehouse .rvt) | Furn. Library | ❌ | family_catalog_format exists but no warehouse UX |
-| F-088 | Dimension text repositioning | Furn. Library | ❌ | |
-| F-089 | Array parameters (Array_Length_Width) | Furn. Library | ❌ | |
-| F-090 | File Save Options (Max backups) | Furn. Library | ❌ | N/A (DB model) |
-| F-091 | Room Tool | Rooms & Areas | 🟡 | tool registered; PlanCanvas has click-to-place vertex logic; missing auto-snap-to-boundary UX |
-| F-092 | Room Separation Lines | Rooms & Areas | 🟡 | RoomSeparationAuthoringWorkbench exists with form-based authoring; missing interactive canvas draw |
-| F-093 | Room Interior Fill visibility (VG) | Rooms & Areas | ❌ | |
-| F-094 | Area Boundary Lines | Rooms & Areas | ❌ | |
-| F-095 | Area Tool | Rooms & Areas | ❌ | |
-| F-096 | Area and Volume Computations dialog | Rooms & Areas | ❌ | |
-| F-097 | Apply Area Rules toggle | Rooms & Areas | ❌ | |
-| F-098 | Area Plan (Gross Building) view type | Rooms & Areas | ❌ | |
-| F-099 | Discipline property for views | Rooms & Areas | ❌ | |
-| F-100 | Filter tool (multi-select type filter) | Troubleshoot | ❌ | |
-| F-101 | Isolate Category | Troubleshoot | ✅ | TemporaryVisibilityChip isolate mode via setTemporaryVisibility store action |
-| F-102 | Hide Category (permanent, view-specific) | Troubleshoot | 🟡 | TemporaryVisibilityChip hide mode exists; permanent view-specific persistence and Reveal Hidden mode missing |
-| F-103 | Move tool (MV) — two-point with snap | Troubleshoot | 🟡 | Drag exists; no typed two-point Move |
-| F-104 | Tab key for chain-selection | Troubleshoot | 🟡 | snapTabCycle.ts (EDT-05) cycles snap candidates via Tab; wall-loop chain-selection missing |
-| F-105 | Split Element (SL) | Troubleshoot | 🟡 | split tool registered as MODIFY_TOOL_IDS; full canvas interaction not confirmed |
-| F-106 | Aligned Dimension for cross-checking accuracy | Troubleshoot | 🟡 | dimension tool registered; annotation category in VVDialog; interactive DI placement not confirmed |
-| F-107 | Floor Tool & Edit Boundary | Floors | 🟡 | floor-sketch tool registered; floors exist; full Edit Boundary sketch mode missing |
-| F-108 | Floor type selection | Floors | 🟡 | Type data in engine; no UI type-selector |
-| F-109 | Parapet walls (Unconnected Height) | Floors | 🟡 | Walls support arbitrary height; no parapet UX |
-| F-110 | Wall Top Offset (negative, sub-slab) | Floors | ❌ | |
-| F-111 | 3D View rotation (Shift + Middle Click) | Floors | 🟡 | 3D viewport exists; mouse nav convention may differ |
-| F-112 | Default {3D} isometric view | Floors | 🟡 | 3D canvas exists; not a named Project Browser view |
-| F-113 | Graphic Display Options (shadows, depth cue, etc.) | Floors | ❌ | |
-| F-114 | Placing component families in project | Furn. Place | ❌ | No interactive placement with live preview |
-| F-115 | Spacebar rotation during placement | Furn. Place | ❌ | |
-| F-116 | Copy (CO) tool | Furn. Place | 🟡 | Duplication exists; not a two-point Copy command |
-| F-117 | Parametric living room sofa family | Furn. Place | ❌ | |
-| F-118 | Parametric kitchen slab family | Furn. Place | ❌ | |
-| F-119 | Parametric bathroom layout family | Furn. Place | ❌ | |
-| F-120 | Parametric bed family (2D) | Furn. Place | ❌ | |
-| F-121 | Align tool (AL) for furniture-to-wall | Furn. Place | ❌ | |
-| F-122 | Rotate tool (about user-defined center) | Furn. Place | ❌ | |
+| ID    | Feature                                              | Chapter        | bim-ai Status | Notes                                                                                                                |
+| ----- | ---------------------------------------------------- | -------------- | ------------- | -------------------------------------------------------------------------------------------------------------------- |
+| F-003 | Project Browser                                      | UI & Nav       | 🟡            | Plan views, 3D/section/elevation/sheet/schedule groups exist; no families/groups/legends subtree                     |
+| F-004 | Properties Palette (context-sensitive)               | UI & Nav       | 🟡            | Right-rail inspector with editable fields; missing type/instance separation and Edit Type button                     |
+| F-005 | Ribbon Interface (tabbed toolbar)                    | UI & Nav       | ❌            | Different UI paradigm                                                                                                |
+| F-006 | Quick Access Toolbar                                 | UI & Nav       | ❌            |                                                                                                                      |
+| F-007 | Multi-tab view workspace                             | UI & Nav       | 🟡            | TabBar + tabsModel (plan/3d/section/sheet/schedule/agent); missing Close Inactive Views                              |
+| F-008 | Dark Mode                                            | UI & Nav       | ✅            | Full toggle with URL hash + localStorage + prefers-color-scheme cascade                                              |
+| F-009 | Language settings                                    | UI & Nav       | 🟡            | EN/DE toggle via command palette (localStorage); no settings dialog or language indicator                            |
+| F-010 | View Scale selector                                  | UI & Nav       | ✅            | Live 1:N scale bar + preset menu; missing annotation-driven plot scale lock                                          |
+| F-011 | Visual Style selector (Wireframe/Shaded/etc.)        | UI & Nav       | 🟡            | Plan detail level + plan style selectors; 3D has no Visual Style dropdown                                            |
+| F-012 | Visibility / Graphic Overrides (VV)                  | UI & Nav       | 🟡            | VVDialog has model/annotation/filters/links tabs; 13 model + 8 annotation categories; missing full 120-category set  |
+| F-013 | Autodesk Account & License UI                        | UI & Nav       | ❌            | N/A (different SaaS model)                                                                                           |
+| F-014 | Reveal Hidden Elements mode                          | UI & Nav       | ❌            |                                                                                                                      |
+| F-015 | Link CAD (DWG/DXF) — live reference                 | CAD            | 🟡            | DXF import backend implemented; frontend file-picker stubbed; no live reload                                         |
+| F-016 | Import CAD (embedded)                                | CAD            | 🟡            | Same backend as F-015; linked vs. embedded distinction not present; frontend stubbed                                  |
+| F-017 | CAD Link Options (Colors/Layers/Units/Positioning)   | CAD            | ❌            | No layer/color/positioning filter UI                                                                                 |
+| F-018 | Pin / Unpin linked files                             | CAD            | 🟡            | ManageLinksDialog has revision pinning with drift badge + Update button; no spatial position lock                    |
+| F-019 | Query tool for DWG layer visibility                  | CAD            | ❌            | DXF layer metadata not preserved; no per-layer visibility UI                                                         |
+| F-020 | Halftone / transparency for imported files (VG)      | CAD            | 🟡            | DXF underlays hardcoded at 50% opacity; no per-link opacity slider in VG                                             |
+| F-021 | Align CAD with Project Base Point                    | CAD            | 🟡            | ManageLinksDialog has origin/project base point/shared coords for link_model; missing for link_dxf                   |
+| F-022 | Project Base Point & Survey Point                    | CAD            | 🟡            | First-class elements in core; 3D markers rendered; missing plan 2D annotation and Clip/Unclip toggle                 |
+| F-023 | Work Plane assignment for linked elements            | CAD            | ❌            |                                                                                                                      |
+| F-024 | Manage Links dialog                                  | CAD            | 🟡            | ManageLinksDialog lists link_model rows with delete/alignment/visibility/pin controls; missing IFC/PDF/image types   |
+| F-025 | Levels (datum planes)                                | Levels & Views | 🟡            | LevelStack with inline create and rename; missing level head symbols in elevation/section views                       |
+| F-026 | Rename Levels                                        | Levels & Views | ✅            | LevelStack inline rename via double-click; commits via updateElementProperty                                         |
+| F-027 | Create Floor Plan Views from levels                  | Levels & Views | ✅            | LevelStack "+" per level fires upsertPlanView; newly created views appear in Project Browser                         |
+| F-028 | Floor Plan View Types (Arch/Lighting/Power/etc.)     | Levels & Views | ❌            |                                                                                                                      |
+| F-029 | View Templates                                       | Levels & Views | 🟡            | view_template elements in ProjectBrowser; create/duplicate/delete/apply; missing save-current-as-template            |
+| F-030 | Rename Views                                         | Levels & Views | ✅            | ProjectBrowser inline rename for plan views via double-click; commits via updateElementProperty                      |
+| F-031 | Delete Views                                         | Levels & Views | ✅            | ProjectBrowser delete buttons for plan views, section cuts, and elevation views; guarded by confirm()                |
+| F-032 | Project Browser view organization by Discipline      | Levels & Views | 🟡            | Discipline-header grouping when views have explicit arch/struct/mep tags; missing full Revit hierarchy               |
+| F-033 | Auto-generated elevation markers (N/S/E/W)           | Levels & Views | 🟡            | ProjectBrowser shows elevation_view rows with rename/delete; auto-generation of 4 cardinal markers missing           |
+| F-034 | Wall Tool (draw by click)                            | Walls          | ✅            | Full interactive draw mode: click-to-place, real-time preview, snap, chain, flip, type/height/location-line options  |
+| F-035 | Wall Types / Type Selector                           | Walls          | ✅            | OptionsBar "Type:" dropdown lists all wall_type elements; selection stored in useBimStore.activeWallTypeId           |
+| F-036 | Edit Wall Assembly (layer structure)                 | Walls          | 🟡            | MaterialLayerStackWorkbench supports multi-layer wall/floor/roof types; missing layer wrapping behavior UI           |
+| F-037 | Wall Location Line (Centerline/Core/Finish Face)     | Walls          | ✅            | OptionsBar has all 6 location-line options for the wall tool                                                         |
+| F-038 | Wall Height / Top Constraint (level-linked)          | Walls          | ✅            | OptionsBar Height input (step 100, min 100); wallDrawHeightMm in store; passed as heightMm to createWall            |
+| F-039 | Wall Top Offset / Bottom Offset                      | Walls          | ✅            | InspectorContent wall case has editable Base Offset and Top Offset inputs; fires updateElementProperty               |
+| F-040 | Wall Join Status (Allow/Disallow)                    | Walls          | 🟡            | wall-join tool cycles miter/butt/square variants via Enter; no per-endpoint Allow/Disallow toggle                    |
+| F-041 | Chain drawing mode                                   | Walls          | ✅            | TOOL_CAPABILITIES.wall.chainable=true; OptionsBar Chain checkbox; PlanCanvas chainAnchor logic                       |
+| F-042 | Offset drawing mode                                  | Walls          | ✅            | OptionsBar wall offset input; wallDrawOffsetMm in store; perpendicular shift applied in PlanCanvas                   |
+| F-043 | Radius (curved corner) drawing mode                  | Walls          | ❌            |                                                                                                                      |
+| F-044 | Spacebar flip wall orientation                       | Walls          | ✅            | PlanCanvas handles Space during wall draw; toggles wallFlipRef; resets after commit                                  |
+| F-045 | Measure Between Two References                       | Walls          | ✅            | measure tool (hotkey ME); two-click distance readout chip; no permanent element                                      |
+| F-046 | Wall Type renaming                                   | Walls          | ✅            | WorkspaceLeftRail F2 rename overlay for wall_type/floor_type/roof_type; commits via updateElementProperty            |
+| F-047 | Temporary Hide / Isolate (sunglasses)                | Walls          | ✅            | TemporaryVisibilityChip with isolate/hide modes and reset; store-backed                                              |
+| F-048 | Family Editor workspace                              | Family Editor  | ❌            | No in-app parametric family editor                                                                                   |
+| F-049 | Family templates (.rft files)                        | Family Editor  | ❌            |                                                                                                                      |
+| F-050 | Reference Planes                                     | Family Editor  | ❌            |                                                                                                                      |
+| F-051 | Extrusion tool                                       | Family Editor  | ❌            |                                                                                                                      |
+| F-052 | Pick Lines with Lock (sketch mode)                   | Family Editor  | ❌            |                                                                                                                      |
+| F-053 | Trim / Extend to Corner (TR)                         | Family Editor  | ❌            | No 2D sketch cleanup tools                                                                                           |
+| F-054 | Aligned Dimension (DI) + Create Parameter            | Family Editor  | ❌            |                                                                                                                      |
+| F-055 | Type vs. Instance Parameters                         | Family Editor  | ❌            |                                                                                                                      |
+| F-056 | Family Types dialog                                  | Family Editor  | ❌            |                                                                                                                      |
+| F-057 | Material Browser                                     | Family Editor  | ❌            | No visual material browser                                                                                           |
+| F-058 | Asset Browser (Autodesk material library)            | Family Editor  | ❌            |                                                                                                                      |
+| F-059 | Family Element Visibility Settings                   | Family Editor  | ❌            |                                                                                                                      |
+| F-060 | Load Family Into Project                             | Family Editor  | ❌            |                                                                                                                      |
+| F-061 | Wall-hosted family placement (door/window)           | Family Editor  | ❌            | No automatic opening cuts                                                                                            |
+| F-062 | Type Properties – Duplicate                          | Family Editor  | ❌            |                                                                                                                      |
+| F-063 | Nested Families                                      | Nested Fam.   | ❌            |                                                                                                                      |
+| F-064 | Overwrite options when reloading families            | Nested Fam.   | ❌            |                                                                                                                      |
+| F-065 | Family Category and Parameters dialog                | Nested Fam.   | ❌            |                                                                                                                      |
+| F-066 | View Range in Family Editor                          | Nested Fam.   | ❌            |                                                                                                                      |
+| F-067 | Detail Component (2D annotation component)           | Nested Fam.   | ❌            |                                                                                                                      |
+| F-068 | Align Tool (AL) + Lock                               | Nested Fam.   | ❌            | No interactive align + lock in family editor context                                                                 |
+| F-069 | Associate Family Parameter (Visible)                 | Nested Fam.   | ❌            |                                                                                                                      |
+| F-070 | Mirror – Draw Axis (DM)                              | Nested Fam.   | ❌            |                                                                                                                      |
+| F-071 | Symbolic Lines                                       | Nested Fam.   | ❌            |                                                                                                                      |
+| F-072 | Opening (Projection) / Hidden Lines (Cut) subcats   | Nested Fam.   | ❌            |                                                                                                                      |
+| F-073 | Preview Visibility toggle (Family Editor)            | Nested Fam.   | ❌            |                                                                                                                      |
+| F-074 | Instance parameters for per-placement overrides      | Nested Fam.   | ❌            |                                                                                                                      |
+| F-075 | Family from furniture template (Metric Furniture.rft)| Param. Furn.  | ❌            |                                                                                                                      |
+| F-076 | EQ (Equal) constraint on dimensions                  | Param. Furn.  | ❌            |                                                                                                                      |
+| F-077 | Masking Region                                       | Param. Furn.  | ❌            |                                                                                                                      |
+| F-078 | Yes/No parameter for conditional visibility          | Param. Furn.  | ❌            |                                                                                                                      |
+| F-079 | Symbolic Lines for 2D furniture                      | Param. Furn.  | ❌            |                                                                                                                      |
+| F-080 | Snap Intersection (SI) shortcut                      | Param. Furn.  | ❌            |                                                                                                                      |
+| F-081 | Multiple Types per family (New Type button)          | Param. Furn.  | ❌            |                                                                                                                      |
+| F-082 | Extrusion from elevation (height parameters)         | Param. Furn.  | ❌            |                                                                                                                      |
+| F-083 | Leg geometry: circle extrusion + Leg_Radius param    | Param. Furn.  | ❌            |                                                                                                                      |
+| F-084 | Leg_Offset parameter                                 | Param. Furn.  | ❌            |                                                                                                                      |
+| F-085 | Detail Level control (Coarse=2D / Medium+Fine=3D)    | Param. Furn.  | ❌            |                                                                                                                      |
+| F-086 | Backrest Depth parameter                             | Param. Furn.  | ❌            |                                                                                                                      |
+| F-087 | Project Furniture Library (warehouse .rvt)           | Furn. Library | ❌            | family_catalog_format exists but no warehouse UX                                                                     |
+| F-088 | Dimension text repositioning                         | Furn. Library | ❌            |                                                                                                                      |
+| F-089 | Array parameters (Array_Length_Width)                | Furn. Library | ❌            |                                                                                                                      |
+| F-090 | File Save Options (Max backups)                      | Furn. Library | ❌            | N/A (DB model)                                                                                                       |
+| F-091 | Room Tool                                            | Rooms & Areas | 🟡            | tool registered; PlanCanvas click-to-place vertex logic; room labels via plan view inspector; missing auto-snap-to-boundary |
+| F-092 | Room Separation Lines                                | Rooms & Areas | 🟡            | SketchCanvas for room_separation; room_separation in VVDialog annotation tab; missing pick-walls shortcut            |
+| F-093 | Room Interior Fill visibility (VG)                   | Rooms & Areas | 🟡            | room category in VV; planRoomFillOpacityScale slider in InspectorPlanViewEditor; missing per-room-instance color override |
+| F-094 | Area Boundary Lines                                  | Rooms & Areas | 🟡            | area-boundary sketch tool (hotkey AR); area_boundary in VVDialog; missing auto-snap to wall faces                   |
+| F-095 | Area Tool                                            | Rooms & Areas | 🟡            | area-boundary sketch tool stores area elements; right-rail shows computed area/rule set; missing auto-close snap     |
+| F-096 | Area and Volume Computations dialog                  | Rooms & Areas | ❌            |                                                                                                                      |
+| F-097 | Apply Area Rules toggle                              | Rooms & Areas | ❌            |                                                                                                                      |
+| F-098 | Area Plan (Gross Building) view type                 | Rooms & Areas | ❌            |                                                                                                                      |
+| F-099 | Discipline property for views                        | Rooms & Areas | 🟡            | plan views have discipline field editable in InspectorPlanViewEditor; missing full Revit sub-discipline tree         |
+| F-100 | Filter tool (multi-select type filter)               | Troubleshoot   | ❌            |                                                                                                                      |
+| F-101 | Isolate Category                                     | Troubleshoot   | ✅            | TemporaryVisibilityChip isolate mode via setTemporaryVisibility store action                                         |
+| F-102 | Hide Category (permanent, view-specific)             | Troubleshoot   | 🟡            | VVDialog permanent per-view category hide + TemporaryVisibilityChip hide mode; no right-click shortcut or Reveal Hidden mode |
+| F-103 | Move tool (MV) — two-point with snap                 | Troubleshoot   | 🟡            | Wall grip drag + Δx/Δy inspector input; missing two-point on-canvas Move for non-wall elements                      |
+| F-104 | Tab key for chain-selection                          | Troubleshoot   | 🟡            | snapTabCycle.ts (EDT-05) cycles snap candidates via Tab; wall-loop chain-selection missing                           |
+| F-105 | Split Element (SL)                                   | Troubleshoot   | ✅            | PlanCanvas split tool; splitWallAt fires on click within 900 mm of wall; SplitWallAtCmd persists                    |
+| F-106 | Aligned Dimension for cross-checking accuracy        | Troubleshoot   | ✅            | dimension tool two-click placement; createDimension persists; rendered by planElementMeshBuilders + symbology        |
+| F-107 | Floor Tool & Edit Boundary                           | Floors         | ✅            | floor-sketch tool (Shift+F) with full SketchCanvas, wall-snap, auto-close, Finish/Cancel; backend creates floor      |
+| F-108 | Floor type selection                                 | Floors         | ✅            | OptionsBar "Type:" select when floor tool active; activeFloorTypeId in store; passed via SketchCanvas to emitter     |
+| F-109 | Parapet walls (Unconnected Height)                   | Floors         | ✅            | Standard wall tool with OptionsBar height and location-line; matches Revit workflow exactly                          |
+| F-110 | Wall Top Offset (negative, sub-slab)                 | Floors         | ✅            | InspectorContent Base Offset and Top Offset support negative values; enables sub-slab placement                      |
+| F-111 | 3D View rotation (Shift + Middle Click)              | Floors         | ✅            | cameraRig.ts classifyPointer returns 'orbit' for Shift+MMB; matches Revit convention                                |
+| F-112 | Default {3D} isometric view                          | Floors         | 🟡            | 3D canvas with orbit/pan/zoom; auto-loads vp-main-iso preset; ViewCube + Home reset; missing QAT 3D button          |
+| F-113 | Graphic Display Options (shadows, depth cue, etc.)   | Floors         | ❌            |                                                                                                                      |
+| F-114 | Placing component families in project                | Furn. Place   | ❌            | No interactive placement with live preview                                                                           |
+| F-115 | Spacebar rotation during placement                   | Furn. Place   | ❌            |                                                                                                                      |
+| F-116 | Copy (CO) tool                                       | Furn. Place   | 🟡            | Ctrl+C/V clipboard copy-paste with offset; missing two-point interactive Copy and multi-copy                         |
+| F-117 | Parametric living room sofa family                   | Furn. Place   | ❌            |                                                                                                                      |
+| F-118 | Parametric kitchen slab family                       | Furn. Place   | ❌            |                                                                                                                      |
+| F-119 | Parametric bathroom layout family                    | Furn. Place   | ❌            |                                                                                                                      |
+| F-120 | Parametric bed family (2D)                           | Furn. Place   | ❌            |                                                                                                                      |
+| F-121 | Align tool (AL) for furniture-to-wall                | Furn. Place   | ❌            |                                                                                                                      |
+| F-122 | Rotate tool (about user-defined center)              | Furn. Place   | ❌            |                                                                                                                      |
 
 ---
 
@@ -175,12 +176,12 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 
 _Last audited: 2026-05-09 against codebase at commit `docs/parity-tracker-audit`._
 
-| Status | Count | % of total |
-|--------|-------|-----------|
-| ✅ Fully available | 5 | 4% |
-| 🟡 Partially available | 30 | 25% |
-| ❌ Not available | 85 | 71% |
-| **Total** | **120** | **100%** |
+| Status                 | Count   | % of total |
+| ---------------------- | ------- | ---------- |
+| ✅ Fully available     | 25      | 21%        |
+| 🟡 Partially available | 30      | 25%        |
+| ❌ Not available       | 65      | 54%        |
+| **Total**              | **120** | **100%**   |
 
 ---
 
