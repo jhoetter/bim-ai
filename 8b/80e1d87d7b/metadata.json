@@ -3,8 +3,9 @@
   "checkpoint_id": "8b80e1d87d7b",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": [
+    "packages/web/src/plan/AnnotateRibbon.tsx",
     "packages/web/src/plan/HelperDimChip.tsx"
   ],
   "sessions": [
@@ -19,13 +20,19 @@
       "transcript": "/8b/80e1d87d7b/1/full.jsonl",
       "content_hash": "/8b/80e1d87d7b/1/content_hash.txt",
       "prompt": "/8b/80e1d87d7b/1/prompt.txt"
+    },
+    {
+      "metadata": "/8b/80e1d87d7b/2/metadata.json",
+      "transcript": "/8b/80e1d87d7b/2/full.jsonl",
+      "content_hash": "/8b/80e1d87d7b/2/content_hash.txt",
+      "prompt": "/8b/80e1d87d7b/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 8175,
-    "cache_creation_tokens": 4925730,
-    "cache_read_tokens": 289857431,
-    "output_tokens": 1542991,
-    "api_call_count": 2929
+    "input_tokens": 9950,
+    "cache_creation_tokens": 6240656,
+    "cache_read_tokens": 376591925,
+    "output_tokens": 2022357,
+    "api_call_count": 3835
   }
 }
