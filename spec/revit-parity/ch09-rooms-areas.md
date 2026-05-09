@@ -103,4 +103,4 @@ This determines where area boundary lines snap relative to wall layers, affectin
 **Screenshot:**
 ![View Discipline](file:///Users/jhoetter/Desktop/Revit%20Specs/0838_05-38-47.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — plan views have a `discipline` field (arch | struct | mep) editable via the right-rail inspector's "Discipline" dropdown in `InspectorPlanViewEditor`. Changing discipline affects the discipline-lens ghost pass in the plan canvas. Missing: automatic view grouping in the Project Browser by discipline subdiscipline tree (F-032), and Revit's Architectural/Structural/Coordination sub-discipline names (bim-ai uses arch/struct/mep tags).
