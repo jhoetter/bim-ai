@@ -37,6 +37,7 @@ from bim_ai.elements import (
     SheetElem,
     SlabOpeningElem,
     StairElem,
+    ToposolidElem,
     ValidationRuleElem,
     ViewTemplateElem,
     WallElem,
@@ -168,6 +169,7 @@ _RULE_DISCIPLINE: dict[str, str] = {
     "floor_overlap": "coordination",
     "slab_opening_missing_floor": "structure",
     "slab_opening_polygon_degenerate": "structure",
+    "toposolid_pierce_check": "site",
     "stair_missing_levels": "architecture",
     "stair_geometry_unreasonable": "architecture",
     "stair_comfort_eu_proxy": "architecture",
@@ -269,6 +271,7 @@ _RULE_BLOCKING_CLASS: dict[str, str] = {
     "floor_overlap": "geometry",
     "slab_opening_missing_floor": "geometry",
     "slab_opening_polygon_degenerate": "geometry",
+    "toposolid_pierce_check": "documentation",
     "room_outline_degenerate": "geometry",
     "room_overlap_plan": "geometry",
     "stair_geometry_unreasonable": "geometry",
@@ -3159,9 +3162,58 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
     viols.extend(_room_boundary_open_violations(elements))
     viols.extend(_monitored_source_drift_advisory_violations(elements))
     viols.extend(_dormer_overflow_advisory_violations(elements))
+    viols.extend(_toposolid_pierce_check_violations(elements))
     viols.sort(key=lambda v: (v.rule_id, tuple(sorted(v.element_ids)), v.severity))
     annotated = annotate_violation_disciplines(viols)
     return annotate_violation_blocking_classes(annotated)
+
+
+def _toposolid_pierce_check_violations(elements: dict[str, Element]) -> list[Violation]:
+    """TOP-V3-01 — warn when a floor footprint overlaps a toposolid and no slab opening exists.
+
+    A FloorElem whose plan boundary overlaps a ToposolidElem boundary is likely
+    piercing the terrain. The advisory is suppressed when any SlabOpeningElem
+    hosted on that floor is present (indicating a deliberate cut-through).
+    """
+    toposolids = [el for el in elements.values() if isinstance(el, ToposolidElem)]
+    floors = [el for el in elements.values() if isinstance(el, FloorElem)]
+    if not toposolids or not floors:
+        return []
+
+    # Collect floors that have at least one slab opening (suppressed floors).
+    floors_with_openings: set[str] = set()
+    for el in elements.values():
+        if isinstance(el, SlabOpeningElem):
+            floors_with_openings.add(el.host_floor_id)
+
+    out: list[Violation] = []
+    for topo in toposolids:
+        topo_poly = [(p.x_mm, p.y_mm) for p in topo.boundary_mm]
+        if len(topo_poly) < 3:
+            continue
+        for floor in floors:
+            if floor.id in floors_with_openings:
+                continue
+            floor_poly = [(p.x_mm, p.y_mm) for p in floor.boundary_mm]
+            if len(floor_poly) < 3:
+                continue
+            overlap = _polygon_overlap_area_mm2(topo_poly, floor_poly)
+            if overlap <= 1.0:
+                continue
+            out.append(
+                Violation(
+                    rule_id="toposolid_pierce_check",
+                    severity="warning",
+                    message=(
+                        f"Floor '{floor.id}' footprint overlaps toposolid '{topo.id}' "
+                        f"(≈{overlap / 1_000_000.0:.2f} m²). "
+                        "Add a SlabOpening to suppress this advisory."
+                    ),
+                    element_ids=sorted([floor.id, topo.id]),
+                    blocking=False,
+                )
+            )
+    return out
 
 
 def _plan_on_sheet_advisory_violations(

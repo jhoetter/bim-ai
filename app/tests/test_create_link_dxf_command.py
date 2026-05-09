@@ -86,8 +86,10 @@ def test_create_link_dxf_rejects_unknown_level() -> None:
         "originMm": {"xMm": 0.0, "yMm": 0.0},
         "linework": [],
     }
-    with pytest.raises(ValueError, match="must reference an existing Level"):
-        try_commit_bundle(doc, [cmd])
+    ok, new_doc, _cmds, _viols, code = try_commit_bundle(doc, [cmd])
+    assert ok is False, "Expected rejection for unknown levelId"
+    assert new_doc is None
+    assert "must reference an existing Level" in code
 
 
 def test_create_link_dxf_round_trips_wire() -> None:

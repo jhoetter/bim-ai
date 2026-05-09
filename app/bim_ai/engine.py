@@ -76,6 +76,7 @@ from bim_ai.commands import (
     CreateRoomRectangleCmd,
     CreateRoomSeparationCmd,
     CreateSavedViewCmd,
+    CreateScheduleViewCmd,
     CreateSectionCutCmd,
     CreateSheetCmd,
     CreateSlabOpeningCmd,
@@ -161,6 +162,7 @@ from bim_ai.commands import (
     SetElementDisciplineCmd,
     SetElementOverrideCmd,
     SetElementPhaseCmd,
+    SetElementPropCmd,
     SetPrimaryOptionCmd,
     SetRailingBalusterPatternCmd,
     SetRailingHandrailSupportsCmd,
@@ -4309,7 +4311,30 @@ def apply_inplace(
         case CreatePropertyDefinitionCmd():
             els[cmd.id] = PropertyDefinitionElem(
                 kind="property_definition",
-                id=eid,
+                id=cmd.id,
+                key=cmd.key,
+                label=cmd.label,
+                propKind=cmd.prop_kind,
+                enumValues=cmd.enum_values,
+                defaultValue=cmd.default_value,
+                appliesTo=cmd.applies_to,
+                showInSchedule=cmd.show_in_schedule,
+            )
+
+        case SetElementPropCmd():
+            target = els.get(cmd.element_id)
+            if target is None:
+                raise ValueError(
+                    f"set_element_prop.elementId '{cmd.element_id}' not found in document"
+                )
+            existing_props: dict = dict(getattr(target, "props", None) or {})
+            existing_props[cmd.key] = cmd.value
+            els[cmd.element_id] = target.model_copy(update={"props": existing_props})
+
+        case CreateScheduleViewCmd():
+            els[cmd.id] = ScheduleElem(
+                kind="schedule",
+                id=cmd.id,
                 name=cmd.name,
                 category=cmd.category,
                 columns=cmd.columns,

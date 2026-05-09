@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from bim_ai.document import Document
 from bim_ai.elements import ElevationViewElem, LevelElem, Vec2Mm, WallElem
 from bim_ai.engine import try_commit_bundle
@@ -81,18 +79,20 @@ def test_create_elevation_view_default_north():
 
 def test_custom_direction_requires_angle():
     doc = _seed_with_box()
-    with pytest.raises(ValueError, match="customAngleDeg required"):
-        try_commit_bundle(
-            doc,
-            [
-                {
-                    "type": "createElevationView",
-                    "id": "elev-X",
-                    "name": "Oblique",
-                    "direction": "custom",
-                }
-            ],
-        )
+    ok, new_doc, _cmds, _viols, code = try_commit_bundle(
+        doc,
+        [
+            {
+                "type": "createElevationView",
+                "id": "elev-X",
+                "name": "Oblique",
+                "direction": "custom",
+            }
+        ],
+    )
+    assert ok is False, "Expected rejection when direction=custom and customAngleDeg is missing"
+    assert new_doc is None
+    assert "customAngleDeg required" in code
 
 
 def test_elevation_to_section_cut_north_lies_above_box():

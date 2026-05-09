@@ -1932,3 +1932,126 @@ register(
         ),
     )
 )
+
+# ---------------------------------------------------------------------------
+# ANN-V3-01 — Detail-region drawing-mode
+# ---------------------------------------------------------------------------
+
+register(
+    ToolDescriptor(
+        name="draw-detail-region",
+        category="mutation",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "DrawDetailRegionInput",
+            "type": "object",
+            "required": ["id", "viewId", "vertices"],
+            "properties": {
+                "id": {"type": "string"},
+                "viewId": {"type": "string"},
+                "vertices": {
+                    "type": "array",
+                    "minItems": 2,
+                    "items": {
+                        "type": "object",
+                        "required": ["x", "y"],
+                        "properties": {
+                            "x": {"type": "number"},
+                            "y": {"type": "number"},
+                        },
+                    },
+                },
+                "closed": {"type": "boolean", "default": False},
+                "hatchId": {"type": "string"},
+                "lineweightOverride": {"type": "number"},
+                "phaseCreated": {"type": "string"},
+            },
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "DrawDetailRegionOutput",
+            "type": "object",
+            "properties": {
+                "applied": {"type": "boolean"},
+                "newRevision": {"type": "integer"},
+            },
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Detail region created"),
+            "not_found": ExitCode(code=1, meaning="viewId not found in document"),
+            "error": ExitCode(code=1, meaning="Unexpected error"),
+        },
+        cliExample="bim-ai apply-bundle bundle.json  # bundle contains create_detail_region",
+        restEndpoint=RestEndpoint(method="POST", path="/api/v3/models/{modelId}/bundles"),
+        sideEffects="mutates-kernel",
+        agentSafetyNotes=(
+            "ANN-V3-01: creates a DetailRegionElem on the target view. "
+            "vertices is a list of {x, y} plan-mm points. "
+            "closed=true fills the region with the optional hatch pattern."
+        ),
+    )
+)
+
+# ---------------------------------------------------------------------------
+# MAT-V3-01 — Material PBR map slots
+# ---------------------------------------------------------------------------
+
+register(
+    ToolDescriptor(
+        name="update-material-pbr",
+        category="mutation",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "UpdateMaterialPbrInput",
+            "type": "object",
+            "required": ["id"],
+            "properties": {
+                "id": {"type": "string", "description": "ID of the MaterialElem to update."},
+                "albedoMapId": {
+                    "type": "string",
+                    "description": "ID of the image asset to use as the albedo (diffuse) map.",
+                },
+                "normalMapId": {
+                    "type": "string",
+                    "description": "ID of the image asset to use as the normal map.",
+                },
+                "roughnessMapId": {
+                    "type": "string",
+                    "description": "ID of the image asset to use as the roughness map.",
+                },
+                "metalnessMapId": {
+                    "type": "string",
+                    "description": "ID of the image asset to use as the metalness map.",
+                },
+                "aoMapId": {
+                    "type": "string",
+                    "description": "ID of the image asset to use as the ambient-occlusion map.",
+                },
+            },
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "UpdateMaterialPbrOutput",
+            "type": "object",
+            "properties": {
+                "applied": {"type": "boolean"},
+                "newRevision": {"type": "integer"},
+            },
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Material PBR maps updated"),
+            "not_found": ExitCode(code=1, meaning="materialId not found in document"),
+            "error": ExitCode(code=1, meaning="Unexpected error"),
+        },
+        cliExample="bim-ai apply-bundle bundle.json  # bundle contains update_material_pbr",
+        restEndpoint=RestEndpoint(method="POST", path="/api/v3/models/{modelId}/bundles"),
+        sideEffects="mutates-kernel",
+        agentSafetyNotes=(
+            "MAT-V3-01: patches PBR map slot IDs on an existing MaterialElem. "
+            "Only provided fields are updated; omitted fields are left unchanged. "
+            "Image asset IDs are opaque strings — they are not validated against an asset registry."
+        ),
+    )
+)

@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from bim_ai.document import Document
 from bim_ai.elements import GridLineElem, LevelElem, Vec2Mm, WallElem
 from bim_ai.engine import is_element_pinned, try_commit_bundle
@@ -51,18 +49,20 @@ def test_move_wall_endpoints_refuses_pinned_wall_without_override():
     doc = _seed_doc()
     _, doc1, *_ = try_commit_bundle(doc, [{"type": "pinElement", "elementId": "wall-1"}])
     assert doc1 is not None
-    with pytest.raises(ValueError, match="pinned_element_blocked"):
-        try_commit_bundle(
-            doc1,
-            [
-                {
-                    "type": "moveWallEndpoints",
-                    "wallId": "wall-1",
-                    "start": {"xMm": 100, "yMm": 100},
-                    "end": {"xMm": 5100, "yMm": 100},
-                }
-            ],
-        )
+    ok, new_doc, _cmds, _viols, code = try_commit_bundle(
+        doc1,
+        [
+            {
+                "type": "moveWallEndpoints",
+                "wallId": "wall-1",
+                "start": {"xMm": 100, "yMm": 100},
+                "end": {"xMm": 5100, "yMm": 100},
+            }
+        ],
+    )
+    assert ok is False, "Expected rejection for pinned wall"
+    assert new_doc is None
+    assert "pinned_element_blocked" in code
 
 
 def test_force_pin_override_allows_move_on_pinned_wall():
@@ -91,21 +91,27 @@ def test_pinned_grid_blocks_move_grid_endpoints():
     doc = _seed_doc()
     _, doc1, *_ = try_commit_bundle(doc, [{"type": "pinElement", "elementId": "grid-A"}])
     assert doc1 is not None
-    with pytest.raises(ValueError, match="pinned_element_blocked"):
-        try_commit_bundle(
-            doc1,
-            [
-                {
-                    "type": "moveGridLineEndpoints",
-                    "gridLineId": "grid-A",
-                    "start": {"xMm": 50, "yMm": 0},
-                    "end": {"xMm": 50, "yMm": 10000},
-                }
-            ],
-        )
+    ok, new_doc, _cmds, _viols, code = try_commit_bundle(
+        doc1,
+        [
+            {
+                "type": "moveGridLineEndpoints",
+                "gridLineId": "grid-A",
+                "start": {"xMm": 50, "yMm": 0},
+                "end": {"xMm": 50, "yMm": 10000},
+            }
+        ],
+    )
+    assert ok is False, "Expected rejection for pinned grid line"
+    assert new_doc is None
+    assert "pinned_element_blocked" in code
 
 
 def test_unpin_unknown_element_raises():
     doc = _seed_doc()
-    with pytest.raises(ValueError, match="unpinElement.elementId unknown"):
-        try_commit_bundle(doc, [{"type": "unpinElement", "elementId": "nope"}])
+    ok, new_doc, _cmds, _viols, code = try_commit_bundle(
+        doc, [{"type": "unpinElement", "elementId": "nope"}]
+    )
+    assert ok is False, "Expected rejection for unknown elementId"
+    assert new_doc is None
+    assert "unpinElement.elementId unknown" in code
