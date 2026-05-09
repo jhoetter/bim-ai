@@ -105,9 +105,11 @@ def test_host_gains_link_model_pointing_at_shadow_uuid():
     assert new_host is not None
 
     new_link_ids = set(new_host.elements.keys()) - set(host_before.elements.keys())
-    # internal_origin already existed; the only newly-created element should be
-    # the link_model row.
+    # internal_origin already existed; sun_settings is auto-created by
+    # ensure_sun_settings() inside try_commit; the only truly new element
+    # should be the link_model row.
     new_link_ids.discard("internal_origin")
+    new_link_ids.discard("sun_settings")
     assert len(new_link_ids) == 1
     link = new_host.elements[next(iter(new_link_ids))]
     assert isinstance(link, LinkModelElem)

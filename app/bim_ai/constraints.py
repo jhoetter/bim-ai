@@ -376,6 +376,8 @@ _RULE_BLOCKING_CLASS: dict[str, str] = {
     "prd_closeout_advisor_readiness_status_drift": "evidence",
     "prd_closeout_section_missing_in_readiness": "evidence",
     "prd_closeout_reason_code_drift": "evidence",
+    # coordination
+    "monitored_source_drift": "coordination",
 }
 
 _MATERIAL_CATALOG_AUDIT_RULE_IDS: dict[str, str] = {
