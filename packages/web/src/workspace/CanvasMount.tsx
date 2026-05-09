@@ -48,7 +48,7 @@ export function CanvasMount({
     value: string;
   }) => void | Promise<void>;
 }): JSX.Element {
-  if (mode === 'plan-3d') {
+  if ((mode as string) === 'plan-3d') {
     return (
       <div
         style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', height: '100%', width: '100%' }}

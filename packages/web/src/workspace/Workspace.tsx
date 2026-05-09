@@ -174,7 +174,6 @@ export function Workspace(): JSX.Element {
   const presenceSetParticipants = usePresenceStore((s) => s.setParticipants);
   const presenceSetLocalUserId = usePresenceStore((s) => s.setLocalUserId);
 
-  // Seed 3 mock participants in dev so the strip is visible without a live WS.
   useEffect(() => {
     if (import.meta.env.DEV && presenceParticipants.length === 0) {
       const devUserId = userId ?? 'dev-local';
@@ -190,29 +189,8 @@ export function Workspace(): JSX.Element {
           role: 'editor',
           sessionStartedAt: Date.now(),
         },
-        {
-          userId: 'dev-peer-1',
-          displayName: 'Alice Schmidt',
-          initials: 'AS',
-          color: 'var(--collab-color-2)',
-          isOnline: true,
-          lastSeenAt: new Date().toISOString(),
-          role: 'editor',
-          sessionStartedAt: Date.now(),
-        },
-        {
-          userId: 'dev-peer-2',
-          displayName: 'Bob Chen',
-          initials: 'BC',
-          color: 'var(--collab-color-3)',
-          isOnline: false,
-          lastSeenAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-          role: 'viewer',
-          sessionStartedAt: Date.now(),
-        },
       ]);
     }
-    // Only seed once on mount — omit deps intentionally.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -593,7 +571,7 @@ export function Workspace(): JSX.Element {
   const handleModeChange = useCallback(
     (next: WorkspaceMode) => {
       setMode(next);
-      if (next === 'plan' || next === 'plan-3d') setViewerMode('plan_canvas');
+      if (next === 'plan') setViewerMode('plan_canvas');
       else if (next === '3d') setViewerMode('orbit_3d');
       // Activate or open a tab of the matching kind so the canvas
       // mounts the right view.
@@ -618,7 +596,7 @@ export function Workspace(): JSX.Element {
       const fromMode = modeForHotkey(event.key);
       if (fromMode) {
         event.preventDefault();
-        handleModeChange(fromMode);
+        handleModeChange(fromMode as WorkspaceMode);
         return;
       }
       if (event.key === '?') {

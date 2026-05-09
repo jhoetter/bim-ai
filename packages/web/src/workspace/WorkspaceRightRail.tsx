@@ -59,7 +59,7 @@ export function WorkspaceRightRail({
   const planProjectionPrimitives = useBimStore((s) => s.planProjectionPrimitives);
 
   const el = selectedId ? (elementsById[selectedId] as Element | undefined) : undefined;
-  const show3dLayers = mode === '3d' || mode === 'plan-3d';
+  const show3dLayers = mode === '3d' || (mode as string) === 'plan-3d';
 
   // CHR-V3-06: sibling count for the applies-to radio.
   const siblingCount = useMemo(() => {
@@ -327,7 +327,7 @@ export function WorkspaceRightRail({
               hotkey: 'W',
               label: 'Draw a wall',
               onTrigger: () => {
-                if (mode !== 'plan' && mode !== 'plan-3d') onModeChange('plan');
+                if (mode !== 'plan' && (mode as string) !== 'plan-3d') onModeChange('plan');
                 setPlanTool('wall');
               },
             },
@@ -335,7 +335,7 @@ export function WorkspaceRightRail({
               hotkey: 'D',
               label: 'Insert a door',
               onTrigger: () => {
-                if (mode !== 'plan' && mode !== 'plan-3d') onModeChange('plan');
+                if (mode !== 'plan' && (mode as string) !== 'plan-3d') onModeChange('plan');
                 setPlanTool('door');
               },
             },
@@ -343,7 +343,7 @@ export function WorkspaceRightRail({
               hotkey: 'M',
               label: 'Drop a room marker',
               onTrigger: () => {
-                if (mode !== 'plan' && mode !== 'plan-3d') onModeChange('plan');
+                if (mode !== 'plan' && (mode as string) !== 'plan-3d') onModeChange('plan');
                 setPlanTool('room');
               },
             },
