@@ -1588,11 +1588,11 @@ export function computeWallSectionPolygon(
 
       if (atEnd) {
         endLeftPerp = (miterLeft.x - ex) * px + (miterLeft.y - ey) * py;
-        endRightPerp = -(((miterRight.x - ex) * px + (miterRight.y - ey) * py));
+        endRightPerp = -((miterRight.x - ex) * px + (miterRight.y - ey) * py);
         endOffset = len + (leftAxisOffset + rightAxisOffset) / 2;
       } else {
         startLeftPerp = (miterLeft.x - sx) * px + (miterLeft.y - sy) * py;
-        startRightPerp = -(((miterRight.x - sx) * px + (miterRight.y - sy) * py));
+        startRightPerp = -((miterRight.x - sx) * px + (miterRight.y - sy) * py);
         startOffset = (leftAxisOffset + rightAxisOffset) / 2;
       }
     }
@@ -1656,32 +1656,37 @@ export function planWallSectionMesh(
   outlineLine.renderOrder = 3;
   group.add(outlineLine);
 
-  // --- Hatch (diagonal lines clipped to AABB) ---
-  const xs = outlineMm.map((pt) => pt.xMm);
-  const ys = outlineMm.map((pt) => pt.yMm);
-  const minX = Math.min(...xs),
-    maxX = Math.max(...xs);
-  const minY = Math.min(...ys),
-    maxY = Math.max(...ys);
-  const hatchPositions: number[] = [];
+  // --- Hatch (45° diagonal lines via proper polygon edge intersection) ---
   const hatchColor = readToken('--draft-paper', '#fdfcf9');
   const thick = wall.thicknessMm;
   const spacing = Math.max(20, thick / 3); // mm
-  for (let c = minX - (maxY - minY); c <= maxX + (maxY - minY); c += spacing) {
-    const candidates: [number, number][] = [];
-    const yAtLeft = minX - c;
-    if (yAtLeft >= minY && yAtLeft <= maxY) candidates.push([minX, yAtLeft]);
-    const yAtRight = maxX - c;
-    if (yAtRight >= minY && yAtRight <= maxY) candidates.push([maxX, yAtRight]);
-    const xAtTop = maxY + c;
-    if (xAtTop > minX && xAtTop < maxX) candidates.push([xAtTop, maxY]);
-    const xAtBot = minY + c;
-    if (xAtBot > minX && xAtBot < maxX) candidates.push([xAtBot, minY]);
-    if (candidates.length >= 2) {
-      candidates.sort((a, b) => a[0] - b[0]);
-      const [x0, y0] = candidates[0]!;
-      const [x1, y1] = candidates[candidates.length - 1]!;
-      hatchPositions.push(ux(x0), PLAN_Y + 0.003, -uz(y0), ux(x1), PLAN_Y + 0.003, -uz(y1));
+  const n = outlineMm.length;
+  let minC = Infinity,
+    maxC = -Infinity;
+  for (const pt of outlineMm) {
+    const c = pt.xMm - pt.yMm;
+    if (c < minC) minC = c;
+    if (c > maxC) maxC = c;
+  }
+  const hatchPositions: number[] = [];
+  for (let c = minC; c <= maxC; c += spacing) {
+    const xs: number[] = [];
+    for (let i = 0; i < n; i++) {
+      const p1 = outlineMm[i]!;
+      const p2 = outlineMm[(i + 1) % n]!;
+      const dx = p2.xMm - p1.xMm;
+      const dy = p2.yMm - p1.yMm;
+      const denom = dx - dy;
+      if (Math.abs(denom) < 1e-6) continue;
+      const t = (c - p1.xMm + p1.yMm) / denom;
+      if (t < -1e-9 || t > 1 + 1e-9) continue;
+      xs.push(p1.xMm + t * dx);
+    }
+    xs.sort((a, b) => a - b);
+    for (let j = 0; j + 1 < xs.length; j += 2) {
+      const x0 = xs[j]!;
+      const x1 = xs[j + 1]!;
+      hatchPositions.push(ux(x0), PLAN_Y + 0.003, -uz(x0 - c), ux(x1), PLAN_Y + 0.003, -uz(x1 - c));
     }
   }
   if (hatchPositions.length > 0) {
