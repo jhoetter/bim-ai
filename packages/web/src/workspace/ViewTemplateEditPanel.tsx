@@ -142,14 +142,14 @@ export function ViewTemplateEditPanel({
         <button
           type="button"
           disabled={saving}
-          className="flex-1 rounded bg-[var(--color-accent)] px-3 py-1.5 text-sm text-white disabled:opacity-50 hover:opacity-90"
+          className="flex-1 rounded bg-accent px-3 py-1.5 text-sm text-accent-foreground disabled:opacity-50 hover:opacity-90"
           onClick={handleSave}
         >
           {saving ? 'Saving…' : 'Save'}
         </button>
         <button
           type="button"
-          className="rounded border px-3 py-1.5 text-sm hover:bg-[var(--color-surface-2)]"
+          className="rounded border px-3 py-1.5 text-sm hover:bg-surface-strong"
           onClick={onClose}
         >
           Cancel
