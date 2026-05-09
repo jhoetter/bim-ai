@@ -35,7 +35,7 @@ This chapter covers the practical workflow of furnishing a completed floor plan 
 **Screenshot:**
 ![Copy tool](file:///Users/jhoetter/Desktop/Revit%20Specs/0685_03-55-42.png)
 
-**bim-ai status:** 🟡 Partial (better) — Two-point CP tool now available in the Modify palette: first click sets the reference point, second click places the copy at the exact delta offset. Ctrl+C / Ctrl+V clipboard workflow also remains. Missing: multi-copy (Revit's "Multiple" option for placing several copies in one activation), persistence of clipboard across page reload, and copy to a different level.
+**bim-ai status:** 🟡 Partial (better) — Two-point CP tool now available in the Modify palette: first click sets the reference point, second click places the copy at the exact delta offset. Multi-copy mode implemented: "Multiple" checkbox in the Options Bar (default: on) keeps the tool active after each copy so the user can place further copies without re-activating; Escape once clears the anchor, Escape again exits to select. When "Multiple" is unchecked, original single-copy behavior is used (exit to select after one copy). Ctrl+C / Ctrl+V clipboard workflow also remains. Missing: persistence of clipboard across page reload, and copy to a different level.
 
 ---
 

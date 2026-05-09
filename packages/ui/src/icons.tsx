@@ -3,6 +3,7 @@ import {
   AlertTriangle,
   AlignCenterHorizontal,
   Camera,
+  Copy,
   ChevronDown,
   ChevronRight,
   CircleDot,
@@ -20,6 +21,7 @@ import {
   Menu,
   Moon,
   MousePointer2,
+  Move,
   Layers,
   Redo2,
   RotateCw,
@@ -113,6 +115,7 @@ export const Icons: Record<string, LucideLikeIcon> = {
 
   // Modify tools
   align: AlignCenterHorizontal,
+  copy: Copy,
   measure: Ruler,
   split: Scissors,
   trim: GitMerge,
@@ -120,6 +123,7 @@ export const Icons: Record<string, LucideLikeIcon> = {
   'wall-opening': SquareDashed,
   shaft: Layers,
   mirror: FlipHorizontal2,
+  move: Move,
   rotate: RotateCw,
 
   // Drawing tools — all now BIM-native from @bim-ai/icons
@@ -210,6 +214,7 @@ export const Icons: Record<string, LucideLikeIcon> = {
 export const IconLabels: Record<keyof typeof Icons, string> = {
   select: 'Select',
   align: 'Align',
+  copy: 'Copy',
   measure: 'Measure',
   split: 'Split element',
   trim: 'Trim / Extend',
@@ -217,6 +222,7 @@ export const IconLabels: Record<keyof typeof Icons, string> = {
   'wall-opening': 'Wall Opening',
   shaft: 'Shaft',
   mirror: 'Mirror',
+  move: 'Move',
   rotate: 'Rotate',
   wall: 'Wall',
   door: 'Door',
