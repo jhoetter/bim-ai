@@ -248,6 +248,59 @@ export function polygonAreaMm2(poly: Array<{ xMm: number; yMm: number }>): numbe
   return Math.abs(a / 2);
 }
 
+/** 45° diagonal hatch lines clipped to an arbitrary polygon outline (mm coords).
+ * Uses proper edge-intersection scanline — no AABB bleed at polygon corners. */
+function hatchPolygon2D(
+  pts: Array<{ xMm: number; yMm: number }>,
+  spacingMm: number,
+  yWorld: number,
+  color: string,
+  opacity: number,
+): THREE.LineSegments | null {
+  const n = pts.length;
+  if (n < 3) return null;
+  let minC = Infinity,
+    maxC = -Infinity;
+  for (const p of pts) {
+    const c = p.xMm - p.yMm;
+    if (c < minC) minC = c;
+    if (c > maxC) maxC = c;
+  }
+  const positions: number[] = [];
+  for (let c = minC; c <= maxC; c += spacingMm) {
+    const xs: number[] = [];
+    for (let i = 0; i < n; i++) {
+      const p1 = pts[i]!;
+      const p2 = pts[(i + 1) % n]!;
+      const dx = p2.xMm - p1.xMm;
+      const dy = p2.yMm - p1.yMm;
+      const denom = dx - dy;
+      if (Math.abs(denom) < 1e-6) continue;
+      const t = (c - p1.xMm + p1.yMm) / denom;
+      if (t < -1e-9 || t > 1 + 1e-9) continue;
+      xs.push(p1.xMm + t * dx);
+    }
+    xs.sort((a, b) => a - b);
+    for (let j = 0; j + 1 < xs.length; j += 2) {
+      const x0 = xs[j]!;
+      const x1 = xs[j + 1]!;
+      positions.push(ux(x0), yWorld, -uz(x0 - c), ux(x1), yWorld, -uz(x1 - c));
+    }
+  }
+  if (positions.length === 0) return null;
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3));
+  const mat = new THREE.LineBasicMaterial({
+    color: new THREE.Color(color),
+    transparent: true,
+    opacity,
+    depthTest: false,
+  });
+  const lines = new THREE.LineSegments(geo, mat);
+  lines.renderOrder = 5;
+  return lines;
+}
+
 function horizontalOutlineMesh(
   outlineMm: Array<{ xMm: number; yMm: number }>,
   yWorld: number,
@@ -321,6 +374,18 @@ function planFloorRoofOutlineWireGroup(
     Number.isFinite(opts.lineWeightHint) && opts.lineWeightHint > 0 ? opts.lineWeightHint : 1;
   const fillOpacity = Math.min(0.65, Math.max(0.12, baseOp * Math.min(1.35, lwh / 1.12)));
   grp.add(horizontalOutlineMesh(outlineMm, fillY, color, fillOpacity, opts.pickId));
+
+  // Floor hatch — 45° diagonal lines at 500 mm spacing, subtle overlay.
+  if (opts.kind === 'floor' && outlineMm.length >= 3) {
+    const hatch = hatchPolygon2D(
+      outlineMm,
+      500,
+      fillY + 0.002,
+      readToken('--draft-cut', '#1d2330'),
+      0.12,
+    );
+    if (hatch) grp.add(hatch);
+  }
 
   if (outlineMm.length < 2) {
     grp.userData.bimPickId = opts.pickId;
@@ -1127,15 +1192,24 @@ export function rebuildPlanMeshes(
 
       if (level && f.levelId !== level) continue;
 
+      const floorFillY = PLAN_Y + 0.001;
       holder.add(
         horizontalOutlineMesh(
           f.boundaryMm,
-          PLAN_Y + 0.001,
+          floorFillY,
           getPlanPalette().floorOutline,
           PLAN_FLOOR_FILL_OPACITY_BASE,
           f.id,
         ),
       );
+      const floorHatch = hatchPolygon2D(
+        f.boundaryMm,
+        500,
+        floorFillY + 0.002,
+        readToken('--draft-cut', '#1d2330'),
+        0.12,
+      );
+      if (floorHatch) holder.add(floorHatch);
     }
 
     for (const rf of Object.values(elementsById)) {

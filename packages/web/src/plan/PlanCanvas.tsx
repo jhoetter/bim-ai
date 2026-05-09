@@ -295,6 +295,7 @@ export function PlanCanvas({
   const spaceDownRef = useRef(false);
   const draftingRef = useRef<ReturnType<typeof draftingPaintFor> | null>(null);
   const lastPlotScaleRef = useRef<number>(0);
+  const lastAutoFitLevelRef = useRef<string | null>(null);
   const snapEngineRef = useRef(new SnapEngine());
   const snapIndicatorRef = useRef<THREE.Mesh | null>(null);
   // SKT-01: callback refs the SketchCanvas overlay reads to map pointer → mm
@@ -1371,6 +1372,22 @@ export function PlanCanvas({
     activePlanViewId,
     showNeighborhoodMasses,
   ]);
+
+  // Auto-fit camera when a level's elements first become available, and on
+  // every level switch — so the model always fills the canvas on open.
+  useEffect(() => {
+    const lvl = activeLevelResolvedId;
+    if (lastAutoFitLevelRef.current === lvl) return;
+    const hasGeo = Object.values(elementsById).some(
+      (el) =>
+        (el.kind === 'wall' || el.kind === 'floor' || el.kind === 'room') &&
+        'levelId' in el &&
+        (el as { levelId?: string }).levelId === lvl,
+    );
+    if (!hasGeo) return;
+    lastAutoFitLevelRef.current = lvl;
+    handleFitToView();
+  }, [activeLevelResolvedId, elementsById, handleFitToView]);
 
   useEffect(() => {
     const canvas = rendererRef.current?.domElement;
