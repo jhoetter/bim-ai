@@ -85,6 +85,7 @@ export function CommentsPanel({
               <button
                 type="button"
                 data-testid={c.resolved ? 'comment-reopen' : 'comment-resolve'}
+                aria-label={c.resolved ? 'Reopen comment' : 'Resolve comment'}
                 onClick={() => void onResolve(c.id, !c.resolved)}
                 className="mt-1 text-[11px] text-accent hover:underline"
               >

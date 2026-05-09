@@ -402,19 +402,66 @@ export function InspectorPropertiesFor(
         </div>
       );
     }
-    case 'stair':
+    case 'stair': {
+      const { onPropertyChange: stairPropChange } = options ?? {};
       return (
-        <div>
-          <FieldRow label={f('width')} value={fmtMm(el.widthMm)} />
-          <FieldRow label={f('riser')} value={fmtMm(el.riserMm)} />
-          <FieldRow label={f('tread')} value={fmtMm(el.treadMm)} />
-          <FieldRow label={f('baseLevel')} value={el.baseLevelId} mono />
-          <FieldRow label={f('topLevel')} value={el.topLevelId} mono />
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Width (mm)</span>
+            <input
+              type="number"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.widthMm}
+              key={`${el.id}-width`}
+              step={100}
+              aria-label="Stair width in millimetres"
+              onBlur={(e) => {
+                const v = Number(e.currentTarget.value);
+                if (!isNaN(v) && v > 0) stairPropChange?.('widthMm', v);
+              }}
+              data-testid="inspector-stair-width"
+            />
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Riser (mm)</span>
+            <input
+              type="number"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.riserMm}
+              key={`${el.id}-riser`}
+              step={10}
+              aria-label="Stair riser height in millimetres"
+              onBlur={(e) => {
+                const v = Number(e.currentTarget.value);
+                if (!isNaN(v) && v > 0) stairPropChange?.('riserMm', v);
+              }}
+              data-testid="inspector-stair-riser"
+            />
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Tread (mm)</span>
+            <input
+              type="number"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.treadMm}
+              key={`${el.id}-tread`}
+              step={10}
+              aria-label="Stair tread depth in millimetres"
+              onBlur={(e) => {
+                const v = Number(e.currentTarget.value);
+                if (!isNaN(v) && v > 0) stairPropChange?.('treadMm', v);
+              }}
+              data-testid="inspector-stair-tread"
+            />
+          </div>
+          <FieldRow label={f('baseLevel')} value={resolveElName(el.baseLevelId, elementsById)} />
+          <FieldRow label={f('topLevel')} value={resolveElName(el.topLevelId, elementsById)} />
           {onDisciplineChange ? (
             <InspectorDisciplineDropdown value={el.discipline} onChange={onDisciplineChange} />
           ) : null}
         </div>
       );
+    }
     case 'column': {
       const { onPropertyChange: colPropChange } = options ?? {};
       return (
