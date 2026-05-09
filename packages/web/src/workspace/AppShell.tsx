@@ -43,6 +43,8 @@ export interface AppShellProps {
   /** Controlled left-rail collapsed state. When provided, overrides internal state. */
   leftCollapsed?: boolean;
   onLeftCollapsedChange?: (v: boolean) => void;
+  /** Controlled right-rail collapsed state. When provided, overrides internal toggle state. */
+  rightCollapsed?: boolean;
   /** Override the document target for the global `[` / `]` hotkeys.
    * Used by tests to scope the listeners. */
   hotkeyTarget?: Document | HTMLElement;
@@ -59,11 +61,15 @@ export function AppShell({
   defaultRightCollapsed = false,
   leftCollapsed: leftCollapsedProp,
   onLeftCollapsedChange,
+  rightCollapsed: rightCollapsedProp,
   hotkeyTarget,
 }: AppShellProps): JSX.Element {
   const { t } = useTranslation();
   const [leftCollapsedInternal, setLeftCollapsedInternal] = useState(defaultLeftCollapsed);
-  const [rightCollapsed, setRightCollapsed] = useState(defaultRightCollapsed);
+  const [rightCollapsedInternal, setRightCollapsedInternal] = useState(defaultRightCollapsed);
+
+  const isRightControlled = rightCollapsedProp !== undefined;
+  const rightCollapsed = isRightControlled ? rightCollapsedProp : rightCollapsedInternal;
 
   const isControlled = leftCollapsedProp !== undefined;
   const leftCollapsed = isControlled ? leftCollapsedProp : leftCollapsedInternal;
@@ -87,7 +93,7 @@ export function AppShell({
         setLeftCollapsed((v) => !v);
       } else if (event.key === ']') {
         event.preventDefault();
-        setRightCollapsed((v) => !v);
+        setRightCollapsedInternal((v) => !v);
       }
     },
     [setLeftCollapsed],
@@ -112,6 +118,7 @@ export function AppShell({
       "leftRail canvas rightRail"
       "statusbar statusbar statusbar"
     `,
+    transition: 'grid-template-columns 200ms var(--ease-paper, ease)',
     height: '100dvh',
     width: '100%',
     overflow: 'hidden',
