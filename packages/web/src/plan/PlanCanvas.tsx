@@ -2833,15 +2833,28 @@ export function PlanCanvas({
         camRef.current.camX += ndcX * asp * dH;
         camRef.current.camZ -= ndcY * dH;
       } else {
-        // Two-finger trackpad swipe OR plain mouse wheel (no modifier) → PAN.
-        // Convert pixel delta to world units at the current zoom level.
-        // worldPerPx is the same for both axes: (2 * half) / height.
-        // Sign convention matches the grab-drag handler (lines ~1553-1554):
-        //   drag cursor right → camX decreases; drag cursor down → camZ decreases.
-        // For natural-scroll trackpad rawX/rawY have the same polarity, so subtract.
-        const worldPerPx = (2 * camRef.current.half) / Math.max(1, rect.height);
-        camRef.current.camX -= rawX * worldPerPx;
-        camRef.current.camZ -= rawY * worldPerPx;
+        // Distinguish mouse wheel (large discrete steps) from trackpad two-finger swipe
+        // (small continuous values). Mouse wheel: zoom. Trackpad swipe: pan.
+        // Heuristic: mouse wheel produces |deltaY| > 30 with |deltaX| < 3.
+        const isMouseWheel = Math.abs(rawY) > 30 && Math.abs(rawX) < 3;
+        if (isMouseWheel) {
+          // Mouse scroll wheel → zoom at cursor (zoom-to-pointer)
+          const oldHalf = camRef.current.half;
+          const newHalf = THREE.MathUtils.clamp(
+            oldHalf * Math.exp(rawY * 0.003),
+            HALF_MIN,
+            HALF_MAX,
+          );
+          const dH = oldHalf - newHalf;
+          camRef.current.half = newHalf;
+          camRef.current.camX += ndcX * asp * dH;
+          camRef.current.camZ -= ndcY * dH;
+        } else {
+          // Trackpad two-finger swipe → pan (1:1 with finger movement)
+          const worldPerPx = (2 * camRef.current.half) / Math.max(1, rect.height);
+          camRef.current.camX -= rawX * worldPerPx;
+          camRef.current.camZ -= rawY * worldPerPx;
+        }
       }
       resizeCam();
       // B01 — rebuild meshes when zoom crosses a 20% threshold so line weights update
@@ -3471,8 +3484,8 @@ export function PlanCanvas({
           data-testid="measure-readout"
         >
           <span className="font-mono">
-            {(measureReadout.distMm / 1000).toFixed(3)} m &nbsp;
-            ({Math.round(measureReadout.distMm)} mm)
+            {(measureReadout.distMm / 1000).toFixed(3)} m &nbsp; (
+            {Math.round(measureReadout.distMm)} mm)
           </span>
           <button
             type="button"
