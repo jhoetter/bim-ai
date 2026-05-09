@@ -1,0 +1,15 @@
+is it merged on main? i dont see a difference honestly
+
+---
+
+[Image #1] is this how it looks like?
+
+---
+
+there is no difference in display for 3d views...
+
+---
+
+so make install
+make seed
+make dev isnt enough to get the new one shown? because that is what i have been running

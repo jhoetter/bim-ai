@@ -1,0 +1,73 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "d3110509d1dd",
+  "session_id": "d8d27cb4-8570-41f6-bcc1-378ce30691bd",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-09T12:56:25.76294Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "spec/v3-build-state.md",
+    "spec/v3-prompts/wp-078.md",
+    "spec/v3-prompts/wp-079.md",
+    "spec/v3-prompts/wp-080.md",
+    "spec/v3-prompts/wp-081.md",
+    "spec/v3-prompts/wp-082.md",
+    "spec/v3-prompts/wp-083.md",
+    "spec/v3-prompts/wp-084.md",
+    "spec/v3-prompts/wp-085.md",
+    "spec/v3-prompts/wp-086.md",
+    "spec/v3-prompts/wp-087.md",
+    "spec/workpackage-tracker-v3.md"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "dfab307a60df",
+  "checkpoint_transcript_start": 569,
+  "transcript_lines_at_start": 569,
+  "token_usage": {
+    "input_tokens": 23,
+    "cache_creation_tokens": 9846,
+    "cache_read_tokens": 1846214,
+    "output_tokens": 5254,
+    "api_call_count": 15
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-09T12:56:25.652761Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 2065,
+    "human_modified": 4,
+    "human_removed": 0,
+    "total_committed": 2065,
+    "total_lines_changed": 2069,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 2069,
+      "user_lines_removed": 2,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "spec/v3-build-state.md": 25,
+        "spec/v3-prompts/wp-078.md": 170,
+        "spec/v3-prompts/wp-079.md": 130,
+        "spec/v3-prompts/wp-080.md": 168,
+        "spec/v3-prompts/wp-081.md": 218,
+        "spec/v3-prompts/wp-082.md": 181,
+        "spec/v3-prompts/wp-083.md": 163,
+        "spec/v3-prompts/wp-084.md": 180,
+        "spec/v3-prompts/wp-085.md": 207,
+        "spec/v3-prompts/wp-086.md": 191,
+        "spec/v3-prompts/wp-087.md": 176,
+        "spec/workpackage-tracker-v3.md": 260
+      },
+      "user_removed_per_file": {
+        "spec/v3-build-state.md": 2
+      }
+    }
+  ]
+}
