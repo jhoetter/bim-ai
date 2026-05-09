@@ -14,6 +14,7 @@
     "packages/icons/src/hifi-edit-ops.tsx",
     "packages/icons/src/hifi-mep-ext-a.tsx",
     "packages/icons/src/hifi-mep-ext-b.tsx",
+    "packages/icons/src/hifi-misc-b.tsx",
     "packages/icons/src/hifi-structural-ext.tsx",
     "packages/icons/src/hifi-views-ext.tsx",
     "packages/icons/src/hifi-workflow.tsx",
@@ -37,13 +38,19 @@
       "transcript": "/4a/b3e7522c6e/2/full.jsonl",
       "content_hash": "/4a/b3e7522c6e/2/content_hash.txt",
       "prompt": "/4a/b3e7522c6e/2/prompt.txt"
+    },
+    {
+      "metadata": "/4a/b3e7522c6e/3/metadata.json",
+      "transcript": "/4a/b3e7522c6e/3/full.jsonl",
+      "content_hash": "/4a/b3e7522c6e/3/content_hash.txt",
+      "prompt": "/4a/b3e7522c6e/3/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 8492,
-    "cache_creation_tokens": 4853054,
-    "cache_read_tokens": 352399260,
-    "output_tokens": 1464980,
-    "api_call_count": 3539
+    "input_tokens": 8498,
+    "cache_creation_tokens": 4858753,
+    "cache_read_tokens": 353114047,
+    "output_tokens": 1469754,
+    "api_call_count": 3545
   }
 }
