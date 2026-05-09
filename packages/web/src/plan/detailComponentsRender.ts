@@ -75,7 +75,7 @@ export function extractDetailComponentPrimitives(
       out.push({
         kind: 'detail_region',
         id: el.id,
-        boundaryMm: el.boundaryMm,
+        boundaryMm: el.boundaryMm ?? [],
         fillColour: el.fillColour ?? '#cccccc',
         fillPattern: el.fillPattern ?? 'solid',
         strokeMm: el.strokeMm ?? 0.5,

@@ -72,7 +72,7 @@ export function OptionsBar({
         padding: '6px 12px',
         borderRadius: 6,
         background: 'var(--color-surface, #1b2433)',
-        color: 'var(--color-on-surface, #e6edf6)',
+        color: 'var(--color-foreground)',
         boxShadow: '0 2px 8px rgba(0,0,0,0.35)',
         font: 'var(--text-sm, 12px system-ui)',
         zIndex: 30,

@@ -88,7 +88,7 @@ export function ScheduleView({ modelId, scheduleId, onHighlightElement }: Schedu
           style={{
             width: '100%',
             padding: 'var(--space-1) var(--space-2)',
-            background: 'var(--surface-2)',
+            background: 'var(--color-surface-2)',
             color: 'var(--color-foreground)',
             border: '1px solid var(--color-border)',
             borderRadius: 'var(--radius-sm)',
@@ -106,7 +106,14 @@ export function ScheduleView({ modelId, scheduleId, onHighlightElement }: Schedu
           }}
         >
           <thead>
-            <tr style={{ position: 'sticky', top: 0, background: 'var(--surface-1)', zIndex: 1 }}>
+            <tr
+              style={{
+                position: 'sticky',
+                top: 0,
+                background: 'var(--color-surface-1)',
+                zIndex: 1,
+              }}
+            >
               {columns.map((col) => (
                 <th
                   key={col}
@@ -158,7 +165,7 @@ export function ScheduleView({ modelId, scheduleId, onHighlightElement }: Schedu
                         }}
                         style={{
                           width: '100%',
-                          background: 'var(--surface-2)',
+                          background: 'var(--color-surface-2)',
                           color: 'var(--color-foreground)',
                           border: '1px solid var(--color-accent)',
                           padding: '2px var(--space-1)',

@@ -15,6 +15,7 @@ const KIND_VERB: Record<ActivityRow['kind'], string> = {
   option_set_lifecycle: 'option set',
   collab_join: 'joined',
   collab_leave: 'left',
+  sheet_comment_chip: 'sheet comment',
 };
 
 function kindColor(kind: ActivityRow['kind']): string {
@@ -196,7 +197,7 @@ export function ActivityDrawer({
           inset: 0,
           right: 380,
           zIndex: 49,
-          background: 'var(--color-fg)',
+          background: 'var(--color-foreground)',
           opacity: isOpen && hoveredRow ? 0.4 : 0,
           pointerEvents: 'none',
           transition: 'opacity 150ms var(--ease-paper)',

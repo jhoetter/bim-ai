@@ -11,16 +11,16 @@ export function AssumptionLogSection({ agentTrace, assumptions }: Props) {
   return (
     <section
       style={{
-        borderTop: '1px solid var(--color-border-subtle)',
+        borderTop: '1px solid var(--color-border)',
         paddingTop: 'var(--space-3)',
         marginTop: 'var(--space-3)',
       }}
     >
       <p
         style={{
-          fontSize: 'var(--font-size-xs)',
-          fontWeight: 'var(--font-weight-medium)',
-          color: 'var(--color-text-secondary)',
+          fontSize: 'var(--text-xs)',
+          fontWeight: 500,
+          color: 'var(--color-muted-foreground)',
           marginBottom: 'var(--space-2)',
           textTransform: 'uppercase',
           letterSpacing: '0.05em',
@@ -34,14 +34,14 @@ export function AssumptionLogSection({ agentTrace, assumptions }: Props) {
           display: 'grid',
           gridTemplateColumns: 'auto 1fr',
           gap: 'var(--space-1) var(--space-3)',
-          fontSize: 'var(--font-size-xs)',
-          color: 'var(--color-text-primary)',
+          fontSize: 'var(--text-xs)',
+          color: 'var(--color-foreground)',
         }}
       >
-        <dt style={{ color: 'var(--color-text-secondary)' }}>Bundle</dt>
+        <dt style={{ color: 'var(--color-muted-foreground)' }}>Bundle</dt>
         <dd
           style={{
-            fontFamily: 'var(--font-family-mono)',
+            fontFamily: 'var(--font-mono)',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
@@ -51,7 +51,7 @@ export function AssumptionLogSection({ agentTrace, assumptions }: Props) {
           {agentTrace.bundleId.slice(0, 8)}
         </dd>
 
-        <dt style={{ color: 'var(--color-text-secondary)' }}>Applied</dt>
+        <dt style={{ color: 'var(--color-muted-foreground)' }}>Applied</dt>
         <dd>{new Date(agentTrace.appliedAt).toLocaleString()}</dd>
       </dl>
 
@@ -59,8 +59,8 @@ export function AssumptionLogSection({ agentTrace, assumptions }: Props) {
         <div style={{ marginTop: 'var(--space-2)' }}>
           <p
             style={{
-              fontSize: 'var(--font-size-xs)',
-              color: 'var(--color-text-secondary)',
+              fontSize: 'var(--text-xs)',
+              color: 'var(--color-muted-foreground)',
               marginBottom: 'var(--space-1)',
             }}
           >
@@ -86,13 +86,13 @@ export function AssumptionLogSection({ agentTrace, assumptions }: Props) {
                     justifyContent: 'space-between',
                     alignItems: 'baseline',
                     gap: 'var(--space-2)',
-                    fontSize: 'var(--font-size-xs)',
+                    fontSize: 'var(--text-xs)',
                   }}
                 >
                   <span
                     style={{
-                      fontFamily: 'var(--font-family-mono)',
-                      color: 'var(--color-text-primary)',
+                      fontFamily: 'var(--font-mono)',
+                      color: 'var(--color-foreground)',
                     }}
                   >
                     {key}
@@ -100,7 +100,7 @@ export function AssumptionLogSection({ agentTrace, assumptions }: Props) {
                   {entry && (
                     <span
                       style={{
-                        color: 'var(--color-text-secondary)',
+                        color: 'var(--color-muted-foreground)',
                         flexShrink: 0,
                       }}
                     >

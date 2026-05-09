@@ -124,7 +124,7 @@ export function HelperDimChip({ descriptor, planToScreen, onDispatch }: HelperDi
               height: '100%',
               background: 'var(--color-surface-2, var(--color-surface-strong))',
               color: 'var(--color-foreground)',
-              border: '1px solid var(--brand-accent)',
+              border: '1px solid var(--color-accent)',
               borderRadius: 3,
               fontSize: 'var(--text-2xs, 10px)',
               fontVariantNumeric: 'tabular-nums',
@@ -170,7 +170,7 @@ export function HelperDimChip({ descriptor, planToScreen, onDispatch }: HelperDi
           }}
           onMouseEnter={(e) => {
             if (!descriptor.readOnly) {
-              (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--brand-accent)';
+              (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-accent)';
             }
           }}
           onMouseLeave={(e) => {

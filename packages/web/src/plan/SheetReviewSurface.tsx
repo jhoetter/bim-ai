@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState, type JSX, type MouseEvent } from 'react';
 
-import type { Comment, Element, SheetAnchor } from '@bim-ai/core';
+import type { Comment, Element, Markup, SheetAnchor } from '@bim-ai/core';
 
 import { SheetCanvas } from '../workspace/SheetCanvas';
 import { CommentsPanel } from '../workspace/CommentsPanel';
+import { MarkupCanvas } from '../collab/MarkupCanvas';
 import { useBimStore, type UxComment } from '../state/store';
 
 type ReviewMode = 'cm' | 'an' | 'mr';
@@ -36,10 +37,46 @@ export function SheetReviewSurface({
   const userDisplayName = useBimStore((s) => s.userDisplayName);
   const [mode, setMode] = useState<ReviewMode>('cm');
   const [comments, setComments] = useState<Comment[]>([]);
+  const [markups, setMarkups] = useState<Markup[]>([]);
+  const [canvasDims, setCanvasDims] = useState({ width: 0, height: 0 });
   const [activePinId, setActivePinId] = useState<string | null>(null);
   const [pendingPin, setPendingPin] = useState<{ xPx: number; yPx: number } | null>(null);
   const pixelMapCacheRef = useRef<PixelMapCache | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = canvasRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) {
+        setCanvasDims({ width: entry.contentRect.width, height: entry.contentRect.height });
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const handleStrokeComplete = useCallback(
+    (pathPx: Array<{ xPx: number; yPx: number }>) => {
+      const newMarkup: Markup = {
+        id: `markup-${Date.now()}`,
+        modelId,
+        viewId: sheetId,
+        anchor: {
+          kind: 'screen',
+          viewId: sheetId,
+          xPx: pathPx[0]?.xPx ?? 0,
+          yPx: pathPx[0]?.yPx ?? 0,
+        },
+        shape: { kind: 'freehand', pathPx, color: 'var(--cat-edit)', strokeWidthPx: 2 },
+        authorId: userId ?? 'current-user',
+        createdAt: Date.now(),
+      };
+      setMarkups((prev) => [...prev, newMarkup]);
+    },
+    [modelId, sheetId, userId],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -203,6 +240,17 @@ export function SheetReviewSurface({
               border: '2px solid var(--color-surface-1)',
               pointerEvents: 'none',
             }}
+          />
+        )}
+        {canvasDims.width > 0 && (
+          <MarkupCanvas
+            markups={markups}
+            viewId={sheetId}
+            drawingActive={mode === 'an' && !readOnly}
+            activeShape="freehand"
+            onStrokeComplete={handleStrokeComplete}
+            width={canvasDims.width}
+            height={canvasDims.height}
           />
         )}
       </div>

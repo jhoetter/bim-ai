@@ -80,6 +80,7 @@
   --cat-review: #f59e0b;         /* amber — review cloud outline */
   --cat-edit: #e53e3e;           /* red — freehand / live stroke */
   --draft-comment-pin: #3b82f6;  /* blue — comment pin bubble */
+  --cat-fixture: #8a9eb0;        /* muted steel-blue — generic fixture crosshair in asset cards */
 
   /* §9.10 Drafting line weights at 1:50 plot scale (in px) */
   --draft-lw-cut-major: 2px;
@@ -209,6 +210,7 @@
   --cat-review: #f3b03d;         /* warm amber on dark paper */
   --cat-edit: #fc6868;           /* lighter red on dark paper */
   --draft-comment-pin: #60a5fa;  /* lighter blue on dark paper */
+  --cat-fixture: #7a9db8;        /* slightly lighter on dark surface */
   /* EDT-V3-11 — simplified phase line-weight aliases */
   --draft-lw-cut: var(--draft-lw-cut-major);
   --draft-lw-projection: var(--draft-lw-projection-major);

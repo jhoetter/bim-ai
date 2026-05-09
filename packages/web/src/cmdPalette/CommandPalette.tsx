@@ -141,7 +141,7 @@ export function CommandPalette({
           borderRadius: 'var(--radius-card, 4px)',
           border: '1px solid var(--color-border)',
           background: 'var(--color-surface)',
-          boxShadow: 'var(--shadow-elev-3)',
+          boxShadow: 'var(--elev-3)',
           overflow: 'hidden',
         }}
         onKeyDown={handleKeyDown}

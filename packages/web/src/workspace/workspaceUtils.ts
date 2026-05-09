@@ -83,6 +83,8 @@ export type LegacyPlanTool =
   | 'column'
   | 'beam'
   | 'ceiling'
+  | 'detail-region'
+  | 'measure'
   | 'toposolid_subdivision';
 
 export function toolIdToLegacy(tool: ToolId): LegacyPlanTool | null {

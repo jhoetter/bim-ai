@@ -14,6 +14,7 @@ const KIND_VERB: Record<ActivityRow['kind'], string> = {
   option_set_lifecycle: 'option set',
   collab_join: 'joined',
   collab_leave: 'left',
+  sheet_comment_chip: 'sheet comment',
 };
 
 function kindColor(kind: ActivityRow['kind']): string {

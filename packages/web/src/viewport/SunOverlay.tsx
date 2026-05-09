@@ -226,7 +226,7 @@ export function SunOverlay({
               onChange={handleTimeSlider}
               onMouseUp={handleTimeCommit as unknown as React.MouseEventHandler<HTMLInputElement>}
               onTouchEnd={handleTimeCommit as unknown as React.TouchEventHandler<HTMLInputElement>}
-              style={{ width: '100%', accentColor: 'var(--brand-accent)' }}
+              style={{ width: '100%', accentColor: 'var(--color-accent)' }}
               aria-label="Time of day"
             />
             <div
