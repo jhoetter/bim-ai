@@ -263,6 +263,7 @@ export interface PointerEventLike {
  *   - LMB            → orbit (primary gesture)
  *   - Alt + LMB      → orbit (explicit alt path)
  *   - RMB (button 2) → orbit (Revit / Rhino convention)
+ *   - Shift + MMB   → orbit (Revit convention: shift+middle orbits)
  *   - MMB (button 1) → pan  (middle-drag pans, natural for scroll wheels)
  *   - Two-finger trackpad scroll arrives as wheel (handled separately)
  */
@@ -270,6 +271,7 @@ export function classifyPointer(event: PointerEventLike): PointerIntent {
   const isLmb = event.button === 0;
   const isMmb = event.button === 1;
   const isRmb = event.button === 2;
+  if (isMmb && event.shiftKey) return 'orbit';
   if (isMmb || isRmb) return 'pan';
   if (isLmb && event.shiftKey) return 'pan';
   if (isLmb && event.altKey) return 'orbit';
