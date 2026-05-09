@@ -2082,32 +2082,104 @@ export function PlanCanvas({
         const xMax = Math.max(sx, ex);
         const yMin = Math.min(sy, ey);
         const yMax = Math.max(sy, ey);
+
+        // Build an asset_library_entry lookup for placed_asset thumbnail sizes.
+        const assetEntries: Record<string, { thumbnailWidthMm?: number; thumbnailHeightMm?: number }> = {};
+        for (const el of Object.values(elementsById)) {
+          if (el.kind === 'asset_library_entry') {
+            assetEntries[el.id] = el as { thumbnailWidthMm?: number; thumbnailHeightMm?: number };
+          }
+        }
+
+        // Helper: derive axis-aligned bbox for each selectable element kind.
+        const getElBbox = (
+          el: Element,
+        ): { xMin: number; xMax: number; yMin: number; yMax: number } | null => {
+          if (el.kind === 'wall') {
+            return {
+              xMin: Math.min(el.start.xMm, el.end.xMm),
+              xMax: Math.max(el.start.xMm, el.end.xMm),
+              yMin: Math.min(el.start.yMm, el.end.yMm),
+              yMax: Math.max(el.start.yMm, el.end.yMm),
+            };
+          }
+          if (el.kind === 'column') {
+            const r = 200;
+            return {
+              xMin: el.positionMm.xMm - r,
+              xMax: el.positionMm.xMm + r,
+              yMin: el.positionMm.yMm - r,
+              yMax: el.positionMm.yMm + r,
+            };
+          }
+          if (el.kind === 'placed_asset') {
+            const entry = assetEntries[el.assetId];
+            const hw = (entry?.thumbnailWidthMm ?? 1000) / 2;
+            const hd = (entry?.thumbnailHeightMm ?? 600) / 2;
+            return {
+              xMin: el.positionMm.xMm - hw,
+              xMax: el.positionMm.xMm + hw,
+              yMin: el.positionMm.yMm - hd,
+              yMax: el.positionMm.yMm + hd,
+            };
+          }
+          if (el.kind === 'room') {
+            const pts = el.outlineMm;
+            if (!pts || pts.length === 0) return null;
+            return {
+              xMin: Math.min(...pts.map((p) => p.xMm)),
+              xMax: Math.max(...pts.map((p) => p.xMm)),
+              yMin: Math.min(...pts.map((p) => p.yMm)),
+              yMax: Math.max(...pts.map((p) => p.yMm)),
+            };
+          }
+          if (el.kind === 'floor' || el.kind === 'area') {
+            const pts = el.boundaryMm;
+            if (!pts || pts.length === 0) return null;
+            return {
+              xMin: Math.min(...pts.map((p) => p.xMm)),
+              xMax: Math.max(...pts.map((p) => p.xMm)),
+              yMin: Math.min(...pts.map((p) => p.yMm)),
+              yMax: Math.max(...pts.map((p) => p.yMm)),
+            };
+          }
+          return null;
+        };
+
         const ids: string[] = [];
         for (const el of Object.values(elementsById)) {
-          if (el.kind !== 'wall') continue;
-          if (displayLevelId && el.levelId !== displayLevelId) continue;
+          // Level filter — use optional chaining since not all kinds have levelId.
+          if (displayLevelId && (el as { levelId?: string }).levelId !== displayLevelId) continue;
+          const bbox = getElBbox(el);
+          if (!bbox) continue;
           if (direction === 'left-to-right') {
-            // Window: fully enclosed
+            // Window select: element bbox must be fully enclosed in marquee.
             if (
-              Math.min(el.start.xMm, el.end.xMm) >= xMin &&
-              Math.max(el.start.xMm, el.end.xMm) <= xMax &&
-              Math.min(el.start.yMm, el.end.yMm) >= yMin &&
-              Math.max(el.start.yMm, el.end.yMm) <= yMax
+              bbox.xMin >= xMin &&
+              bbox.xMax <= xMax &&
+              bbox.yMin >= yMin &&
+              bbox.yMax <= yMax
             ) {
               ids.push(el.id);
             }
           } else {
-            // Crossing: bbox intersects marquee
-            const elXMin = Math.min(el.start.xMm, el.end.xMm);
-            const elXMax = Math.max(el.start.xMm, el.end.xMm);
-            const elYMin = Math.min(el.start.yMm, el.end.yMm);
-            const elYMax = Math.max(el.start.yMm, el.end.yMm);
-            if (elXMax >= xMin && elXMin <= xMax && elYMax >= yMin && elYMin <= yMax) {
+            // Crossing select: element bbox intersects marquee.
+            if (
+              bbox.xMax >= xMin &&
+              bbox.xMin <= xMax &&
+              bbox.yMax >= yMin &&
+              bbox.yMin <= yMax
+            ) {
               ids.push(el.id);
             }
           }
         }
-        if (ids.length > 0) selectEl(ids[0]);
+        if (ids.length >= 1) {
+          selectEl(ids[0]);
+          for (const id of ids.slice(1)) {
+            useBimStore.getState().toggleSelectedId(id);
+          }
+        }
         return;
       }
       clearMarqueeLine();
