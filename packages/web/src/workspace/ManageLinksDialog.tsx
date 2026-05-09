@@ -348,8 +348,8 @@ export function ManageLinksDialog({
                             data-testid={`manage-links-drift-${l.id}`}
                             title={`Source advanced by ${driftCount} commit${driftCount === 1 ? '' : 's'}`}
                             style={{
-                              background: '#facc15',
-                              color: '#1f2937',
+                              background: 'var(--color-warning)',
+                              color: 'var(--color-warning-foreground)',
                               padding: '0 4px',
                               borderRadius: 3,
                               fontSize: 10,

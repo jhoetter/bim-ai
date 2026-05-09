@@ -1553,8 +1553,8 @@ function ProjectBrowserLinksGroup({
                     data-testid={`project-browser-links-drift-${l.id}`}
                     title={`Source advanced by ${drift} commit${drift === 1 ? '' : 's'}`}
                     style={{
-                      background: '#facc15',
-                      color: '#1f2937',
+                      background: 'var(--color-warning)',
+                      color: 'var(--color-warning-foreground)',
                       padding: '0 4px',
                       borderRadius: 3,
                       fontSize: 9,

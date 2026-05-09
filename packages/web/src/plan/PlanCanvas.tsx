@@ -2088,7 +2088,10 @@ export function PlanCanvas({
         const yMax = Math.max(sy, ey);
 
         // Build an asset_library_entry lookup for placed_asset thumbnail sizes.
-        const assetEntries: Record<string, { thumbnailWidthMm?: number; thumbnailHeightMm?: number }> = {};
+        const assetEntries: Record<
+          string,
+          { thumbnailWidthMm?: number; thumbnailHeightMm?: number }
+        > = {};
         for (const el of Object.values(elementsById)) {
           if (el.kind === 'asset_library_entry') {
             assetEntries[el.id] = el as { thumbnailWidthMm?: number; thumbnailHeightMm?: number };
@@ -2158,22 +2161,12 @@ export function PlanCanvas({
           if (!bbox) continue;
           if (direction === 'left-to-right') {
             // Window select: element bbox must be fully enclosed in marquee.
-            if (
-              bbox.xMin >= xMin &&
-              bbox.xMax <= xMax &&
-              bbox.yMin >= yMin &&
-              bbox.yMax <= yMax
-            ) {
+            if (bbox.xMin >= xMin && bbox.xMax <= xMax && bbox.yMin >= yMin && bbox.yMax <= yMax) {
               ids.push(el.id);
             }
           } else {
             // Crossing select: element bbox intersects marquee.
-            if (
-              bbox.xMax >= xMin &&
-              bbox.xMin <= xMax &&
-              bbox.yMax >= yMin &&
-              bbox.yMin <= yMax
-            ) {
+            if (bbox.xMax >= xMin && bbox.xMin <= xMax && bbox.yMax >= yMin && bbox.yMin <= yMax) {
               ids.push(el.id);
             }
           }
@@ -2701,8 +2694,7 @@ export function PlanCanvas({
         const anchor = rotateAnchorRef.current;
         rotateAnchorRef.current = null;
         setRotateAnchorSet(false);
-        const angleDeg =
-          (Math.atan2(sp.yMm - anchor.yMm, sp.xMm - anchor.xMm) * 180) / Math.PI;
+        const angleDeg = (Math.atan2(sp.yMm - anchor.yMm, sp.xMm - anchor.xMm) * 180) / Math.PI;
         const elementIds = [selectedId, ...selectedIds].filter(Boolean) as string[];
         if (elementIds.length > 0) {
           onSemanticCommand({
@@ -4036,9 +4028,7 @@ export function PlanCanvas({
           className="flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-xs shadow"
           data-testid="multi-select-count"
         >
-          <span>
-            {(selectedId ? 1 : 0) + selectedIds.length} elements selected
-          </span>
+          <span>{(selectedId ? 1 : 0) + selectedIds.length} elements selected</span>
           <button
             type="button"
             className="rounded px-2 py-0.5 text-xs font-medium text-primary hover:underline"
@@ -4074,10 +4064,7 @@ export function PlanCanvas({
         >
           <div className="text-[11px] font-semibold text-foreground">Filter Selection</div>
           {(() => {
-            const allIds = [
-              ...(selectedId ? [selectedId] : []),
-              ...selectedIds,
-            ];
+            const allIds = [...(selectedId ? [selectedId] : []), ...selectedIds];
             const kindCounts: Record<string, number> = {};
             for (const eid of allIds) {
               const el = elementsById[eid];
@@ -4086,7 +4073,10 @@ export function PlanCanvas({
               }
             }
             return Object.entries(kindCounts).map(([kind, count]) => (
-              <label key={kind} className="flex items-center gap-2 text-xs cursor-pointer select-none">
+              <label
+                key={kind}
+                className="flex items-center gap-2 text-xs cursor-pointer select-none"
+              >
                 <input
                   type="checkbox"
                   defaultChecked
@@ -4603,8 +4593,8 @@ export function PlanCanvas({
               style={{
                 padding: '2px 8px',
                 fontSize: 10,
-                background: '#f59e0b',
-                color: '#fff',
+                background: 'var(--color-warning)',
+                color: 'var(--color-warning-foreground)',
                 border: '1px solid var(--color-border)',
                 borderRadius: 4,
                 cursor: 'pointer',
