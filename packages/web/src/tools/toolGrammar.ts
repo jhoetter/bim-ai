@@ -26,6 +26,17 @@ export interface ToolGrammarModifiers {
   tagOnPlace: { enabled: boolean; tagFamilyId?: string };
   /** Numeric input mode: typing a digit while drawing pops a numeric input field. */
   numericInputActive: boolean;
+  /**
+   * Wall draw offset — when non-zero, the wall baseline is drawn offset from
+   * the cursor by this many mm (positive = left side of draw direction).
+   * F-042 parity. Default 0.
+   */
+  wallDrawOffsetMm: number;
+  /**
+   * Wall draw radius — when non-null, consecutive wall segments get a curved
+   * corner fillet of this radius (mm). F-043 parity. Default null (sharp corners).
+   */
+  wallDrawRadiusMm: number | null;
 }
 
 export function defaultToolGrammarModifiers(): ToolGrammarModifiers {
@@ -34,6 +45,8 @@ export function defaultToolGrammarModifiers(): ToolGrammarModifiers {
     multipleable: false,
     tagOnPlace: { enabled: false },
     numericInputActive: false,
+    wallDrawOffsetMm: 0,
+    wallDrawRadiusMm: null,
   };
 }
 
