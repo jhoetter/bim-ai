@@ -2,8 +2,8 @@
   "cli_version": "0.6.0",
   "checkpoint_id": "b112247b8f73",
   "strategy": "manual-commit",
-  "branch": "feat/parity-tracker-batch13",
-  "checkpoints_count": 0,
+  "branch": "feat/parity-tracker-origins",
+  "checkpoints_count": 1,
   "files_touched": [
     "packages/web/src/workspace/ProjectBrowser.tsx",
     "spec/revit-parity/ch02-cad-linking.md",
@@ -15,13 +15,19 @@
       "transcript": "/b1/12247b8f73/0/full.jsonl",
       "content_hash": "/b1/12247b8f73/0/content_hash.txt",
       "prompt": "/b1/12247b8f73/0/prompt.txt"
+    },
+    {
+      "metadata": "/b1/12247b8f73/1/metadata.json",
+      "transcript": "/b1/12247b8f73/1/full.jsonl",
+      "content_hash": "/b1/12247b8f73/1/content_hash.txt",
+      "prompt": "/b1/12247b8f73/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 18,
-    "cache_creation_tokens": 194159,
-    "cache_read_tokens": 881981,
-    "output_tokens": 48316,
-    "api_call_count": 14
+    "input_tokens": 6335,
+    "cache_creation_tokens": 3677211,
+    "cache_read_tokens": 153898032,
+    "output_tokens": 1019494,
+    "api_call_count": 1627
   }
 }
