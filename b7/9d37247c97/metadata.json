@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "b79d37247c97",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/levels/LevelStack.tsx",
+    "packages/web/src/workspace/WorkspaceLeftRail.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/b7/9d37247c97/0/metadata.json",
+      "transcript": "/b7/9d37247c97/0/full.jsonl",
+      "content_hash": "/b7/9d37247c97/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 0
+  }
+}
