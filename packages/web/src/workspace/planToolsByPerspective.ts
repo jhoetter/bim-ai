@@ -14,6 +14,7 @@ const ALL_TOOLS: readonly PlanTool[] = [
   'floor-sketch',
   'roof-sketch',
   'room-separation-sketch',
+  'toposolid_subdivision',
 ];
 
 /** Narrow plan toolbar by discipline perspective */
