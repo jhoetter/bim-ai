@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ViewerMode } from '../state/store';
 import { getCheatsheetData } from './cheatsheetData';
@@ -9,6 +10,16 @@ const NAV_SECTION_IDS = new Set(['nav3d', 'walk', 'nav2d', 'global', 'history'])
 export function Cheatsheet({ open, onClose, viewerMode }: Props) {
   const { t } = useTranslation();
   void viewerMode;
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [open, onClose]);
+
   if (!open) return null;
 
   const sections = getCheatsheetData(t).filter((s) => NAV_SECTION_IDS.has(s.id));

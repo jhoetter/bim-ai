@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 
 import type { Command, CommandBundle, DesignOption, DesignOptionSet } from '@bim-ai/core';
@@ -25,6 +25,15 @@ export function DesignOptionChip({
   const [promoting, setPromoting] = useState(false);
 
   const canPromote = option.provenance?.submitter === 'agent';
+
+  useEffect(() => {
+    if (!confirmOpen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setConfirmOpen(false);
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [confirmOpen]);
 
   function handleContextMenu(e: React.MouseEvent) {
     if (!canPromote) return;
