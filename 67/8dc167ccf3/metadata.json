@@ -5,7 +5,8 @@
   "branch": "main",
   "checkpoints_count": 1,
   "files_touched": [
-    "packages/web/src/workspace/OptionsBar.tsx"
+    "packages/web/src/workspace/OptionsBar.tsx",
+    "spec/revit-parity/ch09-rooms-areas.md"
   ],
   "sessions": [
     {
@@ -19,6 +20,12 @@
       "transcript": "/67/8dc167ccf3/1/full.jsonl",
       "content_hash": "/67/8dc167ccf3/1/content_hash.txt",
       "prompt": "/67/8dc167ccf3/1/prompt.txt"
+    },
+    {
+      "metadata": "/67/8dc167ccf3/2/metadata.json",
+      "transcript": "/67/8dc167ccf3/2/full.jsonl",
+      "content_hash": "/67/8dc167ccf3/2/content_hash.txt",
+      "prompt": "/67/8dc167ccf3/2/prompt.txt"
     }
   ],
   "token_usage": {
