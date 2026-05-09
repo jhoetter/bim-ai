@@ -1057,7 +1057,11 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
         typeof raw.discipline === 'string' && raw.discipline ? raw.discipline : 'architecture',
       planViewSubtype:
         typeof raw.planViewSubtype === 'string' && raw.planViewSubtype
-          ? (raw.planViewSubtype as 'floor_plan' | 'lighting_plan' | 'power_plan' | 'coordination_plan')
+          ? (raw.planViewSubtype as
+              | 'floor_plan'
+              | 'lighting_plan'
+              | 'power_plan'
+              | 'coordination_plan')
           : undefined,
       phaseId: (raw.phaseId ?? raw.phase_id ?? null) as string | null,
       cropMinMm,
@@ -2026,6 +2030,13 @@ export const useBimStore = create<StoreState>((set, get) => {
     viewerRenderStyle: 'shaded',
 
     setViewerRenderStyle: (style) => set({ viewerRenderStyle: style }),
+
+    // F-113: graphic display options.
+    viewerBackground: 'light_grey',
+    viewerEdges: 'normal',
+
+    setViewerBackground: (bg) => set({ viewerBackground: bg }),
+    setViewerEdges: (edges) => set({ viewerEdges: edges }),
 
     // F-014: reveal hidden elements mode (lightbulb). Off by default.
     revealHiddenMode: false,

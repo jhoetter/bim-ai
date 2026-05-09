@@ -199,6 +199,7 @@ export function Viewport({
   const [walkActive, setWalkActive] = useState(false);
   const [sectionBoxActive, setSectionBoxActive] = useState(false);
   const [text3dRebuildTick, setText3dRebuildTick] = useState(0);
+  const [gdoOpen, setGdoOpen] = useState(false);
   // ANN-02: state for the right-click "Generate Section / Elevation" menu in 3D.
   const [wallContextMenu, setWallContextMenu] = useState<{
     wall: Extract<Element, { kind: 'wall' }>;
@@ -351,6 +352,8 @@ export function Viewport({
   const viewerCategoryHidden = useBimStore((s) => s.viewerCategoryHidden);
   const viewerPhaseFilter = useBimStore((s) => s.viewerPhaseFilter);
   const viewerRenderStyle = useBimStore((s) => s.viewerRenderStyle);
+  const viewerBackground = useBimStore((s) => s.viewerBackground);
+  const viewerEdges = useBimStore((s) => s.viewerEdges);
   const lensMode = useBimStore((s) => s.lensMode);
 
   const viewerClipElevMm = useBimStore((s) => s.viewerClipElevMm);
@@ -1657,6 +1660,18 @@ export function Viewport({
     }
   }, [viewerRenderStyle]);
 
+  // ── F-113: background colour ──────────────────────────────────────────────
+  useEffect(() => {
+    const rnd = rendererRef.current;
+    if (!rnd) return;
+    const colorMap: Record<typeof viewerBackground, number> = {
+      white: 0xffffff,
+      light_grey: 0xf0f0f0,
+      dark: 0x1a1a2e,
+    };
+    rnd.setClearColor(colorMap[viewerBackground], 1);
+  }, [viewerBackground]);
+
   // ── Clipping planes + section-box cage ───────────────────────────────────
   // Runs only when clip elevation or section box changes — not on every element edit.
   useEffect(() => {
@@ -2076,6 +2091,78 @@ export function Viewport({
         >
           {t('viewport.orthoLabel')}: {orthoMode ? t('viewport.on') : t('viewport.off')}
         </button>
+        {/* F-113: Graphic Display Options */}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setGdoOpen((o) => !o)}
+            aria-pressed={gdoOpen}
+            data-active={gdoOpen ? 'true' : 'false'}
+            data-testid="viewport-gdo-toggle"
+            className={[
+              'rounded-md border border-border px-2 py-1 text-xs',
+              gdoOpen ? 'bg-accent text-accent-foreground' : 'bg-surface text-foreground',
+            ].join(' ')}
+            title="Graphic Display Options"
+          >
+            GD
+          </button>
+          {gdoOpen && (
+            <div
+              className="absolute bottom-full right-0 mb-1 w-48 rounded border border-border bg-surface p-3 shadow-elev-2 text-[11px] space-y-2"
+              data-testid="gdo-panel"
+            >
+              <div className="font-semibold text-foreground">Graphic Display</div>
+
+              <label className="flex flex-col gap-0.5">
+                <span className="text-muted">Visual Style</span>
+                <select
+                  value={viewerRenderStyle}
+                  onChange={(e) =>
+                    useBimStore
+                      .getState()
+                      .setViewerRenderStyle(e.target.value as 'shaded' | 'wireframe')
+                  }
+                  className="rounded border border-border bg-surface px-1 py-0.5 text-foreground"
+                >
+                  <option value="shaded">Shaded</option>
+                  <option value="wireframe">Wireframe</option>
+                </select>
+              </label>
+
+              <label className="flex flex-col gap-0.5">
+                <span className="text-muted">Background</span>
+                <select
+                  value={viewerBackground}
+                  onChange={(e) =>
+                    useBimStore
+                      .getState()
+                      .setViewerBackground(e.target.value as 'white' | 'light_grey' | 'dark')
+                  }
+                  className="rounded border border-border bg-surface px-1 py-0.5 text-foreground"
+                >
+                  <option value="white">White</option>
+                  <option value="light_grey">Light Grey</option>
+                  <option value="dark">Dark</option>
+                </select>
+              </label>
+
+              <label className="flex flex-col gap-0.5">
+                <span className="text-muted">Edges</span>
+                <select
+                  value={viewerEdges}
+                  onChange={(e) =>
+                    useBimStore.getState().setViewerEdges(e.target.value as 'normal' | 'none')
+                  }
+                  className="rounded border border-border bg-surface px-1 py-0.5 text-foreground"
+                >
+                  <option value="normal">Normal</option>
+                  <option value="none">None</option>
+                </select>
+              </label>
+            </div>
+          )}
+        </div>
         <button
           type="button"
           onClick={() =>
