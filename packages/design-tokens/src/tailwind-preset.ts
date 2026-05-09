@@ -18,6 +18,7 @@ export const bimAIPreset = {
       colors: {
         // §9.1 Semantic chrome
         background: 'var(--color-background)',
+        'canvas-paper': 'var(--color-canvas-paper)',
         foreground: 'var(--color-foreground)',
         surface: {
           DEFAULT: 'var(--color-surface)',

@@ -1149,7 +1149,18 @@ export function Workspace(): JSX.Element {
         }
         leftRailCollapsed={<LeftRailCollapsed sections={browserSections} />}
         canvas={
-          <div style={canvasContainerStyle} data-testid="redesign-canvas-root">
+          <div
+            style={{
+              ...canvasContainerStyle,
+              // VIS-V3-08: paper background for 2D views; 3D viewport keeps dark background.
+              background: ['plan', 'section', 'plan-3d'].includes(activeTab?.kind ?? '')
+                ? 'var(--color-canvas-paper)'
+                : 'var(--color-background)',
+              transition: 'background 120ms var(--ease-paper)',
+            }}
+            data-view-type={activeTab?.kind ?? 'none'}
+            data-testid="redesign-canvas-root"
+          >
             {showEmptyState ? (
               <EmptyStateOverlay
                 headline={emptyHint.headline}
