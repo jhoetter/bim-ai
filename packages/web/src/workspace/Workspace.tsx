@@ -233,7 +233,7 @@ export function Workspace(): JSX.Element {
     viewerMode === 'orbit_3d' ? '3d' : 'plan',
   );
   const [theme, setTheme] = useState<Theme>(() => (getCurrentTheme() as Theme) ?? 'light');
-  const [leftRailCollapsed, setLeftRailCollapsed] = useState(false);
+  const [leftRailCollapsed, setLeftRailCollapsed] = useState(true);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [familyLibraryOpen, setFamilyLibraryOpen] = useState(false);
   const [_pendingPlacement, setPendingPlacement] = useState<{
@@ -947,6 +947,9 @@ export function Workspace(): JSX.Element {
     [modelId, setPendingPlacement],
   );
 
+  /* ── VIS-V3-06: right rail driven by selection state ─────────────── */
+  const hasSelection = !!selectedId;
+
   /* ── Empty-state per §25 ──────────────────────────────────────────── */
   const emptyHint = patternFor(seedLoading ? 'canvas-loading' : 'canvas-empty');
   const showEmptyState =
@@ -1036,6 +1039,7 @@ export function Workspace(): JSX.Element {
       <AppShell
         leftCollapsed={leftRailCollapsed}
         onLeftCollapsedChange={setLeftRailCollapsed}
+        rightCollapsed={!hasSelection}
         topBar={
           <div className="flex w-full flex-col">
             <div className="flex w-full items-center">

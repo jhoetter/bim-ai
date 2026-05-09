@@ -50,14 +50,15 @@ describe('AppShell — spec §8', () => {
         canvas={<span>c</span>}
         rightRail={<span>r</span>}
         statusBar={<span>s</span>}
+        defaultLeftCollapsed
       />,
     );
     const shell = getByTestId('app-shell') as HTMLElement;
-    expect(shell.dataset.leftCollapsed).toBe('false');
-    fireEvent.keyDown(document, { key: '[' });
     expect(shell.dataset.leftCollapsed).toBe('true');
     fireEvent.keyDown(document, { key: '[' });
     expect(shell.dataset.leftCollapsed).toBe('false');
+    fireEvent.keyDown(document, { key: '[' });
+    expect(shell.dataset.leftCollapsed).toBe('true');
   });
 
   it('responds to `]` to toggle the right rail collapsed-state', () => {
