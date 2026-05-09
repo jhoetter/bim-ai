@@ -1717,7 +1717,11 @@ export function PlanCanvas({
         redrawSeg(pv, p);
       }
       // TOP-V3-03: dashed polygon preview while sketching a subdivision region.
-      if (planTool === 'toposolid_subdivision' && d?.kind === 'toposolid-subdivision' && d.verts.length >= 1) {
+      if (
+        planTool === 'toposolid_subdivision' &&
+        d?.kind === 'toposolid-subdivision' &&
+        d.verts.length >= 1
+      ) {
         const pts = [
           ...d.verts.map((v2) => new THREE.Vector3(v2.xMm / 1000, SLICE_Y, v2.yMm / 1000)),
           p,
@@ -3233,7 +3237,10 @@ export function PlanCanvas({
   );
 
   return (
-    <div data-testid="plan-canvas" className="relative h-full w-full overflow-hidden bg-canvas-paper">
+    <div
+      data-testid="plan-canvas"
+      className="relative h-full w-full overflow-hidden bg-canvas-paper"
+    >
       {wallContextMenu && (
         <WallContextMenu
           wall={wallContextMenu.wall}
@@ -3385,11 +3392,48 @@ export function PlanCanvas({
         <button
           type="button"
           title="Click for zoom presets · scroll to zoom · Space+drag to pan"
-          className="flex items-center gap-1 rounded border border-border bg-surface/80 px-2 py-1 font-mono text-[10px] text-muted backdrop-blur hover:bg-surface hover:text-foreground"
+          className="flex items-center gap-1.5 rounded border border-border bg-surface/80 px-2 py-1 font-mono text-[10px] text-muted backdrop-blur hover:bg-surface hover:text-foreground"
           onClick={() => setShowZoomMenu((v) => !v)}
         >
-          ━━━ {`${(sb * 100).toFixed(0)} cm`}
+          {/* Graphical scale bar: a horizontal rule + dimension text */}
+          <span aria-hidden="true" className="flex flex-col items-center gap-0.5">
+            <span className="flex h-[7px] w-[36px] items-end">
+              <span className="h-[5px] w-[18px] border border-r-0 border-muted/60 bg-muted/20" />
+              <span className="h-[5px] w-[18px] border border-muted/60 bg-surface/80" />
+            </span>
+            <span>{`${(sb * 100).toFixed(0)} cm`}</span>
+          </span>
         </button>
+      </div>
+      {/* North point — architectural drawing convention, always aligned to grid north (up). */}
+      <div className="pointer-events-none absolute left-3 bottom-14 z-10 opacity-55">
+        <svg
+          width="26"
+          height="30"
+          viewBox="0 0 26 30"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="text-foreground"
+        >
+          {/* Filled north half of circle */}
+          <path d="M13 2 A11 11 0 0 1 24 13 L13 13 Z" fill="currentColor" />
+          {/* Circle outline */}
+          <circle cx="13" cy="13" r="11" stroke="currentColor" strokeWidth="1" />
+          {/* Center crosshair dot */}
+          <circle cx="13" cy="13" r="1.5" fill="currentColor" />
+          {/* N label */}
+          <text
+            x="13"
+            y="29"
+            textAnchor="middle"
+            fontSize="8"
+            fontWeight="600"
+            fontFamily="Inter,system-ui,sans-serif"
+            fill="currentColor"
+          >
+            N
+          </text>
+        </svg>
       </div>
       {/* EDT-01 — temp-dimension layer: shown when exactly one wall is selected. */}
       {selectedWall && tempDimTargets.length > 0 && (
