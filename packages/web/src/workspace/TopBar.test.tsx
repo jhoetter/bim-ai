@@ -67,7 +67,7 @@ describe('TopBar — spec §11', () => {
     expect(onModeChange).toHaveBeenLastCalledWith('agent'); // wraps backwards from plan
   });
 
-  it('renders Sun when theme=dark and Moon when theme=light', () => {
+  it('renders theme toggle in avatar dropdown (light → dark label, dark → light label)', () => {
     const { rerender, getByTestId } = renderWithI18n(
       <TopBar
         {...baseProps}
@@ -77,9 +77,11 @@ describe('TopBar — spec §11', () => {
         theme="light"
       />,
     );
+    // Open the avatar menu to reveal the theme toggle
+    fireEvent.click(getByTestId('topbar-avatar-menu-trigger'));
     const btn = getByTestId('topbar-theme-toggle');
     expect(btn.getAttribute('data-current-theme')).toBe('light');
-    expect(btn.getAttribute('aria-label')).toBe('Dark theme');
+    expect(btn.textContent).toContain('Dark theme');
     rerender(
       <TopBar
         {...baseProps}
@@ -90,7 +92,7 @@ describe('TopBar — spec §11', () => {
       />,
     );
     expect(btn.getAttribute('data-current-theme')).toBe('dark');
-    expect(btn.getAttribute('aria-label')).toBe('Light theme');
+    expect(btn.textContent).toContain('Light theme');
   });
 
   it('shows the project name and emits onProjectNameClick on click', () => {
@@ -117,7 +119,7 @@ describe('TopBar — spec §11', () => {
 
   it('emits onCommandPalette when ⌘K button is clicked', () => {
     const onCommandPalette = vi.fn();
-    const { getByText } = renderWithI18n(
+    const { getByTestId } = renderWithI18n(
       <TopBar
         {...baseProps}
         mode="plan"
@@ -125,7 +127,7 @@ describe('TopBar — spec §11', () => {
         onCommandPalette={onCommandPalette}
       />,
     );
-    fireEvent.click(getByText('⌘K').parentElement!);
+    fireEvent.click(getByTestId('topbar-cmdpalette'));
     expect(onCommandPalette).toHaveBeenCalled();
   });
 

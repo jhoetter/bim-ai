@@ -1123,19 +1123,8 @@ export function Workspace(): JSX.Element {
               onCollaboratorsClick={() => setCommentsOpen((v) => !v)}
               peers={Object.values(presencePeers)}
               avatarInitials={userDisplayName ? userDisplayName.slice(0, 2).toUpperCase() : 'BA'}
-              perspectiveOptions={PERSPECTIVE_OPTIONS}
-              perspectiveValue={perspectiveId}
-              onPerspectiveChange={(v) => setPerspectiveId(v as PerspectiveId)}
-              planStyleOptions={PLAN_STYLE_OPTIONS}
-              planStyleValue={planPresentationPreset}
-              onPlanStyleChange={(v) =>
-                setPlanPresentationPreset(v as 'default' | 'opening_focus' | 'room_scheme')
-              }
               hasPages={sheetPages.length > 0}
               onSharePresentation={() => setSharePresentationOpen(true)}
-              onOpen3dView={() => {
-                setTabsState((s) => openTab(s, { kind: '3d', label: '3D View' }));
-              }}
               onUndo={() => void handleUndoRedo(true)}
               onRedo={() => void handleUndoRedo(false)}
               canUndo={undoDepth > 0}
@@ -1217,6 +1206,14 @@ export function Workspace(): JSX.Element {
             onModeChange={handleModeChange}
             onSetModeOnly={handleSetModeOnly}
             onOpenFamilyLibrary={() => setFamilyLibraryOpen(true)}
+            perspectiveOptions={PERSPECTIVE_OPTIONS}
+            perspectiveValue={perspectiveId}
+            onPerspectiveChange={(v) => setPerspectiveId(v as PerspectiveId)}
+            planStyleOptions={PLAN_STYLE_OPTIONS}
+            planStyleValue={planPresentationPreset}
+            onPlanStyleChange={(v) =>
+              setPlanPresentationPreset(v as 'default' | 'opening_focus' | 'room_scheme')
+            }
           />
         }
         leftRailCollapsed={

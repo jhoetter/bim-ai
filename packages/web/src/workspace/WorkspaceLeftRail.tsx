@@ -2,12 +2,13 @@ import type { JSX } from 'react';
 import { useMemo, useState } from 'react';
 
 import type { Element } from '@bim-ai/core';
+import { Icons } from '@bim-ai/ui';
 
 import { BUILT_IN_FAMILIES } from '../families/familyCatalog';
 import { LevelStack } from '../levels/LevelStack';
 import { useBimStore } from '../state/store';
 import { LeftRail } from './LeftRail';
-import type { WorkspaceMode } from './TopBar';
+import type { TopBarSelectOption, WorkspaceMode } from './TopBar';
 import { buildBrowserSections } from './workspaceUtils';
 
 export function WorkspaceLeftRail({
@@ -16,6 +17,12 @@ export function WorkspaceLeftRail({
   onModeChange,
   onSetModeOnly,
   onOpenFamilyLibrary,
+  perspectiveOptions,
+  perspectiveValue,
+  onPerspectiveChange,
+  planStyleOptions,
+  planStyleValue,
+  onPlanStyleChange,
 }: {
   onSemanticCommand: (cmd: Record<string, unknown>) => void | Promise<void>;
   openTabFromElement: (el: Element) => void;
@@ -25,6 +32,14 @@ export function WorkspaceLeftRail({
    * `onModeChange` (which calls activateOrOpenKind) doesn't override it. */
   onSetModeOnly?: (mode: WorkspaceMode) => void;
   onOpenFamilyLibrary?: () => void;
+  /** Discipline/perspective filter selector. */
+  perspectiveOptions?: TopBarSelectOption[];
+  perspectiveValue?: string;
+  onPerspectiveChange?: (id: string) => void;
+  /** Plan presentation style selector. */
+  planStyleOptions?: TopBarSelectOption[];
+  planStyleValue?: string;
+  onPlanStyleChange?: (id: string) => void;
 }): JSX.Element {
   const elementsById = useBimStore((s) => s.elementsById);
   const activeLevelId = useBimStore((s) => s.activeLevelId);
@@ -47,8 +62,64 @@ export function WorkspaceLeftRail({
     return undefined;
   }, [selectedId, elementsById]);
 
+  const showDisciplineHeader =
+    (perspectiveOptions && perspectiveOptions.length > 0) ||
+    (planStyleOptions && planStyleOptions.length > 0);
+
   return (
     <div className="relative flex h-full flex-col overflow-hidden">
+      {showDisciplineHeader ? (
+        <div className="flex shrink-0 items-center gap-1.5 border-b border-border px-2 py-1.5">
+          {perspectiveOptions &&
+          perspectiveOptions.length > 0 &&
+          perspectiveValue !== undefined &&
+          onPerspectiveChange ? (
+            <div className="relative flex flex-1 items-center">
+              <select
+                aria-label="Discipline"
+                value={perspectiveValue}
+                onChange={(e) => onPerspectiveChange(e.target.value)}
+                className="h-6 w-full cursor-pointer appearance-none rounded border border-border bg-surface pl-2 pr-5 text-xs text-foreground hover:bg-surface-strong focus:outline-none"
+              >
+                {perspectiveOptions.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+              <Icons.disclosureOpen
+                size={10}
+                className="pointer-events-none absolute right-1 text-muted"
+                aria-hidden="true"
+              />
+            </div>
+          ) : null}
+          {planStyleOptions &&
+          planStyleOptions.length > 0 &&
+          planStyleValue !== undefined &&
+          onPlanStyleChange ? (
+            <div className="relative flex flex-1 items-center">
+              <select
+                aria-label="Plan style"
+                value={planStyleValue}
+                onChange={(e) => onPlanStyleChange(e.target.value)}
+                className="h-6 w-full cursor-pointer appearance-none rounded border border-border bg-surface pl-2 pr-5 text-xs text-foreground hover:bg-surface-strong focus:outline-none"
+              >
+                {planStyleOptions.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+              <Icons.disclosureOpen
+                size={10}
+                className="pointer-events-none absolute right-1 text-muted"
+                aria-hidden="true"
+              />
+            </div>
+          ) : null}
+        </div>
+      ) : null}
       {onOpenFamilyLibrary ? (
         <div className="shrink-0 border-b border-border p-2">
           <button
