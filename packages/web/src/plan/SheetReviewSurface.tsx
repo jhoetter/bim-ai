@@ -373,7 +373,8 @@ function CommentPinOverlay({
   return (
     <button
       type="button"
-      aria-label="Sheet comment"
+      aria-label={resolved ? 'Resolved comment' : active ? 'Active comment (open)' : 'Comment'}
+      aria-pressed={active}
       onClick={(e) => {
         e.stopPropagation();
         onClick();
