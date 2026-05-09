@@ -39,6 +39,9 @@ export function SheetReviewSurface({
   const [comments, setComments] = useState<Comment[]>([]);
   const [markups, setMarkups] = useState<Markup[]>([]);
   const [canvasDims, setCanvasDims] = useState({ width: 0, height: 0 });
+  const [markupShape, setMarkupShape] = useState<'freehand' | 'arrow' | 'cloud' | 'text'>(
+    'freehand',
+  );
   const [activePinId, setActivePinId] = useState<string | null>(null);
   const [pendingPin, setPendingPin] = useState<{ xPx: number; yPx: number } | null>(null);
   const pixelMapCacheRef = useRef<PixelMapCache | null>(null);
@@ -59,6 +62,15 @@ export function SheetReviewSurface({
 
   const handleStrokeComplete = useCallback(
     (pathPx: Array<{ xPx: number; yPx: number }>) => {
+      const shape =
+        markupShape === 'cloud'
+          ? { kind: 'cloud' as const, pointsMm: pathPx.map((p) => ({ xMm: p.xPx, yMm: p.yPx })) }
+          : {
+              kind: 'freehand' as const,
+              pathPx,
+              color: 'var(--cat-edit)',
+              strokeWidthPx: 2,
+            };
       const newMarkup: Markup = {
         id: `markup-${Date.now()}`,
         modelId,
@@ -69,7 +81,48 @@ export function SheetReviewSurface({
           xPx: pathPx[0]?.xPx ?? 0,
           yPx: pathPx[0]?.yPx ?? 0,
         },
-        shape: { kind: 'freehand', pathPx, color: 'var(--cat-edit)', strokeWidthPx: 2 },
+        shape,
+        authorId: userId ?? 'current-user',
+        createdAt: Date.now(),
+      };
+      setMarkups((prev) => [...prev, newMarkup]);
+    },
+    [modelId, sheetId, userId, markupShape],
+  );
+
+  const handleArrowComplete = useCallback(
+    (from: { xPx: number; yPx: number }, to: { xPx: number; yPx: number }) => {
+      const newMarkup: Markup = {
+        id: `markup-${Date.now()}`,
+        modelId,
+        viewId: sheetId,
+        anchor: { kind: 'screen', viewId: sheetId, xPx: from.xPx, yPx: from.yPx },
+        shape: {
+          kind: 'arrow',
+          fromMm: { xMm: from.xPx, yMm: from.yPx },
+          toMm: { xMm: to.xPx, yMm: to.yPx },
+          color: 'var(--cat-edit)',
+        },
+        authorId: userId ?? 'current-user',
+        createdAt: Date.now(),
+      };
+      setMarkups((prev) => [...prev, newMarkup]);
+    },
+    [modelId, sheetId, userId],
+  );
+
+  const handleTextPlace = useCallback(
+    (pos: { xPx: number; yPx: number }, text: string) => {
+      const newMarkup: Markup = {
+        id: `markup-${Date.now()}`,
+        modelId,
+        viewId: sheetId,
+        anchor: { kind: 'screen', viewId: sheetId, xPx: pos.xPx, yPx: pos.yPx },
+        shape: {
+          kind: 'text',
+          bodyMd: text,
+          positionMm: { xMm: pos.xPx, yMm: pos.yPx },
+        },
         authorId: userId ?? 'current-user',
         createdAt: Date.now(),
       };
@@ -247,8 +300,10 @@ export function SheetReviewSurface({
             markups={markups}
             viewId={sheetId}
             drawingActive={mode === 'an' && !readOnly}
-            activeShape="freehand"
+            activeShape={markupShape}
             onStrokeComplete={handleStrokeComplete}
+            onArrowComplete={handleArrowComplete}
+            onTextPlace={handleTextPlace}
             width={canvasDims.width}
             height={canvasDims.height}
           />
@@ -291,7 +346,13 @@ export function SheetReviewSurface({
         </div>
       )}
 
-      <ReviewToolbar mode={mode} onModeChange={setMode} readOnly={readOnly} />
+      <ReviewToolbar
+        mode={mode}
+        onModeChange={setMode}
+        readOnly={readOnly}
+        markupShape={markupShape}
+        onMarkupShapeChange={setMarkupShape}
+      />
     </div>
   );
 }
@@ -334,14 +395,29 @@ function CommentPinOverlay({
   );
 }
 
+const MARKUP_SHAPES: Array<{
+  id: 'freehand' | 'arrow' | 'cloud' | 'text';
+  label: string;
+  title: string;
+}> = [
+  { id: 'freehand', label: '✏️ Free', title: 'Freehand pen stroke' },
+  { id: 'arrow', label: '→ Arrow', title: 'Arrow annotation (drag)' },
+  { id: 'cloud', label: '☁ Cloud', title: 'Cloud revision cloud (stroke)' },
+  { id: 'text', label: 'T Text', title: 'Text note (click to place)' },
+];
+
 function ReviewToolbar({
   mode,
   onModeChange,
   readOnly,
+  markupShape,
+  onMarkupShapeChange,
 }: {
   mode: ReviewMode;
   onModeChange: (m: ReviewMode) => void;
   readOnly: boolean;
+  markupShape: 'freehand' | 'arrow' | 'cloud' | 'text';
+  onMarkupShapeChange: (s: 'freehand' | 'arrow' | 'cloud' | 'text') => void;
 }): JSX.Element {
   return (
     <div
@@ -375,6 +451,35 @@ function ReviewToolbar({
           {label}
         </button>
       ))}
+
+      {mode === 'an' && !readOnly && (
+        <>
+          <div
+            aria-hidden="true"
+            style={{ width: 1, height: 20, background: 'var(--color-border)', marginInline: 4 }}
+          />
+          {MARKUP_SHAPES.map(({ id, label, title }) => (
+            <button
+              key={id}
+              type="button"
+              data-testid={`markup-shape-${id}`}
+              aria-pressed={markupShape === id}
+              title={title}
+              onClick={() => onMarkupShapeChange(id)}
+              className={[
+                'rounded px-2 py-1 text-[11px] transition-colors',
+                markupShape === id
+                  ? 'bg-accent text-accent-foreground font-semibold'
+                  : 'text-muted hover:bg-surface hover:text-foreground',
+              ]
+                .join(' ')
+                .trim()}
+            >
+              {label}
+            </button>
+          ))}
+        </>
+      )}
     </div>
   );
 }
