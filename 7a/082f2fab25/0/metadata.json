@@ -1,0 +1,22 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "7a082f2fab25",
+  "session_id": "484b3fc4-cdb5-4d63-973e-ff931c99ea77",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-09T15:45:03.732325Z",
+  "branch": "feat/parity-spacebar-flip",
+  "checkpoints_count": 0,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "874ca3d03ce8",
+  "checkpoint_transcript_start": 6467,
+  "transcript_lines_at_start": 6467,
+  "token_usage": {
+    "input_tokens": 7,
+    "cache_creation_tokens": 3990,
+    "cache_read_tokens": 683826,
+    "output_tokens": 1676,
+    "api_call_count": 7
+  }
+}
