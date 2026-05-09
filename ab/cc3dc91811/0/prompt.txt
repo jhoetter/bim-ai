@@ -1,0 +1,40 @@
+my CI/CD is failing.
+
+python:
+Run ruff check bim_ai tests
+/home/runner/work/_temp/0069ff76-2ee9-4572-b863-a0be8242ae1b.sh: line 1: ruff: command not found
+Error: Process completed with exit code 127.
+
+js:
+Run pnpm verify
+
+> bim-ai@0.1.0 verify /home/runner/work/bim-ai/bim-ai
+> pnpm format:check && pnpm lint:root && pnpm architecture && pnpm typecheck && pnpm test && pnpm build
+
+
+> bim-ai@0.1.0 format:check /home/runner/work/bim-ai/bim-ai
+> prettier --check "**/*.{ts,tsx,js,jsx,json,yml,yaml}"
+
+Checking formatting...
+[warn] app/tests/agent/refinement_reliability/12_step_refinement.yaml
+[warn] packages/web/src/__tests__/offlineQueue.test.ts
+[warn] packages/web/src/familyEditor/LoadedFamiliesSidebar.tsx
+[warn] packages/web/src/jobs/JobsPanel.tsx
+[warn] packages/web/src/offlineStore.ts
+[warn] packages/web/src/plan/PhaseDropdown.tsx
+[warn] packages/web/src/plan/SheetCanvas.tsx
+[warn] packages/web/src/tools/toolRegistry.ts
+[warn] packages/web/src/viewport/useLensFilter.ts
+[warn] packages/web/src/workspace/agentBriefAcceptanceReadout.tsx
+[warn] packages/web/src/workspace/KitChainEditor.tsx
+[warn] packages/web/src/workspace/kitSolver.ts
+[warn] packages/web/src/workspace/ProjectBrowser.test.tsx
+[warn] packages/web/src/workspace/SubdivisionPalette.test.tsx
+[warn] packages/web/src/workspace/SunInspectorPanel.tsx
+[warn] packages/web/src/workspace/WallContextMenu.test.tsx
+[warn] Code style issues found in 16 files. Run Prettier with --write to fix.
+ ELIFECYCLE  Command failed with exit code 1.
+ ELIFECYCLE  Command failed with exit code 1.
+Error: Process completed with exit code 1.
+
+please fix, then commit and push to main
