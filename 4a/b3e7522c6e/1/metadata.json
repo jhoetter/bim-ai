@@ -1,0 +1,48 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "4ab3e7522c6e",
+  "session_id": "50a3d153-f462-4f27-b73c-9ec39b274eb6",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-09T20:21:08.235902Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/icons/src/hifi-annotation-ext-a.tsx",
+    "packages/icons/src/hifi-annotation-ext-b.tsx",
+    "packages/icons/src/hifi-arch-ext-a.tsx",
+    "packages/icons/src/hifi-arch-ext-b.tsx",
+    "packages/icons/src/hifi-collaboration.tsx",
+    "packages/icons/src/hifi-edit-basic.tsx",
+    "packages/icons/src/hifi-edit-ops.tsx",
+    "packages/icons/src/hifi-mep-ext-a.tsx",
+    "packages/icons/src/hifi-mep-ext-b.tsx",
+    "packages/icons/src/hifi-structural-ext.tsx",
+    "packages/icons/src/hifi-views-ext.tsx",
+    "packages/icons/src/hifi-workflow.tsx",
+    "packages/icons/src/index.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "af6ddb0886a6",
+  "checkpoint_transcript_start": 5193,
+  "transcript_lines_at_start": 5193,
+  "token_usage": {
+    "input_tokens": 1,
+    "cache_creation_tokens": 267,
+    "cache_read_tokens": 148214,
+    "output_tokens": 432,
+    "api_call_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-09T20:21:08.107292Z",
+    "agent_lines": 10613,
+    "agent_removed": 0,
+    "human_added": 4681,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 15294,
+    "total_lines_changed": 15294,
+    "agent_percentage": 69.39322610173924,
+    "metric_version": 2
+  }
+}
