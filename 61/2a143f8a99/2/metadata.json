@@ -1,0 +1,43 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "612a143f8a99",
+  "session_id": "965188de-05c1-45fb-bdf6-79ca31696284",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-09T18:58:32.278369Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "3869784d92e0",
+  "checkpoint_transcript_start": 245,
+  "transcript_lines_at_start": 245,
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 0
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 286,
+      "user_lines_removed": 76,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/icons/src/hifi.tsx": 154,
+        "packages/web/src/design-systems/IconGallery.tsx": 66,
+        "packages/web/src/plan/PlanCanvas.tsx": 60,
+        "spec/revit-parity/README.md": 6
+      },
+      "user_removed_per_file": {
+        "packages/icons/src/hifi.tsx": 60,
+        "packages/web/src/design-systems/IconGallery.tsx": 8,
+        "packages/web/src/plan/PlanCanvas.tsx": 2,
+        "spec/revit-parity/README.md": 6
+      }
+    }
+  ]
+}
