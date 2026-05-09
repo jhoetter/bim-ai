@@ -1,7 +1,7 @@
 # v3 Build State
 
-Last updated: 2026-05-09 (wave-9A: 8 WPs merged ✅; wave-9B: 6 agents dispatched; ~71/77 merged, 6 in flight)
-Active heavy workers: 6 / 8
+Last updated: 2026-05-09 (wave-9B: all 6 WPs merged ✅; 77/77 WPs done — all feature work complete; wave-9C (CQ) remaining)
+Active heavy workers: 0 / 8
 
 ## Merged so far
 
@@ -133,18 +133,18 @@ All 8 WPs conflict-resolved and merged into main by orchestrator (2026-05-09).
 | WP-072 | OUT-V3-03 branded PDF/PPTX export | 2026-05-09 | 98760b0d |
 | WP-073 | TST-V3-01 refinement-reliability CI test | 2026-05-09 | 038b31b0 |
 
-## Wave-9B dispatched 🚀
+## Wave-9B merged ✅
 
-6 agents in flight (2026-05-09).
+All 6 WPs conflict-resolved and merged into main by orchestrator (2026-05-09).
 
-| WP-ID | WP | Branch | Prompt | Dep |
-| ----- | -- | ------ | ------ | --- |
-| WP-065 | TOP-V3-03 subdivide-with-paint UX | feat/v3-top-v3-03-subdivide-paint | wp-065.md | WP-064 ✅ |
-| WP-068 | OSM-V3-02 neighborhood render style | feat/v3-osm-v3-02-neighborhood-render | wp-068.md | WP-067 ✅ |
-| WP-074 | EXP-V3-01 render-pipeline export | feat/v3-exp-v3-01-render-export | wp-074.md | — |
-| WP-075 | CHR-V3-07 project browser refresh | feat/v3-chr-v3-07-project-browser | wp-075.md | — |
-| WP-076 | COL-V3-04 presence avatars | feat/v3-col-v3-04-presence-avatars | wp-076.md | — |
-| WP-077 | COL-V3-06 offline-tolerant authoring | feat/v3-col-v3-06-offline-authoring | wp-077.md | — |
+| WP-ID | WP | Merged at | Commit |
+| ----- | -- | --------- | ------ |
+| WP-065 | TOP-V3-03 subdivide-with-paint UX | 2026-05-09 | acf59ae9 |
+| WP-068 | OSM-V3-02 neighborhood massing render style | 2026-05-09 | fca5b9a1 |
+| WP-074 | EXP-V3-01 render-pipeline export | 2026-05-09 | 71c4b9e9 |
+| WP-075 | CHR-V3-07 project browser refresh | 2026-05-09 | 6f1772f6 |
+| WP-076 | COL-V3-04 presence avatars | 2026-05-09 | da276ea7 |
+| WP-077 | COL-V3-06 offline-tolerant authoring | 2026-05-09 | b11932e6 |
 
 ## Wave-9C (sequential, quiet window — after all WPs merged)
 
