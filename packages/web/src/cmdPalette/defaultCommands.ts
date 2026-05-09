@@ -122,3 +122,134 @@ registerCommand({
   category: 'navigate',
   invoke: () => useBimStore.getState().setPerspectiveId('mep'),
 });
+
+// Additional tools
+registerCommand({
+  id: 'tool.stair',
+  label: 'Place Stair',
+  shortcut: 'ST',
+  keywords: ['stair', 'steps', 'riser'],
+  category: 'command',
+  invoke: () => useBimStore.getState().setPlanTool('stair'),
+});
+
+registerCommand({
+  id: 'tool.railing',
+  label: 'Place Railing',
+  keywords: ['railing', 'balustrade', 'guard'],
+  category: 'command',
+  invoke: () => useBimStore.getState().setPlanTool('railing'),
+});
+
+registerCommand({
+  id: 'tool.column',
+  label: 'Place Column',
+  keywords: ['column', 'post', 'structural'],
+  category: 'command',
+  invoke: () => useBimStore.getState().setPlanTool('column'),
+});
+
+registerCommand({
+  id: 'tool.beam',
+  label: 'Place Beam',
+  keywords: ['beam', 'joist', 'structural'],
+  category: 'command',
+  invoke: () => useBimStore.getState().setPlanTool('beam'),
+});
+
+registerCommand({
+  id: 'tool.ceiling',
+  label: 'Place Ceiling',
+  keywords: ['ceiling', 'soffit'],
+  category: 'command',
+  invoke: () => useBimStore.getState().setPlanTool('ceiling'),
+});
+
+registerCommand({
+  id: 'tool.roof',
+  label: 'Place Roof',
+  keywords: ['roof', 'roofing'],
+  category: 'command',
+  invoke: () => useBimStore.getState().setPlanTool('roof'),
+});
+
+registerCommand({
+  id: 'tool.grid',
+  label: 'Place Grid Line',
+  keywords: ['grid', 'gridline', 'structural grid'],
+  category: 'command',
+  invoke: () => useBimStore.getState().setPlanTool('grid'),
+});
+
+registerCommand({
+  id: 'tool.dimension',
+  label: 'Place Dimension',
+  keywords: ['dimension', 'measure', 'annotate'],
+  category: 'command',
+  invoke: () => useBimStore.getState().setPlanTool('dimension'),
+});
+
+registerCommand({
+  id: 'tool.section',
+  label: 'Place Section Cut',
+  keywords: ['section', 'cut', 'callout'],
+  category: 'command',
+  invoke: () => useBimStore.getState().setPlanTool('section'),
+});
+
+registerCommand({
+  id: 'tool.measure',
+  label: 'Measure Distance',
+  keywords: ['measure', 'tape', 'distance'],
+  category: 'command',
+  invoke: () => useBimStore.getState().setPlanTool('measure'),
+});
+
+registerCommand({
+  id: 'tool.mirror',
+  label: 'Mirror Elements',
+  keywords: ['mirror', 'flip', 'symmetry'],
+  category: 'command',
+  invoke: () => useBimStore.getState().setPlanTool('mirror'),
+});
+
+// Display settings
+registerCommand({
+  id: 'display.render.shaded',
+  label: 'Render: Shaded',
+  keywords: ['render', 'shaded', 'display', '3d'],
+  category: 'command',
+  invoke: () => useBimStore.getState().setViewerRenderStyle('shaded'),
+});
+
+registerCommand({
+  id: 'display.render.wireframe',
+  label: 'Render: Wireframe',
+  keywords: ['wireframe', 'render', 'display', '3d'],
+  category: 'command',
+  invoke: () => useBimStore.getState().setViewerRenderStyle('wireframe'),
+});
+
+registerCommand({
+  id: 'display.render.consistent-colors',
+  label: 'Render: Consistent Colors',
+  keywords: ['consistent colors', 'render', 'display'],
+  category: 'command',
+  invoke: () => useBimStore.getState().setViewerRenderStyle('consistent-colors'),
+});
+
+registerCommand({
+  id: 'display.reveal-hidden',
+  label: 'Reveal Hidden Elements',
+  keywords: ['reveal', 'hidden', 'invisible', 'show all'],
+  category: 'command',
+  invoke: () => useBimStore.getState().setRevealHiddenMode(true),
+});
+
+registerCommand({
+  id: 'display.neighborhood',
+  label: 'Toggle Neighborhood Masses',
+  keywords: ['neighborhood', 'osm', 'context', 'mass'],
+  category: 'command',
+  invoke: () => useBimStore.getState().toggleNeighborhoodMasses(),
+});
