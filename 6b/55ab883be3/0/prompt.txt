@@ -1,0 +1,13 @@
+codex -c 'model_reasoning_effort="high"' -c 'model_reasoning_summary="detailed"'
+(base) jhoetter@MacBook-Pro-von-Johannes-2 bim-ai % codex -c 'model_reasoning_effort="high"' -c 'model_reasoning_summary="detailed"'
+╭────────────────────────────────────────────╮
+│ >_ OpenAI Codex (v0.130.0)                 │
+│                                            │
+│ model:     gpt-5.5 high   /model to change │
+│ directory: ~/repos/bim-ai                  │
+╰────────────────────────────────────────────╯
+
+  Tip: New For a limited time, Codex is included in your plan for free – let’s build together.
+
+⚠ `[features].codex_hooks` is deprecated. Use `[features].hooks` instead.
+Enable it with `--enable hooks` or `[features].hooks` in config.toml. See https://developers.openai.com/codex/config-basic#feature-flags for details.
