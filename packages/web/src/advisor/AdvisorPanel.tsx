@@ -107,6 +107,7 @@ export function AdvisorPanel(props: {
         <span className="text-muted">{t('advisor.codePreset')}</span>
         <select
           value={props.preset}
+          aria-label={t('advisor.codePreset')}
           onChange={(e) => props.onPreset(e.target.value)}
           className="rounded border border-border bg-background px-2 py-1"
         >
