@@ -2,22 +2,30 @@
   "cli_version": "0.6.0",
   "checkpoint_id": "821705263c16",
   "strategy": "manual-commit",
-  "branch": "feat/parity-vv-room-sep",
+  "branch": "feat/parity-tracker-corrections",
   "checkpoints_count": 1,
-  "files_touched": null,
+  "files_touched": [
+    "packages/web/src/workspace/VVDialog.tsx"
+  ],
   "sessions": [
     {
       "metadata": "/82/1705263c16/0/metadata.json",
       "transcript": "/82/1705263c16/0/full.jsonl",
       "content_hash": "/82/1705263c16/0/content_hash.txt",
       "prompt": "/82/1705263c16/0/prompt.txt"
+    },
+    {
+      "metadata": "/82/1705263c16/1/metadata.json",
+      "transcript": "/82/1705263c16/1/full.jsonl",
+      "content_hash": "/82/1705263c16/1/content_hash.txt",
+      "prompt": "/82/1705263c16/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 6272,
-    "cache_creation_tokens": 3335159,
-    "cache_read_tokens": 147118102,
-    "output_tokens": 952344,
-    "api_call_count": 1570
+    "input_tokens": 6275,
+    "cache_creation_tokens": 3336977,
+    "cache_read_tokens": 147451835,
+    "output_tokens": 956805,
+    "api_call_count": 1573
   }
 }
