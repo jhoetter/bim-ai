@@ -2860,3 +2860,31 @@ export type BrandedExportBundle = {
   sheets: Array<{ sheetId: string; name: string }>;
   invariantCheck: 'layer-c-only';
 };
+
+// ---------------------------------------------------------------------------
+// EXP-V3-01 — Render-pipeline export types
+// ---------------------------------------------------------------------------
+
+export type RenderExportFormat = 'gltf' | 'gltf-pbr' | 'ifc-bundle' | 'metadata-only';
+
+export type RenderExportBundle = {
+  schemaVersion: 'exp-v3.0';
+  format: RenderExportFormat;
+  primaryAsset?: { kind: string; pathInArchive: string };
+  metadata: {
+    cameras: Array<{
+      viewId: string;
+      positionMm: { xMm: number; yMm: number; zMm: number };
+      targetMm: { xMm: number; yMm: number; zMm: number };
+      fovDeg: number;
+    }>;
+    sunSettings: { azimuthDeg: number; elevationDeg: number; intensity: number };
+    materials: Array<{ id: string; pbr: Record<string, unknown> }>;
+    annotations: Array<{
+      id: string;
+      text: string;
+      positionMm: { xMm: number; yMm: number; zMm: number };
+    }>;
+  };
+  exportTimestamp: string;
+};

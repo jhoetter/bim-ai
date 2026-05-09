@@ -2923,3 +2923,38 @@ async def export_presentation_canvas(
     canvas_dict = canvas_elem.model_dump(by_alias=True)
     bundle = build_pptx_bundle(canvas_dict, frames)
     return bundle.to_dict()
+
+
+# ---------------------------------------------------------------------------
+# EXP-V3-01 — Render-pipeline export (glTF / IFC / metadata bundle)
+# ---------------------------------------------------------------------------
+
+_VALID_EXPORT_FORMATS = {"gltf", "gltf-pbr", "ifc-bundle", "metadata-only"}
+
+
+@api_router.get("/v3/models/{model_id}/export", tags=["exp-v3-01"])
+async def render_export(
+    model_id: UUID,
+    format: str = Query(default="metadata-only"),
+    viewId: str | None = Query(default=None),
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """EXP-V3-01 — Export model as glTF, IFC, or metadata bundle for external renderers."""
+    from bim_ai.exp.render_export import build_export_bundle
+
+    if format not in _VALID_EXPORT_FORMATS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid export format '{format}'. Valid values: {sorted(_VALID_EXPORT_FORMATS)}",
+        )
+
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+
+    doc = Document.model_validate(row.document)
+    elements_list = [v.model_dump(by_alias=True) for v in doc.elements.values()]
+    model_state = {"elements": elements_list}
+
+    bundle = build_export_bundle(model_state, format, view_id=viewId)  # type: ignore[arg-type]
+    return bundle.to_dict()

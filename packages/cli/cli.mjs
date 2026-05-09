@@ -426,7 +426,7 @@ async function cmdPlanHouse(briefPath, outPath, modelHint) {
   console.log(JSON.stringify({ ok: true, out: outPath, commandCount: bundle.commands.length }, null, 2));
 }
 
-async function cmdExport(kind, modelId, outPath) {
+async function cmdExport(kind, modelId, outPath, viewId) {
   if (kind === 'gltf') {
     if (!modelId) usage();
     const url = `${base}/api/models/${encodeURIComponent(modelId)}/exports/model.gltf`;
@@ -494,6 +494,22 @@ async function cmdExport(kind, modelId, outPath) {
           2,
         ),
       );
+    } else {
+      process.stdout.write(text);
+    }
+    return;
+  }
+  // EXP-V3-01 — render-pipeline export formats
+  if (kind === 'render-bundle' || kind === 'gltf-pbr' || kind === 'ifc-bundle' || kind === 'metadata-only') {
+    if (!modelId) usage();
+    const params = new URLSearchParams({ format: kind === 'render-bundle' ? 'metadata-only' : kind });
+    if (viewId) params.set('viewId', viewId);
+    const url = `${base}/api/v3/models/${encodeURIComponent(modelId)}/export?${params}`;
+    const json = await fetchJson('GET', url);
+    const text = `${JSON.stringify(json, null, 2)}\n`;
+    if (outPath && outPath !== '-') {
+      await fs.writeFile(outPath, text, 'utf8');
+      console.log(JSON.stringify({ ok: true, out: outPath, format: json.format }, null, 2));
     } else {
       process.stdout.write(text);
     }
@@ -995,10 +1011,13 @@ async function main() {
       const k = rest[0];
       if (!k) usage();
       let outArg;
+      let viewIdArg;
       for (let i = 1; i < rest.length; i++) {
-        if (rest[i] === '--out' && rest[i + 1]) outArg = rest[++i];
+        const a = rest[i];
+        if ((a === '--out' || a === '-o') && rest[i + 1]) outArg = rest[++i];
+        else if (a === '--view' && rest[i + 1]) viewIdArg = rest[++i];
       }
-      await cmdExport(k, modelId, outArg);
+      await cmdExport(k, modelId, outArg, viewIdArg);
       return;
     }
     if (cmd === 'diff') {
