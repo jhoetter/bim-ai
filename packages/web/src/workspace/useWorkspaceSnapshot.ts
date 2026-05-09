@@ -11,13 +11,43 @@ import {
 } from '../lib/api';
 import { log } from '../logger';
 import { useBimStore } from '../state/store';
+import { MAX_WS_RECONNECT_ATTEMPTS, reconnectDelayMs } from '../lib/wsReconnect';
 import { mapComments } from './workspaceUtils';
 
 const DISABLE_WS =
   typeof import.meta.env.VITE_E2E_DISABLE_WS === 'string' &&
   ['1', 'true', 'yes'].includes(import.meta.env.VITE_E2E_DISABLE_WS.trim().toLowerCase());
 
-const MAX_RECONNECT_ATTEMPTS = 10;
+function lastSeqStorageKey(modelId: string): string {
+  return `bim.ws.lastSeq.${modelId}`;
+}
+
+function readLastSeq(modelId: string): number | null {
+  try {
+    const raw = sessionStorage.getItem(lastSeqStorageKey(modelId));
+    if (!raw) return null;
+    const parsed = Number(raw);
+    return Number.isInteger(parsed) && parsed >= 0 ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeLastSeq(modelId: string, seq: number): void {
+  try {
+    sessionStorage.setItem(lastSeqStorageKey(modelId), String(seq));
+  } catch {
+    /* noop */
+  }
+}
+
+function clearLastSeq(modelId: string): void {
+  try {
+    sessionStorage.removeItem(lastSeqStorageKey(modelId));
+  } catch {
+    /* noop */
+  }
+}
 
 export function useWorkspaceSnapshot(): {
   insertSeedHouse: () => Promise<void>;
@@ -70,14 +100,12 @@ export function useWorkspaceSnapshot(): {
         const attempt = reconnectAttemptsRef.current + 1;
         reconnectAttemptsRef.current = attempt;
 
-        if (attempt > MAX_RECONNECT_ATTEMPTS) {
+        if (attempt > MAX_WS_RECONNECT_ATTEMPTS) {
           console.warn('[bim-ai/ws] offline: max reconnect attempts reached');
           return;
         }
 
-        const baseDelay = Math.min(250 * 2 ** (attempt - 1), 8000);
-        const jitter = baseDelay * 0.2 * (Math.random() * 2 - 1);
-        const delay = Math.max(0, Math.round(baseDelay + jitter));
+        const delay = reconnectDelayMs(attempt);
 
         const doReconnect = () => {
           if (!mountedRef.current) return;
@@ -99,12 +127,19 @@ export function useWorkspaceSnapshot(): {
       };
 
       ws.onmessage = (evt) => {
-        const payload = JSON.parse(String(evt.data)) as Record<string, unknown>;
+        let payload: Record<string, unknown>;
+        try {
+          payload = JSON.parse(String(evt.data)) as Record<string, unknown>;
+        } catch (err) {
+          log.error('ws', 'ignored malformed websocket frame', err);
+          return;
+        }
         const t = payload.type;
 
         const seq = payload.seq;
         if (typeof seq === 'number') {
           lastSeqRef.current = seq;
+          writeLastSeq(mid, seq);
         }
 
         if (t === 'snapshot') {
@@ -133,6 +168,7 @@ export function useWorkspaceSnapshot(): {
               const snap = (await snapRes.json()) as Snapshot;
               hydrateFromSnapshot(snap);
               lastSeqRef.current = null;
+              clearLastSeq(mid);
             } catch (err) {
               log.error('ws', 'RESYNC snapshot fetch failed', err);
             }
@@ -165,7 +201,9 @@ export function useWorkspaceSnapshot(): {
       // activityEvents/comments are populated by the modelId effect below — they
       // are model-scoped server state and must invalidate together with modelId.
       if (!DISABLE_WS) {
-        wsRef.current = connectWs(mid, null);
+        const lastSeq = readLastSeq(mid);
+        lastSeqRef.current = lastSeq;
+        wsRef.current = connectWs(mid, lastSeq);
       }
     } catch (err) {
       setSeedError(err instanceof Error ? err.message : 'Failed to load seed');

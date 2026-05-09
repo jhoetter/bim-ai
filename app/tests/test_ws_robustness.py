@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import asyncio
 from typing import Any
+from uuid import uuid4
 
 from bim_ai.hub import Hub
 
@@ -69,12 +70,25 @@ async def test_replay_window_hit() -> None:
     hub.subscribe(model_id, ws_b)
     for payload in replayed:
         await ws_b.send_json(payload)
-    await ws_b.send_json(
-        {"type": "replay_done", "modelId": model_id, "resumedFrom": last_seen}
-    )
+    await ws_b.send_json({"type": "replay_done", "modelId": model_id, "resumedFrom": last_seen})
 
     assert len(ws_b.sent) == 3
     assert ws_b.sent[-1]["type"] == "replay_done"
+
+
+async def test_publish_normalizes_uuid_model_ids_for_string_subscribers() -> None:
+    hub = Hub()
+    model_uuid = uuid4()
+    model_id = str(model_uuid)
+
+    ws: Any = _MockWS()
+    hub.subscribe(model_id, ws)
+
+    seq = await hub.publish(model_uuid, {"type": "delta", "modelId": model_id, "n": 1})
+
+    assert seq == 1
+    assert ws.sent == [{"type": "delta", "modelId": model_id, "n": 1, "seq": 1}]
+    assert hub.resume(model_id, 0) == ws.sent
 
 
 async def test_replay_window_miss_forces_resync() -> None:

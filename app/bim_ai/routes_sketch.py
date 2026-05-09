@@ -469,7 +469,7 @@ async def finish_sketch_session(
     delta = compute_delta_wire(doc_before, new_doc)
     if body.client_op_id:
         delta["clientOpId"] = body.client_op_id
-    await hub.broadcast_json(model_uuid, {"type": "delta", "modelId": str(model_uuid), **delta})
+    await hub.publish(model_uuid, {"type": "delta", "modelId": str(model_uuid), **delta})
 
     sk = sk.model_copy(update={"status": "finished"})
     reg.replace(sk)

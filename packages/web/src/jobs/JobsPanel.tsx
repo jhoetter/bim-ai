@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { Job } from '@bim-ai/core';
 
+import { MAX_WS_RECONNECT_ATTEMPTS, reconnectDelayMs } from '../lib/wsReconnect';
 import { useBimStore } from '../state/store';
 
 const BASE = `${window.location.protocol}//${window.location.host}`;
@@ -173,6 +174,8 @@ export function JobsPanel() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
+  const reconnectAttemptsRef = useRef(0);
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchJobs = useCallback(async () => {
     if (!modelId) return;
@@ -193,29 +196,53 @@ export function JobsPanel() {
   useEffect(() => {
     if (!modelId) return;
 
-    const ws = new WebSocket(`${WS_BASE}/ws/${encodeURIComponent(modelId)}`);
-    wsRef.current = ws;
+    let cancelled = false;
 
-    ws.onmessage = (evt) => {
-      try {
-        const payload = JSON.parse(String(evt.data)) as Record<string, unknown>;
-        if (payload.type === 'job_update') {
-          const updated = payload.job as Job;
-          setJobs((prev) => {
-            const idx = prev.findIndex((j) => j.id === updated.id);
-            if (idx === -1) return [updated, ...prev];
-            const next = [...prev];
-            next[idx] = updated;
-            return next;
-          });
+    const connect = () => {
+      if (cancelled) return;
+      const ws = new WebSocket(`${WS_BASE}/ws/${encodeURIComponent(modelId)}`);
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        reconnectAttemptsRef.current = 0;
+      };
+
+      ws.onmessage = (evt) => {
+        try {
+          const payload = JSON.parse(String(evt.data)) as Record<string, unknown>;
+          if (payload.type === 'job_update') {
+            const updated = payload.job as Job;
+            setJobs((prev) => {
+              const idx = prev.findIndex((j) => j.id === updated.id);
+              if (idx === -1) return [updated, ...prev];
+              const next = [...prev];
+              next[idx] = updated;
+              return next;
+            });
+          }
+        } catch {
+          // ignore parse errors
         }
-      } catch {
-        // ignore parse errors
-      }
+      };
+
+      ws.onclose = () => {
+        if (cancelled) return;
+        const attempt = reconnectAttemptsRef.current + 1;
+        reconnectAttemptsRef.current = attempt;
+        if (attempt > MAX_WS_RECONNECT_ATTEMPTS) return;
+        reconnectTimerRef.current = setTimeout(connect, reconnectDelayMs(attempt));
+      };
     };
 
+    connect();
+
     return () => {
-      ws.close();
+      cancelled = true;
+      if (reconnectTimerRef.current !== null) {
+        clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
+      }
+      wsRef.current?.close();
       wsRef.current = null;
     };
   }, [modelId]);

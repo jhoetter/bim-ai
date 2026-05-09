@@ -349,7 +349,7 @@ async def import_bcf_topics_json(
     if body.client_op_id:
         delta["clientOpId"] = body.client_op_id
 
-    await hub.broadcast_json(
+    await hub.publish(
         model_id,
         {"type": "delta", "modelId": str(model_id), **delta},
     )

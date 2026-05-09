@@ -12,11 +12,11 @@ This tracker is for the code-quality items only:
 
 ## Status Legend
 
-| Symbol    | Meaning                                                      |
-| --------- | ------------------------------------------------------------ |
-| `open`    | Not started                                                  |
-| `partial` | Some slice exists                                            |
-| `done`    | Done rule met — type-clean, tests green, merged              |
+| Symbol    | Meaning                                         |
+| --------- | ----------------------------------------------- |
+| `open`    | Not started                                     |
+| `partial` | Some slice exists                               |
+| `done`    | Done rule met — type-clean, tests green, merged |
 
 ## Done Rule
 
@@ -26,7 +26,7 @@ A CQ item is `done` when: (a) `make verify` passes; (b) new logic has unit-test 
 
 ## CQ-01 — WebSocket robustness (reconnect + replay buffer + sequence)
 
-**Status:** `open`
+**Status:** `partial`
 **Severity:** Medium
 **Blast radius:** Server hub + client WS layer + message envelope. Touches state hydration on reconnect.
 
@@ -47,11 +47,13 @@ A CQ item is `done` when: (a) `make verify` passes; (b) new logic has unit-test 
 - `app/bim_ai/main.py` (or wherever `/ws/{model_id}` is registered) — read `?resumeFrom=` query, dispatch to `Hub.resume`.
 - `packages/web/src/state/ws.ts` (or equivalent) — backoff, resume protocol, `lastSeq` persistence in store.
 
+**Progress 2026-05-10.** Hub sequencing/replay/backpressure exists and all model-scoped mutation broadcasts now use `Hub.publish(...)` so deltas, comments, activity, job updates, and imports are sequenced and replayable. `Hub` normalizes UUID/string model ids before room, buffer, and presence lookup. The workspace client persists `lastSeq` per model in `sessionStorage`, reconnects with `resumeFrom`, and clears the cursor after `RESYNC`; jobs and presentation sockets now reconnect with bounded exponential backoff. Added regression coverage in `app/tests/test_ws_robustness.py` and `packages/web/src/lib/wsReconnect.test.ts`.
+
 ---
 
 ## CQ-02 — Python dependency pinning + lockfile
 
-**Status:** `open`
+**Status:** `done`
 **Severity:** Medium
 **Blast radius:** `app/pyproject.toml` + new lockfile + CI install step.
 
@@ -70,6 +72,8 @@ A CQ item is `done` when: (a) `make verify` passes; (b) new logic has unit-test 
 - `app/uv.lock` (new)
 - `Makefile` — `install` target uses `uv sync --frozen` (or equivalent).
 - `.github/workflows/ci.yml` — same.
+
+**Progress 2026-05-10.** Already satisfied in repo: `app/uv.lock` is committed, runtime deps have major upper bounds, CI runs `uv lock --check` and `uv sync --frozen --extra dev --extra ifc`, and the Makefile has `lockfile-check`.
 
 ---
 
@@ -104,7 +108,7 @@ A CQ item is `done` when: (a) `make verify` passes; (b) new logic has unit-test 
 
 ## CQ-04 — Split Python god-files (`engine.py`, `constraints.py`, `export_ifc.py`)
 
-**Status:** `open`
+**Status:** `partial`
 **Severity:** High (readability + test isolation)
 **Blast radius:** High. Every file that imports from these three.
 
@@ -130,6 +134,8 @@ These files load slowly, test slowly, and are AI-agent-merge-conflict magnets (t
 **Approach note.** Do these three splits as **separate** PRs. Each is independent; serialising avoids merge hell against the nightshift agents.
 
 **Order:** `constraints.py` first (cleanest seams), then `engine.py`, then `export_ifc.py` (gnarliest, IFC-spec-driven).
+
+**Progress 2026-05-10.** Lifted the `bim_ai/export_ifc.py` coverage omit. Full backend pytest passes with `export_ifc.py` included in coverage (`2449 passed, 93 skipped, 1 deselected`; total coverage 74.95%). The actual module splits are still open.
 
 ---
 

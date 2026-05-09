@@ -1532,7 +1532,7 @@ async def apply_bundle_route(
 
         delta = compute_delta_wire(doc_before, new_doc)
         try:
-            await hub.broadcast_json(
+            await hub.publish(
                 model_id, {"type": "delta", "modelId": str(model_id), **delta}
             )
         except Exception:
@@ -1999,7 +1999,7 @@ async def restore_activity_row(
 
     delta = compute_delta_wire(doc_before, restore_doc)
     try:
-        await hub.broadcast_json(
+        await hub.publish(
             model_id, {"type": "delta", "modelId": str(model_id), **delta}
         )
     except Exception:

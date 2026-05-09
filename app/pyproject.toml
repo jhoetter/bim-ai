@@ -75,7 +75,6 @@ markers = [
 
 [tool.coverage.run]
 source = ["bim_ai"]
-omit = ["bim_ai/export_ifc.py"]
 
 [tool.coverage.report]
 exclude_lines = [

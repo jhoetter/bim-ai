@@ -221,7 +221,7 @@ async def _commit_doc_and_broadcast(
     delta = compute_delta_wire(doc_before, new_doc)
     if client_op_id:
         delta["clientOpId"] = client_op_id
-    await hub.broadcast_json(model_uuid, {"type": "delta", "modelId": str(model_uuid), **delta})
+    await hub.publish(model_uuid, {"type": "delta", "modelId": str(model_uuid), **delta})
 
     elems_out = wire_doc["elements"]
     viols_wire = violations_wire(new_doc.elements)
@@ -324,7 +324,7 @@ async def apply_command(
     if body.client_op_id:
         delta["clientOpId"] = body.client_op_id
 
-    await hub.broadcast_json(
+    await hub.publish(
         model_id,
         {"type": "delta", "modelId": str(model_id), **delta},
     )
@@ -469,7 +469,7 @@ async def apply_command_bundle(
     if body.client_op_id:
         delta["clientOpId"] = body.client_op_id
 
-    await hub.broadcast_json(
+    await hub.publish(
         model_id,
         {"type": "delta", "modelId": str(model_id), **delta},
     )

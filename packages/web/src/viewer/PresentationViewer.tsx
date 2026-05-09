@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 
+import { MAX_WS_RECONNECT_ATTEMPTS, reconnectDelayMs } from '../lib/wsReconnect';
+
 interface PresentationMeta {
   id: string;
   displayName?: string;
@@ -26,6 +28,8 @@ export function PresentationViewer({ token }: Props) {
   const [revoked, setRevoked] = useState(false);
   const [loading, setLoading] = useState(true);
   const wsRef = useRef<WebSocket | null>(null);
+  const reconnectAttemptsRef = useRef(0);
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -63,40 +67,62 @@ export function PresentationViewer({ token }: Props) {
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}${data.wsUrl}`;
-    const ws = new WebSocket(wsUrl);
-    wsRef.current = ws;
+    let cancelled = false;
 
-    ws.onmessage = (event) => {
-      try {
-        const msg = JSON.parse(event.data as string) as { type: string };
-        if (msg.type === 'revoked') {
-          setRevoked(true);
-          ws.close();
-        } else if (msg.type === 'snapshot_update' || msg.type === 'delta') {
-          fetch(`/api/p/${token}`)
-            .then((r) => r.json())
-            .then((updated: PresentationData) => {
-              if (updated.status !== 'revoked') {
-                setData((prev) => ({ ...prev, ...updated }));
-              } else {
-                setRevoked(true);
-              }
-            })
-            .catch(() => {});
+    const connect = () => {
+      if (cancelled) return;
+      const ws = new WebSocket(wsUrl);
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        reconnectAttemptsRef.current = 0;
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data as string) as { type: string };
+          if (msg.type === 'revoked') {
+            setRevoked(true);
+            ws.close();
+          } else if (msg.type === 'snapshot_update' || msg.type === 'delta') {
+            fetch(`/api/p/${token}`)
+              .then((r) => r.json())
+              .then((updated: PresentationData) => {
+                if (updated.status !== 'revoked') {
+                  setData((prev) => ({ ...prev, ...updated }));
+                } else {
+                  setRevoked(true);
+                }
+              })
+              .catch(() => {});
+          }
+        } catch {
+          // ignore malformed messages
         }
-      } catch {
-        // ignore malformed messages
-      }
+      };
+
+      ws.onclose = (event) => {
+        if (event.code === 4403) {
+          setRevoked(true);
+          return;
+        }
+        if (cancelled) return;
+        const attempt = reconnectAttemptsRef.current + 1;
+        reconnectAttemptsRef.current = attempt;
+        if (attempt > MAX_WS_RECONNECT_ATTEMPTS) return;
+        reconnectTimerRef.current = setTimeout(connect, reconnectDelayMs(attempt));
+      };
     };
 
-    ws.onclose = (event) => {
-      if (event.code === 4403) {
-        setRevoked(true);
-      }
-    };
+    connect();
 
     return () => {
-      ws.close();
+      cancelled = true;
+      if (reconnectTimerRef.current !== null) {
+        clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
+      }
+      wsRef.current?.close();
       wsRef.current = null;
     };
   }, [data?.wsUrl, token]);

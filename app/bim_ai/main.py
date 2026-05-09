@@ -20,7 +20,7 @@ async def lifespan(app: FastAPI):
     app.state.hub = Hub()
 
     async def _broadcast_job_update(job: Job) -> None:
-        await app.state.hub.broadcast_json(
+        await app.state.hub.publish(
             job.model_id,
             {"type": "job_update", "job": job.model_dump(by_alias=True)},
         )

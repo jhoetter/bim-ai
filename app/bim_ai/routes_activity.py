@@ -148,7 +148,7 @@ async def create_comment(
 
     wired = _wire_comment(crow)
 
-    await hub.broadcast_json(
+    await hub.publish(
         model_id, {"type": "comment_event", "modelId": str(model_id), "payload": wired}
     )
 
@@ -162,7 +162,7 @@ async def create_comment(
             "commentId": str(cid),
             "sheetNumber": body.sheet_id,
         }
-        await hub.broadcast_json(
+        await hub.publish(
             model_id,
             {
                 "type": "activity",
@@ -198,7 +198,7 @@ async def patch_comment(
 
     wired = _wire_comment(row_c)
 
-    await hub.broadcast_json(
+    await hub.publish(
         model_id, {"type": "comment_event", "modelId": str(model_id), "payload": wired}
     )
 
@@ -232,7 +232,7 @@ async def _sync_resolve_siblings(
     # for element anchors.  For sheet anchors we repurpose element_id to store
     # the sheetId and source_element_id is not stored in CommentRecord directly.
     # We emit sheet_comment_resolved on the hub so connected WS clients update.
-    await hub.broadcast_json(
+    await hub.publish(
         model_id,
         {
             "type": "activity",
