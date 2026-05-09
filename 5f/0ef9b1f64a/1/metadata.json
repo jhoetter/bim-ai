@@ -1,0 +1,38 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "5f0ef9b1f64a",
+  "session_id": "1e07b668-5c09-4d39-a201-322aafeb3b95",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-09T15:46:22.410675Z",
+  "branch": "feat/parity-tracker-batch3",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "spec/revit-parity/ch01-ui-navigation.md",
+    "spec/revit-parity/ch03-levels-views.md",
+    "spec/revit-parity/ch04-walls.md"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "6cbc5372d224",
+  "checkpoint_transcript_start": 587,
+  "transcript_lines_at_start": 587,
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 0
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-09T15:46:22.365941Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 8,
+    "human_removed": 0,
+    "total_committed": 0,
+    "total_lines_changed": 8,
+    "agent_percentage": 0,
+    "metric_version": 2
+  }
+}
