@@ -45,7 +45,7 @@ const RIDGE_H_ABS =
 // clad in vertical siding"). Spans the middle third of the UF south loggia.
 const CHIMNEY_X0 = 1500; // West edge within UF footprint
 const CHIMNEY_X1 = 3000; // East edge
-const CHIMNEY_H = 3000; // Height above UF level (below ridge at 3232 mm)
+const CHIMNEY_H = 2000; // Height above UF level — roof at x=1500 is 2366 mm, so 2000 clears by 366 mm
 
 /**
  * @returns {BimCommand[]}
@@ -164,12 +164,36 @@ export function buildOneFamilyHomeCommands() {
     // Upper-floor perimeter walls (5000×8000, west-aligned).
     // heightMm oversized at 5500 so attachWallTopToRoof can trim them
     // correctly along the asymmetric gable slopes in Phase 3.
+    // UF south wall split into 3 segments so each zone gets its own material:
+    //   s-l (x=0..1500): loggia left zone → white_render on back surface
+    //   s-c (x=1500..3000): chimney face, stays flush → cladding_warm_wood
+    //   s-r (x=3000..5000): loggia right zone → white_render on back surface
     {
       type: 'createWall',
-      id: 'hf-w-uf-s',
-      name: 'UF south wall',
+      id: 'hf-w-uf-s-l',
+      name: 'UF south wall left (loggia)',
       levelId: 'hf-lvl-upper',
       start: { xMm: 0, yMm: 0 },
+      end: { xMm: CHIMNEY_X0, yMm: 0 },
+      thicknessMm: WALL_T,
+      heightMm: 5500,
+    },
+    {
+      type: 'createWall',
+      id: 'hf-w-uf-s-c',
+      name: 'UF south wall centre (chimney face)',
+      levelId: 'hf-lvl-upper',
+      start: { xMm: CHIMNEY_X0, yMm: 0 },
+      end: { xMm: CHIMNEY_X1, yMm: 0 },
+      thicknessMm: WALL_T,
+      heightMm: CHIMNEY_H,
+    },
+    {
+      type: 'createWall',
+      id: 'hf-w-uf-s-r',
+      name: 'UF south wall right (loggia)',
+      levelId: 'hf-lvl-upper',
+      start: { xMm: CHIMNEY_X1, yMm: 0 },
       end: { xMm: UF_W, yMm: 0 },
       thicknessMm: WALL_T,
       heightMm: 5500,
@@ -325,8 +349,10 @@ export function buildOneFamilyHomeCommands() {
       materialKey: 'metal_standing_seam_dark_grey',
     },
 
-    // Attach all 4 UF walls to the gable so their tops crop along the slopes.
-    { type: 'attachWallTopToRoof', wallId: 'hf-w-uf-s', roofId: 'hf-roof-main' },
+    // Attach UF walls to the gable so their tops crop along the slopes.
+    // hf-w-uf-s-c (chimney face) is NOT attached — it has a fixed flat top below the roof.
+    { type: 'attachWallTopToRoof', wallId: 'hf-w-uf-s-l', roofId: 'hf-roof-main' },
+    { type: 'attachWallTopToRoof', wallId: 'hf-w-uf-s-r', roofId: 'hf-roof-main' },
     { type: 'attachWallTopToRoof', wallId: 'hf-w-uf-e', roofId: 'hf-roof-main' },
     { type: 'attachWallTopToRoof', wallId: 'hf-w-uf-n', roofId: 'hf-roof-main' },
     { type: 'attachWallTopToRoof', wallId: 'hf-w-uf-w', roofId: 'hf-roof-main' },
@@ -348,8 +374,10 @@ export function buildOneFamilyHomeCommands() {
     { type: 'updateElementProperty', elementId: 'hf-w-gf-e', key: 'materialKey', value: 'cladding_beige_grey' },
     { type: 'updateElementProperty', elementId: 'hf-w-gf-n', key: 'materialKey', value: 'cladding_beige_grey' },
     { type: 'updateElementProperty', elementId: 'hf-w-gf-w', key: 'materialKey', value: 'cladding_beige_grey' },
-    // UF south primary materialKey renders on the loggia recess back surfaces (Phase 4).
-    { type: 'updateElementProperty', elementId: 'hf-w-uf-s', key: 'materialKey', value: 'cladding_warm_wood' },
+    // UF south split walls: loggia back surfaces → white_render; chimney face → cladding_warm_wood.
+    { type: 'updateElementProperty', elementId: 'hf-w-uf-s-l', key: 'materialKey', value: 'white_render' },
+    { type: 'updateElementProperty', elementId: 'hf-w-uf-s-c', key: 'materialKey', value: 'cladding_warm_wood' },
+    { type: 'updateElementProperty', elementId: 'hf-w-uf-s-r', key: 'materialKey', value: 'white_render' },
     // UF side walls = white render (Material A — the "wrapper shell").
     { type: 'updateElementProperty', elementId: 'hf-w-uf-e', key: 'materialKey', value: 'white_render' },
     { type: 'updateElementProperty', elementId: 'hf-w-uf-n', key: 'materialKey', value: 'white_render' },
@@ -377,10 +405,10 @@ export function buildOneFamilyHomeCommands() {
         { xMm: 0, yMm: 0, zMm: F2F },
       ],
       profileMm: [
-        { uMm: -175, vMm: -100 },
-        { uMm: 175, vMm: -100 },
-        { uMm: 175, vMm: 100 },
-        { uMm: -175, vMm: 100 },
+        { uMm: -100, vMm: -60 },
+        { uMm: 100, vMm: -60 },
+        { uMm: 100, vMm: 60 },
+        { uMm: -100, vMm: 60 },
       ],
       profilePlane: 'work_plane',
       materialKey: 'white_render',
@@ -420,27 +448,28 @@ export function buildOneFamilyHomeCommands() {
       widthMm: 900,
     },
 
-    // Loggia recess — two recessZones on UF south wall, skipping the chimney centre.
-    // The non-recessed centre section (T=0.3..0.6, x=1500..3000) protrudes at the
-    // facade line as the "chimney-like volume" (spec §3). Side returns are added in
-    // Phase 6 to complete the chimney box. alongT fractions: 0.3=1500/5000, 0.6=3000/5000.
+    // Loggia recess — the left and right wall segments are each fully recessed.
+    // The chimney centre segment (hf-w-uf-s-c) has no recessZone; it protrudes at the facade
+    // line as the "chimney-like volume" (spec §3). Side returns close the chimney box (Phase 6).
     {
       type: 'setWallRecessZones',
-      wallId: 'hf-w-uf-s',
-      recessZones: [
-        { alongTStart: 0.0, alongTEnd: 0.3, setbackMm: LOGGIA_SETBACK, floorContinues: true },
-        { alongTStart: 0.6, alongTEnd: 1.0, setbackMm: LOGGIA_SETBACK, floorContinues: true },
-      ],
+      wallId: 'hf-w-uf-s-l',
+      recessZones: [{ alongTStart: 0.0, alongTEnd: 1.0, setbackMm: LOGGIA_SETBACK, floorContinues: true }],
+    },
+    {
+      type: 'setWallRecessZones',
+      wallId: 'hf-w-uf-s-r',
+      recessZones: [{ alongTStart: 0.0, alongTEnd: 1.0, setbackMm: LOGGIA_SETBACK, floorContinues: true }],
     },
 
     // Left loggia zone — trapezoidal window whose top edge follows the west gable pitch.
-    // alongT=0.15 → x=750 mm, centre of the left zone (x=0..1500).
+    // hf-w-uf-s-l spans x=0..1500; alongT=0.5 → x=750 mm (wall centre).
     {
       type: 'insertWindowOnWall',
       id: 'hf-win-loggia-trap',
       name: 'Loggia left — trapezoidal slope-following window',
-      wallId: 'hf-w-uf-s',
-      alongT: 0.15,
+      wallId: 'hf-w-uf-s-l',
+      alongT: 0.5,
       widthMm: 900,
       heightMm: 1400,
       sillHeightMm: 300,
@@ -460,13 +489,13 @@ export function buildOneFamilyHomeCommands() {
 
     // Right loggia zone — double-height sliding-glass curtain wall (spec §3
     // "double-height curtain wall of glass divided by a central horizontal mullion").
-    // alongT=0.80 → x=4000 mm, centre of right zone (x=3000..5000).
+    // hf-w-uf-s-r spans x=3000..5000; alongT=0.5 → x=4000 mm (wall centre).
     {
       type: 'insertDoorOnWall',
       id: 'hf-door-loggia',
       name: 'Loggia right — sliding glass curtain wall',
-      wallId: 'hf-w-uf-s',
-      alongT: 0.8,
+      wallId: 'hf-w-uf-s-r',
+      alongT: 0.5,
       widthMm: 1800,
     },
     {
@@ -660,14 +689,24 @@ export function buildOneFamilyHomeCommands() {
       materialKey: 'cladding_warm_wood',
     },
 
-    // Loggia balcony slab + balustrade (spec §3 "three thin, continuous black
+    // Loggia balcony slabs + balustrades (spec §3 "three thin, continuous black
     // horizontal cables/rails fixed to the inner edge of the white shell").
-    // Projects 700 mm south of the main facade plane at elevation F2F.
+    // One per loggia wall segment; the chimney centre section has no balcony.
     {
       type: 'createBalcony',
-      id: 'hf-balcony-loggia',
-      name: 'Loggia balcony',
-      wallId: 'hf-w-uf-s',
+      id: 'hf-balcony-l',
+      name: 'Loggia balcony left',
+      wallId: 'hf-w-uf-s-l',
+      elevationMm: F2F,
+      projectionMm: 700,
+      slabThicknessMm: 150,
+      balustradeHeightMm: 1100,
+    },
+    {
+      type: 'createBalcony',
+      id: 'hf-balcony-r',
+      name: 'Loggia balcony right',
+      wallId: 'hf-w-uf-s-r',
       elevationMm: F2F,
       projectionMm: 700,
       slabThicknessMm: 150,
@@ -679,11 +718,11 @@ export function buildOneFamilyHomeCommands() {
     {
       type: 'saveViewpoint',
       id: 'vp-main-iso',
-      name: 'Main isometric (SSW)',
+      name: 'Main isometric (SSE — south facade + east terrace)',
       mode: 'orbit_3d',
       camera: {
-        position: { xMm: -1500, yMm: -7500, zMm: 11000 },
-        target: { xMm: 3500, yMm: 4000, zMm: 4250 },
+        position: { xMm: 10000, yMm: -7000, zMm: 10000 },
+        target: { xMm: 4000, yMm: 3000, zMm: 3500 },
         up: { xMm: 0, yMm: 0, zMm: 1 },
       },
     },
