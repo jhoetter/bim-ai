@@ -1072,7 +1072,7 @@ export function planAnnotationLabelSprite(
 
   ctx.globalAlpha = 0.92;
   ctx.strokeStyle = 'rgba(255,255,255,0.78)';
-  ctx.fillStyle = getPlanPalette().tagText;
+  ctx.fillStyle = getPlanPalette().tagBg;
   ctx.lineWidth = 4;
   const pad = Math.max(12, Math.floor(fontPx / 16));
   const r = pad * 1.05;
@@ -1090,9 +1090,9 @@ export function planAnnotationLabelSprite(
   ctx.stroke();
 
   ctx.globalAlpha = 1;
-  ctx.font = `600 ${fontPx}px system-ui,sans-serif`;
-  // Inverse of tagText for high-contrast room/tag labels on the dark pill.
-  ctx.fillStyle = readToken('--color-background', '#fafafa');
+  ctx.font = `500 ${fontPx}px system-ui,sans-serif`;
+  // tagText color for high-contrast room/tag labels on the dark pill.
+  ctx.fillStyle = getPlanPalette().tagText;
   ctx.strokeStyle = 'rgba(255,255,255,0.35)';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
