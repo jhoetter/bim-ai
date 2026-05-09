@@ -2104,9 +2104,9 @@ export function Viewport({
               'rounded-md border border-border px-2 py-1 text-xs',
               gdoOpen ? 'bg-accent text-accent-foreground' : 'bg-surface text-foreground',
             ].join(' ')}
-            title="Graphic Display Options"
+            title="Graphic Display Options (GDO)"
           >
-            GD
+            Display
           </button>
           {gdoOpen && (
             <div

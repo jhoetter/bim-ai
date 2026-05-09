@@ -48,9 +48,9 @@ export function MarkupToolbar({ active, shapeMode, onShapeMode, onToggle }: Mark
         display: 'flex',
         gap: 4,
         padding: '4px 6px',
-        background: 'var(--surface-raised)',
+        background: 'var(--color-surface-strong)',
         borderRadius: 6,
-        border: '1px solid var(--border-default)',
+        border: '1px solid var(--color-border)',
       }}
     >
       {SHAPE_MODES.map(({ mode, label, key }) => (
@@ -66,8 +66,9 @@ export function MarkupToolbar({ active, shapeMode, onShapeMode, onToggle }: Mark
             cursor: 'pointer',
             fontSize: 12,
             fontWeight: 500,
-            background: shapeMode === mode ? 'var(--brand-primary)' : 'transparent',
-            color: shapeMode === mode ? 'var(--text-on-brand)' : 'var(--text-default)',
+            background: shapeMode === mode ? 'var(--color-accent)' : 'transparent',
+            color:
+              shapeMode === mode ? 'var(--color-accent-foreground)' : 'var(--color-foreground)',
           }}
         >
           {label}

@@ -43,7 +43,7 @@ export function CommentThread({ comments, onReply, onResolve, onClose }: Comment
       aria-label="Comment thread"
       style={{
         background: 'var(--surface-overlay)',
-        border: '1px solid var(--border-default)',
+        border: '1px solid var(--color-border)',
         borderRadius: 8,
         padding: 12,
         minWidth: 280,
@@ -68,7 +68,7 @@ export function CommentThread({ comments, onReply, onResolve, onClose }: Comment
         rows={2}
         style={{
           resize: 'none',
-          border: '1px solid var(--border-default)',
+          border: '1px solid var(--color-border)',
           borderRadius: 4,
           padding: '6px 8px',
           fontSize: 13,

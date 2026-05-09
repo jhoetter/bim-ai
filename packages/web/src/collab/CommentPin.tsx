@@ -22,14 +22,14 @@ export function CommentPin({ comment, x, y, onClick }: CommentPinProps) {
     >
       <circle
         r={14}
-        fill={isOrphaned ? 'var(--semantic-warning)' : 'var(--brand-primary)'}
-        stroke="var(--surface-default)"
+        fill={isOrphaned ? 'var(--color-warning, #f59e0b)' : 'var(--color-accent)'}
+        stroke="var(--color-surface)"
         strokeWidth={2}
       />
       <text
         textAnchor="middle"
         dominantBaseline="central"
-        fill="var(--text-on-brand)"
+        fill="var(--color-accent-foreground)"
         fontSize={10}
         fontWeight={600}
       >

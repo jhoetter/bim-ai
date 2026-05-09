@@ -305,8 +305,8 @@ export function ActivityDrawer({
                 style={{
                   padding: '2px 8px',
                   borderRadius: 4,
-                  border: '1px solid var(--border-default)',
-                  background: 'var(--surface-default)',
+                  border: '1px solid var(--color-border)',
+                  background: 'var(--color-surface)',
                   color: 'var(--text-secondary)',
                   fontSize: 'var(--text-2xs)',
                   cursor: 'pointer',
@@ -322,7 +322,7 @@ export function ActivityDrawer({
                 style={{
                   padding: '2px 8px',
                   borderRadius: 4,
-                  border: '1px solid var(--border-default)',
+                  border: '1px solid var(--color-border)',
                   background: 'var(--surface-active)',
                   color: 'var(--text-primary)',
                   fontSize: 'var(--text-2xs)',

@@ -92,8 +92,8 @@ export function MilestoneDialog({
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: 'var(--surface-default)',
-          border: '1px solid var(--border-default)',
+          background: 'var(--color-surface)',
+          border: '1px solid var(--color-border)',
           borderRadius: 8,
           padding: 20,
           width: 360,
@@ -122,7 +122,7 @@ export function MilestoneDialog({
             style={{
               padding: '6px 10px',
               borderRadius: 4,
-              border: '1px solid var(--border-default)',
+              border: '1px solid var(--color-border)',
               background: 'var(--surface-secondary)',
               color: 'var(--text-primary)',
               fontSize: 'var(--text-sm)',
@@ -143,7 +143,7 @@ export function MilestoneDialog({
             style={{
               padding: '6px 10px',
               borderRadius: 4,
-              border: '1px solid var(--border-default)',
+              border: '1px solid var(--color-border)',
               background: 'var(--surface-secondary)',
               color: 'var(--text-primary)',
               fontSize: 'var(--text-sm)',
@@ -158,7 +158,7 @@ export function MilestoneDialog({
             style={{
               padding: '6px 14px',
               borderRadius: 4,
-              border: '1px solid var(--border-default)',
+              border: '1px solid var(--color-border)',
               background: 'transparent',
               color: 'var(--text-secondary)',
               fontSize: 'var(--text-xs)',
