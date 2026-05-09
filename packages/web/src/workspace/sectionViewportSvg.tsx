@@ -58,7 +58,13 @@ type LevelMarkerPrim = {
 const MM_EPS = 0.5;
 
 function formatElevationMmLabel(mm: number): string {
-  return `${(mm / 1000).toFixed(2)} m`;
+  const m = mm / 1000;
+  const sign = m < 0 ? '-' : '+';
+  return `${sign}${Math.abs(m).toFixed(3)} m`;
+}
+
+function formatLevelDatumLabel(name: string, elevationMm: number): string {
+  return `${name} | ${formatElevationMmLabel(elevationMm)}`;
 }
 
 function sectionAdvisoryFromPayload(payload: Record<string, unknown>): string | null {
@@ -641,17 +647,30 @@ export function SectionViewportSvg(props: {
             if (skipLine) return null;
             const y = (layers.z1 - m.elevationMm) * layers.sy;
             if (y < -2 || y > props.heightPx + 2) return null;
+            const headR = 4 * strokeScale;
+            const headX = props.widthPx - headR - 2;
             return (
-              <line
-                key={`lvl-line-${m.id}`}
-                x1={0}
-                x2={props.widthPx}
-                y1={y}
-                y2={y}
-                stroke="#64748b"
-                strokeWidth={levelLineStroke}
-                opacity={0.95}
-              />
+              <g key={`lvl-datum-${m.id}`}>
+                <line
+                  x1={0}
+                  x2={headX}
+                  y1={y}
+                  y2={y}
+                  stroke="#3b82f6"
+                  strokeWidth={levelLineStroke}
+                  strokeDasharray={`${8 * strokeScale} ${5 * strokeScale}`}
+                  opacity={0.7}
+                />
+                <circle
+                  cx={headX}
+                  cy={y}
+                  r={headR}
+                  fill="none"
+                  stroke="#3b82f6"
+                  strokeWidth={levelLineStroke}
+                  opacity={0.85}
+                />
+              </g>
             );
           })}
 
@@ -781,12 +800,12 @@ export function SectionViewportSvg(props: {
               <text
                 key={`lvl-txt-${m.id}`}
                 x={8}
-                y={y}
-                fill="#334155"
-                style={{ fontSize: lvlPx }}
-                dominantBaseline="middle"
+                y={y - 3}
+                fill="#1d4ed8"
+                style={{ fontSize: lvlPx, fontWeight: 500 }}
+                dominantBaseline="auto"
               >
-                {`${m.name} · ${formatElevationMmLabel(m.elevationMm)}`}
+                {formatLevelDatumLabel(m.name, m.elevationMm)}
               </text>
             );
           })}
