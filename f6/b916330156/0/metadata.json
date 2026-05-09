@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "f6b916330156",
+  "session_id": "1e07b668-5c09-4d39-a201-322aafeb3b95",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-09T18:23:41.924812Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "3f38994e1dcc",
+  "token_usage": {
+    "input_tokens": 565,
+    "cache_creation_tokens": 573740,
+    "cache_read_tokens": 23423695,
+    "output_tokens": 259329,
+    "api_call_count": 234
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 1,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/web/src/ErrorBoundary.tsx": 1
+      }
+    }
+  ]
+}
