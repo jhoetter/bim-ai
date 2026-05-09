@@ -815,6 +815,34 @@ export function InspectorPropertiesFor(
           <FieldRow label={f('id')} value={el.id} mono />
         </div>
       );
+    case 'elevation_view':
+      return (
+        <div className="flex flex-col gap-2">
+          <FieldRow label="Direction" value={el.direction} />
+          {el.customAngleDeg != null ? (
+            <FieldRow label="Angle" value={`${el.customAngleDeg}°`} />
+          ) : null}
+          {el.scale != null ? <FieldRow label={f('scale')} value={`1:${el.scale}`} /> : null}
+          {el.planDetailLevel ? <FieldRow label="Detail Level" value={el.planDetailLevel} /> : null}
+        </div>
+      );
+    case 'callout':
+      return (
+        <div className="flex flex-col gap-2">
+          <FieldRow label={f('name')} value={el.name} />
+          <FieldRow label="Parent Sheet" value={resolveElName(el.parentSheetId, elementsById)} />
+          <FieldRow label="Outline Vertices" value={String(el.outlineMm.length)} mono />
+        </div>
+      );
+    case 'family_type':
+      return (
+        <div className="flex flex-col gap-2">
+          <FieldRow label={f('name')} value={el.name} />
+          <FieldRow label="Discipline" value={el.discipline} />
+          <FieldRow label="Parameters" value={String(Object.keys(el.parameters).length)} mono />
+          {el.isBuiltIn ? <FieldRow label="Type" value="Built-in" /> : null}
+        </div>
+      );
     case 'view_template':
       return (
         <div>
