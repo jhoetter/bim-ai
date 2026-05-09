@@ -553,7 +553,7 @@ export function Viewport({
         color: csgBaseColor,
         roughness: csgIsWhite ? 0.92 : (paintNow?.categories.wall.roughness ?? 0.85),
         metalness: paintNow?.categories.wall.metalness ?? 0.0,
-        envMapIntensity: csgIsWhite ? 0.08 : 1.0,
+        envMapIntensity: csgIsWhite ? 0.08 : 0.65,
       });
 
       const mesh = new THREE.Mesh(geom, wallMat);
