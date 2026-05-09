@@ -1174,7 +1174,7 @@ export function dimensionsThree(d: Extract<Element, { kind: 'dimension' }>): THR
   const ls = new THREE.LineSegments(
     geo,
 
-    new THREE.LineBasicMaterial({ color: getPlanPalette().wallSelected }),
+    new THREE.LineBasicMaterial({ color: getPlanPalette().dimLine }),
   );
 
   ls.userData.dimensionSpanMm = dimSpanMm;
