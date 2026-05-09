@@ -11,7 +11,7 @@ Source segment: `00:27:59 – 00:55:00`
 **Screenshot:**
 ![Link CAD dialog](file:///Users/jhoetter/Desktop/Revit%20Specs/0207_00-29-53.png)
 
-**bim-ai status:** 🟡 Partial — bim-ai has a `dxf_import.py` module that can read DXF geometry but it works as a one-time import (no live link / reload capability).
+**bim-ai status:** 🟡 Partial — backend is fully implemented: `app/bim_ai/dxf_import.py` parses DXF geometry via `ezdxf`, `build_link_dxf_payload` wraps it into a `link_dxf` engine command, and `POST /api/models/{host_id}/import-dxf` materialises the element. The resulting `link_dxf` element renders as a desaturated grey underlay on the plan canvas with origin/rotation/scale support. The frontend file-picker in ProjectMenu is currently **disabled** (button is stubbed with a "on the roadmap" tooltip that redirects users to Link Model instead). No live reload on source-file change.
 
 ---
 
@@ -22,7 +22,7 @@ Source segment: `00:27:59 – 00:55:00`
 **Screenshot:**
 ![Import vs Link](file:///Users/jhoetter/Desktop/Revit%20Specs/0206_00-29-37.png)
 
-**bim-ai status:** 🟡 Partial — same as F-015, import exists but without the distinction between linked vs. embedded.
+**bim-ai status:** 🟡 Partial — same backend as F-015 (`import-dxf` API). bim-ai uses a single `link_dxf` element kind that behaves like a link (the parsed linework is stored in the element, not as a separate file reference), so the linked vs. embedded distinction does not exist today. Frontend file-picker is also disabled (same stub as F-015).
 
 ---
 
@@ -48,7 +48,7 @@ Source segment: `00:27:59 – 00:55:00`
 **Screenshot:**
 ![Pin CAD file](file:///Users/jhoetter/Desktop/Revit%20Specs/0303_01-02-56.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — `ManageLinksDialog.tsx` implements **revision pinning**: each `link_model` row can be pinned to a specific snapshot revision, preventing automatic advancement. The UI shows the pinned revision number, a yellow drift badge when the source has moved past it, and a one-click "Update" button to bump to head. Pin / Unpin actions are wired to backend commands. This covers the *version-lock* intent of Revit pinning but not the *spatial position lock* (elements can still be moved/deleted regardless of pin state).
 
 ---
 
@@ -59,7 +59,7 @@ Source segment: `00:27:59 – 00:55:00`
 **Screenshot:**
 ![Query Tool](file:///Users/jhoetter/Desktop/Revit%20Specs/0238_00-56-21.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** ❌ Not available — the DXF linework is stored as flat primitives (lines/polylines/arcs); DXF layer metadata is not preserved in the `link_dxf` element, so there is no layer name to query or toggle. No per-layer visibility UI exists in ManageLinksDialog or VVDialog.
 
 ---
 
@@ -70,7 +70,7 @@ Source segment: `00:27:59 – 00:55:00`
 **Screenshot:**
 ![Halftone Override](file:///Users/jhoetter/Desktop/Revit%20Specs/0340_01-09-17.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — `packages/web/src/plan/dxfUnderlay.ts` hardcodes `DXF_UNDERLAY_OPACITY = 0.5` and applies it via `ctx.globalAlpha` when rendering every `link_dxf` element. All DXF underlays are automatically rendered at 50 % opacity (halftone-equivalent), matching Revit's visual intent. However, the value is a compile-time constant — there is no per-link or per-view opacity slider in VG / ManageLinksDialog, and no full-opacity mode.
 
 ---
 
@@ -114,4 +114,4 @@ Source segment: `00:27:59 – 00:55:00`
 **Screenshot:**
 ![Manage Links](file:///Users/jhoetter/Desktop/Revit%20Specs/0146_00-17-16.png)
 
-**bim-ai status:** 🟡 Partial — `ManageLinksDialog.tsx` lists all `link_model` rows with per-row controls for delete, alignment mode (origin-to-origin / project base point / shared coords), visibility mode (host view / linked view), and revision pinning with drift badge + "Update" button. Missing: IFC/PDF/image link types, file-path change workflow.
+**bim-ai status:** 🟡 Partial — `ManageLinksDialog.tsx` lists all `link_model` rows with per-row controls for delete, alignment mode (origin-to-origin / project base point / shared coords), visibility mode (host view / linked view), and revision pinning with drift badge + "Update" button. Missing: `link_dxf` / IFC / PDF / image link types are not listed (ManageLinksDialog only queries `link_model` elements); no file-path change workflow.
