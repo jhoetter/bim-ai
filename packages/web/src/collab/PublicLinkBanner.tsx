@@ -27,7 +27,7 @@ export function PublicLinkBanner({ displayName }: Props) {
       <a
         href="/login"
         style={{
-          color: 'var(--accent, #2563eb)',
+          color: 'var(--color-accent)',
           textDecoration: 'none',
           fontSize: 'var(--text-sm)',
         }}

@@ -261,7 +261,7 @@ export function StairBySketchCanvas(props: StairBySketchCanvasProps): JSX.Elemen
           <polyline
             points={boundaryScreenPts.map((p) => `${p.x},${p.y}`).join(' ')}
             fill="none"
-            stroke="var(--color-accent, #3fc5d3)"
+            stroke="var(--color-accent)"
             strokeWidth={2}
           />
         )}
@@ -272,7 +272,7 @@ export function StairBySketchCanvas(props: StairBySketchCanvasProps): JSX.Elemen
             y1={boundaryScreenPts[boundaryScreenPts.length - 1]!.y}
             x2={hoverScreen.x}
             y2={hoverScreen.y}
-            stroke="var(--color-accent, #3fc5d3)"
+            stroke="var(--color-accent)"
             strokeWidth={1.5}
             strokeDasharray="6 4"
           />
@@ -284,14 +284,14 @@ export function StairBySketchCanvas(props: StairBySketchCanvasProps): JSX.Elemen
             cy={boundaryScreenPts[0].y}
             r={CLOSE_EPS_PX}
             fill="none"
-            stroke="var(--color-accent, #3fc5d3)"
+            stroke="var(--color-accent)"
             strokeWidth={1}
             strokeDasharray="3 3"
           />
         )}
         {/* Boundary vertices */}
         {boundaryScreenPts.map((p, i) => (
-          <circle key={i} cx={p.x} cy={p.y} r={4} fill="var(--color-accent, #3fc5d3)" />
+          <circle key={i} cx={p.x} cy={p.y} r={4} fill="var(--color-accent)" />
         ))}
         {/* Tread lines */}
         {treadLines.map((tl, i) => {

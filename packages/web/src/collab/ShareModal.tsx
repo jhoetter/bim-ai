@@ -188,7 +188,7 @@ export function ShareModal({ modelId, open, onClose }: Props) {
                 padding: '6px 12px',
                 borderRadius: 4,
                 border: '1px solid var(--color-border)',
-                background: tab === t ? 'var(--accent, #2563eb)' : 'transparent',
+                background: tab === t ? 'var(--color-accent)' : 'transparent',
                 color: tab === t ? 'var(--color-accent-foreground)' : 'inherit',
                 cursor: 'pointer',
                 fontSize: 13,
@@ -204,7 +204,7 @@ export function ShareModal({ modelId, open, onClose }: Props) {
         </div>
 
         {error && (
-          <div style={{ color: 'var(--error, #dc2626)', marginBottom: 12, fontSize: 13 }}>
+          <div style={{ color: 'var(--color-danger)', marginBottom: 12, fontSize: 13 }}>
             {error}
           </div>
         )}
@@ -212,7 +212,7 @@ export function ShareModal({ modelId, open, onClose }: Props) {
         {tab === 'members' && (
           <div>
             {members.length === 0 && (
-              <p style={{ color: 'var(--text-muted, #6b7280)', fontSize: 13 }}>
+              <p style={{ color: 'var(--color-muted-foreground)', fontSize: 13 }}>
                 No workspace members yet. Use &ldquo;Invite by email&rdquo; to add collaborators.
               </p>
             )}
@@ -229,14 +229,14 @@ export function ShareModal({ modelId, open, onClose }: Props) {
               >
                 <span style={{ fontSize: 13 }}>{a.subjectId}</span>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <span style={{ fontSize: 12, color: 'var(--text-muted, #6b7280)' }}>
+                  <span style={{ fontSize: 12, color: 'var(--color-muted-foreground)' }}>
                     {ROLE_LABELS[a.role as Role] ?? a.role}
                   </span>
                   <button
                     onClick={() => handleRevokeRole(a.id)}
                     style={{
                       fontSize: 11,
-                      color: 'var(--error, #dc2626)',
+                      color: 'var(--color-danger)',
                       border: 'none',
                       background: 'none',
                       cursor: 'pointer',
@@ -288,7 +288,7 @@ export function ShareModal({ modelId, open, onClose }: Props) {
               style={{
                 padding: '8px 16px',
                 borderRadius: 4,
-                background: 'var(--accent, #2563eb)',
+                background: 'var(--color-accent)',
                 color: 'var(--color-accent-foreground)',
                 border: 'none',
                 cursor: 'pointer',
@@ -307,7 +307,7 @@ export function ShareModal({ modelId, open, onClose }: Props) {
                 const url = `${window.location.origin}/shared/${link.token}`;
                 return (
                   <div key={link.id} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <p style={{ fontSize: 13, color: 'var(--text-muted, #6b7280)', margin: 0 }}>
+                    <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)', margin: 0 }}>
                       Public link is active. Anyone with the link can view this model (read-only).
                     </p>
                     <div style={{ display: 'flex', gap: 8 }}>
@@ -342,7 +342,7 @@ export function ShareModal({ modelId, open, onClose }: Props) {
                         alignItems: 'center',
                       }}
                     >
-                      <span style={{ fontSize: 12, color: 'var(--text-muted, #6b7280)' }}>
+                      <span style={{ fontSize: 12, color: 'var(--color-muted-foreground)' }}>
                         {link.displayName ? `Shared by ${link.displayName} · ` : ''}
                         Opened {link.openCount} time{link.openCount !== 1 ? 's' : ''}
                       </span>
@@ -351,7 +351,7 @@ export function ShareModal({ modelId, open, onClose }: Props) {
                         disabled={loading}
                         style={{
                           fontSize: 12,
-                          color: 'var(--error, #dc2626)',
+                          color: 'var(--color-danger)',
                           border: 'none',
                           background: 'none',
                           cursor: 'pointer',
@@ -366,7 +366,7 @@ export function ShareModal({ modelId, open, onClose }: Props) {
               })
             ) : (
               <>
-                <p style={{ fontSize: 13, color: 'var(--text-muted, #6b7280)', margin: 0 }}>
+                <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)', margin: 0 }}>
                   Create a public link to share this model as read-only.
                 </p>
                 <label style={{ fontSize: 13 }}>
@@ -410,7 +410,7 @@ export function ShareModal({ modelId, open, onClose }: Props) {
                   style={{
                     padding: '8px 16px',
                     borderRadius: 4,
-                    background: 'var(--accent, #2563eb)',
+                    background: 'var(--color-accent)',
                     color: 'var(--color-accent-foreground)',
                     border: 'none',
                     cursor: 'pointer',
