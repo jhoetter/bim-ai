@@ -401,9 +401,8 @@ export function WorkspaceRightRail({
                   </>
                 ) : el.kind === 'project_base_point' || el.kind === 'survey_point' ? (
                   <CoordinatePointInspector
-                    el={
-                      el as Extract<Element, { kind: 'project_base_point' | 'survey_point' }>
-                    }
+                    key={el.id}
+                    el={el as Extract<Element, { kind: 'project_base_point' | 'survey_point' }>}
                     onSemanticCommand={onSemanticCommand}
                   />
                 ) : el.kind === 'placed_asset' ? (
@@ -803,8 +802,7 @@ function CoordinatePointInspector({
   onSemanticCommand: (cmd: Record<string, unknown>) => void | Promise<void>;
 }): JSX.Element {
   const label = el.kind === 'project_base_point' ? 'Project Base Point' : 'Survey Point';
-  const elevationMm =
-    el.kind === 'survey_point' ? el.sharedElevationMm : 0;
+  const elevationMm = el.kind === 'survey_point' ? el.sharedElevationMm : 0;
 
   function commitPosition(xMm: number, yMm: number) {
     void onSemanticCommand({
@@ -825,6 +823,7 @@ function CoordinatePointInspector({
             type="number"
             step={100}
             defaultValue={el.positionMm.xMm}
+            aria-label="X coordinate (E/W) in mm"
             className="w-24 rounded border border-border bg-surface px-1 py-0.5 text-xs text-foreground"
             data-testid="inspector-coord-x"
             onBlur={(e) => {
@@ -839,6 +838,7 @@ function CoordinatePointInspector({
             type="number"
             step={100}
             defaultValue={el.positionMm.yMm}
+            aria-label="Y coordinate (N/S) in mm"
             className="w-24 rounded border border-border bg-surface px-1 py-0.5 text-xs text-foreground"
             data-testid="inspector-coord-y"
             onBlur={(e) => {
@@ -853,6 +853,7 @@ function CoordinatePointInspector({
             type="number"
             value={elevationMm}
             readOnly
+            aria-label="Elevation (read-only) in mm"
             className="w-24 rounded border border-border bg-surface px-1 py-0.5 text-xs text-foreground opacity-60 cursor-not-allowed"
             data-testid="inspector-coord-elevation"
           />
