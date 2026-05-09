@@ -29,6 +29,12 @@
       "transcript": "/ab/cc3dc91811/0/full.jsonl",
       "content_hash": "/ab/cc3dc91811/0/content_hash.txt",
       "prompt": "/ab/cc3dc91811/0/prompt.txt"
+    },
+    {
+      "metadata": "/ab/cc3dc91811/1/metadata.json",
+      "transcript": "/ab/cc3dc91811/1/full.jsonl",
+      "content_hash": "/ab/cc3dc91811/1/content_hash.txt",
+      "prompt": "/ab/cc3dc91811/1/prompt.txt"
     }
   ],
   "token_usage": {
