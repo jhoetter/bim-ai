@@ -90,13 +90,22 @@ export function ClashTestPanel({
         {t('coordination.runClashTest')}
       </button>
       {el.results?.length ? (
-        <table className="w-full border-collapse text-[11px]">
+        <table
+          className="w-full border-collapse text-[11px]"
+          aria-label={t('coordination.clashResultsLabel')}
+        >
           <thead>
             <tr className="border-b border-border">
-              <th className="text-left font-semibold text-muted">{t('coordination.elementA')}</th>
-              <th className="text-left font-semibold text-muted">{t('coordination.elementB')}</th>
-              <th className="text-left font-semibold text-muted">{t('coordination.distance')}</th>
-              <th />
+              <th scope="col" className="text-left font-semibold text-muted">
+                {t('coordination.elementA')}
+              </th>
+              <th scope="col" className="text-left font-semibold text-muted">
+                {t('coordination.elementB')}
+              </th>
+              <th scope="col" className="text-left font-semibold text-muted">
+                {t('coordination.distance')}
+              </th>
+              <th scope="col" />
             </tr>
           </thead>
           <tbody>
