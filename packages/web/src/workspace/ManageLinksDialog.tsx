@@ -1,5 +1,7 @@
 /* eslint-disable bim-ai/no-hex-in-chrome -- pre-v3 hex literals; remove when this file is migrated in B4 Phase 2 */
-import { type JSX, useEffect, useMemo, useState } from 'react';
+import { type JSX, useEffect, useMemo, useRef, useState } from 'react';
+
+import { useFocusTrap } from '../useFocusTrap';
 import type { Element } from '@bim-ai/core';
 
 import { applyCommand, ApiHttpError } from '../lib/api';
@@ -47,6 +49,8 @@ export function ManageLinksDialog({
   onClose,
   applyCommandImpl,
 }: ManageLinksDialogProps): JSX.Element | null {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, open);
   const elementsById = useBimStore((s) => s.elementsById);
   const modelId = useBimStore((s) => s.modelId);
   const linkSourceRevisions = useBimStore((s) => s.linkSourceRevisions);
@@ -200,6 +204,7 @@ export function ManageLinksDialog({
       }}
     >
       <div
+        ref={dialogRef}
         className="rounded-md border border-border bg-surface text-foreground shadow-elev-3"
         style={{ minWidth: 540, maxWidth: 720, padding: 16 }}
       >
@@ -554,7 +559,7 @@ export function ManageLinksDialog({
                 Add Link
               </button>
               {error ? (
-                <span role="alert" className="text-xs text-error" data-testid="manage-links-error">
+                <span role="alert" className="text-xs text-danger" data-testid="manage-links-error">
                   {error}
                 </span>
               ) : null}

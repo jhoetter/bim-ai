@@ -1,5 +1,6 @@
 import { type ReactElement, useCallback, useEffect, useRef, useState } from 'react';
 import { useMilestoneStore } from './milestoneStore';
+import { useFocusTrap } from '../useFocusTrap';
 
 type MilestoneDialogProps = {
   open: boolean;
@@ -23,6 +24,8 @@ export function MilestoneDialog({
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const nameRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, open);
 
   useEffect(() => {
     if (open) {
@@ -90,6 +93,7 @@ export function MilestoneDialog({
       }}
     >
       <div
+        ref={dialogRef}
         onClick={(e) => e.stopPropagation()}
         style={{
           background: 'var(--color-surface)',

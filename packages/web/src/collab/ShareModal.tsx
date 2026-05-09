@@ -1,4 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+
+import { useFocusTrap } from '../useFocusTrap';
 
 import type { PublicLink, Role, RoleAssignment } from '@bim-ai/core';
 
@@ -18,6 +20,8 @@ const ROLE_LABELS: Record<Role, string> = {
 };
 
 export function ShareModal({ modelId, open, onClose }: Props) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, open);
   const [tab, setTab] = useState<Tab>('members');
   const [assignments, setAssignments] = useState<RoleAssignment[]>([]);
   const [inviteEmail, setInviteEmail] = useState('');
@@ -169,6 +173,7 @@ export function ShareModal({ modelId, open, onClose }: Props) {
       }}
     >
       <div
+        ref={dialogRef}
         style={{
           background: 'var(--color-surface)',
           borderRadius: 8,
