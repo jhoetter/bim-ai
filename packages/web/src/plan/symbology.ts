@@ -1160,6 +1160,7 @@ export function rebuildPlanMeshes(
   let rpAutoIdx = 0;
   for (const rp of Object.values(elementsById)) {
     if (rp.kind !== 'reference_plane') continue;
+    if (kindHidden('reference_plane')) continue;
     // Skip the family-editor variant (no levelId).
     if (!('levelId' in rp) || typeof rp.levelId !== 'string') continue;
     if (level && rp.levelId !== level) continue;
@@ -1170,6 +1171,7 @@ export function rebuildPlanMeshes(
   // KRN-01: property lines render in plan regardless of active level (site-wide).
   for (const pl of Object.values(elementsById)) {
     if (pl.kind !== 'property_line') continue;
+    if (kindHidden('property_line')) continue;
     holder.add(propertyLinePlanThree(pl));
   }
 

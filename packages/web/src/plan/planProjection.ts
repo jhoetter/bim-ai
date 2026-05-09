@@ -27,7 +27,12 @@ export type PlanSemanticKind =
   | 'beam'
   | 'section_cut'
   | 'elevation_view'
-  | 'area_boundary';
+  | 'area_boundary'
+  | 'reference_plane'
+  | 'property_line'
+  | 'masking_region'
+  | 'detail_line'
+  | 'text_note';
 
 /** Map schedule / authoring labels to semantic drawing kinds consumed by symbology. */
 
@@ -84,6 +89,21 @@ export function canonHiddenCategory(cat: string): PlanSemanticKind | undefined {
     'area boundaries': 'area_boundary',
     'area boundary': 'area_boundary',
     area_boundary: 'area_boundary',
+    'reference planes': 'reference_plane',
+    'reference plane': 'reference_plane',
+    reference_plane: 'reference_plane',
+    'property lines': 'property_line',
+    'property line': 'property_line',
+    property_line: 'property_line',
+    'masking regions': 'masking_region',
+    'masking region': 'masking_region',
+    masking_region: 'masking_region',
+    'detail lines': 'detail_line',
+    'detail line': 'detail_line',
+    detail_line: 'detail_line',
+    'text notes': 'text_note',
+    'text note': 'text_note',
+    text_note: 'text_note',
   };
 
   return table[raw] ?? undefined;
