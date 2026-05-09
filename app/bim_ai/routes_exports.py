@@ -13,7 +13,7 @@ from starlette.responses import RedirectResponse
 
 from bim_ai.db import get_session
 from bim_ai.document import Document
-from bim_ai.elements import BcfElem
+from bim_ai.elements import BcfElem, BrandTemplateElem
 from bim_ai.engine import (
     bundle_replay_diagnostics,
     clone_document,
@@ -425,6 +425,56 @@ async def export_model_bcf(
         if getattr(elem, "kind", None) == "bcf"
     ]
     return {"modelId": str(model_id), "revision": doc.revision, "topics": topics}
+
+
+@exports_router.get("/v3/models/{model_id}/export/pdf")
+async def export_branded_pdf(
+    model_id: UUID,
+    brand_template_id: str | None = Query(default=None, alias="brandTemplateId"),
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """OUT-V3-03: return a BrandedExportBundle JSON for PDF export.
+
+    If brandTemplateId is provided but not found in the model → 404.
+    If brandTemplateId is omitted → brandLayer is null.
+    """
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+
+    doc = Document.model_validate(row.document)
+
+    brand_layer: dict[str, Any] | None = None
+    if brand_template_id is not None:
+        bt_elem = doc.elements.get(brand_template_id)
+        if bt_elem is None or bt_elem.kind != "brand_template":
+            raise HTTPException(
+                status_code=404,
+                detail=f"BrandTemplate '{brand_template_id}' not found in model",
+            )
+        assert isinstance(bt_elem, BrandTemplateElem)
+        brand_layer = {
+            "accentHex": bt_elem.accent_hex,
+            "accentForegroundHex": bt_elem.accent_foreground_hex,
+            "typeface": bt_elem.typeface,
+            "logoMarkSvgUri": bt_elem.logo_mark_svg_uri,
+            "cssOverrideSnippet": bt_elem.css_override_snippet,
+        }
+
+    sheets = [
+        {"sheetId": elem.id, "name": elem.name}
+        for elem in doc.elements.values()
+        if getattr(elem, "kind", None) == "sheet"
+    ]
+
+    return {
+        "schemaVersion": "out-v3.0",
+        "format": "pdf",
+        "brandTemplateId": brand_template_id,
+        "brandLayer": brand_layer,
+        "sheets": sheets,
+        "invariantCheck": "layer-c-only",
+    }
 
 
 @exports_router.get("/models/{model_id}/export/ids")

@@ -2665,6 +2665,47 @@ class DeleteSavedViewCmd(BaseModel):
     id: str
 
 
+# ---------------------------------------------------------------------------
+# OUT-V3-03 — BrandTemplate commands
+# ---------------------------------------------------------------------------
+
+
+class CreateBrandTemplateCmd(BaseModel):
+    """OUT-V3-03 — create a brand template for Layer-C CSS overrides."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["create_brand_template"] = "create_brand_template"
+    id: str
+    name: str
+    accent_hex: str = Field(alias="accentHex")
+    accent_foreground_hex: str = Field(alias="accentForegroundHex")
+    typeface: str = "Inter"
+    logo_mark_svg_uri: str | None = Field(default=None, alias="logoMarkSvgUri")
+    css_override_snippet: str | None = Field(default=None, alias="cssOverrideSnippet")
+
+
+class UpdateBrandTemplateCmd(BaseModel):
+    """OUT-V3-03 — patch fields on an existing brand template."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["update_brand_template"] = "update_brand_template"
+    id: str
+    name: str | None = None
+    accent_hex: str | None = Field(default=None, alias="accentHex")
+    accent_foreground_hex: str | None = Field(default=None, alias="accentForegroundHex")
+    typeface: str | None = None
+    logo_mark_svg_uri: str | None = Field(default=None, alias="logoMarkSvgUri")
+    css_override_snippet: str | None = Field(default=None, alias="cssOverrideSnippet")
+
+
+class DeleteBrandTemplateCmd(BaseModel):
+    """OUT-V3-03 — delete a brand template."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["delete_brand_template"] = "delete_brand_template"
+    id: str
+
+
 Command = Annotated[
     CreateLevelCmd
     | CreateWallCmd
@@ -2871,6 +2912,9 @@ Command = Annotated[
     | ReorderFrameCmd
     | CreateSavedViewCmd
     | UpdateSavedViewCmd
-    | DeleteSavedViewCmd,
+    | DeleteSavedViewCmd
+    | CreateBrandTemplateCmd
+    | UpdateBrandTemplateCmd
+    | DeleteBrandTemplateCmd,
     Field(discriminator="type"),
 ]

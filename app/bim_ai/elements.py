@@ -1923,6 +1923,7 @@ ElementKind = Literal[
     "view",
     "toposolid",
     "property_definition",
+    "brand_template",
 ]
 
 
@@ -2453,6 +2454,8 @@ class DecalElem(BaseModel):
 # IMP-V3-01 — Image-as-underlay element
 # ---------------------------------------------------------------------------
 
+_HEX_PATTERN = re.compile(r"^#[0-9a-fA-F]{6}$")
+
 
 class ImageUnderlayElem(BaseModel):
     """IMP-V3-01 — raster/PDF underlay pinned to the plan canvas."""
@@ -2465,6 +2468,25 @@ class ImageUnderlayElem(BaseModel):
     rotation_deg: float = Field(0.0, alias="rotationDeg")
     opacity: float = 0.4
     locked_scale: bool = Field(False, alias="lockedScale")
+
+
+# ---------------------------------------------------------------------------
+# OUT-V3-03 — BrandTemplate element
+# ---------------------------------------------------------------------------
+
+
+class BrandTemplateElem(BaseModel):
+    """OUT-V3-03 — Layer-C brand override for PDF/PPTX export."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    kind: Literal["brand_template"] = "brand_template"
+    id: str
+    name: str
+    accent_hex: str = Field(alias="accentHex")
+    accent_foreground_hex: str = Field(alias="accentForegroundHex")
+    typeface: str = "Inter"
+    logo_mark_svg_uri: str | None = Field(default=None, alias="logoMarkSvgUri")
+    css_override_snippet: str | None = Field(default=None, alias="cssOverrideSnippet")
 
 
 # ---------------------------------------------------------------------------
@@ -2661,6 +2683,7 @@ Element = Annotated[
     | NeighborhoodImportSessionElem
     | FrameElem
     | SavedViewElem
-    | PresentationCanvasElem,
+    | PresentationCanvasElem
+    | BrandTemplateElem,
     Field(discriminator="kind"),
 ]
