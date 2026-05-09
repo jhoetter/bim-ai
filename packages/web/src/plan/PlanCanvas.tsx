@@ -295,6 +295,11 @@ export function PlanCanvas({
   >(undefined);
   const cropOverlayRef = useRef<THREE.Group | null>(null);
   const alignStateRef = useRef<AlignState>(initialAlignState());
+  // F-121: React state mirror of alignStateRef.current.referenceMm so SVG overlay re-renders.
+  const [alignReferenceMm, setAlignReferenceMm] = useState<{
+    xMm: number;
+    yMm: number;
+  } | null>(null);
   const mirrorAxisStartRef = useRef<{ xMm: number; yMm: number } | null>(null);
   const copyAnchorRef = useRef<{ xMm: number; yMm: number } | null>(null);
   const [copyAnchorSet, setCopyAnchorSet] = useState(false);
@@ -331,6 +336,13 @@ export function PlanCanvas({
   // EDT-05 — snap glyph layer state
   const [snapSettings, setSnapSettings] = useState<SnapSettings>(() => loadSnapSettings());
   const snapTabCycleRef = useRef<SnapTabCycleState>(initialSnapTabCycle());
+  // F-104 — Tab cycles to the next endpoint-connected wall in select mode.
+  // Tracks which connected-wall candidate to visit next so repeated Tab presses
+  // walk a branching junction in round-robin order.
+  const wallTabCycleIndexRef = useRef<{ selId: string; index: number }>({
+    selId: '',
+    index: 0,
+  });
   const [snapGlyphState, setSnapGlyphState] = useState<{
     candidates: Array<{
       kind: SnapKind;
@@ -3035,6 +3047,55 @@ export function PlanCanvas({
           setActiveGripId(null);
           setDraftMutation(null);
           setNumericInput(null);
+          return;
+        }
+      }
+      // F-104 — Tab cycles to the next endpoint-connected wall when a wall is
+      // selected in select mode. Walks the wall graph: find all walls on the
+      // same level whose start or end endpoint is within 10 mm of the current
+      // wall's end endpoint, then advance the round-robin index and select the
+      // next candidate. If no connected wall is found at the end, try the start
+      // endpoint so Tab still does something useful on isolated segments.
+      if (ev.key === 'Tab' && planTool === 'select' && selectedId) {
+        const curEl = elementsById[selectedId];
+        if (curEl?.kind === 'wall') {
+          ev.preventDefault();
+          type WallEl = Extract<Element, { kind: 'wall' }>;
+          const curWall = curEl as WallEl;
+          const TOLS = 10; // mm tolerance for shared endpoint
+          const allWalls = Object.values(elementsById).filter(
+            (e): e is WallEl => e.kind === 'wall' && e.levelId === curWall.levelId,
+          );
+          const ptClose = (ax: number, ay: number, bx: number, by: number) =>
+            Math.abs(ax - bx) < TOLS && Math.abs(ay - by) < TOLS;
+          // Prefer walls connected at curWall's end point (forward walk).
+          // Fall back to walls connected at the start point.
+          let connected = allWalls.filter(
+            (w) =>
+              w.id !== curWall.id &&
+              (ptClose(w.start.xMm, w.start.yMm, curWall.end.xMm, curWall.end.yMm) ||
+                ptClose(w.end.xMm, w.end.yMm, curWall.end.xMm, curWall.end.yMm)),
+          );
+          if (connected.length === 0) {
+            connected = allWalls.filter(
+              (w) =>
+                w.id !== curWall.id &&
+                (ptClose(w.start.xMm, w.start.yMm, curWall.start.xMm, curWall.start.yMm) ||
+                  ptClose(w.end.xMm, w.end.yMm, curWall.start.xMm, curWall.start.yMm)),
+            );
+          }
+          if (connected.length > 0) {
+            // Advance cycle index; reset when the selected element changes.
+            const cycleState = wallTabCycleIndexRef.current;
+            if (cycleState.selId !== selectedId) {
+              cycleState.selId = selectedId;
+              cycleState.index = 0;
+            } else {
+              cycleState.index = (cycleState.index + 1) % connected.length;
+            }
+            const nextWall = connected[cycleState.index];
+            selectEl(nextWall.id);
+          }
           return;
         }
       }

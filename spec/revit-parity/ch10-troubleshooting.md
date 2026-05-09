@@ -56,7 +56,7 @@ Source segment: `05:30:54 – 05:33:32`
 ![Tab selection](file:///Users/jhoetter/Desktop/Revit%20Specs/0776_05-31-38.png)
 *(Tab+Ctrl multi-select scenario — slab-specific Tab chain frames start beyond 0841)*
 
-**bim-ai status:** 🟡 Partial — `snapTabCycle.ts` (EDT-05) implements Tab-key cycling through snap candidates (endpoint → intersection → perpendicular → extension → parallel → tangent → workplane → grid → raw). Missing: the Revit chain-selection behavior where Tab highlights the next connected element in a wall loop for bulk selection.
+**bim-ai status:** 🟡 Partial — `snapTabCycle.ts` (EDT-05) implements Tab-key cycling through snap candidates (endpoint → intersection → perpendicular → extension → parallel → tangent → workplane → grid → raw). Tab now also cycles to the next endpoint-connected wall in select mode (single-element chain walk): when a wall is selected and Tab is pressed, the selection advances to the next wall sharing the same endpoint (≤10 mm tolerance), with round-robin cycling at junctions. Missing: bulk multi-select of an entire wall loop in one Tab sequence.
 
 ---
 
