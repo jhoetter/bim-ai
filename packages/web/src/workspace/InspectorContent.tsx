@@ -886,6 +886,22 @@ export function InspectorPlanViewEditor({
       </label>
 
       <label className={LABEL_CLS}>
+        <span>Phase Filter</span>
+        <select
+          className={INPUT_CLS}
+          value={el.phaseFilter ?? ''}
+          onChange={(e) => onPersistProperty('phaseFilter', e.target.value)}
+          data-testid="inspector-plan-phase-filter"
+        >
+          <option value="">— none —</option>
+          <option value="all">All</option>
+          <option value="existing">Existing</option>
+          <option value="demolition">Demolition</option>
+          <option value="new">New Construction</option>
+        </select>
+      </label>
+
+      <label className={LABEL_CLS}>
         {pv('underlayLevel')}
         <select
           className={INPUT_CLS}
