@@ -20,7 +20,7 @@ import {
   buildCollaborationConflictQueueV1,
   type CollaborationConflictQueueV1,
 } from '../lib/collaborationConflictQueue';
-import type { LensMode, Snapshot, Violation } from '@bim-ai/core';
+import type { Snapshot, Violation } from '@bim-ai/core';
 import { useBimStore, toggleTheme, getCurrentTheme, type Theme } from '../state/store';
 import type { PerspectiveId } from '@bim-ai/core';
 import { selectDriftedElements } from '../plan/monitorDriftBadge';
@@ -249,7 +249,8 @@ export function Workspace(): JSX.Element {
     useState<CollaborationConflictQueueV1 | null>(null);
   const [projectMenuOpen, setProjectMenuOpen] = useState(false);
   const [manageLinksOpen, setManageLinksOpen] = useState(false);
-  const [lensMode, setLensMode] = useState<LensMode>('all');
+  const lensMode = useBimStore((s) => s.lensMode);
+  const setLensMode = useBimStore((s) => s.setLensMode);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [milestoneDialogOpen, setMilestoneDialogOpen] = useState(false);
   const [undoDepth, setUndoDepth] = useState(0);

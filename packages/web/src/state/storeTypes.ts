@@ -1,5 +1,6 @@
 import type {
   Element,
+  LensMode,
   ModelDelta,
   PerspectiveId,
   Snapshot,
@@ -218,6 +219,8 @@ export type StoreState = {
   setWorkspaceLayoutPreset: (p: WorkspaceLayoutPreset) => void;
   setPerspectiveId: (p: PerspectiveId) => void;
   setPlanPresentationPreset: (p: PlanPresentationPreset) => void;
+  lensMode: LensMode;
+  setLensMode: (m: LensMode) => void;
 
   activatePlanView: (planViewElementId: string | undefined) => void;
   setActiveViewpointId: (viewpointElementId?: string) => void;

@@ -4,6 +4,7 @@ import type {
   Element,
   EvidenceRef,
   EvidenceRefKind,
+  LensMode,
   PerspectiveId,
   Violation,
   WorkspaceLayoutPreset,
@@ -1656,6 +1657,8 @@ export const useBimStore = create<StoreState>((set, get) => {
       return 'default';
     })(),
 
+    lensMode: 'all' as LensMode,
+
     viewerClipElevMm: null,
 
     viewerClipFloorElevMm: null,
@@ -1856,6 +1859,8 @@ export const useBimStore = create<StoreState>((set, get) => {
         }
         return { planPresentationPreset };
       }),
+
+    setLensMode: (lensMode) => set(() => ({ lensMode })),
 
     activatePlanView: (planViewElementId) => {
       if (!planViewElementId) {
