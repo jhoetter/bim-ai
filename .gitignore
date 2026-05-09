@@ -3,6 +3,8 @@ node_modules/
 dist/
 .turbo/
 coverage/
+.coverage
+**/.coverage
 *.log
 *.pid
 .env
@@ -14,6 +16,8 @@ coverage/
 app/.venv/
 .idea/
 .claude/
+.codex/
+.gemini/
 .DS_Store
 .cursor/hooks.json
 *.local
