@@ -2008,6 +2008,11 @@ export const useBimStore = create<StoreState>((set, get) => {
         return { userId, userDisplayName: userDisplayName, peerId };
       }),
 
+    // F-011: default to shaded mode.
+    viewerRenderStyle: 'shaded',
+
+    setViewerRenderStyle: (style) => set({ viewerRenderStyle: style }),
+
     // OSM-V3-02: neighborhood mass layer visible by default.
     showNeighborhoodMasses: true,
 
