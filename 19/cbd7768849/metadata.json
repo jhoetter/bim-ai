@@ -5,7 +5,10 @@
   "branch": "feat/parity-readme-sync",
   "checkpoints_count": 1,
   "files_touched": [
-    "packages/cli/lib/one-family-home-commands.mjs"
+    "packages/cli/lib/one-family-home-commands.mjs",
+    "packages/web/src/Viewport.tsx",
+    "packages/web/src/viewport/materials.ts",
+    "packages/web/src/workspace/workspaceUtils.ts"
   ],
   "sessions": [
     {
@@ -13,13 +16,19 @@
       "transcript": "/19/cbd7768849/0/full.jsonl",
       "content_hash": "/19/cbd7768849/0/content_hash.txt",
       "prompt": "/19/cbd7768849/0/prompt.txt"
+    },
+    {
+      "metadata": "/19/cbd7768849/1/metadata.json",
+      "transcript": "/19/cbd7768849/1/full.jsonl",
+      "content_hash": "/19/cbd7768849/1/content_hash.txt",
+      "prompt": "/19/cbd7768849/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 204,
-    "cache_creation_tokens": 506045,
-    "cache_read_tokens": 16810927,
-    "output_tokens": 208534,
-    "api_call_count": 188
+    "input_tokens": 224,
+    "cache_creation_tokens": 519186,
+    "cache_read_tokens": 18463098,
+    "output_tokens": 215946,
+    "api_call_count": 208
   }
 }
