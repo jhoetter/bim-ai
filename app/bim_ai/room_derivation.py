@@ -10,7 +10,7 @@ from collections import defaultdict
 from typing import Any, Literal
 
 from bim_ai.document import Document
-from bim_ai.elements import LevelElem, RoomElem, RoomSeparationElem, WallElem
+from bim_ai.elements import LevelElem, ProjectSettingsElem, RoomElem, RoomSeparationElem, WallElem
 from bim_ai.plan_aa_room_separation import axis_aligned_room_separation_splits_rectangle
 
 BOUNDARY_SEGMENT_VERSION_V1 = "boundary_segment_v1"
@@ -446,11 +446,52 @@ def _pairwise_preview_overlap_flags(cands: list[dict[str, Any]]) -> set[int]:
     return bad
 
 
+def _room_area_inset_mm_for_level(doc: Document, level_id: str) -> float:
+    """Return the bbox inset (mm) to apply on all four sides when computing room area bounds.
+
+    The inset is derived from the project-level ``roomAreaComputationBasis`` setting:
+    - ``wall_finish`` (default): 0 mm — boundary at the outer wall finish face (existing behavior).
+    - ``wall_centerline``: half the average wall thickness on this level.
+    - ``wall_core_layer``: half the average wall thickness (approximated — no actual layer data).
+    - ``wall_core_center``: half the average wall thickness (same approximation as centerline).
+    """
+    proj_settings = next(
+        (e for e in doc.elements.values() if isinstance(e, ProjectSettingsElem)),
+        None,
+    )
+    basis = proj_settings.room_area_computation_basis if proj_settings else "wall_finish"
+    if basis == "wall_finish":
+        return 0.0
+    walls = [
+        e
+        for e in doc.elements.values()
+        if isinstance(e, WallElem) and e.level_id == level_id
+    ]
+    if not walls:
+        return 0.0
+    avg_thickness = sum(w.thickness_mm for w in walls) / len(walls)
+    # wall_centerline, wall_core_layer, wall_core_center all map to half-thickness
+    # without actual layer geometry data.
+    return avg_thickness / 2.0
+
+
 def compute_room_boundary_derivation(doc: Document) -> dict[str, Any]:
     """Single deterministic bundle: candidates, classification, diagnostics, preview warnings."""
     lvl_names = {e.id: e.name or e.id for e in doc.elements.values() if isinstance(e, LevelElem)}
     segments_by_level = collect_axis_aligned_boundary_segments(doc)
     non_axis_by_level = collect_non_axis_boundary_element_ids_by_level(doc)
+
+    # Resolve the project-level area computation basis once for this derivation run.
+    _proj_settings = next(
+        (e for e in doc.elements.values() if isinstance(e, ProjectSettingsElem)),
+        None,
+    )
+    _area_basis = (
+        _proj_settings.room_area_computation_basis if _proj_settings else "wall_finish"
+    )
+
+    # Cache inset per level to avoid re-scanning elements for every quad combination.
+    _inset_cache: dict[str, float] = {}
 
     candidates: list[dict[str, Any]] = []
     for lid, seglist in segments_by_level.items():
@@ -461,12 +502,31 @@ def compute_room_boundary_derivation(doc: Document) -> dict[str, Any]:
             continue
         if len(seglist) > ROOM_AX_RECT_SEGMENT_ENUM_CAP:
             continue
+        if lid not in _inset_cache:
+            _inset_cache[lid] = _room_area_inset_mm_for_level(doc, lid)
+        inset_mm = _inset_cache[lid]
         for quad in itertools.combinations(seglist, 4):
             qs = quad_closes_rectangle(quad)
             if not qs:
                 continue
             qs["levelId"] = lid
             qs["levelName"] = lvl_names.get(lid, lid)
+            if inset_mm > 0.0:
+                bbox = qs.get("bboxMm") or {}
+                mn = bbox.get("min") or {}
+                mx = bbox.get("max") or {}
+                x_lo = float(mn.get("x") or 0) + inset_mm
+                y_lo = float(mn.get("y") or 0) + inset_mm
+                x_hi = float(mx.get("x") or 0) - inset_mm
+                y_hi = float(mx.get("y") or 0) - inset_mm
+                qs["bboxMm"] = {
+                    "min": {"x": x_lo, "y": y_lo},
+                    "max": {"x": x_hi, "y": y_hi},
+                }
+                area_m2 = max(0.0, (x_hi - x_lo) / 1000.0) * max(0.0, (y_hi - y_lo) / 1000.0)
+                qs["approxAreaM2"] = round(area_m2, 4)
+                qs["roomAreaComputationBasis"] = _area_basis
+                qs["roomAreaInsetMm"] = round(inset_mm, 4)
             candidates.append(qs)
 
     def _sig(cand: dict[str, Any]) -> tuple:
