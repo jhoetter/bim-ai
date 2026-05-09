@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { Element, SiteContextObjectRow, SiteContextType } from '@bim-ai/core';
 
-import { Btn, Panel } from '@bim-ai/ui';
+import { Btn, Icons, ICON_SIZE, Panel } from '@bim-ai/ui';
 
 import {
   boundaryAxisAlignedBoxMm,
@@ -491,16 +491,17 @@ export function SiteAuthoringPanel({ revision, elementsById, levels, onUpsertSem
                   <Btn
                     type="button"
                     variant="quiet"
-                    className="px-1 py-0.5 text-[9px]"
+                    className="px-1 py-0.5"
                     disabled={ctxRows.length <= 1}
                     title="Remove row"
+                    aria-label="Remove row"
                     onClick={() =>
                       setCtxRows((rows) =>
                         rows.length <= 1 ? rows : rows.filter((_, i) => i !== idx),
                       )
                     }
                   >
-                    ×
+                    <Icons.close size={ICON_SIZE.chrome} aria-hidden="true" />
                   </Btn>
                 </div>
               </div>

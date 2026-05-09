@@ -1,6 +1,7 @@
 /* eslint-disable bim-ai/no-hex-in-chrome -- pre-v3 hex literals; remove when this file is migrated in B4 Phase 2 */
 import { useState, useCallback, useEffect } from 'react';
 import type { JSX } from 'react';
+import { Icons, ICON_SIZE } from '@bim-ai/ui';
 import type { Element } from '@bim-ai/core';
 import { useBimStore } from '../state/store';
 import type { CategoryOverride, CategoryOverrides } from '../state/store';
@@ -125,21 +126,23 @@ function ColorSwatch({
           ))}
           <button
             type="button"
+            aria-label="Clear colour override"
+            title="Clear colour override"
             onClick={() => {
               onChange(null);
               setOpen(false);
             }}
             style={{
-              fontSize: 10,
               padding: '0 4px',
               border: '1px solid var(--color-border)',
               borderRadius: 2,
               cursor: 'pointer',
               background: 'transparent',
               color: 'var(--color-foreground)',
+              lineHeight: 1,
             }}
           >
-            ×
+            <Icons.close size={ICON_SIZE.chrome} aria-hidden="true" />
           </button>
         </div>
       )}
@@ -383,14 +386,14 @@ function FiltersTabBody({
                     background: 'transparent',
                     border: 'none',
                     cursor: 'pointer',
-                    fontSize: 14,
                     color: 'var(--color-muted)',
                     lineHeight: 1,
                     padding: '0 2px',
                   }}
                   aria-label={`Remove filter ${f.name}`}
+                  title={`Remove filter ${f.name}`}
                 >
-                  ×
+                  <Icons.close size={ICON_SIZE.chrome} aria-hidden="true" />
                 </button>
               </div>
             );
@@ -510,17 +513,17 @@ export function VVDialog({
             type="button"
             onClick={onClose}
             aria-label="Close"
+            title="Close"
             style={{
               background: 'transparent',
               border: 'none',
               cursor: 'pointer',
-              fontSize: 16,
               color: 'var(--color-muted)',
               lineHeight: 1,
               padding: '0 2px',
             }}
           >
-            ×
+            <Icons.close size={ICON_SIZE.chrome} aria-hidden="true" />
           </button>
         </div>
 

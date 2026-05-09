@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 import type { AssetLibraryEntry, AssetCategory } from '@bim-ai/core';
+import { Icons, ICON_SIZE } from '@bim-ai/ui';
 import { AssetCard } from './AssetCard';
 import { AssetPreviewPane } from './AssetPreviewPane';
 
@@ -292,12 +293,11 @@ export function LibraryOverlay({
                 border: 'none',
                 color: 'var(--text-secondary)',
                 cursor: 'pointer',
-                fontSize: 16,
                 lineHeight: 1,
                 padding: 4,
               }}
             >
-              ✕
+              <Icons.close size={ICON_SIZE.chrome} aria-hidden="true" />
             </button>
           </div>
 

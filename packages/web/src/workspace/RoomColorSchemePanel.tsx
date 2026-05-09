@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 
 import type { RoomColorSchemeRow } from '@bim-ai/core';
 
-import { Btn, Panel } from '@bim-ai/ui';
+import { Btn, Icons, ICON_SIZE, Panel } from '@bim-ai/ui';
 
 import { useBimStore, type PlanRoomSchemeWireReadout } from '../state/store';
 
@@ -128,12 +128,13 @@ function RoomColourSchemeAuthoringDraft({
               <Btn
                 type="button"
                 variant="quiet"
-                className="px-1 py-0.5 text-[10px]"
+                className="px-1 py-0.5"
                 disabled={draftRows.length <= 1}
                 title="Remove row"
+                aria-label="Remove row"
                 onClick={() => setDraftRows((rows) => rows.filter((_, i) => i !== idx))}
               >
-                ×
+                <Icons.close size={ICON_SIZE.chrome} aria-hidden="true" />
               </Btn>
             </div>
           </div>

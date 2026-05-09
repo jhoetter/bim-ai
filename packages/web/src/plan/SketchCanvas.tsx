@@ -698,11 +698,12 @@ export function SketchCanvas(props: SketchCanvasProps): JSX.Element {
             cursor: validation?.valid && !busy ? 'pointer' : 'not-allowed',
           }}
         >
-          ✓ Finish
+          Finish
         </button>
         <button
           type="button"
           data-testid="sketch-cancel"
+          title="Cancel sketch (Esc)"
           onClick={() => void handleCancel()}
           style={{
             padding: '4px 12px',
@@ -714,7 +715,7 @@ export function SketchCanvas(props: SketchCanvasProps): JSX.Element {
             cursor: 'pointer',
           }}
         >
-          ✗ Cancel
+          Cancel
         </button>
       </div>
     </div>

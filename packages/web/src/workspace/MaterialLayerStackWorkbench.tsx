@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import type { Element } from '@bim-ai/core';
+import { Icons, ICON_SIZE } from '@bim-ai/ui';
 
 import {
   ALLOWED_WALL_LAYER_FUNCTIONS,
@@ -188,7 +189,9 @@ export function MaterialLayerStackWorkbench({
                   <td className="p-1">
                     <button
                       type="button"
-                      className="text-[10px] text-muted hover:text-destructive"
+                      aria-label="Remove layer"
+                      title="Remove layer"
+                      className="text-muted hover:text-destructive"
                       onClick={() =>
                         setDraftRows((prev) =>
                           prev
@@ -197,7 +200,7 @@ export function MaterialLayerStackWorkbench({
                         )
                       }
                     >
-                      ×
+                      <Icons.close size={ICON_SIZE.chrome} aria-hidden="true" />
                     </button>
                   </td>
                 </tr>

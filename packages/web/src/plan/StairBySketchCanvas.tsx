@@ -383,7 +383,7 @@ export function StairBySketchCanvas(props: StairBySketchCanvasProps): JSX.Elemen
           }}
         >
           {advisoryOk
-            ? `✓ ${Math.round(avgTread)}×${Math.round(avgRiser)} mm — EU proxy OK`
+            ? `OK ${Math.round(avgTread)}×${Math.round(avgRiser)} mm — EU proxy OK`
             : [
                 !treadOk && `Tread ${Math.round(avgTread)} mm < 260 mm min`,
                 !riserOk && `Riser ${Math.round(avgRiser)} mm > 190 mm max`,
@@ -453,6 +453,7 @@ export function StairBySketchCanvas(props: StairBySketchCanvasProps): JSX.Elemen
 
         <button
           type="button"
+          title="Finish stair sketch"
           disabled={!canFinish || busy}
           onClick={() => void handleFinish()}
           style={{
@@ -465,10 +466,11 @@ export function StairBySketchCanvas(props: StairBySketchCanvasProps): JSX.Elemen
             cursor: canFinish && !busy ? 'pointer' : 'not-allowed',
           }}
         >
-          {busy ? '…' : '✓ Finish'}
+          {busy ? '…' : 'Finish'}
         </button>
         <button
           type="button"
+          title="Cancel stair sketch (Esc)"
           onClick={handleCancel}
           style={{
             padding: '4px 16px',
@@ -480,7 +482,7 @@ export function StairBySketchCanvas(props: StairBySketchCanvasProps): JSX.Elemen
             cursor: 'pointer',
           }}
         >
-          ✗ Cancel
+          Cancel
         </button>
       </div>
     </div>
