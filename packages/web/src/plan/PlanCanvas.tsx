@@ -54,7 +54,12 @@ import {
 } from './planCanvasState';
 import { SnapGlyphLayer } from './SnapGlyphLayer';
 import { SnapSettingsToolbar } from './SnapSettingsToolbar';
-import { applySnapSettings, loadSnapSettings, type SnapSettings } from './snapSettings';
+import {
+  applySnapSettings,
+  loadSnapSettings,
+  type SnapSettings,
+  type ToggleableSnapKind,
+} from './snapSettings';
 import {
   bumpSnapTabCycle,
   initialSnapTabCycle,
@@ -338,6 +343,11 @@ export function PlanCanvas({
   }>({ candidates: [], activeIndex: 0 });
   const lastSnapHitsRef = useRef<SnapHit[]>([]);
   const lastSnapLinesRef = useRef<SegmentLine[]>([]);
+  // F-080 — one-shot snap override (SI/SE/SM/SP/SX Revit-style shortcuts).
+  const snapOverrideRef = useRef<ToggleableSnapKind | null>(null);
+  const [snapOverrideDisplay, setSnapOverrideDisplay] = useState<ToggleableSnapKind | null>(null);
+  // Tracks the first key in a two-key snap-override sequence (e.g. "S" before "I").
+  const lastKeyRef = useRef<{ key: string; time: number } | null>(null);
   // EDT-01 — grip + temp-dim layer state
   const gripDragRef = useRef<{
     grip: GripDescriptor;
@@ -1728,9 +1738,25 @@ export function PlanCanvas({
           orthoHold: orthoSnapHold,
           lines: linesScoped,
         });
+        // F-080 — if a one-shot snap override is active, restrict candidates
+        // to only that kind so the glyph and tab-cycle honour the override.
+        const activeOverride = snapOverrideRef.current;
+        const settingsForFilter: SnapSettings = activeOverride
+          ? {
+              endpoint: activeOverride === 'endpoint',
+              midpoint: activeOverride === 'midpoint',
+              intersection: activeOverride === 'intersection',
+              perpendicular: activeOverride === 'perpendicular',
+              extension: activeOverride === 'extension',
+              parallel: activeOverride === 'parallel',
+              tangent: activeOverride === 'tangent',
+              workplane: activeOverride === 'workplane',
+              grid: activeOverride === 'grid',
+            }
+          : snapSettings;
         const filtered = applySnapSettings(
           allHits.filter((h) => h.kind !== 'raw'),
-          snapSettings,
+          settingsForFilter,
         );
         // Resync tab cycle when the candidate-set changes; keep the
         // index stable for a stationary cursor.
@@ -2128,6 +2154,11 @@ export function PlanCanvas({
       }
       const sp = snapped(ev.clientX, ev.clientY);
       if (!sp || !lvlId) return;
+      // F-080 — consume the one-shot snap override after the click lands.
+      if (snapOverrideRef.current) {
+        snapOverrideRef.current = null;
+        setSnapOverrideDisplay(null);
+      }
       if (planTool === 'select') {
         const rectBox = rnd.domElement.getBoundingClientRect();
         const ray = new THREE.Raycaster();
@@ -3019,7 +3050,39 @@ export function PlanCanvas({
         }));
         return;
       }
+      // F-080 — Revit-style one-shot snap override shortcuts (SI / SE / SM / SP / SX).
+      // Two-letter sequence: press S, then within 500 ms press the second letter.
+      if (!ev.metaKey && !ev.ctrlKey && !ev.altKey) {
+        const now = Date.now();
+        const last = lastKeyRef.current;
+        if (last && last.key === 's' && now - last.time <= 500) {
+          type OverrideEntry = { key: string; kind: ToggleableSnapKind; label: string };
+          const SNAP_OVERRIDE_MAP: OverrideEntry[] = [
+            { key: 'i', kind: 'intersection', label: 'Intersection' },
+            { key: 'e', kind: 'endpoint', label: 'Endpoint' },
+            { key: 'm', kind: 'midpoint', label: 'Midpoint' },
+            { key: 'p', kind: 'perpendicular', label: 'Perpendicular' },
+            { key: 'x', kind: 'extension', label: 'Extension' },
+          ];
+          const match = SNAP_OVERRIDE_MAP.find((o) => o.key === ev.key.toLowerCase());
+          if (match) {
+            ev.preventDefault();
+            snapOverrideRef.current = match.kind;
+            setSnapOverrideDisplay(match.kind);
+            lastKeyRef.current = null;
+          } else {
+            lastKeyRef.current = null;
+          }
+        } else if (ev.key.toLowerCase() === 's') {
+          lastKeyRef.current = { key: 's', time: now };
+        } else {
+          lastKeyRef.current = null;
+        }
+      }
       if (ev.key === 'Escape') {
+        // Cancel any active snap override.
+        snapOverrideRef.current = null;
+        setSnapOverrideDisplay(null);
         draftRef.current = undefined;
         // EDT-V3-05: Esc exits loop mode as well as cancelling the in-flight segment.
         useToolPrefs.getState().setLoopMode(false);
@@ -3822,6 +3885,36 @@ export function PlanCanvas({
           </div>
         </div>
       )}
+      {/* F-080 — snap override chip: shown when a one-shot snap override is active */}
+      {snapOverrideDisplay ? (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 72,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 20,
+          }}
+          className="pointer-events-auto flex items-center gap-2 rounded-full border border-amber-400/60 bg-amber-500/10 px-3 py-1 text-xs text-amber-300 shadow"
+          data-testid="snap-override-chip"
+        >
+          <span>
+            Snap: {snapOverrideDisplay.charAt(0).toUpperCase() + snapOverrideDisplay.slice(1)} (next
+            pick only)
+          </span>
+          <button
+            type="button"
+            className="ml-1 text-amber-400 hover:text-amber-200"
+            aria-label="Cancel snap override"
+            onClick={() => {
+              snapOverrideRef.current = null;
+              setSnapOverrideDisplay(null);
+            }}
+          >
+            ×
+          </button>
+        </div>
+      ) : null}
       {/* Copy tool status chip — shown after first click (anchor set), waiting for destination */}
       {planTool === 'copy' && copyAnchorSet ? (
         <div
