@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 
 export type NewSheetDialogProps = {
@@ -11,6 +11,14 @@ export function NewSheetDialog({ onClose, onSubmit }: NewSheetDialogProps): Reac
   const [name, setName] = useState('');
   const [size, setSize] = useState<'A0' | 'A1' | 'A2' | 'A3'>('A1');
   const [orientation, setOrientation] = useState<'landscape' | 'portrait'>('landscape');
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [onClose]);
 
   function handleCreate() {
     if (!number.trim() || !name.trim()) return;

@@ -17,6 +17,7 @@ export function Cheatsheet({ open, onClose, viewerMode }: Props) {
     <div
       role="dialog"
       aria-modal
+      aria-label="Keyboard shortcuts"
       className="fixed inset-0 z-[80] grid place-items-center bg-black/50 p-4"
       onClick={onClose}
     >

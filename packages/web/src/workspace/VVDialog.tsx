@@ -459,6 +459,15 @@ export function VVDialog({
   const [tab, setTab] = useState<Tab>('model');
   const [draft, setDraft] = useState<CategoryOverrides>({});
 
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [open, onClose]);
+
   // Sync draft from store when dialog opens or active view changes
   useEffect(() => {
     if (!open) return;
