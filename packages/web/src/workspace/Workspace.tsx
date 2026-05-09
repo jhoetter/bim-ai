@@ -100,6 +100,7 @@ import {
   toolIdToLegacy,
 } from './workspaceUtils';
 import { useToolPrefs } from '../tools/toolPrefsStore';
+import { useOfflineStore } from '../offlineStore';
 
 /**
  * Workspace — composition root for the §11–§17 chrome.
@@ -159,6 +160,10 @@ export function Workspace(): JSX.Element {
   const closeVVDialog = useBimStore((s) => s.closeVVDialog);
   const setOrthoSnapHold = useBimStore((s) => s.setOrthoSnapHold);
   const userId = useBimStore((s) => s.userId);
+
+  // COL-V3-06 — offline-tolerant authoring: network status + pending queue count
+  const isOnline = useOfflineStore((s) => s.isOnline);
+  const pendingCommandCount = useOfflineStore((s) => s.pendingCommandCount);
 
   // AST-V3-01 — library overlay (Alt+2)
   const [libraryOpen, setLibraryOpen] = useState(false);
@@ -1008,6 +1013,45 @@ export function Workspace(): JSX.Element {
                   setPlanPresentationPreset(v as 'default' | 'opening_focus' | 'room_scheme')
                 }
               />
+              {/* COL-V3-06 — offline indicator */}
+              {!isOnline ? (
+                <div
+                  data-testid="offline-indicator"
+                  style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 8 }}
+                >
+                  <span
+                    aria-label={
+                      pendingCommandCount > 0
+                        ? `Offline — ${pendingCommandCount} edit${pendingCommandCount === 1 ? '' : 's'} will sync on reconnect`
+                        : 'Offline — edits will sync on reconnect'
+                    }
+                    title={
+                      pendingCommandCount > 0
+                        ? `Offline — ${pendingCommandCount} edit${pendingCommandCount === 1 ? '' : 's'} will sync on reconnect`
+                        : 'Offline — edits will sync on reconnect'
+                    }
+                    style={{
+                      display: 'inline-block',
+                      width: 2,
+                      height: 2,
+                      borderRadius: '50%',
+                      background: 'var(--color-warning)',
+                    }}
+                  />
+                  {pendingCommandCount > 0 ? (
+                    <span
+                      data-testid="offline-pending-badge"
+                      style={{
+                        fontSize: 'var(--text-3xs)',
+                        fontWeight: 700,
+                        color: 'var(--color-warning)',
+                      }}
+                    >
+                      {pendingCommandCount}
+                    </span>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
             <TabBar
               tabs={tabsState.tabs}
