@@ -14,6 +14,13 @@ const LOCATION_LINE_LABELS: Record<WallLocationLine, string> = {
 
 const BAR_CLASS = 'flex items-center gap-4 border-b border-border bg-surface py-1 px-3 text-xs';
 
+/**
+ * Module-level flag for the mirror tool "Copy" option.
+ * Exported so PlanCanvas can read it without a Zustand store change.
+ * Defaults to true (keep original + add mirrored copy).
+ */
+export let mirrorCopyEnabled = true;
+
 export function OptionsBar(): JSX.Element | null {
   const planTool = useBimStore((s) => s.planTool);
   const elementsById = useBimStore((s) => s.elementsById);
@@ -134,6 +141,26 @@ export function OptionsBar(): JSX.Element | null {
           />
           <span>Apply Area Rules</span>
         </label>
+      </div>
+    );
+  }
+
+  if (planTool === 'mirror') {
+    return (
+      <div data-testid="options-bar" className={BAR_CLASS}>
+        <label className="flex items-center gap-1 text-[11px]">
+          <input
+            type="checkbox"
+            defaultChecked={mirrorCopyEnabled}
+            onChange={(e) => {
+              mirrorCopyEnabled = e.target.checked;
+            }}
+            aria-label="Copy (keep original)"
+            data-testid="options-bar-mirror-copy"
+          />
+          <span>Copy</span>
+        </label>
+        <span className="text-muted opacity-60">Click to set axis start, click again to mirror</span>
       </div>
     );
   }

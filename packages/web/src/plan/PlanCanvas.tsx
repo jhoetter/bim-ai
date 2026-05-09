@@ -121,6 +121,7 @@ import { copyElementsToClipboard, pasteFromOSClipboard } from '../clipboard/copy
 import { useToolPrefs } from '../tools/toolPrefsStore';
 import { SubdivisionPalette } from '../workspace/SubdivisionPalette';
 import type { SubdivisionCategory } from '../workspace/SubdivisionPalette';
+import { mirrorCopyEnabled } from '../workspace/OptionsBar';
 
 function readPlanToken(name: string, fallback: string): string {
   const v = liveTokenReader().read(name);
@@ -280,6 +281,7 @@ export function PlanCanvas({
   >(undefined);
   const cropOverlayRef = useRef<THREE.Group | null>(null);
   const alignStateRef = useRef<AlignState>(initialAlignState());
+  const mirrorAxisStartRef = useRef<{ xMm: number; yMm: number } | null>(null);
   const splitStateRef = useRef<SplitState>(initialSplitState());
   const trimStateRef = useRef<TrimState>(initialTrimState());
   const wallJoinStateRef = useRef<WallJoinState>(initialWallJoinState());
@@ -694,6 +696,7 @@ export function PlanCanvas({
     draftRef.current = undefined;
     wallFlipRef.current = false;
     alignStateRef.current = initialAlignState();
+    mirrorAxisStartRef.current = null;
     splitStateRef.current = initialSplitState();
     trimStateRef.current = initialTrimState();
     wallJoinStateRef.current = initialWallJoinState();
@@ -2496,6 +2499,27 @@ export function PlanCanvas({
         }
         return;
       }
+      if (planTool === 'mirror') {
+        if (!mirrorAxisStartRef.current) {
+          // First click: store axis start point
+          mirrorAxisStartRef.current = sp;
+          bumpGeom((x) => x + 1);
+          return;
+        }
+        // Second click: fire mirrorElements with the selected element
+        const axisStart = mirrorAxisStartRef.current;
+        mirrorAxisStartRef.current = null;
+        if (selectedId) {
+          onSemanticCommand({
+            type: 'mirrorElements',
+            elementIds: [selectedId],
+            axis: { startMm: axisStart, endMm: sp },
+            alsoCopy: mirrorCopyEnabled,
+          });
+        }
+        bumpGeom((x) => x + 1);
+        return;
+      }
       if (planTool === 'split') {
         const { state: nextState, effect } = reduceSplit(splitStateRef.current, {
           kind: 'click',
@@ -2962,6 +2986,8 @@ export function PlanCanvas({
         if (planTool === 'align') {
           const { state } = reduceAlign(alignStateRef.current, { kind: 'cancel' });
           alignStateRef.current = state;
+        } else if (planTool === 'mirror') {
+          mirrorAxisStartRef.current = null;
         } else if (planTool === 'split') {
           const { state } = reduceSplit(splitStateRef.current, { kind: 'cancel' });
           splitStateRef.current = state;

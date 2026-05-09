@@ -96,7 +96,7 @@ The category determines which visibility category controls the family in VG over
 **Screenshot:**
 ![Mirror - Draw Axis](file:///Users/jhoetter/Desktop/Revit%20Specs/0467_02-50-08.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — The mirror tool (hotkey `MM`) is available in the plan canvas for regular project elements: first click sets the axis start point, second click completes the axis and fires `mirrorElements { elementIds: [selectedId], axis, alsoCopy: true }`. The backend (`engine.py`) handles wall and floor boundary reflection. Missing: mirror within the family editor context (the spec's primary use case); "Copy" checkbox in OptionsBar (defaults to alsoCopy=true); multi-element selection for bulk mirror; preview of the mirrored result before confirming.
 
 ---
 
