@@ -44,7 +44,7 @@ Source segment: `05:30:00 – 05:39:46`
 **Screenshot:**
 ![Area Boundary Lines](file:///Users/jhoetter/Desktop/Revit%20Specs/0808_05-34-41.png)
 
-**bim-ai status:** 🟡 Partial — the `area-boundary` plan tool (hotkey `AR`) creates rectangular area elements via `createArea { boundaryMm, ruleSet: 'gross' }`. Areas are rendered in the plan canvas. Missing: proper "Area Boundary Line" as a separate annotation element (distinct from the area placement), arbitrary polygon boundary drawing, and Area Plan view type.
+**bim-ai status:** 🟡 Partial — the `area-boundary` sketch tool (hotkey AR, toolRegistry.ts) draws area boundary polylines on the plan canvas stored as `area` elements. The `area_boundary` annotation category now appears in Visibility/Graphics Overrides (VV), allowing per-view toggling of area boundary line visibility. Missing: auto-snap to wall faces for area boundary placement (Revit snaps to wall layers), and separate Area Plan view type (F-098).
 
 ---
 
