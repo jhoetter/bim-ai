@@ -63,7 +63,7 @@ For layered walls this distinction matters significantly — the core can sit 50
 **Screenshot:**
 ![Wall Height Constraint](file:///Users/jhoetter/Desktop/Revit%20Specs/0314_01-04-37.png)
 
-**bim-ai status:** 🟡 Partial — bim-ai supports wall height and base/top level constraints in the data model but not via interactive Options Bar controls.
+**bim-ai status:** ✅ Available — `workspace/OptionsBar.tsx` has a Height number input (step 100, min 100, testid `options-bar-wall-height`); `store.ts` holds `wallDrawHeightMm` (default 2800); `PlanCanvas.tsx` reads the value and passes `heightMm` to `createWall`. `AppShell.tsx` renders the OptionsBar alongside the ToolModifierBar.
 
 ---
 
@@ -108,7 +108,7 @@ For layered walls this distinction matters significantly — the core can sit 50
 **Screenshot:**
 ![Wall Offset option](file:///Users/jhoetter/Desktop/Revit%20Specs/0359_01-12-40.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** ✅ Available — `workspace/OptionsBar.tsx` has a wall offset input connected via `useBimStore`; `store.ts` holds `wallDrawOffsetMm` (default 0); `PlanCanvas.tsx` reads the value and computes a perpendicular shift of both start and end points before calling `createWall`.
 
 ---
 

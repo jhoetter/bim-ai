@@ -22,7 +22,7 @@ Source segment: `00:55:00 – 01:02:00`
 **Screenshot:**
 ![Rename Level](file:///Users/jhoetter/Desktop/Revit%20Specs/0250_00-57-48.png)
 
-**bim-ai status:** ❌ Not available — level names exist in the data model but there is no interactive renaming UI.
+**bim-ai status:** ✅ Available — `LevelStack.tsx` supports inline rename via double-click: an input field appears, blur/Enter commits via `updateElementProperty { key: 'name' }`, and Escape cancels. `WorkspaceLeftRail.tsx` wires the `onNameCommitted` callback.
 
 ---
 
@@ -33,7 +33,7 @@ Source segment: `00:55:00 – 01:02:00`
 **Screenshot:**
 ![Create Floor Plan dialog](file:///Users/jhoetter/Desktop/Revit%20Specs/0263_00-58-27.png)
 
-**bim-ai status:** ❌ Not available — there is no view-creation workflow.
+**bim-ai status:** ✅ Available — `LevelStack.tsx` renders a "+" button per level that fires `upsertPlanView { name, levelId, discipline }` via `onCreatePlanView`. `WorkspaceLeftRail.tsx` wires the callback; newly created views appear in the Project Browser under "Floor Plans".
 
 ---
 
@@ -66,7 +66,7 @@ Source segment: `00:55:00 – 01:02:00`
 **Screenshot:**
 ![Rename View](file:///Users/jhoetter/Desktop/Revit%20Specs/0249_00-57-46.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** ✅ Available — `ProjectBrowser.tsx` implements inline rename for plan views: double-click enters an input field, blur/Enter commits via `updateElementProperty { key: 'name' }`. Renaming a view does not rename the associated level.
 
 ---
 
@@ -77,7 +77,7 @@ Source segment: `00:55:00 – 01:02:00`
 **Screenshot:**
 ![Delete Views](file:///Users/jhoetter/Desktop/Revit%20Specs/0259_00-58-17.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** ✅ Available — `ProjectBrowser.tsx` shows a "Delete…" button for each plan view that fires `deleteElement { elementId }` behind a `confirm()` guard.
 
 ---
 
@@ -99,4 +99,4 @@ Source segment: `00:55:00 – 01:02:00`
 **Screenshot:**
 ![Elevation Markers](file:///Users/jhoetter/Desktop/Revit%20Specs/0122_00-12-17.png)
 
-**bim-ai status:** 🟡 Partial — the `elevation` tool is registered in `toolRegistry.ts` and `ProjectBrowser.tsx` has a dedicated Elevations group (`elevation_view` elements). Missing: auto-generation of four cardinal markers on project creation; double-click-from-plan-tag to open elevation view tab.
+**bim-ai status:** 🟡 Partial — `ProjectBrowser.tsx` now shows `section_cut` and `elevation_view` rows with inline rename support (double-click → input, blur/Enter commits via `updateElementProperty { key: 'name' }`). Missing: auto-generation of four-way elevation markers from a plan view, double-click-from-plan-tag navigation to the corresponding elevation tab.
