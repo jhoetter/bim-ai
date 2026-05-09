@@ -1,0 +1,25 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "02acead5b13f",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/web/src/collab/ShareModal.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/02/acead5b13f/0/metadata.json",
+      "transcript": "/02/acead5b13f/0/full.jsonl",
+      "content_hash": "/02/acead5b13f/0/content_hash.txt",
+      "prompt": "/02/acead5b13f/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 7646,
+    "cache_creation_tokens": 4336224,
+    "cache_read_tokens": 269126875,
+    "output_tokens": 1272802,
+    "api_call_count": 2735
+  }
+}
