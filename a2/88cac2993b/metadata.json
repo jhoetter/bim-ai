@@ -1,0 +1,23 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "a288cac2993b",
+  "strategy": "manual-commit",
+  "branch": "feat/parity-readme-sync",
+  "checkpoints_count": 1,
+  "files_touched": null,
+  "sessions": [
+    {
+      "metadata": "/a2/88cac2993b/0/metadata.json",
+      "transcript": "/a2/88cac2993b/0/full.jsonl",
+      "content_hash": "/a2/88cac2993b/0/content_hash.txt",
+      "prompt": "/a2/88cac2993b/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 6729,
+    "cache_creation_tokens": 3758438,
+    "cache_read_tokens": 191900648,
+    "output_tokens": 1068429,
+    "api_call_count": 2007
+  }
+}
