@@ -1,0 +1,25 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "486f47d54101",
+  "strategy": "manual-commit",
+  "branch": "feat/parity-section-names-delete",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/web/src/workspace/ProjectBrowser.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/48/6f47d54101/0/metadata.json",
+      "transcript": "/48/6f47d54101/0/full.jsonl",
+      "content_hash": "/48/6f47d54101/0/content_hash.txt",
+      "prompt": "/48/6f47d54101/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 6188,
+    "cache_creation_tokens": 3281708,
+    "cache_read_tokens": 139257964,
+    "output_tokens": 923142,
+    "api_call_count": 1488
+  }
+}
