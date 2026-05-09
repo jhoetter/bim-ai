@@ -11,7 +11,7 @@ Source segment: `00:55:00 – 01:02:00`
 **Screenshot:**
 ![Levels in elevation](file:///Users/jhoetter/Desktop/Revit%20Specs/0246_00-57-24.png)
 
-**bim-ai status:** 🟡 Partial (better) — `LevelStack.tsx` now shows a "+" button in the header that fires `createLevel { id, name, elevationMm: maxElev + 3000, alsoCreatePlanView: true }`, automatically creating both the level and a companion plan view. Elevation is editable inline for all levels. Level name can be renamed via double-click. `SectionViewportSvg` now renders blue dashed datum lines at each level elevation with a circle head symbol on the right edge and a `"Name | ±X.XXX m"` label above each line (Revit-style level heads in section/elevation views). Missing: visual elevation datum line drawn across the plan canvas (only the status bar chip shows the elevation).
+**bim-ai status:** ✅ Available — `LevelStack.tsx` now shows a "+" button in the header that fires `createLevel { id, name, elevationMm: maxElev + 3000, alsoCreatePlanView: true }`, automatically creating both the level and a companion plan view. Elevation is editable inline for all levels. Level name can be renamed via double-click. `SectionViewportSvg` now renders blue dashed datum lines at each level elevation with a circle head symbol on the right edge and a `"Name | ±X.XXX m"` label above each line (Revit-style level heads in section/elevation views). `PlanCanvas.tsx` now shows a level elevation badge in the top-left corner of the plan canvas (`data-testid="plan-level-elevation-badge"`) displaying the current level name and elevation as `"Name | ±X.XXX m"`, matching the section/elevation datum label format.
 
 ---
 

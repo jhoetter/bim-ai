@@ -237,6 +237,13 @@ function guessGridLabel(sxMm: number, syMm: number, exMm: number, eyMm: number) 
     : String.fromCharCode(66 + Math.min(10, Math.floor(Math.abs(exMm - sxMm + 8200) / 4200)));
 }
 
+/** F-025: Format an elevation in mm as ±X.XXX m for the plan canvas badge. */
+function fmtElev(mm: number): string {
+  const m = mm / 1000;
+  if (Math.abs(m) < 0.0005) return '±0.000 m';
+  return `${m >= 0 ? '+' : '−'}${Math.abs(m).toFixed(3)} m`;
+}
+
 /** Imperative handle so the tab host can snapshot / restore the 2D camera
  * without continuous callbacks. Fill via cameraHandleRef prop. */
 export interface PlanCameraHandle {
@@ -601,6 +608,14 @@ export function PlanCanvas({
     [elementsById, displayLevelId],
   );
   const lvlId = displayLevelId || activeLevelResolvedId;
+
+  // F-025 — active level element for plan canvas elevation badge.
+  const activeLevelElem = useMemo(() => {
+    if (!lvlId) return undefined;
+    const el = elementsById[lvlId];
+    if (el && el.kind === 'level') return el as { name: string; elevationMm: number };
+    return undefined;
+  }, [lvlId, elementsById]);
 
   // EDT-01 — selected wall + grip / temp-dim derivation
   const selectedWall = useMemo(() => {
@@ -4807,6 +4822,28 @@ export function PlanCanvas({
           <span className="ml-1 text-foreground/70">1:{plotScaleN}</span>
         </button>
       </div>
+      {/* F-025: Level elevation badge — top-left corner showing current level name and elevation. */}
+      {activeLevelElem && (
+        <div
+          data-testid="plan-level-elevation-badge"
+          style={{
+            position: 'absolute',
+            top: 8,
+            left: 8,
+            backgroundColor: 'rgba(30, 58, 138, 0.85)',
+            color: 'white',
+            padding: '3px 8px',
+            borderRadius: 4,
+            fontSize: 11,
+            fontFamily: 'monospace',
+            pointerEvents: 'none',
+            zIndex: 10,
+            userSelect: 'none',
+          }}
+        >
+          {activeLevelElem.name} | {fmtElev(activeLevelElem.elevationMm ?? 0)}
+        </div>
+      )}
       {/* North point — architectural drawing convention, always aligned to grid north (up). */}
       <div className="pointer-events-none absolute left-3 bottom-14 z-10 opacity-55">
         <svg
