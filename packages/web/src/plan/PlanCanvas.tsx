@@ -3763,42 +3763,84 @@ export function PlanCanvas({
             );
           })()
         : null}
-      {/* VIE-04 — Temporary visibility (isolate) trigger, lower-right corner above reveal-hidden. */}
+      {/* VIE-04 — Temporary visibility (isolate / hide) trigger, lower-right corner above reveal-hidden. */}
       {selectedId ? (
-        <div className="pointer-events-auto absolute right-3 z-10" style={{ bottom: 68 }}>
-          <button
-            type="button"
-            title={
-              temporaryVisibility
-                ? 'Reset Temporary Visibility'
-                : 'Isolate selected element category'
-            }
-            data-testid="temp-visibility-toggle"
-            onClick={() => {
-              if (temporaryVisibility) {
-                clearTemporaryVisibility();
-              } else {
-                const el = elementsByIdRaw[selectedId];
-                const categories = el ? [el.kind] : [];
-                setTemporaryVisibility({
-                  viewId: activePlanViewId ?? 'default',
-                  mode: 'isolate',
-                  categories,
-                });
-              }
-            }}
-            style={{
-              padding: '2px 8px',
-              fontSize: 10,
-              background: temporaryVisibility ? '#f59e0b' : 'var(--color-surface)',
-              color: temporaryVisibility ? '#fff' : 'var(--color-muted)',
-              border: '1px solid var(--color-border)',
-              borderRadius: 4,
-              cursor: 'pointer',
-            }}
-          >
-            {temporaryVisibility ? '👓 Reset' : '👓 Isolate'}
-          </button>
+        <div
+          className="pointer-events-auto absolute right-3 z-10 flex gap-1"
+          style={{ bottom: 68 }}
+        >
+          {temporaryVisibility ? (
+            <button
+              type="button"
+              title="Reset Temporary Visibility"
+              data-testid="temp-visibility-toggle"
+              onClick={() => clearTemporaryVisibility()}
+              style={{
+                padding: '2px 8px',
+                fontSize: 10,
+                background: '#f59e0b',
+                color: '#fff',
+                border: '1px solid var(--color-border)',
+                borderRadius: 4,
+                cursor: 'pointer',
+              }}
+            >
+              👓 Reset
+            </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                title="Isolate Category temporarily"
+                data-testid="temp-visibility-toggle"
+                onClick={() => {
+                  const el = elementsByIdRaw[selectedId];
+                  const categories = el ? [el.kind] : [];
+                  setTemporaryVisibility({
+                    viewId: activePlanViewId ?? 'default',
+                    mode: 'isolate',
+                    categories,
+                  });
+                }}
+                style={{
+                  padding: '2px 8px',
+                  fontSize: 10,
+                  background: 'var(--color-surface)',
+                  color: 'var(--color-muted)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 4,
+                  cursor: 'pointer',
+                }}
+              >
+                👓 Isolate
+              </button>
+              <button
+                type="button"
+                title="Hide Category temporarily"
+                data-testid="temp-hide-toggle"
+                onClick={() => {
+                  const el = elementsByIdRaw[selectedId];
+                  const categories = el ? [el.kind] : [];
+                  setTemporaryVisibility({
+                    viewId: activePlanViewId ?? 'default',
+                    mode: 'hide',
+                    categories,
+                  });
+                }}
+                style={{
+                  padding: '2px 8px',
+                  fontSize: 10,
+                  background: 'var(--color-surface)',
+                  color: 'var(--color-muted)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 4,
+                  cursor: 'pointer',
+                }}
+              >
+                👁 Hide
+              </button>
+            </>
+          )}
         </div>
       ) : null}
       {/* F-014 — Reveal Hidden toggle button, lower-right corner above snap toolbar. */}

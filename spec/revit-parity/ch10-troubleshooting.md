@@ -22,7 +22,7 @@ Source segment: `05:30:54 – 05:33:32`
 **Screenshot:**
 ![Isolate Category](file:///Users/jhoetter/Desktop/Revit%20Specs/0778_05-31-49.png)
 
-**bim-ai status:** 🟡 Partial — `TemporaryVisibilityChip.tsx` is mounted in `Workspace.tsx` and renders the active isolate/hide label with one-click reset. `PlanCanvas.tsx` provides a "👓 Isolate" button (`data-testid="temp-visibility-toggle"`) that fires `setTemporaryVisibility({ mode: 'isolate', categories: [selectedElement.kind] })` when an element is selected — matching the "Isolate Category" intent. Missing: Revit's per-element isolate (only the whole category is isolated), and no "Hide Category" mode from the button.
+**bim-ai status:** 🟡 Partial — `TemporaryVisibilityChip.tsx` is mounted in `Workspace.tsx` and renders the active isolate/hide label with one-click reset. `PlanCanvas.tsx` provides both a "👓 Isolate" button (`data-testid="temp-visibility-toggle"`) and "👁 Hide" button (`data-testid="temp-hide-toggle"`) when an element is selected — matching Revit's "Isolate Category" and "Hide Category" modes. Missing: per-element isolate/hide (Revit's "Isolate Element" / "Hide Element" sub-menu); Revit's unified sunglasses pop-up menu (bim-ai uses two separate buttons).
 
 ---
 
