@@ -55,10 +55,18 @@ export type ToolId =
   | 'ceiling'
   | 'toposolid_subdivision'
   | 'measure'
-  | 'component';
+  | 'component'
+  | 'copy';
 
 /** Modify-group tool IDs — used by ToolPalette to insert a separator. */
-export const MODIFY_TOOL_IDS = new Set<ToolId>(['align', 'split', 'trim', 'mirror', 'wall-join']);
+export const MODIFY_TOOL_IDS = new Set<ToolId>([
+  'align',
+  'split',
+  'trim',
+  'mirror',
+  'copy',
+  'wall-join',
+]);
 
 export type WorkspaceMode = 'plan' | '3d' | 'plan-3d' | 'section' | 'sheet' | 'schedule' | 'agent';
 
@@ -363,6 +371,15 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       modes: ['plan', 'plan-3d'],
       tooltip: t('tools.mirror.tooltip'),
     },
+    copy: {
+      id: 'copy',
+      label: 'Copy',
+      icon: 'copy',
+      hotkey: 'CP',
+      shortcut: 'CP',
+      modes: ['plan'],
+      tooltip: 'Copy selected element to a new location (two-point)',
+    },
     toposolid_subdivision: {
       id: 'toposolid_subdivision',
       label: 'Subdivide Toposolid',
@@ -403,6 +420,7 @@ const PALETTE_ORDER: ToolId[] = [
   'split',
   'trim',
   'mirror',
+  'copy',
   'wall-join',
   'wall-opening',
   'shaft',

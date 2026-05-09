@@ -60,6 +60,7 @@ export type PlanTool =
   | 'toposolid_subdivision'
   | 'measure'
   | 'mirror'
+  | 'copy'
   | 'component';
 
 export type PresencePeers = Record<

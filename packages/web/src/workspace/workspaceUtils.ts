@@ -54,6 +54,7 @@ export const KNOWN_PLAN_TOOLS = new Set<ToolId>([
   'toposolid_subdivision',
   'grid',
   'mirror',
+  'copy',
   'component',
 ]);
 
@@ -88,6 +89,7 @@ export type LegacyPlanTool =
   | 'detail-region'
   | 'measure'
   | 'mirror'
+  | 'copy'
   | 'component'
   | 'toposolid_subdivision';
 

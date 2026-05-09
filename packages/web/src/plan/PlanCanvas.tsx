@@ -117,7 +117,11 @@ import type { PlanDetailLevel } from './planDetailLevelLines';
 import { SketchCanvas, type MmToScreen, type PointerToMm } from './SketchCanvas';
 import { getFamilyById as getBuiltInFamilyById } from '../families/familyCatalog';
 import type { FamilyDefinition } from '../families/types';
-import { copyElementsToClipboard, pasteFromOSClipboard } from '../clipboard/copyPaste';
+import {
+  copyElementsToClipboard,
+  pasteElementsFromClipboard,
+  pasteFromOSClipboard,
+} from '../clipboard/copyPaste';
 import { useToolPrefs } from '../tools/toolPrefsStore';
 import { SubdivisionPalette } from '../workspace/SubdivisionPalette';
 import type { SubdivisionCategory } from '../workspace/SubdivisionPalette';
@@ -287,6 +291,8 @@ export function PlanCanvas({
   const cropOverlayRef = useRef<THREE.Group | null>(null);
   const alignStateRef = useRef<AlignState>(initialAlignState());
   const mirrorAxisStartRef = useRef<{ xMm: number; yMm: number } | null>(null);
+  const copyAnchorRef = useRef<{ xMm: number; yMm: number } | null>(null);
+  const [copyAnchorSet, setCopyAnchorSet] = useState(false);
   const splitStateRef = useRef<SplitState>(initialSplitState());
   const trimStateRef = useRef<TrimState>(initialTrimState());
   const wallJoinStateRef = useRef<WallJoinState>(initialWallJoinState());
@@ -708,6 +714,8 @@ export function PlanCanvas({
     wallFlipRef.current = false;
     alignStateRef.current = initialAlignState();
     mirrorAxisStartRef.current = null;
+    copyAnchorRef.current = null;
+    setCopyAnchorSet(false);
     splitStateRef.current = initialSplitState();
     trimStateRef.current = initialTrimState();
     wallJoinStateRef.current = initialWallJoinState();
@@ -2497,6 +2505,49 @@ export function PlanCanvas({
         bumpGeom((x) => x + 1);
         return;
       }
+      if (planTool === 'copy') {
+        if (!selectedId) return;
+        if (!copyAnchorRef.current) {
+          // First click: store reference (source) point
+          copyAnchorRef.current = sp;
+          setCopyAnchorSet(true);
+          bumpGeom((x) => x + 1);
+          return;
+        }
+        // Second click: compute delta and duplicate the element
+        const anchor = copyAnchorRef.current;
+        copyAnchorRef.current = null;
+        setCopyAnchorSet(false);
+        const dx = sp.xMm - anchor.xMm;
+        const dy = sp.yMm - anchor.yMm;
+        const st = useBimStore.getState();
+        const sourceEl = st.elementsById[selectedId];
+        if (sourceEl) {
+          const localUserFamilies = st.userFamilies ?? {};
+          const resolveFamilyById = (id: string): FamilyDefinition | undefined =>
+            localUserFamilies[id] ?? getBuiltInFamilyById(id);
+          const payload = copyElementsToClipboard({
+            sourceProjectId: st.modelId ?? 'unknown-project',
+            sourceModelId: st.modelId ?? 'unknown-model',
+            elements: [sourceEl],
+            resolveFamilyById,
+          });
+          const result = pasteElementsFromClipboard({
+            payload,
+            targetProjectId: st.modelId ?? 'unknown-project',
+            localFamilies: [],
+            // Use the destination point shifted by the element's own position
+            // so the copy lands exactly where the user clicked.
+            cursorMm: { xMm: dx, yMm: dy },
+            sameProjectOffsetMm: 0,
+          });
+          if (result.elements.length > 0) {
+            st.mergeElements(result.elements);
+          }
+        }
+        bumpGeom((x) => x + 1);
+        return;
+      }
       if (planTool === 'component') {
         const assetId = activeComponentAssetId;
         if (assetId && lvlId) {
@@ -2985,6 +3036,9 @@ export function PlanCanvas({
           alignStateRef.current = state;
         } else if (planTool === 'mirror') {
           mirrorAxisStartRef.current = null;
+        } else if (planTool === 'copy') {
+          copyAnchorRef.current = null;
+          setCopyAnchorSet(false);
         } else if (planTool === 'split') {
           const { state } = reduceSplit(splitStateRef.current, { kind: 'cancel' });
           splitStateRef.current = state;
@@ -3436,7 +3490,7 @@ export function PlanCanvas({
         >
           <button
             type="button"
-            className="px-3 py-1.5 text-left text-xs hover:bg-surface-1"
+            className="px-3 py-1.5 text-left text-xs hover:bg-surface-strong"
             data-testid="unhide-context-category"
             onClick={() => {
               if (activePlanViewId) {
@@ -3610,6 +3664,23 @@ export function PlanCanvas({
           >
             ×
           </button>
+        </div>
+      ) : null}
+      {/* Copy tool status chip — shown after first click (anchor set), waiting for destination */}
+      {planTool === 'copy' && copyAnchorSet ? (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 48,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            pointerEvents: 'none',
+            zIndex: 20,
+          }}
+          className="flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-xs shadow"
+          data-testid="copy-tool-chip"
+        >
+          <span>Click destination point to complete copy</span>
         </div>
       ) : null}
       {/* Zoom control — scale bar + preset menu */}
