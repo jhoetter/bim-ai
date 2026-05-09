@@ -20,7 +20,14 @@ export type PlanSemanticKind =
   | 'stair'
   | 'grid_line'
   | 'room_separation'
-  | 'dimension';
+  | 'dimension'
+  | 'ceiling'
+  | 'railing'
+  | 'column'
+  | 'beam'
+  | 'section_cut'
+  | 'elevation_view'
+  | 'area_boundary';
 
 /** Map schedule / authoring labels to semantic drawing kinds consumed by symbology. */
 
@@ -60,6 +67,23 @@ export function canonHiddenCategory(cat: string): PlanSemanticKind | undefined {
     'room-separations': 'room_separation',
     dimensions: 'dimension',
     dimension: 'dimension',
+    ceilings: 'ceiling',
+    ceiling: 'ceiling',
+    railings: 'railing',
+    railing: 'railing',
+    columns: 'column',
+    column: 'column',
+    beams: 'beam',
+    beam: 'beam',
+    sections: 'section_cut',
+    section_cut: 'section_cut',
+    'section marks': 'section_cut',
+    section_mark: 'section_cut',
+    elevations: 'elevation_view',
+    elevation_view: 'elevation_view',
+    'area boundaries': 'area_boundary',
+    'area boundary': 'area_boundary',
+    area_boundary: 'area_boundary',
   };
 
   return table[raw] ?? undefined;
