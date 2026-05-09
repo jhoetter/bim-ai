@@ -1,0 +1,107 @@
+codex -c model_reasoning_effort="high" -c model_reasoning_summary="detailed" -c model_supports_reasoning_summaries=true --sandbox workspace-write --ask-for-approval never
+(base) jhoetter@MacBook-Pro-von-Johannes-2 bim-ai % codex -c model_reasoning_effort="high" -c model_reasoning_summary="detailed" -c model_supports_reasoning_summaries=true --sandbox
+workspace-write --ask-for-approval never
+Superset: codex not found in PATH. Install it and ensure it is on PATH, then retry.
+
+---
+
+please make it permanent
+
+---
+
+no still same issue
+
+---
+
+╭────────────────────────────────────────────╮
+│ >_ OpenAI Codex (v0.130.0)                 │
+│                                            │
+│ model:     gpt-5.5 high   /model to change │
+│ directory: ~/repos/bim-ai                  │
+╰────────────────────────────────────────────╯
+
+  Tip: GPT-5.5 is now available in Codex. It's our strongest agentic coding model yet, built to reason through large codebases, check assumptions with tools, and keep going until the
+  work is done.
+
+  Learn more: https://openai.com/index/introducing-gpt-5-5/
+
+⚠ `[features].codex_hooks` is deprecated. Use `[features].hooks` instead.
+Enable it with `--enable hooks` or `[features].hooks` in config.toml. See https://developers.openai.com/codex/config-basic#feature-flags for details.
+
+⚠ 3 hooks need review before they can run. Open /hooks to review them.
+
+⚠ MCP client for `codex_apps` failed to start: MCP startup failed: handshaking with MCP server failed: Send message error Transport
+  [rmcp::transport::worker::WorkerTransport<rmcp::transport::streamable_http_client::StreamableHttpClientWorker<codex_rmcp_client::http_client_adapter::StreamableHttpClientAdapter>>]
+  error: Unexpected content type: Some("text/plain; body: {\n  \"error\": {\n    \"message\": \"Provided authentication token is expired. Please try signing in again.\",\n
+  \"type\": null,\n    \"code\": \"token_expired\",\n    \"param\": null\n  },\n  \"status\": 401\n}"), when send initialize request
+
+⚠ MCP startup incomplete (failed: codex_apps)
+
+---
+
+codex -c model_reasoning_effort="high" -c model_reasoning_summary="detailed" -c model_supports_reasoning_summaries=true --sandbox workspace-write --ask-for-approval never
+(base) jhoetter@MacBook-Pro-von-Johannes-2 bim-ai % codex -c model_reasoning_effort="high" -c model_reasoning_summary="detailed" -c model_supports_reasoning_summaries=true --sandbox
+workspace-write --ask-for-approval never
+╭────────────────────────────────────────────╮
+│ >_ OpenAI Codex (v0.130.0)                 │
+│                                            │
+│ model:     gpt-5.5 high   /model to change │
+│ directory: ~/repos/bim-ai                  │
+╰────────────────────────────────────────────╯
+
+  Tip: GPT-5.5 is now available in Codex. It's our strongest agentic coding model yet, built to reason through large codebases, check assumptions with tools, and keep going until the
+  work is done.
+
+  Learn more: https://openai.com/index/introducing-gpt-5-5/
+
+⚠ `[features].codex_hooks` is deprecated. Use `[features].hooks` instead.
+Enable it with `--enable hooks` or `[features].hooks` in config.toml. See https://developers.openai.com/codex/config-basic#feature-flags for details.
+
+⚠ 3 hooks need review before they can run. Open /hooks to review them.
+
+
+  Hooks
+  Lifecycle hooks from config and enabled plugins.
+
+  Event                 Installed   Active      Review      Description
+  PreToolUse            0           0           0           Before a tool executes
+  PermissionRequest     0           0           0           When permission is requested
+  PostToolUse           0           0           0           After a tool executes
+  PreCompact            0           0           0           Before context compaction
+  PostCompact           0           0           0           After context compaction
+  SessionStart          1           0           1           When a new session starts
+  UserPromptSubmit      1           0           1           When the user submits a prompt
+  Stop                  1           0           1           Right before Codex ends its turn
+
+can you fix the hooks?
+
+---
+
+codex -c model_reasoning_effort="high" -c model_reasoning_summary="detailed" -c model_supports_reasoning_summaries=true --sandbox workspace-write --ask-for-approval never
+(base) jhoetter@MacBook-Pro-von-Johannes-2 bim-ai % codex -c model_reasoning_effort="high" -c model_reasoning_summary="detailed" -c model_supports_reasoning_summaries=true --sandbox
+workspace-write --ask-for-approval never
+╭────────────────────────────────────────────╮
+│ >_ OpenAI Codex (v0.130.0)                 │
+│                                            │
+│ model:     gpt-5.5 high   /model to change │
+│ directory: ~/repos/bim-ai                  │
+╰────────────────────────────────────────────╯
+
+  Tip: GPT-5.5 is now available in Codex. It's our strongest agentic coding model yet, built to reason through large codebases, check assumptions with tools, and keep going until the
+  work is done.
+
+  Learn more: https://openai.com/index/introducing-gpt-5-5/
+
+⚠ `[features].codex_hooks` is deprecated. Use `[features].hooks` instead.
+Enable it with `--enable hooks` or `[features].hooks` in config.toml. See https://developers.openai.com/codex/config-basic#feature-flags for details.
+
+
+› Improve documentation in @filename
+
+---
+
+now also activate gemini:
+gemini --approval-mode=auto_edit
+(base) jhoetter@MacBook-Pro-von-Johannes-2 bim-ai % gemini --approval-mode=auto_edit
+Superset: gemini not found in PATH. Install it and ensure it is on PATH, then retry.
+(base) jhoetter@MacBook-Pro-von-Johannes-2 bim-ai %
