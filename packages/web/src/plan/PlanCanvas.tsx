@@ -121,7 +121,11 @@ import { copyElementsToClipboard, pasteFromOSClipboard } from '../clipboard/copy
 import { useToolPrefs } from '../tools/toolPrefsStore';
 import { SubdivisionPalette } from '../workspace/SubdivisionPalette';
 import type { SubdivisionCategory } from '../workspace/SubdivisionPalette';
-import { activeComponentAssetId, mirrorCopyEnabled } from '../workspace/OptionsBar';
+import {
+  activeComponentAssetId,
+  mirrorCopyEnabled,
+  pendingComponentRotationDeg,
+} from '../workspace/OptionsBar';
 
 function readPlanToken(name: string, fallback: string): string {
   const v = liveTokenReader().read(name);
@@ -2528,6 +2532,7 @@ export function PlanCanvas({
             assetId,
             levelId: lvlId,
             positionMm: sp,
+            rotationDeg: pendingComponentRotationDeg,
           });
           bumpGeom((x) => x + 1);
         }
@@ -2923,6 +2928,12 @@ export function PlanCanvas({
     };
 
     const onKey = (ev: KeyboardEvent) => {
+      // F-115 — Spacebar rotates pending component placement by 90°.
+      if (ev.key === ' ' && planTool === 'component') {
+        ev.preventDefault();
+        pendingComponentRotationDeg = (pendingComponentRotationDeg + 90) % 360;
+        return;
+      }
       // EDT-01 — grip drag handles its own keys: Esc cancels, digits
       // pop a numeric override input, Backspace edits it, Enter
       // commits via onNumericOverride.
@@ -3325,6 +3336,11 @@ export function PlanCanvas({
 
   useEffect(() => {
     if (planTool !== 'measure') setMeasureReadout(null);
+  }, [planTool]);
+
+  // F-115 — reset pending component rotation when leaving the component tool.
+  useEffect(() => {
+    if (planTool !== 'component') pendingComponentRotationDeg = 0;
   }, [planTool]);
 
   // EDT-01 — grip pointer-down: capture starting world position so

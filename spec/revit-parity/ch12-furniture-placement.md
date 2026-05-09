@@ -24,7 +24,7 @@ This chapter covers the practical workflow of furnishing a completed floor plan 
 **Screenshot:**
 ![Spacebar rotation](file:///Users/jhoetter/Desktop/Revit%20Specs/0575_03-45-10.png)
 
-**bim-ai status:** ❌ Not available — the Component tool does not yet support Spacebar rotation of the preview before placing. The rotationDeg is always 0 on first placement.
+**bim-ai status:** 🟡 Partial — Spacebar rotates the pending placement by 90° (cycling 0°→90°→180°→270°) while the Component tool is active. The `pendingComponentRotationDeg` module-level var is passed to the `PlaceAsset` command on each click. Missing: live visual preview of the rotated asset before placement (rotation is applied at click time, not shown as a preview ghost).
 
 ---
 

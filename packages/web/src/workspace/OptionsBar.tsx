@@ -27,6 +27,14 @@ export let mirrorCopyEnabled = true;
  */
 export let activeComponentAssetId: string | null = null;
 
+/**
+ * Module-level pending rotation for the component placement tool.
+ * Spacebar in PlanCanvas increments this by 90° (mod 360).
+ * Read at click-time by PlanCanvas and passed to PlaceAsset.
+ * Reset to 0 when the tool changes away from 'component'.
+ */
+export let pendingComponentRotationDeg = 0;
+
 export function OptionsBar(): JSX.Element | null {
   const planTool = useBimStore((s) => s.planTool);
   const elementsById = useBimStore((s) => s.elementsById);
@@ -166,7 +174,9 @@ export function OptionsBar(): JSX.Element | null {
           />
           <span>Copy</span>
         </label>
-        <span className="text-muted opacity-60">Click to set axis start, click again to mirror</span>
+        <span className="text-muted opacity-60">
+          Click to set axis start, click again to mirror
+        </span>
       </div>
     );
   }
@@ -197,7 +207,7 @@ export function OptionsBar(): JSX.Element | null {
             ))}
           </select>
         </label>
-        <span className="text-muted opacity-60">Click on canvas to place</span>
+        <span className="text-muted opacity-60">Click to place · Spacebar to rotate 90°</span>
       </div>
     );
   }
