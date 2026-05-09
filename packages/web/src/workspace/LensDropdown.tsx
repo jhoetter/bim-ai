@@ -99,12 +99,34 @@ export function LensDropdown({ currentLens, onLensChange }: LensDropdownProps): 
           data-testid="lens-menu"
           className="absolute bottom-full left-0 z-50 mb-1 w-44 rounded-md border border-border bg-surface shadow-elev-2"
           style={{ fontSize: 'var(--text-sm)' }}
+          ref={(el) => {
+            const active = el?.querySelector<HTMLElement>('[aria-current="true"]');
+            const first = el?.querySelector<HTMLElement>('[role="menuitem"]');
+            (active ?? first)?.focus();
+          }}
+          onKeyDown={(e) => {
+            const items = Array.from(
+              e.currentTarget.querySelectorAll<HTMLElement>('[role="menuitem"]'),
+            );
+            const idx = items.indexOf(document.activeElement as HTMLElement);
+            if (e.key === 'ArrowDown') {
+              e.preventDefault();
+              items[(idx + 1) % items.length]?.focus();
+            } else if (e.key === 'ArrowUp') {
+              e.preventDefault();
+              items[(idx - 1 + items.length) % items.length]?.focus();
+            } else if (e.key === 'Escape') {
+              e.preventDefault();
+              close();
+            }
+          }}
         >
           {LENS_CYCLE.map((lens) => (
             <button
               key={lens}
               type="button"
               role="menuitem"
+              aria-current={lens === currentLens ? 'true' : undefined}
               data-testid={`lens-option-${lens}`}
               onClick={() => {
                 onLensChange(lens);
