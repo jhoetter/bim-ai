@@ -2086,6 +2086,45 @@ class DeleteToposolidCmd(BaseModel):
     toposolid_id: str = Field(alias="toposolidId")
 
 
+
+# ---------------------------------------------------------------------------
+# TOP-V3-02 — Toposolid subdivision commands
+# ---------------------------------------------------------------------------
+
+
+class CreateToposolidSubdivisionCmd(BaseModel):
+    """TOP-V3-02 — create a surface-finish region on an existing toposolid."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["create_toposolid_subdivision"] = "create_toposolid_subdivision"
+    id: str
+    host_toposolid_id: str = Field(alias="hostToposolidId")
+    boundary_mm: list[dict] = Field(alias="boundaryMm")
+    finish_category: str = Field(alias="finishCategory")
+    material_key: str = Field(alias="materialKey")
+    name: str | None = None
+
+
+class UpdateToposolidSubdivisionCmd(BaseModel):
+    """TOP-V3-02 — patch fields on an existing toposolid subdivision."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["update_toposolid_subdivision"] = "update_toposolid_subdivision"
+    id: str
+    boundary_mm: list[dict] | None = Field(default=None, alias="boundaryMm")
+    finish_category: str | None = Field(default=None, alias="finishCategory")
+    material_key: str | None = Field(default=None, alias="materialKey")
+    name: str | None = None
+
+
+class DeleteToposolidSubdivisionCmd(BaseModel):
+    """TOP-V3-02 — remove a toposolid subdivision from the model."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["delete_toposolid_subdivision"] = "delete_toposolid_subdivision"
+    id: str
+
+
 # AST-V3-01 — Asset library commands
 # ---------------------------------------------------------------------------
 
@@ -2545,6 +2584,9 @@ Command = Annotated[
     | CreateToposolidCmd
     | UpdateToposolidCmd
     | DeleteToposolidCmd
+    | CreateToposolidSubdivisionCmd
+    | UpdateToposolidSubdivisionCmd
+    | DeleteToposolidSubdivisionCmd
     | IndexAssetCmd
     | PlaceAssetCmd
     | SetToolPrefCmd

@@ -30,6 +30,44 @@ export type ToposolidElem = {
 };
 
 // ---------------------------------------------------------------------------
+// TOP-V3-02 — Toposolid subdivision (surface finish region)
+// ---------------------------------------------------------------------------
+
+export type ToposolidSubdivisionElem = {
+  kind: 'toposolid_subdivision';
+  id: string;
+  name?: string;
+  hostToposolidId: string;
+  boundaryMm: { xMm: number; yMm: number }[];
+  finishCategory: 'paving' | 'lawn' | 'road' | 'planting' | 'other';
+  materialKey: string;
+};
+
+export type CreateToposolidSubdivisionCmd = {
+  type: 'create_toposolid_subdivision';
+  id: string;
+  hostToposolidId: string;
+  boundaryMm: { xMm: number; yMm: number }[];
+  finishCategory: 'paving' | 'lawn' | 'road' | 'planting' | 'other';
+  materialKey: string;
+  name?: string;
+};
+
+export type UpdateToposolidSubdivisionCmd = {
+  type: 'update_toposolid_subdivision';
+  id: string;
+  boundaryMm?: { xMm: number; yMm: number }[];
+  finishCategory?: 'paving' | 'lawn' | 'road' | 'planting' | 'other';
+  materialKey?: string;
+  name?: string;
+};
+
+export type DeleteToposolidSubdivisionCmd = {
+  type: 'delete_toposolid_subdivision';
+  id: string;
+};
+
+// ---------------------------------------------------------------------------
 // CAN-V3-02 — Hatch pattern definition
 // ---------------------------------------------------------------------------
 
@@ -71,6 +109,7 @@ export type NeighborhoodImportSessionElem = {
 
 export type ElemKind =
   | 'toposolid'
+  | 'toposolid_subdivision'
   | 'project_settings'
   | 'room_color_scheme'
   | 'wall_type'
@@ -1754,6 +1793,7 @@ export type Element =
     }
   | View
   | ToposolidElem
+  | ToposolidSubdivisionElem
   | AssetLibraryEntryElem
   | PlacedAssetElem
   | FamilyKitInstanceElem

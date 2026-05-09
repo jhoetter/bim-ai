@@ -1285,3 +1285,68 @@ register(
         ),
     )
 )
+
+# ---------------------------------------------------------------------------
+# TOP-V3-02 — Toposolid subdivision
+# ---------------------------------------------------------------------------
+
+register(
+    ToolDescriptor(
+        name="create-toposolid-subdivision",
+        category="mutation",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "CreateToposolidSubdivisionInput",
+            "type": "object",
+            "required": ["modelId", "id", "hostToposolidId", "boundaryMm", "finishCategory", "materialKey"],
+            "properties": {
+                "modelId": {"type": "string", "format": "uuid"},
+                "id": {"type": "string"},
+                "hostToposolidId": {"type": "string", "description": "ID of the parent toposolid"},
+                "boundaryMm": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": ["xMm", "yMm"],
+                        "properties": {
+                            "xMm": {"type": "number"},
+                            "yMm": {"type": "number"},
+                        },
+                    },
+                    "minItems": 3,
+                    "description": "Closed polygon defining the subdivision region",
+                },
+                "finishCategory": {
+                    "type": "string",
+                    "enum": ["paving", "lawn", "road", "planting", "other"],
+                },
+                "materialKey": {"type": "string"},
+                "name": {"type": "string"},
+            },
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "CreateToposolidSubdivisionOutput",
+            "type": "object",
+            "properties": {
+                "ok": {"type": "boolean"},
+                "revision": {"type": "integer"},
+                "id": {"type": "string"},
+            },
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Subdivision created"),
+            "not_found": ExitCode(code=1, meaning="Host toposolid not found"),
+            "conflict": ExitCode(code=2, meaning="Element id already exists"),
+        },
+        cliExample="bim-ai apply-bundle bundle.json  # bundle contains create_toposolid_subdivision",
+        restEndpoint=RestEndpoint(method="POST", path="/api/v3/models/{modelId}/bundles"),
+        sideEffects="mutates-kernel",
+        agentSafetyNotes=(
+            "Host toposolid must exist. Boundary outside host footprint triggers a warning "
+            "agent_deviation (not a 400). finishCategory must be one of: paving, lawn, road, "
+            "planting, other."
+        ),
+    )
+)
