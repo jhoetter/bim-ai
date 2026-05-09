@@ -47,7 +47,7 @@ Source segment: `00:00:00 – 00:32:00`
 **Screenshot:**
 ![Quick Access Toolbar](file:///Users/jhoetter/Desktop/Revit%20Specs/0138_00-16-09.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — The TopBar now includes Undo (`data-testid="topbar-undo"`) and Redo (`data-testid="topbar-redo"`) quick-access buttons wired to the model's undo/redo stack (`undoModel`/`redoModel`). The 3D View button (F-112) also serves as a QAT equivalent. Missing: Section shortcut, Thin Lines toggle, Aligned Dimension shortcut, Tag by Category shortcut, user-customisable pin/unpin of tools.
 
 ---
 

@@ -79,6 +79,12 @@ export interface TopBarProps {
   onNavigateToSheet?: (sheetId: string, commentId: string) => void;
   /** F-112: opens a new 3D view tab directly, equivalent to the QAT "3D View" button. */
   onOpen3dView?: () => void;
+  /** F-006: QAT Undo button. */
+  onUndo?: () => void;
+  /** F-006: QAT Redo button. */
+  onRedo?: () => void;
+  /** F-006: true when there is at least one undo step available. */
+  canUndo?: boolean;
 }
 
 export function TopBar({
@@ -108,6 +114,9 @@ export function TopBar({
   activeViewId,
   onNavigateToSheet,
   onOpen3dView,
+  onUndo,
+  onRedo,
+  canUndo,
 }: TopBarProps): JSX.Element {
   const tablistId = useId();
   // SourceViewChip is only relevant when in a sheet-type view and both IDs are known.
@@ -124,6 +133,9 @@ export function TopBar({
         onProjectNameClick={onProjectNameClick}
         projectNameRef={projectNameRef}
         onHamburgerClick={onHamburgerClick}
+        onUndo={onUndo}
+        onRedo={onRedo}
+        canUndo={canUndo}
       />
       <TopBarModePills tablistId={tablistId} mode={mode} onModeChange={onModeChange} />
       <TopBarRight
@@ -168,11 +180,17 @@ function TopBarLeft({
   onProjectNameClick,
   projectNameRef,
   onHamburgerClick,
+  onUndo,
+  onRedo,
+  canUndo,
 }: {
   projectName: string;
   onProjectNameClick?: () => void;
   projectNameRef?: React.RefObject<HTMLButtonElement | null>;
   onHamburgerClick?: () => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  canUndo?: boolean;
 }): JSX.Element {
   const { t } = useTranslation();
   return (
@@ -197,6 +215,30 @@ function TopBarLeft({
           {projectName}
         </span>
         <Icons.disclosureOpen size={14} className="text-muted" aria-hidden="true" />
+      </button>
+      <div className="mx-0.5 h-4 w-px bg-border" aria-hidden="true" />
+      <button
+        type="button"
+        data-testid="topbar-undo"
+        title="Undo (Ctrl+Z)"
+        aria-label={IconLabels.undo}
+        aria-keyshortcuts="Control+Z Meta+Z"
+        disabled={!canUndo}
+        onClick={onUndo}
+        className="relative inline-flex h-8 w-8 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        <Icons.undo size={ICON_SIZE.topbar} aria-hidden="true" />
+      </button>
+      <button
+        type="button"
+        data-testid="topbar-redo"
+        title="Redo (Ctrl+Y)"
+        aria-label={IconLabels.redo}
+        aria-keyshortcuts="Control+Y Meta+Shift+Z"
+        onClick={onRedo}
+        className="relative inline-flex h-8 w-8 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface hover:text-foreground"
+      >
+        <Icons.redo size={ICON_SIZE.topbar} aria-hidden="true" />
       </button>
     </div>
   );

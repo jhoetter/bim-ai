@@ -1130,6 +1130,9 @@ export function Workspace(): JSX.Element {
                 onOpen3dView={() => {
                   setTabsState((s) => openTab(s, { kind: '3d', label: '3D View' }));
                 }}
+                onUndo={() => void handleUndoRedo(true)}
+                onRedo={() => void handleUndoRedo(false)}
+                canUndo={undoDepth > 0}
               />
               {/* COL-V3-06 — offline indicator */}
               {!isOnline ? (
