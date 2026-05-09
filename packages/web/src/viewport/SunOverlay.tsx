@@ -101,6 +101,7 @@ export function SunOverlay({
       }}
     >
       <button
+        type="button"
         onClick={toggleCollapsed}
         style={{
           pointerEvents: 'auto',

@@ -56,6 +56,7 @@ export function MarkupToolbar({ active, shapeMode, onShapeMode, onToggle }: Mark
       {SHAPE_MODES.map(({ mode, label, key }) => (
         <button
           key={mode}
+          type="button"
           onClick={() => onShapeMode(mode)}
           aria-pressed={shapeMode === mode}
           title={`${label} (${key})`}

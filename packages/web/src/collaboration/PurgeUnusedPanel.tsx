@@ -12,7 +12,6 @@ export function PurgeUnusedPanel(): JSX.Element {
         <button
           type="button"
           onClick={() => {
-            console.warn('purge-unused stub');
             setPhase('done');
           }}
         >
