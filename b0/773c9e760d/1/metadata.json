@@ -1,0 +1,37 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "b0773c9e760d",
+  "session_id": "50a3d153-f462-4f27-b73c-9ec39b274eb6",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-09T19:23:19.763774Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/web/src/plan/PlanCanvas.tsx",
+    "packages/web/src/state/store.ts",
+    "packages/web/src/state/storeTypes.ts",
+    "spec/revit-parity/ch10-troubleshooting.md"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "af6ddb0886a6",
+  "token_usage": {
+    "input_tokens": 3000,
+    "cache_creation_tokens": 1384178,
+    "cache_read_tokens": 92039141,
+    "output_tokens": 515335,
+    "api_call_count": 953
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-09T19:23:19.649535Z",
+    "agent_lines": 123,
+    "agent_removed": 2,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 123,
+    "total_lines_changed": 125,
+    "agent_percentage": 100,
+    "metric_version": 2
+  }
+}
