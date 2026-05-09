@@ -107,8 +107,12 @@ export function TopBarV3({
 
       {/* Slot 1 — Logo mark */}
       <div
+        role="button"
         aria-label="bim-ai home"
         tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') e.currentTarget.click();
+        }}
         style={{
           width: 32,
           height: 32,

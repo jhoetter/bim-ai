@@ -254,7 +254,9 @@ export function ShareModal({ modelId, open, onClose }: Props) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <input
               type="email"
+              aria-label="Email address to invite"
               placeholder="name@example.com"
+              autoFocus
               value={inviteEmail}
               onChange={(e) => setInviteEmail(e.target.value)}
               style={{
