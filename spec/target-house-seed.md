@@ -1,117 +1,77 @@
 # Target House Seed — Precision Reference Spec
 
 > **Purpose.** Authoritative reference for what the demo seed house should look
-> like when perfectly modelled in BIM AI. Architect-quality verbal description
-> precise enough to redraw from memory, specifically capturing the core
-> asymmetrical massing and distinct wall heights.
-
-![Target house — line sketch](target-house-seed-vis.png)
-
-![Target house — colour study](target-house-vis-colored.png)
+> like when perfectly modelled in BIM AI.
 
 ---
 
-## 1. Architectural Description (ground truth)
+## 1. Geometry & Massing Logic
 
-_Read as architect's field notes. Every measurement is intent, not survey._
+The building is a monochromatic white architectural study composed of two primary intersecting volumes and one "wrapper" shell.
 
-### 1.1 Viewpoint
+Ground Volume: A rectangular cuboid with a 1:2 aspect ratio.
 
-South-south-west isometric, camera elevated ~30–35° above the ground plane,
-horizontal angle ~25–30° west of due south. The **south facade** (front) occupies
-roughly 70% of the composition width; the **east facade** with the ground-floor
-extension is visible to the right. The west facade is visible as a thin vertical
-slice at the left edge.
+Upper Volume (The Shift): A larger rectangular cuboid placed atop the ground floor, offset to the left. This creates a cantilever exactly 1/3 the width of the building, leaving a covered void beneath it on the left side.
+
+The "Wrapper" Shell: A continuous, thick (approx. 0.5 units) white band that forms the side walls and the roof. This shell creates a deeply recessed frontal plane (approx. 1 meter deep) for the upper floor.
 
 ---
 
-### 1.2 Main Volume & Asymmetrical Massing
+## 2. Roof Subtractions (Boolean Ops)
 
-**Plan:** Two stacked, offset volumes. The ground floor acts as a wide base.
-The upper floor is narrower, aligned entirely to the west (left) edge, leaving
-the eastern portion of the ground floor exposed as a flat roof deck.
+The roof is the most complex element and requires specific instructions:
 
-**Roof & Wall Heights (The Core Essence):** The upper volume is defined by a
-**near-symmetric gable roof** that reads as a clean, squat, wider-than-tall
-pentagon when viewed from the south. The asymmetry is subtle, not dramatic —
-the apex sits SLIGHTLY east of the upper-volume centerline, with both pitches
-descending at similar moderate angles to comparable eave heights.
+Profile: An asymmetrical pitched gable. The ridge is off-center to the right.
 
-- The **roof apex** is a clean ridge running north-south, positioned a short
-  distance east of the volume centerline (roughly 60% of the upper-volume
-  width from the west edge).
-- Both the **west and east walls** of the upper floor sit at modest heights
-  above the upper-floor slab — the east wall slightly higher than the west.
-  The visual effect is a balanced gable with a subtle east-leaning apex,
-  not a dramatic shed-vs-gable asymmetry.
-- Both pitches are moderate (≈ 25–35°). The roof reads as one clean
-  uninterrupted plane on each side, no notches or dormer cuts.
-- Roof surface: **dark grey standing-seam metal**.
+The Cutout: On the right-hand slope, a large rectangular section is subtracted (Boolean difference), extending from the ridge down to the gutter line. This creates an "L-shaped" roof profile when viewed from the side and reveals a hidden upper-level terrace.
 
-The earlier draft of this spec emphasised dramatic asymmetry ("very low
-west wall, much higher east wall, short steep east pitch"); the
-visual reference (`target-house-seed-vis.png`) is the ground truth and
-shows a much more balanced gable. The textual description has been
-updated to match the visual.
+The Inset: Within this cutout, there is a recessed vertical glass wall and a flat floor plane.
 
 ---
 
-### 1.3 South Facade — Ground Floor
+## 3. Facade Composition & Fenestration
 
-- Full width clad in **light beige/grey vertical siding**. Boards have a narrow
-  shadow gap, running floor-to-ceiling without horizontal breaks.
-- **One door:** single-leaf, standard height. Positioned right-of-centre. Dark
-  solid-panel appearance with a vertical glass insert.
-- **Two windows:** portrait-format narrow rectangular glazing. Positioned in the
-  left half of the ground floor facade. Dark grey frames. A staircase is faintly
-  visible through the rightmost window.
+The Recessed Upper Front: Divided into three vertical zones:
 
-### 1.4 South Facade — Upper Floor & Loggia
+Left: A solid wall segment with a high-set, trapezoidal window following the roof's pitch.
 
-- **The Asymmetrical Frame:** The front face of the upper volume is dominated by a
-  thick, smooth white frame that outlines the asymmetrical gable shape (low wall
-  on the left, long rising pitch, high off-center ridge, short drop on the right)
-  and the floor slab.
-- **Deep Recess (Loggia):** Everything inside this white frame is set back/recessed
-  by ~1 500 mm to create a covered balcony.
-- **Recessed Back Wall:** Clad in **warm, natural-tone vertical wood siding**,
-  contrasting sharply with the white frame and lower beige siding.
-- **Windows (on recessed wall):** 1. A large, floor-to-ceiling rectangular window/sliding door on the right. 2. A smaller, trapezoidal window on the left whose top edge slopes to follow
-  the long, low angle of the roof pitch.
-- **Balcony:** Projects very slightly forward. Features a wood floor deck and a
-  **frameless transparent glass balustrade**. No solid posts visible.
+Center: A protruding vertical chimney-like volume clad in vertical siding.
 
-### 1.5 West Facade
+Right: A double-height "curtain wall" of glass divided by a central horizontal mullion.
 
-- Visible as a thin strip to the left.
-- **Ground Floor:** Light beige/grey vertical siding.
-- **Upper Floor:** Features the notably **low wall height** mentioned above. Finished
-  in **smooth white render**. No openings visible from this angle.
+The Ground Front:
 
-### 1.6 East Facade & Extension
+- Two identical portrait-oriented rectangular windows. The right-most window reveals an interior staircase with at least 8 visible treads.
+- A simple, recessed rectangular door on the far right.
 
-- **Ground Floor Extension:** The wide ground floor extends to the right (east),
-  clad entirely in the **light beige/grey vertical siding**. The top forms a flat
-  roof deck surrounded by a low parapet. Features one small vertical window.
-- **Upper-volume / Deck Connection:** The east wall of the upper volume
-  (which forms the west boundary of the deck) carries large floor-to-ceiling
-  sliding glass doors that open from the upper-floor interior onto the east
-  deck. The main gable roof is **NOT** cut or interrupted — it remains a
-  clean uninterrupted plane on each pitch. The earlier "massive rectangular
-  dormer cut-out" description has been retired; the visual reference shows
-  no such cut.
+The Balcony: A horizontal void across the entire upper front width. The railing consists of three thin, continuous black horizontal cables/rails fixed to the inner edge of the white shell.
 
 ---
 
-### 1.7 Material + Colour Summary
+## 4. Material Specification & Mapping
 
-| Surface                        | Material               | Colour             |
-| ------------------------------ | ---------------------- | ------------------ |
-| Ground floor walls & extension | Vertical siding        | Light beige / grey |
-| Upper floor side walls         | Smooth render          | Bright white       |
-| Upper south recessed wall      | Vertical wood siding   | Warm natural wood  |
-| Roof                           | Standing-seam metal    | Dark grey          |
-| Asymmetrical front frame       | Smooth render          | Bright white       |
-| Balcony balustrade             | Frameless glass        | Transparent        |
-| Windows & Door frames          | Aluminium profile      | Dark grey          |
-| Front Door                     | Solid panel with glass | Dark / mid-tone    |
+Material A (Primary Shell): Matte white, seamless plaster/concrete with zero specular reflection. Applied to the roof, the side walls of the second floor, and the floor slabs.
+
+Material B (Cladding): High-definition vertical board-and-batten siding. The boards are narrow (approx. 10cm width). This texture is applied to all ground-floor walls and the central recessed section of the second floor.
+
+Material C (Glazing): Semi-transparent, neutral-tinted glass.
+
+Material D (Plinth): A low-profile, flat white rectangular base that extends exactly 0.5 units beyond the building's footprint on all sides.
+
+---
+
+## 5. Lighting & Rendering Parameters
+
+Perspective: Axonometric/Isometric view from the front-left.
+
+Lighting: Strong directional "Sun" light from the top-left-front.
+
+Shadows: Sharp-edged (Ray-traced). Note the triangular shadow cast by the roof overhang onto the recessed siding and the large rectangular shadow cast by the cantilever onto the ground plinth.
+
+Line Work: Thin, black ambient occlusion lines or "outline" rendering style (0.5pt thickness) highlighting every geometric edge.
+
+---
+
+## 6. Prompting Cheat-Sheet for AI
+
+High-fidelity architectural concept, axonometric view, asymmetrical pitched roof with a rectangular Boolean subtraction on the right slope, cantilevered second floor overhang, white plaster shell, vertical board-and-batten siding, three-rail horizontal balustrade, interior staircase visible through ground window, sharp directional shadows, minimalist 3D clay model style.
