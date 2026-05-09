@@ -388,6 +388,11 @@ export function WorkspaceRightRail({
                       }
                     />
                   </>
+                ) : el.kind === 'placed_asset' ? (
+                  <PlacedAssetInspector
+                    el={el as Extract<Element, { kind: 'placed_asset' }>}
+                    onSemanticCommand={onSemanticCommand}
+                  />
                 ) : (
                   InspectorPropertiesFor(el, t, {
                     elementsById,
@@ -569,6 +574,117 @@ export function WorkspaceRightRail({
           </ul>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function PlacedAssetInspector({
+  el,
+  onSemanticCommand,
+}: {
+  el: Extract<Element, { kind: 'placed_asset' }>;
+  onSemanticCommand: (cmd: Record<string, unknown>) => void | Promise<void>;
+}): JSX.Element {
+  const dxRef = useRef<HTMLInputElement | null>(null);
+  const dyRef = useRef<HTMLInputElement | null>(null);
+  return (
+    <div className="space-y-2">
+      <div className="text-[11px] font-semibold text-foreground">{el.name}</div>
+      <div className="space-y-1 text-xs text-muted">
+        <div>
+          <span className="font-medium">Asset ID:</span>{' '}
+          <span className="font-mono">{el.assetId}</span>
+        </div>
+        <div>
+          <span className="font-medium">X:</span> {el.positionMm.xMm.toFixed(1)} mm
+        </div>
+        <div>
+          <span className="font-medium">Y:</span> {el.positionMm.yMm.toFixed(1)} mm
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="font-medium">Rotation:</span>
+          <input
+            type="number"
+            step={15}
+            defaultValue={el.rotationDeg ?? 0}
+            className="w-20 rounded border border-border bg-surface px-1 py-0.5 text-xs text-foreground"
+            data-testid="inspector-asset-rotation"
+            onChange={(e) => {
+              void onSemanticCommand({
+                type: 'updateElementProperty',
+                elementId: el.id,
+                key: 'rotationDeg',
+                value: Number(e.target.value),
+              });
+            }}
+          />
+          <span>°</span>
+        </div>
+      </div>
+      <div className="border-t border-border pt-2 space-y-1">
+        <div
+          className="text-[10px] font-semibold uppercase text-muted"
+          style={{ letterSpacing: '0.08em', opacity: 0.7 }}
+        >
+          Move Δx/Δy (mm)
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="flex items-center gap-1 text-xs text-muted">
+            Δx
+            <input
+              ref={dxRef}
+              type="number"
+              step={50}
+              defaultValue={0}
+              className="w-20 rounded border border-border bg-surface px-1 py-0.5 text-xs text-foreground"
+              data-testid="inspector-asset-move-dx"
+            />
+          </label>
+          <label className="flex items-center gap-1 text-xs text-muted">
+            Δy
+            <input
+              ref={dyRef}
+              type="number"
+              step={50}
+              defaultValue={0}
+              className="w-20 rounded border border-border bg-surface px-1 py-0.5 text-xs text-foreground"
+              data-testid="inspector-asset-move-dy"
+            />
+          </label>
+          <button
+            type="button"
+            className="rounded border border-border bg-surface px-2 py-0.5 text-xs hover:bg-surface-strong"
+            data-testid="inspector-asset-move-apply"
+            onClick={() => {
+              const dx = Number(dxRef.current?.value ?? 0);
+              const dy = Number(dyRef.current?.value ?? 0);
+              if (dx === 0 && dy === 0) return;
+              void onSemanticCommand({
+                type: 'moveAssetDelta',
+                elementId: el.id,
+                dxMm: dx,
+                dyMm: dy,
+              });
+              if (dxRef.current) dxRef.current.value = '0';
+              if (dyRef.current) dyRef.current.value = '0';
+            }}
+          >
+            Apply
+          </button>
+        </div>
+      </div>
+      <div className="border-t border-border pt-2">
+        <button
+          type="button"
+          className="rounded border border-border bg-surface px-2 py-0.5 text-xs text-red-500 hover:bg-surface-strong"
+          data-testid="inspector-asset-delete"
+          onClick={() => {
+            void onSemanticCommand({ type: 'deleteElement', elementId: el.id });
+          }}
+        >
+          Delete
+        </button>
+      </div>
     </div>
   );
 }

@@ -44,7 +44,7 @@ Source segment: `05:30:54 – 05:33:32`
 **Screenshot:**
 ![Move tool](file:///Users/jhoetter/Desktop/Revit%20Specs/0792_05-32-45.png)
 
-**bim-ai status:** 🟡 Partial — walls can be moved via: (1) grip drag handles in the plan canvas (endpoint and midpoint grips fire `moveWallEndpoints` / `moveWallDelta`); (2) a "Move (mm)" Δx/Δy input section in the wall inspector (right rail) — enter a delta in mm and click Apply to fire `moveWallDelta { dxMm, dyMm }`. Missing: two-point on-canvas Move command with typed distance, and move support for non-wall elements (floors, rooms, etc.).
+**bim-ai status:** 🟡 Partial — walls can be moved via grip handles + inspector Δx/Δy section. `placed_asset` elements can now be moved via a Δx/Δy section in the right-rail inspector (fires `moveAssetDelta`). Missing: two-point on-canvas Move command with typed distance, and move support for floor, room, door, and window elements.
 
 ---
 

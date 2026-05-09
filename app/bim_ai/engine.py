@@ -196,6 +196,7 @@ from bim_ai.commands import (
     DeleteGradedRegionCmd,
     IndexAssetCmd,
     PlaceAssetCmd,
+    MoveAssetDeltaCmd,
     PlaceKitCmd,
     UpdateKitComponentCmd,
     SetToolPrefCmd,
@@ -1282,6 +1283,7 @@ _PIN_BLOCKED_TARGETS: dict[type, str] = {
     MoveLevelElevationCmd: "level_id",
     UpdateElementPropertyCmd: "element_id",
     DeleteElementCmd: "element_id",
+    MoveAssetDeltaCmd: "element_id",
 }
 
 
@@ -1311,6 +1313,7 @@ _LINKED_READONLY_SCALAR_FIELDS: dict[type, tuple[str, ...]] = {
     UpdateLinkModelCmd: (),
     DeleteLinkModelCmd: (),
     UpdateLinkDxfCmd: (),
+    MoveAssetDeltaCmd: ("element_id",),
 }
 _LINKED_READONLY_LIST_FIELDS: dict[type, tuple[str, ...]] = {
     DeleteElementsCmd: ("element_ids",),
@@ -5392,6 +5395,16 @@ def apply_inplace(
                 paramValues=cmd.param_values,
                 hostElementId=cmd.host_element_id,
             )
+
+        case MoveAssetDeltaCmd():
+            el = els.get(cmd.element_id)
+            if not isinstance(el, PlacedAssetElem):
+                raise ValueError(f"moveAssetDelta: elementId '{cmd.element_id}' must reference a placed_asset")
+            new_pos = Vec2Mm(
+                xMm=el.position_mm.x_mm + cmd.dx_mm,
+                yMm=el.position_mm.y_mm + cmd.dy_mm,
+            )
+            els[cmd.element_id] = el.model_copy(update={"position_mm": new_pos})
 
         # -----------------------------------------------------------------
         # AST-V3-04 — Parametric kitchen kit

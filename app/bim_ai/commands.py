@@ -2233,6 +2233,16 @@ class PlaceAssetCmd(BaseModel):
     host_element_id: str | None = Field(default=None, alias="hostElementId")
 
 
+class MoveAssetDeltaCmd(BaseModel):
+    """Move a placed_asset element by a positional delta."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["moveAssetDelta"] = "moveAssetDelta"
+    element_id: str = Field(alias="elementId")
+    dx_mm: float = Field(alias="dxMm")
+    dy_mm: float = Field(alias="dyMm")
+
+
 class SetToolPrefCmd(BaseModel):
     """CHR-V3-08: Store a sticky tool-modifier preference for the session.
 
@@ -2907,6 +2917,7 @@ Command = Annotated[
     | DeleteGradedRegionCmd
     | IndexAssetCmd
     | PlaceAssetCmd
+    | MoveAssetDeltaCmd
     | SetToolPrefCmd
     | TraceImageCmd
     | UpdateWallCmd
