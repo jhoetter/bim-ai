@@ -756,6 +756,7 @@ export function PlanCanvas({
     draftRef.current = undefined;
     wallFlipRef.current = false;
     alignStateRef.current = initialAlignState();
+    setAlignReferenceMm(null);
     mirrorAxisStartRef.current = null;
     copyAnchorRef.current = null;
     setCopyAnchorSet(false);
@@ -2516,6 +2517,8 @@ export function PlanCanvas({
           pointMm: sp,
         });
         alignStateRef.current = nextState;
+        // F-121: sync reference point into React state so the SVG overlay re-renders.
+        setAlignReferenceMm(nextState.referenceMm);
         if (effect.commitAlign) {
           // Pick the nearest wall to the *target* click; align it to the
           // reference point that was first picked.
@@ -3166,6 +3169,8 @@ export function PlanCanvas({
         if (planTool === 'align') {
           const { state } = reduceAlign(alignStateRef.current, { kind: 'cancel' });
           alignStateRef.current = state;
+          // F-121: clear reference overlay on cancel.
+          setAlignReferenceMm(null);
         } else if (planTool === 'mirror') {
           mirrorAxisStartRef.current = null;
         } else if (planTool === 'copy') {
@@ -3999,6 +4004,90 @@ export function PlanCanvas({
           <span>Click destination point to complete copy</span>
         </div>
       ) : null}
+      {/* F-121 — Align tool reference line overlay: shown after the first click (reference set).
+          Draws a dashed crosshair SVG at the reference point so the user can see the snap target
+          before clicking a wall to align. Resets when alignment commits or Esc is pressed. */}
+      {planTool === 'align' && alignReferenceMm
+        ? (() => {
+            const refPx = worldToScreen(alignReferenceMm);
+            return (
+              <>
+                {/* Dashed crosshair SVG spanning the full canvas */}
+                <svg
+                  data-testid="align-reference-overlay"
+                  aria-hidden="true"
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    width: '100%',
+                    height: '100%',
+                    pointerEvents: 'none',
+                    zIndex: 15,
+                    overflow: 'visible',
+                  }}
+                >
+                  {/* Horizontal reference line */}
+                  <line
+                    x1="0"
+                    y1={refPx.pxY}
+                    x2="100%"
+                    y2={refPx.pxY}
+                    stroke="hsl(var(--color-accent, 220 90% 56%))"
+                    strokeWidth="1.5"
+                    strokeDasharray="6 4"
+                    opacity="0.75"
+                  />
+                  {/* Vertical reference line */}
+                  <line
+                    x1={refPx.pxX}
+                    y1="0"
+                    x2={refPx.pxX}
+                    y2="100%"
+                    stroke="hsl(var(--color-accent, 220 90% 56%))"
+                    strokeWidth="1.5"
+                    strokeDasharray="6 4"
+                    opacity="0.75"
+                  />
+                  {/* Crosshair dot at reference point */}
+                  <circle
+                    cx={refPx.pxX}
+                    cy={refPx.pxY}
+                    r="4"
+                    fill="hsl(var(--color-accent, 220 90% 56%))"
+                    opacity="0.9"
+                  />
+                  {/* Coordinate label */}
+                  <text
+                    x={refPx.pxX + 8}
+                    y={refPx.pxY - 6}
+                    fontSize="10"
+                    fontFamily="var(--font-mono, monospace)"
+                    fill="hsl(var(--color-accent, 220 90% 56%))"
+                    opacity="0.85"
+                  >
+                    {`X ${(alignReferenceMm.xMm / 1000).toFixed(2)} m · Y ${(alignReferenceMm.yMm / 1000).toFixed(2)} m`}
+                  </text>
+                </svg>
+                {/* Status chip — prompt for second click */}
+                <div
+                  data-testid="align-tool-chip"
+                  aria-live="polite"
+                  style={{
+                    position: 'absolute',
+                    bottom: 48,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    pointerEvents: 'none',
+                    zIndex: 20,
+                  }}
+                  className="flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-xs shadow"
+                >
+                  <span>Click near a wall to align it to the reference line</span>
+                </div>
+              </>
+            );
+          })()
+        : null}
       {/* Zoom control — scale bar + preset menu */}
       <div className="pointer-events-auto absolute left-3 bottom-3 z-10">
         {showZoomMenu && (
