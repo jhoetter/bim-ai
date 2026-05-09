@@ -3,7 +3,7 @@
   "checkpoint_id": "f04051399374",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "nightshift/seed-target-house-status.md",
     "packages/cli/lib/one-family-home-commands.mjs"
@@ -14,13 +14,19 @@
       "transcript": "/f0/4051399374/0/full.jsonl",
       "content_hash": "/f0/4051399374/0/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/f0/4051399374/1/metadata.json",
+      "transcript": "/f0/4051399374/1/full.jsonl",
+      "content_hash": "/f0/4051399374/1/content_hash.txt",
+      "prompt": "/f0/4051399374/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 37,
-    "cache_creation_tokens": 124521,
-    "cache_read_tokens": 3305558,
-    "output_tokens": 69345,
-    "api_call_count": 35
+    "input_tokens": 6027,
+    "cache_creation_tokens": 3187786,
+    "cache_read_tokens": 127192776,
+    "output_tokens": 901734,
+    "api_call_count": 1341
   }
 }
