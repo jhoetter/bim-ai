@@ -4,20 +4,28 @@
   "strategy": "manual-commit",
   "branch": "main",
   "checkpoints_count": 1,
-  "files_touched": null,
+  "files_touched": [
+    "packages/web/src/plan/SheetReviewSurface.tsx"
+  ],
   "sessions": [
     {
       "metadata": "/84/880753c159/0/metadata.json",
       "transcript": "/84/880753c159/0/full.jsonl",
       "content_hash": "/84/880753c159/0/content_hash.txt",
       "prompt": "/84/880753c159/0/prompt.txt"
+    },
+    {
+      "metadata": "/84/880753c159/1/metadata.json",
+      "transcript": "/84/880753c159/1/full.jsonl",
+      "content_hash": "/84/880753c159/1/content_hash.txt",
+      "prompt": "/84/880753c159/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 219,
-    "cache_creation_tokens": 534206,
-    "cache_read_tokens": 18356676,
-    "output_tokens": 230862,
-    "api_call_count": 201
+    "input_tokens": 256,
+    "cache_creation_tokens": 572837,
+    "cache_read_tokens": 20638573,
+    "output_tokens": 249941,
+    "api_call_count": 236
   }
 }
