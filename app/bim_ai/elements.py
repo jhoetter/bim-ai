@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Annotated, Any, Literal, Optional
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -2212,10 +2212,6 @@ class WindowLegendViewElem(BaseModel):
 
 
 class HeightSample(BaseModel):
-    """A single surveyed elevation sample (sparse parametrisation)."""
-
-
-class HeightSample(BaseModel):
     """TOP-V3-01 — single (x, y, z) terrain sample point."""
 
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
@@ -2521,8 +2517,8 @@ class FrameElem(BaseModel):
     view_id: str = Field(alias="viewId")
     position_mm: dict = Field(alias="positionMm")  # {xMm, yMm}
     size_mm: dict = Field(alias="sizeMm")  # {widthMm, heightMm}
-    caption: Optional[str] = None
-    brand_template_id: Optional[str] = Field(None, alias="brandTemplateId")
+    caption: str | None = None
+    brand_template_id: str | None = Field(None, alias="brandTemplateId")
     sort_order: int = Field(0, alias="sortOrder")
 
 
@@ -2534,10 +2530,10 @@ class SavedViewElem(BaseModel):
     id: str
     base_view_id: str = Field(alias="baseViewId")
     name: str
-    camera_state: Optional[dict] = Field(None, alias="cameraState")
-    visibility_overrides: Optional[dict] = Field(None, alias="visibilityOverrides")
-    detail_level: Optional[str] = Field(None, alias="detailLevel")
-    thumbnail_data_uri: Optional[str] = Field(None, alias="thumbnailDataUri")
+    camera_state: dict | None = Field(None, alias="cameraState")
+    visibility_overrides: dict | None = Field(None, alias="visibilityOverrides")
+    detail_level: str | None = Field(None, alias="detailLevel")
+    thumbnail_data_uri: str | None = Field(None, alias="thumbnailDataUri")
 
 
 class PresentationCanvasElem(BaseModel):

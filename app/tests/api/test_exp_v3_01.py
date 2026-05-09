@@ -27,7 +27,7 @@ from fastapi.testclient import TestClient
 
 from bim_ai.document import Document
 from bim_ai.engine import ensure_internal_origin
-from bim_ai.exp.render_export import RenderExportBundle, build_export_bundle
+from bim_ai.exp.render_export import build_export_bundle
 
 MODEL_ID = str(uuid.uuid4())
 

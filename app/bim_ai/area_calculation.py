@@ -17,7 +17,14 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
-from bim_ai.elements import AreaElem, Element, ProjectSettingsElem, SlabOpeningElem, Vec2Mm, WallElem
+from bim_ai.elements import (
+    AreaElem,
+    Element,
+    ProjectSettingsElem,
+    SlabOpeningElem,
+    Vec2Mm,
+    WallElem,
+)
 
 
 def _polygon_area_abs_mm2(poly: Iterable[Vec2Mm]) -> float:

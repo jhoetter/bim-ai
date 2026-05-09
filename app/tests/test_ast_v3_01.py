@@ -4,7 +4,6 @@ from __future__ import annotations
 import pytest
 
 from bim_ai.assets import render_schematic_thumbnail_svg, search_assets
-from bim_ai.commands import IndexAssetCmd, PlaceAssetCmd
 from bim_ai.document import Document
 from bim_ai.elements import AssetLibraryEntryElem, PlacedAssetElem
 from bim_ai.engine import apply_inplace

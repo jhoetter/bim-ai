@@ -35,8 +35,9 @@ def _build_test_app() -> FastAPI:
 
     @app.post("/api/models/{model_id}/milestones")
     async def create_milestone(model_id: str, body: CreateMilestoneBody) -> Any:
-        from fastapi import HTTPException
         from uuid import uuid4
+
+        from fastapi import HTTPException
 
         if model_id not in _models:
             raise HTTPException(status_code=404, detail="Model not found")

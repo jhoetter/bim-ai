@@ -177,7 +177,7 @@ def sample_and_match(
 
 
 def sample(
-    image: "Any",  # type: ignore[name-defined]
+    image: object,
     polygon_pts: list[tuple[int, int]],
 ) -> str | None:
     """Return a room-type key by sampling the average hue inside a polygon.

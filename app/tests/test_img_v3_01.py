@@ -19,7 +19,6 @@ from pathlib import Path
 
 import pytest
 
-
 # ── PNG helpers ──────────────────────────────────────────────────────────────
 
 
@@ -151,8 +150,9 @@ class TestOcr:
         p.write_bytes(_make_png(50, 50, (255, 255, 255)))
 
         with patch.dict(sys.modules, {"pytesseract": None}):
-            from bim_ai.img import ocr as ocr_mod
             import importlib
+
+            from bim_ai.img import ocr as ocr_mod
 
             importlib.reload(ocr_mod)
             labels, advisories = ocr_mod.extract_labels(str(p), 1.0)
@@ -169,8 +169,9 @@ class TestOcr:
         p.write_bytes(_make_png(50, 50, (200, 200, 200)))
 
         with patch.dict(sys.modules, {"pytesseract": None}):
-            from bim_ai.img import ocr as ocr_mod
             import importlib
+
+            from bim_ai.img import ocr as ocr_mod
 
             importlib.reload(ocr_mod)
             try:

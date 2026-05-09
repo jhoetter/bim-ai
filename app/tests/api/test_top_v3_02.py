@@ -15,7 +15,6 @@ Covers:
 
 from __future__ import annotations
 
-import math
 import uuid
 
 import pytest
@@ -27,9 +26,8 @@ from bim_ai.commands import (
     UpdateToposolidSubdivisionCmd,
 )
 from bim_ai.document import Document
-from bim_ai.elements import AgentDeviationElem, ToposolidElem, ToposolidSubdivisionElem
+from bim_ai.elements import AgentDeviationElem, ToposolidSubdivisionElem
 from bim_ai.engine import apply_inplace
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -350,7 +348,7 @@ def test_multiple_subdivisions_coexist() -> None:
     doc = _seed()
     sids = [str(uuid.uuid4()) for _ in range(4)]
     categories = ["paving", "lawn", "road", "planting"]
-    for sid, cat in zip(sids, categories):
+    for sid, cat in zip(sids, categories, strict=True):
         apply_inplace(
             doc,
             CreateToposolidSubdivisionCmd(
@@ -362,7 +360,7 @@ def test_multiple_subdivisions_coexist() -> None:
             ),
         )
 
-    for sid, cat in zip(sids, categories):
+    for sid, cat in zip(sids, categories, strict=True):
         elem = doc.elements[sid]
         assert isinstance(elem, ToposolidSubdivisionElem)
         assert elem.finish_category == cat

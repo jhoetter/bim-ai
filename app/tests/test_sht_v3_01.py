@@ -1,25 +1,12 @@
 """SHT-V3-01: Sheet + titleblock + cartouche + window-legend tests."""
 from __future__ import annotations
 
-import pytest
-
-from bim_ai.commands import (
-    CreateSheetCmd,
-    CreateWindowLegendViewCmd,
-    MoveViewOnSheetCmd,
-    PlaceViewOnSheetCmd,
-    RemoveViewFromSheetCmd,
-    SetSheetTitleblockCmd,
-    UpdateSheetMetadataCmd,
-)
 from bim_ai.document import Document
 from bim_ai.elements import (
-    DEFAULT_TITLEBLOCK_TYPE,
     SheetElem,
     TitleblockTypeElem,
     WindowElem,
     WindowLegendViewElem,
-    Vec2Mm,
 )
 from bim_ai.engine import apply_inplace
 from bim_ai.sheets import resolve_window_legend
@@ -31,6 +18,7 @@ def _empty_doc() -> Document:
 
 def _apply(doc: Document, cmd_dict: dict) -> Document:
     from pydantic import TypeAdapter
+
     from bim_ai.commands import Command
 
     ta: TypeAdapter[Command] = TypeAdapter(Command)

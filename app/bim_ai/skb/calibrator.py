@@ -138,7 +138,7 @@ This gives a reasonable mm/px estimate for typical architectural floor plans.
 """
 
 
-def calibrate_from_edges(edges_image: "Any") -> float:  # type: ignore[name-defined]
+def calibrate_from_edges(edges_image: object) -> float:
     """Estimate mm-per-pixel scale from an edge-detection output.
 
     Strategy: find the widest rectangular region in the edge image (assumed to
@@ -150,7 +150,6 @@ def calibrate_from_edges(edges_image: "Any") -> float:  # type: ignore[name-defi
 
     Falls back to 1.0 if no usable contour is found.
     """
-    import os
 
     arr = None
 
@@ -169,9 +168,8 @@ def calibrate_from_edges(edges_image: "Any") -> float:  # type: ignore[name-defi
                 arr = cv2.imread(path_str, cv2.IMREAD_GRAYSCALE)
             except ImportError:
                 try:
-                    from PIL import Image as _Image  # type: ignore[import-not-found]
-
                     import numpy as np
+                    from PIL import Image as _Image  # type: ignore[import-not-found]
 
                     arr = np.asarray(_Image.open(path_str).convert("L"), dtype=np.uint8)
                 except Exception:
@@ -210,7 +208,6 @@ def calibrate_from_edges(edges_image: "Any") -> float:  # type: ignore[name-defi
     try:
         import numpy as np  # type: ignore[import-not-found]
 
-        rows = np.any(arr > 0, axis=1)
         cols = np.any(arr > 0, axis=0)
         if cols.any():
             col_indices = np.where(cols)[0]

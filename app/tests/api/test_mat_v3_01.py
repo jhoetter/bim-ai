@@ -146,8 +146,9 @@ def _bundle(commands: list[dict[str, Any]], revision: int = 1) -> dict[str, Any]
 def _make_doc_with_level_and_wall() -> Document:
     doc = Document(revision=1, elements={})  # type: ignore[arg-type]
     ensure_internal_origin(doc)
-    from bim_ai.commands import CreateLevelCmd, CreateWallCmd
     from pydantic import TypeAdapter
+
+    from bim_ai.commands import CreateLevelCmd, CreateWallCmd
 
     apply_inplace(doc, TypeAdapter(CreateLevelCmd).validate_python(_CREATE_LEVEL))
     apply_inplace(doc, TypeAdapter(CreateWallCmd).validate_python(_CREATE_WALL))
@@ -160,8 +161,9 @@ def _make_doc_with_level_and_wall() -> Document:
 
 
 def test_update_material_pbr_patches_map_ids() -> None:
-    from bim_ai.commands import UpdateMaterialPbrCmd
     from pydantic import TypeAdapter
+
+    from bim_ai.commands import UpdateMaterialPbrCmd
 
     doc = Document(revision=1, elements={})  # type: ignore[arg-type]
     ensure_internal_origin(doc)
@@ -188,8 +190,9 @@ def test_update_material_pbr_patches_map_ids() -> None:
 
 
 def test_update_material_pbr_raises_for_unknown_id() -> None:
-    from bim_ai.commands import UpdateMaterialPbrCmd
     from pydantic import TypeAdapter
+
+    from bim_ai.commands import UpdateMaterialPbrCmd
 
     doc = Document(revision=1, elements={})  # type: ignore[arg-type]
     ensure_internal_origin(doc)
@@ -202,8 +205,9 @@ def test_update_material_pbr_raises_for_unknown_id() -> None:
 
 
 def test_create_decal_stores_elem() -> None:
-    from bim_ai.commands import CreateDecalCmd
     from pydantic import TypeAdapter
+
+    from bim_ai.commands import CreateDecalCmd
 
     doc = _make_doc_with_level_and_wall()
 
@@ -230,8 +234,9 @@ def test_create_decal_stores_elem() -> None:
 
 
 def test_create_decal_raises_for_missing_parent() -> None:
-    from bim_ai.commands import CreateDecalCmd
     from pydantic import TypeAdapter
+
+    from bim_ai.commands import CreateDecalCmd
 
     doc = Document(revision=1, elements={})  # type: ignore[arg-type]
     ensure_internal_origin(doc)

@@ -29,7 +29,7 @@ from bim_ai.cmd.types import CommandBundle
 from bim_ai.document import Document
 from bim_ai.elements import FrameElem, PresentationCanvasElem, SavedViewElem
 from bim_ai.engine import ensure_internal_origin
-from bim_ai.exp.pptx_export import PptxBundle, Slide, build_pptx_bundle
+from bim_ai.exp.pptx_export import PptxBundle, build_pptx_bundle
 
 MODEL_ID = str(uuid.uuid4())
 

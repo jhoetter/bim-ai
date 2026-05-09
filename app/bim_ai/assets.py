@@ -15,7 +15,6 @@ from typing import Any
 
 from bim_ai.elements import AssetLibraryEntryElem
 
-
 # ---------------------------------------------------------------------------
 # Fuzzy search — token-based, no external deps
 # ---------------------------------------------------------------------------

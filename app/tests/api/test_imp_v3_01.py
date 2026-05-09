@@ -169,8 +169,9 @@ def _make_fresh_doc() -> Document:
 
 def test_import_png_underlay_creates_element() -> None:
     """Import PNG underlay → element in state with correct rect/opacity."""
-    from bim_ai.commands import ImportImageUnderlayCmd
     from pydantic import TypeAdapter
+
+    from bim_ai.commands import ImportImageUnderlayCmd
 
     doc = _make_fresh_doc()
     cmd = TypeAdapter(ImportImageUnderlayCmd).validate_python(
@@ -197,8 +198,9 @@ def test_import_png_underlay_creates_element() -> None:
 
 def test_import_jpeg_underlay_accepted() -> None:
     """Import JPEG underlay → accepted."""
-    from bim_ai.commands import ImportImageUnderlayCmd
     from pydantic import TypeAdapter
+
+    from bim_ai.commands import ImportImageUnderlayCmd
 
     doc = _make_fresh_doc()
     cmd = TypeAdapter(ImportImageUnderlayCmd).validate_python(
@@ -218,8 +220,9 @@ def test_import_jpeg_underlay_accepted() -> None:
 
 def test_import_pdf_underlay_accepted() -> None:
     """Import PDF underlay → accepted."""
-    from bim_ai.commands import ImportImageUnderlayCmd
     from pydantic import TypeAdapter
+
+    from bim_ai.commands import ImportImageUnderlayCmd
 
     doc = _make_fresh_doc()
     cmd = TypeAdapter(ImportImageUnderlayCmd).validate_python(
@@ -239,8 +242,9 @@ def test_import_pdf_underlay_accepted() -> None:
 
 def test_import_invalid_format_raises() -> None:
     """Import with invalid format (SVG) → ValueError."""
-    from bim_ai.commands import ImportImageUnderlayCmd
     from pydantic import TypeAdapter
+
+    from bim_ai.commands import ImportImageUnderlayCmd
 
     doc = _make_fresh_doc()
     svg_uri = "data:image/svg+xml;base64," + base64.b64encode(b"<svg/>").decode()
@@ -258,8 +262,9 @@ def test_import_invalid_format_raises() -> None:
 
 def test_import_src_too_large_raises() -> None:
     """Import with src > 50 MB → ValueError."""
-    from bim_ai.commands import ImportImageUnderlayCmd
     from pydantic import TypeAdapter
+
+    from bim_ai.commands import ImportImageUnderlayCmd
 
     doc = _make_fresh_doc()
     # Create a src that is definitely > 50 MB when encoded as bytes
@@ -280,8 +285,9 @@ def test_import_src_too_large_raises() -> None:
 
 def test_move_underlay_updates_position_preserves_size() -> None:
     """Move underlay → rect_mm position updated, width/height preserved."""
-    from bim_ai.commands import ImportImageUnderlayCmd, MoveImageUnderlayCmd
     from pydantic import TypeAdapter
+
+    from bim_ai.commands import ImportImageUnderlayCmd, MoveImageUnderlayCmd
 
     doc = _make_fresh_doc()
     apply_inplace(
@@ -316,8 +322,9 @@ def test_move_underlay_updates_position_preserves_size() -> None:
 
 def test_scale_underlay_updates_dimensions() -> None:
     """Scale underlay → width/height updated."""
-    from bim_ai.commands import ImportImageUnderlayCmd, ScaleImageUnderlayCmd
     from pydantic import TypeAdapter
+
+    from bim_ai.commands import ImportImageUnderlayCmd, ScaleImageUnderlayCmd
 
     doc = _make_fresh_doc()
     apply_inplace(
@@ -353,8 +360,9 @@ def test_scale_underlay_updates_dimensions() -> None:
 
 def test_rotate_underlay_updates_rotation() -> None:
     """Rotate underlay → rotation_deg updated."""
-    from bim_ai.commands import ImportImageUnderlayCmd, RotateImageUnderlayCmd
     from pydantic import TypeAdapter
+
+    from bim_ai.commands import ImportImageUnderlayCmd, RotateImageUnderlayCmd
 
     doc = _make_fresh_doc()
     apply_inplace(
@@ -385,8 +393,9 @@ def test_rotate_underlay_updates_rotation() -> None:
 
 def test_delete_underlay_removes_element() -> None:
     """Delete underlay → removed from state."""
-    from bim_ai.commands import DeleteImageUnderlayCmd, ImportImageUnderlayCmd
     from pydantic import TypeAdapter
+
+    from bim_ai.commands import DeleteImageUnderlayCmd, ImportImageUnderlayCmd
 
     doc = _make_fresh_doc()
     apply_inplace(
@@ -411,8 +420,9 @@ def test_delete_underlay_removes_element() -> None:
 
 def test_default_opacity_is_0_4() -> None:
     """Default opacity = 0.4."""
-    from bim_ai.commands import ImportImageUnderlayCmd
     from pydantic import TypeAdapter
+
+    from bim_ai.commands import ImportImageUnderlayCmd
 
     doc = _make_fresh_doc()
     cmd = TypeAdapter(ImportImageUnderlayCmd).validate_python(
@@ -433,8 +443,9 @@ def test_default_opacity_is_0_4() -> None:
 
 def test_default_rotation_is_0() -> None:
     """Default rotation = 0.0."""
-    from bim_ai.commands import ImportImageUnderlayCmd
     from pydantic import TypeAdapter
+
+    from bim_ai.commands import ImportImageUnderlayCmd
 
     doc = _make_fresh_doc()
     cmd = TypeAdapter(ImportImageUnderlayCmd).validate_python(
@@ -458,8 +469,9 @@ def test_image_underlay_ts_round_trip_field_shape() -> None:
     The element must serialise with camelCase alias keys matching the
     TypeScript type so the frontend can consume the snapshot payload.
     """
-    from bim_ai.commands import ImportImageUnderlayCmd
     from pydantic import TypeAdapter
+
+    from bim_ai.commands import ImportImageUnderlayCmd
 
     doc = _make_fresh_doc()
     cmd = TypeAdapter(ImportImageUnderlayCmd).validate_python(

@@ -27,7 +27,7 @@ from bim_ai.api.registry import get_catalog
 from bim_ai.cmd.apply_bundle import apply_bundle as _apply_bundle
 from bim_ai.cmd.types import CommandBundle
 from bim_ai.document import Document
-from bim_ai.elements import GradedRegionElem, ToposolidElem, WallElem
+from bim_ai.elements import GradedRegionElem, WallElem
 from bim_ai.engine import apply_inplace, ensure_internal_origin
 
 MODEL_ID = str(uuid.uuid4())
@@ -170,8 +170,9 @@ def _make_doc_with_level_and_topo() -> Document:
     """Utility: create a document that has a level + toposolid pre-seeded."""
     doc = Document(revision=1, elements={})  # type: ignore[arg-type]
     ensure_internal_origin(doc)
-    from bim_ai.commands import CreateToposolidCmd
     from pydantic import TypeAdapter
+
+    from bim_ai.commands import CreateToposolidCmd
 
     apply_inplace(
         doc,
@@ -194,8 +195,9 @@ def _make_doc_with_level_and_topo() -> Document:
 def _fresh_doc() -> Document:
     doc = Document(revision=1, elements={})  # type: ignore[arg-type]
     ensure_internal_origin(doc)
-    from bim_ai.commands import CreateLevelCmd, CreateToposolidCmd
     from pydantic import TypeAdapter
+
+    from bim_ai.commands import CreateLevelCmd, CreateToposolidCmd
 
     apply_inplace(doc, TypeAdapter(CreateLevelCmd).validate_python(_CREATE_LEVEL))
     apply_inplace(doc, TypeAdapter(CreateToposolidCmd).validate_python(_CREATE_TOPOSOLID))
@@ -208,8 +210,9 @@ def _fresh_doc() -> Document:
 
 
 def test_create_site_wall_with_site_host_id() -> None:
-    from bim_ai.commands import CreateWallCmd
     from pydantic import TypeAdapter
+
+    from bim_ai.commands import CreateWallCmd
 
     doc = _fresh_doc()
     cmd = TypeAdapter(CreateWallCmd).validate_python(
@@ -234,8 +237,9 @@ def test_create_site_wall_with_site_host_id() -> None:
 
 
 def test_create_site_wall_nonexistent_site_host_id() -> None:
-    from bim_ai.commands import CreateWallCmd
     from pydantic import TypeAdapter
+
+    from bim_ai.commands import CreateWallCmd
 
     doc = _fresh_doc()
     cmd = TypeAdapter(CreateWallCmd).validate_python(
@@ -258,8 +262,9 @@ def test_create_site_wall_nonexistent_site_host_id() -> None:
 
 
 def test_create_graded_region_flat_mode() -> None:
-    from bim_ai.commands import CreateGradedRegionCmd
     from pydantic import TypeAdapter
+
+    from bim_ai.commands import CreateGradedRegionCmd
 
     doc = _fresh_doc()
     cmd = TypeAdapter(CreateGradedRegionCmd).validate_python(
@@ -287,8 +292,9 @@ def test_create_graded_region_flat_mode() -> None:
 
 
 def test_create_graded_region_slope_mode() -> None:
-    from bim_ai.commands import CreateGradedRegionCmd
     from pydantic import TypeAdapter
+
+    from bim_ai.commands import CreateGradedRegionCmd
 
     doc = _fresh_doc()
     cmd = TypeAdapter(CreateGradedRegionCmd).validate_python(
@@ -317,8 +323,9 @@ def test_create_graded_region_slope_mode() -> None:
 
 
 def test_create_graded_region_flat_missing_target_z() -> None:
-    from bim_ai.commands import CreateGradedRegionCmd
     from pydantic import TypeAdapter
+
+    from bim_ai.commands import CreateGradedRegionCmd
 
     doc = _fresh_doc()
     cmd = TypeAdapter(CreateGradedRegionCmd).validate_python(
@@ -341,8 +348,9 @@ def test_create_graded_region_flat_missing_target_z() -> None:
 
 
 def test_create_graded_region_slope_missing_axis() -> None:
-    from bim_ai.commands import CreateGradedRegionCmd
     from pydantic import TypeAdapter
+
+    from bim_ai.commands import CreateGradedRegionCmd
 
     doc = _fresh_doc()
     cmd = TypeAdapter(CreateGradedRegionCmd).validate_python(
@@ -365,8 +373,9 @@ def test_create_graded_region_slope_missing_axis() -> None:
 
 
 def test_update_graded_region() -> None:
-    from bim_ai.commands import CreateGradedRegionCmd, UpdateGradedRegionCmd
     from pydantic import TypeAdapter
+
+    from bim_ai.commands import CreateGradedRegionCmd, UpdateGradedRegionCmd
 
     doc = _fresh_doc()
     create_cmd = TypeAdapter(CreateGradedRegionCmd).validate_python(
@@ -400,8 +409,9 @@ def test_update_graded_region() -> None:
 
 
 def test_delete_graded_region() -> None:
-    from bim_ai.commands import CreateGradedRegionCmd, DeleteGradedRegionCmd
     from pydantic import TypeAdapter
+
+    from bim_ai.commands import CreateGradedRegionCmd, DeleteGradedRegionCmd
 
     doc = _fresh_doc()
     create_cmd = TypeAdapter(CreateGradedRegionCmd).validate_python(
@@ -430,8 +440,9 @@ def test_delete_graded_region() -> None:
 
 
 def test_create_wall_without_site_host_id_is_normal() -> None:
-    from bim_ai.commands import CreateWallCmd
     from pydantic import TypeAdapter
+
+    from bim_ai.commands import CreateWallCmd
 
     doc = _fresh_doc()
     cmd = TypeAdapter(CreateWallCmd).validate_python(
@@ -533,8 +544,9 @@ def test_create_graded_region_tool_in_catalog(client: TestClient) -> None:
 
 
 def test_delete_nonexistent_graded_region() -> None:
-    from bim_ai.commands import DeleteGradedRegionCmd
     from pydantic import TypeAdapter
+
+    from bim_ai.commands import DeleteGradedRegionCmd
 
     doc = _fresh_doc()
     cmd = TypeAdapter(DeleteGradedRegionCmd).validate_python(

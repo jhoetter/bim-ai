@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import json
-import yaml
-import pytest
 from pathlib import Path
+
+import pytest
+import yaml
 
 FIXTURE_PATH = Path(__file__).parent / "12_step_refinement.yaml"
 

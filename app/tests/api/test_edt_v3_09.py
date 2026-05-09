@@ -19,7 +19,6 @@ from bim_ai.elements import LevelElem, StairElem, StairTreadLine, Vec2Mm
 from bim_ai.engine import apply_inplace
 from bim_ai.stair.autobalance import auto_distribute_treads, rebalance_treads
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

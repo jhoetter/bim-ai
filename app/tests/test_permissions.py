@@ -19,7 +19,7 @@ from bim_ai.cmd.apply_bundle import apply_bundle as _apply_bundle
 from bim_ai.cmd.types import CommandBundle
 from bim_ai.document import Document
 from bim_ai.engine import ensure_internal_origin
-from bim_ai.permissions import VERB_ALLOWLIST, authorize_command
+from bim_ai.permissions import authorize_command
 
 MODEL_ID = str(uuid.uuid4())
 

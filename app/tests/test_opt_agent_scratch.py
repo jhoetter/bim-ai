@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import re
 
-import pytest
-
 from bim_ai.cmd.apply_bundle import apply_bundle
 from bim_ai.cmd.types import CommandBundle
 from bim_ai.document import Document

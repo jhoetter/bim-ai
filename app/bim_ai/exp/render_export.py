@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
-from typing import Literal, Optional
+from typing import Literal
 
 ExportFormat = Literal["gltf", "gltf-pbr", "ifc-bundle", "metadata-only"]
 
@@ -13,7 +13,7 @@ ExportFormat = Literal["gltf", "gltf-pbr", "ifc-bundle", "metadata-only"]
 class RenderExportBundle:
     schema_version: str = "exp-v3.0"
     format: ExportFormat = "metadata-only"
-    primary_asset: Optional[dict] = None  # {kind, pathInArchive}
+    primary_asset: dict | None = None  # {kind, pathInArchive}
     metadata: dict = field(
         default_factory=lambda: {
             "cameras": [],
@@ -41,7 +41,7 @@ class RenderExportBundle:
 def build_export_bundle(
     model_state: dict,
     fmt: ExportFormat,
-    view_id: Optional[str] = None,
+    view_id: str | None = None,
 ) -> RenderExportBundle:
     elements = model_state.get("elements", [])
 

@@ -7,8 +7,8 @@ from bim_ai.constraints import evaluate
 from bim_ai.document import Document
 from bim_ai.elements import (
     FloorElem,
-    HeightSample,
     HeightmapGrid,
+    HeightSample,
     LevelElem,
     SlabOpeningElem,
     ToposolidElem,
@@ -21,7 +21,6 @@ from bim_ai.site.toposolid import (
     samples_from_toposolid,
     underside_elevation_mm,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers

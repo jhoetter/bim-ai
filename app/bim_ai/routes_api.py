@@ -1855,7 +1855,7 @@ async def resolve_shared_token(
     try:
         model_uuid = UUID(link_record.model_id)
     except ValueError:
-        raise HTTPException(status_code=404, detail="Model not found")
+        raise HTTPException(status_code=404, detail="Model not found") from None
 
     row = await load_model_row(session, model_uuid)
     if row is None:

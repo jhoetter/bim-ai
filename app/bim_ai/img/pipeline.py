@@ -17,12 +17,11 @@ No AI runs inside this module. Same input → byte-identical JSON output.
 from __future__ import annotations
 
 import hashlib
-import os
 import tempfile
 from pathlib import Path
 
 from bim_ai.img.types import Advisory, ImageMetadata, RoomRegion, StructuredLayout
-from bim_ai.skb.edge_detection import detect_edges, edge_density
+from bim_ai.skb.edge_detection import detect_edges
 
 _FALLBACK_SCALE_MM_PER_PX = 1.0
 _LOW_CONTRAST_DENSITY_THRESHOLD = 0.001
@@ -73,7 +72,7 @@ def trace(
     tmp_dir.mkdir(parents=True, exist_ok=True)
     edges_path = tmp_dir / f"edges_{img_hash}.png"
 
-    edge_result = detect_edges(
+    detect_edges(
         str(in_path),
         str(edges_path),
         canny_low=50,
@@ -158,7 +157,7 @@ def _load_edge_array(edges_path: str):  # type: ignore[return]
 def _apply_colour_type_hints(
     image_path: Path,
     rooms: list[RoomRegion],
-    cv_img: "Any | None",  # type: ignore[name-defined]
+    cv_img: object | None,
 ) -> list[RoomRegion]:
     """Call SKB-07 colour sampler on each room polygon to populate detectedTypeKey.
 

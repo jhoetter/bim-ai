@@ -16,13 +16,8 @@ Covers (≥ 10 tests, all mocked — no real Overpass HTTP calls):
 from __future__ import annotations
 
 import math
-import uuid
-from typing import Any
-from unittest.mock import patch
 
 import pytest
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
 
 from bim_ai.site.osm_import import (
     DEFAULT_HEIGHT_MM,

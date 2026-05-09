@@ -489,7 +489,6 @@ def test_css_override_snippet_preserved_verbatim() -> None:
 
 def test_logo_mark_svg_uri_stored_and_returned(client: TestClient) -> None:
     svg_uri = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciLz4="
-    model_id = str(uuid.uuid4())
 
     # Build a fresh app so we don't collide with MODULE_ID fixture
     app = _build_test_app()
