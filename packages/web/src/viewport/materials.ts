@@ -128,13 +128,13 @@ export interface ResolveOptions {
 const DEFAULT_PBR = { roughness: 0.85, metalness: 0, aoIntensity: 0.4 } as const;
 
 const PER_CATEGORY_PBR: Record<ElementCategoryToken, { roughness: number; metalness: number }> = {
-  wall: { roughness: 0.8, metalness: 0.0 },
-  floor: { roughness: 0.9, metalness: 0.0 },
-  roof: { roughness: 0.85, metalness: 0.0 },
-  door: { roughness: 0.7, metalness: 0.0 },
-  window: { roughness: 0.6, metalness: 0.05 },
-  stair: { roughness: 0.85, metalness: 0.0 },
-  railing: { roughness: 0.35, metalness: 0.65 },
+  wall: { roughness: 0.92, metalness: 0.0 }, // warm matte plaster
+  floor: { roughness: 0.88, metalness: 0.0 }, // polished concrete
+  roof: { roughness: 0.85, metalness: 0.0 }, // clay tile
+  door: { roughness: 0.72, metalness: 0.02 }, // brushed wood
+  window: { roughness: 0.05, metalness: 0.08 }, // near-perfect glass
+  stair: { roughness: 0.86, metalness: 0.0 }, // concrete stair
+  railing: { roughness: 0.45, metalness: 0.35 }, // brushed metal
   room: { roughness: 0.85, metalness: 0.0 },
   site: { roughness: 0.95, metalness: 0.0 },
   section: { roughness: 0.85, metalness: 0.0 },

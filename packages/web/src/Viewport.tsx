@@ -382,6 +382,8 @@ export function Viewport({
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setClearColor(readColorToken('--draft-paper', '#fdfcf9'), 1);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.05;
     rendererRef.current = renderer;
     host.appendChild(renderer.domElement);
 
@@ -592,7 +594,7 @@ export function Viewport({
     let cumulativeDragPx = 0;
     let inertiaVx = 0;
     let inertiaVy = 0;
-    const INERTIA_DECAY = 0.87;
+    const INERTIA_DECAY = 0.92; // smoother Rhino-like glide after release
     const DRAG_THRESHOLD_PX = 5;
     let lastX = 0;
     let lastY = 0;

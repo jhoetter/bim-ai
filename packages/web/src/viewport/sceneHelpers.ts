@@ -75,10 +75,15 @@ export function buildSkyEnvMap(
   return envTexture;
 }
 
-export function addEdges(mesh: THREE.Mesh, thresholdAngleDeg = 15): THREE.LineSegments {
-  const color = readToken('--color-foreground', '#1a1a1a');
+export function addEdges(mesh: THREE.Mesh, thresholdAngleDeg = 20): THREE.LineSegments {
+  const color = readToken('--draft-cut', '#1d2330');
   const edges = new THREE.EdgesGeometry(mesh.geometry, thresholdAngleDeg);
-  const mat = new THREE.LineBasicMaterial({ color, linewidth: 1 });
+  const mat = new THREE.LineBasicMaterial({
+    color,
+    linewidth: 1,
+    transparent: true,
+    opacity: 0.38,
+  });
   const lines = new THREE.LineSegments(edges, mat);
   lines.renderOrder = 1;
   lines.castShadow = false;

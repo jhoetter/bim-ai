@@ -201,11 +201,13 @@ function buildWallCutHatch(
   const mat = new THREE.LineBasicMaterial({
     color: new THREE.Color(hatchColor),
     transparent: true,
-    opacity: 0.22,
+    opacity: 0.35,
+    depthTest: false, // overlay — must not be occluded by wall fill mesh
   });
 
   const lines = new THREE.LineSegments(geom, mat);
-  lines.position.set(sx + (nx * len) / 2 + perpX, PLAN_Y + 0.0001, sz + (nz * len) / 2 + perpZ);
+  lines.renderOrder = 5; // draw after all opaque geometry
+  lines.position.set(sx + (nx * len) / 2 + perpX, PLAN_Y + 0.003, sz + (nz * len) / 2 + perpZ);
   lines.rotation.y = -angle;
   // Intentionally no bimPickId — hatch is purely visual, picking goes via the
   // group's userData.bimPickId set by the caller.
