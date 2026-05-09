@@ -68,7 +68,7 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-019 | Query tool for DWG layer visibility                  | CAD            | ❌            | DXF layer metadata not preserved; no per-layer visibility UI                                                         |
 | F-020 | Halftone / transparency for imported files (VG)      | CAD            | 🟡            | Per-link opacity now configurable (0–100%) via ManageLinksDialog; missing per-view opacity override in VVDialog and full-opacity (non-halftone) mode as a dropdown choice within VV |
 | F-021 | Align CAD with Project Base Point                    | CAD            | 🟡            | ManageLinksDialog has origin/project base point/shared coords for link_model; missing for link_dxf                   |
-| F-022 | Project Base Point & Survey Point                    | CAD            | 🟡            | First-class elements in core; 3D markers rendered; missing plan 2D annotation and Clip/Unclip toggle                 |
+| F-022 | Project Base Point & Survey Point                    | CAD            | 🟡            | First-class elements in core; 3D markers rendered; plan canvas now also renders 2D cross-in-circle (PBP) and triangle (SP) markers gated by site_origin VG category                 |
 | F-023 | Work Plane assignment for linked elements            | CAD            | 🟡            | `link_dxf` `levelId` field controls which level (work plane) the underlay is associated with; current level shown in inspector (`case 'link_dxf':`); changeable via ManageLinksDialog DXF Links section. Missing: level-dropdown in inspector (read-only display); Revit-style "Set Work Plane" dialog |
 | F-024 | Manage Links dialog                                  | CAD            | 🟡            | ManageLinksDialog lists link_model rows (delete/alignment/visibility/pin) AND link_dxf underlays (opacity + color mode); missing IFC/PDF/image types, unload/reload controls, file-path change |
 | F-025 | Levels (datum planes)                                | Levels & Views | 🟡            | LevelStack with inline create and rename; missing level head symbols in elevation/section views                       |
@@ -123,7 +123,7 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-074 | Instance parameters for per-placement overrides      | Nested Fam.   | ❌            |                                                                                                                      |
 | F-075 | Family from furniture template (Metric Furniture.rft)| Param. Furn.  | ❌            |                                                                                                                      |
 | F-076 | EQ (Equal) constraint on dimensions                  | Param. Furn.  | ❌            |                                                                                                                      |
-| F-077 | Masking Region                                       | Param. Furn.  | 🟡            | maskingRegionRender.ts (KRN-10) renders masking_region elements as white-fill polygons; plan canvas masking-region tool (hotkey MR) for two-click rectangular placement; "Masking Regions" in VV annotation tab; missing arbitrary polygon boundary and per-region fill color |
+| F-077 | Masking Region                                       | Param. Furn.  | 🟡            | maskingRegionRender.ts (KRN-10) renders masking_region elements as white-fill polygons; masking-region tool (hotkey MR) now uses full SketchCanvas polygon authoring (auto-close, Pick Walls); missing per-region fill color and Edit Boundary re-entry |
 | F-078 | Yes/No parameter for conditional visibility          | Param. Furn.  | ❌            |                                                                                                                      |
 | F-079 | Symbolic Lines for 2D furniture                      | Param. Furn.  | ❌            |                                                                                                                      |
 | F-080 | Snap Intersection (SI) shortcut                      | Param. Furn.  | ❌            |                                                                                                                      |
@@ -161,7 +161,7 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-112 | Default {3D} isometric view                          | Floors         | 🟡            | 3D canvas with orbit/pan/zoom; auto-loads vp-main-iso preset; ViewCube + Home reset; missing QAT 3D button          |
 | F-113 | Graphic Display Options (shadows, depth cue, etc.)   | Floors         | 🟡            | GDO toggle button in 3D viewport opens panel with Visual Style (Shaded/Consistent Colors/Wireframe/Hidden Line), Background (White/Light Grey/Dark), and Edge display (Normal/None). Missing: silhouette edge width, depth cue, photographic exposure, shadows, ambient occlusion |
 | F-114 | Placing component families in project                | Furn. Place   | 🟡            | Component tool (hotkey CC) places placed_asset elements; asset selector in OptionsBar; brown rectangle rendered in plan canvas. Missing: live preview, snap to walls, rotation on placement |
-| F-115 | Spacebar rotation during placement                   | Furn. Place   | ❌            |                                                                                                                      |
+| F-115 | Spacebar rotation during placement                   | Furn. Place   | 🟡            | Spacebar cycles pendingComponentRotationDeg by 90° (0→90→180→270) and passes it to PlaceAsset on click; missing live ghost preview before placement                                  |
 | F-116 | Copy (CO) tool                                       | Furn. Place   | 🟡            | Ctrl+C/V clipboard copy-paste with offset; missing two-point interactive Copy and multi-copy                         |
 | F-117 | Parametric living room sofa family                   | Furn. Place   | ❌            |                                                                                                                      |
 | F-118 | Parametric kitchen slab family                       | Furn. Place   | ❌            |                                                                                                                      |
@@ -179,8 +179,8 @@ _Last audited: 2026-05-09 against codebase at commit `docs/parity-tracker-audit`
 | Status                 | Count   | % of total |
 | ---------------------- | ------- | ---------- |
 | ✅ Fully available     | 26      | 22%        |
-| 🟡 Partially available | 42      | 35%        |
-| ❌ Not available       | 52      | 43%        |
+| 🟡 Partially available | 43      | 36%        |
+| ❌ Not available       | 51      | 42%        |
 | **Total**              | **120** | **100%**   |
 
 ---
