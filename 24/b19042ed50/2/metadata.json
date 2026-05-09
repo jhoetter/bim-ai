@@ -1,0 +1,36 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "24b19042ed50",
+  "session_id": "50a3d153-f462-4f27-b73c-9ec39b274eb6",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-09T18:08:05.22914Z",
+  "branch": "feat/parity-readme-sync",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/workspace/InspectorContent.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "1d80f07adde9",
+  "checkpoint_transcript_start": 3871,
+  "transcript_lines_at_start": 3871,
+  "token_usage": {
+    "input_tokens": 4,
+    "cache_creation_tokens": 964,
+    "cache_read_tokens": 444263,
+    "output_tokens": 702,
+    "api_call_count": 4
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-09T18:08:05.134814Z",
+    "agent_lines": 54,
+    "agent_removed": 7,
+    "human_added": 4,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 58,
+    "total_lines_changed": 65,
+    "agent_percentage": 93.84615384615384,
+    "metric_version": 2
+  }
+}
