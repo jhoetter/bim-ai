@@ -186,7 +186,7 @@ export function buildOneFamilyHomeCommands() {
       start: { xMm: CHIMNEY_X0, yMm: 0 },
       end: { xMm: CHIMNEY_X1, yMm: 0 },
       thicknessMm: WALL_T,
-      heightMm: CHIMNEY_H,
+      heightMm: 5500,
     },
     {
       type: 'createWall',
@@ -349,9 +349,11 @@ export function buildOneFamilyHomeCommands() {
       materialKey: 'metal_standing_seam_dark_grey',
     },
 
-    // Attach UF walls to the gable so their tops crop along the slopes.
-    // hf-w-uf-s-c (chimney face) is NOT attached — it has a fixed flat top below the roof.
+    // Attach all UF south segments and side walls to the gable.
+    // hf-w-uf-s-c is also attached: height 5500 → trimmed by gable profile.
+    // The chimney reads as a protrusion because s-l and s-r are recessed 1500 mm back while s-c is flush.
     { type: 'attachWallTopToRoof', wallId: 'hf-w-uf-s-l', roofId: 'hf-roof-main' },
+    { type: 'attachWallTopToRoof', wallId: 'hf-w-uf-s-c', roofId: 'hf-roof-main' },
     { type: 'attachWallTopToRoof', wallId: 'hf-w-uf-s-r', roofId: 'hf-roof-main' },
     { type: 'attachWallTopToRoof', wallId: 'hf-w-uf-e', roofId: 'hf-roof-main' },
     { type: 'attachWallTopToRoof', wallId: 'hf-w-uf-n', roofId: 'hf-roof-main' },
