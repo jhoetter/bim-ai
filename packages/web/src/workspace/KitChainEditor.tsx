@@ -72,9 +72,7 @@ function KitChip({
         justifyContent: 'center',
         cursor: 'pointer',
         background: selected ? 'var(--color-accent-soft)' : 'var(--color-surface)',
-        border: selected
-          ? '1px solid var(--color-accent)'
-          : '1px solid var(--color-border)',
+        border: selected ? '1px solid var(--color-accent)' : '1px solid var(--color-border)',
         borderRadius: '4px',
         overflow: 'hidden',
         userSelect: 'none',

@@ -19,7 +19,8 @@ export function PhaseDropdown({ value, onChange }: PhaseDropdownProps): ReactEle
 
   return (
     <div className="phase-dropdown">
-      <button type="button"
+      <button
+        type="button"
         className="phase-dropdown__chip"
         aria-label={`Phase filter: ${active.label}`}
         onClick={() => {

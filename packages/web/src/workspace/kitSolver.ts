@@ -65,8 +65,7 @@ export function solveChain(kit: FamilyKitInstanceElem): ResolvedComponent[] {
   }
 
   const autoFill = components.filter(
-    (c) =>
-      c.widthMm == null && c.componentKind !== 'countertop' && c.componentKind !== 'end_panel',
+    (c) => c.widthMm == null && c.componentKind !== 'countertop' && c.componentKind !== 'end_panel',
   );
   const autoWidth = autoFill.length > 0 ? (totalRun - explicitRun) / autoFill.length : 0;
 

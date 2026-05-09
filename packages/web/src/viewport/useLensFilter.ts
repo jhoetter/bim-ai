@@ -13,9 +13,7 @@ const LENS_MODE_TO_DISCIPLINE: Record<string, string> = {
  * `defaultLens`), this function takes the ephemeral dropdown selection
  * from the StatusBar and returns the same classifier function shape.
  */
-export function lensFilterFromMode(
-  mode: LensMode,
-): (elem: Element) => 'foreground' | 'ghost' {
+export function lensFilterFromMode(mode: LensMode): (elem: Element) => 'foreground' | 'ghost' {
   if (mode === 'all' || mode === 'energy' || mode === 'coordination') {
     return () => 'foreground';
   }

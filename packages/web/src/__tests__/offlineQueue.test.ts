@@ -1,10 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  clearQueue,
-  drainQueue,
-  enqueueCommand,
-  getQueueLength,
-} from '../commandQueue';
+import { clearQueue, drainQueue, enqueueCommand, getQueueLength } from '../commandQueue';
 import type { OfflineSyncBadge } from '@bim-ai/core';
 
 // Reset module-level queue between tests

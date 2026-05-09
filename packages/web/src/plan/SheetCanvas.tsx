@@ -52,9 +52,7 @@ function findSheet(
     const el = elementsById[preferredSheetId];
     if (el?.kind === 'sheet') return el as Sheet;
   }
-  return (Object.values(elementsById) as Element[]).find(
-    (e): e is Sheet => e.kind === 'sheet',
-  );
+  return (Object.values(elementsById) as Element[]).find((e): e is Sheet => e.kind === 'sheet');
 }
 
 function findTitleblockType(
@@ -70,10 +68,7 @@ function findTitleblockType(
   );
 }
 
-export function SheetCanvas({
-  elementsById,
-  preferredSheetId,
-}: SheetCanvasProps): ReactElement {
+export function SheetCanvas({ elementsById, preferredSheetId }: SheetCanvasProps): ReactElement {
   const sheet = findSheet(elementsById, preferredSheetId);
   const titleblockType = sheet ? findTitleblockType(elementsById, sheet) : undefined;
 
@@ -243,7 +238,8 @@ export function SheetCanvas({
             x={toSvgX(slot.xMm)}
             y={toSvgY(slot.yMm)}
             style={{
-              fontSize: (isProjectName ? (slot.fontSizeMm ?? 3.5) * 1.3 : (slot.fontSizeMm ?? 3.5)) * scale,
+              fontSize:
+                (isProjectName ? (slot.fontSizeMm ?? 3.5) * 1.3 : (slot.fontSizeMm ?? 3.5)) * scale,
               fill: isProjectName ? 'var(--color-foreground)' : 'var(--color-muted)',
               fontWeight: isProjectName ? 600 : undefined,
             }}

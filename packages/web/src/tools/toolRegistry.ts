@@ -401,7 +401,8 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       hotkey: 'MV',
       shortcut: 'MV',
       modes: ['plan'],
-      tooltip: 'Move selected element(s) by specifying a reference point and destination point (two-click)',
+      tooltip:
+        'Move selected element(s) by specifying a reference point and destination point (two-click)',
     },
     rotate: {
       id: 'rotate',

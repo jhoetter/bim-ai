@@ -19,13 +19,10 @@ export const useOfflineStore = create<OfflineStore>((set) => ({
   setOnline: (isOnline) =>
     set((s) => ({
       isOnline,
-      offlineQueuedAt:
-        !isOnline && s.isOnline ? new Date().toISOString() : s.offlineQueuedAt,
+      offlineQueuedAt: !isOnline && s.isOnline ? new Date().toISOString() : s.offlineQueuedAt,
     })),
-  incrementPendingCount: () =>
-    set((s) => ({ pendingCommandCount: s.pendingCommandCount + 1 })),
-  clearPendingCount: () =>
-    set({ pendingCommandCount: 0, lastSyncedAt: new Date().toISOString() }),
+  incrementPendingCount: () => set((s) => ({ pendingCommandCount: s.pendingCommandCount + 1 })),
+  clearPendingCount: () => set({ pendingCommandCount: 0, lastSyncedAt: new Date().toISOString() }),
   setLastSyncedAt: (ts) => set({ lastSyncedAt: ts }),
 }));
 

@@ -32,7 +32,13 @@ function elevToY(elevDeg: number): number {
   return 55 - (clamped / 90) * 50;
 }
 
-function formatStatusLine(dateIso: string, hours: number, minutes: number, azimuthDeg: number, elevationDeg: number): string {
+function formatStatusLine(
+  dateIso: string,
+  hours: number,
+  minutes: number,
+  azimuthDeg: number,
+  elevationDeg: number,
+): string {
   let dateLabel = dateIso;
   try {
     const d = new Date(dateIso + 'T12:00:00Z');
@@ -62,13 +68,10 @@ export function SunInspectorPanel(): JSX.Element {
   const dotX = hourToX(values.hours + values.minutes / 60);
   const dotY = elevToY(elevationDeg);
 
-  const handlePointerDown = useCallback(
-    (e: React.PointerEvent<SVGCircleElement>) => {
-      e.currentTarget.setPointerCapture(e.pointerId);
-      draggingRef.current = true;
-    },
-    [],
-  );
+  const handlePointerDown = useCallback((e: React.PointerEvent<SVGCircleElement>) => {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    draggingRef.current = true;
+  }, []);
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent<SVGSVGElement>) => {

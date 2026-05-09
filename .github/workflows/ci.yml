@@ -121,7 +121,7 @@ jobs:
       - name: Import FastAPI app (route wiring regression guard)
         run: PYTHONPATH=. uv run python -c "from bim_ai.main import app"
 
-      - run: ruff check bim_ai tests
+      - run: uv run ruff check bim_ai tests
 
       - run: pytest
 

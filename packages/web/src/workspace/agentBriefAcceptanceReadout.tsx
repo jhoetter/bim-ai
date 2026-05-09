@@ -108,11 +108,21 @@ export function AgentBriefAcceptanceReadoutV1Table(props: {
         <table className="w-full border-collapse text-[9px]">
           <thead>
             <tr className="border-b border-border/50 text-left text-muted">
-              <th scope="col" className="py-1 pe-2 font-medium">gate</th>
-              <th scope="col" className="py-1 pe-2 font-medium">status</th>
-              <th scope="col" className="py-1 pe-2 font-medium">code</th>
-              <th scope="col" className="py-1 pe-2 font-medium">required action</th>
-              <th scope="col" className="py-1 font-medium">detail</th>
+              <th scope="col" className="py-1 pe-2 font-medium">
+                gate
+              </th>
+              <th scope="col" className="py-1 pe-2 font-medium">
+                status
+              </th>
+              <th scope="col" className="py-1 pe-2 font-medium">
+                code
+              </th>
+              <th scope="col" className="py-1 pe-2 font-medium">
+                required action
+              </th>
+              <th scope="col" className="py-1 font-medium">
+                detail
+              </th>
             </tr>
           </thead>
           <tbody>

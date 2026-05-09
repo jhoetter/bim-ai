@@ -74,32 +74,24 @@ function makeDefaultProps(elements: Element[] = [viewpointEl, savedViewEl, sched
 
 describe('ProjectBrowserV3 — CHR-V3-07', () => {
   it('renders Views group header with viewpoint elements', () => {
-    const { getByTestId, getByText } = render(
-      <ProjectBrowserV3 {...makeDefaultProps()} />,
-    );
+    const { getByTestId, getByText } = render(<ProjectBrowserV3 {...makeDefaultProps()} />);
     expect(getByTestId('pb-group-Views')).toBeTruthy();
     expect(getByText('3D Overview')).toBeTruthy();
   });
 
   it('renders saved_view rows inside the Views group', () => {
-    const { getByText } = render(
-      <ProjectBrowserV3 {...makeDefaultProps()} />,
-    );
+    const { getByText } = render(<ProjectBrowserV3 {...makeDefaultProps()} />);
     expect(getByText('Kitchen Detail')).toBeTruthy();
   });
 
   it('renders Schedules group with schedule elements', () => {
-    const { getByTestId, getByText } = render(
-      <ProjectBrowserV3 {...makeDefaultProps()} />,
-    );
+    const { getByTestId, getByText } = render(<ProjectBrowserV3 {...makeDefaultProps()} />);
     expect(getByTestId('pb-group-Schedules')).toBeTruthy();
     expect(getByText('Door Schedule')).toBeTruthy();
   });
 
   it('search filter shows only matching rows', () => {
-    const { getByLabelText, queryByText } = render(
-      <ProjectBrowserV3 {...makeDefaultProps()} />,
-    );
+    const { getByLabelText, queryByText } = render(<ProjectBrowserV3 {...makeDefaultProps()} />);
     const input = getByLabelText('Search project browser') as HTMLInputElement;
     fireEvent.change(input, { target: { value: 'overview' } });
     expect(queryByText('3D Overview')).not.toBeNull();
@@ -108,9 +100,7 @@ describe('ProjectBrowserV3 — CHR-V3-07', () => {
   });
 
   it('clearing search restores all rows', () => {
-    const { getByLabelText, queryByText } = render(
-      <ProjectBrowserV3 {...makeDefaultProps()} />,
-    );
+    const { getByLabelText, queryByText } = render(<ProjectBrowserV3 {...makeDefaultProps()} />);
     const input = getByLabelText('Search project browser') as HTMLInputElement;
     fireEvent.change(input, { target: { value: 'overview' } });
     fireEvent.change(input, { target: { value: '' } });
@@ -120,9 +110,7 @@ describe('ProjectBrowserV3 — CHR-V3-07', () => {
   });
 
   it('right-click on view row opens context menu', () => {
-    const { getByTestId, queryByTestId } = render(
-      <ProjectBrowserV3 {...makeDefaultProps()} />,
-    );
+    const { getByTestId, queryByTestId } = render(<ProjectBrowserV3 {...makeDefaultProps()} />);
     expect(queryByTestId('pb-context-menu')).toBeNull();
     const row = getByTestId('pb-view-row-vp-01').querySelector('button') as HTMLElement;
     fireEvent.contextMenu(row, { clientX: 100, clientY: 200 });
@@ -173,14 +161,22 @@ describe('ProjectBrowserV3 — CHR-V3-07', () => {
       kind: 'viewpoint',
       id: 'vp-a',
       name: 'Alpha',
-      camera: { position: { x: 0, y: 0, z: 0 }, target: { x: 0, y: 0, z: 0 }, up: { x: 0, y: 1, z: 0 } },
+      camera: {
+        position: { x: 0, y: 0, z: 0 },
+        target: { x: 0, y: 0, z: 0 },
+        up: { x: 0, y: 1, z: 0 },
+      },
       mode: 'orbit_3d',
     };
     const el2: Element = {
       kind: 'viewpoint',
       id: 'vp-b',
       name: 'Beta',
-      camera: { position: { x: 0, y: 0, z: 0 }, target: { x: 0, y: 0, z: 0 }, up: { x: 0, y: 1, z: 0 } },
+      camera: {
+        position: { x: 0, y: 0, z: 0 },
+        target: { x: 0, y: 0, z: 0 },
+        up: { x: 0, y: 1, z: 0 },
+      },
       mode: 'orbit_3d',
     };
     const props = makeDefaultProps([el1, el2]);

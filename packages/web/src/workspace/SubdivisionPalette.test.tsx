@@ -30,11 +30,7 @@ function renderPalette(
   const onCancel = props.onCancel ?? vi.fn();
   const activeCategory = props.activeCategory ?? 'paving';
   return render(
-    <SubdivisionPalette
-      activeCategory={activeCategory}
-      onSelect={onSelect}
-      onCancel={onCancel}
-    />,
+    <SubdivisionPalette activeCategory={activeCategory} onSelect={onSelect} onCancel={onCancel} />,
   );
 }
 

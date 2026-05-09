@@ -8,25 +8,25 @@
 
 # 12-step refinement reliability fixture
 # Each step: a command bundle + expected invariants
-schema_version: "tst-v3.0"
-model_id: "test-model-refinement"
+schema_version: 'tst-v3.0'
+model_id: 'test-model-refinement'
 steps:
   - step: 1
-    description: "Create base wall"
+    description: 'Create base wall'
     bundle:
       commands:
         - type: create_wall
           id: wall-1
-          startMm: {xMm: 0, yMm: 0}
-          endMm: {xMm: 5000, yMm: 0}
+          startMm: { xMm: 0, yMm: 0 }
+          endMm: { xMm: 5000, yMm: 0 }
           heightMm: 2800
           wallTypeId: wt-default
     invariants:
       element_count_gte: 1
-      element_kinds_include: ["wall"]
+      element_kinds_include: ['wall']
 
   - step: 2
-    description: "Add door"
+    description: 'Add door'
     bundle:
       commands:
         - type: create_door
@@ -37,60 +37,60 @@ steps:
           heightMm: 2100
     invariants:
       element_count_gte: 2
-      element_kinds_include: ["door"]
+      element_kinds_include: ['door']
 
   - step: 3
-    description: "Add second wall"
+    description: 'Add second wall'
     bundle:
       commands:
         - type: create_wall
           id: wall-2
-          startMm: {xMm: 5000, yMm: 0}
-          endMm: {xMm: 5000, yMm: 4000}
+          startMm: { xMm: 5000, yMm: 0 }
+          endMm: { xMm: 5000, yMm: 4000 }
           heightMm: 2800
           wallTypeId: wt-default
     invariants:
       element_count_gte: 3
 
   - step: 4
-    description: "Add floor"
+    description: 'Add floor'
     bundle:
       commands:
         - type: create_floor
           id: floor-1
           boundaryMm:
-            - {xMm: 0, yMm: 0}
-            - {xMm: 5000, yMm: 0}
-            - {xMm: 5000, yMm: 4000}
-            - {xMm: 0, yMm: 4000}
+            - { xMm: 0, yMm: 0 }
+            - { xMm: 5000, yMm: 0 }
+            - { xMm: 5000, yMm: 4000 }
+            - { xMm: 0, yMm: 4000 }
           floorTypeId: ft-default
           levelId: level-0
     invariants:
-      element_kinds_include: ["floor"]
+      element_kinds_include: ['floor']
 
   - step: 5
-    description: "Add level"
+    description: 'Add level'
     bundle:
       commands:
         - type: create_level
           id: level-1
-          name: "Level 2"
+          name: 'Level 2'
           elevationMm: 3000
     invariants:
-      element_kinds_include: ["level"]
+      element_kinds_include: ['level']
 
   - step: 6
-    description: "Update wall height"
+    description: 'Update wall height'
     bundle:
       commands:
         - type: update_wall
           id: wall-1
           heightMm: 3000
     invariants:
-      element_kinds_include: ["wall"]
+      element_kinds_include: ['wall']
 
   - step: 7
-    description: "Add window"
+    description: 'Add window'
     bundle:
       commands:
         - type: create_window
@@ -101,61 +101,61 @@ steps:
           heightMm: 1000
           sillHeightMm: 900
     invariants:
-      element_kinds_include: ["window"]
+      element_kinds_include: ['window']
 
   - step: 8
-    description: "Add room"
+    description: 'Add room'
     bundle:
       commands:
         - type: create_room
           id: room-1
-          name: "Living Room"
+          name: 'Living Room'
           levelId: level-0
           boundaryMm:
-            - {xMm: 100, yMm: 100}
-            - {xMm: 4900, yMm: 100}
-            - {xMm: 4900, yMm: 3900}
-            - {xMm: 100, yMm: 3900}
+            - { xMm: 100, yMm: 100 }
+            - { xMm: 4900, yMm: 100 }
+            - { xMm: 4900, yMm: 3900 }
+            - { xMm: 100, yMm: 3900 }
     invariants:
-      element_kinds_include: ["room"]
+      element_kinds_include: ['room']
 
   - step: 9
-    description: "Create design option"
+    description: 'Create design option'
     bundle:
       commands:
         - type: create_design_option
           id: opt-1
-          name: "Option A"
+          name: 'Option A'
     invariants:
       element_count_gte: 8
 
   - step: 10
-    description: "Add assumption log entry"
+    description: 'Add assumption log entry'
     bundle:
       commands:
         - type: log_assumption
-          assumption: "Door width matches typical residential standard"
+          assumption: 'Door width matches typical residential standard'
           confidence: 0.9
-          source: "agent"
+          source: 'agent'
     invariants:
       assumption_log_count_gte: 1
 
   - step: 11
-    description: "Add grid line"
+    description: 'Add grid line'
     bundle:
       commands:
         - type: create_grid_line
           id: grid-1
-          name: "A"
-          startMm: {xMm: 0, yMm: -500}
-          endMm: {xMm: 0, yMm: 4500}
+          name: 'A'
+          startMm: { xMm: 0, yMm: -500 }
+          endMm: { xMm: 0, yMm: 4500 }
     invariants:
-      element_kinds_include: ["grid_line"]
+      element_kinds_include: ['grid_line']
 
   - step: 12
-    description: "Final: tokenise round-trip"
+    description: 'Final: tokenise round-trip'
     bundle:
-      commands: []  # no-op — just verify state is stable
+      commands: [] # no-op — just verify state is stable
     invariants:
       element_count_gte: 9
       no_divergence: true
