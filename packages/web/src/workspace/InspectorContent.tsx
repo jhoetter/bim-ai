@@ -816,6 +816,21 @@ export function InspectorPlanViewEditor({
       </label>
 
       <label className={LABEL_CLS}>
+        <span>Discipline</span>
+        <select
+          className={INPUT_CLS}
+          value={el.discipline ?? ''}
+          onChange={(e) => onPersistProperty('discipline', e.target.value)}
+          data-testid="inspector-plan-view-discipline"
+        >
+          <option value="">(Default)</option>
+          <option value="arch">Architecture</option>
+          <option value="struct">Structural</option>
+          <option value="mep">MEP</option>
+        </select>
+      </label>
+
+      <label className={LABEL_CLS}>
         <span>Room Labels</span>
         <input
           type="checkbox"
