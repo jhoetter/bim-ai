@@ -80,7 +80,7 @@ Source segment: `00:00:00 – 00:32:00`
 **Screenshot:**
 ![Language Settings](file:///Users/jhoetter/Desktop/Revit%20Specs/0175_00-24-47.png)
 
-**bim-ai status:** 🟡 Partial — bim-ai has full i18n support with English and German translations (`packages/web/src/i18n.ts`). Language persists via `localStorage` and is togglable via the command palette (`settings.language.toggle`). Missing: a visible language selector in Settings UI (not command palette), and additional language options beyond en/de.
+**bim-ai status:** ✅ Available — bim-ai has full i18n support with English and German translations (`packages/web/src/i18n.ts`). Language persists via `localStorage` (`bim-ai:lang`) and is togglable via: (a) the `EN`/`DE` toggle button in `TopBar.tsx` (`data-testid="topbar-language-toggle"`) — visible at all times in the top bar — and (b) the command palette (`settings.language.toggle`). Missing: additional language options beyond en/de.
 
 ---
 

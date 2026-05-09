@@ -309,7 +309,7 @@ function TopBarRight({
   /** MRK-V3-03: pre-rendered SourceViewChip node (null when not in sheet view). */
   sourceViewChip?: JSX.Element | null;
 }): JSX.Element {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const showSelects =
     (perspectiveOptions && perspectiveOptions.length > 0) ||
     (planStyleOptions && planStyleOptions.length > 0);
@@ -392,6 +392,19 @@ function TopBarRight({
         badge={collaboratorsCount}
       />
       <IconButton Icon={Icons.settings} label={IconLabels.settings} onClick={onSettings} />
+      <button
+        type="button"
+        data-testid="topbar-language-toggle"
+        title={`Switch language (current: ${i18n.language.toUpperCase()})`}
+        onClick={() => {
+          const next = i18n.language === 'de' ? 'en' : 'de';
+          void i18n.changeLanguage(next);
+          localStorage.setItem('bim-ai:lang', next);
+        }}
+        className="relative inline-flex h-8 w-8 items-center justify-center rounded-md text-xs font-semibold text-muted transition-colors hover:bg-surface hover:text-foreground"
+      >
+        {i18n.language.toUpperCase()}
+      </button>
       <IconButton
         Icon={theme === 'dark' ? Icons.themeLight : Icons.themeDark}
         label={theme === 'dark' ? IconLabels.themeLight : IconLabels.themeDark}
