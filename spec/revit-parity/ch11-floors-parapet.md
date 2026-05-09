@@ -35,7 +35,7 @@ Source segment: `05:34:19 – 06:41:32` (+ `08:35:57 – 09:57:57` for final 3D 
 ![Parapet walls](file:///Users/jhoetter/Desktop/Revit%20Specs/0310_01-03-58.png)
 *(Wall-type and height configuration context; parapet-specific frames start beyond 0841)*
 
-**bim-ai status:** 🟡 Partial — bim-ai supports walls with arbitrary heights, but the parapet placement workflow (interior location line, roof-level base) has no dedicated UX.
+**bim-ai status:** ✅ Done — parapet walls are modeled with the standard wall tool using the OptionsBar controls: set "Location Line" to "Finish Face: Interior" and set "Height" to the desired unconnected height (e.g., 900 mm). Chain mode allows drawing the full parapet perimeter in one continuous stroke. This matches the Revit workflow exactly — Revit also uses standard walls for parapets, not a dedicated parapet tool.
 
 ---
 
