@@ -1,0 +1,31 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "4601dc97f65d",
+  "strategy": "manual-commit",
+  "branch": "feat/parity-readme-sync",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/ErrorBoundary.tsx",
+    "packages/web/src/collab/PublicLinkBanner.tsx",
+    "packages/web/src/collab/ShareModal.tsx",
+    "packages/web/src/plan/ImageTraceDropZone.tsx",
+    "packages/web/src/workspace/ParticipantStrip.tsx",
+    "packages/web/src/workspace/ProjectBrowser.tsx",
+    "packages/web/src/workspace/SubdivisionPalette.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/46/01dc97f65d/0/metadata.json",
+      "transcript": "/46/01dc97f65d/0/full.jsonl",
+      "content_hash": "/46/01dc97f65d/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 0
+  }
+}
