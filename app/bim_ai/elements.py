@@ -96,6 +96,14 @@ class ProjectSettingsElem(BaseModel):
     angular_unit_deg: str = Field(default="degree", alias="angularUnitDeg")
 
     display_locale: str = Field(default="en-US", alias="displayLocale")
+    room_area_computation_basis: str = Field(
+        default="wall_finish",
+        alias="roomAreaComputationBasis",
+    )
+    volume_computed_at: str = Field(
+        default="finish_faces",
+        alias="volumeComputedAt",
+    )
 
 
 class RoomColorSchemeRow(BaseModel):
