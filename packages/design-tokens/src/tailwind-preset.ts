@@ -39,7 +39,10 @@ export const bimAIPreset = {
           soft: 'var(--color-accent-soft)',
         },
         success: 'var(--color-success)',
-        warning: 'var(--color-warning)',
+        warning: {
+          DEFAULT: 'var(--color-warning)',
+          foreground: 'var(--color-warning-foreground)',
+        },
         danger: 'var(--color-danger)',
         info: 'var(--color-info)',
 

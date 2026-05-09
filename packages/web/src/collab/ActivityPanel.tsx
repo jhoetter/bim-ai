@@ -219,6 +219,7 @@ export function ActivityPanel({ modelId, selfId = null, onRestored }: ActivityPa
               type="button"
               onClick={() => void fetchMore(modelId, oldest.ts)}
               disabled={loading}
+              aria-busy={loading}
               style={{
                 width: '100%',
                 padding: '4px 0',

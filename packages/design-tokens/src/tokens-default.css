@@ -24,6 +24,7 @@
   --color-accent-soft: color-mix(in srgb, hsl(214 88% 50%) 12%, hsl(0 0% 100%));
   --color-success: hsl(150 56% 38%);
   --color-warning: hsl(38 92% 50%);
+  --color-warning-foreground: hsl(38 15% 15%);
   --color-danger: hsl(0 72% 50%);
   --color-info: hsl(213 86% 56%);
   --color-ring: color-mix(in srgb, hsl(214 88% 50%) 38%, transparent);

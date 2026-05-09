@@ -88,7 +88,7 @@ export function EmptyStateOverlay({
           </button>
         ) : null}
         {ctaError ? (
-          <div className="text-xs text-danger" data-testid="canvas-empty-error">
+          <div role="alert" className="text-xs text-danger" data-testid="canvas-empty-error">
             {ctaError}
           </div>
         ) : null}

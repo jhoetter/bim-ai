@@ -546,6 +546,7 @@ export function ManageLinksDialog({
               <button
                 type="button"
                 disabled={pending}
+                aria-busy={pending}
                 onClick={() => void submitAdd()}
                 data-testid="manage-links-add"
                 className="rounded border border-border bg-surface-strong px-3 py-1 text-xs hover:bg-surface disabled:opacity-50"

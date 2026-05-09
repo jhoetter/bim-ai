@@ -399,8 +399,12 @@ export function SheetDocumentationManifest(props: {
         <table className="mt-1 w-full border-collapse border border-border font-mono text-[10px]">
           <thead>
             <tr className="bg-muted/30">
-              <th className="border border-border px-1 py-0.5 text-left">key</th>
-              <th className="border border-border px-1 py-0.5 text-left">value</th>
+              <th scope="col" className="border border-border px-1 py-0.5 text-left">
+                key
+              </th>
+              <th scope="col" className="border border-border px-1 py-0.5 text-left">
+                value
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -456,18 +460,40 @@ export function SheetDocumentationManifest(props: {
           <table className="min-w-[960px] border-collapse border border-border font-mono text-[10px]">
             <thead>
               <tr className="bg-muted/30">
-                <th className="border border-border px-1 py-0.5 text-left">viewportId</th>
-                <th className="border border-border px-1 py-0.5 text-left">role</th>
-                <th className="border border-border px-1 py-0.5 text-left">label</th>
-                <th className="border border-border px-1 py-0.5 text-left">viewRef (normalized)</th>
-                <th className="border border-border px-1 py-0.5 text-left">kind</th>
-                <th className="border border-border px-1 py-0.5 text-left">detail #</th>
-                <th className="border border-border px-1 py-0.5 text-left">scale</th>
-                <th className="border border-border px-1 py-0.5 text-left">locked</th>
-                <th className="border border-border px-1 py-0.5 text-left">sheet box (mm)</th>
-                <th className="border border-border px-1 py-0.5 text-left">crop extents (mm)</th>
-                <th className="border border-border px-1 py-0.5 text-left">resolved title</th>
-                <th className="border border-border px-1 py-0.5 text-left">
+                <th scope="col" className="border border-border px-1 py-0.5 text-left">
+                  viewportId
+                </th>
+                <th scope="col" className="border border-border px-1 py-0.5 text-left">
+                  role
+                </th>
+                <th scope="col" className="border border-border px-1 py-0.5 text-left">
+                  label
+                </th>
+                <th scope="col" className="border border-border px-1 py-0.5 text-left">
+                  viewRef (normalized)
+                </th>
+                <th scope="col" className="border border-border px-1 py-0.5 text-left">
+                  kind
+                </th>
+                <th scope="col" className="border border-border px-1 py-0.5 text-left">
+                  detail #
+                </th>
+                <th scope="col" className="border border-border px-1 py-0.5 text-left">
+                  scale
+                </th>
+                <th scope="col" className="border border-border px-1 py-0.5 text-left">
+                  locked
+                </th>
+                <th scope="col" className="border border-border px-1 py-0.5 text-left">
+                  sheet box (mm)
+                </th>
+                <th scope="col" className="border border-border px-1 py-0.5 text-left">
+                  crop extents (mm)
+                </th>
+                <th scope="col" className="border border-border px-1 py-0.5 text-left">
+                  resolved title
+                </th>
+                <th scope="col" className="border border-border px-1 py-0.5 text-left">
                   listing / projection evidence
                 </th>
               </tr>
@@ -635,30 +661,42 @@ export function SheetDocumentationManifest(props: {
             <table className="min-w-[1100px] border-collapse border border-border font-mono text-[10px]">
               <thead>
                 <tr className="bg-muted/30">
-                  <th className="border border-border px-1 py-0.5 text-left">viewportId</th>
-                  <th className="border border-border px-1 py-0.5 text-left">viewportRole</th>
-                  <th className="border border-border px-1 py-0.5 text-left">parentSheetId</th>
-                  <th className="border border-border px-1 py-0.5 text-left">parentSheetName</th>
-                  <th className="border border-border px-1 py-0.5 text-left">
+                  <th scope="col" className="border border-border px-1 py-0.5 text-left">
+                    viewportId
+                  </th>
+                  <th scope="col" className="border border-border px-1 py-0.5 text-left">
+                    viewportRole
+                  </th>
+                  <th scope="col" className="border border-border px-1 py-0.5 text-left">
+                    parentSheetId
+                  </th>
+                  <th scope="col" className="border border-border px-1 py-0.5 text-left">
+                    parentSheetName
+                  </th>
+                  <th scope="col" className="border border-border px-1 py-0.5 text-left">
                     referencedViewRefRaw
                   </th>
-                  <th className="border border-border px-1 py-0.5 text-left">
+                  <th scope="col" className="border border-border px-1 py-0.5 text-left">
                     referencedViewRefNormalized
                   </th>
-                  <th className="border border-border px-1 py-0.5 text-left">
+                  <th scope="col" className="border border-border px-1 py-0.5 text-left">
                     referencedTargetKind
                   </th>
-                  <th className="border border-border px-1 py-0.5 text-left">referencedTargetId</th>
-                  <th className="border border-border px-1 py-0.5 text-left">
+                  <th scope="col" className="border border-border px-1 py-0.5 text-left">
+                    referencedTargetId
+                  </th>
+                  <th scope="col" className="border border-border px-1 py-0.5 text-left">
                     resolvedTargetTitle
                   </th>
-                  <th className="border border-border px-1 py-0.5 text-left">
+                  <th scope="col" className="border border-border px-1 py-0.5 text-left">
                     placeholderDetailNumber
                   </th>
-                  <th className="border border-border px-1 py-0.5 text-left">
+                  <th scope="col" className="border border-border px-1 py-0.5 text-left">
                     placeholderDetailTitle
                   </th>
-                  <th className="border border-border px-1 py-0.5 text-left">unresolvedReason</th>
+                  <th scope="col" className="border border-border px-1 py-0.5 text-left">
+                    unresolvedReason
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -732,20 +770,28 @@ export function SheetDocumentationManifest(props: {
             <table className="min-w-[1100px] border-collapse border border-border font-mono text-[10px]">
               <thead>
                 <tr className="bg-muted/30">
-                  <th className="border border-border px-1 py-0.5 text-left">viewportId</th>
-                  <th className="border border-border px-1 py-0.5 text-left">sectionViewId</th>
-                  <th className="border border-border px-1 py-0.5 text-left">cutLinePresent</th>
-                  <th className="border border-border px-1 py-0.5 text-left">
+                  <th scope="col" className="border border-border px-1 py-0.5 text-left">
+                    viewportId
+                  </th>
+                  <th scope="col" className="border border-border px-1 py-0.5 text-left">
+                    sectionViewId
+                  </th>
+                  <th scope="col" className="border border-border px-1 py-0.5 text-left">
+                    cutLinePresent
+                  </th>
+                  <th scope="col" className="border border-border px-1 py-0.5 text-left">
                     cutLineDigest (prefix12)
                   </th>
-                  <th className="border border-border px-1 py-0.5 text-left">
+                  <th scope="col" className="border border-border px-1 py-0.5 text-left">
                     sectionProfileToken
                   </th>
-                  <th className="border border-border px-1 py-0.5 text-left">listingSegment</th>
-                  <th className="border border-border px-1 py-0.5 text-left">
+                  <th scope="col" className="border border-border px-1 py-0.5 text-left">
+                    listingSegment
+                  </th>
+                  <th scope="col" className="border border-border px-1 py-0.5 text-left">
                     listingSegmentDigest (prefix12)
                   </th>
-                  <th className="border border-border px-1 py-0.5 text-left">
+                  <th scope="col" className="border border-border px-1 py-0.5 text-left">
                     sheetRevIssDocCrossRef
                   </th>
                 </tr>

@@ -316,6 +316,7 @@ export function SharePresentationModal({ modelId, open, onClose, pages = [] }: P
           type="button"
           onClick={handleCopyLink}
           disabled={loading}
+          aria-busy={loading}
           style={{
             width: '100%',
             padding: '10px 16px',
@@ -373,6 +374,7 @@ export function SharePresentationModal({ modelId, open, onClose, pages = [] }: P
                   type="button"
                   onClick={() => handleRevoke(p.id)}
                   disabled={loading}
+                  aria-busy={loading}
                   style={{
                     fontSize: 'var(--text-sm)',
                     color: 'var(--color-destructive)',

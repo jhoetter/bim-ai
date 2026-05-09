@@ -229,11 +229,21 @@ export function MaterialLayerStackWorkbench({
           <table className="w-full border-collapse text-left text-[10px]">
             <thead>
               <tr className="border-border border-b bg-muted/40">
-                <th className="p-1.5 font-medium">#</th>
-                <th className="p-1.5 font-medium">Role</th>
-                <th className="p-1.5 font-medium">Material</th>
-                <th className="p-1.5 font-medium">Display</th>
-                <th className="p-1.5 font-medium text-right">mm</th>
+                <th scope="col" className="p-1.5 font-medium">
+                  #
+                </th>
+                <th scope="col" className="p-1.5 font-medium">
+                  Role
+                </th>
+                <th scope="col" className="p-1.5 font-medium">
+                  Material
+                </th>
+                <th scope="col" className="p-1.5 font-medium">
+                  Display
+                </th>
+                <th scope="col" className="p-1.5 font-medium text-right">
+                  mm
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -283,7 +293,11 @@ export function MaterialLayerStackWorkbench({
           >
             Apply type stack
           </button>
-          {applyError ? <div className="text-[10px] text-destructive">{applyError}</div> : null}
+          {applyError ? (
+            <div role="alert" className="text-[10px] text-destructive">
+              {applyError}
+            </div>
+          ) : null}
         </div>
       ) : null}
 

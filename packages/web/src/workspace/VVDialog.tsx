@@ -639,7 +639,9 @@ export function VVDialog({
                   >
                     Category
                   </th>
-                  <th style={{ padding: '6px 8px', fontSize: 11, fontWeight: 600 }}>Visible</th>
+                  <th scope="col" style={{ padding: '6px 8px', fontSize: 11, fontWeight: 600 }}>
+                    Visible
+                  </th>
                   <th
                     colSpan={3}
                     style={{
@@ -664,11 +666,11 @@ export function VVDialog({
                   >
                     Cut
                   </th>
-                  <th style={{ padding: '6px 8px', fontSize: 11, fontWeight: 600 }} />
+                  <th scope="col" style={{ padding: '6px 8px', fontSize: 11, fontWeight: 600 }} />
                 </tr>
                 <tr style={{ background: 'var(--color-background)' }}>
-                  <th style={{ padding: '4px 8px' }} />
-                  <th style={{ padding: '4px 8px' }} />
+                  <th scope="col" style={{ padding: '4px 8px' }} />
+                  <th scope="col" style={{ padding: '4px 8px' }} />
                   <th
                     style={{
                       padding: '4px 8px',
@@ -679,8 +681,12 @@ export function VVDialog({
                   >
                     Color
                   </th>
-                  <th style={{ padding: '4px 8px', fontSize: 10, fontWeight: 500 }}>Weight</th>
-                  <th style={{ padding: '4px 8px', fontSize: 10, fontWeight: 500 }}>Pattern</th>
+                  <th scope="col" style={{ padding: '4px 8px', fontSize: 10, fontWeight: 500 }}>
+                    Weight
+                  </th>
+                  <th scope="col" style={{ padding: '4px 8px', fontSize: 10, fontWeight: 500 }}>
+                    Pattern
+                  </th>
                   <th
                     style={{
                       padding: '4px 8px',
@@ -691,9 +697,15 @@ export function VVDialog({
                   >
                     Color
                   </th>
-                  <th style={{ padding: '4px 8px', fontSize: 10, fontWeight: 500 }}>Weight</th>
-                  <th style={{ padding: '4px 8px', fontSize: 10, fontWeight: 500 }}>Pattern</th>
-                  <th style={{ padding: '4px 8px', fontSize: 11, fontWeight: 500 }}>Halftone</th>
+                  <th scope="col" style={{ padding: '4px 8px', fontSize: 10, fontWeight: 500 }}>
+                    Weight
+                  </th>
+                  <th scope="col" style={{ padding: '4px 8px', fontSize: 10, fontWeight: 500 }}>
+                    Pattern
+                  </th>
+                  <th scope="col" style={{ padding: '4px 8px', fontSize: 11, fontWeight: 500 }}>
+                    Halftone
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -821,13 +833,22 @@ function LinksTabBody({
     >
       <thead>
         <tr style={{ background: 'var(--color-background)' }}>
-          <th style={{ padding: '6px 8px', textAlign: 'left', fontSize: 11, fontWeight: 600 }}>
+          <th
+            scope="col"
+            style={{ padding: '6px 8px', textAlign: 'left', fontSize: 11, fontWeight: 600 }}
+          >
             Link
           </th>
-          <th style={{ padding: '6px 8px', textAlign: 'left', fontSize: 11, fontWeight: 600 }}>
+          <th
+            scope="col"
+            style={{ padding: '6px 8px', textAlign: 'left', fontSize: 11, fontWeight: 600 }}
+          >
             Visibility mode
           </th>
-          <th style={{ padding: '6px 8px', textAlign: 'center', fontSize: 11, fontWeight: 600 }}>
+          <th
+            scope="col"
+            style={{ padding: '6px 8px', textAlign: 'center', fontSize: 11, fontWeight: 600 }}
+          >
             Visible
           </th>
         </tr>
