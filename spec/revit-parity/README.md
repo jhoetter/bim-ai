@@ -63,10 +63,10 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-014 | Reveal Hidden Elements mode                          | UI & Nav       | 🟡            | 💡 toggle in plan canvas footer + magenta chip; missing per-element highlight and right-click Unhide                 |
 | F-015 | Link CAD (DWG/DXF) — live reference                 | CAD            | 🟡            | DXF import backend implemented; frontend file-picker stubbed; no live reload                                         |
 | F-016 | Import CAD (embedded)                                | CAD            | 🟡            | Same backend as F-015; linked vs. embedded distinction not present; frontend stubbed                                  |
-| F-017 | CAD Link Options (Colors/Layers/Units/Positioning)   | CAD            | ❌            | No layer/color/positioning filter UI                                                                                 |
+| F-017 | CAD Link Options (Colors/Layers/Units/Positioning)   | CAD            | 🟡            | ManageLinksDialog DXF Links section: per-link opacity slider (0–100%) and color mode toggle (B&W / Custom hex); missing layer visibility filtering, "Preserve original colors", and unit/positioning controls at import time |
 | F-018 | Pin / Unpin linked files                             | CAD            | 🟡            | ManageLinksDialog has revision pinning with drift badge + Update button; no spatial position lock                    |
 | F-019 | Query tool for DWG layer visibility                  | CAD            | ❌            | DXF layer metadata not preserved; no per-layer visibility UI                                                         |
-| F-020 | Halftone / transparency for imported files (VG)      | CAD            | 🟡            | DXF underlays hardcoded at 50% opacity; no per-link opacity slider in VG                                             |
+| F-020 | Halftone / transparency for imported files (VG)      | CAD            | 🟡            | Per-link opacity now configurable (0–100%) via ManageLinksDialog; missing per-view opacity override in VVDialog and full-opacity (non-halftone) mode as a dropdown choice within VV |
 | F-021 | Align CAD with Project Base Point                    | CAD            | 🟡            | ManageLinksDialog has origin/project base point/shared coords for link_model; missing for link_dxf                   |
 | F-022 | Project Base Point & Survey Point                    | CAD            | 🟡            | First-class elements in core; 3D markers rendered; missing plan 2D annotation and Clip/Unclip toggle                 |
 | F-023 | Work Plane assignment for linked elements            | CAD            | ❌            |                                                                                                                      |
@@ -179,8 +179,8 @@ _Last audited: 2026-05-09 against codebase at commit `docs/parity-tracker-audit`
 | Status                 | Count   | % of total |
 | ---------------------- | ------- | ---------- |
 | ✅ Fully available     | 23      | 19%        |
-| 🟡 Partially available | 36      | 30%        |
-| ❌ Not available       | 61      | 51%        |
+| 🟡 Partially available | 37      | 31%        |
+| ❌ Not available       | 60      | 50%        |
 | **Total**              | **120** | **100%**   |
 
 ---
