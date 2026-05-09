@@ -31,7 +31,7 @@ help:
 
 install:
 	$(PNPM) install
-	cd $(APP_DIR) && uv venv .venv && uv sync --frozen
+	cd $(APP_DIR) && uv venv --clear .venv && uv sync --frozen
 
 lockfile-check:
 	cd $(APP_DIR) && uv lock --check
