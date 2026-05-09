@@ -8,6 +8,19 @@
  * symbology (`packages/web/src/plan/symbology/*`) and 3D viewport materials.
  */
 
+/* COL-V3-04 — collab participant presence palette.
+ *
+ * Five fixed colours assigned round-robin to participants.
+ * Components MUST use these CSS vars — no hex literals in component code.
+ */
+:root {
+  --collab-color-1: #4f86f7;
+  --collab-color-2: #f74f4f;
+  --collab-color-3: #4ff79a;
+  --collab-color-4: #f7c94f;
+  --collab-color-5: #c44ff7;
+}
+
 /* CAN-V3-02 — hatch pattern scale tokens (paper-mm, theme-independent). */
 :root {
   --hatch-brick-repeat: 73; /* paper-mm */

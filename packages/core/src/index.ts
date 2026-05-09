@@ -2079,6 +2079,7 @@ export type {
   CollabSession,
   InFlightCommand,
   CollabAwarenessState,
+  CollabPresenceState,
 } from './collab';
 export { PARTICIPANT_COLOR_TOKENS, participantColorToken } from './collab';
 
