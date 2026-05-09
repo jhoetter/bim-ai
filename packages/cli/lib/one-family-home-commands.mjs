@@ -450,12 +450,19 @@ export function buildOneFamilyHomeCommands() {
       widthMm: 900,
     },
 
-    // Loggia recess — the left and right wall segments are each fully recessed.
-    // The chimney centre segment (hf-w-uf-s-c) has no recessZone; it protrudes at the facade
-    // line as the "chimney-like volume" (spec §3). Side returns close the chimney box (Phase 6).
+    // Loggia recess — all three south wall segments recessed equally.
+    // The chimney centre (s-c) is ALSO recessed so its face sits at the loggia back plane
+    // (y=LOGGIA_SETBACK), making the chimney read as an interior column visible through
+    // the glass — not a solid protrusion at the facade line.
+    // This also aligns all three balcony slabs to the same y so they form one flat band.
     {
       type: 'setWallRecessZones',
       wallId: 'hf-w-uf-s-l',
+      recessZones: [{ alongTStart: 0.0, alongTEnd: 1.0, setbackMm: LOGGIA_SETBACK, floorContinues: true }],
+    },
+    {
+      type: 'setWallRecessZones',
+      wallId: 'hf-w-uf-s-c',
       recessZones: [{ alongTStart: 0.0, alongTEnd: 1.0, setbackMm: LOGGIA_SETBACK, floorContinues: true }],
     },
     {
@@ -464,17 +471,17 @@ export function buildOneFamilyHomeCommands() {
       recessZones: [{ alongTStart: 0.0, alongTEnd: 1.0, setbackMm: LOGGIA_SETBACK, floorContinues: true }],
     },
 
-    // Left loggia zone — trapezoidal window whose top edge follows the west gable pitch.
-    // hf-w-uf-s-l spans x=0..1500; alongT=0.5 → x=750 mm (wall centre).
+    // Left loggia zone — wide trapezoidal window filling most of the 2000 mm zone.
+    // hf-w-uf-s-l spans x=0..2000; alongT=0.5 → x=1000 mm; 1500 mm wide leaves 250 mm margins.
     {
       type: 'insertWindowOnWall',
       id: 'hf-win-loggia-trap',
       name: 'Loggia left — trapezoidal slope-following window',
       wallId: 'hf-w-uf-s-l',
       alongT: 0.5,
-      widthMm: 900,
-      heightMm: 1400,
-      sillHeightMm: 300,
+      widthMm: 1500,
+      heightMm: 1600,
+      sillHeightMm: 200,
     },
     {
       type: 'updateElementProperty',
@@ -690,22 +697,11 @@ export function buildOneFamilyHomeCommands() {
       heightMm: 5500,
       materialKey: 'white_cladding',
     },
-    {
-      type: 'createWall',
-      id: 'hf-w-chimney-back',
-      name: 'Chimney back wall',
-      levelId: 'hf-lvl-upper',
-      start: { xMm: CHIMNEY_X0, yMm: LOGGIA_SETBACK },
-      end: { xMm: CHIMNEY_X1, yMm: LOGGIA_SETBACK },
-      thicknessMm: WALL_T,
-      heightMm: 5500,
-      materialKey: 'white_cladding',
-    },
-    // Attach chimney return walls and back wall to the gable roof so their tops
-    // are trimmed flush with the gable profile (closes the open corner gaps).
+    // chimney-back wall removed: s-c's recessed back face (at y=LOGGIA_SETBACK) now
+    // provides the south face of the chimney column at the same depth.
+    // Attach chimney return walls to the gable roof.
     { type: 'attachWallTopToRoof', wallId: 'hf-w-chimney-w', roofId: 'hf-roof-main' },
     { type: 'attachWallTopToRoof', wallId: 'hf-w-chimney-e', roofId: 'hf-roof-main' },
-    { type: 'attachWallTopToRoof', wallId: 'hf-w-chimney-back', roofId: 'hf-roof-main' },
 
     // Loggia balcony slabs + balustrades (spec §3 "three thin, continuous black
     // horizontal cables/rails fixed to the inner edge of the white shell").
