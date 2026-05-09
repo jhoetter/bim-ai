@@ -130,7 +130,7 @@ For layered walls this distinction matters significantly — the core can sit 50
 **Screenshot:**
 ![Spacebar flip](file:///Users/jhoetter/Desktop/Revit%20Specs/0360_01-13-01.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** ✅ Available — `PlanCanvas.tsx` handles Space key during wall drawing: when a start anchor is placed (`draftRef.current?.kind === 'wall'`), pressing Space toggles `wallFlipRef` (swapping start/end on commit) and skips the pan action. The flip resets after each wall commit and when the tool is deselected.
 
 ---
 
@@ -152,7 +152,7 @@ For layered walls this distinction matters significantly — the core can sit 50
 **Screenshot:**
 ![Wall Type Rename](file:///Users/jhoetter/Desktop/Revit%20Specs/0328_01-06-32.png)
 
-**bim-ai status:** ❌ Not available — bim-ai has no type-rename flow in the UI.
+**bim-ai status:** ✅ Available — `WorkspaceLeftRail.tsx` wires `onRowRename` on `<LeftRail>`: pressing F2 on a focused wall_type, floor_type, or roof_type row opens a centered overlay with an auto-focused input. Enter/blur commits via `updateElementProperty { key: 'name' }`; Escape cancels.
 
 ---
 
