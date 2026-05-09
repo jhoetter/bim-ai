@@ -37,7 +37,7 @@ export function CommandBar({ expanded, onExpandedChange, onSubmit }: Props) {
           aria-label="Command bar"
           placeholder="Try: room rect 4500×3200 · or paste JSON commands"
           autoFocus
-          className="w-full rounded border border-border bg-background px-2 py-1 font-mono text-xs outline-none"
+          className="w-full rounded border border-border bg-background px-2 py-1 font-mono text-xs outline-none focus:border-accent focus:ring-1 focus:ring-accent/30"
           onKeyDown={onKD}
         />
       )}

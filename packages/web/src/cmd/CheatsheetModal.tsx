@@ -89,7 +89,7 @@ export function CheatsheetModal({ open, onClose }: CheatsheetModalProps): JSX.El
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             autoFocus
-            className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground outline-none placeholder:text-muted"
+            className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 placeholder:text-muted"
           />
         </div>
         <div className="flex-1 overflow-y-auto px-4 py-3">

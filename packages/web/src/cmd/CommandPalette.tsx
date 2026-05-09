@@ -71,7 +71,7 @@ export function CommandPalette({
           shouldFilter={false}
           className="flex flex-1 flex-col"
         >
-          <div className="flex items-center gap-2 border-b border-border px-3 py-2">
+          <div className="flex items-center gap-2 border-b border-border px-3 py-2 focus-within:ring-1 focus-within:ring-accent/40 focus-within:ring-inset">
             <Icons.commandPalette
               size={ICON_SIZE.toolPalette}
               aria-hidden="true"
