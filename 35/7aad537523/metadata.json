@@ -4,7 +4,9 @@
   "strategy": "manual-commit",
   "branch": "main",
   "checkpoints_count": 2,
-  "files_touched": null,
+  "files_touched": [
+    "packages/cli/lib/one-family-home-commands.mjs"
+  ],
   "sessions": [
     {
       "metadata": "/35/7aad537523/0/metadata.json",
@@ -23,13 +25,19 @@
       "transcript": "/35/7aad537523/2/full.jsonl",
       "content_hash": "/35/7aad537523/2/content_hash.txt",
       "prompt": "/35/7aad537523/2/prompt.txt"
+    },
+    {
+      "metadata": "/35/7aad537523/3/metadata.json",
+      "transcript": "/35/7aad537523/3/full.jsonl",
+      "content_hash": "/35/7aad537523/3/content_hash.txt",
+      "prompt": "/35/7aad537523/3/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 8195,
-    "cache_creation_tokens": 4959898,
-    "cache_read_tokens": 290851507,
-    "output_tokens": 1567674,
-    "api_call_count": 2947
+    "input_tokens": 8210,
+    "cache_creation_tokens": 4996227,
+    "cache_read_tokens": 291873618,
+    "output_tokens": 1595775,
+    "api_call_count": 2956
   }
 }
