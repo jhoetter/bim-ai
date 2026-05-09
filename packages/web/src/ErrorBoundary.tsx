@@ -33,11 +33,11 @@ export class ErrorBoundary extends Component<Props, State> {
             justifyContent: 'center',
             height: '100%',
             padding: '2rem',
-            color: 'var(--color-text-secondary, #888)',
+            color: 'var(--color-muted-foreground)',
             fontSize: '0.85rem',
           }}
         >
-          <p style={{ fontWeight: 600, color: 'var(--color-error, #e55)' }}>
+          <p style={{ fontWeight: 600, color: 'var(--color-danger)' }}>
             Something went wrong in {this.props.label ?? 'this panel'}.
           </p>
           <p

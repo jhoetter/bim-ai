@@ -91,7 +91,7 @@ function ParticipantAvatar({
     flexShrink: 0,
     opacity: isOnline ? 1 : 0.5,
     boxSizing: 'border-box',
-    outline: isLocal ? 'var(--outline-width-2, 2px) solid var(--color-accent)' : 'none',
+    outline: isLocal ? '2px solid var(--color-accent)' : 'none',
     outlineOffset: isLocal ? '1px' : '0',
   };
 
@@ -119,7 +119,7 @@ const onlineDotStyle: CSSProperties = {
   height: 7,
   borderRadius: 'var(--radius-pill)',
   background: 'var(--color-success)',
-  border: 'var(--outline-width-2, 2px) solid var(--color-background)',
+  border: '2px solid var(--color-background)',
 };
 
 function OverflowChip({ count }: { count: number }): JSX.Element {
@@ -139,7 +139,7 @@ const overflowChipStyle: CSSProperties = {
   height: AVATAR_SIZE,
   borderRadius: 'var(--radius-pill)',
   background: 'var(--color-surface-2, var(--color-surface-strong))',
-  border: 'var(--outline-width-1, 1px) solid var(--color-border)',
+  border: '1px solid var(--color-border)',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',

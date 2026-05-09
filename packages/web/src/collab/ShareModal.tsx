@@ -160,7 +160,7 @@ export function ShareModal({ modelId, open, onClose }: Props) {
     >
       <div
         style={{
-          background: 'var(--surface-default, #fff)',
+          background: 'var(--color-surface)',
           borderRadius: 8,
           width: 480,
           maxWidth: '90vw',
@@ -187,7 +187,7 @@ export function ShareModal({ modelId, open, onClose }: Props) {
               style={{
                 padding: '6px 12px',
                 borderRadius: 4,
-                border: '1px solid var(--border-default, #ccc)',
+                border: '1px solid var(--color-border)',
                 background: tab === t ? 'var(--accent, #2563eb)' : 'transparent',
                 color: tab === t ? 'var(--color-accent-foreground)' : 'inherit',
                 cursor: 'pointer',
@@ -224,7 +224,7 @@ export function ShareModal({ modelId, open, onClose }: Props) {
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   padding: '8px 0',
-                  borderBottom: '1px solid var(--border-subtle, #f0f0f0)',
+                  borderBottom: '1px solid var(--color-border)',
                 }}
               >
                 <span style={{ fontSize: 13 }}>{a.subjectId}</span>
@@ -260,7 +260,7 @@ export function ShareModal({ modelId, open, onClose }: Props) {
               style={{
                 padding: '8px 10px',
                 borderRadius: 4,
-                border: '1px solid var(--border-default, #ccc)',
+                border: '1px solid var(--color-border)',
                 fontSize: 13,
               }}
             />
@@ -270,7 +270,7 @@ export function ShareModal({ modelId, open, onClose }: Props) {
               style={{
                 padding: '8px 10px',
                 borderRadius: 4,
-                border: '1px solid var(--border-default, #ccc)',
+                border: '1px solid var(--color-border)',
                 fontSize: 13,
               }}
             >
@@ -316,7 +316,7 @@ export function ShareModal({ modelId, open, onClose }: Props) {
                           flex: 1,
                           padding: '8px 10px',
                           borderRadius: 4,
-                          border: '1px solid var(--border-default, #ccc)',
+                          border: '1px solid var(--color-border)',
                           fontSize: 12,
                         }}
                       />
@@ -325,7 +325,7 @@ export function ShareModal({ modelId, open, onClose }: Props) {
                         style={{
                           padding: '8px 12px',
                           borderRadius: 4,
-                          border: '1px solid var(--border-default, #ccc)',
+                          border: '1px solid var(--color-border)',
                           cursor: 'pointer',
                           fontSize: 12,
                         }}
@@ -378,7 +378,7 @@ export function ShareModal({ modelId, open, onClose }: Props) {
                       marginTop: 4,
                       padding: '8px 10px',
                       borderRadius: 4,
-                      border: '1px solid var(--border-default, #ccc)',
+                      border: '1px solid var(--color-border)',
                       fontSize: 13,
                       width: '100%',
                     }}
@@ -396,7 +396,7 @@ export function ShareModal({ modelId, open, onClose }: Props) {
                       marginTop: 4,
                       padding: '8px 10px',
                       borderRadius: 4,
-                      border: '1px solid var(--border-default, #ccc)',
+                      border: '1px solid var(--color-border)',
                       fontSize: 13,
                       width: '100%',
                     }}

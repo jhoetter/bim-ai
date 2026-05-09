@@ -377,24 +377,132 @@ export function ProjectBrowser(props: {
         <div className="space-y-1">
           <div className="text-[10px] uppercase tracking-wide text-muted">Floor plans</div>
           <div className="space-y-0.5">
-            {hasDisciplineGrouping ? (
-              // F-032: discipline-grouped rendering when mixed disciplines are present
-              (
-                [
-                  { key: 'arch', label: 'Architecture' },
-                  { key: 'struct', label: 'Structural' },
-                  { key: 'mep', label: 'MEP' },
-                ] as const
-              ).map(({ key, label }) => {
-                const discViews = planViewDiscBuckets[key];
-                if (discViews.length === 0) return null;
-                return (
-                  <div key={key} className="space-y-0.5" data-bim-disc-group={key}>
-                    <div className="pl-2 pt-1 text-[9px] font-semibold uppercase tracking-wide text-muted">
-                      {label}
+            {hasDisciplineGrouping
+              ? // F-032: discipline-grouped rendering when mixed disciplines are present
+                (
+                  [
+                    { key: 'arch', label: 'Architecture' },
+                    { key: 'struct', label: 'Structural' },
+                    { key: 'mep', label: 'MEP' },
+                  ] as const
+                ).map(({ key, label }) => {
+                  const discViews = planViewDiscBuckets[key];
+                  if (discViews.length === 0) return null;
+                  return (
+                    <div key={key} className="space-y-0.5" data-bim-disc-group={key}>
+                      <div className="pl-2 pt-1 text-[9px] font-semibold uppercase tracking-wide text-muted">
+                        {label}
+                      </div>
+                      <ul className="space-y-0.5">
+                        {discViews.map((pv) => (
+                          <li key={pv.id} className="flex flex-col gap-0.5">
+                            {renamingId === pv.id ? (
+                              <input
+                                autoFocus
+                                type="text"
+                                data-testid={`plan-view-rename-input-${pv.id}`}
+                                value={renameDraft}
+                                className="rounded border border-border bg-background px-1 py-0.5 text-xs"
+                                onChange={(e) => setRenameDraft(e.currentTarget.value)}
+                                onBlur={() => void commitRename(pv.id)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    void commitRename(pv.id);
+                                  }
+                                  if (e.key === 'Escape') {
+                                    e.preventDefault();
+                                    cancelRename();
+                                  }
+                                }}
+                              />
+                            ) : (
+                              <Btn
+                                type="button"
+                                variant="quiet"
+                                className="w-full px-2 py-0.5 text-left text-[10px]"
+                                title={planViewTooltip(pv, props.elementsById)}
+                                onClick={() => activatePlanView(pv.id)}
+                                onDoubleClick={() => {
+                                  setRenamingId(pv.id);
+                                  setRenameDraft(pv.name);
+                                }}
+                              >
+                                plan_view · {pv.name}
+                              </Btn>
+                            )}
+                            <div
+                              className="pl-2 font-mono text-[9px] leading-tight text-muted"
+                              data-bim-plan-view-evidence={pv.id}
+                            >
+                              {planLevelEvidenceToken(props.elementsById, pv.levelId)} ·{' '}
+                              {planViewProjectBrowserEvidenceLine(props.elementsById, pv.id)}
+                            </div>
+                            {(() => {
+                              const h = planViewBrowserHierarchyState(props.elementsById, pv.id);
+                              const hasNonDefault =
+                                h.categoryTemplateCount > 0 || h.categoryPlanViewCount > 0;
+                              const tagNonBuiltin =
+                                h.openingTagSource !== 'builtin' || h.roomTagSource !== 'builtin';
+                              if (!hasNonDefault && !tagNonBuiltin) return null;
+                              return (
+                                <div
+                                  className="pl-2 font-mono text-[9px] leading-tight text-muted/70"
+                                  data-bim-plan-view-hierarchy={pv.id}
+                                >
+                                  {hasNonDefault
+                                    ? `catSrc tmpl=${h.categoryTemplateCount} pv=${h.categoryPlanViewCount}`
+                                    : null}
+                                  {hasNonDefault && tagNonBuiltin ? ' · ' : null}
+                                  {tagNonBuiltin
+                                    ? `tagSrc o=${h.openingTagSource} r=${h.roomTagSource}`
+                                    : null}
+                                </div>
+                              );
+                            })()}
+                            {props.onUpsertSemantic ? (
+                              <button
+                                type="button"
+                                className="pl-2 text-left text-[9px] text-muted underline"
+                                title="Creates a duplicated plan_view with the same pinned settings"
+                                onClick={() => dupPlanView(pv)}
+                              >
+                                Duplicate…
+                              </button>
+                            ) : null}
+                            <button
+                              type="button"
+                              data-testid={`plan-view-delete-${pv.id}`}
+                              title="Delete this plan view"
+                              className="pl-2 text-left text-[9px] text-muted underline hover:text-red-700"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (confirm(`Delete view "${pv.name}"?`)) {
+                                  void applyCommand(modelId!, {
+                                    type: 'deleteElement',
+                                    elementId: pv.id,
+                                  });
+                                }
+                              }}
+                            >
+                              Delete…
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
+                  );
+                })
+              : // Default: group by view template bucket (existing behaviour)
+                bucketKeys.map((tid) => (
+                  <div key={tid} className="space-y-0.5">
+                    {showPlanTemplateBuckets ? (
+                      <div className="pl-2 pt-1 text-[9px] font-semibold uppercase tracking-wide text-muted">
+                        {templateBucketLabel(tid)}
+                      </div>
+                    ) : null}
                     <ul className="space-y-0.5">
-                      {discViews.map((pv) => (
+                      {(planViewBuckets.get(tid) ?? []).map((pv) => (
                         <li key={pv.id} className="flex flex-col gap-0.5">
                           {renamingId === pv.id ? (
                             <input
@@ -491,117 +599,7 @@ export function ProjectBrowser(props: {
                       ))}
                     </ul>
                   </div>
-                );
-              })
-            ) : (
-              // Default: group by view template bucket (existing behaviour)
-              bucketKeys.map((tid) => (
-                <div key={tid} className="space-y-0.5">
-                  {showPlanTemplateBuckets ? (
-                    <div className="pl-2 pt-1 text-[9px] font-semibold uppercase tracking-wide text-muted">
-                      {templateBucketLabel(tid)}
-                    </div>
-                  ) : null}
-                  <ul className="space-y-0.5">
-                    {(planViewBuckets.get(tid) ?? []).map((pv) => (
-                      <li key={pv.id} className="flex flex-col gap-0.5">
-                        {renamingId === pv.id ? (
-                          <input
-                            autoFocus
-                            type="text"
-                            data-testid={`plan-view-rename-input-${pv.id}`}
-                            value={renameDraft}
-                            className="rounded border border-border bg-background px-1 py-0.5 text-xs"
-                            onChange={(e) => setRenameDraft(e.currentTarget.value)}
-                            onBlur={() => void commitRename(pv.id)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                e.preventDefault();
-                                void commitRename(pv.id);
-                              }
-                              if (e.key === 'Escape') {
-                                e.preventDefault();
-                                cancelRename();
-                              }
-                            }}
-                          />
-                        ) : (
-                          <Btn
-                            type="button"
-                            variant="quiet"
-                            className="w-full px-2 py-0.5 text-left text-[10px]"
-                            title={planViewTooltip(pv, props.elementsById)}
-                            onClick={() => activatePlanView(pv.id)}
-                            onDoubleClick={() => {
-                              setRenamingId(pv.id);
-                              setRenameDraft(pv.name);
-                            }}
-                          >
-                            plan_view · {pv.name}
-                          </Btn>
-                        )}
-                        <div
-                          className="pl-2 font-mono text-[9px] leading-tight text-muted"
-                          data-bim-plan-view-evidence={pv.id}
-                        >
-                          {planLevelEvidenceToken(props.elementsById, pv.levelId)} ·{' '}
-                          {planViewProjectBrowserEvidenceLine(props.elementsById, pv.id)}
-                        </div>
-                        {(() => {
-                          const h = planViewBrowserHierarchyState(props.elementsById, pv.id);
-                          const hasNonDefault =
-                            h.categoryTemplateCount > 0 || h.categoryPlanViewCount > 0;
-                          const tagNonBuiltin =
-                            h.openingTagSource !== 'builtin' || h.roomTagSource !== 'builtin';
-                          if (!hasNonDefault && !tagNonBuiltin) return null;
-                          return (
-                            <div
-                              className="pl-2 font-mono text-[9px] leading-tight text-muted/70"
-                              data-bim-plan-view-hierarchy={pv.id}
-                            >
-                              {hasNonDefault
-                                ? `catSrc tmpl=${h.categoryTemplateCount} pv=${h.categoryPlanViewCount}`
-                                : null}
-                              {hasNonDefault && tagNonBuiltin ? ' · ' : null}
-                              {tagNonBuiltin
-                                ? `tagSrc o=${h.openingTagSource} r=${h.roomTagSource}`
-                                : null}
-                            </div>
-                          );
-                        })()}
-                        {props.onUpsertSemantic ? (
-                          <button
-                            type="button"
-                            className="pl-2 text-left text-[9px] text-muted underline"
-                            title="Creates a duplicated plan_view with the same pinned settings"
-                            onClick={() => dupPlanView(pv)}
-                          >
-                            Duplicate…
-                          </button>
-                        ) : null}
-                        <button
-                          type="button"
-                          data-testid={`plan-view-delete-${pv.id}`}
-                          title="Delete this plan view"
-                          className="pl-2 text-left text-[9px] text-muted underline hover:text-red-700"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (confirm(`Delete view "${pv.name}"?`)) {
-                              void applyCommand(modelId!, {
-                                type: 'deleteElement',
-                                elementId: pv.id,
-                              });
-                            }
-                          }}
-                        >
-                          Delete…
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))
-            )}
+                ))}
           </div>
         </div>
       ) : null}
@@ -720,121 +718,123 @@ export function ProjectBrowser(props: {
       </div>
 
       <div className="space-y-1">
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              className="flex flex-1 items-center gap-1 text-[10px] uppercase tracking-wide text-muted hover:text-foreground"
-              onClick={() => setVtCollapsed((v) => !v)}
-            >
-              <span>{vtCollapsed ? '▸' : '▾'}</span>
-              View Templates ({viewTemplates.length})
-            </button>
-            <button
-              type="button"
-              className="text-[9px] text-muted hover:text-foreground"
-              data-testid="view-template-new"
-              title="Create new view template"
-              onClick={async () => {
-                if (!modelId) return;
-                const name = window.prompt('View Template name:');
-                if (!name?.trim()) return;
-                const newId = `vt-${Date.now().toString(36)}`;
-                await vtStore.createTemplate(modelId, newId, name.trim());
-              }}
-            >
-              + New
-            </button>
-          </div>
-          {!vtCollapsed && viewTemplates.length === 0 && (
-            <p className="pl-2 text-[10px] text-muted">No templates yet — click + New to create one.</p>
-          )}
-          {!vtCollapsed && viewTemplates.length > 0 && (
-            <ul className="space-y-0.5">
-              {viewTemplates.map((vt) => {
-                const planViews = Object.values(props.elementsById).filter(
-                  (e): e is Extract<Element, { kind: 'plan_view' }> => e.kind === 'plan_view',
-                );
-                return (
-                  <li key={vt.id} className="flex flex-col gap-0.5">
-                    <div className="flex items-center gap-1 px-1">
-                      <button
-                        type="button"
-                        className="flex-1 truncate text-left text-[10px]"
-                        title={`view_template · ${vt.name} · ${viewTemplateEvidenceLine(props.elementsById, vt)}`}
-                        onClick={() => useBimStore.getState().select(vt.id)}
-                      >
-                        <span className="text-muted">⬡</span> {vt.name}
-                      </button>
-                      <details className="relative">
-                        <summary className="cursor-pointer list-none text-[9px] text-muted hover:text-foreground">
-                          Apply ▾
-                        </summary>
-                        <ul className="absolute right-0 z-50 min-w-[140px] rounded border bg-[var(--color-surface-1)] py-1 shadow-md">
-                          {planViews.map((pv) => (
-                            <li key={pv.id}>
-                              <button
-                                type="button"
-                                className="w-full px-3 py-1 text-left text-[10px] hover:bg-[var(--color-surface-2)]"
-                                onClick={async () => {
-                                  if (!modelId) return;
-                                  await vtStore.applyTemplate(modelId, pv.id, vt.id);
-                                }}
-                              >
-                                {pv.name}
-                              </button>
-                            </li>
-                          ))}
-                          {planViews.length === 0 && (
-                            <li className="px-3 py-1 text-[10px] text-muted">No plan views</li>
-                          )}
-                        </ul>
-                      </details>
-                      <button
-                        type="button"
-                        className="text-[9px] text-muted hover:text-foreground"
-                        title="Edit template — opens in right-rail inspector"
-                        onClick={() => useBimStore.getState().select(vt.id)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        className="text-[9px] text-muted hover:text-foreground"
-                        title="Duplicate template"
-                        onClick={async () => {
-                          if (!modelId) return;
-                          const newId = `${vt.id}-copy-${Date.now().toString(36)}`;
-                          await vtStore.createTemplate(modelId, newId, `${vt.name} (copy)`, {
-                            scale: typeof vt.scale === 'number' ? vt.scale : undefined,
-                            detailLevel: vt.detailLevel ?? undefined,
-                            phase: vt.phase ?? undefined,
-                            phaseFilter: vt.phaseFilter ?? undefined,
-                          });
-                        }}
-                      >
-                        Dup
-                      </button>
-                      <button
-                        type="button"
-                        className="text-[9px] text-muted hover:text-foreground"
-                        title="Delete template"
-                        onClick={async () => {
-                          if (!modelId) return;
-                          await vtStore.deleteTemplate(modelId, vt.id);
-                        }}
-                      >
-                        Del
-                      </button>
-                    </div>
-                    <div className="pl-2 font-mono text-[9px] leading-tight text-muted">
-                      {viewTemplateEvidenceLine(props.elementsById, vt)}
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            className="flex flex-1 items-center gap-1 text-[10px] uppercase tracking-wide text-muted hover:text-foreground"
+            onClick={() => setVtCollapsed((v) => !v)}
+          >
+            <span>{vtCollapsed ? '▸' : '▾'}</span>
+            View Templates ({viewTemplates.length})
+          </button>
+          <button
+            type="button"
+            className="text-[9px] text-muted hover:text-foreground"
+            data-testid="view-template-new"
+            title="Create new view template"
+            onClick={async () => {
+              if (!modelId) return;
+              const name = window.prompt('View Template name:');
+              if (!name?.trim()) return;
+              const newId = `vt-${Date.now().toString(36)}`;
+              await vtStore.createTemplate(modelId, newId, name.trim());
+            }}
+          >
+            + New
+          </button>
         </div>
+        {!vtCollapsed && viewTemplates.length === 0 && (
+          <p className="pl-2 text-[10px] text-muted">
+            No templates yet — click + New to create one.
+          </p>
+        )}
+        {!vtCollapsed && viewTemplates.length > 0 && (
+          <ul className="space-y-0.5">
+            {viewTemplates.map((vt) => {
+              const planViews = Object.values(props.elementsById).filter(
+                (e): e is Extract<Element, { kind: 'plan_view' }> => e.kind === 'plan_view',
+              );
+              return (
+                <li key={vt.id} className="flex flex-col gap-0.5">
+                  <div className="flex items-center gap-1 px-1">
+                    <button
+                      type="button"
+                      className="flex-1 truncate text-left text-[10px]"
+                      title={`view_template · ${vt.name} · ${viewTemplateEvidenceLine(props.elementsById, vt)}`}
+                      onClick={() => useBimStore.getState().select(vt.id)}
+                    >
+                      <span className="text-muted">⬡</span> {vt.name}
+                    </button>
+                    <details className="relative">
+                      <summary className="cursor-pointer list-none text-[9px] text-muted hover:text-foreground">
+                        Apply ▾
+                      </summary>
+                      <ul className="absolute right-0 z-50 min-w-[140px] rounded border bg-[var(--color-surface-1)] py-1 shadow-md">
+                        {planViews.map((pv) => (
+                          <li key={pv.id}>
+                            <button
+                              type="button"
+                              className="w-full px-3 py-1 text-left text-[10px] hover:bg-[var(--color-surface-2)]"
+                              onClick={async () => {
+                                if (!modelId) return;
+                                await vtStore.applyTemplate(modelId, pv.id, vt.id);
+                              }}
+                            >
+                              {pv.name}
+                            </button>
+                          </li>
+                        ))}
+                        {planViews.length === 0 && (
+                          <li className="px-3 py-1 text-[10px] text-muted">No plan views</li>
+                        )}
+                      </ul>
+                    </details>
+                    <button
+                      type="button"
+                      className="text-[9px] text-muted hover:text-foreground"
+                      title="Edit template — opens in right-rail inspector"
+                      onClick={() => useBimStore.getState().select(vt.id)}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      className="text-[9px] text-muted hover:text-foreground"
+                      title="Duplicate template"
+                      onClick={async () => {
+                        if (!modelId) return;
+                        const newId = `${vt.id}-copy-${Date.now().toString(36)}`;
+                        await vtStore.createTemplate(modelId, newId, `${vt.name} (copy)`, {
+                          scale: typeof vt.scale === 'number' ? vt.scale : undefined,
+                          detailLevel: vt.detailLevel ?? undefined,
+                          phase: vt.phase ?? undefined,
+                          phaseFilter: vt.phaseFilter ?? undefined,
+                        });
+                      }}
+                    >
+                      Dup
+                    </button>
+                    <button
+                      type="button"
+                      className="text-[9px] text-muted hover:text-foreground"
+                      title="Delete template"
+                      onClick={async () => {
+                        if (!modelId) return;
+                        await vtStore.deleteTemplate(modelId, vt.id);
+                      }}
+                    >
+                      Del
+                    </button>
+                  </div>
+                  <div className="pl-2 font-mono text-[9px] leading-tight text-muted">
+                    {viewTemplateEvidenceLine(props.elementsById, vt)}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
 
       {lastPropagation && (
         <PropagationToast
@@ -1530,7 +1530,7 @@ export function ProjectBrowserV3({
       <div
         style={{
           padding: 'var(--space-2) var(--space-3)',
-          borderBottom: 'var(--border-px, 1px) solid var(--color-border)',
+          borderBottom: '1px solid var(--color-border)',
         }}
       >
         <input
@@ -1542,7 +1542,7 @@ export function ProjectBrowserV3({
           style={{
             width: '100%',
             background: 'var(--color-background)',
-            border: 'var(--border-px, 1px) solid var(--color-border)',
+            border: '1px solid var(--color-border)',
             borderRadius: 'var(--radius-sm, 4px)',
             color: 'var(--color-foreground)',
             fontSize: 'var(--text-sm, 12.5px)',
@@ -1603,7 +1603,7 @@ export function ProjectBrowserV3({
                               fontSize: 'var(--text-sm, 12.5px)',
                               background: 'var(--color-background)',
                               color: 'var(--color-foreground)',
-                              border: 'var(--border-px, 1px) solid var(--color-accent)',
+                              border: '1px solid var(--color-accent)',
                             }}
                           />
                         ) : (
@@ -1868,7 +1868,7 @@ function PbContextMenu({
         zIndex: 9999,
         minWidth: 140,
         background: 'var(--color-surface)',
-        border: 'var(--border-px, 1px) solid var(--color-border)',
+        border: '1px solid var(--color-border)',
         borderRadius: 'var(--radius-sm, 4px)',
         boxShadow: 'var(--shadow-modal, 0 4px 16px rgba(0,0,0,0.24))',
         padding: 'var(--space-1) 0',

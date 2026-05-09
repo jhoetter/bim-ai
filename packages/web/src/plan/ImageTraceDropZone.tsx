@@ -183,7 +183,7 @@ export function ImageTraceDropZone({
             style={{ display: 'none' }}
             onChange={handleFileChange}
           />
-          <span style={{ color: 'var(--color-text-secondary)', fontSize: 14 }}>
+          <span style={{ color: 'var(--color-muted-foreground)', fontSize: 14 }}>
             {state.phase === 'error'
               ? `Error: ${state.message}`
               : 'Drop a floor plan image here or click to trace'}
@@ -191,11 +191,11 @@ export function ImageTraceDropZone({
         </div>
       ) : state.phase === 'uploading' ? (
         <div style={statusStyle}>
-          <span style={{ color: 'var(--color-text-secondary)' }}>Tracing…</span>
+          <span style={{ color: 'var(--color-muted-foreground)' }}>Tracing…</span>
         </div>
       ) : state.phase === 'polling' ? (
         <div style={statusStyle}>
-          <span style={{ color: 'var(--color-text-secondary)' }}>
+          <span style={{ color: 'var(--color-muted-foreground)' }}>
             Tracing (job {state.jobId.slice(0, 8)}…)
           </span>
         </div>
@@ -234,7 +234,7 @@ function TracePreview({ layout, imageUrl }: TracePreviewProps): JSX.Element {
   return (
     <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', flexWrap: 'wrap' }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <span style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>Source image</span>
+        <span style={{ fontSize: 11, color: 'var(--color-muted-foreground)' }}>Source image</span>
         <img
           src={imageUrl}
           alt="Source floor plan"
@@ -243,7 +243,7 @@ function TracePreview({ layout, imageUrl }: TracePreviewProps): JSX.Element {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <span style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>
+        <span style={{ fontSize: 11, color: 'var(--color-muted-foreground)' }}>
           Detected layout ({layout.walls.length} walls, {layout.rooms.length} rooms)
         </span>
         <svg

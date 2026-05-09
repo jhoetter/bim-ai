@@ -52,12 +52,12 @@ export function SubdivisionPalette({
       style={{
         display: 'flex',
         flexDirection: 'row',
-        gap: 'var(--spacing-1, 4px)',
-        padding: 'var(--spacing-1, 4px) var(--spacing-2, 8px)',
+        gap: 'var(--space-2)',
+        padding: 'var(--space-2) var(--space-4)',
         background: 'var(--color-surface-2, var(--color-surface-strong))',
         border: '1px solid var(--color-border)',
         borderRadius: 'var(--radius-md, 6px)',
-        boxShadow: 'var(--shadow-md)',
+        boxShadow: 'var(--elev-2)',
         pointerEvents: 'auto',
       }}
     >
@@ -76,16 +76,12 @@ export function SubdivisionPalette({
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: 'var(--spacing-1, 4px)',
+              gap: 'var(--space-2)',
               width: 64,
-              padding: 'var(--spacing-2, 8px) var(--spacing-1, 4px)',
+              padding: 'var(--space-4) var(--space-2)',
               borderRadius: 'var(--radius-sm, 4px)',
-              border: isActive
-                ? '1px solid var(--color-accent)'
-                : '1px solid var(--color-border)',
-              background: isActive
-                ? 'var(--color-accent)'
-                : 'var(--color-surface, transparent)',
+              border: isActive ? '1px solid var(--color-accent)' : '1px solid var(--color-border)',
+              background: isActive ? 'var(--color-accent)' : 'var(--color-surface, transparent)',
               color: isActive
                 ? 'var(--color-accent-foreground, var(--color-foreground-on-accent))'
                 : 'var(--color-foreground)',
@@ -93,7 +89,7 @@ export function SubdivisionPalette({
               fontSize: 'var(--text-sm, 14px)',
               fontFamily: 'var(--font-sans)',
               fontWeight: isActive ? 600 : 400,
-              transition: 'background var(--transition-fast, 100ms ease)',
+              transition: 'background var(--motion-fast) var(--ease-out)',
             }}
           >
             <span aria-hidden="true" style={{ fontSize: 'var(--text-lg, 18px)', lineHeight: 1 }}>

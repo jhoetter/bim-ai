@@ -20,7 +20,7 @@ export function PublicLinkBanner({ displayName }: Props) {
         padding: '0 16px',
         fontSize: 'var(--text-sm)',
         zIndex: 100,
-        borderBottom: '1px solid var(--border-subtle, #e5e7eb)',
+        borderBottom: '1px solid var(--color-border)',
       }}
     >
       <span>{displayName ? `Shared by ${displayName}` : 'Shared model (read-only)'}</span>
