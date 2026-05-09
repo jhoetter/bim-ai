@@ -69,6 +69,7 @@ import { VVDialog } from './VVDialog';
 import { ManageLinksDialog } from './ManageLinksDialog';
 import { CommentsPanel } from './CommentsPanel';
 import { ActivityDrawer } from '../collab/ActivityDrawer';
+import { SharePresentationModal } from '../collab/SharePresentationModal';
 import { useActivityDrawerStore } from '../collab/activityDrawerStore';
 import { LibraryOverlay } from './LibraryOverlay';
 import { useActivityStore } from '../collab/activityStore';
@@ -217,6 +218,17 @@ export function Workspace(): JSX.Element {
 
   // AST-V3-01 — library overlay (Alt+2)
   const [libraryOpen, setLibraryOpen] = useState(false);
+
+  // COL-VIS: share presentation modal
+  const [sharePresentationOpen, setSharePresentationOpen] = useState(false);
+
+  const sheetPages = useMemo(
+    () =>
+      (Object.values(elementsById) as Element[])
+        .filter((e): e is Extract<Element, { kind: 'sheet' }> => e.kind === 'sheet')
+        .map((s) => ({ id: s.id, name: (s as unknown as { name?: string }).name ?? 'Sheet' })),
+    [elementsById],
+  );
 
   // CHR-V3-05 activity drawer state
   const activityIsOpen = useActivityDrawerStore((s) => s.isOpen);
@@ -1036,6 +1048,14 @@ export function Workspace(): JSX.Element {
           onClose={() => setMilestoneDialogOpen(false)}
         />
       )}
+      {modelId ? (
+        <SharePresentationModal
+          modelId={modelId}
+          open={sharePresentationOpen}
+          onClose={() => setSharePresentationOpen(false)}
+          pages={sheetPages}
+        />
+      ) : null}
       <AppShell
         leftCollapsed={leftRailCollapsed}
         onLeftCollapsedChange={setLeftRailCollapsed}
@@ -1066,6 +1086,8 @@ export function Workspace(): JSX.Element {
                 onPlanStyleChange={(v) =>
                   setPlanPresentationPreset(v as 'default' | 'opening_focus' | 'room_scheme')
                 }
+                hasPages={sheetPages.length > 0}
+                onSharePresentation={() => setSharePresentationOpen(true)}
               />
               {/* COL-V3-06 — offline indicator */}
               {!isOnline ? (
