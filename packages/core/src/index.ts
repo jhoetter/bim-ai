@@ -2888,3 +2888,19 @@ export type RenderExportBundle = {
   };
   exportTimestamp: string;
 };
+
+// ---------------------------------------------------------------------------
+// COL-V3-06 — Offline-tolerant authoring: display-only sync badge type
+// ---------------------------------------------------------------------------
+
+/**
+ * COL-V3-06: display-only badge shown in the status bar when commands have
+ * been queued while offline and are awaiting sync on reconnect.
+ * Not a kernel element; not part of the Command union.
+ */
+export type OfflineSyncBadge = {
+  kind: 'offline_sync_badge';
+  commandCount: number;
+  offlineQueuedAt: string;
+  syncedAt: string;
+};
