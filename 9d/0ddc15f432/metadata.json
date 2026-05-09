@@ -4,20 +4,29 @@
   "strategy": "manual-commit",
   "branch": "feat/parity-column-beam-inspector",
   "checkpoints_count": 1,
-  "files_touched": null,
+  "files_touched": [
+    "spec/revit-parity/ch01-ui-navigation.md",
+    "spec/revit-parity/ch11-floors-parapet.md"
+  ],
   "sessions": [
     {
       "metadata": "/9d/0ddc15f432/0/metadata.json",
       "transcript": "/9d/0ddc15f432/0/full.jsonl",
       "content_hash": "/9d/0ddc15f432/0/content_hash.txt",
       "prompt": "/9d/0ddc15f432/0/prompt.txt"
+    },
+    {
+      "metadata": "/9d/0ddc15f432/1/metadata.json",
+      "transcript": "/9d/0ddc15f432/1/full.jsonl",
+      "content_hash": "/9d/0ddc15f432/1/content_hash.txt",
+      "prompt": "/9d/0ddc15f432/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 6272,
-    "cache_creation_tokens": 3335159,
-    "cache_read_tokens": 147118102,
-    "output_tokens": 952344,
-    "api_call_count": 1570
+    "input_tokens": 6276,
+    "cache_creation_tokens": 3341240,
+    "cache_read_tokens": 147431599,
+    "output_tokens": 958760,
+    "api_call_count": 1572
   }
 }
