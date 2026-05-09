@@ -93,6 +93,15 @@ export function ProjectMenu({
 
   if (!open || !pos) return null;
 
+  // Auto-focus first enabled menu item on open.
+  useEffect(() => {
+    if (!pos) return;
+    const first = popoverRef.current?.querySelector<HTMLElement>(
+      '[role="menuitem"]:not([disabled])',
+    );
+    first?.focus();
+  }, [pos]);
+
   return (
     <div
       ref={popoverRef}
@@ -107,6 +116,20 @@ export function ProjectMenu({
         minWidth: 240,
       }}
       className="rounded-md border border-border bg-surface shadow-elev-3"
+      onKeyDown={(e) => {
+        const items = Array.from(
+          popoverRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]:not([disabled])') ??
+            [],
+        );
+        const idx = items.indexOf(document.activeElement as HTMLElement);
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          items[(idx + 1) % items.length]?.focus();
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          items[(idx - 1 + items.length) % items.length]?.focus();
+        }
+      }}
     >
       {recent && recent.length > 0 ? (
         <>
