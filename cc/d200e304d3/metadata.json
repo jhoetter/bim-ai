@@ -8,6 +8,7 @@
     "app/bim_ai/commands.py",
     "app/bim_ai/engine.py",
     "packages/web/src/plan/PlanCanvas.tsx",
+    "packages/web/src/state/storeTypes.ts",
     "packages/web/src/tools/toolRegistry.ts",
     "packages/web/src/workspace/workspaceUtils.ts"
   ],
@@ -23,6 +24,12 @@
       "transcript": "/cc/d200e304d3/1/full.jsonl",
       "content_hash": "/cc/d200e304d3/1/content_hash.txt",
       "prompt": "/cc/d200e304d3/1/prompt.txt"
+    },
+    {
+      "metadata": "/cc/d200e304d3/2/metadata.json",
+      "transcript": "/cc/d200e304d3/2/full.jsonl",
+      "content_hash": "/cc/d200e304d3/2/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
