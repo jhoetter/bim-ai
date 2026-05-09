@@ -1,4 +1,5 @@
 import { materialBaseColor } from '../viewport/materials';
+import { readToken } from '../styles/tokens';
 
 /**
  * Built-in wall-type assemblies — FL-08.
@@ -124,19 +125,19 @@ export function visibleLayerCount(assembly: WallTypeAssembly): number {
  * `viewport/materials.ts`.
  */
 export const WALL_LAYER_MATERIAL_HEX: Readonly<Record<string, string>> = {
-  timber_cladding: '#7c5b3b',
-  timber_frame_insulation: '#d6b675',
-  timber_stud: '#cf9b56',
-  vcl_membrane: '#b9c0c8',
-  plasterboard: '#ece8de',
-  plaster: '#efe9d8',
-  masonry_brick: '#a45a3f',
-  masonry_block: '#bcb6a8',
-  air: '#ffffff',
+  timber_cladding: readToken('--mat-timber-cedar', '#7c5b3b'),
+  timber_frame_insulation: readToken('--mat-timber-frame-insulation', '#d6b675'),
+  timber_stud: readToken('--mat-timber-stud', '#cf9b56'),
+  vcl_membrane: readToken('--mat-membrane-vcl', '#b9c0c8'),
+  plasterboard: readToken('--mat-plasterboard', '#ece8de'),
+  plaster: readToken('--mat-plaster', '#efe9d8'),
+  masonry_brick: readToken('--mat-brick-red', '#a45a3f'),
+  masonry_block: readToken('--mat-masonry-block', '#bcb6a8'),
+  air: readToken('--mat-air', '#ffffff'),
 };
 
 export function materialHexFor(materialKey: string | null | undefined): string {
-  if (!materialKey) return '#cccccc';
+  if (!materialKey) return readToken('--mat-unknown', '#cccccc');
   if (WALL_LAYER_MATERIAL_HEX[materialKey]) return WALL_LAYER_MATERIAL_HEX[materialKey];
   return materialBaseColor(materialKey);
 }
