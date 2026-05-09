@@ -57,7 +57,8 @@ export type ToolId =
   | 'measure'
   | 'component'
   | 'copy'
-  | 'rotate';
+  | 'rotate'
+  | 'move';
 
 /** Modify-group tool IDs — used by ToolPalette to insert a separator. */
 export const MODIFY_TOOL_IDS = new Set<ToolId>([
@@ -66,6 +67,7 @@ export const MODIFY_TOOL_IDS = new Set<ToolId>([
   'trim',
   'mirror',
   'copy',
+  'move',
   'rotate',
   'wall-join',
 ]);
@@ -382,6 +384,15 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       modes: ['plan'],
       tooltip: 'Copy selected element to a new location (two-point)',
     },
+    move: {
+      id: 'move',
+      label: 'Move',
+      icon: 'move',
+      hotkey: 'MV',
+      shortcut: 'MV',
+      modes: ['plan'],
+      tooltip: 'Move selected element(s) by specifying a reference point and destination point (two-click)',
+    },
     rotate: {
       id: 'rotate',
       label: 'Rotate',
@@ -432,6 +443,7 @@ const PALETTE_ORDER: ToolId[] = [
   'trim',
   'mirror',
   'copy',
+  'move',
   'rotate',
   'wall-join',
   'wall-opening',

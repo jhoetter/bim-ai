@@ -132,6 +132,7 @@ import { SubdivisionPalette } from '../workspace/SubdivisionPalette';
 import type { SubdivisionCategory } from '../workspace/SubdivisionPalette';
 import {
   activeComponentAssetId,
+  copyMultipleEnabled,
   mirrorCopyEnabled,
   pendingComponentRotationDeg,
   setPendingComponentRotationDeg,
@@ -303,6 +304,8 @@ export function PlanCanvas({
   const mirrorAxisStartRef = useRef<{ xMm: number; yMm: number } | null>(null);
   const copyAnchorRef = useRef<{ xMm: number; yMm: number } | null>(null);
   const [copyAnchorSet, setCopyAnchorSet] = useState(false);
+  const moveAnchorRef = useRef<{ xMm: number; yMm: number } | null>(null);
+  const [moveAnchorSet, setMoveAnchorSet] = useState(false);
   const rotateAnchorRef = useRef<{ xMm: number; yMm: number } | null>(null);
   const [rotateAnchorSet, setRotateAnchorSet] = useState(false);
   const splitStateRef = useRef<SplitState>(initialSplitState());
@@ -764,6 +767,8 @@ export function PlanCanvas({
     mirrorAxisStartRef.current = null;
     copyAnchorRef.current = null;
     setCopyAnchorSet(false);
+    moveAnchorRef.current = null;
+    setMoveAnchorSet(false);
     rotateAnchorRef.current = null;
     setRotateAnchorSet(false);
     splitStateRef.current = initialSplitState();
@@ -2657,6 +2662,7 @@ export function PlanCanvas({
         }
         // Second click: compute delta and duplicate the element
         const anchor = copyAnchorRef.current;
+        // F-116: multi-copy — clear anchor but stay in copy mode if Multiple is checked.
         copyAnchorRef.current = null;
         setCopyAnchorSet(false);
         const dx = sp.xMm - anchor.xMm;
@@ -2685,6 +2691,36 @@ export function PlanCanvas({
           if (result.elements.length > 0) {
             st.mergeElements(result.elements);
           }
+        }
+        // F-116: If "Multiple" is unchecked, exit back to select after placing copy.
+        if (!copyMultipleEnabled) {
+          setPlanTool('select');
+        }
+        bumpGeom((x) => x + 1);
+        return;
+      }
+      if (planTool === 'move') {
+        if (!moveAnchorRef.current) {
+          // First click: store reference point
+          moveAnchorRef.current = sp;
+          setMoveAnchorSet(true);
+          bumpGeom((x) => x + 1);
+          return;
+        }
+        // Second click: compute delta and move selection
+        const anchor = moveAnchorRef.current;
+        moveAnchorRef.current = null;
+        setMoveAnchorSet(false);
+        const dx = sp.xMm - anchor.xMm;
+        const dy = sp.yMm - anchor.yMm;
+        const elementIds = [selectedId, ...selectedIds].filter(Boolean) as string[];
+        if (elementIds.length > 0) {
+          onSemanticCommand({
+            type: 'moveElementsDelta',
+            elementIds,
+            dxMm: dx,
+            dyMm: dy,
+          });
         }
         bumpGeom((x) => x + 1);
         return;
@@ -3291,8 +3327,23 @@ export function PlanCanvas({
         } else if (planTool === 'mirror') {
           mirrorAxisStartRef.current = null;
         } else if (planTool === 'copy') {
-          copyAnchorRef.current = null;
-          setCopyAnchorSet(false);
+          if (copyAnchorRef.current) {
+            // First Escape: clear the anchor (cancel second click), stay in copy mode.
+            copyAnchorRef.current = null;
+            setCopyAnchorSet(false);
+          } else {
+            // Second Escape (or anchor already null): exit to select.
+            setPlanTool('select');
+          }
+        } else if (planTool === 'move') {
+          if (moveAnchorRef.current) {
+            // First Escape: clear the anchor, stay in move mode.
+            moveAnchorRef.current = null;
+            setMoveAnchorSet(false);
+          } else {
+            // Second Escape: exit to select.
+            setPlanTool('select');
+          }
         } else if (planTool === 'rotate') {
           rotateAnchorRef.current = null;
           setRotateAnchorSet(false);
@@ -4243,7 +4294,23 @@ export function PlanCanvas({
           </button>
         </div>
       ) : null}
-      {/* Copy tool status chip — shown after first click (anchor set), waiting for destination */}
+      {/* Copy tool status chips — F-116 multi-copy mode */}
+      {planTool === 'copy' && !copyAnchorSet ? (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 48,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            pointerEvents: 'none',
+            zIndex: 20,
+          }}
+          className="flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-xs shadow"
+          data-testid="copy-tool-chip"
+        >
+          <span>Click reference point</span>
+        </div>
+      ) : null}
       {planTool === 'copy' && copyAnchorSet ? (
         <div
           style={{
@@ -4258,6 +4325,83 @@ export function PlanCanvas({
           data-testid="copy-tool-chip"
         >
           <span>Click destination point to complete copy</span>
+        </div>
+      ) : null}
+      {/* F-103 — Move tool overlay: dot at anchor + dashed line to cursor */}
+      {planTool === 'move' && moveAnchorSet && moveAnchorRef.current
+        ? (() => {
+            const anchorPx = worldToScreen(moveAnchorRef.current);
+            const cursorPx = hudMm ? worldToScreen(hudMm) : null;
+            return (
+              <>
+                <svg
+                  data-testid="move-tool-overlay"
+                  aria-hidden="true"
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    width: '100%',
+                    height: '100%',
+                    pointerEvents: 'none',
+                    zIndex: 15,
+                    overflow: 'visible',
+                  }}
+                >
+                  {/* Dot at reference point */}
+                  <circle
+                    cx={anchorPx.pxX}
+                    cy={anchorPx.pxY}
+                    r="5"
+                    fill="hsl(var(--color-accent, 220 90% 56%))"
+                    opacity="0.9"
+                  />
+                  {/* Dashed line from reference to cursor */}
+                  {cursorPx ? (
+                    <line
+                      x1={anchorPx.pxX}
+                      y1={anchorPx.pxY}
+                      x2={cursorPx.pxX}
+                      y2={cursorPx.pxY}
+                      stroke="hsl(var(--color-accent, 220 90% 56%))"
+                      strokeWidth="1.5"
+                      strokeDasharray="6 3"
+                      opacity="0.7"
+                    />
+                  ) : null}
+                </svg>
+                <div
+                  data-testid="move-tool-chip"
+                  aria-live="polite"
+                  style={{
+                    position: 'absolute',
+                    bottom: 48,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    pointerEvents: 'none',
+                    zIndex: 20,
+                  }}
+                  className="flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-xs shadow"
+                >
+                  <span>Click destination point to move selection</span>
+                </div>
+              </>
+            );
+          })()
+        : null}
+      {planTool === 'move' && !moveAnchorSet ? (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 48,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            pointerEvents: 'none',
+            zIndex: 20,
+          }}
+          className="flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-xs shadow"
+          data-testid="move-tool-chip"
+        >
+          <span>Click reference point</span>
         </div>
       ) : null}
       {/* F-122 — Rotate tool overlay: shown after the first click (center set), waiting for angle click. */}

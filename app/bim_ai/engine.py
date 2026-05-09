@@ -199,6 +199,7 @@ from bim_ai.commands import (
     PlaceAssetCmd,
     MoveAssetDeltaCmd,
     MoveColumnDeltaCmd,
+    MoveElementsDeltaCmd,
     RotateElementsCmd,
     PlaceKitCmd,
     UpdateKitComponentCmd,
@@ -1325,6 +1326,7 @@ _LINKED_READONLY_LIST_FIELDS: dict[type, tuple[str, ...]] = {
     DeleteElementsCmd: ("element_ids",),
     MirrorElementsCmd: ("element_ids",),
     RotateElementsCmd: ("element_ids",),
+    MoveElementsDeltaCmd: ("element_ids",),
 }
 
 
@@ -5433,6 +5435,35 @@ def apply_inplace(
                 yMm=el.position_mm.y_mm + cmd.dy_mm,
             )
             els[cmd.element_id] = el.model_copy(update={"position_mm": new_pos})
+
+        case MoveElementsDeltaCmd():
+            for eid in cmd.element_ids:
+                el = els.get(eid)
+                if el is None:
+                    continue
+                match el.kind:
+                    case "wall":
+                        els[eid] = el.model_copy(update={
+                            "start": Vec2Mm(xMm=el.start.x_mm + cmd.dx_mm, yMm=el.start.y_mm + cmd.dy_mm),
+                            "end": Vec2Mm(xMm=el.end.x_mm + cmd.dx_mm, yMm=el.end.y_mm + cmd.dy_mm),
+                        })
+                    case "column":
+                        els[eid] = el.model_copy(update={
+                            "position_mm": Vec2Mm(xMm=el.position_mm.x_mm + cmd.dx_mm, yMm=el.position_mm.y_mm + cmd.dy_mm),
+                        })
+                    case "placed_asset":
+                        els[eid] = el.model_copy(update={
+                            "position_mm": Vec2Mm(xMm=el.position_mm.x_mm + cmd.dx_mm, yMm=el.position_mm.y_mm + cmd.dy_mm),
+                        })
+                    case "floor":
+                        new_pts = [Vec2Mm(xMm=p.x_mm + cmd.dx_mm, yMm=p.y_mm + cmd.dy_mm) for p in el.boundary_mm]
+                        els[eid] = el.model_copy(update={"boundary_mm": new_pts})
+                    case "room":
+                        new_pts = [Vec2Mm(xMm=p.x_mm + cmd.dx_mm, yMm=p.y_mm + cmd.dy_mm) for p in el.outline_mm]
+                        els[eid] = el.model_copy(update={"outline_mm": new_pts})
+                    case "area":
+                        new_pts = [Vec2Mm(xMm=p.x_mm + cmd.dx_mm, yMm=p.y_mm + cmd.dy_mm) for p in el.boundary_mm]
+                        els[eid] = el.model_copy(update={"boundary_mm": new_pts})
 
         case RotateElementsCmd():
             import math as _math

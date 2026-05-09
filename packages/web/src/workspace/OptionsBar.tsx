@@ -23,6 +23,14 @@ const BAR_CLASS = 'flex items-center gap-4 border-b border-border bg-surface py-
 export let mirrorCopyEnabled = true;
 
 /**
+ * Module-level flag for the copy tool "Multiple copies" option (F-116).
+ * When true (default) the tool stays active after each copy for multi-copy mode.
+ * When false a single copy is placed and the tool returns to select.
+ * Exported so PlanCanvas can read it at click-time.
+ */
+export let copyMultipleEnabled = true;
+
+/**
  * Module-level selected asset ID for the component placement tool.
  * Exported so PlanCanvas can read it on click without a Zustand store change.
  */
@@ -264,6 +272,38 @@ export function OptionsBar(): JSX.Element | null {
         </label>
         <span className="text-muted opacity-60">
           Click to set axis start, click again to mirror
+        </span>
+      </div>
+    );
+  }
+
+  if (planTool === 'copy') {
+    return (
+      <div data-testid="options-bar" className={BAR_CLASS}>
+        <label className="flex items-center gap-1 text-[11px]">
+          <input
+            type="checkbox"
+            defaultChecked={copyMultipleEnabled}
+            onChange={(e) => {
+              copyMultipleEnabled = e.target.checked;
+            }}
+            aria-label="Multiple copies"
+            data-testid="options-bar-copy-multiple"
+          />
+          <span>Multiple</span>
+        </label>
+        <span className="text-muted opacity-60">
+          Click reference point, click destination to place copy
+        </span>
+      </div>
+    );
+  }
+
+  if (planTool === 'move') {
+    return (
+      <div data-testid="options-bar" className={BAR_CLASS}>
+        <span className="text-muted opacity-60">
+          Click reference point, click destination to move selection
         </span>
       </div>
     );

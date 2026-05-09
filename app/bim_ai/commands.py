@@ -2263,6 +2263,16 @@ class MoveColumnDeltaCmd(BaseModel):
     dy_mm: float = Field(alias="dyMm")
 
 
+class MoveElementsDeltaCmd(BaseModel):
+    """Move multiple elements by (dxMm, dyMm). Supports walls, columns, placed_assets."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["moveElementsDelta"] = "moveElementsDelta"
+    element_ids: list[str] = Field(alias="elementIds")
+    dx_mm: float = Field(alias="dxMm")
+    dy_mm: float = Field(alias="dyMm")
+
+
 class RotateElementsCmd(BaseModel):
     """Rotate one or more elements around a center point by a given angle."""
 
@@ -2951,6 +2961,7 @@ Command = Annotated[
     | PlaceAssetCmd
     | MoveAssetDeltaCmd
     | MoveColumnDeltaCmd
+    | MoveElementsDeltaCmd
     | RotateElementsCmd
     | SetToolPrefCmd
     | TraceImageCmd
