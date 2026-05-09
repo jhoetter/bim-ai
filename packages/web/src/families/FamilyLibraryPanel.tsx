@@ -490,11 +490,18 @@ export function FamilyLibraryPanel({
           className="flex items-center gap-1 border-b border-border px-3 py-1"
           role="tablist"
           aria-label="Family library tabs"
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowRight') setTab('external');
+            else if (e.key === 'ArrowLeft') setTab('in-project');
+          }}
         >
           <button
             type="button"
+            id="family-library-tab-in-project"
             role="tab"
             aria-selected={tab === 'in-project'}
+            aria-controls="family-library-panel-tab"
+            tabIndex={tab === 'in-project' ? 0 : -1}
             data-testid="family-library-tab-in-project"
             onClick={() => setTab('in-project')}
             className={`rounded-t px-2 py-1 text-xs ${
@@ -507,8 +514,11 @@ export function FamilyLibraryPanel({
           </button>
           <button
             type="button"
+            id="family-library-tab-external"
             role="tab"
             aria-selected={tab === 'external'}
+            aria-controls="family-library-panel-tab"
+            tabIndex={tab === 'external' ? 0 : -1}
             data-testid="family-library-tab-external"
             onClick={() => setTab('external')}
             className={`rounded-t px-2 py-1 text-xs ${
@@ -530,7 +540,12 @@ export function FamilyLibraryPanel({
             className="w-full rounded border border-border bg-background px-2 py-1 text-sm text-foreground outline-none focus:border-accent"
           />
         </div>
-        <div className="flex-1 overflow-y-auto px-2 py-2">
+        <div
+          id="family-library-panel-tab"
+          role="tabpanel"
+          aria-labelledby={`family-library-tab-${tab}`}
+          className="flex-1 overflow-y-auto px-2 py-2"
+        >
           {tab === 'in-project' ? (
             <>
               {DISCIPLINE_ORDER.map(({ id, label }) => {
