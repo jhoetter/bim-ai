@@ -1,5 +1,5 @@
 import type { JSX } from 'react';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 import type { Element } from '@bim-ai/core';
 
@@ -31,6 +31,9 @@ export function WorkspaceLeftRail({
 
   const browserSections = useMemo(() => buildBrowserSections(elementsById), [elementsById]);
 
+  const [renameId, setRenameId] = useState<string | null>(null);
+  const [renameDraft, setRenameDraft] = useState('');
+
   const activeFamilyTypeId = useMemo(() => {
     if (!selectedId) return undefined;
     const el = elementsById[selectedId];
@@ -40,7 +43,7 @@ export function WorkspaceLeftRail({
   }, [selectedId, elementsById]);
 
   return (
-    <div className="flex h-full flex-col overflow-hidden">
+    <div className="relative flex h-full flex-col overflow-hidden">
       {onOpenFamilyLibrary ? (
         <div className="shrink-0 border-b border-border p-2">
           <button
@@ -86,6 +89,14 @@ export function WorkspaceLeftRail({
         <LeftRail
           sections={browserSections}
           activeRowId={activeFamilyTypeId ?? activeLevelId}
+          onRowRename={(id) => {
+            const el = elementsById[id];
+            if (!el) return;
+            if (el.kind === 'wall_type' || el.kind === 'floor_type' || el.kind === 'roof_type') {
+              setRenameId(id);
+              setRenameDraft(el.name);
+            }
+          }}
           onRowActivate={(id) => {
             if (id === 'new-wall-type') {
               void onSemanticCommand({
@@ -189,6 +200,76 @@ export function WorkspaceLeftRail({
           }}
         />
       </div>
+      {renameId && (
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            zIndex: 50,
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'center',
+            paddingTop: 40,
+            background: 'rgba(0,0,0,0.3)',
+          }}
+          onClick={() => setRenameId(null)}
+        >
+          <div
+            style={{
+              background: 'var(--color-surface)',
+              border: '1px solid var(--color-border)',
+              borderRadius: 6,
+              padding: '8px 12px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 8,
+              minWidth: 200,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span style={{ fontSize: 11, color: 'var(--color-muted)' }}>Rename type</span>
+            <input
+              autoFocus
+              type="text"
+              value={renameDraft}
+              onChange={(e) => setRenameDraft(e.target.value)}
+              className="rounded border border-border bg-background px-2 py-1 text-xs text-foreground"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  const trimmed = renameDraft.trim();
+                  if (trimmed && renameId) {
+                    void onSemanticCommand({
+                      type: 'updateElementProperty',
+                      elementId: renameId,
+                      key: 'name',
+                      value: trimmed,
+                    });
+                  }
+                  setRenameId(null);
+                }
+                if (e.key === 'Escape') {
+                  e.preventDefault();
+                  setRenameId(null);
+                }
+              }}
+              onBlur={() => {
+                const trimmed = renameDraft.trim();
+                if (trimmed && renameId) {
+                  void onSemanticCommand({
+                    type: 'updateElementProperty',
+                    elementId: renameId,
+                    key: 'name',
+                    value: trimmed,
+                  });
+                }
+                setRenameId(null);
+              }}
+              data-testid="type-rename-input"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
