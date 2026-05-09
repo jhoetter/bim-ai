@@ -1,0 +1,1 @@
+i recently looked into code quality; investigate it again and derive workpackages incl. cirticiality and impact what we should do; then go and make the improvements, afeter each commit and push, and once you are done, merge with main

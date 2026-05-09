@@ -5,11 +5,21 @@
   "branch": "codex/code-quality-workpackages-20260510",
   "checkpoints_count": 2,
   "files_touched": [
+    "packages/web/src/Viewport.tsx",
     "packages/web/src/__tests__/offlineQueue.test.ts",
+    "packages/web/src/design-systems/IconGallery.tsx",
+    "packages/web/src/families/geometryFns/doorGeometry.ts",
     "packages/web/src/plan/ImageTraceDropZone.tsx",
     "packages/web/src/plan/PlanCanvas.tsx",
+    "packages/web/src/plan/SheetCanvas.tsx",
+    "packages/web/src/plan/SheetReviewSurface.tsx",
+    "packages/web/src/plan/SketchCanvas.tsx",
     "packages/web/src/state/storeTypes.ts",
     "packages/web/src/workspace/ProjectBrowser.test.tsx",
+    "packages/web/src/workspace/ProjectBrowser.tsx",
+    "packages/web/src/workspace/TopBar.tsx",
+    "packages/web/src/workspace/Workspace.tsx",
+    "packages/web/src/workspace/WorkspaceRightRail.tsx",
     "packages/web/src/workspace/workspaceUtils.ts"
   ],
   "sessions": [
@@ -24,13 +34,19 @@
       "transcript": "/6b/55ab883be3/1/full.jsonl",
       "content_hash": "/6b/55ab883be3/1/content_hash.txt",
       "prompt": "/6b/55ab883be3/1/prompt.txt"
+    },
+    {
+      "metadata": "/6b/55ab883be3/2/metadata.json",
+      "transcript": "/6b/55ab883be3/2/full.jsonl",
+      "content_hash": "/6b/55ab883be3/2/content_hash.txt",
+      "prompt": "/6b/55ab883be3/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 76053,
+    "input_tokens": 161277,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 314112,
-    "output_tokens": 3255,
-    "api_call_count": 20
+    "cache_read_tokens": 2176896,
+    "output_tokens": 12478,
+    "api_call_count": 55
   }
 }
