@@ -4,7 +4,9 @@
   "strategy": "manual-commit",
   "branch": "feat/parity-readme-sync",
   "checkpoints_count": 1,
-  "files_touched": null,
+  "files_touched": [
+    "spec/revit-parity/README.md"
+  ],
   "sessions": [
     {
       "metadata": "/36/a76bb26f00/0/metadata.json",
@@ -17,13 +19,19 @@
       "transcript": "/36/a76bb26f00/1/full.jsonl",
       "content_hash": "/36/a76bb26f00/1/content_hash.txt",
       "prompt": "/36/a76bb26f00/1/prompt.txt"
+    },
+    {
+      "metadata": "/36/a76bb26f00/2/metadata.json",
+      "transcript": "/36/a76bb26f00/2/full.jsonl",
+      "content_hash": "/36/a76bb26f00/2/content_hash.txt",
+      "prompt": "/36/a76bb26f00/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 237,
-    "cache_creation_tokens": 548348,
-    "cache_read_tokens": 18058925,
-    "output_tokens": 206462,
-    "api_call_count": 219
+    "input_tokens": 288,
+    "cache_creation_tokens": 595939,
+    "cache_read_tokens": 24396668,
+    "output_tokens": 228392,
+    "api_call_count": 262
   }
 }
