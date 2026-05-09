@@ -420,15 +420,16 @@ export function buildOneFamilyHomeCommands() {
       widthMm: 900,
     },
 
-    // Loggia recess — full-width recessZone on UF south wall (spec §1 "approx 1 m deep").
-    // The cladding_warm_wood materialKey (set Phase 3) renders on both setback back surfaces.
-    // The chimney mass (Phase 6) sits inside the centre zone (x=1500..3000) and its south
-    // face (at y=0) is visible as the "protruding chimney-like volume" (spec §3).
+    // Loggia recess — two recessZones on UF south wall, skipping the chimney centre.
+    // The non-recessed centre section (T=0.3..0.6, x=1500..3000) protrudes at the
+    // facade line as the "chimney-like volume" (spec §3). Side returns are added in
+    // Phase 6 to complete the chimney box. alongT fractions: 0.3=1500/5000, 0.6=3000/5000.
     {
       type: 'setWallRecessZones',
       wallId: 'hf-w-uf-s',
       recessZones: [
-        { alongTStart: 0.0, alongTEnd: 1.0, setbackMm: LOGGIA_SETBACK, floorContinues: true },
+        { alongTStart: 0.0, alongTEnd: 0.3, setbackMm: LOGGIA_SETBACK, floorContinues: true },
+        { alongTStart: 0.6, alongTEnd: 1.0, setbackMm: LOGGIA_SETBACK, floorContinues: true },
       ],
     },
 
@@ -632,21 +633,29 @@ export function buildOneFamilyHomeCommands() {
     },
 
     // === PHASE 6: DETAIL ===
-    // Chimney-like centre protrusion (spec §3).
-    // A mass occupying x=CHIMNEY_X0..CHIMNEY_X1, y=0..LOGGIA_SETBACK at UF level.
-    // Its south face (at y=0) is flush with the main facade line; flanked by the
-    // left (trapezoidal window) and right (curtain wall) loggia bays.
+    // Chimney-like centre protrusion (spec §3 "protruding chimney-like volume clad
+    // in vertical siding"). The UF south wall's non-recessed centre section
+    // (T=0.3..0.6, x=1500..3000) provides the south face. Two return walls close
+    // the left and right edges so the protrusion reads as a solid volume.
     {
-      type: 'createMass',
-      id: 'hf-mass-chimney',
-      name: 'Chimney-like centre protrusion',
+      type: 'createWall',
+      id: 'hf-w-chimney-w',
+      name: 'Chimney west return',
       levelId: 'hf-lvl-upper',
-      footprintMm: [
-        { xMm: CHIMNEY_X0, yMm: 0 },
-        { xMm: CHIMNEY_X1, yMm: 0 },
-        { xMm: CHIMNEY_X1, yMm: LOGGIA_SETBACK },
-        { xMm: CHIMNEY_X0, yMm: LOGGIA_SETBACK },
-      ],
+      start: { xMm: CHIMNEY_X0, yMm: LOGGIA_SETBACK },
+      end: { xMm: CHIMNEY_X0, yMm: 0 },
+      thicknessMm: WALL_T,
+      heightMm: CHIMNEY_H,
+      materialKey: 'cladding_warm_wood',
+    },
+    {
+      type: 'createWall',
+      id: 'hf-w-chimney-e',
+      name: 'Chimney east return',
+      levelId: 'hf-lvl-upper',
+      start: { xMm: CHIMNEY_X1, yMm: 0 },
+      end: { xMm: CHIMNEY_X1, yMm: LOGGIA_SETBACK },
+      thicknessMm: WALL_T,
       heightMm: CHIMNEY_H,
       materialKey: 'cladding_warm_wood',
     },
