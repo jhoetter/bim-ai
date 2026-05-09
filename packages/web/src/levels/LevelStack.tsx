@@ -12,6 +12,8 @@ export function LevelStack(props: {
   onElevationCommitted(levelId: string, elevationMm: number): void;
 
   onNameCommitted?: (levelId: string, name: string) => void;
+
+  onCreatePlanView?: (levelId: string, levelName: string) => void;
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [nameDraft, setNameDraft] = useState('');
@@ -77,6 +79,18 @@ export function LevelStack(props: {
                 title={props.onNameCommitted ? 'Double-click to rename' : undefined}
               >
                 {lv.name}
+              </button>
+            )}
+
+            {props.onCreatePlanView && editingId !== lv.id && (
+              <button
+                type="button"
+                data-testid={`level-create-view-${lv.id}`}
+                title="Create floor plan view for this level"
+                className="rounded px-1 py-0.5 text-[10px] text-muted hover:bg-accent/10 hover:text-foreground"
+                onClick={() => props.onCreatePlanView!(lv.id, lv.name)}
+              >
+                +
               </button>
             )}
 

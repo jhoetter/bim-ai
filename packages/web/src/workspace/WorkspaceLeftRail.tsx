@@ -71,6 +71,15 @@ export function WorkspaceLeftRail({
               value: name,
             })
           }
+          onCreatePlanView={(levelId, levelName) =>
+            void onSemanticCommand({
+              type: 'upsertPlanView',
+              id: crypto.randomUUID(),
+              name: `${levelName} — Plan`,
+              levelId,
+              discipline: 'architecture',
+            })
+          }
         />
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto">
