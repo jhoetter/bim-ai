@@ -58,7 +58,7 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-009 | Language settings                                    | UI & Nav       | ✅            | EN/DE toggle via language selector in TopBar; localStorage persistence                                              |
 | F-010 | View Scale selector                                  | UI & Nav       | ✅            | Live 1:N scale bar + preset menu; missing annotation-driven plot scale lock                                          |
 | F-011 | Visual Style selector (Wireframe/Shaded/etc.)        | UI & Nav       | 🟡            | Plan detail level + plan style selectors; 3D has no Visual Style dropdown                                            |
-| F-012 | Visibility / Graphic Overrides (VV)                  | UI & Nav       | 🟡            | VVDialog has model/annotation/filters/links tabs; 13 model + 8 annotation categories; missing full 120-category set  |
+| F-012 | Visibility / Graphic Overrides (VV)                  | UI & Nav       | 🟡            | VVDialog (VV hotkey) toggles per-category projection and cut visibility (lines, patterns, fill) per-view. Halftone checkbox now implemented per-category row (sets both projection.halftone and cut.halftone). Missing: transparency slider, override sub-columns (surface/cut patterns separate) |
 | F-013 | Autodesk Account & License UI                        | UI & Nav       | ❌            | N/A (different SaaS model)                                                                                           |
 | F-014 | Reveal Hidden Elements mode                          | UI & Nav       | ✅            | 💡 toggle in plan canvas footer + magenta chip + magenta per-element overlay; missing right-click Unhide             |
 | F-015 | Link CAD (DWG/DXF) — live reference                 | CAD            | 🟡            | DXF import backend implemented; frontend file-picker stubbed; no live reload                                         |
@@ -159,8 +159,8 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-110 | Wall Top Offset (negative, sub-slab)                 | Floors         | ✅            | InspectorContent Base Offset and Top Offset support negative values; enables sub-slab placement                      |
 | F-111 | 3D View rotation (Shift + Middle Click)              | Floors         | ✅            | cameraRig.ts classifyPointer returns 'orbit' for Shift+MMB; matches Revit convention                                |
 | F-112 | Default {3D} isometric view                          | Floors         | 🟡            | 3D canvas with orbit/pan/zoom; auto-loads vp-main-iso preset; ViewCube + Home reset; missing QAT 3D button          |
-| F-113 | Graphic Display Options (shadows, depth cue, etc.)   | Floors         | 🟡            | GDO toggle button (`data-testid="viewport-gdo-toggle"`) in 3D viewport opens panel with Visual Style (Shaded/Wireframe), Background (White/Light Grey/Dark), and Edge display (Normal/None). Missing: silhouette edge width, depth cue, photographic exposure, shadows, ambient occlusion |
-| F-114 | Placing component families in project                | Furn. Place   | ❌            | No interactive placement with live preview                                                                           |
+| F-113 | Graphic Display Options (shadows, depth cue, etc.)   | Floors         | 🟡            | GDO toggle button in 3D viewport opens panel with Visual Style (Shaded/Consistent Colors/Wireframe/Hidden Line), Background (White/Light Grey/Dark), and Edge display (Normal/None). Missing: silhouette edge width, depth cue, photographic exposure, shadows, ambient occlusion |
+| F-114 | Placing component families in project                | Furn. Place   | 🟡            | Component tool (hotkey CC) places placed_asset elements; asset selector in OptionsBar; brown rectangle rendered in plan canvas. Missing: live preview, snap to walls, rotation on placement |
 | F-115 | Spacebar rotation during placement                   | Furn. Place   | ❌            |                                                                                                                      |
 | F-116 | Copy (CO) tool                                       | Furn. Place   | 🟡            | Ctrl+C/V clipboard copy-paste with offset; missing two-point interactive Copy and multi-copy                         |
 | F-117 | Parametric living room sofa family                   | Furn. Place   | ❌            |                                                                                                                      |
@@ -179,8 +179,8 @@ _Last audited: 2026-05-09 against codebase at commit `docs/parity-tracker-audit`
 | Status                 | Count   | % of total |
 | ---------------------- | ------- | ---------- |
 | ✅ Fully available     | 26      | 22%        |
-| 🟡 Partially available | 41      | 34%        |
-| ❌ Not available       | 53      | 44%        |
+| 🟡 Partially available | 42      | 35%        |
+| ❌ Not available       | 52      | 43%        |
 | **Total**              | **120** | **100%**   |
 
 ---
