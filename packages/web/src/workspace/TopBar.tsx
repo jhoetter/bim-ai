@@ -12,6 +12,7 @@ import {
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icons, IconLabels, ICON_SIZE, type LucideLikeIcon } from '@bim-ai/ui';
+import { useBimStore } from '../state/store';
 import { SourceViewChip } from './SourceViewChip';
 import { type ViewTab, type TabKind } from './tabsModel';
 
@@ -88,6 +89,12 @@ export interface TopBarProps {
   onRedo?: () => void;
   /** F-006: true when there is at least one undo step available. */
   canUndo?: boolean;
+  /** F-006: QAT Section shortcut — activates the section tool. */
+  onSectionShortcut?: () => void;
+  /** F-006: QAT Thin Lines toggle — when true the toggle is active. */
+  thinLinesEnabled?: boolean;
+  /** F-006: QAT Thin Lines toggle callback. */
+  onToggleThinLines?: () => void;
   // Tab list (replaces mode pills when provided)
   tabs?: ViewTab[];
   activeTabId?: string | null;
@@ -128,6 +135,9 @@ export function TopBar({
   onUndo,
   onRedo,
   canUndo,
+  onSectionShortcut,
+  thinLinesEnabled,
+  onToggleThinLines,
   tabs,
   activeTabId,
   onTabActivate,
@@ -154,6 +164,9 @@ export function TopBar({
         onUndo={onUndo}
         onRedo={onRedo}
         canUndo={canUndo}
+        onSectionShortcut={onSectionShortcut}
+        thinLinesEnabled={thinLinesEnabled}
+        onToggleThinLines={onToggleThinLines}
       />
       {tabs !== undefined ? (
         <TopBarTabs
@@ -213,6 +226,9 @@ function TopBarLeft({
   onUndo,
   onRedo,
   canUndo,
+  onSectionShortcut,
+  thinLinesEnabled,
+  onToggleThinLines,
 }: {
   projectName: string;
   onProjectNameClick?: () => void;
@@ -221,6 +237,9 @@ function TopBarLeft({
   onUndo?: () => void;
   onRedo?: () => void;
   canUndo?: boolean;
+  onSectionShortcut?: () => void;
+  thinLinesEnabled?: boolean;
+  onToggleThinLines?: () => void;
 }): JSX.Element {
   const { t } = useTranslation();
   return (
@@ -269,6 +288,34 @@ function TopBarLeft({
         className="relative inline-flex h-8 w-8 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface hover:text-foreground"
       >
         <Icons.redo size={ICON_SIZE.topbar} aria-hidden="true" />
+      </button>
+      {/* F-006: QAT — Section shortcut */}
+      <button
+        type="button"
+        data-testid="topbar-section-shortcut"
+        title="Section"
+        aria-label="Section"
+        onClick={onSectionShortcut ?? (() => useBimStore.getState().setPlanTool('section'))}
+        className="relative inline-flex h-8 w-8 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface hover:text-foreground"
+      >
+        <Icons.section size={ICON_SIZE.topbar} aria-hidden="true" />
+      </button>
+      {/* F-006: QAT — Thin Lines toggle */}
+      <button
+        type="button"
+        data-testid="topbar-thin-lines"
+        title="Thin Lines"
+        aria-label={IconLabels.thinLines}
+        aria-pressed={thinLinesEnabled ?? false}
+        onClick={onToggleThinLines ?? (() => useBimStore.getState().toggleThinLines())}
+        className={[
+          'relative inline-flex h-8 w-8 items-center justify-center rounded-md transition-colors',
+          thinLinesEnabled
+            ? 'bg-accent text-accent-foreground hover:bg-accent/80'
+            : 'text-muted hover:bg-surface hover:text-foreground',
+        ].join(' ')}
+      >
+        <Icons.thinLines size={ICON_SIZE.topbar} aria-hidden="true" />
       </button>
     </div>
   );

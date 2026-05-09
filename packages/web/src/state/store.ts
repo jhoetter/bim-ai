@@ -2061,6 +2061,11 @@ export const useBimStore = create<StoreState>((set, get) => {
     toggleNeighborhoodMasses: () =>
       set((s) => ({ showNeighborhoodMasses: !s.showNeighborhoodMasses })),
 
+    // F-006: QAT Thin Lines toggle.
+    thinLinesEnabled: false,
+
+    toggleThinLines: () => set((s) => ({ thinLinesEnabled: !s.thinLinesEnabled })),
+
     vvDialogOpen: false,
 
     openVVDialog: () => set({ vvDialogOpen: true }),
