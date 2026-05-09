@@ -1,0 +1,25 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "cd7e7480220b",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/web/src/workspace/LeftRail.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/cd/7e7480220b/0/metadata.json",
+      "transcript": "/cd/7e7480220b/0/full.jsonl",
+      "content_hash": "/cd/7e7480220b/0/content_hash.txt",
+      "prompt": "/cd/7e7480220b/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 7719,
+    "cache_creation_tokens": 4392791,
+    "cache_read_tokens": 276732260,
+    "output_tokens": 1292469,
+    "api_call_count": 2804
+  }
+}

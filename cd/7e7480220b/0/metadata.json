@@ -1,0 +1,34 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "cd7e7480220b",
+  "session_id": "484b3fc4-cdb5-4d63-973e-ff931c99ea77",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-09T19:06:39.18798Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/web/src/workspace/LeftRail.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "d8f97dda8e66",
+  "token_usage": {
+    "input_tokens": 7719,
+    "cache_creation_tokens": 4392791,
+    "cache_read_tokens": 276732260,
+    "output_tokens": 1292469,
+    "api_call_count": 2804
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-09T19:06:38.825684Z",
+    "agent_lines": 1,
+    "agent_removed": 0,
+    "human_added": 10,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 11,
+    "total_lines_changed": 14,
+    "agent_percentage": 7.142857142857142,
+    "metric_version": 2
+  }
+}
