@@ -27,6 +27,8 @@ export function OptionsBar(): JSX.Element | null {
   const setActiveWallTypeId = useBimStore((s) => s.setActiveWallTypeId);
   const activeFloorTypeId = useBimStore((s) => s.activeFloorTypeId);
   const setActiveFloorTypeId = useBimStore((s) => s.setActiveFloorTypeId);
+  const applyAreaRules = useBimStore((s) => s.applyAreaRules);
+  const setApplyAreaRules = useBimStore((s) => s.setApplyAreaRules);
 
   if (planTool === 'wall') {
     return (
@@ -114,6 +116,23 @@ export function OptionsBar(): JSX.Element | null {
             aria-label="Floor boundary offset in mm"
           />
           <span className="text-muted opacity-60">mm</span>
+        </label>
+      </div>
+    );
+  }
+
+  if (planTool === 'area-boundary') {
+    return (
+      <div data-testid="options-bar" className={BAR_CLASS}>
+        <label className="flex items-center gap-1 text-[11px]">
+          <input
+            type="checkbox"
+            checked={applyAreaRules}
+            onChange={(e) => setApplyAreaRules(e.target.checked)}
+            aria-label="Apply area rules"
+            data-testid="options-bar-apply-area-rules"
+          />
+          <span>Apply Area Rules</span>
         </label>
       </div>
     );

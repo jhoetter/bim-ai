@@ -179,6 +179,7 @@ export type StoreState = {
     includeUntagged: boolean;
   } | null;
   wallLocationLine: WallLocationLine;
+  applyAreaRules: boolean;
   floorBoundaryOffsetMm: number;
   wallDrawOffsetMm: number;
   wallDrawHeightMm: number;
@@ -218,6 +219,7 @@ export type StoreState = {
   setPlanTool: (t: PlanTool) => void;
   setActiveLevelId: (id: string | undefined) => void;
   setWallLocationLine: (loc: WallLocationLine) => void;
+  setApplyAreaRules: (v: boolean) => void;
   setFloorBoundaryOffsetMm: (mm: number) => void;
   setWallDrawOffsetMm: (v: number) => void;
   setWallDrawHeightMm: (h: number) => void;

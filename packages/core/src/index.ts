@@ -1314,6 +1314,8 @@ export type Element =
       optionLocks?: Record<string, string>;
       /** DSC-V3-02: per-view discipline lens; 'show_all' = foreground for all elements. */
       defaultLens?: ViewLensMode;
+      /** F-028: view subtype for tracking and Project Browser display. */
+      planViewSubtype?: 'floor_plan' | 'lighting_plan' | 'power_plan' | 'coordination_plan';
     }
   | {
       kind: 'view_template';

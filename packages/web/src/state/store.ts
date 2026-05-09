@@ -1049,6 +1049,10 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
       underlayLevelId: (raw.underlayLevelId ?? raw.underlay_level_id ?? null) as string | null,
       discipline:
         typeof raw.discipline === 'string' && raw.discipline ? raw.discipline : 'architecture',
+      planViewSubtype:
+        typeof raw.planViewSubtype === 'string' && raw.planViewSubtype
+          ? (raw.planViewSubtype as 'floor_plan' | 'lighting_plan' | 'power_plan' | 'coordination_plan')
+          : undefined,
       phaseId: (raw.phaseId ?? raw.phase_id ?? null) as string | null,
       cropMinMm,
       cropMaxMm,
@@ -1560,6 +1564,8 @@ export const useBimStore = create<StoreState>((set, get) => {
 
     wallLocationLine: 'wall-centerline',
 
+    applyAreaRules: true,
+
     floorBoundaryOffsetMm: 0,
 
     wallDrawOffsetMm: 0,
@@ -1808,6 +1814,8 @@ export const useBimStore = create<StoreState>((set, get) => {
     setActiveLevelId: (id) => set({ activeLevelId: id }),
 
     setWallLocationLine: (wallLocationLine) => set({ wallLocationLine }),
+
+    setApplyAreaRules: (v) => set({ applyAreaRules: v }),
 
     setFloorBoundaryOffsetMm: (floorBoundaryOffsetMm) => set({ floorBoundaryOffsetMm }),
 

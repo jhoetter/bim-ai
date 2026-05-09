@@ -923,6 +923,21 @@ export function InspectorPlanViewEditor({
       </label>
 
       <label className={LABEL_CLS}>
+        <span>View Type</span>
+        <select
+          className={INPUT_CLS}
+          value={el.planViewSubtype ?? 'floor_plan'}
+          onChange={(e) => onPersistProperty('planViewSubtype', e.target.value)}
+          data-testid="inspector-plan-view-subtype"
+        >
+          <option value="floor_plan">Floor Plan</option>
+          <option value="lighting_plan">Lighting Plan</option>
+          <option value="power_plan">Power Plan</option>
+          <option value="coordination_plan">Coordination Plan</option>
+        </select>
+      </label>
+
+      <label className={LABEL_CLS}>
         <span>Room Labels</span>
         <input
           type="checkbox"
