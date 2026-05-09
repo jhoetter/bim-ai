@@ -1,0 +1,1 @@
+please rebuild the seed house from @spec/target-house-seed.md using your skill @claude-skills/sketch-to-bim/; replace the current model, build from scratch aware of the md and your planning skills
