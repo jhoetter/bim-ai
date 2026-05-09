@@ -4,7 +4,10 @@
   "strategy": "manual-commit",
   "branch": "main",
   "checkpoints_count": 2,
-  "files_touched": null,
+  "files_touched": [
+    "packages/web/src/workspace/sectionViewportSvg.tsx",
+    "spec/revit-parity/ch03-levels-views.md"
+  ],
   "sessions": [
     {
       "metadata": "/38/5e7fa30579/0/metadata.json",
@@ -17,6 +20,12 @@
       "transcript": "/38/5e7fa30579/1/full.jsonl",
       "content_hash": "/38/5e7fa30579/1/content_hash.txt",
       "prompt": "/38/5e7fa30579/1/prompt.txt"
+    },
+    {
+      "metadata": "/38/5e7fa30579/2/metadata.json",
+      "transcript": "/38/5e7fa30579/2/full.jsonl",
+      "content_hash": "/38/5e7fa30579/2/content_hash.txt",
+      "prompt": "/38/5e7fa30579/2/prompt.txt"
     }
   ],
   "token_usage": {
