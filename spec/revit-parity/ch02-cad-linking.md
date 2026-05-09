@@ -81,7 +81,7 @@ Source segment: `00:27:59 – 00:55:00`
 **Screenshot:**
 ![Align CAD to Base Point](file:///Users/jhoetter/Desktop/Revit%20Specs/0302_01-02-46.png)
 
-**bim-ai status:** ❌ Not available — no explicit coordinate alignment workflow.
+**bim-ai status:** 🟡 Partial — `ManageLinksDialog.tsx` exposes three alignment modes for every `link_model` row via an `AlignMode` selector: `origin_to_origin` ("Origin → Origin"), `project_origin` ("Project Base Point"), and `shared_coords` ("Shared Coords"). These map directly to Revit's Link CAD positioning options. Missing: the equivalent UI for `link_dxf` underlays (DXF alignment mode is not exposed); no interactive pick-point workflow to click a DWG corner and snap it to the Project Base Point in the canvas.
 
 ---
 
@@ -92,7 +92,7 @@ Source segment: `00:27:59 – 00:55:00`
 **Screenshot:**
 ![Project Base Point](file:///Users/jhoetter/Desktop/Revit%20Specs/0134_00-15-08.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — `project_base_point` and `survey_point` are first-class element kinds in `@bim-ai/core`. The 3D viewport renders them as visual markers (blue circled cross for PBP, green triangle for Survey Point) via `originMarkers.ts`. They are visible/hidden via VG → Site/Origin category (`site_origin` in `MODEL_CATEGORIES`). Missing: plan-canvas 2D annotation markers (cross + clipped circle); interactive "Clip" / "Unclip" toggle; and a dedicated coordinate properties inspector for editing positionMm / angleToTrueNorthDeg.
 
 ---
 

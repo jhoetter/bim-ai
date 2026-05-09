@@ -51,6 +51,7 @@ export function TabBar({
   const [dragSrc, setDragSrc] = useState<number | null>(null);
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
   const popoverRef = useRef<HTMLDivElement | null>(null);
+  const tabBarRef = useRef<HTMLDivElement>(null);
 
   // Click-outside closes the popover.
   useEffect(() => {
@@ -64,12 +65,36 @@ export function TabBar({
     return () => document.removeEventListener('mousedown', onDoc);
   }, [popoverOpen]);
 
+  // Convert vertical scroll to horizontal scroll on the tab bar so a
+  // regular mouse wheel (or two-finger vertical swipe) scrolls tabs.
+  useEffect(() => {
+    const el = tabBarRef.current;
+    if (!el) return;
+    const onWheel = (ev: WheelEvent): void => {
+      if (Math.abs(ev.deltaX) > Math.abs(ev.deltaY)) return; // already horizontal
+      ev.preventDefault();
+      el.scrollLeft += ev.deltaY;
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, []);
+
+  // Scroll the active tab into view whenever activeId changes.
+  useEffect(() => {
+    if (!activeId || !tabBarRef.current) return;
+    const activeEl = tabBarRef.current.querySelector<HTMLElement>(`[data-tab-id="${activeId}"]`);
+    if (activeEl) {
+      activeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+    }
+  }, [activeId]);
+
   return (
     <div
+      ref={tabBarRef}
       role="tablist"
       aria-label={t('workspace.openViews')}
       data-testid="view-tabs"
-      className="flex items-end gap-0.5 border-b border-border bg-surface px-2 pt-1.5"
+      className="flex items-end gap-0.5 overflow-x-auto border-b border-border bg-surface pt-1.5"
       style={{ height: 38 }}
     >
       {tabs.length === 0 ? (

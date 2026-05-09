@@ -14,11 +14,16 @@ export function WorkspaceLeftRail({
   onSemanticCommand,
   openTabFromElement,
   onModeChange,
+  onSetModeOnly,
   onOpenFamilyLibrary,
 }: {
   onSemanticCommand: (cmd: Record<string, unknown>) => void | Promise<void>;
   openTabFromElement: (el: Element) => void;
   onModeChange: (mode: WorkspaceMode) => void;
+  /** Sets mode + viewerMode without touching tab state. Used after
+   * `openTabFromElement` has already activated the correct tab, so that
+   * `onModeChange` (which calls activateOrOpenKind) doesn't override it. */
+  onSetModeOnly?: (mode: WorkspaceMode) => void;
   onOpenFamilyLibrary?: () => void;
 }): JSX.Element {
   const elementsById = useBimStore((s) => s.elementsById);
@@ -175,13 +180,13 @@ export function WorkspaceLeftRail({
             }
             if (el.kind === 'plan_view') {
               openTabFromElement(el);
-              onModeChange('plan');
+              onSetModeOnly?.('plan'); // change mode without overriding the active tab
               select(id);
               return;
             }
             if (el.kind === 'viewpoint') {
               openTabFromElement(el);
-              onModeChange('3d');
+              onSetModeOnly?.('3d'); // change mode without overriding the active tab
               select(id);
               if (el.mode === 'orbit_3d' && el.camera) {
                 setOrbitCameraFromViewpointMm({
@@ -195,19 +200,19 @@ export function WorkspaceLeftRail({
             }
             if (el.kind === 'section_cut') {
               openTabFromElement(el);
-              onModeChange('section');
+              onSetModeOnly?.('section'); // change mode without overriding the active tab
               select(id);
               return;
             }
             if (el.kind === 'sheet') {
               openTabFromElement(el);
-              onModeChange('sheet');
+              onSetModeOnly?.('sheet'); // change mode without overriding the active tab
               select(id);
               return;
             }
             if (el.kind === 'schedule') {
               openTabFromElement(el);
-              onModeChange('schedule');
+              onSetModeOnly?.('schedule'); // change mode without overriding the active tab
               select(id);
               return;
             }

@@ -31,6 +31,7 @@ export function CanvasMount({
   modelId,
   wsOn,
   onPersistViewpointField,
+  lensMode,
 }: {
   mode: WorkspaceMode;
   viewerMode: 'plan_canvas' | 'orbit_3d';
@@ -47,6 +48,7 @@ export function CanvasMount({
     key: string;
     value: string;
   }) => void | Promise<void>;
+  lensMode?: string;
 }): JSX.Element {
   if ((mode as string) === 'plan-3d') {
     return (
@@ -60,6 +62,7 @@ export function CanvasMount({
             onSemanticCommand={onSemanticCommand}
             cameraHandleRef={cameraHandleRef}
             initialCamera={initialCamera}
+            lensMode={lensMode}
           />
         </div>
         <div style={{ position: 'relative' }}>
@@ -86,6 +89,7 @@ export function CanvasMount({
         onSemanticCommand={onSemanticCommand}
         cameraHandleRef={cameraHandleRef}
         initialCamera={initialCamera}
+        lensMode={lensMode}
       />
     );
   if (mode === 'section')
@@ -117,6 +121,7 @@ export function CanvasMount({
       wsConnected={wsOn ?? false}
       activeLevelResolvedId={activeLevelId}
       onSemanticCommand={onSemanticCommand}
+      lensMode={lensMode}
     />
   );
 }

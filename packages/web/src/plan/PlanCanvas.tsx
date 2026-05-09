@@ -237,6 +237,8 @@ type Props = {
   cameraHandleRef?: RefObject<PlanCameraHandle | null>;
   /** Camera to restore on mount (ignored after first render). */
   initialCamera?: { centerMm?: { xMm: number; yMm: number }; halfMm?: number };
+  /** Global discipline lens from the StatusBar dropdown: 'all' | 'architecture' | 'structure' | 'mep' */
+  lensMode?: string;
 };
 
 export function PlanCanvas({
@@ -245,6 +247,7 @@ export function PlanCanvas({
   onSemanticCommand,
   cameraHandleRef,
   initialCamera,
+  lensMode = 'all',
 }: Props) {
   void wsConnected;
   const theme = useTheme();
@@ -849,8 +852,21 @@ export function PlanCanvas({
     // DSC-V3-02 — discipline lens ghost pass: 25% opacity for non-matching elements.
     {
       const planView = activePlanViewId ? elementsById[activePlanViewId] : null;
-      const lens =
-        planView && 'defaultLens' in planView ? (planView.defaultLens as string) : 'show_all';
+      // Global lensMode from StatusBar dropdown overrides the plan_view's defaultLens.
+      // lensMode values: 'all' | 'architecture' | 'structure' | 'mep'
+      // plan_view.defaultLens values: 'show_all' | 'show_arch' | 'show_struct' | 'show_mep'
+      const LENS_PROP_TO_TOKEN: Record<string, string> = {
+        architecture: 'show_arch',
+        structure: 'show_struct',
+        mep: 'show_mep',
+      };
+      const resolvedLens =
+        lensMode && lensMode !== 'all'
+          ? (LENS_PROP_TO_TOKEN[lensMode] ?? 'show_all')
+          : planView && 'defaultLens' in planView
+            ? (planView.defaultLens as string)
+            : 'show_all';
+      const lens = resolvedLens;
       if (lens !== 'show_all') {
         const LENS_TO_DISC: Record<string, string> = {
           show_arch: 'arch',
@@ -1375,6 +1391,7 @@ export function PlanCanvas({
     activeCropState,
     activePlanViewId,
     showNeighborhoodMasses,
+    lensMode,
   ]);
 
   // Auto-fit camera when a level's elements first become available, and on
@@ -2816,19 +2833,27 @@ export function PlanCanvas({
         camRef.current.camX += ndcX * asp * dH;
         camRef.current.camZ -= ndcY * dH;
       } else {
-        // Mouse wheel or two-finger trackpad scroll.
-        // Y → zoom at ~30 % per mouse notch; X → pan so a sideways swipe
-        // scrolls the canvas rather than accidentally zooming.
-        const oldHalf = camRef.current.half;
-        const newHalf = THREE.MathUtils.clamp(oldHalf * Math.exp(rawY * 0.003), HALF_MIN, HALF_MAX);
-        const dH = oldHalf - newHalf;
-        camRef.current.half = newHalf;
-        camRef.current.camX += ndcX * asp * dH;
-        camRef.current.camZ -= ndcY * dH;
-        if (Math.abs(rawX) > 1) {
-          // Horizontal two-finger swipe → pan X.
-          const worldPerPx = (2 * oldHalf * asp) / Math.max(1, rect.width);
-          camRef.current.camX += rawX * worldPerPx;
+        // Distinguish mouse wheel (large discrete steps) from trackpad two-finger swipe
+        // (small continuous values). Mouse wheel: zoom. Trackpad swipe: pan.
+        // Heuristic: mouse wheel produces |deltaY| > 30 with |deltaX| < 3.
+        const isMouseWheel = Math.abs(rawY) > 30 && Math.abs(rawX) < 3;
+        if (isMouseWheel) {
+          // Mouse scroll wheel → zoom at cursor (zoom-to-pointer)
+          const oldHalf = camRef.current.half;
+          const newHalf = THREE.MathUtils.clamp(
+            oldHalf * Math.exp(rawY * 0.003),
+            HALF_MIN,
+            HALF_MAX,
+          );
+          const dH = oldHalf - newHalf;
+          camRef.current.half = newHalf;
+          camRef.current.camX += ndcX * asp * dH;
+          camRef.current.camZ -= ndcY * dH;
+        } else {
+          // Trackpad two-finger swipe → pan (1:1 with finger movement)
+          const worldPerPx = (2 * camRef.current.half) / Math.max(1, rect.height);
+          camRef.current.camX -= rawX * worldPerPx;
+          camRef.current.camZ -= rawY * worldPerPx;
         }
       }
       resizeCam();
@@ -3459,8 +3484,8 @@ export function PlanCanvas({
           data-testid="measure-readout"
         >
           <span className="font-mono">
-            {(measureReadout.distMm / 1000).toFixed(3)} m &nbsp;
-            ({Math.round(measureReadout.distMm)} mm)
+            {(measureReadout.distMm / 1000).toFixed(3)} m &nbsp; (
+            {Math.round(measureReadout.distMm)} mm)
           </span>
           <button
             type="button"
