@@ -419,6 +419,9 @@ export function PlanCanvas({
   const setPlanTool = useBimStore((s) => s.setPlanTool);
   // OSM-V3-02 — neighborhood mass layer toggle.
   const showNeighborhoodMasses = useBimStore((s) => s.showNeighborhoodMasses);
+  // F-014 — reveal hidden elements mode (lightbulb toggle).
+  const revealHiddenMode = useBimStore((s) => s.revealHiddenMode);
+  const setRevealHiddenMode = useBimStore((s) => s.setRevealHiddenMode);
   // EDT-V3-05 — loop mode: re-arm chained tools after each segment commit.
   const loopMode = useToolPrefs((s) => s.loopMode);
   // TOP-V3-03 — active finish category for the subdivision palette.
@@ -3469,6 +3472,28 @@ export function PlanCanvas({
           </label>
         </div>
       ) : null}
+      {/* F-014 — Reveal Hidden mode chip: shown while reveal mode is active. */}
+      {revealHiddenMode && (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 48,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: '#ff00ff',
+            color: '#fff',
+            padding: '2px 10px',
+            borderRadius: 4,
+            fontSize: 11,
+            fontWeight: 600,
+            pointerEvents: 'none',
+            zIndex: 20,
+          }}
+          data-testid="reveal-hidden-chip"
+        >
+          Reveal Hidden Elements — hidden categories visible
+        </div>
+      )}
       {/* Measure readout chip — shown after a two-click distance measurement */}
       {measureReadout && planTool === 'measure' ? (
         <div
@@ -3668,6 +3693,26 @@ export function PlanCanvas({
             );
           })()
         : null}
+      {/* F-014 — Reveal Hidden toggle button, lower-right corner above snap toolbar. */}
+      <div className="pointer-events-auto absolute right-3 bottom-10 z-10">
+        <button
+          type="button"
+          title={revealHiddenMode ? 'Exit Reveal Hidden' : 'Reveal Hidden Elements (lightbulb)'}
+          data-testid="reveal-hidden-toggle"
+          onClick={() => setRevealHiddenMode(!revealHiddenMode)}
+          style={{
+            padding: '2px 8px',
+            fontSize: 10,
+            background: revealHiddenMode ? '#ff00ff' : 'var(--color-surface)',
+            color: revealHiddenMode ? '#fff' : 'var(--color-muted)',
+            border: '1px solid var(--color-border)',
+            borderRadius: 4,
+            cursor: 'pointer',
+          }}
+        >
+          {revealHiddenMode ? '💡 Exit Reveal' : '💡 Reveal Hidden'}
+        </button>
+      </div>
       {/* EDT-05 — per-snap-type toggle UI, lower-right corner. */}
       <div className="pointer-events-auto absolute right-3 bottom-3 z-10">
         <SnapSettingsToolbar value={snapSettings} onChange={setSnapSettings} />
