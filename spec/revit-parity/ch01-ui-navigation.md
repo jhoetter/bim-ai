@@ -14,7 +14,7 @@ Source segment: `00:00:00 – 00:32:00`
 **Screenshot:**
 ![Project Browser](file:///Users/jhoetter/Desktop/Revit%20Specs/0124_00-12-38.png)
 
-**bim-ai status:** 🟡 Partial — `ProjectBrowser.tsx` lists plan views (grouped by view template / discipline), 3D orbit viewpoints, plan viewpoints, section cuts, elevation views, schedules, sheets, view templates, sites, and link_model rows. Per-view inline rename (double-click) and delete (confirm-guarded button) are now implemented for plan views, section cuts, and elevation views. Missing: families subtree, groups, legends, sorting by subdiscipline/phase.
+**bim-ai status:** 🟡 Partial — `ProjectBrowser.tsx` lists plan views (grouped by view template / discipline), 3D orbit viewpoints, plan viewpoints, section cuts, elevation views, schedules, sheets, view templates, sites, link_model rows, and a collapsible Families section (wall_type, floor_type, roof_type grouped by category). Per-view inline rename (double-click) and delete (confirm-guarded button) are now implemented for plan views, section cuts, and elevation views. Missing: legends panel, sorting by subdiscipline/phase, right-click context menu on family items.
 
 ---
 

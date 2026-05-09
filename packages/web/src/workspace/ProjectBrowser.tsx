@@ -213,6 +213,19 @@ export function ProjectBrowser(props: {
     .filter((e): e is Extract<Element, { kind: 'link_model' }> => e.kind === 'link_model')
     .sort((a, b) => a.name.localeCompare(b.name));
 
+  // F-003: Families section — wall_type, floor_type, roof_type
+  const wallTypes = Object.values(props.elementsById)
+    .filter((e): e is Extract<Element, { kind: 'wall_type' }> => e.kind === 'wall_type')
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const floorTypes = Object.values(props.elementsById)
+    .filter((e): e is Extract<Element, { kind: 'floor_type' }> => e.kind === 'floor_type')
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const roofTypes = Object.values(props.elementsById)
+    .filter((e): e is Extract<Element, { kind: 'roof_type' }> => e.kind === 'roof_type')
+    .sort((a, b) => a.name.localeCompare(b.name));
+
   const hasAnyDoc =
     planViewsSorted.length > 0 ||
     viewpoints3d.length > 0 ||
@@ -986,6 +999,15 @@ export function ProjectBrowser(props: {
           })}
         </div>
       ) : null}
+
+      {wallTypes.length > 0 || floorTypes.length > 0 || roofTypes.length > 0 ? (
+        <ProjectBrowserFamiliesGroup
+          wallTypes={wallTypes}
+          floorTypes={floorTypes}
+          roofTypes={roofTypes}
+          onSelect={(id) => useBimStore.getState().select(id)}
+        />
+      ) : null}
     </div>
   );
 }
@@ -1577,6 +1599,67 @@ function PbGroup({ label, children }: { label: string; children: React.ReactNode
         {label}
       </div>
       {children}
+    </div>
+  );
+}
+
+function ProjectBrowserFamiliesGroup({
+  wallTypes,
+  floorTypes,
+  roofTypes,
+  onSelect,
+}: {
+  wallTypes: Extract<Element, { kind: 'wall_type' }>[];
+  floorTypes: Extract<Element, { kind: 'floor_type' }>[];
+  roofTypes: Extract<Element, { kind: 'roof_type' }>[];
+  onSelect: (id: string) => void;
+}): JSX.Element {
+  const [collapsed, setCollapsed] = useState(false);
+
+  const groups: Array<{ label: string; kind: string; items: Array<{ id: string; name: string }> }> =
+    [
+      { label: 'Walls', kind: 'wall_type', items: wallTypes },
+      { label: 'Floors', kind: 'floor_type', items: floorTypes },
+      { label: 'Roofs', kind: 'roof_type', items: roofTypes },
+    ].filter((g) => g.items.length > 0);
+
+  return (
+    <div className="space-y-1" data-testid="project-browser-families-group">
+      <button
+        type="button"
+        onClick={() => setCollapsed((v) => !v)}
+        data-testid="project-browser-families-toggle"
+        className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-muted hover:text-foreground"
+      >
+        <span>{collapsed ? '▸' : '▾'}</span>
+        Families
+      </button>
+      {!collapsed ? (
+        <div className="space-y-1 pl-1">
+          {groups.map((grp) => (
+            <div key={grp.kind} className="space-y-0">
+              <div className="text-[9px] font-semibold uppercase tracking-wide text-muted pl-1">
+                {grp.label} ({grp.items.length})
+              </div>
+              <ul className="space-y-0">
+                {grp.items.map((item) => (
+                  <li key={item.id}>
+                    <button
+                      type="button"
+                      className="w-full px-2 py-0.5 text-left text-[10px] hover:bg-surface-strong"
+                      onClick={() => onSelect(item.id)}
+                      title={`${grp.kind} · ${item.id}`}
+                      data-testid={`pb-family-type-${item.id}`}
+                    >
+                      <span className="text-muted">{grp.kind.replace('_', ' ')} ·</span> {item.name}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
