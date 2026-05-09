@@ -27,6 +27,7 @@ export function ShareModal({ modelId, open, onClose }: Props) {
   const [publicPassword, setPublicPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null);
 
   const fetchAssignments = useCallback(async () => {
     try {
@@ -314,6 +315,7 @@ export function ShareModal({ modelId, open, onClose }: Props) {
                       <input
                         readOnly
                         value={url}
+                        aria-label="Public link URL"
                         style={{
                           flex: 1,
                           padding: '8px 10px',
@@ -323,16 +325,25 @@ export function ShareModal({ modelId, open, onClose }: Props) {
                         }}
                       />
                       <button
-                        onClick={() => navigator.clipboard.writeText(url)}
+                        type="button"
+                        aria-label="Copy public link to clipboard"
+                        onClick={() => {
+                          void navigator.clipboard.writeText(url).then(() => {
+                            setCopiedLinkId(link.id);
+                            setTimeout(() => setCopiedLinkId(null), 2000);
+                          });
+                        }}
                         style={{
                           padding: '8px 12px',
                           borderRadius: 4,
                           border: '1px solid var(--color-border)',
                           cursor: 'pointer',
                           fontSize: 12,
+                          color: copiedLinkId === link.id ? 'var(--color-accent)' : 'inherit',
+                          fontWeight: copiedLinkId === link.id ? 600 : 400,
                         }}
                       >
-                        Copy
+                        {copiedLinkId === link.id ? 'Copied!' : 'Copy'}
                       </button>
                     </div>
                     <div
@@ -347,6 +358,8 @@ export function ShareModal({ modelId, open, onClose }: Props) {
                         Opened {link.openCount} time{link.openCount !== 1 ? 's' : ''}
                       </span>
                       <button
+                        type="button"
+                        aria-label="Revoke public link"
                         onClick={() => handleRevokePublicLink(link.id)}
                         disabled={loading}
                         style={{
