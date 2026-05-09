@@ -161,7 +161,7 @@ export function RoomSeparationAuthoringWorkbench({
       {authorError ? (
         <div
           role="alert"
-          className="rounded border border-destructive/40 bg-destructive/10 p-1.5 text-[10px] text-destructive"
+          className="rounded border border-danger/40 bg-danger/10 p-1.5 text-[10px] text-danger"
         >
           {authorError}
         </div>

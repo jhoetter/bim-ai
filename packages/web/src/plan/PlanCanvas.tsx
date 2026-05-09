@@ -1700,18 +1700,52 @@ export function PlanCanvas({
       grp.add(line);
     };
 
-    const buildComponentGhost = (widthMm: number, heightMm: number, rotDeg: number): THREE.Group => {
+    const buildComponentGhost = (
+      widthMm: number,
+      heightMm: number,
+      rotDeg: number,
+    ): THREE.Group => {
       const g = new THREE.Group();
       const hw = widthMm / 2000;
       const hd = heightMm / 2000;
       const pts = [
-        -hw, SLICE_Y, -hd,   hw, SLICE_Y, -hd,
-         hw, SLICE_Y, -hd,   hw, SLICE_Y,  hd,
-         hw, SLICE_Y,  hd,  -hw, SLICE_Y,  hd,
-        -hw, SLICE_Y,  hd,  -hw, SLICE_Y, -hd,
+        -hw,
+        SLICE_Y,
+        -hd,
+        hw,
+        SLICE_Y,
+        -hd,
+        hw,
+        SLICE_Y,
+        -hd,
+        hw,
+        SLICE_Y,
+        hd,
+        hw,
+        SLICE_Y,
+        hd,
+        -hw,
+        SLICE_Y,
+        hd,
+        -hw,
+        SLICE_Y,
+        hd,
+        -hw,
+        SLICE_Y,
+        -hd,
         // diagonal cross
-        -hw, SLICE_Y, -hd,   hw, SLICE_Y,  hd,
-         hw, SLICE_Y, -hd,  -hw, SLICE_Y,  hd,
+        -hw,
+        SLICE_Y,
+        -hd,
+        hw,
+        SLICE_Y,
+        hd,
+        hw,
+        SLICE_Y,
+        -hd,
+        -hw,
+        SLICE_Y,
+        hd,
       ];
       const geo = new THREE.BufferGeometry();
       geo.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
@@ -2981,7 +3015,12 @@ export function PlanCanvas({
         return;
       }
       if (planTool === 'trim-extend') {
-        const nearestWall = nearestWallAt(elementsById, displayLevelId || undefined, sp.xMm, sp.yMm);
+        const nearestWall = nearestWallAt(
+          elementsById,
+          displayLevelId || undefined,
+          sp.xMm,
+          sp.yMm,
+        );
         if (!nearestWall || nearestWall.distMm > 900) return;
         if (!trimExtendFirstWallRef.current) {
           // First click: pick wall A
@@ -4271,7 +4310,7 @@ export function PlanCanvas({
           <span>{(selectedId ? 1 : 0) + selectedIds.length} elements selected</span>
           <button
             type="button"
-            className="rounded px-2 py-0.5 text-xs font-medium text-primary hover:underline"
+            className="rounded px-2 py-0.5 text-xs font-medium text-accent hover:underline"
             data-testid="filter-selection-button"
             onClick={() => setFilterOpen((v) => !v)}
           >
@@ -4338,7 +4377,7 @@ export function PlanCanvas({
           })()}
           <button
             type="button"
-            className="mt-1 rounded bg-primary px-3 py-1 text-xs font-medium text-primary-foreground"
+            className="mt-1 rounded bg-accent px-3 py-1 text-xs font-medium text-accent-foreground"
             onClick={() => setFilterOpen(false)}
           >
             Close

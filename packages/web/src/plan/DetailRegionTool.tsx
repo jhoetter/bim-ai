@@ -150,7 +150,7 @@ export function DetailRegionOptionsBar({
           className={[
             'rounded border px-2 py-0.5 text-xs',
             hatchId === h
-              ? 'border-primary bg-primary/10 text-primary'
+              ? 'border-accent bg-accent/10 text-accent'
               : 'border-border hover:bg-accent/20 hover:text-foreground',
           ].join(' ')}
           title={h}

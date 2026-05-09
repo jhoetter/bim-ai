@@ -880,19 +880,19 @@ export function SheetDocumentationManifest(props: {
           <ul className="space-y-1 font-mono text-[10px]">
             <li>
               <span className="text-muted">SVG preview:</span>{' '}
-              <a className="text-primary underline" href={exportHrefs.svgHref}>
+              <a className="text-accent underline" href={exportHrefs.svgHref}>
                 {exportHrefs.svgHref}
               </a>
             </li>
             <li>
               <span className="text-muted">PDF preview:</span>{' '}
-              <a className="text-primary underline" href={exportHrefs.pdfHref}>
+              <a className="text-accent underline" href={exportHrefs.pdfHref}>
                 {exportHrefs.pdfHref}
               </a>
             </li>
             <li>
               <span className="text-muted">Print surrogate PNG:</span>{' '}
-              <a className="text-primary underline" href={exportHrefs.printRasterPngHref}>
+              <a className="text-accent underline" href={exportHrefs.printRasterPngHref}>
                 {exportHrefs.printRasterPngHref}
               </a>
             </li>

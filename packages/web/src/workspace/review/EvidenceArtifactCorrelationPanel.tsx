@@ -817,7 +817,7 @@ export function EvidenceArtifactCorrelationPanel({
                     {sr.printRasterPngHref ? (
                       <div className="space-y-0.5">
                         <a
-                          className="text-primary underline break-all"
+                          className="text-accent underline break-all"
                           href={sr.printRasterPngHref}
                           target="_blank"
                           rel="noreferrer"

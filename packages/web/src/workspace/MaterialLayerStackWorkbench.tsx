@@ -207,7 +207,7 @@ export function MaterialLayerStackWorkbench({
                       type="button"
                       aria-label="Remove layer"
                       title="Remove layer"
-                      className="text-muted hover:text-destructive"
+                      className="text-muted hover:text-danger"
                       onClick={() =>
                         setDraftRows((prev) =>
                           prev
@@ -288,13 +288,13 @@ export function MaterialLayerStackWorkbench({
           </button>
           <button
             type="button"
-            className="rounded bg-primary px-2 py-1 text-[10px] font-medium text-primary-foreground hover:opacity-90"
+            className="rounded bg-accent px-2 py-1 text-[10px] font-medium text-accent-foreground hover:opacity-90"
             onClick={handleApply}
           >
             Apply type stack
           </button>
           {applyError ? (
-            <div role="alert" className="text-[10px] text-destructive">
+            <div role="alert" className="text-[10px] text-danger">
               {applyError}
             </div>
           ) : null}
@@ -317,13 +317,13 @@ export function MaterialLayerStackWorkbench({
         {readout.layerStackMatchesCutThickness != null ? (
           <div
             className={
-              readout.layerStackMatchesCutThickness ? 'text-muted' : 'text-destructive font-medium'
+              readout.layerStackMatchesCutThickness ? 'text-muted' : 'text-danger font-medium'
             }
           >
             Stack vs cut: {readout.layerStackMatchesCutThickness ? 'aligned' : 'mismatch'}
           </div>
         ) : null}
-        {mismatch ? <div className="text-destructive">{mismatch}</div> : null}
+        {mismatch ? <div className="text-danger">{mismatch}</div> : null}
       </div>
 
       <div
