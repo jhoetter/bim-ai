@@ -237,6 +237,8 @@ type Props = {
   cameraHandleRef?: RefObject<PlanCameraHandle | null>;
   /** Camera to restore on mount (ignored after first render). */
   initialCamera?: { centerMm?: { xMm: number; yMm: number }; halfMm?: number };
+  /** Global discipline lens from the StatusBar dropdown: 'all' | 'architecture' | 'structure' | 'mep' */
+  lensMode?: string;
 };
 
 export function PlanCanvas({
@@ -245,6 +247,7 @@ export function PlanCanvas({
   onSemanticCommand,
   cameraHandleRef,
   initialCamera,
+  lensMode = 'all',
 }: Props) {
   void wsConnected;
   const theme = useTheme();
@@ -849,8 +852,21 @@ export function PlanCanvas({
     // DSC-V3-02 — discipline lens ghost pass: 25% opacity for non-matching elements.
     {
       const planView = activePlanViewId ? elementsById[activePlanViewId] : null;
-      const lens =
-        planView && 'defaultLens' in planView ? (planView.defaultLens as string) : 'show_all';
+      // Global lensMode from StatusBar dropdown overrides the plan_view's defaultLens.
+      // lensMode values: 'all' | 'architecture' | 'structure' | 'mep'
+      // plan_view.defaultLens values: 'show_all' | 'show_arch' | 'show_struct' | 'show_mep'
+      const LENS_PROP_TO_TOKEN: Record<string, string> = {
+        architecture: 'show_arch',
+        structure: 'show_struct',
+        mep: 'show_mep',
+      };
+      const resolvedLens =
+        lensMode && lensMode !== 'all'
+          ? (LENS_PROP_TO_TOKEN[lensMode] ?? 'show_all')
+          : planView && 'defaultLens' in planView
+            ? (planView.defaultLens as string)
+            : 'show_all';
+      const lens = resolvedLens;
       if (lens !== 'show_all') {
         const LENS_TO_DISC: Record<string, string> = {
           show_arch: 'arch',
@@ -1375,6 +1391,7 @@ export function PlanCanvas({
     activeCropState,
     activePlanViewId,
     showNeighborhoodMasses,
+    lensMode,
   ]);
 
   // Auto-fit camera when a level's elements first become available, and on
