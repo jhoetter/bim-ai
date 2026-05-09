@@ -495,6 +495,39 @@ export function InspectorPropertiesFor(
           <FieldRow label="Boundary Vertices" value={String(el.boundaryMm.length)} mono />
         </div>
       );
+    case 'property_line':
+      return (
+        <div className="flex flex-col gap-2">
+          {el.name ? <FieldRow label={f('name')} value={el.name} /> : null}
+          <FieldRow
+            label="Start"
+            value={`${fmtMm(el.startMm.xMm)} · ${fmtMm(el.startMm.yMm)}`}
+            mono
+          />
+          <FieldRow
+            label="End"
+            value={`${fmtMm(el.endMm.xMm)} · ${fmtMm(el.endMm.yMm)}`}
+            mono
+          />
+          {el.setbackMm !== undefined ? (
+            <FieldRow label="Setback" value={fmtMm(el.setbackMm)} />
+          ) : null}
+          {el.classification ? (
+            <FieldRow
+              label="Classification"
+              value={
+                el.classification === 'street'
+                  ? 'Street'
+                  : el.classification === 'rear'
+                    ? 'Rear'
+                    : el.classification === 'side'
+                      ? 'Side'
+                      : 'Other'
+              }
+            />
+          ) : null}
+        </div>
+      );
     case 'section_cut':
       return (
         <div>
