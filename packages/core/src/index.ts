@@ -2773,6 +2773,13 @@ export type DeleteFrameCmd = { type: 'delete_frame'; id: string };
 
 export type ReorderFrameCmd = { type: 'reorder_frame'; id: string; newSortOrder: number };
 
+/** CHR-V3-07 — move a viewpoint or saved_view to a new sort position in the project browser. */
+export type ReorderViewCmd = {
+  type: 'reorder_view';
+  viewId: string;
+  newSortOrder: number;
+};
+
 export type CreateSavedViewCmd = {
   type: 'create_saved_view';
   id: string;

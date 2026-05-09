@@ -2706,6 +2706,15 @@ class DeleteBrandTemplateCmd(BaseModel):
     id: str
 
 
+class ReorderViewCmd(BaseModel):
+    """CHR-V3-07 — move a viewpoint or saved_view to a new sort position."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["reorder_view"] = "reorder_view"
+    view_id: str = Field(alias="viewId")
+    new_sort_order: int = Field(alias="newSortOrder")
+
+
 Command = Annotated[
     CreateLevelCmd
     | CreateWallCmd
@@ -2915,6 +2924,7 @@ Command = Annotated[
     | DeleteSavedViewCmd
     | CreateBrandTemplateCmd
     | UpdateBrandTemplateCmd
-    | DeleteBrandTemplateCmd,
+    | DeleteBrandTemplateCmd
+    | ReorderViewCmd,
     Field(discriminator="type"),
 ]
