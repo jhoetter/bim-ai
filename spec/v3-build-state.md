@@ -1,7 +1,7 @@
 # v3 Build State
 
-Last updated: 2026-05-09 (wave-9A: 8 WPs dispatched; targeting 77/77 after wave-9B+CQ)
-Active heavy workers: 8 / 8
+Last updated: 2026-05-09 (wave-9A: 8 WPs merged ✅; wave-9B: 6 agents dispatched; ~71/77 merged, 6 in flight)
+Active heavy workers: 6 / 8
 
 ## Merged so far
 
@@ -118,27 +118,29 @@ All 8 WPs merged into main by orchestrator (2026-05-09).
 | WP-062 | CHR-V3-10 empty-state canvas | 2026-05-09 | a9bc4540 |
 | WP-063 | AST-V3-04 parametric kitchen kit | 2026-05-09 | 5bd50ddd |
 
-## Wave-9A dispatched 🚀
+## Wave-9A merged ✅
 
-8 agents in flight. Merge order: IMP/CON/TST (no conflicts) → OUT-V3-02/03 → TOP-V3-02 → TOP-V3-04 → OSM-V3-01 (conflicty last).
+All 8 WPs conflict-resolved and merged into main by orchestrator (2026-05-09).
 
-| WP-ID | WP | Branch | Prompt |
-| ----- | -- | ------ | ------ |
-| WP-064 | TOP-V3-02 toposolid subdivisions | feat/v3-top-v3-02-toposolid-subdivisions | wp-064.md |
-| WP-066 | TOP-V3-04 site walls + graded regions | feat/v3-top-v3-04-site-walls | wp-066.md |
-| WP-067 | OSM-V3-01 neighborhood massing import | feat/v3-osm-v3-01-neighborhood-import | wp-067.md |
-| WP-069 | IMP-V3-01 image-as-underlay import | feat/v3-imp-v3-01-image-underlay | wp-069.md |
-| WP-070 | CON-V3-02 seed handoff contract | feat/v3-con-v3-02-seed-handoff | wp-070.md |
-| WP-071 | OUT-V3-02 frames + views PPTX export | feat/v3-out-v3-02-pptx-export | wp-071.md |
-| WP-072 | OUT-V3-03 branded PDF/PPTX export | feat/v3-out-v3-03-branded-export | wp-072.md |
-| WP-073 | TST-V3-01 refinement-reliability CI | feat/v3-tst-v3-01-refinement-reliability | wp-073.md |
+| WP-ID | WP | Merged at | Commit |
+| ----- | -- | --------- | ------ |
+| WP-064 | TOP-V3-02 toposolid subdivisions | 2026-05-09 | 00b45c95 |
+| WP-066 | TOP-V3-04 site walls + graded regions | 2026-05-09 | 252579d7 |
+| WP-067 | OSM-V3-01 neighborhood massing import | 2026-05-09 | 8517f5d0 |
+| WP-069 | IMP-V3-01 image-as-underlay import | 2026-05-09 | f1bd834a |
+| WP-070 | CON-V3-02 seed → refinement handoff | 2026-05-09 | 11b50217 |
+| WP-071 | OUT-V3-02 frames + views → PPTX export | 2026-05-09 | 9b52a1e9 |
+| WP-072 | OUT-V3-03 branded PDF/PPTX export | 2026-05-09 | 98760b0d |
+| WP-073 | TST-V3-01 refinement-reliability CI test | 2026-05-09 | 038b31b0 |
 
-## Wave-9B (dispatch after 9A merges)
+## Wave-9B dispatched 🚀
+
+6 agents in flight (2026-05-09).
 
 | WP-ID | WP | Branch | Prompt | Dep |
 | ----- | -- | ------ | ------ | --- |
-| WP-065 | TOP-V3-03 subdivide-with-paint UX | feat/v3-top-v3-03-subdivide-paint | wp-065.md | WP-064 |
-| WP-068 | OSM-V3-02 neighborhood render style | feat/v3-osm-v3-02-neighborhood-render | wp-068.md | WP-067 |
+| WP-065 | TOP-V3-03 subdivide-with-paint UX | feat/v3-top-v3-03-subdivide-paint | wp-065.md | WP-064 ✅ |
+| WP-068 | OSM-V3-02 neighborhood render style | feat/v3-osm-v3-02-neighborhood-render | wp-068.md | WP-067 ✅ |
 | WP-074 | EXP-V3-01 render-pipeline export | feat/v3-exp-v3-01-render-export | wp-074.md | — |
 | WP-075 | CHR-V3-07 project browser refresh | feat/v3-chr-v3-07-project-browser | wp-075.md | — |
 | WP-076 | COL-V3-04 presence avatars | feat/v3-col-v3-04-presence-avatars | wp-076.md | — |
