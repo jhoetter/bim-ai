@@ -182,6 +182,7 @@ export function Inspector({
             return (
               <button
                 key={td.id}
+                id={`${tablistId}-tab-${td.id}`}
                 type="button"
                 role="tab"
                 aria-selected={active}
@@ -204,7 +205,7 @@ export function Inspector({
         <div
           role="tabpanel"
           id={`${tablistId}-panel-${activeTab}`}
-          aria-labelledby={tablistId}
+          aria-labelledby={`${tablistId}-tab-${activeTab}`}
           className="flex-1 overflow-y-auto px-3 py-3"
         >
           {/* CHR-V3-06: applies-to radio shown only in Properties tab with >1 siblings */}
@@ -268,7 +269,9 @@ function InspectorHeader({
         </div>
       ) : null}
       <div className="flex flex-1 flex-col gap-0.5">
-        <div className="text-[13px] font-medium leading-snug text-foreground">{selection.label}</div>
+        <div className="text-[13px] font-medium leading-snug text-foreground">
+          {selection.label}
+        </div>
         <div className="font-mono text-[10px] text-muted opacity-60">{selection.id}</div>
       </div>
       <button
