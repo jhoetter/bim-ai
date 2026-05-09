@@ -70,7 +70,7 @@ Source segment: `05:34:19 – 06:41:32` (+ `08:35:57 – 09:57:57` for final 3D 
 **Screenshot:**
 ![Default 3D View](file:///Users/jhoetter/Desktop/Revit%20Specs/0064_00-04-27.png)
 
-**bim-ai status:** 🟡 Partial — The 3D canvas supports orbit, pan, and zoom. `Viewport.tsx` auto-loads a saved viewpoint named `vp-main-iso` (the project's main isometric preset, per SKB-16) when the 3D view opens. `ProjectBrowser.tsx` has a "3D saved views" section listing all `viewpoint` elements. Missing: a Quick Access Toolbar "3D View" button equivalent (the 3D tab is accessible via the tab switcher). The ViewCube face-snap and H/Home key reset are both implemented.
+**bim-ai status:** ✅ Available — The 3D canvas supports orbit, pan, zoom, face-snap ViewCube, and H/Home reset. `Viewport.tsx` auto-loads the `vp-main-iso` preset when the 3D view opens. `ProjectBrowser.tsx` lists all `viewpoint` elements. A "3D" button (`data-testid="topbar-3d-view"`) is now present in the TopBar right section — clicking it opens a new 3D view tab directly, matching the QAT "3D View" shortcut.
 
 ---
 

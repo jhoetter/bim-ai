@@ -158,7 +158,7 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-109 | Parapet walls (Unconnected Height)                   | Floors         | ✅            | Standard wall tool with OptionsBar height and location-line; matches Revit workflow exactly                          |
 | F-110 | Wall Top Offset (negative, sub-slab)                 | Floors         | ✅            | InspectorContent Base Offset and Top Offset support negative values; enables sub-slab placement                      |
 | F-111 | 3D View rotation (Shift + Middle Click)              | Floors         | ✅            | cameraRig.ts classifyPointer returns 'orbit' for Shift+MMB; matches Revit convention                                |
-| F-112 | Default {3D} isometric view                          | Floors         | 🟡            | 3D canvas with orbit/pan/zoom; auto-loads vp-main-iso preset; ViewCube + Home reset; missing QAT 3D button          |
+| F-112 | Default {3D} isometric view                          | Floors         | ✅            | 3D canvas with orbit/pan/zoom, ViewCube, H reset; auto-loads vp-main-iso; "3D" button in TopBar opens 3D tab directly |
 | F-113 | Graphic Display Options (shadows, depth cue, etc.)   | Floors         | 🟡            | GDO toggle button in 3D viewport opens panel with Visual Style (Shaded/Consistent Colors/Wireframe/Hidden Line), Background (White/Light Grey/Dark), and Edge display (Normal/None). Missing: silhouette edge width, depth cue, photographic exposure, shadows, ambient occlusion |
 | F-114 | Placing component families in project                | Furn. Place   | 🟡            | Component tool (hotkey CC) places placed_asset elements; asset selector in OptionsBar; brown rectangle rendered in plan canvas. Missing: live preview, snap to walls, rotation on placement |
 | F-115 | Spacebar rotation during placement                   | Furn. Place   | 🟡            | Spacebar cycles pendingComponentRotationDeg by 90° (0→90→180→270) and passes it to PlaceAsset on click; missing live ghost preview before placement                                  |
@@ -178,9 +178,9 @@ _Last audited: 2026-05-09 against codebase at commit `docs/parity-tracker-audit`
 
 | Status                 | Count   | % of total |
 | ---------------------- | ------- | ---------- |
-| ✅ Fully available     | 26      | 22%        |
-| 🟡 Partially available | 43      | 36%        |
-| ❌ Not available       | 51      | 42%        |
+| ✅ Fully available     | 27      | 23%        |
+| 🟡 Partially available | 42      | 35%        |
+| ❌ Not available       | 51      | 43%        |
 | **Total**              | **120** | **100%**   |
 
 ---

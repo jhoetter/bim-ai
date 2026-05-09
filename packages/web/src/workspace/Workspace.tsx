@@ -1127,6 +1127,9 @@ export function Workspace(): JSX.Element {
                 }
                 hasPages={sheetPages.length > 0}
                 onSharePresentation={() => setSharePresentationOpen(true)}
+                onOpen3dView={() => {
+                  setTabsState((s) => openTab(s, { kind: '3d', label: '3D View' }));
+                }}
               />
               {/* COL-V3-06 — offline indicator */}
               {!isOnline ? (

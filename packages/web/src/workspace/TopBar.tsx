@@ -77,6 +77,8 @@ export interface TopBarProps {
   activeViewId?: string;
   /** MRK-V3-03: callback from SourceViewChip to navigate to a sheet comment. */
   onNavigateToSheet?: (sheetId: string, commentId: string) => void;
+  /** F-112: opens a new 3D view tab directly, equivalent to the QAT "3D View" button. */
+  onOpen3dView?: () => void;
 }
 
 export function TopBar({
@@ -105,6 +107,7 @@ export function TopBar({
   modelId,
   activeViewId,
   onNavigateToSheet,
+  onOpen3dView,
 }: TopBarProps): JSX.Element {
   const tablistId = useId();
   // SourceViewChip is only relevant when in a sheet-type view and both IDs are known.
@@ -140,6 +143,7 @@ export function TopBar({
         onPlanStyleChange={onPlanStyleChange}
         hasPages={hasPages}
         onSharePresentation={onSharePresentation}
+        onOpen3dView={onOpen3dView}
         sourceViewChip={
           showSourceViewChip ? (
             <SourceViewChip
@@ -288,6 +292,7 @@ function TopBarRight({
   onPlanStyleChange,
   hasPages,
   onSharePresentation,
+  onOpen3dView,
   sourceViewChip,
 }: {
   theme: 'light' | 'dark';
@@ -306,6 +311,8 @@ function TopBarRight({
   onPlanStyleChange?: (id: string) => void;
   hasPages?: boolean;
   onSharePresentation?: () => void;
+  /** F-112: opens a new 3D view tab directly. */
+  onOpen3dView?: () => void;
   /** MRK-V3-03: pre-rendered SourceViewChip node (null when not in sheet view). */
   sourceViewChip?: JSX.Element | null;
 }): JSX.Element {
@@ -392,6 +399,17 @@ function TopBarRight({
         badge={collaboratorsCount}
       />
       <IconButton Icon={Icons.settings} label={IconLabels.settings} onClick={onSettings} />
+      {onOpen3dView && (
+        <button
+          type="button"
+          data-testid="topbar-3d-view"
+          title="Open 3D View"
+          onClick={onOpen3dView}
+          className="relative inline-flex h-8 items-center justify-center rounded-md px-2 text-xs font-semibold text-muted transition-colors hover:bg-surface hover:text-foreground"
+        >
+          3D
+        </button>
+      )}
       <button
         type="button"
         data-testid="topbar-language-toggle"
