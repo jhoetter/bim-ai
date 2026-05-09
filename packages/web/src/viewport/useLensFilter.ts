@@ -1,4 +1,31 @@
-import type { Element, ViewLensMode } from '@bim-ai/core';
+import type { Element, LensMode, ViewLensMode } from '@bim-ai/core';
+
+const LENS_MODE_TO_DISCIPLINE: Record<string, string> = {
+  architecture: 'arch',
+  structure: 'struct',
+  mep: 'mep',
+};
+
+/**
+ * DSC-V3-02 — resolve the discipline-lens pass from a UI LensMode value.
+ *
+ * Unlike `resolveLensFilter` (which reads from the saved view element's
+ * `defaultLens`), this function takes the ephemeral dropdown selection
+ * from the StatusBar and returns the same classifier function shape.
+ */
+export function lensFilterFromMode(
+  mode: LensMode,
+): (elem: Element) => 'foreground' | 'ghost' {
+  if (mode === 'all' || mode === 'energy' || mode === 'coordination') {
+    return () => 'foreground';
+  }
+  const expected = LENS_MODE_TO_DISCIPLINE[mode];
+  return (elem: Element): 'foreground' | 'ghost' => {
+    const disc =
+      ('discipline' in elem ? (elem.discipline as string | null | undefined) : null) ?? 'arch';
+    return disc === expected ? 'foreground' : 'ghost';
+  };
+}
 
 const LENS_TO_DISCIPLINE: Record<string, string> = {
   show_arch: 'arch',

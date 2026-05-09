@@ -30,7 +30,7 @@ import { resolveViewportPaintBundle, type ViewportPaintBundle } from './viewport
 import { ViewCube } from './viewport/ViewCube';
 import { applyLinkedGhosting } from './viewport/linkedGhosting';
 import { applyLensGhosting } from './viewport/applyLensGhosting';
-import { resolveLensFilter } from './viewport/useLensFilter';
+import { lensFilterFromMode } from './viewport/useLensFilter';
 import {
   buildDriftBadgeCanvas,
   driftBadgeTooltip,
@@ -350,6 +350,7 @@ export function Viewport({
 
   const viewerCategoryHidden = useBimStore((s) => s.viewerCategoryHidden);
   const viewerPhaseFilter = useBimStore((s) => s.viewerPhaseFilter);
+  const lensMode = useBimStore((s) => s.lensMode);
 
   const viewerClipElevMm = useBimStore((s) => s.viewerClipElevMm);
   const viewerClipFloorElevMm = useBimStore((s) => s.viewerClipFloorElevMm);
@@ -1342,11 +1343,8 @@ export function Viewport({
     };
     const planes = clippingPlanesRef.current;
 
-    // DSC-V3-02 — resolve lens filter from the first 3D view found in the snapshot.
-    const active3dView = Object.values(curr).find(
-      (el) => el.kind === 'view' && (el as { subKind?: string }).subKind === '3d',
-    ) as { defaultLens?: import('@bim-ai/core').ViewLensMode } | undefined;
-    const lensFilter = resolveLensFilter(active3dView ?? null);
+    // DSC-V3-02 — resolve lens filter from the UI dropdown stored in global state.
+    const lensFilter = lensFilterFromMode(lensMode);
     const witnessHex = readToken('--draft-witness', '#64748b');
 
     for (const id of toRebuild) {
@@ -1632,7 +1630,7 @@ export function Viewport({
     }
 
     prevElementsByIdRef.current = curr;
-  }, [elementsById, viewerCategoryHidden, viewerPhaseFilter, theme, text3dRebuildTick]);
+  }, [elementsById, viewerCategoryHidden, viewerPhaseFilter, lensMode, theme, text3dRebuildTick]);
 
   // ── Clipping planes + section-box cage ───────────────────────────────────
   // Runs only when clip elevation or section box changes — not on every element edit.
