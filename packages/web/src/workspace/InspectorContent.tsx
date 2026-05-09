@@ -534,6 +534,59 @@ export function InspectorPropertiesFor(
           <FieldRow label="Path Vertices" value={String(el.pathMm.length)} mono />
         </div>
       );
+    case 'ceiling': {
+      const levels = Object.values(elementsById).filter(
+        (e): e is Extract<Element, { kind: 'level' }> => e.kind === 'level',
+      );
+      const levelNames: Record<string, string> = Object.fromEntries(
+        levels.map((lv) => [lv.id, lv.name]),
+      );
+      return (
+        <div className="flex flex-col gap-2">
+          <FieldRow label={f('level')} value={levelNames[el.levelId] ?? el.levelId} mono />
+          <FieldRow label="Height Offset" value={`${el.heightOffsetMm ?? 0} mm`} />
+          <FieldRow label="Thickness" value={`${el.thicknessMm ?? 50} mm`} />
+          <FieldRow label="Boundary Vertices" value={String(el.boundaryMm?.length ?? 0)} mono />
+        </div>
+      );
+    }
+    case 'property_line':
+      return (
+        <div className="flex flex-col gap-2">
+          <FieldRow label={f('name')} value={el.name ?? '—'} />
+          <FieldRow
+            label="Start"
+            value={`(${Math.round(el.startMm.xMm)}, ${Math.round(el.startMm.yMm)}) mm`}
+            mono
+          />
+          <FieldRow
+            label="End"
+            value={`(${Math.round(el.endMm.xMm)}, ${Math.round(el.endMm.yMm)}) mm`}
+            mono
+          />
+          <FieldRow label="Setback" value={`${el.setbackMm ?? 0} mm`} />
+          <FieldRow label="Classification" value={el.classification ?? '—'} />
+        </div>
+      );
+    case 'reference_plane': {
+      const levels = Object.values(elementsById).filter(
+        (e): e is Extract<Element, { kind: 'level' }> => e.kind === 'level',
+      );
+      const levelNames: Record<string, string> = Object.fromEntries(
+        levels.map((lv) => [lv.id, lv.name]),
+      );
+      const levelId = 'levelId' in el ? el.levelId : undefined;
+      return (
+        <div className="flex flex-col gap-2">
+          <FieldRow label={f('name')} value={el.name ?? '—'} />
+          <FieldRow
+            label={f('level')}
+            value={levelId ? (levelNames[levelId] ?? levelId) : '—'}
+            mono
+          />
+        </div>
+      );
+    }
     case 'section_cut':
       return (
         <div>
