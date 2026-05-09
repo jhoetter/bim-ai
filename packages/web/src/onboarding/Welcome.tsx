@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Btn } from '@bim-ai/ui';
 
 const KEY = 'bim.welcome.dismissed';
@@ -9,6 +10,15 @@ type Props = {
 };
 
 export function Welcome({ visible, onDismiss, onRoomRectTool }: Props) {
+  useEffect(() => {
+    if (!visible) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onDismiss();
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [visible, onDismiss]);
+
   if (!visible) return null;
 
   function dismiss(permanent: boolean) {
@@ -24,7 +34,12 @@ export function Welcome({ visible, onDismiss, onRoomRectTool }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-[70] grid place-items-center bg-black/55 p-4">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Welcome to BIM AI"
+      className="fixed inset-0 z-[70] grid place-items-center bg-black/55 p-4"
+    >
       <div className="w-full max-w-md rounded-xl border bg-background p-6 shadow-xl">
         <h2 className="text-xl font-semibold">Welcome to BIM AI</h2>
 
