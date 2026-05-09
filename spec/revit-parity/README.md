@@ -69,7 +69,7 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-020 | Halftone / transparency for imported files (VG)      | CAD            | 🟡            | Per-link opacity now configurable (0–100%) via ManageLinksDialog; missing per-view opacity override in VVDialog and full-opacity (non-halftone) mode as a dropdown choice within VV |
 | F-021 | Align CAD with Project Base Point                    | CAD            | 🟡            | ManageLinksDialog has origin/project base point/shared coords for link_model; missing for link_dxf                   |
 | F-022 | Project Base Point & Survey Point                    | CAD            | 🟡            | First-class elements in core; 3D markers rendered; missing plan 2D annotation and Clip/Unclip toggle                 |
-| F-023 | Work Plane assignment for linked elements            | CAD            | ❌            |                                                                                                                      |
+| F-023 | Work Plane assignment for linked elements            | CAD            | 🟡            | `link_dxf` `levelId` field controls which level (work plane) the underlay is associated with; current level shown in inspector (`case 'link_dxf':`); changeable via ManageLinksDialog DXF Links section. Missing: level-dropdown in inspector (read-only display); Revit-style "Set Work Plane" dialog |
 | F-024 | Manage Links dialog                                  | CAD            | 🟡            | ManageLinksDialog lists link_model rows with delete/alignment/visibility/pin controls; missing IFC/PDF/image types   |
 | F-025 | Levels (datum planes)                                | Levels & Views | 🟡            | LevelStack with inline create and rename; missing level head symbols in elevation/section views                       |
 | F-026 | Rename Levels                                        | Levels & Views | ✅            | LevelStack inline rename via double-click; commits via updateElementProperty                                         |
@@ -142,7 +142,7 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-093 | Room Interior Fill visibility (VG)                   | Rooms & Areas | 🟡            | room category in VV; planRoomFillOpacityScale slider in InspectorPlanViewEditor; missing per-room-instance color override |
 | F-094 | Area Boundary Lines                                  | Rooms & Areas | 🟡            | area-boundary sketch tool (hotkey AR); area_boundary in VVDialog; missing auto-snap to wall faces                   |
 | F-095 | Area Tool                                            | Rooms & Areas | 🟡            | area-boundary sketch tool stores area elements; right-rail shows computed area/rule set; missing auto-close snap     |
-| F-096 | Area and Volume Computations dialog                  | Rooms & Areas | ❌            |                                                                                                                      |
+| F-096 | Area and Volume Computations dialog                  | Rooms & Areas | 🟡            | "Volume Computed At" and "Room Area Computation Basis" fields on `project_settings` element; editable in right-rail inspector. Missing: dedicated modal dialog; backend derivation engine does not yet consume these settings |
 | F-097 | Apply Area Rules toggle                              | Rooms & Areas | 🟡            | "Apply Area Rules" checkbox (data-testid="options-bar-apply-area-rules") in OptionsBar when area-boundary tool is active; stored in useBimStore.applyAreaRules; missing backend consumption to snap boundary lines to wall faces |
 | F-098 | Area Plan (Gross Building) view type                 | Rooms & Areas | ❌            |                                                                                                                      |
 | F-099 | Discipline property for views                        | Rooms & Areas | 🟡            | plan views have discipline field editable in InspectorPlanViewEditor; missing full Revit sub-discipline tree         |
@@ -159,7 +159,7 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-110 | Wall Top Offset (negative, sub-slab)                 | Floors         | ✅            | InspectorContent Base Offset and Top Offset support negative values; enables sub-slab placement                      |
 | F-111 | 3D View rotation (Shift + Middle Click)              | Floors         | ✅            | cameraRig.ts classifyPointer returns 'orbit' for Shift+MMB; matches Revit convention                                |
 | F-112 | Default {3D} isometric view                          | Floors         | 🟡            | 3D canvas with orbit/pan/zoom; auto-loads vp-main-iso preset; ViewCube + Home reset; missing QAT 3D button          |
-| F-113 | Graphic Display Options (shadows, depth cue, etc.)   | Floors         | ❌            |                                                                                                                      |
+| F-113 | Graphic Display Options (shadows, depth cue, etc.)   | Floors         | 🟡            | GDO toggle button (`data-testid="viewport-gdo-toggle"`) in 3D viewport opens panel with Visual Style (Shaded/Wireframe), Background (White/Light Grey/Dark), and Edge display (Normal/None). Missing: silhouette edge width, depth cue, photographic exposure, shadows, ambient occlusion |
 | F-114 | Placing component families in project                | Furn. Place   | ❌            | No interactive placement with live preview                                                                           |
 | F-115 | Spacebar rotation during placement                   | Furn. Place   | ❌            |                                                                                                                      |
 | F-116 | Copy (CO) tool                                       | Furn. Place   | 🟡            | Ctrl+C/V clipboard copy-paste with offset; missing two-point interactive Copy and multi-copy                         |
@@ -168,7 +168,7 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-119 | Parametric bathroom layout family                    | Furn. Place   | ❌            |                                                                                                                      |
 | F-120 | Parametric bed family (2D)                           | Furn. Place   | ❌            |                                                                                                                      |
 | F-121 | Align tool (AL) for furniture-to-wall                | Furn. Place   | ❌            |                                                                                                                      |
-| F-122 | Rotate tool (about user-defined center)              | Furn. Place   | ❌            |                                                                                                                      |
+| F-122 | Rotate tool (about user-defined center)              | Furn. Place   | 🟡            | Column elements: drag-handle grip (`columnGripProvider.ts` — "Drag to rotate column") fires `updateElementProperty { key: 'rotationDeg' }`; "Rotation (°)" input (`data-testid="inspector-column-rotation"`, step 15°) in inspector. Missing: general-purpose Rotate-about-point for non-column elements; angular snap; numeric dialog |
 
 ---
 
@@ -179,8 +179,8 @@ _Last audited: 2026-05-09 against codebase at commit `docs/parity-tracker-audit`
 | Status                 | Count   | % of total |
 | ---------------------- | ------- | ---------- |
 | ✅ Fully available     | 23      | 19%        |
-| 🟡 Partially available | 37      | 31%        |
-| ❌ Not available       | 60      | 50%        |
+| 🟡 Partially available | 41      | 34%        |
+| ❌ Not available       | 56      | 47%        |
 | **Total**              | **120** | **100%**   |
 
 ---

@@ -600,6 +600,45 @@ export function InspectorPropertiesFor(
         </div>
       );
     }
+    case 'link_dxf': {
+      const levelNames = Object.fromEntries(
+        Object.values(elementsById)
+          .filter((e) => e.kind === 'level')
+          .map((e) => [e.id, (e as Extract<Element, { kind: 'level' }>).name]),
+      );
+      return (
+        <div className="space-y-1 text-[11px]">
+          <FieldRow label="Name" value={el.name ?? '(unnamed DXF)'} />
+          <FieldRow label="Level" value={levelNames[el.levelId] ?? el.levelId} />
+          <FieldRow
+            label="Origin"
+            value={`(${Math.round(el.originMm.xMm)}, ${Math.round(el.originMm.yMm)}) mm`}
+          />
+          <FieldRow label="Rotation" value={`${el.rotationDeg ?? 0}°`} />
+          <FieldRow label="Scale" value={`×${el.scaleFactor ?? 1}`} />
+          <FieldRow
+            label="Color Mode"
+            value={el.colorMode === 'custom' ? 'Custom' : 'Black & White'}
+          />
+          {el.colorMode === 'custom' && el.customColor ? (
+            <FieldRow label="Color" value={el.customColor} />
+          ) : null}
+          <FieldRow label="Opacity" value={`${Math.round((el.overlayOpacity ?? 0.5) * 100)}%`} />
+        </div>
+      );
+    }
+    case 'masking_region': {
+      const hostView = elementsById[el.hostViewId];
+      const viewName =
+        hostView && 'name' in hostView ? String(hostView.name) : el.hostViewId;
+      return (
+        <div className="space-y-1 text-[11px]">
+          <FieldRow label="Host View" value={viewName} />
+          <FieldRow label="Boundary Vertices" value={String(el.boundaryMm.length)} />
+          <FieldRow label="Fill Color" value={el.fillColor ?? '#ffffff'} />
+        </div>
+      );
+    }
     case 'section_cut':
       return (
         <div>
