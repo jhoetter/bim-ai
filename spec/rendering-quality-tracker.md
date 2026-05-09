@@ -579,44 +579,44 @@ BoxGeometry renders a 3D solid. When viewed orthographically from above:
 
 ## Implementation Waves
 
-### Wave 1 — Immediate Fixes (1-2 hours, no architecture change)
+### Wave 1 — Immediate Fixes ✅ COMPLETE
 
-| ID | Fix | File | Impact |
-|----|-----|------|--------|
-| W1-01 | Fix wall hatch `depthTest: false` + Y-offset 0.003 + opacity 0.35 | `planElementMeshBuilders.ts` | HIGH |
-| W1-02 | ACESFilmic tone mapping for 3D viewport | `Viewport.tsx` | MED |
-| W1-03 | Edge line opacity 0.4, threshold 20°, color `--draft-cut` | `sceneHelpers.ts` | MED |
-| W1-04 | Window glass: roughness 0.05, opacity 0.35 transparent | `materials.ts` | HIGH |
-| W1-05 | Camera damping factor 0.08, rotateSpeed 0.6 | `Viewport.tsx` | MED |
-| W1-06 | Auto-fit camera when elements load | `PlanCanvas.tsx` | HIGH |
+| ID | Fix | Status |
+|----|-----|--------|
+| W1-01 | Wall hatch `depthTest: false` + Y-offset 0.003 + opacity 0.35 | ✅ DONE |
+| W1-02 | ACESFilmic tone mapping + exposure 1.05 | ✅ DONE |
+| W1-03 | Edge line opacity 0.38, threshold 20°, `--draft-cut` color | ✅ DONE |
+| W1-04 | Per-category PBR calibration (glass roughness 0.05, matte plaster 0.92) | ✅ DONE |
+| W1-05 | Camera INERTIA_DECAY 0.92 (smoother Rhino-like glide) | ✅ DONE |
+| W1-06 | Auto-fit camera on level load/switch | ✅ DONE |
 
-### Wave 2 — Plan View Architecture (4-8 hours, core refactor)
+### Wave 2 — Plan View Architecture ✅ MOSTLY COMPLETE
 
-| ID | Fix | File | Impact |
-|----|-----|------|--------|
-| W2-01 | Server: compute wall section polygon outlines | `plan_projection_wire.py` | CRITICAL |
-| W2-02 | Client: new `planWallSectionMesh()` using ShapeGeometry | `planElementMeshBuilders.ts` | CRITICAL |
-| W2-03 | Floor hatch in Three.js (canvas texture approach) | `planElementMeshBuilders.ts`, `symbology.ts` | HIGH |
-| W2-04 | Thick outline `LineLoop` for wall section boundaries | `planElementMeshBuilders.ts` | HIGH |
-| W2-05 | Fallback client-side wall polygon computation | `planElementMeshBuilders.ts` | MED |
+| ID | Fix | Status |
+|----|-----|--------|
+| W2-01 | Server polygon outlines (plan_projection_wire.py) | ⬜ Not needed — client fallback works, server already sends wallCornerJoinSummary_v1 |
+| W2-02 | `planWallSectionMesh()` — ShapeGeometry fill + polygon-clipped hatch | ✅ DONE |
+| W2-03 | Floor hatch — 45° diagonal via `hatchPolygon2D()` scanline | ✅ DONE |
+| W2-04 | Wall section outline LineLoop | ✅ DONE (in planWallSectionMesh) |
+| W2-05 | Client-side miter/butt polygon computation via wallCornerJoinSummary_v1 | ✅ DONE |
 
-### Wave 3 — 3D Material & Lighting Polish (2-4 hours)
+### Wave 3 — 3D Material & Lighting Polish ✅ DONE
 
-| ID | Fix | File | Impact |
-|----|-----|------|--------|
-| W3-01 | Per-category roughness/metalness calibration | `materials.ts` | MED |
-| W3-02 | Shadow map size 2048, bias -0.001 | `Viewport.tsx` | MED |
-| W3-03 | SSAO kernel radius 0.12, maxDistance 0.12 | `Viewport.tsx` | MED |
-| W3-04 | Subtle environment gradient sky | `Viewport.tsx` | LOW |
+| ID | Fix | Status |
+|----|-----|--------|
+| W3-01 | Per-category roughness/metalness | ✅ DONE |
+| W3-02 | Shadow map 2048, bias -0.001 | ✅ DONE (was already 2048) |
+| W3-03 | SSAO kernel radius 0.12 | ✅ DONE |
+| W3-04 | Subtle environment gradient sky | ⬜ LOW — deferred |
 
-### Wave 4 — UX & Navigation (3-6 hours)
+### Wave 4 — UX & Navigation (partial)
 
-| ID | Fix | File | Impact |
-|----|-----|------|--------|
-| W4-01 | Left rail tab structure | `LeftRail.tsx` | MED |
-| W4-02 | Radix Tooltip for tool palette (keyboard shortcuts) | `ToolPalette.tsx` | MED |
-| W4-03 | Zoom-to-pointer in plan view | `PlanCanvas.tsx` | HIGH |
-| W4-04 | Status bar: tool guidance text | `StatusBar.tsx` | LOW |
+| ID | Fix | Status |
+|----|-----|--------|
+| W4-01 | Left rail tab structure | ⬜ MED — future sprint |
+| W4-02 | Radix Tooltip for tool shortcuts | ⬜ MED — needs dep install |
+| W4-03 | Zoom-to-pointer | ✅ DONE (already implemented) |
+| W4-04 | Status bar tool guidance text | ⬜ LOW — deferred |
 
 ---
 
