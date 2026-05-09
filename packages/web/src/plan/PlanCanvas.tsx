@@ -2816,20 +2816,15 @@ export function PlanCanvas({
         camRef.current.camX += ndcX * asp * dH;
         camRef.current.camZ -= ndcY * dH;
       } else {
-        // Mouse wheel or two-finger trackpad scroll.
-        // Y → zoom at ~30 % per mouse notch; X → pan so a sideways swipe
-        // scrolls the canvas rather than accidentally zooming.
-        const oldHalf = camRef.current.half;
-        const newHalf = THREE.MathUtils.clamp(oldHalf * Math.exp(rawY * 0.003), HALF_MIN, HALF_MAX);
-        const dH = oldHalf - newHalf;
-        camRef.current.half = newHalf;
-        camRef.current.camX += ndcX * asp * dH;
-        camRef.current.camZ -= ndcY * dH;
-        if (Math.abs(rawX) > 1) {
-          // Horizontal two-finger swipe → pan X.
-          const worldPerPx = (2 * oldHalf * asp) / Math.max(1, rect.width);
-          camRef.current.camX += rawX * worldPerPx;
-        }
+        // Two-finger trackpad swipe OR plain mouse wheel (no modifier) → PAN.
+        // Convert pixel delta to world units at the current zoom level.
+        // worldPerPx is the same for both axes: (2 * half) / height.
+        // Sign convention matches the grab-drag handler (lines ~1553-1554):
+        //   drag cursor right → camX decreases; drag cursor down → camZ decreases.
+        // For natural-scroll trackpad rawX/rawY have the same polarity, so subtract.
+        const worldPerPx = (2 * camRef.current.half) / Math.max(1, rect.height);
+        camRef.current.camX -= rawX * worldPerPx;
+        camRef.current.camZ -= rawY * worldPerPx;
       }
       resizeCam();
       // B01 — rebuild meshes when zoom crosses a 20% threshold so line weights update
