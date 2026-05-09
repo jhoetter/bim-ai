@@ -146,10 +146,10 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-097 | Apply Area Rules toggle                              | Rooms & Areas | 🟡            | "Apply Area Rules" checkbox (data-testid="options-bar-apply-area-rules") in OptionsBar when area-boundary tool is active; stored in useBimStore.applyAreaRules; missing backend consumption to snap boundary lines to wall faces |
 | F-098 | Area Plan (Gross Building) view type                 | Rooms & Areas | 🟡            | Area Plan view subtype added to Project Browser; missing area scheme association and gross/rentable distinction       |
 | F-099 | Discipline property for views                        | Rooms & Areas | 🟡            | plan views have discipline field editable in InspectorPlanViewEditor; missing full Revit sub-discipline tree         |
-| F-100 | Filter tool (multi-select type filter)               | Troubleshoot   | ❌            |                                                                                                                      |
+| F-100 | Filter tool (multi-select type filter)               | Troubleshoot   | 🟡            | Ctrl+Click multi-select + count chip; Filter popover with category checkboxes; box-select (drag marquee) for walls/columns/placed_assets/floors/rooms/areas. Missing: Tab to add connected elements to multi-select |
 | F-101 | Isolate Category                                     | Troubleshoot   | 🟡            | 👓 Isolate + 👁 Hide buttons in PlanCanvas (category-level); TemporaryVisibilityChip in Workspace resets; missing per-element isolate/hide and unified sunglasses pop-up menu |
-| F-102 | Hide Category (permanent, view-specific)             | Troubleshoot   | 🟡            | VVDialog permanent per-view category hide + TemporaryVisibilityChip hide mode; no right-click shortcut or Reveal Hidden mode |
-| F-103 | Move tool (MV) — two-point with snap                 | Troubleshoot   | 🟡            | Wall grip drag + Δx/Δy inspector input; `placed_asset` elements support Δx/Δy inspector move (moveAssetDelta); `column` elements support Δx/Δy inspector move (moveColumnDelta). Missing: two-point on-canvas Move command with typed distance for floor/room/door/window elements |
+| F-102 | Hide Category (permanent, view-specific)             | Troubleshoot   | ✅            | VVDialog permanent per-view category hide; inspector "Hide Category in View" button; TemporaryVisibilityChip hide mode; Reveal Hidden (💡) shows hidden elements in magenta with right-click "Unhide in View" |
+| F-103 | Move tool (MV) — two-point with snap                 | Troubleshoot   | ✅            | Two-point MV tool in Modify palette; supports walls, columns, placed_assets, floors, rooms, areas via moveElementsDelta; grip + Δx/Δy inspector fallbacks. Minor gaps: typed distance entry, Shift-orthogonal constraint |
 | F-104 | Tab key for chain-selection                          | Troubleshoot   | 🟡            | Tab cycles snap candidates (EDT-05) and advances wall selection to next endpoint-connected wall in select mode (round-robin). Missing: bulk multi-select of an entire wall loop in one Tab sequence |
 | F-105 | Split Element (SL)                                   | Troubleshoot   | ✅            | PlanCanvas split tool; splitWallAt fires on click within 900 mm of wall; SplitWallAtCmd persists                    |
 | F-106 | Aligned Dimension for cross-checking accuracy        | Troubleshoot   | ✅            | dimension tool two-click placement; createDimension persists; rendered by planElementMeshBuilders + symbology        |
@@ -160,15 +160,15 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-111 | 3D View rotation (Shift + Middle Click)              | Floors         | ✅            | cameraRig.ts classifyPointer returns 'orbit' for Shift+MMB; matches Revit convention                                |
 | F-112 | Default {3D} isometric view                          | Floors         | ✅            | 3D canvas with orbit/pan/zoom, ViewCube, H reset; auto-loads vp-main-iso; "3D" button in TopBar opens 3D tab directly |
 | F-113 | Graphic Display Options (shadows, depth cue, etc.)   | Floors         | 🟡            | GDO toggle button in 3D viewport opens panel with Visual Style (Shaded/Consistent Colors/Wireframe/Hidden Line), Background (White/Light Grey/Dark), and Edge display (Normal/None). Missing: silhouette edge width, depth cue, photographic exposure, shadows, ambient occlusion |
-| F-114 | Placing component families in project                | Furn. Place   | 🟡            | Component tool (hotkey CC) places placed_asset elements; asset selector in OptionsBar; brown rectangle rendered in plan canvas. Missing: live preview, snap to walls, rotation on placement |
-| F-115 | Spacebar rotation during placement                   | Furn. Place   | 🟡            | Spacebar cycles pendingComponentRotationDeg by 90° (0→90→180→270) and passes it to PlaceAsset on click; missing live ghost preview before placement                                  |
-| F-116 | Copy (CO) tool                                       | Furn. Place   | 🟡            | Two-point CP tool in Modify palette (first click = reference, second click = destination); Ctrl+C/V clipboard also available. Missing: multi-copy (Revit "Multiple" option), clipboard persistence across reload, copy to a different level |
+| F-114 | Placing component families in project                | Furn. Place   | 🟡            | Component tool (hotkey CC) places placed_asset elements; asset selector in OptionsBar; live ghost preview follows cursor; Spacebar rotation (0→90→180→270°) works correctly before placement. Missing: interactive parameter editing after placement; built-in furniture asset library |
+| F-115 | Spacebar rotation during placement                   | Furn. Place   | ✅            | Spacebar cycles pendingComponentRotationDeg by 90° (0→90→180→270); live ghost preview rectangle tracks cursor rotation in real time; passed to PlaceAsset on click |
+| F-116 | Copy (CO) tool                                       | Furn. Place   | ✅            | Two-point CP tool in Modify palette; multi-copy "Multiple" mode (default on) keeps tool active for further copies; Ctrl+C/V clipboard also available. Minor gaps: clipboard persistence across reload, copy to a different level |
 | F-117 | Parametric living room sofa family                   | Furn. Place   | ❌            |                                                                                                                      |
 | F-118 | Parametric kitchen slab family                       | Furn. Place   | ❌            |                                                                                                                      |
 | F-119 | Parametric bathroom layout family                    | Furn. Place   | ❌            |                                                                                                                      |
 | F-120 | Parametric bed family (2D)                           | Furn. Place   | ❌            |                                                                                                                      |
 | F-121 | Align tool (AL) for furniture-to-wall                | Furn. Place   | 🟡            | Two-click workflow: first click = reference point (shows dashed crosshair SVG + coordinate label), second click snaps nearest wall (≤900 mm) via `alignElementToReference`. Missing: arbitrary face alignment, Lock constraint, non-wall elements |
-| F-122 | Rotate tool (about user-defined center)              | Furn. Place   | 🟡            | Column elements: drag-handle grip (`columnGripProvider.ts` — "Drag to rotate column") fires `updateElementProperty { key: 'rotationDeg' }`; "Rotation (°)" input (`data-testid="inspector-column-rotation"`, step 15°) in inspector. Missing: general-purpose Rotate-about-point for non-column elements; angular snap; numeric dialog |
+| F-122 | Rotate tool (about user-defined center)              | Furn. Place   | 🟡            | General-purpose two-click RO tool: first click = center, second click = end angle; supports wall, column, placed_asset, floor, room, area. Missing: angular snap at standard angles (0°/45°/90°), numeric "rotate by typed angle" dialog, start-angle reference ray |
 
 ---
 
@@ -178,9 +178,9 @@ _Last audited: 2026-05-09 against codebase at commit `docs/tracker-sync-wave-11`
 
 | Status                 | Count   | % of total |
 | ---------------------- | ------- | ---------- |
-| ✅ Fully available     | 27      | 23%        |
-| 🟡 Partially available | 45      | 37%        |
-| ❌ Not available       | 48      | 40%        |
+| ✅ Fully available     | 34      | 28%        |
+| 🟡 Partially available | 39      | 33%        |
+| ❌ Not available       | 47      | 39%        |
 | **Total**              | **120** | **100%**   |
 
 ---
