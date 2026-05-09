@@ -28,9 +28,14 @@ export function renderDxfUnderlay(
   const linework: DxfLineworkPrim[] = link.linework ?? [];
   if (linework.length === 0) return;
 
+  const color =
+    link.colorMode === 'custom' && link.customColor ? link.customColor : DXF_UNDERLAY_STROKE;
+  const opacity =
+    typeof link.overlayOpacity === 'number' ? link.overlayOpacity : DXF_UNDERLAY_OPACITY;
+
   ctx.save();
-  ctx.strokeStyle = DXF_UNDERLAY_STROKE;
-  ctx.globalAlpha = DXF_UNDERLAY_OPACITY;
+  ctx.strokeStyle = color;
+  ctx.globalAlpha = opacity;
   ctx.lineWidth = DXF_UNDERLAY_LINE_WIDTH;
 
   const transform = applyLinkTransform(link);

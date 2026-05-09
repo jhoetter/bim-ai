@@ -434,9 +434,22 @@ export function InspectorPropertiesFor(
               data-testid="inspector-column-height"
             />
           </div>
-          {el.rotationDeg != null && (
-            <FieldRow label="Rotation" value={`${el.rotationDeg.toFixed(1)}°`} />
-          )}
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Rotation (°)</span>
+            <input
+              type="number"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.rotationDeg ?? 0}
+              key={`${el.id}-rotation`}
+              step={15}
+              onBlur={(e) => {
+                const v = Number(e.target.value);
+                if (!isNaN(v)) colPropChange?.('rotationDeg', v);
+              }}
+              data-testid="inspector-column-rotation"
+              aria-label="Column rotation in degrees"
+            />
+          </div>
         </div>
       );
     }

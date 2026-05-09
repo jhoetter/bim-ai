@@ -1273,6 +1273,22 @@ class CreateLinkDxfCmd(BaseModel):
     pinned: bool = Field(default=False)
 
 
+class UpdateLinkDxfCmd(BaseModel):
+    """FED-04 / F-017 / F-020: update display properties on a ``link_dxf`` element.
+
+    All fields are optional; only supplied fields are applied. Allows the
+    frontend ``ManageLinksDialog`` to persist per-link opacity and color-mode
+    settings without re-uploading the full linework payload.
+    """
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["updateLinkDxf"] = "updateLinkDxf"
+    link_id: str = Field(alias="linkId")
+    color_mode: Literal["black_white", "custom"] | None = Field(default=None, alias="colorMode")
+    custom_color: str | None = Field(default=None, alias="customColor")
+    overlay_opacity: float | None = Field(default=None, alias="overlayOpacity", ge=0.0, le=1.0)
+
+
 # --- FED-02: selection_set + clash_test commands ----------------------------------
 
 
@@ -2800,6 +2816,7 @@ Command = Annotated[
     | UpdateLinkModelCmd
     | DeleteLinkModelCmd
     | CreateLinkDxfCmd
+    | UpdateLinkDxfCmd
     | UpsertSelectionSetCmd
     | UpsertClashTestCmd
     | RunClashTestCmd

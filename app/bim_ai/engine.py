@@ -123,6 +123,7 @@ from bim_ai.commands import (
     UnpinElementCmd,
     UpdateAreaCmd,
     UpdateElementPropertyCmd,
+    UpdateLinkDxfCmd,
     UpdateLinkModelCmd,
     UpdateMaskingRegionCmd,
     UpdateOpeningCleanroomCmd,
@@ -1309,6 +1310,7 @@ _LINKED_READONLY_SCALAR_FIELDS: dict[type, tuple[str, ...]] = {
     SetCurtainPanelOverrideCmd: ("wall_id",),
     UpdateLinkModelCmd: (),
     DeleteLinkModelCmd: (),
+    UpdateLinkDxfCmd: (),
 }
 _LINKED_READONLY_LIST_FIELDS: dict[type, tuple[str, ...]] = {
     DeleteElementsCmd: ("element_ids",),
@@ -4506,6 +4508,19 @@ def apply_inplace(
             if not isinstance(link, LinkModelElem):
                 raise ValueError("deleteLinkModel.linkId must reference a link_model element")
             del els[cmd.link_id]
+
+        case UpdateLinkDxfCmd():
+            dxf_link = els.get(cmd.link_id)
+            if not isinstance(dxf_link, LinkDxfElem):
+                raise ValueError("updateLinkDxf.linkId must reference a link_dxf element")
+            dxf_updates: dict[str, Any] = {}
+            if cmd.color_mode is not None:
+                dxf_updates["color_mode"] = cmd.color_mode
+            if cmd.custom_color is not None:
+                dxf_updates["custom_color"] = cmd.custom_color
+            if cmd.overlay_opacity is not None:
+                dxf_updates["overlay_opacity"] = float(cmd.overlay_opacity)
+            els[cmd.link_id] = dxf_link.model_copy(update=dxf_updates)
 
         case CreateLinkDxfCmd():
             lid = cmd.id or new_id()

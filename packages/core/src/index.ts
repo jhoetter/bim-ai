@@ -1685,6 +1685,12 @@ export type Element =
       scaleFactor?: number;
       linework: DxfLineworkPrim[];
       pinned?: boolean;
+      /** F-017 / F-020: render color mode. 'black_white' = desaturated grey (default); 'custom' = use customColor. */
+      colorMode?: 'black_white' | 'custom';
+      /** F-017: hex color used when colorMode === 'custom'. */
+      customColor?: string;
+      /** F-020: per-link opacity 0.0–1.0 (default 0.5). */
+      overlayOpacity?: number;
     }
   | {
       /**

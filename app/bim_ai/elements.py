@@ -1254,6 +1254,9 @@ class LinkDxfElem(BaseModel):
     scale_factor: float = Field(default=1.0, alias="scaleFactor", gt=0)
     linework: list[DxfLineworkPrim] = Field(default_factory=list)
     pinned: bool = Field(default=False)
+    color_mode: Literal["black_white", "custom"] | None = Field(default=None, alias="colorMode")
+    custom_color: str | None = Field(default=None, alias="customColor")
+    overlay_opacity: float | None = Field(default=None, alias="overlayOpacity", ge=0.0, le=1.0)
 
 
 class FamilyCatalogSource(BaseModel):

@@ -26,6 +26,7 @@ export interface ManageLinksDialogProps {
 }
 
 type LinkRow = Extract<Element, { kind: 'link_model' }>;
+type DxfLinkRow = Extract<Element, { kind: 'link_dxf' }>;
 
 type AlignMode = 'origin_to_origin' | 'project_origin' | 'shared_coords';
 type VisibilityMode = 'host_view' | 'linked_view';
@@ -55,6 +56,14 @@ export function ManageLinksDialog({
       Object.values(elementsById)
         .filter((e): e is LinkRow => e.kind === 'link_model')
         .sort((a, b) => a.name.localeCompare(b.name)),
+    [elementsById],
+  );
+
+  const dxfLinks: DxfLinkRow[] = useMemo(
+    () =>
+      Object.values(elementsById)
+        .filter((e): e is DxfLinkRow => e.kind === 'link_dxf')
+        .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '')),
     [elementsById],
   );
 
@@ -142,6 +151,20 @@ export function ManageLinksDialog({
       await apply(modelId, { type: 'updateLinkModel', linkId, ...patch });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to update link';
+      setError(msg);
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const submitUpdateDxf = async (linkId: string, patch: Record<string, unknown>): Promise<void> => {
+    setError(null);
+    if (!modelId) return;
+    setPending(true);
+    try {
+      await apply(modelId, { type: 'updateLinkDxf', linkId, ...patch });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to update DXF link';
       setError(msg);
     } finally {
       setPending(false);
