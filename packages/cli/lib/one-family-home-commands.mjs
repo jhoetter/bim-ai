@@ -43,8 +43,8 @@ const RIDGE_H_ABS =
 
 // Chimney-like center protrusion (spec §3 "protruding vertical chimney-like volume
 // clad in vertical siding"). Spans the middle third of the UF south loggia.
-const CHIMNEY_X0 = 1750; // chimney left edge — centred at UF midpoint 2500
-const CHIMNEY_X1 = 3250; // chimney right edge — centred at UF midpoint 2500
+const CHIMNEY_X0 = 2000; // chimney left edge — equal 2000 mm left/right zones; right edge at ridge x=3000
+const CHIMNEY_X1 = 3000; // chimney right edge = ridge x — 1000 mm narrow chimney, 20% of UF facade
 const CHIMNEY_H = 2000; // Height above UF level — roof at x=1500 is 2366 mm, so 2000 clears by 366 mm
 
 /**
