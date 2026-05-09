@@ -16,10 +16,18 @@ export function PlanViewGraphicsMatrix(props: {
         <table className="w-full border-collapse text-[10px]">
           <thead>
             <tr className="border-b border-border text-left text-muted">
-              <th className="py-0.5 pr-2 font-normal">Setting</th>
-              <th className="py-0.5 pr-2 font-mono font-normal">Template</th>
-              <th className="py-0.5 pr-2 font-mono font-normal">Stored</th>
-              <th className="py-0.5 font-mono font-normal">Effective</th>
+              <th scope="col" className="py-0.5 pr-2 font-normal">
+                Setting
+              </th>
+              <th scope="col" className="py-0.5 pr-2 font-mono font-normal">
+                Template
+              </th>
+              <th scope="col" className="py-0.5 pr-2 font-mono font-normal">
+                Stored
+              </th>
+              <th scope="col" className="py-0.5 font-mono font-normal">
+                Effective
+              </th>
             </tr>
           </thead>
           <tbody>
