@@ -2073,6 +2073,24 @@ class RemoveViewBreakCmd(BaseModel):
     axis_mm: float = Field(alias="axisMM")
 
 
+class HideElementInViewCmd(BaseModel):
+    """Hide a specific element in a named plan view (F-102 per-element hide)."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["hideElementInView"] = "hideElementInView"
+    plan_view_id: str = Field(alias="planViewId")
+    element_id: str = Field(alias="elementId")
+
+
+class UnhideElementInViewCmd(BaseModel):
+    """Remove a specific element from the hidden-element list of a plan view (F-102)."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["unhideElementInView"] = "unhideElementInView"
+    plan_view_id: str = Field(alias="planViewId")
+    element_id: str = Field(alias="elementId")
+
+
 # ---------------------------------------------------------------------------
 # TOP-V3-01 — Toposolid commands
 # ---------------------------------------------------------------------------
@@ -2933,6 +2951,8 @@ Command = Annotated[
     | SetElementOverrideCmd
     | AddViewBreakCmd
     | RemoveViewBreakCmd
+    | HideElementInViewCmd
+    | UnhideElementInViewCmd
     | CreateViewTemplateCmd
     | UpdateViewTemplateCmd
     | ApplyViewTemplateCmd

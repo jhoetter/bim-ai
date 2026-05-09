@@ -124,6 +124,8 @@ export type PlanViewResolvedDisplay = {
   presentation: PlanPresentationPreset;
   hiddenSemanticKinds: ReadonlySet<PlanSemanticKind>;
   planViewElementId?: string;
+  /** F-102: element IDs individually hidden in this plan view. */
+  hiddenElementIds: ReadonlySet<string>;
 };
 
 function mergeHiddenFromLabels(labels: Iterable<string>, into: Set<PlanSemanticKind>) {
@@ -145,12 +147,14 @@ export function resolvePlanViewDisplay(
   globalPresentation: PlanPresentationPreset,
 ): PlanViewResolvedDisplay {
   const hidden = new Set<PlanSemanticKind>();
+  const hiddenElementIds = new Set<string>();
 
   if (!activePlanViewId) {
     return {
       activeLevelId: fallbackLevelId,
       presentation: globalPresentation,
       hiddenSemanticKinds: hidden,
+      hiddenElementIds,
     };
   }
 
@@ -161,10 +165,16 @@ export function resolvePlanViewDisplay(
       activeLevelId: fallbackLevelId,
       presentation: globalPresentation,
       hiddenSemanticKinds: hidden,
+      hiddenElementIds,
     };
   }
 
   mergeHiddenFromLabels(el.categoriesHidden ?? [], hidden);
+
+  // F-102: populate per-element hidden IDs.
+  for (const eid of el.hiddenElementIds ?? []) {
+    hiddenElementIds.add(eid);
+  }
 
   const tmplId = el.viewTemplateId;
   if (tmplId) {
@@ -195,6 +205,7 @@ export function resolvePlanViewDisplay(
     presentation,
     hiddenSemanticKinds: hidden,
     planViewElementId: el.id,
+    hiddenElementIds,
   };
 }
 

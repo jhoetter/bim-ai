@@ -390,8 +390,10 @@ export function PlanCanvas({
     position: { x: number; y: number };
   } | null>(null);
   // F-014: state for the right-click "Unhide in View" menu shown in reveal hidden mode.
+  // F-102: extended with optional elementId for per-element unhide action.
   const [unhideContextMenu, setUnhideContextMenu] = useState<{
     elementKind: string;
+    elementId?: string;
     position: { x: number; y: number };
   } | null>(null);
   // F-040: state for the right-click "Allow/Disallow Join" menu on a wall endpoint.
@@ -574,6 +576,12 @@ export function PlanCanvas({
   const hiddenKey = useMemo(
     () => [...display.hiddenSemanticKinds].sort().join('|'),
     [display.hiddenSemanticKinds],
+  );
+
+  // F-102: stable key for per-element hiddenElementIds Set (used in useEffect deps).
+  const hiddenElementIdsKey = useMemo(
+    () => [...display.hiddenElementIds].sort().join('|'),
+    [display.hiddenElementIds],
   );
 
   const displayLevelId = display.activeLevelId;
@@ -908,7 +916,18 @@ export function PlanCanvas({
     // hidden elements magenta. The wire path (server projection) excludes hidden
     // elements at generation time and cannot show them.
     const wirePrimitives = modelId && !revealHiddenMode ? planProjectionPrimitives : null;
-    rebuildPlanMeshes(grp, elementsById, {
+
+    // F-102: build filtered elementsById for per-element hide. In normal mode, remove
+    // individually-hidden elements before passing to rebuildPlanMeshes. In reveal mode,
+    // pass all elements (including hidden ones) so they appear, then tint them magenta below.
+    const elementsByIdForRender =
+      !revealHiddenMode && display.hiddenElementIds.size > 0
+        ? Object.fromEntries(
+            Object.entries(elementsById).filter(([id]) => !display.hiddenElementIds.has(id)),
+          )
+        : elementsById;
+
+    rebuildPlanMeshes(grp, elementsByIdForRender, {
       activeLevelId: displayLevelId || undefined,
       selectedId,
       presentation: display.presentation,
@@ -921,6 +940,29 @@ export function PlanCanvas({
       plotScale,
       lineWeights: draftingRef.current.lineWeights,
     });
+
+    // F-102: in reveal mode, tint individually-hidden elements magenta so users can
+    // see and right-click them to unhide (same magenta as category-hidden reveal).
+    if (revealHiddenMode && display.hiddenElementIds.size > 0) {
+      for (const child of grp.children) {
+        const pickId = (child.userData as { bimPickId?: string }).bimPickId;
+        if (pickId && display.hiddenElementIds.has(pickId)) {
+          child.traverse((node) => {
+            const mesh = node as THREE.Mesh | THREE.Line;
+            if (!(mesh instanceof THREE.Mesh) && !(mesh instanceof THREE.Line)) return;
+            if (!mesh.material) return;
+            const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+            mesh.material = mats.map((m: THREE.Material) => {
+              const c = m.clone();
+              if ('color' in c) (c as unknown as { color: THREE.Color }).color.setHex(0xff00ff);
+              (c as unknown as { transparent: boolean; opacity: number }).transparent = true;
+              (c as unknown as { transparent: boolean; opacity: number }).opacity = 0.55;
+              return c;
+            });
+          });
+        }
+      }
+    }
 
     // B01 — apply hatch visibility per scale (no-op until hatch meshes are added)
     for (const ch of grp.children) {
@@ -1171,9 +1213,13 @@ export function PlanCanvas({
     const areaLevelId = displayLevelId || activeLevelResolvedId;
     if (areaLevelId && (!display.hiddenSemanticKinds.has('area_boundary') || revealHiddenMode)) {
       const areaPrims = extractAreaPrimitives(elementsById, areaLevelId);
-      const areaBoundaryReveal =
+      const areaCategoryReveal =
         revealHiddenMode && display.hiddenSemanticKinds.has('area_boundary');
       for (const a of areaPrims) {
+        // F-102: per-element hide — skip individually hidden areas in normal mode.
+        if (display.hiddenElementIds.has(a.id) && !revealHiddenMode) continue;
+        const areaBoundaryReveal =
+          areaCategoryReveal || (revealHiddenMode && display.hiddenElementIds.has(a.id));
         if (a.boundaryMm.length >= 3) {
           const strokePts = a.boundaryMm.map(
             (pt) => new THREE.Vector3(pt.xMm / 1000, SLICE_Y + 0.0028, pt.yMm / 1000),
@@ -1254,10 +1300,13 @@ export function PlanCanvas({
     if (activePlanViewId) {
       const detailPrims = extractDetailComponentPrimitives(elementsById, activePlanViewId);
       for (const p of detailPrims) {
+        // F-102: per-element hide — skip individually hidden elements in normal mode.
+        if (display.hiddenElementIds.has(p.id) && !revealHiddenMode) continue;
         if (p.kind === 'detail_line') {
           if (display.hiddenSemanticKinds.has('detail_line') && !revealHiddenMode) continue;
           const detailLineReveal =
-            revealHiddenMode && display.hiddenSemanticKinds.has('detail_line');
+            (revealHiddenMode && display.hiddenSemanticKinds.has('detail_line')) ||
+            (revealHiddenMode && display.hiddenElementIds.has(p.id));
           const detailLineColor = detailLineReveal ? '#ff00ff' : p.colour;
           const pts = p.pointsMm.map(
             (pt) => new THREE.Vector3(pt.xMm / 1000, SLICE_Y + 0.004, pt.yMm / 1000),
@@ -1319,7 +1368,9 @@ export function PlanCanvas({
           }
         } else if (p.kind === 'text_note') {
           if (display.hiddenSemanticKinds.has('text_note') && !revealHiddenMode) continue;
-          const textNoteReveal = revealHiddenMode && display.hiddenSemanticKinds.has('text_note');
+          const textNoteReveal =
+            (revealHiddenMode && display.hiddenSemanticKinds.has('text_note')) ||
+            (revealHiddenMode && display.hiddenElementIds.has(p.id));
           // Render the text via canvas-texture sprite. Using the existing
           // sprite pattern is heavier than necessary for a small note —
           // we draw a 1×1 m sprite scaled to the text size.
@@ -1474,6 +1525,7 @@ export function PlanCanvas({
     elementsById,
     geomEpoch,
     hiddenKey,
+    hiddenElementIdsKey,
     planProjectionPrimitives,
     modelId,
     planTool,
@@ -3516,6 +3568,18 @@ export function PlanCanvas({
       }
 
       // F-014: in reveal hidden mode, right-click on a hidden element → Unhide in View menu.
+      // F-102: also handle per-element hidden IDs (check before category check).
+      if (revealHiddenMode && display.hiddenElementIds.has(el.id)) {
+        ev.preventDefault();
+        setUnhideContextMenu({
+          elementKind: el.kind,
+          elementId: el.id,
+          position: { x: ev.clientX, y: ev.clientY },
+        });
+        setWallContextMenu(null);
+        setWallJoinCtxMenu(null);
+        return;
+      }
       if (revealHiddenMode && display.hiddenSemanticKinds.has(el.kind)) {
         ev.preventDefault();
         setUnhideContextMenu({ elementKind: el.kind, position: { x: ev.clientX, y: ev.clientY } });
@@ -3811,13 +3875,33 @@ export function PlanCanvas({
           onClose={() => setWallContextMenu(null)}
         />
       )}
-      {/* F-014: Unhide in View context menu — shown when right-clicking a hidden element in reveal hidden mode */}
+      {/* F-014/F-102: Unhide in View context menu — shown when right-clicking a hidden element in reveal hidden mode */}
       {unhideContextMenu && (
         <div
           data-testid="unhide-context-menu"
           className="pointer-events-auto absolute z-50 flex flex-col overflow-hidden rounded border border-border bg-surface shadow-md"
           style={{ left: unhideContextMenu.position.x, top: unhideContextMenu.position.y }}
         >
+          {/* F-102: per-element unhide action — shown only when the element is individually hidden. */}
+          {unhideContextMenu.elementId && (
+            <button
+              type="button"
+              className="px-3 py-1.5 text-left text-xs hover:bg-surface-strong"
+              data-testid="unhide-context-element"
+              onClick={() => {
+                if (activePlanViewId && unhideContextMenu.elementId) {
+                  void onSemanticCommand({
+                    type: 'unhideElementInView',
+                    planViewId: activePlanViewId,
+                    elementId: unhideContextMenu.elementId,
+                  });
+                }
+                setUnhideContextMenu(null);
+              }}
+            >
+              Unhide Element
+            </button>
+          )}
           <button
             type="button"
             className="px-3 py-1.5 text-left text-xs hover:bg-surface-strong"
