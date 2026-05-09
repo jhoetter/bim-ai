@@ -53,6 +53,7 @@ export const KNOWN_PLAN_TOOLS = new Set<ToolId>([
   'plan-region',
   'toposolid_subdivision',
   'grid',
+  'mirror',
   'component',
 ]);
 
