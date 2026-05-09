@@ -35,12 +35,13 @@ afterEach(() => {
 });
 
 describe('<Workspace /> — smoke', () => {
-  it('renders the AppShell, TopBar, LeftRail, Inspector, StatusBar slots', () => {
-    const { getByTestId, getByRole } = renderWithProviders(<Workspace />);
+  it('renders the AppShell, TopBar, LeftRail, StatusBar slots; inspector absent with no selection — CHR-V3-06', () => {
+    const { getByTestId, getByRole, queryByTestId } = renderWithProviders(<Workspace />);
     expect(getByTestId('app-shell')).toBeTruthy();
     expect(getByTestId('topbar')).toBeTruthy();
     expect(getByRole('tree', { name: 'Project browser' })).toBeTruthy();
-    expect(getByTestId('inspector')).toBeTruthy();
+    // CHR-V3-06: Inspector is absent from DOM when nothing is selected.
+    expect(queryByTestId('inspector')).toBeNull();
     expect(getByTestId('status-bar')).toBeTruthy();
   });
 

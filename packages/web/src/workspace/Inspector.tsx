@@ -8,7 +8,7 @@ import {
   useCallback,
   useEffect,
   useId,
-  useMemo,
+  useRef,
   useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -16,26 +16,28 @@ import { Icons, IconLabels, ICON_SIZE, type LucideLikeIcon } from '@bim-ai/ui';
 import { evaluateFormula } from '../lib/expressionEvaluator';
 
 /**
- * Inspector / Right rail — spec §13.
+ * Inspector / Right rail — spec §13 + CHR-V3-06.
  *
- * Anatomy:
- *   - Header: icon + element type + id (mono) + clear-selection button.
- *   - Tabs: Properties / Constraints / Identity (`role="tablist"`).
- *   - Body: render the active tab; consumers pass each tab's content
- *     through `tabs.{properties,constraints,identity}` props.
- *   - Sticky footer: Apply (Enter) / Reset (Esc) — only visible when the
- *     inspector reports `dirty=true`.
+ * CHR-V3-06 additions:
+ *   - When `selection` is null, the Inspector returns null (absent from DOM),
+ *     not a visible empty-state shell.
+ *   - A CSS `@keyframes inspector-slide-in` drives 200 ms translateX(100%→0)
+ *     re-entry every time the component mounts (i.e. key={selectedId}).
+ *   - When `siblingCount > 1`, a segmented radio ("Applies to: this / all N")
+ *     appears at the top of the Properties tab body.
+ *   - `InspectorDrawer`: non-modal slide-over for type/material edits.
+ *     `aria-modal="false"` keeps the canvas interactive.
  *
  * `evaluateExpression` exposes the §13.3 numeric-field grammar
  * (`2400 + 200`, `1500 / 2` etc.) so inspector callers can wire it into
  * their numeric inputs uniformly. `<NumericField>` is a primitive that
  * uses the evaluator + an optional unit chip (mm / cm / m).
- *
- * Empty state: when `selection` is null, an instruction block renders the
- * tool-mode "quick actions" hint set instead of the tab UI.
  */
 
 export type InspectorTab = 'properties' | 'constraints' | 'identity' | 'graphics';
+
+/** CHR-V3-06: scope for bulk-edit radio. */
+export type InspectorApplyScope = 'this' | 'all';
 
 export interface InspectorSelection {
   /** Lucide icon to show in the header next to the type. */
@@ -55,9 +57,8 @@ export interface InspectorProps {
     /** When provided, a "Graphics" tab appears after Identity. */
     graphics?: ReactNode;
   };
-  /** Quick-action lines for the empty state — typically tool hints
-   * sourced from the active mode. `onTrigger` makes them clickable; if
-   * omitted, rows render as static hints with a key chip only. */
+  /** Quick-action lines for the empty state — not used when selection is null
+   * (Inspector is absent from DOM). Kept for API compatibility. */
   emptyStateActions?: { hotkey: string; label: string; onTrigger?: () => void }[];
   /** When `true` Apply / Reset footer is shown. */
   dirty?: boolean;
@@ -66,32 +67,42 @@ export interface InspectorProps {
   onClearSelection?: () => void;
   /** Initial active tab; uncontrolled. */
   defaultTab?: InspectorTab;
+  /**
+   * CHR-V3-06: number of sibling elements of the same kind in the model.
+   * When > 1, an "Applies to: this / all N" radio appears at the top of
+   * the Properties tab.
+   */
+  siblingCount?: number;
+  /** CHR-V3-06: fired when the user switches the applies-to radio. */
+  onApplyScopeChange?: (scope: InspectorApplyScope) => void;
 }
 
 export function Inspector({
   selection,
   tabs,
-  emptyStateActions,
   dirty = false,
   onApply,
   onReset,
   onClearSelection,
   defaultTab = 'properties',
-}: InspectorProps): JSX.Element {
+  siblingCount = 1,
+  onApplyScopeChange,
+}: InspectorProps): JSX.Element | null {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<InspectorTab>(defaultTab);
+  const [applyScope, setApplyScope] = useState<InspectorApplyScope>('this');
   const tablistId = useId();
+  const radioGroupId = useId();
 
+  // Compute hasGraphics before the early-return so hook count is stable.
   const hasGraphics = tabs.graphics !== undefined;
-  const tabDefs = useMemo<{ id: InspectorTab; label: string }[]>(() => {
-    const defs: { id: InspectorTab; label: string }[] = [
-      { id: 'properties', label: t('inspector.tabs.properties') },
-      { id: 'constraints', label: t('inspector.tabs.constraints') },
-      { id: 'identity', label: t('inspector.tabs.identity') },
-    ];
-    if (hasGraphics) defs.push({ id: 'graphics', label: t('inspector.tabs.graphics') });
-    return defs;
-  }, [hasGraphics, t]);
+
+  const tabDefs: { id: InspectorTab; label: string }[] = [
+    { id: 'properties', label: t('inspector.tabs.properties') },
+    { id: 'constraints', label: t('inspector.tabs.constraints') },
+    { id: 'identity', label: t('inspector.tabs.identity') },
+  ];
+  if (hasGraphics) tabDefs.push({ id: 'graphics', label: t('inspector.tabs.graphics') });
 
   useEffect(() => {
     if (activeTab === 'graphics' && !hasGraphics) setActiveTab('properties');
@@ -100,18 +111,21 @@ export function Inspector({
   const handleTabKey = useCallback(
     (event: KeyboardEvent<HTMLDivElement>) => {
       if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
-      const idx = tabDefs.findIndex((t) => t.id === activeTab);
+      const idx = tabDefs.findIndex((td) => td.id === activeTab);
       if (idx < 0) return;
       const delta = event.key === 'ArrowRight' ? 1 : -1;
       const next = tabDefs[(idx + delta + tabDefs.length) % tabDefs.length];
       event.preventDefault();
       setActiveTab(next.id);
     },
-    [activeTab, tabDefs],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [activeTab, tabDefs.length, hasGraphics],
   );
 
-  const tabBody = useMemo(() => {
-    if (!selection) return null;
+  // CHR-V3-06 — absent from DOM when nothing is selected.
+  if (!selection) return null;
+
+  function getTabBody(): ReactNode {
     switch (activeTab) {
       case 'properties':
         return tabs.properties;
@@ -124,62 +138,117 @@ export function Inspector({
       default:
         return null;
     }
-  }, [activeTab, selection, tabs, t]);
+  }
+
+  function handleScopeChange(scope: InspectorApplyScope): void {
+    setApplyScope(scope);
+    onApplyScopeChange?.(scope);
+  }
 
   return (
-    <div
-      className="flex h-full flex-col overflow-hidden bg-surface"
-      data-testid="inspector"
-      data-dirty={dirty ? 'true' : 'false'}
-    >
-      {selection ? (
-        <>
-          <InspectorHeader selection={selection} onClearSelection={onClearSelection} />
-          <div
-            role="tablist"
-            id={tablistId}
-            aria-label={t('inspector.tabs.ariaLabel')}
-            onKeyDown={handleTabKey}
-            className="flex border-b border-border px-3"
-          >
-            {tabDefs.map((t) => {
-              const active = t.id === activeTab;
-              return (
-                <button
-                  key={t.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={active}
-                  aria-controls={`${tablistId}-panel-${t.id}`}
-                  tabIndex={active ? 0 : -1}
-                  onClick={() => setActiveTab(t.id)}
-                  data-active={active ? 'true' : 'false'}
-                  className={[
-                    'px-3 py-2 text-sm transition-colors',
-                    active
-                      ? 'border-b-2 border-accent text-foreground'
-                      : 'border-b-2 border-transparent text-muted hover:text-foreground',
-                  ].join(' ')}
-                >
-                  {t.label}
-                </button>
-              );
-            })}
-          </div>
-          <div
-            role="tabpanel"
-            id={`${tablistId}-panel-${activeTab}`}
-            aria-labelledby={tablistId}
-            className="flex-1 overflow-y-auto px-3 py-3"
-          >
-            {tabBody}
-          </div>
-          {dirty ? <InspectorFooter onApply={onApply} onReset={onReset} /> : null}
-        </>
-      ) : (
-        <InspectorEmpty actions={emptyStateActions ?? []} />
-      )}
-    </div>
+    <>
+      <style>{`
+        @keyframes inspector-slide-in {
+          from { transform: translateX(100%); }
+          to   { transform: translateX(0); }
+        }
+        @keyframes inspector-drawer-in {
+          from { transform: translateX(100%); }
+          to   { transform: translateX(0); }
+        }
+        @keyframes slide-up {
+          from { opacity: 0; transform: translateY(6px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+      <div
+        className="flex h-full flex-col overflow-hidden bg-surface"
+        data-testid="inspector"
+        data-dirty={dirty ? 'true' : 'false'}
+        style={{
+          animation: 'inspector-slide-in 200ms var(--ease-paper, cubic-bezier(0.32,0.72,0,1)) both',
+        }}
+      >
+        <InspectorHeader selection={selection} onClearSelection={onClearSelection} />
+        <div
+          role="tablist"
+          id={tablistId}
+          aria-label={t('inspector.tabs.ariaLabel')}
+          onKeyDown={handleTabKey}
+          className="flex border-b border-border px-3"
+        >
+          {tabDefs.map((td) => {
+            const active = td.id === activeTab;
+            return (
+              <button
+                key={td.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                aria-controls={`${tablistId}-panel-${td.id}`}
+                tabIndex={active ? 0 : -1}
+                onClick={() => setActiveTab(td.id)}
+                data-active={active ? 'true' : 'false'}
+                className={[
+                  'px-3 py-2 text-sm transition-colors',
+                  active
+                    ? 'border-b-2 border-accent text-foreground'
+                    : 'border-b-2 border-transparent text-muted hover:text-foreground',
+                ].join(' ')}
+              >
+                {td.label}
+              </button>
+            );
+          })}
+        </div>
+        <div
+          role="tabpanel"
+          id={`${tablistId}-panel-${activeTab}`}
+          aria-labelledby={tablistId}
+          className="flex-1 overflow-y-auto px-3 py-3"
+        >
+          {/* CHR-V3-06: applies-to radio shown only in Properties tab with >1 siblings */}
+          {activeTab === 'properties' && siblingCount > 1 ? (
+            <div
+              role="radiogroup"
+              aria-label="Applies to"
+              id={radioGroupId}
+              className="mb-3 flex items-center gap-1 rounded-md border border-border bg-surface-strong p-1 text-xs"
+            >
+              <span className="px-1 text-muted">Applies to:</span>
+              {(['this', 'all'] as InspectorApplyScope[]).map((scope) => {
+                const checked = applyScope === scope;
+                const label = scope === 'this' ? 'this' : `all ${siblingCount}`;
+                return (
+                  <label
+                    key={scope}
+                    className={[
+                      'flex cursor-pointer items-center rounded px-2 py-0.5 transition-colors',
+                      checked
+                        ? 'bg-accent text-accent-foreground'
+                        : 'text-muted hover:bg-background',
+                    ].join(' ')}
+                  >
+                    <input
+                      type="radio"
+                      name={radioGroupId}
+                      value={scope}
+                      checked={checked}
+                      onChange={() => handleScopeChange(scope)}
+                      className="sr-only"
+                      aria-label={label}
+                    />
+                    {label}
+                  </label>
+                );
+              })}
+            </div>
+          ) : null}
+          {getTabBody()}
+        </div>
+        {dirty ? <InspectorFooter onApply={onApply} onReset={onReset} /> : null}
+      </div>
+    </>
   );
 }
 
@@ -255,66 +324,115 @@ function InspectorFooter({
   );
 }
 
-function InspectorEmpty({
-  actions,
-}: {
-  actions: { hotkey: string; label: string; onTrigger?: () => void }[];
-}): JSX.Element {
-  const { t } = useTranslation();
-  return (
-    <div className="flex flex-1 flex-col gap-3 px-3 py-6 text-sm">
-      <p className="text-foreground">{t('inspector.empty.noSelection')}</p>
-      <p className="text-xs text-muted">{t('inspector.empty.hint')}</p>
-      {actions.length ? (
-        <div className="rounded-md border border-border bg-surface-strong p-3">
-          <div
-            className="mb-2 text-xs uppercase text-muted"
-            style={{ letterSpacing: 'var(--text-eyebrow-tracking)' }}
-          >
-            {t('inspector.empty.quickActions')}
-          </div>
-          <ul className="flex flex-col gap-1">
-            {actions.map((a) => {
-              const inner = (
-                <>
-                  <span>{a.label}</span>
-                  <kbd className="rounded-sm bg-background px-1.5 py-0.5 font-mono text-[11px] text-muted">
-                    {a.hotkey}
-                  </kbd>
-                </>
-              );
-              if (a.onTrigger) {
-                return (
-                  <li key={`${a.hotkey}:${a.label}`}>
-                    <button
-                      type="button"
-                      onClick={a.onTrigger}
-                      data-testid={`inspector-quick-action-${a.hotkey.toLowerCase()}`}
-                      className="flex w-full items-center justify-between rounded px-1.5 py-1 text-left text-xs text-foreground hover:bg-background"
-                    >
-                      {inner}
-                    </button>
-                  </li>
-                );
-              }
-              return (
-                <li
-                  key={`${a.hotkey}:${a.label}`}
-                  className="flex items-center justify-between text-xs text-foreground"
-                >
-                  {inner}
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
 function EmptyTab({ message }: { message: string }): JSX.Element {
   return <div className="px-1 py-2 text-xs text-muted">{message}</div>;
+}
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* CHR-V3-06 — InspectorDrawer                                             */
+/* ────────────────────────────────────────────────────────────────────── */
+
+export interface InspectorDrawerProps {
+  open: boolean;
+  title: string;
+  children: ReactNode;
+  onClose: () => void;
+}
+
+/**
+ * Non-modal slide-over drawer for type/material edit flows.
+ * `aria-modal="false"` so the canvas stays interactive while the drawer
+ * is open. The scrim (click-away) and Escape key both trigger `onClose`.
+ */
+export function InspectorDrawer({
+  open,
+  title,
+  children,
+  onClose,
+}: InspectorDrawerProps): JSX.Element | null {
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleKeyDown(e: globalThis.KeyboardEvent): void {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  return (
+    <>
+      {/* Scrim — click-away closes drawer; aria-modal=false keeps canvas interactive */}
+      <div
+        data-testid="inspector-drawer-scrim"
+        aria-hidden="true"
+        onClick={onClose}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 40,
+          backgroundColor: 'var(--color-overlay, rgba(0,0,0,0.3))',
+        }}
+      />
+      {/* Drawer panel */}
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="false"
+        aria-label={title}
+        data-testid="inspector-drawer"
+        style={{
+          position: 'fixed',
+          top: 0,
+          right: 0,
+          bottom: 0,
+          width: '320px',
+          zIndex: 41,
+          backgroundColor: 'var(--color-surface)',
+          boxShadow: 'var(--shadow-modal)',
+          display: 'flex',
+          flexDirection: 'column',
+          animation:
+            'inspector-drawer-in 200ms var(--ease-paper, cubic-bezier(0.32,0.72,0,1)) both',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '12px 16px',
+            borderBottom: '1px solid var(--color-border)',
+          }}
+        >
+          <span style={{ fontSize: 'var(--text-sm)', fontWeight: 500 }}>{title}</span>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={IconLabels.close}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '28px',
+              height: '28px',
+              borderRadius: '6px',
+              color: 'var(--color-muted)',
+            }}
+          >
+            <Icons.close size={ICON_SIZE.chrome} aria-hidden="true" />
+          </button>
+        </div>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px' }}>{children}</div>
+      </div>
+    </>
+  );
 }
 
 /* ────────────────────────────────────────────────────────────────────── */

@@ -1,7 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import { I18nextProvider } from 'react-i18next';
-import { Inspector, NumericField, evaluateExpression, type InspectorSelection } from './Inspector';
+import {
+  Inspector,
+  InspectorDrawer,
+  NumericField,
+  evaluateExpression,
+  type InspectorSelection,
+} from './Inspector';
 import i18n from '../i18n';
 
 function renderWithI18n(ui: React.ReactElement) {
@@ -22,8 +28,8 @@ const selection: InspectorSelection = {
 };
 
 describe('Inspector — spec §13', () => {
-  it('renders the empty state with quick actions when nothing is selected', () => {
-    const { getByText } = renderWithI18n(
+  it('renders nothing (absent from DOM) when selection is null — CHR-V3-06', () => {
+    const { container } = renderWithI18n(
       <Inspector
         selection={null}
         tabs={{ properties: <div /> }}
@@ -33,9 +39,7 @@ describe('Inspector — spec §13', () => {
         ]}
       />,
     );
-    expect(getByText('No selection.')).toBeTruthy();
-    expect(getByText('Draw a wall')).toBeTruthy();
-    expect(getByText('Insert a door')).toBeTruthy();
+    expect(container.firstChild).toBeNull();
   });
 
   it('renders header, three tabs, and Properties body when selection set', () => {
@@ -104,13 +108,15 @@ describe('Inspector — spec §13', () => {
     );
     expect(queryByText('Apply (⏎)')).toBeNull();
     rerender(
-      <Inspector
-        selection={selection}
-        tabs={{ properties: <div>props</div> }}
-        onApply={onApply}
-        onReset={onReset}
-        dirty
-      />,
+      <I18nextProvider i18n={i18n}>
+        <Inspector
+          selection={selection}
+          tabs={{ properties: <div>props</div> }}
+          onApply={onApply}
+          onReset={onReset}
+          dirty
+        />
+      </I18nextProvider>,
     );
     expect(getByText('Apply (⏎)')).toBeTruthy();
     fireEvent.click(getByText('Apply (⏎)'));
@@ -130,6 +136,80 @@ describe('Inspector — spec §13', () => {
     );
     fireEvent.click(getByLabelText('Close'));
     expect(onClearSelection).toHaveBeenCalled();
+  });
+});
+
+describe('Inspector — CHR-V3-06 applies-to radio', () => {
+  it('hides the radio when siblingCount is 1 (default)', () => {
+    const { queryByRole } = renderWithI18n(
+      <Inspector selection={selection} tabs={{ properties: <div>props</div> }} />,
+    );
+    expect(queryByRole('radiogroup')).toBeNull();
+  });
+
+  it('shows the radio when siblingCount > 1', () => {
+    const { getByRole } = renderWithI18n(
+      <Inspector selection={selection} tabs={{ properties: <div>props</div> }} siblingCount={4} />,
+    );
+    expect(getByRole('radiogroup', { name: 'Applies to' })).toBeTruthy();
+  });
+
+  it('fires onApplyScopeChange with "all" when that option is chosen', () => {
+    const onApplyScopeChange = vi.fn();
+    const { getByLabelText } = renderWithI18n(
+      <Inspector
+        selection={selection}
+        tabs={{ properties: <div>props</div> }}
+        siblingCount={3}
+        onApplyScopeChange={onApplyScopeChange}
+      />,
+    );
+    fireEvent.click(getByLabelText('all 3'));
+    expect(onApplyScopeChange).toHaveBeenCalledWith('all');
+  });
+});
+
+describe('InspectorDrawer — CHR-V3-06', () => {
+  it('renders nothing when closed', () => {
+    const { queryByTestId } = renderWithI18n(
+      <InspectorDrawer open={false} title="Edit type" onClose={() => undefined}>
+        <div>drawer content</div>
+      </InspectorDrawer>,
+    );
+    expect(queryByTestId('inspector-drawer')).toBeNull();
+  });
+
+  it('renders title and children when open', () => {
+    const { getByTestId, getByText } = renderWithI18n(
+      <InspectorDrawer open={true} title="Edit type" onClose={() => undefined}>
+        <div>drawer content</div>
+      </InspectorDrawer>,
+    );
+    expect(getByTestId('inspector-drawer')).toBeTruthy();
+    expect(getByText('Edit type')).toBeTruthy();
+    expect(getByText('drawer content')).toBeTruthy();
+  });
+
+  it('calls onClose when the scrim is clicked', () => {
+    const onClose = vi.fn();
+    const { getByTestId } = renderWithI18n(
+      <InspectorDrawer open={true} title="Edit type" onClose={onClose}>
+        <div>content</div>
+      </InspectorDrawer>,
+    );
+    fireEvent.click(getByTestId('inspector-drawer-scrim'));
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('calls onClose when Escape is pressed', () => {
+    const onClose = vi.fn();
+    renderWithI18n(
+      <InspectorDrawer open={true} title="Edit type" onClose={onClose}>
+        <div>content</div>
+      </InspectorDrawer>,
+    );
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(onClose).toHaveBeenCalled();
   });
 });
 

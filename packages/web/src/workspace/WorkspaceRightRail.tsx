@@ -1,5 +1,5 @@
 import type { JSX } from 'react';
-import { useMemo } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import type { Element } from '@bim-ai/core';
@@ -7,7 +7,7 @@ import type { Element } from '@bim-ai/core';
 import { AdvisorPanel } from '../advisor/AdvisorPanel';
 import { buildPlanGridDatumInspectorLine } from './planViewDatumGridReadout';
 import { useBimStore } from '../state/store';
-import { Inspector, type InspectorSelection } from './Inspector';
+import { Inspector, type InspectorApplyScope, type InspectorSelection } from './Inspector';
 import {
   InspectorConstraintsFor,
   InspectorDoorEditor,
@@ -60,6 +60,30 @@ export function WorkspaceRightRail({
   const el = selectedId ? (elementsById[selectedId] as Element | undefined) : undefined;
   const show3dLayers = mode === '3d' || mode === 'plan-3d';
 
+  // CHR-V3-06: sibling count for the applies-to radio.
+  const siblingCount = useMemo(() => {
+    if (!el) return 1;
+    return Object.values(elementsById).filter((e) => (e as Element).kind === el.kind).length;
+  }, [el, elementsById]);
+
+  // CHR-V3-06: non-blocking toast when "all N" scope is selected.
+  const [allScopeToast, setAllScopeToast] = useState<string | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleApplyScopeChange = useCallback(
+    (scope: InspectorApplyScope) => {
+      if (scope === 'all' && el) {
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+        setAllScopeToast(`Edits will apply to all ${siblingCount} ${el.kind} elements.`);
+        toastTimerRef.current = setTimeout(() => setAllScopeToast(null), 4000);
+      } else {
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+        setAllScopeToast(null);
+      }
+    },
+    [el, siblingCount],
+  );
+
   function handleDisciplineChange(discipline: DisciplineTag | null): void {
     if (!el) return;
     void onSemanticCommand({
@@ -88,9 +112,34 @@ export function WorkspaceRightRail({
 
   return (
     <div className="h-full overflow-y-auto">
-      <div>
+      {/* CHR-V3-06: non-blocking scope toast */}
+      {allScopeToast ? (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            position: 'fixed',
+            bottom: '1rem',
+            right: '1rem',
+            zIndex: 50,
+            padding: '8px 16px',
+            borderRadius: '6px',
+            fontSize: 'var(--text-sm)',
+            backgroundColor: 'var(--color-surface-2)',
+            boxShadow: 'var(--shadow-modal)',
+            animation: 'slide-up 200ms var(--ease-paper) both',
+          }}
+        >
+          {allScopeToast}
+        </div>
+      ) : null}
+      {/* CHR-V3-06: key={selectedId} remounts (and re-animates) Inspector on each selection */}
+      <div style={{ position: 'relative' }}>
         <Inspector
+          key={selectedId ?? 'none'}
           selection={inspectorSelection}
+          siblingCount={siblingCount}
+          onApplyScopeChange={handleApplyScopeChange}
           tabs={{
             properties: el ? (
               el.kind === 'plan_view' ? (
