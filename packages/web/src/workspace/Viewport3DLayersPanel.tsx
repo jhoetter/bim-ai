@@ -9,6 +9,7 @@ export const VIEWER_HIDDEN_KIND_KEYS = [
   'door',
   'window',
   'room',
+  'site_origin',
 ] as const;
 
 export type ViewerHiddenKindKey = (typeof VIEWER_HIDDEN_KIND_KEYS)[number];

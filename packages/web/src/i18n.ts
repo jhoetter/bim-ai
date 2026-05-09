@@ -25,6 +25,9 @@ i18n.init({
             label: 'Room',
             tooltip: 'Drop room marker in centroid of bounded area',
           },
+          site_origin: {
+            label: 'Origin',
+          },
           dimension: {
             label: 'Dimension',
             tooltip: 'Linear / Aligned / Angular / Radial / Diameter',
@@ -843,6 +846,9 @@ i18n.init({
           room: {
             label: 'Raum',
             tooltip: 'Raummarker im Schwerpunkt der umschlossenen Fläche platzieren',
+          },
+          site_origin: {
+            label: 'Ursprung',
           },
           dimension: {
             label: 'Maß',
