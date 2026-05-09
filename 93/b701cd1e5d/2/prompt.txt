@@ -1,0 +1,17 @@
+can you add color to them? i want versions for one-colored, accent added color and fully colored to see the differences
+
+---
+
+mono and accent look greaet, colored not really.
+
+---
+
+no color still isnt good because it is one color only; what would be needed to further improve the design / quality? even more px?
+
+---
+
+yep
+
+---
+
+can you generally structure the icons into regular and hifi, and then hifi into mono, accent and colored and do the work for the rest of the icons? please parallelize HEAVILY, because this can perfectly be parallelized in dispatching

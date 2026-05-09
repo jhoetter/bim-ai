@@ -1,0 +1,41 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "93b701cd1e5d",
+  "session_id": "965188de-05c1-45fb-bdf6-79ca31696284",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-09T19:28:11.747393Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "27bde13398a9",
+  "checkpoint_transcript_start": 321,
+  "transcript_lines_at_start": 321,
+  "token_usage": {
+    "input_tokens": 4,
+    "cache_creation_tokens": 47314,
+    "cache_read_tokens": 106796,
+    "output_tokens": 7632,
+    "api_call_count": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 526,
+      "user_lines_removed": 143,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/icons/src/hifi.tsx": 445,
+        "packages/web/src/design-systems/IconGallery.tsx": 71,
+        "packages/web/src/plan/DesignOptionChip.tsx": 10
+      },
+      "user_removed_per_file": {
+        "packages/icons/src/hifi.tsx": 134,
+        "packages/web/src/design-systems/IconGallery.tsx": 8,
+        "packages/web/src/plan/DesignOptionChip.tsx": 1
+      }
+    }
+  ]
+}
