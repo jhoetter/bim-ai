@@ -18,3 +18,7 @@ this always asks me and i always say yes -> can we automate that?
 ---
 
 did you commit and push?
+
+---
+
+yep
