@@ -102,7 +102,7 @@ Source segment: `00:00:00 – 00:32:00`
 **Screenshot:**
 ![Visual Style](file:///Users/jhoetter/Desktop/Revit%20Specs/0332_01-07-40.png)
 
-**bim-ai status:** 🟡 Partial — for plan views: `PlanDetailLevelToolbar` (coarse/medium/fine) is shown in the canvas footer, and a plan style selector (default/opening_focus/room_scheme) is available in the TopBar. For 3D views: bim-ai renders solid geometry with basic lighting but has no Visual Style dropdown equivalent to Revit's wireframe/hidden-line/shaded/consistent-colors/realistic/ray-trace catalogue.
+**bim-ai status:** 🟡 Partial — for plan views: `PlanDetailLevelToolbar` (coarse/medium/fine) is shown in the canvas footer, and a plan style selector (default/opening_focus/room_scheme) is available in the TopBar. For 3D views: bim-ai now has a **Shaded/Wireframe toggle button** in the bottom-left of the 3D viewport (F-011 / `data-testid="viewport-wireframe-toggle"`); clicking it toggles all mesh materials between MeshStandard shaded and wireframe modes via the `viewerRenderStyle` Zustand state. Missing: hidden-line, consistent-colors, realistic, and ray-trace modes from Revit's full Visual Style catalogue.
 
 ---
 

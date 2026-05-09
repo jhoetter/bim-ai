@@ -350,6 +350,7 @@ export function Viewport({
 
   const viewerCategoryHidden = useBimStore((s) => s.viewerCategoryHidden);
   const viewerPhaseFilter = useBimStore((s) => s.viewerPhaseFilter);
+  const viewerRenderStyle = useBimStore((s) => s.viewerRenderStyle);
   const lensMode = useBimStore((s) => s.lensMode);
 
   const viewerClipElevMm = useBimStore((s) => s.viewerClipElevMm);
@@ -1642,6 +1643,23 @@ export function Viewport({
     prevElementsByIdRef.current = curr;
   }, [elementsById, viewerCategoryHidden, viewerPhaseFilter, lensMode, theme, text3dRebuildTick]);
 
+  // ── F-011: wireframe / shaded toggle ─────────────────────────────────────
+  useEffect(() => {
+    const cache = bimPickMapRef.current;
+    const isWireframe = viewerRenderStyle === 'wireframe';
+    for (const [, obj] of cache) {
+      obj.traverse((child) => {
+        if (
+          child instanceof THREE.Mesh &&
+          child.material instanceof THREE.MeshStandardMaterial
+        ) {
+          child.material.wireframe = isWireframe;
+          child.material.needsUpdate = true;
+        }
+      });
+    }
+  }, [viewerRenderStyle]);
+
   // ── Clipping planes + section-box cage ───────────────────────────────────
   // Runs only when clip elevation or section box changes — not on every element edit.
   useEffect(() => {
@@ -2060,6 +2078,28 @@ export function Viewport({
           title={t('viewport.orthoTitle')}
         >
           {t('viewport.orthoLabel')}: {orthoMode ? t('viewport.on') : t('viewport.off')}
+        </button>
+        <button
+          type="button"
+          onClick={() =>
+            useBimStore
+              .getState()
+              .setViewerRenderStyle(
+                viewerRenderStyle === 'wireframe' ? 'shaded' : 'wireframe',
+              )
+          }
+          aria-pressed={viewerRenderStyle === 'wireframe'}
+          data-active={viewerRenderStyle === 'wireframe' ? 'true' : 'false'}
+          data-testid="viewport-wireframe-toggle"
+          className={[
+            'rounded-md border border-border px-2 py-1 text-xs',
+            viewerRenderStyle === 'wireframe'
+              ? 'bg-accent text-accent-foreground'
+              : 'bg-surface text-foreground',
+          ].join(' ')}
+          title="Toggle wireframe / shaded view"
+        >
+          {viewerRenderStyle === 'wireframe' ? 'Wireframe' : 'Shaded'}
         </button>
         {sectionBoxActive && sectionBoxRef.current ? (
           <span

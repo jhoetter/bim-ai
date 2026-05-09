@@ -164,6 +164,8 @@ export type StoreState = {
   viewerClipFloorElevMm: number | null;
   /** When true for a semantic kind (`wall`, `roof`, …), that category is hidden in 3D. */
   viewerCategoryHidden: Record<string, boolean>;
+  /** F-011: current 3D render style — shaded (default) or wireframe. */
+  viewerRenderStyle: 'shaded' | 'wireframe';
   /**
    * SKB-23 — per-phase preview filter. When set, only elements whose
    * `phaseId` is in `viewerPhaseFilter.phases` (or whose `phaseId` is
@@ -241,6 +243,8 @@ export type StoreState = {
   setPlanRoomSchemeWireReadout: (readout: PlanRoomSchemeWireReadout | null) => void;
   setScheduleBudgetHydration: (v: { tab: string; rowCount: number } | null) => void;
   toggleViewerCategoryHidden: (semanticKind: string) => void;
+  /** F-011: switch between shaded and wireframe render modes. */
+  setViewerRenderStyle: (style: 'shaded' | 'wireframe') => void;
   /** Apply saved 3D viewpoint clip planes + semantic category hides (WP-E02/E03). */
   applyOrbitViewpointPreset: (opts: {
     capElevMm?: number | null;
