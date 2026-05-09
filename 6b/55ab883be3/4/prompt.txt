@@ -1,0 +1,5 @@
+i want to auth my entire.io app, can you check how that works? i.e. that CLI is auth for entire.io
+
+---
+
+no i mean entire.io, not hof or such
