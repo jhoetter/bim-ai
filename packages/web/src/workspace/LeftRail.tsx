@@ -248,8 +248,21 @@ export function LeftRailCollapsed({
   return (
     <nav
       aria-label={t('workspace.projectBrowserSections')}
-      className="flex h-full flex-col items-center gap-2 border-r border-border bg-surface py-3"
+      className="flex h-full flex-col items-center gap-1 border-r border-border bg-surface py-2"
     >
+      {/* Expand toggle at top — clear affordance */}
+      <button
+        type="button"
+        aria-label={t('workspace.expandSidebar', { defaultValue: 'Expand sidebar' })}
+        title={t('workspace.expandSidebar', { defaultValue: 'Expand sidebar' })}
+        onClick={onExpand}
+        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface-strong hover:text-foreground"
+      >
+        <Icons.hamburger size={ICON_SIZE.chrome} aria-hidden="true" />
+      </button>
+      {/* Separator */}
+      <div className="my-1 h-px w-5 bg-border" aria-hidden="true" />
+      {/* Section shortcuts — clicking also expands */}
       {sections.map((s) => {
         const Icon = s.icon ?? Icons.disclosureClosed;
         return (
@@ -259,9 +272,9 @@ export function LeftRailCollapsed({
             aria-label={s.label}
             title={s.label}
             onClick={onExpand}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface-strong hover:text-foreground"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface-strong hover:text-foreground"
           >
-            <Icon size={ICON_SIZE.toolPalette} aria-hidden="true" />
+            <Icon size={ICON_SIZE.chrome} aria-hidden="true" />
           </button>
         );
       })}
