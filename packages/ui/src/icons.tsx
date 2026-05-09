@@ -22,6 +22,7 @@ import {
   MousePointer2,
   Layers,
   Redo2,
+  RotateCw,
   Ruler,
   Scissors,
   Search,
@@ -119,6 +120,7 @@ export const Icons: Record<string, LucideLikeIcon> = {
   'wall-opening': SquareDashed,
   shaft: Layers,
   mirror: FlipHorizontal2,
+  rotate: RotateCw,
 
   // Drawing tools — all now BIM-native from @bim-ai/icons
   wall: WallIcon,
@@ -215,6 +217,7 @@ export const IconLabels: Record<keyof typeof Icons, string> = {
   'wall-opening': 'Wall Opening',
   shaft: 'Shaft',
   mirror: 'Mirror',
+  rotate: 'Rotate',
   wall: 'Wall',
   door: 'Door',
   window: 'Window',

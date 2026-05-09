@@ -2263,6 +2263,17 @@ class MoveColumnDeltaCmd(BaseModel):
     dy_mm: float = Field(alias="dyMm")
 
 
+class RotateElementsCmd(BaseModel):
+    """Rotate one or more elements around a center point by a given angle."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["rotateElements"] = "rotateElements"
+    element_ids: list[str] = Field(alias="elementIds")
+    center_x_mm: float = Field(alias="centerXMm")
+    center_y_mm: float = Field(alias="centerYMm")
+    angle_deg: float = Field(alias="angleDeg")
+
+
 class SetToolPrefCmd(BaseModel):
     """CHR-V3-08: Store a sticky tool-modifier preference for the session.
 
@@ -2940,6 +2951,7 @@ Command = Annotated[
     | PlaceAssetCmd
     | MoveAssetDeltaCmd
     | MoveColumnDeltaCmd
+    | RotateElementsCmd
     | SetToolPrefCmd
     | TraceImageCmd
     | UpdateWallCmd

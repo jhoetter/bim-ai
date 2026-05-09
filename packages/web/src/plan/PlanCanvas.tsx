@@ -303,6 +303,8 @@ export function PlanCanvas({
   const mirrorAxisStartRef = useRef<{ xMm: number; yMm: number } | null>(null);
   const copyAnchorRef = useRef<{ xMm: number; yMm: number } | null>(null);
   const [copyAnchorSet, setCopyAnchorSet] = useState(false);
+  const rotateAnchorRef = useRef<{ xMm: number; yMm: number } | null>(null);
+  const [rotateAnchorSet, setRotateAnchorSet] = useState(false);
   const splitStateRef = useRef<SplitState>(initialSplitState());
   const trimStateRef = useRef<TrimState>(initialTrimState());
   const wallJoinStateRef = useRef<WallJoinState>(initialWallJoinState());
@@ -762,6 +764,8 @@ export function PlanCanvas({
     mirrorAxisStartRef.current = null;
     copyAnchorRef.current = null;
     setCopyAnchorSet(false);
+    rotateAnchorRef.current = null;
+    setRotateAnchorSet(false);
     splitStateRef.current = initialSplitState();
     trimStateRef.current = initialTrimState();
     wallJoinStateRef.current = initialWallJoinState();
@@ -2685,6 +2689,33 @@ export function PlanCanvas({
         bumpGeom((x) => x + 1);
         return;
       }
+      if (planTool === 'rotate') {
+        if (!rotateAnchorRef.current) {
+          // First click: store center of rotation
+          rotateAnchorRef.current = sp;
+          setRotateAnchorSet(true);
+          bumpGeom((x) => x + 1);
+          return;
+        }
+        // Second click: compute angle from center to click point and rotate selection
+        const anchor = rotateAnchorRef.current;
+        rotateAnchorRef.current = null;
+        setRotateAnchorSet(false);
+        const angleDeg =
+          (Math.atan2(sp.yMm - anchor.yMm, sp.xMm - anchor.xMm) * 180) / Math.PI;
+        const elementIds = [selectedId, ...selectedIds].filter(Boolean) as string[];
+        if (elementIds.length > 0) {
+          onSemanticCommand({
+            type: 'rotateElements',
+            elementIds,
+            centerXMm: anchor.xMm,
+            centerYMm: anchor.yMm,
+            angleDeg,
+          });
+        }
+        bumpGeom((x) => x + 1);
+        return;
+      }
       if (planTool === 'component') {
         const assetId = activeComponentAssetId;
         if (assetId && lvlId) {
@@ -3262,6 +3293,9 @@ export function PlanCanvas({
         } else if (planTool === 'copy') {
           copyAnchorRef.current = null;
           setCopyAnchorSet(false);
+        } else if (planTool === 'rotate') {
+          rotateAnchorRef.current = null;
+          setRotateAnchorSet(false);
         } else if (planTool === 'split') {
           const { state } = reduceSplit(splitStateRef.current, { kind: 'cancel' });
           splitStateRef.current = state;
@@ -4226,6 +4260,77 @@ export function PlanCanvas({
           <span>Click destination point to complete copy</span>
         </div>
       ) : null}
+      {/* F-122 — Rotate tool overlay: shown after the first click (center set), waiting for angle click. */}
+      {planTool === 'rotate' && rotateAnchorSet && rotateAnchorRef.current
+        ? (() => {
+            const anchorPx = worldToScreen(rotateAnchorRef.current);
+            const cursorPx = hudMm ? worldToScreen(hudMm) : null;
+            return (
+              <>
+                <svg
+                  data-testid="rotate-tool-overlay"
+                  aria-hidden="true"
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    width: '100%',
+                    height: '100%',
+                    pointerEvents: 'none',
+                    zIndex: 15,
+                    overflow: 'visible',
+                  }}
+                >
+                  {/* Circle around the rotation center */}
+                  <circle
+                    cx={anchorPx.pxX}
+                    cy={anchorPx.pxY}
+                    r="12"
+                    fill="none"
+                    stroke="hsl(var(--color-accent, 220 90% 56%))"
+                    strokeWidth="1.5"
+                    opacity="0.8"
+                  />
+                  {/* Center dot */}
+                  <circle
+                    cx={anchorPx.pxX}
+                    cy={anchorPx.pxY}
+                    r="3"
+                    fill="hsl(var(--color-accent, 220 90% 56%))"
+                    opacity="0.9"
+                  />
+                  {/* Line from center to cursor */}
+                  {cursorPx ? (
+                    <line
+                      x1={anchorPx.pxX}
+                      y1={anchorPx.pxY}
+                      x2={cursorPx.pxX}
+                      y2={cursorPx.pxY}
+                      stroke="hsl(var(--color-accent, 220 90% 56%))"
+                      strokeWidth="1"
+                      strokeDasharray="5 3"
+                      opacity="0.7"
+                    />
+                  ) : null}
+                </svg>
+                <div
+                  data-testid="rotate-tool-chip"
+                  aria-live="polite"
+                  style={{
+                    position: 'absolute',
+                    bottom: 48,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    pointerEvents: 'none',
+                    zIndex: 20,
+                  }}
+                  className="flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-xs shadow"
+                >
+                  <span>Click to set end angle and rotate</span>
+                </div>
+              </>
+            );
+          })()
+        : null}
       {/* F-121 — Align tool reference line overlay: shown after the first click (reference set).
           Draws a dashed crosshair SVG at the reference point so the user can see the snap target
           before clicking a wall to align. Resets when alignment commits or Esc is pressed. */}

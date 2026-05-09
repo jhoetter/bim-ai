@@ -199,6 +199,7 @@ from bim_ai.commands import (
     PlaceAssetCmd,
     MoveAssetDeltaCmd,
     MoveColumnDeltaCmd,
+    RotateElementsCmd,
     PlaceKitCmd,
     UpdateKitComponentCmd,
     SetToolPrefCmd,
@@ -1323,6 +1324,7 @@ _LINKED_READONLY_SCALAR_FIELDS: dict[type, tuple[str, ...]] = {
 _LINKED_READONLY_LIST_FIELDS: dict[type, tuple[str, ...]] = {
     DeleteElementsCmd: ("element_ids",),
     MirrorElementsCmd: ("element_ids",),
+    RotateElementsCmd: ("element_ids",),
 }
 
 
@@ -5431,6 +5433,64 @@ def apply_inplace(
                 yMm=el.position_mm.y_mm + cmd.dy_mm,
             )
             els[cmd.element_id] = el.model_copy(update={"position_mm": new_pos})
+
+        case RotateElementsCmd():
+            import math as _math
+
+            cx = cmd.center_x_mm
+            cy = cmd.center_y_mm
+            rad = _math.radians(cmd.angle_deg)
+            cos_a = _math.cos(rad)
+            sin_a = _math.sin(rad)
+
+            def _rotate_pt(x: float, y: float) -> tuple[float, float]:
+                dx, dy = x - cx, y - cy
+                return cx + dx * cos_a - dy * sin_a, cy + dx * sin_a + dy * cos_a
+
+            for eid in cmd.element_ids:
+                el = els.get(eid)
+                if el is None:
+                    continue
+                match el.kind:
+                    case "wall":
+                        nx0, ny0 = _rotate_pt(el.start.x_mm, el.start.y_mm)
+                        nx1, ny1 = _rotate_pt(el.end.x_mm, el.end.y_mm)
+                        els[eid] = el.model_copy(update={
+                            "start": Vec2Mm(xMm=nx0, yMm=ny0),
+                            "end": Vec2Mm(xMm=nx1, yMm=ny1),
+                        })
+                    case "column":
+                        nx, ny = _rotate_pt(el.position_mm.x_mm, el.position_mm.y_mm)
+                        new_rot = (el.rotation_deg + cmd.angle_deg) % 360
+                        els[eid] = el.model_copy(update={
+                            "position_mm": Vec2Mm(xMm=nx, yMm=ny),
+                            "rotation_deg": new_rot,
+                        })
+                    case "placed_asset":
+                        nx, ny = _rotate_pt(el.position_mm.x_mm, el.position_mm.y_mm)
+                        new_rot = (el.rotation_deg + cmd.angle_deg) % 360
+                        els[eid] = el.model_copy(update={
+                            "position_mm": Vec2Mm(xMm=nx, yMm=ny),
+                            "rotation_deg": new_rot,
+                        })
+                    case "floor":
+                        new_pts = []
+                        for pt in el.boundary_mm:
+                            nx, ny = _rotate_pt(pt.x_mm, pt.y_mm)
+                            new_pts.append(Vec2Mm(xMm=nx, yMm=ny))
+                        els[eid] = el.model_copy(update={"boundary_mm": new_pts})
+                    case "room":
+                        new_pts = []
+                        for pt in el.outline_mm:
+                            nx, ny = _rotate_pt(pt.x_mm, pt.y_mm)
+                            new_pts.append(Vec2Mm(xMm=nx, yMm=ny))
+                        els[eid] = el.model_copy(update={"outline_mm": new_pts})
+                    case "area":
+                        new_pts = []
+                        for pt in el.boundary_mm:
+                            nx, ny = _rotate_pt(pt.x_mm, pt.y_mm)
+                            new_pts.append(Vec2Mm(xMm=nx, yMm=ny))
+                        els[eid] = el.model_copy(update={"boundary_mm": new_pts})
 
         # -----------------------------------------------------------------
         # AST-V3-04 — Parametric kitchen kit
