@@ -241,6 +241,11 @@ export type StoreState = {
     up: { xMm: number; yMm: number; zMm: number };
   }) => void;
 
+  /** OSM-V3-02: when false, neighborhood_mass elements are excluded from plan render. */
+  showNeighborhoodMasses: boolean;
+  /** OSM-V3-02: toggle neighborhood mass layer visibility. */
+  toggleNeighborhoodMasses: () => void;
+
   vvDialogOpen: boolean;
   openVVDialog: () => void;
   closeVVDialog: () => void;

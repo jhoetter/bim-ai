@@ -8,6 +8,12 @@
  * symbology (`packages/web/src/plan/symbology/*`) and 3D viewport materials.
  */
 
+/* OSM-V3-02 — neighborhood massing render tokens (theme-independent). */
+:root {
+  --neighborhood-mass-color: #a8a39c; /* neutral warm grey for context massing */
+  --neighborhood-mass-alpha: 0.85;
+}
+
 /* CAN-V3-02 — hatch pattern scale tokens (paper-mm, theme-independent). */
 :root {
   --hatch-brick-repeat: 73; /* paper-mm */
