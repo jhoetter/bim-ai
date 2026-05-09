@@ -1,0 +1,1323 @@
+Run uv run pytest
+============================= test session starts ==============================
+platform linux -- Python 3.12.13, pytest-8.4.2, pluggy-1.6.0
+rootdir: /home/runner/work/bim-ai/bim-ai/app
+configfile: pyproject.toml
+testpaths: tests
+plugins: cov-6.3.0, asyncio-0.26.0, anyio-4.13.0
+asyncio: mode=Mode.AUTO, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 2541 items / 1 skipped
+tests/agent/refinement_reliability/test_refinement_reliability.py .....E [  0%]
+..                                                                       [  0%]
+tests/api/test_activity_route.py ............                            [  0%]
+tests/api/test_ann_v3_01.py .......F                                     [  1%]
+tests/api/test_apply_bundle_route.py .........                           [  1%]
+tests/api/test_ast_v3_04.py ............                                 [  1%]
+tests/api/test_can_v3_02.py ..........                                   [  2%]
+tests/api/test_collab_ws.py ....                                         [  2%]
+tests/api/test_comments_route.py ................                        [  3%]
+tests/api/test_con_v3_02.py ...............                              [  3%]
+tests/api/test_ctl_v3_01.py ..............                               [  4%]
+tests/api/test_discipline_tags.py .....                                  [  4%]
+tests/api/test_dsc_v3_02.py ..............                               [  4%]
+tests/api/test_edt_v3_09.py ................                             [  5%]
+tests/api/test_exp_v3_01.py .................                            [  6%]
+tests/api/test_imp_v3_01.py .............                                [  6%]
+tests/api/test_jobs_routes.py ...........                                [  7%]
+tests/api/test_markups_route.py .............                            [  7%]
+tests/api/test_mat_v3_01.py ....F.                                       [  7%]
+tests/api/test_milestones_route.py .........                             [  8%]
+tests/api/test_mrk_v3_03.py ...................                          [  9%]
+tests/api/test_osm_v3_01.py .................                            [  9%]
+tests/api/test_out_v3_02.py .................                            [ 10%]
+tests/api/test_out_v3_03.py ..............                               [ 10%]
+tests/api/test_public_links_route.py .............FF.                    [ 11%]
+tests/api/test_sch_v3_01.py F.FFFF.                                      [ 11%]
+tests/api/test_tool_pref.py .....                                        [ 12%]
+tests/api/test_top_v3_02.py ............                                 [ 12%]
+tests/api/test_top_v3_04.py .............                                [ 13%]
+tests/api/test_vg_v3_01.py ................                              [ 13%]
+tests/cmd/test_apply_bundle_engine.py ................                   [ 14%]
+tests/cmd/test_apply_bundle_types.py ..................                  [ 15%]
+tests/cmd/test_assumption_log.py .........                               [ 15%]
+tests/collab/test_collab_orchestrator.py .......                         [ 15%]
+tests/jobs/test_job_queue.py ..........                                  [ 16%]
+tests/test_advisor_blocking_class_expansion.py F.............            [ 16%]
+tests/test_agent_brief_acceptance_readout.py ..........                  [ 17%]
+tests/test_agent_brief_command_protocol.py ......                        [ 17%]
+tests/test_agent_evidence_loop_closure.py ........                       [ 17%]
+tests/test_agent_generated_bundle_qa_checklist.py ......                 [ 17%]
+tests/test_agent_iterate.py ............                                 [ 18%]
+tests/test_agent_review_readout_consistency_closure.py ................. [ 18%]
+.........                                                                [ 19%]
+tests/test_api_v3_registry.py ...................                        [ 20%]
+tests/test_area_calculation.py .......                                   [ 20%]
+tests/test_ast_v3_01.py ........................                         [ 21%]
+tests/test_ci_gate_runner.py .............                               [ 21%]
+tests/test_clash_test_cross_link.py ...........                          [ 22%]
+tests/test_cli_agent_loop.py FFF                                         [ 22%]
+tests/test_cli_diff.py FFFFF                                             [ 22%]
+tests/test_cli_export_json.py FF                                         [ 22%]
+tests/test_constraint_rules.py ..........................                [ 23%]
+tests/test_constraints.py .............                                  [ 24%]
+tests/test_constraints_discipline.py ....                                [ 24%]
+tests/test_constraints_room_programme_consistency.py ........            [ 24%]
+tests/test_constraints_room_unenclosed.py .....                          [ 24%]
+tests/test_constraints_schedule_sheet_link.py .........                  [ 25%]
+tests/test_constraints_sheet_documentation_advisory.py ..............    [ 25%]
+tests/test_create_area.py ......                                         [ 25%]
+tests/test_create_constraint_command.py ...                              [ 26%]
+tests/test_create_link_dxf_command.py .F.                                [ 26%]
+tests/test_create_masking_region.py ......                               [ 26%]
+tests/test_create_property_line.py ......                                [ 26%]
+tests/test_create_reference_plane.py ........                            [ 26%]
+tests/test_create_roof_opening.py ....                                   [ 27%]
+tests/test_create_stair_multi_run.py .....                               [ 27%]
+tests/test_create_stair_spiral_and_sketch.py .......                     [ 27%]
+tests/test_create_wall_opening.py .........                              [ 27%]
+tests/test_cross_link_copy_monitor.py ..........                         [ 28%]
+tests/test_cross_surface_evidence_audit_v1.py ....                       [ 28%]
+tests/test_curtain_panel_overrides.py .........                          [ 28%]
+tests/test_cut_solid_kernel.py ...                                       [ 28%]
+tests/test_derived_performance_budget.py ......                          [ 29%]
+tests/test_design_options.py ......................                      [ 30%]
+tests/test_detail_level_rendering.py ................................    [ 31%]
+tests/test_deterministic_sheet_evidence.py ..........                    [ 31%]
+tests/test_diff_engine.py ....                                           [ 31%]
+tests/test_diff_engine_rollback.py ..                                    [ 31%]
+tests/test_discipline_primitive.py ............                          [ 32%]
+tests/test_dormer_completeness.py ......                                 [ 32%]
+tests/test_edge_profile_run.py ......                                    [ 32%]
+tests/test_edt04_engine_commands.py .................                    [ 33%]
+tests/test_edt_constraints.py ...........                                [ 34%]
+tests/test_engine_constraints.py ......                                  [ 34%]
+tests/test_engine_create_dormer.py .....                                 [ 34%]
+tests/test_engine_create_sweep.py ......                                 [ 34%]
+tests/test_engine_origin_points.py ..........                            [ 35%]
+tests/test_engine_text_3d.py ......                                      [ 35%]
+tests/test_engine_wall_recess.py ......                                  [ 35%]
+tests/test_evidence_agent_follow_through.py ..................           [ 36%]
+tests/test_evidence_agent_review_loop.py .........                       [ 36%]
+tests/test_evidence_baseline_lifecycle_readout.py ......                 [ 36%]
+tests/test_evidence_manifest_closure.py ................................ [ 38%]
+.........                                                                [ 38%]
+tests/test_evidence_package_digest.py .............                      [ 38%]
+tests/test_evidence_replay_determinism_harness.py .....                  [ 39%]
+tests/test_exchange_ifc_geometry_skips_advisory.py ...                   [ 39%]
+tests/test_export_gltf.py ...........                                    [ 39%]
+tests/test_export_ifc.py ....................................            [ 41%]
+tests/test_export_ifc_broader_coverage.py ..........                     [ 41%]
+tests/test_export_ifc_door_material_readback.py .                        [ 41%]
+tests/test_expression_evaluator.py ........................              [ 42%]
+tests/test_family_catalog_endpoint.py ....                               [ 42%]
+tests/test_family_catalog_format.py ...........                          [ 43%]
+tests/test_final_hardening_sweep.py ..                                   [ 43%]
+tests/test_floor_overlap_constraint.py ....                              [ 43%]
+tests/test_gltf_export_manifest_closure.py .......................       [ 44%]
+tests/test_golden_exchange_fixture.py ......                             [ 44%]
+tests/test_ids_enforcement.py ........                                   [ 44%]
+tests/test_ifc03_roof_hosted_void_replay.py .....                        [ 44%]
+tests/test_ifc04_materials_and_qto.py ......                             [ 45%]
+tests/test_ifc_classifications.py ..                                     [ 45%]
+tests/test_ifc_exchange_manifest_offline.py .....ss.s............ss..... [ 46%]
+..s....s....                                                             [ 46%]
+tests/test_ifc_pset_qto_deepening.py ...................                 [ 47%]
+tests/test_ifc_shadow_import.py .F...                                    [ 47%]
+tests/test_img_v3_01.py FFFF..F..F.F                                     [ 48%]
+tests/test_kernel_schedule_exports.py .................................. [ 49%]
+                                                                         [ 49%]
+tests/test_layered_assembly_cut_alignment.py ..........                  [ 50%]
+tests/test_level_datum_chain.py .......                                  [ 50%]
+tests/test_link_model.py ...........                                     [ 50%]
+tests/test_link_model_alignment_modes.py ......                          [ 50%]
+tests/test_link_model_revision_pinning.py ....                           [ 51%]
+tests/test_link_model_visibility_mode.py .....                           [ 51%]
+tests/test_material_assembly_schedule.py ........                        [ 51%]
+tests/test_material_catalog.py ..................................        [ 52%]
+tests/test_materialize_mass_to_walls.py .......                          [ 53%]
+tests/test_mirror_command.py .............                               [ 53%]
+tests/test_one_family_bundle_roundtrip.py .                              [ 53%]
+tests/test_opening_cut_primitives.py ......                              [ 54%]
+tests/test_opt_agent_scratch.py ..............                           [ 54%]
+tests/test_out_v3_01.py ................                                 [ 55%]
+tests/test_permissions.py ..............                                 [ 55%]
+tests/test_phase_filter_lens.py .................                        [ 56%]
+tests/test_phasing_primitive.py ....................                     [ 57%]
+tests/test_plan_on_sheet_viewport_evidence.py ..............             [ 57%]
+tests/test_plan_projection_and_evidence_slices.py ...................... [ 58%]
+..................................                                       [ 59%]
+tests/test_plan_region_commands.py ...........                           [ 60%]
+tests/test_plan_template_tag_matrix_advisor.py .......................   [ 61%]
+tests/test_plan_view_template_application.py ......................      [ 62%]
+tests/test_pln01_ann01_commands.py ....                                  [ 62%]
+tests/test_prd_blocking_advisor_matrix.py ..........................     [ 63%]
+tests/test_prd_closeout_cross_correlation.py ........................... [ 64%]
+.                                                                        [ 64%]
+tests/test_prd_traceability_matrix.py ......                             [ 64%]
+tests/test_railing_baluster.py ..................                        [ 65%]
+tests/test_roof_join.py ........                                         [ 65%]
+tests/test_roof_pitch_evidence.py ......................                 [ 66%]
+tests/test_room_color_scheme_override_evidence.py ...............        [ 67%]
+tests/test_room_derivation_preview.py .........                          [ 67%]
+tests/test_room_finish_schedule_evidence.py ......                       [ 67%]
+tests/test_room_programme_unbounded_evidence.py ......................   [ 68%]
+tests/test_room_rectangle.py ..                                          [ 68%]
+tests/test_room_target_area.py .........                                 [ 69%]
+tests/test_saved_3d_view_clip_evidence.py ....................           [ 69%]
+tests/test_schedule_category_field_coverage.py ......................... [ 70%]
+                                                                         [ 70%]
+tests/test_schedule_derivation.py .....                                  [ 71%]
+tests/test_schedule_door_material_key_column.py ..                       [ 71%]
+tests/test_schedule_field_registry.py ..                                 [ 71%]
+tests/test_schedule_opening_computed_fields.py ........                  [ 71%]
+tests/test_schedule_required_field_advisories.py ....                    [ 71%]
+tests/test_schedule_row_filters.py ........                              [ 71%]
+tests/test_schedule_sheet_export_parity.py .........                     [ 72%]
+tests/test_schedule_sort_stable.py .....                                 [ 72%]
+tests/test_schema_advisor.py ...                                         [ 72%]
+tests/test_section_material_hatch_and_scale_evidence.py ................ [ 73%]
+...                                                                      [ 73%]
+tests/test_section_on_sheet_integration_evidence.py .................... [ 74%]
+.......                                                                  [ 74%]
+tests/test_section_sheet_callouts_evidence.py ..                         [ 74%]
+tests/test_sheet_export.py ...                                           [ 74%]
+tests/test_sheet_export_ci_baseline_gate_v3.py ...................       [ 75%]
+tests/test_sheet_print_raster_export_closure.py ........................ [ 76%]
+..                                                                       [ 76%]
+tests/test_sheet_print_raster_placeholder.py ..................          [ 77%]
+tests/test_sheet_viewport_production_hardening.py ...................... [ 78%]
+.....                                                                    [ 78%]
+tests/test_sht_v3_01.py .............                                    [ 78%]
+tests/test_site_context.py ........                                      [ 79%]
+tests/test_skb_archetypes.py .............................               [ 80%]
+tests/test_skb_assumption_phase.py .....                                 [ 80%]
+tests/test_skb_brief.py .......                                          [ 80%]
+tests/test_skb_calibrator.py ...........                                 [ 81%]
+tests/test_skb_camera_presets.py .......                                 [ 81%]
+tests/test_skb_colour_sampler.py .......                                 [ 81%]
+tests/test_skb_edge_detection.py sssss                                   [ 81%]
+tests/test_skb_element_count_priors.py .......                           [ 82%]
+tests/test_skb_mass_element.py .....                                     [ 82%]
+tests/test_skb_phase_gate.py ......                                      [ 82%]
+tests/test_skb_phase_test_fixtures.py .........                          [ 82%]
+tests/test_skb_phases.py .............                                   [ 83%]
+tests/test_skb_proportions.py ........                                   [ 83%]
+tests/test_skb_refine_loop.py ......                                     [ 83%]
+tests/test_skb_roof_wall_alignment.py .......                            [ 84%]
+tests/test_skb_soundness.py ...........                                  [ 84%]
+tests/test_skb_style_bias.py .......                                     [ 84%]
+tests/test_skb_visual_checkpoint.py .......                              [ 85%]
+tests/test_skb_wall_corner_auto_join.py .........                        [ 85%]
+tests/test_skb_wall_graph.py ........                                    [ 85%]
+tests/test_sketch_session.py .....                                       [ 86%]
+tests/test_sketch_session_other_kinds.py ......                          [ 86%]
+tests/test_sketch_session_pick_walls.py .......                          [ 86%]
+tests/test_sketch_session_remaining_modes.py ........                    [ 86%]
+tests/test_sketch_validation.py ......                                   [ 87%]
+tests/test_skew_wall_hosted_opening_evidence.py ...                      [ 87%]
+tests/test_slanted_tapered_walls.py ................                     [ 87%]
+tests/test_soffit.py .......                                             [ 88%]
+tests/test_stacked_walls.py ............                                 [ 88%]
+tests/test_stair_by_sketch.py .................                          [ 89%]
+tests/test_stair_geometry_evidence.py .......                            [ 89%]
+tests/test_stair_subkinds.py ..............                              [ 90%]
+tests/test_sun_position.py .....                                         [ 90%]
+tests/test_sun_settings.py ..........                                    [ 90%]
+tests/test_template_loader.py .....                                      [ 90%]
+tests/test_tkn_decode.py .....                                           [ 91%]
+tests/test_tkn_diff.py .....                                             [ 91%]
+tests/test_tkn_encode.py ..........                                      [ 91%]
+tests/test_tkn_validate.py ....                                          [ 91%]
+tests/test_top_v3_01.py ...............F....                             [ 92%]
+tests/test_undo_replay_constraint.py ..........                          [ 93%]
+tests/test_update_element_property_door_material.py ..                   [ 93%]
+tests/test_update_element_property_door_window_extras.py .............   [ 93%]
+tests/test_update_element_property_plan_view.py .............            [ 94%]
+tests/test_update_element_property_roof.py .....                         [ 94%]
+tests/test_upsert_schedule_filters_grouping.py .....                     [ 94%]
+tests/test_upsert_sheet_viewports.py ......                              [ 94%]
+tests/test_v1_acceptance_proof_matrix.py ....................            [ 95%]
+tests/test_v1_closeout_readiness_manifest.py .............               [ 96%]
+tests/test_v1_limitations_manifest.py ...........                        [ 96%]
+tests/test_vie_03_elevation_view.py .F...                                [ 96%]
+tests/test_vie_05_plan_view_auto_gen.py ...                              [ 96%]
+tests/test_vie_07_pin_element.py .F.FF                                   [ 97%]
+tests/test_vie_v3_02.py ..............                                   [ 97%]
+tests/test_vie_v3_03.py .....................                            [ 98%]
+tests/test_wall_corner_join_summary_v1.py .......                        [ 98%]
+tests/test_wall_datums.py .                                              [ 98%]
+tests/test_wall_join_evidence.py ....                                    [ 98%]
+tests/test_wall_opening_cut_fidelity_v1.py ......                        [ 99%]
+tests/test_wall_sweeps_reveals.py ....................                   [ 99%]
+tests/test_ws_robustness.py ...                                          [100%]
+==================================== ERRORS ====================================
+__ ERROR at setup of TestRefinementReliability.test_12_step_kernel_execution ___
+file /home/runner/work/bim-ai/bim-ai/app/tests/agent/refinement_reliability/test_refinement_reliability.py, line 55
+      @pytest.mark.integration
+      def test_12_step_kernel_execution(self, test_client):
+E       fixture 'test_client' not found
+>       available fixtures: _session_event_loop, anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, cov, doctest_namespace, event_loop, event_loop_policy, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, monkeypatch, no_cover, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, tests/agent/refinement_reliability/test_refinement_reliability.py::<event_loop>, tests/agent/refinement_reliability/test_refinement_reliability.py::TestRefinementReliability::<event_loop>, tests/agent/refinement_reliability::<event_loop>, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+/home/runner/work/bim-ai/bim-ai/app/tests/agent/refinement_reliability/test_refinement_reliability.py:55
+=================================== FAILURES ===================================
+______________ test_draw_detail_region_tool_descriptor_registered ______________
+    def test_draw_detail_region_tool_descriptor_registered() -> None:
+        from bim_ai.api.registry import get_descriptor
+    
+        descriptor = get_descriptor("draw-detail-region")
+>       assert descriptor is not None
+E       assert None is not None
+tests/api/test_ann_v3_01.py:128: AssertionError
+_____________ test_update_material_pbr_tool_descriptor_in_catalog ______________
+client = <starlette.testclient.TestClient object at 0x7f4f8422d340>
+    def test_update_material_pbr_tool_descriptor_in_catalog(client: TestClient) -> None:
+        resp = client.get("/api/v3/tools")
+        assert resp.status_code == 200
+        tool_names = {t["name"] for t in resp.json()["tools"]}
+>       assert "update-material-pbr" in tool_names
+E       AssertionError: assert 'update-material-pbr' in {'api-inspect', 'api-list-tools', 'api-version', 'apply-bundle', 'asset-index', 'asset-place', ...}
+tests/api/test_mat_v3_01.py:266: AssertionError
+___________ TestVerifyPassword.test_correct_password_returns_ok_true ___________
+self = <test_public_links_route.TestVerifyPassword object at 0x7f4f85eddbb0>
+client = <starlette.testclient.TestClient object at 0x7f4f85f9b530>
+    def test_correct_password_returns_ok_true(self, client: TestClient) -> None:
+>       create_res = client.post(
+            f"/api/models/{MODEL_ID}/public-links",
+            json={"password": "s3cr3t"},
+        )
+tests/api/test_public_links_route.py:303: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/starlette/testclient.py:546: in post
+    return super().post(
+.venv/lib/python3.12/site-packages/httpx/_client.py:1144: in post
+    return self.request(
+.venv/lib/python3.12/site-packages/starlette/testclient.py:445: in request
+    return super().request(
+.venv/lib/python3.12/site-packages/httpx/_client.py:825: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:914: in send
+    response = self._send_handling_auth(
+.venv/lib/python3.12/site-packages/httpx/_client.py:942: in _send_handling_auth
+    response = self._send_handling_redirects(
+.venv/lib/python3.12/site-packages/httpx/_client.py:979: in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:1014: in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/starlette/testclient.py:348: in handle_request
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/testclient.py:345: in handle_request
+    portal.call(self.app, scope, receive, send)
+.venv/lib/python3.12/site-packages/anyio/from_thread.py:334: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+.venv/lib/python3.12/site-packages/anyio/from_thread.py:259: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/fastapi/applications.py:1159: in __call__
+    await super().__call__(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/applications.py:90: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:186: in __call__
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:660: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:680: in app
+    await route.handle(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:276: in handle
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:134: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:120: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/fastapi/routing.py:674: in app
+    raw_response = await run_endpoint_function(
+.venv/lib/python3.12/site-packages/fastapi/routing.py:328: in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/api/test_public_links_route.py:48: in create_public_link
+    password_hash = hash_link_password(body["password"]) if body.get("password") else None
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+plain = 's3cr3t'
+    def hash_link_password(plain: str) -> str:
+>       import bcrypt
+E       ModuleNotFoundError: No module named 'bcrypt'
+bim_ai/public_links.py:32: ModuleNotFoundError
+___________ TestVerifyPassword.test_wrong_password_returns_ok_false ____________
+self = <test_public_links_route.TestVerifyPassword object at 0x7f4f85edc110>
+client = <starlette.testclient.TestClient object at 0x7f4f84028fb0>
+    def test_wrong_password_returns_ok_false(self, client: TestClient) -> None:
+>       create_res = client.post(
+            f"/api/models/{MODEL_ID}/public-links",
+            json={"password": "s3cr3t"},
+        )
+tests/api/test_public_links_route.py:314: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/starlette/testclient.py:546: in post
+    return super().post(
+.venv/lib/python3.12/site-packages/httpx/_client.py:1144: in post
+    return self.request(
+.venv/lib/python3.12/site-packages/starlette/testclient.py:445: in request
+    return super().request(
+.venv/lib/python3.12/site-packages/httpx/_client.py:825: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:914: in send
+    response = self._send_handling_auth(
+.venv/lib/python3.12/site-packages/httpx/_client.py:942: in _send_handling_auth
+    response = self._send_handling_redirects(
+.venv/lib/python3.12/site-packages/httpx/_client.py:979: in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:1014: in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/starlette/testclient.py:348: in handle_request
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/testclient.py:345: in handle_request
+    portal.call(self.app, scope, receive, send)
+.venv/lib/python3.12/site-packages/anyio/from_thread.py:334: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+.venv/lib/python3.12/site-packages/anyio/from_thread.py:259: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/fastapi/applications.py:1159: in __call__
+    await super().__call__(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/applications.py:90: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:186: in __call__
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:660: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:680: in app
+    await route.handle(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:276: in handle
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:134: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:120: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/fastapi/routing.py:674: in app
+    raw_response = await run_endpoint_function(
+.venv/lib/python3.12/site-packages/fastapi/routing.py:328: in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/api/test_public_links_route.py:48: in create_public_link
+    password_hash = hash_link_password(body["password"]) if body.get("password") else None
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+plain = 's3cr3t'
+    def hash_link_password(plain: str) -> str:
+>       import bcrypt
+E       ModuleNotFoundError: No module named 'bcrypt'
+bim_ai/public_links.py:32: ModuleNotFoundError
+_______________________ test_create_property_definition ________________________
+client = <starlette.testclient.TestClient object at 0x7f4f845c7c20>
+    def test_create_property_definition(client: TestClient) -> None:
+>       resp = client.post(
+            f"/api/models/{MODEL_ID}/bundles",
+            json=_bundle(
+                [
+                    {
+                        "type": "create_property_definition",
+                        "id": "pd-1",
+                        "key": "cost_per_m2",
+                        "label": "Cost/m²",
+                        "propKind": "currency",
+                        "appliesTo": ["wall"],
+                        "showInSchedule": True,
+                    }
+                ]
+            ),
+        )
+tests/api/test_sch_v3_01.py:164: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/starlette/testclient.py:546: in post
+    return super().post(
+.venv/lib/python3.12/site-packages/httpx/_client.py:1144: in post
+    return self.request(
+.venv/lib/python3.12/site-packages/starlette/testclient.py:445: in request
+    return super().request(
+.venv/lib/python3.12/site-packages/httpx/_client.py:825: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:914: in send
+    response = self._send_handling_auth(
+.venv/lib/python3.12/site-packages/httpx/_client.py:942: in _send_handling_auth
+    response = self._send_handling_redirects(
+.venv/lib/python3.12/site-packages/httpx/_client.py:979: in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:1014: in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/starlette/testclient.py:348: in handle_request
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/testclient.py:345: in handle_request
+    portal.call(self.app, scope, receive, send)
+.venv/lib/python3.12/site-packages/anyio/from_thread.py:334: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+.venv/lib/python3.12/site-packages/anyio/from_thread.py:259: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/fastapi/applications.py:1159: in __call__
+    await super().__call__(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/applications.py:90: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:186: in __call__
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:660: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:680: in app
+    await route.handle(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:276: in handle
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:134: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:120: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/fastapi/routing.py:674: in app
+    raw_response = await run_endpoint_function(
+.venv/lib/python3.12/site-packages/fastapi/routing.py:328: in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/api/test_sch_v3_01.py:69: in apply_bundle_route
+    result, new_doc = _apply_bundle(doc, bundle, "commit")
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                    base_constraint_offset_mm=cmd.base_constraint_offset_mm,
+                    top_constraint_offset_mm=cmd.top_constraint_offset_mm,
+                    insulation_extension_mm=cmd.insulation_extension_mm,
+                    material_key=cmd.material_key,
+                    is_curtain_wall=cmd.is_curtain_wall,
+                    stack=wall_stack,
+                    lean_mm=cmd.lean_mm,
+                    taper_ratio=cmd.taper_ratio,
+                    discipline=DEFAULT_DISCIPLINE_BY_KIND.get("wall", "arch"),
+                    site_host_id=cmd.site_host_id,
+                )
+    
+            case MoveWallDeltaCmd():
+                w = els.get(cmd.wall_id)
+                if not isinstance(w, WallElem):
+                    raise ValueError("move_wall_delta.wallId must reference a Wall")
+                sx = w.start.model_copy(
+                    update={"x_mm": w.start.x_mm + cmd.dx_mm, "y_mm": w.start.y_mm + cmd.dy_mm}
+                )
+                sy = w.end.model_copy(
+                    update={"x_mm": w.end.x_mm + cmd.dx_mm, "y_mm": w.end.y_mm + cmd.dy_mm}
+                )
+                els[cmd.wall_id] = w.model_copy(update={"start": sx, "end": sy})
+    
+            case MoveWallEndpointsCmd():
+                w = els.get(cmd.wall_id)
+                if not isinstance(w, WallElem):
+                    raise ValueError("move_wall_endpoints.wallId must reference a Wall")
+                els[cmd.wall_id] = w.model_copy(update={"start": cmd.start, "end": cmd.end})
+    
+            case MoveBeamEndpointsCmd():
+                # EDT-01 propagation — beams aren't yet stored in the
+                # Python engine (no `BeamElem` in elements.py). The grip
+                # provider emits this command shape so the kernel slice
+                # can land later without a TS rebuild. Reject explicitly so
+                # bad replays surface, rather than silently no-op.
+                raise ValueError(
+                    "moveBeamEndpoints: beam elements are not yet seeded in the engine; "
+                    "TS grips emit this command for forward compatibility (EDT-01 propagation)"
+                )
+    
+            case SetCurtainPanelOverrideCmd():
+                wall = els.get(cmd.wall_id)
+                if not isinstance(wall, WallElem):
+                    raise ValueError("setCurtainPanelOverride.wallId must reference a Wall")
+                if not wall.is_curtain_wall:
+                    raise ValueError("setCurtainPanelOverride target wall must be a curtain wall")
+                # Validate the cell-id format up front so authors get a fast error
+                # instead of a silent no-op render.
+                from bim_ai.elements import parse_curtain_grid_cell_id
+    
+                parse_curtain_grid_cell_id(cmd.grid_cell_id)
+                existing = dict(wall.curtain_panel_overrides or {})
+                if cmd.override is None:
+                    existing.pop(cmd.grid_cell_id, None)
+                else:
+                    existing[cmd.grid_cell_id] = cmd.override
+                els[cmd.wall_id] = wall.model_copy(update={"curtain_panel_overrides": existing or None})
+    
+            case InsertDoorOnWallCmd():
+                did = cmd.id or new_id()
+                if did in els:
+                    raise ValueError(f"duplicate element id '{did}'")
+                host = els.get(cmd.wall_id)
+                if not isinstance(host, WallElem):
+                    raise ValueError("insert_door_on_wall.wallId must reference a Wall")
+                els[did] = DoorElem(
+                    kind="door",
+                    id=did,
+                    name=cmd.name,
+                    wall_id=cmd.wall_id,
+                    along_t=cmd.along_t,
+                    width_mm=cmd.width_mm,
+                    family_type_id=cmd.family_type_id,
+                    discipline=DEFAULT_DISCIPLINE_BY_KIND.get("door", "arch"),
+                )
+    
+            case InsertWindowOnWallCmd():
+                wid_cmd = cmd.id or new_id()
+                if wid_cmd in els:
+                    raise ValueError(f"duplicate element id '{wid_cmd}'")
+                host = els.get(cmd.wall_id)
+                if not isinstance(host, WallElem):
+                    raise ValueError("insertWindowOnWall.wallId must reference a Wall")
+                els[wid_cmd] = WindowElem(
+                    kind="window",
+                    id=wid_cmd,
+                    name=cmd.name,
+                    wall_id=cmd.wall_id,
+                    along_t=cmd.along_t,
+                    width_mm=cmd.width_mm,
+                    sill_height_mm=cmd.sill_height_mm,
+                    height_mm=cmd.height_mm,
+                    family_type_id=cmd.family_type_id,
+                    discipline=DEFAULT_DISCIPLINE_BY_KIND.get("window", "arch"),
+                )
+    
+            case CreateWallChainCmd():
+                if not cmd.segments:
+                    raise ValueError("createWallChain.segments requires at least one segment")
+bim_ai/cmd/apply_bundle.py:289: in apply_bundle
+    ok, new_doc, _cmds, violations, _code = try_commit_bundle(doc, bundle.commands)
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bim_ai/engine.py:7296: in try_commit_bundle
+    apply_inplace(cand, cmd, source_provider=source_provider)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+doc = Document(revision=1, elements={'internal_origin': InternalOriginElem(kind='internal_origin', id='internal_origin')}, design_option_sets=[], tool_prefs={})
+cmd = CreatePropertyDefinitionCmd(type='create_property_definition', id='pd-1', key='cost_per_m2', label='Cost/m²', prop_kind='currency', enum_values=None, default_value=None, applies_to=['wall'], show_in_schedule=True)
+    def apply_inplace(
+        doc: Document,
+        cmd: Command,
+        *,
+        source_provider: SourceDocProvider | None = None,
+    ) -> None:
+        """Apply ``cmd`` to ``doc`` in place.
+    
+        ``source_provider`` is optional: only ``RunClashTestCmd`` (FED-02) consults
+        it to walk linked source documents for cross-link clash detection. All
+        other commands ignore it. The route layer threads a real DB-backed
+        provider; tests and intra-host paths can omit it.
+        """
+        els = doc.elements
+        _enforce_linked_readonly(cmd)
+        _enforce_pin_block(els, cmd)
+        match cmd:
+            case CreateLevelCmd():
+                eid = cmd.id or new_id()
+                if eid in els:
+                    raise ValueError(f"duplicate element id '{eid}'")
+                parent = cmd.parent_level_id
+                if parent is not None and parent not in els:
+                    raise ValueError("createLevel.parentLevelId must reference an existing Level")
+                if parent is not None and not isinstance(els[parent], LevelElem):
+                    raise ValueError("createLevel.parentLevelId must reference a Level")
+                parent_el = els[parent] if parent is not None else None
+                elev_mm = (
+                    expected_level_elevation_from_parent(parent_el, cmd.offset_from_parent_mm)
+                    if isinstance(parent_el, LevelElem)
+                    else float(cmd.elevation_mm)
+                )
+                els[eid] = LevelElem(
+                    kind="level",
+                    id=eid,
+                    name=cmd.name,
+                    elevation_mm=elev_mm,
+                    datum_kind=cmd.datum_kind,
+                    parent_level_id=parent,
+                    offset_from_parent_mm=cmd.offset_from_parent_mm,
+                )
+                propagate_dependent_level_elevations(els)
+                # VIE-05: optionally create a companion "<name> — Plan" plan view in
+                # the same step so the common path (level then plan) is one action.
+                if cmd.also_create_plan_view:
+                    pv_id = cmd.plan_view_id or new_id()
+                    if pv_id in els:
+                        raise ValueError(f"duplicate element id '{pv_id}'")
+                    els[pv_id] = PlanViewElem(
+                        kind="plan_view",
+                        id=pv_id,
+                        name=f"{cmd.name} — Plan",
+                        level_id=eid,
+                    )
+    
+            case CreateWallCmd():
+                eid = cmd.id or new_id()
+                if eid in els:
+                    raise ValueError(f"duplicate element id '{eid}'")
+                if cmd.level_id not in els or not isinstance(els[cmd.level_id], LevelElem):
+                    raise ValueError("createWall.levelId must reference an existing Level")
+                # TOP-V3-04: validate site host toposolid exists when specified.
+                if cmd.site_host_id is not None:
+                    if not isinstance(els.get(cmd.site_host_id), ToposolidElem):
+                        raise ValueError(
+                            f"createWall.siteHostId '{cmd.site_host_id}' does not reference an existing toposolid"
+                        )
+                h_mm = _resolve_wall_height_mm(cmd, els)
+                thick = _wall_thickness_from_type(els, cmd.wall_type_id, cmd.thickness_mm)
+                wall_stack = None
+                if cmd.stack_components:
+                    _validate_wall_stack(cmd.stack_components, h_mm)
+                    wall_stack = WallStack(
+                        components=[
+                            WallStackComponent(wall_type_id=c.wall_type_id, height_mm=c.height_mm)
+                            for c in cmd.stack_components
+                        ]
+                    )
+                if cmd.lean_mm is not None or cmd.taper_ratio is not None:
+                    _validate_wall_lean_taper(cmd.lean_mm, cmd.taper_ratio, h_mm)
+                els[eid] = WallElem(
+                    kind="wall",
+                    id=eid,
+                    name=cmd.name,
+                    level_id=cmd.level_id,
+                    start=cmd.start,
+                    end=cmd.end,
+                    thickness_mm=thick,
+                    height_mm=h_mm,
+                    wall_type_id=cmd.wall_type_id,
+                    base_constraint_level_id=cmd.base_constraint_level_id,
+                    top_constraint_level_id=cmd.top_constraint_level_id,
+                if cmd.level_id not in els or not isinstance(els[cmd.level_id], LevelElem):
+                    raise ValueError("createWallChain.levelId must reference an existing Level")
+                for idx, seg in enumerate(cmd.segments):
+                    eid = seg.id or new_id()
+                    if eid in els:
+                        raise ValueError(f"duplicate segment id '{eid}'")
+                    name = cmd.name_prefix if len(cmd.segments) == 1 else f"{cmd.name_prefix}-{idx + 1}"
+                    els[eid] = WallElem(
+                        kind="wall",
+                        id=eid,
+                        name=name,
+                        level_id=cmd.level_id,
+                        start=seg.start,
+                        end=seg.end,
+                        thickness_mm=seg.thickness_mm,
+                        height_mm=seg.height_mm,
+                        discipline=DEFAULT_DISCIPLINE_BY_KIND.get("wall", "arch"),
+                    )
+    
+            case CreateGridLineCmd():
+                gid = cmd.id or new_id()
+                if gid in els:
+                    raise ValueError(f"duplicate element id '{gid}'")
+                if cmd.level_id is not None:
+                    lvl = els.get(cmd.level_id)
+                    if lvl is not None and not isinstance(lvl, LevelElem):
+                        raise ValueError("createGridLine.levelId must reference a Level")
+                els[gid] = GridLineElem(
+                    kind="grid_line",
+                    id=gid,
+                    name=cmd.name,
+                    start=cmd.start,
+                    end=cmd.end,
+                    label=cmd.label,
+                    level_id=cmd.level_id,
+                )
+    
+            case MoveGridLineEndpointsCmd():
+                g = els.get(cmd.grid_line_id)
+                if not isinstance(g, GridLineElem):
+                    raise ValueError("moveGridLineEndpoints.gridLineId must reference grid_line")
+                els[cmd.grid_line_id] = g.model_copy(update={"start": cmd.start, "end": cmd.end})
+    
+            case CreateDimensionCmd():
+                did = cmd.id or new_id()
+                if did in els:
+                    raise ValueError(f"duplicate element id '{did}'")
+                if cmd.level_id not in els or not isinstance(els[cmd.level_id], LevelElem):
+                    raise ValueError("createDimension.levelId must reference an existing Level")
+                els[did] = DimensionElem(
+                    kind="dimension",
+                    id=did,
+                    name=cmd.name,
+                    level_id=cmd.level_id,
+                    a_mm=cmd.a_mm,
+                    b_mm=cmd.b_mm,
+                    offset_mm=cmd.offset_mm,
+                    ref_element_id_a=cmd.ref_element_id_a,
+                    ref_element_id_b=cmd.ref_element_id_b,
+                    tag_definition_id=cmd.tag_definition_id,
+                    auto_generated=cmd.auto_generated,
+                )
+    
+            case DeleteElementCmd():
+                if cmd.element_id not in els:
+                    raise ValueError("deleteElement.elementId unknown")
+                del els[cmd.element_id]
+    
+            case DeleteElementsCmd():
+                missing = [eid for eid in cmd.element_ids if eid not in els]
+                if missing:
+                    raise ValueError(f"deleteElements: unknown ids {sorted(missing)}")
+                for eid in cmd.element_ids:
+                    del els[eid]
+    
+            case RestoreElementCmd():
+                el = element_adapter.validate_python(cmd.element)
+                els[el.id] = el
+    
+            case CreateRoomOutlineCmd():
+                rid = cmd.id or new_id()
+                if rid in els:
+                    raise ValueError(f"duplicate element id '{rid}'")
+                if len(cmd.outline_mm) < 3:
+                    raise ValueError("Room outline requires at least 3 vertices")
+                if cmd.level_id not in els or not isinstance(els[cmd.level_id], LevelElem):
+                    raise ValueError("create_room_outline.levelId must reference an existing Level")
+                els[rid] = RoomElem(
+                    kind="room",
+                    id=rid,
+                    name=cmd.name,
+                    level_id=cmd.level_id,
+                    outline_mm=cmd.outline_mm,
+                    **_room_programme_field_updates(
+                        cmd.programme_code,
+                        cmd.department,
+                        cmd.function_label,
+                        cmd.finish_set,
+                        cmd.target_area_m2,
+                    ),
+                )
+    
+            case CreateRoomRectangleCmd():
+                if cmd.level_id not in els or not isinstance(els[cmd.level_id], LevelElem):
+                    raise ValueError("createRoomRectangle.levelId must reference an existing Level")
+                w_mm, d_mm = cmd.width_mm, cmd.depth_mm
+                if w_mm < 100 or d_mm < 100:
+                    raise ValueError("createRoomRectangle: widthMm and depthMm must be ≥ 100")
+                ox, oy = cmd.origin.x_mm, cmd.origin.y_mm
+                corners = (
+                    Vec2Mm(x_mm=ox, y_mm=oy),
+                    Vec2Mm(x_mm=ox + w_mm, y_mm=oy),
+                    Vec2Mm(x_mm=ox + w_mm, y_mm=oy + d_mm),
+                    Vec2Mm(x_mm=ox, y_mm=oy + d_mm),
+                )
+                pairs = ((0, 1), (1, 2), (2, 3), (3, 0))
+                for ia, ib in pairs:
+                    wid = new_id()
+                    if wid in els:
+                        raise ValueError(f"collision allocating wall id '{wid}'")
+                    a, b = corners[ia], corners[ib]
+                    els[wid] = WallElem(
+                        kind="wall",
+                        id=wid,
+                        name=cmd.wall_name_prefix,
+                        level_id=cmd.level_id,
+                        start=a,
+                        end=b,
+                        thickness_mm=cmd.thickness_mm,
+                        height_mm=cmd.height_mm,
+                    )
+                rid = cmd.id or new_id()
+                if rid in els:
+                    raise ValueError(f"duplicate room id '{rid}'")
+                els[rid] = RoomElem(
+                    kind="room",
+                    id=rid,
+                    name=cmd.name,
+                    level_id=cmd.level_id,
+                    outline_mm=list(corners),
+                    **_room_programme_field_updates(
+                        cmd.programme_code,
+                        cmd.department,
+                        cmd.function_label,
+                        cmd.finish_set,
+                        cmd.target_area_m2,
+                    ),
+                )
+    
+            case CreateRoomPolyCmd():
+                if cmd.level_id not in els or not isinstance(els[cmd.level_id], LevelElem):
+                    raise ValueError("createRoomPoly.levelId must reference an existing Level")
+                verts = [Vec2Mm(x_mm=v.x_mm, y_mm=v.y_mm) for v in cmd.vertices_mm]
+                if (
+                    len(verts) >= 2
+                    and abs(verts[0].x_mm - verts[-1].x_mm) < 1e-3
+                    and abs(verts[0].y_mm - verts[-1].y_mm) < 1e-3
+                ):
+                    verts = verts[:-1]
+                if len(verts) < 3:
+                    raise ValueError("createRoomPoly.verticesMm requires at least 3 unique corners")
+                n = len(verts)
+                for i in range(n):
+                    wid = new_id()
+                    if wid in els:
+                        raise ValueError(f"collision allocating wall id '{wid}'")
+                    a, b = verts[i], verts[(i + 1) % n]
+                    nm = cmd.wall_name_prefix if n == 1 else f"{cmd.wall_name_prefix}-{i + 1}"
+                    els[wid] = WallElem(
+                        kind="wall",
+                        id=wid,
+                        name=nm,
+                        level_id=cmd.level_id,
+                        start=a,
+                        end=b,
+                        thickness_mm=cmd.thickness_mm,
+                        height_mm=cmd.height_mm,
+                    )
+                rid = cmd.id or new_id()
+                if rid in els:
+                    raise ValueError(f"duplicate room id '{rid}'")
+                els[rid] = RoomElem(
+                    kind="room",
+                    id=rid,
+                    name=cmd.name,
+                    level_id=cmd.level_id,
+                    outline_mm=verts,
+                    **_room_programme_field_updates(
+                        cmd.programme_code,
+                        cmd.department,
+                        cmd.function_label,
+                        cmd.finish_set,
+                        cmd.target_area_m2,
+                    ),
+                )
+    
+            case PlaceRoomAtPointCmd():
+                if cmd.level_id not in els or not isinstance(els[cmd.level_id], LevelElem):
+                    raise ValueError("placeRoomAtPoint.levelId must reference an existing Level")
+                if cmd.id in els:
+                    raise ValueError(f"duplicate element id '{cmd.id}'")
+                from bim_ai.room_derivation import (
+                    compute_room_boundary_derivation,
+                    footprint_outline_mm_rectangle,
+                )
+    
+                derivation = compute_room_boundary_derivation(doc)
+                candidates = derivation.get("candidates", [])
+    
+                best = None
+                best_area = float("inf")
+                for cand in candidates:
+                    if cand.get("levelId") != cmd.level_id:
+                        continue
+                    bbox = cand.get("bboxMm") or {}
+                    mn = bbox.get("min") or {}
+                    mx = bbox.get("max") or {}
+                    x_lo = float(mn.get("x", 0))
+                    y_lo = float(mn.get("y", 0))
+                    x_hi = float(mx.get("x", 0))
+                    y_hi = float(mx.get("y", 0))
+                    if x_lo <= cmd.click_x_mm <= x_hi and y_lo <= cmd.click_y_mm <= y_hi:
+                        area = (x_hi - x_lo) * (y_hi - y_lo)
+                        if area < best_area:
+                            best_area = area
+                            best = cand
+    
+                if best is None:
+                    raise ValueError(
+                        f"placeRoomAtPoint: no enclosed region found at ({cmd.click_x_mm}, {cmd.click_y_mm})"
+                    )
+    
+                bbox = best.get("bboxMm") or {}
+                outline_pts = footprint_outline_mm_rectangle(bbox)
+                outline_mm = [Vec2Mm(xMm=p["xMm"], yMm=p["yMm"]) for p in outline_pts]
+    
+                els[cmd.id] = RoomElem(
+                    kind="room",
+                    id=cmd.id,
+                    name=cmd.name,
+                    level_id=cmd.level_id,
+                    outline_mm=outline_mm,
+                )
+    
+            case MoveLevelElevationCmd():
+                lvl = els.get(cmd.level_id)
+                if not isinstance(lvl, LevelElem):
+                    raise ValueError("moveLevelElevation.levelId must reference an existing Level")
+                els[cmd.level_id] = lvl.model_copy(update={"elevation_mm": cmd.elevation_mm})
+                propagate_dependent_level_elevations(els)
+                _recompute_constrained_wall_heights(els)
+    
+            case CreateIssueFromViolationCmd():
+                iid = new_id()
+                els[iid] = IssueElem(
+                    kind="issue",
+                    id=iid,
+                    title=cmd.title,
+                    status="open",
+                    element_ids=cmd.element_ids,
+                    viewpoint_id=cmd.viewpoint_id,
+                )
+    
+            case UpdateElementPropertyCmd():
+                el = els.get(cmd.element_id)
+                if el is None:
+                    raise ValueError("updateElementProperty.elementId unknown")
+                if isinstance(el, IssueElem):
+                    if cmd.key != "title":
+                        raise ValueError("Issues only support updateElementProperty.key=title (v2)")
+                    els[cmd.element_id] = el.model_copy(update={"title": cmd.value})
+                elif cmd.key == "name" and hasattr(el, "name"):
+                    els[cmd.element_id] = el.model_copy(update={"name": cmd.value})
+                elif cmd.key == "programmeCode" and isinstance(el, RoomElem):
+                    els[cmd.element_id] = el.model_copy(update={"programme_code": cmd.value})
+                elif cmd.key == "department" and isinstance(el, RoomElem):
+                    els[cmd.element_id] = el.model_copy(update={"department": cmd.value})
+                elif cmd.key == "programmeGroup" and isinstance(el, RoomElem):
+                    els[cmd.element_id] = el.model_copy(update={"programme_group": cmd.value})
+                elif cmd.key == "functionLabel" and isinstance(el, RoomElem):
+                    els[cmd.element_id] = el.model_copy(update={"function_label": cmd.value})
+                elif cmd.key == "finishSet" and isinstance(el, RoomElem):
+                    els[cmd.element_id] = el.model_copy(update={"finish_set": cmd.value})
+                elif cmd.key == "targetAreaM2" and isinstance(el, RoomElem):
+                    raw_t = cmd.value.strip()
+                    if not raw_t:
+                        els[cmd.element_id] = el.model_copy(update={"target_area_m2": None})
+                    else:
+                        try:
+                            tv = float(raw_t)
+                        except ValueError as exc:
+                            raise ValueError("targetAreaM2 must be a number or empty to clear") from exc
+                        if tv <= 0:
+                            raise ValueError("targetAreaM2 must be positive when set")
+                        els[cmd.element_id] = el.model_copy(update={"target_area_m2": tv})
+                elif cmd.key == "label" and isinstance(el, GridLineElem):
+                    els[cmd.element_id] = el.model_copy(update={"label": cmd.value})
+                elif isinstance(el, PlanViewElem):
+                    raw = cmd.value.strip()
+                    if cmd.key == "planPresentation":
+                        pres = raw if raw in {"default", "opening_focus", "room_scheme"} else "default"
+                        els[cmd.element_id] = el.model_copy(update={"plan_presentation": pres})
+                    elif cmd.key == "categoriesHidden":
+                        hx: list[str] = []
+                        if raw:
+                            try:
+                                parsed = json.loads(raw)
+                                if isinstance(parsed, list):
+                                    hx = [str(x) for x in parsed if isinstance(x, str)]
+                            except json.JSONDecodeError as exc:
+                                raise ValueError(
+                                    "categoriesHidden must be a JSON array of strings"
+                                ) from exc
+                        els[cmd.element_id] = el.model_copy(update={"categories_hidden": hx})
+                    elif cmd.key == "underlayLevelId":
+                        lv = raw or None
+                        if lv is not None and lv not in els:
+                            raise ValueError("underlayLevelId references unknown Level")
+                        els[cmd.element_id] = el.model_copy(update={"underlay_level_id": lv})
+                    elif cmd.key == "viewTemplateId":
+                        vt = raw or None
+                        if vt is not None:
+                            vt_el = els.get(vt)
+                            if not isinstance(vt_el, ViewTemplateElem):
+                                raise ValueError("viewTemplateId must reference view_template")
+                        els[cmd.element_id] = el.model_copy(update={"view_template_id": vt})
+                    elif cmd.key == "cropMinMm":
+                        if not raw:
+                            els[cmd.element_id] = el.model_copy(update={"crop_min_mm": None})
+                        else:
+                            try:
+                                parsed = json.loads(raw)
+                            except json.JSONDecodeError as exc:
+                                raise ValueError(
+                                    "cropMinMm must be JSON object {xMm,yMm} or empty"
+                                ) from exc
+                            if not isinstance(parsed, dict):
+                                raise ValueError("cropMinMm must be a JSON object")
+                            els[cmd.element_id] = el.model_copy(
+                                update={"crop_min_mm": Vec2Mm.model_validate(parsed)}
+                            )
+                    elif cmd.key == "cropMaxMm":
+                        if not raw:
+                            els[cmd.element_id] = el.model_copy(update={"crop_max_mm": None})
+                        else:
+                            try:
+                                parsed = json.loads(raw)
+                            except json.JSONDecodeError as exc:
+                                raise ValueError(
+                                    "cropMaxMm must be JSON object {xMm,yMm} or empty"
+                                ) from exc
+                            if not isinstance(parsed, dict):
+                                raise ValueError("cropMaxMm must be a JSON object")
+                            els[cmd.element_id] = el.model_copy(
+                                update={"crop_max_mm": Vec2Mm.model_validate(parsed)}
+                            )
+                    elif cmd.key == "cropEnabled":
+                        if raw == "":
+                            els[cmd.element_id] = el.model_copy(update={"crop_enabled": None})
+                        else:
+                            v = _parse_plan_view_bool_override(cmd.value)
+                            els[cmd.element_id] = el.model_copy(update={"crop_enabled": v})
+                    elif cmd.key == "cropRegionVisible":
+                        if raw == "":
+                            els[cmd.element_id] = el.model_copy(update={"crop_region_visible": None})
+                        else:
+                            v = _parse_plan_view_bool_override(cmd.value)
+                            els[cmd.element_id] = el.model_copy(update={"crop_region_visible": v})
+                    elif cmd.key == "viewRangeBottomMm":
+                        vrb: float | None = None
+                        if raw != "":
+                            vrb = float(raw)
+                        els[cmd.element_id] = el.model_copy(update={"view_range_bottom_mm": vrb})
+                    elif cmd.key == "viewRangeTopMm":
+                        vrt: float | None = None
+                        if raw != "":
+                            vrt = float(raw)
+                        els[cmd.element_id] = el.model_copy(update={"view_range_top_mm": vrt})
+                    elif cmd.key == "cutPlaneOffsetMm":
+                        cpo: float | None = None
+                        if raw != "":
+                            cpo = float(raw)
+                        els[cmd.element_id] = el.model_copy(update={"cut_plane_offset_mm": cpo})
+                    elif cmd.key == "discipline":
+                        els[cmd.element_id] = el.model_copy(
+                            update={"discipline": raw if raw else "architecture"}
+                        )
+                    elif cmd.key == "phaseId":
+                        els[cmd.element_id] = el.model_copy(update={"phase_id": raw or None})
+                    elif cmd.key == "planDetailLevel":
+                        if raw == "":
+                            els[cmd.element_id] = el.model_copy(update={"plan_detail_level": None})
+                        elif raw not in {"coarse", "medium", "fine"}:
+                            raise ValueError("planDetailLevel must be coarse|medium|fine or empty")
+                        else:
+                            els[cmd.element_id] = el.model_copy(update={"plan_detail_level": raw})
+                    elif cmd.key == "planRoomFillOpacityScale":
+                        if raw == "":
+                            els[cmd.element_id] = el.model_copy(
+                                update={"plan_room_fill_opacity_scale": None}
+                            )
+                        else:
+                            v = max(0.0, min(1.0, float(raw)))
+                            els[cmd.element_id] = el.model_copy(
+                                update={"plan_room_fill_opacity_scale": v}
+                            )
+                    elif cmd.key == "planShowOpeningTags":
+                        v = _parse_plan_view_bool_override(cmd.value)
+                        els[cmd.element_id] = el.model_copy(update={"plan_show_opening_tags": v})
+                    elif cmd.key == "planShowRoomLabels":
+                        v = _parse_plan_view_bool_override(cmd.value)
+                        els[cmd.element_id] = el.model_copy(update={"plan_show_room_labels": v})
+                    elif cmd.key == "planOpeningTagStyleId":
+                        if raw == "":
+                            els[cmd.element_id] = el.model_copy(
+                                update={"plan_opening_tag_style_id": None}
+                            )
+                        else:
+                            _validate_plan_tag_style_ref(els, raw, "opening")
+                            els[cmd.element_id] = el.model_copy(
+                                update={"plan_opening_tag_style_id": raw}
+                            )
+                    elif cmd.key == "planRoomTagStyleId":
+                        if raw == "":
+                            els[cmd.element_id] = el.model_copy(update={"plan_room_tag_style_id": None})
+                        else:
+                            _validate_plan_tag_style_ref(els, raw, "room")
+                            els[cmd.element_id] = el.model_copy(update={"plan_room_tag_style_id": raw})
+                    elif cmd.key == "planCategoryGraphics":
+                        pcg = parse_plan_category_graphics_property_json(cmd.value)
+                        els[cmd.element_id] = el.model_copy(update={"plan_category_graphics": pcg})
+                    else:
+                        raise ValueError(
+                            "plan_view updates: key=planPresentation | categoriesHidden | underlayLevelId | "
+                            "viewTemplateId | cropMinMm | cropMaxMm | cropEnabled | cropRegionVisible | "
+                            "viewRangeBottomMm | viewRangeTopMm | "
+                            "cutPlaneOffsetMm | discipline | phaseId | planDetailLevel | planRoomFillOpacityScale | "
+                            "planShowOpeningTags | planShowRoomLabels | planOpeningTagStyleId | planRoomTagStyleId | "
+                            "planCategoryGraphics | name"
+                        )
+                elif isinstance(el, ViewTemplateElem):
+                    raw_vt = cmd.value.strip()
+                    if cmd.key == "planShowOpeningTags":
+                        els[cmd.element_id] = el.model_copy(
+                            update={"plan_show_opening_tags": _parse_view_template_bool(cmd.value)}
+                        )
+                    elif cmd.key == "planShowRoomLabels":
+                        els[cmd.element_id] = el.model_copy(
+                            update={"plan_show_room_labels": _parse_view_template_bool(cmd.value)}
+                        )
+                    elif cmd.key == "planDetailLevel":
+                        if raw_vt == "":
+                            els[cmd.element_id] = el.model_copy(update={"plan_detail_level": None})
+                        elif raw_vt not in {"coarse", "medium", "fine"}:
+                            raise ValueError("planDetailLevel must be coarse|medium|fine or empty")
+                        else:
+                            els[cmd.element_id] = el.model_copy(
+                                update={"plan_detail_level": cast(PlanDetailLevelPlan, raw_vt)}
+                            )
+                    elif cmd.key == "planRoomFillOpacityScale":
+                        if raw_vt == "":
+                            els[cmd.element_id] = el.model_copy(
+                                update={"plan_room_fill_opacity_scale": 1.0}
+                            )
+                        else:
+                            vscale = max(0.0, min(1.0, float(raw_vt)))
+                            els[cmd.element_id] = el.model_copy(
+                                update={"plan_room_fill_opacity_scale": vscale}
+                            )
+                    elif cmd.key == "defaultPlanOpeningTagStyleId":
+                        if raw_vt == "":
+                            els[cmd.element_id] = el.model_copy(
+                                update={"default_plan_opening_tag_style_id": None}
+                            )
+                        else:
+                            _validate_plan_tag_style_ref(els, raw_vt, "opening")
+                            els[cmd.element_id] = el.model_copy(
+                                update={"default_plan_opening_tag_style_id": raw_vt}
+                            )
+                    elif cmd.key == "defaultPlanRoomTagStyleId":
+                        if raw_vt == "":
+                            els[cmd.element_id] = el.model_copy(
+                                update={"default_plan_room_tag_style_id": None}
+                            )
+                        else:
+                            _validate_plan_tag_style_ref(els, raw_vt, "room")
+                            els[cmd.element_id] = el.model_copy(
+                                update={"default_plan_room_tag_style_id": raw_vt}
+                            )
+                    elif cmd.key == "planCategoryGraphics":
+                        pcg_vt = parse_plan_category_graphics_property_json(cmd.value)
+                        els[cmd.element_id] = el.model_copy(update={"plan_category_graphics": pcg_vt})
+                    else:
+                        raise ValueError(
+                            "view_template updates: key=planDetailLevel | planRoomFillOpacityScale | "
+                            "planShowOpeningTags | planShowRoomLabels | defaultPlanOpeningTagStyleId | "
+                            "defaultPlanRoomTagStyleId | planCategoryGraphics | name"
+                        )
+                elif isinstance(el, ViewpointElem):
+                    raw = cmd.value.strip()
+                    if cmd.key == "viewerClipCapElevMm":
+                        cap: float | None = None
+                        if raw != "":
+                            cap = float(raw)
+                            if not (cap >= 0):
+                                raise ValueError("viewerClipCapElevMm must be non-negative")
+                        els[cmd.element_id] = el.model_copy(update={"viewer_clip_cap_elev_mm": cap})
+                    elif cmd.key == "viewerClipFloorElevMm":
+                        floor_v: float | None = None
+                        if raw != "":
+                            floor_v = float(raw)
+                            if not (floor_v >= 0):
+                                raise ValueError("viewerClipFloorElevMm must be non-negative")
+                        els[cmd.element_id] = el.model_copy(
+                            update={"viewer_clip_floor_elev_mm": floor_v}
+                        )
+                    elif cmd.key == "hiddenSemanticKinds3d":
+                        hid: list[str] = []
+                        if raw:
+                            try:
+                                parsed = json.loads(raw)
+                                if isinstance(parsed, list):
+                                    hid = [str(x) for x in parsed if isinstance(x, str)]
+                            except json.JSONDecodeError as exc:
+ +  where 1 = CompletedProcess(args=['node', '/home/runner/work/bim-ai/bim-ai/packages/cli/cli.mjs', 'diff'], returncode=1, stdout='.../esm/loader:544:27)\n    at async ModuleJob._link (node:internal/modules/esm/module_job:148:19)\n\nNode.js v20.20.2\n").returncode
+FAILED tests/test_cli_export_json.py::test_export_json_stdout - Failed: CLI failed: rc=1
+stdout=
+stderr=file:///home/runner/work/bim-ai/bim-ai/packages/cli/cli.mjs:1895
+  } catch (e) {
+    ^^^^^
+SyntaxError: Unexpected token 'catch'
+    at compileSourceTextModule (node:internal/modules/esm/utils:346:16)
+    at ModuleLoader.moduleStrategy (node:internal/modules/esm/translators:146:18)
+    at #translate (node:internal/modules/esm/loader:497:12)
+    at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:544:27)
+    at async ModuleJob._link (node:internal/modules/esm/module_job:148:19)
+Node.js v20.20.2
+FAILED tests/test_cli_export_json.py::test_export_json_to_file - Failed: CLI failed: rc=1
+stdout=
+stderr=file:///home/runner/work/bim-ai/bim-ai/packages/cli/cli.mjs:1895
+  } catch (e) {
+    ^^^^^
+SyntaxError: Unexpected token 'catch'
+    at compileSourceTextModule (node:internal/modules/esm/utils:346:16)
+    at ModuleLoader.moduleStrategy (node:internal/modules/esm/translators:146:18)
+    at #translate (node:internal/modules/esm/loader:497:12)
+    at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:544:27)
+    at async ModuleJob._link (node:internal/modules/esm/module_job:148:19)
+Node.js v20.20.2
+FAILED tests/test_create_link_dxf_command.py::test_create_link_dxf_rejects_unknown_level - Failed: DID NOT RAISE <class 'ValueError'>
+FAILED tests/test_ifc_shadow_import.py::test_host_gains_link_model_pointing_at_shadow_uuid - AssertionError: assert 2 == 1
+ +  where 2 = len({'a8147311-f0cc-4317-a399-eccff1373915', 'sun_settings'})
+FAILED tests/test_img_v3_01.py::TestTracePipeline::test_rectangle_gives_rooms_and_walls - ModuleNotFoundError: No module named 'skimage'
+FAILED tests/test_img_v3_01.py::TestTracePipeline::test_determinism - ModuleNotFoundError: No module named 'skimage'
+FAILED tests/test_img_v3_01.py::TestTracePipeline::test_low_contrast_advisory - ModuleNotFoundError: No module named 'skimage'
+FAILED tests/test_img_v3_01.py::TestTracePipeline::test_structured_layout_schema_version - ModuleNotFoundError: No module named 'skimage'
+FAILED tests/test_img_v3_01.py::TestTraceImageCmd::test_engine_dispatch_returns_structured_layout - ModuleNotFoundError: No module named 'skimage'
+FAILED tests/test_img_v3_01.py::TestHttpTrace::test_trace_image_small_file - AssertionError: unexpected status 500: Internal Server Error
+assert 500 in (200, 422)
+ +  where 500 = <Response [500 Internal Server Error]>.status_code
+FAILED tests/test_img_v3_01.py::TestHttpTrace::test_no_walls_advisory - AssertionError: expected 422, got 500: Internal Server Error
+assert 500 == 422
+ +  where 500 = <Response [500 Internal Server Error]>.status_code
+FAILED tests/test_top_v3_01.py::test_toposolid_pierce_check_fires_on_overlap - assert 0 >= 1
+ +  where 0 = len([])
+FAILED tests/test_vie_03_elevation_view.py::test_custom_direction_requires_angle - Failed: DID NOT RAISE <class 'ValueError'>
+FAILED tests/test_vie_07_pin_element.py::test_move_wall_endpoints_refuses_pinned_wall_without_override - Failed: DID NOT RAISE <class 'ValueError'>
+FAILED tests/test_vie_07_pin_element.py::test_pinned_grid_blocks_move_grid_endpoints - Failed: DID NOT RAISE <class 'ValueError'>
+FAILED tests/test_vie_07_pin_element.py::test_unpin_unknown_element_raises - Failed: DID NOT RAISE <class 'ValueError'>
+ERROR tests/agent/refinement_reliability/test_refinement_reliability.py::TestRefinementReliability::test_12_step_kernel_execution
+= 34 failed, 2494 passed, 13 skipped, 4 warnings, 1 error in 85.15s (0:01:25) ==
+Error: Process completed with exit code 1.

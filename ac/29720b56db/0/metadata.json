@@ -1,0 +1,52 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "ac29720b56db",
+  "session_id": "4df28549-6b0f-418a-9d1e-1b4004954020",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-09T21:17:28.939307Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "app/bim_ai/api/registry.py",
+    "app/bim_ai/constraints.py",
+    "app/bim_ai/engine.py",
+    "app/pyproject.toml",
+    "app/tests/test_create_link_dxf_command.py",
+    "app/tests/test_vie_03_elevation_view.py",
+    "app/tests/test_vie_07_pin_element.py",
+    "app/uv.lock"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "7164a8df9a85",
+  "checkpoint_transcript_start": 169,
+  "transcript_lines_at_start": 169,
+  "token_usage": {
+    "input_tokens": 7,
+    "cache_creation_tokens": 34697,
+    "cache_read_tokens": 413848,
+    "output_tokens": 9821,
+    "api_call_count": 5
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-09T21:17:28.862139Z",
+    "agent_lines": 472,
+    "agent_removed": 45,
+    "human_added": 0,
+    "human_modified": 2,
+    "human_removed": 0,
+    "total_committed": 474,
+    "total_lines_changed": 519,
+    "agent_percentage": 99.61464354527938,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}
