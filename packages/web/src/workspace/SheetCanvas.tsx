@@ -1,11 +1,12 @@
 /* eslint-disable bim-ai/no-hex-in-chrome -- pre-v3 hex literals; remove when this file is migrated in B4 Phase 2 */
-import type { Element } from '@bim-ai/core';
+import type { Element, XY } from '@bim-ai/core';
 
 import {
   useEffect,
   useMemo,
   useRef,
   useState,
+  type ReactElement,
   type PointerEvent as ReactPointerEvent,
 } from 'react';
 
@@ -35,6 +36,134 @@ import {
 } from './sheetRevisionIssueManifestV1';
 
 type SheetEl = Extract<Element, { kind: 'sheet' }>;
+
+/**
+ * Renders a simplified floor-plan thumbnail as SVG JSX inside a viewport frame.
+ * Returns null when no geometry is available for the given plan view.
+ */
+function renderPlanThumbnail(
+  elementsById: Record<string, Element>,
+  planViewId: string,
+  widthMm: number,
+  heightMm: number,
+): ReactElement | null {
+  const planView = elementsById[planViewId];
+  if (!planView || planView.kind !== 'plan_view') return null;
+
+  const levelId = planView.levelId;
+
+  const walls = Object.values(elementsById).filter(
+    (el): el is Extract<Element, { kind: 'wall' }> => el.kind === 'wall' && el.levelId === levelId,
+  );
+  const rooms = Object.values(elementsById).filter(
+    (el): el is Extract<Element, { kind: 'room' }> => el.kind === 'room' && el.levelId === levelId,
+  );
+  const floors = Object.values(elementsById).filter(
+    (el): el is Extract<Element, { kind: 'floor' }> =>
+      el.kind === 'floor' && el.levelId === levelId,
+  );
+
+  if (walls.length === 0 && rooms.length === 0 && floors.length === 0) return null;
+
+  // Collect all world coordinate points to compute bounding box
+  const allPoints: XY[] = [];
+  for (const w of walls) {
+    allPoints.push(w.start, w.end);
+  }
+  for (const r of rooms) {
+    allPoints.push(...r.outlineMm);
+  }
+  for (const f of floors) {
+    allPoints.push(...f.boundaryMm);
+  }
+
+  if (allPoints.length === 0) return null;
+
+  let bbMinX = allPoints[0].xMm;
+  let bbMaxX = allPoints[0].xMm;
+  let bbMinY = allPoints[0].yMm;
+  let bbMaxY = allPoints[0].yMm;
+  for (const pt of allPoints) {
+    if (pt.xMm < bbMinX) bbMinX = pt.xMm;
+    if (pt.xMm > bbMaxX) bbMaxX = pt.xMm;
+    if (pt.yMm < bbMinY) bbMinY = pt.yMm;
+    if (pt.yMm > bbMaxY) bbMaxY = pt.yMm;
+  }
+
+  // 5% padding
+  const bbW = bbMaxX - bbMinX;
+  const bbH = bbMaxY - bbMinY;
+  const padX = bbW * 0.05;
+  const padY = bbH * 0.05;
+  const pMinX = bbMinX - padX;
+  const pW = bbW + 2 * padX;
+  const pH = bbH + 2 * padY;
+
+  if (pW <= 0 || pH <= 0) return null;
+
+  // Uniform scale preserving aspect ratio
+  const scaleX = widthMm / pW;
+  const scaleY = heightMm / pH;
+  const scale = Math.min(scaleX, scaleY);
+
+  // Center offset
+  const renderedW = pW * scale;
+  const renderedH = pH * scale;
+  const offsetX = (widthMm - renderedW) / 2;
+  const offsetY = (heightMm - renderedH) / 2;
+
+  // World → SVG: flip Y (architectural y-up → SVG y-down)
+  const toSvg = (pt: XY): { sx: number; sy: number } => ({
+    sx: (pt.xMm - pMinX) * scale + offsetX,
+    sy: (bbMaxY + padY - pt.yMm) * scale + offsetY,
+  });
+
+  const polyPoints = (pts: XY[]): string =>
+    pts
+      .map((pt) => {
+        const { sx, sy } = toSvg(pt);
+        return `${sx},${sy}`;
+      })
+      .join(' ');
+
+  return (
+    <g>
+      {floors.map((f) => (
+        <polygon
+          key={f.id}
+          points={polyPoints(f.boundaryMm)}
+          fill="#f0f0f0"
+          stroke="#aaa"
+          strokeWidth={0.3}
+        />
+      ))}
+      {rooms.map((r) => (
+        <polygon
+          key={r.id}
+          points={polyPoints(r.outlineMm)}
+          fill="rgba(200,220,240,0.3)"
+          stroke="none"
+        />
+      ))}
+      {walls.map((w) => {
+        const s = toSvg(w.start);
+        const e = toSvg(w.end);
+        const sw = Math.min(4, Math.max(0.5, w.thicknessMm * scale));
+        return (
+          <line
+            key={w.id}
+            x1={s.sx}
+            y1={s.sy}
+            x2={e.sx}
+            y2={e.sy}
+            stroke="#334155"
+            strokeWidth={sw}
+          />
+        );
+      })}
+    </g>
+  );
+}
 
 function clientToSvgMm(
   svg: SVGSVGElement,
@@ -439,6 +568,26 @@ function SheetCanvasWithSheet(props: {
             const vpStroke = isDetailCallout ? '#7c3aed' : '#475569';
             const vpDash = isDetailCallout || isScheduleVp ? '480 240' : undefined;
 
+            // Plan thumbnail
+            const isPlanVp = parsedRef?.kind === 'plan' && Boolean(parsedRef.refId);
+            const footerBandMm = 1200;
+            const planThumbW = Math.max(200, widthMm);
+            const planThumbH = Math.max(200, heightMm - footerBandMm);
+            const planThumbnailContent =
+              isPlanVp && parsedRef?.refId
+                ? renderPlanThumbnail(elementsById, parsedRef.refId, planThumbW, planThumbH)
+                : null;
+
+            // When a plan thumbnail is shown, labels shift to the bottom footer band.
+            // The footer band starts at yMm + heightMm - footerBandMm.
+            const footerY0Vp = yMm + heightMm - footerBandMm;
+            const labelY = planThumbnailContent ? footerY0Vp + 480 : yMm + 900;
+            const subY = planThumbnailContent ? footerY0Vp + 820 : yMm + 1400;
+            const scaleY = planThumbnailContent ? footerY0Vp + 1060 : yMm + 1800;
+            const detailY = planThumbnailContent ? footerY0Vp + 480 : yMm + 820;
+            const scheduleY = planThumbnailContent ? footerY0Vp + 1300 : yMm + 2200;
+            const legendY = planThumbnailContent ? footerY0Vp + 1600 : yMm + 2600;
+
             return (
               <g key={row.key}>
                 <rect
@@ -484,19 +633,31 @@ function SheetCanvasWithSheet(props: {
                     />
                   </svg>
                 ) : null}
+                {planThumbnailContent ? (
+                  <svg
+                    x={xMm}
+                    y={yMm}
+                    width={planThumbW}
+                    height={planThumbH}
+                    viewBox={`0 0 ${planThumbW} ${planThumbH}`}
+                    overflow="hidden"
+                  >
+                    {planThumbnailContent}
+                  </svg>
+                ) : null}
                 {isDetailCallout ? (
                   <text x={xMm + 200} y={yMm + 520} fill="#7c3aed" style={{ fontSize: '320px' }}>
                     detail callout
                   </text>
                 ) : null}
-                <text x={xMm + 200} y={yMm + 900} fill="#475569" style={{ fontSize: '600px' }}>
+                <text x={xMm + 200} y={labelY} fill="#475569" style={{ fontSize: '600px' }}>
                   {primary}
                 </text>
                 {detailTrim ? (
                   <text
                     data-testid={`sheet-viewport-detail-${index}`}
                     x={xMm + widthMm - 200}
-                    y={yMm + 820}
+                    y={detailY}
                     fill="#475569"
                     style={{ fontSize: '480px' }}
                     textAnchor="end"
@@ -505,7 +666,7 @@ function SheetCanvasWithSheet(props: {
                   </text>
                 ) : null}
                 {sub ? (
-                  <text x={xMm + 200} y={yMm + 1400} fill="#64748b" style={{ fontSize: '350px' }}>
+                  <text x={xMm + 200} y={subY} fill="#64748b" style={{ fontSize: '350px' }}>
                     {sub}
                   </text>
                 ) : null}
@@ -513,7 +674,7 @@ function SheetCanvasWithSheet(props: {
                   <text
                     data-testid={`sheet-viewport-scale-${index}`}
                     x={xMm + 200}
-                    y={yMm + 1800}
+                    y={scaleY}
                     fill="#64748b"
                     style={{ fontSize: '340px' }}
                   >
@@ -535,7 +696,7 @@ function SheetCanvasWithSheet(props: {
                   <text
                     data-testid={`sheet-viewport-schedule-caption-${index}`}
                     x={xMm + 200}
-                    y={yMm + 2200}
+                    y={scheduleY}
                     fill={scheduleResolved ? '#15803d' : '#b45309'}
                     style={{ fontSize: '320px' }}
                   >
@@ -546,7 +707,7 @@ function SheetCanvasWithSheet(props: {
                   <text
                     data-testid={`sheet-viewport-plan-legend-caption-${index}`}
                     x={xMm + 200}
-                    y={yMm + 2600}
+                    y={legendY}
                     fill="#0e7490"
                     style={{ fontSize: '300px' }}
                   >
