@@ -92,7 +92,7 @@ Source segment: `00:27:59 – 00:55:00`
 **Screenshot:**
 ![Project Base Point](file:///Users/jhoetter/Desktop/Revit%20Specs/0134_00-15-08.png)
 
-**bim-ai status:** 🟡 Partial — `project_base_point` and `survey_point` are first-class element kinds in `@bim-ai/core`. The 3D viewport renders them as visual markers (blue circled cross for PBP, green triangle for Survey Point) via `originMarkers.ts`. They are visible/hidden via VG → Site/Origin category (`site_origin` in `MODEL_CATEGORIES`). Missing: plan-canvas 2D annotation markers (cross + clipped circle); interactive "Clip" / "Unclip" toggle; and a dedicated coordinate properties inspector for editing positionMm / angleToTrueNorthDeg.
+**bim-ai status:** 🟡 Partial — `project_base_point` and `survey_point` are first-class element kinds in `@bim-ai/core`. The 3D viewport renders them as visual markers (blue circled cross for PBP, green triangle for Survey Point) via `originMarkers.ts`. Plan canvas now also renders 2D cross-in-circle (PBP, blue) and triangle (Survey Point, green) markers at `positionMm`, gated by the VG → Site/Origin `site_origin` category. Missing: interactive "Clip"/"Unclip" toggle; dedicated coordinate properties inspector.
 
 ---
 

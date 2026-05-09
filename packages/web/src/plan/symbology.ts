@@ -1239,8 +1239,7 @@ export function rebuildPlanMeshes(
     }
 
     const placedAssets = Object.values(elementsById).filter(
-      (e): e is PlacedAssetElement =>
-        e.kind === 'placed_asset' && (!level || e.levelId === level),
+      (e): e is PlacedAssetElement => e.kind === 'placed_asset' && (!level || e.levelId === level),
     );
 
     for (const asset of placedAssets) {
@@ -1264,12 +1263,7 @@ export function rebuildPlanMeshes(
       ];
 
       const worldCorners = corners.map(
-        (c) =>
-          new THREE.Vector3(
-            cx + c.x * cosR - c.z * sinR,
-            Y,
-            cz + c.x * sinR + c.z * cosR,
-          ),
+        (c) => new THREE.Vector3(cx + c.x * cosR - c.z * sinR, Y, cz + c.x * sinR + c.z * cosR),
       );
 
       // Closed rectangle outline
@@ -1479,6 +1473,79 @@ export function rebuildPlanMeshes(
       holder.add(elevationViewPlanThree(ev, elementsById));
     }
     tintNewChildren(before, 'elevation_view');
+  }
+
+  // KRN-06: plan-canvas 2D origin markers (F-022 extension).
+  // Renders project_base_point (blue cross-in-circle) and survey_point (green triangle)
+  // gated by the site_origin VG category visibility.
+  if (!kindHidden('site_origin')) {
+    const Y = PLAN_Y + 0.009;
+
+    for (const el of Object.values(elementsById)) {
+      if (el.kind !== 'project_base_point' && el.kind !== 'survey_point') continue;
+      const pos = (el as { positionMm: { xMm: number; yMm: number } }).positionMm;
+      const xM = ux(pos.xMm);
+      const zM = uz(pos.yMm);
+
+      if (el.kind === 'project_base_point') {
+        // Blue cross-in-circle marker
+        const color = 0x2563eb;
+        const mat = new THREE.LineBasicMaterial({ color, depthTest: false });
+        const r = 0.3; // 300 mm radius
+
+        // Circle outline (approximated with segments)
+        const circlePoints: THREE.Vector3[] = [];
+        const segs = 32;
+        for (let i = 0; i <= segs; i++) {
+          const a = (i / segs) * Math.PI * 2;
+          circlePoints.push(new THREE.Vector3(xM + Math.cos(a) * r, Y, zM + Math.sin(a) * r));
+        }
+        const circleGeo = new THREE.BufferGeometry().setFromPoints(circlePoints);
+        const circleLine = new THREE.Line(circleGeo, mat);
+        circleLine.renderOrder = 990;
+        circleLine.userData.bimPickId = el.id;
+        holder.add(circleLine);
+
+        // Cross
+        const crossMat = new THREE.LineBasicMaterial({ color, depthTest: false });
+        const crossH = new THREE.Line(
+          new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(xM - r, Y, zM),
+            new THREE.Vector3(xM + r, Y, zM),
+          ]),
+          crossMat,
+        );
+        const crossV = new THREE.Line(
+          new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(xM, Y, zM - r),
+            new THREE.Vector3(xM, Y, zM + r),
+          ]),
+          crossMat,
+        );
+        crossH.renderOrder = 990;
+        crossV.renderOrder = 990;
+        crossH.userData.bimPickId = el.id;
+        crossV.userData.bimPickId = el.id;
+        holder.add(crossH, crossV);
+      } else {
+        // survey_point — green triangle marker
+        const color = 0x16a34a;
+        const mat = new THREE.LineBasicMaterial({ color, depthTest: false });
+        const s = 0.3;
+        const h = (s * Math.sqrt(3)) / 2;
+        const triPts = [
+          new THREE.Vector3(xM, Y, zM - h * (2 / 3)),
+          new THREE.Vector3(xM + s / 2, Y, zM + h * (1 / 3)),
+          new THREE.Vector3(xM - s / 2, Y, zM + h * (1 / 3)),
+          new THREE.Vector3(xM, Y, zM - h * (2 / 3)),
+        ];
+        const triGeo = new THREE.BufferGeometry().setFromPoints(triPts);
+        const triLine = new THREE.Line(triGeo, mat);
+        triLine.renderOrder = 990;
+        triLine.userData.bimPickId = el.id;
+        holder.add(triLine);
+      }
+    }
   }
 }
 
