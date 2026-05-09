@@ -4,7 +4,9 @@
   "strategy": "manual-commit",
   "branch": "main",
   "checkpoints_count": 2,
-  "files_touched": null,
+  "files_touched": [
+    "packages/web/src/onboarding/Welcome.tsx"
+  ],
   "sessions": [
     {
       "metadata": "/25/f9b9adba57/0/metadata.json",
@@ -17,13 +19,19 @@
       "transcript": "/25/f9b9adba57/1/full.jsonl",
       "content_hash": "/25/f9b9adba57/1/content_hash.txt",
       "prompt": "/25/f9b9adba57/1/prompt.txt"
+    },
+    {
+      "metadata": "/25/f9b9adba57/2/metadata.json",
+      "transcript": "/25/f9b9adba57/2/full.jsonl",
+      "content_hash": "/25/f9b9adba57/2/content_hash.txt",
+      "prompt": "/25/f9b9adba57/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 14046,
-    "cache_creation_tokens": 6182092,
-    "cache_read_tokens": 425021814,
-    "output_tokens": 1964920,
-    "api_call_count": 4307
+    "input_tokens": 14049,
+    "cache_creation_tokens": 6190419,
+    "cache_read_tokens": 425033705,
+    "output_tokens": 1965635,
+    "api_call_count": 4308
   }
 }
