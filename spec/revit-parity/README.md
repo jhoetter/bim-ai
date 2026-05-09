@@ -61,14 +61,14 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-012 | Visibility / Graphic Overrides (VV)                  | UI & Nav       | 🟡            | VVDialog (VV hotkey) covers 15 model categories and 14 annotation categories with per-category visibility, color, line weight, pattern overrides, and halftone toggle wired through to hiddenSemanticKinds. Missing: full ~120-category Revit catalogue, transparency slider, projection vs. cut pattern split |
 | F-013 | Autodesk Account & License UI                        | UI & Nav       | ❌            | N/A (different SaaS model)                                                                                           |
 | F-014 | Reveal Hidden Elements mode                          | UI & Nav       | ✅            | 💡 toggle shows hidden elements in magenta; right-click on hidden element → "Unhide in View: <category>" restores visibility; magenta chip while active |
-| F-015 | Link CAD (DWG/DXF) — live reference                 | CAD            | 🟡            | DXF import backend implemented; frontend file-picker stubbed; no live reload                                         |
-| F-016 | Import CAD (embedded)                                | CAD            | 🟡            | Same backend as F-015; linked vs. embedded distinction not present; frontend stubbed                                  |
+| F-015 | Link CAD (DWG/DXF) — live reference                 | CAD            | 🟡            | DXF import backend + multipart upload endpoint implemented; frontend file-picker now enabled (Insert → Link DXF…) wired to upload-dxf-file; underlay appears via WebSocket broadcast. No live reload on source-file change |
+| F-016 | Import CAD (embedded)                                | CAD            | 🟡            | Same backend + frontend file-picker as F-015; linked vs. embedded distinction not present (single link_dxf element kind) |
 | F-017 | CAD Link Options (Colors/Layers/Units/Positioning)   | CAD            | 🟡            | ManageLinksDialog DXF Links section: per-link opacity slider (0–100%) and color mode toggle (B&W / Custom hex); missing layer visibility filtering, "Preserve original colors", and unit/positioning controls at import time |
 | F-018 | Pin / Unpin linked files                             | CAD            | 🟡            | ManageLinksDialog has revision pinning with drift badge + Update button; no spatial position lock                    |
 | F-019 | Query tool for DWG layer visibility                  | CAD            | ❌            | DXF layer metadata not preserved; no per-layer visibility UI                                                         |
 | F-020 | Halftone / transparency for imported files (VG)      | CAD            | 🟡            | Per-link opacity now configurable (0–100%) via ManageLinksDialog; missing per-view opacity override in VVDialog and full-opacity (non-halftone) mode as a dropdown choice within VV |
 | F-021 | Align CAD with Project Base Point                    | CAD            | 🟡            | ManageLinksDialog has origin/project base point/shared coords for link_model; missing for link_dxf                   |
-| F-022 | Project Base Point & Survey Point                    | CAD            | 🟡            | First-class elements in core; 3D markers rendered; plan canvas now also renders 2D cross-in-circle (PBP) and triangle (SP) markers gated by site_origin VG category                 |
+| F-022 | Project Base Point & Survey Point                    | CAD            | 🟡            | First-class elements in core; 3D markers rendered; plan canvas renders 2D cross-in-circle (PBP) and triangle (SP) markers gated by site_origin VG category; inspector now shows editable N/S / E/W coordinate fields (X/Y inputs, blur-to-commit). Missing: Clip/Unclip toggle |
 | F-023 | Work Plane assignment for linked elements            | CAD            | 🟡            | `link_dxf` `levelId` field controls which level (work plane) the underlay is associated with; current level shown in inspector (`case 'link_dxf':`); changeable via ManageLinksDialog DXF Links section. Missing: level-dropdown in inspector (read-only display); Revit-style "Set Work Plane" dialog |
 | F-024 | Manage Links dialog                                  | CAD            | 🟡            | ManageLinksDialog lists link_model rows (delete/alignment/visibility/pin) AND link_dxf underlays (opacity + color mode); missing IFC/PDF/image types, unload/reload controls, file-path change |
 | F-025 | Levels (datum planes)                                | Levels & Views | 🟡            | LevelStack inline create/rename; SectionViewportSvg renders blue dashed datum lines with circle head + "Name \| ±X.XXX m" label; StatusBar shows elevation value for current level. Missing: elevation datum line across the plan canvas |
@@ -174,7 +174,7 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 
 ## Summary Statistics
 
-_Last audited: 2026-05-09 against codebase at commit `docs/tracker-sync-wave-10`._
+_Last audited: 2026-05-09 against codebase at commit `docs/tracker-sync-wave-11`._
 
 | Status                 | Count   | % of total |
 | ---------------------- | ------- | ---------- |
