@@ -1929,7 +1929,9 @@ class PropertyDefinitionElem(BaseModel):
     id: str
     key: str
     label: str
-    prop_kind: Literal["mm", "m2", "currency", "enum", "string", "bool", "date"] = Field(alias="propKind")
+    prop_kind: Literal["mm", "m2", "currency", "enum", "string", "bool", "date"] = Field(
+        alias="propKind"
+    )
     enum_values: list[str] | None = Field(default=None, alias="enumValues")
     default_value: Any | None = Field(default=None, alias="defaultValue")
     applies_to: list[str] = Field(alias="appliesTo")
@@ -2094,7 +2096,6 @@ class MassElem(BaseModel):
     discipline: DisciplineTag | None = Field(default=None)
 
 
-
 class PresentationLinkElem(BaseModel):
     """OUT-V3-01 — live presentation URL token persisted as a document element."""
 
@@ -2110,6 +2111,7 @@ class PresentationLinkElem(BaseModel):
     expires_at: int | None = Field(default=None, alias="expiresAt")
     created_at: int = Field(alias="createdAt")
     revoked_at: int | None = Field(default=None, alias="revokedAt")
+
 
 class VoidCutElem(BaseModel):
     """SKT-01 — subtractive-boolean marker against a host element.
@@ -2190,6 +2192,8 @@ class WindowLegendViewElem(BaseModel):
 
 class HeightSample(BaseModel):
     """A single surveyed elevation sample (sparse parametrisation)."""
+
+
 class HeightSample(BaseModel):
     """TOP-V3-01 — single (x, y, z) terrain sample point."""
 
@@ -2201,6 +2205,7 @@ class HeightSample(BaseModel):
 
 class HeightmapGrid(BaseModel):
     """Regular-grid DEM raster (dense parametrisation)."""
+
     """TOP-V3-01 — regular-grid heightmap representation."""
 
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
@@ -2217,6 +2222,7 @@ class ToposolidElem(BaseModel):
     (regular DEM raster) drives the surface.  Both empty / None means a flat
     starter at ``base_elevation_mm``.
     """
+
     values: list[float]
 
 
@@ -2237,6 +2243,8 @@ class ToposolidElem(BaseModel):
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
     discipline: str | None = None
+
+
 # AST-V3-01 — Asset library entry + placed asset instance
 # ---------------------------------------------------------------------------
 
@@ -2292,6 +2300,54 @@ class PlacedAssetElem(BaseModel):
     param_values: dict[str, Any] = Field(default_factory=dict, alias="paramValues")
     host_element_id: str | None = Field(default=None, alias="hostElementId")
     discipline: DisciplineTag | None = Field(default=None)
+
+
+# ---------------------------------------------------------------------------
+# AST-V3-04 — Parametric kitchen kit
+# ---------------------------------------------------------------------------
+
+
+class KitComponent(BaseModel):
+    """AST-V3-04 — one component in a kitchen kit chain."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    component_kind: Literal[
+        "base",
+        "upper",
+        "oven_housing",
+        "sink",
+        "pantry",
+        "countertop",
+        "end_panel",
+        "dishwasher",
+        "fridge",
+    ] = Field(alias="componentKind")
+    width_mm: float | None = Field(default=None, alias="widthMm")  # None = auto-fill
+    height_mm: float | None = Field(default=None, alias="heightMm")
+    depth_mm: float | None = Field(default=None, alias="depthMm")
+    door_style: str | None = Field(default=None, alias="doorStyle")  # shaker|flat|beaded|glazed
+    material_id: str | None = Field(default=None, alias="materialId")
+    hardware_family_id: str | None = Field(default=None, alias="hardwareFamilyId")
+
+
+class FamilyKitInstanceElem(BaseModel):
+    """AST-V3-04 — a placed parametric kitchen kit snap-chain on a wall."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    kind: Literal["family_kit_instance"] = "family_kit_instance"
+    id: str
+    kit_id: Literal["kitchen_modular"] = Field(alias="kitId")
+    host_wall_id: str = Field(alias="hostWallId")
+    start_mm: float = Field(alias="startMm")
+    end_mm: float = Field(alias="endMm")
+    components: list[KitComponent] = Field(default_factory=list)
+    countertop_depth_mm: float = Field(default=600.0, alias="countertopDepthMm")
+    countertop_thickness_mm: float = Field(default=40.0, alias="countertopThicknessMm")
+    countertop_material_id: str | None = Field(default=None, alias="countertopMaterialId")
+    toe_kick_height_mm: float = Field(default=100.0, alias="toeKickHeightMm")
+    upper_base_clearance_mm: float = Field(default=460.0, alias="upperBaseClearanceMm")
+    phase_created: str | None = Field(default=None, alias="phaseCreated")
+    phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
 
 
 # ---------------------------------------------------------------------------
@@ -2354,17 +2410,8 @@ class DecalElem(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# SCH-V3-01 — Custom property definition element
+# SCH-V3-01 — Custom property definition element (defined at line ~1926 above)
 # ---------------------------------------------------------------------------
-
-
-class PropertyDefinitionElem(BaseModel):
-    """SCH-V3-01 — project-scoped custom property definition."""
-
-    enum_values: list[str] | None = Field(default=None, alias="enumValues")
-    default_value: Any | None = Field(default=None, alias="defaultValue")
-    applies_to: list[str] = Field(alias="appliesTo")
-    show_in_schedule: bool = Field(default=True, alias="showInSchedule")
 
 
 Element = Annotated[
@@ -2444,10 +2491,10 @@ Element = Annotated[
     | ToposolidElem
     | AssetLibraryEntryElem
     | PlacedAssetElem
+    | FamilyKitInstanceElem
     | HatchPatternDefElem
     | MaterialElem
     | DecalElem
     | PropertyDefinitionElem,
     Field(discriminator="kind"),
 ]
-
