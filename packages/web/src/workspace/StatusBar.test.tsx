@@ -14,7 +14,7 @@ afterEach(() => {
 
 describe('StatusBar — spec §17', () => {
   it('renders all clusters', () => {
-    const { getByText, getByLabelText } = renderWithI18n(
+    const { getByText, getByLabelText, getByTitle } = renderWithI18n(
       <StatusBar
         level={{ id: 'lvl-ground', label: 'Ground' }}
         levels={[{ id: 'lvl-ground', label: 'Ground' }]}
@@ -31,11 +31,12 @@ describe('StatusBar — spec §17', () => {
       />,
     );
     expect(getByText('Ground')).toBeTruthy();
-    expect(getByText('Wall')).toBeTruthy();
-    expect(getByText('endpoint')).toBeTruthy();
+    expect(getByText('Drawing wall')).toBeTruthy();
+    // Snap chips now render single-character glyphs (E = endpoint, G = grid)
+    expect(getByTitle('Endpoint snap (on)')).toBeTruthy();
     expect(getByText('ON')).toBeTruthy();
-    expect(getByLabelText('Cursor coordinates').textContent).toContain('X 12.50');
-    expect(getByLabelText('Cursor coordinates').textContent).toContain('Y 8.00');
+    expect(getByLabelText('Cursor coordinates').textContent).toContain('X 12.500 m');
+    expect(getByLabelText('Cursor coordinates').textContent).toContain('Y 8.000 m');
     expect(getByText('saved')).toBeTruthy();
     expect(getByText('connected')).toBeTruthy();
   });
@@ -78,7 +79,7 @@ describe('StatusBar — spec §17', () => {
 
   it('toggles snap modes via switch buttons', () => {
     const onSnapToggle = vi.fn();
-    const { getByText } = renderWithI18n(
+    const { getByTitle } = renderWithI18n(
       <StatusBar
         level={{ id: 'lvl-ground', label: 'Ground' }}
         snapModes={[
@@ -88,7 +89,8 @@ describe('StatusBar — spec §17', () => {
         onSnapToggle={onSnapToggle}
       />,
     );
-    fireEvent.click(getByText('midpoint'));
+    // Snap chips now render single-character glyphs; find by title tooltip
+    fireEvent.click(getByTitle('Midpoint snap (off)'));
     expect(onSnapToggle).toHaveBeenCalledWith('midpoint');
   });
 
