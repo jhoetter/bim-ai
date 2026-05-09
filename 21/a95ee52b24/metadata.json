@@ -4,20 +4,28 @@
   "strategy": "manual-commit",
   "branch": "main",
   "checkpoints_count": 1,
-  "files_touched": null,
+  "files_touched": [
+    "packages/web/src/workspace/Workspace.tsx"
+  ],
   "sessions": [
     {
       "metadata": "/21/a95ee52b24/0/metadata.json",
       "transcript": "/21/a95ee52b24/0/full.jsonl",
       "content_hash": "/21/a95ee52b24/0/content_hash.txt",
       "prompt": "/21/a95ee52b24/0/prompt.txt"
+    },
+    {
+      "metadata": "/21/a95ee52b24/1/metadata.json",
+      "transcript": "/21/a95ee52b24/1/full.jsonl",
+      "content_hash": "/21/a95ee52b24/1/content_hash.txt",
+      "prompt": "/21/a95ee52b24/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 8519,
-    "cache_creation_tokens": 4862048,
-    "cache_read_tokens": 356820416,
-    "output_tokens": 1470466,
-    "api_call_count": 3570
+    "input_tokens": 8522,
+    "cache_creation_tokens": 4999083,
+    "cache_read_tokens": 356832307,
+    "output_tokens": 1470785,
+    "api_call_count": 3571
   }
 }
