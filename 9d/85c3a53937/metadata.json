@@ -1,0 +1,23 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "9d85c3a53937",
+  "strategy": "manual-commit",
+  "branch": "merge-ch02-tracker",
+  "checkpoints_count": 0,
+  "files_touched": null,
+  "sessions": [
+    {
+      "metadata": "/9d/85c3a53937/0/metadata.json",
+      "transcript": "/9d/85c3a53937/0/full.jsonl",
+      "content_hash": "/9d/85c3a53937/0/content_hash.txt",
+      "prompt": "/9d/85c3a53937/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 7,
+    "cache_creation_tokens": 10820,
+    "cache_read_tokens": 401663,
+    "output_tokens": 2557,
+    "api_call_count": 7
+  }
+}
