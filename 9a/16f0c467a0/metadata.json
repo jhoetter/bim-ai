@@ -1,0 +1,25 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "9a16f0c467a0",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/web/src/plan/symbology.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/9a/16f0c467a0/0/metadata.json",
+      "transcript": "/9a/16f0c467a0/0/full.jsonl",
+      "content_hash": "/9a/16f0c467a0/0/content_hash.txt",
+      "prompt": "/9a/16f0c467a0/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 6224,
+    "cache_creation_tokens": 3309528,
+    "cache_read_tokens": 142215171,
+    "output_tokens": 937745,
+    "api_call_count": 1524
+  }
+}
