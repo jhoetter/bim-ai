@@ -376,7 +376,10 @@ export function InspectorPropertiesFor(
         <div className="flex flex-col gap-2">
           <FieldRow label={f('slope')} value={`${(el.slopeDeg ?? 0).toFixed(1)}°`} />
           <FieldRow label={f('overhang')} value={fmtMm(el.overhangMm)} />
-          <FieldRow label={f('referenceLevel')} value={el.referenceLevelId} mono />
+          <FieldRow
+            label={f('referenceLevel')}
+            value={resolveElName(el.referenceLevelId, elementsById)}
+          />
           <FieldRow label={f('footprintPoints')} value={String(el.footprintMm.length)} />
 
           <div className="flex items-center gap-2 py-0.5">
@@ -556,7 +559,10 @@ export function InspectorPropertiesFor(
           <FieldRow label={f('level')} value={resolveElName(el.levelId, elementsById)} />
           <FieldRow label={f('outlinePoints')} value={String(el.outlineMm.length)} />
           {el.upperLimitLevelId ? (
-            <FieldRow label={f('upperLimit')} value={el.upperLimitLevelId} mono />
+            <FieldRow
+              label={f('upperLimit')}
+              value={resolveElName(el.upperLimitLevelId, elementsById)}
+            />
           ) : null}
           {el.volumeM3 != null ? (
             <FieldRow label={f('volume')} value={`${el.volumeM3.toFixed(3)} m³`} />
@@ -871,7 +877,10 @@ export function InspectorPropertiesFor(
     case 'color_fill_legend':
       return (
         <div>
-          <FieldRow label={f('colorFillLegend')} value={el.planViewId} mono />
+          <FieldRow
+            label={f('colorFillLegend')}
+            value={resolveElName(el.planViewId, elementsById)}
+          />
           <FieldRow label={f('schemeField')} value={el.schemeField} />
         </div>
       );
@@ -894,7 +903,10 @@ export function InspectorPropertiesFor(
           <FieldRow label={f('name')} value={el.name ?? '—'} />
           <FieldRow label={f('workset')} value={el.worksetId ?? '—'} mono />
           {el.startingViewId ? (
-            <FieldRow label={f('startingView')} value={el.startingViewId} mono />
+            <FieldRow
+              label={f('startingView')}
+              value={resolveElName(el.startingViewId, elementsById)}
+            />
           ) : null}
         </div>
       );
