@@ -57,6 +57,7 @@ from bim_ai.commands import (
     CreateRoomOutlineCmd,
     CreateRoomPolyCmd,
     CreateRoomRectangleCmd,
+    PlaceRoomAtPointCmd,
     CreateRoomSeparationCmd,
     CreateSectionCutCmd,
     CreateSlabOpeningCmd,
@@ -1836,6 +1837,54 @@ def apply_inplace(
                     cmd.finish_set,
                     cmd.target_area_m2,
                 ),
+            )
+
+        case PlaceRoomAtPointCmd():
+            if cmd.level_id not in els or not isinstance(els[cmd.level_id], LevelElem):
+                raise ValueError("placeRoomAtPoint.levelId must reference an existing Level")
+            if cmd.id in els:
+                raise ValueError(f"duplicate element id '{cmd.id}'")
+            from bim_ai.room_derivation import (
+                compute_room_boundary_derivation,
+                footprint_outline_mm_rectangle,
+            )
+
+            derivation = compute_room_boundary_derivation(doc)
+            candidates = derivation.get("candidates", [])
+
+            best = None
+            best_area = float("inf")
+            for cand in candidates:
+                if cand.get("levelId") != cmd.level_id:
+                    continue
+                bbox = cand.get("bboxMm") or {}
+                mn = bbox.get("min") or {}
+                mx = bbox.get("max") or {}
+                x_lo = float(mn.get("x", 0))
+                y_lo = float(mn.get("y", 0))
+                x_hi = float(mx.get("x", 0))
+                y_hi = float(mx.get("y", 0))
+                if x_lo <= cmd.click_x_mm <= x_hi and y_lo <= cmd.click_y_mm <= y_hi:
+                    area = (x_hi - x_lo) * (y_hi - y_lo)
+                    if area < best_area:
+                        best_area = area
+                        best = cand
+
+            if best is None:
+                raise ValueError(
+                    f"placeRoomAtPoint: no enclosed region found at ({cmd.click_x_mm}, {cmd.click_y_mm})"
+                )
+
+            bbox = best.get("bboxMm") or {}
+            outline_pts = footprint_outline_mm_rectangle(bbox)
+            outline_mm = [Vec2Mm(xMm=p["xMm"], yMm=p["yMm"]) for p in outline_pts]
+
+            els[cmd.id] = RoomElem(
+                kind="room",
+                id=cmd.id,
+                name=cmd.name,
+                level_id=cmd.level_id,
+                outline_mm=outline_mm,
             )
 
         case MoveLevelElevationCmd():

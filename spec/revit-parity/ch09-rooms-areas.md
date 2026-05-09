@@ -11,7 +11,7 @@ Source segment: `05:30:00 – 05:39:46`
 **Screenshot:**
 ![Room tool](file:///Users/jhoetter/Desktop/Revit%20Specs/0751_05-30-00.png)
 
-**bim-ai status:** 🟡 Partial — the `room` tool is registered in `toolRegistry.ts` and `PlanCanvas.tsx` has click-to-place logic (vertex accumulation via `planTool === 'room'`). The backend derivation engine (`room_derivation.py`) calculates area and perimeter. Room label display in the plan view is now available via the plan view inspector's "Room Labels" checkbox (fires `planShowRoomLabels`; `symbology.ts` renders name + area sprites when enabled). Missing: automatic snap-to-enclosed-boundary like Revit (Revit places by single click inside a closed loop; bim-ai requires explicit vertex input).
+**bim-ai status:** ✅ — Single-click room placement is implemented via the `placeRoomAtPoint` command. A single click inside a closed wall enclosure fires `PlaceRoomAtPointCmd` to the backend, which calls `compute_room_boundary_derivation` to find all candidate bounding boxes and picks the smallest enclosing rectangle that contains the click point, then creates a `RoomElem` with that outline. Room label display is available via the plan view inspector's "Room Labels" checkbox (`symbology.ts` renders name + area sprites). **Limitation:** only axis-aligned rectangular enclosures are auto-detected (non-orthogonal rooms still require `createRoomOutline` with explicit vertex input).
 
 ---
 
