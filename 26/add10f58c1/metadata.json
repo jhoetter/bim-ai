@@ -1,0 +1,29 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "26add10f58c1",
+  "strategy": "manual-commit",
+  "branch": "feat/parity-readme-sync",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/design-tokens/src/tokens-drafting.css",
+    "packages/web/src/plan/HelperDimChip.tsx",
+    "packages/web/src/plan/SheetReviewSurface.tsx",
+    "packages/web/src/viewport/SunOverlay.tsx",
+    "packages/web/src/workspace/chrome/TopBar.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/26/add10f58c1/0/metadata.json",
+      "transcript": "/26/add10f58c1/0/full.jsonl",
+      "content_hash": "/26/add10f58c1/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 15,
+    "cache_creation_tokens": 28161,
+    "cache_read_tokens": 1545749,
+    "output_tokens": 22328,
+    "api_call_count": 13
+  }
+}

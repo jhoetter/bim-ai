@@ -1,0 +1,40 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "26add10f58c1",
+  "session_id": "1e07b668-5c09-4d39-a201-322aafeb3b95",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-09T17:47:51.849666Z",
+  "branch": "feat/parity-readme-sync",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/design-tokens/src/tokens-drafting.css",
+    "packages/web/src/plan/HelperDimChip.tsx",
+    "packages/web/src/plan/SheetReviewSurface.tsx",
+    "packages/web/src/viewport/SunOverlay.tsx",
+    "packages/web/src/workspace/chrome/TopBar.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "ac43e732339d",
+  "checkpoint_transcript_start": 809,
+  "transcript_lines_at_start": 809,
+  "token_usage": {
+    "input_tokens": 15,
+    "cache_creation_tokens": 28161,
+    "cache_read_tokens": 1545749,
+    "output_tokens": 22328,
+    "api_call_count": 13
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-09T17:47:51.778359Z",
+    "agent_lines": 59,
+    "agent_removed": 9,
+    "human_added": 30,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 89,
+    "total_lines_changed": 120,
+    "agent_percentage": 56.666666666666664,
+    "metric_version": 2
+  }
+}
