@@ -186,6 +186,7 @@ export function TopBarV3({
       <button
         type="button"
         onClick={onCommandPalette}
+        aria-label={`Command palette  ${cmdGlyph}`}
         aria-keyshortcuts="Meta+K Control+K"
         data-testid="topbar-v3-cmdpalette"
         tabIndex={0}
@@ -210,6 +211,7 @@ export function TopBarV3({
       <button
         type="button"
         onClick={onActivityStream}
+        aria-label="Activity stream  ⌘H"
         aria-keyshortcuts="Meta+H"
         data-testid="topbar-v3-activity"
         tabIndex={0}
