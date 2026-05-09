@@ -52,11 +52,18 @@ export function CommentsPanel({
       <div className="flex flex-col gap-2">
         <textarea
           data-testid="comment-input"
+          aria-label={t('workspace.addComment')}
           className="w-full rounded border border-border bg-surface p-2 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent"
           rows={3}
           placeholder={t('workspace.addComment')}
           value={text}
           onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+              e.preventDefault();
+              void handlePost();
+            }
+          }}
         />
         <button
           type="button"

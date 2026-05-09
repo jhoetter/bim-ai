@@ -81,7 +81,8 @@ export function ScheduleView({ modelId, scheduleId, onHighlightElement }: Schedu
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
       <div style={{ padding: 'var(--space-2)', borderBottom: '1px solid var(--color-border)' }}>
         <input
-          type="text"
+          type="search"
+          aria-label="Filter schedule rows"
           placeholder="Filter…"
           value={filterExpr}
           onChange={(e) => handleFilterChange(e.target.value)}
@@ -117,7 +118,16 @@ export function ScheduleView({ modelId, scheduleId, onHighlightElement }: Schedu
               {columns.map((col) => (
                 <th
                   key={col}
+                  scope="col"
+                  tabIndex={0}
+                  role="columnheader"
+                  aria-sort={
+                    sortKey === col ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'
+                  }
                   onClick={() => handleSort(col)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') handleSort(col);
+                  }}
                   style={{
                     padding: 'var(--space-1) var(--space-2)',
                     textAlign: 'left',
