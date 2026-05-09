@@ -249,13 +249,15 @@ export function ShareModal({ modelId, open, onClose }: Props) {
                   </span>
                   <button
                     type="button"
+                    disabled={loading}
                     onClick={() => handleRevokeRole(a.id)}
                     style={{
                       fontSize: 11,
                       color: 'var(--color-danger)',
                       border: 'none',
                       background: 'none',
-                      cursor: 'pointer',
+                      cursor: loading ? 'not-allowed' : 'pointer',
+                      opacity: loading ? 0.5 : 1,
                     }}
                   >
                     Remove

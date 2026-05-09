@@ -107,6 +107,7 @@ export function ProjectBrowser(props: {
   const [vtNameDraft, setVtNameDraft] = useState('');
   const [elevationInputOpen, setElevationInputOpen] = useState(false);
   const [elevationDraft, setElevationDraft] = useState('');
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const { planViewsSorted, planViewBuckets, bucketKeys } = useMemo(() => {
     const sorted = Object.values(props.elementsById)
@@ -476,23 +477,48 @@ export function ProjectBrowser(props: {
                                 Duplicate…
                               </button>
                             ) : null}
-                            <button
-                              type="button"
-                              data-testid={`plan-view-delete-${pv.id}`}
-                              title="Delete this plan view"
-                              className="pl-2 text-left text-[9px] text-muted underline hover:text-red-700"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (confirm(`Delete view "${pv.name}"?`)) {
-                                  void applyCommand(modelId!, {
-                                    type: 'deleteElement',
-                                    elementId: pv.id,
-                                  });
-                                }
-                              }}
-                            >
-                              Delete…
-                            </button>
+                            {deleteConfirmId === pv.id ? (
+                              <span className="flex items-center gap-1 pl-2">
+                                <button
+                                  type="button"
+                                  data-testid={`plan-view-delete-confirm-${pv.id}`}
+                                  className="text-[9px] text-red-700 underline"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setDeleteConfirmId(null);
+                                    void applyCommand(modelId!, {
+                                      type: 'deleteElement',
+                                      elementId: pv.id,
+                                    });
+                                  }}
+                                >
+                                  Delete
+                                </button>
+                                <button
+                                  type="button"
+                                  className="text-[9px] text-muted underline"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setDeleteConfirmId(null);
+                                  }}
+                                >
+                                  Cancel
+                                </button>
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                data-testid={`plan-view-delete-${pv.id}`}
+                                title="Delete this plan view"
+                                className="pl-2 text-left text-[9px] text-muted underline hover:text-red-700"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDeleteConfirmId(pv.id);
+                                }}
+                              >
+                                Delete…
+                              </button>
+                            )}
                           </li>
                         ))}
                       </ul>
@@ -584,23 +610,47 @@ export function ProjectBrowser(props: {
                               Duplicate…
                             </button>
                           ) : null}
-                          <button
-                            type="button"
-                            data-testid={`plan-view-delete-${pv.id}`}
-                            title="Delete this plan view"
-                            className="pl-2 text-left text-[9px] text-muted underline hover:text-red-700"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (confirm(`Delete view "${pv.name}"?`)) {
-                                void applyCommand(modelId!, {
-                                  type: 'deleteElement',
-                                  elementId: pv.id,
-                                });
-                              }
-                            }}
-                          >
-                            Delete…
-                          </button>
+                          {deleteConfirmId === pv.id ? (
+                            <span className="flex items-center gap-1 pl-2">
+                              <button
+                                type="button"
+                                className="text-[9px] text-red-700 underline"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDeleteConfirmId(null);
+                                  void applyCommand(modelId!, {
+                                    type: 'deleteElement',
+                                    elementId: pv.id,
+                                  });
+                                }}
+                              >
+                                Delete
+                              </button>
+                              <button
+                                type="button"
+                                className="text-[9px] text-muted underline"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDeleteConfirmId(null);
+                                }}
+                              >
+                                Cancel
+                              </button>
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              data-testid={`plan-view-delete-${pv.id}`}
+                              title="Delete this plan view"
+                              className="pl-2 text-left text-[9px] text-muted underline hover:text-red-700"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteConfirmId(pv.id);
+                              }}
+                            >
+                              Delete…
+                            </button>
+                          )}
                         </li>
                       ))}
                     </ul>
@@ -728,23 +778,47 @@ export function ProjectBrowser(props: {
                     Duplicate…
                   </button>
                 ) : null}
-                <button
-                  type="button"
-                  data-testid={`plan-view-delete-${pv.id}`}
-                  title="Delete this area plan view"
-                  className="pl-2 text-left text-[9px] text-muted underline hover:text-red-700"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (confirm(`Delete area plan "${pv.name}"?`)) {
-                      void applyCommand(modelId!, {
-                        type: 'deleteElement',
-                        elementId: pv.id,
-                      });
-                    }
-                  }}
-                >
-                  Delete…
-                </button>
+                {deleteConfirmId === pv.id ? (
+                  <span className="flex items-center gap-1 pl-2">
+                    <button
+                      type="button"
+                      className="text-[9px] text-red-700 underline"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteConfirmId(null);
+                        void applyCommand(modelId!, {
+                          type: 'deleteElement',
+                          elementId: pv.id,
+                        });
+                      }}
+                    >
+                      Delete
+                    </button>
+                    <button
+                      type="button"
+                      className="text-[9px] text-muted underline"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteConfirmId(null);
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    data-testid={`plan-view-delete-${pv.id}`}
+                    title="Delete this area plan view"
+                    className="pl-2 text-left text-[9px] text-muted underline hover:text-red-700"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDeleteConfirmId(pv.id);
+                    }}
+                  >
+                    Delete…
+                  </button>
+                )}
               </li>
             ))}
           </ul>
@@ -980,20 +1054,47 @@ export function ProjectBrowser(props: {
                     >
                       <span className="text-muted">section_cut ·</span> {sc.name}
                     </button>
-                    <button
-                      type="button"
-                      data-testid={`section-cut-delete-${sc.id}`}
-                      title="Delete this section cut"
-                      className="pl-2 text-left text-[9px] text-muted underline hover:text-red-700"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (confirm(`Delete section "${sc.name}"?`)) {
-                          void applyCommand(modelId!, { type: 'deleteElement', elementId: sc.id });
-                        }
-                      }}
-                    >
-                      Delete…
-                    </button>
+                    {deleteConfirmId === sc.id ? (
+                      <span className="flex items-center gap-1 pl-2">
+                        <button
+                          type="button"
+                          className="text-[9px] text-red-700 underline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteConfirmId(null);
+                            void applyCommand(modelId!, {
+                              type: 'deleteElement',
+                              elementId: sc.id,
+                            });
+                          }}
+                        >
+                          Delete
+                        </button>
+                        <button
+                          type="button"
+                          className="text-[9px] text-muted underline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteConfirmId(null);
+                          }}
+                        >
+                          Cancel
+                        </button>
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        data-testid={`section-cut-delete-${sc.id}`}
+                        title="Delete this section cut"
+                        className="pl-2 text-left text-[9px] text-muted underline hover:text-red-700"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeleteConfirmId(sc.id);
+                        }}
+                      >
+                        Delete…
+                      </button>
+                    )}
                   </>
                 )}
                 <div
@@ -1126,20 +1227,47 @@ export function ProjectBrowser(props: {
                     >
                       <span className="text-muted">elevation_view ·</span> {ev.name}
                     </button>
-                    <button
-                      type="button"
-                      data-testid={`elevation-view-delete-${ev.id}`}
-                      title="Delete this elevation view"
-                      className="pl-2 text-left text-[9px] text-muted underline hover:text-red-700"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (confirm(`Delete elevation "${ev.name}"?`)) {
-                          void applyCommand(modelId!, { type: 'deleteElement', elementId: ev.id });
-                        }
-                      }}
-                    >
-                      Delete…
-                    </button>
+                    {deleteConfirmId === ev.id ? (
+                      <span className="flex items-center gap-1 pl-2">
+                        <button
+                          type="button"
+                          className="text-[9px] text-red-700 underline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteConfirmId(null);
+                            void applyCommand(modelId!, {
+                              type: 'deleteElement',
+                              elementId: ev.id,
+                            });
+                          }}
+                        >
+                          Delete
+                        </button>
+                        <button
+                          type="button"
+                          className="text-[9px] text-muted underline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteConfirmId(null);
+                          }}
+                        >
+                          Cancel
+                        </button>
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        data-testid={`elevation-view-delete-${ev.id}`}
+                        title="Delete this elevation view"
+                        className="pl-2 text-left text-[9px] text-muted underline hover:text-red-700"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeleteConfirmId(ev.id);
+                        }}
+                      >
+                        Delete…
+                      </button>
+                    )}
                   </>
                 )}
                 <div className="pl-2 font-mono text-[9px] leading-tight text-muted">
