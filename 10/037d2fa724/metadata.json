@@ -3,21 +3,29 @@
   "checkpoint_id": "10037d2fa724",
   "strategy": "manual-commit",
   "branch": "feat/parity-readme-sync",
-  "checkpoints_count": 1,
-  "files_touched": null,
+  "checkpoints_count": 2,
+  "files_touched": [
+    "packages/web/src/plan/PlanCanvas.tsx"
+  ],
   "sessions": [
     {
       "metadata": "/10/037d2fa724/0/metadata.json",
       "transcript": "/10/037d2fa724/0/full.jsonl",
       "content_hash": "/10/037d2fa724/0/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/10/037d2fa724/1/metadata.json",
+      "transcript": "/10/037d2fa724/1/full.jsonl",
+      "content_hash": "/10/037d2fa724/1/content_hash.txt",
+      "prompt": "/10/037d2fa724/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 219,
-    "cache_creation_tokens": 534206,
-    "cache_read_tokens": 18356676,
-    "output_tokens": 230862,
-    "api_call_count": 201
+    "input_tokens": 7264,
+    "cache_creation_tokens": 4485590,
+    "cache_read_tokens": 243821507,
+    "output_tokens": 1373764,
+    "api_call_count": 2506
   }
 }
