@@ -13,7 +13,7 @@
  * existing Viewport overlay layer.
  */
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
 export type WallFaceRadialMenuOpen = {
   /** Wall the right-click hit. */
@@ -138,6 +138,18 @@ type Props = {
 };
 
 export function WallFaceRadialMenu({ open, onSelect, onDismiss }: Props) {
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onDismiss();
+    };
+    window.addEventListener('keydown', handler);
+    menuRef.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
+    return () => window.removeEventListener('keydown', handler);
+  }, [open, onDismiss]);
+
   const items: { choice: Choice; label: string }[] = useMemo(
     () => [
       { choice: 'door', label: 'Insert Door' },
@@ -151,6 +163,7 @@ export function WallFaceRadialMenu({ open, onSelect, onDismiss }: Props) {
 
   return (
     <div
+      ref={menuRef}
       data-testid="wall-face-radial-menu"
       role="menu"
       style={{
@@ -171,10 +184,24 @@ export function WallFaceRadialMenu({ open, onSelect, onDismiss }: Props) {
       onContextMenu={(e) => {
         e.preventDefault();
       }}
+      onKeyDown={(e) => {
+        const menuItems = Array.from(
+          menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [],
+        );
+        const idx = menuItems.indexOf(document.activeElement as HTMLElement);
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          menuItems[(idx + 1) % menuItems.length]?.focus();
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          menuItems[(idx - 1 + menuItems.length) % menuItems.length]?.focus();
+        }
+      }}
     >
       {items.map(({ choice, label }) => (
         <button
           key={choice}
+          role="menuitem"
           data-testid={`wall-face-radial-menu-${choice}`}
           type="button"
           onClick={() => {
