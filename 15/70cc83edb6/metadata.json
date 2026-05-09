@@ -2,8 +2,8 @@
   "cli_version": "0.6.0",
   "checkpoint_id": "1570cc83edb6",
   "strategy": "manual-commit",
-  "branch": "feat/parity-tracker-batch4",
-  "checkpoints_count": 0,
+  "branch": "main",
+  "checkpoints_count": 1,
   "files_touched": [
     "spec/revit-parity/ch04-walls.md"
   ],
@@ -19,13 +19,19 @@
       "transcript": "/15/70cc83edb6/1/full.jsonl",
       "content_hash": "/15/70cc83edb6/1/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/15/70cc83edb6/2/metadata.json",
+      "transcript": "/15/70cc83edb6/2/full.jsonl",
+      "content_hash": "/15/70cc83edb6/2/content_hash.txt",
+      "prompt": "/15/70cc83edb6/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 0,
-    "cache_creation_tokens": 0,
-    "cache_read_tokens": 0,
-    "output_tokens": 0,
-    "api_call_count": 0
+    "input_tokens": 6266,
+    "cache_creation_tokens": 3330378,
+    "cache_read_tokens": 146402808,
+    "output_tokens": 948628,
+    "api_call_count": 1564
   }
 }
