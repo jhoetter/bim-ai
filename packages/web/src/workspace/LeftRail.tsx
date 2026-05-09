@@ -343,7 +343,10 @@ function Row({
   const ref = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
-    if (isFocused) ref.current?.focus({ preventScroll: true });
+    if (isFocused) {
+      ref.current?.focus({ preventScroll: true });
+      ref.current?.scrollIntoView({ block: 'nearest' });
+    }
   }, [isFocused]);
 
   const indentStyle: CSSProperties = {

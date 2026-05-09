@@ -1,5 +1,5 @@
 /* eslint-disable bim-ai/no-hex-in-chrome -- pre-v3 hex literals; remove when this file is migrated in B4 Phase 2 */
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import type { JSX } from 'react';
 import { Icons, ICON_SIZE } from '@bim-ai/ui';
 import type { Element } from '@bim-ai/core';
@@ -458,6 +458,7 @@ export function VVDialog({
 
   const [tab, setTab] = useState<Tab>('model');
   const [draft, setDraft] = useState<CategoryOverrides>({});
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -467,6 +468,10 @@ export function VVDialog({
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [open, onClose]);
+
+  useEffect(() => {
+    if (open) dialogRef.current?.focus();
+  }, [open]);
 
   // Sync draft from store when dialog opens or active view changes
   useEffect(() => {
@@ -527,6 +532,8 @@ export function VVDialog({
       }}
     >
       <div
+        ref={dialogRef}
+        tabIndex={-1}
         style={{
           background: 'var(--color-surface)',
           border: '1px solid var(--color-border)',
@@ -537,6 +544,7 @@ export function VVDialog({
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
+          outline: 'none',
         }}
         onMouseDown={(e) => e.stopPropagation()}
       >
