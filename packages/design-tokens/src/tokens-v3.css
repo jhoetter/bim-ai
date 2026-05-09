@@ -49,11 +49,29 @@
   /* Chrome accent — warm ochre dark variant */
   --color-accent: #d9924a;
   --color-accent-foreground: hsl(220 18% 10%);
-  --color-accent-soft: color-mix(in srgb, #d9924a 18%, hsl(220 14% 10%));
+  /* Fix accent-soft blend target to match warm background */
+  --color-accent-soft: color-mix(in srgb, #d9924a 18%, hsl(25 8% 9%));
   --color-ring: color-mix(in srgb, #d9924a 38%, transparent);
 
   /* Drift severity — dark variant */
   --color-drift: #d2a256;
+
+  /* VIS-V3-01 — warm dark chrome background + surfaces */
+  /* Replaces the cold blue-grey from tokens-dark.css */
+  --color-background: hsl(25 8% 9%);
+  --color-surface: hsl(25 6% 12%);
+  --color-surface-strong: hsl(25 5% 15%);
+  --color-surface-muted: hsl(25 6% 11%);
+  --color-surface-1: hsl(25 6% 12%);
+  --color-surface-2: hsl(25 5% 15%);
+  --color-surface-3: hsl(25 5% 18%);
+  --color-border: hsl(25 8% 22%);
+  --color-border-strong: hsl(25 8% 28%);
+
+  /* Backwards-compat aliases — warm equivalents */
+  --background: var(--color-background);
+  --surface: var(--color-surface);
+  --border: var(--color-border);
 
   /* Discipline tints are Layer A — same in light and dark.
    * The -soft variants use color-mix(transparent) so they adapt to surface

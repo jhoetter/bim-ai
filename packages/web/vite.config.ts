@@ -14,15 +14,15 @@ function resolveDesignSystemId(env: Record<string, string>): DesignSystemId {
     env.DESIGN_SYSTEM ??
     process.env.VITE_DESIGN_SYSTEM ??
     process.env.DESIGN_SYSTEM ??
-    'default'
+    'v3'
   )
     .trim()
     .toLowerCase();
   if ((DESIGN_SYSTEM_IDS as readonly string[]).includes(raw)) {
     return raw as DesignSystemId;
   }
-  console.warn(`[bim-ai] Unknown VITE_DESIGN_SYSTEM="${raw}". Falling back to default.`);
-  return 'default';
+  console.warn(`[bim-ai] Unknown VITE_DESIGN_SYSTEM="${raw}". Falling back to v3.`);
+  return 'v3';
 }
 
 export default defineConfig(({ mode }) => {
