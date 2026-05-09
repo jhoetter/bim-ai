@@ -45,8 +45,8 @@
    * `hsl(h s% l%)` syntax) so Three.js's Color.set() parses every value
    * correctly across browsers. */
   --draft-paper: #fdfcf9;
-  --draft-grid-major: #d8dcde;
-  --draft-grid-minor: #ecedef;
+  --draft-grid-major: #e4e6e8;
+  --draft-grid-minor: #f0f1f2;
   --draft-construction-blue: #2f7fd1;
   --draft-witness: #5a7da3;
   --draft-cut: #1d2330;

@@ -22,9 +22,9 @@ const BUILT_IN_HATCH_DEFS: Record<string, HatchPatternDef> = {
     id: 'herringbone',
     name: 'Herringbone',
     patternKind: 'crosshatch',
-    paperMmRepeat: 8,
+    paperMmRepeat: 5,
     rotationDeg: 45,
-    strokeWidthMm: 0.12,
+    strokeWidthMm: 0.18,
   },
 };
 
@@ -42,7 +42,7 @@ const BASE_PIXELS_PER_MM = SCREEN_DPI / MM_PER_INCH;
  */
 const CATEGORY_DEFAULT_HATCH: Partial<Record<string, string>> = {
   wall: 'brick',
-  floor: 'herringbone',   // was: 'concrete'
+  floor: 'herringbone', // was: 'concrete'
   roof: 'tile',
   stair: 'concrete',
   slab_edge: 'concrete',

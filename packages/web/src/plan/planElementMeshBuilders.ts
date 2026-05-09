@@ -977,7 +977,7 @@ export function roomMesh(
       : scheme === 'opening_focus'
         ? { opacity: 0.045, color: getPlanPalette().regionFillStrong }
         : {
-            opacity: 0.14,
+            opacity: 0.26,
 
             color: getPlanPalette().regionFill,
           };

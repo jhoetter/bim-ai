@@ -95,8 +95,8 @@ export function getPlanPalette(): PlanPalette {
     dimAlt: readToken('--color-warning', '#facc15'),
     tagBg: readToken('--draft-anno', '#b5451b'),
     tagText: readToken('--draft-paper', '#fdfcf9'),
-    regionFill: readToken('--draft-construction-blue', '#3b82f6'),
-    regionFillStrong: readToken('--draft-construction-blue', '#1d4ed8'),
+    regionFill: readToken('--cat-room', '#c9dfd2'),
+    regionFillStrong: readToken('--cat-room', '#b2d4c4'),
     hairline: readToken('--color-border', '#e2e8f0'),
     hairlineStrong: readToken('--color-border-strong', '#94a3b8'),
   };
@@ -293,9 +293,9 @@ function horizontalOutlineMesh(
   return mesh;
 }
 
-const PLAN_FLOOR_FILL_OPACITY_BASE = 0.16;
+const PLAN_FLOOR_FILL_OPACITY_BASE = 0.42;
 
-const PLAN_ROOF_FILL_OPACITY_BASE = 0.2;
+const PLAN_ROOF_FILL_OPACITY_BASE = 0.32;
 
 /** Wire-path floor/roof: category-weighted fill + closed outline stroke (pattern from server). */
 function planFloorRoofOutlineWireGroup(
@@ -316,7 +316,7 @@ function planFloorRoofOutlineWireGroup(
   const baseOp = opts.kind === 'floor' ? PLAN_FLOOR_FILL_OPACITY_BASE : PLAN_ROOF_FILL_OPACITY_BASE;
   const lwh =
     Number.isFinite(opts.lineWeightHint) && opts.lineWeightHint > 0 ? opts.lineWeightHint : 1;
-  const fillOpacity = Math.min(0.34, Math.max(0.06, baseOp * Math.min(1.35, lwh / 1.12)));
+  const fillOpacity = Math.min(0.65, Math.max(0.12, baseOp * Math.min(1.35, lwh / 1.12)));
   grp.add(horizontalOutlineMesh(outlineMm, fillY, color, fillOpacity, opts.pickId));
 
   if (outlineMm.length < 2) {
@@ -1105,7 +1105,7 @@ export function rebuildPlanMeshes(
           f.boundaryMm,
           PLAN_Y + 0.001,
           getPlanPalette().floorOutline,
-          0.16,
+          PLAN_FLOOR_FILL_OPACITY_BASE,
           f.id,
         ),
       );
@@ -1122,7 +1122,7 @@ export function rebuildPlanMeshes(
           rf.footprintMm,
           PLAN_Y + 0.004,
           getPlanPalette().roofOutline,
-          0.2,
+          PLAN_ROOF_FILL_OPACITY_BASE,
           rf.id,
         ),
       );
