@@ -85,6 +85,7 @@ export function DesignOptionChip({
             </p>
             <div className="design-option-chip__dialog-actions">
               <button
+                type="button"
                 className="design-option-chip__confirm-btn"
                 disabled={promoting}
                 onClick={handlePromote}
@@ -92,6 +93,7 @@ export function DesignOptionChip({
                 {promoting ? 'Promoting…' : 'Promote to main'}
               </button>
               <button
+                type="button"
                 className="design-option-chip__cancel-btn"
                 disabled={promoting}
                 onClick={() => setConfirmOpen(false)}
