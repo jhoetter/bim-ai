@@ -1,0 +1,22 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "878b8690c385",
+  "session_id": "d8d27cb4-8570-41f6-bcc1-378ce30691bd",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-09T13:16:47.240257Z",
+  "branch": "fix/perspective-palette-filtering",
+  "checkpoints_count": 0,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "efdab2bfa5a3",
+  "checkpoint_transcript_start": 731,
+  "transcript_lines_at_start": 731,
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 0
+  }
+}
