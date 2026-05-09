@@ -123,7 +123,7 @@ jobs:
 
       - run: uv run ruff check bim_ai tests
 
-      - run: pytest
+      - run: uv run pytest
 
       - name: Optional evidence-package staging probe
         env:
