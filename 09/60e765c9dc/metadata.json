@@ -8,6 +8,9 @@
     "packages/design-tokens/src/tailwind-preset.ts",
     "packages/design-tokens/src/tokens-dark.css",
     "packages/design-tokens/src/tokens-default.css",
+    "packages/web/src/collab/ActivityPanel.tsx",
+    "packages/web/src/collab/SharePresentationModal.tsx",
+    "packages/web/src/workspace/ManageLinksDialog.tsx",
     "packages/web/src/workspace/MaterialLayerStackWorkbench.tsx",
     "packages/web/src/workspace/SheetDocumentationManifest.tsx",
     "packages/web/src/workspace/VVDialog.tsx"
@@ -24,13 +27,19 @@
       "transcript": "/09/60e765c9dc/1/full.jsonl",
       "content_hash": "/09/60e765c9dc/1/content_hash.txt",
       "prompt": "/09/60e765c9dc/1/prompt.txt"
+    },
+    {
+      "metadata": "/09/60e765c9dc/2/metadata.json",
+      "transcript": "/09/60e765c9dc/2/full.jsonl",
+      "content_hash": "/09/60e765c9dc/2/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
-    "input_tokens": 5879,
-    "cache_creation_tokens": 1517337,
-    "cache_read_tokens": 101759891,
-    "output_tokens": 573998,
-    "api_call_count": 1073
+    "input_tokens": 6408,
+    "cache_creation_tokens": 1545569,
+    "cache_read_tokens": 102363975,
+    "output_tokens": 581039,
+    "api_call_count": 1080
   }
 }

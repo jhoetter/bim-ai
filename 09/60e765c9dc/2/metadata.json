@@ -1,0 +1,44 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "0960e765c9dc",
+  "session_id": "570fe6bc-c8f6-4837-bf17-66d08325a0f7",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-09T20:12:24.018499Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/design-tokens/src/tailwind-preset.ts",
+    "packages/design-tokens/src/tokens-dark.css",
+    "packages/design-tokens/src/tokens-default.css",
+    "packages/web/src/collab/ActivityPanel.tsx",
+    "packages/web/src/collab/SharePresentationModal.tsx",
+    "packages/web/src/workspace/ManageLinksDialog.tsx",
+    "packages/web/src/workspace/MaterialLayerStackWorkbench.tsx",
+    "packages/web/src/workspace/SheetDocumentationManifest.tsx",
+    "packages/web/src/workspace/VVDialog.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "9df54c4a116b",
+  "checkpoint_transcript_start": 88,
+  "transcript_lines_at_start": 88,
+  "token_usage": {
+    "input_tokens": 529,
+    "cache_creation_tokens": 28232,
+    "cache_read_tokens": 604084,
+    "output_tokens": 7041,
+    "api_call_count": 7
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-09T20:12:24.005207Z",
+    "agent_lines": 137,
+    "agent_removed": 52,
+    "human_added": 5,
+    "human_modified": 1,
+    "human_removed": 0,
+    "total_committed": 143,
+    "total_lines_changed": 196,
+    "agent_percentage": 96.42857142857143,
+    "metric_version": 2
+  }
+}
