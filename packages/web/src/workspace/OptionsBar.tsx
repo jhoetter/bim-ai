@@ -187,6 +187,8 @@ export function OptionsBar(): JSX.Element | null {
           <button
             type="button"
             data-testid="options-bar-area-computations"
+            aria-expanded={showComputations}
+            aria-haspopup="dialog"
             onClick={() => setShowComputations((v) => !v)}
             className="rounded border border-border bg-surface px-2 py-0.5 text-[11px] hover:bg-surface-strong"
           >
@@ -194,6 +196,8 @@ export function OptionsBar(): JSX.Element | null {
           </button>
           {showComputations && projectSettings && (
             <div
+              role="dialog"
+              aria-label="Area computation settings"
               className="absolute top-full left-0 z-50 mt-1 flex flex-col gap-2 rounded border border-border bg-surface p-2 shadow-md"
               data-testid="area-computations-dialog"
             >
