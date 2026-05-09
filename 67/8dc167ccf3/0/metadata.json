@@ -1,0 +1,40 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "678dc167ccf3",
+  "session_id": "1e07b668-5c09-4d39-a201-322aafeb3b95",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-09T18:26:37.774759Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "be43439f8207",
+  "token_usage": {
+    "input_tokens": 570,
+    "cache_creation_tokens": 586854,
+    "cache_read_tokens": 23484883,
+    "output_tokens": 259769,
+    "api_call_count": 237
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 76,
+      "user_lines_removed": 3,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/web/src/plan/MarkupToolbar.tsx": 1,
+        "packages/web/src/viewport/SunOverlay.tsx": 1,
+        "packages/web/src/workspace/OptionsBar.tsx": 73,
+        "spec/revit-parity/ch09-rooms-areas.md": 1
+      },
+      "user_removed_per_file": {
+        "packages/web/src/collaboration/PurgeUnusedPanel.tsx": 1,
+        "packages/web/src/workspace/OptionsBar.tsx": 1,
+        "spec/revit-parity/ch09-rooms-areas.md": 1
+      }
+    }
+  ]
+}

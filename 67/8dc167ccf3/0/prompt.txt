@@ -1,0 +1,13 @@
+[Image #4] looks like this...
+
+---
+
+commited and pushed to main?
+
+---
+
+make install
+make seed
+make dev
+
+[Image #5] looks like this; is this what you see in @spec/target-house-seed-vis.png ?
