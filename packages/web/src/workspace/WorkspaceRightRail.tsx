@@ -7,6 +7,7 @@ import type { Element } from '@bim-ai/core';
 import { AdvisorPanel } from '../advisor/AdvisorPanel';
 import { buildPlanGridDatumInspectorLine } from './planViewDatumGridReadout';
 import { useBimStore } from '../state/store';
+import { SunInspectorPanel } from './SunInspectorPanel';
 import { Inspector, type InspectorApplyScope, type InspectorSelection } from './Inspector';
 import {
   InspectorConstraintsFor,
@@ -131,6 +132,15 @@ export function WorkspaceRightRail({
           }}
         >
           {allScopeToast}
+        </div>
+      ) : null}
+      {/* VIS-V3-04: Scene section — visible when no element is selected */}
+      {!selectedId ? (
+        <div className="border-b border-border p-3">
+          <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted">
+            Scene
+          </div>
+          <SunInspectorPanel />
         </div>
       ) : null}
       {/* CHR-V3-06: key={selectedId} remounts (and re-animates) Inspector on each selection */}
