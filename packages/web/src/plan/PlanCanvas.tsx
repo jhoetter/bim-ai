@@ -176,7 +176,6 @@ function rayToPlanMm(
 
 type Draft =
   | { kind: 'wall'; sx: number; sy: number }
-  | { kind: 'room'; verts: Array<{ xMm: number; yMm: number }> }
   | { kind: 'grid'; sx: number; sy: number }
   | { kind: 'dim'; ax: number; ay: number }
   | { kind: 'measure'; ax: number; ay: number }
@@ -1576,9 +1575,7 @@ export function PlanCanvas({
               ? { xMm: draftRef.current.ax, yMm: draftRef.current.ay }
               : draftRef.current?.kind === 'room_rect'
                 ? { xMm: draftRef.current.sx, yMm: draftRef.current.sy }
-                : draftRef.current?.kind === 'room' && draftRef.current.verts.length
-                  ? draftRef.current.verts.at(-1)
-                  : undefined;
+                : undefined;
       const hs = orthoExtents(camRef.current.half);
       return snapPlanPoint({
         cursor: rw,
@@ -1904,21 +1901,18 @@ export function PlanCanvas({
         (planTool === 'wall' && d?.kind === 'wall') ||
         (planTool === 'grid' && d?.kind === 'grid') ||
         (planTool === 'dimension' && d?.kind === 'dim') ||
-        (planTool === 'measure' && d?.kind === 'measure') ||
-        (planTool === 'room' && d?.kind === 'room' && d.verts.length)
+        (planTool === 'measure' && d?.kind === 'measure')
       ) {
         const pv =
-          planTool === 'room' && d?.kind === 'room'
-            ? new THREE.Vector3(d.verts.at(-1)!.xMm / 1000, SLICE_Y, d.verts.at(-1)!.yMm / 1000)
-            : planTool === 'wall' && d?.kind === 'wall'
+          planTool === 'wall' && d?.kind === 'wall'
+            ? new THREE.Vector3(d.sx / 1000, SLICE_Y, d.sy / 1000)
+            : planTool === 'grid' && d?.kind === 'grid'
               ? new THREE.Vector3(d.sx / 1000, SLICE_Y, d.sy / 1000)
-              : planTool === 'grid' && d?.kind === 'grid'
-                ? new THREE.Vector3(d.sx / 1000, SLICE_Y, d.sy / 1000)
-                : planTool === 'dimension' && d?.kind === 'dim'
+              : planTool === 'dimension' && d?.kind === 'dim'
+                ? new THREE.Vector3(d.ax / 1000, SLICE_Y, d.ay / 1000)
+                : planTool === 'measure' && d?.kind === 'measure'
                   ? new THREE.Vector3(d.ax / 1000, SLICE_Y, d.ay / 1000)
-                  : planTool === 'measure' && d?.kind === 'measure'
-                    ? new THREE.Vector3(d.ax / 1000, SLICE_Y, d.ay / 1000)
-                    : p;
+                  : p;
         redrawSeg(pv, p);
       }
       // TOP-V3-03: dashed polygon preview while sketching a subdivision region.
@@ -3066,31 +3060,16 @@ export function PlanCanvas({
         return;
       }
       if (planTool === 'room') {
-        let rm = draftRef.current;
-        if (!rm || rm.kind !== 'room') {
-          rm = { kind: 'room', verts: [{ xMm: sp.xMm, yMm: sp.yMm }] };
-          draftRef.current = rm;
-          bumpGeom((x) => x + 1);
-          return;
-        }
-        const fst = rm.verts[0];
-        if (fst && rm.verts.length >= 3 && Math.hypot(sp.xMm - fst.xMm, sp.yMm - fst.yMm) < 520) {
-          onSemanticCommand({
-            type: 'createRoomOutline',
-            levelId: lvlId,
-            outlineMm: rm.verts.map((vv) => ({ xMm: vv.xMm, yMm: vv.yMm })),
-          });
-          draftRef.current = undefined;
-          bumpGeom((x) => x + 1);
-          if (previewRef.current) {
-            grp.remove(previewRef.current);
-            previewRef.current.geometry.dispose();
-            previewRef.current = null;
-          }
-          return;
-        }
-        rm.verts.push({ xMm: sp.xMm, yMm: sp.yMm });
-        bumpGeom((x) => x + 1);
+        if (!lvlId || !sp) return;
+        onSemanticCommand({
+          type: 'placeRoomAtPoint',
+          id: crypto.randomUUID(),
+          levelId: lvlId,
+          clickXMm: sp.xMm,
+          clickYMm: sp.yMm,
+          name: 'Room',
+        });
+        return;
       }
       if (planTool === 'detail-region') {
         let dr = draftRef.current;
@@ -4400,6 +4379,23 @@ export function PlanCanvas({
           data-testid="copy-tool-chip"
         >
           <span>Click destination point to complete copy</span>
+        </div>
+      ) : null}
+      {/* F-091 — Room tool status chip: single-click placement hint */}
+      {planTool === 'room' ? (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 48,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            pointerEvents: 'none',
+            zIndex: 20,
+          }}
+          className="flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-xs shadow"
+          data-testid="room-tool-chip"
+        >
+          <span>Click inside an enclosed area to place a room</span>
         </div>
       ) : null}
       {/* F-103 — Move tool overlay: dot at anchor + dashed line to cursor */}

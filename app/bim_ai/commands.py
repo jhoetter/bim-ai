@@ -387,6 +387,18 @@ class CreateRoomPolyCmd(BaseModel):
     target_area_m2: float | None = Field(default=None, alias="targetAreaM2")
 
 
+class PlaceRoomAtPointCmd(BaseModel):
+    """Derive and place a room by clicking inside a closed wall enclosure."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["placeRoomAtPoint"] = "placeRoomAtPoint"
+    id: str
+    level_id: str = Field(alias="levelId")
+    click_x_mm: float = Field(alias="clickXMm")
+    click_y_mm: float = Field(alias="clickYMm")
+    name: str = Field(default="Room")
+
+
 class DeleteElementsCmd(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     type: Literal["deleteElements"] = "deleteElements"
@@ -2819,6 +2831,7 @@ Command = Annotated[
     | CreateRoomOutlineCmd
     | CreateRoomRectangleCmd
     | CreateRoomPolyCmd
+    | PlaceRoomAtPointCmd
     | MoveLevelElevationCmd
     | CreateIssueFromViolationCmd
     | UpdateElementPropertyCmd
