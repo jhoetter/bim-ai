@@ -13,6 +13,8 @@ import {
 } from './planProjectionWire';
 import {
   planWallMesh,
+  planWallSectionMesh,
+  computeWallSectionPolygon,
   doorGroupThree,
   planWindowMesh,
   planWallOpeningMesh,
@@ -24,6 +26,7 @@ import {
   referencePlanePlanThree,
   propertyLinePlanThree,
 } from './planElementMeshBuilders';
+import type { WallJoinRecord } from './planElementMeshBuilders';
 import { dormerPlanGroup } from './dormerPlanSymbol';
 
 /** Plan slice elevation in world units (walls still render with real height elsewhere). */
@@ -509,6 +512,13 @@ function rebuildPlanMeshesFromWire(
     wallsByWireId.set(id, wallElemFromWirePrimitive(row));
   }
 
+  const rawJoinSummary = (opts.wirePrimitives as Record<string, unknown>)?.wallCornerJoinSummary_v1;
+  const joinRecords: WallJoinRecord[] = Array.isArray(
+    (rawJoinSummary as Record<string, unknown>)?.joins,
+  )
+    ? ((rawJoinSummary as { joins: unknown[] }).joins as WallJoinRecord[])
+    : [];
+
   const grids = Array.isArray(prim.gridLines) ? (prim.gridLines as Record<string, unknown>[]) : [];
   for (const g of grids) {
     const id = String(g.id ?? '');
@@ -622,8 +632,22 @@ function rebuildPlanMeshesFromWire(
   }
 
   const wireDetail = opts.detailLevel ?? 'medium';
-  for (const w of wallsByWireId.values())
-    holder.add(planWallMesh(w, selectedId, 1, elementsById, wireDetail));
+
+  // Build a merged elementsById that includes wire-sourced walls for join lookups
+  const elementsWithWireWalls: Record<string, Element> = { ...elementsById };
+  for (const [id, w] of wallsByWireId.entries()) {
+    if (!elementsWithWireWalls[id]) elementsWithWireWalls[id] = w;
+  }
+
+  for (const w of wallsByWireId.values()) {
+    const joinsForWall = joinRecords.filter((j) => j.wallIds.includes(w.id));
+    const outlineMm = computeWallSectionPolygon(w, joinsForWall, elementsWithWireWalls);
+    if (outlineMm.length >= 3) {
+      holder.add(planWallSectionMesh(w, outlineMm, selectedId));
+    } else {
+      holder.add(planWallMesh(w, selectedId, 1, elementsById, wireDetail));
+    }
+  }
 
   const sepsRaw = Array.isArray(prim.roomSeparations)
     ? (prim.roomSeparations as Record<string, unknown>[])

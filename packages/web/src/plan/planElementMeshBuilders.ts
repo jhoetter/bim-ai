@@ -24,6 +24,17 @@ import { getBuiltInWallType, materialHexFor } from '../families/wallTypeCatalog'
 import { darkenHex } from '../viewport/meshBuilders.layeredWall';
 import { spiralStairPlanGroup, sketchStairPlanGroup } from './stairPlanSymbol';
 
+export type WallJoinRecord = {
+  joinId: string;
+  wallIds: [string, string];
+  vertexMm: { xMm: number; yMm: number };
+  levelId: string;
+  joinKind: 'butt' | 'miter_candidate' | 'unsupported_skew' | 'proxy_overlap';
+  planDisplayToken: string;
+  affectedOpeningIds: string[];
+  skipReason: string | null;
+};
+
 function planLocationLineOffsetFrac(loc: WallLocationLine): number {
   switch (loc) {
     case 'finish-face-exterior':
@@ -1457,4 +1468,236 @@ export function propertyLinePlanThree(
   grp.userData.bimPickId = pl.id;
   if (pl.classification) grp.userData.propertyLineClassification = pl.classification;
   return grp;
+}
+
+// ---------------------------------------------------------------------------
+// Wall section-cut polygon helpers (MRK-V3-03)
+// ---------------------------------------------------------------------------
+
+function nearEq(a: number, b: number, eps = 1.5): boolean {
+  return Math.abs(a - b) <= eps;
+}
+
+function lineIntersect2D(
+  p1: { x: number; y: number },
+  d1: { x: number; y: number },
+  p2: { x: number; y: number },
+  d2: { x: number; y: number },
+): { x: number; y: number } | null {
+  const cross = d1.x * d2.y - d1.y * d2.x;
+  if (Math.abs(cross) < 1e-6) return null; // parallel
+  const dx = p2.x - p1.x,
+    dy = p2.y - p1.y;
+  const t = (dx * d2.y - dy * d2.x) / cross;
+  return { x: p1.x + t * d1.x, y: p1.y + t * d1.y };
+}
+
+export function computeWallSectionPolygon(
+  wall: Extract<Element, { kind: 'wall' }>,
+  joinsForWall: WallJoinRecord[],
+  wallsById: Record<string, Element>,
+): Array<{ xMm: number; yMm: number }> {
+  const sx = wall.start.xMm,
+    sy = wall.start.yMm;
+  const ex = wall.end.xMm,
+    ey = wall.end.yMm;
+  const dx = ex - sx,
+    dy = ey - sy;
+  const len = Math.sqrt(dx * dx + dy * dy);
+  if (len < 1) return [];
+  const ux = dx / len,
+    uy = dy / len; // unit along wall
+  const px = -uy,
+    py = ux; // left perpendicular
+  const half = wall.thicknessMm / 2;
+
+  let startOffset = 0;
+  let endOffset = len;
+  let startLeftPerp = 0,
+    startRightPerp = 0;
+  let endLeftPerp = 0,
+    endRightPerp = 0;
+
+  for (const join of joinsForWall) {
+    if (join.joinKind !== 'butt' && join.joinKind !== 'miter_candidate') continue;
+    if (join.skipReason) continue;
+
+    const vx = join.vertexMm.xMm,
+      vy = join.vertexMm.yMm;
+    const atStart = nearEq(sx, vx) && nearEq(sy, vy);
+    const atEnd = nearEq(ex, vx) && nearEq(ey, vy);
+    if (!atStart && !atEnd) continue;
+
+    const otherId = join.wallIds.find((id) => id !== wall.id);
+    if (!otherId) continue;
+    const other = wallsById[otherId];
+    if (!other || other.kind !== 'wall') continue;
+
+    if (join.joinKind === 'butt') {
+      const otherAtStart = nearEq(other.start.xMm, vx) && nearEq(other.start.yMm, vy);
+      const otherAtEnd = nearEq(other.end.xMm, vx) && nearEq(other.end.yMm, vy);
+      const otherHasEndpoint = otherAtStart || otherAtEnd;
+
+      if (!otherHasEndpoint) {
+        // This wall is the BUTT wall; clip by half of other's thickness.
+        const clip = other.thicknessMm / 2;
+        if (atEnd) {
+          endOffset = len - clip;
+        } else {
+          startOffset = clip;
+        }
+      }
+    }
+
+    if (join.joinKind === 'miter_candidate') {
+      const odx = other.end.xMm - other.start.xMm;
+      const ody = other.end.yMm - other.start.yMm;
+      const olen = Math.sqrt(odx * odx + ody * ody);
+      if (olen < 1) continue;
+      const oUx = odx / olen,
+        oUy = ody / olen;
+      const oPx = -oUy,
+        oPy = oUx;
+      const oHalf = other.thicknessMm / 2;
+
+      const sign = atEnd ? -1 : 1;
+      const oSign = nearEq(other.end.xMm, vx) && nearEq(other.end.yMm, vy) ? -1 : 1;
+
+      const miterLeft = lineIntersect2D(
+        { x: vx + px * half, y: vy + py * half },
+        { x: sign * ux, y: sign * uy },
+        { x: vx - oPx * oHalf, y: vy - oPy * oHalf },
+        { x: oSign * oUx, y: oSign * oUy },
+      );
+      const miterRight = lineIntersect2D(
+        { x: vx - px * half, y: vy - py * half },
+        { x: sign * ux, y: sign * uy },
+        { x: vx + oPx * oHalf, y: vy + oPy * oHalf },
+        { x: oSign * oUx, y: oSign * oUy },
+      );
+
+      if (!miterLeft || !miterRight) continue;
+
+      const axEndX = atEnd ? ex : sx;
+      const axEndY = atEnd ? ey : sy;
+
+      const leftAxisOffset = (miterLeft.x - axEndX) * ux + (miterLeft.y - axEndY) * uy;
+      const rightAxisOffset = (miterRight.x - axEndX) * ux + (miterRight.y - axEndY) * uy;
+
+      if (atEnd) {
+        endLeftPerp = (miterLeft.x - ex) * px + (miterLeft.y - ey) * py;
+        endRightPerp = -(((miterRight.x - ex) * px + (miterRight.y - ey) * py));
+        endOffset = len + (leftAxisOffset + rightAxisOffset) / 2;
+      } else {
+        startLeftPerp = (miterLeft.x - sx) * px + (miterLeft.y - sy) * py;
+        startRightPerp = -(((miterRight.x - sx) * px + (miterRight.y - sy) * py));
+        startOffset = (leftAxisOffset + rightAxisOffset) / 2;
+      }
+    }
+  }
+
+  const startPtX = sx + ux * startOffset;
+  const startPtY = sy + uy * startOffset;
+  const endPtX = sx + ux * endOffset;
+  const endPtY = sy + uy * endOffset;
+
+  return [
+    { xMm: startPtX + px * (half + startLeftPerp), yMm: startPtY + py * (half + startLeftPerp) },
+    { xMm: endPtX + px * (half + endLeftPerp), yMm: endPtY + py * (half + endLeftPerp) },
+    { xMm: endPtX - px * (half + endRightPerp), yMm: endPtY - py * (half + endRightPerp) },
+    {
+      xMm: startPtX - px * (half + startRightPerp),
+      yMm: startPtY - py * (half + startRightPerp),
+    },
+  ];
+}
+
+export function planWallSectionMesh(
+  wall: Extract<Element, { kind: 'wall' }>,
+  outlineMm: Array<{ xMm: number; yMm: number }>,
+  selectedId?: string,
+): THREE.Group {
+  const p = getPlanPalette();
+  const fillColor = wall.id === selectedId ? p.wallSelected : p.wallFill;
+  const group = new THREE.Group();
+  group.userData.bimPickId = wall.id;
+
+  if (outlineMm.length < 3) return group;
+
+  // --- Fill polygon ---
+  const shape = new THREE.Shape();
+  shape.moveTo(ux(outlineMm[0]!.xMm), -uz(outlineMm[0]!.yMm));
+  for (let i = 1; i < outlineMm.length; i++) {
+    shape.lineTo(ux(outlineMm[i]!.xMm), -uz(outlineMm[i]!.yMm));
+  }
+  shape.closePath();
+  const fillGeo = new THREE.ShapeGeometry(shape);
+  const fillMesh = new THREE.Mesh(
+    fillGeo,
+    new THREE.MeshBasicMaterial({ color: fillColor, depthWrite: false }),
+  );
+  fillMesh.rotation.x = -Math.PI / 2;
+  fillMesh.position.y = PLAN_Y;
+  fillMesh.userData.bimPickId = wall.id;
+  group.add(fillMesh);
+
+  // --- Outline ---
+  const pts = outlineMm.map((pt) => new THREE.Vector3(ux(pt.xMm), PLAN_Y + 0.001, -uz(pt.yMm)));
+  pts.push(pts[0]!.clone());
+  const outlineGeo = new THREE.BufferGeometry().setFromPoints(pts);
+  const outlineMat = new THREE.LineBasicMaterial({
+    color: readToken('--draft-cut', '#1d2330'),
+    linewidth: 1,
+    depthTest: false,
+  });
+  const outlineLine = new THREE.Line(outlineGeo, outlineMat);
+  outlineLine.renderOrder = 3;
+  group.add(outlineLine);
+
+  // --- Hatch (diagonal lines clipped to AABB) ---
+  const xs = outlineMm.map((pt) => pt.xMm);
+  const ys = outlineMm.map((pt) => pt.yMm);
+  const minX = Math.min(...xs),
+    maxX = Math.max(...xs);
+  const minY = Math.min(...ys),
+    maxY = Math.max(...ys);
+  const hatchPositions: number[] = [];
+  const hatchColor = readToken('--draft-paper', '#fdfcf9');
+  const thick = wall.thicknessMm;
+  const spacing = Math.max(20, thick / 3); // mm
+  for (let c = minX - (maxY - minY); c <= maxX + (maxY - minY); c += spacing) {
+    const candidates: [number, number][] = [];
+    const yAtLeft = minX - c;
+    if (yAtLeft >= minY && yAtLeft <= maxY) candidates.push([minX, yAtLeft]);
+    const yAtRight = maxX - c;
+    if (yAtRight >= minY && yAtRight <= maxY) candidates.push([maxX, yAtRight]);
+    const xAtTop = maxY + c;
+    if (xAtTop > minX && xAtTop < maxX) candidates.push([xAtTop, maxY]);
+    const xAtBot = minY + c;
+    if (xAtBot > minX && xAtBot < maxX) candidates.push([xAtBot, minY]);
+    if (candidates.length >= 2) {
+      candidates.sort((a, b) => a[0] - b[0]);
+      const [x0, y0] = candidates[0]!;
+      const [x1, y1] = candidates[candidates.length - 1]!;
+      hatchPositions.push(ux(x0), PLAN_Y + 0.003, -uz(y0), ux(x1), PLAN_Y + 0.003, -uz(y1));
+    }
+  }
+  if (hatchPositions.length > 0) {
+    const hatchGeo = new THREE.BufferGeometry();
+    hatchGeo.setAttribute(
+      'position',
+      new THREE.BufferAttribute(new Float32Array(hatchPositions), 3),
+    );
+    const hatchMat = new THREE.LineBasicMaterial({
+      color: new THREE.Color(hatchColor),
+      transparent: true,
+      opacity: 0.35,
+      depthTest: false,
+    });
+    const hatchLines = new THREE.LineSegments(hatchGeo, hatchMat);
+    hatchLines.renderOrder = 5;
+    group.add(hatchLines);
+  }
+
+  return group;
 }
