@@ -97,6 +97,7 @@ export function DesignOptionChip({
                 type="button"
                 className="design-option-chip__confirm-btn"
                 disabled={promoting}
+                aria-busy={promoting}
                 onClick={handlePromote}
               >
                 {promoting ? 'Promoting…' : 'Promote to main'}
