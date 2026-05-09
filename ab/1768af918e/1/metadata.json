@@ -1,0 +1,63 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "ab1768af918e",
+  "session_id": "484b3fc4-cdb5-4d63-973e-ff931c99ea77",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-09T11:26:46.895211Z",
+  "branch": "feat/v3-vg-v3-01-render-compare",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "spec/v3-build-state.md"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "36b54152c2d2",
+  "checkpoint_transcript_start": 2748,
+  "transcript_lines_at_start": 2748,
+  "token_usage": {
+    "input_tokens": 357,
+    "cache_creation_tokens": 784177,
+    "cache_read_tokens": 27400705,
+    "output_tokens": 242179,
+    "api_call_count": 313
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-09T11:26:46.763728Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 28,
+    "human_modified": 12,
+    "human_removed": 0,
+    "total_committed": 28,
+    "total_lines_changed": 40,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 3113,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "app/bim_ai/kits/kitchen.py": 83,
+        "app/tests/api/test_ast_v3_04.py": 422,
+        "spec/v3-prompts/wp-064.md": 156,
+        "spec/v3-prompts/wp-065.md": 114,
+        "spec/v3-prompts/wp-066.md": 137,
+        "spec/v3-prompts/wp-067.md": 250,
+        "spec/v3-prompts/wp-068.md": 87,
+        "spec/v3-prompts/wp-069.md": 172,
+        "spec/v3-prompts/wp-070.md": 173,
+        "spec/v3-prompts/wp-071.md": 241,
+        "spec/v3-prompts/wp-072.md": 204,
+        "spec/v3-prompts/wp-073.md": 338,
+        "spec/v3-prompts/wp-074.md": 242,
+        "spec/v3-prompts/wp-075.md": 138,
+        "spec/v3-prompts/wp-076.md": 165,
+        "spec/v3-prompts/wp-077.md": 191
+      }
+    }
+  ]
+}
