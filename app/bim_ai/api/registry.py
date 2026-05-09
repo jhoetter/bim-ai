@@ -1857,3 +1857,78 @@ register(
         agentSafetyNotes="Read-only; safe to call freely.",
     )
 )
+
+# ---------------------------------------------------------------------------
+# EXP-V3-01 — Render-pipeline export
+# ---------------------------------------------------------------------------
+
+register(
+    ToolDescriptor(
+        name="export-render-bundle",
+        category="transform",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ExportRenderBundleInput",
+            "type": "object",
+            "required": ["modelId"],
+            "properties": {
+                "modelId": {"type": "string", "description": "UUID of the model"},
+                "format": {
+                    "type": "string",
+                    "enum": ["gltf", "gltf-pbr", "ifc-bundle", "metadata-only"],
+                    "default": "metadata-only",
+                    "description": "Export format. metadata-only returns JSON without a binary asset.",
+                },
+                "viewId": {
+                    "type": "string",
+                    "description": "Optional viewpoint/saved_view id to filter cameras to a single view.",
+                },
+            },
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "RenderExportBundle",
+            "type": "object",
+            "required": ["schemaVersion", "format", "metadata", "exportTimestamp"],
+            "properties": {
+                "schemaVersion": {"type": "string", "enum": ["exp-v3.0"]},
+                "format": {
+                    "type": "string",
+                    "enum": ["gltf", "gltf-pbr", "ifc-bundle", "metadata-only"],
+                },
+                "primaryAsset": {
+                    "type": ["object", "null"],
+                    "properties": {
+                        "kind": {"type": "string"},
+                        "pathInArchive": {"type": "string"},
+                    },
+                },
+                "metadata": {
+                    "type": "object",
+                    "properties": {
+                        "cameras": {"type": "array", "items": {"type": "object"}},
+                        "sunSettings": {"type": "object"},
+                        "materials": {"type": "array", "items": {"type": "object"}},
+                        "annotations": {"type": "array", "items": {"type": "object"}},
+                    },
+                },
+                "exportTimestamp": {"type": "string", "format": "date-time"},
+            },
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Export bundle returned"),
+            "not_found": ExitCode(code=1, meaning="Model not found"),
+            "invalid_format": ExitCode(code=2, meaning="Unsupported export format"),
+        },
+        cliExample="bim-ai export gltf-pbr my-model --view front-elev -o front.glb",
+        restEndpoint=RestEndpoint(method="GET", path="/api/v3/models/{modelId}/export"),
+        sideEffects="none",
+        agentSafetyNotes=(
+            "EXP-V3-01: deterministic — same model state + same parameters → byte-identical bundle. "
+            "Use format=metadata-only to inspect cameras, sun settings, and materials without "
+            "triggering a binary asset pipeline. "
+            "viewId filters cameras to a single viewpoint or saved_view element."
+        ),
+    )
+)
