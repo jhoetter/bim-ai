@@ -1,0 +1,34 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "9a6e85d7ccf8",
+  "session_id": "7c713c20-7186-4aac-a77d-6663b8157a33",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-09T13:19:59.587982Z",
+  "branch": "fix/perspective-palette-filtering",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/web/src/workspace/Workspace.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "c14af2876460",
+  "token_usage": {
+    "input_tokens": 233,
+    "cache_creation_tokens": 112538,
+    "cache_read_tokens": 7458096,
+    "output_tokens": 40673,
+    "api_call_count": 106
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-09T13:19:59.576886Z",
+    "agent_lines": 6,
+    "agent_removed": 0,
+    "human_added": 31,
+    "human_modified": 3,
+    "human_removed": 0,
+    "total_committed": 40,
+    "total_lines_changed": 41,
+    "agent_percentage": 14.634146341463413,
+    "metric_version": 2
+  }
+}
