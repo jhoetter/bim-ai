@@ -350,6 +350,18 @@ export function buildOneFamilyHomeCommands() {
     { type: 'attachWallTopToRoof', wallId: 'hf-w-uf-n', roofId: 'hf-roof-main' },
     { type: 'attachWallTopToRoof', wallId: 'hf-w-uf-w', roofId: 'hf-roof-main' },
 
+    // North gable-end rendering fix: makeSlopedWallMesh samples only 2 wall
+    // endpoints, producing a flat diagonal top instead of the correct
+    // triangular crown. A minimal recessZone forces makeRecessedWallMesh
+    // which samples 25 points, correctly resolving the ridge peak.
+    {
+      type: 'setWallRecessZones',
+      wallId: 'hf-w-uf-n',
+      recessZones: [
+        { alongTStart: 0.0, alongTEnd: 1.0, setbackMm: 50, floorContinues: false },
+      ],
+    },
+
     // Apply primary materials. The UF south wall takes `cladding_warm_wood`
     // because Phase 4 adds a recess zone whose back wall renders with the
     // wall's primary materialKey; the surrounding non-recessed end caps
@@ -396,13 +408,13 @@ export function buildOneFamilyHomeCommands() {
       type: 'updateElementProperty',
       elementId: 'hf-w-uf-n',
       key: 'materialKey',
-      value: 'white_render',
+      value: 'cladding_warm_wood',
     },
     {
       type: 'updateElementProperty',
       elementId: 'hf-w-uf-w',
       key: 'materialKey',
-      value: 'white_render',
+      value: 'cladding_warm_wood',
     },
     {
       type: 'updateElementProperty',
@@ -791,11 +803,13 @@ export function buildOneFamilyHomeCommands() {
     {
       type: 'saveViewpoint',
       id: 'vp-side-elev-east',
-      name: 'Side elevation (east)',
+      name: 'Side elevation (WSW)',
       mode: 'orbit_3d',
       camera: {
-        position: { xMm: 18000, yMm: 4000, zMm: 4250 },
-        target: { xMm: 3500, yMm: 4000, zMm: 4250 },
+        // WSW oblique — shows west face (low eave z=4500), depth going north,
+        // and GF base extending east. Complements the SSW main iso.
+        position: { xMm: -14000, yMm: -1000, zMm: 5000 },
+        target: { xMm: 2500, yMm: 5000, zMm: 2500 },
         up: { xMm: 0, yMm: 0, zMm: 1 },
       },
     },
