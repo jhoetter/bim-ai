@@ -35,7 +35,7 @@ This chapter covers the practical workflow of furnishing a completed floor plan 
 **Screenshot:**
 ![Copy tool](file:///Users/jhoetter/Desktop/Revit%20Specs/0685_03-55-42.png)
 
-**bim-ai status:** 🟡 Partial — bim-ai supports duplication but not via an interactive two-point Copy command.
+**bim-ai status:** 🟡 Partial — Ctrl+C copies selected elements to an in-session clipboard (`copyPaste.ts` + `clipboardStore`); Ctrl+V pastes them with a small offset. This provides the core copy-to-clipboard workflow but without a two-point interactive Copy command (click source → click destination). Missing: multi-copy (Revit's "Multiple" option), two-point placement, persistence of clipboard across page reload, and copy to a different level.
 
 ---
 
