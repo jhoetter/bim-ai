@@ -1174,6 +1174,7 @@ export function PlanCanvas({
       const detailPrims = extractDetailComponentPrimitives(elementsById, activePlanViewId);
       for (const p of detailPrims) {
         if (p.kind === 'detail_line') {
+          if (display.hiddenSemanticKinds.has('detail_line')) continue;
           const pts = p.pointsMm.map(
             (pt) => new THREE.Vector3(pt.xMm / 1000, SLICE_Y + 0.004, pt.yMm / 1000),
           );
@@ -1233,6 +1234,7 @@ export function PlanCanvas({
             grp.add(sline);
           }
         } else if (p.kind === 'text_note') {
+          if (display.hiddenSemanticKinds.has('text_note')) continue;
           // Render the text via canvas-texture sprite. Using the existing
           // sprite pattern is heavier than necessary for a small note —
           // we draw a 1×1 m sprite scaled to the text size.

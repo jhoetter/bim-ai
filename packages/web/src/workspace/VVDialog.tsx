@@ -34,6 +34,10 @@ const ANNOTATION_CATEGORIES = [
   'section_mark',
   'room_separation',
   'area_boundary',
+  'reference_plane',
+  'masking_region',
+  'detail_line',
+  'text_note',
 ] as const;
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -59,6 +63,10 @@ const CATEGORY_LABELS: Record<string, string> = {
   section_mark: 'Section Marks',
   room_separation: 'Room Separation Lines',
   area_boundary: 'Area Boundary Lines',
+  reference_plane: 'Reference Planes',
+  masking_region: 'Masking Regions',
+  detail_line: 'Detail Lines',
+  text_note: 'Text Notes',
 };
 
 const PRESET_COLORS = ['#000000', '#808080', '#0000ff', '#ff0000', '#008000', 'custom'] as const;
