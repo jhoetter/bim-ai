@@ -184,6 +184,34 @@ export function InspectorPropertiesFor(
         <div className="flex flex-col gap-2">
           <FieldRow label={f('thickness')} value={fmtMm(el.thicknessMm)} />
           <FieldRow label={f('height')} value={fmtMm(el.heightMm)} />
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Base Offset (mm)</span>
+            <input
+              type="number"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.baseConstraintOffsetMm ?? 0}
+              key={`${el.id}-base`}
+              step={50}
+              onBlur={(e) =>
+                onPropertyChange?.('baseConstraintOffsetMm', Number(e.currentTarget.value))
+              }
+              data-testid="inspector-wall-base-offset"
+            />
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Top Offset (mm)</span>
+            <input
+              type="number"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.topConstraintOffsetMm ?? 0}
+              key={`${el.id}-top`}
+              step={50}
+              onBlur={(e) =>
+                onPropertyChange?.('topConstraintOffsetMm', Number(e.currentTarget.value))
+              }
+              data-testid="inspector-wall-top-offset"
+            />
+          </div>
           <FieldRow label={f('level')} value={el.levelId} mono />
 
           <div className="flex items-center gap-2 py-0.5">
@@ -1279,10 +1307,7 @@ export function InspectorViewTemplateEditor({
             const raw = e.target.value.trim();
             const n = raw === '' ? null : Number(raw);
             if (n !== null && !Number.isFinite(n)) return;
-            onPersistProperty(
-              '__updateViewTemplate__',
-              JSON.stringify({ scale: n }),
-            );
+            onPersistProperty('__updateViewTemplate__', JSON.stringify({ scale: n }));
           }}
         />
       </label>
@@ -1294,10 +1319,7 @@ export function InspectorViewTemplateEditor({
           value={el.detailLevel ?? ''}
           onChange={(e) => {
             const v = e.target.value;
-            onPersistProperty(
-              '__updateViewTemplate__',
-              JSON.stringify({ detailLevel: v || null }),
-            );
+            onPersistProperty('__updateViewTemplate__', JSON.stringify({ detailLevel: v || null }));
           }}
         >
           <option value="">— inherit —</option>
@@ -1315,10 +1337,7 @@ export function InspectorViewTemplateEditor({
             value={el.phase ?? ''}
             onChange={(e) => {
               const v = e.target.value;
-              onPersistProperty(
-                '__updateViewTemplate__',
-                JSON.stringify({ phase: v || null }),
-              );
+              onPersistProperty('__updateViewTemplate__', JSON.stringify({ phase: v || null }));
             }}
           >
             <option value="">— none —</option>
@@ -1338,10 +1357,7 @@ export function InspectorViewTemplateEditor({
           value={el.phaseFilter ?? ''}
           onChange={(e) => {
             const v = e.target.value;
-            onPersistProperty(
-              '__updateViewTemplate__',
-              JSON.stringify({ phaseFilter: v || null }),
-            );
+            onPersistProperty('__updateViewTemplate__', JSON.stringify({ phaseFilter: v || null }));
           }}
         >
           <option value="">— none —</option>
