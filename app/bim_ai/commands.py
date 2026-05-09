@@ -2527,6 +2527,43 @@ class DeleteImageUnderlayCmd(BaseModel):
     id: str
 
 
+# ---------------------------------------------------------------------------
+# CON-V3-02 — Concept seed handoff contract (T6 → T9)
+# ---------------------------------------------------------------------------
+
+
+class CreateConceptSeedCmd(BaseModel):
+    """CON-V3-02 — create a concept seed in draft state."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["create_concept_seed"] = "create_concept_seed"
+    id: str
+    model_id: str = Field(alias="modelId")
+    source_underlay_id: str | None = Field(default=None, alias="sourceUnderlayId")
+    envelope_tokens: list[dict] = Field(default_factory=list, alias="envelopeTokens")
+    kernel_element_drafts: list[dict] = Field(default_factory=list, alias="kernelElementDrafts")
+    assumptions_log: list[dict] = Field(default_factory=list, alias="assumptionsLog")
+
+
+class CommitConceptSeedCmd(BaseModel):
+    """CON-V3-02 — transitions a ConceptSeedElem from draft → committed."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["commit_concept_seed"] = "commit_concept_seed"
+    id: str
+    envelope_tokens: list[dict] | None = Field(default=None, alias="envelopeTokens")
+    kernel_element_drafts: list[dict] | None = Field(default=None, alias="kernelElementDrafts")
+    assumptions_log: list[dict] | None = Field(default=None, alias="assumptionsLog")
+
+
+class ConsumeConceptSeedCmd(BaseModel):
+    """CON-V3-02 — T9 marks a seed as consumed after ingesting it."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["consume_concept_seed"] = "consume_concept_seed"
+    id: str
+
+
 Command = Annotated[
     CreateLevelCmd
     | CreateWallCmd
@@ -2721,6 +2758,9 @@ Command = Annotated[
     | MoveImageUnderlayCmd
     | ScaleImageUnderlayCmd
     | RotateImageUnderlayCmd
-    | DeleteImageUnderlayCmd,
+    | DeleteImageUnderlayCmd
+    | CreateConceptSeedCmd
+    | CommitConceptSeedCmd
+    | ConsumeConceptSeedCmd,
     Field(discriminator="type"),
 ]

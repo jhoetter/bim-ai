@@ -2468,6 +2468,31 @@ class ImageUnderlayElem(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# CON-V3-02 — Concept seed handoff element
+# ---------------------------------------------------------------------------
+
+
+class ConceptSeedElem(BaseModel):
+    """CON-V3-02 — typed handoff contract between T6 (concept/tracing) and T9 (refinement agent).
+
+    A ConceptSeed carries structured layout JSON + envelope tokens + assumptions log.
+    Lifecycle: draft → committed (T9 can consume) → consumed.
+    """
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["concept_seed"] = "concept_seed"
+    id: str
+    model_id: str = Field(alias="modelId")
+    source_underlay_id: str | None = Field(default=None, alias="sourceUnderlayId")
+    envelope_tokens: list[dict] = Field(default_factory=list, alias="envelopeTokens")
+    kernel_element_drafts: list[dict] = Field(default_factory=list, alias="kernelElementDrafts")
+    assumptions_log: list[dict] = Field(default_factory=list, alias="assumptionsLog")
+    status: Literal["draft", "committed", "consumed"] = "draft"
+    committed_at: str | None = Field(default=None, alias="committedAt")
+    schema_version: str = Field(default="con-v3.0", alias="schemaVersion")
+
+
+# ---------------------------------------------------------------------------
 # OSM-V3-01 — Neighborhood massing import
 # ---------------------------------------------------------------------------
 
@@ -2587,6 +2612,7 @@ Element = Annotated[
     | DecalElem
     | PropertyDefinitionElem
     | ImageUnderlayElem
+    | ConceptSeedElem
     | NeighborhoodMassElem
     | NeighborhoodImportSessionElem,
     Field(discriminator="kind"),

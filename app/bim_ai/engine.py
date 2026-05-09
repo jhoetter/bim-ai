@@ -5,6 +5,7 @@ import json
 import math
 import uuid
 from collections import Counter
+from datetime import datetime, timezone
 from typing import Any, Literal, NamedTuple, cast
 
 from pydantic import TypeAdapter
@@ -216,6 +217,9 @@ from bim_ai.commands import (
     DeleteImageUnderlayCmd,
     _ALLOWED_IMAGE_PREFIXES,
     _MAX_SRC_BYTES,
+    CreateConceptSeedCmd,
+    CommitConceptSeedCmd,
+    ConsumeConceptSeedCmd,
 )
 from bim_ai.constraints import Violation, evaluate
 from bim_ai.datum_levels import (
@@ -345,6 +349,7 @@ from bim_ai.elements import (
     PropertyDefinitionElem,
     HatchPatternDefElem,
     ImageUnderlayElem,
+    ConceptSeedElem,
 )
 from bim_ai.export_ifc import (
     AUTHORITATIVE_REPLAY_KIND_V0,
@@ -5556,13 +5561,11 @@ def apply_inplace(
             eid = cmd.id or new_id()
             if eid in els:
                 raise ValueError(f"ImportImageUnderlay: duplicate element id '{eid}'")
-            # Validate format — src must be an allowed data URI prefix
             if not any(cmd.src.startswith(prefix) for prefix in _ALLOWED_IMAGE_PREFIXES):
                 raise ValueError(
                     "ImportImageUnderlay: src must be a data URI starting with "
                     "data:image/png, data:image/jpeg, or data:application/pdf"
                 )
-            # Validate size — data URI is base64; raw size ≈ len * 3/4
             if len(cmd.src.encode()) > _MAX_SRC_BYTES:
                 raise ValueError(
                     "ImportImageUnderlay: src exceeds maximum allowed size of 50 MB"
@@ -5583,7 +5586,6 @@ def apply_inplace(
                 raise ValueError(
                     f"MoveImageUnderlay: element '{cmd.id}' is not an image_underlay"
                 )
-            # Preserve width/height from existing rect, update position only
             existing_rect = underlay.rect_mm
             new_rect = {
                 "xMm": cmd.rect_mm.get("xMm", existing_rect.get("xMm", 0)),
@@ -5623,6 +5625,59 @@ def apply_inplace(
                     f"DeleteImageUnderlay: element '{cmd.id}' is not an image_underlay"
                 )
             del els[cmd.id]
+
+        # -----------------------------------------------------------------------
+        # CON-V3-02 — concept seed lifecycle
+        # -----------------------------------------------------------------------
+
+        case CreateConceptSeedCmd():
+            if cmd.id in els:
+                raise ValueError(f"duplicate element id '{cmd.id}'")
+            if not cmd.model_id:
+                raise ValueError("create_concept_seed.modelId must be a non-empty string")
+            els[cmd.id] = ConceptSeedElem(
+                id=cmd.id,
+                modelId=cmd.model_id,
+                sourceUnderlayId=cmd.source_underlay_id,
+                envelopeTokens=cmd.envelope_tokens,
+                kernelElementDrafts=cmd.kernel_element_drafts,
+                assumptionsLog=cmd.assumptions_log,
+                status="draft",
+            )
+
+        case CommitConceptSeedCmd():
+            existing = els.get(cmd.id)
+            if existing is None or existing.kind != "concept_seed":
+                raise ValueError(f"commit_concept_seed: no ConceptSeedElem with id '{cmd.id}'")
+            if existing.status != "draft":
+                raise ValueError(
+                    f"commit_concept_seed: seed '{cmd.id}' is already '{existing.status}' "
+                    "(must be 'draft')"
+                )
+            patch_cs: dict = {
+                "status": "committed",
+                "committed_at": datetime.now(tz=timezone.utc).isoformat(),
+            }
+            if cmd.envelope_tokens is not None:
+                patch_cs["envelope_tokens"] = existing.envelope_tokens + cmd.envelope_tokens
+            if cmd.kernel_element_drafts is not None:
+                patch_cs["kernel_element_drafts"] = (
+                    existing.kernel_element_drafts + cmd.kernel_element_drafts
+                )
+            if cmd.assumptions_log is not None:
+                patch_cs["assumptions_log"] = existing.assumptions_log + cmd.assumptions_log
+            els[cmd.id] = existing.model_copy(update=patch_cs)
+
+        case ConsumeConceptSeedCmd():
+            existing = els.get(cmd.id)
+            if existing is None or existing.kind != "concept_seed":
+                raise ValueError(f"consume_concept_seed: no ConceptSeedElem with id '{cmd.id}'")
+            if existing.status != "committed":
+                raise ValueError(
+                    f"consume_concept_seed: seed '{cmd.id}' is '{existing.status}' "
+                    "(must be 'committed')"
+                )
+            els[cmd.id] = existing.model_copy(update={"status": "consumed"})
 
     # KRN-08: areas track a derived computedAreaSqMm. Recompute after every
     # command apply so create/update/delete of areas (and shafts that affect

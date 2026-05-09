@@ -1492,3 +1492,118 @@ register(
         ),
     )
 )
+
+# ---------------------------------------------------------------------------
+# CON-V3-02 — Concept seed handoff tools
+# ---------------------------------------------------------------------------
+
+register(
+    ToolDescriptor(
+        name="commit-concept-seed",
+        category="mutation",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "CommitConceptSeedInput",
+            "type": "object",
+            "required": ["id"],
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "description": "ID of the ConceptSeedElem to commit (must be in 'draft' state).",
+                },
+                "envelopeTokens": {
+                    "type": "array",
+                    "description": "Additional envelope tokens to merge into the seed.",
+                    "items": {
+                        "type": "object",
+                        "required": ["hostId", "t", "deltaMm", "scaleFactor", "rho"],
+                        "properties": {
+                            "hostId": {"type": "string"},
+                            "t": {"type": "number"},
+                            "deltaMm": {"type": "number"},
+                            "scaleFactor": {"type": "number"},
+                            "rho": {"type": "number"},
+                        },
+                    },
+                },
+                "kernelElementDrafts": {
+                    "type": "array",
+                    "description": "Additional kernel element drafts to merge.",
+                    "items": {"type": "object"},
+                },
+                "assumptionsLog": {
+                    "type": "array",
+                    "description": "Additional assumption log entries to merge.",
+                    "items": {
+                        "type": "object",
+                        "required": ["assumption", "confidence", "source"],
+                        "properties": {
+                            "assumption": {"type": "string"},
+                            "confidence": {"type": "number"},
+                            "source": {"type": "string"},
+                        },
+                    },
+                },
+            },
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "CommitConceptSeedOutput",
+            "type": "object",
+            "properties": {
+                "id": {"type": "string"},
+                "status": {"type": "string", "enum": ["committed"]},
+                "committedAt": {"type": "string"},
+            },
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Seed transitioned to 'committed'; T9 may now consume it"),
+            "not_found": ExitCode(code=1, meaning="No ConceptSeedElem found with the given id"),
+            "invalid_state": ExitCode(code=2, meaning="Seed is not in 'draft' state"),
+            "error": ExitCode(code=1, meaning="Unexpected error"),
+        },
+        cliExample="bim-ai apply-bundle bundle.json  # bundle contains commit_concept_seed command",
+        restEndpoint=RestEndpoint(method="POST", path="/api/v3/models/{modelId}/bundles"),
+        sideEffects="mutates-kernel",
+        agentSafetyNotes=(
+            "Idempotent within the T6 session: committing a draft seed is a one-way state "
+            "transition. Do NOT call twice; the second call raises 400."
+        ),
+    )
+)
+
+register(
+    ToolDescriptor(
+        name="list-concept-seeds",
+        category="query",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ListConceptSeedsInput",
+            "type": "object",
+            "properties": {
+                "modelId": {"type": "string", "description": "Target model UUID."},
+                "status": {
+                    "type": "string",
+                    "enum": ["draft", "committed", "consumed"],
+                    "description": "Filter by lifecycle status. Omit to return all seeds.",
+                },
+            },
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "type": "array",
+            "items": {"type": "object"},
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Seed list returned (may be empty)"),
+            "not_found": ExitCode(code=1, meaning="Model not found"),
+        },
+        cliExample="bim-ai api concept-seeds --model <id> --status committed",
+        restEndpoint=RestEndpoint(
+            method="GET", path="/api/v3/models/{modelId}/concept-seeds"
+        ),
+        sideEffects="none",
+        agentSafetyNotes="Safe read-only query. T9 polls this endpoint to discover seeds ready for ingestion.",
+    )
+)

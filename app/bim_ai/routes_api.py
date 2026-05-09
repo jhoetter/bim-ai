@@ -2807,11 +2807,7 @@ async def import_neighborhood(
     session: AsyncSession = Depends(get_session),
     user_id: str = Query(default="local-dev", alias="userId"),
 ) -> dict[str, Any]:
-    """OSM-V3-01: fetch OSM buildings within radius_m of lat/lon and upsert into the model.
-
-    Existing neighborhood_mass elements with matching osmId are replaced so that
-    re-importing the same bounding box is idempotent (no duplicates).
-    """
+    """OSM-V3-01: fetch OSM buildings within radius_m of lat/lon and upsert into the model."""
     lat = float(body.get("lat", 0.0))
     lon = float(body.get("lon", 0.0))
     radius_m = float(body.get("radiusM", 200.0))
@@ -2827,7 +2823,6 @@ async def import_neighborhood(
 
     doc = Document.model_validate(row.document)
 
-    # Remove existing osm neighborhood_mass elements so re-import is idempotent.
     existing_osm_ids = {
         elem_id
         for elem_id, elem in doc.elements.items()
@@ -2837,7 +2832,6 @@ async def import_neighborhood(
     for elem_id in existing_osm_ids:
         del doc.elements[elem_id]
 
-    # Upsert new masses.
     for mass in masses:
         doc.elements[mass["id"]] = mass  # type: ignore[assignment]
 
@@ -2845,3 +2839,34 @@ async def import_neighborhood(
     await session.commit()
 
     return {"imported": len(masses), "masses": masses}
+
+
+# ---------------------------------------------------------------------------
+# CON-V3-02 — Concept-seed handoff endpoint (T6 → T9)
+# ---------------------------------------------------------------------------
+
+
+@api_router.get("/v3/models/{model_id}/concept-seeds")
+async def list_concept_seeds(
+    model_id: UUID,
+    status: str | None = Query(default=None),
+    session: AsyncSession = Depends(get_session),
+) -> list[dict[str, Any]]:
+    """CON-V3-02: return concept seeds for a model, optionally filtered by status."""
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+
+    doc = Document.model_validate(row.document)
+
+    from bim_ai.elements import ConceptSeedElem as _ConceptSeedElem
+
+    seeds: list[dict[str, Any]] = []
+    for elem in doc.elements.values():
+        if not isinstance(elem, _ConceptSeedElem):
+            continue
+        if status is not None and elem.status != status:
+            continue
+        seeds.append(elem.model_dump(by_alias=True))
+
+    return seeds
