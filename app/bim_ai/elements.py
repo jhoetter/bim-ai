@@ -1717,6 +1717,7 @@ class AreaElem(BaseModel):
     level_id: str = Field(alias="levelId")
     boundary_mm: list[Vec2Mm] = Field(alias="boundaryMm")
     rule_set: AreaRuleSet = Field(default="no_rules", alias="ruleSet")
+    apply_area_rules: bool = Field(default=True, alias="applyAreaRules")
     computed_area_sq_mm: float | None = Field(default=None, alias="computedAreaSqMm")
     pinned: bool = Field(default=False)
     phase_created: str | None = Field(default=None, alias="phaseCreated")

@@ -3134,6 +3134,7 @@ def apply_inplace(
                 level_id=cmd.level_id,
                 boundary_mm=list(cmd.boundary_mm),
                 rule_set=cmd.rule_set,
+                apply_area_rules=cmd.apply_area_rules,
             )
 
         case UpdateAreaCmd():

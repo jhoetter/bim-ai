@@ -1548,6 +1548,7 @@ class CreateAreaCmd(BaseModel):
     level_id: str = Field(alias="levelId")
     boundary_mm: list[Vec2Mm] = Field(alias="boundaryMm")
     rule_set: AreaRuleSetCmd = Field(default="no_rules", alias="ruleSet")
+    apply_area_rules: bool = Field(default=True, alias="applyAreaRules")
 
 
 class UpdateAreaCmd(BaseModel):
