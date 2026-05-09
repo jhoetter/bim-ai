@@ -5,6 +5,7 @@
   "branch": "feat/parity-readme-sync",
   "checkpoints_count": 1,
   "files_touched": [
+    "packages/web/src/cmdPalette/registry.ts",
     "packages/web/src/workspace/Workspace.tsx",
     "packages/web/src/workspace/workspaceUtils.ts"
   ],
@@ -20,13 +21,19 @@
       "transcript": "/6d/6da19b5f76/1/full.jsonl",
       "content_hash": "/6d/6da19b5f76/1/content_hash.txt",
       "prompt": "/6d/6da19b5f76/1/prompt.txt"
+    },
+    {
+      "metadata": "/6d/6da19b5f76/2/metadata.json",
+      "transcript": "/6d/6da19b5f76/2/full.jsonl",
+      "content_hash": "/6d/6da19b5f76/2/content_hash.txt",
+      "prompt": "/6d/6da19b5f76/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 241,
-    "cache_creation_tokens": 541538,
-    "cache_read_tokens": 21131845,
-    "output_tokens": 235131,
-    "api_call_count": 221
+    "input_tokens": 257,
+    "cache_creation_tokens": 557707,
+    "cache_read_tokens": 22124710,
+    "output_tokens": 239129,
+    "api_call_count": 235
   }
 }
