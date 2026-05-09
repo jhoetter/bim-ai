@@ -1,7 +1,7 @@
 # v3 Build State
 
-Last updated: 2026-05-09 (wave-8: 8 WPs dispatched; ~55/63 done, ~63/63 targeted after wave-8)
-Active heavy workers: 8 / 8
+Last updated: 2026-05-09 (wave-8: all 8 WPs merged ✅; 63/63 done)
+Active heavy workers: 0 / 8
 
 ## Merged so far
 
@@ -103,20 +103,20 @@ All seed/viewport orphans cherry-picked to main (2026-05-08):
 - 0aeca4fb feat(viewport): add cladding boards to recessed wall back
 - 8b8b77ce feat(seed): bump picture-frame profile
 
-## Wave-8 dispatched 🚀
+## Wave-8 merged ✅
 
-8 agents in flight. Merge order: EDT-V3-05 → CHR-V3-10 → CHR-V3-06 → MAT-V3-02 (safe, frontend-only) → CTL-V3-01 → VG-V3-01 → EDT-V3-09 → AST-V3-04 (conflicty last).
+All 8 WPs merged into main by orchestrator (2026-05-09).
 
-| WP-ID | WP | Branch | Prompt |
-| ----- | -- | ------ | ------ |
-| WP-056 | EDT-V3-09 stair tread auto-balance | feat/v3-edt-v3-09-stair-tread-autobalance | wp-056.md |
-| WP-057 | EDT-V3-05 loop-mode modifier (L) | feat/v3-edt-v3-05-loop-mode | wp-057.md |
-| WP-058 | VG-V3-01 render-and-compare CLI | feat/v3-vg-v3-01-render-compare | wp-058.md |
-| WP-059 | CTL-V3-01 catalog query API | feat/v3-ctl-v3-01-catalog-query | wp-059.md |
-| WP-060 | MAT-V3-02 material token family | feat/v3-mat-v3-02-material-tokens | wp-060.md |
-| WP-061 | CHR-V3-06 right-rail inspector | feat/v3-chr-v3-06-inspector-behavior | wp-061.md |
-| WP-062 | CHR-V3-10 empty-state canvas | feat/v3-chr-v3-10-empty-state | wp-062.md |
-| WP-063 | AST-V3-04 parametric kitchen kit | feat/v3-ast-v3-04-kitchen-kit | wp-063.md |
+| WP-ID | WP | Merged at | Commit |
+| ----- | -- | --------- | ------ |
+| WP-056 | EDT-V3-09 stair tread auto-balance | 2026-05-09 | 9cb39a70 |
+| WP-057 | EDT-V3-05 loop-mode modifier (L) | 2026-05-09 | 33c60b64 |
+| WP-058 | VG-V3-01 render-and-compare CLI | 2026-05-09 | ce727942 |
+| WP-059 | CTL-V3-01 catalog query API | 2026-05-09 | f6d31dc7 |
+| WP-060 | MAT-V3-02 material token family | 2026-05-09 | fd185195 |
+| WP-061 | CHR-V3-06 right-rail inspector | 2026-05-09 | 09247d78 |
+| WP-062 | CHR-V3-10 empty-state canvas | 2026-05-09 | a9bc4540 |
+| WP-063 | AST-V3-04 parametric kitchen kit | 2026-05-09 | 5bd50ddd |
 
 ## Held back (pending deps or timing)
 
