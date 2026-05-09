@@ -2120,6 +2120,7 @@ export function PlanCanvas({
           .getState()
           .getCycle('wall', 'location-line', 'wall-centerline') as WallLocationLine;
         const wallDrawHeightMm = useBimStore.getState().wallDrawHeightMm;
+        const activeWallTypeId = useBimStore.getState().activeWallTypeId;
         const wallDrawOffsetMm = useBimStore.getState().wallDrawOffsetMm;
         let startX = d.sx;
         let startY = d.sy;
@@ -2146,6 +2147,7 @@ export function PlanCanvas({
           start: { xMm: flipped ? endX : startX, yMm: flipped ? endY : startY },
           end: { xMm: flipped ? startX : endX, yMm: flipped ? startY : endY },
           locationLine: wallLocationLine,
+          wallTypeId: activeWallTypeId ?? undefined,
           heightMm: wallDrawHeightMm,
         });
         // EDT-V3-05: re-arm from endpoint when loop mode is on.
@@ -3620,6 +3622,7 @@ export function PlanCanvas({
               endMm: { xMm: w.end.xMm, yMm: w.end.yMm },
               thicknessMm: w.thicknessMm,
             }))}
+          floorTypeId={useBimStore.getState().activeFloorTypeId ?? undefined}
           onFinished={(createdId) => {
             setPlanTool('select');
             if (createdId) selectEl(createdId);

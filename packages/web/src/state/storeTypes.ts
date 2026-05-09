@@ -177,6 +177,8 @@ export type StoreState = {
   floorBoundaryOffsetMm: number;
   wallDrawOffsetMm: number;
   wallDrawHeightMm: number;
+  activeWallTypeId: string | null;
+  activeFloorTypeId: string | null;
   orthoSnapHold: boolean;
   userId: string;
   userDisplayName: string;
@@ -214,6 +216,8 @@ export type StoreState = {
   setFloorBoundaryOffsetMm: (mm: number) => void;
   setWallDrawOffsetMm: (v: number) => void;
   setWallDrawHeightMm: (h: number) => void;
+  setActiveWallTypeId: (id: string | null) => void;
+  setActiveFloorTypeId: (id: string | null) => void;
   setOrthoSnapHold: (v: boolean) => void;
   setPresencePeers: (peers: PresencePeers) => void;
   setComments: (c: UxComment[]) => void;

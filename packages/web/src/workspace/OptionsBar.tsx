@@ -1,4 +1,5 @@
 import type { JSX } from 'react';
+import type { Element } from '@bim-ai/core';
 import { useBimStore } from '../state/store';
 import { WALL_LOCATION_LINE_ORDER, type WallLocationLine } from '../tools/toolGrammar';
 
@@ -15,16 +16,40 @@ const BAR_CLASS = 'flex items-center gap-4 border-b border-border bg-surface py-
 
 export function OptionsBar(): JSX.Element | null {
   const planTool = useBimStore((s) => s.planTool);
+  const elementsById = useBimStore((s) => s.elementsById);
   const wallLocationLine = useBimStore((s) => s.wallLocationLine);
   const setWallLocationLine = useBimStore((s) => s.setWallLocationLine);
   const floorBoundaryOffsetMm = useBimStore((s) => s.floorBoundaryOffsetMm);
   const setFloorBoundaryOffsetMm = useBimStore((s) => s.setFloorBoundaryOffsetMm);
   const wallDrawHeightMm = useBimStore((s) => s.wallDrawHeightMm);
   const setWallDrawHeightMm = useBimStore((s) => s.setWallDrawHeightMm);
+  const activeWallTypeId = useBimStore((s) => s.activeWallTypeId);
+  const setActiveWallTypeId = useBimStore((s) => s.setActiveWallTypeId);
+  const activeFloorTypeId = useBimStore((s) => s.activeFloorTypeId);
+  const setActiveFloorTypeId = useBimStore((s) => s.setActiveFloorTypeId);
 
   if (planTool === 'wall') {
     return (
       <div data-testid="options-bar" className={BAR_CLASS}>
+        <label className="flex items-center gap-2">
+          <span className="text-muted">Type:</span>
+          <select
+            value={activeWallTypeId ?? ''}
+            onChange={(e) => setActiveWallTypeId(e.target.value || null)}
+            className="rounded border border-border bg-surface px-1.5 py-0.5 text-xs text-foreground"
+            aria-label="Wall type"
+            data-testid="options-bar-wall-type"
+          >
+            <option value="">(Default)</option>
+            {Object.values(elementsById)
+              .filter((e): e is Extract<Element, { kind: 'wall_type' }> => e.kind === 'wall_type')
+              .map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+          </select>
+        </label>
         <span className="text-muted">Location Line:</span>
         <select
           value={wallLocationLine}
@@ -60,6 +85,25 @@ export function OptionsBar(): JSX.Element | null {
   if (planTool === 'floor') {
     return (
       <div data-testid="options-bar" className={BAR_CLASS}>
+        <label className="flex items-center gap-2">
+          <span className="text-muted">Type:</span>
+          <select
+            value={activeFloorTypeId ?? ''}
+            onChange={(e) => setActiveFloorTypeId(e.target.value || null)}
+            className="rounded border border-border bg-surface px-1.5 py-0.5 text-xs text-foreground"
+            aria-label="Floor type"
+            data-testid="options-bar-floor-type"
+          >
+            <option value="">(Default)</option>
+            {Object.values(elementsById)
+              .filter((e): e is Extract<Element, { kind: 'floor_type' }> => e.kind === 'floor_type')
+              .map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+          </select>
+        </label>
         <label className="flex items-center gap-2">
           <span className="text-muted">Boundary Offset:</span>
           <input

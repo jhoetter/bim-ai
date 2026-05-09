@@ -76,6 +76,8 @@ export interface SketchCanvasProps {
   onFinished: (createdId: string | null) => void;
   /** Called on cancel (Esc, ✗ button, or session error). */
   onCancelled: () => void;
+  /** F-108: floor type id to apply when finishing a floor sketch session. */
+  floorTypeId?: string;
 }
 
 function snapMm(p: Point2D, snapMmGrid: number): Point2D {
@@ -127,6 +129,7 @@ export function SketchCanvas(props: SketchCanvasProps): JSX.Element {
     onFinished,
     onCancelled,
     sessionId: initialSessionId,
+    floorTypeId,
   } = props;
   const [session, setSession] = useState<SketchSessionWire | null>(null);
   const [validation, setValidation] = useState<SketchValidationState | null>(null);
@@ -313,7 +316,9 @@ export function SketchCanvas(props: SketchCanvasProps): JSX.Element {
     if (!session || busy) return;
     try {
       setBusy(true);
-      const resp = await finishSketchSession(session.sessionId);
+      const resp = await finishSketchSession(session.sessionId, {
+        options: floorTypeId ? { floorTypeId } : undefined,
+      });
       // Pick the kind-specific id from the response, with floorId as the
       // back-compat fallback.
       const createdId =
@@ -324,7 +329,7 @@ export function SketchCanvas(props: SketchCanvasProps): JSX.Element {
     } finally {
       setBusy(false);
     }
-  }, [session, busy, onFinished]);
+  }, [session, busy, onFinished, floorTypeId]);
 
   const handleAutoClose = useCallback(async () => {
     if (!session || busy) return;
