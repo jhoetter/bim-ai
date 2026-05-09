@@ -376,6 +376,17 @@ export function WorkspaceRightRail({
                         }),
                       onDisciplineChange: handleDisciplineChange,
                     })}
+                    <WallJoinDisallowSection
+                      wall={el}
+                      onToggle={(endpoint, disallow) =>
+                        void onSemanticCommand({
+                          type: 'setWallJoinDisallow',
+                          wallId: el.id,
+                          endpoint,
+                          disallow,
+                        })
+                      }
+                    />
                     <WallMoveSection
                       wallId={el.id}
                       onMove={(dx, dy) =>
@@ -392,6 +403,12 @@ export function WorkspaceRightRail({
                   <PlacedAssetInspector
                     el={el as Extract<Element, { kind: 'placed_asset' }>}
                     onSemanticCommand={onSemanticCommand}
+                  />
+                ) : el.kind === 'column' ? (
+                  <ColumnInspector
+                    el={el as Extract<Element, { kind: 'column' }>}
+                    onSemanticCommand={onSemanticCommand}
+                    t={t}
                   />
                 ) : (
                   InspectorPropertiesFor(el, t, {
@@ -685,6 +702,127 @@ function PlacedAssetInspector({
           Delete
         </button>
       </div>
+    </div>
+  );
+}
+
+function ColumnInspector({
+  el,
+  onSemanticCommand,
+  t,
+}: {
+  el: Extract<Element, { kind: 'column' }>;
+  onSemanticCommand: (cmd: Record<string, unknown>) => void | Promise<void>;
+  t: ReturnType<typeof useTranslation>['t'];
+}): JSX.Element {
+  const dxRef = useRef<HTMLInputElement | null>(null);
+  const dyRef = useRef<HTMLInputElement | null>(null);
+  return (
+    <div className="space-y-2">
+      {InspectorPropertiesFor(el, t, {
+        onPropertyChange: (property, value) =>
+          void onSemanticCommand({
+            type: 'updateElementProperty',
+            elementId: el.id,
+            key: property,
+            value,
+          }),
+      })}
+      <div
+        className="border-t border-border pt-2 space-y-1"
+        data-testid="inspector-column-move-delta"
+      >
+        <div
+          className="text-[10px] font-semibold uppercase text-muted"
+          style={{ letterSpacing: '0.08em', opacity: 0.7 }}
+        >
+          Move Δx/Δy (mm)
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="flex items-center gap-1 text-xs text-muted">
+            Δx
+            <input
+              ref={dxRef}
+              type="number"
+              step={50}
+              defaultValue={0}
+              className="w-20 rounded border border-border bg-surface px-1 py-0.5 text-xs text-foreground"
+              data-testid="inspector-column-move-dx"
+            />
+          </label>
+          <label className="flex items-center gap-1 text-xs text-muted">
+            Δy
+            <input
+              ref={dyRef}
+              type="number"
+              step={50}
+              defaultValue={0}
+              className="w-20 rounded border border-border bg-surface px-1 py-0.5 text-xs text-foreground"
+              data-testid="inspector-column-move-dy"
+            />
+          </label>
+          <button
+            type="button"
+            className="rounded border border-border bg-surface px-2 py-0.5 text-xs hover:bg-surface-strong"
+            data-testid="inspector-column-move-apply"
+            onClick={() => {
+              const dx = Number(dxRef.current?.value ?? 0);
+              const dy = Number(dyRef.current?.value ?? 0);
+              if (dx === 0 && dy === 0) return;
+              void onSemanticCommand({
+                type: 'moveColumnDelta',
+                elementId: el.id,
+                dxMm: dx,
+                dyMm: dy,
+              });
+              if (dxRef.current) dxRef.current.value = '0';
+              if (dyRef.current) dyRef.current.value = '0';
+            }}
+          >
+            Apply
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** F-040: Inspector checkboxes for Allow/Disallow Join at each wall endpoint. */
+function WallJoinDisallowSection({
+  wall,
+  onToggle,
+}: {
+  wall: Extract<Element, { kind: 'wall' }>;
+  onToggle: (endpoint: 'start' | 'end', disallow: boolean) => void;
+}): JSX.Element {
+  const startDisallowed = wall.joinDisallowStart ?? false;
+  const endDisallowed = wall.joinDisallowEnd ?? false;
+  return (
+    <div className="mt-3 border-t border-border pt-2 space-y-1">
+      <div
+        className="text-[10px] font-semibold uppercase text-muted"
+        style={{ letterSpacing: '0.08em', opacity: 0.7 }}
+      >
+        Wall Join
+      </div>
+      <label className="flex cursor-pointer items-center gap-2 text-xs text-muted">
+        <input
+          type="checkbox"
+          checked={startDisallowed}
+          data-testid="inspector-wall-join-disallow-start"
+          onChange={(e) => onToggle('start', e.target.checked)}
+        />
+        Disallow Join at Start
+      </label>
+      <label className="flex cursor-pointer items-center gap-2 text-xs text-muted">
+        <input
+          type="checkbox"
+          checked={endDisallowed}
+          data-testid="inspector-wall-join-disallow-end"
+          onChange={(e) => onToggle('end', e.target.checked)}
+        />
+        Disallow Join at End
+      </label>
     </div>
   );
 }

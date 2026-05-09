@@ -114,6 +114,7 @@ from bim_ai.commands import (
     SetViewPhaseCmd,
     SetViewPhaseFilterCmd,
     SetViewLensCmd,
+    SetWallJoinDisallowCmd,
     SetWallJoinVariantCmd,
     SetWallLeanTaperCmd,
     SetWallRecessZonesCmd,
@@ -197,6 +198,7 @@ from bim_ai.commands import (
     IndexAssetCmd,
     PlaceAssetCmd,
     MoveAssetDeltaCmd,
+    MoveColumnDeltaCmd,
     PlaceKitCmd,
     UpdateKitComponentCmd,
     SetToolPrefCmd,
@@ -1284,6 +1286,8 @@ _PIN_BLOCKED_TARGETS: dict[type, str] = {
     UpdateElementPropertyCmd: "element_id",
     DeleteElementCmd: "element_id",
     MoveAssetDeltaCmd: "element_id",
+    MoveColumnDeltaCmd: "element_id",
+    SetWallJoinDisallowCmd: "wall_id",
 }
 
 
@@ -1314,6 +1318,7 @@ _LINKED_READONLY_SCALAR_FIELDS: dict[type, tuple[str, ...]] = {
     DeleteLinkModelCmd: (),
     UpdateLinkDxfCmd: (),
     MoveAssetDeltaCmd: ("element_id",),
+    MoveColumnDeltaCmd: ("element_id",),
 }
 _LINKED_READONLY_LIST_FIELDS: dict[type, tuple[str, ...]] = {
     DeleteElementsCmd: ("element_ids",),
@@ -3424,6 +3429,17 @@ def apply_inplace(
                 notes=f"variant={cmd.variant}",
             )
 
+        case SetWallJoinDisallowCmd():
+            wall = els.get(cmd.wall_id)
+            if not isinstance(wall, WallElem):
+                raise ValueError(
+                    f"setWallJoinDisallow.wallId must reference a Wall"
+                )
+            update_field = (
+                "join_disallow_start" if cmd.endpoint == "start" else "join_disallow_end"
+            )
+            els[cmd.wall_id] = wall.model_copy(update={update_field: cmd.disallow})
+
         case CreateColumnCmd():
             cid = cmd.id or new_id()
             if cid in els:
@@ -5400,6 +5416,16 @@ def apply_inplace(
             el = els.get(cmd.element_id)
             if not isinstance(el, PlacedAssetElem):
                 raise ValueError(f"moveAssetDelta: elementId '{cmd.element_id}' must reference a placed_asset")
+            new_pos = Vec2Mm(
+                xMm=el.position_mm.x_mm + cmd.dx_mm,
+                yMm=el.position_mm.y_mm + cmd.dy_mm,
+            )
+            els[cmd.element_id] = el.model_copy(update={"position_mm": new_pos})
+
+        case MoveColumnDeltaCmd():
+            el = els.get(cmd.element_id)
+            if not isinstance(el, ColumnElem):
+                raise ValueError(f"moveColumnDelta: elementId '{cmd.element_id}' must reference a column")
             new_pos = Vec2Mm(
                 xMm=el.position_mm.x_mm + cmd.dx_mm,
                 yMm=el.position_mm.y_mm + cmd.dy_mm,

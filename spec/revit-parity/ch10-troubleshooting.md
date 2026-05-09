@@ -44,7 +44,7 @@ Source segment: `05:30:54 – 05:33:32`
 **Screenshot:**
 ![Move tool](file:///Users/jhoetter/Desktop/Revit%20Specs/0792_05-32-45.png)
 
-**bim-ai status:** 🟡 Partial — walls can be moved via grip handles + inspector Δx/Δy section. `placed_asset` elements can now be moved via a Δx/Δy section in the right-rail inspector (fires `moveAssetDelta`). Missing: two-point on-canvas Move command with typed distance, and move support for floor, room, door, and window elements.
+**bim-ai status:** 🟡 Partial — walls can be moved via grip handles + inspector Δx/Δy section. `placed_asset` elements can be moved via a Δx/Δy section in the right-rail inspector (fires `moveAssetDelta`). `column` elements can now be moved via a Δx/Δy section in the right-rail inspector (fires `moveColumnDelta`). Missing: two-point on-canvas Move command with typed distance.
 
 ---
 

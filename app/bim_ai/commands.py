@@ -1647,6 +1647,16 @@ class SetWallJoinVariantCmd(BaseModel):
     variant: WallJoinVariant
 
 
+class SetWallJoinDisallowCmd(BaseModel):
+    """F-040 — toggle the 'disallow join' flag for one endpoint of a wall."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["setWallJoinDisallow"] = "setWallJoinDisallow"
+    wall_id: str = Field(alias="wallId")
+    endpoint: Literal["start", "end"] = "start"
+    disallow: bool = True
+
+
 # ---- EDT-04: Single-/two-click placement create commands ----
 
 
@@ -2238,6 +2248,16 @@ class MoveAssetDeltaCmd(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     type: Literal["moveAssetDelta"] = "moveAssetDelta"
+    element_id: str = Field(alias="elementId")
+    dx_mm: float = Field(alias="dxMm")
+    dy_mm: float = Field(alias="dyMm")
+
+
+class MoveColumnDeltaCmd(BaseModel):
+    """Move a column element by a delta in X and Y."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["moveColumnDelta"] = "moveColumnDelta"
     element_id: str = Field(alias="elementId")
     dx_mm: float = Field(alias="dxMm")
     dy_mm: float = Field(alias="dyMm")
@@ -2860,6 +2880,7 @@ Command = Annotated[
     | AlignElementToReferenceCmd
     | TrimElementToReferenceCmd
     | SetWallJoinVariantCmd
+    | SetWallJoinDisallowCmd
     | CreateColumnCmd
     | CreateBeamCmd
     | CreateCeilingCmd
@@ -2918,6 +2939,7 @@ Command = Annotated[
     | IndexAssetCmd
     | PlaceAssetCmd
     | MoveAssetDeltaCmd
+    | MoveColumnDeltaCmd
     | SetToolPrefCmd
     | TraceImageCmd
     | UpdateWallCmd
