@@ -83,6 +83,8 @@ class CreateWallCmd(BaseModel):
     )
     lean_mm: Vec2Mm | None = Field(default=None, alias="leanMm")
     taper_ratio: float | None = Field(default=None, alias="taperRatio")
+    # TOP-V3-04: optional site host — wall base elevation follows the toposolid surface.
+    site_host_id: str | None = Field(default=None, alias="siteHostId")
 
 
 class SetWallStackCmd(BaseModel):
@@ -2073,6 +2075,52 @@ class DeleteToposolidCmd(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     type: Literal["DeleteToposolid"] = "DeleteToposolid"
     toposolid_id: str = Field(alias="toposolidId")
+
+
+# ---------------------------------------------------------------------------
+# TOP-V3-04 — Graded region commands
+# ---------------------------------------------------------------------------
+
+
+class CreateGradedRegionCmd(BaseModel):
+    """TOP-V3-04 — create a graded region anchored to a toposolid.
+
+    ``flat`` mode requires ``targetZMm``; ``slope`` mode requires both
+    ``slopeAxisDeg`` and ``slopeDegPercent``.
+    """
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["CreateGradedRegion"] = "CreateGradedRegion"
+    id: str | None = None
+    host_toposolid_id: str = Field(alias="hostToposolidId")
+    boundary_mm: list[dict] = Field(alias="boundaryMm")  # [{xMm, yMm}]
+    target_mode: Literal["flat", "slope"] = Field("flat", alias="targetMode")
+    target_z_mm: float | None = Field(None, alias="targetZMm")
+    slope_axis_deg: float | None = Field(None, alias="slopeAxisDeg")
+    slope_deg_percent: float | None = Field(None, alias="slopeDegPercent")
+
+
+class UpdateGradedRegionCmd(BaseModel):
+    """TOP-V3-04 — patch fields on an existing graded region."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["UpdateGradedRegion"] = "UpdateGradedRegion"
+    id: str
+    boundary_mm: list[dict] | None = Field(None, alias="boundaryMm")
+    target_mode: Literal["flat", "slope"] | None = Field(None, alias="targetMode")
+    target_z_mm: float | None = Field(None, alias="targetZMm")
+    slope_axis_deg: float | None = Field(None, alias="slopeAxisDeg")
+    slope_deg_percent: float | None = Field(None, alias="slopeDegPercent")
+
+
+class DeleteGradedRegionCmd(BaseModel):
+    """TOP-V3-04 — delete a graded region by id."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["DeleteGradedRegion"] = "DeleteGradedRegion"
+    id: str
+
+
 # AST-V3-01 — Asset library commands
 # ---------------------------------------------------------------------------
 
@@ -2165,6 +2213,8 @@ class UpdateWallCmd(BaseModel):
     id: str
     length_mm: float | None = Field(default=None, alias="lengthMm", gt=0)
     thickness_mm: float | None = Field(default=None, alias="thicknessMm", gt=0)
+    # TOP-V3-04: optional site host binding update.
+    site_host_id: str | None = Field(default=None, alias="siteHostId")
 
 
 class UpdateDoorCmd(BaseModel):
@@ -2496,6 +2546,9 @@ Command = Annotated[
     | CreateToposolidCmd
     | UpdateToposolidCmd
     | DeleteToposolidCmd
+    | CreateGradedRegionCmd
+    | UpdateGradedRegionCmd
+    | DeleteGradedRegionCmd
     | IndexAssetCmd
     | PlaceAssetCmd
     | SetToolPrefCmd
