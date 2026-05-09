@@ -1,7 +1,7 @@
 /* eslint-disable bim-ai/no-hex-in-chrome -- pre-v3 hex literals; remove when this file is migrated in B4 Phase 2 */
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import type { JSX, DragEvent } from 'react';
-import type { DisciplineTag, Element, ViewTemplate } from '@bim-ai/core';
+import type { DisciplineTag, Element } from '@bim-ai/core';
 import { DEFAULT_DISCIPLINE_BY_KIND } from '@bim-ai/core';
 
 import { Btn } from '@bim-ai/ui';
@@ -9,7 +9,6 @@ import { Btn } from '@bim-ai/ui';
 import { applyCommand } from '../lib/api';
 import { useViewTemplateStore } from '../collab/viewTemplateStore';
 import { PropagationToast } from './PropagationToast';
-import { ViewTemplateEditPanel } from './ViewTemplateEditPanel';
 
 import {
   planViewBrowserHierarchyState,
@@ -100,10 +99,6 @@ export function ProjectBrowser(props: {
   const dismissPropagation = useViewTemplateStore((s) => s.dismissPropagation);
   const vtStore = useViewTemplateStore();
   const [vtCollapsed, setVtCollapsed] = useState(false);
-  const [editingTemplate, setEditingTemplate] = useState<Extract<
-    Element,
-    { kind: 'view_template' }
-  > | null>(null);
 
   const { planViewsSorted, planViewBuckets, bucketKeys } = useMemo(() => {
     const sorted = Object.values(props.elementsById)
@@ -433,8 +428,8 @@ export function ProjectBrowser(props: {
                       <button
                         type="button"
                         className="text-[9px] text-muted hover:text-foreground"
-                        title="Edit template"
-                        onClick={() => setEditingTemplate(vt)}
+                        title="Edit template — opens in right-rail inspector"
+                        onClick={() => useBimStore.getState().select(vt.id)}
                       >
                         Edit
                       </button>
@@ -477,16 +472,6 @@ export function ProjectBrowser(props: {
           )}
         </div>
       ) : null}
-
-      {editingTemplate && modelId && (
-        <ViewTemplateEditPanel
-          template={editingTemplate}
-          elementsById={props.elementsById}
-          modelId={modelId}
-          onSave={(patch) => vtStore.updateTemplate(modelId, editingTemplate.id, patch)}
-          onClose={() => setEditingTemplate(null)}
-        />
-      )}
 
       {lastPropagation && (
         <PropagationToast

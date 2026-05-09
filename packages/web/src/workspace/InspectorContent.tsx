@@ -1223,20 +1223,36 @@ export function InspectorWindowEditor({
   );
 }
 
-/** Editable name field for view_template elements (Properties tab). */
+/** Editable inspector for view_template elements (Properties tab).
+ *
+ * VIS-V3-09: replaces the standalone ViewTemplateEditPanel floating card.
+ * name is persisted via updateElementProperty; scale/detailLevel/phase/phaseFilter
+ * are persisted via the __updateViewTemplate__ sentinel key which WorkspaceRightRail
+ * routes to the UpdateViewTemplate engine command (same propagation path).
+ */
 export function InspectorViewTemplateEditor({
   el,
+  elementsById,
   revision,
   onPersistProperty,
 }: {
   el: Extract<Element, { kind: 'view_template' }>;
+  elementsById?: Record<string, Element>;
   revision: number;
   onPersistProperty: (key: string, value: string) => void;
 }): JSX.Element {
   const { t } = useTranslation();
+
+  const phases = elementsById
+    ? (Object.values(elementsById) as Element[]).filter(
+        (e): e is Extract<Element, { kind: 'phase' }> => e.kind === 'phase',
+      )
+    : [];
+
   return (
     <div className="space-y-2 text-[11px]">
       <p className="text-[10px] font-semibold text-muted">{t('inspector.viewTemplate.heading')}</p>
+
       <label className={LABEL_CLS}>
         {t('inspector.fields.name')}
         <input
@@ -1250,11 +1266,91 @@ export function InspectorViewTemplateEditor({
           }}
         />
       </label>
-      <FieldRow
-        label={t('inspector.fields.scale')}
-        value={el.scale != null ? String(el.scale) : ''}
-        mono
-      />
+
+      <label className={LABEL_CLS}>
+        {t('inspector.fields.scale')}
+        <input
+          type="number"
+          className={INPUT_CLS}
+          defaultValue={el.scale != null ? String(el.scale) : ''}
+          key={`vt-scale-${el.id}-${el.scale ?? 'null'}-${revision}`}
+          placeholder="inherit"
+          onBlur={(e) => {
+            const raw = e.target.value.trim();
+            const n = raw === '' ? null : Number(raw);
+            if (n !== null && !Number.isFinite(n)) return;
+            onPersistProperty(
+              '__updateViewTemplate__',
+              JSON.stringify({ scale: n }),
+            );
+          }}
+        />
+      </label>
+
+      <label className={LABEL_CLS}>
+        {t('inspector.fields.detailLevel', 'Detail level')}
+        <select
+          className={INPUT_CLS}
+          value={el.detailLevel ?? ''}
+          onChange={(e) => {
+            const v = e.target.value;
+            onPersistProperty(
+              '__updateViewTemplate__',
+              JSON.stringify({ detailLevel: v || null }),
+            );
+          }}
+        >
+          <option value="">— inherit —</option>
+          <option value="coarse">Coarse</option>
+          <option value="medium">Medium</option>
+          <option value="fine">Fine</option>
+        </select>
+      </label>
+
+      {phases.length > 0 ? (
+        <label className={LABEL_CLS}>
+          {t('inspector.fields.phase', 'Phase')}
+          <select
+            className={INPUT_CLS}
+            value={el.phase ?? ''}
+            onChange={(e) => {
+              const v = e.target.value;
+              onPersistProperty(
+                '__updateViewTemplate__',
+                JSON.stringify({ phase: v || null }),
+              );
+            }}
+          >
+            <option value="">— none —</option>
+            {phases.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : null}
+
+      <label className={LABEL_CLS}>
+        {t('inspector.fields.phaseFilter', 'Phase filter')}
+        <select
+          className={INPUT_CLS}
+          value={el.phaseFilter ?? ''}
+          onChange={(e) => {
+            const v = e.target.value;
+            onPersistProperty(
+              '__updateViewTemplate__',
+              JSON.stringify({ phaseFilter: v || null }),
+            );
+          }}
+        >
+          <option value="">— none —</option>
+          <option value="all">All</option>
+          <option value="existing">Existing</option>
+          <option value="demolition">Demolition</option>
+          <option value="new">New</option>
+        </select>
+      </label>
     </div>
   );
 }
