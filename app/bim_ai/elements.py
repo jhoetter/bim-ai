@@ -312,6 +312,8 @@ class WallElem(BaseModel):
     option_id: str | None = Field(default=None, alias="optionId")
     discipline: DisciplineTag | None = Field(default=None)
     props: dict[str, Any] | None = Field(default=None)
+    # TOP-V3-04: site wall binding — when set, base elevation per-segment follows the toposolid surface.
+    site_host_id: str | None = Field(default=None, alias="siteHostId")
 
     @model_validator(mode="after")
     def _validate_lean_taper(self) -> WallElem:
@@ -2260,6 +2262,29 @@ class ToposolidSubdivisionElem(BaseModel):
     material_key: str = Field(alias="materialKey")
 
 
+# ---------------------------------------------------------------------------
+# TOP-V3-04 — Graded region element
+# ---------------------------------------------------------------------------
+
+
+class GradedRegionElem(BaseModel):
+    """TOP-V3-04 — a graded region anchored to a toposolid surface.
+
+    ``flat`` mode: the region is levelled to ``target_z_mm``.
+    ``slope`` mode: the region is graded along ``slope_axis_deg`` at ``slope_deg_percent``.
+    """
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    kind: Literal["graded_region"] = "graded_region"
+    id: str
+    host_toposolid_id: str = Field(alias="hostToposolidId")
+    boundary_mm: list[dict] = Field(alias="boundaryMm")  # [{xMm, yMm}]
+    target_mode: Literal["flat", "slope"] = Field("flat", alias="targetMode")
+    target_z_mm: float | None = Field(None, alias="targetZMm")
+    slope_axis_deg: float | None = Field(None, alias="slopeAxisDeg")
+    slope_deg_percent: float | None = Field(None, alias="slopeDegPercent")
+
+
 # AST-V3-01 — Asset library entry + placed asset instance
 # ---------------------------------------------------------------------------
 
@@ -2535,6 +2560,7 @@ Element = Annotated[
     | ViewElem
     | ToposolidElem
     | ToposolidSubdivisionElem
+    | GradedRegionElem
     | AssetLibraryEntryElem
     | PlacedAssetElem
     | FamilyKitInstanceElem

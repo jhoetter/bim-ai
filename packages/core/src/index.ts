@@ -68,6 +68,44 @@ export type DeleteToposolidSubdivisionCmd = {
 };
 
 // ---------------------------------------------------------------------------
+// TOP-V3-04 — Site walls + Graded regions
+// ---------------------------------------------------------------------------
+
+export type GradedRegionElem = {
+  kind: 'graded_region';
+  id: string;
+  hostToposolidId: string;
+  boundaryMm: { xMm: number; yMm: number }[];
+  targetMode: 'flat' | 'slope';
+  targetZMm?: number;
+  slopeAxisDeg?: number;
+  slopeDegPercent?: number;
+};
+
+export type CreateGradedRegionCmd = {
+  type: 'CreateGradedRegion';
+  id?: string;
+  hostToposolidId: string;
+  boundaryMm: { xMm: number; yMm: number }[];
+  targetMode: 'flat' | 'slope';
+  targetZMm?: number;
+  slopeAxisDeg?: number;
+  slopeDegPercent?: number;
+};
+
+export type UpdateGradedRegionCmd = {
+  type: 'UpdateGradedRegion';
+  id: string;
+  boundaryMm?: { xMm: number; yMm: number }[];
+  targetMode?: 'flat' | 'slope';
+  targetZMm?: number;
+  slopeAxisDeg?: number;
+  slopeDegPercent?: number;
+};
+
+export type DeleteGradedRegionCmd = { type: 'DeleteGradedRegion'; id: string };
+
+// ---------------------------------------------------------------------------
 // CAN-V3-02 — Hatch pattern definition
 // ---------------------------------------------------------------------------
 
@@ -198,7 +236,8 @@ export type ElemKind =
   | 'hatch_pattern_def'
   | 'property_definition'
   | 'neighborhood_mass'
-  | 'neighborhood_import_session';
+  | 'neighborhood_import_session'
+  | 'graded_region';
 
 export type PhaseFilter = 'all' | 'existing' | 'demolition' | 'new';
 
@@ -775,6 +814,8 @@ export type Element =
       discipline?: DisciplineTag | null;
       /** SCH-V3-01: custom property values. */
       props?: Record<string, unknown>;
+      /** TOP-V3-04: site wall binding — base elevation per-segment follows the toposolid surface. */
+      siteHostId?: string | null;
     }
   | {
       kind: 'door';
@@ -1794,6 +1835,7 @@ export type Element =
   | View
   | ToposolidElem
   | ToposolidSubdivisionElem
+  | GradedRegionElem
   | AssetLibraryEntryElem
   | PlacedAssetElem
   | FamilyKitInstanceElem
@@ -2319,13 +2361,21 @@ export type PlacedAssetElem = {
   hostElementId?: string;
 };
 
-
 // ---------------------------------------------------------------------------
 // AST-V3-04 — Parametric kitchen kit
 // ---------------------------------------------------------------------------
 
 export type KitComponent = {
-  componentKind: 'base' | 'upper' | 'oven_housing' | 'sink' | 'pantry' | 'countertop' | 'end_panel' | 'dishwasher' | 'fridge';
+  componentKind:
+    | 'base'
+    | 'upper'
+    | 'oven_housing'
+    | 'sink'
+    | 'pantry'
+    | 'countertop'
+    | 'end_panel'
+    | 'dishwasher'
+    | 'fridge';
   widthMm?: number | null;
   heightMm?: number | null;
   depthMm?: number | null;

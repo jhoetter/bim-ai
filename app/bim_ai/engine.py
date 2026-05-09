@@ -189,6 +189,9 @@ from bim_ai.commands import (
     CreateToposolidSubdivisionCmd,
     UpdateToposolidSubdivisionCmd,
     DeleteToposolidSubdivisionCmd,
+    CreateGradedRegionCmd,
+    UpdateGradedRegionCmd,
+    DeleteGradedRegionCmd,
     IndexAssetCmd,
     PlaceAssetCmd,
     PlaceKitCmd,
@@ -313,6 +316,7 @@ from bim_ai.elements import (
     ViewTemplateElem,
     ToposolidElem,
     ToposolidSubdivisionElem,
+    GradedRegionElem,
     VoidCutElem,
     WallBasisLine,
     WallEdgeFixed,
@@ -1460,6 +1464,12 @@ def apply_inplace(
                 raise ValueError(f"duplicate element id '{eid}'")
             if cmd.level_id not in els or not isinstance(els[cmd.level_id], LevelElem):
                 raise ValueError("createWall.levelId must reference an existing Level")
+            # TOP-V3-04: validate site host toposolid exists when specified.
+            if cmd.site_host_id is not None:
+                if not isinstance(els.get(cmd.site_host_id), ToposolidElem):
+                    raise ValueError(
+                        f"createWall.siteHostId '{cmd.site_host_id}' does not reference an existing toposolid"
+                    )
             h_mm = _resolve_wall_height_mm(cmd, els)
             thick = _wall_thickness_from_type(els, cmd.wall_type_id, cmd.thickness_mm)
             wall_stack = None
@@ -1494,6 +1504,7 @@ def apply_inplace(
                 lean_mm=cmd.lean_mm,
                 taper_ratio=cmd.taper_ratio,
                 discipline=DEFAULT_DISCIPLINE_BY_KIND.get("wall", "arch"),
+                site_host_id=cmd.site_host_id,
             )
 
         case MoveWallDeltaCmd():
@@ -5154,14 +5165,11 @@ def apply_inplace(
                 raise ValueError(
                     "create_toposolid_subdivision.boundaryMm requires at least 3 points"
                 )
-            # Warn (not 400) if the subdivision boundary falls outside the host boundary.
-            # The engine clips silently and logs an assumption instead of blocking.
             host_xs = [pt.get("xMm", pt.get("x_mm", 0)) for pt in host.boundary_mm
                        if isinstance(pt, dict)]
             host_ys = [pt.get("yMm", pt.get("y_mm", 0)) for pt in host.boundary_mm
                        if isinstance(pt, dict)]
             if not host_xs:
-                # Pydantic Vec2Mm objects
                 host_xs = [getattr(pt, "x_mm", 0) for pt in host.boundary_mm]
                 host_ys = [getattr(pt, "y_mm", 0) for pt in host.boundary_mm]
             host_min_x = min(host_xs) if host_xs else 0
@@ -5220,6 +5228,70 @@ def apply_inplace(
             if not isinstance(existing, ToposolidSubdivisionElem):
                 raise ValueError(
                     f"delete_toposolid_subdivision: no subdivision element with id '{cmd.id}'"
+                )
+            del els[cmd.id]
+
+        # -----------------------------------------------------------------
+        # TOP-V3-04 — Graded region commands
+        # -----------------------------------------------------------------
+
+        case CreateGradedRegionCmd():
+            eid = cmd.id or new_id()
+            if eid in els:
+                raise ValueError(f"CreateGradedRegion: duplicate element id '{eid}'")
+            if not isinstance(els.get(cmd.host_toposolid_id), ToposolidElem):
+                raise ValueError(
+                    f"CreateGradedRegion.hostToposolidId '{cmd.host_toposolid_id}' does not reference an existing toposolid"
+                )
+            if len(cmd.boundary_mm) < 3:
+                raise ValueError("CreateGradedRegion.boundaryMm requires at least 3 boundary points")
+            if cmd.target_mode == "flat":
+                if cmd.target_z_mm is None:
+                    raise ValueError(
+                        "CreateGradedRegion: targetZMm is required for flat mode"
+                    )
+            elif cmd.target_mode == "slope":
+                if cmd.slope_axis_deg is None or cmd.slope_deg_percent is None:
+                    raise ValueError(
+                        "CreateGradedRegion: slopeAxisDeg and slopeDegPercent are required for slope mode"
+                    )
+            els[eid] = GradedRegionElem(
+                kind="graded_region",
+                id=eid,
+                hostToposolidId=cmd.host_toposolid_id,
+                boundaryMm=cmd.boundary_mm,
+                targetMode=cmd.target_mode,
+                targetZMm=cmd.target_z_mm,
+                slopeAxisDeg=cmd.slope_axis_deg,
+                slopeDegPercent=cmd.slope_deg_percent,
+            )
+
+        case UpdateGradedRegionCmd():
+            existing = els.get(cmd.id)
+            if not isinstance(existing, GradedRegionElem):
+                raise ValueError(
+                    f"UpdateGradedRegion: no graded_region element with id '{cmd.id}'"
+                )
+            patch: dict[str, object] = {}
+            if cmd.boundary_mm is not None:
+                if len(cmd.boundary_mm) < 3:
+                    raise ValueError("UpdateGradedRegion.boundaryMm requires at least 3 boundary points")
+                patch["boundary_mm"] = cmd.boundary_mm
+            if cmd.target_mode is not None:
+                patch["target_mode"] = cmd.target_mode
+            if cmd.target_z_mm is not None:
+                patch["target_z_mm"] = cmd.target_z_mm
+            if cmd.slope_axis_deg is not None:
+                patch["slope_axis_deg"] = cmd.slope_axis_deg
+            if cmd.slope_deg_percent is not None:
+                patch["slope_deg_percent"] = cmd.slope_deg_percent
+            els[cmd.id] = existing.model_copy(update=patch)
+
+        case DeleteGradedRegionCmd():
+            existing = els.get(cmd.id)
+            if not isinstance(existing, GradedRegionElem):
+                raise ValueError(
+                    f"DeleteGradedRegion: no graded_region element with id '{cmd.id}'"
                 )
             del els[cmd.id]
 
@@ -5388,6 +5460,13 @@ def apply_inplace(
                 )
             if cmd.thickness_mm is not None:
                 updates["thickness_mm"] = cmd.thickness_mm
+            # TOP-V3-04: update site host binding.
+            if cmd.site_host_id is not None:
+                if not isinstance(els.get(cmd.site_host_id), ToposolidElem):
+                    raise ValueError(
+                        f"updateWall.siteHostId '{cmd.site_host_id}' does not reference an existing toposolid"
+                    )
+                updates["site_host_id"] = cmd.site_host_id
             els[cmd.id] = wall.model_copy(update=updates)
 
         case UpdateDoorCmd():
