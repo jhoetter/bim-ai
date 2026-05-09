@@ -59,7 +59,7 @@ Source segment: `05:34:19 – 06:41:32` (+ `08:35:57 – 09:57:57` for final 3D 
 ![3D View rotation](file:///Users/jhoetter/Desktop/Revit%20Specs/0029_00-00-51.png)
 *(3D house model — rotation-specific frame is beyond 0841)*
 
-**bim-ai status:** 🟡 Partial — bim-ai's 3D viewport supports orbit/pan/zoom but may use different mouse button conventions.
+**bim-ai status:** ✅ Available — `viewport/cameraRig.ts` `classifyPointer` now returns `'orbit'` when Shift+MMB is pressed (before the default MMB→pan fallthrough). This matches Revit's Shift+middle-click orbit convention. LMB drag and RMB drag also orbit; MMB alone pans; scroll wheel zooms.
 
 ---
 
@@ -70,7 +70,7 @@ Source segment: `05:34:19 – 06:41:32` (+ `08:35:57 – 09:57:57` for final 3D 
 **Screenshot:**
 ![Default 3D View](file:///Users/jhoetter/Desktop/Revit%20Specs/0064_00-04-27.png)
 
-**bim-ai status:** 🟡 Partial — bim-ai has a 3D canvas view but no named, saveable 3D views tied to the Project Browser.
+**bim-ai status:** 🟡 Partial — The 3D canvas supports orbit, pan, and zoom. `Viewport.tsx` auto-loads a saved viewpoint named `vp-main-iso` (the project's main isometric preset, per SKB-16) when the 3D view opens. `ProjectBrowser.tsx` has a "3D saved views" section listing all `viewpoint` elements. Missing: a Quick Access Toolbar "3D View" button equivalent and a ViewCube home reset.
 
 ---
 

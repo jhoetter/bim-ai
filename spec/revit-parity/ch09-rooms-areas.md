@@ -22,7 +22,7 @@ Source segment: `05:30:00 – 05:39:46`
 **Screenshot:**
 ![Room Separation Lines](file:///Users/jhoetter/Desktop/Revit%20Specs/0761_05-30-22.png)
 
-**bim-ai status:** 🟡 Partial — `PlanCanvas.tsx` (line 3599) renders `<SketchCanvas elementKind="room_separation">` when `planTool === 'room-separation-sketch'`, providing the interactive sketch-mode draw equivalent. The backend sketch-session finish emitter handles `room_separation` kind. Missing: `room_separation` category in the VVDialog annotation tab (no per-view hide toggle yet).
+**bim-ai status:** 🟡 Partial — `PlanCanvas.tsx` (line 3599) renders `<SketchCanvas elementKind="room_separation">` when `planTool === 'room-separation-sketch'`, providing the interactive sketch-mode draw equivalent. The backend sketch-session finish emitter handles `room_separation` kind. `room_separation` was added to the VVDialog annotation tab — the category now appears under Annotations in VV and can be toggled per-view. Missing: form-based workflow and pick-walls shortcut equivalent to Revit's single-click inside a closed loop placement.
 
 ---
 
