@@ -179,8 +179,10 @@ from bim_ai.commands import (
     AddViewBreakCmd,
     CreateDraftingViewCmd,
     CreateViewCalloutCmd,
+    HideElementInViewCmd,
     RemoveViewBreakCmd,
     SetElementOverrideCmd,
+    UnhideElementInViewCmd,
     CreateViewTemplateCmd,
     UpdateViewTemplateCmd,
     ApplyViewTemplateCmd,
@@ -5043,6 +5045,27 @@ def apply_inplace(
                 raise ValueError("RemoveViewBreak.viewId must reference a 'view' element")
             updated_breaks = [b for b in view.breaks if b.axis_mm != cmd.axis_mm]
             els[cmd.view_id] = view.model_copy(update={"breaks": updated_breaks})
+
+        # F-102 — per-element hide/unhide in plan views
+        case HideElementInViewCmd():
+            view = els.get(cmd.plan_view_id)
+            if not isinstance(view, PlanViewElem):
+                raise ValueError(
+                    f"hideElementInView: {cmd.plan_view_id!r} is not a plan_view"
+                )
+            updated = list(view.hidden_element_ids)
+            if cmd.element_id not in updated:
+                updated.append(cmd.element_id)
+            els[cmd.plan_view_id] = view.model_copy(update={"hidden_element_ids": updated})
+
+        case UnhideElementInViewCmd():
+            view = els.get(cmd.plan_view_id)
+            if not isinstance(view, PlanViewElem):
+                raise ValueError(
+                    f"unhideElementInView: {cmd.plan_view_id!r} is not a plan_view"
+                )
+            updated = [eid for eid in view.hidden_element_ids if eid != cmd.element_id]
+            els[cmd.plan_view_id] = view.model_copy(update={"hidden_element_ids": updated})
 
         # -----------------------------------------------------------------
         # VIE-V3-03 — View templates v3 (create / update / apply / unbind / delete)

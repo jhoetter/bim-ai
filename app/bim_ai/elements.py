@@ -1440,6 +1440,7 @@ class PlanViewElem(BaseModel):
     view_range_top_mm: float | None = Field(default=None, alias="viewRangeTopMm")
     cut_plane_offset_mm: float | None = Field(default=None, alias="cutPlaneOffsetMm")
     categories_hidden: list[str] = Field(default_factory=list, alias="categoriesHidden")
+    hidden_element_ids: list[str] = Field(default_factory=list, alias="hiddenElementIds")
     plan_detail_level: PlanDetailLevelPlan | None = Field(default=None, alias="planDetailLevel")
     plan_room_fill_opacity_scale: float | None = Field(
         default=None, alias="planRoomFillOpacityScale"

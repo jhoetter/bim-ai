@@ -1314,6 +1314,8 @@ export type Element =
       viewRangeTopMm?: number | null;
       cutPlaneOffsetMm?: number | null;
       categoriesHidden?: string[];
+      /** F-102: per-element IDs hidden in this plan view (Revit "Hide in View → Element"). */
+      hiddenElementIds?: string[];
       planDetailLevel?: PlanDetailLevelPlan | null;
       planRoomFillOpacityScale?: number | null;
       planShowOpeningTags?: boolean;

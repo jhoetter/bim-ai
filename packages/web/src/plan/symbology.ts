@@ -1101,6 +1101,10 @@ export function rebuildPlanMeshes(
     hiddenSemanticKinds?: ReadonlySet<string>;
     /** F-014: when set, kinds in this set render in magenta (55% opacity) instead of being hidden. */
     revealHiddenKinds?: ReadonlySet<string>;
+    /** F-102: element IDs individually hidden in this plan view. */
+    hiddenElementIds?: ReadonlySet<string>;
+    /** F-102: element IDs that are individually hidden but shown magenta in reveal mode. */
+    revealHiddenElementIds?: ReadonlySet<string>;
     wirePrimitives?: PlanProjectionPrimitivesV1Wire | null;
     planGraphicHints?: PlanGraphicHintsResolved | null;
     planAnnotationHints?: PlanAnnotationHintsResolved | null;

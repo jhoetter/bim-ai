@@ -463,8 +463,31 @@ export function WorkspaceRightRail({
                       borderTop: '1px solid var(--color-border)',
                       paddingTop: 6,
                       marginTop: 8,
+                      display: 'flex',
+                      gap: 4,
+                      flexWrap: 'wrap',
                     }}
                   >
+                    <button
+                      data-testid="inspector-hide-element"
+                      type="button"
+                      onClick={() => {
+                        void onSemanticCommand({
+                          type: 'hideElementInView',
+                          planViewId: activePlanViewId,
+                          elementId: el.id,
+                        });
+                      }}
+                      style={{
+                        fontSize: 11,
+                        padding: '2px 8px',
+                        cursor: 'pointer',
+                        color: 'var(--color-muted)',
+                      }}
+                      title={`Hide this element in the active plan view`}
+                    >
+                      Hide Element in View
+                    </button>
                     <button
                       data-testid="inspector-hide-category"
                       type="button"
