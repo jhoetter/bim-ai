@@ -1,0 +1,35 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "f04051399374",
+  "session_id": "1e07b668-5c09-4d39-a201-322aafeb3b95",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-09T14:34:45.535871Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/cli/lib/one-family-home-commands.mjs",
+    "nightshift/seed-target-house-status.md"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "8e3e61b1a4f0",
+  "token_usage": {
+    "input_tokens": 37,
+    "cache_creation_tokens": 124521,
+    "cache_read_tokens": 3305558,
+    "output_tokens": 69345,
+    "api_call_count": 35
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-09T14:34:45.516865Z",
+    "agent_lines": 297,
+    "agent_removed": 498,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 297,
+    "total_lines_changed": 795,
+    "agent_percentage": 100,
+    "metric_version": 2
+  }
+}
