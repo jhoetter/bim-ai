@@ -87,6 +87,7 @@ import { OnboardingTour } from '../onboarding/OnboardingTour';
 import { readOnboardingProgress, resetOnboarding } from '../onboarding/tour';
 import { canvasContainerStyle, CanvasMount } from './CanvasMount';
 import { defaultTabFallbackForKind, EmptyStateOverlay, FloatingPalette } from './WorkspaceHelpers';
+import { EmptyStateHint } from './EmptyStateHint';
 import { MilestoneDialog } from '../collab/MilestoneDialog';
 import { WorkspaceLeftRail } from './WorkspaceLeftRail';
 import { WorkspaceRightRail } from './WorkspaceRightRail';
@@ -893,6 +894,9 @@ export function Workspace(): JSX.Element {
   const showEmptyState =
     (Object.values(elementsById) as Element[]).filter((e) => e.kind === 'wall').length === 0;
 
+  /* ── CHR-V3-10: canvas hint (select/tool idle) ────────────────────── */
+  const showCanvasHint = !selectedId && planTool === 'select';
+
   /* ── Compose AppShell slots ───────────────────────────────────────── */
   return (
     <>
@@ -1048,6 +1052,7 @@ export function Workspace(): JSX.Element {
                 onCta={() => void insertSeedHouse()}
               />
             ) : null}
+            {showCanvasHint && !showEmptyState ? <EmptyStateHint /> : null}
             <FloatingPalette
               mode={mode}
               activeTool={legacyToToolId(planTool)}
