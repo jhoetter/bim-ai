@@ -1,0 +1,25 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "befd1d6f4414",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "spec/rendering-quality-tracker.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/be/fd1d6f4414/0/metadata.json",
+      "transcript": "/be/fd1d6f4414/0/full.jsonl",
+      "content_hash": "/be/fd1d6f4414/0/content_hash.txt",
+      "prompt": "/be/fd1d6f4414/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 6268,
+    "cache_creation_tokens": 3333635,
+    "cache_read_tokens": 146637350,
+    "output_tokens": 950466,
+    "api_call_count": 1566
+  }
+}
