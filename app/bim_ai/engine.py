@@ -200,6 +200,9 @@ from bim_ai.commands import (
     CreateScheduleViewCmd,
     DrawDetailRegionCmd,
     UpdateDetailRegionCmd,
+    CreateBrandTemplateCmd,
+    UpdateBrandTemplateCmd,
+    DeleteBrandTemplateCmd,
 )
 from bim_ai.constraints import Violation, evaluate
 from bim_ai.datum_levels import (
@@ -324,6 +327,7 @@ from bim_ai.elements import (
     DecalElem,
     PropertyDefinitionElem,
     HatchPatternDefElem,
+    BrandTemplateElem,
 )
 from bim_ai.export_ifc import (
     AUTHORITATIVE_REPLAY_KIND_V0,
@@ -5272,6 +5276,66 @@ def apply_inplace(
             if cmd.phase_demolished is not None:
                 patch["phase_demolished"] = cmd.phase_demolished
             els[cmd.id] = existing.model_copy(update=patch)
+
+        case CreateBrandTemplateCmd():
+            import re as _re
+
+            _hex_re = _re.compile(r"^#[0-9a-fA-F]{6}$")
+            if not _hex_re.match(cmd.accent_hex):
+                raise ValueError(
+                    f"create_brand_template.accentHex must be #RRGGBB, got '{cmd.accent_hex}'"
+                )
+            if not _hex_re.match(cmd.accent_foreground_hex):
+                raise ValueError(
+                    f"create_brand_template.accentForegroundHex must be #RRGGBB, got '{cmd.accent_foreground_hex}'"
+                )
+            if cmd.id in els:
+                raise ValueError(f"duplicate element id '{cmd.id}'")
+            els[cmd.id] = BrandTemplateElem(
+                id=cmd.id,
+                name=cmd.name,
+                accentHex=cmd.accent_hex,
+                accentForegroundHex=cmd.accent_foreground_hex,
+                typeface=cmd.typeface,
+                logoMarkSvgUri=cmd.logo_mark_svg_uri,
+                cssOverrideSnippet=cmd.css_override_snippet,
+            )
+
+        case UpdateBrandTemplateCmd():
+            import re as _re
+
+            _hex_re = _re.compile(r"^#[0-9a-fA-F]{6}$")
+            existing = els.get(cmd.id)
+            if existing is None or existing.kind != "brand_template":
+                raise ValueError(f"No brand_template element with id '{cmd.id}'")
+            patch_bt: dict = {}
+            if cmd.name is not None:
+                patch_bt["name"] = cmd.name
+            if cmd.accent_hex is not None:
+                if not _hex_re.match(cmd.accent_hex):
+                    raise ValueError(
+                        f"update_brand_template.accentHex must be #RRGGBB, got '{cmd.accent_hex}'"
+                    )
+                patch_bt["accent_hex"] = cmd.accent_hex
+            if cmd.accent_foreground_hex is not None:
+                if not _hex_re.match(cmd.accent_foreground_hex):
+                    raise ValueError(
+                        f"update_brand_template.accentForegroundHex must be #RRGGBB, got '{cmd.accent_foreground_hex}'"
+                    )
+                patch_bt["accent_foreground_hex"] = cmd.accent_foreground_hex
+            if cmd.typeface is not None:
+                patch_bt["typeface"] = cmd.typeface
+            if cmd.logo_mark_svg_uri is not None:
+                patch_bt["logo_mark_svg_uri"] = cmd.logo_mark_svg_uri
+            if cmd.css_override_snippet is not None:
+                patch_bt["css_override_snippet"] = cmd.css_override_snippet
+            els[cmd.id] = existing.model_copy(update=patch_bt)
+
+        case DeleteBrandTemplateCmd():
+            existing = els.get(cmd.id)
+            if existing is None or existing.kind != "brand_template":
+                raise ValueError(f"No brand_template element with id '{cmd.id}'")
+            del els[cmd.id]
 
     # KRN-08: areas track a derived computedAreaSqMm. Recompute after every
     # command apply so create/update/delete of areas (and shafts that affect

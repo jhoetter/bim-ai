@@ -133,7 +133,8 @@ export type ElemKind =
   | 'material'
   | 'decal'
   | 'hatch_pattern_def'
-  | 'property_definition';
+  | 'property_definition'
+  | 'brand_template';
 
 export type PhaseFilter = 'all' | 'existing' | 'demolition' | 'new';
 
@@ -1725,7 +1726,8 @@ export type Element =
   | HatchPatternDef
   | PropertyDefinitionElem
   | MaterialElem
-  | DecalElem;
+  | DecalElem
+  | BrandTemplateElem;
 
 export type Violation = {
   ruleId: string;
@@ -2412,4 +2414,58 @@ export type CompareResult = {
   prePngPath: string;
   postPngPath: string;
   diffPngPath: string;
+};
+
+// ---------------------------------------------------------------------------
+// OUT-V3-03 — BrandTemplate element + export types
+// ---------------------------------------------------------------------------
+
+export type BrandTemplateElem = {
+  kind: 'brand_template';
+  id: string;
+  name: string;
+  accentHex: string;
+  accentForegroundHex: string;
+  typeface: string;
+  logoMarkSvgUri?: string;
+  cssOverrideSnippet?: string;
+};
+
+export type CreateBrandTemplateCmd = {
+  type: 'create_brand_template';
+  id: string;
+  name: string;
+  accentHex: string;
+  accentForegroundHex: string;
+  typeface?: string;
+  logoMarkSvgUri?: string;
+  cssOverrideSnippet?: string;
+};
+
+export type UpdateBrandTemplateCmd = {
+  type: 'update_brand_template';
+  id: string;
+  name?: string;
+  accentHex?: string;
+  accentForegroundHex?: string;
+  typeface?: string;
+  logoMarkSvgUri?: string;
+  cssOverrideSnippet?: string;
+};
+
+export type DeleteBrandTemplateCmd = { type: 'delete_brand_template'; id: string };
+
+export type BrandedExportBundle = {
+  schemaVersion: 'out-v3.0';
+  format: 'pdf' | 'pptx';
+  brandTemplateId?: string;
+  brandLayer?: {
+    accentHex: string;
+    accentForegroundHex: string;
+    typeface: string;
+    logoMarkSvgUri?: string;
+    cssOverrideSnippet?: string;
+  };
+  sheets: Array<{ sheetId: string; name: string }>;
+  invariantCheck: 'layer-c-only';
 };

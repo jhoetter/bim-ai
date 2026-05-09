@@ -1920,6 +1920,7 @@ ElementKind = Literal[
     "view",
     "toposolid",
     "property_definition",
+    "brand_template",
 ]
 
 
@@ -2354,17 +2355,24 @@ class DecalElem(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# SCH-V3-01 — Custom property definition element
+# OUT-V3-03 — BrandTemplate element
 # ---------------------------------------------------------------------------
 
+_HEX_PATTERN = re.compile(r"^#[0-9a-fA-F]{6}$")
 
-class PropertyDefinitionElem(BaseModel):
-    """SCH-V3-01 — project-scoped custom property definition."""
 
-    enum_values: list[str] | None = Field(default=None, alias="enumValues")
-    default_value: Any | None = Field(default=None, alias="defaultValue")
-    applies_to: list[str] = Field(alias="appliesTo")
-    show_in_schedule: bool = Field(default=True, alias="showInSchedule")
+class BrandTemplateElem(BaseModel):
+    """OUT-V3-03 — Layer-C brand override for PDF/PPTX export."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    kind: Literal["brand_template"] = "brand_template"
+    id: str
+    name: str
+    accent_hex: str = Field(alias="accentHex")
+    accent_foreground_hex: str = Field(alias="accentForegroundHex")
+    typeface: str = "Inter"
+    logo_mark_svg_uri: str | None = Field(default=None, alias="logoMarkSvgUri")
+    css_override_snippet: str | None = Field(default=None, alias="cssOverrideSnippet")
 
 
 Element = Annotated[
@@ -2447,7 +2455,8 @@ Element = Annotated[
     | HatchPatternDefElem
     | MaterialElem
     | DecalElem
-    | PropertyDefinitionElem,
+    | PropertyDefinitionElem
+    | BrandTemplateElem,
     Field(discriminator="kind"),
 ]
 

@@ -1093,3 +1093,129 @@ register(
         agentSafetyNotes="Safe to call any number of times. Same inputs → byte-identical output.",
     )
 )
+
+# ---------------------------------------------------------------------------
+# OUT-V3-03 — BrandTemplate CRUD + branded PDF export
+# ---------------------------------------------------------------------------
+
+register(
+    ToolDescriptor(
+        name="create-brand-template",
+        category="mutation",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "CreateBrandTemplateInput",
+            "type": "object",
+            "required": ["id", "name", "accentHex", "accentForegroundHex"],
+            "properties": {
+                "id": {"type": "string"},
+                "name": {"type": "string"},
+                "accentHex": {
+                    "type": "string",
+                    "pattern": "^#[0-9a-fA-F]{6}$",
+                    "description": "CSS hex colour for brand accent, e.g. '#2563eb'",
+                },
+                "accentForegroundHex": {
+                    "type": "string",
+                    "pattern": "^#[0-9a-fA-F]{6}$",
+                    "description": "Foreground colour on the accent surface, e.g. '#ffffff'",
+                },
+                "typeface": {
+                    "type": "string",
+                    "default": "Inter",
+                    "description": "CSS font-family for brand text",
+                },
+                "logoMarkSvgUri": {
+                    "type": "string",
+                    "description": "data: URI or remote URL for the logo SVG mark",
+                },
+                "cssOverrideSnippet": {
+                    "type": "string",
+                    "description": "Raw CSS injected as Layer C overrides (opaque; no validation)",
+                },
+            },
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "CreateBrandTemplateOutput",
+            "type": "object",
+            "properties": {
+                "applied": {"type": "boolean"},
+                "newRevision": {"type": "integer"},
+            },
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Brand template created"),
+            "invalid_hex": ExitCode(code=1, meaning="accentHex or accentForegroundHex not #RRGGBB"),
+            "duplicate_id": ExitCode(code=1, meaning="Element with that id already exists"),
+        },
+        cliExample="bim-ai create-brand-template --id bt-1 --name Acme --accentHex '#2563eb' --accentForegroundHex '#ffffff'",
+        restEndpoint=RestEndpoint(method="POST", path="/api/models/{modelId}/bundles"),
+        sideEffects="mutates-kernel",
+        agentSafetyNotes="Wrap in a CommandBundle with type='create_brand_template'.",
+    )
+)
+
+register(
+    ToolDescriptor(
+        name="export-branded-pdf",
+        category="query",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ExportBrandedPdfInput",
+            "type": "object",
+            "required": ["modelId"],
+            "properties": {
+                "modelId": {"type": "string", "description": "UUID of the model"},
+                "brandTemplateId": {
+                    "type": "string",
+                    "description": "Optional id of a brand_template element; omit for unbranded export",
+                },
+            },
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "BrandedExportBundle",
+            "type": "object",
+            "required": ["schemaVersion", "format", "sheets", "invariantCheck"],
+            "properties": {
+                "schemaVersion": {"type": "string", "enum": ["out-v3.0"]},
+                "format": {"type": "string", "enum": ["pdf", "pptx"]},
+                "brandTemplateId": {"type": "string"},
+                "brandLayer": {
+                    "type": "object",
+                    "properties": {
+                        "accentHex": {"type": "string"},
+                        "accentForegroundHex": {"type": "string"},
+                        "typeface": {"type": "string"},
+                        "logoMarkSvgUri": {"type": "string"},
+                        "cssOverrideSnippet": {"type": "string"},
+                    },
+                },
+                "sheets": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "sheetId": {"type": "string"},
+                            "name": {"type": "string"},
+                        },
+                    },
+                },
+                "invariantCheck": {"type": "string", "enum": ["layer-c-only"]},
+            },
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Export bundle returned"),
+            "not_found": ExitCode(code=1, meaning="Model or brandTemplateId not found"),
+        },
+        cliExample="bim-ai export-branded-pdf --modelId <uuid> --brandTemplateId bt-1",
+        restEndpoint=RestEndpoint(
+            method="GET", path="/api/v3/models/{modelId}/export/pdf"
+        ),
+        sideEffects="none",
+        agentSafetyNotes="Read-only; safe to call freely.",
+    )
+)
