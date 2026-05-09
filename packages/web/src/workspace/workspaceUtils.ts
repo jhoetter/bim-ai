@@ -52,6 +52,7 @@ export const KNOWN_PLAN_TOOLS = new Set<ToolId>([
   'room-separation-sketch',
   'plan-region',
   'toposolid_subdivision',
+  'grid',
 ]);
 
 export type LegacyPlanTool =
@@ -91,7 +92,7 @@ export function toolIdToLegacy(tool: ToolId): LegacyPlanTool | null {
 
 export function legacyToToolId(legacy: LegacyPlanTool): ToolId {
   if (legacy === 'room_rectangle') return 'room';
-  if (legacy === 'grid') return 'select';
+  if (legacy === 'grid') return 'grid';
   return legacy as ToolId;
 }
 

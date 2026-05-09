@@ -4,14 +4,14 @@ import type { Comment, Element, SheetAnchor } from '@bim-ai/core';
 
 import { SheetCanvas } from '../workspace/SheetCanvas';
 import { CommentsPanel } from '../workspace/CommentsPanel';
-import type { UxComment } from '../state/store';
+import { useBimStore, type UxComment } from '../state/store';
 
 type ReviewMode = 'cm' | 'an' | 'mr';
 
 const REVIEW_TOOLS: Array<{ mode: ReviewMode; label: string; title: string }> = [
-  { mode: 'cm', label: 'CM', title: 'Comment' },
-  { mode: 'an', label: 'AN', title: 'Markup' },
-  { mode: 'mr', label: 'MR', title: 'Resolve' },
+  { mode: 'cm', label: 'Comment', title: 'Click on the sheet to place a comment pin (CM)' },
+  { mode: 'an', label: 'Markup', title: 'Draw freehand markup annotations (AN)' },
+  { mode: 'mr', label: 'Resolve', title: 'Click comment pins to mark them resolved (MR)' },
 ];
 
 type PixelMapEntry = { sourceViewId: string; sourceElementId?: string };
@@ -32,6 +32,8 @@ export function SheetReviewSurface({
   readOnly = false,
   elementsById,
 }: SheetReviewSurfaceProps): JSX.Element {
+  const userId = useBimStore((s) => s.userId);
+  const userDisplayName = useBimStore((s) => s.userDisplayName);
   const [mode, setMode] = useState<ReviewMode>('cm');
   const [comments, setComments] = useState<Comment[]>([]);
   const [activePinId, setActivePinId] = useState<string | null>(null);
@@ -118,7 +120,7 @@ export function SheetReviewSurface({
       const res = await fetch(`/api/v3/models/${encodeURIComponent(modelId)}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ authorId: 'current-user', body, anchor }),
+        body: JSON.stringify({ authorId: userId ?? 'current-user', body, anchor }),
       });
       if (!res.ok) return;
       const created = (await res.json()) as Comment;
@@ -230,7 +232,7 @@ export function SheetReviewSurface({
         >
           <CommentsPanel
             comments={activePinId ? activeComment : []}
-            userDisplay="You"
+            userDisplay={userDisplayName || 'You'}
             onPost={handlePost}
             onResolve={handleResolve}
             onClose={() => {

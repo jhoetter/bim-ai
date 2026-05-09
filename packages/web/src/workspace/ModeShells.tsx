@@ -6,6 +6,7 @@ import { SCHEDULE_DEFAULTS } from './modeSurfaces';
 import { AdvisorPanel } from '../advisor/AdvisorPanel';
 import { useBimStore } from '../state/store';
 import { SheetCanvas } from './SheetCanvas';
+import { SheetReviewSurface } from '../plan/SheetReviewSurface';
 import { SectionPlaceholderPane } from './SectionPlaceholderPane';
 
 /**
@@ -62,6 +63,28 @@ export function SheetModeShell({
   modelId?: string;
 }): JSX.Element {
   const evidenceFullBleed = new URLSearchParams(window.location.search).has('evidenceSheetFull');
+
+  // Resolve the displayed sheet — mirrors SheetCanvas's own selection logic.
+  const sheets = asArr(elementsById, 'sheet');
+  const resolvedSheet =
+    sheets.find((s) => s.id === preferredSheetId) ??
+    [...sheets].sort((a, b) => a.name.localeCompare(b.name))[0];
+
+  // MRK-V3-03: when a modelId is available and a sheet is selected, mount the
+  // review surface which adds comment pins and review-mode toolbar on top of
+  // the sheet canvas.
+  if (modelId && resolvedSheet) {
+    return (
+      <div data-testid="sheet-mode-shell" className="h-full w-full overflow-hidden">
+        <SheetReviewSurface
+          sheetId={resolvedSheet.id}
+          modelId={modelId}
+          elementsById={elementsById}
+        />
+      </div>
+    );
+  }
+
   return (
     <div data-testid="sheet-mode-shell" className="h-full w-full overflow-auto bg-[#e5e5e5] p-6">
       <SheetCanvas
