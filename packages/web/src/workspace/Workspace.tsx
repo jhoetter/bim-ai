@@ -797,7 +797,7 @@ export function Workspace(): JSX.Element {
     return (Object.values(elementsById) as Element[])
       .filter((e): e is Extract<Element, { kind: 'level' }> => e.kind === 'level')
       .sort((a, b) => a.elevationMm - b.elevationMm)
-      .map((l) => ({ id: l.id, label: l.name }));
+      .map((l) => ({ id: l.id, label: l.name, elevationMm: l.elevationMm }));
   }, [elementsById]);
   const activeLevel = levels.find((l) => l.id === activeLevelId) ??
     levels[0] ?? { id: '', label: '—' };

@@ -85,8 +85,8 @@ export type StatusSaveState = 'saved' | 'saving' | 'unsynced' | 'error';
 export type StatusWsState = 'connected' | 'reconnecting' | 'offline';
 
 export interface StatusBarProps {
-  level: { id: string; label: string };
-  levels?: { id: string; label: string }[];
+  level: { id: string; label: string; elevationMm?: number };
+  levels?: { id: string; label: string; elevationMm?: number }[];
   onLevelChange?: (id: string) => void;
   toolLabel?: string | null;
   /** Snap mode group; toggling individual snaps lives here. */
@@ -285,13 +285,21 @@ function ConflictSlot({
   );
 }
 
+function fmtElevation(elevationMm: number | undefined): string | null {
+  if (elevationMm == null) return null;
+  const m = elevationMm / 1000;
+  if (elevationMm === 0) return `±0.000 m`;
+  if (elevationMm > 0) return `+${m.toFixed(3)} m`;
+  return `−${Math.abs(m).toFixed(3)} m`;
+}
+
 function LevelCluster({
   level,
   levels,
   onLevelChange,
 }: {
-  level: { id: string; label: string };
-  levels: { id: string; label: string }[];
+  level: { id: string; label: string; elevationMm?: number };
+  levels: { id: string; label: string; elevationMm?: number }[];
   onLevelChange?: (id: string) => void;
 }): JSX.Element {
   const { t } = useTranslation();
@@ -328,6 +336,17 @@ function LevelCluster({
       >
         {t('statusbar.levelLabel')}{' '}
         <span className="font-medium text-foreground">{level.label}</span>
+        {fmtElevation(level.elevationMm) != null ? (
+          <>
+            <span className="mx-1 opacity-40">|</span>
+            <span
+              data-testid="statusbar-level-elevation"
+              className="text-[10px] text-muted opacity-70"
+            >
+              {fmtElevation(level.elevationMm)}
+            </span>
+          </>
+        ) : null}
         <Icons.disclosureOpen size={ICON_SIZE.chrome} aria-hidden="true" className="ml-1 inline" />
       </button>
       {open ? (
@@ -351,7 +370,14 @@ function LevelCluster({
                 l.id === level.id ? 'bg-accent-soft text-foreground' : 'hover:bg-surface-strong',
               ].join(' ')}
             >
-              {l.label}
+              <span className="flex items-center gap-1.5">
+                {l.label}
+                {fmtElevation(l.elevationMm) != null ? (
+                  <span className="text-[10px] text-muted opacity-70">
+                    {fmtElevation(l.elevationMm)}
+                  </span>
+                ) : null}
+              </span>
               {l.id === level.id ? (
                 <span className="text-xs text-muted">{t('statusbar.levelActive')}</span>
               ) : null}
