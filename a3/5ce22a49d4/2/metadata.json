@@ -1,0 +1,31 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "a35ce22a49d4",
+  "session_id": "484b3fc4-cdb5-4d63-973e-ff931c99ea77",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-09T14:02:38.818348Z",
+  "branch": "feat/v3-plan-rayon",
+  "checkpoints_count": 0,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "7d5efdcc4cda",
+  "checkpoint_transcript_start": 5110,
+  "transcript_lines_at_start": 5110,
+  "token_usage": {
+    "input_tokens": 35,
+    "cache_creation_tokens": 62546,
+    "cache_read_tokens": 3077147,
+    "output_tokens": 36799,
+    "api_call_count": 27
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}
