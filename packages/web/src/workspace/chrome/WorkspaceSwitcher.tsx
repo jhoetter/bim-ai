@@ -92,7 +92,35 @@ export function WorkspaceSwitcher({
         />
       </button>
       {isOpen && (
-        <ul role="listbox" style={menuStyle}>
+        <ul
+          role="listbox"
+          style={menuStyle}
+          ref={(el) => {
+            const active = el?.querySelector<HTMLElement>('[aria-selected="true"]');
+            const first = el?.querySelector<HTMLElement>(
+              '[role="option"]:not([aria-disabled="true"])',
+            );
+            (active ?? first)?.focus();
+          }}
+          onKeyDown={(e) => {
+            const options = Array.from(
+              e.currentTarget.querySelectorAll<HTMLElement>(
+                '[role="option"]:not([aria-disabled="true"])',
+              ),
+            );
+            const idx = options.indexOf(document.activeElement as HTMLElement);
+            if (e.key === 'ArrowDown') {
+              e.preventDefault();
+              options[(idx + 1) % options.length]?.focus();
+            } else if (e.key === 'ArrowUp') {
+              e.preventDefault();
+              options[(idx - 1 + options.length) % options.length]?.focus();
+            } else if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              (document.activeElement as HTMLElement | null)?.click();
+            }
+          }}
+        >
           {WORKSPACES.map((w) => (
             <WorkspaceRow
               key={w.id}
@@ -163,6 +191,7 @@ function WorkspaceRow({
     <li
       role="option"
       aria-selected={isActive}
+      tabIndex={0}
       data-testid={`workspace-option-${workspace.id}`}
       onClick={onSelect}
       style={{
