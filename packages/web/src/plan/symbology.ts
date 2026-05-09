@@ -1099,6 +1099,8 @@ export function rebuildPlanMeshes(
     selectedId?: string;
     presentation?: PlanPresentationPreset;
     hiddenSemanticKinds?: ReadonlySet<string>;
+    /** F-014: when set, kinds in this set render in magenta (55% opacity) instead of being hidden. */
+    revealHiddenKinds?: ReadonlySet<string>;
     wirePrimitives?: PlanProjectionPrimitivesV1Wire | null;
     planGraphicHints?: PlanGraphicHintsResolved | null;
     planAnnotationHints?: PlanAnnotationHintsResolved | null;
@@ -1136,7 +1138,27 @@ export function rebuildPlanMeshes(
   const level = opts.activeLevelId;
   const presentation = opts.presentation ?? 'default';
   const hidden = opts.hiddenSemanticKinds;
-  const kindHidden = (k: string) => Boolean(hidden?.has(k));
+  const revealed = opts.revealHiddenKinds;
+  // F-014: in reveal mode, nothing is actually hidden (show all elements)
+  const kindHidden = (k: string) => Boolean(hidden?.has(k)) && !Boolean(revealed?.has(k));
+  const kindRevealMagenta = (k: string) => Boolean(revealed?.has(k));
+
+  /** Tint all mesh/line children of obj to magenta at 55% opacity. */
+  function tintMagenta(obj: THREE.Object3D): void {
+    obj.traverse((child) => {
+      const mesh = child as THREE.Mesh | THREE.Line;
+      if (!(mesh instanceof THREE.Mesh) && !(mesh instanceof THREE.Line)) return;
+      if (!mesh.material) return;
+      const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      mesh.material = mats.map((m: THREE.Material) => {
+        const c = m.clone();
+        if ('color' in c) (c as unknown as { color: THREE.Color }).color.setHex(0xff00ff);
+        (c as unknown as { transparent: boolean; opacity: number }).transparent = true;
+        (c as unknown as { transparent: boolean; opacity: number }).opacity = 0.55;
+        return c;
+      });
+    });
+  }
 
   type WallElem = Extract<Element, { kind: 'wall' }>;
 
@@ -1147,180 +1169,248 @@ export function rebuildPlanMeshes(
 
   const wallsById: Record<string, WallElem> = Object.fromEntries(walls.map((w) => [w.id, w]));
 
-  for (const g of Object.values(elementsById)) {
-    if (g.kind !== 'grid_line') continue;
-    if (kindHidden('grid_line')) continue;
+  /** Helper: tint children added since beforeIdx with magenta if the kind is revealed. */
+  function tintNewChildren(beforeIdx: number, kind: string): void {
+    if (!kindRevealMagenta(kind)) return;
+    for (let i = beforeIdx; i < holder.children.length; i++) {
+      tintMagenta(holder.children[i]!);
+    }
+  }
 
-    if (g.levelId && level && g.levelId !== level) continue;
-
-    holder.add(gridLineThree(g));
+  {
+    const before = holder.children.length;
+    for (const g of Object.values(elementsById)) {
+      if (g.kind !== 'grid_line') continue;
+      if (kindHidden('grid_line')) continue;
+      if (g.levelId && level && g.levelId !== level) continue;
+      holder.add(gridLineThree(g));
+    }
+    tintNewChildren(before, 'grid_line');
   }
 
   // KRN-05: project-scope reference planes (dashed grey line + label).
-  let rpAutoIdx = 0;
-  for (const rp of Object.values(elementsById)) {
-    if (rp.kind !== 'reference_plane') continue;
-    if (kindHidden('reference_plane')) continue;
-    // Skip the family-editor variant (no levelId).
-    if (!('levelId' in rp) || typeof rp.levelId !== 'string') continue;
-    if (level && rp.levelId !== level) continue;
-    rpAutoIdx += 1;
-    holder.add(referencePlanePlanThree(rp, `RP-${rpAutoIdx}`));
+  {
+    let rpAutoIdx = 0;
+    const before = holder.children.length;
+    for (const rp of Object.values(elementsById)) {
+      if (rp.kind !== 'reference_plane') continue;
+      if (kindHidden('reference_plane')) continue;
+      // Skip the family-editor variant (no levelId).
+      if (!('levelId' in rp) || typeof rp.levelId !== 'string') continue;
+      if (level && rp.levelId !== level) continue;
+      rpAutoIdx += 1;
+      holder.add(referencePlanePlanThree(rp, `RP-${rpAutoIdx}`));
+    }
+    tintNewChildren(before, 'reference_plane');
   }
 
   // KRN-01: property lines render in plan regardless of active level (site-wide).
-  for (const pl of Object.values(elementsById)) {
-    if (pl.kind !== 'property_line') continue;
-    if (kindHidden('property_line')) continue;
-    holder.add(propertyLinePlanThree(pl));
+  {
+    const before = holder.children.length;
+    for (const pl of Object.values(elementsById)) {
+      if (pl.kind !== 'property_line') continue;
+      if (kindHidden('property_line')) continue;
+      holder.add(propertyLinePlanThree(pl));
+    }
+    tintNewChildren(before, 'property_line');
   }
 
-  for (const r of Object.values(elementsById)) {
-    if (r.kind !== 'room') continue;
-    if (kindHidden('room')) continue;
-
-    if (level && r.levelId !== level) continue;
-
-    holder.add(roomMesh(r, presentation, { roomFillOpacityScale }));
+  {
+    const before = holder.children.length;
+    for (const r of Object.values(elementsById)) {
+      if (r.kind !== 'room') continue;
+      if (kindHidden('room')) continue;
+      if (level && r.levelId !== level) continue;
+      holder.add(roomMesh(r, presentation, { roomFillOpacityScale }));
+    }
+    tintNewChildren(before, 'room');
   }
 
   // CAN-V3-01: floor/roof outlines are projection geometry — suppress when projMajor is null (1:500+).
   const suppressProjectionFallback = opts.lineWeights != null && opts.lineWeights.projMajor == null;
 
   if (!suppressProjectionFallback) {
-    for (const f of Object.values(elementsById)) {
-      if (f.kind !== 'floor') continue;
-      if (kindHidden('floor')) continue;
+    {
+      const before = holder.children.length;
+      for (const f of Object.values(elementsById)) {
+        if (f.kind !== 'floor') continue;
+        if (kindHidden('floor')) continue;
 
-      if (level && f.levelId !== level) continue;
+        if (level && f.levelId !== level) continue;
 
-      const floorFillY = PLAN_Y + 0.001;
-      holder.add(
-        horizontalOutlineMesh(
+        const floorFillY = PLAN_Y + 0.001;
+        holder.add(
+          horizontalOutlineMesh(
+            f.boundaryMm,
+            floorFillY,
+            getPlanPalette().floorOutline,
+            PLAN_FLOOR_FILL_OPACITY_BASE,
+            f.id,
+          ),
+        );
+        const floorHatch = hatchPolygon2D(
           f.boundaryMm,
-          floorFillY,
-          getPlanPalette().floorOutline,
-          PLAN_FLOOR_FILL_OPACITY_BASE,
-          f.id,
-        ),
-      );
-      const floorHatch = hatchPolygon2D(
-        f.boundaryMm,
-        500,
-        floorFillY + 0.002,
-        readToken('--draft-cut', '#1d2330'),
-        0.12,
-      );
-      if (floorHatch) holder.add(floorHatch);
+          500,
+          floorFillY + 0.002,
+          readToken('--draft-cut', '#1d2330'),
+          0.12,
+        );
+        if (floorHatch) holder.add(floorHatch);
+      }
+      tintNewChildren(before, 'floor');
     }
 
-    for (const rf of Object.values(elementsById)) {
-      if (rf.kind !== 'roof') continue;
-      if (kindHidden('roof')) continue;
+    {
+      const before = holder.children.length;
+      for (const rf of Object.values(elementsById)) {
+        if (rf.kind !== 'roof') continue;
+        if (kindHidden('roof')) continue;
 
-      if (level && rf.referenceLevelId !== level) continue;
+        if (level && rf.referenceLevelId !== level) continue;
 
+        holder.add(
+          horizontalOutlineMesh(
+            rf.footprintMm,
+            PLAN_Y + 0.004,
+            getPlanPalette().roofOutline,
+            PLAN_ROOF_FILL_OPACITY_BASE,
+            rf.id,
+          ),
+        );
+      }
+      tintNewChildren(before, 'roof');
+    }
+  }
+
+  {
+    const before = holder.children.length;
+    for (const cl of Object.values(elementsById)) {
+      if (cl.kind !== 'ceiling') continue;
+      if (kindHidden('ceiling')) continue;
+      if (level && cl.levelId !== level) continue;
       holder.add(
         horizontalOutlineMesh(
-          rf.footprintMm,
-          PLAN_Y + 0.004,
-          getPlanPalette().roofOutline,
-          PLAN_ROOF_FILL_OPACITY_BASE,
-          rf.id,
+          cl.boundaryMm,
+          PLAN_Y + 0.003,
+          getPlanPalette().floorOutline,
+          PLAN_FLOOR_FILL_OPACITY_BASE * 0.7,
+          cl.id,
         ),
       );
     }
+    tintNewChildren(before, 'ceiling');
   }
 
-  for (const cl of Object.values(elementsById)) {
-    if (cl.kind !== 'ceiling') continue;
-    if (kindHidden('ceiling')) continue;
-    if (level && cl.levelId !== level) continue;
-    holder.add(
-      horizontalOutlineMesh(
-        cl.boundaryMm,
-        PLAN_Y + 0.003,
-        getPlanPalette().floorOutline,
-        PLAN_FLOOR_FILL_OPACITY_BASE * 0.7,
-        cl.id,
-      ),
-    );
+  {
+    const before = holder.children.length;
+    for (const wall of walls)
+      holder.add(planWallMesh(wall, opts.selectedId, lineWeightScale, elementsById, detailLevel));
+    tintNewChildren(before, 'wall');
   }
 
-  for (const wall of walls)
-    holder.add(planWallMesh(wall, opts.selectedId, lineWeightScale, elementsById, detailLevel));
-
-  for (const rs of Object.values(elementsById)) {
-    if (rs.kind !== 'room_separation') continue;
-    if (kindHidden('room_separation')) continue;
-    if (level && rs.levelId !== level) continue;
-    holder.add(roomSeparationLineFromMm(rs.start, rs.end, rs.id));
+  {
+    const before = holder.children.length;
+    for (const rs of Object.values(elementsById)) {
+      if (rs.kind !== 'room_separation') continue;
+      if (kindHidden('room_separation')) continue;
+      if (level && rs.levelId !== level) continue;
+      holder.add(roomSeparationLineFromMm(rs.start, rs.end, rs.id));
+    }
+    tintNewChildren(before, 'room_separation');
   }
 
-  for (const d of Object.values(elementsById)) {
-    if (d.kind !== 'door') continue;
-    if (kindHidden('door')) continue;
+  {
+    const before = holder.children.length;
+    for (const d of Object.values(elementsById)) {
+      if (d.kind !== 'door') continue;
+      if (kindHidden('door')) continue;
 
-    const host = wallsById[d.wallId];
+      const host = wallsById[d.wallId];
 
-    if (!host) continue;
+      if (!host) continue;
 
-    holder.add(
-      doorGroupThree(d, host, opts.selectedId, presentation === 'opening_focus', detailLevel),
-    );
+      holder.add(
+        doorGroupThree(d, host, opts.selectedId, presentation === 'opening_focus', detailLevel),
+      );
+    }
+    tintNewChildren(before, 'door');
   }
 
-  for (const win of Object.values(elementsById)) {
-    if (win.kind !== 'window') continue;
-    if (kindHidden('window')) continue;
+  {
+    const before = holder.children.length;
+    for (const win of Object.values(elementsById)) {
+      if (win.kind !== 'window') continue;
+      if (kindHidden('window')) continue;
 
-    const host = wallsById[win.wallId];
+      const host = wallsById[win.wallId];
 
-    if (!host) continue;
+      if (!host) continue;
 
-    holder.add(
-      planWindowMesh(win, host, opts.selectedId, presentation === 'opening_focus', detailLevel),
-    );
+      holder.add(
+        planWindowMesh(win, host, opts.selectedId, presentation === 'opening_focus', detailLevel),
+      );
+    }
+    tintNewChildren(before, 'window');
   }
 
-  for (const st of Object.values(elementsById)) {
-    if (st.kind !== 'stair') continue;
-    if (kindHidden('stair')) continue;
-    if (level && st.baseLevelId !== level) continue;
-    const g = stairPlanThree(st, elementsById, undefined, detailLevel);
+  {
+    const before = holder.children.length;
+    for (const st of Object.values(elementsById)) {
+      if (st.kind !== 'stair') continue;
+      if (kindHidden('stair')) continue;
+      if (level && st.baseLevelId !== level) continue;
+      const g = stairPlanThree(st, elementsById, undefined, detailLevel);
 
-    if (g) holder.add(g);
+      if (g) holder.add(g);
+    }
+    tintNewChildren(before, 'stair');
   }
 
   // KRN-14: dormer plan symbols (dashed outline + "DR" label) on the host
   // roof's reference-level plan view only.
-  for (const dm of Object.values(elementsById)) {
-    if (dm.kind !== 'dormer') continue;
-    if (kindHidden('dormer' as never)) continue;
-    const g = dormerPlanGroup(dm, elementsById, level ?? null);
-    if (g) holder.add(g);
+  {
+    const before = holder.children.length;
+    for (const dm of Object.values(elementsById)) {
+      if (dm.kind !== 'dormer') continue;
+      if (kindHidden('dormer' as never)) continue;
+      const g = dormerPlanGroup(dm, elementsById, level ?? null);
+      if (g) holder.add(g);
+    }
+    tintNewChildren(before, 'dormer');
   }
 
-  for (const dm of Object.values(elementsById)) {
-    if (dm.kind !== 'dimension') continue;
-    if (kindHidden('dimension')) continue;
+  {
+    const before = holder.children.length;
+    for (const dm of Object.values(elementsById)) {
+      if (dm.kind !== 'dimension') continue;
+      if (kindHidden('dimension')) continue;
 
-    if (level && dm.levelId !== level) continue;
+      if (level && dm.levelId !== level) continue;
 
-    holder.add(dimensionsThree(dm));
+      holder.add(dimensionsThree(dm));
+    }
+    tintNewChildren(before, 'dimension');
   }
 
-  for (const sc of Object.values(elementsById)) {
-    if (sc.kind !== 'section_cut') continue;
-    if (kindHidden('section_cut')) continue;
-    holder.add(sectionCutPlanThree(sc));
+  {
+    const before = holder.children.length;
+    for (const sc of Object.values(elementsById)) {
+      if (sc.kind !== 'section_cut') continue;
+      if (kindHidden('section_cut')) continue;
+      holder.add(sectionCutPlanThree(sc));
+    }
+    tintNewChildren(before, 'section_cut');
   }
 
   // VIE-03: triangular markers for first-class elevation views.
-  for (const ev of Object.values(elementsById)) {
-    if (ev.kind !== 'elevation_view') continue;
-    if (kindHidden('elevation_view')) continue;
-    holder.add(elevationViewPlanThree(ev, elementsById));
+  {
+    const before = holder.children.length;
+    for (const ev of Object.values(elementsById)) {
+      if (ev.kind !== 'elevation_view') continue;
+      if (kindHidden('elevation_view')) continue;
+      holder.add(elevationViewPlanThree(ev, elementsById));
+    }
+    tintNewChildren(before, 'elevation_view');
   }
 }
 

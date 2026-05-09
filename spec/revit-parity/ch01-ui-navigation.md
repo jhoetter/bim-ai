@@ -135,4 +135,4 @@ Source segment: `00:00:00 – 00:32:00`
 **Screenshot:**
 ![Reveal Hidden Elements](file:///Users/jhoetter/Desktop/Revit%20Specs/0219_00-55-06.png)
 
-**bim-ai status:** 🟡 Partial — a "Reveal Hidden" toggle (💡 button) in the plan canvas footer activates Reveal Hidden mode. A magenta status chip is shown while active. Full element-level magenta highlight of hidden elements is a follow-up. Missing: element-level magenta overlay on hidden elements, per-element "Make Visible" right-click action, and "Close" button to exit the mode.
+**bim-ai status:** ✅ Done — the Reveal Hidden Elements mode (💡 lightbulb button in plan canvas footer, `data-testid="plan-reveal-hidden"`) shows all VG-hidden elements in magenta (#ff00ff at 55% opacity) — walls, floors, roofs, doors, windows, columns, beams, area boundaries, detail lines, and text notes. A magenta status chip is shown while active (`data-testid="reveal-hidden-chip"`). Missing vs Revit: right-click "Unhide in View" → "Category" or "Element" contextual action; no per-element selective unhide while in reveal mode.

@@ -832,12 +832,16 @@ export function PlanCanvas({
       }
     }
 
-    const wirePrimitives = modelId ? planProjectionPrimitives : null;
+    // F-014: in reveal-hidden mode, force the client-side path so we can tint
+    // hidden elements magenta. The wire path (server projection) excludes hidden
+    // elements at generation time and cannot show them.
+    const wirePrimitives = modelId && !revealHiddenMode ? planProjectionPrimitives : null;
     rebuildPlanMeshes(grp, elementsById, {
       activeLevelId: displayLevelId || undefined,
       selectedId,
       presentation: display.presentation,
-      hiddenSemanticKinds: display.hiddenSemanticKinds,
+      hiddenSemanticKinds: revealHiddenMode ? new Set<string>() : display.hiddenSemanticKinds,
+      revealHiddenKinds: revealHiddenMode ? display.hiddenSemanticKinds : undefined,
       wirePrimitives,
       planGraphicHints: mergedGraphicHints,
       planAnnotationHints: mergedAnnotationHints,
@@ -1093,8 +1097,10 @@ export function PlanCanvas({
       if ((ch.userData as { areaElement?: unknown }).areaElement) grp.remove(ch);
     }
     const areaLevelId = displayLevelId || activeLevelResolvedId;
-    if (areaLevelId && !display.hiddenSemanticKinds.has('area_boundary')) {
+    if (areaLevelId && (!display.hiddenSemanticKinds.has('area_boundary') || revealHiddenMode)) {
       const areaPrims = extractAreaPrimitives(elementsById, areaLevelId);
+      const areaBoundaryReveal =
+        revealHiddenMode && display.hiddenSemanticKinds.has('area_boundary');
       for (const a of areaPrims) {
         if (a.boundaryMm.length >= 3) {
           const strokePts = a.boundaryMm.map(
@@ -1105,7 +1111,7 @@ export function PlanCanvas({
           const sline = new THREE.Line(
             sgeom,
             new THREE.LineDashedMaterial({
-              color: '#d2363b',
+              color: areaBoundaryReveal ? '#ff00ff' : '#d2363b',
               dashSize: 0.18,
               gapSize: 0.08,
               linewidth: 2,
@@ -1122,7 +1128,7 @@ export function PlanCanvas({
         canvas.height = 64;
         const ctx2 = canvas.getContext('2d');
         if (ctx2) {
-          ctx2.fillStyle = '#d2363b';
+          ctx2.fillStyle = areaBoundaryReveal ? '#ff00ff' : '#d2363b';
           ctx2.font = '28px sans-serif';
           ctx2.textBaseline = 'middle';
           ctx2.textAlign = 'center';
@@ -1177,7 +1183,10 @@ export function PlanCanvas({
       const detailPrims = extractDetailComponentPrimitives(elementsById, activePlanViewId);
       for (const p of detailPrims) {
         if (p.kind === 'detail_line') {
-          if (display.hiddenSemanticKinds.has('detail_line')) continue;
+          if (display.hiddenSemanticKinds.has('detail_line') && !revealHiddenMode) continue;
+          const detailLineReveal =
+            revealHiddenMode && display.hiddenSemanticKinds.has('detail_line');
+          const detailLineColor = detailLineReveal ? '#ff00ff' : p.colour;
           const pts = p.pointsMm.map(
             (pt) => new THREE.Vector3(pt.xMm / 1000, SLICE_Y + 0.004, pt.yMm / 1000),
           );
@@ -1185,12 +1194,12 @@ export function PlanCanvas({
           const mat =
             p.style === 'dashed' || p.style === 'dotted'
               ? new THREE.LineDashedMaterial({
-                  color: p.colour,
+                  color: detailLineColor,
                   dashSize: p.style === 'dotted' ? 0.05 : 0.2,
                   gapSize: p.style === 'dotted' ? 0.05 : 0.1,
                   linewidth: p.strokeMm,
                 })
-              : new THREE.LineBasicMaterial({ color: p.colour, linewidth: p.strokeMm });
+              : new THREE.LineBasicMaterial({ color: detailLineColor, linewidth: p.strokeMm });
           const line = new THREE.Line(geom, mat);
           if (p.style !== 'solid') line.computeLineDistances();
           line.userData.detailComponent = true;
@@ -1237,7 +1246,8 @@ export function PlanCanvas({
             grp.add(sline);
           }
         } else if (p.kind === 'text_note') {
-          if (display.hiddenSemanticKinds.has('text_note')) continue;
+          if (display.hiddenSemanticKinds.has('text_note') && !revealHiddenMode) continue;
+          const textNoteReveal = revealHiddenMode && display.hiddenSemanticKinds.has('text_note');
           // Render the text via canvas-texture sprite. Using the existing
           // sprite pattern is heavier than necessary for a small note —
           // we draw a 1×1 m sprite scaled to the text size.
@@ -1246,7 +1256,7 @@ export function PlanCanvas({
           canvas.height = 64;
           const ctx2 = canvas.getContext('2d');
           if (ctx2) {
-            ctx2.fillStyle = p.colour;
+            ctx2.fillStyle = textNoteReveal ? '#ff00ff' : p.colour;
             ctx2.font = `${Math.max(12, Math.round(48))}px sans-serif`;
             ctx2.textBaseline = 'top';
             ctx2.fillText(p.text, 4, 4);

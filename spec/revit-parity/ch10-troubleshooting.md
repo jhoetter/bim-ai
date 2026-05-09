@@ -33,7 +33,7 @@ Source segment: `05:30:54 – 05:33:32`
 **Screenshot:**
 ![Hide Category](file:///Users/jhoetter/Desktop/Revit%20Specs/0762_05-30-26.png)
 
-**bim-ai status:** 🟡 Partial — `VVDialog.tsx` provides permanent per-view category visibility overrides stored in `plan_view.categoriesHidden`, which persist between sessions — covering the core of Revit's "Hide in View → Category" behavior. `TemporaryVisibilityChip.tsx` additionally supports a temporary hide mode (`mode: 'hide'`) for in-session use. Remaining gap vs Revit: no dedicated "Hide in View" right-click shortcut on selected elements; no "Reveal Hidden Elements" lightbulb mode that shows hidden categories in magenta for selective unhiding.
+**bim-ai status:** 🟡 Partial — `VVDialog.tsx` provides permanent per-view category visibility overrides stored in `plan_view.categoriesHidden`, which persist between sessions — covering the core of Revit's "Hide in View → Category" behavior. `TemporaryVisibilityChip.tsx` additionally supports a temporary hide mode (`mode: 'hide'`) for in-session use. The "Reveal Hidden Elements" lightbulb mode (F-014) now shows all VG-hidden categories in magenta (#ff00ff at 55% opacity) in the plan canvas. Remaining gap vs Revit: no dedicated "Hide in View" right-click shortcut on selected elements; no per-element "Unhide in View" contextual action while in reveal mode.
 
 ---
 
