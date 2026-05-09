@@ -1,0 +1,43 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "ad2f51e3611a",
+  "session_id": "965188de-05c1-45fb-bdf6-79ca31696284",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-09T19:03:27.786937Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "80b36fdde4d4",
+  "checkpoint_transcript_start": 257,
+  "transcript_lines_at_start": 257,
+  "token_usage": {
+    "input_tokens": 6,
+    "cache_creation_tokens": 15299,
+    "cache_read_tokens": 37883,
+    "output_tokens": 1367,
+    "api_call_count": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 247,
+      "user_lines_removed": 70,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "app/bim_ai/elements.py": 1,
+        "packages/core/src/index.ts": 4,
+        "packages/icons/src/hifi.tsx": 154,
+        "packages/web/src/design-systems/IconGallery.tsx": 66,
+        "packages/web/src/plan/planElementMeshBuilders.ts": 22
+      },
+      "user_removed_per_file": {
+        "packages/icons/src/hifi.tsx": 60,
+        "packages/web/src/design-systems/IconGallery.tsx": 8,
+        "packages/web/src/plan/planElementMeshBuilders.ts": 2
+      }
+    }
+  ]
+}
