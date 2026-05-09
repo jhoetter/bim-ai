@@ -626,6 +626,17 @@ class SetStairSubKindCmd(BaseModel):
     floating_host_wall_id: str | None = Field(default=None, alias="floatingHostWallId")
 
 
+class UpdateStairTreadsCmd(BaseModel):
+    """EDT-V3-09 — patch tread lines on a by_sketch stair (from drag-to-rebalance)."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["update_stair_treads"] = "update_stair_treads"
+    id: str
+    tread_lines: list[dict] = Field(
+        alias="treadLines"
+    )  # [{fromMm, toMm, riserHeightMm?, manualOverride?}]
+
+
 class CreateSlabOpeningCmd(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     type: Literal["createSlabOpening"] = "createSlabOpening"
@@ -2073,6 +2084,8 @@ class DeleteToposolidCmd(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     type: Literal["DeleteToposolid"] = "DeleteToposolid"
     toposolid_id: str = Field(alias="toposolidId")
+
+
 # AST-V3-01 — Asset library commands
 # ---------------------------------------------------------------------------
 
@@ -2117,6 +2130,8 @@ class PlaceAssetCmd(BaseModel):
     rotation_deg: float = Field(default=0.0, alias="rotationDeg")
     param_values: dict[str, Any] = Field(default_factory=dict, alias="paramValues")
     host_element_id: str | None = Field(default=None, alias="hostElementId")
+
+
 class SetToolPrefCmd(BaseModel):
     """CHR-V3-08: Store a sticky tool-modifier preference for the session.
 
@@ -2365,6 +2380,7 @@ Command = Annotated[
     | AttachWallTopToRoofCmd
     | CreateStairCmd
     | SetStairSubKindCmd
+    | UpdateStairTreadsCmd
     | CreateSlabOpeningCmd
     | CreateRoofOpeningCmd
     | CreateWallOpeningCmd

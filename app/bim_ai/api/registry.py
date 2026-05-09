@@ -340,9 +340,15 @@ register(
         },
         exitCodes={
             "ok": ExitCode(code=0, meaning="Bundle applied (commit) or validated (dry-run)"),
-            "revision_conflict": ExitCode(code=2, meaning="parentRevision does not match current revision"),
-            "assumption_log_required": ExitCode(code=3, meaning="assumptions field missing or malformed"),
-            "assumption_log_malformed": ExitCode(code=4, meaning="assumption entry is missing required field or has invalid value"),
+            "revision_conflict": ExitCode(
+                code=2, meaning="parentRevision does not match current revision"
+            ),
+            "assumption_log_required": ExitCode(
+                code=3, meaning="assumptions field missing or malformed"
+            ),
+            "assumption_log_malformed": ExitCode(
+                code=4, meaning="assumption entry is missing required field or has invalid value"
+            ),
             "error": ExitCode(code=1, meaning="Unexpected error"),
         },
         cliExample=(
@@ -384,7 +390,9 @@ register(
             "properties": {},
         },
         exitCodes={
-            "ok": ExitCode(code=0, meaning="Connection accepted; yjs sync + awareness relay active"),
+            "ok": ExitCode(
+                code=0, meaning="Connection accepted; yjs sync + awareness relay active"
+            ),
             "not_found": ExitCode(code=1, meaning="Model not found"),
         },
         cliExample="# connect via any yjs WebsocketProvider: ws://<host>/api/models/<id>/collab",
@@ -556,7 +564,7 @@ register(
         },
         cliExample=(
             "bim-ai toposolid create "
-            "--boundary '[{\"xMm\":0,\"yMm\":0},{\"xMm\":10000,\"yMm\":0},{\"xMm\":10000,\"yMm\":10000},{\"xMm\":0,\"yMm\":10000}]' "
+            '--boundary \'[{"xMm":0,"yMm":0},{"xMm":10000,"yMm":0},{"xMm":10000,"yMm":10000},{"xMm":0,"yMm":10000}]\' '
             "--thickness 1500"
         ),
         restEndpoint=RestEndpoint(method="POST", path="/api/models/{model_id}/bundles"),
@@ -844,7 +852,9 @@ register(
             "not_found": ExitCode(code=1, meaning="Presentation link not found"),
         },
         cliExample="bim-ai publish --revoke <link-id> --model <id>",
-        restEndpoint=RestEndpoint(method="POST", path="/api/models/{model_id}/presentations/{link_id}/revoke"),
+        restEndpoint=RestEndpoint(
+            method="POST", path="/api/models/{model_id}/presentations/{link_id}/revoke"
+        ),
         sideEffects="writes-audit",
         agentSafetyNotes="Immediately invalidates the link and pushes {type: revoked} to all active WS viewers.",
     )
@@ -930,7 +940,15 @@ register(
             "$schema": "http://json-schema.org/draft-07/schema#",
             "title": "StructuredLayout",
             "type": "object",
-            "required": ["schemaVersion", "imageMetadata", "rooms", "walls", "openings", "ocrLabels", "advisories"],
+            "required": [
+                "schemaVersion",
+                "imageMetadata",
+                "rooms",
+                "walls",
+                "openings",
+                "ocrLabels",
+                "advisories",
+            ],
             "properties": {
                 "schemaVersion": {"type": "string", "enum": ["img-v3.0"]},
                 "imageMetadata": {
@@ -965,7 +983,9 @@ register(
         },
         exitCodes={
             "ok": ExitCode(code=0, meaning="Layout extracted successfully"),
-            "no_walls_detected": ExitCode(code=1, meaning="No wall segments found; image may not be a floor plan"),
+            "no_walls_detected": ExitCode(
+                code=1, meaning="No wall segments found; image may not be a floor plan"
+            ),
         },
         cliExample="bim-ai trace --image plan.png --archetype-hint residential_apartment -o layout.json",
         restEndpoint=RestEndpoint(method="POST", path="/api/v3/trace"),
@@ -991,6 +1011,8 @@ register(
         inputSchema={
             "$schema": "http://json-schema.org/draft-07/schema#",
             "title": "CreateScheduleViewInput",
+            "type": "object",
+            "properties": {
                 "columns": {"type": "array", "items": {"type": "object"}},
                 "filterExpr": {"type": "string"},
                 "sortKey": {"type": "string"},
@@ -1023,5 +1045,60 @@ register(
         inputSchema={
             "$schema": "http://json-schema.org/draft-07/schema#",
             "title": "SetElementPropInput",
+            "type": "object",
+            "required": ["elementId", "key", "value"],
+            "properties": {
+                "elementId": {"type": "string"},
+                "key": {"type": "string"},
+                "value": {},
+            },
+        },
+        outputSchema={"type": "object"},
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Custom property set on element"),
+            "not_found": ExitCode(code=1, meaning="elementId not found in document"),
+            "error": ExitCode(code=1, meaning="Unexpected error"),
+        },
+        cliExample="bim-ai apply-bundle bundle.json  # bundle contains set_element_prop command",
+        restEndpoint=RestEndpoint(method="POST", path="/api/v3/models/{modelId}/bundles"),
+        sideEffects="mutates-kernel",
+    )
+)
+
+# ---------------------------------------------------------------------------
+# EDT-V3-09 — Stair tread auto-balance
+# ---------------------------------------------------------------------------
+
+register(
+    ToolDescriptor(
+        name="update-stair-treads",
+        category="mutation",
+        inputSchema={
+            "type": "object",
+            "required": ["id", "treadLines"],
+            "properties": {
+                "id": {"type": "string"},
+                "treadLines": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "fromMm": {"type": "object"},
+                            "toMm": {"type": "object"},
+                            "riserHeightMm": {"type": "number"},
+                            "manualOverride": {"type": "boolean"},
+                        },
+                    },
+                },
+            },
+        },
+        outputSchema={"type": "object"},
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Tread lines updated"),
+            "not_found": ExitCode(code=1, meaning="Stair not found"),
+        },
+        cliExample="bim-ai update-stair-treads --id stair-1 --treadLines '[...]'",
+        restEndpoint=RestEndpoint(method="POST", path="/api/v3/models/{modelId}/bundles"),
+        sideEffects="mutates-kernel",
     )
 )

@@ -61,6 +61,7 @@ from bim_ai.commands import (
     CreateSlabOpeningCmd,
     CreateSoffitCmd,
     CreateStairCmd,
+    UpdateStairTreadsCmd,
     CreateSunSettingsCmd,
     CreateSurveyPointCmd,
     CreateSweepCmd,
@@ -888,9 +889,7 @@ def _point_in_polygon_xy(px: float, py: float, poly: list[tuple[float, float]]) 
     return inside
 
 
-def _toposolid_elevation_at_centroid_mm(
-    els: dict[str, Any], boundary: list[Any]
-) -> float | None:
+def _toposolid_elevation_at_centroid_mm(els: dict[str, Any], boundary: list[Any]) -> float | None:
     """TOP-V3-01: return toposolid surface elevation (mm) at the centroid of
     ``boundary`` if any toposolid's footprint contains that centroid, else None.
 
@@ -968,13 +967,62 @@ def ensure_sun_settings(doc: Document) -> Document:
 
 
 _SEED_HATCHES: list[dict] = [
-    {"id": "brick_45", "name": "Brick", "paperMmRepeat": 73, "rotationDeg": 45, "strokeWidthMm": 0.18, "patternKind": "lines"},
-    {"id": "concrete_dot", "name": "Concrete", "paperMmRepeat": 5, "rotationDeg": 0, "strokeWidthMm": 0.13, "patternKind": "dots"},
-    {"id": "insulation", "name": "Insulation", "paperMmRepeat": 100, "rotationDeg": 0, "strokeWidthMm": 0.25, "patternKind": "curve"},
-    {"id": "plaster", "name": "Plaster", "paperMmRepeat": 8, "rotationDeg": 45, "strokeWidthMm": 0.13, "patternKind": "crosshatch"},
-    {"id": "timber_grain", "name": "Timber", "paperMmRepeat": 12, "rotationDeg": 0, "strokeWidthMm": 0.18, "patternKind": "lines"},
-    {"id": "gypsum", "name": "Gypsum", "paperMmRepeat": 4, "rotationDeg": 45, "strokeWidthMm": 0.10, "patternKind": "dots"},
-    {"id": "stone", "name": "Stone", "paperMmRepeat": 60, "rotationDeg": 0, "strokeWidthMm": 0.18, "patternKind": "lines"},
+    {
+        "id": "brick_45",
+        "name": "Brick",
+        "paperMmRepeat": 73,
+        "rotationDeg": 45,
+        "strokeWidthMm": 0.18,
+        "patternKind": "lines",
+    },
+    {
+        "id": "concrete_dot",
+        "name": "Concrete",
+        "paperMmRepeat": 5,
+        "rotationDeg": 0,
+        "strokeWidthMm": 0.13,
+        "patternKind": "dots",
+    },
+    {
+        "id": "insulation",
+        "name": "Insulation",
+        "paperMmRepeat": 100,
+        "rotationDeg": 0,
+        "strokeWidthMm": 0.25,
+        "patternKind": "curve",
+    },
+    {
+        "id": "plaster",
+        "name": "Plaster",
+        "paperMmRepeat": 8,
+        "rotationDeg": 45,
+        "strokeWidthMm": 0.13,
+        "patternKind": "crosshatch",
+    },
+    {
+        "id": "timber_grain",
+        "name": "Timber",
+        "paperMmRepeat": 12,
+        "rotationDeg": 0,
+        "strokeWidthMm": 0.18,
+        "patternKind": "lines",
+    },
+    {
+        "id": "gypsum",
+        "name": "Gypsum",
+        "paperMmRepeat": 4,
+        "rotationDeg": 45,
+        "strokeWidthMm": 0.10,
+        "patternKind": "dots",
+    },
+    {
+        "id": "stone",
+        "name": "Stone",
+        "paperMmRepeat": 60,
+        "rotationDeg": 0,
+        "strokeWidthMm": 0.18,
+        "patternKind": "lines",
+    },
 ]
 
 
@@ -988,7 +1036,6 @@ def ensure_seed_hatches(doc: Document) -> Document:
         if row["id"] not in existing_ids:
             doc.elements[row["id"]] = HatchPatternDefElem.model_validate(row)
     return doc
-
 
 
 def _wall_elevation_mm(els: dict[str, Element], level_id: str) -> float:
@@ -2200,9 +2247,7 @@ def apply_inplace(
                 d = cmd.value.strip() if isinstance(cmd.value, str) else ""
                 if d not in {"arch", "struct", "mep", ""}:
                     raise ValueError("discipline must be arch|struct|mep or empty")
-                els[cmd.element_id] = el.model_copy(
-                    update={"discipline": d if d else None}
-                )
+                els[cmd.element_id] = el.model_copy(update={"discipline": d if d else None})
                 els[cmd.element_id] = el.model_copy(update={"discipline": d if d else None})
             else:
                 raise ValueError(
@@ -2509,6 +2554,15 @@ def apply_inplace(
                     "floating_host_wall_id": cmd.floating_host_wall_id,
                 }
             )
+
+        case UpdateStairTreadsCmd():
+            stair = els.get(cmd.id)
+            if stair is None or stair.kind != "stair":
+                raise ValueError(f"update_stair_treads: element '{cmd.id}' is not a stair")
+            if stair.authoring_mode != "by_sketch":
+                raise ValueError("update_stair_treads only applies to by_sketch stairs")
+            new_tread_lines = [StairTreadLine(**t) for t in cmd.tread_lines]
+            els[cmd.id] = stair.model_copy(update={"tread_lines": new_tread_lines})
 
         case CreateSlabOpeningCmd():
             oid = cmd.id or new_id()
@@ -5004,9 +5058,7 @@ def apply_inplace(
             if tid in els:
                 raise ValueError(f"createToposolid: element '{tid}' already exists")
             if len(cmd.boundary_mm) < 3:
-                raise ValueError(
-                    "createToposolid.boundaryMm requires at least 3 boundary points"
-                )
+                raise ValueError("createToposolid.boundaryMm requires at least 3 boundary points")
             if cmd.height_samples and cmd.heightmap_grid_mm is not None:
                 raise ValueError(
                     "createToposolid: supply heightSamples or heightmapGridMm, not both"
@@ -5057,8 +5109,7 @@ def apply_inplace(
             hosted_floors = [
                 eid
                 for eid, el in els.items()
-                if isinstance(el, FloorElem)
-                and getattr(el, "host_id", None) == cmd.toposolid_id
+                if isinstance(el, FloorElem) and getattr(el, "host_id", None) == cmd.toposolid_id
             ]
             if hosted_floors:
                 dev_id = new_id()
@@ -6760,6 +6811,7 @@ def planFamilyInstanceMesh(instance: ColumnElem, detail_level: str) -> list[Line
         return _family_coarse(instance)
     else:
         return _family_full(instance)
+
 
 # ---------------------------------------------------------------------------
 # IMG-V3-01 — handle_trace_image_cmd
