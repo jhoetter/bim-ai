@@ -1180,7 +1180,12 @@ export function Workspace(): JSX.Element {
             onOpenFamilyLibrary={() => setFamilyLibraryOpen(true)}
           />
         }
-        leftRailCollapsed={<LeftRailCollapsed sections={browserSections} />}
+        leftRailCollapsed={
+          <LeftRailCollapsed
+            sections={browserSections}
+            onExpand={() => setLeftRailCollapsed(false)}
+          />
+        }
         canvas={
           <div
             style={{

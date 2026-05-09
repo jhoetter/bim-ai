@@ -377,12 +377,12 @@ export function Viewport({
     const paint = resolveViewportPaintBundle();
     paintBundleRef.current = paint;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, stencil: true });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, stencil: true });
     renderer.localClippingEnabled = true;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    renderer.setClearColor(readColorToken('--draft-paper', '#fdfcf9'), 1);
+    renderer.setClearColor(0x000000, 0);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.05;
     rendererRef.current = renderer;
@@ -1649,10 +1649,7 @@ export function Viewport({
     const isWireframe = viewerRenderStyle === 'wireframe';
     for (const [, obj] of cache) {
       obj.traverse((child) => {
-        if (
-          child instanceof THREE.Mesh &&
-          child.material instanceof THREE.MeshStandardMaterial
-        ) {
+        if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
           child.material.wireframe = isWireframe;
           child.material.needsUpdate = true;
         }
@@ -2084,9 +2081,7 @@ export function Viewport({
           onClick={() =>
             useBimStore
               .getState()
-              .setViewerRenderStyle(
-                viewerRenderStyle === 'wireframe' ? 'shaded' : 'wireframe',
-              )
+              .setViewerRenderStyle(viewerRenderStyle === 'wireframe' ? 'shaded' : 'wireframe')
           }
           aria-pressed={viewerRenderStyle === 'wireframe'}
           data-active={viewerRenderStyle === 'wireframe' ? 'true' : 'false'}
@@ -2111,7 +2106,16 @@ export function Viewport({
         ) : null}
       </div>
 
-      <div ref={mountRef} className="size-full cursor-grab active:cursor-grabbing" />
+      {/* Architectural sky gradient — visible through the transparent Three.js canvas */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 z-0"
+        style={{
+          background:
+            'linear-gradient(to bottom, #cce8f4 0%, #e8f4fd 40%, #f5f9fc 75%, #e8e4d8 100%)',
+        }}
+      />
+      <div ref={mountRef} className="relative z-[1] size-full cursor-grab active:cursor-grabbing" />
     </div>
   );
 }

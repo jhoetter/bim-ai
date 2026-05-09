@@ -237,7 +237,13 @@ export function LeftRail({
 }
 
 /** Slim (56 px) icon strip used by AppShell when the rail is collapsed. */
-export function LeftRailCollapsed({ sections }: { sections: LeftRailSection[] }): JSX.Element {
+export function LeftRailCollapsed({
+  sections,
+  onExpand,
+}: {
+  sections: LeftRailSection[];
+  onExpand?: () => void;
+}): JSX.Element {
   const { t } = useTranslation();
   return (
     <nav
@@ -252,6 +258,7 @@ export function LeftRailCollapsed({ sections }: { sections: LeftRailSection[] })
             type="button"
             aria-label={s.label}
             title={s.label}
+            onClick={onExpand}
             className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface-strong hover:text-foreground"
           >
             <Icon size={ICON_SIZE.toolPalette} aria-hidden="true" />

@@ -191,9 +191,9 @@ export function resolveLighting(): LightingSpec {
       shadowMapSize: 2048,
     },
     hemi: {
-      intensity: 0.45,
-      skyColor: '#e0d8cc',
-      groundColor: '#c8c0b0',
+      intensity: 0.6,
+      skyColor: '#cce8f4',
+      groundColor: '#d4c9a8',
     },
     ssao: {
       kernelRadius: 0.12,
