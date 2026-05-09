@@ -22,7 +22,12 @@ export type SketchValidationState = {
   issues: SketchValidationIssue[];
 };
 
-export type SketchElementKind = 'floor' | 'roof' | 'room_separation' | 'stair_by_sketch';
+export type SketchElementKind =
+  | 'floor'
+  | 'roof'
+  | 'room_separation'
+  | 'stair_by_sketch'
+  | 'masking_region';
 
 export type StairSketchFinishOpts = {
   topLevelId: string;

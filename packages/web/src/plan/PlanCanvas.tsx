@@ -2402,41 +2402,7 @@ export function PlanCanvas({
         return;
       }
       if (planTool === 'masking-region') {
-        // KRN-10: two-click rectangular masking-region fallback while
-        // SKT-01 sketch sessions extend to the `masking_region` kind.
-        const d = draftRef.current;
-        if (!d || d.kind !== 'masking-region') {
-          draftRef.current = { kind: 'masking-region', sx: sp.xMm, sy: sp.yMm };
-          bumpGeom((x) => x + 1);
-          return;
-        }
-        if (Math.hypot(sp.xMm - d.sx, sp.yMm - d.sy) < 1) {
-          draftRef.current = undefined;
-          bumpGeom((x) => x + 1);
-          return;
-        }
-        if (!activePlanViewId) {
-          draftRef.current = undefined;
-          bumpGeom((x) => x + 1);
-          return;
-        }
-        const x0 = Math.min(d.sx, sp.xMm);
-        const x1 = Math.max(d.sx, sp.xMm);
-        const y0 = Math.min(d.sy, sp.yMm);
-        const y1 = Math.max(d.sy, sp.yMm);
-        onSemanticCommand({
-          type: 'createMaskingRegion',
-          hostViewId: activePlanViewId,
-          boundaryMm: [
-            { xMm: x0, yMm: y0 },
-            { xMm: x1, yMm: y0 },
-            { xMm: x1, yMm: y1 },
-            { xMm: x0, yMm: y1 },
-          ],
-          fillColor: '#ffffff',
-        });
-        draftRef.current = undefined;
-        bumpGeom((x) => x + 1);
+        // KRN-10: Now handled by SketchCanvas overlay. This fallback is no longer needed.
         return;
       }
       if (planTool === 'plan-region') {
@@ -3874,7 +3840,8 @@ export function PlanCanvas({
           Finish and otherwise leaves the document untouched. */}
       {(planTool === 'floor-sketch' ||
         planTool === 'roof-sketch' ||
-        planTool === 'room-separation-sketch') &&
+        planTool === 'room-separation-sketch' ||
+        planTool === 'masking-region') &&
       modelId &&
       lvlId ? (
         <SketchCanvas
@@ -3885,7 +3852,9 @@ export function PlanCanvas({
               ? 'roof'
               : planTool === 'room-separation-sketch'
                 ? 'room_separation'
-                : 'floor'
+                : planTool === 'masking-region'
+                  ? 'masking_region'
+                  : 'floor'
           }
           pointerToMmRef={sketchPointerToMmRef}
           mmToScreenRef={sketchMmToScreenRef}
@@ -3901,6 +3870,11 @@ export function PlanCanvas({
               thicknessMm: w.thicknessMm,
             }))}
           floorTypeId={useBimStore.getState().activeFloorTypeId ?? undefined}
+          extraOptions={
+            planTool === 'masking-region' && activePlanViewId
+              ? { hostViewId: activePlanViewId }
+              : undefined
+          }
           onFinished={(createdId) => {
             setPlanTool('select');
             if (createdId) selectEl(createdId);

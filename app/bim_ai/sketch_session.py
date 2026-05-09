@@ -36,6 +36,7 @@ SketchElementKind = Literal[
     "detail_region",
     "stair",
     "stair_by_sketch",
+    "masking_region",
 ]
 SketchSessionStatus = Literal["open", "finished", "cancelled"]
 # SKT-02: sub-tool config — does Pick Walls insert wall centerlines or
@@ -390,6 +391,26 @@ def _emit_detail_region(
     return [cmd]
 
 
+def _emit_masking_region(
+    session: SketchSession, opts: dict[str, Any]
+) -> list[dict[str, Any]]:
+    from bim_ai.sketch_validation import SketchInvalidError
+
+    host_view_id = opts.get("hostViewId")
+    if not host_view_id:
+        raise SketchInvalidError(
+            "missing_host_view",
+            "masking_region Finish requires `hostViewId` in options.",
+        )
+    return [
+        {
+            "type": "createMaskingRegion",
+            "hostViewId": host_view_id,
+            "boundaryMm": _polygon_payload(session),
+        }
+    ]
+
+
 def _emit_stair(session: SketchSession, opts: dict[str, Any]) -> list[dict[str, Any]]:
     """KRN-07 closeout — emit a CreateStair with shape='sketch' from the session
     line set. The polyline runs through every line's `from_mm` plus the last
@@ -491,6 +512,7 @@ SUBMODES: dict[str, SubmodeSpec] = {
     "in_place_mass": SubmodeSpec(_validate_polygon_session, _emit_in_place_mass),
     "void_cut": SubmodeSpec(_validate_polygon_session, _emit_void_cut),
     "detail_region": SubmodeSpec(_validate_line_set_session, _emit_detail_region),
+    "masking_region": SubmodeSpec(_validate_polygon_session, _emit_masking_region),
     "stair": SubmodeSpec(_validate_line_set_session, _emit_stair),
     "stair_by_sketch": SubmodeSpec(lambda _session: None, _emit_stair_by_sketch),
 }

@@ -78,6 +78,8 @@ export interface SketchCanvasProps {
   onCancelled: () => void;
   /** F-108: floor type id to apply when finishing a floor sketch session. */
   floorTypeId?: string;
+  /** Extra options forwarded to finishSketchSession (e.g. hostViewId for masking regions). */
+  extraOptions?: Record<string, unknown>;
 }
 
 function snapMm(p: Point2D, snapMmGrid: number): Point2D {
@@ -130,6 +132,7 @@ export function SketchCanvas(props: SketchCanvasProps): JSX.Element {
     onCancelled,
     sessionId: initialSessionId,
     floorTypeId,
+    extraOptions,
   } = props;
   const [session, setSession] = useState<SketchSessionWire | null>(null);
   const [validation, setValidation] = useState<SketchValidationState | null>(null);
@@ -317,7 +320,10 @@ export function SketchCanvas(props: SketchCanvasProps): JSX.Element {
     try {
       setBusy(true);
       const resp = await finishSketchSession(session.sessionId, {
-        options: floorTypeId ? { floorTypeId } : undefined,
+        options: {
+          ...(floorTypeId ? { floorTypeId } : {}),
+          ...(extraOptions ?? {}),
+        },
       });
       // Pick the kind-specific id from the response, with floorId as the
       // back-compat fallback.
