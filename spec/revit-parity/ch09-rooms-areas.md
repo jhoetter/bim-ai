@@ -44,7 +44,7 @@ Source segment: `05:30:00 – 05:39:46`
 **Screenshot:**
 ![Area Boundary Lines](file:///Users/jhoetter/Desktop/Revit%20Specs/0808_05-34-41.png)
 
-**bim-ai status:** 🟡 Partial — the `area-boundary` sketch tool (hotkey AR, toolRegistry.ts) draws area boundary polylines on the plan canvas stored as `area` elements. The `area_boundary` annotation category now appears in Visibility/Graphics Overrides (VV), allowing per-view toggling of area boundary line visibility. Missing: auto-snap to wall faces for area boundary placement (Revit snaps to wall layers), and separate Area Plan view type (F-098).
+**bim-ai status:** 🟡 Partial — the `area-boundary` sketch tool (hotkey AR, toolRegistry.ts) draws area boundary polylines on the plan canvas stored as `area` elements. The `area_boundary` annotation category appears in Visibility/Graphics Overrides (VV) and now correctly controls rendering: toggling it off hides both the boundary polylines and the centroid label sprites in the plan canvas (`PlanCanvas.tsx` gates the KRN-08 area rendering block on `!display.hiddenSemanticKinds.has('area_boundary')`; `planProjection.ts` maps the VV label via `canonHiddenCategory`). Missing: auto-snap to wall faces for area boundary placement (Revit snaps to wall layers), and separate Area Plan view type (F-098).
 
 ---
 
