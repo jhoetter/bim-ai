@@ -4,20 +4,28 @@
   "strategy": "manual-commit",
   "branch": "main",
   "checkpoints_count": 1,
-  "files_touched": null,
+  "files_touched": [
+    "packages/web/src/ErrorBoundary.tsx"
+  ],
   "sessions": [
     {
       "metadata": "/f6/b916330156/0/metadata.json",
       "transcript": "/f6/b916330156/0/full.jsonl",
       "content_hash": "/f6/b916330156/0/content_hash.txt",
       "prompt": "/f6/b916330156/0/prompt.txt"
+    },
+    {
+      "metadata": "/f6/b916330156/1/metadata.json",
+      "transcript": "/f6/b916330156/1/full.jsonl",
+      "content_hash": "/f6/b916330156/1/content_hash.txt",
+      "prompt": "/f6/b916330156/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 565,
-    "cache_creation_tokens": 573740,
-    "cache_read_tokens": 23423695,
-    "output_tokens": 259329,
-    "api_call_count": 234
+    "input_tokens": 585,
+    "cache_creation_tokens": 585968,
+    "cache_read_tokens": 26102488,
+    "output_tokens": 264499,
+    "api_call_count": 254
   }
 }
