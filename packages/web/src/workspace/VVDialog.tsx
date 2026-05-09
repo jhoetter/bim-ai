@@ -637,6 +637,7 @@ export function VVDialog({
               <thead>
                 <tr style={{ background: 'var(--color-background)' }}>
                   <th
+                    scope="col"
                     style={{ padding: '6px 8px', textAlign: 'left', fontSize: 11, fontWeight: 600 }}
                   >
                     Category
@@ -645,6 +646,7 @@ export function VVDialog({
                     Visible
                   </th>
                   <th
+                    scope="col"
                     colSpan={3}
                     style={{
                       padding: '6px 8px',
@@ -657,6 +659,7 @@ export function VVDialog({
                     Projection
                   </th>
                   <th
+                    scope="col"
                     colSpan={3}
                     style={{
                       padding: '6px 8px',
@@ -674,6 +677,7 @@ export function VVDialog({
                   <th scope="col" style={{ padding: '4px 8px' }} />
                   <th scope="col" style={{ padding: '4px 8px' }} />
                   <th
+                    scope="col"
                     style={{
                       padding: '4px 8px',
                       fontSize: 10,
@@ -690,6 +694,7 @@ export function VVDialog({
                     Pattern
                   </th>
                   <th
+                    scope="col"
                     style={{
                       padding: '4px 8px',
                       fontSize: 10,

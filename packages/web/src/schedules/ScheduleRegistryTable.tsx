@@ -21,7 +21,7 @@ export function ScheduleRegistryTable({ model }: { model: ScheduleTableModelV1 }
   const headerRow = (
     <tr>
       {model.columns.map((c) => (
-        <th key={c.key} className="align-bottom px-1 text-left text-[10px] font-normal">
+        <th scope="col" key={c.key} className="align-bottom px-1 text-left text-[10px] font-normal">
           <div>{c.headerLabel}</div>
           {c.unitLabel || c.roleLabel ? (
             <div className="text-[9px] font-normal text-muted opacity-90">
