@@ -4,20 +4,28 @@
   "strategy": "manual-commit",
   "branch": "feat/v3-vg-v3-01-render-compare",
   "checkpoints_count": 1,
-  "files_touched": null,
+  "files_touched": [
+    "packages/core/src/index.ts"
+  ],
   "sessions": [
     {
       "metadata": "/3a/7520107b66/0/metadata.json",
       "transcript": "/3a/7520107b66/0/full.jsonl",
       "content_hash": "/3a/7520107b66/0/content_hash.txt",
       "prompt": "/3a/7520107b66/0/prompt.txt"
+    },
+    {
+      "metadata": "/3a/7520107b66/1/metadata.json",
+      "transcript": "/3a/7520107b66/1/full.jsonl",
+      "content_hash": "/3a/7520107b66/1/content_hash.txt",
+      "prompt": "/3a/7520107b66/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 248,
-    "cache_creation_tokens": 140344,
-    "cache_read_tokens": 13288401,
-    "output_tokens": 63209,
-    "api_call_count": 152
+    "input_tokens": 316,
+    "cache_creation_tokens": 418497,
+    "cache_read_tokens": 19268445,
+    "output_tokens": 112252,
+    "api_call_count": 210
   }
 }
