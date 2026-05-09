@@ -4,7 +4,10 @@
   "strategy": "manual-commit",
   "branch": "main",
   "checkpoints_count": 2,
-  "files_touched": null,
+  "files_touched": [
+    "packages/web/src/coordination/ClashTestPanel.tsx",
+    "packages/web/src/i18n.ts"
+  ],
   "sessions": [
     {
       "metadata": "/2e/b2af078a7e/0/metadata.json",
@@ -23,6 +26,12 @@
       "transcript": "/2e/b2af078a7e/2/full.jsonl",
       "content_hash": "/2e/b2af078a7e/2/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/2e/b2af078a7e/3/metadata.json",
+      "transcript": "/2e/b2af078a7e/3/full.jsonl",
+      "content_hash": "/2e/b2af078a7e/3/content_hash.txt",
+      "prompt": "/2e/b2af078a7e/3/prompt.txt"
     }
   ],
   "token_usage": {
