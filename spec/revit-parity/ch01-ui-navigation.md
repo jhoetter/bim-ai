@@ -135,4 +135,4 @@ Source segment: `00:00:00 – 00:32:00`
 **Screenshot:**
 ![Reveal Hidden Elements](file:///Users/jhoetter/Desktop/Revit%20Specs/0219_00-55-06.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — a "Reveal Hidden" toggle (💡 button) in the plan canvas footer activates Reveal Hidden mode. A magenta status chip is shown while active. Full element-level magenta highlight of hidden elements is a follow-up. Missing: element-level magenta overlay on hidden elements, per-element "Make Visible" right-click action, and "Close" button to exit the mode.

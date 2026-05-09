@@ -166,6 +166,8 @@ export type StoreState = {
   viewerCategoryHidden: Record<string, boolean>;
   /** F-011: current 3D render style — shaded (default) or wireframe. */
   viewerRenderStyle: 'shaded' | 'wireframe';
+  /** F-014: when true, the plan canvas shows VG-hidden elements (magenta mode). */
+  revealHiddenMode: boolean;
   /**
    * SKB-23 — per-phase preview filter. When set, only elements whose
    * `phaseId` is in `viewerPhaseFilter.phases` (or whose `phaseId` is
@@ -245,6 +247,8 @@ export type StoreState = {
   toggleViewerCategoryHidden: (semanticKind: string) => void;
   /** F-011: switch between shaded and wireframe render modes. */
   setViewerRenderStyle: (style: 'shaded' | 'wireframe') => void;
+  /** F-014: enter or exit Reveal Hidden Elements mode. */
+  setRevealHiddenMode: (v: boolean) => void;
   /** Apply saved 3D viewpoint clip planes + semantic category hides (WP-E02/E03). */
   applyOrbitViewpointPreset: (opts: {
     capElevMm?: number | null;

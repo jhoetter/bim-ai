@@ -2013,6 +2013,11 @@ export const useBimStore = create<StoreState>((set, get) => {
 
     setViewerRenderStyle: (style) => set({ viewerRenderStyle: style }),
 
+    // F-014: reveal hidden elements mode (lightbulb). Off by default.
+    revealHiddenMode: false,
+
+    setRevealHiddenMode: (v) => set({ revealHiddenMode: v }),
+
     // OSM-V3-02: neighborhood mass layer visible by default.
     showNeighborhoodMasses: true,
 
