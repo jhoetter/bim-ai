@@ -2765,3 +2765,57 @@ async def get_sheet_pixel_map(
                     }
 
     return {"map": pixel_map}
+
+
+# ---------------------------------------------------------------------------
+# OUT-V3-02 — Presentation canvas PPTX bundle export
+# ---------------------------------------------------------------------------
+
+
+@api_router.get(
+    "/v3/models/{model_id}/presentation-canvases/{canvas_id}/export",
+    tags=["out-v3-02"],
+)
+async def export_presentation_canvas(
+    model_id: UUID,
+    canvas_id: str,
+    format: str = Query(default="pptx-bundle"),
+    session: AsyncSession = Depends(get_session),
+) -> Any:
+    """OUT-V3-02 — Export a presentation canvas as a structured PPTX bundle JSON.
+
+    Returns the PptxBundle JSON contract (schemaVersion, title, slides[]).
+    Binary .pptx writing via python-pptx is reserved for a future iteration.
+    """
+    from bim_ai.exp.pptx_export import build_pptx_bundle
+    from bim_ai.elements import FrameElem, PresentationCanvasElem
+
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+
+    doc = Document.model_validate(row.document)
+
+    canvas_elem = doc.elements.get(canvas_id)
+    if canvas_elem is None or not isinstance(canvas_elem, PresentationCanvasElem):
+        raise HTTPException(
+            status_code=404,
+            detail=f"presentation_canvas '{canvas_id}' not found in model",
+        )
+
+    if format != "pptx-bundle":
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported export format '{format}'. Only 'pptx-bundle' is supported.",
+        )
+
+    frames = [
+        elem.model_dump(by_alias=True)
+        for elem in doc.elements.values()
+        if isinstance(elem, FrameElem)
+        and elem.presentation_canvas_id == canvas_id
+    ]
+
+    canvas_dict = canvas_elem.model_dump(by_alias=True)
+    bundle = build_pptx_bundle(canvas_dict, frames)
+    return bundle.to_dict()

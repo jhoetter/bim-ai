@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -2354,17 +2354,47 @@ class DecalElem(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# SCH-V3-01 — Custom property definition element
+# OUT-V3-02 — Presentation canvas, frames, saved views
 # ---------------------------------------------------------------------------
 
 
-class PropertyDefinitionElem(BaseModel):
-    """SCH-V3-01 — project-scoped custom property definition."""
+class FrameElem(BaseModel):
+    """OUT-V3-02 — rectangular crop on a presentation canvas pointing at a viewId."""
 
-    enum_values: list[str] | None = Field(default=None, alias="enumValues")
-    default_value: Any | None = Field(default=None, alias="defaultValue")
-    applies_to: list[str] = Field(alias="appliesTo")
-    show_in_schedule: bool = Field(default=True, alias="showInSchedule")
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["frame"] = "frame"
+    id: str
+    presentation_canvas_id: str = Field(alias="presentationCanvasId")
+    view_id: str = Field(alias="viewId")
+    position_mm: dict = Field(alias="positionMm")  # {xMm, yMm}
+    size_mm: dict = Field(alias="sizeMm")  # {widthMm, heightMm}
+    caption: Optional[str] = None
+    brand_template_id: Optional[str] = Field(None, alias="brandTemplateId")
+    sort_order: int = Field(0, alias="sortOrder")
+
+
+class SavedViewElem(BaseModel):
+    """OUT-V3-02 — saved camera + visibility state on a view (3D/plan/sheet)."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["saved_view"] = "saved_view"
+    id: str
+    base_view_id: str = Field(alias="baseViewId")
+    name: str
+    camera_state: Optional[dict] = Field(None, alias="cameraState")
+    visibility_overrides: Optional[dict] = Field(None, alias="visibilityOverrides")
+    detail_level: Optional[str] = Field(None, alias="detailLevel")
+    thumbnail_data_uri: Optional[str] = Field(None, alias="thumbnailDataUri")
+
+
+class PresentationCanvasElem(BaseModel):
+    """OUT-V3-02 — named canvas that groups an ordered sequence of frames."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["presentation_canvas"] = "presentation_canvas"
+    id: str
+    name: str
+    frame_ids: list[str] = Field(default_factory=list, alias="frameIds")
 
 
 Element = Annotated[
@@ -2447,7 +2477,10 @@ Element = Annotated[
     | HatchPatternDefElem
     | MaterialElem
     | DecalElem
-    | PropertyDefinitionElem,
+    | PropertyDefinitionElem
+    | FrameElem
+    | SavedViewElem
+    | PresentationCanvasElem,
     Field(discriminator="kind"),
 ]
 

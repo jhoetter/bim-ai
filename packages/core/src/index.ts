@@ -133,7 +133,10 @@ export type ElemKind =
   | 'material'
   | 'decal'
   | 'hatch_pattern_def'
-  | 'property_definition';
+  | 'property_definition'
+  | 'frame'
+  | 'saved_view'
+  | 'presentation_canvas';
 
 export type PhaseFilter = 'all' | 'existing' | 'demolition' | 'new';
 
@@ -1725,7 +1728,10 @@ export type Element =
   | HatchPatternDef
   | PropertyDefinitionElem
   | MaterialElem
-  | DecalElem;
+  | DecalElem
+  | FrameElem
+  | SavedViewElem
+  | PresentationCanvasElem;
 
 export type Violation = {
   ruleId: string;
@@ -2412,4 +2418,97 @@ export type CompareResult = {
   prePngPath: string;
   postPngPath: string;
   diffPngPath: string;
+};
+
+// ---------------------------------------------------------------------------
+// OUT-V3-02 — Presentation canvas, frames, saved views
+// ---------------------------------------------------------------------------
+
+export type FrameElem = {
+  kind: 'frame';
+  id: string;
+  presentationCanvasId: string;
+  viewId: string;
+  positionMm: { xMm: number; yMm: number };
+  sizeMm: { widthMm: number; heightMm: number };
+  caption?: string;
+  brandTemplateId?: string;
+  sortOrder: number;
+};
+
+export type SavedViewElem = {
+  kind: 'saved_view';
+  id: string;
+  baseViewId: string;
+  name: string;
+  cameraState?: Record<string, unknown>;
+  visibilityOverrides?: Record<string, unknown>;
+  detailLevel?: string;
+  thumbnailDataUri?: string;
+};
+
+export type PresentationCanvasElem = {
+  kind: 'presentation_canvas';
+  id: string;
+  name: string;
+  frameIds: string[];
+};
+
+export type CreateFrameCmd = {
+  type: 'create_frame';
+  id: string;
+  presentationCanvasId: string;
+  viewId: string;
+  positionMm: { xMm: number; yMm: number };
+  sizeMm: { widthMm: number; heightMm: number };
+  caption?: string;
+  brandTemplateId?: string;
+  sortOrder?: number;
+};
+
+export type UpdateFrameCmd = {
+  type: 'update_frame';
+  id: string;
+  caption?: string;
+  positionMm?: { xMm: number; yMm: number };
+  sizeMm?: { widthMm: number; heightMm: number };
+  sortOrder?: number;
+};
+
+export type DeleteFrameCmd = { type: 'delete_frame'; id: string };
+
+export type ReorderFrameCmd = { type: 'reorder_frame'; id: string; newSortOrder: number };
+
+export type CreateSavedViewCmd = {
+  type: 'create_saved_view';
+  id: string;
+  baseViewId: string;
+  name: string;
+  cameraState?: Record<string, unknown>;
+  visibilityOverrides?: Record<string, unknown>;
+  detailLevel?: string;
+};
+
+export type UpdateSavedViewCmd = {
+  type: 'update_saved_view';
+  id: string;
+  name?: string;
+  cameraState?: Record<string, unknown>;
+  visibilityOverrides?: Record<string, unknown>;
+  detailLevel?: string;
+  thumbnailDataUri?: string;
+};
+
+export type DeleteSavedViewCmd = { type: 'delete_saved_view'; id: string };
+
+export type CreatePresentationCanvasCmd = {
+  type: 'create_presentation_canvas';
+  id: string;
+  name: string;
+};
+
+export type UpdatePresentationCanvasCmd = {
+  type: 'update_presentation_canvas';
+  id: string;
+  name?: string;
 };
