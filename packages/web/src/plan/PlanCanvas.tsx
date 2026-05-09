@@ -118,6 +118,8 @@ import { getFamilyById as getBuiltInFamilyById } from '../families/familyCatalog
 import type { FamilyDefinition } from '../families/types';
 import { copyElementsToClipboard, pasteFromOSClipboard } from '../clipboard/copyPaste';
 import { useToolPrefs } from '../tools/toolPrefsStore';
+import { SubdivisionPalette } from '../workspace/SubdivisionPalette';
+import type { SubdivisionCategory } from '../workspace/SubdivisionPalette';
 
 function readPlanToken(name: string, fallback: string): string {
   const v = liveTokenReader().read(name);
@@ -171,6 +173,11 @@ type Draft =
       verts: Array<{ xMm: number; yMm: number }>;
       closed: boolean;
       hatchId: string | null;
+    }
+  | {
+      kind: 'toposolid-subdivision';
+      verts: Array<{ xMm: number; yMm: number }>;
+      finishCategory: SubdivisionCategory;
     };
 
 function nearestWallAt(
@@ -406,6 +413,10 @@ export function PlanCanvas({
   const showNeighborhoodMasses = useBimStore((s) => s.showNeighborhoodMasses);
   // EDT-V3-05 — loop mode: re-arm chained tools after each segment commit.
   const loopMode = useToolPrefs((s) => s.loopMode);
+  // TOP-V3-03 — active finish category for the subdivision palette.
+  const subdivisionDraft = useToolPrefs((s) => s.subdivisionDraft);
+  const setSubdivisionDraft = useToolPrefs((s) => s.setSubdivisionDraft);
+  const clearSubdivisionDraft = useToolPrefs((s) => s.clearSubdivisionDraft);
 
   const display = useMemo(
     () =>
@@ -1705,6 +1716,27 @@ export function PlanCanvas({
                   : p;
         redrawSeg(pv, p);
       }
+      // TOP-V3-03: dashed polygon preview while sketching a subdivision region.
+      if (planTool === 'toposolid_subdivision' && d?.kind === 'toposolid-subdivision' && d.verts.length >= 1) {
+        const pts = [
+          ...d.verts.map((v2) => new THREE.Vector3(v2.xMm / 1000, SLICE_Y, v2.yMm / 1000)),
+          p,
+        ];
+        if (previewRef.current) {
+          grp.remove(previewRef.current);
+          previewRef.current.geometry.dispose();
+        }
+        const geo = new THREE.BufferGeometry().setFromPoints(pts);
+        const mat = new THREE.LineDashedMaterial({
+          color: readPlanToken('--draft-construction-blue', '#fcd34d'),
+          dashSize: 0.25,
+          gapSize: 0.12,
+        });
+        const line = new THREE.Line(geo, mat);
+        line.computeLineDistances();
+        previewRef.current = line;
+        grp.add(previewRef.current);
+      }
     };
 
     const onDown = (ev: PointerEvent) => {
@@ -2669,6 +2701,24 @@ export function PlanCanvas({
         dr.verts.push({ xMm: sp.xMm, yMm: sp.yMm });
         bumpGeom((x) => x + 1);
       }
+      // TOP-V3-03: click → add vertex; double-click (detected via proximity in
+      // onDblClick below) → close polygon + emit CreateToposolidSubdivisionCmd.
+      if (planTool === 'toposolid_subdivision') {
+        const d = draftRef.current;
+        if (!d || d.kind !== 'toposolid-subdivision') {
+          const draft = useToolPrefs.getState().subdivisionDraft;
+          const cat: SubdivisionCategory = draft?.finishCategory ?? 'paving';
+          draftRef.current = {
+            kind: 'toposolid-subdivision',
+            verts: [{ xMm: sp.xMm, yMm: sp.yMm }],
+            finishCategory: cat,
+          };
+          bumpGeom((x) => x + 1);
+          return;
+        }
+        d.verts.push({ xMm: sp.xMm, yMm: sp.yMm });
+        bumpGeom((x) => x + 1);
+      }
     };
 
     const onWheel = (ev: WheelEvent) => {
@@ -2781,6 +2831,16 @@ export function PlanCanvas({
         draftRef.current = undefined;
         // EDT-V3-05: Esc exits loop mode as well as cancelling the in-flight segment.
         useToolPrefs.getState().setLoopMode(false);
+        // TOP-V3-03: Esc clears the in-flight subdivision polygon.
+        if (planTool === 'toposolid_subdivision') {
+          useToolPrefs.getState().clearSubdivisionDraft();
+          if (previewRef.current) {
+            grp.remove(previewRef.current);
+            previewRef.current.geometry.dispose();
+            previewRef.current = null;
+          }
+          bumpGeom((x) => x + 1);
+        }
         if (planTool === 'align') {
           const { state } = reduceAlign(alignStateRef.current, { kind: 'cancel' });
           alignStateRef.current = state;
@@ -2987,10 +3047,61 @@ export function PlanCanvas({
       const h = hits.find(
         (x) => typeof (x.object.userData as { bimPickId?: unknown }).bimPickId === 'string',
       );
-      if (!h) return;
+      if (!h) {
+        // TOP-V3-03: double-click on empty canvas while toposolid_subdivision tool
+        // is active closes the in-flight polygon and emits the command.
+        if (planTool === 'toposolid_subdivision') {
+          const d = draftRef.current;
+          if (d && d.kind === 'toposolid-subdivision' && d.verts.length >= 3) {
+            const draft = useToolPrefs.getState().subdivisionDraft;
+            onSemanticCommand({
+              type: 'create_toposolid_subdivision',
+              id: crypto.randomUUID(),
+              hostToposolidId: draft?.hostToposolidId ?? null,
+              boundaryMm: d.verts,
+              finishCategory: d.finishCategory,
+              materialKey: d.finishCategory,
+            });
+            draftRef.current = undefined;
+            useToolPrefs.getState().clearSubdivisionDraft();
+            if (previewRef.current) {
+              grp.remove(previewRef.current);
+              previewRef.current.geometry.dispose();
+              previewRef.current = null;
+            }
+            bumpGeom((x) => x + 1);
+          }
+        }
+        return;
+      }
       const id = (h.object.userData as { bimPickId: string }).bimPickId;
       const el = elementsById[id];
       if (!el) return;
+      // TOP-V3-03: double-click on a toposolid element while the subdivision
+      // tool is active closes the polygon on that host.
+      if (planTool === 'toposolid_subdivision' && el.kind === 'toposolid') {
+        const d = draftRef.current;
+        if (d && d.kind === 'toposolid-subdivision' && d.verts.length >= 3) {
+          const draft = useToolPrefs.getState().subdivisionDraft;
+          onSemanticCommand({
+            type: 'create_toposolid_subdivision',
+            id: crypto.randomUUID(),
+            hostToposolidId: el.id,
+            boundaryMm: d.verts,
+            finishCategory: d.finishCategory,
+            materialKey: d.finishCategory,
+          });
+          draftRef.current = undefined;
+          useToolPrefs.getState().clearSubdivisionDraft();
+          if (previewRef.current) {
+            grp.remove(previewRef.current);
+            previewRef.current.geometry.dispose();
+            previewRef.current = null;
+          }
+          bumpGeom((x) => x + 1);
+        }
+        return;
+      }
       if (el.kind === 'elevation_view') {
         activateElevationView(id);
       } else if (el.kind === 'plan_view') {
@@ -3419,6 +3530,36 @@ export function PlanCanvas({
           }}
           onCancelled={() => setPlanTool('select')}
         />
+      ) : null}
+      {/* TOP-V3-03 — Subdivision palette: shown when toposolid_subdivision tool
+          is active.  Lets the user pick a finish category before / during sketch. */}
+      {planTool === 'toposolid_subdivision' ? (
+        <div className="pointer-events-auto absolute top-3 left-1/2 z-20 -translate-x-1/2">
+          <SubdivisionPalette
+            activeCategory={subdivisionDraft?.finishCategory ?? 'paving'}
+            onSelect={(cat) => {
+              if (subdivisionDraft) {
+                setSubdivisionDraft({ ...subdivisionDraft, finishCategory: cat });
+              } else {
+                setSubdivisionDraft({
+                  hostToposolidId: null,
+                  boundaryPts: [],
+                  finishCategory: cat,
+                });
+              }
+              // If a draft polygon is in progress, update its category.
+              const d = draftRef.current;
+              if (d && d.kind === 'toposolid-subdivision') {
+                d.finishCategory = cat;
+              }
+            }}
+            onCancel={() => {
+              draftRef.current = undefined;
+              clearSubdivisionDraft();
+              setPlanTool('select');
+            }}
+          />
+        </div>
       ) : null}
     </div>
   );

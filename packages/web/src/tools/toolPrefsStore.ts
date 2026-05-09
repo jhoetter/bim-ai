@@ -10,15 +10,28 @@
  *
  * EDT-V3-05: `loopMode` is a session-level boolean that arms chained drawing
  * tools (Wall, Beam) to auto-restart after each completed segment.
+ *
+ * TOP-V3-03: `subdivisionDraft` holds the in-flight polygon being sketched
+ * for a CreateToposolidSubdivisionCmd.
  */
 
 import { create } from 'zustand';
+
+export type SubdivisionFinishCategory = 'paving' | 'lawn' | 'road' | 'planting' | 'other';
+
+export interface SubdivisionDraft {
+  hostToposolidId: string | null;
+  boundaryPts: { xMm: number; yMm: number }[];
+  finishCategory: SubdivisionFinishCategory;
+}
 
 export interface ToolPrefsState {
   toggles: Record<string, Record<string, boolean>>;
   cycles: Record<string, Record<string, string>>;
   /** EDT-V3-05: when true, chained tools re-arm after each segment commit. */
   loopMode: boolean;
+  /** TOP-V3-03: in-flight subdivision polygon draft, null when not sketching. */
+  subdivisionDraft: SubdivisionDraft | null;
   setToggle: (toolId: string, modifierId: string, value: boolean) => void;
   setCycle: (toolId: string, modifierId: string, value: string) => void;
   getToggle: (toolId: string, modifierId: string, defaultOn: boolean) => boolean;
@@ -31,12 +44,17 @@ export interface ToolPrefsState {
   ) => string;
   /** EDT-V3-05: set loop mode on/off. */
   setLoopMode: (v: boolean) => void;
+  /** TOP-V3-03: update the in-flight subdivision draft (replaces whole object). */
+  setSubdivisionDraft: (draft: SubdivisionDraft) => void;
+  /** TOP-V3-03: clear the in-flight subdivision draft. */
+  clearSubdivisionDraft: () => void;
 }
 
 export const useToolPrefs = create<ToolPrefsState>((set, get) => ({
   toggles: {},
   cycles: {},
   loopMode: false,
+  subdivisionDraft: null,
 
   setToggle(toolId, modifierId, value) {
     set((state) => ({
@@ -74,5 +92,13 @@ export const useToolPrefs = create<ToolPrefsState>((set, get) => ({
 
   setLoopMode(v) {
     set({ loopMode: v });
+  },
+
+  setSubdivisionDraft(draft) {
+    set({ subdivisionDraft: draft });
+  },
+
+  clearSubdivisionDraft() {
+    set({ subdivisionDraft: null });
   },
 }));

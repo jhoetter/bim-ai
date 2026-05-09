@@ -51,7 +51,8 @@ export type ToolId =
   | 'shaft'
   | 'column'
   | 'beam'
-  | 'ceiling';
+  | 'ceiling'
+  | 'toposolid_subdivision';
 
 /** Modify-group tool IDs — used by ToolPalette to insert a separator. */
 export const MODIFY_TOOL_IDS = new Set<ToolId>(['align', 'split', 'trim', 'mirror', 'wall-join']);
@@ -332,6 +333,15 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       hotkey: 'MM',
       modes: ['plan', 'plan-3d'],
       tooltip: t('tools.mirror.tooltip'),
+    },
+    toposolid_subdivision: {
+      id: 'toposolid_subdivision',
+      label: 'Subdivide Toposolid',
+      icon: 'detailLine',
+      hotkey: 'TS',
+      shortcut: 'TS',
+      modes: ['plan', 'plan-3d'],
+      tooltip: 'Paint a finish-category subdivision region on a toposolid (T → S).',
     },
   };
 }
