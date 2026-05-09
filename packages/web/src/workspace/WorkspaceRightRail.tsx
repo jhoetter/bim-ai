@@ -210,15 +210,30 @@ export function WorkspaceRightRail({
               ) : el.kind === 'view_template' ? (
                 <InspectorViewTemplateEditor
                   el={el}
+                  elementsById={elementsById}
                   revision={revision}
-                  onPersistProperty={(key, value) =>
-                    void onSemanticCommand({
-                      type: 'updateElementProperty',
-                      elementId: el.id,
-                      key,
-                      value,
-                    })
-                  }
+                  onPersistProperty={(key, value) => {
+                    if (key === '__updateViewTemplate__') {
+                      const patch = JSON.parse(value) as {
+                        scale?: number | null;
+                        detailLevel?: string | null;
+                        phase?: string | null;
+                        phaseFilter?: string | null;
+                      };
+                      void onSemanticCommand({
+                        type: 'UpdateViewTemplate',
+                        templateId: el.id,
+                        ...patch,
+                      });
+                    } else {
+                      void onSemanticCommand({
+                        type: 'updateElementProperty',
+                        elementId: el.id,
+                        key,
+                        value,
+                      });
+                    }
+                  }}
                 />
               ) : el.kind === 'door' ? (
                 <InspectorDoorEditor
