@@ -14,6 +14,57 @@ import type { CollaborationConflictQueueV1 } from '../lib/collaborationConflictQ
 import { LensDropdown } from './LensDropdown';
 import { DriftBadge } from './DriftBadge';
 
+const TOOL_VERB: Record<string, string> = {
+  wall: 'Drawing wall',
+  door: 'Placing door',
+  window: 'Placing window',
+  floor: 'Sketching floor',
+  roof: 'Sketching roof',
+  stair: 'Sketching stair',
+  railing: 'Placing railing',
+  column: 'Placing column',
+  beam: 'Placing beam',
+  room: 'Bounding room',
+  dimension: 'Annotating',
+  section: 'Placing section',
+  elevation: 'Placing elevation',
+  callout: 'Placing callout',
+  detail_region: 'Framing detail',
+  annotation: 'Annotating',
+  grid: 'Drawing grid',
+  level: 'Setting level',
+};
+
+function toolVerb(label: string | null | undefined): string {
+  if (!label) return '—';
+  return TOOL_VERB[label.toLowerCase().replace(/\s+/g, '_')] ?? label;
+}
+
+/**
+ * Snap-mode id → single-character glyph + accessibility title.
+ * No snap-specific icons exist in @bim-ai/icons; use short glyphs with titles.
+ */
+const SNAP_GLYPH: Record<string, { glyph: string; title: string }> = {
+  endpoint: { glyph: 'E', title: 'Endpoint snap' },
+  midpoint: { glyph: 'M', title: 'Midpoint snap' },
+  intersection: { glyph: 'I', title: 'Intersection snap' },
+  grid: { glyph: 'G', title: 'Grid snap' },
+  nearest: { glyph: 'N', title: 'Nearest snap' },
+  perpendicular: { glyph: 'P', title: 'Perpendicular snap' },
+  tangent: { glyph: 'T', title: 'Tangent snap' },
+  center: { glyph: 'C', title: 'Center snap' },
+  quadrant: { glyph: 'Q', title: 'Quadrant snap' },
+};
+
+function snapGlyph(id: string): { glyph: string; title: string } {
+  return SNAP_GLYPH[id.toLowerCase()] ?? { glyph: id.slice(0, 1).toUpperCase(), title: id };
+}
+
+function fmtM(mm: number | null | undefined): string {
+  if (mm == null) return '—';
+  return `${(mm / 1000).toFixed(3)} m`;
+}
+
 /**
  * StatusBar — spec §17.
  *
@@ -315,8 +366,7 @@ function ToolCluster({ toolLabel }: { toolLabel: string | null }): JSX.Element {
   const { t } = useTranslation();
   return (
     <div aria-live="polite" className="flex items-center gap-1" title={t('statusbar.toolTitle')}>
-      {t('statusbar.toolLabel')}{' '}
-      <span className="font-medium text-foreground">{toolLabel ?? '—'}</span>
+      <span className="font-medium text-foreground">{toolVerb(toolLabel)}</span>
     </div>
   );
 }
@@ -337,22 +387,26 @@ function SnapCluster({
         {snapModes.length === 0 ? (
           <span className="text-muted">{t('statusbar.snapOff')}</span>
         ) : (
-          snapModes.map((s) => (
-            <button
-              key={s.id}
-              type="button"
-              role="switch"
-              aria-checked={s.on}
-              onClick={() => onSnapToggle?.(s.id)}
-              data-active={s.on ? 'true' : 'false'}
-              className={[
-                'rounded-sm px-1.5 py-0.5',
-                s.on ? 'bg-accent-soft text-foreground' : 'text-muted hover:bg-surface-strong',
-              ].join(' ')}
-            >
-              {s.label}
-            </button>
-          ))
+          snapModes.map((s) => {
+            const { glyph, title } = snapGlyph(s.id);
+            return (
+              <button
+                key={s.id}
+                type="button"
+                role="switch"
+                aria-checked={s.on}
+                onClick={() => onSnapToggle?.(s.id)}
+                data-active={s.on ? 'true' : 'false'}
+                title={`${title} (${s.on ? 'on' : 'off'})`}
+                className={[
+                  'rounded-sm px-1 py-0.5 font-mono text-[10px]',
+                  s.on ? 'bg-accent-soft text-foreground' : 'text-muted hover:bg-surface-strong',
+                ].join(' ')}
+              >
+                {glyph}
+              </button>
+            );
+          })
         )}
       </div>
     </div>
@@ -391,9 +445,7 @@ function CoordCluster({
   const { t } = useTranslation();
   return (
     <div aria-live="polite" aria-label={t('statusbar.coordsLabel')} className="font-mono text-xs">
-      {cursorMm
-        ? `X ${(cursorMm.xMm / 1000).toFixed(2)} m   Y ${(cursorMm.yMm / 1000).toFixed(2)} m`
-        : 'X —   Y —'}
+      {cursorMm ? `X ${fmtM(cursorMm.xMm)}   Y ${fmtM(cursorMm.yMm)}` : 'X —   Y —'}
     </div>
   );
 }
